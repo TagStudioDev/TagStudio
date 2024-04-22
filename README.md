@@ -76,6 +76,9 @@ _Learn more about setting up a virtual environment [here](https://docs.python.or
 
 ### Launching
 
+> [!NOTE]
+> Depending on your system, Python may be called `python`, `py`, `python3`, or `py3`. These instructions use the alias `python3`. 
+
 #### Optional Arguments
 
 > `--open <path>` / `-o <path>`
