@@ -3900,7 +3900,7 @@ class QtDriver:
 		for i, id in enumerate(new_ids):
 			# pb.setValue(i)
 			# pb.setLabelText(f'Running Configured Macros on {i}/{len(new_ids)} New Entries')
-			self.run_macro('autofill', id)
+			# self.run_macro('autofill', id)
 			yield i
 		
 		# self.main_window.statusbar.showMessage('', 3)
