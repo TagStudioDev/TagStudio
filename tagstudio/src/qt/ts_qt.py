@@ -3791,6 +3791,8 @@ class QtDriver(QObject):
 	
 	
 	def save_library(self):
+ 		if not self.lib.library_dir:
+			return
 		logging.info(f'Saving Library...')
 		self.main_window.statusbar.showMessage(f'Saving Library...')
 		start_time = time.time()
@@ -3799,6 +3801,8 @@ class QtDriver(QObject):
 		self.main_window.statusbar.showMessage(f'Library Saved! ({format_timespan(end_time - start_time)})')
 
 	def backup_library(self):
+ 		if not self.lib.library_dir:
+			return
 		logging.info(f'Backing Up Library...')
 		self.main_window.statusbar.showMessage(f'Saving Library...')
 		start_time = time.time()
@@ -3807,6 +3811,8 @@ class QtDriver(QObject):
 		self.main_window.statusbar.showMessage(f'Library Backup Saved at: "{os.path.normpath(os.path.normpath(f"{self.lib.library_dir}/{TS_FOLDER_NAME}/{BACKUP_FOLDER_NAME}/{fn}"))}" ({format_timespan(end_time - start_time)})')
 	
 	def add_tag_action_callback(self):
+ 		if not self.lib.library_dir:
+			return
 		self.modal = PanelModal(BuildTagPanel(self.lib), 
 								'New Tag', 
 								'Add Tag',
