@@ -288,10 +288,10 @@ class FieldWidget(QWidget):
 class TagBoxWidget(FieldWidget):
 	updated = Signal()
 
-	def __init__(self, item, title, field_index, library:Library, tags:list[int], driver:'QtDriver') -> None:
+	def __init__(self, items, title, field_index, library:Library, tags:list[int], driver:'QtDriver') -> None:
 		super().__init__(title)
 		# QObject.__init__(self)
-		self.item = item
+		self.items = items
 		self.lib = library
 		self.driver = driver # Used for creating tag click callbacks that search entries for that tag. 
 		self.field_index = field_index
@@ -334,42 +334,43 @@ class TagBoxWidget(FieldWidget):
 		self.set_tags(tags)
 		# self.add_button.setHidden(True)
 
-	def set_item(self, item):
-		self.item = item
+	def set_items(self, items):
+		self.items = items
 
 	def set_tags(self, tags:list[int]):
-		logging.info(f'[TAG BOX WIDGET] SET TAGS: T:{tags} for E:{self.item.id}')
-		is_recycled = False
-		if self.base_layout.itemAt(0):
-			# logging.info(type(self.base_layout.itemAt(0).widget()))
-			while self.base_layout.itemAt(0) and self.base_layout.itemAt(1):
-				# logging.info(f"I'm deleting { self.base_layout.itemAt(0).widget()}")
-				self.base_layout.takeAt(0).widget().deleteLater()
-			is_recycled = True
-		for tag in tags:
-			# TODO: Remove space from the special search here (tag_id:x) once that system is finalized.
-			# tw = TagWidget(self.lib, self.lib.get_tag(tag), True, True, 
-			# 							on_remove_callback=lambda checked=False, t=tag: (self.lib.get_entry(self.item.id).remove_tag(self.lib, t, self.field_index), self.updated.emit()), 
-			# 							on_click_callback=lambda checked=False, q=f'tag_id: {tag}': (self.driver.main_window.searchField.setText(q), self.driver.filter_items(q)),
-			# 							on_edit_callback=lambda checked=False, t=tag: (self.edit_tag(t))
-			# 							)
-			tw = TagWidget(self.lib, self.lib.get_tag(tag), True, True)
-			tw.on_click.connect(lambda checked=False, q=f'tag_id: {tag}': (self.driver.main_window.searchField.setText(q), self.driver.filter_items(q)))
-			tw.on_remove.connect(lambda checked=False, t=tag: (self.lib.get_entry(self.item.id).remove_tag(self.lib, t, self.field_index), self.updated.emit()))
-			tw.on_edit.connect(lambda checked=False, t=tag: (self.edit_tag(t)))
-			self.base_layout.addWidget(tw)
-		self.tags = tags
+		for item in self.items:
+			logging.info(f'[TAG BOX WIDGET] SET TAGS: T:{tags} for E:{item.id}')
+			is_recycled = False
+			if self.base_layout.itemAt(0):
+				# logging.info(type(self.base_layout.itemAt(0).widget()))
+				while self.base_layout.itemAt(0) and self.base_layout.itemAt(1):
+					# logging.info(f"I'm deleting { self.base_layout.itemAt(0).widget()}")
+					self.base_layout.takeAt(0).widget().deleteLater()
+				is_recycled = True
+			for tag in tags:
+				# TODO: Remove space from the special search here (tag_id:x) once that system is finalized.
+				# tw = TagWidget(self.lib, self.lib.get_tag(tag), True, True, 
+				# 							on_remove_callback=lambda checked=False, t=tag: (self.lib.get_entry(self.item.id).remove_tag(self.lib, t, self.field_index), self.updated.emit()), 
+				# 							on_click_callback=lambda checked=False, q=f'tag_id: {tag}': (self.driver.main_window.searchField.setText(q), self.driver.filter_items(q)),
+				# 							on_edit_callback=lambda checked=False, t=tag: (self.edit_tag(t))
+				# 							)
+				tw = TagWidget(self.lib, self.lib.get_tag(tag), True, True)
+				tw.on_click.connect(lambda checked=False, q=f'tag_id: {tag}': (self.driver.main_window.searchField.setText(q), self.driver.filter_items(q)))
+				tw.on_remove.connect(lambda checked=False, t=tag: (self.lib.get_entry(item.id).remove_tag(self.lib, t, self.field_index), self.updated.emit()))
+				tw.on_edit.connect(lambda checked=False, t=tag: (self.edit_tag(t)))
+				self.base_layout.addWidget(tw)
+			self.tags = tags
 
-		# Move or add the '+' button.
-		if is_recycled:
-			self.base_layout.addWidget(self.base_layout.takeAt(0).widget())
-		else:
-			self.base_layout.addWidget(self.add_button)
-	
-		# Handles an edge case where there are no more tags and the '+' button
-		# doesn't move all the way to the left.
-		if self.base_layout.itemAt(0) and not self.base_layout.itemAt(1):
-			self.base_layout.update()
+			# Move or add the '+' button.
+			if is_recycled:
+				self.base_layout.addWidget(self.base_layout.takeAt(0).widget())
+			else:
+				self.base_layout.addWidget(self.add_button)
+		
+			# Handles an edge case where there are no more tags and the '+' button
+			# doesn't move all the way to the left.
+			if self.base_layout.itemAt(0) and not self.base_layout.itemAt(1):
+				self.base_layout.update()
 	
 	def edit_tag(self, tag_id:int):
 		btp = BuildTagPanel(self.lib, tag_id)
@@ -387,18 +388,19 @@ class TagBoxWidget(FieldWidget):
 
 
 	def add_tag_callback(self, tag_id):
-		# self.base_layout.addWidget(TagWidget(self.lib, self.lib.get_tag(tag), True))
-		# self.tags.append(tag)
-		logging.info(f'[TAG BOX WIDGET] ADD TAG CALLBACK: T:{tag_id} to E:{self.item.id}')
-		if type(self.item) == Entry:
-			self.item.add_tag(self.lib, tag_id, field_id=-1, field_index=self.field_index)
-			logging.info(f'[TAG BOX WIDGET] UPDATED EMITTED: {tag_id}')
-			self.updated.emit()
-			# logging.info(f'I want to add tag ID {tag_id} to entry {self.item.filename}')
-		# self.updated.emit()
-			# if tag_id not in self.tags:
-			# 	self.tags.append(tag_id)
-			# self.set_tags(self.tags)
+		for item in self.items:
+			# self.base_layout.addWidget(TagWidget(self.lib, self.lib.get_tag(tag), True))
+			# self.tags.append(tag)
+			logging.info(f'[TAG BOX WIDGET] ADD TAG CALLBACK: T:{tag_id} to E:{item.id}')
+			if type(item) == Entry:
+				item.add_tag(self.lib, tag_id, field_id=-1, field_index=self.field_index)
+				logging.info(f'[TAG BOX WIDGET] UPDATED EMITTED: {tag_id}')
+				self.updated.emit()
+				# logging.info(f'I want to add tag ID {tag_id} to entry {self.item.filename}')
+			# self.updated.emit()
+				# if tag_id not in self.tags:
+				# 	self.tags.append(tag_id)
+				# self.set_tags(self.tags)
 	
 	def edit_tag_callback(self, tag:Tag):
 		self.lib.update_tag(tag)
@@ -2310,10 +2312,10 @@ class PreviewPanel(QWidget):
 			container.set_inline(False)
 			title = f"{self.lib.get_field_attr(field, 'name')} (Tag Box)"
 			if not mixed:
-				item = self.lib.get_entry(self.selected[0][1]) # TODO TODO TODO: TEMPORARY
+				items = self.lib.get_entries([x[1] for x in self.selected]) # TODO TODO TODO: TEMPORARY
 				if type(container.get_inner_widget()) == TagBoxWidget:
 					inner_container: TagBoxWidget = container.get_inner_widget()
-					inner_container.set_item(item)
+					inner_container.set_items(items)
 					inner_container.set_tags(self.lib.get_field_attr(field, 'content'))
 					try:
 						inner_container.updated.disconnect()
@@ -2321,7 +2323,7 @@ class PreviewPanel(QWidget):
 						pass
 					# inner_container.updated.connect(lambda f=self.filepath, i=item: self.write_container(item, index, field))
 				else:
-					inner_container = TagBoxWidget(item, title, index, self.lib, self.lib.get_field_attr(field, 'content'), self.driver)
+					inner_container = TagBoxWidget(items, title, index, self.lib, self.lib.get_field_attr(field, 'content'), self.driver)
 					
 					container.set_inner_widget(inner_container)
 
