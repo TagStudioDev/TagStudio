@@ -314,10 +314,10 @@ class TagBoxWidget(FieldWidget):
 		self.add_button.setText('+')
 		self.add_button.setStyleSheet(
 									f'QPushButton{{'
-									f'background: #1E1A33;'
-									f'color: #CDA7F7;'
+									# f'background: #1E1A33;'
+									# f'color: #CDA7F7;'
 									f'font-weight: bold;'
-									f"border-color: #2B2547;"
+									# f"border-color: #2B2547;"
 									f'border-radius: 6px;'
 									f'border-style:solid;'
 									f'border-width:{math.ceil(1*self.devicePixelRatio())}px;'
@@ -329,7 +329,7 @@ class TagBoxWidget(FieldWidget):
 									f'}}'
 									f'QPushButton::hover'
 									f'{{'
-									f'background: #2B2547;'
+									# f'background: #2B2547;'
 									f'}}')
 		tsp = TagSearchPanel(self.lib)
 		tsp.tag_chosen.connect(lambda x: self.add_tag_callback(x))
@@ -1955,7 +1955,7 @@ class PreviewPanel(QWidget):
 									f'}}'
 									f'QPushButton::hover'
 									f'{{'
-									f'background: #2B2547;'
+									f'background: #333333;'
 									f'}}')
 		self.afb_layout.addWidget(self.add_field_button)
 		self.afm = AddFieldModal(self.lib)
@@ -2094,7 +2094,7 @@ class PreviewPanel(QWidget):
 						if extension in IMAGE_TYPES:
 							image = Image.open(filepath)
 							if image.mode == 'RGBA':
-								new_bg = Image.new('RGB', image.size, color='#110F1B')
+								new_bg = Image.new('RGB', image.size, color='#222222')
 								new_bg.paste(image, mask=image.getchannel(3))
 								image = new_bg
 							if image.mode != 'RGB':
@@ -2563,7 +2563,7 @@ class ItemThumb(FlowWidget):
 	tag_group_icon_128.load()
 
 	small_text_style = (
-		f'background-color:rgba(17, 15, 27, 192);'
+		f'background-color:rgba(0, 0, 0, 64);'
 		f'font-family:Oxanium;'
 		f'font-weight:bold;'
 		f'font-size:12px;'
@@ -3203,7 +3203,7 @@ class ThumbRenderer(QObject):
 					# image = self.thumb_debug
 					if image.mode == 'RGBA':
 						# logging.info(image.getchannel(3).tobytes())
-						new_bg = Image.new('RGB', image.size, color='#110F1B')
+						new_bg = Image.new('RGB', image.size, color='#222222')
 						new_bg.paste(image, mask=image.getchannel(3))
 						image = new_bg
 					if image.mode != 'RGB':
@@ -3364,7 +3364,7 @@ class ThumbRenderer(QObject):
 					# image = self.thumb_debug
 					if image.mode == 'RGBA':
 						# logging.info(image.getchannel(3).tobytes())
-						new_bg = Image.new('RGB', image.size, color='#110F1B')
+						new_bg = Image.new('RGB', image.size, color='#222222')
 						new_bg.paste(image, mask=image.getchannel(3))
 						image = new_bg
 					if image.mode != 'RGB':
@@ -3583,12 +3583,12 @@ class QtDriver(QObject):
 			sys.argv += ['-platform', 'windows:darkmode=2']
 		app = QApplication(sys.argv)
 		app.setStyle('Fusion')
-		pal: QPalette = app.palette()
-		pal.setColor(QPalette.ColorGroup.Active,
-					 QPalette.ColorRole.Highlight, QColor('#6E4BCE'))
-		pal.setColor(QPalette.ColorGroup.Normal,
-					 QPalette.ColorRole.Window, QColor('#110F1B'))
-		app.setPalette(pal)
+		# pal: QPalette = app.palette()
+		# pal.setColor(QPalette.ColorGroup.Active,
+		# 			 QPalette.ColorRole.Highlight, QColor('#6E4BCE'))
+		# pal.setColor(QPalette.ColorGroup.Normal,
+		# 			 QPalette.ColorRole.Window, QColor('#110F1B'))
+		# app.setPalette(pal)
 		home_path = os.path.normpath(f'{Path(__file__).parent}/ui/home.ui')
 		icon_path = os.path.normpath(
 			f'{Path(__file__).parent.parent.parent}/resources/icon.png')
@@ -3603,9 +3603,9 @@ class QtDriver(QObject):
 		self.main_window = Ui_MainWindow()
 		self.main_window.setWindowTitle(self.base_title)
 		self.main_window.mousePressEvent = self.mouse_navigation
-		self.main_window.setStyleSheet(
-			f'QScrollBar::{{background:red;}}'
-			)
+		# self.main_window.setStyleSheet(
+		# 	f'QScrollBar::{{background:red;}}'
+		# 	)
 
 		# # self.main_window.windowFlags() & 
 		# # self.main_window.setWindowFlag(Qt.WindowType.FramelessWindowHint, True)
@@ -3624,7 +3624,7 @@ class QtDriver(QObject):
 
 		menu_bar = self.main_window.menuBar()
 		menu_bar.setNativeMenuBar(False)
-		menu_bar.setStyleSheet('background:#00000000;')
+		# menu_bar.setStyleSheet('background:#00000000;')
 		file_menu = QMenu('&File', menu_bar)
 		edit_menu = QMenu('&Edit', menu_bar)
 		tools_menu = QMenu('&Tools', menu_bar)
