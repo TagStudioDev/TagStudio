@@ -2777,7 +2777,7 @@ class ItemThumb(FlowWidget):
 		self.set_mode(mode)
 
 	def set_mode(self, mode: Optional[ItemType]) -> None:
-		if mode == None and self.mode != None:
+		if mode is None:
 			self.unsetCursor()
 			self.thumb_button.setHidden(True)
 			# self.check_badges.setHidden(True)
