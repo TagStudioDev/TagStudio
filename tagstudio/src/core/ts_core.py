@@ -10,7 +10,7 @@ from types import FunctionType
 import json
 from pathlib import Path
 import traceback
-import requests
+# import requests
 # from bs4 import BeautifulSoup as bs
 from src.core.library import *
 from src.core.field_template import FieldTemplate
