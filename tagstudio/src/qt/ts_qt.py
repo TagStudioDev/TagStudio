@@ -2,6 +2,9 @@
 # Licensed under the GPL-3.0 License.
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
+# SIGTERM handling based on the implementation by Virgil Dupras for dupeGuru:
+# https://github.com/arsenetar/dupeguru/blob/master/run.py#L71
+
 """A Qt driver for TagStudio."""
 
 from copy import copy, deepcopy
@@ -19,7 +22,7 @@ from PySide6 import QtCore
 import PySide6
 from PySide6.QtGui import *
 from PySide6.QtWidgets import *
-from PySide6.QtCore import QFile, QObject, QThread, Signal, QRunnable, Qt, QThreadPool, QSize, QEvent, QMimeData
+from PySide6.QtCore import QFile, QObject, QThread, Signal, QRunnable, Qt, QThreadPool, QSize, QEvent, QMimeData, QTimer
 from PySide6.QtUiTools import QUiLoader
 from PIL import Image, ImageOps, ImageChops, UnidentifiedImageError, ImageQt, ImageDraw, ImageFont, ImageEnhance
 import PySide6.QtWidgets
@@ -39,12 +42,18 @@ import src.qt.resources_rc
 from humanfriendly import format_timespan
 # from src.qt.qtacrylic.qtacrylic import WindowEffect
 
+# SIGQUIT is not defined on Windows
+if sys.platform == "win32":
+	from signal import signal, SIGINT, SIGTERM
+	SIGQUIT = SIGTERM
+else:
+	from signal import signal, SIGINT, SIGTERM, SIGQUIT
+
 ERROR = f'[ERROR]'
 WARNING = f'[WARNING]'
 INFO = f'[INFO]'
 
 logging.basicConfig(format="%(message)s", level=logging.INFO)
-
 
 
 def open_file(path):
@@ -84,8 +93,6 @@ class Consumer(QThread):
 			except (Empty, RuntimeError):
 				pass
 
-
-
 	
 	def set_page_count(self, count:int):
 		self.page_count = count
@@ -98,7 +105,6 @@ class Consumer(QThread):
 
 	def nav_forward(self):
 		pass
-
 
 
 class FieldContainer(QWidget):
@@ -128,7 +134,6 @@ class FieldContainer(QWidget):
 		button_size = 24
 		# self.setStyleSheet('border-style:solid;border-color:#1e1a33;border-radius:8px;border-width:2px;')
 
-		
 
 		self.root_layout = QVBoxLayout(self)
 		self.root_layout.setObjectName('baseLayout')
@@ -2542,8 +2547,6 @@ class PreviewPanel(QWidget):
 			callback()
 	
 
-
-
 class ItemThumb(FlowWidget):
 	"""
 	The thumbnail widget for a library item (Entry, Collation, Tag Group, etc.).
@@ -3518,10 +3521,13 @@ class CustomRunnable(QRunnable, QObject):
 		self.function()
 		self.done.emit()
 
-class QtDriver:
+class QtDriver(QObject):
 	"""A Qt GUI frontend driver for TagStudio."""
 
+	SIGTERM = Signal()
+
 	def __init__(self, core, args):
+		super().__init__()
 		self.core: TagStudioCore = core
 		self.lib = self.core.lib
 		self.args = args
@@ -3540,6 +3546,8 @@ class QtDriver:
 		# self.selected: list[tuple[int,int]] = [] # (Thumb Index, Page Index)
 		self.selected: list[tuple[ItemType,int]] = [] # (Item Type, Item ID)
 
+		self.SIGTERM.connect(self.handleSIGTERM)
+
 
 		max_threads = os.cpu_count()
 		for i in range(max_threads):
@@ -3552,11 +3560,20 @@ class QtDriver:
 	
 	def open_library_from_dialog(self):
 		dir = QFileDialog.getExistingDirectory(None, 
-                                                         'Open/Create Library',
-														 '/', 
-                                                         QFileDialog.ShowDirsOnly)
+												'Open/Create Library',
+												'/', 
+												QFileDialog.ShowDirsOnly)
 		if dir != None and dir != '':
 			self.open_library(dir)
+
+	def signal_handler(self, sig, frame):
+		if sig in (SIGINT, SIGTERM, SIGQUIT):
+			self.SIGTERM.emit()
+	
+	def setup_signals(self):
+		signal(SIGINT, self.signal_handler)
+		signal(SIGTERM, self.signal_handler)
+		signal(SIGQUIT, self.signal_handler)
 
 	def start(self):
 		"""Launches the main Qt window."""
@@ -3575,6 +3592,12 @@ class QtDriver:
 		home_path = os.path.normpath(f'{Path(__file__).parent}/ui/home.ui')
 		icon_path = os.path.normpath(
 			f'{Path(__file__).parent.parent.parent}/resources/icon.png')
+		
+		# Handle OS signals
+		self.setup_signals()
+		timer = QTimer()
+		timer.start(500)
+		timer.timeout.connect(lambda: None)
 
 		# self.main_window = loader.load(home_path)
 		self.main_window = Ui_MainWindow()
@@ -3755,9 +3778,17 @@ class QtDriver:
 
 		app.exec_()
 
+		self.shutdown()
+
+	def handleSIGTERM(self):
+		self.shutdown()
+		
+	def shutdown(self):
 		# Save Library on Application Exit
 		if self.lib.library_dir:
 			self.save_library()
+		QApplication.quit()
+	
 	
 	def save_library(self):
 		logging.info(f'Saving Library...')

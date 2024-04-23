@@ -57,7 +57,7 @@ class Ui_MainWindow(QMainWindow):
 
 		# self._createMenuBar(MainWindow)
 		
-		print(type(MainWindow))
+		# print(type(MainWindow))
 		self.centralwidget = QWidget(MainWindow)
 		self.centralwidget.setObjectName(u"centralwidget")
 		self.gridLayout = QGridLayout(self.centralwidget)
