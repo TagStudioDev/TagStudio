@@ -27,9 +27,9 @@ This is a **_very_** cutdown version of the [Upstream Readme](https://github.com
 
 ## TODO
 
-[ ] Have a working window
-[ ] Basically the whole app
-[ ] Expanding this list
+- [ ] Have a working window
+- [ ] Basically the whole app
+- [ ] Expanding this list
 
 ## Building
 
