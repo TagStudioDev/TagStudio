@@ -1350,6 +1350,10 @@ class Library:
 		"""Returns an Entry object given an Entry ID."""
 		return self.entries[self._entry_id_to_index_map[int(entry_id)]]
 	
+	def get_entries(self, entry_ids: list[int]) -> list[Entry]:
+		"""Returns a list of Entry objects given a list of Entry IDs."""
+		return [self.get_entry(entry_id) for entry_id in entry_ids]
+	
 	def get_collation(self, collation_id: int) -> Collation:
 		"""Returns a Collation object given an Collation ID."""
 		return self.collations[self._collation_id_to_index_map[int(collation_id)]]
