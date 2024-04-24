@@ -39,7 +39,9 @@ ARCHIVE_TYPES: list[str] = ['zip', 'rar', 'tar', 'tar.gz', 'tgz', '7z']
 PROGRAM_TYPES: list[str] = ['exe', 'app']
 SHORTCUT_TYPES: list[str] = ['lnk', 'desktop']
 
-ALL_FILE_TYPES: list[str] = IMAGE_TYPES + VIDEO_TYPES
+ALL_FILE_TYPES: list[str] = IMAGE_TYPES + VIDEO_TYPES + AUDIO_TYPES + \
+	TEXT_TYPES + SPREADSHEET_TYPES + PRESENTATION_TYPES + \
+	ARCHIVE_TYPES + PROGRAM_TYPES
 
 BOX_FIELDS = ['tag_box', 'text_box']
 TEXT_FIELDS = ['text_line', 'text_box']
