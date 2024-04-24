@@ -4,14 +4,16 @@
 	"private": true,
 	"scripts": {
 		"dev": "vite dev",
-		"build": "vite build",
+		"build": "paraglide-js compile --project ./project.inlang --outdir ./src/paraglide && vite build",
 		"preview": "vite preview",
 		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
 		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
 		"lint": "prettier --check .",
-		"format": "prettier --write ."
+		"format": "prettier --write .",
+		"postinstall": "paraglide-js compile --project ./project.inlang --outdir ./src/paraglide"
 	},
 	"devDependencies": {
+		"@inlang/paraglide-js": "1.7.0",
 		"@sveltejs/adapter-auto": "^3.2.0",
 		"@sveltejs/adapter-static": "^3.0.1",
 		"@sveltejs/kit": "^2.5.7",
@@ -33,5 +35,8 @@
 		"typescript": "^5.4.5",
 		"vite": "^5.2.10"
 	},
-	"type": "module"
+	"type": "module",
+	"dependencies": {
+		"@inlang/paraglide-sveltekit": "^0.6.7"
+	}
 }
