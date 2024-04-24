@@ -3650,11 +3650,11 @@ class QtDriver(QObject):
 		file_menu.addAction(open_library_action)
 
 		save_library_action = QAction('&Save Library', menu_bar)
-		save_library_action.triggered.connect(lambda: self.save_library())
+		save_library_action.triggered.connect(lambda: self.callback_library_needed_check(self.save_library))
 		file_menu.addAction(save_library_action)
 	
 		save_library_backup_action = QAction('Save Library &Backup', menu_bar)
-		save_library_backup_action.triggered.connect(lambda: self.backup_library())
+		save_library_backup_action.triggered.connect(lambda: self.callback_library_needed_check(self.backup_library))
 		file_menu.addAction(save_library_backup_action)
 
 		file_menu.addSeparator()
@@ -3662,7 +3662,7 @@ class QtDriver(QObject):
 		# refresh_lib_action = QAction('&Refresh Directories', self.main_window)
 		# refresh_lib_action.triggered.connect(lambda: self.lib.refresh_dir())
 		add_new_files_action = QAction('&Refresh Directories', menu_bar)
-		add_new_files_action.triggered.connect(lambda: self.add_new_files_callback())
+		add_new_files_action.triggered.connect(lambda: self.callback_library_needed_check(self.add_new_files_callback))
 		# file_menu.addAction(refresh_lib_action)
 		file_menu.addAction(add_new_files_action)
 
@@ -3789,6 +3789,13 @@ class QtDriver(QObject):
 		app.exec_()
 
 		self.shutdown()
+
+
+	def callback_library_needed_check(self,func):
+		#Check if loaded library has valid path before executing the button function
+		if self.lib.library_dir:
+			func()
+
 
 	def handleSIGTERM(self):
 		self.shutdown()
