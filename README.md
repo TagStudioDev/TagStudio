@@ -24,12 +24,27 @@ This is a **_very_** cutdown version of the [Upstream Readme](https://github.com
 - [SvelteKit](https://kit.svelte.dev/) w/ [TypeScript](https://www.typescriptlang.org/)
 - [TailwindCSS](https://tailwindcss.com/)
 - [DaisyUI](https://daisyui.com/)
+- [Inlang's ParaglideJS](https://inlang.com/)
 
 ## TODO
 
+Top Priority:
+
 - [x] Have a working window
-- [ ] Basically the whole app
+- [x] Build the app i18n ready (continous)
+- [ ] UI Layout and design
+- [ ] Have a mostly complete frontend
 - [ ] Expanding this list
+
+Low Priority:
+
+- [ ] Start working on backend (only after having a somewhat useable frontend)
+- [ ] Translations
+  - [x] English (native)
+  - [ ] German
+  - [ ] French
+  - [ ] Spanish
+  - [ ] Whatever else is needed
 
 ## Building
 
