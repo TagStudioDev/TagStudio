@@ -2,7 +2,7 @@
 # Licensed under the GPL-3.0 License.
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
-"""A basic CLI driver for TagStudio."""
+"""DEPRECIATED: A basic CLI driver for TagStudio."""
 
 import datetime
 import math
@@ -16,8 +16,8 @@ import pillow_avif
 from pathlib import Path
 import traceback
 import cv2
-import climage
-import click
+# import climage
+# import click
 from datetime import datetime as dt
 from src.core.ts_core import *
 from src.core.utils.web import *
@@ -664,8 +664,8 @@ class CliDriver:
 					os.get_terminal_size()[0])
 				if max_width > 0:
 					thumb_width = max_width if thumb_width > max_width else thumb_width
-				image = climage.convert(final_img_path, is_truecolor=True, is_256color=False,
-										is_16color=False, is_8color=False, width=thumb_width)
+				# image = climage.convert(final_img_path, is_truecolor=True, is_256color=False,
+				# 						is_16color=False, is_8color=False, width=thumb_width)
 				# Center Alignment Hack
 				spacing = (os.get_terminal_size()[0] - thumb_width) // 2
 				if not self.args.external_preview or not entry:
@@ -2616,8 +2616,9 @@ class CliDriver:
 		# print(self.format_subtitle(
 		# 	'Add <Tag Name>    Remove <#>    Open File    Close/Done    Quit'))
 
-		new_content: str = click.edit(self.lib.get_field_attr(
-			entry.fields[field_index], 'content'))
+		# new_content: str = click.edit(self.lib.get_field_attr(
+		# 	entry.fields[field_index], 'content'))
+		new_content: str = '' # NOTE: Removing
 		if new_content is not None:
 			if not allow_newlines:
 				new_content = new_content.replace('\r', '').replace('\n', '')
@@ -3138,7 +3139,8 @@ class CliDriver:
 		print(self.format_title('Opened with Default Text Editor',
 								f'{BLACK_FG}{BRIGHT_CYAN_BG}'))
 
-		new_text: str = click.edit(text)
+		# new_text: str = click.edit(text)
+		new_text: str = input()
 		if new_text is not None:
 			if not allow_newlines:
 				new_text = new_text.replace('\r', '').replace('\n', '')

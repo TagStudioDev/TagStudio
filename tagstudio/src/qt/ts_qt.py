@@ -2113,7 +2113,11 @@ class PreviewPanel(QWidget):
 							frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 							image = Image.fromarray(frame)
 
-						self.dimensions_label.setText(f"{extension.upper()}  •  {humanfriendly.format_size(os.stat(filepath).st_size)}\n{image.width} x {image.height} px")
+						# Stats for specific file types are displayed here.
+						if extension in (IMAGE_TYPES + VIDEO_TYPES):
+							self.dimensions_label.setText(f"{extension.upper()}  •  {humanfriendly.format_size(os.stat(filepath).st_size)}\n{image.width} x {image.height} px")
+						else:
+							self.dimensions_label.setText(f"{extension.upper()}")
 
 						if not image:
 							self.dimensions_label.setText(f"{extension.upper()}  •  {humanfriendly.format_size(os.stat(filepath).st_size)}")
@@ -2563,7 +2567,7 @@ class ItemThumb(FlowWidget):
 	tag_group_icon_128.load()
 
 	small_text_style = (
-		f'background-color:rgba(0, 0, 0, 64);'
+		f'background-color:rgba(0, 0, 0, 128);'
 		f'font-family:Oxanium;'
 		f'font-weight:bold;'
 		f'font-size:12px;'
@@ -2820,10 +2824,11 @@ class ItemThumb(FlowWidget):
 	# 		pass
 
 	def set_extension(self, ext: str) -> None:
-		if ext in VIDEO_TYPES + ['gif', 'apng']:
+		if ext and ext not in IMAGE_TYPES or ext in ['gif', 'apng']:
 			self.ext_badge.setHidden(False)
 			self.ext_badge.setText(ext.upper())
-			self.count_badge.setHidden(False)
+			if ext in VIDEO_TYPES + AUDIO_TYPES:
+				self.count_badge.setHidden(False)
 		else:
 			if self.mode == ItemType.ENTRY:
 				self.ext_badge.setHidden(True)
@@ -3226,6 +3231,11 @@ class ThumbRenderer(QObject):
 						success, frame = video.read()
 					frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 					image = Image.fromarray(frame)
+			
+				# TODO: Create placeholder thumbnails for non-media files.
+				# else:
+				# 	image: Image.Image = ThumbRenderer.thumb_loading_512.resize(
+				# 		(adj_size, adj_size), resample=Image.Resampling.BILINEAR)
 
 				if not image:
 					raise UnidentifiedImageError
