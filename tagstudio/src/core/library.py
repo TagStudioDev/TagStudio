@@ -23,6 +23,8 @@ import time
 import logging
 import ujson
 
+from tagstudio.src.core.json_typing import Json_Collation, Json_Entry, Json_Libary, Json_Tag
+
 TYPE = ['file', 'meta', 'alt', 'mask']
 # RESULT_TYPE = Enum('Result', ['ENTRY', 'COLLATION', 'TAG_GROUP'])
 class ItemType(Enum):
@@ -86,13 +88,14 @@ class Entry:
 				and self.path == __value.path
 				and self.fields == __value.fields)
 
-	def compressed_dict(self) -> dict:
+	def compressed_dict(self) -> Json_Entry:
 		"""
 		An alternative to __dict__ that only includes fields containing 
 		non-default data.
 		"""
-		obj = {}
-		obj['id'] = self.id
+		obj: Json_Entry = {
+			"id": self.id
+		}
 		if self.filename:
 			obj['filename'] = self.filename
 		if self.path:
@@ -200,13 +203,14 @@ class Tag:
 		else:
 			return (f'{self.name}')
 
-	def compressed_dict(self) -> dict:
+	def compressed_dict(self) -> Json_Tag:
 		"""
 		An alternative to __dict__ that only includes fields containing 
 		non-default data.
 		"""
-		obj = {}
-		obj["id"] = self.id
+		obj: Json_Tag = {
+			"id":self.id
+		}
 		if self.name:
 			obj["name"] = self.name
 		if self.shorthand:
@@ -264,13 +268,14 @@ class Collation:
 				and self.path == __value.path
 				and self.fields == __value.fields)
 
-	def compressed_dict(self) -> dict:
+	def compressed_dict(self) -> Json_Collation:
 		"""
 		An alternative to __dict__ that only includes fields containing 
 		non-default data.
 		"""
-		obj = {}
-		obj['id'] = self.id
+		obj: Json_Collation = {
+			"id":self.id
+		}
 		if self.title:
 			obj['title'] = self.title
 		if self.e_ids_and_pages:
@@ -348,7 +353,7 @@ class Library:
 		# Map of every Tag ID to the index of the Tag in self.tags.
 		self._tag_id_to_index_map: dict[int, int] = {}
 
-		self.default_tags = [
+		self.default_tags: list[Json_Tag] = [
 			{
 				"id": 0,
 				"name": "Archived",
@@ -575,13 +580,13 @@ class Library:
 
 		if not os.path.isdir(full_collage_path):
 			os.mkdir(full_collage_path)
-	
-	def verify_default_tags(self, tag_list: list) -> list:
+
+	def verify_default_tags(self, tag_list: list[Json_Tag]) -> list[Json_Tag]:
 		"""
 		Ensures that the default builtin tags  are present in the Library's
 		save file. Takes in and returns the tag dictionary from the JSON file.
 		"""
-		missing: list[int] = []
+		missing: list[Json_Tag] = []
 
 		for dt in self.default_tags:
 			if dt['id'] not in [t['id'] for t in tag_list]:
@@ -609,7 +614,7 @@ class Library:
 
 			try:
 				with open(os.path.normpath(f'{path}/{ts_core.TS_FOLDER_NAME}/ts_library.json'), 'r', encoding='utf-8') as f:
-					json_dump = ujson.load(f)
+					json_dump: Json_Libary = ujson.load(f)
 					self.library_dir = str(path)
 					self.verify_ts_folders()
 					major, minor, patch = json_dump['ts-version'].split('.')
@@ -847,7 +852,7 @@ class Library:
 		Creates a JSON serialized string from the Library object.
 		Used in saving the library to disk.
 		"""
-		file_to_save = {"ts-version": ts_core.VERSION,
+		file_to_save: Json_Libary = {"ts-version": ts_core.VERSION,
 						"tags": [],
 						"collations": [],
 						"fields": [],
