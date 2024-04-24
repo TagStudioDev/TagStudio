@@ -576,7 +576,7 @@ class Library:
 		if not os.path.isdir(full_collage_path):
 			os.mkdir(full_collage_path)
 	
-	def verify_default_tags(self, tag_list: list) -> dict:
+	def verify_default_tags(self, tag_list: list) -> list:
 		"""
 		Ensures that the default builtin tags  are present in the Library's
 		save file. Takes in and returns the tag dictionary from the JSON file.
@@ -856,10 +856,10 @@ class Library:
 						}
 
 		print('[LIBRARY] Formatting Tags to JSON...')
-		file_to_save['tags'] = self.verify_default_tags(file_to_save['tags'])
 		for tag in self.tags:
 			file_to_save["tags"].append(tag.compressed_dict())
-
+		
+		file_to_save['tags'] = self.verify_default_tags(file_to_save['tags'])
 		print('[LIBRARY] Formatting Entries to JSON...')
 		for entry in self.entries:
 			file_to_save["entries"].append(entry.compressed_dict())
