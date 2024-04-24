@@ -397,11 +397,51 @@ class TagBoxWidget(FieldWidget):
 		# self.tags.append(tag)
 		logging.info(f'[TAG BOX WIDGET] ADD TAG CALLBACK: T:{tag_id} to E:{self.item.id}')
 		logging.info(f'[TAG BOX WIDGET] SELECTED T:{self.driver.selected}')
-		#Uses selected list from driver to remove tag from all selected files.
+		# TODO: Make this more efficient.
+		# Iterate through the fields of the item and find the field that
+		# contains the tags.
+		correct_field_id = 0  # Initialize the field index
+		skip = False  # Initialize the skip flag
+		temp_tags = self.tags.copy()  # Make a copy of the tags
+		while correct_field_id < len(self.item.fields):
+			field = list(self.item.fields)[correct_field_id]
+			for key in dict(field).keys():
+				temp = field[key]
+				if type(temp) == list:
+					# Check if the this field's tags list to see if it matches the current field's list
+					if self.tags == temp:
+						# Update the correct_field_id if a match is found
+						correct_field_id = key
+						skip = True
+						break  
+			if skip: 
+				break
+			correct_field_id += 1
 		for x in self.driver.selected:
 			if x[0] == ItemType.ENTRY:
-				self.driver.lib.get_entry(x[1]).add_tag(self.driver.lib, tag_id, field_id=-1, field_index=self.field_index)
-				logging.info(f'[TAG BOX WIDGET] UPDATED EMITTED: {tag_id}')
+				logging.info(f'[TAG BOX WIDGET] FIELDS:{self.driver.lib.get_entry(x[1]).fields}')
+				index = 0  # Initialize the index
+				skip = False  # Initialize the skip flag
+				if not skip:
+					# Iterate through the fields of the current entry
+					while index < len(self.driver.lib.get_entry(x[1]).fields):
+						# Get the current fields
+						field = list(self.driver.lib.get_entry(x[1]).fields)[index]
+						for key in dict(field).keys():
+							temp = field[key]
+							if type(temp) == list:
+								if temp_tags == temp and key == correct_field_id:
+									skip = True
+									break
+						if skip:
+							break
+						else:
+							index += 1  # Increment the index
+					if not skip and index >= len(self.driver.lib.get_entry(x[1]).fields):
+						# Add the field to the entry
+						self.driver.lib.add_field_to_entry(x[1],correct_field_id)
+						index = 0
+				self.driver.lib.get_entry(x[1]).add_tag(self.driver.lib, tag_id, field_id=correct_field_id, field_index=index)
 				self.updated.emit()
 				# logging.info(f'I want to add tag ID {tag_id} to entry {self.item.filename}')
 				# self.updated.emit()
@@ -413,14 +453,59 @@ class TagBoxWidget(FieldWidget):
 	
 	def edit_tag_callback(self, tag:Tag):
 		self.lib.update_tag(tag)
-			
-
+		
 	def remove_tag(self, tag_id):
-		#Uses selected list from driver to remove tag from all selected files.
 		logging.info(f'[TAG BOX WIDGET] SELECTED T:{self.driver.selected}')
+		
+		# Iterate through the fields of the item and find the field that
+		# contains the tags.
+  		# TODO: Make this more efficient.
+		correct_field_id = 0  # Initialize the field index
+		skip = False  # Initialize the skip flag
+		temp_tags = self.tags.copy()  # Make a copy of the tags
+		while correct_field_id < len(self.item.fields):
+			# Get the current field
+			field = list(self.item.fields)[correct_field_id]
+			for key in dict(field).keys():
+				temp = field[key]
+				if type(temp) == list:
+					# Check if the this field's tags list to see if it matches the current field's list
+					if self.tags == temp:
+						# Update the correct_field_id if a match is found
+						correct_field_id = key
+						skip = True
+						break  
+			if skip: 
+				break
+			correct_field_id += 1
+		# Iterate through the selected entries
 		for x in self.driver.selected:
+			# Check if the current entry is of type Entry
 			if x[0] == ItemType.ENTRY:
-				self.driver.lib.get_entry(x[1]).remove_tag(self.driver.lib, tag_id, field_index=self.field_index)
+				index = 0  # Initialize the index
+				skip = False  # Initialize the skip flag
+				# Check if the skip flag is False
+				if not skip:
+					# Iterate through the fields of the current entry
+					while index < len(self.driver.lib.get_entry(x[1]).fields):
+						# Get the current fields
+						field = list(self.driver.lib.get_entry(x[1]).fields)[index]
+						for key in dict(field).keys():
+							temp = field[key]
+							if type(temp) == list:
+								if temp_tags == temp and key == correct_field_id:
+									skip = True
+									break
+						if skip:
+							break
+						else:
+							index += 1  # Increment the index
+					# Check if the skip flag is False and the index is out of bounds
+					if not skip and index >= len(self.driver.lib.get_entry(x[1]).fields):
+						# Add the field to the entry
+						self.driver.lib.add_field_to_entry(x[1],correct_field_id)
+						index = 0  # Reset the index
+				self.driver.lib.get_entry(x[1]).remove_tag(self.driver.lib, tag_id, field_index=index)
 				self.updated.emit()
 
 	# def show_add_button(self, value:bool):
@@ -428,6 +513,7 @@ class TagBoxWidget(FieldWidget):
 
 
 class TextWidget(FieldWidget):
+
 	def __init__(self, title, text:str) -> None:
 		super().__init__(title)
 		# self.item = item
