@@ -44,7 +44,7 @@ TagStudio is a photo & file organization application with an underlying system t
   - Name, Author, Artist (Single-Line Text Fields)
   - Description, Notes (Multiline Text Fields)
   - Tags, Meta Tags, Content Tags (Tag Boxes)
-- Crete rich tags composed of a name, a list of aliases, and a list of “subtags” - being tags in which these tags inherit values from.
+- Create rich tags composed of a name, a list of aliases, and a list of “subtags” - being tags in which these tags inherit values from.
 - Search for entries based on tags, metadata, or filename (using `filename: <query>`)
 - Special search conditions for entries that are: `untagged`/`no tags` and `empty`/`no fields`.
 
