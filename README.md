@@ -57,7 +57,7 @@ TagStudio is a photo & file organization application with an underlying system t
 
 ### Prerequisites
 
-- Python 3.9.6 - ~3.10 *(Not working on 3.12)*
+- Python 3.12
 
 ### Creating the Virtual Environment
 
