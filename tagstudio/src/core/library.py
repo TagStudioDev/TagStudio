@@ -630,41 +630,45 @@ class Library:
 							if 'id' in tag.keys():
 								id = tag['id']
 
-							if int(id) >= self._next_tag_id:
-								self._next_tag_id = int(id) + 1
+							# Don't load tags with duplicate IDs
+							if id not in [t.id for t in self.tags]:
+								if int(id) >= self._next_tag_id:
+									self._next_tag_id = int(id) + 1
 
-							name = ''
-							if 'name' in tag.keys():
-								name = tag['name']
-							shorthand = ''
-							if 'shorthand' in tag.keys():
-								shorthand = tag['shorthand']
-							aliases = []
-							if 'aliases' in tag.keys():
-								aliases = tag['aliases']
-							subtag_ids = []
-							if 'subtag_ids' in tag.keys():
-								subtag_ids = tag['subtag_ids']
-							color = ''
-							if 'color' in tag.keys():
-								color = tag['color']
+								name = ''
+								if 'name' in tag.keys():
+									name = tag['name']
+								shorthand = ''
+								if 'shorthand' in tag.keys():
+									shorthand = tag['shorthand']
+								aliases = []
+								if 'aliases' in tag.keys():
+									aliases = tag['aliases']
+								subtag_ids = []
+								if 'subtag_ids' in tag.keys():
+									subtag_ids = tag['subtag_ids']
+								color = ''
+								if 'color' in tag.keys():
+									color = tag['color']
 
-							t = Tag(
-								id=int(id),
-								name=name,
-								shorthand=shorthand,
-								aliases=aliases,
-								subtags_ids=subtag_ids,
-								color=color
-							)
+								t = Tag(
+									id=int(id),
+									name=name,
+									shorthand=shorthand,
+									aliases=aliases,
+									subtags_ids=subtag_ids,
+									color=color
+								)
 
-							# NOTE: This does NOT use the add_tag_to_library() method!
-							# That method is only used for Tags added at runtime.
-							# This process uses the same inner methods, but waits until all of the
-							# Tags are registered in the Tags list before creating the Tag clusters.
-							self.tags.append(t)
-							self._map_tag_id_to_index(t, -1)
-							self._map_tag_strings_to_tag_id(t)
+								# NOTE: This does NOT use the add_tag_to_library() method!
+								# That method is only used for Tags added at runtime.
+								# This process uses the same inner methods, but waits until all of the
+								# Tags are registered in the Tags list before creating the Tag clusters.
+								self.tags.append(t)
+								self._map_tag_id_to_index(t, -1)
+								self._map_tag_strings_to_tag_id(t)
+							else:
+								logging.info(f'[LIBRARY]Skipping Tag with duplicate ID: {tag}')
 
 						# Step 3: Map each Tag's subtags together now that all Tag objects in it.
 						for t in self.tags:
