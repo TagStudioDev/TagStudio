@@ -540,7 +540,7 @@ class Library:
 		2: File creation error
 		"""
 		
-		path = os.path.normpath(path).strip('\\')
+		path = os.path.normpath(path).rstrip('\\')
 
 		if ts_core.TS_FOLDER_NAME in path:
 			return 1
