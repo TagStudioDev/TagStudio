@@ -18,6 +18,8 @@
         pkgs.freetype
         pkgs.dbus
         pkgs.qt6.qtwayland
+        pkgs.qt6.full
+        pkgs.qt6.qtbase
         pkgs.zstd
       ];
       buildInputs = with pkgs; [
@@ -28,13 +30,12 @@
         qt6.full
         qt6.qtwayland
         qtcreator
-        python310Packages.pip
-        python310Full
-        python310Packages.virtualenv # run virtualenv .
-        # python3Packages.pyqt5 # avoid installing via pip
-        python310Packages.pyusb # fixes the pyusb 'No backend available' when installed directly via pip
+        python312Packages.pip
+        python312Full
+        python312Packages.virtualenv # run virtualenv .
+        python312Packages.pyusb # fixes the pyusb 'No backend available' when installed directly via pip
 
-        gcc.cc.libgcc
+        libgcc
         makeWrapper
         bashInteractive
         glib
@@ -46,7 +47,6 @@
         libGL
         libGLU
         fontconfig
-        # wrapQtAppsHook
         xorg.libxcb
 
 
