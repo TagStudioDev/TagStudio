@@ -360,7 +360,7 @@ class TagBoxWidget(FieldWidget):
 			# 							)
 			tw = TagWidget(self.lib, self.lib.get_tag(tag), True, True)
 			tw.on_click.connect(lambda checked=False, q=f'tag_id: {tag}': (self.driver.main_window.searchField.setText(q), self.driver.filter_items(q)))
-			tw.on_remove.connect(lambda checked=False, t=tag: (self.lib.get_entry(self.item.id).remove_tag(self.lib, t, self.field_index), self.updated.emit()))
+			tw.on_remove.connect(lambda checked=False, t=tag: (self.remove_tag(t)))
 			tw.on_edit.connect(lambda checked=False, t=tag: (self.edit_tag(t)))
 			self.base_layout.addWidget(tw)
 		self.tags = tags
@@ -375,7 +375,8 @@ class TagBoxWidget(FieldWidget):
 		# doesn't move all the way to the left.
 		if self.base_layout.itemAt(0) and not self.base_layout.itemAt(1):
 			self.base_layout.update()
-	
+
+
 	def edit_tag(self, tag_id:int):
 		btp = BuildTagPanel(self.lib, tag_id)
 		# btp.on_edit.connect(lambda x: self.edit_tag_callback(x))
@@ -396,6 +397,7 @@ class TagBoxWidget(FieldWidget):
 		# self.tags.append(tag)
 		logging.info(f'[TAG BOX WIDGET] ADD TAG CALLBACK: T:{tag_id} to E:{self.item.id}')
 		logging.info(f'[TAG BOX WIDGET] SELECTED T:{self.driver.selected}')
+		#Uses selected list from driver to remove tag from all selected files.
 		for x in self.driver.selected:
 			if x[0] == ItemType.ENTRY:
 				self.driver.lib.get_entry(x[1]).add_tag(self.driver.lib, tag_id, field_id=-1, field_index=self.field_index)
@@ -413,9 +415,14 @@ class TagBoxWidget(FieldWidget):
 		self.lib.update_tag(tag)
 			
 
-	def remove_tag(self):
-		# NOTE: You'll need to account for the add button at the end.
-		pass
+	def remove_tag(self, tag_id):
+		#Uses selected list from driver to remove tag from all selected files.
+		logging.info(f'[TAG BOX WIDGET] SELECTED T:{self.driver.selected}')
+		for x in self.driver.selected:
+			if x[0] == ItemType.ENTRY:
+				self.driver.lib.get_entry(x[1]).remove_tag(self.driver.lib, tag_id, field_index=self.field_index)
+				self.updated.emit()
+
 	# def show_add_button(self, value:bool):
 	# 	self.add_button.setHidden(not value)
 
