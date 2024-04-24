@@ -395,15 +395,19 @@ class TagBoxWidget(FieldWidget):
 		# self.base_layout.addWidget(TagWidget(self.lib, self.lib.get_tag(tag), True))
 		# self.tags.append(tag)
 		logging.info(f'[TAG BOX WIDGET] ADD TAG CALLBACK: T:{tag_id} to E:{self.item.id}')
-		if type(self.item) == Entry:
-			self.item.add_tag(self.lib, tag_id, field_id=-1, field_index=self.field_index)
-			logging.info(f'[TAG BOX WIDGET] UPDATED EMITTED: {tag_id}')
-			self.updated.emit()
-			# logging.info(f'I want to add tag ID {tag_id} to entry {self.item.filename}')
-		# self.updated.emit()
-			# if tag_id not in self.tags:
-			# 	self.tags.append(tag_id)
-			# self.set_tags(self.tags)
+		logging.info(f'[TAG BOX WIDGET] SELECTED T:{self.driver.selected}')
+		for x in self.driver.selected:
+			if x[0] == ItemType.ENTRY:
+				self.driver.lib.get_entry(x[1]).add_tag(self.driver.lib, tag_id, field_id=-1, field_index=self.field_index)
+				logging.info(f'[TAG BOX WIDGET] UPDATED EMITTED: {tag_id}')
+				self.updated.emit()
+				# logging.info(f'I want to add tag ID {tag_id} to entry {self.item.filename}')
+				# self.updated.emit()
+				# if tag_id not in self.tags:
+				# 	self.tags.append(tag_id)
+				# self.set_tags(self.tags)
+			# elif type((x[0]) == ThumbButton):
+
 	
 	def edit_tag_callback(self, tag:Tag):
 		self.lib.update_tag(tag)
