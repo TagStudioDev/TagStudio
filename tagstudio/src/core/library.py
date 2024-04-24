@@ -536,14 +536,14 @@ class Library:
 		Creates a TagStudio library in the given directory.\n
 		Return Codes:\n
 		0: Library Successfully Created\n
-		1: Path is inside another TagStudio Library\n
 		2: File creation error
 		"""
 		
 		path = os.path.normpath(path).rstrip('\\')
 
+		# If '.TagStudio' is included in the path, trim the path up to it.
 		if ts_core.TS_FOLDER_NAME in path:
-			return 1
+			path = path.split(ts_core.TS_FOLDER_NAME)[0]
 
 		try:
 			self.clear_internal_vars()
@@ -601,7 +601,7 @@ class Library:
 		return_code: int = 2
 		path = os.path.normpath(path).rstrip('\\')
 
-		# Strip an errant '.TagStudio' from the path if the user pointed to that inner folder.
+		# If '.TagStudio' is included in the path, trim the path up to it.
 		if ts_core.TS_FOLDER_NAME in path:
 			path = path.split(ts_core.TS_FOLDER_NAME)[0]
 
