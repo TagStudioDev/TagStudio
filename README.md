@@ -103,6 +103,10 @@ With the virtual environment loaded, run the python file at "tagstudio/tagstudio
 
 Run the "TagStudio.sh" script, and the program should launch! (Make sure that the script is marked as executable). Note that launching from the script from outside of a terminal will not launch a terminal window with any debug or crash information. If you wish to see this information, just launch the shell script directly from your terminal with `sh TagStudio.sh`.
 
+##### NixOS
+
+Use the provided `flake.nix` file to create and enter a working environment by running `nix develop`. Then, run the above `TagStudio.sh` script.
+
 ## Usage
 
 ### Creating/Opening a Library
