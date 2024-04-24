@@ -541,17 +541,13 @@ class Library:
 		"""
 		
 		path = os.path.normpath(path).strip('\\')
-		prefix = ''
-		if os.name != 'nt' and path != '/':
-			path = path.strip('/')
-			prefix = '/'
 
 		if ts_core.TS_FOLDER_NAME in path:
 			return 1
 
 		try:
 			self.clear_internal_vars()
-			self.library_dir = prefix + path
+			self.library_dir = path
 			self.verify_ts_folders()
 			self.save_library_to_disk()
 			self.open_library(self.library_dir)
@@ -604,8 +600,6 @@ class Library:
 
 		return_code: int = 2
 		path = os.path.normpath(path).rstrip('\\')
-		if os.name != 'nt' and path != '/':
-			path = path.strip('/')
 
 		# Strip an errant '.TagStudio' from the path if the user pointed to that inner folder.
 		if ts_core.TS_FOLDER_NAME in path:
