@@ -7,42 +7,46 @@
 
 """A Qt driver for TagStudio."""
 
-from copy import copy, deepcopy
 import ctypes
-import math
-from os import times
-import sys
 import logging
-import threading
-from time import sleep
-from queue import Empty, Queue
+import math
+import os
+import sys
 import time
-from typing import Optional, Union
-from PySide6 import QtCore
-import PySide6
-from PySide6.QtGui import *
-from PySide6.QtWidgets import *
-from PySide6.QtCore import QFile, QObject, QThread, Signal, QRunnable, Qt, QThreadPool, QSize, QEvent, QMimeData, QTimer
-from PySide6.QtUiTools import QUiLoader
-from PIL import Image, ImageOps, ImageChops, UnidentifiedImageError, ImageQt, ImageDraw, ImageFont, ImageEnhance
-import PySide6.QtWidgets
-import humanfriendly
-import pillow_avif
-import cv2
+import traceback
+import shutil
+import subprocess
+from types import FunctionType
 from datetime import datetime as dt
-from src.core.ts_core import *
-# from src.core.utils.web import *
-# from src.core.utils.fs import *
-from src.core.library import *
+from pathlib import Path
+from queue import Empty, Queue
+from time import sleep
+from typing import Optional
+
+import cv2
+from PIL import Image, ImageChops, UnidentifiedImageError, ImageQt, ImageDraw, ImageFont, ImageEnhance
+from PySide6 import QtCore
+from PySide6.QtCore import QObject, QThread, Signal, QRunnable, Qt, QThreadPool, QSize, QEvent, QTimer
+from PySide6.QtGui import (QGuiApplication, QPixmap, QEnterEvent, QMouseEvent, QResizeEvent, QPainter, QColor, QPen,
+						   QAction, QStandardItemModel, QStandardItem, QPainterPath, QFontDatabase, QIcon)
+from PySide6.QtUiTools import QUiLoader
+from PySide6.QtWidgets import (QApplication, QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QPlainTextEdit,
+							   QLineEdit, QScrollArea, QFrame, QTextEdit, QComboBox, QProgressDialog, QFileDialog,
+							   QListView, QSplitter, QSizePolicy, QMessageBox, QBoxLayout, QCheckBox, QSplashScreen,
+							   QMenu)
+from humanfriendly import format_timespan, format_size
+
+from src.core.library import Collation, Entry, ItemType, Library, Tag
 from src.core.palette import ColorType, get_tag_color
+from src.core.ts_core import (TagStudioCore, TAG_COLORS, DATE_FIELDS, TEXT_FIELDS, BOX_FIELDS, ALL_FILE_TYPES,
+										SHORTCUT_TYPES, PROGRAM_TYPES, ARCHIVE_TYPES, PRESENTATION_TYPES,
+										SPREADSHEET_TYPES, TEXT_TYPES, AUDIO_TYPES, VIDEO_TYPES, IMAGE_TYPES,
+										LIBRARY_FILENAME, COLLAGE_FOLDER_NAME, BACKUP_FOLDER_NAME, TS_FOLDER_NAME,
+										VERSION_BRANCH, VERSION)
+from src.core.utils.web import strip_web_protocol
 from src.qt.flowlayout import FlowLayout, FlowWidget
 from src.qt.main_window import Ui_MainWindow
 import src.qt.resources_rc
-# from typing_extensions import deprecated
-from humanfriendly import format_timespan
-# from src.qt.qtacrylic.qtacrylic import WindowEffect
-import shutil
-import subprocess
 
 # SIGQUIT is not defined on Windows
 if sys.platform == "win32":
@@ -2126,12 +2130,12 @@ class PreviewPanel(QWidget):
 
 						# Stats for specific file types are displayed here.
 						if extension in (IMAGE_TYPES + VIDEO_TYPES):
-							self.dimensions_label.setText(f"{extension.upper()}  •  {humanfriendly.format_size(os.stat(filepath).st_size)}\n{image.width} x {image.height} px")
+							self.dimensions_label.setText(f"{extension.upper()}  •  {format_size(os.stat(filepath).st_size)}\n{image.width} x {image.height} px")
 						else:
 							self.dimensions_label.setText(f"{extension.upper()}")
 
 						if not image:
-							self.dimensions_label.setText(f"{extension.upper()}  •  {humanfriendly.format_size(os.stat(filepath).st_size)}")
+							self.dimensions_label.setText(f"{extension.upper()}  •  {format_size(os.stat(filepath).st_size)}")
 							raise UnidentifiedImageError
 						
 					except (UnidentifiedImageError, FileNotFoundError, cv2.error):
@@ -4525,7 +4529,7 @@ class QtDriver(QObject):
 			self.completed += 1
 		# logging.info(f'threshold:{len(self.lib.entries}, completed:{self.completed}')
 		if self.completed == len(self.lib.entries):
-			filename = os.path.normpath(f'{self.lib.library_dir}/{TS_FOLDER_NAME}/{COLLAGE_FOLDER_NAME}/collage_{datetime.datetime.utcnow().strftime("%F_%T").replace(":", "")}.png')
+			filename = os.path.normpath(f'{self.lib.library_dir}/{TS_FOLDER_NAME}/{COLLAGE_FOLDER_NAME}/collage_{dt.utcnow().strftime("%F_%T").replace(":", "")}.png')
 			self.collage.save(filename)
 			self.collage = None
 

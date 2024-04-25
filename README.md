@@ -90,14 +90,14 @@ _Learn more about setting up a virtual environment [here](https://docs.python.or
 
 To launch TagStudio, launch the `start_win.bat` file. You can modify this .bat file or create a shortcut and add one or more additional arguments if desired.
 
-Alternatively, with the virtual environment loaded, run the python file at `tagstudio\tagstudio.py` from your terminal. If you're in the project's root directory, simply run `python3 tagstudio/tagstudio.py`.
+Alternatively, with the virtual environment loaded, run the python file at `tagstudio\tag_studio.py` from your terminal. If you're in the project's root directory, simply run `python3 tagstudio/tag_studio.py`.
 
 > [!CAUTION]
 > TagStudio on Linux & macOS likely won't function correctly at this time. If you're trying to run this in order to help test, debug, and improve compatibility, then charge on ahead!
 
 #### macOS
 
-With the virtual environment loaded, run the python file at "tagstudio/tagstudio.py" from your terminal. If you're in the project's root directory, simply run `python3 tagstudio/tagstudio.py`. When launching the program in the future, remember to activate the virtual environment each time before launching *(an easier method is currently being worked on).*
+With the virtual environment loaded, run the python file at "tagstudio/tag_studio.py" from your terminal. If you're in the project's root directory, simply run `python3 tagstudio/tag_studio.py`. When launching the program in the future, remember to activate the virtual environment each time before launching *(an easier method is currently being worked on).*
 
 #### Linux
 
