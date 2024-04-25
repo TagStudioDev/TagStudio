@@ -17,9 +17,9 @@ from enum import Enum
 
 import ujson
 
-from tagstudio.src.core import ts_core
-from tagstudio.src.core.utils.str import strip_punctuation
-from tagstudio.src.core.utils.web import strip_web_protocol
+from src.core import ts_core
+from src.core.utils.str import strip_punctuation
+from src.core.utils.web import strip_web_protocol
 
 TYPE = ['file', 'meta', 'alt', 'mask']
 # RESULT_TYPE = Enum('Result', ['ENTRY', 'COLLATION', 'TAG_GROUP'])

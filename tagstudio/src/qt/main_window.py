@@ -19,7 +19,7 @@ from PySide6.QtWidgets import (QComboBox, QFrame, QGridLayout,
 							   QHBoxLayout, QVBoxLayout, QLayout, QLineEdit, QMainWindow,
 							   QMenuBar, QPushButton, QScrollArea, QSizePolicy,
 							   QStatusBar, QWidget, QSplitter, QMenu)
-from tagstudio.src.qt.pagination import Pagination
+from src.qt.pagination import Pagination
 
 
 class Ui_MainWindow(QMainWindow):

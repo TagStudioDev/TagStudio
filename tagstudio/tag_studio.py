@@ -4,9 +4,9 @@
 
 """TagStudio launcher."""
 
-from tagstudio.src.core.ts_core import TagStudioCore
-from tagstudio.src.cli.ts_cli import CliDriver
-from tagstudio.src.qt.ts_qt import QtDriver
+from src.core.ts_core import TagStudioCore
+from src.cli.ts_cli import CliDriver
+from src.qt.ts_qt import QtDriver
 import argparse
 import traceback
 

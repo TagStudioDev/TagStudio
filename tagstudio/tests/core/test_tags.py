@@ -1,4 +1,4 @@
-from tagstudio.src.core.library import Tag
+from src.core.library import Tag
 
 
 class TestTags:
