@@ -33,7 +33,7 @@ The Library is how TagStudio represents your chosen directory. In this Library o
 
 ## Fields
 
-Fields are the the building blocks of metadata stored in Entires. Fields have several base types for representing different types of information, including:
+Fields are the building blocks of metadata stored in Entires. Fields have several base types for representing different types of information, including:
 
 - `text_line`
   - A string of text, displayed as a single line.
