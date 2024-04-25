@@ -18,7 +18,6 @@ from time import sleep
 from typing import Optional
 
 import cv2
-import humanfriendly
 from PIL import Image, ImageChops, UnidentifiedImageError, ImageQt, ImageDraw, ImageFont, ImageEnhance
 from PySide6 import QtCore
 from PySide6.QtCore import QObject, QThread, Signal, QRunnable, Qt, QThreadPool, QSize, QEvent, QTimer
@@ -31,6 +30,7 @@ from src.core.palette import ColorType, get_tag_color
 from src.core.ts_core import *
 from src.qt.flowlayout import FlowLayout, FlowWidget
 from src.qt.main_window import Ui_MainWindow
+from humanfriendly import format_timespan, format_size
 
 
 # SIGQUIT is not defined on Windows
@@ -2106,12 +2106,12 @@ class PreviewPanel(QWidget):
 
 						# Stats for specific file types are displayed here.
 						if extension in (IMAGE_TYPES + VIDEO_TYPES):
-							self.dimensions_label.setText(f"{extension.upper()}  •  {humanfriendly.format_size(os.stat(filepath).st_size)}\n{image.width} x {image.height} px")
+							self.dimensions_label.setText(f"{extension.upper()}  •  {format_size(os.stat(filepath).st_size)}\n{image.width} x {image.height} px")
 						else:
 							self.dimensions_label.setText(f"{extension.upper()}")
 
 						if not image:
-							self.dimensions_label.setText(f"{extension.upper()}  •  {humanfriendly.format_size(os.stat(filepath).st_size)}")
+							self.dimensions_label.setText(f"{extension.upper()}  •  {format_size(os.stat(filepath).st_size)}")
 							raise UnidentifiedImageError
 						
 					except (UnidentifiedImageError, FileNotFoundError, cv2.error):
