@@ -3577,6 +3577,7 @@ class QtDriver(QObject):
 		self.SIGTERM.connect(self.handleSIGTERM)
 
 		self.settings = QSettings(QSettings.IniFormat, QSettings.UserScope, 'TagStudio')
+		self.settings = QSettings(QSettings.IniFormat, QSettings.UserScope, 'tagstudio', 'TagStudio')
 
 
 		max_threads = os.cpu_count()
@@ -3830,6 +3831,7 @@ class QtDriver(QObject):
 		if self.lib.library_dir:
 			self.save_library()
 			self.settings.setValue("last_library", self.lib.library_dir)
+			self.settings.sync()
 		QApplication.quit()
 	
 	
