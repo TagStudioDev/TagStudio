@@ -7,7 +7,7 @@
 import json
 import os
 
-from src.core.library import *
+from tagstudio.src.core.library import Entry, Library
 
 VERSION: str = '9.1.0'  # Major.Minor.Patch
 VERSION_BRANCH: str = 'Alpha'  # 'Alpha', 'Beta', or '' for Full Release

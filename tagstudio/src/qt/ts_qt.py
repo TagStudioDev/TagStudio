@@ -10,9 +10,13 @@
 import ctypes
 import logging
 import math
+import os
 import sys
 import time
+import traceback
+from types import FunctionType
 from datetime import datetime as dt
+from pathlib import Path
 from queue import Empty, Queue
 from time import sleep
 from typing import Optional
@@ -21,17 +25,26 @@ import cv2
 from PIL import Image, ImageChops, UnidentifiedImageError, ImageQt, ImageDraw, ImageFont, ImageEnhance
 from PySide6 import QtCore
 from PySide6.QtCore import QObject, QThread, Signal, QRunnable, Qt, QThreadPool, QSize, QEvent, QTimer
-from PySide6.QtGui import *
+from PySide6.QtGui import (QGuiApplication, QPixmap, QEnterEvent, QMouseEvent, QResizeEvent, QPainter, QColor, QPen,
+						   QAction, QStandardItemModel, QStandardItem, QPainterPath, QFontDatabase, QIcon)
 from PySide6.QtUiTools import QUiLoader
-from PySide6.QtWidgets import *
-from humanfriendly import format_timespan
-from src.core.library import *
-from src.core.palette import ColorType, get_tag_color
-from src.core.ts_core import *
-from src.qt.flowlayout import FlowLayout, FlowWidget
-from src.qt.main_window import Ui_MainWindow
+from PySide6.QtWidgets import (QApplication, QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QPlainTextEdit,
+							   QLineEdit, QScrollArea, QFrame, QTextEdit, QComboBox, QProgressDialog, QFileDialog,
+							   QListView, QSplitter, QSizePolicy, QMessageBox, QBoxLayout, QCheckBox, QSplashScreen,
+							   QMenu)
 from humanfriendly import format_timespan, format_size
 
+from tagstudio.src.core.library import Collation, Entry, ItemType, Library, Tag
+from tagstudio.src.core.palette import ColorType, get_tag_color
+from tagstudio.src.core.ts_core import (TagStudioCore, TAG_COLORS, DATE_FIELDS, TEXT_FIELDS, BOX_FIELDS, ALL_FILE_TYPES,
+										SHORTCUT_TYPES, PROGRAM_TYPES, ARCHIVE_TYPES, PRESENTATION_TYPES,
+										SPREADSHEET_TYPES, TEXT_TYPES, AUDIO_TYPES, VIDEO_TYPES, IMAGE_TYPES,
+										LIBRARY_FILENAME, COLLAGE_FOLDER_NAME, BACKUP_FOLDER_NAME, TS_FOLDER_NAME,
+										VERSION_BRANCH, VERSION)
+from tagstudio.src.core.utils.web import strip_web_protocol
+from tagstudio.src.qt.flowlayout import FlowLayout, FlowWidget
+from tagstudio.src.qt.main_window import Ui_MainWindow
+import tagstudio.src.qt.resources_rc
 
 # SIGQUIT is not defined on Windows
 if sys.platform == "win32":

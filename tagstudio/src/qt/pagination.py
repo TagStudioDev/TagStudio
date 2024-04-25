@@ -6,8 +6,8 @@
 # I never want to see this code again.
 
 from PySide6.QtCore import QObject, Signal, QSize
-from PySide6.QtGui import *
-from PySide6.QtWidgets import *
+from PySide6.QtGui import QIntValidator
+from PySide6.QtWidgets import QWidget, QHBoxLayout, QPushButton, QLabel, QLineEdit, QSizePolicy
 
 
 # class NumberEdit(QLineEdit):

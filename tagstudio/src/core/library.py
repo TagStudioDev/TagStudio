@@ -8,6 +8,7 @@ import datetime
 import glob
 import json
 import logging
+import os
 import sys
 import time
 import traceback
@@ -16,10 +17,9 @@ from enum import Enum
 
 import ujson
 
-import tagstudio.src.core.ts_core as ts_core
-from tagstudio.src.core.utils.fs import *
-from tagstudio.src.core.utils.str import *
-from tagstudio.src.core.utils.web import *
+from tagstudio.src.core import ts_core
+from tagstudio.src.core.utils.str import strip_punctuation
+from tagstudio.src.core.utils.web import strip_web_protocol
 
 TYPE = ['file', 'meta', 'alt', 'mask']
 # RESULT_TYPE = Enum('Result', ['ENTRY', 'COLLATION', 'TAG_GROUP'])
