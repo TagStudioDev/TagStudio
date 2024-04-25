@@ -2936,15 +2936,18 @@ class ItemThumb(FlowWidget):
 		# logging.info(f'Archived Check: {value}, Mode: {self.mode}')
 		if self.mode == ItemType.ENTRY:
 			self.isArchived = value
-			e = self.lib.get_entry(self.item_id)
-			if value:
-				self.archived_badge.setHidden(False)
-				DEFAULT_META_TAG_FIELD = 8
-				e.add_tag(self.lib, 0, DEFAULT_META_TAG_FIELD)
-			else:
-				e.remove_tag(self.lib, 0)
+			DEFAULT_META_TAG_FIELD = 8
+			for x in self.panel.driver.selected:
+				e = self.lib.get_entry(x[1])
+				if value:
+					self.archived_badge.setHidden(False)
+					e.add_tag(self.panel.driver.lib, 0, field_id=DEFAULT_META_TAG_FIELD, field_index=-1)
+				else:
+					e.remove_tag(self.panel.driver.lib, 0)
 			if self.panel.isOpen:
 				self.panel.update_widgets()
+			self.panel.driver.update_thumbs()
+
 
 	# def on_archived_uncheck(self):
 	# 	if self.mode == SearchItemType.ENTRY:
