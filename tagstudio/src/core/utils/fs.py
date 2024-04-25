@@ -2,8 +2,6 @@
 # Licensed under the GPL-3.0 License.
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
-import os
-
 
 def clean_folder_name(folder_name: str) -> str:
     cleaned_name = folder_name

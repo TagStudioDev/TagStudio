@@ -5,10 +5,9 @@
 """A pagination widget created for TagStudio."""
 # I never want to see this code again.
 
-from PySide6 import QtCore
-from PySide6.QtGui import *
-from PySide6.QtWidgets import *
-from PySide6.QtCore import QFile, QObject, QThread, Signal, QRunnable, Qt, QThreadPool, QSize, QEvent, QMimeData
+from PySide6.QtCore import QObject, Signal, QSize
+from PySide6.QtGui import QIntValidator
+from PySide6.QtWidgets import QHBoxLayout, QLabel, QLineEdit, QPushButton, QSizePolicy, QWidget
 
 # class NumberEdit(QLineEdit):
 # 	def __init__(self, parent=None) -> None:
@@ -18,7 +17,7 @@ from PySide6.QtCore import QFile, QObject, QThread, Signal, QRunnable, Qt, QThre
 class Pagination(QWidget, QObject):
 	"""Widget containing controls for navigating between pages of items."""
 	index = Signal(int)
-	def __init__(self, parent=None) -> None:
+	def __init__(self, parent = None) -> None:
 		super().__init__(parent)
 		self.page_count: int = 0
 		self.current_page_index: int = 0
@@ -516,15 +515,15 @@ class Pagination(QWidget, QObject):
 		# print(f'GOTO PAGE: {index}')
 		self.update_buttons(self.page_count, index)
 
-	def _assign_click(self, button:QPushButton, index):
+	def _assign_click(self, button: QPushButton, index):
 		try:
 			button.clicked.disconnect()
 		except RuntimeError:
 			pass
-		button.clicked.connect(lambda checked=False, i=index: self._goto_page(i))
+		button.clicked.connect(lambda checked = False, i = index: self._goto_page(i))
 	
 	def _populate_buffer_buttons(self):
-		for i in range(max(self.buffer_page_count*2, 5)):
+		for _ in range(max(self.buffer_page_count*2, 5)):
 			button = QPushButton()
 			button.setMinimumSize(self.button_size)
 			button.setMaximumSize(self.button_size)
@@ -532,7 +531,7 @@ class Pagination(QWidget, QObject):
 			# button.setMaximumHeight(self.button_size.height())
 			self.start_buffer_layout.addWidget(button)
 		
-		for i in range(max(self.buffer_page_count*2, 5)):
+		for _ in range(max(self.buffer_page_count*2, 5)):
 			button = QPushButton()
 			button.setMinimumSize(self.button_size)
 			button.setMaximumSize(self.button_size)

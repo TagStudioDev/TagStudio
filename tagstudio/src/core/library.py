@@ -8,11 +8,8 @@ import datetime
 from enum import Enum
 import os
 import traceback
-from typing import Optional
 import json
 import glob
-from pathlib import Path
-# from typing_extensions import deprecated
 import src.core.ts_core as ts_core
 from src.core.utils.web import *
 from src.core.utils.str import *
@@ -74,17 +71,17 @@ class Entry:
 	def __repr__(self) -> str:
 		return self.__str__()
 
-	def __eq__(self, __value: object) -> bool:
+	def __eq__(self, other) -> bool:
 		if os.name == 'nt':
-			return (int(self.id) == int(__value.id)
-				and	self.filename.lower() == __value.filename.lower()
-				and self.path.lower() == __value.path.lower()
-				and self.fields == __value.fields)
+			return (int(self.id) == int(other.id)
+				and	self.filename.lower() == other.filename.lower()
+				and self.path.lower() == other.path.lower()
+				and self.fields == other.fields)
 		else:
-			return (int(self.id) == int(__value.id)
-				and	self.filename == __value.filename
-				and self.path == __value.path
-				and self.fields == __value.fields)
+			return (int(self.id) == int(other.id)
+				and	self.filename == other.filename
+				and self.path == other.path
+				and self.fields == other.fields)
 
 	def compressed_dict(self) -> dict:
 		"""
@@ -128,7 +125,7 @@ class Entry:
 						while tag_id in t:
 							t.remove(tag_id)
 	
-	def add_tag(self, library:'Library', tag_id:int, field_id:int, field_index:int=None):
+	def add_tag(self, library: 'Library', tag_id: int, field_id: int, field_index: int | None = None):
 		# field_index: int = -1
 		# if self.fields:
 		# if field_index != -1:
@@ -252,17 +249,17 @@ class Collation:
 	def __repr__(self) -> str:
 		return self.__str__()
 
-	def __eq__(self, __value: object) -> bool:
+	def __eq__(self, other) -> bool:
 		if os.name == 'nt':
-			return (int(self.id) == int(__value.id_)
-				and	self.filename.lower() == __value.filename.lower()
-				and self.path.lower() == __value.path.lower()
-				and self.fields == __value.fields)
+			return (int(self.id) == int(other.id_)
+				and	self.filename.lower() == other.filename.lower()
+				and self.path.lower() == other.path.lower()
+				and self.fields == other.fields)
 		else:
-			return (int(self.id) == int(__value.id_)
-				and	self.filename == __value.filename
-				and self.path == __value.path
-				and self.fields == __value.fields)
+			return (int(self.id) == int(other.id_)
+				and	self.filename == other.filename
+				and self.path == other.path
+				and self.fields == other.fields)
 
 	def compressed_dict(self) -> dict:
 		"""
@@ -287,9 +284,9 @@ class Collation:
 class Library:
 	"""Class for the Library object, and all CRUD operations made upon it."""
 
-	def __init__(self) -> None:
+	def __init__(self):
 		# Library Info =========================================================
-		self.library_dir: str = None
+		self.library_dir: str | None = None
 
 		# Entries ==============================================================
 		# List of every Entry object.
@@ -1338,8 +1335,6 @@ class Library:
 		self.files_not_in_library.clear()
 		return new_ids
 
-		self.files_not_in_library.clear()
-
 	def get_entry(self, entry_id: int) -> Entry:
 		"""Returns an Entry object given an Entry ID."""
 		return self.entries[self._entry_id_to_index_map[int(entry_id)]]
@@ -1349,7 +1344,7 @@ class Library:
 		return self.collations[self._collation_id_to_index_map[int(collation_id)]]
 
 	# @deprecated('Use new Entry ID system.')
-	def get_entry_from_index(self, index: int) -> Entry:
+	def get_entry_from_index(self, index: int) -> Entry | None:
 		"""Returns a Library Entry object given its index in the unfiltered Entries list."""
 		if self.entries:
 			return self.entries[int(index)]
@@ -1365,8 +1360,8 @@ class Library:
 		except:
 			return -1
 
-	def search_library(self, query:str=None, entries=True, collations=True, 
-					   tag_groups=True) -> list[tuple[ItemType, int]]:
+	def search_library(self, query: str | None = None, entries = True, collations = True, 
+					   tag_groups = True) -> list[tuple[ItemType, int]]:
 		"""
 		Uses a search query to generate a filtered results list.
 		Returns a list of (str, int) tuples consisting of a result type and ID.
@@ -1402,7 +1397,7 @@ class Library:
 				# This gets rid of any accidental term inclusions because they were words
 				# in another term. Ex. "3d" getting added in "3d art"
 				for i, term in enumerate(all_tag_terms):
-					for j, term2 in enumerate(all_tag_terms):
+					for j, _ in enumerate(all_tag_terms):
 						if i != j and all_tag_terms[i] in all_tag_terms[j]:
 							# print(
 							#     f'removing {all_tag_terms[i]} because {all_tag_terms[i]} was in {all_tag_terms[j]}')
@@ -1641,7 +1636,6 @@ class Library:
 
 		# Contextual Weighing
 		if context and ((len(id_weights) > 1 and len(priority_ids) > 1) or (len(priority_ids) > 1)):
-			context_ids: list[int] = []
 			context_strings: list[str] = [s.replace(' ', '').replace('_', '').replace('-', '').replace(
 				"'", '').replace('(', '').replace(')', '').replace('[', '').replace(']', '').lower() for s in context]
 			for term in context:
@@ -1658,7 +1652,7 @@ class Library:
 			# for term in context:
 			# 	context_ids += self.filter_tags(query=term, include_cluster=True, ignore_builtin=ignore_builtin)
 			for i, idw in enumerate(id_weights, start=0):
-				weight: int = 0
+				weight = 0
 				tag_strings: list[str] = []
 				subtag_ids: list[int] = self.get_all_child_tag_ids(idw[0])
 				for id in self.get_tag_cluster(idw[0]):
@@ -1715,7 +1709,7 @@ class Library:
 
 		return subtag_ids
 
-	def filter_field_templates(self: str, query) -> list[int]:
+	def filter_field_templates(self, query: str) -> list[int]:
 		"""Returns a list of Field Template IDs returned from a string query."""
 
 		matches: list[int] = []
@@ -1737,20 +1731,20 @@ class Library:
 
 		# Since the ID stays the same when editing, only the Tag object is needed.
 		# Merging Tags is handled in a different function.
-		old_tag: Tag = self.get_tag(tag.id)
+		old_tag = self.get_tag(tag.id)
 
 		# Undo and Redo 'self._map_tag_names_to_tag_id(tag)' ===========================================================
 		# got to map[old names] and remove reference to this id.
 		# Remember that _tag_names_to_tag_id_map maps strings to a LIST of ids.
 		# print(
 		#     f'Removing connection from "{old_tag.name.lower()}" to {old_tag.id} in {self._tag_names_to_tag_id_map[old_tag.name.lower()]}')
-		old_name: str = strip_punctuation(old_tag.name).lower()
+		old_name = strip_punctuation(old_tag.name).lower()
 		self._tag_strings_to_id_map[old_name].remove(old_tag.id)
 		# Delete the map key if it doesn't point to any other IDs.
 		if not self._tag_strings_to_id_map[old_name]:
 			del self._tag_strings_to_id_map[old_name]
 		if old_tag.shorthand:
-			old_sh: str = strip_punctuation(old_tag.shorthand).lower()
+			old_sh = strip_punctuation(old_tag.shorthand).lower()
 			# print(
 			#     f'Removing connection from "{old_tag.shorthand.lower()}" to {old_tag.id} in {self._tag_names_to_tag_id_map[old_tag.shorthand.lower()]}')
 			self._tag_strings_to_id_map[old_sh].remove(old_tag.id)
@@ -1759,7 +1753,7 @@ class Library:
 				del self._tag_strings_to_id_map[old_sh]
 		if old_tag.aliases:
 			for alias in old_tag.aliases:
-				old_a: str = strip_punctuation(alias).lower()
+				old_a = strip_punctuation(alias).lower()
 				# print(
 				#     f'Removing connection from "{alias.lower()}" to {old_tag.id} in {self._tag_names_to_tag_id_map[alias.lower()]}')
 				self._tag_strings_to_id_map[old_a].remove(old_tag.id)
@@ -1845,8 +1839,8 @@ class Library:
 
 	def get_tag_ref_count(self, tag_id: int) -> tuple[int, int]:
 		"""Returns an int tuple (entry_ref_count, subtag_ref_count) of Tag reference counts."""
-		entry_ref_count: int = 0
-		subtag_ref_count: int = 0
+		entry_ref_count = 0
+		subtag_ref_count = 0
 
 		for e in self.entries:
 			if e.fields:
@@ -1942,7 +1936,7 @@ class Library:
 				content_tags_field_id = 7  # Content Tags Field ID
 				meta_tags_field_id = 8  # Meta Tags Field ID
 				notes_field_id = 5  # Notes Field ID
-				tags: list[str] = data['tags']
+				tags = data['tags']
 				# extra: list[str] = []
 				# for tag in tags:
 				# 	if len(tag.split(' ')) > 1:
@@ -1971,7 +1965,7 @@ class Library:
 
 				# Try to add matching tags in library.
 				for tag in tags:
-					matching: list[int] = self.search_tags(
+					matching = self.search_tags(
 						tag.replace('_', ' ').replace('-', ' '), include_cluster=False, ignore_builtin=True, threshold=2, context=tags)
 					priority_field_index = -1
 					if len(matching) > 0:
@@ -2058,7 +2052,7 @@ class Library:
 		# Extract and merge all fields from all given Entries.
 		for id in entry_ids:
 			if id:
-				entry: Entry = self.get_entry(id)
+				entry = self.get_entry(id)
 				if entry and entry.fields:
 					for field in entry.fields:
 						# First checks if their are matching tag_boxes to append to
@@ -2083,7 +2077,7 @@ class Library:
 
 				# TODO: Replace this and any in CLI with a proper user-defined
 				# field storing method.
-				order: list[int] = [0] + [1, 2] + [9, 17, 18, 19, 20] + \
+				order = [0] + [1, 2] + [9, 17, 18, 19, 20] + \
 					[10, 14, 11, 12, 13, 22] + [4, 5] + [8, 7, 6] + [3, 21]
 
 				# NOTE: This code is copied from the sort_fields() method.
@@ -2122,7 +2116,7 @@ class Library:
 		Returns an empty list of no field of that type is found in the entry.
 		"""
 		matched = []
-		# entry: Entry = self.entries[entry_index]
+		# entry = self.entries[entry_index]
 		# entry = self.get_entry(entry_id)
 		if entry.fields:
 			for i, field in enumerate(entry.fields):
@@ -2139,7 +2133,7 @@ class Library:
 		Uses name_and_alias_to_tag_id_map.
 		"""
 		# tag_id: int, tag_name: str, tag_aliases: list[str] = []
-		name: str = strip_punctuation(tag.name).lower()
+		name = strip_punctuation(tag.name).lower()
 		if name not in self._tag_strings_to_id_map:
 			self._tag_strings_to_id_map[name] = []
 		self._tag_strings_to_id_map[name].append(tag.id)
@@ -2150,13 +2144,13 @@ class Library:
 		self._tag_strings_to_id_map[shorthand].append(tag.id)
 
 		for alias in tag.aliases:
-			alias: str = strip_punctuation(alias).lower()
+			alias = strip_punctuation(alias).lower()
 			if alias not in self._tag_strings_to_id_map:
 				self._tag_strings_to_id_map[alias] = []
 			self._tag_strings_to_id_map[alias].append(tag.id)
 			# print(f'{alias.lower()} -> {tag.id}')
 
-	def _map_tag_id_to_cluster(self, tag: Tag, subtags: list[Tag] = None) -> None:
+	def _map_tag_id_to_cluster(self, tag: Tag, subtags: list[Tag] | None = None) -> None:
 		"""
 		Maps a Tag's subtag's ID's back to it's parent Tag's ID (in the form of a list).
 		Uses tag_id_to_cluster_map.\n

@@ -4,9 +4,8 @@
 
 """PySide6 port of the widgets/layouts/flowlayout example from Qt v6.x"""
 
-import sys
 from PySide6.QtCore import Qt, QMargins, QPoint, QRect, QSize
-from PySide6.QtWidgets import QApplication, QLayout, QPushButton, QSizePolicy, QWidget
+from PySide6.QtWidgets import QLayout, QSizePolicy, QWidget
 
 
 # class Window(QWidget):
@@ -42,8 +41,8 @@ class FlowLayout(QLayout):
 		while item:
 			item = self.takeAt(0)
 
-	def addItem(self, item):
-		self._item_list.append(item)
+	def addItem(self, arg__1):
+		self._item_list.append(arg__1)
 
 	def count(self):
 		return len(self._item_list)
@@ -66,13 +65,13 @@ class FlowLayout(QLayout):
 	def hasHeightForWidth(self):
 		return True
 
-	def heightForWidth(self, width):
-		height = self._do_layout(QRect(0, 0, width, 0), True)
+	def heightForWidth(self, arg__1):
+		height = self._do_layout(QRect(0, 0, arg__1, 0), True)
 		return height
 
-	def setGeometry(self, rect):
-		super(FlowLayout, self).setGeometry(rect)
-		self._do_layout(rect, False)
+	def setGeometry(self, arg__1):
+		super(FlowLayout, self).setGeometry(arg__1)
+		self._do_layout(arg__1, False)
 	
 	def setGridEfficiency(self, bool):
 		"""
@@ -107,8 +106,8 @@ class FlowLayout(QLayout):
 		spacing = self.spacing()
 		item = None
 		style = None
-		layout_spacing_x = None
-		layout_spacing_y = None
+		layout_spacing_x = 0
+		layout_spacing_y = 0
 
 		if self.grid_efficiency:
 			if self._item_list:
@@ -120,7 +119,7 @@ class FlowLayout(QLayout):
 				layout_spacing_y = style.layoutSpacing(
 					QSizePolicy.PushButton, QSizePolicy.PushButton, Qt.Vertical
 				)
-		for i, item in enumerate(self._item_list):
+		for _, item in enumerate(self._item_list):
 			# print(issubclass(type(item.widget()), FlowWidget))
 			# print(item.widget().ignore_size)
 			skip_count = 0

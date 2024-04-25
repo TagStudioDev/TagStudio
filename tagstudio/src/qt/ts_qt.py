@@ -7,40 +7,33 @@
 
 """A Qt driver for TagStudio."""
 
-from copy import copy, deepcopy
 import ctypes
-import math
-from os import times
-import sys
-import logging
-import threading
-from time import sleep
-from queue import Empty, Queue
-import time
-from typing import Optional, Union
-from PySide6 import QtCore
-import PySide6
-from PySide6.QtGui import *
-from PySide6.QtWidgets import *
-from PySide6.QtCore import QFile, QObject, QThread, Signal, QRunnable, Qt, QThreadPool, QSize, QEvent, QMimeData, QTimer
-from PySide6.QtUiTools import QUiLoader
-from PIL import Image, ImageOps, ImageChops, UnidentifiedImageError, ImageQt, ImageDraw, ImageFont, ImageEnhance
-import PySide6.QtWidgets
-import humanfriendly
-import pillow_avif
 import cv2
 from datetime import datetime as dt
+import humanfriendly
+from humanfriendly import format_timespan
+import logging
+import math
+from PIL import Image, ImageChops, UnidentifiedImageError, ImageQt, ImageDraw, ImageFont, ImageEnhance
+from PySide6 import QtCore
+from PySide6.QtCore import QObject, QThread, Signal, QRunnable, Qt, QThreadPool, QSize, QEvent, QTimer
+from PySide6.QtGui import QAction, QColor, QEnterEvent, QFontDatabase, QGuiApplication, QIcon, QMouseEvent, QPainter, QPainterPath, QPen, QPixmap, QResizeEvent, QStandardItem, QStandardItemModel
+from PySide6.QtUiTools import QUiLoader
+from PySide6.QtWidgets import QApplication, QBoxLayout, QCheckBox, QComboBox, QFileDialog, QFrame, QHBoxLayout, QLabel, QLineEdit, QListView, QMenu, QMessageBox, QPlainTextEdit, QProgressDialog, QPushButton, QScrollArea, QSizePolicy, QSplashScreen, QSplitter, QTextEdit, QVBoxLayout, QWidget
+from queue import Empty, Queue
+import subprocess
+import sys
+from src.core.library import *
+from src.core.palette import ColorType, get_tag_color
 from src.core.ts_core import *
 # from src.core.utils.web import *
 # from src.core.utils.fs import *
-from src.core.library import *
-from src.core.palette import ColorType, get_tag_color
 from src.qt.flowlayout import FlowLayout, FlowWidget
-from src.qt.main_window import Ui_MainWindow
-import src.qt.resources_rc
-# from typing_extensions import deprecated
-from humanfriendly import format_timespan
 # from src.qt.qtacrylic.qtacrylic import WindowEffect
+from src.qt.main_window import Ui_MainWindow
+import time
+from time import sleep
+from typing import Optional
 
 # SIGQUIT is not defined on Windows
 if sys.platform == "win32":
@@ -56,19 +49,20 @@ INFO = f'[INFO]'
 logging.basicConfig(format="%(message)s", level=logging.INFO)
 
 
-def open_file(path):
-	try:
-		os.startfile(path)
-	except FileNotFoundError:
-		logging.info('File Not Found! (Imagine this as a popup)')
-	except:
-		traceback.print_exc()
+def open_file(path: str):
+	if sys.platform == "win32":
+		try:
+			os.startfile(path)
+		except FileNotFoundError:
+			logging.info('File Not Found! (Imagine this as a popup)')
+		except:
+			traceback.print_exc()
 
 
 class NavigationState():
 	"""Represents a state of the Library grid view."""
 
-	def __init__(self, contents, scrollbar_pos: int, page_index:int, page_count:int, search_text: str = None, thumb_size=None, spacing=None) -> None:
+	def __init__(self, contents, scrollbar_pos: int, page_index: int, page_count:int, search_text: str | None = None, thumb_size = None, spacing = None) -> None:
 		self.contents = contents
 		self.scrollbar_pos = scrollbar_pos
 		self.page_index = page_index
@@ -97,7 +91,7 @@ class Consumer(QThread):
 	def set_page_count(self, count:int):
 		self.page_count = count
 	
-	def jump_to_page(self, index:int):
+	def jump_to_page(self, index: int):
 		pass
 
 	def nav_back(self):
@@ -108,29 +102,29 @@ class Consumer(QThread):
 
 
 class FieldContainer(QWidget):
-	clipboard_icon_128: Image.Image = Image.open(os.path.normpath(
+	clipboard_icon_128 = Image.open(os.path.normpath(
 		f'{Path(__file__).parent.parent.parent}/resources/qt/images/clipboard_icon_128.png')).resize((math.floor(24*1.25),math.floor(24*1.25)))
 	clipboard_icon_128.load()
 
-	edit_icon_128: Image.Image = Image.open(os.path.normpath(
+	edit_icon_128 = Image.open(os.path.normpath(
 		f'{Path(__file__).parent.parent.parent}/resources/qt/images/edit_icon_128.png')).resize((math.floor(24*1.25),math.floor(24*1.25)))
 	edit_icon_128.load()
 
-	trash_icon_128: Image.Image = Image.open(os.path.normpath(
+	trash_icon_128 = Image.open(os.path.normpath(
 		f'{Path(__file__).parent.parent.parent}/resources/qt/images/trash_icon_128.png')).resize((math.floor(24*1.25),math.floor(24*1.25)))
 	trash_icon_128.load()
 	
-	def __init__(self, title:str='Field', inline:bool=True) -> None:
+	def __init__(self, title: str = 'Field', inline: bool = True) -> None:
 		super().__init__()
-		# self.mode:str = mode
+		# self.mode = mode
 		self.setObjectName('fieldContainer')
 		# self.item = item
 		self.title:str = title
 		self.inline:bool = inline
-		# self.editable:bool = editable
-		self.copy_callback:FunctionType = None
-		self.edit_callback:FunctionType = None
-		self.remove_callback:FunctionType = None
+		# self.editable = editable
+		self.copy_callback: FunctionType | None = None
+		self.edit_callback: FunctionType | None = None
+		self.remove_callback: FunctionType | None = None
 		button_size = 24
 		# self.setStyleSheet('border-style:solid;border-color:#1e1a33;border-radius:8px;border-width:2px;')
 
@@ -659,9 +653,9 @@ class PanelModal(QWidget):
 	# TODO: Separate callbacks from the buttons you want, and just generally
 	# figure out what you want from this.
 	def __init__(self, widget:'PanelWidget', title:str, window_title:str, 
-				 done_callback:FunctionType=None, 
+				 done_callback: FunctionType | None = None, 
 				#  cancel_callback:FunctionType=None,
-				 save_callback:FunctionType=None,has_save:bool=False):
+				 save_callback: FunctionType | None = None, has_save: bool = False):
 		# [Done]
 		# - OR -
 		# [Cancel] [Save]
@@ -737,7 +731,7 @@ class PanelWidget(QWidget):
 	done = Signal()
 	def __init__(self):
 		super().__init__()
-	def get_content(self)-> str:
+	def get_content(self):
 		pass
 	def reset(self):
 		pass
@@ -832,7 +826,7 @@ class TagSearchPanel(PanelWidget):
 	# 	self.update_tags('')
 	# 	self.search_field.setFocus()
 	
-	def on_return(self, text:str):
+	def on_return(self, text: str):
 		if text and self.first_tag_id >= 0:
 			# callback(self.first_tag_id)
 			self.tag_chosen.emit(self.first_tag_id)
@@ -842,7 +836,7 @@ class TagSearchPanel(PanelWidget):
 			self.search_field.setFocus()
 			self.parentWidget().hide()
 
-	def update_tags(self, query:str):
+	def update_tags(self, query: str):
 		# for c in self.scroll_layout.children():
 		# 	c.widget().deleteLater()
 		while self.scroll_layout.itemAt(0):
@@ -1973,7 +1967,7 @@ class PreviewPanel(QWidget):
 		# logging.info(f'Updating Ratio to: {ratio} #####################################################')
 		self.image_ratio = ratio
 		
-	def update_image_size(self, size:tuple[int, int], ratio:float = None):
+	def update_image_size(self, size: tuple[int, int], ratio: float | None = None):
 		if ratio:
 			self.set_image_ratio(ratio)
 		# self.img_button_size = size
@@ -2003,7 +1997,7 @@ class PreviewPanel(QWidget):
 
 		# self.preview_img.setMinimumSize(s)
 		# self.preview_img.setMaximumSize(s_max)
-		adj_size = QSize(adj_width, adj_height)
+		adj_size = QSize(round(adj_width), round(adj_height))
 		self.img_button_size = (adj_width, adj_height)
 		self.preview_img.setMaximumSize(adj_size)
 		self.preview_img.setIconSize(adj_size)
@@ -2302,7 +2296,7 @@ class PreviewPanel(QWidget):
 		# logging.info(f'[ENTRY PANEL] WRITE CONTAINER')
 		# Remove 'Add Field' button from scroll_layout, to be re-added later.
 		self.scroll_layout.takeAt(self.scroll_layout.count()-1).widget()
-		container: FieldContainer = None
+		container: FieldContainer | None = None
 		if len(self.containers) < (index + 1):
 			container = FieldContainer()
 			self.containers.append(container)
@@ -2522,7 +2516,7 @@ class PreviewPanel(QWidget):
 					logging.info(f'[PREVIEW PANEL][ERROR?] Tried to remove field from Entry ({entry.id}) that never had it')
 					pass
 	
-	def update_field(self, field:object, content):
+	def update_field(self, field: object, content):
 		"""Removes a field from all selected Entries, given a field object."""
 		field = dict(field)
 		for item_pair in self.selected:
@@ -2843,7 +2837,7 @@ class ItemThumb(FlowWidget):
 				self.ext_badge.setHidden(True)
 				self.count_badge.setHidden(True)
 
-	def update_thumb(self, timestamp: float, image: QPixmap = None):
+	def update_thumb(self, timestamp: float, image: QPixmap | None = None):
 		"""Updates attributes of a thumbnail element."""
 		# logging.info(f'[GUI] Updating Thumbnail for element {id(element)}: {id(image) if image else None}')
 		if timestamp > ItemThumb.update_cutoff:
@@ -2859,7 +2853,7 @@ class ItemThumb(FlowWidget):
 				self.thumb_button.setMinimumSize(size)
 				self.thumb_button.setMaximumSize(size)
 
-	def update_clickable(self, clickable: FunctionType = None):
+	def update_clickable(self, clickable: FunctionType | None = None):
 		"""Updates attributes of a thumbnail element."""
 		# logging.info(f'[GUI] Updating Click Event for element {id(element)}: {id(clickable) if clickable else None}')
 		try:
@@ -2965,8 +2959,8 @@ class ThumbButton(QPushButton):
 
 		# self.clicked.connect(lambda checked: self.set_selected(True))
 	
-	def paintEvent(self, event:QEvent) -> None:
-		super().paintEvent(event)
+	def paintEvent(self, arg__1: QEvent) -> None:
+		super().paintEvent(arg__1)
 		if self.hovered or self.selected:
 			painter = QPainter()
 			painter.begin(self)
@@ -3061,7 +3055,7 @@ class CollageIconRenderer(QObject):
 					color = '#e22c3c' # Red
 
 				if data_only_mode:
-					pic: Image = Image.new('RGB', size, color)
+					pic = Image.new('RGB', size, color)
 					# collage.paste(pic, (y*thumb_size, x*thumb_size))
 					self.rendered.emit(pic)
 			if not data_only_mode:
@@ -3177,7 +3171,7 @@ class ThumbRenderer(QObject):
 		image = None
 		pixmap = None
 		final = None
-		extension: str = None
+		extension: str | None = None
 		broken_thumb = False
 		# adj_font_size = math.floor(12 * pixelRatio)
 		if ThumbRenderer.font_pixel_ratio != pixelRatio:
@@ -3336,10 +3330,10 @@ class ThumbRenderer(QObject):
 	def render_big(self, timestamp: float, filepath, base_size: tuple[int, int], pixelRatio: float, isLoading=False):
 		"""Renders a large, non-square entry/element thumbnail for the GUI."""
 		adj_size: int = 1
-		image: Image.Image = None
-		pixmap: QPixmap = None
-		final: Image.Image = None
-		extension: str = None
+		image: Image.Image | None = None
+		pixmap: QPixmap | None = None
+		final: Image.Image | None = None
+		extension: str | None = None
 		broken_thumb = False
 		img_ratio = 1
 		# adj_font_size = math.floor(12 * pixelRatio)
@@ -3470,7 +3464,7 @@ class ThumbRenderer(QObject):
 				# hl_add.putalpha(ImageEnhance.Brightness(hl.getchannel(3)).enhance(.25))
 				# final.paste(hl_add, mask=hl_add.getchannel(3))
 				scalar = 4
-				rec: Image.Image = Image.new('RGB', tuple(
+				rec = Image.new('RGB', tuple(
 					[d * scalar for d in image.size]), 'black')
 				draw = ImageDraw.Draw(rec)
 				draw.rounded_rectangle(
@@ -3829,7 +3823,7 @@ class QtDriver(QObject):
 								'Add Tag',
 								has_save=True)
 		# self.edit_modal.widget.update_display_name.connect(lambda t: self.edit_modal.title_widget.setText(t))
-		panel: BuildTagPanel = self.modal.widget
+		panel = self.modal.widget
 		self.modal.saved.connect(lambda: (self.lib.add_tag_to_library(panel.build_tag()), self.modal.hide()))
 		# panel.tag_updated.connect(lambda tag: self.lib.update_tag(tag))
 		self.modal.show()
@@ -3926,7 +3920,7 @@ class QtDriver(QObject):
 
 
 
-		iterator = FunctionIterator(lambda:self.new_file_macros_runnable(new_ids))
+		iterator = FunctionIterator(lambda: self.new_file_macros_runnable(new_ids))
 		pw = ProgressWidget(
 			window_title='Running Macros on New Entries', 
 			label_text=f'Running Configured Macros on 1/{len(new_ids)} New Entries', 
@@ -3945,7 +3939,7 @@ class QtDriver(QObject):
 		"""Threaded method that runs macros on a set of Entry IDs."""
 		# sleep(1)
 		logging.info(f'ANFR: {QThread.currentThread()}')
-		for i, id in enumerate(new_ids):
+		for i, _ in enumerate(new_ids):
 			# pb.setValue(i)
 			# pb.setLabelText(f'Running Configured Macros on {i}/{len(new_ids)} New Entries')
 			# self.run_macro('autofill', id)
@@ -3956,7 +3950,7 @@ class QtDriver(QObject):
 		# sleep(5)
 		# pb.deleteLater()
 	
-	def run_macros(self, name: str, entry_ids: int):
+	def run_macros(self, name: str, entry_ids: list[int]):
 		"""Runs a specific Macro on a group of given entry_ids."""
 		for id in entry_ids:
 			self.run_macro(name, id)
@@ -4131,7 +4125,7 @@ class QtDriver(QObject):
 		# layout.setViewMode(QListView.ViewMode.IconMode)
 
 		col_size = 28
-		for i in range(0, self.max_results):
+		for _ in range(0, self.max_results):
 			item_thumb = ItemThumb(None, self.lib, self.preview_panel,
 							 (self.thumb_size, self.thumb_size))
 			layout.addWidget(item_thumb)
@@ -4146,7 +4140,7 @@ class QtDriver(QObject):
 		sa.setWidgetResizable(True)
 		sa.setWidget(self.flow_container)
 
-	def select_item(self, type:int, id:int, append:bool, bridge:bool):
+	def select_item(self, type: int, id: int, append: bool, bridge: bool):
 		"""Selects one or more items in the Thumbnail Grid."""
 		if append:
 			# self.selected.append((thumb_index, page_index))
