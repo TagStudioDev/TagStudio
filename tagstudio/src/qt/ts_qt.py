@@ -59,20 +59,21 @@ logging.basicConfig(format="%(message)s", level=logging.INFO)
 
 
 def open_file(path: str):
-	if sys.platform == "win32":
-		command_name = "start"
-	elif sys.platform == "darwin":
-		command_name = "open"
-	else:
-		command_name = "xdg-open"
-	command = shutil.which(command_name)
-	if command is not None:
-		try:
-			subprocess.Popen([command, path], close_fds=True)
-		except:
-			traceback.print_exc()
-	else:
-		logging.info(f"Could not find {command_name} on system PATH")
+	try:
+		if sys.platform == "win32":
+			subprocess.Popen(["start", path], shell=True, close_fds=True)
+		else:
+			if sys.platform == "darwin":
+				command_name = "open"
+			else:
+				command_name = "xdg-open"
+			command = shutil.which(command_name)
+			if command is not None:
+				subprocess.Popen([command, path], close_fds=True)
+			else:
+				logging.info(f"Could not find {command_name} on system PATH")
+	except:
+		traceback.print_exc()
 
 
 class NavigationState():
