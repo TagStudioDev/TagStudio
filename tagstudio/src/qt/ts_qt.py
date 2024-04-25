@@ -61,7 +61,7 @@ logging.basicConfig(format="%(message)s", level=logging.INFO)
 def open_file(path: str):
 	try:
 		if sys.platform == "win32":
-			subprocess.Popen(["start", path], shell=True, close_fds=True)
+			subprocess.Popen(["start", path], shell=True, close_fds=True, creationflags=subprocess.DETACHED_PROCESS)
 		else:
 			if sys.platform == "darwin":
 				command_name = "open"
