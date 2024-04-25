@@ -5,23 +5,22 @@
 """The Library object and related methods for TagStudio."""
 
 import datetime
-from enum import Enum
-import os
-import traceback
-from typing import Optional
-import json
 import glob
-from pathlib import Path
-# from typing_extensions import deprecated
-import src.core.ts_core as ts_core
-from src.core.utils.web import *
-from src.core.utils.str import *
-from src.core.utils.fs import *
-import xml.etree.ElementTree as ET
+import json
+import logging
 import sys
 import time
-import logging
+import traceback
+import xml.etree.ElementTree as ET
+from enum import Enum
+
 import ujson
+
+# from typing_extensions import deprecated
+import tagstudio.src.core.ts_core as ts_core
+from tagstudio.src.core.utils.fs import *
+from tagstudio.src.core.utils.str import *
+from tagstudio.src.core.utils.web import *
 
 TYPE = ['file', 'meta', 'alt', 'mask']
 # RESULT_TYPE = Enum('Result', ['ENTRY', 'COLLATION', 'TAG_GROUP'])

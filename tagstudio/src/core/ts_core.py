@@ -4,16 +4,13 @@
 
 """The core classes and methods of TagStudio."""
 
-import os
-from types import FunctionType
 # from typing import Dict, Optional, TypedDict, List
 import json
-from pathlib import Path
-import traceback
+import os
+
 # import requests
 # from bs4 import BeautifulSoup as bs
 from src.core.library import *
-from src.core.field_template import FieldTemplate
 
 VERSION: str = '9.1.0'  # Major.Minor.Patch
 VERSION_BRANCH: str = 'Alpha'  # 'Alpha', 'Beta', or '' for Full Release

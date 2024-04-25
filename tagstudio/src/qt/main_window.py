@@ -12,17 +12,10 @@
 # Licensed under the GPL-3.0 License.
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
-from re import S
-import time
-from typing import Optional
-from PySide6.QtCore import (QCoreApplication, QDate, QDateTime, QLocale,
-							QMetaObject, QObject, QPoint, QRect,
-							QSize, QTime, QUrl, Qt)
-from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
-						   QFont, QFontDatabase, QGradient, QIcon,
-						   QImage, QKeySequence, QLinearGradient, QPainter,
-						   QPalette, QPixmap, QRadialGradient, QTransform, QAction)
-from PySide6.QtWidgets import (QApplication, QComboBox, QFrame, QGridLayout,
+from PySide6.QtCore import (QCoreApplication, QMetaObject, QRect,
+							QSize, Qt)
+from PySide6.QtGui import (QFont, QAction)
+from PySide6.QtWidgets import (QComboBox, QFrame, QGridLayout,
 							   QHBoxLayout, QVBoxLayout, QLayout, QLineEdit, QMainWindow,
 							   QMenuBar, QPushButton, QScrollArea, QSizePolicy,
 							   QStatusBar, QWidget, QSplitter, QMenu)

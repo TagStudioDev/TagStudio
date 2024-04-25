@@ -7,39 +7,34 @@
 
 """A Qt driver for TagStudio."""
 
-from copy import copy, deepcopy
 import ctypes
-import math
-from os import times
-import sys
 import logging
-import threading
-from time import sleep
-from queue import Empty, Queue
+import math
+import sys
 import time
-from typing import Optional, Union
-from PySide6 import QtCore
-import PySide6
-from PySide6.QtGui import *
-from PySide6.QtWidgets import *
-from PySide6.QtCore import QFile, QObject, QThread, Signal, QRunnable, Qt, QThreadPool, QSize, QEvent, QMimeData, QTimer
-from PySide6.QtUiTools import QUiLoader
-from PIL import Image, ImageOps, ImageChops, UnidentifiedImageError, ImageQt, ImageDraw, ImageFont, ImageEnhance
-import PySide6.QtWidgets
-import humanfriendly
-import pillow_avif
-import cv2
 from datetime import datetime as dt
-from src.core.ts_core import *
+from queue import Empty, Queue
+from time import sleep
+from typing import Optional
+
+import cv2
+import humanfriendly
+from PIL import Image, ImageChops, UnidentifiedImageError, ImageQt, ImageDraw, ImageFont, ImageEnhance
+from PySide6 import QtCore
+from PySide6.QtCore import QObject, QThread, Signal, QRunnable, Qt, QThreadPool, QSize, QEvent, QTimer
+from PySide6.QtGui import *
+from PySide6.QtUiTools import QUiLoader
+from PySide6.QtWidgets import *
+# from typing_extensions import deprecated
+from humanfriendly import format_timespan
 # from src.core.utils.web import *
 # from src.core.utils.fs import *
 from src.core.library import *
 from src.core.palette import ColorType, get_tag_color
+from src.core.ts_core import *
 from src.qt.flowlayout import FlowLayout, FlowWidget
 from src.qt.main_window import Ui_MainWindow
-import src.qt.resources_rc
-# from typing_extensions import deprecated
-from humanfriendly import format_timespan
+
 # from src.qt.qtacrylic.qtacrylic import WindowEffect
 
 # SIGQUIT is not defined on Windows
