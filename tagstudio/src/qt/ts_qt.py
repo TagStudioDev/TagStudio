@@ -41,6 +41,8 @@ import src.qt.resources_rc
 # from typing_extensions import deprecated
 from humanfriendly import format_timespan
 # from src.qt.qtacrylic.qtacrylic import WindowEffect
+import shutil
+import subprocess
 
 # SIGQUIT is not defined on Windows
 if sys.platform == "win32":
@@ -56,13 +58,21 @@ INFO = f'[INFO]'
 logging.basicConfig(format="%(message)s", level=logging.INFO)
 
 
-def open_file(path):
-	try:
-		os.startfile(path)
-	except FileNotFoundError:
-		logging.info('File Not Found! (Imagine this as a popup)')
-	except:
-		traceback.print_exc()
+def open_file(path: str):
+	if sys.platform == "win32":
+		command_name = "start"
+	elif sys.platform == "darwin":
+		command_name = "open"
+	else:
+		command_name = "xdg-open"
+	command = shutil.which(command_name)
+	if command is not None:
+		try:
+			subprocess.Popen([command, path], close_fds=True)
+		except:
+			traceback.print_exc()
+	else:
+		logging.info(f"Could not find {command_name} on system PATH")
 
 
 class NavigationState():
