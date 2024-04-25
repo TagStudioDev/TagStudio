@@ -5,23 +5,21 @@
 """The Library object and related methods for TagStudio."""
 
 import datetime
-from enum import Enum
-import os
-import traceback
-from typing import Optional
-import json
 import glob
-from pathlib import Path
-# from typing_extensions import deprecated
-import src.core.ts_core as ts_core
-from src.core.utils.web import *
-from src.core.utils.str import *
-from src.core.utils.fs import *
-import xml.etree.ElementTree as ET
+import json
+import logging
+import os
 import sys
 import time
-import logging
+import traceback
+import xml.etree.ElementTree as ET
+from enum import Enum
+
 import ujson
+
+from src.core import ts_core
+from src.core.utils.str import strip_punctuation
+from src.core.utils.web import strip_web_protocol
 
 TYPE = ['file', 'meta', 'alt', 'mask']
 # RESULT_TYPE = Enum('Result', ['ENTRY', 'COLLATION', 'TAG_GROUP'])
@@ -576,7 +574,7 @@ class Library:
 		if not os.path.isdir(full_collage_path):
 			os.mkdir(full_collage_path)
 	
-	def verify_default_tags(self, tag_list: list) -> dict:
+	def verify_default_tags(self, tag_list: list) -> list:
 		"""
 		Ensures that the default builtin tags  are present in the Library's
 		save file. Takes in and returns the tag dictionary from the JSON file.
@@ -630,41 +628,45 @@ class Library:
 							if 'id' in tag.keys():
 								id = tag['id']
 
-							if int(id) >= self._next_tag_id:
-								self._next_tag_id = int(id) + 1
+							# Don't load tags with duplicate IDs
+							if id not in [t.id for t in self.tags]:
+								if int(id) >= self._next_tag_id:
+									self._next_tag_id = int(id) + 1
 
-							name = ''
-							if 'name' in tag.keys():
-								name = tag['name']
-							shorthand = ''
-							if 'shorthand' in tag.keys():
-								shorthand = tag['shorthand']
-							aliases = []
-							if 'aliases' in tag.keys():
-								aliases = tag['aliases']
-							subtag_ids = []
-							if 'subtag_ids' in tag.keys():
-								subtag_ids = tag['subtag_ids']
-							color = ''
-							if 'color' in tag.keys():
-								color = tag['color']
+								name = ''
+								if 'name' in tag.keys():
+									name = tag['name']
+								shorthand = ''
+								if 'shorthand' in tag.keys():
+									shorthand = tag['shorthand']
+								aliases = []
+								if 'aliases' in tag.keys():
+									aliases = tag['aliases']
+								subtag_ids = []
+								if 'subtag_ids' in tag.keys():
+									subtag_ids = tag['subtag_ids']
+								color = ''
+								if 'color' in tag.keys():
+									color = tag['color']
 
-							t = Tag(
-								id=int(id),
-								name=name,
-								shorthand=shorthand,
-								aliases=aliases,
-								subtags_ids=subtag_ids,
-								color=color
-							)
+								t = Tag(
+									id=int(id),
+									name=name,
+									shorthand=shorthand,
+									aliases=aliases,
+									subtags_ids=subtag_ids,
+									color=color
+								)
 
-							# NOTE: This does NOT use the add_tag_to_library() method!
-							# That method is only used for Tags added at runtime.
-							# This process uses the same inner methods, but waits until all of the
-							# Tags are registered in the Tags list before creating the Tag clusters.
-							self.tags.append(t)
-							self._map_tag_id_to_index(t, -1)
-							self._map_tag_strings_to_tag_id(t)
+								# NOTE: This does NOT use the add_tag_to_library() method!
+								# That method is only used for Tags added at runtime.
+								# This process uses the same inner methods, but waits until all of the
+								# Tags are registered in the Tags list before creating the Tag clusters.
+								self.tags.append(t)
+								self._map_tag_id_to_index(t, -1)
+								self._map_tag_strings_to_tag_id(t)
+							else:
+								logging.info(f'[LIBRARY]Skipping Tag with duplicate ID: {tag}')
 
 						# Step 3: Map each Tag's subtags together now that all Tag objects in it.
 						for t in self.tags:
@@ -856,10 +858,10 @@ class Library:
 						}
 
 		print('[LIBRARY] Formatting Tags to JSON...')
-		file_to_save['tags'] = self.verify_default_tags(file_to_save['tags'])
 		for tag in self.tags:
 			file_to_save["tags"].append(tag.compressed_dict())
-
+		
+		file_to_save['tags'] = self.verify_default_tags(file_to_save['tags'])
 		print('[LIBRARY] Formatting Entries to JSON...')
 		for entry in self.entries:
 			file_to_save["entries"].append(entry.compressed_dict())

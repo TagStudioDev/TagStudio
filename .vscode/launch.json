@@ -8,7 +8,7 @@
 			"name": "TagStudio",
 			"type": "debugpy",
 			"request": "launch",
-			"program": "${workspaceRoot}\\TagStudio\\tagstudio.py",
+			"program": "${workspaceRoot}/tagstudio/tag_studio.py",
 			"console": "integratedTerminal",
 			"justMyCode": true,
 			"args": ["--debug"]

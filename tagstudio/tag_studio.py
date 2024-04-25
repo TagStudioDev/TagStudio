@@ -9,7 +9,6 @@ from src.cli.ts_cli import CliDriver
 from src.qt.ts_qt import QtDriver
 import argparse
 import traceback
-# import ctypes
 
 
 def main():

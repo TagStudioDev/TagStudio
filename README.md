@@ -57,7 +57,7 @@ TagStudio is a photo & file organization application with an underlying system t
 
 ### Prerequisites
 
-- Python 3.9.6 - ~3.10 *(Not working on 3.12)*
+- Python 3.12
 
 ### Creating the Virtual Environment
 
@@ -90,18 +90,22 @@ _Learn more about setting up a virtual environment [here](https://docs.python.or
 
 To launch TagStudio, launch the `start_win.bat` file. You can modify this .bat file or create a shortcut and add one or more additional arguments if desired.
 
-Alternatively, with the virtual environment loaded, run the python file at `tagstudio\tagstudio.py` from your terminal. If you're in the project's root directory, simply run `python3 tagstudio/tagstudio.py`.
+Alternatively, with the virtual environment loaded, run the python file at `tagstudio\tag_studio.py` from your terminal. If you're in the project's root directory, simply run `python3 tagstudio/tag_studio.py`.
 
 > [!CAUTION]
 > TagStudio on Linux & macOS likely won't function correctly at this time. If you're trying to run this in order to help test, debug, and improve compatibility, then charge on ahead!
 
 #### macOS
 
-With the virtual environment loaded, run the python file at "tagstudio/tagstudio.py" from your terminal. If you're in the project's root directory, simply run `python3 tagstudio/tagstudio.py`. When launching the program in the future, remember to activate the virtual environment each time before launching *(an easier method is currently being worked on).*
+With the virtual environment loaded, run the python file at "tagstudio/tag_studio.py" from your terminal. If you're in the project's root directory, simply run `python3 tagstudio/tag_studio.py`. When launching the program in the future, remember to activate the virtual environment each time before launching *(an easier method is currently being worked on).*
 
 #### Linux
 
 Run the "TagStudio.sh" script, and the program should launch! (Make sure that the script is marked as executable). Note that launching from the script from outside of a terminal will not launch a terminal window with any debug or crash information. If you wish to see this information, just launch the shell script directly from your terminal with `sh TagStudio.sh`.
+
+##### NixOS
+
+Use the provided `flake.nix` file to create and enter a working environment by running `nix develop`. Then, run the above `TagStudio.sh` script.
 
 ## Usage
 
