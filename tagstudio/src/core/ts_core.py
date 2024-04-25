@@ -4,12 +4,9 @@
 
 """The core classes and methods of TagStudio."""
 
-# from typing import Dict, Optional, TypedDict, List
 import json
 import os
 
-# import requests
-# from bs4 import BeautifulSoup as bs
 from src.core.library import *
 
 VERSION: str = '9.1.0'  # Major.Minor.Patch

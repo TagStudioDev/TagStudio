@@ -20,8 +20,6 @@ from PySide6.QtWidgets import (QComboBox, QFrame, QGridLayout,
 							   QMenuBar, QPushButton, QScrollArea, QSizePolicy,
 							   QStatusBar, QWidget, QSplitter, QMenu)
 from src.qt.pagination import Pagination
-# from src.qt.qtacrylic.qtacrylic import WindowEffect
-# from qframelesswindow import FramelessMainWindow, StandardTitleBar
 
 
 class Ui_MainWindow(QMainWindow):

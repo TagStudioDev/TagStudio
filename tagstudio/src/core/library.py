@@ -16,7 +16,6 @@ from enum import Enum
 
 import ujson
 
-# from typing_extensions import deprecated
 import tagstudio.src.core.ts_core as ts_core
 from tagstudio.src.core.utils.fs import *
 from tagstudio.src.core.utils.str import *

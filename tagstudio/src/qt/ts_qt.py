@@ -25,17 +25,13 @@ from PySide6.QtCore import QObject, QThread, Signal, QRunnable, Qt, QThreadPool,
 from PySide6.QtGui import *
 from PySide6.QtUiTools import QUiLoader
 from PySide6.QtWidgets import *
-# from typing_extensions import deprecated
 from humanfriendly import format_timespan
-# from src.core.utils.web import *
-# from src.core.utils.fs import *
 from src.core.library import *
 from src.core.palette import ColorType, get_tag_color
 from src.core.ts_core import *
 from src.qt.flowlayout import FlowLayout, FlowWidget
 from src.qt.main_window import Ui_MainWindow
 
-# from src.qt.qtacrylic.qtacrylic import WindowEffect
 
 # SIGQUIT is not defined on Windows
 if sys.platform == "win32":
