@@ -418,7 +418,8 @@ class TagBoxWidget(FieldWidget):
 		for x in self.driver.selected:
 				self.driver.lib.get_entry(x[1]).add_tag(self.driver.lib, tag_id, field_id=id, field_index=-1)
 				self.updated.emit()
-		self.driver.update_thumbs()
+		if tag_id == 0 or tag_id == 1:
+			self.driver.update_thumbs()
 
 		# if type((x[0]) == ThumbButton):
 		# 	# TODO: Remove space from the special search here (tag_id:x) once that system is finalized.
@@ -440,7 +441,8 @@ class TagBoxWidget(FieldWidget):
 			index = self.driver.lib.get_field_index_in_entry(self.driver.lib.get_entry(x[1]),id)
 			self.driver.lib.get_entry(x[1]).remove_tag(self.driver.lib, tag_id,field_index=index[0])
 			self.updated.emit()
-		self.driver.update_thumbs()
+		if tag_id == 0 or tag_id == 1:
+			self.driver.update_thumbs()
 
 	# def show_add_button(self, value:bool):
 	# 	self.add_button.setHidden(not value)
