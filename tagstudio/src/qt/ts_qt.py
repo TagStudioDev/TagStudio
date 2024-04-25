@@ -26,7 +26,7 @@ from typing import Optional
 import cv2
 from PIL import Image, ImageChops, UnidentifiedImageError, ImageQt, ImageDraw, ImageFont, ImageEnhance
 from PySide6 import QtCore
-from PySide6.QtCore import QObject, QThread, Signal, QRunnable, Qt, QThreadPool, QSize, QEvent, QTimer
+from PySide6.QtCore import QObject, QThread, Signal, QRunnable, Qt, QThreadPool, QSize, QEvent, QTimer, QSettings
 from PySide6.QtGui import (QGuiApplication, QPixmap, QEnterEvent, QMouseEvent, QResizeEvent, QPainter, QColor, QPen,
 						   QAction, QStandardItemModel, QStandardItem, QPainterPath, QFontDatabase, QIcon)
 from PySide6.QtUiTools import QUiLoader
@@ -60,6 +60,9 @@ WARNING = f'[WARNING]'
 INFO = f'[INFO]'
 
 logging.basicConfig(format="%(message)s", level=logging.INFO)
+
+# Keep settings in ini format in the current working directory.
+QSettings.setPath(QSettings.IniFormat, QSettings.UserScope, os.getcwd())
 
 
 def open_file(path: str):
@@ -3573,6 +3576,8 @@ class QtDriver(QObject):
 
 		self.SIGTERM.connect(self.handleSIGTERM)
 
+		self.settings = QSettings(QSettings.IniFormat, QSettings.UserScope, 'TagStudio')
+
 
 		max_threads = os.cpu_count()
 		for i in range(max_threads):
@@ -3796,10 +3801,15 @@ class QtDriver(QObject):
 		self.splash.finish(self.main_window)
 		self.preview_panel.update_widgets()
 
-		
-		if self.args.open:
-			self.splash.showMessage(f'Opening Library "{self.args.open}"...', int(Qt.AlignmentFlag.AlignBottom|Qt.AlignmentFlag.AlignHCenter), QColor('#9782ff'))
-			self.open_library(self.args.open)
+		# Check if a library should be opened on startup, args should override last_library
+		# TODO: check for behavior (open last, open default, start empty)
+		if self.args.open or self.settings.contains("last_library"):
+			if self.args.open:
+				lib = self.args.open
+			elif self.settings.value("last_library"):
+				lib = self.settings.value("last_library")
+			self.splash.showMessage(f'Opening Library "{lib}"...', int(Qt.AlignmentFlag.AlignBottom|Qt.AlignmentFlag.AlignHCenter), QColor('#9782ff'))
+			self.open_library(lib)
 
 		app.exec_()
 
@@ -3819,6 +3829,7 @@ class QtDriver(QObject):
 		# Save Library on Application Exit
 		if self.lib.library_dir:
 			self.save_library()
+			self.settings.setValue("last_library", self.lib.library_dir)
 		QApplication.quit()
 	
 	
