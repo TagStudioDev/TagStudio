@@ -21,6 +21,7 @@ from PySide6.QtGui import QAction, QColor, QEnterEvent, QFontDatabase, QGuiAppli
 from PySide6.QtUiTools import QUiLoader
 from PySide6.QtWidgets import QApplication, QBoxLayout, QCheckBox, QComboBox, QFileDialog, QFrame, QHBoxLayout, QLabel, QLineEdit, QListView, QMenu, QMessageBox, QPlainTextEdit, QProgressDialog, QPushButton, QScrollArea, QSizePolicy, QSplashScreen, QSplitter, QTextEdit, QVBoxLayout, QWidget
 from queue import Empty, Queue
+import shutil
 import subprocess
 import sys
 from src.core.library import *
@@ -51,12 +52,19 @@ logging.basicConfig(format="%(message)s", level=logging.INFO)
 
 def open_file(path: str):
 	if sys.platform == "win32":
+		command_name = "start"
+	elif sys.platform == "darwin":
+		command_name = "open"
+	else:
+		command_name = "xdg-open"
+	command = shutil.which(command_name)
+	if command is not None:
 		try:
-			os.startfile(path)
-		except FileNotFoundError:
-			logging.info('File Not Found! (Imagine this as a popup)')
+			subprocess.Popen([command, path], close_fds=True)
 		except:
 			traceback.print_exc()
+	else:
+		logging.info(f"Could not find {command_name} on system PATH")
 
 
 class NavigationState():
