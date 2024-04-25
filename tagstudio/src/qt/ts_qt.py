@@ -3576,7 +3576,6 @@ class QtDriver(QObject):
 
 		self.SIGTERM.connect(self.handleSIGTERM)
 
-		self.settings = QSettings(QSettings.IniFormat, QSettings.UserScope, 'TagStudio')
 		self.settings = QSettings(QSettings.IniFormat, QSettings.UserScope, 'tagstudio', 'TagStudio')
 
 
