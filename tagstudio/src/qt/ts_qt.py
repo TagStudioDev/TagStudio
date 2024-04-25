@@ -284,10 +284,12 @@ class FieldContainer(QWidget):
 
 
 class FieldWidget(QWidget):
+	field = dict
 	def __init__(self, title) -> None:
 		super().__init__()
 		# self.item = item
 		self.title = title
+
 
 
 class TagBoxWidget(FieldWidget):
@@ -397,11 +399,14 @@ class TagBoxWidget(FieldWidget):
 		# self.tags.append(tag)
 		logging.info(f'[TAG BOX WIDGET] ADD TAG CALLBACK: T:{tag_id} to E:{self.item.id}')
 		logging.info(f'[TAG BOX WIDGET] SELECTED T:{self.driver.selected}')
-		logging.info(f'[TAG BOX WIDGET] SELECTED T:{self.title}')
-		id = list(self.lib.filter_field_templates(str(self.title).removesuffix(' (Tag Box)')))[0]
+		id = list(self.field.keys())[0]
 		for x in self.driver.selected:
 				self.driver.lib.get_entry(x[1]).add_tag(self.driver.lib, tag_id, field_id=id, field_index=-1)
 				self.updated.emit()
+		self.driver.update_thumbs()
+
+		# if type((x[0]) == ThumbButton):
+		# 	# TODO: Remove space from the special search here (tag_id:x) once that system is finalized.
 			# logging.info(f'I want to add tag ID {tag_id} to entry {self.item.filename}')
 			# self.updated.emit()
 			# if tag_id not in self.tags:
@@ -415,10 +420,12 @@ class TagBoxWidget(FieldWidget):
 		
 	def remove_tag(self, tag_id):
 		logging.info(f'[TAG BOX WIDGET] SELECTED T:{self.driver.selected}')
-		id = list(self.lib.filter_field_templates(str(self.title).removesuffix(' (Tag Box)')))[0]
+		id = list(self.field.keys())[0]
 		for x in self.driver.selected:
-			self.driver.lib.get_entry(x[1]).remove_tag(self.driver.lib, tag_id, field_id=id, field_index=-1)
+			index = self.driver.lib.get_field_index_in_entry(self.driver.lib.get_entry(x[1]),id)
+			self.driver.lib.get_entry(x[1]).remove_tag(self.driver.lib, tag_id,field_index=index[0])
 			self.updated.emit()
+		self.driver.update_thumbs()
 
 	# def show_add_button(self, value:bool):
 	# 	self.add_button.setHidden(not value)
@@ -2320,7 +2327,6 @@ class PreviewPanel(QWidget):
 			container = self.containers[index]
 			# container.inner_layout.removeItem(container.inner_layout.itemAt(1))
 			# container.setHidden(False)
-
 		if self.lib.get_field_attr(field, 'type') == 'tag_box':
 			# logging.info(f'WRITING TAGBOX FOR ITEM {item.id}')
 			container.set_title(self.lib.get_field_attr(field, 'name'))
@@ -2342,7 +2348,7 @@ class PreviewPanel(QWidget):
 					inner_container = TagBoxWidget(item, title, index, self.lib, self.lib.get_field_attr(field, 'content'), self.driver)
 					
 					container.set_inner_widget(inner_container)
-
+				inner_container.field = field
 				inner_container.updated.connect(lambda: (self.write_container(index, field), self.tags_updated.emit()))
 				# if type(item) == Entry:
 				# NOTE: Tag Boxes have no Edit Button (But will when you can convert field types)
@@ -2949,15 +2955,17 @@ class ItemThumb(FlowWidget):
 		# logging.info(f'Favorite Check: {value}, Mode: {self.mode}')
 		if self.mode == ItemType.ENTRY:
 			self.isFavorite = value
-			e = self.lib.get_entry(self.item_id)
-			if value:
-				self.favorite_badge.setHidden(False)
-				DEFAULT_META_TAG_FIELD = 8
-				e.add_tag(self.lib, 1, DEFAULT_META_TAG_FIELD)
-			else:
-				e.remove_tag(self.lib, 1)
+			DEFAULT_META_TAG_FIELD = 8
+			for x in self.panel.driver.selected:
+				e = self.lib.get_entry(x[1])
+				if value:
+					self.favorite_badge.setHidden(False)
+					e.add_tag(self.panel.driver.lib, 1, field_id=DEFAULT_META_TAG_FIELD, field_index=-1)
+				else:
+					e.remove_tag(self.panel.driver.lib, 1)
 			if self.panel.isOpen:
 				self.panel.update_widgets()
+			self.panel.driver.update_thumbs()
 
 	# def on_favorite_uncheck(self):
 	# 	if self.mode == SearchItemType.ENTRY:
