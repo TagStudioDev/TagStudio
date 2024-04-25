@@ -4505,7 +4505,7 @@ class QtDriver(QObject):
 			self.completed += 1
 		# logging.info(f'threshold:{len(self.lib.entries}, completed:{self.completed}')
 		if self.completed == len(self.lib.entries):
-			filename = os.path.normpath(f'{self.lib.library_dir}/{TS_FOLDER_NAME}/{COLLAGE_FOLDER_NAME}/collage_{datetime.datetime.utcnow().strftime("%F_%T").replace(":", "")}.png')
+			filename = os.path.normpath(f'{self.lib.library_dir}/{TS_FOLDER_NAME}/{COLLAGE_FOLDER_NAME}/collage_{dt.utcnow().strftime("%F_%T").replace(":", "")}.png')
 			self.collage.save(filename)
 			self.collage = None
 
