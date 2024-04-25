@@ -3709,6 +3709,10 @@ class QtDriver(QObject):
 		create_collage_action = QAction('Create Collage', menu_bar)
 		create_collage_action.triggered.connect(lambda: self.create_collage())
 		tools_menu.addAction(create_collage_action)
+  
+		folders_to_tags_action = QAction('Folders to Tags', menu_bar)
+		folders_to_tags_action.triggered.connect(lambda: self.folders_to_tags(self.lib))
+		tools_menu.addAction(folders_to_tags_action)
 
 		# Macros Menu ==========================================================
 		self.autofill_action = QAction('Autofill', menu_bar)
@@ -4535,6 +4539,39 @@ class QtDriver(QObject):
 						keep_aspect
 						)))
 				i = i+1
+
+	def folders_to_tags(self,library:Library)->None:
+		
+		def find_tag(tag_list:list[str],last_tag:Tag) ->Tag:
+			tag_name = tag_list.pop(0)
+			logging.info(tag_name)
+			if(last_tag!=None):
+				tag_id = next((tag_id for tag_id in last_tag.subtag_ids if library.get_tag(tag_id).name == tag_name), None)
+				if(tag_id!=None):
+					tag = library.get_tag(tag_id)
+				else:
+					tag=None
+			else:
+				tag = next((tag for tag in library.tags if tag.name == tag_name), None)
+			logging.info(tag)
+			if tag == None:
+				tag_list.append(tag_name)
+				for tag_name in tag_list:
+					new_tag = Tag(-1, tag_name,"",[],([last_tag.id] if last_tag!=None else []),"black")
+					library.add_tag_to_library(new_tag)
+					last_tag = new_tag
+				return last_tag
+			if len(tag_list) == 0:
+				return tag
+			else: 
+				return find_tag(tag_list,tag) 
+
+
+		for ent in library.entries:
+			tag_list = ent.path.split("\\")
+			tag =  find_tag(tag_list,None)
+			logging.info(tag)
+			ent.add_tag(library,tag.id,6)
 
 	def try_save_collage(self, increment_progress:bool):
 		if increment_progress:
