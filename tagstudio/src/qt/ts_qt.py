@@ -46,7 +46,6 @@ from src.core.ts_core import (TagStudioCore, TAG_COLORS, DATE_FIELDS, TEXT_FIELD
 from src.core.utils.web import strip_web_protocol
 from src.qt.flowlayout import FlowLayout, FlowWidget
 from src.qt.main_window import Ui_MainWindow
-from src.qt.utils.clickableLabels import FileOpenerLabel
 import src.qt.resources_rc
 
 # SIGQUIT is not defined on Windows
@@ -1969,6 +1968,23 @@ class AddFieldModal(QWidget):
 		# self.root_layout.setStretch(1,2)
 		self.root_layout.addStretch(1)
 		self.root_layout.addWidget(self.button_container)
+
+class FileOpenerLabel(QLabel):
+    def __init__(self, text, parent=None):
+        super().__init__(text, parent)
+
+    def setFilePath(self, filepath):
+        self.filepath = filepath
+    
+    def mousePressEvent(self, event):
+        super().mousePressEvent(event)
+        #open file
+        if hasattr(self, 'filepath'):
+            if os.path.exists(self.filepath):
+                os.startfile(self.filepath)
+                logging.info(f'Opening file: {self.filepath}')
+            else:
+                logging.error(f'File not found: {self.filepath}')
 
 class PreviewPanel(QWidget):
 	"""The Preview Panel Widget."""
