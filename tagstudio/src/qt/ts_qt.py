@@ -68,7 +68,9 @@ QSettings.setPath(QSettings.IniFormat, QSettings.UserScope, os.getcwd())
 def open_file(path: str):
 	try:
 		if sys.platform == "win32":
-			subprocess.Popen(["start", path], shell=True, close_fds=True, creationflags=subprocess.DETACHED_PROCESS)
+			# Windows needs special attention to handle spaces in the file
+			# first parameter is for title, NOT filepath
+			subprocess.Popen(["start", "", os.path.normpath(path)], shell=True, close_fds=True, creationflags=subprocess.DETACHED_PROCESS)
 		else:
 			if sys.platform == "darwin":
 				command_name = "open"
