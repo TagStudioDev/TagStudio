@@ -68,7 +68,9 @@ QSettings.setPath(QSettings.IniFormat, QSettings.UserScope, os.getcwd())
 def open_file(path: str):
 	try:
 		if sys.platform == "win32":
-			subprocess.Popen(["start", path], shell=True, close_fds=True, creationflags=subprocess.DETACHED_PROCESS)
+			# Windows needs special attention to handle spaces in the file
+			# first parameter is for title, NOT filepath
+			subprocess.Popen(["start", "", os.path.normpath(path)], shell=True, close_fds=True, creationflags=subprocess.DETACHED_PROCESS)
 		else:
 			if sys.platform == "darwin":
 				command_name = "open"
@@ -302,15 +304,17 @@ class FieldContainer(QWidget):
 
 
 class FieldWidget(QWidget):
+	field = dict
 	def __init__(self, title) -> None:
 		super().__init__()
 		# self.item = item
 		self.title = title
 
 
+
 class TagBoxWidget(FieldWidget):
 	updated = Signal()
-
+	
 	def __init__(self, item, title, field_index, library:Library, tags:list[int], driver:'QtDriver') -> None:
 		super().__init__(title)
 		# QObject.__init__(self)
@@ -378,7 +382,7 @@ class TagBoxWidget(FieldWidget):
 			# 							)
 			tw = TagWidget(self.lib, self.lib.get_tag(tag), True, True)
 			tw.on_click.connect(lambda checked=False, q=f'tag_id: {tag}': (self.driver.main_window.searchField.setText(q), self.driver.filter_items(q)))
-			tw.on_remove.connect(lambda checked=False, t=tag: (self.lib.get_entry(self.item.id).remove_tag(self.lib, t, self.field_index), self.updated.emit()))
+			tw.on_remove.connect(lambda checked=False, t=tag: (self.remove_tag(t)))
 			tw.on_edit.connect(lambda checked=False, t=tag: (self.edit_tag(t)))
 			self.base_layout.addWidget(tw)
 		self.tags = tags
@@ -393,7 +397,8 @@ class TagBoxWidget(FieldWidget):
 		# doesn't move all the way to the left.
 		if self.base_layout.itemAt(0) and not self.base_layout.itemAt(1):
 			self.base_layout.update()
-	
+
+
 	def edit_tag(self, tag_id:int):
 		btp = BuildTagPanel(self.lib, tag_id)
 		# btp.on_edit.connect(lambda x: self.edit_tag_callback(x))
@@ -413,28 +418,43 @@ class TagBoxWidget(FieldWidget):
 		# self.base_layout.addWidget(TagWidget(self.lib, self.lib.get_tag(tag), True))
 		# self.tags.append(tag)
 		logging.info(f'[TAG BOX WIDGET] ADD TAG CALLBACK: T:{tag_id} to E:{self.item.id}')
-		if type(self.item) == Entry:
-			self.item.add_tag(self.lib, tag_id, field_id=-1, field_index=self.field_index)
-			logging.info(f'[TAG BOX WIDGET] UPDATED EMITTED: {tag_id}')
-			self.updated.emit()
+		logging.info(f'[TAG BOX WIDGET] SELECTED T:{self.driver.selected}')
+		id = list(self.field.keys())[0]
+		for x in self.driver.selected:
+				self.driver.lib.get_entry(x[1]).add_tag(self.driver.lib, tag_id, field_id=id, field_index=-1)
+				self.updated.emit()
+		if tag_id == 0 or tag_id == 1:
+			self.driver.update_badges()
+
+		# if type((x[0]) == ThumbButton):
+		# 	# TODO: Remove space from the special search here (tag_id:x) once that system is finalized.
 			# logging.info(f'I want to add tag ID {tag_id} to entry {self.item.filename}')
-		# self.updated.emit()
+			# self.updated.emit()
 			# if tag_id not in self.tags:
 			# 	self.tags.append(tag_id)
 			# self.set_tags(self.tags)
+		# elif type((x[0]) == ThumbButton):
+
 	
 	def edit_tag_callback(self, tag:Tag):
 		self.lib.update_tag(tag)
-			
+		
+	def remove_tag(self, tag_id):
+		logging.info(f'[TAG BOX WIDGET] SELECTED T:{self.driver.selected}')
+		id = list(self.field.keys())[0]
+		for x in self.driver.selected:
+			index = self.driver.lib.get_field_index_in_entry(self.driver.lib.get_entry(x[1]),id)
+			self.driver.lib.get_entry(x[1]).remove_tag(self.driver.lib, tag_id,field_index=index[0])
+			self.updated.emit()
+		if tag_id == 0 or tag_id == 1:
+			self.driver.update_badges()
 
-	def remove_tag(self):
-		# NOTE: You'll need to account for the add button at the end.
-		pass
 	# def show_add_button(self, value:bool):
 	# 	self.add_button.setHidden(not value)
 
 
 class TextWidget(FieldWidget):
+
 	def __init__(self, title, text:str) -> None:
 		super().__init__(title)
 		# self.item = item
@@ -1129,6 +1149,131 @@ class BuildTagPanel(PanelWidget):
 	# 		self.search_field.setFocus()
 	# 		self.parentWidget().hide()
 
+class TagDatabasePanel(PanelWidget):
+	tag_chosen = Signal(int)
+	def __init__(self, library):
+		super().__init__()
+		self.lib: Library = library
+		# self.callback = callback
+		self.first_tag_id = -1
+		self.tag_limit = 30
+		# self.selected_tag: int = 0
+	
+		self.setMinimumSize(300, 400)
+		self.root_layout = QVBoxLayout(self)
+		self.root_layout.setContentsMargins(6,0,6,0)
+	
+		self.search_field = QLineEdit()
+		self.search_field.setObjectName('searchField')
+		self.search_field.setMinimumSize(QSize(0, 32))
+		self.search_field.setPlaceholderText('Search Tags')
+		self.search_field.textEdited.connect(lambda x=self.search_field.text(): self.update_tags(x))
+		self.search_field.returnPressed.connect(lambda checked=False: self.on_return(self.search_field.text()))
+
+		# self.content_container = QWidget()
+		# self.content_layout = QHBoxLayout(self.content_container)
+
+		self.scroll_contents = QWidget()
+		self.scroll_layout = QVBoxLayout(self.scroll_contents)
+		self.scroll_layout.setContentsMargins(6,0,6,0)
+		self.scroll_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
+
+		self.scroll_area = QScrollArea()
+		# self.scroll_area.setStyleSheet('background: #000000;')
+		self.scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOn)
+		# self.scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+		self.scroll_area.setWidgetResizable(True)
+		self.scroll_area.setFrameShadow(QFrame.Shadow.Plain)
+		self.scroll_area.setFrameShape(QFrame.Shape.NoFrame)
+		# sa.setMaximumWidth(self.preview_size[0])
+		self.scroll_area.setWidget(self.scroll_contents)
+
+		# self.add_button = QPushButton()
+		# self.root_layout.addWidget(self.add_button)
+		# self.add_button.setText('Add Tag')
+		# # self.done_button.clicked.connect(lambda checked=False, x=1101: (callback(x), self.hide()))
+		# self.add_button.clicked.connect(lambda checked=False, x=1101: callback(x))
+		# # self.setLayout(self.root_layout)
+
+		self.root_layout.addWidget(self.search_field)
+		self.root_layout.addWidget(self.scroll_area)
+		self.update_tags('')
+
+	# def reset(self):
+	# 	self.search_field.setText('')
+	# 	self.update_tags('')
+	# 	self.search_field.setFocus()
+	
+	def on_return(self, text:str):
+		if text and self.first_tag_id >= 0:
+			# callback(self.first_tag_id)
+			self.search_field.setText('')
+			self.update_tags('')
+		else:
+			self.search_field.setFocus()
+			self.parentWidget().hide()
+
+	def update_tags(self, query:str):
+		# for c in self.scroll_layout.children():
+		# 	c.widget().deleteLater()
+		while self.scroll_layout.itemAt(0):
+			# logging.info(f"I'm deleting { self.scroll_layout.itemAt(0).widget()}")
+			self.scroll_layout.takeAt(0).widget().deleteLater()
+		
+		if query:
+			first_id_set = False
+			for tag_id in self.lib.search_tags(query, include_cluster=True)[:self.tag_limit-1]:
+				if not first_id_set:
+					self.first_tag_id = tag_id
+					first_id_set = True
+				c = QWidget()
+				l = QHBoxLayout(c)
+				l.setContentsMargins(0,0,0,0)
+				l.setSpacing(3)
+				tw = TagWidget(self.lib, self.lib.get_tag(tag_id), True, False)
+				tw.on_edit.connect(lambda checked=False, t=self.lib.get_tag(tag_id): (self.edit_tag(t.id)))
+				l.addWidget(tw)
+				self.scroll_layout.addWidget(c)
+		else:
+			first_id_set = False
+			for tag in self.lib.tags:
+				if not first_id_set:
+					self.first_tag_id = tag.id
+					first_id_set = True
+				c = QWidget()
+				l = QHBoxLayout(c)
+				l.setContentsMargins(0,0,0,0)
+				l.setSpacing(3)
+				tw = TagWidget(self.lib, tag, True, False)
+				tw.on_edit.connect(lambda checked=False, t=tag: (self.edit_tag(t.id)))
+				l.addWidget(tw)
+				self.scroll_layout.addWidget(c)
+
+		self.search_field.setFocus()
+	
+	def edit_tag(self, tag_id:int):
+		btp = BuildTagPanel(self.lib, tag_id)
+		# btp.on_edit.connect(lambda x: self.edit_tag_callback(x))
+		self.edit_modal = PanelModal(btp, 
+							   self.lib.get_tag(tag_id).display_name(self.lib), 
+							   'Edit Tag',
+							   done_callback=(self.update_tags(self.search_field.text())),
+							   has_save=True)
+		# self.edit_modal.widget.update_display_name.connect(lambda t: self.edit_modal.title_widget.setText(t))
+		panel: BuildTagPanel = self.edit_modal.widget
+		self.edit_modal.saved.connect(lambda: self.edit_tag_callback(btp))
+		# panel.tag_updated.connect(lambda tag: self.lib.update_tag(tag))
+		self.edit_modal.show()
+	
+	def edit_tag_callback(self, btp:BuildTagPanel):
+		self.lib.update_tag(btp.build_tag())
+		self.update_tags(self.search_field.text())
+
+	# def enterEvent(self, event: QEnterEvent) -> None:
+	# 	self.search_field.setFocus()
+	# 	return super().enterEvent(event)
+	# 	self.focusOutEvent
+		
 
 class FunctionIterator(QObject):
 	"""Iterates over a yielding function and emits progress as the 'value' signal.\n\nThread-Safe Guarantee™"""
@@ -2329,7 +2474,6 @@ class PreviewPanel(QWidget):
 			container = self.containers[index]
 			# container.inner_layout.removeItem(container.inner_layout.itemAt(1))
 			# container.setHidden(False)
-
 		if self.lib.get_field_attr(field, 'type') == 'tag_box':
 			# logging.info(f'WRITING TAGBOX FOR ITEM {item.id}')
 			container.set_title(self.lib.get_field_attr(field, 'name'))
@@ -2351,21 +2495,19 @@ class PreviewPanel(QWidget):
 					inner_container = TagBoxWidget(item, title, index, self.lib, self.lib.get_field_attr(field, 'content'), self.driver)
 					
 					container.set_inner_widget(inner_container)
-
+				inner_container.field = field
 				inner_container.updated.connect(lambda: (self.write_container(index, field), self.tags_updated.emit()))
 				# if type(item) == Entry:
 				# NOTE: Tag Boxes have no Edit Button (But will when you can convert field types)
 				# f'Are you sure you want to remove this \"{self.lib.get_field_attr(field, "name")}\" field?'
 				# container.set_remove_callback(lambda: (self.lib.get_entry(item.id).fields.pop(index), self.update_widgets(item)))
 				prompt=f'Are you sure you want to remove this \"{self.lib.get_field_attr(field, "name")}\" field?'
-				callback = lambda: (self.remove_field(item.fields[index]), self.update_widgets())
+				callback = lambda: (self.remove_field(field), self.update_widgets())
 				container.set_remove_callback(lambda: self.remove_message_box(
 					prompt=prompt,
 					callback=callback))
 				container.set_copy_callback(None)
 				container.set_edit_callback(None)
-				# logging.info(self.common_fields)
-				# logging.info(f'index:{index}')
 			else:
 				text = '<i>Mixed Data</i>'
 				title = f"{self.lib.get_field_attr(field, 'name')} (Wacky Tag Box)"
@@ -2395,15 +2537,14 @@ class PreviewPanel(QWidget):
 			container.set_inner_widget(inner_container)
 			# if type(item) == Entry:
 			if not mixed:
-				item = self.lib.get_entry(self.selected[0][1]) # TODO TODO TODO: TEMPORARY
 				modal = PanelModal(EditTextLine(self.lib.get_field_attr(field, 'content')), 
 												title=title,
 												window_title=f'Edit {self.lib.get_field_attr(field, "name")}',
-												save_callback=(lambda content: (self.update_field(item.fields[index], content), self.update_widgets()))
+												save_callback=(lambda content: (self.update_field(field, content), self.update_widgets()))
 												)
 				container.set_edit_callback(modal.show)
 				prompt=f'Are you sure you want to remove this \"{self.lib.get_field_attr(field, "name")}\" field?'
-				callback = lambda: (self.remove_field(item.fields[index]), self.update_widgets())
+				callback = lambda: (self.remove_field(field), self.update_widgets())
 				container.set_remove_callback(lambda: self.remove_message_box(
 					prompt=prompt,
 					callback=callback))
@@ -2431,17 +2572,15 @@ class PreviewPanel(QWidget):
 			container.set_inner_widget(inner_container)
 			# if type(item) == Entry:
 			if not mixed:
-				item = self.lib.get_entry(self.selected[0][1]) # TODO TODO TODO: TEMPORARY
 				container.set_copy_callback(None)
 				modal = PanelModal(EditTextBox(self.lib.get_field_attr(field, 'content')), 
 												title=title,
 												window_title=f'Edit {self.lib.get_field_attr(field, "name")}',
-												save_callback=(lambda content: (self.update_field(item.fields[index], content), self.update_widgets()))
+												save_callback=(lambda content: (self.update_field(field, content), self.update_widgets()))
 												)
 				container.set_edit_callback(modal.show)
-				# container.set_remove_callback(lambda: (self.lib.get_entry(item.id).fields.pop(index), self.update_widgets(item)))
 				prompt=f'Are you sure you want to remove this \"{self.lib.get_field_attr(field, "name")}\" field?'
-				callback = lambda: (self.remove_field(item.fields[index]), self.update_widgets())
+				callback = lambda: (self.remove_field(field), self.update_widgets())
 				container.set_remove_callback(lambda: self.remove_message_box(
 					prompt=prompt,
 					callback=callback))
@@ -2466,7 +2605,7 @@ class PreviewPanel(QWidget):
 			# container.set_edit_callback(None)
 			# container.set_remove_callback(lambda: (self.lib.get_entry(item.id).fields.pop(index), self.update_widgets(item)))
 			prompt=f'Are you sure you want to remove this \"{self.lib.get_field_attr(field, "name")}\" field?'
-			callback = lambda: (self.remove_field(item.fields[index]), self.update_widgets())
+			callback = lambda: (self.remove_field(field), self.update_widgets())
 			container.set_remove_callback(lambda: self.remove_message_box(
 				prompt=prompt,
 				callback=callback))
@@ -2494,7 +2633,7 @@ class PreviewPanel(QWidget):
 				container.set_edit_callback(None)
 				# container.set_remove_callback(lambda: (self.lib.get_entry(item.id).fields.pop(index), self.update_widgets(item)))
 				prompt=f'Are you sure you want to remove this \"{self.lib.get_field_attr(field, "name")}\" field?'
-				callback = lambda: (self.remove_field(item.fields[index]), self.update_widgets())
+				callback = lambda: (self.remove_field(field), self.update_widgets())
 				container.set_remove_callback(lambda: self.remove_message_box(
 					prompt=prompt,
 					callback=callback))
@@ -2519,7 +2658,7 @@ class PreviewPanel(QWidget):
 			container.set_edit_callback(None)
 			# container.set_remove_callback(lambda: (self.lib.get_entry(item.id).fields.pop(index), self.update_widgets(item)))
 			prompt=f'Are you sure you want to remove this \"{self.lib.get_field_attr(field, "name")}\" field?'
-			callback = lambda: (self.remove_field(item.fields[index]), self.update_widgets())
+			callback = lambda: (self.remove_field(field), self.update_widgets())
 			# callback = lambda: (self.lib.get_entry(item.id).fields.pop(index), self.update_widgets())
 			container.set_remove_callback(lambda: self.remove_message_box(
 				prompt=prompt,
@@ -2534,8 +2673,13 @@ class PreviewPanel(QWidget):
 				entry = self.lib.get_entry(item_pair[1])
 				try:
 					index = entry.fields.index(field)
+					updated_badges = False
+					if 8 in entry.fields[index].keys() and (1 in entry.fields[index][8] or 0 in entry.fields[index][8]):
+						updated_badges = True
 					# TODO: Create a proper Library/Entry method to manage fields.
 					entry.fields.pop(index)
+					if updated_badges:
+						self.driver.update_badges()
 				except ValueError:
 					logging.info(f'[PREVIEW PANEL][ERROR?] Tried to remove field from Entry ({entry.id}) that never had it')
 					pass
@@ -2939,15 +3083,29 @@ class ItemThumb(FlowWidget):
 		# logging.info(f'Archived Check: {value}, Mode: {self.mode}')
 		if self.mode == ItemType.ENTRY:
 			self.isArchived = value
-			e = self.lib.get_entry(self.item_id)
-			if value:
-				self.archived_badge.setHidden(False)
-				DEFAULT_META_TAG_FIELD = 8
-				e.add_tag(self.lib, 0, DEFAULT_META_TAG_FIELD)
+			DEFAULT_META_TAG_FIELD = 8
+			temp = (ItemType.ENTRY,self.item_id)
+			if list(self.panel.driver.selected).count(temp) > 0: # Is the archived badge apart of the selection?
+				# Yes, then add archived tag to all selected.
+				for x in self.panel.driver.selected:
+					e = self.lib.get_entry(x[1])
+					if value:
+						self.archived_badge.setHidden(False)
+						e.add_tag(self.panel.driver.lib, 0, field_id=DEFAULT_META_TAG_FIELD, field_index=-1)
+					else:
+						e.remove_tag(self.panel.driver.lib, 0)
 			else:
-				e.remove_tag(self.lib, 0)
+				# No, then add archived tag to the entry this badge is on.
+				e = self.lib.get_entry(self.item_id)
+				if value:
+					self.favorite_badge.setHidden(False)
+					e.add_tag(self.panel.driver.lib, 0, field_id=DEFAULT_META_TAG_FIELD, field_index=-1)
+				else:
+					e.remove_tag(self.panel.driver.lib, 0)
 			if self.panel.isOpen:
 				self.panel.update_widgets()
+			self.panel.driver.update_badges()
+
 
 	# def on_archived_uncheck(self):
 	# 	if self.mode == SearchItemType.ENTRY:
@@ -2958,15 +3116,29 @@ class ItemThumb(FlowWidget):
 		# logging.info(f'Favorite Check: {value}, Mode: {self.mode}')
 		if self.mode == ItemType.ENTRY:
 			self.isFavorite = value
-			e = self.lib.get_entry(self.item_id)
-			if value:
-				self.favorite_badge.setHidden(False)
-				DEFAULT_META_TAG_FIELD = 8
-				e.add_tag(self.lib, 1, DEFAULT_META_TAG_FIELD)
+			DEFAULT_META_TAG_FIELD = 8
+			temp = (ItemType.ENTRY,self.item_id)
+			if list(self.panel.driver.selected).count(temp) > 0: # Is the favorite badge apart of the selection?
+				# Yes, then add favorite tag to all selected.
+				for x in self.panel.driver.selected:
+					e = self.lib.get_entry(x[1])
+					if value:
+						self.favorite_badge.setHidden(False)
+						e.add_tag(self.panel.driver.lib, 1, field_id=DEFAULT_META_TAG_FIELD, field_index=-1)
+					else:
+						e.remove_tag(self.panel.driver.lib, 1)
 			else:
-				e.remove_tag(self.lib, 1)
+				# No, then add favorite tag to the entry this badge is on.
+				e = self.lib.get_entry(self.item_id)
+				if value:
+					self.favorite_badge.setHidden(False)
+					e.add_tag(self.panel.driver.lib, 1, field_id=DEFAULT_META_TAG_FIELD, field_index=-1)
+				else:
+					e.remove_tag(self.panel.driver.lib, 1)
 			if self.panel.isOpen:
 				self.panel.update_widgets()
+			self.panel.driver.update_badges()
+				
 
 	# def on_favorite_uncheck(self):
 	# 	if self.mode == SearchItemType.ENTRY:
@@ -3667,14 +3839,20 @@ class QtDriver(QObject):
 
 		open_library_action = QAction('&Open/Create Library', menu_bar)
 		open_library_action.triggered.connect(lambda: self.open_library_from_dialog())
+		open_library_action.setShortcut(QtCore.QKeyCombination(QtCore.Qt.KeyboardModifier(QtCore.Qt.KeyboardModifier.ControlModifier), QtCore.Qt.Key.Key_O))
+		open_library_action.setToolTip("Ctrl+O")
 		file_menu.addAction(open_library_action)
 
 		save_library_action = QAction('&Save Library', menu_bar)
 		save_library_action.triggered.connect(lambda: self.callback_library_needed_check(self.save_library))
+		save_library_action.setShortcut(QtCore.QKeyCombination(QtCore.Qt.KeyboardModifier(QtCore.Qt.KeyboardModifier.ControlModifier), QtCore.Qt.Key.Key_S))
+		save_library_action.setStatusTip("Ctrl+S")
 		file_menu.addAction(save_library_action)
 	
-		save_library_backup_action = QAction('Save Library &Backup', menu_bar)
+		save_library_backup_action = QAction('&Save Library Backup', menu_bar)
 		save_library_backup_action.triggered.connect(lambda: self.callback_library_needed_check(self.backup_library))
+		save_library_backup_action.setShortcut(QtCore.QKeyCombination(QtCore.Qt.KeyboardModifier(QtCore.Qt.KeyboardModifier.ControlModifier | QtCore.Qt.KeyboardModifier.ShiftModifier), QtCore.Qt.Key.Key_S))
+		save_library_backup_action.setStatusTip("Ctrl+Shift+S")
 		file_menu.addAction(save_library_backup_action)
 
 		file_menu.addSeparator()
@@ -3683,6 +3861,8 @@ class QtDriver(QObject):
 		# refresh_lib_action.triggered.connect(lambda: self.lib.refresh_dir())
 		add_new_files_action = QAction('&Refresh Directories', menu_bar)
 		add_new_files_action.triggered.connect(lambda: self.callback_library_needed_check(self.add_new_files_callback))
+		add_new_files_action.setShortcut(QtCore.QKeyCombination(QtCore.Qt.KeyboardModifier(QtCore.Qt.KeyboardModifier.ControlModifier), QtCore.Qt.Key.Key_R))
+		add_new_files_action.setStatusTip("Ctrl+R")
 		# file_menu.addAction(refresh_lib_action)
 		file_menu.addAction(add_new_files_action)
 
@@ -3691,9 +3871,17 @@ class QtDriver(QObject):
 		file_menu.addAction(QAction('&Close Library', menu_bar))
 
 		# Edit Menu ============================================================
-		new_tag_action = QAction('New Tag', menu_bar)
+		new_tag_action = QAction('New &Tag', menu_bar)
 		new_tag_action.triggered.connect(lambda: self.add_tag_action_callback())
+		new_tag_action.setShortcut(QtCore.QKeyCombination(QtCore.Qt.KeyboardModifier(QtCore.Qt.KeyboardModifier.ControlModifier), QtCore.Qt.Key.Key_T))
+		new_tag_action.setToolTip('Ctrl+T')
 		edit_menu.addAction(new_tag_action)
+
+		edit_menu.addSeparator()
+
+		tag_database_action = QAction('Tag Database', menu_bar)
+		tag_database_action.triggered.connect(lambda: self.show_tag_database())
+		edit_menu.addAction(tag_database_action)
 
 		# Tools Menu ===========================================================
 		fix_unlinked_entries_action = QAction('Fix &Unlinked Entries', menu_bar)
@@ -3719,8 +3907,10 @@ class QtDriver(QObject):
 		self.autofill_action.triggered.connect(lambda: (self.run_macros('autofill', [x[1] for x in self.selected if x[0] == ItemType.ENTRY]), self.preview_panel.update_widgets()))
 		macros_menu.addAction(self.autofill_action)
 
-		self.sort_fields_action = QAction('Sort Fields', menu_bar)
+		self.sort_fields_action = QAction('&Sort Fields', menu_bar)
 		self.sort_fields_action.triggered.connect(lambda: (self.run_macros('sort-fields', [x[1] for x in self.selected if x[0] == ItemType.ENTRY]), self.preview_panel.update_widgets()))
+		self.sort_fields_action.setShortcut(QtCore.QKeyCombination(QtCore.Qt.KeyboardModifier(QtCore.Qt.KeyboardModifier.AltModifier), QtCore.Qt.Key.Key_S))
+		self.sort_fields_action.setToolTip('Alt+S')
 		macros_menu.addAction(self.sort_fields_action)
 
 		self.set_macro_menu_viability()
@@ -3865,6 +4055,10 @@ class QtDriver(QObject):
 		# panel.tag_updated.connect(lambda tag: self.lib.update_tag(tag))
 		self.modal.show()
 	
+	def show_tag_database(self):
+		self.modal = PanelModal(TagDatabasePanel(self.lib),'Tag Database', 'Tag Database', has_save=False)
+		self.modal.show()
+
 	def add_new_files_callback(self):
 		"""Runs when user initiates adding new files to the Library."""
 		# # if self.lib.files_not_in_library:
@@ -4351,6 +4545,10 @@ class QtDriver(QObject):
 		# logging.info(
 		# 	f'[MAIN] Elements thumbs updated in {(end_time - start_time):.3f} seconds')
 
+	def update_badges(self):
+		for i, item_thumb in enumerate(self.item_thumbs, start=0):
+			item_thumb.update_badges()
+
 	def expand_collation(self, collation_entries: list[tuple[int, int]]):
 		self.nav_forward([(ItemType.ENTRY, x[0])
 						 for x in collation_entries])
@@ -4436,6 +4634,7 @@ class QtDriver(QObject):
 		self.selected.clear()
 		self.preview_panel.update_widgets()
 		self.filter_items()
+
 
 	def create_collage(self) -> None:
 		"""Generates and saves an image collage based on Library Entries."""
