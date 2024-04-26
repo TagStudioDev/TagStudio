@@ -1970,21 +1970,28 @@ class AddFieldModal(QWidget):
 		self.root_layout.addWidget(self.button_container)
 
 class FileOpenerLabel(QLabel):
-    def __init__(self, text, parent=None):
-        super().__init__(text, parent)
+	def __init__(self, text, parent=None):
+		super().__init__(text, parent)
 
-    def setFilePath(self, filepath):
-        self.filepath = filepath
-    
-    def mousePressEvent(self, event):
-        super().mousePressEvent(event)
-        #open file
-        if hasattr(self, 'filepath'):
-            if os.path.exists(self.filepath):
-                os.startfile(self.filepath)
-                logging.info(f'Opening file: {self.filepath}')
-            else:
-                logging.error(f'File not found: {self.filepath}')
+	def setFilePath(self, filepath):
+		self.filepath = filepath
+
+	def mousePressEvent(self, event):
+		super().mousePressEvent(event)
+		#open file
+		if hasattr(self, 'filepath'):
+			if os.path.exists(self.filepath):
+				logging.info(f'Opening file: {self.filepath}')
+				if os.name == 'nt':  # Windows
+					command = f'explorer /select,"{self.filepath}"'
+					subprocess.run(command, shell=True)
+				else:  # macOS and Linux
+					command = f'nautilus --select "{self.filepath}"'  # Adjust for your Linux file manager if different
+					if subprocess.run(command, shell=True).returncode == 0:
+						file_loc = os.path.dirname(self.filepath)
+						os.startfile(self.file_loc)
+			else:
+				logging.error(f'File not found: {self.filepath}')
 
 class PreviewPanel(QWidget):
 	"""The Preview Panel Widget."""
