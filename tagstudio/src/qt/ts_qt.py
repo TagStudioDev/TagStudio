@@ -4517,7 +4517,7 @@ class QtDriver(QObject):
 		
 		if not data_only_mode:
 			time.sleep(5)
-
+		
 		self.collage = Image.new('RGB', (img_size,img_size))
 		i = 0
 		self.completed = 0
@@ -4540,38 +4540,51 @@ class QtDriver(QObject):
 						)))
 				i = i+1
 
-	def folders_to_tags(self,library:Library)->None:
-		
-		def find_tag(tag_list:list[str],last_tag:Tag) ->Tag:
-			tag_name = tag_list.pop(0)
-			logging.info(tag_name)
-			if(last_tag!=None):
-				tag_id = next((tag_id for tag_id in last_tag.subtag_ids if library.get_tag(tag_id).name == tag_name), None)
-				if(tag_id!=None):
-					tag = library.get_tag(tag_id)
-				else:
-					tag=None
-			else:
-				tag = next((tag for tag in library.tags if tag.name == tag_name), None)
-			logging.info(tag)
-			if tag == None:
-				tag_list.append(tag_name)
-				for tag_name in tag_list:
-					new_tag = Tag(-1, tag_name,"",[],([last_tag.id] if last_tag!=None else []),"black")
+	def folders_to_tags(self,library:Library):
+		logging.info("Converting folders to Tags")
+		tree = dict(dirs={})
+  
+		def add_tag_to_tree(list:list[Tag]):
+			branch = tree
+			for tag in list:
+				if tag.name not in branch["dirs"]:
+					branch["dirs"][tag.name] = dict(dirs={},tag=tag)	
+				branch =  branch["dirs"][tag.name]
+
+		def add_folders_to_tree(list:list[str])->Tag:
+			branch = tree
+			for folder in list:
+				if folder not in branch["dirs"]:
+					new_tag = Tag(-1, folder,"",[],([branch["tag"].id] if "tag" in branch else []),"black")
 					library.add_tag_to_library(new_tag)
-					last_tag = new_tag
-				return last_tag
-			if len(tag_list) == 0:
-				return tag
-			else: 
-				return find_tag(tag_list,tag) 
+					branch["dirs"][folder] = dict(dirs={},tag=new_tag)
+				branch =  branch["dirs"][folder]
+			return branch["tag"]
+  
+		def reverse_tag(tag:Tag,list:list[Tag]):
+			if list != None:
+				list.append(tag)
+			else:
+				list = [tag]
+    
+			if len(tag.subtag_ids) == 0:
+				add_tag_to_tree(list)
+			else:
+				for subtag_id in tag.subtag_ids:
+					subtag = library.get_tag(subtag_id)
+					reverse_tag(subtag,list)
+     
+		for tag in library.tags:
+			reverse_tag(tag,None)
 
-
-		for ent in library.entries:
-			tag_list = ent.path.split("\\")
-			tag =  find_tag(tag_list,None)
-			logging.info(tag)
-			ent.add_tag(library,tag.id,6)
+		for entry in library.entries:
+			folders = entry.path.split("\\")
+			tag = add_folders_to_tree(folders)
+			if tag:
+				if not entry.has_tag(library,tag.id):
+					entry.add_tag(library,tag.id,6)
+     
+		logging.info("Done")
 
 	def try_save_collage(self, increment_progress:bool):
 		if increment_progress:
