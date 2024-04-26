@@ -2546,8 +2546,13 @@ class PreviewPanel(QWidget):
 				entry = self.lib.get_entry(item_pair[1])
 				try:
 					index = entry.fields.index(field)
+    					updated_badges = False
+					if 8 in entry.fields[index].keys() and (1 in entry.fields[index][8] or 0 in entry.fields[index][8]):
+						updated_badges = True
 					# TODO: Create a proper Library/Entry method to manage fields.
 					entry.fields.pop(index)
+					if updated_badges:
+						self.driver.update_badges()
 				except ValueError:
 					logging.info(f'[PREVIEW PANEL][ERROR?] Tried to remove field from Entry ({entry.id}) that never had it')
 					pass
