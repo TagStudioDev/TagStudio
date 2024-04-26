@@ -1255,13 +1255,18 @@ class TagDatabasePanel(PanelWidget):
 		self.edit_modal = PanelModal(btp, 
 							   self.lib.get_tag(tag_id).display_name(self.lib), 
 							   'Edit Tag',
-							   done_callback=(self.update_tags('')),
+							   done_callback=(self.update_tags(self.search_field.text())),
 							   has_save=True)
 		# self.edit_modal.widget.update_display_name.connect(lambda t: self.edit_modal.title_widget.setText(t))
 		panel: BuildTagPanel = self.edit_modal.widget
-		self.edit_modal.saved.connect(lambda: self.lib.update_tag(btp.build_tag()))
+		self.edit_modal.saved.connect(lambda: self.edit_tag_callback(btp))
 		# panel.tag_updated.connect(lambda tag: self.lib.update_tag(tag))
 		self.edit_modal.show()
+	
+	def edit_tag_callback(self, btp:BuildTagPanel):
+		self.lib.update_tag(btp.build_tag())
+		self.update_tags(self.search_field.text())
+
 	# def enterEvent(self, event: QEnterEvent) -> None:
 	# 	self.search_field.setFocus()
 	# 	return super().enterEvent(event)
