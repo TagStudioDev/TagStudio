@@ -3834,14 +3834,20 @@ class QtDriver(QObject):
 
 		open_library_action = QAction('&Open/Create Library', menu_bar)
 		open_library_action.triggered.connect(lambda: self.open_library_from_dialog())
+		open_library_action.setShortcut(QtCore.QKeyCombination(QtCore.Qt.KeyboardModifier(QtCore.Qt.KeyboardModifier.ControlModifier), QtCore.Qt.Key.Key_O))
+		open_library_action.setToolTip("Ctrl+O")
 		file_menu.addAction(open_library_action)
 
 		save_library_action = QAction('&Save Library', menu_bar)
 		save_library_action.triggered.connect(lambda: self.callback_library_needed_check(self.save_library))
+		save_library_action.setShortcut(QtCore.QKeyCombination(QtCore.Qt.KeyboardModifier(QtCore.Qt.KeyboardModifier.ControlModifier), QtCore.Qt.Key.Key_S))
+		save_library_action.setStatusTip("Ctrl+S")
 		file_menu.addAction(save_library_action)
 	
-		save_library_backup_action = QAction('Save Library &Backup', menu_bar)
+		save_library_backup_action = QAction('&Save Library Backup', menu_bar)
 		save_library_backup_action.triggered.connect(lambda: self.callback_library_needed_check(self.backup_library))
+		save_library_backup_action.setShortcut(QtCore.QKeyCombination(QtCore.Qt.KeyboardModifier(QtCore.Qt.KeyboardModifier.ControlModifier | QtCore.Qt.KeyboardModifier.ShiftModifier), QtCore.Qt.Key.Key_S))
+		save_library_backup_action.setStatusTip("Ctrl+Shift+S")
 		file_menu.addAction(save_library_backup_action)
 
 		file_menu.addSeparator()
@@ -3850,6 +3856,8 @@ class QtDriver(QObject):
 		# refresh_lib_action.triggered.connect(lambda: self.lib.refresh_dir())
 		add_new_files_action = QAction('&Refresh Directories', menu_bar)
 		add_new_files_action.triggered.connect(lambda: self.callback_library_needed_check(self.add_new_files_callback))
+		add_new_files_action.setShortcut(QtCore.QKeyCombination(QtCore.Qt.KeyboardModifier(QtCore.Qt.KeyboardModifier.ControlModifier), QtCore.Qt.Key.Key_R))
+		add_new_files_action.setStatusTip("Ctrl+R")
 		# file_menu.addAction(refresh_lib_action)
 		file_menu.addAction(add_new_files_action)
 
@@ -3858,8 +3866,10 @@ class QtDriver(QObject):
 		file_menu.addAction(QAction('&Close Library', menu_bar))
 
 		# Edit Menu ============================================================
-		new_tag_action = QAction('New Tag', menu_bar)
+		new_tag_action = QAction('New &Tag', menu_bar)
 		new_tag_action.triggered.connect(lambda: self.add_tag_action_callback())
+		new_tag_action.setShortcut(QtCore.QKeyCombination(QtCore.Qt.KeyboardModifier(QtCore.Qt.KeyboardModifier.ControlModifier), QtCore.Qt.Key.Key_T))
+		new_tag_action.setToolTip('Ctrl+T')
 		edit_menu.addAction(new_tag_action)
 
 		edit_menu.addSeparator()
@@ -3888,8 +3898,10 @@ class QtDriver(QObject):
 		self.autofill_action.triggered.connect(lambda: (self.run_macros('autofill', [x[1] for x in self.selected if x[0] == ItemType.ENTRY]), self.preview_panel.update_widgets()))
 		macros_menu.addAction(self.autofill_action)
 
-		self.sort_fields_action = QAction('Sort Fields', menu_bar)
+		self.sort_fields_action = QAction('&Sort Fields', menu_bar)
 		self.sort_fields_action.triggered.connect(lambda: (self.run_macros('sort-fields', [x[1] for x in self.selected if x[0] == ItemType.ENTRY]), self.preview_panel.update_widgets()))
+		self.sort_fields_action.setShortcut(QtCore.QKeyCombination(QtCore.Qt.KeyboardModifier(QtCore.Qt.KeyboardModifier.AltModifier), QtCore.Qt.Key.Key_S))
+		self.sort_fields_action.setToolTip('Alt+S')
 		macros_menu.addAction(self.sort_fields_action)
 
 		self.set_macro_menu_viability()
@@ -4613,6 +4625,7 @@ class QtDriver(QObject):
 		self.selected.clear()
 		self.preview_panel.update_widgets()
 		self.filter_items()
+
 
 	def create_collage(self) -> None:
 		"""Generates and saves an image collage based on Library Entries."""
