@@ -2015,7 +2015,24 @@ class PreviewPanel(QWidget):
 		image_layout.addWidget(self.preview_img)
 		image_layout.setAlignment(self.preview_img, Qt.AlignmentFlag.AlignCenter)
 
-		self.file_label = QLabel('Filename')
+		class ClickableLabel(QLabel):
+			def __init__(self, text, parent=None):
+				super().__init__(text, parent)
+
+			def setFilePath(self, filepath):
+				self.filepath = filepath
+			
+			def mousePressEvent(self, event):
+				super().mousePressEvent(event)
+				#open file
+				if hasattr(self, 'filepath'):
+					if os.path.exists(self.filepath):
+						os.startfile(self.filepath)
+						logging.info(f'Opening file: {self.filepath}')
+					else:
+						logging.error(f'File not found: {self.filepath}')
+
+		self.file_label = ClickableLabel('Filename')
 		self.file_label.setWordWrap(True)
 		self.file_label.setTextInteractionFlags(
 			Qt.TextInteractionFlag.TextSelectableByMouse)
@@ -2245,6 +2262,7 @@ class PreviewPanel(QWidget):
 				if (len(self.selected) == 0 
 						or self.selected != self.driver.selected):
 					filepath = os.path.normpath(f'{self.lib.library_dir}/{item.path}/{item.filename}')
+					self.file_label.setFilePath(filepath)
 					window_title = filepath
 					ratio: float = self.devicePixelRatio()
 					self.tr.render_big(time.time(), filepath, (512, 512), ratio)
