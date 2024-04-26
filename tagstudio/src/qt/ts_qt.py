@@ -419,7 +419,7 @@ class TagBoxWidget(FieldWidget):
 				self.driver.lib.get_entry(x[1]).add_tag(self.driver.lib, tag_id, field_id=id, field_index=-1)
 				self.updated.emit()
 		if tag_id == 0 or tag_id == 1:
-			self.driver.update_thumbs()
+			self.driver.update_badges()
 
 		# if type((x[0]) == ThumbButton):
 		# 	# TODO: Remove space from the special search here (tag_id:x) once that system is finalized.
@@ -442,7 +442,7 @@ class TagBoxWidget(FieldWidget):
 			self.driver.lib.get_entry(x[1]).remove_tag(self.driver.lib, tag_id,field_index=index[0])
 			self.updated.emit()
 		if tag_id == 0 or tag_id == 1:
-			self.driver.update_thumbs()
+			self.driver.update_badges()
 
 	# def show_add_button(self, value:bool):
 	# 	self.add_button.setHidden(not value)
@@ -2954,16 +2954,27 @@ class ItemThumb(FlowWidget):
 		if self.mode == ItemType.ENTRY:
 			self.isArchived = value
 			DEFAULT_META_TAG_FIELD = 8
-			for x in self.panel.driver.selected:
-				e = self.lib.get_entry(x[1])
+			temp = (ItemType.ENTRY,self.item_id)
+			if list(self.panel.driver.selected).count(temp) > 0: # Is the archived badge apart of the selection?
+				# Yes, then add archived tag to all selected.
+				for x in self.panel.driver.selected:
+					e = self.lib.get_entry(x[1])
+					if value:
+						self.archived_badge.setHidden(False)
+						e.add_tag(self.panel.driver.lib, 0, field_id=DEFAULT_META_TAG_FIELD, field_index=-1)
+					else:
+						e.remove_tag(self.panel.driver.lib, 0)
+			else:
+				# No, then add archived tag to the entry this badge is on.
+				e = self.lib.get_entry(self.item_id)
 				if value:
-					self.archived_badge.setHidden(False)
+					self.favorite_badge.setHidden(False)
 					e.add_tag(self.panel.driver.lib, 0, field_id=DEFAULT_META_TAG_FIELD, field_index=-1)
 				else:
 					e.remove_tag(self.panel.driver.lib, 0)
 			if self.panel.isOpen:
 				self.panel.update_widgets()
-			self.panel.driver.update_thumbs()
+			self.panel.driver.update_badges()
 
 
 	# def on_archived_uncheck(self):
@@ -2976,8 +2987,19 @@ class ItemThumb(FlowWidget):
 		if self.mode == ItemType.ENTRY:
 			self.isFavorite = value
 			DEFAULT_META_TAG_FIELD = 8
-			for x in self.panel.driver.selected:
-				e = self.lib.get_entry(x[1])
+			temp = (ItemType.ENTRY,self.item_id)
+			if list(self.panel.driver.selected).count(temp) > 0: # Is the favorite badge apart of the selection?
+				# Yes, then add favorite tag to all selected.
+				for x in self.panel.driver.selected:
+					e = self.lib.get_entry(x[1])
+					if value:
+						self.favorite_badge.setHidden(False)
+						e.add_tag(self.panel.driver.lib, 1, field_id=DEFAULT_META_TAG_FIELD, field_index=-1)
+					else:
+						e.remove_tag(self.panel.driver.lib, 1)
+			else:
+				# No, then add favorite tag to the entry this badge is on.
+				e = self.lib.get_entry(self.item_id)
 				if value:
 					self.favorite_badge.setHidden(False)
 					e.add_tag(self.panel.driver.lib, 1, field_id=DEFAULT_META_TAG_FIELD, field_index=-1)
@@ -2985,7 +3007,8 @@ class ItemThumb(FlowWidget):
 					e.remove_tag(self.panel.driver.lib, 1)
 			if self.panel.isOpen:
 				self.panel.update_widgets()
-			self.panel.driver.update_thumbs()
+			self.panel.driver.update_badges()
+				
 
 	# def on_favorite_uncheck(self):
 	# 	if self.mode == SearchItemType.ENTRY:
@@ -4356,6 +4379,10 @@ class QtDriver(QObject):
 		# end_time = time.time()
 		# logging.info(
 		# 	f'[MAIN] Elements thumbs updated in {(end_time - start_time):.3f} seconds')
+
+	def update_badges(self):
+		for i, item_thumb in enumerate(self.item_thumbs, start=0):
+			item_thumb.update_badges()
 
 	def expand_collation(self, collation_entries: list[tuple[int, int]]):
 		self.nav_forward([(ItemType.ENTRY, x[0])

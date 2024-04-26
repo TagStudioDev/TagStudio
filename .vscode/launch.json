@@ -6,12 +6,12 @@
 	"configurations": [
 		{
 			"name": "TagStudio",
-			"type": "debugpy",
+			"type": "python",
 			"request": "launch",
 			"program": "${workspaceRoot}/tagstudio/tag_studio.py",
 			"console": "integratedTerminal",
 			"justMyCode": true,
-			"args": ["--debug"]
+			"args": []
 		}
 	]
 }
