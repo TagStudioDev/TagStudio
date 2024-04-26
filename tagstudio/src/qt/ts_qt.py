@@ -2375,14 +2375,12 @@ class PreviewPanel(QWidget):
 				# f'Are you sure you want to remove this \"{self.lib.get_field_attr(field, "name")}\" field?'
 				# container.set_remove_callback(lambda: (self.lib.get_entry(item.id).fields.pop(index), self.update_widgets(item)))
 				prompt=f'Are you sure you want to remove this \"{self.lib.get_field_attr(field, "name")}\" field?'
-				callback = lambda: (self.remove_field(item.fields[index]), self.update_widgets())
+				callback = lambda: (self.remove_field(field), self.update_widgets())
 				container.set_remove_callback(lambda: self.remove_message_box(
 					prompt=prompt,
 					callback=callback))
 				container.set_copy_callback(None)
 				container.set_edit_callback(None)
-				# logging.info(self.common_fields)
-				# logging.info(f'index:{index}')
 			else:
 				text = '<i>Mixed Data</i>'
 				title = f"{self.lib.get_field_attr(field, 'name')} (Wacky Tag Box)"
@@ -2412,15 +2410,14 @@ class PreviewPanel(QWidget):
 			container.set_inner_widget(inner_container)
 			# if type(item) == Entry:
 			if not mixed:
-				item = self.lib.get_entry(self.selected[0][1]) # TODO TODO TODO: TEMPORARY
 				modal = PanelModal(EditTextLine(self.lib.get_field_attr(field, 'content')), 
 												title=title,
 												window_title=f'Edit {self.lib.get_field_attr(field, "name")}',
-												save_callback=(lambda content: (self.update_field(item.fields[index], content), self.update_widgets()))
+												save_callback=(lambda content: (self.update_field(field, content), self.update_widgets()))
 												)
 				container.set_edit_callback(modal.show)
 				prompt=f'Are you sure you want to remove this \"{self.lib.get_field_attr(field, "name")}\" field?'
-				callback = lambda: (self.remove_field(item.fields[index]), self.update_widgets())
+				callback = lambda: (self.remove_field(field), self.update_widgets())
 				container.set_remove_callback(lambda: self.remove_message_box(
 					prompt=prompt,
 					callback=callback))
@@ -2448,17 +2445,15 @@ class PreviewPanel(QWidget):
 			container.set_inner_widget(inner_container)
 			# if type(item) == Entry:
 			if not mixed:
-				item = self.lib.get_entry(self.selected[0][1]) # TODO TODO TODO: TEMPORARY
 				container.set_copy_callback(None)
 				modal = PanelModal(EditTextBox(self.lib.get_field_attr(field, 'content')), 
 												title=title,
 												window_title=f'Edit {self.lib.get_field_attr(field, "name")}',
-												save_callback=(lambda content: (self.update_field(item.fields[index], content), self.update_widgets()))
+												save_callback=(lambda content: (self.update_field(field, content), self.update_widgets()))
 												)
 				container.set_edit_callback(modal.show)
-				# container.set_remove_callback(lambda: (self.lib.get_entry(item.id).fields.pop(index), self.update_widgets(item)))
 				prompt=f'Are you sure you want to remove this \"{self.lib.get_field_attr(field, "name")}\" field?'
-				callback = lambda: (self.remove_field(item.fields[index]), self.update_widgets())
+				callback = lambda: (self.remove_field(field), self.update_widgets())
 				container.set_remove_callback(lambda: self.remove_message_box(
 					prompt=prompt,
 					callback=callback))
@@ -2483,7 +2478,7 @@ class PreviewPanel(QWidget):
 			# container.set_edit_callback(None)
 			# container.set_remove_callback(lambda: (self.lib.get_entry(item.id).fields.pop(index), self.update_widgets(item)))
 			prompt=f'Are you sure you want to remove this \"{self.lib.get_field_attr(field, "name")}\" field?'
-			callback = lambda: (self.remove_field(item.fields[index]), self.update_widgets())
+			callback = lambda: (self.remove_field(field), self.update_widgets())
 			container.set_remove_callback(lambda: self.remove_message_box(
 				prompt=prompt,
 				callback=callback))
@@ -2511,7 +2506,7 @@ class PreviewPanel(QWidget):
 				container.set_edit_callback(None)
 				# container.set_remove_callback(lambda: (self.lib.get_entry(item.id).fields.pop(index), self.update_widgets(item)))
 				prompt=f'Are you sure you want to remove this \"{self.lib.get_field_attr(field, "name")}\" field?'
-				callback = lambda: (self.remove_field(item.fields[index]), self.update_widgets())
+				callback = lambda: (self.remove_field(field), self.update_widgets())
 				container.set_remove_callback(lambda: self.remove_message_box(
 					prompt=prompt,
 					callback=callback))
@@ -2536,7 +2531,7 @@ class PreviewPanel(QWidget):
 			container.set_edit_callback(None)
 			# container.set_remove_callback(lambda: (self.lib.get_entry(item.id).fields.pop(index), self.update_widgets(item)))
 			prompt=f'Are you sure you want to remove this \"{self.lib.get_field_attr(field, "name")}\" field?'
-			callback = lambda: (self.remove_field(item.fields[index]), self.update_widgets())
+			callback = lambda: (self.remove_field(field), self.update_widgets())
 			# callback = lambda: (self.lib.get_entry(item.id).fields.pop(index), self.update_widgets())
 			container.set_remove_callback(lambda: self.remove_message_box(
 				prompt=prompt,
