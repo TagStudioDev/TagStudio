@@ -302,15 +302,17 @@ class FieldContainer(QWidget):
 
 
 class FieldWidget(QWidget):
+	field = dict
 	def __init__(self, title) -> None:
 		super().__init__()
 		# self.item = item
 		self.title = title
 
 
+
 class TagBoxWidget(FieldWidget):
 	updated = Signal()
-
+	
 	def __init__(self, item, title, field_index, library:Library, tags:list[int], driver:'QtDriver') -> None:
 		super().__init__(title)
 		# QObject.__init__(self)
@@ -378,7 +380,7 @@ class TagBoxWidget(FieldWidget):
 			# 							)
 			tw = TagWidget(self.lib, self.lib.get_tag(tag), True, True)
 			tw.on_click.connect(lambda checked=False, q=f'tag_id: {tag}': (self.driver.main_window.searchField.setText(q), self.driver.filter_items(q)))
-			tw.on_remove.connect(lambda checked=False, t=tag: (self.lib.get_entry(self.item.id).remove_tag(self.lib, t, self.field_index), self.updated.emit()))
+			tw.on_remove.connect(lambda checked=False, t=tag: (self.remove_tag(t)))
 			tw.on_edit.connect(lambda checked=False, t=tag: (self.edit_tag(t)))
 			self.base_layout.addWidget(tw)
 		self.tags = tags
@@ -393,7 +395,8 @@ class TagBoxWidget(FieldWidget):
 		# doesn't move all the way to the left.
 		if self.base_layout.itemAt(0) and not self.base_layout.itemAt(1):
 			self.base_layout.update()
-	
+
+
 	def edit_tag(self, tag_id:int):
 		btp = BuildTagPanel(self.lib, tag_id)
 		# btp.on_edit.connect(lambda x: self.edit_tag_callback(x))
@@ -413,28 +416,43 @@ class TagBoxWidget(FieldWidget):
 		# self.base_layout.addWidget(TagWidget(self.lib, self.lib.get_tag(tag), True))
 		# self.tags.append(tag)
 		logging.info(f'[TAG BOX WIDGET] ADD TAG CALLBACK: T:{tag_id} to E:{self.item.id}')
-		if type(self.item) == Entry:
-			self.item.add_tag(self.lib, tag_id, field_id=-1, field_index=self.field_index)
-			logging.info(f'[TAG BOX WIDGET] UPDATED EMITTED: {tag_id}')
-			self.updated.emit()
+		logging.info(f'[TAG BOX WIDGET] SELECTED T:{self.driver.selected}')
+		id = list(self.field.keys())[0]
+		for x in self.driver.selected:
+				self.driver.lib.get_entry(x[1]).add_tag(self.driver.lib, tag_id, field_id=id, field_index=-1)
+				self.updated.emit()
+		if tag_id == 0 or tag_id == 1:
+			self.driver.update_badges()
+
+		# if type((x[0]) == ThumbButton):
+		# 	# TODO: Remove space from the special search here (tag_id:x) once that system is finalized.
 			# logging.info(f'I want to add tag ID {tag_id} to entry {self.item.filename}')
-		# self.updated.emit()
+			# self.updated.emit()
 			# if tag_id not in self.tags:
 			# 	self.tags.append(tag_id)
 			# self.set_tags(self.tags)
+		# elif type((x[0]) == ThumbButton):
+
 	
 	def edit_tag_callback(self, tag:Tag):
 		self.lib.update_tag(tag)
-			
+		
+	def remove_tag(self, tag_id):
+		logging.info(f'[TAG BOX WIDGET] SELECTED T:{self.driver.selected}')
+		id = list(self.field.keys())[0]
+		for x in self.driver.selected:
+			index = self.driver.lib.get_field_index_in_entry(self.driver.lib.get_entry(x[1]),id)
+			self.driver.lib.get_entry(x[1]).remove_tag(self.driver.lib, tag_id,field_index=index[0])
+			self.updated.emit()
+		if tag_id == 0 or tag_id == 1:
+			self.driver.update_badges()
 
-	def remove_tag(self):
-		# NOTE: You'll need to account for the add button at the end.
-		pass
 	# def show_add_button(self, value:bool):
 	# 	self.add_button.setHidden(not value)
 
 
 class TextWidget(FieldWidget):
+
 	def __init__(self, title, text:str) -> None:
 		super().__init__(title)
 		# self.item = item
@@ -2329,7 +2347,6 @@ class PreviewPanel(QWidget):
 			container = self.containers[index]
 			# container.inner_layout.removeItem(container.inner_layout.itemAt(1))
 			# container.setHidden(False)
-
 		if self.lib.get_field_attr(field, 'type') == 'tag_box':
 			# logging.info(f'WRITING TAGBOX FOR ITEM {item.id}')
 			container.set_title(self.lib.get_field_attr(field, 'name'))
@@ -2351,7 +2368,7 @@ class PreviewPanel(QWidget):
 					inner_container = TagBoxWidget(item, title, index, self.lib, self.lib.get_field_attr(field, 'content'), self.driver)
 					
 					container.set_inner_widget(inner_container)
-
+				inner_container.field = field
 				inner_container.updated.connect(lambda: (self.write_container(index, field), self.tags_updated.emit()))
 				# if type(item) == Entry:
 				# NOTE: Tag Boxes have no Edit Button (But will when you can convert field types)
@@ -2939,15 +2956,29 @@ class ItemThumb(FlowWidget):
 		# logging.info(f'Archived Check: {value}, Mode: {self.mode}')
 		if self.mode == ItemType.ENTRY:
 			self.isArchived = value
-			e = self.lib.get_entry(self.item_id)
-			if value:
-				self.archived_badge.setHidden(False)
-				DEFAULT_META_TAG_FIELD = 8
-				e.add_tag(self.lib, 0, DEFAULT_META_TAG_FIELD)
+			DEFAULT_META_TAG_FIELD = 8
+			temp = (ItemType.ENTRY,self.item_id)
+			if list(self.panel.driver.selected).count(temp) > 0: # Is the archived badge apart of the selection?
+				# Yes, then add archived tag to all selected.
+				for x in self.panel.driver.selected:
+					e = self.lib.get_entry(x[1])
+					if value:
+						self.archived_badge.setHidden(False)
+						e.add_tag(self.panel.driver.lib, 0, field_id=DEFAULT_META_TAG_FIELD, field_index=-1)
+					else:
+						e.remove_tag(self.panel.driver.lib, 0)
 			else:
-				e.remove_tag(self.lib, 0)
+				# No, then add archived tag to the entry this badge is on.
+				e = self.lib.get_entry(self.item_id)
+				if value:
+					self.favorite_badge.setHidden(False)
+					e.add_tag(self.panel.driver.lib, 0, field_id=DEFAULT_META_TAG_FIELD, field_index=-1)
+				else:
+					e.remove_tag(self.panel.driver.lib, 0)
 			if self.panel.isOpen:
 				self.panel.update_widgets()
+			self.panel.driver.update_badges()
+
 
 	# def on_archived_uncheck(self):
 	# 	if self.mode == SearchItemType.ENTRY:
@@ -2958,15 +2989,29 @@ class ItemThumb(FlowWidget):
 		# logging.info(f'Favorite Check: {value}, Mode: {self.mode}')
 		if self.mode == ItemType.ENTRY:
 			self.isFavorite = value
-			e = self.lib.get_entry(self.item_id)
-			if value:
-				self.favorite_badge.setHidden(False)
-				DEFAULT_META_TAG_FIELD = 8
-				e.add_tag(self.lib, 1, DEFAULT_META_TAG_FIELD)
+			DEFAULT_META_TAG_FIELD = 8
+			temp = (ItemType.ENTRY,self.item_id)
+			if list(self.panel.driver.selected).count(temp) > 0: # Is the favorite badge apart of the selection?
+				# Yes, then add favorite tag to all selected.
+				for x in self.panel.driver.selected:
+					e = self.lib.get_entry(x[1])
+					if value:
+						self.favorite_badge.setHidden(False)
+						e.add_tag(self.panel.driver.lib, 1, field_id=DEFAULT_META_TAG_FIELD, field_index=-1)
+					else:
+						e.remove_tag(self.panel.driver.lib, 1)
 			else:
-				e.remove_tag(self.lib, 1)
+				# No, then add favorite tag to the entry this badge is on.
+				e = self.lib.get_entry(self.item_id)
+				if value:
+					self.favorite_badge.setHidden(False)
+					e.add_tag(self.panel.driver.lib, 1, field_id=DEFAULT_META_TAG_FIELD, field_index=-1)
+				else:
+					e.remove_tag(self.panel.driver.lib, 1)
 			if self.panel.isOpen:
 				self.panel.update_widgets()
+			self.panel.driver.update_badges()
+				
 
 	# def on_favorite_uncheck(self):
 	# 	if self.mode == SearchItemType.ENTRY:
@@ -4346,6 +4391,10 @@ class QtDriver(QObject):
 		# end_time = time.time()
 		# logging.info(
 		# 	f'[MAIN] Elements thumbs updated in {(end_time - start_time):.3f} seconds')
+
+	def update_badges(self):
+		for i, item_thumb in enumerate(self.item_thumbs, start=0):
+			item_thumb.update_badges()
 
 	def expand_collation(self, collation_entries: list[tuple[int, int]]):
 		self.nav_forward([(ItemType.ENTRY, x[0])
