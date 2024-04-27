@@ -3349,6 +3349,10 @@ class ThumbRenderer(QObject):
 		f'{Path(__file__).parent.parent.parent}/resources/qt/images/thumb_broken_512.png'))
 	thumb_broken_512.load()
 
+	thumb_file_default_512: Image.Image = Image.open(os.path.normpath(
+		f'{Path(__file__).parent.parent.parent}/resources/qt/images/thumb_file_default_512.png'))
+	thumb_file_default_512.load()
+
 	# thumb_debug: Image.Image = Image.open(os.path.normpath(
 	# 	f'{Path(__file__).parent.parent.parent}/resources/qt/images/temp.jpg'))
 	# thumb_debug.load()
@@ -3429,12 +3433,10 @@ class ThumbRenderer(QObject):
 					draw = ImageDraw.Draw(bg)
 					draw.text((16,16), text, file=(255,255,255))
 					image = bg
-			
-				# Other Files ==================================================
-				# TODO: Create placeholder thumbnails for non-media files.
-				# else:
-				# 	image: Image.Image = ThumbRenderer.thumb_loading_512.resize(
-				# 		(adj_size, adj_size), resample=Image.Resampling.BILINEAR)
+				# No Rendered Thumbnail ========================================
+				else:
+					image = ThumbRenderer.thumb_file_default_512.resize(
+					(adj_size, adj_size), resample=Image.Resampling.BILINEAR)
 
 				if not image:
 					raise UnidentifiedImageError
@@ -3586,6 +3588,10 @@ class ThumbRenderer(QObject):
 					draw = ImageDraw.Draw(bg)
 					draw.text((16,16), text, file=(255,255,255))
 					image = bg
+				# No Rendered Thumbnail ========================================
+				else:
+					image = ThumbRenderer.thumb_file_default_512.resize(
+					(adj_size, adj_size), resample=Image.Resampling.BILINEAR)
 
 				if not image:
 					raise UnidentifiedImageError
