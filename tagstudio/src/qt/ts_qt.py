@@ -2046,6 +2046,7 @@ class PreviewPanel(QWidget):
 		self.preview_img.setFlat(True)
 
 		self.preview_img.setContextMenuPolicy(Qt.ContextMenuPolicy.ActionsContextMenu)
+		self.opener = FileOpenerHelper('')
 		self.open_file_action = QAction('Open file', self)
 		self.open_explorer_action = QAction('Open file in explorer', self)
 
@@ -2271,6 +2272,7 @@ class PreviewPanel(QWidget):
 				self.file_label.setText(f"No Items Selected")
 				self.file_label.setFilePath('')
 				self.dimensions_label.setText("")
+				self.preview_img.setContextMenuPolicy(Qt.ContextMenuPolicy.NoContextMenu)
 				ratio: float = self.devicePixelRatio()
 				self.tr.render_big(time.time(), '', (512, 512), ratio, True)
 				try:
@@ -2299,9 +2301,10 @@ class PreviewPanel(QWidget):
 					self.tr.render_big(time.time(), filepath, (512, 512), ratio)
 					self.file_label.setText("\u200b".join(filepath))
 
-					opener = FileOpenerHelper(filepath)
-					self.open_file_action.triggered.connect(opener.open_file)
-					self.open_explorer_action.triggered.connect(opener.open_explorer)
+					self.preview_img.setContextMenuPolicy(Qt.ContextMenuPolicy.ActionsContextMenu)
+					self.opener = FileOpenerHelper(filepath)
+					self.open_file_action.triggered.connect(self.opener.open_file)
+					self.open_explorer_action.triggered.connect(self.opener.open_explorer)
 
 					# TODO: Do this somewhere else, this is just here temporarily.
 					extension = os.path.splitext(filepath)[1][1:].lower()
@@ -2377,6 +2380,7 @@ class PreviewPanel(QWidget):
 				self.file_label.setText(f"{len(self.driver.selected)} Items Selected")
 				self.file_label.setFilePath('')
 				self.dimensions_label.setText("")
+				self.preview_img.setContextMenuPolicy(Qt.ContextMenuPolicy.NoContextMenu)
 				ratio: float = self.devicePixelRatio()
 				self.tr.render_big(time.time(), '', (512, 512), ratio, True)
 				try:
@@ -2902,7 +2906,7 @@ class ItemThumb(FlowWidget):
 		self.thumb_button.setContextMenuPolicy(Qt.ContextMenuPolicy.ActionsContextMenu)
 		self.opener = FileOpenerHelper('')
 		open_file_action = QAction('Open file', self)
-		open_file_action.triggered.connect(lambda: print('Open file'))
+		open_file_action.triggered.connect(self.opener.open_file)
 		open_explorer_action = QAction('Open file in explorer', self)
 		open_explorer_action.triggered.connect(self.opener.open_explorer)
 		self.thumb_button.addAction(open_file_action)
