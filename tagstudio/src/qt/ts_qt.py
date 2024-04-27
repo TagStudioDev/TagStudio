@@ -2009,6 +2009,46 @@ class FileExtensionModal(PanelWidget):
 			if ext and ext.text():
 				self.lib.ignored_extensions.append(ext.text())
 
+class FileOpenerHelper():
+	def __init__(self, filepath:str):
+		self.filepath = filepath
+
+	def set_filepath(self, filepath:str):
+		self.filepath = filepath
+
+	def open_file(self):
+		if os.path.exists(self.filepath):
+			os.startfile(self.filepath)
+			logging.info(f'Opening file: {self.filepath}')
+		else:
+			logging.error(f'File not found: {self.filepath}')
+
+	def open_explorer(self):
+		if os.path.exists(self.filepath):
+				logging.info(f'Opening file: {self.filepath}')
+				if os.name == 'nt':  # Windows
+					command = f'explorer /select,"{self.filepath}"'
+					subprocess.run(command, shell=True)
+				else:  # macOS and Linux
+					command = f'nautilus --select "{self.filepath}"'  # Adjust for your Linux file manager if different
+					if subprocess.run(command, shell=True).returncode == 0:
+						file_loc = os.path.dirname(self.filepath)
+						file_loc = os.path.normpath(file_loc)
+						os.startfile(file_loc)
+		else:
+			logging.error(f'File not found: {self.filepath}')
+class FileOpenerLabel(QLabel):
+	def __init__(self, text, parent=None):
+		super().__init__(text, parent)
+
+	def setFilePath(self, filepath):
+		self.filepath = filepath
+
+	def mousePressEvent(self, event):
+		super().mousePressEvent(event)
+		opener = FileOpenerHelper(self.filepath)
+		opener.open_explorer()
+
 class PreviewPanel(QWidget):
 	"""The Preview Panel Widget."""
 	tags_updated = Signal()
@@ -2044,6 +2084,14 @@ class PreviewPanel(QWidget):
 		self.preview_img = QPushButton()
 		self.preview_img.setMinimumSize(*self.img_button_size)
 		self.preview_img.setFlat(True)
+
+		self.preview_img.setContextMenuPolicy(Qt.ContextMenuPolicy.ActionsContextMenu)
+		self.opener = FileOpenerHelper('')
+		self.open_file_action = QAction('Open file', self)
+		self.open_explorer_action = QAction('Open file in explorer', self)
+
+		self.preview_img.addAction(self.open_file_action)
+		self.preview_img.addAction(self.open_explorer_action)
 		self.tr = ThumbRenderer()
 		self.tr.updated.connect(lambda ts, i, s: (self.preview_img.setIcon(i)))
 		self.tr.updated_ratio.connect(lambda ratio: (self.set_image_ratio(ratio), 
@@ -2055,7 +2103,7 @@ class PreviewPanel(QWidget):
 		image_layout.addWidget(self.preview_img)
 		image_layout.setAlignment(self.preview_img, Qt.AlignmentFlag.AlignCenter)
 
-		self.file_label = QLabel('Filename')
+		self.file_label = FileOpenerLabel('Filename')
 		self.file_label.setWordWrap(True)
 		self.file_label.setTextInteractionFlags(
 			Qt.TextInteractionFlag.TextSelectableByMouse)
@@ -2262,7 +2310,9 @@ class PreviewPanel(QWidget):
 		if len(self.driver.selected) == 0:
 			if len(self.selected) != 0 or not self.initialized:
 				self.file_label.setText(f"No Items Selected")
+				self.file_label.setFilePath('')
 				self.dimensions_label.setText("")
+				self.preview_img.setContextMenuPolicy(Qt.ContextMenuPolicy.NoContextMenu)
 				ratio: float = self.devicePixelRatio()
 				self.tr.render_big(time.time(), '', (512, 512), ratio, True)
 				try:
@@ -2285,10 +2335,16 @@ class PreviewPanel(QWidget):
 				if (len(self.selected) == 0 
 						or self.selected != self.driver.selected):
 					filepath = os.path.normpath(f'{self.lib.library_dir}/{item.path}/{item.filename}')
+					self.file_label.setFilePath(filepath)
 					window_title = filepath
 					ratio: float = self.devicePixelRatio()
 					self.tr.render_big(time.time(), filepath, (512, 512), ratio)
 					self.file_label.setText("\u200b".join(filepath))
+
+					self.preview_img.setContextMenuPolicy(Qt.ContextMenuPolicy.ActionsContextMenu)
+					self.opener = FileOpenerHelper(filepath)
+					self.open_file_action.triggered.connect(self.opener.open_file)
+					self.open_explorer_action.triggered.connect(self.opener.open_explorer)
 
 					# TODO: Do this somewhere else, this is just here temporarily.
 					extension = os.path.splitext(filepath)[1][1:].lower()
@@ -2362,7 +2418,9 @@ class PreviewPanel(QWidget):
 		elif len(self.driver.selected) > 1:
 			if self.selected != self.driver.selected:
 				self.file_label.setText(f"{len(self.driver.selected)} Items Selected")
+				self.file_label.setFilePath('')
 				self.dimensions_label.setText("")
+				self.preview_img.setContextMenuPolicy(Qt.ContextMenuPolicy.NoContextMenu)
 				ratio: float = self.devicePixelRatio()
 				self.tr.render_big(time.time(), '', (512, 512), ratio, True)
 				try:
@@ -2757,7 +2815,6 @@ class ItemThumb(FlowWidget):
 	"""
 	The thumbnail widget for a library item (Entry, Collation, Tag Group, etc.).
 	"""
-
 	update_cutoff: float = time.time()
 
 	collation_icon_128: Image.Image = Image.open(os.path.normpath(
@@ -2885,6 +2942,15 @@ class ItemThumb(FlowWidget):
 		self.thumb_button.setLayout(self.base_layout)
 		# self.bg_button.setMinimumSize(*thumb_size)
 		# self.bg_button.setMaximumSize(*thumb_size)
+
+		self.thumb_button.setContextMenuPolicy(Qt.ContextMenuPolicy.ActionsContextMenu)
+		self.opener = FileOpenerHelper('')
+		open_file_action = QAction('Open file', self)
+		open_file_action.triggered.connect(self.opener.open_file)
+		open_explorer_action = QAction('Open file in explorer', self)
+		open_explorer_action.triggered.connect(self.opener.open_explorer)
+		self.thumb_button.addAction(open_file_action)
+		self.thumb_button.addAction(open_explorer_action)
 
 		# Static Badges ========================================================
 
@@ -3080,7 +3146,15 @@ class ItemThumb(FlowWidget):
 
 
 	def set_item_id(self, id: int):
+		'''
+		also sets the filepath for the file opener
+		'''
 		self.item_id = id
+		if(id == -1):
+			return
+		entry = self.lib.get_entry(self.item_id)
+		filepath = os.path.normpath(f'{self.lib.library_dir}/{entry.path}/{entry.filename}')
+		self.opener.set_filepath(filepath)
 
 	def assign_favorite(self, value: bool):
 		# Switching mode to None to bypass mode-specific operations when the
