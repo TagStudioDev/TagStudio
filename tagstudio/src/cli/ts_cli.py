@@ -493,7 +493,7 @@ class CliDriver:
 		# print(f'Char Limit: {char_limit}, Len: {len(text)}')
 		return char_limit
 
-	def truncate_text(self, text: str) -> int:
+	def truncate_text(self, text: str) -> str:
 		"""Returns a truncated string for displaying, calculated with `get_char_limit()`."""
 		if len(text) > self.get_char_limit(text):
 			# print(f'Char Limit: {self.get_char_limit(text)}, Len: {len(text)}')
@@ -761,7 +761,7 @@ class CliDriver:
 								offset = 1 if (index >= row_count) and (
 									row_number != row_count) else 0
 							elif displayable % table_size != 0:
-								if col_num > 1 and col_num <= displayable % table_size:
+								if 1 < col_num <= displayable % table_size:
 									offset += col_num - 1
 								elif col_num > 1 and col_num > displayable % table_size:
 									offset = displayable % table_size
@@ -1022,30 +1022,31 @@ class CliDriver:
 		"""
 		was_executed:bool = False
 		message:str = ''
+		com_name = com[0].lower()
 
 		# Backup Library =======================================================
-		if (com[0].lower() == 'backup'):
+		if com_name == 'backup':
 			self.backup_library(display_message=False)
 			was_executed = True
 			message=f'{INFO} Backed up Library to disk.'
 		# Create Collage =======================================================
-		elif (com[0].lower() == 'collage'):
+		elif com_name == 'collage':
 			filename = self.create_collage()
 			if filename:
 				was_executed = True
 				message = f'{INFO} Saved collage to \"{filename}\".'
 		# Save Library =========================================================
-		elif (com[0].lower() == 'save' or com[0].lower() == 'write' or com[0].lower() == 'w'):
+		elif com_name in ('save', 'write', 'w'):
 			self.save_library(display_message=False)
 			was_executed = True
 			message=f'{INFO} Library saved to disk.'
 		# Toggle Debug =========================================================
-		elif (com[0].lower() == 'toggle-debug'):
+		elif com_name == 'toggle-debug':
 			self.args.debug = not self.args.debug
 			was_executed = True
 			message=f'{INFO} Debug Mode Active.' if self.args.debug else f'{INFO} Debug Mode Deactivated.'
 		# Toggle External Preview ==============================================
-		elif (com[0].lower() == 'toggle-external-preview'):
+		elif com_name == 'toggle-external-preview':
 			self.args.external_preview = not self.args.external_preview
 			if self.args.external_preview:
 				self.init_external_preview()
@@ -1054,11 +1055,11 @@ class CliDriver:
 			was_executed = True
 			message=f'{INFO} External Preview Enabled.' if self.args.external_preview else f'{INFO} External Preview Disabled.'
 		# Quit =================================================================
-		elif com[0].lower() == 'quit' or com[0].lower() == 'q':
+		elif com_name in ('quit', 'q'):
 			self.exit(save=True, backup=False)
 			was_executed = True
 		# Quit without Saving ==================================================
-		elif com[0].lower() == 'quit!' or com[0].lower() == 'q!':
+		elif com_name in ('quit!', 'q!'):
 			self.exit(save=False, backup=False)
 			was_executed = True
 		
@@ -1345,7 +1346,7 @@ class CliDriver:
 						# self.scr_library_home(clear_scr=False)
 					# Add New Entries ==================================================
 					elif ' '.join(com) == 'add new':
-						if self.is_new_file_count_init == False:
+						if not self.is_new_file_count_init:
 							print(
 								f'{INFO} Scanning for files in \'{self.lib.library_dir}\' (This may take a while)...')
 							# if not self.lib.files_not_in_library:
@@ -1390,7 +1391,7 @@ class CliDriver:
 									for unresolved in self.lib.missing_matches:
 										res = self.scr_choose_missing_match(
 											self.lib.get_entry_id_from_filepath(unresolved), clear_scr=False)
-										if res != None and int(res) >= 0:
+										if res is not None and int(res) >= 0:
 											clear()
 											print(
 												f'{INFO} Updated {self.lib.entries[self.lib.get_entry_id_from_filepath(unresolved)].path} -> {self.lib.missing_matches[unresolved][res]}')
@@ -1555,7 +1556,7 @@ class CliDriver:
 
 				print(self.format_title(title))
 				
-				if len(self.filtered_entries) > 0:
+				if self.filtered_entries:
 					# entry = self.lib.get_entry_from_index(
 					# 	self.filtered_entries[index])
 					entry = self.lib.get_entry(self.filtered_entries[index][1])
@@ -1580,7 +1581,7 @@ class CliDriver:
 
 					self.print_fields(self.filtered_entries[index][1])
 				else:
-					if len(self.lib.entries) > 0:
+					if self.lib.entries:
 						print(self.format_h1('No Entry Results for Query', color=BRIGHT_RED_FG))
 						self.set_external_preview_default()
 					else:
@@ -2049,7 +2050,7 @@ class CliDriver:
 					'<#>    Quit', BRIGHT_CYAN_FG))
 			print('> ', end='')
 
-			com: list[str] = input().lstrip().rstrip().split(' ')
+			com: list[str] = input().strip().split(' ')
 			gc, message = self.global_commands(com)
 			if gc:
 				if message:
@@ -2057,6 +2058,7 @@ class CliDriver:
 					print(message)
 					clear_scr=False
 			else:
+				com_name = com[0].lower()
 
 				try:
 					# # Quit =========================================================
@@ -2069,13 +2071,13 @@ class CliDriver:
 					# 	# self.cleanup()
 					# 	sys.exit()
 					# Cancel =======================================================
-					if (com[0].lower() == 'cancel' or com[0].lower() == 'c' or com[0] == '0') and required==False:
+					if com_name in ('cancel', 'c', '0') and not required:
 						clear()
 						return -1
 					# Selection ====================================================
-					elif int(com[0]) > 0 and int(com[0]) <= len(choices):
+					elif com_name.isdigit() and 0 < int(com_name) <= len(choices):
 						clear()
-						return int(com[0]) - 1
+						return int(com_name) - 1
 					else:
 						# invalid_input = True
 						# print(self.format_h1(str='Please Enter a Valid Selection Number', color=BRIGHT_RED_FG))
@@ -2554,7 +2556,7 @@ class CliDriver:
 			f'Enter #{plural}    Cancel', fg_color))
 		print('> ', end='')
 
-		com: list[int] = input().split(' ')
+		com: list[str] = input().split(' ')
 		selected_ids: list[int] = []
 		try:
 			for c in com:
@@ -2625,14 +2627,14 @@ class CliDriver:
 			self.lib.update_entry_field(
 				entry_index, field_index, new_content.rstrip('\n').rstrip('\r'), 'replace')
 
-	def scr_list_tags(self, query: str = '', tag_ids: list[int] = [], clear_scr=True) -> None:
+	def scr_list_tags(self, query: str = '', tag_ids: list[int] = None, clear_scr=True) -> None:
 		"""A screen for listing out and performing CRUD operations on Library Tags."""
 		# NOTE: While a screen that just displays the first 40 or so random tags on your screen
 		# isn't really that useful, this is just a temporary measure to provide a launchpad
 		# screen for necessary commands such as adding and editing tags.
 		# A more useful screen presentation might look like a list of ranked occurrences, but
 		# that can be figured out and implemented later.
-
+		tag_ids = tag_ids or []
 		title = f'{self.base_title} - Library \'{self.lib.library_dir}\''
 
 
@@ -2673,7 +2675,7 @@ class CliDriver:
 				'Create    Edit <#>    Delete <#>    Search <Query>    Close/Done', BRIGHT_MAGENTA_FG))
 			print('> ', end='')
 
-			com: list[str] = input().lstrip().rstrip().split(' ')
+			com: list[str] = input().strip().split(' ')
 			gc, message = self.global_commands(com)
 			if gc:
 				if message:
@@ -2681,9 +2683,9 @@ class CliDriver:
 					print(message)
 					clear_scr=False
 			else:
-
+				com_name = com[0].lower()
 				# Search Tags ==========================================================
-				if (com[0].lower() == 'search' or com[0].lower() == 's'):
+				if com_name in ('search', 's'):
 					if len(com) > 1:
 						new_query: str = ' '.join(com[1:])
 						# self.scr_list_tags(prev_scr, query=new_query,
@@ -2696,7 +2698,7 @@ class CliDriver:
 						tag_ids=self.lib.search_tags('')
 						# return
 				# Edit Tag ===========================================================
-				elif com[0].lower() == 'edit' or com[0].lower() == 'e':
+				elif com_name in ('edit', 'e'):
 					if len(com) > 1:
 						try:
 							index = int(com[1]) - 1
@@ -2720,7 +2722,7 @@ class CliDriver:
 							# return
 
 				# Create Tag ============================================================
-				elif com[0].lower() == 'create' or com[0].lower() == 'mk':
+				elif com_name in ('create', 'mk'):
 					tag = Tag(id=0, name='New Tag', shorthand='',
 							aliases=[], subtags_ids=[], color='')
 					self.scr_manage_tag(
@@ -2731,7 +2733,7 @@ class CliDriver:
 					# self.scr_list_tags(prev_scr, query=query, tag_ids=tag_ids)
 					# return
 				# Delete Tag ===========================================================
-				elif com[0].lower() == 'delete' or com[0].lower() == 'del':
+				elif com_name in ('delete', 'del'):
 					if len(com) > 1:
 						if len(com) > 1:
 							try:
@@ -2757,7 +2759,7 @@ class CliDriver:
 								# 				tag_ids=tag_ids, clear_scr=False)
 								# return
 				# Close View ===========================================================
-				elif (com[0].lower() == 'close' or com[0].lower() == 'c' or com[0].lower() == 'done'):
+				elif com_name in ('close', 'c', 'done'):
 					# prev_scr()
 					return
 				# # Quit =================================================================
@@ -3192,7 +3194,7 @@ class CliDriver:
 
 		selected: str = input()
 		try:
-			if int(selected) > 0 and int(selected) <= len(colors):
+			if selected.isdigit() and 0 < int(selected) <= len(colors):
 				selected = colors[int(selected)-1]
 				return selected
 		# except SystemExit:
