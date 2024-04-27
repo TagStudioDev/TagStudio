@@ -3425,14 +3425,17 @@ class ThumbRenderer(QObject):
 					image = Image.fromarray(frame)
 
 				# Plain Text ===================================================
-				elif extension in ['txt', 'md']:
-					text: str = extension
-					with open(filepath, 'r', encoding='utf-8') as text_file:
-						text = text_file.read()
-					bg = Image.new('RGB',(256,256), color='#222222')
-					draw = ImageDraw.Draw(bg)
-					draw.text((16,16), text, file=(255,255,255))
-					image = bg
+				elif extension in PLAINTEXT_TYPES:
+					try:
+						text: str = extension
+						with open(filepath, 'r', encoding='utf-8') as text_file:
+							text = text_file.read(256)
+						bg = Image.new('RGB',(256,256), color='#222222')
+						draw = ImageDraw.Draw(bg)
+						draw.text((16,16), text, file=(255,255,255))
+						image = bg
+					except:
+						logging.info(f'[ThumbRenderer][ERROR]: Coulnd\'t render thumbnail for {filepath}')
 				# No Rendered Thumbnail ========================================
 				else:
 					image = ThumbRenderer.thumb_file_default_512.resize(
@@ -3581,13 +3584,16 @@ class ThumbRenderer(QObject):
 					image = Image.fromarray(frame)
 				# Plain Text ===================================================
 				elif extension in PLAINTEXT_TYPES:
-					text: str = extension
-					with open(filepath, 'r', encoding='utf-8') as text_file:
-						text = text_file.read()
-					bg = Image.new('RGB',(256,256), color='#222222')
-					draw = ImageDraw.Draw(bg)
-					draw.text((16,16), text, file=(255,255,255))
-					image = bg
+					try:
+						text: str = extension
+						with open(filepath, 'r', encoding='utf-8') as text_file:
+							text = text_file.read(256)
+						bg = Image.new('RGB',(256,256), color='#222222')
+						draw = ImageDraw.Draw(bg)
+						draw.text((16,16), text, file=(255,255,255))
+						image = bg
+					except:
+						logging.info(f'[ThumbRenderer][ERROR]: Coulnd\'t render thumbnail for {filepath}')
 				# No Rendered Thumbnail ========================================
 				else:
 					image = ThumbRenderer.thumb_file_default_512.resize(

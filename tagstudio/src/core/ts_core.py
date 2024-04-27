@@ -28,7 +28,8 @@ AUDIO_TYPES: list[str] = ['mp3', 'mp4', 'mpeg4', 'm4a', 'aac', 'wav', 'flac',
 						  'alac', 'wma', 'ogg', 'aiff']
 DOC_TYPES: list[str] = ['txt', 'rtf', 'md',
 						 'doc', 'docx', 'pdf', 'tex', 'odt', 'pages']
-PLAINTEXT_TYPES: list[str] = ['txt', 'md', 'css', 'html', 'xml', 'json', 'js', 'ts']
+PLAINTEXT_TYPES: list[str] = ['txt', 'md', 'css', 'html', 'xml', 'json', 'js',
+							  'ts', 'ini', 'htm', 'csv', 'php', 'sh', 'bat']
 SPREADSHEET_TYPES: list[str] = ['csv', 'xls', 'xlsx', 'numbers', 'ods']
 PRESENTATION_TYPES: list[str] = ['ppt', 'pptx', 'key', 'odp']
 ARCHIVE_TYPES: list[str] = ['zip', 'rar', 'tar', 'tar.gz', 'tgz', '7z']
