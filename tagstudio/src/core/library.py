@@ -5,25 +5,21 @@
 """The Library object and related methods for TagStudio."""
 
 import datetime
-from enum import Enum
-import os
-import traceback
-from typing import Optional
-import json
 import glob
-from pathlib import Path
-# from typing_extensions import deprecated
-import src.core.ts_core as ts_core
-from src.core.utils.web import *
-from src.core.utils.str import *
-from src.core.utils.fs import *
-import xml.etree.ElementTree as ET
+import json
+import logging
+import os
 import sys
 import time
-import logging
+import traceback
+import xml.etree.ElementTree as ET
+from enum import Enum
 import ujson
 
-from tagstudio.src.core.json_typing import Json_Collation, Json_Entry, Json_Libary, Json_Tag
+from src.core.json_typing import Json_Collation, Json_Entry, Json_Libary, Json_Tag
+from src.core import ts_core
+from src.core.utils.str import strip_punctuation
+from src.core.utils.web import strip_web_protocol
 
 TYPE = ['file', 'meta', 'alt', 'mask']
 # RESULT_TYPE = Enum('Result', ['ENTRY', 'COLLATION', 'TAG_GROUP'])
@@ -136,7 +132,7 @@ class Entry:
 		# if self.fields:
 		# if field_index != -1:
 		# logging.info(f'[LIBRARY] ADD TAG to E:{self.id}, F-DI:{field_id}, F-INDEX:{field_index}')
-		field_index = -1 if field_index == None else field_index
+		field_index = -1 if field_index is None else field_index
 		for i, f in enumerate(self.fields):
 			if library.get_field_attr(f, 'id') == field_id:
 				field_index = i
@@ -330,6 +326,9 @@ class Library:
 		#   That filename can then be used to provide quick lookup to image metadata entries in the Library.
 		# 	NOTE: On Windows, these strings are always lowercase.
 		self.filename_to_entry_id_map: dict[str, int] = {}
+		# A list of file extensions to be ignored by TagStudio.
+		self.default_ext_blacklist: list = ['json', 'xmp', 'aae']
+		self.ignored_extensions: list = self.default_ext_blacklist
 
 		# Tags =================================================================
 		# List of every Tag object (ts-v8).
@@ -619,6 +618,10 @@ class Library:
 					self.verify_ts_folders()
 					major, minor, patch = json_dump['ts-version'].split('.')
 
+					# Load Extension Blacklist ---------------------------------
+					if 'ignored_extensions' in json_dump.keys():
+						self.ignored_extensions = json_dump['ignored_extensions']
+
 					# Parse Tags ---------------------------------------------------
 					if 'tags' in json_dump.keys():
 						start_time = time.time()
@@ -631,45 +634,37 @@ class Library:
 							# Step 2: Create a Tag object and append it to the internal Tags list,
 							# then map that Tag's ID to its index in the Tags list.
 
-							id = 0
-							if 'id' in tag.keys():
-								id = tag['id']
+							id = int(tag.get('id', 0))
 
-							if int(id) >= self._next_tag_id:
-								self._next_tag_id = int(id) + 1
+							# Don't load tags with duplicate IDs
+							if id not in {t.id for t in self.tags}:
+								if id >= self._next_tag_id:
+									self._next_tag_id = id + 1
 
-							name = ''
-							if 'name' in tag.keys():
-								name = tag['name']
-							shorthand = ''
-							if 'shorthand' in tag.keys():
-								shorthand = tag['shorthand']
-							aliases = []
-							if 'aliases' in tag.keys():
-								aliases = tag['aliases']
-							subtag_ids = []
-							if 'subtag_ids' in tag.keys():
-								subtag_ids = tag['subtag_ids']
-							color = ''
-							if 'color' in tag.keys():
-								color = tag['color']
+								name = tag.get('name', '')
+								shorthand = tag.get('shorthand', '')
+								aliases = tag.get('aliases', [])
+								subtag_ids = tag.get('subtag_ids', [])
+								color = tag.get('color', '')
 
-							t = Tag(
-								id=int(id),
-								name=name,
-								shorthand=shorthand,
-								aliases=aliases,
-								subtags_ids=subtag_ids,
-								color=color
-							)
+								t = Tag(
+									id=id,
+									name=name,
+									shorthand=shorthand,
+									aliases=aliases,
+									subtags_ids=subtag_ids,
+									color=color
+								)
 
-							# NOTE: This does NOT use the add_tag_to_library() method!
-							# That method is only used for Tags added at runtime.
-							# This process uses the same inner methods, but waits until all of the
-							# Tags are registered in the Tags list before creating the Tag clusters.
-							self.tags.append(t)
-							self._map_tag_id_to_index(t, -1)
-							self._map_tag_strings_to_tag_id(t)
+								# NOTE: This does NOT use the add_tag_to_library() method!
+								# That method is only used for Tags added at runtime.
+								# This process uses the same inner methods, but waits until all of the
+								# Tags are registered in the Tags list before creating the Tag clusters.
+								self.tags.append(t)
+								self._map_tag_id_to_index(t, -1)
+								self._map_tag_strings_to_tag_id(t)
+							else:
+								logging.info(f'[LIBRARY]Skipping Tag with duplicate ID: {tag}')
 
 						# Step 3: Map each Tag's subtags together now that all Tag objects in it.
 						for t in self.tags:
@@ -679,12 +674,11 @@ class Library:
 						logging.info(f'[LIBRARY] Tags loaded in {(end_time - start_time):.3f} seconds')
 
 					# Parse Entries ------------------------------------------------
-					if 'entries' in json_dump.keys():
+					if entries := json_dump.get('entries'):
 						start_time = time.time()
-						for entry in json_dump['entries']:
+						for entry in entries:
 
-							id = 0
-							if 'id' in entry.keys():
+							if 'id' in entry:
 								id = int(entry['id'])
 								if id >= self._next_entry_id:
 									self._next_entry_id = id + 1
@@ -693,16 +687,12 @@ class Library:
 								id = self._next_entry_id
 								self._next_entry_id += 1
 
-							filename = ''
-							if 'filename' in entry.keys():
-								filename = entry['filename']
-							e_path = ''
-							if 'path' in entry.keys():
-								e_path = entry['path']
+							filename = entry.get('filename', '')
+							e_path = entry.get('path', '')
 							fields = []
-							if 'fields' in entry.keys():
+							if 'fields' in entry:
 								# Cast JSON str keys to ints
-								for f in entry['fields']:
+								for f in fields:
 									f[int(list(f.keys())[0])
 										] = f[list(f.keys())[0]]
 									del f[list(f.keys())[0]]
@@ -764,28 +754,17 @@ class Library:
 							# the internal Collations list, then map that 
 							# Collation's ID to its index in the Collations list.
 
-							id = 0
-							if 'id' in collation.keys():
-								id = collation['id']
+							id = int(collation.get('id', 0))
+							if id >= self._next_collation_id:
+								self._next_collation_id = id + 1
 
-							if int(id) >= self._next_collation_id:
-								self._next_collation_id = int(id) + 1
-
-							title = ''
-							if 'title' in collation.keys():
-								title = collation['title']
-							e_ids_and_pages = ''
-							if 'e_ids_and_pages' in collation.keys():
-								e_ids_and_pages = collation['e_ids_and_pages']
-							sort_order = []
-							if 'sort_order' in collation.keys():
-								sort_order = collation['sort_order']
-							cover_id = []
-							if 'cover_id' in collation.keys():
-								cover_id = collation['cover_id']
+							title = collation.get('title', '')
+							e_ids_and_pages = collation.get('e_ids_and_pages', '')
+							sort_order = collation.get('sort_order', [])
+							cover_id = collation.get('cover_id', [])
 
 							c = Collation(
-								id=int(id),
+								id=id,
 								title=title,
 								e_ids_and_pages=e_ids_and_pages,
 								sort_order=sort_order,
@@ -852,7 +831,9 @@ class Library:
 		Creates a JSON serialized string from the Library object.
 		Used in saving the library to disk.
 		"""
+
 		file_to_save: Json_Libary = {"ts-version": ts_core.VERSION,
+				  	"ignored_extensions": [],
 						"tags": [],
 						"collations": [],
 						"fields": [],
@@ -861,6 +842,9 @@ class Library:
 						}
 
 		print('[LIBRARY] Formatting Tags to JSON...')
+
+		file_to_save['ignored_extensions'] = [i for i in self.ignored_extensions if i is not '']
+
 		for tag in self.tags:
 			file_to_save["tags"].append(tag.compressed_dict())
 		
@@ -928,6 +912,7 @@ class Library:
 		self.missing_files.clear()
 		self.fixed_files.clear()
 		self.filename_to_entry_id_map: dict[str, int] = {}
+		self.ignored_extensions = self.default_ext_blacklist
 
 		self.tags.clear()
 		self._next_tag_id: int = 1000
@@ -953,7 +938,7 @@ class Library:
 			# p = Path(os.path.normpath(f))
 			if ('$RECYCLE.BIN' not in f and ts_core.TS_FOLDER_NAME not in f 
        				and 'tagstudio_thumbs' not in f and not os.path.isdir(f)):
-				if os.path.splitext(f)[1][1:].lower() in ts_core.ALL_FILE_TYPES:
+				if os.path.splitext(f)[1][1:].lower() not in self.ignored_extensions:
 					self.dir_file_count += 1
 					file = str(os.path.relpath(f, self.library_dir))
 					
@@ -1386,20 +1371,20 @@ class Library:
 			query: str = query.strip().lower()
 			query_words: list[str] = query.split(' ')
 			all_tag_terms: list[str] = []
-			only_untagged: bool = True if 'untagged' in query or 'no tags' in query else False
-			only_empty: bool = True if 'empty' in query or 'no fields' in query else False
-			only_missing: bool = True if 'missing' in query or 'no file' in query else False
-			allow_adv: bool = True if 'filename:' in query_words else False
-			tag_only: bool = True if 'tag_id:' in query_words else False
+			only_untagged: bool = ('untagged' in query or 'no tags' in query)
+			only_empty: bool = ('empty' in query or 'no fields' in query)
+			only_missing: bool = ('missing' in query or 'no file' in query)
+			allow_adv: bool = 'filename:' in query_words
+			tag_only: bool = 'tag_id:' in query_words
 			if allow_adv:
 				query_words.remove('filename:')
 			if tag_only:
 				query_words.remove('tag_id:')
 			# TODO: Expand this to allow for dynamic fields to work.
-			only_no_author: bool = True if 'no author' in query or 'no artist' in query else False
+			only_no_author: bool = ('no author' in query or 'no artist' in query)
 
 			# Preprocess the Tag terms.
-			if len(query_words) > 0:
+			if query_words:
 				for i, term in enumerate(query_words):
 					for j, term in enumerate(query_words):
 						if query_words[i:j+1] and " ".join(query_words[i:j+1]) in self._tag_strings_to_id_map:
@@ -1419,101 +1404,103 @@ class Library:
 			# non_entry_count = 0
 			# Iterate over all Entries =============================================================
 			for entry in self.entries:
+				allowed_ext: bool = os.path.splitext(entry.filename)[1][1:].lower() not in self.ignored_extensions
 				# try:
 				# entry: Entry = self.entries[self.file_to_library_index_map[self._source_filenames[i]]]
 				# print(f'{entry}')
 
-				# If the entry has tags of any kind, append them to this main tag list.
-				entry_tags: list[int] = []
-				entry_authors: list[str] = []
-				if entry.fields:
-					for field in entry.fields:
-						field_id = list(field.keys())[0]
-						if self.get_field_obj(field_id)['type'] == 'tag_box':
-							entry_tags.extend(field[field_id])
-						if self.get_field_obj(field_id)['name'] == 'Author':
-							entry_authors.extend(field[field_id])
-						if self.get_field_obj(field_id)['name'] == 'Artist':
-							entry_authors.extend(field[field_id])
+				if allowed_ext:
+					# If the entry has tags of any kind, append them to this main tag list.
+					entry_tags: list[int] = []
+					entry_authors: list[str] = []
+					if entry.fields:
+						for field in entry.fields:
+							field_id = list(field.keys())[0]
+							if self.get_field_obj(field_id)['type'] == 'tag_box':
+								entry_tags.extend(field[field_id])
+							if self.get_field_obj(field_id)['name'] == 'Author':
+								entry_authors.extend(field[field_id])
+							if self.get_field_obj(field_id)['name'] == 'Artist':
+								entry_authors.extend(field[field_id])
 
-				# print(f'Entry Tags: {entry_tags}')
+					# print(f'Entry Tags: {entry_tags}')
 
-				# Add Entries from special flags -------------------------------
-				# TODO: Come up with a more user-resistent way to 'archived' and 'favorite' tags.
-				if only_untagged:
-					if not entry_tags:
-						results.append((ItemType.ENTRY, entry.id))
-				elif only_no_author:
-					if not entry_authors:
-						results.append((ItemType.ENTRY, entry.id))
-				elif only_empty:
-					if not entry.fields:
-						results.append((ItemType.ENTRY, entry.id))
-				elif only_missing:
-					if os.path.normpath(f'{self.library_dir}/{entry.path}/{entry.filename}') in self.missing_files:
-						results.append((ItemType.ENTRY, entry.id))
-
-				# elif query == "archived":
-				#     if entry.tags and self._tag_names_to_tag_id_map[self.archived_word.lower()][0] in entry.tags:
-				#         self.filtered_file_list.append(file)
-				#         pb.value = len(self.filtered_file_list)
-				# elif query in entry.path.lower():
-
-				# NOTE: This searches path and filenames.
-				if allow_adv:
-					if [q for q in query_words if (q in entry.path.lower())]:
-						results.append((ItemType.ENTRY, entry.id))
-					elif [q for q in query_words if (q in entry.filename.lower())]:
-						results.append((ItemType.ENTRY, entry.id))
-				elif tag_only:
-					if entry.has_tag(self, int(query_words[0])):
-						results.append((ItemType.ENTRY, entry.id))
-
-				# elif query in entry.filename.lower():
-				# 	self.filtered_entries.append(index)
-				elif entry_tags:
-					# For each verified, extracted Tag term.
-					failure_to_union_terms = False
-					for term in all_tag_terms:
-						# If the term from the previous loop was already verified:
-						if not failure_to_union_terms:
-							cluster: set = set()
-							# Add the immediate associated Tags to the set (ex. Name, Alias hits)
-							# Since this term could technically map to multiple IDs, iterate over it
-							# (You're 99.9999999% likely to just get 1 item)
-							for id in self._tag_strings_to_id_map[term]:
-								cluster.add(id)
-								cluster = cluster.union(
-									set(self.get_tag_cluster(id)))
-							# print(f'Full Cluster: {cluster}')
-							# For each of the Tag IDs in the term's ID cluster:
-							for t in cluster:
-								# Assume that this ID from the cluster is not in the Entry.
-								# Wait to see if proven wrong.
-								failure_to_union_terms = True
-								# If the ID actually is in the Entry,
-								if t in entry_tags:
-									# There wasn't a failure to find one of the term's cluster IDs in the Entry.
-									# There is also no more need to keep checking the rest of the terms in the cluster.
-									failure_to_union_terms = False
-									# print(f'FOUND MATCH: {t}')
-									break
-								# print(f'\tFailure to Match: {t}')
-					# If there even were tag terms to search through AND they all match an entry
-					if all_tag_terms and not failure_to_union_terms:
-						# self.filter_entries.append()
-						# self.filtered_file_list.append(file)
-						# results.append((SearchItemType.ENTRY, entry.id))
-						added = False
-						for f in entry.fields:
-							if self.get_field_attr(f, 'type') == 'collation':
-								if (self.get_field_attr(f, 'content') not in collations_added):
-									results.append((ItemType.COLLATION, self.get_field_attr(f, 'content')))
-									collations_added.append(self.get_field_attr(f, 'content'))
-								added = True
-
-						if not added:
+					# Add Entries from special flags -------------------------------
+					# TODO: Come up with a more user-resistent way to 'archived' and 'favorite' tags.
+					if only_untagged:
+						if not entry_tags:
 							results.append((ItemType.ENTRY, entry.id))
+					elif only_no_author:
+						if not entry_authors:
+							results.append((ItemType.ENTRY, entry.id))
+					elif only_empty:
+						if not entry.fields:
+							results.append((ItemType.ENTRY, entry.id))
+					elif only_missing:
+						if os.path.normpath(f'{self.library_dir}/{entry.path}/{entry.filename}') in self.missing_files:
+							results.append((ItemType.ENTRY, entry.id))
+
+					# elif query == "archived":
+					#     if entry.tags and self._tag_names_to_tag_id_map[self.archived_word.lower()][0] in entry.tags:
+					#         self.filtered_file_list.append(file)
+					#         pb.value = len(self.filtered_file_list)
+					# elif query in entry.path.lower():
+
+					# NOTE: This searches path and filenames.
+					if allow_adv:
+						if [q for q in query_words if (q in entry.path.lower())]:
+							results.append((ItemType.ENTRY, entry.id))
+						elif [q for q in query_words if (q in entry.filename.lower())]:
+							results.append((ItemType.ENTRY, entry.id))
+					elif tag_only:
+						if entry.has_tag(self, int(query_words[0])):
+							results.append((ItemType.ENTRY, entry.id))
+
+					# elif query in entry.filename.lower():
+					# 	self.filtered_entries.append(index)
+					elif entry_tags:
+						# For each verified, extracted Tag term.
+						failure_to_union_terms = False
+						for term in all_tag_terms:
+							# If the term from the previous loop was already verified:
+							if not failure_to_union_terms:
+								cluster: set = set()
+								# Add the immediate associated Tags to the set (ex. Name, Alias hits)
+								# Since this term could technically map to multiple IDs, iterate over it
+								# (You're 99.9999999% likely to just get 1 item)
+								for id in self._tag_strings_to_id_map[term]:
+									cluster.add(id)
+									cluster = cluster.union(
+										set(self.get_tag_cluster(id)))
+								# print(f'Full Cluster: {cluster}')
+								# For each of the Tag IDs in the term's ID cluster:
+								for t in cluster:
+									# Assume that this ID from the cluster is not in the Entry.
+									# Wait to see if proven wrong.
+									failure_to_union_terms = True
+									# If the ID actually is in the Entry,
+									if t in entry_tags:
+										# There wasn't a failure to find one of the term's cluster IDs in the Entry.
+										# There is also no more need to keep checking the rest of the terms in the cluster.
+										failure_to_union_terms = False
+										# print(f'FOUND MATCH: {t}')
+										break
+									# print(f'\tFailure to Match: {t}')
+						# If there even were tag terms to search through AND they all match an entry
+						if all_tag_terms and not failure_to_union_terms:
+							# self.filter_entries.append()
+							# self.filtered_file_list.append(file)
+							# results.append((SearchItemType.ENTRY, entry.id))
+							added = False
+							for f in entry.fields:
+								if self.get_field_attr(f, 'type') == 'collation':
+									if (self.get_field_attr(f, 'content') not in collations_added):
+										results.append((ItemType.COLLATION, self.get_field_attr(f, 'content')))
+										collations_added.append(self.get_field_attr(f, 'content'))
+									added = True
+
+							if not added:
+								results.append((ItemType.ENTRY, entry.id))
 
 				# sys.stdout.write(
 				#     f'\r[INFO][FILTER]: {len(self.filtered_file_list)} matches found')
@@ -1539,21 +1526,23 @@ class Library:
 			
 			for entry in self.entries:
 				added = False
-				for f in entry.fields:
-					if self.get_field_attr(f, 'type') == 'collation':
-						if (self.get_field_attr(f, 'content') not in collations_added):
-							results.append((ItemType.COLLATION, self.get_field_attr(f, 'content')))
-							collations_added.append(self.get_field_attr(f, 'content'))
-						added = True
+				allowed_ext: bool = os.path.splitext(entry.filename)[1][1:].lower() not in self.ignored_extensions
+				if allowed_ext:
+					for f in entry.fields:
+						if self.get_field_attr(f, 'type') == 'collation':
+							if (self.get_field_attr(f, 'content') not in collations_added):
+								results.append((ItemType.COLLATION, self.get_field_attr(f, 'content')))
+								collations_added.append(self.get_field_attr(f, 'content'))
+							added = True
 
-				if not added:
-					results.append((ItemType.ENTRY, entry.id))
+					if not added:
+						results.append((ItemType.ENTRY, entry.id))
 			# for file in self._source_filenames:
 			#     self.filtered_file_list.append(file)
 		results.reverse()
 		return results
 
-	def search_tags(self, query: str, include_cluster=False, ignore_builtin=False, threshold: int = 1, context: list[str] = []) -> list[int]:
+	def search_tags(self, query: str, include_cluster=False, ignore_builtin=False, threshold: int = 1, context: list[str] = None) -> list[int]:
 		"""Returns a list of Tag IDs returned from a string query."""
 		# tag_ids: list[int] = []
 		# if query:
@@ -1646,7 +1635,6 @@ class Library:
 
 		# Contextual Weighing
 		if context and ((len(id_weights) > 1 and len(priority_ids) > 1) or (len(priority_ids) > 1)):
-			context_ids: list[int] = []
 			context_strings: list[str] = [s.replace(' ', '').replace('_', '').replace('-', '').replace(
 				"'", '').replace('(', '').replace(')', '').replace('[', '').replace(']', '').lower() for s in context]
 			for term in context:
@@ -1820,16 +1808,16 @@ class Library:
 
 		# Step [3/7]:
 		# Remove ID -> cluster reference.
-		if tag_id in self._tag_id_to_cluster_map.keys():
+		if tag_id in self._tag_id_to_cluster_map:
 			del self._tag_id_to_cluster_map[tag.id]
 		# Remove mentions of this ID in all clusters.
-		for key in self._tag_id_to_cluster_map.keys():
-			if tag_id in self._tag_id_to_cluster_map[key]:
-				self._tag_id_to_cluster_map[key].remove(tag.id)
+		for key, values in self._tag_id_to_cluster_map.items():
+			if tag_id in values:
+				values.remove(tag.id)
 
 		# Step [4/7]:
 		# Remove mapping of this ID to its index in the tags list.
-		if tag.id in self._tag_id_to_index_map.keys():
+		if tag.id in self._tag_id_to_index_map:
 			del self._tag_id_to_index_map[tag.id]
 
 		# Step [5/7]:
@@ -1908,7 +1896,7 @@ class Library:
 		if data:
 
 			# Add a Title Field if the data doesn't already exist.
-			if "title" in data.keys() and data["title"]:
+			if data.get("title"):
 				field_id = 0  # Title Field ID
 				if not self.does_field_content_exist(entry_id, field_id, data['title']):
 					self.add_field_to_entry(entry_id, field_id)
@@ -1916,7 +1904,7 @@ class Library:
 						entry_id, -1, data["title"], 'replace')
 
 			# Add an Author Field if the data doesn't already exist.
-			if "author" in data.keys() and data["author"]:
+			if data.get("author"):
 				field_id = 1  # Author Field ID
 				if not self.does_field_content_exist(entry_id, field_id, data['author']):
 					self.add_field_to_entry(entry_id, field_id)
@@ -1924,7 +1912,7 @@ class Library:
 						entry_id, -1, data["author"], 'replace')
 
 			# Add an Artist Field if the data doesn't already exist.
-			if "artist" in data.keys() and data["artist"]:
+			if data.get("artist"):
 				field_id = 2  # Artist Field ID
 				if not self.does_field_content_exist(entry_id, field_id, data['artist']):
 					self.add_field_to_entry(entry_id, field_id)
@@ -1932,7 +1920,7 @@ class Library:
 						entry_id, -1, data["artist"], 'replace')
 
 			# Add a Date Published Field if the data doesn't already exist.
-			if "date_published" in data.keys() and data["date_published"]:
+			if data.get("date_published"):
 				field_id = 14  # Date Published Field ID
 				date = str(datetime.datetime.strptime(
 					data["date_published"], '%Y-%m-%d %H:%M:%S'))
@@ -1942,7 +1930,7 @@ class Library:
 					self.update_entry_field(entry_id, -1, date, 'replace')
 
 			# Process String Tags if the data doesn't already exist.
-			if "tags" in data.keys() and data["tags"]:
+			if data.get("tags"):
 				tags_field_id = 6  # Tags Field ID
 				content_tags_field_id = 7  # Content Tags Field ID
 				meta_tags_field_id = 8  # Meta Tags Field ID
@@ -1979,7 +1967,7 @@ class Library:
 					matching: list[int] = self.search_tags(
 						tag.replace('_', ' ').replace('-', ' '), include_cluster=False, ignore_builtin=True, threshold=2, context=tags)
 					priority_field_index = -1
-					if len(matching) > 0:
+					if matching:
 
 						# NOTE: The following commented-out code enables the ability
 						# to prefer an existing built-in tag_box field to add to

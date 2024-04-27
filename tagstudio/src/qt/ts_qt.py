@@ -7,40 +7,46 @@
 
 """A Qt driver for TagStudio."""
 
-from copy import copy, deepcopy
 import ctypes
-import math
-from os import times
-import sys
 import logging
-import threading
-from time import sleep
-from queue import Empty, Queue
+import math
+import os
+import sys
 import time
-from typing import Optional, Union
-from PySide6 import QtCore
-import PySide6
-from PySide6.QtGui import *
-from PySide6.QtWidgets import *
-from PySide6.QtCore import QFile, QObject, QThread, Signal, QRunnable, Qt, QThreadPool, QSize, QEvent, QMimeData, QTimer
-from PySide6.QtUiTools import QUiLoader
-from PIL import Image, ImageOps, ImageChops, UnidentifiedImageError, ImageQt, ImageDraw, ImageFont, ImageEnhance
-import PySide6.QtWidgets
-import humanfriendly
-import pillow_avif
-import cv2
+import traceback
+import shutil
+import subprocess
+from types import FunctionType
 from datetime import datetime as dt
-from src.core.ts_core import *
-# from src.core.utils.web import *
-# from src.core.utils.fs import *
-from src.core.library import *
+from pathlib import Path
+from queue import Empty, Queue
+from time import sleep
+from typing import Optional
+
+import cv2
+from PIL import Image, ImageChops, UnidentifiedImageError, ImageQt, ImageDraw, ImageFont, ImageEnhance
+from PySide6 import QtCore
+from PySide6.QtCore import QObject, QThread, Signal, QRunnable, Qt, QThreadPool, QSize, QEvent, QTimer, QSettings
+from PySide6.QtGui import (QGuiApplication, QPixmap, QEnterEvent, QMouseEvent, QResizeEvent, QPainter, QColor, QPen,
+						   QAction, QStandardItemModel, QStandardItem, QPainterPath, QFontDatabase, QIcon)
+from PySide6.QtUiTools import QUiLoader
+from PySide6.QtWidgets import (QApplication, QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QPlainTextEdit,
+							   QLineEdit, QScrollArea, QFrame, QTextEdit, QComboBox, QProgressDialog, QFileDialog,
+							   QListView, QSplitter, QSizePolicy, QMessageBox, QBoxLayout, QCheckBox, QSplashScreen,
+							   QMenu, QTableWidget, QTableWidgetItem)
+from humanfriendly import format_timespan, format_size
+
+from src.core.library import Collation, Entry, ItemType, Library, Tag
 from src.core.palette import ColorType, get_tag_color
+from src.core.ts_core import (TagStudioCore, TAG_COLORS, DATE_FIELDS, TEXT_FIELDS, BOX_FIELDS, ALL_FILE_TYPES,
+										SHORTCUT_TYPES, PROGRAM_TYPES, ARCHIVE_TYPES, PRESENTATION_TYPES,
+										SPREADSHEET_TYPES, TEXT_TYPES, AUDIO_TYPES, VIDEO_TYPES, IMAGE_TYPES,
+										LIBRARY_FILENAME, COLLAGE_FOLDER_NAME, BACKUP_FOLDER_NAME, TS_FOLDER_NAME,
+										VERSION_BRANCH, VERSION)
+from src.core.utils.web import strip_web_protocol
 from src.qt.flowlayout import FlowLayout, FlowWidget
 from src.qt.main_window import Ui_MainWindow
 import src.qt.resources_rc
-# from typing_extensions import deprecated
-from humanfriendly import format_timespan
-# from src.qt.qtacrylic.qtacrylic import WindowEffect
 
 # SIGQUIT is not defined on Windows
 if sys.platform == "win32":
@@ -55,12 +61,26 @@ INFO = f'[INFO]'
 
 logging.basicConfig(format="%(message)s", level=logging.INFO)
 
+# Keep settings in ini format in the current working directory.
+QSettings.setPath(QSettings.IniFormat, QSettings.UserScope, os.getcwd())
 
-def open_file(path):
+
+def open_file(path: str):
 	try:
-		os.startfile(path)
-	except FileNotFoundError:
-		logging.info('File Not Found! (Imagine this as a popup)')
+		if sys.platform == "win32":
+			# Windows needs special attention to handle spaces in the file
+			# first parameter is for title, NOT filepath
+			subprocess.Popen(["start", "", os.path.normpath(path)], shell=True, close_fds=True, creationflags=subprocess.DETACHED_PROCESS)
+		else:
+			if sys.platform == "darwin":
+				command_name = "open"
+			else:
+				command_name = "xdg-open"
+			command = shutil.which(command_name)
+			if command is not None:
+				subprocess.Popen([command, path], close_fds=True)
+			else:
+				logging.info(f"Could not find {command_name} on system PATH")
 	except:
 		traceback.print_exc()
 
@@ -284,15 +304,17 @@ class FieldContainer(QWidget):
 
 
 class FieldWidget(QWidget):
+	field = dict
 	def __init__(self, title) -> None:
 		super().__init__()
 		# self.item = item
 		self.title = title
 
 
+
 class TagBoxWidget(FieldWidget):
 	updated = Signal()
-
+	
 	def __init__(self, item, title, field_index, library:Library, tags:list[int], driver:'QtDriver') -> None:
 		super().__init__(title)
 		# QObject.__init__(self)
@@ -360,7 +382,7 @@ class TagBoxWidget(FieldWidget):
 			# 							)
 			tw = TagWidget(self.lib, self.lib.get_tag(tag), True, True)
 			tw.on_click.connect(lambda checked=False, q=f'tag_id: {tag}': (self.driver.main_window.searchField.setText(q), self.driver.filter_items(q)))
-			tw.on_remove.connect(lambda checked=False, t=tag: (self.lib.get_entry(self.item.id).remove_tag(self.lib, t, self.field_index), self.updated.emit()))
+			tw.on_remove.connect(lambda checked=False, t=tag: (self.remove_tag(t)))
 			tw.on_edit.connect(lambda checked=False, t=tag: (self.edit_tag(t)))
 			self.base_layout.addWidget(tw)
 		self.tags = tags
@@ -375,7 +397,8 @@ class TagBoxWidget(FieldWidget):
 		# doesn't move all the way to the left.
 		if self.base_layout.itemAt(0) and not self.base_layout.itemAt(1):
 			self.base_layout.update()
-	
+
+
 	def edit_tag(self, tag_id:int):
 		btp = BuildTagPanel(self.lib, tag_id)
 		# btp.on_edit.connect(lambda x: self.edit_tag_callback(x))
@@ -395,28 +418,43 @@ class TagBoxWidget(FieldWidget):
 		# self.base_layout.addWidget(TagWidget(self.lib, self.lib.get_tag(tag), True))
 		# self.tags.append(tag)
 		logging.info(f'[TAG BOX WIDGET] ADD TAG CALLBACK: T:{tag_id} to E:{self.item.id}')
-		if type(self.item) == Entry:
-			self.item.add_tag(self.lib, tag_id, field_id=-1, field_index=self.field_index)
-			logging.info(f'[TAG BOX WIDGET] UPDATED EMITTED: {tag_id}')
-			self.updated.emit()
+		logging.info(f'[TAG BOX WIDGET] SELECTED T:{self.driver.selected}')
+		id = list(self.field.keys())[0]
+		for x in self.driver.selected:
+				self.driver.lib.get_entry(x[1]).add_tag(self.driver.lib, tag_id, field_id=id, field_index=-1)
+				self.updated.emit()
+		if tag_id == 0 or tag_id == 1:
+			self.driver.update_badges()
+
+		# if type((x[0]) == ThumbButton):
+		# 	# TODO: Remove space from the special search here (tag_id:x) once that system is finalized.
 			# logging.info(f'I want to add tag ID {tag_id} to entry {self.item.filename}')
-		# self.updated.emit()
+			# self.updated.emit()
 			# if tag_id not in self.tags:
 			# 	self.tags.append(tag_id)
 			# self.set_tags(self.tags)
+		# elif type((x[0]) == ThumbButton):
+
 	
 	def edit_tag_callback(self, tag:Tag):
 		self.lib.update_tag(tag)
-			
+		
+	def remove_tag(self, tag_id):
+		logging.info(f'[TAG BOX WIDGET] SELECTED T:{self.driver.selected}')
+		id = list(self.field.keys())[0]
+		for x in self.driver.selected:
+			index = self.driver.lib.get_field_index_in_entry(self.driver.lib.get_entry(x[1]),id)
+			self.driver.lib.get_entry(x[1]).remove_tag(self.driver.lib, tag_id,field_index=index[0])
+			self.updated.emit()
+		if tag_id == 0 or tag_id == 1:
+			self.driver.update_badges()
 
-	def remove_tag(self):
-		# NOTE: You'll need to account for the add button at the end.
-		pass
 	# def show_add_button(self, value:bool):
 	# 	self.add_button.setHidden(not value)
 
 
 class TextWidget(FieldWidget):
+
 	def __init__(self, title, text:str) -> None:
 		super().__init__(title)
 		# self.item = item
@@ -1111,6 +1149,131 @@ class BuildTagPanel(PanelWidget):
 	# 		self.search_field.setFocus()
 	# 		self.parentWidget().hide()
 
+class TagDatabasePanel(PanelWidget):
+	tag_chosen = Signal(int)
+	def __init__(self, library):
+		super().__init__()
+		self.lib: Library = library
+		# self.callback = callback
+		self.first_tag_id = -1
+		self.tag_limit = 30
+		# self.selected_tag: int = 0
+	
+		self.setMinimumSize(300, 400)
+		self.root_layout = QVBoxLayout(self)
+		self.root_layout.setContentsMargins(6,0,6,0)
+	
+		self.search_field = QLineEdit()
+		self.search_field.setObjectName('searchField')
+		self.search_field.setMinimumSize(QSize(0, 32))
+		self.search_field.setPlaceholderText('Search Tags')
+		self.search_field.textEdited.connect(lambda x=self.search_field.text(): self.update_tags(x))
+		self.search_field.returnPressed.connect(lambda checked=False: self.on_return(self.search_field.text()))
+
+		# self.content_container = QWidget()
+		# self.content_layout = QHBoxLayout(self.content_container)
+
+		self.scroll_contents = QWidget()
+		self.scroll_layout = QVBoxLayout(self.scroll_contents)
+		self.scroll_layout.setContentsMargins(6,0,6,0)
+		self.scroll_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
+
+		self.scroll_area = QScrollArea()
+		# self.scroll_area.setStyleSheet('background: #000000;')
+		self.scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOn)
+		# self.scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+		self.scroll_area.setWidgetResizable(True)
+		self.scroll_area.setFrameShadow(QFrame.Shadow.Plain)
+		self.scroll_area.setFrameShape(QFrame.Shape.NoFrame)
+		# sa.setMaximumWidth(self.preview_size[0])
+		self.scroll_area.setWidget(self.scroll_contents)
+
+		# self.add_button = QPushButton()
+		# self.root_layout.addWidget(self.add_button)
+		# self.add_button.setText('Add Tag')
+		# # self.done_button.clicked.connect(lambda checked=False, x=1101: (callback(x), self.hide()))
+		# self.add_button.clicked.connect(lambda checked=False, x=1101: callback(x))
+		# # self.setLayout(self.root_layout)
+
+		self.root_layout.addWidget(self.search_field)
+		self.root_layout.addWidget(self.scroll_area)
+		self.update_tags('')
+
+	# def reset(self):
+	# 	self.search_field.setText('')
+	# 	self.update_tags('')
+	# 	self.search_field.setFocus()
+	
+	def on_return(self, text:str):
+		if text and self.first_tag_id >= 0:
+			# callback(self.first_tag_id)
+			self.search_field.setText('')
+			self.update_tags('')
+		else:
+			self.search_field.setFocus()
+			self.parentWidget().hide()
+
+	def update_tags(self, query:str):
+		# for c in self.scroll_layout.children():
+		# 	c.widget().deleteLater()
+		while self.scroll_layout.itemAt(0):
+			# logging.info(f"I'm deleting { self.scroll_layout.itemAt(0).widget()}")
+			self.scroll_layout.takeAt(0).widget().deleteLater()
+		
+		if query:
+			first_id_set = False
+			for tag_id in self.lib.search_tags(query, include_cluster=True)[:self.tag_limit-1]:
+				if not first_id_set:
+					self.first_tag_id = tag_id
+					first_id_set = True
+				c = QWidget()
+				l = QHBoxLayout(c)
+				l.setContentsMargins(0,0,0,0)
+				l.setSpacing(3)
+				tw = TagWidget(self.lib, self.lib.get_tag(tag_id), True, False)
+				tw.on_edit.connect(lambda checked=False, t=self.lib.get_tag(tag_id): (self.edit_tag(t.id)))
+				l.addWidget(tw)
+				self.scroll_layout.addWidget(c)
+		else:
+			first_id_set = False
+			for tag in self.lib.tags:
+				if not first_id_set:
+					self.first_tag_id = tag.id
+					first_id_set = True
+				c = QWidget()
+				l = QHBoxLayout(c)
+				l.setContentsMargins(0,0,0,0)
+				l.setSpacing(3)
+				tw = TagWidget(self.lib, tag, True, False)
+				tw.on_edit.connect(lambda checked=False, t=tag: (self.edit_tag(t.id)))
+				l.addWidget(tw)
+				self.scroll_layout.addWidget(c)
+
+		self.search_field.setFocus()
+	
+	def edit_tag(self, tag_id:int):
+		btp = BuildTagPanel(self.lib, tag_id)
+		# btp.on_edit.connect(lambda x: self.edit_tag_callback(x))
+		self.edit_modal = PanelModal(btp, 
+							   self.lib.get_tag(tag_id).display_name(self.lib), 
+							   'Edit Tag',
+							   done_callback=(self.update_tags(self.search_field.text())),
+							   has_save=True)
+		# self.edit_modal.widget.update_display_name.connect(lambda t: self.edit_modal.title_widget.setText(t))
+		panel: BuildTagPanel = self.edit_modal.widget
+		self.edit_modal.saved.connect(lambda: self.edit_tag_callback(btp))
+		# panel.tag_updated.connect(lambda tag: self.lib.update_tag(tag))
+		self.edit_modal.show()
+	
+	def edit_tag_callback(self, btp:BuildTagPanel):
+		self.lib.update_tag(btp.build_tag())
+		self.update_tags(self.search_field.text())
+
+	# def enterEvent(self, event: QEnterEvent) -> None:
+	# 	self.search_field.setFocus()
+	# 	return super().enterEvent(event)
+	# 	self.focusOutEvent
+		
 
 class FunctionIterator(QObject):
 	"""Iterates over a yielding function and emits progress as the 'value' signal.\n\nThread-Safe Guarantee™"""
@@ -1258,10 +1421,9 @@ class FixDupeFilesModal(QWidget):
 					os.path.normpath(self.lib.library_dir))
 		qfd.setFileMode(QFileDialog.FileMode.ExistingFile)
 		qfd.setNameFilter("DupeGuru Files (*.dupeguru)")
-		filename = []
 		if qfd.exec_():
 			filename = qfd.selectedFiles()
-			if len(filename) > 0:
+			if filename:
 				self.set_filename(filename[0])
 	
 	def set_filename(self, filename:str):
@@ -1806,6 +1968,86 @@ class AddFieldModal(QWidget):
 		self.root_layout.addStretch(1)
 		self.root_layout.addWidget(self.button_container)
 
+class FileExtensionModal(PanelWidget):
+	done = Signal()
+	def __init__(self, library:'Library'):
+		super().__init__()
+		self.lib = library
+		self.setWindowTitle(f'File Extensions')
+		self.setWindowModality(Qt.WindowModality.ApplicationModal)
+		self.setMinimumSize(200, 400)
+		self.root_layout = QVBoxLayout(self)
+		self.root_layout.setContentsMargins(6,6,6,6)
+
+		self.table = QTableWidget(len(self.lib.ignored_extensions), 1)
+		self.table.horizontalHeader().setVisible(False)
+		self.table.verticalHeader().setVisible(False)
+		self.table.horizontalHeader().setStretchLastSection(True)
+
+		self.add_button = QPushButton()
+		self.add_button.setText('&Add Extension')
+		self.add_button.clicked.connect(self.add_item)
+		self.add_button.setDefault(True)
+		self.add_button.setMinimumWidth(100)
+
+		self.root_layout.addWidget(self.table)
+		self.root_layout.addWidget(self.add_button, alignment=Qt.AlignmentFlag.AlignCenter)
+		self.refresh_list()
+	
+	def refresh_list(self):
+		for i, ext in enumerate(self.lib.ignored_extensions):
+			self.table.setItem(i, 0, QTableWidgetItem(ext))
+	
+	def add_item(self):
+		self.table.insertRow(self.table.rowCount())
+	
+	def save(self):
+		self.lib.ignored_extensions.clear()
+		for i in range(self.table.rowCount()):
+			ext = self.table.item(i, 0)
+			if ext and ext.text():
+				self.lib.ignored_extensions.append(ext.text())
+
+class FileOpenerHelper():
+	def __init__(self, filepath:str):
+		self.filepath = filepath
+
+	def set_filepath(self, filepath:str):
+		self.filepath = filepath
+
+	def open_file(self):
+		if os.path.exists(self.filepath):
+			os.startfile(self.filepath)
+			logging.info(f'Opening file: {self.filepath}')
+		else:
+			logging.error(f'File not found: {self.filepath}')
+
+	def open_explorer(self):
+		if os.path.exists(self.filepath):
+				logging.info(f'Opening file: {self.filepath}')
+				if os.name == 'nt':  # Windows
+					command = f'explorer /select,"{self.filepath}"'
+					subprocess.run(command, shell=True)
+				else:  # macOS and Linux
+					command = f'nautilus --select "{self.filepath}"'  # Adjust for your Linux file manager if different
+					if subprocess.run(command, shell=True).returncode == 0:
+						file_loc = os.path.dirname(self.filepath)
+						file_loc = os.path.normpath(file_loc)
+						os.startfile(file_loc)
+		else:
+			logging.error(f'File not found: {self.filepath}')
+class FileOpenerLabel(QLabel):
+	def __init__(self, text, parent=None):
+		super().__init__(text, parent)
+
+	def setFilePath(self, filepath):
+		self.filepath = filepath
+
+	def mousePressEvent(self, event):
+		super().mousePressEvent(event)
+		opener = FileOpenerHelper(self.filepath)
+		opener.open_explorer()
+
 class PreviewPanel(QWidget):
 	"""The Preview Panel Widget."""
 	tags_updated = Signal()
@@ -1841,6 +2083,14 @@ class PreviewPanel(QWidget):
 		self.preview_img = QPushButton()
 		self.preview_img.setMinimumSize(*self.img_button_size)
 		self.preview_img.setFlat(True)
+
+		self.preview_img.setContextMenuPolicy(Qt.ContextMenuPolicy.ActionsContextMenu)
+		self.opener = FileOpenerHelper('')
+		self.open_file_action = QAction('Open file', self)
+		self.open_explorer_action = QAction('Open file in explorer', self)
+
+		self.preview_img.addAction(self.open_file_action)
+		self.preview_img.addAction(self.open_explorer_action)
 		self.tr = ThumbRenderer()
 		self.tr.updated.connect(lambda ts, i, s: (self.preview_img.setIcon(i)))
 		self.tr.updated_ratio.connect(lambda ratio: (self.set_image_ratio(ratio), 
@@ -1852,7 +2102,7 @@ class PreviewPanel(QWidget):
 		image_layout.addWidget(self.preview_img)
 		image_layout.setAlignment(self.preview_img, Qt.AlignmentFlag.AlignCenter)
 
-		self.file_label = QLabel('Filename')
+		self.file_label = FileOpenerLabel('Filename')
 		self.file_label.setWordWrap(True)
 		self.file_label.setTextInteractionFlags(
 			Qt.TextInteractionFlag.TextSelectableByMouse)
@@ -2059,7 +2309,9 @@ class PreviewPanel(QWidget):
 		if len(self.driver.selected) == 0:
 			if len(self.selected) != 0 or not self.initialized:
 				self.file_label.setText(f"No Items Selected")
+				self.file_label.setFilePath('')
 				self.dimensions_label.setText("")
+				self.preview_img.setContextMenuPolicy(Qt.ContextMenuPolicy.NoContextMenu)
 				ratio: float = self.devicePixelRatio()
 				self.tr.render_big(time.time(), '', (512, 512), ratio, True)
 				try:
@@ -2082,10 +2334,16 @@ class PreviewPanel(QWidget):
 				if (len(self.selected) == 0 
 						or self.selected != self.driver.selected):
 					filepath = os.path.normpath(f'{self.lib.library_dir}/{item.path}/{item.filename}')
+					self.file_label.setFilePath(filepath)
 					window_title = filepath
 					ratio: float = self.devicePixelRatio()
 					self.tr.render_big(time.time(), filepath, (512, 512), ratio)
 					self.file_label.setText("\u200b".join(filepath))
+
+					self.preview_img.setContextMenuPolicy(Qt.ContextMenuPolicy.ActionsContextMenu)
+					self.opener = FileOpenerHelper(filepath)
+					self.open_file_action.triggered.connect(self.opener.open_file)
+					self.open_explorer_action.triggered.connect(self.opener.open_explorer)
 
 					# TODO: Do this somewhere else, this is just here temporarily.
 					extension = os.path.splitext(filepath)[1][1:].lower()
@@ -2115,12 +2373,12 @@ class PreviewPanel(QWidget):
 
 						# Stats for specific file types are displayed here.
 						if extension in (IMAGE_TYPES + VIDEO_TYPES):
-							self.dimensions_label.setText(f"{extension.upper()}  •  {humanfriendly.format_size(os.stat(filepath).st_size)}\n{image.width} x {image.height} px")
+							self.dimensions_label.setText(f"{extension.upper()}  •  {format_size(os.stat(filepath).st_size)}\n{image.width} x {image.height} px")
 						else:
 							self.dimensions_label.setText(f"{extension.upper()}")
 
 						if not image:
-							self.dimensions_label.setText(f"{extension.upper()}  •  {humanfriendly.format_size(os.stat(filepath).st_size)}")
+							self.dimensions_label.setText(f"{extension.upper()}  •  {format_size(os.stat(filepath).st_size)}")
 							raise UnidentifiedImageError
 						
 					except (UnidentifiedImageError, FileNotFoundError, cv2.error):
@@ -2159,7 +2417,9 @@ class PreviewPanel(QWidget):
 		elif len(self.driver.selected) > 1:
 			if self.selected != self.driver.selected:
 				self.file_label.setText(f"{len(self.driver.selected)} Items Selected")
+				self.file_label.setFilePath('')
 				self.dimensions_label.setText("")
+				self.preview_img.setContextMenuPolicy(Qt.ContextMenuPolicy.NoContextMenu)
 				ratio: float = self.devicePixelRatio()
 				self.tr.render_big(time.time(), '', (512, 512), ratio, True)
 				try:
@@ -2311,7 +2571,6 @@ class PreviewPanel(QWidget):
 			container = self.containers[index]
 			# container.inner_layout.removeItem(container.inner_layout.itemAt(1))
 			# container.setHidden(False)
-
 		if self.lib.get_field_attr(field, 'type') == 'tag_box':
 			# logging.info(f'WRITING TAGBOX FOR ITEM {item.id}')
 			container.set_title(self.lib.get_field_attr(field, 'name'))
@@ -2333,21 +2592,19 @@ class PreviewPanel(QWidget):
 					inner_container = TagBoxWidget(item, title, index, self.lib, self.lib.get_field_attr(field, 'content'), self.driver)
 					
 					container.set_inner_widget(inner_container)
-
+				inner_container.field = field
 				inner_container.updated.connect(lambda: (self.write_container(index, field), self.tags_updated.emit()))
 				# if type(item) == Entry:
 				# NOTE: Tag Boxes have no Edit Button (But will when you can convert field types)
 				# f'Are you sure you want to remove this \"{self.lib.get_field_attr(field, "name")}\" field?'
 				# container.set_remove_callback(lambda: (self.lib.get_entry(item.id).fields.pop(index), self.update_widgets(item)))
 				prompt=f'Are you sure you want to remove this \"{self.lib.get_field_attr(field, "name")}\" field?'
-				callback = lambda: (self.remove_field(item.fields[index]), self.update_widgets())
+				callback = lambda: (self.remove_field(field), self.update_widgets())
 				container.set_remove_callback(lambda: self.remove_message_box(
 					prompt=prompt,
 					callback=callback))
 				container.set_copy_callback(None)
 				container.set_edit_callback(None)
-				# logging.info(self.common_fields)
-				# logging.info(f'index:{index}')
 			else:
 				text = '<i>Mixed Data</i>'
 				title = f"{self.lib.get_field_attr(field, 'name')} (Wacky Tag Box)"
@@ -2377,15 +2634,14 @@ class PreviewPanel(QWidget):
 			container.set_inner_widget(inner_container)
 			# if type(item) == Entry:
 			if not mixed:
-				item = self.lib.get_entry(self.selected[0][1]) # TODO TODO TODO: TEMPORARY
 				modal = PanelModal(EditTextLine(self.lib.get_field_attr(field, 'content')), 
 												title=title,
 												window_title=f'Edit {self.lib.get_field_attr(field, "name")}',
-												save_callback=(lambda content: (self.update_field(item.fields[index], content), self.update_widgets()))
+												save_callback=(lambda content: (self.update_field(field, content), self.update_widgets()))
 												)
 				container.set_edit_callback(modal.show)
 				prompt=f'Are you sure you want to remove this \"{self.lib.get_field_attr(field, "name")}\" field?'
-				callback = lambda: (self.remove_field(item.fields[index]), self.update_widgets())
+				callback = lambda: (self.remove_field(field), self.update_widgets())
 				container.set_remove_callback(lambda: self.remove_message_box(
 					prompt=prompt,
 					callback=callback))
@@ -2413,17 +2669,15 @@ class PreviewPanel(QWidget):
 			container.set_inner_widget(inner_container)
 			# if type(item) == Entry:
 			if not mixed:
-				item = self.lib.get_entry(self.selected[0][1]) # TODO TODO TODO: TEMPORARY
 				container.set_copy_callback(None)
 				modal = PanelModal(EditTextBox(self.lib.get_field_attr(field, 'content')), 
 												title=title,
 												window_title=f'Edit {self.lib.get_field_attr(field, "name")}',
-												save_callback=(lambda content: (self.update_field(item.fields[index], content), self.update_widgets()))
+												save_callback=(lambda content: (self.update_field(field, content), self.update_widgets()))
 												)
 				container.set_edit_callback(modal.show)
-				# container.set_remove_callback(lambda: (self.lib.get_entry(item.id).fields.pop(index), self.update_widgets(item)))
 				prompt=f'Are you sure you want to remove this \"{self.lib.get_field_attr(field, "name")}\" field?'
-				callback = lambda: (self.remove_field(item.fields[index]), self.update_widgets())
+				callback = lambda: (self.remove_field(field), self.update_widgets())
 				container.set_remove_callback(lambda: self.remove_message_box(
 					prompt=prompt,
 					callback=callback))
@@ -2448,7 +2702,7 @@ class PreviewPanel(QWidget):
 			# container.set_edit_callback(None)
 			# container.set_remove_callback(lambda: (self.lib.get_entry(item.id).fields.pop(index), self.update_widgets(item)))
 			prompt=f'Are you sure you want to remove this \"{self.lib.get_field_attr(field, "name")}\" field?'
-			callback = lambda: (self.remove_field(item.fields[index]), self.update_widgets())
+			callback = lambda: (self.remove_field(field), self.update_widgets())
 			container.set_remove_callback(lambda: self.remove_message_box(
 				prompt=prompt,
 				callback=callback))
@@ -2476,7 +2730,7 @@ class PreviewPanel(QWidget):
 				container.set_edit_callback(None)
 				# container.set_remove_callback(lambda: (self.lib.get_entry(item.id).fields.pop(index), self.update_widgets(item)))
 				prompt=f'Are you sure you want to remove this \"{self.lib.get_field_attr(field, "name")}\" field?'
-				callback = lambda: (self.remove_field(item.fields[index]), self.update_widgets())
+				callback = lambda: (self.remove_field(field), self.update_widgets())
 				container.set_remove_callback(lambda: self.remove_message_box(
 					prompt=prompt,
 					callback=callback))
@@ -2501,7 +2755,7 @@ class PreviewPanel(QWidget):
 			container.set_edit_callback(None)
 			# container.set_remove_callback(lambda: (self.lib.get_entry(item.id).fields.pop(index), self.update_widgets(item)))
 			prompt=f'Are you sure you want to remove this \"{self.lib.get_field_attr(field, "name")}\" field?'
-			callback = lambda: (self.remove_field(item.fields[index]), self.update_widgets())
+			callback = lambda: (self.remove_field(field), self.update_widgets())
 			# callback = lambda: (self.lib.get_entry(item.id).fields.pop(index), self.update_widgets())
 			container.set_remove_callback(lambda: self.remove_message_box(
 				prompt=prompt,
@@ -2516,8 +2770,13 @@ class PreviewPanel(QWidget):
 				entry = self.lib.get_entry(item_pair[1])
 				try:
 					index = entry.fields.index(field)
+					updated_badges = False
+					if 8 in entry.fields[index].keys() and (1 in entry.fields[index][8] or 0 in entry.fields[index][8]):
+						updated_badges = True
 					# TODO: Create a proper Library/Entry method to manage fields.
 					entry.fields.pop(index)
+					if updated_badges:
+						self.driver.update_badges()
 				except ValueError:
 					logging.info(f'[PREVIEW PANEL][ERROR?] Tried to remove field from Entry ({entry.id}) that never had it')
 					pass
@@ -2555,7 +2814,6 @@ class ItemThumb(FlowWidget):
 	"""
 	The thumbnail widget for a library item (Entry, Collation, Tag Group, etc.).
 	"""
-
 	update_cutoff: float = time.time()
 
 	collation_icon_128: Image.Image = Image.open(os.path.normpath(
@@ -2683,6 +2941,15 @@ class ItemThumb(FlowWidget):
 		self.thumb_button.setLayout(self.base_layout)
 		# self.bg_button.setMinimumSize(*thumb_size)
 		# self.bg_button.setMaximumSize(*thumb_size)
+
+		self.thumb_button.setContextMenuPolicy(Qt.ContextMenuPolicy.ActionsContextMenu)
+		self.opener = FileOpenerHelper('')
+		open_file_action = QAction('Open file', self)
+		open_file_action.triggered.connect(self.opener.open_file)
+		open_explorer_action = QAction('Open file in explorer', self)
+		open_explorer_action.triggered.connect(self.opener.open_explorer)
+		self.thumb_button.addAction(open_file_action)
+		self.thumb_button.addAction(open_explorer_action)
 
 		# Static Badges ========================================================
 
@@ -2878,7 +3145,15 @@ class ItemThumb(FlowWidget):
 
 
 	def set_item_id(self, id: int):
+		'''
+		also sets the filepath for the file opener
+		'''
 		self.item_id = id
+		if(id == -1):
+			return
+		entry = self.lib.get_entry(self.item_id)
+		filepath = os.path.normpath(f'{self.lib.library_dir}/{entry.path}/{entry.filename}')
+		self.opener.set_filepath(filepath)
 
 	def assign_favorite(self, value: bool):
 		# Switching mode to None to bypass mode-specific operations when the
@@ -2921,15 +3196,29 @@ class ItemThumb(FlowWidget):
 		# logging.info(f'Archived Check: {value}, Mode: {self.mode}')
 		if self.mode == ItemType.ENTRY:
 			self.isArchived = value
-			e = self.lib.get_entry(self.item_id)
-			if value:
-				self.archived_badge.setHidden(False)
-				DEFAULT_META_TAG_FIELD = 8
-				e.add_tag(self.lib, 0, DEFAULT_META_TAG_FIELD)
+			DEFAULT_META_TAG_FIELD = 8
+			temp = (ItemType.ENTRY,self.item_id)
+			if list(self.panel.driver.selected).count(temp) > 0: # Is the archived badge apart of the selection?
+				# Yes, then add archived tag to all selected.
+				for x in self.panel.driver.selected:
+					e = self.lib.get_entry(x[1])
+					if value:
+						self.archived_badge.setHidden(False)
+						e.add_tag(self.panel.driver.lib, 0, field_id=DEFAULT_META_TAG_FIELD, field_index=-1)
+					else:
+						e.remove_tag(self.panel.driver.lib, 0)
 			else:
-				e.remove_tag(self.lib, 0)
+				# No, then add archived tag to the entry this badge is on.
+				e = self.lib.get_entry(self.item_id)
+				if value:
+					self.favorite_badge.setHidden(False)
+					e.add_tag(self.panel.driver.lib, 0, field_id=DEFAULT_META_TAG_FIELD, field_index=-1)
+				else:
+					e.remove_tag(self.panel.driver.lib, 0)
 			if self.panel.isOpen:
 				self.panel.update_widgets()
+			self.panel.driver.update_badges()
+
 
 	# def on_archived_uncheck(self):
 	# 	if self.mode == SearchItemType.ENTRY:
@@ -2940,15 +3229,29 @@ class ItemThumb(FlowWidget):
 		# logging.info(f'Favorite Check: {value}, Mode: {self.mode}')
 		if self.mode == ItemType.ENTRY:
 			self.isFavorite = value
-			e = self.lib.get_entry(self.item_id)
-			if value:
-				self.favorite_badge.setHidden(False)
-				DEFAULT_META_TAG_FIELD = 8
-				e.add_tag(self.lib, 1, DEFAULT_META_TAG_FIELD)
+			DEFAULT_META_TAG_FIELD = 8
+			temp = (ItemType.ENTRY,self.item_id)
+			if list(self.panel.driver.selected).count(temp) > 0: # Is the favorite badge apart of the selection?
+				# Yes, then add favorite tag to all selected.
+				for x in self.panel.driver.selected:
+					e = self.lib.get_entry(x[1])
+					if value:
+						self.favorite_badge.setHidden(False)
+						e.add_tag(self.panel.driver.lib, 1, field_id=DEFAULT_META_TAG_FIELD, field_index=-1)
+					else:
+						e.remove_tag(self.panel.driver.lib, 1)
 			else:
-				e.remove_tag(self.lib, 1)
+				# No, then add favorite tag to the entry this badge is on.
+				e = self.lib.get_entry(self.item_id)
+				if value:
+					self.favorite_badge.setHidden(False)
+					e.add_tag(self.panel.driver.lib, 1, field_id=DEFAULT_META_TAG_FIELD, field_index=-1)
+				else:
+					e.remove_tag(self.panel.driver.lib, 1)
 			if self.panel.isOpen:
 				self.panel.update_widgets()
+			self.panel.driver.update_badges()
+				
 
 	# def on_favorite_uncheck(self):
 	# 	if self.mode == SearchItemType.ENTRY:
@@ -3558,6 +3861,8 @@ class QtDriver(QObject):
 
 		self.SIGTERM.connect(self.handleSIGTERM)
 
+		self.settings = QSettings(QSettings.IniFormat, QSettings.UserScope, 'tagstudio', 'TagStudio')
+
 
 		max_threads = os.cpu_count()
 		for i in range(max_threads):
@@ -3573,7 +3878,7 @@ class QtDriver(QObject):
 												'Open/Create Library',
 												'/', 
 												QFileDialog.ShowDirsOnly)
-		if dir != None and dir != '':
+		if dir not in (None, ''):
 			self.open_library(dir)
 
 	def signal_handler(self, sig, frame):
@@ -3647,14 +3952,20 @@ class QtDriver(QObject):
 
 		open_library_action = QAction('&Open/Create Library', menu_bar)
 		open_library_action.triggered.connect(lambda: self.open_library_from_dialog())
+		open_library_action.setShortcut(QtCore.QKeyCombination(QtCore.Qt.KeyboardModifier(QtCore.Qt.KeyboardModifier.ControlModifier), QtCore.Qt.Key.Key_O))
+		open_library_action.setToolTip("Ctrl+O")
 		file_menu.addAction(open_library_action)
 
 		save_library_action = QAction('&Save Library', menu_bar)
 		save_library_action.triggered.connect(lambda: self.callback_library_needed_check(self.save_library))
+		save_library_action.setShortcut(QtCore.QKeyCombination(QtCore.Qt.KeyboardModifier(QtCore.Qt.KeyboardModifier.ControlModifier), QtCore.Qt.Key.Key_S))
+		save_library_action.setStatusTip("Ctrl+S")
 		file_menu.addAction(save_library_action)
 	
-		save_library_backup_action = QAction('Save Library &Backup', menu_bar)
+		save_library_backup_action = QAction('&Save Library Backup', menu_bar)
 		save_library_backup_action.triggered.connect(lambda: self.callback_library_needed_check(self.backup_library))
+		save_library_backup_action.setShortcut(QtCore.QKeyCombination(QtCore.Qt.KeyboardModifier(QtCore.Qt.KeyboardModifier.ControlModifier | QtCore.Qt.KeyboardModifier.ShiftModifier), QtCore.Qt.Key.Key_S))
+		save_library_backup_action.setStatusTip("Ctrl+Shift+S")
 		file_menu.addAction(save_library_backup_action)
 
 		file_menu.addSeparator()
@@ -3663,6 +3974,8 @@ class QtDriver(QObject):
 		# refresh_lib_action.triggered.connect(lambda: self.lib.refresh_dir())
 		add_new_files_action = QAction('&Refresh Directories', menu_bar)
 		add_new_files_action.triggered.connect(lambda: self.callback_library_needed_check(self.add_new_files_callback))
+		add_new_files_action.setShortcut(QtCore.QKeyCombination(QtCore.Qt.KeyboardModifier(QtCore.Qt.KeyboardModifier.ControlModifier), QtCore.Qt.Key.Key_R))
+		add_new_files_action.setStatusTip("Ctrl+R")
 		# file_menu.addAction(refresh_lib_action)
 		file_menu.addAction(add_new_files_action)
 
@@ -3671,9 +3984,21 @@ class QtDriver(QObject):
 		file_menu.addAction(QAction('&Close Library', menu_bar))
 
 		# Edit Menu ============================================================
-		new_tag_action = QAction('New Tag', menu_bar)
+		new_tag_action = QAction('New &Tag', menu_bar)
 		new_tag_action.triggered.connect(lambda: self.add_tag_action_callback())
+		new_tag_action.setShortcut(QtCore.QKeyCombination(QtCore.Qt.KeyboardModifier(QtCore.Qt.KeyboardModifier.ControlModifier), QtCore.Qt.Key.Key_T))
+		new_tag_action.setToolTip('Ctrl+T')
 		edit_menu.addAction(new_tag_action)
+
+		edit_menu.addSeparator()
+
+		manage_file_extensions_action = QAction('Ignore File Extensions', menu_bar)
+		manage_file_extensions_action.triggered.connect(lambda: self.show_file_extension_modal())
+		edit_menu.addAction(manage_file_extensions_action)
+
+		tag_database_action = QAction('Tag Database', menu_bar)
+		tag_database_action.triggered.connect(lambda: self.show_tag_database())
+		edit_menu.addAction(tag_database_action)
 
 		# Tools Menu ===========================================================
 		fix_unlinked_entries_action = QAction('Fix &Unlinked Entries', menu_bar)
@@ -3695,9 +4020,16 @@ class QtDriver(QObject):
 		self.autofill_action.triggered.connect(lambda: (self.run_macros('autofill', [x[1] for x in self.selected if x[0] == ItemType.ENTRY]), self.preview_panel.update_widgets()))
 		macros_menu.addAction(self.autofill_action)
 
-		self.sort_fields_action = QAction('Sort Fields', menu_bar)
+		self.sort_fields_action = QAction('&Sort Fields', menu_bar)
 		self.sort_fields_action.triggered.connect(lambda: (self.run_macros('sort-fields', [x[1] for x in self.selected if x[0] == ItemType.ENTRY]), self.preview_panel.update_widgets()))
+		self.sort_fields_action.setShortcut(QtCore.QKeyCombination(QtCore.Qt.KeyboardModifier(QtCore.Qt.KeyboardModifier.AltModifier), QtCore.Qt.Key.Key_S))
+		self.sort_fields_action.setToolTip('Alt+S')
 		macros_menu.addAction(self.sort_fields_action)
+
+		folders_to_tags_action = QAction('Folders to Tags', menu_bar)
+		ftt_modal = FoldersToTagsModal(self.lib, self)
+		folders_to_tags_action.triggered.connect(lambda:ftt_modal.show())
+		macros_menu.addAction(folders_to_tags_action)
 
 		self.set_macro_menu_viability()
 
@@ -3781,10 +4113,15 @@ class QtDriver(QObject):
 		self.splash.finish(self.main_window)
 		self.preview_panel.update_widgets()
 
-		
-		if self.args.open:
-			self.splash.showMessage(f'Opening Library "{self.args.open}"...', int(Qt.AlignmentFlag.AlignBottom|Qt.AlignmentFlag.AlignHCenter), QColor('#9782ff'))
-			self.open_library(self.args.open)
+		# Check if a library should be opened on startup, args should override last_library
+		# TODO: check for behavior (open last, open default, start empty)
+		if self.args.open or self.settings.contains("last_library"):
+			if self.args.open:
+				lib = self.args.open
+			elif self.settings.value("last_library"):
+				lib = self.settings.value("last_library")
+			self.splash.showMessage(f'Opening Library "{lib}"...', int(Qt.AlignmentFlag.AlignBottom|Qt.AlignmentFlag.AlignHCenter), QColor('#9782ff'))
+			self.open_library(lib)
 
 		app.exec_()
 
@@ -3804,6 +4141,8 @@ class QtDriver(QObject):
 		# Save Library on Application Exit
 		if self.lib.library_dir:
 			self.save_library()
+			self.settings.setValue("last_library", self.lib.library_dir)
+			self.settings.sync()
 		QApplication.quit()
 	
 	
@@ -3834,6 +4173,17 @@ class QtDriver(QObject):
 		# panel.tag_updated.connect(lambda tag: self.lib.update_tag(tag))
 		self.modal.show()
 	
+	def show_tag_database(self):
+		self.modal = PanelModal(TagDatabasePanel(self.lib),'Tag Database', 'Tag Database', has_save=False)
+		self.modal.show()
+	
+	def show_file_extension_modal(self):
+		# self.modal = FileExtensionModal(self.lib)
+		panel = FileExtensionModal(self.lib)
+		self.modal = PanelModal(panel, 'Ignored File Extensions', 'Ignored File Extensions', has_save=True)
+		self.modal.saved.connect(lambda: (panel.save(), self.filter_items('')))
+		self.modal.show()
+
 	def add_new_files_callback(self):
 		"""Runs when user initiates adding new files to the Library."""
 		# # if self.lib.files_not_in_library:
@@ -3956,7 +4306,7 @@ class QtDriver(QObject):
 		# sleep(5)
 		# pb.deleteLater()
 	
-	def run_macros(self, name: str, entry_ids: int):
+	def run_macros(self, name: str, entry_ids: list[int]):
 		"""Runs a specific Macro on a group of given entry_ids."""
 		for id in entry_ids:
 			self.run_macro(name, id)
@@ -4032,7 +4382,7 @@ class QtDriver(QObject):
 
 		trimmed = False
 		if len(self.nav_frames) > self.cur_frame_idx + 1:
-			if (frame_content != None):
+			if frame_content is not None:
 				# Trim the nav stack if user is taking a new route.
 				self.nav_frames = self.nav_frames[:self.cur_frame_idx+1]
 				if self.nav_frames and not self.nav_frames[self.cur_frame_idx].contents:
@@ -4044,7 +4394,7 @@ class QtDriver(QObject):
 			self.nav_frames[self.cur_frame_idx].scrollbar_pos = sb_pos
 			self.cur_frame_idx += 1 if not trimmed else 0
 		# Moving forward at the end of the stack with new content
-		elif (frame_content != None):
+		elif frame_content is not None:
 			# If the current page is empty, don't include it in the new stack.
 			if self.nav_frames and not self.nav_frames[self.cur_frame_idx].contents:
 				self.nav_frames.pop()
@@ -4055,7 +4405,7 @@ class QtDriver(QObject):
 			self.cur_frame_idx += 1 if not trimmed else 0
 
 		# if self.nav_stack[self.cur_page_idx].contents:
-		if (self.cur_frame_idx != original_pos) or (frame_content != None):
+		if (self.cur_frame_idx != original_pos) or (frame_content is not None):
 			self.update_thumbs()
 			sb.verticalScrollBar().setValue(
 				self.nav_frames[self.cur_frame_idx].scrollbar_pos)
@@ -4320,12 +4670,16 @@ class QtDriver(QObject):
 		# logging.info(
 		# 	f'[MAIN] Elements thumbs updated in {(end_time - start_time):.3f} seconds')
 
+	def update_badges(self):
+		for i, item_thumb in enumerate(self.item_thumbs, start=0):
+			item_thumb.update_badges()
+
 	def expand_collation(self, collation_entries: list[tuple[int, int]]):
 		self.nav_forward([(ItemType.ENTRY, x[0])
 						 for x in collation_entries])
 		# self.update_thumbs()
 
-	def get_frame_contents(self, index=0, query=str):
+	def get_frame_contents(self, index=0, query: str = None):
 		return ([] if not self.frame_dict[query] else self.frame_dict[query][index], index, len(self.frame_dict[query]))
 
 	def filter_items(self, query=''):
@@ -4405,6 +4759,7 @@ class QtDriver(QObject):
 		self.selected.clear()
 		self.preview_panel.update_widgets()
 		self.filter_items()
+
 
 	def create_collage(self) -> None:
 		"""Generates and saves an image collage based on Library Entries."""
@@ -4486,7 +4841,7 @@ class QtDriver(QObject):
 		
 		if not data_only_mode:
 			time.sleep(5)
-
+		
 		self.collage = Image.new('RGB', (img_size,img_size))
 		i = 0
 		self.completed = 0
@@ -4514,10 +4869,265 @@ class QtDriver(QObject):
 			self.completed += 1
 		# logging.info(f'threshold:{len(self.lib.entries}, completed:{self.completed}')
 		if self.completed == len(self.lib.entries):
-			filename = os.path.normpath(f'{self.lib.library_dir}/{TS_FOLDER_NAME}/{COLLAGE_FOLDER_NAME}/collage_{datetime.datetime.utcnow().strftime("%F_%T").replace(":", "")}.png')
+			filename = os.path.normpath(f'{self.lib.library_dir}/{TS_FOLDER_NAME}/{COLLAGE_FOLDER_NAME}/collage_{dt.utcnow().strftime("%F_%T").replace(":", "")}.png')
 			self.collage.save(filename)
 			self.collage = None
 
 			end_time = time.time()
 			self.main_window.statusbar.showMessage(f'Collage Saved at "{filename}" ({format_timespan(end_time - self.collage_start_time)})')
 			logging.info(f'Collage Saved at "{filename}" ({format_timespan(end_time - self.collage_start_time)})')
+
+class FoldersToTagsModal(QWidget):
+	# done = Signal(int)
+	def __init__(self, library:'Library', driver:'QtDriver'):
+		super().__init__()
+		self.library = library
+		self.driver:QtDriver = driver
+		self.count = -1
+		self.filename = ''
+  
+		self.setWindowTitle(f'Folders To Tags')
+		self.setWindowModality(Qt.WindowModality.ApplicationModal)
+		self.setMinimumSize(500, 800)
+		self.root_layout = QVBoxLayout(self)
+		self.root_layout.setContentsMargins(6,6,6,6)
+	
+		self.desc_widget = QLabel()
+		self.desc_widget.setObjectName('descriptionLabel')
+		self.desc_widget.setWordWrap(True)
+		self.desc_widget.setStyleSheet(
+										# 'background:blue;'
+								 		'text-align:left;'
+										# 'font-weight:bold;'
+										 'font-size:18px;'
+										# 'padding-top: 6px'
+										'')
+		self.desc_widget.setText('''Creates tags based on the folder structure and applies them to entries.\n The Structure below shows all the tags that would be added and to which files they would be added. It being empty means that there are no Tag to be created or assigned''')
+		self.desc_widget.setAlignment(Qt.AlignmentFlag.AlignCenter)
+  
+		self.scroll_contents = QWidget()
+		self.scroll_layout = QVBoxLayout(self.scroll_contents)
+		self.scroll_layout.setContentsMargins(6,0,6,0)
+		self.scroll_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
+
+		self.scroll_area = QScrollArea()
+		self.scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOn)
+		self.scroll_area.setWidgetResizable(True)
+		self.scroll_area.setFrameShadow(QFrame.Shadow.Plain)
+		self.scroll_area.setFrameShape(QFrame.Shape.NoFrame)
+		self.scroll_area.setWidget(self.scroll_contents)
+
+		self.Apply_button = QPushButton()
+		self.Apply_button.setText('&Apply')
+		self.Apply_button.clicked.connect(lambda: self.folders_to_tags(self.library))
+
+		self.showEvent = self.on_open
+  
+		self.root_layout.addWidget(self.desc_widget)
+		self.root_layout.addWidget(self.scroll_area)
+		self.root_layout.addWidget(self.Apply_button)
+  
+	def on_open(self,event):
+		for i in reversed(range(self.scroll_layout.count())):
+			self.scroll_layout.itemAt(i).widget().setParent(None)
+
+		data = self.generate_preview_data(self.library)
+		
+		for folder in data["dirs"].values():
+			test = self.TreeItemTest(folder,None)
+			self.scroll_layout.addWidget(test)
+			
+
+	def generate_preview_data(self,library:Library):
+		tree = dict(dirs={},files=[])
+
+		def add_tag_to_tree(list:list[Tag]):
+			branch = tree
+			for tag in list:
+				if tag.name not in branch["dirs"]:
+					branch["dirs"][tag.name] = dict(dirs={},tag=tag,files=[])	
+				branch =  branch["dirs"][tag.name]
+
+		def add_folders_to_tree(list:list[str])->Tag:
+			branch = tree
+			for folder in list:
+				if folder not in branch["dirs"]:
+					new_tag = Tag(-1, folder,"",[],[],"green")
+					branch["dirs"][folder] = dict(dirs={},tag=new_tag,files=[])
+				branch =  branch["dirs"][folder]
+			return branch
+		
+		for tag in library.tags:
+			reversed_tag = self.reverse_tag(tag,None)
+			logging.info(set(map(lambda tag:tag.name ,reversed_tag)))
+			add_tag_to_tree(reversed_tag)
+   
+		for entry in library.entries:
+			folders = entry.path.split("\\")
+			if len(folders) == 1 and folders[0] == "": continue
+			branch = add_folders_to_tree(folders)
+			if branch:
+				field_indexes = library.get_field_index_in_entry(entry,6)
+				has_tag=False
+				for index in field_indexes:
+					content = library.get_field_attr(entry.fields[index],"content")
+					for tag_id in content:
+						tag = library.get_tag(tag_id)
+						if tag.name == branch["tag"].name:
+							has_tag=True	
+							break
+				if not has_tag:
+					branch["files"].append(entry.filename)
+  
+		def cut_branches_adding_nothing(branch:dict):
+			folders = set(branch["dirs"].keys())
+			for folder in folders:
+				logging.info(folder)
+				cut = cut_branches_adding_nothing(branch["dirs"][folder])
+				if cut:
+					branch['dirs'].pop(folder)
+
+			if not "tag" in branch: return
+			if branch["tag"].id == -1:#Needs to be first
+				return False
+			if len(branch["dirs"].keys()) == 0:
+				return True
+
+   
+		cut_branches_adding_nothing(tree)
+  
+		return tree
+
+	def folders_to_tags(self,library:Library):
+		logging.info("Converting folders to Tags")
+		tree = dict(dirs={})
+		def add_tag_to_tree(list:list[Tag]):
+			branch = tree
+			for tag in list:
+				if tag.name not in branch["dirs"]:
+					branch["dirs"][tag.name] = dict(dirs={},tag=tag)	
+				branch =  branch["dirs"][tag.name]
+
+		def add_folders_to_tree(list:list[str])->Tag:
+			branch = tree
+			for folder in list:
+				if folder not in branch["dirs"]:
+					new_tag = Tag(-1, folder,"",[],([branch["tag"].id] if "tag" in branch else []),"")
+					library.add_tag_to_library(new_tag)
+					branch["dirs"][folder] = dict(dirs={},tag=new_tag)
+				branch =  branch["dirs"][folder]
+			return branch["tag"]
+
+
+		for tag in library.tags:
+			reversed_tag = self.reverse_tag(tag,None)
+			add_tag_to_tree(reversed_tag)
+
+		for entry in library.entries:
+			folders = entry.path.split("\\")
+			if len(folders)== 1 and folders[0]=="": continue
+			tag = add_folders_to_tree(folders)
+			if tag:
+				if not entry.has_tag(library,tag.id):
+					entry.add_tag(library,tag.id,6)
+     
+		self.close()
+	
+		logging.info("Done")
+  
+	def reverse_tag(self,tag:Tag,list:list[Tag]) -> list[Tag]:
+			if list != None:
+				list.append(tag)
+			else:
+				list = [tag]
+    
+			if len(tag.subtag_ids) == 0:
+				list.reverse()
+				return list
+			else:
+				for subtag_id in tag.subtag_ids:
+					subtag = self.library.get_tag(subtag_id)
+				return self.reverse_tag(subtag,list)
+  
+	class ModifiedTagWidget(QWidget): # Needed to be modified because the original searched the display name in the library where it wasn't added yet
+		def __init__(self, tag:Tag,parentTag:Tag) -> None:
+			super().__init__()
+			self.tag = tag
+	
+			self.setCursor(Qt.CursorShape.PointingHandCursor)
+			self.base_layout = QVBoxLayout(self)
+			self.base_layout.setObjectName('baseLayout')
+			self.base_layout.setContentsMargins(0, 0, 0, 0)
+
+			self.bg_button = QPushButton(self)
+			self.bg_button.setFlat(True)
+			if parentTag != None:
+				text = f"{tag.name} ({parentTag.name})".replace('&', '&&')
+			else:
+				text = tag.name.replace('&', '&&')
+			self.bg_button.setText(text)
+			self.bg_button.setContextMenuPolicy(Qt.ContextMenuPolicy.ActionsContextMenu)	
+  
+			self.inner_layout = QHBoxLayout()
+			self.inner_layout.setObjectName('innerLayout')
+			self.inner_layout.setContentsMargins(2, 2, 2, 2)
+			self.bg_button.setLayout(self.inner_layout)
+			self.bg_button.setMinimumSize(math.ceil(22*1.5), 22)
+  
+			self.bg_button.setStyleSheet(
+									f'QPushButton{{'
+										f'background: {get_tag_color(ColorType.PRIMARY, tag.color)};'
+										f"color: {get_tag_color(ColorType.TEXT, tag.color)};"
+										f'font-weight: 600;'
+										f"border-color:{get_tag_color(ColorType.BORDER, tag.color)};"
+										f'border-radius: 6px;'
+										f'border-style:inset;'
+										f'border-width: {math.ceil(1*self.devicePixelRatio())}px;'
+										f'padding-right: 4px;'
+										f'padding-bottom: 1px;'
+										f'padding-left: 4px;'
+										f'font-size: 13px'	
+										f'}}'
+										f'QPushButton::hover{{'
+										f"border-color:{get_tag_color(ColorType.LIGHT_ACCENT, tag.color)};"
+										f'}}')
+
+			self.base_layout.addWidget(self.bg_button)
+			self.setMinimumSize(50,20)
+	class TreeItemTest(QWidget):
+		def __init__(self,data:dict,parentTag:Tag):
+			super().__init__()
+			
+			self.root_layout = QVBoxLayout(self)
+			self.root_layout.setContentsMargins(20,0,0,0)
+			self.root_layout.setSpacing(1)
+
+			self.test = QWidget()
+			self.root_layout.addWidget(self.test)
+			
+			self.tag_layout = FlowLayout(self.test)
+		
+			self.tag_widget = FoldersToTagsModal.ModifiedTagWidget(data["tag"],parentTag)
+			self.tag_widget.bg_button.clicked.connect(lambda:self.hide_show())
+			self.tag_layout.addWidget(self.tag_widget)
+   
+			self.children_widget = QWidget()
+			self.children_layout = QVBoxLayout(self.children_widget)
+			self.root_layout.addWidget(self.children_widget)
+   
+			self.populate(data)
+   
+		def hide_show(self):
+			self.children_widget.setHidden(not self.children_widget.isHidden())
+
+		def populate(self,data:dict):
+			for folder in data["dirs"].values():
+				item = FoldersToTagsModal.TreeItemTest(folder,data["tag"])
+				self.children_layout.addWidget(item)
+			for file in data["files"]:
+				label = QLabel()
+				label.setText(file)
+				self.children_layout.addWidget(label)
+			
+			if len(data["files"]) == 0 and len(data["dirs"].values()) == 0:
+				self.hide_show()

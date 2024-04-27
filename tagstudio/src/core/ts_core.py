@@ -4,18 +4,12 @@
 
 """The core classes and methods of TagStudio."""
 
-import os
-from types import FunctionType
-# from typing import Dict, Optional, TypedDict, List
 import json
-from pathlib import Path
-import traceback
-# import requests
-# from bs4 import BeautifulSoup as bs
-from src.core.library import *
-from src.core.field_template import FieldTemplate
+import os
 
-VERSION: str = '9.1.0'  # Major.Minor.Patch
+from src.core.library import Entry, Library
+
+VERSION: str = '9.2.0'  # Major.Minor.Patch
 VERSION_BRANCH: str = 'Alpha'  # 'Alpha', 'Beta', or '' for Full Release
 
 # The folder & file names where TagStudio keeps its data relative to a library.
@@ -37,11 +31,11 @@ SPREADSHEET_TYPES: list[str] = ['csv', 'xls', 'xlsx', 'numbers', 'ods']
 PRESENTATION_TYPES: list[str] = ['ppt', 'pptx', 'key', 'odp']
 ARCHIVE_TYPES: list[str] = ['zip', 'rar', 'tar', 'tar.gz', 'tgz', '7z']
 PROGRAM_TYPES: list[str] = ['exe', 'app']
-SHORTCUT_TYPES: list[str] = ['lnk', 'desktop']
+SHORTCUT_TYPES: list[str] = ['lnk', 'desktop', 'url']
 
 ALL_FILE_TYPES: list[str] = IMAGE_TYPES + VIDEO_TYPES + AUDIO_TYPES + \
 	TEXT_TYPES + SPREADSHEET_TYPES + PRESENTATION_TYPES + \
-	ARCHIVE_TYPES + PROGRAM_TYPES
+	ARCHIVE_TYPES + PROGRAM_TYPES + SHORTCUT_TYPES
 
 BOX_FIELDS = ['tag_box', 'text_box']
 TEXT_FIELDS = ['text_line', 'text_box']
@@ -143,12 +137,11 @@ class TagStudioCore:
 	# 	# 	# print("Could not resolve URL.")
 	# 	# 	pass
 
-	def match_conditions(self, entry_id: int) -> str:
+	def match_conditions(self, entry_id: int) -> None:
 		"""Matches defined conditions against a file to add Entry data."""
 
 		cond_file = os.path.normpath(f'{self.lib.library_dir}/{TS_FOLDER_NAME}/conditions.json')
 		# TODO: Make this stored somewhere better instead of temporarily in this JSON file.
-		json_dump = {}
 		entry: Entry = self.lib.get_entry(entry_id)
 		try:
 			if os.path.isfile(cond_file):
@@ -161,8 +154,8 @@ class TagStudioCore:
 								match = True
 								break
 						if match:
-							if 'fields' in c.keys() and c['fields']:
-								for field in c['fields']:
+							if fields := c.get('fields'):
+								for field in fields:
 
 									field_id = self.lib.get_field_attr(
 										field, 'id')
