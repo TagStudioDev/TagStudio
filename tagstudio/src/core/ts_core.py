@@ -9,7 +9,7 @@ import os
 
 from src.core.library import Entry, Library
 
-VERSION: str = '9.1.0'  # Major.Minor.Patch
+VERSION: str = '9.2.0'  # Major.Minor.Patch
 VERSION_BRANCH: str = 'Alpha'  # 'Alpha', 'Beta', or '' for Full Release
 
 # The folder & file names where TagStudio keeps its data relative to a library.

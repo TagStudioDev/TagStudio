@@ -33,7 +33,7 @@ from PySide6.QtUiTools import QUiLoader
 from PySide6.QtWidgets import (QApplication, QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QPlainTextEdit,
 							   QLineEdit, QScrollArea, QFrame, QTextEdit, QComboBox, QProgressDialog, QFileDialog,
 							   QListView, QSplitter, QSizePolicy, QMessageBox, QBoxLayout, QCheckBox, QSplashScreen,
-							   QMenu)
+							   QMenu, QTableWidget, QTableWidgetItem)
 from humanfriendly import format_timespan, format_size
 
 from src.core.library import Collation, Entry, ItemType, Library, Tag
@@ -1969,6 +1969,86 @@ class AddFieldModal(QWidget):
 		self.root_layout.addStretch(1)
 		self.root_layout.addWidget(self.button_container)
 
+class FileExtensionModal(PanelWidget):
+	done = Signal()
+	def __init__(self, library:'Library'):
+		super().__init__()
+		self.lib = library
+		self.setWindowTitle(f'File Extensions')
+		self.setWindowModality(Qt.WindowModality.ApplicationModal)
+		self.setMinimumSize(200, 400)
+		self.root_layout = QVBoxLayout(self)
+		self.root_layout.setContentsMargins(6,6,6,6)
+
+		self.table = QTableWidget(len(self.lib.ignored_extensions), 1)
+		self.table.horizontalHeader().setVisible(False)
+		self.table.verticalHeader().setVisible(False)
+		self.table.horizontalHeader().setStretchLastSection(True)
+
+		self.add_button = QPushButton()
+		self.add_button.setText('&Add Extension')
+		self.add_button.clicked.connect(self.add_item)
+		self.add_button.setDefault(True)
+		self.add_button.setMinimumWidth(100)
+
+		self.root_layout.addWidget(self.table)
+		self.root_layout.addWidget(self.add_button, alignment=Qt.AlignmentFlag.AlignCenter)
+		self.refresh_list()
+	
+	def refresh_list(self):
+		for i, ext in enumerate(self.lib.ignored_extensions):
+			self.table.setItem(i, 0, QTableWidgetItem(ext))
+	
+	def add_item(self):
+		self.table.insertRow(self.table.rowCount())
+	
+	def save(self):
+		self.lib.ignored_extensions.clear()
+		for i in range(self.table.rowCount()):
+			ext = self.table.item(i, 0)
+			if ext and ext.text():
+				self.lib.ignored_extensions.append(ext.text())
+
+class FileOpenerHelper():
+	def __init__(self, filepath:str):
+		self.filepath = filepath
+
+	def set_filepath(self, filepath:str):
+		self.filepath = filepath
+
+	def open_file(self):
+		if os.path.exists(self.filepath):
+			os.startfile(self.filepath)
+			logging.info(f'Opening file: {self.filepath}')
+		else:
+			logging.error(f'File not found: {self.filepath}')
+
+	def open_explorer(self):
+		if os.path.exists(self.filepath):
+				logging.info(f'Opening file: {self.filepath}')
+				if os.name == 'nt':  # Windows
+					command = f'explorer /select,"{self.filepath}"'
+					subprocess.run(command, shell=True)
+				else:  # macOS and Linux
+					command = f'nautilus --select "{self.filepath}"'  # Adjust for your Linux file manager if different
+					if subprocess.run(command, shell=True).returncode == 0:
+						file_loc = os.path.dirname(self.filepath)
+						file_loc = os.path.normpath(file_loc)
+						os.startfile(file_loc)
+		else:
+			logging.error(f'File not found: {self.filepath}')
+class FileOpenerLabel(QLabel):
+	def __init__(self, text, parent=None):
+		super().__init__(text, parent)
+
+	def setFilePath(self, filepath):
+		self.filepath = filepath
+
+	def mousePressEvent(self, event):
+		super().mousePressEvent(event)
+		opener = FileOpenerHelper(self.filepath)
+		opener.open_explorer()
+
 class PreviewPanel(QWidget):
 	"""The Preview Panel Widget."""
 	tags_updated = Signal()
@@ -2004,6 +2084,14 @@ class PreviewPanel(QWidget):
 		self.preview_img = QPushButton()
 		self.preview_img.setMinimumSize(*self.img_button_size)
 		self.preview_img.setFlat(True)
+
+		self.preview_img.setContextMenuPolicy(Qt.ContextMenuPolicy.ActionsContextMenu)
+		self.opener = FileOpenerHelper('')
+		self.open_file_action = QAction('Open file', self)
+		self.open_explorer_action = QAction('Open file in explorer', self)
+
+		self.preview_img.addAction(self.open_file_action)
+		self.preview_img.addAction(self.open_explorer_action)
 		self.tr = ThumbRenderer()
 		self.tr.updated.connect(lambda ts, i, s: (self.preview_img.setIcon(i)))
 		self.tr.updated_ratio.connect(lambda ratio: (self.set_image_ratio(ratio), 
@@ -2015,7 +2103,7 @@ class PreviewPanel(QWidget):
 		image_layout.addWidget(self.preview_img)
 		image_layout.setAlignment(self.preview_img, Qt.AlignmentFlag.AlignCenter)
 
-		self.file_label = QLabel('Filename')
+		self.file_label = FileOpenerLabel('Filename')
 		self.file_label.setWordWrap(True)
 		self.file_label.setTextInteractionFlags(
 			Qt.TextInteractionFlag.TextSelectableByMouse)
@@ -2222,7 +2310,9 @@ class PreviewPanel(QWidget):
 		if len(self.driver.selected) == 0:
 			if len(self.selected) != 0 or not self.initialized:
 				self.file_label.setText(f"No Items Selected")
+				self.file_label.setFilePath('')
 				self.dimensions_label.setText("")
+				self.preview_img.setContextMenuPolicy(Qt.ContextMenuPolicy.NoContextMenu)
 				ratio: float = self.devicePixelRatio()
 				self.tr.render_big(time.time(), '', (512, 512), ratio, True)
 				try:
@@ -2245,10 +2335,16 @@ class PreviewPanel(QWidget):
 				if (len(self.selected) == 0 
 						or self.selected != self.driver.selected):
 					filepath = os.path.normpath(f'{self.lib.library_dir}/{item.path}/{item.filename}')
+					self.file_label.setFilePath(filepath)
 					window_title = filepath
 					ratio: float = self.devicePixelRatio()
 					self.tr.render_big(time.time(), filepath, (512, 512), ratio)
 					self.file_label.setText("\u200b".join(filepath))
+
+					self.preview_img.setContextMenuPolicy(Qt.ContextMenuPolicy.ActionsContextMenu)
+					self.opener = FileOpenerHelper(filepath)
+					self.open_file_action.triggered.connect(self.opener.open_file)
+					self.open_explorer_action.triggered.connect(self.opener.open_explorer)
 
 					# TODO: Do this somewhere else, this is just here temporarily.
 					extension = os.path.splitext(filepath)[1][1:].lower()
@@ -2322,7 +2418,9 @@ class PreviewPanel(QWidget):
 		elif len(self.driver.selected) > 1:
 			if self.selected != self.driver.selected:
 				self.file_label.setText(f"{len(self.driver.selected)} Items Selected")
+				self.file_label.setFilePath('')
 				self.dimensions_label.setText("")
+				self.preview_img.setContextMenuPolicy(Qt.ContextMenuPolicy.NoContextMenu)
 				ratio: float = self.devicePixelRatio()
 				self.tr.render_big(time.time(), '', (512, 512), ratio, True)
 				try:
@@ -2717,7 +2815,6 @@ class ItemThumb(FlowWidget):
 	"""
 	The thumbnail widget for a library item (Entry, Collation, Tag Group, etc.).
 	"""
-
 	update_cutoff: float = time.time()
 
 	collation_icon_128: Image.Image = Image.open(os.path.normpath(
@@ -2845,6 +2942,15 @@ class ItemThumb(FlowWidget):
 		self.thumb_button.setLayout(self.base_layout)
 		# self.bg_button.setMinimumSize(*thumb_size)
 		# self.bg_button.setMaximumSize(*thumb_size)
+
+		self.thumb_button.setContextMenuPolicy(Qt.ContextMenuPolicy.ActionsContextMenu)
+		self.opener = FileOpenerHelper('')
+		open_file_action = QAction('Open file', self)
+		open_file_action.triggered.connect(self.opener.open_file)
+		open_explorer_action = QAction('Open file in explorer', self)
+		open_explorer_action.triggered.connect(self.opener.open_explorer)
+		self.thumb_button.addAction(open_file_action)
+		self.thumb_button.addAction(open_explorer_action)
 
 		# Static Badges ========================================================
 
@@ -3040,7 +3146,15 @@ class ItemThumb(FlowWidget):
 
 
 	def set_item_id(self, id: int):
+		'''
+		also sets the filepath for the file opener
+		'''
 		self.item_id = id
+		if(id == -1):
+			return
+		entry = self.lib.get_entry(self.item_id)
+		filepath = os.path.normpath(f'{self.lib.library_dir}/{entry.path}/{entry.filename}')
+		self.opener.set_filepath(filepath)
 
 	def assign_favorite(self, value: bool):
 		# Switching mode to None to bypass mode-specific operations when the
@@ -3879,6 +3993,10 @@ class QtDriver(QObject):
 
 		edit_menu.addSeparator()
 
+		manage_file_extensions_action = QAction('Ignore File Extensions', menu_bar)
+		manage_file_extensions_action.triggered.connect(lambda: self.show_file_extension_modal())
+		edit_menu.addAction(manage_file_extensions_action)
+
 		tag_database_action = QAction('Tag Database', menu_bar)
 		tag_database_action.triggered.connect(lambda: self.show_tag_database())
 		edit_menu.addAction(tag_database_action)
@@ -4053,6 +4171,13 @@ class QtDriver(QObject):
 	
 	def show_tag_database(self):
 		self.modal = PanelModal(TagDatabasePanel(self.lib),'Tag Database', 'Tag Database', has_save=False)
+		self.modal.show()
+	
+	def show_file_extension_modal(self):
+		# self.modal = FileExtensionModal(self.lib)
+		panel = FileExtensionModal(self.lib)
+		self.modal = PanelModal(panel, 'Ignored File Extensions', 'Ignored File Extensions', has_save=True)
+		self.modal.saved.connect(lambda: (panel.save(), self.filter_items('')))
 		self.modal.show()
 
 	def add_new_files_callback(self):

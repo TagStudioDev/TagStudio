@@ -323,6 +323,9 @@ class Library:
 		#   That filename can then be used to provide quick lookup to image metadata entries in the Library.
 		# 	NOTE: On Windows, these strings are always lowercase.
 		self.filename_to_entry_id_map: dict[str, int] = {}
+		# A list of file extensions to be ignored by TagStudio.
+		self.default_ext_blacklist: list = ['json', 'xmp', 'aae']
+		self.ignored_extensions: list = self.default_ext_blacklist
 
 		# Tags =================================================================
 		# List of every Tag object (ts-v8).
@@ -612,6 +615,10 @@ class Library:
 					self.verify_ts_folders()
 					major, minor, patch = json_dump['ts-version'].split('.')
 
+					# Load Extension Blacklist ---------------------------------
+					if 'ignored_extensions' in json_dump.keys():
+						self.ignored_extensions = json_dump['ignored_extensions']
+
 					# Parse Tags ---------------------------------------------------
 					if 'tags' in json_dump.keys():
 						start_time = time.time()
@@ -850,6 +857,7 @@ class Library:
 		Used in saving the library to disk.
 		"""
 		file_to_save = {"ts-version": ts_core.VERSION,
+				  		"ignored_extensions": [],
 						"tags": [],
 						"collations": [],
 						"fields": [],
@@ -858,6 +866,9 @@ class Library:
 						}
 
 		print('[LIBRARY] Formatting Tags to JSON...')
+
+		file_to_save['ignored_extensions'] = [i for i in self.ignored_extensions if i is not '']
+
 		for tag in self.tags:
 			file_to_save["tags"].append(tag.compressed_dict())
 		
@@ -925,6 +936,7 @@ class Library:
 		self.missing_files.clear()
 		self.fixed_files.clear()
 		self.filename_to_entry_id_map: dict[str, int] = {}
+		self.ignored_extensions = self.default_ext_blacklist
 
 		self.tags.clear()
 		self._next_tag_id: int = 1000
@@ -950,7 +962,7 @@ class Library:
 			# p = Path(os.path.normpath(f))
 			if ('$RECYCLE.BIN' not in f and ts_core.TS_FOLDER_NAME not in f 
        				and 'tagstudio_thumbs' not in f and not os.path.isdir(f)):
-				if os.path.splitext(f)[1][1:].lower() in ts_core.ALL_FILE_TYPES:
+				if os.path.splitext(f)[1][1:].lower() not in self.ignored_extensions:
 					self.dir_file_count += 1
 					file = str(os.path.relpath(f, self.library_dir))
 					
@@ -1416,101 +1428,103 @@ class Library:
 			# non_entry_count = 0
 			# Iterate over all Entries =============================================================
 			for entry in self.entries:
+				allowed_ext: bool = False if os.path.splitext(entry.filename)[1][1:].lower() in self.ignored_extensions else True
 				# try:
 				# entry: Entry = self.entries[self.file_to_library_index_map[self._source_filenames[i]]]
 				# print(f'{entry}')
 
-				# If the entry has tags of any kind, append them to this main tag list.
-				entry_tags: list[int] = []
-				entry_authors: list[str] = []
-				if entry.fields:
-					for field in entry.fields:
-						field_id = list(field.keys())[0]
-						if self.get_field_obj(field_id)['type'] == 'tag_box':
-							entry_tags.extend(field[field_id])
-						if self.get_field_obj(field_id)['name'] == 'Author':
-							entry_authors.extend(field[field_id])
-						if self.get_field_obj(field_id)['name'] == 'Artist':
-							entry_authors.extend(field[field_id])
+				if allowed_ext:
+					# If the entry has tags of any kind, append them to this main tag list.
+					entry_tags: list[int] = []
+					entry_authors: list[str] = []
+					if entry.fields:
+						for field in entry.fields:
+							field_id = list(field.keys())[0]
+							if self.get_field_obj(field_id)['type'] == 'tag_box':
+								entry_tags.extend(field[field_id])
+							if self.get_field_obj(field_id)['name'] == 'Author':
+								entry_authors.extend(field[field_id])
+							if self.get_field_obj(field_id)['name'] == 'Artist':
+								entry_authors.extend(field[field_id])
 
-				# print(f'Entry Tags: {entry_tags}')
+					# print(f'Entry Tags: {entry_tags}')
 
-				# Add Entries from special flags -------------------------------
-				# TODO: Come up with a more user-resistent way to 'archived' and 'favorite' tags.
-				if only_untagged:
-					if not entry_tags:
-						results.append((ItemType.ENTRY, entry.id))
-				elif only_no_author:
-					if not entry_authors:
-						results.append((ItemType.ENTRY, entry.id))
-				elif only_empty:
-					if not entry.fields:
-						results.append((ItemType.ENTRY, entry.id))
-				elif only_missing:
-					if os.path.normpath(f'{self.library_dir}/{entry.path}/{entry.filename}') in self.missing_files:
-						results.append((ItemType.ENTRY, entry.id))
-
-				# elif query == "archived":
-				#     if entry.tags and self._tag_names_to_tag_id_map[self.archived_word.lower()][0] in entry.tags:
-				#         self.filtered_file_list.append(file)
-				#         pb.value = len(self.filtered_file_list)
-				# elif query in entry.path.lower():
-
-				# NOTE: This searches path and filenames.
-				if allow_adv:
-					if [q for q in query_words if (q in entry.path.lower())]:
-						results.append((ItemType.ENTRY, entry.id))
-					elif [q for q in query_words if (q in entry.filename.lower())]:
-						results.append((ItemType.ENTRY, entry.id))
-				elif tag_only:
-					if entry.has_tag(self, int(query_words[0])):
-						results.append((ItemType.ENTRY, entry.id))
-
-				# elif query in entry.filename.lower():
-				# 	self.filtered_entries.append(index)
-				elif entry_tags:
-					# For each verified, extracted Tag term.
-					failure_to_union_terms = False
-					for term in all_tag_terms:
-						# If the term from the previous loop was already verified:
-						if not failure_to_union_terms:
-							cluster: set = set()
-							# Add the immediate associated Tags to the set (ex. Name, Alias hits)
-							# Since this term could technically map to multiple IDs, iterate over it
-							# (You're 99.9999999% likely to just get 1 item)
-							for id in self._tag_strings_to_id_map[term]:
-								cluster.add(id)
-								cluster = cluster.union(
-									set(self.get_tag_cluster(id)))
-							# print(f'Full Cluster: {cluster}')
-							# For each of the Tag IDs in the term's ID cluster:
-							for t in cluster:
-								# Assume that this ID from the cluster is not in the Entry.
-								# Wait to see if proven wrong.
-								failure_to_union_terms = True
-								# If the ID actually is in the Entry,
-								if t in entry_tags:
-									# There wasn't a failure to find one of the term's cluster IDs in the Entry.
-									# There is also no more need to keep checking the rest of the terms in the cluster.
-									failure_to_union_terms = False
-									# print(f'FOUND MATCH: {t}')
-									break
-								# print(f'\tFailure to Match: {t}')
-					# If there even were tag terms to search through AND they all match an entry
-					if all_tag_terms and not failure_to_union_terms:
-						# self.filter_entries.append()
-						# self.filtered_file_list.append(file)
-						# results.append((SearchItemType.ENTRY, entry.id))
-						added = False
-						for f in entry.fields:
-							if self.get_field_attr(f, 'type') == 'collation':
-								if (self.get_field_attr(f, 'content') not in collations_added):
-									results.append((ItemType.COLLATION, self.get_field_attr(f, 'content')))
-									collations_added.append(self.get_field_attr(f, 'content'))
-								added = True
-
-						if not added:
+					# Add Entries from special flags -------------------------------
+					# TODO: Come up with a more user-resistent way to 'archived' and 'favorite' tags.
+					if only_untagged:
+						if not entry_tags:
 							results.append((ItemType.ENTRY, entry.id))
+					elif only_no_author:
+						if not entry_authors:
+							results.append((ItemType.ENTRY, entry.id))
+					elif only_empty:
+						if not entry.fields:
+							results.append((ItemType.ENTRY, entry.id))
+					elif only_missing:
+						if os.path.normpath(f'{self.library_dir}/{entry.path}/{entry.filename}') in self.missing_files:
+							results.append((ItemType.ENTRY, entry.id))
+
+					# elif query == "archived":
+					#     if entry.tags and self._tag_names_to_tag_id_map[self.archived_word.lower()][0] in entry.tags:
+					#         self.filtered_file_list.append(file)
+					#         pb.value = len(self.filtered_file_list)
+					# elif query in entry.path.lower():
+
+					# NOTE: This searches path and filenames.
+					if allow_adv:
+						if [q for q in query_words if (q in entry.path.lower())]:
+							results.append((ItemType.ENTRY, entry.id))
+						elif [q for q in query_words if (q in entry.filename.lower())]:
+							results.append((ItemType.ENTRY, entry.id))
+					elif tag_only:
+						if entry.has_tag(self, int(query_words[0])):
+							results.append((ItemType.ENTRY, entry.id))
+
+					# elif query in entry.filename.lower():
+					# 	self.filtered_entries.append(index)
+					elif entry_tags:
+						# For each verified, extracted Tag term.
+						failure_to_union_terms = False
+						for term in all_tag_terms:
+							# If the term from the previous loop was already verified:
+							if not failure_to_union_terms:
+								cluster: set = set()
+								# Add the immediate associated Tags to the set (ex. Name, Alias hits)
+								# Since this term could technically map to multiple IDs, iterate over it
+								# (You're 99.9999999% likely to just get 1 item)
+								for id in self._tag_strings_to_id_map[term]:
+									cluster.add(id)
+									cluster = cluster.union(
+										set(self.get_tag_cluster(id)))
+								# print(f'Full Cluster: {cluster}')
+								# For each of the Tag IDs in the term's ID cluster:
+								for t in cluster:
+									# Assume that this ID from the cluster is not in the Entry.
+									# Wait to see if proven wrong.
+									failure_to_union_terms = True
+									# If the ID actually is in the Entry,
+									if t in entry_tags:
+										# There wasn't a failure to find one of the term's cluster IDs in the Entry.
+										# There is also no more need to keep checking the rest of the terms in the cluster.
+										failure_to_union_terms = False
+										# print(f'FOUND MATCH: {t}')
+										break
+									# print(f'\tFailure to Match: {t}')
+						# If there even were tag terms to search through AND they all match an entry
+						if all_tag_terms and not failure_to_union_terms:
+							# self.filter_entries.append()
+							# self.filtered_file_list.append(file)
+							# results.append((SearchItemType.ENTRY, entry.id))
+							added = False
+							for f in entry.fields:
+								if self.get_field_attr(f, 'type') == 'collation':
+									if (self.get_field_attr(f, 'content') not in collations_added):
+										results.append((ItemType.COLLATION, self.get_field_attr(f, 'content')))
+										collations_added.append(self.get_field_attr(f, 'content'))
+									added = True
+
+							if not added:
+								results.append((ItemType.ENTRY, entry.id))
 
 				# sys.stdout.write(
 				#     f'\r[INFO][FILTER]: {len(self.filtered_file_list)} matches found')
@@ -1536,15 +1550,17 @@ class Library:
 			
 			for entry in self.entries:
 				added = False
-				for f in entry.fields:
-					if self.get_field_attr(f, 'type') == 'collation':
-						if (self.get_field_attr(f, 'content') not in collations_added):
-							results.append((ItemType.COLLATION, self.get_field_attr(f, 'content')))
-							collations_added.append(self.get_field_attr(f, 'content'))
-						added = True
+				allowed_ext: bool = False if os.path.splitext(entry.filename)[1][1:].lower() in self.ignored_extensions else True
+				if allowed_ext:
+					for f in entry.fields:
+						if self.get_field_attr(f, 'type') == 'collation':
+							if (self.get_field_attr(f, 'content') not in collations_added):
+								results.append((ItemType.COLLATION, self.get_field_attr(f, 'content')))
+								collations_added.append(self.get_field_attr(f, 'content'))
+							added = True
 
-				if not added:
-					results.append((ItemType.ENTRY, entry.id))
+					if not added:
+						results.append((ItemType.ENTRY, entry.id))
 			# for file in self._source_filenames:
 			#     self.filtered_file_list.append(file)
 		results.reverse()
