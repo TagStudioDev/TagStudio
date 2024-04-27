@@ -4917,15 +4917,15 @@ class FoldersToTagsModal(QWidget):
 		self.scroll_area.setFrameShape(QFrame.Shape.NoFrame)
 		self.scroll_area.setWidget(self.scroll_contents)
 
-		self.Apply_button = QPushButton()
-		self.Apply_button.setText('&Apply')
-		self.Apply_button.clicked.connect(lambda: self.folders_to_tags(self.library))
+		self.apply_button = QPushButton()
+		self.apply_button.setText('&Apply')
+		self.apply_button.clicked.connect(lambda: self.folders_to_tags(self.library))
 
 		self.showEvent = self.on_open
   
 		self.root_layout.addWidget(self.desc_widget)
 		self.root_layout.addWidget(self.scroll_area)
-		self.root_layout.addWidget(self.Apply_button)
+		self.root_layout.addWidget(self.apply_button)
   
 	def on_open(self,event):
 		for i in reversed(range(self.scroll_layout.count())):

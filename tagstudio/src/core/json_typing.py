@@ -1,33 +1,33 @@
 from typing import TypedDict
 
-class Json_Libary(TypedDict("",{"ts-version":str})):
+class JsonLibary(TypedDict("",{"ts-version":str})):
     #"ts-version": str
-    tags: "list[Json_Tag]"
-    collations: "list[Json_Collation]"
+    tags: "list[JsonTag]"
+    collations: "list[JsonCollation]"
     fields: list #TODO
-    macros: "list[Json_Macro]"
-    entries: "list[Json_Entry]"
+    macros: "list[JsonMacro]"
+    entries: "list[JsonEntry]"
 
-class Json_Base(TypedDict):
+class JsonBase(TypedDict):
     id: int
 
-class Json_Tag(Json_Base,total=False):
+class JsonTag(JsonBase,total=False):
     name: str
     aliases: list[str]
     color: str
     shorthand: str
     subtag_ids: list[int]
 
-class Json_Collation(Json_Base,total=False):
+class JsonCollation(JsonBase,total=False):
     title: str
     e_ids_and_pages: list[list[int]]
     sort_order: str
     cover_id: int
 
-class Json_Entry(Json_Base,total=False):
+class JsonEntry(JsonBase,total=False):
     filename: str
     path: str
     fields: list[dict] #TODO
 
-class Json_Macro(Json_Base,total=False):
+class JsonMacro(JsonBase,total=False):
     ... #TODO
