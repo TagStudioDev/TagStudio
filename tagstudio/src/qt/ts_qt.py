@@ -2742,6 +2742,8 @@ class ItemThumb(FlowWidget):
 	"""
 	The thumbnail widget for a library item (Entry, Collation, Tag Group, etc.).
 	"""
+	on_click = Signal()
+	on_edit = Signal()
 
 	update_cutoff: float = time.time()
 
@@ -2871,6 +2873,14 @@ class ItemThumb(FlowWidget):
 		# self.bg_button.setMinimumSize(*thumb_size)
 		# self.bg_button.setMaximumSize(*thumb_size)
 
+		self.thumb_button.setContextMenuPolicy(Qt.ContextMenuPolicy.ActionsContextMenu)
+		open_file_action = QAction('Open file', self)
+		open_file_action.triggered.connect(self.open_file)
+		open_explorer_action = QAction('Open file in explorer', self)
+		open_explorer_action.triggered.connect(self.open_explorer)
+		self.thumb_button.addAction(open_file_action)
+		self.thumb_button.addAction(open_explorer_action)
+
 		# Static Badges ========================================================
 
 		# Item Type Badge ------------------------------------------------------
@@ -2969,6 +2979,31 @@ class ItemThumb(FlowWidget):
 		# self.dumpObjectTree()
 
 		self.set_mode(mode)
+
+	def open_file(self):
+		entry = self.lib.get_entry(self.item_id)
+		filepath = os.path.normpath(f'{self.lib.library_dir}/{entry.path}/{entry.filename}')
+		if os.path.exists(filepath):
+			os.startfile(filepath)
+			logging.info(f'Opening file: {filepath}')
+		else:
+			logging.error(f'File not found: {filepath}')
+
+	def open_explorer(self):
+		entry = self.lib.get_entry(self.item_id)
+		filepath = os.path.normpath(f'{self.lib.library_dir}/{entry.path}/{entry.filename}')
+		if os.path.exists(filepath):
+				logging.info(f'Opening file: {filepath}')
+				if os.name == 'nt':  # Windows
+					command = f'explorer /select,"{filepath}"'
+					subprocess.run(command, shell=True)
+				else:  # macOS and Linux
+					command = f'nautilus --select "{filepath}"'  # Adjust for your Linux file manager if different
+					if subprocess.run(command, shell=True).returncode == 0:
+						file_loc = os.path.dirname(filepath)
+						os.startfile(file_loc)
+		else:
+			logging.error(f'File not found: {filepath}')
 
 	def set_mode(self, mode: Optional[ItemType]) -> None:
 		if mode is None:
