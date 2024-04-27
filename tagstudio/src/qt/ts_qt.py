@@ -1421,10 +1421,9 @@ class FixDupeFilesModal(QWidget):
 					os.path.normpath(self.lib.library_dir))
 		qfd.setFileMode(QFileDialog.FileMode.ExistingFile)
 		qfd.setNameFilter("DupeGuru Files (*.dupeguru)")
-		filename = []
 		if qfd.exec_():
 			filename = qfd.selectedFiles()
-			if len(filename) > 0:
+			if filename:
 				self.set_filename(filename[0])
 	
 	def set_filename(self, filename:str):

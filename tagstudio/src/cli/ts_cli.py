@@ -1556,7 +1556,7 @@ class CliDriver:
 
 				print(self.format_title(title))
 				
-				if len(self.filtered_entries) > 0:
+				if self.filtered_entries:
 					# entry = self.lib.get_entry_from_index(
 					# 	self.filtered_entries[index])
 					entry = self.lib.get_entry(self.filtered_entries[index][1])
@@ -1581,7 +1581,7 @@ class CliDriver:
 
 					self.print_fields(self.filtered_entries[index][1])
 				else:
-					if len(self.lib.entries) > 0:
+					if self.lib.entries:
 						print(self.format_h1('No Entry Results for Query', color=BRIGHT_RED_FG))
 						self.set_external_preview_default()
 					else:

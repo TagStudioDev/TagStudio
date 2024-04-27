@@ -1367,17 +1367,17 @@ class Library:
 			query: str = query.strip().lower()
 			query_words: list[str] = query.split(' ')
 			all_tag_terms: list[str] = []
-			only_untagged: bool = True if 'untagged' in query or 'no tags' in query else False
-			only_empty: bool = True if 'empty' in query or 'no fields' in query else False
-			only_missing: bool = True if 'missing' in query or 'no file' in query else False
-			allow_adv: bool = True if 'filename:' in query_words else False
-			tag_only: bool = True if 'tag_id:' in query_words else False
+			only_untagged: bool = ('untagged' in query or 'no tags' in query)
+			only_empty: bool = ('empty' in query or 'no fields' in query)
+			only_missing: bool = ('missing' in query or 'no file' in query)
+			allow_adv: bool = 'filename:' in query_words
+			tag_only: bool = 'tag_id:' in query_words
 			if allow_adv:
 				query_words.remove('filename:')
 			if tag_only:
 				query_words.remove('tag_id:')
 			# TODO: Expand this to allow for dynamic fields to work.
-			only_no_author: bool = True if 'no author' in query or 'no artist' in query else False
+			only_no_author: bool = ('no author' in query or 'no artist' in query)
 
 			# Preprocess the Tag terms.
 			if query_words:
@@ -1400,7 +1400,7 @@ class Library:
 			# non_entry_count = 0
 			# Iterate over all Entries =============================================================
 			for entry in self.entries:
-				allowed_ext: bool = False if os.path.splitext(entry.filename)[1][1:].lower() in self.ignored_extensions else True
+				allowed_ext: bool = os.path.splitext(entry.filename)[1][1:].lower() not in self.ignored_extensions
 				# try:
 				# entry: Entry = self.entries[self.file_to_library_index_map[self._source_filenames[i]]]
 				# print(f'{entry}')
@@ -1522,7 +1522,7 @@ class Library:
 			
 			for entry in self.entries:
 				added = False
-				allowed_ext: bool = False if os.path.splitext(entry.filename)[1][1:].lower() in self.ignored_extensions else True
+				allowed_ext: bool = os.path.splitext(entry.filename)[1][1:].lower() not in self.ignored_extensions
 				if allowed_ext:
 					for f in entry.fields:
 						if self.get_field_attr(f, 'type') == 'collation':
@@ -1963,7 +1963,7 @@ class Library:
 					matching: list[int] = self.search_tags(
 						tag.replace('_', ' ').replace('-', ' '), include_cluster=False, ignore_builtin=True, threshold=2, context=tags)
 					priority_field_index = -1
-					if len(matching) > 0:
+					if matching:
 
 						# NOTE: The following commented-out code enables the ability
 						# to prefer an existing built-in tag_box field to add to
