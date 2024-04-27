@@ -11,6 +11,3 @@ node_modules
 pnpm-lock.yaml
 package-lock.json
 yarn.lock
-
-# will have compiled files and executables
-/src-tauri/target/

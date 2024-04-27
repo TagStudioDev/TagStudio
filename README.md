@@ -81,22 +81,24 @@ pnpm install
 ### Step 4.
 
 - You can now run a dev server, or build the project.
-> [!WARNING]
-> You may need the `WEBKIT_DISABLE_COMPOSITING_MODE=1` AND/OR `WEBKIT_DISABLE_DMABUF_RENDERER=1`enviroment variable while running the command below if you get a blank screen.
+  > [!WARNING]
+  > You may need the `WEBKIT_DISABLE_COMPOSITING_MODE=1` AND/OR `WEBKIT_DISABLE_DMABUF_RENDERER=1`enviroment variable while running the command below if you get a blank screen.
 
 ```
 pnpm tauri dev
 ```
 
 - Building and then running the project.
-> [!CAUTION]
-> Linux: It requires `NO_STRIP=true` as enviroment variable due to a bug in linuxdeploy, which is used to build .Appimage file.
+  > [!CAUTION]
+  > Linux: It requires `NO_STRIP=true` as enviroment variable due to a bug in linuxdeploy, which is used to build .Appimage file.
 
 ```
 pnpm tauri build
 ```
 
 ### Step 5.
+
 > [!WARNING]
 > You may need the `WEBKIT_DISABLE_COMPOSITING_MODE=1` AND/OR `WEBKIT_DISABLE_DMABUF_RENDERER=1` enviroment variable while running the command below if you get a blank screen.
+
 - Locate the binary in `/src-tauri/target/release/bundle`, pray and then run it.

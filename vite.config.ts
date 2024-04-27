@@ -1,13 +1,12 @@
-import { sveltekit } from '@sveltejs/kit/vite';
 import { paraglide } from '@inlang/paraglide-sveltekit/vite';
+import { sveltekit } from '@sveltejs/kit/vite';
 import { defineConfig } from 'vite';
+import { purgeCss } from 'vite-plugin-tailwind-purgecss';
 
 export default defineConfig({
 	plugins: [
 		sveltekit(),
-		paraglide({
-			project: './project.inlang',
-			outdir: './src/paraglide'
-		})
+		purgeCss(),
+		paraglide({ project: './project.inlang', outdir: './src/paraglide' })
 	]
 });

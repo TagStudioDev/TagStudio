@@ -1,5 +1,5 @@
 <script lang="ts">
-	import Sidebar from '../Sidebar.svelte';
+	import Sidebar from '$lib/Sidebar.svelte';
 	import { page } from '$app/stores';
 
 	let showSidebar = true;

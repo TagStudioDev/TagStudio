@@ -29,7 +29,7 @@
 				"icons/icon.icns",
 				"icons/icon.ico"
 			],
-			"identifier": "com.tagstudio.tauri",
+			"identifier": "dev.tagstudio.tagstudio",
 			"longDescription": "",
 			"macOS": {
 				"entitlements": null,
@@ -44,7 +44,10 @@
 			"windows": {
 				"certificateThumbprint": null,
 				"digestAlgorithm": "sha256",
-				"timestampUrl": ""
+				"timestampUrl": "",
+				"nsis": {
+					"installerIcon": "icons/icon.ico"
+				}
 			}
 		},
 		"security": {
@@ -58,7 +61,7 @@
 				"fullscreen": false,
 				"height": 600,
 				"resizable": true,
-				"title": "TagStudio (tauri)",
+				"title": "TagStudio",
 				"width": 800
 			}
 		]

@@ -1,8 +1,6 @@
 <script lang="ts">
 	export let current: string | undefined = '';
 	let showSidebar = true;
-	import * as m from '$paraglide/messages';
-	import { languageTag } from '$paraglide/runtime';
 	console.log(current);
 </script>
 
@@ -11,14 +9,20 @@
 	style="min-height: calc(100vh - 5rem);"
 >
 	<div
-		class={`flex w-[13%] flex-col bg-base-100 transition-all duration-500 ease-in-out ${showSidebar ? '' : '!w-[0%]'}`}
+		class={`flex w-[13%] flex-col bg-base-100 transition-all duration-500 ease-in-out ${
+			showSidebar ? '' : '!w-[0%]'
+		}`}
 	>
 		<ul
-			class={`menu menu-md mt-5 w-full max-w-xs rounded-lg bg-base-100 transition-all duration-500 ease-in-out ${showSidebar ? '' : 'translate-x-[-14vw]'}`}
+			class={`menu menu-md mt-5 w-full max-w-xs rounded-lg bg-base-100 transition-all duration-500 ease-in-out ${
+				showSidebar ? '' : 'translate-x-[-14vw]'
+			}`}
 		>
 			<li class="mt-3">
 				<a
-					class={`btn justify-start py-3 font-extrabold ${current == '/dashboard' ? 'btn-primary' : 'btn-ghost'}`}
+					class={`btn justify-start py-3 font-extrabold ${
+						current == '/dashboard' ? 'btn-primary' : 'btn-ghost'
+					}`}
 				>
 					<svg
 						width="24"
@@ -104,16 +108,20 @@
 							</a>
 						</li>
 					</ul>
-					<ul></ul>
+					<ul />
 				</details>
 			</li>
 		</ul>
 	</div>
 	<div
-		class={`flex transition-all duration-500 ease-in-out ${showSidebar ? 'm-5 mt-0 flex w-[87%]' : 'flex w-[100%]'}`}
+		class={`flex transition-all duration-500 ease-in-out ${
+			showSidebar ? 'm-5 mt-0 flex w-[87%]' : 'flex w-[100%]'
+		}`}
 	>
 		<div
-			class={`h-full w-full flex-grow transition-all duration-500 ease-in-out ${showSidebar ? 'rounded-3xl' : ''} bg-base-200`}
+			class={`h-full w-full flex-grow transition-all duration-500 ease-in-out ${
+				showSidebar ? 'rounded-3xl' : ''
+			} bg-base-200`}
 		>
 			<slot />
 		</div>

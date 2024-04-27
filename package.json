@@ -2,41 +2,48 @@
 	"name": "tagstudio",
 	"version": "0.0.1",
 	"private": true,
+	"type": "module",
 	"scripts": {
 		"dev": "vite dev",
 		"build": "paraglide-js compile --project ./project.inlang --outdir ./src/paraglide && vite build",
 		"preview": "vite preview",
+		"tauri": "tauri",
 		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
 		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
-		"lint": "prettier --check .",
+		"lint": "prettier --check . && eslint .",
 		"format": "prettier --write .",
 		"postinstall": "paraglide-js compile --project ./project.inlang --outdir ./src/paraglide"
 	},
+	"dependencies": {
+		"@inlang/paraglide-sveltekit": "^0.6.12",
+		"@tauri-apps/api": "^1.5.4"
+	},
 	"devDependencies": {
-		"@inlang/paraglide-js": "1.7.0",
-		"@sveltejs/adapter-auto": "^3.2.0",
+		"@inlang/paraglide-js": "^1.7.2",
 		"@sveltejs/adapter-static": "^3.0.1",
 		"@sveltejs/kit": "^2.5.7",
 		"@sveltejs/vite-plugin-svelte": "^3.1.0",
 		"@tailwindcss/forms": "^0.5.7",
 		"@tailwindcss/typography": "^0.5.12",
-		"@tauri-apps/cli": "^1.5.11",
+		"@tauri-apps/cli": "^1.5.12",
+		"@typescript-eslint/eslint-plugin": "^6.21.0",
+		"@typescript-eslint/parser": "^6.21.0",
 		"autoprefixer": "^10.4.19",
 		"daisyui": "^4.10.2",
+		"eslint": "^8.57.0",
+		"eslint-config-prettier": "^8.10.0",
+		"eslint-plugin-svelte": "^2.38.0",
 		"postcss": "^8.4.38",
-		"postcss-load-config": "^5.0.3",
 		"prettier": "^3.2.5",
 		"prettier-plugin-svelte": "^3.2.3",
 		"prettier-plugin-tailwindcss": "^0.5.14",
 		"svelte": "^4.2.15",
-		"svelte-check": "^3.6.9",
+		"svelte-check": "^3.7.0",
 		"tailwindcss": "^3.4.3",
 		"tslib": "^2.6.2",
 		"typescript": "^5.4.5",
-		"vite": "^5.2.10"
+		"vite": "^5.2.10",
+		"vite-plugin-tailwind-purgecss": "^0.2.1"
 	},
-	"type": "module",
-	"dependencies": {
-		"@inlang/paraglide-sveltekit": "^0.6.7"
-	}
+	"packageManager": "pnpm@9.0.4+sha1.b198ac6d38244fd829253720f9daafd6a606834d"
 }
