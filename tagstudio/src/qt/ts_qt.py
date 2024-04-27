@@ -3805,7 +3805,7 @@ class QtDriver(QObject):
 												'Open/Create Library',
 												'/', 
 												QFileDialog.ShowDirsOnly)
-		if dir != None and dir != '':
+		if dir not in (None, ''):
 			self.open_library(dir)
 
 	def signal_handler(self, sig, frame):
@@ -4228,7 +4228,7 @@ class QtDriver(QObject):
 		# sleep(5)
 		# pb.deleteLater()
 	
-	def run_macros(self, name: str, entry_ids: int):
+	def run_macros(self, name: str, entry_ids: list[int]):
 		"""Runs a specific Macro on a group of given entry_ids."""
 		for id in entry_ids:
 			self.run_macro(name, id)
@@ -4304,7 +4304,7 @@ class QtDriver(QObject):
 
 		trimmed = False
 		if len(self.nav_frames) > self.cur_frame_idx + 1:
-			if (frame_content != None):
+			if frame_content is not None:
 				# Trim the nav stack if user is taking a new route.
 				self.nav_frames = self.nav_frames[:self.cur_frame_idx+1]
 				if self.nav_frames and not self.nav_frames[self.cur_frame_idx].contents:
@@ -4316,7 +4316,7 @@ class QtDriver(QObject):
 			self.nav_frames[self.cur_frame_idx].scrollbar_pos = sb_pos
 			self.cur_frame_idx += 1 if not trimmed else 0
 		# Moving forward at the end of the stack with new content
-		elif (frame_content != None):
+		elif frame_content is not None:
 			# If the current page is empty, don't include it in the new stack.
 			if self.nav_frames and not self.nav_frames[self.cur_frame_idx].contents:
 				self.nav_frames.pop()
@@ -4327,7 +4327,7 @@ class QtDriver(QObject):
 			self.cur_frame_idx += 1 if not trimmed else 0
 
 		# if self.nav_stack[self.cur_page_idx].contents:
-		if (self.cur_frame_idx != original_pos) or (frame_content != None):
+		if (self.cur_frame_idx != original_pos) or (frame_content is not None):
 			self.update_thumbs()
 			sb.verticalScrollBar().setValue(
 				self.nav_frames[self.cur_frame_idx].scrollbar_pos)
@@ -4601,7 +4601,7 @@ class QtDriver(QObject):
 						 for x in collation_entries])
 		# self.update_thumbs()
 
-	def get_frame_contents(self, index=0, query=str):
+	def get_frame_contents(self, index=0, query: str = None):
 		return ([] if not self.frame_dict[query] else self.frame_dict[query][index], index, len(self.frame_dict[query]))
 
 	def filter_items(self, query=''):

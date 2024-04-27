@@ -137,12 +137,11 @@ class TagStudioCore:
 	# 	# 	# print("Could not resolve URL.")
 	# 	# 	pass
 
-	def match_conditions(self, entry_id: int) -> str:
+	def match_conditions(self, entry_id: int) -> None:
 		"""Matches defined conditions against a file to add Entry data."""
 
 		cond_file = os.path.normpath(f'{self.lib.library_dir}/{TS_FOLDER_NAME}/conditions.json')
 		# TODO: Make this stored somewhere better instead of temporarily in this JSON file.
-		json_dump = {}
 		entry: Entry = self.lib.get_entry(entry_id)
 		try:
 			if os.path.isfile(cond_file):
@@ -155,8 +154,8 @@ class TagStudioCore:
 								match = True
 								break
 						if match:
-							if 'fields' in c.keys() and c['fields']:
-								for field in c['fields']:
+							if fields := c.get('fields'):
+								for field in fields:
 
 									field_id = self.lib.get_field_attr(
 										field, 'id')
