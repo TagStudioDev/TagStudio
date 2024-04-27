@@ -1,6 +1,7 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
   devtools: { enabled: true },
+  telemetry: { enabled: false},
   
   // Config using 
   // https://beta.tauri.app/start/frontend-configuration/nuxt/
