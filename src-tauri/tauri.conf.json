@@ -7,7 +7,7 @@
     "distDir": "../dist"
   },
   "package": {
-    "productName": "tagstudio",
+    "productName": "TagStudio",
     "version": "9.1.0-alpha"
   },
   "tauri": {
@@ -56,10 +56,10 @@
     "windows": [
       {
         "fullscreen": false,
-        "height": 600,
+        "height": 720,
         "resizable": true,
         "title": "TagStudio",
-        "width": 800
+        "width": 1300
       }
     ]
   }
