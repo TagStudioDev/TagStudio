@@ -191,7 +191,7 @@ class CliDriver:
 			return WHITE_FG
 		elif ext.lower().replace('.','',1) in VIDEO_TYPES:
 			return BRIGHT_CYAN_FG
-		elif ext.lower().replace('.','',1) in TEXT_TYPES:
+		elif ext.lower().replace('.','',1) in DOC_TYPES:
 			return BRIGHT_GREEN_FG
 		else:
 			return BRIGHT_WHITE_FG

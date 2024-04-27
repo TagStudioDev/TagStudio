@@ -38,9 +38,9 @@ from humanfriendly import format_timespan, format_size
 
 from src.core.library import Collation, Entry, ItemType, Library, Tag
 from src.core.palette import ColorType, get_tag_color
-from src.core.ts_core import (TagStudioCore, TAG_COLORS, DATE_FIELDS, TEXT_FIELDS, BOX_FIELDS, ALL_FILE_TYPES,
+from src.core.ts_core import (PLAINTEXT_TYPES, TagStudioCore, TAG_COLORS, DATE_FIELDS, TEXT_FIELDS, BOX_FIELDS, ALL_FILE_TYPES,
 										SHORTCUT_TYPES, PROGRAM_TYPES, ARCHIVE_TYPES, PRESENTATION_TYPES,
-										SPREADSHEET_TYPES, TEXT_TYPES, AUDIO_TYPES, VIDEO_TYPES, IMAGE_TYPES,
+										SPREADSHEET_TYPES, DOC_TYPES, AUDIO_TYPES, VIDEO_TYPES, IMAGE_TYPES,
 										LIBRARY_FILENAME, COLLAGE_FOLDER_NAME, BACKUP_FOLDER_NAME, TS_FOLDER_NAME,
 										VERSION_BRANCH, VERSION)
 from src.core.utils.web import strip_web_protocol
@@ -3434,7 +3434,7 @@ class CollageIconRenderer(QObject):
 			return '\033[37m'
 		elif ext.lower().replace('.','',1) in VIDEO_TYPES:
 			return '\033[96m'
-		elif ext.lower().replace('.','',1) in TEXT_TYPES:
+		elif ext.lower().replace('.','',1) in DOC_TYPES:
 			return '\033[92m'
 		else:
 			return '\033[97m'
@@ -3461,6 +3461,10 @@ class ThumbRenderer(QObject):
 	thumb_broken_512: Image.Image = Image.open(os.path.normpath(
 		f'{Path(__file__).parent.parent.parent}/resources/qt/images/thumb_broken_512.png'))
 	thumb_broken_512.load()
+
+	thumb_file_default_512: Image.Image = Image.open(os.path.normpath(
+		f'{Path(__file__).parent.parent.parent}/resources/qt/images/thumb_file_default_512.png'))
+	thumb_file_default_512.load()
 
 	# thumb_debug: Image.Image = Image.open(os.path.normpath(
 	# 	f'{Path(__file__).parent.parent.parent}/resources/qt/images/temp.jpg'))
@@ -3506,6 +3510,7 @@ class ThumbRenderer(QObject):
 			extension = os.path.splitext(filepath)[1][1:].lower()
 
 			try:
+				# Images =======================================================
 				if extension in IMAGE_TYPES:
 					image = Image.open(filepath)
 					# image = self.thumb_debug
@@ -3516,11 +3521,8 @@ class ThumbRenderer(QObject):
 						image = new_bg
 					if image.mode != 'RGB':
 						image = image.convert(mode='RGB')
-						# raise ValueError
-				# except (UnidentifiedImageError, FileNotFoundError):
-				# 	image = Image.open(os.path.normpath(f'{Path(__file__).parent.parent.parent}/resources/cli/images/no_preview.png'))
-				# image.thumbnail((adj_size,adj_size))
 
+				# Videos =======================================================
 				elif extension in VIDEO_TYPES:
 					video = cv2.VideoCapture(filepath)
 					video.set(cv2.CAP_PROP_POS_FRAMES,
@@ -3534,11 +3536,23 @@ class ThumbRenderer(QObject):
 						success, frame = video.read()
 					frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 					image = Image.fromarray(frame)
-			
-				# TODO: Create placeholder thumbnails for non-media files.
-				# else:
-				# 	image: Image.Image = ThumbRenderer.thumb_loading_512.resize(
-				# 		(adj_size, adj_size), resample=Image.Resampling.BILINEAR)
+
+				# Plain Text ===================================================
+				elif extension in PLAINTEXT_TYPES:
+					try:
+						text: str = extension
+						with open(filepath, 'r', encoding='utf-8') as text_file:
+							text = text_file.read(256)
+						bg = Image.new('RGB',(256,256), color='#222222')
+						draw = ImageDraw.Draw(bg)
+						draw.text((16,16), text, file=(255,255,255))
+						image = bg
+					except:
+						logging.info(f'[ThumbRenderer][ERROR]: Coulnd\'t render thumbnail for {filepath}')
+				# No Rendered Thumbnail ========================================
+				else:
+					image = ThumbRenderer.thumb_file_default_512.resize(
+					(adj_size, adj_size), resample=Image.Resampling.BILINEAR)
 
 				if not image:
 					raise UnidentifiedImageError
@@ -3553,9 +3567,7 @@ class ThumbRenderer(QObject):
 					new_y = adj_size
 					new_x = math.ceil(adj_size * (orig_x / orig_y))
 
-				img_ratio = new_x / new_y
-				# logging.info(f'[TR] {(new_x / new_y)}')
-				# self.updated_ratio.emit(new_x / new_y)
+				# img_ratio = new_x / new_y
 				image = image.resize(
 					(new_x, new_y), resample=Image.Resampling.BILINEAR)
 
@@ -3608,21 +3620,6 @@ class ThumbRenderer(QObject):
 				final = ThumbRenderer.thumb_broken_512.resize(
 					(adj_size, adj_size), resample=Image.Resampling.BILINEAR)
 
-			# if file_type in VIDEO_TYPES + ['gif', 'apng'] or broken_thumb:
-			# 	idk = ImageDraw.Draw(final)
-			# 	# idk.textlength(file_type)
-			# 	ext_offset_x = idk.textlength(
-			# 		text=file_type.upper(), font=ThumbRenderer.ext_font) / 2
-			# 	ext_offset_x = math.floor(ext_offset_x * (1/pixelRatio))
-			# 	x_margin = math.floor(
-			# 		(adj_size-((base_size[0]//6)+ext_offset_x) * pixelRatio))
-			# 	y_margin = math.floor(
-			# 		(adj_size-((base_size[0]//8)) * pixelRatio))
-			# 	stroke_width = round(2 * pixelRatio)
-			# 	fill = 'white' if not broken_thumb else '#E32B41'
-			# 	idk.text((x_margin, y_margin), file_type.upper(
-			# 	), fill=fill, font=ThumbRenderer.ext_font, stroke_width=stroke_width, stroke_fill=(0, 0, 0))
-
 			qim = ImageQt.ImageQt(final)
 			if image:
 				image.close()
@@ -3672,6 +3669,7 @@ class ThumbRenderer(QObject):
 			extension = os.path.splitext(filepath)[1][1:].lower()
 
 			try:
+				# Images =======================================================
 				if extension in IMAGE_TYPES:
 					image = Image.open(filepath)
 					# image = self.thumb_debug
@@ -3682,11 +3680,8 @@ class ThumbRenderer(QObject):
 						image = new_bg
 					if image.mode != 'RGB':
 						image = image.convert(mode='RGB')
-						# raise ValueError
-				# except (UnidentifiedImageError, FileNotFoundError):
-				# 	image = Image.open(os.path.normpath(f'{Path(__file__).parent.parent.parent}/resources/cli/images/no_preview.png'))
-				# image.thumbnail((adj_size,adj_size))
 
+				# Videos =======================================================
 				elif extension in VIDEO_TYPES:
 					video = cv2.VideoCapture(filepath)
 					video.set(cv2.CAP_PROP_POS_FRAMES,
@@ -3700,6 +3695,22 @@ class ThumbRenderer(QObject):
 						success, frame = video.read()
 					frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 					image = Image.fromarray(frame)
+				# Plain Text ===================================================
+				elif extension in PLAINTEXT_TYPES:
+					try:
+						text: str = extension
+						with open(filepath, 'r', encoding='utf-8') as text_file:
+							text = text_file.read(256)
+						bg = Image.new('RGB',(256,256), color='#222222')
+						draw = ImageDraw.Draw(bg)
+						draw.text((16,16), text, file=(255,255,255))
+						image = bg
+					except:
+						logging.info(f'[ThumbRenderer][ERROR]: Coulnd\'t render thumbnail for {filepath}')
+				# No Rendered Thumbnail ========================================
+				else:
+					image = ThumbRenderer.thumb_file_default_512.resize(
+					(adj_size, adj_size), resample=Image.Resampling.BILINEAR)
 
 				if not image:
 					raise UnidentifiedImageError
