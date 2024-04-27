@@ -33,7 +33,7 @@ from PySide6.QtUiTools import QUiLoader
 from PySide6.QtWidgets import (QApplication, QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QPlainTextEdit,
 							   QLineEdit, QScrollArea, QFrame, QTextEdit, QComboBox, QProgressDialog, QFileDialog,
 							   QListView, QSplitter, QSizePolicy, QMessageBox, QBoxLayout, QCheckBox, QSplashScreen,
-							   QMenu)
+							   QMenu, QTableWidget, QTableWidgetItem)
 from humanfriendly import format_timespan, format_size
 
 from src.core.library import Collation, Entry, ItemType, Library, Tag
@@ -1968,6 +1968,46 @@ class AddFieldModal(QWidget):
 		# self.root_layout.setStretch(1,2)
 		self.root_layout.addStretch(1)
 		self.root_layout.addWidget(self.button_container)
+
+class FileExtensionModal(PanelWidget):
+	done = Signal()
+	def __init__(self, library:'Library'):
+		super().__init__()
+		self.lib = library
+		self.setWindowTitle(f'File Extensions')
+		self.setWindowModality(Qt.WindowModality.ApplicationModal)
+		self.setMinimumSize(200, 400)
+		self.root_layout = QVBoxLayout(self)
+		self.root_layout.setContentsMargins(6,6,6,6)
+
+		self.table = QTableWidget(len(self.lib.ignored_extensions), 1)
+		self.table.horizontalHeader().setVisible(False)
+		self.table.verticalHeader().setVisible(False)
+		self.table.horizontalHeader().setStretchLastSection(True)
+
+		self.add_button = QPushButton()
+		self.add_button.setText('&Add Extension')
+		self.add_button.clicked.connect(self.add_item)
+		self.add_button.setDefault(True)
+		self.add_button.setMinimumWidth(100)
+
+		self.root_layout.addWidget(self.table)
+		self.root_layout.addWidget(self.add_button, alignment=Qt.AlignmentFlag.AlignCenter)
+		self.refresh_list()
+	
+	def refresh_list(self):
+		for i, ext in enumerate(self.lib.ignored_extensions):
+			self.table.setItem(i, 0, QTableWidgetItem(ext))
+	
+	def add_item(self):
+		self.table.insertRow(self.table.rowCount())
+	
+	def save(self):
+		self.lib.ignored_extensions.clear()
+		for i in range(self.table.rowCount()):
+			ext = self.table.item(i, 0)
+			if ext and ext.text():
+				self.lib.ignored_extensions.append(ext.text())
 
 class FileOpenerHelper():
 	def __init__(self, filepath:str):
@@ -3953,6 +3993,10 @@ class QtDriver(QObject):
 
 		edit_menu.addSeparator()
 
+		manage_file_extensions_action = QAction('Ignore File Extensions', menu_bar)
+		manage_file_extensions_action.triggered.connect(lambda: self.show_file_extension_modal())
+		edit_menu.addAction(manage_file_extensions_action)
+
 		tag_database_action = QAction('Tag Database', menu_bar)
 		tag_database_action.triggered.connect(lambda: self.show_tag_database())
 		edit_menu.addAction(tag_database_action)
@@ -4127,6 +4171,13 @@ class QtDriver(QObject):
 	
 	def show_tag_database(self):
 		self.modal = PanelModal(TagDatabasePanel(self.lib),'Tag Database', 'Tag Database', has_save=False)
+		self.modal.show()
+	
+	def show_file_extension_modal(self):
+		# self.modal = FileExtensionModal(self.lib)
+		panel = FileExtensionModal(self.lib)
+		self.modal = PanelModal(panel, 'Ignored File Extensions', 'Ignored File Extensions', has_save=True)
+		self.modal.saved.connect(lambda: (panel.save(), self.filter_items('')))
 		self.modal.show()
 
 	def add_new_files_callback(self):
