@@ -8,3 +8,4 @@ from .text_line_edit import EditTextLine
 from .progress import ProgressWidget
 from .tag import TagWidget
 from .tag_box import TagBoxWidget
+from .text import TextWidget

@@ -44,7 +44,7 @@ from src.qt.flowlayout import FlowLayout, FlowWidget
 from src.qt.main_window import Ui_MainWindow
 from src.qt.helpers import open_file, FileOpenerHelper, FileOpenerLabel
 from src.qt.widgets import (FieldContainer, FieldWidget, CollageIconRenderer, ThumbButton, ThumbRenderer, PanelModal,
-							EditTextBox, EditTextLine, ProgressWidget, TagBoxWidget)
+							EditTextBox, EditTextLine, ProgressWidget, TagBoxWidget, TextWidget)
 from src.qt.modals import BuildTagPanel, TagDatabasePanel, AddFieldModal, FileExtensionModal
 import src.qt.resources_rc
 
@@ -105,29 +105,6 @@ class Consumer(QThread):
 
 	def nav_forward(self):
 		pass
-
-
-class TextWidget(FieldWidget):
-
-	def __init__(self, title, text:str) -> None:
-		super().__init__(title)
-		# self.item = item
-		self.setObjectName('textBox')
-		# self.setStyleSheet('background-color:purple;')
-		self.base_layout = QHBoxLayout()
-		self.base_layout.setContentsMargins(0, 0, 0, 0)
-		self.setLayout(self.base_layout)
-		self.text_label = QLabel()
-		# self.text_label.textFormat(Qt.TextFormat.RichText)
-		self.text_label.setStyleSheet('font-size: 12px')
-		self.text_label.setWordWrap(True)
-		self.text_label.setTextInteractionFlags(
-			Qt.TextInteractionFlag.TextSelectableByMouse)
-		self.base_layout.addWidget(self.text_label)
-		self.set_text(text)
-
-	def set_text(self, text:str):
-		self.text_label.setText(text)
 
 
 class FunctionIterator(QObject):
