@@ -1,7 +1,17 @@
+import * as path from 'path';
+
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
   devtools: { enabled: true },
   telemetry: { enabled: false},
+
+  modules: ["@nuxtjs/tailwindcss", 'nuxt-primevue' ],
+  primevue: {
+    options: {
+      unstyled: true
+    },
+    importPT: { from: path.resolve(__dirname, './presets/wind/') }      //import and apply preset
+  },
   
   // Config using 
   // https://beta.tauri.app/start/frontend-configuration/nuxt/
@@ -31,14 +41,5 @@ export default defineNuxtConfig({
       },
     },
   },
-
-
-  // tailwindcss
-  css: ['~/assets/css/main.css'],
-  postcss: {
-    plugins: {
-      tailwindcss: {},
-      autoprefixer: {},
-    },
-  },
+  css: ['~/assets/css/base.css'],
 })
