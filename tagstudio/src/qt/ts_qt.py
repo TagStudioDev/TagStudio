@@ -46,7 +46,7 @@ from src.qt.main_window import Ui_MainWindow
 from src.qt.helpers import open_file, FileOpenerHelper, FileOpenerLabel
 from src.qt.widgets import (FieldContainer, FieldWidget, CollageIconRenderer, ThumbButton, ThumbRenderer, PanelWidget,
 							PanelModal, EditTextBox, EditTextLine, ProgressWidget, TagWidget, TagBoxWidget)
-from src.qt.modals import TagSearchPanel, BuildTagPanel, TagDatabasePanel, AddFieldModal
+from src.qt.modals import TagSearchPanel, BuildTagPanel, TagDatabasePanel, AddFieldModal, FileExtensionModal
 import src.qt.resources_rc
 
 # SIGQUIT is not defined on Windows
@@ -734,47 +734,6 @@ class RelinkUnlinkedEntries(QObject):
 		# 			f'{ERROR} \"{id}\" was reported as missing, but is not in the file_to_entry_id map.')
 		# for d in deleted:
 		# 	self.lib.missing_files.remove(d)
-
-
-class FileExtensionModal(PanelWidget):
-	done = Signal()
-	def __init__(self, library:'Library'):
-		super().__init__()
-		self.lib = library
-		self.setWindowTitle(f'File Extensions')
-		self.setWindowModality(Qt.WindowModality.ApplicationModal)
-		self.setMinimumSize(200, 400)
-		self.root_layout = QVBoxLayout(self)
-		self.root_layout.setContentsMargins(6,6,6,6)
-
-		self.table = QTableWidget(len(self.lib.ignored_extensions), 1)
-		self.table.horizontalHeader().setVisible(False)
-		self.table.verticalHeader().setVisible(False)
-		self.table.horizontalHeader().setStretchLastSection(True)
-
-		self.add_button = QPushButton()
-		self.add_button.setText('&Add Extension')
-		self.add_button.clicked.connect(self.add_item)
-		self.add_button.setDefault(True)
-		self.add_button.setMinimumWidth(100)
-
-		self.root_layout.addWidget(self.table)
-		self.root_layout.addWidget(self.add_button, alignment=Qt.AlignmentFlag.AlignCenter)
-		self.refresh_list()
-	
-	def refresh_list(self):
-		for i, ext in enumerate(self.lib.ignored_extensions):
-			self.table.setItem(i, 0, QTableWidgetItem(ext))
-	
-	def add_item(self):
-		self.table.insertRow(self.table.rowCount())
-	
-	def save(self):
-		self.lib.ignored_extensions.clear()
-		for i in range(self.table.rowCount()):
-			ext = self.table.item(i, 0)
-			if ext and ext.text():
-				self.lib.ignored_extensions.append(ext.text())
 
 
 class PreviewPanel(QWidget):
