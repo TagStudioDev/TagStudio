@@ -4,6 +4,7 @@
 
 
 import logging
+import typing
 
 from PySide6.QtCore import QThread, Qt, QThreadPool
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton
@@ -12,6 +13,10 @@ from src.core.library import Library
 from src.qt.helpers import FunctionIterator, CustomRunnable
 from src.qt.modals import DeleteUnlinkedEntriesModal, RelinkUnlinkedEntries
 from src.qt.widgets	import ProgressWidget
+
+# Only import for type checking/autocompletion, will not be imported at runtime.
+if typing.TYPE_CHECKING:
+	from src.qt.ts_qt import QtDriver
 
 
 ERROR = f'[ERROR]'

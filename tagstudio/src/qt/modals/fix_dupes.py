@@ -4,12 +4,17 @@
 
 
 import os
+import typing
 
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QFileDialog
 
 from src.core.library import Library
 from src.qt.modals import MirrorEntriesModal
+
+# Only import for type checking/autocompletion, will not be imported at runtime.
+if typing.TYPE_CHECKING:
+	from src.qt.ts_qt import QtDriver
 
 
 class FixDupeFilesModal(QWidget):

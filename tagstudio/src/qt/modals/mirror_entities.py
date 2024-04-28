@@ -4,6 +4,7 @@
 
 
 from time import sleep
+import typing
 
 from PySide6.QtCore import Signal, Qt, QThreadPool
 from PySide6.QtGui import QStandardItemModel, QStandardItem
@@ -12,6 +13,10 @@ from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushBu
 from src.core.library import Library
 from src.qt.helpers import FunctionIterator, CustomRunnable
 from src.qt.widgets	import ProgressWidget
+
+# Only import for type checking/autocompletion, will not be imported at runtime.
+if typing.TYPE_CHECKING:
+	from src.qt.ts_qt import QtDriver
 
 
 class MirrorEntriesModal(QWidget):

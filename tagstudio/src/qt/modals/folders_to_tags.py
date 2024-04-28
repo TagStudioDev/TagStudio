@@ -5,6 +5,7 @@
 
 import logging
 import math
+import typing
 
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QScrollArea, QFrame
@@ -12,6 +13,10 @@ from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushBu
 from src.core.library import Library, Tag
 from src.core.palette import ColorType, get_tag_color
 from src.qt.flowlayout import FlowLayout
+
+# Only import for type checking/autocompletion, will not be imported at runtime.
+if typing.TYPE_CHECKING:
+	from src.qt.ts_qt import QtDriver
 
 
 ERROR = f'[ERROR]'

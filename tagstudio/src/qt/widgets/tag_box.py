@@ -5,6 +5,7 @@
 
 import logging
 import math
+import typing
 
 from PySide6.QtCore import Signal, Qt
 from PySide6.QtWidgets import QPushButton
@@ -13,6 +14,10 @@ from src.core.library import Library, Tag
 from src.qt.flowlayout import FlowLayout
 from src.qt.widgets import FieldWidget, TagWidget, PanelModal
 from src.qt.modals import BuildTagPanel, TagSearchPanel
+
+# Only import for type checking/autocompletion, will not be imported at runtime.
+if typing.TYPE_CHECKING:
+	from src.qt.ts_qt import QtDriver
 
 
 class TagBoxWidget(FieldWidget):

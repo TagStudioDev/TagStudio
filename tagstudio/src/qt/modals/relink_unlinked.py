@@ -2,12 +2,17 @@
 # Licensed under the GPL-3.0 License.
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
+import typing
 
 from PySide6.QtCore import QObject, Signal, QThreadPool
 
 from src.core.library import Library
 from src.qt.helpers import FunctionIterator, CustomRunnable
 from src.qt.widgets	import ProgressWidget
+
+# Only import for type checking/autocompletion, will not be imported at runtime.
+if typing.TYPE_CHECKING:
+	from src.qt.ts_qt import QtDriver
 
 
 class RelinkUnlinkedEntries(QObject):
