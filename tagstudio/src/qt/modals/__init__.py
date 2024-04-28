@@ -3,3 +3,9 @@ from .build_tag import BuildTagPanel
 from .tag_database import TagDatabasePanel
 from .add_field import AddFieldModal
 from .file_extension import FileExtensionModal
+from .delete_unlinked import DeleteUnlinkedEntriesModal
+from .relink_unlinked import RelinkUnlinkedEntries
+from .fix_unlinked import FixUnlinkedEntriesModal
+from .mirror_entities import MirrorEntriesModal
+from .fix_dupes import FixDupeFilesModal
+from .folders_to_tags import FoldersToTagsModal
