@@ -45,7 +45,7 @@ from src.qt.flowlayout import FlowLayout, FlowWidget
 from src.qt.main_window import Ui_MainWindow
 from src.qt.helpers import open_file, FileOpenerHelper, FileOpenerLabel
 from src.qt.widgets import (FieldContainer, FieldWidget, CollageIconRenderer, ThumbButton, ThumbRenderer, PanelWidget,
-							PanelModal, EditTextBox, EditTextLine)
+							PanelModal, EditTextBox, EditTextLine, ProgressWidget)
 import src.qt.resources_rc
 
 # SIGQUIT is not defined on Windows
@@ -957,29 +957,6 @@ class FunctionIterator(QObject):
 		for i in self.iterable():
 			self.value.emit(i)
 	
-
-class ProgressWidget(QWidget):
-	"""Prebuilt thread-safe progress bar widget."""
-	def __init__(self, window_title:str, label_text:str, cancel_button_text:Optional[str], minimum:int, maximum:int):
-		super().__init__()
-		self.root = QVBoxLayout(self)
-		self.pb = QProgressDialog(
-			labelText=label_text, 
-			minimum=minimum, 
-			cancelButtonText=cancel_button_text, 
-			maximum=maximum
-			)
-		self.root.addWidget(self.pb)
-		self.setFixedSize(432, 112)
-		self.setWindowFlags(self.pb.windowFlags() & ~Qt.WindowType.WindowCloseButtonHint)
-		self.setWindowTitle(window_title)
-		self.setWindowModality(Qt.WindowModality.ApplicationModal)
-	
-	def update_label(self, text:str):
-		self.pb.setLabelText(text)
-
-	def update_progress(self, value:int):
-		self.pb.setValue(value)
 
 class FixDupeFilesModal(QWidget):
 	# done = Signal(int)

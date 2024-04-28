@@ -5,3 +5,4 @@ from .thumb_renderer import ThumbRenderer
 from .panel import PanelWidget, PanelModal
 from .text_box_edit import EditTextBox
 from .text_line_edit import EditTextLine
+from .progress import ProgressWidget
