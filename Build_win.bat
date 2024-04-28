@@ -9,7 +9,7 @@ set TAGSTUDIO_ICON=%TAGSTUDIO_DIR%/resources/icon.ico
 set TAGSTUDIO_SRC=%TAGSTUDIO_DIR%/src
 set TAGSTUDIO_MAIN=%TAGSTUDIO_DIR%/tag_studio.py
 
-set COMMAND=PyInstaller --name "%TAGSTUDIO_NAME%" --icon "%TAGSTUDIO_ICON%" --add-data "%TAGSTUDIO_DIR_RESOURCES%:./resources" --add-data "%TAGSTUDIO_SRC%:./src" --distpath "%DIST_PATH%" -p "%TAGSTUDIO_DIR%" --console --onefile "%TAGSTUDIO_MAIN%" -y
+set COMMAND=PyInstaller --name "%TAGSTUDIO_NAME%" --icon "%TAGSTUDIO_ICON%" --add-data "%TAGSTUDIO_DIR_RESOURCES%:./resources" --add-data "%TAGSTUDIO_SRC%:./src" --distpath "%DIST_PATH%" -p "%TAGSTUDIO_DIR%" --console --onedir "%TAGSTUDIO_MAIN%" -y
 call .venv\Scripts\activate.bat
 %COMMAND%
 deactivate
