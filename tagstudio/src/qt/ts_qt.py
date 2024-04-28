@@ -76,7 +76,7 @@ def open_file(path: str, file_manager: bool = False):
 				command_name = "start"
 				# first parameter is for title, NOT filepath
 				command_args = ["", normpath]
-			subprocess.Popen([command_name] + command_args, shell=True, close_fds=True, creationflags=subprocess.DETACHED_PROCESS | subprocess.CREATE_NEW_PROCESS_GROUP | subprocess.CREATE_BREAKAWAY_FROM_JOB)
+			subprocess.Popen([command_name] + command_args, shell=True, close_fds=True, creationflags=subprocess.CREATE_NEW_PROCESS_GROUP | subprocess.CREATE_BREAKAWAY_FROM_JOB)
 		else:
 			if sys.platform == "darwin":
 				command_name = "open"
