@@ -13,37 +13,33 @@ import math
 import os
 import sys
 import time
-from types import FunctionType
 from datetime import datetime as dt
 from pathlib import Path
 from queue import Empty, Queue
 from typing import Optional
 
-import cv2
-from PIL import Image, UnidentifiedImageError, ImageQt
+from PIL import Image
 from PySide6 import QtCore
-from PySide6.QtCore import QObject, QThread, Signal, Qt, QThreadPool, QSize, QEvent, QTimer, QSettings
-from PySide6.QtGui import (QGuiApplication, QPixmap, QEnterEvent, QMouseEvent, QResizeEvent, QColor, QAction,
+from PySide6.QtCore import QObject, QThread, Signal, Qt, QThreadPool, QTimer, QSettings
+from PySide6.QtGui import (QGuiApplication, QPixmap, QMouseEvent, QColor, QAction,
 						   QFontDatabase, QIcon)
 from PySide6.QtUiTools import QUiLoader
-from PySide6.QtWidgets import (QApplication, QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QLineEdit,
-							   QScrollArea, QFrame, QFileDialog, QSplitter, QSizePolicy, QMessageBox,
-							   QBoxLayout, QCheckBox, QSplashScreen, QMenu)
-from humanfriendly import format_timespan, format_size
+from PySide6.QtWidgets import (QApplication, QWidget, QHBoxLayout, QPushButton, QLineEdit, QScrollArea, QFileDialog,
+							   QSplashScreen, QMenu)
+from humanfriendly import format_timespan
 
-from src.core.library import Entry, ItemType, Library
+from src.core.library import ItemType
 from src.core.ts_core import (PLAINTEXT_TYPES, TagStudioCore, TAG_COLORS, DATE_FIELDS, TEXT_FIELDS, BOX_FIELDS, ALL_FILE_TYPES,
 										SHORTCUT_TYPES, PROGRAM_TYPES, ARCHIVE_TYPES, PRESENTATION_TYPES,
 										SPREADSHEET_TYPES, DOC_TYPES, AUDIO_TYPES, VIDEO_TYPES, IMAGE_TYPES,
 										LIBRARY_FILENAME, COLLAGE_FOLDER_NAME, BACKUP_FOLDER_NAME, TS_FOLDER_NAME,
 										VERSION_BRANCH, VERSION)
 from src.core.utils.web import strip_web_protocol
-from src.qt.flowlayout import FlowLayout, FlowWidget
+from src.qt.flowlayout import FlowLayout
 from src.qt.main_window import Ui_MainWindow
-from src.qt.helpers import open_file, FileOpenerHelper, FileOpenerLabel, FunctionIterator, CustomRunnable
-from src.qt.widgets import (FieldContainer, CollageIconRenderer, ThumbButton, ThumbRenderer, PanelModal, EditTextBox,
-							EditTextLine, ProgressWidget, TagBoxWidget, TextWidget, PreviewPanel, ItemThumb)
-from src.qt.modals import (BuildTagPanel, TagDatabasePanel, AddFieldModal, FileExtensionModal, FixUnlinkedEntriesModal,
+from src.qt.helpers import FunctionIterator, CustomRunnable
+from src.qt.widgets import CollageIconRenderer, ThumbRenderer, PanelModal, ProgressWidget, PreviewPanel, ItemThumb
+from src.qt.modals import (BuildTagPanel, TagDatabasePanel, FileExtensionModal, FixUnlinkedEntriesModal,
 						   FixDupeFilesModal, FoldersToTagsModal)
 import src.qt.resources_rc
 
