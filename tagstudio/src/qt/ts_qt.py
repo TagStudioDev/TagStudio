@@ -14,7 +14,6 @@ import os
 import sys
 import time
 import traceback
-import shutil
 import subprocess
 from types import FunctionType
 from datetime import datetime as dt
@@ -46,6 +45,7 @@ from src.core.ts_core import (PLAINTEXT_TYPES, TagStudioCore, TAG_COLORS, DATE_F
 from src.core.utils.web import strip_web_protocol
 from src.qt.flowlayout import FlowLayout, FlowWidget
 from src.qt.main_window import Ui_MainWindow
+from src.qt.helpers import open_file
 import src.qt.resources_rc
 
 # SIGQUIT is not defined on Windows
@@ -63,26 +63,6 @@ logging.basicConfig(format="%(message)s", level=logging.INFO)
 
 # Keep settings in ini format in the current working directory.
 QSettings.setPath(QSettings.IniFormat, QSettings.UserScope, os.getcwd())
-
-
-def open_file(path: str):
-	try:
-		if sys.platform == "win32":
-			# Windows needs special attention to handle spaces in the file
-			# first parameter is for title, NOT filepath
-			subprocess.Popen(["start", "", os.path.normpath(path)], shell=True, close_fds=True, creationflags=subprocess.DETACHED_PROCESS)
-		else:
-			if sys.platform == "darwin":
-				command_name = "open"
-			else:
-				command_name = "xdg-open"
-			command = shutil.which(command_name)
-			if command is not None:
-				subprocess.Popen([command, path], close_fds=True)
-			else:
-				logging.info(f"Could not find {command_name} on system PATH")
-	except:
-		traceback.print_exc()
 
 
 class NavigationState():
