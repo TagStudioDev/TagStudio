@@ -45,7 +45,7 @@ from src.qt.flowlayout import FlowLayout, FlowWidget
 from src.qt.main_window import Ui_MainWindow
 from src.qt.helpers import open_file, FileOpenerHelper, FileOpenerLabel
 from src.qt.widgets import (FieldContainer, FieldWidget, CollageIconRenderer, ThumbButton, ThumbRenderer, PanelWidget,
-							PanelModal, EditTextBox)
+							PanelModal, EditTextBox, EditTextLine)
 import src.qt.resources_rc
 
 # SIGQUIT is not defined on Windows
@@ -487,25 +487,6 @@ class TagWidget(QWidget):
 		self.update()
 		return super().leaveEvent(event)
 
-
-class EditTextLine(PanelWidget):
-	def __init__(self, text):
-		super().__init__()
-		# self.setLayout()
-		self.setMinimumWidth(480)
-		self.root_layout = QVBoxLayout(self)
-		self.root_layout.setContentsMargins(6,0,6,0)
-		self.text = text
-		self.text_edit = QLineEdit()
-		self.text_edit.setText(text)
-		self.text_edit.returnPressed.connect(self.done.emit)
-		self.root_layout.addWidget(self.text_edit)
-	
-	def get_content(self)-> str:
-		return self.text_edit.text()
-	
-	def reset(self):
-		self.text_edit.setText(self.text)
 
 class TagSearchPanel(PanelWidget):
 	tag_chosen = Signal(int)
