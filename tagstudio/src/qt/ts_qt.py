@@ -21,16 +21,15 @@ from time import sleep
 from typing import Optional
 
 import cv2
-from PIL import Image, ImageChops, UnidentifiedImageError, ImageQt, ImageDraw, ImageFont, ImageEnhance
+from PIL import Image, UnidentifiedImageError, ImageQt
 from PySide6 import QtCore
 from PySide6.QtCore import QObject, QThread, Signal, QRunnable, Qt, QThreadPool, QSize, QEvent, QTimer, QSettings
-from PySide6.QtGui import (QGuiApplication, QPixmap, QEnterEvent, QMouseEvent, QResizeEvent, QPainter, QColor, QPen,
-						   QAction, QStandardItemModel, QStandardItem, QPainterPath, QFontDatabase, QIcon)
+from PySide6.QtGui import (QGuiApplication, QPixmap, QEnterEvent, QMouseEvent, QResizeEvent, QColor, QAction,
+						   QStandardItemModel, QStandardItem, QFontDatabase, QIcon)
 from PySide6.QtUiTools import QUiLoader
-from PySide6.QtWidgets import (QApplication, QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QPlainTextEdit,
-							   QLineEdit, QScrollArea, QFrame, QTextEdit, QComboBox, QProgressDialog, QFileDialog,
-							   QListView, QSplitter, QSizePolicy, QMessageBox, QBoxLayout, QCheckBox, QSplashScreen,
-							   QMenu, QTableWidget, QTableWidgetItem)
+from PySide6.QtWidgets import (QApplication, QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QLineEdit,
+							   QScrollArea, QFrame, QFileDialog, QListView, QSplitter, QSizePolicy, QMessageBox,
+							   QBoxLayout, QCheckBox, QSplashScreen, QMenu)
 from humanfriendly import format_timespan, format_size
 
 from src.core.library import Collation, Entry, ItemType, Library, Tag
@@ -44,9 +43,9 @@ from src.core.utils.web import strip_web_protocol
 from src.qt.flowlayout import FlowLayout, FlowWidget
 from src.qt.main_window import Ui_MainWindow
 from src.qt.helpers import open_file, FileOpenerHelper, FileOpenerLabel
-from src.qt.widgets import (FieldContainer, FieldWidget, CollageIconRenderer, ThumbButton, ThumbRenderer, PanelWidget,
-							PanelModal, EditTextBox, EditTextLine, ProgressWidget, TagWidget, TagBoxWidget)
-from src.qt.modals import TagSearchPanel, BuildTagPanel, TagDatabasePanel, AddFieldModal, FileExtensionModal
+from src.qt.widgets import (FieldContainer, FieldWidget, CollageIconRenderer, ThumbButton, ThumbRenderer, PanelModal,
+							EditTextBox, EditTextLine, ProgressWidget, TagBoxWidget)
+from src.qt.modals import BuildTagPanel, TagDatabasePanel, AddFieldModal, FileExtensionModal
 import src.qt.resources_rc
 
 # SIGQUIT is not defined on Windows
