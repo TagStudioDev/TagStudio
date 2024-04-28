@@ -7,3 +7,4 @@ from .text_box_edit import EditTextBox
 from .text_line_edit import EditTextLine
 from .progress import ProgressWidget
 from .tag import TagWidget
+from .tag_box import TagBoxWidget
