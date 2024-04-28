@@ -394,6 +394,7 @@ class MirrorEntriesModal(QWidget):
 
 
 class FixUnlinkedEntriesModal(QWidget):
+	# TODO: Coupled with qt driver, future check
 	# done = Signal(int)
 	def __init__(self, library:'Library', driver:'QtDriver'):
 		super().__init__()
@@ -547,6 +548,7 @@ class FixUnlinkedEntriesModal(QWidget):
 
 
 class DeleteUnlinkedEntriesModal(QWidget):
+	# TODO: Coupled with qt driver, future check
 	done = Signal()
 	def __init__(self, library:'Library', driver:'QtDriver'):
 		super().__init__()
@@ -658,6 +660,7 @@ class DeleteUnlinkedEntriesModal(QWidget):
 
 
 class RelinkUnlinkedEntries(QObject):
+	# TODO: Coupled with qt driver, future check
 	done = Signal()
 	def __init__(self, library:'Library', driver:'QtDriver'):
 		super().__init__()
