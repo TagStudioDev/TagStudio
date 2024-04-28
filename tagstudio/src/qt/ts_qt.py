@@ -45,7 +45,7 @@ from src.core.ts_core import (PLAINTEXT_TYPES, TagStudioCore, TAG_COLORS, DATE_F
 from src.core.utils.web import strip_web_protocol
 from src.qt.flowlayout import FlowLayout, FlowWidget
 from src.qt.main_window import Ui_MainWindow
-from src.qt.helpers import open_file
+from src.qt.helpers import open_file, FileOpenerHelper, FileOpenerLabel
 import src.qt.resources_rc
 
 # SIGQUIT is not defined on Windows
@@ -1988,45 +1988,6 @@ class FileExtensionModal(PanelWidget):
 			if ext and ext.text():
 				self.lib.ignored_extensions.append(ext.text())
 
-class FileOpenerHelper():
-	def __init__(self, filepath:str):
-		self.filepath = filepath
-
-	def set_filepath(self, filepath:str):
-		self.filepath = filepath
-
-	def open_file(self):
-		if os.path.exists(self.filepath):
-			os.startfile(self.filepath)
-			logging.info(f'Opening file: {self.filepath}')
-		else:
-			logging.error(f'File not found: {self.filepath}')
-
-	def open_explorer(self):
-		if os.path.exists(self.filepath):
-				logging.info(f'Opening file: {self.filepath}')
-				if os.name == 'nt':  # Windows
-					command = f'explorer /select,"{self.filepath}"'
-					subprocess.run(command, shell=True)
-				else:  # macOS and Linux
-					command = f'nautilus --select "{self.filepath}"'  # Adjust for your Linux file manager if different
-					if subprocess.run(command, shell=True).returncode == 0:
-						file_loc = os.path.dirname(self.filepath)
-						file_loc = os.path.normpath(file_loc)
-						os.startfile(file_loc)
-		else:
-			logging.error(f'File not found: {self.filepath}')
-class FileOpenerLabel(QLabel):
-	def __init__(self, text, parent=None):
-		super().__init__(text, parent)
-
-	def setFilePath(self, filepath):
-		self.filepath = filepath
-
-	def mousePressEvent(self, event):
-		super().mousePressEvent(event)
-		opener = FileOpenerHelper(self.filepath)
-		opener.open_explorer()
 
 class PreviewPanel(QWidget):
 	"""The Preview Panel Widget."""
