@@ -16,10 +16,10 @@ import xml.etree.ElementTree as ET
 from enum import Enum
 import ujson
 
-from src.core.json_typing import JsonCollation, JsonEntry, JsonLibary, JsonTag
-from src.core import ts_core
-from src.core.utils.str import strip_punctuation
-from src.core.utils.web import strip_web_protocol
+from tagstudio.src.core.json_typing import JsonCollation, JsonEntry, JsonLibary, JsonTag
+from tagstudio.src.core.constants import TS_FOLDER_NAME, BACKUP_FOLDER_NAME, COLLAGE_FOLDER_NAME, VERSION, TEXT_FIELDS
+from tagstudio.src.core.utils.str import strip_punctuation
+from tagstudio.src.core.utils.web import strip_web_protocol
 
 TYPE = ['file', 'meta', 'alt', 'mask']
 # RESULT_TYPE = Enum('Result', ['ENTRY', 'COLLATION', 'TAG_GROUP'])
@@ -154,8 +154,6 @@ class Entry:
 			self.fields[field_index][field_id] = sorted(tags, key=lambda t: library.get_tag(t).display_name(library))
 
 		# logging.info(f'Tags: {self.fields[field_index][field_id]}')
-		
-
 
 class Tag:
 	"""A Library Tag Object. Referenced by ID."""
@@ -546,8 +544,8 @@ class Library:
 		path = os.path.normpath(path).rstrip('\\')
 
 		# If '.TagStudio' is included in the path, trim the path up to it.
-		if ts_core.TS_FOLDER_NAME in path:
-			path = path.split(ts_core.TS_FOLDER_NAME)[0]
+		if TS_FOLDER_NAME in path:
+			path = path.split(TS_FOLDER_NAME)[0]
 
 		try:
 			self.clear_internal_vars()
@@ -565,11 +563,11 @@ class Library:
 		"""Verifies/creates folders required by TagStudio."""
 
 		full_ts_path = os.path.normpath(
-			f'{self.library_dir}/{ts_core.TS_FOLDER_NAME}')
+			f'{self.library_dir}/{TS_FOLDER_NAME}')
 		full_backup_path = os.path.normpath(
-			f'{self.library_dir}/{ts_core.TS_FOLDER_NAME}/{ts_core.BACKUP_FOLDER_NAME}')
+			f'{self.library_dir}/{TS_FOLDER_NAME}/{BACKUP_FOLDER_NAME}')
 		full_collage_path = os.path.normpath(
-			f'{self.library_dir}/{ts_core.TS_FOLDER_NAME}/{ts_core.COLLAGE_FOLDER_NAME}')
+			f'{self.library_dir}/{TS_FOLDER_NAME}/{COLLAGE_FOLDER_NAME}')
 
 		if not os.path.isdir(full_ts_path):
 			os.mkdir(full_ts_path)
@@ -606,13 +604,13 @@ class Library:
 		path = os.path.normpath(path).rstrip('\\')
 
 		# If '.TagStudio' is included in the path, trim the path up to it.
-		if ts_core.TS_FOLDER_NAME in path:
-			path = path.split(ts_core.TS_FOLDER_NAME)[0]
+		if TS_FOLDER_NAME in path:
+			path = path.split(TS_FOLDER_NAME)[0]
 
-		if os.path.exists(os.path.normpath(f'{path}/{ts_core.TS_FOLDER_NAME}/ts_library.json')):
+		if os.path.exists(os.path.normpath(f'{path}/{TS_FOLDER_NAME}/ts_library.json')):
 
 			try:
-				with open(os.path.normpath(f'{path}/{ts_core.TS_FOLDER_NAME}/ts_library.json'), 'r', encoding='utf-8') as f:
+				with open(os.path.normpath(f'{path}/{TS_FOLDER_NAME}/ts_library.json'), 'r', encoding='utf-8') as f:
 					json_dump: JsonLibary = ujson.load(f)
 					self.library_dir = str(path)
 					self.verify_ts_folders()
@@ -788,9 +786,9 @@ class Library:
 		if return_code == 1:
 
 			if not os.path.exists(os.path.normpath(
-					f'{self.library_dir}/{ts_core.TS_FOLDER_NAME}')):
+					f'{self.library_dir}/{TS_FOLDER_NAME}')):
 				os.makedirs(os.path.normpath(
-					f'{self.library_dir}/{ts_core.TS_FOLDER_NAME}'))
+					f'{self.library_dir}/{TS_FOLDER_NAME}'))
 
 			self._map_filenames_to_entry_ids()
 
@@ -832,7 +830,7 @@ class Library:
 		Used in saving the library to disk.
 		"""
 
-		file_to_save: JsonLibary = {"ts-version": ts_core.VERSION,
+		file_to_save: JsonLibary = {"ts-version": VERSION,
 				  	"ignored_extensions": [],
 						"tags": [],
 						"collations": [],
@@ -869,7 +867,7 @@ class Library:
 
 		self.verify_ts_folders()
 
-		with open(os.path.normpath(f'{self.library_dir}/{ts_core.TS_FOLDER_NAME}/{filename}'), 'w', encoding='utf-8') as outfile:
+		with open(os.path.normpath(f'{self.library_dir}/{TS_FOLDER_NAME}/{filename}'), 'w', encoding='utf-8') as outfile:
 			outfile.flush()
 			ujson.dump(self.to_json(), outfile, ensure_ascii=False, escape_forward_slashes=False)
 			# , indent=4 <-- How to prettyprint dump
@@ -886,7 +884,7 @@ class Library:
 		filename = f'ts_library_backup_{datetime.datetime.utcnow().strftime("%F_%T").replace(":", "")}.json'
 
 		self.verify_ts_folders()
-		with open(os.path.normpath(f'{self.library_dir}/{ts_core.TS_FOLDER_NAME}/{ts_core.BACKUP_FOLDER_NAME}/{filename}'), 'w', encoding='utf-8') as outfile:
+		with open(os.path.normpath(f'{self.library_dir}/{TS_FOLDER_NAME}/{BACKUP_FOLDER_NAME}/{filename}'), 'w', encoding='utf-8') as outfile:
 			outfile.flush()
 			ujson.dump(self.to_json(), outfile, ensure_ascii=False, escape_forward_slashes=False)
 		end_time = time.time()
@@ -932,11 +930,11 @@ class Library:
 		# Scans the directory for files, keeping track of:
 		#   - Total file count
 		#   - Files without library entries
-		# for type in ts_core.TYPES:
+		# for type in TYPES:
 		start_time = time.time()
 		for f in glob.glob(self.library_dir + "/**/*", recursive=True):
 			# p = Path(os.path.normpath(f))
-			if ('$RECYCLE.BIN' not in f and ts_core.TS_FOLDER_NAME not in f 
+			if ('$RECYCLE.BIN' not in f and TS_FOLDER_NAME not in f 
        				and 'tagstudio_thumbs' not in f and not os.path.isdir(f)):
 				if os.path.splitext(f)[1][1:].lower() not in self.ignored_extensions:
 					self.dir_file_count += 1
@@ -2034,7 +2032,7 @@ class Library:
 		# entry = self.entries[entry_index]
 		entry = self.get_entry(entry_id)
 		field_type = self.get_field_obj(field_id)['type']
-		if field_type in ts_core.TEXT_FIELDS:
+		if field_type in TEXT_FIELDS:
 			entry.fields.append({int(field_id): ''})
 		elif field_type == 'tag_box':
 			entry.fields.append({int(field_id): []})
