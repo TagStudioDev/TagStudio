@@ -9,3 +9,5 @@ from .progress import ProgressWidget
 from .tag import TagWidget
 from .tag_box import TagBoxWidget
 from .text import TextWidget
+from .item_thumb import ItemThumb
+from .preview_panel import PreviewPanel
