@@ -81,15 +81,11 @@ class CliDriver:
 		self.is_dupe_file_count_init: bool = False
 
 		self.external_preview_size: tuple[int, int] = (960, 960)
-		epd_path = os.path.normpath(
-			f'{Path(__file__).parent.parent.parent}/resources/cli/images/external_preview.png')
-		self.external_preview_default: Image = Image.open(epd_path) if os.path.exists(
-			epd_path) else Image.new(mode='RGB', size=(self.external_preview_size))
+		epd_path = Path(__file__).parent.parent.parent / 'resources/cli/images/external_preview.png'
+		self.external_preview_default: Image = Image.open(epd_path) if epd_path.exists() else Image.new(mode='RGB', size=(self.external_preview_size))
 		self.external_preview_default.thumbnail(self.external_preview_size)
-		epb_path = os.path.normpath(
-			f'{Path(__file__).parent.parent.parent}/resources/cli/images/no_preview.png')
-		self.external_preview_broken: Image = Image.open(epb_path) if os.path.exists(
-			epb_path) else Image.new(mode='RGB', size=(self.external_preview_size))
+		epb_path = Path(__file__).parent.parent.parent / 'resources/cli/images/no_preview.png'
+		self.external_preview_broken: Image = Image.open(epb_path) if epb_path.exists() else Image.new(mode='RGB', size=(self.external_preview_size))
 		self.external_preview_broken.thumbnail(self.external_preview_size)
 
 		self.branch: str = (' ('+VERSION_BRANCH +
@@ -347,41 +343,37 @@ class CliDriver:
 	def init_external_preview(self) -> None:
 		"""Initialized the external preview image file."""
 		if self.lib and self.lib.library_dir:
-			external_preview_path: str = os.path.normpath(
-				f'{self.lib.library_dir}/{TS_FOLDER_NAME}/external_preview.jpg')
-			if not os.path.isfile(external_preview_path):
+			external_preview_path: Path = self.lib.library_dir / TS_FOLDER_NAME / 'external_preview.jpg'
+			if not external_preview_path.isfile():
 				temp = self.external_preview_default
 				temp.save(external_preview_path)
-			if os.path.isfile(external_preview_path):
+			if external_preview_path.isfile():
 				os.startfile(external_preview_path)
 	
 	def set_external_preview_default(self) -> None:
 		"""Sets the external preview to its default image."""
 		if self.lib and self.lib.library_dir:
-			external_preview_path: str = os.path.normpath(
-				f'{self.lib.library_dir}/{TS_FOLDER_NAME}/external_preview.jpg')
-			if os.path.isfile(external_preview_path):
+			external_preview_path: str = self.lib.library_dir / TS_FOLDER_NAME / 'external_preview.jpg'
+			if external_preview_path.isfile():
 				temp = self.external_preview_default
 				temp.save(external_preview_path)
 
 	def set_external_preview_broken(self) -> None:
 		"""Sets the external preview image file to the 'broken' placeholder."""
 		if self.lib and self.lib.library_dir:
-			external_preview_path: str = os.path.normpath(
-				f'{self.lib.library_dir}/{TS_FOLDER_NAME}/external_preview.jpg')
-			if os.path.isfile(external_preview_path):
+			external_preview_path: str = self.lib.library_dir / TS_FOLDER_NAME / 'external_preview.jpg'
+			if xternal_preview_path.isfile():
 				temp = self.external_preview_broken
 				temp.save(external_preview_path)
 
 	def close_external_preview(self) -> None:
 		"""Destroys and closes the external preview image file."""
 		if self.lib and self.lib.library_dir:
-			external_preview_path: str = os.path.normpath(
-				f'{self.lib.library_dir}/{TS_FOLDER_NAME}/external_preview.jpg')
-			if os.path.isfile(external_preview_path):
+			external_preview_path: str = self.lib.library_dir / TS_FOLDER_NAME / 'external_preview.jpg'
+			if external_preview_path.isfile():
 				os.remove(external_preview_path)
 
-	def scr_create_library(self, path=''):
+	def scr_create_library(self, path=None):
 		"""Screen for creating a new TagStudio library."""
 
 		subtitle = 'Create Library'
@@ -394,7 +386,9 @@ class CliDriver:
 		if not path:
 			print('Enter Library Folder Path: \n> ', end='')
 			path = input()
-		if os.path.exists(path):
+		path = Path(path)
+		
+		if path.exists():
 			print('')
 			print(f'{INFO} Are you sure you want to create a new Library at \"{path}\"? (Y/N)\n> ', end='')
 			con = input().lower()
@@ -459,8 +453,7 @@ class CliDriver:
 		"""Saves a backup copy of the Library file to disk. Returns True if successful."""
 		if self.lib and self.lib.library_dir:
 			filename = self.lib.save_library_backup_to_disk()
-			location = os.path.normpath(
-				f'{self.lib.library_dir}/{TS_FOLDER_NAME}/backups/{filename}')
+			location = self.lib.library_dir / TS_FOLDER_NAME / 'backups' / filename
 			if display_message:
 				print(f'{INFO} Backup of Library saved at \"{location}\".')
 			return True
@@ -572,11 +565,10 @@ class CliDriver:
 		"""
 		entry = None if index < 0 else self.lib.entries[index]
 		if entry:
-			filepath = os.path.normpath(f'{self.lib.library_dir}/{entry.path}/{entry.filename}')
+			filepath = self.lib.library_dir / entry.path / entry.filename
 		external_preview_path: str = ''
 		if self.args.external_preview:
-			external_preview_path = os.path.normpath(
-				f'{self.lib.library_dir}/{TS_FOLDER_NAME}/external_preview.jpg')
+			external_preview_path = self.lib.library_dir / TS_FOLDER_NAME / 'external_preview.jpg'
 		# thumb_width = min(
 		# 	os.get_terminal_size()[0]//2,
 		# 	math.floor(os.get_terminal_size()[1]*0.5))
@@ -619,10 +611,8 @@ class CliDriver:
 					frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 					final_frame = Image.fromarray(frame)
 					w, h = final_frame.size
-					final_frame.save(os.path.normpath(
-						f'{self.lib.library_dir}/{TS_FOLDER_NAME}/temp.jpg'), quality=50)
-					final_img_path = os.path.normpath(
-						f'{self.lib.library_dir}/{TS_FOLDER_NAME}/temp.jpg')
+					final_frame.save(self.lib.library_dir / TS_FOLDER_NAME / 'temp.jpg'), quality=50)
+					final_img_path = self.lib.library_dir / TS_FOLDER_NAME / 'temp.jpg'
 					# NOTE: Temporary way to hack a non-terminal preview.
 					if self.args.external_preview and entry:
 						final_frame.thumbnail(self.external_preview_size)
@@ -673,8 +663,7 @@ class CliDriver:
 					print(image.replace('\n', ('\n' + ' ' * spacing)))
 
 				if file_type in VIDEO_TYPES:
-					os.remove(
-						f'{self.lib.library_dir}/{TS_FOLDER_NAME}/temp.jpg')
+					os.remove(self.lib.library_dir / TS_FOLDER_NAME / 'temp.jpg')
 			except:
 				if not self.args.external_preview or not entry:
 					print(
@@ -814,8 +803,7 @@ class CliDriver:
 		"""Runs a specific Macro on an Entry given a Macro name."""
 		# entry: Entry = self.lib.get_entry_from_index(entry_id)
 		entry = self.lib.get_entry(entry_id)
-		path = os.path.normpath(
-			f'{self.lib.library_dir}/{entry.path}/{entry.filename}')
+		path = self.lib.library_dir / entry.path / entry.filename
 		source = path.split(os.sep)[1].lower()
 		if name == 'sidecar':
 			self.lib.add_generic_data_to_entry(
@@ -925,7 +913,7 @@ class CliDriver:
 			time.sleep(5)
 
 		collage = Image.new('RGB', (img_size,img_size))
-		filename = os.path.normpath(f'{self.lib.library_dir}/{TS_FOLDER_NAME}/{COLLAGE_FOLDER_NAME}/collage_{datetime.datetime.utcnow().strftime("%F_%T").replace(":", "")}.png')
+		filename = elf.lib.library_dir / TS_FOLDER_NAME / COLLAGE_FOLDER_NAME / f'collage_{datetime.datetime.utcnow().strftime("%F_%T").replace(":", "")}.png'
 
 		i = 0
 		for x in range(0, grid_len):
@@ -934,7 +922,7 @@ class CliDriver:
 					if i < len(self.lib.entries) and run:
 						# entry: Entry = self.lib.get_entry_from_index(i)
 						entry = self.lib.entries[i]
-						filepath = os.path.normpath(f'{self.lib.library_dir}/{entry.path}/{entry.filename}')
+						filepath = self.lib.library_dir / entry.path / entry.filename
 						file_type = os.path.splitext(filepath)[1].lower()[1:]
 						color: str = ''
 
@@ -972,7 +960,7 @@ class CliDriver:
 							# sys.stdout.write(f'\r{INFO} Combining [{i+1}/{len(self.lib.entries)}]: {self.get_file_color(file_type)}{entry.path}{os.sep}{entry.filename}{RESET}')
 							# sys.stdout.flush()
 							if file_type in IMAGE_TYPES:
-								with Image.open(os.path.normpath(f'{self.lib.library_dir}/{entry.path}/{entry.filename}')) as pic:
+								with Image.open(self.lib.library_dir / entry.path / entry.filename) as pic:
 									if keep_aspect:
 										pic.thumbnail((thumb_size,thumb_size))
 									else:
@@ -996,7 +984,7 @@ class CliDriver:
 										pic = ImageChops.hard_light(pic, Image.new('RGB', (thumb_size,thumb_size), color))
 									collage.paste(pic, (y*thumb_size, x*thumb_size))
 				except UnidentifiedImageError:
-					print(f'\n{ERROR} Couldn\'t read {entry.path}{os.sep}{entry.filename}')
+					print(f'\n{ERROR} Couldn\'t read {entry.path / entry.filename}')
 				except KeyboardInterrupt:
 					# self.quit(save=False, backup=True)
 					run = False
@@ -1004,7 +992,7 @@ class CliDriver:
 					print(f'{INFO} Collage operation cancelled.')
 					clear_scr=False
 				except:
-					print(f'{ERROR} {entry.path}{os.sep}{entry.filename}')
+					print(f'{ERROR} {entry.path / entry.filename}')
 					traceback.print_exc()
 					print('Continuing...')
 				i = i+1
@@ -1240,7 +1228,7 @@ class CliDriver:
 								elif com[2].lower() == 'files' or com[2].lower() == 'f':
 									print(
 										f'{WHITE_FG}Enter the filename for your DupeGuru results file:\n> {RESET}', end='')
-									dg_results_file = os.path.normpath(input())
+									dg_results_file = Path(input())
 									print(
 										f'{INFO} Checking for duplicate files in Library \'{self.lib.library_dir}\'...')
 									self.lib.refresh_dupe_files(dg_results_file)
@@ -1258,7 +1246,7 @@ class CliDriver:
 					elif (com[0].lower() == 'list' or com[0].lower() == 'ls') and len(com) > 1:
 						if com[1].lower() == 'entries':
 							for i, e in enumerate(self.lib.entries, start=0):
-								title = f'[{i+1}/{len(self.lib.entries)}] {self.lib.entries[i].path}{os.path.sep}{self.lib.entries[i].filename}'
+								title = f'[{i+1}/{len(self.lib.entries)}] {self.lib.entries[i].path / os.path.sep / self.lib.entries[i].filename}'
 								print(self.format_subtitle(title, color=self.get_file_color(
 									os.path.splitext(self.lib.entries[i].filename)[1])))
 								self.print_fields(i)
@@ -1298,10 +1286,10 @@ class CliDriver:
 								if com[2].lower() == 'entries' or com[2].lower() == 'e':
 									for dupe in self.lib.dupe_entries:
 										print(
-											self.lib.entries[dupe[0]].path + os.path.sep + self.lib.entries[dupe[0]].filename)
+											self.lib.entries[dupe[0]].path / self.lib.entries[dupe[0]].filename)
 										for d in dupe[1]:
 											print(
-												f'\t-> {(self.lib.entries[d].path + os.path.sep + self.lib.entries[d].filename)}')
+												f'\t-> {(self.lib.entries[d].path / self.lib.entries[d].filename)}')
 											time.sleep(0.1)
 									print('Press Enter to Continue...')
 									input()
@@ -1560,17 +1548,16 @@ class CliDriver:
 					# entry = self.lib.get_entry_from_index(
 					# 	self.filtered_entries[index])
 					entry = self.lib.get_entry(self.filtered_entries[index][1])
-					filename = f'{os.path.normpath(self.lib.library_dir + "/" + entry.path + "/" + entry.filename)}'
+					filename = self.lib.library_dir / entry.path / entry.filename
 					# if self.lib.is_legacy_library:
 					#     title += ' (Legacy Format)'
 					h1 = f'[{index + 1}/{len(self.filtered_entries)}] {filename}'
 					
 					# print(self.format_subtitle(subtitle))
-					print(self.format_h1(h1, self.get_file_color(
-						os.path.splitext(filename)[1])))
+					print(self.format_h1(h1, self.get_file_color(filename.suffix)))
 					print('')
 
-					if not os.path.isfile(filename):
+					if not filename.isfile():
 						print(
 							f'{RED_BG}{BRIGHT_WHITE_FG}[File Missing]{RESET}{BRIGHT_RED_FG} (Run \'fix missing\' to resolve){RESET}')
 						print('')
@@ -1706,7 +1693,7 @@ class CliDriver:
 								args = ['explorer', '/select,', filename]
 								subprocess.call(args)
 						else:
-							if os.path.isfile(filename):
+							if filename.isfile():
 								os.startfile(filename)
 						# refresh=False
 						# self.scr_browse_entries_gallery(index)
@@ -2100,7 +2087,7 @@ class CliDriver:
 
 		while True:
 			entry = self.lib.get_entry_from_index(index)
-			filename = f'{os.path.normpath(self.lib.library_dir + "/" + entry.path + "/" + entry.filename)}'
+			filename = self.lib.library_dir / entry.path / entry.filename
 
 			if refresh:
 				if clear_scr:
@@ -2116,7 +2103,7 @@ class CliDriver:
 
 				for i, match in enumerate(self.lib.missing_matches[filename]):
 					print(self.format_h1(f'[{i+1}] {match}'), end='\n\n')
-					fn = f'{os.path.normpath(self.lib.library_dir + "/" + match + "/" + entry.filename)}'
+					fn = self.lib.library_dir / match / entry.filename
 					self.print_thumbnail(index=-1, filepath=fn,
 										 max_width=(os.get_terminal_size()[1]//len(self.lib.missing_matches[filename])-2))
 					if fn in self.lib.filename_to_entry_id_map.keys():
@@ -2152,8 +2139,8 @@ class CliDriver:
 				# Open =============================================================
 				elif (com[0].lower() == 'open' or com[0].lower() == 'o'):
 					for match in self.lib.missing_matches[filename]:
-						fn = f'{os.path.normpath(self.lib.library_dir + "/" + match + "/" + entry.filename)}'
-						if os.path.isfile(fn):
+						fn = self.lib.library_dir / match / entry.filename
+						if fn.isfile():
 							os.startfile(fn)
 					refresh = False
 					# clear()
@@ -2196,7 +2183,7 @@ class CliDriver:
 		while True:
 			dupe = self.lib.dupe_files[index]
 
-			if os.path.exists(os.path.normpath(f'{dupe[0]}')) and os.path.exists(os.path.normpath(f'{dupe[1]}')):
+			if dupe[0].exists() and dupe[1].exists():
 				# entry = self.lib.get_entry_from_index(index_1)
 				entry_1_index = self.lib.get_entry_id_from_filepath(dupe[0])
 				entry_2_index = self.lib.get_entry_id_from_filepath(dupe[1])
@@ -2336,7 +2323,7 @@ class CliDriver:
 		title = f'{self.base_title} - Library \'{self.lib.library_dir}\''
 
 		entry = self.lib.entries[entry_index]
-		filename = f'{os.path.normpath(self.lib.library_dir + "/" + entry.path + "/" + entry.filename)}'
+		filename = self.lib.library_dir / entry.path / entry.filename
 		field_name = self.lib.get_field_attr(
 			entry.fields[field_index], 'name')
 		subtitle = f'Editing \"{field_name}\" Field'
@@ -2581,7 +2568,7 @@ class CliDriver:
 		title = f'{self.base_title} - Library \'{self.lib.library_dir}\''
 
 		entry = self.lib.entries[entry_index]
-		filename = f'{os.path.normpath(self.lib.library_dir + "/" + entry.path + "/" + entry.filename)}'
+		filename = self.lib.library_dir / entry.path / entry.filename
 		field_name = self.lib.get_field_attr(
 			entry.fields[field_index], 'name')
 		subtitle = f'Editing \"{field_name}\" Field'
