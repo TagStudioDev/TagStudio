@@ -83,7 +83,7 @@ def open_file(path: str, file_manager: bool = False):
 				command_args = [path]
 				if file_manager:
 					# will reveal in Finder
-					command_args = command_args.append("-R")
+					command_args.append("-R")
 			else:
 				if file_manager:
 					command_name = "dbus-send"
