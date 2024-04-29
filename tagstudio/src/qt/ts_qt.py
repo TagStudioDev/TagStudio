@@ -79,9 +79,10 @@ class Consumer(QThread):
 		QThread.__init__(self)
 
 	def run(self):
-		while True:
+		self.active = True
+		while self.active:
 			try:
-				job = self.queue.get()
+				job = self.queue.get(timeout=0.2)
 				# print('Running job...')
 				# logging.info(*job[1])
 				job[0](*job[1])
@@ -411,6 +412,11 @@ class QtDriver(QObject):
 			self.save_library()
 			self.settings.setValue("last_library", self.lib.library_dir)
 			self.settings.sync()
+		logging.info("[SHUTDOWN] Ending Thumbnail Threads...")
+		for thread in self.thumb_threads:
+			thread.active=False
+			thread.quit()
+			thread.wait()
 		QApplication.quit()
 	
 	
