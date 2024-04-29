@@ -692,7 +692,7 @@ class Library:
 							fields = []
 							if 'fields' in entry:
 								# Cast JSON str keys to ints
-								for f in fields:
+								for f in entry['fields']:
 									f[int(list(f.keys())[0])
 										] = f[list(f.keys())[0]]
 									del f[list(f.keys())[0]]
