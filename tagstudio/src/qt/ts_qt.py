@@ -82,7 +82,7 @@ class Consumer(QThread):
 		self.active = True
 		while self.active:
 			try:
-				job = self.queue.get()
+				job = self.queue.get(timeout=0.2)
 				# print('Running job...')
 				# logging.info(*job[1])
 				job[0](*job[1])
