@@ -806,7 +806,7 @@ class Library:
 					f'{entry.path}/{entry.filename}')).lower().lstrip('\\').lstrip('/')] = entry.id
 			else:
 				self.filename_to_entry_id_map[str(
-					os.path.normpath(f'{entry.path}/{entry.filename}'))] = entry.id
+					os.path.normpath(f'{entry.path}/{entry.filename}')).lstrip('/')] = entry.id
 	
 	# def _map_filenames_to_entry_ids(self):
 	# 	"""Maps the file paths of entries to their index in the library list."""
