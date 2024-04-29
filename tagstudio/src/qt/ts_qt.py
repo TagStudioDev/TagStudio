@@ -397,7 +397,7 @@ class QtDriver(QObject):
 
 
 	def callback_library_needed_check(self,func):
-		#Check if loaded library has valid path before executing the button function
+		"""Check if loaded library has valid path before executing the button function"""
 		if self.lib.library_dir:
 			func()
 
@@ -406,7 +406,7 @@ class QtDriver(QObject):
 		self.shutdown()
 		
 	def shutdown(self):
-		# Save Library on Application Exit
+		"""Save Library on Application Exit"""
 		if self.lib.library_dir:
 			self.save_library()
 			self.settings.setValue("last_library", self.lib.library_dir)
