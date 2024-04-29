@@ -26,6 +26,58 @@ INFO = f'[INFO]'
 logging.basicConfig(format="%(message)s", level=logging.INFO)
 
 
+def folders_to_tags(library:Library):
+		logging.info("Converting folders to Tags")
+		tree = dict(dirs={})
+		def add_tag_to_tree(list:list[Tag]):
+			branch = tree
+			for tag in list:
+				if tag.name not in branch["dirs"]:
+					branch["dirs"][tag.name] = dict(dirs={},tag=tag)	
+				branch =  branch["dirs"][tag.name]
+
+		def add_folders_to_tree(list:list[str])->Tag:
+			branch = tree
+			for folder in list:
+				if folder not in branch["dirs"]:
+					new_tag = Tag(-1, folder,"",[],([branch["tag"].id] if "tag" in branch else []),"")
+					library.add_tag_to_library(new_tag)
+					branch["dirs"][folder] = dict(dirs={},tag=new_tag)
+				branch =  branch["dirs"][folder]
+			return branch["tag"]
+
+
+		for tag in library.tags:
+			reversed_tag = reverse_tag(library,tag,None)
+			add_tag_to_tree(reversed_tag)
+
+		for entry in library.entries:
+			folders = entry.path.split("\\")
+			if len(folders)== 1 and folders[0]=="": continue
+			tag = add_folders_to_tree(folders)
+			if tag:
+				if not entry.has_tag(library,tag.id):
+					entry.add_tag(library,tag.id,6)
+
+		logging.info("Done")
+
+def reverse_tag(library:Library,tag:Tag,list:list[Tag]) -> list[Tag]:
+			if list != None:
+				list.append(tag)
+			else:
+				list = [tag]
+
+			if len(tag.subtag_ids) == 0:
+				list.reverse()
+				return list
+			else:
+				for subtag_id in tag.subtag_ids:
+					subtag = library.get_tag(subtag_id)
+				return reverse_tag(library,subtag,list)
+
+#=========== UI ===========
+
+
 class FoldersToTagsModal(QWidget):
 	# done = Signal(int)
 	def __init__(self, library:'Library', driver:'QtDriver'):
@@ -68,13 +120,18 @@ class FoldersToTagsModal(QWidget):
 
 		self.apply_button = QPushButton()
 		self.apply_button.setText('&Apply')
-		self.apply_button.clicked.connect(lambda: self.folders_to_tags(self.library))
-
+		self.apply_button.mouseReleaseEvent = self.on_apply
+  
 		self.showEvent = self.on_open
   
 		self.root_layout.addWidget(self.desc_widget)
 		self.root_layout.addWidget(self.scroll_area)
 		self.root_layout.addWidget(self.apply_button)
+  
+	def on_apply(self,event):
+		folders_to_tags(self.library) 
+		self.close()
+		self.driver.preview_panel.update_widgets()
   
 	def on_open(self,event):
 		for i in reversed(range(self.scroll_layout.count())):
@@ -83,10 +140,9 @@ class FoldersToTagsModal(QWidget):
 		data = self.generate_preview_data(self.library)
 		
 		for folder in data["dirs"].values():
-			test = self.TreeItemTest(folder,None)
+			test = TreeItem(folder,None)
 			self.scroll_layout.addWidget(test)
 			
-
 	def generate_preview_data(self,library:Library):
 		tree = dict(dirs={},files=[])
 
@@ -107,10 +163,9 @@ class FoldersToTagsModal(QWidget):
 			return branch
 		
 		for tag in library.tags:
-			reversed_tag = self.reverse_tag(tag,None)
-			logging.info(set(map(lambda tag:tag.name ,reversed_tag)))
+			reversed_tag = reverse_tag(library,tag,None)
 			add_tag_to_tree(reversed_tag)
-
+		
 		for entry in library.entries:
 			folders = entry.path.split("\\")
 			if len(folders) == 1 and folders[0] == "": continue
@@ -131,152 +186,99 @@ class FoldersToTagsModal(QWidget):
 		def cut_branches_adding_nothing(branch:dict):
 			folders = set(branch["dirs"].keys())
 			for folder in folders:
-				logging.info(folder)
 				cut = cut_branches_adding_nothing(branch["dirs"][folder])
 				if cut:
 					branch['dirs'].pop(folder)
 
 			if not "tag" in branch: return
-			if branch["tag"].id == -1:#Needs to be first
+			if branch["tag"].id == -1 or len(branch["files"])>0:#Needs to be first
 				return False
 			if len(branch["dirs"].keys()) == 0:
 				return True
-
 
 		cut_branches_adding_nothing(tree)
 
 		return tree
 
-	def folders_to_tags(self,library:Library):
-		logging.info("Converting folders to Tags")
-		tree = dict(dirs={})
-		def add_tag_to_tree(list:list[Tag]):
-			branch = tree
-			for tag in list:
-				if tag.name not in branch["dirs"]:
-					branch["dirs"][tag.name] = dict(dirs={},tag=tag)	
-				branch =  branch["dirs"][tag.name]
+class ModifiedTagWidget(QWidget): # Needed to be modified because the original searched the display name in the library where it wasn't added yet
+	def __init__(self, tag:Tag,parentTag:Tag) -> None:
+		super().__init__()
+		self.tag = tag
 
-		def add_folders_to_tree(list:list[str])->Tag:
-			branch = tree
-			for folder in list:
-				if folder not in branch["dirs"]:
-					new_tag = Tag(-1, folder,"",[],([branch["tag"].id] if "tag" in branch else []),"")
-					library.add_tag_to_library(new_tag)
-					branch["dirs"][folder] = dict(dirs={},tag=new_tag)
-				branch =  branch["dirs"][folder]
-			return branch["tag"]
+		self.setCursor(Qt.CursorShape.PointingHandCursor)
+		self.base_layout = QVBoxLayout(self)
+		self.base_layout.setObjectName('baseLayout')
+		self.base_layout.setContentsMargins(0, 0, 0, 0)
 
+		self.bg_button = QPushButton(self)
+		self.bg_button.setFlat(True)
+		if parentTag != None:
+			text = f"{tag.name} ({parentTag.name})".replace('&', '&&')
+		else:
+			text = tag.name.replace('&', '&&')
+		self.bg_button.setText(text)
+		self.bg_button.setContextMenuPolicy(Qt.ContextMenuPolicy.ActionsContextMenu)	
 
-		for tag in library.tags:
-			reversed_tag = self.reverse_tag(tag,None)
-			add_tag_to_tree(reversed_tag)
+		self.inner_layout = QHBoxLayout()
+		self.inner_layout.setObjectName('innerLayout')
+		self.inner_layout.setContentsMargins(2, 2, 2, 2)
+		self.bg_button.setLayout(self.inner_layout)
+		self.bg_button.setMinimumSize(math.ceil(22*1.5), 22)
 
-		for entry in library.entries:
-			folders = entry.path.split("\\")
-			if len(folders)== 1 and folders[0]=="": continue
-			tag = add_folders_to_tree(folders)
-			if tag:
-				if not entry.has_tag(library,tag.id):
-					entry.add_tag(library,tag.id,6)
+		self.bg_button.setStyleSheet(
+								f'QPushButton{{'
+									f'background: {get_tag_color(ColorType.PRIMARY, tag.color)};'
+									f"color: {get_tag_color(ColorType.TEXT, tag.color)};"
+									f'font-weight: 600;'
+									f"border-color:{get_tag_color(ColorType.BORDER, tag.color)};"
+									f'border-radius: 6px;'
+									f'border-style:inset;'
+									f'border-width: {math.ceil(1*self.devicePixelRatio())}px;'
+									f'padding-right: 4px;'
+									f'padding-bottom: 1px;'
+									f'padding-left: 4px;'
+									f'font-size: 13px'	
+									f'}}'
+									f'QPushButton::hover{{'
+									f"border-color:{get_tag_color(ColorType.LIGHT_ACCENT, tag.color)};"
+									f'}}')
 
-		self.close()
-	
-		logging.info("Done")
-
-	def reverse_tag(self,tag:Tag,list:list[Tag]) -> list[Tag]:
-			if list != None:
-				list.append(tag)
-			else:
-				list = [tag]
-
-			if len(tag.subtag_ids) == 0:
-				list.reverse()
-				return list
-			else:
-				for subtag_id in tag.subtag_ids:
-					subtag = self.library.get_tag(subtag_id)
-				return self.reverse_tag(subtag,list)
-
-	class ModifiedTagWidget(QWidget): # Needed to be modified because the original searched the display name in the library where it wasn't added yet
-		def __init__(self, tag:Tag,parentTag:Tag) -> None:
-			super().__init__()
-			self.tag = tag
-	
-			self.setCursor(Qt.CursorShape.PointingHandCursor)
-			self.base_layout = QVBoxLayout(self)
-			self.base_layout.setObjectName('baseLayout')
-			self.base_layout.setContentsMargins(0, 0, 0, 0)
-
-			self.bg_button = QPushButton(self)
-			self.bg_button.setFlat(True)
-			if parentTag != None:
-				text = f"{tag.name} ({parentTag.name})".replace('&', '&&')
-			else:
-				text = tag.name.replace('&', '&&')
-			self.bg_button.setText(text)
-			self.bg_button.setContextMenuPolicy(Qt.ContextMenuPolicy.ActionsContextMenu)	
-  
-			self.inner_layout = QHBoxLayout()
-			self.inner_layout.setObjectName('innerLayout')
-			self.inner_layout.setContentsMargins(2, 2, 2, 2)
-			self.bg_button.setLayout(self.inner_layout)
-			self.bg_button.setMinimumSize(math.ceil(22*1.5), 22)
-  
-			self.bg_button.setStyleSheet(
-									f'QPushButton{{'
-										f'background: {get_tag_color(ColorType.PRIMARY, tag.color)};'
-										f"color: {get_tag_color(ColorType.TEXT, tag.color)};"
-										f'font-weight: 600;'
-										f"border-color:{get_tag_color(ColorType.BORDER, tag.color)};"
-										f'border-radius: 6px;'
-										f'border-style:inset;'
-										f'border-width: {math.ceil(1*self.devicePixelRatio())}px;'
-										f'padding-right: 4px;'
-										f'padding-bottom: 1px;'
-										f'padding-left: 4px;'
-										f'font-size: 13px'	
-										f'}}'
-										f'QPushButton::hover{{'
-										f"border-color:{get_tag_color(ColorType.LIGHT_ACCENT, tag.color)};"
-										f'}}')
-
-			self.base_layout.addWidget(self.bg_button)
-			self.setMinimumSize(50,20)
-	class TreeItemTest(QWidget):
-		def __init__(self,data:dict,parentTag:Tag):
-			super().__init__()
-			
-			self.root_layout = QVBoxLayout(self)
-			self.root_layout.setContentsMargins(20,0,0,0)
-			self.root_layout.setSpacing(1)
-
-			self.test = QWidget()
-			self.root_layout.addWidget(self.test)
-			
-			self.tag_layout = FlowLayout(self.test)
+		self.base_layout.addWidget(self.bg_button)
+		self.setMinimumSize(50,20)
+class TreeItem(QWidget):
+	def __init__(self,data:dict,parentTag:Tag):
+		super().__init__()
 		
-			self.tag_widget = FoldersToTagsModal.ModifiedTagWidget(data["tag"],parentTag)
-			self.tag_widget.bg_button.clicked.connect(lambda:self.hide_show())
-			self.tag_layout.addWidget(self.tag_widget)
-   
-			self.children_widget = QWidget()
-			self.children_layout = QVBoxLayout(self.children_widget)
-			self.root_layout.addWidget(self.children_widget)
-   
-			self.populate(data)
-   
-		def hide_show(self):
-			self.children_widget.setHidden(not self.children_widget.isHidden())
+		self.root_layout = QVBoxLayout(self)
+		self.root_layout.setContentsMargins(20,0,0,0)
+		self.root_layout.setSpacing(1)
 
-		def populate(self,data:dict):
-			for folder in data["dirs"].values():
-				item = FoldersToTagsModal.TreeItemTest(folder,data["tag"])
-				self.children_layout.addWidget(item)
-			for file in data["files"]:
-				label = QLabel()
-				label.setText(file)
-				self.children_layout.addWidget(label)
-			
-			if len(data["files"]) == 0 and len(data["dirs"].values()) == 0:
-				self.hide_show()
+		self.test = QWidget()
+		self.root_layout.addWidget(self.test)
+		
+		self.tag_layout = FlowLayout(self.test)
+	
+		self.tag_widget = ModifiedTagWidget(data["tag"],parentTag)
+		self.tag_widget.bg_button.clicked.connect(lambda:self.hide_show())
+		self.tag_layout.addWidget(self.tag_widget)
+
+		self.children_widget = QWidget()
+		self.children_layout = QVBoxLayout(self.children_widget)
+		self.root_layout.addWidget(self.children_widget)
+
+		self.populate(data)
+
+	def hide_show(self):
+		self.children_widget.setHidden(not self.children_widget.isHidden())
+
+	def populate(self,data:dict):
+		for folder in data["dirs"].values():
+			item = TreeItem(folder,data["tag"])
+			self.children_layout.addWidget(item)
+		for file in data["files"]:
+			label = QLabel()
+			label.setText(file)
+			self.children_layout.addWidget(label)
+		
+		if len(data["files"]) == 0 and len(data["dirs"].values()) == 0:
+			self.hide_show()
