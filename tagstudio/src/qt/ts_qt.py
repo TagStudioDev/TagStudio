@@ -515,6 +515,8 @@ class QtDriver(QObject):
 		iterator.value.connect(lambda x: pw.update_progress(x+1))
 		iterator.value.connect(lambda x: pw.update_label(f'Scanning Directories for New Files...\n{x+1} File{"s" if x+1 != 1 else ""} Searched, {len(self.lib.files_not_in_library)} New Files Found'))
 		r = CustomRunnable(lambda:iterator.run())
+		# r.done.connect(lambda: (pw.hide(), pw.deleteLater(), self.filter_items('')))
+		# vvv This one runs the macros when adding new files to the library.
 		r.done.connect(lambda: (pw.hide(), pw.deleteLater(), self.add_new_files_runnable()))
 		QThreadPool.globalInstance().start(r)
 		
@@ -568,12 +570,15 @@ class QtDriver(QObject):
 	def new_file_macros_runnable(self,  new_ids):
 		"""Threaded method that runs macros on a set of Entry IDs."""
 		# sleep(1)
-		logging.info(f'ANFR: {QThread.currentThread()}')
-		for i, id in enumerate(new_ids):
-			# pb.setValue(i)
-			# pb.setLabelText(f'Running Configured Macros on {i}/{len(new_ids)} New Entries')
-			# self.run_macro('autofill', id)
-			yield i
+		# logging.info(f'ANFR: {QThread.currentThread()}')
+		# for i, id in enumerate(new_ids):
+		# 	# pb.setValue(i)
+		# 	# pb.setLabelText(f'Running Configured Macros on {i}/{len(new_ids)} New Entries')
+		# 	# self.run_macro('autofill', id)
+		
+		# NOTE: I don't know. I don't know why it needs this. The whole program 
+		# falls apart if this method doesn't run, and it DOESN'T DO ANYTHING
+		yield 0
 		
 		# self.main_window.statusbar.showMessage('', 3)
 		
