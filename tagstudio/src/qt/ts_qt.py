@@ -425,28 +425,29 @@ class QtDriver(QObject):
 		self.main_window.statusbar.showMessage(f'Library Saved! ({format_timespan(end_time - start_time)})')
 
 	def close_library(self):
-		logging.info(f'Closing & Saving Library...')
-		self.main_window.statusbar.showMessage(f'Closed & Saving Library...')
-		start_time = time.time()
-		self.lib.save_library_to_disk()
-		self.settings.setValue("last_library", self.lib.library_dir)
-		self.settings.sync()
+		if self.lib.library_dir:
+			logging.info(f'Closing & Saving Library...')
+			self.main_window.statusbar.showMessage(f'Closed & Saving Library...')
+			start_time = time.time()
+			self.lib.save_library_to_disk()
+			self.settings.setValue("last_library", self.lib.library_dir)
+			self.settings.sync()
 
-		# FIXME: idk if all this is necessary to reset the window properly
-		self.lib.clear_internal_vars()
-		
-		title_text = f'{self.base_title}'
-		self.main_window.setWindowTitle(title_text)
+			# FIXME: idk if all this is necessary to reset the window properly
+			self.lib.clear_internal_vars()
+			
+			title_text = f'{self.base_title}'
+			self.main_window.setWindowTitle(title_text)
 
-		self.nav_frames: list[NavigationState] = []
-		self.cur_frame_idx: int = -1
-		self.cur_query: str = ''
-		self.selected.clear()
-		self.preview_panel.update_widgets()
-		self.filter_items()
+			self.nav_frames: list[NavigationState] = []
+			self.cur_frame_idx: int = -1
+			self.cur_query: str = ''
+			self.selected.clear()
+			self.preview_panel.update_widgets()
+			self.filter_items()
 
-		end_time = time.time()
-		self.main_window.statusbar.showMessage(f'Library Saved and Closed! ({format_timespan(end_time - start_time)})')
+			end_time = time.time()
+			self.main_window.statusbar.showMessage(f'Library Saved and Closed! ({format_timespan(end_time - start_time)})')
 
 	def backup_library(self):
 		logging.info(f'Backing Up Library...')
