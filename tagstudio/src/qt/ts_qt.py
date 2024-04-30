@@ -27,8 +27,7 @@ from PySide6.QtUiTools import QUiLoader
 from PySide6.QtWidgets import (QApplication, QWidget, QHBoxLayout, QPushButton, QLineEdit, QScrollArea, QFileDialog,
 							   QSplashScreen, QMenu)
 from humanfriendly import format_timespan
-from src.core.library import Collation, Entry, ItemType, Library, Tag
-from src.core.palette import ColorType, get_tag_color
+from src.core.library import ItemType
 from src.core.ts_core import TagStudioCore
 from src.core.constants import (PLAINTEXT_TYPES, TAG_COLORS, DATE_FIELDS, TEXT_FIELDS, BOX_FIELDS, ALL_FILE_TYPES,
 										SHORTCUT_TYPES, PROGRAM_TYPES, ARCHIVE_TYPES, PRESENTATION_TYPES,
