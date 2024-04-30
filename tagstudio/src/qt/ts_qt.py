@@ -26,14 +26,18 @@ from typing import Optional
 import cv2
 from PIL import Image, ImageChops, UnidentifiedImageError, ImageQt, ImageDraw, ImageFont, ImageEnhance
 from PySide6 import QtCore
-from PySide6.QtCore import QObject, QThread, Signal, QRunnable, Qt, QThreadPool, QSize, QEvent, QTimer, QSettings
-from PySide6.QtGui import (QGuiApplication, QPixmap, QEnterEvent, QMouseEvent, QResizeEvent, QPainter, QColor, QPen,
-						   QAction, QStandardItemModel, QStandardItem, QPainterPath, QFontDatabase, QIcon)
+from PySide6.QtCore import (QObject, QThread, Signal, QRunnable, Qt, QThreadPool, QSize, QEvent, QTimer, QSettings, QUrl, QRect, QPoint, QRectF, QPointF, 
+							QPropertyAnimation, QVariantAnimation, QEasingCurve)
+from PySide6.QtGui import (QGuiApplication, QPaintEvent, QPixmap, QEnterEvent, QMouseEvent, QResizeEvent, QPainter, QColor, QPen,
+						   QAction, QStandardItemModel, QStandardItem, QPainterPath, QFontDatabase, QIcon, QBrush, QPalette)
 from PySide6.QtUiTools import QUiLoader
 from PySide6.QtWidgets import (QApplication, QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QPlainTextEdit,
 							   QLineEdit, QScrollArea, QFrame, QTextEdit, QComboBox, QProgressDialog, QFileDialog,
 							   QListView, QSplitter, QSizePolicy, QMessageBox, QBoxLayout, QCheckBox, QSplashScreen,
-							   QMenu, QTableWidget, QTableWidgetItem)
+							   QMenu, QTableWidget, QTableWidgetItem, QGraphicsView, QGraphicsScene, QGraphicsSceneMouseEvent)
+from PySide6.QtMultimedia import QMediaPlayer, QAudioOutput, QMediaDevices
+from PySide6.QtMultimediaWidgets import QVideoWidget, QGraphicsVideoItem
+from PySide6.QtSvgWidgets import QSvgWidget
 from humanfriendly import format_timespan, format_size
 
 from src.core.library import Collation, Entry, ItemType, Library, Tag
@@ -47,6 +51,8 @@ from src.core.utils.web import strip_web_protocol
 from src.qt.flowlayout import FlowLayout, FlowWidget
 from src.qt.main_window import Ui_MainWindow
 import src.qt.resources_rc
+
+os.environ['QT_MULTIMEDIA_PREFERRED_PLUGINS'] = 'windowsmediafoundation'
 
 # SIGQUIT is not defined on Windows
 if sys.platform == "win32":
@@ -2044,6 +2050,10 @@ class PreviewPanel(QWidget):
 		self.preview_img = QPushButton()
 		self.preview_img.setMinimumSize(*self.img_button_size)
 		self.preview_img.setFlat(True)
+		self.preview_vid = VideoPlayer()
+		self.image_container.setMinimumSize(*self.img_button_size)
+		self.preview_vid.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+
 		self.tr = ThumbRenderer()
 		self.tr.updated.connect(lambda ts, i, s: (self.preview_img.setIcon(i)))
 		self.tr.updated_ratio.connect(lambda ratio: (self.set_image_ratio(ratio), 
@@ -2052,9 +2062,13 @@ class PreviewPanel(QWidget):
 		splitter.splitterMoved.connect(lambda: self.update_image_size((self.image_container.size().width(), self.image_container.size().height())))
 		splitter.addWidget(self.image_container)
 
+		self.preview_vid.hide()
 		image_layout.addWidget(self.preview_img)
+		image_layout.addWidget(self.preview_vid)
 		image_layout.setAlignment(self.preview_img, Qt.AlignmentFlag.AlignCenter)
-
+		self.image_container.installEventFilter(self.preview_vid)
+		image_layout.setAlignment(self.preview_vid, Qt.AlignmentFlag.AlignCenter)
+		driver.installEventFilter(self.preview_vid)
 		self.file_label = QLabel('Filename')
 		self.file_label.setWordWrap(True)
 		self.file_label.setTextInteractionFlags(
@@ -2210,6 +2224,8 @@ class PreviewPanel(QWidget):
 		self.img_button_size = (adj_width, adj_height)
 		self.preview_img.setMaximumSize(adj_size)
 		self.preview_img.setIconSize(adj_size)
+		self.preview_vid.setMaximumSize(adj_size)
+		self.preview_vid.resize_video(adj_size)
 		# self.preview_img.setMinimumSize(adj_size)
 
 		# if self.preview_img.iconSize().toTuple()[0] < self.preview_img.size().toTuple()[0] + 10:
@@ -2295,6 +2311,9 @@ class PreviewPanel(QWidget):
 					try:
 						image = None
 						if extension in IMAGE_TYPES:
+							self.preview_vid.hide()
+							self.preview_img.show()
+
 							image = Image.open(filepath)
 							if image.mode == 'RGBA':
 								new_bg = Image.new('RGB', image.size, color='#222222')
@@ -2303,6 +2322,9 @@ class PreviewPanel(QWidget):
 							if image.mode != 'RGB':
 								image = image.convert(mode='RGB')
 						elif extension in VIDEO_TYPES:
+							self.preview_vid.show()
+							self.preview_img.hide()
+	
 							video = cv2.VideoCapture(filepath)
 							video.set(cv2.CAP_PROP_POS_FRAMES,
 									(video.get(cv2.CAP_PROP_FRAME_COUNT) // 2))
@@ -2315,7 +2337,8 @@ class PreviewPanel(QWidget):
 								success, frame = video.read()
 							frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 							image = Image.fromarray(frame)
-
+							resolution = QSize(image.width, image.height)
+							self.preview_vid.play(filepath, resolution)
 						# Stats for specific file types are displayed here.
 						if extension in (IMAGE_TYPES + VIDEO_TYPES):
 							self.dimensions_label.setText(f"{extension.upper()}  •  {format_size(os.stat(filepath).st_size)}\n{image.width} x {image.height} px")
@@ -2752,8 +2775,167 @@ class PreviewPanel(QWidget):
 		if result == 1:
 			callback()
 	
+class VideoPlayer(QGraphicsView):
+	resolution = QSize(1280, 720)
+	hover_fix_timer = QTimer()
+	play_pause = None
+	content_visible = False
+	def __init__(self) -> None:
+		super().__init__()
+		self.animation = QVariantAnimation(self)
+		self.animation.valueChanged.connect(lambda value: self.set_tint_transparency(value))
+		
+		self.hover_fix_timer.timeout.connect(lambda: self.checkIfStillHovered())
+		self.hover_fix_timer.setSingleShot(True)
+
+		self.installEventFilter(self)
+		self.setMouseTracking(True)
+		self.setScene(QGraphicsScene(self))
+		self.setRenderHint(QPainter.RenderHint.SmoothPixmapTransform)
+		self.player = QMediaPlayer(self)
+		self.player.mediaStatusChanged.connect(lambda: logging.info(self.player.mediaStatus()))
+		self.video_preview = QGraphicsVideoItem()
+		self.player.setVideoOutput(self.video_preview)
+		self.video_preview.setAcceptHoverEvents(True)
+		self.video_preview.installEventFilter(self)
+		self.player.setAudioOutput(QAudioOutput(QMediaDevices().defaultAudioOutput(),self.player))
+
+		self.setAlignment(Qt.AlignmentFlag.AlignCenter)
+		self.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+		self.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+		self.scene().addItem(self.video_preview)
+		self.setMouseTracking(True)
+		self.video_tint = self.scene().addRect(0, 0, self.video_preview.size().width(), self.video_preview.size().height(), QPen(QColor(0, 0, 0, 0)), QBrush(QColor(0, 0, 0, 0)))
+		# self.video_tint.setParentItem(self.video_preview)
+		self.play_pause = QSvgWidget('./tagstudio/resources/pause.svg', self)
+		self.play_pause.setMouseTracking(True)
+		self.play_pause.installEventFilter(self)
+		self.scene().addWidget(self.play_pause)
+		self.play_pause.resize(100, 100)
+		self.play_pause.move(self.width()/2 - self.play_pause.size().width()/2, self.height()/2 - self.play_pause.size().height()/2)
+		self.play_pause.hide()
+		self.mute_button = QSvgWidget('./tagstudio/resources/volume_muted.svg', self)
+		self.mute_button.setMouseTracking(True)
+		self.mute_button.installEventFilter(self)
+		self.scene().addWidget(self.mute_button)
+		self.mute_button.resize(40, 40)
+		self.mute_button.move(self.width() - self.mute_button.size().width()/2, self.height() - self.mute_button.size().height()/2)
+		self.mute_button.hide()
+
+	def eventFilter(self, obj:QObject, event:QEvent) -> bool:
+		if obj == self.play_pause and event.type() == QEvent.Type.MouseButtonPress and event.button() == Qt.MouseButton.LeftButton:
+			if self.player.hasVideo():
+				self.pause_toggle()
+		
+		if obj == self.mute_button and event.type() == QEvent.Type.MouseButtonPress and event.button() == Qt.MouseButton.LeftButton:
+			if self.player.hasAudio():
+				self.mute_toggle()
+
+		if obj == self.video_preview and event.type() == QEvent.Type.GraphicsSceneHoverEnter or event.type() == QEvent.Type.HoverEnter:
+			if self.video_preview.isUnderMouse():
+				self.underMouse()
+				self.hover_fix_timer.start(10)
+		elif obj == self.video_preview and event.type() == QEvent.Type.GraphicsSceneHoverLeave or event.type() == QEvent.Type.HoverLeave:
+			if not self.video_preview.isUnderMouse():
+				self.hover_fix_timer.stop()
+				self.releaseMouse()
+
+
+		return super().eventFilter(obj, event)
+	
+	def checkIfStillHovered(self) -> None:
+		if not self.video_preview.isUnderMouse():
+			self.releaseMouse()
+		else:
+			self.hover_fix_timer.start(10)
+	
+	def set_tint_transparency(self, value) -> None:
+		self.video_tint.setBrush(QBrush(QColor(0, 0, 0, value)))
+
+	def underMouse(self) -> bool:
+		logging.info('under mouse')
+		self.animation.setStartValue(self.video_tint.brush().color().alpha())
+		self.animation.setEndValue(100)
+		self.animation.setDuration(500)
+		self.animation.start()
+		self.play_pause.show()
+		self.mute_button.show()
+		return super().underMouse()
+
+	def releaseMouse(self) -> None:
+		logging.info('release mouse')
+		self.animation.setStartValue(self.video_tint.brush().color().alpha())
+		self.animation.setEndValue(0)
+		self.animation.setDuration(500)
+		self.animation.start()
+		self.play_pause.hide()
+		self.mute_button.hide()
+		return super().releaseMouse()
+	
+	def reset_controls_to_default(self) -> None:
+		self.play_pause.load('./tagstudio/resources/pause.svg')
+		self.mute_button.load('./tagstudio/resources/volume_muted.svg')
+		self.player.audioOutput().setMuted(True)
+
+
+	def pause_toggle(self) -> None:
+		if self.player.isPlaying():
+			self.player.pause()
+			self.play_pause.load('./tagstudio/resources/play.svg')
+		else:
+			self.player.play()
+			self.play_pause.load('./tagstudio/resources/pause.svg')
+	
+	def mute_toggle(self) -> None:
+		if self.player.audioOutput().isMuted():
+			self.player.audioOutput().setMuted(False)
+			self.mute_button.load('./tagstudio/resources/volume_unmuted.svg')
+		else:
+			self.player.audioOutput().setMuted(True)
+			self.mute_button.load('./tagstudio/resources/volume_muted.svg')
+
+	def play(self, filepath: str, resolution: QSize) -> None:
+		logging.info(f'Playing {filepath}')
+		if self.player.isPlaying():
+			self.player.setPosition(self.player.duration())
+			self.player.stop()
+		logging.info(f'Successfully stopped.')
+		self.player.setSource(QUrl().fromLocalFile(filepath))
+		logging.info(f'Set source to {filepath}.')
+		self.resolution = resolution
+		# self.video_preview.setSize(self.resolution)
+		self.player.audioOutput().setMuted(True)
+		logging.info(f'Set muted to true.')
+		self.player.play()
+		logging.info(f'Successfully played.')
+		self.keep_controls_in_place()
+		self.reset_controls_to_default()
+	
+	def resize_video(self, new_size : QSize,) -> None:
+		self.video_preview.setSize(new_size)
+		self.video_tint.setRect(0, 0, self.video_preview.size().width(), self.video_preview.size().height())
+		self.centerOn(self.video_preview)
+		self.keep_controls_in_place()
+
+	def keep_controls_in_place(self) -> None:
+		self.play_pause.move(self.width()/2 - self.play_pause.size().width()/2, self.height()/2 - self.play_pause.size().height()/2)
+		self.mute_button.move(self.width() - self.mute_button.size().width()-10, self.height() - self.mute_button.size().height()-10)
+
+	def resizeEvent(self, event: QResizeEvent) -> None:
+		self.centerOn(self.video_preview)
+		return
+		# return super().resizeEvent(event)
+
+class VideoWidget(QWidget):
+
+
+	def resizeEvent(self, event: QResizeEvent) -> None:
+		return
+		# return super().resizeEvent(event)
 
 class ItemThumb(FlowWidget):
+
+
 	"""
 	The thumbnail widget for a library item (Entry, Collation, Tag Group, etc.).
 	"""
