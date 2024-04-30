@@ -73,7 +73,7 @@ TagStudio is a photo & file organization application with an underlying system t
 
 3. Install the required packages:  
 
-- required to run the app: `pip install -r requirements-prod.txt`
+- required to run the app: `pip install -r requirements.txt`
 - required to develop: `pip install -r requirements-dev.txt`
 
 _Learn more about setting up a virtual environment [here](https://docs.python.org/3/tutorial/venv.html)._
