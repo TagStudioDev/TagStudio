@@ -13,7 +13,7 @@ import cv2
 from PIL import Image, ImageChops, UnidentifiedImageError, ImageQt, ImageDraw, ImageFont, ImageEnhance
 from PySide6.QtCore import QObject, Signal, QSize
 from PySide6.QtGui import QPixmap
-from src.core.ts_core import PLAINTEXT_TYPES, VIDEO_TYPES, IMAGE_TYPES
+from src.core.constants import PLAINTEXT_TYPES, VIDEO_TYPES, IMAGE_TYPES
 
 
 ERROR = f'[ERROR]'

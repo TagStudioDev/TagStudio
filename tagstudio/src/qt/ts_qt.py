@@ -27,22 +27,22 @@ from PySide6.QtUiTools import QUiLoader
 from PySide6.QtWidgets import (QApplication, QWidget, QHBoxLayout, QPushButton, QLineEdit, QScrollArea, QFileDialog,
 							   QSplashScreen, QMenu)
 from humanfriendly import format_timespan
-from tagstudio.src.core.library import Collation, Entry, ItemType, Library, Tag
-from tagstudio.src.core.palette import ColorType, get_tag_color
-from tagstudio.src.core.ts_core import TagStudioCore
-from tagstudio.src.core.constants import (PLAINTEXT_TYPES, TAG_COLORS, DATE_FIELDS, TEXT_FIELDS, BOX_FIELDS, ALL_FILE_TYPES,
+from src.core.library import Collation, Entry, ItemType, Library, Tag
+from src.core.palette import ColorType, get_tag_color
+from src.core.ts_core import TagStudioCore
+from src.core.constants import (PLAINTEXT_TYPES, TAG_COLORS, DATE_FIELDS, TEXT_FIELDS, BOX_FIELDS, ALL_FILE_TYPES,
 										SHORTCUT_TYPES, PROGRAM_TYPES, ARCHIVE_TYPES, PRESENTATION_TYPES,
 										SPREADSHEET_TYPES, DOC_TYPES, AUDIO_TYPES, VIDEO_TYPES, IMAGE_TYPES,
 										LIBRARY_FILENAME, COLLAGE_FOLDER_NAME, BACKUP_FOLDER_NAME, TS_FOLDER_NAME,
 										VERSION_BRANCH, VERSION)
-from tagstudio.src.core.utils.web import strip_web_protocol
-from tagstudio.src.qt.flowlayout import FlowLayout
-from tagstudio.src.qt.main_window import Ui_MainWindow
-from tagstudio.src.qt.helpers import FunctionIterator, CustomRunnable
-from tagstudio.src.qt.widgets import CollageIconRenderer, ThumbRenderer, PanelModal, ProgressWidget, PreviewPanel, ItemThumb
-from tagstudio.src.qt.modals import (BuildTagPanel, TagDatabasePanel, FileExtensionModal, FixUnlinkedEntriesModal,
+from src.core.utils.web import strip_web_protocol
+from src.qt.flowlayout import FlowLayout
+from src.qt.main_window import Ui_MainWindow
+from src.qt.helpers import FunctionIterator, CustomRunnable
+from src.qt.widgets import CollageIconRenderer, ThumbRenderer, PanelModal, ProgressWidget, PreviewPanel, ItemThumb
+from src.qt.modals import (BuildTagPanel, TagDatabasePanel, FileExtensionModal, FixUnlinkedEntriesModal,
 						   FixDupeFilesModal, FoldersToTagsModal)
-import tagstudio.src.qt.resources_rc
+import src.qt.resources_rc
 
 # SIGQUIT is not defined on Windows
 if sys.platform == "win32":
@@ -324,7 +324,7 @@ class QtDriver(QObject):
 		# self.entry_panel.setWindowIcon(icon)
 
 		if os.name == 'nt':
-			appid = "cyanvoxel.tagstudio.9"
+			appid = "cyanvoxel.9"
 			ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(
 				appid)
 		app.setWindowIcon(icon)

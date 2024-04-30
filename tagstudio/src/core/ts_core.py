@@ -7,8 +7,8 @@
 import json
 import os
 
-from tagstudio.src.core.constants import TEXT_FIELDS
-from tagstudio.src.core.library import Entry, Library
+from src.core.constants import TEXT_FIELDS
+from src.core.library import Entry, Library
 
 class TagStudioCore:
 	"""

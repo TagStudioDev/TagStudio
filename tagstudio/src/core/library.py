@@ -16,10 +16,10 @@ import xml.etree.ElementTree as ET
 from enum import Enum
 import ujson
 
-from tagstudio.src.core.json_typing import JsonCollation, JsonEntry, JsonLibary, JsonTag
-from tagstudio.src.core.constants import TS_FOLDER_NAME, BACKUP_FOLDER_NAME, COLLAGE_FOLDER_NAME, VERSION, TEXT_FIELDS
-from tagstudio.src.core.utils.str import strip_punctuation
-from tagstudio.src.core.utils.web import strip_web_protocol
+from src.core.json_typing import JsonCollation, JsonEntry, JsonLibary, JsonTag
+from src.core.constants import TS_FOLDER_NAME, BACKUP_FOLDER_NAME, COLLAGE_FOLDER_NAME, VERSION, TEXT_FIELDS
+from src.core.utils.str import strip_punctuation
+from src.core.utils.web import strip_web_protocol
 
 TYPE = ['file', 'meta', 'alt', 'mask']
 # RESULT_TYPE = Enum('Result', ['ENTRY', 'COLLATION', 'TAG_GROUP'])

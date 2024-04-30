@@ -2,7 +2,7 @@ import unittest
 
 from parameterized import parameterized
 
-from tagstudio.src.core.utils.str import strip_punctuation
+from src.core.utils.str import strip_punctuation
 
 
 class StrTest(unittest.TestCase):

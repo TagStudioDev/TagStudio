@@ -12,7 +12,7 @@ from PIL import Image, ImageChops, UnidentifiedImageError
 from PySide6.QtCore import QObject, QThread, Signal, QRunnable, Qt, QThreadPool, QSize, QEvent, QTimer, QSettings
 
 from src.core.library import Library
-from src.core.ts_core import DOC_TYPES, VIDEO_TYPES, IMAGE_TYPES
+from src.core.constants import DOC_TYPES, VIDEO_TYPES, IMAGE_TYPES
 
 
 ERROR = f'[ERROR]'

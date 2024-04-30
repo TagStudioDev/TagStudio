@@ -10,7 +10,7 @@ from PySide6.QtWidgets import (QWidget, QVBoxLayout, QLabel, QPushButton, QLineE
 
 from src.core.library import Library, Tag
 from src.core.palette import ColorType, get_tag_color
-from src.core.ts_core import TAG_COLORS
+from src.core.constants import TAG_COLORS
 from src.qt.widgets import PanelWidget, PanelModal, TagWidget
 from src.qt.modals import TagSearchPanel
 
