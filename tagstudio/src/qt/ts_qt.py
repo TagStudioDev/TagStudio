@@ -429,7 +429,8 @@ class QtDriver(QObject):
 		self.main_window.statusbar.showMessage(f'Closed & Saving Library...')
 		start_time = time.time()
 		self.lib.save_library_to_disk()
-		end_time = time.time()
+		self.settings.setValue("last_library", self.lib.library_dir)
+		self.settings.sync()
 
 		# FIXME: idk if all this is necessary to reset the window properly
 		self.lib.clear_internal_vars()
@@ -444,6 +445,7 @@ class QtDriver(QObject):
 		self.preview_panel.update_widgets()
 		self.filter_items()
 
+		end_time = time.time()
 		self.main_window.statusbar.showMessage(f'Library Saved and Closed! ({format_timespan(end_time - start_time)})')
 
 	def backup_library(self):
