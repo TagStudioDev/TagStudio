@@ -426,6 +426,7 @@ class QtDriver(QObject):
 
 	def close_library(self):
 		if self.lib.library_dir:
+			# TODO: it is kinda the same code from "save_library"...
 			logging.info(f'Closing & Saving Library...')
 			self.main_window.statusbar.showMessage(f'Closed & Saving Library...')
 			start_time = time.time()
@@ -433,9 +434,7 @@ class QtDriver(QObject):
 			self.settings.setValue("last_library", self.lib.library_dir)
 			self.settings.sync()
 
-			# FIXME: idk if all this is necessary to reset the window properly
 			self.lib.clear_internal_vars()
-			
 			title_text = f'{self.base_title}'
 			self.main_window.setWindowTitle(title_text)
 
