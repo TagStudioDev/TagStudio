@@ -264,6 +264,8 @@ class ThumbRenderer(QObject):
 						image = new_bg
 					if image.mode != 'RGB':
 						image = image.convert(mode='RGB')
+					
+					image = ImageOps.exif_transpose(image)
 
 				# Videos =======================================================
 				elif extension in VIDEO_TYPES:
