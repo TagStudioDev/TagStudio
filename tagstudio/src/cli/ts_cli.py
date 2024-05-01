@@ -23,6 +23,7 @@ from src.core.ts_core import *
 from src.core.utils.web import *
 from src.core.utils.fs import *
 from src.core.library import *
+from src.qt.helpers.file_opener import file_open
 
 WHITE_FG = '\033[37m'
 WHITE_BG = '\033[47m'
@@ -352,8 +353,8 @@ class CliDriver:
 			if not os.path.isfile(external_preview_path):
 				temp = self.external_preview_default
 				temp.save(external_preview_path)
-			if os.path.isfile(external_preview_path):
-				os.startfile(external_preview_path)
+
+			file_open(external_preview_path)
 	
 	def set_external_preview_default(self) -> None:
 		"""Sets the external preview to its default image."""
@@ -1706,8 +1707,7 @@ class CliDriver:
 								args = ['explorer', '/select,', filename]
 								subprocess.call(args)
 						else:
-							if os.path.isfile(filename):
-								os.startfile(filename)
+							file_open(filename)
 						# refresh=False
 						# self.scr_browse_entries_gallery(index)
 					# Add Field ============================================================
@@ -2152,9 +2152,8 @@ class CliDriver:
 				# Open =============================================================
 				elif (com[0].lower() == 'open' or com[0].lower() == 'o'):
 					for match in self.lib.missing_matches[filename]:
-						fn = f'{os.path.normpath(self.lib.library_dir + "/" + match + "/" + entry.filename)}'
-						if os.path.isfile(fn):
-							os.startfile(fn)
+						fn = os.path.normpath(self.lib.library_dir + "/" + match + "/" + entry.filename)
+						file_open(fn)
 					refresh = False
 					# clear()
 					# return self.scr_choose_missing_match(index, clear_scr=False)
@@ -2276,8 +2275,8 @@ class CliDriver:
 						# 	fn = f'{os.path.normpath(self.lib.library_dir + "/" + match + "/" + entry_1.filename)}'
 						# 	if os.path.isfile(fn):
 						# 		os.startfile(fn)
-						os.startfile(dupe[0])
-						os.startfile(dupe[1])
+						file_open(dupe[0])
+						file_open(dupe[1])
 						# clear()
 						# return self.scr_resolve_dupe_files(index, clear_scr=False)
 					# Mirror Entries ===================================================
@@ -2385,8 +2384,7 @@ class CliDriver:
 
 				# Open with Default Application ========================================
 				if (com[0].lower() == 'open' or com[0].lower() == 'o'):
-					if os.path.isfile(filename):
-						os.startfile(filename)
+					file_open(filename)
 					# self.scr_edit_entry_tag_box(entry_index, field_index)
 					# return
 				# Close View ===========================================================

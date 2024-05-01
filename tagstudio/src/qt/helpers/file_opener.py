@@ -5,6 +5,8 @@
 import logging
 import os
 import subprocess
+import sys
+from os.path import isfile
 
 from PySide6.QtWidgets import QLabel
 
@@ -15,7 +17,20 @@ INFO = f'[INFO]'
 logging.basicConfig(format="%(message)s", level=logging.INFO)
 
 
-class FileOpenerHelper():
+def file_open(filepath: str, check_first: bool = True):
+	if check_first and not os.path.isfile(filepath):
+		logging.error(f'File not found: {filepath}')
+		return False
+
+	if os.name == 'nt':
+		os.startfile(filepath)
+	elif sys.platform == 'darwin':
+		subprocess.Popen(['open', filepath])
+	else:
+		subprocess.call(["xdg-open", filepath])
+
+
+class FileOpenerHelper:
 	def __init__(self, filepath:str):
 		self.filepath = filepath
 
@@ -23,26 +38,26 @@ class FileOpenerHelper():
 		self.filepath = filepath
 
 	def open_file(self):
-		if os.path.exists(self.filepath):
-			os.startfile(self.filepath)
-			logging.info(f'Opening file: {self.filepath}')
-		else:
-			logging.error(f'File not found: {self.filepath}')
+		logging.info(f'Opening file: {self.filepath}')
+		file_open(self.filepath)
 
 	def open_explorer(self):
-		if os.path.exists(self.filepath):
-				logging.info(f'Opening file: {self.filepath}')
-				if os.name == 'nt':  # Windows
-					command = f'explorer /select,"{self.filepath}"'
-					subprocess.run(command, shell=True)
-				else:  # macOS and Linux
-					command = f'nautilus --select "{self.filepath}"'  # Adjust for your Linux file manager if different
-					if subprocess.run(command, shell=True).returncode == 0:
-						file_loc = os.path.dirname(self.filepath)
-						file_loc = os.path.normpath(file_loc)
-						os.startfile(file_loc)
-		else:
+		if not os.path.exists(self.filepath):
 			logging.error(f'File not found: {self.filepath}')
+			return
+
+		logging.info(f'Opening file: {self.filepath}')
+		if os.name == 'nt':  # Windows
+			command = f'explorer /select,"{self.filepath}"'
+			subprocess.run(command, shell=True)
+		elif sys.platform == 'darwin':
+			subprocess.Popen(['open', '-R', self.filepath])
+		else:  # macOS and Linux
+			command = f'nautilus --select "{self.filepath}"'  # Adjust for your Linux file manager if different
+			if subprocess.run(command, shell=True).returncode == 0:
+				file_loc = os.path.dirname(self.filepath)
+				file_loc = os.path.normpath(file_loc)
+				os.startfile(file_loc)
 
 
 class FileOpenerLabel(QLabel):
