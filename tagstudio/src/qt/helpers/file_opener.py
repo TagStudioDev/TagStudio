@@ -8,6 +8,7 @@ import subprocess
 import shutil
 import sys
 import traceback
+import sys
 
 from PySide6.QtWidgets import QLabel
 

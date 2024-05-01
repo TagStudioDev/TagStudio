@@ -354,7 +354,7 @@ class CliDriver:
 				temp = self.external_preview_default
 				temp.save(external_preview_path)
 
-			file_open(external_preview_path)
+			open_file(external_preview_path)
 	
 	def set_external_preview_default(self) -> None:
 		"""Sets the external preview to its default image."""
@@ -1704,10 +1704,9 @@ class CliDriver:
 					elif (com[0].lower() == 'open' or com[0].lower() == 'o'):
 						if len(com) > 1:
 							if com[1].lower() == 'location' or com[1].lower() == 'l':
-								args = ['explorer', '/select,', filename]
-								subprocess.call(args)
+								open_file(filename, True)
 						else:
-							file_open(filename)
+							open_file(filename)
 						# refresh=False
 						# self.scr_browse_entries_gallery(index)
 					# Add Field ============================================================
@@ -2153,7 +2152,7 @@ class CliDriver:
 				elif (com[0].lower() == 'open' or com[0].lower() == 'o'):
 					for match in self.lib.missing_matches[filename]:
 						fn = os.path.normpath(self.lib.library_dir + "/" + match + "/" + entry.filename)
-						file_open(fn)
+						open_file(fn)
 					refresh = False
 					# clear()
 					# return self.scr_choose_missing_match(index, clear_scr=False)
@@ -2274,8 +2273,8 @@ class CliDriver:
 						# for match in self.lib.missing_matches[filename]:
 						# 	fn = f'{os.path.normpath(self.lib.library_dir + "/" + match + "/" + entry_1.filename)}'
 						# 	open_file(fn)
-						file_open(dupe[0])
-						file_open(dupe[1])
+						open_file(dupe[0])
+						open_file(dupe[1])
 						# clear()
 						# return self.scr_resolve_dupe_files(index, clear_scr=False)
 					# Mirror Entries ===================================================
@@ -2383,7 +2382,7 @@ class CliDriver:
 
 				# Open with Default Application ========================================
 				if (com[0].lower() == 'open' or com[0].lower() == 'o'):
-					file_open(filename)
+					open_file(filename)
 					# self.scr_edit_entry_tag_box(entry_index, field_index)
 					# return
 				# Close View ===========================================================
