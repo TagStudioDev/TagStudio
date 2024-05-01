@@ -2312,6 +2312,7 @@ class PreviewPanel(QWidget):
 						image = None
 						if extension in IMAGE_TYPES:
 							self.preview_vid.hide()
+							self.preview_vid.stop()
 							self.preview_img.show()
 
 							image = Image.open(filepath)
@@ -2950,7 +2951,10 @@ class VideoPlayer(QGraphicsView):
 
 		logging.info(f'Successfully stopped.')
 
-	
+	def stop(self) -> None:
+		# Stops the video.
+		self.player.stop()
+
 	def resize_video(self, new_size : QSize,) -> None:
 		# Resizes the video preview to the new size.
 		self.video_preview.setSize(new_size)
