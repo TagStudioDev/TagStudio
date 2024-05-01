@@ -276,4 +276,4 @@ As of right now, no. However, I _did_ have a CLI version in the recent past befo
 
 **Yes!!** I recommend taking a look at the [Priority Features](#priority-features), [Future Features](#future-features), and [Features I Won't Pull](#features-i-likely-wont-addpull) lists, as well as the project issues to see what’s currently being worked on. Please do not submit pull requests with new feature additions without opening up an issue with a feature request first.
 
-As of writing I don’t have a concrete style guide, just try to stay within or close enough to the [PEP 8](https://peps.python.org/pep-0008/) style guide and/or match the style of the existing code.
+Code formatting is automatically checked via [ruff](https://docs.astral.sh/ruff/). To format your code, install ruff via `pip install -r requirements-dev.txt` and run `ruff format` 

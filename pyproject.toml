@@ -1,0 +1,2 @@
+[tool.ruff]
+exclude = ["main_window.py", "home_ui.py"]
