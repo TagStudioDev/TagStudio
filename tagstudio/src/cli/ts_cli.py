@@ -23,7 +23,7 @@ from src.core.ts_core import *
 from src.core.utils.web import *
 from src.core.utils.fs import *
 from src.core.library import *
-from src.qt.helpers.file_opener import file_open
+from src.qt.helpers.file_opener import open_file
 
 WHITE_FG = '\033[37m'
 WHITE_BG = '\033[47m'
@@ -2273,8 +2273,7 @@ class CliDriver:
 					elif (com[0].lower() == 'open' or com[0].lower() == 'o'):
 						# for match in self.lib.missing_matches[filename]:
 						# 	fn = f'{os.path.normpath(self.lib.library_dir + "/" + match + "/" + entry_1.filename)}'
-						# 	if os.path.isfile(fn):
-						# 		os.startfile(fn)
+						# 	open_file(fn)
 						file_open(dupe[0])
 						file_open(dupe[1])
 						# clear()
