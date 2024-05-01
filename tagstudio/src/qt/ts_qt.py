@@ -323,7 +323,7 @@ class QtDriver(QObject):
 		# self.entry_panel.setWindowIcon(icon)
 
 		if os.name == 'nt':
-			appid = "cyanvoxel.9"
+			appid = "cyanvoxel.tagstudio.9"
 			ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(
 				appid)
 		app.setWindowIcon(icon)
