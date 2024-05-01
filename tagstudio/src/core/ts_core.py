@@ -7,7 +7,7 @@
 import json
 import os
 
-from src.core.constants import TEXT_FIELDS
+from src.core.constants import TEXT_FIELDS, TS_FOLDER_NAME
 from src.core.library import Entry, Library
 
 class TagStudioCore:
