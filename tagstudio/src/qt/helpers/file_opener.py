@@ -5,6 +5,9 @@
 import logging
 import os
 import subprocess
+import shutil
+import sys
+import traceback
 
 from PySide6.QtWidgets import QLabel
 
@@ -15,7 +18,49 @@ INFO = f'[INFO]'
 logging.basicConfig(format="%(message)s", level=logging.INFO)
 
 
-class FileOpenerHelper():
+def open_file(path: str, file_manager: bool = False):
+	logging.info(f'Opening file: {path}')
+	if not os.path.exists(path):
+		logging.error(f'File not found: {path}')
+		return
+	try:
+		if sys.platform == "win32":
+			normpath = os.path.normpath(path)
+			if file_manager:
+				command_name = "explorer"
+				command_args = [f"/select,{normpath}"]
+			else:
+				command_name = "start"
+				# first parameter is for title, NOT filepath
+				command_args = ["", normpath]
+			subprocess.Popen([command_name] + command_args, shell=True, close_fds=True, creationflags=subprocess.CREATE_NEW_PROCESS_GROUP | subprocess.CREATE_BREAKAWAY_FROM_JOB)
+		else:
+			if sys.platform == "darwin":
+				command_name = "open"
+				command_args = [path]
+				if file_manager:
+					# will reveal in Finder
+					command_args.append("-R")
+			else:
+				if file_manager:
+					command_name = "dbus-send"
+					# might not be guaranteed to launch default?
+					command_args = ["--session", "--dest=org.freedesktop.FileManager1", "--type=method_call",
+									"/org/freedesktop/FileManager1", "org.freedesktop.FileManager1.ShowItems",
+									f"array:string:file://{path}", "string:"]
+				else:
+					command_name = "xdg-open"
+					command_args = [path]
+			command = shutil.which(command_name)
+			if command is not None:
+				subprocess.Popen([command] + command_args, close_fds=True)
+			else:
+				logging.info(f"Could not find {command_name} on system PATH")
+	except:
+		traceback.print_exc()
+
+
+class FileOpenerHelper:
 	def __init__(self, filepath:str):
 		self.filepath = filepath
 
@@ -23,26 +68,10 @@ class FileOpenerHelper():
 		self.filepath = filepath
 
 	def open_file(self):
-		if os.path.exists(self.filepath):
-			os.startfile(self.filepath)
-			logging.info(f'Opening file: {self.filepath}')
-		else:
-			logging.error(f'File not found: {self.filepath}')
+		open_file(self.filepath)
 
 	def open_explorer(self):
-		if os.path.exists(self.filepath):
-				logging.info(f'Opening file: {self.filepath}')
-				if os.name == 'nt':  # Windows
-					command = f'explorer /select,"{self.filepath}"'
-					subprocess.run(command, shell=True)
-				else:  # macOS and Linux
-					command = f'nautilus --select "{self.filepath}"'  # Adjust for your Linux file manager if different
-					if subprocess.run(command, shell=True).returncode == 0:
-						file_loc = os.path.dirname(self.filepath)
-						file_loc = os.path.normpath(file_loc)
-						os.startfile(file_loc)
-		else:
-			logging.error(f'File not found: {self.filepath}')
+		open_file(self.filepath, True)
 
 
 class FileOpenerLabel(QLabel):
