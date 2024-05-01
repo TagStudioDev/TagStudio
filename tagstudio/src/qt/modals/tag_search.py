@@ -68,7 +68,6 @@ class TagSearchPanel(PanelWidget):
 
 		self.root_layout.addWidget(self.search_field)
 		self.root_layout.addWidget(self.scroll_area)
-		self.update_tags('')
 
 	# def reset(self):
 	# 	self.search_field.setText('')
@@ -80,12 +79,12 @@ class TagSearchPanel(PanelWidget):
 			# callback(self.first_tag_id)
 			self.tag_chosen.emit(self.first_tag_id)
 			self.search_field.setText('')
-			self.update_tags('')
+			self.update_tags()
 		else:
 			self.search_field.setFocus()
 			self.parentWidget().hide()
 
-	def update_tags(self, query:str):
+	def update_tags(self, query:str =''):
 		# for c in self.scroll_layout.children():
 		# 	c.widget().deleteLater()
 		while self.scroll_layout.count():
