@@ -18,6 +18,8 @@ import webbrowser
 from datetime import datetime as dt
 from pathlib import Path
 from queue import Queue
+from watchdog.observers import Observer
+from watchdog.events import DirModifiedEvent, FileSystemEventHandler
 from typing import Optional
 
 from PIL import Image
