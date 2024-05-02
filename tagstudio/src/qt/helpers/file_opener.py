@@ -10,6 +10,7 @@ import sys
 import traceback
 
 from PySide6.QtWidgets import QLabel
+from PySide6.QtCore import Qt
 
 ERROR = f'[ERROR]'
 WARNING = f'[WARNING]'
@@ -19,6 +20,13 @@ logging.basicConfig(format="%(message)s", level=logging.INFO)
 
 
 def open_file(path: str, file_manager: bool = False):
+	"""Open a file in the default application or file explorer.
+
+	Args:
+		path (str): The path to the file to open.
+		file_manager (bool, optional): Whether to open the file in the file manager (e.g. Finder on macOS).
+			Defaults to False.
+	"""
 	logging.info(f'Opening file: {path}')
 	if not os.path.exists(path):
 		logging.error(f'File not found: {path}')
@@ -61,27 +69,62 @@ def open_file(path: str, file_manager: bool = False):
 
 
 class FileOpenerHelper:
-	def __init__(self, filepath:str):
+	def __init__(self, filepath: str):
+		"""Initialize the FileOpenerHelper.
+
+		Args:
+			filepath (str): The path to the file to open.
+		"""
 		self.filepath = filepath
 
-	def set_filepath(self, filepath:str):
+	def set_filepath(self, filepath: str):
+		"""Set the filepath to open.
+
+		Args:
+			filepath (str): The path to the file to open.
+		"""
 		self.filepath = filepath
 
 	def open_file(self):
+		"""Open the file in the default application."""
 		open_file(self.filepath)
 
 	def open_explorer(self):
-		open_file(self.filepath, True)
+		"""Open the file in the default file explorer."""
+		open_file(self.filepath, file_manager=True)
 
 
 class FileOpenerLabel(QLabel):
 	def __init__(self, text, parent=None):
+		"""Initialize the FileOpenerLabel.
+
+		Args:
+			text (str): The text to display.
+			parent (QWidget, optional): The parent widget. Defaults to None.
+		"""
 		super().__init__(text, parent)
 
 	def setFilePath(self, filepath):
+		"""Set the filepath to open.
+
+		Args:
+			filepath (str): The path to the file to open.
+		"""
 		self.filepath = filepath
 
 	def mousePressEvent(self, event):
+		"""Handle mouse press events.
+
+		On a left click, open the file in the default file explorer. On a right click, show a context menu.
+		
+		Args:
+			event (QMouseEvent): The mouse press event.
+		"""
 		super().mousePressEvent(event)
-		opener = FileOpenerHelper(self.filepath)
-		opener.open_explorer()
+
+		if event.button() == Qt.LeftButton:
+			opener = FileOpenerHelper(self.filepath)
+			opener.open_explorer()
+		elif event.button() == Qt.RightButton:
+			# Show context menu
+			pass
