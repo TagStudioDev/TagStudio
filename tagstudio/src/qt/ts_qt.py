@@ -386,7 +386,7 @@ class QtDriver(QObject):
 
 		# Check if a library should be opened on startup, args should override last_library
 		# TODO: check for behavior (open last, open default, start empty)
-		if self.args.open or self.settings.contains("last_library"):
+		if self.args.open or self.settings.contains("last_library") and os.path.isdir(self.settings.value("last_library")):
 			if self.args.open:
 				lib = self.args.open
 			elif self.settings.value("last_library"):
