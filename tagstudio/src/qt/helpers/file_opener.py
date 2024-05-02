@@ -25,11 +25,16 @@ class FileOpenerHelper():
 		self.filepath = filepath
 
 	def open_file(self):
-		if os.path.exists(self.filepath):
-			os.startfile(self.filepath)
-			logging.info(f'Opening file: {self.filepath}')
-		else:
+		if not os.path.exists(self.filepath):
 			logging.error(f'File not found: {self.filepath}')
+			return
+
+		if sys.platform == 'win32':
+			os.startfile(self.filepath)
+		elif sys.platform == 'linux':
+			subprocess.run(['xdg-open', self.filepath])
+		elif sys.platform == 'darwin':
+			subprocess.run(['open', self.filepath])
 
 	def open_explorer(self):
 		if os.path.exists(self.filepath):
@@ -47,7 +52,7 @@ class FileOpenerHelper():
 				command = f'open -R "{self.filepath}"'
 				result = subprocess.run(command, shell=True)
 				if result.returncode == 0:
-					print('Opening file in Finder')
+					logging.info('Opening file in Finder')
 				else:
 					logging.error(f'Failed to open file in Finder: {self.filepath}')
 		else:
