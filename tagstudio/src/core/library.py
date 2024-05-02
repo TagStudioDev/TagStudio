@@ -1577,7 +1577,8 @@ class Library:
 
 		# NOTE: I'd expect a blank query to return all with the other implementation, but
 		# it misses stuff like Archive (id 0) so here's this as a catch-all.
-		if query == '':
+		query = query.strip()
+		if not query:
 			all: list[int] = []
 			for tag in self.tags:
 				if ignore_builtin and tag.id >= 1000:

@@ -250,7 +250,9 @@ class QtDriver(QObject):
 
 		file_menu.addSeparator()
 
-		file_menu.addAction(QAction('&Close Library', menu_bar))
+		close_library_action = QAction('&Close Library', menu_bar)
+		close_library_action.triggered.connect(lambda: self.close_library())
+		file_menu.addAction(close_library_action)
 
 		# Edit Menu ============================================================
 		new_tag_action = QAction('New &Tag', menu_bar)
@@ -427,6 +429,30 @@ class QtDriver(QObject):
 		self.lib.save_library_to_disk()
 		end_time = time.time()
 		self.main_window.statusbar.showMessage(f'Library Saved! ({format_timespan(end_time - start_time)})')
+
+	def close_library(self):
+		if self.lib.library_dir:
+			# TODO: it is kinda the same code from "save_library"...
+			logging.info(f'Closing & Saving Library...')
+			self.main_window.statusbar.showMessage(f'Closed & Saving Library...')
+			start_time = time.time()
+			self.lib.save_library_to_disk()
+			self.settings.setValue("last_library", self.lib.library_dir)
+			self.settings.sync()
+
+			self.lib.clear_internal_vars()
+			title_text = f'{self.base_title}'
+			self.main_window.setWindowTitle(title_text)
+
+			self.nav_frames: list[NavigationState] = []
+			self.cur_frame_idx: int = -1
+			self.cur_query: str = ''
+			self.selected.clear()
+			self.preview_panel.update_widgets()
+			self.filter_items()
+
+			end_time = time.time()
+			self.main_window.statusbar.showMessage(f'Library Saved and Closed! ({format_timespan(end_time - start_time)})')
 
 	def backup_library(self):
 		logging.info(f'Backing Up Library...')
