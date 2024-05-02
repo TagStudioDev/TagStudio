@@ -25,6 +25,7 @@ class FileOpenerHelper():
 		self.filepath = filepath
 
 	def open_file(self):
+		"""Open the file in the default program."""
 		if not os.path.exists(self.filepath):
 			logging.error(f'File not found: {self.filepath}')
 			return
@@ -37,6 +38,7 @@ class FileOpenerHelper():
 			subprocess.run(['open', self.filepath])
 
 	def open_explorer(self):
+		"""Open the file in the default file explorer."""
 		if os.path.exists(self.filepath):
 			logging.info(f'Opening file: {self.filepath}')
 			if os.name == 'nt':  # Windows
