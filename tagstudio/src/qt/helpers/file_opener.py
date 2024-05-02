@@ -37,7 +37,7 @@ def open_file(path: str, file_manager: bool = False):
 			if file_manager:
 				command_name = "explorer"				
 				command_args = '/select,"' + normpath + '"'
-				# If the args are passed in a list, this will error when the path has spaces, even while surrounded in doule quotes. IDK why
+				# For some reason, if the args are passed in a list, this will error when the path has spaces, even while surrounded in double quotes
 				subprocess.Popen(command_name + command_args, shell=True, close_fds=True, creationflags=subprocess.CREATE_NEW_PROCESS_GROUP | subprocess.CREATE_BREAKAWAY_FROM_JOB)
 			else:
 				command_name = "start"
