@@ -14,7 +14,14 @@ from typing import Optional
 from PIL import Image, ImageQt
 from PySide6.QtCore import Qt, QSize, QEvent
 from PySide6.QtGui import QPixmap, QEnterEvent, QAction
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QBoxLayout, QCheckBox
+from PySide6.QtWidgets import (
+    QWidget,
+    QVBoxLayout,
+    QHBoxLayout,
+    QLabel,
+    QBoxLayout,
+    QCheckBox,
+)
 
 from src.core.library import ItemType, Library
 from src.core.ts_core import AUDIO_TYPES, VIDEO_TYPES, IMAGE_TYPES
@@ -23,461 +30,514 @@ from src.qt.helpers import FileOpenerHelper
 from src.qt.widgets import ThumbRenderer, ThumbButton
 
 if typing.TYPE_CHECKING:
-	from src.qt.widgets import PreviewPanel
+    from src.qt.widgets import PreviewPanel
 
 
-ERROR = f'[ERROR]'
-WARNING = f'[WARNING]'
-INFO = f'[INFO]'
+ERROR = f"[ERROR]"
+WARNING = f"[WARNING]"
+INFO = f"[INFO]"
 
 logging.basicConfig(format="%(message)s", level=logging.INFO)
 
 
 class ItemThumb(FlowWidget):
-	"""
-	The thumbnail widget for a library item (Entry, Collation, Tag Group, etc.).
-	"""
-	update_cutoff: float = time.time()
+    """
+    The thumbnail widget for a library item (Entry, Collation, Tag Group, etc.).
+    """
 
-	collation_icon_128: Image.Image = Image.open(os.path.normpath(
-		f'{Path(__file__).parent.parent.parent.parent}/resources/qt/images/collation_icon_128.png'))
-	collation_icon_128.load()
+    update_cutoff: float = time.time()
 
-	tag_group_icon_128: Image.Image = Image.open(os.path.normpath(
-		f'{Path(__file__).parent.parent.parent.parent}/resources/qt/images/tag_group_icon_128.png'))
-	tag_group_icon_128.load()
+    collation_icon_128: Image.Image = Image.open(
+        os.path.normpath(
+            f"{Path(__file__).parent.parent.parent.parent}/resources/qt/images/collation_icon_128.png"
+        )
+    )
+    collation_icon_128.load()
 
-	small_text_style = (
-		f'background-color:rgba(0, 0, 0, 128);'
-		f'font-family:Oxanium;'
-		f'font-weight:bold;'
-		f'font-size:12px;'
-		f'border-radius:3px;'
-		f'padding-top: 4px;'
-		f'padding-right: 1px;'
-		f'padding-bottom: 1px;'
-		f'padding-left: 1px;'
-	)
+    tag_group_icon_128: Image.Image = Image.open(
+        os.path.normpath(
+            f"{Path(__file__).parent.parent.parent.parent}/resources/qt/images/tag_group_icon_128.png"
+        )
+    )
+    tag_group_icon_128.load()
 
-	med_text_style = (
-		f'background-color:rgba(17, 15, 27, 192);'
-		f'font-family:Oxanium;'
-		f'font-weight:bold;'
-		f'font-size:18px;'
-		f'border-radius:3px;'
-		f'padding-top: 4px;'
-		f'padding-right: 1px;'
-		f'padding-bottom: 1px;'
-		f'padding-left: 1px;'
-	)
+    small_text_style = (
+        f"background-color:rgba(0, 0, 0, 128);"
+        f"font-family:Oxanium;"
+        f"font-weight:bold;"
+        f"font-size:12px;"
+        f"border-radius:3px;"
+        f"padding-top: 4px;"
+        f"padding-right: 1px;"
+        f"padding-bottom: 1px;"
+        f"padding-left: 1px;"
+    )
 
-	def __init__(self, mode: Optional[ItemType], library: Library, panel: 'PreviewPanel', thumb_size: tuple[int, int]):
-		"""Modes: entry, collation, tag_group"""
-		super().__init__()
-		self.lib = library
-		self.panel = panel
-		self.mode = mode
-		self.item_id: int = -1
-		self.isFavorite: bool = False
-		self.isArchived: bool = False
-		self.thumb_size:tuple[int,int]= thumb_size
-		self.setMinimumSize(*thumb_size)
-		self.setMaximumSize(*thumb_size)
-		check_size = 24
-		# self.setStyleSheet('background-color:red;')
+    med_text_style = (
+        f"background-color:rgba(17, 15, 27, 192);"
+        f"font-family:Oxanium;"
+        f"font-weight:bold;"
+        f"font-size:18px;"
+        f"border-radius:3px;"
+        f"padding-top: 4px;"
+        f"padding-right: 1px;"
+        f"padding-bottom: 1px;"
+        f"padding-left: 1px;"
+    )
 
-		# +----------+
-		# |   ARC FAV| Top Right: Favorite & Archived Badges
-		# |          |
-		# |          |
-		# |EXT      #| Lower Left: File Type, Tag Group Icon, or Collation Icon
-		# +----------+ Lower Right: Collation Count, Video Length, or Word Count
+    def __init__(
+        self,
+        mode: Optional[ItemType],
+        library: Library,
+        panel: "PreviewPanel",
+        thumb_size: tuple[int, int],
+    ):
+        """Modes: entry, collation, tag_group"""
+        super().__init__()
+        self.lib = library
+        self.panel = panel
+        self.mode = mode
+        self.item_id: int = -1
+        self.isFavorite: bool = False
+        self.isArchived: bool = False
+        self.thumb_size: tuple[int, int] = thumb_size
+        self.setMinimumSize(*thumb_size)
+        self.setMaximumSize(*thumb_size)
+        check_size = 24
+        # self.setStyleSheet('background-color:red;')
 
-		# Thumbnail ============================================================
+        # +----------+
+        # |   ARC FAV| Top Right: Favorite & Archived Badges
+        # |          |
+        # |          |
+        # |EXT      #| Lower Left: File Type, Tag Group Icon, or Collation Icon
+        # +----------+ Lower Right: Collation Count, Video Length, or Word Count
 
-		# +----------+
-		# |*--------*|
-		# ||        ||
-		# ||        ||
-		# |*--------*|
-		# +----------+
-		self.base_layout = QVBoxLayout(self)
-		self.base_layout.setObjectName('baseLayout')
-		# self.base_layout.setRowStretch(1, 2)
-		self.base_layout.setContentsMargins(0, 0, 0, 0)
+        # Thumbnail ============================================================
 
-		# +----------+
-		# |[~~~~~~~~]|
-		# |          |
-		# |          |
-		# |          |
-		# +----------+
-		self.top_layout = QHBoxLayout()
-		self.top_layout.setObjectName('topLayout')
-		# self.top_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
-		# self.top_layout.setColumnStretch(1, 2)
-		self.top_layout.setContentsMargins(6, 6, 6, 6)
-		self.top_container = QWidget()
-		self.top_container.setLayout(self.top_layout)
-		self.base_layout.addWidget(self.top_container)
+        # +----------+
+        # |*--------*|
+        # ||        ||
+        # ||        ||
+        # |*--------*|
+        # +----------+
+        self.base_layout = QVBoxLayout(self)
+        self.base_layout.setObjectName("baseLayout")
+        # self.base_layout.setRowStretch(1, 2)
+        self.base_layout.setContentsMargins(0, 0, 0, 0)
 
-		# +----------+
-		# |[~~~~~~~~]|
-		# |     ^    |
-		# |     |    |
-		# |     v    |
-		# +----------+
-		self.base_layout.addStretch(2)
+        # +----------+
+        # |[~~~~~~~~]|
+        # |          |
+        # |          |
+        # |          |
+        # +----------+
+        self.top_layout = QHBoxLayout()
+        self.top_layout.setObjectName("topLayout")
+        # self.top_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
+        # self.top_layout.setColumnStretch(1, 2)
+        self.top_layout.setContentsMargins(6, 6, 6, 6)
+        self.top_container = QWidget()
+        self.top_container.setLayout(self.top_layout)
+        self.base_layout.addWidget(self.top_container)
 
-		# +----------+
-		# |[~~~~~~~~]|
-		# |     ^    |
-		# |     v    |
-		# |[~~~~~~~~]|
-		# +----------+
-		self.bottom_layout = QHBoxLayout()
-		self.bottom_layout.setObjectName('bottomLayout')
-		# self.bottom_container.setAlignment(Qt.AlignmentFlag.AlignBottom)
-		# self.bottom_layout.setColumnStretch(1, 2)
-		self.bottom_layout.setContentsMargins(6, 6, 6, 6)
-		self.bottom_container = QWidget()
-		self.bottom_container.setLayout(self.bottom_layout)
-		self.base_layout.addWidget(self.bottom_container)
+        # +----------+
+        # |[~~~~~~~~]|
+        # |     ^    |
+        # |     |    |
+        # |     v    |
+        # +----------+
+        self.base_layout.addStretch(2)
 
-		# self.root_layout = QGridLayout(self)
-		# self.root_layout.setObjectName('rootLayout')
-		# self.root_layout.setColumnStretch(1, 2)
-		# self.root_layout.setRowStretch(1, 2)
-		# self.root_layout.setContentsMargins(6,6,6,6)
-		# # root_layout.setAlignment(Qt.AlignmentFlag.AlignHCenter)
+        # +----------+
+        # |[~~~~~~~~]|
+        # |     ^    |
+        # |     v    |
+        # |[~~~~~~~~]|
+        # +----------+
+        self.bottom_layout = QHBoxLayout()
+        self.bottom_layout.setObjectName("bottomLayout")
+        # self.bottom_container.setAlignment(Qt.AlignmentFlag.AlignBottom)
+        # self.bottom_layout.setColumnStretch(1, 2)
+        self.bottom_layout.setContentsMargins(6, 6, 6, 6)
+        self.bottom_container = QWidget()
+        self.bottom_container.setLayout(self.bottom_layout)
+        self.base_layout.addWidget(self.bottom_container)
 
-		self.thumb_button = ThumbButton(self, thumb_size)
-		self.renderer = ThumbRenderer()
-		self.renderer.updated.connect(lambda ts, i, s, ext: (self.update_thumb(ts, image=i),
-															 self.update_size(
-																 ts, size=s),
-															 self.set_extension(ext)))
-		self.thumb_button.setFlat(True)
+        # self.root_layout = QGridLayout(self)
+        # self.root_layout.setObjectName('rootLayout')
+        # self.root_layout.setColumnStretch(1, 2)
+        # self.root_layout.setRowStretch(1, 2)
+        # self.root_layout.setContentsMargins(6,6,6,6)
+        # # root_layout.setAlignment(Qt.AlignmentFlag.AlignHCenter)
 
-		# self.bg_button.setStyleSheet('background-color:blue;')
-		# self.bg_button.setLayout(self.root_layout)
-		self.thumb_button.setLayout(self.base_layout)
-		# self.bg_button.setMinimumSize(*thumb_size)
-		# self.bg_button.setMaximumSize(*thumb_size)
+        self.thumb_button = ThumbButton(self, thumb_size)
+        self.renderer = ThumbRenderer()
+        self.renderer.updated.connect(
+            lambda ts, i, s, ext: (
+                self.update_thumb(ts, image=i),
+                self.update_size(ts, size=s),
+                self.set_extension(ext),
+            )
+        )
+        self.thumb_button.setFlat(True)
 
-		self.thumb_button.setContextMenuPolicy(Qt.ContextMenuPolicy.ActionsContextMenu)
-		self.opener = FileOpenerHelper('')
-		open_file_action = QAction('Open file', self)
-		open_file_action.triggered.connect(self.opener.open_file)
-		open_explorer_action = QAction('Open file in explorer', self)
-		open_explorer_action.triggered.connect(self.opener.open_explorer)
-		self.thumb_button.addAction(open_file_action)
-		self.thumb_button.addAction(open_explorer_action)
+        # self.bg_button.setStyleSheet('background-color:blue;')
+        # self.bg_button.setLayout(self.root_layout)
+        self.thumb_button.setLayout(self.base_layout)
+        # self.bg_button.setMinimumSize(*thumb_size)
+        # self.bg_button.setMaximumSize(*thumb_size)
 
-		# Static Badges ========================================================
+        self.thumb_button.setContextMenuPolicy(Qt.ContextMenuPolicy.ActionsContextMenu)
+        self.opener = FileOpenerHelper("")
+        open_file_action = QAction("Open file", self)
+        open_file_action.triggered.connect(self.opener.open_file)
+        open_explorer_action = QAction("Open file in explorer", self)
+        open_explorer_action.triggered.connect(self.opener.open_explorer)
+        self.thumb_button.addAction(open_file_action)
+        self.thumb_button.addAction(open_explorer_action)
 
-		# Item Type Badge ------------------------------------------------------
-		# Used for showing the Tag Group / Collation icons.
-		# Mutually exclusive with the File Extension Badge.
-		self.item_type_badge = QLabel()
-		self.item_type_badge.setObjectName('itemBadge')
-		self.item_type_badge.setPixmap(QPixmap.fromImage(ImageQt.ImageQt(
-			ItemThumb.collation_icon_128.resize((check_size, check_size), Image.Resampling.BILINEAR))))
-		self.item_type_badge.setMinimumSize(check_size, check_size)
-		self.item_type_badge.setMaximumSize(check_size, check_size)
-		# self.root_layout.addWidget(self.item_type_badge, 2, 0)
-		self.bottom_layout.addWidget(self.item_type_badge)
+        # Static Badges ========================================================
 
-		# File Extension Badge -------------------------------------------------
-		# Mutually exclusive with the File Extension Badge.
-		self.ext_badge = QLabel()
-		self.ext_badge.setObjectName('extBadge')
-		# self.ext_badge.setText('MP4')
-		# self.ext_badge.setAlignment(Qt.AlignmentFlag.AlignVCenter)
-		self.ext_badge.setStyleSheet(ItemThumb.small_text_style)
-		# self.type_badge.setAlignment(Qt.AlignmentFlag.AlignRight)
-		# self.root_layout.addWidget(self.ext_badge, 2, 0)
-		self.bottom_layout.addWidget(self.ext_badge)
-		# self.type_badge.setHidden(True)
-		# bl_layout.addWidget(self.type_badge)
+        # Item Type Badge ------------------------------------------------------
+        # Used for showing the Tag Group / Collation icons.
+        # Mutually exclusive with the File Extension Badge.
+        self.item_type_badge = QLabel()
+        self.item_type_badge.setObjectName("itemBadge")
+        self.item_type_badge.setPixmap(
+            QPixmap.fromImage(
+                ImageQt.ImageQt(
+                    ItemThumb.collation_icon_128.resize(
+                        (check_size, check_size), Image.Resampling.BILINEAR
+                    )
+                )
+            )
+        )
+        self.item_type_badge.setMinimumSize(check_size, check_size)
+        self.item_type_badge.setMaximumSize(check_size, check_size)
+        # self.root_layout.addWidget(self.item_type_badge, 2, 0)
+        self.bottom_layout.addWidget(self.item_type_badge)
 
-		self.bottom_layout.addStretch(2)
+        # File Extension Badge -------------------------------------------------
+        # Mutually exclusive with the File Extension Badge.
+        self.ext_badge = QLabel()
+        self.ext_badge.setObjectName("extBadge")
+        # self.ext_badge.setText('MP4')
+        # self.ext_badge.setAlignment(Qt.AlignmentFlag.AlignVCenter)
+        self.ext_badge.setStyleSheet(ItemThumb.small_text_style)
+        # self.type_badge.setAlignment(Qt.AlignmentFlag.AlignRight)
+        # self.root_layout.addWidget(self.ext_badge, 2, 0)
+        self.bottom_layout.addWidget(self.ext_badge)
+        # self.type_badge.setHidden(True)
+        # bl_layout.addWidget(self.type_badge)
 
-		# Count Badge ----------------------------------------------------------
-		# Used for Tag Group + Collation counts, video length, word count, etc.
-		self.count_badge = QLabel()
-		self.count_badge.setObjectName('countBadge')
-		# self.count_badge.setMaximumHeight(17)
-		self.count_badge.setText('-:--')
-		# self.count_badge.setAlignment(Qt.AlignmentFlag.AlignVCenter)
-		self.count_badge.setStyleSheet(ItemThumb.small_text_style)
-		# self.count_badge.setAlignment(Qt.AlignmentFlag.AlignBottom)
-		# self.root_layout.addWidget(self.count_badge, 2, 2)
-		self.bottom_layout.addWidget(
-			self.count_badge, alignment=Qt.AlignmentFlag.AlignBottom)
+        self.bottom_layout.addStretch(2)
 
-		self.top_layout.addStretch(2)
+        # Count Badge ----------------------------------------------------------
+        # Used for Tag Group + Collation counts, video length, word count, etc.
+        self.count_badge = QLabel()
+        self.count_badge.setObjectName("countBadge")
+        # self.count_badge.setMaximumHeight(17)
+        self.count_badge.setText("-:--")
+        # self.count_badge.setAlignment(Qt.AlignmentFlag.AlignVCenter)
+        self.count_badge.setStyleSheet(ItemThumb.small_text_style)
+        # self.count_badge.setAlignment(Qt.AlignmentFlag.AlignBottom)
+        # self.root_layout.addWidget(self.count_badge, 2, 2)
+        self.bottom_layout.addWidget(
+            self.count_badge, alignment=Qt.AlignmentFlag.AlignBottom
+        )
 
-		# Intractable Badges ===================================================
-		self.cb_container = QWidget()
-		# check_badges.setStyleSheet('background-color:cyan;')
-		self.cb_layout = QHBoxLayout()
-		self.cb_layout.setDirection(QBoxLayout.Direction.RightToLeft)
-		self.cb_layout.setContentsMargins(0, 0, 0, 0)
-		self.cb_layout.setSpacing(6)
-		self.cb_container.setLayout(self.cb_layout)
-		# self.cb_container.setHidden(True)
-		# self.root_layout.addWidget(self.check_badges, 0, 2)
-		self.top_layout.addWidget(self.cb_container)
+        self.top_layout.addStretch(2)
 
-		# Favorite Badge -------------------------------------------------------
-		self.favorite_badge = QCheckBox()
-		self.favorite_badge.setObjectName('favBadge')
-		self.favorite_badge.setToolTip('Favorite')
-		self.favorite_badge.setStyleSheet(f'QCheckBox::indicator{{width: {check_size}px;height: {check_size}px;}}'
-										  f'QCheckBox::indicator::unchecked{{image: url(:/images/star_icon_empty_128.png)}}'
-										  f'QCheckBox::indicator::checked{{image: url(:/images/star_icon_filled_128.png)}}'
-										  #  f'QCheckBox{{background-color:yellow;}}'
-										  )
-		self.favorite_badge.setMinimumSize(check_size, check_size)
-		self.favorite_badge.setMaximumSize(check_size, check_size)
-		self.favorite_badge.stateChanged.connect(
-			lambda x=self.favorite_badge.isChecked(): self.on_favorite_check(bool(x)))
+        # Intractable Badges ===================================================
+        self.cb_container = QWidget()
+        # check_badges.setStyleSheet('background-color:cyan;')
+        self.cb_layout = QHBoxLayout()
+        self.cb_layout.setDirection(QBoxLayout.Direction.RightToLeft)
+        self.cb_layout.setContentsMargins(0, 0, 0, 0)
+        self.cb_layout.setSpacing(6)
+        self.cb_container.setLayout(self.cb_layout)
+        # self.cb_container.setHidden(True)
+        # self.root_layout.addWidget(self.check_badges, 0, 2)
+        self.top_layout.addWidget(self.cb_container)
 
-		# self.fav_badge.setContentsMargins(0,0,0,0)
-		# tr_layout.addWidget(self.fav_badge)
-		# root_layout.addWidget(self.fav_badge, 0, 2)
-		self.cb_layout.addWidget(self.favorite_badge)
-		self.favorite_badge.setHidden(True)
+        # Favorite Badge -------------------------------------------------------
+        self.favorite_badge = QCheckBox()
+        self.favorite_badge.setObjectName("favBadge")
+        self.favorite_badge.setToolTip("Favorite")
+        self.favorite_badge.setStyleSheet(
+            f"QCheckBox::indicator{{width: {check_size}px;height: {check_size}px;}}"
+            f"QCheckBox::indicator::unchecked{{image: url(:/images/star_icon_empty_128.png)}}"
+            f"QCheckBox::indicator::checked{{image: url(:/images/star_icon_filled_128.png)}}"
+            #  f'QCheckBox{{background-color:yellow;}}'
+        )
+        self.favorite_badge.setMinimumSize(check_size, check_size)
+        self.favorite_badge.setMaximumSize(check_size, check_size)
+        self.favorite_badge.stateChanged.connect(
+            lambda x=self.favorite_badge.isChecked(): self.on_favorite_check(bool(x))
+        )
 
-		# Archive Badge --------------------------------------------------------
-		self.archived_badge = QCheckBox()
-		self.archived_badge.setObjectName('archiveBadge')
-		self.archived_badge.setToolTip('Archive')
-		self.archived_badge.setStyleSheet(f'QCheckBox::indicator{{width: {check_size}px;height: {check_size}px;}}'
-										  f'QCheckBox::indicator::unchecked{{image: url(:/images/box_icon_empty_128.png)}}'
-										  f'QCheckBox::indicator::checked{{image: url(:/images/box_icon_filled_128.png)}}'
-										  #  f'QCheckBox{{background-color:red;}}'
-										  )
-		self.archived_badge.setMinimumSize(check_size, check_size)
-		self.archived_badge.setMaximumSize(check_size, check_size)
-		# self.archived_badge.clicked.connect(lambda x: self.assign_archived(x))
-		self.archived_badge.stateChanged.connect(
-			lambda x=self.archived_badge.isChecked(): self.on_archived_check(bool(x)))
+        # self.fav_badge.setContentsMargins(0,0,0,0)
+        # tr_layout.addWidget(self.fav_badge)
+        # root_layout.addWidget(self.fav_badge, 0, 2)
+        self.cb_layout.addWidget(self.favorite_badge)
+        self.favorite_badge.setHidden(True)
 
-		# tr_layout.addWidget(self.archive_badge)
-		self.cb_layout.addWidget(self.archived_badge)
-		self.archived_badge.setHidden(True)
-		# root_layout.addWidget(self.archive_badge, 0, 2)
-		# self.dumpObjectTree()
+        # Archive Badge --------------------------------------------------------
+        self.archived_badge = QCheckBox()
+        self.archived_badge.setObjectName("archiveBadge")
+        self.archived_badge.setToolTip("Archive")
+        self.archived_badge.setStyleSheet(
+            f"QCheckBox::indicator{{width: {check_size}px;height: {check_size}px;}}"
+            f"QCheckBox::indicator::unchecked{{image: url(:/images/box_icon_empty_128.png)}}"
+            f"QCheckBox::indicator::checked{{image: url(:/images/box_icon_filled_128.png)}}"
+            #  f'QCheckBox{{background-color:red;}}'
+        )
+        self.archived_badge.setMinimumSize(check_size, check_size)
+        self.archived_badge.setMaximumSize(check_size, check_size)
+        # self.archived_badge.clicked.connect(lambda x: self.assign_archived(x))
+        self.archived_badge.stateChanged.connect(
+            lambda x=self.archived_badge.isChecked(): self.on_archived_check(bool(x))
+        )
 
-		self.set_mode(mode)
+        # tr_layout.addWidget(self.archive_badge)
+        self.cb_layout.addWidget(self.archived_badge)
+        self.archived_badge.setHidden(True)
+        # root_layout.addWidget(self.archive_badge, 0, 2)
+        # self.dumpObjectTree()
 
-	def set_mode(self, mode: Optional[ItemType]) -> None:
-		if mode is None:
-			self.unsetCursor()
-			self.thumb_button.setHidden(True)
-			# self.check_badges.setHidden(True)
-			# self.ext_badge.setHidden(True)
-			# self.item_type_badge.setHidden(True)
-			pass
-		elif mode == ItemType.ENTRY and self.mode != ItemType.ENTRY:
-			self.setCursor(Qt.CursorShape.PointingHandCursor)
-			self.thumb_button.setHidden(False)
-			self.cb_container.setHidden(False)
-			# Count Badge depends on file extension (video length, word count)
-			self.item_type_badge.setHidden(True)
-			self.count_badge.setStyleSheet(ItemThumb.small_text_style)
-			self.count_badge.setHidden(True)
-			self.ext_badge.setHidden(True)
-		elif mode == ItemType.COLLATION and self.mode != ItemType.COLLATION:
-			self.setCursor(Qt.CursorShape.PointingHandCursor)
-			self.thumb_button.setHidden(False)
-			self.cb_container.setHidden(True)
-			self.ext_badge.setHidden(True)
-			self.count_badge.setStyleSheet(ItemThumb.med_text_style)
-			self.count_badge.setHidden(False)
-			self.item_type_badge.setHidden(False)
-		elif mode == ItemType.TAG_GROUP and self.mode != ItemType.TAG_GROUP:
-			self.setCursor(Qt.CursorShape.PointingHandCursor)
-			self.thumb_button.setHidden(False)
-			# self.cb_container.setHidden(True)
-			self.ext_badge.setHidden(True)
-			self.count_badge.setHidden(False)
-			self.item_type_badge.setHidden(False)
-		self.mode = mode
-		# logging.info(f'Set Mode To: {self.mode}')
+        self.set_mode(mode)
 
-	# def update_(self, thumb: QPixmap, size:QSize, ext:str, badges:list[QPixmap]) -> None:
-	# 	"""Updates the ItemThumb's visuals."""
-	# 	if thumb:
-	# 		pass
+    def set_mode(self, mode: Optional[ItemType]) -> None:
+        if mode is None:
+            self.unsetCursor()
+            self.thumb_button.setHidden(True)
+            # self.check_badges.setHidden(True)
+            # self.ext_badge.setHidden(True)
+            # self.item_type_badge.setHidden(True)
+            pass
+        elif mode == ItemType.ENTRY and self.mode != ItemType.ENTRY:
+            self.setCursor(Qt.CursorShape.PointingHandCursor)
+            self.thumb_button.setHidden(False)
+            self.cb_container.setHidden(False)
+            # Count Badge depends on file extension (video length, word count)
+            self.item_type_badge.setHidden(True)
+            self.count_badge.setStyleSheet(ItemThumb.small_text_style)
+            self.count_badge.setHidden(True)
+            self.ext_badge.setHidden(True)
+        elif mode == ItemType.COLLATION and self.mode != ItemType.COLLATION:
+            self.setCursor(Qt.CursorShape.PointingHandCursor)
+            self.thumb_button.setHidden(False)
+            self.cb_container.setHidden(True)
+            self.ext_badge.setHidden(True)
+            self.count_badge.setStyleSheet(ItemThumb.med_text_style)
+            self.count_badge.setHidden(False)
+            self.item_type_badge.setHidden(False)
+        elif mode == ItemType.TAG_GROUP and self.mode != ItemType.TAG_GROUP:
+            self.setCursor(Qt.CursorShape.PointingHandCursor)
+            self.thumb_button.setHidden(False)
+            # self.cb_container.setHidden(True)
+            self.ext_badge.setHidden(True)
+            self.count_badge.setHidden(False)
+            self.item_type_badge.setHidden(False)
+        self.mode = mode
+        # logging.info(f'Set Mode To: {self.mode}')
 
-	def set_extension(self, ext: str) -> None:
-		if ext and ext not in IMAGE_TYPES or ext in ['gif', 'apng']:
-			self.ext_badge.setHidden(False)
-			self.ext_badge.setText(ext.upper())
-			if ext in VIDEO_TYPES + AUDIO_TYPES:
-				self.count_badge.setHidden(False)
-		else:
-			if self.mode == ItemType.ENTRY:
-				self.ext_badge.setHidden(True)
-				self.count_badge.setHidden(True)
+    # def update_(self, thumb: QPixmap, size:QSize, ext:str, badges:list[QPixmap]) -> None:
+    # 	"""Updates the ItemThumb's visuals."""
+    # 	if thumb:
+    # 		pass
 
-	def set_count(self, count: str) -> None:
-		if count:
-			self.count_badge.setHidden(False)
-			self.count_badge.setText(count)
-		else:
-			if self.mode == ItemType.ENTRY:
-				self.ext_badge.setHidden(True)
-				self.count_badge.setHidden(True)
+    def set_extension(self, ext: str) -> None:
+        if ext and ext not in IMAGE_TYPES or ext in ["gif", "apng"]:
+            self.ext_badge.setHidden(False)
+            self.ext_badge.setText(ext.upper())
+            if ext in VIDEO_TYPES + AUDIO_TYPES:
+                self.count_badge.setHidden(False)
+        else:
+            if self.mode == ItemType.ENTRY:
+                self.ext_badge.setHidden(True)
+                self.count_badge.setHidden(True)
 
-	def update_thumb(self, timestamp: float, image: QPixmap = None):
-		"""Updates attributes of a thumbnail element."""
-		# logging.info(f'[GUI] Updating Thumbnail for element {id(element)}: {id(image) if image else None}')
-		if timestamp > ItemThumb.update_cutoff:
-			self.thumb_button.setIcon(image if image else QPixmap())
-			# element.repaint()
+    def set_count(self, count: str) -> None:
+        if count:
+            self.count_badge.setHidden(False)
+            self.count_badge.setText(count)
+        else:
+            if self.mode == ItemType.ENTRY:
+                self.ext_badge.setHidden(True)
+                self.count_badge.setHidden(True)
 
-	def update_size(self, timestamp: float, size: QSize):
-		"""Updates attributes of a thumbnail element."""
-		# logging.info(f'[GUI] Updating size for element {id(element)}:  {size.__str__()}')
-		if timestamp > ItemThumb.update_cutoff:
-			if self.thumb_button.iconSize != size:
-				self.thumb_button.setIconSize(size)
-				self.thumb_button.setMinimumSize(size)
-				self.thumb_button.setMaximumSize(size)
+    def update_thumb(self, timestamp: float, image: QPixmap = None):
+        """Updates attributes of a thumbnail element."""
+        # logging.info(f'[GUI] Updating Thumbnail for element {id(element)}: {id(image) if image else None}')
+        if timestamp > ItemThumb.update_cutoff:
+            self.thumb_button.setIcon(image if image else QPixmap())
+            # element.repaint()
 
-	def update_clickable(self, clickable: FunctionType = None):
-		"""Updates attributes of a thumbnail element."""
-		# logging.info(f'[GUI] Updating Click Event for element {id(element)}: {id(clickable) if clickable else None}')
-		try:
-			self.thumb_button.clicked.disconnect()
-		except RuntimeError:
-			pass
-		if clickable:
-			self.thumb_button.clicked.connect(clickable)
-	
-	def update_badges(self):
-		if self.mode == ItemType.ENTRY:
-			# logging.info(f'[UPDATE BADGES] ENTRY: {self.lib.get_entry(self.item_id)}')
-			# logging.info(f'[UPDATE BADGES] ARCH: {self.lib.get_entry(self.item_id).has_tag(self.lib, 0)}, FAV: {self.lib.get_entry(self.item_id).has_tag(self.lib, 1)}')
-			self.assign_archived(self.lib.get_entry(self.item_id).has_tag(self.lib, 0))
-			self.assign_favorite(self.lib.get_entry(self.item_id).has_tag(self.lib, 1))
+    def update_size(self, timestamp: float, size: QSize):
+        """Updates attributes of a thumbnail element."""
+        # logging.info(f'[GUI] Updating size for element {id(element)}:  {size.__str__()}')
+        if timestamp > ItemThumb.update_cutoff:
+            if self.thumb_button.iconSize != size:
+                self.thumb_button.setIconSize(size)
+                self.thumb_button.setMinimumSize(size)
+                self.thumb_button.setMaximumSize(size)
 
+    def update_clickable(self, clickable: FunctionType = None):
+        """Updates attributes of a thumbnail element."""
+        # logging.info(f'[GUI] Updating Click Event for element {id(element)}: {id(clickable) if clickable else None}')
+        try:
+            self.thumb_button.clicked.disconnect()
+        except RuntimeError:
+            pass
+        if clickable:
+            self.thumb_button.clicked.connect(clickable)
 
-	def set_item_id(self, id: int):
-		'''
-		also sets the filepath for the file opener
-		'''
-		self.item_id = id
-		if(id == -1):
-			return
-		entry = self.lib.get_entry(self.item_id)
-		filepath = os.path.normpath(f'{self.lib.library_dir}/{entry.path}/{entry.filename}')
-		self.opener.set_filepath(filepath)
+    def update_badges(self):
+        if self.mode == ItemType.ENTRY:
+            # logging.info(f'[UPDATE BADGES] ENTRY: {self.lib.get_entry(self.item_id)}')
+            # logging.info(f'[UPDATE BADGES] ARCH: {self.lib.get_entry(self.item_id).has_tag(self.lib, 0)}, FAV: {self.lib.get_entry(self.item_id).has_tag(self.lib, 1)}')
+            self.assign_archived(self.lib.get_entry(self.item_id).has_tag(self.lib, 0))
+            self.assign_favorite(self.lib.get_entry(self.item_id).has_tag(self.lib, 1))
 
-	def assign_favorite(self, value: bool):
-		# Switching mode to None to bypass mode-specific operations when the
-		# checkbox's state changes.
-		mode = self.mode
-		self.mode = None
-		self.isFavorite = value
-		self.favorite_badge.setChecked(value)
-		if not self.thumb_button.underMouse():
-			self.favorite_badge.setHidden(not self.isFavorite)
-		self.mode = mode
+    def set_item_id(self, id: int):
+        """
+        also sets the filepath for the file opener
+        """
+        self.item_id = id
+        if id == -1:
+            return
+        entry = self.lib.get_entry(self.item_id)
+        filepath = os.path.normpath(
+            f"{self.lib.library_dir}/{entry.path}/{entry.filename}"
+        )
+        self.opener.set_filepath(filepath)
 
-	def assign_archived(self, value: bool):
-		# Switching mode to None to bypass mode-specific operations when the
-		# checkbox's state changes.
-		mode = self.mode
-		self.mode = None
-		self.isArchived = value
-		self.archived_badge.setChecked(value)
-		if not self.thumb_button.underMouse():
-			self.archived_badge.setHidden(not self.isArchived)
-		self.mode = mode
+    def assign_favorite(self, value: bool):
+        # Switching mode to None to bypass mode-specific operations when the
+        # checkbox's state changes.
+        mode = self.mode
+        self.mode = None
+        self.isFavorite = value
+        self.favorite_badge.setChecked(value)
+        if not self.thumb_button.underMouse():
+            self.favorite_badge.setHidden(not self.isFavorite)
+        self.mode = mode
 
-	def show_check_badges(self, show: bool):
-		if self.mode != ItemType.TAG_GROUP:
-			self.favorite_badge.setHidden(
-				True if (not show and not self.isFavorite) else False)
-			self.archived_badge.setHidden(
-				True if (not show and not self.isArchived) else False)
+    def assign_archived(self, value: bool):
+        # Switching mode to None to bypass mode-specific operations when the
+        # checkbox's state changes.
+        mode = self.mode
+        self.mode = None
+        self.isArchived = value
+        self.archived_badge.setChecked(value)
+        if not self.thumb_button.underMouse():
+            self.archived_badge.setHidden(not self.isArchived)
+        self.mode = mode
 
-	def enterEvent(self, event: QEnterEvent) -> None:
-		self.show_check_badges(True)
-		return super().enterEvent(event)
+    def show_check_badges(self, show: bool):
+        if self.mode != ItemType.TAG_GROUP:
+            self.favorite_badge.setHidden(
+                True if (not show and not self.isFavorite) else False
+            )
+            self.archived_badge.setHidden(
+                True if (not show and not self.isArchived) else False
+            )
 
-	def leaveEvent(self, event: QEvent) -> None:
-		self.show_check_badges(False)
-		return super().leaveEvent(event)
+    def enterEvent(self, event: QEnterEvent) -> None:
+        self.show_check_badges(True)
+        return super().enterEvent(event)
 
-	def on_archived_check(self, value: bool):
-		# logging.info(f'Archived Check: {value}, Mode: {self.mode}')
-		if self.mode == ItemType.ENTRY:
-			self.isArchived = value
-			DEFAULT_META_TAG_FIELD = 8
-			temp = (ItemType.ENTRY,self.item_id)
-			if list(self.panel.driver.selected).count(temp) > 0: # Is the archived badge apart of the selection?
-				# Yes, then add archived tag to all selected.
-				for x in self.panel.driver.selected:
-					e = self.lib.get_entry(x[1])
-					if value:
-						self.archived_badge.setHidden(False)
-						e.add_tag(self.panel.driver.lib, 0, field_id=DEFAULT_META_TAG_FIELD, field_index=-1)
-					else:
-						e.remove_tag(self.panel.driver.lib, 0)
-			else:
-				# No, then add archived tag to the entry this badge is on.
-				e = self.lib.get_entry(self.item_id)
-				if value:
-					self.favorite_badge.setHidden(False)
-					e.add_tag(self.panel.driver.lib, 0, field_id=DEFAULT_META_TAG_FIELD, field_index=-1)
-				else:
-					e.remove_tag(self.panel.driver.lib, 0)
-			if self.panel.isOpen:
-				self.panel.update_widgets()
-			self.panel.driver.update_badges()
+    def leaveEvent(self, event: QEvent) -> None:
+        self.show_check_badges(False)
+        return super().leaveEvent(event)
 
+    def on_archived_check(self, value: bool):
+        # logging.info(f'Archived Check: {value}, Mode: {self.mode}')
+        if self.mode == ItemType.ENTRY:
+            self.isArchived = value
+            DEFAULT_META_TAG_FIELD = 8
+            temp = (ItemType.ENTRY, self.item_id)
+            if (
+                list(self.panel.driver.selected).count(temp) > 0
+            ):  # Is the archived badge apart of the selection?
+                # Yes, then add archived tag to all selected.
+                for x in self.panel.driver.selected:
+                    e = self.lib.get_entry(x[1])
+                    if value:
+                        self.archived_badge.setHidden(False)
+                        e.add_tag(
+                            self.panel.driver.lib,
+                            0,
+                            field_id=DEFAULT_META_TAG_FIELD,
+                            field_index=-1,
+                        )
+                    else:
+                        e.remove_tag(self.panel.driver.lib, 0)
+            else:
+                # No, then add archived tag to the entry this badge is on.
+                e = self.lib.get_entry(self.item_id)
+                if value:
+                    self.favorite_badge.setHidden(False)
+                    e.add_tag(
+                        self.panel.driver.lib,
+                        0,
+                        field_id=DEFAULT_META_TAG_FIELD,
+                        field_index=-1,
+                    )
+                else:
+                    e.remove_tag(self.panel.driver.lib, 0)
+            if self.panel.isOpen:
+                self.panel.update_widgets()
+            self.panel.driver.update_badges()
 
-	# def on_archived_uncheck(self):
-	# 	if self.mode == SearchItemType.ENTRY:
-	# 		self.isArchived = False
-	# 		e = self.lib.get_entry(self.item_id)
+    # def on_archived_uncheck(self):
+    # 	if self.mode == SearchItemType.ENTRY:
+    # 		self.isArchived = False
+    # 		e = self.lib.get_entry(self.item_id)
 
-	def on_favorite_check(self, value: bool):
-		# logging.info(f'Favorite Check: {value}, Mode: {self.mode}')
-		if self.mode == ItemType.ENTRY:
-			self.isFavorite = value
-			DEFAULT_META_TAG_FIELD = 8
-			temp = (ItemType.ENTRY,self.item_id)
-			if list(self.panel.driver.selected).count(temp) > 0: # Is the favorite badge apart of the selection?
-				# Yes, then add favorite tag to all selected.
-				for x in self.panel.driver.selected:
-					e = self.lib.get_entry(x[1])
-					if value:
-						self.favorite_badge.setHidden(False)
-						e.add_tag(self.panel.driver.lib, 1, field_id=DEFAULT_META_TAG_FIELD, field_index=-1)
-					else:
-						e.remove_tag(self.panel.driver.lib, 1)
-			else:
-				# No, then add favorite tag to the entry this badge is on.
-				e = self.lib.get_entry(self.item_id)
-				if value:
-					self.favorite_badge.setHidden(False)
-					e.add_tag(self.panel.driver.lib, 1, field_id=DEFAULT_META_TAG_FIELD, field_index=-1)
-				else:
-					e.remove_tag(self.panel.driver.lib, 1)
-			if self.panel.isOpen:
-				self.panel.update_widgets()
-			self.panel.driver.update_badges()
-				
+    def on_favorite_check(self, value: bool):
+        # logging.info(f'Favorite Check: {value}, Mode: {self.mode}')
+        if self.mode == ItemType.ENTRY:
+            self.isFavorite = value
+            DEFAULT_META_TAG_FIELD = 8
+            temp = (ItemType.ENTRY, self.item_id)
+            if (
+                list(self.panel.driver.selected).count(temp) > 0
+            ):  # Is the favorite badge apart of the selection?
+                # Yes, then add favorite tag to all selected.
+                for x in self.panel.driver.selected:
+                    e = self.lib.get_entry(x[1])
+                    if value:
+                        self.favorite_badge.setHidden(False)
+                        e.add_tag(
+                            self.panel.driver.lib,
+                            1,
+                            field_id=DEFAULT_META_TAG_FIELD,
+                            field_index=-1,
+                        )
+                    else:
+                        e.remove_tag(self.panel.driver.lib, 1)
+            else:
+                # No, then add favorite tag to the entry this badge is on.
+                e = self.lib.get_entry(self.item_id)
+                if value:
+                    self.favorite_badge.setHidden(False)
+                    e.add_tag(
+                        self.panel.driver.lib,
+                        1,
+                        field_id=DEFAULT_META_TAG_FIELD,
+                        field_index=-1,
+                    )
+                else:
+                    e.remove_tag(self.panel.driver.lib, 1)
+            if self.panel.isOpen:
+                self.panel.update_widgets()
+            self.panel.driver.update_badges()
 
-	# def on_favorite_uncheck(self):
-	# 	if self.mode == SearchItemType.ENTRY:
-	# 		self.isFavorite = False
-	# 		e = self.lib.get_entry(self.item_id)
-	# 		e.remove_tag(1)
+    # def on_favorite_uncheck(self):
+    # 	if self.mode == SearchItemType.ENTRY:
+    # 		self.isFavorite = False
+    # 		e = self.lib.get_entry(self.item_id)
+    # 		e.remove_tag(1)

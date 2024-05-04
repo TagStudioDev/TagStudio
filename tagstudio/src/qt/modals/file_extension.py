@@ -11,41 +11,44 @@ from src.qt.widgets import PanelWidget
 
 
 class FileExtensionModal(PanelWidget):
-	done = Signal()
-	def __init__(self, library:'Library'):
-		super().__init__()
-		self.lib = library
-		self.setWindowTitle(f'File Extensions')
-		self.setWindowModality(Qt.WindowModality.ApplicationModal)
-		self.setMinimumSize(200, 400)
-		self.root_layout = QVBoxLayout(self)
-		self.root_layout.setContentsMargins(6,6,6,6)
+    done = Signal()
 
-		self.table = QTableWidget(len(self.lib.ignored_extensions), 1)
-		self.table.horizontalHeader().setVisible(False)
-		self.table.verticalHeader().setVisible(False)
-		self.table.horizontalHeader().setStretchLastSection(True)
+    def __init__(self, library: "Library"):
+        super().__init__()
+        self.lib = library
+        self.setWindowTitle(f"File Extensions")
+        self.setWindowModality(Qt.WindowModality.ApplicationModal)
+        self.setMinimumSize(200, 400)
+        self.root_layout = QVBoxLayout(self)
+        self.root_layout.setContentsMargins(6, 6, 6, 6)
 
-		self.add_button = QPushButton()
-		self.add_button.setText('&Add Extension')
-		self.add_button.clicked.connect(self.add_item)
-		self.add_button.setDefault(True)
-		self.add_button.setMinimumWidth(100)
+        self.table = QTableWidget(len(self.lib.ignored_extensions), 1)
+        self.table.horizontalHeader().setVisible(False)
+        self.table.verticalHeader().setVisible(False)
+        self.table.horizontalHeader().setStretchLastSection(True)
 
-		self.root_layout.addWidget(self.table)
-		self.root_layout.addWidget(self.add_button, alignment=Qt.AlignmentFlag.AlignCenter)
-		self.refresh_list()
-	
-	def refresh_list(self):
-		for i, ext in enumerate(self.lib.ignored_extensions):
-			self.table.setItem(i, 0, QTableWidgetItem(ext))
-	
-	def add_item(self):
-		self.table.insertRow(self.table.rowCount())
-	
-	def save(self):
-		self.lib.ignored_extensions.clear()
-		for i in range(self.table.rowCount()):
-			ext = self.table.item(i, 0)
-			if ext and ext.text():
-				self.lib.ignored_extensions.append(ext.text())
+        self.add_button = QPushButton()
+        self.add_button.setText("&Add Extension")
+        self.add_button.clicked.connect(self.add_item)
+        self.add_button.setDefault(True)
+        self.add_button.setMinimumWidth(100)
+
+        self.root_layout.addWidget(self.table)
+        self.root_layout.addWidget(
+            self.add_button, alignment=Qt.AlignmentFlag.AlignCenter
+        )
+        self.refresh_list()
+
+    def refresh_list(self):
+        for i, ext in enumerate(self.lib.ignored_extensions):
+            self.table.setItem(i, 0, QTableWidgetItem(ext))
+
+    def add_item(self):
+        self.table.insertRow(self.table.rowCount())
+
+    def save(self):
+        self.lib.ignored_extensions.clear()
+        for i in range(self.table.rowCount()):
+            ext = self.table.item(i, 0)
+            if ext and ext.text():
+                self.lib.ignored_extensions.append(ext.text())
