@@ -563,9 +563,14 @@ class QtDriver(QObject):
                 break
                 # If the parent directory got moved, or deleted, prompt user for where to save.
             except FileNotFoundError:
-                logging.info("Library parent directory not found, prompting user to select the directory")
+                logging.info(
+                    "Library parent directory not found, prompting user to select the directory"
+                )
                 dir = QFileDialog.getExistingDirectory(
-                    None, "Library Location not found, please select location to save Library", "/", QFileDialog.ShowDirsOnly
+                    None,
+                    "Library Location not found, please select location to save Library",
+                    "/",
+                    QFileDialog.ShowDirsOnly,
                 )
                 if dir not in (None, ""):
                     self.lib.library_dir = dir
