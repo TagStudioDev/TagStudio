@@ -555,7 +555,20 @@ class QtDriver(QObject):
         logging.info(f"Saving Library...")
         self.main_window.statusbar.showMessage(f"Saving Library...")
         start_time = time.time()
-        self.lib.save_library_to_disk()
+        # This might still be able to error, if the selected directory deletes in a race condition or something silly like that
+        # Hence the loop, but if this is considered overkill, thats fair.
+        while True:
+            try:
+                self.lib.save_library_to_disk()
+                break
+                # If the parent directory got moved, or deleted, prompt user for where to save.
+            except FileNotFoundError:
+                logging.info("Library parent directory not found, prompting user to select the directory")
+                dir = QFileDialog.getExistingDirectory(
+                    None, "Library Location not found, please select location to save Library", "/", QFileDialog.ShowDirsOnly
+                )
+                if dir not in (None, ""):
+                    self.lib.library_dir = dir
         end_time = time.time()
         self.main_window.statusbar.showMessage(
             f"Library Saved! ({format_timespan(end_time - start_time)})"
