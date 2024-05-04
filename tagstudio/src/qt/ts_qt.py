@@ -79,9 +79,10 @@ class Consumer(QThread):
 		QThread.__init__(self)
 
 	def run(self):
-		while True:
+		self.active = True
+		while self.active:
 			try:
-				job = self.queue.get()
+				job = self.queue.get(timeout=0.2)
 				# print('Running job...')
 				# logging.info(*job[1])
 				job[0](*job[1])
@@ -249,7 +250,9 @@ class QtDriver(QObject):
 
 		file_menu.addSeparator()
 
-		file_menu.addAction(QAction('&Close Library', menu_bar))
+		close_library_action = QAction('&Close Library', menu_bar)
+		close_library_action.triggered.connect(lambda: self.close_library())
+		file_menu.addAction(close_library_action)
 
 		# Edit Menu ============================================================
 		new_tag_action = QAction('New &Tag', menu_bar)
@@ -383,7 +386,7 @@ class QtDriver(QObject):
 
 		# Check if a library should be opened on startup, args should override last_library
 		# TODO: check for behavior (open last, open default, start empty)
-		if self.args.open or self.settings.contains("last_library"):
+		if self.args.open or self.settings.contains("last_library") and os.path.isdir(self.settings.value("last_library")):
 			if self.args.open:
 				lib = self.args.open
 			elif self.settings.value("last_library"):
@@ -397,7 +400,7 @@ class QtDriver(QObject):
 
 
 	def callback_library_needed_check(self,func):
-		#Check if loaded library has valid path before executing the button function
+		"""Check if loaded library has valid path before executing the button function"""
 		if self.lib.library_dir:
 			func()
 
@@ -406,11 +409,16 @@ class QtDriver(QObject):
 		self.shutdown()
 		
 	def shutdown(self):
-		# Save Library on Application Exit
+		"""Save Library on Application Exit"""
 		if self.lib.library_dir:
 			self.save_library()
 			self.settings.setValue("last_library", self.lib.library_dir)
 			self.settings.sync()
+		logging.info("[SHUTDOWN] Ending Thumbnail Threads...")
+		for thread in self.thumb_threads:
+			thread.active=False
+			thread.quit()
+			thread.wait()
 		QApplication.quit()
 	
 	
@@ -421,6 +429,30 @@ class QtDriver(QObject):
 		self.lib.save_library_to_disk()
 		end_time = time.time()
 		self.main_window.statusbar.showMessage(f'Library Saved! ({format_timespan(end_time - start_time)})')
+
+	def close_library(self):
+		if self.lib.library_dir:
+			# TODO: it is kinda the same code from "save_library"...
+			logging.info(f'Closing & Saving Library...')
+			self.main_window.statusbar.showMessage(f'Closed & Saving Library...')
+			start_time = time.time()
+			self.lib.save_library_to_disk()
+			self.settings.setValue("last_library", self.lib.library_dir)
+			self.settings.sync()
+
+			self.lib.clear_internal_vars()
+			title_text = f'{self.base_title}'
+			self.main_window.setWindowTitle(title_text)
+
+			self.nav_frames: list[NavigationState] = []
+			self.cur_frame_idx: int = -1
+			self.cur_query: str = ''
+			self.selected.clear()
+			self.preview_panel.update_widgets()
+			self.filter_items()
+
+			end_time = time.time()
+			self.main_window.statusbar.showMessage(f'Library Saved and Closed! ({format_timespan(end_time - start_time)})')
 
 	def backup_library(self):
 		logging.info(f'Backing Up Library...')
@@ -509,6 +541,8 @@ class QtDriver(QObject):
 		iterator.value.connect(lambda x: pw.update_progress(x+1))
 		iterator.value.connect(lambda x: pw.update_label(f'Scanning Directories for New Files...\n{x+1} File{"s" if x+1 != 1 else ""} Searched, {len(self.lib.files_not_in_library)} New Files Found'))
 		r = CustomRunnable(lambda:iterator.run())
+		# r.done.connect(lambda: (pw.hide(), pw.deleteLater(), self.filter_items('')))
+		# vvv This one runs the macros when adding new files to the library.
 		r.done.connect(lambda: (pw.hide(), pw.deleteLater(), self.add_new_files_runnable()))
 		QThreadPool.globalInstance().start(r)
 		
@@ -562,12 +596,15 @@ class QtDriver(QObject):
 	def new_file_macros_runnable(self,  new_ids):
 		"""Threaded method that runs macros on a set of Entry IDs."""
 		# sleep(1)
-		logging.info(f'ANFR: {QThread.currentThread()}')
-		for i, id in enumerate(new_ids):
-			# pb.setValue(i)
-			# pb.setLabelText(f'Running Configured Macros on {i}/{len(new_ids)} New Entries')
-			# self.run_macro('autofill', id)
-			yield i
+		# logging.info(f'ANFR: {QThread.currentThread()}')
+		# for i, id in enumerate(new_ids):
+		# 	# pb.setValue(i)
+		# 	# pb.setLabelText(f'Running Configured Macros on {i}/{len(new_ids)} New Entries')
+		# 	# self.run_macro('autofill', id)
+		
+		# NOTE: I don't know. I don't know why it needs this. The whole program 
+		# falls apart if this method doesn't run, and it DOESN'T DO ANYTHING
+		yield 0
 		
 		# self.main_window.statusbar.showMessage('', 3)
 		

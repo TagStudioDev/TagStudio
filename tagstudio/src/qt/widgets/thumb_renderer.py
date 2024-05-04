@@ -10,7 +10,7 @@ import os
 from pathlib import Path
 
 import cv2
-from PIL import Image, ImageChops, UnidentifiedImageError, ImageQt, ImageDraw, ImageFont, ImageEnhance
+from PIL import Image, ImageChops, UnidentifiedImageError, ImageQt, ImageDraw, ImageFont, ImageEnhance, ImageOps
 from PySide6.QtCore import QObject, Signal, QSize
 from PySide6.QtGui import QPixmap
 from src.core.constants import PLAINTEXT_TYPES, VIDEO_TYPES, IMAGE_TYPES
@@ -60,9 +60,6 @@ class ThumbRenderer(QObject):
 	ext_font = ImageFont.truetype(os.path.normpath(
 		f'{Path(__file__).parent.parent.parent.parent}/resources/qt/fonts/Oxanium-Bold.ttf'), math.floor(12*font_pixel_ratio))
 
-	def __init__(self):
-		QObject.__init__(self)
-
 	def render(self, timestamp: float, filepath, base_size: tuple[int, int], pixelRatio: float, isLoading=False):
 		"""Renders an entry/element thumbnail for the GUI."""
 		adj_size: int = 1
@@ -106,6 +103,8 @@ class ThumbRenderer(QObject):
 						image = new_bg
 					if image.mode != 'RGB':
 						image = image.convert(mode='RGB')
+
+					image = ImageOps.exif_transpose(image)
 
 				# Videos =======================================================
 				elif extension in VIDEO_TYPES:
@@ -265,6 +264,8 @@ class ThumbRenderer(QObject):
 						image = new_bg
 					if image.mode != 'RGB':
 						image = image.convert(mode='RGB')
+					
+					image = ImageOps.exif_transpose(image)
 
 				# Videos =======================================================
 				elif extension in VIDEO_TYPES:

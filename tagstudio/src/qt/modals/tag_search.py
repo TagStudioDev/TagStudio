@@ -27,7 +27,7 @@ class TagSearchPanel(PanelWidget):
 		super().__init__()
 		self.lib: Library = library
 		# self.callback = callback
-		self.first_tag_id = -1
+		self.first_tag_id = None
 		self.tag_limit = 30
 		# self.selected_tag: int = 0
 		self.setMinimumSize(300, 400)
@@ -75,69 +75,64 @@ class TagSearchPanel(PanelWidget):
 	# 	self.search_field.setFocus()
 	
 	def on_return(self, text:str):
-		if text and self.first_tag_id >= 0:
+		if text and self.first_tag_id is not None:
 			# callback(self.first_tag_id)
 			self.tag_chosen.emit(self.first_tag_id)
 			self.search_field.setText('')
-			self.update_tags('')
+			self.update_tags()
 		else:
 			self.search_field.setFocus()
 			self.parentWidget().hide()
 
-	def update_tags(self, query:str):
+	def update_tags(self, query:str =''):
 		# for c in self.scroll_layout.children():
 		# 	c.widget().deleteLater()
-		while self.scroll_layout.itemAt(0):
+		while self.scroll_layout.count():
 			# logging.info(f"I'm deleting { self.scroll_layout.itemAt(0).widget()}")
 			self.scroll_layout.takeAt(0).widget().deleteLater()
-		
-		if query:
-			first_id_set = False
-			for tag_id in self.lib.search_tags(query, include_cluster=True)[:self.tag_limit-1]:
-				if not first_id_set:
-					self.first_tag_id = tag_id
-					first_id_set = True
 
-				c = QWidget()
-				l = QHBoxLayout(c)
-				l.setContentsMargins(0,0,0,0)
-				l.setSpacing(3)
-				tw = TagWidget(self.lib, self.lib.get_tag(tag_id), False, False)
-				ab = QPushButton()
-				ab.setMinimumSize(23, 23)
-				ab.setMaximumSize(23, 23)
-				ab.setText('+')
-				ab.setStyleSheet(
-								f'QPushButton{{'
-									f'background: {get_tag_color(ColorType.PRIMARY, self.lib.get_tag(tag_id).color)};'
-									# f'background-color: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 {get_tag_color(ColorType.PRIMARY, tag.color)}, stop:1.0 {get_tag_color(ColorType.BORDER, tag.color)});'
-									# f"border-color:{get_tag_color(ColorType.PRIMARY, tag.color)};"
-									f"color: {get_tag_color(ColorType.TEXT, self.lib.get_tag(tag_id).color)};"
-									f'font-weight: 600;'
-									f"border-color:{get_tag_color(ColorType.BORDER, self.lib.get_tag(tag_id).color)};"
-									f'border-radius: 6px;'
-									f'border-style:solid;'
-									f'border-width: {math.ceil(1*self.devicePixelRatio())}px;'
-									# f'padding-top: 1.5px;'
-									# f'padding-right: 4px;'
-									f'padding-bottom: 5px;'
-									# f'padding-left: 4px;'
-									f'font-size: 20px;'
-									f'}}'
-									f'QPushButton::hover'
-									f'{{'
-									f"border-color:{get_tag_color(ColorType.LIGHT_ACCENT, self.lib.get_tag(tag_id).color)};"
-									f"color: {get_tag_color(ColorType.DARK_ACCENT, self.lib.get_tag(tag_id).color)};"
-									f'background: {get_tag_color(ColorType.LIGHT_ACCENT, self.lib.get_tag(tag_id).color)};'
-									f'}}')
+		found_tags = self.lib.search_tags(query, include_cluster=True)[:self.tag_limit - 1]
+		self.first_tag_id = found_tags[0] if found_tags else None
 
-				ab.clicked.connect(lambda checked=False, x=tag_id: self.tag_chosen.emit(x))
+		for tag_id in found_tags:
+			c = QWidget()
+			l = QHBoxLayout(c)
+			l.setContentsMargins(0, 0, 0, 0)
+			l.setSpacing(3)
+			tw = TagWidget(self.lib, self.lib.get_tag(tag_id), False, False)
+			ab = QPushButton()
+			ab.setMinimumSize(23, 23)
+			ab.setMaximumSize(23, 23)
+			ab.setText('+')
+			ab.setStyleSheet(
+							f'QPushButton{{'
+								f'background: {get_tag_color(ColorType.PRIMARY, self.lib.get_tag(tag_id).color)};'
+								# f'background-color: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 {get_tag_color(ColorType.PRIMARY, tag.color)}, stop:1.0 {get_tag_color(ColorType.BORDER, tag.color)});'
+								# f"border-color:{get_tag_color(ColorType.PRIMARY, tag.color)};"
+								f"color: {get_tag_color(ColorType.TEXT, self.lib.get_tag(tag_id).color)};"
+								f'font-weight: 600;'
+								f"border-color:{get_tag_color(ColorType.BORDER, self.lib.get_tag(tag_id).color)};"
+								f'border-radius: 6px;'
+								f'border-style:solid;'
+								f'border-width: {math.ceil(1*self.devicePixelRatio())}px;'
+								# f'padding-top: 1.5px;'
+								# f'padding-right: 4px;'
+								f'padding-bottom: 5px;'
+								# f'padding-left: 4px;'
+								f'font-size: 20px;'
+								f'}}'
+								f'QPushButton::hover'
+								f'{{'
+								f"border-color:{get_tag_color(ColorType.LIGHT_ACCENT, self.lib.get_tag(tag_id).color)};"
+								f"color: {get_tag_color(ColorType.DARK_ACCENT, self.lib.get_tag(tag_id).color)};"
+								f'background: {get_tag_color(ColorType.LIGHT_ACCENT, self.lib.get_tag(tag_id).color)};'
+								f'}}')
 
-				l.addWidget(tw)
-				l.addWidget(ab)
-				self.scroll_layout.addWidget(c)
-		else:
-			self.first_tag_id = -1
+			ab.clicked.connect(lambda checked=False, x=tag_id: self.tag_chosen.emit(x))
+
+			l.addWidget(tw)
+			l.addWidget(ab)
+			self.scroll_layout.addWidget(c)
 
 		self.search_field.setFocus()
 	

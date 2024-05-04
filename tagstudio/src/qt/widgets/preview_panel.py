@@ -66,18 +66,18 @@ class PreviewPanel(QWidget):
 		splitter = QSplitter()
 		splitter.setOrientation(Qt.Orientation.Vertical)
 		splitter.setHandleWidth(12)
-		
-		self.preview_img = QPushButton()
-		self.preview_img.setMinimumSize(*self.img_button_size)
-		self.preview_img.setFlat(True)
 
-		self.preview_img.setContextMenuPolicy(Qt.ContextMenuPolicy.ActionsContextMenu)
-		self.opener = FileOpenerHelper('')
 		self.open_file_action = QAction('Open file', self)
 		self.open_explorer_action = QAction('Open file in explorer', self)
 
+		self.preview_img = QPushButton()
+		self.preview_img.setMinimumSize(*self.img_button_size)
+		self.preview_img.setFlat(True)
+		self.preview_img.setContextMenuPolicy(Qt.ContextMenuPolicy.ActionsContextMenu)
+
 		self.preview_img.addAction(self.open_file_action)
 		self.preview_img.addAction(self.open_explorer_action)
+
 		self.tr = ThumbRenderer()
 		self.tr.updated.connect(lambda ts, i, s: (self.preview_img.setIcon(i)))
 		self.tr.updated_ratio.connect(lambda ratio: (self.set_image_ratio(ratio), 
@@ -293,12 +293,16 @@ class PreviewPanel(QWidget):
 		window_title = ''
 		
 		# 0 Selected Items
-		if len(self.driver.selected) == 0:
-			if len(self.selected) != 0 or not self.initialized:
+		if not self.driver.selected:
+			if self.selected or not self.initialized:
 				self.file_label.setText(f"No Items Selected")
 				self.file_label.setFilePath('')
+				self.file_label.setCursor(Qt.CursorShape.ArrowCursor)
+
 				self.dimensions_label.setText("")
 				self.preview_img.setContextMenuPolicy(Qt.ContextMenuPolicy.NoContextMenu)
+				self.preview_img.setCursor(Qt.CursorShape.ArrowCursor)
+
 				ratio: float = self.devicePixelRatio()
 				self.tr.render_big(time.time(), '', (512, 512), ratio, True)
 				try:
@@ -318,16 +322,18 @@ class PreviewPanel(QWidget):
 			if self.driver.selected[0][0] == ItemType.ENTRY:
 				item: Entry = self.lib.get_entry(self.driver.selected[0][1])
 				# If a new selection is made, update the thumbnail and filepath.
-				if (len(self.selected) == 0 
-						or self.selected != self.driver.selected):
+				if not self.selected or self.selected != self.driver.selected:
 					filepath = os.path.normpath(f'{self.lib.library_dir}/{item.path}/{item.filename}')
 					self.file_label.setFilePath(filepath)
 					window_title = filepath
 					ratio: float = self.devicePixelRatio()
 					self.tr.render_big(time.time(), filepath, (512, 512), ratio)
 					self.file_label.setText("\u200b".join(filepath))
+					self.file_label.setCursor(Qt.CursorShape.PointingHandCursor)
 
 					self.preview_img.setContextMenuPolicy(Qt.ContextMenuPolicy.ActionsContextMenu)
+					self.preview_img.setCursor(Qt.CursorShape.PointingHandCursor)
+
 					self.opener = FileOpenerHelper(filepath)
 					self.open_file_action.triggered.connect(self.opener.open_file)
 					self.open_explorer_action.triggered.connect(self.opener.open_explorer)
@@ -404,9 +410,13 @@ class PreviewPanel(QWidget):
 		elif len(self.driver.selected) > 1:
 			if self.selected != self.driver.selected:
 				self.file_label.setText(f"{len(self.driver.selected)} Items Selected")
+				self.file_label.setCursor(Qt.CursorShape.ArrowCursor)
 				self.file_label.setFilePath('')
 				self.dimensions_label.setText("")
+
 				self.preview_img.setContextMenuPolicy(Qt.ContextMenuPolicy.NoContextMenu)
+				self.preview_img.setCursor(Qt.CursorShape.ArrowCursor)
+
 				ratio: float = self.devicePixelRatio()
 				self.tr.render_big(time.time(), '', (512, 512), ratio, True)
 				try:

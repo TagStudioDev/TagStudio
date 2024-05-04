@@ -690,7 +690,7 @@ class Library:
 							fields = []
 							if 'fields' in entry:
 								# Cast JSON str keys to ints
-								for f in fields:
+								for f in entry['fields']:
 									f[int(list(f.keys())[0])
 										] = f[list(f.keys())[0]]
 									del f[list(f.keys())[0]]
@@ -960,12 +960,15 @@ class Library:
 		# print('')
 
 		# Sorts the files by date modified, descending.
-		try:
-			self.files_not_in_library = sorted(
-				self.files_not_in_library, key=lambda t: -os.stat(os.path.normpath(self.library_dir + '/' + t)).st_ctime)
-		except FileExistsError:
-			print(f'[LIBRARY] [ERROR] Couldn\'t sort files, some were moved during the scanning/sorting process.')
-			pass
+		if len(self.files_not_in_library) <= 100000:
+			try:
+				self.files_not_in_library = sorted(
+					self.files_not_in_library, key=lambda t: -os.stat(os.path.normpath(self.library_dir + '/' + t)).st_ctime)
+			except (FileExistsError, FileNotFoundError):
+				print(f'[LIBRARY][ERROR] Couldn\'t sort files, some were moved during the scanning/sorting process.')
+				pass
+		else:
+			print(f'[LIBRARY][INFO] Not bothering to sort files because there\'s OVER 100,000! Better sorting methods will be added in the future.')
 
 	def refresh_missing_files(self):
 		"""Tracks the number of Entries that point to an invalid file path."""
@@ -1572,7 +1575,8 @@ class Library:
 
 		# NOTE: I'd expect a blank query to return all with the other implementation, but
 		# it misses stuff like Archive (id 0) so here's this as a catch-all.
-		if query == '':
+		query = query.strip()
+		if not query:
 			all: list[int] = []
 			for tag in self.tags:
 				if ignore_builtin and tag.id >= 1000:
