@@ -2,7 +2,6 @@
 # Licensed under the GPL-3.0 License.
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
-
 from PySide6.QtCore import Signal, Qt, QSize
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLineEdit, QScrollArea, QFrame
 
@@ -13,6 +12,7 @@ from src.qt.modals import BuildTagPanel
 
 class TagDatabasePanel(PanelWidget):
 	tag_chosen = Signal(int)
+
 	def __init__(self, library):
 		super().__init__()
 		self.lib: Library = library
@@ -75,41 +75,31 @@ class TagDatabasePanel(PanelWidget):
 			self.search_field.setFocus()
 			self.parentWidget().hide()
 
-	def update_tags(self, query:str):
-		# for c in self.scroll_layout.children():
-		# 	c.widget().deleteLater()
+	def update_tags(self, query: str):
+		# TODO: Look at recycling rather than deleting and reinitializing
 		while self.scroll_layout.itemAt(0):
-			# logging.info(f"I'm deleting { self.scroll_layout.itemAt(0).widget()}")
 			self.scroll_layout.takeAt(0).widget().deleteLater()
-		
+
+		# If there is a query, get a list of tag_ids that match, otherwise return all
 		if query:
-			first_id_set = False
-			for tag_id in self.lib.search_tags(query, include_cluster=True)[:self.tag_limit-1]:
-				if not first_id_set:
-					self.first_tag_id = tag_id
-					first_id_set = True
-				c = QWidget()
-				l = QHBoxLayout(c)
-				l.setContentsMargins(0,0,0,0)
-				l.setSpacing(3)
-				tw = TagWidget(self.lib, self.lib.get_tag(tag_id), True, False)
-				tw.on_edit.connect(lambda checked=False, t=self.lib.get_tag(tag_id): (self.edit_tag(t.id)))
-				l.addWidget(tw)
-				self.scroll_layout.addWidget(c)
+			tags = self.lib.search_tags(query, include_cluster=True)[:self.tag_limit-1]
 		else:
-			first_id_set = False
-			for tag in self.lib.tags:
-				if not first_id_set:
-					self.first_tag_id = tag.id
-					first_id_set = True
-				c = QWidget()
-				l = QHBoxLayout(c)
-				l.setContentsMargins(0,0,0,0)
-				l.setSpacing(3)
-				tw = TagWidget(self.lib, tag, True, False)
-				tw.on_edit.connect(lambda checked=False, t=tag: (self.edit_tag(t.id)))
-				l.addWidget(tw)
-				self.scroll_layout.addWidget(c)
+			# Get tag ids to keep this behaviorally identical
+			tags = [t.id for t in self.lib.tags]
+
+		first_id_set = False
+		for tag_id in tags:
+			if not first_id_set:
+				self.first_tag_id = tag_id
+				first_id_set = True
+			container = QWidget()
+			row = QHBoxLayout(container)
+			row.setContentsMargins(0, 0, 0, 0)
+			row.setSpacing(3)
+			tw = TagWidget(self.lib, self.lib.get_tag(tag_id), True, False)
+			tw.on_edit.connect(lambda checked=False, t=self.lib.get_tag(tag_id): (self.edit_tag(t.id)))
+			row.addWidget(tw)
+			self.scroll_layout.addWidget(container)
 
 		self.search_field.setFocus()
 	
@@ -123,9 +113,7 @@ class TagDatabasePanel(PanelWidget):
 							   has_save=True)
 		# self.edit_modal.widget.update_display_name.connect(lambda t: self.edit_modal.title_widget.setText(t))
 		#TODO Check Warning: Expected type 'BuildTagPanel', got 'PanelWidget' instead
-		panel: BuildTagPanel = self.edit_modal.widget
 		self.edit_modal.saved.connect(lambda: self.edit_tag_callback(btp))
-		# panel.tag_updated.connect(lambda tag: self.lib.update_tag(tag))
 		self.edit_modal.show()
 	
 	def edit_tag_callback(self, btp:BuildTagPanel):
