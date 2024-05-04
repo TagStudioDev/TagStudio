@@ -551,12 +551,13 @@ class QtDriver(QObject):
             thread.wait()
         QApplication.quit()
 
-    def save_library(self):
+    def save_library(self, show_status=True):
         logging.info(f"Saving Library...")
-        self.main_window.statusbar.showMessage(f"Saving Library...")
-        start_time = time.time()
-        # This might still be able to error, if the selected directory deletes in a race condition or something silly like that
-        # Hence the loop, but if this is considered overkill, thats fair.
+        if show_status:
+            self.main_window.statusbar.showMessage(f"Saving Library...")
+            start_time = time.time()
+        # This might still be able to error, if the selected directory deletes in a race condition
+        # or something silly like that. Hence the loop, but if this is considered overkill, thats fair.
         while True:
             try:
                 self.lib.save_library_to_disk()
@@ -574,18 +575,18 @@ class QtDriver(QObject):
                 )
                 if dir not in (None, ""):
                     self.lib.library_dir = dir
-        end_time = time.time()
-        self.main_window.statusbar.showMessage(
-            f"Library Saved! ({format_timespan(end_time - start_time)})"
-        )
+        if show_status:
+            end_time = time.time()
+            self.main_window.statusbar.showMessage(
+                f"Library Saved! ({format_timespan(end_time - start_time)})"
+            )
 
     def close_library(self):
         if self.lib.library_dir:
-            # TODO: it is kinda the same code from "save_library"...
-            logging.info(f"Closing & Saving Library...")
-            self.main_window.statusbar.showMessage(f"Closed & Saving Library...")
+            logging.info(f"Closing Library...")
+            self.main_window.statusbar.showMessage(f"Closing & Saving Library...")
             start_time = time.time()
-            self.lib.save_library_to_disk()
+            self.save_library(show_status=False)
             self.settings.setValue("last_library", self.lib.library_dir)
             self.settings.sync()
 
