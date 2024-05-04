@@ -64,7 +64,7 @@ class TagBoxWidget(FieldWidget):
 		tsp = TagSearchPanel(self.lib)
 		tsp.tag_chosen.connect(lambda x: self.add_tag_callback(x))
 		self.add_modal = PanelModal(tsp, title, 'Add Tags')
-		self.add_button.clicked.connect(self.add_modal.show)
+		self.add_button.clicked.connect(lambda: (tsp.update_tags() ,self.add_modal.show()))
 
 		self.set_tags(tags)
 		# self.add_button.setHidden(True)
