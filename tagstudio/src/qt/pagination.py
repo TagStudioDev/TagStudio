@@ -189,7 +189,7 @@ class Pagination(QWidget, QObject):
             # Set Ellipses Sizes
             # I do not know where these magic values were derived from, but
             # this is better than the chain elif's that were here before
-            if page_count >= 8 and page_count <= 11:
+            if 8 <= page_count <= 11:
                 end_scale = max(1, page_count - index - 6)
                 srt_scale = max(1, index - 5)
             elif page_count > 11:
