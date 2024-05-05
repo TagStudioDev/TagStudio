@@ -523,6 +523,7 @@ class QtDriver(QObject):
                 QColor("#9782ff"),
             )
             self.open_library(lib)
+            self.lib.refresh_on_changes(self.filter_items)
 
         if self.args.ci:
             # gracefully terminate the app in CI environment
