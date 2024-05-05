@@ -38,8 +38,8 @@ class Entry:
 			     fields: list[dict]) -> None:
 		# Required Fields ======================================================
 		self.id = int(id)
-		self.filename = Path(filename)
-		self.path = Path(path)
+		self.filename = Path(filename).resolve()
+		self.path = Path(path).resolve()
 		self.fields = fields
 		self.type = None
 
@@ -1812,11 +1812,11 @@ class Library:
 
 	def update_entry_path(self, entry_id: int, path: str|Path) -> None:
 		"""Updates an Entry's path."""
-		self.get_entry(entry_id).path = Path(path)
+		self.get_entry(entry_id).path = Path(path).resolve()
 
 	def update_entry_filename(self, entry_id: int, filename: str|Path) -> None:
 		"""Updates an Entry's filename."""
-		self.get_entry(entry_id).filename = Path(filename)
+		self.get_entry(entry_id).filename = Path(filename).resolve()
 
 	def update_entry_field(self, entry_id: int, field_index: int, content, mode: str):
 		"""Updates an Entry's specific field. Modes: append, remove, replace."""
