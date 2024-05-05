@@ -187,13 +187,11 @@ class Pagination(QWidget, QObject):
                 self.next_button.setDisabled(False)
 
             # Set Ellipses Sizes
-            # I do not know where these magic values were derived from, but 
+            # I do not know where these magic values were derived from, but
             # this is better than the chain elif's that were here before
             if page_count >= 8 and page_count <= 11:
-                end_scale = max(1,page_count - index - 6)
-                end_size = self.button_size.width() * end_scale + (
-                    3 * (end_scale - 1)
-                )
+                end_scale = max(1, page_count - index - 6)
+                end_size = self.button_size.width() * end_scale + (3 * (end_scale - 1))
                 self.end_ellipses.setMinimumWidth(end_size)
                 self.end_ellipses.setMaximumWidth(end_size)
 
@@ -211,7 +209,9 @@ class Pagination(QWidget, QObject):
                 self.end_ellipses.setMaximumWidth(end_size)
 
                 start_scale = max(1, (7 - (end_page - index)))
-                start_size = self.button_size.width() * start_scale + (3 * (start_scale - 1))
+                start_size = self.button_size.width() * start_scale + (
+                    3 * (start_scale - 1)
+                )
                 self.start_ellipses.setMinimumWidth(start_size)
                 self.start_ellipses.setMaximumWidth(start_size)
 
