@@ -133,12 +133,18 @@ class Pagination(QWidget, QObject):
         # self.update_buttons(page_count=9, index=0)
 
     def update_buttons(self, page_count: int, index: int, emit: bool = True):
+        # Guard
+        if index < 0:
+            raise ValueError("Negative index detected")
+
         # Screw it
         for i in range(0, 10):
             if self.start_buffer_layout.itemAt(i):
                 self.start_buffer_layout.itemAt(i).widget().setHidden(True)
             if self.end_buffer_layout.itemAt(i):
                 self.end_buffer_layout.itemAt(i).widget().setHidden(True)
+
+        end_page = page_count - 1
 
         if page_count <= 1:
             # Hide everything if there are only one or less pages.
@@ -172,7 +178,7 @@ class Pagination(QWidget, QObject):
                 # self.start_buffer_layout.setContentsMargins(3,0,3,0)
                 self._assign_click(self.prev_button, index - 1)
                 self.prev_button.setDisabled(False)
-            if index == page_count - 1:
+            if index == end_page:
                 self.next_button.setDisabled(True)
                 # self.end_buffer_layout.setContentsMargins(0,0,0,0)
             else:
@@ -181,201 +187,33 @@ class Pagination(QWidget, QObject):
                 self.next_button.setDisabled(False)
 
             # Set Ellipses Sizes
-            if page_count == 8:
-                if index == 0:
-                    self.end_ellipses.setMinimumWidth(self.button_size.width() * 2 + 3)
-                    self.end_ellipses.setMaximumWidth(self.button_size.width() * 2 + 3)
-                else:
-                    self.end_ellipses.setMinimumWidth(self.button_size.width())
-                    self.end_ellipses.setMaximumWidth(self.button_size.width())
-                if index == page_count - 1:
-                    self.start_ellipses.setMinimumWidth(
-                        self.button_size.width() * 2 + 3
-                    )
-                    self.start_ellipses.setMaximumWidth(
-                        self.button_size.width() * 2 + 3
-                    )
-                else:
-                    self.start_ellipses.setMinimumWidth(self.button_size.width())
-                    self.start_ellipses.setMaximumWidth(self.button_size.width())
-            elif page_count == 9:
-                if index == 0:
-                    self.end_ellipses.setMinimumWidth(self.button_size.width() * 3 + 6)
-                    self.end_ellipses.setMaximumWidth(self.button_size.width() * 3 + 6)
-                elif index == 1:
-                    self.end_ellipses.setMinimumWidth(self.button_size.width() * 2 + 3)
-                    self.end_ellipses.setMaximumWidth(self.button_size.width() * 2 + 3)
-                else:
-                    self.end_ellipses.setMinimumWidth(self.button_size.width())
-                    self.end_ellipses.setMaximumWidth(self.button_size.width())
-                if index == page_count - 1:
-                    self.start_ellipses.setMinimumWidth(
-                        self.button_size.width() * 3 + 6
-                    )
-                    self.start_ellipses.setMaximumWidth(
-                        self.button_size.width() * 3 + 6
-                    )
-                elif index == page_count - 2:
-                    self.start_ellipses.setMinimumWidth(
-                        self.button_size.width() * 2 + 3
-                    )
-                    self.start_ellipses.setMaximumWidth(
-                        self.button_size.width() * 2 + 3
-                    )
-                else:
-                    self.start_ellipses.setMinimumWidth(self.button_size.width())
-                    self.start_ellipses.setMaximumWidth(self.button_size.width())
-            elif page_count == 10:
-                if index == 0:
-                    self.end_ellipses.setMinimumWidth(self.button_size.width() * 4 + 9)
-                    self.end_ellipses.setMaximumWidth(self.button_size.width() * 4 + 9)
-                elif index == 1:
-                    self.end_ellipses.setMinimumWidth(self.button_size.width() * 3 + 6)
-                    self.end_ellipses.setMaximumWidth(self.button_size.width() * 3 + 6)
-                elif index == 2:
-                    self.end_ellipses.setMinimumWidth(self.button_size.width() * 2 + 3)
-                    self.end_ellipses.setMaximumWidth(self.button_size.width() * 2 + 3)
-                else:
-                    self.end_ellipses.setMinimumWidth(self.button_size.width())
-                    self.end_ellipses.setMaximumWidth(self.button_size.width())
-                if index == page_count - 1:
-                    self.start_ellipses.setMinimumWidth(
-                        self.button_size.width() * 4 + 9
-                    )
-                    self.start_ellipses.setMaximumWidth(
-                        self.button_size.width() * 4 + 9
-                    )
-                elif index == page_count - 2:
-                    self.start_ellipses.setMinimumWidth(
-                        self.button_size.width() * 3 + 6
-                    )
-                    self.start_ellipses.setMaximumWidth(
-                        self.button_size.width() * 3 + 6
-                    )
-                elif index == page_count - 3:
-                    self.start_ellipses.setMinimumWidth(
-                        self.button_size.width() * 2 + 3
-                    )
-                    self.start_ellipses.setMaximumWidth(
-                        self.button_size.width() * 2 + 3
-                    )
-                else:
-                    self.start_ellipses.setMinimumWidth(self.button_size.width())
-                    self.start_ellipses.setMaximumWidth(self.button_size.width())
-            elif page_count == 11:
-                if index == 0:
-                    self.end_ellipses.setMinimumWidth(self.button_size.width() * 5 + 12)
-                    self.end_ellipses.setMaximumWidth(self.button_size.width() * 5 + 12)
-                elif index == 1:
-                    self.end_ellipses.setMinimumWidth(self.button_size.width() * 4 + 9)
-                    self.end_ellipses.setMaximumWidth(self.button_size.width() * 4 + 9)
-                elif index == 2:
-                    self.end_ellipses.setMinimumWidth(self.button_size.width() * 3 + 6)
-                    self.end_ellipses.setMaximumWidth(self.button_size.width() * 3 + 6)
-                elif index == 3:
-                    self.end_ellipses.setMinimumWidth(self.button_size.width() * 2 + 3)
-                    self.end_ellipses.setMaximumWidth(self.button_size.width() * 2 + 3)
-                else:
-                    self.end_ellipses.setMinimumWidth(self.button_size.width())
-                    self.end_ellipses.setMaximumWidth(self.button_size.width())
-                if index == page_count - 1:
-                    self.start_ellipses.setMinimumWidth(
-                        self.button_size.width() * 5 + 12
-                    )
-                    self.start_ellipses.setMaximumWidth(
-                        self.button_size.width() * 5 + 12
-                    )
-                elif index == page_count - 2:
-                    self.start_ellipses.setMinimumWidth(
-                        self.button_size.width() * 4 + 9
-                    )
-                    self.start_ellipses.setMaximumWidth(
-                        self.button_size.width() * 4 + 9
-                    )
-                elif index == page_count - 3:
-                    self.start_ellipses.setMinimumWidth(
-                        self.button_size.width() * 3 + 6
-                    )
-                    self.start_ellipses.setMaximumWidth(
-                        self.button_size.width() * 3 + 6
-                    )
-                elif index == page_count - 4:
-                    self.start_ellipses.setMinimumWidth(
-                        self.button_size.width() * 2 + 3
-                    )
-                    self.start_ellipses.setMaximumWidth(
-                        self.button_size.width() * 2 + 3
-                    )
-                else:
-                    self.start_ellipses.setMinimumWidth(self.button_size.width())
-                    self.start_ellipses.setMaximumWidth(self.button_size.width())
+            # I do not know where these magic values were derived from, but 
+            # this is better than the chain elif's that were here before
+            if page_count >= 8 and page_count <= 11:
+                end_scale = max(1,page_count - index - 6)
+                end_size = self.button_size.width() * end_scale + (
+                    3 * (end_scale - 1)
+                )
+                self.end_ellipses.setMinimumWidth(end_size)
+                self.end_ellipses.setMaximumWidth(end_size)
+
+                start_scale = max(1, index - 5)
+                start_size = self.button_size.width() * start_scale + (
+                    3 * (start_scale - 1)
+                )
+                self.start_ellipses.setMinimumWidth(start_size)
+                self.start_ellipses.setMaximumWidth(start_size)
+
             elif page_count > 11:
-                if index == 0:
-                    self.end_ellipses.setMinimumWidth(self.button_size.width() * 7 + 18)
-                    self.end_ellipses.setMaximumWidth(self.button_size.width() * 7 + 18)
-                elif index == 1:
-                    self.end_ellipses.setMinimumWidth(self.button_size.width() * 6 + 15)
-                    self.end_ellipses.setMaximumWidth(self.button_size.width() * 6 + 15)
-                elif index == 2:
-                    self.end_ellipses.setMinimumWidth(self.button_size.width() * 5 + 12)
-                    self.end_ellipses.setMaximumWidth(self.button_size.width() * 5 + 12)
-                elif index == 3:
-                    self.end_ellipses.setMinimumWidth(self.button_size.width() * 4 + 9)
-                    self.end_ellipses.setMaximumWidth(self.button_size.width() * 4 + 9)
-                elif index == 4:
-                    self.end_ellipses.setMinimumWidth(self.button_size.width() * 3 + 6)
-                    self.end_ellipses.setMaximumWidth(self.button_size.width() * 3 + 6)
-                elif index == 5:
-                    self.end_ellipses.setMinimumWidth(self.button_size.width() * 2 + 3)
-                    self.end_ellipses.setMaximumWidth(self.button_size.width() * 2 + 3)
-                else:
-                    self.end_ellipses.setMinimumWidth(self.button_size.width())
-                    self.end_ellipses.setMaximumWidth(self.button_size.width())
-                if index == page_count - 1:
-                    self.start_ellipses.setMinimumWidth(
-                        self.button_size.width() * 7 + 18
-                    )
-                    self.start_ellipses.setMaximumWidth(
-                        self.button_size.width() * 7 + 18
-                    )
-                elif index == page_count - 2:
-                    self.start_ellipses.setMinimumWidth(
-                        self.button_size.width() * 6 + 15
-                    )
-                    self.start_ellipses.setMaximumWidth(
-                        self.button_size.width() * 6 + 15
-                    )
-                elif index == page_count - 3:
-                    self.start_ellipses.setMinimumWidth(
-                        self.button_size.width() * 5 + 12
-                    )
-                    self.start_ellipses.setMaximumWidth(
-                        self.button_size.width() * 5 + 12
-                    )
-                elif index == page_count - 4:
-                    self.start_ellipses.setMinimumWidth(
-                        self.button_size.width() * 4 + 9
-                    )
-                    self.start_ellipses.setMaximumWidth(
-                        self.button_size.width() * 4 + 9
-                    )
-                elif index == page_count - 5:
-                    self.start_ellipses.setMinimumWidth(
-                        self.button_size.width() * 3 + 6
-                    )
-                    self.start_ellipses.setMaximumWidth(
-                        self.button_size.width() * 3 + 6
-                    )
-                elif index == page_count - 6:
-                    self.start_ellipses.setMinimumWidth(
-                        self.button_size.width() * 2 + 3
-                    )
-                    self.start_ellipses.setMaximumWidth(
-                        self.button_size.width() * 2 + 3
-                    )
-                else:
-                    self.start_ellipses.setMinimumWidth(self.button_size.width())
-                    self.start_ellipses.setMaximumWidth(self.button_size.width())
+                end_scale = max(1, 7 - index)
+                end_size = self.button_size.width() * end_scale + (3 * (end_scale - 1))
+                self.end_ellipses.setMinimumWidth(end_size)
+                self.end_ellipses.setMaximumWidth(end_size)
+
+                start_scale = max(1, (7 - (end_page - index)))
+                start_size = self.button_size.width() * start_scale + (3 * (start_scale - 1))
+                self.start_ellipses.setMinimumWidth(start_size)
+                self.start_ellipses.setMaximumWidth(start_size)
 
             # Enable/Disable Ellipses
             # if index <= max(self.buffer_page_count, 5)+1:
@@ -588,11 +426,13 @@ class Pagination(QWidget, QObject):
 
         # 	self.setHidden(False)
 
+        # TODO: See if this can be pulled to the start of the function to reduce a level of nesting
         self.validator.setTop(page_count)
         # if self.current_page_index != index:
         if emit:
             print(f"[PAGINATION] Emitting {index}")
             self.index.emit(index)
+
         self.current_page_index = index
         self.page_count = page_count
 
