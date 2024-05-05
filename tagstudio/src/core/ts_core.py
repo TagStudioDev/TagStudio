@@ -6,6 +6,7 @@
 
 import json
 import os
+from pathlib import Path
 
 from src.core.library import Entry, Library
 
@@ -70,16 +71,19 @@ class TagStudioCore:
 		"""
 		json_dump = {}
 		info = {}
+		filepath = Path(filepath)
+		filepath = filepath.parent / (filepath.stem + '.json')
 
 		# NOTE: This fixes an unknown (recent?) bug in Gallery-DL where Instagram sidecar
 		# files may be downloaded with indices starting at 1 rather than 0, unlike the posts.
 		# This may only occur with sidecar files that are downloaded separate from posts.
 		if source == 'instagram':
-			if not os.path.isfile(os.path.normpath(filepath + ".json")):
-				filepath = filepath[:-16] + '1' + filepath[-15:]
+			if not filepath.is_file():
+				newstem = filepath.stem[:-16] + '1' + filepath[-15:]
+				filepath = filepath.parent / (newstem + '.json')
 
 		try:
-			with open(os.path.normpath(filepath + ".json"), "r", encoding="utf8") as f:
+			with open(filepath, "r", encoding="utf8") as f:
 				json_dump = json.load(f)
 
 				if json_dump:
@@ -143,17 +147,17 @@ class TagStudioCore:
 	def match_conditions(self, entry_id: int) -> None:
 		"""Matches defined conditions against a file to add Entry data."""
 
-		cond_file = os.path.normpath(f'{self.lib.library_dir}/{TS_FOLDER_NAME}/conditions.json')
+		cond_file = self.lib.library_dir / TS_FOLDER_NAME / 'conditions.json'
 		# TODO: Make this stored somewhere better instead of temporarily in this JSON file.
 		entry: Entry = self.lib.get_entry(entry_id)
 		try:
-			if os.path.isfile(cond_file):
+			if cond_file.is_file():
 				with open(cond_file, "r", encoding="utf8") as f:
 					json_dump = json.load(f)
 					for c in json_dump['conditions']:
 						match: bool = False
 						for path_c in c['path_conditions']:
-							if os.path.normpath(path_c) in entry.path:
+							if str(Path(path_c).resolve()) in str(entry.path):
 								match = True
 								break
 						if match:
@@ -203,7 +207,7 @@ class TagStudioCore:
 		"""
 		try:
 			entry = self.lib.get_entry(entry_id)
-			stubs = entry.filename.rsplit('_', 3)
+			stubs = str(entry.filename).rsplit('_', 3)
 			# print(stubs)
 			# source, author = os.path.split(entry.path)
 			url = f"www.twitter.com/{stubs[0]}/status/{stubs[-3]}/photo/{stubs[-2]}"
@@ -218,7 +222,7 @@ class TagStudioCore:
 		"""
 		try:
 			entry = self.lib.get_entry(entry_id)
-			stubs = entry.filename.rsplit('_', 2)
+			stubs = str(entry.filename).rsplit('_', 2)
 			# stubs[0] = stubs[0].replace(f"{author}_", '', 1)
 			# print(stubs)
 			# NOTE: Both Instagram usernames AND their ID can have underscores in them,
