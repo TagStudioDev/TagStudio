@@ -191,29 +191,18 @@ class Pagination(QWidget, QObject):
             # this is better than the chain elif's that were here before
             if page_count >= 8 and page_count <= 11:
                 end_scale = max(1, page_count - index - 6)
-                end_size = self.button_size.width() * end_scale + (3 * (end_scale - 1))
-                self.end_ellipses.setMinimumWidth(end_size)
-                self.end_ellipses.setMaximumWidth(end_size)
-
-                start_scale = max(1, index - 5)
-                start_size = self.button_size.width() * start_scale + (
-                    3 * (start_scale - 1)
-                )
-                self.start_ellipses.setMinimumWidth(start_size)
-                self.start_ellipses.setMaximumWidth(start_size)
-
+                srt_scale = max(1, index - 5)
             elif page_count > 11:
                 end_scale = max(1, 7 - index)
+                srt_scale = max(1, (7 - (end_page - index)))
+
+            if page_count >= 8:
                 end_size = self.button_size.width() * end_scale + (3 * (end_scale - 1))
+                srt_size = self.button_size.width() * srt_scale + (3 * (srt_scale - 1))
                 self.end_ellipses.setMinimumWidth(end_size)
                 self.end_ellipses.setMaximumWidth(end_size)
-
-                start_scale = max(1, (7 - (end_page - index)))
-                start_size = self.button_size.width() * start_scale + (
-                    3 * (start_scale - 1)
-                )
-                self.start_ellipses.setMinimumWidth(start_size)
-                self.start_ellipses.setMaximumWidth(start_size)
+                self.start_ellipses.setMinimumWidth(srt_size)
+                self.start_ellipses.setMaximumWidth(srt_size)
 
             # Enable/Disable Ellipses
             # if index <= max(self.buffer_page_count, 5)+1:
