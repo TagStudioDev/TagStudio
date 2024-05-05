@@ -415,13 +415,11 @@ class Pagination(QWidget, QObject):
 
         # 	self.setHidden(False)
 
-        # TODO: See if this can be pulled to the start of the function to reduce a level of nesting
         self.validator.setTop(page_count)
         # if self.current_page_index != index:
         if emit:
             print(f"[PAGINATION] Emitting {index}")
             self.index.emit(index)
-
         self.current_page_index = index
         self.page_count = page_count
 
