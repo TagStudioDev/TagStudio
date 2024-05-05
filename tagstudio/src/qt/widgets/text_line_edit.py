@@ -1,7 +1,7 @@
 # Copyright (C) 2024 Travis Abendshien (CyanVoxel).
 # Licensed under the GPL-3.0 License.
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
-
+from typing import Callable
 
 from PySide6.QtWidgets import QVBoxLayout, QLineEdit
 
@@ -18,7 +18,6 @@ class EditTextLine(PanelWidget):
         self.text = text
         self.text_edit = QLineEdit()
         self.text_edit.setText(text)
-        self.text_edit.returnPressed.connect(self.done.emit)
         self.root_layout.addWidget(self.text_edit)
 
     def get_content(self) -> str:
@@ -26,3 +25,9 @@ class EditTextLine(PanelWidget):
 
     def reset(self):
         self.text_edit.setText(self.text)
+
+    def add_callback(self, callback: Callable, event: str = "returnPressed"):
+        if event == "returnPressed":
+            self.text_edit.returnPressed.connect(callback)
+        else:
+            raise ValueError(f"unknown event type: {event}")
