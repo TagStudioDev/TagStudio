@@ -611,7 +611,7 @@ class CliDriver:
 					frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 					final_frame = Image.fromarray(frame)
 					w, h = final_frame.size
-					final_frame.save(self.lib.library_dir / TS_FOLDER_NAME / 'temp.jpg'), quality=50)
+					final_frame.save(self.lib.library_dir / TS_FOLDER_NAME / 'temp.jpg', quality=50)
 					final_img_path = self.lib.library_dir / TS_FOLDER_NAME / 'temp.jpg'
 					# NOTE: Temporary way to hack a non-terminal preview.
 					if self.args.external_preview and entry:

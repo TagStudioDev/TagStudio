@@ -15,6 +15,7 @@ import traceback
 import xml.etree.ElementTree as ET
 from enum import Enum
 import ujson
+from pathlib import Path
 
 from src.core.json_typing import JsonCollation, JsonEntry, JsonLibary, JsonTag
 from src.core import ts_core
@@ -33,12 +34,12 @@ logging.basicConfig(format="%(message)s", level=logging.INFO)
 class Entry:
 	"""A Library Entry Object. Referenced by ID."""
 
-	def __init__(self, id: int, filename: str, path: str, 
+	def __init__(self, id: int, filename: str|Path, path: str|Path, 
 			     fields: list[dict]) -> None:
 		# Required Fields ======================================================
 		self.id = int(id)
-		self.filename = filename
-		self.path = path
+		self.filename = Path(filename)
+		self.path = Path(path)
 		self.fields = fields
 		self.type = None
 
@@ -73,16 +74,10 @@ class Entry:
 		return self.__str__()
 
 	def __eq__(self, __value: object) -> bool:
-		if os.name == 'nt':
-			return (int(self.id) == int(__value.id)
-				and	self.filename.lower() == __value.filename.lower()
-				and self.path.lower() == __value.path.lower()
-				and self.fields == __value.fields)
-		else:
-			return (int(self.id) == int(__value.id)
-				and	self.filename == __value.filename
-				and self.path == __value.path
-				and self.fields == __value.fields)
+		return (int(self.id) == int(__value.id) #TODO: check if resolve does the things we want on Windows
+			and	self.filename.resolve() == __value.filename.resolve()
+			and self.path.resolve() == __value.path.resolve()
+			and self.fields == __value.fields)
 
 	def compressed_dict(self) -> JsonEntry:
 		"""
@@ -253,16 +248,8 @@ class Collation:
 		return self.__str__()
 
 	def __eq__(self, __value: object) -> bool:
-		if os.name == 'nt':
-			return (int(self.id) == int(__value.id_)
-				and	self.filename.lower() == __value.filename.lower()
-				and self.path.lower() == __value.path.lower()
-				and self.fields == __value.fields)
-		else:
-			return (int(self.id) == int(__value.id_)
-				and	self.filename == __value.filename
-				and self.path == __value.path
-				and self.fields == __value.fields)
+		return (int(self.id) == int(__value.id_)
+			and self.fields == __value.fields)
 
 	def compressed_dict(self) -> JsonCollation:
 		"""
@@ -324,7 +311,6 @@ class Library:
 		# Maps the filenames of entries in the Library to their entry's index in the self.entries list.
 		#   Used for O(1) lookup of a file based on the current index (page number - 1) of the image being looked at.
 		#   That filename can then be used to provide quick lookup to image metadata entries in the Library.
-		# 	NOTE: On Windows, these strings are always lowercase.
 		self.filename_to_entry_id_map: dict[str, int] = {}
 		# A list of file extensions to be ignored by TagStudio.
 		self.default_ext_blacklist: list = ['json', 'xmp', 'aae']
@@ -542,12 +528,8 @@ class Library:
 		0: Library Successfully Created\n
 		2: File creation error
 		"""
-		
-		path = os.path.normpath(path).rstrip('\\')
 
-		# If '.TagStudio' is included in the path, trim the path up to it.
-		if ts_core.TS_FOLDER_NAME in path:
-			path = path.split(ts_core.TS_FOLDER_NAME)[0]
+		path = self._fix_lib_path(path)
 
 		try:
 			self.clear_internal_vars()
@@ -560,16 +542,21 @@ class Library:
 			return 2
 
 		return 0
+	
+	def _fix_lib_path(self, path):
+		"""If '.TagStudio' is included in the path, trim the path up to it."""
+		path = Path(path)
+		paths = [x for x in [path, *path.Parents] if x.stem == ts_core.TS_FOLDER_NAME]
+		if len(paths) > 0:
+			return paths[0].parent
+		return path
 
 	def verify_ts_folders(self) -> None:
 		"""Verifies/creates folders required by TagStudio."""
 
-		full_ts_path = os.path.normpath(
-			f'{self.library_dir}/{ts_core.TS_FOLDER_NAME}')
-		full_backup_path = os.path.normpath(
-			f'{self.library_dir}/{ts_core.TS_FOLDER_NAME}/{ts_core.BACKUP_FOLDER_NAME}')
-		full_collage_path = os.path.normpath(
-			f'{self.library_dir}/{ts_core.TS_FOLDER_NAME}/{ts_core.COLLAGE_FOLDER_NAME}')
+		full_ts_path = self.library_dir / ts_core.TS_FOLDER_NAME
+		full_backup_path = self.library_dir / ts_core.TS_FOLDER_NAME / ts_core.BACKUP_FOLDER_NAME
+		full_collage_path = self.library_dir / ts_core.TS_FOLDER_NAME / ts_core.COLLAGE_FOLDER_NAME
 
 		if not os.path.isdir(full_ts_path):
 			os.mkdir(full_ts_path)
@@ -596,23 +583,18 @@ class Library:
 	
 		return tag_list
 
-	def open_library(self, path: str) -> int:
+	def open_library(self, path: str|Path) -> int:
 		"""
 		Opens a TagStudio v9+ Library.
 		Returns 0 if library does not exist, 1 if successfully opened, 2 if corrupted.
 		"""
 
 		return_code: int = 2
-		path = os.path.normpath(path).rstrip('\\')
+		path = _fix_lib_path(path)
 
-		# If '.TagStudio' is included in the path, trim the path up to it.
-		if ts_core.TS_FOLDER_NAME in path:
-			path = path.split(ts_core.TS_FOLDER_NAME)[0]
-
-		if os.path.exists(os.path.normpath(f'{path}/{ts_core.TS_FOLDER_NAME}/ts_library.json')):
-
+		if (path / ts_core.TS_FOLDER_NAME / 'ts_library.json').exists():
 			try:
-				with open(os.path.normpath(f'{path}/{ts_core.TS_FOLDER_NAME}/ts_library.json'), 'r', encoding='utf-8') as f:
+				with open(path / ts_core.TS_FOLDER_NAME / 'ts_library.json', 'r', encoding='utf-8') as f:
 					json_dump: JsonLibary = ujson.load(f)
 					self.library_dir = str(path)
 					self.verify_ts_folders()
@@ -786,12 +768,7 @@ class Library:
 
 		# If the Library is loaded, continue other processes.
 		if return_code == 1:
-
-			if not os.path.exists(os.path.normpath(
-					f'{self.library_dir}/{ts_core.TS_FOLDER_NAME}')):
-				os.makedirs(os.path.normpath(
-					f'{self.library_dir}/{ts_core.TS_FOLDER_NAME}'))
-
+			(self.library_dir / ts_core.TS_FOLDER_NAME).mkdir(parents=True, exist_ok=True)
 			self._map_filenames_to_entry_ids()
 
 		return return_code
@@ -801,14 +778,7 @@ class Library:
 		"""Maps a full filepath to its corresponding Entry's ID."""
 		self.filename_to_entry_id_map.clear()
 		for entry in self.entries:
-			if os.name == 'nt':
-				# print(str(os.path.normpath(
-				# 	f'{entry.path}/{entry.filename}')).lower().lstrip('\\').lstrip('/'))
-				self.filename_to_entry_id_map[str(os.path.normpath(
-					f'{entry.path}/{entry.filename}')).lower().lstrip('\\').lstrip('/')] = entry.id
-			else:
-				self.filename_to_entry_id_map[str(
-					os.path.normpath(f'{entry.path}/{entry.filename}'))] = entry.id
+			self.filename_to_entry_id_map[str((entry.path / entry.filename).resolve())] = entry.id
 	
 	# def _map_filenames_to_entry_ids(self):
 	# 	"""Maps the file paths of entries to their index in the library list."""
@@ -869,7 +839,7 @@ class Library:
 
 		self.verify_ts_folders()
 
-		with open(os.path.normpath(f'{self.library_dir}/{ts_core.TS_FOLDER_NAME}/{filename}'), 'w', encoding='utf-8') as outfile:
+		with open(self.library_dir / ts_core.TS_FOLDER_NAME / filename, 'w', encoding='utf-8') as outfile:
 			outfile.flush()
 			ujson.dump(self.to_json(), outfile, ensure_ascii=False, escape_forward_slashes=False)
 			# , indent=4 <-- How to prettyprint dump
@@ -886,7 +856,7 @@ class Library:
 		filename = f'ts_library_backup_{datetime.datetime.utcnow().strftime("%F_%T").replace(":", "")}.json'
 
 		self.verify_ts_folders()
-		with open(os.path.normpath(f'{self.library_dir}/{ts_core.TS_FOLDER_NAME}/{ts_core.BACKUP_FOLDER_NAME}/{filename}'), 'w', encoding='utf-8') as outfile:
+		with open(self.library_dir / ts_core.TS_FOLDER_NAME / ts_core.BACKUP_FOLDER_NAME / filename, 'w', encoding='utf-8') as outfile:
 			outfile.flush()
 			ujson.dump(self.to_json(), outfile, ensure_ascii=False, escape_forward_slashes=False)
 		end_time = time.time()
@@ -934,18 +904,15 @@ class Library:
 		#   - Files without library entries
 		# for type in ts_core.TYPES:
 		start_time = time.time()
-		for f in glob.glob(self.library_dir + "/**/*", recursive=True):
+		for f in self.library_dir.glob("**/*"):
 			# p = Path(os.path.normpath(f))
 			if ('$RECYCLE.BIN' not in f and ts_core.TS_FOLDER_NAME not in f 
-       				and 'tagstudio_thumbs' not in f and not os.path.isdir(f)):
+       				and 'tagstudio_thumbs' not in f and not f.is_dir()):
 				if os.path.splitext(f)[1][1:].lower() not in self.ignored_extensions:
 					self.dir_file_count += 1
-					file = str(os.path.relpath(f, self.library_dir))
+					file = str(f.relative_to(self.library_dir).resolve())
 					
 					try:
-						if os.name == 'nt':
-							_ = self.filename_to_entry_id_map[file.lower()]
-						else:
 							_ = self.filename_to_entry_id_map[file]
 					except KeyError:
 						# print(file)
@@ -964,7 +931,7 @@ class Library:
 		# Sorts the files by date modified, descending.
 		try:
 			self.files_not_in_library = sorted(
-				self.files_not_in_library, key=lambda t: -os.stat(os.path.normpath(self.library_dir + '/' + t)).st_ctime)
+				self.files_not_in_library, key=lambda t: -(self.library_dir / t).stat().st_ctime)
 		except FileExistsError:
 			print(f'[LIBRARY] [ERROR] Couldn\'t sort files, some were moved during the scanning/sorting process.')
 			pass
@@ -973,10 +940,9 @@ class Library:
 		"""Tracks the number of Entries that point to an invalid file path."""
 		self.missing_files.clear()
 		for i, entry in enumerate(self.entries):
-			full_path = os.path.normpath(
-				f'{self.library_dir}/{entry.path}/{entry.filename}')
-			if not os.path.isfile(full_path):
-				self.missing_files.append(full_path)
+			full_path = self.library_dir / entry.path / entry.filename
+			if not full_path.is_file():
+				self.missing_files.append(str(full_path.resolve()))
 			yield i
 
 	def remove_entry(self, entry_id: int) -> None:
@@ -987,10 +953,9 @@ class Library:
 		# Step [1/2]:
 		# Remove this Entry from the Entries list.
 		entry = self.get_entry(entry_id)
-		path = str(os.path.normpath(f'{entry.path}/{entry.filename}')).lstrip('\\').lstrip('/')
-		path = path.lower() if os.name == 'nt' else path
+		path = entry.path / entry.filename
 		# logging.info(f'Removing path: {path}')
-		del self.filename_to_entry_id_map[path]
+		del self.filename_to_entry_id_map[str(path.resolve())]
 		
 		del self.entries[self._entry_id_to_index_map[entry_id]]
 		
@@ -1030,14 +995,9 @@ class Library:
 			if p not in checked:
 				matched: list[int] = []
 				for c, entry_c in enumerate(remaining, start=0):
-					if os.name == 'nt':
-						if entry_p.path.lower() == entry_c.path.lower() and entry_p.filename.lower() == entry_c.filename.lower() and c != p:
-							matched.append(c)
-							checked.add(c)
-					else:
-						if entry_p.path == entry_c.path and entry_p.filename == entry_c.filename and c != p:
-							matched.append(c)
-							checked.add(c)
+					if str(entry_p.path.resolve()) == str(entry_c.path.resolve()) and str(entry_p.filename.resolve()) == str(entry_c.filename.resolve()) and c != p:
+						matched.append(c)
+						checked.add(c)
 				if matched:
 					self.dupe_entries.append((p, matched))
 					sys.stdout.write(
@@ -1080,7 +1040,7 @@ class Library:
 					f'\r[LIBRARY] [{i}/{len(self.entries)}] Appending Unique Entry...')
 			else:
 				sys.stdout.write(
-					f'\r[LIBRARY] [{i}/{len(self.entries)}] Consolidating Duplicate: {(e.path + os.pathsep + e.filename)[0:]}...')
+					f'\r[LIBRARY] [{i}/{len(self.entries)}] Consolidating Duplicate: {(e.path / e.filename)[0:]}...')
 		print('')
 		# [unique.append(x) for x in self.entries if x not in unique]
 		self.entries = unique
@@ -1092,9 +1052,11 @@ class Library:
 		A duplicate file is defined as an identical or near-identical file as determined
 		by a DupeGuru results file.
 		"""
-		full_results_path = os.path.normpath(
-			f'{self.library_dir}/{results_filepath}') if self.library_dir not in results_filepath else os.path.normpath(f'{results_filepath}')
-		if os.path.exists(full_results_path):
+		full_results_path = Path(results_path)
+		if self.library_dir not in results_filepath.parents:
+			full_results_path = self.library_dir / full_results_path
+
+		if full_results_path.is_file():
 			self.dupe_files.clear()
 			self._map_filenames_to_entry_ids()
 			tree = ET.parse(full_results_path)
@@ -1106,8 +1068,8 @@ class Library:
 				matches: list[tuple[int, int, int]] = []
 				for element in group:
 					if element.tag == 'file':
-						file = element.attrib.get('path')
-						files.append(file)
+						file = Path(element.attrib.get('path')).resolve()
+						files.append(str(file))
 					if element.tag == 'match':
 						matches.append((
 							int(element.attrib.get('first')),
@@ -1115,18 +1077,11 @@ class Library:
 							int(element.attrib.get('percentage'))))
 				for match in matches:
 					# print(f'MATCHED ({match[2]}%): \n   {files[match[0]]} \n-> {files[match[1]]}')
-					if os.name == 'nt':
-						file_1 = str(os.path.relpath(
-							files[match[0]], self.library_dir))
-						file_2 = str(os.path.relpath(
-							files[match[1]], self.library_dir))
-						if file_1.lower() in self.filename_to_entry_id_map.keys() and file_2.lower() in self.filename_to_entry_id_map.keys():
-							self.dupe_files.append(
-								(files[match[0]], files[match[1]], match[2]))
-					else:
-						if file_1 in self.filename_to_entry_id_map.keys() and file_2 in self.filename_to_entry_id_map.keys():
-							self.dupe_files.append(
-								(files[match[0]], files[match[1]], match[2]))
+					file_1 = str(files[match[0]].relative_to(self.library_dir).resolve())
+					file_2 = str(files[match[1]].relative_to(self.library_dir).resolve())
+
+					if file_1.resolve in self.filename_to_entry_id_map.keys() and file_2 in self.filename_to_entry_id_map.keys():
+						self.dupe_files.append((files[match[0]], files[match[1]], match[2]))
 					# self.dupe_files.append((files[match[0]], files[match[1]], match[2]))
 
 				print('')
@@ -1226,23 +1181,23 @@ class Library:
 		matches = []
 
 		# for file in self.missing_files:
-		head, tail = os.path.split(file)
-		for (root, dirs, files) in os.walk(self.library_dir, topdown=True):
+		path = Path(file)
+		for (root, dirs, files) in self.library_dir.walk():
 			for f in files:
 				# print(f'{tail} --- {f}')
-				if tail == f and '$recycle.bin' not in root.lower():
+				if path.name == f and '$recycle.bin' not in str(root).lower():
 					# self.fixed_files.append(tail)
 
-					new_path = str(os.path.relpath(root, self.library_dir))
+					new_path = root.relative_to(self.library_dir).resolve()
 
-					matches.append(new_path)
+					matches.append(str(new_path))
 
 					# if file not in matches.keys():
 					# 	matches[file] = []
 					# matches[file].append(new_path)
 
 					print(
-						f'[LIBRARY] MATCH: {file} \n\t-> {os.path.normpath(self.library_dir + "/" + new_path + "/" + tail)}\n')
+						f'[LIBRARY] MATCH: {file} \n\t-> {self.library_dir / new_path / path.name}\n')
 
 		if not matches:
 			print(f'[LIBRARY] No matches found for: {file}')
@@ -1275,11 +1230,11 @@ class Library:
 		#     # print(match)
 		#     # print(f'\t{matches[match]}')
 
-		with open(os.path.normpath(f'{self.library_dir}/{TS_FOLDER_NAME}/missing_matched.json'), "w") as outfile:
+		with open(self.library_dir / TS_FOLDER_NAME / 'missing_matched.json', "w") as outfile:
 			outfile.flush()
 			json.dump(matches, outfile, indent=4)
 		print(
-			f'[LIBRARY] Saved to disk at {os.path.normpath(self.library_dir + "/" + TS_FOLDER_NAME + "/missing_matched.json")}')
+			f'[LIBRARY] Saved to disk at {self.library_dir / TS_FOLDER_NAME / 'missing_matched.json'}')
 
 	def count_tag_entry_refs(self) -> None:
 		"""
@@ -1318,9 +1273,9 @@ class Library:
 		"""Adds files from the `files_not_in_library` list to the Library as Entries. Returns list of added indices."""
 		new_ids: list[int] = []
 		for file in self.files_not_in_library:
-			path, filename = os.path.split(file)
+			path = Path(file)
 			# print(os.path.split(file))
-			entry = Entry(id=self._next_entry_id, filename=filename, path=path, fields=[])
+			entry = Entry(id=self._next_entry_id, filename=path.name, path=path.parent, fields=[])
 			self._next_entry_id += 1
 			self.add_entry_to_library(entry)
 			new_ids.append(entry.id)
@@ -1349,9 +1304,7 @@ class Library:
 		"""Returns an Entry ID given the full filepath it points to."""
 		try:
 			if self.entries:
-				if os.name == 'nt':
-					return self.filename_to_entry_id_map[str(os.path.normpath(os.path.relpath(filename, self.library_dir))).lower()]
-				return self.filename_to_entry_id_map[str(os.path.normpath(os.path.relpath(filename, self.library_dir)))]
+				return self.filename_to_entry_id_map[str(Path(filename).relative_to(self.libary_dir).resolve())]
 		except:
 			return -1
 
@@ -1404,7 +1357,7 @@ class Library:
 			# non_entry_count = 0
 			# Iterate over all Entries =============================================================
 			for entry in self.entries:
-				allowed_ext: bool = os.path.splitext(entry.filename)[1][1:].lower() not in self.ignored_extensions
+				allowed_ext: bool = entry.filename.suffix not in self.ignored_extensions
 				# try:
 				# entry: Entry = self.entries[self.file_to_library_index_map[self._source_filenames[i]]]
 				# print(f'{entry}')
@@ -1437,7 +1390,7 @@ class Library:
 						if not entry.fields:
 							results.append((ItemType.ENTRY, entry.id))
 					elif only_missing:
-						if os.path.normpath(f'{self.library_dir}/{entry.path}/{entry.filename}') in self.missing_files:
+						if str((self.library_dir / entry.path / entry.filename).resolve()) in self.missing_files:
 							results.append((ItemType.ENTRY, entry.id))
 
 					# elif query == "archived":
@@ -1448,9 +1401,9 @@ class Library:
 
 					# NOTE: This searches path and filenames.
 					if allow_adv:
-						if [q for q in query_words if (q in entry.path.lower())]:
+						if [q for q in query_words if (q in str(entry.path).lower())]:
 							results.append((ItemType.ENTRY, entry.id))
-						elif [q for q in query_words if (q in entry.filename.lower())]:
+						elif [q for q in query_words if (q in str(entry.filename).lower())]:
 							results.append((ItemType.ENTRY, entry.id))
 					elif tag_only:
 						if entry.has_tag(self, int(query_words[0])):
@@ -1526,7 +1479,7 @@ class Library:
 			
 			for entry in self.entries:
 				added = False
-				allowed_ext: bool = os.path.splitext(entry.filename)[1][1:].lower() not in self.ignored_extensions
+				allowed_ext: bool = entry.filename.suffix not in self.ignored_extensions
 				if allowed_ext:
 					for f in entry.fields:
 						if self.get_field_attr(f, 'type') == 'collation':
@@ -1857,13 +1810,13 @@ class Library:
 		# input()
 		return (entry_ref_count, subtag_ref_count)
 
-	def update_entry_path(self, entry_id: int, path: str) -> None:
+	def update_entry_path(self, entry_id: int, path: str|Path) -> None:
 		"""Updates an Entry's path."""
-		self.get_entry(entry_id).path = path
+		self.get_entry(entry_id).path = Path(path)
 
-	def update_entry_filename(self, entry_id: int, filename: str) -> None:
+	def update_entry_filename(self, entry_id: int, filename: str|Path) -> None:
 		"""Updates an Entry's filename."""
-		self.get_entry(entry_id).filename = filename
+		self.get_entry(entry_id).filename = Path(filename)
 
 	def update_entry_field(self, entry_id: int, field_index: int, content, mode: str):
 		"""Updates an Entry's specific field. Modes: append, remove, replace."""
