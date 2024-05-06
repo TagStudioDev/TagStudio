@@ -3797,11 +3797,12 @@ class ThumbRenderer(QObject):
 				# logging.info(image.size)
 				final.paste(image, mask=rec.getchannel(0))
 
-			except (UnidentifiedImageError, FileNotFoundError, cv2.error):
+			except (UnidentifiedImageError, FileNotFoundError, cv2.error) as e:
 				broken_thumb = True
 				self.updated_ratio.emit(1)
 				final = ThumbRenderer.thumb_broken_512.resize(
 					(adj_size, adj_size), resample=Image.Resampling.BILINEAR)
+				print(str(e))
 
 			# if extension in VIDEO_TYPES + ['gif', 'apng'] or broken_thumb:
 			# 	idk = ImageDraw.Draw(final)

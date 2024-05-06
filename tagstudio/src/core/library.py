@@ -38,8 +38,8 @@ class Entry:
 			     fields: list[dict]) -> None:
 		# Required Fields ======================================================
 		self.id = int(id)
-		self.filename = Path(filename).resolve()
-		self.path = Path(path).resolve()
+		self.filename = Path(filename)
+		self.path = Path(path)
 		self.fields = fields
 		self.type = None
 
@@ -88,9 +88,9 @@ class Entry:
 			"id": self.id
 		}
 		if self.filename:
-			obj['filename'] = self.filename
+			obj['filename'] = str(self.filename)
 		if self.path:
-			obj['path'] = self.path
+			obj['path'] = str(self.path)
 		if self.fields:
 			obj['fields'] = self.fields
 
@@ -277,7 +277,7 @@ class Library:
 
 	def __init__(self) -> None:
 		# Library Info =========================================================
-		self.library_dir: str = None
+		self.library_dir: Path = None
 
 		# Entries ==============================================================
 		# List of every Entry object.
@@ -533,7 +533,7 @@ class Library:
 
 		try:
 			self.clear_internal_vars()
-			self.library_dir = path
+			self.library_dir = Path(path)
 			self.verify_ts_folders()
 			self.save_library_to_disk()
 			self.open_library(self.library_dir)
@@ -546,7 +546,7 @@ class Library:
 	def _fix_lib_path(self, path):
 		"""If '.TagStudio' is included in the path, trim the path up to it."""
 		path = Path(path)
-		paths = [x for x in [path, *path.Parents] if x.stem == ts_core.TS_FOLDER_NAME]
+		paths = [x for x in [path, *path.parents] if x.stem == ts_core.TS_FOLDER_NAME]
 		if len(paths) > 0:
 			return paths[0].parent
 		return path
@@ -590,13 +590,13 @@ class Library:
 		"""
 
 		return_code: int = 2
-		path = _fix_lib_path(path)
+		path = self._fix_lib_path(path)
 
 		if (path / ts_core.TS_FOLDER_NAME / 'ts_library.json').exists():
 			try:
 				with open(path / ts_core.TS_FOLDER_NAME / 'ts_library.json', 'r', encoding='utf-8') as f:
 					json_dump: JsonLibary = ujson.load(f)
-					self.library_dir = str(path)
+					self.library_dir = Path(path)
 					self.verify_ts_folders()
 					major, minor, patch = json_dump['ts-version'].split('.')
 
@@ -906,19 +906,19 @@ class Library:
 		start_time = time.time()
 		for f in self.library_dir.glob("**/*"):
 			# p = Path(os.path.normpath(f))
-			if ('$RECYCLE.BIN' not in f and ts_core.TS_FOLDER_NAME not in f 
-       				and 'tagstudio_thumbs' not in f and not f.is_dir()):
-				if os.path.splitext(f)[1][1:].lower() not in self.ignored_extensions:
+			sf = str(f)
+			if ('$RECYCLE.BIN' not in sf and ts_core.TS_FOLDER_NAME not in sf 
+       				and 'tagstudio_thumbs' not in sf and not f.is_dir()):
+
+				if f.suffix not in self.ignored_extensions:
 					self.dir_file_count += 1
-					file = str(f.relative_to(self.library_dir).resolve())
-					
+					file = str(f.relative_to(self.library_dir))
 					try:
 							_ = self.filename_to_entry_id_map[file]
 					except KeyError:
 						# print(file)
 						self.files_not_in_library.append(file)
 		
-			
 			# sys.stdout.write(f'\r[LIBRARY] {self.dir_file_count} files found in "{self.library_dir}"...')
 			# sys.stdout.flush()
 			end_time = time.time()
@@ -927,7 +927,6 @@ class Library:
 				yield self.dir_file_count
 				start_time = time.time()
 		# print('')
-
 		# Sorts the files by date modified, descending.
 		try:
 			self.files_not_in_library = sorted(
@@ -1077,8 +1076,8 @@ class Library:
 							int(element.attrib.get('percentage'))))
 				for match in matches:
 					# print(f'MATCHED ({match[2]}%): \n   {files[match[0]]} \n-> {files[match[1]]}')
-					file_1 = str(files[match[0]].relative_to(self.library_dir).resolve())
-					file_2 = str(files[match[1]].relative_to(self.library_dir).resolve())
+					file_1 = str(files[match[0]].relative_to(self.library_dir))
+					file_2 = str(files[match[1]].relative_to(self.library_dir))
 
 					if file_1.resolve in self.filename_to_entry_id_map.keys() and file_2 in self.filename_to_entry_id_map.keys():
 						self.dupe_files.append((files[match[0]], files[match[1]], match[2]))
@@ -1188,7 +1187,7 @@ class Library:
 				if path.name == f and '$recycle.bin' not in str(root).lower():
 					# self.fixed_files.append(tail)
 
-					new_path = root.relative_to(self.library_dir).resolve()
+					new_path = root.relative_to(self.library_dir)
 
 					matches.append(str(new_path))
 
@@ -1234,7 +1233,7 @@ class Library:
 			outfile.flush()
 			json.dump(matches, outfile, indent=4)
 		print(
-			f'[LIBRARY] Saved to disk at {self.library_dir / TS_FOLDER_NAME / 'missing_matched.json'}')
+			f'[LIBRARY] Saved to disk at {self.library_dir / TS_FOLDER_NAME / "missing_matched.json"}')
 
 	def count_tag_entry_refs(self) -> None:
 		"""
@@ -1304,7 +1303,7 @@ class Library:
 		"""Returns an Entry ID given the full filepath it points to."""
 		try:
 			if self.entries:
-				return self.filename_to_entry_id_map[str(Path(filename).relative_to(self.libary_dir).resolve())]
+				return self.filename_to_entry_id_map[str(Path(filename).relative_to(self.libary_dir))]
 		except:
 			return -1
 
