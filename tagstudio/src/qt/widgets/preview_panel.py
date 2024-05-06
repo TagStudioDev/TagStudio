@@ -28,7 +28,7 @@ from PySide6.QtWidgets import (
 from humanfriendly import format_size
 
 from src.core.library import Entry, ItemType, Library
-from src.core.ts_core import VIDEO_TYPES, IMAGE_TYPES
+from src.core.constants import VIDEO_TYPES, IMAGE_TYPES
 from src.qt.helpers import FileOpenerLabel, FileOpenerHelper, open_file
 from src.qt.modals import AddFieldModal
 from src.qt.widgets import (

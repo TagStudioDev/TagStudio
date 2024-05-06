@@ -45,9 +45,9 @@ from PySide6.QtWidgets import (
 from humanfriendly import format_timespan
 
 from src.core.library import ItemType
-from src.core.ts_core import (
+from src.core.ts_core import TagStudioCore
+from src.core.constants import (
     PLAINTEXT_TYPES,
-    TagStudioCore,
     TAG_COLORS,
     DATE_FIELDS,
     TEXT_FIELDS,

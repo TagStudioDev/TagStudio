@@ -72,7 +72,12 @@ TagStudio is a photo & file organization application with an underlying system t
 - Linux/macOS: `source .venv/bin/activate`
 
 3. Install the required packages:  
-   `pip install -r requirements.txt`
+
+- required to run the app: `pip install -r requirements.txt`
+- required to develop: `pip install -r requirements-dev.txt`
+
+
+To run all the tests use `python -m pytest tests/` from the `tagstudio` folder.
 
 _Learn more about setting up a virtual environment [here](https://docs.python.org/3/tutorial/venv.html)._
 
