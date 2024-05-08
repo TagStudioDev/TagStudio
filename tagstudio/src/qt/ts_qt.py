@@ -356,6 +356,20 @@ class QtDriver(QObject):
 
         edit_menu.addSeparator()
 
+        copy_entry_fields_action = QAction('&Copy', menu_bar)
+        copy_entry_fields_action.triggered.connect(lambda: self.copy_entry_fields_action_callback())
+        copy_entry_fields_action.setShortcut(QtCore.QKeyCombination(QtCore.Qt.KeyboardModifier(QtCore.Qt.KeyboardModifier.ControlModifier), QtCore.Qt.Key.Key_C))
+        copy_entry_fields_action.setToolTip('Ctrl+C')
+        edit_menu.addAction(copy_entry_fields_action)
+  
+        paste_entry_fields_action = QAction('&Paste', menu_bar)
+        paste_entry_fields_action.triggered.connect(lambda: self.paste_entry_fields_action_callback())
+        paste_entry_fields_action.setShortcut(QtCore.QKeyCombination(QtCore.Qt.KeyboardModifier(QtCore.Qt.KeyboardModifier.ControlModifier), QtCore.Qt.Key.Key_V))
+        paste_entry_fields_action.setToolTip('Ctrl+V')
+        edit_menu.addAction(paste_entry_fields_action)
+
+        edit_menu.addSeparator()
+
         manage_file_extensions_action = QAction("Ignore File Extensions", menu_bar)
         manage_file_extensions_action.triggered.connect(
             lambda: self.show_file_extension_modal()
@@ -840,6 +854,20 @@ class QtDriver(QObject):
                             ),
                             mode="replace",
                         )
+
+    def copy_entry_fields_action_callback(self):
+        for item in self.selected.__reversed__():
+            if item[0] == ItemType.ENTRY:
+                entry = self.lib.get_entry(item[1])
+                self.copied_fields = entry.fields.copy()
+
+    def paste_entry_fields_action_callback(self):
+        if self.copied_fields != None:
+            for item in self.selected:
+                if item[0] == ItemType.ENTRY:
+                    entry = self.lib.get_entry(item[1])
+                    entry.fields = self.copied_fields.copy()
+            self.preview_panel.update_widgets()
 
     def mouse_navigation(self, event: QMouseEvent):
         # print(event.button())
