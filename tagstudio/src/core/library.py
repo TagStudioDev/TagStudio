@@ -19,7 +19,13 @@ import ujson
 from src.core.json_typing import JsonCollation, JsonEntry, JsonLibary, JsonTag
 from src.core.utils.str import strip_punctuation
 from src.core.utils.web import strip_web_protocol
-from src.core.constants import BACKUP_FOLDER_NAME, COLLAGE_FOLDER_NAME, TEXT_FIELDS, TS_FOLDER_NAME, VERSION
+from src.core.constants import (
+    BACKUP_FOLDER_NAME,
+    COLLAGE_FOLDER_NAME,
+    TEXT_FIELDS,
+    TS_FOLDER_NAME,
+    VERSION,
+)
 
 TYPE = ["file", "meta", "alt", "mask"]
 
@@ -502,14 +508,10 @@ class Library:
         if TS_FOLDER_NAME in path:
             path = path.split(TS_FOLDER_NAME)[0]
 
-        if os.path.exists(
-            os.path.normpath(f"{path}/{TS_FOLDER_NAME}/ts_library.json")
-        ):
+        if os.path.exists(os.path.normpath(f"{path}/{TS_FOLDER_NAME}/ts_library.json")):
             try:
                 with open(
-                    os.path.normpath(
-                        f"{path}/{TS_FOLDER_NAME}/ts_library.json"
-                    ),
+                    os.path.normpath(f"{path}/{TS_FOLDER_NAME}/ts_library.json"),
                     "r",
                     encoding="utf-8",
                 ) as f:
@@ -720,9 +722,7 @@ class Library:
             if not os.path.exists(
                 os.path.normpath(f"{self.library_dir}/{TS_FOLDER_NAME}")
             ):
-                os.makedirs(
-                    os.path.normpath(f"{self.library_dir}/{TS_FOLDER_NAME}")
-                )
+                os.makedirs(os.path.normpath(f"{self.library_dir}/{TS_FOLDER_NAME}"))
 
             self._map_filenames_to_entry_ids()
 

@@ -1,4 +1,3 @@
-
 VERSION: str = "9.2.0"  # Major.Minor.Patch
 VERSION_BRANCH: str = "Alpha"  # 'Alpha', 'Beta', or '' for Full Release
 

@@ -9,6 +9,7 @@ import os
 
 from src.core.library import Entry, Library
 
+
 class TagStudioCore:
     """
     Instantiate this to establish a TagStudio session.

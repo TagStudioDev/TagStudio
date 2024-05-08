@@ -12,6 +12,7 @@ def test_construction():
     )
     assert tag
 
+
 def test_empty_construction():
     tag = Tag(id=1, name="", shorthand="", aliases=[], subtags_ids=[], color="")
     assert tag
