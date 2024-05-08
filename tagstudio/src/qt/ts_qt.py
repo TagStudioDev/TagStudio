@@ -356,16 +356,30 @@ class QtDriver(QObject):
 
         edit_menu.addSeparator()
 
-        copy_entry_fields_action = QAction('&Copy', menu_bar)
-        copy_entry_fields_action.triggered.connect(lambda: self.copy_entry_fields_action_callback())
-        copy_entry_fields_action.setShortcut(QtCore.QKeyCombination(QtCore.Qt.KeyboardModifier(QtCore.Qt.KeyboardModifier.ControlModifier), QtCore.Qt.Key.Key_C))
-        copy_entry_fields_action.setToolTip('Ctrl+C')
+        copy_entry_fields_action = QAction("&Copy", menu_bar)
+        copy_entry_fields_action.triggered.connect(
+            lambda: self.copy_entry_fields_action_callback()
+        )
+        copy_entry_fields_action.setShortcut(
+            QtCore.QKeyCombination(
+                QtCore.Qt.KeyboardModifier(QtCore.Qt.KeyboardModifier.ControlModifier),
+                QtCore.Qt.Key.Key_C,
+            )
+        )
+        copy_entry_fields_action.setToolTip("Ctrl+C")
         edit_menu.addAction(copy_entry_fields_action)
-  
-        paste_entry_fields_action = QAction('&Paste', menu_bar)
-        paste_entry_fields_action.triggered.connect(lambda: self.paste_entry_fields_action_callback())
-        paste_entry_fields_action.setShortcut(QtCore.QKeyCombination(QtCore.Qt.KeyboardModifier(QtCore.Qt.KeyboardModifier.ControlModifier), QtCore.Qt.Key.Key_V))
-        paste_entry_fields_action.setToolTip('Ctrl+V')
+
+        paste_entry_fields_action = QAction("&Paste", menu_bar)
+        paste_entry_fields_action.triggered.connect(
+            lambda: self.paste_entry_fields_action_callback()
+        )
+        paste_entry_fields_action.setShortcut(
+            QtCore.QKeyCombination(
+                QtCore.Qt.KeyboardModifier(QtCore.Qt.KeyboardModifier.ControlModifier),
+                QtCore.Qt.Key.Key_V,
+            )
+        )
+        paste_entry_fields_action.setToolTip("Ctrl+V")
         edit_menu.addAction(paste_entry_fields_action)
 
         edit_menu.addSeparator()
