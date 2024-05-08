@@ -549,6 +549,11 @@ class QtDriver(QObject):
         for _ in self.thumb_threads:
             self.thumb_job_queue.put(Consumer.MARKER_QUIT)
 
+        # wait for threads to quit
+        for thread in self.thumb_threads:
+            thread.quit()
+            thread.wait()
+
         QApplication.quit()
 
     def save_library(self, show_status=True):
