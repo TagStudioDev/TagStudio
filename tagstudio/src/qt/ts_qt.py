@@ -13,6 +13,7 @@ import math
 import os
 import sys
 import time
+import webbrowser
 from datetime import datetime as dt
 from pathlib import Path
 from queue import Empty, Queue
@@ -414,6 +415,11 @@ class QtDriver(QObject):
         ftt_modal = FoldersToTagsModal(self.lib, self)
         folders_to_tags_action.triggered.connect(lambda: ftt_modal.show())
         macros_menu.addAction(folders_to_tags_action)
+
+        # Help Menu ==========================================================
+        self.repo_action = QAction("Go to GitHub Repository", menu_bar)
+        self.repo_action.triggered.connect(lambda: webbrowser.open('https://github.com/TagStudioDev/TagStudio'))
+        help_menu.addAction(self.repo_action)
 
         self.set_macro_menu_viability()
 
