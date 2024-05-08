@@ -418,7 +418,9 @@ class QtDriver(QObject):
 
         # Help Menu ==========================================================
         self.repo_action = QAction("Go to GitHub Repository", menu_bar)
-        self.repo_action.triggered.connect(lambda: webbrowser.open('https://github.com/TagStudioDev/TagStudio'))
+        self.repo_action.triggered.connect(
+            lambda: webbrowser.open("https://github.com/TagStudioDev/TagStudio")
+        )
         help_menu.addAction(self.repo_action)
 
         self.set_macro_menu_viability()
