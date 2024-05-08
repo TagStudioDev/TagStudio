@@ -855,13 +855,12 @@ class Library:
         #   - Files without library entries
         # for type in ts_core.TYPES:
         start_time = time.time()
-        print(self.filename_to_entry_id_map)
         for f in self.library_dir.glob("**/*"):
             # p = Path(os.path.normpath(f))
             if (
-                "$RECYCLE.BIN" not in str(f)
-                and ts_core.TS_FOLDER_NAME not in str(f)
-                and "tagstudio_thumbs" not in str(f)
+                "$RECYCLE.BIN" not in f.parts
+                and ts_core.TS_FOLDER_NAME not in f.parts
+                and "tagstudio_thumbs" not in f.parts
                 and not f.is_dir()
             ):
                 if f.suffix not in self.ignored_extensions:
