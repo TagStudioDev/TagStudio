@@ -140,13 +140,14 @@ logging.basicConfig(format="%(message)s", level=logging.INFO)
 QSettings.setPath(QSettings.IniFormat, QSettings.UserScope, os.getcwd())
 
 
-def open_file(path: str):
+def open_file(path: str | Path):
+    path = Path(path)
     try:
         if sys.platform == "win32":
             # Windows needs special attention to handle spaces in the file
             # first parameter is for title, NOT filepath
             subprocess.Popen(
-                ["start", "", os.path.normpath(path)],
+                ["start", "", path],
                 shell=True,
                 close_fds=True,
                 creationflags=subprocess.DETACHED_PROCESS,
@@ -217,23 +218,18 @@ class Consumer(QThread):
 
 class FieldContainer(QWidget):
     clipboard_icon_128: Image.Image = Image.open(
-        os.path.normpath(
-            f"{Path(__file__).parent.parent.parent}/resources/qt/images/clipboard_icon_128.png"
-        )
+        Path(__file__).parent.parent.parent
+        / "resources/qt/images/clipboard_icon_128.png"
     ).resize((math.floor(24 * 1.25), math.floor(24 * 1.25)))
     clipboard_icon_128.load()
 
     edit_icon_128: Image.Image = Image.open(
-        os.path.normpath(
-            f"{Path(__file__).parent.parent.parent}/resources/qt/images/edit_icon_128.png"
-        )
+        Path(__file__).parent.parent.parent / "resources/qt/images/edit_icon_128.png"
     ).resize((math.floor(24 * 1.25), math.floor(24 * 1.25)))
     edit_icon_128.load()
 
     trash_icon_128: Image.Image = Image.open(
-        os.path.normpath(
-            f"{Path(__file__).parent.parent.parent}/resources/qt/images/trash_icon_128.png"
-        )
+        Path(__file__).parent.parent.parent / "resources/qt/images/trash_icon_128.png"
     ).resize((math.floor(24 * 1.25), math.floor(24 * 1.25)))
     trash_icon_128.load()
 
@@ -598,9 +594,7 @@ class TextWidget(FieldWidget):
 
 class TagWidget(QWidget):
     edit_icon_128: Image.Image = Image.open(
-        os.path.normpath(
-            f"{Path(__file__).parent.parent.parent}/resources/qt/images/edit_icon_128.png"
-        )
+        Path(__file__).parent.parent.parent / "resources/qt/images/edit_icon_128.png"
     ).resize((math.floor(14 * 1.25), math.floor(14 * 1.25)))
     edit_icon_128.load()
     on_remove = Signal()
@@ -1617,9 +1611,7 @@ class FixDupeFilesModal(QWidget):
         self.set_dupe_count(self.count)
 
     def select_file(self):
-        qfd = QFileDialog(
-            self, "Open DupeGuru Results File", os.path.normpath(self.lib.library_dir)
-        )
+        qfd = QFileDialog(self, "Open DupeGuru Results File", str(self.lib.library_dir))
         qfd.setFileMode(QFileDialog.FileMode.ExistingFile)
         qfd.setNameFilter("DupeGuru Files (*.dupeguru)")
         if qfd.exec_():
@@ -2244,21 +2236,21 @@ class FileExtensionModal(PanelWidget):
 
 
 class FileOpenerHelper:
-    def __init__(self, filepath: str):
-        self.filepath = filepath
+    def __init__(self, filepath: str | Path):
+        self.filepath = Path(filepath)
 
-    def set_filepath(self, filepath: str):
-        self.filepath = filepath
+    def set_filepath(self, filepath: str | Path):
+        self.filepath = Path(filepath)
 
     def open_file(self):
-        if os.path.exists(self.filepath):
+        if self.filepath.exists():
             os.startfile(self.filepath)
             logging.info(f"Opening file: {self.filepath}")
         else:
             logging.error(f"File not found: {self.filepath}")
 
     def open_explorer(self):
-        if os.path.exists(self.filepath):
+        if self.filepath.exists():
             logging.info(f"Opening file: {self.filepath}")
             if os.name == "nt":  # Windows
                 command = f'explorer /select,"{self.filepath}"'
@@ -2266,8 +2258,7 @@ class FileOpenerHelper:
             else:  # macOS and Linux
                 command = f'nautilus --select "{self.filepath}"'  # Adjust for your Linux file manager if different
                 if subprocess.run(command, shell=True).returncode == 0:
-                    file_loc = os.path.dirname(self.filepath)
-                    file_loc = os.path.normpath(file_loc)
+                    file_loc = str(self.filepath.parent)
                     os.startfile(file_loc)
         else:
             logging.error(f"File not found: {self.filepath}")
@@ -2599,15 +2590,12 @@ class PreviewPanel(QWidget):
                 item: Entry = self.lib.get_entry(self.driver.selected[0][1])
                 # If a new selection is made, update the thumbnail and filepath.
                 if len(self.selected) == 0 or self.selected != self.driver.selected:
-                    filepath = os.path.normpath(
-                        f"{self.lib.library_dir}/{item.path}/{item.filename}"
-                    )
+                    filepath = self.lib.library_dir / item.path / item.filename
                     self.file_label.setFilePath(filepath)
-                    window_title = filepath
+                    window_title = str(filepath)
                     ratio: float = self.devicePixelRatio()
                     self.tr.render_big(time.time(), filepath, (512, 512), ratio)
-                    self.file_label.setText("\u200b".join(filepath))
-
+                    self.file_label.setText("\u200b".join(str(filepath))) #TODO: Find a better fix for text wrapping here
                     self.preview_img.setContextMenuPolicy(
                         Qt.ContextMenuPolicy.ActionsContextMenu
                     )
@@ -2618,10 +2606,9 @@ class PreviewPanel(QWidget):
                     )
 
                     # TODO: Do this somewhere else, this is just here temporarily.
-                    extension = os.path.splitext(filepath)[1][1:].lower()
                     try:
                         image = None
-                        if extension in IMAGE_TYPES:
+                        if filepath.suffix in IMAGE_TYPES:
                             image = Image.open(filepath)
                             if image.mode == "RGBA":
                                 new_bg = Image.new("RGB", image.size, color="#222222")
@@ -2629,7 +2616,7 @@ class PreviewPanel(QWidget):
                                 image = new_bg
                             if image.mode != "RGB":
                                 image = image.convert(mode="RGB")
-                        elif extension in VIDEO_TYPES:
+                        elif filepath.suffix in VIDEO_TYPES:
                             video = cv2.VideoCapture(filepath)
                             video.set(
                                 cv2.CAP_PROP_POS_FRAMES,
@@ -2646,16 +2633,16 @@ class PreviewPanel(QWidget):
                             image = Image.fromarray(frame)
 
                         # Stats for specific file types are displayed here.
-                        if extension in (IMAGE_TYPES + VIDEO_TYPES):
+                        if filepath.suffix in (IMAGE_TYPES + VIDEO_TYPES):
                             self.dimensions_label.setText(
-                                f"{extension.upper()}  •  {format_size(os.stat(filepath).st_size)}\n{image.width} x {image.height} px"
+                                f"{filepath.suffix.upper()}  •  {format_size(os.stat(filepath).st_size)}\n{image.width} x {image.height} px"
                             )
                         else:
-                            self.dimensions_label.setText(f"{extension.upper()}")
+                            self.dimensions_label.setText(f"{filepath.suffix.upper()}")
 
                         if not image:
                             self.dimensions_label.setText(
-                                f"{extension.upper()}  •  {format_size(os.stat(filepath).st_size)}"
+                                f"{filepath.suffix.upper()}  •  {format_size(os.stat(filepath).st_size)}"
                             )
                             raise UnidentifiedImageError
 
@@ -3142,16 +3129,14 @@ class ItemThumb(FlowWidget):
     update_cutoff: float = time.time()
 
     collation_icon_128: Image.Image = Image.open(
-        os.path.normpath(
-            f"{Path(__file__).parent.parent.parent}/resources/qt/images/collation_icon_128.png"
-        )
+        Path(__file__).parent.parent.parent
+        / "resources/qt/images/collation_icon_128.png"
     )
     collation_icon_128.load()
 
     tag_group_icon_128: Image.Image = Image.open(
-        os.path.normpath(
-            f"{Path(__file__).parent.parent.parent}/resources/qt/images/tag_group_icon_128.png"
-        )
+        Path(__file__).parent.parent.parent
+        / "resources/qt/images/tag_group_icon_128.png"
     )
     tag_group_icon_128.load()
 
@@ -3503,9 +3488,7 @@ class ItemThumb(FlowWidget):
         if id == -1:
             return
         entry = self.lib.get_entry(self.item_id)
-        filepath = os.path.normpath(
-            f"{self.lib.library_dir}/{entry.path}/{entry.filename}"
-        )
+        filepath = self.lib.library_dir / entry.path / entry.filename
         self.opener.set_filepath(filepath)
 
     def assign_favorite(self, value: bool):
@@ -3733,10 +3716,7 @@ class CollageIconRenderer(QObject):
         keep_aspect,
     ):
         entry = self.lib.get_entry(entry_id)
-        filepath = os.path.normpath(
-            f"{self.lib.library_dir}/{entry.path}/{entry.filename}"
-        )
-        file_type = os.path.splitext(filepath)[1].lower()[1:]
+        filepath = self.lib.library_dir / entry.path / entry.filename
         color: str = ""
 
         try:
@@ -3772,15 +3752,13 @@ class CollageIconRenderer(QObject):
                     self.rendered.emit(pic)
             if not data_only_mode:
                 logging.info(
-                    f"\r{INFO} Combining [ID:{entry_id}/{len(self.lib.entries)}]: {self.get_file_color(file_type)}{entry.path}{os.sep}{entry.filename}\033[0m"
+                    f"\r{INFO} Combining [ID:{entry_id}/{len(self.lib.entries)}]: {self.get_file_color(filepath.suffix)}{entry.path}{os.sep}{entry.filename}\033[0m"
                 )
                 # sys.stdout.write(f'\r{INFO} Combining [{i+1}/{len(self.lib.entries)}]: {self.get_file_color(file_type)}{entry.path}{os.sep}{entry.filename}{RESET}')
                 # sys.stdout.flush()
-                if file_type in IMAGE_TYPES:
+                if filepath.suffix in IMAGE_TYPES:
                     with Image.open(
-                        os.path.normpath(
-                            f"{self.lib.library_dir}/{entry.path}/{entry.filename}"
-                        )
+                        self.lib.library_dir / entry.path / entry.filename
                     ) as pic:
                         if keep_aspect:
                             pic.thumbnail(size)
@@ -3793,7 +3771,7 @@ class CollageIconRenderer(QObject):
                             )
                         # collage.paste(pic, (y*thumb_size, x*thumb_size))
                         self.rendered.emit(pic)
-                elif file_type in VIDEO_TYPES:
+                elif filepath.suffix in VIDEO_TYPES:
                     video = cv2.VideoCapture(filepath)
                     video.set(
                         cv2.CAP_PROP_POS_FRAMES,
@@ -3823,9 +3801,8 @@ class CollageIconRenderer(QObject):
                 f"\n{ERROR} Couldn't read {entry.path}{os.sep}{entry.filename}"
             )
             with Image.open(
-                os.path.normpath(
-                    f"{Path(__file__).parent.parent.parent}/resources/qt/images/thumb_broken_512.png"
-                )
+                Path(__file__).parent.parent.parent
+                / "resources/qt/images/thumb_broken_512.png"
             ) as pic:
                 pic.thumbnail(size)
                 if data_tint_mode and color:
@@ -3869,37 +3846,30 @@ class ThumbRenderer(QObject):
     # updatedSize = Signal(QSize)
 
     thumb_mask_512: Image.Image = Image.open(
-        os.path.normpath(
-            f"{Path(__file__).parent.parent.parent}/resources/qt/images/thumb_mask_512.png"
-        )
+        Path(__file__).parent.parent.parent / "resources/qt/images/thumb_mask_512.png"
     )
     thumb_mask_512.load()
 
     thumb_mask_hl_512: Image.Image = Image.open(
-        os.path.normpath(
-            f"{Path(__file__).parent.parent.parent}/resources/qt/images/thumb_mask_hl_512.png"
-        )
+        Path(__file__).parent.parent.parent
+        / "resources/qt/images/thumb_mask_hl_512.png"
     )
     thumb_mask_hl_512.load()
 
     thumb_loading_512: Image.Image = Image.open(
-        os.path.normpath(
-            f"{Path(__file__).parent.parent.parent}/resources/qt/images/thumb_loading_512.png"
-        )
+        Path(__file__).parent.parent.parent
+        / "resources/qt/images/thumb_loading_512.png"
     )
     thumb_loading_512.load()
 
     thumb_broken_512: Image.Image = Image.open(
-        os.path.normpath(
-            f"{Path(__file__).parent.parent.parent}/resources/qt/images/thumb_broken_512.png"
-        )
+        Path(__file__).parent.parent.parent / "resources/qt/images/thumb_broken_512.png"
     )
     thumb_broken_512.load()
 
     thumb_file_default_512: Image.Image = Image.open(
-        os.path.normpath(
-            f"{Path(__file__).parent.parent.parent}/resources/qt/images/thumb_file_default_512.png"
-        )
+        Path(__file__).parent.parent.parent
+        / "resources/qt/images/thumb_file_default_512.png"
     )
     thumb_file_default_512.load()
 
@@ -3910,9 +3880,7 @@ class ThumbRenderer(QObject):
     # TODO: Make dynamic font sized given different pixel ratios
     font_pixel_ratio: float = 1
     ext_font = ImageFont.truetype(
-        os.path.normpath(
-            f"{Path(__file__).parent.parent.parent}/resources/qt/fonts/Oxanium-Bold.ttf"
-        ),
+        Path(__file__).parent.parent.parent / "resources/qt/fonts/Oxanium-Bold.ttf",
         math.floor(12 * font_pixel_ratio),
     )
 
@@ -3922,7 +3890,7 @@ class ThumbRenderer(QObject):
     def render(
         self,
         timestamp: float,
-        filepath,
+        filepath: str|Path,
         base_size: tuple[int, int],
         pixelRatio: float,
         isLoading=False,
@@ -3932,15 +3900,14 @@ class ThumbRenderer(QObject):
         image = None
         pixmap = None
         final = None
-        extension: str = None
+        filepath = Path(filepath)
         broken_thumb = False
         # adj_font_size = math.floor(12 * pixelRatio)
         if ThumbRenderer.font_pixel_ratio != pixelRatio:
             ThumbRenderer.font_pixel_ratio = pixelRatio
             ThumbRenderer.ext_font = ImageFont.truetype(
-                os.path.normpath(
-                    f"{Path(__file__).parent.parent.parent}/resources/qt/fonts/Oxanium-Bold.ttf"
-                ),
+                Path(__file__).parent.parent.parent
+                / "resources/qt/fonts/Oxanium-Bold.ttf",
                 math.floor(12 * ThumbRenderer.font_pixel_ratio),
             )
 
@@ -3962,11 +3929,9 @@ class ThumbRenderer(QObject):
                 (adj_size, adj_size), resample=Image.Resampling.BILINEAR
             )
 
-            extension = os.path.splitext(filepath)[1][1:].lower()
-
             try:
                 # Images =======================================================
-                if extension in IMAGE_TYPES:
+                if filepath.suffix in IMAGE_TYPES:
                     image = Image.open(filepath)
                     # image = self.thumb_debug
                     if image.mode == "RGBA":
@@ -3978,7 +3943,7 @@ class ThumbRenderer(QObject):
                         image = image.convert(mode="RGB")
 
                 # Videos =======================================================
-                elif extension in VIDEO_TYPES:
+                elif filepath.suffix in VIDEO_TYPES:
                     video = cv2.VideoCapture(filepath)
                     video.set(
                         cv2.CAP_PROP_POS_FRAMES,
@@ -3995,9 +3960,9 @@ class ThumbRenderer(QObject):
                     image = Image.fromarray(frame)
 
                 # Plain Text ===================================================
-                elif extension in PLAINTEXT_TYPES:
+                elif filepath.suffix in PLAINTEXT_TYPES:
                     try:
-                        text: str = extension
+                        text: str = filepath.suffix
                         with open(filepath, "r", encoding="utf-8") as text_file:
                             text = text_file.read(256)
                         bg = Image.new("RGB", (256, 256), color="#222222")
@@ -4093,15 +4058,15 @@ class ThumbRenderer(QObject):
             pixmap.setDevicePixelRatio(pixelRatio)
 
         if pixmap:
-            self.updated.emit(timestamp, pixmap, QSize(*base_size), extension)
+            self.updated.emit(timestamp, pixmap, QSize(*base_size), filepath.suffix)
 
         else:
-            self.updated.emit(timestamp, QPixmap(), QSize(*base_size), extension)
+            self.updated.emit(timestamp, QPixmap(), QSize(*base_size), filepath.suffix)
 
     def render_big(
         self,
         timestamp: float,
-        filepath,
+        filepath: str|Path,
         base_size: tuple[int, int],
         pixelRatio: float,
         isLoading=False,
@@ -4111,16 +4076,15 @@ class ThumbRenderer(QObject):
         image: Image.Image = None
         pixmap: QPixmap = None
         final: Image.Image = None
-        extension: str = None
         broken_thumb = False
         img_ratio = 1
+        filepath = Path(filepath)
         # adj_font_size = math.floor(12 * pixelRatio)
         if ThumbRenderer.font_pixel_ratio != pixelRatio:
             ThumbRenderer.font_pixel_ratio = pixelRatio
             ThumbRenderer.ext_font = ImageFont.truetype(
-                os.path.normpath(
-                    f"{Path(__file__).parent.parent.parent}/resources/qt/fonts/Oxanium-Bold.ttf"
-                ),
+                Path(__file__).parent.parent.parent
+                / "resources/qt/fonts/Oxanium-Bold.ttf",
                 math.floor(12 * ThumbRenderer.font_pixel_ratio),
             )
 
@@ -4143,11 +4107,9 @@ class ThumbRenderer(QObject):
             # hl: Image.Image = ThumbRenderer.thumb_mask_hl_512.resize(
             # 	(adj_size, adj_size), resample=Image.Resampling.BILINEAR)
 
-            extension = os.path.splitext(filepath)[1][1:].lower()
-
             try:
                 # Images =======================================================
-                if extension in IMAGE_TYPES:
+                if filepath.suffix in IMAGE_TYPES:
                     image = Image.open(filepath)
                     # image = self.thumb_debug
                     if image.mode == "RGBA":
@@ -4159,7 +4121,7 @@ class ThumbRenderer(QObject):
                         image = image.convert(mode="RGB")
 
                 # Videos =======================================================
-                elif extension in VIDEO_TYPES:
+                elif filepath.suffix in VIDEO_TYPES:
                     video = cv2.VideoCapture(filepath)
                     video.set(
                         cv2.CAP_PROP_POS_FRAMES,
@@ -4175,9 +4137,9 @@ class ThumbRenderer(QObject):
                     frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
                     image = Image.fromarray(frame)
                 # Plain Text ===================================================
-                elif extension in PLAINTEXT_TYPES:
+                elif filepath.suffix in PLAINTEXT_TYPES:
                     try:
-                        text: str = extension
+                        text: str = filepath.suffix
                         with open(filepath, "r", encoding="utf-8") as text_file:
                             text = text_file.read(256)
                         bg = Image.new("RGB", (256, 256), color="#222222")
@@ -4323,11 +4285,11 @@ class ThumbRenderer(QObject):
                     math.ceil(adj_size * 1 / pixelRatio),
                     math.ceil(final.size[1] * 1 / pixelRatio),
                 ),
-                extension,
+                filepath.suffix,
             )
 
         else:
-            self.updated.emit(timestamp, QPixmap(), QSize(*base_size), extension)
+            self.updated.emit(timestamp, QPixmap(), QSize(*base_size), filepath.suffix)
 
 
 class CustomRunnable(QRunnable, QObject):
@@ -4412,10 +4374,8 @@ class QtDriver(QObject):
         # pal.setColor(QPalette.ColorGroup.Normal,
         # 			 QPalette.ColorRole.Window, QColor('#110F1B'))
         # app.setPalette(pal)
-        home_path = os.path.normpath(f"{Path(__file__).parent}/ui/home.ui")
-        icon_path = os.path.normpath(
-            f"{Path(__file__).parent.parent.parent}/resources/icon.png"
-        )
+        home_path = Path(__file__).parent / "ui/home.ui"
+        icon_path = Path(__file__).parent.parent.parent / "resources/icon.png"
 
         # Handle OS signals
         self.setup_signals()
@@ -4609,7 +4569,7 @@ class QtDriver(QObject):
         # self.main_window.tb_layout.addWidget(menu_bar)
 
         icon = QIcon()
-        icon.addFile(icon_path)
+        icon.addFile(str(icon_path))
         self.main_window.setWindowIcon(icon)
 
         self.preview_panel = PreviewPanel(self.lib, self)
@@ -4625,9 +4585,7 @@ class QtDriver(QObject):
         app.setWindowIcon(icon)
 
         QFontDatabase.addApplicationFont(
-            os.path.normpath(
-                f"{Path(__file__).parent.parent.parent}/resources/qt/fonts/Oxanium-Bold.ttf"
-            )
+            str(Path(__file__).parent.parent.parent / "resources/qt/fonts/Oxanium-Bold.ttf")
         )
 
         self.thumb_size = 128
@@ -4740,7 +4698,7 @@ class QtDriver(QObject):
         fn = self.lib.save_library_backup_to_disk()
         end_time = time.time()
         self.main_window.statusbar.showMessage(
-            f'Library Backup Saved at: "{os.path.normpath(os.path.normpath(f"{self.lib.library_dir}/{TS_FOLDER_NAME}/{BACKUP_FOLDER_NAME}/{fn}"))}" ({format_timespan(end_time - start_time)})'
+            f'Library Backup Saved at: "{ self.lib.library_dir / TS_FOLDER_NAME / BACKUP_FOLDER_NAME / fn}" ({format_timespan(end_time - start_time)})'
         )
 
     def add_tag_action_callback(self):
@@ -4905,7 +4863,7 @@ class QtDriver(QObject):
     def run_macro(self, name: str, entry_id: int):
         """Runs a specific Macro on an Entry given a Macro name."""
         entry = self.lib.get_entry(entry_id)
-        path = os.path.normpath(f"{self.lib.library_dir}/{entry.path}/{entry.filename}")
+        path = self.lib.library_dir / entry.path / entry.filename
         source = path.split(os.sep)[1].lower()
         if name == "sidecar":
             self.lib.add_generic_data_to_entry(
@@ -5256,9 +5214,7 @@ class QtDriver(QObject):
                     entry = self.lib.get_entry(
                         self.nav_frames[self.cur_frame_idx].contents[i][1]
                     )
-                    filepath = os.path.normpath(
-                        f"{self.lib.library_dir}/{entry.path}/{entry.filename}"
-                    )
+                    filepath = self.lib.library_dir / entry.path / entry.filename
 
                     item_thumb.set_item_id(entry.id)
                     item_thumb.assign_archived(entry.has_tag(self.lib, 0))
@@ -5303,9 +5259,7 @@ class QtDriver(QObject):
                         else collation.e_ids_and_pages[0][0]
                     )
                     cover_e = self.lib.get_entry(cover_id)
-                    filepath = os.path.normpath(
-                        f"{self.lib.library_dir}/{cover_e.path}/{cover_e.filename}"
-                    )
+                    filepath = self.lib.library_dir / cover_e.path / cover_e.filename
                     item_thumb.set_count(str(len(collation.e_ids_and_pages)))
                     item_thumb.update_clickable(
                         clickable=(
@@ -5570,8 +5524,11 @@ class QtDriver(QObject):
             self.completed += 1
         # logging.info(f'threshold:{len(self.lib.entries}, completed:{self.completed}')
         if self.completed == len(self.lib.entries):
-            filename = os.path.normpath(
-                f'{self.lib.library_dir}/{TS_FOLDER_NAME}/{COLLAGE_FOLDER_NAME}/collage_{dt.utcnow().strftime("%F_%T").replace(":", "")}.png'
+            filename = (
+                self.lib.library_dir
+                / TS_FOLDER_NAME
+                / COLLAGE_FOLDER_NAME
+                / f'collage_{dt.utcnow().strftime("%F_%T").replace(":", "")}.png'
             )
             self.collage.save(filename)
             self.collage = None
