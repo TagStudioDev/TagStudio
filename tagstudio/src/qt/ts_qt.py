@@ -41,6 +41,7 @@ from PySide6.QtWidgets import (
     QFileDialog,
     QSplashScreen,
     QMenu,
+    QDialog
 )
 from humanfriendly import format_timespan
 
@@ -72,6 +73,7 @@ from src.core.ts_core import (
 from src.core.utils.web import strip_web_protocol
 from src.qt.flowlayout import FlowLayout
 from src.qt.main_window import Ui_MainWindow
+from src.qt.settings_window import Ui_Settings
 from src.qt.helpers import FunctionIterator, CustomRunnable
 from src.qt.widgets import (
     CollageIconRenderer,
@@ -164,16 +166,17 @@ class QtDriver(QObject):
     """A Qt GUI frontend driver for TagStudio."""
 
     SIGTERM = Signal()
+    settings_window = None
+    autosave_timer = QTimer()
 
     def __init__(self, core, args):
         super().__init__()
         self.core: TagStudioCore = core
         self.lib = self.core.lib
         self.args = args
-
         # self.main_window = None
         # self.main_window = Ui_MainWindow()
-
+        # self.autosave_timer.setTimerType(QtCore.Qt.TimerType)
         self.branch: str = (" (" + VERSION_BRANCH + ")") if VERSION_BRANCH else ""
         self.base_title: str = f"TagStudio {VERSION}{self.branch}"
         # self.title_text: str = self.base_title
@@ -339,7 +342,6 @@ class QtDriver(QObject):
         close_library_action = QAction("&Close Library", menu_bar)
         close_library_action.triggered.connect(lambda: self.close_library())
         file_menu.addAction(close_library_action)
-
         # Edit Menu ============================================================
         new_tag_action = QAction("New &Tag", menu_bar)
         new_tag_action.triggered.connect(lambda: self.add_tag_action_callback())
@@ -378,7 +380,9 @@ class QtDriver(QObject):
         create_collage_action = QAction("Create Collage", menu_bar)
         create_collage_action.triggered.connect(lambda: self.create_collage())
         tools_menu.addAction(create_collage_action)
-
+        # Settings Menu ========================================================
+        open_settings_action = QAction("&Settings", menu_bar)
+        open_settings_action.triggered.connect(lambda:self.openSettings())
         # Macros Menu ==========================================================
         self.autofill_action = QAction("Autofill", menu_bar)
         self.autofill_action.triggered.connect(
@@ -420,6 +424,7 @@ class QtDriver(QObject):
         menu_bar.addMenu(file_menu)
         menu_bar.addMenu(edit_menu)
         menu_bar.addMenu(tools_menu)
+        menu_bar.addAction(open_settings_action)
         menu_bar.addMenu(macros_menu)
         menu_bar.addMenu(help_menu)
 
@@ -508,6 +513,15 @@ class QtDriver(QObject):
         self.splash.finish(self.main_window)
         self.preview_panel.update_widgets()
 
+        # Autosave
+        self.autosave_timer = QTimer(self)
+        self.autosave_timer.timeout.connect(lambda: self.backup_library())
+        self.autosave_timer.setSingleShot(False)
+        self.updateSettings()
+
+        # Give settings to classes that need it.
+        ThumbRenderer.settings = self.settings
+
         # Check if a library should be opened on startup, args should override last_library
         # TODO: check for behavior (open last, open default, start empty)
         if (
@@ -525,10 +539,28 @@ class QtDriver(QObject):
                 QColor("#9782ff"),
             )
             self.open_library(lib)
-
         app.exec_()
 
         self.shutdown()
+    def openSettings(self):
+        self.settings_window = Ui_Settings(self.main_window)
+        self.settings_window.setSettings(self.settings)
+        self.settings_window.accepted.connect(lambda: self.updateSettings())
+        self.settings_window.show()        
+
+    def updateSettings(self):
+        if not self.settings_window is None:
+            new_settings = self.settings_window.getSettings()
+            for key in new_settings.keys():
+                self.settings.setValue(key, new_settings[key])
+            self.settings_window.destroy()
+        
+        if self.settings.value('autosave_interval'):
+            self.autosave_timer.setInterval(int(self.settings.value('autosave_interval')) * (60 * 1000))
+        else:
+            self.autosave_timer.setInterval(5 * (60 * 1000))
+        
+        self.update_thumbs()
 
     def callback_library_needed_check(self, func):
         """Check if loaded library has valid path before executing the button function"""
@@ -1321,6 +1353,8 @@ class QtDriver(QObject):
         self.cur_query: str = ""
         self.selected.clear()
         self.preview_panel.update_widgets()
+        if self.settings.contains("autosave") and self.settings.value("autosave") == True:
+            self.autosave_timer.start()
         self.filter_items()
 
     def create_collage(self) -> None:

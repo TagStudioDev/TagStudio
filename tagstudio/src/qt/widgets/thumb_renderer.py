@@ -20,7 +20,7 @@ from PIL import (
     ImageEnhance,
     ImageOps,
 )
-from PySide6.QtCore import QObject, Signal, QSize
+from PySide6.QtCore import QObject, Signal, QSize, QSettings
 from PySide6.QtGui import QPixmap
 from src.core.ts_core import PLAINTEXT_TYPES, VIDEO_TYPES, IMAGE_TYPES
 
@@ -37,6 +37,10 @@ class ThumbRenderer(QObject):
     # finished = Signal()
     updated = Signal(float, QPixmap, QSize, str)
     updated_ratio = Signal(float)
+    
+    # Use as static variable.
+    settings = QSettings()
+
     # updatedImage = Signal(QPixmap)
     # updatedSize = Signal(QSize)
 
@@ -134,8 +138,12 @@ class ThumbRenderer(QObject):
             extension = os.path.splitext(filepath)[1][1:].lower()
 
             try:
+                if ThumbRenderer.settings.contains("render_thumbnails") and ThumbRenderer.settings.value("render_thumbnails") == "true":
+                    image = ThumbRenderer.thumb_file_default_512.resize(
+                        (adj_size, adj_size), resample=Image.Resampling.BILINEAR
+                    )
                 # Images =======================================================
-                if extension in IMAGE_TYPES:
+                elif extension in IMAGE_TYPES:
                     image = Image.open(filepath)
                     # image = self.thumb_debug
                     if image.mode == "RGBA":
