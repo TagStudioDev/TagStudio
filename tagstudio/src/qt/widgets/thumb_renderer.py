@@ -19,11 +19,13 @@ from PIL import (
     ImageFont,
     ImageEnhance,
     ImageOps,
+    ImageFile,
 )
 from PySide6.QtCore import QObject, Signal, QSize
 from PySide6.QtGui import QPixmap
 from src.core.ts_core import PLAINTEXT_TYPES, VIDEO_TYPES, IMAGE_TYPES
 
+ImageFile.LOAD_TRUNCATED_IMAGES = True
 
 ERROR = f"[ERROR]"
 WARNING = f"[WARNING]"
