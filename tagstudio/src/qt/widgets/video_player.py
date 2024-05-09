@@ -15,17 +15,9 @@ from PySide6.QtCore import (
     QRect,
     QRectF,
 )
-from PySide6.QtMultimedia import (
-    QMediaPlayer,
-    QAudioOutput,
-    QMediaDevices
-)
+from PySide6.QtMultimedia import QMediaPlayer, QAudioOutput, QMediaDevices
 from PySide6.QtMultimediaWidgets import QGraphicsVideoItem
-from PySide6.QtWidgets import (
-    QGraphicsView,
-    QGraphicsScene,
-    QGraphicsPixmapItem
-)
+from PySide6.QtWidgets import QGraphicsView, QGraphicsScene, QGraphicsPixmapItem
 from PySide6.QtGui import (
     QInputMethodEvent,
     QPen,
@@ -36,7 +28,7 @@ from PySide6.QtGui import (
     QAction,
     QPixmap,
     QRegion,
-    QBitmap
+    QBitmap,
 )
 from PySide6.QtSvgWidgets import QSvgWidget
 from pathlib import Path
@@ -44,12 +36,12 @@ from PIL import Image
 from src.qt.helpers import FileOpenerHelper
 
 from src.core.ts_core import VIDEO_TYPES, AUDIO_TYPES
-from PIL import (
-    Image,
-    ImageDraw
-)
+from PIL import Image, ImageDraw
+
 if typing.TYPE_CHECKING:
     from src.qt.ts_qt import QtDriver
+
+
 class VideoPlayer(QGraphicsView):
     """A simple video player for the TagStudio application."""
 
@@ -61,7 +53,7 @@ class VideoPlayer(QGraphicsView):
     content_visible = False
     filepath = None
 
-    def __init__(self, driver:"QtDriver") -> None:
+    def __init__(self, driver: "QtDriver") -> None:
         # Set up the base class.
         super().__init__()
         self.driver = driver
@@ -153,7 +145,7 @@ class VideoPlayer(QGraphicsView):
         autoplay_action.triggered.connect(self.toggleAutoplay)
         self.addAction(autoplay_action)
         self.autoplay = autoplay_action
-        
+
         open_file_action = QAction("Open file", self)
         open_file_action.triggered.connect(self.opener.open_file)
         open_explorer_action = QAction("Open file in explorer", self)
@@ -167,7 +159,6 @@ class VideoPlayer(QGraphicsView):
 
     def toggleAutoplay(self) -> None:
         self.driver.settings.setValue("autoplay_videos", self.autoplay.isChecked())
-            
 
     def checkMediaStatus(self, media_status: QMediaPlayer.MediaStatus) -> None:
         logging.info(media_status)
@@ -353,11 +344,17 @@ class VideoPlayer(QGraphicsView):
         )
         draw = ImageDraw.Draw(mask)
         draw.rounded_rectangle(
-            (0, 0) + (self.contentsRect().size().width(), self.contentsRect().size().height()),
+            (0, 0)
+            + (self.contentsRect().size().width(), self.contentsRect().size().height()),
             radius=20,
             fill=(0, 0, 0, 0),
         )
-        mask.resize((int(self.contentsRect().size().width()), int(self.contentsRect().size().height())))
+        mask.resize(
+            (
+                int(self.contentsRect().size().width()),
+                int(self.contentsRect().size().height()),
+            )
+        )
         mask = mask.getchannel("A").toqpixmap()
         self.setMask(QRegion(QBitmap(mask)))
 
