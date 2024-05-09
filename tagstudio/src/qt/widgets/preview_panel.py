@@ -367,7 +367,9 @@ class PreviewPanel(QWidget):
                     pass
                 for i, c in enumerate(self.containers):
                     c.setHidden(True)
-
+            self.preview_img.show()
+            self.preview_vid.stop()
+            self.preview_vid.hide()
             self.selected = list(self.driver.selected)
             self.add_field_button.setHidden(True)
 
@@ -398,12 +400,11 @@ class PreviewPanel(QWidget):
                     self.open_explorer_action.triggered.connect(
                         self.opener.open_explorer
                     )
-
-                    # TODO: Do this somewhere else, this is just here temporarily.
-                    extension = os.path.splitext(filepath)[1][1:].lower()
                     self.preview_img.show()
                     self.preview_vid.stop()
                     self.preview_vid.hide()
+                    # TODO: Do this somewhere else, this is just here temporarily.
+                    extension = os.path.splitext(filepath)[1][1:].lower()
                     try:
                         image = None
                         if extension in IMAGE_TYPES:
@@ -488,6 +489,9 @@ class PreviewPanel(QWidget):
 
         # Multiple Selected Items
         elif len(self.driver.selected) > 1:
+            self.preview_img.show()
+            self.preview_vid.stop()
+            self.preview_vid.hide()
             if self.selected != self.driver.selected:
                 self.file_label.setText(f"{len(self.driver.selected)} Items Selected")
                 self.file_label.setCursor(Qt.CursorShape.ArrowCursor)

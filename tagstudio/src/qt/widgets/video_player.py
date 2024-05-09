@@ -143,16 +143,27 @@ class VideoPlayer(QGraphicsView):
         self.opener = FileOpenerHelper(filepath=self.filepath)
         autoplay_action = QAction("Autoplay", self)
         autoplay_action.setCheckable(True)
-        autoplay_action.setChecked(True)
+        if self.driver.settings.contains("autoplay_videos"):
+            if self.driver.settings.value("autoplay_videos") == "true":
+                autoplay_action.setChecked(True)
+            else:
+                autoplay_action.setChecked(False)
+        else:
+            autoplay_action.setChecked(True)
         autoplay_action.triggered.connect(self.toggleAutoplay)
         self.addAction(autoplay_action)
         self.autoplay = autoplay_action
+        
         open_file_action = QAction("Open file", self)
         open_file_action.triggered.connect(self.opener.open_file)
         open_explorer_action = QAction("Open file in explorer", self)
         open_explorer_action.triggered.connect(self.opener.open_explorer)
         self.addAction(open_file_action)
         self.addAction(open_explorer_action)
+
+    def close(self, *args, **kwargs) -> None:
+        self.player.stop()
+        super().close(*args, **kwargs)
 
     def toggleAutoplay(self) -> None:
         self.driver.settings.setValue("autoplay_videos", self.autoplay.isChecked())
@@ -180,16 +191,10 @@ class VideoPlayer(QGraphicsView):
                 # self.player.setVideoOutput(self.video_preview)
                 self.album_art.setOpacity(0.0)
                 # self.player.audioOutput().setMuted(True)
-                if self.driver.settings.contains("autoplay_videos"):
-                    if self.driver.settings.value("autoplay_videos"):
-                        self.player.play()
-                    else:
-                        self.player.pause()
+                if self.autoplay.isChecked():
+                    self.player.play()
                 else:
-                    if self.autoplay.isChecked():
-                        self.player.play()
-                    else:
-                        self.player.pause()
+                    self.player.pause()
             # elif extension in AUDIO_TYPES:
             #     self.player.setVideoOutput(None)
             #     self.album_art.setOpacity(1.0)
