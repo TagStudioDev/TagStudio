@@ -99,12 +99,12 @@ class VideoPlayer(QGraphicsView):
             QBrush(QColor(0, 0, 0, 0)),
         )
         # self.video_tint.setParentItem(self.video_preview)
-        self.album_art = QGraphicsPixmapItem(self.video_preview)
-        self.scene().addItem(self.album_art)
-        self.album_art.setPixmap(
-            QPixmap("./tagstudio/resources/qt/images/thumb_file_default_512.png")
-        )
-        self.album_art.setOpacity(0.0)
+        # self.album_art = QGraphicsPixmapItem(self.video_preview)
+        # self.scene().addItem(self.album_art)
+        # self.album_art.setPixmap(
+        #     QPixmap("./tagstudio/resources/qt/images/thumb_file_default_512.png")
+        # )
+        # self.album_art.setOpacity(0.0)
         # Set up the buttons.
         self.play_pause = QSvgWidget("./tagstudio/resources/pause.svg")
         self.play_pause.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, True)
