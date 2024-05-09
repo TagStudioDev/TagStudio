@@ -430,7 +430,7 @@ class PreviewPanel(QWidget):
                             frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
                             image = Image.fromarray(frame)
                             self.preview_vid.play(filepath,QSize(image.width, image.height))
-                            self.preview_vid.resizeVideo(QSize(self.preview_vid.width(),self.preview_vid.height()))
+                            self.resizeEvent(QResizeEvent(QSize(image.width, image.height), QSize(image.width, image.height)))
                             self.preview_vid.show()
 
                         # Stats for specific file types are displayed here.
