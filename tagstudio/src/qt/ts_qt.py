@@ -13,6 +13,7 @@ import math
 import os
 import sys
 import time
+import webbrowser
 from datetime import datetime as dt
 from pathlib import Path
 from queue import Empty, Queue
@@ -132,19 +133,20 @@ class NavigationState:
 
 
 class Consumer(QThread):
+    MARKER_QUIT = "MARKER_QUIT"
+
     def __init__(self, queue) -> None:
         self.queue = queue
         QThread.__init__(self)
 
     def run(self):
-        self.active = True
-        while self.active:
+        while True:
             try:
-                job = self.queue.get(timeout=0.2)
-                # print('Running job...')
-                # logging.info(*job[1])
+                job = self.queue.get()
+                if job == self.MARKER_QUIT:
+                    break
                 job[0](*job[1])
-            except (Empty, RuntimeError):
+            except RuntimeError:
                 pass
 
     def set_page_count(self, count: int):
@@ -179,7 +181,7 @@ class QtDriver(QObject):
         # self.title_text: str = self.base_title
         # self.buffer = {}
         self.thumb_job_queue: Queue = Queue()
-        self.thumb_threads = []
+        self.thumb_threads: list[Consumer] = []
         self.thumb_cutoff: float = time.time()
         # self.selected: list[tuple[int,int]] = [] # (Thumb Index, Page Index)
         self.selected: list[tuple[ItemType, int]] = []  # (Item Type, Item ID)
@@ -415,6 +417,13 @@ class QtDriver(QObject):
         folders_to_tags_action.triggered.connect(lambda: ftt_modal.show())
         macros_menu.addAction(folders_to_tags_action)
 
+        # Help Menu ==========================================================
+        self.repo_action = QAction("Go to GitHub Repository", menu_bar)
+        self.repo_action.triggered.connect(
+            lambda: webbrowser.open("https://github.com/TagStudioDev/TagStudio")
+        )
+        help_menu.addAction(self.repo_action)
+
         self.set_macro_menu_viability()
 
         menu_bar.addMenu(file_menu)
@@ -545,10 +554,14 @@ class QtDriver(QObject):
             self.settings.setValue("last_library", self.lib.library_dir)
             self.settings.sync()
         logging.info("[SHUTDOWN] Ending Thumbnail Threads...")
+        for _ in self.thumb_threads:
+            self.thumb_job_queue.put(Consumer.MARKER_QUIT)
+
+        # wait for threads to quit
         for thread in self.thumb_threads:
-            thread.active = False
             thread.quit()
             thread.wait()
+
         QApplication.quit()
 
     def save_library(self, show_status=True):
