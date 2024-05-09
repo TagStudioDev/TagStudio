@@ -89,6 +89,7 @@ from src.qt.modals import (
     FixUnlinkedEntriesModal,
     FixDupeFilesModal,
     FoldersToTagsModal,
+    drop_import,
 )
 import src.qt.resources_rc
 
@@ -507,6 +508,11 @@ class QtDriver(QObject):
 
         # self.render_times: list = []
         # self.main_window.setWindowFlag(Qt.FramelessWindowHint)
+
+        self.main_window.setAcceptDrops(True)
+        self.main_window.dragEnterEvent = drop_import.dragEnterEvent
+        self.main_window.dropEvent = lambda event: drop_import.dropEvent(self, event)
+        self.main_window.dragMoveEvent = drop_import.dragMoveEvent
 
         # NOTE: Putting this early will result in a white non-responsive
         # window until everything is loaded. Consider adding a splash screen
