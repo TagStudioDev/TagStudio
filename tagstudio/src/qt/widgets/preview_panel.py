@@ -40,8 +40,9 @@ from src.qt.widgets import (
     EditTextBox,
     EditTextLine,
     ItemThumb,
+    
 )
-
+from src.qt.widgets.video_player import VideoPlayer
 # Only import for type checking/autocompletion, will not be imported at runtime.
 if typing.TYPE_CHECKING:
     from src.qt.ts_qt import QtDriver
@@ -93,6 +94,8 @@ class PreviewPanel(QWidget):
         self.preview_img.setMinimumSize(*self.img_button_size)
         self.preview_img.setFlat(True)
         self.preview_img.setContextMenuPolicy(Qt.ContextMenuPolicy.ActionsContextMenu)
+        self.preview_vid = VideoPlayer()
+        self.preview_vid.hide()
 
         self.preview_img.addAction(self.open_file_action)
         self.preview_img.addAction(self.open_explorer_action)
@@ -124,7 +127,9 @@ class PreviewPanel(QWidget):
 
         image_layout.addWidget(self.preview_img)
         image_layout.setAlignment(self.preview_img, Qt.AlignmentFlag.AlignCenter)
-
+        image_layout.addWidget(self.preview_vid)
+        image_layout.setAlignment(self.preview_vid, Qt.AlignmentFlag.AlignCenter)
+        self.image_container.setMinimumSize(*self.img_button_size)
         self.file_label = FileOpenerLabel("Filename")
         self.file_label.setWordWrap(True)
         self.file_label.setTextInteractionFlags(
@@ -287,6 +292,8 @@ class PreviewPanel(QWidget):
         self.img_button_size = (adj_width, adj_height)
         self.preview_img.setMaximumSize(adj_size)
         self.preview_img.setIconSize(adj_size)
+        self.preview_vid.resizeVideo(adj_size)
+        self.preview_vid.setMaximumSize(adj_size)
         # self.preview_img.setMinimumSize(adj_size)
 
         # if self.preview_img.iconSize().toTuple()[0] < self.preview_img.size().toTuple()[0] + 10:
@@ -393,6 +400,9 @@ class PreviewPanel(QWidget):
 
                     # TODO: Do this somewhere else, this is just here temporarily.
                     extension = os.path.splitext(filepath)[1][1:].lower()
+                    self.preview_img.show()
+                    self.preview_vid.stop()
+                    self.preview_vid.hide()
                     try:
                         image = None
                         if extension in IMAGE_TYPES:
@@ -404,6 +414,7 @@ class PreviewPanel(QWidget):
                             if image.mode != "RGB":
                                 image = image.convert(mode="RGB")
                         elif extension in VIDEO_TYPES:
+                            self.preview_img.hide()
                             video = cv2.VideoCapture(filepath)
                             video.set(
                                 cv2.CAP_PROP_POS_FRAMES,
@@ -418,6 +429,9 @@ class PreviewPanel(QWidget):
                                 success, frame = video.read()
                             frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
                             image = Image.fromarray(frame)
+                            self.preview_vid.play(filepath,QSize(image.width, image.height))
+                            self.preview_vid.resizeVideo(QSize(self.preview_vid.width(),self.preview_vid.height()))
+                            self.preview_vid.show()
 
                         # Stats for specific file types are displayed here.
                         if extension in (IMAGE_TYPES + VIDEO_TYPES):
