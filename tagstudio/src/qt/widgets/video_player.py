@@ -17,7 +17,12 @@ from PySide6.QtCore import (
 )
 from PySide6.QtMultimedia import QMediaPlayer, QAudioOutput, QMediaDevices
 from PySide6.QtMultimediaWidgets import QGraphicsVideoItem
-from PySide6.QtWidgets import QGraphicsView, QGraphicsScene, QGraphicsPixmapItem
+from PySide6.QtWidgets import (
+    QGraphicsView,
+    QGraphicsScene,
+    QGraphicsPixmapItem,
+    QWidget,
+)
 from PySide6.QtGui import (
     QInputMethodEvent,
     QPen,
@@ -101,8 +106,8 @@ class VideoPlayer(QGraphicsView):
         )
         self.album_art.setOpacity(0.0)
         # Set up the buttons.
-
-        self.play_pause = QSvgWidget("./tagstudio/resources/pause.svg", self)
+        self.play_pause = QSvgWidget("./tagstudio/resources/pause.svg")
+        self.play_pause.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, True)
         self.play_pause.setMouseTracking(True)
         self.play_pause.installEventFilter(self)
         self.scene().addWidget(self.play_pause)
@@ -113,7 +118,8 @@ class VideoPlayer(QGraphicsView):
         )
         self.play_pause.hide()
 
-        self.mute_button = QSvgWidget("./tagstudio/resources/volume_muted.svg", self)
+        self.mute_button = QSvgWidget("./tagstudio/resources/volume_muted.svg")
+        self.mute_button.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, True)
         self.mute_button.setMouseTracking(True)
         self.mute_button.installEventFilter(self)
         self.scene().addWidget(self.mute_button)
@@ -258,7 +264,7 @@ class VideoPlayer(QGraphicsView):
         self.video_tint.setBrush(QBrush(QColor(0, 0, 0, value)))
 
     def underMouse(self) -> bool:
-        logging.info("under mouse")
+        # logging.info("under mouse")
         self.animation.setStartValue(self.video_tint.brush().color().alpha())
         self.animation.setEndValue(100)
         self.animation.setDuration(500)
@@ -272,7 +278,7 @@ class VideoPlayer(QGraphicsView):
         return super().underMouse()
 
     def releaseMouse(self) -> None:
-        logging.info("release mouse")
+        # logging.info("release mouse")
         self.animation.setStartValue(self.video_tint.brush().color().alpha())
         self.animation.setEndValue(0)
         self.animation.setDuration(500)
