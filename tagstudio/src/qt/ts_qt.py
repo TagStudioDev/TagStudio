@@ -371,7 +371,7 @@ class QtDriver(QObject):
 
         paste_entry_fields_action = QAction("&Paste", menu_bar)
         paste_entry_fields_action.triggered.connect(
-            lambda: self.paste_entry_fields_action_callback()
+            self.paste_entry_fields_action_callback
         )
         paste_entry_fields_action.setShortcut(
             QtCore.QKeyCombination(
@@ -870,16 +870,16 @@ class QtDriver(QObject):
                         )
 
     def copy_entry_fields_action_callback(self):
-        for item in self.selected.__reversed__():
-            if item[0] == ItemType.ENTRY:
-                entry = self.lib.get_entry(item[1])
+        for item_type, item_id in reversed(self.selected):
+            if item_type == ItemType.ENTRY:
+                entry = self.lib.get_entry(item_id)
                 self.copied_fields = entry.fields.copy()
 
     def paste_entry_fields_action_callback(self):
         if self.copied_fields != None:
-            for item in self.selected:
-                if item[0] == ItemType.ENTRY:
-                    entry = self.lib.get_entry(item[1])
+            for item_type, item_id in self.selected:
+                if item_type == ItemType.ENTRY:
+                    entry = self.lib.get_entry(item_id)
                     entry.fields = self.copied_fields.copy()
             self.preview_panel.update_widgets()
 
