@@ -874,6 +874,7 @@ class QtDriver(QObject):
             if item_type == ItemType.ENTRY:
                 entry = self.lib.get_entry(item_id)
                 self.copied_fields = entry.fields.copy()
+                break
 
     def paste_entry_fields_action_callback(self):
         if self.copied_fields != None:
