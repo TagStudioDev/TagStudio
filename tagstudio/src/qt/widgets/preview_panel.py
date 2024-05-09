@@ -94,7 +94,7 @@ class PreviewPanel(QWidget):
         self.preview_img.setMinimumSize(*self.img_button_size)
         self.preview_img.setFlat(True)
         self.preview_img.setContextMenuPolicy(Qt.ContextMenuPolicy.ActionsContextMenu)
-        self.preview_vid = VideoPlayer()
+        self.preview_vid = VideoPlayer(driver)
         self.preview_vid.hide()
 
         self.preview_img.addAction(self.open_file_action)
@@ -294,6 +294,7 @@ class PreviewPanel(QWidget):
         self.preview_img.setIconSize(adj_size)
         self.preview_vid.resizeVideo(adj_size)
         self.preview_vid.setMaximumSize(adj_size)
+        self.preview_vid.setMinimumSize(adj_size)
         # self.preview_img.setMinimumSize(adj_size)
 
         # if self.preview_img.iconSize().toTuple()[0] < self.preview_img.size().toTuple()[0] + 10:

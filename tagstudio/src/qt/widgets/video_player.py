@@ -1,5 +1,6 @@
 import logging
 import os
+import typing
 
 os.environ["QT_MEDIA_BACKEND"] = "ffmpeg"
 
@@ -17,27 +18,16 @@ from PySide6.QtCore import (
 from PySide6.QtMultimedia import (
     QMediaPlayer,
     QAudioOutput,
-    QMediaDevices,
-    QAudioFormat,
-    QAudioDecoder,
-    QAudioBuffer,
+    QMediaDevices
 )
 from PySide6.QtMultimediaWidgets import QGraphicsVideoItem
 from PySide6.QtWidgets import (
     QGraphicsView,
     QGraphicsScene,
-    QGraphicsPixmapItem,
-    QSizePolicy,
-    QLabel,
-    QGraphicsEffect,
-    QStyleOption,
-    QWidget,
-    QGraphicsItem,
+    QGraphicsPixmapItem
 )
 from PySide6.QtGui import (
-    QDragMoveEvent,
     QInputMethodEvent,
-    QPainter,
     QPen,
     QColor,
     QBrush,
@@ -46,7 +36,7 @@ from PySide6.QtGui import (
     QAction,
     QPixmap,
     QRegion,
-    QBitmap,
+    QBitmap
 )
 from PySide6.QtSvgWidgets import QSvgWidget
 from pathlib import Path
@@ -56,16 +46,10 @@ from src.qt.helpers import FileOpenerHelper
 from src.core.ts_core import VIDEO_TYPES, AUDIO_TYPES
 from PIL import (
     Image,
-    ImageChops,
-    UnidentifiedImageError,
-    ImageQt,
-    ImageDraw,
-    ImageFont,
-    ImageEnhance,
-    ImageOps,
+    ImageDraw
 )
-
-
+if typing.TYPE_CHECKING:
+    from src.qt.ts_qt import QtDriver
 class VideoPlayer(QGraphicsView):
     """A simple video player for the TagStudio application."""
 
@@ -77,10 +61,10 @@ class VideoPlayer(QGraphicsView):
     content_visible = False
     filepath = None
 
-    def __init__(self) -> None:
+    def __init__(self, driver:"QtDriver") -> None:
         # Set up the base class.
         super().__init__()
-
+        self.driver = driver
         self.animation = QVariantAnimation(self)
         self.animation.valueChanged.connect(
             lambda value: self.setTintTransparency(value)
@@ -102,6 +86,7 @@ class VideoPlayer(QGraphicsView):
         self.player.setAudioOutput(
             QAudioOutput(QMediaDevices().defaultAudioOutput(), self.player)
         )
+        self.player.audioOutput().setMuted(True)
         self.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
@@ -146,7 +131,6 @@ class VideoPlayer(QGraphicsView):
             self.height() - self.mute_button.size().height() / 2,
         )
         self.mute_button.hide()
-
         # self.fullscreen_button = QSvgWidget('./tagstudio/resources/pause.svg', self)
         # self.fullscreen_button.setMouseTracking(True)
         # self.fullscreen_button.installEventFilter(self)
@@ -157,12 +141,22 @@ class VideoPlayer(QGraphicsView):
 
         self.setContextMenuPolicy(Qt.ContextMenuPolicy.ActionsContextMenu)
         self.opener = FileOpenerHelper(filepath=self.filepath)
+        autoplay_action = QAction("Autoplay", self)
+        autoplay_action.setCheckable(True)
+        autoplay_action.setChecked(True)
+        autoplay_action.triggered.connect(self.toggleAutoplay)
+        self.addAction(autoplay_action)
+        self.autoplay = autoplay_action
         open_file_action = QAction("Open file", self)
         open_file_action.triggered.connect(self.opener.open_file)
         open_explorer_action = QAction("Open file in explorer", self)
         open_explorer_action.triggered.connect(self.opener.open_explorer)
         self.addAction(open_file_action)
         self.addAction(open_explorer_action)
+
+    def toggleAutoplay(self) -> None:
+        self.driver.settings.setValue("autoplay_videos", self.autoplay.isChecked())
+            
 
     def checkMediaStatus(self, media_status: QMediaPlayer.MediaStatus) -> None:
         logging.info(media_status)
@@ -183,15 +177,24 @@ class VideoPlayer(QGraphicsView):
             if old_filename == filename:
                 self.player.play()
             elif extension in VIDEO_TYPES:
-                self.player.setVideoOutput(self.video_preview)
+                # self.player.setVideoOutput(self.video_preview)
                 self.album_art.setOpacity(0.0)
-                self.player.audioOutput().setMuted(True)
-                self.player.play()
-            elif extension in AUDIO_TYPES:
-                self.player.setVideoOutput(None)
-                self.album_art.setOpacity(1.0)
-                self.player.audioOutput().setMuted(False)
-                self.player.pause()
+                # self.player.audioOutput().setMuted(True)
+                if self.driver.settings.contains("autoplay_videos"):
+                    if self.driver.settings.value("autoplay_videos"):
+                        self.player.play()
+                    else:
+                        self.player.pause()
+                else:
+                    if self.autoplay.isChecked():
+                        self.player.play()
+                    else:
+                        self.player.pause()
+            # elif extension in AUDIO_TYPES:
+            #     self.player.setVideoOutput(None)
+            #     self.album_art.setOpacity(1.0)
+            #     self.player.audioOutput().setMuted(False)
+            #     self.player.pause()
             # logging.info(f'Successfully played.')
             self.opener.set_filepath(self.filepath)
             self.keepControlsInPlace()
@@ -306,7 +309,7 @@ class VideoPlayer(QGraphicsView):
 
     def play(self, filepath: str, resolution: QSize) -> None:
         # Sets the filepath and sends the current player position to the very end, so that the new video can be played.
-        self.player.audioOutput().setMuted(True)
+        # self.player.audioOutput().setMuted(True)
         logging.info(f"Playing {filepath}")
         self.resolution = resolution
         self.filepath = filepath
@@ -328,27 +331,28 @@ class VideoPlayer(QGraphicsView):
             0, 0, self.video_preview.size().width(), self.video_preview.size().height()
         )
 
+        rcontent = self.contentsRect()
         self.centerOn(self.video_preview)
         self.roundCorners()
-        # self.setSceneRect(0, 0, rcontent.width(), rcontent.height())
+        self.setSceneRect(0, 0, rcontent.width(), rcontent.height())
         self.keepControlsInPlace()
 
     def roundCorners(self) -> None:
         mask = Image.new(
             "RGBA",
             (
-                int(self.video_preview.size().width()),
-                int(self.video_preview.size().height()),
+                int(self.contentsRect().size().width()),
+                int(self.contentsRect().size().height()),
             ),
             (0, 0, 0, 255),
         )
         draw = ImageDraw.Draw(mask)
         draw.rounded_rectangle(
-            (0, 0) + (self.size().width(), self.size().height()),
+            (0, 0) + (self.contentsRect().size().width(), self.contentsRect().size().height()),
             radius=20,
             fill=(0, 0, 0, 0),
         )
-        mask.resize((int(self.size().width()), int(self.size().height())))
+        mask.resize((int(self.contentsRect().size().width()), int(self.contentsRect().size().height())))
         mask = mask.getchannel("A").toqpixmap()
         self.setMask(QRegion(QBitmap(mask)))
 
@@ -367,6 +371,7 @@ class VideoPlayer(QGraphicsView):
     def resizeEvent(self, event: QResizeEvent) -> None:
         # Keeps the video preview in the center of the screen.
         self.centerOn(self.video_preview)
+        self.resizeVideo(self.video_preview.size())
         return
         # return super().resizeEvent(event)\
 
