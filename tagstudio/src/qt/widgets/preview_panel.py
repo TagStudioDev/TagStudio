@@ -40,9 +40,9 @@ from src.qt.widgets import (
     EditTextBox,
     EditTextLine,
     ItemThumb,
-    
 )
 from src.qt.widgets.video_player import VideoPlayer
+
 # Only import for type checking/autocompletion, will not be imported at runtime.
 if typing.TYPE_CHECKING:
     from src.qt.ts_qt import QtDriver
@@ -429,8 +429,15 @@ class PreviewPanel(QWidget):
                                 success, frame = video.read()
                             frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
                             image = Image.fromarray(frame)
-                            self.preview_vid.play(filepath,QSize(image.width, image.height))
-                            self.resizeEvent(QResizeEvent(QSize(image.width, image.height), QSize(image.width, image.height)))
+                            self.preview_vid.play(
+                                filepath, QSize(image.width, image.height)
+                            )
+                            self.resizeEvent(
+                                QResizeEvent(
+                                    QSize(image.width, image.height),
+                                    QSize(image.width, image.height),
+                                )
+                            )
                             self.preview_vid.show()
 
                         # Stats for specific file types are displayed here.
