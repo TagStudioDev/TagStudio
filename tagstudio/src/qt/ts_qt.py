@@ -90,6 +90,7 @@ from src.qt.modals.file_extension import FileExtensionModal
 from src.qt.modals.fix_unlinked import FixUnlinkedEntriesModal
 from src.qt.modals.fix_dupes import FixDupeFilesModal
 from src.qt.modals.folders_to_tags import FoldersToTagsModal
+from src.qt.modals.drop_import import DropImport
 
 # this import has side-effect of import PySide resources
 import src.qt.resources_rc  # pylint: disable=unused-import
@@ -573,6 +574,11 @@ class QtDriver(QObject):
 
         # self.render_times: list = []
         # self.main_window.setWindowFlag(Qt.FramelessWindowHint)
+
+        self.main_window.setAcceptDrops(True)
+        self.main_window.dragEnterEvent = drop_import.dragEnterEvent
+        self.main_window.dropEvent = lambda event: drop_import.dropEvent(self, event)
+        self.main_window.dragMoveEvent = drop_import.dragMoveEvent
 
         # NOTE: Putting this early will result in a white non-responsive
         # window until everything is loaded. Consider adding a splash screen
