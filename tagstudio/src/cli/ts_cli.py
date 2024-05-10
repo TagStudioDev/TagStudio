@@ -360,7 +360,7 @@ class CliDriver:
             external_preview_path: Path = (
                 self.lib.library_dir / TS_FOLDER_NAME / "external_preview.jpg"
             )
-            if not external_preview_path.isfile():
+            if not external_preview_path.is_file():
                 temp = self.external_preview_default
                 temp.save(external_preview_path)
             open_file(external_preview_path)
@@ -368,30 +368,30 @@ class CliDriver:
     def set_external_preview_default(self) -> None:
         """Sets the external preview to its default image."""
         if self.lib and self.lib.library_dir:
-            external_preview_path: str = (
+            external_preview_path: Path = (
                 self.lib.library_dir / TS_FOLDER_NAME / "external_preview.jpg"
             )
-            if external_preview_path.isfile():
+            if external_preview_path.is_file():
                 temp = self.external_preview_default
                 temp.save(external_preview_path)
 
     def set_external_preview_broken(self) -> None:
         """Sets the external preview image file to the 'broken' placeholder."""
         if self.lib and self.lib.library_dir:
-            external_preview_path: str = (
+            external_preview_path: Path = (
                 self.lib.library_dir / TS_FOLDER_NAME / "external_preview.jpg"
             )
-            if external_preview_path.isfile():
+            if external_preview_path.is_file():
                 temp = self.external_preview_broken
                 temp.save(external_preview_path)
 
     def close_external_preview(self) -> None:
         """Destroys and closes the external preview image file."""
         if self.lib and self.lib.library_dir:
-            external_preview_path: str = (
+            external_preview_path: Path = (
                 self.lib.library_dir / TS_FOLDER_NAME / "external_preview.jpg"
             )
-            if external_preview_path.isfile():
+            if external_preview_path.is_file():
                 os.remove(external_preview_path)
 
     def scr_create_library(self, path=None):
@@ -1851,7 +1851,7 @@ class CliDriver:
                     print(self.format_h1(h1, self.get_file_color(filename.suffix)))
                     print("")
 
-                    if not filename.isfile():
+                    if not filename.is_file():
                         print(
                             f"{RED_BG}{BRIGHT_WHITE_FG}[File Missing]{RESET}{BRIGHT_RED_FG} (Run 'fix missing' to resolve){RESET}"
                         )
@@ -2759,7 +2759,7 @@ class CliDriver:
             )
             print("")
 
-            if not os.path.isfile(filename):
+            if not filename.is_file():
                 print(
                     f"{RED_BG}{BRIGHT_WHITE_FG}[File Missing]{RESET}{BRIGHT_RED_FG} (Run 'fix missing' to resolve){RESET}"
                 )
@@ -3024,7 +3024,7 @@ class CliDriver:
         print(self.format_h1(h1, self.get_file_color(os.path.splitext(filename)[1])))
         print("")
 
-        if not os.path.isfile(filename):
+        if not filename.is_file():
             print(
                 f"{RED_BG}{BRIGHT_WHITE_FG}[File Missing]{RESET}{BRIGHT_RED_FG} (Run 'fix missing' to resolve){RESET}"
             )
