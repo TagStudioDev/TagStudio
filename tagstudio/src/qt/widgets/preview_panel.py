@@ -345,7 +345,9 @@ class PreviewPanel(QWidget):
         self.isOpen = True
         # self.tag_callback = tag_callback if tag_callback else None
         window_title = ""
-
+        self.preview_img.show()
+        self.preview_vid.stop()
+        self.preview_vid.hide()
         # 0 Selected Items
         if not self.driver.selected:
             if self.selected or not self.initialized:
@@ -400,9 +402,6 @@ class PreviewPanel(QWidget):
                     self.open_explorer_action.triggered.connect(
                         self.opener.open_explorer
                     )
-                    self.preview_img.show()
-                    self.preview_vid.stop()
-                    self.preview_vid.hide()
                     # TODO: Do this somewhere else, this is just here temporarily.
                     extension = os.path.splitext(filepath)[1][1:].lower()
                     try:

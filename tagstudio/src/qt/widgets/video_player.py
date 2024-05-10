@@ -144,7 +144,7 @@ class VideoPlayer(QGraphicsView):
         autoplay_action.setChecked(
             self.driver.settings.value("autoplay_videos", True, bool)
         )
-        autoplay_action.triggered.connect(self.toggleAutoplay)
+        autoplay_action.triggered.connect(lambda: self.toggleAutoplay())
         self.addAction(autoplay_action)
         self.autoplay = autoplay_action
 
@@ -169,8 +169,6 @@ class VideoPlayer(QGraphicsView):
             # Even if I stop the player before switching, it breaks.
             # On the plus side, this adds infinite looping for the video preview.
             self.player.stop()
-            old_filename = self.player.source().fileName()
-            logging.info(f"Old filepath: {old_filename}")
             self.player.setSource(QUrl().fromLocalFile(self.filepath))
             # logging.info(f'Set source to {self.filepath}.')
             # self.video_preview.setSize(self.resolution)
@@ -178,22 +176,10 @@ class VideoPlayer(QGraphicsView):
             # logging.info(f'Set muted to true.')
             extension = os.path.splitext(self.filepath)[1][1:].lower()
             filename = os.path.basename(self.filepath)
-            if old_filename == filename:
+            if self.driver.settings.value("autoplay_videos", True, bool):
                 self.player.play()
-            elif extension in VIDEO_TYPES:
-                # self.player.setVideoOutput(self.video_preview)
-                # self.album_art.setOpacity(0.0)
-                # self.player.audioOutput().setMuted(True)
-                if self.autoplay.isChecked():
-                    self.player.play()
-                else:
-                    self.player.pause()
-            # elif extension in AUDIO_TYPES:
-            #     self.player.setVideoOutput(None)
-            #     self.album_art.setOpacity(1.0)
-            #     self.player.audioOutput().setMuted(False)
-            #     self.player.pause()
-            # logging.info(f'Successfully played.')
+            else:
+                self.player.pause()
             self.opener.set_filepath(self.filepath)
             self.keepControlsInPlace()
             self.updateControls()
@@ -316,10 +302,10 @@ class VideoPlayer(QGraphicsView):
             self.player.play()
         else:
             self.checkMediaStatus(QMediaPlayer.MediaStatus.EndOfMedia)
-        logging.info(f"Successfully stopped.")
+        # logging.info(f"Successfully stopped.")
 
     def stop(self) -> None:
-        # Stops the video.
+        self.filepath = None
         self.player.stop()
 
     def resizeVideo(self, new_size: QSize) -> None:
