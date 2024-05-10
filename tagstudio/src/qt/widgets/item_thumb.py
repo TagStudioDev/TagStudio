@@ -23,7 +23,7 @@ from PySide6.QtWidgets import (
     QCheckBox,
 )
 
-
+from src.core.enums import FieldID
 from src.core.library import ItemType, Library, Entry
 from src.core.constants import AUDIO_TYPES, VIDEO_TYPES, IMAGE_TYPES
 from src.qt.flowlayout import FlowWidget
@@ -38,7 +38,6 @@ ERROR = f"[ERROR]"
 WARNING = f"[WARNING]"
 INFO = f"[INFO]"
 
-DEFAULT_META_TAG_FIELD = 8
 TAG_FAVORITE = 1
 TAG_ARCHIVED = 0
 
@@ -405,8 +404,12 @@ class ItemThumb(FlowWidget):
         if self.mode == ItemType.ENTRY:
             # logging.info(f'[UPDATE BADGES] ENTRY: {self.lib.get_entry(self.item_id)}')
             # logging.info(f'[UPDATE BADGES] ARCH: {self.lib.get_entry(self.item_id).has_tag(self.lib, 0)}, FAV: {self.lib.get_entry(self.item_id).has_tag(self.lib, 1)}')
-            self.assign_archived(self.lib.get_entry(self.item_id).has_tag(self.lib, 0))
-            self.assign_favorite(self.lib.get_entry(self.item_id).has_tag(self.lib, 1))
+            self.assign_archived(
+                self.lib.get_entry(self.item_id).has_tag(self.lib, TAG_ARCHIVED)
+            )
+            self.assign_favorite(
+                self.lib.get_entry(self.item_id).has_tag(self.lib, TAG_FAVORITE)
+            )
 
     def set_item_id(self, id: int):
         """
@@ -475,7 +478,7 @@ class ItemThumb(FlowWidget):
                 entry.add_tag(
                     self.panel.driver.lib,
                     tag_id,
-                    field_id=DEFAULT_META_TAG_FIELD,
+                    field_id=FieldID.META_TAGS,
                     field_index=-1,
                 )
             else:

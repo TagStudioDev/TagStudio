@@ -18,6 +18,7 @@ from PySide6.QtWidgets import (
     QFrame,
 )
 
+from src.core.enums import FieldID
 from src.core.library import Library, Tag
 from src.core.palette import ColorType, get_tag_color
 from src.qt.flowlayout import FlowLayout
@@ -73,7 +74,7 @@ def folders_to_tags(library: Library):
         tag = add_folders_to_tree(folders)
         if tag:
             if not entry.has_tag(library, tag.id):
-                entry.add_tag(library, tag.id, 6)
+                entry.add_tag(library, tag.id, FieldID.TAGS)
 
     logging.info("Done")
 
