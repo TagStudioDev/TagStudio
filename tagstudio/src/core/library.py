@@ -898,7 +898,7 @@ class Library:
         for i, entry in enumerate(self.entries):
             full_path = self.library_dir / entry.path / entry.filename
             if not full_path.is_file():
-                self.missing_files.append(str(full_path.resolve()))
+                self.missing_files.append(full_path.resolve())
             yield i
 
     def remove_entry(self, entry_id: int) -> None:
@@ -911,7 +911,8 @@ class Library:
         entry = self.get_entry(entry_id)
         path = entry.path / entry.filename
         # logging.info(f'Removing path: {path}')
-        del self.filename_to_entry_id_map[str(path)]
+
+        del self.filename_to_entry_id_map[path]
 
         del self.entries[self._entry_id_to_index_map[entry_id]]
 
@@ -1077,7 +1078,7 @@ class Library:
                 self.remove_entry(id)
                 # self.driver.purge_item_from_navigation(ItemType.ENTRY, id)
                 deleted.append(missing)
-            except KeyError:
+            except KeyError as e:
                 logging.info(
                     f'[LIBRARY][ERROR]: "{id}" was reported as missing, but is not in the file_to_entry_id map.'
                 )
@@ -1287,9 +1288,9 @@ class Library:
         try:
             if self.entries:
                 return self.filename_to_entry_id_map[
-                    Path(filename).relative_to(self.libary_dir)
+                    Path(filename).relative_to(self.library_dir)
                 ]
-        except:
+        except KeyError:
             return -1
 
     def search_library(

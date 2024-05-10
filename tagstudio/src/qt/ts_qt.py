@@ -1970,8 +1970,8 @@ class DeleteUnlinkedEntriesModal(QWidget):
 		""")
 
         self.model.clear()
-        for i in self.lib.missing_files:
-            self.model.appendRow(QStandardItem(i))
+        for file in self.lib.missing_files:
+            self.model.appendRow(QStandardItem(str(file)))
 
     def delete_entries(self):
         # pb = QProgressDialog('', None, 0, len(self.lib.missing_files))
