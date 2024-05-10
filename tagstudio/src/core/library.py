@@ -333,7 +333,7 @@ class Library:
         #   Used for O(1) lookup of a file based on the current index (page number - 1) of the image being looked at.
         #   That filename can then be used to provide quick lookup to image metadata entries in the Library.
 
-        self.filename_to_entry_id_map: dict[str, int] = {}
+        self.filename_to_entry_id_map: dict[Path, int] = {}
         # A list of file extensions to be ignored by TagStudio.
         self.default_ext_blacklist: list = ["json", "xmp", "aae"]
         self.ignored_extensions: list = self.default_ext_blacklist
