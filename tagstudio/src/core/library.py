@@ -834,7 +834,7 @@ class Library:
         self.files_not_in_library.clear()
         self.missing_files.clear()
         self.fixed_files.clear()
-        self.filename_to_entry_id_map: dict[str, int] = {}
+        self.filename_to_entry_id_map: dict[Path, int] = {}
         self.ignored_extensions = self.default_ext_blacklist
 
         self.tags.clear()
