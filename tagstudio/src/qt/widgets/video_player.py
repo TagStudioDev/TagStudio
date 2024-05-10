@@ -186,7 +186,7 @@ class VideoPlayer(QGraphicsView):
                 self.player.play()
             elif extension in VIDEO_TYPES:
                 # self.player.setVideoOutput(self.video_preview)
-                self.album_art.setOpacity(0.0)
+                # self.album_art.setOpacity(0.0)
                 # self.player.audioOutput().setMuted(True)
                 if self.autoplay.isChecked():
                     self.player.play()
