@@ -41,7 +41,7 @@ from PySide6.QtWidgets import (
     QFileDialog,
     QSplashScreen,
     QMenu,
-    QDialog
+    QDialog,
 )
 from humanfriendly import format_timespan
 
@@ -192,8 +192,10 @@ class QtDriver(QObject):
         self.settings = QSettings(
             QSettings.IniFormat, QSettings.UserScope, "tagstudio", "TagStudio"
         )
-
-        max_threads = os.cpu_count()
+        if self.settings.value("limit_threads", False, bool):
+            max_threads = self.settings.value("max_threads", os.cpu_count(), int)
+        else:
+            max_threads = os.cpu_count()
         for i in range(max_threads):
             # thread = threading.Thread(target=self.consumer, name=f'ThumbRenderer_{i}',args=(), daemon=True)
             # thread.start()
@@ -382,7 +384,7 @@ class QtDriver(QObject):
         tools_menu.addAction(create_collage_action)
         # Settings Menu ========================================================
         open_settings_action = QAction("&Settings", menu_bar)
-        open_settings_action.triggered.connect(lambda:self.openSettings())
+        open_settings_action.triggered.connect(lambda: self.openSettings())
         # Macros Menu ==========================================================
         self.autofill_action = QAction("Autofill", menu_bar)
         self.autofill_action.triggered.connect(
@@ -517,11 +519,12 @@ class QtDriver(QObject):
         self.autosave_timer = QTimer(self)
         self.autosave_timer.timeout.connect(lambda: self.backup_library())
         self.autosave_timer.setSingleShot(False)
+        self.settings_window = Ui_Settings()
         self.updateSettings()
 
         # Give settings to classes that need it.
         ThumbRenderer.settings = self.settings
-
+        logging.info(self.settings.allKeys())
         # Check if a library should be opened on startup, args should override last_library
         # TODO: check for behavior (open last, open default, start empty)
         if (
@@ -542,25 +545,33 @@ class QtDriver(QObject):
         app.exec_()
 
         self.shutdown()
+
     def openSettings(self):
         self.settings_window = Ui_Settings(self.main_window)
         self.settings_window.setSettings(self.settings)
-        self.settings_window.accepted.connect(lambda: self.updateSettings())
-        self.settings_window.show()        
+        self.settings_window.accepted.connect(lambda: self.closeSettings())
+        self.settings_window.show()
+
+    def closeSettings(self):
+        rerender_thumbs = False
+        new_settings = self.settings_window.getSettings()
+        if (
+            self.settings.value("render_thumbnails", False, bool)
+            != new_settings["render_thumbnails"]
+        ):
+            rerender_thumbs = True
+        for key in new_settings.keys():
+            self.settings.setValue(key, new_settings[key])
+        self.settings.sync()
+        if rerender_thumbs:
+            self.update_thumbs()
+        self.settings_window.destroy()
+        self.updateSettings()
 
     def updateSettings(self):
-        if not self.settings_window is None:
-            new_settings = self.settings_window.getSettings()
-            for key in new_settings.keys():
-                self.settings.setValue(key, new_settings[key])
-            self.settings_window.destroy()
-        
-        if self.settings.value('autosave_interval'):
-            self.autosave_timer.setInterval(int(self.settings.value('autosave_interval')) * (60 * 1000))
-        else:
-            self.autosave_timer.setInterval(5 * (60 * 1000))
-        
-        self.update_thumbs()
+        self.autosave_timer.setInterval(
+            int(self.settings.value("autosave_interval", 5)) * (60 * 1000)
+        )
 
     def callback_library_needed_check(self, func):
         """Check if loaded library has valid path before executing the button function"""
@@ -575,7 +586,7 @@ class QtDriver(QObject):
         if self.lib.library_dir:
             self.save_library()
             self.settings.setValue("last_library", self.lib.library_dir)
-            self.settings.sync()
+        self.settings.sync()
         logging.info("[SHUTDOWN] Ending Thumbnail Threads...")
         for thread in self.thumb_threads:
             thread.active = False
@@ -1353,7 +1364,10 @@ class QtDriver(QObject):
         self.cur_query: str = ""
         self.selected.clear()
         self.preview_panel.update_widgets()
-        if self.settings.contains("autosave") and self.settings.value("autosave") == True:
+        if (
+            self.settings.contains("autosave")
+            and self.settings.value("autosave") == True
+        ):
             self.autosave_timer.start()
         self.filter_items()
 
