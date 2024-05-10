@@ -66,7 +66,7 @@ class ItemThumb(FlowWidget):
     tag_group_icon_128.load()
 
     small_text_style = (
-        f"background-color:rgba(0, 0, 0, 128);"
+        f"background-color:rgba(0, 0, 0, 192);"
         f"font-family:Oxanium;"
         f"font-weight:bold;"
         f"font-size:12px;"
@@ -78,7 +78,7 @@ class ItemThumb(FlowWidget):
     )
 
     med_text_style = (
-        f"background-color:rgba(17, 15, 27, 192);"
+        f"background-color:rgba(0, 0, 0, 192);"
         f"font-family:Oxanium;"
         f"font-weight:bold;"
         f"font-size:18px;"

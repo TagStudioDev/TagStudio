@@ -263,8 +263,11 @@ class QtDriver(QObject):
         self.splash.show()
 
         menu_bar = self.main_window.menuBar()
-        menu_bar.setNativeMenuBar(False)
-        # menu_bar.setStyleSheet('background:#00000000;')
+
+        # Allow the use of the native macOS menu bar.
+        if sys.platform != "darwin":
+            menu_bar.setNativeMenuBar(False)
+
         file_menu = QMenu("&File", menu_bar)
         edit_menu = QMenu("&Edit", menu_bar)
         tools_menu = QMenu("&Tools", menu_bar)
@@ -353,13 +356,13 @@ class QtDriver(QObject):
 
         edit_menu.addSeparator()
 
-        manage_file_extensions_action = QAction("Ignore File Extensions", menu_bar)
+        manage_file_extensions_action = QAction("Ignored File Extensions", menu_bar)
         manage_file_extensions_action.triggered.connect(
             lambda: self.show_file_extension_modal()
         )
         edit_menu.addAction(manage_file_extensions_action)
 
-        tag_database_action = QAction("Tag Database", menu_bar)
+        tag_database_action = QAction("Manage Tags", menu_bar)
         tag_database_action.triggered.connect(lambda: self.show_tag_database())
         edit_menu.addAction(tag_database_action)
 
@@ -409,13 +412,13 @@ class QtDriver(QObject):
         self.sort_fields_action.setToolTip("Alt+S")
         macros_menu.addAction(self.sort_fields_action)
 
-        folders_to_tags_action = QAction("Folders to Tags", menu_bar)
+        folders_to_tags_action = QAction("Create Tags From Folders", menu_bar)
         ftt_modal = FoldersToTagsModal(self.lib, self)
         folders_to_tags_action.triggered.connect(lambda: ftt_modal.show())
         macros_menu.addAction(folders_to_tags_action)
 
         # Help Menu ==========================================================
-        self.repo_action = QAction("Go to GitHub Repository", menu_bar)
+        self.repo_action = QAction("Visit GitHub Repository", menu_bar)
         self.repo_action.triggered.connect(
             lambda: webbrowser.open("https://github.com/TagStudioDev/TagStudio")
         )
@@ -640,7 +643,7 @@ class QtDriver(QObject):
 
     def show_tag_database(self):
         self.modal = PanelModal(
-            TagDatabasePanel(self.lib), "Tag Database", "Tag Database", has_save=False
+            TagDatabasePanel(self.lib), "Library Tags", "Library Tags", has_save=False
         )
         self.modal.show()
 

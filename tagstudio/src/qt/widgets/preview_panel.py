@@ -134,19 +134,20 @@ class PreviewPanel(QWidget):
         self.dimensions_label.setWordWrap(True)
         # self.dim_label.setTextInteractionFlags(
         # 	Qt.TextInteractionFlag.TextSelectableByMouse)
-        self.dimensions_label.setStyleSheet(ItemThumb.small_text_style)
 
-        # 	small_text_style = (
-        # 	f'background-color:rgba(17, 15, 27, 192);'
-        # 	f'font-family:Oxanium;'
-        # 	f'font-weight:bold;'
-        # 	f'font-size:12px;'
-        # 	f'border-radius:3px;'
-        # 	f'padding-top: 4px;'
-        # 	f'padding-right: 1px;'
-        # 	f'padding-bottom: 1px;'
-        # 	f'padding-left: 1px;'
-        # )
+        properties_style = (
+            f"background-color:#65000000;"
+            f"font-family:Oxanium;"
+            f"font-weight:bold;"
+            f"font-size:12px;"
+            f"border-radius:6px;"
+            f"padding-top: 4px;"
+            f"padding-right: 1px;"
+            f"padding-bottom: 1px;"
+            f"padding-left: 1px;"
+        )
+
+        self.dimensions_label.setStyleSheet(properties_style)
 
         self.scroll_layout = QVBoxLayout()
         self.scroll_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
@@ -155,20 +156,14 @@ class PreviewPanel(QWidget):
         scroll_container: QWidget = QWidget()
         scroll_container.setObjectName("entryScrollContainer")
         scroll_container.setLayout(self.scroll_layout)
-        # scroll_container.setStyleSheet('background:#080716; border-radius:12px;')
-        scroll_container.setStyleSheet(
-            "background:#00000000;"
-            "border-style:none;"
-            f"QScrollBar::{{background:red;}}"
-        )
 
         info_section = QWidget()
         info_layout = QVBoxLayout(info_section)
         info_layout.setContentsMargins(0, 0, 0, 0)
         info_layout.setSpacing(6)
-        self.setStyleSheet("background:#00000000;" f"QScrollBar::{{background:red;}}")
 
         scroll_area = QScrollArea()
+        scroll_area.setObjectName("entryScrollArea")
         scroll_area.setSizePolicy(
             QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding
         )
@@ -176,15 +171,15 @@ class PreviewPanel(QWidget):
         scroll_area.setWidgetResizable(True)
         scroll_area.setFrameShadow(QFrame.Shadow.Plain)
         scroll_area.setFrameShape(QFrame.Shape.NoFrame)
+        # NOTE: I would rather have this style applied to the scroll_area
+        # background and NOT the scroll container background, so that the
+        # rounded corners are maintained when scrolling. I was unable to
+        # find the right trick to only select that particular element.
         scroll_area.setStyleSheet(
-            "background:#55000000;"
-            "border-radius:12px;"
-            "border-style:solid;"
-            "border-width:1px;"
-            "border-color:#11FFFFFF;"
-            # f'QScrollBar::add-line:horizontal, QScrollBar::sub-line:horizontal {{border: none;background: none;}}'
-            # f'QScrollBar::left-arrow:horizontal, QScrollBar::right-arrow:horizontal, QScrollBar::add-page:horizontal, QScrollBar::sub-page:horizontal {{border: none;background: none;color: none;}}'
-            f"QScrollBar::{{background:red;}}"
+            f"QWidget#entryScrollContainer{{"
+            "background:#65000000;"
+            "border-radius:6px;"
+            f"}}"
         )
         scroll_area.setWidget(scroll_container)
 
@@ -205,29 +200,6 @@ class PreviewPanel(QWidget):
         self.add_field_button.setMinimumSize(96, 28)
         self.add_field_button.setMaximumSize(96, 28)
         self.add_field_button.setText("Add Field")
-        self.add_field_button.setStyleSheet(
-            f"QPushButton{{"
-            # f'background: #1E1A33;'
-            # f'color: #CDA7F7;'
-            f"font-weight: bold;"
-            # f"border-color: #2B2547;"
-            f"border-radius: 6px;"
-            f"border-style:solid;"
-            # f'border-width:{math.ceil(1*self.devicePixelRatio())}px;'
-            "background:#55000000;"
-            "border-width:1px;"
-            "border-color:#11FFFFFF;"
-            # f'padding-top: 1.5px;'
-            # f'padding-right: 4px;'
-            # f'padding-bottom: 5px;'
-            # f'padding-left: 4px;'
-            f"font-size: 13px;"
-            f"}}"
-            f"QPushButton::hover"
-            f"{{"
-            f"background: #333333;"
-            f"}}"
-        )
         self.afb_layout.addWidget(self.add_field_button)
         self.afm = AddFieldModal(self.lib)
         self.place_add_field_button()
@@ -396,7 +368,7 @@ class PreviewPanel(QWidget):
                         if extension in IMAGE_TYPES:
                             image = Image.open(filepath)
                             if image.mode == "RGBA":
-                                new_bg = Image.new("RGB", image.size, color="#222222")
+                                new_bg = Image.new("RGB", image.size, color="#1e1e1e")
                                 new_bg.paste(image, mask=image.getchannel(3))
                                 image = new_bg
                             if image.mode != "RGB":
