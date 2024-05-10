@@ -332,6 +332,7 @@ class Library:
         # Maps the filenames of entries in the Library to their entry's index in the self.entries list.
         #   Used for O(1) lookup of a file based on the current index (page number - 1) of the image being looked at.
         #   That filename can then be used to provide quick lookup to image metadata entries in the Library.
+
         self.filename_to_entry_id_map: dict[str, int] = {}
         # A list of file extensions to be ignored by TagStudio.
         self.default_ext_blacklist: list = ["json", "xmp", "aae"]
@@ -571,7 +572,8 @@ class Library:
                             fields = []
                             if "fields" in entry:
                                 # Cast JSON str keys to ints
-                                for f in fields:
+
+                                for f in entry["fields"]:
                                     f[int(list(f.keys())[0])] = f[list(f.keys())[0]]
                                     del f[list(f.keys())[0]]
                                 fields = entry["fields"]
@@ -881,16 +883,21 @@ class Library:
                 start_time = time.time()
         # print('')
         # Sorts the files by date modified, descending.
-        try:
-            self.files_not_in_library = sorted(
-                self.files_not_in_library,
-                key=lambda t: -(self.library_dir / t).stat().st_ctime,
-            )
-        except FileExistsError:
+        if len(self.files_not_in_library) <= 100000:
+          try:
+              self.files_not_in_library = sorted(
+                  self.files_not_in_library,
+                  key=lambda t: -(self.library_dir / t).stat().st_ctime,
+              )
+          except (FileExistsError, FileNotFoundError):
+              print(
+                  f"[LIBRARY] [ERROR] Couldn't sort files, some were moved during the scanning/sorting process."
+              )
+              pass
+        else:
             print(
-                f"[LIBRARY] [ERROR] Couldn't sort files, some were moved during the scanning/sorting process."
+                f"[LIBRARY][INFO] Not bothering to sort files because there's OVER 100,000! Better sorting methods will be added in the future."
             )
-            pass
 
     def refresh_missing_files(self):
         """Tracks the number of Entries that point to an invalid file path."""
@@ -1078,7 +1085,7 @@ class Library:
                 self.remove_entry(id)
                 # self.driver.purge_item_from_navigation(ItemType.ENTRY, id)
                 deleted.append(missing)
-            except KeyError as e:
+            except KeyError:
                 logging.info(
                     f'[LIBRARY][ERROR]: "{id}" was reported as missing, but is not in the file_to_entry_id map.'
                 )
@@ -1206,14 +1213,14 @@ class Library:
         #     # print(match)
         #     # print(f'\t{matches[match]}')
 
-        with open(
-            self.library_dir / TS_FOLDER_NAME / "missing_matched.json", "w"
-        ) as outfile:
-            outfile.flush()
-            json.dump(matches, outfile, indent=4)
-        print(
-            f'[LIBRARY] Saved to disk at {self.library_dir / TS_FOLDER_NAME / "missing_matched.json"}'
-        )
+        #with open(
+        #    self.library_dir / TS_FOLDER_NAME / "missing_matched.json", "w"
+        #) as outfile:
+        #    outfile.flush()
+        #    json.dump(matches, outfile, indent=4)
+        #print(
+        #    f'[LIBRARY] Saved to disk at {self.library_dir / TS_FOLDER_NAME / "missing_matched.json"}'
+        #)
 
     def count_tag_entry_refs(self) -> None:
         """
@@ -1549,6 +1556,7 @@ class Library:
 
         # NOTE: I'd expect a blank query to return all with the other implementation, but
         # it misses stuff like Archive (id 0) so here's this as a catch-all.
+
         if query == "":
             all: list[int] = []
             for tag in self.tags:

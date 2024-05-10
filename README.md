@@ -276,4 +276,8 @@ As of right now, no. However, I _did_ have a CLI version in the recent past befo
 
 **Yes!!** I recommend taking a look at the [Priority Features](#priority-features), [Future Features](#future-features), and [Features I Won't Pull](#features-i-likely-wont-addpull) lists, as well as the project issues to see what’s currently being worked on. Please do not submit pull requests with new feature additions without opening up an issue with a feature request first.
 
-As of writing I don’t have a concrete style guide, just try to stay within or close enough to the PEP 8 style guide and/or match the style of the existing code.
+Code formatting is automatically checked via [ruff](https://docs.astral.sh/ruff/). 
+
+To format the code manually, install ruff via `pip install -r requirements-dev.txt` and then run `ruff format` 
+
+To format the code automatically before each commit, there's a configured action available for `pre-commit` hook. Install it by running `pre-commit install`. The hook will be executed each time on running `git commit`.
