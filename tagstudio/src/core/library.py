@@ -1042,7 +1042,7 @@ class Library:
                 for element in group:
                     if element.tag == "file":
                         file = Path(element.attrib.get("path")).resolve()
-                        files.append(str(file))
+                        files.append(file)
                     if element.tag == "match":
                         matches.append(
                             (
