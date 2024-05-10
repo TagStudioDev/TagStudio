@@ -19,7 +19,7 @@ def dropEvent(driver: "QtDriver", event: QDropEvent):
     urls = event.mimeData().urls()
     duplicate_filesnames = []
     for url in urls:
-        if Path(driver.lib.library_dir + "/" + url.fileName()).exists():
+        if (Path(driver.lib.library_dir) / url.fileName()).exists():
             duplicate_filesnames.append(url)
 
     ret = -1
