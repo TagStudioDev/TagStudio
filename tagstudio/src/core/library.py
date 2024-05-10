@@ -1012,7 +1012,7 @@ class Library:
                 )
             else:
                 sys.stdout.write(
-                    f"\r[LIBRARY] [{i}/{len(self.entries)}] Consolidating Duplicate: {(e.path / e.filename)[0:]}..."
+                    f"\r[LIBRARY] [{i}/{len(self.entries)}] Consolidating Duplicate: {e.path / e.filename}..."
                 )
         print("")
         # [unique.append(x) for x in self.entries if x not in unique]
