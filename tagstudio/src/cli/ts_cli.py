@@ -614,7 +614,7 @@ class CliDriver:
         entry = None if index < 0 else self.lib.entries[index]
         if entry:
             filepath = self.lib.library_dir / entry.path / entry.filename
-        external_preview_path: str = ""
+        external_preview_path: Path = None
         if self.args.external_preview:
             external_preview_path = (
                 self.lib.library_dir / TS_FOLDER_NAME / "external_preview.jpg"
