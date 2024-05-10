@@ -10,16 +10,16 @@ if typing.TYPE_CHECKING:
 
 
 def dropEvent(driver: "QtDriver", event: QDropEvent):
-    if not event.mimeData().hasUrls():  
+    if not event.mimeData().hasUrls():
         return
-    
-    if not event.mimeData().urls()[0].isLocalFile():  
-        return  
-    
+
+    if not event.mimeData().urls()[0].isLocalFile():
+        return
+
     urls = event.mimeData().urls()
     duplicate_filesnames = []
     for url in urls:
-        if  Path(driver.lib.library_dir + "/" + url.fileName()).exists():
+        if Path(driver.lib.library_dir + "/" + url.fileName()).exists():
             duplicate_filesnames.append(url)
 
     ret = -1
@@ -44,17 +44,17 @@ def dropEvent(driver: "QtDriver", event: QDropEvent):
         if url in duplicate_filesnames:
             if ret == 0:  # skip duplicates
                 continue
-            
-            if ret == 2: # rename 
-                filename = get_renamed_duplicate_filename(driver.lib.library_dir,filename)
+
+            if ret == 2:  # rename
+                filename = get_renamed_duplicate_filename(
+                    driver.lib.library_dir, filename
+                )
                 driver.lib.files_not_in_library.append(filename)
-        else: # override is simply copying but not adding a new entry
+        else:  # override is simply copying but not adding a new entry
             driver.lib.files_not_in_library.append(filename)
-            
-        shutil.copyfile(
-            url.toLocalFile(), driver.lib.library_dir + "/" + filename
-        )    
-            
+
+        shutil.copyfile(url.toLocalFile(), driver.lib.library_dir + "/" + filename)
+
     driver.add_new_files_runnable()
 
 
@@ -72,15 +72,11 @@ def dragMoveEvent(event: QDragMoveEvent):
         event.ignore()
 
 
-def get_renamed_duplicate_filename(path,filename)->str:
-        index = 2
-        o_filename = filename
-        dot_idx = o_filename.index(".")
-        while Path(path + "/" + filename).exists():
-            filename = (
-                o_filename[:dot_idx]
-                + f" ({index})"
-                + o_filename[dot_idx:]
-            )
-            index += 1
-        return filename    
+def get_renamed_duplicate_filename(path, filename) -> str:
+    index = 2
+    o_filename = filename
+    dot_idx = o_filename.index(".")
+    while Path(path + "/" + filename).exists():
+        filename = o_filename[:dot_idx] + f" ({index})" + o_filename[dot_idx:]
+        index += 1
+    return filename
