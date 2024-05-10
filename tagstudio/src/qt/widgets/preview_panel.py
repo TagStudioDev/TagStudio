@@ -29,18 +29,16 @@ from humanfriendly import format_size
 
 from src.core.library import Entry, ItemType, Library
 from src.core.ts_core import VIDEO_TYPES, IMAGE_TYPES
-from src.qt.helpers import FileOpenerLabel, FileOpenerHelper, open_file
-from src.qt.modals import AddFieldModal
-from src.qt.widgets import (
-    ThumbRenderer,
-    FieldContainer,
-    TagBoxWidget,
-    TextWidget,
-    PanelModal,
-    EditTextBox,
-    EditTextLine,
-    ItemThumb,
-)
+from src.qt.helpers.file_opener import FileOpenerLabel, FileOpenerHelper, open_file
+from src.qt.modals.add_field import AddFieldModal
+from src.qt.widgets.thumb_renderer import ThumbRenderer
+from src.qt.widgets.fields import FieldContainer
+from src.qt.widgets.tag_box import TagBoxWidget
+from src.qt.widgets.text import TextWidget
+from src.qt.widgets.panel import PanelModal
+from src.qt.widgets.text_box_edit import EditTextBox
+from src.qt.widgets.text_line_edit import EditTextLine
+from src.qt.widgets.item_thumb import ItemThumb
 
 # Only import for type checking/autocompletion, will not be imported at runtime.
 if typing.TYPE_CHECKING:

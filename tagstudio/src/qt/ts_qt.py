@@ -73,23 +73,20 @@ from src.core.ts_core import (
 from src.core.utils.web import strip_web_protocol
 from src.qt.flowlayout import FlowLayout
 from src.qt.main_window import Ui_MainWindow
-from src.qt.helpers import FunctionIterator, CustomRunnable
-from src.qt.widgets import (
-    CollageIconRenderer,
-    ThumbRenderer,
-    PanelModal,
-    ProgressWidget,
-    PreviewPanel,
-    ItemThumb,
-)
-from src.qt.modals import (
-    BuildTagPanel,
-    TagDatabasePanel,
-    FileExtensionModal,
-    FixUnlinkedEntriesModal,
-    FixDupeFilesModal,
-    FoldersToTagsModal,
-)
+from src.qt.helpers.function_iterator import FunctionIterator
+from src.qt.helpers.custom_runnable import CustomRunnable
+from src.qt.widgets.collage_icon import CollageIconRenderer
+from src.qt.widgets.panel import PanelModal
+from src.qt.widgets.thumb_renderer import ThumbRenderer
+from src.qt.widgets.progress import ProgressWidget
+from src.qt.widgets.preview_panel import PreviewPanel
+from src.qt.widgets.item_thumb import ItemThumb
+from src.qt.modals.build_tag import BuildTagPanel
+from src.qt.modals.tag_database import TagDatabasePanel
+from src.qt.modals.file_extension import FileExtensionModal
+from src.qt.modals.fix_unlinked import FixUnlinkedEntriesModal
+from src.qt.modals.fix_dupes import FixDupeFilesModal
+from src.qt.modals.folders_to_tags import FoldersToTagsModal
 import src.qt.resources_rc
 
 # SIGQUIT is not defined on Windows

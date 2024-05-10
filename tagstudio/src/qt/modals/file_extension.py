@@ -7,7 +7,7 @@ from PySide6.QtCore import Signal, Qt
 from PySide6.QtWidgets import QVBoxLayout, QPushButton, QTableWidget, QTableWidgetItem
 
 from src.core.library import Library
-from src.qt.widgets import PanelWidget
+from src.qt.widgets.panel import PanelWidget
 
 
 class FileExtensionModal(PanelWidget):
