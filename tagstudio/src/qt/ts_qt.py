@@ -188,9 +188,7 @@ class QtDriver(QObject):
 
         self.SIGTERM.connect(self.handleSIGTERM)
 
-        self.settings = QSettings(
-            QSettings.IniFormat, QSettings.UserScope, "tagstudio", "TagStudio"
-        )
+        self.settings = QSettings(QSettings.IniFormat, QSettings.UserScope, "TagStudio")
 
         max_threads = os.cpu_count()
         for i in range(max_threads):
