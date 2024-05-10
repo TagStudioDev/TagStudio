@@ -19,7 +19,7 @@ def dropEvent(driver: "QtDriver", event: QDropEvent):
     urls = event.mimeData().urls()
     duplicate_filesnames = []
     for url in urls:
-        if Path(driver.lib.library_dir + "/" + url.fileName()).exists():
+        if Path(driver.lib.library_dir / url.fileName()).exists():
             duplicate_filesnames.append(url)
 
     ret = -1
@@ -27,7 +27,7 @@ def dropEvent(driver: "QtDriver", event: QDropEvent):
     if len(duplicate_filesnames) > 0:
         msgBox = QMessageBox()
         msgBox.setText(
-            f"The files  {", ".join(map(lambda url:url.fileName(),duplicate_filesnames))}  have filenames that already exist in the library folder."
+            f"The files  {', '.join(map(lambda url:url.fileName(),duplicate_filesnames))}  have filenames that already exist in the library folder."
         )
         msgBox.addButton("Skip", QMessageBox.ButtonRole.YesRole)
         msgBox.addButton("Override", QMessageBox.ButtonRole.DestructiveRole)
