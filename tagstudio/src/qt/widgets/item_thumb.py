@@ -23,7 +23,7 @@ from PySide6.QtWidgets import (
     QCheckBox,
 )
 
-from src.core.library import ItemType, Library
+from src.core.library import ItemType, Library, Entry
 from src.core.ts_core import AUDIO_TYPES, VIDEO_TYPES, IMAGE_TYPES
 from src.qt.flowlayout import FlowWidget
 from src.qt.helpers import FileOpenerHelper
@@ -32,10 +32,13 @@ from src.qt.widgets import ThumbRenderer, ThumbButton
 if typing.TYPE_CHECKING:
     from src.qt.widgets import PreviewPanel
 
-
 ERROR = f"[ERROR]"
 WARNING = f"[WARNING]"
 INFO = f"[INFO]"
+
+DEFAULT_META_TAG_FIELD = 8
+TAG_FAVORITE = 1
+TAG_ARCHIVED = 0
 
 logging.basicConfig(format="%(message)s", level=logging.INFO)
 
@@ -453,91 +456,40 @@ class ItemThumb(FlowWidget):
         self.show_check_badges(False)
         return super().leaveEvent(event)
 
-    def on_archived_check(self, value: bool):
-        # logging.info(f'Archived Check: {value}, Mode: {self.mode}')
+    def on_archived_check(self, toggle_value: bool):
         if self.mode == ItemType.ENTRY:
-            self.isArchived = value
-            DEFAULT_META_TAG_FIELD = 8
-            temp = (ItemType.ENTRY, self.item_id)
-            if (
-                list(self.panel.driver.selected).count(temp) > 0
-            ):  # Is the archived badge apart of the selection?
-                # Yes, then add archived tag to all selected.
-                for x in self.panel.driver.selected:
-                    e = self.lib.get_entry(x[1])
-                    if value:
-                        self.archived_badge.setHidden(False)
-                        e.add_tag(
-                            self.panel.driver.lib,
-                            0,
-                            field_id=DEFAULT_META_TAG_FIELD,
-                            field_index=-1,
-                        )
-                    else:
-                        e.remove_tag(self.panel.driver.lib, 0)
-            else:
-                # No, then add archived tag to the entry this badge is on.
-                e = self.lib.get_entry(self.item_id)
-                if value:
-                    self.favorite_badge.setHidden(False)
-                    e.add_tag(
-                        self.panel.driver.lib,
-                        0,
-                        field_id=DEFAULT_META_TAG_FIELD,
-                        field_index=-1,
-                    )
-                else:
-                    e.remove_tag(self.panel.driver.lib, 0)
-            if self.panel.isOpen:
-                self.panel.update_widgets()
-            self.panel.driver.update_badges()
+            self.isArchived = toggle_value
+            self.toggle_item_tag(toggle_value, TAG_ARCHIVED)
 
-    # def on_archived_uncheck(self):
-    # 	if self.mode == SearchItemType.ENTRY:
-    # 		self.isArchived = False
-    # 		e = self.lib.get_entry(self.item_id)
-
-    def on_favorite_check(self, value: bool):
-        # logging.info(f'Favorite Check: {value}, Mode: {self.mode}')
+    def on_favorite_check(self, toggle_value: bool):
         if self.mode == ItemType.ENTRY:
-            self.isFavorite = value
-            DEFAULT_META_TAG_FIELD = 8
-            temp = (ItemType.ENTRY, self.item_id)
-            if (
-                list(self.panel.driver.selected).count(temp) > 0
-            ):  # Is the favorite badge apart of the selection?
-                # Yes, then add favorite tag to all selected.
-                for x in self.panel.driver.selected:
-                    e = self.lib.get_entry(x[1])
-                    if value:
-                        self.favorite_badge.setHidden(False)
-                        e.add_tag(
-                            self.panel.driver.lib,
-                            1,
-                            field_id=DEFAULT_META_TAG_FIELD,
-                            field_index=-1,
-                        )
-                    else:
-                        e.remove_tag(self.panel.driver.lib, 1)
-            else:
-                # No, then add favorite tag to the entry this badge is on.
-                e = self.lib.get_entry(self.item_id)
-                if value:
-                    self.favorite_badge.setHidden(False)
-                    e.add_tag(
-                        self.panel.driver.lib,
-                        1,
-                        field_id=DEFAULT_META_TAG_FIELD,
-                        field_index=-1,
-                    )
-                else:
-                    e.remove_tag(self.panel.driver.lib, 1)
-            if self.panel.isOpen:
-                self.panel.update_widgets()
-            self.panel.driver.update_badges()
+            self.isFavorite = toggle_value
+            self.toggle_item_tag(toggle_value, TAG_FAVORITE)
 
-    # def on_favorite_uncheck(self):
-    # 	if self.mode == SearchItemType.ENTRY:
-    # 		self.isFavorite = False
-    # 		e = self.lib.get_entry(self.item_id)
-    # 		e.remove_tag(1)
+    def toggle_item_tag(self, toggle_value: bool, tag_id: int):
+        def toggle_tag(entry: Entry):
+            if toggle_value:
+                self.favorite_badge.setHidden(False)
+                entry.add_tag(
+                    self.panel.driver.lib,
+                    tag_id,
+                    field_id=DEFAULT_META_TAG_FIELD,
+                    field_index=-1,
+                )
+            else:
+                entry.remove_tag(self.panel.driver.lib, tag_id)
+
+        # Is the badge a part of the selection?
+        if (ItemType.ENTRY, self.item_id) in self.panel.driver.selected:
+            # Yes, add chosen tag to all selected.
+            for _, item_id in self.panel.driver.selected:
+                entry = self.lib.get_entry(item_id)
+                toggle_tag(entry)
+        else:
+            # No, add tag to the entry this badge is on.
+            entry = self.lib.get_entry(self.item_id)
+            toggle_tag(entry)
+
+        if self.panel.isOpen:
+            self.panel.update_widgets()
+        self.panel.driver.update_badges()
