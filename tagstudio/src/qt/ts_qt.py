@@ -2595,7 +2595,9 @@ class PreviewPanel(QWidget):
                     window_title = str(filepath)
                     ratio: float = self.devicePixelRatio()
                     self.tr.render_big(time.time(), filepath, (512, 512), ratio)
-                    self.file_label.setText("\u200b".join(str(filepath))) #TODO: Find a better fix for text wrapping here
+                    self.file_label.setText(
+                        "\u200b".join(str(filepath))
+                    )  # TODO: Find a better fix for text wrapping here
                     self.preview_img.setContextMenuPolicy(
                         Qt.ContextMenuPolicy.ActionsContextMenu
                     )
@@ -3890,7 +3892,7 @@ class ThumbRenderer(QObject):
     def render(
         self,
         timestamp: float,
-        filepath: str|Path,
+        filepath: str | Path,
         base_size: tuple[int, int],
         pixelRatio: float,
         isLoading=False,
@@ -3901,6 +3903,7 @@ class ThumbRenderer(QObject):
         pixmap = None
         final = None
         filepath = Path(filepath)
+
         broken_thumb = False
         # adj_font_size = math.floor(12 * pixelRatio)
         if ThumbRenderer.font_pixel_ratio != pixelRatio:
@@ -4066,7 +4069,7 @@ class ThumbRenderer(QObject):
     def render_big(
         self,
         timestamp: float,
-        filepath: str|Path,
+        filepath: str | Path,
         base_size: tuple[int, int],
         pixelRatio: float,
         isLoading=False,
@@ -4585,7 +4588,10 @@ class QtDriver(QObject):
         app.setWindowIcon(icon)
 
         QFontDatabase.addApplicationFont(
-            str(Path(__file__).parent.parent.parent / "resources/qt/fonts/Oxanium-Bold.ttf")
+            str(
+                Path(__file__).parent.parent.parent
+                / "resources/qt/fonts/Oxanium-Bold.ttf"
+            )
         )
 
         self.thumb_size = 128
