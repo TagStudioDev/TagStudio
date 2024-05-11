@@ -19,11 +19,13 @@ from PIL import (
     ImageFont,
     ImageEnhance,
     ImageOps,
+    ImageFile,
 )
 from PySide6.QtCore import QObject, Signal, QSize
 from PySide6.QtGui import QPixmap
 from src.core.constants import PLAINTEXT_TYPES, VIDEO_TYPES, IMAGE_TYPES
 
+ImageFile.LOAD_TRUNCATED_IMAGES = True
 
 ERROR = f"[ERROR]"
 WARNING = f"[WARNING]"
@@ -140,7 +142,7 @@ class ThumbRenderer(QObject):
                     # image = self.thumb_debug
                     if image.mode == "RGBA":
                         # logging.info(image.getchannel(3).tobytes())
-                        new_bg = Image.new("RGB", image.size, color="#222222")
+                        new_bg = Image.new("RGB", image.size, color="#1e1e1e")
                         new_bg.paste(image, mask=image.getchannel(3))
                         image = new_bg
                     if image.mode != "RGB":
@@ -171,7 +173,7 @@ class ThumbRenderer(QObject):
                         text: str = extension
                         with open(filepath, "r", encoding="utf-8") as text_file:
                             text = text_file.read(256)
-                        bg = Image.new("RGB", (256, 256), color="#222222")
+                        bg = Image.new("RGB", (256, 256), color="#1e1e1e")
                         draw = ImageDraw.Draw(bg)
                         draw.text((16, 16), text, file=(255, 255, 255))
                         image = bg
@@ -323,7 +325,7 @@ class ThumbRenderer(QObject):
                     # image = self.thumb_debug
                     if image.mode == "RGBA":
                         # logging.info(image.getchannel(3).tobytes())
-                        new_bg = Image.new("RGB", image.size, color="#222222")
+                        new_bg = Image.new("RGB", image.size, color="#1e1e1e")
                         new_bg.paste(image, mask=image.getchannel(3))
                         image = new_bg
                     if image.mode != "RGB":
@@ -353,7 +355,7 @@ class ThumbRenderer(QObject):
                         text: str = extension
                         with open(filepath, "r", encoding="utf-8") as text_file:
                             text = text_file.read(256)
-                        bg = Image.new("RGB", (256, 256), color="#222222")
+                        bg = Image.new("RGB", (256, 256), color="#1e1e1e")
                         draw = ImageDraw.Draw(bg)
                         draw.text((16, 16), text, file=(255, 255, 255))
                         image = bg
