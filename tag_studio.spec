@@ -2,10 +2,16 @@
 # vi: ft=python
 
 
+from argparse import ArgumentParser
 import sys
 from PyInstaller.building.api import COLLECT, EXE, PYZ
 from PyInstaller.building.build_main import Analysis
 from PyInstaller.building.osx import BUNDLE
+
+
+parser = ArgumentParser()
+parser.add_argument('--portable', action='store_true')
+options = parser.parse_args()
 
 
 name = 'TagStudio' if sys.platform == 'win32' else 'tagstudio'
@@ -32,9 +38,12 @@ a = Analysis(
 
 pyz = PYZ(a.pure)
 
+include = [a.scripts]
+if options.portable:
+    include += (a.binaries, a.datas)
 exe = EXE(
     pyz,
-    a.scripts,
+    *include,
     [],
     bootloader_ignore_signals=False,
     console=True,
@@ -42,7 +51,7 @@ exe = EXE(
     disable_windowed_traceback=False,
     debug=False,
     name=name,
-    exclude_binaries=True,
+    exclude_binaries=options.portable,
     icon=icon,
     argv_emulation=False,
     target_arch=None,
@@ -50,9 +59,11 @@ exe = EXE(
     entitlements_file=None,
     strip=False,
     upx=True,
+    upx_exclude=[],
+    runtime_tmpdir=None
 )
 
-coll = COLLECT(
+coll = None if options.portable else COLLECT(
     exe,
     a.binaries,
     a.datas,
@@ -63,7 +74,7 @@ coll = COLLECT(
 )
 
 app = BUNDLE(
-    coll,
+    exe if coll is None else coll,
     name='TagStudio.app',
     icon=icon,
     bundle_identifier='com.github.tagstudiodev',
