@@ -57,7 +57,7 @@ jobs:
           python-version: '3.12'
       - run: pip install -r requirements.txt pyinstaller
       - run: pyinstaller tagstudio.spec -- ${{ matrix.build-flag }}
-      - run: tar czfC dist/tagstudio_macos_${{ matrix.arch }}${{ matrix.suffix }}.tar.gz dist tagstudio
+      - run: tar czfC dist/tagstudio_macos_${{ matrix.arch }}${{ matrix.suffix }}.tar.gz dist TagStudio.app
       - uses: actions/upload-artifact@v4
         with:
           name: tagstudio_macos_${{ matrix.arch }}${{ matrix.suffix }}
