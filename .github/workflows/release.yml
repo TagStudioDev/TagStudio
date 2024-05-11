@@ -24,7 +24,7 @@ jobs:
         with:
           python-version: '3.12'
       - run: pip install -r requirements.txt pyinstaller
-      - run: pyinstaller tag_studio.spec -- ${{ matrix.build-flag }}
+      - run: pyinstaller tagstudio.spec -- ${{ matrix.build-flag }}
       - run: tar czfC dist/tagstudio_linux_x86_64${{ matrix.suffix }}.tar.gz dist tagstudio
       - uses: actions/upload-artifact@v4
         with:
@@ -56,7 +56,7 @@ jobs:
         with:
           python-version: '3.12'
       - run: pip install -r requirements.txt pyinstaller
-      - run: pyinstaller tag_studio.spec -- ${{ matrix.build-flag }}
+      - run: pyinstaller tagstudio.spec -- ${{ matrix.build-flag }}
       - run: tar czfC dist/tagstudio_macos_${{ matrix.arch }}${{ matrix.suffix }}.tar.gz dist tagstudio
       - uses: actions/upload-artifact@v4
         with:
@@ -83,7 +83,7 @@ jobs:
         with:
           python-version: '3.12'
       - run: pip install -r requirements.txt pyinstaller
-      - run: PyInstaller tag_studio.spec -- ${{ matrix.build-flag }}
+      - run: PyInstaller tagstudio.spec -- ${{ matrix.build-flag }}
       - run: Compress-Archive -Path dist/TagStudio${{ matrix.file-end }} -DestinationPath dist/tagstudio_windows_x86_64${{ matrix.suffix }}.zip
       - uses: actions/upload-artifact@v4
         with:
