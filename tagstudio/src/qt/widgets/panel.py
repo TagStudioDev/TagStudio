@@ -38,9 +38,7 @@ class PanelModal(QWidget):
         self.title_widget.setObjectName("fieldTitle")
         self.title_widget.setWordWrap(True)
         self.title_widget.setStyleSheet(
-            # 'background:blue;'
-            # 'text-align:center;'
-            "font-weight:bold;" "font-size:14px;" "padding-top: 6px" ""
+            "font-weight:bold;" "font-size:14px;" "padding-top: 6px"
         )
         self.title_widget.setText(title)
         self.title_widget.setAlignment(Qt.AlignmentFlag.AlignCenter)

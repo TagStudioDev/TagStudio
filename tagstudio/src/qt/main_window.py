@@ -38,54 +38,29 @@ class Ui_MainWindow(QMainWindow):
 		# # self.setStyleSheet(
 		# # 	'background:#EE000000;'
 		# # 	)
-
 		
 
 	def setupUi(self, MainWindow):
 		if not MainWindow.objectName():
 			MainWindow.setObjectName(u"MainWindow")
 		MainWindow.resize(1300, 720)
-
-		# self._createMenuBar(MainWindow)
 		
-		# print(type(MainWindow))
 		self.centralwidget = QWidget(MainWindow)
 		self.centralwidget.setObjectName(u"centralwidget")
 		self.gridLayout = QGridLayout(self.centralwidget)
 		self.gridLayout.setObjectName(u"gridLayout")
-		# self.gridLayout.setContentsMargins(0, 0, 0, 0)
 		self.horizontalLayout = QHBoxLayout()
 		self.horizontalLayout.setObjectName(u"horizontalLayout")
-
-		
-		
-		# tb = StandardTitleBar(MainWindow)
-		# tb.setObjectName('TitleBar')
-		# # # self.setTitleBar(tb)
-		# hor = QVBoxLayout()
-		# self.gridLayout.setContentsMargins(0,0,0,0)
-		# self.gridLayout.addLayout(hor, 0, 0, 1, 1)
-		
-
-		
-		# hor.addWidget(tb)
 
 		self.splitter = QSplitter()
 		self.splitter.setObjectName(u"splitter")
 		self.splitter.setHandleWidth(12)
 
 		self.frame_container = QWidget()
-		# self.frame_container.setStyleSheet('background:red;')
 		self.frame_layout = QVBoxLayout(self.frame_container)
-		# self.frame_container.setSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Minimum)
-		
 		self.frame_layout.setSpacing(0)
 
-		
-
 		self.scrollArea = QScrollArea()
-		# self.scrollArea.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
-		# self.scrollArea.setStyleSheet('background:green;')
 		self.scrollArea.setObjectName(u"scrollArea")
 		self.scrollArea.setFocusPolicy(Qt.WheelFocus)
 		self.scrollArea.setFrameShape(QFrame.NoFrame)
@@ -102,12 +77,6 @@ class Ui_MainWindow(QMainWindow):
 		self.scrollArea.setWidget(self.scrollAreaWidgetContents)
 		self.frame_layout.addWidget(self.scrollArea)
 
-		self.scrollArea.setAttribute(Qt.WidgetAttribute.WA_NoSystemBackground)
-		# self.scrollArea.setWindowFlag(Qt.WindowType.FramelessWindowHint)
-		self.scrollArea.setAttribute(
-			Qt.WidgetAttribute.WA_TranslucentBackground)
-		self.scrollArea.setStyleSheet('background:#00000000;')
-
 		# self.page_bar_controls = QWidget()
 		# self.page_bar_controls.setStyleSheet('background:blue;')
 		# self.page_bar_controls.setMinimumHeight(32)
@@ -118,7 +87,6 @@ class Ui_MainWindow(QMainWindow):
 		# self.frame_layout.addWidget(self.page_bar_controls)
 		# self.frame_layout.addWidget(self.page_bar_controls)
 
-		# self.horizontalLayout.addWidget(self.scrollArea)
 		self.horizontalLayout.addWidget(self.splitter)
 		self.splitter.addWidget(self.frame_container)
 		self.splitter.setStretchFactor(0, 1)
@@ -154,13 +122,6 @@ class Ui_MainWindow(QMainWindow):
 		self.searchField = QLineEdit(self.centralwidget)
 		self.searchField.setObjectName(u"searchField")
 		self.searchField.setMinimumSize(QSize(0, 32))
-		self.searchField.setStyleSheet(
-			'background:#55000000;' 
-			'border-radius:6px;'
-			'border-style:solid;'
-			'border-width:1px;'
-			'border-color:#11FFFFFF;'
-			)
 		font2 = QFont()
 		font2.setPointSize(11)
 		font2.setBold(False)
@@ -174,7 +135,6 @@ class Ui_MainWindow(QMainWindow):
 		self.searchButton.setFont(font2)
 
 		self.horizontalLayout_2.addWidget(self.searchButton)
-
 		self.gridLayout.addLayout(self.horizontalLayout_2, 3, 0, 1, 1)
 
 		self.comboBox = QComboBox(self.centralwidget)
@@ -213,7 +173,6 @@ class Ui_MainWindow(QMainWindow):
 		self.frame_layout.addWidget(menu_bar)
 
 		self.retranslateUi(MainWindow)
-		# self.dumpObjectTree()
 
 		QMetaObject.connectSlotsByName(MainWindow)
 	# setupUi
