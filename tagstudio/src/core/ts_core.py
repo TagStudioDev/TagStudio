@@ -300,7 +300,7 @@ class TagStudioCore:
             # input()
             pass
 
-    def build_url(self, entry_id: int, source: str) -> str:
+    def build_url(self, entry_id: int, source: str):
         """Tries to rebuild a source URL given a specific filename structure."""
 
         source = source.lower().replace("-", " ").replace("_", " ")

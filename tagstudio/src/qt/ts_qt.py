@@ -117,7 +117,7 @@ class NavigationState:
         scrollbar_pos: int,
         page_index: int,
         page_count: int,
-        search_text: str = None,
+        search_text: str | None = None,
         thumb_size=None,
         spacing=None,
     ) -> None:
@@ -165,11 +165,16 @@ class QtDriver(QObject):
 
     SIGTERM = Signal()
 
-    def __init__(self, core, args):
+    preview_panel: PreviewPanel
+
+    def __init__(self, core: TagStudioCore, args):
         super().__init__()
         self.core: TagStudioCore = core
         self.lib = self.core.lib
         self.args = args
+        self.frame_dict: dict = {}
+        self.nav_frames: list[NavigationState] = []
+        self.cur_frame_idx: int = -1
 
         # self.main_window = None
         # self.main_window = Ui_MainWindow()
@@ -230,7 +235,7 @@ class QtDriver(QObject):
         signal(SIGTERM, self.signal_handler)
         signal(SIGQUIT, self.signal_handler)
 
-    def start(self):
+    def start(self) -> None:
         """Launches the main Qt window."""
 
         loader = QUiLoader()
@@ -257,7 +262,7 @@ class QtDriver(QObject):
         # self.main_window = loader.load(home_path)
         self.main_window = Ui_MainWindow()
         self.main_window.setWindowTitle(self.base_title)
-        self.main_window.mousePressEvent = self.mouse_navigation
+        self.main_window.mousePressEvent = self.mouse_navigation  # type: ignore
         # self.main_window.setStyleSheet(
         # 	f'QScrollBar::{{background:red;}}'
         # 	)
@@ -553,13 +558,13 @@ class QtDriver(QObject):
                         i, self.nav_frames[self.cur_frame_idx].search_text
                     )
                 ),
-                logging.info(f"emitted {i}"),
+                logging.info(f"emitted {i}"),  # type: ignore
             )
         )
 
-        self.nav_frames: list[NavigationState] = []
-        self.cur_frame_idx: int = -1
-        self.cur_query: str = ""
+        self.nav_frames = []
+        self.cur_frame_idx = -1
+        self.cur_query = ""
         self.filter_items()
         # self.update_thumbs()
 
@@ -650,9 +655,9 @@ class QtDriver(QObject):
             title_text = f"{self.base_title}"
             self.main_window.setWindowTitle(title_text)
 
-            self.nav_frames: list[NavigationState] = []
-            self.cur_frame_idx: int = -1
-            self.cur_query: str = ""
+            self.nav_frames = []
+            self.cur_frame_idx = -1
+            self.cur_query = ""
             self.selected.clear()
             self.preview_panel.update_widgets()
             self.filter_items()
@@ -1018,6 +1023,7 @@ class QtDriver(QObject):
 
     def purge_item_from_navigation(self, type: ItemType, id: int):
         # logging.info(self.nav_frames)
+        # TODO - types here are ambiguous
         for i, frame in enumerate(self.nav_frames, start=0):
             while (type, id) in frame.contents:
                 logging.info(f"Removing {id} from nav stack frame {i}")
@@ -1025,9 +1031,9 @@ class QtDriver(QObject):
 
         for i, key in enumerate(self.frame_dict.keys(), start=0):
             for frame in self.frame_dict[key]:
-                while (type, id) in frame:
+                while (type, id) in frame:  # type: ignore
                     logging.info(f"Removing {id} from frame dict item {i}")
-                    frame.remove((type, id))
+                    frame.remove((type, id))  # type: ignore
 
         while (type, id) in self.selected:
             logging.info(f"Removing {id} from frame selected")
@@ -1061,7 +1067,7 @@ class QtDriver(QObject):
         sa.setWidgetResizable(True)
         sa.setWidget(self.flow_container)
 
-    def select_item(self, type: int, id: int, append: bool, bridge: bool):
+    def select_item(self, type: ItemType, id: int, append: bool, bridge: bool):
         """Selects one or more items in the Thumbnail Grid."""
         if append:
             # self.selected.append((thumb_index, page_index))
@@ -1284,14 +1290,14 @@ class QtDriver(QObject):
         self.nav_forward([(ItemType.ENTRY, x[0]) for x in collation_entries])
         # self.update_thumbs()
 
-    def get_frame_contents(self, index=0, query: str = None):
+    def get_frame_contents(self, index=0, query: str = ""):
         return (
             [] if not self.frame_dict[query] else self.frame_dict[query][index],
             index,
             len(self.frame_dict[query]),
         )
 
-    def filter_items(self, query=""):
+    def filter_items(self, query: str = ""):
         if self.lib:
             # logging.info('Filtering...')
             self.main_window.statusbar.showMessage(
@@ -1303,7 +1309,7 @@ class QtDriver(QObject):
             # self.filtered_items = self.lib.search_library(query)
             # 73601 Entries at 500 size should be 246
             all_items = self.lib.search_library(query)
-            frames = []
+            frames: list[list[tuple[ItemType, int]]] = []
             frame_count = math.ceil(len(all_items) / self.max_results)
             for i in range(0, frame_count):
                 frames.append(
@@ -1404,9 +1410,9 @@ class QtDriver(QObject):
         title_text = f"{self.base_title} - Library '{self.lib.library_dir}'"
         self.main_window.setWindowTitle(title_text)
 
-        self.nav_frames: list[NavigationState] = []
-        self.cur_frame_idx: int = -1
-        self.cur_query: str = ""
+        self.nav_frames = []
+        self.cur_frame_idx = -1
+        self.cur_query = ""
         self.selected.clear()
         self.preview_panel.update_widgets()
         self.filter_items()
@@ -1444,7 +1450,7 @@ class QtDriver(QObject):
             # 	('Stretch to Fill','Stretches the media file to fill the entire collage square.'),
             # 	('Keep Aspect Ratio','Keeps the original media file\'s aspect ratio, filling the rest of the square with black bars.')
             # 	], prompt='', required=True)
-            keep_aspect = 0
+            keep_aspect = False
 
         if mode in [1, 2, 3]:
             # TODO: Choose data visualization options here.
@@ -1540,7 +1546,7 @@ class QtDriver(QObject):
                 f'{self.lib.library_dir}/{TS_FOLDER_NAME}/{COLLAGE_FOLDER_NAME}/collage_{dt.utcnow().strftime("%F_%T").replace(":", "")}.png'
             )
             self.collage.save(filename)
-            self.collage = None
+            self.collage = None  # type: ignore
 
             end_time = time.time()
             self.main_window.statusbar.showMessage(

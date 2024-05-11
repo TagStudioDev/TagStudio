@@ -292,9 +292,9 @@ class Pagination(QWidget, QObject):
                         ).widget().setHidden(False)
                         self.start_buffer_layout.itemAt(
                             i - start_offset
-                        ).widget().setText(str(i + 1))
+                        ).widget().setText(str(i + 1))  # type: ignore
                         self._assign_click(
-                            self.start_buffer_layout.itemAt(i - start_offset).widget(),
+                            self.start_buffer_layout.itemAt(i - start_offset).widget(),  # type: ignore
                             i,
                         )
                         sbc += 1
@@ -319,11 +319,12 @@ class Pagination(QWidget, QObject):
                         self.end_buffer_layout.itemAt(
                             i - end_offset
                         ).widget().setHidden(False)
-                        self.end_buffer_layout.itemAt(i - end_offset).widget().setText(
+                        self.end_buffer_layout.itemAt(i - end_offset).widget().setText(  # type: ignore
                             str(i + 1)
                         )
                         self._assign_click(
-                            self.end_buffer_layout.itemAt(i - end_offset).widget(), i
+                            self.end_buffer_layout.itemAt(i - end_offset).widget(),  # type: ignore
+                            i,
                         )
                     else:
                         # if self.start_buffer_layout.itemAt(i-1):
