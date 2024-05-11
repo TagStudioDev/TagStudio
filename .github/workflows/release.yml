@@ -34,7 +34,7 @@ jobs:
   macos:
     strategy:
       matrix:
-        runner: [macos-11, macos-14]
+        os-version: ['11', '14']
         build-type: ['', portable]
         include:
           - runner: macos-11
@@ -47,7 +47,7 @@ jobs:
           - build-type: portable
             build-flag: --portable
             suffix: _portable
-    runs-on: ${{ matrix.runner }}
+    runs-on: macos-${{ matrix.os-version }}
     env:
       MACOSX_DEPLOYMENT_TARGET: '11.0'
     steps:
