@@ -46,7 +46,7 @@ exe = EXE(
     *include,
     [],
     bootloader_ignore_signals=False,
-    console=True,
+    console=False,
     hide_console='hide-early',
     disable_windowed_traceback=False,
     debug=False,
