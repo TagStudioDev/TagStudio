@@ -34,19 +34,19 @@ jobs:
   macos:
     strategy:
       matrix:
-        build-type: ['', portable]
         runner: [macos-11, macos-14]
+        build-type: ['', portable]
         include:
+          - runner: macos-11
+            arch: x86_64
+          - runner: macos-14
+            arch: arm64
           - build-type: ''
             build-flag: ''
             suffix: ''
           - build-type: portable
             build-flag: --portable
             suffix: _portable
-          - runner: macos-11
-            arch: x86_64
-          - runner: macos-14
-            arch: arm64
     runs-on: ${{ matrix.runner }}
     env:
       MACOSX_DEPLOYMENT_TARGET: '11.0'
