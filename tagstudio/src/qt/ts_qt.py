@@ -575,9 +575,10 @@ class QtDriver(QObject):
         # self.render_times: list = []
         # self.main_window.setWindowFlag(Qt.FramelessWindowHint)
 
+        drop_import = DropImport(self)
         self.main_window.setAcceptDrops(True)
         self.main_window.dragEnterEvent = drop_import.dragEnterEvent
-        self.main_window.dropEvent = lambda event: drop_import.dropEvent(self, event)
+        self.main_window.dropEvent = drop_import.dropEvent
         self.main_window.dragMoveEvent = drop_import.dragMoveEvent
 
         # NOTE: Putting this early will result in a white non-responsive
