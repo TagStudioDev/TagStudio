@@ -9,3 +9,4 @@ from .fix_unlinked import FixUnlinkedEntriesModal
 from .mirror_entities import MirrorEntriesModal
 from .fix_dupes import FixDupeFilesModal
 from .folders_to_tags import FoldersToTagsModal
+from .drop_import import DropImport
