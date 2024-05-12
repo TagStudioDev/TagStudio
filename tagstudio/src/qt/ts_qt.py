@@ -268,8 +268,8 @@ class QtDriver(QObject):
         menu_bar = self.main_window.menuBar()
 
         # Allow the use of the native macOS menu bar.
-        if sys.platform != "darwin":
-            menu_bar.setNativeMenuBar(False)
+        # if sys.platform != "darwin":
+        #     menu_bar.setNativeMenuBar(False)
 
         file_menu = QMenu("&File", menu_bar)
         edit_menu = QMenu("&Edit", menu_bar)
