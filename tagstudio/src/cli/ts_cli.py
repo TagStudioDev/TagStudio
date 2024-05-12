@@ -1054,7 +1054,6 @@ class CliDriver:
                         # entry: Entry = self.lib.get_entry_from_index(i)
                         entry = self.lib.entries[i]
                         filepath = self.lib.library_dir / entry.path / entry.filename
-                        file_type = os.path.splitext(filepath)[1].lower()[1:]
                         color: str = ""
 
                         if data_tint_mode or data_only_mode:
@@ -1099,11 +1098,11 @@ class CliDriver:
                                 collage.paste(pic, (y * thumb_size, x * thumb_size))
                         if not data_only_mode:
                             print(
-                                f"\r{INFO} Combining [{i+1}/{len(self.lib.entries)}]: {self.get_file_color(file_type)}{entry.path}{os.sep}{entry.filename}{RESET}"
+                                f"\r{INFO} Combining [{i+1}/{len(self.lib.entries)}]: {self.get_file_color(filepath.suffix)}{entry.path}{os.sep}{entry.filename}{RESET}"
                             )
                             # sys.stdout.write(f'\r{INFO} Combining [{i+1}/{len(self.lib.entries)}]: {self.get_file_color(file_type)}{entry.path}{os.sep}{entry.filename}{RESET}')
                             # sys.stdout.flush()
-                            if file_type in IMAGE_TYPES:
+                            if filepath.suffix in IMAGE_TYPES:
                                 with Image.open(
                                     self.lib.library_dir / entry.path / entry.filename
                                 ) as pic:
@@ -1120,7 +1119,7 @@ class CliDriver:
                                             ),
                                         )
                                     collage.paste(pic, (y * thumb_size, x * thumb_size))
-                            elif file_type in VIDEO_TYPES:
+                            elif filepath.suffix in VIDEO_TYPES:
                                 video = cv2.VideoCapture(filepath)
                                 video.set(
                                     cv2.CAP_PROP_POS_FRAMES,

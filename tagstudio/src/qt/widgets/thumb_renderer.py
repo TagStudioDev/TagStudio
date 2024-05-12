@@ -42,39 +42,19 @@ class ThumbRenderer(QObject):
     # updatedImage = Signal(QPixmap)
     # updatedSize = Signal(QSize)
 
-    thumb_mask_512: Image.Image = Image.open(
-        os.path.normpath(
-            f"{Path(__file__).parent.parent.parent.parent}/resources/qt/images/thumb_mask_512.png"
-        )
-    )
+    thumb_mask_512: Image.Image = Image.open(Path(__file__).parent.parent.parent.parent / 'resources/qt/images/thumb_mask_512.png')
     thumb_mask_512.load()
 
-    thumb_mask_hl_512: Image.Image = Image.open(
-        os.path.normpath(
-            f"{Path(__file__).parent.parent.parent.parent}/resources/qt/images/thumb_mask_hl_512.png"
-        )
-    )
+    thumb_mask_hl_512: Image.Image = Image.open(Path(__file__).parent.parent.parent.parent / 'resources/qt/images/thumb_mask_hl_512.png')
     thumb_mask_hl_512.load()
 
-    thumb_loading_512: Image.Image = Image.open(
-        os.path.normpath(
-            f"{Path(__file__).parent.parent.parent.parent}/resources/qt/images/thumb_loading_512.png"
-        )
-    )
+    thumb_loading_512: Image.Image = Image.open(Path(__file__).parent.parent.parent.parent / 'resources/qt/images/thumb_loading_512.png')
     thumb_loading_512.load()
 
-    thumb_broken_512: Image.Image = Image.open(
-        os.path.normpath(
-            f"{Path(__file__).parent.parent.parent.parent}/resources/qt/images/thumb_broken_512.png"
-        )
-    )
+    thumb_broken_512: Image.Image = Image.open(Path(__file__).parent.parent.parent.parent / 'resources/qt/images/thumb_broken_512.png')
     thumb_broken_512.load()
 
-    thumb_file_default_512: Image.Image = Image.open(
-        os.path.normpath(
-            f"{Path(__file__).parent.parent.parent.parent}/resources/qt/images/thumb_file_default_512.png"
-        )
-    )
+    thumb_file_default_512: Image.Image = Image.open(Path(__file__).parent.parent.parent.parent / 'resources/qt/images/thumb_file_default_512.png')
     thumb_file_default_512.load()
 
     # thumb_debug: Image.Image = Image.open(os.path.normpath(
@@ -83,12 +63,8 @@ class ThumbRenderer(QObject):
 
     # TODO: Make dynamic font sized given different pixel ratios
     font_pixel_ratio: float = 1
-    ext_font = ImageFont.truetype(
-        os.path.normpath(
-            f"{Path(__file__).parent.parent.parent.parent}/resources/qt/fonts/Oxanium-Bold.ttf"
-        ),
-        math.floor(12 * font_pixel_ratio),
-    )
+    ext_font = ImageFont.truetype(Path(__file__).parent.parent.parent.parent / 'resources/qt/fonts/Oxanium-Bold.ttf',
+        math.floor(12 * font_pixel_ratio),)
 
     def render(
         self,
@@ -103,15 +79,12 @@ class ThumbRenderer(QObject):
         image = None
         pixmap = None
         final = None
-        extension: str = None
         broken_thumb = False
+        filepath = Path(filepath)
         # adj_font_size = math.floor(12 * pixelRatio)
         if ThumbRenderer.font_pixel_ratio != pixelRatio:
             ThumbRenderer.font_pixel_ratio = pixelRatio
-            ThumbRenderer.ext_font = ImageFont.truetype(
-                os.path.normpath(
-                    f"{Path(__file__).parent.parent.parent.parent}/resources/qt/fonts/Oxanium-Bold.ttf"
-                ),
+            ThumbRenderer.ext_font = ImageFont.truetype(Path(__file__).parent.parent.parent.parent / 'resources/qt/fonts/Oxanium-Bold.ttf',
                 math.floor(12 * ThumbRenderer.font_pixel_ratio),
             )
 
@@ -133,11 +106,9 @@ class ThumbRenderer(QObject):
                 (adj_size, adj_size), resample=Image.Resampling.BILINEAR
             )
 
-            extension = os.path.splitext(filepath)[1][1:].lower()
-
             try:
                 # Images =======================================================
-                if extension in IMAGE_TYPES:
+                if filepath.suffix in IMAGE_TYPES:
                     image = Image.open(filepath)
                     # image = self.thumb_debug
                     if image.mode == "RGBA":
@@ -151,7 +122,7 @@ class ThumbRenderer(QObject):
                     image = ImageOps.exif_transpose(image)
 
                 # Videos =======================================================
-                elif extension in VIDEO_TYPES:
+                elif filepath.suffix in VIDEO_TYPES:
                     video = cv2.VideoCapture(filepath)
                     video.set(
                         cv2.CAP_PROP_POS_FRAMES,
@@ -168,9 +139,9 @@ class ThumbRenderer(QObject):
                     image = Image.fromarray(frame)
 
                 # Plain Text ===================================================
-                elif extension in PLAINTEXT_TYPES:
+                elif filepath.suffix in PLAINTEXT_TYPES:
                     try:
-                        text: str = extension
+                        text: str = filepath.suffix
                         with open(filepath, "r", encoding="utf-8") as text_file:
                             text = text_file.read(256)
                         bg = Image.new("RGB", (256, 256), color="#222222")
@@ -266,10 +237,10 @@ class ThumbRenderer(QObject):
             pixmap.setDevicePixelRatio(pixelRatio)
 
         if pixmap:
-            self.updated.emit(timestamp, pixmap, QSize(*base_size), extension)
+            self.updated.emit(timestamp, pixmap, QSize(*base_size), filepath.suffix)
 
         else:
-            self.updated.emit(timestamp, QPixmap(), QSize(*base_size), extension)
+            self.updated.emit(timestamp, QPixmap(), QSize(*base_size), filepath.suffix)
 
     def render_big(
         self,
@@ -284,16 +255,13 @@ class ThumbRenderer(QObject):
         image: Image.Image = None
         pixmap: QPixmap = None
         final: Image.Image = None
-        extension: str = None
         broken_thumb = False
+        filepath = Path(filepath)
         img_ratio = 1
         # adj_font_size = math.floor(12 * pixelRatio)
         if ThumbRenderer.font_pixel_ratio != pixelRatio:
             ThumbRenderer.font_pixel_ratio = pixelRatio
-            ThumbRenderer.ext_font = ImageFont.truetype(
-                os.path.normpath(
-                    f"{Path(__file__).parent.parent.parent.parent}/resources/qt/fonts/Oxanium-Bold.ttf"
-                ),
+            ThumbRenderer.ext_font = ImageFont.truetype(Path(__file__).parent.parent.parent.parent / 'resources/qt/fonts/Oxanium-Bold.ttf',
                 math.floor(12 * ThumbRenderer.font_pixel_ratio),
             )
 
@@ -316,11 +284,9 @@ class ThumbRenderer(QObject):
             # hl: Image.Image = ThumbRenderer.thumb_mask_hl_512.resize(
             # 	(adj_size, adj_size), resample=Image.Resampling.BILINEAR)
 
-            extension = os.path.splitext(filepath)[1][1:].lower()
-
             try:
                 # Images =======================================================
-                if extension in IMAGE_TYPES:
+                if filepath.suffix in IMAGE_TYPES:
                     image = Image.open(filepath)
                     # image = self.thumb_debug
                     if image.mode == "RGBA":
@@ -334,7 +300,7 @@ class ThumbRenderer(QObject):
                     image = ImageOps.exif_transpose(image)
 
                 # Videos =======================================================
-                elif extension in VIDEO_TYPES:
+                elif filepath.suffix in VIDEO_TYPES:
                     video = cv2.VideoCapture(filepath)
                     video.set(
                         cv2.CAP_PROP_POS_FRAMES,
@@ -350,9 +316,9 @@ class ThumbRenderer(QObject):
                     frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
                     image = Image.fromarray(frame)
                 # Plain Text ===================================================
-                elif extension in PLAINTEXT_TYPES:
+                elif filepath.suffix in PLAINTEXT_TYPES:
                     try:
-                        text: str = extension
+                        text: str = filepath.suffix
                         with open(filepath, "r", encoding="utf-8") as text_file:
                             text = text_file.read(256)
                         bg = Image.new("RGB", (256, 256), color="#222222")
@@ -497,8 +463,8 @@ class ThumbRenderer(QObject):
                     math.ceil(adj_size * 1 / pixelRatio),
                     math.ceil(final.size[1] * 1 / pixelRatio),
                 ),
-                extension,
+                filepath.suffix,
             )
 
         else:
-            self.updated.emit(timestamp, QPixmap(), QSize(*base_size), extension)
+            self.updated.emit(timestamp, QPixmap(), QSize(*base_size), filepath.suffix)
