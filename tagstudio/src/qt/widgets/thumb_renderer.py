@@ -21,6 +21,7 @@ from PIL import (
     ImageOps,
     ImageFile,
 )
+from PIL.Image import DecompressionBombError
 from PySide6.QtCore import QObject, Signal, QSize
 from PySide6.QtGui import QPixmap
 from src.core.ts_core import PLAINTEXT_TYPES, VIDEO_TYPES, IMAGE_TYPES
@@ -138,17 +139,22 @@ class ThumbRenderer(QObject):
             try:
                 # Images =======================================================
                 if extension in IMAGE_TYPES:
-                    image = Image.open(filepath)
-                    # image = self.thumb_debug
-                    if image.mode == "RGBA":
-                        # logging.info(image.getchannel(3).tobytes())
-                        new_bg = Image.new("RGB", image.size, color="#1e1e1e")
-                        new_bg.paste(image, mask=image.getchannel(3))
-                        image = new_bg
-                    if image.mode != "RGB":
-                        image = image.convert(mode="RGB")
+                    try:
+                        image = Image.open(filepath)
+                        # image = self.thumb_debug
+                        if image.mode == "RGBA":
+                            # logging.info(image.getchannel(3).tobytes())
+                            new_bg = Image.new("RGB", image.size, color="#1e1e1e")
+                            new_bg.paste(image, mask=image.getchannel(3))
+                            image = new_bg
+                        if image.mode != "RGB":
+                            image = image.convert(mode="RGB")
 
-                    image = ImageOps.exif_transpose(image)
+                        image = ImageOps.exif_transpose(image)
+                    except DecompressionBombError as e:
+                        logging.info(
+                            f"[ThumbRenderer][ERROR] Couldn't Render thumbnail for {filepath} (because of {e})"
+                        )
 
                 # Videos =======================================================
                 elif extension in VIDEO_TYPES:
@@ -321,17 +327,22 @@ class ThumbRenderer(QObject):
             try:
                 # Images =======================================================
                 if extension in IMAGE_TYPES:
-                    image = Image.open(filepath)
-                    # image = self.thumb_debug
-                    if image.mode == "RGBA":
-                        # logging.info(image.getchannel(3).tobytes())
-                        new_bg = Image.new("RGB", image.size, color="#1e1e1e")
-                        new_bg.paste(image, mask=image.getchannel(3))
-                        image = new_bg
-                    if image.mode != "RGB":
-                        image = image.convert(mode="RGB")
+                    try:
+                        image = Image.open(filepath)
+                        # image = self.thumb_debug
+                        if image.mode == "RGBA":
+                            # logging.info(image.getchannel(3).tobytes())
+                            new_bg = Image.new("RGB", image.size, color="#1e1e1e")
+                            new_bg.paste(image, mask=image.getchannel(3))
+                            image = new_bg
+                        if image.mode != "RGB":
+                            image = image.convert(mode="RGB")
 
-                    image = ImageOps.exif_transpose(image)
+                        image = ImageOps.exif_transpose(image)
+                    except DecompressionBombError as e:
+                        logging.info(
+                            f"[ThumbRenderer][ERROR] Couldn't Render thumbnail for {filepath} (because of {e})"
+                        )
 
                 # Videos =======================================================
                 elif extension in VIDEO_TYPES:
@@ -502,3 +513,4 @@ class ThumbRenderer(QObject):
 
         else:
             self.updated.emit(timestamp, QPixmap(), QSize(*base_size), extension)
+
