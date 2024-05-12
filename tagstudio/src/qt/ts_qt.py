@@ -108,6 +108,7 @@ logging.basicConfig(format="%(message)s", level=logging.INFO)
 # Keep settings in ini format in the current working directory.
 QSettings.setPath(QSettings.IniFormat, QSettings.UserScope, os.getcwd())
 
+
 class NavigationState:
     """Represents a state of the Library grid view."""
 
@@ -132,6 +133,7 @@ class NavigationState:
 
 class Consumer(QThread):
     MARKER_QUIT = "MARKER_QUIT"
+
     def __init__(self, queue) -> None:
         self.queue = queue
         QThread.__init__(self)
@@ -157,6 +159,7 @@ class Consumer(QThread):
 
     def nav_forward(self):
         pass
+
 
 class QtDriver(QObject):
     """A Qt GUI frontend driver for TagStudio."""

@@ -884,16 +884,16 @@ class Library:
         # print('')
         # Sorts the files by date modified, descending.
         if len(self.files_not_in_library) <= 100000:
-          try:
-              self.files_not_in_library = sorted(
-                  self.files_not_in_library,
-                  key=lambda t: -(self.library_dir / t).stat().st_ctime,
-              )
-          except (FileExistsError, FileNotFoundError):
-              print(
-                  f"[LIBRARY] [ERROR] Couldn't sort files, some were moved during the scanning/sorting process."
-              )
-              pass
+            try:
+                self.files_not_in_library = sorted(
+                    self.files_not_in_library,
+                    key=lambda t: -(self.library_dir / t).stat().st_ctime,
+                )
+            except (FileExistsError, FileNotFoundError):
+                print(
+                    f"[LIBRARY] [ERROR] Couldn't sort files, some were moved during the scanning/sorting process."
+                )
+                pass
         else:
             print(
                 f"[LIBRARY][INFO] Not bothering to sort files because there's OVER 100,000! Better sorting methods will be added in the future."
@@ -1213,14 +1213,14 @@ class Library:
         #     # print(match)
         #     # print(f'\t{matches[match]}')
 
-        #with open(
+        # with open(
         #    self.library_dir / TS_FOLDER_NAME / "missing_matched.json", "w"
-        #) as outfile:
+        # ) as outfile:
         #    outfile.flush()
         #    json.dump(matches, outfile, indent=4)
-        #print(
+        # print(
         #    f'[LIBRARY] Saved to disk at {self.library_dir / TS_FOLDER_NAME / "missing_matched.json"}'
-        #)
+        # )
 
     def count_tag_entry_refs(self) -> None:
         """

@@ -177,7 +177,7 @@ class Pagination(QWidget, QObject):
                 # self.start_buffer_layout.setContentsMargins(3,0,3,0)
                 self._assign_click(self.prev_button, index - 1)
                 self.prev_button.setDisabled(False)
-                
+
             if index == end_page:
                 self.next_button.setDisabled(True)
                 # self.end_buffer_layout.setContentsMargins(0,0,0,0)
