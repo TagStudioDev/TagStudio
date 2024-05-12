@@ -513,4 +513,3 @@ class ThumbRenderer(QObject):
 
         else:
             self.updated.emit(timestamp, QPixmap(), QSize(*base_size), extension)
-
