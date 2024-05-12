@@ -138,7 +138,7 @@ class FixDupeFilesModal(QWidget):
 
     def select_file(self):
         qfd = QFileDialog(
-            self, "Open DupeGuru Results File", os.path.normpath(self.lib.library_dir)
+            self, "Open DupeGuru Results File", str(self.lib.library_dir)
         )
         qfd.setFileMode(QFileDialog.FileMode.ExistingFile)
         qfd.setNameFilter("DupeGuru Files (*.dupeguru)")
