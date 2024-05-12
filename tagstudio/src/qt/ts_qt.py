@@ -193,6 +193,9 @@ class QtDriver(QObject):
         )
 
         max_threads = os.cpu_count()
+        if args.ci:
+            # spawn only single worker in CI environment
+            max_threads = 1
         for i in range(max_threads):
             # thread = threading.Thread(target=self.consumer, name=f'ThumbRenderer_{i}',args=(), daemon=True)
             # thread.start()
@@ -238,6 +241,7 @@ class QtDriver(QObject):
 
         # Handle OS signals
         self.setup_signals()
+        # allow to process input from console, eg. SIGTERM
         timer = QTimer()
         timer.start(500)
         timer.timeout.connect(lambda: None)
@@ -538,7 +542,11 @@ class QtDriver(QObject):
             )
             self.open_library(lib)
 
-        app.exec_()
+        if self.args.ci:
+            # gracefully terminate the app in CI environment
+            self.thumb_job_queue.put((self.SIGTERM.emit, []))
+
+        app.exec()
 
         self.shutdown()
 
