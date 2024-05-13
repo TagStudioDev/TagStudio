@@ -261,7 +261,7 @@ class QtDriver(QObject):
 
         splash_pixmap = QPixmap(":/images/splash.png")
         splash_pixmap.setDevicePixelRatio(self.main_window.devicePixelRatio())
-        self.splash = QSplashScreen(splash_pixmap)
+        self.splash = QSplashScreen(splash_pixmap, Qt.WindowStaysOnTopHint)
         # self.splash.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
         self.splash.show()
 
