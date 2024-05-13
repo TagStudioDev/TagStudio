@@ -42,6 +42,7 @@ from PySide6.QtWidgets import (
     QFileDialog,
     QSplashScreen,
     QMenu,
+    QMenuBar,
 )
 from humanfriendly import format_timespan
 
@@ -87,6 +88,7 @@ from src.qt.modals.file_extension import FileExtensionModal
 from src.qt.modals.fix_unlinked import FixUnlinkedEntriesModal
 from src.qt.modals.fix_dupes import FixDupeFilesModal
 from src.qt.modals.folders_to_tags import FoldersToTagsModal
+  
 import src.qt.resources_rc
 
 # SIGQUIT is not defined on Windows
@@ -229,9 +231,7 @@ class QtDriver(QObject):
         # 			 QPalette.ColorRole.Window, QColor('#110F1B'))
         # app.setPalette(pal)
         home_path = os.path.normpath(f"{Path(__file__).parent}/ui/home.ui")
-        icon_path = os.path.normpath(
-            f"{Path(__file__).parent.parent.parent}/resources/icon.png"
-        )
+        icon_path = os.path.normpath(f"{Path(__file__).parents[2]}/resources/icon.png")
 
         # Handle OS signals
         self.setup_signals()
@@ -258,15 +258,22 @@ class QtDriver(QObject):
 
         splash_pixmap = QPixmap(":/images/splash.png")
         splash_pixmap.setDevicePixelRatio(self.main_window.devicePixelRatio())
-        self.splash = QSplashScreen(splash_pixmap)
+        self.splash = QSplashScreen(splash_pixmap, Qt.WindowStaysOnTopHint)
         # self.splash.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
         self.splash.show()
 
-        menu_bar = self.main_window.menuBar()
+        if os.name == "nt":
+            appid = "cyanvoxel.tagstudio.9"
+            ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(appid)
 
-        # Allow the use of the native macOS menu bar.
         if sys.platform != "darwin":
-            menu_bar.setNativeMenuBar(False)
+            icon = QIcon()
+            icon.addFile(icon_path)
+            app.setWindowIcon(icon)
+
+        menu_bar = QMenuBar(self.main_window)
+        self.main_window.setMenuBar(menu_bar)
+        menu_bar.setNativeMenuBar(True)
 
         file_menu = QMenu("&File", menu_bar)
         edit_menu = QMenu("&Edit", menu_bar)
@@ -432,29 +439,13 @@ class QtDriver(QObject):
         menu_bar.addMenu(macros_menu)
         menu_bar.addMenu(help_menu)
 
-        # self.main_window.setMenuBar(menu_bar)
-        # self.main_window.centralWidget().layout().addWidget(menu_bar, 0,0,1,1)
-        # self.main_window.tb_layout.addWidget(menu_bar)
-
-        icon = QIcon()
-        icon.addFile(icon_path)
-        self.main_window.setWindowIcon(icon)
-
         self.preview_panel = PreviewPanel(self.lib, self)
         l: QHBoxLayout = self.main_window.splitter
         l.addWidget(self.preview_panel)
-        # self.preview_panel.update_widgets()
-        # l.setEnabled(False)
-        # self.entry_panel.setWindowIcon(icon)
-
-        if os.name == "nt":
-            appid = "cyanvoxel.tagstudio.9"
-            ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(appid)
-        app.setWindowIcon(icon)
 
         QFontDatabase.addApplicationFont(
             os.path.normpath(
-                f"{Path(__file__).parent.parent.parent}/resources/qt/fonts/Oxanium-Bold.ttf"
+                f"{Path(__file__).parents[2]}/resources/qt/fonts/Oxanium-Bold.ttf"
             )
         )
 
@@ -463,7 +454,6 @@ class QtDriver(QObject):
         self.item_thumbs: list[ItemThumb] = []
         self.thumb_renderers: list[ThumbRenderer] = []
         self.collation_thumb_size = math.ceil(self.thumb_size * 2)
-        # self.filtered_items: list[tuple[SearchItemType, int]] = []
 
         self._init_thumb_grid()
 
@@ -471,7 +461,7 @@ class QtDriver(QObject):
         # so the resource isn't being used, then store the specific size variations
         # in a global dict for methods to access for different DPIs.
         # adj_font_size = math.floor(12 * self.main_window.devicePixelRatio())
-        # self.ext_font = ImageFont.truetype(os.path.normpath(f'{Path(__file__).parent.parent.parent}/resources/qt/fonts/Oxanium-Bold.ttf'), adj_font_size)
+        # self.ext_font = ImageFont.truetype(os.path.normpath(f'{Path(__file__).parents[2]}/resources/qt/fonts/Oxanium-Bold.ttf'), adj_font_size)
 
         search_button: QPushButton = self.main_window.searchButton
         search_button.clicked.connect(
