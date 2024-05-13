@@ -30,10 +30,11 @@ def main():
         help="Path to a TagStudio Library folder to open on start.",
     )
     parser.add_argument(
-        "-c", "--config-file",
+        "-c",
+        "--config-file",
         dest="config_file",
         type=str,
-        help="Path to a TagStudio.ini config file to use"
+        help="Path to a TagStudio.ini config file to use",
     )
 
     # parser.add_argument('--browse', dest='browse', action='store_true',
