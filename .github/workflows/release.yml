@@ -35,18 +35,11 @@ jobs:
     strategy:
       matrix:
         os-version: ['11', '14']
-        build-type: ['', portable]
         include:
-          - runner: macos-11
+          - os-version: '11'
             arch: x86_64
-          - runner: macos-14
+          - os-version: '14'
             arch: arm64
-          - build-type: ''
-            build-flag: ''
-            suffix: ''
-          - build-type: portable
-            build-flag: --portable
-            suffix: _portable
     runs-on: macos-${{ matrix.os-version }}
     env:
       MACOSX_DEPLOYMENT_TARGET: '11.0'
@@ -56,12 +49,12 @@ jobs:
         with:
           python-version: '3.12'
       - run: pip install -r requirements.txt pyinstaller
-      - run: pyinstaller tagstudio.spec -- ${{ matrix.build-flag }}
-      - run: tar czfC dist/tagstudio_macos_${{ matrix.arch }}${{ matrix.suffix }}.tar.gz dist TagStudio.app
+      - run: pyinstaller tagstudio.spec
+      - run: tar czfC dist/tagstudio_macos_${{ matrix.arch }}.tar.gz dist TagStudio.app
       - uses: actions/upload-artifact@v4
         with:
-          name: tagstudio_macos_${{ matrix.arch }}${{ matrix.suffix }}
-          path: dist/tagstudio_macos_${{ matrix.arch }}${{ matrix.suffix }}.tar.gz
+          name: tagstudio_macos_${{ matrix.arch }}
+          path: dist/tagstudio_macos_${{ matrix.arch }}.tar.gz
 
   windows:
     strategy:
