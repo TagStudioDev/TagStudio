@@ -13,8 +13,9 @@ from PySide6.QtWidgets import (
 )
 
 from src.core.library import Library
-from src.qt.widgets import PanelWidget, PanelModal, TagWidget
-from src.qt.modals import BuildTagPanel
+from src.qt.widgets.panel import PanelWidget, PanelModal
+from src.qt.widgets.tag import TagWidget
+from src.qt.modals.build_tag import BuildTagPanel
 
 
 class TagDatabasePanel(PanelWidget):

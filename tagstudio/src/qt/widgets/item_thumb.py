@@ -26,11 +26,12 @@ from PySide6.QtWidgets import (
 from src.core.library import ItemType, Library, Entry
 from src.core.ts_core import AUDIO_TYPES, VIDEO_TYPES, IMAGE_TYPES
 from src.qt.flowlayout import FlowWidget
-from src.qt.helpers import FileOpenerHelper
-from src.qt.widgets import ThumbRenderer, ThumbButton
+from src.qt.helpers.file_opener import FileOpenerHelper
+from src.qt.widgets.thumb_renderer import ThumbRenderer
+from src.qt.widgets.thumb_button import ThumbButton
 
 if typing.TYPE_CHECKING:
-    from src.qt.widgets import PreviewPanel
+    from src.qt.widgets.preview_panel import PreviewPanel
 
 ERROR = f"[ERROR]"
 WARNING = f"[WARNING]"
