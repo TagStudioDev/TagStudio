@@ -107,9 +107,6 @@ INFO = f"[INFO]"
 
 logging.basicConfig(format="%(message)s", level=logging.INFO)
 
-# Keep settings in ini format in the current working directory.
-QSettings.setPath(QSettings.IniFormat, QSettings.UserScope, os.getcwd())
-
 
 class NavigationState:
     """Represents a state of the Library grid view."""
@@ -189,7 +186,42 @@ class QtDriver(QObject):
 
         self.SIGTERM.connect(self.handleSIGTERM)
 
-        self.settings = QSettings(QSettings.IniFormat, QSettings.UserScope, "TagStudio")
+        if self.args.config_file:
+            path = Path(self.args.config_file)
+            if path.is_dir():
+                path = path / "TagStudio.ini"
+                self.settings = QSettings(str(path), QSettings.IniFormat)
+                logging.info(
+                    f"[QT DRIVER] Directory provided defaulting to TagStudio.ini in directory, using {self.settings.fileName()}"
+                )
+            elif path.is_file():
+                self.settings = QSettings(str(path), QSettings.IniFormat)
+                logging.info(
+                    f"[QT DRIVER] Config File exists, using {self.settings.fileName()}"
+                )
+            else:
+                if path.suffix == ".ini" and path.parent.is_dir():
+                    self.settings = QSettings(str(path), QSettings.IniFormat)
+                    logging.info(
+                        f"[QT DRIVER] Config File does not exist, valid path specified using {self.settings.fileName()}"
+                    )
+                else:
+                    self.settings = QSettings(
+                        QSettings.IniFormat,
+                        QSettings.UserScope,
+                        "TagStudio",
+                        "TagStudio",
+                    )
+                    logging.warning(
+                        f"[QT DRIVER] Config File does not exist, defaulting to {self.settings.fileName()}"
+                    )
+        else:
+            self.settings = QSettings(
+                QSettings.IniFormat, QSettings.UserScope, "TagStudio", "TagStudio"
+            )
+            logging.info(
+                f"[QT DRIVER] Config File not specified, defaulting to {self.settings.fileName()}"
+            )
 
         max_threads = os.cpu_count()
         for i in range(max_threads):
