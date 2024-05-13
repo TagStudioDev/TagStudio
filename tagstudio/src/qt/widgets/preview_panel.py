@@ -11,6 +11,7 @@ from datetime import datetime as dt
 
 import cv2
 from PIL import Image, UnidentifiedImageError
+from PIL.Image import DecompressionBombError
 from PySide6.QtCore import Signal, Qt, QSize
 from PySide6.QtGui import QResizeEvent, QAction
 from PySide6.QtWidgets import (
@@ -403,8 +404,15 @@ class PreviewPanel(QWidget):
                             )
                             raise UnidentifiedImageError
 
-                    except (UnidentifiedImageError, FileNotFoundError, cv2.error):
-                        pass
+                    except (
+                        UnidentifiedImageError,
+                        FileNotFoundError,
+                        cv2.error,
+                        DecompressionBombError,
+                    ) as e:
+                        logging.info(
+                            f"[PreviewPanel][ERROR] Couldn't Render thumbnail for {filepath} (because of {e})"
+                        )
 
                     try:
                         self.preview_img.clicked.disconnect()
