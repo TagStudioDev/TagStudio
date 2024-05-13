@@ -42,6 +42,7 @@ from PySide6.QtWidgets import (
     QFileDialog,
     QSplashScreen,
     QMenu,
+    QMenuBar,
 )
 from humanfriendly import format_timespan
 
@@ -273,11 +274,9 @@ class QtDriver(QObject):
             icon.addFile(icon_path)
             app.setWindowIcon(icon)
 
-        menu_bar = self.main_window.menuBar()
-
-        # Allow the use of the native macOS menu bar.
-        # if sys.platform != "darwin":
-        menu_bar.setNativeMenuBar(False)
+        menu_bar = QMenuBar(self.main_window)
+        self.main_window.setMenuBar(menu_bar)
+        menu_bar.setNativeMenuBar(True)
 
         file_menu = QMenu("&File", menu_bar)
         edit_menu = QMenu("&Edit", menu_bar)
