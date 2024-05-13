@@ -266,6 +266,15 @@ class QtDriver(QObject):
         # self.splash.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
         self.splash.show()
 
+        if os.name == "nt":
+            appid = "cyanvoxel.tagstudio.9"
+            ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(appid)
+
+        if sys.platform != "darwin":
+            icon = QIcon()
+            icon.addFile(icon_path)
+            app.setWindowIcon(icon)
+
         menu_bar = self.main_window.menuBar()
 
         # Allow the use of the native macOS menu bar.
@@ -436,26 +445,9 @@ class QtDriver(QObject):
         menu_bar.addMenu(macros_menu)
         menu_bar.addMenu(help_menu)
 
-        # self.main_window.setMenuBar(menu_bar)
-        # self.main_window.centralWidget().layout().addWidget(menu_bar, 0,0,1,1)
-        # self.main_window.tb_layout.addWidget(menu_bar)
-
-        if sys.platform != "darwin":
-            icon = QIcon()
-            icon.addFile(icon_path)
-            self.main_window.setWindowIcon(icon)
-
         self.preview_panel = PreviewPanel(self.lib, self)
         l: QHBoxLayout = self.main_window.splitter
         l.addWidget(self.preview_panel)
-        # self.preview_panel.update_widgets()
-        # l.setEnabled(False)
-        # self.entry_panel.setWindowIcon(icon)
-
-        if os.name == "nt":
-            appid = "cyanvoxel.tagstudio.9"
-            ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(appid)
-        app.setWindowIcon(icon)
 
         QFontDatabase.addApplicationFont(
             os.path.normpath(
@@ -468,7 +460,6 @@ class QtDriver(QObject):
         self.item_thumbs: list[ItemThumb] = []
         self.thumb_renderers: list[ThumbRenderer] = []
         self.collation_thumb_size = math.ceil(self.thumb_size * 2)
-        # self.filtered_items: list[tuple[SearchItemType, int]] = []
 
         self._init_thumb_grid()
 
