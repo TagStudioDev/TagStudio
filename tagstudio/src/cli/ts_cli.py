@@ -1129,10 +1129,14 @@ class CliDriver:
                                             pic = ImageChops.hard_light(
                                                 pic,
                                                 Image.new(
-                                                    "RGB", (thumb_size, thumb_size), color
+                                                    "RGB",
+                                                    (thumb_size, thumb_size),
+                                                    color,
                                                 ),
                                             )
-                                        collage.paste(pic, (y * thumb_size, x * thumb_size))
+                                        collage.paste(
+                                            pic, (y * thumb_size, x * thumb_size)
+                                        )
                                 except DecompressionBombError as e:
                                     print(f"[ERROR] One of the images was to big ({e})")
 
