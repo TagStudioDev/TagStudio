@@ -23,7 +23,7 @@ from PIL.Image import DecompressionBombError
 from PySide6.QtCore import QObject, Signal, QSize
 from PySide6.QtGui import QPixmap
 from src.core.ts_core import PLAINTEXT_TYPES, VIDEO_TYPES, IMAGE_TYPES
-from src.qt.helpers import four_corner_gradient_background
+from src.qt.helpers.gradient import four_corner_gradient_background
 
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 
