@@ -90,6 +90,7 @@ from src.qt.modals import (
     FixDupeFilesModal,
     FoldersToTagsModal,
 )
+
 import src.qt.resources_rc
 
 # SIGQUIT is not defined on Windows
@@ -230,9 +231,7 @@ class QtDriver(QObject):
         # 			 QPalette.ColorRole.Window, QColor('#110F1B'))
         # app.setPalette(pal)
         home_path = os.path.normpath(f"{Path(__file__).parent}/ui/home.ui")
-        icon_path = os.path.normpath(
-            f"{Path(__file__).parent.parent.parent}/resources/icon.png"
-        )
+        icon_path = os.path.normpath(f"{Path(__file__).parents[2]}/resources/icon.png")
 
         # Handle OS signals
         self.setup_signals()
@@ -257,7 +256,9 @@ class QtDriver(QObject):
         # self.windowFX = WindowEffect()
         # self.windowFX.setAcrylicEffect(self.main_window.winId())
 
-        splash_pixmap = QPixmap(":/images/splash.png")
+        splash_pixmap = QPixmap(
+            f"{Path(__file__).parents[2]}/resources/qt/images/splash.png"
+        )
         splash_pixmap.setDevicePixelRatio(self.main_window.devicePixelRatio())
         self.splash = QSplashScreen(splash_pixmap)
         # self.splash.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
@@ -437,9 +438,10 @@ class QtDriver(QObject):
         # self.main_window.centralWidget().layout().addWidget(menu_bar, 0,0,1,1)
         # self.main_window.tb_layout.addWidget(menu_bar)
 
-        icon = QIcon()
-        icon.addFile(icon_path)
-        self.main_window.setWindowIcon(icon)
+        if sys.platform != "darwin":
+            icon = QIcon()
+            icon.addFile(icon_path)
+            self.main_window.setWindowIcon(icon)
 
         self.preview_panel = PreviewPanel(self.lib, self)
         l: QHBoxLayout = self.main_window.splitter
@@ -455,7 +457,7 @@ class QtDriver(QObject):
 
         QFontDatabase.addApplicationFont(
             os.path.normpath(
-                f"{Path(__file__).parent.parent.parent}/resources/qt/fonts/Oxanium-Bold.ttf"
+                f"{Path(__file__).parents[2]}/resources/qt/fonts/Oxanium-Bold.ttf"
             )
         )
 
@@ -472,7 +474,7 @@ class QtDriver(QObject):
         # so the resource isn't being used, then store the specific size variations
         # in a global dict for methods to access for different DPIs.
         # adj_font_size = math.floor(12 * self.main_window.devicePixelRatio())
-        # self.ext_font = ImageFont.truetype(os.path.normpath(f'{Path(__file__).parent.parent.parent}/resources/qt/fonts/Oxanium-Bold.ttf'), adj_font_size)
+        # self.ext_font = ImageFont.truetype(os.path.normpath(f'{Path(__file__).parents[2]}/resources/qt/fonts/Oxanium-Bold.ttf'), adj_font_size)
 
         search_button: QPushButton = self.main_window.searchButton
         search_button.clicked.connect(

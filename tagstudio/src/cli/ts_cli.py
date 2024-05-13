@@ -84,7 +84,7 @@ class CliDriver:
 
         self.external_preview_size: tuple[int, int] = (960, 960)
         epd_path = os.path.normpath(
-            f"{Path(__file__).parent.parent.parent}/resources/cli/images/external_preview.png"
+            f"{Path(__file__).parents[2]}/resources/cli/images/external_preview.png"
         )
         self.external_preview_default: Image = (
             Image.open(epd_path)
@@ -93,7 +93,7 @@ class CliDriver:
         )
         self.external_preview_default.thumbnail(self.external_preview_size)
         epb_path = os.path.normpath(
-            f"{Path(__file__).parent.parent.parent}/resources/cli/images/no_preview.png"
+            f"{Path(__file__).parents[2]}/resources/cli/images/no_preview.png"
         )
         self.external_preview_broken: Image = (
             Image.open(epb_path)

@@ -44,48 +44,48 @@ class ThumbRenderer(QObject):
 
     thumb_mask_512: Image.Image = Image.open(
         os.path.normpath(
-            f"{Path(__file__).parent.parent.parent.parent}/resources/qt/images/thumb_mask_512.png"
+            f"{Path(__file__).parents[3]}/resources/qt/images/thumb_mask_512.png"
         )
     )
     thumb_mask_512.load()
 
     thumb_mask_hl_512: Image.Image = Image.open(
         os.path.normpath(
-            f"{Path(__file__).parent.parent.parent.parent}/resources/qt/images/thumb_mask_hl_512.png"
+            f"{Path(__file__).parents[3]}/resources/qt/images/thumb_mask_hl_512.png"
         )
     )
     thumb_mask_hl_512.load()
 
     thumb_loading_512: Image.Image = Image.open(
         os.path.normpath(
-            f"{Path(__file__).parent.parent.parent.parent}/resources/qt/images/thumb_loading_512.png"
+            f"{Path(__file__).parents[3]}/resources/qt/images/thumb_loading_512.png"
         )
     )
     thumb_loading_512.load()
 
     thumb_broken_512: Image.Image = Image.open(
         os.path.normpath(
-            f"{Path(__file__).parent.parent.parent.parent}/resources/qt/images/thumb_broken_512.png"
+            f"{Path(__file__).parents[3]}/resources/qt/images/thumb_broken_512.png"
         )
     )
     thumb_broken_512.load()
 
     thumb_file_default_512: Image.Image = Image.open(
         os.path.normpath(
-            f"{Path(__file__).parent.parent.parent.parent}/resources/qt/images/thumb_file_default_512.png"
+            f"{Path(__file__).parents[3]}/resources/qt/images/thumb_file_default_512.png"
         )
     )
     thumb_file_default_512.load()
 
     # thumb_debug: Image.Image = Image.open(os.path.normpath(
-    # 	f'{Path(__file__).parent.parent.parent}/resources/qt/images/temp.jpg'))
+    # 	f'{Path(__file__).parents[2]}/resources/qt/images/temp.jpg'))
     # thumb_debug.load()
 
     # TODO: Make dynamic font sized given different pixel ratios
     font_pixel_ratio: float = 1
     ext_font = ImageFont.truetype(
         os.path.normpath(
-            f"{Path(__file__).parent.parent.parent.parent}/resources/qt/fonts/Oxanium-Bold.ttf"
+            f"{Path(__file__).parents[3]}/resources/qt/fonts/Oxanium-Bold.ttf"
         ),
         math.floor(12 * font_pixel_ratio),
     )
@@ -110,7 +110,7 @@ class ThumbRenderer(QObject):
             ThumbRenderer.font_pixel_ratio = pixelRatio
             ThumbRenderer.ext_font = ImageFont.truetype(
                 os.path.normpath(
-                    f"{Path(__file__).parent.parent.parent.parent}/resources/qt/fonts/Oxanium-Bold.ttf"
+                    f"{Path(__file__).parents[3]}/resources/qt/fonts/Oxanium-Bold.ttf"
                 ),
                 math.floor(12 * ThumbRenderer.font_pixel_ratio),
             )
@@ -292,7 +292,7 @@ class ThumbRenderer(QObject):
             ThumbRenderer.font_pixel_ratio = pixelRatio
             ThumbRenderer.ext_font = ImageFont.truetype(
                 os.path.normpath(
-                    f"{Path(__file__).parent.parent.parent.parent}/resources/qt/fonts/Oxanium-Bold.ttf"
+                    f"{Path(__file__).parents[3]}/resources/qt/fonts/Oxanium-Bold.ttf"
                 ),
                 math.floor(12 * ThumbRenderer.font_pixel_ratio),
             )
