@@ -439,9 +439,10 @@ class QtDriver(QObject):
         # self.main_window.centralWidget().layout().addWidget(menu_bar, 0,0,1,1)
         # self.main_window.tb_layout.addWidget(menu_bar)
 
-        icon = QIcon()
-        icon.addFile(icon_path)
-        self.main_window.setWindowIcon(icon)
+        if sys.platform != "darwin":
+            icon = QIcon()
+            icon.addFile(icon_path)
+            self.main_window.setWindowIcon(icon)
 
         self.preview_panel = PreviewPanel(self.lib, self)
         l: QHBoxLayout = self.main_window.splitter
