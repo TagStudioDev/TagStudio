@@ -106,9 +106,6 @@ class ThumbRenderer(QObject):
         pixmap: QPixmap = None
         final: Image.Image = None
         extension: str = None
-        broken_thumb = False
-        img_ratio = 1
-        # adj_font_size = math.floor(12 * pixelRatio)
         if ThumbRenderer.font_pixel_ratio != pixelRatio:
             ThumbRenderer.font_pixel_ratio = pixelRatio
             ThumbRenderer.ext_font = ImageFont.truetype(
@@ -167,18 +164,12 @@ class ThumbRenderer(QObject):
 
                 # Plain Text ===================================================
                 elif extension in PLAINTEXT_TYPES:
-                    # try:
-                    text: str = extension
                     with open(filepath, "r", encoding="utf-8") as text_file:
                         text = text_file.read(256)
                     bg = Image.new("RGB", (256, 256), color="#1e1e1e")
                     draw = ImageDraw.Draw(bg)
                     draw.text((16, 16), text, file=(255, 255, 255))
                     image = bg
-                    # except Exception as e:
-                    #    logging.info(
-                    #        f"[ThumbRenderer][ERROR]: Coulnd't render thumbnail for {filepath} ({e})"
-                    #    )
                 # No Rendered Thumbnail ========================================
                 else:
                     image = ThumbRenderer.thumb_file_default_512.resize(
@@ -198,7 +189,6 @@ class ThumbRenderer(QObject):
                     new_y = adj_size
                     new_x = math.ceil(adj_size * (orig_x / orig_y))
 
-                # img_ratio = new_x / new_y
                 if update_on_ratio_change:
                     self.updated_ratio.emit(new_x / new_y)
                 image = image.resize((new_x, new_y), resample=Image.Resampling.BILINEAR)
@@ -225,10 +215,7 @@ class ThumbRenderer(QObject):
                         tuple([d // scalar for d in rec.size]),
                         resample=Image.Resampling.BILINEAR,
                     )
-                    # final = image
                     final = Image.new("RGBA", image.size, (0, 0, 0, 0))
-                    # logging.info(rec.size)
-                    # logging.info(image.size)
                     final.paste(image, mask=rec.getchannel(0))
             except (
                 UnidentifiedImageError,
@@ -240,7 +227,6 @@ class ThumbRenderer(QObject):
                 logging.info(
                     f"[ThumbRenderer][ERROR]: Coulnd't render thumbnail for {filepath} ({e})"
                 )
-                broken_thumb = True
                 if update_on_ratio_change:
                     self.updated_ratio.emit(1)
                 final = ThumbRenderer.thumb_broken_512.resize(
@@ -253,8 +239,6 @@ class ThumbRenderer(QObject):
             pixmap = QPixmap.fromImage(qim)
             pixmap.setDevicePixelRatio(pixelRatio)
         if pixmap:
-            # logging.info(final.size)
-            # self.updated.emit(pixmap, QSize(*final.size))
             self.updated.emit(
                 timestamp,
                 pixmap,
