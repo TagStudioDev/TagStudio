@@ -1114,24 +1114,28 @@ class CliDriver:
                             # sys.stdout.write(f'\r{INFO} Combining [{i+1}/{len(self.lib.entries)}]: {self.get_file_color(file_type)}{entry.path}{os.sep}{entry.filename}{RESET}')
                             # sys.stdout.flush()
                             if file_type in IMAGE_TYPES:
-                                with Image.open(
-                                    os.path.normpath(
-                                        f"{self.lib.library_dir}/{entry.path}/{entry.filename}"
-                                    )
-                                ) as pic:
-                                    if keep_aspect:
-                                        pic.thumbnail((thumb_size, thumb_size))
-                                    else:
-                                        pic = pic.resize((thumb_size, thumb_size))
-                                    if data_tint_mode and color:
-                                        pic = pic.convert(mode="RGB")
-                                        pic = ImageChops.hard_light(
-                                            pic,
-                                            Image.new(
-                                                "RGB", (thumb_size, thumb_size), color
-                                            ),
+                                try:
+                                    with Image.open(
+                                        os.path.normpath(
+                                            f"{self.lib.library_dir}/{entry.path}/{entry.filename}"
                                         )
-                                    collage.paste(pic, (y * thumb_size, x * thumb_size))
+                                    ) as pic:
+                                        if keep_aspect:
+                                            pic.thumbnail((thumb_size, thumb_size))
+                                        else:
+                                            pic = pic.resize((thumb_size, thumb_size))
+                                        if data_tint_mode and color:
+                                            pic = pic.convert(mode="RGB")
+                                            pic = ImageChops.hard_light(
+                                                pic,
+                                                Image.new(
+                                                    "RGB", (thumb_size, thumb_size), color
+                                                ),
+                                            )
+                                        collage.paste(pic, (y * thumb_size, x * thumb_size))
+                                except DecompressionBombError as e:
+                                    print(f"[ERROR] One of the images was to big ({e})")
+
                             elif file_type in VIDEO_TYPES:
                                 video = cv2.VideoCapture(filepath)
                                 video.set(
