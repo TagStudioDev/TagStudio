@@ -1,20 +1,13 @@
-<!-- TO COMPILE: pyside6-rcc resources.qrc -o resources.py (in \tagstudio\src\qt)-->
+<!-- TO COMPILE: pyside6-rcc resources.qrc -o resources_rc.py (in \tagstudio\src\qt)-->
 <RCC>
     <qresource prefix="/">
         <file alias = "images/star_icon_empty_128.png">../../resources/qt/images/star_icon_empty_128.png</file>
 		<file alias = "images/star_icon_filled_128.png">../../resources/qt/images/star_icon_filled_128.png</file>
         <file alias = "images/box_icon_empty_128.png">../../resources/qt/images/box_icon_empty_128.png</file>
 		<file alias = "images/box_icon_filled_128.png">../../resources/qt/images/box_icon_filled_128.png</file>
-        <file alias = "images/edit_icon_128.png">../../resources/qt/images/edit_icon_128.png</file>
-        <file alias = "images/trash_icon_128.png">../../resources/qt/images/trash_icon_128.png</file>
-        <file alias = "images/clipboard_icon_128.png">../../resources/qt/images/clipboard_icon_128.png</file>
-        <file alias = "images/splash.png">../../resources/qt/images/splash.png</file>
-        <!-- <file>../../CommonClasses/PNGWriter/report_text/GothamBlackRegular.otf</file>
-        <file>../../CommonClasses/PNGWriter/report_text/GothamBold.otf</file>
-        <file>../../CommonClasses/PNGWriter/report_text/GothamBook.otf</file>
-        <file>../../CommonClasses/PNGWriter/report_text/GothamLight.otf</file>
-        <file>../../CommonClasses/PNGWriter/report_text/GothamMedium.otf</file>
-        <file>../../CommonClasses/PNGWriter/report_text/Spanish</file>
-        <file>../../CommonClasses/PNGWriter/report_text/viewmind.png</file> -->
+        <!-- <file alias = "images/edit_icon_128.png">../../resources/qt/images/edit_icon_128.png</file> -->
+        <!-- <file alias = "images/trash_icon_128.png">../../resources/qt/images/trash_icon_128.png</file> -->
+        <!-- <file alias = "images/clipboard_icon_128.png">../../resources/qt/images/clipboard_icon_128.png</file> -->
+        <!-- <file alias = "images/splash.png">../../resources/qt/images/splash.png</file> -->
     </qresource>
 </RCC>
