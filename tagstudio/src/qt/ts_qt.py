@@ -258,9 +258,7 @@ class QtDriver(QObject):
         # self.windowFX = WindowEffect()
         # self.windowFX.setAcrylicEffect(self.main_window.winId())
 
-        splash_pixmap = QPixmap(
-            f"{Path(__file__).parents[2]}/resources/qt/images/splash.png"
-        )
+        splash_pixmap = QPixmap(":/images/splash.png")
         splash_pixmap.setDevicePixelRatio(self.main_window.devicePixelRatio())
         self.splash = QSplashScreen(splash_pixmap)
         # self.splash.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
