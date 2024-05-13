@@ -12,6 +12,7 @@ import subprocess
 import sys
 import time
 from PIL import Image, ImageOps, ImageChops, UnidentifiedImageError
+from PIL.Image import DecompressionBombError
 import pillow_avif
 from pathlib import Path
 import traceback
@@ -643,8 +644,12 @@ class CliDriver:
                         # raw.thumbnail((512, 512))
                         raw.thumbnail(self.external_preview_size)
                         raw.save(external_preview_path)
-                except:
-                    print(f'{ERROR} Could not load image "{filepath}"')
+                except (
+                    UnidentifiedImageError,
+                    FileNotFoundError,
+                    DecompressionBombError,
+                ) as e:
+                    print(f'{ERROR} Could not load image "{filepath} due to {e}"')
                     if self.args.external_preview:
                         self.set_external_preview_broken()
             elif file_type in VIDEO_TYPES:

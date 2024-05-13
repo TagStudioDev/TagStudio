@@ -406,9 +406,12 @@ class PreviewPanel(QWidget):
                             )
                             raise UnidentifiedImageError
 
-                    except (UnidentifiedImageError, FileNotFoundError, cv2.error):
-                        pass
-                    except DecompressionBombError as e:
+                    except (
+                        UnidentifiedImageError,
+                        FileNotFoundError,
+                        cv2.error,
+                        DecompressionBombError,
+                    ) as e:
                         logging.info(
                             f"[PreviewPanel][ERROR] Couldn't Render thumbnail for {filepath} (because of {e})"
                         )
