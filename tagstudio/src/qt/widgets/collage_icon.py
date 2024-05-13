@@ -142,7 +142,7 @@ class CollageIconRenderer(QObject):
             )
             with Image.open(
                 os.path.normpath(
-                    f"{Path(__file__).parent.parent.parent}/resources/qt/images/thumb_broken_512.png"
+                    f"{Path(__file__).parents[2]}/resources/qt/images/thumb_broken_512.png"
                 )
             ) as pic:
                 pic.thumbnail(size)
