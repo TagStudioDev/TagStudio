@@ -5,7 +5,7 @@
 
 from PySide6.QtWidgets import QVBoxLayout, QPlainTextEdit
 
-from src.qt.widgets import PanelWidget
+from src.qt.widgets.panel import PanelWidget
 
 
 class EditTextBox(PanelWidget):
