@@ -1138,7 +1138,9 @@ class CliDriver:
                                             pic, (y * thumb_size, x * thumb_size)
                                         )
                                 except DecompressionBombError as e:
-                                    print(f"[ERROR] One of the images was too big ({e})")
+                                    print(
+                                        f"[ERROR] One of the images was too big ({e})"
+                                    )
 
                             elif file_type in VIDEO_TYPES:
                                 video = cv2.VideoCapture(filepath)
