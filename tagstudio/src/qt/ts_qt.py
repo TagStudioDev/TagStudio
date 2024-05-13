@@ -88,7 +88,6 @@ from src.qt.modals.file_extension import FileExtensionModal
 from src.qt.modals.fix_unlinked import FixUnlinkedEntriesModal
 from src.qt.modals.fix_dupes import FixDupeFilesModal
 from src.qt.modals.folders_to_tags import FoldersToTagsModal
-  
 import src.qt.resources_rc
 
 # SIGQUIT is not defined on Windows
