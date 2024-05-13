@@ -55,10 +55,10 @@ class TagBoxWidget(FieldWidget):
         self.add_button.setText("+")
         self.add_button.setStyleSheet(
             f"QPushButton{{"
-            # f'background: #1E1A33;'
-            # f'color: #CDA7F7;'
+            f"background: #1e1e1e;"
+            f"color: #FFFFFF;"
             f"font-weight: bold;"
-            # f"border-color: #2B2547;"
+            f"border-color: #333333;"
             f"border-radius: 6px;"
             f"border-style:solid;"
             f"border-width:{math.ceil(1*self.devicePixelRatio())}px;"
@@ -70,7 +70,8 @@ class TagBoxWidget(FieldWidget):
             f"}}"
             f"QPushButton::hover"
             f"{{"
-            # f'background: #2B2547;'
+            f"border-color: #CCCCCC;"
+            f"background: #555555;"
             f"}}"
         )
         tsp = TagSearchPanel(self.lib)

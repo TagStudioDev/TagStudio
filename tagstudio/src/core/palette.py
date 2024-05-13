@@ -15,11 +15,11 @@ class ColorType(Enum):
 
 _TAG_COLORS = {
     "": {
-        ColorType.PRIMARY: "#1E1A33",
+        ColorType.PRIMARY: "#1e1e1e",
         ColorType.TEXT: ColorType.LIGHT_ACCENT,
-        ColorType.BORDER: "#2B2547",
-        ColorType.LIGHT_ACCENT: "#CDA7F7",
-        ColorType.DARK_ACCENT: "#1E1A33",
+        ColorType.BORDER: "#333333",
+        ColorType.LIGHT_ACCENT: "#FFFFFF",
+        ColorType.DARK_ACCENT: "#222222",
     },
     "black": {
         ColorType.PRIMARY: "#111018",
