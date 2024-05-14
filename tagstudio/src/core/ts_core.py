@@ -4,7 +4,6 @@
 
 """The core classes and methods of TagStudio."""
 
-import enum
 import json
 import os
 
@@ -18,7 +17,6 @@ TS_FOLDER_NAME: str = ".TagStudio"
 BACKUP_FOLDER_NAME: str = "backups"
 COLLAGE_FOLDER_NAME: str = "collages"
 LIBRARY_FILENAME: str = "ts_library.json"
-
 
 # TODO: Turn this whitelist into a user-configurable blacklist.
 IMAGE_TYPES: list[str] = [

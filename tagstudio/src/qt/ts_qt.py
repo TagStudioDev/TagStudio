@@ -505,7 +505,11 @@ class QtDriver(QObject):
             )
             self.open_library(lib)
 
-        app.exec_()
+        if self.args.ci:
+            # gracefully terminate the app in CI environment
+            self.thumb_job_queue.put((self.SIGTERM.emit, []))
+
+        app.exec()
 
         self.shutdown()
 
@@ -1329,6 +1333,12 @@ class QtDriver(QObject):
             # logging.info(f'Done Filtering! ({(end_time - start_time):.3f}) seconds')
 
             # self.update_thumbs()
+
+    def remove_recent_library(self, item_key: str):
+        self.settings.beginGroup(SettingItems.LIBS_LIST)
+        self.settings.remove(item_key)
+        self.settings.endGroup()
+        self.settings.sync()
 
     def update_libs_list(self, path: str | Path):
         """add library to list in SettingItems.LIBS_LIST"""

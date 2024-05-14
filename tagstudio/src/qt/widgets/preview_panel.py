@@ -173,7 +173,7 @@ class PreviewPanel(QWidget):
         info_layout.addWidget(self.dimensions_label)
         info_layout.addWidget(scroll_area)
 
-        # keep list of rendered libraries to avoid needles re-rendering
+        # keep list of rendered libraries to avoid needless re-rendering
         self.render_libs = set()
         self.libs_layout = QVBoxLayout()
         self.fill_libs_widget(self.libs_layout)
@@ -247,44 +247,79 @@ class PreviewPanel(QWidget):
         libs_sorted = sorted(lib_items.items(), key=lambda item: item[0], reverse=True)
 
         self.render_libs = new_keys
-        return self._fill_libs_widget(libs_sorted, layout)
+        self._fill_libs_widget(libs_sorted, layout)
 
     def _fill_libs_widget(
         self, libraries: list[tuple[str, tuple[str, str]]], layout: QVBoxLayout
     ):
+        def clear_layout(layout_item: QVBoxLayout):
+            for i in reversed(range(layout_item.count())):
+                child = layout_item.itemAt(i)
+                if child.widget() is not None:
+                    child.widget().deleteLater()
+                elif child.layout() is not None:
+                    clear_layout(child.layout())
+
         # remove any potential previous items
-        for idx in reversed(range(layout.count())):
-            widget = layout.itemAt(idx).widget()
-            layout.removeWidget(widget)
-            # remove from GUI
-            widget.setParent(None)
+        clear_layout(layout)
 
         label = QLabel("Recent Libraries")
         label.setAlignment(Qt.AlignCenter)
-        layout.addWidget(label)
 
-        for tstamp, (full_val, cut_val) in libraries:
+        row_layout = QHBoxLayout()
+        row_layout.addWidget(label)
+        layout.addLayout(row_layout)
+
+        def set_button_style(btn: QPushButton, extras: list[str] | None = None):
+            base_style = [
+                f"background-color:{Theme.COLOR_BG.value};",
+                "border-radius:6px;",
+                "text-align: left;",
+                "padding-top: 3px;",
+                "padding-left: 6px;",
+                "padding-bottom: 4px;",
+            ]
+
+            full_style_rows = base_style + (extras or [])
+
+            btn.setStyleSheet(
+                (
+                    "QPushButton{"
+                    f"{''.join(full_style_rows)}"
+                    "}"
+                    f"QPushButton::hover{{background-color:{Theme.COLOR_HOVER.value};}}"
+                    f"QPushButton::pressed{{background-color:{Theme.COLOR_PRESSED.value};}}"
+                )
+            )
+            btn.setCursor(Qt.CursorShape.PointingHandCursor)
+
+        for item_key, (full_val, cut_val) in libraries:
             button = QPushButton(text=cut_val)
-            button.setObjectName(f"path{tstamp}")
+            button.setObjectName(f"path{item_key}")
 
             def open_library_button_clicked(path):
                 return lambda: self.driver.open_library(path)
 
             button.clicked.connect(open_library_button_clicked(full_val))
-            button.setStyleSheet(
-                "QPushButton{"
-                f"background-color:{Theme.COLOR_BG.value};"
-                "border-radius:6px;"
-                "text-align: left;"
-                "padding-top: 3px;"
-                "padding-left: 6px;"
-                "padding-bottom: 4px;"
-                "}"
-                f"QPushButton::hover{{background-color:{Theme.COLOR_HOVER.value};}}"
-                f"QPushButton::pressed{{background-color:{Theme.COLOR_PRESSED.value};}}"
-            )
-            button.setCursor(Qt.CursorShape.PointingHandCursor)
-            layout.addWidget(button)
+            set_button_style(button)
+
+            button_remove = QPushButton("➖")
+            button_remove.setCursor(Qt.CursorShape.PointingHandCursor)
+            set_button_style(button_remove)
+
+            def remove_recent_library_clicked(key: str):
+                return lambda: (
+                    self.driver.remove_recent_library(key),
+                    self.fill_libs_widget(self.libs_layout),
+                )
+
+            button_remove.clicked.connect(remove_recent_library_clicked(item_key))
+
+            row_layout = QHBoxLayout()
+            row_layout.addWidget(button)
+            row_layout.addWidget(button_remove)
+
+            layout.addLayout(row_layout)
 
     def resizeEvent(self, event: QResizeEvent) -> None:
         self.update_image_size(
