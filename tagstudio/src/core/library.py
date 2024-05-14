@@ -21,8 +21,9 @@ from typing import cast, Generator
 from typing_extensions import Self
 
 import ujson
+from cachetools import cached, LRUCache
 from watchdog.observers import Observer
-from watchdog.events import DirModifiedEvent, FileSystemEventHandler
+from watchdog.events import FileSystemEvent, DirModifiedEvent, FileSystemEventHandler
 
 from src.core.json_typing import JsonCollation, JsonEntry, JsonLibary, JsonTag
 from src.core.utils.str import strip_punctuation
@@ -324,6 +325,48 @@ class Collation:
             obj["cover_id"] = self.cover_id
 
         return obj
+
+
+class IsDirModifiedHandler(FileSystemEventHandler):
+    def __init__(self, lib: "Library", callback: Callable[[], None]) -> None:
+        self.library: Library = lib
+        self.callback: Callable[[], None] = callback
+        super().__init__()
+
+    @cached(cache=LRUCache(maxsize=32), key=lambda _, path, time: (path, time))
+    def event_helper(self, filepath: str, time: int) -> None:
+        _ = time
+        # Here update internal vars with single new file
+        if "$RECYCLE.BIN" in filepath or "tagstudio_thumbs" in filepath:
+            return
+
+        assert not os.path.isdir(filepath)
+
+        if (
+            os.path.splitext(filepath)[1][1:].lower()
+            not in self.library.ignored_extensions
+        ):
+            self.library.dir_file_count += 1
+            file = os.path.relpath(filepath, self.library.library_dir)
+
+            if os.name == "nt":
+                id = self.library.filename_to_entry_id_map.get(file.lower())
+            else:
+                id = self.library.filename_to_entry_id_map.get(file)
+
+            if id is None:
+                self.library.files_not_in_library.append(file)
+                new_ids = self.library.add_new_files_as_entries()
+                assert len(new_ids) == 1
+                id = new_ids[0]
+
+            self.callback()
+
+    def on_any_event(self, event: FileSystemEvent) -> None:
+        filepath = event.dest_path if event.dest_path else event.src_path
+        now = round(time.time())
+        if not event.is_directory:
+            self.event_helper(filepath, now)
 
 
 class Library:
@@ -962,48 +1005,8 @@ class Library:
 
     def refresh_on_changes(self, callback: Callable[[], None]) -> None:
         """Activates the automatic refreshing of the Library on filesystem modifications"""
-
-        class IsDirModifiedHandler(FileSystemEventHandler):
-            def __init__(self, lib: Library) -> None:
-                self.library: Library = lib
-                self.file_cache: dict[str, int] = {}  # TODO: Cache invalidation
-                super().__init__()
-
-            def on_any_event(self, event):
-                filepath = event.dest_path if event.dest_path else event.src_path
-                now = time.time()
-                if not event.is_directory and round(now) != self.file_cache.get(
-                    filepath, 0
-                ):
-                    # Update cache
-                    self.file_cache[filepath] = round(now)
-
-                    # Here update internal vars with single file
-                    if "$RECYCLE.BIN" in filepath or "tagstudio_thumbs" in filepath:
-                        return
-
-                    if (
-                        os.path.splitext(filepath)[1][1:].lower()
-                        not in self.library.ignored_extensions
-                    ):
-                        self.library.dir_file_count += 1
-                        file = os.path.relpath(filepath, self.library.library_dir)
-
-                        if os.name == "nt":
-                            id = self.library.filename_to_entry_id_map.get(file.lower())
-                        else:
-                            id = self.library.filename_to_entry_id_map.get(file)
-
-                        if id is None:
-                            self.library.files_not_in_library.append(file)
-                            new_ids = self.library.add_new_files_as_entries()
-                            assert len(new_ids) == 1
-                            id = new_ids[0]
-
-                        callback()  # TODO: Maybe wait for x time?
-
         self.observer.schedule(
-            IsDirModifiedHandler(self), path=self.library_dir, recursive=True
+            IsDirModifiedHandler(self, callback), path=self.library_dir, recursive=True
         )
         self.observer.start()
 
