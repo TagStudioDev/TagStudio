@@ -107,9 +107,6 @@ INFO = f"[INFO]"
 
 logging.basicConfig(format="%(message)s", level=logging.INFO)
 
-# Keep settings in ini format in the current working directory.
-QSettings.setPath(QSettings.IniFormat, QSettings.UserScope, os.getcwd())
-
 
 class NavigationState:
     """Represents a state of the Library grid view."""
@@ -189,9 +186,21 @@ class QtDriver(QObject):
 
         self.SIGTERM.connect(self.handleSIGTERM)
 
-        self.settings = QSettings(
-            QSettings.IniFormat, QSettings.UserScope, "tagstudio", "TagStudio"
-        )
+        if self.args.config_file:
+            path = Path(self.args.config_file)
+            if not path.exists():
+                logging.warning(
+                    f"[QT DRIVER] Config File does not exist creating {str(path)}"
+                )
+            logging.info(f"[QT DRIVER] Using Config File {str(path)}")
+            self.settings = QSettings(str(path), QSettings.IniFormat)
+        else:
+            self.settings = QSettings(
+                QSettings.IniFormat, QSettings.UserScope, "TagStudio", "TagStudio"
+            )
+            logging.info(
+                f"[QT DRIVER] Config File not specified, defaulting to {self.settings.fileName()}"
+            )
 
         max_threads = os.cpu_count()
         if args.ci:
