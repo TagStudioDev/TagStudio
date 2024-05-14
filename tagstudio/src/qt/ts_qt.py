@@ -188,33 +188,12 @@ class QtDriver(QObject):
 
         if self.args.config_file:
             path = Path(self.args.config_file)
-            if path.is_dir():
-                path = path / "TagStudio.ini"
-                self.settings = QSettings(str(path), QSettings.IniFormat)
-                logging.info(
-                    f"[QT DRIVER] Directory provided defaulting to TagStudio.ini in directory, using {self.settings.fileName()}"
+            if not path.exists():
+                logging.warning(
+                    f"[QT DRIVER] Config File does not exist creating {str(path)}"
                 )
-            elif path.is_file():
-                self.settings = QSettings(str(path), QSettings.IniFormat)
-                logging.info(
-                    f"[QT DRIVER] Config File exists, using {self.settings.fileName()}"
-                )
-            else:
-                if path.suffix == ".ini" and path.parent.is_dir():
-                    self.settings = QSettings(str(path), QSettings.IniFormat)
-                    logging.info(
-                        f"[QT DRIVER] Config File does not exist, valid path specified using {self.settings.fileName()}"
-                    )
-                else:
-                    self.settings = QSettings(
-                        QSettings.IniFormat,
-                        QSettings.UserScope,
-                        "TagStudio",
-                        "TagStudio",
-                    )
-                    logging.warning(
-                        f"[QT DRIVER] Config File does not exist, defaulting to {self.settings.fileName()}"
-                    )
+            logging.info(f"[QT DRIVER] Using Config File {str(path)}")
+            self.settings = QSettings(str(path), QSettings.IniFormat)
         else:
             self.settings = QSettings(
                 QSettings.IniFormat, QSettings.UserScope, "TagStudio", "TagStudio"
