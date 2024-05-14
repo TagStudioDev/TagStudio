@@ -53,6 +53,11 @@ def main():
         type=str,
         help="User interface option for TagStudio. Options: qt, cli (Default: qt)",
     )
+    parser.add_argument(
+        "--ci",
+        action=argparse.BooleanOptionalAction,
+        help="Exit the application after checking it starts without any problem. Meant for CI check.",
+    )
     args = parser.parse_args()
 
     core = TagStudioCore()  # The TagStudio Core instance. UI agnostic.

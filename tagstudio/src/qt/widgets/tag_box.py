@@ -12,8 +12,11 @@ from PySide6.QtWidgets import QPushButton
 
 from src.core.library import Library, Tag
 from src.qt.flowlayout import FlowLayout
-from src.qt.widgets import FieldWidget, TagWidget, PanelModal
-from src.qt.modals import BuildTagPanel, TagSearchPanel
+from src.qt.widgets.fields import FieldWidget
+from src.qt.widgets.tag import TagWidget
+from src.qt.widgets.panel import PanelModal
+from src.qt.modals.build_tag import BuildTagPanel
+from src.qt.modals.tag_search import TagSearchPanel
 
 # Only import for type checking/autocompletion, will not be imported at runtime.
 if typing.TYPE_CHECKING:
