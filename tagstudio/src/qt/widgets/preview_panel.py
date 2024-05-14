@@ -305,6 +305,7 @@ class PreviewPanel(QWidget):
 
             button_remove = QPushButton("➖")
             button_remove.setCursor(Qt.CursorShape.PointingHandCursor)
+            button_remove.setFixedWidth(30)
             set_button_style(button_remove)
 
             def remove_recent_library_clicked(key: str):
