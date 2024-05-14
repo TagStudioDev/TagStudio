@@ -42,6 +42,7 @@ from PySide6.QtWidgets import (
     QFileDialog,
     QSplashScreen,
     QMenu,
+    QMenuBar,
 )
 from humanfriendly import format_timespan
 
@@ -73,23 +74,20 @@ from src.core.constants import (
 from src.core.utils.web import strip_web_protocol
 from src.qt.flowlayout import FlowLayout
 from src.qt.main_window import Ui_MainWindow
-from src.qt.helpers import FunctionIterator, CustomRunnable
-from src.qt.widgets import (
-    CollageIconRenderer,
-    ThumbRenderer,
-    PanelModal,
-    ProgressWidget,
-    PreviewPanel,
-    ItemThumb,
-)
-from src.qt.modals import (
-    BuildTagPanel,
-    TagDatabasePanel,
-    FileExtensionModal,
-    FixUnlinkedEntriesModal,
-    FixDupeFilesModal,
-    FoldersToTagsModal,
-)
+from src.qt.helpers.function_iterator import FunctionIterator
+from src.qt.helpers.custom_runnable import CustomRunnable
+from src.qt.widgets.collage_icon import CollageIconRenderer
+from src.qt.widgets.panel import PanelModal
+from src.qt.widgets.thumb_renderer import ThumbRenderer
+from src.qt.widgets.progress import ProgressWidget
+from src.qt.widgets.preview_panel import PreviewPanel
+from src.qt.widgets.item_thumb import ItemThumb
+from src.qt.modals.build_tag import BuildTagPanel
+from src.qt.modals.tag_database import TagDatabasePanel
+from src.qt.modals.file_extension import FileExtensionModal
+from src.qt.modals.fix_unlinked import FixUnlinkedEntriesModal
+from src.qt.modals.fix_dupes import FixDupeFilesModal
+from src.qt.modals.folders_to_tags import FoldersToTagsModal
 import src.qt.resources_rc
 
 # SIGQUIT is not defined on Windows
@@ -193,6 +191,9 @@ class QtDriver(QObject):
         )
 
         max_threads = os.cpu_count()
+        if args.ci:
+            # spawn only single worker in CI environment
+            max_threads = 1
         for i in range(max_threads):
             # thread = threading.Thread(target=self.consumer, name=f'ThumbRenderer_{i}',args=(), daemon=True)
             # thread.start()
@@ -232,12 +233,11 @@ class QtDriver(QObject):
         # 			 QPalette.ColorRole.Window, QColor('#110F1B'))
         # app.setPalette(pal)
         home_path = os.path.normpath(f"{Path(__file__).parent}/ui/home.ui")
-        icon_path = os.path.normpath(
-            f"{Path(__file__).parent.parent.parent}/resources/icon.png"
-        )
+        icon_path = os.path.normpath(f"{Path(__file__).parents[2]}/resources/icon.png")
 
         # Handle OS signals
         self.setup_signals()
+        # allow to process input from console, eg. SIGTERM
         timer = QTimer()
         timer.start(500)
         timer.timeout.connect(lambda: None)
@@ -261,15 +261,22 @@ class QtDriver(QObject):
 
         splash_pixmap = QPixmap(":/images/splash.png")
         splash_pixmap.setDevicePixelRatio(self.main_window.devicePixelRatio())
-        self.splash = QSplashScreen(splash_pixmap)
+        self.splash = QSplashScreen(splash_pixmap, Qt.WindowStaysOnTopHint)
         # self.splash.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
         self.splash.show()
 
-        menu_bar = self.main_window.menuBar()
+        if os.name == "nt":
+            appid = "cyanvoxel.tagstudio.9"
+            ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(appid)
 
-        # Allow the use of the native macOS menu bar.
         if sys.platform != "darwin":
-            menu_bar.setNativeMenuBar(False)
+            icon = QIcon()
+            icon.addFile(icon_path)
+            app.setWindowIcon(icon)
+
+        menu_bar = QMenuBar(self.main_window)
+        self.main_window.setMenuBar(menu_bar)
+        menu_bar.setNativeMenuBar(True)
 
         file_menu = QMenu("&File", menu_bar)
         edit_menu = QMenu("&Edit", menu_bar)
@@ -435,29 +442,13 @@ class QtDriver(QObject):
         menu_bar.addMenu(macros_menu)
         menu_bar.addMenu(help_menu)
 
-        # self.main_window.setMenuBar(menu_bar)
-        # self.main_window.centralWidget().layout().addWidget(menu_bar, 0,0,1,1)
-        # self.main_window.tb_layout.addWidget(menu_bar)
-
-        icon = QIcon()
-        icon.addFile(icon_path)
-        self.main_window.setWindowIcon(icon)
-
         self.preview_panel = PreviewPanel(self.lib, self)
         l: QHBoxLayout = self.main_window.splitter
         l.addWidget(self.preview_panel)
-        # self.preview_panel.update_widgets()
-        # l.setEnabled(False)
-        # self.entry_panel.setWindowIcon(icon)
-
-        if os.name == "nt":
-            appid = "cyanvoxel.tagstudio.9"
-            ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(appid)
-        app.setWindowIcon(icon)
 
         QFontDatabase.addApplicationFont(
             os.path.normpath(
-                f"{Path(__file__).parent.parent.parent}/resources/qt/fonts/Oxanium-Bold.ttf"
+                f"{Path(__file__).parents[2]}/resources/qt/fonts/Oxanium-Bold.ttf"
             )
         )
 
@@ -466,7 +457,6 @@ class QtDriver(QObject):
         self.item_thumbs: list[ItemThumb] = []
         self.thumb_renderers: list[ThumbRenderer] = []
         self.collation_thumb_size = math.ceil(self.thumb_size * 2)
-        # self.filtered_items: list[tuple[SearchItemType, int]] = []
 
         self._init_thumb_grid()
 
@@ -474,7 +464,7 @@ class QtDriver(QObject):
         # so the resource isn't being used, then store the specific size variations
         # in a global dict for methods to access for different DPIs.
         # adj_font_size = math.floor(12 * self.main_window.devicePixelRatio())
-        # self.ext_font = ImageFont.truetype(os.path.normpath(f'{Path(__file__).parent.parent.parent}/resources/qt/fonts/Oxanium-Bold.ttf'), adj_font_size)
+        # self.ext_font = ImageFont.truetype(os.path.normpath(f'{Path(__file__).parents[2]}/resources/qt/fonts/Oxanium-Bold.ttf'), adj_font_size)
 
         search_button: QPushButton = self.main_window.searchButton
         search_button.clicked.connect(
@@ -538,7 +528,11 @@ class QtDriver(QObject):
             )
             self.open_library(lib)
 
-        app.exec_()
+        if self.args.ci:
+            # gracefully terminate the app in CI environment
+            self.thumb_job_queue.put((self.SIGTERM.emit, []))
+
+        app.exec()
 
         self.shutdown()
 
