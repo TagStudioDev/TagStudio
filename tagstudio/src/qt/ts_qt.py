@@ -1330,29 +1330,27 @@ class QtDriver(QObject):
 
             # self.update_thumbs()
 
-    def update_libs_list(self, path: str):
-        # add library to list in SettingItems.LIBS_LIST
+    def update_libs_list(self, path: str | Path):
+        """add library to list in SettingItems.LIBS_LIST"""
         ITEMS_LIMIT = 5
+        path = Path(path)
 
         self.settings.beginGroup(SettingItems.LIBS_LIST)
 
-        current_time = str(time.time())
-        all_libs = {current_time: path}
+        all_libs = {str(time.time()): str(path)}
 
         for item_key in self.settings.allKeys():
             item_path = self.settings.value(item_key)
-            if item_path != path:
+            if Path(item_path) != path:
                 all_libs[item_key] = item_path
 
-        # sort items by the most recent first
+        # sort items, most recent first
         all_libs = sorted(all_libs.items(), key=lambda item: item[0], reverse=True)
 
         # remove previously saved items
         self.settings.clear()
 
-        for idx, (item_key, item_value) in enumerate(all_libs, start=1):
-            if idx > ITEMS_LIMIT:
-                break
+        for item_key, item_value in all_libs[:ITEMS_LIMIT]:
             self.settings.setValue(item_key, item_value)
 
         self.settings.endGroup()

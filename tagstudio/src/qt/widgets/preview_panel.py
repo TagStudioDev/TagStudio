@@ -122,7 +122,7 @@ class PreviewPanel(QWidget):
         # 	Qt.TextInteractionFlag.TextSelectableByMouse)
 
         properties_style = (
-            f"background-color:{Theme.COLOR_BG};"
+            f"background-color:{Theme.COLOR_BG.value};"
             f"font-family:Oxanium;"
             f"font-weight:bold;"
             f"font-size:12px;"
@@ -163,7 +163,7 @@ class PreviewPanel(QWidget):
         # find the right trick to only select that particular element.
         scroll_area.setStyleSheet(
             "QWidget#entryScrollContainer{"
-            f"background: {Theme.COLOR_BG};"
+            f"background: {Theme.COLOR_BG.value};"
             "border-radius:6px;"
             "}"
         )
@@ -273,15 +273,15 @@ class PreviewPanel(QWidget):
             button.clicked.connect(open_library_button_clicked(full_val))
             button.setStyleSheet(
                 "QPushButton{"
-                f"background-color:{Theme.COLOR_BG};"
+                f"background-color:{Theme.COLOR_BG.value};"
                 "border-radius:6px;"
                 "text-align: left;"
                 "padding-top: 3px;"
                 "padding-left: 6px;"
                 "padding-bottom: 4px;"
                 "}"
-                f"QPushButton::hover{{background-color:{Theme.COLOR_HOVER};}}"
-                f"QPushButton::pressed{{background-color:{Theme.COLOR_PRESSED};}}"
+                f"QPushButton::hover{{background-color:{Theme.COLOR_HOVER.value};}}"
+                f"QPushButton::pressed{{background-color:{Theme.COLOR_PRESSED.value};}}"
             )
             button.setCursor(Qt.CursorShape.PointingHandCursor)
             layout.addWidget(button)
