@@ -340,13 +340,10 @@ class IsDirModifiedHandler(FileSystemEventHandler):
         if "$RECYCLE.BIN" in filepath or "tagstudio_thumbs" in filepath:
             return
 
-        assert not os.path.isdir(filepath)
-
         if (
             os.path.splitext(filepath)[1][1:].lower()
             not in self.library.ignored_extensions
         ):
-            self.library.dir_file_count += 1
             file = os.path.relpath(filepath, self.library.library_dir)
 
             if os.name == "nt":
@@ -355,10 +352,9 @@ class IsDirModifiedHandler(FileSystemEventHandler):
                 id = self.library.filename_to_entry_id_map.get(file)
 
             if id is None:
+                self.library.dir_file_count += 1
                 self.library.files_not_in_library.append(file)
-                new_ids = self.library.add_new_files_as_entries()
-                assert len(new_ids) == 1
-                id = new_ids[0]
+                self.library.add_new_files_as_entries()
 
             self.callback()
 
