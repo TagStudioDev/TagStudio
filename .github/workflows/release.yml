@@ -97,8 +97,6 @@ jobs:
             tagstudio_linux_x86_64/*
             tagstudio_linux_x86_64_portable/*
             tagstudio_macos_x86_64/*
-            tagstudio_macos_x86_64_portable/*
-            tagstudio_macos_arm64/*
-            tagstudio_macos_arm64_portable/*
+            tagstudio_macos_aarch64/*
             tagstudio_windows_x86_64/*
             tagstudio_windows_x86_64_portable/*
