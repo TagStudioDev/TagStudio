@@ -56,7 +56,8 @@ TagStudio is a photo & file organization application with an underlying system t
 
 To download TagStudio, visit the [Releases](https://github.com/TagStudioDev/TagStudio/releases) section of the GitHub repository and download the latest release for your system. TagStudio is available for **Windows**, **macOS** _(Apple Silicon & Intel)_, and **Linux**. Windows and Linux builds are also available in portable versions if you want a more self-contained executable to move around.
 
-Once downloaded, launch the corresponding TagStudio executable to start the program. Once open, go to **"File -> Create/Open Library"** to create your first library from a directory!
+> [!NOTE]
+> On macOS, you may be met with a message saying _""TagStudio" can't be opened because Apple cannot check it for malicious software."_ If you encounter this, then you'll need to go to the "Settings" app, navigate to "Privacy & Security", and scroll down to a section that says _""TagStudio" was blocked from use because it is not from an identified developer."_ Click the "Open Anyway" button to allow TagStudio to run. You should only have to do this once after downloading the application.
 
 #### Optional Arguments
 
