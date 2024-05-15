@@ -175,7 +175,7 @@ class QtDriver(QObject):
         # self.main_window = Ui_MainWindow()
 
         self.branch: str = (" (" + VERSION_BRANCH + ")") if VERSION_BRANCH else ""
-        self.base_title: str = f"TagStudio {VERSION}{self.branch}"
+        self.base_title: str = f"TagStudio Alpha {VERSION}{self.branch}"
         # self.title_text: str = self.base_title
         # self.buffer = {}
         self.thumb_job_queue: Queue = Queue()
