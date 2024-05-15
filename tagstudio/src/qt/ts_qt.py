@@ -16,7 +16,7 @@ import time
 import webbrowser
 from datetime import datetime as dt
 from pathlib import Path
-from queue import Empty, Queue
+from queue import Queue
 from typing import Optional
 
 from PIL import Image
@@ -42,9 +42,11 @@ from PySide6.QtWidgets import (
     QFileDialog,
     QSplashScreen,
     QMenu,
+    QMenuBar,
 )
 from humanfriendly import format_timespan
 
+from src.core.enums import SettingItems
 from src.core.library import ItemType
 from src.core.ts_core import (
     PLAINTEXT_TYPES,
@@ -87,7 +89,9 @@ from src.qt.modals.file_extension import FileExtensionModal
 from src.qt.modals.fix_unlinked import FixUnlinkedEntriesModal
 from src.qt.modals.fix_dupes import FixDupeFilesModal
 from src.qt.modals.folders_to_tags import FoldersToTagsModal
-import src.qt.resources_rc
+
+# this import has side-effect of import PySide resources
+import src.qt.resources_rc  # pylint: disable=unused-import
 
 # SIGQUIT is not defined on Windows
 if sys.platform == "win32":
@@ -102,9 +106,6 @@ WARNING = f"[WARNING]"
 INFO = f"[INFO]"
 
 logging.basicConfig(format="%(message)s", level=logging.INFO)
-
-# Keep settings in ini format in the current working directory.
-QSettings.setPath(QSettings.IniFormat, QSettings.UserScope, os.getcwd())
 
 
 class NavigationState:
@@ -185,11 +186,26 @@ class QtDriver(QObject):
 
         self.SIGTERM.connect(self.handleSIGTERM)
 
-        self.settings = QSettings(
-            QSettings.IniFormat, QSettings.UserScope, "tagstudio", "TagStudio"
-        )
+        if self.args.config_file:
+            path = Path(self.args.config_file)
+            if not path.exists():
+                logging.warning(
+                    f"[QT DRIVER] Config File does not exist creating {str(path)}"
+                )
+            logging.info(f"[QT DRIVER] Using Config File {str(path)}")
+            self.settings = QSettings(str(path), QSettings.IniFormat)
+        else:
+            self.settings = QSettings(
+                QSettings.IniFormat, QSettings.UserScope, "TagStudio", "TagStudio"
+            )
+            logging.info(
+                f"[QT DRIVER] Config File not specified, defaulting to {self.settings.fileName()}"
+            )
 
         max_threads = os.cpu_count()
+        if args.ci:
+            # spawn only single worker in CI environment
+            max_threads = 1
         for i in range(max_threads):
             # thread = threading.Thread(target=self.consumer, name=f'ThumbRenderer_{i}',args=(), daemon=True)
             # thread.start()
@@ -229,12 +245,11 @@ class QtDriver(QObject):
         # 			 QPalette.ColorRole.Window, QColor('#110F1B'))
         # app.setPalette(pal)
         home_path = os.path.normpath(f"{Path(__file__).parent}/ui/home.ui")
-        icon_path = os.path.normpath(
-            f"{Path(__file__).parent.parent.parent}/resources/icon.png"
-        )
+        icon_path = os.path.normpath(f"{Path(__file__).parents[2]}/resources/icon.png")
 
         # Handle OS signals
         self.setup_signals()
+        # allow to process input from console, eg. SIGTERM
         timer = QTimer()
         timer.start(500)
         timer.timeout.connect(lambda: None)
@@ -258,20 +273,28 @@ class QtDriver(QObject):
 
         splash_pixmap = QPixmap(":/images/splash.png")
         splash_pixmap.setDevicePixelRatio(self.main_window.devicePixelRatio())
-        self.splash = QSplashScreen(splash_pixmap)
+        self.splash = QSplashScreen(splash_pixmap, Qt.WindowStaysOnTopHint)
         # self.splash.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
         self.splash.show()
 
-        menu_bar = self.main_window.menuBar()
+        if os.name == "nt":
+            appid = "cyanvoxel.tagstudio.9"
+            ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(appid)
 
-        # Allow the use of the native macOS menu bar.
-        # if sys.platform != "darwin":
-        menu_bar.setNativeMenuBar(False)
+        if sys.platform != "darwin":
+            icon = QIcon()
+            icon.addFile(icon_path)
+            app.setWindowIcon(icon)
+
+        menu_bar = QMenuBar(self.main_window)
+        self.main_window.setMenuBar(menu_bar)
+        menu_bar.setNativeMenuBar(True)
 
         file_menu = QMenu("&File", menu_bar)
         edit_menu = QMenu("&Edit", menu_bar)
         tools_menu = QMenu("&Tools", menu_bar)
         macros_menu = QMenu("&Macros", menu_bar)
+        window_menu = QMenu("&Window", menu_bar)
         help_menu = QMenu("&Help", menu_bar)
 
         # File Menu ============================================================
@@ -366,6 +389,18 @@ class QtDriver(QObject):
         tag_database_action.triggered.connect(lambda: self.show_tag_database())
         edit_menu.addAction(tag_database_action)
 
+        check_action = QAction("Open library on start", self)
+        check_action.setCheckable(True)
+        check_action.setChecked(
+            self.settings.value(SettingItems.START_LOAD_LAST, True, type=bool)
+        )
+        check_action.triggered.connect(
+            lambda checked: self.settings.setValue(
+                SettingItems.START_LOAD_LAST, checked
+            )
+        )
+        window_menu.addAction(check_action)
+
         # Tools Menu ===========================================================
         fix_unlinked_entries_action = QAction("Fix &Unlinked Entries", menu_bar)
         fue_modal = FixUnlinkedEntriesModal(self.lib, self)
@@ -413,6 +448,20 @@ class QtDriver(QObject):
         macros_menu.addAction(self.sort_fields_action)
 
         folders_to_tags_action = QAction("Create Tags From Folders", menu_bar)
+        show_libs_list_action = QAction("Show Recent Libraries", menu_bar)
+        show_libs_list_action.setCheckable(True)
+        show_libs_list_action.setChecked(
+            self.settings.value(SettingItems.WINDOW_SHOW_LIBS, True, type=bool)
+        )
+        show_libs_list_action.triggered.connect(
+            lambda checked: (
+                self.settings.setValue(SettingItems.WINDOW_SHOW_LIBS, checked),
+                self.toggle_libs_list(checked),
+            )
+        )
+        window_menu.addAction(show_libs_list_action)
+
+        folders_to_tags_action = QAction("Folders to Tags", menu_bar)
         ftt_modal = FoldersToTagsModal(self.lib, self)
         folders_to_tags_action.triggered.connect(lambda: ftt_modal.show())
         macros_menu.addAction(folders_to_tags_action)
@@ -430,31 +479,16 @@ class QtDriver(QObject):
         menu_bar.addMenu(edit_menu)
         menu_bar.addMenu(tools_menu)
         menu_bar.addMenu(macros_menu)
+        menu_bar.addMenu(window_menu)
         menu_bar.addMenu(help_menu)
-
-        # self.main_window.setMenuBar(menu_bar)
-        # self.main_window.centralWidget().layout().addWidget(menu_bar, 0,0,1,1)
-        # self.main_window.tb_layout.addWidget(menu_bar)
-
-        icon = QIcon()
-        icon.addFile(icon_path)
-        self.main_window.setWindowIcon(icon)
 
         self.preview_panel = PreviewPanel(self.lib, self)
         l: QHBoxLayout = self.main_window.splitter
         l.addWidget(self.preview_panel)
-        # self.preview_panel.update_widgets()
-        # l.setEnabled(False)
-        # self.entry_panel.setWindowIcon(icon)
-
-        if os.name == "nt":
-            appid = "cyanvoxel.tagstudio.9"
-            ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(appid)
-        app.setWindowIcon(icon)
 
         QFontDatabase.addApplicationFont(
             os.path.normpath(
-                f"{Path(__file__).parent.parent.parent}/resources/qt/fonts/Oxanium-Bold.ttf"
+                f"{Path(__file__).parents[2]}/resources/qt/fonts/Oxanium-Bold.ttf"
             )
         )
 
@@ -463,15 +497,39 @@ class QtDriver(QObject):
         self.item_thumbs: list[ItemThumb] = []
         self.thumb_renderers: list[ThumbRenderer] = []
         self.collation_thumb_size = math.ceil(self.thumb_size * 2)
-        # self.filtered_items: list[tuple[SearchItemType, int]] = []
 
+        self.init_library_window()
+
+        lib = None
+        if self.args.open:
+            lib = self.args.open
+        elif self.settings.value(SettingItems.START_LOAD_LAST, True, type=bool):
+            lib = self.settings.value(SettingItems.LAST_LIBRARY)
+
+        if lib:
+            self.splash.showMessage(
+                f'Opening Library "{lib}"...',
+                int(Qt.AlignmentFlag.AlignBottom | Qt.AlignmentFlag.AlignHCenter),
+                QColor("#9782ff"),
+            )
+            self.open_library(lib)
+
+        if self.args.ci:
+            # gracefully terminate the app in CI environment
+            self.thumb_job_queue.put((self.SIGTERM.emit, []))
+
+        app.exec()
+
+        self.shutdown()
+
+    def init_library_window(self):
         self._init_thumb_grid()
 
         # TODO: Put this into its own method that copies the font file(s) into memory
         # so the resource isn't being used, then store the specific size variations
         # in a global dict for methods to access for different DPIs.
         # adj_font_size = math.floor(12 * self.main_window.devicePixelRatio())
-        # self.ext_font = ImageFont.truetype(os.path.normpath(f'{Path(__file__).parent.parent.parent}/resources/qt/fonts/Oxanium-Bold.ttf'), adj_font_size)
+        # self.ext_font = ImageFont.truetype(os.path.normpath(f'{Path(__file__).parents[2]}/resources/qt/fonts/Oxanium-Bold.ttf'), adj_font_size)
 
         search_button: QPushButton = self.main_window.searchButton
         search_button.clicked.connect(
@@ -517,27 +575,12 @@ class QtDriver(QObject):
         self.splash.finish(self.main_window)
         self.preview_panel.update_widgets()
 
-        # Check if a library should be opened on startup, args should override last_library
-        # TODO: check for behavior (open last, open default, start empty)
-        if (
-            self.args.open
-            or self.settings.contains("last_library")
-            and os.path.isdir(self.settings.value("last_library"))
-        ):
-            if self.args.open:
-                lib = self.args.open
-            elif self.settings.value("last_library"):
-                lib = self.settings.value("last_library")
-            self.splash.showMessage(
-                f'Opening Library "{lib}"...',
-                int(Qt.AlignmentFlag.AlignBottom | Qt.AlignmentFlag.AlignHCenter),
-                QColor("#9782ff"),
-            )
-            self.open_library(lib)
-
-        app.exec_()
-
-        self.shutdown()
+    def toggle_libs_list(self, value: bool):
+        if value:
+            self.preview_panel.libs_flow_container.show()
+        else:
+            self.preview_panel.libs_flow_container.hide()
+        self.preview_panel.update()
 
     def callback_library_needed_check(self, func):
         """Check if loaded library has valid path before executing the button function"""
@@ -551,7 +594,7 @@ class QtDriver(QObject):
         """Save Library on Application Exit"""
         if self.lib.library_dir:
             self.save_library()
-            self.settings.setValue("last_library", self.lib.library_dir)
+            self.settings.setValue(SettingItems.LAST_LIBRARY, self.lib.library_dir)
             self.settings.sync()
         logging.info("[SHUTDOWN] Ending Thumbnail Threads...")
         for _ in self.thumb_threads:
@@ -600,7 +643,7 @@ class QtDriver(QObject):
             self.main_window.statusbar.showMessage(f"Closing & Saving Library...")
             start_time = time.time()
             self.save_library(show_status=False)
-            self.settings.setValue("last_library", self.lib.library_dir)
+            self.settings.setValue(SettingItems.LAST_LIBRARY, self.lib.library_dir)
             self.settings.sync()
 
             self.lib.clear_internal_vars()
@@ -712,7 +755,7 @@ class QtDriver(QObject):
         iterator.value.connect(lambda x: pw.update_progress(x + 1))
         iterator.value.connect(
             lambda x: pw.update_label(
-                f'Scanning Directories for New Files...\n{x+1} File{"s" if x+1 != 1 else ""} Searched, {len(self.lib.files_not_in_library)} New Files Found'
+                f'Scanning Directories for New Files...\n{x + 1} File{"s" if x + 1 != 1 else ""} Searched, {len(self.lib.files_not_in_library)} New Files Found'
             )
         )
         r = CustomRunnable(lambda: iterator.run())
@@ -763,7 +806,7 @@ class QtDriver(QObject):
         iterator.value.connect(lambda x: pw.update_progress(x + 1))
         iterator.value.connect(
             lambda x: pw.update_label(
-                f"Running Configured Macros on {x+1}/{len(new_ids)} New Entries"
+                f"Running Configured Macros on {x + 1}/{len(new_ids)} New Entries"
             )
         )
         r = CustomRunnable(lambda: iterator.run())
@@ -1300,6 +1343,38 @@ class QtDriver(QObject):
 
             # self.update_thumbs()
 
+    def remove_recent_library(self, item_key: str):
+        self.settings.beginGroup(SettingItems.LIBS_LIST)
+        self.settings.remove(item_key)
+        self.settings.endGroup()
+        self.settings.sync()
+
+    def update_libs_list(self, path: str | Path):
+        """add library to list in SettingItems.LIBS_LIST"""
+        ITEMS_LIMIT = 5
+        path = Path(path)
+
+        self.settings.beginGroup(SettingItems.LIBS_LIST)
+
+        all_libs = {str(time.time()): str(path)}
+
+        for item_key in self.settings.allKeys():
+            item_path = self.settings.value(item_key)
+            if Path(item_path) != path:
+                all_libs[item_key] = item_path
+
+        # sort items, most recent first
+        all_libs = sorted(all_libs.items(), key=lambda item: item[0], reverse=True)
+
+        # remove previously saved items
+        self.settings.clear()
+
+        for item_key, item_value in all_libs[:ITEMS_LIMIT]:
+            self.settings.setValue(item_key, item_value)
+
+        self.settings.endGroup()
+        self.settings.sync()
+
     def open_library(self, path):
         """Opens a TagStudio library."""
         if self.lib.library_dir:
@@ -1317,7 +1392,7 @@ class QtDriver(QObject):
             # 	self.lib.refresh_missing_files()
             # title_text = f'{self.base_title} - Library \'{self.lib.library_dir}\''
             # self.main_window.setWindowTitle(title_text)
-            pass
+            self.update_libs_list(path)
 
         else:
             logging.info(

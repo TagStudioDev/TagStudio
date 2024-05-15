@@ -11,6 +11,7 @@ from datetime import datetime as dt
 
 import cv2
 from PIL import Image, UnidentifiedImageError
+from PIL.Image import DecompressionBombError
 from PySide6.QtCore import Signal, Qt, QSize
 from PySide6.QtGui import QResizeEvent, QAction
 from PySide6.QtWidgets import (
@@ -27,6 +28,7 @@ from PySide6.QtWidgets import (
 )
 from humanfriendly import format_size
 
+from src.core.enums import SettingItems, Theme
 from src.core.library import Entry, ItemType, Library
 from src.core.ts_core import VIDEO_TYPES, IMAGE_TYPES
 from src.qt.helpers.file_opener import FileOpenerLabel, FileOpenerHelper, open_file
@@ -39,6 +41,7 @@ from src.qt.widgets.panel import PanelModal
 from src.qt.widgets.text_box_edit import EditTextBox
 from src.qt.widgets.text_line_edit import EditTextLine
 from src.qt.widgets.item_thumb import ItemThumb
+
 
 # Only import for type checking/autocompletion, will not be imported at runtime.
 if typing.TYPE_CHECKING:
@@ -73,16 +76,9 @@ class PreviewPanel(QWidget):
         self.img_button_size: tuple[int, int] = (266, 266)
         self.image_ratio: float = 1.0
 
-        root_layout = QHBoxLayout(self)
-        root_layout.setContentsMargins(0, 0, 0, 0)
-
         self.image_container = QWidget()
         image_layout = QHBoxLayout(self.image_container)
         image_layout.setContentsMargins(0, 0, 0, 0)
-
-        splitter = QSplitter()
-        splitter.setOrientation(Qt.Orientation.Vertical)
-        splitter.setHandleWidth(12)
 
         self.open_file_action = QAction("Open file", self)
         self.open_explorer_action = QAction("Open file in explorer", self)
@@ -110,16 +106,6 @@ class PreviewPanel(QWidget):
             )
         )
 
-        splitter.splitterMoved.connect(
-            lambda: self.update_image_size(
-                (
-                    self.image_container.size().width(),
-                    self.image_container.size().height(),
-                )
-            )
-        )
-        splitter.addWidget(self.image_container)
-
         image_layout.addWidget(self.preview_img)
         image_layout.setAlignment(self.preview_img, Qt.AlignmentFlag.AlignCenter)
 
@@ -136,7 +122,7 @@ class PreviewPanel(QWidget):
         # 	Qt.TextInteractionFlag.TextSelectableByMouse)
 
         properties_style = (
-            f"background-color:#65000000;"
+            f"background-color:{Theme.COLOR_BG.value};"
             f"font-family:Oxanium;"
             f"font-weight:bold;"
             f"font-size:12px;"
@@ -176,19 +162,48 @@ class PreviewPanel(QWidget):
         # rounded corners are maintained when scrolling. I was unable to
         # find the right trick to only select that particular element.
         scroll_area.setStyleSheet(
-            f"QWidget#entryScrollContainer{{"
-            "background:#65000000;"
+            "QWidget#entryScrollContainer{"
+            f"background: {Theme.COLOR_BG.value};"
             "border-radius:6px;"
-            f"}}"
+            "}"
         )
         scroll_area.setWidget(scroll_container)
 
         info_layout.addWidget(self.file_label)
         info_layout.addWidget(self.dimensions_label)
         info_layout.addWidget(scroll_area)
-        splitter.addWidget(info_section)
 
-        root_layout.addWidget(splitter)
+        # keep list of rendered libraries to avoid needless re-rendering
+        self.render_libs = set()
+        self.libs_layout = QVBoxLayout()
+        self.fill_libs_widget(self.libs_layout)
+
+        self.libs_flow_container: QWidget = QWidget()
+        self.libs_flow_container.setObjectName("librariesList")
+        self.libs_flow_container.setLayout(self.libs_layout)
+        self.libs_flow_container.setSizePolicy(QSizePolicy.Maximum, QSizePolicy.Maximum)
+
+        # set initial visibility based on settings
+        if not self.driver.settings.value(
+            SettingItems.WINDOW_SHOW_LIBS, True, type=bool
+        ):
+            self.libs_flow_container.hide()
+
+        splitter = QSplitter()
+        splitter.setOrientation(Qt.Orientation.Vertical)
+        splitter.setHandleWidth(12)
+        splitter.splitterMoved.connect(
+            lambda: self.update_image_size(
+                (
+                    self.image_container.size().width(),
+                    self.image_container.size().height(),
+                )
+            )
+        )
+
+        splitter.addWidget(self.image_container)
+        splitter.addWidget(info_section)
+        splitter.addWidget(self.libs_flow_container)
         splitter.setStretchFactor(1, 2)
 
         self.afb_container = QWidget()
@@ -206,6 +221,107 @@ class PreviewPanel(QWidget):
         self.update_image_size(
             (self.image_container.size().width(), self.image_container.size().height())
         )
+
+        root_layout = QHBoxLayout(self)
+        root_layout.setContentsMargins(0, 0, 0, 0)
+        root_layout.addWidget(splitter)
+
+    def fill_libs_widget(self, layout: QVBoxLayout):
+        settings = self.driver.settings
+        settings.beginGroup(SettingItems.LIBS_LIST)
+        lib_items: dict[str, tuple[str, str]] = {}
+        for item_tstamp in settings.allKeys():
+            val = settings.value(item_tstamp)
+            cut_val = val
+            if len(val) > 45:
+                cut_val = f"{val[0:10]} ... {val[-10:]}"
+            lib_items[item_tstamp] = (val, cut_val)
+
+        settings.endGroup()
+
+        new_keys = set(lib_items.keys())
+        if new_keys == self.render_libs:
+            # no need to re-render
+            return
+
+        # sort lib_items by the key
+        libs_sorted = sorted(lib_items.items(), key=lambda item: item[0], reverse=True)
+
+        self.render_libs = new_keys
+        self._fill_libs_widget(libs_sorted, layout)
+
+    def _fill_libs_widget(
+        self, libraries: list[tuple[str, tuple[str, str]]], layout: QVBoxLayout
+    ):
+        def clear_layout(layout_item: QVBoxLayout):
+            for i in reversed(range(layout_item.count())):
+                child = layout_item.itemAt(i)
+                if child.widget() is not None:
+                    child.widget().deleteLater()
+                elif child.layout() is not None:
+                    clear_layout(child.layout())
+
+        # remove any potential previous items
+        clear_layout(layout)
+
+        label = QLabel("Recent Libraries")
+        label.setAlignment(Qt.AlignCenter)
+
+        row_layout = QHBoxLayout()
+        row_layout.addWidget(label)
+        layout.addLayout(row_layout)
+
+        def set_button_style(btn: QPushButton, extras: list[str] | None = None):
+            base_style = [
+                f"background-color:{Theme.COLOR_BG.value};",
+                "border-radius:6px;",
+                "text-align: left;",
+                "padding-top: 3px;",
+                "padding-left: 6px;",
+                "padding-bottom: 4px;",
+            ]
+
+            full_style_rows = base_style + (extras or [])
+
+            btn.setStyleSheet(
+                (
+                    "QPushButton{"
+                    f"{''.join(full_style_rows)}"
+                    "}"
+                    f"QPushButton::hover{{background-color:{Theme.COLOR_HOVER.value};}}"
+                    f"QPushButton::pressed{{background-color:{Theme.COLOR_PRESSED.value};}}"
+                )
+            )
+            btn.setCursor(Qt.CursorShape.PointingHandCursor)
+
+        for item_key, (full_val, cut_val) in libraries:
+            button = QPushButton(text=cut_val)
+            button.setObjectName(f"path{item_key}")
+
+            def open_library_button_clicked(path):
+                return lambda: self.driver.open_library(path)
+
+            button.clicked.connect(open_library_button_clicked(full_val))
+            set_button_style(button)
+
+            button_remove = QPushButton("➖")
+            button_remove.setCursor(Qt.CursorShape.PointingHandCursor)
+            button_remove.setFixedWidth(30)
+            set_button_style(button_remove)
+
+            def remove_recent_library_clicked(key: str):
+                return lambda: (
+                    self.driver.remove_recent_library(key),
+                    self.fill_libs_widget(self.libs_layout),
+                )
+
+            button_remove.clicked.connect(remove_recent_library_clicked(item_key))
+
+            row_layout = QHBoxLayout()
+            row_layout.addWidget(button)
+            row_layout.addWidget(button_remove)
+
+            layout.addLayout(row_layout)
 
     def resizeEvent(self, event: QResizeEvent) -> None:
         self.update_image_size(
@@ -308,6 +424,9 @@ class PreviewPanel(QWidget):
         # self.tag_callback = tag_callback if tag_callback else None
         window_title = ""
 
+        # update list of libraries
+        self.fill_libs_widget(self.libs_layout)
+
         # 0 Selected Items
         if not self.driver.selected:
             if self.selected or not self.initialized:
@@ -403,8 +522,15 @@ class PreviewPanel(QWidget):
                             )
                             raise UnidentifiedImageError
 
-                    except (UnidentifiedImageError, FileNotFoundError, cv2.error):
-                        pass
+                    except (
+                        UnidentifiedImageError,
+                        FileNotFoundError,
+                        cv2.error,
+                        DecompressionBombError,
+                    ) as e:
+                        logging.info(
+                            f"[PreviewPanel][ERROR] Couldn't Render thumbnail for {filepath} (because of {e})"
+                        )
 
                     try:
                         self.preview_img.clicked.disconnect()
