@@ -39,7 +39,7 @@ jobs:
           - os-version: '11'
             arch: x86_64
           - os-version: '14'
-            arch: arm64
+            arch: aarch64
     runs-on: macos-${{ matrix.os-version }}
     env:
       MACOSX_DEPLOYMENT_TARGET: '11.0'
