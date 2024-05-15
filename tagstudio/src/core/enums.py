@@ -1,0 +1,16 @@
+import enum
+
+
+class SettingItems(str, enum.Enum):
+    """List of setting item names."""
+
+    START_LOAD_LAST = "start_load_last"
+    LAST_LIBRARY = "last_library"
+    LIBS_LIST = "libs_list"
+    WINDOW_SHOW_LIBS = "window_show_libs"
+
+
+class Theme(str, enum.Enum):
+    COLOR_BG = "#65000000"
+    COLOR_HOVER = "#65AAAAAA"
+    COLOR_PRESSED = "#65EEEEEE"
