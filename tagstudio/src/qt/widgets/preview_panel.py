@@ -181,7 +181,9 @@ class PreviewPanel(QWidget):
         self.libs_flow_container: QWidget = QWidget()
         self.libs_flow_container.setObjectName("librariesList")
         self.libs_flow_container.setLayout(self.libs_layout)
-        self.libs_flow_container.setSizePolicy(QSizePolicy.Maximum, QSizePolicy.Maximum)
+        self.libs_flow_container.setSizePolicy(
+            QSizePolicy.Preferred, QSizePolicy.Maximum
+        )
 
         # set initial visibility based on settings
         if not self.driver.settings.value(
