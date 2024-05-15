@@ -34,7 +34,7 @@ def main():
         "--config-file",
         dest="config_file",
         type=str,
-        help="Path to a TagStudio.ini config file to use",
+        help="Path to a TagStudio .ini or .plist config file to use.",
     )
 
     # parser.add_argument('--browse', dest='browse', action='store_true',
