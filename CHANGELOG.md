@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [9.2.0-alpha] - 2024-05-14
+## [9.2.0] - 2024-05-14
 
 ### Added
 
@@ -54,7 +54,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 	- A temporary workaround it to omit spaces in tag names when  searching
 - Sorting fields using the "Sort Fields" macro may result in edit icons being shown for incorrect fields
 
-## [9.1.0-alpha] - 2024-04-22
+## [9.1.0] - 2024-04-22
 
 ### Added
 
