@@ -5,7 +5,7 @@ from typing import Callable
 
 from PySide6.QtWidgets import QVBoxLayout, QLineEdit
 
-from src.qt.widgets import PanelWidget
+from src.qt.widgets.panel import PanelWidget
 
 
 class EditTextLine(PanelWidget):

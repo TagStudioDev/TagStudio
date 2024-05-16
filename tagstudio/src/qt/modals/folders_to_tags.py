@@ -36,18 +36,18 @@ logging.basicConfig(format="%(message)s", level=logging.INFO)
 
 def folders_to_tags(library: Library):
     logging.info("Converting folders to Tags")
-    tree = dict(dirs={})
+    tree: dict = dict(dirs={})
 
-    def add_tag_to_tree(list: list[Tag]):
+    def add_tag_to_tree(items: list[Tag]):
         branch = tree
-        for tag in list:
+        for tag in items:
             if tag.name not in branch["dirs"]:
                 branch["dirs"][tag.name] = dict(dirs={}, tag=tag)
             branch = branch["dirs"][tag.name]
 
-    def add_folders_to_tree(list: list[str]) -> Tag:
-        branch = tree
-        for folder in list:
+    def add_folders_to_tree(items: list[str]) -> Tag:
+        branch: dict = tree
+        for folder in items:
             if folder not in branch["dirs"]:
                 new_tag = Tag(
                     -1,
@@ -97,18 +97,18 @@ def reverse_tag(library: Library, tag: Tag, list: list[Tag]) -> list[Tag]:
 
 
 def generate_preview_data(library: Library):
-    tree = dict(dirs={}, files=[])
+    tree: dict = dict(dirs={}, files=[])
 
-    def add_tag_to_tree(list: list[Tag]):
-        branch = tree
-        for tag in list:
+    def add_tag_to_tree(items: list[Tag]):
+        branch: dict = tree
+        for tag in items:
             if tag.name not in branch["dirs"]:
                 branch["dirs"][tag.name] = dict(dirs={}, tag=tag, files=[])
             branch = branch["dirs"][tag.name]
 
-    def add_folders_to_tree(list: list[str]) -> Tag:
-        branch = tree
-        for folder in list:
+    def add_folders_to_tree(items: list[str]) -> dict:
+        branch: dict = tree
+        for folder in items:
             if folder not in branch["dirs"]:
                 new_tag = Tag(-1, folder, "", [], [], "green")
                 branch["dirs"][folder] = dict(dirs={}, tag=new_tag, files=[])
@@ -165,25 +165,26 @@ class FoldersToTagsModal(QWidget):
         self.count = -1
         self.filename = ""
 
-        self.setWindowTitle(f"Folders To Tags")
+        self.setWindowTitle(f"Create Tags From Folders")
         self.setWindowModality(Qt.WindowModality.ApplicationModal)
-        self.setMinimumSize(500, 800)
+        self.setMinimumSize(640, 640)
         self.root_layout = QVBoxLayout(self)
         self.root_layout.setContentsMargins(6, 6, 6, 6)
+
+        self.title_widget = QLabel()
+        self.title_widget.setObjectName("title")
+        self.title_widget.setWordWrap(True)
+        self.title_widget.setStyleSheet(
+            "font-weight:bold;" "font-size:14px;" "padding-top: 6px"
+        )
+        self.title_widget.setText("Create Tags From Folders")
+        self.title_widget.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         self.desc_widget = QLabel()
         self.desc_widget.setObjectName("descriptionLabel")
         self.desc_widget.setWordWrap(True)
-        self.desc_widget.setStyleSheet(
-            # 'background:blue;'
-            "text-align:left;"
-            # 'font-weight:bold;'
-            "font-size:18px;"
-            # 'padding-top: 6px'
-            ""
-        )
         self.desc_widget.setText(
-            """Creates tags based on the folder structure and applies them to entries.\n The Structure below shows all the tags that would be added and to which files they would be added. It being empty means that there are no Tag to be created or assigned"""
+            """Creates tags based on your folder structure and applies them to your entries.\n The structure below shows all the tags that will be created and what entries they will be applied to."""
         )
         self.desc_widget.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
@@ -216,14 +217,18 @@ class FoldersToTagsModal(QWidget):
 
         self.apply_button = QPushButton()
         self.apply_button.setText("&Apply")
+        self.apply_button.setMinimumWidth(100)
         self.apply_button.clicked.connect(self.on_apply)
 
-        self.showEvent = self.on_open
+        self.showEvent = self.on_open  # type: ignore
 
+        self.root_layout.addWidget(self.title_widget)
         self.root_layout.addWidget(self.desc_widget)
         self.root_layout.addWidget(self.open_close_button_w)
         self.root_layout.addWidget(self.scroll_area)
-        self.root_layout.addWidget(self.apply_button)
+        self.root_layout.addWidget(
+            self.apply_button, alignment=Qt.AlignmentFlag.AlignCenter
+        )
 
     def on_apply(self, event):
         folders_to_tags(self.library)

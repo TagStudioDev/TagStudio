@@ -5,7 +5,7 @@
 
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QHBoxLayout, QLabel
-from src.qt.widgets import FieldWidget
+from src.qt.widgets.fields import FieldWidget
 
 
 class TextWidget(FieldWidget):

@@ -5,7 +5,7 @@
 """TagStudio launcher."""
 
 from src.core.ts_core import TagStudioCore
-from src.cli.ts_cli import CliDriver
+from src.cli.ts_cli import CliDriver  # type: ignore
 from src.qt.ts_qt import QtDriver
 import argparse
 import traceback
@@ -29,6 +29,14 @@ def main():
         type=str,
         help="Path to a TagStudio Library folder to open on start.",
     )
+    parser.add_argument(
+        "-c",
+        "--config-file",
+        dest="config_file",
+        type=str,
+        help="Path to a TagStudio .ini or .plist config file to use.",
+    )
+
     # parser.add_argument('--browse', dest='browse', action='store_true',
     #                     help='Jumps to entry browsing on startup.')
     # parser.add_argument('--external_preview', dest='external_preview', action='store_true',
@@ -44,6 +52,11 @@ def main():
         dest="ui",
         type=str,
         help="User interface option for TagStudio. Options: qt, cli (Default: qt)",
+    )
+    parser.add_argument(
+        "--ci",
+        action=argparse.BooleanOptionalAction,
+        help="Exit the application after checking it starts without any problem. Meant for CI check.",
     )
     args = parser.parse_args()
 
