@@ -1,5 +1,5 @@
-VERSION: str = "9.2.0"  # Major.Minor.Patch
-VERSION_BRANCH: str = "Alpha"  # 'Alpha', 'Beta', or '' for Full Release
+VERSION: str = "9.2.1"  # Major.Minor.Patch
+VERSION_BRANCH: str = "Pre-Release"  # 'Alpha', 'Beta', or '' for Full Release
 
 # The folder & file names where TagStudio keeps its data relative to a library.
 TS_FOLDER_NAME: str = ".TagStudio"
