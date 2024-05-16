@@ -532,7 +532,6 @@ class PreviewPanel(QWidget):
                             )
                             self.preview_vid.show()
 
-
                         # Stats for specific file types are displayed here.
                         if extension in (IMAGE_TYPES + VIDEO_TYPES):
                             self.dimensions_label.setText(

@@ -163,7 +163,7 @@ class VideoPlayer(QGraphicsView):
         self.driver.settings.setValue("autoplay_videos", self.autoplay.isChecked())
 
     def checkMediaStatus(self, media_status: QMediaPlayer.MediaStatus) -> None:
-        logging.info(media_status)
+        # logging.info(media_status)
         if media_status == QMediaPlayer.MediaStatus.EndOfMedia:
             # Switches current video to with video at filepath. Reason for this is because Pyside6 is dumb and can't handle setting a new source and freezes.
             # Even if I stop the player before switching, it breaks.
@@ -174,8 +174,6 @@ class VideoPlayer(QGraphicsView):
             # self.video_preview.setSize(self.resolution)
             self.player.setPosition(0)
             # logging.info(f'Set muted to true.')
-            extension = os.path.splitext(self.filepath)[1][1:].lower()
-            filename = os.path.basename(self.filepath)
             if self.driver.settings.value("autoplay_videos", True, bool):
                 self.player.play()
             else:
@@ -322,26 +320,21 @@ class VideoPlayer(QGraphicsView):
         self.keepControlsInPlace()
 
     def roundCorners(self) -> None:
+        width: int = int(max(self.contentsRect().size().width(), 0))
+        height: int = int(max(self.contentsRect().size().height(), 0))
         mask = Image.new(
             "RGBA",
             (
-                int(self.contentsRect().size().width()),
-                int(self.contentsRect().size().height()),
+                width,
+                height,
             ),
             (0, 0, 0, 255),
         )
         draw = ImageDraw.Draw(mask)
         draw.rounded_rectangle(
-            (0, 0)
-            + (self.contentsRect().size().width(), self.contentsRect().size().height()),
-            radius=20,
+            (0, 0) + (width, height),
+            radius=12,
             fill=(0, 0, 0, 0),
-        )
-        mask.resize(
-            (
-                int(self.contentsRect().size().width()),
-                int(self.contentsRect().size().height()),
-            )
         )
         mask = mask.getchannel("A").toqpixmap()
         self.setMask(QRegion(QBitmap(mask)))
