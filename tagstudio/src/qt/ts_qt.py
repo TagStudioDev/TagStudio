@@ -282,7 +282,7 @@ class QtDriver(QObject):
 
         if sys.platform != "darwin":
             icon = QIcon()
-            icon.addFile(icon_path)
+            icon.addFile(str(icon_path))
             app.setWindowIcon(icon)
 
         menu_bar = QMenuBar(self.main_window)
@@ -479,12 +479,14 @@ class QtDriver(QObject):
         menu_bar.addMenu(macros_menu)
         menu_bar.addMenu(window_menu)
         menu_bar.addMenu(help_menu)
-        
+
         self.preview_panel = PreviewPanel(self.lib, self)
         l: QHBoxLayout = self.main_window.splitter
         l.addWidget(self.preview_panel)
 
-        QFontDatabase.addApplicationFont(str(Path(__file__).parents[2]/ "resources/qt/fonts/Oxanium-Bold.ttf"))
+        QFontDatabase.addApplicationFont(
+            str(Path(__file__).parents[2] / "resources/qt/fonts/Oxanium-Bold.ttf")
+        )
 
         self.thumb_size = 128
         self.max_results = 500

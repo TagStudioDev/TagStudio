@@ -84,7 +84,9 @@ class CliDriver:
         self.is_dupe_file_count_init: bool = False
 
         self.external_preview_size: tuple[int, int] = (960, 960)
-        epd_path = Path(__file__).parents[2] / "resources/cli/images/external_preview.png"
+        epd_path = (
+            Path(__file__).parents[2] / "resources/cli/images/external_preview.png"
+        )
         self.external_preview_default: Image = (
             Image.open(epd_path)
             if epd_path.exists()
@@ -92,7 +94,6 @@ class CliDriver:
         )
         self.external_preview_default.thumbnail(self.external_preview_size)
         epb_path = Path(__file__).parents[3] / "resources/cli/images/no_preview.png"
-        )
         self.external_preview_broken: Image = (
             Image.open(epb_path)
             if epb_path.exists()
@@ -1106,7 +1107,10 @@ class CliDriver:
 
                             if filepath.suffix in IMAGE_TYPES:
                                 try:
-                                    with Image.open(self.lib.library_dir / entry.path / entry.filename)
+                                    with Image.open(
+                                        self.lib.library_dir
+                                        / entry.path
+                                        / entry.filename
                                     ) as pic:
                                         if keep_aspect:
                                             pic.thumbnail((thumb_size, thumb_size))
