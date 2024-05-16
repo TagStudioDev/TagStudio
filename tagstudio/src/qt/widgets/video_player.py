@@ -2,7 +2,7 @@ import logging
 import os
 import typing
 
-os.environ["QT_MEDIA_BACKEND"] = "ffmpeg"
+# os.environ["QT_MEDIA_BACKEND"] = "ffmpeg"
 
 from PySide6.QtCore import (
     Qt,
@@ -12,17 +12,11 @@ from PySide6.QtCore import (
     QUrl,
     QObject,
     QEvent,
-    QRect,
     QRectF,
 )
 from PySide6.QtMultimedia import QMediaPlayer, QAudioOutput, QMediaDevices
 from PySide6.QtMultimediaWidgets import QGraphicsVideoItem
-from PySide6.QtWidgets import (
-    QGraphicsView,
-    QGraphicsScene,
-    QGraphicsPixmapItem,
-    QWidget,
-)
+from PySide6.QtWidgets import QGraphicsView, QGraphicsScene
 from PySide6.QtGui import (
     QInputMethodEvent,
     QPen,
@@ -31,12 +25,10 @@ from PySide6.QtGui import (
     QResizeEvent,
     QWheelEvent,
     QAction,
-    QPixmap,
     QRegion,
     QBitmap,
 )
 from PySide6.QtSvgWidgets import QSvgWidget
-from pathlib import Path
 from PIL import Image
 from src.qt.helpers.file_opener import FileOpenerHelper
 
