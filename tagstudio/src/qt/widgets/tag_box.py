@@ -12,8 +12,11 @@ from PySide6.QtWidgets import QPushButton
 
 from src.core.library import Library, Tag
 from src.qt.flowlayout import FlowLayout
-from src.qt.widgets import FieldWidget, TagWidget, PanelModal
-from src.qt.modals import BuildTagPanel, TagSearchPanel
+from src.qt.widgets.fields import FieldWidget
+from src.qt.widgets.tag import TagWidget
+from src.qt.widgets.panel import PanelModal
+from src.qt.modals.build_tag import BuildTagPanel
+from src.qt.modals.tag_search import TagSearchPanel
 
 # Only import for type checking/autocompletion, will not be imported at runtime.
 if typing.TYPE_CHECKING:
@@ -52,10 +55,10 @@ class TagBoxWidget(FieldWidget):
         self.add_button.setText("+")
         self.add_button.setStyleSheet(
             f"QPushButton{{"
-            # f'background: #1E1A33;'
-            # f'color: #CDA7F7;'
+            f"background: #1e1e1e;"
+            f"color: #FFFFFF;"
             f"font-weight: bold;"
-            # f"border-color: #2B2547;"
+            f"border-color: #333333;"
             f"border-radius: 6px;"
             f"border-style:solid;"
             f"border-width:{math.ceil(1*self.devicePixelRatio())}px;"
@@ -67,14 +70,15 @@ class TagBoxWidget(FieldWidget):
             f"}}"
             f"QPushButton::hover"
             f"{{"
-            # f'background: #2B2547;'
+            f"border-color: #CCCCCC;"
+            f"background: #555555;"
             f"}}"
         )
         tsp = TagSearchPanel(self.lib)
         tsp.tag_chosen.connect(lambda x: self.add_tag_callback(x))
         self.add_modal = PanelModal(tsp, title, "Add Tags")
         self.add_button.clicked.connect(
-            lambda: (tsp.update_tags(), self.add_modal.show())
+            lambda: (tsp.update_tags(), self.add_modal.show())  # type: ignore
         )
 
         self.set_tags(tags)
@@ -133,7 +137,6 @@ class TagBoxWidget(FieldWidget):
             has_save=True,
         )
         # self.edit_modal.widget.update_display_name.connect(lambda t: self.edit_modal.title_widget.setText(t))
-        panel: BuildTagPanel = self.edit_modal.widget
         self.edit_modal.saved.connect(lambda: self.lib.update_tag(btp.build_tag()))
         # panel.tag_updated.connect(lambda tag: self.lib.update_tag(tag))
         self.edit_modal.show()
@@ -145,7 +148,7 @@ class TagBoxWidget(FieldWidget):
             f"[TAG BOX WIDGET] ADD TAG CALLBACK: T:{tag_id} to E:{self.item.id}"
         )
         logging.info(f"[TAG BOX WIDGET] SELECTED T:{self.driver.selected}")
-        id = list(self.field.keys())[0]
+        id: int = list(self.field.keys())[0]  # type: ignore
         for x in self.driver.selected:
             self.driver.lib.get_entry(x[1]).add_tag(
                 self.driver.lib, tag_id, field_id=id, field_index=-1
@@ -166,9 +169,9 @@ class TagBoxWidget(FieldWidget):
     def edit_tag_callback(self, tag: Tag):
         self.lib.update_tag(tag)
 
-    def remove_tag(self, tag_id):
+    def remove_tag(self, tag_id: int):
         logging.info(f"[TAG BOX WIDGET] SELECTED T:{self.driver.selected}")
-        id = list(self.field.keys())[0]
+        id: int = list(self.field.keys())[0]  # type: ignore
         for x in self.driver.selected:
             index = self.driver.lib.get_field_index_in_entry(
                 self.driver.lib.get_entry(x[1]), id

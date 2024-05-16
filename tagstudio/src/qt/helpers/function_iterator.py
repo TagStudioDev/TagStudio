@@ -3,9 +3,8 @@
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
 
-from types import FunctionType
-
 from PySide6.QtCore import Signal, QObject
+from typing import Callable
 
 
 class FunctionIterator(QObject):
@@ -13,7 +12,7 @@ class FunctionIterator(QObject):
 
     value = Signal(object)
 
-    def __init__(self, function: FunctionType):
+    def __init__(self, function: Callable):
         super().__init__()
         self.iterable = function
 

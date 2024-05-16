@@ -35,6 +35,7 @@ MANIFEST
 #  before PyInstaller builds the exe, so as to inject date/other infos into it.
 *.manifest
 *.spec
+!tagstudio.spec
 
 # Installer logs
 pip-log.txt
@@ -250,8 +251,4 @@ compile_commands.json
 # TagStudio
 .TagStudio
 TagStudio.ini
-
-
-
-
 # End of https://www.toptal.com/developers/gitignore/api/visualstudiocode,python,qt

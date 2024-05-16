@@ -17,8 +17,8 @@ from PySide6.QtCore import (QCoreApplication, QMetaObject, QRect,
 from PySide6.QtGui import (QFont, QAction)
 from PySide6.QtWidgets import (QComboBox, QFrame, QGridLayout,
 							   QHBoxLayout, QVBoxLayout, QLayout, QLineEdit, QMainWindow,
-							   QMenuBar, QPushButton, QScrollArea, QSizePolicy,
-							   QStatusBar, QWidget, QSplitter, QMenu)
+							   QPushButton, QScrollArea, QSizePolicy,
+							   QStatusBar, QWidget, QSplitter)
 from src.qt.pagination import Pagination
 
 
@@ -38,54 +38,29 @@ class Ui_MainWindow(QMainWindow):
 		# # self.setStyleSheet(
 		# # 	'background:#EE000000;'
 		# # 	)
-
 		
 
 	def setupUi(self, MainWindow):
 		if not MainWindow.objectName():
 			MainWindow.setObjectName(u"MainWindow")
 		MainWindow.resize(1300, 720)
-
-		# self._createMenuBar(MainWindow)
 		
-		# print(type(MainWindow))
 		self.centralwidget = QWidget(MainWindow)
 		self.centralwidget.setObjectName(u"centralwidget")
 		self.gridLayout = QGridLayout(self.centralwidget)
 		self.gridLayout.setObjectName(u"gridLayout")
-		# self.gridLayout.setContentsMargins(0, 0, 0, 0)
 		self.horizontalLayout = QHBoxLayout()
 		self.horizontalLayout.setObjectName(u"horizontalLayout")
-
-		
-		
-		# tb = StandardTitleBar(MainWindow)
-		# tb.setObjectName('TitleBar')
-		# # # self.setTitleBar(tb)
-		# hor = QVBoxLayout()
-		# self.gridLayout.setContentsMargins(0,0,0,0)
-		# self.gridLayout.addLayout(hor, 0, 0, 1, 1)
-		
-
-		
-		# hor.addWidget(tb)
 
 		self.splitter = QSplitter()
 		self.splitter.setObjectName(u"splitter")
 		self.splitter.setHandleWidth(12)
 
 		self.frame_container = QWidget()
-		# self.frame_container.setStyleSheet('background:red;')
 		self.frame_layout = QVBoxLayout(self.frame_container)
-		# self.frame_container.setSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Minimum)
-		
 		self.frame_layout.setSpacing(0)
 
-		
-
 		self.scrollArea = QScrollArea()
-		# self.scrollArea.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
-		# self.scrollArea.setStyleSheet('background:green;')
 		self.scrollArea.setObjectName(u"scrollArea")
 		self.scrollArea.setFocusPolicy(Qt.WheelFocus)
 		self.scrollArea.setFrameShape(QFrame.NoFrame)
@@ -102,12 +77,6 @@ class Ui_MainWindow(QMainWindow):
 		self.scrollArea.setWidget(self.scrollAreaWidgetContents)
 		self.frame_layout.addWidget(self.scrollArea)
 
-		self.scrollArea.setAttribute(Qt.WidgetAttribute.WA_NoSystemBackground)
-		# self.scrollArea.setWindowFlag(Qt.WindowType.FramelessWindowHint)
-		self.scrollArea.setAttribute(
-			Qt.WidgetAttribute.WA_TranslucentBackground)
-		self.scrollArea.setStyleSheet('background:#00000000;')
-
 		# self.page_bar_controls = QWidget()
 		# self.page_bar_controls.setStyleSheet('background:blue;')
 		# self.page_bar_controls.setMinimumHeight(32)
@@ -118,7 +87,6 @@ class Ui_MainWindow(QMainWindow):
 		# self.frame_layout.addWidget(self.page_bar_controls)
 		# self.frame_layout.addWidget(self.page_bar_controls)
 
-		# self.horizontalLayout.addWidget(self.scrollArea)
 		self.horizontalLayout.addWidget(self.splitter)
 		self.splitter.addWidget(self.frame_container)
 		self.splitter.setStretchFactor(0, 1)
@@ -154,13 +122,6 @@ class Ui_MainWindow(QMainWindow):
 		self.searchField = QLineEdit(self.centralwidget)
 		self.searchField.setObjectName(u"searchField")
 		self.searchField.setMinimumSize(QSize(0, 32))
-		self.searchField.setStyleSheet(
-			'background:#55000000;' 
-			'border-radius:6px;'
-			'border-style:solid;'
-			'border-width:1px;'
-			'border-color:#11FFFFFF;'
-			)
 		font2 = QFont()
 		font2.setPointSize(11)
 		font2.setBold(False)
@@ -174,7 +135,6 @@ class Ui_MainWindow(QMainWindow):
 		self.searchButton.setFont(font2)
 
 		self.horizontalLayout_2.addWidget(self.searchButton)
-
 		self.gridLayout.addLayout(self.horizontalLayout_2, 3, 0, 1, 1)
 
 		self.comboBox = QComboBox(self.centralwidget)
@@ -207,13 +167,12 @@ class Ui_MainWindow(QMainWindow):
 		self.statusbar.setSizePolicy(sizePolicy1)
 		MainWindow.setStatusBar(self.statusbar)
 
-		menu_bar = self.menuBar()
-		self.setMenuBar(menu_bar)
+		# menu_bar = self.menuBar()
+		# self.setMenuBar(menu_bar)
 		# self.gridLayout.addWidget(menu_bar, 4, 0, 1, 1, Qt.AlignRight)
-		self.frame_layout.addWidget(menu_bar)
+		# self.frame_layout.addWidget(menu_bar)
 
 		self.retranslateUi(MainWindow)
-		# self.dumpObjectTree()
 
 		QMetaObject.connectSlotsByName(MainWindow)
 	# setupUi
@@ -242,26 +201,26 @@ class Ui_MainWindow(QMainWindow):
 		# time.sleep(0.02)  # sleep for 20ms
 		pass
 
-	def _createMenuBar(self, main_window):
-		menu_bar = QMenuBar(main_window)
-		file_menu = QMenu('&File', main_window)
-		edit_menu = QMenu('&Edit', main_window)
-		tools_menu = QMenu('&Tools', main_window)
-		macros_menu = QMenu('&Macros', main_window)
-		help_menu = QMenu('&Help', main_window)
+	# def _createMenuBar(self, main_window):
+	# 	menu_bar = QMenuBar(main_window)
+	# 	file_menu = QMenu('&File', main_window)
+	# 	edit_menu = QMenu('&Edit', main_window)
+	# 	tools_menu = QMenu('&Tools', main_window)
+	# 	macros_menu = QMenu('&Macros', main_window)
+	# 	help_menu = QMenu('&Help', main_window)
 
-		file_menu.addAction(QAction('&New Library', main_window))
-		file_menu.addAction(QAction('&Open Library', main_window))
-		file_menu.addAction(QAction('&Save Library', main_window))
-		file_menu.addAction(QAction('&Close Library', main_window))
+	# 	file_menu.addAction(QAction('&New Library', main_window))
+	# 	file_menu.addAction(QAction('&Open Library', main_window))
+	# 	file_menu.addAction(QAction('&Save Library', main_window))
+	# 	file_menu.addAction(QAction('&Close Library', main_window))
 
-		file_menu.addAction(QAction('&Refresh Directories', main_window))
-		file_menu.addAction(QAction('&Add New Files to Library', main_window))
+	# 	file_menu.addAction(QAction('&Refresh Directories', main_window))
+	# 	file_menu.addAction(QAction('&Add New Files to Library', main_window))
 
-		menu_bar.addMenu(file_menu)
-		menu_bar.addMenu(edit_menu)
-		menu_bar.addMenu(tools_menu)
-		menu_bar.addMenu(macros_menu)
-		menu_bar.addMenu(help_menu)
+	# 	menu_bar.addMenu(file_menu)
+	# 	menu_bar.addMenu(edit_menu)
+	# 	menu_bar.addMenu(tools_menu)
+	# 	menu_bar.addMenu(macros_menu)
+	# 	menu_bar.addMenu(help_menu)
 
-		main_window.setMenuBar(menu_bar)
+	# 	main_window.setMenuBar(menu_bar)
