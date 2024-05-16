@@ -103,9 +103,7 @@ class ThumbRenderer(QObject):
         adj_size: int = 1
         image = None
         pixmap = None
-        final = None
         extension: str = None
-        broken_thumb = False
         # adj_font_size = math.floor(12 * pixelRatio)
         if ThumbRenderer.font_pixel_ratio != pixelRatio:
             ThumbRenderer.font_pixel_ratio = pixelRatio
@@ -283,7 +281,7 @@ class ThumbRenderer(QObject):
         filepath,
         base_size: tuple[int, int],
         pixelRatio: float,
-        isLoading=False,
+        isLoading: bool = False,
     ):
         """Renders a large, non-square entry/element thumbnail for the GUI."""
         adj_size: int = 1
@@ -291,8 +289,6 @@ class ThumbRenderer(QObject):
         pixmap: QPixmap = None
         final: Image.Image = None
         extension: str = None
-        broken_thumb = False
-        img_ratio = 1
         # adj_font_size = math.floor(12 * pixelRatio)
         if ThumbRenderer.font_pixel_ratio != pixelRatio:
             ThumbRenderer.font_pixel_ratio = pixelRatio
@@ -308,7 +304,7 @@ class ThumbRenderer(QObject):
 
         if isLoading:
             adj_size = math.ceil((512 * pixelRatio))
-            final: Image.Image = ThumbRenderer.thumb_loading_512.resize(
+            final = ThumbRenderer.thumb_loading_512.resize(
                 (adj_size, adj_size), resample=Image.Resampling.BILINEAR
             )
             qim = ImageQt.ImageQt(final)
@@ -452,7 +448,9 @@ class ThumbRenderer(QObject):
                 # final.paste(hl_add, mask=hl_add.getchannel(3))
                 scalar = 4
                 rec: Image.Image = Image.new(
-                    "RGB", tuple([d * scalar for d in image.size]), "black"
+                    "RGB",
+                    tuple([d * scalar for d in image.size]),  # type: ignore
+                    "black",
                 )
                 draw = ImageDraw.Draw(rec)
                 draw.rounded_rectangle(
