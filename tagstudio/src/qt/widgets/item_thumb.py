@@ -26,11 +26,12 @@ from PySide6.QtWidgets import (
 from src.core.library import ItemType, Library, Entry
 from src.core.ts_core import AUDIO_TYPES, VIDEO_TYPES, IMAGE_TYPES
 from src.qt.flowlayout import FlowWidget
-from src.qt.helpers import FileOpenerHelper
-from src.qt.widgets import ThumbRenderer, ThumbButton
+from src.qt.helpers.file_opener import FileOpenerHelper
+from src.qt.widgets.thumb_renderer import ThumbRenderer
+from src.qt.widgets.thumb_button import ThumbButton
 
 if typing.TYPE_CHECKING:
-    from src.qt.widgets import PreviewPanel
+    from src.qt.widgets.preview_panel import PreviewPanel
 
 ERROR = f"[ERROR]"
 WARNING = f"[WARNING]"
@@ -52,14 +53,14 @@ class ItemThumb(FlowWidget):
 
     collation_icon_128: Image.Image = Image.open(
         os.path.normpath(
-            f"{Path(__file__).parent.parent.parent.parent}/resources/qt/images/collation_icon_128.png"
+            f"{Path(__file__).parents[3]}/resources/qt/images/collation_icon_128.png"
         )
     )
     collation_icon_128.load()
 
     tag_group_icon_128: Image.Image = Image.open(
         os.path.normpath(
-            f"{Path(__file__).parent.parent.parent.parent}/resources/qt/images/tag_group_icon_128.png"
+            f"{Path(__file__).parents[3]}/resources/qt/images/tag_group_icon_128.png"
         )
     )
     tag_group_icon_128.load()

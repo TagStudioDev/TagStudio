@@ -21,8 +21,9 @@ from PySide6.QtWidgets import (
 from src.core.library import Library, Tag
 from src.core.palette import ColorType, get_tag_color
 from src.core.ts_core import TAG_COLORS
-from src.qt.widgets import PanelWidget, PanelModal, TagWidget
-from src.qt.modals import TagSearchPanel
+from src.qt.widgets.panel import PanelWidget, PanelModal
+from src.qt.widgets.tag import TagWidget
+from src.qt.modals.tag_search import TagSearchPanel
 
 
 ERROR = f"[ERROR]"

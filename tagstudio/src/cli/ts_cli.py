@@ -12,6 +12,7 @@ import subprocess
 import sys
 import time
 from PIL import Image, ImageOps, ImageChops, UnidentifiedImageError
+from PIL.Image import DecompressionBombError
 import pillow_avif
 from pathlib import Path
 import traceback
@@ -83,18 +84,14 @@ class CliDriver:
         self.is_dupe_file_count_init: bool = False
 
         self.external_preview_size: tuple[int, int] = (960, 960)
-        epd_path = (
-            Path(__file__).parent.parent.parent
-            / "resources/cli/images/external_preview.png"
-        )
+        epd_path = Path(__file__).parents[2] / "resources/cli/images/external_preview.png"
         self.external_preview_default: Image = (
             Image.open(epd_path)
             if epd_path.exists()
             else Image.new(mode="RGB", size=(self.external_preview_size))
         )
         self.external_preview_default.thumbnail(self.external_preview_size)
-        epb_path = (
-            Path(__file__).parent.parent.parent / "resources/cli/images/no_preview.png"
+        epb_path = Path(__file__).parents[3] / "resources/cli/images/no_preview.png"
         )
         self.external_preview_broken: Image = (
             Image.open(epb_path)
@@ -642,8 +639,12 @@ class CliDriver:
                         # raw.thumbnail((512, 512))
                         raw.thumbnail(self.external_preview_size)
                         raw.save(external_preview_path)
-                except:
-                    print(f'{ERROR} Could not load image "{filepath}"')
+                except (
+                    UnidentifiedImageError,
+                    FileNotFoundError,
+                    DecompressionBombError,
+                ) as e:
+                    print(f'{ERROR} Could not load image "{filepath} due to {e}"')
                     if self.args.external_preview:
                         self.set_external_preview_broken()
             elif file_type in VIDEO_TYPES:
@@ -1102,23 +1103,33 @@ class CliDriver:
                             )
                             # sys.stdout.write(f'\r{INFO} Combining [{i+1}/{len(self.lib.entries)}]: {self.get_file_color(file_type)}{entry.path}{os.sep}{entry.filename}{RESET}')
                             # sys.stdout.flush()
+
                             if filepath.suffix in IMAGE_TYPES:
-                                with Image.open(
-                                    self.lib.library_dir / entry.path / entry.filename
-                                ) as pic:
-                                    if keep_aspect:
-                                        pic.thumbnail((thumb_size, thumb_size))
-                                    else:
-                                        pic = pic.resize((thumb_size, thumb_size))
-                                    if data_tint_mode and color:
-                                        pic = pic.convert(mode="RGB")
-                                        pic = ImageChops.hard_light(
-                                            pic,
-                                            Image.new(
-                                                "RGB", (thumb_size, thumb_size), color
-                                            ),
+                                try:
+                                    with Image.open(self.lib.library_dir / entry.path / entry.filename)
+                                    ) as pic:
+                                        if keep_aspect:
+                                            pic.thumbnail((thumb_size, thumb_size))
+                                        else:
+                                            pic = pic.resize((thumb_size, thumb_size))
+                                        if data_tint_mode and color:
+                                            pic = pic.convert(mode="RGB")
+                                            pic = ImageChops.hard_light(
+                                                pic,
+                                                Image.new(
+                                                    "RGB",
+                                                    (thumb_size, thumb_size),
+                                                    color,
+                                                ),
+                                            )
+                                        collage.paste(
+                                            pic, (y * thumb_size, x * thumb_size)
                                         )
-                                    collage.paste(pic, (y * thumb_size, x * thumb_size))
+                                except DecompressionBombError as e:
+                                    print(
+                                        f"[ERROR] One of the images was too big ({e})"
+                                    )
+
                             elif filepath.suffix in VIDEO_TYPES:
                                 video = cv2.VideoCapture(filepath)
                                 video.set(

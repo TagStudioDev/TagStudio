@@ -18,8 +18,9 @@ from PySide6.QtWidgets import (
 )
 
 from src.core.library import Library
-from src.qt.helpers import FunctionIterator, CustomRunnable
-from src.qt.widgets import ProgressWidget
+from src.qt.helpers.function_iterator import FunctionIterator
+from src.qt.helpers.custom_runnable import CustomRunnable
+from src.qt.widgets.progress import ProgressWidget
 
 # Only import for type checking/autocompletion, will not be imported at runtime.
 if typing.TYPE_CHECKING:

@@ -12,26 +12,13 @@
 # Licensed under the GPL-3.0 License.
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
-from PySide6.QtCore import QCoreApplication, QMetaObject, QRect, QSize, Qt
-from PySide6.QtGui import QFont, QAction
-from PySide6.QtWidgets import (
-    QComboBox,
-    QFrame,
-    QGridLayout,
-    QHBoxLayout,
-    QVBoxLayout,
-    QLayout,
-    QLineEdit,
-    QMainWindow,
-    QMenuBar,
-    QPushButton,
-    QScrollArea,
-    QSizePolicy,
-    QStatusBar,
-    QWidget,
-    QSplitter,
-    QMenu,
-)
+from PySide6.QtCore import (QCoreApplication, QMetaObject, QRect,
+							QSize, Qt)
+from PySide6.QtGui import (QFont, QAction)
+from PySide6.QtWidgets import (QComboBox, QFrame, QGridLayout,
+							   QHBoxLayout, QVBoxLayout, QLayout, QLineEdit, QMainWindow,
+							   QPushButton, QScrollArea, QSizePolicy,
+							   QStatusBar, QWidget, QSplitter)
 from src.qt.pagination import Pagination
 
 
@@ -181,10 +168,10 @@ class Ui_MainWindow(QMainWindow):
 		self.statusbar.setSizePolicy(sizePolicy1)
 		MainWindow.setStatusBar(self.statusbar)
 
-		menu_bar = self.menuBar()
-		self.setMenuBar(menu_bar)
+		# menu_bar = self.menuBar()
+		# self.setMenuBar(menu_bar)
 		# self.gridLayout.addWidget(menu_bar, 4, 0, 1, 1, Qt.AlignRight)
-		self.frame_layout.addWidget(menu_bar)
+		# self.frame_layout.addWidget(menu_bar)
 
 		self.retranslateUi(MainWindow)
 
@@ -215,26 +202,26 @@ class Ui_MainWindow(QMainWindow):
 		# time.sleep(0.02)  # sleep for 20ms
 		pass
 
-	def _createMenuBar(self, main_window):
-		menu_bar = QMenuBar(main_window)
-		file_menu = QMenu('&File', main_window)
-		edit_menu = QMenu('&Edit', main_window)
-		tools_menu = QMenu('&Tools', main_window)
-		macros_menu = QMenu('&Macros', main_window)
-		help_menu = QMenu('&Help', main_window)
+	# def _createMenuBar(self, main_window):
+	# 	menu_bar = QMenuBar(main_window)
+	# 	file_menu = QMenu('&File', main_window)
+	# 	edit_menu = QMenu('&Edit', main_window)
+	# 	tools_menu = QMenu('&Tools', main_window)
+	# 	macros_menu = QMenu('&Macros', main_window)
+	# 	help_menu = QMenu('&Help', main_window)
 
-		file_menu.addAction(QAction('&New Library', main_window))
-		file_menu.addAction(QAction('&Open Library', main_window))
-		file_menu.addAction(QAction('&Save Library', main_window))
-		file_menu.addAction(QAction('&Close Library', main_window))
+	# 	file_menu.addAction(QAction('&New Library', main_window))
+	# 	file_menu.addAction(QAction('&Open Library', main_window))
+	# 	file_menu.addAction(QAction('&Save Library', main_window))
+	# 	file_menu.addAction(QAction('&Close Library', main_window))
 
-		file_menu.addAction(QAction('&Refresh Directories', main_window))
-		file_menu.addAction(QAction('&Add New Files to Library', main_window))
+	# 	file_menu.addAction(QAction('&Refresh Directories', main_window))
+	# 	file_menu.addAction(QAction('&Add New Files to Library', main_window))
 
-		menu_bar.addMenu(file_menu)
-		menu_bar.addMenu(edit_menu)
-		menu_bar.addMenu(tools_menu)
-		menu_bar.addMenu(macros_menu)
-		menu_bar.addMenu(help_menu)
+	# 	menu_bar.addMenu(file_menu)
+	# 	menu_bar.addMenu(edit_menu)
+	# 	menu_bar.addMenu(tools_menu)
+	# 	menu_bar.addMenu(macros_menu)
+	# 	menu_bar.addMenu(help_menu)
 
-		main_window.setMenuBar(menu_bar)
+	# 	main_window.setMenuBar(menu_bar)

@@ -17,7 +17,7 @@ from PySide6.QtWidgets import (
 )
 
 from src.core.library import Library
-from src.qt.modals import MirrorEntriesModal
+from src.qt.modals.mirror_entities import MirrorEntriesModal
 
 # Only import for type checking/autocompletion, will not be imported at runtime.
 if typing.TYPE_CHECKING:
