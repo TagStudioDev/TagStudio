@@ -9,8 +9,8 @@ import os
 
 from src.core.library import Entry, Library
 
-VERSION: str = "9.2.0"  # Major.Minor.Patch
-VERSION_BRANCH: str = "Alpha"  # 'Alpha', 'Beta', or '' for Full Release
+VERSION: str = "9.2.1"  # Major.Minor.Patch
+VERSION_BRANCH: str = "Pre-Release"  # 'Alpha', 'Beta', or '' for Full Release
 
 # The folder & file names where TagStudio keeps its data relative to a library.
 TS_FOLDER_NAME: str = ".TagStudio"
@@ -300,7 +300,7 @@ class TagStudioCore:
             # input()
             pass
 
-    def build_url(self, entry_id: int, source: str) -> str:
+    def build_url(self, entry_id: int, source: str):
         """Tries to rebuild a source URL given a specific filename structure."""
 
         source = source.lower().replace("-", " ").replace("_", " ")

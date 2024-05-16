@@ -19,7 +19,7 @@ class FieldTemplate:
 
     def to_compressed_obj(self) -> dict:
         """An alternative to __dict__ that only includes fields containing non-default data."""
-        obj = {}
+        obj: dict = {}
         # All Field fields (haha) are mandatory, so no value checks are done.
         obj["id"] = self.id
         obj["name"] = self.name

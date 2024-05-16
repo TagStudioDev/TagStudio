@@ -36,18 +36,18 @@ logging.basicConfig(format="%(message)s", level=logging.INFO)
 
 def folders_to_tags(library: Library):
     logging.info("Converting folders to Tags")
-    tree = dict(dirs={})
+    tree: dict = dict(dirs={})
 
-    def add_tag_to_tree(list: list[Tag]):
+    def add_tag_to_tree(items: list[Tag]):
         branch = tree
-        for tag in list:
+        for tag in items:
             if tag.name not in branch["dirs"]:
                 branch["dirs"][tag.name] = dict(dirs={}, tag=tag)
             branch = branch["dirs"][tag.name]
 
-    def add_folders_to_tree(list: list[str]) -> Tag:
-        branch = tree
-        for folder in list:
+    def add_folders_to_tree(items: list[str]) -> Tag:
+        branch: dict = tree
+        for folder in items:
             if folder not in branch["dirs"]:
                 new_tag = Tag(
                     -1,
@@ -97,18 +97,18 @@ def reverse_tag(library: Library, tag: Tag, list: list[Tag]) -> list[Tag]:
 
 
 def generate_preview_data(library: Library):
-    tree = dict(dirs={}, files=[])
+    tree: dict = dict(dirs={}, files=[])
 
-    def add_tag_to_tree(list: list[Tag]):
-        branch = tree
-        for tag in list:
+    def add_tag_to_tree(items: list[Tag]):
+        branch: dict = tree
+        for tag in items:
             if tag.name not in branch["dirs"]:
                 branch["dirs"][tag.name] = dict(dirs={}, tag=tag, files=[])
             branch = branch["dirs"][tag.name]
 
-    def add_folders_to_tree(list: list[str]) -> Tag:
-        branch = tree
-        for folder in list:
+    def add_folders_to_tree(items: list[str]) -> dict:
+        branch: dict = tree
+        for folder in items:
             if folder not in branch["dirs"]:
                 new_tag = Tag(-1, folder, "", [], [], "green")
                 branch["dirs"][folder] = dict(dirs={}, tag=new_tag, files=[])
@@ -220,7 +220,7 @@ class FoldersToTagsModal(QWidget):
         self.apply_button.setMinimumWidth(100)
         self.apply_button.clicked.connect(self.on_apply)
 
-        self.showEvent = self.on_open
+        self.showEvent = self.on_open  # type: ignore
 
         self.root_layout.addWidget(self.title_widget)
         self.root_layout.addWidget(self.desc_widget)

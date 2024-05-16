@@ -5,7 +5,7 @@
 from enum import Enum
 
 
-class ColorType(Enum):
+class ColorType(int, Enum):
     PRIMARY = 0
     TEXT = 1
     BORDER = 2
@@ -278,7 +278,7 @@ _TAG_COLORS = {
 }
 
 
-def get_tag_color(type: ColorType, color: str):
+def get_tag_color(type, color):
     color = color.lower()
     try:
         if type == ColorType.TEXT:
