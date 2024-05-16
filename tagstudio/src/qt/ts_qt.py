@@ -199,11 +199,11 @@ class QtDriver(QObject):
                     f"[QT DRIVER] Config File does not exist creating {str(path)}"
                 )
             logging.info(f"[QT DRIVER] Using Config File {str(path)}")
-            self.settings = QSettings(str(path), QSettings.IniFormat)  # type: ignore
+            self.settings = QSettings(str(path), QSettings.Format.IniFormat)
         else:
             self.settings = QSettings(
-                QSettings.IniFormat,  # type: ignore
-                QSettings.UserScope,  # type: ignore
+                QSettings.Format.IniFormat,
+                QSettings.Scope.UserScope,
                 "TagStudio",
                 "TagStudio",
             )
@@ -561,7 +561,7 @@ class QtDriver(QObject):
                         i, self.nav_frames[self.cur_frame_idx].search_text
                     )
                 ),
-                logging.info(f"emitted {i}"),  # type: ignore
+                logging.info(f"emitted {i}"),
             )
         )
 
@@ -1024,6 +1024,7 @@ class QtDriver(QObject):
         self.update_thumbs()
         # logging.info(f'Refresh: {[len(x.contents) for x in self.nav_stack]}, Index {self.cur_page_idx}')
 
+    @typing.no_type_check
     def purge_item_from_navigation(self, type: ItemType, id: int):
         # logging.info(self.nav_frames)
         # TODO - types here are ambiguous
@@ -1034,9 +1035,9 @@ class QtDriver(QObject):
 
         for i, key in enumerate(self.frame_dict.keys(), start=0):
             for frame in self.frame_dict[key]:
-                while (type, id) in frame:  # type: ignore
+                while (type, id) in frame:
                     logging.info(f"Removing {id} from frame dict item {i}")
-                    frame.remove((type, id))  # type: ignore
+                    frame.remove((type, id))
 
         while (type, id) in self.selected:
             logging.info(f"Removing {id} from frame selected")
@@ -1550,7 +1551,7 @@ class QtDriver(QObject):
                 f'{self.lib.library_dir}/{TS_FOLDER_NAME}/{COLLAGE_FOLDER_NAME}/collage_{dt.utcnow().strftime("%F_%T").replace(":", "")}.png'
             )
             self.collage.save(filename)
-            self.collage = None  # type: ignore
+            self.collage = None
 
             end_time = time.time()
             self.main_window.statusbar.showMessage(

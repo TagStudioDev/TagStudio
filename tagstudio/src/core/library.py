@@ -11,6 +11,7 @@ import os
 import sys
 import time
 import traceback
+import typing
 import xml.etree.ElementTree as ET
 from enum import Enum
 from pathlib import Path
@@ -278,20 +279,21 @@ class Collation:
     def __repr__(self) -> str:
         return self.__str__()
 
+    @typing.no_type_check
     def __eq__(self, __value: object) -> bool:
         __value = cast(Self, __value)
         if os.name == "nt":
             return (
                 int(self.id) == int(__value.id)
-                and self.filename.lower() == __value.filename.lower()  # type: ignore
-                and self.path.lower() == __value.path.lower()  # type: ignore
+                and self.filename.lower() == __value.filename.lower()
+                and self.path.lower() == __value.path.lower()
                 and self.fields == __value.fields
             )
         else:
             return (
                 int(self.id) == int(__value.id)
-                and self.filename == __value.filename  # type: ignore
-                and self.path == __value.path  # type: ignore
+                and self.filename == __value.filename
+                and self.path == __value.path
                 and self.fields == __value.fields
             )
 
@@ -1215,7 +1217,7 @@ class Library:
 
         self._map_filenames_to_entry_ids()
         # TODO - the type here doesnt match but I cant reproduce calling this
-        self.remove_missing_matches(fixed_indices)  # type: ignore
+        self.remove_missing_matches(fixed_indices)
 
         # for i in fixed_indices:
         # 	# print(json_dump[i])

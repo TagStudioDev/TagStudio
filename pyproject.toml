@@ -5,3 +5,4 @@ exclude = ["main_window.py", "home_ui.py", "resources.py", "resources_rc.py"]
 strict_optional = false
 disable_error_code = ["union-attr", "annotation-unchecked", "import-untyped"]
 explicit_package_bases = true
+warn_unused_ignores = true

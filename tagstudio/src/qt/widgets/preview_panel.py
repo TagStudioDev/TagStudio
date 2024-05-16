@@ -6,7 +6,6 @@ import logging
 import os
 import time
 import typing
-from types import FunctionType
 from datetime import datetime as dt
 
 import cv2
