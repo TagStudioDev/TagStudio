@@ -90,24 +90,24 @@ class ThumbRenderer(QObject):
         math.floor(12 * font_pixel_ratio),
     )
 
-    def _render(
+    def render(
         self,
         timestamp: float,
         filepath,
         base_size: tuple[int, int],
-        pixelRatio: float,
-        isLoading=False,
+        pixel_ratio: float,
+        is_loading=False,
         gradient=False,
         update_on_ratio_change=False,
     ):
         """Internal renderer. Renders an entry/element thumbnail for the GUI."""
-        adj_size: int = 1
         image: Image.Image = None
         pixmap: QPixmap = None
         final: Image.Image = None
         extension: str = None
-        if ThumbRenderer.font_pixel_ratio != pixelRatio:
-            ThumbRenderer.font_pixel_ratio = pixelRatio
+        resampling_method = Image.Resampling.BILINEAR
+        if ThumbRenderer.font_pixel_ratio != pixel_ratio:
+            ThumbRenderer.font_pixel_ratio = pixel_ratio
             ThumbRenderer.ext_font = ImageFont.truetype(
                 os.path.normpath(
                     f"{Path(__file__).parents[3]}/resources/qt/fonts/Oxanium-Bold.ttf"
@@ -115,16 +115,14 @@ class ThumbRenderer(QObject):
                 math.floor(12 * ThumbRenderer.font_pixel_ratio),
             )
 
-        if isLoading or filepath:
-            adj_size = math.ceil(max(base_size[0], base_size[1]) * pixelRatio)
-
-        if isLoading:
+        adj_size = math.ceil(max(base_size[0], base_size[1]) * pixel_ratio)
+        if is_loading:
             final: Image.Image = ThumbRenderer.thumb_loading_512.resize(
-                (adj_size, adj_size), resample=Image.Resampling.BILINEAR
+                (adj_size, adj_size), resample=resampling_method
             )
             qim = ImageQt.ImageQt(final)
             pixmap = QPixmap.fromImage(qim)
-            pixmap.setDevicePixelRatio(pixelRatio)
+            pixmap.setDevicePixelRatio(pixel_ratio)
             if update_on_ratio_change:
                 self.updated_ratio.emit(1)
         elif filepath:
@@ -173,7 +171,7 @@ class ThumbRenderer(QObject):
                 # No Rendered Thumbnail ========================================
                 else:
                     image = ThumbRenderer.thumb_file_default_512.resize(
-                        (adj_size, adj_size), resample=Image.Resampling.BILINEAR
+                        (adj_size, adj_size), resample=resampling_method
                     )
 
                 if not image:
@@ -191,7 +189,7 @@ class ThumbRenderer(QObject):
 
                 if update_on_ratio_change:
                     self.updated_ratio.emit(new_x / new_y)
-                image = image.resize((new_x, new_y), resample=Image.Resampling.BILINEAR)
+                image = image.resize((new_x, new_y), resample=resampling_method)
                 if gradient:
                     mask: Image.Image = ThumbRenderer.thumb_mask_512.resize(
                         (adj_size, adj_size), resample=Image.Resampling.BILINEAR
@@ -208,7 +206,7 @@ class ThumbRenderer(QObject):
                     draw = ImageDraw.Draw(rec)
                     draw.rounded_rectangle(
                         (0, 0) + rec.size,
-                        (base_size[0] // 32) * scalar * pixelRatio,
+                        (base_size[0] // 32) * scalar * pixel_ratio,
                         fill="red",
                     )
                     rec = rec.resize(
@@ -224,59 +222,31 @@ class ThumbRenderer(QObject):
                 DecompressionBombError,
                 UnicodeDecodeError,
             ) as e:
-                logging.info(
-                    f"[ThumbRenderer][ERROR]: Coulnd't render thumbnail for {filepath} ({e})"
-                )
+                if e is not UnicodeDecodeError:
+                    logging.info(
+                        f"[ThumbRenderer][ERROR]: Coulnd't render thumbnail for {filepath} ({e})"
+                    )
                 if update_on_ratio_change:
                     self.updated_ratio.emit(1)
                 final = ThumbRenderer.thumb_broken_512.resize(
-                    (adj_size, adj_size), resample=Image.Resampling.BILINEAR
+                    (adj_size, adj_size), resample=resampling_method
                 )
 
             qim = ImageQt.ImageQt(final)
             if image:
                 image.close()
             pixmap = QPixmap.fromImage(qim)
-            pixmap.setDevicePixelRatio(pixelRatio)
+            pixmap.setDevicePixelRatio(pixel_ratio)
         if pixmap:
             self.updated.emit(
                 timestamp,
                 pixmap,
                 QSize(
-                    math.ceil(adj_size * 1 / pixelRatio),
-                    math.ceil(final.size[1] * 1 / pixelRatio),
+                    math.ceil(adj_size / pixel_ratio),
+                    math.ceil(final.size[1] / pixel_ratio),
                 ),
                 extension,
             )
 
         else:
             self.updated.emit(timestamp, QPixmap(), QSize(*base_size), extension)
-
-    def render(
-        self,
-        timestamp: float,
-        filepath,
-        base_size: tuple[int, int],
-        pixelRatio: float,
-        isLoading=False,
-    ):
-        """Renders an entry/element thumbnail for the GUI."""
-        self._render(timestamp, filepath, base_size, pixelRatio, isLoading, True)
-
-    def render_big(
-        self,
-        timestamp: float,
-        filepath,
-        base_size: tuple[int, int],
-        pixelRatio: float,
-        isLoading=False,
-    ):
-        """Renders a large, non-square entry/element thumbnail for the GUI."""
-        self._render(
-            timestamp,
-            filepath,
-            base_size,
-            pixelRatio,
-            isLoading,
-            update_on_ratio_change=True,
-        )

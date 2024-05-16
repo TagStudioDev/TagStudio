@@ -380,7 +380,7 @@ class PreviewPanel(QWidget):
         # if self.preview_img.iconSize().toTuple()[0] < self.preview_img.size().toTuple()[0] + 10:
         # 	if type(self.item) == Entry:
         # 		filepath = os.path.normpath(f'{self.lib.library_dir}/{self.item.path}/{self.item.filename}')
-        # 		self.tr.render_big(time.time(), filepath, self.preview_img.size().toTuple(), self.devicePixelRatio())
+        # 		self.tr.render(time.time(), filepath, self.preview_img.size().toTuple(), self.devicePixelRatio(),update_on_ratio_change=True)
 
         # logging.info(f' Img Aspect Ratio: {self.image_ratio}')
         # logging.info(f'  Max Button Size: {size}')
@@ -443,7 +443,14 @@ class PreviewPanel(QWidget):
                 self.preview_img.setCursor(Qt.CursorShape.ArrowCursor)
 
                 ratio: float = self.devicePixelRatio()
-                self.tr.render_big(time.time(), "", (512, 512), ratio, True)
+                self.tr.render(
+                    time.time(),
+                    "",
+                    (512, 512),
+                    ratio,
+                    True,
+                    update_on_ratio_change=True,
+                )
                 try:
                     self.preview_img.clicked.disconnect()
                 except RuntimeError:
@@ -467,7 +474,13 @@ class PreviewPanel(QWidget):
                     self.file_label.setFilePath(filepath)
                     window_title = filepath
                     ratio: float = self.devicePixelRatio()
-                    self.tr.render_big(time.time(), filepath, (512, 512), ratio)
+                    self.tr.render(
+                        time.time(),
+                        filepath,
+                        (512, 512),
+                        ratio,
+                        update_on_ratio_change=True,
+                    )
                     self.file_label.setText("\u200b".join(filepath))
                     self.file_label.setCursor(Qt.CursorShape.PointingHandCursor)
 
@@ -576,7 +589,14 @@ class PreviewPanel(QWidget):
                 self.preview_img.setCursor(Qt.CursorShape.ArrowCursor)
 
                 ratio: float = self.devicePixelRatio()
-                self.tr.render_big(time.time(), "", (512, 512), ratio, True)
+                self.tr.render(
+                    time.time(),
+                    "",
+                    (512, 512),
+                    ratio,
+                    True,
+                    update_on_ratio_change=True,
+                )
                 try:
                     self.preview_img.clicked.disconnect()
                 except RuntimeError:
@@ -658,7 +678,7 @@ class PreviewPanel(QWidget):
         # 		filepath = os.path.normpath(f'{self.lib.library_dir}/{item.path}/{item.filename}')
         # 		window_title = filepath
         # 		ratio: float = self.devicePixelRatio()
-        # 		self.tr.render_big(time.time(), filepath, (512, 512), ratio)
+        # 		self.tr.render(time.time(), filepath, (512, 512), ratio,update_on_ratio_change=True)
         # 		self.file_label.setText("\u200b".join(filepath))
 
         # 		# TODO: Deal with this later.
