@@ -29,6 +29,14 @@ def main():
         type=str,
         help="Path to a TagStudio Library folder to open on start.",
     )
+    parser.add_argument(
+        "-c",
+        "--config-file",
+        dest="config_file",
+        type=str,
+        help="Path to a TagStudio .ini or .plist config file to use.",
+    )
+
     # parser.add_argument('--browse', dest='browse', action='store_true',
     #                     help='Jumps to entry browsing on startup.')
     # parser.add_argument('--external_preview', dest='external_preview', action='store_true',
