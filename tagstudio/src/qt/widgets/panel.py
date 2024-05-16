@@ -19,9 +19,9 @@ class PanelModal(QWidget):
         widget: "PanelWidget",
         title: str,
         window_title: str,
-        done_callback: FunctionType = None,
+        done_callback: Callable = None,
         #  cancel_callback:FunctionType=None,
-        save_callback: FunctionType = None,
+        save_callback: Callable = None,
         has_save: bool = False,
     ):
         # [Done]

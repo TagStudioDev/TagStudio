@@ -6,7 +6,6 @@ import logging
 import os
 import time
 import typing
-from types import FunctionType
 from datetime import datetime as dt
 
 import cv2
@@ -67,8 +66,8 @@ class PreviewPanel(QWidget):
         self.isOpen: bool = False
         # self.filepath = None
         # self.item = None # DEPRECATED, USE self.selected
-        self.common_fields = []
-        self.mixed_fields = []
+        self.common_fields: list = []
+        self.mixed_fields: list = []
         self.selected: list[tuple[ItemType, int]] = []  # New way of tracking items
         self.tag_callback = None
         self.containers: list[QWidget] = []
@@ -174,7 +173,7 @@ class PreviewPanel(QWidget):
         info_layout.addWidget(scroll_area)
 
         # keep list of rendered libraries to avoid needless re-rendering
-        self.render_libs = set()
+        self.render_libs: set = set()
         self.libs_layout = QVBoxLayout()
         self.fill_libs_widget(self.libs_layout)
 
@@ -182,7 +181,8 @@ class PreviewPanel(QWidget):
         self.libs_flow_container.setObjectName("librariesList")
         self.libs_flow_container.setLayout(self.libs_layout)
         self.libs_flow_container.setSizePolicy(
-            QSizePolicy.Preferred, QSizePolicy.Maximum
+            QSizePolicy.Preferred,  # type: ignore
+            QSizePolicy.Maximum,  # type: ignore
         )
 
         # set initial visibility based on settings
@@ -233,7 +233,7 @@ class PreviewPanel(QWidget):
         settings.beginGroup(SettingItems.LIBS_LIST)
         lib_items: dict[str, tuple[str, str]] = {}
         for item_tstamp in settings.allKeys():
-            val = settings.value(item_tstamp)
+            val: str = settings.value(item_tstamp)  # type: ignore
             cut_val = val
             if len(val) > 45:
                 cut_val = f"{val[0:10]} ... {val[-10:]}"
@@ -261,13 +261,13 @@ class PreviewPanel(QWidget):
                 if child.widget() is not None:
                     child.widget().deleteLater()
                 elif child.layout() is not None:
-                    clear_layout(child.layout())
+                    clear_layout(child.layout())  # type: ignore
 
         # remove any potential previous items
         clear_layout(layout)
 
         label = QLabel("Recent Libraries")
-        label.setAlignment(Qt.AlignCenter)
+        label.setAlignment(Qt.AlignCenter)  # type: ignore
 
         row_layout = QHBoxLayout()
         row_layout.addWidget(label)
@@ -348,8 +348,8 @@ class PreviewPanel(QWidget):
         # logging.info(f'')
         # self.preview_img.setMinimumSize(64,64)
 
-        adj_width = size[0]
-        adj_height = size[1]
+        adj_width: float = size[0]
+        adj_height: float = size[1]
         # Landscape
         if self.image_ratio > 1:
             # logging.info('Landscape')
@@ -371,8 +371,8 @@ class PreviewPanel(QWidget):
 
         # self.preview_img.setMinimumSize(s)
         # self.preview_img.setMaximumSize(s_max)
-        adj_size = QSize(adj_width, adj_height)
-        self.img_button_size = (adj_width, adj_height)
+        adj_size = QSize(int(adj_width), int(adj_height))
+        self.img_button_size = (int(adj_width), int(adj_height))
         self.preview_img.setMaximumSize(adj_size)
         self.preview_img.setIconSize(adj_size)
         # self.preview_img.setMinimumSize(adj_size)
@@ -466,7 +466,7 @@ class PreviewPanel(QWidget):
                     )
                     self.file_label.setFilePath(filepath)
                     window_title = filepath
-                    ratio: float = self.devicePixelRatio()
+                    ratio = self.devicePixelRatio()
                     self.tr.render_big(time.time(), filepath, (512, 512), ratio)
                     self.file_label.setText("\u200b".join(filepath))
                     self.file_label.setCursor(Qt.CursorShape.PointingHandCursor)
@@ -575,7 +575,7 @@ class PreviewPanel(QWidget):
                 )
                 self.preview_img.setCursor(Qt.CursorShape.ArrowCursor)
 
-                ratio: float = self.devicePixelRatio()
+                ratio = self.devicePixelRatio()
                 self.tr.render_big(time.time(), "", (512, 512), ratio, True)
                 try:
                     self.preview_img.clicked.disconnect()
@@ -796,7 +796,6 @@ class PreviewPanel(QWidget):
             # container.set_editable(True)
             container.set_inline(False)
             # Normalize line endings in any text content.
-            text: str = ""
             if not mixed:
                 text = self.lib.get_field_attr(field, "content").replace("\r", "\n")
             else:
@@ -836,7 +835,6 @@ class PreviewPanel(QWidget):
             # container.set_editable(True)
             container.set_inline(False)
             # Normalize line endings in any text content.
-            text: str = ""
             if not mixed:
                 text = self.lib.get_field_attr(field, "content").replace("\r", "\n")
             else:
@@ -877,7 +875,7 @@ class PreviewPanel(QWidget):
                 self.lib.get_field_attr(field, "content")
             )
             title = f"{self.lib.get_field_attr(field, 'name')} (Collation)"
-            text: str = f"{collation.title} ({len(collation.e_ids_and_pages)} Items)"
+            text = f"{collation.title} ({len(collation.e_ids_and_pages)} Items)"
             if len(self.selected) == 1:
                 text += f" - Page {collation.e_ids_and_pages[[x[0] for x in collation.e_ids_and_pages].index(self.selected[0][1])][1]}"
             inner_container = TextWidget(title, text)
@@ -953,7 +951,7 @@ class PreviewPanel(QWidget):
         container.setHidden(False)
         self.place_add_field_button()
 
-    def remove_field(self, field: object):
+    def remove_field(self, field: dict):
         """Removes a field from all selected Entries, given a field object."""
         for item_pair in self.selected:
             if item_pair[0] == ItemType.ENTRY:
@@ -975,7 +973,7 @@ class PreviewPanel(QWidget):
                     )
                     pass
 
-    def update_field(self, field: object, content):
+    def update_field(self, field: dict, content):
         """Removes a field from all selected Entries, given a field object."""
         field = dict(field)
         for item_pair in self.selected:
@@ -991,7 +989,7 @@ class PreviewPanel(QWidget):
                     )
                     pass
 
-    def remove_message_box(self, prompt: str, callback: FunctionType) -> int:
+    def remove_message_box(self, prompt: str, callback: typing.Callable) -> None:
         remove_mb = QMessageBox()
         remove_mb.setText(prompt)
         remove_mb.setWindowTitle("Remove Field")
