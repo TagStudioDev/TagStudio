@@ -13,6 +13,7 @@ import math
 import os
 import sys
 import time
+import typing
 import webbrowser
 from datetime import datetime as dt
 from pathlib import Path
@@ -198,10 +199,13 @@ class QtDriver(QObject):
                     f"[QT DRIVER] Config File does not exist creating {str(path)}"
                 )
             logging.info(f"[QT DRIVER] Using Config File {str(path)}")
-            self.settings = QSettings(str(path), QSettings.IniFormat)
+            self.settings = QSettings(str(path), QSettings.IniFormat)  # type: ignore
         else:
             self.settings = QSettings(
-                QSettings.IniFormat, QSettings.UserScope, "TagStudio", "TagStudio"
+                QSettings.IniFormat,  # type: ignore
+                QSettings.UserScope,  # type: ignore
+                "TagStudio",
+                "TagStudio",
             )
             logging.info(
                 f"[QT DRIVER] Config File not specified, defaulting to {self.settings.fileName()}"
@@ -278,13 +282,13 @@ class QtDriver(QObject):
 
         splash_pixmap = QPixmap(":/images/splash.png")
         splash_pixmap.setDevicePixelRatio(self.main_window.devicePixelRatio())
-        self.splash = QSplashScreen(splash_pixmap, Qt.WindowStaysOnTopHint)
+        self.splash = QSplashScreen(splash_pixmap, Qt.WindowStaysOnTopHint)  # type: ignore
         # self.splash.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
         self.splash.show()
 
         if os.name == "nt":
             appid = "cyanvoxel.tagstudio.9"
-            ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(appid)
+            ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(appid)  # type: ignore
 
         if sys.platform != "darwin":
             icon = QIcon()
@@ -397,7 +401,7 @@ class QtDriver(QObject):
         check_action = QAction("Open library on start", self)
         check_action.setCheckable(True)
         check_action.setChecked(
-            self.settings.value(SettingItems.START_LOAD_LAST, True, type=bool)
+            self.settings.value(SettingItems.START_LOAD_LAST, True, type=bool)  # type: ignore
         )
         check_action.triggered.connect(
             lambda checked: self.settings.setValue(
@@ -452,15 +456,14 @@ class QtDriver(QObject):
         self.sort_fields_action.setToolTip("Alt+S")
         macros_menu.addAction(self.sort_fields_action)
 
-        folders_to_tags_action = QAction("Create Tags From Folders", menu_bar)
         show_libs_list_action = QAction("Show Recent Libraries", menu_bar)
         show_libs_list_action.setCheckable(True)
         show_libs_list_action.setChecked(
-            self.settings.value(SettingItems.WINDOW_SHOW_LIBS, True, type=bool)
+            self.settings.value(SettingItems.WINDOW_SHOW_LIBS, True, type=bool)  # type: ignore
         )
         show_libs_list_action.triggered.connect(
             lambda checked: (
-                self.settings.setValue(SettingItems.WINDOW_SHOW_LIBS, checked),
+                self.settings.setValue(SettingItems.WINDOW_SHOW_LIBS, checked),  # type: ignore
                 self.toggle_libs_list(checked),
             )
         )
@@ -1355,7 +1358,8 @@ class QtDriver(QObject):
         self.settings.endGroup()
         self.settings.sync()
 
-    def update_libs_list(self, path: str | Path):
+    @typing.no_type_check
+    def update_libs_list(self, path: Path):
         """add library to list in SettingItems.LIBS_LIST"""
         ITEMS_LIMIT = 5
         path = Path(path)

@@ -174,7 +174,7 @@ class PreviewPanel(QWidget):
         info_layout.addWidget(scroll_area)
 
         # keep list of rendered libraries to avoid needless re-rendering
-        self.render_libs = set()
+        self.render_libs: set = set()
         self.libs_layout = QVBoxLayout()
         self.fill_libs_widget(self.libs_layout)
 
@@ -182,7 +182,8 @@ class PreviewPanel(QWidget):
         self.libs_flow_container.setObjectName("librariesList")
         self.libs_flow_container.setLayout(self.libs_layout)
         self.libs_flow_container.setSizePolicy(
-            QSizePolicy.Preferred, QSizePolicy.Maximum
+            QSizePolicy.Preferred,  # type: ignore
+            QSizePolicy.Maximum,  # type: ignore
         )
 
         # set initial visibility based on settings
@@ -233,7 +234,7 @@ class PreviewPanel(QWidget):
         settings.beginGroup(SettingItems.LIBS_LIST)
         lib_items: dict[str, tuple[str, str]] = {}
         for item_tstamp in settings.allKeys():
-            val = settings.value(item_tstamp)
+            val: str = settings.value(item_tstamp)  # type: ignore
             cut_val = val
             if len(val) > 45:
                 cut_val = f"{val[0:10]} ... {val[-10:]}"
@@ -261,13 +262,13 @@ class PreviewPanel(QWidget):
                 if child.widget() is not None:
                     child.widget().deleteLater()
                 elif child.layout() is not None:
-                    clear_layout(child.layout())
+                    clear_layout(child.layout())  # type: ignore
 
         # remove any potential previous items
         clear_layout(layout)
 
         label = QLabel("Recent Libraries")
-        label.setAlignment(Qt.AlignCenter)
+        label.setAlignment(Qt.AlignCenter)  # type: ignore
 
         row_layout = QHBoxLayout()
         row_layout.addWidget(label)
