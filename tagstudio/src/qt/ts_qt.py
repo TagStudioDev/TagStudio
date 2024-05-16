@@ -1403,7 +1403,7 @@ class QtDriver(QObject):
             # 	self.lib.refresh_missing_files()
             # title_text = f'{self.base_title} - Library \'{self.lib.library_dir}\''
             # self.main_window.setWindowTitle(title_text)
-            self.update_libs_list(path)
+            pass
 
         else:
             logging.info(
@@ -1412,6 +1412,7 @@ class QtDriver(QObject):
             print(f"Library Creation Return Code: {self.lib.create_library(path)}")
             self.add_new_files_callback()
 
+        self.update_libs_list(path)
         title_text = f"{self.base_title} - Library '{self.lib.library_dir}'"
         self.main_window.setWindowTitle(title_text)
 
