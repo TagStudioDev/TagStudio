@@ -348,7 +348,7 @@ class VideoPlayer(QGraphicsView):
     def resizeEvent(self, event: QResizeEvent) -> None:
         # Keeps the video preview in the center of the screen.
         self.centerOn(self.video_preview)
-        self.resizeVideo(QSize(self.video_preview.size()))
+        self.resizeVideo(QSize(int(self.video_preview.size().width()), int(self.video_preview.size().height())))
         return
         # return super().resizeEvent(event)\
 
