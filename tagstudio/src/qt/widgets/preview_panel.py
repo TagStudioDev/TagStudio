@@ -948,6 +948,7 @@ class PreviewPanel(QWidget):
             container.set_remove_callback(
                 lambda: self.remove_message_box(prompt=prompt, callback=callback)
             )
+        container.edit_button.setHidden(True)
         container.setHidden(False)
         self.place_add_field_button()
 
