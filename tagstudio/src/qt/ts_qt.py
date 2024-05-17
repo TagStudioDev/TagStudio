@@ -523,7 +523,6 @@ class QtDriver(QObject):
                 QColor("#9782ff"),
             )
             self.open_library(lib)
-            self.lib.refresh_on_changes(self.filter_items)
 
         if self.args.ci:
             # gracefully terminate the app in CI environment
@@ -603,6 +602,7 @@ class QtDriver(QObject):
 
     def shutdown(self):
         """Save Library on Application Exit"""
+        self.lib.observer.stop()
         if self.lib.library_dir:
             self.save_library()
             self.settings.setValue(SettingItems.LAST_LIBRARY, self.lib.library_dir)
@@ -1218,14 +1218,18 @@ class QtDriver(QObject):
                             lambda checked=False, entry=entry: self.select_item(
                                 ItemType.ENTRY,
                                 entry.id,
-                                append=True
-                                if QGuiApplication.keyboardModifiers()
-                                == Qt.KeyboardModifier.ControlModifier
-                                else False,
-                                bridge=True
-                                if QGuiApplication.keyboardModifiers()
-                                == Qt.KeyboardModifier.ShiftModifier
-                                else False,
+                                append=(
+                                    True
+                                    if QGuiApplication.keyboardModifiers()
+                                    == Qt.KeyboardModifier.ControlModifier
+                                    else False
+                                ),
+                                bridge=(
+                                    True
+                                    if QGuiApplication.keyboardModifiers()
+                                    == Qt.KeyboardModifier.ShiftModifier
+                                    else False
+                                ),
                             )
                         )
                     )
@@ -1425,6 +1429,7 @@ class QtDriver(QObject):
         self.selected.clear()
         self.preview_panel.update_widgets()
         self.filter_items()
+        self.lib.refresh_on_changes(self.filter_items)
 
     def create_collage(self) -> None:
         """Generates and saves an image collage based on Library Entries."""
@@ -1482,15 +1487,21 @@ class QtDriver(QObject):
         thumb_size: int = (
             32
             if (full_thumb_size == 0)
-            else 64
-            if (full_thumb_size == 1)
-            else 128
-            if (full_thumb_size == 2)
-            else 256
-            if (full_thumb_size == 3)
-            else 512
-            if (full_thumb_size == 4)
-            else 32
+            else (
+                64
+                if (full_thumb_size == 1)
+                else (
+                    128
+                    if (full_thumb_size == 2)
+                    else (
+                        256
+                        if (full_thumb_size == 3)
+                        else 512
+                        if (full_thumb_size == 4)
+                        else 32
+                    )
+                )
+            )
         )
         thumb_size = 16
 

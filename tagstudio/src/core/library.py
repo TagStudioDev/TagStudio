@@ -483,6 +483,7 @@ class Library:
 
         # Refresh on changes
         self.observer = Observer()
+        self.observer.start()
 
     def create_library(self, path) -> int:
         """
@@ -934,8 +935,7 @@ class Library:
         self._tag_entry_ref_map.clear()
 
         if self.observer.is_alive():
-            self.observer.stop()
-            self.observer.join()
+            self.observer.unschedule_all()
 
     def refresh_dir(self) -> Generator:
         """Scans a directory for files, and adds those relative filenames to internal variables."""
@@ -1004,7 +1004,6 @@ class Library:
         self.observer.schedule(
             IsDirModifiedHandler(self, callback), path=self.library_dir, recursive=True
         )
-        self.observer.start()
 
     def refresh_missing_files(self):
         """Tracks the number of Entries that point to an invalid file path."""
