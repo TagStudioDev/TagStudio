@@ -7,6 +7,7 @@ drop table if exists entry_attribute;
 drop table if exists alias;
 drop table if exists entry_page;
 
+PRAGMA user_version = 1; /* TagStudio v9.2.0 - Current */
 
 create table location
 (
