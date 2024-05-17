@@ -136,9 +136,9 @@ class VideoPlayer(QGraphicsView):
         autoplay_action.setCheckable(True)
         self.addAction(autoplay_action)
         autoplay_action.triggered.connect(lambda: self.toggleAutoplay())
-        autoplay_action.setChecked( # type: ignore
-            self.driver.settings.value(SettingItems.AUTOPLAY, True, bool) # type: ignore
-        )  # type: ignore
+        autoplay_action.setChecked(
+            self.driver.settings.value(SettingItems.AUTOPLAY, True, bool)  # type: ignore
+        )
         self.autoplay = autoplay_action
 
         open_file_action = QAction("Open file", self)
