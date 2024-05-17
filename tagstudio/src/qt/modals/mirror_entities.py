@@ -125,7 +125,7 @@ class MirrorEntriesModal(QWidget):
         )
 
     def mirror_entries_runnable(self):
-        mirrored = []
+        mirrored: list = []
         for i, dupe in enumerate(self.lib.dupe_files):
             # pb.setValue(i)
             # pb.setLabelText(f'Mirroring {i}/{len(self.lib.dupe_files)} Entries')

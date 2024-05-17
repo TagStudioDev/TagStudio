@@ -5,7 +5,7 @@
 """TagStudio launcher."""
 
 from src.core.ts_core import TagStudioCore
-from src.cli.ts_cli import CliDriver
+from src.cli.ts_cli import CliDriver  # type: ignore
 from src.qt.ts_qt import QtDriver
 import argparse
 import traceback
