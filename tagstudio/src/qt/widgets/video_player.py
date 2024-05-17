@@ -35,6 +35,7 @@ from src.qt.helpers.file_opener import FileOpenerHelper
 from src.core.ts_core import VIDEO_TYPES, AUDIO_TYPES
 from PIL import Image, ImageDraw
 from src.core.enums import SettingItems
+
 if typing.TYPE_CHECKING:
     from src.qt.ts_qt import QtDriver
 
@@ -135,7 +136,9 @@ class VideoPlayer(QGraphicsView):
         autoplay_action.setCheckable(True)
         self.addAction(autoplay_action)
         autoplay_action.triggered.connect(lambda: self.toggleAutoplay())
-        autoplay_action.setChecked(self.driver.settings.value(SettingItems.AUTOPLAY, True, bool)) # type: ignore        
+        autoplay_action.setChecked(
+            self.driver.settings.value(SettingItems.AUTOPLAY, True, bool)
+        )  # type: ignore
         self.autoplay = autoplay_action
 
         open_file_action = QAction("Open file", self)
@@ -194,7 +197,7 @@ class VideoPlayer(QGraphicsView):
         if (
             obj == self.play_pause
             and event.type() == QEvent.Type.MouseButtonPress
-            and event.button() == Qt.MouseButton.LeftButton # type: ignore
+            and event.button() == Qt.MouseButton.LeftButton  # type: ignore
         ):
             if self.player.hasVideo():
                 self.pauseToggle()
@@ -202,7 +205,7 @@ class VideoPlayer(QGraphicsView):
         if (
             obj == self.mute_button
             and event.type() == QEvent.Type.MouseButtonPress
-            and event.button() == Qt.MouseButton.LeftButton # type: ignore
+            and event.button() == Qt.MouseButton.LeftButton  # type: ignore
         ):
             if self.player.hasAudio():
                 self.muteToggle()
@@ -331,7 +334,7 @@ class VideoPlayer(QGraphicsView):
             fill=(0, 0, 0, 0),
         )
         mask = mask.getchannel("A").toqpixmap()
-        self.setMask(QRegion(QBitmap(mask))) # type: ignore
+        self.setMask(QRegion(QBitmap(mask)))  # type: ignore
 
     def keepControlsInPlace(self) -> None:
         # Keeps the video controls in the places they should be.
@@ -348,7 +351,12 @@ class VideoPlayer(QGraphicsView):
     def resizeEvent(self, event: QResizeEvent) -> None:
         # Keeps the video preview in the center of the screen.
         self.centerOn(self.video_preview)
-        self.resizeVideo(QSize(int(self.video_preview.size().width()), int(self.video_preview.size().height())))
+        self.resizeVideo(
+            QSize(
+                int(self.video_preview.size().width()),
+                int(self.video_preview.size().height()),
+            )
+        )
         return
         # return super().resizeEvent(event)\
 
