@@ -432,9 +432,7 @@ class PreviewPanel(QWidget):
         self.isOpen = True
         # self.tag_callback = tag_callback if tag_callback else None
         window_title = ""
-        self.preview_img.show()
-        self.preview_vid.stop()
-        self.preview_vid.hide()
+
         # update list of libraries
         self.fill_libs_widget(self.libs_layout)
 
@@ -472,6 +470,9 @@ class PreviewPanel(QWidget):
                 item: Entry = self.lib.get_entry(self.driver.selected[0][1])
                 # If a new selection is made, update the thumbnail and filepath.
                 if not self.selected or self.selected != self.driver.selected:
+                    self.preview_img.show()
+                    self.preview_vid.stop()
+                    self.preview_vid.hide()
                     filepath = os.path.normpath(
                         f"{self.lib.library_dir}/{item.path}/{item.filename}"
                     )

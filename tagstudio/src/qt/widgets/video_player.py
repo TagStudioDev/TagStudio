@@ -34,7 +34,7 @@ from src.qt.helpers.file_opener import FileOpenerHelper
 
 from src.core.ts_core import VIDEO_TYPES, AUDIO_TYPES
 from PIL import Image, ImageDraw
-
+from src.core.enums import SettingItems
 if typing.TYPE_CHECKING:
     from src.qt.ts_qt import QtDriver
 
@@ -105,8 +105,8 @@ class VideoPlayer(QGraphicsView):
         self.scene().addWidget(self.play_pause)
         self.play_pause.resize(100, 100)
         self.play_pause.move(
-            self.width() / 2 - self.play_pause.size().width() / 2,
-            self.height() / 2 - self.play_pause.size().height() / 2,
+            int(self.width() / 2 - self.play_pause.size().width() / 2),
+            int(self.height() / 2 - self.play_pause.size().height() / 2),
         )
         self.play_pause.hide()
 
@@ -117,8 +117,8 @@ class VideoPlayer(QGraphicsView):
         self.scene().addWidget(self.mute_button)
         self.mute_button.resize(40, 40)
         self.mute_button.move(
-            self.width() - self.mute_button.size().width() / 2,
-            self.height() - self.mute_button.size().height() / 2,
+            int(self.width() - self.mute_button.size().width() / 2),
+            int(self.height() - self.mute_button.size().height() / 2),
         )
         self.mute_button.hide()
         # self.fullscreen_button = QSvgWidget('./tagstudio/resources/pause.svg', self)
@@ -133,11 +133,9 @@ class VideoPlayer(QGraphicsView):
         self.opener = FileOpenerHelper(filepath=self.filepath)
         autoplay_action = QAction("Autoplay", self)
         autoplay_action.setCheckable(True)
-        autoplay_action.setChecked(
-            self.driver.settings.value("autoplay_videos", True, bool)
-        )
-        autoplay_action.triggered.connect(lambda: self.toggleAutoplay())
         self.addAction(autoplay_action)
+        autoplay_action.triggered.connect(lambda: self.toggleAutoplay())
+        autoplay_action.setChecked(self.driver.settings.value(SettingItems.AUTOPLAY, True, bool)) # type: ignore        
         self.autoplay = autoplay_action
 
         open_file_action = QAction("Open file", self)
@@ -152,7 +150,8 @@ class VideoPlayer(QGraphicsView):
         super().close(*args, **kwargs)
 
     def toggleAutoplay(self) -> None:
-        self.driver.settings.setValue("autoplay_videos", self.autoplay.isChecked())
+        self.driver.settings.setValue(SettingItems.AUTOPLAY, self.autoplay.isChecked())
+        self.driver.settings.sync()
 
     def checkMediaStatus(self, media_status: QMediaPlayer.MediaStatus) -> None:
         # logging.info(media_status)
@@ -167,8 +166,10 @@ class VideoPlayer(QGraphicsView):
             self.player.setPosition(0)
             # logging.info(f'Set muted to true.')
             if self.driver.settings.value("autoplay_videos", True, bool):
+                logging.info(self.driver.settings.value("autoplay_videos", True, bool))
                 self.player.play()
             else:
+                logging.info("Paused")
                 self.player.pause()
             self.opener.set_filepath(self.filepath)
             self.keepControlsInPlace()
@@ -193,7 +194,7 @@ class VideoPlayer(QGraphicsView):
         if (
             obj == self.play_pause
             and event.type() == QEvent.Type.MouseButtonPress
-            and event.button() == Qt.MouseButton.LeftButton
+            and event.button() == Qt.MouseButton.LeftButton # type: ignore
         ):
             if self.player.hasVideo():
                 self.pauseToggle()
@@ -201,7 +202,7 @@ class VideoPlayer(QGraphicsView):
         if (
             obj == self.mute_button
             and event.type() == QEvent.Type.MouseButtonPress
-            and event.button() == Qt.MouseButton.LeftButton
+            and event.button() == Qt.MouseButton.LeftButton # type: ignore
         ):
             if self.player.hasAudio():
                 self.muteToggle()
@@ -245,6 +246,7 @@ class VideoPlayer(QGraphicsView):
         self.mute_button.show()
         # self.fullscreen_button.show()
         self.keepControlsInPlace()
+        self.updateControls()
         # rcontent = self.contentsRect()
         # self.setSceneRect(0, 0, rcontent.width(), rcontent.height())
         return super().underMouse()
@@ -329,17 +331,17 @@ class VideoPlayer(QGraphicsView):
             fill=(0, 0, 0, 0),
         )
         mask = mask.getchannel("A").toqpixmap()
-        self.setMask(QRegion(QBitmap(mask)))
+        self.setMask(QRegion(QBitmap(mask))) # type: ignore
 
     def keepControlsInPlace(self) -> None:
         # Keeps the video controls in the places they should be.
         self.play_pause.move(
-            self.width() / 2 - self.play_pause.size().width() / 2,
-            self.height() / 2 - self.play_pause.size().height() / 2,
+            int(self.width() / 2 - self.play_pause.size().width() / 2),
+            int(self.height() / 2 - self.play_pause.size().height() / 2),
         )
         self.mute_button.move(
-            self.width() - self.mute_button.size().width() - 10,
-            self.height() - self.mute_button.size().height() - 10,
+            int(self.width() - self.mute_button.size().width() - 10),
+            int(self.height() - self.mute_button.size().height() - 10),
         )
         # self.fullscreen_button.move(-self.fullscreen_button.size().width()-10, self.height() - self.fullscreen_button.size().height()-10)
 
