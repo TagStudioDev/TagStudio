@@ -1164,7 +1164,7 @@ class Library:
 
         # for file in self.missing_files:
         path = Path(file)
-        for root, dirs, files in self.library_dir.walk():
+        for root, dirs, files in os.walk(self.library_dir):
             for f in files:
                 # print(f'{tail} --- {f}')
                 if path.name == f and "$recycle.bin" not in str(root).lower():
