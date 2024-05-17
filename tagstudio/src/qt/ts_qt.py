@@ -18,8 +18,6 @@ import webbrowser
 from datetime import datetime as dt
 from pathlib import Path
 from queue import Queue
-from watchdog.observers import Observer
-from watchdog.events import DirModifiedEvent, FileSystemEventHandler
 from typing import Optional
 
 from PIL import Image
@@ -1219,16 +1217,12 @@ class QtDriver(QObject):
                                 ItemType.ENTRY,
                                 entry.id,
                                 append=(
-                                    True
-                                    if QGuiApplication.keyboardModifiers()
+                                    QGuiApplication.keyboardModifiers()
                                     == Qt.KeyboardModifier.ControlModifier
-                                    else False
                                 ),
                                 bridge=(
-                                    True
-                                    if QGuiApplication.keyboardModifiers()
+                                    QGuiApplication.keyboardModifiers()
                                     == Qt.KeyboardModifier.ShiftModifier
-                                    else False
                                 ),
                             )
                         )
@@ -1484,25 +1478,13 @@ class QtDriver(QObject):
             # 	], prompt='', required=True)
             full_thumb_size = 0
 
-        thumb_size: int = (
-            32
-            if (full_thumb_size == 0)
-            else (
-                64
-                if (full_thumb_size == 1)
-                else (
-                    128
-                    if (full_thumb_size == 2)
-                    else (
-                        256
-                        if (full_thumb_size == 3)
-                        else 512
-                        if (full_thumb_size == 4)
-                        else 32
-                    )
-                )
-            )
-        )
+        size_options = {
+            1: 64,
+            2: 128,
+            3: 256,
+            4: 512,
+        }
+        thumb_size = size_options.get(full_thumb_size, 32)
         thumb_size = 16
 
         # if len(com) > 1 and com[1] == 'keep-aspect':
