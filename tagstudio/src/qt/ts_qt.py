@@ -64,6 +64,8 @@ from src.core.constants import (
     TS_FOLDER_NAME,
     VERSION_BRANCH,
     VERSION,
+    TAG_FAVORITE,
+    TAG_ARCHIVED,
 )
 from src.core.utils.web import strip_web_protocol
 from src.qt.flowlayout import FlowLayout

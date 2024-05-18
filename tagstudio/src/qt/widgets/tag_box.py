@@ -10,6 +10,7 @@ import typing
 from PySide6.QtCore import Signal, Qt
 from PySide6.QtWidgets import QPushButton
 
+from src.core.constants import TAG_FAVORITE, TAG_ARCHIVED
 from src.core.library import Library, Tag
 from src.qt.flowlayout import FlowLayout
 from src.qt.widgets.fields import FieldWidget

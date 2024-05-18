@@ -5,7 +5,6 @@
 """The Library object and related methods for TagStudio."""
 
 import datetime
-import json
 import logging
 import os
 import time
@@ -17,8 +16,6 @@ from enum import Enum
 from pathlib import Path
 from typing import cast, Generator
 from typing_extensions import Self
-
-import ujson
 
 from src.core.enums import FieldID
 from src.core.json_typing import JsonCollation, JsonEntry, JsonLibary, JsonTag

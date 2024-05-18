@@ -7,7 +7,6 @@ import logging
 import os
 import time
 import typing
-from types import FunctionType
 from pathlib import Path
 from typing import Optional
 
@@ -25,7 +24,13 @@ from PySide6.QtWidgets import (
 
 from src.core.enums import FieldID
 from src.core.library import ItemType, Library, Entry
-from src.core.constants import AUDIO_TYPES, VIDEO_TYPES, IMAGE_TYPES
+from src.core.constants import (
+    AUDIO_TYPES,
+    VIDEO_TYPES,
+    IMAGE_TYPES,
+    TAG_FAVORITE,
+    TAG_ARCHIVED,
+)
 from src.qt.flowlayout import FlowWidget
 from src.qt.helpers.file_opener import FileOpenerHelper
 from src.qt.widgets.thumb_renderer import ThumbRenderer
@@ -38,8 +43,6 @@ ERROR = f"[ERROR]"
 WARNING = f"[WARNING]"
 INFO = f"[INFO]"
 
-TAG_FAVORITE = 1
-TAG_ARCHIVED = 0
 
 logging.basicConfig(format="%(message)s", level=logging.INFO)
 
