@@ -106,7 +106,7 @@ class ThumbRenderer(QObject):
 
         adj_size = math.ceil(max(base_size[0], base_size[1]) * pixel_ratio)
         if is_loading:
-            final: Image.Image = ThumbRenderer.thumb_loading_512.resize(
+            final = ThumbRenderer.thumb_loading_512.resize(
                 (adj_size, adj_size), resample=resampling_method
             )
             qim = ImageQt.ImageQt(final)
