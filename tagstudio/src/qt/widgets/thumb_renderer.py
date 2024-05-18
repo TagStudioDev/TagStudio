@@ -3,7 +3,6 @@
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
 
-import ctypes
 import logging
 import math
 import os
@@ -27,9 +26,9 @@ from src.core.constants import PLAINTEXT_TYPES, VIDEO_TYPES, IMAGE_TYPES
 
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 
-ERROR = f"[ERROR]"
-WARNING = f"[WARNING]"
-INFO = f"[INFO]"
+ERROR = "[ERROR]"
+WARNING = "[WARNING]"
+INFO = "[INFO]"
 
 
 logging.basicConfig(format="%(message)s", level=logging.INFO)
@@ -43,50 +42,40 @@ class ThumbRenderer(QObject):
     # updatedSize = Signal(QSize)
 
     thumb_mask_512: Image.Image = Image.open(
-        os.path.normpath(
-            f"{Path(__file__).parents[3]}/resources/qt/images/thumb_mask_512.png"
-        )
+        Path(f"{Path(__file__).parents[3]}/resources/qt/images/thumb_mask_512.png")
     )
     thumb_mask_512.load()
 
     thumb_mask_hl_512: Image.Image = Image.open(
-        os.path.normpath(
-            f"{Path(__file__).parents[3]}/resources/qt/images/thumb_mask_hl_512.png"
-        )
+        Path(f"{Path(__file__).parents[3]}/resources/qt/images/thumb_mask_hl_512.png")
     )
     thumb_mask_hl_512.load()
 
     thumb_loading_512: Image.Image = Image.open(
-        os.path.normpath(
-            f"{Path(__file__).parents[3]}/resources/qt/images/thumb_loading_512.png"
-        )
+        Path(f"{Path(__file__).parents[3]}/resources/qt/images/thumb_loading_512.png")
     )
     thumb_loading_512.load()
 
     thumb_broken_512: Image.Image = Image.open(
-        os.path.normpath(
-            f"{Path(__file__).parents[3]}/resources/qt/images/thumb_broken_512.png"
-        )
+        Path(f"{Path(__file__).parents[3]}/resources/qt/images/thumb_broken_512.png")
     )
     thumb_broken_512.load()
 
     thumb_file_default_512: Image.Image = Image.open(
-        os.path.normpath(
+        Path(
             f"{Path(__file__).parents[3]}/resources/qt/images/thumb_file_default_512.png"
         )
     )
     thumb_file_default_512.load()
 
-    # thumb_debug: Image.Image = Image.open(os.path.normpath(
+    # thumb_debug: Image.Image = Image.open(Path(
     # 	f'{Path(__file__).parents[2]}/resources/qt/images/temp.jpg'))
     # thumb_debug.load()
 
     # TODO: Make dynamic font sized given different pixel ratios
     font_pixel_ratio: float = 1
     ext_font = ImageFont.truetype(
-        os.path.normpath(
-            f"{Path(__file__).parents[3]}/resources/qt/fonts/Oxanium-Bold.ttf"
-        ),
+        Path(f"{Path(__file__).parents[3]}/resources/qt/fonts/Oxanium-Bold.ttf"),
         math.floor(12 * font_pixel_ratio),
     )
 
@@ -109,7 +98,7 @@ class ThumbRenderer(QObject):
         if ThumbRenderer.font_pixel_ratio != pixel_ratio:
             ThumbRenderer.font_pixel_ratio = pixel_ratio
             ThumbRenderer.ext_font = ImageFont.truetype(
-                os.path.normpath(
+                Path(
                     f"{Path(__file__).parents[3]}/resources/qt/fonts/Oxanium-Bold.ttf"
                 ),
                 math.floor(12 * ThumbRenderer.font_pixel_ratio),
@@ -131,17 +120,22 @@ class ThumbRenderer(QObject):
             try:
                 # Images =======================================================
                 if extension in IMAGE_TYPES:
-                    image = Image.open(filepath)
-                    # image = self.thumb_debug
-                    if image.mode == "RGBA":
-                        # logging.info(image.getchannel(3).tobytes())
-                        new_bg = Image.new("RGB", image.size, color="#1e1e1e")
-                        new_bg.paste(image, mask=image.getchannel(3))
-                        image = new_bg
-                    if image.mode != "RGB":
-                        image = image.convert(mode="RGB")
+                    try:
+                        image = Image.open(filepath)
+                        # image = self.thumb_debug
+                        if image.mode == "RGBA":
+                            # logging.info(image.getchannel(3).tobytes())
+                            new_bg = Image.new("RGB", image.size, color="#1e1e1e")
+                            new_bg.paste(image, mask=image.getchannel(3))
+                            image = new_bg
+                        if image.mode != "RGB":
+                            image = image.convert(mode="RGB")
 
-                    image = ImageOps.exif_transpose(image)
+                        image = ImageOps.exif_transpose(image)
+                    except DecompressionBombError as e:
+                        logging.info(
+                            f"[ThumbRenderer]{WARNING} Couldn't Render thumbnail for {filepath} (because of {e})"
+                        )
 
                 # Videos =======================================================
                 elif extension in VIDEO_TYPES:
@@ -201,7 +195,9 @@ class ThumbRenderer(QObject):
                 else:
                     scalar = 4
                     rec: Image.Image = Image.new(
-                        "RGB", tuple([d * scalar for d in image.size]), "black"
+                        "RGB",
+                        tuple([d * scalar for d in image.size]),  # type: ignore
+                        "black",
                     )
                     draw = ImageDraw.Draw(rec)
                     draw.rounded_rectangle(
@@ -224,7 +220,7 @@ class ThumbRenderer(QObject):
             ) as e:
                 if e is not UnicodeDecodeError:
                     logging.info(
-                        f"[ThumbRenderer][ERROR]: Coulnd't render thumbnail for {filepath} ({e})"
+                        f"[ThumbRenderer]{ERROR}: Couldn't render thumbnail for {filepath} ({e})"
                     )
                 if update_on_ratio_change:
                     self.updated_ratio.emit(1)
