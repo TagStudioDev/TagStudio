@@ -29,7 +29,7 @@ from humanfriendly import format_size
 
 from src.core.enums import SettingItems, Theme
 from src.core.library import Entry, ItemType, Library
-from src.core.ts_core import VIDEO_TYPES, IMAGE_TYPES
+from src.core.constants import VIDEO_TYPES, IMAGE_TYPES
 from src.qt.helpers.file_opener import FileOpenerLabel, FileOpenerHelper, open_file
 from src.qt.modals.add_field import AddFieldModal
 from src.qt.widgets.thumb_renderer import ThumbRenderer
