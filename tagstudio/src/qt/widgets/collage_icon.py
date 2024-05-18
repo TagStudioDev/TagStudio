@@ -24,7 +24,7 @@ from PySide6.QtCore import (
 )
 
 from src.core.library import Library
-from src.core.ts_core import DOC_TYPES, VIDEO_TYPES, IMAGE_TYPES
+from src.core.constants import DOC_TYPES, VIDEO_TYPES, IMAGE_TYPES
 
 
 ERROR = f"[ERROR]"
@@ -86,7 +86,7 @@ class CollageIconRenderer(QObject):
                     color = "#e22c3c"  # Red
 
                 if data_only_mode:
-                    pic: Image = Image.new("RGB", size, color)
+                    pic = Image.new("RGB", size, color)
                     # collage.paste(pic, (y*thumb_size, x*thumb_size))
                     self.rendered.emit(pic)
             if not data_only_mode:

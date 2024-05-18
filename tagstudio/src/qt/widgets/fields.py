@@ -5,9 +5,9 @@
 
 import math
 import os
-from types import FunctionType
+from types import FunctionType, MethodType
 from pathlib import Path
-from typing import Optional
+from typing import Optional, cast, Callable, Any
 
 from PIL import Image, ImageQt
 from PySide6.QtCore import Qt, QEvent
@@ -48,7 +48,7 @@ class FieldContainer(QWidget):
         # self.editable:bool = editable
         self.copy_callback: FunctionType = None
         self.edit_callback: FunctionType = None
-        self.remove_callback: FunctionType = None
+        self.remove_callback: Callable = None
         button_size = 24
         # self.setStyleSheet('border-style:solid;border-color:#1e1a33;border-radius:8px;border-width:2px;')
 
@@ -129,7 +129,7 @@ class FieldContainer(QWidget):
 
         # self.set_inner_widget(mode)
 
-    def set_copy_callback(self, callback: Optional[FunctionType]):
+    def set_copy_callback(self, callback: Optional[MethodType]):
         try:
             self.copy_button.clicked.disconnect()
         except RuntimeError:
@@ -138,7 +138,7 @@ class FieldContainer(QWidget):
         self.copy_callback = callback
         self.copy_button.clicked.connect(callback)
 
-    def set_edit_callback(self, callback: Optional[FunctionType]):
+    def set_edit_callback(self, callback: Optional[MethodType]):
         try:
             self.edit_button.clicked.disconnect()
         except RuntimeError:
@@ -147,7 +147,7 @@ class FieldContainer(QWidget):
         self.edit_callback = callback
         self.edit_button.clicked.connect(callback)
 
-    def set_remove_callback(self, callback: Optional[FunctionType]):
+    def set_remove_callback(self, callback: Optional[Callable]):
         try:
             self.remove_button.clicked.disconnect()
         except RuntimeError:
@@ -168,7 +168,7 @@ class FieldContainer(QWidget):
 
     def get_inner_widget(self) -> Optional["FieldWidget"]:
         if self.field_layout.itemAt(0):
-            return self.field_layout.itemAt(0).widget()
+            return cast(FieldWidget, self.field_layout.itemAt(0).widget())
         return None
 
     def set_title(self, title: str):

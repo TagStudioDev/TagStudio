@@ -23,8 +23,9 @@ from PySide6.QtWidgets import (
     QCheckBox,
 )
 
+
 from src.core.library import ItemType, Library, Entry
-from src.core.ts_core import AUDIO_TYPES, VIDEO_TYPES, IMAGE_TYPES
+from src.core.constants import AUDIO_TYPES, VIDEO_TYPES, IMAGE_TYPES
 from src.qt.flowlayout import FlowWidget
 from src.qt.helpers.file_opener import FileOpenerHelper
 from src.qt.widgets.thumb_renderer import ThumbRenderer
@@ -181,7 +182,7 @@ class ItemThumb(FlowWidget):
             lambda ts, i, s, ext: (
                 self.update_thumb(ts, image=i),
                 self.update_size(ts, size=s),
-                self.set_extension(ext),
+                self.set_extension(ext),  # type: ignore
             )
         )
         self.thumb_button.setFlat(True)
@@ -388,7 +389,7 @@ class ItemThumb(FlowWidget):
                 self.thumb_button.setMinimumSize(size)
                 self.thumb_button.setMaximumSize(size)
 
-    def update_clickable(self, clickable: FunctionType = None):
+    def update_clickable(self, clickable: typing.Callable):
         """Updates attributes of a thumbnail element."""
         # logging.info(f'[GUI] Updating Click Event for element {id(element)}: {id(clickable) if clickable else None}')
         try:

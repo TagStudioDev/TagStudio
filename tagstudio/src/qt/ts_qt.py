@@ -13,6 +13,7 @@ import math
 import os
 import sys
 import time
+import typing
 import webbrowser
 from datetime import datetime as dt
 from pathlib import Path
@@ -48,9 +49,9 @@ from humanfriendly import format_timespan
 
 from src.core.enums import SettingItems
 from src.core.library import ItemType
-from src.core.ts_core import (
+from src.core.ts_core import TagStudioCore
+from src.core.constants import (
     PLAINTEXT_TYPES,
-    TagStudioCore,
     TAG_COLORS,
     DATE_FIELDS,
     TEXT_FIELDS,
@@ -117,7 +118,7 @@ class NavigationState:
         scrollbar_pos: int,
         page_index: int,
         page_count: int,
-        search_text: str = None,
+        search_text: str | None = None,
         thumb_size=None,
         spacing=None,
     ) -> None:
@@ -165,11 +166,16 @@ class QtDriver(QObject):
 
     SIGTERM = Signal()
 
-    def __init__(self, core, args):
+    preview_panel: PreviewPanel
+
+    def __init__(self, core: TagStudioCore, args):
         super().__init__()
         self.core: TagStudioCore = core
         self.lib = self.core.lib
         self.args = args
+        self.frame_dict: dict = {}
+        self.nav_frames: list[NavigationState] = []
+        self.cur_frame_idx: int = -1
 
         # self.main_window = None
         # self.main_window = Ui_MainWindow()
@@ -193,10 +199,13 @@ class QtDriver(QObject):
                     f"[QT DRIVER] Config File does not exist creating {str(path)}"
                 )
             logging.info(f"[QT DRIVER] Using Config File {str(path)}")
-            self.settings = QSettings(str(path), QSettings.IniFormat)
+            self.settings = QSettings(str(path), QSettings.Format.IniFormat)
         else:
             self.settings = QSettings(
-                QSettings.IniFormat, QSettings.UserScope, "TagStudio", "TagStudio"
+                QSettings.Format.IniFormat,
+                QSettings.Scope.UserScope,
+                "TagStudio",
+                "TagStudio",
             )
             logging.info(
                 f"[QT DRIVER] Config File not specified, defaulting to {self.settings.fileName()}"
@@ -230,7 +239,7 @@ class QtDriver(QObject):
         signal(SIGTERM, self.signal_handler)
         signal(SIGQUIT, self.signal_handler)
 
-    def start(self):
+    def start(self) -> None:
         """Launches the main Qt window."""
 
         loader = QUiLoader()
@@ -257,7 +266,7 @@ class QtDriver(QObject):
         # self.main_window = loader.load(home_path)
         self.main_window = Ui_MainWindow()
         self.main_window.setWindowTitle(self.base_title)
-        self.main_window.mousePressEvent = self.mouse_navigation
+        self.main_window.mousePressEvent = self.mouse_navigation  # type: ignore
         # self.main_window.setStyleSheet(
         # 	f'QScrollBar::{{background:red;}}'
         # 	)
@@ -273,13 +282,13 @@ class QtDriver(QObject):
 
         splash_pixmap = QPixmap(":/images/splash.png")
         splash_pixmap.setDevicePixelRatio(self.main_window.devicePixelRatio())
-        self.splash = QSplashScreen(splash_pixmap, Qt.WindowStaysOnTopHint)
+        self.splash = QSplashScreen(splash_pixmap, Qt.WindowStaysOnTopHint)  # type: ignore
         # self.splash.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
         self.splash.show()
 
         if os.name == "nt":
             appid = "cyanvoxel.tagstudio.9"
-            ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(appid)
+            ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(appid)  # type: ignore
 
         if sys.platform != "darwin":
             icon = QIcon()
@@ -392,7 +401,7 @@ class QtDriver(QObject):
         check_action = QAction("Open library on start", self)
         check_action.setCheckable(True)
         check_action.setChecked(
-            self.settings.value(SettingItems.START_LOAD_LAST, True, type=bool)
+            self.settings.value(SettingItems.START_LOAD_LAST, True, type=bool)  # type: ignore
         )
         check_action.triggered.connect(
             lambda checked: self.settings.setValue(
@@ -447,15 +456,14 @@ class QtDriver(QObject):
         self.sort_fields_action.setToolTip("Alt+S")
         macros_menu.addAction(self.sort_fields_action)
 
-        folders_to_tags_action = QAction("Create Tags From Folders", menu_bar)
         show_libs_list_action = QAction("Show Recent Libraries", menu_bar)
         show_libs_list_action.setCheckable(True)
         show_libs_list_action.setChecked(
-            self.settings.value(SettingItems.WINDOW_SHOW_LIBS, True, type=bool)
+            self.settings.value(SettingItems.WINDOW_SHOW_LIBS, True, type=bool)  # type: ignore
         )
         show_libs_list_action.triggered.connect(
             lambda checked: (
-                self.settings.setValue(SettingItems.WINDOW_SHOW_LIBS, checked),
+                self.settings.setValue(SettingItems.WINDOW_SHOW_LIBS, checked),  # type: ignore
                 self.toggle_libs_list(checked),
             )
         )
@@ -557,9 +565,9 @@ class QtDriver(QObject):
             )
         )
 
-        self.nav_frames: list[NavigationState] = []
-        self.cur_frame_idx: int = -1
-        self.cur_query: str = ""
+        self.nav_frames = []
+        self.cur_frame_idx = -1
+        self.cur_query = ""
         self.filter_items()
         # self.update_thumbs()
 
@@ -650,9 +658,9 @@ class QtDriver(QObject):
             title_text = f"{self.base_title}"
             self.main_window.setWindowTitle(title_text)
 
-            self.nav_frames: list[NavigationState] = []
-            self.cur_frame_idx: int = -1
-            self.cur_query: str = ""
+            self.nav_frames = []
+            self.cur_frame_idx = -1
+            self.cur_query = ""
             self.selected.clear()
             self.preview_panel.update_widgets()
             self.filter_items()
@@ -1016,8 +1024,10 @@ class QtDriver(QObject):
         self.update_thumbs()
         # logging.info(f'Refresh: {[len(x.contents) for x in self.nav_stack]}, Index {self.cur_page_idx}')
 
+    @typing.no_type_check
     def purge_item_from_navigation(self, type: ItemType, id: int):
         # logging.info(self.nav_frames)
+        # TODO - types here are ambiguous
         for i, frame in enumerate(self.nav_frames, start=0):
             while (type, id) in frame.contents:
                 logging.info(f"Removing {id} from nav stack frame {i}")
@@ -1061,7 +1071,7 @@ class QtDriver(QObject):
         sa.setWidgetResizable(True)
         sa.setWidget(self.flow_container)
 
-    def select_item(self, type: int, id: int, append: bool, bridge: bool):
+    def select_item(self, type: ItemType, id: int, append: bool, bridge: bool):
         """Selects one or more items in the Thumbnail Grid."""
         if append:
             # self.selected.append((thumb_index, page_index))
@@ -1284,14 +1294,14 @@ class QtDriver(QObject):
         self.nav_forward([(ItemType.ENTRY, x[0]) for x in collation_entries])
         # self.update_thumbs()
 
-    def get_frame_contents(self, index=0, query: str = None):
+    def get_frame_contents(self, index=0, query: str = ""):
         return (
             [] if not self.frame_dict[query] else self.frame_dict[query][index],
             index,
             len(self.frame_dict[query]),
         )
 
-    def filter_items(self, query=""):
+    def filter_items(self, query: str = ""):
         if self.lib:
             # logging.info('Filtering...')
             self.main_window.statusbar.showMessage(
@@ -1303,7 +1313,7 @@ class QtDriver(QObject):
             # self.filtered_items = self.lib.search_library(query)
             # 73601 Entries at 500 size should be 246
             all_items = self.lib.search_library(query)
-            frames = []
+            frames: list[list[tuple[ItemType, int]]] = []
             frame_count = math.ceil(len(all_items) / self.max_results)
             for i in range(0, frame_count):
                 frames.append(
@@ -1349,7 +1359,8 @@ class QtDriver(QObject):
         self.settings.endGroup()
         self.settings.sync()
 
-    def update_libs_list(self, path: str | Path):
+    @typing.no_type_check
+    def update_libs_list(self, path: Path):
         """add library to list in SettingItems.LIBS_LIST"""
         ITEMS_LIMIT = 5
         path = Path(path)
@@ -1392,7 +1403,7 @@ class QtDriver(QObject):
             # 	self.lib.refresh_missing_files()
             # title_text = f'{self.base_title} - Library \'{self.lib.library_dir}\''
             # self.main_window.setWindowTitle(title_text)
-            self.update_libs_list(path)
+            pass
 
         else:
             logging.info(
@@ -1401,12 +1412,13 @@ class QtDriver(QObject):
             print(f"Library Creation Return Code: {self.lib.create_library(path)}")
             self.add_new_files_callback()
 
+        self.update_libs_list(path)
         title_text = f"{self.base_title} - Library '{self.lib.library_dir}'"
         self.main_window.setWindowTitle(title_text)
 
-        self.nav_frames: list[NavigationState] = []
-        self.cur_frame_idx: int = -1
-        self.cur_query: str = ""
+        self.nav_frames = []
+        self.cur_frame_idx = -1
+        self.cur_query = ""
         self.selected.clear()
         self.preview_panel.update_widgets()
         self.filter_items()
@@ -1444,7 +1456,7 @@ class QtDriver(QObject):
             # 	('Stretch to Fill','Stretches the media file to fill the entire collage square.'),
             # 	('Keep Aspect Ratio','Keeps the original media file\'s aspect ratio, filling the rest of the square with black bars.')
             # 	], prompt='', required=True)
-            keep_aspect = 0
+            keep_aspect = False
 
         if mode in [1, 2, 3]:
             # TODO: Choose data visualization options here.
