@@ -1,0 +1,1 @@
+The "Database Update", "DB Migration", or "SQLite Migration" is an upcoming update to TagStudio which will replace the current JSON [library](/doc/Library.md) with a SQL-based one, and will additionally include some fundamental changes to how some features such as [tags](/doc/Tag.md) will work.
