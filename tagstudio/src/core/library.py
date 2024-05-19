@@ -445,7 +445,7 @@ class Library:
     def _fix_lib_path(self, path) -> Path:
         """If '.TagStudio' is included in the path, trim the path up to it."""
         path = Path(path)
-        paths = [x for x in [path, *path.parents] if x.stem == ts_core.TS_FOLDER_NAME]
+        paths = [x for x in [path, *path.parents] if x.stem == TS_FOLDER_NAME]
         if len(paths) > 0:
             return paths[0].parent
         return path
@@ -495,10 +495,10 @@ class Library:
         return_code: int = 2
         path: Path = self._fix_lib_path(path)
 
-        if (path / ts_core.TS_FOLDER_NAME / "ts_library.json").exists():
+        if (path / TS_FOLDER_NAME / "ts_library.json").exists():
             try:
                 with open(
-                    path / ts_core.TS_FOLDER_NAME / "ts_library.json",
+                    path / TS_FOLDER_NAME / "ts_library.json",
                     "r",
                     encoding="utf-8",
                 ) as file:
@@ -707,7 +707,7 @@ class Library:
 
         # If the Library is loaded, continue other processes.
         if return_code == 1:
-            (self.library_dir / ts_core.TS_FOLDER_NAME).mkdir(
+            (self.library_dir / TS_FOLDER_NAME).mkdir(
                 parents=True, exist_ok=True
             )
             self._map_filenames_to_entry_ids()

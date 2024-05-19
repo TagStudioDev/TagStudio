@@ -88,7 +88,7 @@ class ThumbRenderer(QObject):
     def render(
         self,
         timestamp: float,
-        filepath,
+        filepath: str|Path,
         base_size: tuple[int, int],
         pixel_ratio: float,
         is_loading=False,
@@ -99,7 +99,7 @@ class ThumbRenderer(QObject):
         image: Image.Image = None
         pixmap: QPixmap = None
         final: Image.Image = None
-        extension: str = None
+        filepath: Path = Path(filepath)
         resampling_method = Image.Resampling.BILINEAR
         if ThumbRenderer.font_pixel_ratio != pixel_ratio:
             ThumbRenderer.font_pixel_ratio = pixel_ratio
@@ -138,7 +138,7 @@ class ThumbRenderer(QObject):
                             f"[ThumbRenderer]{WARNING} Couldn't Render thumbnail for {filepath} (because of {e})"
                         )
 
-                elif extension in RAW_IMAGE_TYPES:
+                elif filepath.suffix in RAW_IMAGE_TYPES:
                     try:
                         with rawpy.imread(filepath) as raw:
                             rgb = raw.postprocess()
