@@ -67,7 +67,7 @@ def folders_to_tags(library: Library):
         add_tag_to_tree(reversed_tag)
 
     for entry in library.entries:
-        folders = entry.path.parts
+        folders = list(entry.path.parts)
         if len(folders) == 1 and folders[0] == "":
             continue
         tag = add_folders_to_tree(folders)
@@ -120,7 +120,7 @@ def generate_preview_data(library: Library):
         add_tag_to_tree(reversed_tag)
 
     for entry in library.entries:
-        folders = entry.path.parts
+        folders = list(entry.path.parts)
         if len(folders) == 1 and folders[0] == "":
             continue
         branch = add_folders_to_tree(folders)

@@ -844,7 +844,7 @@ class QtDriver(QObject):
         """Runs a specific Macro on an Entry given a Macro name."""
         entry = self.lib.get_entry(entry_id)
         path = self.lib.library_dir / entry.path / entry.filename
-        source = path.split(os.sep)[1].lower()
+        source = entry.path.parts[0]
         if name == "sidecar":
             self.lib.add_generic_data_to_entry(
                 self.core.get_gdl_sidecar(path, source), entry_id

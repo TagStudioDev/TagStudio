@@ -277,7 +277,7 @@ class ThumbRenderer(QObject):
         broken_thumb = False
         filepath = Path(filepath)
         img_ratio = 1
-        
+
         # adj_font_size = math.floor(12 * pixelRatio)
         if ThumbRenderer.font_pixel_ratio != pixelRatio:
             ThumbRenderer.font_pixel_ratio = pixelRatio

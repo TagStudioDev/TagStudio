@@ -167,7 +167,7 @@ class TagStudioCore:
     def __init__(self):
         self.lib: Library = Library()
 
-    def get_gdl_sidecar(self, filepath: str, source: str = "") -> dict:
+    def get_gdl_sidecar(self, filepath: str | Path, source: str = "") -> dict:
         """
         Attempts to open and dump a Gallery-DL Sidecar sidecar file for
         the filepath.\n Returns a formatted object with notable values or an
@@ -175,7 +175,7 @@ class TagStudioCore:
         """
         json_dump = {}
         info = {}
-        filepath = Path(filepath)
+        filepath: Path = Path(filepath)
         filepath = filepath.parent / (filepath.stem + ".json")
 
         # NOTE: This fixes an unknown (recent?) bug in Gallery-DL where Instagram sidecar
