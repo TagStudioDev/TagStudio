@@ -23,9 +23,15 @@ import ujson
 from pathlib import Path
 
 from src.core.json_typing import JsonCollation, JsonEntry, JsonLibary, JsonTag
-from src.core import ts_core
 from src.core.utils.str import strip_punctuation
 from src.core.utils.web import strip_web_protocol
+from src.core.constants import (
+    BACKUP_FOLDER_NAME,
+    COLLAGE_FOLDER_NAME,
+    TEXT_FIELDS,
+    TS_FOLDER_NAME,
+    VERSION,
+)
 
 TYPE = ["file", "meta", "alt", "mask"]
 
@@ -421,7 +427,7 @@ class Library:
         0: Library Successfully Created\n
         2: File creation error
         """
-
+        
         path = self._fix_lib_path(path)
 
         try:
@@ -447,12 +453,12 @@ class Library:
     def verify_ts_folders(self) -> None:
         """Verifies/creates folders required by TagStudio."""
 
-        full_ts_path = self.library_dir / ts_core.TS_FOLDER_NAME
+        full_ts_path = self.library_dir / TS_FOLDER_NAME
         full_backup_path = (
-            self.library_dir / ts_core.TS_FOLDER_NAME / ts_core.BACKUP_FOLDER_NAME
+            self.library_dir / TS_FOLDER_NAME / BACKUP_FOLDER_NAME
         )
         full_collage_path = (
-            self.library_dir / ts_core.TS_FOLDER_NAME / ts_core.COLLAGE_FOLDER_NAME
+            self.library_dir / TS_FOLDER_NAME / COLLAGE_FOLDER_NAME
         )
 
         if not os.path.isdir(full_ts_path):
@@ -737,7 +743,7 @@ class Library:
         """
 
         file_to_save: JsonLibary = {
-            "ts-version": ts_core.VERSION,
+            "ts-version": VERSION,
             "ignored_extensions": [],
             "tags": [],
             "collations": [],
@@ -775,7 +781,7 @@ class Library:
         self.verify_ts_folders()
 
         with open(
-            self.library_dir / ts_core.TS_FOLDER_NAME / filename, "w", encoding="utf-8"
+            self.library_dir / TS_FOLDER_NAME / filename, "w", encoding="utf-8"
         ) as outfile:
             outfile.flush()
             ujson.dump(
@@ -802,8 +808,8 @@ class Library:
         self.verify_ts_folders()
         with open(
             self.library_dir
-            / ts_core.TS_FOLDER_NAME
-            / ts_core.BACKUP_FOLDER_NAME
+            / TS_FOLDER_NAME
+            / BACKUP_FOLDER_NAME
             / filename,
             "w",
             encoding="utf-8",
@@ -860,13 +866,13 @@ class Library:
         # Scans the directory for files, keeping track of:
         #   - Total file count
         #   - Files without library entries
-        # for type in ts_core.TYPES:
+        # for type in TYPES:
         start_time = time.time()
         for f in self.library_dir.glob("**/*"):
             # p = Path(os.path.normpath(f))
             if (
                 "$RECYCLE.BIN" not in f.parts
-                and ts_core.TS_FOLDER_NAME not in f.parts
+                and TS_FOLDER_NAME not in f.parts
                 and "tagstudio_thumbs" not in f.parts
                 and not f.is_dir()
             ):
@@ -2060,7 +2066,7 @@ class Library:
         # entry = self.entries[entry_index]
         entry = self.get_entry(entry_id)
         field_type = self.get_field_obj(field_id)["type"]
-        if field_type in ts_core.TEXT_FIELDS:
+        if field_type in TEXT_FIELDS:
             entry.fields.append({int(field_id): ""})
         elif field_type == "tag_box":
             entry.fields.append({int(field_id): []})

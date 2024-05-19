@@ -48,9 +48,9 @@ from humanfriendly import format_timespan
 
 from src.core.enums import SettingItems
 from src.core.library import ItemType
-from src.core.ts_core import (
+from src.core.ts_core import TagStudioCore
+from src.core.constants import (
     PLAINTEXT_TYPES,
-    TagStudioCore,
     TAG_COLORS,
     DATE_FIELDS,
     TEXT_FIELDS,
@@ -1170,7 +1170,7 @@ class QtDriver(QObject):
                 self.thumb_job_queue.put(
                     (
                         item_thumb.renderer.render,
-                        (sys.float_info.max, "", base_size, ratio, True),
+                        (sys.float_info.max, "", base_size, ratio, True, True),
                     )
                 )
                 # # Restore Selected Borders
@@ -1264,7 +1264,7 @@ class QtDriver(QObject):
                 self.thumb_job_queue.put(
                     (
                         item_thumb.renderer.render,
-                        (time.time(), filepath, base_size, ratio, False),
+                        (time.time(), filepath, base_size, ratio, False, True),
                     )
                 )
             else:
