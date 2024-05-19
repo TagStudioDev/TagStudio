@@ -122,14 +122,12 @@ class ThumbRenderer(QObject):
                 if extension in IMAGE_TYPES:
                     try:
                         image = Image.open(filepath)
-                        # image = self.thumb_debug
+                        if image.mode != "RGB" and image.mode != "RGBA":
+                            image = image.convert(mode="RGBA")
                         if image.mode == "RGBA":
-                            # logging.info(image.getchannel(3).tobytes())
                             new_bg = Image.new("RGB", image.size, color="#1e1e1e")
                             new_bg.paste(image, mask=image.getchannel(3))
                             image = new_bg
-                        if image.mode != "RGB":
-                            image = image.convert(mode="RGB")
 
                         image = ImageOps.exif_transpose(image)
                     except DecompressionBombError as e:
