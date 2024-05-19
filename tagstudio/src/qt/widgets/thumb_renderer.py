@@ -9,6 +9,7 @@ import os
 from pathlib import Path
 
 import cv2
+import rawpy
 from PIL import (
     Image,
     UnidentifiedImageError,
@@ -22,7 +23,12 @@ from PIL.Image import DecompressionBombError
 from PySide6.QtCore import QObject, Signal, QSize
 from PySide6.QtGui import QPixmap
 from src.qt.helpers.gradient import four_corner_gradient_background
-from src.core.constants import PLAINTEXT_TYPES, VIDEO_TYPES, IMAGE_TYPES
+from src.core.constants import (
+    PLAINTEXT_TYPES,
+    VIDEO_TYPES,
+    IMAGE_TYPES,
+    RAW_IMAGE_TYPES,
+)
 
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 
@@ -42,29 +48,27 @@ class ThumbRenderer(QObject):
     # updatedSize = Signal(QSize)
 
     thumb_mask_512: Image.Image = Image.open(
-        Path(f"{Path(__file__).parents[3]}/resources/qt/images/thumb_mask_512.png")
+        Path(__file__).parents[3] / "resources/qt/images/thumb_mask_512.png"
     )
     thumb_mask_512.load()
 
     thumb_mask_hl_512: Image.Image = Image.open(
-        Path(f"{Path(__file__).parents[3]}/resources/qt/images/thumb_mask_hl_512.png")
+        Path(__file__).parents[3] / "resources/qt/images/thumb_mask_hl_512.png"
     )
     thumb_mask_hl_512.load()
 
     thumb_loading_512: Image.Image = Image.open(
-        Path(f"{Path(__file__).parents[3]}/resources/qt/images/thumb_loading_512.png")
+        Path(__file__).parents[3] / "resources/qt/images/thumb_loading_512.png"
     )
     thumb_loading_512.load()
 
     thumb_broken_512: Image.Image = Image.open(
-        Path(f"{Path(__file__).parents[3]}/resources/qt/images/thumb_broken_512.png")
+        Path(__file__).parents[3] / "resources/qt/images/thumb_broken_512.png"
     )
     thumb_broken_512.load()
 
     thumb_file_default_512: Image.Image = Image.open(
-        Path(
-            f"{Path(__file__).parents[3]}/resources/qt/images/thumb_file_default_512.png"
-        )
+        Path(__file__).parents[3] / "resources/qt/images/thumb_file_default_512.png"
     )
     thumb_file_default_512.load()
 
@@ -75,7 +79,7 @@ class ThumbRenderer(QObject):
     # TODO: Make dynamic font sized given different pixel ratios
     font_pixel_ratio: float = 1
     ext_font = ImageFont.truetype(
-        Path(f"{Path(__file__).parents[3]}/resources/qt/fonts/Oxanium-Bold.ttf"),
+        Path(__file__).parents[3] / "resources/qt/fonts/Oxanium-Bold.ttf",
         math.floor(12 * font_pixel_ratio),
     )
 
@@ -98,9 +102,7 @@ class ThumbRenderer(QObject):
         if ThumbRenderer.font_pixel_ratio != pixel_ratio:
             ThumbRenderer.font_pixel_ratio = pixel_ratio
             ThumbRenderer.ext_font = ImageFont.truetype(
-                Path(
-                    f"{Path(__file__).parents[3]}/resources/qt/fonts/Oxanium-Bold.ttf"
-                ),
+                Path(__file__).parents[3] / "resources/qt/fonts/Oxanium-Bold.ttf",
                 math.floor(12 * ThumbRenderer.font_pixel_ratio),
             )
 
@@ -135,6 +137,25 @@ class ThumbRenderer(QObject):
                             f"[ThumbRenderer]{WARNING} Couldn't Render thumbnail for {filepath} (because of {e})"
                         )
 
+                elif extension in RAW_IMAGE_TYPES:
+                    try:
+                        with rawpy.imread(filepath) as raw:
+                            rgb = raw.postprocess()
+                            image = Image.frombytes(
+                                "RGB",
+                                (rgb.shape[1], rgb.shape[0]),
+                                rgb,
+                                decoder_name="raw",
+                            )
+                    except DecompressionBombError as e:
+                        logging.info(
+                            f"[ThumbRenderer]{WARNING} Couldn't Render thumbnail for {filepath} (because of {e})"
+                        )
+                    except rawpy._rawpy.LibRawIOError:
+                        logging.info(
+                            f"[ThumbRenderer]{ERROR} Couldn't Render thumbnail for raw image {filepath}"
+                        )
+
                 # Videos =======================================================
                 elif extension in VIDEO_TYPES:
                     video = cv2.VideoCapture(filepath)
@@ -160,6 +181,25 @@ class ThumbRenderer(QObject):
                     draw = ImageDraw.Draw(bg)
                     draw.text((16, 16), text, file=(255, 255, 255))
                     image = bg
+                # 3D ===========================================================
+                # elif extension == 'stl':
+                # 	# Create a new plot
+                # 	matplotlib.use('agg')
+                # 	figure = plt.figure()
+                # 	axes = figure.add_subplot(projection='3d')
+
+                # 	# Load the STL files and add the vectors to the plot
+                # 	your_mesh = mesh.Mesh.from_file(filepath)
+
+                # 	poly_collection = mplot3d.art3d.Poly3DCollection(your_mesh.vectors)
+                # 	poly_collection.set_color((0,0,1))  # play with color
+                # 	scale = your_mesh.points.flatten()
+                # 	axes.auto_scale_xyz(scale, scale, scale)
+                # 	axes.add_collection3d(poly_collection)
+                # 	# plt.show()
+                # 	img_buf = io.BytesIO()
+                # 	plt.savefig(img_buf, format='png')
+                # 	image = Image.open(img_buf)
                 # No Rendered Thumbnail ========================================
                 else:
                     image = ThumbRenderer.thumb_file_default_512.resize(

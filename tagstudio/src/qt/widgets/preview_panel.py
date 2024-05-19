@@ -9,6 +9,7 @@ import typing
 from datetime import datetime as dt
 
 import cv2
+import rawpy
 from PIL import Image, UnidentifiedImageError
 from PIL.Image import DecompressionBombError
 from PySide6.QtCore import Signal, Qt, QSize
@@ -29,7 +30,7 @@ from humanfriendly import format_size
 
 from src.core.enums import SettingItems, Theme
 from src.core.library import Entry, ItemType, Library
-from src.core.constants import VIDEO_TYPES, IMAGE_TYPES
+from src.core.constants import VIDEO_TYPES, IMAGE_TYPES, RAW_IMAGE_TYPES
 from src.qt.helpers.file_opener import FileOpenerLabel, FileOpenerHelper, open_file
 from src.qt.modals.add_field import AddFieldModal
 from src.qt.widgets.thumb_renderer import ThumbRenderer
@@ -503,30 +504,21 @@ class PreviewPanel(QWidget):
                         image = None
                         if extension in IMAGE_TYPES:
                             image = Image.open(filepath)
-                            if image.mode == "RGBA":
-                                new_bg = Image.new("RGB", image.size, color="#1e1e1e")
-                                new_bg.paste(image, mask=image.getchannel(3))
-                                image = new_bg
-                            if image.mode != "RGB":
-                                image = image.convert(mode="RGB")
+                        elif extension in RAW_IMAGE_TYPES:
+                            with rawpy.imread(filepath) as raw:
+                                rgb = raw.postprocess()
+                                image = Image.new(
+                                    "L", (rgb.shape[1], rgb.shape[0]), color="black"
+                                )
                         elif extension in VIDEO_TYPES:
                             video = cv2.VideoCapture(filepath)
-                            video.set(
-                                cv2.CAP_PROP_POS_FRAMES,
-                                (video.get(cv2.CAP_PROP_FRAME_COUNT) // 2),
-                            )
+                            video.set(cv2.CAP_PROP_POS_FRAMES, 0)
                             success, frame = video.read()
-                            if not success:
-                                # Depending on the video format, compression, and frame
-                                # count, seeking halfway does not work and the thumb
-                                # must be pulled from the earliest available frame.
-                                video.set(cv2.CAP_PROP_POS_FRAMES, 0)
-                                success, frame = video.read()
                             frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
                             image = Image.fromarray(frame)
 
                         # Stats for specific file types are displayed here.
-                        if extension in (IMAGE_TYPES + VIDEO_TYPES):
+                        if extension in (IMAGE_TYPES + VIDEO_TYPES + RAW_IMAGE_TYPES):
                             self.dimensions_label.setText(
                                 f"{extension.upper()}  •  {format_size(os.stat(filepath).st_size)}\n{image.width} x {image.height} px"
                             )
@@ -534,9 +526,6 @@ class PreviewPanel(QWidget):
                             self.dimensions_label.setText(f"{extension.upper()}")
 
                         if not image:
-                            self.dimensions_label.setText(
-                                f"{extension.upper()}  •  {format_size(os.stat(filepath).st_size)}"
-                            )
                             raise UnidentifiedImageError
 
                     except (
@@ -545,6 +534,9 @@ class PreviewPanel(QWidget):
                         cv2.error,
                         DecompressionBombError,
                     ) as e:
+                        self.dimensions_label.setText(
+                            f"{extension.upper()}  •  {format_size(os.stat(filepath).st_size)}"
+                        )
                         logging.info(
                             f"[PreviewPanel][ERROR] Couldn't Render thumbnail for {filepath} (because of {e})"
                         )
