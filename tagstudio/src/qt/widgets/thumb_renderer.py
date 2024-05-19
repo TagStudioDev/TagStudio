@@ -107,7 +107,7 @@ class ThumbRenderer(QObject):
         adj_size = math.ceil(max(base_size[0], base_size[1]) * pixel_ratio)
         if is_loading:
             final = ThumbRenderer.thumb_loading_512.resize(
-                (adj_size, adj_size), resample=resampling_method
+                (adj_size, adj_size), resample=Image.Resampling.BILINEAR
             )
             qim = ImageQt.ImageQt(final)
             pixmap = QPixmap.fromImage(qim)
@@ -163,7 +163,7 @@ class ThumbRenderer(QObject):
                 # No Rendered Thumbnail ========================================
                 else:
                     image = ThumbRenderer.thumb_file_default_512.resize(
-                        (adj_size, adj_size), resample=resampling_method
+                        (adj_size, adj_size), resample=Image.Resampling.BILINEAR
                     )
 
                 if not image:
@@ -181,6 +181,14 @@ class ThumbRenderer(QObject):
 
                 if update_on_ratio_change:
                     self.updated_ratio.emit(new_x / new_y)
+
+                resampling_method = (
+                    Image.Resampling.NEAREST
+                    if max(image.size[0], image.size[1])
+                    < max(base_size[0], base_size[1])
+                    else Image.Resampling.BILINEAR
+                )
+
                 image = image.resize((new_x, new_y), resample=resampling_method)
                 if gradient:
                     mask: Image.Image = ThumbRenderer.thumb_mask_512.resize(
