@@ -273,12 +273,13 @@ class ThumbRenderer(QObject):
                 final = ThumbRenderer.thumb_broken_512.resize(
                     (adj_size, adj_size), resample=resampling_method
                 )
-
             qim = ImageQt.ImageQt(final)
+            final.save(f'/home/icosahunter/Documents/test/{filepath.stem}.png')
             if image:
                 image.close()
             pixmap = QPixmap.fromImage(qim)
             pixmap.setDevicePixelRatio(pixel_ratio)
+
         if pixmap:
             self.updated.emit(
                 timestamp,
@@ -291,4 +292,5 @@ class ThumbRenderer(QObject):
             )
 
         else:
+    
             self.updated.emit(timestamp, QPixmap(), QSize(*base_size), filepath.suffix)
