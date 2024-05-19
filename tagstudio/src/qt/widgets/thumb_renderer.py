@@ -10,6 +10,7 @@ from pathlib import Path
 
 import cv2
 import rawpy
+from pillow_heif import register_heif_opener, register_avif_opener
 from PIL import (
     Image,
     UnidentifiedImageError,
@@ -36,8 +37,9 @@ ERROR = "[ERROR]"
 WARNING = "[WARNING]"
 INFO = "[INFO]"
 
-
 logging.basicConfig(format="%(message)s", level=logging.INFO)
+register_heif_opener()
+register_avif_opener()
 
 
 class ThumbRenderer(QObject):
