@@ -135,10 +135,10 @@ class VideoPlayer(QGraphicsView):
         autoplay_action = QAction("Autoplay", self)
         autoplay_action.setCheckable(True)
         self.addAction(autoplay_action)
-        autoplay_action.triggered.connect(lambda: self.toggleAutoplay())
         autoplay_action.setChecked(
             self.driver.settings.value(SettingItems.AUTOPLAY, True, bool)  # type: ignore
         )
+        autoplay_action.triggered.connect(lambda: self.toggleAutoplay())
         self.autoplay = autoplay_action
 
         open_file_action = QAction("Open file", self)
@@ -168,15 +168,15 @@ class VideoPlayer(QGraphicsView):
             # self.video_preview.setSize(self.resolution)
             self.player.setPosition(0)
             # logging.info(f'Set muted to true.')
-            if self.driver.settings.value("autoplay_videos", True, bool):
-                logging.info(self.driver.settings.value("autoplay_videos", True, bool))
+            if self.autoplay.isChecked():
+                # logging.info(self.driver.settings.value("autoplay_videos", True, bool))
                 self.player.play()
             else:
-                logging.info("Paused")
+                # logging.info("Paused")
                 self.player.pause()
             self.opener.set_filepath(self.filepath)
             self.keepControlsInPlace()
-            self.updateControls()
+        self.updateControls()
 
     def updateControls(self) -> None:
         if self.player.audioOutput().isMuted():
@@ -333,8 +333,8 @@ class VideoPlayer(QGraphicsView):
             radius=12,
             fill=(0, 0, 0, 0),
         )
-        mask = mask.getchannel("A").toqpixmap()
-        self.setMask(QRegion(QBitmap(mask)))  # type: ignore
+        final_mask = mask.getchannel("A").toqpixmap()
+        self.setMask(QRegion(QBitmap(final_mask)))  # type: ignore
 
     def keepControlsInPlace(self) -> None:
         # Keeps the video controls in the places they should be.
@@ -359,10 +359,6 @@ class VideoPlayer(QGraphicsView):
         )
         return
         # return super().resizeEvent(event)\
-
-    def inputMethodEvent(self, event: QInputMethodEvent) -> None:
-        return
-        return super().inputMethodEvent(event)
 
 
 class VideoPreview(QGraphicsVideoItem):
