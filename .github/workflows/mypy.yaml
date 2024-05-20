@@ -12,10 +12,9 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - uses: reviewdog/action-setup@v1
         with:
-          python-version: '3.12'
+          reviewdog_version: latest
 
       - name: Install dependencies
         run: |
@@ -24,10 +23,13 @@ jobs:
           pip install PySide6==6.6.2
           pip install -r requirements.txt
           pip install mypy==1.10.0
+          mkdir tagstudio/.mypy_cache
 
-      - name: Run MyPy
-        run: |
-          cd tagstudio
-          mkdir -p .mypy_cache
-          mypy --install-types --non-interactive 
-          mypy --config-file ../pyproject.toml .
+      - uses: tsuyoshicho/action-mypy@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          reporter: github-check
+          fail_on_error: true
+          workdir: tagstudio
+          level: error
+          mypy_flags: --config-file ../pyproject.toml
