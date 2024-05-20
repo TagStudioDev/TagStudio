@@ -334,7 +334,7 @@ class VideoPlayer(QGraphicsView):
             fill=(0, 0, 0, 0),
         )
         final_mask = mask.getchannel("A").toqpixmap()
-        self.setMask(QRegion(QBitmap(final_mask)))  # type: ignore
+        self.setMask(QRegion(QBitmap(final_mask)))
 
     def keepControlsInPlace(self) -> None:
         # Keeps the video controls in the places they should be.
