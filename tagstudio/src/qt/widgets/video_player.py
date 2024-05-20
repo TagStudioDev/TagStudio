@@ -32,7 +32,7 @@ from PySide6.QtSvgWidgets import QSvgWidget
 from PIL import Image
 from src.qt.helpers.file_opener import FileOpenerHelper
 
-from src.core.ts_core import VIDEO_TYPES, AUDIO_TYPES
+from src.core.constants import VIDEO_TYPES, AUDIO_TYPES
 from PIL import Image, ImageDraw
 from src.core.enums import SettingItems
 

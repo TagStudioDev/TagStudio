@@ -41,6 +41,7 @@ from src.qt.widgets.panel import PanelModal
 from src.qt.widgets.text_box_edit import EditTextBox
 from src.qt.widgets.text_line_edit import EditTextLine
 from src.qt.widgets.item_thumb import ItemThumb
+from src.qt.widgets.video_player import VideoPlayer
 
 
 # Only import for type checking/autocompletion, will not be imported at runtime.
@@ -90,7 +91,8 @@ class PreviewPanel(QWidget):
 
         self.preview_img.addAction(self.open_file_action)
         self.preview_img.addAction(self.open_explorer_action)
-
+        self.preview_vid = VideoPlayer(driver)
+        self.preview_vid.hide()
         self.thumb_renderer = ThumbRenderer()
         self.thumb_renderer.updated.connect(
             lambda ts, i, s: (self.preview_img.setIcon(i))
@@ -110,7 +112,9 @@ class PreviewPanel(QWidget):
 
         image_layout.addWidget(self.preview_img)
         image_layout.setAlignment(self.preview_img, Qt.AlignmentFlag.AlignCenter)
-
+        image_layout.addWidget(self.preview_vid)
+        image_layout.setAlignment(self.preview_vid, Qt.AlignmentFlag.AlignCenter)
+        self.image_container.setMinimumSize(*self.img_button_size)
         self.file_label = FileOpenerLabel("Filename")
         self.file_label.setWordWrap(True)
         self.file_label.setTextInteractionFlags(
@@ -378,6 +382,9 @@ class PreviewPanel(QWidget):
         self.img_button_size = (int(adj_width), int(adj_height))
         self.preview_img.setMaximumSize(adj_size)
         self.preview_img.setIconSize(adj_size)
+        self.preview_vid.resizeVideo(adj_size)
+        self.preview_vid.setMaximumSize(adj_size)
+        self.preview_vid.setMinimumSize(adj_size)
         # self.preview_img.setMinimumSize(adj_size)
 
         # if self.preview_img.iconSize().toTuple()[0] < self.preview_img.size().toTuple()[0] + 10:
@@ -460,7 +467,9 @@ class PreviewPanel(QWidget):
                     pass
                 for i, c in enumerate(self.containers):
                     c.setHidden(True)
-
+            self.preview_img.show()
+            self.preview_vid.stop()
+            self.preview_vid.hide()
             self.selected = list(self.driver.selected)
             self.add_field_button.setHidden(True)
 
@@ -471,6 +480,9 @@ class PreviewPanel(QWidget):
                 item: Entry = self.lib.get_entry(self.driver.selected[0][1])
                 # If a new selection is made, update the thumbnail and filepath.
                 if not self.selected or self.selected != self.driver.selected:
+                    self.preview_img.show()
+                    self.preview_vid.stop()
+                    self.preview_vid.hide()
                     filepath = os.path.normpath(
                         f"{self.lib.library_dir}/{item.path}/{item.filename}"
                     )
@@ -516,6 +528,18 @@ class PreviewPanel(QWidget):
                             success, frame = video.read()
                             frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
                             image = Image.fromarray(frame)
+                            if success:
+                                self.preview_img.hide()
+                                self.preview_vid.play(
+                                    filepath, QSize(image.width, image.height)
+                                )
+                                self.resizeEvent(
+                                    QResizeEvent(
+                                        QSize(image.width, image.height),
+                                        QSize(image.width, image.height),
+                                    )
+                                )
+                                self.preview_vid.show()
 
                         # Stats for specific file types are displayed here.
                         if extension in (IMAGE_TYPES + VIDEO_TYPES + RAW_IMAGE_TYPES):
@@ -571,6 +595,9 @@ class PreviewPanel(QWidget):
 
         # Multiple Selected Items
         elif len(self.driver.selected) > 1:
+            self.preview_img.show()
+            self.preview_vid.stop()
+            self.preview_vid.hide()
             if self.selected != self.driver.selected:
                 self.file_label.setText(f"{len(self.driver.selected)} Items Selected")
                 self.file_label.setCursor(Qt.CursorShape.ArrowCursor)
