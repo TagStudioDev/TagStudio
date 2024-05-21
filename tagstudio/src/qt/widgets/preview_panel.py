@@ -4,7 +4,6 @@
 
 import logging
 import os
-from pathlib import Path
 import time
 import typing
 from datetime import datetime as dt
@@ -305,7 +304,7 @@ class PreviewPanel(QWidget):
             button.setObjectName(f"path{item_key}")
 
             def open_library_button_clicked(path):
-                return lambda: self.driver.open_library(Path(path))
+                return lambda: self.driver.open_library(path)
 
             button.clicked.connect(open_library_button_clicked(full_val))
             set_button_style(button)
@@ -529,13 +528,10 @@ class PreviewPanel(QWidget):
                         if not image:
                             raise UnidentifiedImageError
 
-                    except (FileNotFoundError, cv2.error) as e:
-                        self.dimensions_label.setText(f"{extension.upper()}")
-                        logging.info(
-                            f"[PreviewPanel][ERROR] Couldn't Render thumbnail for {filepath} (because of {e})"
-                        )
                     except (
                         UnidentifiedImageError,
+                        FileNotFoundError,
+                        cv2.error,
                         DecompressionBombError,
                     ) as e:
                         self.dimensions_label.setText(

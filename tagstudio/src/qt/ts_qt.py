@@ -224,10 +224,8 @@ class QtDriver(QObject):
             thread.start()
 
     def open_library_from_dialog(self):
-        dir = Path(
-            QFileDialog.getExistingDirectory(
-                None, "Open/Create Library", "/", QFileDialog.ShowDirsOnly
-            )
+        dir = QFileDialog.getExistingDirectory(
+            None, "Open/Create Library", "/", QFileDialog.ShowDirsOnly
         )
         if dir not in (None, ""):
             self.open_library(dir)
@@ -522,7 +520,7 @@ class QtDriver(QObject):
                 int(Qt.AlignmentFlag.AlignBottom | Qt.AlignmentFlag.AlignHCenter),
                 QColor("#9782ff"),
             )
-            self.open_library(Path(lib))
+            self.open_library(lib)
 
         if self.args.ci:
             # gracefully terminate the app in CI environment
@@ -1388,7 +1386,7 @@ class QtDriver(QObject):
         self.settings.endGroup()
         self.settings.sync()
 
-    def open_library(self, path: Path):
+    def open_library(self, path):
         """Opens a TagStudio library."""
         if self.lib.library_dir:
             self.save_library()
@@ -1397,6 +1395,14 @@ class QtDriver(QObject):
         self.main_window.statusbar.showMessage(f"Opening Library {str(path)}", 3)
         return_code = self.lib.open_library(path)
         if return_code == 1:
+            # if self.args.external_preview:
+            # 	self.init_external_preview()
+
+            # if len(self.lib.entries) <= 1000:
+            # 	print(f'{INFO} Checking for missing files in Library \'{self.lib.library_dir}\'...')
+            # 	self.lib.refresh_missing_files()
+            # title_text = f'{self.base_title} - Library \'{self.lib.library_dir}\''
+            # self.main_window.setWindowTitle(title_text)
             pass
 
         else:
