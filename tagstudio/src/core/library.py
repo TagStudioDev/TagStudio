@@ -89,17 +89,17 @@ class Entry:
         __value = cast(Self, object)
         if os.name == "nt":
             return (
-                int(self.id) == int(__value.id) #type: ignore
-                and self.filename.lower() == __value.filename.lower() #type: ignore
-                and self.path.lower() == __value.path.lower() #type: ignore
-                and self.fields == __value.fields #type: ignore
+                int(self.id) == int(__value.id)
+                and self.filename.lower() == __value.filename.lower()
+                and self.path.lower() == __value.path.lower()
+                and self.fields == __value.fields
             )
         else:
             return (
-                int(self.id) == int(__value.id) #type: ignore
-                and self.filename == __value.filename #type: ignore
-                and self.path == __value.path #type: ignore
-                and self.fields == __value.fields #type: ignore
+                int(self.id) == int(__value.id)
+                and self.filename == __value.filename
+                and self.path == __value.path
+                and self.fields == __value.fields
             )
 
     def compressed_dict(self) -> JsonEntry:
@@ -450,9 +450,8 @@ class Library:
         path = os.path.normpath(path).rstrip("\\")
 
         # If '.TagStudio' is included in the path, trim the path up to it.
-        if TS_FOLDER_NAME in str(path):
-            # TODO: Native Path method instead of this casting.
-            path = Path(str(path).split(TS_FOLDER_NAME)[0])
+        if TS_FOLDER_NAME in path:
+            path = path.split(TS_FOLDER_NAME)[0]
 
         try:
             self.clear_internal_vars()
