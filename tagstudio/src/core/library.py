@@ -86,20 +86,20 @@ class Entry:
         return self.__str__()
 
     def __eq__(self, __value: object) -> bool:
-        # __value = cast(Self, object)
+        __value = cast(Self, object)
         if os.name == "nt":
             return (
-                int(self.id) == int(__value.id) #type: ignore
-                and self.filename.lower() == __value.filename.lower() #type: ignore
-                and self.path.lower() == __value.path.lower() #type: ignore
-                and self.fields == __value.fields #type: ignore
+                int(self.id) == int(__value.id)  # type: ignore
+                and self.filename.lower() == __value.filename.lower()  # type: ignore
+                and self.path.lower() == __value.path.lower()  # type: ignore
+                and self.fields == __value.fields  # type: ignore
             )
         else:
             return (
-                int(self.id) == int(__value.id) #type: ignore
-                and self.filename == __value.filename #type: ignore
-                and self.path == __value.path #type: ignore
-                and self.fields == __value.fields #type: ignore
+                int(self.id) == int(__value.id)  # type: ignore
+                and self.filename == __value.filename  # type: ignore
+                and self.path == __value.path  # type: ignore
+                and self.fields == __value.fields  # type: ignore
             )
 
     def compressed_dict(self) -> JsonEntry:
@@ -351,7 +351,7 @@ class Library:
 
         # File Interfacing =====================================================
         self.dir_file_count: int = -1
-        self.files_not_in_library: list[str] = []
+        self.files_not_in_library: list[Path] = []
         self.missing_files: list[str] = []
         self.fixed_files: list[str] = []  # TODO: Get rid of this.
         self.missing_matches: dict = {}
@@ -363,7 +363,7 @@ class Library:
         #   Used for O(1) lookup of a file based on the current index (page number - 1) of the image being looked at.
         #   That filename can then be used to provide quick lookup to image metadata entries in the Library.
         # 	NOTE: On Windows, these strings are always lowercase.
-        self.filename_to_entry_id_map: dict[str, int] = {}
+        self.filename_to_entry_id_map: dict[Path, int] = {}
         # A list of file extensions to be ignored by TagStudio.
         self.default_ext_blacklist: list = ["json", "xmp", "aae"]
         self.ignored_extensions: list = self.default_ext_blacklist
@@ -500,18 +500,17 @@ class Library:
 
         return tag_list
 
-    def open_library(self, path: str) -> int:
+    def open_library(self, path: Path) -> int:
         """
         Opens a TagStudio v9+ Library.
         Returns 0 if library does not exist, 1 if successfully opened, 2 if corrupted.
         """
 
         return_code: int = 2
-        path = os.path.normpath(path).rstrip("\\")
 
         # If '.TagStudio' is included in the path, trim the path up to it.
-        if TS_FOLDER_NAME in path:
-            path = path.split(TS_FOLDER_NAME)[0]
+        if TS_FOLDER_NAME in str(path):
+            path = Path(str(path).split(TS_FOLDER_NAME)[0])
 
         if os.path.exists(os.path.normpath(f"{path}/{TS_FOLDER_NAME}/ts_library.json")):
             try:
