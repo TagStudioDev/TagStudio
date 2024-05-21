@@ -86,7 +86,7 @@ class Entry:
         return self.__str__()
 
     def __eq__(self, __value: object) -> bool:
-        __value = cast(Self, object)
+        # __value = cast(Self, object)
         if os.name == "nt":
             return (
                 int(self.id) == int(__value.id)  # type: ignore
