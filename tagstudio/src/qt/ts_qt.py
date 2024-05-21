@@ -1394,7 +1394,7 @@ class QtDriver(QObject):
             self.save_library()
             self.lib.clear_internal_vars()
 
-        self.main_window.statusbar.showMessage(f"Opening Library {path}", 3)
+        self.main_window.statusbar.showMessage(f"Opening Library {str(path)}", 3)
         return_code = self.lib.open_library(path)
         if return_code == 1:
             pass
