@@ -278,7 +278,6 @@ class QtDriver(QObject):
         self.main_window.dropEvent = self.drop_import.dropEvent
         self.main_window.dragMoveEvent = self.drop_import.dragMoveEvent
 
-
         # # self.main_window.windowFlags() &
         # # self.main_window.setWindowFlag(Qt.WindowType.FramelessWindowHint, True)
         # self.main_window.setWindowFlag(Qt.WindowType.NoDropShadowWindowHint, True)
@@ -1067,10 +1066,10 @@ class QtDriver(QObject):
             item_thumb = ItemThumb(
                 None, self.lib, self.preview_panel, (self.thumb_size, self.thumb_size)
             )
-            
+
             item_thumb.setMouseTracking(True)
             item_thumb.mouseMoveEvent = self.drop_import.mouseMoveEvent
-            
+
             layout.addWidget(item_thumb)
             self.item_thumbs.append(item_thumb)
 
