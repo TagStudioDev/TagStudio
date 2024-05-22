@@ -2,27 +2,54 @@ from pathlib import Path
 import shutil
 import typing
 
-from PySide6.QtCore import QThreadPool
-from PySide6.QtGui import QDropEvent, QDragEnterEvent, QDragMoveEvent
+from PySide6.QtCore import QThreadPool,Qt,QMimeData,QUrl
+from PySide6.QtGui import QDropEvent, QDragEnterEvent,QImage, QDragMoveEvent,QMouseEvent,QDrag,QDragLeaveEvent
 from PySide6.QtWidgets import QMessageBox
 from src.qt.widgets import ProgressWidget
 from src.qt.helpers import FunctionIterator, CustomRunnable
 
+from ctypes import wintypes,windll
 
 if typing.TYPE_CHECKING:
     from src.qt.ts_qt import QtDriver
 
+import logging
 
 class DropImport:
     def __init__(self, driver: "QtDriver"):
         self.driver = driver
-
+    
+    def mouseMoveEvent(self,event:QMouseEvent):
+        if event.buttons() is not Qt.MouseButton.LeftButton: return
+        if len(self.driver.selected) == 0: return
+        
+        drag = QDrag(self.driver)
+        paths = []
+        mimedata = QMimeData()
+        for selected in  self.driver.selected:
+            entry =self.driver.lib.get_entry(selected[1])
+            url = QUrl.fromLocalFile(self.driver.lib.library_dir+"/"+entry.path+"/"+entry.filename)
+            paths.append(url)
+        
+        mimedata.setUrls(paths)
+        drag.setMimeData(mimedata)
+        drag.exec(Qt.DropAction.CopyAction)
+    
     def dropEvent(self, event: QDropEvent):
+        if event.source() is self.driver: # change that if you want to drop something originating from tagstudio, for moving or so
+            return
+
         if not event.mimeData().hasUrls():
             return
 
         self.urls = event.mimeData().urls()
         self.import_files()
+
+    def dragLeaveEvent(self,event:QDragLeaveEvent):
+        if event.mimeData().hasUrls():
+            event.accept()
+        else:
+            event.ignore()
 
     def dragEnterEvent(self, event: QDragEnterEvent):
         if event.mimeData().hasUrls():
@@ -34,6 +61,7 @@ class DropImport:
         if event.mimeData().hasUrls():
             event.accept()
         else:
+            logging.info(self.driver.selected)
             event.ignore()
 
     def import_files(self):
@@ -216,3 +244,5 @@ class DropImport:
             )
             index += 1
         return filePath.name
+
+
