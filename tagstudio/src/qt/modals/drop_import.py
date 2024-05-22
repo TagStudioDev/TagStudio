@@ -38,7 +38,7 @@ class DropImport:
         for selected in self.driver.selected:
             entry = self.driver.lib.get_entry(selected[1])
             url = QUrl.fromLocalFile(
-                self.driver.lib.library_dir + "/" + entry.path + "/" + entry.filename
+                Path(self.driver.lib.library_dir) / entry.path / entry.filename
             )
             paths.append(url)
 
@@ -82,27 +82,13 @@ class DropImport:
         self.dirs_in_root: list[Path] = []
         self.duplicate_files: list[Path] = []
 
-        self.start_collection_progress()
-
-    def start_collection_progress(self):
-        iterator = FunctionIterator(self.collect_files_to_import)
-        pw = ProgressWidget(
-            window_title="Searching Files",
-            label_text="Searching New Files...\nPreparing...",
-            cancel_button_text=None,
-            minimum=0,
-            maximum=0,
+        create_progress_bar(
+            self.collect_files_to_import,
+           "Searching Files",
+           "Searching New Files...\nPreparing...",
+            lambda x: f'Searching New Files...\n{x[0]+1} File{"s" if x[0]+1 != 1 else ""} Found. {(f"{x[1]} Already exist in the library folders") if x[1]>0 else ""}',
+            self.ask_user
         )
-        pw.show()
-        iterator.value.connect(lambda x: pw.update_progress(x[0] + 1))
-        iterator.value.connect(
-            lambda x: pw.update_label(
-                f'Searching New Files...\n{x[0]+1} File{"s" if x[0]+1 != 1 else ""} Found. {(f"{x[1]} Already exist in the library folders") if x[1]>0 else ""}'
-            )
-        )
-        r = CustomRunnable(lambda: iterator.run())
-        r.done.connect(lambda: (pw.hide(), self.ask_user()))
-        QThreadPool.globalInstance().start(r)
 
     def collect_files_to_import(self):
         for url in self.urls:
@@ -135,31 +121,6 @@ class DropImport:
                     self.duplicate_files.append(file)
 
                 yield [len(self.files), len(self.duplicate_files)]
-
-    def start_copy_progress(self):
-        iterator = FunctionIterator(self.copy_files)
-        pw = ProgressWidget(
-            window_title="Import Files",
-            label_text="Importing New Files...\nPreparing...",
-            cancel_button_text=None,
-            minimum=0,
-            maximum=len(self.files),
-        )
-        pw.show()
-        iterator.value.connect(lambda x: pw.update_progress(x[0] + 1))
-        dupes_choice_text = (
-            "Skipped"
-            if self.choice == 0
-            else ("Overridden" if self.choice == 1 else "Renamed")
-        )
-        iterator.value.connect(
-            lambda x: pw.update_label(
-                f'Importing New Files...\n{x[0]+1} File{"s" if x[0]+1 != 1 else ""} Imported. {(f"{x[1]} {dupes_choice_text}") if x[1]>0 else ""}'
-            )
-        )
-        r = CustomRunnable(lambda: iterator.run())
-        r.done.connect(lambda: (pw.hide(), self.driver.add_new_files_runnable()))
-        QThreadPool.globalInstance().start(r)
 
     def copy_files(self):
         fileCount = 0
@@ -199,7 +160,19 @@ class DropImport:
             if self.choice == 3:  # cancel
                 return
 
-        self.start_copy_progress()
+        dupes_choice_text = (
+            "Skipped"
+            if self.choice == 0
+            else ("Overridden" if self.choice == 1 else "Renamed")
+        )
+        create_progress_bar(
+            self.copy_files,
+            "Import Files",
+            "Importing New Files...\nPreparing...",
+            lambda x: f'Importing New Files...\n{x[0]+1} File{"s" if x[0]+1 != 1 else ""} Imported. {(f"{x[1]} {dupes_choice_text}") if x[1]>0 else ""}',
+            self.driver.add_new_files_runnable,
+            len(self.files),
+        )
 
     def duplicates_choice(self) -> int:
         msgBox = QMessageBox()
@@ -257,3 +230,22 @@ class DropImport:
             )
             index += 1
         return filePath.name
+
+
+def create_progress_bar(
+    function, title: str, text: str, update_label_callback, done_callback, max=0
+):
+    iterator = FunctionIterator(function)
+    pw = ProgressWidget(
+        window_title=title,
+        label_text=text,
+        cancel_button_text=None,
+        minimum=0,
+        maximum=max,
+    )
+    pw.show()
+    iterator.value.connect(lambda x: pw.update_progress(x[0] + 1))
+    iterator.value.connect(lambda x: pw.update_label(update_label_callback(x)))
+    r = CustomRunnable(lambda: iterator.run())
+    r.done.connect(lambda: (pw.hide(), done_callback()))
+    QThreadPool.globalInstance().start(r)
