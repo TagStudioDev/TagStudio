@@ -86,7 +86,7 @@ class DropImport:
             self.collect_files_to_import,
             "Searching Files",
             "Searching New Files...\nPreparing...",
-            lambda x: f'Searching New Files...\n{x[0]+1} File{"s" if x[0]+1 != 1 else ""} Found. {(f"{x[1]} Already exist in the library folders") if x[1]>0 else ""}',
+            lambda x: f'Searching New Files...\n{x[0]+1} File{'s' if x[0]+1 != 1 else ''} Found. {(f'{x[1]} Already exist in the library folders') if x[1]>0 else ''}',
             self.ask_user,
         )
 
@@ -169,7 +169,7 @@ class DropImport:
             self.copy_files,
             "Import Files",
             "Importing New Files...\nPreparing...",
-            lambda x: f'Importing New Files...\n{x[0]+1} File{"s" if x[0]+1 != 1 else ""} Imported. {(f"{x[1]} {dupes_choice_text}") if x[1]>0 else ""}',
+            lambda x: f'Importing New Files...\n{x[0]+1} File{'s' if x[0]+1 != 1 else ''} Imported. {(f'{x[1]} {dupes_choice_text}') if x[1]>0 else ''}',
             self.driver.add_new_files_runnable,
             len(self.files),
         )
@@ -181,7 +181,7 @@ class DropImport:
             dupes_to_show = dupes_to_show[0:20]
 
         msgBox.setText(
-            f"The files  {', '.join(map(lambda path: str(path),self.get_relativ_paths(dupes_to_show)))} {(f"and {len(self.duplicate_files)-20} more") if len(self.duplicate_files)>20 else ""}  have filenames that already exist in the library folder."
+            f"The files  {', '.join(map(lambda path: str(path),self.get_relativ_paths(dupes_to_show)))} {(f'and {len(self.duplicate_files)-20} more') if len(self.duplicate_files)>20 else ''}  have filenames that already exist in the library folder."
         )
         msgBox.addButton("Skip", QMessageBox.ButtonRole.YesRole)
         msgBox.addButton("Override", QMessageBox.ButtonRole.DestructiveRole)
