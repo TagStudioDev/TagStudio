@@ -84,10 +84,10 @@ class DropImport:
 
         create_progress_bar(
             self.collect_files_to_import,
-           "Searching Files",
-           "Searching New Files...\nPreparing...",
+            "Searching Files",
+            "Searching New Files...\nPreparing...",
             lambda x: f'Searching New Files...\n{x[0]+1} File{"s" if x[0]+1 != 1 else ""} Found. {(f"{x[1]} Already exist in the library folders") if x[1]>0 else ""}',
-            self.ask_user
+            self.ask_user,
         )
 
     def collect_files_to_import(self):
