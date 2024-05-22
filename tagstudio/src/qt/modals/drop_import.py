@@ -13,7 +13,7 @@ from PySide6.QtGui import (
 )
 from PySide6.QtWidgets import QMessageBox
 from src.qt.widgets.progress import ProgressWidget
-from src.qt.helpers.custom_runnable import  CustomRunnable
+from src.qt.helpers.custom_runnable import CustomRunnable
 from src.qt.helpers.function_iterator import FunctionIterator
 
 if typing.TYPE_CHECKING:
