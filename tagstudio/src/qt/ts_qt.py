@@ -272,6 +272,13 @@ class QtDriver(QObject):
         # 	f'QScrollBar::{{background:red;}}'
         # 	)
 
+        self.drop_import = DropImport(self)
+        self.main_window.setAcceptDrops(True)
+        self.main_window.dragEnterEvent = self.drop_import.dragEnterEvent
+        self.main_window.dropEvent = self.drop_import.dropEvent
+        self.main_window.dragMoveEvent = self.drop_import.dragMoveEvent
+
+
         # # self.main_window.windowFlags() &
         # # self.main_window.setWindowFlag(Qt.WindowType.FramelessWindowHint, True)
         # self.main_window.setWindowFlag(Qt.WindowType.NoDropShadowWindowHint, True)
@@ -574,12 +581,6 @@ class QtDriver(QObject):
 
         # self.render_times: list = []
         # self.main_window.setWindowFlag(Qt.FramelessWindowHint)
-
-        drop_import = DropImport(self)
-        self.main_window.setAcceptDrops(True)
-        self.main_window.dragEnterEvent = drop_import.dragEnterEvent
-        self.main_window.dropEvent = drop_import.dropEvent
-        self.main_window.dragMoveEvent = drop_import.dragMoveEvent
 
         # NOTE: Putting this early will result in a white non-responsive
         # window until everything is loaded. Consider adding a splash screen
@@ -1066,6 +1067,10 @@ class QtDriver(QObject):
             item_thumb = ItemThumb(
                 None, self.lib, self.preview_panel, (self.thumb_size, self.thumb_size)
             )
+            
+            item_thumb.setMouseTracking(True)
+            item_thumb.mouseMoveEvent = self.drop_import.mouseMoveEvent
+            
             layout.addWidget(item_thumb)
             self.item_thumbs.append(item_thumb)
 
