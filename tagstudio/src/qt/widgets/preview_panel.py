@@ -473,7 +473,7 @@ class PreviewPanel(QWidget):
                 if not self.selected or self.selected != self.driver.selected:
                     filepath = self.lib.library_dir / item.path / item.filename
                     self.file_label.setFilePath(filepath)
-                    window_title = filepath
+                    window_title = str(filepath)
                     ratio: float = self.devicePixelRatio()
                     self.thumb_renderer.render(
                         time.time(),
