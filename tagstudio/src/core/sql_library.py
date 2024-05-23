@@ -95,6 +95,18 @@ class SqliteLibrary:
         )
         return Location(*location.fetchone())
 
+    def get_entries(self) -> list["Entry"]:
+        # This function really shouldn't exist, entries should be loaded as needed for searches
+        # and or the first screen full when loading a library
+        entries = self.db.execute("SELECT (id, path, location) FROM entry;").fetchall()
+        return [Entry(*entry) for entry in entries]
+
+    def get_entry(self, entry_id: int) -> "Entry":
+        entry = self.db.execute(
+            "SELECT (id, path, location) FROM entry WHERE id = ?;", (entry_id,)
+        )
+        return Entry(*entry.fetchone())
+
     def get_version(self) -> tuple[int, int, int]:
         # PRAGMA user_version is only able to store an unsigned int
         database_versions = {1: (9, 2, 0)}
