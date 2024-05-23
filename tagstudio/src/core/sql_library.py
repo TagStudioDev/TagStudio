@@ -70,9 +70,13 @@ class DataSource(Protocol):
         """Return the group with a given title tag."""
         ...
 
-    def get_entry_attributes(self, entry_id: int) -> dict[int, str | float | datetime | list[int]]: ...
+    def get_entry_attributes(
+        self, entry_id: int
+    ) -> dict[int, str | float | datetime | list[int]]: ...
 
-    def get_tag_relations(self, tag_id: int, find_parents: bool = True) -> list[int]: ...
+    def get_tag_relations(
+        self, tag_id: int, find_parents: bool = True
+    ) -> list[int]: ...
 
     def get_aliases(self, tag_id: int) -> list[str]: ...
 
@@ -107,9 +111,12 @@ class SqliteLibrary:
         )
         return Entry(*entry.fetchone())
 
-    def get_attributes(self, entry_id: int) -> dict[int, str | float | datetime | list[int]]:
+    def get_attributes(
+        self, entry_id: int
+    ) -> dict[int, str | float | datetime | list[int]]:
         attributes = self.db.execute(
-            "SELECT (title_tag, tag, text, number, datetime) FROM entry_attribute WHERE entry = ?;", (entry_id,)
+            "SELECT (title_tag, tag, text, number, datetime) FROM entry_attribute WHERE entry = ?;",
+            (entry_id,),
         ).fetchall()
         # Author: "John Smith",
         # Description: "This is an example",
@@ -136,7 +143,9 @@ class SqliteLibrary:
         return entry_attributes
 
     def get_tags(self) -> dict[int, "Tag"]:
-        tags = self.db.execute("SELECT (id, name, shorthand, color) FROM tag;").fetchall()
+        tags = self.db.execute(
+            "SELECT (id, name, shorthand, color) FROM tag;"
+        ).fetchall()
         return {tag[0]: Tag(*tag) for tag in tags}
 
     def get_tag(self, tag_id: int) -> "Tag":
@@ -201,14 +210,18 @@ class Entry:
     @property
     def fields(self) -> list[int] | None:
         if self._attributes is None:
-            logging.warning(f"[Entry] {self.entry_id} Fields accessed before attributes loaded")
+            logging.warning(
+                f"[Entry] {self.entry_id} Fields accessed before attributes loaded"
+            )
             return None
         return list(self._attributes.keys())
 
     @property
     def tags(self) -> list[int] | None:
         if self._attributes is None:
-            logging.warning(f"[Entry] {self.entry_id} Tags accessed before attributes loaded")
+            logging.warning(
+                f"[Entry] {self.entry_id} Tags accessed before attributes loaded"
+            )
             return None
         contained_tags = []
         for tag, value in self._attributes.items():
@@ -1494,9 +1507,7 @@ class Library:
             if data.get("date_published"):
                 field_id = 14  # Date Published Field ID
                 date = str(
-                    datetime.strptime(
-                        data["date_published"], "%Y-%m-%d %H:%M:%S"
-                    )
+                    datetime.strptime(data["date_published"], "%Y-%m-%d %H:%M:%S")
                 )
                 if not self.does_field_content_exist(entry_id, field_id, date):
                     self.add_field_to_entry(entry_id, field_id)
