@@ -194,7 +194,7 @@ class Entry:
         # Required Fields ======================================================
         self.entry_id = entry_id
         self.location = location  # TODO: replace int
-        self.path = path.relative_to(location.path)
+        self.path = path
         self.hash = self.update_hash()
         self._attributes: Optional[dict[int, str | float | datetime | list[int]]] = None
 
