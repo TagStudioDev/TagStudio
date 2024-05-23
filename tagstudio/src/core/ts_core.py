@@ -37,7 +37,7 @@ class TagStudioCore:
         # This may only occur with sidecar files that are downloaded separate from posts.
         if source == "instagram":
             if not _filepath.is_file():
-                newstem = _filepath.stem[:-16] + "1" + _filepath[-15:]
+                newstem = _filepath.stem[:-16] + "1" + _filepath.stem[-15:]
                 _filepath = _filepath.parent / (newstem + ".json")
 
         try:

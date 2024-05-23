@@ -489,7 +489,7 @@ class Library:
         """
 
         return_code: int = 2
-        
+
         _path: Path = self._fix_lib_path(path)
 
         if (_path / TS_FOLDER_NAME / "ts_library.json").exists():

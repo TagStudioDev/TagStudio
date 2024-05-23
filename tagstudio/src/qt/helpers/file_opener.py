@@ -20,7 +20,7 @@ INFO = f"[INFO]"
 logging.basicConfig(format="%(message)s", level=logging.INFO)
 
 
-def open_file(path: str|Path, file_manager: bool = False):
+def open_file(path: str | Path, file_manager: bool = False):
     """Open a file in the default application or file explorer.
 
     Args:
@@ -91,21 +91,21 @@ def open_file(path: str|Path, file_manager: bool = False):
 
 
 class FileOpenerHelper:
-    def __init__(self, filepath: str):
+    def __init__(self, filepath: str | Path):
         """Initialize the FileOpenerHelper.
 
         Args:
                 filepath (str): The path to the file to open.
         """
-        self.filepath = filepath
+        self.filepath = str(filepath)
 
-    def set_filepath(self, filepath: str):
+    def set_filepath(self, filepath: str | Path):
         """Set the filepath to open.
 
         Args:
                 filepath (str): The path to the file to open.
         """
-        self.filepath = filepath
+        self.filepath = str(filepath)
 
     def open_file(self):
         """Open the file in the default application."""
