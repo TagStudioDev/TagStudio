@@ -240,14 +240,6 @@ class Tag:
         pass
 
 
-class TagRelation:
-    """A Library Tag Relation Object. Used to store the relationship between tags"""
-
-    def __init__(self, tag: Tag, parent: Tag) -> None:
-        self.tag = tag
-        self.parent = parent
-
-
 class EntryAttribute:
     """A Library Entry Attribute Object. Used to store the attributes of an entry"""
 
