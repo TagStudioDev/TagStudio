@@ -86,20 +86,20 @@ class Entry:
         return self.__str__()
 
     def __eq__(self, __value: object) -> bool:
-        # __value = cast(Self, object)
+        __value = cast(Self, __value)
         if os.name == "nt":
             return (
-                int(self.id) == int(__value.id)  # type: ignore
-                and self.filename.lower() == __value.filename.lower()  # type: ignore
-                and self.path.lower() == __value.path.lower()  # type: ignore
-                and self.fields == __value.fields  # type: ignore
+                int(self.id) == int(__value.id)
+                and self.filename.lower() == __value.filename.lower()
+                and self.path.lower() == __value.path.lower()
+                and self.fields == __value.fields
             )
         else:
             return (
-                int(self.id) == int(__value.id)  # type: ignore
-                and self.filename == __value.filename  # type: ignore
-                and self.path == __value.path  # type: ignore
-                and self.fields == __value.fields  # type: ignore
+                int(self.id) == int(__value.id)
+                and self.filename == __value.filename
+                and self.path == __value.path
+                and self.fields == __value.fields
             )
 
     def compressed_dict(self) -> JsonEntry:
