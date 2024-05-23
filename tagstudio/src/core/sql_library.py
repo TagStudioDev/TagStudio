@@ -324,6 +324,14 @@ class Library:
 
         return 1
 
+    def get_tag(self, tag_id: int) -> Tag:
+        """Returns a Tag object given a Tag ID.
+        If not already cached in the Library, fetch from the DataSource."""
+        if tag_id in self.tags:
+            return self.tags[tag_id]
+        else:
+            return self.data_source.get_tag(tag_id)
+
     def to_json(self):
         """
         Creates a JSON serialized string from the Library object.
