@@ -86,7 +86,7 @@ class SqliteLibrary:
         self.db = db
 
     def get_locations(self) -> list["Location"]:
-        locations = self.db.execute("SELECT (id, path, name) FROM location;")
+        locations = self.db.execute("SELECT (id, path, name) FROM location;").fetchall()
         return [Location(*loc) for loc in locations]
 
     def get_location(self, location_id: int) -> "Location":
