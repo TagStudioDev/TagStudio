@@ -107,6 +107,16 @@ class SqliteLibrary:
         )
         return Entry(*entry.fetchone())
 
+    def get_tags(self) -> dict[int, "Tag"]:
+        tags = self.db.execute("SELECT (id, name, shorthand, color) FROM tag;").fetchall()
+        return {tag[0]: Tag(*tag) for tag in tags}
+
+    def get_tag(self, tag_id: int) -> "Tag":
+        tag = self.db.execute(
+            "SELECT (id, name, shorthand, color) FROM tag WHERE id = ?;", (tag_id,)
+        )
+        return Tag(*tag.fetchone())
+
     def get_version(self) -> tuple[int, int, int]:
         # PRAGMA user_version is only able to store an unsigned int
         database_versions = {1: (9, 2, 0)}
