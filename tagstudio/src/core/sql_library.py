@@ -318,11 +318,7 @@ class Library:
         self.locations = self.data_source.get_locations()
         self.entries = self.data_source.get_entries()
         self.tags = self.data_source.get_tags()
-        self.groups = self.data_source.get_groups()
-
-        # Load Tags
-        # Load Groups
-        # Load Attributes
+        # self.groups = self.data_source.get_groups()  # TODO: Not implemented in v9.2.0
         # Load Relations
         # Load Aliases
 
