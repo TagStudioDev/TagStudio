@@ -70,7 +70,7 @@ class DataSource(Protocol):
         """Return the group with a given title tag."""
         ...
 
-    def get_attributes(self, entry_id: int) -> list["EntryAttribute"]: ...
+    def get_entry_attributes(self, entry_id: int) -> dict[int, str | float | datetime | list[int]]: ...
 
     def get_tag_relations(self, tag_id: int, find_parents: bool = True) -> list[int]: ...
 
@@ -168,26 +168,28 @@ class Entry:
         self.location = location  # TODO: replace int
         self.path = path.relative_to(location.path)
         self.hash = self.update_hash()
-        # TODO: Load attributes from database (Lazy Load?)
-        self._attributes: list[EntryAttribute] = None
+        self._attributes: Optional[dict[int, str | float | datetime | list[int]]] = None
 
     @property
-    def fields(self):
+    def fields(self) -> list[int] | None:
         if self._attributes is None:
-            self.load_attributes()
-        return [attr for attr in self._attributes if attr.is_field]
-
-    @fields.setter
-    def fields(self, fields: list["EntryAttribute"]):
-        # TODO: Store fields back to the database
-        # TODO: add methods to add/remove single fields
-        pass
+            logging.warning(f"[Entry] {self.entry_id} Fields accessed before attributes loaded")
+            return None
+        return list(self._attributes.keys())
 
     @property
-    def tags(self):
+    def tags(self) -> list[int] | None:
         if self._attributes is None:
-            self.load_attributes()
-        return [attr for attr in self._attributes if not attr.is_field]
+            logging.warning(f"[Entry] {self.entry_id} Tags accessed before attributes loaded")
+            return None
+        contained_tags = []
+        for tag, value in self._attributes.items():
+            # All fields are tags
+            contained_tags.append(tag)
+            if isinstance(value, list):
+                # values that are lists are tag boxes so add those tags also
+                contained_tags += value
+        return contained_tags
 
     @tags.setter
     def tags(self, tags):
@@ -247,16 +249,6 @@ class Tag:
                 return f"{self.name} ({self.parents[0].name})"
         else:
             return f"{self.name}"
-
-
-class EntryAttribute:
-    """A Library Entry Attribute Object. Used to store the attributes of an entry"""
-
-    def __init__(self, entry: Entry, title_tag: Tag) -> None:
-        self.entry = entry
-        self.tag = title_tag
-        self.type = None  # TODO: Enum (tag, text, number, datetime)?
-        self.value = None  # TODO: Load value from database (Lazy Load?)
 
 
 class Group:  # Maps to entry_page table
