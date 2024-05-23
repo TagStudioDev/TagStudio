@@ -72,9 +72,9 @@ class DataSource(Protocol):
 
     def get_attributes(self, entry_id: int) -> list["EntryAttribute"]: ...
 
-    def get_tag_relations(self, tag_id: int, find_parents: bool = False): ...
+    def get_tag_relations(self, tag_id: int, find_parents: bool = True) -> list[int]: ...
 
-    def get_aliases(self, tag: "Tag") -> list[str]: ...
+    def get_aliases(self, tag_id: int) -> list[str]: ...
 
     def get_version(self) -> tuple[int, int, int]:
         """Should return the version of the data source in the format Major.Minor.Patch"""
@@ -116,6 +116,23 @@ class SqliteLibrary:
             "SELECT (id, name, shorthand, color) FROM tag WHERE id = ?;", (tag_id,)
         )
         return Tag(*tag.fetchone())
+
+    def get_tag_relations(self, tag_id: int, find_parents: bool = True):
+        if find_parents:
+            relations = self.db.execute(
+                "SELECT (parent) FROM tag_relation WHERE tag = ?;", (tag_id,)
+            ).fetchall()
+        else:
+            relations = self.db.execute(
+                "SELECT (tag) FROM tag_relation WHERE parent = ?;", (tag_id,)
+            ).fetchall()
+        return [rel[0] for rel in relations]
+
+    def get_aliases(self, tag_id: int) -> list[str]:
+        aliases = self.db.execute(
+            "SELECT (name) FROM alias WHERE tag = ?;", (tag_id,)
+        ).fetchall()
+        return [alias[0] for alias in aliases]
 
     def get_version(self) -> tuple[int, int, int]:
         # PRAGMA user_version is only able to store an unsigned int
@@ -318,9 +335,10 @@ class Library:
         self.locations = self.data_source.get_locations()
         self.entries = self.data_source.get_entries()
         self.tags = self.data_source.get_tags()
+        for tag_id, tag in self.tags.items():
+            tag.parents = self.data_source.get_tag_relations(tag_id)
+            tag.aliases = self.data_source.get_aliases(tag_id)
         # self.groups = self.data_source.get_groups()  # TODO: Not implemented in v9.2.0
-        # Load Relations
-        # Load Aliases
 
         return 1
 
