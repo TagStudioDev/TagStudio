@@ -3,9 +3,9 @@
 Tags are keywords that represent a certain user-defined attribute. A person, place, thing, concept, you name it! Tags allow for a more sophisticated way to organize and search [entries](/doc/Entry.md) thanks to their aliases, parent tags, and more.
 Tags can be as simple or complex as wanted, so that any user can tune TagStudio to fit their needs.
 
-Among the things that make tags so useful, aliases give the ability to contain alternate names and spellings, making searches intuitive and expansive. Furthermore, parent-tags/subtags offer relational organization capabilities for the structuring and connection of the [Library's](/doc/Library.md) contents.
+Among the things that make tags so useful, aliases give the ability to contain alternate names and spellings, making searches intuitive and expansive. Furthermore, parent-tags/subtags offer relational organization capabilities for the structuring and connection of the [library's](/doc/Library.md) contents.
 
-## Tag Object Structure (v9.x.x):
+## Tag Object Structure
 
 #### `id`
 ID for the tag.
@@ -29,7 +29,7 @@ Alternate names for the tag.
 #### `subtags`
 Other Tags that make up properties of this tag. Also called "parent tags".
 - List of Strings, Optional
-- Used for display (first subtag only) and searching.
+- Used for display (first parent tag only) and searching.
 #### `color`
 A color name string for customizing the tag's display color
 - String, Optional
@@ -39,7 +39,7 @@ A color name string for customizing the tag's display color
 
 Using for example, a library of files including some tagged with the following tags:
 
-| Tag                 | `name`              | `shorthand` | `aliases`              | `subtags`                                    |
+| Tag                 | `name`              | `shorthand` | `aliases`              | `parent tags`                                |
 | ------------------- | ------------------- | ----------- | ---------------------- | -------------------------------------------- |
 | *League of Legends* | "League of Legends" | "LoL"       | ["League"]             | ["Game", "Fantasy"]                          |
 | *Arcane*            | "Arcane"            | ""          | []                     | ["League of Legends", "Cartoon"]             |
@@ -49,20 +49,20 @@ Using for example, a library of files including some tagged with the following t
 
 **The query "Arcane" will display results tagged with:**
 
-| Tag             | reason                                | Mock Path Display          |
-| --------------- | ------------------------------------- | -------------------------- |
-| Arcane          | Direct match of tag name              | "Arcane"                   |
-| Jinx (LoL)      | Search term is referenced as a subtag | "Jinx (LoL) > Arcane"      |
-| Zander (Arcane) | Search term is referenced as a subtag | "Zander (Arcane) > Arcane" |
+| Tag             | Cause of Inclusion               | Tag Tree Lineage           |
+| --------------- | -------------------------------- | -------------------------- |
+| Arcane          | Direct match of tag name         | "Arcane"                   |
+| Jinx (LoL)      | Search term is set as parent tag | "Jinx (LoL) > Arcane"      |
+| Zander (Arcane) | Search term is set as parent tag | "Zander (Arcane) > Arcane" |
 
 **The query "League of Legends" will display results tagged with:**
 
-| Tag               | reason                                       | Mock Path Display                              |
-| ----------------- | -------------------------------------------- | ---------------------------------------------- |
-| League of Legends | Direct match of tag name                     | "League of Legends"                            |
-| Arcane            | Search term is referenced as a subtag        | "Arcane > League of Legends"                   |
-| Jinx (LoL)        | Search term is referenced as a subtag        | "Jinx (LoL) > League of Legends"               |
-| Mr. Legend (LoL)  | Search term is referenced as a subtag        | "Mr. Legend (LoL) > League of Legends"         |
-| Zander (Arcane)   | Search term is a subtag referenced in subtag | "Zander (Arcane) > Arcane > League of Legends" |
+| Tag               | Cause of Inclusion                                     | Tag Tree Lineage                               |
+| ----------------- | ------------------------------------------------------ | ---------------------------------------------- |
+| League of Legends | Direct match of tag name                               | "League of Legends"                            |
+| Arcane            | Search term is set as parent tag                       | "Arcane > League of Legends"                   |
+| Jinx (LoL)        | Search term is set as parent tag                       | "Jinx (LoL) > League of Legends"               |
+| Mr. Legend (LoL)  | Search term is set as parent tag                       | "Mr. Legend (LoL) > League of Legends"         |
+| Zander (Arcane)   | Search term is a parent tag of a tag set as parent tag | "Zander (Arcane) > Arcane > League of Legends" |
 
 Note: The query "LoL" will display the same results as the above example since "LoL" is the shorthand for "League of Legends".

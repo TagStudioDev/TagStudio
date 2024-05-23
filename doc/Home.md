@@ -8,9 +8,9 @@
 ## Table of Contents
 
 - [Library](/doc/Library.md)
-- [Tags](/doc/Tag.md)
 - [Entries](/doc/Entry.md)
 - [Fields](/doc/Field.md)
+- [Tags](/doc/Tag.md)
 - [Tools & Macros](/doc/Macro.md)
 
 ---
