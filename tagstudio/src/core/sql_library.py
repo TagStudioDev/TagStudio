@@ -74,9 +74,7 @@ class DataSource(Protocol):
 
     def get_tag_relations(self, tag_id: int, find_parents: bool = False): ...
 
-    def get_aliases(
-        self, tag: "Tag"
-    ) -> list["Alias"]: ...  # Should probably just be a list of str
+    def get_aliases(self, tag: "Tag") -> list[str]: ...
 
     def get_version(self) -> tuple[int, int, int]:
         """Should return the version of the data source in the format Major.Minor.Patch"""
@@ -226,14 +224,6 @@ class TagRelation:
     def __init__(self, tag: Tag, parent: Tag) -> None:
         self.tag = tag
         self.parent = parent
-
-
-class Alias:
-    """A Library Alias Object. Used to store the aliases of a tag"""
-
-    def __init__(self, tag: Tag, alias: str) -> None:
-        self.tag = tag
-        self.alias = alias
 
 
 class EntryAttribute:
