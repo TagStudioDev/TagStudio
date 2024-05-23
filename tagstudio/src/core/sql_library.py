@@ -231,14 +231,6 @@ class Tag:
         else:
             return f"{self.name}"
 
-    def add_parent(self, tag: "Tag"):
-        # TODO: Add tag as parent
-        pass
-
-    def remove_subtag(self, tag: "Tag"):
-        # TODO: Remove tag as parent
-        pass
-
 
 class EntryAttribute:
     """A Library Entry Attribute Object. Used to store the attributes of an entry"""
