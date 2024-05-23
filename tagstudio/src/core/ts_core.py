@@ -29,19 +29,19 @@ class TagStudioCore:
         """
         json_dump = {}
         info = {}
-        filepath: Path = Path(filepath)
-        filepath = filepath.parent / (filepath.stem + ".json")
+        _filepath: Path = Path(filepath)
+        _filepath = _filepath.parent / (_filepath.stem + ".json")
 
         # NOTE: This fixes an unknown (recent?) bug in Gallery-DL where Instagram sidecar
         # files may be downloaded with indices starting at 1 rather than 0, unlike the posts.
         # This may only occur with sidecar files that are downloaded separate from posts.
         if source == "instagram":
-            if not filepath.is_file():
-                newstem = filepath.stem[:-16] + "1" + filepath[-15:]
-                filepath = filepath.parent / (newstem + ".json")
+            if not _filepath.is_file():
+                newstem = _filepath.stem[:-16] + "1" + _filepath[-15:]
+                _filepath = _filepath.parent / (newstem + ".json")
 
         try:
-            with open(filepath, "r", encoding="utf8") as f:
+            with open(_filepath, "r", encoding="utf8") as f:
                 json_dump = json.load(f)
 
                 if json_dump:

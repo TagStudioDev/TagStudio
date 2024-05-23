@@ -489,17 +489,18 @@ class Library:
         """
 
         return_code: int = 2
-        path: Path = self._fix_lib_path(path)
+        
+        _path: Path = self._fix_lib_path(path)
 
-        if (path / TS_FOLDER_NAME / "ts_library.json").exists():
+        if (_path / TS_FOLDER_NAME / "ts_library.json").exists():
             try:
                 with open(
-                    path / TS_FOLDER_NAME / "ts_library.json",
+                    _path / TS_FOLDER_NAME / "ts_library.json",
                     "r",
                     encoding="utf-8",
                 ) as file:
                     json_dump: JsonLibary = ujson.load(file)
-                    self.library_dir = Path(path)
+                    self.library_dir = Path(_path)
                     self.verify_ts_folders()
                     major, minor, patch = json_dump["ts-version"].split(".")
 
@@ -1155,7 +1156,7 @@ class Library:
         # 	json.dump({}, outfile, indent=4)
         # print(f'Re-saved to disk at {matched_json_filepath}')
 
-    def _match_missing_file(self, file: str) -> list[str]:
+    def _match_missing_file(self, file: str) -> list[Path]:
         """
         Tries to find missing entry files within the library directory.
         Works if files were just moved to different subfolders and don't have duplicate names.

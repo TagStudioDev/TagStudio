@@ -8,6 +8,7 @@ import subprocess
 import shutil
 import sys
 import traceback
+from pathlib import Path
 
 from PySide6.QtWidgets import QLabel
 from PySide6.QtCore import Qt
@@ -19,7 +20,7 @@ INFO = f"[INFO]"
 logging.basicConfig(format="%(message)s", level=logging.INFO)
 
 
-def open_file(path: str, file_manager: bool = False):
+def open_file(path: str|Path, file_manager: bool = False):
     """Open a file in the default application or file explorer.
 
     Args:
@@ -27,13 +28,14 @@ def open_file(path: str, file_manager: bool = False):
             file_manager (bool, optional): Whether to open the file in the file manager (e.g. Finder on macOS).
                     Defaults to False.
     """
-    logging.info(f"Opening file: {path}")
-    if not os.path.exists(path):
-        logging.error(f"File not found: {path}")
+    _path = str(path)
+    logging.info(f"Opening file: {_path}")
+    if not os.path.exists(_path):
+        logging.error(f"File not found: {_path}")
         return
     try:
         if sys.platform == "win32":
-            normpath = os.path.normpath(path)
+            normpath = os.path.normpath(_path)
             if file_manager:
                 command_name = "explorer"
                 command_args = '/select,"' + normpath + '"'
@@ -59,7 +61,7 @@ def open_file(path: str, file_manager: bool = False):
         else:
             if sys.platform == "darwin":
                 command_name = "open"
-                command_args = [path]
+                command_args = [_path]
                 if file_manager:
                     # will reveal in Finder
                     command_args.append("-R")
@@ -73,12 +75,12 @@ def open_file(path: str, file_manager: bool = False):
                         "--type=method_call",
                         "/org/freedesktop/FileManager1",
                         "org.freedesktop.FileManager1.ShowItems",
-                        f"array:string:file://{path}",
+                        f"array:string:file://{_path}",
                         "string:",
                     ]
                 else:
                     command_name = "xdg-open"
-                    command_args = [path]
+                    command_args = [_path]
             command = shutil.which(command_name)
             if command is not None:
                 subprocess.Popen([command] + command_args, close_fds=True)

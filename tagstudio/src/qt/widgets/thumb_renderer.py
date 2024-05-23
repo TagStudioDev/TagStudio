@@ -99,7 +99,7 @@ class ThumbRenderer(QObject):
         image: Image.Image = None
         pixmap: QPixmap = None
         final: Image.Image = None
-        filepath: Path = Path(filepath)
+        _filepath: Path = Path(filepath)
         resampling_method = Image.Resampling.BILINEAR
         if ThumbRenderer.font_pixel_ratio != pixel_ratio:
             ThumbRenderer.font_pixel_ratio = pixel_ratio
@@ -118,12 +118,12 @@ class ThumbRenderer(QObject):
             pixmap.setDevicePixelRatio(pixel_ratio)
             if update_on_ratio_change:
                 self.updated_ratio.emit(1)
-        elif filepath:
+        elif _filepath:
             try:
                 # Images =======================================================
-                if filepath.suffix in IMAGE_TYPES:
+                if _filepath.suffix in IMAGE_TYPES:
                     try:
-                        image = Image.open(filepath)
+                        image = Image.open(_filepath)
                         if image.mode != "RGB" and image.mode != "RGBA":
                             image = image.convert(mode="RGBA")
                         if image.mode == "RGBA":
@@ -134,12 +134,12 @@ class ThumbRenderer(QObject):
                         image = ImageOps.exif_transpose(image)
                     except DecompressionBombError as e:
                         logging.info(
-                            f"[ThumbRenderer]{WARNING} Couldn't Render thumbnail for {filepath} (because of {e})"
+                            f"[ThumbRenderer]{WARNING} Couldn't Render thumbnail for {_filepath} (because of {e})"
                         )
 
-                elif filepath.suffix in RAW_IMAGE_TYPES:
+                elif _filepath.suffix in RAW_IMAGE_TYPES:
                     try:
-                        with rawpy.imread(filepath) as raw:
+                        with rawpy.imread(_filepath) as raw:
                             rgb = raw.postprocess()
                             image = Image.frombytes(
                                 "RGB",
@@ -149,16 +149,16 @@ class ThumbRenderer(QObject):
                             )
                     except DecompressionBombError as e:
                         logging.info(
-                            f"[ThumbRenderer]{WARNING} Couldn't Render thumbnail for {filepath} (because of {e})"
+                            f"[ThumbRenderer]{WARNING} Couldn't Render thumbnail for {_filepath} (because of {e})"
                         )
                     except rawpy._rawpy.LibRawIOError:
                         logging.info(
-                            f"[ThumbRenderer]{ERROR} Couldn't Render thumbnail for raw image {filepath}"
+                            f"[ThumbRenderer]{ERROR} Couldn't Render thumbnail for raw image {_filepath}"
                         )
 
                 # Videos =======================================================
-                elif filepath.suffix in VIDEO_TYPES:
-                    video = cv2.VideoCapture(filepath)
+                elif _filepath.suffix in VIDEO_TYPES:
+                    video = cv2.VideoCapture(str(_filepath))
                     video.set(
                         cv2.CAP_PROP_POS_FRAMES,
                         (video.get(cv2.CAP_PROP_FRAME_COUNT) // 2),
@@ -174,8 +174,8 @@ class ThumbRenderer(QObject):
                     image = Image.fromarray(frame)
 
                 # Plain Text ===================================================
-                elif filepath.suffix in PLAINTEXT_TYPES:
-                    with open(filepath, "r", encoding="utf-8") as text_file:
+                elif _filepath.suffix in PLAINTEXT_TYPES:
+                    with open(_filepath, "r", encoding="utf-8") as text_file:
                         text = text_file.read(256)
                     bg = Image.new("RGB", (256, 256), color="#1e1e1e")
                     draw = ImageDraw.Draw(bg)
@@ -189,7 +189,7 @@ class ThumbRenderer(QObject):
                 # 	axes = figure.add_subplot(projection='3d')
 
                 # 	# Load the STL files and add the vectors to the plot
-                # 	your_mesh = mesh.Mesh.from_file(filepath)
+                # 	your_mesh = mesh.Mesh.from_file(_filepath)
 
                 # 	poly_collection = mplot3d.art3d.Poly3DCollection(your_mesh.vectors)
                 # 	poly_collection.set_color((0,0,1))  # play with color
@@ -265,7 +265,7 @@ class ThumbRenderer(QObject):
             ) as e:
                 if e is not UnicodeDecodeError:
                     logging.info(
-                        f"[ThumbRenderer]{ERROR}: Couldn't render thumbnail for {filepath} ({e})"
+                        f"[ThumbRenderer]{ERROR}: Couldn't render thumbnail for {_filepath} ({e})"
                     )
                 if update_on_ratio_change:
                     self.updated_ratio.emit(1)
@@ -286,8 +286,8 @@ class ThumbRenderer(QObject):
                     math.ceil(adj_size / pixel_ratio),
                     math.ceil(final.size[1] / pixel_ratio),
                 ),
-                filepath.suffix,
+                _filepath.suffix,
             )
 
         else:
-            self.updated.emit(timestamp, QPixmap(), QSize(*base_size), filepath.suffix)
+            self.updated.emit(timestamp, QPixmap(), QSize(*base_size), _filepath.suffix)
