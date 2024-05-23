@@ -107,6 +107,34 @@ class SqliteLibrary:
         )
         return Entry(*entry.fetchone())
 
+    def get_attributes(self, entry_id: int) -> dict[int, str | float | datetime | list[int]]:
+        attributes = self.db.execute(
+            "SELECT (title_tag, tag, text, number, datetime) FROM entry_attribute WHERE entry = ?;", (entry_id,)
+        ).fetchall()
+        # Author: "John Smith",
+        # Description: "This is an example",
+        # Meta_Tag group contains the favorite tag id (default 33)
+        # {2: 'John Smith', 6: 'This is an example',  10: [33]}
+        entry_attributes = {}
+        for attr in attributes:
+            title_tag, tag, text, number, dt = attr
+            if text is not None:
+                entry_attributes[title_tag] = text
+            elif number is not None:
+                entry_attributes[title_tag] = number
+            elif dt is not None:
+                entry_attributes[title_tag] = datetime.fromisoformat(dt)
+            elif tag is not None:
+                # In order for this to work with the current schema,
+                # the title_tag plays the opposite role as normal this limits tags to being assigned once
+                # rather than only allowing tag_groups to have a single child
+                if not entry_attributes[tag]:
+                    entry_attributes[tag] = []
+                entry_attributes[tag].append(title_tag)
+            else:
+                logging.error("[Sqlite Library] [Get Attr] How did you get here?")
+        return entry_attributes
+
     def get_tags(self) -> dict[int, "Tag"]:
         tags = self.db.execute("SELECT (id, name, shorthand, color) FROM tag;").fetchall()
         return {tag[0]: Tag(*tag) for tag in tags}
@@ -191,15 +219,11 @@ class Entry:
                 contained_tags += value
         return contained_tags
 
-    @tags.setter
-    def tags(self, tags):
-        # TODO: Store tags back to the database
-        # TODO: add methods to add/remove single tags
-        pass
-
-    def load_attributes(self):
-        # TODO: Load attributes from database
-        pass
+    def set_attributes(self, attributes: dict[int, str | float | datetime | list[int]]):
+        """Sets the attributes of the Entry.
+        Should only be called by the Library.
+        """
+        self._attributes = attributes
 
     def update_hash(self) -> bytes:
         # TODO: Choose and implement a hashing algorithm (hashlib.SHA1?)
@@ -326,6 +350,9 @@ class Library:
         # TODO: For now load the entire DB into memory, this should be optimized (lazy loads or other)
         self.locations = self.data_source.get_locations()
         self.entries = self.data_source.get_entries()
+        for entry_id, entry in self.entries.items():
+            entry.set_attributes(self.data_source.get_entry_attributes(entry_id))
+            self._filename_to_entry_id_map[str(entry.path)] = entry_id
         self.tags = self.data_source.get_tags()
         for tag_id, tag in self.tags.items():
             tag.parents = self.data_source.get_tag_relations(tag_id)
