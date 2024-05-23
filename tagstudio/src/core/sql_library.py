@@ -4,7 +4,6 @@
 
 """The Library object and related methods for TagStudio."""
 
-import datetime
 import glob
 import hashlib
 import json
@@ -15,6 +14,7 @@ import sys
 import time
 import traceback
 import xml.etree.ElementTree as ET
+from datetime import datetime
 from enum import Enum
 from pathlib import Path
 from typing import Optional, Protocol
@@ -1475,7 +1475,7 @@ class Library:
             if data.get("date_published"):
                 field_id = 14  # Date Published Field ID
                 date = str(
-                    datetime.datetime.strptime(
+                    datetime.strptime(
                         data["date_published"], "%Y-%m-%d %H:%M:%S"
                     )
                 )
