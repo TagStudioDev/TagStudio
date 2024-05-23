@@ -57,7 +57,17 @@ AUDIO_TYPES: list[str] = [
     ".ogg",
     ".aiff",
 ]
-DOC_TYPES: list[str] = [".txt", ".rtf", ".md", ".doc", ".docx", ".pdf", ".tex", ".odt", ".pages"]
+DOC_TYPES: list[str] = [
+    ".txt",
+    ".rtf",
+    ".md",
+    ".doc",
+    ".docx",
+    ".pdf",
+    ".tex",
+    ".odt",
+    ".pages",
+]
 PLAINTEXT_TYPES: list[str] = [
     ".txt",
     ".md",

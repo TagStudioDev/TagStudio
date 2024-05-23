@@ -427,7 +427,7 @@ class Library:
         0: Library Successfully Created\n
         2: File creation error
         """
-        
+
         path = self._fix_lib_path(path)
 
         try:
@@ -454,12 +454,8 @@ class Library:
         """Verifies/creates folders required by TagStudio."""
 
         full_ts_path = self.library_dir / TS_FOLDER_NAME
-        full_backup_path = (
-            self.library_dir / TS_FOLDER_NAME / BACKUP_FOLDER_NAME
-        )
-        full_collage_path = (
-            self.library_dir / TS_FOLDER_NAME / COLLAGE_FOLDER_NAME
-        )
+        full_backup_path = self.library_dir / TS_FOLDER_NAME / BACKUP_FOLDER_NAME
+        full_collage_path = self.library_dir / TS_FOLDER_NAME / COLLAGE_FOLDER_NAME
 
         if not os.path.isdir(full_ts_path):
             os.mkdir(full_ts_path)
@@ -707,9 +703,7 @@ class Library:
 
         # If the Library is loaded, continue other processes.
         if return_code == 1:
-            (self.library_dir / TS_FOLDER_NAME).mkdir(
-                parents=True, exist_ok=True
-            )
+            (self.library_dir / TS_FOLDER_NAME).mkdir(parents=True, exist_ok=True)
             self._map_filenames_to_entry_ids()
 
         return return_code
@@ -807,10 +801,7 @@ class Library:
 
         self.verify_ts_folders()
         with open(
-            self.library_dir
-            / TS_FOLDER_NAME
-            / BACKUP_FOLDER_NAME
-            / filename,
+            self.library_dir / TS_FOLDER_NAME / BACKUP_FOLDER_NAME / filename,
             "w",
             encoding="utf-8",
         ) as outfile:

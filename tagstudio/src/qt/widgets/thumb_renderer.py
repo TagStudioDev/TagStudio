@@ -88,7 +88,7 @@ class ThumbRenderer(QObject):
     def render(
         self,
         timestamp: float,
-        filepath: str|Path,
+        filepath: str | Path,
         base_size: tuple[int, int],
         pixel_ratio: float,
         is_loading=False,
@@ -119,7 +119,6 @@ class ThumbRenderer(QObject):
             if update_on_ratio_change:
                 self.updated_ratio.emit(1)
         elif filepath:
-
             try:
                 # Images =======================================================
                 if filepath.suffix in IMAGE_TYPES:
@@ -274,7 +273,6 @@ class ThumbRenderer(QObject):
                     (adj_size, adj_size), resample=resampling_method
                 )
             qim = ImageQt.ImageQt(final)
-            final.save(f'/home/icosahunter/Documents/test/{filepath.stem}.png')
             if image:
                 image.close()
             pixmap = QPixmap.fromImage(qim)
@@ -292,5 +290,4 @@ class ThumbRenderer(QObject):
             )
 
         else:
-    
             self.updated.emit(timestamp, QPixmap(), QSize(*base_size), filepath.suffix)
