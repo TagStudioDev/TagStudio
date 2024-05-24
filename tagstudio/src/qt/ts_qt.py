@@ -1067,9 +1067,6 @@ class QtDriver(QObject):
                 None, self.lib, self.preview_panel, (self.thumb_size, self.thumb_size)
             )
 
-            item_thumb.setMouseTracking(True)
-            item_thumb.mouseMoveEvent = self.drop_import.mouseMoveEvent
-
             layout.addWidget(item_thumb)
             self.item_thumbs.append(item_thumb)
 
