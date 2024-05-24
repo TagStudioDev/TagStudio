@@ -925,6 +925,7 @@ class PreviewPanel(QWidget):
                     inner_container = TextWidget(
                         title, str(self.lib.get_field_attr(field, "content"))
                     )
+                    container.set_inner_widget(inner_container)
                 # if type(item) == Entry:
                 container.set_copy_callback(None)
                 container.set_edit_callback(None)
