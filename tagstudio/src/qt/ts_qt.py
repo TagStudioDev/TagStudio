@@ -274,9 +274,9 @@ class QtDriver(QObject):
 
         self.drop_import = DropImport(self)
         self.main_window.setAcceptDrops(True)
-        self.main_window.dragEnterEvent = self.drop_import.dragEnterEvent
-        self.main_window.dropEvent = self.drop_import.dropEvent
-        self.main_window.dragMoveEvent = self.drop_import.dragMoveEvent
+        self.main_window.dragEnterEvent = self.drop_import.dragEnterEvent  # type: ignore
+        self.main_window.dropEvent = self.drop_import.dropEvent  # type: ignore
+        self.main_window.dragMoveEvent = self.drop_import.dragMoveEvent  # type: ignore
 
         # # self.main_window.windowFlags() &
         # # self.main_window.setWindowFlag(Qt.WindowType.FramelessWindowHint, True)

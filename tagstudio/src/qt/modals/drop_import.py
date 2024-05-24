@@ -58,12 +58,6 @@ class DropImport:
         self.urls = event.mimeData().urls()
         self.import_files()
 
-    def dragLeaveEvent(self, event: QDragLeaveEvent):
-        if event.mimeData().hasUrls():
-            event.accept()
-        else:
-            event.ignore()
-
     def dragEnterEvent(self, event: QDragEnterEvent):
         if event.mimeData().hasUrls():
             event.accept()
@@ -260,5 +254,5 @@ def create_progress_bar(
     iterator.value.connect(lambda x: pw.update_progress(x[0] + 1))
     iterator.value.connect(lambda x: pw.update_label(update_label_callback(x)))
     r = CustomRunnable(lambda: iterator.run())
-    r.done.connect(lambda: (pw.hide(), done_callback()))
+    r.done.connect(lambda: (pw.hide(), done_callback()))  # type: ignore
     QThreadPool.globalInstance().start(r)
