@@ -1,6 +1,6 @@
 # Tag
 
-Tags are keywords that represent a certain user-defined attribute. A person, place, thing, concept, you name it! Tags allow for a more sophisticated way to organize and search [entries](/doc/Entry.md) thanks to their aliases, parent tags, and more.
+Tags are user-defined attributes made up of one or more keywords, aliases, and relationships to other tags. A person, place, thing, concept, you name it! Tags allow for a more sophisticated way to organize and search [entries](/doc/Entry.md) thanks to their aliases, parent tags, and more.
 Tags can be as simple or complex as wanted, so that any user can tune TagStudio to fit their needs.
 
 Among the things that make tags so useful, aliases give the ability to contain alternate names and spellings, making searches intuitive and expansive. Furthermore, parent-tags/subtags offer relational organization capabilities for the structuring and connection of the [library's](/doc/Library.md) contents.
