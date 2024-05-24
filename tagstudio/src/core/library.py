@@ -837,7 +837,7 @@ class Library:
 
         logging.info(f"[LIBRARY] Saving Library Backup to Disk...")
         start_time = time.time()
-        filename = f'ts_library_backup_{datetime.datetime.utcnow().strftime("%F_%T").replace(":", "")}.json'
+        filename = f'ts_library_backup_{datetime.datetime.now(datetime.UTC).strftime("%F_%T").replace(":", "")}.json'
 
         self.verify_ts_folders()
         with open(
