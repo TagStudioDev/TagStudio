@@ -82,11 +82,17 @@ class DropImport:
         self.dirs_in_root: list[Path] = []
         self.duplicate_files: list[Path] = []
 
+        def displayed_text(x):
+            text = f"Searching New Files...\n{x[0]+1} File{'s' if x[0]+1 != 1 else ''} Found."
+            if x[1] == 0:
+                return text
+            return text + f" {x[1]} Already exist in the library folders"
+
         create_progress_bar(
             self.collect_files_to_import,
             "Searching Files",
             "Searching New Files...\nPreparing...",
-            lambda x: f'Searching New Files...\n{x[0]+1} File{'s' if x[0]+1 != 1 else ''} Found. {(f'{x[1]} Already exist in the library folders') if x[1]>0 else ''}',
+            displayed_text,
             self.ask_user,
         )
 
@@ -160,16 +166,23 @@ class DropImport:
             if self.choice == 3:  # cancel
                 return
 
-        dupes_choice_text = (
-            "Skipped"
-            if self.choice == 0
-            else ("Overridden" if self.choice == 1 else "Renamed")
-        )
+        def displayed_text(x):
+            dupes_choice_text = (
+                "Skipped"
+                if self.choice == 0
+                else ("Overridden" if self.choice == 1 else "Renamed")
+            )
+
+            text = f"Importing New Files...\n{x[0]+1} File{'s' if x[0]+1 != 1 else ''} Imported."
+            if x[1] == 0:
+                return text
+            return text + f" {x[1]} {dupes_choice_text}"
+
         create_progress_bar(
             self.copy_files,
             "Import Files",
             "Importing New Files...\nPreparing...",
-            lambda x: f'Importing New Files...\n{x[0]+1} File{'s' if x[0]+1 != 1 else ''} Imported. {(f'{x[1]} {dupes_choice_text}') if x[1]>0 else ''}',
+            displayed_text,
             self.driver.add_new_files_runnable,
             len(self.files),
         )
