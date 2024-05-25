@@ -36,4 +36,9 @@ class JsonEntry(JsonBase, total=False):
     fields: list[dict]  # TODO
 
 
+class JsonLocation(JsonBase, total=False):
+    name: str
+    path: str
+
+
 class JsonMacro(JsonBase, total=False): ...  # TODO

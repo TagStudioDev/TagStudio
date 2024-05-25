@@ -225,6 +225,13 @@ class Location:
     def __str__(self):
         return f"Location {self.name} @ {self.path}"
 
+    def to_json(self):
+        return {
+            "id": self.location_id,
+            "path": str(self.path),
+            "name": self.name
+        }
+
 
 class Entry:
     """A Library Entry Object. Referenced by ID."""
@@ -283,6 +290,16 @@ class Entry:
             raise NotImplemented
         return self.entry_id == __value.entry_id
 
+    def to_json(self) -> JsonEntry:
+        # TODO: Talk about changing the fields type in JsonEntry
+        temp_fields = [{k: v} for k, v in self._attributes.items()]
+        return JsonEntry(
+            id=self.entry_id,
+            filename=self.path.name,
+            path=str(self.path),
+            fields=temp_fields
+        )
+
 
 class Tag:
     """A Library Tag Object. Referenced by ID."""
@@ -292,8 +309,8 @@ class Tag:
         self.name = name
         self.shorthand = shorthand
         self.color = color
-        self.aliases = None  # TODO: Load aliases from database (Lazy Load?)
-        self.parents = None  # TODO: Load parent tags from database (Lazy Load?)
+        self.aliases = []  # TODO: Load aliases from database (Lazy Load?)
+        self.parents = []  # TODO: Load parent tags from database (Lazy Load?)
         # self.parents probably needs to be a load on init since its part of the tag title
 
     def __str__(self) -> str:
@@ -301,6 +318,16 @@ class Tag:
 
     def __repr__(self) -> str:
         return f"Tag {self.tag_id}: {self.name=}, {self.shorthand=}, {self.color=}, {self.aliases=}, {self.parents=}"
+
+    def to_json(self) -> JsonTag:
+        return JsonTag(
+            id=self.tag_id,
+            name=self.name,
+            aliases=self.aliases,
+            color=self.color,
+            shorthand=self.shorthand,
+            subtag_ids=self.parents
+        )
 
     # TODO: Check where this is used
     def debug_name(self) -> str:
@@ -425,15 +452,16 @@ class Library:
         file_to_save["ignored_extensions"] = [i for i in self.ignored_extensions if i]
 
         for tag in self.tags:
-            file_to_save["tags"].append(tag.compressed_dict())
+            file_to_save["tags"].append(tag.to_json())
 
         logging.info("[LIBRARY] Formatting Entries to JSON...")
         for entry in self.entries.values():
-            file_to_save["entries"].append(entry.compressed_dict())
+            file_to_save["entries"].append(entry.to_json())
 
-        logging.info("[LIBRARY] Formatting Groups to JSON...")
-        for group in self.groups:
-            file_to_save["groups"].append(group.compressed_dict())
+        # TODO: Implement groups
+        # logging.info("[LIBRARY] Formatting Groups to JSON...")
+        # for group in self.groups:
+        #     file_to_save["groups"].append(group.to_json())
 
         logging.info("[LIBRARY] Done Formatting to JSON!")
         return file_to_save
