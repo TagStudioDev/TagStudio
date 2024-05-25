@@ -229,11 +229,7 @@ class Location:
         return f"Location {self.name} @ {self.path}"
 
     def to_json(self):
-        return {
-            "id": self.location_id,
-            "path": str(self.path),
-            "name": self.name
-        }
+        return {"id": self.location_id, "path": str(self.path), "name": self.name}
 
 
 class Entry:
@@ -300,7 +296,7 @@ class Entry:
             id=self.entry_id,
             filename=self.path.name,
             path=str(self.path),
-            fields=temp_fields
+            fields=temp_fields,
         )
 
 
@@ -329,7 +325,7 @@ class Tag:
             aliases=self.aliases,
             color=self.color,
             shorthand=self.shorthand,
-            subtag_ids=self.parents
+            subtag_ids=self.parents,
         )
 
     # TODO: Check where this is used
