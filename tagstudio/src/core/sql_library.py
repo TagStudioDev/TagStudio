@@ -112,7 +112,11 @@ class SqliteLibrary:
     def get_entry(self, entry_id: int) -> "Entry":
         entry = self.db.execute(
             "SELECT (id, path, location) FROM entry WHERE id = ?;", (entry_id,)
-        )
+        ).fetchone()
+        if not entry:
+            raise ValueError(
+                f"[SQLite Library] [get_entry] Entry {entry_id} not found in database."
+            )
         return Entry(*entry.fetchone())
 
     def get_attributes(
