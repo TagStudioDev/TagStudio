@@ -1757,12 +1757,6 @@ class Library:
                     key=lambda x: order.index(self.get_field_attr(x, "id")),
                 )
 
-    # def move_entry_field(self, entry_index, old_index, new_index) -> None:
-    # 	"""Moves a field in entry[entry_index] from position entry.fields[old_index] to entry.fields[new_index]"""
-    # 	entry = self.entries[entry_index]
-    # 	pass
-    # 	# TODO: Implement.
-
     def get_field_attr(self, entry_field, attribute: str):
         """Returns the value of a specified attribute inside an Entry field."""
         if attribute.lower() == "id":
