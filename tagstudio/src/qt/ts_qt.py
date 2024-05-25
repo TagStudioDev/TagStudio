@@ -707,7 +707,12 @@ class QtDriver(QObject):
 
     def select_all_action_callback(self):
         for item in self.item_thumbs:
-            item.thumb_button.set_selected(True)
+            if item.mode and (item.mode, item.item_id) not in self.selected:
+                self.selected.append((item.mode, item.item_id))
+                item.thumb_button.set_selected(True)
+
+        self.set_macro_menu_viability()
+        self.preview_panel.update_widgets()
 
     def show_tag_database(self):
         self.modal = PanelModal(
