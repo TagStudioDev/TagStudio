@@ -110,6 +110,9 @@ class SqliteLibrary:
         return [Entry(*entry) for entry in entries]
 
     def get_entry(self, entry_id: int) -> "Entry":
+        """Get an entry by its ID.
+        raises ValueError if the entry is not found.
+        """
         entry = self.db.execute(
             "SELECT (id, path, location) FROM entry WHERE id = ?;", (entry_id,)
         ).fetchone()
