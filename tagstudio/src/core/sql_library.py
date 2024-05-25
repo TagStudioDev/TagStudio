@@ -1911,10 +1911,3 @@ class Library:
         if tag_id in self._tag_id_to_cluster_map:
             return self._tag_id_to_cluster_map[int(tag_id)]
         return []
-
-    def sort_fields(self, entry_id: int, order: list[int]) -> None:
-        """Sorts an Entry's Fields given an ordered list of Field IDs."""
-        entry = self.get_entry(entry_id)
-        entry._fields = sorted(
-            entry._fields, key=lambda x: order.index(self.get_field_attr(x, "id"))
-        )
