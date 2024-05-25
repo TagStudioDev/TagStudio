@@ -455,11 +455,7 @@ class Library:
         start_time = time.time()
         for location in self.locations:
             for f in location.path.rglob("*"):
-                if "$RECYCLE.BIN" in f:
-                    continue
-                if TS_FOLDER_NAME in f:
-                    continue
-                if f.is_dir():
+                if f.is_dir() or TS_FOLDER_NAME in f or "$RECYCLE.BIN" in f:
                     continue
 
                 dir_file_count += 1
