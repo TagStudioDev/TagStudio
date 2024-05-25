@@ -84,6 +84,10 @@ class DataSource(Protocol):
         """Should return the version of the data source in the format Major.Minor.Patch"""
         ...
 
+    def save(self, path: Optional[Path] = None) -> int:
+        """Saves the library to the given path."""
+        ...
+
 
 class SqliteLibrary:
     def __init__(self, db: sqlite3.Connection) -> None:
@@ -176,6 +180,28 @@ class SqliteLibrary:
         database_versions = {1: (9, 2, 0)}
         pragma_version = self.db.execute("PRAGMA user_version").fetchone()
         return database_versions.get(pragma_version[0], (0, 0, 0))
+
+    def save(self, path: Optional[Path] = None) -> int:
+        """Save a library, either to the current location or to a new location.
+        Returns 0 on success, 1 on failure."""
+        self.db.commit()
+
+        if path:
+            db_id, db_name, db_location = self.db.execute(
+                "PRAGMA database_list"
+            ).fetchone()
+            if db_location == str(path):
+                return 0
+            else:
+                try:
+                    backup_db = sqlite3.connect(path)
+                    self.db.backup(backup_db)
+                    backup_db.commit()
+                    backup_db.close()
+                except sqlite3.Error as e:
+                    logging.error(f"[Sqlite Library] [Save] {e}")
+                    return 1
+                return 0
 
 
 # =============================================================================
@@ -407,6 +433,17 @@ class Library:
 
         logging.info("[LIBRARY] Done Formatting to JSON!")
         return file_to_save
+
+    def save_library_to_disk(self) -> int:
+        """Calls the DataSource to save the Library."""
+        return self.data_source.save()
+
+    def backup_library(self, path: Path) -> int:
+        """Creates a backup of the Library."""
+        # Only way I could think of verifying a file that MIGHT exist
+        if not path.suffix:
+            raise ValueError("Backup path must point to a file.")
+        return self.data_source.save(path)
 
     def export_library_to_disk(self, path: Path) -> int:
         """Exports a JSON file of the Library to disk at the specified path.
