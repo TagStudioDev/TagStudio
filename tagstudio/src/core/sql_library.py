@@ -147,7 +147,7 @@ class SqliteLibrary:
                     entry_attributes[tag] = []
                 entry_attributes[tag].append(title_tag)
             else:
-                logging.error("[Sqlite Library] [Get Attr] How did you get here?")
+                logging.error("[Sqlite Library] [get_attr] How did you get here?")
         return entry_attributes
 
     def get_tags(self) -> dict[int, "Tag"]:
