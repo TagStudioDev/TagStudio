@@ -499,15 +499,15 @@ class PreviewPanel(QWidget):
                     # TODO: Do this somewhere else, this is just here temporarily.
                     try:
                         image = None
-                        if filepath.suffix in IMAGE_TYPES:
+                        if filepath.suffix.lower() in IMAGE_TYPES:
                             image = Image.open(str(filepath))
-                        elif filepath.suffix in RAW_IMAGE_TYPES:
+                        elif filepath.suffix.lower() in RAW_IMAGE_TYPES:
                             with rawpy.imread(filepath) as raw:
                                 rgb = raw.postprocess()
                                 image = Image.new(
                                     "L", (rgb.shape[1], rgb.shape[0]), color="black"
                                 )
-                        elif filepath.suffix in VIDEO_TYPES:
+                        elif filepath.suffix.lower() in VIDEO_TYPES:
                             video = cv2.VideoCapture(str(filepath))
                             video.set(cv2.CAP_PROP_POS_FRAMES, 0)
                             success, frame = video.read()
@@ -515,28 +515,35 @@ class PreviewPanel(QWidget):
                             image = Image.fromarray(frame)
 
                         # Stats for specific file types are displayed here.
-                        if filepath.suffix in (
+                        if filepath.suffix.lower() in (
                             IMAGE_TYPES + VIDEO_TYPES + RAW_IMAGE_TYPES
                         ):
                             self.dimensions_label.setText(
-                                f"{filepath.suffix.upper()[1:]}  •  {format_size(os.stat(filepath).st_size)}\n{image.width} x {image.height} px"
+                                f"{filepath.suffix.lower().upper()[1:]}  •  {format_size(os.stat(filepath).st_size)}\n{image.width} x {image.height} px"
                             )
                         else:
                             self.dimensions_label.setText(
-                                f"{filepath.suffix.upper()[1:]}"
+                                f"{filepath.suffix.lower().upper()[1:]}  •  {format_size(os.stat(filepath).st_size)}"
                             )
 
-                        if not image:
-                            raise UnidentifiedImageError
+                        if not filepath.is_file():
+                            raise FileNotFoundError
+
+                    except FileNotFoundError as e:
+                        self.dimensions_label.setText(
+                            f"{filepath.suffix.lower().upper()[1:]}"
+                        )
+                        logging.info(
+                            f"[PreviewPanel][ERROR] Couldn't Render thumbnail for {filepath} (because of {e})"
+                        )
 
                     except (
                         UnidentifiedImageError,
-                        FileNotFoundError,
                         cv2.error,
                         DecompressionBombError,
                     ) as e:
                         self.dimensions_label.setText(
-                            f"{filepath.suffix.upper()[1:]}  •  {format_size(os.stat(filepath).st_size)}"
+                            f"{filepath.suffix.lower().upper()[1:]}  •  {format_size(os.stat(filepath).st_size)}"
                         )
                         logging.info(
                             f"[PreviewPanel][ERROR] Couldn't Render thumbnail for {filepath} (because of {e})"

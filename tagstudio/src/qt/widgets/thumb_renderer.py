@@ -121,7 +121,7 @@ class ThumbRenderer(QObject):
         elif _filepath:
             try:
                 # Images =======================================================
-                if _filepath.suffix in IMAGE_TYPES:
+                if _filepath.suffix.lower() in IMAGE_TYPES:
                     try:
                         image = Image.open(_filepath)
                         if image.mode != "RGB" and image.mode != "RGBA":
@@ -137,9 +137,9 @@ class ThumbRenderer(QObject):
                             f"[ThumbRenderer]{WARNING} Couldn't Render thumbnail for {_filepath} (because of {e})"
                         )
 
-                elif _filepath.suffix in RAW_IMAGE_TYPES:
+                elif _filepath.suffix.lower() in RAW_IMAGE_TYPES:
                     try:
-                        with rawpy.imread(_filepath) as raw:
+                        with rawpy.imread(str(_filepath)) as raw:
                             rgb = raw.postprocess()
                             image = Image.frombytes(
                                 "RGB",
@@ -157,7 +157,7 @@ class ThumbRenderer(QObject):
                         )
 
                 # Videos =======================================================
-                elif _filepath.suffix in VIDEO_TYPES:
+                elif _filepath.suffix.lower() in VIDEO_TYPES:
                     video = cv2.VideoCapture(str(_filepath))
                     video.set(
                         cv2.CAP_PROP_POS_FRAMES,
@@ -174,7 +174,7 @@ class ThumbRenderer(QObject):
                     image = Image.fromarray(frame)
 
                 # Plain Text ===================================================
-                elif _filepath.suffix in PLAINTEXT_TYPES:
+                elif _filepath.suffix.lower() in PLAINTEXT_TYPES:
                     with open(_filepath, "r", encoding="utf-8") as text_file:
                         text = text_file.read(256)
                     bg = Image.new("RGB", (256, 256), color="#1e1e1e")
@@ -286,10 +286,10 @@ class ThumbRenderer(QObject):
                     math.ceil(adj_size / pixel_ratio),
                     math.ceil(final.size[1] / pixel_ratio),
                 ),
-                _filepath.suffix[1:],
+                _filepath.suffix.lower(),
             )
 
         else:
             self.updated.emit(
-                timestamp, QPixmap(), QSize(*base_size), _filepath.suffix[1:]
+                timestamp, QPixmap(), QSize(*base_size), _filepath.suffix.lower()
             )

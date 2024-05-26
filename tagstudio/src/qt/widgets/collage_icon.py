@@ -89,11 +89,11 @@ class CollageIconRenderer(QObject):
                     self.rendered.emit(pic)
             if not data_only_mode:
                 logging.info(
-                    f"\r{INFO} Combining [ID:{entry_id}/{len(self.lib.entries)}]: {self.get_file_color(filepath.suffix)}{entry.path}{os.sep}{entry.filename}\033[0m"
+                    f"\r{INFO} Combining [ID:{entry_id}/{len(self.lib.entries)}]: {self.get_file_color(filepath.suffix.lower())}{entry.path}{os.sep}{entry.filename}\033[0m"
                 )
                 # sys.stdout.write(f'\r{INFO} Combining [{i+1}/{len(self.lib.entries)}]: {self.get_file_color(file_type)}{entry.path}{os.sep}{entry.filename}{RESET}')
                 # sys.stdout.flush()
-                if filepath.suffix in IMAGE_TYPES:
+                if filepath.suffix.lower() in IMAGE_TYPES:
                     try:
                         with Image.open(
                             str(self.lib.library_dir / entry.path / entry.filename)
@@ -111,7 +111,7 @@ class CollageIconRenderer(QObject):
                             self.rendered.emit(pic)
                     except DecompressionBombError as e:
                         logging.info(f"[ERROR] One of the images was too big ({e})")
-                elif filepath.suffix in VIDEO_TYPES:
+                elif filepath.suffix.lower() in VIDEO_TYPES:
                     video = cv2.VideoCapture(str(filepath))
                     video.set(
                         cv2.CAP_PROP_POS_FRAMES,

@@ -1104,12 +1104,12 @@ class CliDriver:
                                 collage.paste(pic, (y * thumb_size, x * thumb_size))
                         if not data_only_mode:
                             print(
-                                f"\r{INFO} Combining [{i+1}/{len(self.lib.entries)}]: {self.get_file_color(filepath.suffix)}{entry.path}{os.sep}{entry.filename}{RESET}"
+                                f"\r{INFO} Combining [{i+1}/{len(self.lib.entries)}]: {self.get_file_color(filepath.suffix.lower())}{entry.path}{os.sep}{entry.filename}{RESET}"
                             )
                             # sys.stdout.write(f'\r{INFO} Combining [{i+1}/{len(self.lib.entries)}]: {self.get_file_color(file_type)}{entry.path}{os.sep}{entry.filename}{RESET}')
                             # sys.stdout.flush()
 
-                            if filepath.suffix in IMAGE_TYPES:
+                            if filepath.suffix.lower() in IMAGE_TYPES:
                                 try:
                                     with Image.open(
                                         self.lib.library_dir
@@ -1138,7 +1138,7 @@ class CliDriver:
                                         f"[ERROR] One of the images was too big ({e})"
                                     )
 
-                            elif filepath.suffix in VIDEO_TYPES:
+                            elif filepath.suffix.lower() in VIDEO_TYPES:
                                 video = cv2.VideoCapture(filepath)
                                 video.set(
                                     cv2.CAP_PROP_POS_FRAMES,
@@ -1866,7 +1866,9 @@ class CliDriver:
                     h1 = f"[{index + 1}/{len(self.filtered_entries)}] {filename}"
 
                     # print(self.format_subtitle(subtitle))
-                    print(self.format_h1(h1, self.get_file_color(filename.suffix)))
+                    print(
+                        self.format_h1(h1, self.get_file_color(filename.suffix.lower()))
+                    )
                     print("")
 
                     if not filename.is_file():
