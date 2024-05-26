@@ -522,7 +522,7 @@ class PreviewPanel(QWidget):
                                 f"{filepath.suffix.upper()[1:]}  •  {format_size(os.stat(filepath).st_size)}\n{image.width} x {image.height} px"
                             )
                         else:
-                            self.dimensions_label.setText(f"{filepath.suffix.upper()}")
+                            self.dimensions_label.setText(f"{filepath.suffix.upper()[1:]}")
 
                         if not image:
                             raise UnidentifiedImageError
