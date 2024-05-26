@@ -519,7 +519,7 @@ class PreviewPanel(QWidget):
                             IMAGE_TYPES + VIDEO_TYPES + RAW_IMAGE_TYPES
                         ):
                             self.dimensions_label.setText(
-                                f"{filepath.suffix.upper()}  •  {format_size(os.stat(filepath).st_size)}\n{image.width} x {image.height} px"
+                                f"{filepath.suffix.upper()[1:]}  •  {format_size(os.stat(filepath).st_size)}\n{image.width} x {image.height} px"
                             )
                         else:
                             self.dimensions_label.setText(f"{filepath.suffix.upper()}")
