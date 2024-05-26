@@ -410,7 +410,7 @@ class PreviewPanel(QWidget):
         self.afm.done.connect(
             lambda f: (self.add_field_to_selected(f), self.update_widgets())
         )
-        self.afm.is_connected=True
+        self.afm.is_connected = True
         self.add_field_button.clicked.connect(self.afm.show)
 
     def add_field_to_selected(self, field_id: int):
@@ -546,7 +546,7 @@ class PreviewPanel(QWidget):
                     self.preview_img.clicked.connect(
                         lambda checked=False, filepath=filepath: open_file(filepath)
                     )
-                    self.preview_img.is_connected=True
+                    self.preview_img.is_connected = True
                 self.selected = list(self.driver.selected)
                 for i, f in enumerate(item.fields):
                     self.write_container(i, f)
