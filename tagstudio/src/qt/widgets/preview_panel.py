@@ -278,7 +278,9 @@ class PreviewPanel(QWidget):
         row_layout.addWidget(label)
         layout.addLayout(row_layout)
 
-        def set_button_style(btn: CustomQPushButton, extras: list[str] | None = None):
+        def set_button_style(
+            btn: CustomQPushButton | QPushButton, extras: list[str] | None = None
+        ):
             base_style = [
                 f"background-color:{Theme.COLOR_BG.value};",
                 "border-radius:6px;",
@@ -310,7 +312,6 @@ class PreviewPanel(QWidget):
 
             button.clicked.connect(open_library_button_clicked(full_val))
             set_button_style(button)
-
             button_remove = QPushButton("➖")
             button_remove.setCursor(Qt.CursorShape.PointingHandCursor)
             button_remove.setFixedWidth(30)
