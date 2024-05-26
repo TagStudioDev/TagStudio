@@ -445,15 +445,20 @@ class Library:
         """
 
         file_to_save: JsonLibary = JsonLibary()
+        file_to_save["ts-version"] = VERSION
+
+        logging.info("[LIBRARY] Formatting Locations to JSON...")
+        file_to_save["locations"] = []
+        for location in self.locations:
+            file_to_save["locations"].append(location.to_json())
 
         logging.info("[LIBRARY] Formatting Tags to JSON...")
-
-        file_to_save["ignored_extensions"] = [i for i in self.ignored_extensions if i]
-
+        file_to_save["tags"] = []
         for tag in self.tags:
             file_to_save["tags"].append(tag.to_json())
 
         logging.info("[LIBRARY] Formatting Entries to JSON...")
+        file_to_save["entries"] = []
         for entry in self.entries.values():
             file_to_save["entries"].append(entry.to_json())
 
