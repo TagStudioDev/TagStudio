@@ -374,7 +374,7 @@ class Library:
         self.locations: list[Location] = []
         self.entries: dict[int, Entry] = {}
         self._filename_to_entry_id_map: dict[str, int] = {}
-        self.tags: list[Tag] = []
+        self.tags: dict[int, Tag] = {}
         self.groups: list[Group] = []
 
     def create_library(self, path: Path, data_source: DataSource) -> int:
