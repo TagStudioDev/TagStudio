@@ -23,6 +23,7 @@ from src.qt.pagination import Pagination
 
 
 class Ui_MainWindow(QMainWindow):
+  
 	def __init__(self, parent=None) -> None:
 		super().__init__(parent)
 		self.setupUi(self)
