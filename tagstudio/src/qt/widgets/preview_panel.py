@@ -508,7 +508,7 @@ class PreviewPanel(QWidget):
                                     "L", (rgb.shape[1], rgb.shape[0]), color="black"
                                 )
                         elif filepath.suffix in VIDEO_TYPES:
-                            video = cv2.VideoCapture(filepath)
+                            video = cv2.VideoCapture(str(filepath))
                             video.set(cv2.CAP_PROP_POS_FRAMES, 0)
                             success, frame = video.read()
                             frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
