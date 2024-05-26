@@ -286,7 +286,7 @@ class ThumbRenderer(QObject):
                     math.ceil(adj_size / pixel_ratio),
                     math.ceil(final.size[1] / pixel_ratio),
                 ),
-                _filepath.suffix,
+                _filepath.suffix[1:],
             )
 
         else:
