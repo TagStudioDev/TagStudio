@@ -534,7 +534,7 @@ class PreviewPanel(QWidget):
                         DecompressionBombError,
                     ) as e:
                         self.dimensions_label.setText(
-                            f"{filepath.suffix.upper()}  •  {format_size(os.stat(filepath).st_size)}"
+                            f"{filepath.suffix.upper()[1:]}  •  {format_size(os.stat(filepath).st_size)}"
                         )
                         logging.info(
                             f"[PreviewPanel][ERROR] Couldn't Render thumbnail for {filepath} (because of {e})"
