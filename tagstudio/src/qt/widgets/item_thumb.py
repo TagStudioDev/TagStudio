@@ -23,8 +23,9 @@ from PySide6.QtWidgets import (
     QCheckBox,
 )
 
+
 from src.core.library import ItemType, Library, Entry
-from src.core.ts_core import AUDIO_TYPES, VIDEO_TYPES, IMAGE_TYPES
+from src.core.constants import AUDIO_TYPES, VIDEO_TYPES, IMAGE_TYPES
 from src.qt.flowlayout import FlowWidget
 from src.qt.helpers.file_opener import FileOpenerHelper
 from src.qt.widgets.thumb_renderer import ThumbRenderer

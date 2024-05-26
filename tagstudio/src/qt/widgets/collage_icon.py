@@ -24,7 +24,7 @@ from PySide6.QtCore import (
 )
 
 from src.core.library import Library
-from src.core.ts_core import DOC_TYPES, VIDEO_TYPES, IMAGE_TYPES
+from src.core.constants import DOC_TYPES, VIDEO_TYPES, IMAGE_TYPES
 
 
 ERROR = f"[ERROR]"

@@ -9,6 +9,7 @@ import typing
 from datetime import datetime as dt
 
 import cv2
+import rawpy
 from PIL import Image, UnidentifiedImageError
 from PIL.Image import DecompressionBombError
 from PySide6.QtCore import Signal, Qt, QSize
@@ -29,7 +30,7 @@ from humanfriendly import format_size
 
 from src.core.enums import SettingItems, Theme
 from src.core.library import Entry, ItemType, Library
-from src.core.ts_core import VIDEO_TYPES, IMAGE_TYPES
+from src.core.constants import VIDEO_TYPES, IMAGE_TYPES, RAW_IMAGE_TYPES
 from src.qt.helpers.file_opener import FileOpenerLabel, FileOpenerHelper, open_file
 from src.qt.modals.add_field import AddFieldModal
 from src.qt.widgets.thumb_renderer import ThumbRenderer
@@ -90,9 +91,11 @@ class PreviewPanel(QWidget):
         self.preview_img.addAction(self.open_file_action)
         self.preview_img.addAction(self.open_explorer_action)
 
-        self.tr = ThumbRenderer()
-        self.tr.updated.connect(lambda ts, i, s: (self.preview_img.setIcon(i)))
-        self.tr.updated_ratio.connect(
+        self.thumb_renderer = ThumbRenderer()
+        self.thumb_renderer.updated.connect(
+            lambda ts, i, s: (self.preview_img.setIcon(i))
+        )
+        self.thumb_renderer.updated_ratio.connect(
             lambda ratio: (
                 self.set_image_ratio(ratio),
                 self.update_image_size(
@@ -380,7 +383,7 @@ class PreviewPanel(QWidget):
         # if self.preview_img.iconSize().toTuple()[0] < self.preview_img.size().toTuple()[0] + 10:
         # 	if type(self.item) == Entry:
         # 		filepath = os.path.normpath(f'{self.lib.library_dir}/{self.item.path}/{self.item.filename}')
-        # 		self.tr.render_big(time.time(), filepath, self.preview_img.size().toTuple(), self.devicePixelRatio())
+        # 		self.thumb_renderer.render(time.time(), filepath, self.preview_img.size().toTuple(), self.devicePixelRatio(),update_on_ratio_change=True)
 
         # logging.info(f' Img Aspect Ratio: {self.image_ratio}')
         # logging.info(f'  Max Button Size: {size}')
@@ -443,7 +446,14 @@ class PreviewPanel(QWidget):
                 self.preview_img.setCursor(Qt.CursorShape.ArrowCursor)
 
                 ratio: float = self.devicePixelRatio()
-                self.tr.render_big(time.time(), "", (512, 512), ratio, True)
+                self.thumb_renderer.render(
+                    time.time(),
+                    "",
+                    (512, 512),
+                    ratio,
+                    True,
+                    update_on_ratio_change=True,
+                )
                 try:
                     self.preview_img.clicked.disconnect()
                 except RuntimeError:
@@ -466,8 +476,14 @@ class PreviewPanel(QWidget):
                     )
                     self.file_label.setFilePath(filepath)
                     window_title = filepath
-                    ratio = self.devicePixelRatio()
-                    self.tr.render_big(time.time(), filepath, (512, 512), ratio)
+                    ratio: float = self.devicePixelRatio()
+                    self.thumb_renderer.render(
+                        time.time(),
+                        filepath,
+                        (512, 512),
+                        ratio,
+                        update_on_ratio_change=True,
+                    )
                     self.file_label.setText("\u200b".join(filepath))
                     self.file_label.setCursor(Qt.CursorShape.PointingHandCursor)
 
@@ -488,30 +504,21 @@ class PreviewPanel(QWidget):
                         image = None
                         if extension in IMAGE_TYPES:
                             image = Image.open(filepath)
-                            if image.mode == "RGBA":
-                                new_bg = Image.new("RGB", image.size, color="#1e1e1e")
-                                new_bg.paste(image, mask=image.getchannel(3))
-                                image = new_bg
-                            if image.mode != "RGB":
-                                image = image.convert(mode="RGB")
+                        elif extension in RAW_IMAGE_TYPES:
+                            with rawpy.imread(filepath) as raw:
+                                rgb = raw.postprocess()
+                                image = Image.new(
+                                    "L", (rgb.shape[1], rgb.shape[0]), color="black"
+                                )
                         elif extension in VIDEO_TYPES:
                             video = cv2.VideoCapture(filepath)
-                            video.set(
-                                cv2.CAP_PROP_POS_FRAMES,
-                                (video.get(cv2.CAP_PROP_FRAME_COUNT) // 2),
-                            )
+                            video.set(cv2.CAP_PROP_POS_FRAMES, 0)
                             success, frame = video.read()
-                            if not success:
-                                # Depending on the video format, compression, and frame
-                                # count, seeking halfway does not work and the thumb
-                                # must be pulled from the earliest available frame.
-                                video.set(cv2.CAP_PROP_POS_FRAMES, 0)
-                                success, frame = video.read()
                             frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
                             image = Image.fromarray(frame)
 
                         # Stats for specific file types are displayed here.
-                        if extension in (IMAGE_TYPES + VIDEO_TYPES):
+                        if extension in (IMAGE_TYPES + VIDEO_TYPES + RAW_IMAGE_TYPES):
                             self.dimensions_label.setText(
                                 f"{extension.upper()}  •  {format_size(os.stat(filepath).st_size)}\n{image.width} x {image.height} px"
                             )
@@ -519,9 +526,6 @@ class PreviewPanel(QWidget):
                             self.dimensions_label.setText(f"{extension.upper()}")
 
                         if not image:
-                            self.dimensions_label.setText(
-                                f"{extension.upper()}  •  {format_size(os.stat(filepath).st_size)}"
-                            )
                             raise UnidentifiedImageError
 
                     except (
@@ -530,6 +534,9 @@ class PreviewPanel(QWidget):
                         cv2.error,
                         DecompressionBombError,
                     ) as e:
+                        self.dimensions_label.setText(
+                            f"{extension.upper()}  •  {format_size(os.stat(filepath).st_size)}"
+                        )
                         logging.info(
                             f"[PreviewPanel][ERROR] Couldn't Render thumbnail for {filepath} (because of {e})"
                         )
@@ -575,8 +582,15 @@ class PreviewPanel(QWidget):
                 )
                 self.preview_img.setCursor(Qt.CursorShape.ArrowCursor)
 
-                ratio = self.devicePixelRatio()
-                self.tr.render_big(time.time(), "", (512, 512), ratio, True)
+                ratio: float = self.devicePixelRatio()
+                self.thumb_renderer.render(
+                    time.time(),
+                    "",
+                    (512, 512),
+                    ratio,
+                    True,
+                    update_on_ratio_change=True,
+                )
                 try:
                     self.preview_img.clicked.disconnect()
                 except RuntimeError:
@@ -658,7 +672,7 @@ class PreviewPanel(QWidget):
         # 		filepath = os.path.normpath(f'{self.lib.library_dir}/{item.path}/{item.filename}')
         # 		window_title = filepath
         # 		ratio: float = self.devicePixelRatio()
-        # 		self.tr.render_big(time.time(), filepath, (512, 512), ratio)
+        # 		self.thumb_renderer.render(time.time(), filepath, (512, 512), ratio,update_on_ratio_change=True)
         # 		self.file_label.setText("\u200b".join(filepath))
 
         # 		# TODO: Deal with this later.
@@ -948,6 +962,7 @@ class PreviewPanel(QWidget):
             container.set_remove_callback(
                 lambda: self.remove_message_box(prompt=prompt, callback=callback)
             )
+        container.edit_button.setHidden(True)
         container.setHidden(False)
         self.place_add_field_button()
 

@@ -7,14 +7,17 @@
 
 import datetime
 import math
-from multiprocessing import Value
+
+# from multiprocessing import Value
 import os
-import subprocess
+
+# import subprocess
 import sys
 import time
-from PIL import Image, ImageOps, ImageChops, UnidentifiedImageError
+from PIL import Image, ImageChops, UnidentifiedImageError
 from PIL.Image import DecompressionBombError
-import pillow_avif
+
+# import pillow_avif
 from pathlib import Path
 import traceback
 import cv2
