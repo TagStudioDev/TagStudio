@@ -17,7 +17,7 @@ import xml.etree.ElementTree as ET
 from datetime import datetime
 from enum import Enum
 from pathlib import Path
-from typing import Optional, Protocol
+from typing import Optional, Protocol, Generator
 
 import ujson
 
@@ -130,8 +130,8 @@ class SqliteLibrary:
         self.db.execute("DELETE FROM entry WHERE id = ?;", (entry_id,))
 
     def remove_entries(self, entry_ids: list[int]) -> None:
-        entry_ids = [(entry_id,) for entry_id in entry_ids]
-        self.db.executemany("DELETE FROM entry WHERE id = ?;", entry_ids)
+        sql_entry_ids = [(entry_id,) for entry_id in entry_ids]
+        self.db.executemany("DELETE FROM entry WHERE id = ?;", sql_entry_ids)
 
     def get_attributes(
         self, entry_id: int
@@ -176,7 +176,7 @@ class SqliteLibrary:
         )
         return Tag(*tag.fetchone())
 
-    def get_tag_relations(self, tag_id: int, find_parents: bool = True):
+    def get_tag_relations(self, tag_id: int, find_parents: bool = True) -> list[int]:
         if find_parents:
             relations = self.db.execute(
                 "SELECT (parent) FROM tag_relation WHERE tag = ?;", (tag_id,)
@@ -319,8 +319,8 @@ class Tag:
         self.name = name
         self.shorthand = shorthand
         self.color = color
-        self.aliases = []  # TODO: Load aliases from database (Lazy Load?)
-        self.parents = []  # TODO: Load parent tags from database (Lazy Load?)
+        self.aliases: list[str] = []  # TODO: Load aliases from database (Lazy Load?)
+        self.parents: list[int] = []  # TODO: Load parent tags from database (Lazy Load?)
         # self.parents probably needs to be a load on init since its part of the tag title
 
     def __str__(self) -> str:
@@ -557,33 +557,11 @@ class Library:
                     yield dir_file_count
                     start_time = time.time()
 
-        # Sorts the files by date modified, descending.
-        if len(files_not_in_library) <= 100000:
-            try:
-                files_not_in_library = sorted(
-                    files_not_in_library,
-                    key=lambda t: -os.stat(self.library_dir / t).st_ctime,
-                )
-            except (FileExistsError, FileNotFoundError):
-                print(
-                    f"[LIBRARY][ERROR] Couldn't sort files, some were moved during the scanning/sorting process."
-                )
-                pass
-        else:
-            print(
-                f"[LIBRARY][INFO] Not bothering to sort files because there's OVER 100,000! Better sorting methods will be added in the future."
-            )
-
-    def refresh_missing_files(self):
-        """Tracks the number of Entries that point to an invalid file path."""
-        self.missing_files.clear()
-        for i, entry in enumerate(self.entries):
-            full_path = os.path.normpath(
-                f"{self.library_dir}/{entry.path}/{entry.filename}"
-            )
-            if not os.path.isfile(full_path):
-                self.missing_files.append(full_path)
-            yield i
+    def get_missing_files(self) -> Generator[Entry, None, None]:
+        """Generator that yields a list of Entries with missing files."""
+        for entry in self.entries.values():
+            if not entry.path.exists():
+                yield entry
 
     def remove_entry(self, entry_id: int) -> None:
         """Removes an Entry from the Library."""
