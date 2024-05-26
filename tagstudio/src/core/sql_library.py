@@ -587,51 +587,26 @@ class Library:
         # Remove Entries from DataSource
         self.remove_entries(entry_ids)
 
-        # self.dupe_entries.clear()
-        # known_files: set = set()
-        # for entry in self.entries:
-        # 	full_path = os.path.normpath(f'{self.library_dir}/{entry.path}/{entry.filename}')
-        # 	if full_path in known_files:
-        # 		self.dupe_entries.append(full_path)
-        # 	else:
-        # 		known_files.add(full_path)
-
-        self.dupe_entries.clear()
-        checked = set()
-        remaining: list[Entry] = list(self.entries)
-        for p, entry_p in enumerate(self.entries, start=0):
-            if p not in checked:
-                matched: list[int] = []
-                for c, entry_c in enumerate(remaining, start=0):
-                    if os.name == "nt":
-                        if (
-                            entry_p.path.lower() == entry_c.path.lower()
-                            and entry_p.filename.lower() == entry_c.filename.lower()
-                            and c != p
-                        ):
-                            matched.append(c)
-                            checked.add(c)
-                    else:
-                        if (
-                            entry_p.path == entry_c.path
-                            and entry_p.filename == entry_c.filename
-                            and c != p
-                        ):
-                            matched.append(c)
-                            checked.add(c)
+    def get_duplicate_entries(self) -> list[list[Entry]]:
+        """Get all duplicate entries"""
+        checked: set[Entry] = set[Entry]()
+        duplicate_entries: list[list[Entry]] = []
+        for entry in self.entries.values():
+            if entry not in checked:
+                matched: list[Entry] = []
+                for other_entry in self.entries.values():
+                    if entry.path == other_entry.path:
+                        matched.append(other_entry)
                 if matched:
-                    self.dupe_entries.append((p, matched))
-                    sys.stdout.write(
-                        f"\r[LIBRARY] Entry [{p}/{len(self.entries)-1}]: Has Duplicate(s): {matched}"
+                    matched.insert(0, entry)
+                    duplicate_entries.append(matched)
+                    logging.log(
+                        f"[LIBRARY] Entry {entry.entry_id} has {len(matched)} duplicates"
                     )
-                    sys.stdout.flush()
                 else:
-                    sys.stdout.write(
-                        f"\r[LIBRARY] Entry [{p}/{len(self.entries)-1}]: Has No Duplicates"
-                    )
-                    sys.stdout.flush()
-                checked.add(p)
-        print("")
+                    logging.log(f"[LIBRARY] Entry {entry.entry_id} has no duplicates")
+                checked.add(entry)
+        return duplicate_entries
 
     def merge_dupe_entries(self):
         """
