@@ -1022,7 +1022,7 @@ class Library:
         self.entries = unique
         self._map_filenames_to_entry_ids()
 
-    def refresh_dupe_files(self, results_filepath: str|Path):
+    def refresh_dupe_files(self, results_filepath: str | Path):
         """
         Refreshes the list of duplicate files.
         A duplicate file is defined as an identical or near-identical file as determined
