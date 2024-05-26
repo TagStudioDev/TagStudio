@@ -58,6 +58,10 @@ class DataSource(Protocol):
 
     def get_entry(self, entry_id: int) -> "Entry": ...
 
+    def remove_entry(self, entry_id: int) -> None: ...
+
+    def remove_entries(self, entry_ids: list[int]) -> None: ...
+
     def get_tags(self) -> dict[int, "Tag"]: ...
 
     def get_tag(self, tag_id: int) -> "Tag": ...
@@ -121,6 +125,13 @@ class SqliteLibrary:
                 f"[SQLite Library] [get_entry] Entry {entry_id} not found in database."
             )
         return Entry(*entry.fetchone())
+
+    def remove_entry(self, entry_id: int) -> None:
+        self.db.execute("DELETE FROM entry WHERE id = ?;", (entry_id,))
+
+    def remove_entries(self, entry_ids: list[int]) -> None:
+        entry_ids = [(entry_id,) for entry_id in entry_ids]
+        self.db.executemany("DELETE FROM entry WHERE id = ?;", entry_ids)
 
     def get_attributes(
         self, entry_id: int
@@ -576,42 +587,27 @@ class Library:
 
     def remove_entry(self, entry_id: int) -> None:
         """Removes an Entry from the Library."""
-        # del self.entries[entry_index]
-        # self._map_filenames_to_entry_indices()
+        # Remove Entry from library
+        entry = self.entries[entry_id]
 
-        # Step [1/2]:
-        # Remove this Entry from the Entries list.
-        entry = self.get_entry(entry_id)
-        path = (
-            str(os.path.normpath(f"{entry.path}/{entry.filename}"))
-            .lstrip("\\")
-            .lstrip("/")
-        )
-        path = path.lower() if os.name == "nt" else path
-        # logging.info(f'Removing path: {path}')
-        del self.filename_to_entry_id_map[path]
+        del self._filename_to_entry_id_map[str(entry.path)]
+        del self.entries[entry_id]
 
-        del self.entries[self._entry_id_to_index_map[entry_id]]
+        # Remove Entry from DataSource
+        self.data_source.remove_entry(entry_id)
 
-        # self.entries.remove(self.entries[self._entry_id_to_index_map[entry_id]])
+    def remove_entries(self, entry_ids: list[int]) -> None:
+        """Removes a list of Entries from the Library."""
 
-        # Step [2/2]:
-        # Remap the other Entry IDs to their new indices in the Entries list.
-        self._entry_id_to_index_map.clear()
-        for i, e in enumerate(self.entries):
-            self._map_entry_id_to_index(e, i)
+        # Remove Entries from library
+        for entry_id in entry_ids:
+            entry = self.entries[entry_id]
 
-        # # Step [3/3]:
-        # # Remap filenames to new indices.
-        # self._map_filenames_to_entry_ids()
+            del self._filename_to_entry_id_map[str(entry.path)]
+            del self.entries[entry_id]
 
-    def refresh_dupe_entries(self):
-        """
-        Refreshes the list of duplicate Entries.
-        A duplicate Entry is defined as an Entry pointing to a file that one or more
-        other Entries are also pointing to.\n
-        `dupe_entries = tuple(int, list[int])`
-        """
+        # Remove Entries from DataSource
+        self.remove_entries(entry_ids)
 
         # self.dupe_entries.clear()
         # known_files: set = set()
