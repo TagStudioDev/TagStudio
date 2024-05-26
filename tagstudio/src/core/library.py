@@ -1022,14 +1022,14 @@ class Library:
         self.entries = unique
         self._map_filenames_to_entry_ids()
 
-    def refresh_dupe_files(self, results_filepath):
+    def refresh_dupe_files(self, results_filepath: str|Path):
         """
         Refreshes the list of duplicate files.
         A duplicate file is defined as an identical or near-identical file as determined
         by a DupeGuru results file.
         """
-        full_results_path = Path(results_path)
-        if self.library_dir not in results_filepath.parents:
+        full_results_path: Path = Path(results_filepath)
+        if self.library_dir not in full_results_path.parents:
             full_results_path = self.library_dir / full_results_path
 
         if full_results_path.is_file():
