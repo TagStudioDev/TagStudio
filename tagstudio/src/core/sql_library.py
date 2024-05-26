@@ -22,7 +22,7 @@ from typing import Optional, Protocol
 import ujson
 
 from src.core.json_typing import JsonCollation, JsonEntry, JsonLibary, JsonTag
-from src.core.ts_core import (
+from src.core.constants import (
     VERSION,
     TS_FOLDER_NAME,
     BACKUP_FOLDER_NAME,
