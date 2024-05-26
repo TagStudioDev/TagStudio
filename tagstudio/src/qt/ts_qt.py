@@ -388,6 +388,19 @@ class QtDriver(QObject):
 
         edit_menu.addSeparator()
 
+        select_all_action = QAction("Select All", menu_bar)
+        select_all_action.triggered.connect(self.select_all_action_callback)
+        select_all_action.setShortcut(
+            QtCore.QKeyCombination(
+                QtCore.Qt.KeyboardModifier(QtCore.Qt.KeyboardModifier.ControlModifier),
+                QtCore.Qt.Key.Key_A,
+            )
+        )
+        select_all_action.setToolTip("Ctrl+A")
+        edit_menu.addAction(select_all_action)
+
+        edit_menu.addSeparator()
+
         manage_file_extensions_action = QAction("Ignored File Extensions", menu_bar)
         manage_file_extensions_action.triggered.connect(
             lambda: self.show_file_extension_modal()
@@ -691,6 +704,15 @@ class QtDriver(QObject):
         )
         # panel.tag_updated.connect(lambda tag: self.lib.update_tag(tag))
         self.modal.show()
+
+    def select_all_action_callback(self):
+        for item in self.item_thumbs:
+            if item.mode and (item.mode, item.item_id) not in self.selected:
+                self.selected.append((item.mode, item.item_id))
+                item.thumb_button.set_selected(True)
+
+        self.set_macro_menu_viability()
+        self.preview_panel.update_widgets()
 
     def show_tag_database(self):
         self.modal = PanelModal(
