@@ -1,8 +1,7 @@
 # Copyright (C) 2024 Travis Abendshien (CyanVoxel).
 # Licensed under the GPL-3.0 License.
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
-
-
+import contextlib
 import logging
 import os
 import time
@@ -392,12 +391,11 @@ class ItemThumb(FlowWidget):
     def update_clickable(self, clickable: typing.Callable):
         """Updates attributes of a thumbnail element."""
         # logging.info(f'[GUI] Updating Click Event for element {id(element)}: {id(clickable) if clickable else None}')
-        try:
+        if self.thumb_button.is_connected:
             self.thumb_button.clicked.disconnect()
-        except RuntimeError:
-            pass
         if clickable:
             self.thumb_button.clicked.connect(clickable)
+            self.thumb_button.is_connected = True
 
     def update_badges(self):
         if self.mode == ItemType.ENTRY:

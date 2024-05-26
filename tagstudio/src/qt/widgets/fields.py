@@ -13,6 +13,7 @@ from PIL import Image, ImageQt
 from PySide6.QtCore import Qt, QEvent
 from PySide6.QtGui import QPixmap, QEnterEvent
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton
+from src.qt.helpers.custom_qbutton import CustomQPushButton
 
 
 class FieldContainer(QWidget):
@@ -87,7 +88,7 @@ class FieldContainer(QWidget):
 
         self.title_layout.addStretch(2)
 
-        self.copy_button = QPushButton()
+        self.copy_button = CustomQPushButton()
         self.copy_button.setMinimumSize(button_size, button_size)
         self.copy_button.setMaximumSize(button_size, button_size)
         self.copy_button.setFlat(True)
@@ -98,7 +99,7 @@ class FieldContainer(QWidget):
         self.title_layout.addWidget(self.copy_button)
         self.copy_button.setHidden(True)
 
-        self.edit_button = QPushButton()
+        self.edit_button = CustomQPushButton()
         self.edit_button.setMinimumSize(button_size, button_size)
         self.edit_button.setMaximumSize(button_size, button_size)
         self.edit_button.setFlat(True)
@@ -107,7 +108,7 @@ class FieldContainer(QWidget):
         self.title_layout.addWidget(self.edit_button)
         self.edit_button.setHidden(True)
 
-        self.remove_button = QPushButton()
+        self.remove_button = CustomQPushButton()
         self.remove_button.setMinimumSize(button_size, button_size)
         self.remove_button.setMaximumSize(button_size, button_size)
         self.remove_button.setFlat(True)
@@ -130,31 +131,30 @@ class FieldContainer(QWidget):
         # self.set_inner_widget(mode)
 
     def set_copy_callback(self, callback: Optional[MethodType]):
-        try:
+        if self.copy_button.is_connected:
             self.copy_button.clicked.disconnect()
-        except RuntimeError:
-            pass
 
         self.copy_callback = callback
         self.copy_button.clicked.connect(callback)
+        if callback is not None:
+            self.copy_button.is_connected = True
 
     def set_edit_callback(self, callback: Optional[MethodType]):
-        try:
+        if self.edit_button.is_connected:
             self.edit_button.clicked.disconnect()
-        except RuntimeError:
-            pass
 
         self.edit_callback = callback
         self.edit_button.clicked.connect(callback)
+        if callback is not None:
+            self.edit_button.is_connected = True
 
     def set_remove_callback(self, callback: Optional[Callable]):
-        try:
+        if self.remove_button.is_connected:
             self.remove_button.clicked.disconnect()
-        except RuntimeError:
-            pass
 
         self.remove_callback = callback
         self.remove_button.clicked.connect(callback)
+        self.remove_button.is_connected = True
 
     def set_inner_widget(self, widget: "FieldWidget"):
         # widget.setStyleSheet('background-color:green;')
