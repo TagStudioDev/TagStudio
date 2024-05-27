@@ -519,41 +519,140 @@ class Library:
         self.groups.clear()
         self.locations.clear()
 
-    def refresh_dir(self):
-        """Scans a directory for files, and adds those relative filenames to internal variables."""
+    def add_entry_to_library(self, entry: Entry):
+        """Adds a new Entry to the Library."""
+        self.entries.append(entry)
+        self._map_entry_id_to_index(entry, -1)
 
-        dir_file_count: int = 0
-        files_not_in_library = []
+    def add_new_files_as_entries(self) -> list[int]:
+        """Adds files from the `files_not_in_library` list to the Library as Entries. Returns list of added indices."""
+        new_ids: list[int] = []
+        for file in self.files_not_in_library:
+            path, filename = os.path.split(file)
+            # print(os.path.split(file))
+            entry = Entry(
+                id=self._next_entry_id, filename=filename, path=path, fields=[]
+            )
+            self._next_entry_id += 1
+            self.add_entry_to_library(entry)
+            new_ids.append(entry.entry_id)
+        self._map_filenames_to_entry_ids()
+        self.files_not_in_library.clear()
+        return new_ids
 
-        # Scans the directory for files, keeping track of:
-        #   - Total file count
-        #   - Files without library entries
-        start_time = time.time()
-        for location in self.locations:
-            for f in location.path.rglob("*"):
-                if f.is_dir() or TS_FOLDER_NAME in f or "$RECYCLE.BIN" in f:
-                    continue
+        self.files_not_in_library.clear()
 
-                dir_file_count += 1
-                file = str(f.relative_to(location.path))
+    def get_entry(self, entry_id: int) -> Entry:
+        """Returns an Entry object given an Entry ID."""
+        if entry_id in self.entries:
+            entry = self.get_entry(entry_id)
+        else:
+            entry = self.data_source.get_entry(entry_id)
+            self.entries[entry_id] = entry
+        return entry
 
-                try:
-                    _ = self._filename_to_entry_id_map[str(file)]
-                except KeyError:
-                    # print(file)
-                    files_not_in_library.append(file)
+    # @deprecated('Use new Entry ID system.')
+    def get_entry_id_from_filepath(self, filename):
+        """Returns an Entry ID given the full filepath it points to."""
+        try:
+            if self.entries:
+                if os.name == "nt":
+                    return self.filename_to_entry_id_map[
+                        str(
+                            os.path.normpath(
+                                os.path.relpath(filename, self.library_dir)
+                            )
+                        ).lower()
+                    ]
+                return self.filename_to_entry_id_map[
+                    str(os.path.normpath(os.path.relpath(filename, self.library_dir)))
+                ]
+        except:
+            return -1
 
-                end_time = time.time()
-                # Yield output every 1/30 of a second
-                if (end_time - start_time) > 0.034:
-                    yield dir_file_count
-                    start_time = time.time()
+    def update_entry_path(self, entry_id: int, path: str) -> None:
+        """Updates an Entry's path."""
+        self.get_entry(entry_id).path = path
 
-    def get_missing_files(self) -> Generator[Entry, None, None]:
-        """Generator that yields a list of Entries with missing files."""
-        for entry in self.entries.values():
-            if not entry.path.exists():
-                yield entry
+    def update_entry_filename(self, entry_id: int, filename: str) -> None:
+        """Updates an Entry's filename."""
+        self.get_entry(entry_id).filename = filename
+
+    def update_entry_field(self, entry_id: int, field_index: int, content, mode: str):
+        """Updates an Entry's specific field. Modes: append, remove, replace."""
+
+        field_id: int = list(self.get_entry(entry_id)._fields[field_index].keys())[0]
+        if mode.lower() == "append" or mode.lower() == "extend":
+            for i in content:
+                if i not in self.get_entry(entry_id)._fields[field_index][field_id]:
+                    self.get_entry(entry_id)._fields[field_index][field_id].append(i)
+        elif mode.lower() == "replace":
+            self.get_entry(entry_id)._fields[field_index][field_id] = content
+        elif mode.lower() == "remove":
+            for i in content:
+                self.get_entry(entry_id)._fields[field_index][field_id].remove(i)
+
+    def does_field_content_exist(self, entry_id: int, field_id: int, content) -> bool:
+        """Returns whether or not content exists in a specific entry field type."""
+        # entry = self.entries[entry_index]
+        entry = self.get_entry(entry_id)
+        indices = self.get_field_index_in_entry(entry, field_id)
+        for i in indices:
+            if self.get_field_attr(entry._fields[i], "content") == content:
+                return True
+        return False
+
+    def add_field_to_entry(self, entry_id: int, field_id: int) -> None:
+        """Adds an empty Field, specified by Field ID, to an Entry via its index."""
+        # entry = self.entries[entry_index]
+        entry = self.get_entry(entry_id)
+        field_type = self.get_field_obj(field_id)["type"]
+        if field_type in TEXT_FIELDS:
+            entry._fields.append({int(field_id): ""})
+        elif field_type == "tag_box":
+            entry._fields.append({int(field_id): []})
+        elif field_type == "datetime":
+            entry._fields.append({int(field_id): ""})
+        else:
+            logging.info(
+                f"[LIBRARY][ERROR]: Unknown field id attempted to be added to entry: {field_id}"
+            )
+
+    def get_field_attr(self, entry_field, attribute: str):
+        """Returns the value of a specified attribute inside an Entry field."""
+        if attribute.lower() == "id":
+            return list(entry_field.keys())[0]
+        elif attribute.lower() == "content":
+            return entry_field[self.get_field_attr(entry_field, "id")]
+        else:
+            return self.get_field_obj(self.get_field_attr(entry_field, "id"))[
+                attribute.lower()
+            ]
+
+    def get_field_obj(self, field_id: int) -> dict:
+        """
+        Returns a field template object associated with a field ID.
+        The objects have "id", "name", and "type" fields.
+        """
+        if int(field_id) < len(self.default_fields):
+            return self.default_fields[int(field_id)]
+        else:
+            return {"id": -1, "name": "Unknown Field", "type": "unknown"}
+
+    def get_field_index_in_entry(self, entry: Entry, field_id: int) -> list[int]:
+        """
+        Returns matched indices for the field type in an entry.\n
+        Returns an empty list of no field of that type is found in the entry.
+        """
+        matched = []
+        # entry: Entry = self.entries[entry_index]
+        # entry = self.get_entry(entry_id)
+        if entry._fields:
+            for i, field in enumerate(entry._fields):
+                if self.get_field_attr(field, "id") == int(field_id):
+                    matched.append(i)
+
+        return matched
 
     def remove_entry(self, entry_id: int) -> None:
         """Removes an Entry from the Library."""
@@ -578,6 +677,191 @@ class Library:
 
         # Remove Entries from DataSource
         self.remove_entries(entry_ids)
+
+    def add_tag_to_library(self, tag: Tag) -> int:
+        """
+        Adds a Tag to the Library. ⚠️Only use at runtime! (Cannot reference tags that are not loaded yet)⚠️\n
+        For adding Tags from the Library save file, append Tags to the Tags list
+        and then map them using map_library_tags().
+        """
+        tag.subtag_ids = [x for x in tag.subtag_ids if x != tag.id]
+        tag.id = self._next_tag_id
+        self._next_tag_id += 1
+
+        self._map_tag_strings_to_tag_id(tag)
+        self.tags.append(tag)  # Must be appended before mapping the index!
+        self._map_tag_id_to_index(tag, -1)
+        self._map_tag_id_to_cluster(tag)
+
+        return tag.id
+
+    def get_tag(self, tag_id: int) -> Tag:
+        """Returns a Tag object given a Tag ID.
+        If not already cached in the Library, fetch from the DataSource."""
+        if tag_id in self.tags:
+            tag = self.tags[tag_id]
+        else:
+            tag = self.data_source.get_tag(tag_id)
+            self.tags[tag_id] = tag
+        return tag
+
+    def get_tag_cluster(self, tag_id: int) -> list[int]:
+        """Returns a list of Tag IDs that reference this Tag."""
+        return self.get_tag(tag_id).parents
+
+    def get_all_child_tag_ids(self, tag_id: int) -> list[int]:
+        """Recursively traverse a Tag's subtags and return a list of all children tags."""
+        subtag_ids: list[int] = []
+        if self.get_tag(tag_id).subtag_ids:
+            for sub_id in self.get_tag(tag_id).subtag_ids:
+                if sub_id not in subtag_ids:
+                    subtag_ids.append(sub_id)
+                    subtag_ids += self.get_all_child_tag_ids(sub_id)
+        else:
+            return [tag_id]
+
+        return subtag_ids
+
+    def update_tag(self, tag: Tag) -> None:
+        """
+        Edits a Tag in the Library.
+        This function undoes and redos the following parts of the 'add_tag_to_library()' process:\n
+        - Un-maps the old Tag name, shorthand, and aliases from the Tag ID
+        and re-maps the new strings to its ID via '_map_tag_names_to_tag_id()'.\n
+        - Un
+        """
+        tag.subtag_ids = [x for x in tag.subtag_ids if x != tag.id]
+
+        # Since the ID stays the same when editing, only the Tag object is needed.
+        # Merging Tags is handled in a different function.
+        old_tag: Tag = self.get_tag(tag.id)
+
+        # Undo and Redo 'self._map_tag_names_to_tag_id(tag)' ===========================================================
+        # got to map[old names] and remove reference to this id.
+        # Remember that _tag_names_to_tag_id_map maps strings to a LIST of ids.
+        # print(
+        #     f'Removing connection from "{old_tag.name.lower()}" to {old_tag.id} in {self._tag_names_to_tag_id_map[old_tag.name.lower()]}')
+        old_name: str = strip_punctuation(old_tag.name).lower()
+        self._tag_strings_to_id_map[old_name].remove(old_tag.id)
+        # Delete the map key if it doesn't point to any other IDs.
+        if not self._tag_strings_to_id_map[old_name]:
+            del self._tag_strings_to_id_map[old_name]
+        if old_tag.shorthand:
+            old_sh: str = strip_punctuation(old_tag.shorthand).lower()
+            # print(
+            #     f'Removing connection from "{old_tag.shorthand.lower()}" to {old_tag.id} in {self._tag_names_to_tag_id_map[old_tag.shorthand.lower()]}')
+            self._tag_strings_to_id_map[old_sh].remove(old_tag.id)
+            # Delete the map key if it doesn't point to any other IDs.
+            if not self._tag_strings_to_id_map[old_sh]:
+                del self._tag_strings_to_id_map[old_sh]
+        if old_tag.aliases:
+            for alias in old_tag.aliases:
+                old_a: str = strip_punctuation(alias).lower()
+                # print(
+                #     f'Removing connection from "{alias.lower()}" to {old_tag.id} in {self._tag_names_to_tag_id_map[alias.lower()]}')
+                self._tag_strings_to_id_map[old_a].remove(old_tag.id)
+                # Delete the map key if it doesn't point to any other IDs.
+                if not self._tag_strings_to_id_map[old_a]:
+                    del self._tag_strings_to_id_map[old_a]
+        # then add new reference to this id at map[new names]
+        # print(f'Mapping new names for "{tag.name.lower()}" (ID: {tag.id})')
+        self._map_tag_strings_to_tag_id(tag)
+
+        # Redo 'self.tags.append(tag)' =================================================================================
+        # then swap out the tag in the tags list to this one
+        # print(f'Swapping {self.tags[self._tag_id_to_index_map[old_tag.id]]} *FOR* {tag} in tags list.')
+        self.tags[self._tag_id_to_index_map[old_tag.id]] = tag
+        print(f"Edited Tag: {tag}")
+
+        # Undo and Redo 'self._map_tag_id_to_cluster(tag)' =============================================================
+        # NOTE: Currently the tag is getting updated outside of this due to python
+        # entanglement shenanigans so for now this method will always update the cluster maps.
+        # if old_tag.subtag_ids != tag.subtag_ids:
+        # TODO: Optimize this by 1,000,000% buy building an inverse recursive map function
+        # instead of literally just deleting the whole map and building it again
+        # print('Reticulating Splines...')
+        self._tag_id_to_cluster_map.clear()
+        for tag in self.tags:
+            self._map_tag_id_to_cluster(tag)
+            # print('Splines Reticulated.')
+
+            self._map_tag_id_to_cluster(tag)
+
+    def remove_tag(self, tag_id: int) -> None:
+        """
+        Removes a Tag from the Library.
+        Disconnects it from all internal lists and maps, then remaps others as needed.
+        """
+        tag = self.get_tag(tag_id)
+
+        # Step [1/7]:
+        # Remove from Entries.
+        for e in self.entries:
+            if e._fields:
+                for f in e._fields:
+                    if self.get_field_attr(f, "type") == "tag_box":
+                        if tag_id in self.get_field_attr(f, "content"):
+                            self.get_field_attr(f, "content").remove(tag.id)
+
+        # Step [2/7]:
+        # Remove from Subtags.
+        for t in self.tags:
+            if t.subtag_ids:
+                if tag_id in t.subtag_ids:
+                    t.subtag_ids.remove(tag.id)
+
+        # Step [3/7]:
+        # Remove ID -> cluster reference.
+        if tag_id in self._tag_id_to_cluster_map:
+            del self._tag_id_to_cluster_map[tag.id]
+        # Remove mentions of this ID in all clusters.
+        for key, values in self._tag_id_to_cluster_map.items():
+            if tag_id in values:
+                values.remove(tag.id)
+
+        # Step [4/7]:
+        # Remove mapping of this ID to its index in the tags list.
+        if tag.id in self._tag_id_to_index_map:
+            del self._tag_id_to_index_map[tag.id]
+
+        # Step [5/7]:
+        # Remove this Tag from the tags list.
+        self.tags.remove(tag)
+
+        # Step [6/7]:
+        # Remap the other Tag IDs to their new indices in the tags list.
+        self._tag_id_to_index_map.clear()
+        for i, t in enumerate(self.tags):
+            self._map_tag_id_to_index(t, i)
+
+        # Step [7/7]:
+        # Remap all existing Tag names.
+        self._tag_strings_to_id_map.clear()
+        for t in self.tags:
+            self._map_tag_strings_to_tag_id(t)
+
+    def add_group_to_library(self, group: Group) -> int:
+        """Adds a Group to the Library."""
+        ...
+
+    def get_group(self, group_id: int) -> Group:
+        """Returns a Group object given a Group ID."""
+        # TODO: Implement Groups
+        ...
+
+    def update_group(self, group: Group) -> None:
+        """Updates a Group in the Library."""
+        ...
+
+    def remove_group(self, group_id: int) -> None:
+        """Removes a Group from the Library."""
+        ...
+
+    def get_missing_files(self) -> Generator[Entry, None, None]:
+        """Generator that yields a list of Entries with missing files."""
+        for entry in self.entries.values():
+            if not entry.path.exists():
+                yield entry
 
     def get_duplicate_entries(self) -> list[list[Entry]]:
         """Get all duplicate entries"""
@@ -781,6 +1065,37 @@ class Library:
         # 	json.dump({}, outfile, indent=4)
         # print(f'Re-saved to disk at {matched_json_filepath}')
 
+    def refresh_dir(self):
+        """Scans a directory for files, and adds those relative filenames to internal variables."""
+
+        dir_file_count: int = 0
+        files_not_in_library = []
+
+        # Scans the directory for files, keeping track of:
+        #   - Total file count
+        #   - Files without library entries
+        start_time = time.time()
+        for location in self.locations:
+            location_path = location.path
+            for file in location.path.rglob("*"):
+                if file.is_dir() or TS_FOLDER_NAME in file or "$RECYCLE.BIN" in file:
+                    continue
+
+                dir_file_count += 1
+
+                try:
+                    _ = self._filename_to_entry_id_map[str(file)]
+                except KeyError:
+                    # print(file)
+                    files_not_in_library.append(file)
+
+                end_time = time.time()
+                # Yield output every 1/30 of a second
+                if (end_time - start_time) > 0.034:
+                    yield dir_file_count
+                    start_time = time.time()
+
+
     def _match_missing_file(self, file: str) -> list[str]:
         """
         Tries to find missing entry files within the library directory.
@@ -827,62 +1142,6 @@ class Library:
         # print(
         #     f'[LIBRARY] Saved to disk at {os.path.normpath(self.library_dir + "/" + TS_FOLDER_NAME + "/missing_matched.json")}'
         # )
-
-    def add_entry_to_library(self, entry: Entry):
-        """Adds a new Entry to the Library."""
-        self.entries.append(entry)
-        self._map_entry_id_to_index(entry, -1)
-
-    def add_new_files_as_entries(self) -> list[int]:
-        """Adds files from the `files_not_in_library` list to the Library as Entries. Returns list of added indices."""
-        new_ids: list[int] = []
-        for file in self.files_not_in_library:
-            path, filename = os.path.split(file)
-            # print(os.path.split(file))
-            entry = Entry(
-                id=self._next_entry_id, filename=filename, path=path, fields=[]
-            )
-            self._next_entry_id += 1
-            self.add_entry_to_library(entry)
-            new_ids.append(entry.entry_id)
-        self._map_filenames_to_entry_ids()
-        self.files_not_in_library.clear()
-        return new_ids
-
-        self.files_not_in_library.clear()
-
-    def get_entry(self, entry_id: int) -> Entry:
-        """Returns an Entry object given an Entry ID."""
-        if entry_id in self.entries:
-            entry = self.get_entry(entry_id)
-        else:
-            entry = self.data_source.get_entry(entry_id)
-            self.entries[entry_id] = entry
-        return entry
-
-    def get_group(self, group_id: int) -> Group:
-        """Returns a Group object given a Group ID."""
-        # TODO: Implement Groups
-        ...
-
-    # @deprecated('Use new Entry ID system.')
-    def get_entry_id_from_filepath(self, filename):
-        """Returns an Entry ID given the full filepath it points to."""
-        try:
-            if self.entries:
-                if os.name == "nt":
-                    return self.filename_to_entry_id_map[
-                        str(
-                            os.path.normpath(
-                                os.path.relpath(filename, self.library_dir)
-                            )
-                        ).lower()
-                    ]
-                return self.filename_to_entry_id_map[
-                    str(os.path.normpath(os.path.relpath(filename, self.library_dir)))
-                ]
-        except:
-            return -1
 
     def search_library(
         self, query: str = None, entries=True, collations=True, tag_groups=True
@@ -1291,19 +1550,6 @@ class Library:
         # print('')
         return final
 
-    def get_all_child_tag_ids(self, tag_id: int) -> list[int]:
-        """Recursively traverse a Tag's subtags and return a list of all children tags."""
-        subtag_ids: list[int] = []
-        if self.get_tag(tag_id).subtag_ids:
-            for sub_id in self.get_tag(tag_id).subtag_ids:
-                if sub_id not in subtag_ids:
-                    subtag_ids.append(sub_id)
-                    subtag_ids += self.get_all_child_tag_ids(sub_id)
-        else:
-            return [tag_id]
-
-        return subtag_ids
-
     def filter_field_templates(self: str, query) -> list[int]:
         """Returns a list of Field Template IDs returned from a string query."""
 
@@ -1313,124 +1559,6 @@ class Library:
                 matches.append(ft["id"])
 
         return matches
-
-    def update_tag(self, tag: Tag) -> None:
-        """
-        Edits a Tag in the Library.
-        This function undoes and redos the following parts of the 'add_tag_to_library()' process:\n
-        - Un-maps the old Tag name, shorthand, and aliases from the Tag ID
-        and re-maps the new strings to its ID via '_map_tag_names_to_tag_id()'.\n
-        - Un
-        """
-        tag.subtag_ids = [x for x in tag.subtag_ids if x != tag.id]
-
-        # Since the ID stays the same when editing, only the Tag object is needed.
-        # Merging Tags is handled in a different function.
-        old_tag: Tag = self.get_tag(tag.id)
-
-        # Undo and Redo 'self._map_tag_names_to_tag_id(tag)' ===========================================================
-        # got to map[old names] and remove reference to this id.
-        # Remember that _tag_names_to_tag_id_map maps strings to a LIST of ids.
-        # print(
-        #     f'Removing connection from "{old_tag.name.lower()}" to {old_tag.id} in {self._tag_names_to_tag_id_map[old_tag.name.lower()]}')
-        old_name: str = strip_punctuation(old_tag.name).lower()
-        self._tag_strings_to_id_map[old_name].remove(old_tag.id)
-        # Delete the map key if it doesn't point to any other IDs.
-        if not self._tag_strings_to_id_map[old_name]:
-            del self._tag_strings_to_id_map[old_name]
-        if old_tag.shorthand:
-            old_sh: str = strip_punctuation(old_tag.shorthand).lower()
-            # print(
-            #     f'Removing connection from "{old_tag.shorthand.lower()}" to {old_tag.id} in {self._tag_names_to_tag_id_map[old_tag.shorthand.lower()]}')
-            self._tag_strings_to_id_map[old_sh].remove(old_tag.id)
-            # Delete the map key if it doesn't point to any other IDs.
-            if not self._tag_strings_to_id_map[old_sh]:
-                del self._tag_strings_to_id_map[old_sh]
-        if old_tag.aliases:
-            for alias in old_tag.aliases:
-                old_a: str = strip_punctuation(alias).lower()
-                # print(
-                #     f'Removing connection from "{alias.lower()}" to {old_tag.id} in {self._tag_names_to_tag_id_map[alias.lower()]}')
-                self._tag_strings_to_id_map[old_a].remove(old_tag.id)
-                # Delete the map key if it doesn't point to any other IDs.
-                if not self._tag_strings_to_id_map[old_a]:
-                    del self._tag_strings_to_id_map[old_a]
-        # then add new reference to this id at map[new names]
-        # print(f'Mapping new names for "{tag.name.lower()}" (ID: {tag.id})')
-        self._map_tag_strings_to_tag_id(tag)
-
-        # Redo 'self.tags.append(tag)' =================================================================================
-        # then swap out the tag in the tags list to this one
-        # print(f'Swapping {self.tags[self._tag_id_to_index_map[old_tag.id]]} *FOR* {tag} in tags list.')
-        self.tags[self._tag_id_to_index_map[old_tag.id]] = tag
-        print(f"Edited Tag: {tag}")
-
-        # Undo and Redo 'self._map_tag_id_to_cluster(tag)' =============================================================
-        # NOTE: Currently the tag is getting updated outside of this due to python
-        # entanglement shenanigans so for now this method will always update the cluster maps.
-        # if old_tag.subtag_ids != tag.subtag_ids:
-        # TODO: Optimize this by 1,000,000% buy building an inverse recursive map function
-        # instead of literally just deleting the whole map and building it again
-        # print('Reticulating Splines...')
-        self._tag_id_to_cluster_map.clear()
-        for tag in self.tags:
-            self._map_tag_id_to_cluster(tag)
-            # print('Splines Reticulated.')
-
-            self._map_tag_id_to_cluster(tag)
-
-    def remove_tag(self, tag_id: int) -> None:
-        """
-        Removes a Tag from the Library.
-        Disconnects it from all internal lists and maps, then remaps others as needed.
-        """
-        tag = self.get_tag(tag_id)
-
-        # Step [1/7]:
-        # Remove from Entries.
-        for e in self.entries:
-            if e._fields:
-                for f in e._fields:
-                    if self.get_field_attr(f, "type") == "tag_box":
-                        if tag_id in self.get_field_attr(f, "content"):
-                            self.get_field_attr(f, "content").remove(tag.id)
-
-        # Step [2/7]:
-        # Remove from Subtags.
-        for t in self.tags:
-            if t.subtag_ids:
-                if tag_id in t.subtag_ids:
-                    t.subtag_ids.remove(tag.id)
-
-        # Step [3/7]:
-        # Remove ID -> cluster reference.
-        if tag_id in self._tag_id_to_cluster_map:
-            del self._tag_id_to_cluster_map[tag.id]
-        # Remove mentions of this ID in all clusters.
-        for key, values in self._tag_id_to_cluster_map.items():
-            if tag_id in values:
-                values.remove(tag.id)
-
-        # Step [4/7]:
-        # Remove mapping of this ID to its index in the tags list.
-        if tag.id in self._tag_id_to_index_map:
-            del self._tag_id_to_index_map[tag.id]
-
-        # Step [5/7]:
-        # Remove this Tag from the tags list.
-        self.tags.remove(tag)
-
-        # Step [6/7]:
-        # Remap the other Tag IDs to their new indices in the tags list.
-        self._tag_id_to_index_map.clear()
-        for i, t in enumerate(self.tags):
-            self._map_tag_id_to_index(t, i)
-
-        # Step [7/7]:
-        # Remap all existing Tag names.
-        self._tag_strings_to_id_map.clear()
-        for t in self.tags:
-            self._map_tag_strings_to_tag_id(t)
 
     def get_tag_ref_count(self, tag_id: int) -> tuple[int, int]:
         """Returns an int tuple (entry_ref_count, subtag_ref_count) of Tag reference counts."""
@@ -1452,54 +1580,6 @@ class Library:
 
         # input()
         return (entry_ref_count, subtag_ref_count)
-
-    def update_entry_path(self, entry_id: int, path: str) -> None:
-        """Updates an Entry's path."""
-        self.get_entry(entry_id).path = path
-
-    def update_entry_filename(self, entry_id: int, filename: str) -> None:
-        """Updates an Entry's filename."""
-        self.get_entry(entry_id).filename = filename
-
-    def update_entry_field(self, entry_id: int, field_index: int, content, mode: str):
-        """Updates an Entry's specific field. Modes: append, remove, replace."""
-
-        field_id: int = list(self.get_entry(entry_id)._fields[field_index].keys())[0]
-        if mode.lower() == "append" or mode.lower() == "extend":
-            for i in content:
-                if i not in self.get_entry(entry_id)._fields[field_index][field_id]:
-                    self.get_entry(entry_id)._fields[field_index][field_id].append(i)
-        elif mode.lower() == "replace":
-            self.get_entry(entry_id)._fields[field_index][field_id] = content
-        elif mode.lower() == "remove":
-            for i in content:
-                self.get_entry(entry_id)._fields[field_index][field_id].remove(i)
-
-    def does_field_content_exist(self, entry_id: int, field_id: int, content) -> bool:
-        """Returns whether or not content exists in a specific entry field type."""
-        # entry = self.entries[entry_index]
-        entry = self.get_entry(entry_id)
-        indices = self.get_field_index_in_entry(entry, field_id)
-        for i in indices:
-            if self.get_field_attr(entry._fields[i], "content") == content:
-                return True
-        return False
-
-    def add_field_to_entry(self, entry_id: int, field_id: int) -> None:
-        """Adds an empty Field, specified by Field ID, to an Entry via its index."""
-        # entry = self.entries[entry_index]
-        entry = self.get_entry(entry_id)
-        field_type = self.get_field_obj(field_id)["type"]
-        if field_type in TEXT_FIELDS:
-            entry._fields.append({int(field_id): ""})
-        elif field_type == "tag_box":
-            entry._fields.append({int(field_id): []})
-        elif field_type == "datetime":
-            entry._fields.append({int(field_id): ""})
-        else:
-            logging.info(
-                f"[LIBRARY][ERROR]: Unknown field id attempted to be added to entry: {field_id}"
-            )
 
     def mirror_entry_fields(self, entry_ids: list[int]) -> None:
         """Combines and mirrors all fields across a list of given Entry IDs."""
@@ -1551,42 +1631,6 @@ class Library:
                     entry._fields,
                     key=lambda x: order.index(self.get_field_attr(x, "id")),
                 )
-
-    def get_field_attr(self, entry_field, attribute: str):
-        """Returns the value of a specified attribute inside an Entry field."""
-        if attribute.lower() == "id":
-            return list(entry_field.keys())[0]
-        elif attribute.lower() == "content":
-            return entry_field[self.get_field_attr(entry_field, "id")]
-        else:
-            return self.get_field_obj(self.get_field_attr(entry_field, "id"))[
-                attribute.lower()
-            ]
-
-    def get_field_obj(self, field_id: int) -> dict:
-        """
-        Returns a field template object associated with a field ID.
-        The objects have "id", "name", and "type" fields.
-        """
-        if int(field_id) < len(self.default_fields):
-            return self.default_fields[int(field_id)]
-        else:
-            return {"id": -1, "name": "Unknown Field", "type": "unknown"}
-
-    def get_field_index_in_entry(self, entry: Entry, field_id: int) -> list[int]:
-        """
-        Returns matched indices for the field type in an entry.\n
-        Returns an empty list of no field of that type is found in the entry.
-        """
-        matched = []
-        # entry: Entry = self.entries[entry_index]
-        # entry = self.get_entry(entry_id)
-        if entry._fields:
-            for i, field in enumerate(entry._fields):
-                if self.get_field_attr(field, "id") == int(field_id):
-                    matched.append(i)
-
-        return matched
 
     def _map_tag_strings_to_tag_id(self, tag: Tag) -> None:
         """
@@ -1673,34 +1717,3 @@ class Library:
         if index < 0:
             index = len(self.collations) + index
         self._collation_id_to_index_map[collation.id] = index
-
-    def add_tag_to_library(self, tag: Tag) -> int:
-        """
-        Adds a Tag to the Library. ⚠️Only use at runtime! (Cannot reference tags that are not loaded yet)⚠️\n
-        For adding Tags from the Library save file, append Tags to the Tags list
-        and then map them using map_library_tags().
-        """
-        tag.subtag_ids = [x for x in tag.subtag_ids if x != tag.id]
-        tag.id = self._next_tag_id
-        self._next_tag_id += 1
-
-        self._map_tag_strings_to_tag_id(tag)
-        self.tags.append(tag)  # Must be appended before mapping the index!
-        self._map_tag_id_to_index(tag, -1)
-        self._map_tag_id_to_cluster(tag)
-
-        return tag.id
-
-    def get_tag(self, tag_id: int) -> Tag:
-        """Returns a Tag object given a Tag ID.
-        If not already cached in the Library, fetch from the DataSource."""
-        if tag_id in self.tags:
-            tag = self.tags[tag_id]
-        else:
-            tag = self.data_source.get_tag(tag_id)
-            self.tags[tag_id] = tag
-        return tag
-
-    def get_tag_cluster(self, tag_id: int) -> list[int]:
-        """Returns a list of Tag IDs that reference this Tag."""
-        return self.get_tag(tag_id).parents
