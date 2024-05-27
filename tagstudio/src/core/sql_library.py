@@ -320,7 +320,7 @@ class Tag:
         self.shorthand = shorthand
         self.color = color
         self.aliases: list[str] = []  # TODO: Load aliases from database (Lazy Load?)
-        self.parents: list[int] = []  # TODO: Load parent tags from database (Lazy Load?)
+        self.parents: list[int] = []  # TODO: Load parents from database (Lazy Load?)
         # self.parents probably needs to be a load on init since its part of the tag title
 
     def __str__(self) -> str:
