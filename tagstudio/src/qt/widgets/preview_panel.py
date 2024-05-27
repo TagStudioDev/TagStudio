@@ -471,11 +471,9 @@ class PreviewPanel(QWidget):
                 item: Entry = self.lib.get_entry(self.driver.selected[0][1])
                 # If a new selection is made, update the thumbnail and filepath.
                 if not self.selected or self.selected != self.driver.selected:
-                    filepath = os.path.normpath(
-                        f"{self.lib.library_dir}/{item.path}/{item.filename}"
-                    )
+                    filepath = self.lib.library_dir / item.path / item.filename
                     self.file_label.setFilePath(filepath)
-                    window_title = filepath
+                    window_title = str(filepath)
                     ratio: float = self.devicePixelRatio()
                     self.thumb_renderer.render(
                         time.time(),
@@ -484,7 +482,7 @@ class PreviewPanel(QWidget):
                         ratio,
                         update_on_ratio_change=True,
                     )
-                    self.file_label.setText("\u200b".join(filepath))
+                    self.file_label.setText("\u200b".join(str(filepath)))
                     self.file_label.setCursor(Qt.CursorShape.PointingHandCursor)
 
                     self.preview_img.setContextMenuPolicy(
@@ -499,43 +497,53 @@ class PreviewPanel(QWidget):
                     )
 
                     # TODO: Do this somewhere else, this is just here temporarily.
-                    extension = os.path.splitext(filepath)[1][1:].lower()
                     try:
                         image = None
-                        if extension in IMAGE_TYPES:
-                            image = Image.open(filepath)
-                        elif extension in RAW_IMAGE_TYPES:
+                        if filepath.suffix.lower() in IMAGE_TYPES:
+                            image = Image.open(str(filepath))
+                        elif filepath.suffix.lower() in RAW_IMAGE_TYPES:
                             with rawpy.imread(filepath) as raw:
                                 rgb = raw.postprocess()
                                 image = Image.new(
                                     "L", (rgb.shape[1], rgb.shape[0]), color="black"
                                 )
-                        elif extension in VIDEO_TYPES:
-                            video = cv2.VideoCapture(filepath)
+                        elif filepath.suffix.lower() in VIDEO_TYPES:
+                            video = cv2.VideoCapture(str(filepath))
                             video.set(cv2.CAP_PROP_POS_FRAMES, 0)
                             success, frame = video.read()
                             frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
                             image = Image.fromarray(frame)
 
                         # Stats for specific file types are displayed here.
-                        if extension in (IMAGE_TYPES + VIDEO_TYPES + RAW_IMAGE_TYPES):
+                        if filepath.suffix.lower() in (
+                            IMAGE_TYPES + VIDEO_TYPES + RAW_IMAGE_TYPES
+                        ):
                             self.dimensions_label.setText(
-                                f"{extension.upper()}  •  {format_size(os.stat(filepath).st_size)}\n{image.width} x {image.height} px"
+                                f"{filepath.suffix.lower().upper()[1:]}  •  {format_size(os.stat(filepath).st_size)}\n{image.width} x {image.height} px"
                             )
                         else:
-                            self.dimensions_label.setText(f"{extension.upper()}")
+                            self.dimensions_label.setText(
+                                f"{filepath.suffix.lower().upper()[1:]}  •  {format_size(os.stat(filepath).st_size)}"
+                            )
 
-                        if not image:
-                            raise UnidentifiedImageError
+                        if not filepath.is_file():
+                            raise FileNotFoundError
+
+                    except FileNotFoundError as e:
+                        self.dimensions_label.setText(
+                            f"{filepath.suffix.lower().upper()[1:]}"
+                        )
+                        logging.info(
+                            f"[PreviewPanel][ERROR] Couldn't Render thumbnail for {filepath} (because of {e})"
+                        )
 
                     except (
                         UnidentifiedImageError,
-                        FileNotFoundError,
                         cv2.error,
                         DecompressionBombError,
                     ) as e:
                         self.dimensions_label.setText(
-                            f"{extension.upper()}  •  {format_size(os.stat(filepath).st_size)}"
+                            f"{filepath.suffix.lower().upper()[1:]}  •  {format_size(os.stat(filepath).st_size)}"
                         )
                         logging.info(
                             f"[PreviewPanel][ERROR] Couldn't Render thumbnail for {filepath} (because of {e})"
