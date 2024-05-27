@@ -441,14 +441,6 @@ class Library:
 
         return 1
 
-    def get_tag(self, tag_id: int) -> Tag:
-        """Returns a Tag object given a Tag ID.
-        If not already cached in the Library, fetch from the DataSource."""
-        if tag_id in self.tags:
-            return self.tags[tag_id]
-        else:
-            return self.data_source.get_tag(tag_id)
-
     def to_json(self):
         """
         Creates a JSON serialized string from the Library object.
@@ -1700,11 +1692,15 @@ class Library:
         return tag.id
 
     def get_tag(self, tag_id: int) -> Tag:
-        """Returns a Tag object given a Tag ID."""
-        return self.tags[self._tag_id_to_index_map[int(tag_id)]]
+        """Returns a Tag object given a Tag ID.
+        If not already cached in the Library, fetch from the DataSource."""
+        if tag_id in self.tags:
+            tag = self.tags[tag_id]
+        else:
+            tag = self.data_source.get_tag(tag_id)
+            self.tags[tag_id] = tag
+        return tag
 
     def get_tag_cluster(self, tag_id: int) -> list[int]:
         """Returns a list of Tag IDs that reference this Tag."""
-        if tag_id in self._tag_id_to_cluster_map:
-            return self._tag_id_to_cluster_map[int(tag_id)]
-        return []
+        return self.get_tag(tag_id).parents
