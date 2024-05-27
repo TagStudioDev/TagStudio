@@ -865,12 +865,6 @@ class Library:
         return self.collations[self._collation_id_to_index_map[int(collation_id)]]
 
     # @deprecated('Use new Entry ID system.')
-    def get_entry_from_index(self, index: int) -> Entry:
-        """Returns a Library Entry object given its index in the unfiltered Entries list."""
-        if self.entries:
-            return self.entries[int(index)]
-
-    # @deprecated('Use new Entry ID system.')
     def get_entry_id_from_filepath(self, filename):
         """Returns an Entry ID given the full filepath it points to."""
         try:
