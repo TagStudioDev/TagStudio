@@ -860,9 +860,10 @@ class Library:
             self.entries[entry_id] = entry
         return entry
 
-    def get_collation(self, collation_id: int) -> Collation:
-        """Returns a Collation object given an Collation ID."""
-        return self.collations[self._collation_id_to_index_map[int(collation_id)]]
+    def get_group(self, group_id: int) -> Group:
+        """Returns a Group object given a Group ID."""
+        # TODO: Implement Groups
+        ...
 
     # @deprecated('Use new Entry ID system.')
     def get_entry_id_from_filepath(self, filename):
