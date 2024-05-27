@@ -853,7 +853,12 @@ class Library:
 
     def get_entry(self, entry_id: int) -> Entry:
         """Returns an Entry object given an Entry ID."""
-        return self.entries[self._entry_id_to_index_map[int(entry_id)]]
+        if entry_id in self.entries:
+            entry = self.get_entry(entry_id)
+        else:
+            entry = self.data_source.get_entry(entry_id)
+            self.entries[entry_id] = entry
+        return entry
 
     def get_collation(self, collation_id: int) -> Collation:
         """Returns a Collation object given an Collation ID."""
