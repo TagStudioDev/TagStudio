@@ -16,46 +16,31 @@ if typing.TYPE_CHECKING:
     from src.qt.ts_qt import QtDriver
 
 
-class RelinkUnlinkedEntries(QObject):
+class MergeDuplicateEntries(QObject):
     done = Signal()
 
     def __init__(self, library: "Library", driver: "QtDriver"):
         super().__init__()
         self.lib = library
         self.driver = driver
-        self.fixed = 0
 
-    def repair_entries(self):
-        iterator = FunctionIterator(self.lib.fix_missing_files)
+    def merge_entries(self):
+        iterator = FunctionIterator(self.lib.merge_dupe_entries)
 
         pw = ProgressWidget(
-            window_title="Relinking Entries",
+            window_title="Merging Duplicate Entries",
             label_text="",
             cancel_button_text=None,
             minimum=0,
-            maximum=len(self.lib.missing_files),
+            maximum=len(self.lib.dupe_entries),
         )
-
         pw.show()
 
-        iterator.value.connect(lambda x: pw.update_progress(x[0] + 1))
+        iterator.value.connect(lambda x: pw.update_progress(x))
         iterator.value.connect(
-            lambda x: (
-                self.increment_fixed() if x[1] else (),
-                pw.update_label(
-                    f"Attempting to Relink {x[0]+1}/{len(self.lib.missing_files)} Entries, {self.fixed} Successfully Relinked"
-                ),
-            )
+            lambda: (pw.update_label("Merging Duplicate Entries..."))
         )
 
         r = CustomRunnable(lambda: iterator.run())
-        r.done.connect(
-            lambda: (pw.hide(), pw.deleteLater(), self.done.emit(), self.reset_fixed())
-        )
+        r.done.connect(lambda: (pw.hide(), pw.deleteLater(), self.done.emit()))
         QThreadPool.globalInstance().start(r)
-
-    def increment_fixed(self):
-        self.fixed += 1
-
-    def reset_fixed(self):
-        self.fixed = 0

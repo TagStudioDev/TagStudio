@@ -5,22 +5,17 @@
 """The Library object and related methods for TagStudio."""
 
 import datetime
-import glob
 import logging
 import os
-import sys
 import time
 import traceback
-import typing
 import xml.etree.ElementTree as ET
+import ujson
+
 from enum import Enum
 from pathlib import Path
 from typing import cast, Generator
-
 from typing_extensions import Self
-
-import ujson
-from pathlib import Path
 
 from src.core.json_typing import JsonCollation, JsonEntry, JsonLibary, JsonTag
 from src.core.utils.str import strip_punctuation
@@ -89,7 +84,7 @@ class Entry:
         return self.__str__()
 
     def __eq__(self, __value: object) -> bool:
-        __value = cast(Self, object)
+        __value = cast(Self, __value)
         return (
             int(self.id) == int(__value.id)
             and self.filename == __value.filename
@@ -343,7 +338,6 @@ class Library:
         # Maps the filenames of entries in the Library to their entry's index in the self.entries list.
         #   Used for O(1) lookup of a file based on the current index (page number - 1) of the image being looked at.
         #   That filename can then be used to provide quick lookup to image metadata entries in the Library.
-
         self.filename_to_entry_id_map: dict[Path, int] = {}
         # A list of file extensions to be ignored by TagStudio.
         self.default_ext_blacklist: list = ["json", "xmp", "aae"]
@@ -420,7 +414,7 @@ class Library:
             {"id": 30, "name": "Comments", "type": "text_box"},
         ]
 
-    def create_library(self, path) -> int:
+    def create_library(self, path: Path) -> int:
         """
         Creates a TagStudio library in the given directory.\n
         Return Codes:\n
@@ -657,6 +651,7 @@ class Library:
                             )
                             self.entries.append(e)
                             self._map_entry_id_to_index(e, -1)
+
                         end_time = time.time()
                         logging.info(
                             f"[LIBRARY] Entries loaded in {(end_time - start_time):.3f} seconds"
@@ -946,42 +941,34 @@ class Library:
         `dupe_entries = tuple(int, list[int])`
         """
 
-        # self.dupe_entries.clear()
-        # known_files: set = set()
-        # for entry in self.entries:
-        # 	full_path = os.path.normpath(f'{self.library_dir}/{entry.path}/{entry.filename}')
-        # 	if full_path in known_files:
-        # 		self.dupe_entries.append(full_path)
-        # 	else:
-        # 		known_files.add(full_path)
-
         self.dupe_entries.clear()
-        checked = set()
-        remaining: list[Entry] = list(self.entries)
-        for p, entry_p in enumerate(self.entries, start=0):
-            if p not in checked:
-                matched: list[int] = []
-                for c, entry_c in enumerate(remaining, start=0):
-                    if (
-                        entry_p.path == entry_c.path
-                        and entry_p.filename == entry_c.filename
-                        and c != p
-                    ):
-                        matched.append(c)
-                        checked.add(c)
-                if matched:
-                    self.dupe_entries.append((p, matched))
-                    sys.stdout.write(
-                        f"\r[LIBRARY] Entry [{p}/{len(self.entries)-1}]: Has Duplicate(s): {matched}"
-                    )
-                    sys.stdout.flush()
-                else:
-                    sys.stdout.write(
-                        f"\r[LIBRARY] Entry [{p}/{len(self.entries)-1}]: Has No Duplicates"
-                    )
-                    sys.stdout.flush()
-                checked.add(p)
-        print("")
+        registered: dict = {}  # string: list[int]
+
+        # Registered: filename : list[ALL entry IDs pointing to this filename]
+        # Dupe Entries: primary ID : list of [every OTHER entry ID pointing]
+
+        for i, e in enumerate(self.entries):
+            file: Path = Path() / e.path / e.filename
+            # If this unique filepath has not been marked as checked,
+            if not registered.get(file, None):
+                # Register the filepath as having been checked, and include
+                # its entry ID as the first entry in the corresponding list.
+                registered[file] = [e.id]
+            # Else if the filepath is already been seen in another entry,
+            else:
+                # Add this new entry ID to the list of entry ID(s) pointing to
+                # the same file.
+                registered[file].append(e.id)
+            yield i - 1  # The -1 waits for the next step to finish
+
+        for k, v in registered.items():
+            if len(v) > 1:
+                self.dupe_entries.append((v[0], v[1:]))
+                # logging.info(f"DUPLICATE FOUND: {(v[0], v[1:])}")
+                # for id in v:
+                #     logging.info(f"\t{(Path()/self.get_entry(id).path/self.get_entry(id).filename)}")
+
+        yield len(self.entries)
 
     def merge_dupe_entries(self):
         """
@@ -991,35 +978,36 @@ class Library:
         `dupe_entries = tuple(int, list[int])`
         """
 
-        print("[LIBRARY] Mirroring Duplicate Entries...")
+        logging.info("[LIBRARY] Mirroring Duplicate Entries...")
+        id_to_entry_map: dict = {}
+
         for dupe in self.dupe_entries:
+            # Store the id to entry relationship as the library one is about to
+            # be destroyed.
+            # NOTE: This is not a good solution, but will be upended by the
+            # database migration soon anyways.
+            for id in dupe[1]:
+                id_to_entry_map[id] = self.get_entry(id)
             self.mirror_entry_fields([dupe[0]] + dupe[1])
 
-        # print('Consolidating Entries...')
-        # for dupe in self.dupe_entries:
-        # 	for index in dupe[1]:
-        # 		print(f'Consolidating Duplicate: {(self.entries[index].path + os.pathsep + self.entries[index].filename)}')
-        # 		self.entries.remove(self.entries[index])
-        # self._map_filenames_to_entry_indices()
-
-        print(
+        logging.info(
             "[LIBRARY] Consolidating Entries... (This may take a while for larger libraries)"
         )
-        unique: list[Entry] = []
-        for i, e in enumerate(self.entries):
-            if e not in unique:
-                unique.append(e)
-                # print(f'[{i}/{len(self.entries)}] Appending: {(e.path + os.pathsep + e.filename)[0:32]}...')
-                sys.stdout.write(
-                    f"\r[LIBRARY] [{i}/{len(self.entries)}] Appending Unique Entry..."
-                )
-            else:
-                sys.stdout.write(
-                    f"\r[LIBRARY] [{i}/{len(self.entries)}] Consolidating Duplicate: {e.path / e.filename}..."
-                )
-        print("")
-        # [unique.append(x) for x in self.entries if x not in unique]
-        self.entries = unique
+        for i, dupe in enumerate(self.dupe_entries):
+            for id in dupe[1]:
+                # NOTE: Instead of using self.remove_entry(id), I'm bypassing it
+                # because it's currently inefficient in how it needs to remap
+                # every ID to every list index. I'm recreating the steps it
+                # takes but in a batch-friendly way here.
+                # NOTE: Couldn't use get_entry(id) because that relies on the
+                # entry's index in the list, which is currently being messed up.
+                logging.info(f"[LIBRARY] Removing Unneeded Entry {id}")
+                self.entries.remove(id_to_entry_map[id])
+            yield i - 1  # The -1 waits for the next step to finish
+
+        self._entry_id_to_index_map.clear()
+        for i, e in enumerate(self.entries, start=0):
+            self._map_entry_id_to_index(e, i)
         self._map_filenames_to_entry_ids()
 
     def refresh_dupe_files(self, results_filepath: str | Path):
@@ -1028,6 +1016,7 @@ class Library:
         A duplicate file is defined as an identical or near-identical file as determined
         by a DupeGuru results file.
         """
+
         full_results_path: Path = Path(results_filepath)
         if self.library_dir not in full_results_path.parents:
             full_results_path = self.library_dir / full_results_path
@@ -1066,8 +1055,6 @@ class Library:
                         self.dupe_files.append(
                             (files[match[0]], files[match[1]], match[2])
                         )
-                    # self.dupe_files.append((files[match[0]], files[match[1]], match[2]))
-
                 print("")
 
             for dupe in self.dupe_files:
@@ -1143,18 +1130,15 @@ class Library:
                 print(f"[LIBRARY] Fixed {self.get_entry(id).filename}")
             # (int, str)
 
+        # Consolidate new matches with existing unlinked entries.
+        self.refresh_dupe_entries()
+        if self.dupe_entries:
+            self.merge_dupe_entries()
+
+        # Remap filenames to entry IDs.
         self._map_filenames_to_entry_ids()
         # TODO - the type here doesnt match but I cant reproduce calling this
         self.remove_missing_matches(fixed_indices)
-
-        # for i in fixed_indices:
-        # 	# print(json_dump[i])
-        # 	del self.missing_matches[i]
-
-        # with open(matched_json_filepath, "w") as outfile:
-        # 	outfile.flush()
-        # 	json.dump({}, outfile, indent=4)
-        # print(f'Re-saved to disk at {matched_json_filepath}')
 
     def _match_missing_file(self, file: str) -> list[Path]:
         """
@@ -1295,7 +1279,7 @@ class Library:
         return None
 
     # @deprecated('Use new Entry ID system.')
-    def get_entry_id_from_filepath(self, filename):
+    def get_entry_id_from_filepath(self, filename: Path):
         """Returns an Entry ID given the full filepath it points to."""
         try:
             if self.entries:
