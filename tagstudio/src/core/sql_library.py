@@ -118,12 +118,18 @@ class DataSource(Protocol):
 
 
 class SqliteLibrary:
+    # TODO: ASSUME ALL OPERATIONS WORK
+    #       ADD ERROR HANDLING
     def __init__(self, db: sqlite3.Connection) -> None:
         self.db = db
 
-    def get_locations(self) -> list["Location"]:
-        locations = self.db.execute("SELECT (id, path, name) FROM location;").fetchall()
-        return [Location(*loc) for loc in locations]
+    def create_location(self, location: "Location") -> int:
+        cursor = self.db.execute(
+            "INSERT INTO location (path, name) VALUES (?, ?);",
+            (location.path, location.name),
+        )
+        self.db.commit()
+        return cursor.lastrowid
 
     def get_location(self, location_id: int) -> "Location":
         location = self.db.execute(
@@ -131,33 +137,47 @@ class SqliteLibrary:
         )
         return Location(*location.fetchone())
 
-    def get_entries(self) -> list["Entry"]:
-        # This function really shouldn't exist, entries should be loaded as needed for searches
-        # and or the first screen full when loading a library
-        entries = self.db.execute("SELECT (id, path, location) FROM entry;").fetchall()
-        return [Entry(*entry) for entry in entries]
+    def get_locations(self) -> list["Location"]:
+        locations = self.db.execute("SELECT (id, path, name) FROM location;").fetchall()
+        return [Location(*loc) for loc in locations]
+
+    def update_location(self, location: "Location") -> None:
+        self.db.execute(
+            "UPDATE location SET path = ?, name = ? WHERE id = ?;",
+            (location.path, location.name, location.location_id),
+        )
+        self.db.commit()
+
+    def remove_location(self, location_id: int) -> None:
+        self.db.execute("DELETE FROM location WHERE id = ?;", (location_id,))
+        self.db.commit()
+
+    def create_entry(self, entry: "Entry") -> int:
+        cursor = self.db.execute(
+            "INSERT INTO entry (path, hash, location) VALUES (?, ?, ?);",
+            (entry.path, "0", entry.location),
+        )
+        self.db.commit()
+        return cursor.lastrowid
 
     def get_entry(self, entry_id: int) -> "Entry":
         """Get an entry by its ID.
         raises ValueError if the entry is not found.
         """
         entry = self.db.execute(
-            "SELECT (id, path, location) FROM entry WHERE id = ?;", (entry_id,)
+            "SELECT (id, path, hash, location) FROM entry WHERE id = ?;", (entry_id,)
         ).fetchone()
         if not entry:
             raise ValueError(
                 f"[SQLite Library] [get_entry] Entry {entry_id} not found in database."
             )
-        return Entry(*entry.fetchone())
+        return Entry(*entry)
 
-    def remove_entry(self, entry_id: int) -> None:
-        self.db.execute("DELETE FROM entry WHERE id = ?;", (entry_id,))
+    def get_entries(self) -> list["Entry"]:
+        entries = self.db.execute("SELECT (id, path, location) FROM entry;").fetchall()
+        return [Entry(*entry) for entry in entries]
 
-    def remove_entries(self, entry_ids: list[int]) -> None:
-        sql_entry_ids = [(entry_id,) for entry_id in entry_ids]
-        self.db.executemany("DELETE FROM entry WHERE id = ?;", sql_entry_ids)
-
-    def get_attributes(
+    def get_entry_attributes(
         self, entry_id: int
     ) -> dict[int, str | float | datetime | list[int]]:
         attributes = self.db.execute(
@@ -188,17 +208,74 @@ class SqliteLibrary:
                 logging.error("[Sqlite Library] [get_attr] How did you get here?")
         return entry_attributes
 
+    def update_entry(self, entry: "Entry") -> None:
+        cursor = self.db.cursor()
+        cursor.execute(
+            "UPDATE entry SET path = ?, hash = ?, location = ? WHERE id = ?;",
+            (entry.path, entry.hash, entry.location, entry.entry_id),
+        )
+        # Update attributes using upserts
+        for tag_id, attr in entry._attributes.items():
+            if isinstance(attr, str):
+                cursor.execute(
+                    "INSERT INTO entry_attribute (entry, title_tag, text) VALUES (?, ?, ?) \
+                           ON CONFLICT (entry, title_tag) DO UPDATE SET text = excluded.text;",
+                    (entry.entry_id, tag_id, attr),
+                )
+            elif isinstance(attr, float):
+                cursor.execute(
+                    "INSERT INTO entry_attribute (entry, title_tag, number) VALUES (?, ?, ?) \
+                           ON CONFLICT (entry, title_tag) DO UPDATE SET number = excluded.number;",
+                    (entry.entry_id, tag_id, attr),
+                )
+            elif isinstance(attr, datetime):
+                cursor.execute(
+                    "INSERT INTO entry_attribute (entry, title_tag, datetime) VALUES (?, ?, ?) \
+                           ON CONFLICT (entry, title_tag) DO UPDATE SET datetime = excluded.datetime;",
+                    (entry.entry_id, tag_id, attr.isoformat()),
+                )
+            elif isinstance(attr, list):
+                for tag in attr:
+                    cursor.execute(
+                        "INSERT INTO entry_attribute (entry, title_tag, tag) VALUES (?, ?, ?) \
+                               ON CONFLICT (entry, title_tag) DO UPDATE SET tag = excluded.tag;",
+                        (entry.entry_id, tag, tag_id),
+                    )
+            self.db.commit()
+
+    def remove_entry(self, entry_id: int) -> None:
+        self.db.execute("DELETE FROM entry WHERE id = ?;", (entry_id,))
+        self.db.commit()
+
+    def create_tag(self, tag: "Tag") -> int:
+        cursor = self.db.execute(
+            "INSERT INTO tag (name, shorthand, color) VALUES (?, ?, ?);",
+            (tag.name, tag.shorthand, tag.color),
+        )
+        self.db.commit()
+        return cursor.lastrowid
+
+    def get_tag(self, tag_id: int) -> "Tag":
+        tag = self.db.execute(
+            "SELECT (id, name, shorthand, color) FROM tag WHERE id = ?;", (tag_id,)
+        ).fetchone()
+        if not tag:
+            raise ValueError(
+                f"[SQLite Library] [get_tag] Tag {tag_id} not found in database."
+            )
+        return Tag(*tag)
+
     def get_tags(self) -> dict[int, "Tag"]:
         tags = self.db.execute(
             "SELECT (id, name, shorthand, color) FROM tag;"
         ).fetchall()
         return {tag[0]: Tag(*tag) for tag in tags}
 
-    def get_tag(self, tag_id: int) -> "Tag":
-        tag = self.db.execute(
-            "SELECT (id, name, shorthand, color) FROM tag WHERE id = ?;", (tag_id,)
-        )
-        return Tag(*tag.fetchone())
+    def get_aliases(self, tag_id: int) -> list[str]:
+        aliases = self.db.execute(
+            "SELECT (name) FROM alias WHERE tag = ?;", (tag_id,)
+        ).fetchall()
+        return [alias[0] for alias in aliases]
 
     def get_tag_relations(self, tag_id: int, find_parents: bool = True) -> list[int]:
         if find_parents:
@@ -211,17 +288,64 @@ class SqliteLibrary:
             ).fetchall()
         return [rel[0] for rel in relations]
 
-    def get_aliases(self, tag_id: int) -> list[str]:
-        aliases = self.db.execute(
-            "SELECT (name) FROM alias WHERE tag = ?;", (tag_id,)
-        ).fetchall()
-        return [alias[0] for alias in aliases]
+    def update_tag(self, tag: "Tag") -> None:
+        cursor = self.db.cursor()
+        cursor.execute(
+            "UPDATE tag SET name = ?, shorthand = ?, color = ? WHERE id = ?;",
+            (tag.name, tag.shorthand, tag.color, tag.tag_id),
+        )
+        for alias in tag.aliases:
+            cursor.execute(
+                "INSERT INTO alias (tag, name) VALUES (?, ?) \
+                        ON CONFLICT (tag, name) DO UPDATE SET name = excluded.name;",
+                (tag.tag_id, alias),
+            )
+
+        for parent in tag.parents:
+            cursor.execute(
+                "INSERT INTO tag_relation (tag, parent) VALUES (?, ?) \
+                        ON CONFLICT (tag, parent) DO UPDATE SET parent = excluded.parent;",
+                (tag.tag_id, parent),
+            )
+        self.db.commit()
+
+    def remove_tag(self, tag_id: int) -> None:
+        self.db.execute("DELETE FROM tag WHERE id = ?;", (tag_id,))
+        self.db.commit()
+
+    def create_group(self, group: "Group") -> None:
+        # TODO: Implement Groups
+        pass
+
+    def get_group(self, tag: "Tag") -> "Group":
+        # TODO: Implement Groups
+        pass
+
+    def get_groups(self) -> list["Group"]:
+        # TODO: Implement Groups
+        pass
+
+    def update_group(self, group: "Group") -> None:
+        # TODO: Implement Groups
+        pass
+
+    def remove_group(self, group: "Group") -> None:
+        # TODO: Implement Groups
+        pass
 
     def get_version(self) -> tuple[int, int, int]:
         # PRAGMA user_version is only able to store an unsigned int
-        database_versions = {1: (9, 2, 0)}
         pragma_version = self.db.execute("PRAGMA user_version").fetchone()
-        return database_versions.get(pragma_version[0], (0, 0, 0))
+        major = pragma_version[0] // 1_000_000
+        minor = (pragma_version[0] % 1_000_000) // 1_000
+        patch = pragma_version[0] % 1_000
+        return major, minor, patch
+
+    def set_version(self, version: tuple[int, int, int]) -> None:
+        # PRAGMA user_version is only able to store an unsigned int
+        major, minor, patch = version
+        db_version = major * 1_000_000 + minor * 1_000 + patch
+        self.db.execute(f"PRAGMA user_version = {db_version};")
 
     def save(self, path: Optional[Path] = None) -> int:
         """Save a library, either to the current location or to a new location.
@@ -244,6 +368,10 @@ class SqliteLibrary:
                     logging.error(f"[Sqlite Library] [Save] {e}")
                     return 1
                 return 0
+
+    def close(self):
+        # Close the database connection NOTE: Does not commit changes
+        self.db.close()
 
 
 # =============================================================================
