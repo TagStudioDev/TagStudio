@@ -19,7 +19,6 @@ from datetime import datetime as dt
 from pathlib import Path
 from queue import Queue
 from typing import Optional
-
 from PIL import Image
 from PySide6 import QtCore
 from PySide6.QtCore import QObject, QThread, Signal, Qt, QThreadPool, QTimer, QSettings
@@ -255,8 +254,8 @@ class QtDriver(QObject):
         # pal.setColor(QPalette.ColorGroup.Normal,
         # 			 QPalette.ColorRole.Window, QColor('#110F1B'))
         # app.setPalette(pal)
-        home_path = os.path.normpath(f"{Path(__file__).parent}/ui/home.ui")
-        icon_path = os.path.normpath(f"{Path(__file__).parents[2]}/resources/icon.png")
+        home_path = Path(__file__).parent / "ui/home.ui"
+        icon_path = Path(__file__).parents[2] / "resources/icon.png"
 
         # Handle OS signals
         self.setup_signals()
@@ -294,7 +293,7 @@ class QtDriver(QObject):
 
         if sys.platform != "darwin":
             icon = QIcon()
-            icon.addFile(icon_path)
+            icon.addFile(str(icon_path))
             app.setWindowIcon(icon)
 
         menu_bar = QMenuBar(self.main_window)
@@ -390,6 +389,19 @@ class QtDriver(QObject):
 
         edit_menu.addSeparator()
 
+        select_all_action = QAction("Select All", menu_bar)
+        select_all_action.triggered.connect(self.select_all_action_callback)
+        select_all_action.setShortcut(
+            QtCore.QKeyCombination(
+                QtCore.Qt.KeyboardModifier(QtCore.Qt.KeyboardModifier.ControlModifier),
+                QtCore.Qt.Key.Key_A,
+            )
+        )
+        select_all_action.setToolTip("Ctrl+A")
+        edit_menu.addAction(select_all_action)
+
+        edit_menu.addSeparator()
+
         manage_file_extensions_action = QAction("Ignored File Extensions", menu_bar)
         manage_file_extensions_action.triggered.connect(
             lambda: self.show_file_extension_modal()
@@ -482,7 +494,6 @@ class QtDriver(QObject):
             lambda: webbrowser.open("https://github.com/TagStudioDev/TagStudio")
         )
         help_menu.addAction(self.repo_action)
-
         self.set_macro_menu_viability()
 
         menu_bar.addMenu(file_menu)
@@ -497,9 +508,7 @@ class QtDriver(QObject):
         l.addWidget(self.preview_panel)
 
         QFontDatabase.addApplicationFont(
-            os.path.normpath(
-                f"{Path(__file__).parents[2]}/resources/qt/fonts/Oxanium-Bold.ttf"
-            )
+            str(Path(__file__).parents[2] / "resources/qt/fonts/Oxanium-Bold.ttf")
         )
 
         self.thumb_size = 128
@@ -679,7 +688,7 @@ class QtDriver(QObject):
         fn = self.lib.save_library_backup_to_disk()
         end_time = time.time()
         self.main_window.statusbar.showMessage(
-            f'Library Backup Saved at: "{os.path.normpath(os.path.normpath(f"{self.lib.library_dir}/{TS_FOLDER_NAME}/{BACKUP_FOLDER_NAME}/{fn}"))}" ({format_timespan(end_time - start_time)})'
+            f'Library Backup Saved at: "{ self.lib.library_dir / TS_FOLDER_NAME / BACKUP_FOLDER_NAME / fn}" ({format_timespan(end_time - start_time)})'
         )
 
     def add_tag_action_callback(self):
@@ -693,6 +702,15 @@ class QtDriver(QObject):
         )
         # panel.tag_updated.connect(lambda tag: self.lib.update_tag(tag))
         self.modal.show()
+
+    def select_all_action_callback(self):
+        for item in self.item_thumbs:
+            if item.mode and (item.mode, item.item_id) not in self.selected:
+                self.selected.append((item.mode, item.item_id))
+                item.thumb_button.set_selected(True)
+
+        self.set_macro_menu_viability()
+        self.preview_panel.update_widgets()
 
     def show_tag_database(self):
         self.modal = PanelModal(
@@ -849,8 +867,8 @@ class QtDriver(QObject):
     def run_macro(self, name: str, entry_id: int):
         """Runs a specific Macro on an Entry given a Macro name."""
         entry = self.lib.get_entry(entry_id)
-        path = os.path.normpath(f"{self.lib.library_dir}/{entry.path}/{entry.filename}")
-        source = path.split(os.sep)[1].lower()
+        path = self.lib.library_dir / entry.path / entry.filename
+        source = entry.path.parts[0]
         if name == "sidecar":
             self.lib.add_generic_data_to_entry(
                 self.core.get_gdl_sidecar(path, source), entry_id
@@ -1202,9 +1220,7 @@ class QtDriver(QObject):
                     entry = self.lib.get_entry(
                         self.nav_frames[self.cur_frame_idx].contents[i][1]
                     )
-                    filepath = os.path.normpath(
-                        f"{self.lib.library_dir}/{entry.path}/{entry.filename}"
-                    )
+                    filepath = self.lib.library_dir / entry.path / entry.filename
 
                     item_thumb.set_item_id(entry.id)
                     item_thumb.assign_archived(entry.has_tag(self.lib, 0))
@@ -1249,9 +1265,7 @@ class QtDriver(QObject):
                         else collation.e_ids_and_pages[0][0]
                     )
                     cover_e = self.lib.get_entry(cover_id)
-                    filepath = os.path.normpath(
-                        f"{self.lib.library_dir}/{cover_e.path}/{cover_e.filename}"
-                    )
+                    filepath = self.lib.library_dir / cover_e.path / cover_e.filename
                     item_thumb.set_count(str(len(collation.e_ids_and_pages)))
                     item_thumb.update_clickable(
                         clickable=(
@@ -1542,8 +1556,11 @@ class QtDriver(QObject):
             self.completed += 1
         # logging.info(f'threshold:{len(self.lib.entries}, completed:{self.completed}')
         if self.completed == len(self.lib.entries):
-            filename = os.path.normpath(
-                f'{self.lib.library_dir}/{TS_FOLDER_NAME}/{COLLAGE_FOLDER_NAME}/collage_{dt.utcnow().strftime("%F_%T").replace(":", "")}.png'
+            filename = (
+                self.lib.library_dir
+                / TS_FOLDER_NAME
+                / COLLAGE_FOLDER_NAME
+                / f'collage_{dt.utcnow().strftime("%F_%T").replace(":", "")}.png'
             )
             self.collage.save(filename)
             self.collage = None
