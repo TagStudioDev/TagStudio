@@ -473,6 +473,10 @@ class Tag:
         self.color = color
         self.aliases: list[str] = []  # TODO: Load aliases from database (Lazy Load?)
         self.parents: list[int] = []  # TODO: Load parents from database (Lazy Load?)
+        self.icon: Optional[Path] = None
+        self.preference: int = -1
+        self.field: bool = False
+        self.system: bool = False
         # self.parents probably needs to be a load on init since its part of the tag title
 
     def __str__(self) -> str:
@@ -1246,7 +1250,6 @@ class Library:
                 if (end_time - start_time) > 0.034:
                     yield dir_file_count
                     start_time = time.time()
-
 
     def _match_missing_file(self, file: str) -> list[str]:
         """
