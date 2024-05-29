@@ -5,22 +5,17 @@
 """The Library object and related methods for TagStudio."""
 
 import datetime
-import glob
 import logging
 import os
-import sys
 import time
 import traceback
-import typing
 import xml.etree.ElementTree as ET
+import ujson
+
 from enum import Enum
 from pathlib import Path
 from typing import cast, Generator
-
 from typing_extensions import Self
-
-import ujson
-from pathlib import Path
 
 from src.core.json_typing import JsonCollation, JsonEntry, JsonLibary, JsonTag
 from src.core.utils.str import strip_punctuation
@@ -90,13 +85,12 @@ class Entry:
 
     def __eq__(self, __value: object) -> bool:
         __value = cast(Self, __value)
-        if os.name == "nt":
-            return (
-                int(self.id) == int(__value.id)
-                and self.filename == __value.filename
-                and self.path == __value.path
-                and self.fields == __value.fields
-            )
+        return (
+            int(self.id) == int(__value.id)
+            and self.filename == __value.filename
+            and self.path == __value.path
+            and self.fields == __value.fields
+        )
 
     def compressed_dict(self) -> JsonEntry:
         """
@@ -1145,7 +1139,6 @@ class Library:
         self._map_filenames_to_entry_ids()
         # TODO - the type here doesnt match but I cant reproduce calling this
         self.remove_missing_matches(fixed_indices)
-
 
     def _match_missing_file(self, file: str) -> list[Path]:
         """
