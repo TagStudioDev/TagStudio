@@ -677,8 +677,9 @@ class Library:
 
     def add_entry_to_library(self, entry: Entry):
         """Adds a new Entry to the Library."""
-        self.entries.append(entry)
-        self._map_entry_id_to_index(entry, -1)
+        entry_id = self.data_source.create_entry(entry)
+        entry.entry_id = entry_id
+        self.entries[entry.entry_id] = entry
 
     def add_new_files_as_entries(self) -> list[int]:
         """Adds files from the `files_not_in_library` list to the Library as Entries. Returns list of added indices."""
