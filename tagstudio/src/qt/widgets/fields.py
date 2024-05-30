@@ -19,23 +19,17 @@ from src.qt.helpers.custom_qbutton import CustomQPushButton
 class FieldContainer(QWidget):
     # TODO: reference a resources folder rather than path.parents[3]?
     clipboard_icon_128: Image.Image = Image.open(
-        os.path.normpath(
-            f"{Path(__file__).parents[3]}/resources/qt/images/clipboard_icon_128.png"
-        )
+        str(Path(__file__).parents[3] / "resources/qt/images/clipboard_icon_128.png")
     ).resize((math.floor(24 * 1.25), math.floor(24 * 1.25)))
     clipboard_icon_128.load()
 
     edit_icon_128: Image.Image = Image.open(
-        os.path.normpath(
-            f"{Path(__file__).parents[3]}/resources/qt/images/edit_icon_128.png"
-        )
+        str(Path(__file__).parents[3] / "resources/qt/images/edit_icon_128.png")
     ).resize((math.floor(24 * 1.25), math.floor(24 * 1.25)))
     edit_icon_128.load()
 
     trash_icon_128: Image.Image = Image.open(
-        os.path.normpath(
-            f"{Path(__file__).parents[3]}/resources/qt/images/trash_icon_128.png"
-        )
+        str(Path(__file__).parents[3] / "resources/qt/images/trash_icon_128.png")
     ).resize((math.floor(24 * 1.25), math.floor(24 * 1.25)))
     trash_icon_128.load()
 

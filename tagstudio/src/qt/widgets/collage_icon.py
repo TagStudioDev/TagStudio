@@ -52,9 +52,7 @@ class CollageIconRenderer(QObject):
         keep_aspect,
     ):
         entry = self.lib.get_entry(entry_id)
-        filepath = os.path.normpath(
-            f"{self.lib.library_dir}/{entry.path}/{entry.filename}"
-        )
+        filepath = self.lib.library_dir / entry.path / entry.filename
         file_type = os.path.splitext(filepath)[1].lower()[1:]
         color: str = ""
 
@@ -91,16 +89,14 @@ class CollageIconRenderer(QObject):
                     self.rendered.emit(pic)
             if not data_only_mode:
                 logging.info(
-                    f"\r{INFO} Combining [ID:{entry_id}/{len(self.lib.entries)}]: {self.get_file_color(file_type)}{entry.path}{os.sep}{entry.filename}\033[0m"
+                    f"\r{INFO} Combining [ID:{entry_id}/{len(self.lib.entries)}]: {self.get_file_color(filepath.suffix.lower())}{entry.path}{os.sep}{entry.filename}\033[0m"
                 )
                 # sys.stdout.write(f'\r{INFO} Combining [{i+1}/{len(self.lib.entries)}]: {self.get_file_color(file_type)}{entry.path}{os.sep}{entry.filename}{RESET}')
                 # sys.stdout.flush()
-                if file_type in IMAGE_TYPES:
+                if filepath.suffix.lower() in IMAGE_TYPES:
                     try:
                         with Image.open(
-                            os.path.normpath(
-                                f"{self.lib.library_dir}/{entry.path}/{entry.filename}"
-                            )
+                            str(self.lib.library_dir / entry.path / entry.filename)
                         ) as pic:
                             if keep_aspect:
                                 pic.thumbnail(size)
@@ -115,8 +111,8 @@ class CollageIconRenderer(QObject):
                             self.rendered.emit(pic)
                     except DecompressionBombError as e:
                         logging.info(f"[ERROR] One of the images was too big ({e})")
-                elif file_type in VIDEO_TYPES:
-                    video = cv2.VideoCapture(filepath)
+                elif filepath.suffix.lower() in VIDEO_TYPES:
+                    video = cv2.VideoCapture(str(filepath))
                     video.set(
                         cv2.CAP_PROP_POS_FRAMES,
                         (video.get(cv2.CAP_PROP_FRAME_COUNT) // 2),
@@ -145,8 +141,9 @@ class CollageIconRenderer(QObject):
                 f"\n{ERROR} Couldn't read {entry.path}{os.sep}{entry.filename}"
             )
             with Image.open(
-                os.path.normpath(
-                    f"{Path(__file__).parents[2]}/resources/qt/images/thumb_broken_512.png"
+                str(
+                    Path(__file__).parents[2]
+                    / "resources/qt/images/thumb_broken_512.png"
                 )
             ) as pic:
                 pic.thumbnail(size)

@@ -24,9 +24,7 @@ INFO = f"[INFO]"
 
 class TagWidget(QWidget):
     edit_icon_128: Image.Image = Image.open(
-        os.path.normpath(
-            f"{Path(__file__).parents[3]}/resources/qt/images/edit_icon_128.png"
-        )
+        str(Path(__file__).parents[3] / "resources/qt/images/edit_icon_128.png")
     ).resize((math.floor(14 * 1.25), math.floor(14 * 1.25)))
     edit_icon_128.load()
     on_remove = Signal()
