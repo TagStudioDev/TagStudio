@@ -32,7 +32,7 @@ class DeleteUnlinkedEntriesModal(QWidget):
         super().__init__()
         self.lib = library
         self.driver = driver
-        self.setWindowTitle(f"Delete Unlinked Entries")
+        self.setWindowTitle("Delete Unlinked Entries")
         self.setWindowModality(Qt.WindowModality.ApplicationModal)
         self.setMinimumSize(500, 400)
         self.root_layout = QVBoxLayout(self)
@@ -81,20 +81,6 @@ class DeleteUnlinkedEntriesModal(QWidget):
             self.model.appendRow(QStandardItem(str(i)))
 
     def delete_entries(self):
-        # pb = QProgressDialog('', None, 0, len(self.lib.missing_files))
-        # # pb.setMaximum(len(self.lib.missing_files))
-        # pb.setFixedSize(432, 112)
-        # pb.setWindowFlags(pb.windowFlags() & ~Qt.WindowType.WindowCloseButtonHint)
-        # pb.setWindowTitle('Deleting Entries')
-        # pb.setWindowModality(Qt.WindowModality.ApplicationModal)
-        # pb.show()
-
-        # r = CustomRunnable(lambda: self.lib.ref(pb))
-        # r.done.connect(lambda: self.done.emit())
-        # # r.done.connect(lambda: self.model.clear())
-        # QThreadPool.globalInstance().start(r)
-        # # r.run()
-
         iterator = FunctionIterator(self.lib.remove_missing_files)
 
         pw = ProgressWidget(
@@ -119,23 +105,3 @@ class DeleteUnlinkedEntriesModal(QWidget):
         r = CustomRunnable(lambda: iterator.run())
         QThreadPool.globalInstance().start(r)
         r.done.connect(lambda: (pw.hide(), pw.deleteLater(), self.done.emit()))
-
-    # def delete_entries_runnable(self):
-    # 	deleted = []
-    # 	for i, missing in enumerate(self.lib.missing_files):
-    # 		# pb.setValue(i)
-    # 		# pb.setLabelText(f'Deleting {i}/{len(self.lib.missing_files)} Unlinked Entries')
-    # 		try:
-    # 			id = self.lib.get_entry_id_from_filepath(missing)
-    # 			logging.info(f'Removing Entry ID {id}:\n\t{missing}')
-    # 			self.lib.remove_entry(id)
-    # 			self.driver.purge_item_from_navigation(ItemType.ENTRY, id)
-    # 			deleted.append(missing)
-    # 		except KeyError:
-    # 			logging.info(
-    # 				f'{ERROR} \"{id}\" was reported as missing, but is not in the file_to_entry_id map.')
-    # 		yield i
-    # 	for d in deleted:
-    # 		self.lib.missing_files.remove(d)
-    # 	# self.driver.filter_items('')
-    # 	# self.done.emit()
