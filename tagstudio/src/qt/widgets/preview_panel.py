@@ -502,11 +502,17 @@ class PreviewPanel(QWidget):
                         if filepath.suffix.lower() in IMAGE_TYPES:
                             image = Image.open(str(filepath))
                         elif filepath.suffix.lower() in RAW_IMAGE_TYPES:
-                            with rawpy.imread(filepath) as raw:
-                                rgb = raw.postprocess()
-                                image = Image.new(
-                                    "L", (rgb.shape[1], rgb.shape[0]), color="black"
-                                )
+                            try:
+                                with rawpy.imread(filepath) as raw:
+                                    rgb = raw.postprocess()
+                                    image = Image.new(
+                                        "L", (rgb.shape[1], rgb.shape[0]), color="black"
+                                    )
+                            except (
+                                rawpy._rawpy.LibRawIOError,
+                                rawpy._rawpy.LibRawFileUnsupportedError,
+                            ):
+                                pass
                         elif filepath.suffix.lower() in VIDEO_TYPES:
                             video = cv2.VideoCapture(str(filepath))
                             video.set(cv2.CAP_PROP_POS_FRAMES, 0)
