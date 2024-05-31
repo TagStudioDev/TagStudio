@@ -857,21 +857,27 @@ class Library:
         start_time = time.time()
         for f in self.library_dir.glob("**/*"):
             # p = Path(os.path.normpath(f))
-            if (
-                "$RECYCLE.BIN" not in f.parts
-                and TS_FOLDER_NAME not in f.parts
-                and "tagstudio_thumbs" not in f.parts
-                and not f.is_dir()
-            ):
-                if f.suffix not in self.ignored_extensions:
-                    self.dir_file_count += 1
-                    file = f.relative_to(self.library_dir)
-                    try:
-                        _ = self.filename_to_entry_id_map[file]
-                    except KeyError:
-                        # print(file)
-                        self.files_not_in_library.append(file)
-
+            try:
+                if f.is_dir():
+                    print(f)
+                if (
+                    "$RECYCLE.BIN" not in f.parts
+                    and TS_FOLDER_NAME not in f.parts
+                    and "tagstudio_thumbs" not in f.parts
+                    and not f.is_dir()
+                ):
+                    if f.suffix not in self.ignored_extensions:
+                        self.dir_file_count += 1
+                        file = f.relative_to(self.library_dir)
+                        try:
+                            _ = self.filename_to_entry_id_map[file]
+                        except KeyError:
+                            # print(file)
+                            self.files_not_in_library.append(file)
+            except PermissionError:
+                logging.info(
+                    f"The File/Folder {f} cannot be accessed, because it requires higher permission!"
+                )
             # sys.stdout.write(f'\r[LIBRARY] {self.dir_file_count} files found in "{self.library_dir}"...')
             # sys.stdout.flush()
             end_time = time.time()

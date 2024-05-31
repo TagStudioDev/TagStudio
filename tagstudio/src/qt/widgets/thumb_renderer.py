@@ -151,7 +151,10 @@ class ThumbRenderer(QObject):
                         logging.info(
                             f"[ThumbRenderer]{WARNING} Couldn't Render thumbnail for {_filepath} (because of {e})"
                         )
-                    except rawpy._rawpy.LibRawIOError:
+                    except (
+                        rawpy._rawpy.LibRawIOError,
+                        rawpy._rawpy.LibRawFileUnsupportedError,
+                    ):
                         logging.info(
                             f"[ThumbRenderer]{ERROR} Couldn't Render thumbnail for raw image {_filepath}"
                         )
