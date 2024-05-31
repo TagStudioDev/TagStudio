@@ -40,17 +40,11 @@
         </property>
         <item>
          <property name="text">
-          <string>And (includes all matches)</string>
+          <string>And (includes all tags)</string>
          </property>
         </item>
-        <item>
          <property name="text">
-          <string>Any (includes partial matches)</string>
-         </property>
-        </item>
-        <item>
-         <property name="text">
-          <string>Or (skips partial matches)</string>
+          <string>Or (includes any tag)</string>
          </property>
         </item>
        </widget>
