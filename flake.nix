@@ -21,6 +21,9 @@
         pkgs.qt6.full
         pkgs.qt6.qtbase
         pkgs.zstd
+        # For PySide6 Multimedia
+        pkgs.libpulseaudio
+        pkgs.libkrb5
       ];
       buildInputs = with pkgs; [
         cmake
