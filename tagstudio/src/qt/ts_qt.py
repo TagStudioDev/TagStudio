@@ -43,6 +43,7 @@ from PySide6.QtWidgets import (
     QSplashScreen,
     QMenu,
     QMenuBar,
+    QComboBox,
 )
 from humanfriendly import format_timespan
 
@@ -66,6 +67,7 @@ from src.core.constants import (
     VIDEO_TYPES,
     IMAGE_TYPES,
     LIBRARY_FILENAME,
+    SEARCH_MODES,
     COLLAGE_FOLDER_NAME,
     BACKUP_FOLDER_NAME,
     TS_FOLDER_NAME,
@@ -175,6 +177,8 @@ class QtDriver(QObject):
         self.frame_dict: dict = {}
         self.nav_frames: list[NavigationState] = []
         self.cur_frame_idx: int = -1
+
+        self.search_mode: int = 0  # index of SEARCH_MODES
 
         # self.main_window = None
         # self.main_window = Ui_MainWindow()
@@ -557,6 +561,10 @@ class QtDriver(QObject):
         search_field: QLineEdit = self.main_window.searchField
         search_field.returnPressed.connect(
             lambda: self.filter_items(self.main_window.searchField.text())
+        )
+        search_type_selector: QComboBox = self.main_window.comboBox_2
+        search_type_selector.currentIndexChanged.connect(
+            lambda: self.set_search_type(search_type_selector.currentIndex())
         )
 
         back_button: QPushButton = self.main_window.backButton
@@ -1317,6 +1325,10 @@ class QtDriver(QObject):
             len(self.frame_dict[query]),
         )
 
+    def set_search_type(self, mode: int = 0):
+        print(SEARCH_MODES[mode])
+        self.search_mode = mode
+
     def filter_items(self, query: str = ""):
         if self.lib:
             # logging.info('Filtering...')
@@ -1328,7 +1340,7 @@ class QtDriver(QObject):
 
             # self.filtered_items = self.lib.search_library(query)
             # 73601 Entries at 500 size should be 246
-            all_items = self.lib.search_library(query)
+            all_items = self.lib.search_library(query, search_mode=self.search_mode)
             frames: list[list[tuple[ItemType, int]]] = []
             frame_count = math.ceil(len(all_items) / self.max_results)
             for i in range(0, frame_count):
