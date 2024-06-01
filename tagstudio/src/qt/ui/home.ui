@@ -43,6 +43,7 @@
           <string>And (includes all tags)</string>
          </property>
         </item>
+        <item>
          <property name="text">
           <string>Or (includes any tag)</string>
          </property>
