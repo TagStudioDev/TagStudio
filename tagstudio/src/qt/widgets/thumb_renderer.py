@@ -29,7 +29,7 @@ from src.core.constants import (
     IMAGE_TYPES,
     RAW_IMAGE_TYPES,
 )
-from src.core.utils.encoding import get_text_encoding
+from src.core.utils.encoding import detect_char_encoding
 
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 
@@ -178,7 +178,7 @@ class ThumbRenderer(QObject):
 
                 # Plain Text ===================================================
                 elif _filepath.suffix.lower() in PLAINTEXT_TYPES:
-                    encoding = get_text_encoding(_filepath)
+                    encoding = detect_char_encoding(_filepath)
                     with open(_filepath, "r", encoding=encoding) as text_file:
                         text = text_file.read(256)
                     bg = Image.new("RGB", (256, 256), color="#1e1e1e")
