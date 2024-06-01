@@ -205,6 +205,5 @@ TAG_COLORS = [
     "cool gray",
     "olive",
 ]
-
 TAG_FAVORITE = 1
 TAG_ARCHIVED = 0
