@@ -145,3 +145,5 @@ TAG_COLORS = [
     "cool gray",
     "olive",
 ]
+
+ENCODINGS: list[str] = ["utf-8", "utf-16", "ansi", "ascii", "latin1"]
