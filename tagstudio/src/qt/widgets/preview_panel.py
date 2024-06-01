@@ -569,6 +569,7 @@ class PreviewPanel(QWidget):
                             font = ImageFont.truetype(filepath)
                             self.dimensions_label.setText(
                                 f"{filepath.suffix.upper()[1:]} •  {format_size(filepath.stat().st_size)}\n{font.getname()[0]} ({font.getname()[1]}) "
+
                             )
                         else:
                             self.dimensions_label.setText(
@@ -784,7 +785,7 @@ class PreviewPanel(QWidget):
         """
         if self.is_connected:
             self.tags_updated.disconnect()
-
+        
         logging.info("[UPDATE CONTAINER] Setting tags updated slot")
         self.tags_updated.connect(slot)
         self.is_connected = True
