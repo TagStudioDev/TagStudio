@@ -1475,7 +1475,6 @@ class Library:
                         if SEARCH_MODES[search_mode] == "OR":  # Include any terms
                             # For each verified, extracted Tag term.
                             for term in all_tag_terms:
-                                cluster: set = set()
                                 # Add the immediate associated Tags to the set (ex. Name, Alias hits)
                                 # Since this term could technically map to multiple IDs, iterate over it
                                 # (You're 99.9999999% likely to just get 1 item)

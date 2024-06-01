@@ -1325,10 +1325,6 @@ class QtDriver(QObject):
             len(self.frame_dict[query]),
         )
 
-    def set_search_type(self, mode: int = 0):
-        print(SEARCH_MODES[mode])
-        self.search_mode = mode
-
     def filter_items(self, query: str = ""):
         if self.lib:
             # logging.info('Filtering...')
@@ -1380,6 +1376,11 @@ class QtDriver(QObject):
             # logging.info(f'Done Filtering! ({(end_time - start_time):.3f}) seconds')
 
             # self.update_thumbs()
+
+    def set_search_type(self, mode: int = 0):
+        print(SEARCH_MODES[mode])
+        self.search_mode = mode
+        self.filter_items(self.main_window.searchField.text())
 
     def remove_recent_library(self, item_key: str):
         self.settings.beginGroup(SettingItems.LIBS_LIST)
