@@ -4,10 +4,8 @@
 
 
 import logging
-import os
 import time
 import typing
-from types import FunctionType
 from pathlib import Path
 from typing import Optional
 
@@ -34,15 +32,13 @@ from src.qt.widgets.thumb_button import ThumbButton
 if typing.TYPE_CHECKING:
     from src.qt.widgets.preview_panel import PreviewPanel
 
-ERROR = f"[ERROR]"
-WARNING = f"[WARNING]"
-INFO = f"[INFO]"
+ERROR = "[ERROR]"
+WARNING = "[WARNING]"
+INFO = "[INFO]"
 
 DEFAULT_META_TAG_FIELD = 8
 TAG_FAVORITE = 1
 TAG_ARCHIVED = 0
-
-logging.basicConfig(format="%(message)s", level=logging.INFO)
 
 
 class ItemThumb(FlowWidget):
@@ -63,27 +59,27 @@ class ItemThumb(FlowWidget):
     tag_group_icon_128.load()
 
     small_text_style = (
-        f"background-color:rgba(0, 0, 0, 192);"
-        f"font-family:Oxanium;"
-        f"font-weight:bold;"
-        f"font-size:12px;"
-        f"border-radius:3px;"
-        f"padding-top: 4px;"
-        f"padding-right: 1px;"
-        f"padding-bottom: 1px;"
-        f"padding-left: 1px;"
+        "background-color:rgba(0, 0, 0, 192);"
+        "font-family:Oxanium;"
+        "font-weight:bold;"
+        "font-size:12px;"
+        "border-radius:3px;"
+        "padding-top: 4px;"
+        "padding-right: 1px;"
+        "padding-bottom: 1px;"
+        "padding-left: 1px;"
     )
 
     med_text_style = (
-        f"background-color:rgba(0, 0, 0, 192);"
-        f"font-family:Oxanium;"
-        f"font-weight:bold;"
-        f"font-size:18px;"
-        f"border-radius:3px;"
-        f"padding-top: 4px;"
-        f"padding-right: 1px;"
-        f"padding-bottom: 1px;"
-        f"padding-left: 1px;"
+        "background-color:rgba(0, 0, 0, 192);"
+        "font-family:Oxanium;"
+        "font-weight:bold;"
+        "font-size:18px;"
+        "border-radius:3px;"
+        "padding-top: 4px;"
+        "padding-right: 1px;"
+        "padding-bottom: 1px;"
+        "padding-left: 1px;"
     )
 
     def __init__(

@@ -5,7 +5,6 @@
 """The core classes and methods of TagStudio."""
 
 import json
-import os
 from pathlib import Path
 
 from src.core.library import Entry, Library

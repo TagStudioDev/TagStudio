@@ -2,7 +2,6 @@
 # Licensed under the GPL-3.0 License.
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
-import logging
 import os
 import traceback
 from pathlib import Path
@@ -10,29 +9,17 @@ from pathlib import Path
 import cv2
 from PIL import Image, ImageChops, UnidentifiedImageError
 from PIL.Image import DecompressionBombError
-from PySide6.QtCore import (
-    QObject,
-    QThread,
-    Signal,
-    QRunnable,
-    Qt,
-    QThreadPool,
-    QSize,
-    QEvent,
-    QTimer,
-    QSettings,
-)
-
+from PySide6.QtCore import QObject, Signal
+from src.core.constants import DOC_TYPES, IMAGE_TYPES, VIDEO_TYPES
 from src.core.library import Library
-from src.core.constants import DOC_TYPES, VIDEO_TYPES, IMAGE_TYPES
 
+from src.core.logging import get_logger
 
-ERROR = f"[ERROR]"
-WARNING = f"[WARNING]"
-INFO = f"[INFO]"
+ERROR = "[ERROR]"
+WARNING = "[WARNING]"
+INFO = "[INFO]"
 
-
-logging.basicConfig(format="%(message)s", level=logging.INFO)
+logger = get_logger(__name__)
 
 
 class CollageIconRenderer(QObject):
@@ -88,7 +75,7 @@ class CollageIconRenderer(QObject):
                     # collage.paste(pic, (y*thumb_size, x*thumb_size))
                     self.rendered.emit(pic)
             if not data_only_mode:
-                logging.info(
+                logger.info(
                     f"\r{INFO} Combining [ID:{entry_id}/{len(self.lib.entries)}]: {self.get_file_color(filepath.suffix.lower())}{entry.path}{os.sep}{entry.filename}\033[0m"
                 )
                 # sys.stdout.write(f'\r{INFO} Combining [{i+1}/{len(self.lib.entries)}]: {self.get_file_color(file_type)}{entry.path}{os.sep}{entry.filename}{RESET}')
@@ -110,7 +97,7 @@ class CollageIconRenderer(QObject):
                             # collage.paste(pic, (y*thumb_size, x*thumb_size))
                             self.rendered.emit(pic)
                     except DecompressionBombError as e:
-                        logging.info(f"[ERROR] One of the images was too big ({e})")
+                        logger.info(f"[ERROR] One of the images was too big ({e})")
                 elif filepath.suffix.lower() in VIDEO_TYPES:
                     video = cv2.VideoCapture(str(filepath))
                     video.set(
@@ -137,7 +124,7 @@ class CollageIconRenderer(QObject):
                         # collage.paste(pic, (y*thumb_size, x*thumb_size))
                         self.rendered.emit(pic)
         except (UnidentifiedImageError, FileNotFoundError):
-            logging.info(
+            logger.info(
                 f"\n{ERROR} Couldn't read {entry.path}{os.sep}{entry.filename}"
             )
             with Image.open(
@@ -156,16 +143,16 @@ class CollageIconRenderer(QObject):
             # self.quit(save=False, backup=True)
             run = False
             # clear()
-            logging.info("\n")
-            logging.info(f"{INFO} Collage operation cancelled.")
+            logger.info("\n")
+            logger.info(f"{INFO} Collage operation cancelled.")
             clear_scr = False
         except:
-            logging.info(f"{ERROR} {entry.path}{os.sep}{entry.filename}")
+            logger.info(f"{ERROR} {entry.path}{os.sep}{entry.filename}")
             traceback.print_exc()
-            logging.info("Continuing...")
+            logger.info("Continuing...")
 
         self.done.emit()
-        # logging.info('Done!')
+        # logger.info('Done!')
 
     def get_file_color(self, ext: str):
         if ext.lower().replace(".", "", 1) == "gif":

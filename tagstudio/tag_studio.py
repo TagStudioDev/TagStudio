@@ -4,11 +4,14 @@
 
 """TagStudio launcher."""
 
-from src.core.ts_core import TagStudioCore
-from src.cli.ts_cli import CliDriver  # type: ignore
-from src.qt.ts_qt import QtDriver
 import argparse
 import traceback
+
+from src.cli.ts_cli import CliDriver  # type: ignore
+from src.core.ts_core import TagStudioCore
+from src.qt.ts_qt import QtDriver
+
+from src.core.logging import setup_logging
 
 
 def main():
@@ -59,6 +62,8 @@ def main():
         help="Exit the application after checking it starts without any problem. Meant for CI check.",
     )
     args = parser.parse_args()
+
+    setup_logging()
 
     core = TagStudioCore()  # The TagStudio Core instance. UI agnostic.
     driver = None  # The UI driver instance.

@@ -16,7 +16,7 @@ class FileExtensionModal(PanelWidget):
     def __init__(self, library: "Library"):
         super().__init__()
         self.lib = library
-        self.setWindowTitle(f"File Extensions")
+        self.setWindowTitle("File Extensions")
         self.setWindowModality(Qt.WindowModality.ApplicationModal)
         self.setMinimumSize(200, 400)
         self.root_layout = QVBoxLayout(self)

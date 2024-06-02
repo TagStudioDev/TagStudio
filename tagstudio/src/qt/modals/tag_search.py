@@ -23,11 +23,9 @@ from src.qt.widgets.panel import PanelWidget
 from src.qt.widgets.tag import TagWidget
 
 
-ERROR = f"[ERROR]"
-WARNING = f"[WARNING]"
-INFO = f"[INFO]"
-
-logging.basicConfig(format="%(message)s", level=logging.INFO)
+ERROR = "[ERROR]"
+WARNING = "[WARNING]"
+INFO = "[INFO]"
 
 
 class TagSearchPanel(PanelWidget):

@@ -26,8 +26,6 @@ ERROR = "[ERROR]"
 WARNING = "[WARNING]"
 INFO = "[INFO]"
 
-logging.basicConfig(format="%(message)s", level=logging.INFO)
-
 
 class FixUnlinkedEntriesModal(QWidget):
     def __init__(self, library: "Library", driver: "QtDriver"):

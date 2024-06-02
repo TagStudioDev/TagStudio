@@ -2,22 +2,23 @@
 # Licensed under the GPL-3.0 License.
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
-import logging
 import os
-import subprocess
 import shutil
+import subprocess
 import sys
 import traceback
 from pathlib import Path
 
-from PySide6.QtWidgets import QLabel
 from PySide6.QtCore import Qt
+from PySide6.QtWidgets import QLabel
 
-ERROR = f"[ERROR]"
-WARNING = f"[WARNING]"
-INFO = f"[INFO]"
+from src.core.logging import get_logger
 
-logging.basicConfig(format="%(message)s", level=logging.INFO)
+ERROR = "[ERROR]"
+WARNING = "[WARNING]"
+INFO = "[INFO]"
+
+logger = get_logger(__name__)
 
 
 def open_file(path: str | Path, file_manager: bool = False):
@@ -29,9 +30,9 @@ def open_file(path: str | Path, file_manager: bool = False):
                     Defaults to False.
     """
     _path = str(path)
-    logging.info(f"Opening file: {_path}")
+    logger.info(f"Opening file: {_path}")
     if not os.path.exists(_path):
-        logging.error(f"File not found: {_path}")
+        logger.error(f"File not found: {_path}")
         return
     try:
         if sys.platform == "win32":
@@ -85,7 +86,7 @@ def open_file(path: str | Path, file_manager: bool = False):
             if command is not None:
                 subprocess.Popen([command] + command_args, close_fds=True)
             else:
-                logging.info(f"Could not find {command_name} on system PATH")
+                logger.info(f"Could not find {command_name} on system PATH")
     except:
         traceback.print_exc()
 
