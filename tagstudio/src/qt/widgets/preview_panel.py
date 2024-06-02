@@ -15,14 +15,23 @@ from PIL import Image, UnidentifiedImageError
 from PIL.Image import DecompressionBombError
 from PySide6.QtCore import QSize, Qt, Signal
 from PySide6.QtGui import QAction, QResizeEvent
-from PySide6.QtWidgets import (QFrame, QHBoxLayout, QLabel, QMessageBox,
-                               QPushButton, QScrollArea, QSizePolicy,
-                               QSplitter, QVBoxLayout, QWidget)
+from PySide6.QtWidgets import (
+    QFrame,
+    QHBoxLayout,
+    QLabel,
+    QMessageBox,
+    QPushButton,
+    QScrollArea,
+    QSizePolicy,
+    QSplitter,
+    QVBoxLayout,
+    QWidget,
+)
 from src.core.constants import IMAGE_TYPES, RAW_IMAGE_TYPES, VIDEO_TYPES
 from src.core.enums import SettingItems, Theme
 from src.core.library import Entry, ItemType, Library
-from src.qt.helpers.file_opener import (FileOpenerHelper, FileOpenerLabel,
-                                        open_file)
+from src.core.logging import get_logger
+from src.qt.helpers.file_opener import FileOpenerHelper, FileOpenerLabel, open_file
 from src.qt.modals.add_field import AddFieldModal
 from src.qt.widgets.fields import FieldContainer
 from src.qt.widgets.panel import PanelModal
@@ -33,15 +42,9 @@ from src.qt.widgets.text_line_edit import EditTextLine
 from src.qt.widgets.thumb_renderer import ThumbRenderer
 from src.qt.widgets.video_player import VideoPlayer
 
-from src.core.logging import get_logger
-
 # Only import for type checking/autocompletion, will not be imported at runtime.
 if typing.TYPE_CHECKING:
     from src.qt.ts_qt import QtDriver
-
-ERROR = "[ERROR]"
-WARNING = "[WARNING]"
-INFO = "[INFO]"
 
 logger = get_logger(__name__)
 
@@ -525,7 +528,8 @@ class PreviewPanel(QWidget):
                             if success:
                                 self.preview_img.hide()
                                 self.preview_vid.play(
-                                    filepath, QSize(image.width, image.height)
+                                    str(filepath.resolve().absolute()),
+                                    QSize(image.width, image.height),
                                 )
                                 self.resizeEvent(
                                     QResizeEvent(
@@ -554,14 +558,14 @@ class PreviewPanel(QWidget):
                         self.dimensions_label.setText(
                             f"{filepath.suffix.lower().upper()[1:]}"
                         )
-                        logger.info(
-                            f"[PreviewPanel][ERROR] Couldn't Render thumbnail for {filepath} (because of {e})"
+                        logger.error(
+                            f"[PreviewPanel] Couldn't Render thumbnail for {filepath} (because of {e})"
                         )
 
                     except (FileNotFoundError, cv2.error) as e:
-                        self.dimensions_label.setText(f"{extension.upper()}")
-                        logger.info(
-                            f"[PreviewPanel][ERROR] Couldn't Render thumbnail for {filepath} (because of {e})"
+                        self.dimensions_label.setText(f"{filepath.suffix.upper()}")
+                        logger.error(
+                            f"[PreviewPanel] Couldn't Render thumbnail for {filepath} (because of {e})"
                         )
                     except (
                         UnidentifiedImageError,
@@ -570,8 +574,8 @@ class PreviewPanel(QWidget):
                         self.dimensions_label.setText(
                             f"{filepath.suffix.lower().upper()[1:]}  •  {format_size(os.stat(filepath).st_size)}"
                         )
-                        logger.info(
-                            f"[PreviewPanel][ERROR] Couldn't Render thumbnail for {filepath} (because of {e})"
+                        logger.error(
+                            f"[PreviewPanel] Couldn't Render thumbnail for {filepath} (because of {e})"
                         )
 
                     try:
@@ -823,7 +827,10 @@ class PreviewPanel(QWidget):
                 # f'Are you sure you want to remove this \"{self.lib.get_field_attr(field, "name")}\" field?'
                 # container.set_remove_callback(lambda: (self.lib.get_entry(item.id).fields.pop(index), self.update_widgets(item)))
                 prompt = f'Are you sure you want to remove this "{self.lib.get_field_attr(field, "name")}" field?'
-                callback = lambda: (self.remove_field(field), self.update_widgets())
+
+                def callback():
+                    return self.remove_field(field), self.update_widgets()
+
                 container.set_remove_callback(
                     lambda: self.remove_message_box(prompt=prompt, callback=callback)
                 )
@@ -868,7 +875,10 @@ class PreviewPanel(QWidget):
                 )
                 container.set_edit_callback(modal.show)
                 prompt = f'Are you sure you want to remove this "{self.lib.get_field_attr(field, "name")}" field?'
-                callback = lambda: (self.remove_field(field), self.update_widgets())
+
+                def callback():
+                    return self.remove_field(field), self.update_widgets()
+
                 container.set_remove_callback(
                     lambda: self.remove_message_box(prompt=prompt, callback=callback)
                 )
@@ -908,7 +918,10 @@ class PreviewPanel(QWidget):
                 )
                 container.set_edit_callback(modal.show)
                 prompt = f'Are you sure you want to remove this "{self.lib.get_field_attr(field, "name")}" field?'
-                callback = lambda: (self.remove_field(field), self.update_widgets())
+
+                def callback():
+                    return self.remove_field(field), self.update_widgets()
+
                 container.set_remove_callback(
                     lambda: self.remove_message_box(prompt=prompt, callback=callback)
                 )
@@ -935,7 +948,10 @@ class PreviewPanel(QWidget):
             # container.set_edit_callback(None)
             # container.set_remove_callback(lambda: (self.lib.get_entry(item.id).fields.pop(index), self.update_widgets(item)))
             prompt = f'Are you sure you want to remove this "{self.lib.get_field_attr(field, "name")}" field?'
-            callback = lambda: (self.remove_field(field), self.update_widgets())
+
+            def callback():
+                return self.remove_field(field), self.update_widgets()
+
             container.set_remove_callback(
                 lambda: self.remove_message_box(prompt=prompt, callback=callback)
             )
@@ -953,7 +969,7 @@ class PreviewPanel(QWidget):
                     title = f"{self.lib.get_field_attr(field, 'name')} (Date)"
                     inner_container = TextWidget(title, date.strftime("%D - %r"))
                     container.set_inner_widget(inner_container)
-                except:
+                except Exception:
                     container.set_title(self.lib.get_field_attr(field, "name"))
                     # container.set_editable(False)
                     container.set_inline(False)
@@ -966,7 +982,10 @@ class PreviewPanel(QWidget):
                 container.set_edit_callback(None)
                 # container.set_remove_callback(lambda: (self.lib.get_entry(item.id).fields.pop(index), self.update_widgets(item)))
                 prompt = f'Are you sure you want to remove this "{self.lib.get_field_attr(field, "name")}" field?'
-                callback = lambda: (self.remove_field(field), self.update_widgets())
+
+                def callback():
+                    return self.remove_field(field), self.update_widgets()
+
                 container.set_remove_callback(
                     lambda: self.remove_message_box(prompt=prompt, callback=callback)
                 )
@@ -993,7 +1012,10 @@ class PreviewPanel(QWidget):
             container.set_edit_callback(None)
             # container.set_remove_callback(lambda: (self.lib.get_entry(item.id).fields.pop(index), self.update_widgets(item)))
             prompt = f'Are you sure you want to remove this "{self.lib.get_field_attr(field, "name")}" field?'
-            callback = lambda: (self.remove_field(field), self.update_widgets())
+
+            def callback():
+                return self.remove_field(field), self.update_widgets()
+
             # callback = lambda: (self.lib.get_entry(item.id).fields.pop(index), self.update_widgets())
             container.set_remove_callback(
                 lambda: self.remove_message_box(prompt=prompt, callback=callback)
@@ -1019,6 +1041,7 @@ class PreviewPanel(QWidget):
                     if updated_badges:
                         self.driver.update_badges()
                 except ValueError:
+                    # TODO: Decide whether this should be logged as info or an error
                     logger.info(
                         f"[PREVIEW PANEL][ERROR?] Tried to remove field from Entry ({entry.id}) that never had it"
                     )
@@ -1035,8 +1058,8 @@ class PreviewPanel(QWidget):
                     index = entry.fields.index(field)
                     self.lib.update_entry_field(entry.id, index, content, "replace")
                 except ValueError:
-                    logger.info(
-                        f"[PREVIEW PANEL][ERROR] Tried to update field from Entry ({entry.id}) that never had it"
+                    logger.error(
+                        f"[PREVIEW PANEL] Tried to update field from Entry ({entry.id}) that never had it"
                     )
                     pass
 
@@ -1048,9 +1071,7 @@ class PreviewPanel(QWidget):
         cancel_button = remove_mb.addButton(
             "&Cancel", QMessageBox.ButtonRole.DestructiveRole
         )
-        remove_button = remove_mb.addButton(
-            "&Remove", QMessageBox.ButtonRole.RejectRole
-        )
+        remove_mb.addButton("&Remove", QMessageBox.ButtonRole.RejectRole)
         # remove_mb.setStandardButtons(QMessageBox.StandardButton.Cancel)
         remove_mb.setDefaultButton(cancel_button)
         result = remove_mb.exec_()

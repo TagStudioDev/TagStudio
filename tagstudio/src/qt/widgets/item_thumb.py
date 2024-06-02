@@ -3,38 +3,31 @@
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
 
-import logging
 import time
 import typing
 from pathlib import Path
 from typing import Optional
 
 from PIL import Image, ImageQt
-from PySide6.QtCore import Qt, QSize, QEvent
-from PySide6.QtGui import QPixmap, QEnterEvent, QAction
+from PySide6.QtCore import QEvent, QSize, Qt
+from PySide6.QtGui import QAction, QEnterEvent, QPixmap
 from PySide6.QtWidgets import (
-    QWidget,
-    QVBoxLayout,
-    QHBoxLayout,
-    QLabel,
     QBoxLayout,
     QCheckBox,
+    QHBoxLayout,
+    QLabel,
+    QVBoxLayout,
+    QWidget,
 )
-
-
-from src.core.library import ItemType, Library, Entry
-from src.core.constants import AUDIO_TYPES, VIDEO_TYPES, IMAGE_TYPES
+from src.core.constants import AUDIO_TYPES, IMAGE_TYPES, VIDEO_TYPES
+from src.core.library import Entry, ItemType, Library
 from src.qt.flowlayout import FlowWidget
 from src.qt.helpers.file_opener import FileOpenerHelper
-from src.qt.widgets.thumb_renderer import ThumbRenderer
 from src.qt.widgets.thumb_button import ThumbButton
+from src.qt.widgets.thumb_renderer import ThumbRenderer
 
 if typing.TYPE_CHECKING:
     from src.qt.widgets.preview_panel import PreviewPanel
-
-ERROR = "[ERROR]"
-WARNING = "[WARNING]"
-INFO = "[INFO]"
 
 DEFAULT_META_TAG_FIELD = 8
 TAG_FAVORITE = 1

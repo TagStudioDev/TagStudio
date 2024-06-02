@@ -7,22 +7,23 @@ import math
 import typing
 
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import (QFrame, QHBoxLayout, QLabel, QPushButton,
-                               QScrollArea, QVBoxLayout, QWidget)
+from PySide6.QtWidgets import (
+    QFrame,
+    QHBoxLayout,
+    QLabel,
+    QPushButton,
+    QScrollArea,
+    QVBoxLayout,
+    QWidget,
+)
 from src.core.library import Library, Tag
+from src.core.logging import get_logger
 from src.core.palette import ColorType, get_tag_color
 from src.qt.flowlayout import FlowLayout
-
-from src.core.logging import get_logger
 
 # Only import for type checking/autocompletion, will not be imported at runtime.
 if typing.TYPE_CHECKING:
     from src.qt.ts_qt import QtDriver
-
-
-ERROR = "[ERROR]"
-WARNING = "[WARNING]"
-INFO = "[INFO]"
 
 logger = get_logger(__name__)
 
@@ -314,7 +315,7 @@ class ModifiedTagWidget(
 
         self.bg_button = QPushButton(self)
         self.bg_button.setFlat(True)
-        if parentTag != None:
+        if parentTag is not None:
             text = f"{tag.name} ({parentTag.name})".replace("&", "&&")
         else:
             text = tag.name.replace("&", "&&")

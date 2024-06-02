@@ -6,22 +6,16 @@ import os
 import shutil
 import subprocess
 import sys
-import traceback
 from pathlib import Path
 
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QLabel
-
 from src.core.logging import get_logger
-
-ERROR = "[ERROR]"
-WARNING = "[WARNING]"
-INFO = "[INFO]"
 
 logger = get_logger(__name__)
 
 
-def open_file(path: str | Path, file_manager: bool = False):
+def open_file(path: str | Path, file_manager: bool = False) -> None:
     """Open a file in the default application or file explorer.
 
     Args:
@@ -29,11 +23,17 @@ def open_file(path: str | Path, file_manager: bool = False):
             file_manager (bool, optional): Whether to open the file in the file manager (e.g. Finder on macOS).
                     Defaults to False.
     """
-    _path = str(path)
+
+    if isinstance(path, Path):
+        _path = str(path.resolve().absolute())
+    else:
+        _path = str(path)
+
     logger.info(f"Opening file: {_path}")
     if not os.path.exists(_path):
         logger.error(f"File not found: {_path}")
         return
+
     try:
         if sys.platform == "win32":
             normpath = os.path.normpath(_path)
@@ -87,8 +87,8 @@ def open_file(path: str | Path, file_manager: bool = False):
                 subprocess.Popen([command] + command_args, close_fds=True)
             else:
                 logger.info(f"Could not find {command_name} on system PATH")
-    except:
-        traceback.print_exc()
+    except Exception:
+        logger.exception(f"Error opening a file at {_path}")
 
 
 class FileOpenerHelper:

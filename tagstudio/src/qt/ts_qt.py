@@ -22,19 +22,38 @@ from typing import Optional
 from humanfriendly import format_timespan
 from PIL import Image
 from PySide6 import QtCore
-from PySide6.QtCore import (QObject, QSettings, Qt, QThread, QThreadPool,
-                            QTimer, Signal)
-from PySide6.QtGui import (QAction, QColor, QFontDatabase, QGuiApplication,
-                           QIcon, QMouseEvent, QPixmap)
+from PySide6.QtCore import QObject, QSettings, Qt, QThread, QThreadPool, QTimer, Signal
+from PySide6.QtGui import (
+    QAction,
+    QColor,
+    QFontDatabase,
+    QGuiApplication,
+    QIcon,
+    QMouseEvent,
+    QPixmap,
+)
 from PySide6.QtUiTools import QUiLoader
-from PySide6.QtWidgets import (QApplication, QFileDialog, QHBoxLayout,
-                               QLineEdit, QMenu, QMenuBar, QPushButton,
-                               QScrollArea, QSplashScreen, QWidget)
-from src.core.constants import (BACKUP_FOLDER_NAME, COLLAGE_FOLDER_NAME,
-                                TS_FOLDER_NAME, VERSION, VERSION_BRANCH)
+from PySide6.QtWidgets import (
+    QApplication,
+    QFileDialog,
+    QLineEdit,
+    QMenu,
+    QMenuBar,
+    QPushButton,
+    QScrollArea,
+    QSplashScreen,
+    QWidget,
+)
+from src.core.constants import (
+    BACKUP_FOLDER_NAME,
+    COLLAGE_FOLDER_NAME,
+    TS_FOLDER_NAME,
+    VERSION,
+    VERSION_BRANCH,
+)
 from src.core.enums import SettingItems
 from src.core.library import ItemType
-from src.core.logging import get_logger, setup_logging
+from src.core.logging import get_logger
 from src.core.ts_core import TagStudioCore
 from src.core.utils.web import strip_web_protocol
 from src.qt.flowlayout import FlowLayout
@@ -64,11 +83,6 @@ if sys.platform == "win32":
 else:
     from signal import SIGINT, SIGQUIT, SIGTERM, signal
 
-ERROR = "[ERROR]"
-WARNING = "[WARNING]"
-INFO = "[INFO]"
-
-setup_logging()
 logger = get_logger(__name__)
 
 
@@ -207,7 +221,7 @@ class QtDriver(QObject):
     def start(self) -> None:
         """Launches the main Qt window."""
 
-        loader = QUiLoader()
+        QUiLoader()
         if os.name == "nt":
             sys.argv += ["-platform", "windows:darkmode=2"]
         app = QApplication(sys.argv)
@@ -218,7 +232,7 @@ class QtDriver(QObject):
         # pal.setColor(QPalette.ColorGroup.Normal,
         # 			 QPalette.ColorRole.Window, QColor('#110F1B'))
         # app.setPalette(pal)
-        home_path = Path(__file__).parent / "ui/home.ui"
+        Path(__file__).parent / "ui/home.ui"
         icon_path = Path(__file__).parents[2] / "resources/icon.png"
 
         # Handle OS signals
@@ -468,8 +482,7 @@ class QtDriver(QObject):
         menu_bar.addMenu(help_menu)
 
         self.preview_panel = PreviewPanel(self.lib, self)
-        l: QHBoxLayout = self.main_window.splitter
-        l.addWidget(self.preview_panel)
+        self.main_window.splitter.addWidget(self.preview_panel)
 
         QFontDatabase.addApplicationFont(
             str(Path(__file__).parents[2] / "resources/qt/fonts/Oxanium-Bold.ttf")
@@ -1038,7 +1051,6 @@ class QtDriver(QObject):
         # layout = QListView()
         # layout.setViewMode(QListView.ViewMode.IconMode)
 
-        col_size = 28
         for i in range(0, self.max_results):
             item_thumb = ItemThumb(
                 None, self.lib, self.preview_panel, (self.thumb_size, self.thumb_size)
@@ -1378,10 +1390,13 @@ class QtDriver(QObject):
             pass
 
         else:
-            logger.info(
-                f"{ERROR} No existing TagStudio library found at '{path}'. Creating one."
+            logger.error(
+                f"No existing TagStudio library found at '{path}'. Creating one."
             )
-            print(f"Library Creation Return Code: {self.lib.create_library(path)}")
+            logger.info(
+                f"Library Creation Return Code: {self.lib.create_library(path)}"
+            )
+
             self.add_new_files_callback()
 
         self.update_libs_list(path)

@@ -3,21 +3,24 @@
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
 from PySide6.QtCore import Qt, Signal
-from PySide6.QtWidgets import (QComboBox, QFrame, QLabel, QLineEdit,
-                               QPushButton, QScrollArea, QTextEdit,
-                               QVBoxLayout, QWidget)
+from PySide6.QtWidgets import (
+    QComboBox,
+    QFrame,
+    QLabel,
+    QLineEdit,
+    QPushButton,
+    QScrollArea,
+    QTextEdit,
+    QVBoxLayout,
+    QWidget,
+)
 from src.core.constants import TAG_COLORS
 from src.core.library import Library, Tag
+from src.core.logging import get_logger
 from src.core.palette import ColorType, get_tag_color
 from src.qt.modals.tag_search import TagSearchPanel
 from src.qt.widgets.panel import PanelModal, PanelWidget
 from src.qt.widgets.tag import TagWidget
-
-from src.core.logging import get_logger
-
-ERROR = "[ERROR]"
-WARNING = "[WARNING]"
-INFO = "[INFO]"
 
 logger = get_logger(__name__)
 
@@ -27,6 +30,7 @@ class BuildTagPanel(PanelWidget):
 
     def __init__(self, library, tag_id: int = -1):
         super().__init__()
+
         self.lib: Library = library
         # self.callback = callback
         # self.tag_id = tag_id
@@ -182,15 +186,15 @@ class BuildTagPanel(PanelWidget):
             self.scroll_layout.takeAt(0).widget().deleteLater()
         logger.info(f"Setting {self.tag.subtag_ids}")
         c = QWidget()
-        l = QVBoxLayout(c)
-        l.setContentsMargins(0, 0, 0, 0)
-        l.setSpacing(3)
+        layout = QVBoxLayout(c)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(3)
         for tag_id in self.tag.subtag_ids:
             tw = TagWidget(self.lib, self.lib.get_tag(tag_id), False, True)
             tw.on_remove.connect(
                 lambda checked=False, t=tag_id: self.remove_subtag_callback(t)
             )
-            l.addWidget(tw)
+            layout.addWidget(tw)
         self.scroll_layout.addWidget(c)
 
     def set_tag(self, tag: Tag):

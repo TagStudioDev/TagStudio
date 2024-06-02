@@ -7,21 +7,24 @@
 import datetime
 import os
 import time
-import traceback
 import xml.etree.ElementTree as ET
 from enum import Enum
 from pathlib import Path
 from typing import Generator, cast
 
 import ujson
-from src.core.constants import (BACKUP_FOLDER_NAME, COLLAGE_FOLDER_NAME,
-                                TEXT_FIELDS, TS_FOLDER_NAME, VERSION)
+from src.core.constants import (
+    BACKUP_FOLDER_NAME,
+    COLLAGE_FOLDER_NAME,
+    TEXT_FIELDS,
+    TS_FOLDER_NAME,
+    VERSION,
+)
 from src.core.json_typing import JsonCollation, JsonEntry, JsonLibary, JsonTag
+from src.core.logging import get_logger
 from src.core.utils.str import strip_punctuation
 from src.core.utils.web import strip_web_protocol
 from typing_extensions import Self
-
-from src.core.logging import get_logger
 
 TYPE = ["file", "meta", "alt", "mask"]
 
@@ -425,8 +428,10 @@ class Library:
             self.verify_ts_folders()
             self.save_library_to_disk()
             self.open_library(self.library_dir)
-        except:
-            traceback.print_exc()
+        except Exception:
+            logger.exception(
+                f"Error creating a library in {str(path.resolve().absolute())}"
+            )
             return 2
 
         return 0
@@ -539,7 +544,7 @@ class Library:
                                 self._map_tag_strings_to_tag_id(t)
                             else:
                                 logger.info(
-                                    f"[LIBRARY]Skipping Tag with duplicate ID: {tag}"
+                                    f"[LIBRARY] Skipping Tag with duplicate ID: {tag}"
                                 )
 
                         # Step 3: Map each Tag's subtags together now that all Tag objects in it.
@@ -690,7 +695,7 @@ class Library:
 
                     return_code = 1
             except ujson.JSONDecodeError:
-                logger.info("[LIBRARY][ERROR]: Empty JSON file!")
+                logger.error("[LIBRARY]: Empty JSON file!")
 
         # If the Library is loaded, continue other processes.
         if return_code == 1:
@@ -737,7 +742,7 @@ class Library:
             "entries": [],
         }
 
-        print("[LIBRARY] Formatting Tags to JSON...")
+        logger.info("[LIBRARY] Formatting Tags to JSON...")
 
         file_to_save["ignored_extensions"] = [i for i in self.ignored_extensions if i]
 
@@ -745,15 +750,15 @@ class Library:
             file_to_save["tags"].append(tag.compressed_dict())
 
         file_to_save["tags"] = self.verify_default_tags(file_to_save["tags"])
-        print("[LIBRARY] Formatting Entries to JSON...")
+        logger.info("[LIBRARY] Formatting Entries to JSON...")
         for entry in self.entries:
             file_to_save["entries"].append(entry.compressed_dict())
 
-        print("[LIBRARY] Formatting Collations to JSON...")
+        logger.info("[LIBRARY] Formatting Collations to JSON...")
         for collation in self.collations:
             file_to_save["collations"].append(collation.compressed_dict())
 
-        print("[LIBRARY] Done Formatting to JSON!")
+        logger.info("[LIBRARY] Done Formatting to JSON!")
         return file_to_save
 
     def save_library_to_disk(self):
@@ -889,12 +894,12 @@ class Library:
                     key=lambda t: -(self.library_dir / t).stat().st_ctime,
                 )
             except (FileExistsError, FileNotFoundError):
-                print(
-                    "[LIBRARY] [ERROR] Couldn't sort files, some were moved during the scanning/sorting process."
+                logger.error(
+                    "[LIBRARY] Couldn't sort files, some were moved during the scanning/sorting process."
                 )
                 pass
         else:
-            print(
+            logger.info(
                 "[LIBRARY][INFO] Not bothering to sort files because there's OVER 100,000! Better sorting methods will be added in the future."
             )
 
@@ -1056,10 +1061,10 @@ class Library:
                         self.dupe_files.append(
                             (files[match[0]], files[match[1]], match[2])
                         )
-                print("")
+                # print("")
 
             for dupe in self.dupe_files:
-                print(
+                logger.info(
                     f"[LIBRARY] MATCHED ({dupe[2]}%): \n   {dupe[0]} \n-> {dupe[1]}",
                     end="\n",
                 )
@@ -1077,8 +1082,8 @@ class Library:
                 # self.driver.purge_item_from_navigation(ItemType.ENTRY, id)
                 deleted.append(missing)
             except KeyError:
-                logger.info(
-                    f'[LIBRARY][ERROR]: "{id}" was reported as missing, but is not in the file_to_entry_id map.'
+                logger.error(
+                    f'[LIBRARY]: "{id}" was reported as missing, but is not in the file_to_entry_id map.'
                 )
             yield (i, id)
         for d in deleted:
@@ -1110,11 +1115,13 @@ class Library:
 
         # 	self.refresh_missing_files()
         for i, missing in enumerate(self.missing_files):
-            print(missing)
+            # print(missing)
             if missing not in self.missing_matches.keys():
                 matches = self._match_missing_file(missing)
                 if matches:
-                    print(f"[LIBRARY] Adding key {missing} with matches {matches}")
+                    logger.info(
+                        f"[LIBRARY] Adding key {missing} with matches {matches}"
+                    )
                     self.missing_matches[missing] = matches
                     yield (i, True)
                 else:
@@ -1128,7 +1135,7 @@ class Library:
                 self.update_entry_path(id, self.missing_matches[matches][0])
                 fixed_indices.append(matches)
                 # print(f'Fixed {self.entries[self.get_entry_index_from_filename(i)].filename}')
-                print(f"[LIBRARY] Fixed {self.get_entry(id).filename}")
+                logger.info(f"[LIBRARY] Fixed {self.get_entry(id).filename}")
             # (int, str)
 
         # Consolidate new matches with existing unlinked entries.
@@ -1167,12 +1174,12 @@ class Library:
                     # 	matches[file] = []
                     # matches[file].append(new_path)
 
-                    print(
+                    logger.info(
                         f"[LIBRARY] MATCH: {file} \n\t-> {self.library_dir / new_path / path.name}\n"
                     )
 
         if not matches:
-            print(f"[LIBRARY] No matches found for: {file}")
+            logger.info(f"[LIBRARY] No matches found for: {file}")
 
         return matches
 
@@ -1928,9 +1935,7 @@ class Library:
 
             # Process String Tags if the data doesn't already exist.
             if data.get("tags"):
-                tags_field_id = 6  # Tags Field ID
                 content_tags_field_id = 7  # Content Tags Field ID
-                meta_tags_field_id = 8  # Meta Tags Field ID
                 notes_field_id = 5  # Notes Field ID
                 tags: list[str] = data["tags"]
                 # extra: list[str] = []
@@ -2050,8 +2055,8 @@ class Library:
         elif field_type == "datetime":
             entry.fields.append({int(field_id): ""})
         else:
-            logger.info(
-                f"[LIBRARY][ERROR]: Unknown field id attempted to be added to entry: {field_id}"
+            logger.error(
+                f"[LIBRARY]: Unknown field id attempted to be added to entry: {field_id}"
             )
 
     def mirror_entry_fields(self, entry_ids: list[int]) -> None:

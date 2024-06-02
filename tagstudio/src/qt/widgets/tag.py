@@ -4,21 +4,16 @@
 
 
 import math
-from types import FunctionType
 from pathlib import Path
+from types import FunctionType
+from typing import Optional
 
 from PIL import Image
-from PySide6.QtCore import Signal, Qt, QEvent
-from PySide6.QtGui import QEnterEvent, QAction
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QPushButton
-
+from PySide6.QtCore import QEvent, Qt, Signal
+from PySide6.QtGui import QAction, QEnterEvent
+from PySide6.QtWidgets import QHBoxLayout, QPushButton, QVBoxLayout, QWidget
 from src.core.library import Library, Tag
 from src.core.palette import ColorType, get_tag_color
-
-
-ERROR = "[ERROR]"
-WARNING = "[WARNING]"
-INFO = "[INFO]"
 
 
 class TagWidget(QWidget):
@@ -36,9 +31,9 @@ class TagWidget(QWidget):
         tag: Tag,
         has_edit: bool,
         has_remove: bool,
-        on_remove_callback: FunctionType = None,
-        on_click_callback: FunctionType = None,
-        on_edit_callback: FunctionType = None,
+        on_remove_callback: Optional[FunctionType] = None,
+        on_click_callback: Optional[FunctionType] = None,
+        on_edit_callback: Optional[FunctionType] = None,
     ) -> None:
         super().__init__()
         self.lib = library

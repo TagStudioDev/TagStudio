@@ -3,7 +3,6 @@
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
 import os
-import traceback
 from pathlib import Path
 
 import cv2
@@ -12,12 +11,7 @@ from PIL.Image import DecompressionBombError
 from PySide6.QtCore import QObject, Signal
 from src.core.constants import DOC_TYPES, IMAGE_TYPES, VIDEO_TYPES
 from src.core.library import Library
-
 from src.core.logging import get_logger
-
-ERROR = "[ERROR]"
-WARNING = "[WARNING]"
-INFO = "[INFO]"
 
 logger = get_logger(__name__)
 
@@ -40,7 +34,7 @@ class CollageIconRenderer(QObject):
     ):
         entry = self.lib.get_entry(entry_id)
         filepath = self.lib.library_dir / entry.path / entry.filename
-        file_type = os.path.splitext(filepath)[1].lower()[1:]
+        os.path.splitext(filepath)[1].lower()[1:]
         color: str = ""
 
         try:
@@ -76,7 +70,7 @@ class CollageIconRenderer(QObject):
                     self.rendered.emit(pic)
             if not data_only_mode:
                 logger.info(
-                    f"\r{INFO} Combining [ID:{entry_id}/{len(self.lib.entries)}]: {self.get_file_color(filepath.suffix.lower())}{entry.path}{os.sep}{entry.filename}\033[0m"
+                    f"\rCombining [ID:{entry_id}/{len(self.lib.entries)}]: {self.get_file_color(filepath.suffix.lower())}{entry.path}{os.sep}{entry.filename}\033[0m"
                 )
                 # sys.stdout.write(f'\r{INFO} Combining [{i+1}/{len(self.lib.entries)}]: {self.get_file_color(file_type)}{entry.path}{os.sep}{entry.filename}{RESET}')
                 # sys.stdout.flush()
@@ -97,7 +91,7 @@ class CollageIconRenderer(QObject):
                             # collage.paste(pic, (y*thumb_size, x*thumb_size))
                             self.rendered.emit(pic)
                     except DecompressionBombError as e:
-                        logger.info(f"[ERROR] One of the images was too big ({e})")
+                        logger.error(f"One of the images was too big ({e})")
                 elif filepath.suffix.lower() in VIDEO_TYPES:
                     video = cv2.VideoCapture(str(filepath))
                     video.set(
@@ -124,9 +118,7 @@ class CollageIconRenderer(QObject):
                         # collage.paste(pic, (y*thumb_size, x*thumb_size))
                         self.rendered.emit(pic)
         except (UnidentifiedImageError, FileNotFoundError):
-            logger.info(
-                f"\n{ERROR} Couldn't read {entry.path}{os.sep}{entry.filename}"
-            )
+            logger.error(f"\nCouldn't read {entry.path}{os.sep}{entry.filename}")
             with Image.open(
                 str(
                     Path(__file__).parents[2]
@@ -141,14 +133,12 @@ class CollageIconRenderer(QObject):
                 self.rendered.emit(pic)
         except KeyboardInterrupt:
             # self.quit(save=False, backup=True)
-            run = False
             # clear()
             logger.info("\n")
-            logger.info(f"{INFO} Collage operation cancelled.")
-            clear_scr = False
-        except:
-            logger.info(f"{ERROR} {entry.path}{os.sep}{entry.filename}")
-            traceback.print_exc()
+            logger.info("Collage operation cancelled.")
+        except Exception:
+            logger.exception(f"{entry.path}{os.sep}{entry.filename}")
+
             logger.info("Continuing...")
 
         self.done.emit()

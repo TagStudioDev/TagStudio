@@ -14,21 +14,33 @@ import os
 # import subprocess
 import sys
 import time
-from PIL import Image, ImageChops, UnidentifiedImageError
-from PIL.Image import DecompressionBombError
-
-# import pillow_avif
-from pathlib import Path
 import traceback
-import cv2
 
 # import climage
 # import click
 from datetime import datetime as dt
-from src.core.ts_core import *
-from src.core.utils.web import *
-from src.core.utils.fs import *
-from src.core.library import *
+
+# import pillow_avif
+from pathlib import Path
+
+import cv2
+from PIL import Image, ImageChops, UnidentifiedImageError
+from PIL.Image import DecompressionBombError
+from src.core.constants import (
+    BOX_FIELDS,
+    COLLAGE_FOLDER_NAME,
+    DOC_TYPES,
+    IMAGE_TYPES,
+    TAG_COLORS,
+    TEXT_FIELDS,
+    TS_FOLDER_NAME,
+    VERSION,
+    VERSION_BRANCH,
+    VIDEO_TYPES,
+)
+from src.core.library import ItemType, Tag
+from src.core.ts_core import TagStudioCore
+from src.core.utils.web import strip_web_protocol
 from src.qt.helpers.file_opener import open_file
 
 WHITE_FG = "\033[37m"
@@ -127,7 +139,7 @@ class CliDriver:
             # self.cleanup_before_exit()
             # sys.exit()
             self.exit(save=False, backup=False)
-        except:
+        except Exception:
             traceback.print_exc()
             print("\nPress Enter to Continue...")
             input()
@@ -591,7 +603,7 @@ class CliDriver:
                             "%Y-%m-%d %H:%M:%S",
                         )
                         print(date.strftime("%D - %r"))
-                    except:
+                    except Exception:
                         print(self.lib.get_field_attr(field, "content"))
                 else:
                     print(self.lib.get_field_attr(field, "content"))
@@ -633,7 +645,6 @@ class CliDriver:
 
             # Lots of calculations to determine an image width that works well.
             w, h = (1, 1)
-            final_img_path = filepath
             if file_type in IMAGE_TYPES:
                 try:
                     raw = Image.open(filepath)
@@ -672,14 +683,14 @@ class CliDriver:
                     final_frame.save(
                         self.lib.library_dir / TS_FOLDER_NAME / "temp.jpg", quality=50
                     )
-                    final_img_path = self.lib.library_dir / TS_FOLDER_NAME / "temp.jpg"
+                    self.lib.library_dir / TS_FOLDER_NAME / "temp.jpg"
                     # NOTE: Temporary way to hack a non-terminal preview.
                     if self.args.external_preview and entry:
                         final_frame.thumbnail(self.external_preview_size)
                         final_frame.save(external_preview_path)
                 except SystemExit:
                     sys.exit()
-                except:
+                except Exception:
                     print(f'{ERROR} Could not load video thumbnail for "{filepath}"')
                     if self.args.external_preview and entry:
                         self.set_external_preview_broken()
@@ -732,11 +743,12 @@ class CliDriver:
                 spacing = (os.get_terminal_size()[0] - thumb_width) // 2
                 if not self.args.external_preview or not entry:
                     print(" " * spacing, end="")
-                    print(image.replace("\n", ("\n" + " " * spacing)))
+                    # NOTE: Image is not defined, therefore commented out.
+                    # print(image.replace("\n", ("\n" + " " * spacing)))
 
                 if file_type in VIDEO_TYPES:
                     os.remove(self.lib.library_dir / TS_FOLDER_NAME / "temp.jpg")
-            except:
+            except Exception:
                 if not self.args.external_preview or not entry:
                     print(
                         f"{ERROR} Could not display preview. Is there enough screen space?"
@@ -1046,7 +1058,7 @@ class CliDriver:
 
         collage = Image.new("RGB", (img_size, img_size))
         filename = (
-            elf.lib.library_dir
+            self.lib.library_dir
             / TS_FOLDER_NAME
             / COLLAGE_FOLDER_NAME
             / f'collage_{datetime.datetime.utcnow().strftime("%F_%T").replace(":", "")}.png'
@@ -1166,8 +1178,7 @@ class CliDriver:
                     run = False
                     clear()
                     print(f"{INFO} Collage operation cancelled.")
-                    clear_scr = False
-                except:
+                except Exception:
                     print(f"{ERROR} {entry.path / entry.filename}")
                     traceback.print_exc()
                     print("Continuing...")
@@ -1844,7 +1855,7 @@ class CliDriver:
     def scr_browse_entries_gallery(self, index, clear_scr=True, refresh=True):
         """Gallery View for browsing Library Entries."""
 
-        branch = (" (" + VERSION_BRANCH + ")") if VERSION_BRANCH else ""
+        (" (" + VERSION_BRANCH + ")") if VERSION_BRANCH else ""
         title = f"{self.base_title} - Library '{self.lib.library_dir}'"
 
         while True:
@@ -2882,7 +2893,7 @@ class CliDriver:
                         # except SystemExit:
                         # 	self.cleanup_before_exit()
                         # 	sys.exit()
-                        except:
+                        except Exception:
                             clear()
                             print(f"{ERROR} Invalid Tag Selection '{com[1:]}'")
                             clear_scr = False
@@ -2936,7 +2947,7 @@ class CliDriver:
         except SystemExit:
             self.cleanup_before_exit()
             sys.exit()
-        except:
+        except Exception:
             print(f"{ERROR} Invalid Tag Selection")
 
         return selected_ids
@@ -3016,7 +3027,7 @@ class CliDriver:
         except SystemExit:
             self.cleanup_before_exit()
             sys.exit()
-        except:
+        except Exception:
             print(f"{ERROR} Invalid Tag Selection")
 
         if not allow_multiple and selected_ids:
@@ -3702,7 +3713,7 @@ class CliDriver:
         # except SystemExit:
         # 	self.cleanup_before_exit()
         # 	sys.exit()
-        except:
+        except Exception:
             print(f"{ERROR} Invalid Tag Selection")
 
         return fallback
@@ -3784,7 +3795,7 @@ class CliDriver:
                         # except SystemExit:
                         # 	self.cleanup_before_exit()
                         # 	sys.exit()
-                        except:
+                        except Exception:
                             clear()
                             print(f"{ERROR} Invalid Tag Selection '{com[1:]}'")
                             # return self.scr_edit_generic_tag_box(tag_ids, tag_box_name, clear_scr=False)
