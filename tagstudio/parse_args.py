@@ -54,7 +54,7 @@ def get_parser() -> argparse.ArgumentParser:
         const="qt",
         default="qt",
         choices=SUPPORTED_DRIVERS,
-        help="User interface option for TagStudio. Options: qt, cli (Default: qt)",
+        help=f"User interface option for TagStudio. Options: {', '.join(SUPPORTED_DRIVERS)}",
     )
     parser.add_argument(
         "--ci",
