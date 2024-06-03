@@ -106,8 +106,6 @@ BOX_FIELDS = ["tag_box", "text_box"]
 TEXT_FIELDS = ["text_line", "text_box"]
 DATE_FIELDS = ["datetime"]
 
-SEARCH_MODES = ["AND", "OR"]
-
 TAG_COLORS = [
     "",
     "black",

@@ -47,7 +47,7 @@ from PySide6.QtWidgets import (
 )
 from humanfriendly import format_timespan
 
-from src.core.enums import SettingItems
+from src.core.enums import SettingItems, SearchMode
 from src.core.library import ItemType
 from src.core.ts_core import TagStudioCore
 from src.core.constants import (
@@ -67,7 +67,6 @@ from src.core.constants import (
     VIDEO_TYPES,
     IMAGE_TYPES,
     LIBRARY_FILENAME,
-    SEARCH_MODES,
     COLLAGE_FOLDER_NAME,
     BACKUP_FOLDER_NAME,
     TS_FOLDER_NAME,
@@ -178,7 +177,7 @@ class QtDriver(QObject):
         self.nav_frames: list[NavigationState] = []
         self.cur_frame_idx: int = -1
 
-        self.search_mode: int = 0  # index of SEARCH_MODES
+        self.search_mode = SearchMode.AND
 
         # self.main_window = None
         # self.main_window = Ui_MainWindow()
@@ -564,7 +563,9 @@ class QtDriver(QObject):
         )
         search_type_selector: QComboBox = self.main_window.comboBox_2
         search_type_selector.currentIndexChanged.connect(
-            lambda: self.set_search_type(search_type_selector.currentIndex())
+            lambda: self.set_search_type(
+                SearchMode(search_type_selector.currentIndex())
+            )
         )
 
         back_button: QPushButton = self.main_window.backButton
@@ -1377,8 +1378,7 @@ class QtDriver(QObject):
 
             # self.update_thumbs()
 
-    def set_search_type(self, mode: int = 0):
-        print(SEARCH_MODES[mode])
+    def set_search_type(self, mode=SearchMode.AND):
         self.search_mode = mode
         self.filter_items(self.main_window.searchField.text())
 

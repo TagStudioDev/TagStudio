@@ -15,3 +15,10 @@ class Theme(str, enum.Enum):
     COLOR_BG = "#65000000"
     COLOR_HOVER = "#65AAAAAA"
     COLOR_PRESSED = "#65EEEEEE"
+
+
+class SearchMode(int, enum.Enum):
+    """Operational modes for item searching."""
+
+    AND = 0
+    OR = 1

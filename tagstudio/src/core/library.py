@@ -20,13 +20,13 @@ from typing_extensions import Self
 from src.core.json_typing import JsonCollation, JsonEntry, JsonLibary, JsonTag
 from src.core.utils.str import strip_punctuation
 from src.core.utils.web import strip_web_protocol
+from src.core.enums import SearchMode
 from src.core.constants import (
     BACKUP_FOLDER_NAME,
     COLLAGE_FOLDER_NAME,
     TEXT_FIELDS,
     TS_FOLDER_NAME,
     VERSION,
-    SEARCH_MODES,
 )
 
 TYPE = ["file", "meta", "alt", "mask"]
@@ -1296,7 +1296,7 @@ class Library:
         entries=True,
         collations=True,
         tag_groups=True,
-        search_mode: int = 0,  # index of SEARCH_MODES
+        search_mode=SearchMode.AND,
     ) -> list[tuple[ItemType, int]]:
         """
         Uses a search query to generate a filtered results list.
@@ -1306,7 +1306,7 @@ class Library:
         # self.filtered_entries.clear()
         results: list[tuple[ItemType, int]] = []
         collations_added = []
-        print(f"Searching Library with query: {query} search_mode: {search_mode}")
+        # print(f"Searching Library with query: {query} search_mode: {search_mode}")
         if query:
             # start_time = time.time()
             query = query.strip().lower()
@@ -1326,7 +1326,7 @@ class Library:
 
             # Preprocess the Tag terms.
             if query_words:
-                print(query_words, self._tag_strings_to_id_map)
+                # print(query_words, self._tag_strings_to_id_map)
                 for i, term in enumerate(query_words):
                     for j, term in enumerate(query_words):
                         if (
@@ -1335,7 +1335,7 @@ class Library:
                             in self._tag_strings_to_id_map
                         ):
                             all_tag_terms.append(" ".join(query_words[i : j + 1]))
-                        print(all_tag_terms)
+                        # print(all_tag_terms)
 
                 # This gets rid of any accidental term inclusions because they were words
                 # in another term. Ex. "3d" getting added in "3d art"
@@ -1347,7 +1347,7 @@ class Library:
                             all_tag_terms.remove(all_tag_terms[i])
                             break
 
-            print(all_tag_terms)
+            # print(all_tag_terms)
 
             # non_entry_count = 0
             # Iterate over all Entries =============================================================
@@ -1438,7 +1438,7 @@ class Library:
                             if not added:
                                 results.append((ItemType.ENTRY, entry.id))
 
-                        if SEARCH_MODES[search_mode] == "AND":  # Include all terms
+                        if search_mode == SearchMode.AND:  # Include all terms
                             # For each verified, extracted Tag term.
                             failure_to_union_terms = False
                             for term in all_tag_terms:
@@ -1464,7 +1464,7 @@ class Library:
                                             # There wasn't a failure to find one of the term's cluster IDs in the Entry.
                                             # There is also no more need to keep checking the rest of the terms in the cluster.
                                             failure_to_union_terms = False
-                                            print(f"FOUND MATCH: {t}")
+                                            # print(f"FOUND MATCH: {t}")
                                             break
                                         # print(f'\tFailure to Match: {t}')
                             # # failure_to_union_terms is used to determine if all terms in the query were found in the entry.
@@ -1472,7 +1472,7 @@ class Library:
                             if all_tag_terms and not failure_to_union_terms:
                                 add_entry(entry)
 
-                        if SEARCH_MODES[search_mode] == "OR":  # Include any terms
+                        if search_mode == SearchMode.OR:  # Include any terms
                             # For each verified, extracted Tag term.
                             for term in all_tag_terms:
                                 # Add the immediate associated Tags to the set (ex. Name, Alias hits)
