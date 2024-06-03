@@ -857,30 +857,30 @@ class Library:
         # for type in TYPES:
         start_time = time.time()
         for f in self.library_dir.glob("**/*"):
-            # p = Path(os.path.normpath(f))
-            if (
-                "$RECYCLE.BIN" not in f.parts
-                and TS_FOLDER_NAME not in f.parts
-                and "tagstudio_thumbs" not in f.parts
-                and not f.is_dir()
-            ):
-                if f.suffix not in self.ignored_extensions:
-                    self.dir_file_count += 1
-                    file = f.relative_to(self.library_dir)
-                    try:
-                        _ = self.filename_to_entry_id_map[file]
-                    except KeyError:
-                        # print(file)
-                        self.files_not_in_library.append(file)
-
-            # sys.stdout.write(f'\r[LIBRARY] {self.dir_file_count} files found in "{self.library_dir}"...')
-            # sys.stdout.flush()
+            try:
+                if (
+                    "$RECYCLE.BIN" not in f.parts
+                    and TS_FOLDER_NAME not in f.parts
+                    and "tagstudio_thumbs" not in f.parts
+                    and not f.is_dir()
+                ):
+                    if f.suffix not in self.ignored_extensions:
+                        self.dir_file_count += 1
+                        file = f.relative_to(self.library_dir)
+                        try:
+                            _ = self.filename_to_entry_id_map[file]
+                        except KeyError:
+                            # print(file)
+                            self.files_not_in_library.append(file)
+            except PermissionError:
+                logging.info(
+                    f"The File/Folder {f} cannot be accessed, because it requires higher permission!"
+                )
             end_time = time.time()
             # Yield output every 1/30 of a second
             if (end_time - start_time) > 0.034:
                 yield self.dir_file_count
                 start_time = time.time()
-        # print('')
         # Sorts the files by date modified, descending.
         if len(self.files_not_in_library) <= 100000:
             try:
@@ -890,12 +890,12 @@ class Library:
                 )
             except (FileExistsError, FileNotFoundError):
                 print(
-                    f"[LIBRARY] [ERROR] Couldn't sort files, some were moved during the scanning/sorting process."
+                    "[LIBRARY] [ERROR] Couldn't sort files, some were moved during the scanning/sorting process."
                 )
                 pass
         else:
             print(
-                f"[LIBRARY][INFO] Not bothering to sort files because there's OVER 100,000! Better sorting methods will be added in the future."
+                "[LIBRARY][INFO] Not bothering to sort files because there's OVER 100,000! Better sorting methods will be added in the future."
             )
 
     def refresh_missing_files(self):
