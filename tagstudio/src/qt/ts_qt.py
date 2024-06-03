@@ -223,13 +223,11 @@ class QtDriver(QObject):
             thread.start()
 
     def open_library_from_dialog(self):
-        dir = Path(
-            QFileDialog.getExistingDirectory(
-                None, "Open/Create Library", "/", QFileDialog.ShowDirsOnly
-            )
+        dir = QFileDialog.getExistingDirectory(
+            None, "Open/Create Library", "/", QFileDialog.ShowDirsOnly
         )
         if dir not in (None, ""):
-            self.open_library(dir)
+            self.open_library(Path(dir))
 
     def signal_handler(self, sig, frame):
         if sig in (SIGINT, SIGTERM, SIGQUIT):
