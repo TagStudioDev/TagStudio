@@ -1,4 +1,6 @@
 {
+  description = "Tag Studio Development Environment";
+
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
 
@@ -15,6 +17,9 @@
     qt6Pkgs = qt6Nixpkgs.legacyPackages.x86_64-linux;
   in {
     devShells.x86_64-linux.default = pkgs.mkShell {
+      name = "Tag Studio Virtual Environment";
+      venvDir = "./.venv";
+
       LD_LIBRARY_PATH = pkgs.lib.makeLibraryPath [
         pkgs.gcc-unwrapped
         pkgs.zlib
@@ -35,18 +40,17 @@
         qt6Pkgs.qt6.full
         qt6Pkgs.qt6.qtbase
       ];
+
       buildInputs = with pkgs; [
         cmake
         gdb
         zstd
-        python312Packages.pip
         python312Full
-        python312Packages.virtualenv # run virtualenv .
+        python312Packages.pip
         python312Packages.pyusb # fixes the pyusb 'No backend available' when installed directly via pip
+        python312Packages.venvShellHook # Initializes a venv in $venvDir
 
         libgcc
-        makeWrapper
-        bashInteractive
         glib
         libxkbcommon
         freetype
@@ -70,14 +74,31 @@
         # this is for the shellhook portion
         qt6Pkgs.qt6.wrapQtAppsHook
       ];
+
+      # Run after the virtual environment is created
+      postVenvCreation = ''
+        unset SOURCE_DATE_EPOCH
+
+        echo Installing dependencies into virtual environment
+        pip install -r requirements.txt
+        pip install -r requirements-dev.txt
+      '';
+
       # set the environment variables that Qt apps expect
-      shellHook = ''
+      postShellHook = ''
+        unset SOURCE_DATE_EPOCH
+
         export QT_QPA_PLATFORM=wayland
         export LIBRARY_PATH=/usr/lib:/usr/lib64:$LIBRARY_PATH
         # export LD_LIBRARY_PATH=${pkgs.stdenv.cc.cc.lib}/lib/:/run/opengl-driver/lib/
         export QT_PLUGIN_PATH=${pkgs.qt6.qtbase}/${pkgs.qt6.qtbase.qtPluginPrefix}
         bashdir=$(mktemp -d)
         makeWrapper "$(type -p bash)" "$bashdir/bash" "''${qtWrapperArgs[@]}"
+
+        echo Activating Virtual Environment
+        source $venvDir/bin/activate
+        export PYTHONPATH=$PWD/$venvDir/${pkgs.python312Full.sitePackages}:$PYTHONPATH
+
         exec "$bashdir/bash"
       '';
     };
