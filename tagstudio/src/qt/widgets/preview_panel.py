@@ -30,7 +30,7 @@ from humanfriendly import format_size
 
 from src.core.enums import SettingItems, Theme
 from src.core.library import Entry, ItemType, Library
-from src.core.constants import VIDEO_TYPES, IMAGE_TYPES, RAW_IMAGE_TYPES
+from src.core.constants import VIDEO_TYPES, IMAGE_TYPES, RAW_IMAGE_TYPES, TS_FOLDER_NAME
 from src.qt.helpers.file_opener import FileOpenerLabel, FileOpenerHelper, open_file
 from src.qt.modals.add_field import AddFieldModal
 from src.qt.widgets.thumb_renderer import ThumbRenderer
@@ -298,6 +298,7 @@ class PreviewPanel(QWidget):
                     "}"
                     f"QPushButton::hover{{background-color:{Theme.COLOR_HOVER.value};}}"
                     f"QPushButton::pressed{{background-color:{Theme.COLOR_PRESSED.value};}}"
+                    f"QPushButton::disabled{{background-color:{Theme.COLOR_DISABLED_BG.value};}}"
                 )
             )
             btn.setCursor(Qt.CursorShape.PointingHandCursor)
@@ -305,6 +306,11 @@ class PreviewPanel(QWidget):
         for item_key, (full_val, cut_val) in libraries:
             button = QPushButton(text=cut_val)
             button.setObjectName(f"path{item_key}")
+
+            lib = Path(full_val)
+            if not lib.exists() or not (lib / TS_FOLDER_NAME).exists():
+                button.setDisabled(True)
+                button.setToolTip("Location is missing")
 
             def open_library_button_clicked(path):
                 return lambda: self.driver.open_library(Path(path))

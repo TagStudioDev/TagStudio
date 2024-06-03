@@ -525,6 +525,14 @@ class QtDriver(QObject):
         elif self.settings.value(SettingItems.START_LOAD_LAST, True, type=bool):
             lib = self.settings.value(SettingItems.LAST_LIBRARY)
 
+            # TODO: Remove this check if the library is no longer saved with files
+            if lib and not (Path(lib) / TS_FOLDER_NAME).exists():
+                logging.error(
+                    f"[QT DRIVER] {TS_FOLDER_NAME} folder in {lib} does not exist."
+                )
+                self.settings.setValue(SettingItems.LAST_LIBRARY, "")
+                lib = None
+
         if lib:
             self.splash.showMessage(
                 f'Opening Library "{lib}"...',
