@@ -27,6 +27,7 @@ from src.core.constants import (
     RAW_IMAGE_TYPES,
     VIDEO_TYPES,
 )
+from src.core.utils.encoding import detect_char_encoding
 from src.core.logging import get_logger
 from src.qt.helpers.gradient import four_corner_gradient_background
 
@@ -130,7 +131,7 @@ class ThumbRenderer(QObject):
                         image = ImageOps.exif_transpose(image)
                     except DecompressionBombError as e:
                         logger.warning(
-                            f"[ThumbRenderer] Couldn't Render thumbnail for {_filepath} (because of {e})"
+                            f"[ThumbRenderer] Couldn't Render thumbnail for {_filepath.name} ({type(e).__name__})"
                         )
 
                 elif _filepath.suffix.lower() in RAW_IMAGE_TYPES:
@@ -145,14 +146,14 @@ class ThumbRenderer(QObject):
                             )
                     except DecompressionBombError as e:
                         logger.warning(
-                            f"[ThumbRenderer] Couldn't Render thumbnail for {_filepath} (because of {e})"
+                            f"[ThumbRenderer] Couldn't Render thumbnail for {_filepath.name} ({type(e).__name__})"
                         )
                     except (
                         rawpy._rawpy.LibRawIOError,
                         rawpy._rawpy.LibRawFileUnsupportedError,
-                    ):
+                    ) as e:
                         logger.error(
-                            f"[ThumbRenderer] Couldn't Render thumbnail for raw image {_filepath}"
+                            f"[ThumbRenderer] Couldn't Render thumbnail for raw image {_filepath.name} ({type(e).__name__})"
                         )
 
                 # Videos =======================================================
@@ -174,7 +175,8 @@ class ThumbRenderer(QObject):
 
                 # Plain Text ===================================================
                 elif _filepath.suffix.lower() in PLAINTEXT_TYPES:
-                    with open(_filepath, "r", encoding="utf-8") as text_file:
+                    encoding = detect_char_encoding(_filepath)
+                    with open(_filepath, "r", encoding=encoding) as text_file:
                         text = text_file.read(256)
                     bg = Image.new("RGB", (256, 256), color="#1e1e1e")
                     draw = ImageDraw.Draw(bg)
@@ -264,7 +266,7 @@ class ThumbRenderer(QObject):
             ) as e:
                 if e is not UnicodeDecodeError:
                     logger.error(
-                        f"[ThumbRenderer]: Couldn't render thumbnail for {_filepath} ({e})"
+                        f"[ThumbRenderer]: Couldn't render thumbnail for {_filepath.name} ({type(e).__name__})"
                     )
                 if update_on_ratio_change:
                     self.updated_ratio.emit(1)

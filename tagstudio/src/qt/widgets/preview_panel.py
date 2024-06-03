@@ -2,7 +2,6 @@
 # Licensed under the GPL-3.0 License.
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
-import os
 import time
 import typing
 from datetime import datetime as dt
@@ -16,22 +15,23 @@ from PIL.Image import DecompressionBombError
 from PySide6.QtCore import QSize, Qt, Signal
 from PySide6.QtGui import QAction, QResizeEvent
 from PySide6.QtWidgets import (
+    QWidget,
+    QVBoxLayout,
     QFrame,
     QHBoxLayout,
     QLabel,
-    QMessageBox,
     QPushButton,
     QScrollArea,
-    QSizePolicy,
     QSplitter,
-    QVBoxLayout,
-    QWidget,
+    QSizePolicy,
+    QMessageBox,
 )
 from src.core.constants import IMAGE_TYPES, RAW_IMAGE_TYPES, VIDEO_TYPES
 from src.core.enums import SettingItems, Theme
 from src.core.library import Entry, ItemType, Library
 from src.core.logging import get_logger
-from src.qt.helpers.file_opener import FileOpenerHelper, FileOpenerLabel, open_file
+from src.core.constants import TS_FOLDER_NAME
+from src.qt.helpers.file_opener import FileOpenerLabel, FileOpenerHelper, open_file
 from src.qt.modals.add_field import AddFieldModal
 from src.qt.widgets.fields import FieldContainer
 from src.qt.widgets.panel import PanelModal
@@ -293,6 +293,7 @@ class PreviewPanel(QWidget):
                     "}"
                     f"QPushButton::hover{{background-color:{Theme.COLOR_HOVER.value};}}"
                     f"QPushButton::pressed{{background-color:{Theme.COLOR_PRESSED.value};}}"
+                    f"QPushButton::disabled{{background-color:{Theme.COLOR_DISABLED_BG.value};}}"
                 )
             )
             btn.setCursor(Qt.CursorShape.PointingHandCursor)
@@ -300,6 +301,11 @@ class PreviewPanel(QWidget):
         for item_key, (full_val, cut_val) in libraries:
             button = QPushButton(text=cut_val)
             button.setObjectName(f"path{item_key}")
+
+            lib = Path(full_val)
+            if not lib.exists() or not (lib / TS_FOLDER_NAME).exists():
+                button.setDisabled(True)
+                button.setToolTip("Location is missing")
 
             def open_library_button_clicked(path):
                 return lambda: self.driver.open_library(Path(path))
@@ -509,7 +515,7 @@ class PreviewPanel(QWidget):
                             image = Image.open(str(filepath))
                         elif filepath.suffix.lower() in RAW_IMAGE_TYPES:
                             try:
-                                with rawpy.imread(filepath) as raw:
+                                with rawpy.imread(str(filepath)) as raw:
                                     rgb = raw.postprocess()
                                     image = Image.new(
                                         "L", (rgb.shape[1], rgb.shape[0]), color="black"
@@ -540,28 +546,25 @@ class PreviewPanel(QWidget):
                                 self.preview_vid.show()
 
                         # Stats for specific file types are displayed here.
-                        if filepath.suffix.lower() in (
+                        if image and filepath.suffix.lower() in (
                             IMAGE_TYPES + VIDEO_TYPES + RAW_IMAGE_TYPES
                         ):
                             self.dimensions_label.setText(
-                                f"{filepath.suffix.lower().upper()[1:]}  •  {format_size(os.stat(filepath).st_size)}\n{image.width} x {image.height} px"
+                                f"{filepath.suffix.upper()[1:]}  •  {format_size(filepath.stat().st_size)}\n{image.width} x {image.height} px"
                             )
                         else:
                             self.dimensions_label.setText(
-                                f"{filepath.suffix.lower().upper()[1:]}  •  {format_size(os.stat(filepath).st_size)}"
+                                f"{filepath.suffix.upper()[1:]}  •  {format_size(filepath.stat().st_size)}"
                             )
 
                         if not filepath.is_file():
                             raise FileNotFoundError
 
                     except FileNotFoundError as e:
-                        self.dimensions_label.setText(
-                            f"{filepath.suffix.lower().upper()[1:]}"
-                        )
+                        self.dimensions_label.setText(f"{filepath.suffix.upper()[1:]}")
                         logger.error(
                             f"[PreviewPanel] Couldn't Render thumbnail for {filepath} (because of {e})"
                         )
-
                     except (FileNotFoundError, cv2.error) as e:
                         self.dimensions_label.setText(f"{filepath.suffix.upper()}")
                         logger.error(
@@ -572,7 +575,7 @@ class PreviewPanel(QWidget):
                         DecompressionBombError,
                     ) as e:
                         self.dimensions_label.setText(
-                            f"{filepath.suffix.lower().upper()[1:]}  •  {format_size(os.stat(filepath).st_size)}"
+                            f"{filepath.suffix.upper()[1:]}  •  {format_size(filepath.stat().st_size)}"
                         )
                         logger.error(
                             f"[PreviewPanel] Couldn't Render thumbnail for {filepath} (because of {e})"
@@ -828,6 +831,8 @@ class PreviewPanel(QWidget):
                 # container.set_remove_callback(lambda: (self.lib.get_entry(item.id).fields.pop(index), self.update_widgets(item)))
                 prompt = f'Are you sure you want to remove this "{self.lib.get_field_attr(field, "name")}" field?'
 
+                # TODO: Reuse the callback
+                # NOTE: Not a lambda as it was previously due to ruff complaining about lambdas being assigned to variables
                 def callback():
                     return self.remove_field(field), self.update_widgets()
 
