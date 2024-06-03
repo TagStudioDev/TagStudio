@@ -1065,8 +1065,7 @@ class Library:
 
             for dupe in self.dupe_files:
                 logger.info(
-                    f"[LIBRARY] MATCHED ({dupe[2]}%): \n   {dupe[0]} \n-> {dupe[1]}",
-                    end="\n",
+                    f"[LIBRARY] MATCHED ({dupe[2]}%): \n   {dupe[0]} \n-> {dupe[1]}"
                 )
                 # self.dupe_files.append(full_path)
 
