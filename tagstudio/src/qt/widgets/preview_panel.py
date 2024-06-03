@@ -3,7 +3,6 @@
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
 import logging
-import os
 from pathlib import Path
 import time
 import typing
@@ -31,7 +30,7 @@ from humanfriendly import format_size
 
 from src.core.enums import SettingItems, Theme
 from src.core.library import Entry, ItemType, Library
-from src.core.constants import VIDEO_TYPES, IMAGE_TYPES, RAW_IMAGE_TYPES
+from src.core.constants import VIDEO_TYPES, IMAGE_TYPES, RAW_IMAGE_TYPES, TS_FOLDER_NAME
 from src.qt.helpers.file_opener import FileOpenerLabel, FileOpenerHelper, open_file
 from src.qt.modals.add_field import AddFieldModal
 from src.qt.widgets.thumb_renderer import ThumbRenderer
@@ -50,9 +49,9 @@ from src.qt.widgets.video_player import VideoPlayer
 if typing.TYPE_CHECKING:
     from src.qt.ts_qt import QtDriver
 
-ERROR = f"[ERROR]"
-WARNING = f"[WARNING]"
-INFO = f"[INFO]"
+ERROR = "[ERROR]"
+WARNING = "[WARNING]"
+INFO = "[INFO]"
 
 logging.basicConfig(format="%(message)s", level=logging.INFO)
 
@@ -304,6 +303,7 @@ class PreviewPanel(QWidget):
                     "}"
                     f"QPushButton::hover{{background-color:{Theme.COLOR_HOVER.value};}}"
                     f"QPushButton::pressed{{background-color:{Theme.COLOR_PRESSED.value};}}"
+                    f"QPushButton::disabled{{background-color:{Theme.COLOR_DISABLED_BG.value};}}"
                 )
             )
             btn.setCursor(Qt.CursorShape.PointingHandCursor)
@@ -311,6 +311,11 @@ class PreviewPanel(QWidget):
         for item_key, (full_val, cut_val) in libraries:
             button = QPushButton(text=cut_val)
             button.setObjectName(f"path{item_key}")
+
+            lib = Path(full_val)
+            if not lib.exists() or not (lib / TS_FOLDER_NAME).exists():
+                button.setDisabled(True)
+                button.setToolTip("Location is missing")
 
             def open_library_button_clicked(path):
                 return lambda: self.driver.open_library(Path(path))
@@ -446,7 +451,7 @@ class PreviewPanel(QWidget):
         # 0 Selected Items
         if not self.driver.selected:
             if self.selected or not self.initialized:
-                self.file_label.setText(f"No Items Selected")
+                self.file_label.setText("No Items Selected")
                 self.file_label.setFilePath("")
                 self.file_label.setCursor(Qt.CursorShape.ArrowCursor)
 
@@ -516,11 +521,17 @@ class PreviewPanel(QWidget):
                         if filepath.suffix.lower() in IMAGE_TYPES:
                             image = Image.open(str(filepath))
                         elif filepath.suffix.lower() in RAW_IMAGE_TYPES:
-                            with rawpy.imread(filepath) as raw:
-                                rgb = raw.postprocess()
-                                image = Image.new(
-                                    "L", (rgb.shape[1], rgb.shape[0]), color="black"
-                                )
+                            try:
+                                with rawpy.imread(str(filepath)) as raw:
+                                    rgb = raw.postprocess()
+                                    image = Image.new(
+                                        "L", (rgb.shape[1], rgb.shape[0]), color="black"
+                                    )
+                            except (
+                                rawpy._rawpy.LibRawIOError,
+                                rawpy._rawpy.LibRawFileUnsupportedError,
+                            ):
+                                pass
                         elif filepath.suffix.lower() in VIDEO_TYPES:
                             video = cv2.VideoCapture(str(filepath))
                             video.set(cv2.CAP_PROP_POS_FRAMES, 0)
@@ -541,30 +552,28 @@ class PreviewPanel(QWidget):
                                 self.preview_vid.show()
 
                         # Stats for specific file types are displayed here.
-                        if filepath.suffix.lower() in (
+                        if image and filepath.suffix.lower() in (
                             IMAGE_TYPES + VIDEO_TYPES + RAW_IMAGE_TYPES
                         ):
                             self.dimensions_label.setText(
-                                f"{filepath.suffix.lower().upper()[1:]}  •  {format_size(os.stat(filepath).st_size)}\n{image.width} x {image.height} px"
+                                f"{filepath.suffix.upper()[1:]}  •  {format_size(filepath.stat().st_size)}\n{image.width} x {image.height} px"
                             )
                         else:
                             self.dimensions_label.setText(
-                                f"{filepath.suffix.lower().upper()[1:]}  •  {format_size(os.stat(filepath).st_size)}"
+                                f"{filepath.suffix.upper()[1:]}  •  {format_size(filepath.stat().st_size)}"
                             )
 
                         if not filepath.is_file():
                             raise FileNotFoundError
 
                     except FileNotFoundError as e:
-                        self.dimensions_label.setText(
-                            f"{filepath.suffix.lower().upper()[1:]}"
-                        )
+                        self.dimensions_label.setText(f"{filepath.suffix.upper()[1:]}")
                         logging.info(
                             f"[PreviewPanel][ERROR] Couldn't Render thumbnail for {filepath} (because of {e})"
                         )
 
                     except (FileNotFoundError, cv2.error) as e:
-                        self.dimensions_label.setText(f"{extension.upper()}")
+                        self.dimensions_label.setText(f"{filepath.suffix.upper()}")
                         logging.info(
                             f"[PreviewPanel][ERROR] Couldn't Render thumbnail for {filepath} (because of {e})"
                         )
@@ -573,7 +582,7 @@ class PreviewPanel(QWidget):
                         DecompressionBombError,
                     ) as e:
                         self.dimensions_label.setText(
-                            f"{filepath.suffix.lower().upper()[1:]}  •  {format_size(os.stat(filepath).st_size)}"
+                            f"{filepath.suffix.upper()[1:]}  •  {format_size(filepath.stat().st_size)}"
                         )
                         logging.info(
                             f"[PreviewPanel][ERROR] Couldn't Render thumbnail for {filepath} (because of {e})"
@@ -763,7 +772,7 @@ class PreviewPanel(QWidget):
         if self.is_connected:
             self.tags_updated.disconnect()
 
-        logging.info(f"[UPDATE CONTAINER] Setting tags updated slot")
+        logging.info("[UPDATE CONTAINER] Setting tags updated slot")
         self.tags_updated.connect(slot)
         self.is_connected = True
 
