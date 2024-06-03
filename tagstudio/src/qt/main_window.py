@@ -225,8 +225,8 @@ class Ui_MainWindow(QMainWindow):
 			QCoreApplication.translate("MainWindow", u"Search", None))
   
         # Search type selector
-		self.comboBox_2.setItemText(0, QCoreApplication.translate("MainWindow", "And (includes all tags)"))
-		self.comboBox_2.setItemText(1, QCoreApplication.translate("MainWindow", "Or (includes any tag)"))
+		self.comboBox_2.setItemText(0, QCoreApplication.translate("MainWindow", "And (Includes All Tags)"))
+		self.comboBox_2.setItemText(1, QCoreApplication.translate("MainWindow", "Or (Includes Any Tag)"))
 		self.comboBox.setCurrentText("")
   
         # Tumbnail size selector
