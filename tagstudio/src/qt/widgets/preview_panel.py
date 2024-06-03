@@ -40,7 +40,6 @@ from src.qt.widgets.text import TextWidget
 from src.qt.widgets.panel import PanelModal
 from src.qt.widgets.text_box_edit import EditTextBox
 from src.qt.widgets.text_line_edit import EditTextLine
-from src.qt.widgets.item_thumb import ItemThumb
 from src.qt.helpers.custom_qbutton import CustomQPushButton
 
 
