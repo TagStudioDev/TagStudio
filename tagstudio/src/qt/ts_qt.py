@@ -43,10 +43,11 @@ from PySide6.QtWidgets import (
     QSplashScreen,
     QMenu,
     QMenuBar,
+    QComboBox,
 )
 from humanfriendly import format_timespan
 
-from src.core.enums import SettingItems
+from src.core.enums import SettingItems, SearchMode
 from src.core.library import ItemType
 from src.core.ts_core import TagStudioCore
 from src.core.constants import (
@@ -175,6 +176,8 @@ class QtDriver(QObject):
         self.frame_dict: dict = {}
         self.nav_frames: list[NavigationState] = []
         self.cur_frame_idx: int = -1
+
+        self.search_mode = SearchMode.AND
 
         # self.main_window = None
         # self.main_window = Ui_MainWindow()
@@ -563,6 +566,12 @@ class QtDriver(QObject):
         search_field: QLineEdit = self.main_window.searchField
         search_field.returnPressed.connect(
             lambda: self.filter_items(self.main_window.searchField.text())
+        )
+        search_type_selector: QComboBox = self.main_window.comboBox_2
+        search_type_selector.currentIndexChanged.connect(
+            lambda: self.set_search_type(
+                SearchMode(search_type_selector.currentIndex())
+            )
         )
 
         back_button: QPushButton = self.main_window.backButton
@@ -1334,7 +1343,7 @@ class QtDriver(QObject):
 
             # self.filtered_items = self.lib.search_library(query)
             # 73601 Entries at 500 size should be 246
-            all_items = self.lib.search_library(query)
+            all_items = self.lib.search_library(query, search_mode=self.search_mode)
             frames: list[list[tuple[ItemType, int]]] = []
             frame_count = math.ceil(len(all_items) / self.max_results)
             for i in range(0, frame_count):
@@ -1374,6 +1383,10 @@ class QtDriver(QObject):
             # logging.info(f'Done Filtering! ({(end_time - start_time):.3f}) seconds')
 
             # self.update_thumbs()
+
+    def set_search_type(self, mode=SearchMode.AND):
+        self.search_mode = mode
+        self.filter_items(self.main_window.searchField.text())
 
     def remove_recent_library(self, item_key: str):
         self.settings.beginGroup(SettingItems.LIBS_LIST)
