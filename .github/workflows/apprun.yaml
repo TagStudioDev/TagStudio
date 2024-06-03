@@ -32,7 +32,8 @@ jobs:
             libxcb-render-util0 \
             libxcb-xinerama0 \
             libopengl0 \
-            libxcb-cursor0
+            libxcb-cursor0 \
+            libpulse0
 
       - name: Install dependencies
         run: |

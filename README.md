@@ -67,7 +67,7 @@ Optional arguments to pass to the program.
 > Path to a TagStudio Library folder to open on start.
 
 > `--config-file <path>` / `-c <path>`
-> Path to a TagStudio Library folder to open on start.
+> Path to the TagStudio config file to load.
 
 ## Usage
 

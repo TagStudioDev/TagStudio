@@ -52,16 +52,12 @@ class ItemThumb(FlowWidget):
     update_cutoff: float = time.time()
 
     collation_icon_128: Image.Image = Image.open(
-        os.path.normpath(
-            f"{Path(__file__).parents[3]}/resources/qt/images/collation_icon_128.png"
-        )
+        str(Path(__file__).parents[3] / "resources/qt/images/collation_icon_128.png")
     )
     collation_icon_128.load()
 
     tag_group_icon_128: Image.Image = Image.open(
-        os.path.normpath(
-            f"{Path(__file__).parents[3]}/resources/qt/images/tag_group_icon_128.png"
-        )
+        str(Path(__file__).parents[3] / "resources/qt/images/tag_group_icon_128.png")
     )
     tag_group_icon_128.load()
 
@@ -353,9 +349,11 @@ class ItemThumb(FlowWidget):
     # 		pass
 
     def set_extension(self, ext: str) -> None:
-        if ext and ext not in IMAGE_TYPES or ext in ["gif", "apng"]:
+        if ext and ext.startswith(".") is False:
+            ext = "." + ext
+        if ext and ext not in IMAGE_TYPES or ext in [".gif", ".apng"]:
             self.ext_badge.setHidden(False)
-            self.ext_badge.setText(ext.upper())
+            self.ext_badge.setText(ext.upper()[1:])
             if ext in VIDEO_TYPES + AUDIO_TYPES:
                 self.count_badge.setHidden(False)
         else:
@@ -412,9 +410,7 @@ class ItemThumb(FlowWidget):
         if id == -1:
             return
         entry = self.lib.get_entry(self.item_id)
-        filepath = os.path.normpath(
-            f"{self.lib.library_dir}/{entry.path}/{entry.filename}"
-        )
+        filepath = self.lib.library_dir / entry.path / entry.filename
         self.opener.set_filepath(filepath)
 
     def assign_favorite(self, value: bool):
