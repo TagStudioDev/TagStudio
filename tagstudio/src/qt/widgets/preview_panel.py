@@ -300,7 +300,7 @@ class PreviewPanel(QWidget):
                     "}"
                     f"QPushButton::hover{{background-color:{Theme.COLOR_HOVER.value};}}"
                     f"QPushButton::pressed{{background-color:{Theme.COLOR_PRESSED.value};}}"
-                    f"QPushButton::disabled{{color:{Theme.COLOR_DISABLED.value};}}"
+                    f"QPushButton::disabled{{background-color:{Theme.COLOR_DISABLED_BG.value};}}"
                 )
             )
             btn.setCursor(Qt.CursorShape.PointingHandCursor)

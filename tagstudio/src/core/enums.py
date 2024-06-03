@@ -16,3 +16,4 @@ class Theme(str, enum.Enum):
     COLOR_HOVER = "#65AAAAAA"
     COLOR_PRESSED = "#65EEEEEE"
     COLOR_DISABLED = "#65F39CAA"
+    COLOR_DISABLED_BG = "#65440D12"
