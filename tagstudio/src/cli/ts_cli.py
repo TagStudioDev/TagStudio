@@ -645,6 +645,7 @@ class CliDriver:
 
             # Lots of calculations to determine an image width that works well.
             w, h = (1, 1)
+            # final_img_path = filepath
             if file_type in IMAGE_TYPES:
                 try:
                     raw = Image.open(filepath)
@@ -1178,6 +1179,7 @@ class CliDriver:
                     run = False
                     clear()
                     print(f"{INFO} Collage operation cancelled.")
+                    # clear_scr = False
                 except Exception:
                     print(f"{ERROR} {entry.path / entry.filename}")
                     traceback.print_exc()

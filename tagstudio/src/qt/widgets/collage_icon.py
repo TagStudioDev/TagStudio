@@ -34,7 +34,7 @@ class CollageIconRenderer(QObject):
     ):
         entry = self.lib.get_entry(entry_id)
         filepath = self.lib.library_dir / entry.path / entry.filename
-        os.path.splitext(filepath)[1].lower()[1:]
+        # file_type = os.path.splitext(filepath)[1].lower()[1:]
         color: str = ""
 
         try:
