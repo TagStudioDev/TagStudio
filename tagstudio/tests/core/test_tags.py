@@ -155,7 +155,3 @@ class TestTags():
         result = test_tag1.display_name(mock_library)
         assert result == "tag1 Name (tag2 Name)"
 '''
-
-if __name__ == "__main__":
-    pytest.main()
-
