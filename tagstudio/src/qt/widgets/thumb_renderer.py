@@ -258,7 +258,7 @@ class ThumbRenderer(QObject):
                             audio: AudioSegment = AudioSegment.from_file(
                                 _filepath, _filepath.suffix.lower()[1:]
                             )
-                            data = numpy.fromstring(audio._data, numpy.int16)
+                            data = numpy.fromstring(audio._data, numpy.int16) # type: ignore
                             data_indices = numpy.linspace(1, len(data), num=adj_size)
 
                             BARS = adj_size // 5
