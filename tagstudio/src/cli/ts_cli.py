@@ -683,7 +683,7 @@ class CliDriver:
                     final_frame.save(
                         self.lib.library_dir / TS_FOLDER_NAME / "temp.jpg", quality=50
                     )
-                    self.lib.library_dir / TS_FOLDER_NAME / "temp.jpg"
+                    # final_img_path = self.lib.library_dir / TS_FOLDER_NAME / "temp.jpg"
                     # NOTE: Temporary way to hack a non-terminal preview.
                     if self.args.external_preview and entry:
                         final_frame.thumbnail(self.external_preview_size)
@@ -1855,7 +1855,6 @@ class CliDriver:
     def scr_browse_entries_gallery(self, index, clear_scr=True, refresh=True):
         """Gallery View for browsing Library Entries."""
 
-        (" (" + VERSION_BRANCH + ")") if VERSION_BRANCH else ""
         title = f"{self.base_title} - Library '{self.lib.library_dir}'"
 
         while True:
@@ -2968,10 +2967,7 @@ class CliDriver:
         Return Index: Instead of returning the Field IDs that were selected, this returns the indices of the selected items from the given list.
         """
 
-        branch = (" (" + VERSION_BRANCH + ")") if VERSION_BRANCH else ""
-        title = (
-            f"TagStudio {VERSION}{branch} - CLI Mode - Library '{self.lib.library_dir}'"
-        )
+        title = f"TagStudio {VERSION}{self.branch} - CLI Mode - Library '{self.lib.library_dir}'"
         subtitle = "Select Field(s) to Add"
         plural = "(s)"
 
