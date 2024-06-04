@@ -95,8 +95,17 @@ PLAINTEXT_TYPES: list[str] = [
 ]
 SPREADSHEET_TYPES: list[str] = [".csv", ".xls", ".xlsx", ".numbers", ".ods"]
 PRESENTATION_TYPES: list[str] = [".ppt", ".pptx", ".key", ".odp"]
-ARCHIVE_TYPES: list[str] = [".zip", ".rar", ".tar", ".tar", ".gz", ".tgz", ".7z", ".s7z", ".dmg"]
-PROGRAM_TYPES: list[str] = [".exe", ".app", ".jar", ".msi"]
+ARCHIVE_TYPES: list[str] = [
+    ".zip",
+    ".rar",
+    ".tar",
+    ".tar",
+    ".gz",
+    ".tgz",
+    ".7z",
+    ".s7z",
+]
+PROGRAM_TYPES: list[str] = [".exe", ".app"]
 SHORTCUT_TYPES: list[str] = [".lnk", ".desktop", ".url"]
 
 ALL_FILE_TYPES: list[str] = (
