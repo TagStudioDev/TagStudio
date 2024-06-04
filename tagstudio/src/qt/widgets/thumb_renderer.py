@@ -5,10 +5,9 @@
 
 import logging
 import math
-from pathlib import Path
-
 import cv2
 import rawpy
+import numpy
 from pillow_heif import register_heif_opener, register_avif_opener
 from PIL import (
     Image,
@@ -19,12 +18,17 @@ from PIL import (
     ImageOps,
     ImageFile,
 )
+from io import BytesIO
+from pathlib import Path
 from PIL.Image import DecompressionBombError
+from pydub import AudioSegment, exceptions
+from mutagen import id3, flac, mp4
 from PySide6.QtCore import QObject, Signal, QSize
 from PySide6.QtGui import QPixmap
 from src.qt.helpers.gradient import four_corner_gradient_background
 from src.qt.helpers.text_wrapper import wrap_full_text
 from src.core.constants import (
+    AUDIO_TYPES,
     PLAINTEXT_TYPES,
     FONT_TYPES,
     VIDEO_TYPES,
@@ -224,6 +228,99 @@ class ThumbRenderer(QObject):
                             ) * draw.textbbox((0, 0), "A", font=font)[-1]
 
                     image = bg
+                # Audio
+                elif _filepath.suffix.lower() in AUDIO_TYPES:
+                    try:
+                        artwork = None
+                        if _filepath.suffix.lower() in [".mp3"]:
+                            audio_tags = id3.ID3(_filepath)
+                            covers = audio_tags.getall("APIC")
+                            if covers:
+                                artwork = Image.open(BytesIO(covers[0].data))
+                        elif _filepath.suffix.lower() in [".flac"]:
+                            audio_tags = flac.FLAC(_filepath)
+                            covers = audio_tags.pictures
+                            if covers:
+                                artwork = Image.open(BytesIO(covers[0].data))
+                        elif _filepath.suffix.lower() in [".mp4", ".m4a", ".aac"]:
+                            audio_tags = mp4.MP4(_filepath)
+                            covers = audio_tags.get("covr")
+                            if covers:
+                                artwork = Image.open(BytesIO(covers[0]))
+                        if artwork:
+                            image = artwork
+                    except (mp4.MP4MetadataError, mp4.MP4StreamInfoError) as e:
+                        logging.error(
+                            f"[ThumbRenderer]{ERROR}: Couldn't read album artwork for {_filepath.name} ({type(e).__name__})"
+                        )
+                    if image is None:
+                        try:
+                            audio: AudioSegment = AudioSegment.from_file(
+                                _filepath, _filepath.suffix.lower()[1:]
+                            )
+                            data = numpy.fromstring(audio._data, numpy.int16)
+                            data_indices = numpy.linspace(1, len(data), num=adj_size)
+
+                            BARS = adj_size // 5
+                            BAR_MARGIN = 4
+                            BAR_HEIGHT = adj_size - (adj_size // BAR_MARGIN)
+                            LINE_WIDTH = 6
+
+                            length = len(data_indices)
+                            RATIO = length / BARS
+
+                            count = 0
+                            maximum_item = 0
+                            max_array = []
+                            highest_line = 0
+
+                            for i in range(1, len(data_indices)):
+                                d = data[math.ceil(data_indices[i]) - 1]
+                                if count < RATIO:
+                                    count = count + 1
+                                    if abs(d) > maximum_item:
+                                        maximum_item = abs(d)
+                                else:
+                                    max_array.append(maximum_item)
+
+                                    if maximum_item > highest_line:
+                                        highest_line = maximum_item
+
+                                    maximum_item = 0
+                                    count = 1
+
+                            line_ratio = max(highest_line / BAR_HEIGHT, 1)
+
+                            image = Image.new(
+                                "RGB", (adj_size, adj_size), color="#1e1e1e"
+                            )
+                            draw = ImageDraw.Draw(image)
+
+                            current_x = 1
+                            for item in max_array:
+                                item_height = item / line_ratio
+
+                                current_y = (
+                                    BAR_HEIGHT - item_height + (adj_size // BAR_MARGIN)
+                                ) / 2
+                                draw.line(
+                                    (
+                                        current_x,
+                                        current_y,
+                                        current_x,
+                                        current_y + item_height,
+                                    ),
+                                    fill=(169, 171, 172),
+                                    width=4,
+                                    joint="curve",
+                                )
+
+                                current_x = current_x + LINE_WIDTH
+                        except exceptions.CouldntDecodeError as e:
+                            logging.error(
+                                f"[ThumbRenderer]{ERROR}: Couldn't render waveform for {_filepath.name} ({type(e).__name__})"
+                            )
+
                 # 3D ===========================================================
                 # elif extension == 'stl':
                 # 	# Create a new plot

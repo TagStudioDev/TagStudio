@@ -70,6 +70,7 @@ AUDIO_TYPES: list[str] = [
     ".wma",
     ".ogg",
     ".aiff",
+    ".aif",
 ]
 DOC_TYPES: list[str] = [
     ".txt",

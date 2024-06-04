@@ -46,6 +46,9 @@ def four_corner_gradient_background(
         image.putalpha(mask)
         final = image
 
+    if final.mode != "RGBA":
+        final = final.convert("RGBA")
+
     hl_soft = hl.copy()
     hl_soft.putalpha(ImageEnhance.Brightness(hl.getchannel(3)).enhance(0.5))
     final.paste(ImageChops.soft_light(final, hl_soft), mask=hl_soft.getchannel(3))
