@@ -75,6 +75,7 @@ from src.qt.widgets.progress import ProgressWidget
 from src.qt.widgets.thumb_renderer import ThumbRenderer
 
 # this import has side-effect of import PySide resources
+import src.qt.resources_rc  # noqa: F401 pylint: disable=unused-import
 
 # SIGQUIT is not defined on Windows
 if sys.platform == "win32":
