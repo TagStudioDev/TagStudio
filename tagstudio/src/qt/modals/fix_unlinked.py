@@ -195,8 +195,8 @@ class FixUnlinkedEntriesModal(QWidget):
         QThreadPool.globalInstance().start(r)
         r.done.connect(
             lambda: (
-                pw.hide(),
-                pw.deleteLater(),
+                pw.hide(),  # type: ignore
+                pw.deleteLater(),  # type: ignore
                 self.set_dupe_count(len(self.lib.dupe_entries)),
                 merge_class.merge_entries(),
             )

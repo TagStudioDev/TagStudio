@@ -3,7 +3,7 @@
 ################################################################################
 ## Form generated from reading UI file 'home.ui'
 ##
-## Created by: Qt User Interface Compiler version 6.5.1
+## Created by: Qt User Interface Compiler version 6.6.3
 ##
 ## WARNING! All changes made in this file will be lost when recompiling UI file!
 ################################################################################
@@ -18,7 +18,7 @@ from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
 from PySide6.QtWidgets import (QApplication, QComboBox, QFrame, QGridLayout,
     QHBoxLayout, QLayout, QLineEdit, QMainWindow,
     QMenuBar, QPushButton, QScrollArea, QSizePolicy,
-    QStatusBar, QWidget)
+    QSpacerItem, QStatusBar, QWidget)
 
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
@@ -29,6 +29,35 @@ class Ui_MainWindow(object):
         self.centralwidget.setObjectName(u"centralwidget")
         self.gridLayout = QGridLayout(self.centralwidget)
         self.gridLayout.setObjectName(u"gridLayout")
+        self.horizontalLayout_3 = QHBoxLayout()
+        self.horizontalLayout_3.setObjectName(u"horizontalLayout_3")
+        self.horizontalSpacer = QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+
+        self.horizontalLayout_3.addItem(self.horizontalSpacer)
+
+        self.comboBox_2 = QComboBox(self.centralwidget)
+        self.comboBox_2.addItem("")
+        self.comboBox_2.addItem("")
+        self.comboBox_2.setObjectName(u"comboBox_2")
+        self.comboBox_2.setMinimumSize(QSize(165, 0))
+
+        self.horizontalLayout_3.addWidget(self.comboBox_2)
+
+        self.comboBox = QComboBox(self.centralwidget)
+        self.comboBox.setObjectName(u"comboBox")
+        sizePolicy = QSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Fixed)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.comboBox.sizePolicy().hasHeightForWidth())
+        self.comboBox.setSizePolicy(sizePolicy)
+        self.comboBox.setMinimumSize(QSize(128, 0))
+        self.comboBox.setMaximumSize(QSize(256, 32))
+
+        self.horizontalLayout_3.addWidget(self.comboBox)
+
+
+        self.gridLayout.addLayout(self.horizontalLayout_3, 5, 0, 1, 1)
+
         self.horizontalLayout = QHBoxLayout()
         self.horizontalLayout.setObjectName(u"horizontalLayout")
         self.scrollArea = QScrollArea(self.centralwidget)
@@ -39,7 +68,7 @@ class Ui_MainWindow(object):
         self.scrollArea.setWidgetResizable(True)
         self.scrollAreaWidgetContents = QWidget()
         self.scrollAreaWidgetContents.setObjectName(u"scrollAreaWidgetContents")
-        self.scrollAreaWidgetContents.setGeometry(QRect(0, 0, 1260, 590))
+        self.scrollAreaWidgetContents.setGeometry(QRect(0, 0, 1260, 585))
         self.gridLayout_2 = QGridLayout(self.scrollAreaWidgetContents)
         self.gridLayout_2.setSpacing(8)
         self.gridLayout_2.setObjectName(u"gridLayout_2")
@@ -49,7 +78,7 @@ class Ui_MainWindow(object):
         self.horizontalLayout.addWidget(self.scrollArea)
 
 
-        self.gridLayout.addLayout(self.horizontalLayout, 5, 0, 1, 1)
+        self.gridLayout.addLayout(self.horizontalLayout, 9, 0, 1, 1)
 
         self.horizontalLayout_2 = QHBoxLayout()
         self.horizontalLayout_2.setObjectName(u"horizontalLayout_2")
@@ -97,26 +126,14 @@ class Ui_MainWindow(object):
 
         self.gridLayout.addLayout(self.horizontalLayout_2, 3, 0, 1, 1)
 
-        self.comboBox = QComboBox(self.centralwidget)
-        self.comboBox.setObjectName(u"comboBox")
-        sizePolicy = QSizePolicy(QSizePolicy.Minimum, QSizePolicy.Fixed)
-        sizePolicy.setHorizontalStretch(0)
-        sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(self.comboBox.sizePolicy().hasHeightForWidth())
-        self.comboBox.setSizePolicy(sizePolicy)
-        self.comboBox.setMinimumSize(QSize(128, 0))
-        self.comboBox.setMaximumSize(QSize(256, 32))
-
-        self.gridLayout.addWidget(self.comboBox, 4, 0, 1, 1, Qt.AlignRight)
-
         MainWindow.setCentralWidget(self.centralwidget)
         self.menubar = QMenuBar(MainWindow)
         self.menubar.setObjectName(u"menubar")
-        self.menubar.setGeometry(QRect(0, 0, 1280, 22))
+        self.menubar.setGeometry(QRect(0, 0, 1280, 21))
         MainWindow.setMenuBar(self.menubar)
         self.statusbar = QStatusBar(MainWindow)
         self.statusbar.setObjectName(u"statusbar")
-        sizePolicy1 = QSizePolicy(QSizePolicy.Preferred, QSizePolicy.Maximum)
+        sizePolicy1 = QSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Maximum)
         sizePolicy1.setHorizontalStretch(0)
         sizePolicy1.setVerticalStretch(0)
         sizePolicy1.setHeightForWidth(self.statusbar.sizePolicy().hasHeightForWidth())
@@ -130,11 +147,14 @@ class Ui_MainWindow(object):
 
     def retranslateUi(self, MainWindow):
         MainWindow.setWindowTitle(QCoreApplication.translate("MainWindow", u"MainWindow", None))
+        self.comboBox_2.setItemText(0, QCoreApplication.translate("MainWindow", u"And (includes all tags)", None))
+        self.comboBox_2.setItemText(1, QCoreApplication.translate("MainWindow", u"Or (includes any tag)", None))
+
+        self.comboBox.setCurrentText("")
+        self.comboBox.setPlaceholderText(QCoreApplication.translate("MainWindow", u"Thumbnail Size", None))
         self.backButton.setText(QCoreApplication.translate("MainWindow", u"<", None))
         self.forwardButton.setText(QCoreApplication.translate("MainWindow", u">", None))
         self.searchField.setPlaceholderText(QCoreApplication.translate("MainWindow", u"Search Entries", None))
         self.searchButton.setText(QCoreApplication.translate("MainWindow", u"Search", None))
-        self.comboBox.setCurrentText("")
-        self.comboBox.setPlaceholderText(QCoreApplication.translate("MainWindow", u"Thumbnail Size", None))
     # retranslateUi
 

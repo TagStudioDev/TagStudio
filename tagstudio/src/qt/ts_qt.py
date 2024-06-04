@@ -19,7 +19,6 @@ from datetime import datetime as dt
 from pathlib import Path
 from queue import Queue
 from typing import Optional
-
 from PIL import Image
 from PySide6 import QtCore
 from PySide6.QtCore import QObject, QThread, Signal, Qt, QThreadPool, QTimer, QSettings
@@ -44,10 +43,11 @@ from PySide6.QtWidgets import (
     QSplashScreen,
     QMenu,
     QMenuBar,
+    QComboBox,
 )
 from humanfriendly import format_timespan
 
-from src.core.enums import SettingItems
+from src.core.enums import SettingItems, SearchMode
 from src.core.library import ItemType
 from src.core.ts_core import TagStudioCore
 from src.core.constants import (
@@ -177,6 +177,8 @@ class QtDriver(QObject):
         self.nav_frames: list[NavigationState] = []
         self.cur_frame_idx: int = -1
 
+        self.search_mode = SearchMode.AND
+
         # self.main_window = None
         # self.main_window = Ui_MainWindow()
 
@@ -224,13 +226,11 @@ class QtDriver(QObject):
             thread.start()
 
     def open_library_from_dialog(self):
-        dir = Path(
-            QFileDialog.getExistingDirectory(
-                None, "Open/Create Library", "/", QFileDialog.ShowDirsOnly
-            )
+        dir = QFileDialog.getExistingDirectory(
+            None, "Open/Create Library", "/", QFileDialog.ShowDirsOnly
         )
         if dir not in (None, ""):
-            self.open_library(dir)
+            self.open_library(Path(dir))
 
     def signal_handler(self, sig, frame):
         if sig in (SIGINT, SIGTERM, SIGQUIT):
@@ -255,8 +255,8 @@ class QtDriver(QObject):
         # pal.setColor(QPalette.ColorGroup.Normal,
         # 			 QPalette.ColorRole.Window, QColor('#110F1B'))
         # app.setPalette(pal)
-        home_path = os.path.normpath(f"{Path(__file__).parent}/ui/home.ui")
-        icon_path = os.path.normpath(f"{Path(__file__).parents[2]}/resources/icon.png")
+        home_path = Path(__file__).parent / "ui/home.ui"
+        icon_path = Path(__file__).parents[2] / "resources/icon.png"
 
         # Handle OS signals
         self.setup_signals()
@@ -294,7 +294,7 @@ class QtDriver(QObject):
 
         if sys.platform != "darwin":
             icon = QIcon()
-            icon.addFile(icon_path)
+            icon.addFile(str(icon_path))
             app.setWindowIcon(icon)
 
         menu_bar = QMenuBar(self.main_window)
@@ -390,6 +390,19 @@ class QtDriver(QObject):
 
         edit_menu.addSeparator()
 
+        select_all_action = QAction("Select All", menu_bar)
+        select_all_action.triggered.connect(self.select_all_action_callback)
+        select_all_action.setShortcut(
+            QtCore.QKeyCombination(
+                QtCore.Qt.KeyboardModifier(QtCore.Qt.KeyboardModifier.ControlModifier),
+                QtCore.Qt.Key.Key_A,
+            )
+        )
+        select_all_action.setToolTip("Ctrl+A")
+        edit_menu.addAction(select_all_action)
+
+        edit_menu.addSeparator()
+
         manage_file_extensions_action = QAction("Ignored File Extensions", menu_bar)
         manage_file_extensions_action.triggered.connect(
             lambda: self.show_file_extension_modal()
@@ -482,7 +495,6 @@ class QtDriver(QObject):
             lambda: webbrowser.open("https://github.com/TagStudioDev/TagStudio")
         )
         help_menu.addAction(self.repo_action)
-
         self.set_macro_menu_viability()
 
         menu_bar.addMenu(file_menu)
@@ -497,9 +509,7 @@ class QtDriver(QObject):
         l.addWidget(self.preview_panel)
 
         QFontDatabase.addApplicationFont(
-            os.path.normpath(
-                f"{Path(__file__).parents[2]}/resources/qt/fonts/Oxanium-Bold.ttf"
-            )
+            str(Path(__file__).parents[2] / "resources/qt/fonts/Oxanium-Bold.ttf")
         )
 
         self.thumb_size = 128
@@ -515,6 +525,14 @@ class QtDriver(QObject):
             lib = self.args.open
         elif self.settings.value(SettingItems.START_LOAD_LAST, True, type=bool):
             lib = self.settings.value(SettingItems.LAST_LIBRARY)
+
+            # TODO: Remove this check if the library is no longer saved with files
+            if lib and not (Path(lib) / TS_FOLDER_NAME).exists():
+                logging.error(
+                    f"[QT DRIVER] {TS_FOLDER_NAME} folder in {lib} does not exist."
+                )
+                self.settings.setValue(SettingItems.LAST_LIBRARY, "")
+                lib = None
 
         if lib:
             self.splash.showMessage(
@@ -548,6 +566,12 @@ class QtDriver(QObject):
         search_field: QLineEdit = self.main_window.searchField
         search_field.returnPressed.connect(
             lambda: self.filter_items(self.main_window.searchField.text())
+        )
+        search_type_selector: QComboBox = self.main_window.comboBox_2
+        search_type_selector.currentIndexChanged.connect(
+            lambda: self.set_search_type(
+                SearchMode(search_type_selector.currentIndex())
+            )
         )
 
         back_button: QPushButton = self.main_window.backButton
@@ -679,7 +703,7 @@ class QtDriver(QObject):
         fn = self.lib.save_library_backup_to_disk()
         end_time = time.time()
         self.main_window.statusbar.showMessage(
-            f'Library Backup Saved at: "{os.path.normpath(os.path.normpath(f"{self.lib.library_dir}/{TS_FOLDER_NAME}/{BACKUP_FOLDER_NAME}/{fn}"))}" ({format_timespan(end_time - start_time)})'
+            f'Library Backup Saved at: "{ self.lib.library_dir / TS_FOLDER_NAME / BACKUP_FOLDER_NAME / fn}" ({format_timespan(end_time - start_time)})'
         )
 
     def add_tag_action_callback(self):
@@ -693,6 +717,15 @@ class QtDriver(QObject):
         )
         # panel.tag_updated.connect(lambda tag: self.lib.update_tag(tag))
         self.modal.show()
+
+    def select_all_action_callback(self):
+        for item in self.item_thumbs:
+            if item.mode and (item.mode, item.item_id) not in self.selected:
+                self.selected.append((item.mode, item.item_id))
+                item.thumb_button.set_selected(True)
+
+        self.set_macro_menu_viability()
+        self.preview_panel.update_widgets()
 
     def show_tag_database(self):
         self.modal = PanelModal(
@@ -849,8 +882,8 @@ class QtDriver(QObject):
     def run_macro(self, name: str, entry_id: int):
         """Runs a specific Macro on an Entry given a Macro name."""
         entry = self.lib.get_entry(entry_id)
-        path = os.path.normpath(f"{self.lib.library_dir}/{entry.path}/{entry.filename}")
-        source = path.split(os.sep)[1].lower()
+        path = self.lib.library_dir / entry.path / entry.filename
+        source = entry.path.parts[0]
         if name == "sidecar":
             self.lib.add_generic_data_to_entry(
                 self.core.get_gdl_sidecar(path, source), entry_id
@@ -1202,9 +1235,7 @@ class QtDriver(QObject):
                     entry = self.lib.get_entry(
                         self.nav_frames[self.cur_frame_idx].contents[i][1]
                     )
-                    filepath = os.path.normpath(
-                        f"{self.lib.library_dir}/{entry.path}/{entry.filename}"
-                    )
+                    filepath = self.lib.library_dir / entry.path / entry.filename
 
                     item_thumb.set_item_id(entry.id)
                     item_thumb.assign_archived(entry.has_tag(self.lib, 0))
@@ -1249,9 +1280,7 @@ class QtDriver(QObject):
                         else collation.e_ids_and_pages[0][0]
                     )
                     cover_e = self.lib.get_entry(cover_id)
-                    filepath = os.path.normpath(
-                        f"{self.lib.library_dir}/{cover_e.path}/{cover_e.filename}"
-                    )
+                    filepath = self.lib.library_dir / cover_e.path / cover_e.filename
                     item_thumb.set_count(str(len(collation.e_ids_and_pages)))
                     item_thumb.update_clickable(
                         clickable=(
@@ -1314,7 +1343,7 @@ class QtDriver(QObject):
 
             # self.filtered_items = self.lib.search_library(query)
             # 73601 Entries at 500 size should be 246
-            all_items = self.lib.search_library(query)
+            all_items = self.lib.search_library(query, search_mode=self.search_mode)
             frames: list[list[tuple[ItemType, int]]] = []
             frame_count = math.ceil(len(all_items) / self.max_results)
             for i in range(0, frame_count):
@@ -1354,6 +1383,10 @@ class QtDriver(QObject):
             # logging.info(f'Done Filtering! ({(end_time - start_time):.3f}) seconds')
 
             # self.update_thumbs()
+
+    def set_search_type(self, mode=SearchMode.AND):
+        self.search_mode = mode
+        self.filter_items(self.main_window.searchField.text())
 
     def remove_recent_library(self, item_key: str):
         self.settings.beginGroup(SettingItems.LIBS_LIST)
@@ -1542,8 +1575,11 @@ class QtDriver(QObject):
             self.completed += 1
         # logging.info(f'threshold:{len(self.lib.entries}, completed:{self.completed}')
         if self.completed == len(self.lib.entries):
-            filename = os.path.normpath(
-                f'{self.lib.library_dir}/{TS_FOLDER_NAME}/{COLLAGE_FOLDER_NAME}/collage_{dt.utcnow().strftime("%F_%T").replace(":", "")}.png'
+            filename = (
+                self.lib.library_dir
+                / TS_FOLDER_NAME
+                / COLLAGE_FOLDER_NAME
+                / f'collage_{dt.utcnow().strftime("%F_%T").replace(":", "")}.png'
             )
             self.collage.save(filename)
             self.collage = None
