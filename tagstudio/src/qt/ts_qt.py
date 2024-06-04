@@ -43,10 +43,11 @@ from PySide6.QtWidgets import (
     QSplashScreen,
     QMenu,
     QMenuBar,
+    QComboBox,
 )
 from humanfriendly import format_timespan
 
-from src.core.enums import SettingItems
+from src.core.enums import SettingItems, SearchMode
 from src.core.library import ItemType
 from src.core.ts_core import TagStudioCore
 from src.core.constants import (
@@ -162,7 +163,7 @@ class Consumer(QThread):
 
 class QtDriver(QObject):
     """A Qt GUI frontend driver for TagStudio."""
-    last_search_string: None = None | str,
+    cur_qry: None = None | str,
     SIGTERM = Signal()
 
     preview_panel: PreviewPanel
@@ -175,6 +176,8 @@ class QtDriver(QObject):
         self.frame_dict: dict = {}
         self.nav_frames: list[NavigationState] = []
         self.cur_frame_idx: int = -1
+
+        self.search_mode = SearchMode.AND
 
         # self.main_window = None
         # self.main_window = Ui_MainWindow()
@@ -563,6 +566,12 @@ class QtDriver(QObject):
         search_field: QLineEdit = self.main_window.searchField
         search_field.returnPressed.connect(
             lambda: self.filter_items(self.main_window.searchField.text(),False) # False as a parameter cancels default 'redundant search' override in filter_items()
+        )
+        search_type_selector: QComboBox = self.main_window.comboBox_2
+        search_type_selector.currentIndexChanged.connect(
+            lambda: self.set_search_type(
+                SearchMode(search_type_selector.currentIndex())
+            )
         )
 
         back_button: QPushButton = self.main_window.backButton
@@ -1322,12 +1331,11 @@ class QtDriver(QObject):
             index,
             len(self.frame_dict[query]),
         )
-
     
     def filter_items(self, query: str = "", override: bool = True):
-        if self.lib and (override or (not (self.last_search_string == query))):
-            if(override or (not (self.last_search_string == query))):        
-                self.last_search_string = query
+        if self.lib:
+            if(override or (not (self.cur_qry == query))):        
+                self.cur_qry = query
                 # logging.info('Filtering...')
                 self.main_window.statusbar.showMessage(
                     f'Searching Library for "{query}"...'
@@ -1377,6 +1385,10 @@ class QtDriver(QObject):
                 # logging.info(f'Done Filtering! ({(end_time - start_time):.3f}) seconds')
 
                 # self.update_thumbs()
+
+    def set_search_type(self, mode=SearchMode.AND):
+        self.search_mode = mode
+        self.filter_items(self.main_window.searchField.text())
 
     def remove_recent_library(self, item_key: str):
         self.settings.beginGroup(SettingItems.LIBS_LIST)

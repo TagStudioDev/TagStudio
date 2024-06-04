@@ -20,6 +20,7 @@ from typing_extensions import Self
 from src.core.json_typing import JsonCollation, JsonEntry, JsonLibary, JsonTag
 from src.core.utils.str import strip_punctuation
 from src.core.utils.web import strip_web_protocol
+from src.core.enums import SearchMode
 from src.core.constants import (
     BACKUP_FOLDER_NAME,
     COLLAGE_FOLDER_NAME,
@@ -340,7 +341,7 @@ class Library:
         #   That filename can then be used to provide quick lookup to image metadata entries in the Library.
         self.filename_to_entry_id_map: dict[Path, int] = {}
         # A list of file extensions to be ignored by TagStudio.
-        self.default_ext_blacklist: list = ["json", "xmp", "aae"]
+        self.default_ext_blacklist: list = [".json", ".xmp", ".aae"]
         self.ignored_extensions: list = self.default_ext_blacklist
 
         # Tags =================================================================
@@ -1290,7 +1291,12 @@ class Library:
             return -1
 
     def search_library(
-        self, query: str = None, entries=True, collations=True, tag_groups=True
+        self,
+        query: str = None,
+        entries=True,
+        collations=True,
+        tag_groups=True,
+        search_mode=SearchMode.AND,
     ) -> list[tuple[ItemType, int]]:
         """
         Uses a search query to generate a filtered results list.
@@ -1300,7 +1306,7 @@ class Library:
         # self.filtered_entries.clear()
         results: list[tuple[ItemType, int]] = []
         collations_added = []
-
+        # print(f"Searching Library with query: {query} search_mode: {search_mode}")
         if query:
             # start_time = time.time()
             query = query.strip().lower()
@@ -1320,6 +1326,7 @@ class Library:
 
             # Preprocess the Tag terms.
             if query_words:
+                # print(query_words, self._tag_strings_to_id_map)
                 for i, term in enumerate(query_words):
                     for j, term in enumerate(query_words):
                         if (
@@ -1328,6 +1335,8 @@ class Library:
                             in self._tag_strings_to_id_map
                         ):
                             all_tag_terms.append(" ".join(query_words[i : j + 1]))
+                        # print(all_tag_terms)
+
                 # This gets rid of any accidental term inclusions because they were words
                 # in another term. Ex. "3d" getting added in "3d art"
                 for i, term in enumerate(all_tag_terms):
@@ -1403,36 +1412,8 @@ class Library:
                     # elif query in entry.filename.lower():
                     # 	self.filtered_entries.append(index)
                     elif entry_tags:
-                        # For each verified, extracted Tag term.
-                        failure_to_union_terms = False
-                        for term in all_tag_terms:
-                            # If the term from the previous loop was already verified:
-                            if not failure_to_union_terms:
-                                cluster: set = set()
-                                # Add the immediate associated Tags to the set (ex. Name, Alias hits)
-                                # Since this term could technically map to multiple IDs, iterate over it
-                                # (You're 99.9999999% likely to just get 1 item)
-                                for id in self._tag_strings_to_id_map[term]:
-                                    cluster.add(id)
-                                    cluster = cluster.union(
-                                        set(self.get_tag_cluster(id))
-                                    )
-                                # print(f'Full Cluster: {cluster}')
-                                # For each of the Tag IDs in the term's ID cluster:
-                                for t in cluster:
-                                    # Assume that this ID from the cluster is not in the Entry.
-                                    # Wait to see if proven wrong.
-                                    failure_to_union_terms = True
-                                    # If the ID actually is in the Entry,
-                                    if t in entry_tags:
-                                        # There wasn't a failure to find one of the term's cluster IDs in the Entry.
-                                        # There is also no more need to keep checking the rest of the terms in the cluster.
-                                        failure_to_union_terms = False
-                                        # print(f'FOUND MATCH: {t}')
-                                        break
-                                    # print(f'\tFailure to Match: {t}')
-                        # If there even were tag terms to search through AND they all match an entry
-                        if all_tag_terms and not failure_to_union_terms:
+                        # function to add entry to results
+                        def add_entry(entry: Entry):
                             # self.filter_entries.append()
                             # self.filtered_file_list.append(file)
                             # results.append((SearchItemType.ENTRY, entry.id))
@@ -1456,6 +1437,54 @@ class Library:
 
                             if not added:
                                 results.append((ItemType.ENTRY, entry.id))
+
+                        if search_mode == SearchMode.AND:  # Include all terms
+                            # For each verified, extracted Tag term.
+                            failure_to_union_terms = False
+                            for term in all_tag_terms:
+                                # If the term from the previous loop was already verified:
+                                if not failure_to_union_terms:
+                                    cluster: set = set()
+                                    # Add the immediate associated Tags to the set (ex. Name, Alias hits)
+                                    # Since this term could technically map to multiple IDs, iterate over it
+                                    # (You're 99.9999999% likely to just get 1 item)
+                                    for id in self._tag_strings_to_id_map[term]:
+                                        cluster.add(id)
+                                        cluster = cluster.union(
+                                            set(self.get_tag_cluster(id))
+                                        )
+                                    # print(f'Full Cluster: {cluster}')
+                                    # For each of the Tag IDs in the term's ID cluster:
+                                    for t in cluster:
+                                        # Assume that this ID from the cluster is not in the Entry.
+                                        # Wait to see if proven wrong.
+                                        failure_to_union_terms = True
+                                        # If the ID actually is in the Entry,
+                                        if t in entry_tags:
+                                            # There wasn't a failure to find one of the term's cluster IDs in the Entry.
+                                            # There is also no more need to keep checking the rest of the terms in the cluster.
+                                            failure_to_union_terms = False
+                                            # print(f"FOUND MATCH: {t}")
+                                            break
+                                        # print(f'\tFailure to Match: {t}')
+                            # # failure_to_union_terms is used to determine if all terms in the query were found in the entry.
+                            # # If there even were tag terms to search through AND they all match an entry
+                            if all_tag_terms and not failure_to_union_terms:
+                                add_entry(entry)
+
+                        if search_mode == SearchMode.OR:  # Include any terms
+                            # For each verified, extracted Tag term.
+                            for term in all_tag_terms:
+                                # Add the immediate associated Tags to the set (ex. Name, Alias hits)
+                                # Since this term could technically map to multiple IDs, iterate over it
+                                # (You're 99.9999999% likely to just get 1 item)
+                                for id in self._tag_strings_to_id_map[term]:
+                                    # If the ID actually is in the Entry,
+                                    if id in entry_tags:
+                                        # check if result already contains the entry
+                                        if (ItemType.ENTRY, entry.id) not in results:
+                                            add_entry(entry)
+                                        break
 
                 # sys.stdout.write(
                 #     f'\r[INFO][FILTER]: {len(self.filtered_file_list)} matches found')

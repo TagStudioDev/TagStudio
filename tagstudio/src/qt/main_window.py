@@ -18,7 +18,8 @@ from PySide6.QtGui import (QFont, QAction)
 from PySide6.QtWidgets import (QComboBox, QFrame, QGridLayout,
 							   QHBoxLayout, QVBoxLayout, QLayout, QLineEdit, QMainWindow,
 							   QPushButton, QScrollArea, QSizePolicy,
-							   QStatusBar, QWidget, QSplitter)
+							   QStatusBar, QWidget, QSplitter, QCheckBox,
+							   QSpacerItem)
 from src.qt.pagination import Pagination
 
 
@@ -52,6 +53,36 @@ class Ui_MainWindow(QMainWindow):
 		self.gridLayout.setObjectName(u"gridLayout")
 		self.horizontalLayout = QHBoxLayout()
 		self.horizontalLayout.setObjectName(u"horizontalLayout")
+  
+		# ComboBox goup for search type and thumbnail size
+		self.horizontalLayout_3 = QHBoxLayout()
+		self.horizontalLayout_3.setObjectName("horizontalLayout_3")
+  
+		# left side spacer
+		spacerItem = QSpacerItem(40, 20, QSizePolicy.Expanding, QSizePolicy.Minimum)
+		self.horizontalLayout_3.addItem(spacerItem)
+  
+  		# Search type selector
+		self.comboBox_2 = QComboBox(self.centralwidget)
+		self.comboBox_2.setMinimumSize(QSize(165, 0))
+		self.comboBox_2.setObjectName("comboBox_2")
+		self.comboBox_2.addItem("")
+		self.comboBox_2.addItem("")
+		self.horizontalLayout_3.addWidget(self.comboBox_2)
+  
+        # Thumbnail Size placeholder
+		self.comboBox = QComboBox(self.centralwidget)
+		self.comboBox.setObjectName(u"comboBox")
+		sizePolicy = QSizePolicy(QSizePolicy.Minimum, QSizePolicy.Fixed)
+		sizePolicy.setHorizontalStretch(0)
+		sizePolicy.setVerticalStretch(0)
+		sizePolicy.setHeightForWidth(
+			self.comboBox.sizePolicy().hasHeightForWidth())
+		self.comboBox.setSizePolicy(sizePolicy)
+		self.comboBox.setMinimumWidth(128)
+		self.comboBox.setMaximumWidth(128)
+		self.horizontalLayout_3.addWidget(self.comboBox)
+		self.gridLayout.addLayout(self.horizontalLayout_3, 5, 0, 1, 1)
 
 		self.splitter = QSplitter()
 		self.splitter.setObjectName(u"splitter")
@@ -138,18 +169,18 @@ class Ui_MainWindow(QMainWindow):
 		self.horizontalLayout_2.addWidget(self.searchButton)
 		self.gridLayout.addLayout(self.horizontalLayout_2, 3, 0, 1, 1)
 
-		self.comboBox = QComboBox(self.centralwidget)
-		self.comboBox.setObjectName(u"comboBox")
-		sizePolicy = QSizePolicy(QSizePolicy.Minimum, QSizePolicy.Fixed)
-		sizePolicy.setHorizontalStretch(0)
-		sizePolicy.setVerticalStretch(0)
-		sizePolicy.setHeightForWidth(
-			self.comboBox.sizePolicy().hasHeightForWidth())
-		self.comboBox.setSizePolicy(sizePolicy)
-		self.comboBox.setMinimumWidth(128)
-		self.comboBox.setMaximumWidth(128)
+		# self.comboBox = QComboBox(self.centralwidget)
+		# self.comboBox.setObjectName(u"comboBox")
+		# sizePolicy = QSizePolicy(QSizePolicy.Minimum, QSizePolicy.Fixed)
+		# sizePolicy.setHorizontalStretch(0)
+		# sizePolicy.setVerticalStretch(0)
+		# sizePolicy.setHeightForWidth(
+		# 	self.comboBox.sizePolicy().hasHeightForWidth())
+		# self.comboBox.setSizePolicy(sizePolicy)
+		# self.comboBox.setMinimumWidth(128)
+		# self.comboBox.setMaximumWidth(128)
 
-		self.gridLayout.addWidget(self.comboBox, 4, 0, 1, 1, Qt.AlignRight)
+		# self.gridLayout.addWidget(self.comboBox, 4, 0, 1, 1, Qt.AlignRight)
 
 		self.gridLayout_2.setContentsMargins(6, 6, 6, 6)
 
@@ -181,15 +212,24 @@ class Ui_MainWindow(QMainWindow):
 	def retranslateUi(self, MainWindow):
 		MainWindow.setWindowTitle(QCoreApplication.translate(
 			"MainWindow", u"MainWindow", None))
+        # Navigation buttons
 		self.backButton.setText(
 			QCoreApplication.translate("MainWindow", u"<", None))
 		self.forwardButton.setText(
 			QCoreApplication.translate("MainWindow", u">", None))
+  
+        # Search field
 		self.searchField.setPlaceholderText(
 			QCoreApplication.translate("MainWindow", u"Search Entries", None))
 		self.searchButton.setText(
 			QCoreApplication.translate("MainWindow", u"Search", None))
+  
+        # Search type selector
+		self.comboBox_2.setItemText(0, QCoreApplication.translate("MainWindow", "And (Includes All Tags)"))
+		self.comboBox_2.setItemText(1, QCoreApplication.translate("MainWindow", "Or (Includes Any Tag)"))
 		self.comboBox.setCurrentText("")
+  
+        # Tumbnail size selector
 		self.comboBox.setPlaceholderText(
 			QCoreApplication.translate("MainWindow", u"Thumbnail Size", None))
 	# retranslateUi
