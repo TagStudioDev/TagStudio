@@ -234,19 +234,19 @@ class ThumbRenderer(QObject):
                         artwork = None
                         if _filepath.suffix.lower() in [".mp3"]:
                             audio_tags = id3.ID3(_filepath)
-                            covers = audio_tags.getall("APIC")
-                            if covers:
-                                artwork = Image.open(BytesIO(covers[0].data))
+                            id3_covers = audio_tags.getall("APIC")
+                            if id3_covers:
+                                artwork = Image.open(BytesIO(id3_covers[0].data))
                         elif _filepath.suffix.lower() in [".flac"]:
                             audio_tags = flac.FLAC(_filepath)
-                            covers = audio_tags.pictures
-                            if covers:
-                                artwork = Image.open(BytesIO(covers[0].data))
+                            flac_covers = audio_tags.pictures
+                            if flac_covers:
+                                artwork = Image.open(BytesIO(flac_covers[0].data))
                         elif _filepath.suffix.lower() in [".mp4", ".m4a", ".aac"]:
                             audio_tags = mp4.MP4(_filepath)
-                            covers = audio_tags.get("covr")
-                            if covers:
-                                artwork = Image.open(BytesIO(covers[0]))
+                            mp4_covers = audio_tags.get("covr")
+                            if mp4_covers:
+                                artwork = Image.open(BytesIO(mp4_covers[0]))
                         if artwork:
                             image = artwork
                     except (mp4.MP4MetadataError, mp4.MP4StreamInfoError) as e:
