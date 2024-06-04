@@ -32,7 +32,6 @@ from PySide6.QtGui import (
     QMouseEvent,
     QPixmap,
 )
-from PySide6.QtUiTools import QUiLoader
 from PySide6.QtWidgets import (
     QApplication,
     QFileDialog,
@@ -43,7 +42,12 @@ from PySide6.QtWidgets import (
     QScrollArea,
     QSplashScreen,
     QWidget,
+    QComboBox,
 )
+
+from src.core.enums import SettingItems, SearchMode
+from src.core.library import ItemType
+from src.core.ts_core import TagStudioCore
 from src.core.constants import (
     BACKUP_FOLDER_NAME,
     COLLAGE_FOLDER_NAME,
@@ -51,10 +55,7 @@ from src.core.constants import (
     VERSION,
     VERSION_BRANCH,
 )
-from src.core.enums import SettingItems
-from src.core.library import ItemType
 from src.core.logging import get_logger
-from src.core.ts_core import TagStudioCore
 from src.core.utils.web import strip_web_protocol
 from src.qt.flowlayout import FlowLayout
 from src.qt.helpers.custom_runnable import CustomRunnable
@@ -77,11 +78,11 @@ from src.qt.widgets.thumb_renderer import ThumbRenderer
 
 # SIGQUIT is not defined on Windows
 if sys.platform == "win32":
-    from signal import SIGINT, SIGTERM, signal
+    from signal import signal, SIGINT, SIGTERM
 
     SIGQUIT = SIGTERM
 else:
-    from signal import SIGINT, SIGQUIT, SIGTERM, signal
+    from signal import signal, SIGINT, SIGTERM, SIGQUIT
 
 logger = get_logger(__name__)
 
@@ -154,6 +155,8 @@ class QtDriver(QObject):
         self.nav_frames: list[NavigationState] = []
         self.cur_frame_idx: int = -1
 
+        self.search_mode = SearchMode.AND
+
         # self.main_window = None
         # self.main_window = Ui_MainWindow()
 
@@ -219,7 +222,7 @@ class QtDriver(QObject):
     def start(self) -> None:
         """Launches the main Qt window."""
 
-        QUiLoader()
+        # loader = QUiLoader()
         if os.name == "nt":
             sys.argv += ["-platform", "windows:darkmode=2"]
         app = QApplication(sys.argv)
@@ -230,7 +233,7 @@ class QtDriver(QObject):
         # pal.setColor(QPalette.ColorGroup.Normal,
         # 			 QPalette.ColorRole.Window, QColor('#110F1B'))
         # app.setPalette(pal)
-        Path(__file__).parent / "ui/home.ui"
+        # home_path = Path(__file__).parent / "ui/home.ui"
         icon_path = Path(__file__).parents[2] / "resources/icon.png"
 
         # Handle OS signals
@@ -508,14 +511,6 @@ class QtDriver(QObject):
                 self.settings.setValue(SettingItems.LAST_LIBRARY, "")
                 lib = None
 
-            # TODO: Remove this check if the library is no longer saved with files
-            if lib and not (Path(lib) / TS_FOLDER_NAME).exists():
-                logger.error(
-                    f"[QT DRIVER] {TS_FOLDER_NAME} folder in {lib} does not exist."
-                )
-                self.settings.setValue(SettingItems.LAST_LIBRARY, "")
-                lib = None
-
         if lib:
             self.splash.showMessage(
                 f'Opening Library "{lib}"...',
@@ -548,6 +543,12 @@ class QtDriver(QObject):
         search_field: QLineEdit = self.main_window.searchField
         search_field.returnPressed.connect(
             lambda: self.filter_items(self.main_window.searchField.text())
+        )
+        search_type_selector: QComboBox = self.main_window.comboBox_2
+        search_type_selector.currentIndexChanged.connect(
+            lambda: self.set_search_type(
+                SearchMode(search_type_selector.currentIndex())
+            )
         )
 
         back_button: QPushButton = self.main_window.backButton
@@ -1065,6 +1066,7 @@ class QtDriver(QObject):
         # layout = QListView()
         # layout.setViewMode(QListView.ViewMode.IconMode)
 
+        # col_size = 28
         for i in range(0, self.max_results):
             item_thumb = ItemThumb(
                 None, self.lib, self.preview_panel, (self.thumb_size, self.thumb_size)
@@ -1318,7 +1320,7 @@ class QtDriver(QObject):
 
             # self.filtered_items = self.lib.search_library(query)
             # 73601 Entries at 500 size should be 246
-            all_items = self.lib.search_library(query)
+            all_items = self.lib.search_library(query, search_mode=self.search_mode)
             frames: list[list[tuple[ItemType, int]]] = []
             frame_count = math.ceil(len(all_items) / self.max_results)
             for i in range(0, frame_count):
@@ -1358,6 +1360,10 @@ class QtDriver(QObject):
             # logger.info(f'Done Filtering! ({(end_time - start_time):.3f}) seconds')
 
             # self.update_thumbs()
+
+    def set_search_type(self, mode=SearchMode.AND):
+        self.search_mode = mode
+        self.filter_items(self.main_window.searchField.text())
 
     def remove_recent_library(self, item_key: str):
         self.settings.beginGroup(SettingItems.LIBS_LIST)
