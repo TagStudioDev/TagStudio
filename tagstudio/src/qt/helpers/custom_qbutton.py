@@ -10,6 +10,7 @@ class CustomQPushButton(QPushButton):
     This is a customized implementation of the PySide6 QPushButton that allows to suppress the warning that is triggered
     by disconnecting a signal that is not currently connected.
     """
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.is_connected = False
