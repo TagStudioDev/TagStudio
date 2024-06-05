@@ -23,7 +23,8 @@ jobs:
           pip install PySide6==6.6.2
           pip install -r requirements.txt
           pip install -r requirements-dev.txt
+          pip install pytest-mock==3.14.0
 
       - name: Run tests
         run: |
-          pytest tagstudio\tests\core\test_tags.py
+          pytest tagstudio/tests/core/test_tags.py
