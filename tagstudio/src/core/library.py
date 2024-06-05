@@ -342,7 +342,7 @@ class Library:
         self.filename_to_entry_id_map: dict[Path, int] = {}
         # A list of file extensions to be ignored by TagStudio.
         self.default_ext_blacklist: list = [".json", ".xmp", ".aae"]
-        self.ignored_extensions: list = self.default_ext_blacklist
+        self.ext_list: list = self.default_ext_blacklist
         self.ignore_extensions = True
 
         # Tags =================================================================
@@ -502,7 +502,7 @@ class Library:
 
                     # Load Extension Blacklist ---------------------------------
                     if "ignored_extensions" in json_dump.keys():
-                        self.ignored_extensions = json_dump["ignored_extensions"]
+                        self.ext_list = json_dump["ignored_extensions"]
                     if "ignore_extensions" in json_dump.keys():
                         self.ignore_extensions = json_dump["ignore_extensions"]
                     # Parse Tags ---------------------------------------------------
@@ -748,7 +748,7 @@ class Library:
 
         print("[LIBRARY] Formatting Tags to JSON...")
 
-        file_to_save["ignored_extensions"] = [i for i in self.ignored_extensions if i]
+        file_to_save["ignored_extensions"] = [i for i in self.ext_list if i]
         file_to_save["ignore_extensions"] = self.ignore_extensions
 
         for tag in self.tags:
@@ -838,7 +838,7 @@ class Library:
         self.missing_files.clear()
         self.fixed_files.clear()
         self.filename_to_entry_id_map: dict[Path, int] = {}
-        self.ignored_extensions = self.default_ext_blacklist
+        self.ext_list = self.default_ext_blacklist
 
         self.tags.clear()
         self._next_tag_id = 1000
@@ -868,10 +868,7 @@ class Library:
                     and "tagstudio_thumbs" not in f.parts
                     and not f.is_dir()
                 ):
-                    if (
-                        f.suffix not in self.ignored_extensions
-                        and self.ignore_extensions
-                    ):
+                    if f.suffix not in self.ext_list and self.ignore_extensions:
                         self.dir_file_count += 1
                         file = f.relative_to(self.library_dir)
                         try:
@@ -879,10 +876,7 @@ class Library:
                         except KeyError:
                             # print(file)
                             self.files_not_in_library.append(file)
-                    elif (
-                        f.suffix in self.ignored_extensions
-                        and not self.ignore_extensions
-                    ):
+                    elif f.suffix in self.ext_list and not self.ignore_extensions:
                         self.dir_file_count += 1
                         file = f.relative_to(self.library_dir)
                         try:
@@ -1370,14 +1364,14 @@ class Library:
             # non_entry_count = 0
             # Iterate over all Entries =============================================================
             for entry in self.entries:
-                allowed_ext: bool = entry.filename.suffix not in self.ignored_extensions
-                if not self.ignore_extensions:
-                    allowed_ext = not allowed_ext
+                allowed_ext: bool = entry.filename.suffix not in self.ext_list
                 # try:
                 # entry: Entry = self.entries[self.file_to_library_index_map[self._source_filenames[i]]]
                 # print(f'{entry}')
 
-                if allowed_ext:
+                if (allowed_ext and self.ignore_extensions) or (
+                    not allowed_ext and not self.ignore_extensions
+                ):
                     # If the entry has tags of any kind, append them to this main tag list.
                     entry_tags: list[int] = []
                     entry_authors: list[str] = []
@@ -1529,10 +1523,10 @@ class Library:
         else:
             for entry in self.entries:
                 added = False
-                allowed_ext: bool = entry.filename.suffix not in self.ignored_extensions
-                if not self.ignore_extensions:
-                    allowed_ext = not allowed_ext
-                if allowed_ext:
+                allowed_ext: bool = entry.filename.suffix not in self.ext_list
+                if (allowed_ext and self.ignore_extensions) or (
+                    not allowed_ext and not self.ignore_extensions
+                ):
                     for f in entry.fields:
                         if self.get_field_attr(f, "type") == "collation":
                             if (

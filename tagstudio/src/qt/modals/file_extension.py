@@ -38,7 +38,7 @@ class FileExtensionModal(PanelWidget):
         self.root_layout = QVBoxLayout(self)
         self.root_layout.setContentsMargins(6, 6, 6, 6)
 
-        self.table = QTableWidget(len(self.lib.ignored_extensions), 1)
+        self.table = QTableWidget(len(self.lib.ext_list), 1)
         self.table.horizontalHeader().setVisible(False)
         self.table.verticalHeader().setVisible(False)
         self.table.horizontalHeader().setStretchLastSection(True)
@@ -65,15 +65,15 @@ class FileExtensionModal(PanelWidget):
         self.lib.ignore_extensions = self.ignored_checkbox.isChecked()
 
     def refresh_list(self):
-        for i, ext in enumerate(self.lib.ignored_extensions):
+        for i, ext in enumerate(self.lib.ext_list):
             self.table.setItem(i, 0, QTableWidgetItem(ext))
 
     def add_item(self):
         self.table.insertRow(self.table.rowCount())
 
     def save(self):
-        self.lib.ignored_extensions.clear()
+        self.lib.ext_list.clear()
         for i in range(self.table.rowCount()):
             ext = self.table.item(i, 0)
             if ext and ext.text():
-                self.lib.ignored_extensions.append(ext.text())
+                self.lib.ext_list.append(ext.text())
