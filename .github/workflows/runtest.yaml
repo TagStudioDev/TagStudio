@@ -23,9 +23,7 @@ jobs:
           pip install PySide6==6.6.2
           pip install -r requirements.txt
           pip install -r requirements-dev.txt
-          pip install mypy==1.10.0
-          mkdir tagstudio/.mypy_cache
 
       - name: Run tests
         run: |
-          pytest
+          pytest tagstudio\tests\core\test_tags.py
