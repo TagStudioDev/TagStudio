@@ -11,6 +11,7 @@ from PySide6.QtWidgets import (
     QTableWidgetItem,
     QStyledItemDelegate,
     QLineEdit,
+    QCheckBox,
 )
 
 from src.core.library import Library
@@ -53,7 +54,15 @@ class FileExtensionModal(PanelWidget):
         self.root_layout.addWidget(
             self.add_button, alignment=Qt.AlignmentFlag.AlignCenter
         )
+        self.ignored_checkbox = QCheckBox()
+        self.ignored_checkbox.setText("Uncheck to toggle it to an Whitelist")
+        self.ignored_checkbox.setChecked(self.lib.ignore_extensions)
+        self.ignored_checkbox.clicked.connect(self.toggle_whitelist)
+        self.root_layout.addWidget(self.ignored_checkbox)
         self.refresh_list()
+
+    def toggle_whitelist(self) -> None:
+        self.lib.ignore_extensions = self.ignored_checkbox.isChecked()
 
     def refresh_list(self):
         for i, ext in enumerate(self.lib.ignored_extensions):

@@ -343,6 +343,7 @@ class Library:
         # A list of file extensions to be ignored by TagStudio.
         self.default_ext_blacklist: list = [".json", ".xmp", ".aae"]
         self.ignored_extensions: list = self.default_ext_blacklist
+        self.ignore_extensions = True
 
         # Tags =================================================================
         # List of every Tag object (ts-v8).
@@ -502,7 +503,8 @@ class Library:
                     # Load Extension Blacklist ---------------------------------
                     if "ignored_extensions" in json_dump.keys():
                         self.ignored_extensions = json_dump["ignored_extensions"]
-
+                    if "ignore_extensions" in json_dump.keys():
+                        self.ignore_extensions = json_dump["ignore_extensions"]
                     # Parse Tags ---------------------------------------------------
                     if "tags" in json_dump.keys():
                         start_time = time.time()
@@ -736,6 +738,7 @@ class Library:
         file_to_save: JsonLibary = {
             "ts-version": VERSION,
             "ignored_extensions": [],
+            "ignore_extensions": True,
             "tags": [],
             "collations": [],
             "fields": [],
@@ -746,6 +749,7 @@ class Library:
         print("[LIBRARY] Formatting Tags to JSON...")
 
         file_to_save["ignored_extensions"] = [i for i in self.ignored_extensions if i]
+        file_to_save["ignore_extensions"] = self.ignore_extensions
 
         for tag in self.tags:
             file_to_save["tags"].append(tag.compressed_dict())
@@ -864,7 +868,21 @@ class Library:
                     and "tagstudio_thumbs" not in f.parts
                     and not f.is_dir()
                 ):
-                    if f.suffix not in self.ignored_extensions:
+                    if (
+                        f.suffix not in self.ignored_extensions
+                        and self.ignore_extensions
+                    ):
+                        self.dir_file_count += 1
+                        file = f.relative_to(self.library_dir)
+                        try:
+                            _ = self.filename_to_entry_id_map[file]
+                        except KeyError:
+                            # print(file)
+                            self.files_not_in_library.append(file)
+                    elif (
+                        f.suffix in self.ignored_extensions
+                        and not self.ignore_extensions
+                    ):
                         self.dir_file_count += 1
                         file = f.relative_to(self.library_dir)
                         try:
@@ -1352,7 +1370,12 @@ class Library:
             # non_entry_count = 0
             # Iterate over all Entries =============================================================
             for entry in self.entries:
-                allowed_ext: bool = entry.filename.suffix not in self.ignored_extensions
+                if self.ignore_extensions:
+                    allowed_ext: bool = (
+                        entry.filename.suffix not in self.ignored_extensions
+                    )
+                else:
+                    allowed_ext: bool = entry.filename.suffix in self.ignored_extensions
                 # try:
                 # entry: Entry = self.entries[self.file_to_library_index_map[self._source_filenames[i]]]
                 # print(f'{entry}')
@@ -1509,7 +1532,12 @@ class Library:
         else:
             for entry in self.entries:
                 added = False
-                allowed_ext = entry.filename.suffix not in self.ignored_extensions
+                if self.ignore_extensions:
+                    allowed_ext: bool = (
+                        entry.filename.suffix not in self.ignored_extensions
+                    )
+                else:
+                    allowed_ext: bool = entry.filename.suffix in self.ignored_extensions
                 if allowed_ext:
                     for f in entry.fields:
                         if self.get_field_attr(f, "type") == "collation":

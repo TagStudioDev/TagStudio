@@ -403,7 +403,9 @@ class QtDriver(QObject):
 
         edit_menu.addSeparator()
 
-        manage_file_extensions_action = QAction("Ignored File Extensions", menu_bar)
+        manage_file_extensions_action = QAction(
+            "Ignore/Allow File Extensions", menu_bar
+        )
         manage_file_extensions_action.triggered.connect(
             lambda: self.show_file_extension_modal()
         )
