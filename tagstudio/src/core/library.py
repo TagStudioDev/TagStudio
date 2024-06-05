@@ -1370,12 +1370,9 @@ class Library:
             # non_entry_count = 0
             # Iterate over all Entries =============================================================
             for entry in self.entries:
-                if self.ignore_extensions:
-                    allowed_ext: bool = (
-                        entry.filename.suffix not in self.ignored_extensions
-                    )
-                else:
-                    allowed_ext: bool = entry.filename.suffix in self.ignored_extensions
+                allowed_ext: bool = entry.filename.suffix not in self.ignored_extensions
+                if not self.ignore_extensions:
+                    allowed_ext = not allowed_ext
                 # try:
                 # entry: Entry = self.entries[self.file_to_library_index_map[self._source_filenames[i]]]
                 # print(f'{entry}')
@@ -1532,12 +1529,9 @@ class Library:
         else:
             for entry in self.entries:
                 added = False
-                if self.ignore_extensions:
-                    allowed_ext: bool = (
-                        entry.filename.suffix not in self.ignored_extensions
-                    )
-                else:
-                    allowed_ext: bool = entry.filename.suffix in self.ignored_extensions
+                allowed_ext: bool = entry.filename.suffix not in self.ignored_extensions
+                if not self.ignore_extensions:
+                    allowed_ext = not allowed_ext
                 if allowed_ext:
                     for f in entry.fields:
                         if self.get_field_attr(f, "type") == "collation":
