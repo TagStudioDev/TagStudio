@@ -55,7 +55,7 @@ class FileExtensionModal(PanelWidget):
             self.add_button, alignment=Qt.AlignmentFlag.AlignCenter
         )
         self.ignored_checkbox = QCheckBox()
-        self.ignored_checkbox.setText("Uncheck to toggle it to an Whitelist")
+        self.update_text()
         self.ignored_checkbox.setChecked(self.lib.ignore_extensions)
         self.ignored_checkbox.clicked.connect(self.toggle_whitelist)
         self.root_layout.addWidget(self.ignored_checkbox)
@@ -63,6 +63,13 @@ class FileExtensionModal(PanelWidget):
 
     def toggle_whitelist(self) -> None:
         self.lib.ignore_extensions = self.ignored_checkbox.isChecked()
+        self.update_text()
+
+    def update_text(self):
+        if self.lib.ignore_extensions:
+            self.ignored_checkbox.setText("Uncheck to make it a whitelist.")
+        else:
+            self.ignored_checkbox.setText("Check to make it a blacklist.")
 
     def refresh_list(self):
         for i, ext in enumerate(self.lib.ext_list):
