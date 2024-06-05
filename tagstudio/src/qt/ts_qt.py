@@ -739,7 +739,10 @@ class QtDriver(QObject):
         # self.modal = FileExtensionModal(self.lib)
         panel = FileExtensionModal(self.lib)
         self.modal = PanelModal(
-            panel, "Ignored File Extensions", "Ignored File Extensions", has_save=True
+            panel,
+            "Ignored/Allowed File Extensions",
+            "Ignored/Allowed File Extensions",
+            has_save=True,
         )
         self.modal.saved.connect(lambda: (panel.save(), self.filter_items("")))
         self.modal.show()
