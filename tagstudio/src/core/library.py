@@ -1523,7 +1523,7 @@ class Library:
         else:
             for entry in self.entries:
                 added = False
-                allowed_ext: bool = entry.filename.suffix not in self.ext_list
+                allowed_ext = entry.filename.suffix not in self.ext_list
                 if (allowed_ext and self.ignore_extensions) or (
                     not allowed_ext and not self.ignore_extensions
                 ):
