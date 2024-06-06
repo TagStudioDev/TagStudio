@@ -21,7 +21,15 @@ from queue import Queue
 from typing import Optional
 from PIL import Image
 from PySide6 import QtCore
-from PySide6.QtCore import QObject, QThread, Signal, Qt, QThreadPool, QTimer, QSettings
+from PySide6.QtCore import (
+    QObject,
+    QThread,
+    Signal,
+    Qt,
+    QThreadPool,
+    QTimer,
+    QSettings,
+)
 from PySide6.QtGui import (
     QGuiApplication,
     QPixmap,
@@ -51,22 +59,6 @@ from src.core.enums import SettingItems, SearchMode
 from src.core.library import ItemType
 from src.core.ts_core import TagStudioCore
 from src.core.constants import (
-    PLAINTEXT_TYPES,
-    TAG_COLORS,
-    DATE_FIELDS,
-    TEXT_FIELDS,
-    BOX_FIELDS,
-    ALL_FILE_TYPES,
-    SHORTCUT_TYPES,
-    PROGRAM_TYPES,
-    ARCHIVE_TYPES,
-    PRESENTATION_TYPES,
-    SPREADSHEET_TYPES,
-    DOC_TYPES,
-    AUDIO_TYPES,
-    VIDEO_TYPES,
-    IMAGE_TYPES,
-    LIBRARY_FILENAME,
     COLLAGE_FOLDER_NAME,
     BACKUP_FOLDER_NAME,
     TS_FOLDER_NAME,
@@ -266,7 +258,7 @@ class QtDriver(QObject):
         timer.timeout.connect(lambda: None)
 
         # self.main_window = loader.load(home_path)
-        self.main_window = Ui_MainWindow()
+        self.main_window = Ui_MainWindow(self)
         self.main_window.setWindowTitle(self.base_title)
         self.main_window.mousePressEvent = self.mouse_navigation  # type: ignore
         # self.main_window.setStyleSheet(
@@ -551,6 +543,7 @@ class QtDriver(QObject):
         self.shutdown()
 
     def init_library_window(self):
+        # self._init_landing_page() # Taken care of inside the widget now
         self._init_thumb_grid()
 
         # TODO: Put this into its own method that copies the font file(s) into memory
@@ -579,6 +572,13 @@ class QtDriver(QObject):
         forward_button: QPushButton = self.main_window.forwardButton
         forward_button.clicked.connect(self.nav_forward)
 
+        # NOTE: Putting this early will result in a white non-responsive
+        # window until everything is loaded. Consider adding a splash screen
+        # or implementing some clever loading tricks.
+        self.main_window.show()
+        self.main_window.activateWindow()
+        self.main_window.toggle_landing_page(True)
+
         self.frame_dict = {}
         self.main_window.pagination.index.connect(
             lambda i: (
@@ -600,11 +600,6 @@ class QtDriver(QObject):
         # self.render_times: list = []
         # self.main_window.setWindowFlag(Qt.FramelessWindowHint)
 
-        # NOTE: Putting this early will result in a white non-responsive
-        # window until everything is loaded. Consider adding a splash screen
-        # or implementing some clever loading tricks.
-        self.main_window.show()
-        self.main_window.activateWindow()
         # self.main_window.raise_()
         self.splash.finish(self.main_window)
         self.preview_panel.update_widgets()
@@ -690,6 +685,7 @@ class QtDriver(QObject):
             self.selected.clear()
             self.preview_panel.update_widgets()
             self.filter_items()
+            self.main_window.toggle_landing_page(True)
 
             end_time = time.time()
             self.main_window.statusbar.showMessage(
@@ -1423,15 +1419,18 @@ class QtDriver(QObject):
 
     def open_library(self, path: Path):
         """Opens a TagStudio library."""
+        open_message: str = f'Opening Library "{str(path)}"...'
+        self.main_window.landing_widget.set_status_label(open_message)
+        self.main_window.statusbar.showMessage(open_message, 3)
+        self.main_window.repaint()
+
         if self.lib.library_dir:
             self.save_library()
             self.lib.clear_internal_vars()
 
-        self.main_window.statusbar.showMessage(f"Opening Library {str(path)}", 3)
         return_code = self.lib.open_library(path)
         if return_code == 1:
             pass
-
         else:
             logging.info(
                 f"{ERROR} No existing TagStudio library found at '{path}'. Creating one."
@@ -1449,6 +1448,7 @@ class QtDriver(QObject):
         self.selected.clear()
         self.preview_panel.update_widgets()
         self.filter_items()
+        self.main_window.toggle_landing_page(False)
 
     def create_collage(self) -> None:
         """Generates and saves an image collage based on Library Entries."""
