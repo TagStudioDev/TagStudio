@@ -2,11 +2,13 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from sqlalchemy.ext.orderinglist import OrderingList, ordering_list  # type: ignore
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .base import Base
-from .field import DatetimeField, Field, TagBoxField, TagBoxTypes, TextField
-from .tag import Tag
+from .field import Field
+from .joins import tag_entries
+from .tag import Tag, TagCategory
 
 
 class Entry(Base):
@@ -16,50 +18,36 @@ class Entry(Base):
 
     path: Mapped[Path] = mapped_column(unique=True)
 
-    text_fields: Mapped[list[TextField]] = relationship(
-        back_populates="entry",
-        cascade="all, delete",
-    )
-    datetime_fields: Mapped[list[DatetimeField]] = relationship(
-        back_populates="entry",
-        cascade="all, delete",
-    )
-    tag_box_fields: Mapped[list[TagBoxField]] = relationship(
-        back_populates="entry",
-        cascade="all, delete",
+    fields: Mapped[OrderingList[Field]] = relationship(
+        order_by="Field.position",
+        collection_class=ordering_list("position"),  # type: ignore
     )
 
-    @property
-    def fields(self) -> list[Field]:
-        fields: list[Field] = []
-        fields.extend(self.tag_box_fields)
-        fields.extend(self.text_fields)
-        fields.extend(self.datetime_fields)
-        fields = sorted(fields, key=lambda field: field.id)
-        return fields
-
-    @property
-    def tags(self) -> set[Tag]:
-        tag_set: set[Tag] = set()
-        for tag_box_field in self.tag_box_fields:
-            tag_set.update(tag_box_field.tags)
-        return tag_set
+    tags: Mapped[set[Tag]] = relationship(
+        secondary=tag_entries,
+        back_populates="entries",
+    )
 
     @property
     def favorited(self) -> bool:
-        for tag_box_field in self.tag_box_fields:
-            for tag in tag_box_field.tags:
-                if tag.name == "Favorite":
-                    return True
+        for tag in self.tags:
+            if tag.name == "Favorite":
+                return True
         return False
 
     @property
     def archived(self) -> bool:
-        for tag_box_field in self.tag_box_fields:
-            for tag in tag_box_field.tags:
-                if tag.name == "Archived":
-                    return True
+        for tag in self.tags:
+            if tag.name == "Archived":
+                return True
         return False
+
+    def category_tags(self, category: TagCategory) -> set[Tag]:
+        return_tags: set[Tag] = set()
+        for tag in self.tags:
+            if tag.category == category:
+                return_tags.add(tag)
+        return return_tags
 
     # TODO
     # # Any Type
@@ -84,36 +72,17 @@ class Entry(Base):
     ) -> None:
         self.path = path
         self.type = None
-        self.tag_box_fields.append(
-            TagBoxField(
-                name="Meta Tags",
-                type=TagBoxTypes.meta_tag_box,
-            )
-        )
 
-        for field in fields:
-            if isinstance(field, TextField):
-                self.text_fields.append(field)
-            elif isinstance(field, DatetimeField):
-                self.datetime_fields.append(field)
-            else:
-                self.tag_box_fields.append(field)
+        ordering_list_: OrderingList[Field] = OrderingList()  # type: ignore
+        ordering_list_.extend(fields)
+        self.fields = ordering_list_
 
     def has_tag(self, tag: Tag) -> bool:
         return tag in self.tags
 
-    def remove_tag(self, tag: Tag, field: TagBoxField | None = None) -> None:
-        """
-        Removes a Tag from the Entry. If given a field index, the given Tag will
-        only be removed from that index. If left blank, all instances of that
-        Tag will be removed from the Entry.
-        """
-        if field:
-            field.tags.remove(tag)
-            return
+    def remove_tag(self, tag: Tag) -> None:
+        if tag in self.tags:
+            self.tags.remove(tag)
 
-        for tag_box_field in self.tag_box_fields:
-            tag_box_field.tags.remove(tag)
-
-    def add_tag(self, tag: Tag, field: TagBoxField):
-        field.tags.add(tag)
+    def add_tag(self, tag: Tag) -> None:
+        self.tags.add(tag)

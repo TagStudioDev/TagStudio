@@ -1,14 +1,19 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from enum import Enum
+from typing import TYPE_CHECKING
 
 from sqlalchemy import ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from src.alt_core.types import TagColor  # type: ignore
-from src.core.json_typing import JsonTag  # type: ignore
+
+from tagstudio.src.alt_core.types import TagColor  # type: ignore
 
 from .base import Base
-from .joins import tag_subtags
+from .joins import tag_entries, tag_subtags
+
+if TYPE_CHECKING:
+    from .entry import Entry
 
 
 @dataclass
@@ -23,12 +28,19 @@ class TagInfo:
     subtag_ids: set[int] = field(default_factory=set)
 
 
+class TagCategory(Enum):
+    meta_tag = "meta_tag"
+    user_tag = "user_tag"
+    artist_tag = "artist_tag"
+
+
 class Tag(Base):
     __tablename__ = "tags"
 
     id: Mapped[int] = mapped_column(primary_key=True)
 
     name: Mapped[str] = mapped_column(unique=True)
+    category: Mapped[TagCategory]
     shorthand: Mapped[str | None]
     color: Mapped[TagColor]
     icon: Mapped[str | None]
@@ -49,6 +61,11 @@ class Tag(Base):
         back_populates="parent_tags",
     )
 
+    entries: Mapped[set[Entry]] = relationship(
+        secondary=tag_entries,
+        back_populates="tags",
+    )
+
     @property
     def subtag_ids(self) -> list[int]:
         return [tag.id for tag in self.subtags]
@@ -60,6 +77,7 @@ class Tag(Base):
     def __init__(
         self,
         name: str,
+        category: TagCategory = TagCategory.user_tag,
         shorthand: str | None = None,
         aliases: set[TagAlias] = set(),
         parent_tags: set[Tag] = set(),
@@ -68,6 +86,7 @@ class Tag(Base):
         color: TagColor = TagColor.default,
     ):
         self.name = name
+        self.category = category
         self.aliases = aliases
         self.parent_tags = parent_tags
         self.subtags = subtags
@@ -95,25 +114,6 @@ class Tag(Base):
             return f"{self.name}" f" ({first_subtag_display_name})"
         else:
             return f"{self.name}"
-
-    def compressed_dict(self) -> JsonTag:
-        """
-        An alternative to __dict__ that only includes fields containing
-        non-default data.
-        """
-        obj: JsonTag = {"id": self.id}
-        if self.name:
-            obj["name"] = self.name
-        if self.shorthand:
-            obj["shorthand"] = self.shorthand
-        if self.aliases:
-            obj["aliases"] = self.alias_strings
-        if self.subtag_ids:
-            obj["subtag_ids"] = self.subtag_ids
-        if self.color:
-            obj["color"] = self.color.value or ""
-
-        return obj
 
     def add_subtag(self, tag: Tag):
         if tag not in self.subtags:

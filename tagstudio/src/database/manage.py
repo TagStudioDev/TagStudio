@@ -2,15 +2,13 @@ from sqlalchemy import Engine, create_engine
 
 from .table_declarations.base import Base
 from .table_declarations.entry import Entry
-from .table_declarations.field import DatetimeField, TagBoxField, TextField
+from .table_declarations.field import Field
 from .table_declarations.tag import Tag, TagAlias
 
 # Need to load subclasses for Base.metadata to function as intended
 force_access = [
     Entry,
-    TagBoxField,
-    TextField,
-    DatetimeField,
+    Field,
     Tag,
     TagAlias,
 ]

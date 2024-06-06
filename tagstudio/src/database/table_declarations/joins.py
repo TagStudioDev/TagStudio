@@ -9,9 +9,9 @@ tag_subtags = Table(
     Column("subtag_id", Integer, ForeignKey("tags.id")),
 )
 
-tag_fields = Table(
-    "tag_fields",
+tag_entries = Table(
+    "tag_entries",
     Base.metadata,
-    Column("field_id", Integer, ForeignKey("tag_box_fields.id")),
+    Column("entry_id", Integer, ForeignKey("entries.id")),
     Column("tag_id", Integer, ForeignKey("tags.id")),
 )
