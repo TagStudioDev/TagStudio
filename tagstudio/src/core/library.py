@@ -747,6 +747,7 @@ class Library:
             "fields": [],
             "macros": [],
             "entries": [],
+            "ignored_extensions": [],
         }
 
         print("[LIBRARY] Formatting Tags to JSON...")
