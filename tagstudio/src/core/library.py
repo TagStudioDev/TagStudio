@@ -741,8 +741,8 @@ class Library:
 
         file_to_save: JsonLibary = {
             "ts-version": VERSION,
-            "ignored_extensions": [],
-            "ignore_extensions": True,
+            "ext_list": [],
+            "is_exclude_list": True,
             "tags": [],
             "collations": [],
             "fields": [],
