@@ -5,6 +5,7 @@
 """The Library object and related methods for TagStudio."""
 
 import datetime
+import json
 import logging
 import os
 import time
@@ -341,9 +342,9 @@ class Library:
         #   That filename can then be used to provide quick lookup to image metadata entries in the Library.
         self.filename_to_entry_id_map: dict[Path, int] = {}
         # A list of file extensions to be ignored by TagStudio.
-        self.default_ext_blacklist: list = [".json", ".xmp", ".aae"]
-        self.ext_list: list = self.default_ext_blacklist
-        self.ignore_extensions = True
+        self.default_ext_exclude_list: list = [".json", ".xmp", ".aae"]
+        self.ext_list: list = self.default_ext_exclude_list
+        self.is_exclude_list = True
 
         # Tags =================================================================
         # List of every Tag object (ts-v8).
@@ -500,11 +501,14 @@ class Library:
                     self.verify_ts_folders()
                     major, minor, patch = json_dump["ts-version"].split(".")
 
-                    # Load Extension Blacklist ---------------------------------
-                    if "ignored_extensions" in json_dump.keys():
+                    # Load Extension Exclude List ---------------------------------
+                    # The following if statment is only used when a old library is loaded
+                    if "ignored_extensions" in json_dump:
                         self.ext_list = json_dump["ignored_extensions"]
-                    if "ignore_extensions" in json_dump.keys():
-                        self.ignore_extensions = json_dump["ignore_extensions"]
+                    if "ext_list" in json_dump:
+                        self.ext_list = json_dump["ext_list"]
+                    if "is_exclude_list" in json_dump:
+                        self.is_exclude_list = json_dump["is_exclude_list"]
                     # Parse Tags ---------------------------------------------------
                     if "tags" in json_dump.keys():
                         start_time = time.time()
@@ -748,8 +752,8 @@ class Library:
 
         print("[LIBRARY] Formatting Tags to JSON...")
 
-        file_to_save["ignored_extensions"] = [i for i in self.ext_list if i]
-        file_to_save["ignore_extensions"] = self.ignore_extensions
+        file_to_save["ext_list"] = [i for i in self.ext_list if i]
+        file_to_save["is_exclude_list"] = self.is_exclude_list
 
         for tag in self.tags:
             file_to_save["tags"].append(tag.compressed_dict())
@@ -838,7 +842,7 @@ class Library:
         self.missing_files.clear()
         self.fixed_files.clear()
         self.filename_to_entry_id_map: dict[Path, int] = {}
-        self.ext_list = self.default_ext_blacklist
+        self.ext_list = self.default_ext_exclude_list
 
         self.tags.clear()
         self._next_tag_id = 1000
@@ -868,7 +872,7 @@ class Library:
                     and "tagstudio_thumbs" not in f.parts
                     and not f.is_dir()
                 ):
-                    if f.suffix not in self.ext_list and self.ignore_extensions:
+                    if f.suffix not in self.ext_list and self.is_exclude_list:
                         self.dir_file_count += 1
                         file = f.relative_to(self.library_dir)
                         try:
@@ -876,7 +880,7 @@ class Library:
                         except KeyError:
                             # print(file)
                             self.files_not_in_library.append(file)
-                    elif f.suffix in self.ext_list and not self.ignore_extensions:
+                    elif f.suffix in self.ext_list and not self.is_exclude_list:
                         self.dir_file_count += 1
                         file = f.relative_to(self.library_dir)
                         try:
@@ -1369,7 +1373,7 @@ class Library:
                 # entry: Entry = self.entries[self.file_to_library_index_map[self._source_filenames[i]]]
                 # print(f'{entry}')
 
-                if allowed_ext == self.ignore_extensions:
+                if allowed_ext == self.is_exclude_list:
                     # If the entry has tags of any kind, append them to this main tag list.
                     entry_tags: list[int] = []
                     entry_authors: list[str] = []
@@ -1522,7 +1526,7 @@ class Library:
             for entry in self.entries:
                 added = False
                 allowed_ext = entry.filename.suffix not in self.ext_list
-                if allowed_ext == self.ignore_extensions:
+                if allowed_ext == self.is_exclude_list:
                     for f in entry.fields:
                         if self.get_field_attr(f, "type") == "collation":
                             if (

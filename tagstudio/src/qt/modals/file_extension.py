@@ -54,24 +54,24 @@ class FileExtensionModal(PanelWidget):
         self.root_layout.addWidget(
             self.add_button, alignment=Qt.AlignmentFlag.AlignCenter
         )
-        self.ignored_checkbox = QCheckBox()
+        self.exclude_list_checkbox = QCheckBox()
         self.update_text()
-        self.ignored_checkbox.setChecked(self.lib.ignore_extensions)
-        self.ignored_checkbox.clicked.connect(self.toggle_whitelist)
-        self.root_layout.addWidget(self.ignored_checkbox)
+        self.exclude_list_checkbox.setChecked(self.lib.is_exclude_list)
+        self.exclude_list_checkbox.clicked.connect(self.toggle_exclude_list)
+        self.root_layout.addWidget(self.exclude_list_checkbox)
         self.refresh_list()
 
-    def toggle_whitelist(self) -> None:
-        self.lib.ignore_extensions = self.ignored_checkbox.isChecked()
+    def toggle_exclude_list(self) -> None:
+        self.lib.is_exclude_list = self.exclude_list_checkbox.isChecked()
         self.update_text()
 
     def update_text(self):
-        if self.lib.ignore_extensions:
-            self.ignored_checkbox.setText(
+        if self.lib.is_exclude_list:
+            self.exclude_list_checkbox.setText(
                 "Uncheck to only show files with these file extensions."
             )
         else:
-            self.ignored_checkbox.setText(
+            self.exclude_list_checkbox.setText(
                 "Check to ignore files with these file extensions."
             )
 

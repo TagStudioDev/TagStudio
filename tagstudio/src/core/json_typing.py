@@ -8,8 +8,8 @@ class JsonLibary(TypedDict("", {"ts-version": str})):
     fields: list  # TODO
     macros: "list[JsonMacro]"
     entries: "list[JsonEntry]"
-    ignored_extensions: list[str]
-    ignore_extensions: bool
+    ext_list: list[str]
+    is_exclude_list: bool
 
 
 class JsonBase(TypedDict):
