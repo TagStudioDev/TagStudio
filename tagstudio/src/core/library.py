@@ -740,20 +740,16 @@ class Library:
 
         file_to_save: JsonLibary = {
             "ts-version": VERSION,
-            "ext_list": [],
-            "is_exclude_list": True,
+            "ext_list": [i for i in self.ext_list if i],
+            "is_exclude_list": self.is_exclude_list,
             "tags": [],
             "collations": [],
             "fields": [],
             "macros": [],
             "entries": [],
-            "ignored_extensions": [],
         }
 
         print("[LIBRARY] Formatting Tags to JSON...")
-
-        file_to_save["ext_list"] = [i for i in self.ext_list if i]
-        file_to_save["is_exclude_list"] = self.is_exclude_list
 
         for tag in self.tags:
             file_to_save["tags"].append(tag.compressed_dict())
