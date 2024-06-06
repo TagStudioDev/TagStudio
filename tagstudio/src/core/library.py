@@ -871,10 +871,7 @@ class Library:
                     if f.suffix not in self.ext_list and self.is_exclude_list:
                         self.dir_file_count += 1
                         file = f.relative_to(self.library_dir)
-                        try:
-                            _ = self.filename_to_entry_id_map[file]
-                        except KeyError:
-                            # print(file)
+                        if file not in self.filename_to_entry_id_map:
                             self.files_not_in_library.append(file)
                     elif f.suffix in self.ext_list and not self.is_exclude_list:
                         self.dir_file_count += 1
