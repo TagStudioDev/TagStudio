@@ -1369,9 +1369,7 @@ class Library:
                 # entry: Entry = self.entries[self.file_to_library_index_map[self._source_filenames[i]]]
                 # print(f'{entry}')
 
-                if (allowed_ext and self.ignore_extensions) or (
-                    not allowed_ext and not self.ignore_extensions
-                ):
+                if allowed_ext == self.ignore_extensions:
                     # If the entry has tags of any kind, append them to this main tag list.
                     entry_tags: list[int] = []
                     entry_authors: list[str] = []
@@ -1524,9 +1522,7 @@ class Library:
             for entry in self.entries:
                 added = False
                 allowed_ext = entry.filename.suffix not in self.ext_list
-                if (allowed_ext and self.ignore_extensions) or (
-                    not allowed_ext and not self.ignore_extensions
-                ):
+                if allowed_ext == self.ignore_extensions:
                     for f in entry.fields:
                         if self.get_field_attr(f, "type") == "collation":
                             if (

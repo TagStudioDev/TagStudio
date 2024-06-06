@@ -67,9 +67,13 @@ class FileExtensionModal(PanelWidget):
 
     def update_text(self):
         if self.lib.ignore_extensions:
-            self.ignored_checkbox.setText("Uncheck to make it a whitelist.")
+            self.ignored_checkbox.setText(
+                "Uncheck to only show files with these file extensions."
+            )
         else:
-            self.ignored_checkbox.setText("Check to make it a blacklist.")
+            self.ignored_checkbox.setText(
+                "Check to ignore files with these file extensions."
+            )
 
     def refresh_list(self):
         for i, ext in enumerate(self.lib.ext_list):
