@@ -16,9 +16,13 @@ jobs:
         with:
           reviewdog_version: latest
 
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
       - name: Install dependencies
         run: |
-          python -m pip install --upgrade pip
           # pyside 6.6.3 has some issue in their .pyi files
           pip install PySide6==6.6.2
           pip install -r requirements.txt
