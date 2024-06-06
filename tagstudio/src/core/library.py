@@ -502,11 +502,10 @@ class Library:
                     major, minor, patch = json_dump["ts-version"].split(".")
 
                     # Load Extension Exclude List ---------------------------------
-                    # The following if statment is only used when a old library is loaded
-                    if "ignored_extensions" in json_dump:
-                        self.ext_list = json_dump["ignored_extensions"]
-                    if "ext_list" in json_dump:
-                        self.ext_list = json_dump["ext_list"]
+                    self.ext_list = json_dump.get("ext_list") or json_dump.get(
+                        "ignored_extensions"
+                    )
+
                     if "is_exclude_list" in json_dump:
                         self.is_exclude_list = json_dump["is_exclude_list"]
                     # Parse Tags ---------------------------------------------------
