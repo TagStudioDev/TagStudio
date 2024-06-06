@@ -10,7 +10,7 @@ class JsonLibary(TypedDict("", {"ts-version": str})):
     entries: "list[JsonEntry]"
     ext_list: list[str]
     is_exclude_list: bool
-    ignored_extensions: list[str]
+    ignored_extensions: NotRequired[list[str]] # deprecated
 
 
 class JsonBase(TypedDict):
