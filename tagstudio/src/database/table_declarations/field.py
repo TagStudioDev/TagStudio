@@ -62,7 +62,7 @@ class TextField(Field):
         value: str,
         name: str,
     ):
-        self.text = value
+        self.value = value
 
         super().__init__(
             name=name,
