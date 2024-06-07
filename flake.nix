@@ -49,6 +49,7 @@
         python312Packages.pip
         python312Packages.pyusb # fixes the pyusb 'No backend available' when installed directly via pip
         python312Packages.venvShellHook # Initializes a venv in $venvDir
+        ruff # Ruff cannot be installed via pip
 
         libgcc
         glib
@@ -82,6 +83,7 @@
         echo Installing dependencies into virtual environment
         pip install -r requirements.txt
         pip install -r requirements-dev.txt
+        pip uninstall -y ruff # Hacky solution to not fight with other dev deps
       '';
 
       # set the environment variables that Qt apps expect
