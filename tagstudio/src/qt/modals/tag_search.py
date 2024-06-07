@@ -160,7 +160,9 @@ class TagSearchPanel(PanelWidget):
             if tag_id in self.selected_tags:
                 ab.setChecked(True)
 
-            ab.toggled.connect(lambda checked, x=tag_id: self.tag_chosen.emit(x, checked))
+            ab.toggled.connect(
+                lambda checked, x=tag_id: self.tag_chosen.emit(x, checked)
+            )
 
             l.addWidget(tw)
             l.addWidget(ab)
