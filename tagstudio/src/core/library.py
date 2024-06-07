@@ -502,9 +502,10 @@ class Library:
                     major, minor, patch = json_dump["ts-version"].split(".")
 
                     # Load Extension Exclude List ---------------------------------
-                    self.ext_list = json_dump.get("ext_list") or json_dump.get(
-                        "ignored_extensions"
-                    )
+                    if "ext_list" in json_dump or "ignored_extensions" in json_dump:
+                        self.ext_list = json_dump.get("ext_list") or json_dump.get(
+                            "ignored_extensions"
+                        )
 
                     if "is_exclude_list" in json_dump:
                         self.is_exclude_list = json_dump["is_exclude_list"]
