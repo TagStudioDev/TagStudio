@@ -231,7 +231,7 @@ class Ui_MainWindow(QMainWindow):
         if enabled:
             self.scrollArea.setHidden(True)
             self.landing_widget.setHidden(False)
-            self.landing_widget.animate_logo()
+            self.landing_widget.animate_logo_in()
         else:
             self.landing_widget.setHidden(True)
             self.landing_widget.set_status_label("")
