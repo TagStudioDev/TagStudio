@@ -88,7 +88,7 @@
       postShellHook = ''
         unset SOURCE_DATE_EPOCH
 
-        export QT_QPA_PLATFORM=wayland
+        export QT_QPA_PLATFORM="wayland;xcb"
         export LIBRARY_PATH=/usr/lib:/usr/lib64:$LIBRARY_PATH
         # export LD_LIBRARY_PATH=${pkgs.stdenv.cc.cc.lib}/lib/:/run/opengl-driver/lib/
         export QT_PLUGIN_PATH=${pkgs.qt6.qtbase}/${pkgs.qt6.qtbase.qtPluginPrefix}
