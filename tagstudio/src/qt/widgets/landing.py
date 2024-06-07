@@ -95,12 +95,11 @@ class LandingWidget(QWidget):
         """
 
         logo_im: Image.Image = None
-
         if style == "mono":
-            logo_im: Image.Image = theme_fg_overlay(self.logo_raw)
+            logo_im = theme_fg_overlay(self.logo_raw)
         elif style == "gradient":
             gradient_colors: list[str] = ["#d27bf4", "#7992f5", "#63c6e3", "#63f5cf"]
-            logo_im: Image.Image = gradient_overlay(self.logo_raw, gradient_colors)
+            logo_im = gradient_overlay(self.logo_raw, gradient_colors)
 
         logo_final: Image.Image = Image.new(
             mode="RGBA", size=self.logo_raw.size, color="#00000000"
@@ -149,13 +148,13 @@ class LandingWidget(QWidget):
         """Special pop animation for the TagStudio logo."""
         self.logo_special_anim.setStartValue(self.logo_label.pos())
         self.logo_special_anim.setKeyValueAt(
-            0.25, QPoint(self.logo_label.x() - 10, self.logo_label.y())
+            0.25, QPoint(self.logo_label.x() - 5, self.logo_label.y())
         )
         self.logo_special_anim.setKeyValueAt(
-            0.5, QPoint(self.logo_label.x() + 10, self.logo_label.y() - 20)
+            0.5, QPoint(self.logo_label.x() + 5, self.logo_label.y() - 10)
         )
         self.logo_special_anim.setKeyValueAt(
-            0.75, QPoint(self.logo_label.x() - 10, self.logo_label.y())
+            0.75, QPoint(self.logo_label.x() - 5, self.logo_label.y())
         )
         self.logo_special_anim.setEndValue(self.logo_label.pos())
 
