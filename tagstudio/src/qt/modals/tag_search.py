@@ -38,6 +38,7 @@ class TagSearchPanel(PanelWidget):
         self.lib: Library = library
         # self.callback = callback
         self.first_tag_id = None
+        self.selected_tags = []
         self.tag_limit = 100
         # self.selected_tag: int = 0
         self.setMinimumSize(300, 400)
@@ -100,7 +101,10 @@ class TagSearchPanel(PanelWidget):
             self.search_field.setFocus()
             self.parentWidget().hide()
 
-    def update_tags(self, query: str = ""):
+    def update_tags(self, query: str = "", current_tags: list[int] = None):
+        if current_tags:
+            self.selected_tags = current_tags
+
         # for c in self.scroll_layout.children():
         # 	c.widget().deleteLater()
         while self.scroll_layout.count():
@@ -152,6 +156,9 @@ class TagSearchPanel(PanelWidget):
                 f"color: {get_tag_color(ColorType.LIGHT_ACCENT, self.lib.get_tag(tag_id).color)};"
                 f"}}"
             )
+
+            if tag_id in self.selected_tags:
+                ab.setChecked(True)
 
             ab.toggled.connect(lambda checked, x=tag_id: self.tag_chosen.emit(x, checked))
 

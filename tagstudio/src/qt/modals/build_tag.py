@@ -120,7 +120,9 @@ class BuildTagPanel(PanelWidget):
         tsp.tag_chosen.connect(lambda x, checked: self.add_subtag_callback(x) if checked
                             else self.remove_subtag_callback(x))
         self.add_tag_modal = PanelModal(tsp, "Add Parent Tags", "Add Parent Tags")
-        self.subtags_add_button.clicked.connect(self.add_tag_modal.show)
+        self.subtags_add_button.clicked.connect(
+            lambda: (tsp.update_tags(current_tags=(self.tag.subtag_ids if self.tag else None)), self.add_tag_modal.show())  # type: ignore
+        )
         self.subtags_layout.addWidget(self.subtags_add_button)
 
         # self.subtags_field = TagBoxWidget()

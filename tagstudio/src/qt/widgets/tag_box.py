@@ -79,7 +79,7 @@ class TagBoxWidget(FieldWidget):
         tsp.tag_chosen.connect(lambda x, checked: self.update_tag_callback(x, checked))
         self.add_modal = PanelModal(tsp, title, "Add Tags")
         self.add_button.clicked.connect(
-            lambda: (tsp.update_tags(), self.add_modal.show())  # type: ignore
+            lambda: (tsp.update_tags(current_tags=self.tags), self.add_modal.show())  # type: ignore
         )
 
         self.set_tags(tags)
