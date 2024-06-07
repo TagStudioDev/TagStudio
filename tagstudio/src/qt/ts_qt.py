@@ -403,9 +403,7 @@ class QtDriver(QObject):
 
         edit_menu.addSeparator()
 
-        manage_file_extensions_action = QAction(
-            "Ignore/Allow File Extensions", menu_bar
-        )
+        manage_file_extensions_action = QAction("Manage File Extensions", menu_bar)
         manage_file_extensions_action.triggered.connect(
             lambda: self.show_file_extension_modal()
         )
@@ -736,12 +734,11 @@ class QtDriver(QObject):
         self.modal.show()
 
     def show_file_extension_modal(self):
-        # self.modal = FileExtensionModal(self.lib)
         panel = FileExtensionModal(self.lib)
         self.modal = PanelModal(
             panel,
-            "Ignored/Allowed File Extensions",
-            "Ignored/Allowed File Extensions",
+            "File Extensions",
+            "File Extensions",
             has_save=True,
         )
         self.modal.saved.connect(lambda: (panel.save(), self.filter_items("")))

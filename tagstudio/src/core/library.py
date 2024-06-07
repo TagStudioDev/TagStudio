@@ -342,9 +342,9 @@ class Library:
         #   That filename can then be used to provide quick lookup to image metadata entries in the Library.
         self.filename_to_entry_id_map: dict[Path, int] = {}
         # A list of file extensions to be ignored by TagStudio.
-        self.default_ext_exclude_list: list = [".json", ".xmp", ".aae"]
-        self.ext_list: list = self.default_ext_exclude_list
-        self.is_exclude_list = True
+        self.default_ext_exclude_list: list[str] = [".json", ".xmp", ".aae"]
+        self.ext_list: list[str] = []
+        self.is_exclude_list: bool = True
 
         # Tags =================================================================
         # List of every Tag object (ts-v8).
@@ -501,15 +501,35 @@ class Library:
                     self.verify_ts_folders()
                     major, minor, patch = json_dump["ts-version"].split(".")
 
-                    # Load Extension Exclude List ---------------------------------
-                    if "ext_list" in json_dump or "ignored_extensions" in json_dump:
-                        self.ext_list = json_dump.get("ext_list") or json_dump.get(
-                            "ignored_extensions"
+                    # Load Extension List --------------------------------------
+                    start_time = time.time()
+                    if "ignored_extensions" in json_dump:
+                        self.ext_list = json_dump.get(
+                            "ignored_extensions", self.default_ext_exclude_list
+                        )
+                    else:
+                        self.ext_list = json_dump.get(
+                            "ext_list", self.default_ext_exclude_list
                         )
 
-                    if "is_exclude_list" in json_dump:
-                        self.is_exclude_list = json_dump["is_exclude_list"]
-                    # Parse Tags ---------------------------------------------------
+                    # Sanitizes older lists (v9.2.1) that don't use leading periods.
+                    # Without this, existing lists (including default lists)
+                    # have to otherwise be updated by hand in order to restore
+                    # previous functionality.
+                    sanitized_list: list[str] = []
+                    for ext in self.ext_list:
+                        if not ext.startswith("."):
+                            ext = "." + ext
+                        sanitized_list.append(ext)
+                    self.ext_list = sanitized_list
+
+                    self.is_exclude_list = json_dump.get("is_exclude_list", True)
+                    end_time = time.time()
+                    logging.info(
+                        f"[LIBRARY] Extension list loaded in {(end_time - start_time):.3f} seconds"
+                    )
+
+                    # Parse Tags -----------------------------------------------
                     if "tags" in json_dump.keys():
                         start_time = time.time()
 
@@ -563,7 +583,7 @@ class Library:
                             f"[LIBRARY] Tags loaded in {(end_time - start_time):.3f} seconds"
                         )
 
-                    # Parse Entries ------------------------------------------------
+                    # Parse Entries --------------------------------------------
                     if entries := json_dump.get("entries"):
                         start_time = time.time()
                         for entry in entries:
@@ -587,7 +607,7 @@ class Library:
                                     del f[list(f.keys())[0]]
                                 fields = entry["fields"]
 
-                            # Look through fields for legacy Collation data --------
+                            # Look through fields for legacy Collation data ----
                             if int(major) >= 9 and int(minor) < 1:
                                 for f in fields:
                                     if self.get_field_attr(f, "type") == "collation":
@@ -664,7 +684,7 @@ class Library:
                             f"[LIBRARY] Entries loaded in {(end_time - start_time):.3f} seconds"
                         )
 
-                    # Parse Collations ---------------------------------------------------
+                    # Parse Collations -----------------------------------------
                     if "collations" in json_dump.keys():
                         start_time = time.time()
                         for collation in json_dump["collations"]:
