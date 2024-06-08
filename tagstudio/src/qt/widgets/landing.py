@@ -57,10 +57,10 @@ class LandingWidget(QWidget):
 
         # Create "Open/Create Library" button ----------------------------------
         open_shortcut_text: str = ""
-        if sys.platform == "Darwin":
-            open_shortcut_text = "(⌘Command + O)"
+        if sys.platform == "darwin":
+            open_shortcut_text = "(⌘+O)"
         else:
-            open_shortcut_text = "(Ctrl + O)"
+            open_shortcut_text = "(Ctrl+O)"
         self.open_button: QPushButton = QPushButton()
         self.open_button.setMinimumWidth(200)
         self.open_button.setText(f"Open/Create Library {open_shortcut_text}")
