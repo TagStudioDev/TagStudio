@@ -403,13 +403,8 @@ class QtDriver(QObject):
 
         clear_select_action = QAction("Clear Selection", menu_bar)
         clear_select_action.triggered.connect(self.clear_select_action_callback)
-        clear_select_action.setShortcut(
-            QtCore.QKeyCombination(
-                QtCore.Qt.KeyboardModifier(QtCore.Qt.KeyboardModifier.ControlModifier),
-                QtCore.Qt.Key.Key_D,
-            )
-        )
-        clear_select_action.setToolTip("Ctrl+D")
+        clear_select_action.setShortcut(QtCore.Qt.Key.Key_Escape)
+        clear_select_action.setToolTip("Esc")
         edit_menu.addAction(clear_select_action)
 
         edit_menu.addSeparator()
