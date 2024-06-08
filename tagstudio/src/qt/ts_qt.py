@@ -401,6 +401,12 @@ class QtDriver(QObject):
         select_all_action.setToolTip("Ctrl+A")
         edit_menu.addAction(select_all_action)
 
+        clear_select_action = QAction("Clear Selection", menu_bar)
+        clear_select_action.triggered.connect(self.clear_select_action_callback)
+        clear_select_action.setShortcut(QtCore.Qt.Key.Key_Escape)
+        clear_select_action.setToolTip("Esc")
+        edit_menu.addAction(clear_select_action)
+
         edit_menu.addSeparator()
 
         manage_file_extensions_action = QAction("Manage File Extensions", menu_bar)
@@ -723,6 +729,14 @@ class QtDriver(QObject):
             if item.mode and (item.mode, item.item_id) not in self.selected:
                 self.selected.append((item.mode, item.item_id))
                 item.thumb_button.set_selected(True)
+
+        self.set_macro_menu_viability()
+        self.preview_panel.update_widgets()
+
+    def clear_select_action_callback(self):
+        self.selected.clear()
+        for item in self.item_thumbs:
+            item.thumb_button.set_selected(False)
 
         self.set_macro_menu_viability()
         self.preview_panel.update_widgets()
