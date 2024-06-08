@@ -2,17 +2,17 @@
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
 
-    qt6Pkgs = {
+    qt6Nixpkgs = {
       # Commit bumping to qt6.6.3
       url = "github:NixOS/nixpkgs/f862bd46d3020bcfe7195b3dad638329271b0524"; 
     };
   };
 
-  outputs = { self, nixpkgs, qt6Pkgs }:
+  outputs = { self, nixpkgs, qt6Nixpkgs }:
   let
     pkgs = nixpkgs.legacyPackages.x86_64-linux;
 
-    qt6 = qt6Pkgs.legacyPackages.x86_64-linux.qt6;
+    qt6Pkgs = qt6Nixpkgs.legacyPackages.x86_64-linux;
   in {
     devShells.x86_64-linux.default = pkgs.mkShell {
       LD_LIBRARY_PATH = pkgs.lib.makeLibraryPath [
@@ -31,9 +31,9 @@
         pkgs.libpulseaudio
         pkgs.libkrb5
 
-        qt6.qtwayland
-        qt6.full
-        qt6.qtbase
+        qt6Pkgs.qt6.qtwayland
+        qt6Pkgs.qt6.full
+        qt6Pkgs.qt6.qtbase
       ];
       buildInputs = with pkgs; [
         cmake
@@ -62,13 +62,13 @@
         makeWrapper
         bashInteractive
       ] ++ [
-        qt6.qtbase
-        qt6.full
-        qt6.qtwayland
-        qtcreator
+        qt6Pkgs.qt6.qtbase
+        qt6Pkgs.qt6.full
+        qt6Pkgs.qt6.qtwayland
+        qt6Pkgs.qtcreator
 
         # this is for the shellhook portion
-        qt6.wrapQtAppsHook
+        qt6Pkgs.qt6.wrapQtAppsHook
       ];
       # set the environment variables that Qt apps expect
       shellHook = ''
