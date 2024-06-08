@@ -5,6 +5,7 @@
 
 import logging
 import math
+import sys
 import cv2
 import rawpy
 import numpy
@@ -171,11 +172,17 @@ class ThumbRenderer(QObject):
 
                 # Videos =======================================================
                 elif _filepath.suffix.lower() in VIDEO_TYPES:
-                    video = cv2.VideoCapture(str(_filepath))
-                    frame_count = video.get(cv2.CAP_PROP_FRAME_COUNT)
-                    if frame_count <= 0:
-                        raise cv2.error("File is invalid or has 0 frames")
-                    video.set(cv2.CAP_PROP_POS_FRAMES, frame_count // 2)
+                    video = cv2.VideoCapture(str(_filepath), cv2.CAP_FFMPEG)
+                    # Stupid check to try and tell if the codec can be read.
+                    # TODO: Find a way to intercept the native FFMPEG errors.
+                    h = int(video.get(cv2.CAP_PROP_FOURCC))
+                    codec = h.to_bytes(4, byteorder=sys.byteorder).decode()
+                    logging.info(f"{codec} - {h} - {video.getBackendName()}")
+                    if h != 22:
+                        video.set(
+                            cv2.CAP_PROP_POS_FRAMES,
+                            (video.get(cv2.CAP_PROP_FRAME_COUNT) // 2),
+                        )
                     success, frame = video.read()
                     if not success:
                         # Depending on the video format, compression, and frame
@@ -183,8 +190,14 @@ class ThumbRenderer(QObject):
                         # must be pulled from the earliest available frame.
                         video.set(cv2.CAP_PROP_POS_FRAMES, 0)
                         success, frame = video.read()
-                    frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-                    image = Image.fromarray(frame)
+                        if not success:
+                            # Depending on the video format, compression, and frame
+                            # count, seeking halfway does not work and the thumb
+                            # must be pulled from the earliest available frame.
+                            video.set(cv2.CAP_PROP_POS_FRAMES, 0)
+                            success, frame = video.read()
+                        frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+                        image = Image.fromarray(frame)
 
                 # Plain Text ===================================================
                 elif _filepath.suffix.lower() in PLAINTEXT_TYPES:
