@@ -98,6 +98,7 @@ PLAINTEXT_TYPES: list[str] = [
     ".php",
     ".sh",
     ".bat",
+    ".plist",
 ]
 SPREADSHEET_TYPES: list[str] = [".csv", ".xls", ".xlsx", ".numbers", ".ods"]
 PRESENTATION_TYPES: list[str] = [".ppt", ".pptx", ".key", ".odp"]
