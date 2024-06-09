@@ -5,7 +5,6 @@
 
 import logging
 import math
-import sys
 import cv2
 import rawpy
 import numpy
@@ -41,6 +40,7 @@ from src.core.constants import (
 )
 from src.core.utils.encoding import detect_char_encoding
 from src.qt.helpers.blender_thumbnailer import blend_thumb
+from src.qt.helpers.file_tester import is_readable_video
 
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 
@@ -172,13 +172,8 @@ class ThumbRenderer(QObject):
 
                 # Videos =======================================================
                 elif _filepath.suffix.lower() in VIDEO_TYPES:
-                    video = cv2.VideoCapture(str(_filepath), cv2.CAP_FFMPEG)
-                    # Stupid check to try and tell if the codec can be read.
-                    # TODO: Find a way to intercept the native FFMPEG errors.
-                    h = int(video.get(cv2.CAP_PROP_FOURCC))
-                    codec = h.to_bytes(4, byteorder=sys.byteorder).decode()
-                    logging.info(f"{codec} - {h} - {video.getBackendName()}")
-                    if h != 22:
+                    if is_readable_video(_filepath):
+                        video = cv2.VideoCapture(str(_filepath), cv2.CAP_FFMPEG)
                         video.set(
                             cv2.CAP_PROP_POS_FRAMES,
                             (video.get(cv2.CAP_PROP_FRAME_COUNT) // 2),
@@ -198,6 +193,8 @@ class ThumbRenderer(QObject):
                             success, frame = video.read()
                         frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
                         image = Image.fromarray(frame)
+                    else:
+                        image = self.thumb_file_default_512
 
                 # Plain Text ===================================================
                 elif _filepath.suffix.lower() in PLAINTEXT_TYPES:

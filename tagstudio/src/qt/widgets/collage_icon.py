@@ -25,6 +25,7 @@ from PySide6.QtCore import (
 
 from src.core.library import Library
 from src.core.constants import DOC_TYPES, VIDEO_TYPES, IMAGE_TYPES
+from src.qt.helpers.file_tester import is_readable_video
 
 
 ERROR = f"[ERROR]"
@@ -112,30 +113,31 @@ class CollageIconRenderer(QObject):
                     except DecompressionBombError as e:
                         logging.info(f"[ERROR] One of the images was too big ({e})")
                 elif filepath.suffix.lower() in VIDEO_TYPES:
-                    video = cv2.VideoCapture(str(filepath))
-                    video.set(
-                        cv2.CAP_PROP_POS_FRAMES,
-                        (video.get(cv2.CAP_PROP_FRAME_COUNT) // 2),
-                    )
-                    success, frame = video.read()
-                    if not success:
-                        # Depending on the video format, compression, and frame
-                        # count, seeking halfway does not work and the thumb
-                        # must be pulled from the earliest available frame.
-                        video.set(cv2.CAP_PROP_POS_FRAMES, 0)
+                    if is_readable_video(filepath):
+                        video = cv2.VideoCapture(str(filepath), cv2.CAP_FFMPEG)
+                        video.set(
+                            cv2.CAP_PROP_POS_FRAMES,
+                            (video.get(cv2.CAP_PROP_FRAME_COUNT) // 2),
+                        )
                         success, frame = video.read()
-                    frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-                    with Image.fromarray(frame, mode="RGB") as pic:
-                        if keep_aspect:
-                            pic.thumbnail(size)
-                        else:
-                            pic = pic.resize(size)
-                        if data_tint_mode and color:
-                            pic = ImageChops.hard_light(
-                                pic, Image.new("RGB", size, color)
-                            )
-                        # collage.paste(pic, (y*thumb_size, x*thumb_size))
-                        self.rendered.emit(pic)
+                        if not success:
+                            # Depending on the video format, compression, and frame
+                            # count, seeking halfway does not work and the thumb
+                            # must be pulled from the earliest available frame.
+                            video.set(cv2.CAP_PROP_POS_FRAMES, 0)
+                            success, frame = video.read()
+                        frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+                        with Image.fromarray(frame, mode="RGB") as pic:
+                            if keep_aspect:
+                                pic.thumbnail(size)
+                            else:
+                                pic = pic.resize(size)
+                            if data_tint_mode and color:
+                                pic = ImageChops.hard_light(
+                                    pic, Image.new("RGB", size, color)
+                                )
+                            # collage.paste(pic, (y*thumb_size, x*thumb_size))
+                            self.rendered.emit(pic)
         except (UnidentifiedImageError, FileNotFoundError):
             logging.info(
                 f"\n{ERROR} Couldn't read {entry.path}{os.sep}{entry.filename}"

@@ -47,6 +47,7 @@ from src.qt.widgets.text_box_edit import EditTextBox
 from src.qt.widgets.text_line_edit import EditTextLine
 from src.qt.helpers.qbutton_wrapper import QPushButtonWrapper
 from src.qt.widgets.video_player import VideoPlayer
+from src.qt.helpers.file_tester import is_readable_video
 
 
 # Only import for type checking/autocompletion, will not be imported at runtime.
@@ -558,25 +559,27 @@ class PreviewPanel(QWidget):
                             ):
                                 pass
                         elif filepath.suffix.lower() in VIDEO_TYPES:
-                            video = cv2.VideoCapture(str(filepath))
-                            if video.get(cv2.CAP_PROP_FRAME_COUNT) <= 0:
-                                raise cv2.error("File is invalid or has 0 frames")
-                            video.set(cv2.CAP_PROP_POS_FRAMES, 0)
-                            success, frame = video.read()
-                            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-                            image = Image.fromarray(frame)
-                            if success:
-                                self.preview_img.hide()
-                                self.preview_vid.play(
-                                    filepath, QSize(image.width, image.height)
+                            if is_readable_video(filepath):
+                                video = cv2.VideoCapture(str(filepath), cv2.CAP_FFMPEG)
+                                video.set(
+                                    cv2.CAP_PROP_POS_FRAMES,
+                                    (video.get(cv2.CAP_PROP_FRAME_COUNT) // 2),
                                 )
-                                self.resizeEvent(
-                                    QResizeEvent(
-                                        QSize(image.width, image.height),
-                                        QSize(image.width, image.height),
+                                success, frame = video.read()
+                                frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+                                image = Image.fromarray(frame)
+                                if success:
+                                    self.preview_img.hide()
+                                    self.preview_vid.play(
+                                        filepath, QSize(image.width, image.height)
                                     )
-                                )
-                                self.preview_vid.show()
+                                    self.resizeEvent(
+                                        QResizeEvent(
+                                            QSize(image.width, image.height),
+                                            QSize(image.width, image.height),
+                                        )
+                                    )
+                                    self.preview_vid.show()
 
                         # Stats for specific file types are displayed here.
                         if image and filepath.suffix.lower() in (
