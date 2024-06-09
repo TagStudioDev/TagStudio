@@ -1320,6 +1320,29 @@ class Library:
         except KeyError:
             return -1
 
+
+    # field1: string| field2: string | tags: tag1, tag2 #
+    def parse_metadata(self, query: str | None = None) -> dict[str, list[str] | dict]:
+        if query is None:
+            return {}
+        meta_to_value: dict = {}
+
+        meta_list = query.split("|")
+        for meta in meta_list:
+            inner_meta = meta.split(":")
+            # TODO
+            if len(inner_meta) < 2:
+                continue
+                field, value = 'tags', inner_meta[0]
+            else:
+                field, value = inner_meta[0], inner_meta[1]
+            values_list = value.strip().split(";")
+            meta_to_value[field] = values_list
+
+        return meta_to_value
+
+
+    ### WIPWIPWIP ###
     def search_library(
         self,
         query: str = None,
@@ -1333,6 +1356,7 @@ class Library:
         Returns a list of (str, int) tuples consisting of a result type and ID.
         """
 
+
         # self.filtered_entries.clear()
         results: list[tuple[ItemType, int]] = []
         collations_added = []
@@ -1340,6 +1364,10 @@ class Library:
         if query:
             # start_time = time.time()
             query = query.strip().lower()
+            print(query)
+
+            meta_to_value = self.parse_metadata(query)
+
             query_words: list[str] = query.split(" ")
             all_tag_terms: list[str] = []
             only_untagged: bool = "untagged" in query or "no tags" in query
@@ -1382,6 +1410,8 @@ class Library:
             # non_entry_count = 0
             # Iterate over all Entries =============================================================
             for entry in self.entries:
+
+                # self.filter_entries(
                 allowed_ext: bool = entry.filename.suffix not in self.ext_list
                 # try:
                 # entry: Entry = self.entries[self.file_to_library_index_map[self._source_filenames[i]]]
@@ -1428,12 +1458,10 @@ class Library:
 
                     # NOTE: This searches path and filenames.
 
-                    if allow_adv:
-                        if [q for q in query_words if (q in str(entry.path).lower())]:
+                    if meta_to_value.get('filename') is not None:
+                        if [q for q in meta_to_value.get('filename') if (q in str(entry.path).lower())]:
                             results.append((ItemType.ENTRY, entry.id))
-                        elif [
-                            q for q in query_words if (q in str(entry.filename).lower())
-                        ]:
+                        elif [q for q in meta_to_value.get('filename') if (q in str(entry.filename).lower())]:
                             results.append((ItemType.ENTRY, entry.id))
                     elif tag_only:
                         if entry.has_tag(self, int(query_words[0])):
