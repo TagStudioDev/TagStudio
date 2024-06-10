@@ -344,6 +344,7 @@ class ItemThumb(FlowWidget):
         if ext and ext not in IMAGE_TYPES or ext in [".gif", ".apng"]:
             self.ext_badge.setHidden(False)
             self.ext_badge.setText(ext.upper()[1:])
+            # TODO: Consider creating a separate constant
             if ext in VIDEO_TYPES + AUDIO_TYPES:
                 self.count_badge.setHidden(False)
         else:

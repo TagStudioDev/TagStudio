@@ -25,7 +25,7 @@ def open_file(path: str | Path, file_manager: bool = False) -> None:
     """
 
     if isinstance(path, Path):
-        _path = str(path.resolve().absolute())
+        _path = str(path.resolve())
     else:
         _path = str(path)
 

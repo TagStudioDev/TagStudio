@@ -34,6 +34,7 @@ class CollageIconRenderer(QObject):
     ):
         entry = self.lib.get_entry(entry_id)
         filepath = self.lib.library_dir / entry.path / entry.filename
+        # NOTE: See https://github.com/TagStudioDev/TagStudio/pull/235/files/5ebd179a344b0aa5a8323e6842f8c2d538698dc4#r1628628603
         # file_type = os.path.splitext(filepath)[1].lower()[1:]
         color: str = ""
 
@@ -118,7 +119,7 @@ class CollageIconRenderer(QObject):
                         # collage.paste(pic, (y*thumb_size, x*thumb_size))
                         self.rendered.emit(pic)
         except (UnidentifiedImageError, FileNotFoundError):
-            logger.error(f"\nCouldn't read {entry.path}{os.sep}{entry.filename}")
+            logger.error(f"Couldn't read {entry.path}{os.sep}{entry.filename}")
             with Image.open(
                 str(
                     Path(__file__).parents[2]
@@ -132,9 +133,6 @@ class CollageIconRenderer(QObject):
                 # collage.paste(pic, (y*thumb_size, x*thumb_size))
                 self.rendered.emit(pic)
         except KeyboardInterrupt:
-            # self.quit(save=False, backup=True)
-            # clear()
-            logger.info("\n")
             logger.info("Collage operation cancelled.")
         except Exception:
             logger.exception(f"{entry.path}{os.sep}{entry.filename}")

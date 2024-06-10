@@ -7,20 +7,11 @@
 
 import datetime
 import math
-
-# from multiprocessing import Value
 import os
-
-# import subprocess
 import sys
 import time
 import traceback
-
-# import climage
-# import click
 from datetime import datetime as dt
-
-# import pillow_avif
 from pathlib import Path
 
 import cv2

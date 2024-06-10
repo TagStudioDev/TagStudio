@@ -430,9 +430,7 @@ class Library:
             self.save_library_to_disk()
             self.open_library(self.library_dir)
         except Exception:
-            logger.exception(
-                f"Error creating a library in {str(path.resolve().absolute())}"
-            )
+            logger.exception(f"Error creating a library in {str(path.resolve())}")
             return 2
 
         return 0

@@ -17,7 +17,7 @@ import webbrowser
 from datetime import datetime as dt
 from pathlib import Path
 from queue import Queue
-from typing import Optional
+from typing import Optional, cast
 
 from humanfriendly import format_timespan
 from PIL import Image
@@ -34,6 +34,7 @@ from PySide6.QtGui import (
 )
 from PySide6.QtWidgets import (
     QApplication,
+    QComboBox,
     QFileDialog,
     QLineEdit,
     QMenu,
@@ -42,12 +43,7 @@ from PySide6.QtWidgets import (
     QScrollArea,
     QSplashScreen,
     QWidget,
-    QComboBox,
 )
-
-from src.core.enums import SettingItems, SearchMode
-from src.core.library import ItemType
-from src.core.ts_core import TagStudioCore
 from src.core.constants import (
     BACKUP_FOLDER_NAME,
     COLLAGE_FOLDER_NAME,
@@ -55,7 +51,10 @@ from src.core.constants import (
     VERSION,
     VERSION_BRANCH,
 )
+from src.core.enums import SearchMode, SettingItems
+from src.core.library import ItemType
 from src.core.logging import get_logger
+from src.core.ts_core import TagStudioCore
 from src.core.utils.web import strip_web_protocol
 from src.qt.flowlayout import FlowLayout
 from src.qt.helpers.custom_runnable import CustomRunnable
@@ -75,15 +74,15 @@ from src.qt.widgets.progress import ProgressWidget
 from src.qt.widgets.thumb_renderer import ThumbRenderer
 
 # this import has side-effect of import PySide resources
-import src.qt.resources_rc  # noqa: F401 pylint: disable=unused-import
+import src.qt.resources_rc  # noqa: F401 pylint: disable=unused-impor # isort: skip
 
 # SIGQUIT is not defined on Windows
 if sys.platform == "win32":
-    from signal import signal, SIGINT, SIGTERM
+    from signal import SIGINT, SIGTERM, signal
 
     SIGQUIT = SIGTERM
 else:
-    from signal import signal, SIGINT, SIGTERM, SIGQUIT
+    from signal import SIGINT, SIGQUIT, SIGTERM, signal
 
 logger = get_logger(__name__)
 
@@ -147,7 +146,7 @@ class QtDriver(QObject):
 
     preview_panel: PreviewPanel
 
-    def __init__(self, core: TagStudioCore, args):
+    def __init__(self, core: TagStudioCore, args) -> None:
         super().__init__()
         self.core: TagStudioCore = core
         self.lib = self.core.lib
@@ -192,10 +191,12 @@ class QtDriver(QObject):
                 f"[QT DRIVER] Config File not specified, defaulting to {self.settings.fileName()}"
             )
 
+        # TODO: Handle the situation, where os.cpu_count returned None
         max_threads = os.cpu_count()
         if args.ci:
             # spawn only single worker in CI environment
             max_threads = 1
+
         for i in range(max_threads):
             # thread = threading.Thread(target=self.consumer, name=f'ThumbRenderer_{i}',args=(), daemon=True)
             # thread.start()
@@ -205,6 +206,7 @@ class QtDriver(QObject):
             thread.start()
 
     def open_library_from_dialog(self):
+        # NOTE: Isn't QFileDialog.Option the proper way of accessing the values?
         dir = QFileDialog.getExistingDirectory(
             None, "Open/Create Library", "/", QFileDialog.ShowDirsOnly
         )
@@ -498,11 +500,11 @@ class QtDriver(QObject):
 
         self.init_library_window()
 
-        lib = None
+        lib: Path | None = None
         if self.args.open:
-            lib = self.args.open
+            lib = Path(self.args.open)
         elif self.settings.value(SettingItems.START_LOAD_LAST, True, type=bool):
-            lib = self.settings.value(SettingItems.LAST_LIBRARY)
+            lib = cast(Path, self.settings.value(SettingItems.LAST_LIBRARY))
 
             # TODO: Remove this check if the library is no longer saved with files
             if lib and not (Path(lib) / TS_FOLDER_NAME).exists():
@@ -512,13 +514,13 @@ class QtDriver(QObject):
                 self.settings.setValue(SettingItems.LAST_LIBRARY, "")
                 lib = None
 
-        if lib:
+        if lib is not None:
             self.splash.showMessage(
                 f'Opening Library "{lib}"...',
                 int(Qt.AlignmentFlag.AlignBottom | Qt.AlignmentFlag.AlignHCenter),
                 QColor("#9782ff"),
             )
-            self.open_library(Path(lib))
+            self.open_library(lib)
 
         if self.args.ci:
             # gracefully terminate the app in CI environment
@@ -1414,9 +1416,9 @@ class QtDriver(QObject):
             logger.error(
                 f"No existing TagStudio library found at '{path}'. Creating one."
             )
-            logger.info(
-                f"Library Creation Return Code: {self.lib.create_library(path)}"
-            )
+
+            lib_creation_code = self.lib.create_library(path)
+            logger.info(f"Library Creation Return Code: {lib_creation_code}")
 
             self.add_new_files_callback()
 

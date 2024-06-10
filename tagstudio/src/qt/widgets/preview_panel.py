@@ -15,23 +15,22 @@ from PIL.Image import DecompressionBombError
 from PySide6.QtCore import QSize, Qt, Signal
 from PySide6.QtGui import QAction, QResizeEvent
 from PySide6.QtWidgets import (
-    QWidget,
-    QVBoxLayout,
     QFrame,
     QHBoxLayout,
     QLabel,
+    QMessageBox,
     QPushButton,
     QScrollArea,
-    QSplitter,
     QSizePolicy,
-    QMessageBox,
+    QSplitter,
+    QVBoxLayout,
+    QWidget,
 )
-from src.core.constants import IMAGE_TYPES, RAW_IMAGE_TYPES, VIDEO_TYPES
+from src.core.constants import IMAGE_TYPES, RAW_IMAGE_TYPES, TS_FOLDER_NAME, VIDEO_TYPES
 from src.core.enums import SettingItems, Theme
 from src.core.library import Entry, ItemType, Library
 from src.core.logging import get_logger
-from src.core.constants import TS_FOLDER_NAME
-from src.qt.helpers.file_opener import FileOpenerLabel, FileOpenerHelper, open_file
+from src.qt.helpers.file_opener import FileOpenerHelper, FileOpenerLabel, open_file
 from src.qt.modals.add_field import AddFieldModal
 from src.qt.widgets.fields import FieldContainer
 from src.qt.widgets.panel import PanelModal
@@ -534,7 +533,7 @@ class PreviewPanel(QWidget):
                             if success:
                                 self.preview_img.hide()
                                 self.preview_vid.play(
-                                    str(filepath.resolve().absolute()),
+                                    str(filepath.resolve()),
                                     QSize(image.width, image.height),
                                 )
                                 self.resizeEvent(
@@ -546,6 +545,7 @@ class PreviewPanel(QWidget):
                                 self.preview_vid.show()
 
                         # Stats for specific file types are displayed here.
+                        # TODO: Consider creating a separate constant. I assume that this code runs a lot and this may have a performance impact
                         if image and filepath.suffix.lower() in (
                             IMAGE_TYPES + VIDEO_TYPES + RAW_IMAGE_TYPES
                         ):
@@ -881,6 +881,7 @@ class PreviewPanel(QWidget):
                 container.set_edit_callback(modal.show)
                 prompt = f'Are you sure you want to remove this "{self.lib.get_field_attr(field, "name")}" field?'
 
+                # TODO: Change into a partial, as per https://github.com/TagStudioDev/TagStudio/issues/131. Also similar other callback definitions in the file
                 def callback():
                     return self.remove_field(field), self.update_widgets()
 
@@ -1046,9 +1047,8 @@ class PreviewPanel(QWidget):
                     if updated_badges:
                         self.driver.update_badges()
                 except ValueError:
-                    # TODO: Decide whether this should be logged as info or an error
-                    logger.info(
-                        f"[PREVIEW PANEL][ERROR?] Tried to remove field from Entry ({entry.id}) that never had it"
+                    logger.error(
+                        f"[PREVIEW PANEL] Tried to remove field from Entry ({entry.id}) that never had it"
                     )
                     pass
 

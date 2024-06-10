@@ -8,6 +8,8 @@ COLLAGE_FOLDER_NAME: str = "collages"
 LIBRARY_FILENAME: str = "ts_library.json"
 
 # TODO: Turn this whitelist into a user-configurable blacklist.
+# TODO: Consider changing into sets? Except the TAG_COLORS. Further input needed
+# TODO: Type the variables as Final
 IMAGE_TYPES: list[str] = [
     ".png",
     ".jpg",
