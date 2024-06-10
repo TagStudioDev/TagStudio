@@ -35,7 +35,7 @@ body:
   - type: textarea
     attributes:
       label: Description
-      description: Clear and concise description of the problem. Include any errors you see.
+      description: Clear and concise description of the problem. Attach screenshots if needed, and include any errors you see.
     validations:
       required: true
   - type: textarea
@@ -44,10 +44,6 @@ body:
       description: Clear and concise description of what you think should happen.
     validations:
       required: true
-  - type: textarea
-    attributes:
-      label: Screenshots
-      description: Any screenshots that might help explain.
   - type: textarea
     attributes:
       label: Steps to Reproduce
