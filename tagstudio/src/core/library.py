@@ -417,6 +417,14 @@ class Library:
             {"id": 30, "name": "Comments", "type": "text_box"},
         ]
 
+        def generate_field_id_to_name_map(self) -> dict[int, str]:
+            map: dict = {}
+            for field in self.default_fields:
+                map[field.get("id")] = field.get('name').lower()
+            return map
+
+        self._field_id_to_name_map: dict = generate_field_id_to_name_map(self)
+
     def create_library(self, path: Path) -> int:
         """
         Creates a TagStudio library in the given directory.\n
@@ -1320,29 +1328,96 @@ class Library:
         except KeyError:
             return -1
 
-
-    # field1: string| field2: string | tags: tag1, tag2 #
-    def parse_metadata(self, query: str | None = None) -> dict[str, list[str] | dict]:
+    def parse_metadata(self, query: str | None = None) \
+            -> list[dict[str, str | list[str]]]:
+        """
+        Splits query into several maps 'meta_key -> value'\n
+        Values without specified key parsed as tags and put in 'unbound' key \n
+        example query1:
+            "meta_first: value; meta_second: value; tag1;\
+ | meta_first: value; meta_second: value; notag;"
+        example query2:
+            "tag1 | notag | tag2"
+        """
         if query is None:
             return {}
-        meta_to_value: dict = {}
+        meta_list: list = []
+        meta_conditions = query.strip().split("|")
+        for meta_condition in meta_conditions:
+            meta_to_value: dict = {}
+            field_data_list = meta_condition.strip().split(";")
+            print(field_data_list)
+            for field_data in field_data_list:
+                field_parsed = field_data.strip().split(":")
+                if len(field_parsed) < 2:
+                    unbound_values = field_parsed[0].strip().split(' ')
+                    if meta_to_value.get('unbound') is None:
+                        meta_to_value['unbound'] = unbound_values
+                    else:
+                        meta_to_value['unbound'].append(unbound_values)
+                    continue
+                if len(field_parsed) != 2:
+                    logging.warning("""[ERROR] Attempt to parse mutiple fields\
+                                    as one! Do not forget to specify ';'\
+                                    between different meta fields""")
+                meta_to_value[field_parsed[0].lower()] = field_parsed[1].lower()
+            meta_list.append(meta_to_value)
 
-        meta_list = query.split("|")
-        for meta in meta_list:
-            inner_meta = meta.split(":")
-            # TODO
-            if len(inner_meta) < 2:
+        logging.info("Parsed values: ",meta_list)
+        return meta_list
+
+    def populate_tags(self, entry: Entry) -> tuple[list[str], list[str]]:
+        """ Parse tags from entry.fields\n
+        returns tuple (entry_tags, entry_authors) """
+        entry_tags: list[int] = []
+        entry_authors: list[str] = []
+        if entry.fields:
+            for field in entry.fields:
+                field_id = list(field.keys())[0]
+                if self.get_field_obj(field_id)["type"] == "tag_box":
+                    entry_tags.extend(field[field_id])
+                if self.get_field_obj(field_id)["name"] == "Author":
+                    entry_authors.extend(field[field_id])
+                if self.get_field_obj(field_id)["name"] == "Artist":
+                    entry_authors.extend(field[field_id])
+        return (entry_tags, entry_authors)
+
+    def filter_entry(self, meta_to_value: dict, entry: Entry) -> bool:
+        entry_fields: dict = {}
+
+        query = meta_to_value.get('unbound', '')
+        only_untagged: bool = "untagged" in query or "no tags" in query
+        only_empty: bool = "empty" in query or "no fields" in query
+        only_missing: bool = "missing" in query or "no file" in query
+        (entry_tags, _) = self.populate_tags(entry)
+        if only_untagged and len(entry_tags) <= 0:
+            return True
+        elif only_empty and len(entry.fields) <= 0:
+            return True
+        elif only_missing:
+            if (self.library_dir / entry.path / entry.filename)\
+                    .resolve() in self.missing_files:
+                return True
+
+        for field in entry.fields:
+            field_key = self._field_id_to_name_map.get(list(field.keys())[0])
+            entry_fields[field_key] = list(field.values())[0]
+
+        for meta in meta_to_value.keys():
+            if not isinstance(meta_to_value.get(meta, ''), str):
                 continue
-                field, value = 'tags', inner_meta[0]
-            else:
-                field, value = inner_meta[0], inner_meta[1]
-            values_list = value.strip().split(";")
-            meta_to_value[field] = values_list
+            string = entry_fields.get(meta, '').casefold().encode('UTF-8').strip()
+            substring = meta_to_value.get(meta, '').casefold().encode('UTF-8').strip()
+            if substring in string:
+                return True
+        if meta_to_value.get('filename') is not None:
+            if [q for q in meta_to_value.get('filename') if (q in str(entry.path).lower())]:
+                return True
+            elif [q for q in meta_to_value.get('filename') if (q in str(entry.filename).lower())]:
+                return True
+        return False
 
-        return meta_to_value
 
-
-    ### WIPWIPWIP ###
     def search_library(
         self,
         query: str = None,
@@ -1355,8 +1430,6 @@ class Library:
         Uses a search query to generate a filtered results list.
         Returns a list of (str, int) tuples consisting of a result type and ID.
         """
-
-
         # self.filtered_entries.clear()
         results: list[tuple[ItemType, int]] = []
         collations_added = []
@@ -1364,9 +1437,9 @@ class Library:
         if query:
             # start_time = time.time()
             query = query.strip().lower()
-            print(query)
 
-            meta_to_value = self.parse_metadata(query)
+            # HACK: AND and OR is not yet supported
+            meta_to_value = self.parse_metadata(query)[0]
 
             query_words: list[str] = query.split(" ")
             all_tag_terms: list[str] = []
@@ -1379,6 +1452,7 @@ class Library:
                 query_words.remove("filename:")
             if tag_only:
                 query_words.remove("tag_id:")
+            query_words = meta_to_value.get('unbound')
             # TODO: Expand this to allow for dynamic fields to work.
             only_no_author: bool = "no author" in query or "no artist" in query
 
@@ -1411,7 +1485,11 @@ class Library:
             # Iterate over all Entries =============================================================
             for entry in self.entries:
 
-                # self.filter_entries(
+                # HACK: search algorithm demo
+                if self.filter_entry(meta_to_value, entry):
+                    results.append((ItemType.ENTRY, entry.id))
+                    continue
+
                 allowed_ext: bool = entry.filename.suffix not in self.ext_list
                 # try:
                 # entry: Entry = self.entries[self.file_to_library_index_map[self._source_filenames[i]]]
@@ -1419,17 +1497,7 @@ class Library:
 
                 if allowed_ext == self.is_exclude_list:
                     # If the entry has tags of any kind, append them to this main tag list.
-                    entry_tags: list[int] = []
-                    entry_authors: list[str] = []
-                    if entry.fields:
-                        for field in entry.fields:
-                            field_id = list(field.keys())[0]
-                            if self.get_field_obj(field_id)["type"] == "tag_box":
-                                entry_tags.extend(field[field_id])
-                            if self.get_field_obj(field_id)["name"] == "Author":
-                                entry_authors.extend(field[field_id])
-                            if self.get_field_obj(field_id)["name"] == "Artist":
-                                entry_authors.extend(field[field_id])
+                    (entry_tags, entry_authors) = self.populate_tags(entry)
 
                     # print(f'Entry Tags: {entry_tags}')
 
