@@ -53,6 +53,8 @@ def open_wrapper_get():
 
     def open_local_url(url, mode='r'):
 
+        # Redundant af, but this is where the checking of file names can be done
+
         path = url
 
         return open(str(path), mode)
