@@ -1,0 +1,64 @@
+name: Bug Report
+description: File a bug or issue report.
+title: '[Bug]: '
+labels: [Type: Bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Before reporting, read the [documentation](https://github.com/TagStudioDev/TagStudio/wiki) and search existing [issues](https://github.com/TagStudioDev/TagStudio/issues).
+        Validate that you are using the latest version, your issue might already be fixed!
+        Questions, guidance, and usage goes in [discussions](https://github.com/TagStudioDev/TagStudio/discussions). Invalid issues will be closed.
+  - type: checkboxes
+    attributes:
+      label: Checklist
+      description: Make sure you've checked (and actually did) all of the below.
+      options:
+        - label: I am using the latest version.
+          required: true
+        - label: I read the [documentation](https://github.com/TagStudioDev/TagStudio/wiki).
+          required: true
+        - label: I searched existing [issues](https://github.com/TagStudioDev/TagStudio/issues).
+          required: true
+  - type: input
+    attributes:
+      label: TagStudio Version
+      placeholder: Alpha 9.1.0
+    validations:
+      required: true
+  - type: input
+    attributes:
+      label: Operating System & Version
+      placeholder: TagOS 3.14
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Description
+      description: Clear and concise description of the problem. Include any errors you see.
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Expected Behavior
+      description: Clear and concise description of what you think should happen.
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Screenshots
+      description: Any screenshots that might help explain.
+  - type: textarea
+    attributes:
+      label: Steps to Reproduce
+      description: Minimal steps neded for the problem to occur.
+      placeholder: |
+        1.
+        2.
+        3.
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Logs
+      description: Provide any logs, if applicable.
