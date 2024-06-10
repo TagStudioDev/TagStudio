@@ -229,6 +229,7 @@ class ThumbRenderer(QObject):
                         else:
                             logging.info(f"[ThumbRenderer]{ERROR}: Couldn't render thumbnail for {_filepath.name} ({type(e).__name__})")
 
+                        # Making the "No blend thumbnail avaliable" thumbnail
                         font_path = "./resources/qt/fonts/Oxanium-Bold.ttf"
                         font = ImageFont.truetype(font_path, 17)
                         bg = Image.new("RGB", (256, 256), color="#1e1e1e")
