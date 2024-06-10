@@ -204,6 +204,39 @@ class ThumbRenderer(QObject):
                 # 	img_buf = io.BytesIO()
                 # 	plt.savefig(img_buf, format='png')
                 # 	image = Image.open(img_buf)
+
+                # Blender ===========================================================
+                elif _filepath.suffix.lower() == '.blend':
+                    from src.qt.helpers import blender_thumbnailer
+                    
+                    try:
+                        blendthumbnail = blender_thumbnailer.main(str(_filepath))
+                        image = Image.frombuffer("RGBA",(blendthumbnail[1],blendthumbnail[2]),blendthumbnail[0])
+                        image = ImageOps.flip(image)
+                        image = ImageOps.exif_transpose(image)
+                        
+                    except (
+                        AttributeError,
+                        UnidentifiedImageError,
+                        FileNotFoundError,
+                        DecompressionBombError,
+                        UnicodeDecodeError, TypeError) as e:
+
+                        if str(e) == "expected string or buffer":
+                            logging.info(f"[ThumbRenderer]{ERROR} Can't read the blender thumbnail of {_filepath.name}. Unlucky.")
+        
+
+                        else:
+                            logging.info(f"[ThumbRenderer]{ERROR}: Couldn't render thumbnail for {_filepath.name} ({type(e).__name__})")
+
+                        font_path = "./resources/qt/fonts/Oxanium-Bold.ttf"
+                        font = ImageFont.truetype(font_path, 17)
+                        bg = Image.new("RGB", (256, 256), color="#1e1e1e")
+                        draw = ImageDraw.Draw(bg)
+                        draw.text((16, 16), "Can't read blend thumbnail", file=(255, 255, 255), font=font)
+                        image = bg
+                    
+                        
                 # No Rendered Thumbnail ========================================
                 else:
                     image = ThumbRenderer.thumb_file_default_512.resize(
