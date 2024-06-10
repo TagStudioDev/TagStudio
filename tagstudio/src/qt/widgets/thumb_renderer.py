@@ -223,7 +223,7 @@ class ThumbRenderer(QObject):
                         UnicodeDecodeError, TypeError) as e:
 
                         if str(e) == "expected string or buffer":
-                            logging.info(f"[ThumbRenderer]{ERROR} Can't read the blender thumbnail of {_filepath.name}. Unlucky.")
+                            logging.info(f"[ThumbRenderer]{ERROR} Can't read the blender thumbnail of {_filepath.name}. Either deleted or doesn't have a thumbnail.")
         
 
                         else:
