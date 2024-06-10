@@ -1,8 +1,10 @@
-import logging
-import os
-import typing
+# Licensed under the GPL-3.0 License.
+# Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
-# os.environ["QT_MEDIA_BACKEND"] = "ffmpeg"
+import logging
+
+from pathlib import Path
+import typing
 
 from PySide6.QtCore import (
     Qt,
@@ -18,7 +20,6 @@ from PySide6.QtMultimedia import QMediaPlayer, QAudioOutput, QMediaDevices
 from PySide6.QtMultimediaWidgets import QGraphicsVideoItem
 from PySide6.QtWidgets import QGraphicsView, QGraphicsScene
 from PySide6.QtGui import (
-    QInputMethodEvent,
     QPen,
     QColor,
     QBrush,
@@ -29,10 +30,7 @@ from PySide6.QtGui import (
     QBitmap,
 )
 from PySide6.QtSvgWidgets import QSvgWidget
-from PIL import Image
 from src.qt.helpers.file_opener import FileOpenerHelper
-
-from src.core.constants import VIDEO_TYPES, AUDIO_TYPES
 from PIL import Image, ImageDraw
 from src.core.enums import SettingItems
 
@@ -51,6 +49,25 @@ class VideoPlayer(QGraphicsView):
     content_visible = False
     filepath = None
 
+    pause_icon: bytes = None
+    play_icon: bytes = None
+    volume_mute_icon: bytes = None
+    volume_icon: bytes = None
+
+    # Load icon files as bytes
+    _parents = Path(__file__).parents[3]
+    with open(Path(_parents, "resources/qt/images/pause.svg"), "rb") as icon:
+        pause_icon = bytes(icon.read())
+
+    with open(Path(_parents, "resources/qt/images/play.svg"), "rb") as icon:
+        play_icon = bytes(icon.read())
+
+    with open(Path(_parents, "resources/qt/images/volume.svg"), "rb") as icon:
+        volume_icon = bytes(icon.read())
+
+    with open(Path(_parents, "resources/qt/images/volume_mute.svg"), "rb") as icon:
+        volume_mute_icon = bytes(icon.read())
+
     def __init__(self, driver: "QtDriver") -> None:
         # Set up the base class.
         super().__init__()
@@ -61,6 +78,7 @@ class VideoPlayer(QGraphicsView):
         )
         self.hover_fix_timer.timeout.connect(lambda: self.checkIfStillHovered())
         self.hover_fix_timer.setSingleShot(True)
+
         # Set up the video player.
         self.installEventFilter(self)
         self.setScene(QGraphicsScene(self))
@@ -82,6 +100,7 @@ class VideoPlayer(QGraphicsView):
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.scene().addItem(self.video_preview)
         self.video_preview.setAcceptedMouseButtons(Qt.MouseButton.LeftButton)
+
         # Set up the video tint.
         self.video_tint = self.scene().addRect(
             0,
@@ -91,44 +110,31 @@ class VideoPlayer(QGraphicsView):
             QPen(QColor(0, 0, 0, 0)),
             QBrush(QColor(0, 0, 0, 0)),
         )
-        # self.video_tint.setParentItem(self.video_preview)
-        # self.album_art = QGraphicsPixmapItem(self.video_preview)
-        # self.scene().addItem(self.album_art)
-        # self.album_art.setPixmap(
-        #     QPixmap("./tagstudio/resources/qt/images/thumb_file_default_512.png")
-        # )
-        # self.album_art.setOpacity(0.0)
+
         # Set up the buttons.
-        self.play_pause = QSvgWidget("./tagstudio/resources/pause.svg")
+        self.play_pause = QSvgWidget()
         self.play_pause.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, True)
         self.play_pause.setMouseTracking(True)
         self.play_pause.installEventFilter(self)
         self.scene().addWidget(self.play_pause)
-        self.play_pause.resize(100, 100)
+        self.play_pause.resize(72, 72)
         self.play_pause.move(
             int(self.width() / 2 - self.play_pause.size().width() / 2),
             int(self.height() / 2 - self.play_pause.size().height() / 2),
         )
         self.play_pause.hide()
 
-        self.mute_button = QSvgWidget("./tagstudio/resources/volume_muted.svg")
+        self.mute_button = QSvgWidget()
         self.mute_button.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, True)
         self.mute_button.setMouseTracking(True)
         self.mute_button.installEventFilter(self)
         self.scene().addWidget(self.mute_button)
-        self.mute_button.resize(40, 40)
+        self.mute_button.resize(32, 32)
         self.mute_button.move(
             int(self.width() - self.mute_button.size().width() / 2),
             int(self.height() - self.mute_button.size().height() / 2),
         )
         self.mute_button.hide()
-        # self.fullscreen_button = QSvgWidget('./tagstudio/resources/pause.svg', self)
-        # self.fullscreen_button.setMouseTracking(True)
-        # self.fullscreen_button.installEventFilter(self)
-        # self.scene().addWidget(self.fullscreen_button)
-        # self.fullscreen_button.resize(40, 40)
-        # self.fullscreen_button.move(self.fullscreen_button.size().width()/2, self.height() - self.fullscreen_button.size().height()/2)
-        # self.fullscreen_button.hide()
 
         self.setContextMenuPolicy(Qt.ContextMenuPolicy.ActionsContextMenu)
         self.opener = FileOpenerHelper(filepath=self.filepath)
@@ -157,22 +163,17 @@ class VideoPlayer(QGraphicsView):
         self.driver.settings.sync()
 
     def checkMediaStatus(self, media_status: QMediaPlayer.MediaStatus) -> None:
-        # logging.info(media_status)
         if media_status == QMediaPlayer.MediaStatus.EndOfMedia:
-            # Switches current video to with video at filepath. Reason for this is because Pyside6 is dumb and can't handle setting a new source and freezes.
+            # Switches current video to with video at filepath.
+            # Reason for this is because Pyside6 can't handle setting a new source and freezes.
             # Even if I stop the player before switching, it breaks.
             # On the plus side, this adds infinite looping for the video preview.
             self.player.stop()
             self.player.setSource(QUrl().fromLocalFile(self.filepath))
-            # logging.info(f'Set source to {self.filepath}.')
-            # self.video_preview.setSize(self.resolution)
             self.player.setPosition(0)
-            # logging.info(f'Set muted to true.')
             if self.autoplay.isChecked():
-                # logging.info(self.driver.settings.value("autoplay_videos", True, bool))
                 self.player.play()
             else:
-                # logging.info("Paused")
                 self.player.pause()
             self.opener.set_filepath(self.filepath)
             self.keepControlsInPlace()
@@ -180,14 +181,14 @@ class VideoPlayer(QGraphicsView):
 
     def updateControls(self) -> None:
         if self.player.audioOutput().isMuted():
-            self.mute_button.load("./tagstudio/resources/volume_muted.svg")
+            self.mute_button.load(VideoPlayer.volume_mute_icon)
         else:
-            self.mute_button.load("./tagstudio/resources/volume_unmuted.svg")
+            self.mute_button.load(VideoPlayer.volume_icon)
 
         if self.player.isPlaying():
-            self.play_pause.load("./tagstudio/resources/pause.svg")
+            self.play_pause.load(VideoPlayer.pause_icon)
         else:
-            self.play_pause.load("./tagstudio/resources/play.svg")
+            self.play_pause.load(VideoPlayer.play_icon)
 
     def wheelEvent(self, event: QWheelEvent) -> None:
         return
@@ -229,8 +230,10 @@ class VideoPlayer(QGraphicsView):
         return super().eventFilter(obj, event)
 
     def checkIfStillHovered(self) -> None:
-        # Yet again, Pyside6 is dumb. I don't know why, but the HoverLeave event is not triggered sometimes and does not hide the controls.
-        # So, this is a workaround. This is called by a QTimer every 10ms to check if the mouse is still in the video preview.
+        # I don't know why, but the HoverLeave event is not triggered sometimes
+        # and does not hide the controls.
+        # So, this is a workaround. This is called by a QTimer every 10ms to check if the mouse
+        # is still in the video preview.
         if not self.video_preview.isUnderMouse():
             self.releaseMouse()
         else:
@@ -240,55 +243,51 @@ class VideoPlayer(QGraphicsView):
         self.video_tint.setBrush(QBrush(QColor(0, 0, 0, value)))
 
     def underMouse(self) -> bool:
-        # logging.info("under mouse")
         self.animation.setStartValue(self.video_tint.brush().color().alpha())
         self.animation.setEndValue(100)
-        self.animation.setDuration(500)
+        self.animation.setDuration(250)
         self.animation.start()
         self.play_pause.show()
         self.mute_button.show()
-        # self.fullscreen_button.show()
         self.keepControlsInPlace()
         self.updateControls()
-        # rcontent = self.contentsRect()
-        # self.setSceneRect(0, 0, rcontent.width(), rcontent.height())
+
         return super().underMouse()
 
     def releaseMouse(self) -> None:
-        # logging.info("release mouse")
         self.animation.setStartValue(self.video_tint.brush().color().alpha())
         self.animation.setEndValue(0)
         self.animation.setDuration(500)
         self.animation.start()
         self.play_pause.hide()
         self.mute_button.hide()
-        # self.fullscreen_button.hide()
+
         return super().releaseMouse()
 
     def resetControlsToDefault(self) -> None:
         # Resets the video controls to their default state.
-        self.play_pause.load("./tagstudio/resources/pause.svg")
-        self.mute_button.load("./tagstudio/resources/volume_muted.svg")
+        self.play_pause.load(VideoPlayer.pause_icon)
+        self.mute_button.load(VideoPlayer.volume_mute_icon)
 
     def pauseToggle(self) -> None:
         if self.player.isPlaying():
             self.player.pause()
-            self.play_pause.load("./tagstudio/resources/play.svg")
+            self.play_pause.load(VideoPlayer.play_icon)
         else:
             self.player.play()
-            self.play_pause.load("./tagstudio/resources/pause.svg")
+            self.play_pause.load(VideoPlayer.pause_icon)
 
     def muteToggle(self) -> None:
         if self.player.audioOutput().isMuted():
             self.player.audioOutput().setMuted(False)
-            self.mute_button.load("./tagstudio/resources/volume_unmuted.svg")
+            self.mute_button.load(VideoPlayer.volume_icon)
         else:
             self.player.audioOutput().setMuted(True)
-            self.mute_button.load("./tagstudio/resources/volume_muted.svg")
+            self.mute_button.load(VideoPlayer.volume_mute_icon)
 
     def play(self, filepath: str, resolution: QSize) -> None:
-        # Sets the filepath and sends the current player position to the very end, so that the new video can be played.
-        # self.player.audioOutput().setMuted(True)
+        # Sets the filepath and sends the current player position to the very end,
+        # so that the new video can be played.
         logging.info(f"Playing {filepath}")
         self.resolution = resolution
         self.filepath = filepath
@@ -297,7 +296,6 @@ class VideoPlayer(QGraphicsView):
             self.player.play()
         else:
             self.checkMediaStatus(QMediaPlayer.MediaStatus.EndOfMedia)
-        # logging.info(f"Successfully stopped.")
 
     def stop(self) -> None:
         self.filepath = None
@@ -310,10 +308,10 @@ class VideoPlayer(QGraphicsView):
             0, 0, self.video_preview.size().width(), self.video_preview.size().height()
         )
 
-        rcontent = self.contentsRect()
+        contents = self.contentsRect()
         self.centerOn(self.video_preview)
         self.roundCorners()
-        self.setSceneRect(0, 0, rcontent.width(), rcontent.height())
+        self.setSceneRect(0, 0, contents.width(), contents.height())
         self.keepControlsInPlace()
 
     def roundCorners(self) -> None:
@@ -346,7 +344,6 @@ class VideoPlayer(QGraphicsView):
             int(self.width() - self.mute_button.size().width() - 10),
             int(self.height() - self.mute_button.size().height() - 10),
         )
-        # self.fullscreen_button.move(-self.fullscreen_button.size().width()-10, self.height() - self.fullscreen_button.size().height()-10)
 
     def resizeEvent(self, event: QResizeEvent) -> None:
         # Keeps the video preview in the center of the screen.
@@ -358,7 +355,6 @@ class VideoPlayer(QGraphicsView):
             )
         )
         return
-        # return super().resizeEvent(event)\
 
 
 class VideoPreview(QGraphicsVideoItem):
@@ -367,7 +363,8 @@ class VideoPreview(QGraphicsVideoItem):
 
     def paint(self, painter, option, widget):
         # painter.brush().setColor(QColor(0, 0, 0, 255))
-        # You can set any shape you want here. RoundedRect is the standard rectangle with rounded corners
+        # You can set any shape you want here.
+        # RoundedRect is the standard rectangle with rounded corners.
         # With 2nd and 3rd parameter you can tweak the curve until you get what you expect
 
         super().paint(painter, option, widget)
