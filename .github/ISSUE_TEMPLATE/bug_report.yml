@@ -6,7 +6,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        Before reporting, read the [documentation](https://github.com/TagStudioDev/TagStudio/wiki) and search existing [issues](https://github.com/TagStudioDev/TagStudio/issues).
+        Before reporting, read the [documentation](https://github.com/TagStudioDev/TagStudio/blob/main/doc/index.md) and search existing [issues](https://github.com/TagStudioDev/TagStudio/issues).
         Validate that you are using the latest version, your issue might already be fixed!
         Questions, guidance, and usage goes in [discussions](https://github.com/TagStudioDev/TagStudio/discussions). Invalid issues will be closed.
   - type: checkboxes
@@ -16,7 +16,7 @@ body:
       options:
         - label: I am using the latest version.
           required: true
-        - label: I read the [documentation](https://github.com/TagStudioDev/TagStudio/wiki).
+        - label: I read the [documentation](https://github.com/TagStudioDev/TagStudio/blob/main/doc/index.md).
           required: true
         - label: I searched existing [issues](https://github.com/TagStudioDev/TagStudio/issues).
           required: true
