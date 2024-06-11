@@ -1363,7 +1363,7 @@ class Library:
                 meta_to_value[field_parsed[0].lower()] = field_parsed[1].lower()
             meta_list.append(meta_to_value)
 
-        logging.info("Parsed values: ",meta_list)
+        logging.info("Parsed values: ", meta_list)
         return meta_list
 
     def populate_tags(self, entry: Entry) -> tuple[list[str], list[str]]:
@@ -1417,6 +1417,40 @@ class Library:
                 return True
         return False
 
+    def preprocess_tag_terms(self, query_words: list[str]):
+        all_tag_terms: list[str] = []
+        for i, term in enumerate(query_words):
+            for j, term in enumerate(query_words):
+                if (
+                    query_words[i : j + 1]
+                    and " ".join(query_words[i : j + 1])
+                    in self._tag_strings_to_id_map
+                ):
+                    all_tag_terms.append(" ".join(query_words[i : j + 1]))
+        # This gets rid of any accidental term inclusions because they were words
+        # in another term. Ex. "3d" getting added in "3d art"
+        for i, term in enumerate(all_tag_terms):
+            for j, term2 in enumerate(all_tag_terms):
+                if i != j and all_tag_terms[i] in all_tag_terms[j]:
+                    all_tag_terms.remove(all_tag_terms[i])
+                    break
+        return all_tag_terms
+
+    def add_entries_from_special_flags(self,
+                                       special_flags: tuple[bool, bool, bool, bool],
+                                       entry_tags: list[str], entry_authors: list[str],
+                                       entry: Entry):
+        (only_untagged, only_no_author, only_empty, only_missing) = special_flags
+        if only_untagged and not entry_tags:
+            return True
+        elif only_no_author and not entry_authors:
+            return True
+        elif only_empty and not entry.fields:
+            return True
+        elif only_missing and (self.library_dir / entry.path / entry.filename
+                               ).resolve() in self.missing_files:
+            return True
+        return False
 
     def search_library(
         self,
@@ -1456,44 +1490,18 @@ class Library:
             # TODO: Expand this to allow for dynamic fields to work.
             only_no_author: bool = "no author" in query or "no artist" in query
 
-            # Preprocess the Tag terms.
             if query_words:
-                # print(query_words, self._tag_strings_to_id_map)
-                for i, term in enumerate(query_words):
-                    for j, term in enumerate(query_words):
-                        if (
-                            query_words[i : j + 1]
-                            and " ".join(query_words[i : j + 1])
-                            in self._tag_strings_to_id_map
-                        ):
-                            all_tag_terms.append(" ".join(query_words[i : j + 1]))
-                        # print(all_tag_terms)
+                all_tag_terms.extend(self.preprocess_tag_terms(query_words))
 
-                # This gets rid of any accidental term inclusions because they were words
-                # in another term. Ex. "3d" getting added in "3d art"
-                for i, term in enumerate(all_tag_terms):
-                    for j, term2 in enumerate(all_tag_terms):
-                        if i != j and all_tag_terms[i] in all_tag_terms[j]:
-                            # print(
-                            #     f'removing {all_tag_terms[i]} because {all_tag_terms[i]} was in {all_tag_terms[j]}')
-                            all_tag_terms.remove(all_tag_terms[i])
-                            break
-
-            # print(all_tag_terms)
-
-            # non_entry_count = 0
             # Iterate over all Entries =============================================================
             for entry in self.entries:
 
                 # HACK: search algorithm demo
-                if self.filter_entry(meta_to_value, entry):
-                    results.append((ItemType.ENTRY, entry.id))
-                    continue
+                # if self.filter_entry(meta_to_value, entry):
+                #     results.append((ItemType.ENTRY, entry.id))
+                #     continue
 
                 allowed_ext: bool = entry.filename.suffix not in self.ext_list
-                # try:
-                # entry: Entry = self.entries[self.file_to_library_index_map[self._source_filenames[i]]]
-                # print(f'{entry}')
 
                 if allowed_ext == self.is_exclude_list:
                     # If the entry has tags of any kind, append them to this main tag list.
@@ -1502,41 +1510,29 @@ class Library:
                     # print(f'Entry Tags: {entry_tags}')
 
                     # Add Entries from special flags -------------------------------
-                    # TODO: Come up with a more user-resistent way to 'archived' and 'favorite' tags.
-                    if only_untagged:
-                        if not entry_tags:
-                            results.append((ItemType.ENTRY, entry.id))
-                    elif only_no_author:
-                        if not entry_authors:
-                            results.append((ItemType.ENTRY, entry.id))
-                    elif only_empty:
-                        if not entry.fields:
-                            results.append((ItemType.ENTRY, entry.id))
-                    elif only_missing:
-                        if (
-                            self.library_dir / entry.path / entry.filename
-                        ).resolve() in self.missing_files:
-                            results.append((ItemType.ENTRY, entry.id))
+                    special_flags = (only_untagged, only_no_author, only_empty, only_missing)
+                    if self.add_entries_from_special_flags(special_flags, entry_tags,
+                                                           entry_authors, entry):
+                        results.append((ItemType.ENTRY, entry.id))
 
+                    # TODO: Come up with a more user-resistent way to 'archived' and 'favorite' tags.
                     # elif query == "archived":
                     #     if entry.tags and self._tag_names_to_tag_id_map[self.archived_word.lower()][0] in entry.tags:
                     #         self.filtered_file_list.append(file)
                     #         pb.value = len(self.filtered_file_list)
                     # elif query in entry.path.lower():
 
-                    # NOTE: This searches path and filenames.
+                    query_tag_id = meta_to_value.get('tag_id')
 
+                    # NOTE: This searches path and filenames.
                     if meta_to_value.get('filename') is not None:
                         if [q for q in meta_to_value.get('filename') if (q in str(entry.path).lower())]:
                             results.append((ItemType.ENTRY, entry.id))
                         elif [q for q in meta_to_value.get('filename') if (q in str(entry.filename).lower())]:
                             results.append((ItemType.ENTRY, entry.id))
-                    elif tag_only:
-                        if entry.has_tag(self, int(query_words[0])):
-                            results.append((ItemType.ENTRY, entry.id))
+                    elif query_tag_id is not None and entry.has_tag(self, int(query_tag_id)):
+                        results.append((ItemType.ENTRY, entry.id))
 
-                    # elif query in entry.filename.lower():
-                    # 	self.filtered_entries.append(index)
                     elif entry_tags:
                         # function to add entry to results
                         def add_entry(entry: Entry):
@@ -1579,7 +1575,6 @@ class Library:
                                         cluster = cluster.union(
                                             set(self.get_tag_cluster(id))
                                         )
-                                    # print(f'Full Cluster: {cluster}')
                                     # For each of the Tag IDs in the term's ID cluster:
                                     for t in cluster:
                                         # Assume that this ID from the cluster is not in the Entry.
@@ -1612,26 +1607,6 @@ class Library:
                                             add_entry(entry)
                                         break
 
-                # sys.stdout.write(
-                #     f'\r[INFO][FILTER]: {len(self.filtered_file_list)} matches found')
-                # sys.stdout.flush()
-
-                # except:
-                #     # # Put this here to have new non-registered images show up
-                #     # if query == "untagged" or query == "no author" or query == "no artist":
-                #     #     self.filtered_file_list.append(file)
-                #     # non_entry_count = non_entry_count + 1
-                #     pass
-
-            # end_time = time.time()
-            # print(
-            # 	f'[INFO][FILTER]: {len(self.filtered_entries)} matches found ({(end_time - start_time):.3f} seconds)')
-
-            # if non_entry_count:
-            # 	print(
-            # 		f'[INFO][FILTER]: There are {non_entry_count} new files in {self.source_dir} that do not have entries. These will not appear in most filtered results.')
-            # if not self.filtered_entries:
-            # 	print("[INFO][FILTER]: Filter returned no results.")
         else:
             for entry in self.entries:
                 added = False
