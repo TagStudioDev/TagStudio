@@ -11,9 +11,9 @@
 TagStudio is a photo & file organization application with an underlying system that focuses on giving freedom and flexibility to the user. No proprietary programs or formats, no sea of sidecar files, and no complete upheaval of your filesystem structure.
 
 <figure align="center">
-  <img width="80%" src="screenshot.jpg" alt="TagStudio Screenshot">
+  <img width="80%" src="screenshot.jpg" alt="TagStudio Screenshot" align="center">
 
-  <figcaption><i>TagStudio Alpha v9.0.0 running on Windows 10.</i></figcaption>
+  <figcaption><i>TagStudio Alpha v9.1.0 running on Windows 10.</i></figcaption>
 </figure>
 
 ## Contents
