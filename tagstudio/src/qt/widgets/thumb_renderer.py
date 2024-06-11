@@ -30,6 +30,7 @@ from src.core.constants import (
     RAW_IMAGE_TYPES,
 )
 from src.core.utils.encoding import detect_char_encoding
+from src.qt.helpers.blender_thumbnailer import main
 
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 
@@ -206,9 +207,7 @@ class ThumbRenderer(QObject):
                 # 	image = Image.open(img_buf)
 
                 # Blender ===========================================================
-                elif _filepath.suffix.lower() == '.blend':
-                    from src.qt.helpers import blender_thumbnailer
-                    
+                elif _filepath.suffix.lower() == '.blend':                    
                     try:
                         blendthumbnail = blender_thumbnailer.main(str(_filepath))
                         image = Image.frombuffer("RGBA",(blendthumbnail[1],blendthumbnail[2]),blendthumbnail[0])
