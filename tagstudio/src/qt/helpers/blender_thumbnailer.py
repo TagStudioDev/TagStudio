@@ -164,6 +164,6 @@ def blend_extract_thumb(path):
 
 
 
-def main(file_in):
+def blendthumb(file_in):
     buf, width, height = blend_extract_thumb(file_in)
     return [buf, width, height]
