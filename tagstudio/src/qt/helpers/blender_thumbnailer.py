@@ -28,84 +28,54 @@ import struct
 
 
 def open_wrapper_get():
-    """ wrap OS specific read functionality here, fallback to 'open()'
-    """
+    """wrap OS specific read functionality here, fallback to 'open()'"""
 
-    class GFileWrapper:
-        __slots__ = ("mode", "g_file")
-
-        def __init__(self, url, mode='r'):
-            self.mode = mode  # used in gzip module
-            self.g_file = Gio.File.parse_name(url).read(None)
-
-        def read(self, size):
-            return self.g_file.read_bytes(size, None).get_data()
-
-        def seek(self, offset, whence=0):
-            self.g_file.seek(offset, [1, 0, 2][whence], None)
-            return self.g_file.tell()
-
-        def tell(self):
-            return self.g_file.tell()
-
-        def close(self):
-            self.g_file.close(None)
-
-    def open_local_url(url, mode='r'):
-
-        # Redundant af, but this is where the checking of file names can be done
+    def open_local_url(url, mode="r"):
+        # Redundant af, but this is where the checking of file path can be done
 
         path = url
 
         return open(str(path), mode)
 
-    try:
-        from gi.repository import Gio
-        return GFileWrapper
-    except ImportError:
-        try:
-            # Python 3
-            from urllib.parse import urlparse, unquote
-        except ImportError:
-            # Python 2
-            from urlparse import urlparse
-            from urllib import unquote
-        return open_local_url
+    
+    return open_local_url
 
 
 def blend_extract_thumb(path):
     import os
+
     open_wrapper = open_wrapper_get()
 
-    REND = b'REND'
-    TEST = b'TEST'
+    REND = b"REND"
+    TEST = b"TEST"
 
-    blendfile = open_wrapper(path, 'rb')
+    blendfile = open_wrapper(path, "rb")
 
     head = blendfile.read(12)
 
-    if head[0:2] == b'\x1f\x8b':  # gzip magic
+    if head[0:2] == b"\x1f\x8b":  # gzip magic
         import gzip
+
         blendfile.close()
-        blendfile = gzip.GzipFile('', 'rb', 0, open_wrapper(path, 'rb'))
+        blendfile = gzip.GzipFile("", "rb", 0, open_wrapper(path, "rb"))
         head = blendfile.read(12)
 
-    if not head.startswith(b'BLENDER'):
+    if not head.startswith(b"BLENDER"):
         blendfile.close()
         return None, 0, 0
 
-    is_64_bit = (head[7] == b'-'[0])
+    is_64_bit = head[7] == b"-"[0]
 
     # true for PPC, false for X86
-    is_big_endian = (head[8] == b'V'[0])
+    is_big_endian = head[8] == b"V"[0]
 
     # blender pre 2.5 had no thumbs
-    if head[9:11] <= b'24':
+    if head[9:11] <= b"24":
         return None, 0, 0
 
     sizeof_bhead = 24 if is_64_bit else 20
-    int_endian = '>i' if is_big_endian else '<i'
-    int_endian_pair = int_endian + 'i'
+    int_endian = ">i" if is_big_endian else "<i"
+    int_endian_pair = int_endian + "i"
 
     while True:
         bhead = blendfile.read(sizeof_bhead)
@@ -161,7 +131,6 @@ def blend_extract_thumb(path):
 ##        png_pack(b'IHDR', struct.pack("!2I5B", width, height, 8, 6, 0, 0, 0)),
 ##        png_pack(b'IDAT', zlib.compress(raw_data, 9)),
 ##        png_pack(b'IEND', b'')]), width, height]
-
 
 
 def blendthumb(file_in):
