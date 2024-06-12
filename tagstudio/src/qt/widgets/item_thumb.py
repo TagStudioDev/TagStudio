@@ -12,7 +12,7 @@ from pathlib import Path
 from typing import Optional
 
 from PIL import Image, ImageQt
-from PySide6.QtCore import Qt, QSize, QEvent, QThreadPool
+from PySide6.QtCore import Qt, QSize, QEvent
 from PySide6.QtGui import QPixmap, QEnterEvent, QAction
 from PySide6.QtWidgets import (
     QWidget,
