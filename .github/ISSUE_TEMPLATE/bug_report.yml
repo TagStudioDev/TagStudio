@@ -7,14 +7,16 @@ body:
     attributes:
       value: |
         Before reporting, read the [documentation](https://github.com/TagStudioDev/TagStudio/blob/main/doc/index.md) and search existing [issues](https://github.com/TagStudioDev/TagStudio/issues).
-        Validate that you are using the latest version, your issue might already be fixed!
+        Validate that you are using an up-to-date version[^1], your issue might already be fixed!
         Questions, guidance, and usage goes in [discussions](https://github.com/TagStudioDev/TagStudio/discussions). Invalid issues will be closed.
+
+        [^1]: This can mean latest release, pre-release, or git commit.
   - type: checkboxes
     attributes:
       label: Checklist
       description: Make sure you've checked (and actually did) all of the below.
       options:
-        - label: I am using the latest version.
+        - label: I am using an up-to-date version.[^1]
           required: true
         - label: I read the [documentation](https://github.com/TagStudioDev/TagStudio/blob/main/doc/index.md).
           required: true
