@@ -532,6 +532,8 @@ class PreviewPanel(QWidget):
                                 pass
                         elif filepath.suffix.lower() in VIDEO_TYPES:
                             video = cv2.VideoCapture(str(filepath))
+                            if video.get(cv2.CAP_PROP_FRAME_COUNT) <= 0:
+                                raise cv2.error("File is invalid or has 0 frames")
                             video.set(cv2.CAP_PROP_POS_FRAMES, 0)
                             success, frame = video.read()
                             frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
