@@ -33,51 +33,33 @@ from PySide6.QtSvgWidgets import QSvgWidget
 from src.qt.helpers.file_opener import FileOpenerHelper
 from PIL import Image, ImageDraw
 from src.core.enums import SettingItems
+from src.qt.resource_manager import ResourceManager
 
 if typing.TYPE_CHECKING:
     from src.qt.ts_qt import QtDriver
 
 
 class VideoPlayer(QGraphicsView):
-    """A simple video player for the TagStudio application."""
+    """A basic video player."""
 
-    resolution = QSize(1280, 720)
-    hover_fix_timer = QTimer()
+    rm: ResourceManager = ResourceManager()
     video_preview = None
     play_pause = None
     mute_button = None
-    content_visible = False
-    filepath = None
-
-    pause_icon: bytes = None
-    play_icon: bytes = None
-    volume_mute_icon: bytes = None
-    volume_icon: bytes = None
-
-    # Load icon files as bytes
-    _parents = Path(__file__).parents[3]
-    with open(Path(_parents, "resources/qt/images/pause.svg"), "rb") as icon:
-        pause_icon = bytes(icon.read())
-
-    with open(Path(_parents, "resources/qt/images/play.svg"), "rb") as icon:
-        play_icon = bytes(icon.read())
-
-    with open(Path(_parents, "resources/qt/images/volume.svg"), "rb") as icon:
-        volume_icon = bytes(icon.read())
-
-    with open(Path(_parents, "resources/qt/images/volume_mute.svg"), "rb") as icon:
-        volume_mute_icon = bytes(icon.read())
 
     def __init__(self, driver: "QtDriver") -> None:
-        # Set up the base class.
         super().__init__()
         self.driver = driver
+        self.resolution = QSize(1280, 720)
         self.animation = QVariantAnimation(self)
         self.animation.valueChanged.connect(
             lambda value: self.setTintTransparency(value)
         )
+        self.hover_fix_timer = QTimer()
         self.hover_fix_timer.timeout.connect(lambda: self.checkIfStillHovered())
         self.hover_fix_timer.setSingleShot(True)
+        self.content_visible = False
+        self.filepath = None
 
         # Set up the video player.
         self.installEventFilter(self)
@@ -181,14 +163,14 @@ class VideoPlayer(QGraphicsView):
 
     def updateControls(self) -> None:
         if self.player.audioOutput().isMuted():
-            self.mute_button.load(VideoPlayer.volume_mute_icon)
+            self.mute_button.load(VideoPlayer.rm.volume_mute_icon)
         else:
-            self.mute_button.load(VideoPlayer.volume_icon)
+            self.mute_button.load(VideoPlayer.rm.volume_icon)
 
         if self.player.isPlaying():
-            self.play_pause.load(VideoPlayer.pause_icon)
+            self.play_pause.load(VideoPlayer.rm.pause_icon)
         else:
-            self.play_pause.load(VideoPlayer.play_icon)
+            self.play_pause.load(VideoPlayer.rm.play_icon)
 
     def wheelEvent(self, event: QWheelEvent) -> None:
         return
@@ -266,24 +248,24 @@ class VideoPlayer(QGraphicsView):
 
     def resetControlsToDefault(self) -> None:
         # Resets the video controls to their default state.
-        self.play_pause.load(VideoPlayer.pause_icon)
-        self.mute_button.load(VideoPlayer.volume_mute_icon)
+        self.play_pause.load(VideoPlayer.rm.pause_icon)
+        self.mute_button.load(VideoPlayer.rm.volume_mute_icon)
 
     def pauseToggle(self) -> None:
         if self.player.isPlaying():
             self.player.pause()
-            self.play_pause.load(VideoPlayer.play_icon)
+            self.play_pause.load(VideoPlayer.rm.play_icon)
         else:
             self.player.play()
-            self.play_pause.load(VideoPlayer.pause_icon)
+            self.play_pause.load(VideoPlayer.rm.pause_icon)
 
     def muteToggle(self) -> None:
         if self.player.audioOutput().isMuted():
             self.player.audioOutput().setMuted(False)
-            self.mute_button.load(VideoPlayer.volume_icon)
+            self.mute_button.load(VideoPlayer.rm.volume_icon)
         else:
             self.player.audioOutput().setMuted(True)
-            self.mute_button.load(VideoPlayer.volume_mute_icon)
+            self.mute_button.load(VideoPlayer.rm.volume_mute_icon)
 
     def play(self, filepath: str, resolution: QSize) -> None:
         # Sets the filepath and sends the current player position to the very end,
