@@ -12,8 +12,8 @@ from pathlib import Path
 from typing import Optional
 
 from PIL import Image, ImageQt
-from PySide6.QtCore import Qt, QSize, QEvent
-from PySide6.QtGui import QPixmap, QEnterEvent, QAction
+from PySide6.QtCore import Qt, QSize, QEvent, QMimeData, QUrl
+from PySide6.QtGui import QPixmap, QEnterEvent, QAction, QDrag
 from PySide6.QtWidgets import (
     QWidget,
     QVBoxLayout,
@@ -495,3 +495,17 @@ class ItemThumb(FlowWidget):
         if self.panel.isOpen:
             self.panel.update_widgets()
         self.panel.driver.update_badges()
+    
+    def mouseMoveEvent(self, event):
+
+        # ignore if no left button is pressed
+        if not (event.buttons() & Qt.LeftButton):
+            return
+
+        # simple drag-n-drop into other applications
+        if self.mode == ItemType.ENTRY:
+            drag = QDrag(self)
+            mimeData = QMimeData()
+            mimeData.setUrls([QUrl.fromLocalFile(str(self.opener.filepath))])
+            drag.setMimeData(mimeData)
+            dropAction = drag.exec(Qt.DropAction.CopyAction)
