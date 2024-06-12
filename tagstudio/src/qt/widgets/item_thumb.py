@@ -311,6 +311,7 @@ class ItemThumb(FlowWidget):
 
     def set_mode(self, mode: Optional[ItemType]) -> None:
         if mode is None:
+            self.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents, True)
             self.unsetCursor()
             self.thumb_button.setHidden(True)
             # self.check_badges.setHidden(True)
@@ -318,6 +319,7 @@ class ItemThumb(FlowWidget):
             # self.item_type_badge.setHidden(True)
             pass
         elif mode == ItemType.ENTRY and self.mode != ItemType.ENTRY:
+            self.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents, False)
             self.setCursor(Qt.CursorShape.PointingHandCursor)
             self.thumb_button.setHidden(False)
             self.cb_container.setHidden(False)
@@ -327,6 +329,7 @@ class ItemThumb(FlowWidget):
             self.count_badge.setHidden(True)
             self.ext_badge.setHidden(True)
         elif mode == ItemType.COLLATION and self.mode != ItemType.COLLATION:
+            self.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents, False)
             self.setCursor(Qt.CursorShape.PointingHandCursor)
             self.thumb_button.setHidden(False)
             self.cb_container.setHidden(True)
@@ -335,6 +338,7 @@ class ItemThumb(FlowWidget):
             self.count_badge.setHidden(False)
             self.item_type_badge.setHidden(False)
         elif mode == ItemType.TAG_GROUP and self.mode != ItemType.TAG_GROUP:
+            self.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents, False)
             self.setCursor(Qt.CursorShape.PointingHandCursor)
             self.thumb_button.setHidden(False)
             # self.cb_container.setHidden(True)
