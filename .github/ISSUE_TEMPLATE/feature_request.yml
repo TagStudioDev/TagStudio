@@ -18,9 +18,9 @@ body:
       options:
         - label: I am using an up-to-date version.
           required: true
-        - label: I read the [documentation](https://github.com/TagStudioDev/TagStudio/blob/main/doc/index.md).
+        - label: I have read the [documentation](https://github.com/TagStudioDev/TagStudio/blob/main/doc/index.md).
           required: true
-        - label: I searched existing [issues](https://github.com/TagStudioDev/TagStudio/issues).
+        - label: I have searched existing [issues](https://github.com/TagStudioDev/TagStudio/issues).
           required: true
   - type: textarea
     attributes:
