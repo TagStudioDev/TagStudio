@@ -1344,27 +1344,33 @@ class Library:
         meta_list: list = []
         meta_conditions = query.strip().split("|")
         for meta_condition in meta_conditions:
-            meta_to_value: dict = {}
+            query_part: dict = {}
             field_data_list = meta_condition.strip().split(";")
-            print(field_data_list)
             for field_data in field_data_list:
                 field_parsed = field_data.strip().split(":")
                 if len(field_parsed) < 2:
                     unbound_values = field_parsed[0].strip().split(' ')
-                    if meta_to_value.get('unbound') is None:
-                        meta_to_value['unbound'] = unbound_values
+                    if query_part.get('unbound') is None:
+                        query_part['unbound'] = unbound_values
                     else:
-                        meta_to_value['unbound'].append(unbound_values)
+                        query_part['unbound'].append(unbound_values)
                     continue
                 if len(field_parsed) != 2:
                     logging.warning("""[ERROR] Attempt to parse mutiple fields\
                                     as one! Do not forget to specify ';'\
                                     between different meta fields""")
-                meta_to_value[field_parsed[0].lower()] = field_parsed[1].lower()
-            meta_list.append(meta_to_value)
+                query_part[field_parsed[0].lower()] = field_parsed[1].lower()
+            meta_list.append(query_part)
 
         logging.info("Parsed values: ", meta_list)
         return meta_list
+
+    def remap_fields(self, entry: Entry) -> dict[str, str]:
+        entry_fields: dict = {}
+        for field in entry.fields:
+            field_key = self._field_id_to_name_map.get(list(field.keys())[0])
+            entry_fields[field_key] = list(field.values())[0]
+        return entry_fields
 
     def populate_tags(self, entry: Entry) -> tuple[list[str], list[str]]:
         """ Parse tags from entry.fields\n
@@ -1382,10 +1388,19 @@ class Library:
                     entry_authors.extend(field[field_id])
         return (entry_tags, entry_authors)
 
-    def filter_entry(self, meta_to_value: dict, entry: Entry) -> bool:
+    def check_filename(self, entry: Entry, query: str | None) -> bool:
+        if not query:
+            return False
+        if [q for q in query if (q in str(entry.path).lower())]:
+            return True
+        elif [q for q in query if (q in str(entry.filename).lower())]:
+            return True
+        return False
+
+    def filter_entry_2(self, query_part: dict, entry: Entry) -> bool:
         entry_fields: dict = {}
 
-        query = meta_to_value.get('unbound', '')
+        query = query_part.get('unbound', '')
         only_untagged: bool = "untagged" in query or "no tags" in query
         only_empty: bool = "empty" in query or "no fields" in query
         only_missing: bool = "missing" in query or "no file" in query
@@ -1403,17 +1418,17 @@ class Library:
             field_key = self._field_id_to_name_map.get(list(field.keys())[0])
             entry_fields[field_key] = list(field.values())[0]
 
-        for meta in meta_to_value.keys():
-            if not isinstance(meta_to_value.get(meta, ''), str):
+        for meta in query_part.keys():
+            if not isinstance(query_part.get(meta, ''), str):
                 continue
-            string = entry_fields.get(meta, '').casefold().encode('UTF-8').strip()
-            substring = meta_to_value.get(meta, '').casefold().encode('UTF-8').strip()
+            string = entry_fields.get(meta, '').casefold().strip()
+            substring = query_part.get(meta, '').casefold().strip()
             if substring in string:
                 return True
-        if meta_to_value.get('filename') is not None:
-            if [q for q in meta_to_value.get('filename') if (q in str(entry.path).lower())]:
+        if query_part.get('filename') is not None:
+            if [q for q in query_part.get('filename') if (q in str(entry.path).lower())]:
                 return True
-            elif [q for q in meta_to_value.get('filename') if (q in str(entry.filename).lower())]:
+            elif [q for q in query_part.get('filename') if (q in str(entry.filename).lower())]:
                 return True
         return False
 
@@ -1436,6 +1451,9 @@ class Library:
                     break
         return all_tag_terms
 
+    def filter_by_unbound_value(self):
+        pass
+
     def add_entries_from_special_flags(self,
                                        special_flags: tuple[bool, bool, bool, bool],
                                        entry_tags: list[str], entry_authors: list[str],
@@ -1452,6 +1470,67 @@ class Library:
             return True
         return False
 
+    def handle_tags(self, entry: Entry, all_tag_terms: list[str]
+                    ) -> tuple[ItemType, int] | None:
+        collations_added: list = []
+
+        def add_entry(entry: Entry) -> tuple[ItemType, int] | None:
+            # self.filter_entries.append()
+            # self.filtered_file_list.append(file)
+            # results.append((SearchItemType.ENTRY, entry.id))
+            added = False
+            for f in entry.fields:
+                if self.get_field_attr(f, "type") == "collation":
+                    if (
+                        self.get_field_attr(f, "content")
+                        not in collations_added
+                    ):
+                        return (
+                                ItemType.COLLATION,
+                                self.get_field_attr(f, "content"),
+                            )
+                        collations_added.append(
+                            self.get_field_attr(f, "content")
+                        )
+                    added = True
+
+            if not added:
+                return (ItemType.ENTRY, entry.id)
+
+        # For each verified, extracted Tag term.
+        failure_to_union_terms = False
+        for term in all_tag_terms:
+            # If the term from the previous loop was already verified:
+            if not failure_to_union_terms:
+                cluster: set = set()
+                # Add the immediate associated Tags to the set (ex. Name, Alias hits)
+                # Since this term could technically map to multiple IDs, iterate over it
+                # (You're 99.9999999% likely to just get 1 item)
+                for id in self._tag_strings_to_id_map[term]:
+                    cluster.add(id)
+                    cluster = cluster.union(
+                        set(self.get_tag_cluster(id))
+                    )
+                # For each of the Tag IDs in the term's ID cluster:
+                for t in cluster:
+                    # Assume that this ID from the cluster is not in the Entry.
+                    # Wait to see if proven wrong.
+                    failure_to_union_terms = True
+                    # If the ID actually is in the Entry,
+                    if t in entry_tags:
+                        # There wasn't a failure to find one of the term's cluster IDs in the Entry.
+                        # There is also no more need to keep checking the rest of the terms in the cluster.
+                        failure_to_union_terms = False
+                        # print(f"FOUND MATCH: {t}")
+                        break
+                    # print(f'\tFailure to Match: {t}')
+        # # failure_to_union_terms is used to determine if all terms in the query were found in the entry.
+        # # If there even were tag terms to search through AND they all match an entry
+        if all_tag_terms and not failure_to_union_terms:
+            return add_entry(entry)
+
+
+
     def search_library(
         self,
         query: str = None,
@@ -1466,146 +1545,202 @@ class Library:
         """
         # self.filtered_entries.clear()
         results: list[tuple[ItemType, int]] = []
-        collations_added = []
         # print(f"Searching Library with query: {query} search_mode: {search_mode}")
         if query:
             # start_time = time.time()
             query = query.strip().lower()
 
             # HACK: AND and OR is not yet supported
-            meta_to_value = self.parse_metadata(query)[0]
+            split_query = self.parse_metadata(query)
 
-            query_words: list[str] = query.split(" ")
-            all_tag_terms: list[str] = []
-            only_untagged: bool = "untagged" in query or "no tags" in query
-            only_empty: bool = "empty" in query or "no fields" in query
-            only_missing: bool = "missing" in query or "no file" in query
-            allow_adv: bool = "filename:" in query_words
-            tag_only: bool = "tag_id:" in query_words
-            if allow_adv:
-                query_words.remove("filename:")
-            if tag_only:
-                query_words.remove("tag_id:")
-            query_words = meta_to_value.get('unbound')
-            # TODO: Expand this to allow for dynamic fields to work.
-            only_no_author: bool = "no author" in query or "no artist" in query
+            pre_results: list = []
 
-            if query_words:
-                all_tag_terms.extend(self.preprocess_tag_terms(query_words))
+            for query_part in split_query:
+                query = query_part.get('unbound')
 
-            # Iterate over all Entries =============================================================
-            for entry in self.entries:
+                # query_words: list[str] = query.split(" ")
+                all_tag_terms: list[str] = []
+                only_untagged: bool = "untagged" in query or "no tags" in query
+                only_empty: bool = "empty" in query or "no fields" in query
+                only_missing: bool = "missing" in query or "no file" in query
+                query_words = query_part.get('unbound')
+                # TODO: Expand this to allow for dynamic fields to work.
+                only_no_author: bool = "no author" in query or "no artist" in query
 
-                # HACK: search algorithm demo
-                # if self.filter_entry(meta_to_value, entry):
-                #     results.append((ItemType.ENTRY, entry.id))
-                #     continue
+                if query_words:
+                    all_tag_terms.extend(self.preprocess_tag_terms(query_words))
 
-                allowed_ext: bool = entry.filename.suffix not in self.ext_list
+                filtered_entries: list = []
 
-                if allowed_ext == self.is_exclude_list:
-                    # If the entry has tags of any kind, append them to this main tag list.
-                    (entry_tags, entry_authors) = self.populate_tags(entry)
+                # Iterate over all Entries =============================================================
+                for entry in self.entries:
+                    entry_tuple: tuple = ()
+                    allowed_ext: bool = entry.filename.suffix not in self.ext_list
+                    if allowed_ext != self.is_exclude_list:
+                        continue
+                    is_selected: bool = False
+                    # Remap entry.fields from list of dicts, to dict for ease of work
+                    entry_fields: dict = self.remap_fields(entry)
+                    for key, value in query_part.items():
+                        select_empty: bool = False
+                        if value.strip().casefold() == '\\_':
+                            select_empty = True
+                        is_empty = entry_fields.get(key)
 
-                    # print(f'Entry Tags: {entry_tags}')
+                        if key == 'filename':
+                            is_selected = is_selected and self.check_filename(entry, value)
+                        elif key == 'unbound':
+                            entry_tuple = self.handle_tags(entry, all_tag_terms)
+                            if entry_tuple is None:
+                                is_selected = False
+                                break
+                        elif is_empty:
+                            if select_empty:
+                                is_selected = is_selected and True
+                            else:
+                                is_selected = False
+                                break
 
-                    # Add Entries from special flags -------------------------------
-                    special_flags = (only_untagged, only_no_author, only_empty, only_missing)
-                    if self.add_entries_from_special_flags(special_flags, entry_tags,
-                                                           entry_authors, entry):
-                        results.append((ItemType.ENTRY, entry.id))
+                    if is_selected and entry_tuple is None:
+                        filtered_entries.append((ItemType.ENTRY, entry.id))
+                    elif is_selected and entry_tuple is not None:
+                        filtered_entries.append(entry_tuple)
 
-                    # TODO: Come up with a more user-resistent way to 'archived' and 'favorite' tags.
-                    # elif query == "archived":
-                    #     if entry.tags and self._tag_names_to_tag_id_map[self.archived_word.lower()][0] in entry.tags:
-                    #         self.filtered_file_list.append(file)
-                    #         pb.value = len(self.filtered_file_list)
-                    # elif query in entry.path.lower():
+                pre_results.append(filtered_entries)
 
-                    query_tag_id = meta_to_value.get('tag_id')
+            if search_mode == SearchMode.AND:
+                if len(pre_results) <= 1:
+                    return list(pre_results[0])
+                result_set: set = set(pre_results[0])
+                for result in range(1, len(pre_results)):
+                    set_copy: list = list(result_set.copy())
+                    for recorded_entry in set_copy:
+                        entry_detected: bool = False
+                        for new_entry in result:
+                            if recorded_entry == new_entry:
+                                entry_detected = True
+                                break
+                        if not entry_detected:
+                            result_set.remove(recorded_entry)
+                return list(result_set)
+            elif search_mode == SearchMode.OR:
+                result_set: set = {}
+                for result in pre_results:
+                    for entry in result:
+                        result_set.add(entry)
+                return list(result_set)
 
-                    # NOTE: This searches path and filenames.
-                    if meta_to_value.get('filename') is not None:
-                        if [q for q in meta_to_value.get('filename') if (q in str(entry.path).lower())]:
+
+
+
+                    # HACK: search algorithm demo
+                    # if self.filter_entry(query_part, entry):
+                    #     results.append((ItemType.ENTRY, entry.id))
+                    #     continue
+
+                    allowed_ext: bool = entry.filename.suffix not in self.ext_list
+
+                    if allowed_ext == self.is_exclude_list:
+                        # If the entry has tags of any kind, append them to this main tag list.
+                        (entry_tags, entry_authors) = self.populate_tags(entry)
+
+                        # Add Entries from special flags -------------------------------
+                        special_flags = (only_untagged, only_no_author, only_empty, only_missing)
+                        if self.add_entries_from_special_flags(special_flags, entry_tags,
+                                                               entry_authors, entry):
                             results.append((ItemType.ENTRY, entry.id))
-                        elif [q for q in meta_to_value.get('filename') if (q in str(entry.filename).lower())]:
-                            results.append((ItemType.ENTRY, entry.id))
-                    elif query_tag_id is not None and entry.has_tag(self, int(query_tag_id)):
-                        results.append((ItemType.ENTRY, entry.id))
 
-                    elif entry_tags:
-                        # function to add entry to results
-                        def add_entry(entry: Entry):
-                            # self.filter_entries.append()
-                            # self.filtered_file_list.append(file)
-                            # results.append((SearchItemType.ENTRY, entry.id))
-                            added = False
-                            for f in entry.fields:
-                                if self.get_field_attr(f, "type") == "collation":
-                                    if (
-                                        self.get_field_attr(f, "content")
-                                        not in collations_added
-                                    ):
-                                        results.append(
-                                            (
-                                                ItemType.COLLATION,
-                                                self.get_field_attr(f, "content"),
-                                            )
-                                        )
-                                        collations_added.append(
-                                            self.get_field_attr(f, "content")
-                                        )
-                                    added = True
+                        # TODO: Come up with a more user-resistent way to 'archived' and 'favorite' tags.
+                        # elif query == "archived":
+                        #     if entry.tags and self._tag_names_to_tag_id_map[self.archived_word.lower()][0] in entry.tags:
+                        #         self.filtered_file_list.append(file)
+                        #         pb.value = len(self.filtered_file_list)
+                        # elif query in entry.path.lower():
 
-                            if not added:
+                        query_tag_id = query_part.get('tag_id')
+
+                        # NOTE: This searches path and filenames.
+                        if query_part.get('filename') is not None:
+                            if [q for q in query_part.get('filename') if (q in str(entry.path).lower())]:
                                 results.append((ItemType.ENTRY, entry.id))
+                            elif [q for q in query_part.get('filename') if (q in str(entry.filename).lower())]:
+                                results.append((ItemType.ENTRY, entry.id))
+                        elif query_tag_id is not None and entry.has_tag(self, int(query_tag_id)):
+                            results.append((ItemType.ENTRY, entry.id))
 
-                        if search_mode == SearchMode.AND:  # Include all terms
-                            # For each verified, extracted Tag term.
-                            failure_to_union_terms = False
-                            for term in all_tag_terms:
-                                # If the term from the previous loop was already verified:
-                                if not failure_to_union_terms:
-                                    cluster: set = set()
+                        elif entry_tags:
+                            # function to add entry to results
+                            def add_entry(entry: Entry):
+                                # self.filter_entries.append()
+                                # self.filtered_file_list.append(file)
+                                # results.append((SearchItemType.ENTRY, entry.id))
+                                added = False
+                                for f in entry.fields:
+                                    if self.get_field_attr(f, "type") == "collation":
+                                        if (
+                                            self.get_field_attr(f, "content")
+                                            not in collations_added
+                                        ):
+                                            results.append(
+                                                (
+                                                    ItemType.COLLATION,
+                                                    self.get_field_attr(f, "content"),
+                                                )
+                                            )
+                                            collations_added.append(
+                                                self.get_field_attr(f, "content")
+                                            )
+                                        added = True
+
+                                if not added:
+                                    results.append((ItemType.ENTRY, entry.id))
+
+                            if search_mode == SearchMode.AND:  # Include all terms
+                                # For each verified, extracted Tag term.
+                                failure_to_union_terms = False
+                                for term in all_tag_terms:
+                                    # If the term from the previous loop was already verified:
+                                    if not failure_to_union_terms:
+                                        cluster: set = set()
+                                        # Add the immediate associated Tags to the set (ex. Name, Alias hits)
+                                        # Since this term could technically map to multiple IDs, iterate over it
+                                        # (You're 99.9999999% likely to just get 1 item)
+                                        for id in self._tag_strings_to_id_map[term]:
+                                            cluster.add(id)
+                                            cluster = cluster.union(
+                                                set(self.get_tag_cluster(id))
+                                            )
+                                        # For each of the Tag IDs in the term's ID cluster:
+                                        for t in cluster:
+                                            # Assume that this ID from the cluster is not in the Entry.
+                                            # Wait to see if proven wrong.
+                                            failure_to_union_terms = True
+                                            # If the ID actually is in the Entry,
+                                            if t in entry_tags:
+                                                # There wasn't a failure to find one of the term's cluster IDs in the Entry.
+                                                # There is also no more need to keep checking the rest of the terms in the cluster.
+                                                failure_to_union_terms = False
+                                                # print(f"FOUND MATCH: {t}")
+                                                break
+                                            # print(f'\tFailure to Match: {t}')
+                                # # failure_to_union_terms is used to determine if all terms in the query were found in the entry.
+                                # # If there even were tag terms to search through AND they all match an entry
+                                if all_tag_terms and not failure_to_union_terms:
+                                    add_entry(entry)
+
+                            if search_mode == SearchMode.OR:  # Include any terms
+                                # For each verified, extracted Tag term.
+                                for term in all_tag_terms:
                                     # Add the immediate associated Tags to the set (ex. Name, Alias hits)
                                     # Since this term could technically map to multiple IDs, iterate over it
                                     # (You're 99.9999999% likely to just get 1 item)
                                     for id in self._tag_strings_to_id_map[term]:
-                                        cluster.add(id)
-                                        cluster = cluster.union(
-                                            set(self.get_tag_cluster(id))
-                                        )
-                                    # For each of the Tag IDs in the term's ID cluster:
-                                    for t in cluster:
-                                        # Assume that this ID from the cluster is not in the Entry.
-                                        # Wait to see if proven wrong.
-                                        failure_to_union_terms = True
                                         # If the ID actually is in the Entry,
-                                        if t in entry_tags:
-                                            # There wasn't a failure to find one of the term's cluster IDs in the Entry.
-                                            # There is also no more need to keep checking the rest of the terms in the cluster.
-                                            failure_to_union_terms = False
-                                            # print(f"FOUND MATCH: {t}")
+                                        if id in entry_tags:
+                                            # check if result already contains the entry
+                                            if (ItemType.ENTRY, entry.id) not in results:
+                                                add_entry(entry)
                                             break
-                                        # print(f'\tFailure to Match: {t}')
-                            # # failure_to_union_terms is used to determine if all terms in the query were found in the entry.
-                            # # If there even were tag terms to search through AND they all match an entry
-                            if all_tag_terms and not failure_to_union_terms:
-                                add_entry(entry)
-
-                        if search_mode == SearchMode.OR:  # Include any terms
-                            # For each verified, extracted Tag term.
-                            for term in all_tag_terms:
-                                # Add the immediate associated Tags to the set (ex. Name, Alias hits)
-                                # Since this term could technically map to multiple IDs, iterate over it
-                                # (You're 99.9999999% likely to just get 1 item)
-                                for id in self._tag_strings_to_id_map[term]:
-                                    # If the ID actually is in the Entry,
-                                    if id in entry_tags:
-                                        # check if result already contains the entry
-                                        if (ItemType.ENTRY, entry.id) not in results:
-                                            add_entry(entry)
-                                        break
 
         else:
             for entry in self.entries:
