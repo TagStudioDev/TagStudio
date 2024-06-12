@@ -12,6 +12,7 @@ INFO = f"[INFO]"
 
 logging.basicConfig(format="%(message)s", level=logging.INFO)
 
+
 def delete_file(path: str | Path, callback: Callable):
     _path = str(path)
     logging.info(f"Deleting file: {_path}")
@@ -24,8 +25,8 @@ def delete_file(path: str | Path, callback: Callable):
     except:
         traceback.print_exc()
 
-class FileDeleterHelper:
 
+class FileDeleterHelper:
     def __init__(self, filepath: str | Path):
         self.filepath = str(filepath)
 
