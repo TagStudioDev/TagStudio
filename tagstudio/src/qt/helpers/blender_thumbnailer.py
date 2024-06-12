@@ -37,7 +37,6 @@ def open_wrapper_get():
 
         return open(str(path), mode)
 
-    
     return open_local_url
 
 
