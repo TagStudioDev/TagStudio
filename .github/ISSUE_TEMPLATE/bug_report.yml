@@ -16,7 +16,7 @@ body:
       label: Checklist
       description: Make sure you've checked (and actually did) all of the below.
       options:
-        - label: I am using an up-to-date version.[^1]
+        - label: I am using an up-to-date version.
           required: true
         - label: I read the [documentation](https://github.com/TagStudioDev/TagStudio/blob/main/doc/index.md).
           required: true
