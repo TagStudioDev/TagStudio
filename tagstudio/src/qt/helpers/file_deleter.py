@@ -9,6 +9,7 @@ INFO = f"[INFO]"
 
 logging.basicConfig(format="%(message)s", level=logging.INFO)
 
+
 def delete_file(path: str | Path, callback: Callable):
     _path = str(path)
     _file = Path(_path)
@@ -19,8 +20,8 @@ def delete_file(path: str | Path, callback: Callable):
     try:
         _file.unlink()
         callback()
-    except:
-        traceback.print_exc()
+    except Exception as exception:
+        logging.exception(exception)
 
 
 class FileDeleterHelper:
