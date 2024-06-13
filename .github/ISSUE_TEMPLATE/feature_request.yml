@@ -1,0 +1,38 @@
+name: Feature Request
+description: Suggest a new feature.
+title: '[Feature Request]: '
+labels: ['Type: Enhancement']
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Before suggesting, read the [documentation](https://github.com/TagStudioDev/TagStudio/blob/main/doc/index.md) and search existing [issues](https://github.com/TagStudioDev/TagStudio/issues).
+        Validate that you are using an up-to-date version[^1], your feature might already be implemented!
+        Questions, guidance, and usage goes in [discussions](https://github.com/TagStudioDev/TagStudio/discussions). Invalid issues will be closed.
+
+        [^1]: This can mean latest release, pre-release, or git commit.
+  - type: checkboxes
+    attributes:
+      label: Checklist
+      description: Make sure you've checked (and actually did) all of the below.
+      options:
+        - label: I am using an up-to-date version.
+          required: true
+        - label: I have read the [documentation](https://github.com/TagStudioDev/TagStudio/blob/main/doc/index.md).
+          required: true
+        - label: I have searched existing [issues](https://github.com/TagStudioDev/TagStudio/issues).
+          required: true
+  - type: textarea
+    attributes:
+      label: Description
+      description: Clear and concise description of the problem or missing capability. Attach screenshots if needed, and explain your own use case.
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Solution
+      description: Clear and concise description of what you think should happen.
+  - type: textarea
+    attributes:
+      label: Alternatives
+      description: Any considered alternative solutions or workarounds. If undesirable, why?

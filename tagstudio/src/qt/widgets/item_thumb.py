@@ -12,8 +12,8 @@ from pathlib import Path
 from typing import Optional
 
 from PIL import Image, ImageQt
-from PySide6.QtCore import Qt, QSize, QEvent
-from PySide6.QtGui import QPixmap, QEnterEvent, QAction
+from PySide6.QtCore import Qt, QSize, QEvent, QMimeData, QUrl
+from PySide6.QtGui import QPixmap, QEnterEvent, QAction, QDrag
 from PySide6.QtWidgets import (
     QWidget,
     QVBoxLayout,
@@ -23,19 +23,24 @@ from PySide6.QtWidgets import (
     QCheckBox,
 )
 
-from src.core.library import ItemType, Library
-from src.core.ts_core import AUDIO_TYPES, VIDEO_TYPES, IMAGE_TYPES
+
+from src.core.library import ItemType, Library, Entry
+from src.core.constants import AUDIO_TYPES, VIDEO_TYPES, IMAGE_TYPES
 from src.qt.flowlayout import FlowWidget
-from src.qt.helpers import FileOpenerHelper
-from src.qt.widgets import ThumbRenderer, ThumbButton
+from src.qt.helpers.file_opener import FileOpenerHelper
+from src.qt.widgets.thumb_renderer import ThumbRenderer
+from src.qt.widgets.thumb_button import ThumbButton
 
 if typing.TYPE_CHECKING:
-    from src.qt.widgets import PreviewPanel
-
+    from src.qt.widgets.preview_panel import PreviewPanel
 
 ERROR = f"[ERROR]"
 WARNING = f"[WARNING]"
 INFO = f"[INFO]"
+
+DEFAULT_META_TAG_FIELD = 8
+TAG_FAVORITE = 1
+TAG_ARCHIVED = 0
 
 logging.basicConfig(format="%(message)s", level=logging.INFO)
 
@@ -48,21 +53,17 @@ class ItemThumb(FlowWidget):
     update_cutoff: float = time.time()
 
     collation_icon_128: Image.Image = Image.open(
-        os.path.normpath(
-            f"{Path(__file__).parent.parent.parent.parent}/resources/qt/images/collation_icon_128.png"
-        )
+        str(Path(__file__).parents[3] / "resources/qt/images/collation_icon_128.png")
     )
     collation_icon_128.load()
 
     tag_group_icon_128: Image.Image = Image.open(
-        os.path.normpath(
-            f"{Path(__file__).parent.parent.parent.parent}/resources/qt/images/tag_group_icon_128.png"
-        )
+        str(Path(__file__).parents[3] / "resources/qt/images/tag_group_icon_128.png")
     )
     tag_group_icon_128.load()
 
     small_text_style = (
-        f"background-color:rgba(0, 0, 0, 128);"
+        f"background-color:rgba(0, 0, 0, 192);"
         f"font-family:Oxanium;"
         f"font-weight:bold;"
         f"font-size:12px;"
@@ -74,7 +75,7 @@ class ItemThumb(FlowWidget):
     )
 
     med_text_style = (
-        f"background-color:rgba(17, 15, 27, 192);"
+        f"background-color:rgba(0, 0, 0, 192);"
         f"font-family:Oxanium;"
         f"font-weight:bold;"
         f"font-size:18px;"
@@ -103,6 +104,7 @@ class ItemThumb(FlowWidget):
         self.thumb_size: tuple[int, int] = thumb_size
         self.setMinimumSize(*thumb_size)
         self.setMaximumSize(*thumb_size)
+        self.setMouseTracking(True)
         check_size = 24
         # self.setStyleSheet('background-color:red;')
 
@@ -177,7 +179,7 @@ class ItemThumb(FlowWidget):
             lambda ts, i, s, ext: (
                 self.update_thumb(ts, image=i),
                 self.update_size(ts, size=s),
-                self.set_extension(ext),
+                self.set_extension(ext),  # type: ignore
             )
         )
         self.thumb_button.setFlat(True)
@@ -310,6 +312,7 @@ class ItemThumb(FlowWidget):
 
     def set_mode(self, mode: Optional[ItemType]) -> None:
         if mode is None:
+            self.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents, True)
             self.unsetCursor()
             self.thumb_button.setHidden(True)
             # self.check_badges.setHidden(True)
@@ -317,6 +320,7 @@ class ItemThumb(FlowWidget):
             # self.item_type_badge.setHidden(True)
             pass
         elif mode == ItemType.ENTRY and self.mode != ItemType.ENTRY:
+            self.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents, False)
             self.setCursor(Qt.CursorShape.PointingHandCursor)
             self.thumb_button.setHidden(False)
             self.cb_container.setHidden(False)
@@ -326,6 +330,7 @@ class ItemThumb(FlowWidget):
             self.count_badge.setHidden(True)
             self.ext_badge.setHidden(True)
         elif mode == ItemType.COLLATION and self.mode != ItemType.COLLATION:
+            self.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents, False)
             self.setCursor(Qt.CursorShape.PointingHandCursor)
             self.thumb_button.setHidden(False)
             self.cb_container.setHidden(True)
@@ -334,6 +339,7 @@ class ItemThumb(FlowWidget):
             self.count_badge.setHidden(False)
             self.item_type_badge.setHidden(False)
         elif mode == ItemType.TAG_GROUP and self.mode != ItemType.TAG_GROUP:
+            self.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents, False)
             self.setCursor(Qt.CursorShape.PointingHandCursor)
             self.thumb_button.setHidden(False)
             # self.cb_container.setHidden(True)
@@ -349,9 +355,11 @@ class ItemThumb(FlowWidget):
     # 		pass
 
     def set_extension(self, ext: str) -> None:
-        if ext and ext not in IMAGE_TYPES or ext in ["gif", "apng"]:
+        if ext and ext.startswith(".") is False:
+            ext = "." + ext
+        if ext and ext not in IMAGE_TYPES or ext in [".gif", ".apng"]:
             self.ext_badge.setHidden(False)
-            self.ext_badge.setText(ext.upper())
+            self.ext_badge.setText(ext.upper()[1:])
             if ext in VIDEO_TYPES + AUDIO_TYPES:
                 self.count_badge.setHidden(False)
         else:
@@ -384,7 +392,7 @@ class ItemThumb(FlowWidget):
                 self.thumb_button.setMinimumSize(size)
                 self.thumb_button.setMaximumSize(size)
 
-    def update_clickable(self, clickable: FunctionType = None):
+    def update_clickable(self, clickable: typing.Callable):
         """Updates attributes of a thumbnail element."""
         # logging.info(f'[GUI] Updating Click Event for element {id(element)}: {id(clickable) if clickable else None}')
         try:
@@ -409,9 +417,7 @@ class ItemThumb(FlowWidget):
         if id == -1:
             return
         entry = self.lib.get_entry(self.item_id)
-        filepath = os.path.normpath(
-            f"{self.lib.library_dir}/{entry.path}/{entry.filename}"
-        )
+        filepath = self.lib.library_dir / entry.path / entry.filename
         self.opener.set_filepath(filepath)
 
     def assign_favorite(self, value: bool):
@@ -453,91 +459,63 @@ class ItemThumb(FlowWidget):
         self.show_check_badges(False)
         return super().leaveEvent(event)
 
-    def on_archived_check(self, value: bool):
-        # logging.info(f'Archived Check: {value}, Mode: {self.mode}')
+    def on_archived_check(self, toggle_value: bool):
         if self.mode == ItemType.ENTRY:
-            self.isArchived = value
-            DEFAULT_META_TAG_FIELD = 8
-            temp = (ItemType.ENTRY, self.item_id)
-            if (
-                list(self.panel.driver.selected).count(temp) > 0
-            ):  # Is the archived badge apart of the selection?
-                # Yes, then add archived tag to all selected.
-                for x in self.panel.driver.selected:
-                    e = self.lib.get_entry(x[1])
-                    if value:
-                        self.archived_badge.setHidden(False)
-                        e.add_tag(
-                            self.panel.driver.lib,
-                            0,
-                            field_id=DEFAULT_META_TAG_FIELD,
-                            field_index=-1,
-                        )
-                    else:
-                        e.remove_tag(self.panel.driver.lib, 0)
-            else:
-                # No, then add archived tag to the entry this badge is on.
-                e = self.lib.get_entry(self.item_id)
-                if value:
-                    self.favorite_badge.setHidden(False)
-                    e.add_tag(
-                        self.panel.driver.lib,
-                        0,
-                        field_id=DEFAULT_META_TAG_FIELD,
-                        field_index=-1,
-                    )
-                else:
-                    e.remove_tag(self.panel.driver.lib, 0)
-            if self.panel.isOpen:
-                self.panel.update_widgets()
-            self.panel.driver.update_badges()
+            self.isArchived = toggle_value
+            self.toggle_item_tag(toggle_value, TAG_ARCHIVED)
 
-    # def on_archived_uncheck(self):
-    # 	if self.mode == SearchItemType.ENTRY:
-    # 		self.isArchived = False
-    # 		e = self.lib.get_entry(self.item_id)
-
-    def on_favorite_check(self, value: bool):
-        # logging.info(f'Favorite Check: {value}, Mode: {self.mode}')
+    def on_favorite_check(self, toggle_value: bool):
         if self.mode == ItemType.ENTRY:
-            self.isFavorite = value
-            DEFAULT_META_TAG_FIELD = 8
-            temp = (ItemType.ENTRY, self.item_id)
-            if (
-                list(self.panel.driver.selected).count(temp) > 0
-            ):  # Is the favorite badge apart of the selection?
-                # Yes, then add favorite tag to all selected.
-                for x in self.panel.driver.selected:
-                    e = self.lib.get_entry(x[1])
-                    if value:
-                        self.favorite_badge.setHidden(False)
-                        e.add_tag(
-                            self.panel.driver.lib,
-                            1,
-                            field_id=DEFAULT_META_TAG_FIELD,
-                            field_index=-1,
-                        )
-                    else:
-                        e.remove_tag(self.panel.driver.lib, 1)
-            else:
-                # No, then add favorite tag to the entry this badge is on.
-                e = self.lib.get_entry(self.item_id)
-                if value:
-                    self.favorite_badge.setHidden(False)
-                    e.add_tag(
-                        self.panel.driver.lib,
-                        1,
-                        field_id=DEFAULT_META_TAG_FIELD,
-                        field_index=-1,
-                    )
-                else:
-                    e.remove_tag(self.panel.driver.lib, 1)
-            if self.panel.isOpen:
-                self.panel.update_widgets()
-            self.panel.driver.update_badges()
+            self.isFavorite = toggle_value
+            self.toggle_item_tag(toggle_value, TAG_FAVORITE)
 
-    # def on_favorite_uncheck(self):
-    # 	if self.mode == SearchItemType.ENTRY:
-    # 		self.isFavorite = False
-    # 		e = self.lib.get_entry(self.item_id)
-    # 		e.remove_tag(1)
+    def toggle_item_tag(self, toggle_value: bool, tag_id: int):
+        def toggle_tag(entry: Entry):
+            if toggle_value:
+                self.favorite_badge.setHidden(False)
+                entry.add_tag(
+                    self.panel.driver.lib,
+                    tag_id,
+                    field_id=DEFAULT_META_TAG_FIELD,
+                    field_index=-1,
+                )
+            else:
+                entry.remove_tag(self.panel.driver.lib, tag_id)
+
+        # Is the badge a part of the selection?
+        if (ItemType.ENTRY, self.item_id) in self.panel.driver.selected:
+            # Yes, add chosen tag to all selected.
+            for _, item_id in self.panel.driver.selected:
+                entry = self.lib.get_entry(item_id)
+                toggle_tag(entry)
+        else:
+            # No, add tag to the entry this badge is on.
+            entry = self.lib.get_entry(self.item_id)
+            toggle_tag(entry)
+
+        if self.panel.isOpen:
+            self.panel.update_widgets()
+        self.panel.driver.update_badges()
+
+    def mouseMoveEvent(self, event):
+        if event.buttons() is not Qt.MouseButton.LeftButton:
+            return
+
+        drag = QDrag(self.panel.driver)
+        paths = []
+        mimedata = QMimeData()
+
+        selected_ids = list(map(lambda x: x[1], self.panel.driver.selected))
+        if self.item_id not in selected_ids:
+            selected_ids = [self.item_id]
+
+        for id in selected_ids:
+            entry = self.lib.get_entry(id)
+            url = QUrl.fromLocalFile(
+                Path(self.lib.library_dir) / entry.path / entry.filename
+            )
+            paths.append(url)
+
+        mimedata.setUrls(paths)
+        drag.setMimeData(mimedata)
+        drag.exec(Qt.DropAction.CopyAction)

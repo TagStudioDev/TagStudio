@@ -6,145 +6,10 @@
 
 import json
 import os
+from pathlib import Path
 
 from src.core.library import Entry, Library
-
-VERSION: str = "9.2.0"  # Major.Minor.Patch
-VERSION_BRANCH: str = "Alpha"  # 'Alpha', 'Beta', or '' for Full Release
-
-# The folder & file names where TagStudio keeps its data relative to a library.
-TS_FOLDER_NAME: str = ".TagStudio"
-BACKUP_FOLDER_NAME: str = "backups"
-COLLAGE_FOLDER_NAME: str = "collages"
-LIBRARY_FILENAME: str = "ts_library.json"
-
-# TODO: Turn this whitelist into a user-configurable blacklist.
-IMAGE_TYPES: list[str] = [
-    "png",
-    "jpg",
-    "jpeg",
-    "jpg_large",
-    "jpeg_large",
-    "jfif",
-    "gif",
-    "tif",
-    "tiff",
-    "heic",
-    "heif",
-    "webp",
-    "bmp",
-    "svg",
-    "avif",
-    "apng",
-    "jp2",
-    "j2k",
-    "jpg2",
-]
-VIDEO_TYPES: list[str] = [
-    "mp4",
-    "webm",
-    "mov",
-    "hevc",
-    "mkv",
-    "avi",
-    "wmv",
-    "flv",
-    "gifv",
-    "m4p",
-    "m4v",
-    "3gp",
-]
-AUDIO_TYPES: list[str] = [
-    "mp3",
-    "mp4",
-    "mpeg4",
-    "m4a",
-    "aac",
-    "wav",
-    "flac",
-    "alac",
-    "wma",
-    "ogg",
-    "aiff",
-]
-DOC_TYPES: list[str] = ["txt", "rtf", "md", "doc", "docx", "pdf", "tex", "odt", "pages"]
-PLAINTEXT_TYPES: list[str] = [
-    "txt",
-    "md",
-    "css",
-    "html",
-    "xml",
-    "json",
-    "js",
-    "ts",
-    "ini",
-    "htm",
-    "csv",
-    "php",
-    "sh",
-    "bat",
-]
-SPREADSHEET_TYPES: list[str] = ["csv", "xls", "xlsx", "numbers", "ods"]
-PRESENTATION_TYPES: list[str] = ["ppt", "pptx", "key", "odp"]
-ARCHIVE_TYPES: list[str] = ["zip", "rar", "tar", "tar.gz", "tgz", "7z"]
-PROGRAM_TYPES: list[str] = ["exe", "app"]
-SHORTCUT_TYPES: list[str] = ["lnk", "desktop", "url"]
-
-ALL_FILE_TYPES: list[str] = (
-    IMAGE_TYPES
-    + VIDEO_TYPES
-    + AUDIO_TYPES
-    + DOC_TYPES
-    + SPREADSHEET_TYPES
-    + PRESENTATION_TYPES
-    + ARCHIVE_TYPES
-    + PROGRAM_TYPES
-    + SHORTCUT_TYPES
-)
-
-BOX_FIELDS = ["tag_box", "text_box"]
-TEXT_FIELDS = ["text_line", "text_box"]
-DATE_FIELDS = ["datetime"]
-
-TAG_COLORS = [
-    "",
-    "black",
-    "dark gray",
-    "gray",
-    "light gray",
-    "white",
-    "light pink",
-    "pink",
-    "red",
-    "red orange",
-    "orange",
-    "yellow orange",
-    "yellow",
-    "lime",
-    "light green",
-    "mint",
-    "green",
-    "teal",
-    "cyan",
-    "light blue",
-    "blue",
-    "blue violet",
-    "violet",
-    "purple",
-    "lavender",
-    "berry",
-    "magenta",
-    "salmon",
-    "auburn",
-    "dark brown",
-    "brown",
-    "light brown",
-    "blonde",
-    "peach",
-    "warm gray",
-    "cool gray",
-    "olive",
-]
+from src.core.constants import TS_FOLDER_NAME, TEXT_FIELDS
 
 
 class TagStudioCore:
@@ -156,7 +21,7 @@ class TagStudioCore:
     def __init__(self):
         self.lib: Library = Library()
 
-    def get_gdl_sidecar(self, filepath: str, source: str = "") -> dict:
+    def get_gdl_sidecar(self, filepath: str | Path, source: str = "") -> dict:
         """
         Attempts to open and dump a Gallery-DL Sidecar sidecar file for
         the filepath.\n Returns a formatted object with notable values or an
@@ -164,16 +29,19 @@ class TagStudioCore:
         """
         json_dump = {}
         info = {}
+        _filepath: Path = Path(filepath)
+        _filepath = _filepath.parent / (_filepath.stem + ".json")
 
         # NOTE: This fixes an unknown (recent?) bug in Gallery-DL where Instagram sidecar
         # files may be downloaded with indices starting at 1 rather than 0, unlike the posts.
         # This may only occur with sidecar files that are downloaded separate from posts.
         if source == "instagram":
-            if not os.path.isfile(os.path.normpath(filepath + ".json")):
-                filepath = filepath[:-16] + "1" + filepath[-15:]
+            if not _filepath.is_file():
+                newstem = _filepath.stem[:-16] + "1" + _filepath.stem[-15:]
+                _filepath = _filepath.parent / (newstem + ".json")
 
         try:
-            with open(os.path.normpath(filepath + ".json"), "r", encoding="utf8") as f:
+            with open(_filepath, "r", encoding="utf8") as f:
                 json_dump = json.load(f)
 
                 if json_dump:
@@ -237,19 +105,17 @@ class TagStudioCore:
     def match_conditions(self, entry_id: int) -> None:
         """Matches defined conditions against a file to add Entry data."""
 
-        cond_file = os.path.normpath(
-            f"{self.lib.library_dir}/{TS_FOLDER_NAME}/conditions.json"
-        )
+        cond_file = self.lib.library_dir / TS_FOLDER_NAME / "conditions.json"
         # TODO: Make this stored somewhere better instead of temporarily in this JSON file.
         entry: Entry = self.lib.get_entry(entry_id)
         try:
-            if os.path.isfile(cond_file):
+            if cond_file.is_file():
                 with open(cond_file, "r", encoding="utf8") as f:
                     json_dump = json.load(f)
                     for c in json_dump["conditions"]:
                         match: bool = False
                         for path_c in c["path_conditions"]:
-                            if os.path.normpath(path_c) in entry.path:
+                            if str(Path(path_c).resolve()) in str(entry.path):
                                 match = True
                                 break
                         if match:
@@ -300,7 +166,7 @@ class TagStudioCore:
             # input()
             pass
 
-    def build_url(self, entry_id: int, source: str) -> str:
+    def build_url(self, entry_id: int, source: str):
         """Tries to rebuild a source URL given a specific filename structure."""
 
         source = source.lower().replace("-", " ").replace("_", " ")
@@ -316,7 +182,7 @@ class TagStudioCore:
         """
         try:
             entry = self.lib.get_entry(entry_id)
-            stubs = entry.filename.rsplit("_", 3)
+            stubs = str(entry.filename).rsplit("_", 3)
             # print(stubs)
             # source, author = os.path.split(entry.path)
             url = f"www.twitter.com/{stubs[0]}/status/{stubs[-3]}/photo/{stubs[-2]}"
@@ -331,7 +197,7 @@ class TagStudioCore:
         """
         try:
             entry = self.lib.get_entry(entry_id)
-            stubs = entry.filename.rsplit("_", 2)
+            stubs = str(entry.filename).rsplit("_", 2)
             # stubs[0] = stubs[0].replace(f"{author}_", '', 1)
             # print(stubs)
             # NOTE: Both Instagram usernames AND their ID can have underscores in them,

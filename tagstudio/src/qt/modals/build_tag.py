@@ -20,9 +20,10 @@ from PySide6.QtWidgets import (
 
 from src.core.library import Library, Tag
 from src.core.palette import ColorType, get_tag_color
-from src.core.ts_core import TAG_COLORS
-from src.qt.widgets import PanelWidget, PanelModal, TagWidget
-from src.qt.modals import TagSearchPanel
+from src.core.constants import TAG_COLORS
+from src.qt.widgets.panel import PanelWidget, PanelModal
+from src.qt.widgets.tag import TagWidget
+from src.qt.modals.tag_search import TagSearchPanel
 
 
 ERROR = f"[ERROR]"
@@ -95,7 +96,7 @@ class BuildTagPanel(PanelWidget):
         self.subtags_layout.setSpacing(0)
         self.subtags_layout.setAlignment(Qt.AlignmentFlag.AlignLeft)
         self.subtags_title = QLabel()
-        self.subtags_title.setText("Subtags")
+        self.subtags_title.setText("Parent Tags")
         self.subtags_layout.addWidget(self.subtags_title)
 
         self.scroll_contents = QWidget()
@@ -117,7 +118,7 @@ class BuildTagPanel(PanelWidget):
         self.subtags_add_button.setText("+")
         tsp = TagSearchPanel(self.lib)
         tsp.tag_chosen.connect(lambda x: self.add_subtag_callback(x))
-        self.add_tag_modal = PanelModal(tsp, "Add Subtags", "Add Subtags")
+        self.add_tag_modal = PanelModal(tsp, "Add Parent Tags", "Add Parent Tags")
         self.subtags_add_button.clicked.connect(self.add_tag_modal.show)
         self.subtags_layout.addWidget(self.subtags_add_button)
 

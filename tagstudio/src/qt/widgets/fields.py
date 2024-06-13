@@ -5,9 +5,9 @@
 
 import math
 import os
-from types import FunctionType
+from types import FunctionType, MethodType
 from pathlib import Path
-from typing import Optional
+from typing import Optional, cast, Callable, Any
 
 from PIL import Image, ImageQt
 from PySide6.QtCore import Qt, QEvent
@@ -16,25 +16,19 @@ from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushBu
 
 
 class FieldContainer(QWidget):
-    # TODO: reference a resources folder rather than path.parent.parent.parent.parent?
+    # TODO: reference a resources folder rather than path.parents[3]?
     clipboard_icon_128: Image.Image = Image.open(
-        os.path.normpath(
-            f"{Path(__file__).parent.parent.parent.parent}/resources/qt/images/clipboard_icon_128.png"
-        )
+        str(Path(__file__).parents[3] / "resources/qt/images/clipboard_icon_128.png")
     ).resize((math.floor(24 * 1.25), math.floor(24 * 1.25)))
     clipboard_icon_128.load()
 
     edit_icon_128: Image.Image = Image.open(
-        os.path.normpath(
-            f"{Path(__file__).parent.parent.parent.parent}/resources/qt/images/edit_icon_128.png"
-        )
+        str(Path(__file__).parents[3] / "resources/qt/images/edit_icon_128.png")
     ).resize((math.floor(24 * 1.25), math.floor(24 * 1.25)))
     edit_icon_128.load()
 
     trash_icon_128: Image.Image = Image.open(
-        os.path.normpath(
-            f"{Path(__file__).parent.parent.parent.parent}/resources/qt/images/trash_icon_128.png"
-        )
+        str(Path(__file__).parents[3] / "resources/qt/images/trash_icon_128.png")
     ).resize((math.floor(24 * 1.25), math.floor(24 * 1.25)))
     trash_icon_128.load()
 
@@ -48,7 +42,7 @@ class FieldContainer(QWidget):
         # self.editable:bool = editable
         self.copy_callback: FunctionType = None
         self.edit_callback: FunctionType = None
-        self.remove_callback: FunctionType = None
+        self.remove_callback: Callable = None
         button_size = 24
         # self.setStyleSheet('border-style:solid;border-color:#1e1a33;border-radius:8px;border-width:2px;')
 
@@ -129,7 +123,7 @@ class FieldContainer(QWidget):
 
         # self.set_inner_widget(mode)
 
-    def set_copy_callback(self, callback: Optional[FunctionType]):
+    def set_copy_callback(self, callback: Optional[MethodType]):
         try:
             self.copy_button.clicked.disconnect()
         except RuntimeError:
@@ -138,7 +132,7 @@ class FieldContainer(QWidget):
         self.copy_callback = callback
         self.copy_button.clicked.connect(callback)
 
-    def set_edit_callback(self, callback: Optional[FunctionType]):
+    def set_edit_callback(self, callback: Optional[MethodType]):
         try:
             self.edit_button.clicked.disconnect()
         except RuntimeError:
@@ -147,7 +141,7 @@ class FieldContainer(QWidget):
         self.edit_callback = callback
         self.edit_button.clicked.connect(callback)
 
-    def set_remove_callback(self, callback: Optional[FunctionType]):
+    def set_remove_callback(self, callback: Optional[Callable]):
         try:
             self.remove_button.clicked.disconnect()
         except RuntimeError:
@@ -168,7 +162,7 @@ class FieldContainer(QWidget):
 
     def get_inner_widget(self) -> Optional["FieldWidget"]:
         if self.field_layout.itemAt(0):
-            return self.field_layout.itemAt(0).widget()
+            return cast(FieldWidget, self.field_layout.itemAt(0).widget())
         return None
 
     def set_title(self, title: str):

@@ -1,4 +1,5 @@
 from typing import TypedDict
+from typing_extensions import NotRequired
 
 
 class JsonLibary(TypedDict("", {"ts-version": str})):
@@ -8,6 +9,9 @@ class JsonLibary(TypedDict("", {"ts-version": str})):
     fields: list  # TODO
     macros: "list[JsonMacro]"
     entries: "list[JsonEntry]"
+    ext_list: list[str]
+    is_exclude_list: bool
+    ignored_extensions: NotRequired[list[str]]  # deprecated
 
 
 class JsonBase(TypedDict):

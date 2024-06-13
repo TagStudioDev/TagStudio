@@ -19,7 +19,8 @@ from PySide6.QtWidgets import (
 
 from src.core.library import Library
 from src.core.palette import ColorType, get_tag_color
-from src.qt.widgets import PanelWidget, TagWidget
+from src.qt.widgets.panel import PanelWidget
+from src.qt.widgets.tag import TagWidget
 
 
 ERROR = f"[ERROR]"
@@ -37,7 +38,7 @@ class TagSearchPanel(PanelWidget):
         self.lib: Library = library
         # self.callback = callback
         self.first_tag_id = None
-        self.tag_limit = 30
+        self.tag_limit = 100
         # self.selected_tag: int = 0
         self.setMinimumSize(300, 400)
         self.root_layout = QVBoxLayout(self)
@@ -106,9 +107,7 @@ class TagSearchPanel(PanelWidget):
             # logging.info(f"I'm deleting { self.scroll_layout.itemAt(0).widget()}")
             self.scroll_layout.takeAt(0).widget().deleteLater()
 
-        found_tags = self.lib.search_tags(query, include_cluster=True)[
-            : self.tag_limit - 1
-        ]
+        found_tags = self.lib.search_tags(query, include_cluster=True)[: self.tag_limit]
         self.first_tag_id = found_tags[0] if found_tags else None
 
         for tag_id in found_tags:

@@ -145,7 +145,6 @@ class Pagination(QWidget, QObject):
                 self.end_buffer_layout.itemAt(i).widget().setHidden(True)
 
         end_page = page_count - 1
-
         if page_count <= 1:
             # Hide everything if there are only one or less pages.
             # [-------------- HIDDEN --------------]
@@ -178,6 +177,7 @@ class Pagination(QWidget, QObject):
                 # self.start_buffer_layout.setContentsMargins(3,0,3,0)
                 self._assign_click(self.prev_button, index - 1)
                 self.prev_button.setDisabled(False)
+
             if index == end_page:
                 self.next_button.setDisabled(True)
                 # self.end_buffer_layout.setContentsMargins(0,0,0,0)
@@ -292,9 +292,9 @@ class Pagination(QWidget, QObject):
                         ).widget().setHidden(False)
                         self.start_buffer_layout.itemAt(
                             i - start_offset
-                        ).widget().setText(str(i + 1))
+                        ).widget().setText(str(i + 1))  # type: ignore
                         self._assign_click(
-                            self.start_buffer_layout.itemAt(i - start_offset).widget(),
+                            self.start_buffer_layout.itemAt(i - start_offset).widget(),  # type: ignore
                             i,
                         )
                         sbc += 1
@@ -319,11 +319,12 @@ class Pagination(QWidget, QObject):
                         self.end_buffer_layout.itemAt(
                             i - end_offset
                         ).widget().setHidden(False)
-                        self.end_buffer_layout.itemAt(i - end_offset).widget().setText(
+                        self.end_buffer_layout.itemAt(i - end_offset).widget().setText(  # type: ignore
                             str(i + 1)
                         )
                         self._assign_click(
-                            self.end_buffer_layout.itemAt(i - end_offset).widget(), i
+                            self.end_buffer_layout.itemAt(i - end_offset).widget(),  # type: ignore
+                            i,
                         )
                     else:
                         # if self.start_buffer_layout.itemAt(i-1):

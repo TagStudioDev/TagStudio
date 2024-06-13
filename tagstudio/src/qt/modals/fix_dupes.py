@@ -17,7 +17,7 @@ from PySide6.QtWidgets import (
 )
 
 from src.core.library import Library
-from src.qt.modals import MirrorEntriesModal
+from src.qt.modals.mirror_entities import MirrorEntriesModal
 
 # Only import for type checking/autocompletion, will not be imported at runtime.
 if typing.TYPE_CHECKING:
@@ -137,9 +137,7 @@ class FixDupeFilesModal(QWidget):
         self.set_dupe_count(self.count)
 
     def select_file(self):
-        qfd = QFileDialog(
-            self, "Open DupeGuru Results File", os.path.normpath(self.lib.library_dir)
-        )
+        qfd = QFileDialog(self, "Open DupeGuru Results File", str(self.lib.library_dir))
         qfd.setFileMode(QFileDialog.FileMode.ExistingFile)
         qfd.setNameFilter("DupeGuru Files (*.dupeguru)")
         if qfd.exec_():

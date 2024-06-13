@@ -1,0 +1,106 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - v[0-9]+.[0-9]+.[0-9]+*
+
+jobs:
+  linux:
+    strategy:
+      matrix:
+        build-type: ['', portable]
+        include:
+          - build-type: ''
+            build-flag: ''
+            suffix: ''
+          - build-type: portable
+            build-flag: --portable
+            suffix: _portable
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+      - run: pip install -Ur requirements.txt pyinstaller
+      - run: pyinstaller tagstudio.spec -- ${{ matrix.build-flag }}
+      - run: tar czfC dist/tagstudio_linux_x86_64${{ matrix.suffix }}.tar.gz dist tagstudio
+      - uses: actions/upload-artifact@v4
+        with:
+          name: tagstudio_linux_x86_64${{ matrix.suffix }}
+          path: dist/tagstudio_linux_x86_64${{ matrix.suffix }}.tar.gz
+
+  macos:
+    strategy:
+      matrix:
+        os-version: ['12', '14']
+        include:
+          - os-version: '12'
+            arch: x86_64
+          - os-version: '14'
+            arch: aarch64
+    runs-on: macos-${{ matrix.os-version }}
+    env:
+      # even though we run on 12, target towards compatibility
+      MACOSX_DEPLOYMENT_TARGET: '11.0'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+      - run: pip install -Ur requirements.txt pyinstaller
+      - run: pyinstaller tagstudio.spec
+      - run: tar czfC dist/tagstudio_macos_${{ matrix.arch }}.tar.gz dist TagStudio.app
+      - uses: actions/upload-artifact@v4
+        with:
+          name: tagstudio_macos_${{ matrix.arch }}
+          path: dist/tagstudio_macos_${{ matrix.arch }}.tar.gz
+
+  windows:
+    strategy:
+      matrix:
+        build-type: ['', portable]
+        include:
+          - build-type: ''
+            build-flag: ''
+            suffix: ''
+            file-end: ''
+          - build-type: portable
+            build-flag: --portable
+            suffix: _portable
+            file-end: .exe
+    runs-on: windows-2019
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+      - run: pip install -Ur requirements.txt pyinstaller
+      - run: PyInstaller tagstudio.spec -- ${{ matrix.build-flag }}
+      - run: Compress-Archive -Path dist/TagStudio${{ matrix.file-end }} -DestinationPath dist/tagstudio_windows_x86_64${{ matrix.suffix }}.zip
+      - uses: actions/upload-artifact@v4
+        with:
+          name: tagstudio_windows_x86_64${{ matrix.suffix }}
+          path: dist/tagstudio_windows_x86_64${{ matrix.suffix }}.zip
+
+  publish:
+    needs: [linux, macos, windows]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            tagstudio_linux_x86_64/*
+            tagstudio_linux_x86_64_portable/*
+            tagstudio_macos_x86_64/*
+            tagstudio_macos_aarch64/*
+            tagstudio_windows_x86_64/*
+            tagstudio_windows_x86_64_portable/*
