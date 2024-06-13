@@ -8,6 +8,7 @@
 """A Qt driver for TagStudio."""
 
 import ctypes
+import copy
 import logging
 import math
 import os
@@ -64,6 +65,7 @@ from src.core.constants import (
     TS_FOLDER_NAME,
     VERSION_BRANCH,
     VERSION,
+    TEXT_FIELDS,
 )
 from src.core.utils.web import strip_web_protocol
 from src.qt.flowlayout import FlowLayout
@@ -390,9 +392,9 @@ class QtDriver(QObject):
 
         edit_menu.addSeparator()
 
-        copy_entry_fields_action = QAction("&Copy", menu_bar)
+        copy_entry_fields_action = QAction("&Copy Entry Fields", menu_bar)
         copy_entry_fields_action.triggered.connect(
-            lambda: self.copy_entry_fields_action_callback()
+            lambda: self.copy_entry_fields_callback()
         )
         copy_entry_fields_action.setShortcut(
             QtCore.QKeyCombination(
@@ -403,10 +405,8 @@ class QtDriver(QObject):
         copy_entry_fields_action.setToolTip("Ctrl+C")
         edit_menu.addAction(copy_entry_fields_action)
 
-        paste_entry_fields_action = QAction("&Paste", menu_bar)
-        paste_entry_fields_action.triggered.connect(
-            self.paste_entry_fields_action_callback
-        )
+        paste_entry_fields_action = QAction("&Paste Entry Fields", menu_bar)
+        paste_entry_fields_action.triggered.connect(self.paste_entry_fields_callback)
         paste_entry_fields_action.setShortcut(
             QtCore.QKeyCombination(
                 QtCore.Qt.KeyboardModifier(QtCore.Qt.KeyboardModifier.ControlModifier),
@@ -974,20 +974,52 @@ class QtDriver(QObject):
                             mode="replace",
                         )
 
-    def copy_entry_fields_action_callback(self):
+    def copy_entry_fields_callback(self):
+        """Copies fields from selected Entry into buffer."""
         for item_type, item_id in reversed(self.selected):
             if item_type == ItemType.ENTRY:
                 entry = self.lib.get_entry(item_id)
-                self.copied_fields = entry.fields.copy()
+                self.copied_fields = copy.deepcopy(entry.fields)
                 break
 
-    def paste_entry_fields_action_callback(self):
-        if self.copied_fields != None:
+    def paste_entry_fields_callback(self):
+        """Pastes buffered fields into currently selected Entries."""
+        # Code ported from ts_cli.py
+        if self.copied_fields:
             for item_type, item_id in self.selected:
                 if item_type == ItemType.ENTRY:
                     entry = self.lib.get_entry(item_id)
-                    entry.fields = self.copied_fields.copy()
+
+                    for field in self.copied_fields:
+                        logging.info(field)
+                        field_id: int = self.lib.get_field_attr(field, "id")
+                        content = self.lib.get_field_attr(field, "content")
+
+                        if self.lib.get_field_obj(int(field_id))["type"] == "tag_box":
+                            existing_fields: list[int] = (
+                                self.lib.get_field_index_in_entry(entry, field_id)
+                            )
+                            if existing_fields:
+                                self.lib.update_entry_field(
+                                    item_id, existing_fields[0], content, "append"
+                                )
+                            else:
+                                self.lib.add_field_to_entry(item_id, field_id)
+                                self.lib.update_entry_field(
+                                    item_id, -1, content, "append"
+                                )
+
+                        if self.lib.get_field_obj(int(field_id))["type"] in TEXT_FIELDS:
+                            if not self.lib.does_field_content_exist(
+                                item_id, field_id, content
+                            ):
+                                self.lib.add_field_to_entry(item_id, field_id)
+                                self.lib.update_entry_field(
+                                    item_id, -1, content, "replace"
+                                )
+
             self.preview_panel.update_widgets()
+            self.update_badges()
 
     def mouse_navigation(self, event: QMouseEvent):
         # print(event.button())
