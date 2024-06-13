@@ -1,3 +1,6 @@
+# Licensed under the GPL-3.0 License.
+# Created for TagStudio: https://github.com/CyanVoxel/TagStudio
+
 from pathlib import Path
 import shutil
 import typing
@@ -76,7 +79,7 @@ class DropImport:
                         continue
                     self.files.append(f)
                     if (
-                        self.driver.lib.library_dir / self.get_relativ_path(file)
+                        self.driver.lib.library_dir / self.get_relative_path(file)
                     ).exists():
                         self.duplicate_files.append(f)
                     yield [len(self.files), len(self.duplicate_files)]
@@ -102,7 +105,7 @@ class DropImport:
             if file.is_dir():
                 continue
 
-            dest_file = self.get_relativ_path(file)
+            dest_file = self.get_relative_path(file)
 
             if file in self.duplicate_files:
                 duplicated_files_progress += 1
@@ -161,7 +164,7 @@ class DropImport:
             dupes_to_show = dupes_to_show[0:20]
 
         msgBox.setText(
-            f"The files  {', '.join(map(lambda path: str(path),self.get_relativ_paths(dupes_to_show)))} {(f'and {len(self.duplicate_files)-20} more') if len(self.duplicate_files)>20 else ''}  have filenames that already exist in the library folder."
+            f"The files  {', '.join(map(lambda path: str(path),self.get_relative_paths(dupes_to_show)))} {(f'and {len(self.duplicate_files)-20} more') if len(self.duplicate_files)>20 else ''}  have filenames that already exist in the library folder."
         )
         msgBox.addButton("Skip", QMessageBox.ButtonRole.YesRole)
         msgBox.addButton("Override", QMessageBox.ButtonRole.DestructiveRole)
@@ -178,17 +181,17 @@ class DropImport:
         for file in files:
             if file.is_dir():
                 exists += self.get_files_exists_in_library(file)
-            elif (self.driver.lib.library_dir / self.get_relativ_path(file)).exists():
+            elif (self.driver.lib.library_dir / self.get_relative_path(file)).exists():
                 exists.append(file)
         return exists
 
-    def get_relativ_paths(self, paths: list[Path]) -> list[Path]:
-        relativ_paths = []
+    def get_relative_paths(self, paths: list[Path]) -> list[Path]:
+        relative_paths = []
         for file in paths:
-            relativ_paths.append(self.get_relativ_path(file))
-        return relativ_paths
+            relative_paths.append(self.get_relative_path(file))
+        return relative_paths
 
-    def get_relativ_path(self, path: Path) -> Path:
+    def get_relative_path(self, path: Path) -> Path:
         for dir in self.dirs_in_root:
             if path.is_relative_to(dir):
                 return path.relative_to(dir)
