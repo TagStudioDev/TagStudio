@@ -25,8 +25,9 @@ Thank you so much for showing interest in contributing to TagStudio! Here are a 
 ### Prerequisites
 
 - [Python](https://www.python.org/downloads/) 3.12
-- [Ruff](https://github.com/astral-sh/ruff) _(Included in `requirements-dev.txt`)_
-- [Mypy](https://github.com/python/mypy) _(Included in `requirements-dev.txt`)_
+- [Ruff](https://github.com/astral-sh/ruff) (Included in `requirements-dev.txt`)
+- [Mypy](https://github.com/python/mypy) (Included in `requirements-dev.txt`)
+- [PyTest](https://docs.pytest.org) (Included in `requirements-dev.txt`)
 
 ### Creating a Python Virtual Environment
 
@@ -85,7 +86,7 @@ A Python linter and code formatter. Ruff uses the `pyproject.toml` as its config
 
 #### Running Locally
 
-- Lint code with by moving into the `/tagstudio` directory with `cd tagstudio` and running `ruff --config ../pyproject.toml `
+- Lint code with by moving into the `/tagstudio` directory with `cd tagstudio` and running `ruff --config ../pyproject.toml`.
 - Format code with `ruff format` inside the repository directory
 
 Ruff is also available as a VS Code [extension](https://marketplace.visualstudio.com/items?itemName=charliermarsh.ruff), PyCharm [plugin](https://plugins.jetbrains.com/plugin/20574-ruff), and [more](https://docs.astral.sh/ruff/integrations/).
@@ -99,19 +100,16 @@ Mypy is a static type checker for Python. It sure has a lot to say sometimes, bu
 - **First time only:** Move into the `/tagstudio` directory with `cd tagstudio` and run the following:
   - `mkdir -p .mypy_cache`
   - `mypy --install-types --non-interactive`
-- Check code by moving into the `/tagstudio` directory with `cd tagstudio` _(if you aren't already inside)_ and running `mypy --config-file ../pyproject.toml .` _(Don't forget the `.` at the end!)_
+- Check code by moving into the `/tagstudio` directory with `cd tagstudio` _(if you aren't already inside)_ and running `mypy --config-file ../pyproject.toml .`. _(Don't forget the `.` at the end!)_
 
 > [!CAUTION]
 > There's a known issue between PySide v6.6.3 and Mypy where Mypy will detect issues with the `.pyi` files inside of PySide and prematurely stop checking files. This issue is not present in PySide v6.6.2, which _should_ be compatible with everything else if you wish to try using that version in the meantime.
 
 Mypy is also available as a VS Code [extension](https://marketplace.visualstudio.com/items?itemName=matangover.mypy), PyCharm [plugin](https://plugins.jetbrains.com/plugin/11086-mypy), and [more](https://plugins.jetbrains.com/plugin/11086-mypy).
 
-### PyTest _(Work in Progress)_
+### PyTest
 
-> [!IMPORTANT]
-> Tests are not currently run as part of any automated workflow.
-
-To run all the tests use `python -m pytest tests/` from the `tagstudio` folder.
+- Run all tests by moving into the `/tagstudio` directory with `cd tagstudio` and running `pytest tests/`.
 
 ## Code Guidelines
 
