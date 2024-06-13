@@ -158,13 +158,18 @@ class DropImport:
         )
 
     def duplicates_choice(self) -> int:
+        display_limit: int = 5
         msgBox = QMessageBox()
+        msgBox.setWindowTitle(
+            f"File Conflict{'s' if len(self.duplicate_files) > 1 else ''}"
+        )
+
         dupes_to_show = self.duplicate_files
-        if len(self.duplicate_files) > 20:
-            dupes_to_show = dupes_to_show[0:20]
+        if len(self.duplicate_files) > display_limit:
+            dupes_to_show = dupes_to_show[0:display_limit]
 
         msgBox.setText(
-            f"The files  {', '.join(map(lambda path: str(path),self.get_relative_paths(dupes_to_show)))} {(f'and {len(self.duplicate_files)-20} more') if len(self.duplicate_files)>20 else ''}  have filenames that already exist in the library folder."
+            f"The following files:\n    {'\n    '.join(map(lambda path: str(path),self.get_relative_paths(dupes_to_show)))} {(f'\nand {len(self.duplicate_files)-display_limit} more ') if len(self.duplicate_files)>display_limit else '\n'}have filenames that already exist in the library folder."
         )
         msgBox.addButton("Skip", QMessageBox.ButtonRole.YesRole)
         msgBox.addButton("Override", QMessageBox.ButtonRole.DestructiveRole)
