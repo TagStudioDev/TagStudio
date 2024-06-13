@@ -10,8 +10,8 @@ from typing import TYPE_CHECKING
 
 import structlog
 from PIL import Image, ImageQt
-from PySide6.QtCore import QEvent, QSize, Qt
-from PySide6.QtGui import QAction, QEnterEvent, QPixmap
+from PySide6.QtCore import QEvent, QMimeData, QSize, Qt, QUrl
+from PySide6.QtGui import QAction, QDrag, QEnterEvent, QPixmap
 from PySide6.QtWidgets import (
     QBoxLayout,
     QCheckBox,
@@ -128,6 +128,7 @@ class ItemThumb(FlowWidget):
         self.thumb_size: tuple[int, int] = thumb_size
         self.setMinimumSize(*thumb_size)
         self.setMaximumSize(*thumb_size)
+        self.setMouseTracking(True)
         check_size = 24
 
         # +----------+
@@ -483,3 +484,29 @@ class ItemThumb(FlowWidget):
 
         if self.driver.preview_panel.is_open:
             self.driver.preview_panel.update_widgets()
+
+    def mouseMoveEvent(self, event):  # noqa: N802
+        if event.buttons() is not Qt.MouseButton.LeftButton:
+            return
+
+        drag = QDrag(self.driver)
+        paths = []
+        mimedata = QMimeData()
+
+        selected_idxs = self.driver.selected
+        if self.grid_idx not in selected_idxs:
+            selected_idxs = [self.grid_idx]
+
+        for grid_idx in selected_idxs:
+            id = self.driver.item_thumbs[grid_idx].item_id
+            entry = self.lib.get_entry(id)
+            if not entry:
+                continue
+
+            url = QUrl.fromLocalFile(Path(self.lib.library_dir) / entry.path)
+            paths.append(url)
+
+        mimedata.setUrls(paths)
+        drag.setMimeData(mimedata)
+        drag.exec(Qt.DropAction.CopyAction)
+        logger.info("dragged files to external program", thumbnail_indexs=selected_idxs)
