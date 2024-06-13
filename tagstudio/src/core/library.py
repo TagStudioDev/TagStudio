@@ -1359,7 +1359,7 @@ class Library:
                     logging.warning("""[ERROR] Attempt to parse mutiple fields\
                                     as one! Do not forget to specify ';'\
                                     between different meta fields""")
-                query_part[field_parsed[0].lower()] = field_parsed[1].lower()
+                query_part[field_parsed[0].lower().strip().casefold()] = field_parsed[1].lower().strip().casefold()
             meta_list.append(query_part)
 
         logging.info("Parsed values: ")
@@ -2370,8 +2370,9 @@ class Filter:
     def remap_fields(self, entry: Entry) -> dict[str, str]:
         entry_fields: dict = {}
         for field in entry.fields:
-            field_key = self._field_id_to_name_map.get(list(field.keys())[0])
-            entry_fields[field_key] = list(field.values())[0]
+            if len(field.keys()) > 0:
+                field_key = self._field_id_to_name_map.get(list(field.keys())[0])
+                entry_fields[field_key] = list(field.values())[0]
         return entry_fields
 
     def populate_tags(self, entry: Entry) -> tuple[list[int], list[str]]:
