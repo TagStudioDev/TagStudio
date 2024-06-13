@@ -80,7 +80,7 @@ class Entry:
         # self.word_count: int = None
 
     def __str__(self) -> str:
-        return f"\n{self.compressed_dict()}\n"
+        return str(self.compressed_dict())
 
     def __repr__(self) -> str:
         return self.__str__()
