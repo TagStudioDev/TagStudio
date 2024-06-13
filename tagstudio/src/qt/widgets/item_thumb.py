@@ -12,8 +12,8 @@ from pathlib import Path
 from typing import Optional
 
 from PIL import Image, ImageQt
-from PySide6.QtCore import Qt, QSize, QEvent
-from PySide6.QtGui import QPixmap, QEnterEvent, QAction
+from PySide6.QtCore import Qt, QSize, QEvent, QMimeData, QUrl
+from PySide6.QtGui import QPixmap, QEnterEvent, QAction, QDrag
 from PySide6.QtWidgets import (
     QWidget,
     QVBoxLayout,
@@ -104,6 +104,7 @@ class ItemThumb(FlowWidget):
         self.thumb_size: tuple[int, int] = thumb_size
         self.setMinimumSize(*thumb_size)
         self.setMaximumSize(*thumb_size)
+        self.setMouseTracking(True)
         check_size = 24
         # self.setStyleSheet('background-color:red;')
 
@@ -495,3 +496,26 @@ class ItemThumb(FlowWidget):
         if self.panel.isOpen:
             self.panel.update_widgets()
         self.panel.driver.update_badges()
+
+    def mouseMoveEvent(self, event):
+        if event.buttons() is not Qt.MouseButton.LeftButton:
+            return
+
+        drag = QDrag(self.panel.driver)
+        paths = []
+        mimedata = QMimeData()
+
+        selected_ids = list(map(lambda x: x[1], self.panel.driver.selected))
+        if self.item_id not in selected_ids:
+            selected_ids = [self.item_id]
+
+        for id in selected_ids:
+            entry = self.lib.get_entry(id)
+            url = QUrl.fromLocalFile(
+                Path(self.lib.library_dir) / entry.path / entry.filename
+            )
+            paths.append(url)
+
+        mimedata.setUrls(paths)
+        drag.setMimeData(mimedata)
+        drag.exec(Qt.DropAction.CopyAction)

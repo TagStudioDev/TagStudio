@@ -83,6 +83,7 @@ from src.qt.modals.file_extension import FileExtensionModal
 from src.qt.modals.fix_unlinked import FixUnlinkedEntriesModal
 from src.qt.modals.fix_dupes import FixDupeFilesModal
 from src.qt.modals.folders_to_tags import FoldersToTagsModal
+from src.qt.modals.drop_import import DropImport
 
 # this import has side-effect of import PySide resources
 import src.qt.resources_rc  # pylint: disable=unused-import
@@ -266,6 +267,11 @@ class QtDriver(QObject):
         # self.main_window.setStyleSheet(
         # 	f'QScrollBar::{{background:red;}}'
         # 	)
+
+        self.drop_import = DropImport(self)
+        self.main_window.dragEnterEvent = self.drop_import.dragEnterEvent  # type: ignore
+        self.main_window.dropEvent = self.drop_import.dropEvent  # type: ignore
+        self.main_window.dragMoveEvent = self.drop_import.dragMoveEvent  # type: ignore
 
         # # self.main_window.windowFlags() &
         # # self.main_window.setWindowFlag(Qt.WindowType.FramelessWindowHint, True)
@@ -686,6 +692,7 @@ class QtDriver(QObject):
             self.lib.clear_internal_vars()
             title_text = f"{self.base_title}"
             self.main_window.setWindowTitle(title_text)
+            self.main_window.setAcceptDrops(False)
 
             self.nav_frames = []
             self.cur_frame_idx = -1
@@ -1108,6 +1115,7 @@ class QtDriver(QObject):
             item_thumb = ItemThumb(
                 None, self.lib, self.preview_panel, (self.thumb_size, self.thumb_size)
             )
+
             layout.addWidget(item_thumb)
             self.item_thumbs.append(item_thumb)
 
@@ -1459,6 +1467,7 @@ class QtDriver(QObject):
         self.update_libs_list(path)
         title_text = f"{self.base_title} - Library '{self.lib.library_dir}'"
         self.main_window.setWindowTitle(title_text)
+        self.main_window.setAcceptDrops(True)
 
         self.nav_frames = []
         self.cur_frame_idx = -1
