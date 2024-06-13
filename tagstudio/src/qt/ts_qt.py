@@ -273,7 +273,6 @@ class QtDriver(QObject):
         # 	)
 
         self.drop_import = DropImport(self)
-        self.main_window.setAcceptDrops(True)
         self.main_window.dragEnterEvent = self.drop_import.dragEnterEvent  # type: ignore
         self.main_window.dropEvent = self.drop_import.dropEvent  # type: ignore
         self.main_window.dragMoveEvent = self.drop_import.dragMoveEvent  # type: ignore
@@ -664,6 +663,7 @@ class QtDriver(QObject):
             self.lib.clear_internal_vars()
             title_text = f"{self.base_title}"
             self.main_window.setWindowTitle(title_text)
+            self.main_window.setAcceptDrops(False)
 
             self.nav_frames = []
             self.cur_frame_idx = -1
@@ -1423,6 +1423,7 @@ class QtDriver(QObject):
         self.update_libs_list(path)
         title_text = f"{self.base_title} - Library '{self.lib.library_dir}'"
         self.main_window.setWindowTitle(title_text)
+        self.main_window.setAcceptDrops(True)
 
         self.nav_frames = []
         self.cur_frame_idx = -1
