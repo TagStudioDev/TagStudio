@@ -259,7 +259,11 @@ class ThumbRenderer(QObject):
                                 artwork = Image.open(BytesIO(mp4_covers[0]))
                         if artwork:
                             image = artwork
-                    except (mp4.MP4MetadataError, mp4.MP4StreamInfoError) as e:
+                    except (
+                        mp4.MP4MetadataError,
+                        mp4.MP4StreamInfoError,
+                        id3.ID3NoHeaderError,
+                    ) as e:
                         logging.error(
                             f"[ThumbRenderer]{ERROR}: Couldn't read album artwork for {_filepath.name} ({type(e).__name__})"
                         )

@@ -358,7 +358,7 @@ class ItemThumb(FlowWidget):
     def set_extension(self, ext: str) -> None:
         if ext and ext.startswith(".") is False:
             ext = "." + ext
-        if ext and ext not in IMAGE_TYPES or ext in [".gif", ".apng"]:
+        if ext and ext not in IMAGE_TYPES or ext in [".gif", ".apng", ".psd"]:
             self.ext_badge.setHidden(False)
             self.ext_badge.setText(ext.upper()[1:])
             if ext in VIDEO_TYPES + AUDIO_TYPES:
