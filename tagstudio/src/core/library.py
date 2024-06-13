@@ -1369,7 +1369,7 @@ class Library:
 
     def search_library(
         self,
-        query: str = None,  # type: ignore
+        query: str = None,
         entries=True,
         collations=True,
         tag_groups=True,
@@ -1396,20 +1396,20 @@ class Library:
                 added = False
                 allowed_ext = entry.filename.suffix not in self.ext_list
                 if allowed_ext == self.is_exclude_list:
-                    for f in entry.fields:
-                        if self.get_field_attr(f, "type") == "collation":
+                    for f in entry.fields: # type: ignore [assignment]
+                        if self.get_field_attr(f, "type") == "collation": # type: ignore [arg-type]
                             if (
-                                self.get_field_attr(f, "content")
+                                self.get_field_attr(f, "content") # type: ignore [arg-type]
                                 not in collations_added
                             ):
                                 results.append(
                                     (
                                         ItemType.COLLATION,
-                                        self.get_field_attr(f, "content"),
+                                        self.get_field_attr(f, "content"), # type: ignore [arg-type]
                                     )
                                 )
                                 collations_added.append(
-                                    self.get_field_attr(f, "content")
+                                    self.get_field_attr(f, "content") # type: ignore [arg-type]
                                 )
                             added = True
 
@@ -2199,7 +2199,7 @@ class Filter:
             # start_time = time.time()
             query = query.strip().lower()
 
-            pre_results: list = []
+            pre_results: list[list[tuple[ItemType, int]]]= []
 
             for query_part in split_query:
                 all_tag_terms: list[str] = []
@@ -2212,7 +2212,7 @@ class Filter:
 
                 # Iterate over all Entries =============================================================
                 for entry in self.entries:
-                    entry_tuple: tuple = None # type: ignore
+                    entry_tuple: tuple | None = None
                     allowed_ext: bool = entry.filename.suffix not in self.ext_list
                     if allowed_ext != self.is_exclude_list:
                         continue
@@ -2235,7 +2235,7 @@ class Filter:
                         elif key == 'unbound':
                             entry_tuple = self.handle_unbound(entry, all_tag_terms,
                                                               entry_tags, entry_authors,
-                                                              query_words) # type: ignore
+                                                              query_words)
                             if entry_tuple is None:
                                 is_selected = False
                                 break
@@ -2256,11 +2256,12 @@ class Filter:
 
                 pre_results.append(filtered_entries)
             # Entries should match all parts between '|'
+            result_set: set = set()
             if search_mode == SearchMode.AND:
                 if len(pre_results) <= 1:
-                    result_set = pre_results[0]
+                    result_set = set(pre_results[0])
                     return list(pre_results[0])
-                result_set: set = set(pre_results[0])
+                result_set = set(pre_results[0])
                 # entries should be found in every part of query
                 for result in range(1, len(pre_results)):
                     set_copy: list = list(result_set.copy())
@@ -2275,10 +2276,8 @@ class Filter:
                 return list(result_set)
             # Entries should match any of parts between '|'
             elif search_mode == SearchMode.OR:
-                print(pre_results)
-                result_set: set = set()
-                for result in pre_results:
-                    for entry in result:
+                for result in pre_results: # type: ignore [assignment]
+                    for entry in result: # type: ignore [attr-defined]
                         result_set.add(entry)
                 return list(result_set)
 
@@ -2319,6 +2318,8 @@ class Filter:
 
             if not added:
                 return (ItemType.ENTRY, entry.id)
+            else:
+                return None
 
         # For each verified, extracted Tag term.
         failure_to_union_terms = False
@@ -2351,6 +2352,8 @@ class Filter:
         # # If there even were tag terms to search through AND they all match an entry
         if all_tag_terms and not failure_to_union_terms:
             return add_entry(entry)
+        else:
+            return None
 
     def add_entries_from_special_flags(self,
                                        special_flags: tuple[bool, bool, bool, bool],
