@@ -16,17 +16,19 @@ class ResourceManager:
 
     _map: dict = {}
     _cache: dict[str, Any] = {}
-
-    # Initialize _map
-    with open(
-        Path(__file__).parent / "resources.json", mode="r", encoding="utf-8"
-    ) as f:
-        _map = ujson.load(f)
-
-    logging.info(f"[ResourceManager] Resources Loaded: {_map}")
+    _initialized: bool = False
 
     def __init__(self) -> None:
-        pass
+        # Load JSON resource map
+        if not ResourceManager._initialized:
+            with open(
+                Path(__file__).parent / "resources.json", mode="r", encoding="utf-8"
+            ) as f:
+                ResourceManager._map = ujson.load(f)
+                logging.info(
+                    f"[ResourceManager] {len(ResourceManager._map.items())} resources registered"
+                )
+            ResourceManager._initialized = True
 
     def get(self, id: str) -> Any:
         """Get a resource from the ResourceManager.

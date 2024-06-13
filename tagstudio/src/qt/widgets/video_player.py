@@ -33,7 +33,6 @@ from PySide6.QtSvgWidgets import QSvgWidget
 from src.qt.helpers.file_opener import FileOpenerHelper
 from PIL import Image, ImageDraw
 from src.core.enums import SettingItems
-from src.qt.resource_manager import ResourceManager
 
 if typing.TYPE_CHECKING:
     from src.qt.ts_qt import QtDriver
@@ -42,7 +41,6 @@ if typing.TYPE_CHECKING:
 class VideoPlayer(QGraphicsView):
     """A basic video player."""
 
-    rm: ResourceManager = ResourceManager()
     video_preview = None
     play_pause = None
     mute_button = None
@@ -163,14 +161,14 @@ class VideoPlayer(QGraphicsView):
 
     def updateControls(self) -> None:
         if self.player.audioOutput().isMuted():
-            self.mute_button.load(VideoPlayer.rm.volume_mute_icon)
+            self.mute_button.load(self.driver.rm.volume_mute_icon)
         else:
-            self.mute_button.load(VideoPlayer.rm.volume_icon)
+            self.mute_button.load(self.driver.rm.volume_icon)
 
         if self.player.isPlaying():
-            self.play_pause.load(VideoPlayer.rm.pause_icon)
+            self.play_pause.load(self.driver.rm.pause_icon)
         else:
-            self.play_pause.load(VideoPlayer.rm.play_icon)
+            self.play_pause.load(self.driver.rm.play_icon)
 
     def wheelEvent(self, event: QWheelEvent) -> None:
         return
@@ -248,24 +246,24 @@ class VideoPlayer(QGraphicsView):
 
     def resetControlsToDefault(self) -> None:
         # Resets the video controls to their default state.
-        self.play_pause.load(VideoPlayer.rm.pause_icon)
-        self.mute_button.load(VideoPlayer.rm.volume_mute_icon)
+        self.play_pause.load(self.driver.rm.pause_icon)
+        self.mute_button.load(self.driver.rm.volume_mute_icon)
 
     def pauseToggle(self) -> None:
         if self.player.isPlaying():
             self.player.pause()
-            self.play_pause.load(VideoPlayer.rm.play_icon)
+            self.play_pause.load(self.driver.rm.play_icon)
         else:
             self.player.play()
-            self.play_pause.load(VideoPlayer.rm.pause_icon)
+            self.play_pause.load(self.driver.rm.pause_icon)
 
     def muteToggle(self) -> None:
         if self.player.audioOutput().isMuted():
             self.player.audioOutput().setMuted(False)
-            self.mute_button.load(VideoPlayer.rm.volume_icon)
+            self.mute_button.load(self.driver.rm.volume_icon)
         else:
             self.player.audioOutput().setMuted(True)
-            self.mute_button.load(VideoPlayer.rm.volume_mute_icon)
+            self.mute_button.load(self.driver.rm.volume_mute_icon)
 
     def play(self, filepath: str, resolution: QSize) -> None:
         # Sets the filepath and sends the current player position to the very end,
