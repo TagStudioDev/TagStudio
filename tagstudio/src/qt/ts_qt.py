@@ -91,6 +91,7 @@ from src.qt.widgets.panel import PanelModal
 from src.qt.widgets.preview_panel import PreviewPanel
 from src.qt.widgets.progress import ProgressWidget
 from src.qt.widgets.thumb_renderer import ThumbRenderer
+from src.qt.modals.drop_import import DropImport
 
 # SIGQUIT is not defined on Windows
 if sys.platform == "win32":
@@ -234,6 +235,11 @@ class QtDriver(DriverMixin, QObject):
         # self.main_window.setStyleSheet(
         # 	f'QScrollBar::{{background:red;}}'
         # 	)
+
+        self.drop_import = DropImport(self)
+        self.main_window.dragEnterEvent = self.drop_import.dragEnterEvent  # type: ignore
+        self.main_window.dropEvent = self.drop_import.dropEvent  # type: ignore
+        self.main_window.dragMoveEvent = self.drop_import.dragMoveEvent  # type: ignore
 
         # # self.main_window.windowFlags() &
         # # self.main_window.setWindowFlag(Qt.WindowType.FramelessWindowHint, True)
@@ -892,6 +898,7 @@ class QtDriver(DriverMixin, QObject):
             item_thumb = ItemThumb(
                 None, self.lib, self, (self.thumb_size, self.thumb_size), grid_idx
             )
+
             layout.addWidget(item_thumb)
             self.item_thumbs.append(item_thumb)
 
@@ -1130,6 +1137,7 @@ class QtDriver(DriverMixin, QObject):
         self.update_libs_list(path)
         title_text = f"{self.base_title} - Library '{self.lib.library_dir}'"
         self.main_window.setWindowTitle(title_text)
+        self.main_window.setAcceptDrops(True)
 
         self.selected.clear()
         self.preview_panel.update_widgets()
