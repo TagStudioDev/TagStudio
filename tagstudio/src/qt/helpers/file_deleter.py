@@ -1,17 +1,13 @@
 import logging
-import pathlib
-import subprocess
-import sys
 import traceback
 from pathlib import Path
-from typing import Callable
+from collections.abc import Callable
 
 ERROR = f"[ERROR]"
 WARNING = f"[WARNING]"
 INFO = f"[INFO]"
 
 logging.basicConfig(format="%(message)s", level=logging.INFO)
-
 
 def delete_file(path: str | Path, callback: Callable):
     _path = str(path)
@@ -29,10 +25,10 @@ def delete_file(path: str | Path, callback: Callable):
 
 class FileDeleterHelper:
     def __init__(self, filepath: str | Path):
-        self.filepath = str(filepath)
+        self.filepath = filepath
 
     def set_filepath(self, filepath: str | Path):
-        self.filepath = str(filepath)
+        self.filepath = filepath
 
     def set_delete_callback(self, callback: Callable):
         self.delete_callback = callback
