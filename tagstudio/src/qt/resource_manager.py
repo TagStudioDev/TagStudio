@@ -52,7 +52,7 @@ class ResourceManager:
                     res.get("mode"),
                 ) as f:
                     data = f.read()
-                    if res.get("mode") == ["rb"]:
+                    if res.get("mode") == "rb":
                         data = bytes(data)
                     ResourceManager._cache[id] = data
                     return data
