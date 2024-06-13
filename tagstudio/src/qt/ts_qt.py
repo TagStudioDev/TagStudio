@@ -70,6 +70,7 @@ from src.qt.flowlayout import FlowLayout
 from src.qt.main_window import Ui_MainWindow
 from src.qt.helpers.function_iterator import FunctionIterator
 from src.qt.helpers.custom_runnable import CustomRunnable
+from src.qt.resource_manager import ResourceManager
 from src.qt.widgets.collage_icon import CollageIconRenderer
 from src.qt.widgets.panel import PanelModal
 from src.qt.widgets.thumb_renderer import ThumbRenderer
@@ -164,6 +165,7 @@ class QtDriver(QObject):
         super().__init__()
         self.core: TagStudioCore = core
         self.lib = self.core.lib
+        self.rm: ResourceManager = ResourceManager()
         self.args = args
         self.frame_dict: dict = {}
         self.nav_frames: list[NavigationState] = []
