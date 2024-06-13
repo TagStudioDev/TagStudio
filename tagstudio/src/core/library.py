@@ -2232,6 +2232,12 @@ class Filter:
                         if key == 'filename' and isinstance(value, str):
                             is_selected = is_selected and self.check_filename(entry, value)
                         # all usual tags handling, as if search was in AND mode
+                        elif key == 'tag_id':
+                            if self.handle_tag_id(value, entry_tags):
+                                is_selected = True
+                            else:
+                                is_selected = False
+                                break
                         elif key == 'unbound':
                             entry_tuple = self.handle_unbound(entry, all_tag_terms,
                                                               entry_tags, entry_authors,
@@ -2280,6 +2286,16 @@ class Filter:
                     for entry in result: # type: ignore [attr-defined]
                         result_set.add(entry)
                 return list(result_set)
+
+    def handle_tag_id(self, query: str, entry_tags: list[int]) -> bool:
+        id_query: int = 0
+        try:
+            id_query = int(query)
+        except Exception:
+            return False
+        if id_query in entry_tags:
+            return True
+        return False
 
     def handle_unbound(self, entry: Entry, all_tag_terms: list[str],
                        entry_tags: list[int], entry_authors: list[str],
