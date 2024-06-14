@@ -2195,7 +2195,7 @@ class Filter:
         self.missing_files = lib.missing_files
 
     def filter_results(self, query: str, split_query: list[dict],
-                       search_mode: SearchMode) -> list[tuple[ItemType, int]] | None:
+                       search_mode: SearchMode) -> list[tuple[ItemType, int]]:
             # start_time = time.time()
             query = query.strip().lower()
 
@@ -2275,6 +2275,7 @@ class Filter:
                 return list(result_set)
             # Entries should match any of parts between '|'
             elif search_mode == SearchMode.OR:
+                print(pre_results)
                 result_set: set = set()
                 for result in pre_results:
                     for entry in result:
@@ -2353,35 +2354,38 @@ class Filter:
 
     def add_entries_from_special_flags(self,
                                        special_flags: tuple[bool, bool, bool, bool],
-                                       entry_tags: list[int], entry_authors: list[str],
+                                       entry_tags: list[int], entry_authors: list[list[str]],
                                        entry: Entry):
         (only_untagged, only_no_author, only_empty, only_missing) = special_flags
         if only_untagged and not entry_tags:
             return True
         elif only_no_author and not entry_authors:
             return True
-        elif only_empty and len(entry.fields) <= 0:
+        elif only_empty and (len(entry.fields) <= 0 or len(entry.fields[0].keys()) <=0) :
             return True
         elif only_missing and (self.library_dir / entry.path / entry.filename
                                ).resolve() in self.missing_files:
             return True
         return False
 
-    def remap_fields(self, entry: Entry) -> dict[str, str]:
+    def remap_fields(self, entry: Entry) -> dict[str | int, str]:
         entry_fields: dict = {}
         for field in entry.fields:
             if len(field.keys()) > 0:
-                field_key = self._field_id_to_name_map.get(list(field.keys())[0])
+                field_keys = list(field.keys())
+                field_key = self._field_id_to_name_map.get(int(field_keys[0]))
                 entry_fields[field_key] = list(field.values())[0]
         return entry_fields
 
-    def populate_tags(self, entry: Entry) -> tuple[list[int], list[str]]:
+    def populate_tags(self, entry: Entry) -> tuple[list[int], list[list[str]]]:
         """ Parse tags from entry.fields\n
         returns tuple (entry_tags, entry_authors) """
         entry_tags: list[int] = []
-        entry_authors: list[str] = []
+        entry_authors: list[list[str]] = []
         if entry.fields:
             for field in entry.fields:
+                if len(field.keys()) <= 0:
+                    continue
                 field_id = list(field.keys())[0]
                 if self.get_field_obj(field_id)["type"] == "tag_box":
                     entry_tags.extend(field[field_id])
