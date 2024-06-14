@@ -1341,7 +1341,7 @@ class Library:
             for field_data in field_data_list:
                 field_parsed = field_data.strip().split(":")
                 if len(field_parsed) < 2:
-                    unbound_values = field_parsed[0].strip().split(' ')
+                    unbound_values = field_parsed[0].strip().lower().casefold().split(' ')
                     if query_part.get('unbound') is None:
                         query_part['unbound'] = unbound_values
                     else:
@@ -1354,8 +1354,7 @@ class Library:
                 query_part[field_parsed[0].lower().strip().casefold()] = field_parsed[1].lower().strip().casefold()
             meta_list.append(query_part)
 
-        logging.info("Parsed values: ")
-        logging.info(str(meta_list))
+        logging.info(f"Parsed values: {meta_list}")
         return meta_list
 
 
