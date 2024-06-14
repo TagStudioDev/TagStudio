@@ -169,7 +169,7 @@ class DropImport:
             dupes_to_show = dupes_to_show[0:display_limit]
         
         dupes_str = '\n    '.join(map(lambda path: str(path),dupes_to_show))
-        dupes_more = "\nand {len(self.duplicate_files)-display_limit} more " if len(self.duplicate_files) > display_limit else '\n'
+        dupes_more = f"\nand {len(self.duplicate_files)-display_limit} more " if len(self.duplicate_files) > display_limit else '\n'
 
         msgBox.setText(f"The following files:\n    {dupes_str}{dupes_more}have filenames that already exist in the library folder.")
         msgBox.addButton("Skip", QMessageBox.ButtonRole.YesRole)
