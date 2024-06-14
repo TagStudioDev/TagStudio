@@ -25,9 +25,15 @@ def test_tag():
 
 @pytest.fixture
 def test_library():
+    lib_dir = CWD / "fixtures" / "library"
+
     lib = Library()
-    ret_code = lib.open_library(CWD / "fixtures" / "library")
+    ret_code = lib.open_library(lib_dir)
     assert ret_code == 1
+    # create files for the entries
+    for entry in lib.entries:
+        (lib_dir / entry.filename).touch()
+
     yield lib
 
 
