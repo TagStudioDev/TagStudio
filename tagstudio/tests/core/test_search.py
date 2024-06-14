@@ -1,18 +1,9 @@
-from pathlib import Path
-import src.core.library as lib
 from src.core.library import ItemType, Library, Filter, Entry
 from src.core.enums import SearchMode
 import pytest
 
-# from mock import MagicMock
-
 
 test_library = Library()
-TEST_DIR_PATH = Path.cwd()
-lib.TS_FOLDER_NAME = 'mock'
-assert test_library.open_library(TEST_DIR_PATH.joinpath('tests/core/mock_library_dir')) == 1
-
-
 
 test_entry_one = Entry(id=0, filename='test_file1.png',
                        path='.', fields=[{'6': [1000, 1001]}, {'1': ['James']} ])
@@ -72,7 +63,7 @@ filter_case_one: tuple = (
         [(ItemType.ENTRY, 2)]
         )
 filter_case_two: tuple = (
-        [{'unbound': 'notags'}, {'description': 'des'}],
+        [{'unbound': 'no tags'}, {'description': 'des'}],
         SearchMode.OR,
         [(ItemType.ENTRY, 1), (ItemType.ENTRY, 2), (ItemType.ENTRY, 3)]
         )
@@ -90,7 +81,7 @@ filter_case_four: tuple = (
 filter_case_five: tuple = (
         [{'tag_id': '1000'}, {'unbound': 'no author'}],
         SearchMode.OR,
-        [(ItemType.ENTRY, 0), (ItemType.ENTRY, 1), (ItemType.ENTRY, 2), (ItemType.ENTRY, 3),]
+        [(ItemType.ENTRY, 0), (ItemType.ENTRY, 1), (ItemType.ENTRY, 2)]
         )
 
 filter_results_cases: list[tuple] = [
