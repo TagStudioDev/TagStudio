@@ -418,13 +418,6 @@ class Library:
             {"id": 30, "name": "Comments", "type": "text_box"},
         ]
 
-        def generate_field_id_to_name_map(self) -> dict[int, str]:
-            map: dict = {}
-            for field in self.default_fields:
-                map[field.get("id")] = field.get('name').lower()
-            return map
-
-        self._field_id_to_name_map: dict = generate_field_id_to_name_map(self)
 
     def create_library(self, path: Path) -> int:
         """
@@ -2190,9 +2183,15 @@ class Filter:
         self._tag_strings_to_id_map = lib._tag_strings_to_id_map
         self.get_tag_cluster = lib.get_tag_cluster
         self.library_dir = lib.library_dir
-        self._field_id_to_name_map = lib._field_id_to_name_map
         self.get_field_obj = lib.get_field_obj
         self.missing_files = lib.missing_files
+
+        def generate_field_id_to_name_map(self) -> dict[int, str]:
+            map: dict = {}
+            for field in self.default_fields:
+                map[field.get("id")] = field.get('name').lower()
+            return map
+        self._field_id_to_name_map: dict = generate_field_id_to_name_map(self)
 
     def filter_results(self, query: str, split_query: list[dict],
                        search_mode: SearchMode) -> list[tuple[ItemType, int]]:
