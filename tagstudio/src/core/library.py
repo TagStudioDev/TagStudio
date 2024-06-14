@@ -6,7 +6,6 @@
 
 
 import datetime
-import json
 import logging
 import os
 import time
@@ -435,7 +434,7 @@ class Library:
             self.verify_ts_folders()
             self.save_library_to_disk()
             self.open_library(self.library_dir)
-        except:
+        except Exception:
             traceback.print_exc()
             return 2
 
@@ -792,7 +791,7 @@ class Library:
     def save_library_to_disk(self):
         """Saves the Library to disk at the default TagStudio folder location."""
 
-        logging.info(f"[LIBRARY] Saving Library to Disk...")
+        logging.info("[LIBRARY] Saving Library to Disk...")
         start_time = time.time()
         filename = "ts_library.json"
 
@@ -819,7 +818,7 @@ class Library:
         Saves a backup file of the Library to disk at the default TagStudio folder location.
         Returns the filename used, including the date and time."""
 
-        logging.info(f"[LIBRARY] Saving Library Backup to Disk...")
+        logging.info("[LIBRARY] Saving Library Backup to Disk...")
         start_time = time.time()
         filename = f'ts_library_backup_{datetime.datetime.utcnow().strftime("%F_%T").replace(":", "")}.json'
 
@@ -1834,9 +1833,9 @@ class Library:
 
             # Process String Tags if the data doesn't already exist.
             if data.get("tags"):
-                tags_field_id = 6  # Tags Field ID
+                # tags_field_id = 6  # Tags Field ID
                 content_tags_field_id = 7  # Content Tags Field ID
-                meta_tags_field_id = 8  # Meta Tags Field ID
+                # meta_tags_field_id = 8  # Meta Tags Field ID
                 notes_field_id = 5  # Notes Field ID
                 tags: list[str] = data["tags"]
                 # extra: list[str] = []
@@ -2185,6 +2184,7 @@ class Filter:
         self.library_dir = lib.library_dir
         self.get_field_obj = lib.get_field_obj
         self.missing_files = lib.missing_files
+        self.default_fields =lib.default_fields
 
         def generate_field_id_to_name_map(self) -> dict[int, str]:
             map: dict = {}
@@ -2251,8 +2251,13 @@ class Filter:
                             is_selected = True
                         # check if entry's value match the query
                         else:
+                            print(value, entry_value)
                             if entry_value is not None and value in entry_value:
+                                print('true')
                                 is_selected = True
+                            else:
+                                is_selected = False
+                                break
 
                     if is_selected and entry_tuple is None:
                         filtered_entries.append((ItemType.ENTRY, entry.id))
@@ -2297,7 +2302,7 @@ class Filter:
         return False
 
     def handle_unbound(self, entry: Entry, all_tag_terms: list[str],
-                       entry_tags: list[int], entry_authors: list[str],
+                       entry_tags: list[int], entry_authors: list[list[str]],
                        unbound: list[str]) -> tuple[ItemType, int] | None:
         collations_added: list = []
         orig_query = ''.join(unbound)
@@ -2379,7 +2384,7 @@ class Filter:
             return True
         elif only_no_author and not entry_authors:
             return True
-        elif only_empty and (len(entry.fields) <= 0 or len(entry.fields[0].keys()) <=0) :
+        elif only_empty and (len(entry.fields) <= 0 or len(entry.fields[0].keys()) <= 0):
             return True
         elif only_missing and (self.library_dir / entry.path / entry.filename
                                ).resolve() in self.missing_files:
