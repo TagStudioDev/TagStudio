@@ -432,6 +432,7 @@ class ThumbRenderer(QObject):
         size_scaled: int = size * BASE_SCALE
         ALLOW_SMALL_MIN: bool = False
         SAMPLES_PER_BAR: int = 5
+        image: Image.Image = None
 
         try:
             BARS: int = 24
@@ -498,11 +499,12 @@ class ThumbRenderer(QObject):
                 current_x = current_x + LINE_WIDTH + BAR_MARGIN
 
             image.resize((size, size), Image.Resampling.BILINEAR)
-            return image
+
         except exceptions.CouldntDecodeError as e:
             logging.error(
                 f"[ThumbRenderer]{ERROR}: Couldn't render waveform for {filepath.name} ({type(e).__name__})"
             )
+        return image
 
     def _apply_overlay_color(self, image=Image.Image) -> Image.Image:
         """Apply a gradient effect over an an image.
