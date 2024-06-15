@@ -13,3 +13,4 @@ chardet==5.2.0
 pydub==0.25.1
 mutagen==1.47.0
 numpy==1.26.4
+ffmpeg-python==0.2.0

@@ -23,8 +23,8 @@ from pathlib import Path
 from PIL.Image import DecompressionBombError
 from pydub import AudioSegment, exceptions
 from mutagen import id3, flac, mp4
-from PySide6.QtCore import QObject, Signal, QSize
-from PySide6.QtGui import QPixmap
+from PySide6.QtCore import Qt, QObject, Signal, QSize
+from PySide6.QtGui import QGuiApplication, QPixmap
 from src.qt.helpers.gradient import four_corner_gradient_background
 from src.qt.helpers.text_wrapper import wrap_full_text
 from src.core.constants import (
@@ -131,8 +131,9 @@ class ThumbRenderer(QObject):
                 self.updated_ratio.emit(1)
         elif _filepath:
             try:
+                ext = _filepath.suffix.lower()
                 # Images =======================================================
-                if _filepath.suffix.lower() in IMAGE_TYPES:
+                if ext in IMAGE_TYPES:
                     try:
                         image = Image.open(_filepath)
                         if image.mode != "RGB" and image.mode != "RGBA":
@@ -148,7 +149,7 @@ class ThumbRenderer(QObject):
                             f"[ThumbRenderer]{WARNING} Couldn't Render thumbnail for {_filepath.name} ({type(e).__name__})"
                         )
 
-                elif _filepath.suffix.lower() in RAW_IMAGE_TYPES:
+                elif ext in RAW_IMAGE_TYPES:
                     try:
                         with rawpy.imread(str(_filepath)) as raw:
                             rgb = raw.postprocess()
@@ -171,7 +172,7 @@ class ThumbRenderer(QObject):
                         )
 
                 # Videos =======================================================
-                elif _filepath.suffix.lower() in VIDEO_TYPES:
+                elif ext in VIDEO_TYPES:
                     if is_readable_video(_filepath):
                         video = cv2.VideoCapture(str(_filepath), cv2.CAP_FFMPEG)
                         video.set(
@@ -197,7 +198,7 @@ class ThumbRenderer(QObject):
                         image = self.thumb_file_default_512
 
                 # Plain Text ===================================================
-                elif _filepath.suffix.lower() in PLAINTEXT_TYPES:
+                elif ext in PLAINTEXT_TYPES:
                     encoding = detect_char_encoding(_filepath)
                     with open(_filepath, "r", encoding=encoding) as text_file:
                         text = text_file.read(256)
@@ -238,102 +239,13 @@ class ThumbRenderer(QObject):
                             ) * draw.textbbox((0, 0), "A", font=font)[-1]
 
                     image = bg
-                # Audio
-                elif _filepath.suffix.lower() in AUDIO_TYPES:
-                    try:
-                        artwork = None
-                        if _filepath.suffix.lower() in [".mp3"]:
-                            id3_tags: id3.ID3 = id3.ID3(_filepath)
-                            id3_covers: list = id3_tags.getall("APIC")
-                            if id3_covers:
-                                artwork = Image.open(BytesIO(id3_covers[0].data))
-                        elif _filepath.suffix.lower() in [".flac"]:
-                            flac_tags: flac.FLAC = flac.FLAC(_filepath)
-                            flac_covers: list = flac_tags.pictures
-                            if flac_covers:
-                                artwork = Image.open(BytesIO(flac_covers[0].data))
-                        elif _filepath.suffix.lower() in [".mp4", ".m4a", ".aac"]:
-                            mp4_tags: mp4.MP4 = mp4.MP4(_filepath)
-                            mp4_covers: list = mp4_tags.get("covr")
-                            if mp4_covers:
-                                artwork = Image.open(BytesIO(mp4_covers[0]))
-                        if artwork:
-                            image = artwork
-                    except (
-                        mp4.MP4MetadataError,
-                        mp4.MP4StreamInfoError,
-                        id3.ID3NoHeaderError,
-                    ) as e:
-                        logging.error(
-                            f"[ThumbRenderer]{ERROR}: Couldn't read album artwork for {_filepath.name} ({type(e).__name__})"
-                        )
+                # Audio ========================================================
+                elif ext in AUDIO_TYPES:
+                    image = self._album_artwork(_filepath, ext)
                     if image is None:
-                        try:
-                            audio: AudioSegment = AudioSegment.from_file(
-                                _filepath, _filepath.suffix.lower()[1:]
-                            )
-                            data = numpy.fromstring(audio._data, numpy.int16)  # type: ignore
-                            data_indices = numpy.linspace(1, len(data), num=adj_size)
-
-                            BARS = adj_size // 5
-                            BAR_MARGIN = 4
-                            BAR_HEIGHT = adj_size - (adj_size // BAR_MARGIN)
-                            LINE_WIDTH = 6
-
-                            length = len(data_indices)
-                            RATIO = length / BARS
-
-                            count = 0
-                            maximum_item = 0
-                            max_array = []
-                            highest_line = 0
-
-                            for i in range(1, len(data_indices)):
-                                d = data[math.ceil(data_indices[i]) - 1]
-                                if count < RATIO:
-                                    count = count + 1
-                                    if abs(d) > maximum_item:
-                                        maximum_item = abs(d)
-                                else:
-                                    max_array.append(maximum_item)
-
-                                    if maximum_item > highest_line:
-                                        highest_line = maximum_item
-
-                                    maximum_item = 0
-                                    count = 1
-
-                            line_ratio = max(highest_line / BAR_HEIGHT, 1)
-
-                            image = Image.new(
-                                "RGB", (adj_size, adj_size), color="#1e1e1e"
-                            )
-                            draw = ImageDraw.Draw(image)
-
-                            current_x = 1
-                            for item in max_array:
-                                item_height = item / line_ratio
-
-                                current_y = (
-                                    BAR_HEIGHT - item_height + (adj_size // BAR_MARGIN)
-                                ) / 2
-                                draw.line(
-                                    (
-                                        current_x,
-                                        current_y,
-                                        current_x,
-                                        current_y + item_height,
-                                    ),
-                                    fill=(169, 171, 172),
-                                    width=4,
-                                    joint="curve",
-                                )
-
-                                current_x = current_x + LINE_WIDTH
-                        except exceptions.CouldntDecodeError as e:
-                            logging.error(
-                                f"[ThumbRenderer]{ERROR}: Couldn't render waveform for {_filepath.name} ({type(e).__name__})"
-                            )
+                        image = self._audio_waveform(_filepath, ext, adj_size)
+                        if image is not None:
+                            image = self._apply_overlay_color(image)
 
                 # 3D ===========================================================
                 # elif extension == 'stl':
@@ -477,3 +389,141 @@ class ThumbRenderer(QObject):
             self.updated.emit(
                 timestamp, QPixmap(), QSize(*base_size), _filepath.suffix.lower()
             )
+
+    def _album_artwork(self, filepath: Path, ext: str) -> Image.Image | None:
+        """Gets an album cover from an audio file if one is present."""
+        try:
+            artwork = None
+            if ext in [".mp3"]:
+                id3_tags: id3.ID3 = id3.ID3(filepath)
+                id3_covers: list = id3_tags.getall("APIC")
+                if id3_covers:
+                    artwork = Image.open(BytesIO(id3_covers[0].data))
+            elif ext in [".flac"]:
+                flac_tags: flac.FLAC = flac.FLAC(filepath)
+                flac_covers: list = flac_tags.pictures
+                if flac_covers:
+                    artwork = Image.open(BytesIO(flac_covers[0].data))
+            elif ext in [".mp4", ".m4a", ".aac"]:
+                mp4_tags: mp4.MP4 = mp4.MP4(filepath)
+                mp4_covers: list = mp4_tags.get("covr")
+                if mp4_covers:
+                    artwork = Image.open(BytesIO(mp4_covers[0]))
+            if artwork:
+                return artwork
+        except (
+            mp4.MP4MetadataError,
+            mp4.MP4StreamInfoError,
+            id3.ID3NoHeaderError,
+        ) as e:
+            logging.error(
+                f"[ThumbRenderer]{ERROR}: Couldn't read album artwork for {filepath.name} ({type(e).__name__})"
+            )
+
+    def _audio_waveform(
+        self, filepath: Path, ext: str, size: int
+    ) -> Image.Image | None:
+        """Renders a waveform image from an audio file."""
+        # BASE_SCALE used for drawing on a larger image and resampling down
+        # to provide an antialiased effect.
+        BASE_SCALE: int = 2
+        size_scaled: int = size * BASE_SCALE
+        ALLOW_SMALL_MIN: bool = False
+        SAMPLES_PER_BAR: int = 5
+
+        try:
+            BARS: int = 24
+            audio: AudioSegment = AudioSegment.from_file(filepath, ext[1:])
+            data = numpy.fromstring(audio._data, numpy.int16)  # type: ignore
+            data_indices = numpy.linspace(1, len(data), num=BARS * SAMPLES_PER_BAR)
+
+            BAR_MARGIN: float = ((size_scaled / (BARS * 3)) * BASE_SCALE) / 2
+            LINE_WIDTH: float = ((size_scaled - BAR_MARGIN) / (BARS * 3)) * BASE_SCALE
+            BAR_HEIGHT: float = (size_scaled) - (size_scaled // BAR_MARGIN)
+
+            count: int = 0
+            maximum_item: int = 0
+            max_array: list = []
+            highest_line: int = 0
+
+            for i in range(-1, len(data_indices)):
+                d = data[math.ceil(data_indices[i]) - 1]
+                if count < SAMPLES_PER_BAR:
+                    count = count + 1
+                    if abs(d) > maximum_item:
+                        maximum_item = abs(d)
+                else:
+                    max_array.append(maximum_item)
+
+                    if maximum_item > highest_line:
+                        highest_line = maximum_item
+
+                    maximum_item = 0
+                    count = 1
+
+            line_ratio = max(highest_line / BAR_HEIGHT, 1)
+
+            image = Image.new("RGB", (size_scaled, size_scaled), color="#000000")
+            draw = ImageDraw.Draw(image)
+
+            logging.info(f"data_ind {len(data_indices)}, max_array {len(max_array)}")
+            current_x = BAR_MARGIN
+            for item in max_array:
+                item_height = item / line_ratio
+
+                # If small minimums are not allowed, raise all values
+                # smaller than the line width to the same value.
+                if not ALLOW_SMALL_MIN:
+                    item_height = max(item_height, LINE_WIDTH)
+
+                current_y = (
+                    BAR_HEIGHT - item_height + (size_scaled // BAR_MARGIN)
+                ) // 2
+
+                draw.rounded_rectangle(
+                    (
+                        current_x,
+                        current_y,
+                        (current_x + LINE_WIDTH),
+                        (current_y + item_height),
+                    ),
+                    radius=100 * BASE_SCALE,
+                    fill=("#FF0000"),
+                    outline=("#FFFF00"),
+                    width=max(math.ceil(LINE_WIDTH / 6), BASE_SCALE),
+                )
+
+                current_x = current_x + LINE_WIDTH + BAR_MARGIN
+
+            image.resize((size, size), Image.Resampling.BILINEAR)
+            return image
+        except exceptions.CouldntDecodeError as e:
+            logging.error(
+                f"[ThumbRenderer]{ERROR}: Couldn't render waveform for {filepath.name} ({type(e).__name__})"
+            )
+
+    def _apply_overlay_color(self, image=Image.Image) -> Image.Image:
+        """Apply a gradient effect over an an image.
+        Red channel for foreground, green channel for outline, none for background."""
+        bg_color: str = (
+            "#0d3828"
+            if QGuiApplication.styleHints().colorScheme() is Qt.ColorScheme.Dark
+            else "#28bb48"
+        )
+        fg_color: str = (
+            "#28bb48"
+            if QGuiApplication.styleHints().colorScheme() is Qt.ColorScheme.Dark
+            else "#93e2c8"
+        )
+        ol_color: str = (
+            "#43c568"
+            if QGuiApplication.styleHints().colorScheme() is Qt.ColorScheme.Dark
+            else "#93e2c8"
+        )
+
+        bg: Image.Image = Image.new("RGB", image.size, color=bg_color)
+        fg: Image.Image = Image.new("RGB", image.size, color=fg_color)
+        ol: Image.Image = Image.new("RGB", image.size, color=ol_color)
+        bg.paste(fg, (0, 0), mask=image.getchannel(0))
+        bg.paste(ol, (0, 0), mask=image.getchannel(1))
+        return bg
