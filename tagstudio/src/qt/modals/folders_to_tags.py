@@ -79,7 +79,7 @@ def folders_to_tags(library: Library):
 
 
 def reverse_tag(library: Library, tag: Tag, list: list[Tag]) -> list[Tag]:
-    if list != None:
+    if list is not None:
         list.append(tag)
     else:
         list = [tag]
@@ -144,7 +144,7 @@ def generate_preview_data(library: Library):
             if cut:
                 branch["dirs"].pop(folder)
 
-        if not "tag" in branch:
+        if "tag" not in branch:
             return
         if branch["tag"].id == -1 or len(branch["files"]) > 0:  # Needs to be first
             return False
@@ -289,7 +289,7 @@ class TreeItem(QWidget):
             self.children_layout.addWidget(item)
         for file in data["files"]:
             label = QLabel()
-            label.setText("    ->  " + file)
+            label.setText("    ->  " + str(file))
             self.children_layout.addWidget(label)
 
         if len(data["files"]) == 0 and len(data["dirs"].values()) == 0:
@@ -321,7 +321,7 @@ class ModifiedTagWidget(
 
         self.bg_button = QPushButton(self)
         self.bg_button.setFlat(True)
-        if parentTag != None:
+        if parentTag is not None:
             text = f"{tag.name} ({parentTag.name})".replace("&", "&&")
         else:
             text = tag.name.replace("&", "&&")
