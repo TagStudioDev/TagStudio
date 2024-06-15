@@ -243,7 +243,9 @@ class ThumbRenderer(QObject):
                 elif ext in AUDIO_TYPES:
                     image = self._album_artwork(_filepath, ext)
                     if image is None:
-                        image = self._audio_waveform(_filepath, ext, adj_size)
+                        image = self._audio_waveform(
+                            _filepath, ext, adj_size, pixel_ratio
+                        )
                         if image is not None:
                             image = self._apply_overlay_color(image)
 
@@ -423,7 +425,7 @@ class ThumbRenderer(QObject):
         return image
 
     def _audio_waveform(
-        self, filepath: Path, ext: str, size: int
+        self, filepath: Path, ext: str, size: int, pixel_ratio: float
     ) -> Image.Image | None:
         """Renders a waveform image from an audio file."""
         # BASE_SCALE used for drawing on a larger image and resampling down
@@ -431,11 +433,12 @@ class ThumbRenderer(QObject):
         BASE_SCALE: int = 2
         size_scaled: int = size * BASE_SCALE
         ALLOW_SMALL_MIN: bool = False
-        SAMPLES_PER_BAR: int = 5
+        SAMPLES_PER_BAR: int = 3
         image: Image.Image = None
 
         try:
-            BARS: int = 24
+            logging.info(f"{size}, {pixel_ratio}")
+            BARS: int = min(math.floor((size // pixel_ratio) / 5), 64)
             audio: AudioSegment = AudioSegment.from_file(filepath, ext[1:])
             data = numpy.fromstring(audio._data, numpy.int16)  # type: ignore
             data_indices = numpy.linspace(1, len(data), num=BARS * SAMPLES_PER_BAR)
@@ -517,12 +520,12 @@ class ThumbRenderer(QObject):
         fg_color: str = (
             "#28bb48"
             if QGuiApplication.styleHints().colorScheme() is Qt.ColorScheme.Dark
-            else "#93e2c8"
+            else "#DDFFCC"
         )
         ol_color: str = (
             "#43c568"
             if QGuiApplication.styleHints().colorScheme() is Qt.ColorScheme.Dark
-            else "#93e2c8"
+            else "#FFFFFF"
         )
 
         bg: Image.Image = Image.new("RGB", image.size, color=bg_color)
