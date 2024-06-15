@@ -25,6 +25,7 @@ from pydub import AudioSegment, exceptions
 from mutagen import id3, flac, mp4
 from PySide6.QtCore import Qt, QObject, Signal, QSize
 from PySide6.QtGui import QGuiApplication, QPixmap
+from src.qt.helpers.color_overlay import theme_fg_overlay
 from src.qt.helpers.gradient import four_corner_gradient_background
 from src.qt.helpers.text_wrapper import wrap_full_text
 from src.core.constants import (
@@ -74,6 +75,10 @@ class ThumbRenderer(QObject):
         Path(__file__).parents[3] / "resources/qt/images/thumb_loading_512.png"
     )
     thumb_loading_512.load()
+
+    # TODO: Allow this to be dynamically updated at runtime
+    if QGuiApplication.styleHints().colorScheme() is not Qt.ColorScheme.Dark:
+        thumb_loading_512 = theme_fg_overlay(thumb_loading_512)
 
     thumb_broken_512: Image.Image = Image.open(
         Path(__file__).parents[3] / "resources/qt/images/thumb_broken_512.png"
@@ -199,12 +204,24 @@ class ThumbRenderer(QObject):
 
                 # Plain Text ===================================================
                 elif ext in PLAINTEXT_TYPES:
+                    bg_color: str = (
+                        "#1E1E1E"
+                        if QGuiApplication.styleHints().colorScheme()
+                        is Qt.ColorScheme.Dark
+                        else "#FFFFFF"
+                    )
+                    fg_color: str = (
+                        "#FFFFFF"
+                        if QGuiApplication.styleHints().colorScheme()
+                        is Qt.ColorScheme.Dark
+                        else "#111111"
+                    )
                     encoding = detect_char_encoding(_filepath)
                     with open(_filepath, "r", encoding=encoding) as text_file:
                         text = text_file.read(256)
-                    bg = Image.new("RGB", (256, 256), color="#1e1e1e")
+                    bg = Image.new("RGB", (256, 256), color=bg_color)
                     draw = ImageDraw.Draw(bg)
-                    draw.text((16, 16), text, fill=(255, 255, 255))
+                    draw.text((16, 16), text, fill=fg_color)
                     image = bg
                 # Fonts ========================================================
                 elif _filepath.suffix.lower() in FONT_TYPES:
@@ -237,7 +254,6 @@ class ThumbRenderer(QObject):
                             y_offset += (
                                 len(text_wrapped.split("\n")) + lines_of_padding
                             ) * draw.textbbox((0, 0), "A", font=font)[-1]
-
                     image = bg
                 # Audio ========================================================
                 elif ext in AUDIO_TYPES:

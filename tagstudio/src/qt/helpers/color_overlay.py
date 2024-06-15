@@ -12,6 +12,8 @@ from src.qt.helpers.gradient import linear_gradient
 # here, in enums.py, and in palette.py.
 _THEME_DARK_FG: str = "#FFFFFF55"
 _THEME_LIGHT_FG: str = "#000000DD"
+_THEME_DARK_BG: str = "#000000DD"
+_THEME_LIGHT_BG: str = "#FFFFFF55"
 
 
 def theme_fg_overlay(image: Image.Image) -> Image.Image:
@@ -27,6 +29,7 @@ def theme_fg_overlay(image: Image.Image) -> Image.Image:
         if QGuiApplication.styleHints().colorScheme() is Qt.ColorScheme.Dark
         else _THEME_LIGHT_FG
     )
+
     im = Image.new(mode="RGBA", size=image.size, color=overlay_color)
     return _apply_overlay(image, im)
 

@@ -12,7 +12,7 @@ import rawpy
 from PIL import Image, UnidentifiedImageError, ImageFont
 from PIL.Image import DecompressionBombError
 from PySide6.QtCore import QModelIndex, Signal, Qt, QSize
-from PySide6.QtGui import QResizeEvent, QAction, QMovie
+from PySide6.QtGui import QGuiApplication, QResizeEvent, QAction, QMovie
 from PySide6.QtWidgets import (
     QWidget,
     QVBoxLayout,
@@ -84,6 +84,17 @@ class PreviewPanel(QWidget):
         self.img_button_size: tuple[int, int] = (266, 266)
         self.image_ratio: float = 1.0
 
+        self.label_bg_color = (
+            Theme.COLOR_BG_DARK.value
+            if QGuiApplication.styleHints().colorScheme() is Qt.ColorScheme.Dark
+            else Theme.COLOR_DARK_LABEL.value
+        )
+        self.panel_bg_color = (
+            Theme.COLOR_BG_DARK.value
+            if QGuiApplication.styleHints().colorScheme() is Qt.ColorScheme.Dark
+            else Theme.COLOR_BG_LIGHT.value
+        )
+
         self.image_container = QWidget()
         image_layout = QHBoxLayout(self.image_container)
         image_layout.setContentsMargins(0, 0, 0, 0)
@@ -145,15 +156,16 @@ class PreviewPanel(QWidget):
         # 	Qt.TextInteractionFlag.TextSelectableByMouse)
 
         properties_style = (
-            f"background-color:{Theme.COLOR_BG.value};"
-            f"font-family:Oxanium;"
-            f"font-weight:bold;"
-            f"font-size:12px;"
-            f"border-radius:6px;"
-            f"padding-top: 4px;"
-            f"padding-right: 1px;"
-            f"padding-bottom: 1px;"
-            f"padding-left: 1px;"
+            f"background-color:{self.label_bg_color};"
+            "color:#FFFFFF;"
+            "font-family:Oxanium;"
+            "font-weight:bold;"
+            "font-size:12px;"
+            "border-radius:3px;"
+            "padding-top: 4px;"
+            "padding-right: 1px;"
+            "padding-bottom: 1px;"
+            "padding-left: 1px;"
         )
 
         self.dimensions_label.setStyleSheet(properties_style)
@@ -184,9 +196,10 @@ class PreviewPanel(QWidget):
         # background and NOT the scroll container background, so that the
         # rounded corners are maintained when scrolling. I was unable to
         # find the right trick to only select that particular element.
+
         scroll_area.setStyleSheet(
             "QWidget#entryScrollContainer{"
-            f"background: {Theme.COLOR_BG.value};"
+            f"background:{self.panel_bg_color};"
             "border-radius:6px;"
             "}"
         )
@@ -291,6 +304,7 @@ class PreviewPanel(QWidget):
         clear_layout(layout)
 
         label = QLabel("Recent Libraries")
+        label.setStyleSheet("font-weight:bold;")
         label.setAlignment(Qt.AlignCenter)  # type: ignore
 
         row_layout = QHBoxLayout()
@@ -301,11 +315,9 @@ class PreviewPanel(QWidget):
             btn: QPushButtonWrapper | QPushButton, extras: list[str] | None = None
         ):
             base_style = [
-                f"background-color:{Theme.COLOR_BG.value};",
+                f"background-color:{self.panel_bg_color};",
                 "border-radius:6px;",
-                "text-align: left;",
                 "padding-top: 3px;",
-                "padding-left: 6px;",
                 "padding-bottom: 4px;",
             ]
 
@@ -336,11 +348,11 @@ class PreviewPanel(QWidget):
                 return lambda: self.driver.open_library(Path(path))
 
             button.clicked.connect(open_library_button_clicked(full_val))
-            set_button_style(button)
-            button_remove = QPushButton("➖")
+            set_button_style(button, ["padding-left: 6px;", "text-align: left;"])
+            button_remove = QPushButton("—")
             button_remove.setCursor(Qt.CursorShape.PointingHandCursor)
-            button_remove.setFixedWidth(30)
-            set_button_style(button_remove)
+            button_remove.setFixedWidth(24)
+            set_button_style(button_remove, ["font-weight:bold;", "text-align:center;"])
 
             def remove_recent_library_clicked(key: str):
                 return lambda: (

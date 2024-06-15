@@ -12,7 +12,9 @@ class SettingItems(str, enum.Enum):
 
 
 class Theme(str, enum.Enum):
-    COLOR_BG = "#65000000"
+    COLOR_BG_DARK = "#65000000"
+    COLOR_BG_LIGHT = "#33000000"
+    COLOR_DARK_LABEL = "#DD000000"
     COLOR_HOVER = "#65AAAAAA"
     COLOR_PRESSED = "#65EEEEEE"
     COLOR_DISABLED = "#65F39CAA"
