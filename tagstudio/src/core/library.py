@@ -4,7 +4,6 @@
 
 """The Library object and related methods for TagStudio."""
 
-
 import datetime
 import logging
 import os
@@ -416,7 +415,6 @@ class Library:
             {"id": 29, "name": "Composer", "type": "text_line"},
             {"id": 30, "name": "Comments", "type": "text_box"},
         ]
-
 
     def create_library(self, path: Path) -> int:
         """
@@ -1321,8 +1319,9 @@ class Library:
         except KeyError:
             return -1
 
-    def parse_metadata(self, query: str | None = None) \
-            -> list[dict[str, str | list[str]]]:
+    def parse_metadata(
+        self, query: str | None = None
+    ) -> list[dict[str, str | list[str]]]:
         """
         Splits query into several maps 'meta_key -> value'\n
         Values without specified key parsed as tags and put in 'unbound' key \n
@@ -1341,22 +1340,25 @@ class Library:
             for field_data in field_data_list:
                 field_parsed = field_data.strip().split(":")
                 if len(field_parsed) < 2:
-                    unbound_values = field_parsed[0].strip().lower().casefold().split(' ')
-                    if query_part.get('unbound') is None:
-                        query_part['unbound'] = unbound_values
+                    unbound_values = (
+                        field_parsed[0].strip().lower().casefold().split(" ")
+                    )
+                    if query_part.get("unbound") is None:
+                        query_part["unbound"] = unbound_values
                     else:
-                        query_part['unbound'].extend(unbound_values)
+                        query_part["unbound"].extend(unbound_values)
                     continue
                 if len(field_parsed) != 2:
                     logging.warning("""[ERROR] Attempt to parse mutiple fields\
                                     as one! Do not forget to specify ';'\
                                     between different meta fields""")
-                query_part[field_parsed[0].lower().strip().casefold()] = field_parsed[1].lower().strip().casefold()
+                query_part[field_parsed[0].lower().strip().casefold()] = (
+                    field_parsed[1].lower().strip().casefold()
+                )
             meta_list.append(query_part)
 
         logging.info(f"Parsed values: {meta_list}")
         return meta_list
-
 
     def search_library(
         self,
@@ -1387,20 +1389,20 @@ class Library:
                 added = False
                 allowed_ext = entry.filename.suffix not in self.ext_list
                 if allowed_ext == self.is_exclude_list:
-                    for f in entry.fields: # type: ignore [assignment]
-                        if self.get_field_attr(f, "type") == "collation": # type: ignore [arg-type]
+                    for f in entry.fields:  # type: ignore [assignment]
+                        if self.get_field_attr(f, "type") == "collation":  # type: ignore [arg-type]
                             if (
-                                self.get_field_attr(f, "content") # type: ignore [arg-type]
+                                self.get_field_attr(f, "content")  # type: ignore [arg-type]
                                 not in collations_added
                             ):
                                 results.append(
                                     (
                                         ItemType.COLLATION,
-                                        self.get_field_attr(f, "content"), # type: ignore [arg-type]
+                                        self.get_field_attr(f, "content"),  # type: ignore [arg-type]
                                     )
                                 )
                                 collations_added.append(
-                                    self.get_field_attr(f, "content") # type: ignore [arg-type]
+                                    self.get_field_attr(f, "content")  # type: ignore [arg-type]
                                 )
                             added = True
 
@@ -2171,6 +2173,7 @@ class Library:
             entry.fields, key=lambda x: order.index(self.get_field_attr(x, "id"))
         )
 
+
 class Filter:
     def __init__(self, lib: Library) -> None:
         # self.lib = lib
@@ -2183,112 +2186,114 @@ class Filter:
         self.library_dir = lib.library_dir
         self.get_field_obj = lib.get_field_obj
         self.missing_files = lib.missing_files
-        self.default_fields =lib.default_fields
+        self.default_fields = lib.default_fields
 
         def generate_field_id_to_name_map(self) -> dict[int, str]:
             map: dict = {}
             for field in self.default_fields:
-                map[field.get("id")] = field.get('name').lower()
+                map[field.get("id")] = field.get("name").lower()
             return map
+
         self._field_id_to_name_map: dict = generate_field_id_to_name_map(self)
 
-    def filter_results(self, query: str, split_query: list[dict],
-                       search_mode: SearchMode) -> list[tuple[ItemType, int]]:
-            # start_time = time.time()
-            query = query.strip().lower()
+    def filter_results(
+        self, query: str, split_query: list[dict], search_mode: SearchMode
+    ) -> list[tuple[ItemType, int]]:
+        # start_time = time.time()
+        query = query.strip().lower()
 
-            pre_results: list[list[tuple[ItemType, int]]]= []
+        pre_results: list[list[tuple[ItemType, int]]] = []
 
-            for query_part in split_query:
-                all_tag_terms: list[str] = []
-                query_words = query_part.get('unbound')
+        for query_part in split_query:
+            all_tag_terms: list[str] = []
+            query_words = query_part.get("unbound")
 
-                if isinstance(query_words, list):
-                    all_tag_terms.extend(self.preprocess_tag_terms(query_words))
+            if isinstance(query_words, list):
+                all_tag_terms.extend(self.preprocess_tag_terms(query_words))
 
-                filtered_entries: list = []
+            filtered_entries: list = []
 
-                # Iterate over all Entries =============================================================
-                for entry in self.entries:
-                    entry_tuple: tuple | None = None
-                    allowed_ext: bool = entry.filename.suffix not in self.ext_list
-                    if allowed_ext != self.is_exclude_list:
-                        continue
-                    (entry_tags, entry_authors) = self.populate_tags(entry)
-                    is_selected: bool = False
-                    # Remap entry.fields from list of dicts, to dict for ease of work
-                    entry_fields: dict = self.remap_fields(entry)
-                    for key, value in query_part.items():
-                        select_empty: bool = False
-                        if isinstance(value, str):
-                            value = value.strip().casefold().lower()
-                            if value == 'null':
-                                select_empty = True
-                        entry_value = entry_fields.get(key)
+            # Iterate over all Entries =============================================================
+            for entry in self.entries:
+                entry_tuple: tuple | None = None
+                allowed_ext: bool = entry.filename.suffix not in self.ext_list
+                if allowed_ext != self.is_exclude_list:
+                    continue
+                (entry_tags, entry_authors) = self.populate_tags(entry)
+                is_selected: bool = False
+                # Remap entry.fields from list of dicts, to dict for ease of work
+                entry_fields: dict = self.remap_fields(entry)
+                for key, value in query_part.items():
+                    select_empty: bool = False
+                    if isinstance(value, str):
+                        value = value.strip().casefold().lower()
+                        if value == "null":
+                            select_empty = True
+                    entry_value = entry_fields.get(key)
 
-                        # special treatment for filename
-                        if key == 'filename' and isinstance(value, str):
-                            is_selected = is_selected and self.check_filename(entry, value)
-                        # all usual tags handling, as if search was in AND mode
-                        elif key == 'tag_id':
-                            if self.handle_tag_id(value, entry_tags):
-                                is_selected = True
-                            else:
-                                is_selected = False
-                                break
-                        elif key == 'unbound':
-                            entry_tuple = self.handle_unbound(entry, all_tag_terms,
-                                                              entry_tags, entry_authors,
-                                                              query_words)
-                            if entry_tuple is None:
-                                is_selected = False
-                                break
-                            else:
-                                is_selected = True
-                        # if entry does not have info on requested key
-                        elif select_empty and (entry_value is None or entry_value == ''):
+                    # special treatment for filename
+                    if key == "filename" and isinstance(value, str):
+                        is_selected = is_selected and self.check_filename(entry, value)
+                    # all usual tags handling, as if search was in AND mode
+                    elif key == "tag_id":
+                        if self.handle_tag_id(value, entry_tags):
                             is_selected = True
-                        # check if entry's value match the query
                         else:
-                            print(value, entry_value)
-                            if entry_value is not None and value in entry_value:
-                                print('true')
-                                is_selected = True
-                            else:
-                                is_selected = False
-                                break
+                            is_selected = False
+                            break
+                    elif key == "unbound":
+                        entry_tuple = self.handle_unbound(
+                            entry, all_tag_terms, entry_tags, entry_authors, query_words
+                        )
+                        if entry_tuple is None:
+                            is_selected = False
+                            break
+                        else:
+                            is_selected = True
+                    # if entry does not have info on requested key
+                    elif select_empty and (entry_value is None or entry_value == ""):
+                        is_selected = True
+                    # check if entry's value match the query
+                    else:
+                        print(value, entry_value)
+                        if entry_value is not None and value in entry_value:
+                            print("true")
+                            is_selected = True
+                        else:
+                            is_selected = False
+                            break
 
-                    if is_selected and entry_tuple is None:
-                        filtered_entries.append((ItemType.ENTRY, entry.id))
-                    elif is_selected and entry_tuple is not None:
-                        filtered_entries.append(entry_tuple)
+                if is_selected and entry_tuple is None:
+                    filtered_entries.append((ItemType.ENTRY, entry.id))
+                elif is_selected and entry_tuple is not None:
+                    filtered_entries.append(entry_tuple)
 
-                pre_results.append(filtered_entries)
-            # Entries should match all parts between '|'
-            result_set: set = set()
-            if search_mode == SearchMode.AND:
-                if len(pre_results) <= 1:
-                    result_set = set(pre_results[0])
-                    return list(pre_results[0])
+            pre_results.append(filtered_entries)
+        # Entries should match all parts between '|'
+        result_set: set = set()
+        if search_mode == SearchMode.AND:
+            if len(pre_results) <= 1:
                 result_set = set(pre_results[0])
-                # entries should be found in every part of query
-                for result in range(1, len(pre_results)):
-                    set_copy: list = list(result_set.copy())
-                    for recorded_entry in set_copy:
-                        entry_detected: bool = False
-                        for new_entry in pre_results[result]:
-                            if recorded_entry == new_entry:
-                                entry_detected = True
-                                break
-                        if not entry_detected:
-                            result_set.remove(recorded_entry)
-                return list(result_set)
-            # Entries should match any of parts between '|'
-            elif search_mode == SearchMode.OR:
-                for result in pre_results: # type: ignore [assignment]
-                    for entry in result: # type: ignore [attr-defined]
-                        result_set.add(entry)
-                return list(result_set)
+                return list(pre_results[0])
+            result_set = set(pre_results[0])
+            # entries should be found in every part of query
+            for result in range(1, len(pre_results)):
+                set_copy: list = list(result_set.copy())
+                for recorded_entry in set_copy:
+                    entry_detected: bool = False
+                    for new_entry in pre_results[result]:
+                        if recorded_entry == new_entry:
+                            entry_detected = True
+                            break
+                    if not entry_detected:
+                        result_set.remove(recorded_entry)
+            return list(result_set)
+        # Entries should match any of parts between '|'
+        elif search_mode == SearchMode.OR:
+            for result in pre_results:  # type: ignore [assignment]
+                for entry in result:  # type: ignore [attr-defined]
+                    result_set.add(entry)
+            return list(result_set)
 
     def handle_tag_id(self, query: str, entry_tags: list[int]) -> bool:
         id_query: int = 0
@@ -2300,11 +2305,16 @@ class Filter:
             return True
         return False
 
-    def handle_unbound(self, entry: Entry, all_tag_terms: list[str],
-                       entry_tags: list[int], entry_authors: list[list[str]],
-                       unbound: list[str]) -> tuple[ItemType, int] | None:
+    def handle_unbound(
+        self,
+        entry: Entry,
+        all_tag_terms: list[str],
+        entry_tags: list[int],
+        entry_authors: list[list[str]],
+        unbound: list[str],
+    ) -> tuple[ItemType, int] | None:
         collations_added: list = []
-        orig_query = ''.join(unbound)
+        orig_query = "".join(unbound)
         # TODO: Expand this to allow for dynamic fields to work.
         only_no_author: bool = "no author" in orig_query or "no artist" in orig_query
         only_untagged: bool = "untagged" in orig_query or "no tags" in orig_query
@@ -2312,9 +2322,11 @@ class Filter:
         only_missing: bool = "missing" in orig_query or "no file" in orig_query
 
         special_flags = (only_untagged, only_no_author, only_empty, only_missing)
-        if self.add_entries_from_special_flags(special_flags, entry_tags,
-                                               entry_authors, entry):
+        if self.add_entries_from_special_flags(
+            special_flags, entry_tags, entry_authors, entry
+        ):
             return (ItemType.ENTRY, entry.id)
+
         def add_entry(entry: Entry) -> tuple[ItemType, int] | None:
             # self.filter_entries.append()
             # self.filtered_file_list.append(file)
@@ -2322,17 +2334,12 @@ class Filter:
             added = False
             for f in entry.fields:
                 if self.get_field_attr(f, "type") == "collation":
-                    if (
-                        self.get_field_attr(f, "content")
-                        not in collations_added
-                    ):
-                        collations_added.append(
-                                self.get_field_attr(f, "content")
-                                )
+                    if self.get_field_attr(f, "content") not in collations_added:
+                        collations_added.append(self.get_field_attr(f, "content"))
                         return (
-                                ItemType.COLLATION,
-                                self.get_field_attr(f, "content"),
-                                )
+                            ItemType.COLLATION,
+                            self.get_field_attr(f, "content"),
+                        )
                     added = True
 
             if not added:
@@ -2351,9 +2358,7 @@ class Filter:
                 # (You're 99.9999999% likely to just get 1 item)
                 for id in self._tag_strings_to_id_map[term]:
                     cluster.add(id)
-                    cluster = cluster.union(
-                        set(self.get_tag_cluster(id))
-                    )
+                    cluster = cluster.union(set(self.get_tag_cluster(id)))
                 # For each of the Tag IDs in the term's ID cluster:
                 for t in cluster:
                     # Assume that this ID from the cluster is not in the Entry.
@@ -2374,19 +2379,27 @@ class Filter:
         else:
             return None
 
-    def add_entries_from_special_flags(self,
-                                       special_flags: tuple[bool, bool, bool, bool],
-                                       entry_tags: list[int], entry_authors: list[list[str]],
-                                       entry: Entry):
+    def add_entries_from_special_flags(
+        self,
+        special_flags: tuple[bool, bool, bool, bool],
+        entry_tags: list[int],
+        entry_authors: list[list[str]],
+        entry: Entry,
+    ):
         (only_untagged, only_no_author, only_empty, only_missing) = special_flags
         if only_untagged and not entry_tags:
             return True
         elif only_no_author and not entry_authors:
             return True
-        elif only_empty and (len(entry.fields) <= 0 or len(entry.fields[0].keys()) <= 0):
+        elif only_empty and (
+            len(entry.fields) <= 0 or len(entry.fields[0].keys()) <= 0
+        ):
             return True
-        elif only_missing and (self.library_dir / entry.path / entry.filename
-                               ).resolve() in self.missing_files:
+        elif (
+            only_missing
+            and (self.library_dir / entry.path / entry.filename).resolve()
+            in self.missing_files
+        ):
             return True
         return False
 
@@ -2400,8 +2413,8 @@ class Filter:
         return entry_fields
 
     def populate_tags(self, entry: Entry) -> tuple[list[int], list[list[str]]]:
-        """ Parse tags from entry.fields\n
-        returns tuple (entry_tags, entry_authors) """
+        """Parse tags from entry.fields\n
+        returns tuple (entry_tags, entry_authors)"""
         entry_tags: list[int] = []
         entry_authors: list[list[str]] = []
         if entry.fields:
@@ -2432,8 +2445,7 @@ class Filter:
             for j, term in enumerate(query_words):
                 if (
                     query_words[i : j + 1]
-                    and " ".join(query_words[i : j + 1])
-                    in self._tag_strings_to_id_map
+                    and " ".join(query_words[i : j + 1]) in self._tag_strings_to_id_map
                 ):
                     all_tag_terms.append(" ".join(query_words[i : j + 1]))
         # This gets rid of any accidental term inclusions because they were words
