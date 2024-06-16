@@ -6,6 +6,7 @@ PySide6_Addons==6.7.1
 PySide6_Essentials==6.7.1
 typing_extensions>=3.10.0.0,<=4.11.0
 ujson>=5.8.0,<=5.9.0
+numpy==1.26.4
 rawpy==0.21.0
 pillow-heif==0.16.0
 chardet==5.2.0
