@@ -50,6 +50,7 @@
         python312Packages.pyusb # fixes the pyusb 'No backend available' when installed directly via pip
         python312Packages.venvShellHook # Initializes a venv in $venvDir
         ruff # Ruff cannot be installed via pip
+        mypy # MyPy cannot be installed via pip
 
         libgcc
         glib
@@ -81,9 +82,12 @@
         unset SOURCE_DATE_EPOCH
 
         echo Installing dependencies into virtual environment
+        pip install PySide6==6.6.2 # 6.6.3 has faulty .pyi files
         pip install -r requirements.txt
         pip install -r requirements-dev.txt
-        pip uninstall -y ruff # Hacky solution to not fight with other dev deps
+        # Hacky solution to not fight with other dev deps
+        # May show failure if skipped due to same version with nixpkgs
+        pip uninstall -y mypy ruff
       '';
 
       # set the environment variables that Qt apps expect
