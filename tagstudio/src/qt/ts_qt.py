@@ -187,6 +187,7 @@ class QtDriver(QObject):
         self.thumb_cutoff: float = time.time()
         # self.selected: list[tuple[int,int]] = [] # (Thumb Index, Page Index)
         self.selected: list[tuple[ItemType, int]] = []  # (Item Type, Item ID)
+        self.loading_library = False
 
         self.SIGTERM.connect(self.handleSIGTERM)
 
@@ -588,6 +589,7 @@ class QtDriver(QObject):
         self.main_window.show()
         self.main_window.activateWindow()
         self.main_window.toggle_landing_page(True)
+        logging.info("Showing main window...")
 
         self.frame_dict = {}
         self.main_window.pagination.index.connect(
@@ -1439,26 +1441,41 @@ class QtDriver(QObject):
 
     def open_library(self, path: Path):
         """Opens a TagStudio library."""
+        # Prevents attemping to load a new library
+        # while another is already loading.
+        if self.loading_library:
+            return
+
         open_message: str = f'Opening Library "{str(path)}"...'
+        logging.info(open_message)
         self.main_window.landing_widget.set_status_label(open_message)
         self.main_window.statusbar.showMessage(open_message, 3)
         self.main_window.repaint()
+
+        self.loaded_library_path = path
+        self.loading_library = True
 
         if self.lib.library_dir:
             self.save_library()
             self.lib.clear_internal_vars()
 
-        return_code = self.lib.open_library(path)
+        r = CustomRunnable(lambda: self.lib.open_library(path))
+        r.done.connect(lambda return_code: self.library_load_callback(return_code))
+        QThreadPool.globalInstance().start(r)
+
+    def library_load_callback(self, return_code: int):
+        """Displays the newly loaded library."""
         if return_code == 1:
-            pass
+            logging.info(f"Succesfully loaded Library")
         else:
             logging.info(
-                f"{ERROR} No existing TagStudio library found at '{path}'. Creating one."
+                f"{ERROR} No existing TagStudio library found at '{self.loaded_library_path}'. Creating one."
             )
-            print(f"Library Creation Return Code: {self.lib.create_library(path)}")
+            result = self.lib.create_library(self.loaded_library_path)
+            logging.info(f"Library Creation Return Code: {result}")
             self.add_new_files_callback()
 
-        self.update_libs_list(path)
+        self.update_libs_list(self.loaded_library_path)
         title_text = f"{self.base_title} - Library '{self.lib.library_dir}'"
         self.main_window.setWindowTitle(title_text)
 
@@ -1469,6 +1486,7 @@ class QtDriver(QObject):
         self.preview_panel.update_widgets()
         self.filter_items()
         self.main_window.toggle_landing_page(False)
+        self.loading_library = False
 
     def create_collage(self) -> None:
         """Generates and saves an image collage based on Library Entries."""
