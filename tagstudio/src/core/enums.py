@@ -17,3 +17,10 @@ class Theme(str, enum.Enum):
     COLOR_PRESSED = "#65EEEEEE"
     COLOR_DISABLED = "#65F39CAA"
     COLOR_DISABLED_BG = "#65440D12"
+
+
+class SearchMode(int, enum.Enum):
+    """Operational modes for item searching."""
+
+    AND = 0
+    OR = 1

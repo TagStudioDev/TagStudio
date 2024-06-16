@@ -16,9 +16,13 @@ jobs:
         with:
           reviewdog_version: latest
 
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
       - name: Install dependencies
         run: |
-          python -m pip install --upgrade pip
           pip install -r requirements.txt
           pip install mypy==1.10.0
           mkdir tagstudio/.mypy_cache

@@ -162,10 +162,10 @@ class ThumbRenderer(QObject):
                 # Videos =======================================================
                 elif _filepath.suffix.lower() in VIDEO_TYPES:
                     video = cv2.VideoCapture(str(_filepath))
-                    video.set(
-                        cv2.CAP_PROP_POS_FRAMES,
-                        (video.get(cv2.CAP_PROP_FRAME_COUNT) // 2),
-                    )
+                    frame_count = video.get(cv2.CAP_PROP_FRAME_COUNT)
+                    if frame_count <= 0:
+                        raise cv2.error("File is invalid or has 0 frames")
+                    video.set(cv2.CAP_PROP_POS_FRAMES, frame_count // 2)
                     success, frame = video.read()
                     if not success:
                         # Depending on the video format, compression, and frame

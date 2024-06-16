@@ -1,5 +1,5 @@
-VERSION: str = "9.2.2"  # Major.Minor.Patch
-VERSION_BRANCH: str = "Pre-Release"  # 'Alpha', 'Beta', or '' for Full Release
+VERSION: str = "9.3.1"  # Major.Minor.Patch
+VERSION_BRANCH: str = "Pre-Release"  # Usually "" or "Pre-Release"
 
 # The folder & file names where TagStudio keeps its data relative to a library.
 TS_FOLDER_NAME: str = ".TagStudio"
@@ -29,7 +29,16 @@ IMAGE_TYPES: list[str] = [
     ".j2k",
     ".jpg2",
 ]
-RAW_IMAGE_TYPES: list[str] = [".raw", ".dng", ".rw2", ".nef", ".arw", ".crw", ".cr3"]
+RAW_IMAGE_TYPES: list[str] = [
+    ".raw",
+    ".dng",
+    ".rw2",
+    ".nef",
+    ".arw",
+    ".crw",
+    ".cr2",
+    ".cr3",
+]
 VIDEO_TYPES: list[str] = [
     ".mp4",
     ".webm",
@@ -86,7 +95,16 @@ PLAINTEXT_TYPES: list[str] = [
 ]
 SPREADSHEET_TYPES: list[str] = [".csv", ".xls", ".xlsx", ".numbers", ".ods"]
 PRESENTATION_TYPES: list[str] = [".ppt", ".pptx", ".key", ".odp"]
-ARCHIVE_TYPES: list[str] = [".zip", ".rar", ".tar", ".tar", ".gz", ".tgz", ".7z"]
+ARCHIVE_TYPES: list[str] = [
+    ".zip",
+    ".rar",
+    ".tar",
+    ".tar",
+    ".gz",
+    ".tgz",
+    ".7z",
+    ".s7z",
+]
 PROGRAM_TYPES: list[str] = [".exe", ".app"]
 SHORTCUT_TYPES: list[str] = [".lnk", ".desktop", ".url"]
 

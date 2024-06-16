@@ -21,7 +21,15 @@ from queue import Queue
 from typing import Optional
 from PIL import Image
 from PySide6 import QtCore
-from PySide6.QtCore import QObject, QThread, Signal, Qt, QThreadPool, QTimer, QSettings
+from PySide6.QtCore import (
+    QObject,
+    QThread,
+    Signal,
+    Qt,
+    QThreadPool,
+    QTimer,
+    QSettings,
+)
 from PySide6.QtGui import (
     QGuiApplication,
     QPixmap,
@@ -43,29 +51,14 @@ from PySide6.QtWidgets import (
     QSplashScreen,
     QMenu,
     QMenuBar,
+    QComboBox,
 )
 from humanfriendly import format_timespan
 
-from src.core.enums import SettingItems
+from src.core.enums import SettingItems, SearchMode
 from src.core.library import ItemType
 from src.core.ts_core import TagStudioCore
 from src.core.constants import (
-    PLAINTEXT_TYPES,
-    TAG_COLORS,
-    DATE_FIELDS,
-    TEXT_FIELDS,
-    BOX_FIELDS,
-    ALL_FILE_TYPES,
-    SHORTCUT_TYPES,
-    PROGRAM_TYPES,
-    ARCHIVE_TYPES,
-    PRESENTATION_TYPES,
-    SPREADSHEET_TYPES,
-    DOC_TYPES,
-    AUDIO_TYPES,
-    VIDEO_TYPES,
-    IMAGE_TYPES,
-    LIBRARY_FILENAME,
     COLLAGE_FOLDER_NAME,
     BACKUP_FOLDER_NAME,
     TS_FOLDER_NAME,
@@ -77,6 +70,7 @@ from src.qt.flowlayout import FlowLayout
 from src.qt.main_window import Ui_MainWindow
 from src.qt.helpers.function_iterator import FunctionIterator
 from src.qt.helpers.custom_runnable import CustomRunnable
+from src.qt.resource_manager import ResourceManager
 from src.qt.widgets.collage_icon import CollageIconRenderer
 from src.qt.widgets.panel import PanelModal
 from src.qt.widgets.thumb_renderer import ThumbRenderer
@@ -171,10 +165,13 @@ class QtDriver(QObject):
         super().__init__()
         self.core: TagStudioCore = core
         self.lib = self.core.lib
+        self.rm: ResourceManager = ResourceManager()
         self.args = args
         self.frame_dict: dict = {}
         self.nav_frames: list[NavigationState] = []
         self.cur_frame_idx: int = -1
+
+        self.search_mode = SearchMode.AND
 
         # self.main_window = None
         # self.main_window = Ui_MainWindow()
@@ -263,7 +260,7 @@ class QtDriver(QObject):
         timer.timeout.connect(lambda: None)
 
         # self.main_window = loader.load(home_path)
-        self.main_window = Ui_MainWindow()
+        self.main_window = Ui_MainWindow(self)
         self.main_window.setWindowTitle(self.base_title)
         self.main_window.mousePressEvent = self.mouse_navigation  # type: ignore
         # self.main_window.setStyleSheet(
@@ -398,9 +395,15 @@ class QtDriver(QObject):
         select_all_action.setToolTip("Ctrl+A")
         edit_menu.addAction(select_all_action)
 
+        clear_select_action = QAction("Clear Selection", menu_bar)
+        clear_select_action.triggered.connect(self.clear_select_action_callback)
+        clear_select_action.setShortcut(QtCore.Qt.Key.Key_Escape)
+        clear_select_action.setToolTip("Esc")
+        edit_menu.addAction(clear_select_action)
+
         edit_menu.addSeparator()
 
-        manage_file_extensions_action = QAction("Ignored File Extensions", menu_bar)
+        manage_file_extensions_action = QAction("Manage File Extensions", menu_bar)
         manage_file_extensions_action.triggered.connect(
             lambda: self.show_file_extension_modal()
         )
@@ -548,6 +551,7 @@ class QtDriver(QObject):
         self.shutdown()
 
     def init_library_window(self):
+        # self._init_landing_page() # Taken care of inside the widget now
         self._init_thumb_grid()
 
         # TODO: Put this into its own method that copies the font file(s) into memory
@@ -564,11 +568,24 @@ class QtDriver(QObject):
         search_field.returnPressed.connect(
             lambda: self.filter_items(self.main_window.searchField.text())
         )
+        search_type_selector: QComboBox = self.main_window.comboBox_2
+        search_type_selector.currentIndexChanged.connect(
+            lambda: self.set_search_type(
+                SearchMode(search_type_selector.currentIndex())
+            )
+        )
 
         back_button: QPushButton = self.main_window.backButton
         back_button.clicked.connect(self.nav_back)
         forward_button: QPushButton = self.main_window.forwardButton
         forward_button.clicked.connect(self.nav_forward)
+
+        # NOTE: Putting this early will result in a white non-responsive
+        # window until everything is loaded. Consider adding a splash screen
+        # or implementing some clever loading tricks.
+        self.main_window.show()
+        self.main_window.activateWindow()
+        self.main_window.toggle_landing_page(True)
 
         self.frame_dict = {}
         self.main_window.pagination.index.connect(
@@ -591,11 +608,6 @@ class QtDriver(QObject):
         # self.render_times: list = []
         # self.main_window.setWindowFlag(Qt.FramelessWindowHint)
 
-        # NOTE: Putting this early will result in a white non-responsive
-        # window until everything is loaded. Consider adding a splash screen
-        # or implementing some clever loading tricks.
-        self.main_window.show()
-        self.main_window.activateWindow()
         # self.main_window.raise_()
         self.splash.finish(self.main_window)
         self.preview_panel.update_widgets()
@@ -681,6 +693,7 @@ class QtDriver(QObject):
             self.selected.clear()
             self.preview_panel.update_widgets()
             self.filter_items()
+            self.main_window.toggle_landing_page(True)
 
             end_time = time.time()
             self.main_window.statusbar.showMessage(
@@ -718,6 +731,14 @@ class QtDriver(QObject):
         self.set_macro_menu_viability()
         self.preview_panel.update_widgets()
 
+    def clear_select_action_callback(self):
+        self.selected.clear()
+        for item in self.item_thumbs:
+            item.thumb_button.set_selected(False)
+
+        self.set_macro_menu_viability()
+        self.preview_panel.update_widgets()
+
     def show_tag_database(self):
         self.modal = PanelModal(
             TagDatabasePanel(self.lib), "Library Tags", "Library Tags", has_save=False
@@ -725,10 +746,12 @@ class QtDriver(QObject):
         self.modal.show()
 
     def show_file_extension_modal(self):
-        # self.modal = FileExtensionModal(self.lib)
         panel = FileExtensionModal(self.lib)
         self.modal = PanelModal(
-            panel, "Ignored File Extensions", "Ignored File Extensions", has_save=True
+            panel,
+            "File Extensions",
+            "File Extensions",
+            has_save=True,
         )
         self.modal.saved.connect(lambda: (panel.save(), self.filter_items("")))
         self.modal.show()
@@ -1334,7 +1357,7 @@ class QtDriver(QObject):
 
             # self.filtered_items = self.lib.search_library(query)
             # 73601 Entries at 500 size should be 246
-            all_items = self.lib.search_library(query)
+            all_items = self.lib.search_library(query, search_mode=self.search_mode)
             frames: list[list[tuple[ItemType, int]]] = []
             frame_count = math.ceil(len(all_items) / self.max_results)
             for i in range(0, frame_count):
@@ -1375,6 +1398,10 @@ class QtDriver(QObject):
 
             # self.update_thumbs()
 
+    def set_search_type(self, mode=SearchMode.AND):
+        self.search_mode = mode
+        self.filter_items(self.main_window.searchField.text())
+
     def remove_recent_library(self, item_key: str):
         self.settings.beginGroup(SettingItems.LIBS_LIST)
         self.settings.remove(item_key)
@@ -1410,15 +1437,18 @@ class QtDriver(QObject):
 
     def open_library(self, path: Path):
         """Opens a TagStudio library."""
+        open_message: str = f'Opening Library "{str(path)}"...'
+        self.main_window.landing_widget.set_status_label(open_message)
+        self.main_window.statusbar.showMessage(open_message, 3)
+        self.main_window.repaint()
+
         if self.lib.library_dir:
             self.save_library()
             self.lib.clear_internal_vars()
 
-        self.main_window.statusbar.showMessage(f"Opening Library {str(path)}", 3)
         return_code = self.lib.open_library(path)
         if return_code == 1:
             pass
-
         else:
             logging.info(
                 f"{ERROR} No existing TagStudio library found at '{path}'. Creating one."
@@ -1436,6 +1466,7 @@ class QtDriver(QObject):
         self.selected.clear()
         self.preview_panel.update_widgets()
         self.filter_items()
+        self.main_window.toggle_landing_page(False)
 
     def create_collage(self) -> None:
         """Generates and saves an image collage based on Library Entries."""
