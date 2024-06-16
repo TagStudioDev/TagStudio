@@ -76,10 +76,6 @@ class ThumbRenderer(QObject):
     )
     thumb_loading_512.load()
 
-    # TODO: Allow this to be dynamically updated at runtime
-    if QGuiApplication.styleHints().colorScheme() is not Qt.ColorScheme.Dark:
-        thumb_loading_512 = theme_fg_overlay(thumb_loading_512)
-
     thumb_broken_512: Image.Image = Image.open(
         Path(__file__).parents[3] / "resources/qt/images/thumb_broken_512.png"
     )
@@ -112,6 +108,8 @@ class ThumbRenderer(QObject):
         update_on_ratio_change=False,
     ):
         """Internal renderer. Renders an entry/element thumbnail for the GUI."""
+        loading_thumb: Image.Image = ThumbRenderer.thumb_loading_512
+
         image: Image.Image = None
         pixmap: QPixmap = None
         final: Image.Image = None
@@ -124,9 +122,12 @@ class ThumbRenderer(QObject):
                 math.floor(12 * ThumbRenderer.font_pixel_ratio),
             )
 
+        if QGuiApplication.styleHints().colorScheme() is Qt.ColorScheme.Light:
+            loading_thumb = theme_fg_overlay(loading_thumb)
+
         adj_size = math.ceil(max(base_size[0], base_size[1]) * pixel_ratio)
         if is_loading:
-            final = ThumbRenderer.thumb_loading_512.resize(
+            final = loading_thumb.resize(
                 (adj_size, adj_size), resample=Image.Resampling.BILINEAR
             )
             qim = ImageQt.ImageQt(final)
@@ -453,7 +454,6 @@ class ThumbRenderer(QObject):
         image: Image.Image = None
 
         try:
-            logging.info(f"{size}, {pixel_ratio}")
             BARS: int = min(math.floor((size // pixel_ratio) / 5), 64)
             audio: AudioSegment = AudioSegment.from_file(filepath, ext[1:])
             data = numpy.fromstring(audio._data, numpy.int16)  # type: ignore
@@ -488,7 +488,6 @@ class ThumbRenderer(QObject):
             image = Image.new("RGB", (size_scaled, size_scaled), color="#000000")
             draw = ImageDraw.Draw(image)
 
-            logging.info(f"data_ind {len(data_indices)}, max_array {len(max_array)}")
             current_x = BAR_MARGIN
             for item in max_array:
                 item_height = item / line_ratio

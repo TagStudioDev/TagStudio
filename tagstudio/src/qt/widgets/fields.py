@@ -14,6 +14,7 @@ from PySide6.QtCore import Qt, QEvent
 from PySide6.QtGui import QPixmap, QEnterEvent
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton
 from src.qt.helpers.qbutton_wrapper import QPushButtonWrapper
+from src.qt.helpers.color_overlay import theme_fg_overlay
 
 
 class FieldContainer(QWidget):
@@ -46,6 +47,10 @@ class FieldContainer(QWidget):
         self.remove_callback: Callable = None
         button_size = 24
         # self.setStyleSheet('border-style:solid;border-color:#1e1a33;border-radius:8px;border-width:2px;')
+
+        self.clipboard_icon_128 = theme_fg_overlay(FieldContainer.clipboard_icon_128)
+        self.edit_icon_128 = theme_fg_overlay(FieldContainer.edit_icon_128)
+        self.trash_icon_128 = theme_fg_overlay(FieldContainer.trash_icon_128)
 
         self.root_layout = QVBoxLayout(self)
         self.root_layout.setObjectName("baseLayout")
