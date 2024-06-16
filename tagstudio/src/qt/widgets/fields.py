@@ -13,7 +13,7 @@ from PIL import Image, ImageQt
 from PySide6.QtCore import Qt, QEvent
 from PySide6.QtGui import QPixmap, QEnterEvent
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton
-from src.qt.helpers.custom_qbutton import CustomQPushButton
+from src.qt.helpers.qbutton_wrapper import QPushButtonWrapper
 
 
 class FieldContainer(QWidget):
@@ -82,7 +82,7 @@ class FieldContainer(QWidget):
 
         self.title_layout.addStretch(2)
 
-        self.copy_button = CustomQPushButton()
+        self.copy_button = QPushButtonWrapper()
         self.copy_button.setMinimumSize(button_size, button_size)
         self.copy_button.setMaximumSize(button_size, button_size)
         self.copy_button.setFlat(True)
@@ -93,7 +93,7 @@ class FieldContainer(QWidget):
         self.title_layout.addWidget(self.copy_button)
         self.copy_button.setHidden(True)
 
-        self.edit_button = CustomQPushButton()
+        self.edit_button = QPushButtonWrapper()
         self.edit_button.setMinimumSize(button_size, button_size)
         self.edit_button.setMaximumSize(button_size, button_size)
         self.edit_button.setFlat(True)
@@ -102,7 +102,7 @@ class FieldContainer(QWidget):
         self.title_layout.addWidget(self.edit_button)
         self.edit_button.setHidden(True)
 
-        self.remove_button = CustomQPushButton()
+        self.remove_button = QPushButtonWrapper()
         self.remove_button.setMinimumSize(button_size, button_size)
         self.remove_button.setMaximumSize(button_size, button_size)
         self.remove_button.setFlat(True)
