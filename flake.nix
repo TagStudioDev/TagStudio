@@ -5,8 +5,8 @@
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
 
     qt6Nixpkgs = {
-      # Commit bumping to qt6.6.3
-      url = "github:NixOS/nixpkgs/f862bd46d3020bcfe7195b3dad638329271b0524"; 
+      # Commit bumping to qt6.7.1
+      url = "github:NixOS/nixpkgs/47da0aee5616a063015f10ea593688646f2377e4";
     };
   };
 
@@ -82,7 +82,6 @@
         unset SOURCE_DATE_EPOCH
 
         echo Installing dependencies into virtual environment
-        pip install PySide6==6.6.2 # 6.6.3 has faulty .pyi files
         pip install -r requirements.txt
         pip install -r requirements-dev.txt
         # Hacky solution to not fight with other dev deps
