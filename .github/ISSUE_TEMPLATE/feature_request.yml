@@ -6,6 +6,8 @@ body:
   - type: markdown
     attributes:
       value: |
+        *Please add an appropriate title for this feature request.*
+
         Before suggesting, read the [documentation](https://github.com/TagStudioDev/TagStudio/blob/main/doc/index.md) and search existing [issues](https://github.com/TagStudioDev/TagStudio/issues).
         Validate that you are using an up-to-date version[^1], your feature might already be implemented!
         Questions, guidance, and usage goes in [discussions](https://github.com/TagStudioDev/TagStudio/discussions). Invalid issues will be closed.
