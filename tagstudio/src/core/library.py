@@ -1341,7 +1341,7 @@ class Library:
                 field_parsed = field_data.strip().split(":")
                 if len(field_parsed) < 2:
                     unbound_values = (
-                        field_parsed[0].strip().lower().casefold().split(" ")
+                        field_parsed[0].strip().lower().casefold().split()
                     )
                     if query_part.get("unbound") is None:
                         query_part["unbound"] = unbound_values
@@ -2301,9 +2301,7 @@ class Filter:
             id_query = int(query)
         except Exception:
             return False
-        if id_query in entry_tags:
-            return True
-        return False
+        return id_query in entry_tags
 
     def handle_unbound(
         self,
@@ -2392,7 +2390,7 @@ class Filter:
         elif only_no_author and not entry_authors:
             return True
         elif only_empty and (
-            len(entry.fields) <= 0 or len(entry.fields[0].keys()) <= 0
+            not (entry.fields and entry.fields[0])
         ):
             return True
         elif (
@@ -2419,7 +2417,7 @@ class Filter:
         entry_authors: list[list[str]] = []
         if entry.fields:
             for field in entry.fields:
-                if len(field.keys()) <= 0:
+                if not field:
                     continue
                 field_id = list(field.keys())[0]
                 if self.get_field_obj(field_id)["type"] == "tag_box":
