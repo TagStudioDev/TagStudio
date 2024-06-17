@@ -82,7 +82,6 @@
         unset SOURCE_DATE_EPOCH
 
         echo Installing dependencies into virtual environment
-        pip install PySide6==6.6.2 # 6.6.3 has faulty .pyi files
         pip install -r requirements.txt
         pip install -r requirements-dev.txt
         # Hacky solution to not fight with other dev deps
