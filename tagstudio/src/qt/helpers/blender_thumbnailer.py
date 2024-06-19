@@ -25,38 +25,26 @@
 
 
 import struct
-
-
-def open_wrapper_get():
-    """wrap OS specific read functionality here, fallback to 'open()'"""
-
-    def open_local_url(url, mode="r"):
-        # Redundant af, but this is where the checking of file path can be done
-
-        path = url
-
-        return open(str(path), mode)
-
-    return open_local_url
+from PIL import (
+    Image,
+    ImageOps,
+)
+import gzip
+import os
 
 
 def blend_extract_thumb(path):
-    import os
-
-    open_wrapper = open_wrapper_get()
-
+    
     REND = b"REND"
     TEST = b"TEST"
 
-    blendfile = open_wrapper(path, "rb")
+    blendfile = open(path, "rb")
 
     head = blendfile.read(12)
 
     if head[0:2] == b"\x1f\x8b":  # gzip magic
-        import gzip
-
         blendfile.close()
-        blendfile = gzip.GzipFile("", "rb", 0, open_wrapper(path, "rb"))
+        blendfile = gzip.GzipFile("", "rb", 0, open(path, "rb"))
         head = blendfile.read(12)
 
     if not head.startswith(b"BLENDER"):
@@ -111,27 +99,12 @@ def blend_extract_thumb(path):
     return image_buffer, x, y
 
 
-# Trying to flip image buffer to have the image right way round on the output, but can't figure it out
-# Currently, just flipping it with ImageOps in the thumbnail_renderer.py
-
-##def flip_image(buf, width, height):
-##    import zlib
-##
-##    # reverse the vertical line order and add null bytes at the start
-##    width_byte_4 = width * 4
-##    raw_data = b"".join(b'\x00' + buf[span:span + width_byte_4] for span in range((height - 1) * width * 4, -1, - width_byte_4))
-##
-##    def png_pack(png_tag, data):
-##        chunk_head = png_tag + data
-##        return struct.pack("!I", len(data)) + chunk_head + struct.pack("!I", 0xFFFFFFFF & zlib.crc32(chunk_head))
-##
-##    return [b"".join([
-##        b'\x89PNG\r\n\x1a\n',
-##        png_pack(b'IHDR', struct.pack("!2I5B", width, height, 8, 6, 0, 0, 0)),
-##        png_pack(b'IDAT', zlib.compress(raw_data, 9)),
-##        png_pack(b'IEND', b'')]), width, height]
-
-
-def blendthumb(file_in):
+def blend_thumb(file_in):
     buf, width, height = blend_extract_thumb(file_in)
-    return [buf, width, height]
+    image = Image.frombuffer(
+        "RGBA",
+        (width, height),
+        buf,
+        )
+    image = ImageOps.flip(image)
+    return image
