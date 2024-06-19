@@ -64,12 +64,15 @@ from src.core.constants import (
     TS_FOLDER_NAME,
     VERSION_BRANCH,
     VERSION,
+    TAG_FAVORITE,
+    TAG_ARCHIVED,
 )
 from src.core.utils.web import strip_web_protocol
 from src.qt.flowlayout import FlowLayout
 from src.qt.main_window import Ui_MainWindow
 from src.qt.helpers.function_iterator import FunctionIterator
 from src.qt.helpers.custom_runnable import CustomRunnable
+from src.qt.resource_manager import ResourceManager
 from src.qt.widgets.collage_icon import CollageIconRenderer
 from src.qt.widgets.panel import PanelModal
 from src.qt.widgets.thumb_renderer import ThumbRenderer
@@ -164,6 +167,7 @@ class QtDriver(QObject):
         super().__init__()
         self.core: TagStudioCore = core
         self.lib = self.core.lib
+        self.rm: ResourceManager = ResourceManager()
         self.args = args
         self.frame_dict: dict = {}
         self.nav_frames: list[NavigationState] = []
@@ -1250,8 +1254,8 @@ class QtDriver(QObject):
                     filepath = self.lib.library_dir / entry.path / entry.filename
 
                     item_thumb.set_item_id(entry.id)
-                    item_thumb.assign_archived(entry.has_tag(self.lib, 0))
-                    item_thumb.assign_favorite(entry.has_tag(self.lib, 1))
+                    item_thumb.assign_archived(entry.has_tag(self.lib, TAG_ARCHIVED))
+                    item_thumb.assign_favorite(entry.has_tag(self.lib, TAG_FAVORITE))
                     # ctrl_down = True if QGuiApplication.keyboardModifiers() else False
                     # TODO: Change how this works. The click function
                     # for collations a few lines down should NOT be allowed during modifier keys.

@@ -40,6 +40,7 @@ from src.qt.widgets.text import TextWidget
 from src.qt.widgets.panel import PanelModal
 from src.qt.widgets.text_box_edit import EditTextBox
 from src.qt.widgets.text_line_edit import EditTextLine
+from src.qt.helpers.qbutton_wrapper import QPushButtonWrapper
 from src.qt.widgets.video_player import VideoPlayer
 
 
@@ -61,6 +62,7 @@ class PreviewPanel(QWidget):
 
     def __init__(self, library: Library, driver: "QtDriver"):
         super().__init__()
+        self.is_connected = False
         self.lib = library
         self.driver: QtDriver = driver
         self.initialized = False
@@ -83,7 +85,7 @@ class PreviewPanel(QWidget):
         self.open_file_action = QAction("Open file", self)
         self.open_explorer_action = QAction("Open file in explorer", self)
 
-        self.preview_img = QPushButton()
+        self.preview_img = QPushButtonWrapper()
         self.preview_img.setMinimumSize(*self.img_button_size)
         self.preview_img.setFlat(True)
         self.preview_img.setContextMenuPolicy(Qt.ContextMenuPolicy.ActionsContextMenu)
@@ -218,7 +220,7 @@ class PreviewPanel(QWidget):
         self.afb_layout = QVBoxLayout(self.afb_container)
         self.afb_layout.setContentsMargins(0, 12, 0, 0)
 
-        self.add_field_button = QPushButton()
+        self.add_field_button = QPushButtonWrapper()
         self.add_field_button.setCursor(Qt.CursorShape.PointingHandCursor)
         self.add_field_button.setMinimumSize(96, 28)
         self.add_field_button.setMaximumSize(96, 28)
@@ -279,7 +281,9 @@ class PreviewPanel(QWidget):
         row_layout.addWidget(label)
         layout.addLayout(row_layout)
 
-        def set_button_style(btn: QPushButton, extras: list[str] | None = None):
+        def set_button_style(
+            btn: QPushButtonWrapper | QPushButton, extras: list[str] | None = None
+        ):
             base_style = [
                 f"background-color:{Theme.COLOR_BG.value};",
                 "border-radius:6px;",
@@ -317,7 +321,6 @@ class PreviewPanel(QWidget):
 
             button.clicked.connect(open_library_button_clicked(full_val))
             set_button_style(button)
-
             button_remove = QPushButton("➖")
             button_remove.setCursor(Qt.CursorShape.PointingHandCursor)
             button_remove.setFixedWidth(30)
@@ -411,16 +414,16 @@ class PreviewPanel(QWidget):
             self.afb_container, Qt.AlignmentFlag.AlignHCenter
         )
 
-        try:
+        if self.afm.is_connected:
             self.afm.done.disconnect()
+        if self.add_field_button.is_connected:
             self.add_field_button.clicked.disconnect()
-        except RuntimeError:
-            pass
 
         # self.afm.done.connect(lambda f: (self.lib.add_field_to_entry(self.selected[0][1], f), self.update_widgets()))
         self.afm.done.connect(
             lambda f: (self.add_field_to_selected(f), self.update_widgets())
         )
+        self.afm.is_connected = True
         self.add_field_button.clicked.connect(self.afm.show)
 
     def add_field_to_selected(self, field_id: int):
@@ -466,10 +469,8 @@ class PreviewPanel(QWidget):
                     True,
                     update_on_ratio_change=True,
                 )
-                try:
+                if self.preview_img.is_connected:
                     self.preview_img.clicked.disconnect()
-                except RuntimeError:
-                    pass
                 for i, c in enumerate(self.containers):
                     c.setHidden(True)
             self.preview_img.show()
@@ -532,6 +533,8 @@ class PreviewPanel(QWidget):
                                 pass
                         elif filepath.suffix.lower() in VIDEO_TYPES:
                             video = cv2.VideoCapture(str(filepath))
+                            if video.get(cv2.CAP_PROP_FRAME_COUNT) <= 0:
+                                raise cv2.error("File is invalid or has 0 frames")
                             video.set(cv2.CAP_PROP_POS_FRAMES, 0)
                             success, frame = video.read()
                             frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
@@ -586,14 +589,12 @@ class PreviewPanel(QWidget):
                             f"[PreviewPanel][ERROR] Couldn't Render thumbnail for {filepath} (because of {e})"
                         )
 
-                    try:
+                    if self.preview_img.is_connected:
                         self.preview_img.clicked.disconnect()
-                    except RuntimeError:
-                        pass
                     self.preview_img.clicked.connect(
                         lambda checked=False, filepath=filepath: open_file(filepath)
                     )
-
+                    self.preview_img.is_connected = True
                 self.selected = list(self.driver.selected)
                 for i, f in enumerate(item.fields):
                     self.write_container(i, f)
@@ -639,10 +640,8 @@ class PreviewPanel(QWidget):
                     True,
                     update_on_ratio_change=True,
                 )
-                try:
+                if self.preview_img.is_connected:
                     self.preview_img.clicked.disconnect()
-                except RuntimeError:
-                    pass
 
             self.common_fields = []
             self.mixed_fields = []
@@ -771,12 +770,12 @@ class PreviewPanel(QWidget):
         """
         Replacement for tag_callback.
         """
-        try:
+        if self.is_connected:
             self.tags_updated.disconnect()
-        except RuntimeError:
-            pass
+
         logging.info("[UPDATE CONTAINER] Setting tags updated slot")
         self.tags_updated.connect(slot)
+        self.is_connected = True
 
     # def write_container(self, item:Union[Entry, Collation, Tag], index, field):
     def write_container(self, index, field, mixed=False):
@@ -1065,7 +1064,8 @@ class PreviewPanel(QWidget):
         )
         # remove_mb.setStandardButtons(QMessageBox.StandardButton.Cancel)
         remove_mb.setDefaultButton(cancel_button)
+        remove_mb.setEscapeButton(cancel_button)
         result = remove_mb.exec_()
         # logging.info(result)
-        if result == 1:
+        if result == 3:
             callback()

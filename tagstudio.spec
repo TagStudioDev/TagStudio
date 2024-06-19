@@ -26,7 +26,7 @@ a = Analysis(
     ['tagstudio/tag_studio.py'],
     pathex=[],
     binaries=[],
-    datas=[('tagstudio/resources', 'resources')],
+    datas=[('tagstudio/resources', 'resources'), ('tagstudio/src', 'src')],
     hiddenimports=[],
     hookspath=[],
     hooksconfig={},
