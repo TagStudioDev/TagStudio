@@ -28,9 +28,10 @@ from src.core.constants import (
     VIDEO_TYPES,
     IMAGE_TYPES,
     RAW_IMAGE_TYPES,
+    BLENDER_TYPES,
 )
 from src.core.utils.encoding import detect_char_encoding
-from src.qt.helpers.blender_thumbnailer import blendthumb
+from src.qt.helpers.blender_thumbnailer import blend_thumb
 
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 
@@ -207,28 +208,23 @@ class ThumbRenderer(QObject):
                 # 	image = Image.open(img_buf)
 
                 # Blender ===========================================================
-                elif _filepath.suffix.lower() == ".blend":
+                elif _filepath.suffix.lower() in BLENDER_TYPES:
                     try:
-                        blendthumbnail = blendthumb(str(_filepath))
-                        image = Image.frombuffer(
-                            "RGBA",
-                            (blendthumbnail[1], blendthumbnail[2]),
-                            blendthumbnail[0],
-                        )
-                        image = ImageOps.flip(image)
-                        image = ImageOps.exif_transpose(image)
+                        blend_image = blend_thumb(str(_filepath))
 
+                        bg = Image.new("RGB", blend_image.size, color="#1e1e1e")
+                        bg.paste(blend_image, mask=blend_image.getchannel(3))
+                        image = bg
+                        
                     except (
                         AttributeError,
                         UnidentifiedImageError,
                         FileNotFoundError,
-                        DecompressionBombError,
-                        UnicodeDecodeError,
                         TypeError,
                     ) as e:
                         if str(e) == "expected string or buffer":
                             logging.info(
-                                f"[ThumbRenderer]{ERROR} Can't read the blender thumbnail of {_filepath.name}. Either deleted or doesn't have a thumbnail."
+                                f"[ThumbRenderer]{ERROR} {_filepath.name} Doesn't have thumbnail saved. ({type(e).__name__})"
                             )
 
                         else:
@@ -236,18 +232,9 @@ class ThumbRenderer(QObject):
                                 f"[ThumbRenderer]{ERROR}: Couldn't render thumbnail for {_filepath.name} ({type(e).__name__})"
                             )
 
-                        # Making the "No blend thumbnail avaliable" thumbnail
-                        font_path = "./resources/qt/fonts/Oxanium-Bold.ttf"
-                        font = ImageFont.truetype(font_path, 17)
-                        bg = Image.new("RGB", (256, 256), color="#1e1e1e")
-                        draw = ImageDraw.Draw(bg)
-                        draw.text(
-                            (16, 16),
-                            "Can't read blend thumbnail",
-                            file=(255, 255, 255),
-                            font=font,
-                        )
-                        image = bg
+                        image = ThumbRenderer.thumb_file_default_512.resize(
+                        (adj_size, adj_size), resample=Image.Resampling.BILINEAR
+                    )
 
                 # No Rendered Thumbnail ========================================
                 else:
