@@ -34,7 +34,6 @@ import os
 
 
 def blend_extract_thumb(path):
-    
     REND = b"REND"
     TEST = b"TEST"
 
@@ -105,6 +104,6 @@ def blend_thumb(file_in):
         "RGBA",
         (width, height),
         buf,
-        )
+    )
     image = ImageOps.flip(image)
     return image
