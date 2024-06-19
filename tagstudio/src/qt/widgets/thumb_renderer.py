@@ -215,7 +215,7 @@ class ThumbRenderer(QObject):
                         bg = Image.new("RGB", blend_image.size, color="#1e1e1e")
                         bg.paste(blend_image, mask=blend_image.getchannel(3))
                         image = bg
-                        
+
                     except (
                         AttributeError,
                         UnidentifiedImageError,
@@ -233,8 +233,8 @@ class ThumbRenderer(QObject):
                             )
 
                         image = ThumbRenderer.thumb_file_default_512.resize(
-                        (adj_size, adj_size), resample=Image.Resampling.BILINEAR
-                    )
+                            (adj_size, adj_size), resample=Image.Resampling.BILINEAR
+                        )
 
                 # No Rendered Thumbnail ========================================
                 else:
