@@ -889,12 +889,12 @@ class Library:
                     and "tagstudio_thumbs" not in f.parts
                     and not f.is_dir()
                 ):
-                    if f.suffix not in self.ext_list and self.is_exclude_list:
+                    if f.suffix.lower() not in self.ext_list and self.is_exclude_list:
                         self.dir_file_count += 1
                         file = f.relative_to(self.library_dir)
                         if file not in self.filename_to_entry_id_map:
                             self.files_not_in_library.append(file)
-                    elif f.suffix in self.ext_list and not self.is_exclude_list:
+                    elif f.suffix.lower() in self.ext_list and not self.is_exclude_list:
                         self.dir_file_count += 1
                         file = f.relative_to(self.library_dir)
                         try:
@@ -1382,7 +1382,7 @@ class Library:
             # non_entry_count = 0
             # Iterate over all Entries =============================================================
             for entry in self.entries:
-                allowed_ext: bool = entry.filename.suffix not in self.ext_list
+                allowed_ext: bool = entry.filename.suffix.lower() not in self.ext_list
                 # try:
                 # entry: Entry = self.entries[self.file_to_library_index_map[self._source_filenames[i]]]
                 # print(f'{entry}')
@@ -1539,7 +1539,7 @@ class Library:
         else:
             for entry in self.entries:
                 added = False
-                allowed_ext = entry.filename.suffix not in self.ext_list
+                allowed_ext = entry.filename.suffix.lower() not in self.ext_list
                 if allowed_ext == self.is_exclude_list:
                     for f in entry.fields:
                         if self.get_field_attr(f, "type") == "collation":
