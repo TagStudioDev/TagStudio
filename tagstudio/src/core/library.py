@@ -1339,22 +1339,35 @@ class Library:
             field_data_list = meta_condition.strip().split(";")
             for field_data in field_data_list:
                 field_parsed = field_data.strip().split(":")
-                if len(field_parsed) < 2:
+                # if no ':' found, process this part as tags and flags
+                if len(field_parsed) == 1:
                     unbound_values = (
-                        field_parsed[0].strip().lower().casefold().split()
+                        field_parsed[0].strip().casefold().split()
                     )
                     if query_part.get("unbound") is None:
                         query_part["unbound"] = unbound_values
                     else:
                         query_part["unbound"].extend(unbound_values)
                     continue
-                if len(field_parsed) != 2:
+                if len(field_parsed) > 2:
                     logging.warning("""[ERROR] Attempt to parse mutiple fields\
                                     as one! Do not forget to specify ';'\
                                     between different meta fields""")
-                query_part[field_parsed[0].lower().strip().casefold()] = (
-                    field_parsed[1].lower().strip().casefold()
+                query_part[field_parsed[0].strip().casefold()] = (
+                    field_parsed[1].strip().casefold()
                 )
+            negative_flags: list = []
+            # selecting null fields are done with '-field' word in unbound part
+            if 'unbound' in query_part.keys():
+                flags: list = query_part.get('unbound', [])
+                for i, flag in enumerate(flags.copy()):
+                    if flag[0] == '-':
+                        negative_flag = flag[1:]
+                        negative_flags.append(negative_flag)
+                        flags.remove(flag)
+                if negative_flags:
+                    query_part['NEGATIVE'] = negative_flags
+                query_part['unbound'] = flags
             meta_list.append(query_part)
 
         logging.info(f"Parsed values: {meta_list}")
@@ -1376,9 +1389,9 @@ class Library:
         results: list[tuple[ItemType, int]] | None = []
         collations_added: list = []
         if query:
-            f = Filter(self)
+            filter = Filter(self)
             processed_query = self.parse_metadata(query)
-            results = f.filter_results(query, processed_query, search_mode)
+            results = filter.filter_results(query, processed_query, search_mode)
             if results is None:
                 return []
             else:
@@ -1389,20 +1402,20 @@ class Library:
                 added = False
                 allowed_ext = entry.filename.suffix not in self.ext_list
                 if allowed_ext == self.is_exclude_list:
-                    for f in entry.fields:  # type: ignore [assignment]
-                        if self.get_field_attr(f, "type") == "collation":  # type: ignore [arg-type]
+                    for field in entry.fields:
+                        if self.get_field_attr(field, "type") == "collation":
                             if (
-                                self.get_field_attr(f, "content")  # type: ignore [arg-type]
+                                self.get_field_attr(field, "content")  # type: ignore [arg-type]
                                 not in collations_added
                             ):
                                 results.append(
                                     (
                                         ItemType.COLLATION,
-                                        self.get_field_attr(f, "content"),  # type: ignore [arg-type]
+                                        self.get_field_attr(field, "content"),  # type: ignore [arg-type]
                                     )
                                 )
                                 collations_added.append(
-                                    self.get_field_attr(f, "content")  # type: ignore [arg-type]
+                                    self.get_field_attr(field, "content")  # type: ignore [arg-type]
                                 )
                             added = True
 
@@ -2173,6 +2186,18 @@ class Library:
             entry.fields, key=lambda x: order.index(self.get_field_attr(x, "id"))
         )
 
+class SpecialFlag:
+    only_untagged: bool
+    only_no_author: bool
+    only_empty: bool
+    only_missing: bool
+
+    def __init__(self, query: str):
+        self.only_no_author: bool = "no author" in query or "no artist" in query
+        self.only_untagged: bool = "untagged" in query or "no tags" in query
+        self.only_empty: bool = "empty" in query or "no fields" in query
+        self.only_missing: bool = "missing" in query or "no file" in query
+
 
 class Filter:
     def __init__(self, lib: Library) -> None:
@@ -2226,7 +2251,7 @@ class Filter:
                 for key, value in query_part.items():
                     select_empty: bool = False
                     if isinstance(value, str):
-                        value = value.strip().casefold().lower()
+                        value = value.strip().casefold()
                         if value == "null":
                             select_empty = True
                     entry_value = entry_fields.get(key)
@@ -2255,9 +2280,7 @@ class Filter:
                         is_selected = True
                     # check if entry's value match the query
                     else:
-                        print(value, entry_value)
                         if entry_value is not None and value in entry_value:
-                            print("true")
                             is_selected = True
                         else:
                             is_selected = False
@@ -2272,16 +2295,17 @@ class Filter:
         # Entries should match all parts between '|'
         result_set: set = set()
         if search_mode == SearchMode.AND:
-            if len(pre_results) <= 1:
-                result_set = set(pre_results[0])
+            if len(pre_results) == 1:
                 return list(pre_results[0])
+            elif len(pre_results) == 0:
+                return []
             result_set = set(pre_results[0])
             # entries should be found in every part of query
-            for result in range(1, len(pre_results)):
+            for and_result in pre_results[1:]:
                 set_copy: list = list(result_set.copy())
                 for recorded_entry in set_copy:
                     entry_detected: bool = False
-                    for new_entry in pre_results[result]:
+                    for new_entry in and_result:
                         if recorded_entry == new_entry:
                             entry_detected = True
                             break
@@ -2290,9 +2314,9 @@ class Filter:
             return list(result_set)
         # Entries should match any of parts between '|'
         elif search_mode == SearchMode.OR:
-            for result in pre_results:  # type: ignore [assignment]
-                for entry in result:  # type: ignore [attr-defined]
-                    result_set.add(entry)
+            for or_result in pre_results:
+                for or_entry in or_result:
+                    result_set.add(or_entry)
             return list(result_set)
 
     def handle_tag_id(self, query: str, entry_tags: list[int]) -> bool:
@@ -2312,14 +2336,8 @@ class Filter:
         unbound: list[str],
     ) -> tuple[ItemType, int] | None:
         collations_added: list = []
-        orig_query = "".join(unbound)
-        # TODO: Expand this to allow for dynamic fields to work.
-        only_no_author: bool = "no author" in orig_query or "no artist" in orig_query
-        only_untagged: bool = "untagged" in orig_query or "no tags" in orig_query
-        only_empty: bool = "empty" in orig_query or "no fields" in orig_query
-        only_missing: bool = "missing" in orig_query or "no file" in orig_query
 
-        special_flags = (only_untagged, only_no_author, only_empty, only_missing)
+        special_flags = SpecialFlag("".join(unbound))
         if self.add_entries_from_special_flags(
             special_flags, entry_tags, entry_authors, entry
         ):
@@ -2379,22 +2397,21 @@ class Filter:
 
     def add_entries_from_special_flags(
         self,
-        special_flags: tuple[bool, bool, bool, bool],
+        special_flags: SpecialFlag,
         entry_tags: list[int],
         entry_authors: list[list[str]],
         entry: Entry,
     ):
-        (only_untagged, only_no_author, only_empty, only_missing) = special_flags
-        if only_untagged and not entry_tags:
+        if special_flags.only_untagged and not entry_tags:
             return True
-        elif only_no_author and not entry_authors:
+        elif special_flags.only_no_author and not entry_authors:
             return True
-        elif only_empty and (
+        elif special_flags.only_empty and (
             not (entry.fields and entry.fields[0])
         ):
             return True
         elif (
-            only_missing
+            special_flags.only_missing
             and (self.library_dir / entry.path / entry.filename).resolve()
             in self.missing_files
         ):
@@ -2454,3 +2471,5 @@ class Filter:
                     all_tag_terms.remove(all_tag_terms[i])
                     break
         return all_tag_terms
+
+

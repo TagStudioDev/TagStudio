@@ -11,7 +11,12 @@ test_entry_one = Entry(
     path=".",
     fields=[{"6": [1000, 1001]}, {"1": ["James"]}],
 )
-test_entry_two = Entry(id=1, filename="test_file2.png", path="test_folder", fields=[{}])
+test_entry_two = Entry(
+        id=1,
+        filename="test_file2.png",
+        path="test_folder",
+        fields=[{}]
+)
 test_entry_three = Entry(
     id=2,
     filename="test_file3.png",
@@ -42,6 +47,11 @@ decomposition_cases: list[tuple] = [
     ("tag1 | tag2", [{"unbound": ["tag1"]}, {"unbound": ["tag2"]}]),
     ("tag1 tag2 | tag3", [{"unbound": ["tag1", "tag2"]}, {"unbound": ["tag3"]}]),
     ("tag1; description: desc", [{"unbound": ["tag1"], "description": "desc"}]),
+    ("tag1; description: desc", [{"unbound": ["tag1"], "description": "desc"}]),
+    ("tag1 -description | description: desc", [
+        {"unbound": ["tag1"], "NEGATIVE": ["description"]},
+        {"description": "desc"}
+    ]),
 ]
 
 remap_cases: list[tuple] = [
