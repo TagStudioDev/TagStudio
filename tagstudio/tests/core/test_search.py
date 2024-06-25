@@ -1,4 +1,4 @@
-from src.core.library import ItemType, Library, Filter, Entry
+from src.core.library import ItemType, Library, Filter, Entry, SpecialFlag
 from src.core.enums import SearchMode
 import pytest
 
@@ -83,6 +83,13 @@ add_entries_from_special_cases: list[tuple] = [
     (test_entry_four, "untagged", True),
 ]
 
+# no_author, untagged, empty, missing
+special_flag_cases: list[tuple] = [
+        ("no author untagged", (True, True, False, False)),
+        ("empty no file", (False, False, True, True)),
+        ("missing untagged no artist", (True, True, False, True)),
+]
+
 filter_case_one: tuple = (
     [{"unbound": "no author", "description": "des"}],
     SearchMode.OR,
@@ -144,17 +151,21 @@ def test_populate_tags(entry: Entry, expected: tuple):
 
 
 @pytest.mark.parametrize("entry,unbound_query,expected", add_entries_from_special_cases)
-def test_add_entrues_from_special(entry: Entry, unbound_query: str, expected: bool):
-    only_no_author: bool = "no author" in unbound_query or "no artist" in unbound_query
-    only_untagged: bool = "untagged" in unbound_query or "no tags" in unbound_query
-    only_empty: bool = "empty" in unbound_query or "no fields" in unbound_query
-    only_missing: bool = "missing" in unbound_query or "no file" in unbound_query
-    special_flags = (only_untagged, only_no_author, only_empty, only_missing)
+def test_add_entries_from_special(entry: Entry, unbound_query: str, expected: bool):
+    special_flags = SpecialFlag(unbound_query)
     (entry_tags, entry_authors) = filter.populate_tags(entry)
     result = filter.add_entries_from_special_flags(
         special_flags, entry_tags, entry_authors, entry
     )
     assert result == expected
+
+
+@pytest.mark.parametrize("query,flags", special_flag_cases)
+def test_special_flag(query: str, flags: tuple[bool, bool, bool, bool]):
+    special_flags = SpecialFlag(query)
+    result = (special_flags.only_no_author, special_flags.only_untagged,
+              special_flags.only_empty, special_flags.only_missing)
+    assert result == flags
 
 
 @pytest.mark.parametrize("split_query,search_mode,expected", filter_results_cases)

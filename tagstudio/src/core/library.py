@@ -2267,9 +2267,16 @@ class Filter:
                             is_selected = False
                             break
                     elif key == "unbound":
-                        entry_tuple = self.handle_unbound(
-                            entry, all_tag_terms, entry_tags, entry_authors, query_words
-                        )
+                        entry_tuple = None
+                        # HACK
+                        if isinstance(query_words, str):
+                            query_words = [query_words]
+                        if isinstance(query_words, list):
+                            entry_tuple = self.handle_unbound(
+                                                    entry, all_tag_terms,
+                                                    entry_tags, entry_authors,
+                                                    query_words
+                                                )
                         if entry_tuple is None:
                             is_selected = False
                             break
@@ -2292,7 +2299,7 @@ class Filter:
                     filtered_entries.append(entry_tuple)
 
             pre_results.append(filtered_entries)
-        # Entries should match all parts between '|'
+        # Entries should match all parts separated by '|'
         result_set: set = set()
         if search_mode == SearchMode.AND:
             if len(pre_results) == 1:
@@ -2312,7 +2319,7 @@ class Filter:
                     if not entry_detected:
                         result_set.remove(recorded_entry)
             return list(result_set)
-        # Entries should match any of parts between '|'
+        # Entries should match any of parts separated by '|'
         elif search_mode == SearchMode.OR:
             for or_result in pre_results:
                 for or_entry in or_result:
