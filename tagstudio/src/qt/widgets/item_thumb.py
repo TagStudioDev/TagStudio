@@ -1,13 +1,11 @@
 # Copyright (C) 2024 Travis Abendshien (CyanVoxel).
 # Licensed under the GPL-3.0 License.
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
-
-
+import contextlib
 import logging
 import os
 import time
 import typing
-from types import FunctionType
 from pathlib import Path
 from typing import Optional
 
@@ -23,9 +21,15 @@ from PySide6.QtWidgets import (
     QCheckBox,
 )
 
-
+from src.core.enums import FieldID
 from src.core.library import ItemType, Library, Entry
-from src.core.constants import AUDIO_TYPES, VIDEO_TYPES, IMAGE_TYPES
+from src.core.constants import (
+    AUDIO_TYPES,
+    VIDEO_TYPES,
+    IMAGE_TYPES,
+    TAG_FAVORITE,
+    TAG_ARCHIVED,
+)
 from src.qt.flowlayout import FlowWidget
 from src.qt.helpers.file_opener import FileOpenerHelper
 from src.qt.widgets.thumb_renderer import ThumbRenderer
@@ -38,9 +42,6 @@ ERROR = f"[ERROR]"
 WARNING = f"[WARNING]"
 INFO = f"[INFO]"
 
-DEFAULT_META_TAG_FIELD = 8
-TAG_FAVORITE = 1
-TAG_ARCHIVED = 0
 
 logging.basicConfig(format="%(message)s", level=logging.INFO)
 
@@ -394,19 +395,22 @@ class ItemThumb(FlowWidget):
     def update_clickable(self, clickable: typing.Callable):
         """Updates attributes of a thumbnail element."""
         # logging.info(f'[GUI] Updating Click Event for element {id(element)}: {id(clickable) if clickable else None}')
-        try:
+        if self.thumb_button.is_connected:
             self.thumb_button.clicked.disconnect()
-        except RuntimeError:
-            pass
         if clickable:
             self.thumb_button.clicked.connect(clickable)
+            self.thumb_button.is_connected = True
 
     def update_badges(self):
         if self.mode == ItemType.ENTRY:
             # logging.info(f'[UPDATE BADGES] ENTRY: {self.lib.get_entry(self.item_id)}')
             # logging.info(f'[UPDATE BADGES] ARCH: {self.lib.get_entry(self.item_id).has_tag(self.lib, 0)}, FAV: {self.lib.get_entry(self.item_id).has_tag(self.lib, 1)}')
-            self.assign_archived(self.lib.get_entry(self.item_id).has_tag(self.lib, 0))
-            self.assign_favorite(self.lib.get_entry(self.item_id).has_tag(self.lib, 1))
+            self.assign_archived(
+                self.lib.get_entry(self.item_id).has_tag(self.lib, TAG_ARCHIVED)
+            )
+            self.assign_favorite(
+                self.lib.get_entry(self.item_id).has_tag(self.lib, TAG_FAVORITE)
+            )
 
     def set_item_id(self, id: int):
         """
@@ -475,7 +479,7 @@ class ItemThumb(FlowWidget):
                 entry.add_tag(
                     self.panel.driver.lib,
                     tag_id,
-                    field_id=DEFAULT_META_TAG_FIELD,
+                    field_id=FieldID.META_TAGS,
                     field_index=-1,
                 )
             else:

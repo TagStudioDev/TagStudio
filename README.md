@@ -176,7 +176,7 @@ As of writing (Alpha v9.3.0) the project is in a useable state, however it lacks
 ### What Features Are You Planning on Adding?
 
 > [!IMPORTANT]
-> See the [Planned Features](/doc/planned_features.md) documentation for the latest feature lists. The lists here are currently being migrated over there with individual pages for larger features.
+> See the [Planned Features](/doc/updates/planned_features.md) documentation for the latest feature lists. The lists here are currently being migrated over there with individual pages for larger features.
 
 Of the several features I have planned for the project, these are broken up into “priority” features and “future” features. Priority features were originally intended for the first public release, however are currently absent from the Alpha v9.x.x builds.
 
