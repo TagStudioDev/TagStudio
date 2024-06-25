@@ -11,12 +11,7 @@ test_entry_one = Entry(
     path=".",
     fields=[{"6": [1000, 1001]}, {"1": ["James"]}],
 )
-test_entry_two = Entry(
-        id=1,
-        filename="test_file2.png",
-        path="test_folder",
-        fields=[{}]
-)
+test_entry_two = Entry(id=1, filename="test_file2.png", path="test_folder", fields=[{}])
 test_entry_three = Entry(
     id=2,
     filename="test_file3.png",
@@ -33,7 +28,7 @@ test_entry_five = Entry(
     id=4,
     filename="test_file5.png",
     path="test_folder",
-    fields=[{"1": ["Victor"]},{"1": ["James"]}],
+    fields=[{"1": ["Victor"]}, {"1": ["James"]}],
 )
 test_entry_six = Entry(
     id=5,
@@ -48,7 +43,7 @@ test_library.entries = [
     test_entry_three,
     test_entry_four,
     test_entry_five,
-    test_entry_six
+    test_entry_six,
 ]
 
 filter = Filter(test_library)
@@ -62,10 +57,10 @@ decomposition_cases: list[tuple] = [
     ("tag1 tag2 | tag3", [{"unbound": ["tag1", "tag2"]}, {"unbound": ["tag3"]}]),
     ("tag1; description: desc", [{"unbound": ["tag1"], "description": "desc"}]),
     ("tag1; description: desc", [{"unbound": ["tag1"], "description": "desc"}]),
-    ("tag1 -description | description: desc", [
-        {"unbound": ["tag1"], "EMPTY": ["description"]},
-        {"description": "desc"}
-    ]),
+    (
+        "tag1 -description | description: desc",
+        [{"unbound": ["tag1"], "EMPTY": ["description"]}, {"description": "desc"}],
+    ),
 ]
 
 remap_cases: list[tuple] = [
@@ -73,7 +68,7 @@ remap_cases: list[tuple] = [
     (test_entry_two, {}),
     (test_entry_three, {"tags": [1001], "description": ["description"]}),
     (test_entry_four, {"author": ["Victor"], "description": ["description"]}),
-    (test_entry_five, {"author": ["Victor", "James"]})
+    (test_entry_five, {"author": ["Victor", "James"]}),
 ]
 
 filename_cases: list[tuple] = [
@@ -93,9 +88,9 @@ populate_tags_cases: list[tuple] = [
 
 # no_author, untagged, empty, missing
 special_flag_cases: list[tuple] = [
-        ("no author untagged", (True, True, False, False)),
-        ("empty no file", (False, False, True, True)),
-        ("missing untagged no artist", (True, True, False, True)),
+    ("no author untagged", (True, True, False, False)),
+    ("empty no file", (False, False, True, True)),
+    ("missing untagged no artist", (True, True, False, True)),
 ]
 
 add_entries_from_special_cases: list[tuple] = [
@@ -106,22 +101,27 @@ add_entries_from_special_cases: list[tuple] = [
 ]
 
 required_fields_empty_cases: list[tuple] = [
-        (test_entry_one, ["author"], False),
-        (test_entry_one, ["description"], True),
-        (test_entry_two, ["description", "author"], True),
-        (test_entry_three, ["author"], True),
-
+    (test_entry_one, ["author"], False),
+    (test_entry_one, ["description"], True),
+    (test_entry_two, ["description", "author"], True),
+    (test_entry_three, ["author"], True),
 ]
 
 filter_case_one: tuple = (
     [{"unbound": "no author", "description": "des"}],
     SearchMode.OR,
-    [(ItemType.ENTRY, 2),(ItemType.ENTRY, 5)],
+    [(ItemType.ENTRY, 2), (ItemType.ENTRY, 5)],
 )
 filter_case_two: tuple = (
     [{"unbound": "no tags"}, {"description": "des"}],
     SearchMode.OR,
-    [(ItemType.ENTRY, 1), (ItemType.ENTRY, 2), (ItemType.ENTRY, 3), (ItemType.ENTRY, 4), (ItemType.ENTRY, 5)],
+    [
+        (ItemType.ENTRY, 1),
+        (ItemType.ENTRY, 2),
+        (ItemType.ENTRY, 3),
+        (ItemType.ENTRY, 4),
+        (ItemType.ENTRY, 5),
+    ],
 )
 filter_case_three: tuple = (
     [{"tag_id": "1000"}, {"unbound": "no author"}],
@@ -137,33 +137,43 @@ filter_case_four: tuple = (
 filter_case_five: tuple = (
     [{"tag_id": "1000"}, {"unbound": "no author"}],
     SearchMode.OR,
-    [(ItemType.ENTRY, 0), (ItemType.ENTRY, 1), (ItemType.ENTRY, 2), (ItemType.ENTRY, 5)],
+    [
+        (ItemType.ENTRY, 0),
+        (ItemType.ENTRY, 1),
+        (ItemType.ENTRY, 2),
+        (ItemType.ENTRY, 5),
+    ],
 )
 
 negative_filter_case_one: tuple = (
-        [{"EMPTY": "description"}],
-        SearchMode.OR,
-        [(ItemType.ENTRY, 0),(ItemType.ENTRY, 1),(ItemType.ENTRY, 4)],
+    [{"EMPTY": "description"}],
+    SearchMode.OR,
+    [(ItemType.ENTRY, 0), (ItemType.ENTRY, 1), (ItemType.ENTRY, 4)],
 )
 
-negative_filter_case_two : tuple = (
-        [{"EMPTY": "author"}],
-        SearchMode.OR,
-        [(ItemType.ENTRY, 1),(ItemType.ENTRY, 2), (ItemType.ENTRY, 5)],
+negative_filter_case_two: tuple = (
+    [{"EMPTY": "author"}],
+    SearchMode.OR,
+    [(ItemType.ENTRY, 1), (ItemType.ENTRY, 2), (ItemType.ENTRY, 5)],
 )
 
-negative_filter_case_three : tuple = (
-        [{"-description": "foo"}],
-        SearchMode.OR,
-        [(ItemType.ENTRY, 0),(ItemType.ENTRY, 1),(ItemType.ENTRY, 2),(ItemType.ENTRY, 3),(ItemType.ENTRY, 4)],
+negative_filter_case_three: tuple = (
+    [{"-description": "foo"}],
+    SearchMode.OR,
+    [
+        (ItemType.ENTRY, 0),
+        (ItemType.ENTRY, 1),
+        (ItemType.ENTRY, 2),
+        (ItemType.ENTRY, 3),
+        (ItemType.ENTRY, 4),
+    ],
 )
 
-negative_filter_case_four : tuple = (
-        [{"-description": "desc", "description": "foo"}],
-        SearchMode.OR,
-        [],
+negative_filter_case_four: tuple = (
+    [{"-description": "desc", "description": "foo"}],
+    SearchMode.OR,
+    [],
 )
-
 
 
 filter_results_cases: list[tuple] = [
@@ -175,7 +185,7 @@ filter_results_cases: list[tuple] = [
     negative_filter_case_one,
     negative_filter_case_two,
     negative_filter_case_three,
-    negative_filter_case_four
+    negative_filter_case_four,
 ]
 
 ### TESTS ###
@@ -202,12 +212,18 @@ def test_populate_tags(entry: Entry, expected: tuple):
     assert filter.populate_tags(entry) == expected
     pass
 
+
 @pytest.mark.parametrize("query,flags", special_flag_cases)
 def test_special_flag(query: str, flags: tuple[bool, bool, bool, bool]):
     special_flags = SpecialFlag(query)
-    result = (special_flags.only_no_author, special_flags.only_untagged,
-              special_flags.only_empty, special_flags.only_missing)
+    result = (
+        special_flags.only_no_author,
+        special_flags.only_untagged,
+        special_flags.only_empty,
+        special_flags.only_missing,
+    )
     assert result == flags
+
 
 @pytest.mark.parametrize("entry,unbound_query,expected", add_entries_from_special_cases)
 def test_add_entries_from_special(entry: Entry, unbound_query: str, expected: bool):
@@ -218,12 +234,12 @@ def test_add_entries_from_special(entry: Entry, unbound_query: str, expected: bo
     )
     assert result == expected
 
+
 @pytest.mark.parametrize("entry,empty_fields,expected", required_fields_empty_cases)
 def test_required_fields_empty(entry: Entry, empty_fields: list[str], expected: bool):
     entry_fields: dict = filter.remap_fields(entry)
     result = filter.required_fields_empty(entry_fields, empty_fields)
     assert result == expected
-
 
 
 @pytest.mark.parametrize("split_query,search_mode,expected", filter_results_cases)

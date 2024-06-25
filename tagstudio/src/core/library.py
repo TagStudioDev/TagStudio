@@ -1342,9 +1342,7 @@ class Library:
                 field_parsed = field_data.strip().split(":")
                 # if no ':' found, process this part as tags and flags
                 if len(field_parsed) == 1:
-                    unbound_values = (
-                        field_parsed[0].strip().casefold().split()
-                    )
+                    unbound_values = field_parsed[0].strip().casefold().split()
                     if query_part.get("unbound") is None:
                         query_part["unbound"] = unbound_values
                     else:
@@ -1359,16 +1357,16 @@ class Library:
                 )
             negative_flags: list = []
             # selecting null fields are done with '-field' word in unbound part
-            if 'unbound' in query_part.keys():
-                flags: list = query_part.get('unbound', [])
+            if "unbound" in query_part.keys():
+                flags: list = query_part.get("unbound", [])
                 for flag in flags.copy():
-                    if flag[0] == '-':
+                    if flag[0] == "-":
                         negative_flag = flag[1:]
                         negative_flags.append(negative_flag)
                         flags.remove(flag)
                 if negative_flags:
-                    query_part['EMPTY'] = negative_flags
-                query_part['unbound'] = flags
+                    query_part["EMPTY"] = negative_flags
+                query_part["unbound"] = flags
             meta_list.append(query_part)
 
         logging.info(f"Parsed values: {meta_list}")
@@ -1406,17 +1404,17 @@ class Library:
                     for field in entry.fields:
                         if self.get_field_attr(field, "type") == "collation":
                             if (
-                                self.get_field_attr(field, "content")  # type: ignore [arg-type]
+                                self.get_field_attr(field, "content")
                                 not in collations_added
                             ):
                                 results.append(
                                     (
                                         ItemType.COLLATION,
-                                        self.get_field_attr(field, "content"),  # type: ignore [arg-type]
+                                        self.get_field_attr(field, "content"),
                                     )
                                 )
                                 collations_added.append(
-                                    self.get_field_attr(field, "content")  # type: ignore [arg-type]
+                                    self.get_field_attr(field, "content")
                                 )
                             added = True
 
@@ -2178,6 +2176,7 @@ class Library:
             entry.fields, key=lambda x: order.index(self.get_field_attr(x, "id"))
         )
 
+
 class SpecialFlag:
     only_untagged: bool
     only_no_author: bool
@@ -2265,10 +2264,12 @@ class Filter:
                             query_words = [query_words]
                         if isinstance(query_words, list):
                             entry_tuple = self.handle_unbound(
-                                                    entry, all_tag_terms,
-                                                    entry_tags, entry_authors,
-                                                    query_words
-                                                )
+                                entry,
+                                all_tag_terms,
+                                entry_tags,
+                                entry_authors,
+                                query_words,
+                            )
                         if entry_tuple is None:
                             is_selected = False
                             break
@@ -2284,11 +2285,11 @@ class Filter:
                             is_selected = False
                             break
                     else:
-                        if key[0] == '-':
+                        if key[0] == "-":
                             entry_value = entry_fields.get(key[1:])
                             if isinstance(entry_value, list):
                                 entry_value = "".join(entry_value)
-                            if entry_value is  None or value not in entry_value:
+                            if entry_value is None or value not in entry_value:
                                 is_selected = True
                             else:
                                 is_selected = False
@@ -2423,9 +2424,7 @@ class Filter:
             return True
         elif special_flags.only_no_author and not entry_authors:
             return True
-        elif special_flags.only_empty and (
-            not (entry.fields and entry.fields[0])
-        ):
+        elif special_flags.only_empty and (not (entry.fields and entry.fields[0])):
             return True
         elif (
             special_flags.only_missing
@@ -2440,8 +2439,12 @@ class Filter:
         for field in entry.fields:
             for key, value in field.items():
                 key_mapped = self._field_id_to_name_map.get(int(key))
-                key_type = self.get_field_obj(key)['type']
-                if key_type != 'tag_box' and key_mapped != "author" and key_mapped != "artist":
+                key_type = self.get_field_obj(key)["type"]
+                if (
+                    key_type != "tag_box"
+                    and key_mapped != "author"
+                    and key_mapped != "artist"
+                ):
                     if key_mapped in entry_fields.keys():
                         entry_fields[key_mapped].append(value)
                     else:
@@ -2475,8 +2478,8 @@ class Filter:
         if not query:
             return False
 
-        file_path_fuzzy:list = []
-        file_filename_fuzzy:list = []
+        file_path_fuzzy: list = []
+        file_filename_fuzzy: list = []
         for char in query:
             if char in str(entry.path).casefold():
                 file_path_fuzzy.append(char)
@@ -2489,7 +2492,9 @@ class Filter:
             return True
         return False
 
-    def required_fields_empty(self, entry_fields: dict, empty_fields: list[str]) -> bool:
+    def required_fields_empty(
+        self, entry_fields: dict, empty_fields: list[str]
+    ) -> bool:
         for field in empty_fields:
             if field in entry_fields.keys() and entry_fields.get(field) is not None:
                 return False
@@ -2512,5 +2517,3 @@ class Filter:
                     all_tag_terms.remove(all_tag_terms[i])
                     break
         return all_tag_terms
-
-
