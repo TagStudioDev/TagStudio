@@ -1360,13 +1360,13 @@ class Library:
             # selecting null fields are done with '-field' word in unbound part
             if 'unbound' in query_part.keys():
                 flags: list = query_part.get('unbound', [])
-                for i, flag in enumerate(flags.copy()):
+                for flag in flags.copy():
                     if flag[0] == '-':
                         negative_flag = flag[1:]
                         negative_flags.append(negative_flag)
                         flags.remove(flag)
                 if negative_flags:
-                    query_part['NEGATIVE'] = negative_flags
+                    query_part['EMPTY'] = negative_flags
                 query_part['unbound'] = flags
             meta_list.append(query_part)
 
@@ -2282,16 +2282,33 @@ class Filter:
                             break
                         else:
                             is_selected = True
-                    # if entry does not have info on requested key
-                    elif select_empty and (entry_value is None or entry_value == ""):
-                        is_selected = True
-                    # check if entry's value match the query
-                    else:
-                        if entry_value is not None and value in entry_value:
+                    elif key == "EMPTY":
+                        empty_fields = value
+                        if not isinstance(empty_fields, list):
+                            empty_fields = [empty_fields]
+                        if self.required_fields_empty(entry_fields, empty_fields):
                             is_selected = True
                         else:
                             is_selected = False
                             break
+                    else:
+                        if key[0] == '-':
+                            entry_value = entry_fields.get(key[1:])
+                            if isinstance(entry_value, list):
+                                entry_value = "".join(entry_value)
+                            if entry_value is  None or value not in entry_value:
+                                is_selected = True
+                            else:
+                                is_selected = False
+                                break
+                        else:
+                            if isinstance(entry_value, list):
+                                entry_value = "".join(entry_value)
+                            if entry_value is not None and value in entry_value:
+                                is_selected = True
+                            else:
+                                is_selected = False
+                                break
 
                 if is_selected and entry_tuple is None:
                     filtered_entries.append((ItemType.ENTRY, entry.id))
@@ -2345,6 +2362,7 @@ class Filter:
         collations_added: list = []
 
         special_flags = SpecialFlag("".join(unbound))
+
         if self.add_entries_from_special_flags(
             special_flags, entry_tags, entry_authors, entry
         ):
@@ -2428,10 +2446,19 @@ class Filter:
     def remap_fields(self, entry: Entry) -> dict[str | int, str]:
         entry_fields: dict = {}
         for field in entry.fields:
-            if len(field.keys()) > 0:
-                field_keys = list(field.keys())
-                field_key = self._field_id_to_name_map.get(int(field_keys[0]))
-                entry_fields[field_key] = list(field.values())[0]
+            for key, value in field.items():
+                key_mapped = self._field_id_to_name_map.get(int(key))
+                key_type = self.get_field_obj(key)['type']
+                if key_type != 'tag_box' and key_mapped != "author" and key_mapped != "artist":
+                    if key_mapped in entry_fields.keys():
+                        entry_fields[key_mapped].append(value)
+                    else:
+                        entry_fields[key_mapped] = [value]
+                else:
+                    if key_mapped in entry_fields.keys():
+                        entry_fields[key_mapped].extend(value)
+                    else:
+                        entry_fields[key_mapped] = value
         return entry_fields
 
     def populate_tags(self, entry: Entry) -> tuple[list[int], list[list[str]]]:
@@ -2455,11 +2482,26 @@ class Filter:
     def check_filename(self, entry: Entry, query: str | None) -> bool:
         if not query:
             return False
-        if [q for q in query if (q in str(entry.path).lower())]:
+
+        file_path_fuzzy:list = []
+        file_filename_fuzzy:list = []
+        for char in query:
+            if char in str(entry.path).casefold():
+                file_path_fuzzy.append(char)
+            if char in str(entry.filename).casefold():
+                file_filename_fuzzy.append(char)
+
+        if file_path_fuzzy:
             return True
-        elif [q for q in query if (q in str(entry.filename).lower())]:
+        elif file_filename_fuzzy:
             return True
         return False
+
+    def required_fields_empty(self, entry_fields: dict, empty_fields: list[str]) -> bool:
+        for field in empty_fields:
+            if field in entry_fields.keys() and entry_fields.get(field) is not None:
+                return False
+        return True
 
     def preprocess_tag_terms(self, query_words: list[str]):
         all_tag_terms: list[str] = []
