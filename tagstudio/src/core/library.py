@@ -2236,15 +2236,12 @@ class Filter:
                 if allowed_ext != self.is_exclude_list:
                     continue
                 (entry_tags, entry_authors) = self.populate_tags(entry)
-                is_selected: bool = False
+                is_selected: bool = True
                 # Remap entry.fields from list of dicts, to dict for ease of work
                 entry_fields: dict = self.remap_fields(entry)
                 for key, value in query_part.items():
-                    select_empty: bool = False
                     if isinstance(value, str):
                         value = value.strip().casefold()
-                        if value == "null":
-                            select_empty = True
                     entry_value = entry_fields.get(key)
 
                     # special treatment for filename
@@ -2252,9 +2249,7 @@ class Filter:
                         is_selected = is_selected and self.check_filename(entry, value)
                     # all usual tags handling, as if search was in AND mode
                     elif key == "tag_id":
-                        if self.handle_tag_id(value, entry_tags):
-                            is_selected = True
-                        else:
+                        if not self.handle_tag_id(value, entry_tags):
                             is_selected = False
                             break
                     elif key == "unbound":
@@ -2273,42 +2268,28 @@ class Filter:
                         if entry_tuple is None:
                             is_selected = False
                             break
-                        else:
-                            is_selected = True
                     elif key == "EMPTY":
                         empty_fields = value
                         if not isinstance(empty_fields, list):
                             empty_fields = [empty_fields]
-                        if self.required_fields_empty(entry_fields, empty_fields):
-                            is_selected = True
-                        else:
+                        if not self.required_fields_empty(entry_fields, empty_fields):
                             is_selected = False
                             break
                     else:
+                        negative: bool = False
                         if key[0] == "-":
                             entry_value = entry_fields.get(key[1:])
-                            if isinstance(entry_value, list):
-                                entry_value = "".join(entry_value)
-                            if entry_value is None or value not in entry_value:
-                                is_selected = True
-                            else:
-                                is_selected = False
-                                break
-                        else:
-                            if isinstance(entry_value, list):
-                                entry_value = "".join(entry_value)
-                            if entry_value is not None and value in entry_value:
-                                is_selected = True
-                            else:
-                                is_selected = False
-                                break
+                            negative = True
+                        if not self.handle_common_field(entry_value, value, negative):
+                            is_selected = False
+                            break
 
                 if is_selected and entry_tuple is None:
                     filtered_entries.append((ItemType.ENTRY, entry.id))
                 elif is_selected and entry_tuple is not None:
                     filtered_entries.append(entry_tuple)
-
             pre_results.append(filtered_entries)
+
         # Entries should match all parts separated by '|'
         result_set: set = set()
         if search_mode == SearchMode.AND:
@@ -2319,7 +2300,7 @@ class Filter:
             result_set = set(pre_results[0])
             # entries should be found in every part of query
             for and_result in pre_results[1:]:
-                set_copy: list = list(result_set.copy())
+                set_copy: list = list(result_set)
                 for recorded_entry in set_copy:
                     entry_detected: bool = False
                     for new_entry in and_result:
@@ -2335,6 +2316,20 @@ class Filter:
                 for or_entry in or_result:
                     result_set.add(or_entry)
             return list(result_set)
+
+    def handle_common_field(
+        self, entry_value: list[str] | str | None, value: str, query_is_negative: bool
+    ) -> bool:
+        if isinstance(entry_value, list):
+            entry_value = "".join(entry_value)
+
+        if entry_value is None:
+            return query_is_negative
+        else:
+            if value in entry_value:
+                return not query_is_negative
+            else:
+                return query_is_negative
 
     def handle_tag_id(self, query: str, entry_tags: list[int]) -> bool:
         id_query: int = 0
