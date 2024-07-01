@@ -391,7 +391,8 @@ class QtDriver(QObject):
             QtCore.QKeyCombination(
                 QtCore.Qt.KeyboardModifier(
                     QtCore.Qt.KeyboardModifier.ControlModifier
-                    | QtCore.Qt.KeyboardModifier.ShiftModifier),
+                    | QtCore.Qt.KeyboardModifier.ShiftModifier
+                ),
                 QtCore.Qt.Key.Key_T,
             )
         )
