@@ -18,7 +18,7 @@ tuvwxyz
 0123456
 789!?@$
 %(){}[]"""
-FONT_SAMPLE_SIZES: list[int] = [10,12,15]
+FONT_SAMPLE_SIZES: list[int] = [10, 12, 15]
 
 # TODO: Turn this whitelist into a user-configurable blacklist.
 IMAGE_TYPES: list[str] = [
