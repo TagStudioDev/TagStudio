@@ -7,6 +7,13 @@ BACKUP_FOLDER_NAME: str = "backups"
 COLLAGE_FOLDER_NAME: str = "collages"
 LIBRARY_FILENAME: str = "ts_library.json"
 
+FONT_SAMPLE_TEXT: str = """ABCDEFGHIJKLM
+NOPQRSTUVWXYZ
+abcdefghijklm
+nopqrstuvwxyz
+0123456789
+!?.@$%(){}[]"""
+
 # TODO: Turn this whitelist into a user-configurable blacklist.
 IMAGE_TYPES: list[str] = [
     ".png",
@@ -107,6 +114,7 @@ ARCHIVE_TYPES: list[str] = [
 ]
 PROGRAM_TYPES: list[str] = [".exe", ".app"]
 SHORTCUT_TYPES: list[str] = [".lnk", ".desktop", ".url"]
+FONT_TYPES: list[str] = [".ttf", ".otf", ".woff"]
 
 ALL_FILE_TYPES: list[str] = (
     IMAGE_TYPES
@@ -118,6 +126,7 @@ ALL_FILE_TYPES: list[str] = (
     + ARCHIVE_TYPES
     + PROGRAM_TYPES
     + SHORTCUT_TYPES
+    + FONT_TYPES
 )
 
 BOX_FIELDS = ["tag_box", "text_box"]

@@ -25,9 +25,11 @@ from PySide6.QtGui import QPixmap
 from src.qt.helpers.gradient import four_corner_gradient_background
 from src.core.constants import (
     PLAINTEXT_TYPES,
+    FONT_TYPES,
     VIDEO_TYPES,
     IMAGE_TYPES,
     RAW_IMAGE_TYPES,
+    FONT_SAMPLE_TEXT,
 )
 from src.core.utils.encoding import detect_char_encoding
 
@@ -183,7 +185,14 @@ class ThumbRenderer(QObject):
                         text = text_file.read(256)
                     bg = Image.new("RGB", (256, 256), color="#1e1e1e")
                     draw = ImageDraw.Draw(bg)
-                    draw.text((16, 16), text, file=(255, 255, 255))
+                    draw.text((16, 16), text, fill=(255, 255, 255))
+                    image = bg
+                # Fonts ========================================================
+                elif _filepath.suffix.lower() in FONT_TYPES:
+                    bg = Image.new("RGB", (256, 256), color="#1e1e1e")
+                    font = ImageFont.truetype(_filepath, 25)
+                    draw = ImageDraw.Draw(bg)
+                    draw.text((16, 16), FONT_SAMPLE_TEXT, font=font)
                     image = bg
                 # 3D ===========================================================
                 # elif extension == 'stl':
