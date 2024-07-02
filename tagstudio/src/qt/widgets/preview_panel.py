@@ -10,7 +10,7 @@ from datetime import datetime as dt
 
 import cv2
 import rawpy
-from PIL import Image, UnidentifiedImageError
+from PIL import Image, UnidentifiedImageError, ImageFont
 from PIL.Image import DecompressionBombError
 from PySide6.QtCore import Signal, Qt, QSize
 from PySide6.QtGui import QResizeEvent, QAction
@@ -30,7 +30,13 @@ from humanfriendly import format_size
 
 from src.core.enums import SettingItems, Theme
 from src.core.library import Entry, ItemType, Library
-from src.core.constants import VIDEO_TYPES, IMAGE_TYPES, RAW_IMAGE_TYPES, TS_FOLDER_NAME
+from src.core.constants import (
+    VIDEO_TYPES,
+    IMAGE_TYPES,
+    RAW_IMAGE_TYPES,
+    TS_FOLDER_NAME,
+    FONT_TYPES,
+)
 from src.qt.helpers.file_opener import FileOpenerLabel, FileOpenerHelper, open_file
 from src.qt.modals.add_field import AddFieldModal
 from src.qt.widgets.thumb_renderer import ThumbRenderer
@@ -558,6 +564,11 @@ class PreviewPanel(QWidget):
                         ):
                             self.dimensions_label.setText(
                                 f"{filepath.suffix.upper()[1:]}  •  {format_size(filepath.stat().st_size)}\n{image.width} x {image.height} px"
+                            )
+                        elif filepath.suffix.lower() in FONT_TYPES:
+                            font = ImageFont.truetype(filepath)
+                            self.dimensions_label.setText(
+                                f"{filepath.suffix.upper()[1:]}  •  {font.getname()[0]} : {font.getname()[1]}  •  {format_size(filepath.stat().st_size)} "
                             )
                         else:
                             self.dimensions_label.setText(
