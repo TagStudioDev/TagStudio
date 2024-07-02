@@ -198,10 +198,10 @@ class ThumbRenderer(QObject):
                     padding = 2
                     x_offset = 0
                     for fontsize in FONT_SAMPLE_SIZES:
-                        font = ImageFont.truetype(_filepath,size=fontsize)
+                        font = ImageFont.truetype(_filepath, size=fontsize)
                         text_box_width = draw.textlength(longest_line, font=font)
-                        draw.text((16+x_offset, 16), FONT_SAMPLE_TEXT, font=font)
-                        x_offset += text_box_width+padding
+                        draw.text((16 + x_offset, 16), FONT_SAMPLE_TEXT, font=font)
+                        x_offset += text_box_width + padding
                     image = bg
                 # 3D ===========================================================
                 # elif extension == 'stl':
