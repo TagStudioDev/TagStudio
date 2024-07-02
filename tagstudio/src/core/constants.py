@@ -7,12 +7,18 @@ BACKUP_FOLDER_NAME: str = "backups"
 COLLAGE_FOLDER_NAME: str = "collages"
 LIBRARY_FILENAME: str = "ts_library.json"
 
-FONT_SAMPLE_TEXT: str = """ABCDEFGHIJKLM
-NOPQRSTUVWXYZ
-abcdefghijklm
-nopqrstuvwxyz
-0123456789
-!?.@$%(){}[]"""
+FONT_SAMPLE_TEXT: str = """ABCDEF
+GHIJKLM
+NOPQRS
+TUVWXYZ
+abcdef
+ghijklm
+nopqrs
+tuvwxyz
+0123456
+789!?@$
+%(){}[]"""
+FONT_SAMPLE_SIZES: list[int] = [10,12,15]
 
 # TODO: Turn this whitelist into a user-configurable blacklist.
 IMAGE_TYPES: list[str] = [

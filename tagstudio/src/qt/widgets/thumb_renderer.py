@@ -30,6 +30,7 @@ from src.core.constants import (
     IMAGE_TYPES,
     RAW_IMAGE_TYPES,
     FONT_SAMPLE_TEXT,
+    FONT_SAMPLE_SIZES,
 )
 from src.core.utils.encoding import detect_char_encoding
 
@@ -190,9 +191,17 @@ class ThumbRenderer(QObject):
                 # Fonts ========================================================
                 elif _filepath.suffix.lower() in FONT_TYPES:
                     bg = Image.new("RGB", (256, 256), color="#1e1e1e")
-                    font = ImageFont.truetype(_filepath, 25)
                     draw = ImageDraw.Draw(bg)
-                    draw.text((16, 16), FONT_SAMPLE_TEXT, font=font)
+                    lines = FONT_SAMPLE_TEXT.split("\n")
+                    lines.sort(key=draw.textlength)
+                    longest_line = lines[-1]
+                    padding = 2
+                    x_offset = 0
+                    for fontsize in FONT_SAMPLE_SIZES:
+                        font = ImageFont.truetype(_filepath,size=fontsize)
+                        text_box_width = draw.textlength(longest_line, font=font)
+                        draw.text((16+x_offset, 16), FONT_SAMPLE_TEXT, font=font)
+                        x_offset += text_box_width+padding
                     image = bg
                 # 3D ===========================================================
                 # elif extension == 'stl':
