@@ -23,6 +23,7 @@ from PIL.Image import DecompressionBombError
 from PySide6.QtCore import QObject, Signal, QSize
 from PySide6.QtGui import QPixmap
 from src.qt.helpers.gradient import four_corner_gradient_background
+from src.qt.helpers.text_wrapper import wrap_full_text
 from src.core.constants import (
     PLAINTEXT_TYPES,
     FONT_TYPES,
@@ -190,18 +191,29 @@ class ThumbRenderer(QObject):
                     image = bg
                 # Fonts ========================================================
                 elif _filepath.suffix.lower() in FONT_TYPES:
-                    bg = Image.new("RGB", (256, 256), color="#1e1e1e")
-                    draw = ImageDraw.Draw(bg)
-                    lines = FONT_SAMPLE_TEXT.split("\n")
-                    lines.sort(key=draw.textlength)
-                    longest_line = lines[-1]
-                    padding = 2
-                    x_offset = 0
-                    for fontsize in FONT_SAMPLE_SIZES:
-                        font = ImageFont.truetype(_filepath, size=fontsize)
-                        text_box_width = draw.textlength(longest_line, font=font)
-                        draw.text((16 + x_offset, 16), FONT_SAMPLE_TEXT, font=font)
-                        x_offset += text_box_width + padding
+                    if gradient:
+                        # handles small thumbnails
+                        bg = Image.new("RGB", (256, 256), color="#1e1e1e")
+                        draw = ImageDraw.Draw(bg)
+                        font = ImageFont.truetype(_filepath, size=170)
+                        draw.text((10, 0), "Aa", font=font)
+                    else:
+                        # handles big thumbnails and renders a sample text in multiple font sizes
+                        bg = Image.new("RGB", (256, 256), color="#1e1e1e")
+                        draw = ImageDraw.Draw(bg)
+                        lines_of_padding = 2
+                        y_offset = 0
+
+                        for font_size in FONT_SAMPLE_SIZES:
+                            font = ImageFont.truetype(_filepath, size=font_size)
+                            text_wrapped: str = wrap_full_text(
+                                FONT_SAMPLE_TEXT, font=font, draw=draw
+                            )
+                            draw.multiline_text((0, y_offset), text_wrapped, font=font)
+                            y_offset += (
+                                len(text_wrapped.split("\n")) + lines_of_padding
+                            ) * draw.textbbox((0, 0), "A", font=font)[-1]
+
                     image = bg
                 # 3D ===========================================================
                 # elif extension == 'stl':
