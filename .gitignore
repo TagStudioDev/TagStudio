@@ -55,6 +55,7 @@ coverage.xml
 .hypothesis/
 .pytest_cache/
 cover/
+tagstudio/tests/fixtures/library/*
 
 # Translations
 *.mo

@@ -24,6 +24,7 @@ class AddFieldModal(QWidget):
         # - OR -
         # [Cancel] [Save]
         super().__init__()
+        self.is_connected = False
         self.lib = library
         self.setWindowTitle(f"Add Field")
         self.setWindowModality(Qt.WindowModality.ApplicationModal)

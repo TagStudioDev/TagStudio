@@ -5,7 +5,6 @@
 """The Library object and related methods for TagStudio."""
 
 import datetime
-import json
 import logging
 import os
 import time
@@ -18,6 +17,7 @@ from pathlib import Path
 from typing import cast, Generator
 from typing_extensions import Self
 
+from src.core.enums import FieldID
 from src.core.json_typing import JsonCollation, JsonEntry, JsonLibary, JsonTag
 from src.core.utils.str import strip_punctuation
 from src.core.utils.web import strip_web_protocol
@@ -80,7 +80,7 @@ class Entry:
         # self.word_count: int = None
 
     def __str__(self) -> str:
-        return f"\n{self.compressed_dict()}\n"
+        return str(self.compressed_dict())
 
     def __repr__(self) -> str:
         return self.__str__()
@@ -889,12 +889,12 @@ class Library:
                     and "tagstudio_thumbs" not in f.parts
                     and not f.is_dir()
                 ):
-                    if f.suffix not in self.ext_list and self.is_exclude_list:
+                    if f.suffix.lower() not in self.ext_list and self.is_exclude_list:
                         self.dir_file_count += 1
                         file = f.relative_to(self.library_dir)
                         if file not in self.filename_to_entry_id_map:
                             self.files_not_in_library.append(file)
-                    elif f.suffix in self.ext_list and not self.is_exclude_list:
+                    elif f.suffix.lower() in self.ext_list and not self.is_exclude_list:
                         self.dir_file_count += 1
                         file = f.relative_to(self.library_dir)
                         try:
@@ -1382,7 +1382,7 @@ class Library:
             # non_entry_count = 0
             # Iterate over all Entries =============================================================
             for entry in self.entries:
-                allowed_ext: bool = entry.filename.suffix not in self.ext_list
+                allowed_ext: bool = entry.filename.suffix.lower() not in self.ext_list
                 # try:
                 # entry: Entry = self.entries[self.file_to_library_index_map[self._source_filenames[i]]]
                 # print(f'{entry}')
@@ -1539,7 +1539,7 @@ class Library:
         else:
             for entry in self.entries:
                 added = False
-                allowed_ext = entry.filename.suffix not in self.ext_list
+                allowed_ext = entry.filename.suffix.lower() not in self.ext_list
                 if allowed_ext == self.is_exclude_list:
                     for f in entry.fields:
                         if self.get_field_attr(f, "type") == "collation":
@@ -1948,48 +1948,44 @@ class Library:
         if data:
             # Add a Title Field if the data doesn't already exist.
             if data.get("title"):
-                field_id = 0  # Title Field ID
-                if not self.does_field_content_exist(entry_id, field_id, data["title"]):
-                    self.add_field_to_entry(entry_id, field_id)
+                if not self.does_field_content_exist(
+                    entry_id, FieldID.TITLE, data["title"]
+                ):
+                    self.add_field_to_entry(entry_id, FieldID.TITLE)
                     self.update_entry_field(entry_id, -1, data["title"], "replace")
 
             # Add an Author Field if the data doesn't already exist.
             if data.get("author"):
-                field_id = 1  # Author Field ID
                 if not self.does_field_content_exist(
-                    entry_id, field_id, data["author"]
+                    entry_id, FieldID.AUTHOR, data["author"]
                 ):
-                    self.add_field_to_entry(entry_id, field_id)
+                    self.add_field_to_entry(entry_id, FieldID.AUTHOR)
                     self.update_entry_field(entry_id, -1, data["author"], "replace")
 
             # Add an Artist Field if the data doesn't already exist.
             if data.get("artist"):
-                field_id = 2  # Artist Field ID
                 if not self.does_field_content_exist(
-                    entry_id, field_id, data["artist"]
+                    entry_id, FieldID.ARTIST, data["artist"]
                 ):
-                    self.add_field_to_entry(entry_id, field_id)
+                    self.add_field_to_entry(entry_id, FieldID.ARTIST)
                     self.update_entry_field(entry_id, -1, data["artist"], "replace")
 
             # Add a Date Published Field if the data doesn't already exist.
             if data.get("date_published"):
-                field_id = 14  # Date Published Field ID
                 date = str(
                     datetime.datetime.strptime(
                         data["date_published"], "%Y-%m-%d %H:%M:%S"
                     )
                 )
-                if not self.does_field_content_exist(entry_id, field_id, date):
-                    self.add_field_to_entry(entry_id, field_id)
+                if not self.does_field_content_exist(
+                    entry_id, FieldID.DATE_PUBLISHED, date
+                ):
+                    self.add_field_to_entry(entry_id, FieldID.DATE_PUBLISHED)
                     # entry = self.entries[entry_id]
                     self.update_entry_field(entry_id, -1, date, "replace")
 
             # Process String Tags if the data doesn't already exist.
             if data.get("tags"):
-                tags_field_id = 6  # Tags Field ID
-                content_tags_field_id = 7  # Content Tags Field ID
-                meta_tags_field_id = 8  # Meta Tags Field ID
-                notes_field_id = 5  # Notes Field ID
                 tags: list[str] = data["tags"]
                 # extra: list[str] = []
                 # for tag in tags:
@@ -2038,7 +2034,7 @@ class Library:
                         # tag_field_indices = self.get_field_index_in_entry(
                         # 	entry_index, tags_field_id)
                         content_tags_field_indices = self.get_field_index_in_entry(
-                            self.get_entry(entry_id), content_tags_field_id
+                            self.get_entry(entry_id), FieldID.CONTENT_TAGS
                         )
                         # meta_tags_field_indices = self.get_field_index_in_entry(
                         # 	entry_index, meta_tags_field_id)
@@ -2055,45 +2051,40 @@ class Library:
                                 entry_id, priority_field_index, [matching[0]], "append"
                             )
                         else:
-                            self.add_field_to_entry(entry_id, content_tags_field_id)
+                            self.add_field_to_entry(entry_id, FieldID.CONTENT_TAGS)
                             self.update_entry_field(
                                 entry_id, -1, [matching[0]], "append"
                             )
 
                 # Add all original string tags as a note.
                 str_tags = f"Original Tags: {tags}"
-                if not self.does_field_content_exist(
-                    entry_id, notes_field_id, str_tags
-                ):
-                    self.add_field_to_entry(entry_id, notes_field_id)
+                if not self.does_field_content_exist(entry_id, FieldID.NOTES, str_tags):
+                    self.add_field_to_entry(entry_id, FieldID.NOTES)
                     self.update_entry_field(entry_id, -1, str_tags, "replace")
 
             # Add a Description Field if the data doesn't already exist.
-            if "description" in data.keys() and data["description"]:
-                field_id = 4  # Description Field ID
+            if data.get("description"):
                 if not self.does_field_content_exist(
-                    entry_id, field_id, data["description"]
+                    entry_id, FieldID.DESCRIPTION, data["description"]
                 ):
-                    self.add_field_to_entry(entry_id, field_id)
+                    self.add_field_to_entry(entry_id, FieldID.DESCRIPTION)
                     self.update_entry_field(
                         entry_id, -1, data["description"], "replace"
                     )
-            if "content" in data.keys() and data["content"]:
-                field_id = 4  # Description Field ID
+            if data.get("content"):
                 if not self.does_field_content_exist(
-                    entry_id, field_id, data["content"]
+                    entry_id, FieldID.DESCRIPTION, data["content"]
                 ):
-                    self.add_field_to_entry(entry_id, field_id)
+                    self.add_field_to_entry(entry_id, FieldID.DESCRIPTION)
                     self.update_entry_field(entry_id, -1, data["content"], "replace")
-            if "source" in data.keys() and data["source"]:
-                field_id = 21  # Source Field ID
+            if data.get("source"):
                 for source in data["source"].split(" "):
                     if source and source != " ":
                         source = strip_web_protocol(string=source)
                         if not self.does_field_content_exist(
-                            entry_id, field_id, source
+                            entry_id, FieldID.SOURCE, source
                         ):
-                            self.add_field_to_entry(entry_id, field_id)
+                            self.add_field_to_entry(entry_id, FieldID.SOURCE)
                             self.update_entry_field(entry_id, -1, source, "replace")
 
     def add_field_to_entry(self, entry_id: int, field_id: int) -> None:
