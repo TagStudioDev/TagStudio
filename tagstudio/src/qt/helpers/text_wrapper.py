@@ -15,12 +15,15 @@ def wrap_line(  # type: ignore
         bg = Image.new("RGB", (width, width), color="#1e1e1e")
         draw = ImageDraw.Draw(bg)
     if draw.textlength(text, font=font) > 256:
+        # print(draw.textlength(text, font=font))
         for i in range(
-            int(len(text) / int(draw.textlength(text, font=font)) * 256),
+            int(len(text) / int(draw.textlength(text, font=font)) * 256) - 2,
             0,
             -1,
         ):
             if draw.textlength(text[:i], font=font) < 256:
+                # print(len(text))
+                # print(i)
                 return i
     else:
         return -1
