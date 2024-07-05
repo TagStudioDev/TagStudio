@@ -19,7 +19,7 @@ from typing_extensions import Self
 
 from src.core.enums import FieldID
 from src.core.json_typing import JsonCollation, JsonEntry, JsonLibary, JsonTag
-from src.core.utils.str import strip_punctuation
+from src.core.utils.str import replace_whitespace
 from src.core.utils.web import strip_web_protocol
 from src.core.enums import SearchMode
 from src.core.constants import (
@@ -1629,8 +1629,8 @@ class Library:
         for string in self._tag_strings_to_id_map:  # O(n), n = tags
             exact_match: bool = False
             partial_match: bool = False
-            query = strip_punctuation(query).lower()
-            string = strip_punctuation(string).lower()
+            query = replace_whitespace(query).lower()
+            string = replace_whitespace(string).lower()
 
             if query == string:
                 exact_match = True
@@ -1796,13 +1796,13 @@ class Library:
         # Remember that _tag_names_to_tag_id_map maps strings to a LIST of ids.
         # print(
         #     f'Removing connection from "{old_tag.name.lower()}" to {old_tag.id} in {self._tag_names_to_tag_id_map[old_tag.name.lower()]}')
-        old_name: str = strip_punctuation(old_tag.name).lower()
+        old_name: str = replace_whitespace(old_tag.name).lower()
         self._tag_strings_to_id_map[old_name].remove(old_tag.id)
         # Delete the map key if it doesn't point to any other IDs.
         if not self._tag_strings_to_id_map[old_name]:
             del self._tag_strings_to_id_map[old_name]
         if old_tag.shorthand:
-            old_sh: str = strip_punctuation(old_tag.shorthand).lower()
+            old_sh: str = replace_whitespace(old_tag.shorthand).lower()
             # print(
             #     f'Removing connection from "{old_tag.shorthand.lower()}" to {old_tag.id} in {self._tag_names_to_tag_id_map[old_tag.shorthand.lower()]}')
             self._tag_strings_to_id_map[old_sh].remove(old_tag.id)
@@ -1811,7 +1811,7 @@ class Library:
                 del self._tag_strings_to_id_map[old_sh]
         if old_tag.aliases:
             for alias in old_tag.aliases:
-                old_a: str = strip_punctuation(alias).lower()
+                old_a: str = replace_whitespace(alias).lower()
                 # print(
                 #     f'Removing connection from "{alias.lower()}" to {old_tag.id} in {self._tag_names_to_tag_id_map[alias.lower()]}')
                 self._tag_strings_to_id_map[old_a].remove(old_tag.id)
@@ -2209,18 +2209,18 @@ class Library:
         Uses name_and_alias_to_tag_id_map.
         """
         # tag_id: int, tag_name: str, tag_aliases: list[str] = []
-        name: str = strip_punctuation(tag.name).lower()
+        name: str = replace_whitespace(tag.name).lower()
         if name not in self._tag_strings_to_id_map:
             self._tag_strings_to_id_map[name] = []
         self._tag_strings_to_id_map[name].append(tag.id)
 
-        shorthand: str = strip_punctuation(tag.shorthand).lower()
+        shorthand: str = replace_whitespace(tag.shorthand).lower()
         if shorthand not in self._tag_strings_to_id_map:
             self._tag_strings_to_id_map[shorthand] = []
         self._tag_strings_to_id_map[shorthand].append(tag.id)
 
         for alias in tag.aliases:
-            alias = strip_punctuation(alias).lower()
+            alias = replace_whitespace(alias).lower()
             if alias not in self._tag_strings_to_id_map:
                 self._tag_strings_to_id_map[alias] = []
             self._tag_strings_to_id_map[alias].append(tag.id)
