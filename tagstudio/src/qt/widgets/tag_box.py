@@ -98,7 +98,6 @@ class TagBoxWidget(FieldWidget):
                 self.base_layout.takeAt(0).widget().deleteLater()
             is_recycled = True
         for tag in tags:
-            # TODO: Remove space from the special search here (tag_id:x) once that system is finalized.
             # tw = TagWidget(self.lib, self.lib.get_tag(tag), True, True,
             # 							on_remove_callback=lambda checked=False, t=tag: (self.lib.get_entry(self.item.id).remove_tag(self.lib, t, self.field_index), self.updated.emit()),
             # 							on_click_callback=lambda checked=False, q=f'tag_id: {tag}': (self.driver.main_window.searchField.setText(q), self.driver.filter_items(q)),
@@ -106,7 +105,7 @@ class TagBoxWidget(FieldWidget):
             # 							)
             tw = TagWidget(self.lib, self.lib.get_tag(tag), True, True)
             tw.on_click.connect(
-                lambda checked=False, q=f"tag_id: {tag}": (
+                lambda checked=False, q=f"tag_id:{tag}": (
                     self.driver.main_window.searchField.setText(q),
                     self.driver.filter_items(q),
                 )
