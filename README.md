@@ -49,8 +49,9 @@ TagStudio is a photo & file organization application with an underlying system t
   - Description, Notes (Multiline Text Fields)
   - Tags, Meta Tags, Content Tags (Tag Boxes)
 - Create rich tags composed of a name, a list of aliases, and a list of “subtags” - being tags in which these tags inherit values from.
-- Search for entries based on tags, ~~metadata~~ (TBA), or filenames/filetypes (using `filename: <query>`)
-- Special search conditions for entries that are: `untagged`/`no tags` and `empty`/`no fields`.
+- Search for entries based on tags, ~~metadata~~ (TBA), or filenames/filetypes (using `filename:<query>`)
+- Special search conditions for entries that are: `untagged`/`no_tags`, `empty`/`no_fields`, `no_author`/`no_artist`, and `missing`/`no_file`.
+- Search for entries using Boolean expressions. (See the [search cheat-sheet](#search-cheat-sheet) section for more)
 
 > [!NOTE]
 > For more information on the project itself, please see the [FAQ](#faq) section as well as the [documentation](/doc/index.md).
@@ -133,6 +134,66 @@ Inevitably, some of the files inside your library will be renamed, moved, or del
 
 Libraries are saved upon exiting the program. To manually save, select File -> Save Library from the menu bar. To save a backup of your library, select File -> Save Library Backup from the menu bar.
 
+### Search Cheat-Sheet
+
+#### The Basics
+
+After loading a tagged library, enter your search into the bar that says `Search Entries` at the top of the window. Every tag needs a space after it. If your tag contains spaces between words, substitute underscores _ for the spaces. Capitalization doesn't affect tags and searches. After you have typed your search, press enter or click the `Search` button to the right of the search bar. It may take a moment for the search to complete. After you have made a few searches, you can use the arrows `<` `>` on the left hand side of the search bar to bring back previous searches.
+- **dog favorites** searches favorites for any entry tagged "dog"
+- **fat_cat dress_up** searches entries for the "fat cat" tag and searches for the "dress up" tag
+
+#### Search Modes
+
+On the right side of the window, just below the search bar, there is a dropdown option to choose the search bar. The options are `And (Includes All Tags)`, and `Or (Includes Any Tag)`. In And mode, if you have a list of search terms in the search bar, your search will try to match entries fitting all the search terms in the list. In Or mode, your search will try to match entries fitting even just one of the search terms.
+
+#### Optional Terms and Partial Match Terms
+
+If you have a search list with many search terms, you may use tilde ~ before a term to mark it as an optional term in And mode, or as a partial match term in Or mode.
+- In And mode, an entry with even just one of the tilde ~ marked optional terms can match a search list that uses them, so long as the entry matches all other terms in the list.
+  - **costume ~witch ~skeleton** matches all entries tagged costume and witch, and all entries tagged costume and skeleton.
+- In Or mode, an entry with all of the tilde ~ marked partial match terms will match a search list that uses them, even if the entry matches no other terms in the list.
+  - **lake river ~indoors ~life_vest** matches all entries tagged "lake", tagged "river", or tagged with both "indoors" and "life vest".
+
+> [!NOTE]
+> For simplicity, the remaining search examples are written for And mode unless otherwise specified.
+
+#### Exclude Terms
+
+Using minus -, exclamation mark !, or "not" before a term matches when the term doesn't. "not" needs a space after it. Tilde ~ will have no effect unless it comes before the exclude indicator.
+- **-golf** matches any entry that doesn't have the "golf" tag.
+- **party -birthday** matches any entry that has the "party" tag, but that does not have the "birthday" tag.
+
+#### Parentheses
+
+Surrounding a list of search terms with parentheses () makes it act like a single term, and allows for more complicated nesting of tags. Every parenthesis needs a space after it, or it will be interpreted as being part of a tag. Square brackets \[\] and curly braces {} can be used too.
+- **woods -( scary ~weapon ~animal )** matches any entry with the "woods" tag, unless it is also tagged "scary" and "weapon", or "scary" and "animal"
+
+#### Other Operators
+
+It is also possible to use various Boolean operators directly when combining tags instead of relying on tags to be combined automatically. These operators will be evaluated from left to right, after parentheses and exclusion operators, but before the implicit operations in lists of search terms. Every one of these Boolean operators needs a space after it, or it will be interpreted as being part of a tag. Many operators are supported, and many ways of writing the operators are supported. Here is a list: "and", "^", "&", "&&", "or", "v", "|", "||", "nor", "nand", "xor", "!=", "!=\=", "xnor", "=", "=\=", or "=\=\=".
+- **sad == dark_clothes and photograph** matches any entry tagged "photograph", but that doesn't have exactly one "sad" or "dark clothes" tag without the other.
+
+#### Metatags
+
+There are some terms that can be matched even without the need to be specifically tagged ahead of time. The following are the supported metatags:
+- **untagged**/**no_tags** whether the entry has no tags at all yet.
+- **empty**/**no_fields** whether the entry has no fields at all, tag or otherwise. This covers text lines, text boxes, dates, and more.
+- **missing**/**no_file** whether the media file associated with the entry is gone or missing from where it was when the entry was created.
+- **no_author**/**no_artist** whether the "Author" or "Artist" fields aren't present in the entry.
+- **filename:** matches any portion of text in the name and subdirectory that the file is located in relative to the library's path. Here are some usage examples:
+  - **filename:copy.png** matches any .PNG file whose filename ends with "copy" regardless of directory, such as "shared img \- Copy.png"
+  - **filename:subdir1\subdir2** matches any file in subdir2, such as "subdir1\subdir2\subdir3\hidden.gif"
+  - **filename:subdir3\photo.jpg** matches any file named photo.jpg in a folder called "subdir3", even if the path to it from the library directory is something like "subdir1\subdir2\subdir3\photo.jpg".
+- **tag_id:** matches any entry with a tag whose internal id matches the number. Click on a tag in the preview pane on the right to replace the search with a tag_id expression for that tag.
+  - **tag_id:1001** matches any entry tagged with the first custom tag created for the library.
+- Hopefully more coming in the future!
+
+#### Escape Characters
+
+If the name of one of your tags overlaps with the search syntax, then put a backslash \\ or a forward slash / just before the tag to ensure it's treated like a tag.
+- **~clip_art ~stock_photo \\\~cute~** matches entries tagged "clip art" and "\~cute~" or "stock photo" and "\~cute~". Without the backslash, the tilde ~ at the start of the "\~cute~" tag would mistakenly result in the mandatory "\~cute~" tag being interpreted as an optional "cute~" tag, missing the first tilde.
+- **transparent -\\empty -roses** matches entries tagged "transparent", but not tagged "empty" or "roses". Without the backslash, the "empty" tag would be interpreted as a metatag instead of a tag, meaning that the results would mistakenly include entries tagged "empty", since the entry didn't have "no_fields".
+
 ### Half-Implemented Features
 
 #### Fix Duplicate Files
@@ -184,7 +245,6 @@ Of the several features I have planned for the project, these are broken up into
 
 - Improved search
   - Sortable Search
-  - Boolean Search
   - Coexisting Text + Tag Search
   - Searchable File Metadata
 - Comprehensive Tag management tab
