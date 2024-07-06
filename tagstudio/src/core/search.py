@@ -14,13 +14,11 @@ class _EntrySearchableData:
         self,
         has_fields,
         has_author,
-        has_file,
         filename: str,
         tag_ids: list[int]
     ):
         self.has_fields = has_fields
         self.has_author = has_author
-        self.has_file = has_file
         self.filename = filename
         self.tag_ids = tag_ids
 
@@ -244,8 +242,6 @@ class _TagNode(_SynNode):
                 return not entry.has_fields
             case "no_author" | "no-author" | "noauthor" | "no_artist" | "no-artist" | "noartist":
                 return not entry.has_author
-            case "missing" | "no_file" | "no-file" | "nofile":
-                return not entry.has_file
             case "untagged" | "no_tags" | "no-tags" | "notags":
                 return not entry.tag_ids
         
@@ -537,14 +533,12 @@ class SearchQuery:
         self,
         has_fields,
         has_author,
-        has_file,
         filename: str,
         tag_ids: list[int]
     ):
         return self._syntax_root.match(_EntrySearchableData(
             has_fields,
             has_author,
-            has_file,
             filename,
             tag_ids
         ))
