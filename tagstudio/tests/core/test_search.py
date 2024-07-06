@@ -6,13 +6,11 @@ def sqmtch(
     tag_ids: list[int] = [],
     has_fields=True,
     has_author=True,
-    has_file=True,
     filename="subfolder\\entry.png"
 ) -> bool:
     return search_query.match_entry(
         has_fields=has_fields,
         has_author=has_author,
-        has_file=has_file,
         filename=filename,
         tag_ids=tag_ids
     )
@@ -239,15 +237,11 @@ def test_receive_requested_lib_info_true():
 def test_eval_with_no_author():
     search_query = SearchQuery("", SearchMode.AND)
     assert str(search_query) == "L()"
-    assert sqmtch(search_query, has_fields=True ,has_author=False,has_file=True )
+    assert sqmtch(search_query, has_fields=True ,has_author=False)
 def test_eval_with_no_fields():
     search_query = SearchQuery("", SearchMode.AND)
     assert str(search_query) == "L()"
-    assert sqmtch(search_query, has_fields=False,has_author=False,has_file=True )
-def test_eval_with_no_file():
-    search_query = SearchQuery("", SearchMode.AND)
-    assert str(search_query) == "L()"
-    assert sqmtch(search_query, has_fields=True ,has_author=True ,has_file=False)
+    assert sqmtch(search_query, has_fields=False,has_author=False)
     
 def test_eval_and_mode_list():
     search_query = SearchQuery("tag1 tag2 tag3", SearchMode.AND)
@@ -409,8 +403,7 @@ def test_eval_tag_empty_false():
         "no-fields": [],
         "nofields": []
     })
-    assert not sqmtch(search_query, has_fields=True ,has_author=True ,has_file=True )
-    assert not sqmtch(search_query, has_fields=True ,has_author=True ,has_file=False)
+    assert not sqmtch(search_query, has_fields=True ,has_author=True )
 def test_eval_tag_empty_true():
     search_query = SearchQuery("empty no_fields no-fields nofields", SearchMode.AND)
     assert str(search_query) == "L(T(empty) T(no_fields) T(no-fields) T(nofields))"
@@ -426,8 +419,7 @@ def test_eval_tag_empty_true():
         "no-fields": [],
         "nofields": []
     })
-    assert     sqmtch(search_query, has_fields=False,has_author=False,has_file=True )
-    assert     sqmtch(search_query, has_fields=False,has_author=False,has_file=False)
+    assert     sqmtch(search_query, has_fields=False,has_author=False)
 def test_eval_tag_no_author_false():
     search_query = SearchQuery("no_author no-author noauthor no_artist no-artist noartist", SearchMode.OR)
     assert str(search_query) == "L(T(no_author) T(no-author) T(noauthor) T(no_artist) T(no-artist) T(noartist))"
@@ -447,8 +439,7 @@ def test_eval_tag_no_author_false():
         "no-artist": [],
         "noartist": []
     })
-    assert not sqmtch(search_query, has_fields=True ,has_author=True ,has_file=True )
-    assert not sqmtch(search_query, has_fields=True ,has_author=True ,has_file=False)
+    assert not sqmtch(search_query, has_fields=True ,has_author=True)
 def test_eval_tag_no_author_true():
     search_query = SearchQuery("no_author no-author noauthor no_artist no-artist noartist", SearchMode.AND)
     assert str(search_query) == "L(T(no_author) T(no-author) T(noauthor) T(no_artist) T(no-artist) T(noartist))"
@@ -468,46 +459,8 @@ def test_eval_tag_no_author_true():
         "no-artist": [],
         "noartist": []
     })
-    assert     sqmtch(search_query, has_fields=True ,has_author=False,has_file=True )
-    assert     sqmtch(search_query, has_fields=True ,has_author=False,has_file=False)
-    assert     sqmtch(search_query, has_fields=False,has_author=False,has_file=True )
-    assert     sqmtch(search_query, has_fields=False,has_author=False,has_file=False)
-def test_eval_tag_missing_false():
-    search_query = SearchQuery("missing no_file no-file nofile", SearchMode.OR)
-    assert str(search_query) == "L(T(missing) T(no_file) T(no-file) T(nofile))"
-    assert search_query.share_tag_requests() == [
-        "missing",
-        "no_file",
-        "no-file",
-        "nofile"
-    ]
-    search_query.receive_requested_lib_info({
-        "missing": [],
-        "no_file": [],
-        "no-file": [],
-        "nofile": []
-    })
-    assert not sqmtch(search_query, has_fields=True ,has_author=True ,has_file=True )
-    assert not sqmtch(search_query, has_fields=True ,has_author=False,has_file=True )
-    assert not sqmtch(search_query, has_fields=False,has_author=False,has_file=True )
-def test_eval_tag_missing_true():
-    search_query = SearchQuery("missing no_file no-file nofile", SearchMode.OR)
-    assert str(search_query) == "L(T(missing) T(no_file) T(no-file) T(nofile))"
-    assert search_query.share_tag_requests() == [
-        "missing",
-        "no_file",
-        "no-file",
-        "nofile"
-    ]
-    search_query.receive_requested_lib_info({
-        "missing": [],
-        "no_file": [],
-        "no-file": [],
-        "nofile": []
-    })
-    assert     sqmtch(search_query, has_fields=True ,has_author=True ,has_file=False)
-    assert     sqmtch(search_query, has_fields=True ,has_author=False,has_file=False)
-    assert     sqmtch(search_query, has_fields=False,has_author=False,has_file=False)
+    assert     sqmtch(search_query, has_fields=True ,has_author=False)
+    assert     sqmtch(search_query, has_fields=False,has_author=False)
 def test_eval_tag_untagged_false():
     search_query = SearchQuery("untagged no_tags no-tags notags", SearchMode.OR)
     assert str(search_query) == "L(T(untagged) T(no_tags) T(no-tags) T(notags))"
@@ -523,12 +476,9 @@ def test_eval_tag_untagged_false():
         "no-tags": [],
         "notags": []
     })
-    assert not sqmtch(search_query, tag_ids=[1],has_fields=True ,has_author=True ,has_file=True )
-    assert not sqmtch(search_query, tag_ids=[1],has_fields=True ,has_author=False,has_file=True )
-    assert not sqmtch(search_query, tag_ids=[1],has_fields=False,has_author=False,has_file=True )
-    assert not sqmtch(search_query, tag_ids=[1],has_fields=True ,has_author=True ,has_file=False)
-    assert not sqmtch(search_query, tag_ids=[1],has_fields=True ,has_author=False,has_file=False)
-    assert not sqmtch(search_query, tag_ids=[1],has_fields=False,has_author=False,has_file=False)
+    assert not sqmtch(search_query, tag_ids=[1],has_fields=True ,has_author=True )
+    assert not sqmtch(search_query, tag_ids=[1],has_fields=True ,has_author=False)
+    assert not sqmtch(search_query, tag_ids=[1],has_fields=False,has_author=False)
 def test_eval_tag_untagged_true():
     search_query = SearchQuery("untagged no_tags no-tags notags", SearchMode.AND)
     assert str(search_query) == "L(T(untagged) T(no_tags) T(no-tags) T(notags))"
@@ -544,12 +494,9 @@ def test_eval_tag_untagged_true():
         "no-tags": [],
         "notags": []
     })
-    assert     sqmtch(search_query, tag_ids=[ ],has_fields=True ,has_author=True ,has_file=True )
-    assert     sqmtch(search_query, tag_ids=[ ],has_fields=True ,has_author=False,has_file=True )
-    assert     sqmtch(search_query, tag_ids=[ ],has_fields=False,has_author=False,has_file=True )
-    assert     sqmtch(search_query, tag_ids=[ ],has_fields=True ,has_author=True ,has_file=False)
-    assert     sqmtch(search_query, tag_ids=[ ],has_fields=True ,has_author=False,has_file=False)
-    assert     sqmtch(search_query, tag_ids=[ ],has_fields=False,has_author=False,has_file=False)
+    assert     sqmtch(search_query, tag_ids=[ ],has_fields=True ,has_author=True )
+    assert     sqmtch(search_query, tag_ids=[ ],has_fields=True ,has_author=False)
+    assert     sqmtch(search_query, tag_ids=[ ],has_fields=False,has_author=False)
 
 def test_eval_tag_filename():
     search_query = SearchQuery("filename:subfolder1 filename:entry1.png", SearchMode.AND)

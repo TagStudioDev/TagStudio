@@ -1379,16 +1379,11 @@ class Library:
                     # to this Library, so skip the entry.
                     continue
                 
-                # These 5 values contain all the pieces of entry-related
+                # These 4 values contain all the pieces of entry-related
                 # information that the search_query may need in order to
                 # evaluate the entry.
                 entry_has_fields = bool(entry.fields)
                 entry_has_author = False
-                entry_has_file = (
-                    self.library_dir /
-                    entry.path /
-                    entry.filename
-                ).resolve() in self.missing_files
                 entry_filename = str(os.path.join(entry.path, entry.filename)).lower()
                 entry_tag_ids: list[int] = []
                 
@@ -1408,7 +1403,6 @@ class Library:
                 if search_query.match_entry(
                     has_fields=entry_has_fields,
                     has_author=entry_has_author,
-                    has_file=entry_has_file,
                     filename=entry_filename,
                     tag_ids=entry_tag_ids
                 ):

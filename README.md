@@ -178,7 +178,6 @@ It is also possible to use various Boolean operators directly when combining tag
 There are some terms that can be matched even without the need to be specifically tagged ahead of time. The following are the supported metatags:
 - **untagged**/**no_tags** whether the entry has no tags at all yet.
 - **empty**/**no_fields** whether the entry has no fields at all, tag or otherwise. This covers text lines, text boxes, dates, and more.
-- **missing**/**no_file** whether the media file associated with the entry is gone or missing from where it was when the entry was created.
 - **no_author**/**no_artist** whether the "Author" or "Artist" fields aren't present in the entry.
 - **filename:** matches any portion of text in the name and subdirectory that the file is located in relative to the library's path. Here are some usage examples:
   - **filename:copy.png** matches any .PNG file whose filename ends with "copy" regardless of directory, such as "shared img \- Copy.png"
