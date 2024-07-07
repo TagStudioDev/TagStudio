@@ -1,3 +1,6 @@
+
+from pathlib import Path
+
 from src.core.search import SearchQuery
 from src.core.enums import SearchMode
 
@@ -6,12 +9,14 @@ def sqmtch(
     tag_ids: list[int] = [],
     has_fields=True,
     has_author=True,
-    filename="subfolder\\entry.png"
+    path="subfolder",
+    filename="entry.png"
 ) -> bool:
     return search_query.match_entry(
         has_fields=has_fields,
         has_author=has_author,
-        filename=filename,
+        path=Path(path),
+        filename=Path(filename),
         tag_ids=tag_ids
     )
 
@@ -503,10 +508,10 @@ def test_eval_tag_filename():
     assert str(search_query) == "L(T(filename:subfolder1) T(filename:entry1.png))"
     assert search_query.share_tag_requests() == ["filename:subfolder1", "filename:entry1.png"]
     search_query.receive_requested_lib_info({"filename:subfolder1": [], "filename:entry1.png": []})
-    assert     sqmtch(search_query, filename="subfolder1\\entry1.png")
-    assert not sqmtch(search_query, filename="subfolder2\\entry1.png")
-    assert not sqmtch(search_query, filename="subfolder1\\entry2.png")
-    assert not sqmtch(search_query, filename="subfolder2\\entry2.png")
+    assert     sqmtch(search_query, path="subfolder1", filename="entry1.png")
+    assert not sqmtch(search_query, path="subfolder2", filename="entry1.png")
+    assert not sqmtch(search_query, path="subfolder1", filename="entry2.png")
+    assert not sqmtch(search_query, path="subfolder2", filename="entry2.png")
 def test_eval_tag_tag_id():
     search_query = SearchQuery("tag_id:1 tag-id:2 tagid:3", SearchMode.AND)
     assert str(search_query) == "L(T(tag_id:1) T(tag-id:2) T(tagid:3))"

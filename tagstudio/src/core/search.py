@@ -2,9 +2,11 @@
 """Search query parsing functionality for use by the src.core.library.Library object in TagStudio"""
 
 import re
+import os # for os.path.sep
 
 from abc import ABC, abstractmethod
 from collections import deque
+from pathlib import Path
 
 from src.core.enums import SearchMode
 
@@ -14,13 +16,22 @@ class _EntrySearchableData:
         self,
         has_fields,
         has_author,
-        filename: str,
+        path: Path,
+        filename: Path,
         tag_ids: list[int]
     ):
         self.has_fields = has_fields
         self.has_author = has_author
+        self.path = path
         self.filename = filename
         self.tag_ids = tag_ids
+        
+        # Path.__str__() is almost 10x slower than anything else you
+        # will find in this file combined. If _TagNode.match() ever ends
+        # up evaluating (str(path) + os.path.sep + str(filename)).lower(),
+        # then the result is cached here in case the query needs to use
+        # it multiple times per entry.
+        self.filestring = ""
 
 
 class ParseError(Exception):
@@ -247,7 +258,11 @@ class _TagNode(_SynNode):
         
         if self.token_text.startswith("filename:"):
             filename = self.token_text.removeprefix("filename:")
-            return filename in entry.filename
+            # str(path) has a noticeable runtime cost, so cache the
+            # result in case the query needs it multiple times per entry
+            if not entry.filestring:
+                entry.filestring = (str(entry.path) + os.path.sep + str(entry.filename)).lower()
+            return filename in entry.filestring
         if (
                self.token_text.startswith("tag_id:")
             or self.token_text.startswith("tag-id:")
@@ -533,12 +548,14 @@ class SearchQuery:
         self,
         has_fields,
         has_author,
-        filename: str,
+        path: Path,
+        filename: Path,
         tag_ids: list[int]
     ):
         return self._syntax_root.match(_EntrySearchableData(
             has_fields,
             has_author,
+            path,
             filename,
             tag_ids
         ))

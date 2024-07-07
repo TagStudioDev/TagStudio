@@ -1379,12 +1379,7 @@ class Library:
                     # to this Library, so skip the entry.
                     continue
                 
-                # These 4 values contain all the pieces of entry-related
-                # information that the search_query may need in order to
-                # evaluate the entry.
-                entry_has_fields = bool(entry.fields)
                 entry_has_author = False
-                entry_filename = str(os.path.join(entry.path, entry.filename)).lower()
                 entry_tag_ids: list[int] = []
                 
                 for field in entry.fields:
@@ -1401,9 +1396,10 @@ class Library:
                         entry_has_author = True
                 
                 if search_query.match_entry(
-                    has_fields=entry_has_fields,
+                    has_fields=bool(entry.fields),
                     has_author=entry_has_author,
-                    filename=entry_filename,
+                    path=entry.path,
+                    filename=entry.filename,
                     tag_ids=entry_tag_ids
                 ):
                     results.append((ItemType.ENTRY, entry.id))
