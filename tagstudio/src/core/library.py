@@ -13,7 +13,7 @@ import xml.etree.ElementTree as ET
 import ujson
 
 from enum import Enum
-from pathlib import Path, PureWindowsPath
+from pathlib import Path
 from typing import cast, Generator
 from typing_extensions import Self
 
