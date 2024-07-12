@@ -13,7 +13,7 @@ import xml.etree.ElementTree as ET
 import ujson
 
 from enum import Enum
-from pathlib import Path
+from pathlib import Path, PureWindowsPath
 from typing import cast, Generator
 from typing_extensions import Self
 
@@ -52,7 +52,7 @@ class Entry:
         # Required Fields ======================================================
         self.id = int(id)
         self.filename = Path(filename)
-        self.path = Path(path)
+        self.path = Path(Path(path).as_posix())
         self.fields: list[dict] = fields
         self.type = None
 
