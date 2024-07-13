@@ -109,63 +109,46 @@ class TagStudioCore:
         cond_file = self.lib.library_dir / TS_FOLDER_NAME / "conditions.json"
         # TODO: Make this stored somewhere better instead of temporarily in this JSON file.
         entry: Entry = self.lib.get_entry(entry_id)
+        if not cond_file.is_file():
+            print("No conditions file found.")
+            return
+        
         try:
-            if cond_file.is_file():
-                with open(cond_file, "r", encoding="utf8") as f:
-                    json_dump = json.load(f)
-                    for c in json_dump["conditions"]:
-                        match: bool = False
-                        for path_c in c["path_conditions"]:
-                            if str(Path(path_c).resolve()) in str(entry.path):
-                                match = True
-                                break
-                        if match:
-                            if fields := c.get("fields"):
-                                for field in fields:
-                                    field_id = self.lib.get_field_attr(field, "id")
-                                    content = field[field_id]
+            f = open(cond_file, "r", encoding="utf8")
+        except Exception as e:
+            print(f"Error opening conditions file: {e}")
+            return
+        
+        with f:
+            json_dump = json.load(f)
+            for c in json_dump.get("conditions", []):
+                match: bool = any(str(Path(path_c).resolve()) in str(entry.path) for path_c in c.get("path_conditions", []))
+                    
+                if not match:
+                    continue
 
-                                    if (
-                                        self.lib.get_field_obj(int(field_id))["type"]
-                                        == "tag_box"
-                                    ):
-                                        existing_fields: list[int] = (
-                                            self.lib.get_field_index_in_entry(
-                                                entry, field_id
-                                            )
-                                        )
-                                        if existing_fields:
-                                            self.lib.update_entry_field(
-                                                entry_id,
-                                                existing_fields[0],
-                                                content,
-                                                "append",
-                                            )
-                                        else:
-                                            self.lib.add_field_to_entry(
-                                                entry_id, field_id
-                                            )
-                                            self.lib.update_entry_field(
-                                                entry_id, -1, content, "append"
-                                            )
+                if not any(fields := c.get("fields", [])):
+                    continue
+                
+                for field in fields:
+                    field_id = self.lib.get_field_attr(field, "id")
+                    content = field.get(field_id)
 
-                                    if (
-                                        self.lib.get_field_obj(int(field_id))["type"]
-                                        in TEXT_FIELDS
-                                    ):
-                                        if not self.lib.does_field_content_exist(
-                                            entry_id, field_id, content
-                                        ):
-                                            self.lib.add_field_to_entry(
-                                                entry_id, field_id
-                                            )
-                                            self.lib.update_entry_field(
-                                                entry_id, -1, content, "replace"
-                                            )
-        except:
-            print("Error in match_conditions...")
-            # input()
-            pass
+                    if self.lib.get_field_obj(int(field_id))["type"] == "tag_box":
+                        existing_fields: list[int] = self.lib.get_field_index_in_entry(entry, field_id)
+
+                        if existing_fields:
+                            self.lib.update_entry_field(entry_id, existing_fields[0], content, "append")
+                        else:
+                            self.lib.add_field_to_entry(entry_id, field_id)
+                            self.lib.update_entry_field(entry_id, -1, content, "append")
+
+                    if self.lib.get_field_obj(int(field_id))["type"] in TEXT_FIELDS:
+                        if not self.lib.does_field_content_exist(entry_id, field_id, content):
+                            self.lib.add_field_to_entry(entry_id, field_id)
+                            self.lib.update_entry_field(entry_id, -1, content, "replace")
+    
+
 
     def build_url(self, entry_id: int, source: str):
         """Tries to rebuild a source URL given a specific filename structure."""
