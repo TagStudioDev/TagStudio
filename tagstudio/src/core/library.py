@@ -2164,7 +2164,7 @@ class Library:
     # 	entry = self.entries[entry_index]
     # 	pass
     # 	# TODO: Implement.
-    
+
     def get_field_attr(self, entry_field: dict, attribute: str):
         """Returns the value of a specified attribute inside an Entry field."""
         match attribute.lower():
