@@ -52,7 +52,7 @@ class Entry:
         # Required Fields ======================================================
         self.id = int(id)
         self.filename = Path(filename)
-        self.path = Path(Path(path).as_posix())
+        self.path = Path(path).as_posix()
         self.fields: list[dict] = fields
         self.type = None
 
