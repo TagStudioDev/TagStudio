@@ -2169,12 +2169,15 @@ class Library:
         """Returns the value of a specified attribute inside an Entry field."""
         match attribute.lower():
             case "id":
-                return list(entry_field.keys())[:1]
+                return val[0] if not any(val := list(entry_field.keys())[:1]) else -1
             case "content":
                 return entry_field[self.get_field_attr(entry_field, "id")]
             case _:
-                _ensure_field: dict = self.get_field_obj(self.get_field_attr(entry_field, "id"))
-                return _ensure_field.get(attribute.lower())
+                #_ensure_field: dict = self.get_field_obj(self.get_field_attr(entry_field, "id"))
+                #return _ensure_field.get(attribute.lower())
+                return self.get_field_obj(self.get_field_attr(entry_field, "id"))[
+                attribute.lower()
+            ]
         
 
     def get_field_obj(self, field_id: int) -> dict:
