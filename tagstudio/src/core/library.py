@@ -2173,11 +2173,8 @@ class Library:
             case "content":
                 return entry_field[self.get_field_attr(entry_field, "id")]
             case _:
-                #_ensure_field: dict = self.get_field_obj(self.get_field_attr(entry_field, "id"))
-                #return _ensure_field.get(attribute.lower())
-                return self.get_field_obj(self.get_field_attr(entry_field, "id"))[
-                attribute.lower()
-            ]
+                _ensure_field: dict = self.get_field_obj(self.get_field_attr(entry_field, "id"))
+                return _ensure_field.get(attribute.lower())
         
 
     def get_field_obj(self, field_id: int) -> dict:
