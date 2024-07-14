@@ -5,12 +5,10 @@
 """The core classes and methods of TagStudio."""
 
 import json
-import os
 from pathlib import Path
-from enum import Enum
 
-from src.core.library import Entry, Library
 from src.core.constants import TS_FOLDER_NAME, TEXT_FIELDS
+from src.core.library import Entry
 
 
 class TagStudioCore:
@@ -79,29 +77,6 @@ class TagStudioCore:
             pass
 
         return info
-
-    # def scrape(self, entry_id):
-    # 	entry = self.lib.get_entry(entry_id)
-    # 	if entry.fields:
-    # 		urls: list[str] = []
-    # 		if self.lib.get_field_index_in_entry(entry, 21):
-    # 			urls.extend([self.lib.get_field_attr(entry.fields[x], 'content')
-    # 						for x in self.lib.get_field_index_in_entry(entry, 21)])
-    # 		if self.lib.get_field_index_in_entry(entry, 3):
-    # 			urls.extend([self.lib.get_field_attr(entry.fields[x], 'content')
-    # 						for x in self.lib.get_field_index_in_entry(entry, 3)])
-    # 	# try:
-    # 	if urls:
-    # 		for url in urls:
-    # 			url = "https://" + url if 'https://' not in url else url
-    # 			html_doc = requests.get(url).text
-    # 			soup = bs(html_doc, "html.parser")
-    # 			print(soup)
-    # 			input()
-
-    # 	# except:
-    # 	# 	# print("Could not resolve URL.")
-    # 	# 	pass
 
     def match_conditions(self, entry_id: int) -> None:
         """Matches defined conditions against a file to add Entry data."""

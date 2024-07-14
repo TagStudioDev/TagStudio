@@ -5,6 +5,7 @@
 
 import math
 import os
+from calendar import Calendar
 from types import FunctionType, MethodType
 from pathlib import Path
 from typing import Optional, cast, Callable, Any
@@ -41,8 +42,8 @@ class FieldContainer(QWidget):
         self.title: str = title
         self.inline: bool = inline
         # self.editable:bool = editable
-        self.copy_callback: FunctionType = None
-        self.edit_callback: FunctionType = None
+        self.copy_callback: Callable = None
+        self.edit_callback: Callable = None
         self.remove_callback: Callable = None
         button_size = 24
         # self.setStyleSheet('border-style:solid;border-color:#1e1a33;border-radius:8px;border-width:2px;')
@@ -133,7 +134,7 @@ class FieldContainer(QWidget):
         if callback is not None:
             self.copy_button.is_connected = True
 
-    def set_edit_callback(self, callback: Optional[MethodType]):
+    def set_edit_callback(self, callback: Callable):
         if self.edit_button.is_connected:
             self.edit_button.clicked.disconnect()
 
@@ -142,7 +143,7 @@ class FieldContainer(QWidget):
         if callback is not None:
             self.edit_button.is_connected = True
 
-    def set_remove_callback(self, callback: Optional[Callable]):
+    def set_remove_callback(self, callback: Callable):
         if self.remove_button.is_connected:
             self.remove_button.clicked.disconnect()
 
@@ -160,9 +161,9 @@ class FieldContainer(QWidget):
             self.field_layout.itemAt(0).widget().deleteLater()
         self.field_layout.addWidget(widget)
 
-    def get_inner_widget(self) -> Optional["FieldWidget"]:
+    def get_inner_widget(self):
         if self.field_layout.itemAt(0):
-            return cast(FieldWidget, self.field_layout.itemAt(0).widget())
+            return self.field_layout.itemAt(0).widget()
         return None
 
     def set_title(self, title: str):

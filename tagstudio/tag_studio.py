@@ -4,11 +4,17 @@
 
 """TagStudio launcher."""
 
-from src.core.ts_core import TagStudioCore
-from src.cli.ts_cli import CliDriver  # type: ignore
+import structlog
+import logging
+
 from src.qt.ts_qt import QtDriver
 import argparse
 import traceback
+
+
+structlog.configure(
+    wrapper_class=structlog.make_filtering_bound_logger(logging.INFO),
+)
 
 
 def main():
@@ -36,6 +42,13 @@ def main():
         type=str,
         help="Path to a TagStudio .ini or .plist config file to use.",
     )
+    parser.add_argument(
+        "-b",
+        "--backend",
+        dest="backend",
+        type=str,
+        help="Either SQLite or JSON. (Default: JSON)",
+    )
 
     # parser.add_argument('--browse', dest='browse', action='store_true',
     #                     help='Jumps to entry browsing on startup.')
@@ -60,20 +73,14 @@ def main():
     )
     args = parser.parse_args()
 
-    core = TagStudioCore()  # The TagStudio Core instance. UI agnostic.
-    driver = None  # The UI driver instance.
-    ui_name: str = "unknown"  # Display name for the UI, used in logs.
-
-    # Driver selection based on parameters.
-    if args.ui and args.ui == "qt":
-        driver = QtDriver(core, args)
-        ui_name = "Qt"
-    elif args.ui and args.ui == "cli":
-        driver = CliDriver(core, args)
-        ui_name = "CLI"
+    be = args.backend
+    if be == "json":
+        from src.core.library import json as backend
     else:
-        driver = QtDriver(core, args)
-        ui_name = "Qt"
+        from src.core.library import alchemy as backend
+
+    driver = QtDriver(backend, args)
+    ui_name = "Qt"
 
     # Run the chosen frontend driver.
     try:

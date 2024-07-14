@@ -13,6 +13,7 @@ from PySide6.QtWidgets import (
 )
 
 from src.core.library import Library
+from src.core.library.alchemy.enums import FilterState
 from src.qt.widgets.panel import PanelWidget, PanelModal
 from src.qt.widgets.tag import TagWidget
 from src.qt.modals.build_tag import BuildTagPanel
@@ -96,26 +97,25 @@ class TagDatabasePanel(PanelWidget):
 
         # If there is a query, get a list of tag_ids that match, otherwise return all
         if query:
-            tags = self.lib.search_tags(query, include_cluster=True)[
-                : self.tag_limit - 1
-            ]
+            tags = self.lib.search_tags(
+                FilterState(name=query, page_size=self.tag_limit)
+            )
         else:
             # Get tag ids to keep this behaviorally identical
-            tags = [t.id for t in self.lib.tags]
+            # tags = [t.id for t in self.lib.tags]
+            tags = self.lib.tags
 
         first_id_set = False
-        for tag_id in tags:
+        for tag in tags:
             if not first_id_set:
-                self.first_tag_id = tag_id
+                self.first_tag_id = tag.id
                 first_id_set = True
             container = QWidget()
             row = QHBoxLayout(container)
             row.setContentsMargins(0, 0, 0, 0)
             row.setSpacing(3)
-            tw = TagWidget(self.lib, self.lib.get_tag(tag_id), True, False)
-            tw.on_edit.connect(
-                lambda checked=False, t=self.lib.get_tag(tag_id): (self.edit_tag(t.id))
-            )
+            tw = TagWidget(tag, True, False)
+            tw.on_edit.connect(lambda checked=False, t=tag.id: self.edit_tag(t))
             row.addWidget(tw)
             self.scroll_layout.addWidget(container)
 
@@ -124,9 +124,10 @@ class TagDatabasePanel(PanelWidget):
     def edit_tag(self, tag_id: int):
         btp = BuildTagPanel(self.lib, tag_id)
         # btp.on_edit.connect(lambda x: self.edit_tag_callback(x))
+        tag = self.lib.get_tag(tag_id)
         self.edit_modal = PanelModal(
             btp,
-            self.lib.get_tag(tag_id).display_name(self.lib),
+            tag.name,
             "Edit Tag",
             done_callback=(self.update_tags(self.search_field.text())),
             has_save=True,
@@ -137,7 +138,8 @@ class TagDatabasePanel(PanelWidget):
         self.edit_modal.show()
 
     def edit_tag_callback(self, btp: BuildTagPanel):
-        self.lib.update_tag(btp.build_tag())
+        self.lib.add_tag(btp.build_tag())
+        # self.lib.update_tag(btp.build_tag())
         self.update_tags(self.search_field.text())
 
     # def enterEvent(self, event: QEnterEvent) -> None:

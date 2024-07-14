@@ -2,7 +2,6 @@
 # Licensed under the GPL-3.0 License.
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
-import logging
 from pathlib import Path
 import time
 import typing
@@ -10,9 +9,10 @@ from datetime import datetime as dt
 
 import cv2
 import rawpy
+import structlog
 from PIL import Image, UnidentifiedImageError
 from PIL.Image import DecompressionBombError
-from PySide6.QtCore import Signal, Qt, QSize
+from PySide6.QtCore import QModelIndex, Signal, Qt, QSize
 from PySide6.QtGui import QResizeEvent, QAction
 from PySide6.QtWidgets import (
     QWidget,
@@ -28,9 +28,10 @@ from PySide6.QtWidgets import (
 )
 from humanfriendly import format_size
 
-from src.core.enums import SettingItems, Theme
-from src.core.library import Entry, ItemType, Library
+from src.core.enums import SettingItems, Theme, FieldID
 from src.core.constants import VIDEO_TYPES, IMAGE_TYPES, RAW_IMAGE_TYPES, TS_FOLDER_NAME
+from src.core.library.alchemy.enums import FilterState
+from src.core.library.alchemy.fields import TextField, TagBoxField, DatetimeField
 from src.qt.helpers.file_opener import FileOpenerLabel, FileOpenerHelper, open_file
 from src.qt.modals.add_field import AddFieldModal
 from src.qt.widgets.thumb_renderer import ThumbRenderer
@@ -43,7 +44,6 @@ from src.qt.widgets.text_line_edit import EditTextLine
 from src.qt.helpers.qbutton_wrapper import QPushButtonWrapper
 from src.qt.widgets.video_player import VideoPlayer
 
-
 # Only import for type checking/autocompletion, will not be imported at runtime.
 if typing.TYPE_CHECKING:
     from src.qt.ts_qt import QtDriver
@@ -52,7 +52,19 @@ ERROR = "[ERROR]"
 WARNING = "[WARNING]"
 INFO = "[INFO]"
 
-logging.basicConfig(format="%(message)s", level=logging.INFO)
+logger = structlog.get_logger(__name__)
+
+
+def update_selected_entry(driver: "QtDriver"):
+    for grid_idx in driver.selected:
+        entry = driver.frame_content[grid_idx]
+        # reload entry
+        _, entries = driver.lib.search_library(FilterState(id=entry.id))
+        logger.info(
+            "found item", entries=entries, grid_idx=grid_idx, lookup_id=entry.id
+        )
+        assert entries, f"Entry not found: {entry.id}"
+        driver.frame_content[grid_idx] = entries[0]
 
 
 class PreviewPanel(QWidget):
@@ -60,18 +72,18 @@ class PreviewPanel(QWidget):
 
     tags_updated = Signal()
 
-    def __init__(self, library: Library, driver: "QtDriver"):
+    def __init__(self, library, driver: "QtDriver"):
         super().__init__()
         self.is_connected = False
         self.lib = library
         self.driver: QtDriver = driver
         self.initialized = False
-        self.isOpen: bool = False
+        self.is_open: bool = False
         # self.filepath = None
         # self.item = None # DEPRECATED, USE self.selected
         self.common_fields: list = []
         self.mixed_fields: list = []
-        self.selected: list[tuple[ItemType, int]] = []  # New way of tracking items
+        self.selected: list[int] = []  # New way of tracking items
         self.tag_callback = None
         self.containers: list[QWidget] = []
 
@@ -241,7 +253,7 @@ class PreviewPanel(QWidget):
         settings.beginGroup(SettingItems.LIBS_LIST)
         lib_items: dict[str, tuple[str, str]] = {}
         for item_tstamp in settings.allKeys():
-            val: str = settings.value(item_tstamp)  # type: ignore
+            val: str = settings.value(item_tstamp)
             cut_val = val
             if len(val) > 45:
                 cut_val = f"{val[0:10]} ... {val[-10:]}"
@@ -353,25 +365,25 @@ class PreviewPanel(QWidget):
         )
 
     def set_image_ratio(self, ratio: float):
-        # logging.info(f'Updating Ratio to: {ratio} #####################################################')
+        # logger.info(f'Updating Ratio to: {ratio} #####################################################')
         self.image_ratio = ratio
 
     def update_image_size(self, size: tuple[int, int], ratio: float = None):
         if ratio:
             self.set_image_ratio(ratio)
         # self.img_button_size = size
-        # logging.info(f'')
+        # logger.info(f'')
         # self.preview_img.setMinimumSize(64,64)
 
         adj_width: float = size[0]
         adj_height: float = size[1]
         # Landscape
         if self.image_ratio > 1:
-            # logging.info('Landscape')
+            # logger.info('Landscape')
             adj_height = size[0] * (1 / self.image_ratio)
         # Portrait
         elif self.image_ratio <= 1:
-            # logging.info('Portrait')
+            # logger.info('Portrait')
             adj_width = size[1] * self.image_ratio
 
         if adj_width > size[0]:
@@ -400,14 +412,6 @@ class PreviewPanel(QWidget):
         # 		filepath = os.path.normpath(f'{self.lib.library_dir}/{self.item.path}/{self.item.filename}')
         # 		self.thumb_renderer.render(time.time(), filepath, self.preview_img.size().toTuple(), self.devicePixelRatio(),update_on_ratio_change=True)
 
-        # logging.info(f' Img Aspect Ratio: {self.image_ratio}')
-        # logging.info(f'  Max Button Size: {size}')
-        # logging.info(f'Container Size: {(self.image_container.size().width(), self.image_container.size().height())}')
-        # logging.info(f'Final Button Size: {(adj_width, adj_height)}')
-        # logging.info(f'')
-        # logging.info(f'  Icon Size: {self.preview_img.icon().actualSize().toTuple()}')
-        # logging.info(f'Button Size: {self.preview_img.size().toTuple()}')
-
     def place_add_field_button(self):
         self.scroll_layout.addWidget(self.afb_container)
         self.scroll_layout.setAlignment(
@@ -421,26 +425,30 @@ class PreviewPanel(QWidget):
 
         # self.afm.done.connect(lambda f: (self.lib.add_field_to_entry(self.selected[0][1], f), self.update_widgets()))
         self.afm.done.connect(
-            lambda f: (self.add_field_to_selected(f), self.update_widgets())
+            lambda f: (
+                self.add_field_to_selected(f),
+                update_selected_entry(self.driver),
+                self.update_widgets(),
+            )
         )
         self.afm.is_connected = True
         self.add_field_button.clicked.connect(self.afm.show)
 
-    def add_field_to_selected(self, field_id: int):
-        """Adds an entry field to one or more selected items."""
-        added = set()
-        for item_pair in self.selected:
-            if item_pair[0] == ItemType.ENTRY and item_pair[1] not in added:
-                self.lib.add_field_to_entry(item_pair[1], field_id)
-                added.add(item_pair[1])
+    def add_field_to_selected(self, field_list: list[QModelIndex]):
+        """Add list of entry fields to one or more selected items."""
+        logger.info("add_field_to_selected", selected=self.selected, fields=field_list)
+        for grid_idx in self.selected:
+            entry = self.driver.frame_content[grid_idx]
+            for field_item in field_list:
+                self.lib.add_field_to_entry(entry, field_item.row())
 
     # def update_widgets(self, item: Union[Entry, Collation, Tag]):
     def update_widgets(self):
         """
-        Renders the panel's widgets with the newest data from the Library.
+        Render the panel widgets with the newest data from the Library.
         """
-        logging.info(f"[ENTRY PANEL] UPDATE WIDGETS ({self.driver.selected})")
-        self.isOpen = True
+        logger.info("update widgets", selected=self.driver.selected)
+        self.is_open = True
         # self.tag_callback = tag_callback if tag_callback else None
         window_title = ""
 
@@ -482,138 +490,133 @@ class PreviewPanel(QWidget):
         # 1 Selected Item
         elif len(self.driver.selected) == 1:
             # 1 Selected Entry
-            if self.driver.selected[0][0] == ItemType.ENTRY:
-                self.preview_img.show()
-                self.preview_vid.stop()
-                self.preview_vid.hide()
-                item: Entry = self.lib.get_entry(self.driver.selected[0][1])
-                # If a new selection is made, update the thumbnail and filepath.
-                if not self.selected or self.selected != self.driver.selected:
-                    filepath = self.lib.library_dir / item.path / item.filename
-                    self.file_label.setFilePath(filepath)
-                    window_title = str(filepath)
-                    ratio: float = self.devicePixelRatio()
-                    self.thumb_renderer.render(
-                        time.time(),
-                        filepath,
-                        (512, 512),
-                        ratio,
-                        update_on_ratio_change=True,
-                    )
-                    self.file_label.setText("\u200b".join(str(filepath)))
-                    self.file_label.setCursor(Qt.CursorShape.PointingHandCursor)
+            selected_idx = self.driver.selected[0]
+            item = self.driver.frame_content[selected_idx]
 
-                    self.preview_img.setContextMenuPolicy(
-                        Qt.ContextMenuPolicy.ActionsContextMenu
-                    )
-                    self.preview_img.setCursor(Qt.CursorShape.PointingHandCursor)
+            self.preview_img.show()
+            self.preview_vid.stop()
+            self.preview_vid.hide()
+            # If a new selection is made, update the thumbnail and filepath.
+            if not self.selected or self.selected != self.driver.selected:
+                filepath = self.lib.library_dir / item.path
+                self.file_label.setFilePath(filepath)
+                ratio: float = self.devicePixelRatio()
+                self.thumb_renderer.render(
+                    time.time(),
+                    filepath,
+                    (512, 512),
+                    ratio,
+                    update_on_ratio_change=True,
+                )
+                self.file_label.setText("\u200b".join(str(filepath)))
+                self.file_label.setCursor(Qt.CursorShape.PointingHandCursor)
 
-                    self.opener = FileOpenerHelper(filepath)
-                    self.open_file_action.triggered.connect(self.opener.open_file)
-                    self.open_explorer_action.triggered.connect(
-                        self.opener.open_explorer
-                    )
+                self.preview_img.setContextMenuPolicy(
+                    Qt.ContextMenuPolicy.ActionsContextMenu
+                )
+                self.preview_img.setCursor(Qt.CursorShape.PointingHandCursor)
 
-                    # TODO: Do this somewhere else, this is just here temporarily.
-                    try:
-                        image = None
-                        if filepath.suffix.lower() in IMAGE_TYPES:
-                            image = Image.open(str(filepath))
-                        elif filepath.suffix.lower() in RAW_IMAGE_TYPES:
-                            try:
-                                with rawpy.imread(str(filepath)) as raw:
-                                    rgb = raw.postprocess()
-                                    image = Image.new(
-                                        "L", (rgb.shape[1], rgb.shape[0]), color="black"
-                                    )
-                            except (
-                                rawpy._rawpy.LibRawIOError,
-                                rawpy._rawpy.LibRawFileUnsupportedError,
-                            ):
-                                pass
-                        elif filepath.suffix.lower() in VIDEO_TYPES:
-                            video = cv2.VideoCapture(str(filepath))
-                            if video.get(cv2.CAP_PROP_FRAME_COUNT) <= 0:
-                                raise cv2.error("File is invalid or has 0 frames")
-                            video.set(cv2.CAP_PROP_POS_FRAMES, 0)
-                            success, frame = video.read()
-                            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-                            image = Image.fromarray(frame)
-                            if success:
-                                self.preview_img.hide()
-                                self.preview_vid.play(
-                                    filepath, QSize(image.width, image.height)
+                self.opener = FileOpenerHelper(filepath)
+                self.open_file_action.triggered.connect(self.opener.open_file)
+                self.open_explorer_action.triggered.connect(self.opener.open_explorer)
+
+                # TODO: Do this somewhere else, this is just here temporarily.
+                try:
+                    image = None
+                    if filepath.suffix.lower() in IMAGE_TYPES:
+                        image = Image.open(str(filepath))
+                    elif filepath.suffix.lower() in RAW_IMAGE_TYPES:
+                        try:
+                            with rawpy.imread(str(filepath)) as raw:
+                                rgb = raw.postprocess()
+                                image = Image.new(
+                                    "L", (rgb.shape[1], rgb.shape[0]), color="black"
                                 )
-                                self.resizeEvent(
-                                    QResizeEvent(
-                                        QSize(image.width, image.height),
-                                        QSize(image.width, image.height),
-                                    )
-                                )
-                                self.preview_vid.show()
-
-                        # Stats for specific file types are displayed here.
-                        if image and filepath.suffix.lower() in (
-                            IMAGE_TYPES + VIDEO_TYPES + RAW_IMAGE_TYPES
+                        except (
+                            rawpy._rawpy.LibRawIOError,
+                            rawpy._rawpy.LibRawFileUnsupportedError,
                         ):
-                            self.dimensions_label.setText(
-                                f"{filepath.suffix.upper()[1:]}  •  {format_size(filepath.stat().st_size)}\n{image.width} x {image.height} px"
+                            pass
+                    elif filepath.suffix.lower() in VIDEO_TYPES:
+                        video = cv2.VideoCapture(str(filepath))
+                        if video.get(cv2.CAP_PROP_FRAME_COUNT) <= 0:
+                            raise cv2.error("File is invalid or has 0 frames")
+                        video.set(cv2.CAP_PROP_POS_FRAMES, 0)
+                        success, frame = video.read()
+                        frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+                        image = Image.fromarray(frame)
+                        if success:
+                            self.preview_img.hide()
+                            self.preview_vid.play(
+                                filepath, QSize(image.width, image.height)
                             )
-                        else:
-                            self.dimensions_label.setText(
-                                f"{filepath.suffix.upper()[1:]}  •  {format_size(filepath.stat().st_size)}"
+                            self.resizeEvent(
+                                QResizeEvent(
+                                    QSize(image.width, image.height),
+                                    QSize(image.width, image.height),
+                                )
                             )
+                            self.preview_vid.show()
 
-                        if not filepath.is_file():
-                            raise FileNotFoundError
-
-                    except FileNotFoundError as e:
-                        self.dimensions_label.setText(f"{filepath.suffix.upper()[1:]}")
-                        logging.info(
-                            f"[PreviewPanel][ERROR] Couldn't Render thumbnail for {filepath} (because of {e})"
+                    # Stats for specific file types are displayed here.
+                    if image and filepath.suffix.lower() in (
+                        IMAGE_TYPES + VIDEO_TYPES + RAW_IMAGE_TYPES
+                    ):
+                        self.dimensions_label.setText(
+                            f"{filepath.suffix.upper()[1:]}  •  {format_size(filepath.stat().st_size)}\n{image.width} x {image.height} px"
                         )
-
-                    except (FileNotFoundError, cv2.error) as e:
-                        self.dimensions_label.setText(f"{filepath.suffix.upper()}")
-                        logging.info(
-                            f"[PreviewPanel][ERROR] Couldn't Render thumbnail for {filepath} (because of {e})"
-                        )
-                    except (
-                        UnidentifiedImageError,
-                        DecompressionBombError,
-                    ) as e:
+                    else:
                         self.dimensions_label.setText(
                             f"{filepath.suffix.upper()[1:]}  •  {format_size(filepath.stat().st_size)}"
                         )
-                        logging.info(
-                            f"[PreviewPanel][ERROR] Couldn't Render thumbnail for {filepath} (because of {e})"
-                        )
 
-                    if self.preview_img.is_connected:
-                        self.preview_img.clicked.disconnect()
-                    self.preview_img.clicked.connect(
-                        lambda checked=False, filepath=filepath: open_file(filepath)
+                    if not filepath.is_file():
+                        raise FileNotFoundError
+
+                except FileNotFoundError as e:
+                    self.dimensions_label.setText(f"{filepath.suffix.upper()[1:]}")
+                    logger.error(
+                        "Couldn't Render thumbnail", filepath=filepath, error=e
                     )
-                    self.preview_img.is_connected = True
-                self.selected = list(self.driver.selected)
-                for i, f in enumerate(item.fields):
-                    self.write_container(i, f)
 
-                # Hide leftover containers
-                if len(self.containers) > len(item.fields):
-                    for i, c in enumerate(self.containers):
-                        if i > (len(item.fields) - 1):
-                            c.setHidden(True)
+                except (FileNotFoundError, cv2.error) as e:
+                    self.dimensions_label.setText(f"{filepath.suffix.upper()}")
+                    logger.error(
+                        "Couldn't Render thumbnail", filepath=filepath, error=e
+                    )
 
-                self.add_field_button.setHidden(False)
+                except (
+                    UnidentifiedImageError,
+                    DecompressionBombError,
+                ) as e:
+                    self.dimensions_label.setText(
+                        f"{filepath.suffix.upper()[1:]}  •  {format_size(filepath.stat().st_size)}"
+                    )
+                    logger.error(
+                        "Couldn't Render thumbnail", filepath=filepath, error=e
+                    )
 
-            # 1 Selected Collation
-            elif self.driver.selected[0][0] == ItemType.COLLATION:
-                pass
+                if self.preview_img.is_connected:
+                    self.preview_img.clicked.disconnect()
+                self.preview_img.clicked.connect(
+                    lambda checked=False, filepath=filepath: open_file(filepath)
+                )
+                self.preview_img.is_connected = True
 
-            # 1 Selected Tag
-            elif self.driver.selected[0][0] == ItemType.TAG_GROUP:
-                pass
+            self.selected = self.driver.selected
+            logger.info("rendering item fields", item=item, fields=item.tag_box_fields)
+            # logger.info("rendering item fields", item=item, fields=item.fields)
+            for idx, field in enumerate(item.fields):
+                logger.info("write container in update_widgets", idx=idx, field=field)
+                self.write_container(idx, field)
+
+            # Hide leftover containers
+            if len(self.containers) > len(item.fields):
+                for i, c in enumerate(self.containers):
+                    if i > (len(item.fields) - 1):
+                        c.setHidden(True)
+
+            self.add_field_button.setHidden(False)
 
         # Multiple Selected Items
         elif len(self.driver.selected) > 1:
@@ -646,39 +649,32 @@ class PreviewPanel(QWidget):
 
             self.common_fields = []
             self.mixed_fields = []
-            for i, item_pair in enumerate(self.driver.selected):
-                if item_pair[0] == ItemType.ENTRY:
-                    item = self.lib.get_entry(item_pair[1])
-                    if i == 0:
-                        for f in item.fields:
-                            self.common_fields.append(f)
-                    else:
-                        common_to_remove = []
-                        for f in self.common_fields:
-                            # Common field found (Same ID, identical content)
-                            if f not in item.fields:
-                                common_to_remove.append(f)
+            for i, grid_idx in enumerate(self.driver.selected):
+                item = self.driver.frame_content[grid_idx]
+                if i == 0:
+                    for f in item.fields:
+                        self.common_fields.append(f)
+                else:
+                    common_to_remove = []
+                    for f in self.common_fields:
+                        # Common field found (Same ID, identical content)
+                        if f not in item.fields:
+                            common_to_remove.append(f)
 
-                                # Mixed field found (Same ID, different content)
-                                if self.lib.get_field_index_in_entry(
-                                    item, self.lib.get_field_attr(f, "id")
+                            # Mixed field found (Same ID, different content)
+                            # TODO
+                            if self.lib.get_field_index_in_entry(
+                                item, self.lib.get_field_attr(f, "id")
+                            ):
+                                f_stripped = {self.lib.get_field_attr(f, "id"): None}
+                                if f_stripped not in self.mixed_fields and (
+                                    f not in self.common_fields or f in common_to_remove
                                 ):
-                                    # if self.lib.get_field_attr(f, 'type') == ('tag_box'):
-                                    # 	pass
-                                    # logging.info(f)
-                                    # logging.info(type(f))
-                                    f_stripped = {
-                                        self.lib.get_field_attr(f, "id"): None
-                                    }
-                                    if f_stripped not in self.mixed_fields and (
-                                        f not in self.common_fields
-                                        or f in common_to_remove
-                                    ):
-                                        #  and (f not in self.common_fields or f in common_to_remove)
-                                        self.mixed_fields.append(f_stripped)
-                        self.common_fields = [
-                            f for f in self.common_fields if f not in common_to_remove
-                        ]
+                                    #  and (f not in self.common_fields or f in common_to_remove)
+                                    self.mixed_fields.append(f_stripped)
+                    self.common_fields = [
+                        f for f in self.common_fields if f not in common_to_remove
+                    ]
             order: list[int] = (
                 [0]
                 + [1, 2]
@@ -696,10 +692,11 @@ class PreviewPanel(QWidget):
 
             self.selected = list(self.driver.selected)
             for i, f in enumerate(self.common_fields):
-                logging.info(f"ci:{i}, f:{f}")
+                logger.info("update_widgets enum common_fields", index=i, field=f)
                 self.write_container(i, f)
+
             for i, f in enumerate(self.mixed_fields, start=len(self.common_fields)):
-                logging.info(f"mi:{i}, f:{f}")
+                logger.info("update_widgets enum mixed_fields", index=i, field=f)
                 self.write_container(i, f, mixed=True)
 
             # Hide leftover containers
@@ -712,58 +709,6 @@ class PreviewPanel(QWidget):
 
         self.initialized = True
 
-        # # Uninitialized or New Item:
-        # if not self.item or self.item.id != item.id:
-        # 	# logging.info(f'Uninitialized or New Item ({item.id})')
-        # 	if type(item) == Entry:
-        # 		# New Entry: Render preview and update filename label
-        # 		filepath = os.path.normpath(f'{self.lib.library_dir}/{item.path}/{item.filename}')
-        # 		window_title = filepath
-        # 		ratio: float = self.devicePixelRatio()
-        # 		self.thumb_renderer.render(time.time(), filepath, (512, 512), ratio,update_on_ratio_change=True)
-        # 		self.file_label.setText("\u200b".join(filepath))
-
-        # 		# TODO: Deal with this later.
-        # 		# https://stackoverflow.com/questions/64252654/pyqt5-drag-and-drop-into-system-file-explorer-with-delayed-encoding
-        # 		# https://doc.qt.io/qtforpython-5/PySide2/QtCore/QMimeData.html#more
-        # 		# drag = QDrag(self.preview_img)
-        # 		# mime = QMimeData()
-        # 		# mime.setUrls([filepath])
-        # 		# drag.setMimeData(mime)
-        # 		# drag.exec_(Qt.DropAction.CopyAction)
-
-        # 		try:
-        # 			self.preview_img.clicked.disconnect()
-        # 		except RuntimeError:
-        # 			pass
-        # 		self.preview_img.clicked.connect(
-        # 			lambda checked=False, filepath=filepath: open_file(filepath))
-
-        # 		for i, f in enumerate(item.fields):
-        # 			self.write_container(item, i, f)
-
-        # 		self.item = item
-
-        # 		# try:
-        # 		# 	self.tags_updated.disconnect()
-        # 		# except RuntimeError:
-        # 		# 	pass
-        # 		# if self.tag_callback:
-        # 		# 	# logging.info(f'[UPDATE CONTAINER] Updating Callback for {item.id}: {self.tag_callback}')
-        # 		# 	self.tags_updated.connect(self.tag_callback)
-
-        # # Initialized, Updating:
-        # elif self.item and self.item.id == item.id:
-        # 	# logging.info(f'Initialized Item, Updating! ({item.id})')
-        # 	for i, f in enumerate(item.fields):
-        # 		self.write_container(item, i, f)
-
-        # # Hide leftover containers
-        # if len(self.containers) > len(self.item.fields):
-        # 	for i, c in enumerate(self.containers):
-        # 		if i > (len(self.item.fields) - 1):
-        # 			c.setHidden(True)
-
         self.setWindowTitle(window_title)
         self.show()
 
@@ -774,68 +719,70 @@ class PreviewPanel(QWidget):
         if self.is_connected:
             self.tags_updated.disconnect()
 
-        logging.info("[UPDATE CONTAINER] Setting tags updated slot")
+        logger.info("[UPDATE CONTAINER] Setting tags updated slot")
         self.tags_updated.connect(slot)
         self.is_connected = True
 
-    # def write_container(self, item:Union[Entry, Collation, Tag], index, field):
-    def write_container(self, index, field, mixed=False):
-        """Updates/Creates data for a FieldContainer."""
-        # logging.info(f'[ENTRY PANEL] WRITE CONTAINER')
+    def write_container(self, index: int, field, mixed: bool = False):
+        """Update/Create data for a FieldContainer."""
         # Remove 'Add Field' button from scroll_layout, to be re-added later.
         self.scroll_layout.takeAt(self.scroll_layout.count() - 1).widget()
-        container: FieldContainer = None
         if len(self.containers) < (index + 1):
             container = FieldContainer()
             self.containers.append(container)
             self.scroll_layout.addWidget(container)
         else:
-            container = self.containers[index]
+            container = self.containers[index]  # type: ignore
             # container.inner_layout.removeItem(container.inner_layout.itemAt(1))
             # container.setHidden(False)
-        if self.lib.get_field_attr(field, "type") == "tag_box":
-            # logging.info(f'WRITING TAGBOX FOR ITEM {item.id}')
-            container.set_title(self.lib.get_field_attr(field, "name"))
-            # container.set_editable(False)
+
+        if isinstance(field, TagBoxField):
+            container.set_title(field.name)
             container.set_inline(False)
-            title = f"{self.lib.get_field_attr(field, 'name')} (Tag Box)"
+            title = f"{field.name} (Tag Box)"
             if not mixed:
-                item = self.lib.get_entry(
-                    self.selected[0][1]
-                )  # TODO TODO TODO: TEMPORARY
-                if type(container.get_inner_widget()) == TagBoxWidget:
-                    inner_container: TagBoxWidget = container.get_inner_widget()
-                    inner_container.set_item(item)
-                    inner_container.set_tags(self.lib.get_field_attr(field, "content"))
+                entry = self.driver.frame_content[self.selected[0]]
+                inner_container = container.get_inner_widget()
+                if isinstance(inner_container, TagBoxWidget):
+                    # TODO
+                    # inner_container.set_item(entry)
+                    # inner_container.set_tags(field.tags)  # type: ignore
+
                     try:
                         inner_container.updated.disconnect()
                     except RuntimeError:
+                        logger.error("Failed to disconnect inner_container.updated")
                         pass
-                    # inner_container.updated.connect(lambda f=self.filepath, i=item: self.write_container(item, index, field))
+
                 else:
                     inner_container = TagBoxWidget(
-                        item,
+                        entry,
                         title,
-                        index,
-                        self.lib,
-                        self.lib.get_field_attr(field, "content"),
+                        # index,
+                        list(field.tags),
                         self.driver,
                     )
 
                     container.set_inner_widget(inner_container)
+
                 inner_container.field = field
                 inner_container.updated.connect(
                     lambda: (
+                        print("inner_container updated emited"),
                         self.write_container(index, field),
-                        self.tags_updated.emit(),
+                        # self.tags_updated.emit(),
                     )
                 )
                 # if type(item) == Entry:
                 # NOTE: Tag Boxes have no Edit Button (But will when you can convert field types)
-                # f'Are you sure you want to remove this \"{self.lib.get_field_attr(field, "name")}\" field?'
                 # container.set_remove_callback(lambda: (self.lib.get_entry(item.id).fields.pop(index), self.update_widgets(item)))
-                prompt = f'Are you sure you want to remove this "{self.lib.get_field_attr(field, "name")}" field?'
-                callback = lambda: (self.remove_field(field), self.update_widgets())
+                prompt = f'Are you sure you want to remove this "{field.name}" field?'
+                callback = lambda: (
+                    self.remove_field(field),
+                    update_selected_entry(self.driver),
+                    # reload entry and its fields
+                    self.update_widgets(),
+                )
                 container.set_remove_callback(
                     lambda: self.remove_message_box(prompt=prompt, callback=callback)
                 )
@@ -852,8 +799,8 @@ class PreviewPanel(QWidget):
 
             self.tags_updated.emit()
             # self.dynamic_widgets.append(inner_container)
-        elif self.lib.get_field_attr(field, "type") in "text_line":
-            # logging.info(f'WRITING TEXTLINE FOR ITEM {item.id}')
+        elif isinstance(field, TextField):  # TODO - formerly text_line
+            # logger.info(f'WRITING TEXTLINE FOR ITEM {item.id}')
             container.set_title(self.lib.get_field_attr(field, "name"))
             # container.set_editable(True)
             container.set_inline(False)
@@ -879,8 +826,12 @@ class PreviewPanel(QWidget):
                     ),
                 )
                 container.set_edit_callback(modal.show)
-                prompt = f'Are you sure you want to remove this "{self.lib.get_field_attr(field, "name")}" field?'
-                callback = lambda: (self.remove_field(field), self.update_widgets())
+                prompt = f'Are you sure you want to remove this "{field.name}" field?'
+                callback = lambda: (
+                    print("remove field 2"),
+                    self.remove_field(field),
+                    self.update_widgets(),
+                )
                 container.set_remove_callback(
                     lambda: self.remove_message_box(prompt=prompt, callback=callback)
                 )
@@ -891,8 +842,8 @@ class PreviewPanel(QWidget):
                 container.set_remove_callback(None)
             # container.set_remove_callback(lambda: (self.lib.get_entry(item.id).fields.pop(index), self.update_widgets(item)))
 
-        elif self.lib.get_field_attr(field, "type") in "text_box":
-            # logging.info(f'WRITING TEXTBOX FOR ITEM {item.id}')
+        elif isinstance(field, TextField):  # formerly text_box
+            # logger.info(f'WRITING TEXTBOX FOR ITEM {item.id}')
             container.set_title(self.lib.get_field_attr(field, "name"))
             # container.set_editable(True)
             container.set_inline(False)
@@ -919,8 +870,12 @@ class PreviewPanel(QWidget):
                     ),
                 )
                 container.set_edit_callback(modal.show)
-                prompt = f'Are you sure you want to remove this "{self.lib.get_field_attr(field, "name")}" field?'
-                callback = lambda: (self.remove_field(field), self.update_widgets())
+                prompt = f'Are you sure you want to remove this "{field.name}" field?'
+                callback = lambda: (
+                    print("remove field 3"),
+                    self.remove_field(field),
+                    self.update_widgets(),
+                )
                 container.set_remove_callback(
                     lambda: self.remove_message_box(prompt=prompt, callback=callback)
                 )
@@ -928,31 +883,9 @@ class PreviewPanel(QWidget):
                 container.set_edit_callback(None)
                 container.set_copy_callback(None)
                 container.set_remove_callback(None)
-        elif self.lib.get_field_attr(field, "type") == "collation":
-            # logging.info(f'WRITING COLLATION FOR ITEM {item.id}')
-            container.set_title(self.lib.get_field_attr(field, "name"))
-            # container.set_editable(True)
-            container.set_inline(False)
-            collation = self.lib.get_collation(
-                self.lib.get_field_attr(field, "content")
-            )
-            title = f"{self.lib.get_field_attr(field, 'name')} (Collation)"
-            text = f"{collation.title} ({len(collation.e_ids_and_pages)} Items)"
-            if len(self.selected) == 1:
-                text += f" - Page {collation.e_ids_and_pages[[x[0] for x in collation.e_ids_and_pages].index(self.selected[0][1])][1]}"
-            inner_container = TextWidget(title, text)
-            container.set_inner_widget(inner_container)
-            # if type(item) == Entry:
-            container.set_copy_callback(None)
-            # container.set_edit_callback(None)
-            # container.set_remove_callback(lambda: (self.lib.get_entry(item.id).fields.pop(index), self.update_widgets(item)))
-            prompt = f'Are you sure you want to remove this "{self.lib.get_field_attr(field, "name")}" field?'
-            callback = lambda: (self.remove_field(field), self.update_widgets())
-            container.set_remove_callback(
-                lambda: self.remove_message_box(prompt=prompt, callback=callback)
-            )
-        elif self.lib.get_field_attr(field, "type") == "datetime":
-            # logging.info(f'WRITING DATETIME FOR ITEM {item.id}')
+
+        elif field.type == DatetimeField:
+            # logger.info(f'WRITING DATETIME FOR ITEM {item.id}')
             if not mixed:
                 try:
                     container.set_title(self.lib.get_field_attr(field, "name"))
@@ -977,8 +910,12 @@ class PreviewPanel(QWidget):
                 container.set_copy_callback(None)
                 container.set_edit_callback(None)
                 # container.set_remove_callback(lambda: (self.lib.get_entry(item.id).fields.pop(index), self.update_widgets(item)))
-                prompt = f'Are you sure you want to remove this "{self.lib.get_field_attr(field, "name")}" field?'
-                callback = lambda: (self.remove_field(field), self.update_widgets())
+                prompt = f'Are you sure you want to remove this "{field.name}" field?'
+                callback = lambda: (
+                    print("remove field 4"),
+                    self.remove_field(field),
+                    self.update_widgets(),
+                )
                 container.set_remove_callback(
                     lambda: self.remove_message_box(prompt=prompt, callback=callback)
                 )
@@ -991,66 +928,78 @@ class PreviewPanel(QWidget):
                 container.set_edit_callback(None)
                 container.set_remove_callback(None)
         else:
-            # logging.info(f'[ENTRY PANEL] Unknown Type: {self.lib.get_field_attr(field, "type")}')
-            container.set_title(self.lib.get_field_attr(field, "name"))
+            # logger.info(f'[ENTRY PANEL] Unknown Type: {self.lib.get_field_attr(field, "type")}')
+            container.set_title(field.name)
             # container.set_editable(False)
             container.set_inline(False)
-            title = f"{self.lib.get_field_attr(field, 'name')} (Unknown Field Type)"
-            inner_container = TextWidget(
-                title, str(self.lib.get_field_attr(field, "content"))
-            )
+            title = f"{field.name} (Unknown Field Type)"
+            inner_container = TextWidget(title, field.name)
             container.set_inner_widget(inner_container)
             # if type(item) == Entry:
             container.set_copy_callback(None)
             container.set_edit_callback(None)
             # container.set_remove_callback(lambda: (self.lib.get_entry(item.id).fields.pop(index), self.update_widgets(item)))
-            prompt = f'Are you sure you want to remove this "{self.lib.get_field_attr(field, "name")}" field?'
-            callback = lambda: (self.remove_field(field), self.update_widgets())
-            # callback = lambda: (self.lib.get_entry(item.id).fields.pop(index), self.update_widgets())
+            prompt = f'Are you sure you want to remove this "{field.name}" field?'
+            callback = lambda: (
+                print("remove field 5"),
+                self.remove_field(field),
+                self.update_widgets(),
+            )
             container.set_remove_callback(
                 lambda: self.remove_message_box(prompt=prompt, callback=callback)
             )
+
         container.edit_button.setHidden(True)
         container.setHidden(False)
         self.place_add_field_button()
 
-    def remove_field(self, field: dict):
-        """Removes a field from all selected Entries, given a field object."""
-        for item_pair in self.selected:
-            if item_pair[0] == ItemType.ENTRY:
-                entry = self.lib.get_entry(item_pair[1])
-                try:
-                    index = entry.fields.index(field)
-                    updated_badges = False
-                    if 8 in entry.fields[index].keys() and (
-                        1 in entry.fields[index][8] or 0 in entry.fields[index][8]
+    def remove_field(self, field):
+        """Remove a field from all selected Entries, given a field object."""
+        logger.info("removing field", field=field.id, selected=self.selected)
+
+        # TODO - how will this work with multiple items selected, each having different DB record for the same field type?
+
+        # open db session and deleted `field` record
+        self.lib.delete_item(field)
+
+        return
+
+        for grid_idx in self.selected:
+            entry = self.driver.frame_content[grid_idx]
+
+            try:
+                index = entry.fields.index(field)
+                updated_badges = False
+                # TODO - I dont know what is this supposed do
+                if False:
+                    if FieldID.META_TAGS in entry.fields[index] and (
+                        FieldID.AUTHOR in entry.fields[index][FieldID.META_TAGS]
+                        or FieldID.TITLE in entry.fields[index][FieldID.META_TAGS]
                     ):
                         updated_badges = True
-                    # TODO: Create a proper Library/Entry method to manage fields.
-                    entry.fields.pop(index)
-                    if updated_badges:
-                        self.driver.update_badges()
-                except ValueError:
-                    logging.info(
-                        f"[PREVIEW PANEL][ERROR?] Tried to remove field from Entry ({entry.id}) that never had it"
-                    )
-                    pass
+                # TODO: Create a proper Library/Entry method to manage fields.
+                entry.fields.pop(index)
+                if updated_badges:
+                    print("update badges 2")
+                    self.driver.update_badges()
+            except ValueError:
+                logger.exception(
+                    "Tried to remove field from Entry that never had it", entry=entry
+                )
 
-    def update_field(self, field: dict, content):
-        """Removes a field from all selected Entries, given a field object."""
+    def update_field(self, field, content):
+        """Remove a field from all selected Entries, given a field object."""
         field = dict(field)
-        for item_pair in self.selected:
-            if item_pair[0] == ItemType.ENTRY:
-                entry = self.lib.get_entry(item_pair[1])
-                try:
-                    logging.info(field)
-                    index = entry.fields.index(field)
-                    self.lib.update_entry_field(entry.id, index, content, "replace")
-                except ValueError:
-                    logging.info(
-                        f"[PREVIEW PANEL][ERROR] Tried to update field from Entry ({entry.id}) that never had it"
-                    )
-                    pass
+        for grid_idx in self.selected:
+            entry = self.driver.frame_content[grid_idx]
+            try:
+                logger.info(field)
+                index = entry.fields.index(field)
+                self.lib.update_entry_field(entry.id, index, content, "replace")
+            except ValueError:
+                logger.exception(
+                    "Tried to update field from Entry that never had it", entry=entry
+                )
 
     def remove_message_box(self, prompt: str, callback: typing.Callable) -> None:
         remove_mb = QMessageBox()
@@ -1067,6 +1016,6 @@ class PreviewPanel(QWidget):
         remove_mb.setDefaultButton(cancel_button)
         remove_mb.setEscapeButton(cancel_button)
         result = remove_mb.exec_()
-        # logging.info(result)
+        # logger.info(result)
         if result == 3:
             callback()

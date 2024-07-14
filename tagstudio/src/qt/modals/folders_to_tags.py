@@ -19,14 +19,15 @@ from PySide6.QtWidgets import (
 )
 
 from src.core.enums import FieldID
-from src.core.library import Library, Tag
+from src.core.library import Tag, Library
+from src.core.library.alchemy.enums import TagColor
 from src.core.palette import ColorType, get_tag_color
 from src.qt.flowlayout import FlowLayout
+from src.qt.widgets.preview_panel import logger
 
 # Only import for type checking/autocompletion, will not be imported at runtime.
 if typing.TYPE_CHECKING:
     from src.qt.ts_qt import QtDriver
-
 
 ERROR = f"[ERROR]"
 WARNING = f"[WARNING]"
@@ -35,28 +36,26 @@ INFO = f"[INFO]"
 logging.basicConfig(format="%(message)s", level=logging.INFO)
 
 
-def folders_to_tags(library: Library):
+def folders_to_tags(library):
     logging.info("Converting folders to Tags")
     tree: dict = dict(dirs={})
 
-    def add_tag_to_tree(items: list[Tag]):
+    def add_tag_to_tree(items: list):
         branch = tree
         for tag in items:
             if tag.name not in branch["dirs"]:
                 branch["dirs"][tag.name] = dict(dirs={}, tag=tag)
             branch = branch["dirs"][tag.name]
 
-    def add_folders_to_tree(items: list[str]) -> Tag:
+    def add_folders_to_tree(items: list[str]):
         branch: dict = tree
+        logger.info("add_folders_to_tree", branch=branch)
         for folder in items:
             if folder not in branch["dirs"]:
                 new_tag = Tag(
-                    -1,
-                    folder,
-                    "",
-                    [],
-                    ([branch["tag"].id] if "tag" in branch else []),
-                    "",
+                    name=folder,
+                    # TODO - subtags
+                    # ([branch["tag"].id] if "tag" in branch else []),
                 )
                 library.add_tag_to_library(new_tag)
                 branch["dirs"][folder] = dict(dirs={}, tag=new_tag)
@@ -79,7 +78,7 @@ def folders_to_tags(library: Library):
     logging.info("Done")
 
 
-def reverse_tag(library: Library, tag: Tag, list: list[Tag]) -> list[Tag]:
+def reverse_tag(library, tag, list: list) -> list:
     if list is not None:
         list.append(tag)
     else:
@@ -97,21 +96,21 @@ def reverse_tag(library: Library, tag: Tag, list: list[Tag]) -> list[Tag]:
 # =========== UI ===========
 
 
-def generate_preview_data(library: Library):
+def generate_preview_data(library):
     tree: dict = dict(dirs={}, files=[])
 
-    def add_tag_to_tree(items: list[Tag]):
-        branch: dict = tree
+    def add_tag_to_tree(items: list):
+        branch = tree
         for tag in items:
             if tag.name not in branch["dirs"]:
                 branch["dirs"][tag.name] = dict(dirs={}, tag=tag, files=[])
             branch = branch["dirs"][tag.name]
 
     def add_folders_to_tree(items: list[str]) -> dict:
-        branch: dict = tree
+        branch = tree
         for folder in items:
             if folder not in branch["dirs"]:
-                new_tag = Tag(-1, folder, "", [], [], "green")
+                new_tag = Tag(name=folder, color=TagColor.green)
                 branch["dirs"][folder] = dict(dirs={}, tag=new_tag, files=[])
             branch = branch["dirs"][folder]
         return branch
@@ -159,7 +158,7 @@ def generate_preview_data(library: Library):
 
 class FoldersToTagsModal(QWidget):
     # done = Signal(int)
-    def __init__(self, library: "Library", driver: "QtDriver"):
+    def __init__(self, library: Library, driver: "QtDriver"):
         super().__init__()
         self.library = library
         self.driver = driver
@@ -343,7 +342,7 @@ class ModifiedTagWidget(
             f"border-color:{get_tag_color(ColorType.BORDER, tag.color)};"
             f"border-radius: 6px;"
             f"border-style:inset;"
-            f"border-width: {math.ceil(1*self.devicePixelRatio())}px;"
+            f"border-width: {math.ceil(self.devicePixelRatio())}px;"
             f"padding-right: 4px;"
             f"padding-bottom: 1px;"
             f"padding-left: 4px;"

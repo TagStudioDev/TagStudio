@@ -3,7 +3,6 @@
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
 
-import logging
 import math
 from pathlib import Path
 
@@ -22,6 +21,7 @@ from PIL import (
 from PIL.Image import DecompressionBombError
 from PySide6.QtCore import QObject, Signal, QSize
 from PySide6.QtGui import QPixmap
+
 from src.qt.helpers.gradient import four_corner_gradient_background
 from src.core.constants import (
     PLAINTEXT_TYPES,
@@ -29,6 +29,8 @@ from src.core.constants import (
     IMAGE_TYPES,
     RAW_IMAGE_TYPES,
 )
+import structlog
+
 from src.core.utils.encoding import detect_char_encoding
 
 ImageFile.LOAD_TRUNCATED_IMAGES = True
@@ -37,7 +39,8 @@ ERROR = "[ERROR]"
 WARNING = "[WARNING]"
 INFO = "[INFO]"
 
-logging.basicConfig(format="%(message)s", level=logging.INFO)
+logger = structlog.get_logger(__name__)
+
 register_heif_opener()
 register_avif_opener()
 
@@ -95,7 +98,10 @@ class ThumbRenderer(QObject):
         gradient=False,
         update_on_ratio_change=False,
     ):
-        """Internal renderer. Renders an entry/element thumbnail for the GUI."""
+        """Internal renderer. Render an entry/element thumbnail for the GUI."""
+
+        logger.debug("rendering thumbnail", path=filepath)
+
         image: Image.Image = None
         pixmap: QPixmap = None
         final: Image.Image = None
@@ -133,8 +139,8 @@ class ThumbRenderer(QObject):
 
                         image = ImageOps.exif_transpose(image)
                     except DecompressionBombError as e:
-                        logging.info(
-                            f"[ThumbRenderer]{WARNING} Couldn't Render thumbnail for {_filepath.name} ({type(e).__name__})"
+                        logger.error(
+                            "Couldn't Render thumbnail", filepath=filepath, error=e
                         )
 
                 elif _filepath.suffix.lower() in RAW_IMAGE_TYPES:
@@ -148,15 +154,16 @@ class ThumbRenderer(QObject):
                                 decoder_name="raw",
                             )
                     except DecompressionBombError as e:
-                        logging.info(
-                            f"[ThumbRenderer]{WARNING} Couldn't Render thumbnail for {_filepath.name} ({type(e).__name__})"
+                        logger.error(
+                            "Couldn't Render thumbnail", filepath=filepath, error=e
                         )
+
                     except (
                         rawpy._rawpy.LibRawIOError,
                         rawpy._rawpy.LibRawFileUnsupportedError,
                     ) as e:
-                        logging.info(
-                            f"[ThumbRenderer]{ERROR} Couldn't Render thumbnail for raw image {_filepath.name} ({type(e).__name__})"
+                        logger.error(
+                            "Couldn't Render thumbnail", filepath=filepath, error=e
                         )
 
                 # Videos =======================================================
@@ -268,9 +275,10 @@ class ThumbRenderer(QObject):
                 UnicodeDecodeError,
             ) as e:
                 if e is not UnicodeDecodeError:
-                    logging.info(
-                        f"[ThumbRenderer]{ERROR}: Couldn't render thumbnail for {_filepath.name} ({type(e).__name__})"
+                    logger.error(
+                        "Couldn't Render thumbnail", filepath=filepath, error=e
                     )
+
                 if update_on_ratio_change:
                     self.updated_ratio.emit(1)
                 final = ThumbRenderer.thumb_broken_512.resize(

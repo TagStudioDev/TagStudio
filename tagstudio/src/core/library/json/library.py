@@ -5,23 +5,23 @@
 """The Library object and related methods for TagStudio."""
 
 import datetime
-import logging
 import os
 import time
 import traceback
 import xml.etree.ElementTree as ET
+
+import structlog
 import ujson
 
-from enum import Enum
+from enum import Enum, IntEnum
 from pathlib import Path
 from typing import cast, Generator
 from typing_extensions import Self
 
-from src.core.enums import FieldID
-from src.core.json_typing import JsonCollation, JsonEntry, JsonLibary, JsonTag
+from .fields import DEFAULT_FIELDS
+from src.core.enums import FieldID, OpenStatus
 from src.core.utils.str import strip_punctuation
 from src.core.utils.web import strip_web_protocol
-from src.core.enums import SearchMode
 from src.core.constants import (
     BACKUP_FOLDER_NAME,
     COLLAGE_FOLDER_NAME,
@@ -40,7 +40,7 @@ class ItemType(Enum):
     TAG_GROUP = 2
 
 
-logging.basicConfig(format="%(message)s", level=logging.INFO)
+logger = structlog.get_logger(__name__)
 
 
 class Entry:
@@ -94,12 +94,12 @@ class Entry:
             and self.fields == __value.fields
         )
 
-    def compressed_dict(self) -> JsonEntry:
+    def compressed_dict(self):
         """
         An alternative to __dict__ that only includes fields containing
         non-default data.
         """
-        obj: JsonEntry = {"id": self.id}
+        obj = {"id": self.id}
         if self.filename:
             obj["filename"] = str(self.filename)
         if self.path:
@@ -128,7 +128,7 @@ class Entry:
                 if library.get_field_attr(f, "type") == "tag_box":
                     if field_index >= 0 and field_index == i:
                         t: list[int] = library.get_field_attr(f, "content")
-                        logging.info(
+                        logger.info(
                             f't:{tag_id}, i:{i}, idx:{field_index}, c:{library.get_field_attr(f, "content")}'
                         )
                         t.remove(tag_id)
@@ -142,30 +142,30 @@ class Entry:
     ):
         # if self.fields:
         # if field_index != -1:
-        # logging.info(f'[LIBRARY] ADD TAG to E:{self.id}, F-DI:{field_id}, F-INDEX:{field_index}')
+        # logger.info(f'[LIBRARY] ADD TAG to E:{self.id}, F-DI:{field_id}, F-INDEX:{field_index}')
         for i, f in enumerate(self.fields):
             if library.get_field_attr(f, "id") == field_id:
                 field_index = i
-                # logging.info(f'[LIBRARY] FOUND F-INDEX:{field_index}')
+                # logger.info(f'[LIBRARY] FOUND F-INDEX:{field_index}')
                 break
 
         if field_index == -1:
             library.add_field_to_entry(self.id, field_id)
-            # logging.info(f'[LIBRARY] USING NEWEST F-INDEX:{field_index}')
+            # logger.info(f'[LIBRARY] USING NEWEST F-INDEX:{field_index}')
 
-        # logging.info(list(self.fields[field_index].keys()))
+        # logger.info(list(self.fields[field_index].keys()))
         field_id = list(self.fields[field_index].keys())[0]
-        # logging.info(f'Entry Field ID: {field_id}, Index: {field_index}')
+        # logger.info(f'Entry Field ID: {field_id}, Index: {field_index}')
 
         tags: list[int] = self.fields[field_index][field_id]
         if tag_id not in tags:
-            # logging.info(f'Adding Tag: {tag_id}')
+            # logger.info(f'Adding Tag: {tag_id}')
             tags.append(tag_id)
             self.fields[field_index][field_id] = sorted(
                 tags, key=lambda t: library.get_tag(t).display_name(library)
             )
 
-        # logging.info(f'Tags: {self.fields[field_index][field_id]}')
+        # logger.info(f'Tags: {self.fields[field_index][field_id]}')
 
 
 class Tag:
@@ -219,12 +219,12 @@ class Tag:
         else:
             return f"{self.name}"
 
-    def compressed_dict(self) -> JsonTag:
+    def compressed_dict(self):
         """
         An alternative to __dict__ that only includes fields containing
         non-default data.
         """
-        obj: JsonTag = {"id": self.id}
+        obj = {"id": self.id}
         if self.name:
             obj["name"] = self.name
         if self.shorthand:
@@ -281,12 +281,12 @@ class Collation:
         __value = cast(Self, __value)
         return int(self.id) == int(__value.id) and self.fields == __value.fields
 
-    def compressed_dict(self) -> JsonCollation:
+    def compressed_dict(self):
         """
         An alternative to __dict__ that only includes fields containing
         non-default data.
         """
-        obj: JsonCollation = {"id": self.id}
+        obj = {"id": self.id}
         if self.title:
             obj["title"] = self.title
         if self.e_ids_and_pages:
@@ -368,7 +368,7 @@ class Library:
         # Map of every Tag ID to the index of the Tag in self.tags.
         self._tag_id_to_index_map: dict[int, int] = {}
 
-        self.default_tags: list[JsonTag] = [
+        self.default_tags: list = [
             {"id": 0, "name": "Archived", "aliases": ["Archive"], "color": "Red"},
             {
                 "id": 1,
@@ -382,40 +382,6 @@ class Library:
         # 	Tag(id=0, name='Archived', shorthand='', aliases=['Archive'], subtags_ids=[], color='red'),
         # 	Tag(id=1, name='Favorite', shorthand='', aliases=['Favorited, Favorites, Likes, Liked, Loved'], subtags_ids=[], color='yellow'),
         # ]
-
-        self.default_fields: list[dict] = [
-            {"id": 0, "name": "Title", "type": "text_line"},
-            {"id": 1, "name": "Author", "type": "text_line"},
-            {"id": 2, "name": "Artist", "type": "text_line"},
-            {"id": 3, "name": "URL", "type": "text_line"},
-            {"id": 4, "name": "Description", "type": "text_box"},
-            {"id": 5, "name": "Notes", "type": "text_box"},
-            {"id": 6, "name": "Tags", "type": "tag_box"},
-            {"id": 7, "name": "Content Tags", "type": "tag_box"},
-            {"id": 8, "name": "Meta Tags", "type": "tag_box"},
-            {"id": 9, "name": "Collation", "type": "collation"},
-            {"id": 10, "name": "Date", "type": "datetime"},
-            {"id": 11, "name": "Date Created", "type": "datetime"},
-            {"id": 12, "name": "Date Modified", "type": "datetime"},
-            {"id": 13, "name": "Date Taken", "type": "datetime"},
-            {"id": 14, "name": "Date Published", "type": "datetime"},
-            {"id": 15, "name": "Archived", "type": "checkbox"},
-            {"id": 16, "name": "Favorite", "type": "checkbox"},
-            {"id": 17, "name": "Book", "type": "collation"},
-            {"id": 18, "name": "Comic", "type": "collation"},
-            {"id": 19, "name": "Series", "type": "collation"},
-            {"id": 20, "name": "Manga", "type": "collation"},
-            {"id": 21, "name": "Source", "type": "text_line"},
-            {"id": 22, "name": "Date Uploaded", "type": "datetime"},
-            {"id": 23, "name": "Date Released", "type": "datetime"},
-            {"id": 24, "name": "Volume", "type": "collation"},
-            {"id": 25, "name": "Anthology", "type": "collation"},
-            {"id": 26, "name": "Magazine", "type": "collation"},
-            {"id": 27, "name": "Publisher", "type": "text_line"},
-            {"id": 28, "name": "Guest Artist", "type": "text_line"},
-            {"id": 29, "name": "Composer", "type": "text_line"},
-            {"id": 30, "name": "Comments", "type": "text_box"},
-        ]
 
     def create_library(self, path: Path) -> int:
         """
@@ -443,7 +409,7 @@ class Library:
         """If '.TagStudio' is included in the path, trim the path up to it."""
         path = Path(path)
         paths = [x for x in [path, *path.parents] if x.stem == TS_FOLDER_NAME]
-        if len(paths) > 0:
+        if paths:
             return paths[0].parent
         return path
 
@@ -463,12 +429,12 @@ class Library:
         if not os.path.isdir(full_collage_path):
             os.mkdir(full_collage_path)
 
-    def verify_default_tags(self, tag_list: list[JsonTag]) -> list[JsonTag]:
+    def verify_default_tags(self, tag_list: list) -> list:
         """
         Ensures that the default builtin tags  are present in the Library's
         save file. Takes in and returns the tag dictionary from the JSON file.
         """
-        missing: list[JsonTag] = []
+        missing: list = []
 
         for dt in self.default_tags:
             if dt["id"] not in [t["id"] for t in tag_list]:
@@ -479,16 +445,14 @@ class Library:
 
         return tag_list
 
-    def open_library(self, path: str | Path) -> int:
+    def open_library(self, path: str | Path) -> OpenStatus:
         """
-        Opens a TagStudio v9+ Library.
-        Returns 0 if library does not exist, 1 if successfully opened, 2 if corrupted.
+        Open a TagStudio v9+ Library.
         """
-
-        return_code: int = 2
+        return_code = OpenStatus.CORRUPTED
 
         _path: Path = self._fix_lib_path(path)
-
+        logger.info("opening library", path=_path)
         if (_path / TS_FOLDER_NAME / "ts_library.json").exists():
             try:
                 with open(
@@ -496,7 +460,7 @@ class Library:
                     "r",
                     encoding="utf-8",
                 ) as file:
-                    json_dump: JsonLibary = ujson.load(file)
+                    json_dump = ujson.load(file)
                     self.library_dir = Path(_path)
                     self.verify_ts_folders()
                     major, minor, patch = json_dump["ts-version"].split(".")
@@ -525,7 +489,7 @@ class Library:
 
                     self.is_exclude_list = json_dump.get("is_exclude_list", True)
                     end_time = time.time()
-                    logging.info(
+                    logger.info(
                         f"[LIBRARY] Extension list loaded in {(end_time - start_time):.3f} seconds"
                     )
 
@@ -570,7 +534,7 @@ class Library:
                                 self._map_tag_id_to_index(t, -1)
                                 self._map_tag_strings_to_tag_id(t)
                             else:
-                                logging.info(
+                                logger.info(
                                     f"[LIBRARY]Skipping Tag with duplicate ID: {tag}"
                                 )
 
@@ -579,7 +543,7 @@ class Library:
                             self._map_tag_id_to_cluster(t)
 
                         end_time = time.time()
-                        logging.info(
+                        logger.info(
                             f"[LIBRARY] Tags loaded in {(end_time - start_time):.3f} seconds"
                         )
 
@@ -680,8 +644,8 @@ class Library:
                             self._map_entry_id_to_index(e, -1)
 
                         end_time = time.time()
-                        logging.info(
-                            f"[LIBRARY] Entries loaded in {(end_time - start_time):.3f} seconds"
+                        logger.info(
+                            f"[LIBRARY] Entries loaded", load_time=end_time - start_time
                         )
 
                     # Parse Collations -----------------------------------------
@@ -704,7 +668,7 @@ class Library:
                             c = Collation(
                                 id=id,
                                 title=title,
-                                e_ids_and_pages=e_ids_and_pages,  # type: ignore
+                                e_ids_and_pages=e_ids_and_pages,
                                 sort_order=sort_order,
                                 cover_id=cover_id,
                             )
@@ -716,16 +680,16 @@ class Library:
                             self.collations.append(c)
                             self._map_collation_id_to_index(c, -1)
                         end_time = time.time()
-                        logging.info(
+                        logger.info(
                             f"[LIBRARY] Collations loaded in {(end_time - start_time):.3f} seconds"
                         )
 
-                    return_code = 1
+                    return_code = OpenStatus.SUCCESS
             except ujson.JSONDecodeError:
-                logging.info("[LIBRARY][ERROR]: Empty JSON file!")
+                logger.info("[LIBRARY][ERROR]: Empty JSON file!")
 
         # If the Library is loaded, continue other processes.
-        if return_code == 1:
+        if return_code == OpenStatus.SUCCESS:
             (self.library_dir / TS_FOLDER_NAME).mkdir(parents=True, exist_ok=True)
             self._map_filenames_to_entry_ids()
 
@@ -759,7 +723,7 @@ class Library:
         Used in saving the library to disk.
         """
 
-        file_to_save: JsonLibary = {
+        file_to_save = {
             "ts-version": VERSION,
             "ext_list": [i for i in self.ext_list if i],
             "is_exclude_list": self.is_exclude_list,
@@ -790,7 +754,7 @@ class Library:
     def save_library_to_disk(self):
         """Saves the Library to disk at the default TagStudio folder location."""
 
-        logging.info(f"[LIBRARY] Saving Library to Disk...")
+        logger.info(f"[LIBRARY] Saving Library to Disk...")
         start_time = time.time()
         filename = "ts_library.json"
 
@@ -808,7 +772,7 @@ class Library:
             )
             # , indent=4 <-- How to prettyprint dump
         end_time = time.time()
-        logging.info(
+        logger.info(
             f"[LIBRARY] Library saved to disk in {(end_time - start_time):.3f} seconds"
         )
 
@@ -817,7 +781,7 @@ class Library:
         Saves a backup file of the Library to disk at the default TagStudio folder location.
         Returns the filename used, including the date and time."""
 
-        logging.info(f"[LIBRARY] Saving Library Backup to Disk...")
+        logger.info(f"[LIBRARY] Saving Library Backup to Disk...")
         start_time = time.time()
         filename = f'ts_library_backup_{datetime.datetime.utcnow().strftime("%F_%T").replace(":", "")}.json'
 
@@ -835,7 +799,7 @@ class Library:
                 escape_forward_slashes=False,
             )
         end_time = time.time()
-        logging.info(
+        logger.info(
             f"[LIBRARY] Library backup saved to disk in {(end_time - start_time):.3f} seconds"
         )
         return filename
@@ -908,7 +872,7 @@ class Library:
                             # print(file)
                             self.files_not_in_library.append(file)
             except PermissionError:
-                logging.info(
+                logger.info(
                     f"The File/Folder {f} cannot be accessed, because it requires higher permission!"
                 )
             end_time = time.time()
@@ -951,7 +915,7 @@ class Library:
         # Remove this Entry from the Entries list.
         entry = self.get_entry(entry_id)
         path = entry.path / entry.filename
-        # logging.info(f'Removing path: {path}')
+        # logger.info(f'Removing path: {path}')
 
         del self.filename_to_entry_id_map[path]
 
@@ -1000,9 +964,9 @@ class Library:
         for k, v in registered.items():
             if len(v) > 1:
                 self.dupe_entries.append((v[0], v[1:]))
-                # logging.info(f"DUPLICATE FOUND: {(v[0], v[1:])}")
+                # logger.info(f"DUPLICATE FOUND: {(v[0], v[1:])}")
                 # for id in v:
-                #     logging.info(f"\t{(Path()/self.get_entry(id).path/self.get_entry(id).filename)}")
+                #     logger.info(f"\t{(Path()/self.get_entry(id).path/self.get_entry(id).filename)}")
 
         yield len(self.entries)
 
@@ -1014,7 +978,7 @@ class Library:
         `dupe_entries = tuple(int, list[int])`
         """
 
-        logging.info("[LIBRARY] Mirroring Duplicate Entries...")
+        logger.info("[LIBRARY] Mirroring Duplicate Entries...")
         id_to_entry_map: dict = {}
 
         for dupe in self.dupe_entries:
@@ -1026,7 +990,7 @@ class Library:
                 id_to_entry_map[id] = self.get_entry(id)
             self.mirror_entry_fields([dupe[0]] + dupe[1])
 
-        logging.info(
+        logger.info(
             "[LIBRARY] Consolidating Entries... (This may take a while for larger libraries)"
         )
         for i, dupe in enumerate(self.dupe_entries):
@@ -1037,7 +1001,7 @@ class Library:
                 # takes but in a batch-friendly way here.
                 # NOTE: Couldn't use get_entry(id) because that relies on the
                 # entry's index in the list, which is currently being messed up.
-                logging.info(f"[LIBRARY] Removing Unneeded Entry {id}")
+                logger.info(f"[LIBRARY] Removing Unneeded Entry {id}")
                 self.entries.remove(id_to_entry_map[id])
             yield i - 1  # The -1 waits for the next step to finish
 
@@ -1107,12 +1071,12 @@ class Library:
             # pb.setLabelText(f'Deleting {i}/{len(self.lib.missing_files)} Unlinked Entries')
             try:
                 id = self.get_entry_id_from_filepath(missing)
-                logging.info(f"Removing Entry ID {id}:\n\t{missing}")
+                logger.info(f"Removing Entry ID {id}:\n\t{missing}")
                 self.remove_entry(id)
                 # self.driver.purge_item_from_navigation(ItemType.ENTRY, id)
                 deleted.append(missing)
             except KeyError:
-                logging.info(
+                logger.info(
                     f'[LIBRARY][ERROR]: "{id}" was reported as missing, but is not in the file_to_entry_id map.'
                 )
             yield (i, id)
@@ -1331,7 +1295,7 @@ class Library:
         entries=True,
         collations=True,
         tag_groups=True,
-        search_mode=SearchMode.AND,
+        search_mode=0,  # AND
     ) -> list[tuple[ItemType, int]]:
         """
         Uses a search query to generate a filtered results list.
@@ -1473,7 +1437,7 @@ class Library:
                             if not added:
                                 results.append((ItemType.ENTRY, entry.id))
 
-                        if search_mode == SearchMode.AND:  # Include all terms
+                        if search_mode == 0:  # AND  # Include all terms
                             # For each verified, extracted Tag term.
                             failure_to_union_terms = False
                             for term in all_tag_terms:
@@ -1507,7 +1471,7 @@ class Library:
                             if all_tag_terms and not failure_to_union_terms:
                                 add_entry(entry)
 
-                        if search_mode == SearchMode.OR:  # Include any terms
+                        if search_mode == 1:  # OR  # Include any terms
                             # For each verified, extracted Tag term.
                             for term in all_tag_terms:
                                 # Add the immediate associated Tags to the set (ex. Name, Alias hits)
@@ -1771,7 +1735,7 @@ class Library:
         """Returns a list of Field Template IDs returned from a string query."""
 
         matches: list[int] = []
-        for ft in self.default_fields:
+        for ft in DEFAULT_FIELDS:
             if ft["name"].lower().startswith(query.lower()):
                 matches.append(ft["id"])
 
@@ -2104,7 +2068,7 @@ class Library:
         elif field_type == "datetime":
             entry.fields.append({int(field_id): ""})
         else:
-            logging.info(
+            logger.info(
                 f"[LIBRARY][ERROR]: Unknown field id attempted to be added to entry: {field_id}"
             )
 
@@ -2181,8 +2145,8 @@ class Library:
         Returns a field template object associated with a field ID.
         The objects have "id", "name", and "type" fields.
         """
-        if int(field_id) < len(self.default_fields):
-            return self.default_fields[int(field_id)]
+        if int(field_id) < len(DEFAULT_FIELDS):
+            return DEFAULT_FIELDS[int(field_id)]
         else:
             return {"id": -1, "name": "Unknown Field", "type": "unknown"}
 

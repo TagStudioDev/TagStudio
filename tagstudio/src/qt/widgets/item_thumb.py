@@ -1,14 +1,12 @@
 # Copyright (C) 2024 Travis Abendshien (CyanVoxel).
 # Licensed under the GPL-3.0 License.
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
-import contextlib
-import logging
-import os
 import time
 import typing
 from pathlib import Path
 from typing import Optional
 
+import structlog
 from PIL import Image, ImageQt
 from PySide6.QtCore import Qt, QSize, QEvent
 from PySide6.QtGui import QPixmap, QEnterEvent, QAction
@@ -22,7 +20,6 @@ from PySide6.QtWidgets import (
 )
 
 from src.core.enums import FieldID
-from src.core.library import ItemType, Library, Entry
 from src.core.constants import (
     AUDIO_TYPES,
     VIDEO_TYPES,
@@ -30,6 +27,7 @@ from src.core.constants import (
     TAG_FAVORITE,
     TAG_ARCHIVED,
 )
+from src.core.library import ItemType, Entry
 from src.qt.flowlayout import FlowWidget
 from src.qt.helpers.file_opener import FileOpenerHelper
 from src.qt.widgets.thumb_renderer import ThumbRenderer
@@ -42,8 +40,7 @@ ERROR = f"[ERROR]"
 WARNING = f"[WARNING]"
 INFO = f"[INFO]"
 
-
-logging.basicConfig(format="%(message)s", level=logging.INFO)
+logger = structlog.get_logger(__name__)
 
 
 class ItemThumb(FlowWidget):
@@ -89,8 +86,8 @@ class ItemThumb(FlowWidget):
 
     def __init__(
         self,
-        mode: Optional[ItemType],
-        library: Library,
+        mode,
+        library,
         panel: "PreviewPanel",
         thumb_size: tuple[int, int],
     ):
@@ -100,8 +97,8 @@ class ItemThumb(FlowWidget):
         self.panel = panel
         self.mode = mode
         self.item_id: int = -1
-        self.isFavorite: bool = False
-        self.isArchived: bool = False
+        self.is_favorite: bool = False
+        self.is_archived: bool = False
         self.thumb_size: tuple[int, int] = thumb_size
         self.setMinimumSize(*thumb_size)
         self.setMaximumSize(*thumb_size)
@@ -318,7 +315,6 @@ class ItemThumb(FlowWidget):
             # self.check_badges.setHidden(True)
             # self.ext_badge.setHidden(True)
             # self.item_type_badge.setHidden(True)
-            pass
         elif mode == ItemType.ENTRY and self.mode != ItemType.ENTRY:
             self.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents, False)
             self.setCursor(Qt.CursorShape.PointingHandCursor)
@@ -377,7 +373,7 @@ class ItemThumb(FlowWidget):
                 self.count_badge.setHidden(True)
 
     def update_thumb(self, timestamp: float, image: QPixmap = None):
-        """Updates attributes of a thumbnail element."""
+        """Update attributes of a thumbnail element."""
         # logging.info(f'[GUI] Updating Thumbnail for element {id(element)}: {id(image) if image else None}')
         if timestamp > ItemThumb.update_cutoff:
             self.thumb_button.setIcon(image if image else QPixmap())
@@ -402,25 +398,17 @@ class ItemThumb(FlowWidget):
             self.thumb_button.is_connected = True
 
     def update_badges(self):
-        if self.mode == ItemType.ENTRY:
-            # logging.info(f'[UPDATE BADGES] ENTRY: {self.lib.get_entry(self.item_id)}')
-            # logging.info(f'[UPDATE BADGES] ARCH: {self.lib.get_entry(self.item_id).has_tag(self.lib, 0)}, FAV: {self.lib.get_entry(self.item_id).has_tag(self.lib, 1)}')
-            self.assign_archived(
-                self.lib.get_entry(self.item_id).has_tag(self.lib, TAG_ARCHIVED)
-            )
-            self.assign_favorite(
-                self.lib.get_entry(self.item_id).has_tag(self.lib, TAG_FAVORITE)
-            )
-
-    def set_item_id(self, id: int):
-        """
-        also sets the filepath for the file opener
-        """
-        self.item_id = id
-        if id == -1:
-            return
         entry = self.lib.get_entry(self.item_id)
-        filepath = self.lib.library_dir / entry.path / entry.filename
+        if not entry:
+            # logger.error("Entry not found", item_id=self.item_id)
+            return
+
+        tag_ids = {tag.id for tag in entry.tags}
+        self.assign_archived(TAG_ARCHIVED in tag_ids)
+        self.assign_favorite(TAG_FAVORITE in tag_ids)
+
+    def set_item_id(self, entry: Entry):
+        filepath = self.lib.library_dir / entry.path
         self.opener.set_filepath(filepath)
 
     def assign_favorite(self, value: bool):
@@ -428,10 +416,10 @@ class ItemThumb(FlowWidget):
         # checkbox's state changes.
         mode = self.mode
         self.mode = None
-        self.isFavorite = value
+        self.is_favorite = value
         self.favorite_badge.setChecked(value)
         if not self.thumb_button.underMouse():
-            self.favorite_badge.setHidden(not self.isFavorite)
+            self.favorite_badge.setHidden(not self.is_favorite)
         self.mode = mode
 
     def assign_archived(self, value: bool):
@@ -439,19 +427,19 @@ class ItemThumb(FlowWidget):
         # checkbox's state changes.
         mode = self.mode
         self.mode = None
-        self.isArchived = value
+        self.is_archived = value
         self.archived_badge.setChecked(value)
         if not self.thumb_button.underMouse():
-            self.archived_badge.setHidden(not self.isArchived)
+            self.archived_badge.setHidden(not self.is_archived)
         self.mode = mode
 
     def show_check_badges(self, show: bool):
         if self.mode != ItemType.TAG_GROUP:
             self.favorite_badge.setHidden(
-                True if (not show and not self.isFavorite) else False
+                True if (not show and not self.is_favorite) else False
             )
             self.archived_badge.setHidden(
-                True if (not show and not self.isArchived) else False
+                True if (not show and not self.is_archived) else False
             )
 
     def enterEvent(self, event: QEnterEvent) -> None:
@@ -463,39 +451,30 @@ class ItemThumb(FlowWidget):
         return super().leaveEvent(event)
 
     def on_archived_check(self, toggle_value: bool):
-        if self.mode == ItemType.ENTRY:
-            self.isArchived = toggle_value
-            self.toggle_item_tag(toggle_value, TAG_ARCHIVED)
+        # if self.mode == ItemType.ENTRY:
+        self.is_archived = toggle_value
+        self.toggle_item_tag(toggle_value, TAG_ARCHIVED)
 
     def on_favorite_check(self, toggle_value: bool):
-        if self.mode == ItemType.ENTRY:
-            self.isFavorite = toggle_value
-            self.toggle_item_tag(toggle_value, TAG_FAVORITE)
+        # if self.mode == ItemType.ENTRY:
+        self.is_favorite = toggle_value
+        self.toggle_item_tag(toggle_value, TAG_FAVORITE)
 
     def toggle_item_tag(self, toggle_value: bool, tag_id: int):
         def toggle_tag(entry: Entry):
             if toggle_value:
                 self.favorite_badge.setHidden(False)
                 entry.add_tag(
-                    self.panel.driver.lib,
                     tag_id,
-                    field_id=FieldID.META_TAGS,
-                    field_index=-1,
+                    # field_id=FieldID.META_TAGS,
+                    # field_index=-1,
                 )
             else:
-                entry.remove_tag(self.panel.driver.lib, tag_id)
+                entry.remove_tag(self.panel.driver.lib)
 
-        # Is the badge a part of the selection?
-        if (ItemType.ENTRY, self.item_id) in self.panel.driver.selected:
-            # Yes, add chosen tag to all selected.
-            for _, item_id in self.panel.driver.selected:
-                entry = self.lib.get_entry(item_id)
-                toggle_tag(entry)
-        else:
-            # No, add tag to the entry this badge is on.
-            entry = self.lib.get_entry(self.item_id)
-            toggle_tag(entry)
+        entry = self.panel.driver.frame_content[self.item_id]
+        toggle_tag(entry)
 
-        if self.panel.isOpen:
+        if self.panel.is_open:
             self.panel.update_widgets()
         self.panel.driver.update_badges()

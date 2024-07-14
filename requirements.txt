@@ -10,3 +10,5 @@ numpy==1.26.4
 rawpy==0.21.0
 pillow-heif==0.16.0
 chardet==5.2.0
+structlog==24.2.0
+SQLAlchemy==2.0.31

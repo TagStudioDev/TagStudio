@@ -7,3 +7,8 @@ disable_error_code = ["union-attr", "annotation-unchecked", "import-untyped"]
 explicit_package_bases = true
 warn_unused_ignores = true
 exclude = ['tests']
+
+
+[tool.pytest.ini_options]
+#addopts = "-m 'not qt'"
+qt_api = "pyside6"

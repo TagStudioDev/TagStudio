@@ -124,45 +124,5 @@ BOX_FIELDS = ["tag_box", "text_box"]
 TEXT_FIELDS = ["text_line", "text_box"]
 DATE_FIELDS = ["datetime"]
 
-TAG_COLORS = [
-    "",
-    "black",
-    "dark gray",
-    "gray",
-    "light gray",
-    "white",
-    "light pink",
-    "pink",
-    "red",
-    "red orange",
-    "orange",
-    "yellow orange",
-    "yellow",
-    "lime",
-    "light green",
-    "mint",
-    "green",
-    "teal",
-    "cyan",
-    "light blue",
-    "blue",
-    "blue violet",
-    "violet",
-    "purple",
-    "lavender",
-    "berry",
-    "magenta",
-    "salmon",
-    "auburn",
-    "dark brown",
-    "brown",
-    "light brown",
-    "blonde",
-    "peach",
-    "warm gray",
-    "cool gray",
-    "olive",
-]
-
 TAG_FAVORITE = 1
 TAG_ARCHIVED = 0

@@ -23,7 +23,6 @@ from PySide6.QtCore import (
     QSettings,
 )
 
-from src.core.library import Library
 from src.core.constants import DOC_TYPES, VIDEO_TYPES, IMAGE_TYPES
 
 
@@ -39,7 +38,7 @@ class CollageIconRenderer(QObject):
     rendered = Signal(Image.Image)
     done = Signal()
 
-    def __init__(self, library: Library):
+    def __init__(self, library):
         QObject.__init__(self)
         self.lib = library
 
@@ -52,8 +51,7 @@ class CollageIconRenderer(QObject):
         keep_aspect,
     ):
         entry = self.lib.get_entry(entry_id)
-        filepath = self.lib.library_dir / entry.path / entry.filename
-        file_type = os.path.splitext(filepath)[1].lower()[1:]
+        filepath = self.lib.library_dir / entry.path
         color: str = ""
 
         try:
@@ -65,12 +63,14 @@ class CollageIconRenderer(QObject):
                     has_content_tags: bool = False
                     has_meta_tags: bool = False
                     for field in entry.fields:
-                        if self.lib.get_field_attr(field, "type") == "tag_box":
-                            if self.lib.get_field_attr(field, "content"):
+                        if field.name == "Tags":
+                            if field.content:
                                 has_any_tags = True
-                                if self.lib.get_field_attr(field, "id") == 7:
+                                continue
+                                # TODO
+                                if field.id == 7:
                                     has_content_tags = True
-                                elif self.lib.get_field_attr(field, "id") == 8:
+                                elif field.id == 8:
                                     has_meta_tags = True
                     if has_content_tags and has_meta_tags:
                         color = "#28bb48"  # Green

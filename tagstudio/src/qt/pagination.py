@@ -352,80 +352,16 @@ class Pagination(QWidget, QObject):
                         # print(f'Removing T-Start {i-1}')
                         self.start_buffer_layout.itemAt(i - 1).widget().setHidden(True)
 
-                # if index == 0 or index == 1:
-                # 	print(f'Removing Start i: {i}')
-                # 	if self.start_buffer_layout.itemAt(i):
-                # 		self.start_buffer_layout.itemAt(i).widget().setHidden(True)
-
-                # elif index == page_count-1 or index == page_count-2 or index == page_count-3 or index == page_count-4:
-                # 	print(f' Removing End i: {i}')
-                # 	if self.end_buffer_layout.itemAt(i):
-                # 		self.end_buffer_layout.itemAt(i).widget().setHidden(True)
-
-                # else:
-                # 	print(f'Truncate: {i}')
-                # 	if self.start_buffer_layout.itemAt(i):
-                # 		self.start_buffer_layout.itemAt(i).widget().setHidden(True)
-                # 	if self.end_buffer_layout.itemAt(i):
-                # 		self.end_buffer_layout.itemAt(i).widget().setHidden(True)
-
-                # if i < self.buffer_page_count:
-                # 	print(f'start {i}')
-                # 	if i == 0:
-                # 		self.start_buffer_layout.itemAt(i).widget().setHidden(True)
-                # 		self.current_page_field.setText((str(i+1)))
-                # 	else:
-                # 		self.start_buffer_layout.itemAt(i).widget().setHidden(False)
-                # 		self.start_buffer_layout.itemAt(i).widget().setText(str(i+1))
-                # elif i >= self.buffer_page_count and i < count:
-                # 	print(f'end {i}')
-                # 	self.end_buffer_layout.itemAt(i-self.buffer_page_count).widget().setHidden(False)
-                # 	self.end_buffer_layout.itemAt(i-self.buffer_page_count).widget().setText(str(i+1))
-                # else:
-                # 	self.end_buffer_layout.itemAt(i-self.buffer_page_count).widget().setHidden(True)
-
             self.setHidden(False)
-        # elif page_count >= 7:
-        # 	# Show everything, except truncate the buffers as needed.
-        # 	# [<] [1]...[3] [4] [5]...[7] [>]
-        # 	self.start_button.setHidden(False)
-        # 	self.start_ellipses.setHidden(False)
-        # 	self.end_ellipses.setHidden(False)
-        # 	self.end_button.setHidden(False)
-
-        # 	if index == 0:
-        # 		self.prev_button.setDisabled(True)
-        # 		self.start_buffer_layout.setContentsMargins(0,0,3,0)
-        # 	else:
-        # 		self.start_buffer_layout.setContentsMargins(3,0,3,0)
-        # 		self.assign_click(self.prev_button, index-1)
-        # 		self.prev_button.setDisabled(False)
-
-        # 	if index == page_count-1:
-        # 		self.next_button.setDisabled(True)
-        # 		self.end_buffer_layout.setContentsMargins(3,0,0,0)
-        # 	else:
-        # 		self.end_buffer_layout.setContentsMargins(3,0,3,0)
-        # 		self.assign_click(self.next_button, index+1)
-        # 		self.next_button.setDisabled(False)
-
-        # 	self.start_button.setText('1')
-        # 	self.assign_click(self.start_button, 0)
-        # 	self.end_button.setText(str(page_count))
-        # 	self.assign_click(self.end_button, page_count-1)
-
-        # 	self.setHidden(False)
 
         self.validator.setTop(page_count)
-        # if self.current_page_index != index:
         if emit:
-            print(f"[PAGINATION] Emitting {index}")
             self.index.emit(index)
+
         self.current_page_index = index
         self.page_count = page_count
 
     def _goto_page(self, index: int):
-        # print(f'GOTO PAGE: {index}')
         self.update_buttons(self.page_count, index)
 
     def _assign_click(self, button: QPushButtonWrapper, index):

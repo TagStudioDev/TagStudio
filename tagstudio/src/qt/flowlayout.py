@@ -8,20 +8,6 @@ from PySide6.QtCore import Qt, QMargins, QPoint, QRect, QSize
 from PySide6.QtWidgets import QLayout, QSizePolicy, QWidget
 
 
-# class Window(QWidget):
-#     def __init__(self):
-#         super().__init__()
-
-#         flow_layout = FlowLayout(self)
-#         flow_layout.addWidget(QPushButton("Short"))
-#         flow_layout.addWidget(QPushButton("Longer"))
-#         flow_layout.addWidget(QPushButton("Different text"))
-#         flow_layout.addWidget(QPushButton("More text"))
-#         flow_layout.addWidget(QPushButton("Even longer button text"))
-
-#         self.setWindowTitle("Flow Layout")
-
-
 class FlowWidget(QWidget):
     def __init__(self, parent=None) -> None:
         super().__init__(parent)
