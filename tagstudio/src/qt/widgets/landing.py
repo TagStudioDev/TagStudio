@@ -24,7 +24,7 @@ logging.basicConfig(format="%(message)s", level=logging.INFO)
 class LandingWidget(QWidget):
     def __init__(self, driver: "QtDriver", pixel_ratio: float):
         super().__init__()
-        self.driver: "QtDriver" = driver
+        self.driver = driver
         self.logo_label: ClickableLabel = ClickableLabel()
         self._pixel_ratio: float = pixel_ratio
         self._logo_width: int = int(480 * pixel_ratio)

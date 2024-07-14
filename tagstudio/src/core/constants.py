@@ -1,3 +1,5 @@
+from enum import Enum
+
 VERSION: str = "9.3.2"  # Major.Minor.Patch
 VERSION_BRANCH: str = ""  # Usually "" or "Pre-Release"
 
@@ -120,49 +122,13 @@ ALL_FILE_TYPES: list[str] = (
     + SHORTCUT_TYPES
 )
 
-BOX_FIELDS = ["tag_box", "text_box"]
-TEXT_FIELDS = ["text_line", "text_box"]
-DATE_FIELDS = ["datetime"]
-
-TAG_COLORS = [
-    "",
-    "black",
-    "dark gray",
-    "gray",
-    "light gray",
-    "white",
-    "light pink",
-    "pink",
-    "red",
-    "red orange",
-    "orange",
-    "yellow orange",
-    "yellow",
-    "lime",
-    "light green",
-    "mint",
-    "green",
-    "teal",
-    "cyan",
-    "light blue",
-    "blue",
-    "blue violet",
-    "violet",
-    "purple",
-    "lavender",
-    "berry",
-    "magenta",
-    "salmon",
-    "auburn",
-    "dark brown",
-    "brown",
-    "light brown",
-    "blonde",
-    "peach",
-    "warm gray",
-    "cool gray",
-    "olive",
-]
 
 TAG_FAVORITE = 1
 TAG_ARCHIVED = 0
+
+
+class LibraryPrefs(Enum):
+    IS_EXCLUDE_LIST = True
+    EXTENSION_LIST: list[str] = [".json", ".xmp", ".aae"]
+    PAGE_SIZE: int = 500
+    DB_VERSION: int = 1

@@ -10,7 +10,6 @@ from PySide6.QtGui import QIntValidator
 from PySide6.QtWidgets import (
     QWidget,
     QHBoxLayout,
-    QPushButton,
     QLabel,
     QLineEdit,
     QSizePolicy,
@@ -274,7 +273,7 @@ class Pagination(QWidget, QObject):
                     if self.end_buffer_layout.itemAt(i):
                         self.end_buffer_layout.itemAt(i).widget().setHidden(True)
                     sbc += 1
-                    self.current_page_field.setText((str(i + 1)))
+                    self.current_page_field.setText(str(i + 1))
                 # elif index == page_count-1:
                 # 	self.start_button.setText(str(page_count))
 
@@ -419,7 +418,6 @@ class Pagination(QWidget, QObject):
         self.validator.setTop(page_count)
         # if self.current_page_index != index:
         if emit:
-            print(f"[PAGINATION] Emitting {index}")
             self.index.emit(index)
         self.current_page_index = index
         self.page_count = page_count
@@ -435,7 +433,7 @@ class Pagination(QWidget, QObject):
         button.is_connected = True
 
     def _populate_buffer_buttons(self):
-        for i in range(max(self.buffer_page_count * 2, 5)):
+        for _ in range(max(self.buffer_page_count * 2, 5)):
             button = QPushButtonWrapper()
             button.setMinimumSize(self.button_size)
             button.setMaximumSize(self.button_size)
@@ -443,13 +441,12 @@ class Pagination(QWidget, QObject):
             # button.setMaximumHeight(self.button_size.height())
             self.start_buffer_layout.addWidget(button)
 
-        for i in range(max(self.buffer_page_count * 2, 5)):
-            button = QPushButtonWrapper()
-            button.setMinimumSize(self.button_size)
-            button.setMaximumSize(self.button_size)
-            button.setHidden(True)
+            end_button = QPushButtonWrapper()
+            end_button.setMinimumSize(self.button_size)
+            end_button.setMaximumSize(self.button_size)
+            end_button.setHidden(True)
             # button.setMaximumHeight(self.button_size.height())
-            self.end_buffer_layout.addWidget(button)
+            self.end_buffer_layout.addWidget(end_button)
 
 
 class Validator(QIntValidator):

@@ -2,7 +2,6 @@
 # Licensed under the GPL-3.0 License.
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 import logging
-from types import FunctionType
 from typing import Callable
 
 from PySide6.QtCore import Signal, Qt
@@ -16,12 +15,11 @@ class PanelModal(QWidget):
     # figure out what you want from this.
     def __init__(
         self,
-        widget: "PanelWidget",
+        widget,
         title: str,
         window_title: str,
-        done_callback: Callable = None,
-        #  cancel_callback:FunctionType=None,
-        save_callback: Callable = None,
+        done_callback: Callable | None = None,
+        save_callback: Callable | None = None,
         has_save: bool = False,
     ):
         # [Done]
@@ -76,10 +74,12 @@ class PanelModal(QWidget):
 
             if done_callback:
                 self.save_button.clicked.connect(done_callback)
+
             if save_callback:
                 self.save_button.clicked.connect(
                     lambda: save_callback(widget.get_content())
                 )
+
             self.button_layout.addWidget(self.save_button)
 
             # trigger save button actions when pressing enter in the widget

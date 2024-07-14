@@ -1,11 +1,20 @@
 name: Ruff
 on: [ push, pull_request ]
 jobs:
-  ruff:
+  ruff-format:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: chartboost/ruff-action@v1
         with:
-          version: 0.4.2
+          version: 0.6.4
           args: 'format --check'
+
+  ruff-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: chartboost/ruff-action@v1
+        with:
+          version: 0.6.4
+          args: 'check'

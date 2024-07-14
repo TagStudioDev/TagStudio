@@ -1,14 +1,14 @@
 # Copyright (C) 2024 Travis Abendshien (CyanVoxel).
 # Licensed under the GPL-3.0 License.
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
-import contextlib
-import logging
-import os
 import time
 import typing
+from enum import Enum
+from functools import wraps
 from pathlib import Path
-from typing import Optional
+from typing import TYPE_CHECKING
 
+import structlog
 from PIL import Image, ImageQt
 from PySide6.QtCore import Qt, QSize, QEvent
 from PySide6.QtGui import QPixmap, QEnterEvent, QAction
@@ -21,8 +21,6 @@ from PySide6.QtWidgets import (
     QCheckBox,
 )
 
-from src.core.enums import FieldID
-from src.core.library import ItemType, Library, Entry
 from src.core.constants import (
     AUDIO_TYPES,
     VIDEO_TYPES,
@@ -30,20 +28,49 @@ from src.core.constants import (
     TAG_FAVORITE,
     TAG_ARCHIVED,
 )
+from src.core.library import ItemType, Entry, Library
+from src.core.library.alchemy.enums import FilterState
+from src.core.library.alchemy.fields import _FieldID
+
 from src.qt.flowlayout import FlowWidget
 from src.qt.helpers.file_opener import FileOpenerHelper
 from src.qt.widgets.thumb_renderer import ThumbRenderer
 from src.qt.widgets.thumb_button import ThumbButton
 
-if typing.TYPE_CHECKING:
-    from src.qt.widgets.preview_panel import PreviewPanel
+if TYPE_CHECKING:
+    from src.qt.ts_qt import QtDriver
 
-ERROR = f"[ERROR]"
-WARNING = f"[WARNING]"
-INFO = f"[INFO]"
+logger = structlog.get_logger(__name__)
 
 
-logging.basicConfig(format="%(message)s", level=logging.INFO)
+class BadgeType(Enum):
+    FAVORITE = "Favorite"
+    ARCHIVED = "Archived"
+
+
+BADGE_TAGS = {
+    BadgeType.FAVORITE: TAG_FAVORITE,
+    BadgeType.ARCHIVED: TAG_ARCHIVED,
+}
+
+
+def badge_update_lock(func):
+    """Prevent recursively triggering badge updates."""
+
+    @wraps(func)
+    def wrapper(self, *args, **kwargs):
+        if self.driver.badge_update_lock:
+            return
+
+        self.driver.badge_update_lock = True
+        try:
+            func(self, *args, **kwargs)
+        except Exception:
+            raise
+        finally:
+            self.driver.badge_update_lock = False
+
+    return wrapper
 
 
 class ItemThumb(FlowWidget):
@@ -89,19 +116,18 @@ class ItemThumb(FlowWidget):
 
     def __init__(
         self,
-        mode: Optional[ItemType],
+        mode: ItemType,
         library: Library,
-        panel: "PreviewPanel",
+        driver: "QtDriver",
         thumb_size: tuple[int, int],
+        grid_idx: int,
     ):
-        """Modes: entry, collation, tag_group"""
         super().__init__()
+        self.grid_idx = grid_idx
         self.lib = library
-        self.panel = panel
-        self.mode = mode
-        self.item_id: int = -1
-        self.isFavorite: bool = False
-        self.isArchived: bool = False
+        self.mode: ItemType = mode
+        self.driver = driver
+        self.item_id: int | None = None
         self.thumb_size: tuple[int, int] = thumb_size
         self.setMinimumSize(*thumb_size)
         self.setMaximumSize(*thumb_size)
@@ -179,7 +205,7 @@ class ItemThumb(FlowWidget):
             lambda ts, i, s, ext: (
                 self.update_thumb(ts, image=i),
                 self.update_size(ts, size=s),
-                self.set_extension(ext),  # type: ignore
+                self.set_extension(ext),
             )
         )
         self.thumb_button.setFlat(True)
@@ -263,54 +289,52 @@ class ItemThumb(FlowWidget):
         # self.root_layout.addWidget(self.check_badges, 0, 2)
         self.top_layout.addWidget(self.cb_container)
 
-        # Favorite Badge -------------------------------------------------------
-        self.favorite_badge = QCheckBox()
-        self.favorite_badge.setObjectName("favBadge")
-        self.favorite_badge.setToolTip("Favorite")
-        self.favorite_badge.setStyleSheet(
-            f"QCheckBox::indicator{{width: {check_size}px;height: {check_size}px;}}"
-            f"QCheckBox::indicator::unchecked{{image: url(:/images/star_icon_empty_128.png)}}"
-            f"QCheckBox::indicator::checked{{image: url(:/images/star_icon_filled_128.png)}}"
-            #  f'QCheckBox{{background-color:yellow;}}'
-        )
-        self.favorite_badge.setMinimumSize(check_size, check_size)
-        self.favorite_badge.setMaximumSize(check_size, check_size)
-        self.favorite_badge.stateChanged.connect(
-            lambda x=self.favorite_badge.isChecked(): self.on_favorite_check(bool(x))
-        )
+        self.badge_active: dict[BadgeType, bool] = {
+            BadgeType.FAVORITE: False,
+            BadgeType.ARCHIVED: False,
+        }
 
-        # self.fav_badge.setContentsMargins(0,0,0,0)
-        # tr_layout.addWidget(self.fav_badge)
-        # root_layout.addWidget(self.fav_badge, 0, 2)
-        self.cb_layout.addWidget(self.favorite_badge)
-        self.favorite_badge.setHidden(True)
+        self.badges: dict[BadgeType, QCheckBox] = {}
+        badge_icons = {
+            BadgeType.FAVORITE: (
+                ":/images/star_icon_empty_128.png",
+                ":/images/star_icon_filled_128.png",
+            ),
+            BadgeType.ARCHIVED: (
+                ":/images/box_icon_empty_128.png",
+                ":/images/box_icon_filled_128.png",
+            ),
+        }
+        for badge_type in BadgeType:
+            icon_empty, icon_checked = badge_icons[badge_type]
+            badge = QCheckBox()
+            badge.setObjectName(badge_type.name)
+            badge.setToolTip(badge_type.value)
+            badge.setStyleSheet(
+                f"QCheckBox::indicator{{width: {check_size}px;height: {check_size}px;}}"
+                f"QCheckBox::indicator::unchecked{{image: url({icon_empty})}}"
+                f"QCheckBox::indicator::checked{{image: url({icon_checked})}}"
+            )
+            badge.setMinimumSize(check_size, check_size)
+            badge.setMaximumSize(check_size, check_size)
+            badge.setHidden(True)
 
-        # Archive Badge --------------------------------------------------------
-        self.archived_badge = QCheckBox()
-        self.archived_badge.setObjectName("archiveBadge")
-        self.archived_badge.setToolTip("Archive")
-        self.archived_badge.setStyleSheet(
-            f"QCheckBox::indicator{{width: {check_size}px;height: {check_size}px;}}"
-            f"QCheckBox::indicator::unchecked{{image: url(:/images/box_icon_empty_128.png)}}"
-            f"QCheckBox::indicator::checked{{image: url(:/images/box_icon_filled_128.png)}}"
-            #  f'QCheckBox{{background-color:red;}}'
-        )
-        self.archived_badge.setMinimumSize(check_size, check_size)
-        self.archived_badge.setMaximumSize(check_size, check_size)
-        # self.archived_badge.clicked.connect(lambda x: self.assign_archived(x))
-        self.archived_badge.stateChanged.connect(
-            lambda x=self.archived_badge.isChecked(): self.on_archived_check(bool(x))
-        )
+            badge.stateChanged.connect(lambda x, bt=badge_type: self.on_badge_check(bt))
 
-        # tr_layout.addWidget(self.archive_badge)
-        self.cb_layout.addWidget(self.archived_badge)
-        self.archived_badge.setHidden(True)
-        # root_layout.addWidget(self.archive_badge, 0, 2)
-        # self.dumpObjectTree()
+            self.badges[badge_type] = badge
+            self.cb_layout.addWidget(badge)
 
         self.set_mode(mode)
 
-    def set_mode(self, mode: Optional[ItemType]) -> None:
+    @property
+    def is_favorite(self) -> bool:
+        return self.badge_active[BadgeType.FAVORITE]
+
+    @property
+    def is_archived(self):
+        return self.badge_active[BadgeType.ARCHIVED]
+
+    def set_mode(self, mode: ItemType | None) -> None:
         if mode is None:
             self.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents, True)
             self.unsetCursor()
@@ -318,7 +342,6 @@ class ItemThumb(FlowWidget):
             # self.check_badges.setHidden(True)
             # self.ext_badge.setHidden(True)
             # self.item_type_badge.setHidden(True)
-            pass
         elif mode == ItemType.ENTRY and self.mode != ItemType.ENTRY:
             self.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents, False)
             self.setCursor(Qt.CursorShape.PointingHandCursor)
@@ -349,11 +372,6 @@ class ItemThumb(FlowWidget):
         self.mode = mode
         # logging.info(f'Set Mode To: {self.mode}')
 
-    # def update_(self, thumb: QPixmap, size:QSize, ext:str, badges:list[QPixmap]) -> None:
-    # 	"""Updates the ItemThumb's visuals."""
-    # 	if thumb:
-    # 		pass
-
     def set_extension(self, ext: str) -> None:
         if ext and ext.startswith(".") is False:
             ext = "." + ext
@@ -376,8 +394,8 @@ class ItemThumb(FlowWidget):
                 self.ext_badge.setHidden(True)
                 self.count_badge.setHidden(True)
 
-    def update_thumb(self, timestamp: float, image: QPixmap = None):
-        """Updates attributes of a thumbnail element."""
+    def update_thumb(self, timestamp: float, image: QPixmap | None = None):
+        """Update attributes of a thumbnail element."""
         # logging.info(f'[GUI] Updating Thumbnail for element {id(element)}: {id(image) if image else None}')
         if timestamp > ItemThumb.update_cutoff:
             self.thumb_button.setIcon(image if image else QPixmap())
@@ -386,11 +404,10 @@ class ItemThumb(FlowWidget):
     def update_size(self, timestamp: float, size: QSize):
         """Updates attributes of a thumbnail element."""
         # logging.info(f'[GUI] Updating size for element {id(element)}:  {size.__str__()}')
-        if timestamp > ItemThumb.update_cutoff:
-            if self.thumb_button.iconSize != size:
-                self.thumb_button.setIconSize(size)
-                self.thumb_button.setMinimumSize(size)
-                self.thumb_button.setMaximumSize(size)
+        if timestamp > ItemThumb.update_cutoff and self.thumb_button.iconSize != size:
+            self.thumb_button.setIconSize(size)
+            self.thumb_button.setMinimumSize(size)
+            self.thumb_button.setMaximumSize(size)
 
     def update_clickable(self, clickable: typing.Callable):
         """Updates attributes of a thumbnail element."""
@@ -401,58 +418,41 @@ class ItemThumb(FlowWidget):
             self.thumb_button.clicked.connect(clickable)
             self.thumb_button.is_connected = True
 
-    def update_badges(self):
-        if self.mode == ItemType.ENTRY:
-            # logging.info(f'[UPDATE BADGES] ENTRY: {self.lib.get_entry(self.item_id)}')
-            # logging.info(f'[UPDATE BADGES] ARCH: {self.lib.get_entry(self.item_id).has_tag(self.lib, 0)}, FAV: {self.lib.get_entry(self.item_id).has_tag(self.lib, 1)}')
-            self.assign_archived(
-                self.lib.get_entry(self.item_id).has_tag(self.lib, TAG_ARCHIVED)
-            )
-            self.assign_favorite(
-                self.lib.get_entry(self.item_id).has_tag(self.lib, TAG_FAVORITE)
-            )
+    def refresh_badge(self, entry: Entry | None = None):
+        if not entry:
+            if not self.item_id:
+                logger.error("missing both entry and item_id")
+                return None
 
-    def set_item_id(self, id: int):
-        """
-        also sets the filepath for the file opener
-        """
-        self.item_id = id
-        if id == -1:
-            return
-        entry = self.lib.get_entry(self.item_id)
-        filepath = self.lib.library_dir / entry.path / entry.filename
+            entry = self.lib.get_entry(self.item_id)
+            if not entry:
+                logger.error("Entry not found", item_id=self.item_id)
+                return
+
+        self.assign_badge(BadgeType.ARCHIVED, entry.is_archived)
+        self.assign_badge(BadgeType.FAVORITE, entry.is_favorited)
+
+    def set_item_id(self, entry: Entry):
+        filepath = self.lib.library_dir / entry.path
         self.opener.set_filepath(filepath)
+        self.item_id = entry.id
 
-    def assign_favorite(self, value: bool):
-        # Switching mode to None to bypass mode-specific operations when the
-        # checkbox's state changes.
-        mode = self.mode
-        self.mode = None
-        self.isFavorite = value
-        self.favorite_badge.setChecked(value)
-        if not self.thumb_button.underMouse():
-            self.favorite_badge.setHidden(not self.isFavorite)
-        self.mode = mode
+    def assign_badge(self, badge_type: BadgeType, value: bool) -> None:
+        # mode = self.mode
+        # self.mode = None
+        badge = self.badges[badge_type]
+        self.badge_active[badge_type] = value
+        if badge.isChecked() != value:
+            badge.setChecked(value)
+            badge.setHidden(not value)
 
-    def assign_archived(self, value: bool):
-        # Switching mode to None to bypass mode-specific operations when the
-        # checkbox's state changes.
-        mode = self.mode
-        self.mode = None
-        self.isArchived = value
-        self.archived_badge.setChecked(value)
-        if not self.thumb_button.underMouse():
-            self.archived_badge.setHidden(not self.isArchived)
-        self.mode = mode
+        # self.mode = mode
 
     def show_check_badges(self, show: bool):
         if self.mode != ItemType.TAG_GROUP:
-            self.favorite_badge.setHidden(
-                True if (not show and not self.isFavorite) else False
-            )
-            self.archived_badge.setHidden(
-                True if (not show and not self.isArchived) else False
-            )
+            for badge_type, badge in self.badges.items():
+                is_hidden = not (show or self.badge_active[badge_type])
+                badge.setHidden(is_hidden)
 
     def enterEvent(self, event: QEnterEvent) -> None:
         self.show_check_badges(True)
@@ -462,40 +462,55 @@ class ItemThumb(FlowWidget):
         self.show_check_badges(False)
         return super().leaveEvent(event)
 
-    def on_archived_check(self, toggle_value: bool):
-        if self.mode == ItemType.ENTRY:
-            self.isArchived = toggle_value
-            self.toggle_item_tag(toggle_value, TAG_ARCHIVED)
+    @badge_update_lock
+    def on_badge_check(self, badge_type: BadgeType):
+        if self.mode is None:
+            return
 
-    def on_favorite_check(self, toggle_value: bool):
-        if self.mode == ItemType.ENTRY:
-            self.isFavorite = toggle_value
-            self.toggle_item_tag(toggle_value, TAG_FAVORITE)
+        toggle_value = self.badges[badge_type].isChecked()
 
-    def toggle_item_tag(self, toggle_value: bool, tag_id: int):
-        def toggle_tag(entry: Entry):
-            if toggle_value:
-                self.favorite_badge.setHidden(False)
-                entry.add_tag(
-                    self.panel.driver.lib,
-                    tag_id,
-                    field_id=FieldID.META_TAGS,
-                    field_index=-1,
-                )
-            else:
-                entry.remove_tag(self.panel.driver.lib, tag_id)
+        self.badge_active[badge_type] = toggle_value
+        tag_id = BADGE_TAGS[badge_type]
 
-        # Is the badge a part of the selection?
-        if (ItemType.ENTRY, self.item_id) in self.panel.driver.selected:
-            # Yes, add chosen tag to all selected.
-            for _, item_id in self.panel.driver.selected:
-                entry = self.lib.get_entry(item_id)
-                toggle_tag(entry)
+        # check if current item is selected. if so, update all selected items
+        if self.grid_idx in self.driver.selected:
+            update_items = self.driver.selected
         else:
-            # No, add tag to the entry this badge is on.
-            entry = self.lib.get_entry(self.item_id)
-            toggle_tag(entry)
+            update_items = [self.grid_idx]
 
-        if self.panel.isOpen:
-            self.panel.update_widgets()
-        self.panel.driver.update_badges()
+        for idx in update_items:
+            entry = self.driver.frame_content[idx]
+            self.toggle_item_tag(
+                entry, toggle_value, tag_id, _FieldID.TAGS_META.name, True
+            )
+            # update the entry
+            self.driver.frame_content[idx] = self.lib.search_library(
+                FilterState(id=entry.id)
+            )[1][0]
+
+        self.driver.update_badges(update_items)
+
+    def toggle_item_tag(
+        self,
+        entry: Entry,
+        toggle_value: bool,
+        tag_id: int,
+        field_key: str,
+        create_field: bool = False,
+    ):
+        logger.info(
+            "toggle_item_tag",
+            entry_id=entry.id,
+            toggle_value=toggle_value,
+            tag_id=tag_id,
+            field_key=field_key,
+        )
+
+        tag = self.lib.get_tag(tag_id)
+        if toggle_value:
+            self.lib.add_field_tag(entry, tag, field_key, create_field)
+        else:
+            self.lib.remove_field_tag(entry, tag.id, field_key)
+
+        if self.driver.preview_panel.is_open:
+            self.driver.preview_panel.update_widgets()
