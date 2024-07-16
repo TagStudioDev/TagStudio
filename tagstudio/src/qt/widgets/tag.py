@@ -15,6 +15,7 @@ from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QPushButton
 
 from src.core.library import Library, Tag
 from src.core.palette import ColorType, get_tag_color
+from src.qt.modals.merge_tag import MergeTagModal
 
 
 ERROR = f"[ERROR]"
@@ -76,6 +77,11 @@ class TagWidget(QWidget):
         self.bg_button.addAction(search_for_tag_action)
         add_to_search_action = QAction("Add to Search", self)
         self.bg_button.addAction(add_to_search_action)
+
+        merge_tag_action = QAction("Merge Tag", self)
+        merge_tag_action.triggered.connect(self.show_merge_tag_modal)
+        self.bg_button.addAction(merge_tag_action)
+
 
         self.inner_layout = QHBoxLayout()
         self.inner_layout.setObjectName("innerLayout")
@@ -234,6 +240,9 @@ class TagWidget(QWidget):
     # 		pass
     # 	# self.bg.clicked.connect(lambda checked=False, filepath=filepath: open_file(filepath))
     # 	# self.bg.clicked.connect(function)
+    def show_merge_tag_modal(self):
+        modal = MergeTagModal(self.lib, self.tag)
+        modal.exec_()
 
     def enterEvent(self, event: QEnterEvent) -> None:
         if self.has_remove:
