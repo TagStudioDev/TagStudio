@@ -32,7 +32,7 @@ class MergeTagModal(QDialog):
         self.merge_button = QPushButton("Merge", self)
         layout.addWidget(self.merge_button)
 
-        self.merge_button.clicked.connect(lambda: self.lib.merge_tag(self.current_tag, self.tag2_dropdown.currentData()))
+        self.merge_button.clicked.connect(self.merge_tags)
 
         self.setLayout(layout)
 
@@ -41,3 +41,7 @@ class MergeTagModal(QDialog):
             if self.selected_tag_dropdown.itemData(index) == self.current_tag:
                 return index
         return 0
+
+    def merge_tags(self):
+        self.lib.merge_tag(self.current_tag, self.tag2_dropdown.currentData())
+        self.accept()
