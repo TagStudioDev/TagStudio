@@ -82,7 +82,6 @@ class TagWidget(QWidget):
         merge_tag_action.triggered.connect(self.show_merge_tag_modal)
         self.bg_button.addAction(merge_tag_action)
 
-
         self.inner_layout = QHBoxLayout()
         self.inner_layout.setObjectName("innerLayout")
         self.inner_layout.setContentsMargins(2, 2, 2, 2)

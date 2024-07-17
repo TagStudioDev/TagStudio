@@ -1899,12 +1899,9 @@ class Library:
         source_tag_id: int = source_tag.id
         target_tag_id: int = target_tag.id
 
-        if not source_tag or not target_tag:
-            return 0
-        
         if source_tag.name not in target_tag.aliases:
             target_tag.aliases.append(source_tag.name)
-            
+
         for alias in source_tag.aliases:
             if alias not in target_tag.aliases:
                 target_tag.aliases.append(alias)
@@ -1912,7 +1909,7 @@ class Library:
         for subtag_id in source_tag.subtag_ids:
             if subtag_id not in target_tag.subtag_ids:
                 target_tag.subtag_ids.append(subtag_id)
-        
+
         for entry in self.entries:
             for field in entry.fields:
                 if self.get_field_attr(field, "type") == "tag_box":
