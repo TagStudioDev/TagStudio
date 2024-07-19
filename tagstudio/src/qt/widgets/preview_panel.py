@@ -642,6 +642,7 @@ class PreviewPanel(QWidget):
                 )
                 if self.preview_img.is_connected:
                     self.preview_img.clicked.disconnect()
+                    self.preview_img.is_connected = False
 
             self.common_fields = []
             self.mixed_fields = []
