@@ -7,7 +7,7 @@ import logging
 import math
 import cv2
 import rawpy
-import numpy
+import numpy as np
 from pillow_heif import register_heif_opener, register_avif_opener
 from PIL import (
     Image,
@@ -40,6 +40,7 @@ from src.core.constants import (
     BLENDER_TYPES,
 )
 from src.core.utils.encoding import detect_char_encoding
+from src.core.palette import ColorType, get_ui_color
 from src.qt.helpers.blender_thumbnailer import blend_thumb
 from src.qt.helpers.file_tester import is_readable_video
 
@@ -181,16 +182,13 @@ class ThumbRenderer(QObject):
                 elif ext in VIDEO_TYPES:
                     if is_readable_video(_filepath):
                         video = cv2.VideoCapture(str(_filepath), cv2.CAP_FFMPEG)
+                        # TODO: Move this check to is_readable_video()
+                        if video.get(cv2.CAP_PROP_FRAME_COUNT) <= 0:
+                            raise cv2.error("File is invalid or has 0 frames")
                         video.set(
                             cv2.CAP_PROP_POS_FRAMES,
                             (video.get(cv2.CAP_PROP_FRAME_COUNT) // 2),
                         )
-                    success, frame = video.read()
-                    if not success:
-                        # Depending on the video format, compression, and frame
-                        # count, seeking halfway does not work and the thumb
-                        # must be pulled from the earliest available frame.
-                        video.set(cv2.CAP_PROP_POS_FRAMES, 0)
                         success, frame = video.read()
                         if not success:
                             # Depending on the video format, compression, and frame
@@ -198,6 +196,12 @@ class ThumbRenderer(QObject):
                             # must be pulled from the earliest available frame.
                             video.set(cv2.CAP_PROP_POS_FRAMES, 0)
                             success, frame = video.read()
+                            if not success:
+                                # Depending on the video format, compression, and frame
+                                # count, seeking halfway does not work and the thumb
+                                # must be pulled from the earliest available frame.
+                                video.set(cv2.CAP_PROP_POS_FRAMES, 0)
+                                success, frame = video.read()
                         frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
                         image = Image.fromarray(frame)
                     else:
@@ -226,21 +230,16 @@ class ThumbRenderer(QObject):
                     image = bg
                 # Fonts ========================================================
                 elif _filepath.suffix.lower() in FONT_TYPES:
-                    # Scale the sample font sizes to the preview image
-                    # resolution,assuming the sizes are tuned for 256px.
-                    scaled_sizes: list[int] = [
-                        math.floor(x * (adj_size / 256)) for x in FONT_SAMPLE_SIZES
-                    ]
                     if gradient:
-                        # handles small thumbnails
-                        bg = Image.new("RGB", (adj_size, adj_size), color="#1e1e1e")
-                        draw = ImageDraw.Draw(bg)
-                        font = ImageFont.truetype(
-                            _filepath, size=math.ceil(adj_size * 0.65)
-                        )
-                        draw.text((10, 0), "Aa", font=font)
+                        # Handles small thumbnails
+                        image = self._font_preview_small(_filepath, adj_size)
                     else:
-                        # handles big thumbnails and renders a sample text in multiple font sizes
+                        # Handles big thumbnails and renders a sample text in multiple font sizes.
+                        # Scale the sample font sizes to the preview image
+                        # resolution,assuming the sizes are tuned for 256px.
+                        scaled_sizes: list[int] = [
+                            math.floor(x * (adj_size / 256)) for x in FONT_SAMPLE_SIZES
+                        ]
                         bg = Image.new("RGB", (adj_size, adj_size), color="#1e1e1e")
                         draw = ImageDraw.Draw(bg)
                         lines_of_padding = 2
@@ -255,7 +254,7 @@ class ThumbRenderer(QObject):
                             y_offset += (
                                 len(text_wrapped.split("\n")) + lines_of_padding
                             ) * draw.textbbox((0, 0), "A", font=font)[-1]
-                    image = bg
+                        image = bg
                 # Audio ========================================================
                 elif ext in AUDIO_TYPES:
                     image = self._album_artwork(_filepath, ext)
@@ -264,7 +263,7 @@ class ThumbRenderer(QObject):
                             _filepath, ext, adj_size, pixel_ratio
                         )
                         if image is not None:
-                            image = self._apply_overlay_color(image)
+                            image = self._apply_overlay_color(image, "green")
 
                 # 3D ===========================================================
                 # elif extension == 'stl':
@@ -456,8 +455,8 @@ class ThumbRenderer(QObject):
         try:
             BARS: int = min(math.floor((size // pixel_ratio) / 5), 64)
             audio: AudioSegment = AudioSegment.from_file(filepath, ext[1:])
-            data = numpy.fromstring(audio._data, numpy.int16)  # type: ignore
-            data_indices = numpy.linspace(1, len(data), num=BARS * SAMPLES_PER_BAR)
+            data = np.fromstring(audio._data, np.int16)  # type: ignore
+            data_indices = np.linspace(1, len(data), num=BARS * SAMPLES_PER_BAR)
 
             BAR_MARGIN: float = ((size_scaled / (BARS * 3)) * BASE_SCALE) / 2
             LINE_WIDTH: float = ((size_scaled - BAR_MARGIN) / (BARS * 3)) * BASE_SCALE
@@ -524,21 +523,71 @@ class ThumbRenderer(QObject):
             )
         return image
 
-    def _apply_overlay_color(self, image=Image.Image) -> Image.Image:
+    def _font_preview_small(self, filepath: Path, size: int) -> Image.Image:
+        """Renders a small font preview ("Aa") thumbnail from a font file."""
+        bg = Image.new("RGB", (size, size), color="#000000")
+        raw = Image.new("RGB", (size * 2, size * 2), color="#000000")
+        draw = ImageDraw.Draw(raw)
+        font = ImageFont.truetype(filepath, size=size)
+        # NOTE: While a stroke effect is desired, the text
+        # method only allows for outer strokes, which looks
+        # a bit weird when rendering fonts.
+        draw.text(
+            (size // 8, size // 8),
+            "Aa",
+            font=font,
+            fill="#FF0000",
+            # stroke_width=math.ceil(size / 96),
+            # stroke_fill="#FFFF00",
+        )
+        # NOTE: Change to getchannel(1) if using an outline.
+        data = np.asarray(raw.getchannel(0))
+
+        m, n = data.shape[:2]
+        col: np.ndarray = data.any(0)
+        row: np.ndarray = data.any(1)
+        cropped_data = np.asarray(raw)[
+            row.argmax() : m - row[::-1].argmax(),
+            col.argmax() : n - col[::-1].argmax(),
+        ]
+        cropped_im: Image.Image = Image.fromarray(cropped_data, "RGB")
+
+        margin: int = math.ceil(size // 16)
+
+        orig_x, orig_y = cropped_im.size
+        new_x, new_y = (size, size)
+        if orig_x > orig_y:
+            new_x = size
+            new_y = math.ceil(size * (orig_y / orig_x))
+        elif orig_y > orig_x:
+            new_y = size
+            new_x = math.ceil(size * (orig_x / orig_y))
+
+        cropped_im = cropped_im.resize(
+            size=(new_x - (margin * 2), new_y - (margin * 2)),
+            resample=Image.Resampling.BILINEAR,
+        )
+        bg.paste(
+            cropped_im,
+            box=(margin, margin + ((size - new_y) // 2)),
+        )
+        return self._apply_overlay_color(bg, "purple")
+
+    def _apply_overlay_color(self, image: Image.Image, color: str) -> Image.Image:
         """Apply a gradient effect over an an image.
         Red channel for foreground, green channel for outline, none for background."""
         bg_color: str = (
-            "#0d3828"
+            get_ui_color(ColorType.DARK_ACCENT, color)
             if QGuiApplication.styleHints().colorScheme() is Qt.ColorScheme.Dark
-            else "#28bb48"
+            else get_ui_color(ColorType.PRIMARY, color)
         )
         fg_color: str = (
-            "#28bb48"
+            get_ui_color(ColorType.PRIMARY, color)
             if QGuiApplication.styleHints().colorScheme() is Qt.ColorScheme.Dark
-            else "#DDFFCC"
+            else get_ui_color(ColorType.LIGHT_ACCENT, color)
         )
         ol_color: str = (
-            "#43c568"
+            get_ui_color(ColorType.BORDER, color)
             if QGuiApplication.styleHints().colorScheme() is Qt.ColorScheme.Dark
             else "#FFFFFF"
         )
