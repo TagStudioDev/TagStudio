@@ -75,5 +75,4 @@ class AddFieldModal(QWidget):
         self.root_layout.addWidget(self.title_widget)
         self.root_layout.addWidget(self.list_widget)
 
-        self.root_layout.addStretch(1)
         self.root_layout.addWidget(self.button_container)
