@@ -568,7 +568,7 @@ class PreviewPanel(QWidget):
                         elif filepath.suffix.lower() in FONT_TYPES:
                             font = ImageFont.truetype(filepath)
                             self.dimensions_label.setText(
-                                f"{filepath.suffix.upper()[1:]} •  {format_size(filepath.stat().st_size)}\n{font.getname()[0]} : {font.getname()[1]} "
+                                f"{filepath.suffix.upper()[1:]} •  {format_size(filepath.stat().st_size)}\n{font.getname()[0]} ({font.getname()[1]}) "
                             )
                         else:
                             self.dimensions_label.setText(

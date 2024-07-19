@@ -10,7 +10,7 @@ LIBRARY_FILENAME: str = "ts_library.json"
 FONT_SAMPLE_TEXT: str = (
     """ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!?@$%(){}[]"""
 )
-FONT_SAMPLE_SIZES: list[int] = [12, 15, 20]
+FONT_SAMPLE_SIZES: list[int] = [10, 15, 20]
 
 # TODO: Turn this whitelist into a user-configurable blacklist.
 IMAGE_TYPES: list[str] = [
@@ -112,7 +112,7 @@ ARCHIVE_TYPES: list[str] = [
 ]
 PROGRAM_TYPES: list[str] = [".exe", ".app"]
 SHORTCUT_TYPES: list[str] = [".lnk", ".desktop", ".url"]
-FONT_TYPES: list[str] = [".ttf", ".otf", ".woff"]
+FONT_TYPES: list[str] = [".ttf", ".otf", ".woff", ".woff2", ".ttc"]
 
 ALL_FILE_TYPES: list[str] = (
     IMAGE_TYPES

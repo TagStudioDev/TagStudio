@@ -191,23 +191,30 @@ class ThumbRenderer(QObject):
                     image = bg
                 # Fonts ========================================================
                 elif _filepath.suffix.lower() in FONT_TYPES:
+                    # Scale the sample font sizes to the preview image
+                    # resolution,assuming the sizes are tuned for 256px.
+                    scaled_sizes: list[int] = [
+                        math.floor(x * (adj_size / 256)) for x in FONT_SAMPLE_SIZES
+                    ]
                     if gradient:
                         # handles small thumbnails
-                        bg = Image.new("RGB", (256, 256), color="#1e1e1e")
+                        bg = Image.new("RGB", (adj_size, adj_size), color="#1e1e1e")
                         draw = ImageDraw.Draw(bg)
-                        font = ImageFont.truetype(_filepath, size=170)
+                        font = ImageFont.truetype(
+                            _filepath, size=math.ceil(adj_size * 0.65)
+                        )
                         draw.text((10, 0), "Aa", font=font)
                     else:
                         # handles big thumbnails and renders a sample text in multiple font sizes
-                        bg = Image.new("RGB", (256, 256), color="#1e1e1e")
+                        bg = Image.new("RGB", (adj_size, adj_size), color="#1e1e1e")
                         draw = ImageDraw.Draw(bg)
                         lines_of_padding = 2
                         y_offset = 0
 
-                        for font_size in FONT_SAMPLE_SIZES:
+                        for font_size in scaled_sizes:
                             font = ImageFont.truetype(_filepath, size=font_size)
                             text_wrapped: str = wrap_full_text(
-                                FONT_SAMPLE_TEXT, font=font, draw=draw
+                                FONT_SAMPLE_TEXT, font=font, width=adj_size, draw=draw
                             )
                             draw.multiline_text((0, y_offset), text_wrapped, font=font)
                             y_offset += (
