@@ -1,5 +1,5 @@
-VERSION: str = "9.3.1"  # Major.Minor.Patch
-VERSION_BRANCH: str = "Pre-Release"  # Usually "" or "Pre-Release"
+VERSION: str = "9.3.2"  # Major.Minor.Patch
+VERSION_BRANCH: str = ""  # Usually "" or "Pre-Release"
 
 # The folder & file names where TagStudio keeps its data relative to a library.
 TS_FOLDER_NAME: str = ".TagStudio"
@@ -105,6 +105,41 @@ ARCHIVE_TYPES: list[str] = [
     ".7z",
     ".s7z",
 ]
+BLENDER_TYPES: list[str] = [
+    ".blend",
+    ".blend1",
+    ".blend2",
+    ".blend3",
+    ".blend4",
+    ".blend5",
+    ".blend6",
+    ".blend7",
+    ".blend8",
+    ".blend9",
+    ".blend10",
+    ".blend11",
+    ".blend12",
+    ".blend13",
+    ".blend14",
+    ".blend15",
+    ".blend16",
+    ".blend17",
+    ".blend18",
+    ".blend19",
+    ".blend20",
+    ".blend21",
+    ".blend22",
+    ".blend23",
+    ".blend24",
+    ".blend25",
+    ".blend26",
+    ".blend27",
+    ".blend28",
+    ".blend29",
+    ".blend30",
+    ".blend31",
+    ".blend32",
+]
 PROGRAM_TYPES: list[str] = [".exe", ".app"]
 SHORTCUT_TYPES: list[str] = [".lnk", ".desktop", ".url"]
 
@@ -163,3 +198,6 @@ TAG_COLORS = [
     "cool gray",
     "olive",
 ]
+
+TAG_FAVORITE = 1
+TAG_ARCHIVED = 0

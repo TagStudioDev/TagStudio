@@ -110,4 +110,4 @@ class FileExtensionModal(PanelWidget):
         for i in range(self.table.rowCount()):
             ext = self.table.item(i, 0)
             if ext and ext.text():
-                self.lib.ext_list.append(ext.text())
+                self.lib.ext_list.append(ext.text().lower())

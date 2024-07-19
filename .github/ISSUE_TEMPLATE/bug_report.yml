@@ -6,6 +6,8 @@ body:
   - type: markdown
     attributes:
       value: |
+        *Please add an appropriate title for this issue.*
+
         Before reporting, read the [documentation](https://github.com/TagStudioDev/TagStudio/blob/main/doc/index.md) and search existing [issues](https://github.com/TagStudioDev/TagStudio/issues).
         Validate that you are using an up-to-date version[^1], your issue might already be fixed!
         Questions, guidance, and usage goes in [discussions](https://github.com/TagStudioDev/TagStudio/discussions). Invalid issues will be closed.

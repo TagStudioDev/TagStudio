@@ -15,7 +15,7 @@ from PySide6.QtWidgets import (
     QLineEdit,
     QSizePolicy,
 )
-
+from src.qt.helpers.qbutton_wrapper import QPushButtonWrapper
 
 # class NumberEdit(QLineEdit):
 # 	def __init__(self, parent=None) -> None:
@@ -50,13 +50,13 @@ class Pagination(QWidget, QObject):
         # self.setMinimumHeight(32)
 
         # [<] ----------------------------------
-        self.prev_button = QPushButton()
+        self.prev_button = QPushButtonWrapper()
         self.prev_button.setText("<")
         self.prev_button.setMinimumSize(self.button_size)
         self.prev_button.setMaximumSize(self.button_size)
 
         # --- [1] ------------------------------
-        self.start_button = QPushButton()
+        self.start_button = QPushButtonWrapper()
         self.start_button.setMinimumSize(self.button_size)
         self.start_button.setMaximumSize(self.button_size)
         # self.start_button.setStyleSheet('background:cyan;')
@@ -104,14 +104,14 @@ class Pagination(QWidget, QObject):
         self.end_ellipses.setText(". . .")
 
         # ----------------------------- [42] ---
-        self.end_button = QPushButton()
+        self.end_button = QPushButtonWrapper()
         self.end_button.setMinimumSize(self.button_size)
         self.end_button.setMaximumSize(self.button_size)
         # self.end_button.setMaximumHeight(self.button_size.height())
         # self.end_button.setStyleSheet('background:red;')
 
         # ---------------------------------- [>]
-        self.next_button = QPushButton()
+        self.next_button = QPushButtonWrapper()
         self.next_button.setText(">")
         self.next_button.setMinimumSize(self.button_size)
         self.next_button.setMaximumSize(self.button_size)
@@ -428,16 +428,15 @@ class Pagination(QWidget, QObject):
         # print(f'GOTO PAGE: {index}')
         self.update_buttons(self.page_count, index)
 
-    def _assign_click(self, button: QPushButton, index):
-        try:
+    def _assign_click(self, button: QPushButtonWrapper, index):
+        if button.is_connected:
             button.clicked.disconnect()
-        except RuntimeError:
-            pass
         button.clicked.connect(lambda checked=False, i=index: self._goto_page(i))
+        button.is_connected = True
 
     def _populate_buffer_buttons(self):
         for i in range(max(self.buffer_page_count * 2, 5)):
-            button = QPushButton()
+            button = QPushButtonWrapper()
             button.setMinimumSize(self.button_size)
             button.setMaximumSize(self.button_size)
             button.setHidden(True)
@@ -445,7 +444,7 @@ class Pagination(QWidget, QObject):
             self.start_buffer_layout.addWidget(button)
 
         for i in range(max(self.buffer_page_count * 2, 5)):
-            button = QPushButton()
+            button = QPushButtonWrapper()
             button.setMinimumSize(self.button_size)
             button.setMaximumSize(self.button_size)
             button.setHidden(True)

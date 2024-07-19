@@ -66,6 +66,8 @@ from src.core.constants import (
     VERSION_BRANCH,
     VERSION,
     TEXT_FIELDS,
+    TAG_FAVORITE,
+    TAG_ARCHIVED,
 )
 from src.core.utils.web import strip_web_protocol
 from src.qt.flowlayout import FlowLayout
@@ -1410,8 +1412,8 @@ class QtDriver(QObject):
                     filepath = self.lib.library_dir / entry.path / entry.filename
 
                     item_thumb.set_item_id(entry.id)
-                    item_thumb.assign_archived(entry.has_tag(self.lib, 0))
-                    item_thumb.assign_favorite(entry.has_tag(self.lib, 1))
+                    item_thumb.assign_archived(entry.has_tag(self.lib, TAG_ARCHIVED))
+                    item_thumb.assign_favorite(entry.has_tag(self.lib, TAG_FAVORITE))
                     # ctrl_down = True if QGuiApplication.keyboardModifiers() else False
                     # TODO: Change how this works. The click function
                     # for collations a few lines down should NOT be allowed during modifier keys.
