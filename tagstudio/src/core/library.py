@@ -843,30 +843,35 @@ class Library:
 
     def clear_internal_vars(self):
         """Clears the internal variables of the Library object."""
-        self.library_dir = None
-        self.is_legacy_library = False
 
+        # Reset Directory Data =================================================
+        self.library_dir = None
+
+        # Reset Entries ========================================================
         self.entries.clear()
         self._next_entry_id = 0
-        # self.filtered_entries.clear()
         self._entry_id_to_index_map.clear()
-
-        self._collation_id_to_index_map.clear()
-
         self.missing_matches = {}
         self.dir_file_count = -1
         self.files_not_in_library.clear()
         self.missing_files.clear()
         self.fixed_files.clear()
         self.filename_to_entry_id_map: dict[Path, int] = {}
-        self.ext_list = self.default_ext_exclude_list
 
+        # Reset Tags ===========================================================
         self.tags.clear()
         self._next_tag_id = 1000
         self._tag_strings_to_id_map = {}
         self._tag_id_to_cluster_map = {}
         self._tag_id_to_index_map = {}
         self._tag_entry_ref_map.clear()
+
+        # Reset Collations =====================================================
+        self.collations.clear()
+        self._collation_id_to_index_map.clear()
+
+        # Reset Extension List =================================================
+        self.ext_list = self.default_ext_exclude_list
 
     def refresh_dir(self) -> Generator:
         """Scans a directory for files, and adds those relative filenames to internal variables."""
