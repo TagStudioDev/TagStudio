@@ -13,7 +13,7 @@ class ColorType(int, Enum):
     DARK_ACCENT = 4
 
 
-_TAG_COLORS = {
+_TAG_COLORS: dict = {
     "": {
         ColorType.PRIMARY: "#1e1e1e",
         ColorType.TEXT: ColorType.LIGHT_ACCENT,
@@ -277,6 +277,28 @@ _TAG_COLORS = {
     },
 }
 
+_UI_COLORS: dict = {
+    "": {
+        ColorType.PRIMARY: "#1e1e1e",
+        ColorType.TEXT: ColorType.LIGHT_ACCENT,
+        ColorType.BORDER: "#333333",
+        ColorType.LIGHT_ACCENT: "#FFFFFF",
+        ColorType.DARK_ACCENT: "#222222",
+    },
+    "green": {
+        ColorType.PRIMARY: "#28bb48",
+        ColorType.BORDER: "#43c568",
+        ColorType.LIGHT_ACCENT: "#DDFFCC",
+        ColorType.DARK_ACCENT: "#0d3828",
+    },
+    "purple": {
+        ColorType.PRIMARY: "#C76FF3",
+        ColorType.BORDER: "#c364f2",
+        ColorType.LIGHT_ACCENT: "#EFD4FB",
+        ColorType.DARK_ACCENT: "#3E1555",
+    },
+}
+
 
 def get_tag_color(type, color):
     color = color.lower()
@@ -287,3 +309,9 @@ def get_tag_color(type, color):
             return _TAG_COLORS[color][type]
     except KeyError:
         return "#FF00FF"
+
+
+def get_ui_color(type: ColorType, color: str):
+    """Returns a hex value given a color name and ColorType."""
+    color = color.lower()
+    return _UI_COLORS.get(color).get(type)
