@@ -665,6 +665,7 @@ class PreviewPanel(QWidget):
         # Multiple Selected Items
         elif len(self.driver.selected) > 1:
             self.preview_img.show()
+            self.preview_gif.hide()
             self.preview_vid.stop()
             self.preview_vid.hide()
             if self.selected != self.driver.selected:
