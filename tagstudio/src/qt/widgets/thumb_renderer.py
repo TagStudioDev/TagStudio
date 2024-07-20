@@ -116,6 +116,17 @@ class ThumbRenderer(QObject):
         final: Image.Image = None
         _filepath: Path = Path(filepath)
         resampling_method = Image.Resampling.BILINEAR
+        bg_color: str = (
+            "#1e1e1e"
+            if QGuiApplication.styleHints().colorScheme() is Qt.ColorScheme.Dark
+            else "#FFFFFF"
+        )
+        fg_color: str = (
+            "#FFFFFF"
+            if QGuiApplication.styleHints().colorScheme() is Qt.ColorScheme.Dark
+            else "#111111"
+        )
+
         if ThumbRenderer.font_pixel_ratio != pixel_ratio:
             ThumbRenderer.font_pixel_ratio = pixel_ratio
             ThumbRenderer.ext_font = ImageFont.truetype(
@@ -146,7 +157,7 @@ class ThumbRenderer(QObject):
                         if image.mode != "RGB" and image.mode != "RGBA":
                             image = image.convert(mode="RGBA")
                         if image.mode == "RGBA":
-                            new_bg = Image.new("RGB", image.size, color="#1e1e1e")
+                            new_bg = Image.new("RGB", image.size, color=bg_color)
                             new_bg.paste(image, mask=image.getchannel(3))
                             image = new_bg
 
@@ -209,18 +220,6 @@ class ThumbRenderer(QObject):
 
                 # Plain Text ===================================================
                 elif ext in PLAINTEXT_TYPES:
-                    bg_color: str = (
-                        "#1E1E1E"
-                        if QGuiApplication.styleHints().colorScheme()
-                        is Qt.ColorScheme.Dark
-                        else "#FFFFFF"
-                    )
-                    fg_color: str = (
-                        "#FFFFFF"
-                        if QGuiApplication.styleHints().colorScheme()
-                        is Qt.ColorScheme.Dark
-                        else "#111111"
-                    )
                     encoding = detect_char_encoding(_filepath)
                     with open(_filepath, "r", encoding=encoding) as text_file:
                         text = text_file.read(256)
@@ -231,10 +230,10 @@ class ThumbRenderer(QObject):
                 # Fonts ========================================================
                 elif _filepath.suffix.lower() in FONT_TYPES:
                     if gradient:
-                        # Handles small thumbnails
+                        # Short (Aa) Preview
                         image = self._font_preview_short(_filepath, adj_size)
                     else:
-                        # Handles big thumbnails and renders a sample text in multiple font sizes.
+                        # Large (Full Alphabet) Preview
                         image = self._font_preview_long(_filepath, adj_size)
                 # Audio ========================================================
                 elif ext in AUDIO_TYPES:
@@ -271,7 +270,7 @@ class ThumbRenderer(QObject):
                     try:
                         blend_image = blend_thumb(str(_filepath))
 
-                        bg = Image.new("RGB", blend_image.size, color="#1e1e1e")
+                        bg = Image.new("RGB", blend_image.size, color=bg_color)
                         bg.paste(blend_image, mask=blend_image.getchannel(3))
                         image = bg
 
