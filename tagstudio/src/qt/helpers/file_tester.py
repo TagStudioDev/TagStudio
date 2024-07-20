@@ -17,7 +17,6 @@ def is_readable_video(filepath: Path | str):
     probe = ffmpeg.probe(Path(filepath))
     for stream in probe["streams"]:
         if stream.get("codec_tag_string") in [
-            "[0][0][0][0]",
             "drma",
             "drms",
             "drmi",
