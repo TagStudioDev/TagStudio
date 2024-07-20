@@ -22,7 +22,7 @@ from io import BytesIO
 from pathlib import Path
 from PIL.Image import DecompressionBombError
 from pydub import AudioSegment, exceptions
-from mutagen import id3, flac, mp4
+from mutagen import id3, flac, mp4, MutagenError
 from PySide6.QtCore import Qt, QObject, Signal, QSize
 from PySide6.QtGui import QGuiApplication, QPixmap
 from src.qt.helpers.color_overlay import theme_fg_overlay
@@ -457,6 +457,9 @@ class ThumbRenderer(QObject):
         """Gets an album cover from an audio file if one is present."""
         image: Image.Image = None
         try:
+            if not filepath.is_file():
+                raise FileNotFoundError
+
             artwork = None
             if ext in [".mp3"]:
                 id3_tags: id3.ID3 = id3.ID3(filepath)
@@ -479,6 +482,7 @@ class ThumbRenderer(QObject):
             mp4.MP4MetadataError,
             mp4.MP4StreamInfoError,
             id3.ID3NoHeaderError,
+            MutagenError,
         ) as e:
             logging.error(
                 f"[ThumbRenderer]{ERROR}: Couldn't read album artwork for {filepath.name} ({type(e).__name__})"
