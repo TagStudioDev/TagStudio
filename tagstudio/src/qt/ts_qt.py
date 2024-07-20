@@ -557,11 +557,17 @@ class QtDriver(QObject):
             str(Path(__file__).parents[2] / "resources/qt/fonts/Oxanium-Bold.ttf")
         )
 
+        self.thumb_sizes: list[tuple[str, int]] = [
+            ("Extra Large Thumbnails", 256),
+            ("Large Thumbnails", 192),
+            ("Medium Thumbnails", 128),
+            ("Small Thumbnails", 96),
+            ("Mini Thumbnails", 76),
+        ]
         self.thumb_size = 128
         self.max_results = 500
         self.item_thumbs: list[ItemThumb] = []
         self.thumb_renderers: list[ThumbRenderer] = []
-        self.collation_thumb_size = math.ceil(self.thumb_size * 2)
 
         self.init_library_window()
 
@@ -596,23 +602,35 @@ class QtDriver(QObject):
         self.shutdown()
 
     def init_library_window(self):
-        # self._init_landing_page() # Taken care of inside the widget now
-        self._init_thumb_grid()
-
         # TODO: Put this into its own method that copies the font file(s) into memory
         # so the resource isn't being used, then store the specific size variations
         # in a global dict for methods to access for different DPIs.
         # adj_font_size = math.floor(12 * self.main_window.devicePixelRatio())
         # self.ext_font = ImageFont.truetype(os.path.normpath(f'{Path(__file__).parents[2]}/resources/qt/fonts/Oxanium-Bold.ttf'), adj_font_size)
 
+        # Search Button
         search_button: QPushButton = self.main_window.searchButton
         search_button.clicked.connect(
             lambda: self.filter_items(self.main_window.searchField.text())
         )
+
+        # Search Field
         search_field: QLineEdit = self.main_window.searchField
         search_field.returnPressed.connect(
             lambda: self.filter_items(self.main_window.searchField.text())
         )
+
+        # Thumbnail Size ComboBox
+        thumb_size_combobox: QComboBox = self.main_window.thumb_size_combobox
+        for size in self.thumb_sizes:
+            thumb_size_combobox.addItem(size[0])
+        thumb_size_combobox.setCurrentIndex(2)  # Default: Medium
+        thumb_size_combobox.currentIndexChanged.connect(
+            lambda: self.thumb_size_callback(thumb_size_combobox.currentIndex())
+        )
+        self._init_thumb_grid()
+
+        # Search Type ComboBox
         search_type_selector: QComboBox = self.main_window.comboBox_2
         search_type_selector.currentIndexChanged.connect(
             lambda: self.set_search_type(
@@ -1098,6 +1116,30 @@ class QtDriver(QObject):
             self.paste_entry_fields_action.setText("&Paste Combined Fields")
         else:
             self.paste_entry_fields_action.setText("&Paste Fields")
+
+    def thumb_size_callback(self, index: int):
+        """
+        Performs actions needed when the thumbnail size selection is changed.
+
+        Args:
+            index (int): The index of the item_thumbs/ComboBox list to use.
+        """
+        # Index 2 is the default (Medium)
+        if index < len(self.thumb_sizes) and index >= 0:
+            self.thumb_size = self.thumb_sizes[index][1]
+        else:
+            logging.error(
+                f"ERROR: Invalid thumbnail size index ({index}). Defaulting to 128px."
+            )
+            self.thumb_size = 128
+        self.update_thumbs()
+        for it in self.item_thumbs:
+            it.resize(self.thumb_size, self.thumb_size)
+            it.thumb_size = (self.thumb_size, self.thumb_size)
+            it.setMinimumSize(self.thumb_size, self.thumb_size)
+            it.setMaximumSize(self.thumb_size, self.thumb_size)
+            it.thumb_button.thumb_size = (self.thumb_size, self.thumb_size)
+        self.flow_container.layout().setSpacing(min(self.thumb_size // 10, 12))
 
     def mouse_navigation(self, event: QMouseEvent):
         # print(event.button())

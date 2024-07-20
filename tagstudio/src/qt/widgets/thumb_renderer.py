@@ -62,15 +62,10 @@ class ThumbRenderer(QObject):
     # updatedImage = Signal(QPixmap)
     # updatedSize = Signal(QSize)
 
-    thumb_mask_512: Image.Image = Image.open(
-        Path(__file__).parents[3] / "resources/qt/images/thumb_mask_512.png"
-    )
-    thumb_mask_512.load()
-
-    thumb_mask_hl_512: Image.Image = Image.open(
-        Path(__file__).parents[3] / "resources/qt/images/thumb_mask_hl_512.png"
-    )
-    thumb_mask_hl_512.load()
+    # Cached thumbnail elements.
+    # Key: Size + Pixel Ratio Tuple (Ex. (512, 512, 1.25))
+    thumb_masks: dict = {}
+    thumb_borders: dict = {}
 
     thumb_loading_512: Image.Image = Image.open(
         Path(__file__).parents[3] / "resources/qt/images/thumb_loading_512.png"
@@ -97,6 +92,76 @@ class ThumbRenderer(QObject):
         Path(__file__).parents[3] / "resources/qt/fonts/Oxanium-Bold.ttf",
         math.floor(12 * font_pixel_ratio),
     )
+
+    @staticmethod
+    def _get_mask(size: tuple[int, int], pixel_ratio: float) -> Image.Image:
+        """
+        Returns a thumbnail mask given a size and pixel ratio.
+        If one is not already cached, then a new one will be rendered.
+        """
+        item: Image.Image = ThumbRenderer.thumb_masks.get((*size, pixel_ratio))
+        if not item:
+            item = ThumbRenderer._render_mask(size, pixel_ratio)
+            ThumbRenderer.thumb_masks[(*size, pixel_ratio)] = item
+        return item
+
+    @staticmethod
+    def _get_border(size: tuple[int, int], pixel_ratio: float) -> Image.Image:
+        """
+        Returns a thumbnail border given a size and pixel ratio.
+        If one is not already cached, then a new one will be rendered.
+        """
+        item: Image.Image = ThumbRenderer.thumb_borders.get((*size, pixel_ratio))
+        if not item:
+            item = ThumbRenderer._render_border(size, pixel_ratio)
+            ThumbRenderer.thumb_borders[(*size, pixel_ratio)] = item
+        return item
+
+    @staticmethod
+    def _render_mask(size: tuple[int, int], pixel_ratio) -> Image.Image:
+        """Renders a thumbnail mask."""
+        smooth_factor: int = math.ceil(2 * pixel_ratio)
+        radius_factor: int = 8
+        im: Image.Image = Image.new(
+            mode="L",
+            size=tuple([d * smooth_factor for d in size]),  # type: ignore
+            color="black",
+        )
+        draw = ImageDraw.Draw(im)
+        draw.rounded_rectangle(
+            (0, 0) + tuple([d - 1 for d in im.size]),
+            radius=math.ceil(radius_factor * smooth_factor * pixel_ratio),
+            fill="white",
+        )
+        im = im.resize(
+            size,
+            resample=Image.Resampling.BILINEAR,
+        )
+        return im
+
+    @staticmethod
+    def _render_border(size: tuple[int, int], pixel_ratio) -> Image.Image:
+        """Renders a thumbnail border."""
+        smooth_factor: int = math.ceil(2 * pixel_ratio)
+        radius_factor: int = 8
+        im: Image.Image = Image.new(
+            mode="RGBA",
+            size=tuple([d * smooth_factor for d in size]),  # type: ignore
+            color="#00000000",
+        )
+        draw = ImageDraw.Draw(im)
+        draw.rounded_rectangle(
+            (0, 0) + tuple([d - 1 for d in im.size]),
+            radius=math.ceil(radius_factor * smooth_factor * pixel_ratio),
+            fill=None,
+            outline="white",
+            width=math.floor(pixel_ratio * 2),
+        )
+        im = im.resize(
+            size,
+            resample=Image.Resampling.BILINEAR,
+        )
+        return im
 
     def render(
         self,
@@ -324,11 +389,11 @@ class ThumbRenderer(QObject):
                 )
                 image = image.resize((new_x, new_y), resample=resampling_method)
                 if gradient:
-                    mask: Image.Image = ThumbRenderer.thumb_mask_512.resize(
-                        (adj_size, adj_size), resample=Image.Resampling.BILINEAR
-                    ).getchannel(3)
-                    hl: Image.Image = ThumbRenderer.thumb_mask_hl_512.resize(
-                        (adj_size, adj_size), resample=Image.Resampling.BILINEAR
+                    mask: Image.Image = ThumbRenderer._get_mask(
+                        (adj_size, adj_size), pixel_ratio
+                    )
+                    hl: Image.Image = ThumbRenderer._get_border(
+                        (adj_size, adj_size), pixel_ratio
                     )
                     final = four_corner_gradient_background(image, adj_size, mask, hl)
                 else:
@@ -340,7 +405,7 @@ class ThumbRenderer(QObject):
                     )
                     draw = ImageDraw.Draw(rec)
                     draw.rounded_rectangle(
-                        (0, 0) + rec.size,
+                        (0, 0) + tuple([d - 1 for d in rec.size]),
                         (base_size[0] // 32) * scalar * pixel_ratio,
                         fill="red",
                     )
