@@ -232,29 +232,10 @@ class ThumbRenderer(QObject):
                 elif _filepath.suffix.lower() in FONT_TYPES:
                     if gradient:
                         # Handles small thumbnails
-                        image = self._font_preview_small(_filepath, adj_size)
+                        image = self._font_preview_short(_filepath, adj_size)
                     else:
                         # Handles big thumbnails and renders a sample text in multiple font sizes.
-                        # Scale the sample font sizes to the preview image
-                        # resolution,assuming the sizes are tuned for 256px.
-                        scaled_sizes: list[int] = [
-                            math.floor(x * (adj_size / 256)) for x in FONT_SAMPLE_SIZES
-                        ]
-                        bg = Image.new("RGB", (adj_size, adj_size), color="#1e1e1e")
-                        draw = ImageDraw.Draw(bg)
-                        lines_of_padding = 2
-                        y_offset = 0
-
-                        for font_size in scaled_sizes:
-                            font = ImageFont.truetype(_filepath, size=font_size)
-                            text_wrapped: str = wrap_full_text(
-                                FONT_SAMPLE_TEXT, font=font, width=adj_size, draw=draw
-                            )
-                            draw.multiline_text((0, y_offset), text_wrapped, font=font)
-                            y_offset += (
-                                len(text_wrapped.split("\n")) + lines_of_padding
-                            ) * draw.textbbox((0, 0), "A", font=font)[-1]
-                        image = bg
+                        image = self._font_preview_long(_filepath, adj_size)
                 # Audio ========================================================
                 elif ext in AUDIO_TYPES:
                     image = self._album_artwork(_filepath, ext)
@@ -523,7 +504,7 @@ class ThumbRenderer(QObject):
             )
         return image
 
-    def _font_preview_small(self, filepath: Path, size: int) -> Image.Image:
+    def _font_preview_short(self, filepath: Path, size: int) -> Image.Image:
         """Renders a small font preview ("Aa") thumbnail from a font file."""
         bg = Image.new("RGB", (size, size), color="#000000")
         raw = Image.new("RGB", (size * 2, size * 2), color="#000000")
@@ -572,6 +553,29 @@ class ThumbRenderer(QObject):
             box=(margin, margin + ((size - new_y) // 2)),
         )
         return self._apply_overlay_color(bg, "purple")
+
+    def _font_preview_long(self, filepath: Path, size: int) -> Image.Image:
+        """Renders a large font preview ("Alphabet") thumbnail from a font file."""
+        # Scale the sample font sizes to the preview image
+        # resolution,assuming the sizes are tuned for 256px.
+        scaled_sizes: list[int] = [
+            math.floor(x * (size / 256)) for x in FONT_SAMPLE_SIZES
+        ]
+        bg = Image.new("RGBA", (size, size), color="#00000000")
+        draw = ImageDraw.Draw(bg)
+        lines_of_padding = 2
+        y_offset = 0
+
+        for font_size in scaled_sizes:
+            font = ImageFont.truetype(filepath, size=font_size)
+            text_wrapped: str = wrap_full_text(
+                FONT_SAMPLE_TEXT, font=font, width=size, draw=draw
+            )
+            draw.multiline_text((0, y_offset), text_wrapped, font=font)
+            y_offset += (
+                len(text_wrapped.split("\n")) + lines_of_padding
+            ) * draw.textbbox((0, 0), "A", font=font)[-1]
+        return theme_fg_overlay(bg, use_alpha=False)
 
     def _apply_overlay_color(self, image: Image.Image, color: str) -> Image.Image:
         """Apply a gradient effect over an an image.

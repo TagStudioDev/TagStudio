@@ -16,18 +16,20 @@ _THEME_DARK_BG: str = "#000000DD"
 _THEME_LIGHT_BG: str = "#FFFFFF55"
 
 
-def theme_fg_overlay(image: Image.Image) -> Image.Image:
+def theme_fg_overlay(image: Image.Image, use_alpha: bool = True) -> Image.Image:
     """
     Overlay the foreground theme color onto an image.
 
     Args:
         image (Image): The PIL Image object to apply an overlay to.
     """
+    dark_fg: str = _THEME_DARK_FG[:-2] if not use_alpha else _THEME_DARK_FG
+    light_fg: str = _THEME_LIGHT_FG[:-2] if not use_alpha else _THEME_LIGHT_FG
 
     overlay_color = (
-        _THEME_DARK_FG
+        dark_fg
         if QGuiApplication.styleHints().colorScheme() is Qt.ColorScheme.Dark
-        else _THEME_LIGHT_FG
+        else light_fg
     )
 
     im = Image.new(mode="RGBA", size=image.size, color=overlay_color)
