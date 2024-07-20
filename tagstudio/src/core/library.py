@@ -1338,7 +1338,7 @@ class Library:
         Uses a search query to generate a filtered results list.
         Returns a list of (str, int) tuples consisting of a result type and ID.
         """
-        
+
         results: list[tuple[ItemType, int]] = []
         collations_added = []
         if query_string:
@@ -1347,7 +1347,7 @@ class Library:
             # to minimize refactoring if it is reprogrammed to return an
             # SQL query instead of evaluating entries itself.
             search_query = SearchQuery(query_string, search_mode)
-            
+
             # By default, SearchQuery does not know the ID of any of its
             # tags, or the IDs of any of their child tags.
             # share_tag_requests() returns a list of potential tag
@@ -1357,20 +1357,18 @@ class Library:
             tag_text_to_id_clusters: dict[str, list[int]] = {}
             for tag_text in tags_to_identify:
                 cluster: set[int] = set()
-                
+
                 # Add the immediate associated Tags to the set (ex. Name, Alias hits)
                 # Since this term could technically map to multiple IDs, iterate over it
                 # (You're 99.9999999% likely to just get 1 item)
                 if tag_text in self._tag_strings_to_id_map:
                     for id in self._tag_strings_to_id_map[tag_text]:
                         cluster.add(id)
-                        cluster = cluster.union(
-                            set(self.get_tag_cluster(id))
-                        )
-                
+                        cluster = cluster.union(set(self.get_tag_cluster(id)))
+
                 tag_text_to_id_clusters[tag_text] = list(cluster)
             search_query.receive_requested_lib_info(tag_text_to_id_clusters)
-            
+
             # This loop evaluates the search query against each entry
             # and adds the entry to results if it matches the search.
             for entry in self.entries:
@@ -1378,29 +1376,29 @@ class Library:
                     # The filename of the current entry is not relevant
                     # to this Library, so skip the entry.
                     continue
-                
+
                 entry_has_author = False
                 entry_tag_ids: list[int] = []
-                
+
                 for field in entry.fields:
                     field_id = list(field.keys())[0]
                     field_obj = self.get_field_obj(field_id)
-                    
+
                     # If the entry has tags of any kind, append their ids to entry_tag_ids.
                     if field_obj["type"] == "tag_box":
                         entry_tag_ids.extend(field[field_id])
-                    
+
                     if field_obj["name"] == "Author":
                         entry_has_author = True
                     elif field_obj["name"] == "Artist":
                         entry_has_author = True
-                
+
                 if search_query.match_entry(
                     has_fields=bool(entry.fields),
                     has_author=entry_has_author,
                     path=entry.path,
                     filename=entry.filename,
-                    tag_ids=entry_tag_ids
+                    tag_ids=entry_tag_ids,
                 ):
                     results.append((ItemType.ENTRY, entry.id))
         else:
