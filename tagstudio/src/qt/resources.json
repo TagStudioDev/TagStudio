@@ -14,5 +14,13 @@
   "volume_mute_icon": {
     "path": "qt/images/volume_mute.svg",
     "mode": "rb"
+  },
+  "broken_link_icon": {
+    "path": "qt/images/broken_link_icon.png",
+    "mode": "pil"
+  },
+  "file_generic": {
+    "path": "qt/images/file_icons/generic.png",
+    "mode": "pil"
   }
 }

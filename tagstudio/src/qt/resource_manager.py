@@ -5,6 +5,7 @@
 import logging
 from pathlib import Path
 from typing import Any
+from PIL import Image
 
 import ujson
 
@@ -46,7 +47,7 @@ class ResourceManager:
             return cached_res
         else:
             res: dict = ResourceManager._map.get(id)
-            if res.get("mode") in ["r", "rb"]:
+            if res and res.get("mode") in ["r", "rb"]:
                 with open(
                     (Path(__file__).parents[2] / "resources" / res.get("path")),
                     res.get("mode"),
@@ -56,7 +57,12 @@ class ResourceManager:
                         data = bytes(data)
                     ResourceManager._cache[id] = data
                     return data
-            elif res.get("mode") in ["qt"]:
+            elif res and res.get("mode") == "pil":
+                data = Image.open(
+                    Path(__file__).parents[2] / "resources" / res.get("path")
+                )
+                return data
+            elif res and res.get("mode") in ["qt"]:
                 # TODO: Qt resource loading logic
                 pass
 

@@ -279,11 +279,16 @@ _TAG_COLORS: dict = {
 
 _UI_COLORS: dict = {
     "": {
-        ColorType.PRIMARY: "#1e1e1e",
-        ColorType.TEXT: ColorType.LIGHT_ACCENT,
-        ColorType.BORDER: "#333333",
+        ColorType.PRIMARY: "#333333",
+        ColorType.BORDER: "#555555",
         ColorType.LIGHT_ACCENT: "#FFFFFF",
-        ColorType.DARK_ACCENT: "#222222",
+        ColorType.DARK_ACCENT: "#1e1e1e",
+    },
+    "red": {
+        ColorType.PRIMARY: "#e22c3c",
+        ColorType.BORDER: "#e54252",
+        ColorType.LIGHT_ACCENT: "#f39caa",
+        ColorType.DARK_ACCENT: "#440d12",
     },
     "green": {
         ColorType.PRIMARY: "#28bb48",

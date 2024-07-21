@@ -25,6 +25,7 @@ from pydub import AudioSegment, exceptions
 from mutagen import id3, flac, mp4, MutagenError
 from PySide6.QtCore import Qt, QObject, Signal, QSize
 from PySide6.QtGui import QGuiApplication, QPixmap
+from src.qt.resource_manager import ResourceManager
 from src.qt.helpers.color_overlay import theme_fg_overlay
 from src.qt.helpers.gradient import four_corner_gradient_background
 from src.qt.helpers.text_wrapper import wrap_full_text
@@ -44,6 +45,7 @@ from src.core.palette import ColorType, get_ui_color
 from src.qt.helpers.blender_thumbnailer import blend_thumb
 from src.qt.helpers.file_tester import is_readable_video
 
+
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 
 ERROR = "[ERROR]"
@@ -56,35 +58,22 @@ register_avif_opener()
 
 
 class ThumbRenderer(QObject):
-    # finished = Signal()
+    rm: ResourceManager = ResourceManager()
     updated = Signal(float, QPixmap, QSize, str)
     updated_ratio = Signal(float)
-    # updatedImage = Signal(QPixmap)
-    # updatedSize = Signal(QSize)
 
     # Cached thumbnail elements.
     # Key: Size + Pixel Ratio Tuple (Ex. (512, 512, 1.25))
     thumb_masks: dict = {}
     thumb_borders: dict = {}
 
+    # Key: ("name", "color", 512, 512, 1.25)
+    icons: dict = {}
+
     thumb_loading_512: Image.Image = Image.open(
         Path(__file__).parents[3] / "resources/qt/images/thumb_loading_512.png"
     )
     thumb_loading_512.load()
-
-    thumb_broken_512: Image.Image = Image.open(
-        Path(__file__).parents[3] / "resources/qt/images/thumb_broken_512.png"
-    )
-    thumb_broken_512.load()
-
-    thumb_file_default_512: Image.Image = Image.open(
-        Path(__file__).parents[3] / "resources/qt/images/thumb_file_default_512.png"
-    )
-    thumb_file_default_512.load()
-
-    # thumb_debug: Image.Image = Image.open(Path(
-    # 	f'{Path(__file__).parents[2]}/resources/qt/images/temp.jpg'))
-    # thumb_debug.load()
 
     # TODO: Make dynamic font sized given different pixel ratios
     font_pixel_ratio: float = 1
@@ -106,22 +95,33 @@ class ThumbRenderer(QObject):
         return item
 
     @staticmethod
-    def _get_border(size: tuple[int, int], pixel_ratio: float) -> Image.Image:
+    def _get_hl_border(size: tuple[int, int], pixel_ratio: float) -> Image.Image:
         """
         Returns a thumbnail border given a size and pixel ratio.
         If one is not already cached, then a new one will be rendered.
         """
         item: Image.Image = ThumbRenderer.thumb_borders.get((*size, pixel_ratio))
         if not item:
-            item = ThumbRenderer._render_border(size, pixel_ratio)
+            item = ThumbRenderer._render_hl_border(size, pixel_ratio)
             ThumbRenderer.thumb_borders[(*size, pixel_ratio)] = item
+        return item
+
+    @staticmethod
+    def _get_icon(
+        name: str, color: str, size: tuple[int, int], pixel_ratio: float
+    ) -> Image.Image:
+        item: Image.Image = ThumbRenderer.icons.get((name, color, *size, pixel_ratio))
+        if not item:
+            item = ThumbRenderer._render_icon(name, color, size, pixel_ratio)
+            ThumbRenderer.thumb_borders[(name, *color, size, pixel_ratio)] = item
         return item
 
     @staticmethod
     def _render_mask(size: tuple[int, int], pixel_ratio) -> Image.Image:
         """Renders a thumbnail mask."""
-        smooth_factor: int = math.ceil(2 * pixel_ratio)
+        smooth_factor: int = 2
         radius_factor: int = 8
+
         im: Image.Image = Image.new(
             mode="L",
             size=tuple([d * smooth_factor for d in size]),  # type: ignore
@@ -140,9 +140,9 @@ class ThumbRenderer(QObject):
         return im
 
     @staticmethod
-    def _render_border(size: tuple[int, int], pixel_ratio) -> Image.Image:
-        """Renders a thumbnail border."""
-        smooth_factor: int = math.ceil(2 * pixel_ratio)
+    def _render_hl_border(size: tuple[int, int], pixel_ratio) -> Image.Image:
+        """Renders a thumbnail highlight border."""
+        smooth_factor: int = 2
         radius_factor: int = 8
         im: Image.Image = Image.new(
             mode="RGBA",
@@ -162,6 +162,127 @@ class ThumbRenderer(QObject):
             resample=Image.Resampling.BILINEAR,
         )
         return im
+
+    @staticmethod
+    def _render_icon(
+        name: str, color: str, size: tuple[int, int], pixel_ratio: float
+    ) -> Image.Image:
+        smooth_factor: int = math.ceil(2 * pixel_ratio)
+        radius_factor: int = 8
+        icon_ratio: float = 1.75
+
+        # Create larger blank image based on smooth_factor
+        im: Image.Image = Image.new(
+            "RGBA",
+            size=tuple([d * smooth_factor for d in size]),  # type: ignore
+            color="#00000000",
+        )
+
+        # Create solid background color
+        bg: Image.Image = Image.new(
+            "RGB",
+            size=tuple([d * smooth_factor for d in size]),  # type: ignore
+            color="#000000",
+        )
+
+        # Paste background color with rounded rectangle mask onto blank image
+        im.paste(
+            bg,
+            (0, 0),
+            mask=ThumbRenderer._get_mask(
+                tuple([d * smooth_factor for d in size]),  # type: ignore
+                (pixel_ratio * smooth_factor),
+            ),
+        )
+
+        # Draw rounded rectangle border
+        draw = ImageDraw.Draw(im)
+        draw.rounded_rectangle(
+            (0, 0) + tuple([d - 1 for d in im.size]),
+            radius=math.ceil(radius_factor * smooth_factor * pixel_ratio),
+            fill="black",
+            outline="#FF0000",
+            width=math.floor(pixel_ratio * 8),
+        )
+
+        # Resize image to final size
+        im = im.resize(
+            size,
+            resample=Image.Resampling.BILINEAR,
+        )
+        fg: Image.Image = Image.new("RGB", size=size, color="#00FF00")
+
+        # Get icon by name
+        icon: Image.Image = ThumbRenderer.rm.get(name)
+
+        # Resize icon to fit icon_ratio
+        icon = icon.resize(
+            (math.ceil(size[0] // icon_ratio), math.ceil(size[1] // icon_ratio))
+        )
+
+        # Paste icon centered
+        im.paste(
+            im=fg.resize(
+                (math.ceil(size[0] // icon_ratio), math.ceil(size[1] // icon_ratio))
+            ),
+            box=(
+                math.ceil((size[0] - (size[0] // icon_ratio)) // 2),
+                math.ceil((size[1] - (size[1] // icon_ratio)) // 2),
+            ),
+            mask=icon.getchannel(3),
+        )
+
+        # Apply color overlay
+        im = ThumbRenderer._apply_overlay_color(
+            im,
+            color,
+        )
+
+        return im
+
+    @staticmethod
+    def _apply_overlay_color(image: Image.Image, color: str) -> Image.Image:
+        """Apply a gradient effect over an an image.
+        Red channel for foreground, green channel for outline, none for background."""
+        bg_color: str = (
+            get_ui_color(ColorType.DARK_ACCENT, color)
+            if QGuiApplication.styleHints().colorScheme() is Qt.ColorScheme.Dark
+            else get_ui_color(ColorType.PRIMARY, color)
+        )
+        fg_color: str = (
+            get_ui_color(ColorType.PRIMARY, color)
+            if QGuiApplication.styleHints().colorScheme() is Qt.ColorScheme.Dark
+            else get_ui_color(ColorType.LIGHT_ACCENT, color)
+        )
+        ol_color: str = (
+            get_ui_color(ColorType.BORDER, color)
+            if QGuiApplication.styleHints().colorScheme() is Qt.ColorScheme.Dark
+            else "#FFFFFF"
+        )
+
+        bg: Image.Image = Image.new(image.mode, image.size, color=bg_color)
+        fg: Image.Image = Image.new(image.mode, image.size, color=fg_color)
+        ol: Image.Image = Image.new(image.mode, image.size, color=ol_color)
+
+        bg.paste(fg, (0, 0), mask=image.getchannel(0))
+        bg.paste(ol, (0, 0), mask=image.getchannel(1))
+
+        if image.mode == "RGBA":
+            alpha_bg: Image.Image = bg.copy()
+            alpha_bg.convert("RGBA")
+            alpha_bg.putalpha(0)
+            alpha_bg.paste(bg, (0, 0), mask=image.getchannel(3))
+            bg = alpha_bg
+
+        return bg
+
+    @staticmethod
+    def get_mime_icon_resource(ext: str = "") -> str:
+        if ext in IMAGE_TYPES:
+            return "image_photo"
+        elif ext in VIDEO_TYPES:
+            return "doc_presentation"
+        return ""
 
     def render(
         self,
@@ -271,17 +392,15 @@ class ThumbRenderer(QObject):
                             # count, seeking halfway does not work and the thumb
                             # must be pulled from the earliest available frame.
                             video.set(cv2.CAP_PROP_POS_FRAMES, 0)
-                            success, frame = video.read()
-                            if not success:
-                                # Depending on the video format, compression, and frame
-                                # count, seeking halfway does not work and the thumb
-                                # must be pulled from the earliest available frame.
-                                video.set(cv2.CAP_PROP_POS_FRAMES, 0)
-                                success, frame = video.read()
                         frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
                         image = Image.fromarray(frame)
                     else:
-                        image = self.thumb_file_default_512
+                        image = ThumbRenderer._get_icon(
+                            name="file_generic",
+                            color="red",
+                            size=(adj_size, adj_size),
+                            pixel_ratio=pixel_ratio,
+                        )
 
                 # Plain Text ===================================================
                 elif ext in PLAINTEXT_TYPES:
@@ -308,7 +427,7 @@ class ThumbRenderer(QObject):
                             _filepath, ext, adj_size, pixel_ratio
                         )
                         if image is not None:
-                            image = self._apply_overlay_color(image, "green")
+                            image = ThumbRenderer._apply_overlay_color(image, "green")
 
                 # 3D ===========================================================
                 # elif extension == 'stl':
@@ -355,16 +474,7 @@ class ThumbRenderer(QObject):
                                 f"[ThumbRenderer]{ERROR}: Couldn't render thumbnail for {_filepath.name} ({type(e).__name__})"
                             )
 
-                        image = ThumbRenderer.thumb_file_default_512.resize(
-                            (adj_size, adj_size), resample=Image.Resampling.BILINEAR
-                        )
-
                 # No Rendered Thumbnail ========================================
-                else:
-                    image = ThumbRenderer.thumb_file_default_512.resize(
-                        (adj_size, adj_size), resample=Image.Resampling.BILINEAR
-                    )
-
                 if not image:
                     raise UnidentifiedImageError
 
@@ -392,7 +502,7 @@ class ThumbRenderer(QObject):
                     mask: Image.Image = ThumbRenderer._get_mask(
                         (adj_size, adj_size), pixel_ratio
                     )
-                    hl: Image.Image = ThumbRenderer._get_border(
+                    hl: Image.Image = ThumbRenderer._get_hl_border(
                         (adj_size, adj_size), pixel_ratio
                     )
                     final = four_corner_gradient_background(image, adj_size, mask, hl)
@@ -415,21 +525,37 @@ class ThumbRenderer(QObject):
                     )
                     final = Image.new("RGBA", image.size, (0, 0, 0, 0))
                     final.paste(image, mask=rec.getchannel(0))
+            except FileNotFoundError as e:
+                logging.info(
+                    f"[ThumbRenderer]{ERROR}: Couldn't render thumbnail for {_filepath.name} ({type(e).__name__})"
+                )
+                if update_on_ratio_change:
+                    self.updated_ratio.emit(1)
+                final = ThumbRenderer._get_icon(
+                    name="broken_link_icon",
+                    color="red",
+                    size=(adj_size, adj_size),
+                    pixel_ratio=pixel_ratio,
+                )
             except (
                 UnidentifiedImageError,
-                FileNotFoundError,
                 cv2.error,
                 DecompressionBombError,
                 UnicodeDecodeError,
             ) as e:
-                if e is not UnicodeDecodeError:
-                    logging.info(
-                        f"[ThumbRenderer]{ERROR}: Couldn't render thumbnail for {_filepath.name} ({type(e).__name__})"
-                    )
+                # if e is not UnicodeDecodeError:
+                logging.info(
+                    f"[ThumbRenderer]{ERROR}: Couldn't render thumbnail for {_filepath.name} ({type(e).__name__})"
+                )
+
                 if update_on_ratio_change:
                     self.updated_ratio.emit(1)
-                final = ThumbRenderer.thumb_broken_512.resize(
-                    (adj_size, adj_size), resample=resampling_method
+                final = ThumbRenderer._get_icon(
+                    # name=ThumbRenderer.get_mime_icon_resource(_filepath.suffix.lower()),
+                    name="file_generic",
+                    color="",
+                    size=(adj_size, adj_size),
+                    pixel_ratio=pixel_ratio,
                 )
             qim = ImageQt.ImageQt(final)
             if image:
@@ -620,7 +746,7 @@ class ThumbRenderer(QObject):
             cropped_im,
             box=(margin, margin + ((size - new_y) // 2)),
         )
-        return self._apply_overlay_color(bg, "purple")
+        return ThumbRenderer._apply_overlay_color(bg, "purple")
 
     def _font_preview_long(self, filepath: Path, size: int) -> Image.Image:
         """Renders a large font preview ("Alphabet") thumbnail from a font file."""
@@ -644,29 +770,3 @@ class ThumbRenderer(QObject):
                 len(text_wrapped.split("\n")) + lines_of_padding
             ) * draw.textbbox((0, 0), "A", font=font)[-1]
         return theme_fg_overlay(bg, use_alpha=False)
-
-    def _apply_overlay_color(self, image: Image.Image, color: str) -> Image.Image:
-        """Apply a gradient effect over an an image.
-        Red channel for foreground, green channel for outline, none for background."""
-        bg_color: str = (
-            get_ui_color(ColorType.DARK_ACCENT, color)
-            if QGuiApplication.styleHints().colorScheme() is Qt.ColorScheme.Dark
-            else get_ui_color(ColorType.PRIMARY, color)
-        )
-        fg_color: str = (
-            get_ui_color(ColorType.PRIMARY, color)
-            if QGuiApplication.styleHints().colorScheme() is Qt.ColorScheme.Dark
-            else get_ui_color(ColorType.LIGHT_ACCENT, color)
-        )
-        ol_color: str = (
-            get_ui_color(ColorType.BORDER, color)
-            if QGuiApplication.styleHints().colorScheme() is Qt.ColorScheme.Dark
-            else "#FFFFFF"
-        )
-
-        bg: Image.Image = Image.new("RGB", image.size, color=bg_color)
-        fg: Image.Image = Image.new("RGB", image.size, color=fg_color)
-        ol: Image.Image = Image.new("RGB", image.size, color=ol_color)
-        bg.paste(fg, (0, 0), mask=image.getchannel(0))
-        bg.paste(ol, (0, 0), mask=image.getchannel(1))
-        return bg
