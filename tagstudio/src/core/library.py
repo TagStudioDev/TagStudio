@@ -42,6 +42,14 @@ class ItemType(Enum):
 
 logging.basicConfig(format="%(message)s", level=logging.INFO)
 
+class KeyNameConstants:
+    """Class, containing constants for special keys in search query, that are not supposed to be visible to user."""
+
+    # FILENAME_KEYNAME = "filename"
+    # TAG_ID_KEYNAME = "tag_id"
+    UNBOUND_QUERY_ARGUMENTS_KEYNAME = "UNBOUND"
+    EMPTY_FIELD_QUERY_KEYNAME = "EMPTY"
+
 
 class Entry:
     """A Library Entry Object. Referenced by ID."""
@@ -1331,6 +1339,7 @@ class Library:
         example query2:
             "tag1 | notag | tag2"
         """
+        unbound_keyname = KeyNameConstants.UNBOUND_QUERY_ARGUMENTS_KEYNAME
         if query is None:
             return []
         meta_list: list = []
@@ -1343,10 +1352,10 @@ class Library:
                 # if no ':' found, process this part as tags and flags
                 if len(field_parsed) == 1:
                     unbound_values = field_parsed[0].strip().casefold().split()
-                    if query_part.get("unbound") is None:
-                        query_part["unbound"] = unbound_values
+                    if query_part.get(unbound_keyname) is None:
+                        query_part[unbound_keyname] = unbound_values
                     else:
-                        query_part["unbound"].extend(unbound_values)
+                        query_part[unbound_keyname].extend(unbound_values)
                     continue
                 if len(field_parsed) > 2:
                     logging.warning("""[ERROR] Attempt to parse mutiple fields\
@@ -1357,8 +1366,8 @@ class Library:
                 )
             negative_flags: list = []
             # selecting null fields are done with '-field' word in unbound part
-            if "unbound" in query_part.keys():
-                flags: list = query_part.get("unbound", [])
+            if unbound_keyname in query_part.keys():
+                flags: list = query_part.get(unbound_keyname, [])
                 for flag in flags.copy():
                     if flag[0] == "-":
                         negative_flag = flag[1:]
@@ -1366,7 +1375,7 @@ class Library:
                         flags.remove(flag)
                 if negative_flags:
                     query_part["EMPTY"] = negative_flags
-                query_part["unbound"] = flags
+                query_part[unbound_keyname] = flags
             meta_list.append(query_part)
 
         logging.info(f"Parsed values: {meta_list}")
@@ -2191,6 +2200,8 @@ class SpecialFlag:
 
 
 class Filter:
+
+
     def __init__(self, lib: Library) -> None:
         # self.lib = lib
         self.ext_list = lib.ext_list
@@ -2216,13 +2227,13 @@ class Filter:
         self, query: str, split_query: list[dict], search_mode: SearchMode
     ) -> list[tuple[ItemType, int]]:
         # start_time = time.time()
-        query = query.strip().lower()
+        query = query.strip().casefold()
 
         pre_results: list[list[tuple[ItemType, int]]] = []
 
         for query_part in split_query:
             all_tag_terms: list[str] = []
-            query_words = query_part.get("unbound")
+            query_words = query_part.get(KeyNameConstants.UNBOUND_QUERY_ARGUMENTS_KEYNAME)
 
             if isinstance(query_words, list):
                 all_tag_terms.extend(self.preprocess_tag_terms(query_words))
@@ -2252,7 +2263,7 @@ class Filter:
                         if not self.handle_tag_id(value, entry_tags):
                             is_selected = False
                             break
-                    elif key == "unbound":
+                    elif key == KeyNameConstants.UNBOUND_QUERY_ARGUMENTS_KEYNAME:
                         entry_tuple = None
                         # HACK
                         if isinstance(query_words, str):
@@ -2268,7 +2279,7 @@ class Filter:
                         if entry_tuple is None:
                             is_selected = False
                             break
-                    elif key == "EMPTY":
+                    elif key == KeyNameConstants.EMPTY_FIELD_QUERY_KEYNAME:
                         empty_fields = value
                         if not isinstance(empty_fields, list):
                             empty_fields = [empty_fields]

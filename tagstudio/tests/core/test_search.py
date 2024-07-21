@@ -1,7 +1,9 @@
-from src.core.library import ItemType, Library, Filter, Entry, SpecialFlag
+from src.core.library import ItemType, Library, Filter, Entry, SpecialFlag, KeyNameConstants
 from src.core.enums import SearchMode
 import pytest
 
+key_unbound = KeyNameConstants.UNBOUND_QUERY_ARGUMENTS_KEYNAME
+key_empty = KeyNameConstants.EMPTY_FIELD_QUERY_KEYNAME
 
 test_library = Library()
 
@@ -52,14 +54,14 @@ filter = Filter(test_library)
 
 
 decomposition_cases: list[tuple] = [
-    ("tag1 tag2", [{"unbound": ["tag1", "tag2"]}]),
-    ("tag1 | tag2", [{"unbound": ["tag1"]}, {"unbound": ["tag2"]}]),
-    ("tag1 tag2 | tag3", [{"unbound": ["tag1", "tag2"]}, {"unbound": ["tag3"]}]),
-    ("tag1; description: desc", [{"unbound": ["tag1"], "description": "desc"}]),
-    ("tag1; description: desc", [{"unbound": ["tag1"], "description": "desc"}]),
+    ("tag1 tag2", [{key_unbound: ["tag1", "tag2"]}]),
+    ("tag1 | tag2", [{key_unbound: ["tag1"]}, {key_unbound: ["tag2"]}]),
+    ("tag1 tag2 | tag3", [{key_unbound: ["tag1", "tag2"]}, {key_unbound: ["tag3"]}]),
+    ("tag1; description: desc", [{key_unbound: ["tag1"], "description": "desc"}]),
+    ("tag1; description: desc", [{key_unbound: ["tag1"], "description": "desc"}]),
     (
         "tag1 -description | description: desc",
-        [{"unbound": ["tag1"], "EMPTY": ["description"]}, {"description": "desc"}],
+        [{key_unbound: ["tag1"], key_empty: ["description"]}, {"description": "desc"}],
     ),
 ]
 
@@ -108,12 +110,12 @@ required_fields_empty_cases: list[tuple] = [
 ]
 
 filter_case_one: tuple = (
-    [{"unbound": "no author", "description": "des"}],
+    [{key_unbound: "no author", "description": "des"}],
     SearchMode.OR,
     [(ItemType.ENTRY, 2), (ItemType.ENTRY, 5)],
 )
 filter_case_two: tuple = (
-    [{"unbound": "no tags"}, {"description": "des"}],
+    [{key_unbound: "no tags"}, {"description": "des"}],
     SearchMode.OR,
     [
         (ItemType.ENTRY, 1),
@@ -124,18 +126,18 @@ filter_case_two: tuple = (
     ],
 )
 filter_case_three: tuple = (
-    [{"tag_id": "1000"}, {"unbound": "no author"}],
+    [{"tag_id": "1000"}, {key_unbound: "no author"}],
     SearchMode.AND,
     [],
 )
 filter_case_four: tuple = (
-    [{"tag_id": "1001", "unbound": "no author"}],
+    [{"tag_id": "1001", key_unbound: "no author"}],
     SearchMode.OR,
     [(ItemType.ENTRY, 2)],
 )
 
 filter_case_five: tuple = (
-    [{"tag_id": "1000"}, {"unbound": "no author"}],
+    [{"tag_id": "1000"}, {key_unbound: "no author"}],
     SearchMode.OR,
     [
         (ItemType.ENTRY, 0),
@@ -146,13 +148,13 @@ filter_case_five: tuple = (
 )
 
 negative_filter_case_one: tuple = (
-    [{"EMPTY": "description"}],
+    [{key_empty: "description"}],
     SearchMode.OR,
     [(ItemType.ENTRY, 0), (ItemType.ENTRY, 1), (ItemType.ENTRY, 4)],
 )
 
 negative_filter_case_two: tuple = (
-    [{"EMPTY": "author"}],
+    [{key_empty: "author"}],
     SearchMode.OR,
     [(ItemType.ENTRY, 1), (ItemType.ENTRY, 2), (ItemType.ENTRY, 5)],
 )
