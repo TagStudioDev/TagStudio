@@ -1895,6 +1895,31 @@ class Library:
         for t in self.tags:
             self._map_tag_strings_to_tag_id(t)
 
+    def merge_tag(self, source_tag: Tag, target_tag: Tag) -> None:
+        source_tag_id: int = source_tag.id
+        target_tag_id: int = target_tag.id
+
+        if source_tag.name not in target_tag.aliases:
+            target_tag.aliases.append(source_tag.name)
+
+        for alias in source_tag.aliases:
+            if alias not in target_tag.aliases:
+                target_tag.aliases.append(alias)
+
+        for subtag_id in source_tag.subtag_ids:
+            if subtag_id not in target_tag.subtag_ids:
+                target_tag.subtag_ids.append(subtag_id)
+
+        for entry in self.entries:
+            for field in entry.fields:
+                if self.get_field_attr(field, "type") == "tag_box":
+                    if source_tag_id in self.get_field_attr(field, "content"):
+                        self.get_field_attr(field, "content").remove(source_tag_id)
+                        if target_tag_id not in self.get_field_attr(field, "content"):
+                            self.get_field_attr(field, "content").append(target_tag_id)
+
+        self.remove_tag(source_tag_id)
+
     def get_tag_ref_count(self, tag_id: int) -> tuple[int, int]:
         """Returns an int tuple (entry_ref_count, subtag_ref_count) of Tag reference counts."""
         entry_ref_count: int = 0
