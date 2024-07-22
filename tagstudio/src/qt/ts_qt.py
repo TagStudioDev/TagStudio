@@ -1132,8 +1132,11 @@ class QtDriver(QObject):
                 f"ERROR: Invalid thumbnail size index ({index}). Defaulting to 128px."
             )
             self.thumb_size = 128
+
         self.update_thumbs()
+        blank_icon: QIcon = QIcon()
         for it in self.item_thumbs:
+            it.thumb_button.setIcon(blank_icon)
             it.resize(self.thumb_size, self.thumb_size)
             it.thumb_size = (self.thumb_size, self.thumb_size)
             it.setMinimumSize(self.thumb_size, self.thumb_size)
