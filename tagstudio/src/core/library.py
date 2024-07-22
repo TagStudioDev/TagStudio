@@ -14,7 +14,7 @@ import ujson
 
 from enum import Enum
 from pathlib import Path
-from typing import cast, Generator
+from typing import DefaultDict, cast, Generator
 from typing_extensions import Self
 
 from src.core.enums import FieldID
@@ -41,6 +41,7 @@ class ItemType(Enum):
 
 
 logging.basicConfig(format="%(message)s", level=logging.INFO)
+
 
 class KeyNameConstants:
     """Class, containing constants for special keys in search query, that are not supposed to be visible to user."""
@@ -1366,7 +1367,7 @@ class Library:
                 )
             negative_flags: list = []
             # selecting null fields are done with '-field' word in unbound part
-            if unbound_keyname in query_part.keys():
+            if unbound_keyname in query_part:
                 flags: list = query_part.get(unbound_keyname, [])
                 for flag in flags.copy():
                     if flag[0] == "-":
@@ -2200,8 +2201,6 @@ class SpecialFlag:
 
 
 class Filter:
-
-
     def __init__(self, lib: Library) -> None:
         # self.lib = lib
         self.ext_list = lib.ext_list
@@ -2218,7 +2217,11 @@ class Filter:
         def generate_field_id_to_name_map(self) -> dict[int, str]:
             map: dict = {}
             for field in self.default_fields:
-                map[field.get("id")] = field.get("name").lower()
+                field_id = field.get("id")
+                if field_id is None:
+                    logging.error(f"Field {field} is not found in default fields!")
+                    continue
+                map[field_id] = field.get("name").lower()
             return map
 
         self._field_id_to_name_map: dict = generate_field_id_to_name_map(self)
@@ -2233,7 +2236,9 @@ class Filter:
 
         for query_part in split_query:
             all_tag_terms: list[str] = []
-            query_words = query_part.get(KeyNameConstants.UNBOUND_QUERY_ARGUMENTS_KEYNAME)
+            query_words = query_part.get(
+                KeyNameConstants.UNBOUND_QUERY_ARGUMENTS_KEYNAME
+            )
 
             if isinstance(query_words, list):
                 all_tag_terms.extend(self.preprocess_tag_terms(query_words))
@@ -2305,7 +2310,7 @@ class Filter:
         result_set: set = set()
         if search_mode == SearchMode.AND:
             if len(pre_results) == 1:
-                return list(pre_results[0])
+                return pre_results[0]
             elif len(pre_results) == 0:
                 return []
             result_set = set(pre_results[0])
@@ -2336,14 +2341,13 @@ class Filter:
 
         if entry_value is None:
             return query_is_negative
+
+        if value in entry_value:
+            return not query_is_negative
         else:
-            if value in entry_value:
-                return not query_is_negative
-            else:
-                return query_is_negative
+            return query_is_negative
 
     def handle_tag_id(self, query: str, entry_tags: list[int]) -> bool:
-        id_query: int = 0
         try:
             id_query = int(query)
         except Exception:
@@ -2441,7 +2445,7 @@ class Filter:
         return False
 
     def remap_fields(self, entry: Entry) -> dict[str | int, str]:
-        entry_fields: dict = {}
+        entry_fields: dict = DefaultDict(list)
         for field in entry.fields:
             for key, value in field.items():
                 key_mapped = self._field_id_to_name_map.get(int(key))
@@ -2451,15 +2455,9 @@ class Filter:
                     and key_mapped != "author"
                     and key_mapped != "artist"
                 ):
-                    if key_mapped in entry_fields.keys():
-                        entry_fields[key_mapped].append(value)
-                    else:
-                        entry_fields[key_mapped] = [value]
+                    entry_fields[key_mapped].append(value)
                 else:
-                    if key_mapped in entry_fields.keys():
-                        entry_fields[key_mapped].extend(value)
-                    else:
-                        entry_fields[key_mapped] = value
+                    entry_fields[key_mapped].extend(value)
         return entry_fields
 
     def populate_tags(self, entry: Entry) -> tuple[list[int], list[list[str]]]:
@@ -2481,6 +2479,9 @@ class Filter:
         return (entry_tags, entry_authors)
 
     def check_filename(self, entry: Entry, query: str | None) -> bool:
+        """Checks if entry's path string contains Characters from 'filename: ' query part.
+        Method is coded in a way to look up individual characters, not substrings."""
+
         if not query:
             return False
 
@@ -2502,7 +2503,7 @@ class Filter:
         self, entry_fields: dict, empty_fields: list[str]
     ) -> bool:
         for field in empty_fields:
-            if field in entry_fields.keys() and entry_fields.get(field) is not None:
+            if entry_fields.get(field) is not None:
                 return False
         return True
 
@@ -2510,11 +2511,13 @@ class Filter:
         all_tag_terms: list[str] = []
         for i, term in enumerate(query_words):
             for j, term in enumerate(query_words):
+                query_words_sublist = query_words[i : j + 1]
+                query_words_single_string = " ".join(query_words_sublist)
                 if (
-                    query_words[i : j + 1]
-                    and " ".join(query_words[i : j + 1]) in self._tag_strings_to_id_map
+                    query_words_sublist
+                    and query_words_single_string in self._tag_strings_to_id_map
                 ):
-                    all_tag_terms.append(" ".join(query_words[i : j + 1]))
+                    all_tag_terms.append(query_words_single_string)
         # This gets rid of any accidental term inclusions because they were words
         # in another term. Ex. "3d" getting added in "3d art"
         for i, term in enumerate(all_tag_terms):

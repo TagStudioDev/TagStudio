@@ -1,4 +1,11 @@
-from src.core.library import ItemType, Library, Filter, Entry, SpecialFlag, KeyNameConstants
+from src.core.library import (
+    ItemType,
+    Library,
+    Filter,
+    Entry,
+    SpecialFlag,
+    KeyNameConstants,
+)
 from src.core.enums import SearchMode
 import pytest
 
