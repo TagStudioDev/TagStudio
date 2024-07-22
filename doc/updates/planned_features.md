@@ -19,7 +19,6 @@ The following lists outline the planned major and minor features for TagStudio, 
 - Settings Menu
 - Custom User Colors
 - Search Engine Rework
-  - Boolean Search
   - Tag Objects In Search
   - Search For Fields
   - Sortable Search Results

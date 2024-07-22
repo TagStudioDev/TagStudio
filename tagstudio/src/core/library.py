@@ -19,9 +19,10 @@ from typing_extensions import Self
 
 from src.core.enums import FieldID
 from src.core.json_typing import JsonCollation, JsonEntry, JsonLibary, JsonTag
-from src.core.utils.str import strip_punctuation
+from src.core.utils.str import replace_whitespace
 from src.core.utils.web import strip_web_protocol
 from src.core.enums import SearchMode
+from src.core.search import SearchQuery
 from src.core.constants import (
     BACKUP_FOLDER_NAME,
     COLLAGE_FOLDER_NAME,
@@ -1327,7 +1328,7 @@ class Library:
 
     def search_library(
         self,
-        query: str = None,
+        query_string: str = None,
         entries=True,
         collations=True,
         tag_groups=True,
@@ -1338,209 +1339,81 @@ class Library:
         Returns a list of (str, int) tuples consisting of a result type and ID.
         """
 
-        # self.filtered_entries.clear()
         results: list[tuple[ItemType, int]] = []
         collations_added = []
-        # print(f"Searching Library with query: {query} search_mode: {search_mode}")
-        if query:
-            # start_time = time.time()
-            query = query.strip().lower()
-            query_words: list[str] = query.split(" ")
-            all_tag_terms: list[str] = []
-            only_untagged: bool = "untagged" in query or "no tags" in query
-            only_empty: bool = "empty" in query or "no fields" in query
-            only_missing: bool = "missing" in query or "no file" in query
-            allow_adv: bool = "filename:" in query_words
-            tag_only: bool = "tag_id:" in query_words
-            if allow_adv:
-                query_words.remove("filename:")
-            if tag_only:
-                query_words.remove("tag_id:")
-            # TODO: Expand this to allow for dynamic fields to work.
-            only_no_author: bool = "no author" in query or "no artist" in query
+        if query_string:
+            # SearchQuery is not intended to have any direct access to
+            # this library instance or to its entries. That's in order
+            # to minimize refactoring if it is reprogrammed to return an
+            # SQL query instead of evaluating entries itself.
+            search_query = SearchQuery(query_string, search_mode)
 
-            # Preprocess the Tag terms.
-            if query_words:
-                # print(query_words, self._tag_strings_to_id_map)
-                for i, term in enumerate(query_words):
-                    for j, term in enumerate(query_words):
-                        if (
-                            query_words[i : j + 1]
-                            and " ".join(query_words[i : j + 1])
-                            in self._tag_strings_to_id_map
-                        ):
-                            all_tag_terms.append(" ".join(query_words[i : j + 1]))
-                        # print(all_tag_terms)
+            # By default, SearchQuery does not know the ID of any of its
+            # tags, or the IDs of any of their child tags.
+            # share_tag_requests() returns a list of potential tag
+            # strings that the SearchQuery may need to know the IDs of
+            # in order to evaluate an entry
+            tags_to_identify: list[str] = search_query.share_tag_requests()
+            tag_text_to_id_clusters: dict[str, list[int]] = {}
+            for tag_text in tags_to_identify:
+                cluster: set[int] = set()
 
-                # This gets rid of any accidental term inclusions because they were words
-                # in another term. Ex. "3d" getting added in "3d art"
-                for i, term in enumerate(all_tag_terms):
-                    for j, term2 in enumerate(all_tag_terms):
-                        if i != j and all_tag_terms[i] in all_tag_terms[j]:
-                            # print(
-                            #     f'removing {all_tag_terms[i]} because {all_tag_terms[i]} was in {all_tag_terms[j]}')
-                            all_tag_terms.remove(all_tag_terms[i])
-                            break
+                # Add the immediate associated Tags to the set (ex. Name, Alias hits)
+                # Since this term could technically map to multiple IDs, iterate over it
+                # (You're 99.9999999% likely to just get 1 item)
+                if tag_text in self._tag_strings_to_id_map:
+                    for id in self._tag_strings_to_id_map[tag_text]:
+                        cluster.add(id)
+                        cluster = cluster.union(set(self.get_tag_cluster(id)))
 
-            # print(all_tag_terms)
+                tag_text_to_id_clusters[tag_text] = list(cluster)
 
-            # non_entry_count = 0
-            # Iterate over all Entries =============================================================
+            fields_to_identify: set[str] = search_query.share_field_requests()
+            used_fields: set[str] = set()
+            for field in self.default_fields:
+                field_name = field["name"]
+                field_name = replace_whitespace(field_name)
+                field_name = field_name.lower()
+                if field_name in fields_to_identify:
+                    used_fields.add(field_name)
+
+            search_query.receive_requested_lib_info(
+                tag_text_to_id_clusters, used_fields
+            )
+
+            # This loop evaluates the search query against each entry
+            # and adds the entry to results if it matches the search.
             for entry in self.entries:
-                allowed_ext: bool = entry.filename.suffix.lower() not in self.ext_list
-                # try:
-                # entry: Entry = self.entries[self.file_to_library_index_map[self._source_filenames[i]]]
-                # print(f'{entry}')
+                if self.is_exclude_list == (entry.filename.suffix in self.ext_list):
+                    # The filename of the current entry is not relevant
+                    # to this Library, so skip the entry.
+                    continue
 
-                if allowed_ext == self.is_exclude_list:
-                    # If the entry has tags of any kind, append them to this main tag list.
-                    entry_tags: list[int] = []
-                    entry_authors: list[str] = []
-                    if entry.fields:
-                        for field in entry.fields:
-                            field_id = list(field.keys())[0]
-                            if self.get_field_obj(field_id)["type"] == "tag_box":
-                                entry_tags.extend(field[field_id])
-                            if self.get_field_obj(field_id)["name"] == "Author":
-                                entry_authors.extend(field[field_id])
-                            if self.get_field_obj(field_id)["name"] == "Artist":
-                                entry_authors.extend(field[field_id])
+                entry_tag_ids: list[int] = []
+                entry_fields_text: dict[str, str] = {}
 
-                    # print(f'Entry Tags: {entry_tags}')
+                for field in entry.fields:
+                    field_id = list(field.keys())[0]
+                    field_obj = self.get_field_obj(field_id)
 
-                    # Add Entries from special flags -------------------------------
-                    # TODO: Come up with a more user-resistent way to 'archived' and 'favorite' tags.
-                    if only_untagged:
-                        if not entry_tags:
-                            results.append((ItemType.ENTRY, entry.id))
-                    elif only_no_author:
-                        if not entry_authors:
-                            results.append((ItemType.ENTRY, entry.id))
-                    elif only_empty:
-                        if not entry.fields:
-                            results.append((ItemType.ENTRY, entry.id))
-                    elif only_missing:
-                        if (
-                            self.library_dir / entry.path / entry.filename
-                        ).resolve() in self.missing_files:
-                            results.append((ItemType.ENTRY, entry.id))
+                    # If the entry has tags of any kind, append their ids to entry_tag_ids.
+                    if field_obj["type"] == "tag_box":
+                        entry_tag_ids.extend(field[field_id])
+                    field_name = field_obj["name"]
+                    field_name = replace_whitespace(field_name)
+                    field_name = field_name.lower()
+                    if field_obj["type"] in ["text_line", "text_box"]:
+                        entry_fields_text[field_name] = field[field_id]
+                    else:
+                        entry_fields_text[field_name] = None
 
-                    # elif query == "archived":
-                    #     if entry.tags and self._tag_names_to_tag_id_map[self.archived_word.lower()][0] in entry.tags:
-                    #         self.filtered_file_list.append(file)
-                    #         pb.value = len(self.filtered_file_list)
-                    # elif query in entry.path.lower():
-
-                    # NOTE: This searches path and filenames.
-
-                    if allow_adv:
-                        if [q for q in query_words if (q in str(entry.path).lower())]:
-                            results.append((ItemType.ENTRY, entry.id))
-                        elif [
-                            q for q in query_words if (q in str(entry.filename).lower())
-                        ]:
-                            results.append((ItemType.ENTRY, entry.id))
-                    elif tag_only:
-                        if entry.has_tag(self, int(query_words[0])):
-                            results.append((ItemType.ENTRY, entry.id))
-
-                    # elif query in entry.filename.lower():
-                    # 	self.filtered_entries.append(index)
-                    elif entry_tags:
-                        # function to add entry to results
-                        def add_entry(entry: Entry):
-                            # self.filter_entries.append()
-                            # self.filtered_file_list.append(file)
-                            # results.append((SearchItemType.ENTRY, entry.id))
-                            added = False
-                            for f in entry.fields:
-                                if self.get_field_attr(f, "type") == "collation":
-                                    if (
-                                        self.get_field_attr(f, "content")
-                                        not in collations_added
-                                    ):
-                                        results.append(
-                                            (
-                                                ItemType.COLLATION,
-                                                self.get_field_attr(f, "content"),
-                                            )
-                                        )
-                                        collations_added.append(
-                                            self.get_field_attr(f, "content")
-                                        )
-                                    added = True
-
-                            if not added:
-                                results.append((ItemType.ENTRY, entry.id))
-
-                        if search_mode == SearchMode.AND:  # Include all terms
-                            # For each verified, extracted Tag term.
-                            failure_to_union_terms = False
-                            for term in all_tag_terms:
-                                # If the term from the previous loop was already verified:
-                                if not failure_to_union_terms:
-                                    cluster: set = set()
-                                    # Add the immediate associated Tags to the set (ex. Name, Alias hits)
-                                    # Since this term could technically map to multiple IDs, iterate over it
-                                    # (You're 99.9999999% likely to just get 1 item)
-                                    for id in self._tag_strings_to_id_map[term]:
-                                        cluster.add(id)
-                                        cluster = cluster.union(
-                                            set(self.get_tag_cluster(id))
-                                        )
-                                    # print(f'Full Cluster: {cluster}')
-                                    # For each of the Tag IDs in the term's ID cluster:
-                                    for t in cluster:
-                                        # Assume that this ID from the cluster is not in the Entry.
-                                        # Wait to see if proven wrong.
-                                        failure_to_union_terms = True
-                                        # If the ID actually is in the Entry,
-                                        if t in entry_tags:
-                                            # There wasn't a failure to find one of the term's cluster IDs in the Entry.
-                                            # There is also no more need to keep checking the rest of the terms in the cluster.
-                                            failure_to_union_terms = False
-                                            # print(f"FOUND MATCH: {t}")
-                                            break
-                                        # print(f'\tFailure to Match: {t}')
-                            # # failure_to_union_terms is used to determine if all terms in the query were found in the entry.
-                            # # If there even were tag terms to search through AND they all match an entry
-                            if all_tag_terms and not failure_to_union_terms:
-                                add_entry(entry)
-
-                        if search_mode == SearchMode.OR:  # Include any terms
-                            # For each verified, extracted Tag term.
-                            for term in all_tag_terms:
-                                # Add the immediate associated Tags to the set (ex. Name, Alias hits)
-                                # Since this term could technically map to multiple IDs, iterate over it
-                                # (You're 99.9999999% likely to just get 1 item)
-                                for id in self._tag_strings_to_id_map[term]:
-                                    # If the ID actually is in the Entry,
-                                    if id in entry_tags:
-                                        # check if result already contains the entry
-                                        if (ItemType.ENTRY, entry.id) not in results:
-                                            add_entry(entry)
-                                        break
-
-                # sys.stdout.write(
-                #     f'\r[INFO][FILTER]: {len(self.filtered_file_list)} matches found')
-                # sys.stdout.flush()
-
-                # except:
-                #     # # Put this here to have new non-registered images show up
-                #     # if query == "untagged" or query == "no author" or query == "no artist":
-                #     #     self.filtered_file_list.append(file)
-                #     # non_entry_count = non_entry_count + 1
-                #     pass
-
-            # end_time = time.time()
-            # print(
-            # 	f'[INFO][FILTER]: {len(self.filtered_entries)} matches found ({(end_time - start_time):.3f} seconds)')
-
-            # if non_entry_count:
-            # 	print(
-            # 		f'[INFO][FILTER]: There are {non_entry_count} new files in {self.source_dir} that do not have entries. These will not appear in most filtered results.')
-            # if not self.filtered_entries:
-            # 	print("[INFO][FILTER]: Filter returned no results.")
+                if search_query.match_entry(
+                    path=entry.path,
+                    filename=entry.filename,
+                    tag_ids=entry_tag_ids,
+                    fields_text=entry_fields_text,
+                ):
+                    results.append((ItemType.ENTRY, entry.id))
         else:
             for entry in self.entries:
                 added = False
@@ -1629,8 +1502,8 @@ class Library:
         for string in self._tag_strings_to_id_map:  # O(n), n = tags
             exact_match: bool = False
             partial_match: bool = False
-            query = strip_punctuation(query).lower()
-            string = strip_punctuation(string).lower()
+            query = replace_whitespace(query).lower()
+            string = replace_whitespace(string).lower()
 
             if query == string:
                 exact_match = True
@@ -1796,13 +1669,13 @@ class Library:
         # Remember that _tag_names_to_tag_id_map maps strings to a LIST of ids.
         # print(
         #     f'Removing connection from "{old_tag.name.lower()}" to {old_tag.id} in {self._tag_names_to_tag_id_map[old_tag.name.lower()]}')
-        old_name: str = strip_punctuation(old_tag.name).lower()
+        old_name: str = replace_whitespace(old_tag.name).lower()
         self._tag_strings_to_id_map[old_name].remove(old_tag.id)
         # Delete the map key if it doesn't point to any other IDs.
         if not self._tag_strings_to_id_map[old_name]:
             del self._tag_strings_to_id_map[old_name]
         if old_tag.shorthand:
-            old_sh: str = strip_punctuation(old_tag.shorthand).lower()
+            old_sh: str = replace_whitespace(old_tag.shorthand).lower()
             # print(
             #     f'Removing connection from "{old_tag.shorthand.lower()}" to {old_tag.id} in {self._tag_names_to_tag_id_map[old_tag.shorthand.lower()]}')
             self._tag_strings_to_id_map[old_sh].remove(old_tag.id)
@@ -1811,7 +1684,7 @@ class Library:
                 del self._tag_strings_to_id_map[old_sh]
         if old_tag.aliases:
             for alias in old_tag.aliases:
-                old_a: str = strip_punctuation(alias).lower()
+                old_a: str = replace_whitespace(alias).lower()
                 # print(
                 #     f'Removing connection from "{alias.lower()}" to {old_tag.id} in {self._tag_names_to_tag_id_map[alias.lower()]}')
                 self._tag_strings_to_id_map[old_a].remove(old_tag.id)
@@ -2209,18 +2082,18 @@ class Library:
         Uses name_and_alias_to_tag_id_map.
         """
         # tag_id: int, tag_name: str, tag_aliases: list[str] = []
-        name: str = strip_punctuation(tag.name).lower()
+        name: str = replace_whitespace(tag.name).lower()
         if name not in self._tag_strings_to_id_map:
             self._tag_strings_to_id_map[name] = []
         self._tag_strings_to_id_map[name].append(tag.id)
 
-        shorthand: str = strip_punctuation(tag.shorthand).lower()
+        shorthand: str = replace_whitespace(tag.shorthand).lower()
         if shorthand not in self._tag_strings_to_id_map:
             self._tag_strings_to_id_map[shorthand] = []
         self._tag_strings_to_id_map[shorthand].append(tag.id)
 
         for alias in tag.aliases:
-            alias = strip_punctuation(alias).lower()
+            alias = replace_whitespace(alias).lower()
             if alias not in self._tag_strings_to_id_map:
                 self._tag_strings_to_id_map[alias] = []
             self._tag_strings_to_id_map[alias].append(tag.id)
