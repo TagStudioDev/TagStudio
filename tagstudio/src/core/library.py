@@ -1367,7 +1367,19 @@ class Library:
                         cluster = cluster.union(set(self.get_tag_cluster(id)))
 
                 tag_text_to_id_clusters[tag_text] = list(cluster)
-            search_query.receive_requested_lib_info(tag_text_to_id_clusters)
+
+            fields_to_identify: set[str] = search_query.share_field_requests()
+            used_fields: set[str] = set()
+            for field in self.default_fields:
+                field_name = field["name"]
+                field_name = replace_whitespace(field_name)
+                field_name = field_name.lower()
+                if field_name in fields_to_identify:
+                    used_fields.add(field_name)
+
+            search_query.receive_requested_lib_info(
+                tag_text_to_id_clusters, used_fields
+            )
 
             # This loop evaluates the search query against each entry
             # and adds the entry to results if it matches the search.
@@ -1377,8 +1389,8 @@ class Library:
                     # to this Library, so skip the entry.
                     continue
 
-                entry_has_author = False
                 entry_tag_ids: list[int] = []
+                entry_fields_text: dict[str, str] = {}
 
                 for field in entry.fields:
                     field_id = list(field.keys())[0]
@@ -1387,18 +1399,19 @@ class Library:
                     # If the entry has tags of any kind, append their ids to entry_tag_ids.
                     if field_obj["type"] == "tag_box":
                         entry_tag_ids.extend(field[field_id])
-
-                    if field_obj["name"] == "Author":
-                        entry_has_author = True
-                    elif field_obj["name"] == "Artist":
-                        entry_has_author = True
+                    field_name = field_obj["name"]
+                    field_name = replace_whitespace(field_name)
+                    field_name = field_name.lower()
+                    if field_obj["type"] in ["text_line", "text_box"]:
+                        entry_fields_text[field_name] = field[field_id]
+                    else:
+                        entry_fields_text[field_name] = None
 
                 if search_query.match_entry(
-                    has_fields=bool(entry.fields),
-                    has_author=entry_has_author,
                     path=entry.path,
                     filename=entry.filename,
                     tag_ids=entry_tag_ids,
+                    fields_text=entry_fields_text,
                 ):
                     results.append((ItemType.ENTRY, entry.id))
         else:

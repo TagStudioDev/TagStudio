@@ -8,19 +8,23 @@ from collections import deque
 from pathlib import Path
 
 from src.core.enums import SearchMode
+from src.core.utils.str import replace_whitespace
 
 """Container for search relevant entry data received by SearchQuery instances"""
 
 
 class _EntrySearchableData:
     def __init__(
-        self, has_fields, has_author, path: Path, filename: Path, tag_ids: list[int]
+        self,
+        path: Path,
+        filename: Path,
+        tag_ids: list[int],
+        fields_text: dict[str, str | None],
     ):
-        self.has_fields = has_fields
-        self.has_author = has_author
         self.path = path
         self.filename = filename
         self.tag_ids = tag_ids
+        self.fields_text = fields_text
 
         # Path.__str__() is almost 10x slower than anything else you
         # will find in this file combined. If _TagNode.match() ever ends
@@ -241,10 +245,16 @@ class _TagNode(_SynNode):
     Instances of this class represent tags and metatags in search query
     strings.
 
-    Instances of his class don't have child nodes, but currently their
-    id_cluster attribute must be set by SearchQuery before their match()
-    method can be called. id_cluster should contain any ids associated
-    with the tag and with any child tags it may have.
+    Instances of his class don't have child nodes, but currently if the
+    _TagNode represents a tag, then the id_cluster attribute must be set
+    by SearchQuery before their match() method can be called. id_cluster
+    should contain any ids associated with the tag and with any child
+    tags it may have.
+
+    And if an instance of this class represents a field, then the
+    used_fields attribute must be set by SearchQuery before the
+    instance's match() method can be called. used_fields should contain
+    at the names of any relevant fields that entries could be using.
     """
 
     # token_text should store this tag's raw representation in the
@@ -258,17 +268,25 @@ class _TagNode(_SynNode):
     # In the future, a compile_SQL method can be used to return an SQL
     # query without any library data being passed at all.
     id_cluster: list[int]
+    used_fields: set[str]
 
     def match(self, entry: _EntrySearchableData) -> bool:
         metatag = self.token_text.replace("-", "_")
         match metatag.replace("no_", "no"):
+            # empty
             case "empty" | "nofields":
-                return not entry.has_fields
+                return not entry.fields_text
+            # no-artist
             case "noauthor" | "noartist":
-                return not entry.has_author
+                return (
+                    "author" not in entry.fields_text
+                    and "artist" not in entry.fields_text
+                )
+            # untagged
             case "untagged" | "notags":
                 return not entry.tag_ids
 
+        # filename:example.png
         if (
             self.token_text.startswith("file_name:")
             or self.token_text.startswith("file-name:")
@@ -286,6 +304,8 @@ class _TagNode(_SynNode):
                     str(entry.path) + os.path.sep + str(entry.filename)
                 ).lower()
             return filename in entry.filestring
+
+        # tag_id:1005
         if (
             self.token_text.startswith("tag_id:")
             or self.token_text.startswith("tag-id:")
@@ -298,11 +318,80 @@ class _TagNode(_SynNode):
             tag_id_text = tag_id_text.removeprefix("id:")
             return tag_id_text.isdecimal() and int(tag_id_text) in entry.tag_ids
 
+        if ":" in self.token_text:
+            field_name_text, _, field_content_goal_text = self.token_text.partition(":")
+            field_name_text = field_name_text.lower()
+            field_content_goal_text = field_content_goal_text.lower()
+
+            # hastitle:True
+            goal_to_have_field = field_content_goal_text in [
+                "true",
+                "t",
+                "yes",
+                "y",
+                "1",
+            ]
+            goal_not_to_have_field = field_content_goal_text in [
+                "false",
+                "f",
+                "no",
+                "n",
+                "0",
+            ]
+            if (
+                goal_to_have_field or goal_not_to_have_field
+            ) and field_name_text.startswith("has"):
+                # hastitle:True
+                if field_name_text.removeprefix("has") in self.used_fields:
+                    return (
+                        field_name_text.removeprefix("has") in entry.fields_text
+                    ) == goal_to_have_field
+                # has_title:True
+                if field_name_text.removeprefix("has_") in self.used_fields:
+                    return (
+                        field_name_text.removeprefix("has_") in entry.fields_text
+                    ) == goal_to_have_field
+                # has-title:True
+                if field_name_text.removeprefix("has-") in self.used_fields:
+                    return (
+                        field_name_text.removeprefix("has-") in entry.fields_text
+                    ) == goal_to_have_field
+                # hastitle:True
+
+            # URL:artstation
+            field_name = field_name_text
+            if field_name in self.used_fields:
+                if field_name not in entry.fields_text:
+                    return False
+                field_content = entry.fields_text[field_name]
+                if field_content is None:
+                    return False
+                field_content = replace_whitespace(field_content)
+                field_content = field_content.lower()
+                return field_content_goal_text in field_content
+
+        if self.token_text.startswith("has"):
+            # hasdescription
+            field_name = self.token_text
+            if field_name.removeprefix("has") in self.used_fields:
+                return field_name.removeprefix("has") in entry.fields_text
+            # has_description
+            if field_name.removeprefix("has_") in self.used_fields:
+                return field_name.removeprefix("has_") in entry.fields_text
+            # has-description
+            if field_name.removeprefix("has-") in self.used_fields:
+                return field_name.removeprefix("has-") in entry.fields_text
+
+        # token_text is a tag in the entry
         for tag_id in self.id_cluster:
             # If the ID actually is in the src.core.library.Entry,
             if tag_id in entry.tag_ids:
                 return True
+        # token_text is still a tag, even though it's not present in the entry
+        if self.id_cluster:
+            return False
 
+        # unknown tag, unknown syntax
         return False
 
     def __str__(self) -> str:
@@ -342,13 +431,24 @@ class SearchQuery:
     def __init__(self, query_string, search_mode: SearchMode):
         query_tokens: list[_Token] = self._tokenize(query_string.lower())
 
-        # The _tag_text_to_tag_nodes attribute keeps track of the
-        # library information that the _TagNodes need, and which tag
-        # nodes requested the information. That way this SearchQuery can
-        # share requests for the information, and that way this
+        # The _tag_name_to_tag_nodes attribute keeps track of the
+        # potential tags whose id_clusters the _TagNodes need, and which
+        # tag nodes requested the information. That way this SearchQuery
+        # can share requests for the information, and that way this
         # SearchQuery can pass received information to the proper
         # _TagNodes.
-        self._tag_text_to_tag_nodes: dict[str, list[_TagNode]] = {}
+        self._tag_name_to_tag_nodes: dict[str, list[_TagNode]] = {}
+        # The _requested_fields_names attribute keeps track of the
+        # potential fields that the _TagNodes want to check are in use
+        # That way this SearchQuery can share requests for the
+        # information.
+        self._requested_fields_names: set[str] = set()
+        # The _tag_nodes_requesting_fields attribute keeps track of all
+        # _TagNodes that requested to learn whether a field is in use,
+        # that way this SearchQuery can pass all received information on
+        # which fields are in use to any requesting _TagNodes.
+        self._tag_nodes_requesting_fields: set[_TagNode] = set()
+
         self._syntax_root: _ListNode = self._parse_list_node(
             deque(query_tokens), search_mode
         )
@@ -559,27 +659,65 @@ class SearchQuery:
         # ensures that an escape character it will not interfere with it
         # as a tag.
         if tag_node.token_text.startswith("/"):
-            tag_text = tag_node.token_text.removeprefix("/")
+            tag_name = tag_node.token_text.removeprefix("/")
         else:
-            tag_text = tag_node.token_text.removeprefix("\\")
+            tag_name = tag_node.token_text.removeprefix("\\")
         # Multiple tag nodes can be associated with the same tag text.
-        if tag_text not in self._tag_text_to_tag_nodes:
-            self._tag_text_to_tag_nodes[tag_text] = []
-        self._tag_text_to_tag_nodes[tag_text].append(tag_node)
+        if tag_name not in self._tag_name_to_tag_nodes:
+            self._tag_name_to_tag_nodes[tag_name] = []
+        self._tag_name_to_tag_nodes[tag_name].append(tag_node)
+
+        if ":" in tag_node.token_text:
+            self._tag_nodes_requesting_fields.add(tag_node)
+
+            field_name = tag_node.token_text.partition(":")[0]
+            field_name = field_name.lower()
+
+            self._requested_fields_names.add(field_name)
+
+            if field_name.startswith("has"):
+                self._requested_fields_names.add(field_name.removeprefix("has"))
+            if field_name.startswith("has_"):
+                self._requested_fields_names.add(field_name.removeprefix("has_"))
+            if field_name.startswith("has-"):
+                self._requested_fields_names.add(field_name.removeprefix("has-"))
+
+        if tag_node.token_text.startswith("has"):
+            self._tag_nodes_requesting_fields.add(tag_node)
+
+            field_name = tag_node.token_text.removeprefix("has")
+            self._requested_fields_names.add(field_name)
+
+            if field_name.startswith("_"):
+                self._requested_fields_names.add(field_name.removeprefix("_"))
+            if field_name.startswith("-"):
+                self._requested_fields_names.add(field_name.removeprefix("-"))
 
     def share_tag_requests(self) -> list[str]:
-        return list(self._tag_text_to_tag_nodes.keys())
+        return list(self._tag_name_to_tag_nodes.keys())
 
-    def receive_requested_lib_info(self, tag_text_to_id_clusters: dict[str, list[int]]):
-        for tag_text, id_cluster in tag_text_to_id_clusters.items():
-            for tag_node in self._tag_text_to_tag_nodes[tag_text]:
+    def share_field_requests(self) -> set[str]:
+        return self._requested_fields_names
+
+    def receive_requested_lib_info(
+        self, tag_name_to_id_clusters: dict[str, list[int]], used_fields: set[str]
+    ):
+        for tag_name, id_cluster in tag_name_to_id_clusters.items():
+            for tag_node in self._tag_name_to_tag_nodes[tag_name]:
                 tag_node.id_cluster = id_cluster
 
+        for tag_node in self._tag_nodes_requesting_fields:
+            tag_node.used_fields = used_fields
+
     def match_entry(
-        self, has_fields, has_author, path: Path, filename: Path, tag_ids: list[int]
+        self,
+        path: Path,
+        filename: Path,
+        tag_ids: list[int],
+        fields_text: dict[str, str],
     ):
         return self._syntax_root.match(
-            _EntrySearchableData(has_fields, has_author, path, filename, tag_ids)
+            _EntrySearchableData(path, filename, tag_ids, fields_text)
         )
 
     def __str__(self):
