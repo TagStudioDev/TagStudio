@@ -2167,14 +2167,15 @@ class Library:
 
     def get_field_attr(self, entry_field: dict, attribute: str):
         """Returns the value of a specified attribute inside an Entry field."""
-        if attribute.lower() == "id":
-            return list(entry_field.keys())[0]
-        elif attribute.lower() == "content":
-            return entry_field[self.get_field_attr(entry_field, "id")]
-        else:
-            return self.get_field_obj(self.get_field_attr(entry_field, "id"))[
-                attribute.lower()
-            ]
+        match attribute.lower():
+            case "id":
+                return val[0] if not any(val := list(entry_field.keys())[:1]) else -1
+            case "content":
+                return entry_field[self.get_field_attr(entry_field, "id")]
+            case _:
+                _ensure_field: dict = self.get_field_obj(self.get_field_attr(entry_field, "id"))
+                return _ensure_field.get(attribute.lower())
+        
 
     def get_field_obj(self, field_id: int) -> dict:
         """
