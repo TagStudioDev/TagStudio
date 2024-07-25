@@ -104,16 +104,24 @@ class TagDatabasePanel(PanelWidget):
             # Get tag ids to keep this behaviorally identical
             tags = [t.id for t in self.lib.tags]
 
-        # sort tags by Archived and Favorite at the top, then by color,
-        # and then alphabetically
-        sorted_tags = sorted(
-            tags,
-            key=lambda tag_id: (
-                tag_id not in [0, 1],
-                TAG_COLORS.index(self.lib.get_tag(tag_id).color.lower()),
-                self.lib.get_tag(tag_id).display_name(self.lib),
-            ),
-        )
+        if query:
+            # sort tags alphabetically and then by color
+            sorted_tags = sorted(
+                tags,
+                key=lambda tag_id: (
+                    self.lib.get_tag(tag_id).display_name(self.lib),
+                    TAG_COLORS.index(self.lib.get_tag(tag_id).color.lower()),
+                ),
+            )
+        else:
+            # sort tags by color and then alphabetically
+            sorted_tags = sorted(
+                tags,
+                key=lambda tag_id: (
+                    TAG_COLORS.index(self.lib.get_tag(tag_id).color.lower()),
+                    self.lib.get_tag(tag_id).display_name(self.lib),
+                ),
+            )
 
         first_id_set = False
         for tag_id in sorted_tags:

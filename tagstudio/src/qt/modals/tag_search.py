@@ -110,17 +110,25 @@ class TagSearchPanel(PanelWidget):
 
         found_tags = self.lib.search_tags(query, include_cluster=True)[: self.tag_limit]
         self.first_tag_id = found_tags[0] if found_tags else None
-
-        # sort tags by Archived and Favorite at the top, then by color,
-        # and then alphabetically
-        sorted_tags = sorted(
-            found_tags,
-            key=lambda tag_id: (
-                tag_id not in [0, 1],
-                TAG_COLORS.index(self.lib.get_tag(tag_id).color.lower()),
-                self.lib.get_tag(tag_id).display_name(self.lib),
-            ),
-        )
+        
+        if query:
+            # sort tags alphabetically and then by color
+            sorted_tags = sorted(
+                found_tags,
+                key=lambda tag_id: (
+                    self.lib.get_tag(tag_id).display_name(self.lib),
+                    TAG_COLORS.index(self.lib.get_tag(tag_id).color.lower()),
+                ),
+            )
+        else:
+            # sort tags by color and then alphabetically
+            sorted_tags = sorted(
+                found_tags,
+                key=lambda tag_id: (
+                    TAG_COLORS.index(self.lib.get_tag(tag_id).color.lower()),
+                    self.lib.get_tag(tag_id).display_name(self.lib),
+                ),
+            )
 
         for tag_id in sorted_tags:
             c = QWidget()
