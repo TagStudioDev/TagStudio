@@ -218,17 +218,18 @@ class MediaCategories:
         ".xml",
     }
     _PRESENTATION_SET: set[str] = {
-        ".ppt",
-        ".pptx",
         ".key",
         ".odp",
+        ".ppt",
+        ".pptx",
     }
     _PROGRAM_SET: set[str] = {".app", ".exe"}
     _SHORTCUT_SET: set[str] = {".desktop", ".lnk", ".url"}
     _SPREADSHEET_SET: set[str] = {
         ".csv",
         ".numbers",
-        ".ods" ".xls",
+        ".ods",
+        ".xls",
         ".xlsx",
     }
     _VIDEO_SET: set[str] = {
