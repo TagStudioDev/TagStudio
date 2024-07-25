@@ -110,7 +110,7 @@ class TagSearchPanel(PanelWidget):
 
         found_tags = self.lib.search_tags(query, include_cluster=True)[: self.tag_limit]
         self.first_tag_id = found_tags[0] if found_tags else None
-        
+
         if query:
             # sort tags alphabetically and then by color
             sorted_tags = sorted(
