@@ -31,13 +31,14 @@ logging.basicConfig(format="%(message)s", level=logging.INFO)
 
 
 class TagSearchPanel(PanelWidget):
-    tag_chosen = Signal(int)
+    tag_chosen = Signal(int, bool)
 
     def __init__(self, library):
         super().__init__()
         self.lib: Library = library
         # self.callback = callback
         self.first_tag_id = None
+        self.selected_tags = []
         self.tag_limit = 100
         # self.selected_tag: int = 0
         self.setMinimumSize(300, 400)
@@ -101,7 +102,10 @@ class TagSearchPanel(PanelWidget):
             self.search_field.setFocus()
             self.parentWidget().hide()
 
-    def update_tags(self, query: str = ""):
+    def update_tags(self, query: str = "", current_tags: list[int] = None):
+        if current_tags:
+            self.selected_tags = current_tags
+
         # for c in self.scroll_layout.children():
         # 	c.widget().deleteLater()
         while self.scroll_layout.count():
@@ -116,19 +120,23 @@ class TagSearchPanel(PanelWidget):
             l = QHBoxLayout(c)
             l.setContentsMargins(0, 0, 0, 0)
             l.setSpacing(3)
+
             tw = TagWidget(self.lib, self.lib.get_tag(tag_id), False, False)
+
+            tag_colors = self.lib.get_tag(tag_id).color
             ab = QPushButton()
+            ab.setCheckable(True)
             ab.setMinimumSize(23, 23)
             ab.setMaximumSize(23, 23)
             ab.setText("+")
             ab.setStyleSheet(
                 f"QPushButton{{"
-                f"background: {get_tag_color(ColorType.PRIMARY, self.lib.get_tag(tag_id).color)};"
+                f"background: #d2d2d2;"
                 # f'background-color: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 {get_tag_color(ColorType.PRIMARY, tag.color)}, stop:1.0 {get_tag_color(ColorType.BORDER, tag.color)});'
                 # f"border-color:{get_tag_color(ColorType.PRIMARY, tag.color)};"
-                f"color: {get_tag_color(ColorType.TEXT, self.lib.get_tag(tag_id).color)};"
+                f"color: {get_tag_color(ColorType.BORDER, tag_colors)};"
                 f"font-weight: 600;"
-                f"border-color:{get_tag_color(ColorType.BORDER, self.lib.get_tag(tag_id).color)};"
+                f"border-color:{get_tag_color(ColorType.BORDER, tag_colors)};"
                 f"border-radius: 6px;"
                 f"border-style:solid;"
                 f"border-width: {math.ceil(1*self.devicePixelRatio())}px;"
@@ -138,15 +146,27 @@ class TagSearchPanel(PanelWidget):
                 # f'padding-left: 4px;'
                 f"font-size: 20px;"
                 f"}}"
-                f"QPushButton::hover"
-                f"{{"
-                f"border-color:{get_tag_color(ColorType.LIGHT_ACCENT, self.lib.get_tag(tag_id).color)};"
-                f"color: {get_tag_color(ColorType.DARK_ACCENT, self.lib.get_tag(tag_id).color)};"
-                f"background: {get_tag_color(ColorType.LIGHT_ACCENT, self.lib.get_tag(tag_id).color)};"
+                f"QPushButton::checked{{"
+                f"border-color:{get_tag_color(ColorType.BORDER, tag_colors)};"
+                f"color: {get_tag_color(ColorType.PRIMARY, tag_colors)};"
+                f"background: {get_tag_color(ColorType.PRIMARY, tag_colors)};"
+                f"}}"
+                f"QPushButton::hover{{"
+                f"border-color:{get_tag_color(ColorType.LIGHT_ACCENT, tag_colors)};"
+                f"color: {get_tag_color(ColorType.DARK_ACCENT, tag_colors)};"
+                f"background: {get_tag_color(ColorType.LIGHT_ACCENT, tag_colors)};"
+                f"}}"
+                f"QPushButton::checked:hover{{"
+                f"color: {get_tag_color(ColorType.LIGHT_ACCENT, tag_colors)};"
                 f"}}"
             )
 
-            ab.clicked.connect(lambda checked=False, x=tag_id: self.tag_chosen.emit(x))
+            if tag_id in self.selected_tags:
+                ab.setChecked(True)
+
+            ab.toggled.connect(
+                lambda checked, x=tag_id: self.tag_chosen.emit(x, checked)
+            )
 
             l.addWidget(tw)
             l.addWidget(ab)
