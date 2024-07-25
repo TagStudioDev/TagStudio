@@ -14,12 +14,16 @@ def is_readable_video(filepath: Path | str):
     Args:
         filepath (Path | str):
     """
-    probe = ffmpeg.probe(Path(filepath))
-    for stream in probe["streams"]:
-        if stream.get("codec_tag_string") in [
-            "drma",
-            "drms",
-            "drmi",
-        ]:
-            return False
+    try:
+        probe = ffmpeg.probe(Path(filepath))
+        for stream in probe["streams"]:
+            # DRM check
+            if stream.get("codec_tag_string") in [
+                "drma",
+                "drms",
+                "drmi",
+            ]:
+                return False
+    except ffmpeg.Error:
+        return False
     return True
