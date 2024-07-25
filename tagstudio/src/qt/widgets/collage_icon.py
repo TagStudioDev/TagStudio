@@ -24,7 +24,7 @@ from PySide6.QtCore import (
 )
 
 from src.core.library import Library
-from src.core.constants import DOC_TYPES, VIDEO_TYPES, IMAGE_TYPES
+from src.core.media_types import MediaCategories, MediaType
 from src.qt.helpers.file_tester import is_readable_video
 
 
@@ -94,7 +94,8 @@ class CollageIconRenderer(QObject):
                 )
                 # sys.stdout.write(f'\r{INFO} Combining [{i+1}/{len(self.lib.entries)}]: {self.get_file_color(file_type)}{entry.path}{os.sep}{entry.filename}{RESET}')
                 # sys.stdout.flush()
-                if filepath.suffix.lower() in IMAGE_TYPES:
+                ext: str = filepath.suffix.lower()
+                if MediaType.IMAGE in MediaCategories.get_types(ext):
                     try:
                         with Image.open(
                             str(self.lib.library_dir / entry.path / entry.filename)
@@ -112,7 +113,7 @@ class CollageIconRenderer(QObject):
                             self.rendered.emit(pic)
                     except DecompressionBombError as e:
                         logging.info(f"[ERROR] One of the images was too big ({e})")
-                elif filepath.suffix.lower() in VIDEO_TYPES:
+                elif MediaType.VIDEO in MediaCategories.get_types(ext):
                     if is_readable_video(filepath):
                         video = cv2.VideoCapture(str(filepath), cv2.CAP_FFMPEG)
                         video.set(
@@ -169,14 +170,16 @@ class CollageIconRenderer(QObject):
         self.done.emit()
         # logging.info('Done!')
 
+    # NOTE: Depreciated
     def get_file_color(self, ext: str):
-        if ext.lower().replace(".", "", 1) == "gif":
+        _ext = ext.lower().replace(".", "", 1)
+        if _ext == "gif":
             return "\033[93m"
-        if ext.lower().replace(".", "", 1) in IMAGE_TYPES:
+        elif MediaType.IMAGE in MediaCategories.get_types(_ext):
             return "\033[37m"
-        elif ext.lower().replace(".", "", 1) in VIDEO_TYPES:
+        elif MediaType.VIDEO in MediaCategories.get_types(_ext):
             return "\033[96m"
-        elif ext.lower().replace(".", "", 1) in DOC_TYPES:
+        elif MediaType.DOCUMENT in MediaCategories.get_types(_ext):
             return "\033[92m"
         else:
             return "\033[97m"

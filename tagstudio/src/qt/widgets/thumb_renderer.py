@@ -29,17 +29,8 @@ from src.qt.resource_manager import ResourceManager
 from src.qt.helpers.color_overlay import theme_fg_overlay
 from src.qt.helpers.gradient import four_corner_gradient_background
 from src.qt.helpers.text_wrapper import wrap_full_text
-from src.core.constants import (
-    AUDIO_TYPES,
-    PLAINTEXT_TYPES,
-    FONT_TYPES,
-    VIDEO_TYPES,
-    IMAGE_TYPES,
-    RAW_IMAGE_TYPES,
-    FONT_SAMPLE_TEXT,
-    FONT_SAMPLE_SIZES,
-    BLENDER_TYPES,
-)
+from src.core.constants import FONT_SAMPLE_SIZES, FONT_SAMPLE_TEXT
+from src.core.media_types import MediaType, MediaCategories
 from src.core.utils.encoding import detect_char_encoding
 from src.core.palette import ColorType, get_ui_color
 from src.qt.helpers.blender_thumbnailer import blend_thumb
@@ -278,11 +269,7 @@ class ThumbRenderer(QObject):
 
     @staticmethod
     def get_mime_icon_resource(ext: str = "") -> str:
-        if ext in IMAGE_TYPES:
-            return "image_photo"
-        elif ext in VIDEO_TYPES:
-            return "doc_presentation"
-        return ""
+        pass
 
     def render(
         self,
@@ -335,48 +322,50 @@ class ThumbRenderer(QObject):
                 self.updated_ratio.emit(1)
         elif _filepath:
             try:
-                ext = _filepath.suffix.lower()
+                ext: str = _filepath.suffix.lower()
                 # Images =======================================================
-                if ext in IMAGE_TYPES:
-                    try:
-                        image = Image.open(_filepath)
-                        if image.mode != "RGB" and image.mode != "RGBA":
-                            image = image.convert(mode="RGBA")
-                        if image.mode == "RGBA":
-                            new_bg = Image.new("RGB", image.size, color=bg_color)
-                            new_bg.paste(image, mask=image.getchannel(3))
-                            image = new_bg
-
-                        image = ImageOps.exif_transpose(image)
-                    except DecompressionBombError as e:
-                        logging.info(
-                            f"[ThumbRenderer]{WARNING} Couldn't Render thumbnail for {_filepath.name} ({type(e).__name__})"
-                        )
-
-                elif ext in RAW_IMAGE_TYPES:
-                    try:
-                        with rawpy.imread(str(_filepath)) as raw:
-                            rgb = raw.postprocess()
-                            image = Image.frombytes(
-                                "RGB",
-                                (rgb.shape[1], rgb.shape[0]),
-                                rgb,
-                                decoder_name="raw",
+                if MediaType.IMAGE in MediaCategories.get_types(ext, True):
+                    # Raw Images -----------------------------------------------
+                    if MediaType.IMAGE_RAW in MediaCategories.get_types(ext, True):
+                        try:
+                            with rawpy.imread(str(_filepath)) as raw:
+                                rgb = raw.postprocess()
+                                image = Image.frombytes(
+                                    "RGB",
+                                    (rgb.shape[1], rgb.shape[0]),
+                                    rgb,
+                                    decoder_name="raw",
+                                )
+                        except DecompressionBombError as e:
+                            logging.info(
+                                f"[ThumbRenderer]{WARNING} Couldn't Render thumbnail for {_filepath.name} ({type(e).__name__})"
                             )
-                    except DecompressionBombError as e:
-                        logging.info(
-                            f"[ThumbRenderer]{WARNING} Couldn't Render thumbnail for {_filepath.name} ({type(e).__name__})"
-                        )
-                    except (
-                        rawpy._rawpy.LibRawIOError,
-                        rawpy._rawpy.LibRawFileUnsupportedError,
-                    ) as e:
-                        logging.info(
-                            f"[ThumbRenderer]{ERROR} Couldn't Render thumbnail for raw image {_filepath.name} ({type(e).__name__})"
-                        )
+                        except (
+                            rawpy._rawpy.LibRawIOError,
+                            rawpy._rawpy.LibRawFileUnsupportedError,
+                        ) as e:
+                            logging.info(
+                                f"[ThumbRenderer]{ERROR} Couldn't Render thumbnail for raw image {_filepath.name} ({type(e).__name__})"
+                            )
 
+                    # Normal Images --------------------------------------------
+                    else:
+                        try:
+                            image = Image.open(_filepath)
+                            if image.mode != "RGB" and image.mode != "RGBA":
+                                image = image.convert(mode="RGBA")
+                            if image.mode == "RGBA":
+                                new_bg = Image.new("RGB", image.size, color="#1e1e1e")
+                                new_bg.paste(image, mask=image.getchannel(3))
+                                image = new_bg
+
+                            image = ImageOps.exif_transpose(image)
+                        except DecompressionBombError as e:
+                            logging.info(
+                                f"[ThumbRenderer]{WARNING} Couldn't Render thumbnail for {_filepath.name} ({type(e).__name__})"
+                            )
                 # Videos =======================================================
-                elif ext in VIDEO_TYPES:
+                elif MediaType.VIDEO in MediaCategories.get_types(ext, True):
                     if is_readable_video(_filepath):
                         video = cv2.VideoCapture(str(_filepath), cv2.CAP_FFMPEG)
                         # TODO: Move this check to is_readable_video()
@@ -403,7 +392,7 @@ class ThumbRenderer(QObject):
                         )
 
                 # Plain Text ===================================================
-                elif ext in PLAINTEXT_TYPES:
+                elif MediaType.PLAINTEXT in MediaCategories.get_types(ext):
                     encoding = detect_char_encoding(_filepath)
                     with open(_filepath, "r", encoding=encoding) as text_file:
                         text = text_file.read(256)
@@ -412,7 +401,7 @@ class ThumbRenderer(QObject):
                     draw.text((16, 16), text, fill=fg_color)
                     image = bg
                 # Fonts ========================================================
-                elif _filepath.suffix.lower() in FONT_TYPES:
+                elif MediaType.FONT in MediaCategories.get_types(ext, True):
                     if gradient:
                         # Short (Aa) Preview
                         image = self._font_preview_short(_filepath, adj_size)
@@ -420,7 +409,7 @@ class ThumbRenderer(QObject):
                         # Large (Full Alphabet) Preview
                         image = self._font_preview_long(_filepath, adj_size)
                 # Audio ========================================================
-                elif ext in AUDIO_TYPES:
+                elif MediaType.AUDIO in MediaCategories.get_types(ext, True):
                     image = self._album_artwork(_filepath, ext)
                     if image is None:
                         image = self._audio_waveform(
@@ -450,7 +439,7 @@ class ThumbRenderer(QObject):
                 # 	image = Image.open(img_buf)
 
                 # Blender ===========================================================
-                elif _filepath.suffix.lower() in BLENDER_TYPES:
+                elif MediaType.BLENDER in MediaCategories.get_types(ext):
                     try:
                         blend_image = blend_thumb(str(_filepath))
 
@@ -542,6 +531,7 @@ class ThumbRenderer(QObject):
                 cv2.error,
                 DecompressionBombError,
                 UnicodeDecodeError,
+                OSError,
             ) as e:
                 # if e is not UnicodeDecodeError:
                 logging.info(
