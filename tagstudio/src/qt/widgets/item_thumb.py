@@ -363,12 +363,15 @@ class ItemThumb(FlowWidget):
             and (MediaType.IMAGE not in MediaCategories.get_types(ext))
             or (MediaType.IMAGE_RAW in MediaCategories.get_types(ext))
             or (MediaType.IMAGE_VECTOR in MediaCategories.get_types(ext))
-            or (MediaType.PHOTOSHOP in MediaCategories.get_types(ext))
+            or (MediaType.ADOBE_PHOTOSHOP in MediaCategories.get_types(ext))
             or ext
             in [
                 ".apng",
+                ".avif",
                 ".exr",
                 ".gif",
+                ".jxl",
+                ".webp",
             ]
         ):
             self.ext_badge.setHidden(False)

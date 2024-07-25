@@ -205,6 +205,10 @@ class ThumbRenderer(QObject):
 
         # Get icon by name
         icon: Image.Image = ThumbRenderer.rm.get(name)
+        if not icon:
+            icon = ThumbRenderer.rm.get("file_generic")
+            if not icon:
+                icon = Image.new(mode="RGBA", size=(32, 32), color="magenta")
 
         # Resize icon to fit icon_ratio
         icon = icon.resize(
@@ -268,8 +272,29 @@ class ThumbRenderer(QObject):
         return bg
 
     @staticmethod
-    def get_mime_icon_resource(ext: str = "") -> str:
-        pass
+    def get_icon_resource(url: Path) -> str:
+        """Return the name of the icon resource to use for a file type.
+
+        Args:
+            url (Path): The file url to assess.
+        """
+        ext = url.suffix.lower()
+        types: set[MediaType] = MediaCategories.get_types(ext, True)
+
+        # Loop though the specific (non-IANA) categories and return the string
+        # name of the first matching category found.
+        for cat in MediaCategories.ALL_CATEGORIES:
+            if not cat.is_iana:
+                if cat.media_type in types:
+                    return cat.media_type.value
+
+        # If the type is broader (IANA registered) then search those types.
+        for cat in MediaCategories.ALL_CATEGORIES:
+            if cat.is_iana:
+                if cat.media_type in types:
+                    return cat.media_type.value
+
+        return "file_generic"
 
     def render(
         self,
@@ -541,8 +566,8 @@ class ThumbRenderer(QObject):
                 if update_on_ratio_change:
                     self.updated_ratio.emit(1)
                 final = ThumbRenderer._get_icon(
-                    # name=ThumbRenderer.get_mime_icon_resource(_filepath.suffix.lower()),
-                    name="file_generic",
+                    name=ThumbRenderer.get_icon_resource(_filepath),
+                    # name="file_generic",
                     color="",
                     size=(adj_size, adj_size),
                     pixel_ratio=pixel_ratio,

@@ -13,7 +13,10 @@ logging.basicConfig(format="%(message)s", level=logging.INFO)
 class MediaType(str, Enum):
     """Names of media types."""
 
+    ADOBE_PHOTOSHOP: str = "adobe_photoshop"
+    AFFINITY_PHOTO: str = "affinity_photo"
     ARCHIVE: str = "archive"
+    AUDIO_MIDI: str = "audio_midi"
     AUDIO: str = "audio"
     BLENDER: str = "blender"
     DATABASE: str = "database"
@@ -27,7 +30,6 @@ class MediaType(str, Enum):
     MATERIAL: str = "material"
     MODEL: str = "model"
     PACKAGE: str = "package"
-    PHOTOSHOP: str = "photoshop"
     PLAINTEXT: str = "plaintext"
     PRESENTATION: str = "presentation"
     PROGRAM: str = "program"
@@ -67,6 +69,12 @@ class MediaCategories:
     # These sets are used either individually or together to form the final sets
     # for the MediaCategory(s).
     # These sets may be combined and are NOT 1:1 with the final categories.
+    _ADOBE_PHOTOSHOP_SET: set[str] = {
+        ".pdd",
+        ".psb",
+        ".psd",
+    }
+    _AFFINITY_PHOTO_SET: set[str] = {".afphoto"}
     _ARCHIVE_SET: set[str] = {
         ".7z",
         ".gz",
@@ -75,6 +83,10 @@ class MediaCategories:
         ".tar",
         ".tgz",
         ".zip",
+    }
+    _AUDIO_MIDI_SET: set[str] = {
+        ".mid",
+        ".midi",
     }
     _AUDIO_SET: set[str] = {
         ".aac",
@@ -182,6 +194,7 @@ class MediaCategories:
         ".jpg_large",
         ".jpg",
         ".jpg2",
+        ".jxl",
         ".png",
         ".psb",
         ".psd",
@@ -193,11 +206,6 @@ class MediaCategories:
     _MATERIAL_SET: set[str] = {".mtl"}
     _MODEL_SET: set[str] = {".3ds", ".fbx", ".obj", ".stl"}
     _PACKAGE_SET: set[str] = {".pkg"}
-    _PHOTOSHOP_SET: set[str] = {
-        ".pdd",
-        ".psb",
-        ".psd",
-    }
     _PLAINTEXT_SET: set[str] = {
         ".bat",
         ".css",
@@ -247,14 +255,29 @@ class MediaCategories:
         ".wmv",
     }
 
+    ADOBE_PHOTOSHOP_TYPES: MediaCategory = MediaCategory(
+        media_type=MediaType.ADOBE_PHOTOSHOP,
+        extensions=_ADOBE_PHOTOSHOP_SET,
+        is_iana=False,
+    )
+    AFFINITY_PHOTO_TYPES: MediaCategory = MediaCategory(
+        media_type=MediaType.AFFINITY_PHOTO,
+        extensions=_AFFINITY_PHOTO_SET,
+        is_iana=False,
+    )
     ARCHIVE_TYPES: MediaCategory = MediaCategory(
         media_type=MediaType.ARCHIVE,
         extensions=_ARCHIVE_SET,
         is_iana=False,
     )
+    AUDIO_MIDI_TYPES: MediaCategory = MediaCategory(
+        media_type=MediaType.AUDIO_MIDI,
+        extensions=_AUDIO_MIDI_SET,
+        is_iana=False,
+    )
     AUDIO_TYPES: MediaCategory = MediaCategory(
         media_type=MediaType.AUDIO,
-        extensions=_AUDIO_SET,
+        extensions=_AUDIO_SET | _AUDIO_MIDI_SET,
         is_iana=True,
     )
     BLENDER_TYPES: MediaCategory = MediaCategory(
@@ -317,11 +340,6 @@ class MediaCategories:
         extensions=_PACKAGE_SET,
         is_iana=False,
     )
-    PHOTOSHOP_TYPES: MediaCategory = MediaCategory(
-        media_type=MediaType.PHOTOSHOP,
-        extensions=_PHOTOSHOP_SET,
-        is_iana=False,
-    )
     PLAINTEXT_TYPES: MediaCategory = MediaCategory(
         media_type=MediaType.PLAINTEXT,
         extensions=_PLAINTEXT_SET,
@@ -359,7 +377,10 @@ class MediaCategories:
     )
 
     ALL_CATEGORIES: list[MediaCategory] = [
+        ADOBE_PHOTOSHOP_TYPES,
+        AFFINITY_PHOTO_TYPES,
         ARCHIVE_TYPES,
+        AUDIO_MIDI_TYPES,
         AUDIO_TYPES,
         BLENDER_TYPES,
         DATABASE_TYPES,
@@ -373,7 +394,6 @@ class MediaCategories:
         MATERIAL_TYPES,
         MODEL_TYPES,
         PACKAGE_TYPES,
-        PHOTOSHOP_TYPES,
         PLAINTEXT_TYPES,
         PRESENTATION_TYPES,
         PROGRAM_TYPES,
