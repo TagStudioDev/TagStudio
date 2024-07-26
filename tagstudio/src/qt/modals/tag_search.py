@@ -112,10 +112,11 @@ class TagSearchPanel(PanelWidget):
         self.first_tag_id = found_tags[0] if found_tags else None
 
         if query:
-            # sort tags alphabetically and then by color
+            # sort tags by whether the tag's name is the text that's matching the search, alphabetically, and then by color
             sorted_tags = sorted(
                 found_tags,
                 key=lambda tag_id: (
+                    not self.lib.get_tag(tag_id).name.lower().startswith(query.lower()),
                     self.lib.get_tag(tag_id).display_name(self.lib),
                     TAG_COLORS.index(self.lib.get_tag(tag_id).color.lower()),
                 ),
