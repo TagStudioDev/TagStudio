@@ -1375,8 +1375,13 @@ class Library:
                         negative_flags.append(negative_flag)
                         flags.remove(flag)
                 if negative_flags:
-                    query_part["EMPTY"] = negative_flags
-                query_part[unbound_keyname] = flags
+                    query_part[KeyNameConstants.EMPTY_FIELD_QUERY_KEYNAME] = (
+                        negative_flags
+                    )
+                if flags:
+                    query_part[unbound_keyname] = flags
+                else:
+                    query_part.pop(unbound_keyname)
             meta_list.append(query_part)
 
         logging.info(f"Parsed values: {meta_list}")
@@ -2194,10 +2199,10 @@ class SpecialFlag:
     only_missing: bool
 
     def __init__(self, query: str):
-        self.only_no_author: bool = "no author" in query or "no artist" in query
-        self.only_untagged: bool = "untagged" in query or "no tags" in query
-        self.only_empty: bool = "empty" in query or "no fields" in query
-        self.only_missing: bool = "missing" in query or "no file" in query
+        self.only_no_author: bool = "noauthor" in query or "noartist" in query
+        self.only_untagged: bool = "untagged" in query or "notags" in query
+        self.only_empty: bool = "empty" in query or "nofields" in query
+        self.only_missing: bool = "missing" in query or "nofile" in query
 
 
 class Filter:

@@ -71,6 +71,7 @@ decomposition_cases: list[tuple] = [
         [{key_unbound: ["tag1"], key_empty: ["description"]}, {"description": "desc"}],
     ),
     ("; no author", [{key_unbound: ["no", "author"]}]),
+    ("-author", [{key_empty: ["author"]}]),
     ("description: Foo", [{"description": "foo"}]),
 ]
 
@@ -99,15 +100,16 @@ populate_tags_cases: list[tuple] = [
 
 # no_author, untagged, empty, missing
 special_flag_cases: list[tuple] = [
-    ("no author untagged", (True, True, False, False)),
-    ("empty no file", (False, False, True, True)),
-    ("missing untagged no artist", (True, True, False, True)),
+    ("noauthoruntagged", (True, True, False, False)),
+    ("emptynofile", (False, False, True, True)),
+    ("missinguntaggednoartist", (True, True, False, True)),
+    ("noartist", (True, False, False, False)),
 ]
 
 add_entries_from_special_cases: list[tuple] = [
-    (test_entry_one, "no author", False),
+    (test_entry_one, "noauthor", False),
     (test_entry_two, "empty", True),
-    (test_entry_three, "no author", True),
+    (test_entry_three, "noauthor", True),
     (test_entry_four, "untagged", True),
 ]
 
@@ -119,12 +121,12 @@ required_fields_empty_cases: list[tuple] = [
 ]
 
 filter_case_one: tuple = (
-    [{key_unbound: "no author", "description": "des"}],
+    [{key_unbound: ["no", "author"], "description": "des"}],
     SearchMode.OR,
     [(ItemType.ENTRY, 2), (ItemType.ENTRY, 5)],
 )
 filter_case_two: tuple = (
-    [{key_unbound: "no tags"}, {"description": "des"}],
+    [{key_unbound: ["no", "tags"]}, {"description": "des"}],
     SearchMode.OR,
     [
         (ItemType.ENTRY, 1),
@@ -140,13 +142,13 @@ filter_case_three: tuple = (
     [],
 )
 filter_case_four: tuple = (
-    [{"tag_id": "1001", key_unbound: "no author"}],
+    [{"tag_id": "1001", key_unbound: ["no", "author"]}],
     SearchMode.OR,
     [(ItemType.ENTRY, 2)],
 )
 
 filter_case_five: tuple = (
-    [{"tag_id": "1000"}, {key_unbound: "no author"}],
+    [{"tag_id": "1000"}, {key_unbound: ["no", "author"]}],
     SearchMode.OR,
     [
         (ItemType.ENTRY, 0),
