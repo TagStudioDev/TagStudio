@@ -71,13 +71,13 @@ decomposition_cases: list[tuple] = [
         [{key_unbound: ["tag1"], key_empty: ["description"]}, {"description": "desc"}],
     ),
     ("; no author", [{key_unbound: ["no", "author"]}]),
-    ("description: Foo", [{"description": "foo"}])
+    ("description: Foo", [{"description": "foo"}]),
 ]
 
 remap_cases: list[tuple] = [
     (test_entry_one, {"tags": [1000, 1001], "author": ["James"]}),
     (test_entry_two, {}),
-    (test_entry_three, {"tags": [1001], "description": ["Foo description"]}),
+    (test_entry_three, {"tags": [1001], "description": ["foo description"]}),
     (test_entry_four, {"author": ["Victor"], "description": ["description"]}),
     (test_entry_five, {"author": ["Victor", "James"]}),
 ]
@@ -157,10 +157,10 @@ filter_case_five: tuple = (
 )
 
 filter_case_six: tuple = (
-        [{"description": "foo"}],
-        SearchMode.OR,
-        [(ItemType.ENTRY, 2), (ItemType.ENTRY, 5)]
-        )
+    [{"description": "foo"}],
+    SearchMode.OR,
+    [(ItemType.ENTRY, 2), (ItemType.ENTRY, 5)],
+)
 
 negative_filter_case_one: tuple = (
     [{key_empty: "description"}],
@@ -180,7 +180,6 @@ negative_filter_case_three: tuple = (
     [
         (ItemType.ENTRY, 0),
         (ItemType.ENTRY, 1),
-        (ItemType.ENTRY, 2),
         (ItemType.ENTRY, 3),
         (ItemType.ENTRY, 4),
     ],

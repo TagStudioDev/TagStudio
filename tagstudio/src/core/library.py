@@ -2450,6 +2450,12 @@ class Filter:
             for key, value in field.items():
                 key_mapped = self._field_id_to_name_map.get(int(key))
                 key_type = self.get_field_obj(key)["type"]
+                if isinstance(value, str):
+                    value = value.casefold()
+                elif isinstance(value, list):
+                    for i in value:
+                        if isinstance(i, str):
+                            i = i.casefold()
                 if (
                     key_type != "tag_box"
                     and key_mapped != "author"
