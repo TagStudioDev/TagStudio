@@ -34,7 +34,7 @@ _default_sort: Sort = [
 def normalize_sort(old_sort: Sort = None) -> Sort:
     if old_sort is None:
         old_sort = []
-    old_sort.extend(_default_sort)
+    old_sort.extend(_default_sort.copy())
 
     sorted_properties: set[TagSortProperty] = set()
     new_sort = []
@@ -72,8 +72,11 @@ def reverse_sort(old_sort: Sort) -> Sort:
 
 
 def get_key(
-    lib: Library, tag_id_list, sort: Sort = _default_sort
+    lib: Library, tag_id_list, sort: Sort = None
 ) -> Callable[[int], list[Any]]:
+    if sort is None:
+        sort = _default_sort.copy()
+    
     sort = normalize_sort(sort)
 
     outer_sort: Sort = []
@@ -177,9 +180,12 @@ def _get_canonical_lineage(
     inner_sort: Sort,
     tag_id: int,
     tag_id_list: list[int],
-    last_generation_ids=set([-1]),
+    last_generation_ids=None,
     first_gen=True,
 ) -> list[list[Any]]:
+    if first_gen:
+        last_generation_ids = set([-1])
+    
     ancestor_id_queue: list[int] = [tag_id]
     encountered_tag_ids: set[int] = set(last_generation_ids)
     encountered_tag_ids.add(tag_id)
