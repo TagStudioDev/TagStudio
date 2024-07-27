@@ -10,7 +10,7 @@ def test_open_library(test_library, snapshot_json):
     [
         ("First",),
         ("Second",),
-        ("--nomatch--",),
+        ("/--nomatch--/",),
     ],
 )
 def test_library_search(test_library, query, snapshot_json):
