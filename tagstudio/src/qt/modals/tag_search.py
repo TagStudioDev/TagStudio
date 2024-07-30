@@ -18,6 +18,7 @@ from PySide6.QtWidgets import (
 )
 
 from src.core.library import Library
+from src.core.tag_sort import get_key
 from src.core.palette import ColorType, get_tag_color
 from src.qt.widgets.panel import PanelWidget
 from src.qt.widgets.tag import TagWidget
@@ -111,7 +112,9 @@ class TagSearchPanel(PanelWidget):
         found_tags = self.lib.search_tags(query, include_cluster=True)[: self.tag_limit]
         self.first_tag_id = found_tags[0] if found_tags else None
 
-        for tag_id in found_tags:
+        sorted_tags = sorted(found_tags, key=get_key(self.lib, found_tags))
+
+        for tag_id in sorted_tags:
             c = QWidget()
             l = QHBoxLayout(c)
             l.setContentsMargins(0, 0, 0, 0)
