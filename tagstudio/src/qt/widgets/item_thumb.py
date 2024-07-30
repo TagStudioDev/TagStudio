@@ -24,12 +24,10 @@ from PySide6.QtWidgets import (
 from src.core.enums import FieldID
 from src.core.library import ItemType, Library, Entry
 from src.core.constants import (
-    AUDIO_TYPES,
-    VIDEO_TYPES,
-    IMAGE_TYPES,
     TAG_FAVORITE,
     TAG_ARCHIVED,
 )
+from src.core.media_types import MediaCategories, MediaType
 from src.qt.flowlayout import FlowWidget
 from src.qt.helpers.file_opener import FileOpenerHelper
 from src.qt.widgets.thumb_renderer import ThumbRenderer
@@ -358,10 +356,24 @@ class ItemThumb(FlowWidget):
     def set_extension(self, ext: str) -> None:
         if ext and ext.startswith(".") is False:
             ext = "." + ext
-        if ext and ext not in IMAGE_TYPES or ext in [".gif", ".apng"]:
+        if (
+            ext
+            and (MediaType.IMAGE not in MediaCategories.get_types(ext))
+            or (MediaType.IMAGE_RAW in MediaCategories.get_types(ext))
+            or (MediaType.IMAGE_VECTOR in MediaCategories.get_types(ext))
+            or (MediaType.PHOTOSHOP in MediaCategories.get_types(ext))
+            or ext
+            in [
+                ".apng",
+                ".exr",
+                ".gif",
+            ]
+        ):
             self.ext_badge.setHidden(False)
             self.ext_badge.setText(ext.upper()[1:])
-            if ext in VIDEO_TYPES + AUDIO_TYPES:
+            if (MediaType.VIDEO in MediaCategories.get_types(ext)) or (
+                MediaType.AUDIO in MediaCategories.get_types(ext)
+            ):
                 self.count_badge.setHidden(False)
         else:
             if self.mode == ItemType.ENTRY:
