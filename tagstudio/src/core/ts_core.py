@@ -1,3 +1,4 @@
+# type: ignore
 # Copyright (C) 2024 Travis Abendshien (CyanVoxel).
 # Licensed under the GPL-3.0 License.
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
@@ -17,16 +18,12 @@ class TagStudioCore:
     Holds all TagStudio session data and provides methods to manage it.
     """
 
-    def __init__(self):
-        self.lib: Library = Library()
-
     def get_gdl_sidecar(self, filepath: str | Path, source: str = "") -> dict:
         """
         Attempts to open and dump a Gallery-DL Sidecar sidecar file for
         the filepath.\n Returns a formatted object with notable values or an
         empty object if none is found.
         """
-        json_dump = {}
         info = {}
         _filepath: Path = Path(filepath)
         _filepath = _filepath.parent / (_filepath.stem + ".json")

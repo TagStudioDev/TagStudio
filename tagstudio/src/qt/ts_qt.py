@@ -51,6 +51,7 @@ from PySide6.QtWidgets import (
     QMenu,
     QMenuBar,
     QComboBox,
+    QTreeWidget,
 )
 from humanfriendly import format_timespan
 
@@ -187,7 +188,7 @@ class QtDriver(QObject):
             None,
             "Open/Create Library",
             "/",
-            QFileDialog.ShowDirsOnly,  # type: ignore
+            QFileDialog.Option.ShowDirsOnly,
         )
         if dir not in (None, ""):
             self.open_library(Path(dir))
@@ -469,7 +470,7 @@ class QtDriver(QObject):
         menu_bar.addMenu(help_menu)
 
         self.preview_panel = PreviewPanel(self.lib, self)
-        l: QHBoxLayout = self.main_window.splitter
+        l = self.main_window.splitter
         l.addWidget(self.preview_panel)
 
         QFontDatabase.addApplicationFont(
@@ -621,7 +622,7 @@ class QtDriver(QObject):
                     None,
                     "Library Location not found, please select location to save Library",
                     "/",
-                    QFileDialog.ShowDirsOnly,
+                    QFileDialog.Option.ShowDirsOnly,
                 )
                 if dir not in (None, ""):
                     self.lib.library_dir = dir
@@ -677,7 +678,7 @@ class QtDriver(QObject):
         self.modal.saved.connect(
             lambda: (
                 self.lib.add_tag(panel.build_tag()),
-                self.modal.hide(),
+                self.modal.hide(),  # type: ignore
             )
         )
         self.modal.show()
@@ -742,7 +743,7 @@ class QtDriver(QObject):
         # vvv This one runs the macros when adding new files to the library.
         r.done.connect(
             lambda: (
-                pw.hide(),
+                pw.hide(),  # type: ignore
                 pw.deleteLater(),  # type: ignore
                 self.add_new_files_runnable(),
             )
@@ -795,8 +796,8 @@ class QtDriver(QObject):
         r = CustomRunnable(iterator.run)
         r.done.connect(
             lambda: (
-                pw.hide(),
-                pw.deleteLater(),
+                pw.hide(),  # type: ignore
+                pw.deleteLater(),  # type: ignore
                 self.filter_items(),  # type: ignore
             )
         )

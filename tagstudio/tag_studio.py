@@ -42,13 +42,6 @@ def main():
         type=str,
         help="Path to a TagStudio .ini or .plist config file to use.",
     )
-    parser.add_argument(
-        "-b",
-        "--backend",
-        dest="backend",
-        type=str,
-        help="Either SQLite or JSON. (Default: JSON)",
-    )
 
     # parser.add_argument('--browse', dest='browse', action='store_true',
     #                     help='Jumps to entry browsing on startup.')

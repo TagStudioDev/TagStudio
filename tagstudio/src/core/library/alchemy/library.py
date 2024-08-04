@@ -603,8 +603,17 @@ class Library:
     def fix_missing_files(self) -> None:
         logger.error("fix_missing_files to be implemented")
 
-    def refresh_dupe_files(self):
+    def refresh_dupe_files(self, filename: str):
         logger.error("refresh_dupe_files to be implemented")
 
     def remove_missing_files(self):
         logger.error("remove_missing_files to be implemented")
+
+    def get_entry_id_from_filepath(self, item):
+        logger.error("get_entry_id_from_filepath to be implemented")
+
+    def mirror_entry_fields(self, items: list):
+        logger.error("mirror_entry_fields to be implemented")
+
+    def merge_dupe_entries(self):
+        logger.error("merge_dupe_entries to be implemented")

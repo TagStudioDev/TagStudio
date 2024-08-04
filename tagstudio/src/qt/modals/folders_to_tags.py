@@ -17,9 +17,6 @@ from PySide6.QtWidgets import (
     QScrollArea,
     QFrame,
 )
-from parso.python.tree import Literal
-
-from src.core.enums import FieldID
 from src.core.library import Tag, Library
 from src.core.library.alchemy.enums import TagColor
 from src.core.palette import ColorType, get_tag_color
@@ -58,7 +55,7 @@ def folders_to_tags(library: Library):
                     # TODO - subtags
                     # ([branch["tag"].id] if "tag" in branch else []),
                 )
-                library.add_tag_to_library(new_tag)
+                library.add_tag(new_tag)
                 branch["dirs"][folder] = dict(dirs={}, tag=new_tag)
             branch = branch["dirs"][folder]
         return branch["tag"]
@@ -69,21 +66,19 @@ def folders_to_tags(library: Library):
 
     for entry in library.entries:
         folders = list(entry.path.parts)
-        if len(folders) == 1 and folders[0] == "":
+        if folders == [""]:
             continue
+
         tag = add_folders_to_tree(folders)
-        if tag:
-            if not entry.has_tag(library, tag.id):
-                entry.add_tag(library, tag.id, FieldID.TAGS)
+        if tag and not entry.has_tag(tag):
+            entry.add_tag(tag.id)  # Field.TAGS
 
     logging.info("Done")
 
 
-def reverse_tag(library: Library, tag: Tag, items: list[Tag]) -> list[Tag]:
-    if items is not None:
-        items.append(tag)
-    else:
-        items = [tag]
+def reverse_tag(library: Library, tag: Tag, items: list[Tag] | None) -> list[Tag]:
+    items = items or []
+    items.append(tag)
 
     if not tag.subtag_ids:
         items.reverse()

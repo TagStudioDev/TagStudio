@@ -6,8 +6,20 @@ strict_optional = false
 disable_error_code = ["union-attr", "annotation-unchecked", "import-untyped"]
 explicit_package_bases = true
 warn_unused_ignores = true
-exclude = ['tests']
 check_untyped_defs = true
+
+[[tool.mypy.overrides]]
+module = "tests.*"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = "src.qt.main_window"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = "src.qt.ui.home_ui"
+ignore_errors = true
+
 
 [tool.pytest.ini_options]
 #addopts = "-m 'not qt'"

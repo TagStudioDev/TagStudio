@@ -42,5 +42,11 @@ class MergeDuplicateEntries(QObject):
         )
 
         r = CustomRunnable(lambda: iterator.run())
-        r.done.connect(lambda: (pw.hide(), pw.deleteLater(), self.done.emit()))
+        r.done.connect(
+            lambda: (
+                pw.hide(),  # type: ignore
+                pw.deleteLater(),  # type: ignore
+                self.done.emit(),  # type: ignore
+            )
+        )
         QThreadPool.globalInstance().start(r)

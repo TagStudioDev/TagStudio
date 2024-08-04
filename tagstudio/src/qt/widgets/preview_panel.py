@@ -287,7 +287,7 @@ class PreviewPanel(QWidget):
         clear_layout(layout)
 
         label = QLabel("Recent Libraries")
-        label.setAlignment(Qt.AlignCenter)  # type: ignore
+        label.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         row_layout = QHBoxLayout()
         row_layout.addWidget(label)
@@ -634,7 +634,7 @@ class PreviewPanel(QWidget):
                 )
                 self.preview_img.setCursor(Qt.CursorShape.ArrowCursor)
 
-                ratio: float = self.devicePixelRatio()
+                ratio = self.devicePixelRatio()
                 self.thumb_renderer.render(
                     time.time(),
                     "",

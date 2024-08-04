@@ -28,6 +28,7 @@ from PySide6.QtGui import (
     QAction,
     QRegion,
     QBitmap,
+    QPainter,
 )
 from PySide6.QtSvgWidgets import QSvgWidget
 from src.qt.helpers.file_opener import FileOpenerHelper
@@ -122,7 +123,7 @@ class VideoPlayer(QGraphicsView):
         autoplay_action.setCheckable(True)
         self.addAction(autoplay_action)
         autoplay_action.setChecked(
-            self.driver.settings.value(SettingItems.AUTOPLAY, True, bool)
+            bool(self.driver.settings.value(SettingItems.AUTOPLAY, True, type=bool))
         )
         autoplay_action.triggered.connect(lambda: self.toggleAutoplay())
         self.autoplay = autoplay_action
@@ -176,37 +177,30 @@ class VideoPlayer(QGraphicsView):
     def eventFilter(self, obj: QObject, event: QEvent) -> bool:
         # This chunk of code is for the video controls.
         if (
-            obj == self.play_pause
-            and event.type() == QEvent.Type.MouseButtonPress
+            event.type() == QEvent.Type.MouseButtonPress
             and event.button() == Qt.MouseButton.LeftButton  # type: ignore
         ):
-            if self.player.hasVideo():
+            if obj == self.play_pause and self.player.hasVideo():
                 self.pauseToggle()
-
-        if (
-            obj == self.mute_button
-            and event.type() == QEvent.Type.MouseButtonPress
-            and event.button() == Qt.MouseButton.LeftButton  # type: ignore
-        ):
-            if self.player.hasAudio():
+            elif obj == self.mute_button and self.player.hasAudio():
                 self.muteToggle()
 
-        if (
-            obj == self.video_preview
-            and event.type() == QEvent.Type.GraphicsSceneHoverEnter
-            or event.type() == QEvent.Type.HoverEnter
-        ):
-            if self.video_preview.isUnderMouse():
-                self.underMouse()
-                self.hover_fix_timer.start(10)
-        elif (
-            obj == self.video_preview
-            and event.type() == QEvent.Type.GraphicsSceneHoverLeave
-            or event.type() == QEvent.Type.HoverLeave
-        ):
-            if not self.video_preview.isUnderMouse():
-                self.hover_fix_timer.stop()
-                self.releaseMouse()
+        elif obj == self.video_preview:
+            if event.type() in (
+                QEvent.Type.GraphicsSceneHoverEnter,
+                QEvent.Type.HoverEnter,
+            ):
+                if self.video_preview.isUnderMouse():
+                    self.underMouse()
+                    self.hover_fix_timer.start(10)
+            elif event.type() in (
+                QEvent.Type.GraphicsSceneHoverLeave,
+                QEvent.Type.HoverLeave,
+            ):
+                if not self.video_preview.isUnderMouse():
+                    self.hover_fix_timer.stop()
+                    self.releaseMouse()
+
         return super().eventFilter(obj, event)
 
     def checkIfStillHovered(self) -> None:
@@ -334,14 +328,13 @@ class VideoPlayer(QGraphicsView):
                 int(self.video_preview.size().height()),
             )
         )
-        return
 
 
 class VideoPreview(QGraphicsVideoItem):
     def boundingRect(self):
         return QRectF(0, 0, self.size().width(), self.size().height())
 
-    def paint(self, painter, option, widget):
+    def paint(self, painter, option, widget):  # type: ignore
         # painter.brush().setColor(QColor(0, 0, 0, 255))
         # You can set any shape you want here.
         # RoundedRect is the standard rectangle with rounded corners.

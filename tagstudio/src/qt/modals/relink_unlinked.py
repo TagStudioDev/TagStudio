@@ -50,7 +50,12 @@ class RelinkUnlinkedEntries(QObject):
 
         r = CustomRunnable(lambda: iterator.run())
         r.done.connect(
-            lambda: (pw.hide(), pw.deleteLater(), self.done.emit(), self.reset_fixed())
+            lambda: (
+                pw.hide(),  # type: ignore
+                pw.deleteLater(),  # type: ignore
+                self.done.emit(),  # type: ignore
+                self.reset_fixed(),
+            )
         )
         QThreadPool.globalInstance().start(r)
 
