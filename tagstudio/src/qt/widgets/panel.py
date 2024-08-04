@@ -15,7 +15,7 @@ class PanelModal(QWidget):
     # figure out what you want from this.
     def __init__(
         self,
-        widget: "PanelWidget",
+        widget,
         title: str,
         window_title: str,
         done_callback: Callable = None,

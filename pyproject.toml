@@ -7,7 +7,7 @@ disable_error_code = ["union-attr", "annotation-unchecked", "import-untyped"]
 explicit_package_bases = true
 warn_unused_ignores = true
 exclude = ['tests']
-
+check_untyped_defs = true
 
 [tool.pytest.ini_options]
 #addopts = "-m 'not qt'"

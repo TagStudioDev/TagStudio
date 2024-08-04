@@ -17,12 +17,13 @@ from PySide6.QtWidgets import (
     QScrollArea,
     QFrame,
 )
+from parso.python.tree import Literal
 
 from src.core.enums import FieldID
 from src.core.library import Tag, Library
 from src.core.library.alchemy.enums import TagColor
 from src.core.palette import ColorType, get_tag_color
-from src.qt.flowlayout import FlowLayout
+from src.qt.flowlayout import FlowLayout  # type: ignore[attr-defined]
 from src.qt.widgets.preview_panel import logger
 
 # Only import for type checking/autocompletion, will not be imported at runtime.
@@ -36,18 +37,18 @@ INFO = f"[INFO]"
 logging.basicConfig(format="%(message)s", level=logging.INFO)
 
 
-def folders_to_tags(library):
+def folders_to_tags(library: Library):
     logging.info("Converting folders to Tags")
     tree: dict = dict(dirs={})
 
-    def add_tag_to_tree(items: list):
+    def add_tag_to_tree(items: list[Tag]):
         branch = tree
         for tag in items:
             if tag.name not in branch["dirs"]:
                 branch["dirs"][tag.name] = dict(dirs={}, tag=tag)
             branch = branch["dirs"][tag.name]
 
-    def add_folders_to_tree(items: list[str]):
+    def add_folders_to_tree(items: list[str]) -> Tag:
         branch: dict = tree
         logger.info("add_folders_to_tree", branch=branch)
         for folder in items:
@@ -78,19 +79,19 @@ def folders_to_tags(library):
     logging.info("Done")
 
 
-def reverse_tag(library, tag, list: list) -> list:
-    if list is not None:
-        list.append(tag)
+def reverse_tag(library: Library, tag: Tag, items: list[Tag]) -> list[Tag]:
+    if items is not None:
+        items.append(tag)
     else:
-        list = [tag]
+        items = [tag]
 
-    if len(tag.subtag_ids) == 0:
-        list.reverse()
-        return list
-    else:
-        for subtag_id in tag.subtag_ids:
-            subtag = library.get_tag(subtag_id)
-        return reverse_tag(library, subtag, list)
+    if not tag.subtag_ids:
+        items.reverse()
+        return items
+
+    for subtag_id in tag.subtag_ids:
+        subtag = library.get_tag(subtag_id)
+    return reverse_tag(library, subtag, items)
 
 
 # =========== UI ===========
@@ -158,7 +159,7 @@ def generate_preview_data(library):
 
 class FoldersToTagsModal(QWidget):
     # done = Signal(int)
-    def __init__(self, library: Library, driver: "QtDriver"):
+    def __init__(self, library: "Library", driver: "QtDriver"):
         super().__init__()
         self.library = library
         self.driver = driver

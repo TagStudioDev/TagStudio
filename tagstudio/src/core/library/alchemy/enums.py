@@ -65,6 +65,7 @@ class FilterState:
     name: str | None = None
     id: int | None = None
     tag_id: int | None = None
+    search_mode: SearchMode = SearchMode.AND  # TODO - actually implement this
 
     # default_search: str = "name"
 

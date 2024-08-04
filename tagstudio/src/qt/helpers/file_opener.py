@@ -146,9 +146,9 @@ class FileOpenerLabel(QLabel):
         """
         super().mousePressEvent(event)
 
-        if event.button() == Qt.LeftButton:
+        if event.button() == Qt.MouseButton.LeftButton:
             opener = FileOpenerHelper(self.filepath)
             opener.open_explorer()
-        elif event.button() == Qt.RightButton:
+        elif event.button() == Qt.MouseButton.RightButton:
             # Show context menu
             pass

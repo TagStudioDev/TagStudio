@@ -32,7 +32,7 @@ class FileExtensionItemDelegate(QStyledItemDelegate):
 class FileExtensionModal(PanelWidget):
     done = Signal()
 
-    def __init__(self, library: Library):
+    def __init__(self, library: "Library"):
         super().__init__()
         # Initialize Modal =====================================================
         self.lib = library

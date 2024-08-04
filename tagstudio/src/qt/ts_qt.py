@@ -64,7 +64,7 @@ from src.core.constants import (
 )
 from src.core.library.alchemy.enums import SearchMode, FilterState, ItemType
 from src.core.utils.web import strip_web_protocol
-from src.qt.flowlayout import FlowLayout
+from src.qt.flowlayout import FlowLayout  # type: ignore
 from src.qt.main_window import Ui_MainWindow
 from src.qt.helpers.function_iterator import FunctionIterator
 from src.qt.helpers.custom_runnable import CustomRunnable
@@ -184,7 +184,10 @@ class QtDriver(QObject):
 
     def open_library_from_dialog(self):
         dir = QFileDialog.getExistingDirectory(
-            None, "Open/Create Library", "/", QFileDialog.ShowDirsOnly
+            None,
+            "Open/Create Library",
+            "/",
+            QFileDialog.ShowDirsOnly,  # type: ignore
         )
         if dir not in (None, ""):
             self.open_library(Path(dir))
@@ -379,7 +382,7 @@ class QtDriver(QObject):
         check_action = QAction("Open library on start", self)
         check_action.setCheckable(True)
         check_action.setChecked(
-            self.settings.value(SettingItems.START_LOAD_LAST, True, type=bool)
+            self.settings.value(SettingItems.START_LOAD_LAST, True, type=bool)  # type: ignore[arg-type]
         )
         check_action.triggered.connect(
             lambda checked: self.settings.setValue(
@@ -435,11 +438,11 @@ class QtDriver(QObject):
         show_libs_list_action = QAction("Show Recent Libraries", menu_bar)
         show_libs_list_action.setCheckable(True)
         show_libs_list_action.setChecked(
-            self.settings.value(SettingItems.WINDOW_SHOW_LIBS, True, type=bool)
+            self.settings.value(SettingItems.WINDOW_SHOW_LIBS, True, type=bool)  # type: ignore
         )
         show_libs_list_action.triggered.connect(
             lambda checked: (
-                self.settings.setValue(SettingItems.WINDOW_SHOW_LIBS, checked),
+                self.settings.setValue(SettingItems.WINDOW_SHOW_LIBS, checked),  # type: ignore
                 self.toggle_libs_list(checked),
             )
         )
@@ -522,12 +525,17 @@ class QtDriver(QObject):
 
         search_button: QPushButton = self.main_window.searchButton
         search_button.clicked.connect(
-            lambda: self.filter_items(self.main_window.searchField.text())
+            lambda: self.filter_items(
+                FilterState(name=self.main_window.searchField.text())
+            )
         )
         search_field: QLineEdit = self.main_window.searchField
         search_field.returnPressed.connect(
             # search_field
-            lambda: self.filter_items(self.main_window.searchField.text())
+            # TODO - parse search field for filters
+            lambda: self.filter_items(
+                FilterState(name=self.main_window.searchField.text())
+            )
         )
         search_type_selector: QComboBox = self.main_window.comboBox_2
         search_type_selector.currentIndexChanged.connect(
@@ -548,9 +556,7 @@ class QtDriver(QObject):
         self.main_window.activateWindow()
         self.main_window.toggle_landing_page(True)
 
-        self.main_window.pagination.index.connect(
-            lambda i: (self.page_move(page_id=i),)
-        )
+        self.main_window.pagination.index.connect(lambda i: self.page_move(page_id=i))
 
         self.splash.finish(self.main_window)
         self.preview_panel.update_widgets()
@@ -707,7 +713,12 @@ class QtDriver(QObject):
             "File Extensions",
             has_save=True,
         )
-        self.modal.saved.connect(lambda: (panel.save(), self.filter_items("")))
+        self.modal.saved.connect(
+            lambda: (
+                panel.save(),
+                self.filter_items(),  # type: ignore
+            )
+        )
         self.modal.show()
 
     def add_new_files_callback(self):
@@ -732,7 +743,7 @@ class QtDriver(QObject):
         r.done.connect(
             lambda: (
                 pw.hide(),
-                pw.deleteLater(),
+                pw.deleteLater(),  # type: ignore
                 self.add_new_files_runnable(),
             )
         )
@@ -782,7 +793,13 @@ class QtDriver(QObject):
             )
         )
         r = CustomRunnable(iterator.run)
-        r.done.connect(lambda: (pw.hide(), pw.deleteLater(), self.filter_items("")))
+        r.done.connect(
+            lambda: (
+                pw.hide(),
+                pw.deleteLater(),
+                self.filter_items(),  # type: ignore
+            )
+        )
         QThreadPool.globalInstance().start(r)
 
     def new_file_macros_runnable(self, new_ids):
@@ -893,7 +910,6 @@ class QtDriver(QObject):
         self.update_filter(page_index=page_index)
         self.filter_items()
 
-    @typing.no_type_check
     def purge_item_from_navigation(self, idx: int):
         logger.error("not implemented")
         # TODO - types here are ambiguous
@@ -1103,9 +1119,13 @@ class QtDriver(QObject):
             pages_count, self.filter.page_index, emit=False
         )
 
-    def set_search_type(self, mode=SearchMode.AND):
-        self.search_mode = mode
-        self.filter_items(self.main_window.searchField.text())
+    def set_search_type(self, mode: SearchMode = SearchMode.AND):
+        self.filter_items(
+            FilterState(
+                search_mode=mode,
+                name=self.main_window.searchField.text(),
+            )
+        )
 
     def remove_recent_library(self, item_key: str):
         self.settings.beginGroup(SettingItems.LIBS_LIST)
@@ -1123,7 +1143,7 @@ class QtDriver(QObject):
         all_libs = {str(time.time()): str(path)}
 
         for item_key in self.settings.allKeys():
-            item_path = self.settings.value(item_key)
+            item_path = str(self.settings.value(item_key, type=str))
             if Path(item_path) != path:
                 all_libs[item_key] = item_path
 

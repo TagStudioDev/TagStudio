@@ -73,11 +73,7 @@ def main():
     )
     args = parser.parse_args()
 
-    be = args.backend
-    if be == "json":
-        from src.core.library import json as backend
-    else:
-        from src.core.library import alchemy as backend
+    from src.core.library import alchemy as backend
 
     driver = QtDriver(backend, args)
     ui_name = "Qt"

@@ -253,7 +253,7 @@ class PreviewPanel(QWidget):
         settings.beginGroup(SettingItems.LIBS_LIST)
         lib_items: dict[str, tuple[str, str]] = {}
         for item_tstamp in settings.allKeys():
-            val: str = settings.value(item_tstamp)
+            val = str(settings.value(item_tstamp, type=str))
             cut_val = val
             if len(val) > 45:
                 cut_val = f"{val[0:10]} ... {val[-10:]}"
@@ -468,7 +468,7 @@ class PreviewPanel(QWidget):
                 )
                 self.preview_img.setCursor(Qt.CursorShape.ArrowCursor)
 
-                ratio: float = self.devicePixelRatio()
+                ratio = self.devicePixelRatio()
                 self.thumb_renderer.render(
                     time.time(),
                     "",
@@ -500,7 +500,7 @@ class PreviewPanel(QWidget):
             if not self.selected or self.selected != self.driver.selected:
                 filepath = self.lib.library_dir / item.path
                 self.file_label.setFilePath(filepath)
-                ratio: float = self.devicePixelRatio()
+                ratio = self.devicePixelRatio()
                 self.thumb_renderer.render(
                     time.time(),
                     filepath,

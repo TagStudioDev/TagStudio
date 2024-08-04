@@ -599,3 +599,12 @@ class Library:
         logger.info("refreshing dupe entries", filename=filename)
         # TODO - implement this
         raise NotImplementedError
+
+    def fix_missing_files(self) -> None:
+        logger.error("fix_missing_files to be implemented")
+
+    def refresh_dupe_files(self):
+        logger.error("refresh_dupe_files to be implemented")
+
+    def remove_missing_files(self):
+        logger.error("remove_missing_files to be implemented")
