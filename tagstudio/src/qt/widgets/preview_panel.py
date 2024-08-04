@@ -663,6 +663,7 @@ class PreviewPanel(QWidget):
 
                             # Mixed field found (Same ID, different content)
                             # TODO
+                            continue
                             if self.lib.get_field_index_in_entry(
                                 item, self.lib.get_field_attr(f, "id")
                             ):

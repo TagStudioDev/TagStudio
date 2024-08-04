@@ -13,13 +13,13 @@ from PySide6.QtWidgets import (
     QListWidget,
 )
 
-from src.core.library import DEFAULT_FIELDS
+from src.core.library import DEFAULT_FIELDS, Library
 
 
 class AddFieldModal(QWidget):
     done = Signal(list)
 
-    def __init__(self, library):
+    def __init__(self, library: Library):
         # [Done]
         # - OR -
         # [Cancel] [Save]

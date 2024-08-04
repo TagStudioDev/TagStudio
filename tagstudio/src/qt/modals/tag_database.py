@@ -22,7 +22,7 @@ from src.qt.modals.build_tag import BuildTagPanel
 class TagDatabasePanel(PanelWidget):
     tag_chosen = Signal(int)
 
-    def __init__(self, library):
+    def __init__(self, library: Library):
         super().__init__()
         self.lib: Library = library
         # self.callback = callback

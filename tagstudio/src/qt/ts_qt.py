@@ -677,12 +677,10 @@ class QtDriver(QObject):
         self.modal.show()
 
     def select_all_action_callback(self):
-        logger.error("not implemented")
-        for item in self.item_thumbs:
-            if item.mode and (item.mode, item.item_id) not in self.selected:
-                print("adding selected 1")
-                # self.selected.append()
-                item.thumb_button.set_selected(True)
+        self.selected = list(range(0, len(self.frame_content)))
+
+        for grid_idx in self.selected:
+            self.item_thumbs[grid_idx].thumb_button.set_selected(True)
 
         self.set_macro_menu_viability()
         self.preview_panel.update_widgets()
@@ -933,8 +931,6 @@ class QtDriver(QObject):
             layout.addWidget(item_thumb)
             self.item_thumbs.append(item_thumb)
 
-        print("len item thumbs", len(self.item_thumbs))
-
         self.flow_container: QWidget = QWidget()
         self.flow_container.setObjectName("flowContainer")
         self.flow_container.setLayout(layout)
@@ -946,6 +942,9 @@ class QtDriver(QObject):
 
     def select_item(self, grid_index: int, append: bool, bridge: bool):
         """Select one or more items in the Thumbnail Grid."""
+        logger.info(
+            "selecting item", grid_index=grid_index, append=append, bridge=bridge
+        )
         if append:
             if grid_index not in self.selected:
                 self.selected.append(grid_index)
@@ -955,29 +954,22 @@ class QtDriver(QObject):
                 self.item_thumbs[grid_index].thumb_button.set_selected(False)
 
         elif bridge and self.selected:
-            logger.info("select_item", bridge=bridge, selected=self.selected)
+            last_index = self.selected[-1]
+            current_index = grid_index
 
-            current_index = 0
-            last_index = 1
-
-            index_range = self.frame_content[current_index:last_index]
-
-            # Preserve bridge direction for correct appending order.
             if last_index < current_index:
-                index_range.reverse()
+                index_range = range(last_index, current_index + 1)
+            else:
+                index_range = range(current_index, last_index + 1)
 
-            for c_type, c_id in index_range:
-                for it in self.item_thumbs:
-                    if it.mode == c_type and it.item_id == c_id:
-                        it.thumb_button.set_selected(True)
-                        if (c_type, c_id) not in self.selected:
-                            self.selected.append(c_id)
+            self.selected = list(index_range)
+
+            for selected_idx in self.selected:
+                self.item_thumbs[selected_idx].thumb_button.set_selected(True)
         else:
-            logger.info("setting .selected item", index=grid_index)
             self.selected = [grid_index]
-            for item_thumb in self.item_thumbs:
-                entry = self.frame_content[grid_index]
-                item_matched = item_thumb.item_id == entry.id
+            for thumb_idx, item_thumb in enumerate(self.item_thumbs):
+                item_matched = thumb_idx == grid_index
                 item_thumb.thumb_button.set_selected(item_matched)
 
         # NOTE: By using the preview panel's "set_tags_updated_slot" method,
@@ -1054,7 +1046,7 @@ class QtDriver(QObject):
                         ),
                         bridge=(
                             QGuiApplication.keyboardModifiers()
-                            == Qt.KeyboardModifier.ControlModifier
+                            == Qt.KeyboardModifier.ShiftModifier
                         ),
                     )
                 )
