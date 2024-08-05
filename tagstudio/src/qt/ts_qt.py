@@ -65,7 +65,7 @@ from src.core.constants import (
 )
 from src.core.library.alchemy.enums import SearchMode, FilterState, ItemType
 from src.core.utils.web import strip_web_protocol
-from src.qt.flowlayout import FlowLayout  # type: ignore
+from src.qt.flowlayout import FlowLayout
 from src.qt.main_window import Ui_MainWindow
 from src.qt.helpers.function_iterator import FunctionIterator
 from src.qt.helpers.custom_runnable import CustomRunnable

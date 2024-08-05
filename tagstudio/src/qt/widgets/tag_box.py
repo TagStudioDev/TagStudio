@@ -14,7 +14,7 @@ from src.core.constants import TAG_FAVORITE, TAG_ARCHIVED
 from src.core.library import Entry, Tag
 from src.core.library.alchemy.enums import FilterState
 from src.core.library.alchemy.fields import TagBoxField
-from src.qt.flowlayout import FlowLayout  # type: ignore
+from src.qt.flowlayout import FlowLayout
 from src.qt.widgets.fields import FieldWidget
 from src.qt.widgets.tag import TagWidget
 from src.qt.widgets.panel import PanelModal

@@ -20,7 +20,7 @@ from PySide6.QtWidgets import (
 from src.core.library import Tag, Library
 from src.core.library.alchemy.enums import TagColor
 from src.core.palette import ColorType, get_tag_color
-from src.qt.flowlayout import FlowLayout  # type: ignore[attr-defined]
+from src.qt.flowlayout import FlowLayout
 from src.qt.widgets.preview_panel import logger
 
 # Only import for type checking/autocompletion, will not be imported at runtime.

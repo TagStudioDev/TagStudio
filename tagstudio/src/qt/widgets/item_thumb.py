@@ -19,7 +19,6 @@ from PySide6.QtWidgets import (
     QCheckBox,
 )
 
-from src.core.enums import FieldID
 from src.core.constants import (
     AUDIO_TYPES,
     VIDEO_TYPES,
@@ -28,7 +27,7 @@ from src.core.constants import (
     TAG_ARCHIVED,
 )
 from src.core.library import ItemType, Entry
-from src.qt.flowlayout import FlowWidget  # type: ignore
+from src.qt.flowlayout import FlowWidget
 from src.qt.helpers.file_opener import FileOpenerHelper
 from src.qt.widgets.thumb_renderer import ThumbRenderer
 from src.qt.widgets.thumb_button import ThumbButton

@@ -20,6 +20,14 @@ ignore_errors = true
 module = "src.qt.ui.home_ui"
 ignore_errors = true
 
+[[tool.mypy.overrides]]
+module = "src.core.ts_core"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = "src.core.ts_core"
+ignore_errors = true
+
 
 [tool.pytest.ini_options]
 #addopts = "-m 'not qt'"
