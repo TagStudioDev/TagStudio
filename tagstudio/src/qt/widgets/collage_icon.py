@@ -3,7 +3,6 @@
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
 import logging
-import os
 import traceback
 from pathlib import Path
 
@@ -12,20 +11,11 @@ from PIL import Image, ImageChops, UnidentifiedImageError
 from PIL.Image import DecompressionBombError
 from PySide6.QtCore import (
     QObject,
-    QThread,
     Signal,
-    QRunnable,
-    Qt,
-    QThreadPool,
-    QSize,
-    QEvent,
-    QTimer,
-    QSettings,
 )
 
-from src.core.library import Library
 from src.core.constants import DOC_TYPES, VIDEO_TYPES, IMAGE_TYPES
-
+from src.core.library import Library
 
 ERROR = f"[ERROR]"
 WARNING = f"[WARNING]"
@@ -52,8 +42,7 @@ class CollageIconRenderer(QObject):
         keep_aspect,
     ):
         entry = self.lib.get_entry(entry_id)
-        filepath = self.lib.library_dir / entry.path / entry.filename
-        file_type = os.path.splitext(filepath)[1].lower()[1:]
+        filepath = self.lib.library_dir / entry.path
         color: str = ""
 
         try:
@@ -65,12 +54,14 @@ class CollageIconRenderer(QObject):
                     has_content_tags: bool = False
                     has_meta_tags: bool = False
                     for field in entry.fields:
-                        if self.lib.get_field_attr(field, "type") == "tag_box":
-                            if self.lib.get_field_attr(field, "content"):
+                        if field.name == "Tags":
+                            if field.content:
                                 has_any_tags = True
-                                if self.lib.get_field_attr(field, "id") == 7:
+                                continue
+                                # TODO
+                                if field.id == 7:
                                     has_content_tags = True
-                                elif self.lib.get_field_attr(field, "id") == 8:
+                                elif field.id == 8:
                                     has_meta_tags = True
                     if has_content_tags and has_meta_tags:
                         color = "#28bb48"  # Green
@@ -89,15 +80,13 @@ class CollageIconRenderer(QObject):
                     self.rendered.emit(pic)
             if not data_only_mode:
                 logging.info(
-                    f"\r{INFO} Combining [ID:{entry_id}/{len(self.lib.entries)}]: {self.get_file_color(filepath.suffix.lower())}{entry.path}{os.sep}{entry.filename}\033[0m"
+                    f"\r{INFO} Combining [ID:{entry_id}/{len(self.lib.entries)}]: {self.get_file_color(filepath.suffix.lower())}{entry.path}\033[0m"
                 )
                 # sys.stdout.write(f'\r{INFO} Combining [{i+1}/{len(self.lib.entries)}]: {self.get_file_color(file_type)}{entry.path}{os.sep}{entry.filename}{RESET}')
                 # sys.stdout.flush()
                 if filepath.suffix.lower() in IMAGE_TYPES:
                     try:
-                        with Image.open(
-                            str(self.lib.library_dir / entry.path / entry.filename)
-                        ) as pic:
+                        with Image.open(str(self.lib.library_dir / entry.path)) as pic:
                             if keep_aspect:
                                 pic.thumbnail(size)
                             else:
@@ -137,9 +126,7 @@ class CollageIconRenderer(QObject):
                         # collage.paste(pic, (y*thumb_size, x*thumb_size))
                         self.rendered.emit(pic)
         except (UnidentifiedImageError, FileNotFoundError):
-            logging.info(
-                f"\n{ERROR} Couldn't read {entry.path}{os.sep}{entry.filename}"
-            )
+            logging.info(f"\n{ERROR} Couldn't read {entry.path}")
             with Image.open(
                 str(
                     Path(__file__).parents[2]
@@ -160,7 +147,7 @@ class CollageIconRenderer(QObject):
             logging.info(f"{INFO} Collage operation cancelled.")
             clear_scr = False
         except:
-            logging.info(f"{ERROR} {entry.path}{os.sep}{entry.filename}")
+            logging.info(f"{ERROR} {entry.path}")
             traceback.print_exc()
             logging.info("Continuing...")
 

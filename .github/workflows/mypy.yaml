@@ -24,7 +24,7 @@ jobs:
       - name: Install dependencies
         run: |
           pip install -r requirements.txt
-          pip install mypy==1.10.0
+          pip install mypy==1.11.1
           mkdir tagstudio/.mypy_cache
 
       - uses: tsuyoshicho/action-mypy@v4

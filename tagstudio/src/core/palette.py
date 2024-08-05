@@ -4,6 +4,12 @@
 
 from enum import Enum
 
+import structlog
+
+from src.core.library.alchemy.enums import TagColor
+
+logger = structlog.get_logger(__name__)
+
 
 class ColorType(int, Enum):
     PRIMARY = 0
@@ -13,7 +19,7 @@ class ColorType(int, Enum):
     DARK_ACCENT = 4
 
 
-_TAG_COLORS = {
+TAG_COLORS = {
     "": {
         ColorType.PRIMARY: "#1e1e1e",
         ColorType.TEXT: ColorType.LIGHT_ACCENT,
@@ -28,7 +34,7 @@ _TAG_COLORS = {
         ColorType.LIGHT_ACCENT: "#b7b6be",
         ColorType.DARK_ACCENT: "#03020a",
     },
-    "dark gray": {
+    "dark_gray": {
         ColorType.PRIMARY: "#24232a",
         ColorType.TEXT: ColorType.LIGHT_ACCENT,
         ColorType.BORDER: "#2a2930",
@@ -42,7 +48,7 @@ _TAG_COLORS = {
         ColorType.LIGHT_ACCENT: "#cbcad2",
         ColorType.DARK_ACCENT: "#191820",
     },
-    "light gray": {
+    "light_gray": {
         ColorType.PRIMARY: "#aaa9b0",
         ColorType.TEXT: ColorType.DARK_ACCENT,
         ColorType.BORDER: "#b6b4bc",
@@ -56,7 +62,7 @@ _TAG_COLORS = {
         ColorType.LIGHT_ACCENT: "#ffffff",
         ColorType.DARK_ACCENT: "#302f36",
     },
-    "light pink": {
+    "light_pink": {
         ColorType.PRIMARY: "#ff99c4",
         ColorType.TEXT: ColorType.DARK_ACCENT,
         ColorType.BORDER: "#ffaad0",
@@ -85,7 +91,7 @@ _TAG_COLORS = {
         ColorType.LIGHT_ACCENT: "#f39caa",
         ColorType.DARK_ACCENT: "#440d12",
     },
-    "red orange": {
+    "red_orange": {
         ColorType.PRIMARY: "#e83726",
         ColorType.TEXT: ColorType.DARK_ACCENT,
         ColorType.BORDER: "#ea4b3b",
@@ -106,7 +112,7 @@ _TAG_COLORS = {
         ColorType.LIGHT_ACCENT: "#f7b79b",
         ColorType.DARK_ACCENT: "#551e0a",
     },
-    "yellow orange": {
+    "yellow_orange": {
         ColorType.PRIMARY: "#fa9a2c",
         ColorType.TEXT: ColorType.DARK_ACCENT,
         ColorType.BORDER: "#fba94b",
@@ -135,7 +141,7 @@ _TAG_COLORS = {
         ColorType.LIGHT_ACCENT: "#e9f9b7",
         ColorType.DARK_ACCENT: "#405516",
     },
-    "light green": {
+    "light_green": {
         ColorType.PRIMARY: "#85ec76",
         ColorType.TEXT: ColorType.DARK_ACCENT,
         ColorType.BORDER: "#a3f198",
@@ -163,7 +169,7 @@ _TAG_COLORS = {
         ColorType.LIGHT_ACCENT: "#bff5f0",
         ColorType.DARK_ACCENT: "#0f4246",
     },
-    "light blue": {
+    "light_blue": {
         ColorType.PRIMARY: "#55bbf6",
         ColorType.TEXT: ColorType.DARK_ACCENT,
         ColorType.BORDER: "#70c6f7",
@@ -177,7 +183,7 @@ _TAG_COLORS = {
         ColorType.LIGHT_ACCENT: "#aedbfa",
         ColorType.DARK_ACCENT: "#122948",
     },
-    "blue violet": {
+    "blue_violet": {
         ColorType.PRIMARY: "#5948f2",
         ColorType.TEXT: ColorType.LIGHT_ACCENT,
         ColorType.BORDER: "#6258f3",
@@ -233,28 +239,28 @@ _TAG_COLORS = {
         ColorType.LIGHT_ACCENT: "#d98a7f",
         ColorType.DARK_ACCENT: "#3d100a",
     },
-    "light brown": {
+    "light_brown": {
         ColorType.PRIMARY: "#be5b2d",
         ColorType.TEXT: ColorType.DARK_ACCENT,
         ColorType.BORDER: "#c4693d",
         ColorType.LIGHT_ACCENT: "#e5b38c",
         ColorType.DARK_ACCENT: "#4c290e",
     },
-    "dark brown": {
+    "dark_brown": {
         ColorType.PRIMARY: "#4c2315",
         ColorType.TEXT: ColorType.LIGHT_ACCENT,
         ColorType.BORDER: "#542a1c",
         ColorType.LIGHT_ACCENT: "#b78171",
         ColorType.DARK_ACCENT: "#211006",
     },
-    "cool gray": {
+    "cool_gray": {
         ColorType.PRIMARY: "#515768",
         ColorType.TEXT: ColorType.LIGHT_ACCENT,
         ColorType.BORDER: "#5b6174",
         ColorType.LIGHT_ACCENT: "#9ea1c3",
         ColorType.DARK_ACCENT: "#181a37",
     },
-    "warm gray": {
+    "warm_gray": {
         ColorType.PRIMARY: "#625550",
         ColorType.TEXT: ColorType.LIGHT_ACCENT,
         ColorType.BORDER: "#6c5e57",
@@ -278,12 +284,15 @@ _TAG_COLORS = {
 }
 
 
-def get_tag_color(type, color):
-    color = color.lower()
+def get_tag_color(type, color_id: str | TagColor):
+    if isinstance(color_id, TagColor):
+        color_id = color_id.name
+
     try:
-        if type == ColorType.TEXT:
-            return get_tag_color(_TAG_COLORS[color][type], color)
-        else:
-            return _TAG_COLORS[color][type]
+        return TAG_COLORS[color_id][type]
+        # if type == ColorType.TEXT:
+        #    return get_tag_color([color][type], color)
+
     except KeyError:
+        logger.error("Color not found", color_id=color_id)
         return "#FF00FF"

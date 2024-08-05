@@ -3,8 +3,7 @@
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
 
-import logging
-
+import structlog
 from PySide6.QtCore import Signal, Qt
 from PySide6.QtWidgets import (
     QWidget,
@@ -18,27 +17,27 @@ from PySide6.QtWidgets import (
     QComboBox,
 )
 
-from src.core.library import Library, Tag
+from src.core.library import Tag, Library
+from src.core.library.alchemy.enums import TagColor
 from src.core.palette import ColorType, get_tag_color
-from src.core.constants import TAG_COLORS
+
 from src.qt.widgets.panel import PanelWidget, PanelModal
 from src.qt.widgets.tag import TagWidget
 from src.qt.modals.tag_search import TagSearchPanel
-
 
 ERROR = f"[ERROR]"
 WARNING = f"[WARNING]"
 INFO = f"[INFO]"
 
-logging.basicConfig(format="%(message)s", level=logging.INFO)
+logger = structlog.get_logger(__name__)
 
 
 class BuildTagPanel(PanelWidget):
-    on_edit = Signal(Tag)
+    on_edit = Signal(object)
 
-    def __init__(self, library, tag_id: int = -1):
+    def __init__(self, library: Library, tag_id: int = -1):
         super().__init__()
-        self.lib: Library = library
+        self.lib = library
         # self.callback = callback
         # self.tag_id = tag_id
         self.tag = None
@@ -140,15 +139,16 @@ class BuildTagPanel(PanelWidget):
         self.color_field.setEditable(False)
         self.color_field.setMaxVisibleItems(10)
         self.color_field.setStyleSheet("combobox-popup:0;")
-        for color in TAG_COLORS:
-            self.color_field.addItem(color.title())
+        for color in TagColor:
+            self.color_field.addItem(color.name)
         # self.color_field.setProperty("appearance", "flat")
         self.color_field.currentTextChanged.connect(
-            lambda c: self.color_field.setStyleSheet(f"""combobox-popup:0;									
-																					   font-weight:600;
-																					   color:{get_tag_color(ColorType.TEXT, c.lower())};
-																					   background-color:{get_tag_color(ColorType.PRIMARY, c.lower())};
-																					   """)
+            lambda c: self.color_field.setStyleSheet(
+                "combobox-popup:0;"
+                "font-weight:600;"
+                f"color:{get_tag_color(ColorType.TEXT, c)};"
+                f"background-color:{get_tag_color(ColorType.PRIMARY, c)};"
+            )
         )
         self.color_layout.addWidget(self.color_field)
 
@@ -163,22 +163,19 @@ class BuildTagPanel(PanelWidget):
         if tag_id >= 0:
             self.tag = self.lib.get_tag(tag_id)
         else:
-            self.tag = Tag(-1, "New Tag", "", [], [], "")
+            self.tag = Tag(
+                name="New Tag",
+            )
+
         self.set_tag(self.tag)
 
     def add_subtag_callback(self, tag_id: int):
-        logging.info(f"adding {tag_id}")
-        # tag = self.lib.get_tag(self.tag_id)
-        # TODO: Create a single way to update tags and refresh library data
-        # new = self.build_tag()
+        logger.info("add_subtag_callback", tag_id=tag_id)
         self.tag.add_subtag(tag_id)
-        # self.tag = new
-        # self.lib.update_tag(new)
         self.set_subtags()
-        # self.on_edit.emit(self.build_tag())
 
     def remove_subtag_callback(self, tag_id: int):
-        logging.info(f"removing {tag_id}")
+        logger.info(f"removing {tag_id}")
         # tag = self.lib.get_tag(self.tag_id)
         # TODO: Create a single way to update tags and refresh library data
         # new = self.build_tag()
@@ -191,43 +188,46 @@ class BuildTagPanel(PanelWidget):
     def set_subtags(self):
         while self.scroll_layout.itemAt(0):
             self.scroll_layout.takeAt(0).widget().deleteLater()
-        logging.info(f"Setting {self.tag.subtag_ids}")
+        logger.info("setting subtags", tag=self.tag, subtags=self.tag.subtag_ids)
+
         c = QWidget()
         l = QVBoxLayout(c)
         l.setContentsMargins(0, 0, 0, 0)
         l.setSpacing(3)
         for tag_id in self.tag.subtag_ids:
-            tw = TagWidget(self.lib, self.lib.get_tag(tag_id), False, True)
-            tw.on_remove.connect(
-                lambda checked=False, t=tag_id: self.remove_subtag_callback(t)
-            )
+            tag = self.lib.get_tag(tag_id)
+            tw = TagWidget(tag, False, True)
+            tw.on_remove.connect(lambda t=tag_id: self.remove_subtag_callback(t))
             l.addWidget(tw)
         self.scroll_layout.addWidget(c)
 
     def set_tag(self, tag: Tag):
-        # tag = self.lib.get_tag(tag_id)
+        logger.info("setting tag", tag=tag)
+
         self.name_field.setText(tag.name)
         self.shorthand_field.setText(tag.shorthand)
-        self.aliases_field.setText("\n".join(tag.aliases))
+        # TODO: Implement aliases
+        # self.aliases_field.setText("\n".join(tag.aliases))
         self.set_subtags()
-        self.color_field.setCurrentIndex(TAG_COLORS.index(tag.color.lower()))
-        # self.tag_id = tag.id
+        self.color_field.setCurrentIndex(tag.color.value)
 
     def build_tag(self) -> Tag:
-        # tag: Tag = self.tag
-        # if self.tag_id >= 0:
-        # 	tag = self.lib.get_tag(self.tag_id)
-        # else:
-        # 	tag = Tag(-1, '', '', [], [], '')
-        new_tag: Tag = Tag(
-            id=self.tag.id,
+        # TODO - optimize
+        for c in TagColor:
+            if c.name == self.color_field.currentText().lower():
+                color = c
+                break
+        else:
+            color = TagColor.default
+
+        new_tag = Tag(
             name=self.name_field.text(),
             shorthand=self.shorthand_field.text(),
-            aliases=self.aliases_field.toPlainText().split("\n"),
-            subtags_ids=self.tag.subtag_ids,
-            color=self.color_field.currentText().lower(),
+            # aliases=set(self.aliases_field.toPlainText().split("\n")),
+            # subtags_ids=self.tag.subtag_ids,
+            color=color,
         )
-        logging.info(f"built {new_tag}")
+        logger.info("built tag", tag=new_tag, self_tag=self.tag)
         return new_tag
 
         # NOTE: The callback and signal do the same thing, I'm currently

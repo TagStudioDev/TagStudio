@@ -95,13 +95,17 @@ class DeleteUnlinkedEntriesModal(QWidget):
         iterator.value.connect(lambda x: pw.update_progress(x[0] + 1))
         iterator.value.connect(
             lambda x: pw.update_label(
-                f"Deleting {x[0]+1}/{len(self.lib.missing_files)} Unlinked Entries"
+                f"Deleting {x[0] + 1}/{len(self.lib.missing_files)} Unlinked Entries"
             )
         )
-        iterator.value.connect(
-            lambda x: self.driver.purge_item_from_navigation(ItemType.ENTRY, x[1])
-        )
+        iterator.value.connect(lambda x: self.driver.purge_item_from_navigation(x[1]))
 
         r = CustomRunnable(lambda: iterator.run())
         QThreadPool.globalInstance().start(r)
-        r.done.connect(lambda: (pw.hide(), pw.deleteLater(), self.done.emit()))
+        r.done.connect(
+            lambda: (
+                pw.hide(),  # type: ignore
+                pw.deleteLater(),  # type: ignore
+                self.done.emit(),  # type: ignore
+            )
+        )

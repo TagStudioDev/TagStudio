@@ -110,17 +110,17 @@ class MirrorEntriesModal(QWidget):
         iterator.value.connect(lambda x: pw.update_progress(x + 1))
         iterator.value.connect(
             lambda x: pw.update_label(
-                f"Mirroring {x+1}/{len(self.lib.dupe_files)} Entries..."
+                f"Mirroring {x + 1}/{len(self.lib.dupe_files)} Entries..."
             )
         )
         r = CustomRunnable(lambda: iterator.run())
         QThreadPool.globalInstance().start(r)
         r.done.connect(
             lambda: (
-                pw.hide(),
-                pw.deleteLater(),
+                pw.hide(),  # type: ignore
+                pw.deleteLater(),  # type: ignore
                 self.driver.preview_panel.update_widgets(),
-                self.done.emit(),
+                self.done.emit(),  # type: ignore
             )
         )
 
@@ -136,5 +136,3 @@ class MirrorEntriesModal(QWidget):
             yield i
         for d in mirrored:
             self.lib.dupe_files.remove(d)
-        # self.driver.filter_items('')
-        # self.done.emit()

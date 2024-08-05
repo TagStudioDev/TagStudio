@@ -8,20 +8,6 @@ from PySide6.QtCore import Qt, QMargins, QPoint, QRect, QSize
 from PySide6.QtWidgets import QLayout, QSizePolicy, QWidget
 
 
-# class Window(QWidget):
-#     def __init__(self):
-#         super().__init__()
-
-#         flow_layout = FlowLayout(self)
-#         flow_layout.addWidget(QPushButton("Short"))
-#         flow_layout.addWidget(QPushButton("Longer"))
-#         flow_layout.addWidget(QPushButton("Different text"))
-#         flow_layout.addWidget(QPushButton("More text"))
-#         flow_layout.addWidget(QPushButton("Even longer button text"))
-
-#         self.setWindowTitle("Flow Layout")
-
-
 class FlowWidget(QWidget):
     def __init__(self, parent=None) -> None:
         super().__init__(parent)
@@ -116,10 +102,14 @@ class FlowLayout(QLayout):
                 item = self._item_list[0]
                 style = item.widget().style()
                 layout_spacing_x = style.layoutSpacing(
-                    QSizePolicy.PushButton, QSizePolicy.PushButton, Qt.Horizontal
+                    QSizePolicy.PushButton,  # type: ignore
+                    QSizePolicy.PushButton,  # type: ignore
+                    Qt.Horizontal,  # type: ignore
                 )
                 layout_spacing_y = style.layoutSpacing(
-                    QSizePolicy.PushButton, QSizePolicy.PushButton, Qt.Vertical
+                    QSizePolicy.PushButton,  # type: ignore
+                    QSizePolicy.PushButton,  # type: ignore
+                    Qt.Vertical,  # type: ignore
                 )
         for i, item in enumerate(self._item_list):
             # print(issubclass(type(item.widget()), FlowWidget))
@@ -139,10 +129,14 @@ class FlowLayout(QLayout):
                 if not self.grid_efficiency:
                     style = item.widget().style()
                     layout_spacing_x = style.layoutSpacing(
-                        QSizePolicy.PushButton, QSizePolicy.PushButton, Qt.Horizontal
+                        QSizePolicy.PushButton,  # type: ignore
+                        QSizePolicy.PushButton,  # type: ignore
+                        Qt.Horizontal,  # type: ignore
                     )
                     layout_spacing_y = style.layoutSpacing(
-                        QSizePolicy.PushButton, QSizePolicy.PushButton, Qt.Vertical
+                        QSizePolicy.PushButton,  # type: ignore
+                        QSizePolicy.PushButton,  # type: ignore
+                        Qt.Vertical,  # type: ignore
                     )
                 space_x = spacing + layout_spacing_x
                 space_y = spacing + layout_spacing_y

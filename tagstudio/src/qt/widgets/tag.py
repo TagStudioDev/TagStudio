@@ -4,7 +4,6 @@
 
 
 import math
-import os
 from types import FunctionType
 from pathlib import Path
 
@@ -13,9 +12,8 @@ from PySide6.QtCore import Signal, Qt, QEvent
 from PySide6.QtGui import QEnterEvent, QAction
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QPushButton
 
-from src.core.library import Library, Tag
+from src.core.library import Tag
 from src.core.palette import ColorType, get_tag_color
-
 
 ERROR = f"[ERROR]"
 WARNING = f"[WARNING]"
@@ -33,7 +31,6 @@ class TagWidget(QWidget):
 
     def __init__(
         self,
-        library: Library,
         tag: Tag,
         has_edit: bool,
         has_remove: bool,
@@ -42,7 +39,6 @@ class TagWidget(QWidget):
         on_edit_callback: FunctionType = None,
     ) -> None:
         super().__init__()
-        self.lib = library
         self.tag = tag
         self.has_edit: bool = has_edit
         self.has_remove: bool = has_remove
@@ -57,7 +53,7 @@ class TagWidget(QWidget):
 
         self.bg_button = QPushButton(self)
         self.bg_button.setFlat(True)
-        self.bg_button.setText(tag.display_name(self.lib).replace("&", "&&"))
+        self.bg_button.setText(tag.name)
         if has_edit:
             edit_action = QAction("Edit", self)
             edit_action.triggered.connect(on_edit_callback)
@@ -65,13 +61,8 @@ class TagWidget(QWidget):
             self.bg_button.addAction(edit_action)
         # if on_click_callback:
         self.bg_button.setContextMenuPolicy(Qt.ContextMenuPolicy.ActionsContextMenu)
-        # if has_remove:
-        # 	remove_action = QAction('Remove', self)
-        # 	# remove_action.triggered.connect(on_remove_callback)
-        # 	remove_action.triggered.connect(self.on_remove.emit())
-        # 	self.bg_button.addAction(remove_action)
+
         search_for_tag_action = QAction("Search for Tag", self)
-        # search_for_tag_action.triggered.connect(on_click_callback)
         search_for_tag_action.triggered.connect(self.on_click.emit)
         self.bg_button.addAction(search_for_tag_action)
         add_to_search_action = QAction("Add to Search", self)
@@ -106,7 +97,7 @@ class TagWidget(QWidget):
             f"border-color:{get_tag_color(ColorType.BORDER, tag.color)};"
             f"border-radius: 6px;"
             f"border-style:solid;"
-            f"border-width: {math.ceil(1*self.devicePixelRatio())}px;"
+            f"border-width: {math.ceil(self.devicePixelRatio())}px;"
             # f'border-top:2px solid {get_tag_color(ColorType.LIGHT_ACCENT, tag.color)};'
             # f'border-bottom:2px solid {get_tag_color(ColorType.BORDER, tag.color)};'
             # f'border-left:2px solid {get_tag_color(ColorType.BORDER, tag.color)};'
@@ -146,7 +137,6 @@ class TagWidget(QWidget):
             self.remove_button.setStyleSheet(
                 f"color: {get_tag_color(ColorType.PRIMARY, tag.color)};"
                 f"background: {get_tag_color(ColorType.TEXT, tag.color)};"
-                # f"color: {'black' if color not in ['black', 'gray', 'dark gray', 'cool gray', 'warm gray', 'blue', 'purple', 'violet'] else 'white'};"
                 # f"border-color: {get_tag_color(ColorType.BORDER, tag.color)};"
                 f"font-weight: 800;"
                 # f"border-color:{'black' if color not in [
@@ -164,37 +154,7 @@ class TagWidget(QWidget):
             )
             self.remove_button.setMinimumSize(19, 19)
             self.remove_button.setMaximumSize(19, 19)
-            # self.remove_button.clicked.connect(on_remove_callback)
             self.remove_button.clicked.connect(self.on_remove.emit)
-
-        # NOTE: No more edit button! Just make it a right-click option.
-        # self.edit_button = QPushButton(self)
-        # self.edit_button.setFlat(True)
-        # self.edit_button.setText('Edit')
-        # self.edit_button.setIcon(QPixmap.fromImage(ImageQt.ImageQt(self.edit_icon_128)))
-        # self.edit_button.setIconSize(QSize(14,14))
-        # self.edit_button.setHidden(True)
-        # self.edit_button.setStyleSheet(f'color: {color};'
-        # 						    f"background: {'black' if color not in ['black', 'gray', 'dark gray', 'cool gray', 'warm gray', 'blue', 'purple', 'violet'] else 'white'};"
-        # 							# f"color: {'black' if color not in ['black', 'gray', 'dark gray', 'cool gray', 'warm gray', 'blue', 'purple', 'violet'] else 'white'};"
-        # 							f"border-color: {'black' if color not in ['black', 'gray', 'dark gray', 'cool gray', 'warm gray', 'blue', 'purple', 'violet'] else 'white'};"
-        # 							f'font-weight: 600;'
-        # 							# f"border-color:{'black' if color not in [
-        # 							# 'black', 'gray', 'dark gray',
-        # 							# 'cool gray', 'warm gray', 'blue',
-        # 							# 'purple', 'violet'] else 'white'};"
-        # 							# f'QPushButton{{border-image: url(:/images/edit_icon_128.png);}}'
-        # 							# f'QPushButton{{border-image: url(:/images/edit_icon_128.png);}}'
-        # 							f'border-radius: 4px;'
-        # 							# f'border-style:solid;'
-        # 							# f'border-width:1px;'
-        # 							f'padding-top: 1.5px;'
-        # 							f'padding-right: 4px;'
-        # 							f'padding-bottom: 3px;'
-        # 							f'padding-left: 4px;'
-        # 							f'font-size: 14px')
-        # self.edit_button.setMinimumSize(18,18)
-        # # self.edit_button.setMaximumSize(18,18)
 
         # self.inner_layout.addWidget(self.edit_button)
         if has_remove:
@@ -208,32 +168,6 @@ class TagWidget(QWidget):
         self.bg_button.clicked.connect(self.on_click.emit)
 
         # self.setMinimumSize(50,20)
-
-    # def set_name(self, name:str):
-    # 	self.bg_label.setText(str)
-
-    # def on_remove(self):
-    # 	if self.item and self.item[0] == ItemType.ENTRY:
-    # 		if self.field_index >= 0:
-    # 			self.lib.get_entry(self.item[1]).remove_tag(self.tag.id, self.field_index)
-    # 		else:
-    # 			self.lib.get_entry(self.item[1]).remove_tag(self.tag.id)
-
-    # def set_click(self, callback):
-    # 	try:
-    # 		self.bg_button.clicked.disconnect()
-    # 	except RuntimeError:
-    # 		pass
-    # 	if callback:
-    # 		self.bg_button.clicked.connect(callback)
-
-    # def set_click(self, function):
-    # 	try:
-    # 		self.bg.clicked.disconnect()
-    # 	except RuntimeError:
-    # 		pass
-    # 	# self.bg.clicked.connect(lambda checked=False, filepath=filepath: open_file(filepath))
-    # 	# self.bg.clicked.connect(function)
 
     def enterEvent(self, event: QEnterEvent) -> None:
         if self.has_remove:

@@ -2,7 +2,6 @@
 # Licensed under the GPL-3.0 License.
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 import logging
-from types import FunctionType
 from typing import Callable
 
 from PySide6.QtCore import Signal, Qt
@@ -16,7 +15,7 @@ class PanelModal(QWidget):
     # figure out what you want from this.
     def __init__(
         self,
-        widget: "PanelWidget",
+        widget,
         title: str,
         window_title: str,
         done_callback: Callable = None,

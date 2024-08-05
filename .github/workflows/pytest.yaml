@@ -1,6 +1,6 @@
 name: pytest
 
-on: [push, pull_request]
+on: [ push, pull_request ]
 
 jobs:
   pytest:
@@ -11,11 +11,17 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
 
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
       - name: Install dependencies
         run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-          pip install -r requirements-dev.txt
+          python -m pip install --upgrade uv
+          uv pip install --system -r requirements.txt
+          uv pip install --system -r requirements-dev.txt
 
       - name: Run tests
         run: |

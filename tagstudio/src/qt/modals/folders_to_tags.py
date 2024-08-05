@@ -17,16 +17,15 @@ from PySide6.QtWidgets import (
     QScrollArea,
     QFrame,
 )
-
-from src.core.enums import FieldID
-from src.core.library import Library, Tag
+from src.core.library import Tag, Library
+from src.core.library.alchemy.enums import TagColor
 from src.core.palette import ColorType, get_tag_color
 from src.qt.flowlayout import FlowLayout
+from src.qt.widgets.preview_panel import logger
 
 # Only import for type checking/autocompletion, will not be imported at runtime.
 if typing.TYPE_CHECKING:
     from src.qt.ts_qt import QtDriver
-
 
 ERROR = f"[ERROR]"
 WARNING = f"[WARNING]"
@@ -48,17 +47,15 @@ def folders_to_tags(library: Library):
 
     def add_folders_to_tree(items: list[str]) -> Tag:
         branch: dict = tree
+        logger.info("add_folders_to_tree", branch=branch)
         for folder in items:
             if folder not in branch["dirs"]:
                 new_tag = Tag(
-                    -1,
-                    folder,
-                    "",
-                    [],
-                    ([branch["tag"].id] if "tag" in branch else []),
-                    "",
+                    name=folder,
+                    # TODO - subtags
+                    # ([branch["tag"].id] if "tag" in branch else []),
                 )
-                library.add_tag_to_library(new_tag)
+                library.add_tag(new_tag)
                 branch["dirs"][folder] = dict(dirs={}, tag=new_tag)
             branch = branch["dirs"][folder]
         return branch["tag"]
@@ -69,49 +66,47 @@ def folders_to_tags(library: Library):
 
     for entry in library.entries:
         folders = list(entry.path.parts)
-        if len(folders) == 1 and folders[0] == "":
+        if folders == [""]:
             continue
+
         tag = add_folders_to_tree(folders)
-        if tag:
-            if not entry.has_tag(library, tag.id):
-                entry.add_tag(library, tag.id, FieldID.TAGS)
+        if tag and not entry.has_tag(tag):
+            entry.add_tag(tag.id)  # Field.TAGS
 
     logging.info("Done")
 
 
-def reverse_tag(library: Library, tag: Tag, list: list[Tag]) -> list[Tag]:
-    if list is not None:
-        list.append(tag)
-    else:
-        list = [tag]
+def reverse_tag(library: Library, tag: Tag, items: list[Tag] | None) -> list[Tag]:
+    items = items or []
+    items.append(tag)
 
-    if len(tag.subtag_ids) == 0:
-        list.reverse()
-        return list
-    else:
-        for subtag_id in tag.subtag_ids:
-            subtag = library.get_tag(subtag_id)
-        return reverse_tag(library, subtag, list)
+    if not tag.subtag_ids:
+        items.reverse()
+        return items
+
+    for subtag_id in tag.subtag_ids:
+        subtag = library.get_tag(subtag_id)
+    return reverse_tag(library, subtag, items)
 
 
 # =========== UI ===========
 
 
-def generate_preview_data(library: Library):
+def generate_preview_data(library):
     tree: dict = dict(dirs={}, files=[])
 
-    def add_tag_to_tree(items: list[Tag]):
-        branch: dict = tree
+    def add_tag_to_tree(items: list):
+        branch = tree
         for tag in items:
             if tag.name not in branch["dirs"]:
                 branch["dirs"][tag.name] = dict(dirs={}, tag=tag, files=[])
             branch = branch["dirs"][tag.name]
 
     def add_folders_to_tree(items: list[str]) -> dict:
-        branch: dict = tree
+        branch = tree
         for folder in items:
             if folder not in branch["dirs"]:
-                new_tag = Tag(-1, folder, "", [], [], "green")
+                new_tag = Tag(name=folder, color=TagColor.green)
                 branch["dirs"][folder] = dict(dirs={}, tag=new_tag, files=[])
             branch = branch["dirs"][folder]
         return branch
@@ -343,7 +338,7 @@ class ModifiedTagWidget(
             f"border-color:{get_tag_color(ColorType.BORDER, tag.color)};"
             f"border-radius: 6px;"
             f"border-style:inset;"
-            f"border-width: {math.ceil(1*self.devicePixelRatio())}px;"
+            f"border-width: {math.ceil(self.devicePixelRatio())}px;"
             f"padding-right: 4px;"
             f"padding-bottom: 1px;"
             f"padding-left: 4px;"
