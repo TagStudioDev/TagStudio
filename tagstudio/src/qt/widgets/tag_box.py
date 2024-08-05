@@ -41,7 +41,7 @@ class TagBoxWidget(FieldWidget):
     ) -> None:
         super().__init__(title)
 
-        self.item = item
+        # self.item = item
         self.driver = driver  # Used for creating tag click callbacks that search entries for that tag.
         # self.field_index = field_index
         self.tags = tags
@@ -86,21 +86,16 @@ class TagBoxWidget(FieldWidget):
 
         self.set_tags(tags)
 
-    def set_item(self, item):
-        self.item = item
-
     def set_tags(self, tags: list[Tag]):
         is_recycled = False
-        if self.base_layout.itemAt(0):
-            while self.base_layout.itemAt(0) and self.base_layout.itemAt(1):
-                self.base_layout.takeAt(0).widget().deleteLater()
+        while self.base_layout.itemAt(0) and self.base_layout.itemAt(1):
+            self.base_layout.takeAt(0).widget().deleteLater()
             is_recycled = True
 
         for tag in tags:
             tw = TagWidget(tag, True, True)
             tw.on_click.connect(
                 lambda tag_id=tag.id: (
-                    print("tag widget clicked on_click emited", tag_id),
                     self.driver.main_window.searchField.setText(f"tag_id:{tag_id}"),  # type: ignore
                     self.driver.filter_items(FilterState(id=tag_id)),  # type: ignore[func-returns-value]
                 )
@@ -109,6 +104,7 @@ class TagBoxWidget(FieldWidget):
             tw.on_remove.connect(lambda tag_id=tag.id: self.remove_tag(tag_id))
             tw.on_edit.connect(lambda tag_id=tag.id: self.edit_tag(tag_id))
             self.base_layout.addWidget(tw)
+
         self.tags = tags
 
         # Move or add the '+' button.
@@ -128,7 +124,7 @@ class TagBoxWidget(FieldWidget):
         tag = self.driver.lib.get_tag(tag_id)
         self.edit_modal = PanelModal(
             btp,
-            tag.name,
+            tag.name,  # TODO - display name including subtags
             "Edit Tag",
             done_callback=self.driver.preview_panel.update_widgets,
             has_save=True,
@@ -142,17 +138,17 @@ class TagBoxWidget(FieldWidget):
     def add_tag_callback(self, tag_id: int):
         logger.info("add_tag_callback", tag_id=tag_id, selected=self.driver.selected)
 
+        tag = self.driver.lib.get_tag(tag_id=tag_id)
+
         for idx in self.driver.selected:
             entry: Entry = self.driver.frame_content[idx]
 
             # TODO - add tag to correct field
             tag_field: TagBoxField = entry.tag_box_fields[0]
+            self.driver.lib.add_field_tag(tag, tag_field)
 
-            tag = self.driver.lib.get_tag(tag_id=tag_id)
-
-            tag_field.tags.add(tag)
-
-            self.updated.emit()
+        # TODO - this was originally in the loop, is it needed there?
+        self.updated.emit()
 
         if tag_id in (TAG_FAVORITE, TAG_ARCHIVED):
             self.driver.update_badges()

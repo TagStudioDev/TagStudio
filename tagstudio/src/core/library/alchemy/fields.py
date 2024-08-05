@@ -6,7 +6,7 @@ from enum import Enum
 from typing import TYPE_CHECKING, Union, Type, TypeVar, Any
 
 from sqlalchemy import ForeignKey
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.orm import Mapped, mapped_column, relationship, Session
 
 from .db import Base
 
@@ -110,7 +110,12 @@ class TagBoxField(Base):
         super().__init__()
 
     def __key(self):
-        return (self.type, self.name, str(self.tag_ids))
+        # tags are not bound to session, dont show them
+        return (
+            self.id,
+            self.type,
+            self.name,
+        )  # str(self.tag_ids))
 
     def __hash__(self):
         return hash(self.__key())

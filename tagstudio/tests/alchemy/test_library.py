@@ -1,6 +1,5 @@
 import random
 import string
-from copy import copy
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
@@ -25,7 +24,7 @@ def generate_entry(*, path: Path = None) -> Entry:
 
 
 @pytest.fixture
-def tag_fixture():
+def generate_tag():
     def inner(**kwargs):
         params = dict(name="foo", color=TagColor.red) | kwargs
         return Tag(**params)
@@ -59,12 +58,12 @@ def test_library_add_file():
         assert lib.has_item(entry.path)
 
 
-def test_create_tag(library, tag_fixture):
+def test_create_tag(library, generate_tag):
     # tag already exists
-    assert not library.add_tag(tag_fixture())
+    assert not library.add_tag(generate_tag())
 
     # new tag name
-    assert library.add_tag(tag_fixture(name="bar"))
+    assert library.add_tag(generate_tag(name="bar"))
 
 
 def test_library_search(library, tag_fixture):
@@ -153,3 +152,19 @@ def test_add_field_to_entry(library):
     entry = [x for x in library.entries if x.path == item_path][0]
     # meta tags and tags field present
     assert len(entry.tag_box_fields) == 2
+
+
+def test_add_field_tag(library, generate_tag):
+    # Given
+    entry = library.entries[0]
+    tag_name = "xxx"
+    tag = generate_tag(name=tag_name)
+    tag_field = entry.tag_box_fields[0]
+
+    # When
+    library.add_field_tag(tag, tag_field)
+
+    # Then
+    entry = [x for x in library.entries if x.id == entry.id][0]
+    tag_field = entry.tag_box_fields[0]
+    assert [x.name for x in tag_field.tags if x.name == tag_name]

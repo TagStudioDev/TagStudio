@@ -170,7 +170,7 @@ class Library:
 
     def verify_default_tags(self, tag_list: list) -> list:
         """
-        Ensures that the default builtin tags  are present in the Library's
+        Ensure that the default builtin tags  are present in the Library's
         save file. Takes in and returns the tag dictionary from the JSON file.
         """
         missing: list = []
@@ -181,7 +181,7 @@ class Library:
         return tag_list
 
     def clear_internal_vars(self):
-        """Clears the internal variables of the Library object."""
+        """Clear the internal variables of the Library object."""
         self.library_dir = None
         self.missing_files = []
         self.dupe_files = []
@@ -201,13 +201,11 @@ class Library:
 
         for path in self.library_dir.glob("**/*"):
             str_path = str(path)
-            if any(
-                [
-                    path.is_dir()
-                    or "$RECYCLE.BIN" in str_path
-                    or TS_FOLDER_NAME in str_path
-                    or "tagstudio_thumbs" in str_path
-                ]
+            if (
+                path.is_dir()
+                or "$RECYCLE.BIN" in str_path
+                or TS_FOLDER_NAME in str_path
+                or "tagstudio_thumbs" in str_path
             ):
                 continue
 
@@ -527,22 +525,15 @@ class Library:
             else:
                 return True
 
-    def add_tag_to_field(
+    def add_field_tag(
         self,
-        tag: int | Tag,
+        tag: Tag,
         field: TagBoxField,
     ) -> None:
-        if isinstance(tag, Tag):
-            tag = tag.id
-
         with Session(self.engine) as session, session.begin():
-            tag_object = session.scalars(select(Tag).where(Tag.id == tag)).one()
-
-            field_ = session.scalars(
-                select(TagBoxField).where(TagBoxField.id == field.id)
-            ).one()
-
-            field_.tags.add(tag_object)
+            field.tags = field.tags | {tag}
+            session.add(field)
+            session.commit()
 
     def add_tag_to_entry_meta_tags(self, tag: int | Tag, entry_id: int) -> None:
         if isinstance(tag, Tag):

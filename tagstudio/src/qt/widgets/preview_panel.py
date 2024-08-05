@@ -692,12 +692,19 @@ class PreviewPanel(QWidget):
             )
 
             self.selected = list(self.driver.selected)
+            logger.info(
+                "update_widgets enum common_fields",
+                common_fields=self.common_fields,
+            )
             for i, f in enumerate(self.common_fields):
-                logger.info("update_widgets enum common_fields", index=i, field=f)
                 self.write_container(i, f)
 
+            logger.info(
+                "update_widgets enum mixed_fields",
+                mixed_fields=self.mixed_fields,
+                start=len(self.common_fields),
+            )
             for i, f in enumerate(self.mixed_fields, start=len(self.common_fields)):
-                logger.info("update_widgets enum mixed_fields", index=i, field=f)
                 self.write_container(i, f, mixed=True)
 
             # Hide leftover containers
@@ -724,7 +731,9 @@ class PreviewPanel(QWidget):
         self.tags_updated.connect(slot)
         self.is_connected = True
 
-    def write_container(self, index: int, field, mixed: bool = False):
+    def write_container(
+        self, index: int, field: TagBoxField | TextField, mixed: bool = False
+    ):
         """Update/Create data for a FieldContainer."""
         # Remove 'Add Field' button from scroll_layout, to be re-added later.
         self.scroll_layout.takeAt(self.scroll_layout.count() - 1).widget()
@@ -741,13 +750,14 @@ class PreviewPanel(QWidget):
             container.set_title(field.name)
             container.set_inline(False)
             title = f"{field.name} (Tag Box)"
+
             if not mixed:
                 entry = self.driver.frame_content[self.selected[0]]
                 inner_container = container.get_inner_widget()
                 if isinstance(inner_container, TagBoxWidget):
                     # TODO
                     # inner_container.set_item(entry)
-                    # inner_container.set_tags(field.tags)  # type: ignore
+                    inner_container.set_tags(list(field.tags))
 
                     try:
                         inner_container.updated.disconnect()
@@ -756,6 +766,10 @@ class PreviewPanel(QWidget):
                         pass
 
                 else:
+                    logger.info(
+                        "inner_container is not instance of TagBoxWidget",
+                        container=inner_container,
+                    )
                     inner_container = TagBoxWidget(
                         entry,
                         title,
