@@ -9,6 +9,7 @@ from pathlib import Path
 
 import cv2
 import rawpy
+import pillow_jxl
 from pillow_heif import register_heif_opener, register_avif_opener
 from PIL import (
     Image,
