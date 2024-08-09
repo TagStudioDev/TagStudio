@@ -21,6 +21,7 @@ IMAGE_TYPES: list[str] = [
     ".heic",
     ".heif",
     ".webp",
+    ".jxl",
     ".bmp",
     ".svg",
     ".avif",
