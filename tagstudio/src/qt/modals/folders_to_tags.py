@@ -61,7 +61,7 @@ def folders_to_tags(library: Library):
                 library.add_tag_to_library(new_tag)
                 branch["dirs"][folder] = dict(dirs={}, tag=new_tag)
             branch = branch["dirs"][folder]
-        return branch["tag"]
+        return branch.get("tag")
 
     for tag in library.tags:
         reversed_tag = reverse_tag(library, tag, None)
