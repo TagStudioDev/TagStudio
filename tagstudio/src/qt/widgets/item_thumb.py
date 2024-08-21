@@ -4,6 +4,7 @@
 import contextlib
 import logging
 import os
+import platform
 import time
 import typing
 from pathlib import Path
@@ -194,7 +195,15 @@ class ItemThumb(FlowWidget):
         self.opener = FileOpenerHelper("")
         open_file_action = QAction("Open file", self)
         open_file_action.triggered.connect(self.opener.open_file)
-        open_explorer_action = QAction("Open file in explorer", self)
+        
+        system = platform.system()
+        if system == "Darwin":
+            open_explorer_action = QAction("Reveal file in Finder", self)
+        elif system == "Linux":
+            open_explorer_action = QAction("Open file in explorer", self) # TODO: Rename to whatever the Linux explorer is
+        else:
+            open_explorer_action = QAction("Open file in explorer", self)
+
         open_explorer_action.triggered.connect(self.opener.open_explorer)
         self.thumb_button.addAction(open_file_action)
         self.thumb_button.addAction(open_explorer_action)
