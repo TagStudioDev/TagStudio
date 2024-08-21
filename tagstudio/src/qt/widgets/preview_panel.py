@@ -642,7 +642,7 @@ class PreviewPanel(QWidget):
                         )
 
                     except (FileNotFoundError, cv2.error) as e:
-                        self.dimensions_label.setText(f"{ext.upper()}")
+                        self.dimensions_label.setText(f"{ext.upper()[1:]}")
                         logging.info(
                             f"[PreviewPanel][ERROR] Couldn't Render thumbnail for {filepath} (because of {e})"
                         )
