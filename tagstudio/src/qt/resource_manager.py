@@ -47,24 +47,30 @@ class ResourceManager:
             return cached_res
         else:
             res: dict = ResourceManager._map.get(id)
-            if res and res.get("mode") in ["r", "rb"]:
-                with open(
-                    (Path(__file__).parents[2] / "resources" / res.get("path")),
-                    res.get("mode"),
-                ) as f:
-                    data = f.read()
-                    if res.get("mode") == "rb":
-                        data = bytes(data)
-                    ResourceManager._cache[id] = data
+            try:
+                if res and res.get("mode") in ["r", "rb"]:
+                    with open(
+                        (Path(__file__).parents[2] / "resources" / res.get("path")),
+                        res.get("mode"),
+                    ) as f:
+                        data = f.read()
+                        if res.get("mode") == "rb":
+                            data = bytes(data)
+                        ResourceManager._cache[id] = data
+                        return data
+                elif res and res.get("mode") == "pil":
+                    data = Image.open(
+                        Path(__file__).parents[2] / "resources" / res.get("path")
+                    )
                     return data
-            elif res and res.get("mode") == "pil":
-                data = Image.open(
-                    Path(__file__).parents[2] / "resources" / res.get("path")
+                elif res and res.get("mode") in ["qt"]:
+                    # TODO: Qt resource loading logic
+                    pass
+            except FileNotFoundError:
+                logging.error(
+                    f"[ResourceManager][ERROR]: Could not find resource: {Path(__file__).parents[2] / "resources" / res.get("path")}"
                 )
-                return data
-            elif res and res.get("mode") in ["qt"]:
-                # TODO: Qt resource loading logic
-                pass
+                return None
 
     def __getattr__(self, __name: str) -> Any:
         attr = self.get(__name)
