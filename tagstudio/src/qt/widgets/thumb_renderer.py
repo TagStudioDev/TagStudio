@@ -54,12 +54,7 @@ class ThumbRenderer(QObject):
     updated = Signal(float, QPixmap, QSize, str)
     updated_ratio = Signal(float)
 
-    thumb_loading_512: Image.Image = Image.open(
-        Path(__file__).parents[3] / "resources/qt/images/thumb_loading_512.png"
-    )
-    thumb_loading_512.load()
-
-    # TODO: Make dynamic font sized given different pixel ratios
+    # TODO: Make dynamic font sizes given different pixel ratios
     font_pixel_ratio: float = 1
     ext_font = ImageFont.truetype(
         Path(__file__).parents[3] / "resources/qt/fonts/Oxanium-Bold.ttf",
@@ -220,9 +215,13 @@ class ThumbRenderer(QObject):
         return (im_hl, im_sh)
 
     def _render_icon(
-        self, name: str, color: str, size: tuple[int, int], pixel_ratio: float
+        self,
+        name: str,
+        color: str,
+        size: tuple[int, int],
+        pixel_ratio: float,
     ) -> Image.Image:
-        border_factor: int = 12
+        border_factor: int = 5
         smooth_factor: int = math.ceil(2 * pixel_ratio)
         radius_factor: int = 8
         icon_ratio: float = 1.75
@@ -255,10 +254,14 @@ class ThumbRenderer(QObject):
         draw = ImageDraw.Draw(im)
         draw.rounded_rectangle(
             (0, 0) + tuple([d - 1 for d in im.size]),
-            radius=math.ceil(radius_factor * smooth_factor * pixel_ratio),
+            radius=math.ceil(
+                (radius_factor * smooth_factor * pixel_ratio) + (pixel_ratio * 1.5)
+            ),
             fill="black",
             outline="#FF0000",
-            width=math.floor(pixel_ratio * border_factor),
+            width=math.floor(
+                (border_factor * smooth_factor * pixel_ratio) - (pixel_ratio * 1.5)
+            ),
         )
 
         # Resize image to final size
@@ -266,7 +269,11 @@ class ThumbRenderer(QObject):
             size,
             resample=Image.Resampling.BILINEAR,
         )
-        fg: Image.Image = Image.new("RGB", size=size, color="#00FF00")
+        fg: Image.Image = Image.new(
+            "RGB",
+            size=size,
+            color="#00FF00",
+        )
 
         # Get icon by name
         icon: Image.Image = self.rm.get(name)
@@ -301,7 +308,7 @@ class ThumbRenderer(QObject):
         return im
 
     def _apply_overlay_color(self, image: Image.Image, color: str) -> Image.Image:
-        """Apply a gradient effect over an an image.
+        """Apply a color overlay effect to an image based on its color channel data.
         Red channel for foreground, green channel for outline, none for background."""
         bg_color: str = (
             get_ui_color(ColorType.DARK_ACCENT, color)
@@ -750,13 +757,17 @@ class ThumbRenderer(QObject):
         update_on_ratio_change=False,
     ):
         """Internal renderer. Renders an entry/element thumbnail for the GUI."""
-        loading_thumb: Image.Image = ThumbRenderer.thumb_loading_512
-
+        adj_size = math.ceil(max(base_size[0], base_size[1]) * pixel_ratio)
         image: Image.Image = None
         pixmap: QPixmap = None
         final: Image.Image = None
         _filepath: Path = Path(filepath)
         resampling_method = Image.Resampling.BILINEAR
+
+        # Initialize "Loading" thumbnail
+        loading_thumb: Image.Image = self._get_icon(
+            "thumb_loading", "", (adj_size, adj_size), pixel_ratio
+        )
 
         if ThumbRenderer.font_pixel_ratio != pixel_ratio:
             ThumbRenderer.font_pixel_ratio = pixel_ratio
@@ -765,10 +776,6 @@ class ThumbRenderer(QObject):
                 math.floor(12 * ThumbRenderer.font_pixel_ratio),
             )
 
-        if QGuiApplication.styleHints().colorScheme() is Qt.ColorScheme.Light:
-            loading_thumb = theme_fg_overlay(loading_thumb)
-
-        adj_size = math.ceil(max(base_size[0], base_size[1]) * pixel_ratio)
         if is_loading:
             final = loading_thumb.resize(
                 (adj_size, adj_size), resample=Image.Resampling.BILINEAR

@@ -86,5 +86,9 @@
   "video": {
     "path": "qt/images/file_icons/video.png",
     "mode": "pil"
+  },
+  "thumb_loading": {
+    "path": "qt/images/thumb_loading.png",
+    "mode": "pil"
   }
 }
