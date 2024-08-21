@@ -30,6 +30,7 @@ class MediaType(str, Enum):
     MATERIAL: str = "material"
     MODEL: str = "model"
     PACKAGE: str = "package"
+    PDF: str = "pdf"
     PLAINTEXT: str = "plaintext"
     PRESENTATION: str = "presentation"
     PROGRAM: str = "program"
@@ -205,7 +206,18 @@ class MediaCategories:
     _INSTALLER_SET: set[str] = {".appx", ".msi", ".msix"}
     _MATERIAL_SET: set[str] = {".mtl"}
     _MODEL_SET: set[str] = {".3ds", ".fbx", ".obj", ".stl"}
-    _PACKAGE_SET: set[str] = {".pkg"}
+    _PACKAGE_SET: set[str] = {
+        ".aab",
+        ".akp",
+        ".apk",
+        ".apkm",
+        ".apks",
+        ".pkg",
+        ".xapk",
+    }
+    _PDF_SET: set[str] = {
+        ".pdf",
+    }
     _PLAINTEXT_SET: set[str] = {
         ".bat",
         ".css",
@@ -340,6 +352,11 @@ class MediaCategories:
         extensions=_PACKAGE_SET,
         is_iana=False,
     )
+    PDF_TYPES: MediaCategory = MediaCategory(
+        media_type=MediaType.PDF,
+        extensions=_PDF_SET,
+        is_iana=False,
+    )
     PLAINTEXT_TYPES: MediaCategory = MediaCategory(
         media_type=MediaType.PLAINTEXT,
         extensions=_PLAINTEXT_SET,
@@ -394,6 +411,7 @@ class MediaCategories:
         MATERIAL_TYPES,
         MODEL_TYPES,
         PACKAGE_TYPES,
+        PDF_TYPES,
         PLAINTEXT_TYPES,
         PRESENTATION_TYPES,
         PROGRAM_TYPES,

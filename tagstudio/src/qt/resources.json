@@ -31,6 +31,10 @@
     "path": "qt/images/file_icons/affinity_photo.png",
     "mode": "pil"
   },
+  "blender": {
+    "path": "qt/images/file_icons/blender.png",
+    "mode": "pil"
+  },
   "document": {
     "path": "qt/images/file_icons/document.png",
     "mode": "pil"
@@ -53,6 +57,18 @@
   },
   "model": {
     "path": "qt/images/file_icons/model.png",
+    "mode": "pil"
+  },
+  "presentation": {
+    "path": "qt/images/file_icons/presentation.png",
+    "mode": "pil"
+  },
+  "program": {
+    "path": "qt/images/file_icons/program.png",
+    "mode": "pil"
+  },
+  "spreadsheet": {
+    "path": "qt/images/file_icons/spreadsheet.png",
     "mode": "pil"
   },
   "text": {

@@ -5,43 +5,41 @@
 
 import logging
 import math
-import cv2
-import rawpy
-import numpy as np
-from pillow_heif import register_heif_opener, register_avif_opener
-from PIL import (
-    Image,
-    UnidentifiedImageError,
-    ImageQt,
-    ImageDraw,
-    ImageFont,
-    ImageOps,
-    ImageFile,
-)
 from io import BytesIO
 from pathlib import Path
+
+import cv2
+import numpy as np
+import rawpy
+from mutagen import MutagenError, flac, id3, mp4
+from PIL import (
+    Image,
+    ImageChops,
+    ImageDraw,
+    ImageEnhance,
+    ImageFile,
+    ImageFont,
+    ImageOps,
+    ImageQt,
+    UnidentifiedImageError,
+)
 from PIL.Image import DecompressionBombError
+from pillow_heif import register_avif_opener, register_heif_opener
 from pydub import AudioSegment, exceptions
-from mutagen import id3, flac, mp4, MutagenError
-from PySide6.QtCore import Qt, QObject, Signal, QSize
+from PySide6.QtCore import QObject, QSize, Qt, Signal
 from PySide6.QtGui import QGuiApplication, QPixmap
-from src.qt.resource_manager import ResourceManager
+from src.core.constants import FONT_SAMPLE_SIZES, FONT_SAMPLE_TEXT
+from src.core.media_types import MediaCategories, MediaType
+from src.core.palette import ColorType, get_ui_color
+from src.core.utils.encoding import detect_char_encoding
+from src.qt.helpers.blender_thumbnailer import blend_thumb
 from src.qt.helpers.color_overlay import theme_fg_overlay
+from src.qt.helpers.file_tester import is_readable_video
 from src.qt.helpers.gradient import four_corner_gradient_background
 from src.qt.helpers.text_wrapper import wrap_full_text
-from src.core.constants import FONT_SAMPLE_SIZES, FONT_SAMPLE_TEXT
-from src.core.media_types import MediaType, MediaCategories
-from src.core.utils.encoding import detect_char_encoding
-from src.core.palette import ColorType, get_ui_color
-from src.qt.helpers.blender_thumbnailer import blend_thumb
-from src.qt.helpers.file_tester import is_readable_video
-
+from src.qt.resource_manager import ResourceManager
 
 ImageFile.LOAD_TRUNCATED_IMAGES = True
-
-ERROR = "[ERROR]"
-WARNING = "[WARNING]"
-INFO = "[INFO]"
 
 logging.basicConfig(format="%(message)s", level=logging.INFO)
 register_heif_opener()
@@ -49,17 +47,11 @@ register_avif_opener()
 
 
 class ThumbRenderer(QObject):
+    """A class for rendering image and file thumbnails."""
+
     rm: ResourceManager = ResourceManager()
     updated = Signal(float, QPixmap, QSize, str)
     updated_ratio = Signal(float)
-
-    # Cached thumbnail elements.
-    # Key: Size + Pixel Ratio Tuple (Ex. (512, 512, 1.25))
-    thumb_masks: dict = {}
-    thumb_borders: dict = {}
-
-    # Key: ("name", "color", 512, 512, 1.25)
-    icons: dict = {}
 
     thumb_loading_512: Image.Image = Image.open(
         Path(__file__).parents[3] / "resources/qt/images/thumb_loading_512.png"
@@ -73,42 +65,88 @@ class ThumbRenderer(QObject):
         math.floor(12 * font_pixel_ratio),
     )
 
-    @staticmethod
-    def _get_mask(size: tuple[int, int], pixel_ratio: float) -> Image.Image:
+    def __init__(self) -> None:
+        super().__init__()
+
+        # Cached thumbnail elements.
+        # Key: Size + Pixel Ratio Tuple (Ex. (512, 512, 1.25))
+        self.thumb_masks: dict = {}
+        self.raised_edges: dict = {}
+
+        # Key: ("name", "color", 512, 512, 1.25)
+        self.icons: dict = {}
+
+    def _get_resource_id(self, url: Path) -> str:
+        """Return the name of the icon resource to use for a file type.
+        Special terms will return special resources.
+
+        Args:
+            url (Path): The file url to assess. "$LOADING" will return the loading graphic.
+        """
+        ext = url.suffix.lower()
+        types: set[MediaType] = MediaCategories.get_types(ext, True)
+
+        # Loop though the specific (non-IANA) categories and return the string
+        # name of the first matching category found.
+        for cat in MediaCategories.ALL_CATEGORIES:
+            if not cat.is_iana:
+                if cat.media_type in types:
+                    return cat.media_type.value
+
+        # If the type is broader (IANA registered) then search those types.
+        for cat in MediaCategories.ALL_CATEGORIES:
+            if cat.is_iana:
+                if cat.media_type in types:
+                    return cat.media_type.value
+
+        return "file_generic"
+
+    def _get_mask(self, size: tuple[int, int], pixel_ratio: float) -> Image.Image:
         """
         Returns a thumbnail mask given a size and pixel ratio.
         If one is not already cached, then a new one will be rendered.
         """
-        item: Image.Image = ThumbRenderer.thumb_masks.get((*size, pixel_ratio))
+        item: Image.Image = self.thumb_masks.get((*size, pixel_ratio))
         if not item:
-            item = ThumbRenderer._render_mask(size, pixel_ratio)
-            ThumbRenderer.thumb_masks[(*size, pixel_ratio)] = item
+            item = self._render_mask(size, pixel_ratio)
+            self.thumb_masks[(*size, pixel_ratio)] = item
         return item
 
-    @staticmethod
-    def _get_hl_border(size: tuple[int, int], pixel_ratio: float) -> Image.Image:
+    def _get_edge(
+        self, size: tuple[int, int], pixel_ratio: float
+    ) -> tuple[Image.Image, Image.Image]:
         """
-        Returns a thumbnail border given a size and pixel ratio.
+        Returns a thumbnail raised edge graphic given a size and pixel ratio.
         If one is not already cached, then a new one will be rendered.
         """
-        item: Image.Image = ThumbRenderer.thumb_borders.get((*size, pixel_ratio))
+        item: tuple[Image.Image, Image.Image] = self.raised_edges.get(
+            (*size, pixel_ratio)
+        )
         if not item:
-            item = ThumbRenderer._render_hl_border(size, pixel_ratio)
-            ThumbRenderer.thumb_borders[(*size, pixel_ratio)] = item
+            item = self._render_edge(size, pixel_ratio)
+            self.raised_edges[(*size, pixel_ratio)] = item
+        else:
+            logging.info("using cached edge")
         return item
 
-    @staticmethod
     def _get_icon(
-        name: str, color: str, size: tuple[int, int], pixel_ratio: float
+        self, name: str, color: str, size: tuple[int, int], pixel_ratio: float = 1.0
     ) -> Image.Image:
-        item: Image.Image = ThumbRenderer.icons.get((name, color, *size, pixel_ratio))
+        """Retrieves a new or cached icon.
+
+        Args:
+            name (str): The name of the icon resource.
+            color (str): The color to use for the icon.
+            size (tuple[int,int]): The size of the icon.
+            pixel_ratio (float): The screen pixel ratio.
+        """
+        item: Image.Image = self.icons.get((name, color, *size, pixel_ratio))
         if not item:
-            item = ThumbRenderer._render_icon(name, color, size, pixel_ratio)
-            ThumbRenderer.thumb_borders[(name, *color, size, pixel_ratio)] = item
+            item = self._render_icon(name, color, size, pixel_ratio)
+            self.raised_edges[(name, *color, size, pixel_ratio)] = item
         return item
 
-    @staticmethod
-    def _render_mask(size: tuple[int, int], pixel_ratio) -> Image.Image:
+    def _render_mask(self, size: tuple[int, int], pixel_ratio) -> Image.Image:
         """Renders a thumbnail mask."""
         smooth_factor: int = 2
         radius_factor: int = 8
@@ -130,33 +168,97 @@ class ThumbRenderer(QObject):
         )
         return im
 
-    @staticmethod
-    def _render_hl_border(size: tuple[int, int], pixel_ratio) -> Image.Image:
+    def _render_edge(
+        self, size: tuple[int, int], pixel_ratio
+    ) -> tuple[Image.Image, Image.Image]:
         """Renders a thumbnail highlight border."""
+        logging.info("rendering edge")
         smooth_factor: int = 2
         radius_factor: int = 8
-        im: Image.Image = Image.new(
+        width: int = math.floor(pixel_ratio * 2)
+
+        # Highlight
+        im_hl: Image.Image = Image.new(
             mode="RGBA",
             size=tuple([d * smooth_factor for d in size]),  # type: ignore
             color="#00000000",
         )
-        draw = ImageDraw.Draw(im)
+        draw = ImageDraw.Draw(im_hl)
         draw.rounded_rectangle(
-            (0, 0) + tuple([d - 1 for d in im.size]),
-            radius=math.ceil(radius_factor * smooth_factor * pixel_ratio),
+            (width, width) + tuple([d - (width + 1) for d in im_hl.size]),
+            radius=math.ceil(
+                (radius_factor * smooth_factor * pixel_ratio) - (pixel_ratio * 3)
+            ),
             fill=None,
             outline="white",
-            width=math.floor(pixel_ratio * 2),
+            width=width,
         )
-        im = im.resize(
+        im_hl = im_hl.resize(
             size,
             resample=Image.Resampling.BILINEAR,
         )
-        return im
 
-    @staticmethod
+        # Shadow
+        im_sh: Image.Image = Image.new(
+            mode="RGBA",
+            size=tuple([d * smooth_factor for d in size]),  # type: ignore
+            color="#00000000",
+        )
+        draw = ImageDraw.Draw(im_sh)
+        draw.rounded_rectangle(
+            (0, 0) + tuple([d - 1 for d in im_sh.size]),
+            radius=math.ceil(radius_factor * smooth_factor * pixel_ratio),
+            fill=None,
+            outline="black",
+            width=width,
+        )
+        im_sh = im_sh.resize(
+            size,
+            resample=Image.Resampling.BILINEAR,
+        )
+        # sh_bg = sh_bg.resize(
+        #     size,
+        #     resample=Image.Resampling.BILINEAR,
+        # )
+
+        # Shadow
+        # sh_bg: Image.Image = Image.new(
+        #     mode="RGBA",
+        #     size=tuple([d * smooth_factor for d in size]),  # type: ignore
+        #     color="black",
+        # )
+        # sh_inner_mask: Image.Image = Image.new(
+        #     mode="RGBA",
+        #     size=tuple([d * smooth_factor for d in size]),  # type: ignore
+        #     color="red",
+        # )
+        # draw = ImageDraw.Draw(sh_inner_mask)
+        # draw.rounded_rectangle(
+        #     (0, 0) + tuple([d - 1 for d in sh_bg.size]),
+        #     radius=math.ceil(radius_factor * smooth_factor * pixel_ratio),
+        #     fill="black",
+        #     outline="red",
+        #     width=width,
+        # )
+        # sh_bg.putalpha(sh_inner_mask.getchannel(0))
+        # # sh_bg = sh_bg.resize(
+        # #     size,
+        # #     resample=Image.Resampling.BILINEAR,
+        # # )
+
+        # alpha_mask: Image.Image = self._get_mask(sh_bg.size, pixel_ratio)
+        # im_sh = Image.new("RGBA", sh_bg.size, "#00000000")
+        # im_sh.paste(sh_bg, mask=alpha_mask.getchannel(0))
+
+        # im_sh = im_sh.resize(
+        #     size,
+        #     resample=Image.Resampling.BILINEAR,
+        # )
+
+        return (im_hl, im_sh)
+
     def _render_icon(
-        name: str, color: str, size: tuple[int, int], pixel_ratio: float
+        self, name: str, color: str, size: tuple[int, int], pixel_ratio: float
     ) -> Image.Image:
         smooth_factor: int = math.ceil(2 * pixel_ratio)
         radius_factor: int = 8
@@ -180,7 +282,7 @@ class ThumbRenderer(QObject):
         im.paste(
             bg,
             (0, 0),
-            mask=ThumbRenderer._get_mask(
+            mask=self._get_mask(
                 tuple([d * smooth_factor for d in size]),  # type: ignore
                 (pixel_ratio * smooth_factor),
             ),
@@ -204,9 +306,9 @@ class ThumbRenderer(QObject):
         fg: Image.Image = Image.new("RGB", size=size, color="#00FF00")
 
         # Get icon by name
-        icon: Image.Image = ThumbRenderer.rm.get(name)
+        icon: Image.Image = self.rm.get(name)
         if not icon:
-            icon = ThumbRenderer.rm.get("file_generic")
+            icon = self.rm.get("file_generic")
             if not icon:
                 icon = Image.new(mode="RGBA", size=(32, 32), color="magenta")
 
@@ -228,15 +330,14 @@ class ThumbRenderer(QObject):
         )
 
         # Apply color overlay
-        im = ThumbRenderer._apply_overlay_color(
+        im = self._apply_overlay_color(
             im,
             color,
         )
 
         return im
 
-    @staticmethod
-    def _apply_overlay_color(image: Image.Image, color: str) -> Image.Image:
+    def _apply_overlay_color(self, image: Image.Image, color: str) -> Image.Image:
         """Apply a gradient effect over an an image.
         Red channel for foreground, green channel for outline, none for background."""
         bg_color: str = (
@@ -271,330 +372,34 @@ class ThumbRenderer(QObject):
 
         return bg
 
-    @staticmethod
-    def get_icon_resource(url: Path) -> str:
-        """Return the name of the icon resource to use for a file type.
+    def _apply_edge(self, image: Image.Image, edge: tuple[Image.Image, Image.Image]):
+        """Apply a given edge effect to an image.
 
         Args:
-            url (Path): The file url to assess.
+            image (Image.Image): The image to apply the edge to.
+            edge (Image.Image): The edge image to apply.
         """
-        ext = url.suffix.lower()
-        types: set[MediaType] = MediaCategories.get_types(ext, True)
+        logging.info("applying edge")
+        im: Image.Image = image
+        im_hl, im_sh = edge
 
-        # Loop though the specific (non-IANA) categories and return the string
-        # name of the first matching category found.
-        for cat in MediaCategories.ALL_CATEGORIES:
-            if not cat.is_iana:
-                if cat.media_type in types:
-                    return cat.media_type.value
+        # Configure and apply a soft light overlay.
+        # This makes up the bulk of the effect.
+        # edge_soft = im_hl.copy()
+        im_hl.putalpha(ImageEnhance.Brightness(im_hl.getchannel(3)).enhance(0.75))
+        im.paste(ImageChops.soft_light(im, im_hl), mask=im_hl.getchannel(3))
 
-        # If the type is broader (IANA registered) then search those types.
-        for cat in MediaCategories.ALL_CATEGORIES:
-            if cat.is_iana:
-                if cat.media_type in types:
-                    return cat.media_type.value
+        # Configure and apply a hard light overlay.
+        # This helps with contrast.
+        # edge_hard = im_sh.copy()
+        # edge_hard.putalpha(ImageEnhance.Brightness(im_sh.getchannel(3)).enhance(0.75))
+        im_sh.putalpha(ImageEnhance.Brightness(im_sh.getchannel(3)).enhance(0.75))
+        im.paste(im_sh, mask=im_sh.getchannel(3))
+        # im.paste(edge_hard, mask=im_sh.getchannel(3))
 
-        return "file_generic"
+        return im
 
-    def render(
-        self,
-        timestamp: float,
-        filepath: str | Path,
-        base_size: tuple[int, int],
-        pixel_ratio: float,
-        is_loading=False,
-        gradient=False,
-        update_on_ratio_change=False,
-    ):
-        """Internal renderer. Renders an entry/element thumbnail for the GUI."""
-        loading_thumb: Image.Image = ThumbRenderer.thumb_loading_512
-
-        image: Image.Image = None
-        pixmap: QPixmap = None
-        final: Image.Image = None
-        _filepath: Path = Path(filepath)
-        resampling_method = Image.Resampling.BILINEAR
-        bg_color: str = (
-            "#1e1e1e"
-            if QGuiApplication.styleHints().colorScheme() is Qt.ColorScheme.Dark
-            else "#FFFFFF"
-        )
-        fg_color: str = (
-            "#FFFFFF"
-            if QGuiApplication.styleHints().colorScheme() is Qt.ColorScheme.Dark
-            else "#111111"
-        )
-
-        if ThumbRenderer.font_pixel_ratio != pixel_ratio:
-            ThumbRenderer.font_pixel_ratio = pixel_ratio
-            ThumbRenderer.ext_font = ImageFont.truetype(
-                Path(__file__).parents[3] / "resources/qt/fonts/Oxanium-Bold.ttf",
-                math.floor(12 * ThumbRenderer.font_pixel_ratio),
-            )
-
-        if QGuiApplication.styleHints().colorScheme() is Qt.ColorScheme.Light:
-            loading_thumb = theme_fg_overlay(loading_thumb)
-
-        adj_size = math.ceil(max(base_size[0], base_size[1]) * pixel_ratio)
-        if is_loading:
-            final = loading_thumb.resize(
-                (adj_size, adj_size), resample=Image.Resampling.BILINEAR
-            )
-            qim = ImageQt.ImageQt(final)
-            pixmap = QPixmap.fromImage(qim)
-            pixmap.setDevicePixelRatio(pixel_ratio)
-            if update_on_ratio_change:
-                self.updated_ratio.emit(1)
-        elif _filepath:
-            try:
-                ext: str = _filepath.suffix.lower()
-                # Images =======================================================
-                if MediaType.IMAGE in MediaCategories.get_types(ext, True):
-                    # Raw Images -----------------------------------------------
-                    if MediaType.IMAGE_RAW in MediaCategories.get_types(ext, True):
-                        try:
-                            with rawpy.imread(str(_filepath)) as raw:
-                                rgb = raw.postprocess()
-                                image = Image.frombytes(
-                                    "RGB",
-                                    (rgb.shape[1], rgb.shape[0]),
-                                    rgb,
-                                    decoder_name="raw",
-                                )
-                        except DecompressionBombError as e:
-                            logging.info(
-                                f"[ThumbRenderer]{WARNING} Couldn't Render thumbnail for {_filepath.name} ({type(e).__name__})"
-                            )
-                        except (
-                            rawpy._rawpy.LibRawIOError,
-                            rawpy._rawpy.LibRawFileUnsupportedError,
-                        ) as e:
-                            logging.info(
-                                f"[ThumbRenderer]{ERROR} Couldn't Render thumbnail for raw image {_filepath.name} ({type(e).__name__})"
-                            )
-
-                    # Normal Images --------------------------------------------
-                    else:
-                        try:
-                            image = Image.open(_filepath)
-                            if image.mode != "RGB" and image.mode != "RGBA":
-                                image = image.convert(mode="RGBA")
-                            if image.mode == "RGBA":
-                                new_bg = Image.new("RGB", image.size, color="#1e1e1e")
-                                new_bg.paste(image, mask=image.getchannel(3))
-                                image = new_bg
-
-                            image = ImageOps.exif_transpose(image)
-                        except DecompressionBombError as e:
-                            logging.info(
-                                f"[ThumbRenderer]{WARNING} Couldn't Render thumbnail for {_filepath.name} ({type(e).__name__})"
-                            )
-                # Videos =======================================================
-                elif MediaType.VIDEO in MediaCategories.get_types(ext, True):
-                    if is_readable_video(_filepath):
-                        video = cv2.VideoCapture(str(_filepath), cv2.CAP_FFMPEG)
-                        # TODO: Move this check to is_readable_video()
-                        if video.get(cv2.CAP_PROP_FRAME_COUNT) <= 0:
-                            raise cv2.error("File is invalid or has 0 frames")
-                        video.set(
-                            cv2.CAP_PROP_POS_FRAMES,
-                            (video.get(cv2.CAP_PROP_FRAME_COUNT) // 2),
-                        )
-                        success, frame = video.read()
-                        if not success:
-                            # Depending on the video format, compression, and frame
-                            # count, seeking halfway does not work and the thumb
-                            # must be pulled from the earliest available frame.
-                            video.set(cv2.CAP_PROP_POS_FRAMES, 0)
-                        frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-                        image = Image.fromarray(frame)
-                    else:
-                        image = ThumbRenderer._get_icon(
-                            name="file_generic",
-                            color="red",
-                            size=(adj_size, adj_size),
-                            pixel_ratio=pixel_ratio,
-                        )
-
-                # Plain Text ===================================================
-                elif MediaType.PLAINTEXT in MediaCategories.get_types(ext):
-                    encoding = detect_char_encoding(_filepath)
-                    with open(_filepath, "r", encoding=encoding) as text_file:
-                        text = text_file.read(256)
-                    bg = Image.new("RGB", (256, 256), color=bg_color)
-                    draw = ImageDraw.Draw(bg)
-                    draw.text((16, 16), text, fill=fg_color)
-                    image = bg
-                # Fonts ========================================================
-                elif MediaType.FONT in MediaCategories.get_types(ext, True):
-                    if gradient:
-                        # Short (Aa) Preview
-                        image = self._font_preview_short(_filepath, adj_size)
-                    else:
-                        # Large (Full Alphabet) Preview
-                        image = self._font_preview_long(_filepath, adj_size)
-                # Audio ========================================================
-                elif MediaType.AUDIO in MediaCategories.get_types(ext, True):
-                    image = self._album_artwork(_filepath, ext)
-                    if image is None:
-                        image = self._audio_waveform(
-                            _filepath, ext, adj_size, pixel_ratio
-                        )
-                        if image is not None:
-                            image = ThumbRenderer._apply_overlay_color(image, "green")
-
-                # 3D ===========================================================
-                # elif extension == 'stl':
-                # 	# Create a new plot
-                # 	matplotlib.use('agg')
-                # 	figure = plt.figure()
-                # 	axes = figure.add_subplot(projection='3d')
-
-                # 	# Load the STL files and add the vectors to the plot
-                # 	your_mesh = mesh.Mesh.from_file(_filepath)
-
-                # 	poly_collection = mplot3d.art3d.Poly3DCollection(your_mesh.vectors)
-                # 	poly_collection.set_color((0,0,1))  # play with color
-                # 	scale = your_mesh.points.flatten()
-                # 	axes.auto_scale_xyz(scale, scale, scale)
-                # 	axes.add_collection3d(poly_collection)
-                # 	# plt.show()
-                # 	img_buf = io.BytesIO()
-                # 	plt.savefig(img_buf, format='png')
-                # 	image = Image.open(img_buf)
-
-                # Blender ===========================================================
-                elif MediaType.BLENDER in MediaCategories.get_types(ext):
-                    try:
-                        blend_image = blend_thumb(str(_filepath))
-
-                        bg = Image.new("RGB", blend_image.size, color=bg_color)
-                        bg.paste(blend_image, mask=blend_image.getchannel(3))
-                        image = bg
-
-                    except (
-                        AttributeError,
-                        UnidentifiedImageError,
-                        FileNotFoundError,
-                        TypeError,
-                    ) as e:
-                        if str(e) == "expected string or buffer":
-                            logging.info(
-                                f"[ThumbRenderer]{ERROR} {_filepath.name} Doesn't have thumbnail saved. ({type(e).__name__})"
-                            )
-
-                        else:
-                            logging.info(
-                                f"[ThumbRenderer]{ERROR}: Couldn't render thumbnail for {_filepath.name} ({type(e).__name__})"
-                            )
-
-                # No Rendered Thumbnail ========================================
-                if not image:
-                    raise UnidentifiedImageError
-
-                orig_x, orig_y = image.size
-                new_x, new_y = (adj_size, adj_size)
-
-                if orig_x > orig_y:
-                    new_x = adj_size
-                    new_y = math.ceil(adj_size * (orig_y / orig_x))
-                elif orig_y > orig_x:
-                    new_y = adj_size
-                    new_x = math.ceil(adj_size * (orig_x / orig_y))
-
-                if update_on_ratio_change:
-                    self.updated_ratio.emit(new_x / new_y)
-
-                resampling_method = (
-                    Image.Resampling.NEAREST
-                    if max(image.size[0], image.size[1])
-                    < max(base_size[0], base_size[1])
-                    else Image.Resampling.BILINEAR
-                )
-                image = image.resize((new_x, new_y), resample=resampling_method)
-                if gradient:
-                    mask: Image.Image = ThumbRenderer._get_mask(
-                        (adj_size, adj_size), pixel_ratio
-                    )
-                    hl: Image.Image = ThumbRenderer._get_hl_border(
-                        (adj_size, adj_size), pixel_ratio
-                    )
-                    final = four_corner_gradient_background(image, adj_size, mask, hl)
-                else:
-                    scalar = 4
-                    rec: Image.Image = Image.new(
-                        "RGB",
-                        tuple([d * scalar for d in image.size]),  # type: ignore
-                        "black",
-                    )
-                    draw = ImageDraw.Draw(rec)
-                    draw.rounded_rectangle(
-                        (0, 0) + tuple([d - 1 for d in rec.size]),
-                        (base_size[0] // 32) * scalar * pixel_ratio,
-                        fill="red",
-                    )
-                    rec = rec.resize(
-                        tuple([d // scalar for d in rec.size]),
-                        resample=Image.Resampling.BILINEAR,
-                    )
-                    final = Image.new("RGBA", image.size, (0, 0, 0, 0))
-                    final.paste(image, mask=rec.getchannel(0))
-            except FileNotFoundError as e:
-                logging.info(
-                    f"[ThumbRenderer]{ERROR}: Couldn't render thumbnail for {_filepath.name} ({type(e).__name__})"
-                )
-                if update_on_ratio_change:
-                    self.updated_ratio.emit(1)
-                final = ThumbRenderer._get_icon(
-                    name="broken_link_icon",
-                    color="red",
-                    size=(adj_size, adj_size),
-                    pixel_ratio=pixel_ratio,
-                )
-            except (
-                UnidentifiedImageError,
-                cv2.error,
-                DecompressionBombError,
-                UnicodeDecodeError,
-                OSError,
-            ) as e:
-                # if e is not UnicodeDecodeError:
-                logging.info(
-                    f"[ThumbRenderer]{ERROR}: Couldn't render thumbnail for {_filepath.name} ({type(e).__name__})"
-                )
-
-                if update_on_ratio_change:
-                    self.updated_ratio.emit(1)
-                final = ThumbRenderer._get_icon(
-                    name=ThumbRenderer.get_icon_resource(_filepath),
-                    # name="file_generic",
-                    color="",
-                    size=(adj_size, adj_size),
-                    pixel_ratio=pixel_ratio,
-                )
-            qim = ImageQt.ImageQt(final)
-            if image:
-                image.close()
-            pixmap = QPixmap.fromImage(qim)
-            pixmap.setDevicePixelRatio(pixel_ratio)
-
-        if pixmap:
-            self.updated.emit(
-                timestamp,
-                pixmap,
-                QSize(
-                    math.ceil(adj_size / pixel_ratio),
-                    math.ceil(final.size[1] / pixel_ratio),
-                ),
-                _filepath.suffix.lower(),
-            )
-
-        else:
-            self.updated.emit(
-                timestamp, QPixmap(), QSize(*base_size), _filepath.suffix.lower()
-            )
-
-    def _album_artwork(self, filepath: Path, ext: str) -> Image.Image | None:
+    def _audio_album_thumb(self, filepath: Path, ext: str) -> Image.Image | None:
         """Gets an album cover from an audio file if one is present."""
         image: Image.Image = None
         try:
@@ -626,21 +431,21 @@ class ThumbRenderer(QObject):
             MutagenError,
         ) as e:
             logging.error(
-                f"[ThumbRenderer]{ERROR}: Couldn't read album artwork for {filepath.name} ({type(e).__name__})"
+                f"[ThumbRenderer][ERROR]: Couldn't read album artwork for {filepath.name} ({type(e).__name__})"
             )
         return image
 
-    def _audio_waveform(
+    def _audio_waveform_thumb(
         self, filepath: Path, ext: str, size: int, pixel_ratio: float
     ) -> Image.Image | None:
-        """Renders a waveform image from an audio file."""
+        """Render a waveform image from an audio file."""
         # BASE_SCALE used for drawing on a larger image and resampling down
         # to provide an antialiased effect.
         BASE_SCALE: int = 2
         size_scaled: int = size * BASE_SCALE
         ALLOW_SMALL_MIN: bool = False
         SAMPLES_PER_BAR: int = 3
-        image: Image.Image = None
+        im: Image.Image = None
 
         try:
             BARS: int = min(math.floor((size // pixel_ratio) / 5), 64)
@@ -674,8 +479,8 @@ class ThumbRenderer(QObject):
 
             line_ratio = max(highest_line / BAR_HEIGHT, 1)
 
-            image = Image.new("RGB", (size_scaled, size_scaled), color="#000000")
-            draw = ImageDraw.Draw(image)
+            im = Image.new("RGB", (size_scaled, size_scaled), color="#000000")
+            draw = ImageDraw.Draw(im)
 
             current_x = BAR_MARGIN
             for item in max_array:
@@ -705,83 +510,462 @@ class ThumbRenderer(QObject):
 
                 current_x = current_x + LINE_WIDTH + BAR_MARGIN
 
-            image.resize((size, size), Image.Resampling.BILINEAR)
+            im.resize((size, size), Image.Resampling.BILINEAR)
 
         except exceptions.CouldntDecodeError as e:
             logging.error(
-                f"[ThumbRenderer]{ERROR}: Couldn't render waveform for {filepath.name} ({type(e).__name__})"
+                f"[ThumbRenderer][WAVEFORM][ERROR]: Couldn't render waveform for {filepath.name} ({type(e).__name__})"
             )
-        return image
+        return im
 
-    def _font_preview_short(self, filepath: Path, size: int) -> Image.Image:
-        """Renders a small font preview ("Aa") thumbnail from a font file."""
-        bg = Image.new("RGB", (size, size), color="#000000")
-        raw = Image.new("RGB", (size * 2, size * 2), color="#000000")
-        draw = ImageDraw.Draw(raw)
-        font = ImageFont.truetype(filepath, size=size)
-        # NOTE: While a stroke effect is desired, the text
-        # method only allows for outer strokes, which looks
-        # a bit weird when rendering fonts.
-        draw.text(
-            (size // 8, size // 8),
-            "Aa",
-            font=font,
-            fill="#FF0000",
-            # stroke_width=math.ceil(size / 96),
-            # stroke_fill="#FFFF00",
+    def _blender(self, filepath: Path) -> Image.Image:
+        bg_color: str = (
+            "#1e1e1e"
+            if QGuiApplication.styleHints().colorScheme() is Qt.ColorScheme.Dark
+            else "#FFFFFF"
         )
-        # NOTE: Change to getchannel(1) if using an outline.
-        data = np.asarray(raw.getchannel(0))
+        im: Image.Image = None
+        try:
+            blend_image = blend_thumb(str(filepath))
 
-        m, n = data.shape[:2]
-        col: np.ndarray = data.any(0)
-        row: np.ndarray = data.any(1)
-        cropped_data = np.asarray(raw)[
-            row.argmax() : m - row[::-1].argmax(),
-            col.argmax() : n - col[::-1].argmax(),
-        ]
-        cropped_im: Image.Image = Image.fromarray(cropped_data, "RGB")
+            bg = Image.new("RGB", blend_image.size, color=bg_color)
+            bg.paste(blend_image, mask=blend_image.getchannel(3))
+            im = bg
 
-        margin: int = math.ceil(size // 16)
+        except (
+            AttributeError,
+            UnidentifiedImageError,
+            FileNotFoundError,
+            TypeError,
+        ) as e:
+            if str(e) == "expected string or buffer":
+                logging.info(
+                    f"[ThumbRenderer][BLENDER][INFO] {filepath.name} Doesn't have an embedded thumbnail. ({type(e).__name__})"
+                )
 
-        orig_x, orig_y = cropped_im.size
-        new_x, new_y = (size, size)
-        if orig_x > orig_y:
-            new_x = size
-            new_y = math.ceil(size * (orig_y / orig_x))
-        elif orig_y > orig_x:
-            new_y = size
-            new_x = math.ceil(size * (orig_x / orig_y))
+            else:
+                logging.error(
+                    f"[ThumbRenderer][BLENDER][ERROR]: Couldn't render thumbnail for {filepath.name} ({type(e).__name__})"
+                )
+        return im
 
-        cropped_im = cropped_im.resize(
-            size=(new_x - (margin * 2), new_y - (margin * 2)),
-            resample=Image.Resampling.BILINEAR,
-        )
-        bg.paste(
-            cropped_im,
-            box=(margin, margin + ((size - new_y) // 2)),
-        )
-        return ThumbRenderer._apply_overlay_color(bg, "purple")
+    def _font_short_thumb(self, filepath: Path, size: int) -> Image.Image:
+        """Render a small font preview ("Aa") thumbnail from a font file."""
+        im: Image.Image = None
+        try:
+            bg = Image.new("RGB", (size, size), color="#000000")
+            raw = Image.new("RGB", (size * 3, size * 3), color="#000000")
+            draw = ImageDraw.Draw(raw)
+            font = ImageFont.truetype(filepath, size=size)
+            # NOTE: While a stroke effect is desired, the text
+            # method only allows for outer strokes, which looks
+            # a bit weird when rendering fonts.
+            draw.text(
+                (size // 8, size // 8),
+                "Aa",
+                font=font,
+                fill="#FF0000",
+                # stroke_width=math.ceil(size / 96),
+                # stroke_fill="#FFFF00",
+            )
+            # NOTE: Change to getchannel(1) if using an outline.
+            data = np.asarray(raw.getchannel(0))
 
-    def _font_preview_long(self, filepath: Path, size: int) -> Image.Image:
-        """Renders a large font preview ("Alphabet") thumbnail from a font file."""
+            m, n = data.shape[:2]
+            col: np.ndarray = data.any(0)
+            row: np.ndarray = data.any(1)
+            cropped_data = np.asarray(raw)[
+                row.argmax() : m - row[::-1].argmax(),
+                col.argmax() : n - col[::-1].argmax(),
+            ]
+            cropped_im: Image.Image = Image.fromarray(cropped_data, "RGB")
+
+            margin: int = math.ceil(size // 16)
+
+            orig_x, orig_y = cropped_im.size
+            new_x, new_y = (size, size)
+            if orig_x > orig_y:
+                new_x = size
+                new_y = math.ceil(size * (orig_y / orig_x))
+            elif orig_y > orig_x:
+                new_y = size
+                new_x = math.ceil(size * (orig_x / orig_y))
+
+            cropped_im = cropped_im.resize(
+                size=(new_x - (margin * 2), new_y - (margin * 2)),
+                resample=Image.Resampling.BILINEAR,
+            )
+            bg.paste(
+                cropped_im,
+                box=(margin, margin + ((size - new_y) // 2)),
+            )
+            im = self._apply_overlay_color(bg, "purple")
+        except OSError as e:
+            logging.info(
+                f"[ThumbRenderer][FONT][ERROR] Couldn't Render thumbnail for font {filepath.name} ({type(e).__name__})"
+            )
+        return im
+
+    def _font_long_thumb(self, filepath: Path, size: int) -> Image.Image:
+        """Render a large font preview ("Alphabet") thumbnail from a font file."""
         # Scale the sample font sizes to the preview image
         # resolution,assuming the sizes are tuned for 256px.
-        scaled_sizes: list[int] = [
-            math.floor(x * (size / 256)) for x in FONT_SAMPLE_SIZES
-        ]
-        bg = Image.new("RGBA", (size, size), color="#00000000")
-        draw = ImageDraw.Draw(bg)
-        lines_of_padding = 2
-        y_offset = 0
+        im: Image.Image = None
+        try:
+            scaled_sizes: list[int] = [
+                math.floor(x * (size / 256)) for x in FONT_SAMPLE_SIZES
+            ]
+            bg = Image.new("RGBA", (size, size), color="#00000000")
+            draw = ImageDraw.Draw(bg)
+            lines_of_padding = 2
+            y_offset = 0
 
-        for font_size in scaled_sizes:
-            font = ImageFont.truetype(filepath, size=font_size)
-            text_wrapped: str = wrap_full_text(
-                FONT_SAMPLE_TEXT, font=font, width=size, draw=draw
+            for font_size in scaled_sizes:
+                font = ImageFont.truetype(filepath, size=font_size)
+                text_wrapped: str = wrap_full_text(
+                    FONT_SAMPLE_TEXT, font=font, width=size, draw=draw
+                )
+                draw.multiline_text((0, y_offset), text_wrapped, font=font)
+                y_offset += (
+                    len(text_wrapped.split("\n")) + lines_of_padding
+                ) * draw.textbbox((0, 0), "A", font=font)[-1]
+            im = theme_fg_overlay(bg, use_alpha=False)
+        except OSError as e:
+            logging.info(
+                f"[ThumbRenderer][FONT][ERROR] Couldn't Render thumbnail for font {filepath.name} ({type(e).__name__})"
             )
-            draw.multiline_text((0, y_offset), text_wrapped, font=font)
-            y_offset += (
-                len(text_wrapped.split("\n")) + lines_of_padding
-            ) * draw.textbbox((0, 0), "A", font=font)[-1]
-        return theme_fg_overlay(bg, use_alpha=False)
+        return im
+
+    def _image_raw_thumb(self, filepath: Path) -> Image.Image:
+        im: Image.Image = None
+        try:
+            with rawpy.imread(str(filepath)) as raw:
+                rgb = raw.postprocess()
+                im = Image.frombytes(
+                    "RGB",
+                    (rgb.shape[1], rgb.shape[0]),
+                    rgb,
+                    decoder_name="raw",
+                )
+        except DecompressionBombError as e:
+            logging.info(
+                f"[ThumbRenderer][RAW][WARNING] Couldn't Render thumbnail for {filepath.name} ({type(e).__name__})"
+            )
+        except (
+            rawpy._rawpy.LibRawIOError,
+            rawpy._rawpy.LibRawFileUnsupportedError,
+        ) as e:
+            logging.info(
+                f"[ThumbRenderer][RAW][ERROR] Couldn't Render thumbnail for raw image {filepath.name} ({type(e).__name__})"
+            )
+        return im
+
+    def _image_thumb(self, filepath: Path) -> Image.Image:
+        im: Image.Image = None
+        try:
+            im = Image.open(filepath)
+            if im.mode != "RGB" and im.mode != "RGBA":
+                im = im.convert(mode="RGBA")
+            if im.mode == "RGBA":
+                new_bg = Image.new("RGB", im.size, color="#1e1e1e")
+                new_bg.paste(im, mask=im.getchannel(3))
+                im = new_bg
+
+            im = ImageOps.exif_transpose(im)
+        except (
+            UnidentifiedImageError,
+            DecompressionBombError,
+        ) as e:
+            logging.error(
+                f"[ThumbRenderer][IMAGE][ERROR]: Couldn't render thumbnail for {filepath.name} ({type(e).__name__})"
+            )
+        return im
+
+    def _image_vector_thumb(self, filepath: Path, size: int) -> Image.Image:
+        # TODO: Implement.
+        im: Image.Image = None
+        return im
+
+    def _model_stl_thumb(self, filepath: Path, size: int) -> Image.Image:
+        # TODO: Implement.
+        im: Image.Image = None
+        # # Create a new plot
+        # matplotlib.use('agg')
+        # figure = plt.figure()
+        # axes = figure.add_subplot(projection='3d')
+
+        # # Load the STL files and add the vectors to the plot
+        # your_mesh = mesh.Mesh.from_file(_filepath)
+
+        # poly_collection = mplot3d.art3d.Poly3DCollection(your_mesh.vectors)
+        # poly_collection.set_color((0,0,1))  # play with color
+        # scale = your_mesh.points.flatten()
+        # axes.auto_scale_xyz(scale, scale, scale)
+        # axes.add_collection3d(poly_collection)
+        # # plt.show()
+        # img_buf = io.BytesIO()
+        # plt.savefig(img_buf, format='png')
+        # im = Image.open(img_buf)
+
+        return im
+
+    def _text_thumb(self, filepath: Path, size: int) -> Image.Image:
+        im: Image.Image = None
+
+        bg_color: str = (
+            "#1e1e1e"
+            if QGuiApplication.styleHints().colorScheme() is Qt.ColorScheme.Dark
+            else "#FFFFFF"
+        )
+        fg_color: str = (
+            "#FFFFFF"
+            if QGuiApplication.styleHints().colorScheme() is Qt.ColorScheme.Dark
+            else "#111111"
+        )
+
+        try:
+            encoding = detect_char_encoding(filepath)
+            with open(filepath, "r", encoding=encoding) as text_file:
+                text = text_file.read(256)
+            bg = Image.new("RGB", (256, 256), color=bg_color)
+            draw = ImageDraw.Draw(bg)
+            draw.text((16, 16), text, fill=fg_color)
+            im = bg
+        except (
+            UnidentifiedImageError,
+            cv2.error,
+            DecompressionBombError,
+            UnicodeDecodeError,
+            OSError,
+        ) as e:
+            logging.info(
+                f"[ThumbRenderer][TEXT][ERROR]: Couldn't render thumbnail for {filepath.name} ({type(e).__name__})"
+            )
+        return im
+
+    def _video_thumb(self, filepath: Path) -> Image.Image:
+        im: Image.Image = None
+        try:
+            if is_readable_video(filepath):
+                video = cv2.VideoCapture(str(filepath), cv2.CAP_FFMPEG)
+                # TODO: Move this check to is_readable_video()
+                if video.get(cv2.CAP_PROP_FRAME_COUNT) <= 0:
+                    raise cv2.error("File is invalid or has 0 frames")
+                video.set(
+                    cv2.CAP_PROP_POS_FRAMES,
+                    (video.get(cv2.CAP_PROP_FRAME_COUNT) // 2),
+                )
+                success, frame = video.read()
+                if not success:
+                    # Depending on the video format, compression, and frame
+                    # count, seeking halfway does not work and the thumb
+                    # must be pulled from the earliest available frame.
+                    video.set(cv2.CAP_PROP_POS_FRAMES, 0)
+                frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+                im = Image.fromarray(frame)
+            # else:
+            #     im = self._get_icon(
+            #         name="file_generic",
+            #         color="red",
+            #         size=(size, size),
+            #         pixel_ratio=pixel_ratio,
+            #     )
+        except (
+            UnidentifiedImageError,
+            cv2.error,
+            DecompressionBombError,
+            OSError,
+        ) as e:
+            logging.error(
+                f"[ThumbRenderer][ERROR]: Couldn't render thumbnail for {filepath.name} ({type(e).__name__})"
+            )
+        return im
+
+    def render(
+        self,
+        timestamp: float,
+        filepath: str | Path,
+        base_size: tuple[int, int],
+        pixel_ratio: float,
+        is_loading=False,
+        gradient=False,
+        update_on_ratio_change=False,
+    ):
+        """Internal renderer. Renders an entry/element thumbnail for the GUI."""
+        loading_thumb: Image.Image = ThumbRenderer.thumb_loading_512
+
+        image: Image.Image = None
+        pixmap: QPixmap = None
+        final: Image.Image = None
+        _filepath: Path = Path(filepath)
+        resampling_method = Image.Resampling.BILINEAR
+
+        if ThumbRenderer.font_pixel_ratio != pixel_ratio:
+            ThumbRenderer.font_pixel_ratio = pixel_ratio
+            ThumbRenderer.ext_font = ImageFont.truetype(
+                Path(__file__).parents[3] / "resources/qt/fonts/Oxanium-Bold.ttf",
+                math.floor(12 * ThumbRenderer.font_pixel_ratio),
+            )
+
+        if QGuiApplication.styleHints().colorScheme() is Qt.ColorScheme.Light:
+            loading_thumb = theme_fg_overlay(loading_thumb)
+
+        adj_size = math.ceil(max(base_size[0], base_size[1]) * pixel_ratio)
+        if is_loading:
+            final = loading_thumb.resize(
+                (adj_size, adj_size), resample=Image.Resampling.BILINEAR
+            )
+            qim = ImageQt.ImageQt(final)
+            pixmap = QPixmap.fromImage(qim)
+            pixmap.setDevicePixelRatio(pixel_ratio)
+            if update_on_ratio_change:
+                self.updated_ratio.emit(1)
+        elif _filepath:
+            try:
+                ext: str = _filepath.suffix.lower()
+                # Images =======================================================
+                if MediaType.IMAGE in MediaCategories.get_types(ext, True):
+                    # Raw Images -----------------------------------------------
+                    if MediaType.IMAGE_RAW in MediaCategories.get_types(ext, True):
+                        image = self._image_raw_thumb(_filepath)
+                    elif MediaType.IMAGE_VECTOR in MediaCategories.get_types(ext, True):
+                        image = self._image_vector_thumb(_filepath, adj_size)
+                    # Normal Images --------------------------------------------
+                    else:
+                        image = self._image_thumb(_filepath)
+                # Videos =======================================================
+                elif MediaType.VIDEO in MediaCategories.get_types(ext, True):
+                    image = self._video_thumb(_filepath)
+                # Plain Text ===================================================
+                elif MediaType.PLAINTEXT in MediaCategories.get_types(ext):
+                    image = self._text_thumb(_filepath, adj_size)
+                # Fonts ========================================================
+                elif MediaType.FONT in MediaCategories.get_types(ext, True):
+                    if gradient:
+                        # Short (Aa) Preview
+                        image = self._font_short_thumb(_filepath, adj_size)
+                    else:
+                        # Large (Full Alphabet) Preview
+                        image = self._font_long_thumb(_filepath, adj_size)
+                # Audio ========================================================
+                elif MediaType.AUDIO in MediaCategories.get_types(ext, True):
+                    image = self._audio_album_thumb(_filepath, ext)
+                    if image is None:
+                        image = self._audio_waveform_thumb(
+                            _filepath, ext, adj_size, pixel_ratio
+                        )
+                        if image is not None:
+                            image = self._apply_overlay_color(image, "green")
+
+                # Blender ===========================================================
+                elif MediaType.BLENDER in MediaCategories.get_types(ext):
+                    image = self._blender(_filepath)
+
+                # No Rendered Thumbnail ========================================
+                if not image:
+                    raise UnidentifiedImageError
+
+                orig_x, orig_y = image.size
+                new_x, new_y = (adj_size, adj_size)
+
+                if orig_x > orig_y:
+                    new_x = adj_size
+                    new_y = math.ceil(adj_size * (orig_y / orig_x))
+                elif orig_y > orig_x:
+                    new_y = adj_size
+                    new_x = math.ceil(adj_size * (orig_x / orig_y))
+
+                if update_on_ratio_change:
+                    self.updated_ratio.emit(new_x / new_y)
+
+                resampling_method = (
+                    Image.Resampling.NEAREST
+                    if max(image.size[0], image.size[1])
+                    < max(base_size[0], base_size[1])
+                    else Image.Resampling.BILINEAR
+                )
+                image = image.resize((new_x, new_y), resample=resampling_method)
+                if gradient:
+                    mask: Image.Image = self._get_mask(
+                        (adj_size, adj_size), pixel_ratio
+                    )
+                    edge: tuple[Image.Image, Image.Image] = self._get_edge(
+                        (adj_size, adj_size), pixel_ratio
+                    )
+                    final = self._apply_edge(
+                        four_corner_gradient_background(
+                            image, (adj_size, adj_size), mask
+                        ),
+                        edge,
+                    )
+                else:
+                    scalar = 4
+                    mask: Image.Image = self._get_mask(image.size, pixel_ratio)
+                    # rec: Image.Image = Image.new(
+                    #     "RGB",
+                    #     tuple([d * scalar for d in image.size]),  # type: ignore
+                    #     "black",
+                    # )
+                    # draw = ImageDraw.Draw(rec)
+                    # draw.rounded_rectangle(
+                    #     (0, 0) + tuple([d - 1 for d in rec.size]),
+                    #     (base_size[0] // 32) * scalar * pixel_ratio,
+                    #     fill="red",
+                    # )
+                    # rec = rec.resize(
+                    #     tuple([d // scalar for d in rec.size]),
+                    #     resample=Image.Resampling.BILINEAR,
+                    # )
+                    final = Image.new("RGBA", image.size, (0, 0, 0, 0))
+                    final.paste(image, mask=mask.getchannel(0))
+
+            except FileNotFoundError as e:
+                logging.info(
+                    f"[ThumbRenderer][ERROR]: Couldn't render thumbnail for {_filepath.name} ({type(e).__name__})"
+                )
+                if update_on_ratio_change:
+                    self.updated_ratio.emit(1)
+                final = self._get_icon(
+                    name="broken_link_icon",
+                    color="red",
+                    size=(adj_size, adj_size),
+                    pixel_ratio=pixel_ratio,
+                )
+            except (
+                UnidentifiedImageError,
+                DecompressionBombError,
+            ) as e:
+                logging.info(
+                    f"[ThumbRenderer][ERROR]: Couldn't render thumbnail for {_filepath.name} ({type(e).__name__})"
+                )
+
+                if update_on_ratio_change:
+                    self.updated_ratio.emit(1)
+                final = self._get_icon(
+                    name=self._get_resource_id(_filepath),
+                    # name="file_generic",
+                    color="",
+                    size=(adj_size, adj_size),
+                    pixel_ratio=pixel_ratio,
+                )
+            qim = ImageQt.ImageQt(final)
+            if image:
+                image.close()
+            pixmap = QPixmap.fromImage(qim)
+            pixmap.setDevicePixelRatio(pixel_ratio)
+
+        if pixmap:
+            self.updated.emit(
+                timestamp,
+                pixmap,
+                QSize(
+                    math.ceil(adj_size / pixel_ratio),
+                    math.ceil(final.size[1] / pixel_ratio),
+                ),
+                _filepath.suffix.lower(),
+            )
+
+        else:
+            self.updated.emit(
+                timestamp, QPixmap(), QSize(*base_size), _filepath.suffix.lower()
+            )
