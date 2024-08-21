@@ -31,12 +31,9 @@ from humanfriendly import format_size
 from src.core.enums import SettingItems, Theme
 from src.core.library import Entry, ItemType, Library
 from src.core.constants import (
-    VIDEO_TYPES,
-    IMAGE_TYPES,
-    RAW_IMAGE_TYPES,
     TS_FOLDER_NAME,
-    FONT_TYPES,
 )
+from src.core.media_types import MediaCategories, MediaType
 from src.qt.helpers.file_opener import FileOpenerLabel, FileOpenerHelper, open_file
 from src.qt.modals.add_field import AddFieldModal
 from src.qt.widgets.thumb_renderer import ThumbRenderer
@@ -520,12 +517,23 @@ class PreviewPanel(QWidget):
                         self.opener.open_explorer
                     )
 
-                    # TODO: Do this somewhere else, this is just here temporarily.
+                    # TODO: Do this all somewhere else, this is just here temporarily.
+                    ext: str = filepath.suffix.lower()
                     try:
                         image = None
-                        if filepath.suffix.lower() in IMAGE_TYPES:
+                        if (
+                            (MediaType.IMAGE in MediaCategories.get_types(ext))
+                            and (
+                                MediaType.IMAGE_RAW
+                                not in MediaCategories.get_types(ext)
+                            )
+                            and (
+                                MediaType.IMAGE_VECTOR
+                                not in MediaCategories.get_types(ext)
+                            )
+                        ):
                             image = Image.open(str(filepath))
-                        elif filepath.suffix.lower() in RAW_IMAGE_TYPES:
+                        elif MediaType.IMAGE_RAW in MediaCategories.get_types(ext):
                             try:
                                 with rawpy.imread(str(filepath)) as raw:
                                     rgb = raw.postprocess()
@@ -537,7 +545,7 @@ class PreviewPanel(QWidget):
                                 rawpy._rawpy.LibRawFileUnsupportedError,
                             ):
                                 pass
-                        elif filepath.suffix.lower() in VIDEO_TYPES:
+                        elif MediaType.VIDEO in MediaCategories.get_types(ext):
                             video = cv2.VideoCapture(str(filepath))
                             if video.get(cv2.CAP_PROP_FRAME_COUNT) <= 0:
                                 raise cv2.error("File is invalid or has 0 frames")
@@ -559,33 +567,47 @@ class PreviewPanel(QWidget):
                                 self.preview_vid.show()
 
                         # Stats for specific file types are displayed here.
-                        if image and filepath.suffix.lower() in (
-                            IMAGE_TYPES + VIDEO_TYPES + RAW_IMAGE_TYPES
+                        if image and (
+                            (MediaType.IMAGE in MediaCategories.get_types(ext))
+                            or (MediaType.VIDEO in MediaCategories.get_types(ext, True))
+                            or (
+                                MediaType.IMAGE_RAW
+                                in MediaCategories.get_types(ext, True)
+                            )
                         ):
                             self.dimensions_label.setText(
-                                f"{filepath.suffix.upper()[1:]}  •  {format_size(filepath.stat().st_size)}\n{image.width} x {image.height} px"
+                                f"{ext.upper()[1:]}  •  {format_size(filepath.stat().st_size)}\n{image.width} x {image.height} px"
                             )
-                        elif filepath.suffix.lower() in FONT_TYPES:
-                            font = ImageFont.truetype(filepath)
-                            self.dimensions_label.setText(
-                                f"{filepath.suffix.upper()[1:]} •  {format_size(filepath.stat().st_size)}\n{font.getname()[0]} ({font.getname()[1]}) "
-                            )
+                        elif MediaType.FONT in MediaCategories.get_types(ext, True):
+                            try:
+                                font = ImageFont.truetype(filepath)
+                                self.dimensions_label.setText(
+                                    f"{ext.upper()[1:]} •  {format_size(filepath.stat().st_size)}\n{font.getname()[0]} ({font.getname()[1]}) "
+                                )
+                            except OSError:
+                                self.dimensions_label.setText(
+                                    f"{ext.upper()[1:]}  •  {format_size(filepath.stat().st_size)}"
+                                )
+                                logging.info(
+                                    f"[PreviewPanel][ERROR] Couldn't read font file: {filepath}"
+                                )
                         else:
+                            self.dimensions_label.setText(f"{ext.upper()[1:]}")
                             self.dimensions_label.setText(
-                                f"{filepath.suffix.upper()[1:]}  •  {format_size(filepath.stat().st_size)}"
+                                f"{ext.upper()[1:]}  •  {format_size(filepath.stat().st_size)}"
                             )
 
                         if not filepath.is_file():
                             raise FileNotFoundError
 
                     except FileNotFoundError as e:
-                        self.dimensions_label.setText(f"{filepath.suffix.upper()[1:]}")
+                        self.dimensions_label.setText(f"{ext.upper()[1:]}")
                         logging.info(
                             f"[PreviewPanel][ERROR] Couldn't Render thumbnail for {filepath} (because of {e})"
                         )
 
                     except (FileNotFoundError, cv2.error) as e:
-                        self.dimensions_label.setText(f"{filepath.suffix.upper()}")
+                        self.dimensions_label.setText(f"{ext.upper()}")
                         logging.info(
                             f"[PreviewPanel][ERROR] Couldn't Render thumbnail for {filepath} (because of {e})"
                         )
@@ -594,7 +616,7 @@ class PreviewPanel(QWidget):
                         DecompressionBombError,
                     ) as e:
                         self.dimensions_label.setText(
-                            f"{filepath.suffix.upper()[1:]}  •  {format_size(filepath.stat().st_size)}"
+                            f"{ext.upper()[1:]}  •  {format_size(filepath.stat().st_size)}"
                         )
                         logging.info(
                             f"[PreviewPanel][ERROR] Couldn't Render thumbnail for {filepath} (because of {e})"
