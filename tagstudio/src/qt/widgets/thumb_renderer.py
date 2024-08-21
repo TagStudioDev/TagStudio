@@ -3,6 +3,7 @@
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
 
+from copy import deepcopy
 import logging
 import math
 from io import BytesIO
@@ -119,15 +120,13 @@ class ThumbRenderer(QObject):
         Returns a thumbnail raised edge graphic given a size and pixel ratio.
         If one is not already cached, then a new one will be rendered.
         """
-        logging.info((*size, pixel_ratio))
         item: tuple[Image.Image, Image.Image] = self.raised_edges.get(
             (*size, pixel_ratio)
         )
         if not item:
             item = self._render_edge(size, pixel_ratio)
+
             self.raised_edges[(*size, pixel_ratio)] = item
-        else:
-            logging.info("using cached edge")
         return item
 
     def _get_icon(
@@ -173,7 +172,6 @@ class ThumbRenderer(QObject):
         self, size: tuple[int, int], pixel_ratio
     ) -> tuple[Image.Image, Image.Image]:
         """Renders a thumbnail highlight border."""
-        logging.info("rendering edge")
         smooth_factor: int = 2
         radius_factor: int = 8
         width: int = math.floor(pixel_ratio * 2)
@@ -380,9 +378,8 @@ class ThumbRenderer(QObject):
             image (Image.Image): The image to apply the edge to.
             edge (Image.Image): The edge image to apply.
         """
-        logging.info("applying edge")
         im: Image.Image = image
-        im_hl, im_sh = edge
+        im_hl, im_sh = deepcopy(edge)
 
         # Configure and apply a soft light overlay.
         # This makes up the bulk of the effect.
