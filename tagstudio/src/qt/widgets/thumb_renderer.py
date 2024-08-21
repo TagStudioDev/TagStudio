@@ -3,9 +3,9 @@
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
 
-from copy import deepcopy
 import logging
 import math
+from copy import deepcopy
 from io import BytesIO
 from pathlib import Path
 
@@ -216,44 +216,6 @@ class ThumbRenderer(QObject):
             size,
             resample=Image.Resampling.BILINEAR,
         )
-        # sh_bg = sh_bg.resize(
-        #     size,
-        #     resample=Image.Resampling.BILINEAR,
-        # )
-
-        # Shadow
-        # sh_bg: Image.Image = Image.new(
-        #     mode="RGBA",
-        #     size=tuple([d * smooth_factor for d in size]),  # type: ignore
-        #     color="black",
-        # )
-        # sh_inner_mask: Image.Image = Image.new(
-        #     mode="RGBA",
-        #     size=tuple([d * smooth_factor for d in size]),  # type: ignore
-        #     color="red",
-        # )
-        # draw = ImageDraw.Draw(sh_inner_mask)
-        # draw.rounded_rectangle(
-        #     (0, 0) + tuple([d - 1 for d in sh_bg.size]),
-        #     radius=math.ceil(radius_factor * smooth_factor * pixel_ratio),
-        #     fill="black",
-        #     outline="red",
-        #     width=width,
-        # )
-        # sh_bg.putalpha(sh_inner_mask.getchannel(0))
-        # # sh_bg = sh_bg.resize(
-        # #     size,
-        # #     resample=Image.Resampling.BILINEAR,
-        # # )
-
-        # alpha_mask: Image.Image = self._get_mask(sh_bg.size, pixel_ratio)
-        # im_sh = Image.new("RGBA", sh_bg.size, "#00000000")
-        # im_sh.paste(sh_bg, mask=alpha_mask.getchannel(0))
-
-        # im_sh = im_sh.resize(
-        #     size,
-        #     resample=Image.Resampling.BILINEAR,
-        # )
 
         return (im_hl, im_sh)
 
@@ -392,17 +354,13 @@ class ThumbRenderer(QObject):
 
         # Configure and apply a soft light overlay.
         # This makes up the bulk of the effect.
-        # edge_soft = im_hl.copy()
         im_hl.putalpha(ImageEnhance.Brightness(im_hl.getchannel(3)).enhance(opacity))
         im.paste(ImageChops.soft_light(im, im_hl), mask=im_hl.getchannel(3))
 
         # Configure and apply a hard light overlay.
         # This helps with contrast.
-        # edge_hard = im_sh.copy()
-        # edge_hard.putalpha(ImageEnhance.Brightness(im_sh.getchannel(3)).enhance(0.75))
         im_sh.putalpha(ImageEnhance.Brightness(im_sh.getchannel(3)).enhance(opacity))
         im.paste(im_sh, mask=im_sh.getchannel(3))
-        # im.paste(edge_hard, mask=im_sh.getchannel(3))
 
         return im
 
@@ -770,13 +728,6 @@ class ThumbRenderer(QObject):
                     video.set(cv2.CAP_PROP_POS_FRAMES, 0)
                 frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
                 im = Image.fromarray(frame)
-            # else:
-            #     im = self._get_icon(
-            #         name="file_generic",
-            #         color="red",
-            #         size=(size, size),
-            #         pixel_ratio=pixel_ratio,
-            #     )
         except (
             UnidentifiedImageError,
             cv2.error,
@@ -903,23 +854,7 @@ class ThumbRenderer(QObject):
                         edge,
                     )
                 else:
-                    scalar = 4
                     mask = self._get_mask(image.size, pixel_ratio)
-                    # rec: Image.Image = Image.new(
-                    #     "RGB",
-                    #     tuple([d * scalar for d in image.size]),  # type: ignore
-                    #     "black",
-                    # )
-                    # draw = ImageDraw.Draw(rec)
-                    # draw.rounded_rectangle(
-                    #     (0, 0) + tuple([d - 1 for d in rec.size]),
-                    #     (base_size[0] // 32) * scalar * pixel_ratio,
-                    #     fill="red",
-                    # )
-                    # rec = rec.resize(
-                    #     tuple([d // scalar for d in rec.size]),
-                    #     resample=Image.Resampling.BILINEAR,
-                    # )
                     final = Image.new("RGBA", image.size, (0, 0, 0, 0))
                     final.paste(image, mask=mask.getchannel(0))
 
