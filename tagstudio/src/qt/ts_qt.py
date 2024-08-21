@@ -1215,7 +1215,7 @@ class QtDriver(QObject):
         base_size: tuple[int, int] = (self.thumb_size, self.thumb_size)
 
         for i, item_thumb in enumerate(self.item_thumbs, start=0):
-            if i < len(self.nav_frames[self.cur_frame_idx].contents):
+            if self.nav_frames[self.cur_frame_idx].contents and i < len(self.nav_frames[self.cur_frame_idx].contents):
                 # Set new item type modes
                 # logging.info(f'[UPDATE] Setting Mode To: {self.nav_stack[self.cur_page_idx].contents[i][0]}')
                 item_thumb.set_mode(self.nav_frames[self.cur_frame_idx].contents[i][0])
@@ -1245,7 +1245,7 @@ class QtDriver(QObject):
         self.main_window.update()
 
         for i, item_thumb in enumerate(self.item_thumbs, start=0):
-            if i < len(self.nav_frames[self.cur_frame_idx].contents):
+            if self.nav_frames[self.cur_frame_idx].contents and i < len(self.nav_frames[self.cur_frame_idx].contents):
                 filepath = ""
                 if self.nav_frames[self.cur_frame_idx].contents[i][0] == ItemType.ENTRY:
                     entry = self.lib.get_entry(
