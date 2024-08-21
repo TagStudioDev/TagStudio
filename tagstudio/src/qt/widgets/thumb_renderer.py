@@ -125,7 +125,6 @@ class ThumbRenderer(QObject):
         )
         if not item:
             item = self._render_edge(size, pixel_ratio)
-
             self.raised_edges[(*size, pixel_ratio)] = item
         return item
 
@@ -142,8 +141,10 @@ class ThumbRenderer(QObject):
         """
         item: Image.Image = self.icons.get((name, color, *size, pixel_ratio))
         if not item:
-            item = self._render_icon(name, color, size, pixel_ratio)
-            self.raised_edges[(name, *color, size, pixel_ratio)] = item
+            item_flat: Image.Image = self._render_icon(name, color, size, pixel_ratio)
+            edge: tuple[Image.Image, Image.Image] = self._get_edge(size, pixel_ratio)
+            item = self._apply_edge(item_flat, edge, faded=True)
+            self.icons[(name, *color, size, pixel_ratio)] = item
         return item
 
     def _render_mask(self, size: tuple[int, int], pixel_ratio) -> Image.Image:
@@ -259,6 +260,7 @@ class ThumbRenderer(QObject):
     def _render_icon(
         self, name: str, color: str, size: tuple[int, int], pixel_ratio: float
     ) -> Image.Image:
+        border_factor: int = 12
         smooth_factor: int = math.ceil(2 * pixel_ratio)
         radius_factor: int = 8
         icon_ratio: float = 1.75
@@ -294,7 +296,7 @@ class ThumbRenderer(QObject):
             radius=math.ceil(radius_factor * smooth_factor * pixel_ratio),
             fill="black",
             outline="#FF0000",
-            width=math.floor(pixel_ratio * 8),
+            width=math.floor(pixel_ratio * border_factor),
         )
 
         # Resize image to final size
@@ -371,27 +373,34 @@ class ThumbRenderer(QObject):
 
         return bg
 
-    def _apply_edge(self, image: Image.Image, edge: tuple[Image.Image, Image.Image]):
+    def _apply_edge(
+        self,
+        image: Image.Image,
+        edge: tuple[Image.Image, Image.Image],
+        faded: bool = False,
+    ):
         """Apply a given edge effect to an image.
 
         Args:
             image (Image.Image): The image to apply the edge to.
             edge (Image.Image): The edge image to apply.
+            faded (bool): Whether or not to apply a faded version of the edge.
         """
+        opacity: float = 0.75 if not faded else 0.6
         im: Image.Image = image
         im_hl, im_sh = deepcopy(edge)
 
         # Configure and apply a soft light overlay.
         # This makes up the bulk of the effect.
         # edge_soft = im_hl.copy()
-        im_hl.putalpha(ImageEnhance.Brightness(im_hl.getchannel(3)).enhance(0.75))
+        im_hl.putalpha(ImageEnhance.Brightness(im_hl.getchannel(3)).enhance(opacity))
         im.paste(ImageChops.soft_light(im, im_hl), mask=im_hl.getchannel(3))
 
         # Configure and apply a hard light overlay.
         # This helps with contrast.
         # edge_hard = im_sh.copy()
         # edge_hard.putalpha(ImageEnhance.Brightness(im_sh.getchannel(3)).enhance(0.75))
-        im_sh.putalpha(ImageEnhance.Brightness(im_sh.getchannel(3)).enhance(0.75))
+        im_sh.putalpha(ImageEnhance.Brightness(im_sh.getchannel(3)).enhance(opacity))
         im.paste(im_sh, mask=im_sh.getchannel(3))
         # im.paste(edge_hard, mask=im_sh.getchannel(3))
 
