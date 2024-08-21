@@ -85,6 +85,7 @@ class TagSearchPanel(PanelWidget):
 
         self.root_layout.addWidget(self.search_field)
         self.root_layout.addWidget(self.scroll_area)
+        self.update_tags("")
 
     # def reset(self):
     # 	self.search_field.setText('')
