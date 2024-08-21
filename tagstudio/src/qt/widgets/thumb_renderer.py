@@ -883,10 +883,9 @@ class ThumbRenderer(QObject):
                     else Image.Resampling.BILINEAR
                 )
                 image = image.resize((new_x, new_y), resample=resampling_method)
+                mask: Image.Image = None
                 if gradient:
-                    mask: Image.Image = self._get_mask(
-                        (adj_size, adj_size), pixel_ratio
-                    )
+                    mask = self._get_mask((adj_size, adj_size), pixel_ratio)
                     edge: tuple[Image.Image, Image.Image] = self._get_edge(
                         (adj_size, adj_size), pixel_ratio
                     )
@@ -896,7 +895,7 @@ class ThumbRenderer(QObject):
                     )
                 else:
                     scalar = 4
-                    mask: Image.Image = self._get_mask(image.size, pixel_ratio)
+                    mask = self._get_mask(image.size, pixel_ratio)
                     # rec: Image.Image = Image.new(
                     #     "RGB",
                     #     tuple([d * scalar for d in image.size]),  # type: ignore

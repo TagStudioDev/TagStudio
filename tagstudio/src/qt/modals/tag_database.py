@@ -12,6 +12,7 @@ from PySide6.QtWidgets import (
     QFrame,
 )
 
+from src.core.constants import TAG_COLORS
 from src.core.library import Library
 from src.qt.widgets.panel import PanelWidget, PanelModal
 from src.qt.widgets.tag import TagWidget
@@ -103,8 +104,28 @@ class TagDatabasePanel(PanelWidget):
             # Get tag ids to keep this behaviorally identical
             tags = [t.id for t in self.lib.tags]
 
+        if query:
+            # sort tags by whether the tag's name is the text that's matching the search, alphabetically, and then by color
+            sorted_tags = sorted(
+                tags,
+                key=lambda tag_id: (
+                    not self.lib.get_tag(tag_id).name.lower().startswith(query.lower()),
+                    self.lib.get_tag(tag_id).display_name(self.lib),
+                    TAG_COLORS.index(self.lib.get_tag(tag_id).color.lower()),
+                ),
+            )
+        else:
+            # sort tags by color and then alphabetically
+            sorted_tags = sorted(
+                tags,
+                key=lambda tag_id: (
+                    TAG_COLORS.index(self.lib.get_tag(tag_id).color.lower()),
+                    self.lib.get_tag(tag_id).display_name(self.lib),
+                ),
+            )
+
         first_id_set = False
-        for tag_id in tags:
+        for tag_id in sorted_tags:
             if not first_id_set:
                 self.first_tag_id = tag_id
                 first_id_set = True
