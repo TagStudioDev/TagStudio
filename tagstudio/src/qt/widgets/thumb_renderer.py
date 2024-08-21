@@ -35,7 +35,7 @@ from src.core.utils.encoding import detect_char_encoding
 from src.qt.helpers.blender_thumbnailer import blend_thumb
 from src.qt.helpers.color_overlay import theme_fg_overlay
 from src.qt.helpers.file_tester import is_readable_video
-from src.qt.helpers.gradient import four_corner_gradient_background
+from src.qt.helpers.gradient import four_corner_gradient
 from src.qt.helpers.text_wrapper import wrap_full_text
 from src.qt.resource_manager import ResourceManager
 
@@ -119,6 +119,7 @@ class ThumbRenderer(QObject):
         Returns a thumbnail raised edge graphic given a size and pixel ratio.
         If one is not already cached, then a new one will be rendered.
         """
+        logging.info((*size, pixel_ratio))
         item: tuple[Image.Image, Image.Image] = self.raised_edges.get(
             (*size, pixel_ratio)
         )
@@ -893,9 +894,7 @@ class ThumbRenderer(QObject):
                         (adj_size, adj_size), pixel_ratio
                     )
                     final = self._apply_edge(
-                        four_corner_gradient_background(
-                            image, (adj_size, adj_size), mask
-                        ),
+                        four_corner_gradient(image, (adj_size, adj_size), mask),
                         edge,
                     )
                 else:
