@@ -19,7 +19,8 @@ packages = [
   {include = "tagstudio/__init__.py"}
 ]
 
-description = "TagStudio (Alpha): A User-Focused Document Management System TagStudio is a photo & file organization application with an underlying system that focuses on giving freedom and flexibility to the user. No proprietary programs or formats, no sea of sidecar files, and no complete upheaval of your filesystem structure."
+description = "User-Focused Photo & File Management System"
+readme = "README.md"
 authors = ["Travis Abendshien"]
 readme = "README.md"
 license = "GPL-3.0-only"
