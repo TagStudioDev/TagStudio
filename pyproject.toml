@@ -7,3 +7,51 @@ disable_error_code = ["union-attr", "annotation-unchecked", "import-untyped"]
 explicit_package_bases = true
 warn_unused_ignores = true
 exclude = ['tests']
+
+[tool.poetry]
+name = "tagstudio"
+version = "9.1.1"
+packages = [{include = "tagstudio/tag_studio.py"}, {include = "tagstudio/src/core"}, {include = "tagstudio/src/qt"}, {include = "tagstudio/resources"}]
+
+description = "TagStudio (Alpha): A User-Focused Document Management System TagStudio is a photo & file organization application with an underlying system that focuses on giving freedom and flexibility to the user. No proprietary programs or formats, no sea of sidecar files, and no complete upheaval of your filesystem structure."
+authors = ["Travis Abendshien"]
+readme = "README.md"
+license = "GPL-3.0-only"
+repository = "https://github.com/TagStudioDev/TagStudio"
+maintainers = [] # Maybe someone can find a way to export this from GitHub?
+
+[tool.poetry.urls]
+Discord = "https://discord.gg/hRNnVKhF2G"
+
+[tool.poetry.dependencies]
+python = "~3.12"
+humanfriendly = "10.0"
+opencv_python=">=4.8.0.74,<=4.9.0.80"
+Pillow="10.3.0"
+PySide6="6.7.1"
+PySide6_Addons="6.7.1"
+PySide6_Essentials="6.7.1"
+typing_extensions=">=3.10.0.0,<=4.11.0"
+ujson=">=5.8.0,<=5.9.0"
+numpy="1.26.4"
+rawpy="0.21.0"
+pillow-heif="0.16.0"
+chardet="5.2.0"
+
+[tool.poetry.group.dev]
+optional = true
+[tool.poetry.group.dev.dependencies]
+ruff="0.4.2"
+pre-commit="3.7.0"
+pytest="8.2.0"
+Pyinstaller="6.6.0"
+mypy="1.10.0"
+syrupy="4.6.1"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.scripts]
+tagstudio = "tagstudio.tag_studio:main"
