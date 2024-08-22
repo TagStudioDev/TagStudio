@@ -22,7 +22,6 @@ packages = [
 description = "User-Focused Photo & File Management System"
 readme = "README.md"
 authors = ["Travis Abendshien"]
-readme = "README.md"
 license = "GPL-3.0-only"
 repository = "https://github.com/TagStudioDev/TagStudio"
 maintainers = [] # Maybe someone can find a way to export this from GitHub?
