@@ -16,7 +16,8 @@ packages = [
   {include = "tagstudio/src/core"},
   {include = "tagstudio/src/qt"},
   {include = "tagstudio/resources"},
-  {include = "tagstudio/__init__.py"}
+  {include = "tagstudio/__init__.py"},
+  {include = "tagstudio/tests"}
 ]
 
 description = "User-Focused Photo & File Management System"
