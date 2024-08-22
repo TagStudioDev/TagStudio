@@ -8,8 +8,6 @@ import os, sys
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__)))) # add this so that `poetry run tagstudio` works
 
 from src.core.ts_core import TagStudioCore
-from src.cli.ts_cli import CliDriver  # type: ignore
-from src.qt.ts_qt import QtDriver
 import argparse
 import traceback
 
@@ -69,12 +67,15 @@ def main():
 
     # Driver selection based on parameters.
     if args.ui and args.ui == "qt":
+        from src.qt.ts_qt import QtDriver
         driver = QtDriver(core, args)
         ui_name = "Qt"
     elif args.ui and args.ui == "cli":
+        from src.cli.ts_cli import CliDriver
         driver = CliDriver(core, args)
         ui_name = "CLI"
     else:
+        from src.qt.ts_qt import QtDriver
         driver = QtDriver(core, args)
         ui_name = "Qt"
 
