@@ -90,7 +90,7 @@ class PreviewPanel(QWidget):
         if system == "Darwin":
             self.open_explorer_action = QAction("Reveal file in Finder", self)
         elif system == "Linux":
-            self.open_explorer_action = QAction("Open file in explorer", self) # TODO: Rename to whatever the Linux explorer is
+            self.open_explorer_action = QAction("Open file in filesystem", self) # TODO: Rename to whatever the Linux explorer is
         else:
             self.open_explorer_action = QAction("Open file in explorer", self)
 
