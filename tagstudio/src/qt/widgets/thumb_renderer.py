@@ -30,6 +30,8 @@ from src.core.constants import (
     RAW_IMAGE_TYPES,
 )
 from src.core.utils.encoding import detect_char_encoding
+import zipfile
+import io
 
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 
@@ -204,6 +206,22 @@ class ThumbRenderer(QObject):
                 # 	img_buf = io.BytesIO()
                 # 	plt.savefig(img_buf, format='png')
                 # 	image = Image.open(img_buf)
+                # Musescore File Format ========================================
+                elif _filepath.suffix.lower() == ".mscz":
+                    file_path_within_zip = "Thumbnails/thumbnail.png"
+                    with zipfile.ZipFile(_filepath, "r") as zip_file:
+                        # Check if the file exists in the zip
+                        if file_path_within_zip in zip_file.namelist():
+                            # Read the specific file into memory
+                            file_data = zip_file.read(file_path_within_zip)
+                            image = Image.open(io.BytesIO(file_data))
+                        else:
+                            logging.info(
+                                f"[ThumbRenderer]{WARNING}: mscz file {_filepath.name} missing Thumbnails/thumbnail.png"
+                            )
+                            image = ThumbRenderer.thumb_file_default_512.resize(
+                                (adj_size, adj_size), resample=Image.Resampling.BILINEAR
+                            )
                 # No Rendered Thumbnail ========================================
                 else:
                     image = ThumbRenderer.thumb_file_default_512.resize(
