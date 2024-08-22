@@ -11,7 +11,7 @@ exclude = ['tests']
 [tool.poetry]
 name = "tagstudio"
 version = "9.1.1"
-packages = [{include = "tagstudio/tag_studio.py"}, {include = "tagstudio/src/core"}, {include = "tagstudio/src/qt"}, {include = "tagstudio/resources"}]
+packages = [{include = "tagstudio/tag_studio.py"}, {include = "tagstudio/src/core"}, {include = "tagstudio/src/qt"}, {include = "tagstudio/resources"}, {include = "tagstudio/__init__.py"}]
 
 description = "TagStudio (Alpha): A User-Focused Document Management System TagStudio is a photo & file organization application with an underlying system that focuses on giving freedom and flexibility to the user. No proprietary programs or formats, no sea of sidecar files, and no complete upheaval of your filesystem structure."
 authors = ["Travis Abendshien"]
