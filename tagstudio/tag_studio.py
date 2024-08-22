@@ -4,6 +4,9 @@
 
 """TagStudio launcher."""
 
+import os, sys
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__)))) # add this so that `poetry run tagstudio` works
+
 from src.core.ts_core import TagStudioCore
 from src.cli.ts_cli import CliDriver  # type: ignore
 from src.qt.ts_qt import QtDriver
