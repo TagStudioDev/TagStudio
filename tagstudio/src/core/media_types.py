@@ -143,7 +143,7 @@ class MediaCategories:
     }
 
     _SOURCE_SET: set[str] = {
-       ".vtf",
+        ".vtf",
     }
     _DATABASE_SET: set[str] = {
         ".accdb",
@@ -255,7 +255,7 @@ class MediaCategories:
         ".qss",
         ".vsc",
         ".kv3",
-        ".vsnd_template"
+        ".vsnd_template",
     }
     _PRESENTATION_SET: set[str] = {
         ".key",
