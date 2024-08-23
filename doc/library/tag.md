@@ -47,7 +47,7 @@ Other Tags that make up properties of this tag. Also called "parent tags".
 
 #### `color`
 
-A color name string for customizing the tag's display color
+A color hex string for customizing the tag's display color
 
 - String, Optional
 - Used for display
