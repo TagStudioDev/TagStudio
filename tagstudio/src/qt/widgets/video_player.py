@@ -133,11 +133,11 @@ class VideoPlayer(QGraphicsView):
 
         system = platform.system()
         if system == "Darwin":
-            open_explorer_action = QAction("Reveal file in Finder", self)
-        elif system == "Linux":
-            open_explorer_action = QAction("Open file in filesystem", self) # TODO: Rename to whatever the Linux explorer is
+            open_explorer_action = QAction("Reveal in Finder", self)
+        elif system == "Windows":
+            open_explorer_action = QAction("Open in Explorer", self)
         else:
-            open_explorer_action = QAction("Open file in explorer", self)
+            open_explorer_action = QAction("Open in explorer", self)
 
         open_explorer_action.triggered.connect(self.opener.open_explorer)
         self.addAction(open_file_action)
