@@ -24,6 +24,7 @@ from PIL import (
     ImageQt,
     UnidentifiedImageError,
 )
+from vtf2img import Parser
 from PIL.Image import DecompressionBombError
 from pillow_heif import register_avif_opener, register_heif_opener
 from pydub import AudioSegment, exceptions
@@ -521,6 +522,31 @@ class ThumbRenderer(QObject):
                 )
         return im
 
+    def _source(self, filepath: Path) -> Image.Image:
+        parser = Parser(filepath) 
+        header = parser.header
+        im: Image.Image = None
+        try:
+            im = parser.get_image()
+
+        except (
+            AttributeError,
+            UnidentifiedImageError,
+            FileNotFoundError,
+            TypeError,
+        ) as e:
+            if str(e) == "expected string or buffer":
+                logging.info(
+                    f"[ThumbRenderer][VTF][INFO] {filepath.name} Doesn't have an embedded thumbnail. ({type(e).__name__})"
+                )
+
+            else:
+                logging.error(
+                    f"[ThumbRenderer][VTF][ERROR]: Couldn't render thumbnail for {filepath.name} ({type(e).__name__})"
+                )
+        return im
+
+
     def _font_short_thumb(self, filepath: Path, size: int) -> Image.Image:
         """Render a small font preview ("Aa") thumbnail from a font file."""
         im: Image.Image = None
@@ -825,6 +851,10 @@ class ThumbRenderer(QObject):
                 # Blender ===========================================================
                 elif MediaType.BLENDER in MediaCategories.get_types(ext):
                     image = self._blender(_filepath)
+
+                # VTF ==========================================================
+                elif MediaType.SOURCE in MediaCategories.get_types(ext):
+                    image = self._source(_filepath)
 
                 # No Rendered Thumbnail ========================================
                 if not image:
