@@ -522,7 +522,7 @@ class ThumbRenderer(QObject):
                 )
         return im
 
-    def _source(self, filepath: Path) -> Image.Image:
+    def _source_engine(self, filepath: Path) -> Image.Image:
         parser = Parser(filepath)
         im: Image.Image = None
         try:
@@ -533,6 +533,7 @@ class ThumbRenderer(QObject):
             UnidentifiedImageError,
             FileNotFoundError,
             TypeError,
+            struct.error,
         ) as e:
             if str(e) == "expected string or buffer":
                 logging.info(
@@ -851,8 +852,8 @@ class ThumbRenderer(QObject):
                     image = self._blender(_filepath)
 
                 # VTF ==========================================================
-                elif MediaType.SOURCE in MediaCategories.get_types(ext):
-                    image = self._source(_filepath)
+                elif MediaType.SOURCE_ENGINE in MediaCategories.get_types(ext):
+                    image = self._source_engine(_filepath)
 
                 # No Rendered Thumbnail ========================================
                 if not image:
