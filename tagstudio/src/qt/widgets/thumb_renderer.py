@@ -8,7 +8,7 @@ import math
 from copy import deepcopy
 from io import BytesIO
 from pathlib import Path
-import struct 
+import struct
 
 import cv2
 import numpy as np
@@ -524,9 +524,9 @@ class ThumbRenderer(QObject):
         return im
 
     def _source_engine(self, filepath: Path) -> Image.Image:
-        '''
+        """
         This is a function to convert the VTF (Valve Texture Format) files to thumbnails, it works using the VTF2IMG library for PILLOW.
-        '''
+        """
         parser = Parser(filepath)
         im: Image.Image = None
         try:
