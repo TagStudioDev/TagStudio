@@ -43,7 +43,7 @@ poetry install --with dev
 
 ### Running TagStudio
 
-After installing the dependencies you can now you can start TagStudio by running this command at the root of the project:
+After installing the dependencies you can start TagStudio by running this command at the root of the project:
 
 ```shell
 poetry run tagstudio
