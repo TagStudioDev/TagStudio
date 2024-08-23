@@ -10,7 +10,7 @@ exclude = ['tests']
 
 [tool.poetry]
 name = "tagstudio"
-version = "9.1.1"
+version = "9.3.2"
 packages = [
   {include = "tagstudio/tag_studio.py"},
   {include = "tagstudio/src/core"},
