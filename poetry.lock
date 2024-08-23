@@ -254,7 +254,10 @@ files = [
 ]
 
 [package.dependencies]
-numpy = {version = ">=1.26.0", markers = "python_version >= \"3.12\""}
+numpy = [
+    {version = ">=1.26.0", markers = "python_version >= \"3.12\""},
+    {version = ">=1.23.5", markers = "python_version >= \"3.11\" and python_version < \"3.12\""},
+]
 
 [[package]]
 name = "packaging"
@@ -897,5 +900,5 @@ test = ["covdefaults (>=2.3)", "coverage (>=7.2.7)", "coverage-enable-subprocess
 
 [metadata]
 lock-version = "2.0"
-python-versions = "~3.12"
-content-hash = "9f82031f7ab13077d46e6039a2224d5d9822cc6174f21bff2376ab73a44d1c39"
+python-versions = ">=3.11 <3.13"
+content-hash = "60c16d0fc282dfff8db6f6534803a13da508675ddb1214620f29298272c23cb1"

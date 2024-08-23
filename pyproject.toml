@@ -30,7 +30,7 @@ maintainers = [] # Maybe someone can find a way to export this from GitHub?
 Discord = "https://discord.gg/hRNnVKhF2G"
 
 [tool.poetry.dependencies]
-python = "~3.12"
+python = ">=3.11 <3.13"
 humanfriendly = "10.0"
 opencv_python=">=4.8.0.74,<=4.9.0.80"
 Pillow="10.3.0"
