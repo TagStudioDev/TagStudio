@@ -19,7 +19,6 @@ class MediaType(str, Enum):
     AUDIO_MIDI: str = "audio_midi"
     AUDIO: str = "audio"
     BLENDER: str = "blender"
-    SOURCE: str = "source"
     DATABASE: str = "database"
     DISK_IMAGE: str = "disk_image"
     DOCUMENT: str = "document"
@@ -36,10 +35,10 @@ class MediaType(str, Enum):
     PRESENTATION: str = "presentation"
     PROGRAM: str = "program"
     SHORTCUT: str = "shortcut"
+    SOURCE: str = "source"
     SPREADSHEET: str = "spreadsheet"
     TEXT: str = "text"
     VIDEO: str = "video"
-    
 
 
 class MediaCategory:
@@ -140,10 +139,6 @@ class MediaCategories:
         ".blend7",
         ".blend8",
         ".blend9",
-    }
-
-    _SOURCE_SET: set[str] = {
-        ".vtf",
     }
     _DATABASE_SET: set[str] = {
         ".accdb",
@@ -264,6 +259,9 @@ class MediaCategories:
         ".pptx",
     }
     _PROGRAM_SET: set[str] = {".app", ".exe"}
+    _SOURCE_SET: set[str] = {
+        ".vtf",
+    }
     _SHORTCUT_SET: set[str] = {".desktop", ".lnk", ".url"}
     _SPREADSHEET_SET: set[str] = {
         ".csv",
@@ -315,11 +313,6 @@ class MediaCategories:
     BLENDER_TYPES: MediaCategory = MediaCategory(
         media_type=MediaType.BLENDER,
         extensions=_BLENDER_SET,
-        is_iana=False,
-    )
-    SOURCE_TYPES: MediaCategory = MediaCategory(
-        media_type=MediaType.SOURCE,
-        extensions=_SOURCE_SET,
         is_iana=False,
     )
     DATABASE_TYPES: MediaCategory = MediaCategory(
@@ -402,6 +395,11 @@ class MediaCategories:
         extensions=_SHORTCUT_SET,
         is_iana=False,
     )
+    SOURCE_TYPES: MediaCategory = MediaCategory(
+        media_type=MediaType.SOURCE,
+        extensions=_SOURCE_SET,
+        is_iana=False,
+    )
     SPREADSHEET_TYPES: MediaCategory = MediaCategory(
         media_type=MediaType.SPREADSHEET,
         extensions=_SPREADSHEET_SET,
@@ -425,7 +423,6 @@ class MediaCategories:
         AUDIO_MIDI_TYPES,
         AUDIO_TYPES,
         BLENDER_TYPES,
-        SOURCE_TYPES,
         DATABASE_TYPES,
         DISK_IMAGE_TYPES,
         DOCUMENT_TYPES,
@@ -442,6 +439,7 @@ class MediaCategories:
         PRESENTATION_TYPES,
         PROGRAM_TYPES,
         SHORTCUT_TYPES,
+        SOURCE_TYPES,
         SPREADSHEET_TYPES,
         TEXT_TYPES,
         VIDEO_TYPES,

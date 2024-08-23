@@ -24,7 +24,6 @@ from PIL import (
     ImageQt,
     UnidentifiedImageError,
 )
-from vtf2img import Parser
 from PIL.Image import DecompressionBombError
 from pillow_heif import register_avif_opener, register_heif_opener
 from pydub import AudioSegment, exceptions
@@ -40,6 +39,7 @@ from src.qt.helpers.file_tester import is_readable_video
 from src.qt.helpers.gradient import four_corner_gradient
 from src.qt.helpers.text_wrapper import wrap_full_text
 from src.qt.resource_manager import ResourceManager
+from vtf2img import Parser
 
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 
@@ -523,7 +523,7 @@ class ThumbRenderer(QObject):
         return im
 
     def _source(self, filepath: Path) -> Image.Image:
-        parser = Parser(filepath) 
+        parser = Parser(filepath)
         im: Image.Image = None
         try:
             im = parser.get_image()
@@ -544,7 +544,6 @@ class ThumbRenderer(QObject):
                     f"[ThumbRenderer][VTF][ERROR]: Couldn't render thumbnail for {filepath.name} ({type(e).__name__})"
                 )
         return im
-
 
     def _font_short_thumb(self, filepath: Path, size: int) -> Image.Image:
         """Render a small font preview ("Aa") thumbnail from a font file."""
