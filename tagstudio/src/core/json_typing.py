@@ -2,18 +2,6 @@ from typing import TypedDict
 from typing_extensions import NotRequired
 
 
-class JsonLibary(TypedDict("", {"ts-version": str})):
-    # "ts-version": str
-    tags: "list[JsonTag]"
-    collations: "list[JsonCollation]"
-    fields: list  # TODO
-    macros: "list[JsonMacro]"
-    entries: "list[JsonEntry]"
-    ext_list: list[str]
-    is_exclude_list: bool
-    ignored_extensions: NotRequired[list[str]]  # deprecated
-
-
 class JsonBase(TypedDict):
     id: int
 
@@ -40,3 +28,14 @@ class JsonEntry(JsonBase, total=False):
 
 
 class JsonMacro(JsonBase, total=False): ...  # TODO
+
+
+class JsonLibary(TypedDict("", {"ts-version": str})):
+    tags: list[JsonTag]
+    collations: list[JsonCollation]
+    fields: list  # TODO
+    macros: list[JsonMacro]
+    entries: list[JsonEntry]
+    ext_list: list[str]
+    is_exclude_list: bool
+    ignored_extensions: NotRequired[list[str]]  # deprecated
