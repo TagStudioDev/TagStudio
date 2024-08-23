@@ -55,7 +55,9 @@ Alternatively, you can also run TagStudio using Nix.
 
 > [!WARNING]
 > Support for NixOS is still a work in progress.
-- Use the provided `flake.nix` file to create and enter a working environment by running `nix develop`. Then, run the `TagStudio.sh` script.
+    
+Use the provided [Flake](https://nixos.wiki/wiki/Flakes) to create and enter a working environment by running `nix develop`. 
+Then, run the program via `python3 tagstudio/tag_studio.py` from the root directory.
 
 ## Workflow Checks
 

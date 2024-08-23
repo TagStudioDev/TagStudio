@@ -23,13 +23,8 @@ def main():
     # Parse arguments.
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "--open",
-        dest="open",
-        type=str,
-        help="Path to a TagStudio Library folder to open on start.",
-    )
-    parser.add_argument(
         "-o",
+        "--open",
         dest="open",
         type=str,
         help="Path to a TagStudio Library folder to open on start.",
