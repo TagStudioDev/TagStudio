@@ -27,8 +27,19 @@ from PIL import (
 from PIL.Image import DecompressionBombError
 from pillow_heif import register_avif_opener, register_heif_opener
 from pydub import AudioSegment, exceptions
-from PySide6.QtCore import QObject, QSize, Qt, Signal
-from PySide6.QtGui import QGuiApplication, QPixmap
+from PySide6.QtCore import (
+    QObject,
+    QSize,
+    QSizeF,
+    Qt,
+    Signal,
+    QFile,
+    QFileDevice,
+    QIODeviceBase,
+    QBuffer,
+)
+from PySide6.QtGui import QGuiApplication, QPixmap, QImage
+from PySide6.QtPdf import QPdfDocument, QPdfDocumentRenderOptions
 from src.core.constants import FONT_SAMPLE_SIZES, FONT_SAMPLE_TEXT
 from src.core.media_types import MediaCategories, MediaType
 from src.core.palette import ColorType, get_ui_color
@@ -746,6 +757,44 @@ class ThumbRenderer(QObject):
             )
         return im
 
+    def _pdf_thumb(self, filepath: Path, size: int) -> Image.Image:
+        file: QFile = QFile(filepath)
+        was_open_success: bool = file.open(QIODeviceBase.ReadOnly, QFileDevice.ReadUser)
+        if not was_open_success:
+            logging.error(
+                f"[ThumbRenderer][PDF][ERROR]: Couldn't open pdf-file {filepath.name}"
+            )
+            return None
+        document: QPdfDocument = QPdfDocument()
+        document.load(file)
+        # Transform page_size in points to pixels with proper aspect ratio
+        page_size: QSizeF = document.pagePointSize(0)
+        ratio_hw: float = page_size.height() / page_size.width()
+        if ratio_hw >= 1:
+            page_size *= size / page_size.height()
+        else:
+            page_size *= size / page_size.width()
+        # Enlarge image to improve image downscaling (kind of arbitrary)
+        page_size *= 2.5
+        # Render image with no anti-aliasing for speed
+        render_options: QPdfDocumentRenderOptions = QPdfDocumentRenderOptions()
+        render_options.setRenderFlags(
+            QPdfDocumentRenderOptions.RenderFlag.TextAliased
+            | QPdfDocumentRenderOptions.RenderFlag.ImageAliased
+            | QPdfDocumentRenderOptions.RenderFlag.PathAliased
+        )
+        # Convert QImage to PIL Image
+        rendered_qimage: QImage = document.render(0, page_size.toSize(), render_options)
+        buffer: QBuffer = QBuffer()
+        buffer.open(QBuffer.ReadWrite)
+        rendered_qimage.save(buffer, "PNG")
+        pil_image: Image = Image.open(BytesIO(buffer.data()))
+        buffer.close()
+        # Replace transparent pixels with white (otherwise Background defaults to transparent)
+        pixel_array = np.asarray(pil_image.convert("RGBA")).copy()
+        pixel_array[pixel_array[:, :, 3] == 0] = [255, 255, 255, 255]
+        return Image.fromarray(pixel_array)
+
     def render(
         self,
         timestamp: float,
@@ -825,6 +874,10 @@ class ThumbRenderer(QObject):
                 # Blender ===========================================================
                 elif MediaType.BLENDER in MediaCategories.get_types(ext):
                     image = self._blender(_filepath)
+                # Documents ===================================================
+                elif MediaType.DOCUMENT in MediaCategories.get_types(ext):
+                    if ext == ".pdf":
+                        image = self._pdf_thumb(_filepath, adj_size)
 
                 # No Rendered Thumbnail ========================================
                 if not image:
