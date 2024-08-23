@@ -759,7 +759,9 @@ class ThumbRenderer(QObject):
 
     def _pdf_thumb(self, filepath: Path, size: int) -> Image.Image:
         file: QFile = QFile(filepath)
-        was_open_success: bool = file.open(QIODeviceBase.ReadOnly, QFileDevice.ReadUser)
+        was_open_success: bool = file.open(
+            QIODeviceBase.OpenModeFlag.ReadOnly, QFileDevice.Permission.ReadUser
+        )
         if not was_open_success:
             logging.error(
                 f"[ThumbRenderer][PDF][ERROR]: Couldn't open pdf-file {filepath.name}"
@@ -786,9 +788,9 @@ class ThumbRenderer(QObject):
         # Convert QImage to PIL Image
         rendered_qimage: QImage = document.render(0, page_size.toSize(), render_options)
         buffer: QBuffer = QBuffer()
-        buffer.open(QBuffer.ReadWrite)
+        buffer.open(QBuffer.OpenModeFlag.ReadWrite)
         rendered_qimage.save(buffer, "PNG")
-        pil_image: Image = Image.open(BytesIO(buffer.data()))
+        pil_image: Image.Image = Image.open(BytesIO(buffer.buffer().data()))
         buffer.close()
         # Replace transparent pixels with white (otherwise Background defaults to transparent)
         pixel_array = np.asarray(pil_image.convert("RGBA")).copy()
