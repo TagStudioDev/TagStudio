@@ -83,21 +83,6 @@ class MirrorEntriesModal(QWidget):
             self.model.appendRow(QStandardItem(str(i)))
 
     def mirror_entries(self):
-        # pb = QProgressDialog('', None, 0, len(self.lib.dupe_files))
-        # # pb.setMaximum(len(self.lib.missing_files))
-        # pb.setFixedSize(432, 112)
-        # pb.setWindowFlags(pb.windowFlags() & ~Qt.WindowType.WindowCloseButtonHint)
-        # pb.setWindowTitle('Mirroring Entries')
-        # pb.setWindowModality(Qt.WindowModality.ApplicationModal)
-        # pb.show()
-
-        # r = CustomRunnable(lambda: self.mirror_entries_runnable(pb))
-        # r.done.connect(lambda: self.done.emit())
-        # r.done.connect(lambda: self.driver.preview_panel.refresh())
-        # # r.done.connect(lambda: self.model.clear())
-        # # QThreadPool.globalInstance().start(r)
-        # r.run()
-
         iterator = FunctionIterator(self.mirror_entries_runnable)
         pw = ProgressWidget(
             window_title="Mirroring Entries",
@@ -127,8 +112,6 @@ class MirrorEntriesModal(QWidget):
     def mirror_entries_runnable(self):
         mirrored: list = []
         for i, dupe in enumerate(self.lib.dupe_files):
-            # pb.setValue(i)
-            # pb.setLabelText(f'Mirroring {i}/{len(self.lib.dupe_files)} Entries')
             entry_id_1 = self.lib.get_entry_id_from_filepath(dupe[0])
             entry_id_2 = self.lib.get_entry_id_from_filepath(dupe[1])
             self.lib.mirror_entry_fields([entry_id_1, entry_id_2])
@@ -136,5 +119,3 @@ class MirrorEntriesModal(QWidget):
             yield i
         for d in mirrored:
             self.lib.dupe_files.remove(d)
-        # self.driver.filter_items('')
-        # self.done.emit()

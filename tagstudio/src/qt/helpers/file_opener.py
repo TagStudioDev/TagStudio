@@ -13,9 +13,9 @@ from pathlib import Path
 from PySide6.QtWidgets import QLabel
 from PySide6.QtCore import Qt
 
-ERROR = f"[ERROR]"
-WARNING = f"[WARNING]"
-INFO = f"[INFO]"
+ERROR = "[ERROR]"
+WARNING = "[WARNING]"
+INFO = "[INFO]"
 
 logging.basicConfig(format="%(message)s", level=logging.INFO)
 

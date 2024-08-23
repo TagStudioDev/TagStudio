@@ -8,20 +8,6 @@ from PySide6.QtCore import Qt, QMargins, QPoint, QRect, QSize
 from PySide6.QtWidgets import QLayout, QSizePolicy, QWidget
 
 
-# class Window(QWidget):
-#     def __init__(self):
-#         super().__init__()
-
-#         flow_layout = FlowLayout(self)
-#         flow_layout.addWidget(QPushButton("Short"))
-#         flow_layout.addWidget(QPushButton("Longer"))
-#         flow_layout.addWidget(QPushButton("Different text"))
-#         flow_layout.addWidget(QPushButton("More text"))
-#         flow_layout.addWidget(QPushButton("Even longer button text"))
-
-#         self.setWindowTitle("Flow Layout")
-
-
 class FlowWidget(QWidget):
     def __init__(self, parent=None) -> None:
         super().__init__(parent)
@@ -122,8 +108,6 @@ class FlowLayout(QLayout):
                     QSizePolicy.PushButton, QSizePolicy.PushButton, Qt.Vertical
                 )
         for i, item in enumerate(self._item_list):
-            # print(issubclass(type(item.widget()), FlowWidget))
-            # print(item.widget().ignore_size)
             skip_count = 0
             if (
                 issubclass(type(item.widget()), FlowWidget)
@@ -135,7 +119,6 @@ class FlowLayout(QLayout):
                 issubclass(type(item.widget()), FlowWidget)
                 and not item.widget().ignore_size
             ) or (not issubclass(type(item.widget()), FlowWidget)):
-                # print(f'Item {i}')
                 if not self.grid_efficiency:
                     style = item.widget().style()
                     layout_spacing_x = style.layoutSpacing(
@@ -159,15 +142,6 @@ class FlowLayout(QLayout):
                 x = next_x
                 line_height = max(line_height, item.sizeHint().height())
 
-        # print(y + line_height - rect.y() * ((len(self._item_list) - skip_count) / len(self._item_list)))
-        # print(y + line_height - rect.y()) * ((len(self._item_list) - skip_count) / len(self._item_list))
         return (
             y + line_height - rect.y() * ((len(self._item_list)) / len(self._item_list))
         )
-
-
-# if __name__ == "__main__":
-#     app = QApplication(sys.argv)
-#     main_win = Window()
-#     main_win.show()
-#     sys.exit(app.exec())

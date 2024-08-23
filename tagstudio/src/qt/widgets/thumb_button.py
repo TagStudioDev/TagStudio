@@ -17,15 +17,12 @@ class ThumbButton(QPushButtonWrapper):
         self.hovered = False
         self.selected = False
 
-        # self.clicked.connect(lambda checked: self.set_selected(True))
-
     def paintEvent(self, event: QPaintEvent) -> None:
         super().paintEvent(event)
         if self.hovered or self.selected:
             painter = QPainter()
             painter.begin(self)
             painter.setRenderHint(QPainter.RenderHint.Antialiasing)
-            # painter.setCompositionMode(QPainter.CompositionMode.CompositionMode_Source)
             path = QPainterPath()
             width = 3
             radius = 6
@@ -39,12 +36,6 @@ class ThumbButton(QPushButtonWrapper):
                 radius,
                 radius,
             )
-
-            # color = QColor('#bb4ff0') if self.selected else QColor('#55bbf6')
-            # pen = QPen(color, width)
-            # painter.setPen(pen)
-            # # brush.setColor(fill)
-            # painter.drawPath(path)
 
             if self.selected:
                 painter.setCompositionMode(

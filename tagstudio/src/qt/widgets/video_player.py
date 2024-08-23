@@ -2,37 +2,35 @@
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
 import logging
-
-from pathlib import Path
 import typing
 
+from PIL import Image, ImageDraw
 from PySide6.QtCore import (
-    Qt,
-    QSize,
-    QTimer,
-    QVariantAnimation,
-    QUrl,
-    QObject,
     QEvent,
+    QObject,
     QRectF,
+    QSize,
+    Qt,
+    QTimer,
+    QUrl,
+    QVariantAnimation,
 )
-from PySide6.QtMultimedia import QMediaPlayer, QAudioOutput, QMediaDevices
-from PySide6.QtMultimediaWidgets import QGraphicsVideoItem
-from PySide6.QtWidgets import QGraphicsView, QGraphicsScene
 from PySide6.QtGui import (
-    QPen,
-    QColor,
+    QAction,
+    QBitmap,
     QBrush,
+    QColor,
+    QPen,
+    QRegion,
     QResizeEvent,
     QWheelEvent,
-    QAction,
-    QRegion,
-    QBitmap,
 )
+from PySide6.QtMultimedia import QAudioOutput, QMediaDevices, QMediaPlayer
+from PySide6.QtMultimediaWidgets import QGraphicsVideoItem
 from PySide6.QtSvgWidgets import QSvgWidget
-from src.qt.helpers.file_opener import FileOpenerHelper
-from PIL import Image, ImageDraw
+from PySide6.QtWidgets import QGraphicsScene, QGraphicsView
 from src.core.enums import SettingItems
+from src.qt.helpers.file_opener import FileOpenerHelper
 
 if typing.TYPE_CHECKING:
     from src.qt.ts_qt import QtDriver

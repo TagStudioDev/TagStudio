@@ -57,51 +57,19 @@ class TagStudioCore:
                         info["artist"] = json_dump["user"]["full_name"].strip()
                         info["description"] = json_dump["description"].strip()
                         info["tags"] = json_dump["tags"]
-                        # info["tags"] = [x for x in json_dump["mediums"]["name"]]
+
                         info["date_published"] = json_dump["date"]
                     elif source == "newgrounds":
-                        # info["title"] = json_dump["title"]
-                        # info["artist"] = json_dump["artist"]
-                        # info["description"] = json_dump["description"]
                         info["tags"] = json_dump["tags"]
                         info["date_published"] = json_dump["date"]
                         info["artist"] = json_dump["user"].strip()
                         info["description"] = json_dump["description"].strip()
                         info["source"] = json_dump["post_url"].strip()
-                    # else:
-                    # 	print(
-                    # 		f'[INFO]: TagStudio does not currently support sidecar files for "{source}"')
 
-        # except FileNotFoundError:
-        except:
-            # print(
-            # 	f'[INFO]: No sidecar file found at "{os.path.normpath(file_path + ".json")}"')
+        except Exception:
             pass
 
         return info
-
-    # def scrape(self, entry_id):
-    # 	entry = self.lib.get_entry(entry_id)
-    # 	if entry.fields:
-    # 		urls: list[str] = []
-    # 		if self.lib.get_field_index_in_entry(entry, 21):
-    # 			urls.extend([self.lib.get_field_attr(entry.fields[x], 'content')
-    # 						for x in self.lib.get_field_index_in_entry(entry, 21)])
-    # 		if self.lib.get_field_index_in_entry(entry, 3):
-    # 			urls.extend([self.lib.get_field_attr(entry.fields[x], 'content')
-    # 						for x in self.lib.get_field_index_in_entry(entry, 3)])
-    # 	# try:
-    # 	if urls:
-    # 		for url in urls:
-    # 			url = "https://" + url if 'https://' not in url else url
-    # 			html_doc = requests.get(url).text
-    # 			soup = bs(html_doc, "html.parser")
-    # 			print(soup)
-    # 			input()
-
-    # 	# except:
-    # 	# 	# print("Could not resolve URL.")
-    # 	# 	pass
 
     def match_conditions(self, entry_id: int) -> None:
         """Matches defined conditions against a file to add Entry data."""
@@ -162,9 +130,8 @@ class TagStudioCore:
                                             self.lib.update_entry_field(
                                                 entry_id, -1, content, "replace"
                                             )
-        except:
+        except Exception:
             print("Error in match_conditions...")
-            # input()
             pass
 
     def build_url(self, entry_id: int, source: str):
@@ -184,11 +151,9 @@ class TagStudioCore:
         try:
             entry = self.lib.get_entry(entry_id)
             stubs = str(entry.filename).rsplit("_", 3)
-            # print(stubs)
-            # source, author = os.path.split(entry.path)
             url = f"www.twitter.com/{stubs[0]}/status/{stubs[-3]}/photo/{stubs[-2]}"
             return url
-        except:
+        except Exception:
             return ""
 
     def _build_instagram_url(self, entry_id: int):
@@ -199,13 +164,12 @@ class TagStudioCore:
         try:
             entry = self.lib.get_entry(entry_id)
             stubs = str(entry.filename).rsplit("_", 2)
-            # stubs[0] = stubs[0].replace(f"{author}_", '', 1)
-            # print(stubs)
+
             # NOTE: Both Instagram usernames AND their ID can have underscores in them,
             # so unless you have the exact username (which can change) on hand to remove,
             # your other best bet is to hope that the ID is only 11 characters long, which
             # seems to more or less be the case... for now...
             url = f"www.instagram.com/p/{stubs[-3][-11:]}"
             return url
-        except:
+        except Exception:
             return ""

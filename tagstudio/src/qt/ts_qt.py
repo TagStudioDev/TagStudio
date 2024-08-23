@@ -97,9 +97,9 @@ if sys.platform == "win32":
 else:
     from signal import signal, SIGINT, SIGTERM, SIGQUIT
 
-ERROR = f"[ERROR]"
-WARNING = f"[WARNING]"
-INFO = f"[INFO]"
+ERROR = "[ERROR]"
+WARNING = "[WARNING]"
+INFO = "[INFO]"
 
 logging.basicConfig(format="%(message)s", level=logging.INFO)
 
@@ -175,17 +175,11 @@ class QtDriver(QObject):
 
         self.search_mode = SearchMode.AND
 
-        # self.main_window = None
-        # self.main_window = Ui_MainWindow()
-
         self.branch: str = (" (" + VERSION_BRANCH + ")") if VERSION_BRANCH else ""
         self.base_title: str = f"TagStudio Alpha {VERSION}{self.branch}"
-        # self.title_text: str = self.base_title
-        # self.buffer = {}
         self.thumb_job_queue: Queue = Queue()
         self.thumb_threads: list[Consumer] = []
         self.thumb_cutoff: float = time.time()
-        # self.selected: list[tuple[int,int]] = [] # (Thumb Index, Page Index)
         self.selected: list[tuple[ItemType, int]] = []  # (Item Type, Item ID)
 
         self.SIGTERM.connect(self.handleSIGTERM)
@@ -210,12 +204,12 @@ class QtDriver(QObject):
             )
 
         max_threads = os.cpu_count()
+        assert max_threads, "Could not read os.cpu_count()"
+
         if args.ci:
             # spawn only single worker in CI environment
             max_threads = 1
         for i in range(max_threads):
-            # thread = threading.Thread(target=self.consumer, name=f'ThumbRenderer_{i}',args=(), daemon=True)
-            # thread.start()
             thread = Consumer(self.thumb_job_queue)
             thread.setObjectName(f"ThumbRenderer_{i}")
             self.thumb_threads.append(thread)
@@ -240,18 +234,11 @@ class QtDriver(QObject):
     def start(self) -> None:
         """Launches the main Qt window."""
 
-        loader = QUiLoader()
         if os.name == "nt":
             sys.argv += ["-platform", "windows:darkmode=2"]
         app = QApplication(sys.argv)
         app.setStyle("Fusion")
-        # pal: QPalette = app.palette()
-        # pal.setColor(QPalette.ColorGroup.Active,
-        # 			 QPalette.ColorRole.Highlight, QColor('#6E4BCE'))
-        # pal.setColor(QPalette.ColorGroup.Normal,
-        # 			 QPalette.ColorRole.Window, QColor('#110F1B'))
-        # app.setPalette(pal)
-        home_path = Path(__file__).parent / "ui/home.ui"
+
         icon_path = Path(__file__).parents[2] / "resources/icon.png"
 
         # Handle OS signals
@@ -261,27 +248,13 @@ class QtDriver(QObject):
         timer.start(500)
         timer.timeout.connect(lambda: None)
 
-        # self.main_window = loader.load(home_path)
         self.main_window = Ui_MainWindow(self)
         self.main_window.setWindowTitle(self.base_title)
         self.main_window.mousePressEvent = self.mouse_navigation  # type: ignore
-        # self.main_window.setStyleSheet(
-        # 	f'QScrollBar::{{background:red;}}'
-        # 	)
-
-        # # self.main_window.windowFlags() &
-        # # self.main_window.setWindowFlag(Qt.WindowType.FramelessWindowHint, True)
-        # self.main_window.setWindowFlag(Qt.WindowType.NoDropShadowWindowHint, True)
-        # self.main_window.setWindowFlag(Qt.WindowType.WindowTransparentForInput, False)
-        # self.main_window.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
-
-        # self.windowFX = WindowEffect()
-        # self.windowFX.setAcrylicEffect(self.main_window.winId())
 
         splash_pixmap = QPixmap(":/images/splash.png")
         splash_pixmap.setDevicePixelRatio(self.main_window.devicePixelRatio())
         self.splash = QSplashScreen(splash_pixmap, Qt.WindowStaysOnTopHint)  # type: ignore
-        # self.splash.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
         self.splash.show()
 
         if os.name == "nt":
@@ -305,8 +278,6 @@ class QtDriver(QObject):
         help_menu = QMenu("&Help", menu_bar)
 
         # File Menu ============================================================
-        # file_menu.addAction(QAction('&New Library', menu_bar))
-        # file_menu.addAction(QAction('&Open Library', menu_bar))
 
         open_library_action = QAction("&Open/Create Library", menu_bar)
         open_library_action.triggered.connect(lambda: self.open_library_from_dialog())
@@ -350,8 +321,6 @@ class QtDriver(QObject):
 
         file_menu.addSeparator()
 
-        # refresh_lib_action = QAction('&Refresh Directories', self.main_window)
-        # refresh_lib_action.triggered.connect(lambda: self.lib.refresh_dir())
         add_new_files_action = QAction("&Refresh Directories", menu_bar)
         add_new_files_action.triggered.connect(
             lambda: self.callback_library_needed_check(self.add_new_files_callback)
@@ -363,9 +332,8 @@ class QtDriver(QObject):
             )
         )
         add_new_files_action.setStatusTip("Ctrl+R")
-        # file_menu.addAction(refresh_lib_action)
-        file_menu.addAction(add_new_files_action)
 
+        file_menu.addAction(add_new_files_action)
         file_menu.addSeparator()
 
         close_library_action = QAction("&Close Library", menu_bar)
@@ -553,14 +521,11 @@ class QtDriver(QObject):
         self.shutdown()
 
     def init_library_window(self):
-        # self._init_landing_page() # Taken care of inside the widget now
         self._init_thumb_grid()
 
         # TODO: Put this into its own method that copies the font file(s) into memory
         # so the resource isn't being used, then store the specific size variations
         # in a global dict for methods to access for different DPIs.
-        # adj_font_size = math.floor(12 * self.main_window.devicePixelRatio())
-        # self.ext_font = ImageFont.truetype(os.path.normpath(f'{Path(__file__).parents[2]}/resources/qt/fonts/Oxanium-Bold.ttf'), adj_font_size)
 
         search_button: QPushButton = self.main_window.searchButton
         search_button.clicked.connect(
@@ -605,12 +570,6 @@ class QtDriver(QObject):
         self.cur_frame_idx = -1
         self.cur_query = ""
         self.filter_items()
-        # self.update_thumbs()
-
-        # self.render_times: list = []
-        # self.main_window.setWindowFlag(Qt.FramelessWindowHint)
-
-        # self.main_window.raise_()
         self.splash.finish(self.main_window)
         self.preview_panel.update_widgets()
 
@@ -647,9 +606,9 @@ class QtDriver(QObject):
         QApplication.quit()
 
     def save_library(self, show_status=True):
-        logging.info(f"Saving Library...")
+        logging.info("Saving Library...")
         if show_status:
-            self.main_window.statusbar.showMessage(f"Saving Library...")
+            self.main_window.statusbar.showMessage("Saving Library...")
             start_time = time.time()
         # This might still be able to error, if the selected directory deletes in a race condition
         # or something silly like that. Hence the loop, but if this is considered overkill, thats fair.
@@ -678,8 +637,8 @@ class QtDriver(QObject):
 
     def close_library(self):
         if self.lib.library_dir:
-            logging.info(f"Closing Library...")
-            self.main_window.statusbar.showMessage(f"Closing & Saving Library...")
+            logging.info("Closing Library...")
+            self.main_window.statusbar.showMessage("Closing & Saving Library...")
             start_time = time.time()
             self.save_library(show_status=False)
             self.settings.setValue(SettingItems.LAST_LIBRARY, self.lib.library_dir)
@@ -703,8 +662,8 @@ class QtDriver(QObject):
             )
 
     def backup_library(self):
-        logging.info(f"Backing Up Library...")
-        self.main_window.statusbar.showMessage(f"Saving Library...")
+        logging.info("Backing Up Library...")
+        self.main_window.statusbar.showMessage("Saving Library...")
         start_time = time.time()
         fn = self.lib.save_library_backup_to_disk()
         end_time = time.time()
@@ -716,12 +675,10 @@ class QtDriver(QObject):
         self.modal = PanelModal(
             BuildTagPanel(self.lib), "New Tag", "Add Tag", has_save=True
         )
-        # self.edit_modal.widget.update_display_name.connect(lambda t: self.edit_modal.title_widget.setText(t))
         panel: BuildTagPanel = self.modal.widget
         self.modal.saved.connect(
             lambda: (self.lib.add_tag_to_library(panel.build_tag()), self.modal.hide())
         )
-        # panel.tag_updated.connect(lambda tag: self.lib.update_tag(tag))
         self.modal.show()
 
     def select_all_action_callback(self):
@@ -760,47 +717,6 @@ class QtDriver(QObject):
 
     def add_new_files_callback(self):
         """Runs when user initiates adding new files to the Library."""
-        # # if self.lib.files_not_in_library:
-        # # 	mb = QMessageBox()
-        # # 	mb.setText(f'Would you like to refresh the directory before adding {len(self.lib.files_not_in_library)} new files to the library?\nThis will add any additional files that have been moved to the directory since the last refresh.')
-        # # 	mb.setWindowTitle('Refresh Library')
-        # # 	mb.setIcon(QMessageBox.Icon.Information)
-        # # 	mb.setStandardButtons(QMessageBox.StandardButton.No)
-        # # 	refresh_button = mb.addButton('Refresh', QMessageBox.ButtonRole.AcceptRole)
-        # # 	mb.setDefaultButton(refresh_button)
-        # # 	result = mb.exec_()
-        # # 	# logging.info(result)
-        # # 	if result == 0:
-        # # 		self.main_window.statusbar.showMessage(f'Refreshing Library...', 3)
-        # # 		self.lib.refresh_dir()
-        # # else:
-        # pb = QProgressDialog('Scanning Directories for New Files...\nPreparing...', None, 0,0)
-
-        # pb.setFixedSize(432, 112)
-        # pb.setWindowFlags(pb.windowFlags() & ~Qt.WindowType.WindowCloseButtonHint)
-        # # pb.setLabelText('Scanning Directories...')
-        # pb.setWindowTitle('Scanning Directories')
-        # pb.setWindowModality(Qt.WindowModality.ApplicationModal)
-        # # pb.setMinimum(0)
-        # # pb.setMaximum(0)
-        # # pb.setValue(0)
-        # pb.show()
-        # self.main_window.statusbar.showMessage(f'Refreshing Library...', 3)
-        # # self.lib.refresh_dir()
-        # r = CustomRunnable(lambda: self.runnable(pb))
-        # logging.info(f'Main: {QThread.currentThread()}')
-        # r.done.connect(lambda: (pb.hide(), pb.deleteLater(), self.add_new_files_runnable()))
-        # QThreadPool.globalInstance().start(r)
-        # # r.run()
-
-        # # new_ids: list[int] = self.lib.add_new_files_as_entries()
-        # # # logging.info(f'{INFO} Running configured Macros on {len(new_ids)} new Entries...')
-        # # # self.main_window.statusbar.showMessage(f'Running configured Macros on {len(new_ids)} new Entries...', 3)
-        # # # for id in new_ids:
-        # # # 	self.run_macro('autofill', id)
-
-        # # self.main_window.statusbar.showMessage('', 3)
-        # # self.filter_entries('')
 
         iterator = FunctionIterator(self.lib.refresh_dir)
         pw = ProgressWidget(
@@ -818,40 +734,20 @@ class QtDriver(QObject):
             )
         )
         r = CustomRunnable(lambda: iterator.run())
-        # r.done.connect(lambda: (pw.hide(), pw.deleteLater(), self.filter_items('')))
+
         # vvv This one runs the macros when adding new files to the library.
         r.done.connect(
             lambda: (pw.hide(), pw.deleteLater(), self.add_new_files_runnable())
         )
         QThreadPool.globalInstance().start(r)
 
-    # def runnable(self, pb:QProgressDialog):
-    # 	for i in self.lib.refresh_dir():
-    # 		pb.setLabelText(f'Scanning Directories for New Files...\n{i} File{"s" if i != 1 else ""} Searched, {len(self.lib.files_not_in_library)} New Files Found')
-
     def add_new_files_runnable(self):
         """
         Threaded method that adds any known new files to the library and
         initiates running default macros on them.
         """
-        # logging.info(f'Start ANF: {QThread.currentThread()}')
+
         new_ids: list[int] = self.lib.add_new_files_as_entries()
-        # pb = QProgressDialog(f'Running Configured Macros on 1/{len(new_ids)} New Entries', None, 0,len(new_ids))
-        # pb.setFixedSize(432, 112)
-        # pb.setWindowFlags(pb.windowFlags() & ~Qt.WindowType.WindowCloseButtonHint)
-        # pb.setWindowTitle('Running Macros')
-        # pb.setWindowModality(Qt.WindowModality.ApplicationModal)
-        # pb.show()
-
-        # r = CustomRunnable(lambda: self.new_file_macros_runnable(pb, new_ids))
-        # r.done.connect(lambda: (pb.hide(), pb.deleteLater(), self.filter_items('')))
-        # r.run()
-        # # QThreadPool.globalInstance().start(r)
-
-        # # logging.info(f'{INFO} Running configured Macros on {len(new_ids)} new Entries...')
-        # # self.main_window.statusbar.showMessage(f'Running configured Macros on {len(new_ids)} new Entries...', 3)
-
-        # # pb.hide()
 
         iterator = FunctionIterator(lambda: self.new_file_macros_runnable(new_ids))
         pw = ProgressWidget(
@@ -874,21 +770,10 @@ class QtDriver(QObject):
 
     def new_file_macros_runnable(self, new_ids):
         """Threaded method that runs macros on a set of Entry IDs."""
-        # sleep(1)
-        # logging.info(f'ANFR: {QThread.currentThread()}')
-        # for i, id in enumerate(new_ids):
-        # 	# pb.setValue(i)
-        # 	# pb.setLabelText(f'Running Configured Macros on {i}/{len(new_ids)} New Entries')
-        # 	# self.run_macro('autofill', id)
 
         # NOTE: I don't know. I don't know why it needs this. The whole program
         # falls apart if this method doesn't run, and it DOESN'T DO ANYTHING
         yield 0
-
-        # self.main_window.statusbar.showMessage('', 3)
-
-        # sleep(5)
-        # pb.deleteLater()
 
     def run_macros(self, name: str, entry_ids: list[int]):
         """Runs a specific Macro on a group of given entry_ids."""
@@ -927,10 +812,7 @@ class QtDriver(QObject):
             self.lib.sort_fields(entry_id, order)
         elif name == "match":
             self.core.match_conditions(entry_id)
-        # elif name == 'scrape':
-        # 	self.core.scrape(entry_id)
         elif name == "clean-url":
-            # entry = self.lib.get_entry_from_index(entry_id)
             if entry.fields:
                 for i, field in enumerate(entry.fields, start=0):
                     if self.lib.get_field_attr(field, "type") == "text_line":
@@ -944,7 +826,6 @@ class QtDriver(QObject):
                         )
 
     def mouse_navigation(self, event: QMouseEvent):
-        # print(event.button())
         if event.button() == Qt.MouseButton.ForwardButton:
             self.nav_forward()
         elif event.button() == Qt.MouseButton.BackButton:
@@ -986,7 +867,6 @@ class QtDriver(QObject):
                         frame_content, 0, page_index, page_count, search_text
                     )
                 )
-                # logging.info(f'Saving Text: {search_text}')
             # Update the last frame's scroll_pos
             self.nav_frames[self.cur_frame_idx].scrollbar_pos = sb_pos
             self.cur_frame_idx += 1 if not trimmed else 0
@@ -999,11 +879,10 @@ class QtDriver(QObject):
             self.nav_frames.append(
                 NavigationState(frame_content, 0, page_index, page_count, search_text)
             )
-            # logging.info(f'Saving Text: {search_text}')
+
             self.nav_frames[self.cur_frame_idx].scrollbar_pos = sb_pos
             self.cur_frame_idx += 1 if not trimmed else 0
 
-        # if self.nav_stack[self.cur_page_idx].contents:
         if (self.cur_frame_idx != original_pos) or (frame_content is not None):
             self.update_thumbs()
             sb.verticalScrollBar().setValue(
@@ -1017,14 +896,6 @@ class QtDriver(QObject):
                 self.nav_frames[self.cur_frame_idx].page_index,
                 emit=False,
             )
-            # logging.info(f'Setting Text: {self.nav_stack[self.cur_page_idx].search_text}')
-        # else:
-        # 	self.nav_stack.pop()
-        # 	self.cur_page_idx -= 1
-        # 	self.update_thumbs()
-        # 	sb.verticalScrollBar().setValue(self.nav_stack[self.cur_page_idx].scrollbar_pos)
-
-        # logging.info(f'Forward: {[len(x.contents) for x in self.nav_stack]}, Index {self.cur_page_idx}, SB {self.nav_stack[self.cur_page_idx].scrollbar_pos}')
 
     def nav_back(self):
         """Navigates a step backwards in the navigation stack."""
@@ -1049,8 +920,6 @@ class QtDriver(QObject):
                     self.nav_frames[self.cur_frame_idx].page_index,
                     emit=False,
                 )
-                # logging.info(f'Setting Text: {self.nav_stack[self.cur_page_idx].search_text}')
-        # logging.info(f'Back: {[len(x.contents) for x in self.nav_stack]}, Index {self.cur_page_idx}, SB {self.nav_stack[self.cur_page_idx].scrollbar_pos}')
 
     def refresh_frame(
         self,
@@ -1073,11 +942,9 @@ class QtDriver(QObject):
         else:
             self.nav_forward(frame_content, page_index, page_count)
         self.update_thumbs()
-        # logging.info(f'Refresh: {[len(x.contents) for x in self.nav_stack]}, Index {self.cur_page_idx}')
 
     @typing.no_type_check
     def purge_item_from_navigation(self, type: ItemType, id: int):
-        # logging.info(self.nav_frames)
         # TODO - types here are ambiguous
         for i, frame in enumerate(self.nav_frames, start=0):
             while (type, id) in frame.contents:
@@ -1095,17 +962,11 @@ class QtDriver(QObject):
             self.selected.remove((type, id))
 
     def _init_thumb_grid(self):
-        # logging.info('Initializing Thumbnail Grid...')
         layout = FlowLayout()
         layout.setGridEfficiency(True)
-        # layout.setContentsMargins(0,0,0,0)
-        layout.setSpacing(min(self.thumb_size // 10, 12))
-        # layout = QHBoxLayout()
-        # layout.setSizeConstraint(QLayout.SizeConstraint.SetMaximumSize)
-        # layout = QListView()
-        # layout.setViewMode(QListView.ViewMode.IconMode)
 
-        col_size = 28
+        layout.setSpacing(min(self.thumb_size // 10, 12))
+
         for i in range(0, self.max_results):
             item_thumb = ItemThumb(
                 None, self.lib, self.preview_panel, (self.thumb_size, self.thumb_size)
@@ -1125,7 +986,6 @@ class QtDriver(QObject):
     def select_item(self, type: ItemType, id: int, append: bool, bridge: bool):
         """Selects one or more items in the Thumbnail Grid."""
         if append:
-            # self.selected.append((thumb_index, page_index))
             if ((type, id)) not in self.selected:
                 self.selected.append((type, id))
                 for it in self.item_thumbs:
@@ -1136,7 +996,6 @@ class QtDriver(QObject):
                 for it in self.item_thumbs:
                     if it.mode == type and it.item_id == id:
                         it.thumb_button.set_selected(False)
-            # self.item_thumbs[thumb_index].thumb_button.set_selected(True)
 
         elif bridge and self.selected:
             logging.info(f"Last Selected: {self.selected[-1]}")
@@ -1154,11 +1013,6 @@ class QtDriver(QObject):
             if last_index < current_index:
                 index_range.reverse()
 
-            # logging.info(f'Current Frame Contents: {len(self.nav_frames[self.cur_frame_idx].contents)}')
-            # logging.info(f'Last Selected Index: {last_index}')
-            # logging.info(f'Current Selected Index: {current_index}')
-            # logging.info(f'Index Range: {index_range}')
-
             for c_type, c_id in index_range:
                 for it in self.item_thumbs:
                     if it.mode == c_type and it.item_id == c_id:
@@ -1166,13 +1020,9 @@ class QtDriver(QObject):
                         if ((c_type, c_id)) not in self.selected:
                             self.selected.append((c_type, c_id))
         else:
-            # for i in self.selected:
-            # 	if i[1] == self.cur_frame_idx:
-            # 		self.item_thumbs[i[0]].thumb_button.set_selected(False)
             self.selected.clear()
-            # self.selected.append((thumb_index, page_index))
             self.selected.append((type, id))
-            # self.item_thumbs[thumb_index].thumb_button.set_selected(True)
+
             for it in self.item_thumbs:
                 if it.mode == type and it.item_id == id:
                     it.thumb_button.set_selected(True)
@@ -1217,30 +1067,21 @@ class QtDriver(QObject):
         for i, item_thumb in enumerate(self.item_thumbs, start=0):
             if i < len(self.nav_frames[self.cur_frame_idx].contents):
                 # Set new item type modes
-                # logging.info(f'[UPDATE] Setting Mode To: {self.nav_stack[self.cur_page_idx].contents[i][0]}')
                 item_thumb.set_mode(self.nav_frames[self.cur_frame_idx].contents[i][0])
                 item_thumb.ignore_size = False
-                # logging.info(f'[UPDATE] Set Mode To: {item.mode}')
-                # Set thumbnails to loading (will always finish if rendering)
+
                 self.thumb_job_queue.put(
                     (
                         item_thumb.renderer.render,
                         (sys.float_info.max, "", base_size, ratio, True, True),
                     )
                 )
-                # # Restore Selected Borders
-                # if (item_thumb.mode, item_thumb.item_id) in self.selected:
-                # 	item_thumb.thumb_button.set_selected(True)
-                # else:
-                # 	item_thumb.thumb_button.set_selected(False)
             else:
                 item_thumb.ignore_size = True
                 item_thumb.set_mode(None)
                 item_thumb.set_item_id(-1)
                 item_thumb.thumb_button.set_selected(False)
 
-        # scrollbar: QScrollArea = self.main_window.scrollArea
-        # scrollbar.verticalScrollBar().setValue(scrollbar_pos)
         self.flow_container.layout().update()
         self.main_window.update()
 
@@ -1275,14 +1116,6 @@ class QtDriver(QObject):
                             )
                         )
                     )
-                    # item_thumb.update_clickable(clickable=(
-                    # 	lambda checked=False, filepath=filepath, entry=entry,
-                    # 		   item_t=item_thumb, i=i, page=self.cur_frame_idx: (
-                    # 		self.preview_panel.update_widgets(entry),
-                    # 		self.select_item(ItemType.ENTRY, entry.id,
-                    # 	append=True if QGuiApplication.keyboardModifiers() == Qt.KeyboardModifier.ControlModifier else False,
-                    # 	bridge=True if QGuiApplication.keyboardModifiers() == Qt.KeyboardModifier.ShiftModifier else False))))
-                    # item.dumpObjectTree()
                 elif (
                     self.nav_frames[self.cur_frame_idx].contents[i][0]
                     == ItemType.COLLATION
@@ -1308,7 +1141,6 @@ class QtDriver(QObject):
                             )
                         )
                     )
-                # item.setHidden(False)
 
                 # Restore Selected Borders
                 if (item_thumb.mode, item_thumb.item_id) in self.selected:
@@ -1322,16 +1154,6 @@ class QtDriver(QObject):
                         (time.time(), filepath, base_size, ratio, False, True),
                     )
                 )
-            else:
-                # item.setHidden(True)
-                pass
-                # update_widget_clickable(widget=item.bg_button, clickable=())
-                # self.thumb_job_queue.put(
-                # 	(item.renderer.render, ('', base_size, ratio, False)))
-
-        # end_time = time.time()
-        # logging.info(
-        # 	f'[MAIN] Elements thumbs updated in {(end_time - start_time):.3f} seconds')
 
     def update_badges(self):
         for i, item_thumb in enumerate(self.item_thumbs, start=0):
@@ -1339,7 +1161,6 @@ class QtDriver(QObject):
 
     def expand_collation(self, collation_entries: list[tuple[int, int]]):
         self.nav_forward([(ItemType.ENTRY, x[0]) for x in collation_entries])
-        # self.update_thumbs()
 
     def get_frame_contents(self, index=0, query: str = ""):
         return (
@@ -1350,14 +1171,12 @@ class QtDriver(QObject):
 
     def filter_items(self, query: str = ""):
         if self.lib:
-            # logging.info('Filtering...')
             self.main_window.statusbar.showMessage(
                 f'Searching Library for "{query}"...'
             )
             self.main_window.statusbar.repaint()
             start_time = time.time()
 
-            # self.filtered_items = self.lib.search_library(query)
             # 73601 Entries at 500 size should be 246
             all_items = self.lib.search_library(query, search_mode=self.search_mode)
             frames: list[list[tuple[ItemType, int]]] = []
@@ -1373,18 +1192,8 @@ class QtDriver(QObject):
             for i, f in enumerate(frames):
                 logging.info(f"Query:{query}, Frame: {i},  Length: {len(f)}")
             self.frame_dict[query] = frames
-            # self.frame_dict[query] = [all_items]
 
-            if self.cur_query == query:
-                # self.refresh_frame(self.lib.search_library(query))
-                # NOTE: Trying to refresh instead of navigating forward here
-                # now creates a bug when the page counts differ on refresh.
-                # If refreshing is absolutely desired, see how to update
-                # page counts where they need to be updated.
-                self.nav_forward(*self.get_frame_contents(0, query))
-            else:
-                # self.nav_forward(self.lib.search_library(query))
-                self.nav_forward(*self.get_frame_contents(0, query))
+            self.nav_forward(*self.get_frame_contents(0, query))
             self.cur_query = query
 
             end_time = time.time()
@@ -1396,9 +1205,6 @@ class QtDriver(QObject):
                 self.main_window.statusbar.showMessage(
                     f"{len(all_items)} Results ({format_timespan(end_time - start_time)})"
                 )
-            # logging.info(f'Done Filtering! ({(end_time - start_time):.3f}) seconds')
-
-            # self.update_thumbs()
 
     def set_search_type(self, mode=SearchMode.AND):
         self.search_mode = mode
@@ -1478,18 +1284,10 @@ class QtDriver(QObject):
         data_only_mode: bool = False
         data_tint_mode: bool = False
 
-        self.main_window.statusbar.showMessage(f"Creating Library Collage...")
+        self.main_window.statusbar.showMessage("Creating Library Collage...")
         self.collage_start_time = time.time()
 
-        # mode:int = self.scr_choose_option(subtitle='Choose Collage Mode(s)',
-        # 	choices=[
-        # 	('Normal','Creates a standard square image collage made up of Library media files.'),
-        # 	('Data Tint','Tints the collage with a color representing data about the Library Entries/files.'),
-        # 	('Data Only','Ignores media files entirely and only outputs a collage of Library Entry/file data.'),
-        # 	('Normal & Data Only','Creates both Normal and Data Only collages.'),
-        # 	], prompt='', required=True)
-        mode = 0
-
+        mode = 0  # TODO mode is always 0
         if mode == 1:
             data_tint_mode = True
 
@@ -1497,12 +1295,6 @@ class QtDriver(QObject):
             data_only_mode = True
 
         if mode in [0, 1, 3]:
-            # keep_aspect = self.scr_choose_option(
-            # 	subtitle='Choose Aspect Ratio Option',
-            # 	choices=[
-            # 	('Stretch to Fill','Stretches the media file to fill the entire collage square.'),
-            # 	('Keep Aspect Ratio','Keeps the original media file\'s aspect ratio, filling the rest of the square with black bars.')
-            # 	], prompt='', required=True)
             keep_aspect = False
 
         if mode in [1, 2, 3]:
@@ -1512,15 +1304,6 @@ class QtDriver(QObject):
         full_thumb_size: int = 1
 
         if mode in [0, 1, 3]:
-            # full_thumb_size = self.scr_choose_option(
-            # 	subtitle='Choose Thumbnail Size',
-            # 	choices=[
-            # 	('Tiny (32px)',''),
-            # 	('Small (64px)',''),
-            # 	('Medium (128px)',''),
-            # 	('Large (256px)',''),
-            # 	('Extra Large (512px)','')
-            # 	], prompt='', required=True)
             full_thumb_size = 0
 
         thumb_size: int = (
@@ -1538,12 +1321,6 @@ class QtDriver(QObject):
         )
         thumb_size = 16
 
-        # if len(com) > 1 and com[1] == 'keep-aspect':
-        # 	keep_aspect = True
-        # elif len(com) > 1 and com[1] == 'data-only':
-        # 	data_only_mode = True
-        # elif len(com) > 1 and com[1] == 'data-tint':
-        # 	data_tint_mode = True
         grid_size = math.ceil(math.sqrt(len(self.lib.entries))) ** 2
         grid_len = math.floor(math.sqrt(grid_size))
         thumb_size = thumb_size if not data_only_mode else 1
@@ -1566,8 +1343,6 @@ class QtDriver(QObject):
         for x in range(0, grid_len):
             for y in range(0, grid_len):
                 if i < len(self.lib.entries) and run:
-                    # if i < 5 and run:
-
                     entry_id = self.lib.entries[i].id
                     renderer = CollageIconRenderer(self.lib)
                     renderer.rendered.connect(
@@ -1593,7 +1368,7 @@ class QtDriver(QObject):
     def try_save_collage(self, increment_progress: bool):
         if increment_progress:
             self.completed += 1
-        # logging.info(f'threshold:{len(self.lib.entries}, completed:{self.completed}')
+
         if self.completed == len(self.lib.entries):
             filename = (
                 self.lib.library_dir

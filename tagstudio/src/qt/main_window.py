@@ -33,47 +33,33 @@ logging.basicConfig(format="%(message)s", level=logging.INFO)
 
 
 class Ui_MainWindow(QMainWindow):
-  
+
     def __init__(self, driver: "QtDriver", parent=None) -> None:
         super().__init__(parent)
         self.driver: "QtDriver" = driver
         self.setupUi(self)
 
-        # NOTE: These are old attempts to allow for a translucent/acrylic
-        # window effect. This may be attempted again in the future.
-        # self.setWindowFlag(Qt.WindowType.NoDropShadowWindowHint, True)
-        # self.setWindowFlag(Qt.WindowType.WindowTransparentForInput, False)
-        # # self.setWindowFlag(Qt.WindowType.FramelessWindowHint, True)
-        # self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
-
-        # self.windowFX = WindowEffect()
-        # self.windowFX.setAcrylicEffect(self.winId(), isEnableShadow=False)
-
-        # # self.setStyleSheet(
-        # # 	'background:#EE000000;'
-        # # 	)
-        
 
     def setupUi(self, MainWindow):
         if not MainWindow.objectName():
             MainWindow.setObjectName(u"MainWindow")
         MainWindow.resize(1300, 720)
-        
+
         self.centralwidget = QWidget(MainWindow)
         self.centralwidget.setObjectName(u"centralwidget")
         self.gridLayout = QGridLayout(self.centralwidget)
         self.gridLayout.setObjectName(u"gridLayout")
         self.horizontalLayout = QHBoxLayout()
         self.horizontalLayout.setObjectName(u"horizontalLayout")
-  
+
         # ComboBox goup for search type and thumbnail size
         self.horizontalLayout_3 = QHBoxLayout()
         self.horizontalLayout_3.setObjectName("horizontalLayout_3")
-  
+
         # left side spacer
         spacerItem = QSpacerItem(40, 20, QSizePolicy.Expanding, QSizePolicy.Minimum)
         self.horizontalLayout_3.addItem(spacerItem)
-  
+
           # Search type selector
         self.comboBox_2 = QComboBox(self.centralwidget)
         self.comboBox_2.setMinimumSize(QSize(165, 0))
@@ -81,7 +67,7 @@ class Ui_MainWindow(QMainWindow):
         self.comboBox_2.addItem("")
         self.comboBox_2.addItem("")
         self.horizontalLayout_3.addWidget(self.comboBox_2)
-  
+
         # Thumbnail Size placeholder
         self.comboBox = QComboBox(self.centralwidget)
         self.comboBox.setObjectName(u"comboBox")
@@ -120,7 +106,7 @@ class Ui_MainWindow(QMainWindow):
         self.gridLayout_2.setContentsMargins(0, 0, 0, 8)
         self.scrollArea.setWidget(self.scrollAreaWidgetContents)
         self.frame_layout.addWidget(self.scrollArea)
-        
+
         self.landing_widget: LandingWidget = LandingWidget(self.driver, self.devicePixelRatio())
         self.frame_layout.addWidget(self.landing_widget)
 
@@ -202,18 +188,18 @@ class Ui_MainWindow(QMainWindow):
             QCoreApplication.translate("MainWindow", u"<", None))
         self.forwardButton.setText(
             QCoreApplication.translate("MainWindow", u">", None))
-  
+
         # Search field
         self.searchField.setPlaceholderText(
             QCoreApplication.translate("MainWindow", u"Search Entries", None))
         self.searchButton.setText(
             QCoreApplication.translate("MainWindow", u"Search", None))
-  
+
         # Search type selector
         self.comboBox_2.setItemText(0, QCoreApplication.translate("MainWindow", "And (Includes All Tags)"))
         self.comboBox_2.setItemText(1, QCoreApplication.translate("MainWindow", "Or (Includes Any Tag)"))
         self.comboBox.setCurrentText("")
-  
+
         # Thumbnail size selector
         self.comboBox.setPlaceholderText(
             QCoreApplication.translate("MainWindow", u"Thumbnail Size", None))

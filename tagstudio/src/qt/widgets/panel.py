@@ -2,7 +2,6 @@
 # Licensed under the GPL-3.0 License.
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 import logging
-from types import FunctionType
 from typing import Callable
 
 from PySide6.QtCore import Signal, Qt
@@ -19,9 +18,8 @@ class PanelModal(QWidget):
         widget: "PanelWidget",
         title: str,
         window_title: str,
-        done_callback: Callable = None,
-        #  cancel_callback:FunctionType=None,
-        save_callback: Callable = None,
+        done_callback: Callable | None = None,
+        save_callback: Callable | None = None,
         has_save: bool = False,
     ):
         # [Done]
@@ -48,9 +46,6 @@ class PanelModal(QWidget):
         self.button_layout.setContentsMargins(6, 6, 6, 6)
         self.button_layout.addStretch(1)
 
-        # self.cancel_button = QPushButton()
-        # self.cancel_button.setText('Cancel')
-
         if not (save_callback or has_save):
             self.done_button = QPushButton()
             self.done_button.setText("Done")
@@ -65,7 +60,6 @@ class PanelModal(QWidget):
             self.cancel_button.setText("Cancel")
             self.cancel_button.clicked.connect(self.hide)
             self.cancel_button.clicked.connect(widget.reset)
-            # self.cancel_button.clicked.connect(cancel_callback)
             self.button_layout.addWidget(self.cancel_button)
 
             self.save_button = QPushButton()

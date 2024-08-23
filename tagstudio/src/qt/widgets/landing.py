@@ -37,7 +37,6 @@ class LandingWidget(QWidget):
         self.setLayout(self.landing_layout)
 
         # Create landing logo --------------------------------------------------
-        # self.landing_logo_pixmap = QPixmap(":/images/tagstudio_logo_text_mono.png")
         self.logo_raw: Image.Image = Image.open(
             Path(__file__).parents[3]
             / "resources/qt/images/tagstudio_logo_text_mono.png"
@@ -160,22 +159,11 @@ class LandingWidget(QWidget):
 
         self.logo_special_anim.start()
 
-    # def animate_status(self):
-    #     # if self.status_label.y() > 50:
-    #     logging.info(f"{self.status_label.pos()}")
-    #     self.status_pos_anim.setStartValue(
-    #         QPoint(self.status_label.x(), self.status_label.y() + 50)
-    #     )
-    #     self.status_pos_anim.setEndValue(self.status_label.pos())
-    #     self.status_pos_anim.start()
-
-    def set_status_label(self, text=str):
+    def set_status_label(self, text: str):
         """
         Set the text of the status label.
 
         Args:
             text (str): Text of the status to set.
         """
-        # if text:
-        #     self.animate_status()
         self.status_label.setText(text)

@@ -26,9 +26,9 @@ from src.qt.widgets.tag import TagWidget
 from src.qt.modals.tag_search import TagSearchPanel
 
 
-ERROR = f"[ERROR]"
-WARNING = f"[WARNING]"
-INFO = f"[INFO]"
+ERROR = "[ERROR]"
+WARNING = "[WARNING]"
+INFO = "[INFO]"
 
 logging.basicConfig(format="%(message)s", level=logging.INFO)
 
@@ -39,8 +39,7 @@ class BuildTagPanel(PanelWidget):
     def __init__(self, library, tag_id: int = -1):
         super().__init__()
         self.lib: Library = library
-        # self.callback = callback
-        # self.tag_id = tag_id
+
         self.tag = None
         self.setMinimumSize(300, 400)
         self.root_layout = QVBoxLayout(self)
@@ -105,12 +104,10 @@ class BuildTagPanel(PanelWidget):
         self.scroll_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
 
         self.scroll_area = QScrollArea()
-        # self.scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOn)
         self.scroll_area.setWidgetResizable(True)
         self.scroll_area.setFrameShadow(QFrame.Shadow.Plain)
         self.scroll_area.setFrameShape(QFrame.Shape.NoFrame)
         self.scroll_area.setWidget(self.scroll_contents)
-        # self.scroll_area.setMinimumHeight(60)
 
         self.subtags_layout.addWidget(self.scroll_area)
 
@@ -122,19 +119,18 @@ class BuildTagPanel(PanelWidget):
         self.subtags_add_button.clicked.connect(self.add_tag_modal.show)
         self.subtags_layout.addWidget(self.subtags_add_button)
 
-        # self.subtags_field = TagBoxWidget()
-        # self.subtags_field.setMinimumHeight(60)
-        # self.subtags_layout.addWidget(self.subtags_field)
-
         # Shorthand ------------------------------------------------------------
         self.color_widget = QWidget()
+
         self.color_layout = QVBoxLayout(self.color_widget)
         self.color_layout.setStretch(1, 1)
         self.color_layout.setContentsMargins(0, 0, 0, 0)
         self.color_layout.setSpacing(0)
         self.color_layout.setAlignment(Qt.AlignmentFlag.AlignLeft)
+
         self.color_title = QLabel()
         self.color_title.setText("Color")
+
         self.color_layout.addWidget(self.color_title)
         self.color_field = QComboBox()
         self.color_field.setEditable(False)
@@ -142,9 +138,8 @@ class BuildTagPanel(PanelWidget):
         self.color_field.setStyleSheet("combobox-popup:0;")
         for color in TAG_COLORS:
             self.color_field.addItem(color.title())
-        # self.color_field.setProperty("appearance", "flat")
         self.color_field.currentTextChanged.connect(
-            lambda c: self.color_field.setStyleSheet(f"""combobox-popup:0;									
+            lambda c: self.color_field.setStyleSheet(f"""combobox-popup:0;
 																					   font-weight:600;
 																					   color:{get_tag_color(ColorType.TEXT, c.lower())};
 																					   background-color:{get_tag_color(ColorType.PRIMARY, c.lower())};
@@ -158,7 +153,6 @@ class BuildTagPanel(PanelWidget):
         self.root_layout.addWidget(self.aliases_widget)
         self.root_layout.addWidget(self.subtags_widget)
         self.root_layout.addWidget(self.color_widget)
-        # self.parent().done.connect(self.update_tag)
 
         if tag_id >= 0:
             self.tag = self.lib.get_tag(tag_id)
@@ -168,25 +162,16 @@ class BuildTagPanel(PanelWidget):
 
     def add_subtag_callback(self, tag_id: int):
         logging.info(f"adding {tag_id}")
-        # tag = self.lib.get_tag(self.tag_id)
         # TODO: Create a single way to update tags and refresh library data
-        # new = self.build_tag()
+
         self.tag.add_subtag(tag_id)
-        # self.tag = new
-        # self.lib.update_tag(new)
         self.set_subtags()
-        # self.on_edit.emit(self.build_tag())
 
     def remove_subtag_callback(self, tag_id: int):
         logging.info(f"removing {tag_id}")
-        # tag = self.lib.get_tag(self.tag_id)
         # TODO: Create a single way to update tags and refresh library data
-        # new = self.build_tag()
         self.tag.remove_subtag(tag_id)
-        # self.tag = new
-        # self.lib.update_tag(new)
         self.set_subtags()
-        # self.on_edit.emit(self.build_tag())
 
     def set_subtags(self):
         while self.scroll_layout.itemAt(0):
@@ -205,20 +190,13 @@ class BuildTagPanel(PanelWidget):
         self.scroll_layout.addWidget(c)
 
     def set_tag(self, tag: Tag):
-        # tag = self.lib.get_tag(tag_id)
         self.name_field.setText(tag.name)
         self.shorthand_field.setText(tag.shorthand)
         self.aliases_field.setText("\n".join(tag.aliases))
         self.set_subtags()
         self.color_field.setCurrentIndex(TAG_COLORS.index(tag.color.lower()))
-        # self.tag_id = tag.id
 
     def build_tag(self) -> Tag:
-        # tag: Tag = self.tag
-        # if self.tag_id >= 0:
-        # 	tag = self.lib.get_tag(self.tag_id)
-        # else:
-        # 	tag = Tag(-1, '', '', [], [], '')
         new_tag: Tag = Tag(
             id=self.tag.id,
             name=self.name_field.text(),
@@ -229,17 +207,3 @@ class BuildTagPanel(PanelWidget):
         )
         logging.info(f"built {new_tag}")
         return new_tag
-
-        # NOTE: The callback and signal do the same thing, I'm currently
-        # transitioning from using callbacks to the Qt method of using signals.
-        # self.tag_updated.emit(new_tag)
-        # self.callback(new_tag)
-
-    # def on_return(self, callback, text:str):
-    # 	if text and self.first_tag_id >= 0:
-    # 		callback(self.first_tag_id)
-    # 		self.search_field.setText('')
-    # 		self.update_tags('')
-    # 	else:
-    # 		self.search_field.setFocus()
-    # 		self.parentWidget().hide()

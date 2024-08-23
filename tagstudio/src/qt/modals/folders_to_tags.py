@@ -28,9 +28,9 @@ if typing.TYPE_CHECKING:
     from src.qt.ts_qt import QtDriver
 
 
-ERROR = f"[ERROR]"
-WARNING = f"[WARNING]"
-INFO = f"[INFO]"
+ERROR = "[ERROR]"
+WARNING = "[WARNING]"
+INFO = "[INFO]"
 
 logging.basicConfig(format="%(message)s", level=logging.INFO)
 
@@ -158,7 +158,6 @@ def generate_preview_data(library: Library):
 
 
 class FoldersToTagsModal(QWidget):
-    # done = Signal(int)
     def __init__(self, library: "Library", driver: "QtDriver"):
         super().__init__()
         self.library = library

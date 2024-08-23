@@ -11,7 +11,6 @@ from src.qt.widgets.panel import PanelWidget
 class EditTextBox(PanelWidget):
     def __init__(self, text):
         super().__init__()
-        # self.setLayout()
         self.setMinimumSize(480, 480)
         self.root_layout = QVBoxLayout(self)
         self.root_layout.setContentsMargins(6, 0, 6, 0)

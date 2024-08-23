@@ -37,7 +37,6 @@ class TagBoxWidget(FieldWidget):
         driver: "QtDriver",
     ) -> None:
         super().__init__(title)
-        # QObject.__init__(self)
         self.item = item
         self.lib = library
         self.driver = driver  # Used for creating tag click callbacks that search entries for that tag.
@@ -55,25 +54,23 @@ class TagBoxWidget(FieldWidget):
         self.add_button.setMaximumSize(23, 23)
         self.add_button.setText("+")
         self.add_button.setStyleSheet(
-            f"QPushButton{{"
-            f"background: #1e1e1e;"
-            f"color: #FFFFFF;"
-            f"font-weight: bold;"
-            f"border-color: #333333;"
-            f"border-radius: 6px;"
-            f"border-style:solid;"
-            f"border-width:{math.ceil(1*self.devicePixelRatio())}px;"
-            # f'padding-top: 1.5px;'
-            # f'padding-right: 4px;'
-            f"padding-bottom: 5px;"
-            # f'padding-left: 4px;'
-            f"font-size: 20px;"
-            f"}}"
-            f"QPushButton::hover"
-            f"{{"
-            f"border-color: #CCCCCC;"
-            f"background: #555555;"
-            f"}}"
+            f"""QPushButton{{
+            background: #1e1e1e;
+            color: #FFFFFF;
+            font-weight: bold;
+            border-color: #333333;
+            border-radius: 6px;
+            border-style:solid;
+            border-width:{math.ceil(1*self.devicePixelRatio())}px;
+            padding-bottom: 5px;
+            font-size: 20px;
+            }}
+            QPushButton::hover
+            {{
+            border-color: #CCCCCC;
+            background: #555555;
+            }}
+            """
         )
         tsp = TagSearchPanel(self.lib)
         tsp.tag_chosen.connect(lambda x: self.add_tag_callback(x))
@@ -83,7 +80,6 @@ class TagBoxWidget(FieldWidget):
         )
 
         self.set_tags(tags)
-        # self.add_button.setHidden(True)
 
     def set_item(self, item):
         self.item = item
@@ -92,18 +88,10 @@ class TagBoxWidget(FieldWidget):
         logging.info(f"[TAG BOX WIDGET] SET TAGS: T:{tags} for E:{self.item.id}")
         is_recycled = False
         if self.base_layout.itemAt(0):
-            # logging.info(type(self.base_layout.itemAt(0).widget()))
             while self.base_layout.itemAt(0) and self.base_layout.itemAt(1):
-                # logging.info(f"I'm deleting { self.base_layout.itemAt(0).widget()}")
                 self.base_layout.takeAt(0).widget().deleteLater()
             is_recycled = True
         for tag in tags:
-            # TODO: Remove space from the special search here (tag_id:x) once that system is finalized.
-            # tw = TagWidget(self.lib, self.lib.get_tag(tag), True, True,
-            # 							on_remove_callback=lambda checked=False, t=tag: (self.lib.get_entry(self.item.id).remove_tag(self.lib, t, self.field_index), self.updated.emit()),
-            # 							on_click_callback=lambda checked=False, q=f'tag_id: {tag}': (self.driver.main_window.searchField.setText(q), self.driver.filter_items(q)),
-            # 							on_edit_callback=lambda checked=False, t=tag: (self.edit_tag(t))
-            # 							)
             tw = TagWidget(self.lib, self.lib.get_tag(tag), True, True)
             tw.on_click.connect(
                 lambda checked=False, q=f"tag_id: {tag}": (
@@ -129,7 +117,7 @@ class TagBoxWidget(FieldWidget):
 
     def edit_tag(self, tag_id: int):
         btp = BuildTagPanel(self.lib, tag_id)
-        # btp.on_edit.connect(lambda x: self.edit_tag_callback(x))
+
         self.edit_modal = PanelModal(
             btp,
             self.lib.get_tag(tag_id).display_name(self.lib),
@@ -137,14 +125,10 @@ class TagBoxWidget(FieldWidget):
             done_callback=(self.driver.preview_panel.update_widgets),
             has_save=True,
         )
-        # self.edit_modal.widget.update_display_name.connect(lambda t: self.edit_modal.title_widget.setText(t))
         self.edit_modal.saved.connect(lambda: self.lib.update_tag(btp.build_tag()))
-        # panel.tag_updated.connect(lambda tag: self.lib.update_tag(tag))
         self.edit_modal.show()
 
     def add_tag_callback(self, tag_id: int):
-        # self.base_layout.addWidget(TagWidget(self.lib, self.lib.get_tag(tag), True))
-        # self.tags.append(tag)
         logging.info(
             f"[TAG BOX WIDGET] ADD TAG CALLBACK: T:{tag_id} to E:{self.item.id}"
         )
@@ -157,15 +141,6 @@ class TagBoxWidget(FieldWidget):
             self.updated.emit()
         if tag_id in (TAG_FAVORITE, TAG_ARCHIVED):
             self.driver.update_badges()
-
-        # if type((x[0]) == ThumbButton):
-        # 	# TODO: Remove space from the special search here (tag_id:x) once that system is finalized.
-        # logging.info(f'I want to add tag ID {tag_id} to entry {self.item.filename}')
-        # self.updated.emit()
-        # if tag_id not in self.tags:
-        # 	self.tags.append(tag_id)
-        # self.set_tags(self.tags)
-        # elif type((x[0]) == ThumbButton):
 
     def edit_tag_callback(self, tag: Tag):
         self.lib.update_tag(tag)
@@ -183,6 +158,3 @@ class TagBoxWidget(FieldWidget):
             self.updated.emit()
         if tag_id in (TAG_FAVORITE, TAG_ARCHIVED):
             self.driver.update_badges()
-
-    # def show_add_button(self, value:bool):
-    # 	self.add_button.setHidden(not value)

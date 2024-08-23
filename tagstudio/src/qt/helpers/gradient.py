@@ -9,15 +9,6 @@ def four_corner_gradient_background(
     image: Image.Image, adj_size, mask, hl
 ) -> Image.Image:
     if image.size != (adj_size, adj_size):
-        # Old 1 color method.
-        # bg_col = image.copy().resize((1, 1)).getpixel((0,0))
-        # bg = Image.new(mode='RGB',size=(adj_size,adj_size),color=bg_col)
-        # bg.thumbnail((1, 1))
-        # bg = bg.resize((adj_size,adj_size), resample=Image.Resampling.NEAREST)
-
-        # Small gradient background. Looks decent, and is only a one-liner.
-        # bg = image.copy().resize((2, 2), resample=Image.Resampling.BILINEAR).resize((adj_size,adj_size),resample=Image.Resampling.BILINEAR)
-
         # Four-Corner Gradient Background.
         # Not exactly a one-liner, but it's (subjectively) really cool.
         tl = image.getpixel((0, 0))

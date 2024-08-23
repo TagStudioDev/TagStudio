@@ -10,18 +10,11 @@ import os
 import time
 import traceback
 import xml.etree.ElementTree as ET
-import ujson
-
 from enum import Enum
 from pathlib import Path
-from typing import cast, Generator
-from typing_extensions import Self
+from typing import Generator, cast
 
-from src.core.enums import FieldID
-from src.core.json_typing import JsonCollation, JsonEntry, JsonLibary, JsonTag
-from src.core.utils.str import strip_punctuation
-from src.core.utils.web import strip_web_protocol
-from src.core.enums import SearchMode
+import ujson
 from src.core.constants import (
     BACKUP_FOLDER_NAME,
     COLLAGE_FOLDER_NAME,
@@ -29,11 +22,13 @@ from src.core.constants import (
     TS_FOLDER_NAME,
     VERSION,
 )
+from src.core.enums import FieldID, SearchMode
+from src.core.json_typing import JsonCollation, JsonEntry, JsonLibary, JsonTag
+from src.core.utils.str import strip_punctuation
+from src.core.utils.web import strip_web_protocol
+from typing_extensions import Self
 
-TYPE = ["file", "meta", "alt", "mask"]
 
-
-# RESULT_TYPE = Enum('Result', ['ENTRY', 'COLLATION', 'TAG_GROUP'])
 class ItemType(Enum):
     ENTRY = 0
     COLLATION = 1
@@ -49,35 +44,11 @@ class Entry:
     def __init__(
         self, id: int, filename: str | Path, path: str | Path, fields: list[dict]
     ) -> None:
-        # Required Fields ======================================================
         self.id = int(id)
         self.filename = Path(filename)
         self.path = Path(path)
         self.fields: list[dict] = fields
         self.type = None
-
-        # Optional Fields ======================================================
-        # # Any Type
-        # self.alts: list[id] = None
-        # # Image/Video
-        # self.crop: tuple[int, int, int, int] = None
-        # self.mask: list[id] = None
-        # # Video
-        # self.trim: tuple[float, float] = None
-
-        # Handy Data ===========================================================
-        # # Any Type
-        # self.date_created: datetime.datetime = None
-        # self.date_modified: datetime.datetime = None
-        # self.file_size: int = None
-        # self.isArchived: bool = None
-        # self.isFavorite: bool = None
-        # # Image/Video
-        # self.dimensions: tuple[int, int] = None
-        # # Video
-        # self.length: float = None
-        # # Text
-        # self.word_count: int = None
 
     def __str__(self) -> str:
         return str(self.compressed_dict())
@@ -140,32 +111,21 @@ class Entry:
     def add_tag(
         self, library: "Library", tag_id: int, field_id: int, field_index: int = -1
     ):
-        # if self.fields:
-        # if field_index != -1:
-        # logging.info(f'[LIBRARY] ADD TAG to E:{self.id}, F-DI:{field_id}, F-INDEX:{field_index}')
         for i, f in enumerate(self.fields):
             if library.get_field_attr(f, "id") == field_id:
                 field_index = i
-                # logging.info(f'[LIBRARY] FOUND F-INDEX:{field_index}')
                 break
 
         if field_index == -1:
             library.add_field_to_entry(self.id, field_id)
-            # logging.info(f'[LIBRARY] USING NEWEST F-INDEX:{field_index}')
-
-        # logging.info(list(self.fields[field_index].keys()))
         field_id = list(self.fields[field_index].keys())[0]
-        # logging.info(f'Entry Field ID: {field_id}, Index: {field_index}')
 
         tags: list[int] = self.fields[field_index][field_id]
         if tag_id not in tags:
-            # logging.info(f'Adding Tag: {tag_id}')
             tags.append(tag_id)
             self.fields[field_index][field_id] = sorted(
                 tags, key=lambda t: library.get_tag(t).display_name(library)
             )
-
-        # logging.info(f'Tags: {self.fields[field_index][field_id]}')
 
 
 class Tag:
@@ -189,7 +149,6 @@ class Tag:
         for s in subtags_ids:
             if int(s) not in self.subtag_ids:
                 self.subtag_ids.append(int(s))
-        # [int(s) for s in subtags_ids]
         self.color = color
 
     def __str__(self) -> str:
@@ -204,7 +163,6 @@ class Tag:
 
     def debug_name(self) -> str:
         """Returns a formatted tag name intended for displaying."""
-        # return (f'{self.name} (ID: {self.id}) Subtags: {self.subtag_ids}')
         return f"{self.name} (ID: {self.id})"
 
     def display_name(self, library: "Library") -> str:
@@ -292,7 +250,6 @@ class Collation:
         if self.e_ids_and_pages:
             # TODO: work with tuples
             obj["e_ids_and_pages"] = [list(x) for x in self.e_ids_and_pages]
-            # obj['e_ids_and_pages'] = self.e_ids_and_pages
         if self.sort_order:
             obj["sort_order"] = self.sort_order
         if self.cover_id:
@@ -314,8 +271,6 @@ class Library:
         self._next_entry_id: int = 0
         # Map of every Entry ID to the index of the Entry in self.entries.
         self._entry_id_to_index_map: dict[int, int] = {}
-        # # List of filtered Entry indexes generated by the filter_entries() method.
-        # self.filtered_entries: list[int] = []
         # Duplicate Entries
         # Defined by Entries that point to files that one or more other Entries are also pointing to.
         # tuple(int, list[int])
@@ -377,11 +332,6 @@ class Library:
                 "color": "Yellow",
             },
         ]
-
-        # self.default_tags = [
-        # 	Tag(id=0, name='Archived', shorthand='', aliases=['Archive'], subtags_ids=[], color='red'),
-        # 	Tag(id=1, name='Favorite', shorthand='', aliases=['Favorited, Favorites, Likes, Liked, Loved'], subtags_ids=[], color='yellow'),
-        # ]
 
         self.default_fields: list[dict] = [
             {"id": 0, "name": "Title", "type": "text_line"},
@@ -738,21 +688,6 @@ class Library:
         for entry in self.entries:
             self.filename_to_entry_id_map[(entry.path / entry.filename)] = entry.id
 
-    # def _map_filenames_to_entry_ids(self):
-    # 	"""Maps the file paths of entries to their index in the library list."""
-    # 	self.file_to_entry_index_map.clear()
-    # 	for i, entry in enumerate(self.entries):
-    # 		if os.name == 'nt':
-    # 			self.file_to_entry_index_map[str(os.path.normpath(
-    # 				f'{entry.path}/{entry.filename}')).lower()] = i
-    # 		else:
-    # 			self.file_to_entry_index_map[str(
-    # 				os.path.normpath(f'{entry.path}/{entry.filename}'))] = i
-
-    # def close_library(self, save: bool = True):
-    # 	"""Closes the open TagStudio Library."""
-    # 	self.clear_internal_vars()
-
     def to_json(self):
         """
         Creates a JSON serialized string from the Library object.
@@ -839,7 +774,6 @@ class Library:
             f"[LIBRARY] Library backup saved to disk in {(end_time - start_time):.3f} seconds"
         )
         return filename
-        # , indent=4 <-- How to prettyprint dump
 
     def clear_internal_vars(self):
         """Clears the internal variables of the Library object."""
@@ -881,10 +815,6 @@ class Library:
         self.dir_file_count = 0
         self.files_not_in_library.clear()
 
-        # Scans the directory for files, keeping track of:
-        #   - Total file count
-        #   - Files without library entries
-        # for type in TYPES:
         start_time = time.time()
         for f in self.library_dir.glob("**/*"):
             try:
@@ -944,30 +874,19 @@ class Library:
 
     def remove_entry(self, entry_id: int) -> None:
         """Removes an Entry from the Library."""
-        # del self.entries[entry_index]
-        # self._map_filenames_to_entry_indices()
-
         # Step [1/2]:
         # Remove this Entry from the Entries list.
         entry = self.get_entry(entry_id)
         path = entry.path / entry.filename
-        # logging.info(f'Removing path: {path}')
 
         del self.filename_to_entry_id_map[path]
-
         del self.entries[self._entry_id_to_index_map[entry_id]]
-
-        # self.entries.remove(self.entries[self._entry_id_to_index_map[entry_id]])
 
         # Step [2/2]:
         # Remap the other Entry IDs to their new indices in the Entries list.
         self._entry_id_to_index_map.clear()
         for i, e in enumerate(self.entries):
             self._map_entry_id_to_index(e, i)
-
-        # # Step [3/3]:
-        # # Remap filenames to new indices.
-        # self._map_filenames_to_entry_ids()
 
     def refresh_dupe_entries(self):
         """
@@ -1000,9 +919,6 @@ class Library:
         for k, v in registered.items():
             if len(v) > 1:
                 self.dupe_entries.append((v[0], v[1:]))
-                # logging.info(f"DUPLICATE FOUND: {(v[0], v[1:])}")
-                # for id in v:
-                #     logging.info(f"\t{(Path()/self.get_entry(id).path/self.get_entry(id).filename)}")
 
         yield len(self.entries)
 
@@ -1080,7 +996,6 @@ class Library:
                             )
                         )
                 for match in matches:
-                    # print(f'MATCHED ({match[2]}%): \n   {files[match[0]]} \n-> {files[match[1]]}')
                     file_1 = files[match[0]].relative_to(self.library_dir)
                     file_2 = files[match[1]].relative_to(self.library_dir)
 
@@ -1098,18 +1013,14 @@ class Library:
                     f"[LIBRARY] MATCHED ({dupe[2]}%): \n   {dupe[0]} \n-> {dupe[1]}",
                     end="\n",
                 )
-                # self.dupe_files.append(full_path)
 
     def remove_missing_files(self):
         deleted = []
         for i, missing in enumerate(self.missing_files):
-            # pb.setValue(i)
-            # pb.setLabelText(f'Deleting {i}/{len(self.lib.missing_files)} Unlinked Entries')
             try:
                 id = self.get_entry_id_from_filepath(missing)
                 logging.info(f"Removing Entry ID {id}:\n\t{missing}")
                 self.remove_entry(id)
-                # self.driver.purge_item_from_navigation(ItemType.ENTRY, id)
                 deleted.append(missing)
             except KeyError:
                 logging.info(
@@ -1128,22 +1039,10 @@ class Library:
         """
         Attempts to repair Entries that point to invalid file paths.
         """
-
-        # self.refresh_missing_files()
-
-        # matched_json_filepath = os.path.normpath(
-        # 	f'{self.library_dir}/{TS_FOLDER_NAME}/missing_matched.json')
-        # # if not os.path.exists(matched_json_filepath):
-        # # 	self.match_missing_files()
-
         self.missing_matches.clear()
 
         fixed_indices = []
-        # if os.path.exists(matched_json_filepath):
-        # 	with open(matched_json_filepath, "r", encoding="utf8") as f:
-        # 		self.missing_matches = json.load(f)
 
-        # 	self.refresh_missing_files()
         for i, missing in enumerate(self.missing_files):
             print(missing)
             if missing not in self.missing_matches.keys():
@@ -1155,16 +1054,13 @@ class Library:
                 else:
                     yield (i, False)
 
-        # self._purge_empty_missing_entries()
-
         for i, matches in enumerate(self.missing_matches):
             if len(self.missing_matches[matches]) == 1:
                 id = self.get_entry_id_from_filepath(matches)
                 self.update_entry_path(id, self.missing_matches[matches][0])
                 fixed_indices.append(matches)
-                # print(f'Fixed {self.entries[self.get_entry_index_from_filename(i)].filename}')
+
                 print(f"[LIBRARY] Fixed {self.get_entry(id).filename}")
-            # (int, str)
 
         # Consolidate new matches with existing unlinked entries.
         self.refresh_dupe_entries()
@@ -1181,26 +1077,14 @@ class Library:
         Tries to find missing entry files within the library directory.
         Works if files were just moved to different subfolders and don't have duplicate names.
         """
-
-        # self.refresh_missing_files()
-
         matches = []
 
-        # for file in self.missing_files:
         path = Path(file)
         for root, dirs, files in os.walk(self.library_dir):
             for f in files:
-                # print(f'{tail} --- {f}')
                 if path.name == f and "$recycle.bin" not in str(root).lower():
-                    # self.fixed_files.append(tail)
-
                     new_path = Path(root).relative_to(self.library_dir)
-
                     matches.append(new_path)
-
-                    # if file not in matches.keys():
-                    # 	matches[file] = []
-                    # matches[file].append(new_path)
 
                     print(
                         f"[LIBRARY] MATCH: {file} \n\t-> {self.library_dir / new_path / path.name}\n"
@@ -1210,41 +1094,6 @@ class Library:
             print(f"[LIBRARY] No matches found for: {file}")
 
         return matches
-
-        # print(f'╡ {os.path.normpath(os.path.relpath(file, self.library_dir))} ╞'.center(
-        #     os.get_terminal_size()[0], "═"))
-        # print('↓ ↓ ↓'.center(os.get_terminal_size()[0], " "))
-        # print(
-        #     f'╡ {os.path.normpath(new_path + "/" + tail)} ╞'.center(os.get_terminal_size()[0], "═"))
-        # print(self.entries[self.file_to_entry_index_map[str(
-        #     os.path.normpath(os.path.relpath(file, self.library_dir)))]])
-
-        # # print(
-        # #     f'{file} -> {os.path.normpath(self.library_dir + "/" + new_path + "/" + tail)}')
-        # # # TODO: Update the Entry path with the 'new_path' variable via a completed update_entry() method.
-
-        # if (str(os.path.normpath(new_path + "/" + tail))) in self.file_to_entry_index_map.keys():
-        #     print(
-        #         'Existing Entry ->'.center(os.get_terminal_size()[0], " "))
-        #     print(self.entries[self.file_to_entry_index_map[str(
-        #         os.path.normpath(new_path + "/" + tail))]])
-
-        # print(f''.center(os.get_terminal_size()[0], "─"))
-        # print('')
-
-        # for match in matches.keys():
-        #     self.fixed_files.append(match)
-        #     # print(match)
-        #     # print(f'\t{matches[match]}')
-
-        # with open(
-        #    self.library_dir / TS_FOLDER_NAME / "missing_matched.json", "w"
-        # ) as outfile:
-        #    outfile.flush()
-        #    json.dump(matches, outfile, indent=4)
-        # print(
-        #    f'[LIBRARY] Saved to disk at {self.library_dir / TS_FOLDER_NAME / "missing_matched.json"}'
-        # )
 
     def count_tag_entry_refs(self) -> None:
         """
@@ -1270,8 +1119,6 @@ class Library:
                     self._tag_entry_ref_map[hit] = 0
                 self._tag_entry_ref_map[hit] += 1
 
-        # keys = list(self.tag_entry_ref_map.keys())
-        # values = list(self.tag_entry_ref_map.values())
         self.tag_entry_refs = sorted(
             self._tag_entry_ref_map.items(), key=lambda x: x[1], reverse=True
         )
@@ -1286,7 +1133,7 @@ class Library:
         new_ids: list[int] = []
         for file in self.files_not_in_library:
             path = Path(file)
-            # print(os.path.split(file))
+
             entry = Entry(
                 id=self._next_entry_id, filename=path.name, path=path.parent, fields=[]
             )
@@ -1336,14 +1183,12 @@ class Library:
         """
         Uses a search query to generate a filtered results list.
         Returns a list of (str, int) tuples consisting of a result type and ID.
-        """
 
-        # self.filtered_entries.clear()
+        """
         results: list[tuple[ItemType, int]] = []
         collations_added = []
-        # print(f"Searching Library with query: {query} search_mode: {search_mode}")
+
         if query:
-            # start_time = time.time()
             query = query.strip().lower()
             query_words: list[str] = query.split(" ")
             all_tag_terms: list[str] = []
@@ -1361,7 +1206,6 @@ class Library:
 
             # Preprocess the Tag terms.
             if query_words:
-                # print(query_words, self._tag_strings_to_id_map)
                 for i, term in enumerate(query_words):
                     for j, term in enumerate(query_words):
                         if (
@@ -1370,27 +1214,19 @@ class Library:
                             in self._tag_strings_to_id_map
                         ):
                             all_tag_terms.append(" ".join(query_words[i : j + 1]))
-                        # print(all_tag_terms)
 
                 # This gets rid of any accidental term inclusions because they were words
                 # in another term. Ex. "3d" getting added in "3d art"
                 for i, term in enumerate(all_tag_terms):
                     for j, term2 in enumerate(all_tag_terms):
                         if i != j and all_tag_terms[i] in all_tag_terms[j]:
-                            # print(
-                            #     f'removing {all_tag_terms[i]} because {all_tag_terms[i]} was in {all_tag_terms[j]}')
                             all_tag_terms.remove(all_tag_terms[i])
                             break
-
-            # print(all_tag_terms)
 
             # non_entry_count = 0
             # Iterate over all Entries =============================================================
             for entry in self.entries:
                 allowed_ext: bool = entry.filename.suffix.lower() not in self.ext_list
-                # try:
-                # entry: Entry = self.entries[self.file_to_library_index_map[self._source_filenames[i]]]
-                # print(f'{entry}')
 
                 if allowed_ext == self.is_exclude_list:
                     # If the entry has tags of any kind, append them to this main tag list.
@@ -1405,8 +1241,6 @@ class Library:
                                 entry_authors.extend(field[field_id])
                             if self.get_field_obj(field_id)["name"] == "Artist":
                                 entry_authors.extend(field[field_id])
-
-                    # print(f'Entry Tags: {entry_tags}')
 
                     # Add Entries from special flags -------------------------------
                     # TODO: Come up with a more user-resistent way to 'archived' and 'favorite' tags.
@@ -1425,14 +1259,7 @@ class Library:
                         ).resolve() in self.missing_files:
                             results.append((ItemType.ENTRY, entry.id))
 
-                    # elif query == "archived":
-                    #     if entry.tags and self._tag_names_to_tag_id_map[self.archived_word.lower()][0] in entry.tags:
-                    #         self.filtered_file_list.append(file)
-                    #         pb.value = len(self.filtered_file_list)
-                    # elif query in entry.path.lower():
-
                     # NOTE: This searches path and filenames.
-
                     if allow_adv:
                         if [q for q in query_words if (q in str(entry.path).lower())]:
                             results.append((ItemType.ENTRY, entry.id))
@@ -1444,14 +1271,9 @@ class Library:
                         if entry.has_tag(self, int(query_words[0])):
                             results.append((ItemType.ENTRY, entry.id))
 
-                    # elif query in entry.filename.lower():
-                    # 	self.filtered_entries.append(index)
                     elif entry_tags:
                         # function to add entry to results
                         def add_entry(entry: Entry):
-                            # self.filter_entries.append()
-                            # self.filtered_file_list.append(file)
-                            # results.append((SearchItemType.ENTRY, entry.id))
                             added = False
                             for f in entry.fields:
                                 if self.get_field_attr(f, "type") == "collation":
@@ -1488,7 +1310,6 @@ class Library:
                                         cluster = cluster.union(
                                             set(self.get_tag_cluster(id))
                                         )
-                                    # print(f'Full Cluster: {cluster}')
                                     # For each of the Tag IDs in the term's ID cluster:
                                     for t in cluster:
                                         # Assume that this ID from the cluster is not in the Entry.
@@ -1499,9 +1320,8 @@ class Library:
                                             # There wasn't a failure to find one of the term's cluster IDs in the Entry.
                                             # There is also no more need to keep checking the rest of the terms in the cluster.
                                             failure_to_union_terms = False
-                                            # print(f"FOUND MATCH: {t}")
+
                                             break
-                                        # print(f'\tFailure to Match: {t}')
                             # # failure_to_union_terms is used to determine if all terms in the query were found in the entry.
                             # # If there even were tag terms to search through AND they all match an entry
                             if all_tag_terms and not failure_to_union_terms:
@@ -1521,26 +1341,6 @@ class Library:
                                             add_entry(entry)
                                         break
 
-                # sys.stdout.write(
-                #     f'\r[INFO][FILTER]: {len(self.filtered_file_list)} matches found')
-                # sys.stdout.flush()
-
-                # except:
-                #     # # Put this here to have new non-registered images show up
-                #     # if query == "untagged" or query == "no author" or query == "no artist":
-                #     #     self.filtered_file_list.append(file)
-                #     # non_entry_count = non_entry_count + 1
-                #     pass
-
-            # end_time = time.time()
-            # print(
-            # 	f'[INFO][FILTER]: {len(self.filtered_entries)} matches found ({(end_time - start_time):.3f} seconds)')
-
-            # if non_entry_count:
-            # 	print(
-            # 		f'[INFO][FILTER]: There are {non_entry_count} new files in {self.source_dir} that do not have entries. These will not appear in most filtered results.')
-            # if not self.filtered_entries:
-            # 	print("[INFO][FILTER]: Filter returned no results.")
         else:
             for entry in self.entries:
                 added = False
@@ -1565,8 +1365,6 @@ class Library:
 
                     if not added:
                         results.append((ItemType.ENTRY, entry.id))
-            # for file in self._source_filenames:
-            #     self.filtered_file_list.append(file)
         results.reverse()
         return results
 
@@ -1579,33 +1377,6 @@ class Library:
         context: list[str] = None,
     ) -> list[int]:
         """Returns a list of Tag IDs returned from a string query."""
-        # tag_ids: list[int] = []
-        # if query:
-        # 	query = query.lower()
-        # 	query_words = query.split(' ')
-        # 	all_tag_terms: list[str] = []
-
-        # 	# Preprocess the Tag terms.
-        # 	if len(query_words) > 0:
-        # 		for i, term in enumerate(query_words):
-        # 			for j, term in enumerate(query_words):
-        # 				if query_words[i:j+1] and " ".join(query_words[i:j+1]) in self._tag_names_to_tag_id_map:
-        # 					all_tag_terms.append(" ".join(query_words[i:j+1]))
-        # 		# This gets rid of any accidental term inclusions because they were words
-        # 		# in another term. Ex. "3d" getting added in "3d art"
-        # 		for i, term in enumerate(all_tag_terms):
-        # 			for j, term2 in enumerate(all_tag_terms):
-        # 				if i != j and all_tag_terms[i] in all_tag_terms[j]:
-        # 					# print(
-        # 					#     f'removing {all_tag_terms[i]} because {all_tag_terms[i]} was in {all_tag_terms[j]}')
-        # 					all_tag_terms.remove(all_tag_terms[i])
-        # 					break
-
-        # 		for term in all_tag_terms:
-        # 			for id in self._tag_names_to_tag_id_map[term]:
-        # 				if id not in tag_ids:
-        # 					tag_ids.append(id)
-        # return tag_ids
 
         # NOTE: I'd expect a blank query to return all with the other implementation, but
         # it misses stuff like Archive (id 0) so here's this as a catch-all.
@@ -1621,11 +1392,10 @@ class Library:
 
         # Direct port from Version 8 ===========================================
         # TODO: Make this more efficient (if needed)
-        # ids: list[int] = []
+
         id_weights: list[tuple[int, int]] = []
-        # partial_id_weights: list[int] = []
         priority_ids: list[int] = []
-        # print(f'Query: \"{query}\" -------------------------------------')
+
         for string in self._tag_strings_to_id_map:  # O(n), n = tags
             exact_match: bool = False
             partial_match: bool = False
@@ -1652,18 +1422,9 @@ class Library:
                     if proceed:
                         if tag_id not in [x[0] for x in id_weights]:
                             if exact_match:
-                                # print(f'[{query}] EXACT MATCH:')
-                                # print(self.get_tag_from_id(tag_id).display_name(self))
-                                # print('')
-                                # time.sleep(0.1)
                                 priority_ids.append(tag_id)
                                 id_weights.append((tag_id, 100000000))
                             else:
-                                # print(f'[{query}] Partial Match:')
-                                # print(self.get_tag_from_id(tag_id).display_name(self))
-                                # print('')
-                                # time.sleep(0.1)
-                                # ids.append(id)
                                 id_weights.append((tag_id, 0))
                         # O(m), m = # of references
                         if include_cluster:
@@ -1675,6 +1436,7 @@ class Library:
         if context and (
             (len(id_weights) > 1 and len(priority_ids) > 1) or (len(priority_ids) > 1)
         ):
+            # TODO replace with re.sub()
             context_strings: list[str] = [
                 s.replace(" ", "")
                 .replace("_", "")
@@ -1695,11 +1457,7 @@ class Library:
                 if len(term.split("-")) > 1:
                     context_strings += term.split("-")
             context_strings = list(set(context_strings))
-            # context_strings.sort() # NOTE: TEMP!!!!!!!!!!!!!!!!!!
-            # print(f'Context Strings: {context_strings}')
-            # time.sleep(3)
-            # for term in context:
-            # 	context_ids += self.filter_tags(query=term, include_cluster=True, ignore_builtin=ignore_builtin)
+
             for i, idw in enumerate(id_weights, start=0):
                 weight: int = 0
                 tag_strings: list[str] = []
@@ -1715,8 +1473,6 @@ class Library:
                         + self.get_tag(sub_id).aliases
                     )
 
-                # for id in self.get_tag_cluster(idw[0]):
-                # 	tag_strings += [self.get_tag_from_id(id).name] + [self.get_tag_from_id(id).shorthand] + self.get_tag_from_id(id).aliases
                 split: list[str] = []
                 for ts in tag_strings:
                     if len(ts.split(" ")) > 1:
@@ -1733,25 +1489,17 @@ class Library:
                 while "" in tag_strings:
                     tag_strings.remove("")
                 tag_strings = list(set(tag_strings))
-                # tag_strings.sort() # NOTE: TEMP!!!!!!!!!!!!!!!!!!
+
                 for ts in tag_strings:
                     weight += context_strings.count(ts)
                 id_weights[i] = (idw[0], idw[1] + weight)
 
-                # print(f'Tag Strings for {self.get_tag_from_id(idw[0]).display_name(self)}: {tag_strings}')
-                # time.sleep(3)
         id_weights = sorted(id_weights, key=lambda id: id[1], reverse=True)
-
-        # if len(id_weights) > 1:
-        # 	print(f'Context Weights: \"{id_weights}\"')
 
         final: list[int] = []
 
-        # if context and id_weights:
-        # 	time.sleep(3)
         [final.append(idw[0]) for idw in id_weights if idw[0] not in final]  # type: ignore
-        # print(f'Final IDs: \"{[self.get_tag_from_id(id).display_name(self) for id in final]}\"')
-        # print('')
+
         return final
 
     def get_all_child_tag_ids(self, tag_id: int) -> list[int]:
@@ -1794,8 +1542,6 @@ class Library:
         # Undo and Redo 'self._map_tag_names_to_tag_id(tag)' ===========================================================
         # got to map[old names] and remove reference to this id.
         # Remember that _tag_names_to_tag_id_map maps strings to a LIST of ids.
-        # print(
-        #     f'Removing connection from "{old_tag.name.lower()}" to {old_tag.id} in {self._tag_names_to_tag_id_map[old_tag.name.lower()]}')
         old_name: str = strip_punctuation(old_tag.name).lower()
         self._tag_strings_to_id_map[old_name].remove(old_tag.id)
         # Delete the map key if it doesn't point to any other IDs.
@@ -1803,8 +1549,6 @@ class Library:
             del self._tag_strings_to_id_map[old_name]
         if old_tag.shorthand:
             old_sh: str = strip_punctuation(old_tag.shorthand).lower()
-            # print(
-            #     f'Removing connection from "{old_tag.shorthand.lower()}" to {old_tag.id} in {self._tag_names_to_tag_id_map[old_tag.shorthand.lower()]}')
             self._tag_strings_to_id_map[old_sh].remove(old_tag.id)
             # Delete the map key if it doesn't point to any other IDs.
             if not self._tag_strings_to_id_map[old_sh]:
@@ -1812,19 +1556,17 @@ class Library:
         if old_tag.aliases:
             for alias in old_tag.aliases:
                 old_a: str = strip_punctuation(alias).lower()
-                # print(
-                #     f'Removing connection from "{alias.lower()}" to {old_tag.id} in {self._tag_names_to_tag_id_map[alias.lower()]}')
+
                 self._tag_strings_to_id_map[old_a].remove(old_tag.id)
                 # Delete the map key if it doesn't point to any other IDs.
                 if not self._tag_strings_to_id_map[old_a]:
                     del self._tag_strings_to_id_map[old_a]
         # then add new reference to this id at map[new names]
-        # print(f'Mapping new names for "{tag.name.lower()}" (ID: {tag.id})')
         self._map_tag_strings_to_tag_id(tag)
 
         # Redo 'self.tags.append(tag)' =================================================================================
         # then swap out the tag in the tags list to this one
-        # print(f'Swapping {self.tags[self._tag_id_to_index_map[old_tag.id]]} *FOR* {tag} in tags list.')
+
         self.tags[self._tag_id_to_index_map[old_tag.id]] = tag
         print(f"Edited Tag: {tag}")
 
@@ -1834,12 +1576,9 @@ class Library:
         # if old_tag.subtag_ids != tag.subtag_ids:
         # TODO: Optimize this by 1,000,000% buy building an inverse recursive map function
         # instead of literally just deleting the whole map and building it again
-        # print('Reticulating Splines...')
+
         self._tag_id_to_cluster_map.clear()
         for tag in self.tags:
-            self._map_tag_id_to_cluster(tag)
-            # print('Splines Reticulated.')
-
             self._map_tag_id_to_cluster(tag)
 
     def remove_tag(self, tag_id: int) -> None:
@@ -1913,7 +1652,6 @@ class Library:
                 if tag_id in t.subtag_ids:
                     subtag_ref_count += 1
 
-        # input()
         return (entry_ref_count, subtag_ref_count)
 
     def update_entry_path(self, entry_id: int, path: str | Path) -> None:
@@ -1940,7 +1678,7 @@ class Library:
 
     def does_field_content_exist(self, entry_id: int, field_id: int, content) -> bool:
         """Returns whether or not content exists in a specific entry field type."""
-        # entry = self.entries[entry_index]
+
         entry = self.get_entry(entry_id)
         indices = self.get_field_index_in_entry(entry, field_id)
         for i in indices:
@@ -1986,22 +1724,11 @@ class Library:
                     entry_id, FieldID.DATE_PUBLISHED, date
                 ):
                     self.add_field_to_entry(entry_id, FieldID.DATE_PUBLISHED)
-                    # entry = self.entries[entry_id]
                     self.update_entry_field(entry_id, -1, date, "replace")
 
             # Process String Tags if the data doesn't already exist.
             if data.get("tags"):
                 tags: list[str] = data["tags"]
-                # extra: list[str] = []
-                # for tag in tags:
-                # 	if len(tag.split(' ')) > 1:
-                # 		extra += tag.split(' ')
-                # 	if len(tag.split('_')) > 1:
-                # 		extra += tag.split('_')
-                # 	if len(tag.split('-')) > 1:
-                # 		extra += tag.split('-')
-                # tags = tags + extra
-                # tags = list(set(tags))
                 extra: list[str] = []
                 for tag in tags:
                     if len(tag.split("_(")) > 1:
@@ -2012,11 +1739,6 @@ class Library:
 
                 while "" in tags:
                     tags.remove("")
-
-                # # If the tags were a single string (space delimitated), split them into a list.
-                # if isinstance(data["tags"], str):
-                # 	tags.clear()
-                # 	tags = data["tags"].split(' ')
 
                 # Try to add matching tags in library.
                 for tag in tags:
@@ -2036,20 +1758,12 @@ class Library:
                         # but the idea behind it isn't bad. Maybe this could be
                         # user configurable and scale with custom fields.
 
-                        # tag_field_indices = self.get_field_index_in_entry(
-                        # 	entry_index, tags_field_id)
                         content_tags_field_indices = self.get_field_index_in_entry(
                             self.get_entry(entry_id), FieldID.CONTENT_TAGS
                         )
-                        # meta_tags_field_indices = self.get_field_index_in_entry(
-                        # 	entry_index, meta_tags_field_id)
 
                         if content_tags_field_indices:
                             priority_field_index = content_tags_field_indices[0]
-                        # elif tag_field_indices:
-                        # 	priority_field_index = tag_field_indices[0]
-                        # elif meta_tags_field_indices:
-                        # 	priority_field_index = meta_tags_field_indices[0]
 
                         if priority_field_index > 0:
                             self.update_entry_field(
@@ -2094,7 +1808,6 @@ class Library:
 
     def add_field_to_entry(self, entry_id: int, field_id: int) -> None:
         """Adds an empty Field, specified by Field ID, to an Entry via its index."""
-        # entry = self.entries[entry_index]
         entry = self.get_entry(entry_id)
         field_type = self.get_field_obj(field_id)["type"]
         if field_type in TEXT_FIELDS:
@@ -2159,12 +1872,6 @@ class Library:
                     key=lambda x: order.index(self.get_field_attr(x, "id")),
                 )
 
-    # def move_entry_field(self, entry_index, old_index, new_index) -> None:
-    # 	"""Moves a field in entry[entry_index] from position entry.fields[old_index] to entry.fields[new_index]"""
-    # 	entry = self.entries[entry_index]
-    # 	pass
-    # 	# TODO: Implement.
-
     def get_field_attr(self, entry_field: dict, attribute: str):
         """Returns the value of a specified attribute inside an Entry field."""
         if attribute.lower() == "id":
@@ -2192,8 +1899,7 @@ class Library:
         Returns an empty list of no field of that type is found in the entry.
         """
         matched = []
-        # entry: Entry = self.entries[entry_index]
-        # entry = self.get_entry(entry_id)
+
         if entry.fields:
             for i, field in enumerate(entry.fields):
                 if self.get_field_attr(field, "id") == int(field_id):
@@ -2208,7 +1914,7 @@ class Library:
         This is intended to be used for quick search queries.\n
         Uses name_and_alias_to_tag_id_map.
         """
-        # tag_id: int, tag_name: str, tag_aliases: list[str] = []
+
         name: str = strip_punctuation(tag.name).lower()
         if name not in self._tag_strings_to_id_map:
             self._tag_strings_to_id_map[name] = []
@@ -2224,7 +1930,6 @@ class Library:
             if alias not in self._tag_strings_to_id_map:
                 self._tag_strings_to_id_map[alias] = []
             self._tag_strings_to_id_map[alias].append(tag.id)
-            # print(f'{alias.lower()} -> {tag.id}')
 
     def _map_tag_id_to_cluster(self, tag: Tag, subtags: list[Tag] = None) -> None:
         """
@@ -2259,23 +1964,19 @@ class Library:
         Maps a Tag's ID to the Tag's Index in self.tags.
         Uses _tag_id_to_index_map.
         """
-        # self._tag_id_to_index_map[tag.id_] = self.tags.index(tag)
+
         if index < 0:
             index = len(self.tags) + index
         self._tag_id_to_index_map[tag.id] = index
-        # print(f'{tag.id} - {self._tag_id_to_index_map[tag.id]}')
 
     def _map_entry_id_to_index(self, entry: Entry, index: int) -> None:
         """
         Maps an Entry's ID to the Entry's Index in self.entries.
         Uses _entry_id_to_index_map.
         """
-        # if index != None:
         if index < 0:
             index = len(self.entries) + index
         self._entry_id_to_index_map[entry.id] = index
-        # else:
-        # 	self._entry_id_to_index_map[entry.id_] = self.entries.index(entry)
 
     def _map_collation_id_to_index(self, collation: Collation, index: int) -> None:
         """

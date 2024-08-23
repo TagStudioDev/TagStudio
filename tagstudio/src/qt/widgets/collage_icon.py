@@ -10,26 +10,15 @@ from pathlib import Path
 import cv2
 from PIL import Image, ImageChops, UnidentifiedImageError
 from PIL.Image import DecompressionBombError
-from PySide6.QtCore import (
-    QObject,
-    QThread,
-    Signal,
-    QRunnable,
-    Qt,
-    QThreadPool,
-    QSize,
-    QEvent,
-    QTimer,
-    QSettings,
-)
+from PySide6.QtCore import QObject, Signal
 
 from src.core.library import Library
 from src.core.constants import DOC_TYPES, VIDEO_TYPES, IMAGE_TYPES
 
 
-ERROR = f"[ERROR]"
-WARNING = f"[WARNING]"
-INFO = f"[INFO]"
+ERROR = "[ERROR]"
+WARNING = "[WARNING]"
+INFO = "[INFO]"
 
 
 logging.basicConfig(format="%(message)s", level=logging.INFO)
@@ -53,7 +42,6 @@ class CollageIconRenderer(QObject):
     ):
         entry = self.lib.get_entry(entry_id)
         filepath = self.lib.library_dir / entry.path / entry.filename
-        file_type = os.path.splitext(filepath)[1].lower()[1:]
         color: str = ""
 
         try:
@@ -76,23 +64,20 @@ class CollageIconRenderer(QObject):
                         color = "#28bb48"  # Green
                     elif has_any_tags:
                         color = "#ffd63d"  # Yellow
-                        # color = '#95e345' # Yellow-Green
                     else:
-                        # color = '#fa9a2c' # Yellow-Orange
                         color = "#ed8022"  # Orange
                 else:
                     color = "#e22c3c"  # Red
 
                 if data_only_mode:
                     pic = Image.new("RGB", size, color)
-                    # collage.paste(pic, (y*thumb_size, x*thumb_size))
+
                     self.rendered.emit(pic)
             if not data_only_mode:
                 logging.info(
                     f"\r{INFO} Combining [ID:{entry_id}/{len(self.lib.entries)}]: {self.get_file_color(filepath.suffix.lower())}{entry.path}{os.sep}{entry.filename}\033[0m"
                 )
-                # sys.stdout.write(f'\r{INFO} Combining [{i+1}/{len(self.lib.entries)}]: {self.get_file_color(file_type)}{entry.path}{os.sep}{entry.filename}{RESET}')
-                # sys.stdout.flush()
+
                 if filepath.suffix.lower() in IMAGE_TYPES:
                     try:
                         with Image.open(
@@ -107,7 +92,7 @@ class CollageIconRenderer(QObject):
                                 pic = ImageChops.hard_light(
                                     pic, Image.new("RGB", size, color)
                                 )
-                            # collage.paste(pic, (y*thumb_size, x*thumb_size))
+
                             self.rendered.emit(pic)
                     except DecompressionBombError as e:
                         logging.info(f"[ERROR] One of the images was too big ({e})")
@@ -150,22 +135,17 @@ class CollageIconRenderer(QObject):
                 if data_tint_mode and color:
                     pic = pic.convert(mode="RGB")
                     pic = ImageChops.hard_light(pic, Image.new("RGB", size, color))
-                # collage.paste(pic, (y*thumb_size, x*thumb_size))
+
                 self.rendered.emit(pic)
         except KeyboardInterrupt:
-            # self.quit(save=False, backup=True)
-            run = False
-            # clear()
             logging.info("\n")
             logging.info(f"{INFO} Collage operation cancelled.")
-            clear_scr = False
-        except:
+        except Exception:
             logging.info(f"{ERROR} {entry.path}{os.sep}{entry.filename}")
             traceback.print_exc()
             logging.info("Continuing...")
 
         self.done.emit()
-        # logging.info('Done!')
 
     def get_file_color(self, ext: str):
         if ext.lower().replace(".", "", 1) == "gif":

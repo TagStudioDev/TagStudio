@@ -67,8 +67,6 @@ class PreviewPanel(QWidget):
         self.driver: QtDriver = driver
         self.initialized = False
         self.isOpen: bool = False
-        # self.filepath = None
-        # self.item = None # DEPRECATED, USE self.selected
         self.common_fields: list = []
         self.mixed_fields: list = []
         self.selected: list[tuple[ItemType, int]] = []  # New way of tracking items
@@ -125,8 +123,6 @@ class PreviewPanel(QWidget):
 
         self.dimensions_label = QLabel("Dimensions")
         self.dimensions_label.setWordWrap(True)
-        # self.dim_label.setTextInteractionFlags(
-        # 	Qt.TextInteractionFlag.TextSelectableByMouse)
 
         properties_style = (
             f"background-color:{Theme.COLOR_BG.value};"
@@ -353,25 +349,19 @@ class PreviewPanel(QWidget):
         )
 
     def set_image_ratio(self, ratio: float):
-        # logging.info(f'Updating Ratio to: {ratio} #####################################################')
         self.image_ratio = ratio
 
     def update_image_size(self, size: tuple[int, int], ratio: float = None):
         if ratio:
             self.set_image_ratio(ratio)
-        # self.img_button_size = size
-        # logging.info(f'')
-        # self.preview_img.setMinimumSize(64,64)
 
         adj_width: float = size[0]
         adj_height: float = size[1]
         # Landscape
         if self.image_ratio > 1:
-            # logging.info('Landscape')
             adj_height = size[0] * (1 / self.image_ratio)
         # Portrait
         elif self.image_ratio <= 1:
-            # logging.info('Portrait')
             adj_width = size[1] * self.image_ratio
 
         if adj_width > size[0]:
@@ -381,11 +371,6 @@ class PreviewPanel(QWidget):
             adj_width = adj_width * (size[1] / adj_height)
             adj_height = size[1]
 
-        # adj_width = min(adj_width, self.image_container.size().width())
-        # adj_height = min(adj_width, self.image_container.size().height())
-
-        # self.preview_img.setMinimumSize(s)
-        # self.preview_img.setMaximumSize(s_max)
         adj_size = QSize(int(adj_width), int(adj_height))
         self.img_button_size = (int(adj_width), int(adj_height))
         self.preview_img.setMaximumSize(adj_size)
@@ -393,20 +378,6 @@ class PreviewPanel(QWidget):
         self.preview_vid.resizeVideo(adj_size)
         self.preview_vid.setMaximumSize(adj_size)
         self.preview_vid.setMinimumSize(adj_size)
-        # self.preview_img.setMinimumSize(adj_size)
-
-        # if self.preview_img.iconSize().toTuple()[0] < self.preview_img.size().toTuple()[0] + 10:
-        # 	if type(self.item) == Entry:
-        # 		filepath = os.path.normpath(f'{self.lib.library_dir}/{self.item.path}/{self.item.filename}')
-        # 		self.thumb_renderer.render(time.time(), filepath, self.preview_img.size().toTuple(), self.devicePixelRatio(),update_on_ratio_change=True)
-
-        # logging.info(f' Img Aspect Ratio: {self.image_ratio}')
-        # logging.info(f'  Max Button Size: {size}')
-        # logging.info(f'Container Size: {(self.image_container.size().width(), self.image_container.size().height())}')
-        # logging.info(f'Final Button Size: {(adj_width, adj_height)}')
-        # logging.info(f'')
-        # logging.info(f'  Icon Size: {self.preview_img.icon().actualSize().toTuple()}')
-        # logging.info(f'Button Size: {self.preview_img.size().toTuple()}')
 
     def place_add_field_button(self):
         self.scroll_layout.addWidget(self.afb_container)
@@ -419,7 +390,6 @@ class PreviewPanel(QWidget):
         if self.add_field_button.is_connected:
             self.add_field_button.clicked.disconnect()
 
-        # self.afm.done.connect(lambda f: (self.lib.add_field_to_entry(self.selected[0][1], f), self.update_widgets()))
         self.afm.done.connect(
             lambda f: (self.add_field_to_selected(f), self.update_widgets())
         )
@@ -434,14 +404,13 @@ class PreviewPanel(QWidget):
                 self.lib.add_field_to_entry(item_pair[1], field_id)
                 added.add(item_pair[1])
 
-    # def update_widgets(self, item: Union[Entry, Collation, Tag]):
     def update_widgets(self):
         """
         Renders the panel's widgets with the newest data from the Library.
         """
         logging.info(f"[ENTRY PANEL] UPDATE WIDGETS ({self.driver.selected})")
         self.isOpen = True
-        # self.tag_callback = tag_callback if tag_callback else None
+
         window_title = ""
 
         # update list of libraries
@@ -663,10 +632,6 @@ class PreviewPanel(QWidget):
                                 if self.lib.get_field_index_in_entry(
                                     item, self.lib.get_field_attr(f, "id")
                                 ):
-                                    # if self.lib.get_field_attr(f, 'type') == ('tag_box'):
-                                    # 	pass
-                                    # logging.info(f)
-                                    # logging.info(type(f))
                                     f_stripped = {
                                         self.lib.get_field_attr(f, "id"): None
                                     }
@@ -674,7 +639,6 @@ class PreviewPanel(QWidget):
                                         f not in self.common_fields
                                         or f in common_to_remove
                                     ):
-                                        #  and (f not in self.common_fields or f in common_to_remove)
                                         self.mixed_fields.append(f_stripped)
                         self.common_fields = [
                             f for f in self.common_fields if f not in common_to_remove
@@ -712,58 +676,6 @@ class PreviewPanel(QWidget):
 
         self.initialized = True
 
-        # # Uninitialized or New Item:
-        # if not self.item or self.item.id != item.id:
-        # 	# logging.info(f'Uninitialized or New Item ({item.id})')
-        # 	if type(item) == Entry:
-        # 		# New Entry: Render preview and update filename label
-        # 		filepath = os.path.normpath(f'{self.lib.library_dir}/{item.path}/{item.filename}')
-        # 		window_title = filepath
-        # 		ratio: float = self.devicePixelRatio()
-        # 		self.thumb_renderer.render(time.time(), filepath, (512, 512), ratio,update_on_ratio_change=True)
-        # 		self.file_label.setText("\u200b".join(filepath))
-
-        # 		# TODO: Deal with this later.
-        # 		# https://stackoverflow.com/questions/64252654/pyqt5-drag-and-drop-into-system-file-explorer-with-delayed-encoding
-        # 		# https://doc.qt.io/qtforpython-5/PySide2/QtCore/QMimeData.html#more
-        # 		# drag = QDrag(self.preview_img)
-        # 		# mime = QMimeData()
-        # 		# mime.setUrls([filepath])
-        # 		# drag.setMimeData(mime)
-        # 		# drag.exec_(Qt.DropAction.CopyAction)
-
-        # 		try:
-        # 			self.preview_img.clicked.disconnect()
-        # 		except RuntimeError:
-        # 			pass
-        # 		self.preview_img.clicked.connect(
-        # 			lambda checked=False, filepath=filepath: open_file(filepath))
-
-        # 		for i, f in enumerate(item.fields):
-        # 			self.write_container(item, i, f)
-
-        # 		self.item = item
-
-        # 		# try:
-        # 		# 	self.tags_updated.disconnect()
-        # 		# except RuntimeError:
-        # 		# 	pass
-        # 		# if self.tag_callback:
-        # 		# 	# logging.info(f'[UPDATE CONTAINER] Updating Callback for {item.id}: {self.tag_callback}')
-        # 		# 	self.tags_updated.connect(self.tag_callback)
-
-        # # Initialized, Updating:
-        # elif self.item and self.item.id == item.id:
-        # 	# logging.info(f'Initialized Item, Updating! ({item.id})')
-        # 	for i, f in enumerate(item.fields):
-        # 		self.write_container(item, i, f)
-
-        # # Hide leftover containers
-        # if len(self.containers) > len(self.item.fields):
-        # 	for i, c in enumerate(self.containers):
-        # 		if i > (len(self.item.fields) - 1):
-        # 			c.setHidden(True)
-
         self.setWindowTitle(window_title)
         self.show()
 
@@ -778,11 +690,9 @@ class PreviewPanel(QWidget):
         self.tags_updated.connect(slot)
         self.is_connected = True
 
-    # def write_container(self, item:Union[Entry, Collation, Tag], index, field):
     def write_container(self, index, field, mixed=False):
         """Updates/Creates data for a FieldContainer."""
-        # logging.info(f'[ENTRY PANEL] WRITE CONTAINER')
-        # Remove 'Add Field' button from scroll_layout, to be re-added later.
+
         self.scroll_layout.takeAt(self.scroll_layout.count() - 1).widget()
         container: FieldContainer = None
         if len(self.containers) < (index + 1):
@@ -791,12 +701,10 @@ class PreviewPanel(QWidget):
             self.scroll_layout.addWidget(container)
         else:
             container = self.containers[index]
-            # container.inner_layout.removeItem(container.inner_layout.itemAt(1))
-            # container.setHidden(False)
+
         if self.lib.get_field_attr(field, "type") == "tag_box":
-            # logging.info(f'WRITING TAGBOX FOR ITEM {item.id}')
             container.set_title(self.lib.get_field_attr(field, "name"))
-            # container.set_editable(False)
+
             container.set_inline(False)
             title = f"{self.lib.get_field_attr(field, 'name')} (Tag Box)"
             if not mixed:
@@ -811,7 +719,6 @@ class PreviewPanel(QWidget):
                         inner_container.updated.disconnect()
                     except RuntimeError:
                         pass
-                    # inner_container.updated.connect(lambda f=self.filepath, i=item: self.write_container(item, index, field))
                 else:
                     inner_container = TagBoxWidget(
                         item,
@@ -830,10 +737,10 @@ class PreviewPanel(QWidget):
                         self.tags_updated.emit(),
                     )
                 )
-                # if type(item) == Entry:
+
                 # NOTE: Tag Boxes have no Edit Button (But will when you can convert field types)
                 # f'Are you sure you want to remove this \"{self.lib.get_field_attr(field, "name")}\" field?'
-                # container.set_remove_callback(lambda: (self.lib.get_entry(item.id).fields.pop(index), self.update_widgets(item)))
+
                 prompt = f'Are you sure you want to remove this "{self.lib.get_field_attr(field, "name")}" field?'
                 callback = lambda: (self.remove_field(field), self.update_widgets())
                 container.set_remove_callback(
@@ -851,11 +758,9 @@ class PreviewPanel(QWidget):
                 container.set_remove_callback(None)
 
             self.tags_updated.emit()
-            # self.dynamic_widgets.append(inner_container)
+
         elif self.lib.get_field_attr(field, "type") in "text_line":
-            # logging.info(f'WRITING TEXTLINE FOR ITEM {item.id}')
             container.set_title(self.lib.get_field_attr(field, "name"))
-            # container.set_editable(True)
             container.set_inline(False)
             # Normalize line endings in any text content.
             if not mixed:
@@ -865,7 +770,6 @@ class PreviewPanel(QWidget):
             title = f"{self.lib.get_field_attr(field, 'name')} (Text Line)"
             inner_container = TextWidget(title, text)
             container.set_inner_widget(inner_container)
-            # if type(item) == Entry:
             if not mixed:
                 modal = PanelModal(
                     EditTextLine(self.lib.get_field_attr(field, "content")),
@@ -889,12 +793,9 @@ class PreviewPanel(QWidget):
                 container.set_edit_callback(None)
                 container.set_copy_callback(None)
                 container.set_remove_callback(None)
-            # container.set_remove_callback(lambda: (self.lib.get_entry(item.id).fields.pop(index), self.update_widgets(item)))
 
         elif self.lib.get_field_attr(field, "type") in "text_box":
-            # logging.info(f'WRITING TEXTBOX FOR ITEM {item.id}')
             container.set_title(self.lib.get_field_attr(field, "name"))
-            # container.set_editable(True)
             container.set_inline(False)
             # Normalize line endings in any text content.
             if not mixed:
@@ -929,9 +830,7 @@ class PreviewPanel(QWidget):
                 container.set_copy_callback(None)
                 container.set_remove_callback(None)
         elif self.lib.get_field_attr(field, "type") == "collation":
-            # logging.info(f'WRITING COLLATION FOR ITEM {item.id}')
             container.set_title(self.lib.get_field_attr(field, "name"))
-            # container.set_editable(True)
             container.set_inline(False)
             collation = self.lib.get_collation(
                 self.lib.get_field_attr(field, "content")
@@ -942,41 +841,33 @@ class PreviewPanel(QWidget):
                 text += f" - Page {collation.e_ids_and_pages[[x[0] for x in collation.e_ids_and_pages].index(self.selected[0][1])][1]}"
             inner_container = TextWidget(title, text)
             container.set_inner_widget(inner_container)
-            # if type(item) == Entry:
             container.set_copy_callback(None)
-            # container.set_edit_callback(None)
-            # container.set_remove_callback(lambda: (self.lib.get_entry(item.id).fields.pop(index), self.update_widgets(item)))
             prompt = f'Are you sure you want to remove this "{self.lib.get_field_attr(field, "name")}" field?'
             callback = lambda: (self.remove_field(field), self.update_widgets())
             container.set_remove_callback(
                 lambda: self.remove_message_box(prompt=prompt, callback=callback)
             )
         elif self.lib.get_field_attr(field, "type") == "datetime":
-            # logging.info(f'WRITING DATETIME FOR ITEM {item.id}')
             if not mixed:
                 try:
                     container.set_title(self.lib.get_field_attr(field, "name"))
-                    # container.set_editable(False)
                     container.set_inline(False)
-                    # TODO: Localize this and/or add preferences.
                     date = dt.strptime(
                         self.lib.get_field_attr(field, "content"), "%Y-%m-%d %H:%M:%S"
                     )
                     title = f"{self.lib.get_field_attr(field, 'name')} (Date)"
                     inner_container = TextWidget(title, date.strftime("%D - %r"))
                     container.set_inner_widget(inner_container)
-                except:
+                except Exception:
                     container.set_title(self.lib.get_field_attr(field, "name"))
-                    # container.set_editable(False)
                     container.set_inline(False)
                     title = f"{self.lib.get_field_attr(field, 'name')} (Date) (Unknown Format)"
                     inner_container = TextWidget(
                         title, str(self.lib.get_field_attr(field, "content"))
                     )
-                # if type(item) == Entry:
                 container.set_copy_callback(None)
                 container.set_edit_callback(None)
-                # container.set_remove_callback(lambda: (self.lib.get_entry(item.id).fields.pop(index), self.update_widgets(item)))
+
                 prompt = f'Are you sure you want to remove this "{self.lib.get_field_attr(field, "name")}" field?'
                 callback = lambda: (self.remove_field(field), self.update_widgets())
                 container.set_remove_callback(
@@ -991,22 +882,19 @@ class PreviewPanel(QWidget):
                 container.set_edit_callback(None)
                 container.set_remove_callback(None)
         else:
-            # logging.info(f'[ENTRY PANEL] Unknown Type: {self.lib.get_field_attr(field, "type")}')
             container.set_title(self.lib.get_field_attr(field, "name"))
-            # container.set_editable(False)
             container.set_inline(False)
             title = f"{self.lib.get_field_attr(field, 'name')} (Unknown Field Type)"
             inner_container = TextWidget(
                 title, str(self.lib.get_field_attr(field, "content"))
             )
             container.set_inner_widget(inner_container)
-            # if type(item) == Entry:
             container.set_copy_callback(None)
             container.set_edit_callback(None)
-            # container.set_remove_callback(lambda: (self.lib.get_entry(item.id).fields.pop(index), self.update_widgets(item)))
+
             prompt = f'Are you sure you want to remove this "{self.lib.get_field_attr(field, "name")}" field?'
             callback = lambda: (self.remove_field(field), self.update_widgets())
-            # callback = lambda: (self.lib.get_entry(item.id).fields.pop(index), self.update_widgets())
+
             container.set_remove_callback(
                 lambda: self.remove_message_box(prompt=prompt, callback=callback)
             )
@@ -1060,13 +948,9 @@ class PreviewPanel(QWidget):
         cancel_button = remove_mb.addButton(
             "&Cancel", QMessageBox.ButtonRole.DestructiveRole
         )
-        remove_button = remove_mb.addButton(
-            "&Remove", QMessageBox.ButtonRole.RejectRole
-        )
-        # remove_mb.setStandardButtons(QMessageBox.StandardButton.Cancel)
+
         remove_mb.setDefaultButton(cancel_button)
         remove_mb.setEscapeButton(cancel_button)
         result = remove_mb.exec_()
-        # logging.info(result)
         if result == 3:
             callback()

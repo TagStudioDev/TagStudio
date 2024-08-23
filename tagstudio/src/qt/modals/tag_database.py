@@ -24,10 +24,9 @@ class TagDatabasePanel(PanelWidget):
     def __init__(self, library):
         super().__init__()
         self.lib: Library = library
-        # self.callback = callback
+
         self.first_tag_id = -1
         self.tag_limit = 30
-        # self.selected_tag: int = 0
 
         self.setMinimumSize(300, 400)
         self.root_layout = QVBoxLayout(self)
@@ -44,45 +43,26 @@ class TagDatabasePanel(PanelWidget):
             lambda checked=False: self.on_return(self.search_field.text())
         )
 
-        # self.content_container = QWidget()
-        # self.content_layout = QHBoxLayout(self.content_container)
-
         self.scroll_contents = QWidget()
         self.scroll_layout = QVBoxLayout(self.scroll_contents)
         self.scroll_layout.setContentsMargins(6, 0, 6, 0)
         self.scroll_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
 
         self.scroll_area = QScrollArea()
-        # self.scroll_area.setStyleSheet('background: #000000;')
         self.scroll_area.setVerticalScrollBarPolicy(
             Qt.ScrollBarPolicy.ScrollBarAlwaysOn
         )
-        # self.scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.scroll_area.setWidgetResizable(True)
         self.scroll_area.setFrameShadow(QFrame.Shadow.Plain)
         self.scroll_area.setFrameShape(QFrame.Shape.NoFrame)
-        # sa.setMaximumWidth(self.preview_size[0])
         self.scroll_area.setWidget(self.scroll_contents)
-
-        # self.add_button = QPushButton()
-        # self.root_layout.addWidget(self.add_button)
-        # self.add_button.setText('Add Tag')
-        # # self.done_button.clicked.connect(lambda checked=False, x=1101: (callback(x), self.hide()))
-        # self.add_button.clicked.connect(lambda checked=False, x=1101: callback(x))
-        # # self.setLayout(self.root_layout)
 
         self.root_layout.addWidget(self.search_field)
         self.root_layout.addWidget(self.scroll_area)
         self.update_tags("")
 
-    # def reset(self):
-    # 	self.search_field.setText('')
-    # 	self.update_tags('')
-    # 	self.search_field.setFocus()
-
     def on_return(self, text: str):
         if text and self.first_tag_id >= 0:
-            # callback(self.first_tag_id)
             self.search_field.setText("")
             self.update_tags("")
         else:
@@ -123,7 +103,7 @@ class TagDatabasePanel(PanelWidget):
 
     def edit_tag(self, tag_id: int):
         btp = BuildTagPanel(self.lib, tag_id)
-        # btp.on_edit.connect(lambda x: self.edit_tag_callback(x))
+
         self.edit_modal = PanelModal(
             btp,
             self.lib.get_tag(tag_id).display_name(self.lib),
@@ -131,7 +111,7 @@ class TagDatabasePanel(PanelWidget):
             done_callback=(self.update_tags(self.search_field.text())),
             has_save=True,
         )
-        # self.edit_modal.widget.update_display_name.connect(lambda t: self.edit_modal.title_widget.setText(t))
+
         # TODO Check Warning: Expected type 'BuildTagPanel', got 'PanelWidget' instead
         self.edit_modal.saved.connect(lambda: self.edit_tag_callback(btp))
         self.edit_modal.show()
@@ -139,8 +119,3 @@ class TagDatabasePanel(PanelWidget):
     def edit_tag_callback(self, btp: BuildTagPanel):
         self.lib.update_tag(btp.build_tag())
         self.update_tags(self.search_field.text())
-
-    # def enterEvent(self, event: QEnterEvent) -> None:
-    # 	self.search_field.setFocus()
-    # 	return super().enterEvent(event)
-    # 	self.focusOutEvent

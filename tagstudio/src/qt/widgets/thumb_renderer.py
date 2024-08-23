@@ -43,11 +43,8 @@ register_avif_opener()
 
 
 class ThumbRenderer(QObject):
-    # finished = Signal()
     updated = Signal(float, QPixmap, QSize, str)
     updated_ratio = Signal(float)
-    # updatedImage = Signal(QPixmap)
-    # updatedSize = Signal(QSize)
 
     thumb_mask_512: Image.Image = Image.open(
         Path(__file__).parents[3] / "resources/qt/images/thumb_mask_512.png"
@@ -74,10 +71,6 @@ class ThumbRenderer(QObject):
     )
     thumb_file_default_512.load()
 
-    # thumb_debug: Image.Image = Image.open(Path(
-    # 	f'{Path(__file__).parents[2]}/resources/qt/images/temp.jpg'))
-    # thumb_debug.load()
-
     # TODO: Make dynamic font sized given different pixel ratios
     font_pixel_ratio: float = 1
     ext_font = ImageFont.truetype(
@@ -96,9 +89,9 @@ class ThumbRenderer(QObject):
         update_on_ratio_change=False,
     ):
         """Internal renderer. Renders an entry/element thumbnail for the GUI."""
-        image: Image.Image = None
-        pixmap: QPixmap = None
-        final: Image.Image = None
+        image: Image.Image | None = None
+        pixmap: QPixmap | None = None
+        final: Image.Image | None = None
         _filepath: Path = Path(filepath)
         resampling_method = Image.Resampling.BILINEAR
         if ThumbRenderer.font_pixel_ratio != pixel_ratio:
@@ -185,25 +178,7 @@ class ThumbRenderer(QObject):
                     draw = ImageDraw.Draw(bg)
                     draw.text((16, 16), text, file=(255, 255, 255))
                     image = bg
-                # 3D ===========================================================
-                # elif extension == 'stl':
-                # 	# Create a new plot
-                # 	matplotlib.use('agg')
-                # 	figure = plt.figure()
-                # 	axes = figure.add_subplot(projection='3d')
 
-                # 	# Load the STL files and add the vectors to the plot
-                # 	your_mesh = mesh.Mesh.from_file(_filepath)
-
-                # 	poly_collection = mplot3d.art3d.Poly3DCollection(your_mesh.vectors)
-                # 	poly_collection.set_color((0,0,1))  # play with color
-                # 	scale = your_mesh.points.flatten()
-                # 	axes.auto_scale_xyz(scale, scale, scale)
-                # 	axes.add_collection3d(poly_collection)
-                # 	# plt.show()
-                # 	img_buf = io.BytesIO()
-                # 	plt.savefig(img_buf, format='png')
-                # 	image = Image.open(img_buf)
                 # No Rendered Thumbnail ========================================
                 else:
                     image = ThumbRenderer.thumb_file_default_512.resize(
