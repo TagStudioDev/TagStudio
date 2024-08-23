@@ -35,7 +35,7 @@ class MediaType(str, Enum):
     PRESENTATION: str = "presentation"
     PROGRAM: str = "program"
     SHORTCUT: str = "shortcut"
-    SOURCE: str = "source"
+    SOURCE_ENGINE: str = "source_engine"
     SPREADSHEET: str = "spreadsheet"
     TEXT: str = "text"
     VIDEO: str = "video"
@@ -259,7 +259,7 @@ class MediaCategories:
         ".pptx",
     }
     _PROGRAM_SET: set[str] = {".app", ".exe"}
-    _SOURCE_SET: set[str] = {
+    _SOURCE_ENGINE_SET: set[str] = {
         ".vtf",
     }
     _SHORTCUT_SET: set[str] = {".desktop", ".lnk", ".url"}
@@ -395,9 +395,9 @@ class MediaCategories:
         extensions=_SHORTCUT_SET,
         is_iana=False,
     )
-    SOURCE_TYPES: MediaCategory = MediaCategory(
-        media_type=MediaType.SOURCE,
-        extensions=_SOURCE_SET,
+    SOURCE_ENGINE_TYPES: MediaCategory = MediaCategory(
+        media_type=MediaType.SOURCE_ENGINE,
+        extensions=_SOURCE_ENGINE_SET,
         is_iana=False,
     )
     SPREADSHEET_TYPES: MediaCategory = MediaCategory(
@@ -439,7 +439,7 @@ class MediaCategories:
         PRESENTATION_TYPES,
         PROGRAM_TYPES,
         SHORTCUT_TYPES,
-        SOURCE_TYPES,
+        SOURCE_ENGINE_TYPES,
         SPREADSHEET_TYPES,
         TEXT_TYPES,
         VIDEO_TYPES,
