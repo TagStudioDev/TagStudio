@@ -28,6 +28,9 @@ from src.core.constants import (
     TEXT_FIELDS,
     TS_FOLDER_NAME,
     VERSION,
+    DEFAULT_FAVORITE_COLOR,
+    DEFAULT_ARCHIVED_COLOR,
+    LEGACY_TAG_COLORS,
 )
 
 TYPE = ["file", "meta", "alt", "mask"]
@@ -369,19 +372,14 @@ class Library:
         self._tag_id_to_index_map: dict[int, int] = {}
 
         self.default_tags: list[JsonTag] = [
-            {"id": 0, "name": "Archived", "aliases": ["Archive"], "color": "Red"},
+            {"id": 0, "name": "Archived", "aliases": ["Archive"], "color": DEFAULT_ARCHIVED_COLOR},
             {
                 "id": 1,
                 "name": "Favorite",
                 "aliases": ["Favorited", "Favorites"],
-                "color": "Yellow",
+                "color": DEFAULT_FAVORITE_COLOR,
             },
         ]
-
-        # self.default_tags = [
-        # 	Tag(id=0, name='Archived', shorthand='', aliases=['Archive'], subtags_ids=[], color='red'),
-        # 	Tag(id=1, name='Favorite', shorthand='', aliases=['Favorited, Favorites, Likes, Liked, Loved'], subtags_ids=[], color='yellow'),
-        # ]
 
         self.default_fields: list[dict] = [
             {"id": 0, "name": "Title", "type": "text_line"},
@@ -551,7 +549,10 @@ class Library:
                                 shorthand = tag.get("shorthand", "")
                                 aliases = tag.get("aliases", [])
                                 subtag_ids = tag.get("subtag_ids", [])
+
                                 color = tag.get("color", "")
+                                if color in LEGACY_TAG_COLORS.keys():
+                                    color = LEGACY_TAG_COLORS[color]
 
                                 t = Tag(
                                     id=id,
