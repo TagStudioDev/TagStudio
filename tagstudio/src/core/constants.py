@@ -124,6 +124,7 @@ BOX_FIELDS = ["tag_box", "text_box"]
 TEXT_FIELDS = ["text_line", "text_box"]
 DATE_FIELDS = ["datetime"]
 
+DEFAULT_TAG_COLOR = "#f2f1f8"
 TAG_COLORS = [
     "",
     "black",

@@ -6,6 +6,7 @@
 import logging
 
 from PySide6.QtCore import Signal, Qt
+from PySide6.QtGui import QColor
 from PySide6.QtWidgets import (
     QWidget,
     QVBoxLayout,
@@ -15,12 +16,11 @@ from PySide6.QtWidgets import (
     QScrollArea,
     QFrame,
     QTextEdit,
-    QComboBox,
+    QColorDialog,
 )
 
 from src.core.library import Library, Tag
-from src.core.palette import ColorType, get_tag_color
-from src.core.constants import TAG_COLORS
+from src.core.constants import DEFAULT_TAG_COLOR
 from src.qt.widgets.panel import PanelWidget, PanelModal
 from src.qt.widgets.tag import TagWidget
 from src.qt.modals.tag_search import TagSearchPanel
@@ -126,31 +126,22 @@ class BuildTagPanel(PanelWidget):
         # self.subtags_field.setMinimumHeight(60)
         # self.subtags_layout.addWidget(self.subtags_field)
 
-        # Shorthand ------------------------------------------------------------
+        # Colors ------------------------------------------------------------
+        self.selected_color = DEFAULT_TAG_COLOR
+
         self.color_widget = QWidget()
         self.color_layout = QVBoxLayout(self.color_widget)
-        self.color_layout.setStretch(1, 1)
+        self.color_layout.setStretch(2, 1)
         self.color_layout.setContentsMargins(0, 0, 0, 0)
         self.color_layout.setSpacing(0)
         self.color_layout.setAlignment(Qt.AlignmentFlag.AlignLeft)
         self.color_title = QLabel()
         self.color_title.setText("Color")
         self.color_layout.addWidget(self.color_title)
-        self.color_field = QComboBox()
-        self.color_field.setEditable(False)
-        self.color_field.setMaxVisibleItems(10)
-        self.color_field.setStyleSheet("combobox-popup:0;")
-        for color in TAG_COLORS:
-            self.color_field.addItem(color.title())
-        # self.color_field.setProperty("appearance", "flat")
-        self.color_field.currentTextChanged.connect(
-            lambda c: self.color_field.setStyleSheet(f"""combobox-popup:0;									
-																					   font-weight:600;
-																					   color:{get_tag_color(ColorType.TEXT, c.lower())};
-																					   background-color:{get_tag_color(ColorType.PRIMARY, c.lower())};
-																					   """)
-        )
-        self.color_layout.addWidget(self.color_field)
+        self.color_add_button = QPushButton("+")
+        self.color_add_button.clicked.connect(self.set_color)
+        self.color_add_button.setStyleSheet(f"background-color: {self.selected_color}")
+        self.color_layout.addWidget(self.color_add_button)
 
         # Add Widgets to Layout ================================================
         self.root_layout.addWidget(self.name_widget)
@@ -204,13 +195,18 @@ class BuildTagPanel(PanelWidget):
             l.addWidget(tw)
         self.scroll_layout.addWidget(c)
 
+    def set_color(self):
+        color = QColorDialog.getColor()
+        if color.isValid():
+            self.selected_color = color.name(format=QColor.NameFormat.HexRgb)
+            self.color_add_button.setStyleSheet(f"background-color: {self.selected_color}")
+
     def set_tag(self, tag: Tag):
         # tag = self.lib.get_tag(tag_id)
         self.name_field.setText(tag.name)
         self.shorthand_field.setText(tag.shorthand)
         self.aliases_field.setText("\n".join(tag.aliases))
         self.set_subtags()
-        self.color_field.setCurrentIndex(TAG_COLORS.index(tag.color.lower()))
         # self.tag_id = tag.id
 
     def build_tag(self) -> Tag:
@@ -225,7 +221,7 @@ class BuildTagPanel(PanelWidget):
             shorthand=self.shorthand_field.text(),
             aliases=self.aliases_field.toPlainText().split("\n"),
             subtags_ids=self.tag.subtag_ids,
-            color=self.color_field.currentText().lower(),
+            color=self.selected_color,
         )
         logging.info(f"built {new_tag}")
         return new_tag

@@ -18,7 +18,7 @@ from PySide6.QtWidgets import (
 )
 
 from src.core.library import Library
-from src.core.palette import ColorType, get_tag_color
+from src.qt.helpers.calculate_colors import ColorType, get_tag_color
 from src.qt.widgets.panel import PanelWidget
 from src.qt.widgets.tag import TagWidget
 
