@@ -1,0 +1,1 @@
+This file is meant to be the zipfile for Python 3.12 installed files (C:\Program Files\Python3.12). It should be replaced with the URL for the Python installed files.
