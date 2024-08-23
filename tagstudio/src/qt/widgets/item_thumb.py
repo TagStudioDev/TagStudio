@@ -199,10 +199,10 @@ class ItemThumb(FlowWidget):
         system = platform.system()
         if system == "Darwin":
             open_explorer_action = QAction("Reveal in Finder", self)
-        elif system == "Linux":
-            open_explorer_action = QAction("Open in file explorer", self)
-        else:
+        elif system == "Windows":
             open_explorer_action = QAction("Open in Explorer", self)
+        else:
+            open_explorer_action = QAction("Open in explorer", self)
 
         open_explorer_action.triggered.connect(self.opener.open_explorer)
         self.thumb_button.addAction(open_file_action)
