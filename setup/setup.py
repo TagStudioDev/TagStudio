@@ -88,6 +88,7 @@ def compile():
     
     tagstudio_title = "Preparing Installation"
     try:
+        ## TODO: Make so it you download a portable version of Python3.12 on the internet and name it "data/pyport.zip" because Github cannot upload 75MB files.
         pyexe=zipfile.ZipFile("data/pyport.zip")
         appxe=zipfile.ZipFile("data/software.zip")
     except:
