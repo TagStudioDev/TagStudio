@@ -86,17 +86,12 @@ PLAINTEXT_TYPES: list[str] = [
     ".json",
     ".js",
     ".ts",
-    ".py",
-    ".c",
-    ".cpp",
-    ".cs",
     ".ini",
     ".htm",
     ".csv",
     ".php",
     ".sh",
     ".bat",
-    ".yml"
 ]
 SPREADSHEET_TYPES: list[str] = [".csv", ".xls", ".xlsx", ".numbers", ".ods"]
 PRESENTATION_TYPES: list[str] = [".ppt", ".pptx", ".key", ".odp"]
