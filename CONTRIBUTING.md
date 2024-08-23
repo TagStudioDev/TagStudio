@@ -24,58 +24,44 @@ Thank you so much for showing interest in contributing to TagStudio! Here are a 
 
 ### Prerequisites
 
-- [Python](https://www.python.org/downloads/) 3.12
-- [Ruff](https://github.com/astral-sh/ruff) (Included in `requirements-dev.txt`)
-- [Mypy](https://github.com/python/mypy) (Included in `requirements-dev.txt`)
-- [PyTest](https://docs.pytest.org) (Included in `requirements-dev.txt`)
+- [Python](https://www.python.org/downloads/) 3.11 or 3.12
+- [Poetry](https://python-poetry.org/docs/)
 
-### Creating a Python Virtual Environment
+### Installing dependencies 
 
-If you wish to launch the source version of TagStudio outside of your IDE:
+After installing poetry and python you can install the dependencies with the following command:
 
-> [!IMPORTANT]
-> Depending on your system, Python may be called `python`, `py`, `python3`, or `py3`. These instructions use the alias `python3` for consistency. You can check to see which alias your system uses and if it's for the correct Python version by typing `python3 --version` (or whichever alias) into your terminal.
+```shell
+poetry install
+```
 
-> [!TIP]
-> On Linux and macOS, you can launch the `tagstudio.sh` script to skip the following process, minus the `requirements-dev.txt` installation step. _Using the script is fine if you just want to launch the program from source._
+If you plan to make a pull request or develop the code run this instead to also install the dev dependencies:
 
-1. In the root repository directory, create a python virtual environment:  
-   `python3 -m venv .venv`
-2. Activate your environment:
+```shell
+poetry install --with dev
+```
 
-- Windows w/Powershell: `.venv\Scripts\Activate.ps1`
-- Windows w/Command Prompt: `.venv\Scripts\activate.bat`
-- Linux/macOS: `source .venv/bin/activate`
+### Running TagStudio
 
-3. Install the required packages:
+After installing the dependencies you can now you can start TagStudio by running this command at the root of the project:
 
-- `pip install -r requirements.txt`
-- If developing (includes Ruff and Mypy): `pip install -r requirements-dev.txt`
+```shell
+poetry run tagstudio
+```
+ 
+#### Nix 
 
-_Learn more about setting up a virtual environment [here](https://docs.python.org/3/tutorial/venv.html)._
+Alternatively, you can also run TagStudio using Nix.
 
-### Manually Launching (Outside of an IDE)
-
-- **Windows** (start_win.bat)
-
-  - To launch TagStudio, launch the `start_win.bat` file. You can modify this .bat file or create a shortcut and add one or more additional arguments if desired.
-
-- **Linux/macOS** (TagStudio.sh)
-
-  - Run the "TagStudio.sh" script and the program should launch! (Make sure that the script is marked as executable if on Linux). Note that launching from the script from outside of a terminal will not launch a terminal window with any debug or crash information. If you wish to see this information, just launch the shell script directly from your terminal with `./TagStudio.sh`.
-
-  - **NixOS** (TagStudio.sh)
-    > [!WARNING]
-    > Support for NixOS is still a work in progress.
-    - Use the provided `flake.nix` file to create and enter a working environment by running `nix develop`. Then, run the `TagStudio.sh` script.
-
-- **Any** (No Scripts)
-
-  - Alternatively, with the virtual environment loaded, run the python file at `tagstudio\tag_studio.py` from your terminal. If you're in the project's root directory, simply run `python3 tagstudio/tag_studio.py`.
+> [!WARNING]
+> Support for NixOS is still a work in progress.
+- Use the provided `flake.nix` file to create and enter a working environment by running `nix develop`. Then, run the `TagStudio.sh` script.
 
 ## Workflow Checks
 
 When pushing your code, several automated workflows will check it against predefined tests and style checks. It's _highly recommended_ that you run these checks locally beforehand to avoid having to fight back-and-forth with the workflow checks inside your pull requests.
+These tools are installed into your environment if you ran `poetry install --with dev`. 
+You can get a shell with these tools on the activated on the path with `poetry shell`. 
 
 > [!TIP]
 > To format the code automatically before each commit, there's a configured action available for the `pre-commit` hook. Install it by running `pre-commit install`. The hook will be executed each time on running `git commit`.
@@ -103,7 +89,7 @@ Mypy is a static type checker for Python. It sure has a lot to say sometimes, bu
 - Check code by moving into the `/tagstudio` directory with `cd tagstudio` _(if you aren't already inside)_ and running `mypy --config-file ../pyproject.toml .`. _(Don't forget the `.` at the end!)_
 
 > [!CAUTION]
-> There's a known issue between PySide v6.6.3 and Mypy where Mypy will detect issues with the `.pyi` files inside of PySide and prematurely stop checking files. This issue is not present in PySide v6.6.2, which _should_ be compatible with everything else if you wish to try using that version in the meantime.
+> There's a known issue between PySide v6.6.3 and Mypy where Mypy will detect issues with the `.pyi` files inside PySide and prematurely stop checking files. This issue is not present in PySide v6.6.2, which _should_ be compatible with everything else if you wish to try using that version in the meantime.
 
 Mypy is also available as a VS Code [extension](https://marketplace.visualstudio.com/items?itemName=matangover.mypy), PyCharm [plugin](https://plugins.jetbrains.com/plugin/11086-mypy), and [more](https://plugins.jetbrains.com/plugin/11086-mypy).
 
@@ -144,7 +130,7 @@ Most of the style guidelines can be checked, fixed, and enforced via Ruff. Older
   - macOS: 12.0+
   - Linux: TBD
 - Avoid use of unnecessary logging statements in final submitted code.
-- Code should not cause unreasonable slowdowns to the program outside of a progress-indicated task.
+- Code should not cause unreasonable slowdowns to the program outside a progress-indicated task.
 
 #### Git/GitHub Specifics
 
@@ -157,7 +143,7 @@ Most of the style guidelines can be checked, fixed, and enforced via Ruff. Older
 
 ## Documentation Guidelines
 
-Documentation contributions include anything inside of the `doc/` folder, as well as the `README.md` and `CONTRIBUTING.md` files.
+Documentation contributions include anything inside the `doc/` folder, as well as the `README.md` and `CONTRIBUTING.md` files.
 
 - Use "[snake_case](https://developer.mozilla.org/en-US/docs/Glossary/Snake_case)" for file and folder names
 - Follow the folder structure pattern
