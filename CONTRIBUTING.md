@@ -143,6 +143,27 @@ Most of the style guidelines can be checked, fixed, and enforced via Ruff. Older
   - "Fix function foobar"
 - Pull Requests should have an adequate title and description which clearly outline your intentions and changes/additions. Feel free to provide screenshots, GIFs, or videos, especially for UI changes.
 
+#### Adding dependencies
+
+If you want to add a dependency to the project use `poetry add <dependency-name>`.  
+For example: `poetry add httpx`.
+If you decide you did not want to add the dependency after all you can use `poetry remove <dependency-name>`.
+
+If you decide to commit this change be sure to also update the requirements.txt file by generating it from the pyproject.toml with:
+
+```shell
+poetry export --without-hashes --format=requirements.txt > requirements.txt
+```
+
+If you want to add a dev dependency instead use: `poetry add <name> --group dev`. 
+To regenerate the requirements-dev.txt use: 
+
+```shell
+poetry export --without-hashes --without main --with dev --format=requirements.txt > requirements-dev.txt
+```
+
+Do not forget to actually commit the updated requirement.txt and pyproject.toml and poetry.lock files when you change/add dependencies.
+
 ## Documentation Guidelines
 
 Documentation contributions include anything inside the `doc/` folder, as well as the `README.md` and `CONTRIBUTING.md` files.
