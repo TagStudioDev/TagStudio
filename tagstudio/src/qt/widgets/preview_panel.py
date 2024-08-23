@@ -88,11 +88,11 @@ class PreviewPanel(QWidget):
         system = platform.system()
 
         if system == "Darwin":
-            self.open_explorer_action = QAction("Reveal file in Finder", self)
-        elif system == "Linux":
-            self.open_explorer_action = QAction("Open file in filesystem", self) # TODO: Rename to whatever the Linux explorer is
+            open_explorer_action = QAction("Reveal in Finder", self)
+        elif system == "Windows":
+            open_explorer_action = QAction("Open in Explorer", self)
         else:
-            self.open_explorer_action = QAction("Open file in explorer", self)
+            open_explorer_action = QAction("Open in explorer", self)
 
         self.preview_img = QPushButtonWrapper()
         self.preview_img.setMinimumSize(*self.img_button_size)
