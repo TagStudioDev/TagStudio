@@ -524,7 +524,6 @@ class ThumbRenderer(QObject):
 
     def _source(self, filepath: Path) -> Image.Image:
         parser = Parser(filepath) 
-        header = parser.header
         im: Image.Image = None
         try:
             im = parser.get_image()
