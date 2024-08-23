@@ -196,7 +196,7 @@ class BuildTagPanel(PanelWidget):
         self.scroll_layout.addWidget(c)
 
     def set_color(self):
-        color = QColorDialog.getColor()
+        color = QColorDialog.getColor(initial=self.selected_color)
         if color.isValid():
             self.selected_color = color.name(format=QColor.NameFormat.HexRgb)
             self.color_add_button.setStyleSheet(f"background-color: {self.selected_color}")
