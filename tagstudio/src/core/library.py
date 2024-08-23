@@ -372,7 +372,12 @@ class Library:
         self._tag_id_to_index_map: dict[int, int] = {}
 
         self.default_tags: list[JsonTag] = [
-            {"id": 0, "name": "Archived", "aliases": ["Archive"], "color": DEFAULT_ARCHIVED_COLOR},
+            {
+                "id": 0,
+                "name": "Archived",
+                "aliases": ["Archive"],
+                "color": DEFAULT_ARCHIVED_COLOR,
+            },
             {
                 "id": 1,
                 "name": "Favorite",

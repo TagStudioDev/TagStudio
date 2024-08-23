@@ -199,7 +199,9 @@ class BuildTagPanel(PanelWidget):
         color = QColorDialog.getColor(initial=self.selected_color)
         if color.isValid():
             self.selected_color = color.name(format=QColor.NameFormat.HexRgb)
-            self.color_add_button.setStyleSheet(f"background-color: {self.selected_color}")
+            self.color_add_button.setStyleSheet(
+                f"background-color: {self.selected_color}"
+            )
 
     def set_tag(self, tag: Tag):
         # tag = self.lib.get_tag(tag_id)
