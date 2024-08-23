@@ -19,6 +19,7 @@ class MediaType(str, Enum):
     AUDIO_MIDI: str = "audio_midi"
     AUDIO: str = "audio"
     BLENDER: str = "blender"
+    SOURCE: str = "source"
     DATABASE: str = "database"
     DISK_IMAGE: str = "disk_image"
     DOCUMENT: str = "document"
@@ -38,6 +39,7 @@ class MediaType(str, Enum):
     SPREADSHEET: str = "spreadsheet"
     TEXT: str = "text"
     VIDEO: str = "video"
+    
 
 
 class MediaCategory:
@@ -139,6 +141,10 @@ class MediaCategories:
         ".blend8",
         ".blend9",
     }
+
+    _SOURCE_SET: set[str] = {
+       ".vtf",
+    }
     _DATABASE_SET: set[str] = {
         ".accdb",
         ".mdb",
@@ -236,6 +242,20 @@ class MediaCategories:
         ".ts",
         ".txt",
         ".xml",
+        ".vmt",
+        ".fgd",
+        ".nut",
+        ".cfg",
+        ".conf",
+        ".vdf",
+        ".vcfg",
+        ".gi",
+        ".inf",
+        ".vqlayout",
+        ".qss",
+        ".vsc",
+        ".kv3",
+        ".vsnd_template"
     }
     _PRESENTATION_SET: set[str] = {
         ".key",
@@ -295,6 +315,11 @@ class MediaCategories:
     BLENDER_TYPES: MediaCategory = MediaCategory(
         media_type=MediaType.BLENDER,
         extensions=_BLENDER_SET,
+        is_iana=False,
+    )
+    SOURCE_TYPES: MediaCategory = MediaCategory(
+        media_type=MediaType.SOURCE,
+        extensions=_SOURCE_SET,
         is_iana=False,
     )
     DATABASE_TYPES: MediaCategory = MediaCategory(
@@ -400,6 +425,7 @@ class MediaCategories:
         AUDIO_MIDI_TYPES,
         AUDIO_TYPES,
         BLENDER_TYPES,
+        SOURCE_TYPES,
         DATABASE_TYPES,
         DISK_IMAGE_TYPES,
         DOCUMENT_TYPES,
