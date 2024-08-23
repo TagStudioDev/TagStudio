@@ -129,14 +129,21 @@ class ThumbRenderer(QObject):
         """Retrieves a new or cached icon.
 
         Args:
-            name (str): The name of the icon resource.
+            name (str): The name of the icon resource. "thumb_loading" will not draw a border.
             color (str): The color to use for the icon.
             size (tuple[int,int]): The size of the icon.
             pixel_ratio (float): The screen pixel ratio.
         """
+
+        draw_border: bool = True
+        if name == "thumb_loading":
+            draw_border = False
+
         item: Image.Image = self.icons.get((name, color, *size, pixel_ratio))
         if not item:
-            item_flat: Image.Image = self._render_icon(name, color, size, pixel_ratio)
+            item_flat: Image.Image = self._render_icon(
+                name, color, size, pixel_ratio, draw_border
+            )
             edge: tuple[Image.Image, Image.Image] = self._get_edge(size, pixel_ratio)
             item = self._apply_edge(item_flat, edge, faded=True)
             self.icons[(name, *color, size, pixel_ratio)] = item
@@ -220,6 +227,7 @@ class ThumbRenderer(QObject):
         color: str,
         size: tuple[int, int],
         pixel_ratio: float,
+        draw_border: bool = True,
     ) -> Image.Image:
         border_factor: int = 5
         smooth_factor: int = math.ceil(2 * pixel_ratio)
@@ -251,18 +259,19 @@ class ThumbRenderer(QObject):
         )
 
         # Draw rounded rectangle border
-        draw = ImageDraw.Draw(im)
-        draw.rounded_rectangle(
-            (0, 0) + tuple([d - 1 for d in im.size]),
-            radius=math.ceil(
-                (radius_factor * smooth_factor * pixel_ratio) + (pixel_ratio * 1.5)
-            ),
-            fill="black",
-            outline="#FF0000",
-            width=math.floor(
-                (border_factor * smooth_factor * pixel_ratio) - (pixel_ratio * 1.5)
-            ),
-        )
+        if draw_border:
+            draw = ImageDraw.Draw(im)
+            draw.rounded_rectangle(
+                (0, 0) + tuple([d - 1 for d in im.size]),
+                radius=math.ceil(
+                    (radius_factor * smooth_factor * pixel_ratio) + (pixel_ratio * 1.5)
+                ),
+                fill="black",
+                outline="#FF0000",
+                width=math.floor(
+                    (border_factor * smooth_factor * pixel_ratio) - (pixel_ratio * 1.5)
+                ),
+            )
 
         # Resize image to final size
         im = im.resize(
@@ -323,7 +332,7 @@ class ThumbRenderer(QObject):
         ol_color: str = (
             get_ui_color(ColorType.BORDER, color)
             if QGuiApplication.styleHints().colorScheme() is Qt.ColorScheme.Dark
-            else "#FFFFFF"
+            else get_ui_color(ColorType.LIGHT_ACCENT, color)
         )
 
         bg: Image.Image = Image.new(image.mode, image.size, color=bg_color)
@@ -356,6 +365,11 @@ class ThumbRenderer(QObject):
             faded (bool): Whether or not to apply a faded version of the edge.
         """
         opacity: float = 0.75 if not faded else 0.6
+        shade_reduction: float = (
+            0.15
+            if QGuiApplication.styleHints().colorScheme() is Qt.ColorScheme.Dark
+            else 0.3
+        )
         im: Image.Image = image
         im_hl, im_sh = deepcopy(edge)
 
@@ -364,9 +378,13 @@ class ThumbRenderer(QObject):
         im_hl.putalpha(ImageEnhance.Brightness(im_hl.getchannel(3)).enhance(opacity))
         im.paste(ImageChops.soft_light(im, im_hl), mask=im_hl.getchannel(3))
 
-        # Configure and apply a hard light overlay.
+        # Configure and apply a normal shading overlay.
         # This helps with contrast.
-        im_sh.putalpha(ImageEnhance.Brightness(im_sh.getchannel(3)).enhance(opacity))
+        im_sh.putalpha(
+            ImageEnhance.Brightness(im_sh.getchannel(3)).enhance(
+                max(0, opacity - shade_reduction)
+            )
+        )
         im.paste(im_sh, mask=im_sh.getchannel(3))
 
         return im
@@ -764,9 +782,15 @@ class ThumbRenderer(QObject):
         _filepath: Path = Path(filepath)
         resampling_method = Image.Resampling.BILINEAR
 
+        theme_color: str = (
+            "theme_light"
+            if QGuiApplication.styleHints().colorScheme() == Qt.ColorScheme.Light
+            else "theme_dark"
+        )
+
         # Initialize "Loading" thumbnail
         loading_thumb: Image.Image = self._get_icon(
-            "thumb_loading", "", (adj_size, adj_size), pixel_ratio
+            "thumb_loading", theme_color, (adj_size, adj_size), pixel_ratio
         )
 
         if ThumbRenderer.font_pixel_ratio != pixel_ratio:
@@ -887,10 +911,15 @@ class ThumbRenderer(QObject):
 
                 if update_on_ratio_change:
                     self.updated_ratio.emit(1)
+                theme_color: str = (
+                    "theme_light"
+                    if QGuiApplication.styleHints().colorScheme()
+                    == Qt.ColorScheme.Light
+                    else "theme_dark"
+                )
                 final = self._get_icon(
                     name=self._get_resource_id(_filepath),
-                    # name="file_generic",
-                    color="",
+                    color=theme_color,
                     size=(adj_size, adj_size),
                     pixel_ratio=pixel_ratio,
                 )
