@@ -911,12 +911,6 @@ class ThumbRenderer(QObject):
 
                 if update_on_ratio_change:
                     self.updated_ratio.emit(1)
-                theme_color: str = (
-                    "theme_light"
-                    if QGuiApplication.styleHints().colorScheme()
-                    == Qt.ColorScheme.Light
-                    else "theme_dark"
-                )
                 final = self._get_icon(
                     name=self._get_resource_id(_filepath),
                     color=theme_color,
