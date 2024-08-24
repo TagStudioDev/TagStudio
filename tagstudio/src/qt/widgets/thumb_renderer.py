@@ -767,6 +767,17 @@ class ThumbRenderer(QObject):
         return im
 
     def _epub_cover(self, filepath: Path) -> Image.Image:
+        """
+        Extracts and returns the first image found in the ePub file at the given filepath.
+
+        Args:
+            filepath (Path): The path to the ePub file.
+
+        Returns:
+            Image: The first image found in the ePub file, or None if no image is found or an error occurs.
+        """
+        im: Image.Image = None
+
         try:
             with zipfile.ZipFile(filepath, "r") as zipFile:
                 for file_name in zipFile.namelist():
@@ -780,6 +791,7 @@ class ThumbRenderer(QObject):
             logging.info(
                 f"[ThumbRenderer][EPUB][ERROR]: Couldn't render ePub cover for {filepath.name} ({type(e).__name__})"
             )
+        return im
 
     def render(
         self,
