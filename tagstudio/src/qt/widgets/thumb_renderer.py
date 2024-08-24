@@ -8,6 +8,8 @@ import math
 from copy import deepcopy
 from io import BytesIO
 from pathlib import Path
+import zipfile
+import io
 
 import cv2
 import numpy as np
@@ -764,6 +766,21 @@ class ThumbRenderer(QObject):
             )
         return im
 
+    def _epub_cover(self, filepath: Path) -> Image.Image:
+        try:
+            with zipfile.ZipFile(filepath, "r") as zipFile:
+                for file_name in zipFile.namelist():
+                    if file_name.lower().endswith(
+                        (".png", ".jpg", ".jpeg", ".gif", ".bmp", ".svg")
+                    ):
+                        image_data = zipFile.read(file_name)
+                        image = Image.open(io.BytesIO(image_data))
+                        return image
+        except Exception as e:
+            logging.info(
+                f"[ThumbRenderer][EPUB][ERROR]: Couldn't render ePub cover for {filepath.name} ({type(e).__name__})"
+            )
+
     def render(
         self,
         timestamp: float,
@@ -850,6 +867,9 @@ class ThumbRenderer(QObject):
                 elif MediaType.BLENDER in MediaCategories.get_types(ext):
                     image = self._blender(_filepath)
 
+                # Ebooks ===========================================================
+                elif MediaType.EBOOK in MediaCategories.get_types(ext):
+                    image = self._epub_cover(_filepath)
                 # No Rendered Thumbnail ========================================
                 if not image:
                     raise UnidentifiedImageError

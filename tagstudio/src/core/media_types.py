@@ -22,6 +22,7 @@ class MediaType(str, Enum):
     DATABASE: str = "database"
     DISK_IMAGE: str = "disk_image"
     DOCUMENT: str = "document"
+    EBOOK: str = "ebook"
     FONT: str = "font"
     IMAGE_RAW: str = "image_raw"
     IMAGE_VECTOR: str = "image_vector"
@@ -160,6 +161,27 @@ class MediaCategories:
         ".wpd",
         ".wps",
     }
+    # https://en.wikipedia.org/wiki/Comparison_of_e-book_formats
+    _EBOOK_SET: set[str] = {
+        ".epub",
+        # ".mobi",
+        # ".cbr",
+        # ".cbz",
+        # ".cb7",
+        # ".cbt",
+        # ".cba",
+        # ".djvu",
+        # ".fb2",
+        # ".ibook",
+        # ".inf",
+        # ".azw",
+        # ".azw3",
+        # ".kfx",
+        # ".lit",
+        # ".prc",
+        # ".pdb"
+    }
+
     _FONT_SET: set[str] = {
         ".fon",
         ".otf",
@@ -312,6 +334,11 @@ class MediaCategories:
         extensions=_DOCUMENT_SET,
         is_iana=False,
     )
+    EBOOK_TYPES: MediaCategory = MediaCategory(
+        media_type=MediaType.EBOOK,
+        extensions=_EBOOK_SET,
+        is_iana=False,
+    )
     FONT_TYPES: MediaCategory = MediaCategory(
         media_type=MediaType.FONT,
         extensions=_FONT_SET,
@@ -403,6 +430,7 @@ class MediaCategories:
         DATABASE_TYPES,
         DISK_IMAGE_TYPES,
         DOCUMENT_TYPES,
+        EBOOK_TYPES,
         FONT_TYPES,
         IMAGE_RAW_TYPES,
         IMAGE_TYPES,
