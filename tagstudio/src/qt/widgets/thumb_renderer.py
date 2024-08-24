@@ -55,10 +55,10 @@ class ThumbRenderer(QObject):
     updated_ratio = Signal(float)
 
     # TODO: Make dynamic font sizes given different pixel ratios
-    font_pixel_ratio: float = 1
+    FONT_PIXEL_RATIO: float = 1
     ext_font = ImageFont.truetype(
         Path(__file__).parents[3] / "resources/qt/fonts/Oxanium-Bold.ttf",
-        math.floor(12 * font_pixel_ratio),
+        math.floor(12 * FONT_PIXEL_RATIO),
     )
 
     def __init__(self) -> None:
@@ -151,18 +151,18 @@ class ThumbRenderer(QObject):
 
     def _render_mask(self, size: tuple[int, int], pixel_ratio) -> Image.Image:
         """Renders a thumbnail mask."""
-        smooth_factor: int = 2
-        radius_factor: int = 8
+        SMOOTH_FACTOR: int = 2
+        RADIUS_FACTOR: int = 8
 
         im: Image.Image = Image.new(
             mode="L",
-            size=tuple([d * smooth_factor for d in size]),  # type: ignore
+            size=tuple([d * SMOOTH_FACTOR for d in size]),  # type: ignore
             color="black",
         )
         draw = ImageDraw.Draw(im)
         draw.rounded_rectangle(
             (0, 0) + tuple([d - 1 for d in im.size]),
-            radius=math.ceil(radius_factor * smooth_factor * pixel_ratio),
+            radius=math.ceil(RADIUS_FACTOR * SMOOTH_FACTOR * pixel_ratio),
             fill="white",
         )
         im = im.resize(
@@ -175,25 +175,25 @@ class ThumbRenderer(QObject):
         self, size: tuple[int, int], pixel_ratio
     ) -> tuple[Image.Image, Image.Image]:
         """Renders a thumbnail highlight border."""
-        smooth_factor: int = 2
-        radius_factor: int = 8
-        width: int = math.floor(pixel_ratio * 2)
+        SMOOTH_FACTOR: int = 2
+        RADIUS_FACTOR: int = 8
+        WIDTH: int = math.floor(pixel_ratio * 2)
 
         # Highlight
         im_hl: Image.Image = Image.new(
             mode="RGBA",
-            size=tuple([d * smooth_factor for d in size]),  # type: ignore
+            size=tuple([d * SMOOTH_FACTOR for d in size]),  # type: ignore
             color="#00000000",
         )
         draw = ImageDraw.Draw(im_hl)
         draw.rounded_rectangle(
-            (width, width) + tuple([d - (width + 1) for d in im_hl.size]),
+            (WIDTH, WIDTH) + tuple([d - (WIDTH + 1) for d in im_hl.size]),
             radius=math.ceil(
-                (radius_factor * smooth_factor * pixel_ratio) - (pixel_ratio * 3)
+                (RADIUS_FACTOR * SMOOTH_FACTOR * pixel_ratio) - (pixel_ratio * 3)
             ),
             fill=None,
             outline="white",
-            width=width,
+            width=WIDTH,
         )
         im_hl = im_hl.resize(
             size,
@@ -203,16 +203,16 @@ class ThumbRenderer(QObject):
         # Shadow
         im_sh: Image.Image = Image.new(
             mode="RGBA",
-            size=tuple([d * smooth_factor for d in size]),  # type: ignore
+            size=tuple([d * SMOOTH_FACTOR for d in size]),  # type: ignore
             color="#00000000",
         )
         draw = ImageDraw.Draw(im_sh)
         draw.rounded_rectangle(
             (0, 0) + tuple([d - 1 for d in im_sh.size]),
-            radius=math.ceil(radius_factor * smooth_factor * pixel_ratio),
+            radius=math.ceil(RADIUS_FACTOR * SMOOTH_FACTOR * pixel_ratio),
             fill=None,
             outline="black",
-            width=width,
+            width=WIDTH,
         )
         im_sh = im_sh.resize(
             size,
@@ -229,22 +229,22 @@ class ThumbRenderer(QObject):
         pixel_ratio: float,
         draw_border: bool = True,
     ) -> Image.Image:
-        border_factor: int = 5
-        smooth_factor: int = math.ceil(2 * pixel_ratio)
-        radius_factor: int = 8
-        icon_ratio: float = 1.75
+        BORDER_FACTOR: int = 5
+        SMOOTH_FACTOR: int = math.ceil(2 * pixel_ratio)
+        RADIUS_FACTOR: int = 8
+        ICON_RATIO: float = 1.75
 
         # Create larger blank image based on smooth_factor
         im: Image.Image = Image.new(
             "RGBA",
-            size=tuple([d * smooth_factor for d in size]),  # type: ignore
+            size=tuple([d * SMOOTH_FACTOR for d in size]),  # type: ignore
             color="#00000000",
         )
 
         # Create solid background color
         bg: Image.Image = Image.new(
             "RGB",
-            size=tuple([d * smooth_factor for d in size]),  # type: ignore
+            size=tuple([d * SMOOTH_FACTOR for d in size]),  # type: ignore
             color="#000000",
         )
 
@@ -253,8 +253,8 @@ class ThumbRenderer(QObject):
             bg,
             (0, 0),
             mask=self._get_mask(
-                tuple([d * smooth_factor for d in size]),  # type: ignore
-                (pixel_ratio * smooth_factor),
+                tuple([d * SMOOTH_FACTOR for d in size]),  # type: ignore
+                (pixel_ratio * SMOOTH_FACTOR),
             ),
         )
 
@@ -264,12 +264,12 @@ class ThumbRenderer(QObject):
             draw.rounded_rectangle(
                 (0, 0) + tuple([d - 1 for d in im.size]),
                 radius=math.ceil(
-                    (radius_factor * smooth_factor * pixel_ratio) + (pixel_ratio * 1.5)
+                    (RADIUS_FACTOR * SMOOTH_FACTOR * pixel_ratio) + (pixel_ratio * 1.5)
                 ),
                 fill="black",
                 outline="#FF0000",
                 width=math.floor(
-                    (border_factor * smooth_factor * pixel_ratio) - (pixel_ratio * 1.5)
+                    (BORDER_FACTOR * SMOOTH_FACTOR * pixel_ratio) - (pixel_ratio * 1.5)
                 ),
             )
 
@@ -293,17 +293,17 @@ class ThumbRenderer(QObject):
 
         # Resize icon to fit icon_ratio
         icon = icon.resize(
-            (math.ceil(size[0] // icon_ratio), math.ceil(size[1] // icon_ratio))
+            (math.ceil(size[0] // ICON_RATIO), math.ceil(size[1] // ICON_RATIO))
         )
 
         # Paste icon centered
         im.paste(
             im=fg.resize(
-                (math.ceil(size[0] // icon_ratio), math.ceil(size[1] // icon_ratio))
+                (math.ceil(size[0] // ICON_RATIO), math.ceil(size[1] // ICON_RATIO))
             ),
             box=(
-                math.ceil((size[0] - (size[0] // icon_ratio)) // 2),
-                math.ceil((size[1] - (size[1] // icon_ratio)) // 2),
+                math.ceil((size[0] - (size[0] // ICON_RATIO)) // 2),
+                math.ceil((size[1] - (size[1] // ICON_RATIO)) // 2),
             ),
             mask=icon.getchannel(3),
         )
@@ -432,20 +432,21 @@ class ThumbRenderer(QObject):
         # BASE_SCALE used for drawing on a larger image and resampling down
         # to provide an antialiased effect.
         BASE_SCALE: int = 2
-        size_scaled: int = size * BASE_SCALE
-        ALLOW_SMALL_MIN: bool = False
         SAMPLES_PER_BAR: int = 3
+        size_scaled: int = size * BASE_SCALE
+        allow_small_min: bool = False
         im: Image.Image = None
 
         try:
-            BARS: int = min(math.floor((size // pixel_ratio) / 5), 64)
+            BAR_COUNT: int = min(math.floor((size // pixel_ratio) / 5), 64)
             audio: AudioSegment = AudioSegment.from_file(filepath, ext[1:])
             data = np.fromstring(audio._data, np.int16)  # type: ignore
-            data_indices = np.linspace(1, len(data), num=BARS * SAMPLES_PER_BAR)
-
-            BAR_MARGIN: float = ((size_scaled / (BARS * 3)) * BASE_SCALE) / 2
-            LINE_WIDTH: float = ((size_scaled - BAR_MARGIN) / (BARS * 3)) * BASE_SCALE
-            BAR_HEIGHT: float = (size_scaled) - (size_scaled // BAR_MARGIN)
+            data_indices = np.linspace(1, len(data), num=BAR_COUNT * SAMPLES_PER_BAR)
+            bar_margin: float = ((size_scaled / (BAR_COUNT * 3)) * BASE_SCALE) / 2
+            line_width: float = (
+                (size_scaled - bar_margin) / (BAR_COUNT * 3)
+            ) * BASE_SCALE
+            bar_height: float = (size_scaled) - (size_scaled // bar_margin)
 
             count: int = 0
             maximum_item: int = 0
@@ -467,38 +468,38 @@ class ThumbRenderer(QObject):
                     maximum_item = 0
                     count = 1
 
-            line_ratio = max(highest_line / BAR_HEIGHT, 1)
+            line_ratio = max(highest_line / bar_height, 1)
 
             im = Image.new("RGB", (size_scaled, size_scaled), color="#000000")
             draw = ImageDraw.Draw(im)
 
-            current_x = BAR_MARGIN
+            current_x = bar_margin
             for item in max_array:
                 item_height = item / line_ratio
 
                 # If small minimums are not allowed, raise all values
                 # smaller than the line width to the same value.
-                if not ALLOW_SMALL_MIN:
-                    item_height = max(item_height, LINE_WIDTH)
+                if not allow_small_min:
+                    item_height = max(item_height, line_width)
 
                 current_y = (
-                    BAR_HEIGHT - item_height + (size_scaled // BAR_MARGIN)
+                    bar_height - item_height + (size_scaled // bar_margin)
                 ) // 2
 
                 draw.rounded_rectangle(
                     (
                         current_x,
                         current_y,
-                        (current_x + LINE_WIDTH),
+                        (current_x + line_width),
                         (current_y + item_height),
                     ),
                     radius=100 * BASE_SCALE,
                     fill=("#FF0000"),
                     outline=("#FFFF00"),
-                    width=max(math.ceil(LINE_WIDTH / 6), BASE_SCALE),
+                    width=max(math.ceil(line_width / 6), BASE_SCALE),
                 )
 
-                current_x = current_x + LINE_WIDTH + BAR_MARGIN
+                current_x = current_x + line_width + bar_margin
 
             im.resize((size, size), Image.Resampling.BILINEAR)
 
@@ -678,6 +679,9 @@ class ThumbRenderer(QObject):
 
     def _model_stl_thumb(self, filepath: Path, size: int) -> Image.Image:
         # TODO: Implement.
+        # The following commented code describes a method for rendering via
+        # matplotlib.
+        # This implementation did not play nice with multithreading.
         im: Image.Image = None
         # # Create a new plot
         # matplotlib.use('agg')
@@ -771,7 +775,7 @@ class ThumbRenderer(QObject):
         base_size: tuple[int, int],
         pixel_ratio: float,
         is_loading=False,
-        gradient=False,
+        is_thumb=False,
         update_on_ratio_change=False,
     ):
         """Internal renderer. Renders an entry/element thumbnail for the GUI."""
@@ -793,11 +797,11 @@ class ThumbRenderer(QObject):
             "thumb_loading", theme_color, (adj_size, adj_size), pixel_ratio
         )
 
-        if ThumbRenderer.font_pixel_ratio != pixel_ratio:
-            ThumbRenderer.font_pixel_ratio = pixel_ratio
+        if ThumbRenderer.FONT_PIXEL_RATIO != pixel_ratio:
+            ThumbRenderer.FONT_PIXEL_RATIO = pixel_ratio
             ThumbRenderer.ext_font = ImageFont.truetype(
                 Path(__file__).parents[3] / "resources/qt/fonts/Oxanium-Bold.ttf",
-                math.floor(12 * ThumbRenderer.font_pixel_ratio),
+                math.floor(12 * ThumbRenderer.FONT_PIXEL_RATIO),
             )
 
         if is_loading:
@@ -830,7 +834,7 @@ class ThumbRenderer(QObject):
                     image = self._text_thumb(_filepath, adj_size)
                 # Fonts ========================================================
                 elif MediaType.FONT in MediaCategories.get_types(ext, True):
-                    if gradient:
+                    if is_thumb:
                         # Short (Aa) Preview
                         image = self._font_short_thumb(_filepath, adj_size)
                     else:
@@ -875,7 +879,7 @@ class ThumbRenderer(QObject):
                 )
                 image = image.resize((new_x, new_y), resample=resampling_method)
                 mask: Image.Image = None
-                if gradient:
+                if is_thumb:
                     mask = self._get_mask((adj_size, adj_size), pixel_ratio)
                     edge: tuple[Image.Image, Image.Image] = self._get_edge(
                         (adj_size, adj_size), pixel_ratio
