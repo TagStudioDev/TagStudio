@@ -41,6 +41,8 @@ If you plan to make a pull request or develop the code run this instead to also 
 poetry install --with dev
 ```
 
+You should run these (or any other poetry command) at the root of the project where the pyproject.toml file is located.
+
 ### Running TagStudio
 
 After installing the dependencies you can start TagStudio by running this command at the root of the project:
