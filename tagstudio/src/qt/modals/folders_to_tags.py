@@ -22,6 +22,7 @@ from src.core.enums import FieldID
 from src.core.library import Library, Tag
 from src.core.palette import ColorType, get_tag_color
 from src.qt.flowlayout import FlowLayout
+from src.qt.helpers.theming import get_style
 
 # Only import for type checking/autocompletion, will not be imported at runtime.
 if typing.TYPE_CHECKING:
@@ -161,6 +162,7 @@ class FoldersToTagsModal(QWidget):
     # done = Signal(int)
     def __init__(self, library: "Library", driver: "QtDriver"):
         super().__init__()
+        self.setStyleSheet(get_style("GenericStyle"))
         self.library = library
         self.driver = driver
         self.count = -1

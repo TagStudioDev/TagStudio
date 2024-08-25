@@ -42,6 +42,7 @@ from src.qt.widgets.text_box_edit import EditTextBox
 from src.qt.widgets.text_line_edit import EditTextLine
 from src.qt.helpers.qbutton_wrapper import QPushButtonWrapper
 from src.qt.widgets.video_player import VideoPlayer
+from src.qt.helpers.theming import get_style
 
 
 # Only import for type checking/autocompletion, will not be imported at runtime.
@@ -62,6 +63,7 @@ class PreviewPanel(QWidget):
 
     def __init__(self, library: Library, driver: "QtDriver"):
         super().__init__()
+        self.setStyleSheet(get_style("GenericStyle"))
         self.is_connected = False
         self.lib = library
         self.driver: QtDriver = driver
@@ -86,6 +88,7 @@ class PreviewPanel(QWidget):
         self.open_explorer_action = QAction("Open file in explorer", self)
 
         self.preview_img = QPushButtonWrapper()
+        self.preview_img.setStyleSheet(get_style("Empty"))
         self.preview_img.setMinimumSize(*self.img_button_size)
         self.preview_img.setFlat(True)
         self.preview_img.setContextMenuPolicy(Qt.ContextMenuPolicy.ActionsContextMenu)

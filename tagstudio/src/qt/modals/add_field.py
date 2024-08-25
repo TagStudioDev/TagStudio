@@ -14,6 +14,7 @@ from PySide6.QtWidgets import (
 )
 
 from src.core.library import Library
+from src.qt.helpers.theming import get_style
 
 
 class AddFieldModal(QWidget):
@@ -24,6 +25,7 @@ class AddFieldModal(QWidget):
         # - OR -
         # [Cancel] [Save]
         super().__init__()
+        self.setStyleSheet(get_style("GenericStyle"))
         self.is_connected = False
         self.lib = library
         self.setWindowTitle(f"Add Field")
@@ -71,6 +73,7 @@ class AddFieldModal(QWidget):
 
         self.save_button = QPushButton()
         self.save_button.setText("Add")
+        self.save_button.setStyleSheet(get_style("QPushButtonAccented"))
         # self.save_button.setAutoDefault(True)
         self.save_button.setDefault(True)
         self.save_button.clicked.connect(self.hide)

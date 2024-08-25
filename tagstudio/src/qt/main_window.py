@@ -16,7 +16,7 @@
 import logging
 import typing
 from PySide6.QtCore import (QCoreApplication, QMetaObject, QRect,QSize, Qt)
-from PySide6.QtGui import QFont
+from PySide6.QtGui import QFont, QIcon
 from PySide6.QtWidgets import (QComboBox, QFrame, QGridLayout,
                                QHBoxLayout, QVBoxLayout, QLayout, QLineEdit, QMainWindow,
                                QPushButton, QScrollArea, QSizePolicy,
@@ -24,13 +24,13 @@ from PySide6.QtWidgets import (QComboBox, QFrame, QGridLayout,
                                QSpacerItem)
 from src.qt.pagination import Pagination
 from src.qt.widgets.landing import LandingWidget
+from src.qt.helpers.theming import get_style
 
 # Only import for type checking/autocompletion, will not be imported at runtime.
 if typing.TYPE_CHECKING:
     from src.qt.ts_qt import QtDriver
 
 logging.basicConfig(format="%(message)s", level=logging.INFO)
-
 
 class Ui_MainWindow(QMainWindow):
   
@@ -52,9 +52,10 @@ class Ui_MainWindow(QMainWindow):
         # # self.setStyleSheet(
         # # 	'background:#EE000000;'
         # # 	)
-        
 
     def setupUi(self, MainWindow):
+        self.setStyleSheet(get_style("GenericStyle"))
+
         if not MainWindow.objectName():
             MainWindow.setObjectName(u"MainWindow")
         MainWindow.resize(1300, 720)
@@ -138,24 +139,26 @@ class Ui_MainWindow(QMainWindow):
         self.horizontalLayout_2.setSizeConstraint(QLayout.SetMinimumSize)
         self.backButton = QPushButton(self.centralwidget)
         self.backButton.setObjectName(u"backButton")
-        self.backButton.setMinimumSize(QSize(0, 32))
+        self.backButton.setMinimumSize(QSize(32, 32))
         self.backButton.setMaximumSize(QSize(32, 16777215))
         font = QFont()
         font.setPointSize(14)
         font.setBold(True)
         self.backButton.setFont(font)
+        self.backButton.setStyleSheet(get_style("QPushButtonUnpadded"))
 
         self.horizontalLayout_2.addWidget(self.backButton)
 
         self.forwardButton = QPushButton(self.centralwidget)
         self.forwardButton.setObjectName(u"forwardButton")
-        self.forwardButton.setMinimumSize(QSize(0, 32))
+        self.forwardButton.setMinimumSize(QSize(32, 32))
         self.forwardButton.setMaximumSize(QSize(32, 16777215))
         font1 = QFont()
         font1.setPointSize(14)
         font1.setBold(True)
         font1.setKerning(True)
         self.forwardButton.setFont(font1)
+        self.forwardButton.setStyleSheet(get_style("QPushButtonUnpadded"))
 
         self.horizontalLayout_2.addWidget(self.forwardButton)
 

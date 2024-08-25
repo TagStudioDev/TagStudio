@@ -14,6 +14,7 @@ from PySide6.QtCore import Qt, QEvent
 from PySide6.QtGui import QPixmap, QEnterEvent
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton
 from src.qt.helpers.qbutton_wrapper import QPushButtonWrapper
+from src.qt.helpers.theming import get_style
 
 
 class FieldContainer(QWidget):
@@ -35,6 +36,7 @@ class FieldContainer(QWidget):
 
     def __init__(self, title: str = "Field", inline: bool = True) -> None:
         super().__init__()
+        self.setStyleSheet(get_style("GenericStyle"))
         # self.mode:str = mode
         self.setObjectName("fieldContainer")
         # self.item = item

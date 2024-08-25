@@ -8,6 +8,8 @@ from typing import Callable
 from PySide6.QtCore import Signal, Qt
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton
 
+from src.qt.helpers.theming import get_style
+
 
 class PanelModal(QWidget):
     saved = Signal()
@@ -28,6 +30,7 @@ class PanelModal(QWidget):
         # - OR -
         # [Cancel] [Save]
         super().__init__()
+        self.setStyleSheet(get_style("GenericStyle"))
         self.widget = widget
         self.setWindowTitle(window_title)
         self.setWindowModality(Qt.WindowModality.ApplicationModal)

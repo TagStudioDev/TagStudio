@@ -16,6 +16,7 @@ from src.qt.modals.delete_unlinked import DeleteUnlinkedEntriesModal
 from src.qt.modals.relink_unlinked import RelinkUnlinkedEntries
 from src.qt.modals.merge_dupe_entries import MergeDuplicateEntries
 from src.qt.widgets.progress import ProgressWidget
+from src.qt.helpers.theming import get_style
 
 # Only import for type checking/autocompletion, will not be imported at runtime.
 if typing.TYPE_CHECKING:
@@ -32,6 +33,7 @@ logging.basicConfig(format="%(message)s", level=logging.INFO)
 class FixUnlinkedEntriesModal(QWidget):
     def __init__(self, library: "Library", driver: "QtDriver"):
         super().__init__()
+        self.setStyleSheet(get_style("GenericStyle"))
         self.lib = library
         self.driver = driver
         self.missing_count = -1
@@ -100,6 +102,7 @@ class FixUnlinkedEntriesModal(QWidget):
 
         self.delete_button = QPushButton()
         self.delete_modal = DeleteUnlinkedEntriesModal(self.lib, self.driver)
+        self.delete_button.setStyleSheet(get_style("QPushButtonCritical"))
         self.delete_modal.done.connect(
             lambda: self.set_missing_count(len(self.lib.missing_files))
         )

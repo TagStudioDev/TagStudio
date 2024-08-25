@@ -24,6 +24,7 @@ from src.core.constants import TAG_COLORS
 from src.qt.widgets.panel import PanelWidget, PanelModal
 from src.qt.widgets.tag import TagWidget
 from src.qt.modals.tag_search import TagSearchPanel
+from src.qt.helpers.theming import get_style
 
 
 ERROR = f"[ERROR]"
@@ -37,6 +38,7 @@ class BuildTagPanel(PanelWidget):
     on_edit = Signal(Tag)
 
     def __init__(self, library, tag_id: int = -1):
+        self.setStyleSheet(get_style("GenericStyle"))
         super().__init__()
         self.lib: Library = library
         # self.callback = callback

@@ -21,6 +21,7 @@ from src.core.library import Library
 from src.qt.helpers.function_iterator import FunctionIterator
 from src.qt.helpers.custom_runnable import CustomRunnable
 from src.qt.widgets.progress import ProgressWidget
+from src.qt.helpers.theming import get_style
 
 # Only import for type checking/autocompletion, will not be imported at runtime.
 if typing.TYPE_CHECKING:
@@ -32,6 +33,7 @@ class MirrorEntriesModal(QWidget):
 
     def __init__(self, library: "Library", driver: "QtDriver"):
         super().__init__()
+        self.setStyleSheet(get_style("GenericStyle"))
         self.lib = library
         self.driver = driver
         self.setWindowTitle(f"Mirror Entries")

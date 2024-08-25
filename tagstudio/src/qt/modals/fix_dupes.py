@@ -18,6 +18,7 @@ from PySide6.QtWidgets import (
 
 from src.core.library import Library
 from src.qt.modals.mirror_entities import MirrorEntriesModal
+from src.qt.helpers.theming import get_style
 
 # Only import for type checking/autocompletion, will not be imported at runtime.
 if typing.TYPE_CHECKING:
@@ -28,6 +29,7 @@ class FixDupeFilesModal(QWidget):
     # done = Signal(int)
     def __init__(self, library: "Library", driver: "QtDriver"):
         super().__init__()
+        self.setStyleSheet(get_style("GenericStyle"))
         self.lib = library
         self.driver = driver
         self.count = -1
