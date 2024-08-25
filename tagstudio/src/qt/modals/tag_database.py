@@ -2,6 +2,7 @@
 # Licensed under the GPL-3.0 License.
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
+import typing
 from PySide6.QtCore import Signal, Qt, QSize
 from PySide6.QtWidgets import (
     QWidget,
@@ -18,17 +19,21 @@ from src.qt.widgets.panel import PanelWidget, PanelModal
 from src.qt.widgets.tag import TagWidget
 from src.qt.modals.build_tag import BuildTagPanel
 
+# Only import for type checking/autocompletion, will not be imported at runtime.
+if typing.TYPE_CHECKING:
+    from src.core.library import Tag
+    from src.qt.ts_qt import QtDriver
+
 
 class TagDatabasePanel(PanelWidget):
     tag_chosen = Signal(int)
 
-    def __init__(self, library):
+    def __init__(self, library: "Library", driver: "QtDriver"):
         super().__init__()
         self.lib: Library = library
-        # self.callback = callback
+        self.driver: QtDriver = driver
         self.first_tag_id = -1
         self.tag_limit = 30
-        # self.selected_tag: int = 0
 
         self.setMinimumSize(300, 400)
         self.root_layout = QVBoxLayout(self)
@@ -133,9 +138,14 @@ class TagDatabasePanel(PanelWidget):
             row = QHBoxLayout(container)
             row.setContentsMargins(0, 0, 0, 0)
             row.setSpacing(3)
-            tw = TagWidget(self.lib, self.lib.get_tag(tag_id), True, False)
-            tw.on_edit.connect(
-                lambda checked=False, t=self.lib.get_tag(tag_id): (self.edit_tag(t.id))
+            tag: Tag = self.lib.get_tag(tag_id)
+            tw = TagWidget(self.lib, tag, True, False)
+            tw.on_edit.connect(lambda checked=False, t=tag: (self.edit_tag(t.id)))
+            tw.on_click.connect(
+                lambda checked=False, q=f"tag_id: {tag_id}": (
+                    self.driver.main_window.searchField.setText(q),
+                    self.driver.filter_items(q),
+                )
             )
             row.addWidget(tw)
             self.scroll_layout.addWidget(container)
