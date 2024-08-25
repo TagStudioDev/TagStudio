@@ -122,15 +122,15 @@ class CliDriver:
             # sys.exit()
             self.exit(save=False, backup=False)
         except KeyboardInterrupt:
-            # traceback.print_exc()
+            # tag_studio_log.exception(e)
             print("\nForce Quitting TagStudio...")
             # if self.lib and self.lib.library_dir:
             # 	self.backup_library()
             # self.cleanup_before_exit()
             # sys.exit()
             self.exit(save=False, backup=False)
-        except:
-            traceback.print_exc()
+        except Exception as e:
+            tag_studio_log.exception(e)
             print("\nPress Enter to Continue...")
             input()
             # if self.lib and self.lib.library_dir:
@@ -138,7 +138,7 @@ class CliDriver:
             # self.cleanup_before_exit()
             # sys.exit()
             self.exit(save=False, backup=True)
-        # except:
+        # except Exception as e:
         # 	print(
         # 		'\nAn Unknown Exception in TagStudio has Occurred. Press Enter to Continue...')
         # 	input()
@@ -154,7 +154,7 @@ class CliDriver:
             if self.args.external_preview:
                 self.close_external_preview()
         except Exception as e:
-            tag_studio_log.error(e)
+            tag_studio_log.exception(e)
             print("\nCrashed on Cleanup! This is unusual... Press Enter to Continue...")
             input()
             self.backup_library()
@@ -593,7 +593,7 @@ class CliDriver:
                             "%Y-%m-%d %H:%M:%S",
                         )
                         print(date.strftime("%D - %r"))
-                    except:
+                    except Exception as e:
                         print(self.lib.get_field_attr(field, "content"))
                 else:
                     print(self.lib.get_field_attr(field, "content"))
@@ -681,7 +681,7 @@ class CliDriver:
                         final_frame.save(external_preview_path)
                 except SystemExit:
                     sys.exit()
-                except:
+                except Exception as e:
                     print(f'{ERROR} Could not load video thumbnail for "{filepath}"')
                     if self.args.external_preview and entry:
                         self.set_external_preview_broken()
@@ -738,7 +738,7 @@ class CliDriver:
 
                 if file_type in VIDEO_TYPES:
                     os.remove(self.lib.library_dir / TS_FOLDER_NAME / "temp.jpg")
-            except:
+            except Exception as e:
                 if not self.args.external_preview or not entry:
                     print(
                         f"{ERROR} Could not display preview. Is there enough screen space?"
@@ -885,7 +885,7 @@ class CliDriver:
                 print("")
 
         except Exception as e:
-            tag_studio_log.error(e)
+            tag_studio_log.exception(e)
             print("\nPress Enter to Continue...")
             input()
             pass
@@ -1169,9 +1169,9 @@ class CliDriver:
                     clear()
                     print(f"{INFO} Collage operation cancelled.")
                     clear_scr = False
-                except:
+                except Exception as e:
                     print(f"{ERROR} {entry.path / entry.filename}")
-                    traceback.print_exc()
+                    tag_studio_log.exception(e)
                     print("Continuing...")
                 i = i + 1
 
@@ -2304,7 +2304,7 @@ class CliDriver:
                             # except SystemExit:
                             # 	self.cleanup_before_exit()
                             # 	sys.exit()
-                            # except:
+                            # except Exception as e:
                             # 	pass
 
                             if final_field_index >= 0:
@@ -2752,7 +2752,7 @@ class CliDriver:
                         # 		raise IndexError
                         # except SystemExit:
                         # 	sys.exit()
-                        # except:
+                        # except Exception as e:
                         clear()
                         print(f'{ERROR} Invalid command \'{" ".join(com)}\'')
                         # return self.scr_resolve_dupe_files(index, clear_scr=False)
@@ -2884,7 +2884,7 @@ class CliDriver:
                         # except SystemExit:
                         # 	self.cleanup_before_exit()
                         # 	sys.exit()
-                        except:
+                        except Exception as e:
                             clear()
                             print(f"{ERROR} Invalid Tag Selection '{com[1:]}'")
                             clear_scr = False
@@ -2938,7 +2938,7 @@ class CliDriver:
         except SystemExit:
             self.cleanup_before_exit()
             sys.exit()
-        except:
+        except Exception as e:
             print(f"{ERROR} Invalid Tag Selection")
 
         return selected_ids
@@ -3018,7 +3018,7 @@ class CliDriver:
         except SystemExit:
             self.cleanup_before_exit()
             sys.exit()
-        except:
+        except Exception as e:
             print(f"{ERROR} Invalid Tag Selection")
 
         if not allow_multiple and selected_ids:
@@ -3704,7 +3704,7 @@ class CliDriver:
         # except SystemExit:
         # 	self.cleanup_before_exit()
         # 	sys.exit()
-        except:
+        except Exception as e:
             print(f"{ERROR} Invalid Tag Selection")
 
         return fallback
@@ -3786,7 +3786,7 @@ class CliDriver:
                         # except SystemExit:
                         # 	self.cleanup_before_exit()
                         # 	sys.exit()
-                        except:
+                        except Exception as e:
                             clear()
                             print(f"{ERROR} Invalid Tag Selection '{com[1:]}'")
                             # return self.scr_edit_generic_tag_box(tag_ids, tag_box_name, clear_scr=False)

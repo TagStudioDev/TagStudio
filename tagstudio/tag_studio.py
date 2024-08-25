@@ -37,7 +37,7 @@ def main():
         driver.start()
     except Exception as e:
         msg = f"TagStudio Frontend ({ui_name}) Crashed! Press Enter to Continue..."
-        tag_studio_log.error(e)
+        tag_studio_log.exception(e)
         print(msg)
         input()
 

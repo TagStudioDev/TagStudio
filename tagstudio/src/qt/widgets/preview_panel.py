@@ -965,7 +965,7 @@ class PreviewPanel(QWidget):
                     title = f"{self.lib.get_field_attr(field, 'name')} (Date)"
                     inner_container = TextWidget(title, date.strftime("%D - %r"))
                     container.set_inner_widget(inner_container)
-                except:
+                except Exception as e:
                     container.set_title(self.lib.get_field_attr(field, "name"))
                     # container.set_editable(False)
                     container.set_inline(False)

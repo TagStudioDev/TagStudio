@@ -433,8 +433,8 @@ class Library:
             self.verify_ts_folders()
             self.save_library_to_disk()
             self.open_library(self.library_dir)
-        except:
-            traceback.print_exc()
+        except Exception as e:
+            tag_studio_log.exception(e)
             return 2
 
         return 0
@@ -1525,7 +1525,7 @@ class Library:
                 #     f'\r[INFO][FILTER]: {len(self.filtered_file_list)} matches found')
                 # sys.stdout.flush()
 
-                # except:
+                # except Exception as e:
                 #     # # Put this here to have new non-registered images show up
                 #     # if query == "untagged" or query == "no author" or query == "no artist":
                 #     #     self.filtered_file_list.append(file)

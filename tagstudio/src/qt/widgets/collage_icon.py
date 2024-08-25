@@ -159,9 +159,9 @@ class CollageIconRenderer(QObject):
             logging.info("\n")
             logging.info(f"{INFO} Collage operation cancelled.")
             clear_scr = False
-        except:
+        except Exception as e:
             logging.info(f"{ERROR} {entry.path}{os.sep}{entry.filename}")
-            traceback.print_exc()
+            tag_studio_log.exception(e)
             logging.info("Continuing...")
 
         self.done.emit()

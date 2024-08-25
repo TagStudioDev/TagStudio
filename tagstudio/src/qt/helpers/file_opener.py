@@ -86,8 +86,8 @@ def open_file(path: str | Path, file_manager: bool = False):
                 subprocess.Popen([command] + command_args, close_fds=True)
             else:
                 logging.info(f"Could not find {command_name} on system PATH")
-    except:
-        traceback.print_exc()
+    except Exception as e:
+        tag_studio_log.exception(e)
 
 
 class FileOpenerHelper:
