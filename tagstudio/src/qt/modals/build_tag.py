@@ -3,7 +3,7 @@
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
 
-import logging
+
 
 from PySide6.QtCore import Signal, Qt
 from PySide6.QtWidgets import (
@@ -24,17 +24,14 @@ from src.core.constants import TAG_COLORS
 from src.qt.widgets.panel import PanelWidget, PanelModal
 from src.qt.widgets.tag import TagWidget
 from src.qt.modals.tag_search import TagSearchPanel
+from logger import get_logger
 
 
-ERROR = f"[ERROR]"
-WARNING = f"[WARNING]"
-INFO = f"[INFO]"
-
-logging.basicConfig(format="%(message)s", level=logging.INFO)
 
 
 class BuildTagPanel(PanelWidget):
     on_edit = Signal(Tag)
+    logger = get_logger(__qualname__)
 
     def __init__(self, library, tag_id: int = -1):
         super().__init__()
@@ -167,7 +164,7 @@ class BuildTagPanel(PanelWidget):
         self.set_tag(self.tag)
 
     def add_subtag_callback(self, tag_id: int):
-        logging.info(f"adding {tag_id}")
+        self.logger.info(f"adding {tag_id}")
         # tag = self.lib.get_tag(self.tag_id)
         # TODO: Create a single way to update tags and refresh library data
         # new = self.build_tag()
@@ -178,7 +175,7 @@ class BuildTagPanel(PanelWidget):
         # self.on_edit.emit(self.build_tag())
 
     def remove_subtag_callback(self, tag_id: int):
-        logging.info(f"removing {tag_id}")
+        self.logger.info(f"removing {tag_id}")
         # tag = self.lib.get_tag(self.tag_id)
         # TODO: Create a single way to update tags and refresh library data
         # new = self.build_tag()
@@ -191,7 +188,7 @@ class BuildTagPanel(PanelWidget):
     def set_subtags(self):
         while self.scroll_layout.itemAt(0):
             self.scroll_layout.takeAt(0).widget().deleteLater()
-        logging.info(f"Setting {self.tag.subtag_ids}")
+        self.logger.info(f"Setting {self.tag.subtag_ids}")
         c = QWidget()
         l = QVBoxLayout(c)
         l.setContentsMargins(0, 0, 0, 0)
@@ -227,7 +224,7 @@ class BuildTagPanel(PanelWidget):
             subtags_ids=self.tag.subtag_ids,
             color=self.color_field.currentText().lower(),
         )
-        logging.info(f"built {new_tag}")
+        self.logger.info(f"built {new_tag}")
         return new_tag
 
         # NOTE: The callback and signal do the same thing, I'm currently

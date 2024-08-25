@@ -24,7 +24,7 @@ from datetime import datetime as dt
 from pathlib import Path
 
 import cv2
-from logger import tag_studio_log
+from logger import get_logger
 from PIL import Image, ImageChops, UnidentifiedImageError
 from PIL.Image import DecompressionBombError
 from src.core.library import *
@@ -32,6 +32,7 @@ from src.core.ts_core import *
 from src.core.utils.fs import *
 from src.core.utils.web import *
 from src.qt.helpers.file_opener import open_file
+
 
 WHITE_FG = "\033[37m"
 WHITE_BG = "\033[47m"
@@ -76,6 +77,7 @@ def clear():
 
 class CliDriver:
     """A basic CLI driver for TagStudio."""
+    logger = get_logger(__qualname__)
 
     def __init__(self, core, args):
         self.core: TagStudioCore = core

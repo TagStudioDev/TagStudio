@@ -2,7 +2,7 @@
 # Licensed under the GPL-3.0 License.
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
-import logging
+
 import os
 import subprocess
 import shutil
@@ -13,11 +13,9 @@ from pathlib import Path
 from PySide6.QtWidgets import QLabel
 from PySide6.QtCore import Qt
 
-ERROR = f"[ERROR]"
-WARNING = f"[WARNING]"
-INFO = f"[INFO]"
+from logger import get_logger
 
-logging.basicConfig(format="%(message)s", level=logging.INFO)
+logger = get_logger(__name__)
 
 
 def open_file(path: str | Path, file_manager: bool = False):
@@ -29,9 +27,9 @@ def open_file(path: str | Path, file_manager: bool = False):
                     Defaults to False.
     """
     _path = str(path)
-    logging.info(f"Opening file: {_path}")
+    logger.info(f"Opening file: {_path}")
     if not os.path.exists(_path):
-        logging.error(f"File not found: {_path}")
+        logger.error(f"File not found: {_path}")
         return
     try:
         if sys.platform == "win32":
@@ -85,9 +83,9 @@ def open_file(path: str | Path, file_manager: bool = False):
             if command is not None:
                 subprocess.Popen([command] + command_args, close_fds=True)
             else:
-                logging.info(f"Could not find {command_name} on system PATH")
+                logger.info(f"Could not find {command_name} on system PATH")
     except Exception as e:
-        tag_studio_log.exception(e)
+        logger.exception(e)
 
 
 class FileOpenerHelper:
@@ -97,7 +95,7 @@ class FileOpenerHelper:
         Args:
                 filepath (str): The path to the file to open.
         """
-        self.filepath = str(filepath)
+        filepath = str(filepath)
 
     def set_filepath(self, filepath: str | Path):
         """Set the filepath to open.
@@ -105,15 +103,15 @@ class FileOpenerHelper:
         Args:
                 filepath (str): The path to the file to open.
         """
-        self.filepath = str(filepath)
+        filepath = str(filepath)
 
     def open_file(self):
         """Open the file in the default application."""
-        open_file(self.filepath)
+        open_file(filepath)
 
     def open_explorer(self):
         """Open the file in the default file explorer."""
-        open_file(self.filepath, file_manager=True)
+        open_file(filepath, file_manager=True)
 
 
 class FileOpenerLabel(QLabel):
@@ -132,7 +130,7 @@ class FileOpenerLabel(QLabel):
         Args:
                 filepath (str): The path to the file to open.
         """
-        self.filepath = filepath
+        filepath = filepath
 
     def mousePressEvent(self, event):
         """Handle mouse press events.
@@ -145,7 +143,7 @@ class FileOpenerLabel(QLabel):
         super().mousePressEvent(event)
 
         if event.button() == Qt.LeftButton:
-            opener = FileOpenerHelper(self.filepath)
+            opener = FileOpenerHelper(filepath)
             opener.open_explorer()
         elif event.button() == Qt.RightButton:
             # Show context menu

@@ -1,7 +1,7 @@
 # Licensed under the GPL-3.0 License.
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
-import logging
+
 
 from pathlib import Path
 import typing
@@ -268,7 +268,7 @@ class VideoPlayer(QGraphicsView):
     def play(self, filepath: str, resolution: QSize) -> None:
         # Sets the filepath and sends the current player position to the very end,
         # so that the new video can be played.
-        logging.info(f"Playing {filepath}")
+        self.logger.info(f"Playing {filepath}")
         self.resolution = resolution
         self.filepath = filepath
         if self.player.isPlaying():

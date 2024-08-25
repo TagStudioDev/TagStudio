@@ -11,6 +11,7 @@ from enum import Enum
 
 from src.core.library import Entry, Library
 from src.core.constants import TS_FOLDER_NAME, TEXT_FIELDS
+from logger import get_logger
 
 
 class TagStudioCore:
@@ -18,6 +19,7 @@ class TagStudioCore:
     Instantiate this to establish a TagStudio session.
     Holds all TagStudio session data and provides methods to manage it.
     """
+    logger = get_logger(__qualname__)
 
     def __init__(self):
         self.lib: Library = Library()

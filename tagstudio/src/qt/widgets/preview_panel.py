@@ -2,7 +2,7 @@
 # Licensed under the GPL-3.0 License.
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
-import logging
+
 from pathlib import Path
 import time
 import typing
@@ -42,21 +42,18 @@ from src.qt.widgets.text_box_edit import EditTextBox
 from src.qt.widgets.text_line_edit import EditTextLine
 from src.qt.helpers.qbutton_wrapper import QPushButtonWrapper
 from src.qt.widgets.video_player import VideoPlayer
+from logger import get_logger
 
 
 # Only import for type checking/autocompletion, will not be imported at runtime.
 if typing.TYPE_CHECKING:
     from src.qt.ts_qt import QtDriver
 
-ERROR = "[ERROR]"
-WARNING = "[WARNING]"
-INFO = "[INFO]"
-
-logging.basicConfig(format="%(message)s", level=logging.INFO)
 
 
 class PreviewPanel(QWidget):
     """The Preview Panel Widget."""
+    logger = get_logger(__qualname__)
 
     tags_updated = Signal()
 
@@ -353,25 +350,25 @@ class PreviewPanel(QWidget):
         )
 
     def set_image_ratio(self, ratio: float):
-        # logging.info(f'Updating Ratio to: {ratio} #####################################################')
+        # self.logger.debug(f'Updating Ratio to: {ratio} #####################################################')
         self.image_ratio = ratio
 
     def update_image_size(self, size: tuple[int, int], ratio: float = None):
         if ratio:
             self.set_image_ratio(ratio)
         # self.img_button_size = size
-        # logging.info(f'')
+        # self.logger.info(f'')
         # self.preview_img.setMinimumSize(64,64)
 
         adj_width: float = size[0]
         adj_height: float = size[1]
         # Landscape
         if self.image_ratio > 1:
-            # logging.info('Landscape')
+            # self.logger.info('Landscape')
             adj_height = size[0] * (1 / self.image_ratio)
         # Portrait
         elif self.image_ratio <= 1:
-            # logging.info('Portrait')
+            # self.logger.info('Portrait')
             adj_width = size[1] * self.image_ratio
 
         if adj_width > size[0]:
@@ -400,13 +397,13 @@ class PreviewPanel(QWidget):
         # 		filepath = os.path.normpath(f'{self.lib.library_dir}/{self.item.path}/{self.item.filename}')
         # 		self.thumb_renderer.render(time.time(), filepath, self.preview_img.size().toTuple(), self.devicePixelRatio(),update_on_ratio_change=True)
 
-        # logging.info(f' Img Aspect Ratio: {self.image_ratio}')
-        # logging.info(f'  Max Button Size: {size}')
-        # logging.info(f'Container Size: {(self.image_container.size().width(), self.image_container.size().height())}')
-        # logging.info(f'Final Button Size: {(adj_width, adj_height)}')
-        # logging.info(f'')
-        # logging.info(f'  Icon Size: {self.preview_img.icon().actualSize().toTuple()}')
-        # logging.info(f'Button Size: {self.preview_img.size().toTuple()}')
+        # self.logger.info(f' Img Aspect Ratio: {self.image_ratio}')
+        # self.logger.info(f'  Max Button Size: {size}')
+        # self.logger.info(f'Container Size: {(self.image_container.size().width(), self.image_container.size().height())}')
+        # self.logger.info(f'Final Button Size: {(adj_width, adj_height)}')
+        # self.logger.info(f'')
+        # self.logger.info(f'  Icon Size: {self.preview_img.icon().actualSize().toTuple()}')
+        # self.logger.info(f'Button Size: {self.preview_img.size().toTuple()}')
 
     def place_add_field_button(self):
         self.scroll_layout.addWidget(self.afb_container)
@@ -439,7 +436,7 @@ class PreviewPanel(QWidget):
         """
         Renders the panel's widgets with the newest data from the Library.
         """
-        logging.info(f"[ENTRY PANEL] UPDATE WIDGETS ({self.driver.selected})")
+        self.logger.info(f"UPDATE WIDGETS ({self.driver.selected})")
         self.isOpen = True
         # self.tag_callback = tag_callback if tag_callback else None
         window_title = ""
@@ -569,13 +566,13 @@ class PreviewPanel(QWidget):
 
                     except FileNotFoundError as e:
                         self.dimensions_label.setText(f"{filepath.suffix.upper()[1:]}")
-                        logging.info(
+                        self.logger.info(
                             f"[PreviewPanel][ERROR] Couldn't Render thumbnail for {filepath} (because of {e})"
                         )
 
                     except (FileNotFoundError, cv2.error) as e:
                         self.dimensions_label.setText(f"{filepath.suffix.upper()}")
-                        logging.info(
+                        self.logger.info(
                             f"[PreviewPanel][ERROR] Couldn't Render thumbnail for {filepath} (because of {e})"
                         )
                     except (
@@ -585,7 +582,7 @@ class PreviewPanel(QWidget):
                         self.dimensions_label.setText(
                             f"{filepath.suffix.upper()[1:]}  •  {format_size(filepath.stat().st_size)}"
                         )
-                        logging.info(
+                        self.logger.info(
                             f"[PreviewPanel][ERROR] Couldn't Render thumbnail for {filepath} (because of {e})"
                         )
 
@@ -665,8 +662,8 @@ class PreviewPanel(QWidget):
                                 ):
                                     # if self.lib.get_field_attr(f, 'type') == ('tag_box'):
                                     # 	pass
-                                    # logging.info(f)
-                                    # logging.info(type(f))
+                                    # self.logger.info(f)
+                                    # self.logger.info(type(f))
                                     f_stripped = {
                                         self.lib.get_field_attr(f, "id"): None
                                     }
@@ -696,10 +693,10 @@ class PreviewPanel(QWidget):
 
             self.selected = list(self.driver.selected)
             for i, f in enumerate(self.common_fields):
-                logging.info(f"ci:{i}, f:{f}")
+                self.logger.info(f"ci:{i}, f:{f}")
                 self.write_container(i, f)
             for i, f in enumerate(self.mixed_fields, start=len(self.common_fields)):
-                logging.info(f"mi:{i}, f:{f}")
+                self.logger.info(f"mi:{i}, f:{f}")
                 self.write_container(i, f, mixed=True)
 
             # Hide leftover containers
@@ -714,7 +711,7 @@ class PreviewPanel(QWidget):
 
         # # Uninitialized or New Item:
         # if not self.item or self.item.id != item.id:
-        # 	# logging.info(f'Uninitialized or New Item ({item.id})')
+        # 	# self.logger.info(f'Uninitialized or New Item ({item.id})')
         # 	if type(item) == Entry:
         # 		# New Entry: Render preview and update filename label
         # 		filepath = os.path.normpath(f'{self.lib.library_dir}/{item.path}/{item.filename}')
@@ -749,12 +746,12 @@ class PreviewPanel(QWidget):
         # 		# except RuntimeError:
         # 		# 	pass
         # 		# if self.tag_callback:
-        # 		# 	# logging.info(f'[UPDATE CONTAINER] Updating Callback for {item.id}: {self.tag_callback}')
+        # 		# 	# self.logger.info(f'[UPDATE CONTAINER] Updating Callback for {item.id}: {self.tag_callback}')
         # 		# 	self.tags_updated.connect(self.tag_callback)
 
         # # Initialized, Updating:
         # elif self.item and self.item.id == item.id:
-        # 	# logging.info(f'Initialized Item, Updating! ({item.id})')
+        # 	# self.logger.info(f'Initialized Item, Updating! ({item.id})')
         # 	for i, f in enumerate(item.fields):
         # 		self.write_container(item, i, f)
 
@@ -774,14 +771,14 @@ class PreviewPanel(QWidget):
         if self.is_connected:
             self.tags_updated.disconnect()
 
-        logging.info("[UPDATE CONTAINER] Setting tags updated slot")
+        self.logger.info("[UPDATE CONTAINER] Setting tags updated slot")
         self.tags_updated.connect(slot)
         self.is_connected = True
 
     # def write_container(self, item:Union[Entry, Collation, Tag], index, field):
     def write_container(self, index, field, mixed=False):
         """Updates/Creates data for a FieldContainer."""
-        # logging.info(f'[ENTRY PANEL] WRITE CONTAINER')
+        # self.logger.info(f'[ENTRY PANEL] WRITE CONTAINER')
         # Remove 'Add Field' button from scroll_layout, to be re-added later.
         self.scroll_layout.takeAt(self.scroll_layout.count() - 1).widget()
         container: FieldContainer = None
@@ -794,7 +791,7 @@ class PreviewPanel(QWidget):
             # container.inner_layout.removeItem(container.inner_layout.itemAt(1))
             # container.setHidden(False)
         if self.lib.get_field_attr(field, "type") == "tag_box":
-            # logging.info(f'WRITING TAGBOX FOR ITEM {item.id}')
+            # self.logger.info(f'WRITING TAGBOX FOR ITEM {item.id}')
             container.set_title(self.lib.get_field_attr(field, "name"))
             # container.set_editable(False)
             container.set_inline(False)
@@ -853,7 +850,7 @@ class PreviewPanel(QWidget):
             self.tags_updated.emit()
             # self.dynamic_widgets.append(inner_container)
         elif self.lib.get_field_attr(field, "type") in "text_line":
-            # logging.info(f'WRITING TEXTLINE FOR ITEM {item.id}')
+            # self.logger.info(f'WRITING TEXTLINE FOR ITEM {item.id}')
             container.set_title(self.lib.get_field_attr(field, "name"))
             # container.set_editable(True)
             container.set_inline(False)
@@ -892,7 +889,7 @@ class PreviewPanel(QWidget):
             # container.set_remove_callback(lambda: (self.lib.get_entry(item.id).fields.pop(index), self.update_widgets(item)))
 
         elif self.lib.get_field_attr(field, "type") in "text_box":
-            # logging.info(f'WRITING TEXTBOX FOR ITEM {item.id}')
+            # self.logger.info(f'WRITING TEXTBOX FOR ITEM {item.id}')
             container.set_title(self.lib.get_field_attr(field, "name"))
             # container.set_editable(True)
             container.set_inline(False)
@@ -929,7 +926,7 @@ class PreviewPanel(QWidget):
                 container.set_copy_callback(None)
                 container.set_remove_callback(None)
         elif self.lib.get_field_attr(field, "type") == "collation":
-            # logging.info(f'WRITING COLLATION FOR ITEM {item.id}')
+            # self.logger.info(f'WRITING COLLATION FOR ITEM {item.id}')
             container.set_title(self.lib.get_field_attr(field, "name"))
             # container.set_editable(True)
             container.set_inline(False)
@@ -952,7 +949,7 @@ class PreviewPanel(QWidget):
                 lambda: self.remove_message_box(prompt=prompt, callback=callback)
             )
         elif self.lib.get_field_attr(field, "type") == "datetime":
-            # logging.info(f'WRITING DATETIME FOR ITEM {item.id}')
+            # self.logger.info(f'WRITING DATETIME FOR ITEM {item.id}')
             if not mixed:
                 try:
                     container.set_title(self.lib.get_field_attr(field, "name"))
@@ -991,7 +988,7 @@ class PreviewPanel(QWidget):
                 container.set_edit_callback(None)
                 container.set_remove_callback(None)
         else:
-            # logging.info(f'[ENTRY PANEL] Unknown Type: {self.lib.get_field_attr(field, "type")}')
+            # self.logger.info(f'[ENTRY PANEL] Unknown Type: {self.lib.get_field_attr(field, "type")}')
             container.set_title(self.lib.get_field_attr(field, "name"))
             # container.set_editable(False)
             container.set_inline(False)
@@ -1031,7 +1028,7 @@ class PreviewPanel(QWidget):
                     if updated_badges:
                         self.driver.update_badges()
                 except ValueError:
-                    logging.info(
+                    self.logger.info(
                         f"[PREVIEW PANEL][ERROR?] Tried to remove field from Entry ({entry.id}) that never had it"
                     )
                     pass
@@ -1043,11 +1040,11 @@ class PreviewPanel(QWidget):
             if item_pair[0] == ItemType.ENTRY:
                 entry = self.lib.get_entry(item_pair[1])
                 try:
-                    logging.info(field)
+                    self.logger.info(field)
                     index = entry.fields.index(field)
                     self.lib.update_entry_field(entry.id, index, content, "replace")
                 except ValueError:
-                    logging.info(
+                    self.logger.info(
                         f"[PREVIEW PANEL][ERROR] Tried to update field from Entry ({entry.id}) that never had it"
                     )
                     pass
@@ -1067,6 +1064,6 @@ class PreviewPanel(QWidget):
         remove_mb.setDefaultButton(cancel_button)
         remove_mb.setEscapeButton(cancel_button)
         result = remove_mb.exec_()
-        # logging.info(result)
+        # self.logger.info(result)
         if result == 3:
             callback()

@@ -137,7 +137,7 @@ class TagWidget(QWidget):
         self.base_layout.addWidget(self.bg_button)
         # self.setMinimumSize(self.bg_button.size())
 
-        # logging.info(tag.color)
+        # self.logger.info(tag.color)
         if has_remove:
             self.remove_button = QPushButton(self)
             self.remove_button.setFlat(True)

@@ -5,7 +5,7 @@
 """The Library object and related methods for TagStudio."""
 
 import datetime
-import logging
+
 import os
 import time
 
@@ -29,7 +29,7 @@ from src.core.constants import (
     TS_FOLDER_NAME,
     VERSION,
 )
-from tagstudio.logger import get_logger
+from logger import get_logger
 
 TYPE = ["file", "meta", "alt", "mask"]
 
@@ -44,7 +44,7 @@ class ItemType(Enum):
 
 class Entry:
     """A Library Entry Object. Referenced by ID."""
-    logger = get_logger(__name__)
+    logger = get_logger(__qualname__)
 
     def __init__(
         self, id: int, filename: str | Path, path: str | Path, fields: list[dict]
@@ -170,7 +170,7 @@ class Entry:
 
 class Tag:
     """A Library Tag Object. Referenced by ID."""
-    logger = get_logger(__name__)
+    logger = get_logger(__qualname__)
 
     def __init__(
         self,
@@ -256,7 +256,7 @@ class Collation:
     Entries and their Page #s are grouped together in the e_ids_and_paged tuple.
     Sort order is `(filename | title | date, asc | desc)`.
     """
-    logger = get_logger(__name__)
+    logger = get_logger(__qualname__)
 
     def __init__(
         self,
@@ -305,7 +305,7 @@ class Collation:
 
 class Library:
     """Class for the Library object, and all CRUD operations made upon it."""
-    logger = get_logger(__name__)
+    logger = get_logger(__qualname__)
 
     def __init__(self) -> None:
         # Library Info =========================================================
