@@ -1,12 +1,14 @@
 # Parse arguments.
 import argparse
 
+
 class TagStudioArgs(argparse.Namespace):
     open: str
     config_file: str
     debug: bool
     ui: str
     ci: bool
+
 
 parser = argparse.ArgumentParser()
 parser.add_argument(

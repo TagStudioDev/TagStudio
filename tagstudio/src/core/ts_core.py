@@ -5,9 +5,7 @@
 """The core classes and methods of TagStudio."""
 
 import json
-import os
 from pathlib import Path
-from enum import Enum
 
 from src.core.library import Entry, Library
 from src.core.constants import TS_FOLDER_NAME, TEXT_FIELDS
@@ -19,6 +17,7 @@ class TagStudioCore:
     Instantiate this to establish a TagStudio session.
     Holds all TagStudio session data and provides methods to manage it.
     """
+
     logger = get_logger(__qualname__)
 
     def __init__(self):
@@ -75,7 +74,7 @@ class TagStudioCore:
                     # 		f'[INFO]: TagStudio does not currently support sidecar files for "{source}"')
 
         # except FileNotFoundError:
-        except Exception as e:
+        except Exception:
             # print(
             # 	f'[INFO]: No sidecar file found at "{os.path.normpath(file_path + ".json")}"')
             pass
@@ -164,7 +163,7 @@ class TagStudioCore:
                                             self.lib.update_entry_field(
                                                 entry_id, -1, content, "replace"
                                             )
-        except Exception as e:
+        except Exception:
             print("Error in match_conditions...")
             # input()
             pass
@@ -190,7 +189,7 @@ class TagStudioCore:
             # source, author = os.path.split(entry.path)
             url = f"www.twitter.com/{stubs[0]}/status/{stubs[-3]}/photo/{stubs[-2]}"
             return url
-        except Exception as e:
+        except Exception:
             return ""
 
     def _build_instagram_url(self, entry_id: int):
@@ -209,5 +208,5 @@ class TagStudioCore:
             # seems to more or less be the case... for now...
             url = f"www.instagram.com/p/{stubs[-3][-11:]}"
             return url
-        except Exception as e:
+        except Exception:
             return ""

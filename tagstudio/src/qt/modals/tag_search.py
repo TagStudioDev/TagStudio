@@ -3,7 +3,6 @@
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
 
-
 import math
 
 from PySide6.QtCore import Signal, Qt, QSize
@@ -22,8 +21,6 @@ from src.core.palette import ColorType, get_tag_color
 from src.qt.widgets.panel import PanelWidget
 from src.qt.widgets.tag import TagWidget
 from logger import get_logger
-
-
 
 
 class TagSearchPanel(PanelWidget):

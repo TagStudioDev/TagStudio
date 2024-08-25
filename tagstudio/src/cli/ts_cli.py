@@ -77,6 +77,7 @@ def clear():
 
 class CliDriver:
     """A basic CLI driver for TagStudio."""
+
     logger = get_logger(__qualname__)
 
     def __init__(self, core, args):
@@ -595,7 +596,7 @@ class CliDriver:
                             "%Y-%m-%d %H:%M:%S",
                         )
                         print(date.strftime("%D - %r"))
-                    except Exception as e:
+                    except Exception:
                         print(self.lib.get_field_attr(field, "content"))
                 else:
                     print(self.lib.get_field_attr(field, "content"))
@@ -683,7 +684,7 @@ class CliDriver:
                         final_frame.save(external_preview_path)
                 except SystemExit:
                     sys.exit()
-                except Exception as e:
+                except Exception:
                     print(f'{ERROR} Could not load video thumbnail for "{filepath}"')
                     if self.args.external_preview and entry:
                         self.set_external_preview_broken()
@@ -740,7 +741,7 @@ class CliDriver:
 
                 if file_type in VIDEO_TYPES:
                     os.remove(self.lib.library_dir / TS_FOLDER_NAME / "temp.jpg")
-            except Exception as e:
+            except Exception:
                 if not self.args.external_preview or not entry:
                     print(
                         f"{ERROR} Could not display preview. Is there enough screen space?"
@@ -1592,7 +1593,7 @@ class CliDriver:
                     # Fix ==============================================================
                     elif (com[0].lower() == "fix") and len(com) > 1:
                         if com[1].lower() == "missing":
-                            subtitle = f"Fix Missing Files"
+                            subtitle = "Fix Missing Files"
                             choices: list[(str, str)] = [
                                 (
                                     "Search with Manual & Automated Repair",
@@ -1714,11 +1715,11 @@ class CliDriver:
                             if len(com) > 2:
                                 # Fix Duplicate Entries ----------------------------------------------------
                                 if com[2].lower() == "entries" or com[2].lower() == "e":
-                                    subtitle = f"Fix Duplicate Entries"
+                                    subtitle = "Fix Duplicate Entries"
                                     choices: list[(str, str)] = [
                                         (
                                             "Merge",
-                                            f"Each Entry pointing to the same file will have their data merged into a single remaining Entry.",
+                                            "Each Entry pointing to the same file will have their data merged into a single remaining Entry.",
                                         )
                                     ]
                                     prompt: str = "Choose how you want to address groups of Entries which point to the same file."
@@ -1753,11 +1754,11 @@ class CliDriver:
                                             self.is_dupe_entry_count_init = False
                                 # Fix Duplicate Entries ----------------------------------------------------
                                 elif com[2].lower() == "files" or com[2].lower() == "f":
-                                    subtitle = f"Fix Duplicate Files"
+                                    subtitle = "Fix Duplicate Files"
                                     choices: list[(str, str)] = [
                                         (
                                             "Mirror",
-                                            f"""For every predetermined duplicate file, mirror those files\' Entries with each other.\nMirroring involves merging all Entry field data together and then duplicating it across each Entry.\nThis process does not delete any Entries or files.""",
+                                            """For every predetermined duplicate file, mirror those files\' Entries with each other.\nMirroring involves merging all Entry field data together and then duplicating it across each Entry.\nThis process does not delete any Entries or files.""",
                                         )
                                     ]
                                     prompt: str = """Choose how you want to address handling data for files considered to be duplicates by an application such as DupeGuru. It\'s recommended that you mirror data here, then manually delete the duplicate files based on your own best judgement. Afterwards run \"fix missing\" and choose the \"Remove Entries\" option."""
@@ -2514,7 +2515,7 @@ class CliDriver:
         """
 
         title = f"{self.base_title} - Library '{self.lib.library_dir}'"
-        subtitle = f"Resolve Missing File Conflict"
+        subtitle = "Resolve Missing File Conflict"
 
         while True:
             entry = self.lib.get_entry_from_index(index)
@@ -2614,7 +2615,7 @@ class CliDriver:
         """Screen for manually resolving duplicate files."""
 
         title = f"{self.base_title} - Library '{self.lib.library_dir}'"
-        subtitle = f"Resolve Duplicate Files"
+        subtitle = "Resolve Duplicate Files"
 
         while True:
             dupe = self.lib.dupe_files[index]
@@ -2639,9 +2640,9 @@ class CliDriver:
                 print("")
                 print(self.format_h1(dupe[0], BRIGHT_RED_FG), end="\n\n")
                 print(f"{WHITE_BG}{BLACK_FG} File Size: {RESET} ", end="")
-                print(f"0 KB")
+                print("0 KB")
                 print(f"{WHITE_BG}{BLACK_FG} Resolution: {RESET} ", end="")
-                print(f"0x0")
+                print("0x0")
                 if entry_1_index is not None:
                     print("")
                     self.print_fields(entry_1_index)
@@ -2652,9 +2653,9 @@ class CliDriver:
                 print("")
                 print(self.format_h1(dupe[1], BRIGHT_RED_FG), end="\n\n")
                 print(f"{WHITE_BG}{BLACK_FG} File Size: {RESET} ", end="")
-                print(f"0 KB")
+                print("0 KB")
                 print(f"{WHITE_BG}{BLACK_FG} Resolution: {RESET} ", end="")
-                print(f"0x0")
+                print("0x0")
                 if entry_2_index is not None:
                     print("")
                     self.print_fields(entry_2_index)
@@ -2886,7 +2887,7 @@ class CliDriver:
                         # except SystemExit:
                         # 	self.cleanup_before_exit()
                         # 	sys.exit()
-                        except Exception as e:
+                        except Exception:
                             clear()
                             print(f"{ERROR} Invalid Tag Selection '{com[1:]}'")
                             clear_scr = False
@@ -2908,7 +2909,7 @@ class CliDriver:
         """Screen for selecting and returning one or more Tags. Used for Entry editing."""
 
         title = f"{self.base_title} - Library '{self.lib.library_dir}'"
-        subtitle = f"Select Tag(s) to Add"
+        subtitle = "Select Tag(s) to Add"
 
         if clear_scr:
             clear()
@@ -2940,7 +2941,7 @@ class CliDriver:
         except SystemExit:
             self.cleanup_before_exit()
             sys.exit()
-        except Exception as e:
+        except Exception:
             print(f"{ERROR} Invalid Tag Selection")
 
         return selected_ids
@@ -2965,7 +2966,7 @@ class CliDriver:
         title = (
             f"TagStudio {VERSION}{branch} - CLI Mode - Library '{self.lib.library_dir}'"
         )
-        subtitle = f"Select Field(s) to Add"
+        subtitle = "Select Field(s) to Add"
         plural = "(s)"
 
         if not allow_multiple:
@@ -3020,7 +3021,7 @@ class CliDriver:
         except SystemExit:
             self.cleanup_before_exit()
             sys.exit()
-        except Exception as e:
+        except Exception:
             print(f"{ERROR} Invalid Tag Selection")
 
         if not allow_multiple and selected_ids:
@@ -3108,7 +3109,7 @@ class CliDriver:
                     if query:
                         h1 += f" connected to '{query}'"
             else:
-                h1 = f"No Tags"
+                h1 = "No Tags"
                 if query:
                     h1 += f" connected to '{query}'"
 
@@ -3261,7 +3262,7 @@ class CliDriver:
         title = f"{self.base_title} - Library '{self.lib.library_dir}'"
 
         while True:
-            h1 = f"Top Tags"
+            h1 = "Top Tags"
 
             # if tag_ids:
             # 	if len(tag_ids) < len(self.lib.filter_tags('')):
@@ -3455,7 +3456,7 @@ class CliDriver:
                             new_aliases: list[str] = self.scr_edit_text(
                                 text="\n".join(tag.aliases),
                                 field_name="Aliases",
-                                note=f"# Tag Aliases Below Are Separated By Newlines",
+                                note="# Tag Aliases Below Are Separated By Newlines",
                                 allow_newlines=True,
                             ).split("\n")
                             new_tag: Tag = Tag(
@@ -3665,7 +3666,7 @@ class CliDriver:
         """
 
         title = f"{self.base_title} - Library '{self.lib.library_dir}'"
-        subtitle = f"Select Color"
+        subtitle = "Select Color"
 
         fg_text_color = BLACK_FG
         fg_color = BRIGHT_CYAN_FG
@@ -3695,7 +3696,7 @@ class CliDriver:
         # 		break
         # print('')
 
-        print(self.format_subtitle(f"Enter #    Cancel", fg_color))
+        print(self.format_subtitle("Enter #    Cancel", fg_color))
         print("> ", end="")
 
         selected: str = input()
@@ -3706,7 +3707,7 @@ class CliDriver:
         # except SystemExit:
         # 	self.cleanup_before_exit()
         # 	sys.exit()
-        except Exception as e:
+        except Exception:
             print(f"{ERROR} Invalid Tag Selection")
 
         return fallback
@@ -3788,7 +3789,7 @@ class CliDriver:
                         # except SystemExit:
                         # 	self.cleanup_before_exit()
                         # 	sys.exit()
-                        except Exception as e:
+                        except Exception:
                             clear()
                             print(f"{ERROR} Invalid Tag Selection '{com[1:]}'")
                             # return self.scr_edit_generic_tag_box(tag_ids, tag_box_name, clear_scr=False)

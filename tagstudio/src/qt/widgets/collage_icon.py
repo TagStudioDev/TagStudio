@@ -12,23 +12,12 @@ from PIL import Image, ImageChops, UnidentifiedImageError
 from PIL.Image import DecompressionBombError
 from PySide6.QtCore import (
     QObject,
-    QThread,
     Signal,
-    QRunnable,
-    Qt,
-    QThreadPool,
-    QSize,
-    QEvent,
-    QTimer,
-    QSettings,
 )
 
 from src.core.library import Library
 from src.core.constants import DOC_TYPES, VIDEO_TYPES, IMAGE_TYPES
 from logger import get_logger
-
-
-
 
 
 class CollageIconRenderer(QObject):
@@ -134,9 +123,7 @@ class CollageIconRenderer(QObject):
                         # collage.paste(pic, (y*thumb_size, x*thumb_size))
                         self.rendered.emit(pic)
         except (UnidentifiedImageError, FileNotFoundError):
-            self.logger.error(
-                f"Couldn't read {entry.path}{os.sep}{entry.filename}"
-            )
+            self.logger.error(f"Couldn't read {entry.path}{os.sep}{entry.filename}")
             with Image.open(
                 str(
                     Path(__file__).parents[2]
@@ -153,7 +140,7 @@ class CollageIconRenderer(QObject):
             # self.quit(save=False, backup=True)
             run = False
             # clear()
-            self.logger.info(f"Collage operation cancelled.")
+            self.logger.info("Collage operation cancelled.")
             clear_scr = False
         except Exception as e:
             self.logger.error(f"{entry.path}{os.sep}{entry.filename}")

@@ -3,7 +3,9 @@ from args import TagStudioArgs, parser
 
 args = parser.parse_args(namespace=TagStudioArgs)
 
-formatter = logging.Formatter("[%(name)s]: [%(levelname)s] => %(message)s") # TODO: maybe include timestamps?
+formatter = logging.Formatter(
+    "[%(name)s]: [%(levelname)s] => %(message)s"
+)  # TODO: maybe include timestamps?
 
 tag_studio_log = logging.getLogger(__name__)
 
@@ -25,15 +27,16 @@ else:
     stream_handler.setLevel(logging.INFO)
     tag_studio_log.setLevel(logging.INFO)
 
+
 def get_logger(name: str):
     """
     Convenience function to get a logger with the given name, as a child of the tag_studio_log logger.
-    
+
     Parameters
     -----------
     :param:`name`: :class:`str`
         the name for the logger
-    
+
     Returns
     -------
     :class:`_type_`

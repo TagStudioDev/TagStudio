@@ -11,10 +11,9 @@ import ujson
 from logger import get_logger
 
 
-
-
 class ResourceManager:
     """A resource manager for retrieving resources."""
+
     logger = get_logger(__qualname__)
 
     _map: dict = {}

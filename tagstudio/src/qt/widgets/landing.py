@@ -3,7 +3,6 @@
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
 
-
 import sys
 import typing
 from pathlib import Path
@@ -18,8 +17,6 @@ from logger import get_logger
 # Only import for type checking/autocompletion, will not be imported at runtime.
 if typing.TYPE_CHECKING:
     from src.qt.ts_qt import QtDriver
-
-
 
 
 class LandingWidget(QWidget):

@@ -2,8 +2,6 @@
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
 
-
-from pathlib import Path
 import typing
 
 from PySide6.QtCore import (

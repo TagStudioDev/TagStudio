@@ -41,9 +41,9 @@ class ItemType(Enum):
     TAG_GROUP = 2
 
 
-
 class Entry:
     """A Library Entry Object. Referenced by ID."""
+
     logger = get_logger(__qualname__)
 
     def __init__(
@@ -170,6 +170,7 @@ class Entry:
 
 class Tag:
     """A Library Tag Object. Referenced by ID."""
+
     logger = get_logger(__qualname__)
 
     def __init__(
@@ -256,6 +257,7 @@ class Collation:
     Entries and their Page #s are grouped together in the e_ids_and_paged tuple.
     Sort order is `(filename | title | date, asc | desc)`.
     """
+
     logger = get_logger(__qualname__)
 
     def __init__(
@@ -305,6 +307,7 @@ class Collation:
 
 class Library:
     """Class for the Library object, and all CRUD operations made upon it."""
+
     logger = get_logger(__qualname__)
 
     def __init__(self) -> None:
@@ -811,9 +814,7 @@ class Library:
             )
             # , indent=4 <-- How to prettyprint dump
         end_time = time.time()
-        self.logger.info(
-            f"Saved to disk in {(end_time - start_time):.3f} seconds"
-        )
+        self.logger.info(f"Saved to disk in {(end_time - start_time):.3f} seconds")
 
     def save_library_backup_to_disk(self) -> str:
         """
@@ -1029,7 +1030,9 @@ class Library:
                 id_to_entry_map[id] = self.get_entry(id)
             self.mirror_entry_fields([dupe[0]] + dupe[1])
 
-        self.logger.info("Consolidating Entries... (This may take a while for larger libraries)")
+        self.logger.info(
+            "Consolidating Entries... (This may take a while for larger libraries)"
+        )
         for i, dupe in enumerate(self.dupe_entries):
             for id in dupe[1]:
                 # NOTE: Instead of using self.remove_entry(id), I'm bypassing it

@@ -4,7 +4,6 @@
 
 
 import math
-import os
 from types import FunctionType
 from pathlib import Path
 
@@ -17,9 +16,9 @@ from src.core.library import Library, Tag
 from src.core.palette import ColorType, get_tag_color
 
 
-ERROR = f"[ERROR]"
-WARNING = f"[WARNING]"
-INFO = f"[INFO]"
+ERROR = "[ERROR]"
+WARNING = "[WARNING]"
+INFO = "[INFO]"
 
 
 class TagWidget(QWidget):

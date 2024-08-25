@@ -3,7 +3,6 @@
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
 
-
 import math
 import typing
 
@@ -29,11 +28,10 @@ if typing.TYPE_CHECKING:
     from src.qt.ts_qt import QtDriver
 
 
-
-
-
 def folders_to_tags(library: Library):
-    get_logger("FoldersToTags").info("Converting folders to Tags") # TODO: move function 'FoldersToTagsModal'
+    get_logger("FoldersToTags").info(
+        "Converting folders to Tags"
+    )  # TODO: move function 'FoldersToTagsModal'
     tree: dict = dict(dirs={})
 
     def add_tag_to_tree(items: list[Tag]):
@@ -156,6 +154,7 @@ def generate_preview_data(library: Library):
 
 class FoldersToTagsModal(QWidget):
     logger = get_logger(__qualname__)
+
     # done = Signal(int)
     def __init__(self, library: "Library", driver: "QtDriver"):
         super().__init__()
@@ -164,7 +163,7 @@ class FoldersToTagsModal(QWidget):
         self.count = -1
         self.filename = ""
 
-        self.setWindowTitle(f"Create Tags From Folders")
+        self.setWindowTitle("Create Tags From Folders")
         self.setWindowModality(Qt.WindowModality.ApplicationModal)
         self.setMinimumSize(640, 640)
         self.root_layout = QVBoxLayout(self)
@@ -253,6 +252,7 @@ class FoldersToTagsModal(QWidget):
 
 class TreeItem(QWidget):
     logger = get_logger(__qualname__)
+
     def __init__(self, data: dict, parentTag: Tag):
         super().__init__()
 
@@ -311,6 +311,7 @@ class ModifiedTagWidget(
     QWidget
 ):  # Needed to be modified because the original searched the display name in the library where it wasn't added yet
     logger = get_logger(__qualname__)
+
     def __init__(self, tag: Tag, parentTag: Tag) -> None:
         super().__init__()
         self.tag = tag

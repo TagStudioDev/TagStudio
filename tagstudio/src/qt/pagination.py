@@ -10,7 +10,6 @@ from PySide6.QtGui import QIntValidator
 from PySide6.QtWidgets import (
     QWidget,
     QHBoxLayout,
-    QPushButton,
     QLabel,
     QLineEdit,
     QSizePolicy,

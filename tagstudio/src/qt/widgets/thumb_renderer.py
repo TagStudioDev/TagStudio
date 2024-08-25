@@ -3,7 +3,6 @@
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
 
-
 import math
 from pathlib import Path
 
@@ -33,7 +32,6 @@ from src.core.utils.encoding import detect_char_encoding
 from logger import get_logger
 
 ImageFile.LOAD_TRUNCATED_IMAGES = True
-
 
 
 register_heif_opener()

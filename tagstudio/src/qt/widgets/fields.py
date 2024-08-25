@@ -4,15 +4,14 @@
 
 
 import math
-import os
 from types import FunctionType, MethodType
 from pathlib import Path
-from typing import Optional, cast, Callable, Any
+from typing import Optional, cast, Callable
 
 from PIL import Image, ImageQt
 from PySide6.QtCore import Qt, QEvent
 from PySide6.QtGui import QPixmap, QEnterEvent
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton
+from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel
 from src.qt.helpers.qbutton_wrapper import QPushButtonWrapper
 
 

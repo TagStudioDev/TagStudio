@@ -50,9 +50,9 @@ if typing.TYPE_CHECKING:
     from src.qt.ts_qt import QtDriver
 
 
-
 class PreviewPanel(QWidget):
     """The Preview Panel Widget."""
+
     logger = get_logger(__qualname__)
 
     tags_updated = Signal()
@@ -962,7 +962,7 @@ class PreviewPanel(QWidget):
                     title = f"{self.lib.get_field_attr(field, 'name')} (Date)"
                     inner_container = TextWidget(title, date.strftime("%D - %r"))
                     container.set_inner_widget(inner_container)
-                except Exception as e:
+                except Exception:
                     container.set_title(self.lib.get_field_attr(field, "name"))
                     # container.set_editable(False)
                     container.set_inline(False)

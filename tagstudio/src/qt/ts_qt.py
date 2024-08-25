@@ -87,7 +87,6 @@ from src.qt.modals.fix_dupes import FixDupeFilesModal
 from src.qt.modals.folders_to_tags import FoldersToTagsModal
 
 # this import has side-effect of import PySide resources
-import src.qt.resources_rc
 from logger import get_logger  # pylint: disable=unused-import
 
 # SIGQUIT is not defined on Windows
@@ -101,6 +100,7 @@ else:
 
 class NavigationState:
     """Represents a state of the Library grid view."""
+
     logger = get_logger(__qualname__)
 
     def __init__(
@@ -154,6 +154,7 @@ class Consumer(QThread):
 
 class QtDriver(QObject):
     """A Qt GUI frontend driver for TagStudio."""
+
     logger = get_logger(__qualname__)
     SIGTERM = Signal()
     preview_panel: PreviewPanel
@@ -188,9 +189,7 @@ class QtDriver(QObject):
         if self.args.config_file:
             path = Path(self.args.config_file)
             if not path.exists():
-                self.logger.warning(
-                    f"Config File does not exist creating {str(path)}"
-                )
+                self.logger.warning(f"Config File does not exist creating {str(path)}")
             self.logger.info(f"Using Config File {str(path)}")
             self.settings = QSettings(str(path), QSettings.Format.IniFormat)
         else:
@@ -525,9 +524,7 @@ class QtDriver(QObject):
 
             # TODO: Remove this check if the library is no longer saved with files
             if lib and not (Path(lib) / TS_FOLDER_NAME).exists():
-                self.logger.error(
-                    f"{TS_FOLDER_NAME} folder in {lib} does not exist."
-                )
+                self.logger.error(f"{TS_FOLDER_NAME} folder in {lib} does not exist.")
                 self.settings.setValue(SettingItems.LAST_LIBRARY, "")
                 lib = None
 
@@ -642,9 +639,9 @@ class QtDriver(QObject):
         QApplication.quit()
 
     def save_library(self, show_status=True):
-        self.logger.info(f"Saving Library...")
+        self.logger.info("Saving Library...")
         if show_status:
-            self.main_window.statusbar.showMessage(f"Saving Library...")
+            self.main_window.statusbar.showMessage("Saving Library...")
             start_time = time.time()
         # This might still be able to error, if the selected directory deletes in a race condition
         # or something silly like that. Hence the loop, but if this is considered overkill, thats fair.
@@ -673,8 +670,8 @@ class QtDriver(QObject):
 
     def close_library(self):
         if self.lib.library_dir:
-            self.logger.info(f"Closing Library...")
-            self.main_window.statusbar.showMessage(f"Closing & Saving Library...")
+            self.logger.info("Closing Library...")
+            self.main_window.statusbar.showMessage("Closing & Saving Library...")
             start_time = time.time()
             self.save_library(show_status=False)
             self.settings.setValue(SettingItems.LAST_LIBRARY, self.lib.library_dir)
@@ -698,8 +695,8 @@ class QtDriver(QObject):
             )
 
     def backup_library(self):
-        self.logger.info(f"Backing Up Library...")
-        self.main_window.statusbar.showMessage(f"Saving Library...")
+        self.logger.info("Backing Up Library...")
+        self.main_window.statusbar.showMessage("Saving Library...")
         start_time = time.time()
         fn = self.lib.save_library_backup_to_disk()
         end_time = time.time()
@@ -1473,7 +1470,7 @@ class QtDriver(QObject):
         data_only_mode: bool = False
         data_tint_mode: bool = False
 
-        self.main_window.statusbar.showMessage(f"Creating Library Collage...")
+        self.main_window.statusbar.showMessage("Creating Library Collage...")
         self.collage_start_time = time.time()
 
         # mode:int = self.scr_choose_option(subtitle='Choose Collage Mode(s)',
