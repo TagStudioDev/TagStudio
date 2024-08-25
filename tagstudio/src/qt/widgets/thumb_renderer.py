@@ -65,7 +65,8 @@ class ThumbRenderer(QObject):
         super().__init__()
 
         # Cached thumbnail elements.
-        # Key: Size + Pixel Ratio Tuple (Ex. (512, 512, 1.25))
+        # Key: Size + Pixel Ratio Tuple + Radius Scale
+        #      (Ex. (512, 512, 1.25, 4))
         self.thumb_masks: dict = {}
         self.raised_edges: dict = {}
 
@@ -97,23 +98,36 @@ class ThumbRenderer(QObject):
 
         return "file_generic"
 
-    def _get_mask(self, size: tuple[int, int], pixel_ratio: float) -> Image.Image:
+    def _get_mask(
+        self, size: tuple[int, int], pixel_ratio: float, scale_radius: bool = False
+    ) -> Image.Image:
+        """Return a thumbnail mask given a size, pixel ratio, and radius scaling option.
+        If one is not already cached, a new one will be rendered.
+
+        Args:
+             size (tuple[int, int]): The size of the graphic.
+             pixel_ratio (float): The screen pixel ratio.
+             scale_radius (bool): Option to scale the radius up (Used for Preview Panel).
         """
-        Returns a thumbnail mask given a size and pixel ratio.
-        If one is not already cached, then a new one will be rendered.
-        """
-        item: Image.Image = self.thumb_masks.get((*size, pixel_ratio))
+        radius_scale: float = 1
+        if scale_radius:
+            radius_scale = max(size[0], size[1]) / 512
+
+        item: Image.Image = self.thumb_masks.get((*size, pixel_ratio, radius_scale))
         if not item:
-            item = self._render_mask(size, pixel_ratio)
-            self.thumb_masks[(*size, pixel_ratio)] = item
+            item = self._render_mask(size, pixel_ratio, radius_scale)
+            self.thumb_masks[(*size, pixel_ratio, radius_scale)] = item
         return item
 
     def _get_edge(
         self, size: tuple[int, int], pixel_ratio: float
     ) -> tuple[Image.Image, Image.Image]:
-        """
-        Returns a thumbnail raised edge graphic given a size and pixel ratio.
-        If one is not already cached, then a new one will be rendered.
+        """Return a thumbnail edge given a size, pixel ratio, and radius scaling option.
+        If one is not already cached, a new one will be rendered.
+
+        Args:
+            size (tuple[int, int]): The size of the graphic.
+            pixel_ratio (float): The screen pixel ratio.
         """
         item: tuple[Image.Image, Image.Image] = self.raised_edges.get(
             (*size, pixel_ratio)
@@ -126,7 +140,7 @@ class ThumbRenderer(QObject):
     def _get_icon(
         self, name: str, color: str, size: tuple[int, int], pixel_ratio: float = 1.0
     ) -> Image.Image:
-        """Retrieves a new or cached icon.
+        """Return an icon given a size, pixel ratio, and radius scaling option.
 
         Args:
             name (str): The name of the icon resource. "thumb_loading" will not draw a border.
@@ -149,8 +163,16 @@ class ThumbRenderer(QObject):
             self.icons[(name, *color, size, pixel_ratio)] = item
         return item
 
-    def _render_mask(self, size: tuple[int, int], pixel_ratio) -> Image.Image:
-        """Renders a thumbnail mask."""
+    def _render_mask(
+        self, size: tuple[int, int], pixel_ratio: float, radius_scale: float = 1
+    ) -> Image.Image:
+        """Render a thumbnail mask graphic.
+
+        Args:
+            size (tuple[int,int]): The size of the graphic.
+            pixel_ratio (float): The screen pixel ratio.
+            radius scale (float): The scale factor of the border radius (Used by Preview Panel).
+        """
         SMOOTH_FACTOR: int = 2
         RADIUS_FACTOR: int = 8
 
@@ -162,7 +184,9 @@ class ThumbRenderer(QObject):
         draw = ImageDraw.Draw(im)
         draw.rounded_rectangle(
             (0, 0) + tuple([d - 1 for d in im.size]),
-            radius=math.ceil(RADIUS_FACTOR * SMOOTH_FACTOR * pixel_ratio),
+            radius=math.ceil(
+                RADIUS_FACTOR * SMOOTH_FACTOR * pixel_ratio * radius_scale
+            ),
             fill="white",
         )
         im = im.resize(
@@ -172,9 +196,14 @@ class ThumbRenderer(QObject):
         return im
 
     def _render_edge(
-        self, size: tuple[int, int], pixel_ratio
+        self, size: tuple[int, int], pixel_ratio: float
     ) -> tuple[Image.Image, Image.Image]:
-        """Renders a thumbnail highlight border."""
+        """Render a thumbnail edge graphic.
+        Args:
+            size (tuple[int,int]): The size of the graphic.
+            pixel_ratio (float): The screen pixel ratio.
+        """
+
         SMOOTH_FACTOR: int = 2
         RADIUS_FACTOR: int = 8
         WIDTH: int = math.floor(pixel_ratio * 2)
@@ -229,6 +258,15 @@ class ThumbRenderer(QObject):
         pixel_ratio: float,
         draw_border: bool = True,
     ) -> Image.Image:
+        """Render a thumbnail icon.
+
+        Args:
+            name (str): The name of the icon resource.
+            color (str): The color to use for the icon.
+            size (tuple[int,int]): The size of the icon.
+            pixel_ratio (float): The screen pixel ratio.
+            draw_border (bool): Option to draw a border.
+        """
         BORDER_FACTOR: int = 5
         SMOOTH_FACTOR: int = math.ceil(2 * pixel_ratio)
         RADIUS_FACTOR: int = 8
@@ -318,7 +356,12 @@ class ThumbRenderer(QObject):
 
     def _apply_overlay_color(self, image: Image.Image, color: str) -> Image.Image:
         """Apply a color overlay effect to an image based on its color channel data.
-        Red channel for foreground, green channel for outline, none for background."""
+        Red channel for foreground, green channel for outline, none for background.
+
+        Args:
+            image (Image.Image): The image to apply an overlay to.
+            color (str): The name of the ColorType color to use.
+        """
         bg_color: str = (
             get_ui_color(ColorType.DARK_ACCENT, color)
             if QGuiApplication.styleHints().colorScheme() is Qt.ColorScheme.Dark
@@ -361,8 +404,10 @@ class ThumbRenderer(QObject):
 
         Args:
             image (Image.Image): The image to apply the edge to.
-            edge (Image.Image): The edge image to apply.
+            edge (tuple[Image.Image, Image.Image]): The edge images to apply.
+                Item 0 is the inner highlight, and item 1 is the outer shadow.
             faded (bool): Whether or not to apply a faded version of the edge.
+                Used for light themes.
         """
         opacity: float = 0.75 if not faded else 0.6
         shade_reduction: float = (
@@ -390,7 +435,12 @@ class ThumbRenderer(QObject):
         return im
 
     def _audio_album_thumb(self, filepath: Path, ext: str) -> Image.Image | None:
-        """Gets an album cover from an audio file if one is present."""
+        """Return an album cover thumb from an audio file if a cover is present.
+
+        Args:
+            filepath (Path): The path of the file.
+            ext (str): The file extension (with leading ".").
+        """
         image: Image.Image = None
         try:
             if not filepath.is_file():
@@ -428,7 +478,14 @@ class ThumbRenderer(QObject):
     def _audio_waveform_thumb(
         self, filepath: Path, ext: str, size: int, pixel_ratio: float
     ) -> Image.Image | None:
-        """Render a waveform image from an audio file."""
+        """Render a waveform image from an audio file.
+
+        Args:
+            filepath (Path): The path of the file.
+            ext (str): The file extension (with leading ".").
+            size (tuple[int,int]): The size of the thumbnail.
+            pixel_ratio (float): The screen pixel ratio.
+        """
         # BASE_SCALE used for drawing on a larger image and resampling down
         # to provide an antialiased effect.
         BASE_SCALE: int = 2
@@ -510,6 +567,12 @@ class ThumbRenderer(QObject):
         return im
 
     def _blender(self, filepath: Path) -> Image.Image:
+        """
+        Get an emended thumbnail from a Blender file, if a thumbnail is present.
+
+        Args:
+            filepath (Path): The path of the file.
+        """
         bg_color: str = (
             "#1e1e1e"
             if QGuiApplication.styleHints().colorScheme() is Qt.ColorScheme.Dark
@@ -541,7 +604,12 @@ class ThumbRenderer(QObject):
         return im
 
     def _font_short_thumb(self, filepath: Path, size: int) -> Image.Image:
-        """Render a small font preview ("Aa") thumbnail from a font file."""
+        """Render a small font preview ("Aa") thumbnail from a font file.
+
+        Args:
+            filepath (Path): The path of the file.
+            size (tuple[int,int]): The size of the thumbnail.
+        """
         im: Image.Image = None
         try:
             bg = Image.new("RGB", (size, size), color="#000000")
@@ -598,7 +666,12 @@ class ThumbRenderer(QObject):
         return im
 
     def _font_long_thumb(self, filepath: Path, size: int) -> Image.Image:
-        """Render a large font preview ("Alphabet") thumbnail from a font file."""
+        """Render a large font preview ("Alphabet") thumbnail from a font file.
+
+        Args:
+            filepath (Path): The path of the file.
+            size (tuple[int,int]): The size of the thumbnail.
+        """
         # Scale the sample font sizes to the preview image
         # resolution,assuming the sizes are tuned for 256px.
         im: Image.Image = None
@@ -628,6 +701,11 @@ class ThumbRenderer(QObject):
         return im
 
     def _image_raw_thumb(self, filepath: Path) -> Image.Image:
+        """Render a thumbnail for a RAW image type.
+
+        Args:
+            filepath (Path): The path of the file.
+        """
         im: Image.Image = None
         try:
             with rawpy.imread(str(filepath)) as raw:
@@ -652,6 +730,11 @@ class ThumbRenderer(QObject):
         return im
 
     def _image_thumb(self, filepath: Path) -> Image.Image:
+        """Render a thumbnail for a standard image type.
+
+        Args:
+            filepath (Path): The path of the file.
+        """
         im: Image.Image = None
         try:
             im = Image.open(filepath)
@@ -673,11 +756,23 @@ class ThumbRenderer(QObject):
         return im
 
     def _image_vector_thumb(self, filepath: Path, size: int) -> Image.Image:
+        """Render a thumbnail for a vector image, such as SVG.
+
+        Args:
+            filepath (Path): The path of the file.
+            size (tuple[int,int]): The size of the thumbnail.
+        """
         # TODO: Implement.
         im: Image.Image = None
         return im
 
     def _model_stl_thumb(self, filepath: Path, size: int) -> Image.Image:
+        """Render a thumbnail for an STL file.
+
+        Args:
+            filepath (Path): The path of the file.
+            size (tuple[int,int]): The size of the icon.
+        """
         # TODO: Implement.
         # The following commented code describes a method for rendering via
         # matplotlib.
@@ -703,7 +798,12 @@ class ThumbRenderer(QObject):
 
         return im
 
-    def _text_thumb(self, filepath: Path, size: int) -> Image.Image:
+    def _text_thumb(self, filepath: Path) -> Image.Image:
+        """Render a thumbnail for a plaintext file.
+
+        Args:
+            filepath (Path): The path of the file.
+        """
         im: Image.Image = None
 
         bg_color: str = (
@@ -738,6 +838,11 @@ class ThumbRenderer(QObject):
         return im
 
     def _video_thumb(self, filepath: Path) -> Image.Image:
+        """Render a thumbnail for a video file.
+
+        Args:
+            filepath (Path): The path of the file.
+        """
         im: Image.Image = None
         try:
             if is_readable_video(filepath):
@@ -775,10 +880,22 @@ class ThumbRenderer(QObject):
         base_size: tuple[int, int],
         pixel_ratio: float,
         is_loading=False,
-        is_thumb=False,
+        is_grid_thumb=False,
         update_on_ratio_change=False,
     ):
-        """Internal renderer. Renders an entry/element thumbnail for the GUI."""
+        """Render a thumbnail or preview image.
+
+        Args:
+            timestamp (float): The timestamp for which this this job was dispatched.
+            filepath (str | Path): The path of the file to render a thumbnail for.
+            base_size (tuple[int,int]): The unmodified base size of the thumbnail.
+            pixel_ratio (float): The screen pixel ratio.
+            is_loading (bool): Is this a loading graphic?
+            is_grid_thumb (bool): Is this a thumbnail for the thumbnail grid?
+                Or else the Preview Pane?
+            update_on_ratio_change (bool): Should an updated ratio signal be sent?
+
+        """
         adj_size = math.ceil(max(base_size[0], base_size[1]) * pixel_ratio)
         image: Image.Image = None
         pixmap: QPixmap = None
@@ -831,10 +948,10 @@ class ThumbRenderer(QObject):
                     image = self._video_thumb(_filepath)
                 # Plain Text ===================================================
                 elif MediaType.PLAINTEXT in MediaCategories.get_types(ext):
-                    image = self._text_thumb(_filepath, adj_size)
+                    image = self._text_thumb(_filepath)
                 # Fonts ========================================================
                 elif MediaType.FONT in MediaCategories.get_types(ext, True):
-                    if is_thumb:
+                    if is_grid_thumb:
                         # Short (Aa) Preview
                         image = self._font_short_thumb(_filepath, adj_size)
                     else:
@@ -879,7 +996,7 @@ class ThumbRenderer(QObject):
                 )
                 image = image.resize((new_x, new_y), resample=resampling_method)
                 mask: Image.Image = None
-                if is_thumb:
+                if is_grid_thumb:
                     mask = self._get_mask((adj_size, adj_size), pixel_ratio)
                     edge: tuple[Image.Image, Image.Image] = self._get_edge(
                         (adj_size, adj_size), pixel_ratio
@@ -889,7 +1006,7 @@ class ThumbRenderer(QObject):
                         edge,
                     )
                 else:
-                    mask = self._get_mask(image.size, pixel_ratio)
+                    mask = self._get_mask(image.size, pixel_ratio, scale_radius=True)
                     final = Image.new("RGBA", image.size, (0, 0, 0, 0))
                     final.paste(image, mask=mask.getchannel(0))
 
