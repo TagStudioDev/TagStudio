@@ -153,9 +153,9 @@ class FieldContainer(QWidget):
     def set_inner_widget(self, widget: "FieldWidget"):
         # widget.setStyleSheet('background-color:green;')
         # self.inner_container.dumpObjectTree()
-        # logging.info('')
+        # self.logger.info('')
         if self.field_layout.itemAt(0):
-            # logging.info(f'Removing {self.field_layout.itemAt(0)}')
+            # self.logger.info(f'Removing {self.field_layout.itemAt(0)}')
             # self.field_layout.removeItem(self.field_layout.itemAt(0))
             self.field_layout.itemAt(0).widget().deleteLater()
         self.field_layout.addWidget(widget)

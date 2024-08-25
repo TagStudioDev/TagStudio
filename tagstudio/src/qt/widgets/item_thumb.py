@@ -2,7 +2,7 @@
 # Licensed under the GPL-3.0 License.
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 import contextlib
-import logging
+
 import os
 import time
 import typing
@@ -34,22 +34,20 @@ from src.qt.flowlayout import FlowWidget
 from src.qt.helpers.file_opener import FileOpenerHelper
 from src.qt.widgets.thumb_renderer import ThumbRenderer
 from src.qt.widgets.thumb_button import ThumbButton
+from logger import get_logger
 
 if typing.TYPE_CHECKING:
     from src.qt.widgets.preview_panel import PreviewPanel
 
-ERROR = f"[ERROR]"
-WARNING = f"[WARNING]"
-INFO = f"[INFO]"
 
 
-logging.basicConfig(format="%(message)s", level=logging.INFO)
 
 
 class ItemThumb(FlowWidget):
     """
     The thumbnail widget for a library item (Entry, Collation, Tag Group, etc.).
     """
+    logger = get_logger(__qualname__)
 
     update_cutoff: float = time.time()
 
@@ -347,7 +345,7 @@ class ItemThumb(FlowWidget):
             self.count_badge.setHidden(False)
             self.item_type_badge.setHidden(False)
         self.mode = mode
-        # logging.info(f'Set Mode To: {self.mode}')
+        # self.logger.info(f'Set Mode To: {self.mode}')
 
     # def update_(self, thumb: QPixmap, size:QSize, ext:str, badges:list[QPixmap]) -> None:
     # 	"""Updates the ItemThumb's visuals."""
@@ -378,14 +376,14 @@ class ItemThumb(FlowWidget):
 
     def update_thumb(self, timestamp: float, image: QPixmap = None):
         """Updates attributes of a thumbnail element."""
-        # logging.info(f'[GUI] Updating Thumbnail for element {id(element)}: {id(image) if image else None}')
+        # self.logger.info(f'[GUI] Updating Thumbnail for element {id(element)}: {id(image) if image else None}')
         if timestamp > ItemThumb.update_cutoff:
             self.thumb_button.setIcon(image if image else QPixmap())
             # element.repaint()
 
     def update_size(self, timestamp: float, size: QSize):
         """Updates attributes of a thumbnail element."""
-        # logging.info(f'[GUI] Updating size for element {id(element)}:  {size.__str__()}')
+        # self.logger.info(f'[GUI] Updating size for element {id(element)}:  {size.__str__()}')
         if timestamp > ItemThumb.update_cutoff:
             if self.thumb_button.iconSize != size:
                 self.thumb_button.setIconSize(size)
@@ -394,7 +392,7 @@ class ItemThumb(FlowWidget):
 
     def update_clickable(self, clickable: typing.Callable):
         """Updates attributes of a thumbnail element."""
-        # logging.info(f'[GUI] Updating Click Event for element {id(element)}: {id(clickable) if clickable else None}')
+        # self.logger.info(f'[GUI] Updating Click Event for element {id(element)}: {id(clickable) if clickable else None}')
         if self.thumb_button.is_connected:
             self.thumb_button.clicked.disconnect()
         if clickable:
@@ -403,8 +401,8 @@ class ItemThumb(FlowWidget):
 
     def update_badges(self):
         if self.mode == ItemType.ENTRY:
-            # logging.info(f'[UPDATE BADGES] ENTRY: {self.lib.get_entry(self.item_id)}')
-            # logging.info(f'[UPDATE BADGES] ARCH: {self.lib.get_entry(self.item_id).has_tag(self.lib, 0)}, FAV: {self.lib.get_entry(self.item_id).has_tag(self.lib, 1)}')
+            # self.logger.info(f'[UPDATE BADGES] ENTRY: {self.lib.get_entry(self.item_id)}')
+            # self.logger.info(f'[UPDATE BADGES] ARCH: {self.lib.get_entry(self.item_id).has_tag(self.lib, 0)}, FAV: {self.lib.get_entry(self.item_id).has_tag(self.lib, 1)}')
             self.assign_archived(
                 self.lib.get_entry(self.item_id).has_tag(self.lib, TAG_ARCHIVED)
             )

@@ -2,17 +2,20 @@
 # Licensed under the GPL-3.0 License.
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
-import logging
+
 from pathlib import Path
 from typing import Any
 
 import ujson
 
-logging.basicConfig(format="%(message)s", level=logging.INFO)
+from logger import get_logger
+
+
 
 
 class ResourceManager:
     """A resource manager for retrieving resources."""
+    logger = get_logger(__qualname__)
 
     _map: dict = {}
     _cache: dict[str, Any] = {}
@@ -25,8 +28,8 @@ class ResourceManager:
                 Path(__file__).parent / "resources.json", mode="r", encoding="utf-8"
             ) as f:
                 ResourceManager._map = ujson.load(f)
-                logging.info(
-                    f"[ResourceManager] {len(ResourceManager._map.items())} resources registered"
+                self.logger.info(
+                    f"{len(ResourceManager._map.items())} resources registered"
                 )
             ResourceManager._initialized = True
 

@@ -12,6 +12,15 @@
 			"console": "integratedTerminal",
 			"justMyCode": true,
 			"args": []
+		},
+		{
+			"name": "TagStudio: Debug",
+			"type": "debugpy",
+			"request": "launch",
+			"program": "${workspaceRoot}/tagstudio/tag_studio.py",
+			"console": "integratedTerminal",
+			"justMyCode": true,
+			"args": ["--debug"]
 		}
 	]
 }

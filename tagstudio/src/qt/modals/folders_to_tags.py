@@ -3,7 +3,7 @@
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
 
-import logging
+
 import math
 import typing
 
@@ -22,21 +22,18 @@ from src.core.enums import FieldID
 from src.core.library import Library, Tag
 from src.core.palette import ColorType, get_tag_color
 from src.qt.flowlayout import FlowLayout
+from logger import get_logger
 
 # Only import for type checking/autocompletion, will not be imported at runtime.
 if typing.TYPE_CHECKING:
     from src.qt.ts_qt import QtDriver
 
 
-ERROR = f"[ERROR]"
-WARNING = f"[WARNING]"
-INFO = f"[INFO]"
 
-logging.basicConfig(format="%(message)s", level=logging.INFO)
 
 
 def folders_to_tags(library: Library):
-    logging.info("Converting folders to Tags")
+    get_logger("FoldersToTags").info("Converting folders to Tags") # TODO: move function 'FoldersToTagsModal'
     tree: dict = dict(dirs={})
 
     def add_tag_to_tree(items: list[Tag]):
@@ -76,7 +73,7 @@ def folders_to_tags(library: Library):
             if not entry.has_tag(library, tag.id):
                 entry.add_tag(library, tag.id, FieldID.TAGS)
 
-    logging.info("Done")
+    self.logger.info("Done")
 
 
 def reverse_tag(library: Library, tag: Tag, list: list[Tag]) -> list[Tag]:
@@ -158,6 +155,7 @@ def generate_preview_data(library: Library):
 
 
 class FoldersToTagsModal(QWidget):
+    logger = get_logger(__qualname__)
     # done = Signal(int)
     def __init__(self, library: "Library", driver: "QtDriver"):
         super().__init__()
@@ -254,6 +252,7 @@ class FoldersToTagsModal(QWidget):
 
 
 class TreeItem(QWidget):
+    logger = get_logger(__qualname__)
     def __init__(self, data: dict, parentTag: Tag):
         super().__init__()
 
@@ -311,6 +310,7 @@ class TreeItem(QWidget):
 class ModifiedTagWidget(
     QWidget
 ):  # Needed to be modified because the original searched the display name in the library where it wasn't added yet
+    logger = get_logger(__qualname__)
     def __init__(self, tag: Tag, parentTag: Tag) -> None:
         super().__init__()
         self.tag = tag

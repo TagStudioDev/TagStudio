@@ -8,7 +8,7 @@ from src.core.ts_core import TagStudioCore
 from src.cli.ts_cli import CliDriver  # type: ignore
 from src.qt.ts_qt import QtDriver
 from args import TagStudioArgs, parser
-from tagstudio.logger import logger
+from logger import tag_studio_log
 
 
 def main():
@@ -37,7 +37,7 @@ def main():
         driver.start()
     except Exception as e:
         msg = f"TagStudio Frontend ({ui_name}) Crashed! Press Enter to Continue..."
-        logger.error(e)
+        tag_studio_log.exception(e)
         print(msg)
         input()
 

@@ -3,7 +3,7 @@
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
 
-import logging
+
 import math
 import typing
 
@@ -89,12 +89,12 @@ class TagBoxWidget(FieldWidget):
         self.item = item
 
     def set_tags(self, tags: list[int]):
-        logging.info(f"[TAG BOX WIDGET] SET TAGS: T:{tags} for E:{self.item.id}")
+        self.logger.info(f"[TAG BOX WIDGET] SET TAGS: T:{tags} for E:{self.item.id}")
         is_recycled = False
         if self.base_layout.itemAt(0):
-            # logging.info(type(self.base_layout.itemAt(0).widget()))
+            # self.logger.info(type(self.base_layout.itemAt(0).widget()))
             while self.base_layout.itemAt(0) and self.base_layout.itemAt(1):
-                # logging.info(f"I'm deleting { self.base_layout.itemAt(0).widget()}")
+                # self.logger.info(f"I'm deleting { self.base_layout.itemAt(0).widget()}")
                 self.base_layout.takeAt(0).widget().deleteLater()
             is_recycled = True
         for tag in tags:
@@ -145,10 +145,10 @@ class TagBoxWidget(FieldWidget):
     def add_tag_callback(self, tag_id: int):
         # self.base_layout.addWidget(TagWidget(self.lib, self.lib.get_tag(tag), True))
         # self.tags.append(tag)
-        logging.info(
+        self.logger.info(
             f"[TAG BOX WIDGET] ADD TAG CALLBACK: T:{tag_id} to E:{self.item.id}"
         )
-        logging.info(f"[TAG BOX WIDGET] SELECTED T:{self.driver.selected}")
+        self.logger.info(f"[TAG BOX WIDGET] SELECTED T:{self.driver.selected}")
         id: int = list(self.field.keys())[0]  # type: ignore
         for x in self.driver.selected:
             self.driver.lib.get_entry(x[1]).add_tag(
@@ -160,7 +160,7 @@ class TagBoxWidget(FieldWidget):
 
         # if type((x[0]) == ThumbButton):
         # 	# TODO: Remove space from the special search here (tag_id:x) once that system is finalized.
-        # logging.info(f'I want to add tag ID {tag_id} to entry {self.item.filename}')
+        # self.logger.info(f'I want to add tag ID {tag_id} to entry {self.item.filename}')
         # self.updated.emit()
         # if tag_id not in self.tags:
         # 	self.tags.append(tag_id)
@@ -171,7 +171,7 @@ class TagBoxWidget(FieldWidget):
         self.lib.update_tag(tag)
 
     def remove_tag(self, tag_id: int):
-        logging.info(f"[TAG BOX WIDGET] SELECTED T:{self.driver.selected}")
+        self.logger.info(f"[TAG BOX WIDGET] SELECTED T:{self.driver.selected}")
         id: int = list(self.field.keys())[0]  # type: ignore
         for x in self.driver.selected:
             index = self.driver.lib.get_field_index_in_entry(

@@ -3,7 +3,7 @@
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
 
-import logging
+
 import typing
 
 from PySide6.QtCore import Qt, QThreadPool
@@ -16,20 +16,18 @@ from src.qt.modals.delete_unlinked import DeleteUnlinkedEntriesModal
 from src.qt.modals.relink_unlinked import RelinkUnlinkedEntries
 from src.qt.modals.merge_dupe_entries import MergeDuplicateEntries
 from src.qt.widgets.progress import ProgressWidget
+from logger import get_logger
 
 # Only import for type checking/autocompletion, will not be imported at runtime.
 if typing.TYPE_CHECKING:
     from src.qt.ts_qt import QtDriver
 
 
-ERROR = "[ERROR]"
-WARNING = "[WARNING]"
-INFO = "[INFO]"
-
-logging.basicConfig(format="%(message)s", level=logging.INFO)
 
 
 class FixUnlinkedEntriesModal(QWidget):
+    logger = get_logger(__qualname__)
+
     def __init__(self, library: "Library", driver: "QtDriver"):
         super().__init__()
         self.lib = library

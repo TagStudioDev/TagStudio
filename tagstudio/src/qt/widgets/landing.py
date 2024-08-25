@@ -3,7 +3,7 @@
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
 
-import logging
+
 import sys
 import typing
 from pathlib import Path
@@ -13,15 +13,18 @@ from PySide6.QtGui import QPixmap
 from PySide6.QtWidgets import QWidget, QLabel, QVBoxLayout, QPushButton
 from src.qt.widgets.clickable_label import ClickableLabel
 from src.qt.helpers.color_overlay import gradient_overlay, theme_fg_overlay
+from logger import get_logger
 
 # Only import for type checking/autocompletion, will not be imported at runtime.
 if typing.TYPE_CHECKING:
     from src.qt.ts_qt import QtDriver
 
-logging.basicConfig(format="%(message)s", level=logging.INFO)
+
 
 
 class LandingWidget(QWidget):
+    logger = get_logger(__qualname__)
+
     def __init__(self, driver: "QtDriver", pixel_ratio: float):
         super().__init__()
         self.driver: "QtDriver" = driver
@@ -162,7 +165,7 @@ class LandingWidget(QWidget):
 
     # def animate_status(self):
     #     # if self.status_label.y() > 50:
-    #     logging.info(f"{self.status_label.pos()}")
+    #     self.logger.info(f"{self.status_label.pos()}")
     #     self.status_pos_anim.setStartValue(
     #         QPoint(self.status_label.x(), self.status_label.y() + 50)
     #     )

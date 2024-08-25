@@ -3,7 +3,7 @@
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
 
-import logging
+
 import math
 
 from PySide6.QtCore import Signal, Qt, QSize
@@ -21,17 +21,14 @@ from src.core.library import Library
 from src.core.palette import ColorType, get_tag_color
 from src.qt.widgets.panel import PanelWidget
 from src.qt.widgets.tag import TagWidget
+from logger import get_logger
 
 
-ERROR = f"[ERROR]"
-WARNING = f"[WARNING]"
-INFO = f"[INFO]"
-
-logging.basicConfig(format="%(message)s", level=logging.INFO)
 
 
 class TagSearchPanel(PanelWidget):
     tag_chosen = Signal(int)
+    logger = get_logger(__qualname__)
 
     def __init__(self, library):
         super().__init__()
@@ -105,7 +102,7 @@ class TagSearchPanel(PanelWidget):
         # for c in self.scroll_layout.children():
         # 	c.widget().deleteLater()
         while self.scroll_layout.count():
-            # logging.info(f"I'm deleting { self.scroll_layout.itemAt(0).widget()}")
+            # self.logger.info(f"I'm deleting { self.scroll_layout.itemAt(0).widget()}")
             self.scroll_layout.takeAt(0).widget().deleteLater()
 
         found_tags = self.lib.search_tags(query, include_cluster=True)[: self.tag_limit]
