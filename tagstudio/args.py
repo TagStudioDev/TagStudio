@@ -1,7 +1,7 @@
 # Parse arguments.
 import argparse
 
-class Args(argparse.Namespace):
+class TagStudioArgs(argparse.Namespace):
     open: str
     config_file: str
     debug: bool
