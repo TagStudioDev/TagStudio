@@ -14,21 +14,23 @@ import os
 # import subprocess
 import sys
 import time
-from PIL import Image, ImageChops, UnidentifiedImageError
-from PIL.Image import DecompressionBombError
-
-# import pillow_avif
-from pathlib import Path
 import traceback
-import cv2
 
 # import climage
 # import click
 from datetime import datetime as dt
-from src.core.ts_core import *
-from src.core.utils.web import *
-from src.core.utils.fs import *
+
+# import pillow_avif
+from pathlib import Path
+
+import cv2
+from logger import tag_studio_log
+from PIL import Image, ImageChops, UnidentifiedImageError
+from PIL.Image import DecompressionBombError
 from src.core.library import *
+from src.core.ts_core import *
+from src.core.utils.fs import *
+from src.core.utils.web import *
 from src.qt.helpers.file_opener import open_file
 
 WHITE_FG = "\033[37m"
@@ -151,8 +153,8 @@ class CliDriver:
         try:
             if self.args.external_preview:
                 self.close_external_preview()
-        except Exception:
-            traceback.print_exc()
+        except Exception as e:
+            tag_studio_log.error(e)
             print("\nCrashed on Cleanup! This is unusual... Press Enter to Continue...")
             input()
             self.backup_library()
@@ -882,8 +884,8 @@ class CliDriver:
                 # print(f'Rows:{row_count}, Cols:{column_count}')
                 print("")
 
-        except Exception:
-            traceback.print_exc()
+        except Exception as e:
+            tag_studio_log.error(e)
             print("\nPress Enter to Continue...")
             input()
             pass
