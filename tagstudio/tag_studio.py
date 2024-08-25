@@ -8,7 +8,7 @@ from src.core.ts_core import TagStudioCore
 from src.cli.ts_cli import CliDriver  # type: ignore
 from src.qt.ts_qt import QtDriver
 from args import TagStudioArgs, parser
-from tagstudio.logger import tag_studio_log
+from logger import tag_studio_log
 
 
 def main():
