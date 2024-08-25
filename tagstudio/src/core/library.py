@@ -41,8 +41,6 @@ class ItemType(Enum):
     TAG_GROUP = 2
 
 
-logging.basicConfig(format="%(message)s", level=logging.INFO)
-
 
 class Entry:
     """A Library Entry Object. Referenced by ID."""
