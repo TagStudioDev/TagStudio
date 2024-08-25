@@ -62,6 +62,7 @@ class ThumbRenderer(QObject):
     )
 
     def __init__(self) -> None:
+        """Initialize the class."""
         super().__init__()
 
         # Cached thumbnail elements.
@@ -75,6 +76,7 @@ class ThumbRenderer(QObject):
 
     def _get_resource_id(self, url: Path) -> str:
         """Return the name of the icon resource to use for a file type.
+
         Special terms will return special resources.
 
         Args:
@@ -102,6 +104,7 @@ class ThumbRenderer(QObject):
         self, size: tuple[int, int], pixel_ratio: float, scale_radius: bool = False
     ) -> Image.Image:
         """Return a thumbnail mask given a size, pixel ratio, and radius scaling option.
+
         If one is not already cached, a new one will be rendered.
 
         Args:
@@ -123,6 +126,7 @@ class ThumbRenderer(QObject):
         self, size: tuple[int, int], pixel_ratio: float
     ) -> tuple[Image.Image, Image.Image]:
         """Return a thumbnail edge given a size, pixel ratio, and radius scaling option.
+
         If one is not already cached, a new one will be rendered.
 
         Args:
@@ -148,7 +152,6 @@ class ThumbRenderer(QObject):
             size (tuple[int,int]): The size of the icon.
             pixel_ratio (float): The screen pixel ratio.
         """
-
         draw_border: bool = True
         if name == "thumb_loading":
             draw_border = False
@@ -171,7 +174,7 @@ class ThumbRenderer(QObject):
         Args:
             size (tuple[int,int]): The size of the graphic.
             pixel_ratio (float): The screen pixel ratio.
-            radius scale (float): The scale factor of the border radius (Used by Preview Panel).
+            radius_scale (float): The scale factor of the border radius (Used by Preview Panel).
         """
         SMOOTH_FACTOR: int = 2
         RADIUS_FACTOR: int = 8
@@ -199,11 +202,11 @@ class ThumbRenderer(QObject):
         self, size: tuple[int, int], pixel_ratio: float
     ) -> tuple[Image.Image, Image.Image]:
         """Render a thumbnail edge graphic.
+
         Args:
             size (tuple[int,int]): The size of the graphic.
             pixel_ratio (float): The screen pixel ratio.
         """
-
         SMOOTH_FACTOR: int = 2
         RADIUS_FACTOR: int = 8
         WIDTH: int = math.floor(pixel_ratio * 2)
@@ -356,6 +359,7 @@ class ThumbRenderer(QObject):
 
     def _apply_overlay_color(self, image: Image.Image, color: str) -> Image.Image:
         """Apply a color overlay effect to an image based on its color channel data.
+
         Red channel for foreground, green channel for outline, none for background.
 
         Args:
@@ -567,8 +571,7 @@ class ThumbRenderer(QObject):
         return im
 
     def _blender(self, filepath: Path) -> Image.Image:
-        """
-        Get an emended thumbnail from a Blender file, if a thumbnail is present.
+        """Get an emended thumbnail from a Blender file, if a thumbnail is present.
 
         Args:
             filepath (Path): The path of the file.
