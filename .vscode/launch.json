@@ -17,10 +17,10 @@
 			"name": "TagStudio: Debug",
 			"type": "debugpy",
 			"request": "launch",
-			"program": "${workspaceRoot}/tagstudio/tag_studio.py --debug",
+			"program": "${workspaceRoot}/tagstudio/tag_studio.py",
 			"console": "integratedTerminal",
 			"justMyCode": true,
-			"args": []
+			"args": ["--debug"]
 		}
 	]
 }
