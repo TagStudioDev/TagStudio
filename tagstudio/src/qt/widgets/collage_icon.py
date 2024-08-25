@@ -4,7 +4,7 @@
 
 import logging
 import os
-import traceback
+
 from pathlib import Path
 
 import cv2
