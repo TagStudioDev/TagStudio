@@ -10,3 +10,7 @@ tag_studio_log.addHandler(logging.StreamHandler()) # print logs.
 
 if args.debug:
     tag_studio_log.setLevel(logging.DEBUG)
+
+
+def get_logger(name: str):
+    return tag_studio_log.getChild(name)
