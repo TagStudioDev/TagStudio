@@ -86,13 +86,11 @@ class PreviewPanel(QWidget):
         self.open_file_action = QAction("Open file", self)
 
         system = platform.system()
-        self.open_explorer_action = QAction(
-            "Open in explorer", self
-        )  # Default (mainly going to be for linux)
+        open_explorer_action = QAction("Open in explorer", self) # Default (mainly going to be for linux)
         if system == "Darwin":
-            self.open_explorer_action = QAction("Reveal in Finder", self)
+            open_explorer_action = QAction("Reveal in Finder", self)
         elif system == "Windows":
-            self.open_explorer_action = QAction("Open in Explorer", self)
+            open_explorer_action = QAction("Open in Explorer", self)
 
         self.preview_img = QPushButtonWrapper()
         self.preview_img.setMinimumSize(*self.img_button_size)
@@ -844,10 +842,7 @@ class PreviewPanel(QWidget):
                 # f'Are you sure you want to remove this \"{self.lib.get_field_attr(field, "name")}\" field?'
                 # container.set_remove_callback(lambda: (self.lib.get_entry(item.id).fields.pop(index), self.update_widgets(item)))
                 prompt = f'Are you sure you want to remove this "{self.lib.get_field_attr(field, "name")}" field?'
-
-                def callback():
-                    return self.remove_field(field), self.update_widgets()
-
+                callback = lambda: (self.remove_field(field), self.update_widgets())
                 container.set_remove_callback(
                     lambda: self.remove_message_box(prompt=prompt, callback=callback)
                 )
@@ -892,10 +887,7 @@ class PreviewPanel(QWidget):
                 )
                 container.set_edit_callback(modal.show)
                 prompt = f'Are you sure you want to remove this "{self.lib.get_field_attr(field, "name")}" field?'
-
-                def callback():
-                    return self.remove_field(field), self.update_widgets()
-
+                callback = lambda: (self.remove_field(field), self.update_widgets())
                 container.set_remove_callback(
                     lambda: self.remove_message_box(prompt=prompt, callback=callback)
                 )
@@ -935,10 +927,7 @@ class PreviewPanel(QWidget):
                 )
                 container.set_edit_callback(modal.show)
                 prompt = f'Are you sure you want to remove this "{self.lib.get_field_attr(field, "name")}" field?'
-
-                def callback():
-                    return self.remove_field(field), self.update_widgets()
-
+                callback = lambda: (self.remove_field(field), self.update_widgets())
                 container.set_remove_callback(
                     lambda: self.remove_message_box(prompt=prompt, callback=callback)
                 )
@@ -965,10 +954,7 @@ class PreviewPanel(QWidget):
             # container.set_edit_callback(None)
             # container.set_remove_callback(lambda: (self.lib.get_entry(item.id).fields.pop(index), self.update_widgets(item)))
             prompt = f'Are you sure you want to remove this "{self.lib.get_field_attr(field, "name")}" field?'
-
-            def callback():
-                return self.remove_field(field), self.update_widgets()
-
+            callback = lambda: (self.remove_field(field), self.update_widgets())
             container.set_remove_callback(
                 lambda: self.remove_message_box(prompt=prompt, callback=callback)
             )
@@ -986,7 +972,7 @@ class PreviewPanel(QWidget):
                     title = f"{self.lib.get_field_attr(field, 'name')} (Date)"
                     inner_container = TextWidget(title, date.strftime("%D - %r"))
                     container.set_inner_widget(inner_container)
-                except Exception:
+                except:
                     container.set_title(self.lib.get_field_attr(field, "name"))
                     # container.set_editable(False)
                     container.set_inline(False)
@@ -999,10 +985,7 @@ class PreviewPanel(QWidget):
                 container.set_edit_callback(None)
                 # container.set_remove_callback(lambda: (self.lib.get_entry(item.id).fields.pop(index), self.update_widgets(item)))
                 prompt = f'Are you sure you want to remove this "{self.lib.get_field_attr(field, "name")}" field?'
-
-                def callback():
-                    return self.remove_field(field), self.update_widgets()
-
+                callback = lambda: (self.remove_field(field), self.update_widgets())
                 container.set_remove_callback(
                     lambda: self.remove_message_box(prompt=prompt, callback=callback)
                 )
@@ -1029,10 +1012,7 @@ class PreviewPanel(QWidget):
             container.set_edit_callback(None)
             # container.set_remove_callback(lambda: (self.lib.get_entry(item.id).fields.pop(index), self.update_widgets(item)))
             prompt = f'Are you sure you want to remove this "{self.lib.get_field_attr(field, "name")}" field?'
-
-            def callback():
-                return self.remove_field(field), self.update_widgets()
-
+            callback = lambda: (self.remove_field(field), self.update_widgets())
             # callback = lambda: (self.lib.get_entry(item.id).fields.pop(index), self.update_widgets())
             container.set_remove_callback(
                 lambda: self.remove_message_box(prompt=prompt, callback=callback)
@@ -1087,13 +1067,11 @@ class PreviewPanel(QWidget):
         cancel_button = remove_mb.addButton(
             "&Cancel", QMessageBox.ButtonRole.DestructiveRole
         )
-        remove_button = remove_mb.addButton(  # noqa: F841
+        remove_button = remove_mb.addButton(
             "&Remove", QMessageBox.ButtonRole.RejectRole
         )
         # remove_mb.setStandardButtons(QMessageBox.StandardButton.Cancel)
-        remove_mb.setDefaultButton(
-            cancel_button
-        )  # TODO: is it supposed to be two cancel buttons? idk but i dont know either way so dont wanna change it
+        remove_mb.setDefaultButton(cancel_button)
         remove_mb.setEscapeButton(cancel_button)
         result = remove_mb.exec_()
         # logging.info(result)
