@@ -2051,7 +2051,7 @@ class Library:
                         # elif meta_tags_field_indices:
                         # 	priority_field_index = meta_tags_field_indices[0]
 
-                        if priority_field_index > 0:
+                        if priority_field_index >= 0:
                             self.update_entry_field(
                                 entry_id, priority_field_index, [matching[0]], "append"
                             )
