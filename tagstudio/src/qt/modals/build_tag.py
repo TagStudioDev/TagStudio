@@ -5,30 +5,28 @@
 
 import logging
 
-from PySide6.QtCore import Signal, Qt
+from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import (
-    QWidget,
-    QVBoxLayout,
-    QLabel,
-    QPushButton,
-    QLineEdit,
-    QScrollArea,
-    QFrame,
-    QTextEdit,
     QComboBox,
+    QFrame,
+    QLabel,
+    QLineEdit,
+    QPushButton,
+    QScrollArea,
+    QTextEdit,
+    QVBoxLayout,
+    QWidget,
 )
-
+from src.core.constants import TAG_COLORS
 from src.core.library import Library, Tag
 from src.core.palette import ColorType, get_tag_color
-from src.core.constants import TAG_COLORS
-from src.qt.widgets.panel import PanelWidget, PanelModal
-from src.qt.widgets.tag import TagWidget
 from src.qt.modals.tag_search import TagSearchPanel
+from src.qt.widgets.panel import PanelModal, PanelWidget
+from src.qt.widgets.tag import TagWidget
 
-
-ERROR = f"[ERROR]"
-WARNING = f"[WARNING]"
-INFO = f"[INFO]"
+ERROR = "[ERROR]"
+WARNING = "[WARNING]"
+INFO = "[INFO]"
 
 logging.basicConfig(format="%(message)s", level=logging.INFO)
 
@@ -36,7 +34,7 @@ logging.basicConfig(format="%(message)s", level=logging.INFO)
 class BuildTagPanel(PanelWidget):
     on_edit = Signal(Tag)
 
-    def __init__(self, library, tag_id: int = -1, given_name: str = ""):
+    def __init__(self, library, tag_id: int = -1, tag_name: str = "New Tag"):
         super().__init__()
         self.lib: Library = library
         # self.callback = callback
@@ -163,9 +161,8 @@ class BuildTagPanel(PanelWidget):
         if tag_id >= 0:
             self.tag = self.lib.get_tag(tag_id)
         else:
-            self.tag = Tag(-1, "New Tag", given_name, [], [], "")
+            self.tag = Tag(-1, tag_name, "", [], [], "")
         self.set_tag(self.tag)
-
 
     def add_subtag_callback(self, tag_id: int):
         logging.info(f"adding {tag_id}")

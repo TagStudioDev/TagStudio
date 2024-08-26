@@ -5,29 +5,26 @@
 
 import logging
 import math
-import random
-
-from PySide6.QtCore import Signal, Qt, QSize
+import src.qt.modals.build_tag as bt
+from PySide6.QtCore import QSize, Qt, Signal
 from PySide6.QtWidgets import (
-    QWidget,
-    QVBoxLayout,
-    QHBoxLayout,
-    QPushButton,
-    QLineEdit,
-    QScrollArea,
     QFrame,
+    QHBoxLayout,
+    QLineEdit,
+    QPushButton,
+    QScrollArea,
+    QVBoxLayout,
+    QWidget,
 )
-
 from src.core.constants import TAG_COLORS
-from src.core.library import Library, Tag
+from src.core.library import Library
 from src.core.palette import ColorType, get_tag_color
-from src.qt.widgets.panel import PanelWidget
+from src.qt.widgets.panel import PanelModal, PanelWidget
 from src.qt.widgets.tag import TagWidget
 
-
-ERROR = f"[ERROR]"
-WARNING = f"[WARNING]"
-INFO = f"[INFO]"
+ERROR = "[ERROR]"
+WARNING = "[WARNING]"
+INFO = "[INFO]"
 
 logging.basicConfig(format="%(message)s", level=logging.INFO)
 
@@ -35,13 +32,11 @@ logging.basicConfig(format="%(message)s", level=logging.INFO)
 class TagSearchPanel(PanelWidget):
     tag_created = Signal(int)
 
-    def __init__(self, library):
+    def __init__(self, library: "Library"):
         super().__init__()
         self.lib: Library = library
-        # self.callback = callback
-        self.first_tag_id = None
+        self.first_tag_id: int | None = None
         self.tag_limit = 100
-        # self.selected_tag: int = 0
         self.setMinimumSize(300, 400)
         self.root_layout = QVBoxLayout(self)
         self.root_layout.setContentsMargins(6, 0, 6, 0)
@@ -57,41 +52,23 @@ class TagSearchPanel(PanelWidget):
             lambda checked=False: self.on_return(self.search_field.text())
         )
 
-        # self.content_container = QWidget()
-        # self.content_layout = QHBoxLayout(self.content_container)
-
         self.scroll_contents = QWidget()
         self.scroll_layout = QVBoxLayout(self.scroll_contents)
         self.scroll_layout.setContentsMargins(6, 0, 6, 0)
         self.scroll_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
 
         self.scroll_area = QScrollArea()
-        # self.scroll_area.setStyleSheet('background: #000000;')
         self.scroll_area.setVerticalScrollBarPolicy(
             Qt.ScrollBarPolicy.ScrollBarAlwaysOn
         )
-        # self.scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.scroll_area.setWidgetResizable(True)
         self.scroll_area.setFrameShadow(QFrame.Shadow.Plain)
         self.scroll_area.setFrameShape(QFrame.Shape.NoFrame)
-        # sa.setMaximumWidth(self.preview_size[0])
         self.scroll_area.setWidget(self.scroll_contents)
-
-        # self.add_button = QPushButton()
-        # self.root_layout.addWidget(self.add_button)
-        # self.add_button.setText('Add Tag')
-        # # self.done_button.clicked.connect(lambda checked=False, x=1101: (callback(x), self.hide()))
-        # self.add_button.clicked.connect(lambda checked=False, x=1101: callback(x))
-        # # self.setLayout(self.root_layout)
 
         self.root_layout.addWidget(self.search_field)
         self.root_layout.addWidget(self.scroll_area)
         self.update_tags("")
-
-    # def reset(self):
-    # 	self.search_field.setText('')
-    # 	self.update_tags('')
-    # 	self.search_field.setFocus()
 
     def on_return(self, text: str):
         if text and self.first_tag_id is not None:
@@ -100,16 +77,13 @@ class TagSearchPanel(PanelWidget):
             self.search_field.setText("")
             self.update_tags()
         elif text:
-            self.create_tag(text)
+            self.create_and_add_tag(text)
             self.parentWidget().hide()
         else:
             self.parentWidget().hide()
 
     def update_tags(self, query: str = ""):
-        # for c in self.scroll_layout.children():
-        # 	c.widget().deleteLater()
         while self.scroll_layout.count():
-            # logging.info(f"I'm deleting { self.scroll_layout.itemAt(0).widget()}")
             self.scroll_layout.takeAt(0).widget().deleteLater()
 
         found_tags = self.lib.search_tags(query, include_cluster=True)[: self.tag_limit]
@@ -156,10 +130,7 @@ class TagSearchPanel(PanelWidget):
                 f"border-radius: 6px;"
                 f"border-style:solid;"
                 f"border-width: {math.ceil(1*self.devicePixelRatio())}px;"
-                # f'padding-top: 1.5px;'
-                # f'padding-right: 4px;'
                 f"padding-bottom: 5px;"
-                # f'padding-left: 4px;'
                 f"font-size: 20px;"
                 f"}}"
                 f"QPushButton::hover"
@@ -194,17 +165,19 @@ class TagSearchPanel(PanelWidget):
         l.setContentsMargins(0, 0, 0, 0)
         l.setSpacing(3)
 
-        create_button = QPushButton(self)
-        create_button.setFlat(True)
-        create_button.setText(f"Create \"{name.replace("&", "&&")}\"")
+        create_and_add_button = QPushButton(self)
+        create_and_add_button.setFlat(True)
+        create_and_add_button.setText(
+            f"Create && Add \"{name.replace("&", "&&")}\" Tag"
+        )
 
         inner_layout = QHBoxLayout()
         inner_layout.setObjectName("innerLayout")
         inner_layout.setContentsMargins(2, 2, 2, 2)
-        create_button.setLayout(inner_layout)
-        create_button.setMinimumSize(math.ceil(22 * 1.5), 22)
+        create_and_add_button.setLayout(inner_layout)
+        create_and_add_button.setMinimumSize(math.ceil(22 * 1.5), 22)
 
-        create_button.setStyleSheet(
+        create_and_add_button.setStyleSheet(
             f"QPushButton{{"
             f"background: {get_tag_color(ColorType.PRIMARY, "dark gray")};"
             f"color: {get_tag_color(ColorType.TEXT, "dark gray")};"
@@ -223,36 +196,39 @@ class TagSearchPanel(PanelWidget):
             f"}}"
         )
 
-        create_button.clicked.connect(lambda x=name: self.create_tag(name))
-        l.addWidget(create_button)
+        create_and_add_button.clicked.connect(
+            lambda x=name: self.create_and_add_tag(name)
+        )
+        l.addWidget(create_and_add_button)
 
         return c
 
-    def create_tag(self, name: str) -> None:
-        """Create tag given a string name. Emits a tag_created signal with its new ID.
+    def create_and_add_tag(self, name: str):
+        """Open "Add Tag" panel to create and add a new tag with the given name.
 
         Args:
             name (str): The name of the tag to give.
         """
-        new_tag: Tag = Tag(
-            id=-1,
-            name=name,
-            shorthand=name,
-            aliases=[],
-            subtags_ids=[],
-            color=random.sample(TAG_COLORS, 1)[0],
+        self.add_tag_modal = PanelModal(
+            bt.BuildTagPanel(self.lib, tag_name=name),
+            "New Tag",
+            "Add Tag",
+            has_save=True,
         )
+        self.add_tag_modal.saved.connect(lambda n=name: self.on_tag_modal_saved(n))
+        self.add_tag_modal.show()
 
-        new_id = self.lib.add_tag_to_library(new_tag)
+    def on_tag_modal_saved(self, name):
+        """Callback for actions to perform when a new "Create & Add" tag is confirmed.
+        Args:
+            name (str): The name of the tag to give.
+        """
+        panel: bt.BuildTagPanel = self.add_tag_modal.widget
+        self.tag_created.emit(self.lib.add_tag_to_library(panel.build_tag()))
+        self.add_tag_modal.hide()
         self.update_tags(name)
-        self.tag_created.emit(new_id)
 
     def showEvent(self, event):
         # Clear search field and focus when showing modal
         self.search_field.setText("")
         self.search_field.setFocus()
-
-    # def enterEvent(self, event: QEnterEvent) -> None:
-    # 	self.search_field.setFocus()
-    # 	return super().enterEvent(event)
-    # 	self.focusOutEvent
