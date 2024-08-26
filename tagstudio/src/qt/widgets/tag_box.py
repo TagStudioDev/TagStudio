@@ -10,6 +10,7 @@ import typing
 from PySide6.QtCore import Signal, Qt
 from PySide6.QtWidgets import QPushButton
 
+from src.core.constants import TAG_FAVORITE, TAG_ARCHIVED
 from src.core.library import Library, Tag
 from src.qt.flowlayout import FlowLayout
 from src.qt.widgets.fields import FieldWidget
@@ -141,7 +142,7 @@ class TagBoxWidget(FieldWidget):
         # panel.tag_updated.connect(lambda tag: self.lib.update_tag(tag))
         self.edit_modal.show()
 
-    def add_tag_callback(self, tag_id):
+    def add_tag_callback(self, tag_id: int):
         # self.base_layout.addWidget(TagWidget(self.lib, self.lib.get_tag(tag), True))
         # self.tags.append(tag)
         logging.info(
@@ -154,7 +155,7 @@ class TagBoxWidget(FieldWidget):
                 self.driver.lib, tag_id, field_id=id, field_index=-1
             )
             self.updated.emit()
-        if tag_id == 0 or tag_id == 1:
+        if tag_id in (TAG_FAVORITE, TAG_ARCHIVED):
             self.driver.update_badges()
 
         # if type((x[0]) == ThumbButton):
@@ -180,7 +181,7 @@ class TagBoxWidget(FieldWidget):
                 self.driver.lib, tag_id, field_index=index[0]
             )
             self.updated.emit()
-        if tag_id == 0 or tag_id == 1:
+        if tag_id in (TAG_FAVORITE, TAG_ARCHIVED):
             self.driver.update_badges()
 
     # def show_add_button(self, value:bool):

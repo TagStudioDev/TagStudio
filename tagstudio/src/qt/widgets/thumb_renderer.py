@@ -23,13 +23,11 @@ from PIL.Image import DecompressionBombError
 from PySide6.QtCore import QObject, Signal, QSize
 from PySide6.QtGui import QPixmap
 from src.qt.helpers.gradient import four_corner_gradient_background
-from src.core.constants import (
-    PLAINTEXT_TYPES,
-    VIDEO_TYPES,
-    IMAGE_TYPES,
-    RAW_IMAGE_TYPES,
-)
+from src.qt.helpers.text_wrapper import wrap_full_text
+from src.core.constants import FONT_SAMPLE_SIZES, FONT_SAMPLE_TEXT
+from src.core.media_types import MediaType, MediaCategories
 from src.core.utils.encoding import detect_char_encoding
+from src.qt.helpers.blender_thumbnailer import blend_thumb
 
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 
@@ -120,52 +118,56 @@ class ThumbRenderer(QObject):
                 self.updated_ratio.emit(1)
         elif _filepath:
             try:
+                ext: str = _filepath.suffix.lower()
                 # Images =======================================================
-                if _filepath.suffix.lower() in IMAGE_TYPES:
-                    try:
-                        image = Image.open(_filepath)
-                        if image.mode != "RGB" and image.mode != "RGBA":
-                            image = image.convert(mode="RGBA")
-                        if image.mode == "RGBA":
-                            new_bg = Image.new("RGB", image.size, color="#1e1e1e")
-                            new_bg.paste(image, mask=image.getchannel(3))
-                            image = new_bg
-
-                        image = ImageOps.exif_transpose(image)
-                    except DecompressionBombError as e:
-                        logging.info(
-                            f"[ThumbRenderer]{WARNING} Couldn't Render thumbnail for {_filepath.name} ({type(e).__name__})"
-                        )
-
-                elif _filepath.suffix.lower() in RAW_IMAGE_TYPES:
-                    try:
-                        with rawpy.imread(str(_filepath)) as raw:
-                            rgb = raw.postprocess()
-                            image = Image.frombytes(
-                                "RGB",
-                                (rgb.shape[1], rgb.shape[0]),
-                                rgb,
-                                decoder_name="raw",
+                if MediaType.IMAGE in MediaCategories.get_types(ext, True):
+                    # Raw Images -----------------------------------------------
+                    if MediaType.IMAGE_RAW in MediaCategories.get_types(ext, True):
+                        try:
+                            with rawpy.imread(str(_filepath)) as raw:
+                                rgb = raw.postprocess()
+                                image = Image.frombytes(
+                                    "RGB",
+                                    (rgb.shape[1], rgb.shape[0]),
+                                    rgb,
+                                    decoder_name="raw",
+                                )
+                        except DecompressionBombError as e:
+                            logging.info(
+                                f"[ThumbRenderer]{WARNING} Couldn't Render thumbnail for {_filepath.name} ({type(e).__name__})"
                             )
-                    except DecompressionBombError as e:
-                        logging.info(
-                            f"[ThumbRenderer]{WARNING} Couldn't Render thumbnail for {_filepath.name} ({type(e).__name__})"
-                        )
-                    except (
-                        rawpy._rawpy.LibRawIOError,
-                        rawpy._rawpy.LibRawFileUnsupportedError,
-                    ) as e:
-                        logging.info(
-                            f"[ThumbRenderer]{ERROR} Couldn't Render thumbnail for raw image {_filepath.name} ({type(e).__name__})"
-                        )
+                        except (
+                            rawpy._rawpy.LibRawIOError,
+                            rawpy._rawpy.LibRawFileUnsupportedError,
+                        ) as e:
+                            logging.info(
+                                f"[ThumbRenderer]{ERROR} Couldn't Render thumbnail for raw image {_filepath.name} ({type(e).__name__})"
+                            )
+
+                    # Normal Images --------------------------------------------
+                    else:
+                        try:
+                            image = Image.open(_filepath)
+                            if image.mode != "RGB" and image.mode != "RGBA":
+                                image = image.convert(mode="RGBA")
+                            if image.mode == "RGBA":
+                                new_bg = Image.new("RGB", image.size, color="#1e1e1e")
+                                new_bg.paste(image, mask=image.getchannel(3))
+                                image = new_bg
+
+                            image = ImageOps.exif_transpose(image)
+                        except DecompressionBombError as e:
+                            logging.info(
+                                f"[ThumbRenderer]{WARNING} Couldn't Render thumbnail for {_filepath.name} ({type(e).__name__})"
+                            )
 
                 # Videos =======================================================
-                elif _filepath.suffix.lower() in VIDEO_TYPES:
+                elif MediaType.VIDEO in MediaCategories.get_types(ext, True):
                     video = cv2.VideoCapture(str(_filepath))
-                    video.set(
-                        cv2.CAP_PROP_POS_FRAMES,
-                        (video.get(cv2.CAP_PROP_FRAME_COUNT) // 2),
-                    )
+                    frame_count = video.get(cv2.CAP_PROP_FRAME_COUNT)
+                    if frame_count <= 0:
+                        raise cv2.error("File is invalid or has 0 frames")
+                    video.set(cv2.CAP_PROP_POS_FRAMES, frame_count // 2)
                     success, frame = video.read()
                     if not success:
                         # Depending on the video format, compression, and frame
@@ -177,13 +179,46 @@ class ThumbRenderer(QObject):
                     image = Image.fromarray(frame)
 
                 # Plain Text ===================================================
-                elif _filepath.suffix.lower() in PLAINTEXT_TYPES:
+                elif MediaType.PLAINTEXT in MediaCategories.get_types(ext):
                     encoding = detect_char_encoding(_filepath)
                     with open(_filepath, "r", encoding=encoding) as text_file:
                         text = text_file.read(256)
                     bg = Image.new("RGB", (256, 256), color="#1e1e1e")
                     draw = ImageDraw.Draw(bg)
-                    draw.text((16, 16), text, file=(255, 255, 255))
+                    draw.text((16, 16), text, fill=(255, 255, 255))
+                    image = bg
+                # Fonts ========================================================
+                elif MediaType.FONT in MediaCategories.get_types(ext, True):
+                    # Scale the sample font sizes to the preview image
+                    # resolution,assuming the sizes are tuned for 256px.
+                    scaled_sizes: list[int] = [
+                        math.floor(x * (adj_size / 256)) for x in FONT_SAMPLE_SIZES
+                    ]
+                    if gradient:
+                        # handles small thumbnails
+                        bg = Image.new("RGB", (adj_size, adj_size), color="#1e1e1e")
+                        draw = ImageDraw.Draw(bg)
+                        font = ImageFont.truetype(
+                            _filepath, size=math.ceil(adj_size * 0.65)
+                        )
+                        draw.text((10, 0), "Aa", font=font)
+                    else:
+                        # handles big thumbnails and renders a sample text in multiple font sizes
+                        bg = Image.new("RGB", (adj_size, adj_size), color="#1e1e1e")
+                        draw = ImageDraw.Draw(bg)
+                        lines_of_padding = 2
+                        y_offset = 0
+
+                        for font_size in scaled_sizes:
+                            font = ImageFont.truetype(_filepath, size=font_size)
+                            text_wrapped: str = wrap_full_text(
+                                FONT_SAMPLE_TEXT, font=font, width=adj_size, draw=draw
+                            )
+                            draw.multiline_text((0, y_offset), text_wrapped, font=font)
+                            y_offset += (
+                                len(text_wrapped.split("\n")) + lines_of_padding
+                            ) * draw.textbbox((0, 0), "A", font=font)[-1]
+
                     image = bg
                 # 3D ===========================================================
                 # elif extension == 'stl':
@@ -204,6 +239,36 @@ class ThumbRenderer(QObject):
                 # 	img_buf = io.BytesIO()
                 # 	plt.savefig(img_buf, format='png')
                 # 	image = Image.open(img_buf)
+
+                # Blender ===========================================================
+                elif MediaType.BLENDER in MediaCategories.get_types(ext):
+                    try:
+                        blend_image = blend_thumb(str(_filepath))
+
+                        bg = Image.new("RGB", blend_image.size, color="#1e1e1e")
+                        bg.paste(blend_image, mask=blend_image.getchannel(3))
+                        image = bg
+
+                    except (
+                        AttributeError,
+                        UnidentifiedImageError,
+                        FileNotFoundError,
+                        TypeError,
+                    ) as e:
+                        if str(e) == "expected string or buffer":
+                            logging.info(
+                                f"[ThumbRenderer]{ERROR} {_filepath.name} Doesn't have thumbnail saved. ({type(e).__name__})"
+                            )
+
+                        else:
+                            logging.info(
+                                f"[ThumbRenderer]{ERROR}: Couldn't render thumbnail for {_filepath.name} ({type(e).__name__})"
+                            )
+
+                        image = ThumbRenderer.thumb_file_default_512.resize(
+                            (adj_size, adj_size), resample=Image.Resampling.BILINEAR
+                        )
+
                 # No Rendered Thumbnail ========================================
                 else:
                     image = ThumbRenderer.thumb_file_default_512.resize(
@@ -266,6 +331,7 @@ class ThumbRenderer(QObject):
                 cv2.error,
                 DecompressionBombError,
                 UnicodeDecodeError,
+                OSError,
             ) as e:
                 if e is not UnicodeDecodeError:
                     logging.info(

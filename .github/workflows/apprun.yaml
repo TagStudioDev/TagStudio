@@ -37,7 +37,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install -r requirements.txt
+          pip install -Ur requirements.txt
 
       - name: Run TagStudio app and check exit code
         run: |

@@ -10,9 +10,9 @@ from datetime import datetime as dt
 
 import cv2
 import rawpy
-from PIL import Image, UnidentifiedImageError
+from PIL import Image, UnidentifiedImageError, ImageFont
 from PIL.Image import DecompressionBombError
-from PySide6.QtCore import Signal, Qt, QSize
+from PySide6.QtCore import QModelIndex, Signal, Qt, QSize
 from PySide6.QtGui import QResizeEvent, QAction
 from PySide6.QtWidgets import (
     QWidget,
@@ -30,7 +30,10 @@ from humanfriendly import format_size
 
 from src.core.enums import SettingItems, Theme
 from src.core.library import Entry, ItemType, Library
-from src.core.constants import VIDEO_TYPES, IMAGE_TYPES, RAW_IMAGE_TYPES, TS_FOLDER_NAME
+from src.core.constants import (
+    TS_FOLDER_NAME,
+)
+from src.core.media_types import MediaCategories, MediaType
 from src.qt.helpers.file_opener import FileOpenerLabel, FileOpenerHelper, open_file
 from src.qt.modals.add_field import AddFieldModal
 from src.qt.widgets.thumb_renderer import ThumbRenderer
@@ -40,6 +43,7 @@ from src.qt.widgets.text import TextWidget
 from src.qt.widgets.panel import PanelModal
 from src.qt.widgets.text_box_edit import EditTextBox
 from src.qt.widgets.text_line_edit import EditTextLine
+from src.qt.helpers.qbutton_wrapper import QPushButtonWrapper
 from src.qt.widgets.video_player import VideoPlayer
 
 
@@ -61,6 +65,7 @@ class PreviewPanel(QWidget):
 
     def __init__(self, library: Library, driver: "QtDriver"):
         super().__init__()
+        self.is_connected = False
         self.lib = library
         self.driver: QtDriver = driver
         self.initialized = False
@@ -83,7 +88,7 @@ class PreviewPanel(QWidget):
         self.open_file_action = QAction("Open file", self)
         self.open_explorer_action = QAction("Open file in explorer", self)
 
-        self.preview_img = QPushButton()
+        self.preview_img = QPushButtonWrapper()
         self.preview_img.setMinimumSize(*self.img_button_size)
         self.preview_img.setFlat(True)
         self.preview_img.setContextMenuPolicy(Qt.ContextMenuPolicy.ActionsContextMenu)
@@ -218,7 +223,7 @@ class PreviewPanel(QWidget):
         self.afb_layout = QVBoxLayout(self.afb_container)
         self.afb_layout.setContentsMargins(0, 12, 0, 0)
 
-        self.add_field_button = QPushButton()
+        self.add_field_button = QPushButtonWrapper()
         self.add_field_button.setCursor(Qt.CursorShape.PointingHandCursor)
         self.add_field_button.setMinimumSize(96, 28)
         self.add_field_button.setMaximumSize(96, 28)
@@ -279,7 +284,9 @@ class PreviewPanel(QWidget):
         row_layout.addWidget(label)
         layout.addLayout(row_layout)
 
-        def set_button_style(btn: QPushButton, extras: list[str] | None = None):
+        def set_button_style(
+            btn: QPushButtonWrapper | QPushButton, extras: list[str] | None = None
+        ):
             base_style = [
                 f"background-color:{Theme.COLOR_BG.value};",
                 "border-radius:6px;",
@@ -317,7 +324,6 @@ class PreviewPanel(QWidget):
 
             button.clicked.connect(open_library_button_clicked(full_val))
             set_button_style(button)
-
             button_remove = QPushButton("➖")
             button_remove.setCursor(Qt.CursorShape.PointingHandCursor)
             button_remove.setFixedWidth(30)
@@ -411,25 +417,25 @@ class PreviewPanel(QWidget):
             self.afb_container, Qt.AlignmentFlag.AlignHCenter
         )
 
-        try:
+        if self.afm.is_connected:
             self.afm.done.disconnect()
+        if self.add_field_button.is_connected:
             self.add_field_button.clicked.disconnect()
-        except RuntimeError:
-            pass
 
         # self.afm.done.connect(lambda f: (self.lib.add_field_to_entry(self.selected[0][1], f), self.update_widgets()))
         self.afm.done.connect(
             lambda f: (self.add_field_to_selected(f), self.update_widgets())
         )
+        self.afm.is_connected = True
         self.add_field_button.clicked.connect(self.afm.show)
 
-    def add_field_to_selected(self, field_id: int):
-        """Adds an entry field to one or more selected items."""
-        added = set()
-        for item_pair in self.selected:
-            if item_pair[0] == ItemType.ENTRY and item_pair[1] not in added:
-                self.lib.add_field_to_entry(item_pair[1], field_id)
-                added.add(item_pair[1])
+    def add_field_to_selected(self, field_list: list[QModelIndex]):
+        """Add list of entry fields to one or more selected items."""
+        for item_type, item_id in self.selected:
+            if item_type != ItemType.ENTRY:
+                continue
+            for field_item in field_list:
+                self.lib.add_field_to_entry(item_id, field_item.row())
 
     # def update_widgets(self, item: Union[Entry, Collation, Tag]):
     def update_widgets(self):
@@ -466,10 +472,8 @@ class PreviewPanel(QWidget):
                     True,
                     update_on_ratio_change=True,
                 )
-                try:
+                if self.preview_img.is_connected:
                     self.preview_img.clicked.disconnect()
-                except RuntimeError:
-                    pass
                 for i, c in enumerate(self.containers):
                     c.setHidden(True)
             self.preview_img.show()
@@ -513,12 +517,23 @@ class PreviewPanel(QWidget):
                         self.opener.open_explorer
                     )
 
-                    # TODO: Do this somewhere else, this is just here temporarily.
+                    # TODO: Do this all somewhere else, this is just here temporarily.
+                    ext: str = filepath.suffix.lower()
                     try:
                         image = None
-                        if filepath.suffix.lower() in IMAGE_TYPES:
+                        if (
+                            (MediaType.IMAGE in MediaCategories.get_types(ext))
+                            and (
+                                MediaType.IMAGE_RAW
+                                not in MediaCategories.get_types(ext)
+                            )
+                            and (
+                                MediaType.IMAGE_VECTOR
+                                not in MediaCategories.get_types(ext)
+                            )
+                        ):
                             image = Image.open(str(filepath))
-                        elif filepath.suffix.lower() in RAW_IMAGE_TYPES:
+                        elif MediaType.IMAGE_RAW in MediaCategories.get_types(ext):
                             try:
                                 with rawpy.imread(str(filepath)) as raw:
                                     rgb = raw.postprocess()
@@ -530,8 +545,10 @@ class PreviewPanel(QWidget):
                                 rawpy._rawpy.LibRawFileUnsupportedError,
                             ):
                                 pass
-                        elif filepath.suffix.lower() in VIDEO_TYPES:
+                        elif MediaType.VIDEO in MediaCategories.get_types(ext):
                             video = cv2.VideoCapture(str(filepath))
+                            if video.get(cv2.CAP_PROP_FRAME_COUNT) <= 0:
+                                raise cv2.error("File is invalid or has 0 frames")
                             video.set(cv2.CAP_PROP_POS_FRAMES, 0)
                             success, frame = video.read()
                             frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
@@ -550,28 +567,47 @@ class PreviewPanel(QWidget):
                                 self.preview_vid.show()
 
                         # Stats for specific file types are displayed here.
-                        if image and filepath.suffix.lower() in (
-                            IMAGE_TYPES + VIDEO_TYPES + RAW_IMAGE_TYPES
+                        if image and (
+                            (MediaType.IMAGE in MediaCategories.get_types(ext))
+                            or (MediaType.VIDEO in MediaCategories.get_types(ext, True))
+                            or (
+                                MediaType.IMAGE_RAW
+                                in MediaCategories.get_types(ext, True)
+                            )
                         ):
                             self.dimensions_label.setText(
-                                f"{filepath.suffix.upper()[1:]}  •  {format_size(filepath.stat().st_size)}\n{image.width} x {image.height} px"
+                                f"{ext.upper()[1:]}  •  {format_size(filepath.stat().st_size)}\n{image.width} x {image.height} px"
                             )
+                        elif MediaType.FONT in MediaCategories.get_types(ext, True):
+                            try:
+                                font = ImageFont.truetype(filepath)
+                                self.dimensions_label.setText(
+                                    f"{ext.upper()[1:]} •  {format_size(filepath.stat().st_size)}\n{font.getname()[0]} ({font.getname()[1]}) "
+                                )
+                            except OSError:
+                                self.dimensions_label.setText(
+                                    f"{ext.upper()[1:]}  •  {format_size(filepath.stat().st_size)}"
+                                )
+                                logging.info(
+                                    f"[PreviewPanel][ERROR] Couldn't read font file: {filepath}"
+                                )
                         else:
+                            self.dimensions_label.setText(f"{ext.upper()[1:]}")
                             self.dimensions_label.setText(
-                                f"{filepath.suffix.upper()[1:]}  •  {format_size(filepath.stat().st_size)}"
+                                f"{ext.upper()[1:]}  •  {format_size(filepath.stat().st_size)}"
                             )
 
                         if not filepath.is_file():
                             raise FileNotFoundError
 
                     except FileNotFoundError as e:
-                        self.dimensions_label.setText(f"{filepath.suffix.upper()[1:]}")
+                        self.dimensions_label.setText(f"{ext.upper()[1:]}")
                         logging.info(
                             f"[PreviewPanel][ERROR] Couldn't Render thumbnail for {filepath} (because of {e})"
                         )
 
                     except (FileNotFoundError, cv2.error) as e:
-                        self.dimensions_label.setText(f"{filepath.suffix.upper()}")
+                        self.dimensions_label.setText(f"{ext.upper()}")
                         logging.info(
                             f"[PreviewPanel][ERROR] Couldn't Render thumbnail for {filepath} (because of {e})"
                         )
@@ -580,20 +616,18 @@ class PreviewPanel(QWidget):
                         DecompressionBombError,
                     ) as e:
                         self.dimensions_label.setText(
-                            f"{filepath.suffix.upper()[1:]}  •  {format_size(filepath.stat().st_size)}"
+                            f"{ext.upper()[1:]}  •  {format_size(filepath.stat().st_size)}"
                         )
                         logging.info(
                             f"[PreviewPanel][ERROR] Couldn't Render thumbnail for {filepath} (because of {e})"
                         )
 
-                    try:
+                    if self.preview_img.is_connected:
                         self.preview_img.clicked.disconnect()
-                    except RuntimeError:
-                        pass
                     self.preview_img.clicked.connect(
                         lambda checked=False, filepath=filepath: open_file(filepath)
                     )
-
+                    self.preview_img.is_connected = True
                 self.selected = list(self.driver.selected)
                 for i, f in enumerate(item.fields):
                     self.write_container(i, f)
@@ -639,10 +673,9 @@ class PreviewPanel(QWidget):
                     True,
                     update_on_ratio_change=True,
                 )
-                try:
+                if self.preview_img.is_connected:
                     self.preview_img.clicked.disconnect()
-                except RuntimeError:
-                    pass
+                    self.preview_img.is_connected = False
 
             self.common_fields = []
             self.mixed_fields = []
@@ -771,12 +804,12 @@ class PreviewPanel(QWidget):
         """
         Replacement for tag_callback.
         """
-        try:
+        if self.is_connected:
             self.tags_updated.disconnect()
-        except RuntimeError:
-            pass
+
         logging.info("[UPDATE CONTAINER] Setting tags updated slot")
         self.tags_updated.connect(slot)
+        self.is_connected = True
 
     # def write_container(self, item:Union[Entry, Collation, Tag], index, field):
     def write_container(self, index, field, mixed=False):
@@ -1065,7 +1098,8 @@ class PreviewPanel(QWidget):
         )
         # remove_mb.setStandardButtons(QMessageBox.StandardButton.Cancel)
         remove_mb.setDefaultButton(cancel_button)
+        remove_mb.setEscapeButton(cancel_button)
         result = remove_mb.exec_()
         # logging.info(result)
-        if result == 1:
+        if result == 3:
             callback()

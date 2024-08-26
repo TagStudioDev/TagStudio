@@ -1,19 +1,17 @@
 # Copyright (C) 2024 Travis Abendshien (CyanVoxel).
 # Licensed under the GPL-3.0 License.
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
-
-
+import contextlib
 import logging
 import os
 import time
 import typing
-from types import FunctionType
 from pathlib import Path
 from typing import Optional
 
 from PIL import Image, ImageQt
-from PySide6.QtCore import Qt, QSize, QEvent
-from PySide6.QtGui import QPixmap, QEnterEvent, QAction
+from PySide6.QtCore import Qt, QSize, QEvent, QMimeData, QUrl
+from PySide6.QtGui import QPixmap, QEnterEvent, QAction, QDrag
 from PySide6.QtWidgets import (
     QWidget,
     QVBoxLayout,
@@ -23,9 +21,13 @@ from PySide6.QtWidgets import (
     QCheckBox,
 )
 
-
+from src.core.enums import FieldID
 from src.core.library import ItemType, Library, Entry
-from src.core.constants import AUDIO_TYPES, VIDEO_TYPES, IMAGE_TYPES
+from src.core.constants import (
+    TAG_FAVORITE,
+    TAG_ARCHIVED,
+)
+from src.core.media_types import MediaCategories, MediaType
 from src.qt.flowlayout import FlowWidget
 from src.qt.helpers.file_opener import FileOpenerHelper
 from src.qt.helpers.file_deleter import FileDeleterHelper
@@ -39,9 +41,6 @@ ERROR = f"[ERROR]"
 WARNING = f"[WARNING]"
 INFO = f"[INFO]"
 
-DEFAULT_META_TAG_FIELD = 8
-TAG_FAVORITE = 1
-TAG_ARCHIVED = 0
 
 logging.basicConfig(format="%(message)s", level=logging.INFO)
 
@@ -105,6 +104,7 @@ class ItemThumb(FlowWidget):
         self.thumb_size: tuple[int, int] = thumb_size
         self.setMinimumSize(*thumb_size)
         self.setMaximumSize(*thumb_size)
+        self.setMouseTracking(True)
         check_size = 24
         # self.setStyleSheet('background-color:red;')
 
@@ -316,6 +316,7 @@ class ItemThumb(FlowWidget):
 
     def set_mode(self, mode: Optional[ItemType]) -> None:
         if mode is None:
+            self.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents, True)
             self.unsetCursor()
             self.thumb_button.setHidden(True)
             # self.check_badges.setHidden(True)
@@ -323,6 +324,7 @@ class ItemThumb(FlowWidget):
             # self.item_type_badge.setHidden(True)
             pass
         elif mode == ItemType.ENTRY and self.mode != ItemType.ENTRY:
+            self.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents, False)
             self.setCursor(Qt.CursorShape.PointingHandCursor)
             self.thumb_button.setHidden(False)
             self.cb_container.setHidden(False)
@@ -332,6 +334,7 @@ class ItemThumb(FlowWidget):
             self.count_badge.setHidden(True)
             self.ext_badge.setHidden(True)
         elif mode == ItemType.COLLATION and self.mode != ItemType.COLLATION:
+            self.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents, False)
             self.setCursor(Qt.CursorShape.PointingHandCursor)
             self.thumb_button.setHidden(False)
             self.cb_container.setHidden(True)
@@ -340,6 +343,7 @@ class ItemThumb(FlowWidget):
             self.count_badge.setHidden(False)
             self.item_type_badge.setHidden(False)
         elif mode == ItemType.TAG_GROUP and self.mode != ItemType.TAG_GROUP:
+            self.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents, False)
             self.setCursor(Qt.CursorShape.PointingHandCursor)
             self.thumb_button.setHidden(False)
             # self.cb_container.setHidden(True)
@@ -357,10 +361,24 @@ class ItemThumb(FlowWidget):
     def set_extension(self, ext: str) -> None:
         if ext and ext.startswith(".") is False:
             ext = "." + ext
-        if ext and ext not in IMAGE_TYPES or ext in [".gif", ".apng"]:
+        if (
+            ext
+            and (MediaType.IMAGE not in MediaCategories.get_types(ext))
+            or (MediaType.IMAGE_RAW in MediaCategories.get_types(ext))
+            or (MediaType.IMAGE_VECTOR in MediaCategories.get_types(ext))
+            or (MediaType.PHOTOSHOP in MediaCategories.get_types(ext))
+            or ext
+            in [
+                ".apng",
+                ".exr",
+                ".gif",
+            ]
+        ):
             self.ext_badge.setHidden(False)
             self.ext_badge.setText(ext.upper()[1:])
-            if ext in VIDEO_TYPES + AUDIO_TYPES:
+            if (MediaType.VIDEO in MediaCategories.get_types(ext)) or (
+                MediaType.AUDIO in MediaCategories.get_types(ext)
+            ):
                 self.count_badge.setHidden(False)
         else:
             if self.mode == ItemType.ENTRY:
@@ -395,19 +413,22 @@ class ItemThumb(FlowWidget):
     def update_clickable(self, clickable: typing.Callable):
         """Updates attributes of a thumbnail element."""
         # logging.info(f'[GUI] Updating Click Event for element {id(element)}: {id(clickable) if clickable else None}')
-        try:
+        if self.thumb_button.is_connected:
             self.thumb_button.clicked.disconnect()
-        except RuntimeError:
-            pass
         if clickable:
             self.thumb_button.clicked.connect(clickable)
+            self.thumb_button.is_connected = True
 
     def update_badges(self):
         if self.mode == ItemType.ENTRY:
             # logging.info(f'[UPDATE BADGES] ENTRY: {self.lib.get_entry(self.item_id)}')
             # logging.info(f'[UPDATE BADGES] ARCH: {self.lib.get_entry(self.item_id).has_tag(self.lib, 0)}, FAV: {self.lib.get_entry(self.item_id).has_tag(self.lib, 1)}')
-            self.assign_archived(self.lib.get_entry(self.item_id).has_tag(self.lib, 0))
-            self.assign_favorite(self.lib.get_entry(self.item_id).has_tag(self.lib, 1))
+            self.assign_archived(
+                self.lib.get_entry(self.item_id).has_tag(self.lib, TAG_ARCHIVED)
+            )
+            self.assign_favorite(
+                self.lib.get_entry(self.item_id).has_tag(self.lib, TAG_FAVORITE)
+            )
 
     def set_item_id(self, id: int):
         """
@@ -478,7 +499,7 @@ class ItemThumb(FlowWidget):
                 entry.add_tag(
                     self.panel.driver.lib,
                     tag_id,
-                    field_id=DEFAULT_META_TAG_FIELD,
+                    field_id=FieldID.META_TAGS,
                     field_index=-1,
                 )
             else:
@@ -504,3 +525,26 @@ class ItemThumb(FlowWidget):
         self.lib.remove_entry(self.item_id)
         self.panel.driver.purge_item_from_navigation(entry.type, self.item_id)
         self.panel.driver.filter_items()
+
+    def mouseMoveEvent(self, event):
+        if event.buttons() is not Qt.MouseButton.LeftButton:
+            return
+
+        drag = QDrag(self.panel.driver)
+        paths = []
+        mimedata = QMimeData()
+
+        selected_ids = list(map(lambda x: x[1], self.panel.driver.selected))
+        if self.item_id not in selected_ids:
+            selected_ids = [self.item_id]
+
+        for id in selected_ids:
+            entry = self.lib.get_entry(id)
+            url = QUrl.fromLocalFile(
+                Path(self.lib.library_dir) / entry.path / entry.filename
+            )
+            paths.append(url)
+
+        mimedata.setUrls(paths)
+        drag.setMimeData(mimedata)
+        drag.exec(Qt.DropAction.CopyAction)

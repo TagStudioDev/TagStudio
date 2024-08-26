@@ -17,6 +17,7 @@ from PySide6.QtWidgets import (
     QFrame,
 )
 
+from src.core.constants import TAG_COLORS
 from src.core.library import Library
 from src.core.palette import ColorType, get_tag_color
 from src.qt.widgets.panel import PanelWidget
@@ -38,7 +39,7 @@ class TagSearchPanel(PanelWidget):
         self.lib: Library = library
         # self.callback = callback
         self.first_tag_id = None
-        self.tag_limit = 30
+        self.tag_limit = 100
         # self.selected_tag: int = 0
         self.setMinimumSize(300, 400)
         self.root_layout = QVBoxLayout(self)
@@ -84,6 +85,7 @@ class TagSearchPanel(PanelWidget):
 
         self.root_layout.addWidget(self.search_field)
         self.root_layout.addWidget(self.scroll_area)
+        self.update_tags("")
 
     # def reset(self):
     # 	self.search_field.setText('')
@@ -107,12 +109,30 @@ class TagSearchPanel(PanelWidget):
             # logging.info(f"I'm deleting { self.scroll_layout.itemAt(0).widget()}")
             self.scroll_layout.takeAt(0).widget().deleteLater()
 
-        found_tags = self.lib.search_tags(query, include_cluster=True)[
-            : self.tag_limit - 1
-        ]
+        found_tags = self.lib.search_tags(query, include_cluster=True)[: self.tag_limit]
         self.first_tag_id = found_tags[0] if found_tags else None
 
-        for tag_id in found_tags:
+        if query:
+            # sort tags by whether the tag's name is the text that's matching the search, alphabetically, and then by color
+            sorted_tags = sorted(
+                found_tags,
+                key=lambda tag_id: (
+                    not self.lib.get_tag(tag_id).name.lower().startswith(query.lower()),
+                    self.lib.get_tag(tag_id).display_name(self.lib),
+                    TAG_COLORS.index(self.lib.get_tag(tag_id).color.lower()),
+                ),
+            )
+        else:
+            # sort tags by color and then alphabetically
+            sorted_tags = sorted(
+                found_tags,
+                key=lambda tag_id: (
+                    TAG_COLORS.index(self.lib.get_tag(tag_id).color.lower()),
+                    self.lib.get_tag(tag_id).display_name(self.lib),
+                ),
+            )
+
+        for tag_id in sorted_tags:
             c = QWidget()
             l = QHBoxLayout(c)
             l.setContentsMargins(0, 0, 0, 0)
