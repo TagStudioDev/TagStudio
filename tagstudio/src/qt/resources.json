@@ -1,0 +1,18 @@
+{
+  "play_icon": {
+    "path": "qt/images/play.svg",
+    "mode": "rb"
+  },
+  "pause_icon": {
+    "path": "qt/images/pause.svg",
+    "mode": "rb"
+  },
+  "volume_icon": {
+    "path": "qt/images/volume.svg",
+    "mode": "rb"
+  },
+  "volume_mute_icon": {
+    "path": "qt/images/volume_mute.svg",
+    "mode": "rb"
+  }
+}

@@ -8,6 +8,7 @@
 """A Qt driver for TagStudio."""
 
 import ctypes
+import copy
 import logging
 import math
 import os
@@ -21,7 +22,15 @@ from queue import Queue
 from typing import Optional
 from PIL import Image
 from PySide6 import QtCore
-from PySide6.QtCore import QObject, QThread, Signal, Qt, QThreadPool, QTimer, QSettings
+from PySide6.QtCore import (
+    QObject,
+    QThread,
+    Signal,
+    Qt,
+    QThreadPool,
+    QTimer,
+    QSettings,
+)
 from PySide6.QtGui import (
     QGuiApplication,
     QPixmap,
@@ -51,33 +60,21 @@ from src.core.enums import SettingItems, SearchMode
 from src.core.library import ItemType
 from src.core.ts_core import TagStudioCore
 from src.core.constants import (
-    PLAINTEXT_TYPES,
-    TAG_COLORS,
-    DATE_FIELDS,
-    TEXT_FIELDS,
-    BOX_FIELDS,
-    ALL_FILE_TYPES,
-    SHORTCUT_TYPES,
-    PROGRAM_TYPES,
-    ARCHIVE_TYPES,
-    PRESENTATION_TYPES,
-    SPREADSHEET_TYPES,
-    DOC_TYPES,
-    AUDIO_TYPES,
-    VIDEO_TYPES,
-    IMAGE_TYPES,
-    LIBRARY_FILENAME,
     COLLAGE_FOLDER_NAME,
     BACKUP_FOLDER_NAME,
     TS_FOLDER_NAME,
     VERSION_BRANCH,
     VERSION,
+    TEXT_FIELDS,
+    TAG_FAVORITE,
+    TAG_ARCHIVED,
 )
 from src.core.utils.web import strip_web_protocol
 from src.qt.flowlayout import FlowLayout
 from src.qt.main_window import Ui_MainWindow
 from src.qt.helpers.function_iterator import FunctionIterator
 from src.qt.helpers.custom_runnable import CustomRunnable
+from src.qt.resource_manager import ResourceManager
 from src.qt.widgets.collage_icon import CollageIconRenderer
 from src.qt.widgets.panel import PanelModal
 from src.qt.widgets.thumb_renderer import ThumbRenderer
@@ -90,6 +87,7 @@ from src.qt.modals.file_extension import FileExtensionModal
 from src.qt.modals.fix_unlinked import FixUnlinkedEntriesModal
 from src.qt.modals.fix_dupes import FixDupeFilesModal
 from src.qt.modals.folders_to_tags import FoldersToTagsModal
+from src.qt.modals.drop_import import DropImport
 
 # this import has side-effect of import PySide resources
 import src.qt.resources_rc  # pylint: disable=unused-import
@@ -172,6 +170,7 @@ class QtDriver(QObject):
         super().__init__()
         self.core: TagStudioCore = core
         self.lib = self.core.lib
+        self.rm: ResourceManager = ResourceManager()
         self.args = args
         self.frame_dict: dict = {}
         self.nav_frames: list[NavigationState] = []
@@ -266,12 +265,17 @@ class QtDriver(QObject):
         timer.timeout.connect(lambda: None)
 
         # self.main_window = loader.load(home_path)
-        self.main_window = Ui_MainWindow()
+        self.main_window = Ui_MainWindow(self)
         self.main_window.setWindowTitle(self.base_title)
         self.main_window.mousePressEvent = self.mouse_navigation  # type: ignore
         # self.main_window.setStyleSheet(
         # 	f'QScrollBar::{{background:red;}}'
         # 	)
+
+        self.drop_import = DropImport(self)
+        self.main_window.dragEnterEvent = self.drop_import.dragEnterEvent  # type: ignore
+        self.main_window.dropEvent = self.drop_import.dropEvent  # type: ignore
+        self.main_window.dragMoveEvent = self.drop_import.dragMoveEvent  # type: ignore
 
         # # self.main_window.windowFlags() &
         # # self.main_window.setWindowFlag(Qt.WindowType.FramelessWindowHint, True)
@@ -296,6 +300,9 @@ class QtDriver(QObject):
             icon = QIcon()
             icon.addFile(str(icon_path))
             app.setWindowIcon(icon)
+
+        self.copied_fields: list[dict] = []
+        self.is_buffer_merged: bool = False
 
         menu_bar = QMenuBar(self.main_window)
         self.main_window.setMenuBar(menu_bar)
@@ -390,6 +397,36 @@ class QtDriver(QObject):
 
         edit_menu.addSeparator()
 
+        # NOTE: Name is set in update_clipboard_actions()
+        self.copy_entry_fields_action = QAction(menu_bar)
+        self.copy_entry_fields_action.triggered.connect(
+            lambda: self.copy_entry_fields_callback()
+        )
+        self.copy_entry_fields_action.setShortcut(
+            QtCore.QKeyCombination(
+                QtCore.Qt.KeyboardModifier(QtCore.Qt.KeyboardModifier.ControlModifier),
+                QtCore.Qt.Key.Key_C,
+            )
+        )
+        self.copy_entry_fields_action.setToolTip("Ctrl+C")
+        edit_menu.addAction(self.copy_entry_fields_action)
+
+        # NOTE: Name is set in update_clipboard_actions()
+        self.paste_entry_fields_action = QAction(menu_bar)
+        self.paste_entry_fields_action.triggered.connect(
+            self.paste_entry_fields_callback
+        )
+        self.paste_entry_fields_action.setShortcut(
+            QtCore.QKeyCombination(
+                QtCore.Qt.KeyboardModifier(QtCore.Qt.KeyboardModifier.ControlModifier),
+                QtCore.Qt.Key.Key_V,
+            )
+        )
+        self.paste_entry_fields_action.setToolTip("Ctrl+V")
+        edit_menu.addAction(self.paste_entry_fields_action)
+
+        edit_menu.addSeparator()
+
         select_all_action = QAction("Select All", menu_bar)
         select_all_action.triggered.connect(self.select_all_action_callback)
         select_all_action.setShortcut(
@@ -400,6 +437,12 @@ class QtDriver(QObject):
         )
         select_all_action.setToolTip("Ctrl+A")
         edit_menu.addAction(select_all_action)
+
+        clear_select_action = QAction("Clear Selection", menu_bar)
+        clear_select_action.triggered.connect(self.clear_select_action_callback)
+        clear_select_action.setShortcut(QtCore.Qt.Key.Key_Escape)
+        clear_select_action.setToolTip("Esc")
+        edit_menu.addAction(clear_select_action)
 
         edit_menu.addSeparator()
 
@@ -497,6 +540,8 @@ class QtDriver(QObject):
         help_menu.addAction(self.repo_action)
         self.set_macro_menu_viability()
 
+        self.update_clipboard_actions()
+
         menu_bar.addMenu(file_menu)
         menu_bar.addMenu(edit_menu)
         menu_bar.addMenu(tools_menu)
@@ -551,6 +596,7 @@ class QtDriver(QObject):
         self.shutdown()
 
     def init_library_window(self):
+        # self._init_landing_page() # Taken care of inside the widget now
         self._init_thumb_grid()
 
         # TODO: Put this into its own method that copies the font file(s) into memory
@@ -579,6 +625,13 @@ class QtDriver(QObject):
         forward_button: QPushButton = self.main_window.forwardButton
         forward_button.clicked.connect(self.nav_forward)
 
+        # NOTE: Putting this early will result in a white non-responsive
+        # window until everything is loaded. Consider adding a splash screen
+        # or implementing some clever loading tricks.
+        self.main_window.show()
+        self.main_window.activateWindow()
+        self.main_window.toggle_landing_page(True)
+
         self.frame_dict = {}
         self.main_window.pagination.index.connect(
             lambda i: (
@@ -600,11 +653,6 @@ class QtDriver(QObject):
         # self.render_times: list = []
         # self.main_window.setWindowFlag(Qt.FramelessWindowHint)
 
-        # NOTE: Putting this early will result in a white non-responsive
-        # window until everything is loaded. Consider adding a splash screen
-        # or implementing some clever loading tricks.
-        self.main_window.show()
-        self.main_window.activateWindow()
         # self.main_window.raise_()
         self.splash.finish(self.main_window)
         self.preview_panel.update_widgets()
@@ -683,13 +731,19 @@ class QtDriver(QObject):
             self.lib.clear_internal_vars()
             title_text = f"{self.base_title}"
             self.main_window.setWindowTitle(title_text)
+            self.main_window.setAcceptDrops(False)
 
             self.nav_frames = []
             self.cur_frame_idx = -1
             self.cur_query = ""
             self.selected.clear()
+            self.copied_fields.clear()
+            self.is_buffer_merged = False
+            self.update_clipboard_actions()
+            self.set_macro_menu_viability()
             self.preview_panel.update_widgets()
             self.filter_items()
+            self.main_window.toggle_landing_page(True)
 
             end_time = time.time()
             self.main_window.statusbar.showMessage(
@@ -723,6 +777,14 @@ class QtDriver(QObject):
             if item.mode and (item.mode, item.item_id) not in self.selected:
                 self.selected.append((item.mode, item.item_id))
                 item.thumb_button.set_selected(True)
+
+        self.set_macro_menu_viability()
+        self.preview_panel.update_widgets()
+
+    def clear_select_action_callback(self):
+        self.selected.clear()
+        for item in self.item_thumbs:
+            item.thumb_button.set_selected(False)
 
         self.set_macro_menu_viability()
         self.preview_panel.update_widgets()
@@ -929,6 +991,114 @@ class QtDriver(QObject):
                             mode="replace",
                         )
 
+    def copy_entry_fields_callback(self):
+        """Copies fields from selected Entries into to buffer."""
+        merged_fields: list[dict] = []
+        merged_count: int = 0
+        for item_type, item_id in self.selected:
+            if item_type == ItemType.ENTRY:
+                entry = self.lib.get_entry(item_id)
+
+                if len(entry.fields) > 0:
+                    merged_count += 1
+
+                for field in entry.fields:
+                    field_id: int = self.lib.get_field_attr(field, "id")
+                    content = self.lib.get_field_attr(field, "content")
+
+                    if self.lib.get_field_obj(int(field_id))["type"] == "tag_box":
+                        existing_fields: list[int] = self.lib.get_field_index_in_entry(
+                            entry, field_id
+                        )
+                        if existing_fields and merged_fields:
+                            for i in content:
+                                field_index = copy.deepcopy(existing_fields[0])
+                                if i not in merged_fields[field_index][field_id]:
+                                    merged_fields[field_index][field_id].append(
+                                        copy.deepcopy(i)
+                                    )
+                        else:
+                            merged_fields.append(copy.deepcopy({field_id: content}))
+
+                    if self.lib.get_field_obj(int(field_id))["type"] in TEXT_FIELDS:
+                        if {field_id: content} not in merged_fields:
+                            merged_fields.append(copy.deepcopy({field_id: content}))
+
+        # Only set merged state to True if multiple Entries with actual field data were copied.
+        if merged_count > 1:
+            self.is_buffer_merged = True
+        else:
+            self.is_buffer_merged = False
+
+        self.copied_fields = merged_fields
+        self.update_clipboard_actions()
+
+    def paste_entry_fields_callback(self):
+        """Pastes buffered fields into currently selected Entries."""
+        # Code ported from ts_cli.py
+        if self.copied_fields:
+            for item_type, item_id in self.selected:
+                if item_type == ItemType.ENTRY:
+                    entry = self.lib.get_entry(item_id)
+
+                    for field in self.copied_fields:
+                        field_id: int = self.lib.get_field_attr(field, "id")
+                        content = self.lib.get_field_attr(field, "content")
+
+                        if self.lib.get_field_obj(int(field_id))["type"] == "tag_box":
+                            existing_fields: list[int] = (
+                                self.lib.get_field_index_in_entry(entry, field_id)
+                            )
+                            if existing_fields:
+                                self.lib.update_entry_field(
+                                    item_id, existing_fields[0], content, "append"
+                                )
+                            else:
+                                self.lib.add_field_to_entry(item_id, field_id)
+                                self.lib.update_entry_field(
+                                    item_id, -1, content, "append"
+                                )
+
+                        if self.lib.get_field_obj(int(field_id))["type"] in TEXT_FIELDS:
+                            if not self.lib.does_field_content_exist(
+                                item_id, field_id, content
+                            ):
+                                self.lib.add_field_to_entry(item_id, field_id)
+                                self.lib.update_entry_field(
+                                    item_id, -1, content, "replace"
+                                )
+
+            self.preview_panel.update_widgets()
+            self.update_badges()
+        self.update_clipboard_actions()
+
+    def update_clipboard_actions(self):
+        """Updates the text and enabled state of the field copy & paste actions."""
+        # Buffer State Dependant
+        if self.copied_fields:
+            self.paste_entry_fields_action.setDisabled(False)
+        else:
+            self.paste_entry_fields_action.setDisabled(True)
+            self.paste_entry_fields_action.setText("&Paste Fields")
+
+        # Selection Count Dependant
+        if len(self.selected) <= 0:
+            self.copy_entry_fields_action.setDisabled(True)
+            self.paste_entry_fields_action.setDisabled(True)
+            self.copy_entry_fields_action.setText("&Copy Fields")
+        if len(self.selected) == 1:
+            self.copy_entry_fields_action.setDisabled(False)
+            self.copy_entry_fields_action.setText("&Copy Fields")
+        elif len(self.selected) > 1:
+            self.copy_entry_fields_action.setDisabled(False)
+            self.copy_entry_fields_action.setText("&Copy Combined Fields")
+
+        # Merged State Dependant
+        if self.is_buffer_merged:
+            self.paste_entry_fields_action.setText("&Paste Combined Fields")
+        else:
+            self.paste_entry_fields_action.setText("&Paste Fields")
+
     def mouse_navigation(self, event: QMouseEvent):
         # print(event.button())
         if event.button() == Qt.MouseButton.ForwardButton:
@@ -1096,6 +1266,7 @@ class QtDriver(QObject):
             item_thumb = ItemThumb(
                 None, self.lib, self.preview_panel, (self.thumb_size, self.thumb_size)
             )
+
             layout.addWidget(item_thumb)
             self.item_thumbs.append(item_thumb)
 
@@ -1175,6 +1346,7 @@ class QtDriver(QObject):
                     self.preview_panel.set_tags_updated_slot(it.update_badges)
 
         self.set_macro_menu_viability()
+        self.update_clipboard_actions()
         self.preview_panel.update_widgets()
 
     def set_macro_menu_viability(self):
@@ -1240,8 +1412,8 @@ class QtDriver(QObject):
                     filepath = self.lib.library_dir / entry.path / entry.filename
 
                     item_thumb.set_item_id(entry.id)
-                    item_thumb.assign_archived(entry.has_tag(self.lib, 0))
-                    item_thumb.assign_favorite(entry.has_tag(self.lib, 1))
+                    item_thumb.assign_archived(entry.has_tag(self.lib, TAG_ARCHIVED))
+                    item_thumb.assign_favorite(entry.has_tag(self.lib, TAG_FAVORITE))
                     # ctrl_down = True if QGuiApplication.keyboardModifiers() else False
                     # TODO: Change how this works. The click function
                     # for collations a few lines down should NOT be allowed during modifier keys.
@@ -1425,15 +1597,18 @@ class QtDriver(QObject):
 
     def open_library(self, path: Path):
         """Opens a TagStudio library."""
+        open_message: str = f'Opening Library "{str(path)}"...'
+        self.main_window.landing_widget.set_status_label(open_message)
+        self.main_window.statusbar.showMessage(open_message, 3)
+        self.main_window.repaint()
+
         if self.lib.library_dir:
             self.save_library()
             self.lib.clear_internal_vars()
 
-        self.main_window.statusbar.showMessage(f"Opening Library {str(path)}", 3)
         return_code = self.lib.open_library(path)
         if return_code == 1:
             pass
-
         else:
             logging.info(
                 f"{ERROR} No existing TagStudio library found at '{path}'. Creating one."
@@ -1444,6 +1619,7 @@ class QtDriver(QObject):
         self.update_libs_list(path)
         title_text = f"{self.base_title} - Library '{self.lib.library_dir}'"
         self.main_window.setWindowTitle(title_text)
+        self.main_window.setAcceptDrops(True)
 
         self.nav_frames = []
         self.cur_frame_idx = -1
@@ -1451,6 +1627,7 @@ class QtDriver(QObject):
         self.selected.clear()
         self.preview_panel.update_widgets()
         self.filter_items()
+        self.main_window.toggle_landing_page(False)
 
     def create_collage(self) -> None:
         """Generates and saves an image collage based on Library Entries."""

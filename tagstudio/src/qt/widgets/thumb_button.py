@@ -6,10 +6,11 @@
 from PySide6 import QtCore
 from PySide6.QtCore import QEvent
 from PySide6.QtGui import QEnterEvent, QPainter, QColor, QPen, QPainterPath, QPaintEvent
-from PySide6.QtWidgets import QWidget, QPushButton
+from PySide6.QtWidgets import QWidget
+from src.qt.helpers.qbutton_wrapper import QPushButtonWrapper
 
 
-class ThumbButton(QPushButton):
+class ThumbButton(QPushButtonWrapper):
     def __init__(self, parent: QWidget, thumb_size: tuple[int, int]) -> None:
         super().__init__(parent)
         self.thumb_size: tuple[int, int] = thumb_size
