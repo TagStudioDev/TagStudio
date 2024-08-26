@@ -19,6 +19,7 @@ from PySide6.QtWidgets import (
 
 from src.core.library import Library
 from src.qt.widgets.panel import PanelWidget
+from src.qt.helpers.theming import get_style
 
 
 class FileExtensionItemDelegate(QStyledItemDelegate):
@@ -34,6 +35,7 @@ class FileExtensionModal(PanelWidget):
 
     def __init__(self, library: "Library"):
         super().__init__()
+        self.setStyleSheet(get_style("GenericStyle"))
         # Initialize Modal =====================================================
         self.lib = library
         self.setWindowTitle("File Extensions")

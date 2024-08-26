@@ -13,6 +13,7 @@ from PySide6.QtGui import QPixmap
 from PySide6.QtWidgets import QWidget, QLabel, QVBoxLayout, QPushButton
 from src.qt.widgets.clickable_label import ClickableLabel
 from src.qt.helpers.color_overlay import gradient_overlay, theme_fg_overlay
+from src.qt.helpers.theming import get_style
 
 # Only import for type checking/autocompletion, will not be imported at runtime.
 if typing.TYPE_CHECKING:
@@ -24,6 +25,7 @@ logging.basicConfig(format="%(message)s", level=logging.INFO)
 class LandingWidget(QWidget):
     def __init__(self, driver: "QtDriver", pixel_ratio: float):
         super().__init__()
+        self.setStyleSheet(get_style("GenericStyle"))
         self.driver: "QtDriver" = driver
         self.logo_label: ClickableLabel = ClickableLabel()
         self._pixel_ratio: float = pixel_ratio
@@ -64,6 +66,7 @@ class LandingWidget(QWidget):
         self.open_button: QPushButton = QPushButton()
         self.open_button.setMinimumWidth(200)
         self.open_button.setText(f"Open/Create Library {open_shortcut_text}")
+        self.open_button.setStyleSheet(get_style("QPushButtonAccented"))
         self.open_button.clicked.connect(self.driver.open_library_from_dialog)
 
         # Create status label --------------------------------------------------

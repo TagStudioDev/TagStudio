@@ -32,6 +32,7 @@ from src.qt.flowlayout import FlowWidget
 from src.qt.helpers.file_opener import FileOpenerHelper
 from src.qt.widgets.thumb_renderer import ThumbRenderer
 from src.qt.widgets.thumb_button import ThumbButton
+from src.qt.helpers.theming import get_style
 
 if typing.TYPE_CHECKING:
     from src.qt.widgets.preview_panel import PreviewPanel
@@ -94,6 +95,7 @@ class ItemThumb(FlowWidget):
     ):
         """Modes: entry, collation, tag_group"""
         super().__init__()
+        self.setStyleSheet(get_style("GenericStyle"))
         self.lib = library
         self.panel = panel
         self.mode = mode

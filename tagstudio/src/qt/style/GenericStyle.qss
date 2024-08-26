@@ -1,0 +1,61 @@
+QLineEdit {
+    background: #1a1a1a; 
+    border: 2px solid #343434 inset; 
+    color: white; border-radius: 6px; 
+    padding: 0px 8px;
+}
+QPushButton {
+    background: #343434; 
+    color: white; 
+    border-radius: 6px;
+    padding: 6px 12px;
+}
+QPushButton:hover {
+    background: #3f3f3f;
+}
+QPushButton:pressed {
+    background: #2f2f2f;
+}
+QPushButton:disabled {
+    background: #2f2f2f;
+    color: #aaaaaa;
+}
+
+QComboBox {
+    background: #343434; 
+    color: white; 
+    border-radius: 6px;
+    padding: 6px 12px;
+    border: 0px solid #000000;
+}
+QComboBox:hover {
+    background: #3f3f3f;
+}
+QComboBox:pressed {
+    background: #2f2f2f;
+}
+QComboBox:disabled {
+    background: #2f2f2f;
+    color: #aaaaaa;
+}
+/* Styling for the Dropdown Arrow, currently very broken so it's commented out. */
+/* QComboBox::down-arrow {
+    image: url(resources/qt/images/Dropdown.png);
+}
+QComboBox::drop-down {
+    subcontrol-origin: padding;
+    subcontrol-position: top right;
+    width: 16px;
+    border: 0px solid #00000000;
+    border-radius: 6px;
+} */
+QComboBox QAbstractItemView { /* This is the popup */
+    background: #343434; 
+    border: 2px solid #3f3f3f;
+    color: white; 
+    border-radius: 6px;
+    padding: 6px 12px;
+}
+QComboBox:on {
+    background: #00000000;
+}
