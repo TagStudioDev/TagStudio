@@ -36,7 +36,7 @@ logging.basicConfig(format="%(message)s", level=logging.INFO)
 class BuildTagPanel(PanelWidget):
     on_edit = Signal(Tag)
 
-    def __init__(self, library, tag_id: int = -1):
+    def __init__(self, library, tag_id: int = -1, given_name: str = ""):
         super().__init__()
         self.lib: Library = library
         # self.callback = callback
@@ -117,7 +117,7 @@ class BuildTagPanel(PanelWidget):
         self.subtags_add_button = QPushButton()
         self.subtags_add_button.setText("+")
         tsp = TagSearchPanel(self.lib)
-        tsp.tag_chosen.connect(lambda x: self.add_subtag_callback(x))
+        tsp.tag_created.connect(lambda x: self.add_subtag_callback(x))
         self.add_tag_modal = PanelModal(tsp, "Add Parent Tags", "Add Parent Tags")
         self.subtags_add_button.clicked.connect(self.add_tag_modal.show)
         self.subtags_layout.addWidget(self.subtags_add_button)
@@ -163,8 +163,9 @@ class BuildTagPanel(PanelWidget):
         if tag_id >= 0:
             self.tag = self.lib.get_tag(tag_id)
         else:
-            self.tag = Tag(-1, "New Tag", "", [], [], "")
+            self.tag = Tag(-1, "New Tag", given_name, [], [], "")
         self.set_tag(self.tag)
+
 
     def add_subtag_callback(self, tag_id: int):
         logging.info(f"adding {tag_id}")

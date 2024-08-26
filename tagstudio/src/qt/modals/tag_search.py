@@ -33,7 +33,7 @@ logging.basicConfig(format="%(message)s", level=logging.INFO)
 
 
 class TagSearchPanel(PanelWidget):
-    tag_chosen = Signal(int)
+    tag_created = Signal(int)
 
     def __init__(self, library):
         super().__init__()
@@ -96,7 +96,7 @@ class TagSearchPanel(PanelWidget):
     def on_return(self, text: str):
         if text and self.first_tag_id is not None:
             # callback(self.first_tag_id)
-            self.tag_chosen.emit(self.first_tag_id)
+            self.tag_created.emit(self.first_tag_id)
             self.search_field.setText("")
             self.update_tags()
         elif text:
@@ -170,7 +170,7 @@ class TagSearchPanel(PanelWidget):
                 f"}}"
             )
 
-            ab.clicked.connect(lambda checked=False, x=tag_id: self.tag_chosen.emit(x))
+            ab.clicked.connect(lambda checked=False, x=tag_id: self.tag_created.emit(x))
 
             l.addWidget(tw)
             l.addWidget(ab)
@@ -183,8 +183,12 @@ class TagSearchPanel(PanelWidget):
 
         self.search_field.setFocus()
 
-    def create_tag_button(self, query: str):
-        # Construct the create tag button
+    def create_tag_button(self, name: str) -> QWidget:
+        """Construct a "Create Tag" button.
+
+        Args:
+            name (str): The name of the tag to give.
+        """
         c = QWidget()
         l = QHBoxLayout(c)
         l.setContentsMargins(0, 0, 0, 0)
@@ -192,7 +196,7 @@ class TagSearchPanel(PanelWidget):
 
         create_button = QPushButton(self)
         create_button.setFlat(True)
-        create_button.setText(f"Create \"{query.replace("&", "&&")}\"")
+        create_button.setText(f"Create \"{name.replace("&", "&&")}\"")
 
         inner_layout = QHBoxLayout()
         inner_layout.setObjectName("innerLayout")
@@ -219,26 +223,29 @@ class TagSearchPanel(PanelWidget):
             f"}}"
         )
 
-        create_button.clicked.connect(lambda x=query: self.create_tag(query))
+        create_button.clicked.connect(lambda x=name: self.create_tag(name))
         l.addWidget(create_button)
 
         return c
 
-    def create_tag(self, query: str):
-        # Fuction called when tag should be created based on query
-        # Creates the tag and applies it to the document
+    def create_tag(self, name: str) -> None:
+        """Create tag given a string name. Emits a tag_created signal with its new ID.
+
+        Args:
+            name (str): The name of the tag to give.
+        """
         new_tag: Tag = Tag(
-            id=-2,
-            name=query,
-            shorthand=query,
+            id=-1,
+            name=name,
+            shorthand=name,
             aliases=[],
             subtags_ids=[],
             color=random.sample(TAG_COLORS, 1)[0],
         )
 
         new_id = self.lib.add_tag_to_library(new_tag)
-        self.update_tags(query)
-        self.tag_chosen.emit(new_id)
+        self.update_tags(name)
+        self.tag_created.emit(new_id)
 
     def showEvent(self, event):
         # Clear search field and focus when showing modal
