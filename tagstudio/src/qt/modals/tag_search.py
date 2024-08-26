@@ -216,6 +216,7 @@ class TagSearchPanel(PanelWidget):
             has_save=True,
         )
         self.add_tag_modal.saved.connect(lambda n=name: self.on_tag_modal_saved(n))
+        self.add_tag_modal.save_button.setFocus()
         self.add_tag_modal.show()
 
     def on_tag_modal_saved(self, name):
