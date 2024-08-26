@@ -208,7 +208,7 @@ class TagSearchPanel(PanelWidget):
             f"border-color:{get_tag_color(ColorType.BORDER, "dark gray")};"
             f"border-radius: 6px;"
             f"border-style:solid;"
-            f"border-width: {math.ceil(1*self.devicePixelRatio())}px;"
+            f"border-width: {math.ceil(self.devicePixelRatio())}px;"
             f"padding-right: 4px;"
             f"padding-bottom: 1px;"
             f"padding-left: 4px;"
