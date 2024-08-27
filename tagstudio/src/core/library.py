@@ -908,6 +908,12 @@ class Library:
                         except KeyError:
                             # print(file)
                             self.files_not_in_library.append(file)
+                    else:
+                        entry_id = self.filename_to_entry_id_map.get(f.relative_to(self.library_dir), None)
+
+                        if entry_id:
+                            # A exclude file is in the library, let's remove it.
+                            self.remove_entry(entry_id)
             except PermissionError:
                 logging.info(
                     f"The File/Folder {f} cannot be accessed, because it requires higher permission!"
