@@ -449,6 +449,15 @@ class QtDriver(QObject):
 
         edit_menu.addSeparator()
 
+        self.delete_file_action = QAction("Delete Selected File(s)", menu_bar)
+        self.delete_file_action.triggered.connect(
+            lambda f="": self.delete_files_callback(f)
+        )
+        self.delete_file_action.setShortcut(QtCore.Qt.Key.Key_Delete)
+        edit_menu.addAction(self.delete_file_action)
+
+        edit_menu.addSeparator()
+
         manage_file_extensions_action = QAction("Manage File Extensions", menu_bar)
         manage_file_extensions_action.triggered.connect(
             lambda: self.show_file_extension_modal()
@@ -541,7 +550,7 @@ class QtDriver(QObject):
             lambda: webbrowser.open("https://github.com/TagStudioDev/TagStudio")
         )
         help_menu.addAction(self.repo_action)
-        self.set_macro_menu_viability()
+        self.set_menu_action_viability()
 
         self.update_clipboard_actions()
 
@@ -764,7 +773,7 @@ class QtDriver(QObject):
             self.copied_fields.clear()
             self.is_buffer_merged = False
             self.update_clipboard_actions()
-            self.set_macro_menu_viability()
+            self.set_menu_action_viability()
             self.preview_panel.update_widgets()
             self.filter_items()
             self.main_window.toggle_landing_page(True)
@@ -802,7 +811,7 @@ class QtDriver(QObject):
                 self.selected.append((item.mode, item.item_id))
                 item.thumb_button.set_selected(True)
 
-        self.set_macro_menu_viability()
+        self.set_menu_action_viability()
         self.preview_panel.update_widgets()
 
     def clear_select_action_callback(self):
@@ -810,7 +819,7 @@ class QtDriver(QObject):
         for item in self.item_thumbs:
             item.thumb_button.set_selected(False)
 
-        self.set_macro_menu_viability()
+        self.set_menu_action_viability()
         self.preview_panel.update_widgets()
 
     def show_tag_database(self):
@@ -846,9 +855,10 @@ class QtDriver(QObject):
         pending: list[Path] = []
         deleted_count: int = 0
         filepath: Path = None  # Initialize
-        if len(self.selected) <= 1:
+
+        if len(self.selected) <= 1 and origin_path:
             pending.append(Path(origin_path))
-        elif len(self.selected) > 1:
+        elif (len(self.selected) > 1) or (len(self.selected) <= 1 and not origin_path):
             for i, item_pair in enumerate(self.selected):
                 if item_pair[0] == ItemType.ENTRY:
                     entry = self.lib.get_entry(item_pair[1])
@@ -857,12 +867,12 @@ class QtDriver(QObject):
 
         if pending:
             if self.delete_file_confirmation(len(pending), pending[0]) == 3:
-                for f in pending:
-                    if origin_path == f:
+                for i, f in enumerate(pending):
+                    if (origin_path == f) or (not origin_path):
                         self.preview_panel.stop_file_use()
                     if delete_file(f):
                         self.main_window.statusbar.showMessage(
-                            f'Deleting file "{f}"...'
+                            f'Deleting file [{i}/{len(pending)}]: "{f}"...'
                         )
                         self.main_window.statusbar.repaint()
 
@@ -1485,17 +1495,19 @@ class QtDriver(QObject):
                 if it.mode == type and it.item_id == id:
                     self.preview_panel.set_tags_updated_slot(it.update_badges)
 
-        self.set_macro_menu_viability()
+        self.set_menu_action_viability()
         self.update_clipboard_actions()
         self.preview_panel.update_widgets()
 
-    def set_macro_menu_viability(self):
+    def set_menu_action_viability(self):
         if len([x[1] for x in self.selected if x[0] == ItemType.ENTRY]) == 0:
             self.autofill_action.setDisabled(True)
             self.sort_fields_action.setDisabled(True)
+            self.delete_file_action.setDisabled(True)
         else:
             self.autofill_action.setDisabled(False)
             self.sort_fields_action.setDisabled(False)
+            self.delete_file_action.setDisabled(False)
 
     def update_thumbs(self):
         """Updates search thumbnails."""
