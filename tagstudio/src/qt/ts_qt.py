@@ -69,9 +69,11 @@ from src.core.constants import (
     TAG_FAVORITE,
     TAG_ARCHIVED,
 )
+from src.core.media_types import MediaCategories, MediaType
 from src.core.utils.web import strip_web_protocol
 from src.qt.flowlayout import FlowLayout
 from src.qt.main_window import Ui_MainWindow
+from src.qt.helpers.file_deleter import delete_file
 from src.qt.helpers.function_iterator import FunctionIterator
 from src.qt.helpers.custom_runnable import CustomRunnable
 from src.qt.resource_manager import ResourceManager
@@ -532,7 +534,7 @@ class QtDriver(QObject):
         folders_to_tags_action.triggered.connect(lambda: ftt_modal.show())
         macros_menu.addAction(folders_to_tags_action)
 
-        # Help Menu ==========================================================
+        # Help Menu ============================================================
         self.repo_action = QAction("Visit GitHub Repository", menu_bar)
         self.repo_action.triggered.connect(
             lambda: webbrowser.open("https://github.com/TagStudioDev/TagStudio")
@@ -549,6 +551,9 @@ class QtDriver(QObject):
         menu_bar.addMenu(window_menu)
         menu_bar.addMenu(help_menu)
 
+        # ======================================================================
+
+        # Preview Panel --------------------------------------------------------
         self.preview_panel = PreviewPanel(self.lib, self)
         l: QHBoxLayout = self.main_window.splitter
         l.addWidget(self.preview_panel)
@@ -823,6 +828,73 @@ class QtDriver(QObject):
         )
         self.modal.saved.connect(lambda: (panel.save(), self.filter_items("")))
         self.modal.show()
+
+    def delete_files_callback(self, origin_path: str | Path):
+        """Callback to send on or more files to the system trash.
+
+        If 0-1 items are currently selected, the origin_path is used to delete the file
+        from the originating context menu item.
+        If there are currently multiple items selected,
+        then the selection buffer is used to determine the files to be deleted.
+
+        Args:
+            origin_path(str): The file path associated with the widget making the call.
+                May or may not be the file targeted, depending on the selection rules.
+        """
+        _op: Path = Path(origin_path)
+        item = None
+        deleted_count: int = 0
+        filepath: Path = None  # Initialize
+        if len(self.selected) <= 1:
+            if self.selected:
+                item = self.lib.get_entry(self.selected[0][1])
+                filepath = self.lib.library_dir / item.path / item.filename
+                # If the file to be deleted is currently being displayed on the Preview Panel,
+                # tell the panel to stop any use of the file.
+                if origin_path == filepath:
+                    self.preview_panel.stop_file_use()
+            self.main_window.statusbar.showMessage(f'Deleting file "{origin_path}"...')
+            self.main_window.statusbar.repaint()
+            if delete_file(_op):
+                op_item = self.lib.get_entry_id_from_filepath(_op)
+                self.lib.remove_entry(op_item)
+                self.purge_item_from_navigation(ItemType.ENTRY, op_item)
+                deleted_count += 1
+        elif len(self.selected) > 1:
+            for i, item_pair in enumerate(self.selected):
+                if item_pair[0] == ItemType.ENTRY:
+                    item = self.lib.get_entry(item_pair[1])
+                    filepath = self.lib.library_dir / item.path / item.filename
+                    self.main_window.statusbar.showMessage(
+                        f'Deleting file "{filepath}"...'
+                    )
+                    self.main_window.statusbar.repaint()
+                    if delete_file(filepath):
+                        self.purge_item_from_navigation(item.type, item.id)
+                        self.lib.remove_entry(item.id)
+                        deleted_count += 1
+            self.selected.clear()
+
+        self.filter_items()
+        self.preview_panel.update_widgets()
+
+        if len(self.selected) <= 1 and deleted_count == 0:
+            self.main_window.statusbar.showMessage(
+                "No files deleted. Check if any of the files are currently in use."
+            )
+        elif len(self.selected) <= 1 and deleted_count == 1:
+            self.main_window.statusbar.showMessage(f"Deleted {deleted_count} file!")
+        elif len(self.selected) > 1 and deleted_count == 0:
+            self.main_window.statusbar.showMessage(
+                "No files deleted! Check if any of the files are currently in use."
+            )
+        elif len(self.selected) > 1 and deleted_count < len(self.selected):
+            self.main_window.statusbar.showMessage(
+                f"Only deleted {deleted_count} file{'' if deleted_count == 1 else 's'}! Check if any of the files are currently in use"
+            )
+        elif len(self.selected) > 1 and deleted_count == len(self.selected):
+            self.main_window.statusbar.showMessage(f"Deleted {deleted_count} files!")
+        self.main_window.statusbar.repaint()
 
     def add_new_files_callback(self):
         """Runs when user initiates adding new files to the Library."""
@@ -1449,12 +1521,20 @@ class QtDriver(QObject):
 
         for i, item_thumb in enumerate(self.item_thumbs, start=0):
             if i < len(self.nav_frames[self.cur_frame_idx].contents):
-                filepath = ""
+                filepath: Path = None  # Initialize
                 if self.nav_frames[self.cur_frame_idx].contents[i][0] == ItemType.ENTRY:
                     entry = self.lib.get_entry(
                         self.nav_frames[self.cur_frame_idx].contents[i][1]
                     )
-                    filepath = self.lib.library_dir / entry.path / entry.filename
+                    filepath: Path = self.lib.library_dir / entry.path / entry.filename
+
+                    try:
+                        item_thumb.delete_action.triggered.disconnect()
+                    except RuntimeWarning:
+                        pass
+                    item_thumb.delete_action.triggered.connect(
+                        lambda checked=False, f=filepath: self.delete_files_callback(f)
+                    )
 
                     item_thumb.set_item_id(entry.id)
                     item_thumb.assign_archived(entry.has_tag(self.lib, TAG_ARCHIVED))
@@ -1499,7 +1579,9 @@ class QtDriver(QObject):
                         else collation.e_ids_and_pages[0][0]
                     )
                     cover_e = self.lib.get_entry(cover_id)
-                    filepath = self.lib.library_dir / cover_e.path / cover_e.filename
+                    filepath: Path = (
+                        self.lib.library_dir / cover_e.path / cover_e.filename
+                    )
                     item_thumb.set_count(str(len(collation.e_ids_and_pages)))
                     item_thumb.update_clickable(
                         clickable=(

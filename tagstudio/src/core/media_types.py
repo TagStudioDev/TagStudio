@@ -23,6 +23,7 @@ class MediaType(str, Enum):
     DISK_IMAGE: str = "disk_image"
     DOCUMENT: str = "document"
     FONT: str = "font"
+    IMAGE_ANIMATED: str = "image_animated"
     IMAGE_RAW: str = "image_raw"
     IMAGE_VECTOR: str = "image_vector"
     IMAGE: str = "image"
@@ -167,6 +168,12 @@ class MediaCategories:
         ".ttf",
         ".woff",
         ".woff2",
+    }
+    _IMAGE_ANIMATED_SET: set[str] = {
+        ".apng",
+        ".gif",
+        ".webp",
+        ".jxl",
     }
     _IMAGE_RAW_SET: set[str] = {
         ".arw",
@@ -317,6 +324,11 @@ class MediaCategories:
         extensions=_FONT_SET,
         is_iana=True,
     )
+    IMAGE_ANIMATED_TYPES: MediaCategory = MediaCategory(
+        media_type=MediaType.IMAGE_ANIMATED,
+        extensions=_IMAGE_ANIMATED_SET,
+        is_iana=False,
+    )
     IMAGE_RAW_TYPES: MediaCategory = MediaCategory(
         media_type=MediaType.IMAGE_RAW,
         extensions=_IMAGE_RAW_SET,
@@ -404,6 +416,7 @@ class MediaCategories:
         DISK_IMAGE_TYPES,
         DOCUMENT_TYPES,
         FONT_TYPES,
+        IMAGE_ANIMATED_TYPES,
         IMAGE_RAW_TYPES,
         IMAGE_TYPES,
         IMAGE_VECTOR_TYPES,
