@@ -12,6 +12,7 @@ import copy
 import logging
 import math
 import os
+import platform
 import sys
 import time
 import typing
@@ -53,6 +54,7 @@ from PySide6.QtWidgets import (
     QMenu,
     QMenuBar,
     QComboBox,
+    QMessageBox,
 )
 from humanfriendly import format_timespan
 
@@ -69,7 +71,6 @@ from src.core.constants import (
     TAG_FAVORITE,
     TAG_ARCHIVED,
 )
-from src.core.media_types import MediaCategories, MediaType
 from src.core.utils.web import strip_web_protocol
 from src.qt.flowlayout import FlowLayout
 from src.qt.main_window import Ui_MainWindow
@@ -841,41 +842,38 @@ class QtDriver(QObject):
             origin_path(str): The file path associated with the widget making the call.
                 May or may not be the file targeted, depending on the selection rules.
         """
-        _op: Path = Path(origin_path)
-        item = None
+        entry = None
+        pending: list[Path] = []
         deleted_count: int = 0
         filepath: Path = None  # Initialize
         if len(self.selected) <= 1:
-            if self.selected:
-                item = self.lib.get_entry(self.selected[0][1])
-                filepath = self.lib.library_dir / item.path / item.filename
-                # If the file to be deleted is currently being displayed on the Preview Panel,
-                # tell the panel to stop any use of the file.
-                if origin_path == filepath:
-                    self.preview_panel.stop_file_use()
-            self.main_window.statusbar.showMessage(f'Deleting file "{origin_path}"...')
-            self.main_window.statusbar.repaint()
-            if delete_file(_op):
-                op_item = self.lib.get_entry_id_from_filepath(_op)
-                self.lib.remove_entry(op_item)
-                self.purge_item_from_navigation(ItemType.ENTRY, op_item)
-                deleted_count += 1
+            pending.append(Path(origin_path))
         elif len(self.selected) > 1:
             for i, item_pair in enumerate(self.selected):
                 if item_pair[0] == ItemType.ENTRY:
-                    item = self.lib.get_entry(item_pair[1])
-                    filepath = self.lib.library_dir / item.path / item.filename
-                    self.main_window.statusbar.showMessage(
-                        f'Deleting file "{filepath}"...'
-                    )
-                    self.main_window.statusbar.repaint()
-                    if delete_file(filepath):
-                        self.purge_item_from_navigation(item.type, item.id)
-                        self.lib.remove_entry(item.id)
-                        deleted_count += 1
-            self.selected.clear()
+                    entry = self.lib.get_entry(item_pair[1])
+                    filepath = self.lib.library_dir / entry.path / entry.filename
+                    pending.append(filepath)
 
-        self.filter_items()
+        if pending:
+            if self.delete_file_confirmation(len(pending), pending[0]) == 3:
+                for f in pending:
+                    if origin_path == f:
+                        self.preview_panel.stop_file_use()
+                    if delete_file(f):
+                        self.main_window.statusbar.showMessage(
+                            f'Deleting file "{f}"...'
+                        )
+                        self.main_window.statusbar.repaint()
+
+                        entry_id = self.lib.get_entry_id_from_filepath(f)
+                        self.lib.remove_entry(entry_id)
+                        self.purge_item_from_navigation(ItemType.ENTRY, entry_id)
+                        deleted_count += 1
+                self.selected.clear()
+
+        if deleted_count > 0:
+            self.filter_items()
         self.preview_panel.update_widgets()
 
         if len(self.selected) <= 1 and deleted_count == 0:
@@ -895,6 +893,31 @@ class QtDriver(QObject):
         elif len(self.selected) > 1 and deleted_count == len(self.selected):
             self.main_window.statusbar.showMessage(f"Deleted {deleted_count} files!")
         self.main_window.statusbar.repaint()
+
+    def delete_file_confirmation(self, count: int, filename: Path | None = None) -> int:
+        trash_term: str = "Trash"
+        if platform.system() == "Windows":
+            trash_term = "Recycle Bin"
+
+        msg_box = QMessageBox()
+        msg_box.setIcon(QMessageBox.Icon.Warning)
+        msg_box.setTextFormat(Qt.TextFormat.RichText)
+
+        msg_box.setWindowTitle("Delete File" if count == 1 else "Delete Files")
+        if count <= 1:
+            msg_box.setText(
+                f"Are you sure you want to move this file to the {trash_term}?<br>"
+                "<b>This will remove it from TagStudio <i>AND</i> your file system!</b><br><br>"
+                f"{filename if filename else ''}<br>"
+            )
+        elif count > 1:
+            msg_box.setText(
+                f"Are you sure you want to move these {count} files to the {trash_term}?<br>"
+                "<b>This will remove them from TagStudio <i>AND</i> your file system!</b><br>"
+            )
+        msg_box.addButton("&No", QMessageBox.ButtonRole.NoRole)
+        msg_box.addButton("&Yes", QMessageBox.ButtonRole.YesRole)
+        return msg_box.exec()
 
     def add_new_files_callback(self):
         """Runs when user initiates adding new files to the Library."""
