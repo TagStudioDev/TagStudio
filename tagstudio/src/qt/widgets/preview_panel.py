@@ -4,6 +4,7 @@
 
 import logging
 from pathlib import Path
+import platform
 import time
 import typing
 from datetime import datetime as dt
@@ -11,7 +12,7 @@ import cv2
 import rawpy
 from PIL import Image, UnidentifiedImageError, ImageFont
 from PIL.Image import DecompressionBombError
-from PySide6.QtCore import QModelIndex, Signal, Qt, QSize
+from PySide6.QtCore import QModelIndex, Signal, Qt, QSize, QByteArray, QBuffer
 from PySide6.QtGui import QGuiApplication, QResizeEvent, QAction, QMovie
 from PySide6.QtWidgets import (
     QWidget,
@@ -45,6 +46,7 @@ from src.qt.widgets.text_line_edit import EditTextLine
 from src.qt.helpers.qbutton_wrapper import QPushButtonWrapper
 from src.qt.widgets.video_player import VideoPlayer
 from src.qt.helpers.file_tester import is_readable_video
+from src.qt.resource_manager import ResourceManager
 
 
 # Only import for type checking/autocompletion, will not be imported at runtime.
@@ -98,6 +100,10 @@ class PreviewPanel(QWidget):
 
         self.open_file_action = QAction("Open file", self)
         self.open_explorer_action = QAction("Open file in explorer", self)
+        self.trash_term: str = "Trash"
+        if platform.system() == "Windows":
+            self.trash_term = "Recycle Bin"
+        self.delete_action = QAction(f"Send file to {self.trash_term}", self)
 
         self.preview_img = QPushButtonWrapper()
         self.preview_img.setMinimumSize(*self.img_button_size)
@@ -105,6 +111,7 @@ class PreviewPanel(QWidget):
         self.preview_img.setContextMenuPolicy(Qt.ContextMenuPolicy.ActionsContextMenu)
         self.preview_img.addAction(self.open_file_action)
         self.preview_img.addAction(self.open_explorer_action)
+        self.preview_img.addAction(self.delete_action)
 
         self.preview_gif = QLabel()
         self.preview_gif.setMinimumSize(*self.img_button_size)
@@ -112,10 +119,13 @@ class PreviewPanel(QWidget):
         self.preview_gif.setCursor(Qt.CursorShape.ArrowCursor)
         self.preview_gif.addAction(self.open_file_action)
         self.preview_gif.addAction(self.open_explorer_action)
+        self.preview_gif.addAction(self.delete_action)
         self.preview_gif.hide()
+        self.gif_buffer: QBuffer = QBuffer()
 
         self.preview_vid = VideoPlayer(driver)
         self.preview_vid.hide()
+        self.preview_vid.addAction(self.delete_action)
         self.thumb_renderer = ThumbRenderer()
         self.thumb_renderer.updated.connect(
             lambda ts, i, s: (self.preview_img.setIcon(i))
@@ -490,6 +500,14 @@ class PreviewPanel(QWidget):
                 )
                 if self.preview_img.is_connected:
                     self.preview_img.clicked.disconnect()
+                    self.preview_img.is_connected = False
+
+                try:
+                    self.delete_action.triggered.disconnect()
+                except RuntimeWarning:
+                    pass
+                self.delete_action.setEnabled(False)
+
                 for i, c in enumerate(self.containers):
                     c.setHidden(True)
             self.preview_img.show()
@@ -529,6 +547,17 @@ class PreviewPanel(QWidget):
                     )
                     self.preview_img.setCursor(Qt.CursorShape.PointingHandCursor)
 
+                    try:
+                        self.delete_action.triggered.disconnect()
+                    except RuntimeError:
+                        pass
+                    self.delete_action.setText(f"Send file to {self.trash_term}")
+                    self.delete_action.triggered.connect(
+                        lambda checked=False,
+                        f=filepath: self.driver.delete_files_callback(f)
+                    )
+                    self.delete_action.setEnabled(True)
+
                     self.opener = FileOpenerHelper(filepath)
                     self.open_file_action.triggered.connect(self.opener.open_file)
                     self.open_explorer_action.triggered.connect(
@@ -539,16 +568,24 @@ class PreviewPanel(QWidget):
                     ext: str = filepath.suffix.lower()
                     try:
                         if filepath.suffix.lower() in [".gif"]:
-                            movie = QMovie(str(filepath))
+                            with open(filepath, mode="rb") as f:
+                                if self.preview_gif.movie():
+                                    self.preview_gif.movie().stop()
+                                    self.gif_buffer.close()
+
+                                ba = f.read()
+                                self.gif_buffer.setData(ba)
+                                movie = QMovie(self.gif_buffer, QByteArray())
+                                self.preview_gif.setMovie(movie)
+                                movie.start()
+
                             image = Image.open(str(filepath))
-                            self.preview_gif.setMovie(movie)
                             self.resizeEvent(
                                 QResizeEvent(
                                     QSize(image.width, image.height),
                                     QSize(image.width, image.height),
                                 )
                             )
-                            movie.start()
                             self.preview_img.hide()
                             self.preview_vid.hide()
                             self.preview_gif.show()
@@ -660,6 +697,7 @@ class PreviewPanel(QWidget):
                     # TODO: Implement a clickable label to use for the GIF preview.
                     if self.preview_img.is_connected:
                         self.preview_img.clicked.disconnect()
+                        self.preview_img.is_connected = False
                     self.preview_img.clicked.connect(
                         lambda checked=False, filepath=filepath: open_file(filepath)
                     )
@@ -700,6 +738,16 @@ class PreviewPanel(QWidget):
                     Qt.ContextMenuPolicy.NoContextMenu
                 )
                 self.preview_img.setCursor(Qt.CursorShape.ArrowCursor)
+
+                try:
+                    self.delete_action.triggered.disconnect()
+                except RuntimeError:
+                    pass
+                self.delete_action.setText(f"Send files to {self.trash_term}")
+                self.delete_action.triggered.connect(
+                    lambda checked=False, f=None: self.driver.delete_files_callback(f)
+                )
+                self.delete_action.setEnabled(True)
 
                 ratio: float = self.devicePixelRatio()
                 self.thumb_renderer.render(
@@ -1140,3 +1188,26 @@ class PreviewPanel(QWidget):
         # logging.info(result)
         if result == 3:
             callback()
+
+    def stop_file_use(self):
+        """Stops the use of the currently previewed file. Used to release file permissions."""
+        logging.info("[PreviewPanel] Stopping file use in video playback...")
+        # This swaps the video out for a placeholder so the previous video's file
+        # is no longer in use by this object.
+        self.preview_vid.play(ResourceManager.get_path("placeholder_mp4"), QSize(8, 8))
+        self.preview_vid.hide()
+
+        # NOTE: I'm keeping this here until #357 is merged in the case it still needs to be used.
+        # logging.info("[PreviewPanel] Stopping file use for animated image playback...")
+        # logging.info(self.preview_gif.movie())
+        # if self.preview_gif.movie():
+        #     self.preview_gif.movie().stop()
+        # with open(ResourceManager.get_path("placeholder_gif"), mode="rb") as f:
+        #     ba = f.read()
+        #     self.gif_buffer.setData(ba)
+        #     movie = QMovie(self.gif_buffer, QByteArray())
+        #     self.preview_gif.setMovie(movie)
+        #     movie.start()
+
+        # self.preview_gif.hide()
+        # logging.info(self.preview_gif.movie())

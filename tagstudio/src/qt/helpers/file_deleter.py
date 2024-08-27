@@ -1,38 +1,30 @@
-import logging
-import traceback
-from pathlib import Path
-from collections.abc import Callable
+# Copyright (C) 2024 Travis Abendshien (CyanVoxel).
+# Licensed under the GPL-3.0 License.
+# Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
-ERROR = f"[ERROR]"
-WARNING = f"[WARNING]"
-INFO = f"[INFO]"
+import logging
+from pathlib import Path
+
+from send2trash import send2trash
 
 logging.basicConfig(format="%(message)s", level=logging.INFO)
 
 
-def delete_file(path: str | Path, callback: Callable):
-    _path = str(path)
-    _file = Path(_path)
-    logging.info(f"Deleting file: {_path}")
-    if not _file.exists():
-        logging.error(f"File not found: {_path}")
-        return
+def delete_file(path: str | Path) -> bool:
+    """Sends a file to the system trash.
+
+    Args:
+        path (str | Path): The path of the file to delete.
+    """
+    _path = Path(path)
     try:
-        _file.unlink()
-        callback()
-    except Exception as exception:
-        logging.exception(exception)
-
-
-class FileDeleterHelper:
-    def __init__(self, filepath: str | Path):
-        self.filepath = filepath
-
-    def set_filepath(self, filepath: str | Path):
-        self.filepath = filepath
-
-    def set_delete_callback(self, callback: Callable):
-        self.delete_callback = callback
-
-    def delete_file(self):
-        delete_file(self.filepath, self.delete_callback)
+        logging.info(f"[delete_file] Sending to Trash: {_path}")
+        send2trash(_path)
+        return True
+    except PermissionError as e:
+        logging.error(f"[delete_file][ERROR] PermissionError: {e}")
+    except FileNotFoundError:
+        logging.error(f"[delete_file][ERROR] File Not Found: {_path}")
+    except Exception as e:
+        logging.error(e)
+    return False
