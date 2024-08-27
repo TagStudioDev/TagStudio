@@ -894,7 +894,9 @@ class Library:
                     and "tagstudio_thumbs" not in f.parts
                     and not f.is_dir()
                 ):
-                    suffix = f.name.lower() if f.name.startswith(".") else f.suffix.lower()
+                    suffix = (
+                        f.name.lower() if f.name.startswith(".") else f.suffix.lower()
+                    )
                     if suffix not in self.ext_list and self.is_exclude_list:
                         self.dir_file_count += 1
                         file = f.relative_to(self.library_dir)
@@ -909,7 +911,9 @@ class Library:
                             # print(file)
                             self.files_not_in_library.append(file)
                     else:
-                        entry_id = self.filename_to_entry_id_map.get(f.relative_to(self.library_dir), None)
+                        entry_id = self.filename_to_entry_id_map.get(
+                            f.relative_to(self.library_dir), None
+                        )
 
                         if entry_id:
                             # A exclude file is in the library, let's remove it.
