@@ -71,6 +71,7 @@ from src.core.constants import (
     TAG_FAVORITE,
     TAG_ARCHIVED,
 )
+from src.core.palette import ColorType, get_ui_color
 from src.core.utils.web import strip_web_protocol
 from src.qt.flowlayout import FlowLayout
 from src.qt.main_window import Ui_MainWindow
@@ -854,7 +855,6 @@ class QtDriver(QObject):
         entry = None
         pending: list[Path] = []
         deleted_count: int = 0
-        filepath: Path = None  # Initialize
 
         if len(self.selected) <= 1 and origin_path:
             pending.append(Path(origin_path))
@@ -862,7 +862,7 @@ class QtDriver(QObject):
             for i, item_pair in enumerate(self.selected):
                 if item_pair[0] == ItemType.ENTRY:
                     entry = self.lib.get_entry(item_pair[1])
-                    filepath = self.lib.library_dir / entry.path / entry.filename
+                    filepath: Path = self.lib.library_dir / entry.path / entry.filename
                     pending.append(filepath)
 
         if pending:
@@ -884,7 +884,7 @@ class QtDriver(QObject):
 
         if deleted_count > 0:
             self.filter_items()
-        self.preview_panel.update_widgets()
+            self.preview_panel.update_widgets()
 
         if len(self.selected) <= 1 and deleted_count == 0:
             self.main_window.statusbar.showMessage(
@@ -905,29 +905,46 @@ class QtDriver(QObject):
         self.main_window.statusbar.repaint()
 
     def delete_file_confirmation(self, count: int, filename: Path | None = None) -> int:
+        """A confirmation dialogue box for deleting files.
+
+        Args:
+            count(int): The number of files to be deleted.
+            filename(Path | None): The filename to show if only one file is to be deleted.
+        """
         trash_term: str = "Trash"
+        perm_warning: str = ""
         if platform.system() == "Windows":
             trash_term = "Recycle Bin"
+            # NOTE: Windows + send2trash will PERMANENTLY delete files which cannot be moved to the Recycle Bin.
+            # This is done without any warning, so this message is currently the best way I've got to inform the user.
+            # https://github.com/arsenetar/send2trash/issues/28
+            perm_warning = (
+                f"<h4 style='color: {get_ui_color(ColorType.PRIMARY, 'red')}'>"
+                f"<b>WARNING!</b> If this file can't be moved to the Recycle Bin, "
+                f"</b>it will be <b>permanently deleted!</b></h4>"
+            )
 
-        msg_box = QMessageBox()
-        msg_box.setIcon(QMessageBox.Icon.Warning)
-        msg_box.setTextFormat(Qt.TextFormat.RichText)
-
-        msg_box.setWindowTitle("Delete File" if count == 1 else "Delete Files")
+        msg = QMessageBox()
+        msg.setTextFormat(Qt.TextFormat.RichText)
+        msg.setWindowTitle("Delete File" if count == 1 else "Delete Files")
+        msg.setIcon(QMessageBox.Icon.Warning)
         if count <= 1:
-            msg_box.setText(
-                f"Are you sure you want to move this file to the {trash_term}?<br>"
-                "<b>This will remove it from TagStudio <i>AND</i> your file system!</b><br><br>"
-                f"{filename if filename else ''}<br>"
+            msg.setText(
+                f"<h3>Are you sure you want to move this file to the {trash_term}?</h3>"
+                "<h4>This will remove it from TagStudio <i>AND</i> your file system!</h4>"
+                f"{filename if filename else ''}"
+                f"{perm_warning}<br>"
             )
         elif count > 1:
-            msg_box.setText(
-                f"Are you sure you want to move these {count} files to the {trash_term}?<br>"
-                "<b>This will remove them from TagStudio <i>AND</i> your file system!</b><br>"
+            msg.setText(
+                f"<h3>Are you sure you want to move these {count} files to the {trash_term}?</h3>"
+                "<h4>This will remove them from TagStudio <i>AND</i> your file system!</h4>"
+                f"{perm_warning}<br>"
             )
-        msg_box.addButton("&No", QMessageBox.ButtonRole.NoRole)
-        msg_box.addButton("&Yes", QMessageBox.ButtonRole.YesRole)
-        return msg_box.exec()
+        msg.addButton("&No", QMessageBox.ButtonRole.NoRole)
+        msg.addButton("&Yes", QMessageBox.ButtonRole.YesRole)
+
+        return msg.exec()
 
     def add_new_files_callback(self):
         """Runs when user initiates adding new files to the Library."""
