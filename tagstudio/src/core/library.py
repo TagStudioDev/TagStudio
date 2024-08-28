@@ -1080,25 +1080,22 @@ class Library:
                             )
                         )
                 for match in matches:
-                    # print(f'MATCHED ({match[2]}%): \n   {files[match[0]]} \n-> {files[match[1]]}')
                     file_1 = files[match[0]].relative_to(self.library_dir)
                     file_2 = files[match[1]].relative_to(self.library_dir)
 
                     if (
-                        file_1.resolve in self.filename_to_entry_id_map.keys()
+                        file_1 in self.filename_to_entry_id_map.keys()
                         and file_2 in self.filename_to_entry_id_map.keys()
                     ):
                         self.dupe_files.append(
                             (files[match[0]], files[match[1]], match[2])
                         )
-                print("")
 
             for dupe in self.dupe_files:
                 print(
                     f"[LIBRARY] MATCHED ({dupe[2]}%): \n   {dupe[0]} \n-> {dupe[1]}",
                     end="\n",
                 )
-                # self.dupe_files.append(full_path)
 
     def remove_missing_files(self):
         deleted = []
