@@ -54,13 +54,6 @@ class ThumbRenderer(QObject):
     updated = Signal(float, QPixmap, QSize, str)
     updated_ratio = Signal(float)
 
-    # TODO: Make dynamic font sizes given different pixel ratios
-    FONT_PIXEL_RATIO: float = 1
-    ext_font = ImageFont.truetype(
-        Path(__file__).parents[3] / "resources/qt/fonts/Oxanium-Bold.ttf",
-        math.floor(12 * FONT_PIXEL_RATIO),
-    )
-
     def __init__(self) -> None:
         """Initialize the class."""
         super().__init__()
@@ -917,13 +910,6 @@ class ThumbRenderer(QObject):
         loading_thumb: Image.Image = self._get_icon(
             "thumb_loading", theme_color, (adj_size, adj_size), pixel_ratio
         )
-
-        if ThumbRenderer.FONT_PIXEL_RATIO != pixel_ratio:
-            ThumbRenderer.FONT_PIXEL_RATIO = pixel_ratio
-            ThumbRenderer.ext_font = ImageFont.truetype(
-                Path(__file__).parents[3] / "resources/qt/fonts/Oxanium-Bold.ttf",
-                math.floor(12 * ThumbRenderer.FONT_PIXEL_RATIO),
-            )
 
         if is_loading:
             final = loading_thumb.resize(
