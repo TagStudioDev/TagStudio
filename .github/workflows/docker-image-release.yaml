@@ -17,7 +17,21 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4.1.7
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0  # Fetch all history to ensure the tag is available
+
+      - name: Extract Tag Name
+        id: extract_tag
+        run: |
+          TAG_NAME=$(git describe --tags --exact-match || echo "")
+          echo "TAG_NAME=${TAG_NAME}" >> $GITHUB_ENV
+
+      - name: Checkout specific tag
+        if: env.TAG_NAME != ''
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ env.TAG_NAME }}  # Checkout the exact tag
 
       - name: Set up lowercase repo name
         id: vars
@@ -42,5 +56,5 @@ jobs:
           platforms: ${{ matrix.platform }}
           push: true
           tags: |
-            ghcr.io/${{ env.REPO_NAME_LOWER }}:${{ github.ref_name }}
+            ghcr.io/${{ env.REPO_NAME_LOWER }}:${{ env.TAG_NAME }}
             ghcr.io/${{ env.REPO_NAME_LOWER }}:latest
