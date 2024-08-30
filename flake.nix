@@ -88,10 +88,15 @@
                     setQtEnv = pkgs.runCommand "set-qt-env"
                       {
                         buildInputs = with qt6Pkgs.qt6; [
-                          qtbase # Needed by wrapQtAppsHook.
-                          wrapQtAppsHook
+                          qtbase
                         ];
-                        nativeBuildInputs = with pkgs; [ makeShellWrapper ];
+
+                        nativeBuildInputs = (with pkgs; [
+                          makeShellWrapper
+                        ])
+                        ++ (with qt6Pkgs.qt6; [
+                          wrapQtAppsHook
+                        ]);
                       }
                       ''
                         makeShellWrapper "$(type -p sh)" "$out" "''${qtWrapperArgs[@]}"
@@ -122,7 +127,9 @@
                       libglvnd
                       libkrb5
                       libpulseaudio
+                      libva
                       libxkbcommon
+                      openssl
                       stdenv.cc.cc.lib
                       wayland
                       xorg.libxcb
