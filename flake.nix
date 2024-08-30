@@ -88,7 +88,7 @@
                     setQtEnv = pkgs.runCommand "set-qt-env"
                       {
                         buildInputs = with qt6Pkgs.qt6; [
-                          qtbase # Needed by wrapQtAppsHook.
+                          qtbase
                         ];
 
                         nativeBuildInputs = (with pkgs; [
@@ -104,17 +104,6 @@
                       '';
                   in
                   ''
-                    AMD_VDPAU=$(${pkgs.libva-utils}/bin/vainfo 2>/dev/null | ${pkgs.gnugrep}/bin/grep -F radeonsi)
-
-                    # If no explicit VDPAU driver is specified, check for a potential VDPAU~>VA-API adapter.
-                    # Try to use AMD driver `radeonsi` (non-zero output for AMD_VDPAU => found a driver)
-                    if [ -z "$VDPAU_DRIVER" ] && [ -n "$AMD_VDPAU" ]; then
-                      echo "Use \"radeonsi\" as VDPAU~>VA-API adapter for video hardware acceleration on AMD-GPUs."
-                      echo "$AMD_VDPAU"
-
-                      export VDPAU_DRIVER=radeonsi
-                    fi
-
                     source ${setQtEnv}
                   '';
 
