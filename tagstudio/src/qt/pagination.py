@@ -138,6 +138,7 @@ class Pagination(QWidget, QObject):
             raise ValueError("Negative index detected")
 
         # Screw it
+        # Gotta give  it to ya: Nice docs on this one lol
         for i in range(0, 10):
             if self.start_buffer_layout.itemAt(i):
                 self.start_buffer_layout.itemAt(i).widget().setHidden(True)

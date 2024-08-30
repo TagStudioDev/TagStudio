@@ -29,10 +29,12 @@ from src.qt.widgets.landing import LandingWidget
 if typing.TYPE_CHECKING:
     from src.qt.ts_qt import QtDriver
 
+# Configure basic "logging" options
 logging.basicConfig(format="%(message)s", level=logging.INFO)
 
 
 class Ui_MainWindow(QMainWindow):
+    """Main Qt window"""
   
     def __init__(self, driver: "QtDriver", parent=None) -> None:
         super().__init__(parent)
@@ -55,18 +57,28 @@ class Ui_MainWindow(QMainWindow):
         
 
     def setupUi(self, MainWindow):
+        """Set up the window's UI."""
+        # In case main window doesn't have a name as an object
         if not MainWindow.objectName():
+            # Set object's name to "MainWindow"
             MainWindow.setObjectName(u"MainWindow")
+        # Set the default size of the window
         MainWindow.resize(1300, 720)
-        
+
+        #
+        # Initialize UI elements.
+        #
         self.centralwidget = QWidget(MainWindow)
         self.centralwidget.setObjectName(u"centralwidget")
         self.gridLayout = QGridLayout(self.centralwidget)
         self.gridLayout.setObjectName(u"gridLayout")
         self.horizontalLayout = QHBoxLayout()
         self.horizontalLayout.setObjectName(u"horizontalLayout")
-  
-        # ComboBox goup for search type and thumbnail size
+        #
+        # End init
+        #
+
+        # ComboBox group for search type and thumbnail size
         self.horizontalLayout_3 = QHBoxLayout()
         self.horizontalLayout_3.setObjectName("horizontalLayout_3")
   
@@ -74,7 +86,7 @@ class Ui_MainWindow(QMainWindow):
         spacerItem = QSpacerItem(40, 20, QSizePolicy.Expanding, QSizePolicy.Minimum)
         self.horizontalLayout_3.addItem(spacerItem)
   
-          # Search type selector
+        # Search type selector
         self.comboBox_2 = QComboBox(self.centralwidget)
         self.comboBox_2.setMinimumSize(QSize(165, 0))
         self.comboBox_2.setObjectName("comboBox_2")
@@ -89,7 +101,8 @@ class Ui_MainWindow(QMainWindow):
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(
-            self.comboBox.sizePolicy().hasHeightForWidth())
+            self.comboBox.sizePolicy().hasHeightForWidth()
+        )
         self.comboBox.setSizePolicy(sizePolicy)
         self.comboBox.setMinimumWidth(128)
         self.comboBox.setMaximumWidth(128)
@@ -227,8 +240,9 @@ class Ui_MainWindow(QMainWindow):
         # time.sleep(0.02)  # sleep for 20ms
         pass
 
-    def toggle_landing_page(self, enabled: bool):
-        if enabled:
+    def toggle_landing_page(self, state: bool) -> None:
+        # Check if the state is True
+        if state:
             self.scrollArea.setHidden(True)
             self.landing_widget.setHidden(False)
             self.landing_widget.animate_logo_in()
