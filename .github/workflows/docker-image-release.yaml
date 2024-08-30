@@ -1,9 +1,10 @@
 name: Docker Image - Release
 
 on:
-  push:
-    tags:
-      - v[0-9]+.[0-9]+.[0-9]+*
+  workflow_run:
+    workflows: ["Release"]
+    types:
+      - completed
 
 jobs:
   build-and-push:
