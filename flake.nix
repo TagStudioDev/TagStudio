@@ -95,7 +95,6 @@
                           makeShellWrapper
                         ])
                         ++ (with qt6Pkgs.qt6; [
-                          full
                           wrapQtAppsHook
                         ]);
                       }
@@ -139,10 +138,13 @@
                       libglvnd
                       libkrb5
                       libpulseaudio
+                      libva
                       libxkbcommon
+                      openssl
                       stdenv.cc.cc.lib
                       wayland
                       xorg.libxcb
+                      xorg.libXrandr
                       zlib
                       zstd
                     ])
