@@ -1,7 +1,7 @@
 version: '3.3'
 services:
   tagstudio:
-    image: ghcr.io/strenkml/tagstudio:nightly
+    image: ghcr.io/strenkml/tagstudio:nightly-latest
     build:
       context: .
       dockerfile: Dockerfile
