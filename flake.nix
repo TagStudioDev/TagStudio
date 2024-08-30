@@ -4,6 +4,11 @@
   inputs = {
     devenv.url = "github:cachix/devenv";
 
+    devenv-root = {
+      url = "file+file:///dev/null";
+      flake = false;
+    };
+
     flake-parts = {
       url = "github:hercules-ci/flake-parts";
       inputs.nixpkgs-lib.follows = "nixpkgs";
@@ -53,9 +58,14 @@
                 #
                 # Thank you! -Xarvex
 
-                name = "TagStudio";
+                devenv.root =
+                  let
+                    devenvRoot = builtins.readFile inputs.devenv-root.outPath;
+                  in
+                  # If not overriden (/dev/null), --impure is necessary.
+                  pkgs.lib.mkIf (devenvRoot != "") devenvRoot;
 
-                dotenv.disableHint = true;
+                name = "TagStudio";
 
                 # Derived from previous flake iteration.
                 packages = (with pkgs; [
