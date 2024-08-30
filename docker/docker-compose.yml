@@ -1,0 +1,18 @@
+version: '3.3'
+services:
+  tagstudio:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: ghcr.io/strenkml/tagstudio:latest
+    container_name: tagstudio
+    restart: unless-stopped
+    ports:
+      - 3000:3000
+    volumes:
+      # host:container
+      - /photos:/photos
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=America/New_York
