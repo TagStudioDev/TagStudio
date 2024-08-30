@@ -1,4 +1,4 @@
-name: Release Docker Image
+name: Docker Image - Release
 
 on:
   push:

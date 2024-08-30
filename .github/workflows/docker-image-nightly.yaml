@@ -1,4 +1,4 @@
-name: Nightly Docker Image
+name: Docker Image - Nightly
 
 on:
   schedule:
