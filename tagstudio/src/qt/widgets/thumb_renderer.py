@@ -112,9 +112,10 @@ class ThumbRenderer(QObject):
              pixel_ratio (float): The screen pixel ratio.
              scale_radius (bool): Option to scale the radius up (Used for Preview Panel).
         """
+        THUMB_SCALE: int = 512
         radius_scale: float = 1
         if scale_radius:
-            radius_scale = max(size[0], size[1]) / 512
+            radius_scale = max(size[0], size[1]) / THUMB_SCALE
 
         item: Image.Image = self.thumb_masks.get((*size, pixel_ratio, radius_scale))
         if not item:
