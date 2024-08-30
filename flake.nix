@@ -124,7 +124,9 @@
                       libpulseaudio
                       libxkbcommon
                       stdenv.cc.cc.lib
+                      wayland
                       xorg.libxcb
+                      xorg.libXrandr
                       zlib
                       zstd
                     ])
