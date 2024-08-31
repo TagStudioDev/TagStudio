@@ -1357,8 +1357,13 @@ class Library:
                 query_words.remove("filename:")
             if tag_only:
                 query_words.remove("tag_id:")
-                tag_only_ids.append(int(query_words[0]))
-                tag_only_ids = tag_only_ids + self.get_tag_cluster(int(query_words[0]))
+                if query_words and query_words[0].isdigit():
+                    tag_only_ids.append(int(query_words[0]))
+                    tag_only_ids.extend(self.get_tag_cluster(int(query_words[0])))
+                else:
+                    logging.error(
+                        f"[Library][ERROR] Invalid Tag ID in query: {query_words}"
+                    )
             # TODO: Expand this to allow for dynamic fields to work.
             only_no_author: bool = "no author" in query or "no artist" in query
 
