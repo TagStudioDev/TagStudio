@@ -9,6 +9,7 @@ import typing
 
 from PySide6.QtCore import Signal, Qt
 from PySide6.QtWidgets import QPushButton
+from PySide6.QtGui import QGuiApplication
 
 from src.core.constants import TAG_FAVORITE, TAG_ARCHIVED
 from src.core.library import Library, Tag
@@ -49,6 +50,22 @@ class TagBoxWidget(FieldWidget):
         self.base_layout.setContentsMargins(0, 0, 0, 0)
         self.setLayout(self.base_layout)
 
+        bg_color: str = (
+            "#1E1E1E"
+            if QGuiApplication.styleHints().colorScheme() is Qt.ColorScheme.Dark
+            else "#EEEEEE"
+        )
+        fg_color: str = (
+            "#FFFFFF"
+            if QGuiApplication.styleHints().colorScheme() is Qt.ColorScheme.Dark
+            else "#444444"
+        )
+        ol_color: str = (
+            "#333333"
+            if QGuiApplication.styleHints().colorScheme() is Qt.ColorScheme.Dark
+            else "#F5F5F5"
+        )
+
         self.add_button = QPushButton()
         self.add_button.setCursor(Qt.CursorShape.PointingHandCursor)
         self.add_button.setMinimumSize(23, 23)
@@ -56,10 +73,10 @@ class TagBoxWidget(FieldWidget):
         self.add_button.setText("+")
         self.add_button.setStyleSheet(
             f"QPushButton{{"
-            f"background: #1e1e1e;"
-            f"color: #FFFFFF;"
+            f"background: {bg_color};"
+            f"color: {fg_color};"
             f"font-weight: bold;"
-            f"border-color: #333333;"
+            f"border-color: {ol_color};"
             f"border-radius: 6px;"
             f"border-style:solid;"
             f"border-width:{math.ceil(1*self.devicePixelRatio())}px;"

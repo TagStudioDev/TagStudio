@@ -3,7 +3,6 @@
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
 import logging
-import os
 import traceback
 from pathlib import Path
 
@@ -12,24 +11,15 @@ from PIL import Image, ImageChops, UnidentifiedImageError
 from PIL.Image import DecompressionBombError
 from PySide6.QtCore import (
     QObject,
-    QThread,
     Signal,
-    QRunnable,
-    Qt,
-    QThreadPool,
-    QSize,
-    QEvent,
-    QTimer,
-    QSettings,
 )
-
 from src.core.library import Library
 from src.core.media_types import MediaCategories, MediaType
+from src.qt.helpers.file_tester import is_readable_video
 
-
-ERROR = f"[ERROR]"
-WARNING = f"[WARNING]"
-INFO = f"[INFO]"
+ERROR = "[ERROR]"
+WARNING = "[WARNING]"
+INFO = "[INFO]"
 
 
 logging.basicConfig(format="%(message)s", level=logging.INFO)
@@ -53,7 +43,6 @@ class CollageIconRenderer(QObject):
     ):
         entry = self.lib.get_entry(entry_id)
         filepath = self.lib.library_dir / entry.path / entry.filename
-        file_type = os.path.splitext(filepath)[1].lower()[1:]
         color: str = ""
 
         try:
@@ -85,14 +74,11 @@ class CollageIconRenderer(QObject):
 
                 if data_only_mode:
                     pic = Image.new("RGB", size, color)
-                    # collage.paste(pic, (y*thumb_size, x*thumb_size))
                     self.rendered.emit(pic)
             if not data_only_mode:
                 logging.info(
-                    f"\r{INFO} Combining [ID:{entry_id}/{len(self.lib.entries)}]: {self.get_file_color(filepath.suffix.lower())}{entry.path}{os.sep}{entry.filename}\033[0m"
+                    f"\r{INFO} Combining [ID:{entry_id}/{len(self.lib.entries)}]: {self.get_file_color(filepath.suffix.lower())}{entry.path}/{entry.filename}\033[0m"
                 )
-                # sys.stdout.write(f'\r{INFO} Combining [{i+1}/{len(self.lib.entries)}]: {self.get_file_color(file_type)}{entry.path}{os.sep}{entry.filename}{RESET}')
-                # sys.stdout.flush()
                 ext: str = filepath.suffix.lower()
                 if MediaType.IMAGE in MediaCategories.get_types(ext):
                     try:
@@ -108,39 +94,36 @@ class CollageIconRenderer(QObject):
                                 pic = ImageChops.hard_light(
                                     pic, Image.new("RGB", size, color)
                                 )
-                            # collage.paste(pic, (y*thumb_size, x*thumb_size))
                             self.rendered.emit(pic)
                     except DecompressionBombError as e:
                         logging.info(f"[ERROR] One of the images was too big ({e})")
                 elif MediaType.VIDEO in MediaCategories.get_types(ext):
-                    video = cv2.VideoCapture(str(filepath))
-                    video.set(
-                        cv2.CAP_PROP_POS_FRAMES,
-                        (video.get(cv2.CAP_PROP_FRAME_COUNT) // 2),
-                    )
-                    success, frame = video.read()
-                    if not success:
-                        # Depending on the video format, compression, and frame
-                        # count, seeking halfway does not work and the thumb
-                        # must be pulled from the earliest available frame.
-                        video.set(cv2.CAP_PROP_POS_FRAMES, 0)
+                    if is_readable_video(filepath):
+                        video = cv2.VideoCapture(str(filepath), cv2.CAP_FFMPEG)
+                        video.set(
+                            cv2.CAP_PROP_POS_FRAMES,
+                            (video.get(cv2.CAP_PROP_FRAME_COUNT) // 2),
+                        )
                         success, frame = video.read()
-                    frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-                    with Image.fromarray(frame, mode="RGB") as pic:
-                        if keep_aspect:
-                            pic.thumbnail(size)
-                        else:
-                            pic = pic.resize(size)
-                        if data_tint_mode and color:
-                            pic = ImageChops.hard_light(
-                                pic, Image.new("RGB", size, color)
-                            )
-                        # collage.paste(pic, (y*thumb_size, x*thumb_size))
-                        self.rendered.emit(pic)
+                        if not success:
+                            # Depending on the video format, compression, and frame
+                            # count, seeking halfway does not work and the thumb
+                            # must be pulled from the earliest available frame.
+                            video.set(cv2.CAP_PROP_POS_FRAMES, 0)
+                            success, frame = video.read()
+                        frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+                        with Image.fromarray(frame, mode="RGB") as pic:
+                            if keep_aspect:
+                                pic.thumbnail(size)
+                            else:
+                                pic = pic.resize(size)
+                            if data_tint_mode and color:
+                                pic = ImageChops.hard_light(
+                                    pic, Image.new("RGB", size, color)
+                                )
+                            self.rendered.emit(pic)
         except (UnidentifiedImageError, FileNotFoundError):
-            logging.info(
-                f"\n{ERROR} Couldn't read {entry.path}{os.sep}{entry.filename}"
-            )
+            logging.info(f"\n{ERROR} Couldn't read {entry.path}/{entry.filename}")
             with Image.open(
                 str(
                     Path(__file__).parents[2]
@@ -151,22 +134,16 @@ class CollageIconRenderer(QObject):
                 if data_tint_mode and color:
                     pic = pic.convert(mode="RGB")
                     pic = ImageChops.hard_light(pic, Image.new("RGB", size, color))
-                # collage.paste(pic, (y*thumb_size, x*thumb_size))
                 self.rendered.emit(pic)
         except KeyboardInterrupt:
-            # self.quit(save=False, backup=True)
-            run = False
-            # clear()
             logging.info("\n")
             logging.info(f"{INFO} Collage operation cancelled.")
-            clear_scr = False
-        except:
-            logging.info(f"{ERROR} {entry.path}{os.sep}{entry.filename}")
+        except Exception:
+            logging.info(f"{ERROR} {entry.path}/{entry.filename}")
             traceback.print_exc()
             logging.info("Continuing...")
 
         self.done.emit()
-        # logging.info('Done!')
 
     # NOTE: Depreciated
     def get_file_color(self, ext: str):

@@ -62,27 +62,29 @@ class ItemThumb(FlowWidget):
     tag_group_icon_128.load()
 
     small_text_style = (
-        f"background-color:rgba(0, 0, 0, 192);"
-        f"font-family:Oxanium;"
-        f"font-weight:bold;"
-        f"font-size:12px;"
-        f"border-radius:3px;"
-        f"padding-top: 4px;"
-        f"padding-right: 1px;"
-        f"padding-bottom: 1px;"
-        f"padding-left: 1px;"
+        "background-color:rgba(0, 0, 0, 192);"
+        "color:#FFFFFF;"
+        "font-family:Oxanium;"
+        "font-weight:bold;"
+        "font-size:12px;"
+        "border-radius:3px;"
+        "padding-top: 4px;"
+        "padding-right: 1px;"
+        "padding-bottom: 1px;"
+        "padding-left: 1px;"
     )
 
     med_text_style = (
-        f"background-color:rgba(0, 0, 0, 192);"
-        f"font-family:Oxanium;"
-        f"font-weight:bold;"
-        f"font-size:18px;"
-        f"border-radius:3px;"
-        f"padding-top: 4px;"
-        f"padding-right: 1px;"
-        f"padding-bottom: 1px;"
-        f"padding-left: 1px;"
+        "background-color:rgba(0, 0, 0, 192);"
+        "color:#FFFFFF;"
+        "font-family:Oxanium;"
+        "font-weight:bold;"
+        "font-size:18px;"
+        "border-radius:3px;"
+        "padding-top: 4px;"
+        "padding-right: 1px;"
+        "padding-bottom: 1px;"
+        "padding-left: 1px;"
     )
 
     def __init__(
@@ -361,12 +363,15 @@ class ItemThumb(FlowWidget):
             and (MediaType.IMAGE not in MediaCategories.get_types(ext))
             or (MediaType.IMAGE_RAW in MediaCategories.get_types(ext))
             or (MediaType.IMAGE_VECTOR in MediaCategories.get_types(ext))
-            or (MediaType.PHOTOSHOP in MediaCategories.get_types(ext))
+            or (MediaType.ADOBE_PHOTOSHOP in MediaCategories.get_types(ext))
             or ext
             in [
                 ".apng",
+                ".avif",
                 ".exr",
                 ".gif",
+                ".jxl",
+                ".webp",
             ]
         ):
             self.ext_badge.setHidden(False)

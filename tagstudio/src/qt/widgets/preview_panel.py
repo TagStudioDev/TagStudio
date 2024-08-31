@@ -7,13 +7,12 @@ from pathlib import Path
 import time
 import typing
 from datetime import datetime as dt
-
 import cv2
 import rawpy
 from PIL import Image, UnidentifiedImageError, ImageFont
 from PIL.Image import DecompressionBombError
 from PySide6.QtCore import QModelIndex, Signal, Qt, QSize
-from PySide6.QtGui import QResizeEvent, QAction
+from PySide6.QtGui import QGuiApplication, QResizeEvent, QAction, QMovie
 from PySide6.QtWidgets import (
     QWidget,
     QVBoxLayout,
@@ -27,13 +26,13 @@ from PySide6.QtWidgets import (
     QMessageBox,
 )
 from humanfriendly import format_size
-
 from src.core.enums import SettingItems, Theme
 from src.core.library import Entry, ItemType, Library
 from src.core.constants import (
     TS_FOLDER_NAME,
 )
 from src.core.media_types import MediaCategories, MediaType
+from src.qt.helpers.rounded_pixmap_style import RoundedPixmapStyle
 from src.qt.helpers.file_opener import FileOpenerLabel, FileOpenerHelper, open_file
 from src.qt.modals.add_field import AddFieldModal
 from src.qt.widgets.thumb_renderer import ThumbRenderer
@@ -45,6 +44,7 @@ from src.qt.widgets.text_box_edit import EditTextBox
 from src.qt.widgets.text_line_edit import EditTextLine
 from src.qt.helpers.qbutton_wrapper import QPushButtonWrapper
 from src.qt.widgets.video_player import VideoPlayer
+from src.qt.helpers.file_tester import is_readable_video
 
 
 # Only import for type checking/autocompletion, will not be imported at runtime.
@@ -81,6 +81,17 @@ class PreviewPanel(QWidget):
         self.img_button_size: tuple[int, int] = (266, 266)
         self.image_ratio: float = 1.0
 
+        self.label_bg_color = (
+            Theme.COLOR_BG_DARK.value
+            if QGuiApplication.styleHints().colorScheme() is Qt.ColorScheme.Dark
+            else Theme.COLOR_DARK_LABEL.value
+        )
+        self.panel_bg_color = (
+            Theme.COLOR_BG_DARK.value
+            if QGuiApplication.styleHints().colorScheme() is Qt.ColorScheme.Dark
+            else Theme.COLOR_BG_LIGHT.value
+        )
+
         self.image_container = QWidget()
         image_layout = QHBoxLayout(self.image_container)
         image_layout.setContentsMargins(0, 0, 0, 0)
@@ -92,9 +103,17 @@ class PreviewPanel(QWidget):
         self.preview_img.setMinimumSize(*self.img_button_size)
         self.preview_img.setFlat(True)
         self.preview_img.setContextMenuPolicy(Qt.ContextMenuPolicy.ActionsContextMenu)
-
         self.preview_img.addAction(self.open_file_action)
         self.preview_img.addAction(self.open_explorer_action)
+
+        self.preview_gif = QLabel()
+        self.preview_gif.setMinimumSize(*self.img_button_size)
+        self.preview_gif.setContextMenuPolicy(Qt.ContextMenuPolicy.ActionsContextMenu)
+        self.preview_gif.setCursor(Qt.CursorShape.ArrowCursor)
+        self.preview_gif.addAction(self.open_file_action)
+        self.preview_gif.addAction(self.open_explorer_action)
+        self.preview_gif.hide()
+
         self.preview_vid = VideoPlayer(driver)
         self.preview_vid.hide()
         self.thumb_renderer = ThumbRenderer()
@@ -116,6 +135,8 @@ class PreviewPanel(QWidget):
 
         image_layout.addWidget(self.preview_img)
         image_layout.setAlignment(self.preview_img, Qt.AlignmentFlag.AlignCenter)
+        image_layout.addWidget(self.preview_gif)
+        image_layout.setAlignment(self.preview_gif, Qt.AlignmentFlag.AlignCenter)
         image_layout.addWidget(self.preview_vid)
         image_layout.setAlignment(self.preview_vid, Qt.AlignmentFlag.AlignCenter)
         self.image_container.setMinimumSize(*self.img_button_size)
@@ -132,15 +153,16 @@ class PreviewPanel(QWidget):
         # 	Qt.TextInteractionFlag.TextSelectableByMouse)
 
         properties_style = (
-            f"background-color:{Theme.COLOR_BG.value};"
-            f"font-family:Oxanium;"
-            f"font-weight:bold;"
-            f"font-size:12px;"
-            f"border-radius:6px;"
-            f"padding-top: 4px;"
-            f"padding-right: 1px;"
-            f"padding-bottom: 1px;"
-            f"padding-left: 1px;"
+            f"background-color:{self.label_bg_color};"
+            "color:#FFFFFF;"
+            "font-family:Oxanium;"
+            "font-weight:bold;"
+            "font-size:12px;"
+            "border-radius:3px;"
+            "padding-top: 4px;"
+            "padding-right: 1px;"
+            "padding-bottom: 1px;"
+            "padding-left: 1px;"
         )
 
         self.dimensions_label.setStyleSheet(properties_style)
@@ -171,9 +193,10 @@ class PreviewPanel(QWidget):
         # background and NOT the scroll container background, so that the
         # rounded corners are maintained when scrolling. I was unable to
         # find the right trick to only select that particular element.
+
         scroll_area.setStyleSheet(
             "QWidget#entryScrollContainer{"
-            f"background: {Theme.COLOR_BG.value};"
+            f"background:{self.panel_bg_color};"
             "border-radius:6px;"
             "}"
         )
@@ -278,6 +301,7 @@ class PreviewPanel(QWidget):
         clear_layout(layout)
 
         label = QLabel("Recent Libraries")
+        label.setStyleSheet("font-weight:bold;")
         label.setAlignment(Qt.AlignCenter)  # type: ignore
 
         row_layout = QHBoxLayout()
@@ -288,11 +312,9 @@ class PreviewPanel(QWidget):
             btn: QPushButtonWrapper | QPushButton, extras: list[str] | None = None
         ):
             base_style = [
-                f"background-color:{Theme.COLOR_BG.value};",
+                f"background-color:{self.panel_bg_color};",
                 "border-radius:6px;",
-                "text-align: left;",
                 "padding-top: 3px;",
-                "padding-left: 6px;",
                 "padding-bottom: 4px;",
             ]
 
@@ -323,11 +345,11 @@ class PreviewPanel(QWidget):
                 return lambda: self.driver.open_library(Path(path))
 
             button.clicked.connect(open_library_button_clicked(full_val))
-            set_button_style(button)
-            button_remove = QPushButton("➖")
+            set_button_style(button, ["padding-left: 6px;", "text-align: left;"])
+            button_remove = QPushButton("—")
             button_remove.setCursor(Qt.CursorShape.PointingHandCursor)
-            button_remove.setFixedWidth(30)
-            set_button_style(button_remove)
+            button_remove.setFixedWidth(24)
+            set_button_style(button_remove, ["font-weight:bold;", "text-align:center;"])
 
             def remove_recent_library_clicked(key: str):
                 return lambda: (
@@ -396,20 +418,14 @@ class PreviewPanel(QWidget):
         self.preview_vid.resizeVideo(adj_size)
         self.preview_vid.setMaximumSize(adj_size)
         self.preview_vid.setMinimumSize(adj_size)
-        # self.preview_img.setMinimumSize(adj_size)
-
-        # if self.preview_img.iconSize().toTuple()[0] < self.preview_img.size().toTuple()[0] + 10:
-        # 	if type(self.item) == Entry:
-        # 		filepath = os.path.normpath(f'{self.lib.library_dir}/{self.item.path}/{self.item.filename}')
-        # 		self.thumb_renderer.render(time.time(), filepath, self.preview_img.size().toTuple(), self.devicePixelRatio(),update_on_ratio_change=True)
-
-        # logging.info(f' Img Aspect Ratio: {self.image_ratio}')
-        # logging.info(f'  Max Button Size: {size}')
-        # logging.info(f'Container Size: {(self.image_container.size().width(), self.image_container.size().height())}')
-        # logging.info(f'Final Button Size: {(adj_width, adj_height)}')
-        # logging.info(f'')
-        # logging.info(f'  Icon Size: {self.preview_img.icon().actualSize().toTuple()}')
-        # logging.info(f'Button Size: {self.preview_img.size().toTuple()}')
+        self.preview_gif.setMaximumSize(adj_size)
+        self.preview_gif.setMinimumSize(adj_size)
+        proxy_style = RoundedPixmapStyle(radius=8)
+        self.preview_gif.setStyle(proxy_style)
+        self.preview_vid.setStyle(proxy_style)
+        m = self.preview_gif.movie()
+        if m:
+            m.setScaledSize(adj_size)
 
     def place_add_field_button(self):
         self.scroll_layout.addWidget(self.afb_container)
@@ -479,6 +495,7 @@ class PreviewPanel(QWidget):
             self.preview_img.show()
             self.preview_vid.stop()
             self.preview_vid.hide()
+            self.preview_gif.hide()
             self.selected = list(self.driver.selected)
             self.add_field_button.setHidden(True)
 
@@ -489,6 +506,7 @@ class PreviewPanel(QWidget):
                 self.preview_img.show()
                 self.preview_vid.stop()
                 self.preview_vid.hide()
+                self.preview_gif.hide()
                 item: Entry = self.lib.get_entry(self.driver.selected[0][1])
                 # If a new selection is made, update the thumbnail and filepath.
                 if not self.selected or self.selected != self.driver.selected:
@@ -520,6 +538,21 @@ class PreviewPanel(QWidget):
                     # TODO: Do this all somewhere else, this is just here temporarily.
                     ext: str = filepath.suffix.lower()
                     try:
+                        if filepath.suffix.lower() in [".gif"]:
+                            movie = QMovie(str(filepath))
+                            image = Image.open(str(filepath))
+                            self.preview_gif.setMovie(movie)
+                            self.resizeEvent(
+                                QResizeEvent(
+                                    QSize(image.width, image.height),
+                                    QSize(image.width, image.height),
+                                )
+                            )
+                            movie.start()
+                            self.preview_img.hide()
+                            self.preview_vid.hide()
+                            self.preview_gif.show()
+
                         image = None
                         if (
                             (MediaType.IMAGE in MediaCategories.get_types(ext))
@@ -546,25 +579,27 @@ class PreviewPanel(QWidget):
                             ):
                                 pass
                         elif MediaType.VIDEO in MediaCategories.get_types(ext):
-                            video = cv2.VideoCapture(str(filepath))
-                            if video.get(cv2.CAP_PROP_FRAME_COUNT) <= 0:
-                                raise cv2.error("File is invalid or has 0 frames")
-                            video.set(cv2.CAP_PROP_POS_FRAMES, 0)
-                            success, frame = video.read()
-                            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-                            image = Image.fromarray(frame)
-                            if success:
-                                self.preview_img.hide()
-                                self.preview_vid.play(
-                                    filepath, QSize(image.width, image.height)
+                            if is_readable_video(filepath):
+                                video = cv2.VideoCapture(str(filepath), cv2.CAP_FFMPEG)
+                                video.set(
+                                    cv2.CAP_PROP_POS_FRAMES,
+                                    (video.get(cv2.CAP_PROP_FRAME_COUNT) // 2),
                                 )
-                                self.resizeEvent(
-                                    QResizeEvent(
-                                        QSize(image.width, image.height),
-                                        QSize(image.width, image.height),
+                                success, frame = video.read()
+                                frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+                                image = Image.fromarray(frame)
+                                if success:
+                                    self.preview_img.hide()
+                                    self.preview_vid.play(
+                                        filepath, QSize(image.width, image.height)
                                     )
-                                )
-                                self.preview_vid.show()
+                                    self.resizeEvent(
+                                        QResizeEvent(
+                                            QSize(image.width, image.height),
+                                            QSize(image.width, image.height),
+                                        )
+                                    )
+                                    self.preview_vid.show()
 
                         # Stats for specific file types are displayed here.
                         if image and (
@@ -607,7 +642,7 @@ class PreviewPanel(QWidget):
                         )
 
                     except (FileNotFoundError, cv2.error) as e:
-                        self.dimensions_label.setText(f"{ext.upper()}")
+                        self.dimensions_label.setText(f"{ext.upper()[1:]}")
                         logging.info(
                             f"[PreviewPanel][ERROR] Couldn't Render thumbnail for {filepath} (because of {e})"
                         )
@@ -622,6 +657,7 @@ class PreviewPanel(QWidget):
                             f"[PreviewPanel][ERROR] Couldn't Render thumbnail for {filepath} (because of {e})"
                         )
 
+                    # TODO: Implement a clickable label to use for the GIF preview.
                     if self.preview_img.is_connected:
                         self.preview_img.clicked.disconnect()
                     self.preview_img.clicked.connect(
@@ -651,6 +687,7 @@ class PreviewPanel(QWidget):
         # Multiple Selected Items
         elif len(self.driver.selected) > 1:
             self.preview_img.show()
+            self.preview_gif.hide()
             self.preview_vid.stop()
             self.preview_vid.hide()
             if self.selected != self.driver.selected:

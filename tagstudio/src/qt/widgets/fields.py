@@ -4,16 +4,16 @@
 
 
 import math
-import os
 from types import FunctionType, MethodType
 from pathlib import Path
-from typing import Optional, cast, Callable, Any
+from typing import Optional, cast, Callable
 
 from PIL import Image, ImageQt
 from PySide6.QtCore import Qt, QEvent
 from PySide6.QtGui import QPixmap, QEnterEvent
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton
+from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel
 from src.qt.helpers.qbutton_wrapper import QPushButtonWrapper
+from src.qt.helpers.color_overlay import theme_fg_overlay
 
 
 class FieldContainer(QWidget):
@@ -35,22 +35,21 @@ class FieldContainer(QWidget):
 
     def __init__(self, title: str = "Field", inline: bool = True) -> None:
         super().__init__()
-        # self.mode:str = mode
         self.setObjectName("fieldContainer")
-        # self.item = item
         self.title: str = title
         self.inline: bool = inline
-        # self.editable:bool = editable
         self.copy_callback: FunctionType = None
         self.edit_callback: FunctionType = None
         self.remove_callback: Callable = None
         button_size = 24
-        # self.setStyleSheet('border-style:solid;border-color:#1e1a33;border-radius:8px;border-width:2px;')
+
+        self.clipboard_icon_128 = theme_fg_overlay(FieldContainer.clipboard_icon_128)
+        self.edit_icon_128 = theme_fg_overlay(FieldContainer.edit_icon_128)
+        self.trash_icon_128 = theme_fg_overlay(FieldContainer.trash_icon_128)
 
         self.root_layout = QVBoxLayout(self)
         self.root_layout.setObjectName("baseLayout")
         self.root_layout.setContentsMargins(0, 0, 0, 0)
-        # self.setStyleSheet('background-color:red;')
 
         self.inner_layout = QVBoxLayout()
         self.inner_layout.setObjectName("innerLayout")
@@ -62,7 +61,6 @@ class FieldContainer(QWidget):
         self.root_layout.addWidget(self.inner_container)
 
         self.title_container = QWidget()
-        # self.title_container.setStyleSheet('background:black;')
         self.title_layout = QHBoxLayout(self.title_container)
         self.title_layout.setAlignment(Qt.AlignmentFlag.AlignHCenter)
         self.title_layout.setObjectName("fieldLayout")
@@ -75,9 +73,7 @@ class FieldContainer(QWidget):
         self.title_widget.setObjectName("fieldTitle")
         self.title_widget.setWordWrap(True)
         self.title_widget.setStyleSheet("font-weight: bold; font-size: 14px;")
-        # self.title_widget.setStyleSheet('background-color:orange;')
         self.title_widget.setText(title)
-        # self.inner_layout.addWidget(self.title_widget)
         self.title_layout.addWidget(self.title_widget)
 
         self.title_layout.addStretch(2)
@@ -119,10 +115,7 @@ class FieldContainer(QWidget):
         self.field_layout.setObjectName("fieldLayout")
         self.field_layout.setContentsMargins(0, 0, 0, 0)
         self.field_container.setLayout(self.field_layout)
-        # self.field_container.setStyleSheet('background-color:#666600;')
         self.inner_layout.addWidget(self.field_container)
-
-        # self.set_inner_widget(mode)
 
     def set_copy_callback(self, callback: Optional[MethodType]):
         if self.copy_button.is_connected:
@@ -151,12 +144,7 @@ class FieldContainer(QWidget):
         self.remove_button.is_connected = True
 
     def set_inner_widget(self, widget: "FieldWidget"):
-        # widget.setStyleSheet('background-color:green;')
-        # self.inner_container.dumpObjectTree()
-        # logging.info('')
         if self.field_layout.itemAt(0):
-            # logging.info(f'Removing {self.field_layout.itemAt(0)}')
-            # self.field_layout.removeItem(self.field_layout.itemAt(0))
             self.field_layout.itemAt(0).widget().deleteLater()
         self.field_layout.addWidget(widget)
 
@@ -172,12 +160,7 @@ class FieldContainer(QWidget):
     def set_inline(self, inline: bool):
         self.inline = inline
 
-    # def set_editable(self, editable:bool):
-    # 	self.editable = editable
-
     def enterEvent(self, event: QEnterEvent) -> None:
-        # if self.field_layout.itemAt(1):
-        # 	self.field_layout.itemAt(1).
         # NOTE: You could pass the hover event to the FieldWidget if needed.
         if self.copy_callback:
             self.copy_button.setHidden(False)
@@ -202,5 +185,4 @@ class FieldWidget(QWidget):
 
     def __init__(self, title) -> None:
         super().__init__()
-        # self.item = item
         self.title = title
