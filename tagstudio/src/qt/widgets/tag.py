@@ -74,8 +74,6 @@ class TagWidget(QWidget):
         # search_for_tag_action.triggered.connect(on_click_callback)
         search_for_tag_action.triggered.connect(self.on_click.emit)
         self.bg_button.addAction(search_for_tag_action)
-        # add_to_search_action = QAction("Add to Search", self)
-        # self.bg_button.addAction(add_to_search_action)
 
         self.inner_layout = QHBoxLayout()
         self.inner_layout.setObjectName("innerLayout")
