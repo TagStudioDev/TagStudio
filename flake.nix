@@ -1,187 +1,111 @@
 {
-  description = "TagStudio";
+  description = "Tag Studio Development Environment";
 
   inputs = {
-    devenv.url = "github:cachix/devenv";
-
-    devenv-root = {
-      url = "file+file:///dev/null";
-      flake = false;
-    };
-
-    flake-parts = {
-      url = "github:hercules-ci/flake-parts";
-      inputs.nixpkgs-lib.follows = "nixpkgs";
-    };
-
-    nix2container = {
-      url = "github:nlewo/nix2container";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
 
-    # Pinned to Qt version 6.7.1
-    nixpkgs-qt6.url = "github:NixOS/nixpkgs/e6cea36f83499eb4e9cd184c8a8e823296b50ad5";
-
-    systems.url = "github:nix-systems/default-linux";
+    qt6Nixpkgs = {
+      # Commit bumping to qt6.7.1
+      url = "github:NixOS/nixpkgs/47da0aee5616a063015f10ea593688646f2377e4";
+    };
   };
 
-  outputs = { flake-parts, nixpkgs, nixpkgs-qt6, self, systems, ... }@inputs:
-    flake-parts.lib.mkFlake { inherit inputs; } {
-      imports = [ inputs.devenv.flakeModule ];
+  outputs = { self, nixpkgs, qt6Nixpkgs }:
+  let
+    pkgs = nixpkgs.legacyPackages.x86_64-linux;
 
-      systems = import systems;
+    qt6Pkgs = qt6Nixpkgs.legacyPackages.x86_64-linux;
+  in {
+    devShells.x86_64-linux.default = pkgs.mkShell {
+      name = "Tag Studio Virtual Environment";
+      venvDir = "./.venv";
 
-      perSystem = { config, pkgs, system, ... }:
-        let
-          inherit (nixpkgs) lib;
+      LD_LIBRARY_PATH = pkgs.lib.makeLibraryPath [
+        pkgs.gcc-unwrapped
+        pkgs.zlib
+        pkgs.libglvnd
+        pkgs.glib
+        pkgs.stdenv.cc.cc
+        pkgs.fontconfig
+        pkgs.libxkbcommon
+        pkgs.xorg.libxcb
+        pkgs.freetype
+        pkgs.dbus
+        pkgs.zstd
+        # For PySide6 Multimedia
+        pkgs.libpulseaudio
+        pkgs.libkrb5
 
-          qt6Pkgs = import nixpkgs-qt6 { inherit system; };
-        in
-        {
-          devenv.shells = rec {
-            default = tagstudio;
+        qt6Pkgs.qt6.qtwayland
+        qt6Pkgs.qt6.full
+        qt6Pkgs.qt6.qtbase
+      ];
 
-            tagstudio =
-              let
-                cfg = config.devenv.shells.tagstudio;
-              in
-              {
-                # NOTE: many things were simply transferred over from previous,
-                # there must be additional work in ensuring all relevant dependencies
-                # are in place (and no extraneous). I have already spent much
-                # work making this in the first place and just need to get it out
-                # there, especially after my promises. Would appreciate any help
-                # (possibly PRs!) on taking care of this. Otherwise, just expect
-                # this to get ironed out over time.
-                #
-                # Thank you! -Xarvex
+      buildInputs = with pkgs; [
+        cmake
+        gdb
+        zstd
+        python312Full
+        python312Packages.pip
+        python312Packages.pyusb # fixes the pyusb 'No backend available' when installed directly via pip
+        python312Packages.venvShellHook # Initializes a venv in $venvDir
+        ruff # Ruff cannot be installed via pip
+        mypy # MyPy cannot be installed via pip
 
-                devenv.root =
-                  let
-                    devenvRoot = builtins.readFile inputs.devenv-root.outPath;
-                  in
-                  # If not overriden (/dev/null), --impure is necessary.
-                  pkgs.lib.mkIf (devenvRoot != "") devenvRoot;
+        libgcc
+        glib
+        libxkbcommon
+        freetype
+        binutils
+        dbus
+        coreutils
+        libGL
+        libGLU
+        fontconfig
+        xorg.libxcb
 
-                name = "TagStudio";
+        # this is for the shellhook portion
+        makeWrapper
+        bashInteractive
+      ] ++ [
+        qt6Pkgs.qt6.qtbase
+        qt6Pkgs.qt6.full
+        qt6Pkgs.qt6.qtwayland
+        qt6Pkgs.qtcreator
 
-                # Derived from previous flake iteration.
-                packages = (with pkgs; [
-                  cmake
-                  binutils
-                  coreutils
-                  dbus
-                  fontconfig
-                  freetype
-                  gdb
-                  glib
-                  libGL
-                  libGLU
-                  libgcc
-                  libxkbcommon
-                  mypy
-                  ruff
-                  xorg.libxcb
-                  zstd
-                ])
-                ++ (with qt6Pkgs; [
-                  qt6.full
-                  qt6.qtbase
-                  qt6.qtwayland
-                  qtcreator
-                ]);
+        # this is for the shellhook portion
+        qt6Pkgs.qt6.wrapQtAppsHook
+      ];
 
-                enterShell =
-                  let
-                    setQtEnv = pkgs.runCommand "set-qt-env"
-                      {
-                        buildInputs = with qt6Pkgs.qt6; [
-                          qtbase
-                        ];
+      # Run after the virtual environment is created
+      postVenvCreation = ''
+        unset SOURCE_DATE_EPOCH
 
-                        nativeBuildInputs = (with pkgs; [
-                          makeShellWrapper
-                        ])
-                        ++ (with qt6Pkgs.qt6; [
-                          wrapQtAppsHook
-                        ]);
-                      }
-                      ''
-                        makeShellWrapper "$(type -p sh)" "$out" "''${qtWrapperArgs[@]}"
-                        sed "/^exec/d" -i "$out"
-                      '';
-                  in
-                  ''
-                    source ${setQtEnv}
-                  '';
+        echo Installing dependencies into virtual environment
+        pip install -r requirements.txt
+        pip install -r requirements-dev.txt
+        # Hacky solution to not fight with other dev deps
+        # May show failure if skipped due to same version with nixpkgs
+        pip uninstall -y mypy ruff
+      '';
 
-                scripts.tagstudio.exec = ''
-                  python ${cfg.devenv.root}/tagstudio/tag_studio.py
-                '';
+      # set the environment variables that Qt apps expect
+      postShellHook = ''
+        unset SOURCE_DATE_EPOCH
 
-                env = {
-                  QT_QPA_PLATFORM = "wayland;xcb";
+        export QT_QPA_PLATFORM="wayland;xcb"
+        export LIBRARY_PATH=/usr/lib:/usr/lib64:$LIBRARY_PATH
+        # export LD_LIBRARY_PATH=${pkgs.stdenv.cc.cc.lib}/lib/:/run/opengl-driver/lib/
+        export QT_PLUGIN_PATH=${pkgs.qt6.qtbase}/${pkgs.qt6.qtbase.qtPluginPrefix}
+        bashdir=$(mktemp -d)
+        makeWrapper "$(type -p bash)" "$bashdir/bash" "''${qtWrapperArgs[@]}"
 
-                  # Derived from previous flake iteration.
-                  # Not desired given LD_LIBRARY_PATH pollution.
-                  # See supposed alternative below, further research required.
-                  LD_LIBRARY_PATH = lib.makeLibraryPath (
-                    (with pkgs; [
-                      dbus
-                      fontconfig
-                      freetype
-                      gcc-unwrapped
-                      glib
-                      libglvnd
-                      libkrb5
-                      libpulseaudio
-                      libva
-                      libxkbcommon
-                      openssl
-                      stdenv.cc.cc.lib
-                      wayland
-                      xorg.libxcb
-                      xorg.libXrandr
-                      zlib
-                      zstd
-                    ])
-                    ++ (with qt6Pkgs.qt6; [
-                      qtbase
-                      qtwayland
-                      full
-                    ])
-                  );
-                };
+        echo Activating Virtual Environment
+        source $venvDir/bin/activate
+        export PYTHONPATH=$PWD/$venvDir/${pkgs.python312Full.sitePackages}:$PYTHONPATH
 
-                languages.python = {
-                  enable = true;
-                  venv = {
-                    enable = true;
-                    quiet = true;
-                    requirements =
-                      let
-                        excludeDeps = req: deps: builtins.concatStringsSep "\n"
-                          (builtins.filter (line: !(lib.any (elem: lib.hasPrefix elem line) deps))
-                            (lib.splitString "\n" req));
-                      in
-                      ''
-                        ${builtins.readFile ./requirements.txt}
-                        ${excludeDeps (builtins.readFile ./requirements-dev.txt) [
-                          "mypy"
-                          "ruff"
-                        ]}
-                      '';
-                  };
-
-                  # Should be able to replace LD_LIBRARY_PATH?
-                  # Was not quite able to get working,
-                  # will be consulting cachix community. -Xarvex
-                  # libraries = with pkgs; [ ];
-                };
-              };
-          };
-        };
+        exec "$bashdir/bash"
+      '';
     };
+  };
 }
