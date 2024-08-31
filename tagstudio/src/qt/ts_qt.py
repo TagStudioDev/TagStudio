@@ -866,7 +866,10 @@ class QtDriver(QObject):
                     pending.append(filepath)
 
         if pending:
-            if self.delete_file_confirmation(len(pending), pending[0]) == 3:
+            return_code = self.delete_file_confirmation(len(pending), pending[0])
+            logging.info(return_code)
+            # If there was a confirmation and not a cancellation
+            if return_code == 2 and return_code != 3:
                 for i, f in enumerate(pending):
                     if (origin_path == f) or (not origin_path):
                         self.preview_panel.stop_file_use()
@@ -887,18 +890,14 @@ class QtDriver(QObject):
             self.preview_panel.update_widgets()
 
         if len(self.selected) <= 1 and deleted_count == 0:
-            self.main_window.statusbar.showMessage(
-                "No files deleted. Check if any of the files are currently in use."
-            )
+            self.main_window.statusbar.showMessage("No files deleted.")
         elif len(self.selected) <= 1 and deleted_count == 1:
             self.main_window.statusbar.showMessage(f"Deleted {deleted_count} file!")
         elif len(self.selected) > 1 and deleted_count == 0:
-            self.main_window.statusbar.showMessage(
-                "No files deleted! Check if any of the files are currently in use."
-            )
+            self.main_window.statusbar.showMessage("No files deleted.")
         elif len(self.selected) > 1 and deleted_count < len(self.selected):
             self.main_window.statusbar.showMessage(
-                f"Only deleted {deleted_count} file{'' if deleted_count == 1 else 's'}! Check if any of the files are currently in use"
+                f"Only deleted {deleted_count} file{'' if deleted_count == 1 else 's'}! Check if any of the files are currently missing or in use."
             )
         elif len(self.selected) > 1 and deleted_count == len(self.selected):
             self.main_window.statusbar.showMessage(f"Deleted {deleted_count} files!")
@@ -941,8 +940,10 @@ class QtDriver(QObject):
                 "<h4>This will remove them from TagStudio <i>AND</i> your file system!</h4>"
                 f"{perm_warning}<br>"
             )
+
+        yes_button: QPushButton = msg.addButton("&Yes", QMessageBox.ButtonRole.YesRole)
         msg.addButton("&No", QMessageBox.ButtonRole.NoRole)
-        msg.addButton("&Yes", QMessageBox.ButtonRole.YesRole)
+        msg.setDefaultButton(yes_button)
 
         return msg.exec()
 
