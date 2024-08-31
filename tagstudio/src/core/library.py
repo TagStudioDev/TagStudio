@@ -1080,25 +1080,22 @@ class Library:
                             )
                         )
                 for match in matches:
-                    # print(f'MATCHED ({match[2]}%): \n   {files[match[0]]} \n-> {files[match[1]]}')
                     file_1 = files[match[0]].relative_to(self.library_dir)
                     file_2 = files[match[1]].relative_to(self.library_dir)
 
                     if (
-                        file_1.resolve in self.filename_to_entry_id_map.keys()
+                        file_1 in self.filename_to_entry_id_map.keys()
                         and file_2 in self.filename_to_entry_id_map.keys()
                     ):
                         self.dupe_files.append(
                             (files[match[0]], files[match[1]], match[2])
                         )
-                print("")
 
             for dupe in self.dupe_files:
                 print(
                     f"[LIBRARY] MATCHED ({dupe[2]}%): \n   {dupe[0]} \n-> {dupe[1]}",
                     end="\n",
                 )
-                # self.dupe_files.append(full_path)
 
     def remove_missing_files(self):
         deleted = []
@@ -1352,10 +1349,18 @@ class Library:
             only_missing: bool = "missing" in query or "no file" in query
             allow_adv: bool = "filename:" in query_words
             tag_only: bool = "tag_id:" in query_words
+            tag_only_ids: list[int] = []
             if allow_adv:
                 query_words.remove("filename:")
             if tag_only:
                 query_words.remove("tag_id:")
+                if query_words and query_words[0].isdigit():
+                    tag_only_ids.append(int(query_words[0]))
+                    tag_only_ids.extend(self.get_tag_cluster(int(query_words[0])))
+                else:
+                    logging.error(
+                        f"[Library][ERROR] Invalid Tag ID in query: {query_words}"
+                    )
             # TODO: Expand this to allow for dynamic fields to work.
             only_no_author: bool = "no author" in query or "no artist" in query
 
@@ -1382,15 +1387,9 @@ class Library:
                             all_tag_terms.remove(all_tag_terms[i])
                             break
 
-            # print(all_tag_terms)
-
-            # non_entry_count = 0
             # Iterate over all Entries =============================================================
             for entry in self.entries:
                 allowed_ext: bool = entry.filename.suffix.lower() not in self.ext_list
-                # try:
-                # entry: Entry = self.entries[self.file_to_library_index_map[self._source_filenames[i]]]
-                # print(f'{entry}')
 
                 if allowed_ext == self.is_exclude_list:
                     # If the entry has tags of any kind, append them to this main tag list.
@@ -1432,7 +1431,6 @@ class Library:
                     # elif query in entry.path.lower():
 
                     # NOTE: This searches path and filenames.
-
                     if allow_adv:
                         if [q for q in query_words if (q in str(entry.path).lower())]:
                             results.append((ItemType.ENTRY, entry.id))
@@ -1441,17 +1439,14 @@ class Library:
                         ]:
                             results.append((ItemType.ENTRY, entry.id))
                     elif tag_only:
-                        if entry.has_tag(self, int(query_words[0])):
-                            results.append((ItemType.ENTRY, entry.id))
+                        for id in tag_only_ids:
+                            if entry.has_tag(self, id) and entry.id not in results:
+                                results.append((ItemType.ENTRY, entry.id))
+                                break
 
-                    # elif query in entry.filename.lower():
-                    # 	self.filtered_entries.append(index)
                     elif entry_tags:
                         # function to add entry to results
                         def add_entry(entry: Entry):
-                            # self.filter_entries.append()
-                            # self.filtered_file_list.append(file)
-                            # results.append((SearchItemType.ENTRY, entry.id))
                             added = False
                             for f in entry.fields:
                                 if self.get_field_attr(f, "type") == "collation":
@@ -1521,26 +1516,6 @@ class Library:
                                             add_entry(entry)
                                         break
 
-                # sys.stdout.write(
-                #     f'\r[INFO][FILTER]: {len(self.filtered_file_list)} matches found')
-                # sys.stdout.flush()
-
-                # except:
-                #     # # Put this here to have new non-registered images show up
-                #     # if query == "untagged" or query == "no author" or query == "no artist":
-                #     #     self.filtered_file_list.append(file)
-                #     # non_entry_count = non_entry_count + 1
-                #     pass
-
-            # end_time = time.time()
-            # print(
-            # 	f'[INFO][FILTER]: {len(self.filtered_entries)} matches found ({(end_time - start_time):.3f} seconds)')
-
-            # if non_entry_count:
-            # 	print(
-            # 		f'[INFO][FILTER]: There are {non_entry_count} new files in {self.source_dir} that do not have entries. These will not appear in most filtered results.')
-            # if not self.filtered_entries:
-            # 	print("[INFO][FILTER]: Filter returned no results.")
         else:
             for entry in self.entries:
                 added = False
@@ -1565,8 +1540,6 @@ class Library:
 
                     if not added:
                         results.append((ItemType.ENTRY, entry.id))
-            # for file in self._source_filenames:
-            #     self.filtered_file_list.append(file)
         results.reverse()
         return results
 
@@ -2309,7 +2282,7 @@ class Library:
         return self.tags[self._tag_id_to_index_map[int(tag_id)]]
 
     def get_tag_cluster(self, tag_id: int) -> list[int]:
-        """Returns a list of Tag IDs that reference this Tag."""
+        """Returns a list of Tag IDs that reference this Tag as its parent."""
         if tag_id in self._tag_id_to_cluster_map:
             return self._tag_id_to_cluster_map[int(tag_id)]
         return []
