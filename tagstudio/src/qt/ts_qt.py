@@ -914,17 +914,18 @@ class QtDriver(QObject):
             filename(Path | None): The filename to show if only one file is to be deleted.
         """
         trash_term: str = "Trash"
-        perm_warning: str = ""
         if platform.system() == "Windows":
             trash_term = "Recycle Bin"
-            # NOTE: Windows + send2trash will PERMANENTLY delete files which cannot be moved to the Recycle Bin.
-            # This is done without any warning, so this message is currently the best way I've got to inform the user.
-            # https://github.com/arsenetar/send2trash/issues/28
-            perm_warning = (
-                f"<h4 style='color: {get_ui_color(ColorType.PRIMARY, 'red')}'>"
-                f"<b>WARNING!</b> If this file can't be moved to the Recycle Bin, "
-                f"</b>it will be <b>permanently deleted!</b></h4>"
-            )
+        # NOTE: Windows + send2trash will PERMANENTLY delete files which cannot be moved to the Recycle Bin.
+        # This is done without any warning, so this message is currently the best way I've got to inform the user.
+        # https://github.com/arsenetar/send2trash/issues/28
+        # This warning is applied to all platforms until at least macOS and Linux can be verified to
+        # not exhibit this same behavior.
+        perm_warning: str = (
+            f"<h4 style='color: {get_ui_color(ColorType.PRIMARY, 'red')}'>"
+            f"<b>WARNING!</b> If this file can't be moved to the {trash_term}, "
+            f"</b>it will be <b>permanently deleted!</b></h4>"
+        )
 
         msg = QMessageBox()
         msg.setTextFormat(Qt.TextFormat.RichText)
