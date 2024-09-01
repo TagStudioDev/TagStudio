@@ -12,6 +12,7 @@ import copy
 import logging
 import math
 import os
+import platform
 import sys
 import time
 import typing
@@ -53,6 +54,7 @@ from PySide6.QtWidgets import (
     QMenu,
     QMenuBar,
     QComboBox,
+    QMessageBox,
 )
 from humanfriendly import format_timespan
 
@@ -69,9 +71,11 @@ from src.core.constants import (
     TAG_FAVORITE,
     TAG_ARCHIVED,
 )
+from src.core.palette import ColorType, get_ui_color
 from src.core.utils.web import strip_web_protocol
 from src.qt.flowlayout import FlowLayout
 from src.qt.main_window import Ui_MainWindow
+from src.qt.helpers.file_deleter import delete_file
 from src.qt.helpers.function_iterator import FunctionIterator
 from src.qt.helpers.custom_runnable import CustomRunnable
 from src.qt.resource_manager import ResourceManager
@@ -446,6 +450,15 @@ class QtDriver(QObject):
 
         edit_menu.addSeparator()
 
+        self.delete_file_action = QAction("Delete Selected File(s)", menu_bar)
+        self.delete_file_action.triggered.connect(
+            lambda f="": self.delete_files_callback(f)
+        )
+        self.delete_file_action.setShortcut(QtCore.Qt.Key.Key_Delete)
+        edit_menu.addAction(self.delete_file_action)
+
+        edit_menu.addSeparator()
+
         manage_file_extensions_action = QAction("Manage File Extensions", menu_bar)
         manage_file_extensions_action.triggered.connect(
             lambda: self.show_file_extension_modal()
@@ -532,13 +545,13 @@ class QtDriver(QObject):
         folders_to_tags_action.triggered.connect(lambda: ftt_modal.show())
         macros_menu.addAction(folders_to_tags_action)
 
-        # Help Menu ==========================================================
+        # Help Menu ============================================================
         self.repo_action = QAction("Visit GitHub Repository", menu_bar)
         self.repo_action.triggered.connect(
             lambda: webbrowser.open("https://github.com/TagStudioDev/TagStudio")
         )
         help_menu.addAction(self.repo_action)
-        self.set_macro_menu_viability()
+        self.set_menu_action_viability()
 
         self.update_clipboard_actions()
 
@@ -549,6 +562,9 @@ class QtDriver(QObject):
         menu_bar.addMenu(window_menu)
         menu_bar.addMenu(help_menu)
 
+        # ======================================================================
+
+        # Preview Panel --------------------------------------------------------
         self.preview_panel = PreviewPanel(self.lib, self)
         l: QHBoxLayout = self.main_window.splitter
         l.addWidget(self.preview_panel)
@@ -758,7 +774,7 @@ class QtDriver(QObject):
             self.copied_fields.clear()
             self.is_buffer_merged = False
             self.update_clipboard_actions()
-            self.set_macro_menu_viability()
+            self.set_menu_action_viability()
             self.preview_panel.update_widgets()
             self.filter_items()
             self.main_window.toggle_landing_page(True)
@@ -796,7 +812,7 @@ class QtDriver(QObject):
                 self.selected.append((item.mode, item.item_id))
                 item.thumb_button.set_selected(True)
 
-        self.set_macro_menu_viability()
+        self.set_menu_action_viability()
         self.preview_panel.update_widgets()
 
     def clear_select_action_callback(self):
@@ -804,7 +820,7 @@ class QtDriver(QObject):
         for item in self.item_thumbs:
             item.thumb_button.set_selected(False)
 
-        self.set_macro_menu_viability()
+        self.set_menu_action_viability()
         self.preview_panel.update_widgets()
 
     def show_tag_database(self):
@@ -826,6 +842,114 @@ class QtDriver(QObject):
         )
         self.modal.saved.connect(lambda: (panel.save(), self.filter_items("")))
         self.modal.show()
+
+    def delete_files_callback(self, origin_path: str | Path):
+        """Callback to send on or more files to the system trash.
+
+        If 0-1 items are currently selected, the origin_path is used to delete the file
+        from the originating context menu item.
+        If there are currently multiple items selected,
+        then the selection buffer is used to determine the files to be deleted.
+
+        Args:
+            origin_path(str): The file path associated with the widget making the call.
+                May or may not be the file targeted, depending on the selection rules.
+        """
+        entry = None
+        pending: list[Path] = []
+        deleted_count: int = 0
+
+        if len(self.selected) <= 1 and origin_path:
+            pending.append(Path(origin_path))
+        elif (len(self.selected) > 1) or (len(self.selected) <= 1 and not origin_path):
+            for i, item_pair in enumerate(self.selected):
+                if item_pair[0] == ItemType.ENTRY:
+                    entry = self.lib.get_entry(item_pair[1])
+                    filepath: Path = self.lib.library_dir / entry.path / entry.filename
+                    pending.append(filepath)
+
+        if pending:
+            return_code = self.delete_file_confirmation(len(pending), pending[0])
+            logging.info(return_code)
+            # If there was a confirmation and not a cancellation
+            if return_code == 2 and return_code != 3:
+                for i, f in enumerate(pending):
+                    if (origin_path == f) or (not origin_path):
+                        self.preview_panel.stop_file_use()
+                    if delete_file(f):
+                        self.main_window.statusbar.showMessage(
+                            f'Deleting file [{i}/{len(pending)}]: "{f}"...'
+                        )
+                        self.main_window.statusbar.repaint()
+
+                        entry_id = self.lib.get_entry_id_from_filepath(f)
+                        self.lib.remove_entry(entry_id)
+                        self.purge_item_from_navigation(ItemType.ENTRY, entry_id)
+                        deleted_count += 1
+                self.selected.clear()
+
+        if deleted_count > 0:
+            self.filter_items()
+            self.preview_panel.update_widgets()
+
+        if len(self.selected) <= 1 and deleted_count == 0:
+            self.main_window.statusbar.showMessage("No files deleted.")
+        elif len(self.selected) <= 1 and deleted_count == 1:
+            self.main_window.statusbar.showMessage(f"Deleted {deleted_count} file!")
+        elif len(self.selected) > 1 and deleted_count == 0:
+            self.main_window.statusbar.showMessage("No files deleted.")
+        elif len(self.selected) > 1 and deleted_count < len(self.selected):
+            self.main_window.statusbar.showMessage(
+                f"Only deleted {deleted_count} file{'' if deleted_count == 1 else 's'}! Check if any of the files are currently missing or in use."
+            )
+        elif len(self.selected) > 1 and deleted_count == len(self.selected):
+            self.main_window.statusbar.showMessage(f"Deleted {deleted_count} files!")
+        self.main_window.statusbar.repaint()
+
+    def delete_file_confirmation(self, count: int, filename: Path | None = None) -> int:
+        """A confirmation dialogue box for deleting files.
+
+        Args:
+            count(int): The number of files to be deleted.
+            filename(Path | None): The filename to show if only one file is to be deleted.
+        """
+        trash_term: str = "Trash"
+        if platform.system() == "Windows":
+            trash_term = "Recycle Bin"
+        # NOTE: Windows + send2trash will PERMANENTLY delete files which cannot be moved to the Recycle Bin.
+        # This is done without any warning, so this message is currently the best way I've got to inform the user.
+        # https://github.com/arsenetar/send2trash/issues/28
+        # This warning is applied to all platforms until at least macOS and Linux can be verified to
+        # not exhibit this same behavior.
+        perm_warning: str = (
+            f"<h4 style='color: {get_ui_color(ColorType.PRIMARY, 'red')}'>"
+            f"<b>WARNING!</b> If this file can't be moved to the {trash_term}, "
+            f"</b>it will be <b>permanently deleted!</b></h4>"
+        )
+
+        msg = QMessageBox()
+        msg.setTextFormat(Qt.TextFormat.RichText)
+        msg.setWindowTitle("Delete File" if count == 1 else "Delete Files")
+        msg.setIcon(QMessageBox.Icon.Warning)
+        if count <= 1:
+            msg.setText(
+                f"<h3>Are you sure you want to move this file to the {trash_term}?</h3>"
+                "<h4>This will remove it from TagStudio <i>AND</i> your file system!</h4>"
+                f"{filename if filename else ''}"
+                f"{perm_warning}<br>"
+            )
+        elif count > 1:
+            msg.setText(
+                f"<h3>Are you sure you want to move these {count} files to the {trash_term}?</h3>"
+                "<h4>This will remove them from TagStudio <i>AND</i> your file system!</h4>"
+                f"{perm_warning}<br>"
+            )
+
+        yes_button: QPushButton = msg.addButton("&Yes", QMessageBox.ButtonRole.YesRole)
+        msg.addButton("&No", QMessageBox.ButtonRole.NoRole)
+        msg.setDefaultButton(yes_button)
+
+        return msg.exec()
 
     def add_new_files_callback(self):
         """Runs when user initiates adding new files to the Library."""
@@ -1397,17 +1521,19 @@ class QtDriver(QObject):
                 if it.mode == type and it.item_id == id:
                     self.preview_panel.set_tags_updated_slot(it.update_badges)
 
-        self.set_macro_menu_viability()
+        self.set_menu_action_viability()
         self.update_clipboard_actions()
         self.preview_panel.update_widgets()
 
-    def set_macro_menu_viability(self):
+    def set_menu_action_viability(self):
         if len([x[1] for x in self.selected if x[0] == ItemType.ENTRY]) == 0:
             self.autofill_action.setDisabled(True)
             self.sort_fields_action.setDisabled(True)
+            self.delete_file_action.setDisabled(True)
         else:
             self.autofill_action.setDisabled(False)
             self.sort_fields_action.setDisabled(False)
+            self.delete_file_action.setDisabled(False)
 
     def update_thumbs(self):
         """Updates search thumbnails."""
@@ -1456,12 +1582,20 @@ class QtDriver(QObject):
 
         for i, item_thumb in enumerate(self.item_thumbs, start=0):
             if i < len(self.nav_frames[self.cur_frame_idx].contents):
-                filepath = ""
+                filepath: Path = None  # Initialize
                 if self.nav_frames[self.cur_frame_idx].contents[i][0] == ItemType.ENTRY:
                     entry = self.lib.get_entry(
                         self.nav_frames[self.cur_frame_idx].contents[i][1]
                     )
-                    filepath = self.lib.library_dir / entry.path / entry.filename
+                    filepath: Path = self.lib.library_dir / entry.path / entry.filename
+
+                    try:
+                        item_thumb.delete_action.triggered.disconnect()
+                    except RuntimeWarning:
+                        pass
+                    item_thumb.delete_action.triggered.connect(
+                        lambda checked=False, f=filepath: self.delete_files_callback(f)
+                    )
 
                     item_thumb.set_item_id(entry.id)
                     item_thumb.assign_archived(entry.has_tag(self.lib, TAG_ARCHIVED))
@@ -1506,7 +1640,9 @@ class QtDriver(QObject):
                         else collation.e_ids_and_pages[0][0]
                     )
                     cover_e = self.lib.get_entry(cover_id)
-                    filepath = self.lib.library_dir / cover_e.path / cover_e.filename
+                    filepath: Path = (
+                        self.lib.library_dir / cover_e.path / cover_e.filename
+                    )
                     item_thumb.set_count(str(len(collation.e_ids_and_pages)))
                     item_thumb.update_clickable(
                         clickable=(

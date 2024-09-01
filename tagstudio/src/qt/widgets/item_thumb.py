@@ -9,6 +9,7 @@ import time
 import typing
 from pathlib import Path
 from typing import Optional
+import platform
 
 from PIL import Image, ImageQt
 from PySide6.QtCore import Qt, QSize, QEvent, QMimeData, QUrl
@@ -207,8 +208,15 @@ class ItemThumb(FlowWidget):
             open_explorer_action = QAction("Open in Explorer", self)
 
         open_explorer_action.triggered.connect(self.opener.open_explorer)
+
+        trash_term: str = "Trash"
+        if platform.system() == "Windows":
+            trash_term = "Recycle Bin"
+        self.delete_action = QAction(f"Send file to {trash_term}", self)
+
         self.thumb_button.addAction(open_file_action)
         self.thumb_button.addAction(open_explorer_action)
+        self.thumb_button.addAction(self.delete_action)
 
         # Static Badges ========================================================
 
