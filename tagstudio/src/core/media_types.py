@@ -36,6 +36,7 @@ class MediaType(str, Enum):
     PRESENTATION: str = "presentation"
     PROGRAM: str = "program"
     SHORTCUT: str = "shortcut"
+    SOURCE_ENGINE: str = "source_engine"
     SPREADSHEET: str = "spreadsheet"
     TEXT: str = "text"
     VIDEO: str = "video"
@@ -243,6 +244,20 @@ class MediaCategories:
         ".ts",
         ".txt",
         ".xml",
+        ".vmt",
+        ".fgd",
+        ".nut",
+        ".cfg",
+        ".conf",
+        ".vdf",
+        ".vcfg",
+        ".gi",
+        ".inf",
+        ".vqlayout",
+        ".qss",
+        ".vsc",
+        ".kv3",
+        ".vsnd_template",
     }
     _PRESENTATION_SET: set[str] = {
         ".key",
@@ -251,6 +266,9 @@ class MediaCategories:
         ".pptx",
     }
     _PROGRAM_SET: set[str] = {".app", ".exe"}
+    _SOURCE_ENGINE_SET: set[str] = {
+        ".vtf",
+    }
     _SHORTCUT_SET: set[str] = {".desktop", ".lnk", ".url"}
     _SPREADSHEET_SET: set[str] = {
         ".csv",
@@ -389,6 +407,11 @@ class MediaCategories:
         extensions=_SHORTCUT_SET,
         is_iana=False,
     )
+    SOURCE_ENGINE_TYPES: MediaCategory = MediaCategory(
+        media_type=MediaType.SOURCE_ENGINE,
+        extensions=_SOURCE_ENGINE_SET,
+        is_iana=False,
+    )
     SPREADSHEET_TYPES: MediaCategory = MediaCategory(
         media_type=MediaType.SPREADSHEET,
         extensions=_SPREADSHEET_SET,
@@ -429,6 +452,7 @@ class MediaCategories:
         PRESENTATION_TYPES,
         PROGRAM_TYPES,
         SHORTCUT_TYPES,
+        SOURCE_ENGINE_TYPES,
         SPREADSHEET_TYPES,
         TEXT_TYPES,
         VIDEO_TYPES,

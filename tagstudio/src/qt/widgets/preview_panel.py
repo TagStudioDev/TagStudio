@@ -99,11 +99,18 @@ class PreviewPanel(QWidget):
         image_layout.setContentsMargins(0, 0, 0, 0)
 
         self.open_file_action = QAction("Open file", self)
-        self.open_explorer_action = QAction("Open file in explorer", self)
         self.trash_term: str = "Trash"
         if platform.system() == "Windows":
             self.trash_term = "Recycle Bin"
         self.delete_action = QAction(f"Send file to {self.trash_term}", self)
+
+        self.open_explorer_action = QAction(
+            "Open in explorer", self
+        )  # Default text (Linux, etc.)
+        if platform.system() == "Darwin":
+            self.open_explorer_action = QAction("Reveal in Finder", self)
+        elif platform.system() == "Windows":
+            self.open_explorer_action = QAction("Open in Explorer", self)
 
         self.preview_img = QPushButtonWrapper()
         self.preview_img.setMinimumSize(*self.img_button_size)

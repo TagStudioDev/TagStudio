@@ -8,6 +8,7 @@ import math
 from copy import deepcopy
 from io import BytesIO
 from pathlib import Path
+import struct
 
 import cv2
 import numpy as np
@@ -39,6 +40,7 @@ from src.qt.helpers.file_tester import is_readable_video
 from src.qt.helpers.gradient import four_corner_gradient
 from src.qt.helpers.text_wrapper import wrap_full_text
 from src.qt.resource_manager import ResourceManager
+from vtf2img import Parser
 
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 
@@ -600,6 +602,33 @@ class ThumbRenderer(QObject):
                 )
         return im
 
+    def _source_engine(self, filepath: Path) -> Image.Image:
+        """
+        This is a function to convert the VTF (Valve Texture Format) files to thumbnails, it works using the VTF2IMG library for PILLOW.
+        """
+        parser = Parser(filepath)
+        im: Image.Image = None
+        try:
+            im = parser.get_image()
+
+        except (
+            AttributeError,
+            UnidentifiedImageError,
+            FileNotFoundError,
+            TypeError,
+            struct.error,
+        ) as e:
+            if str(e) == "expected string or buffer":
+                logging.info(
+                    f"[ThumbRenderer][VTF][INFO] {filepath.name} Doesn't have an embedded thumbnail. ({type(e).__name__})"
+                )
+
+            else:
+                logging.error(
+                    f"[ThumbRenderer][VTF][ERROR]: Couldn't render thumbnail for {filepath.name} ({type(e).__name__})"
+                )
+        return im
+
     def _font_short_thumb(self, filepath: Path, size: int) -> Image.Image:
         """Render a small font preview ("Aa") thumbnail from a font file.
 
@@ -960,6 +989,10 @@ class ThumbRenderer(QObject):
                 # Blender ===========================================================
                 elif MediaType.BLENDER in MediaCategories.get_types(ext):
                     image = self._blender(_filepath)
+
+                # VTF ==========================================================
+                elif MediaType.SOURCE_ENGINE in MediaCategories.get_types(ext):
+                    image = self._source_engine(_filepath)
 
                 # No Rendered Thumbnail ========================================
                 if not image:
