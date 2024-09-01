@@ -602,7 +602,6 @@ class ThumbRenderer(QObject):
                 )
         return im
 
-
     def _source_engine(self, filepath: Path) -> Image.Image:
         """
         This is a function to convert the VTF (Valve Texture Format) files to thumbnails, it works using the VTF2IMG library for PILLOW.
@@ -629,7 +628,6 @@ class ThumbRenderer(QObject):
                     f"[ThumbRenderer][VTF][ERROR]: Couldn't render thumbnail for {filepath.name} ({type(e).__name__})"
                 )
         return im
-
 
     def _font_short_thumb(self, filepath: Path, size: int) -> Image.Image:
         """Render a small font preview ("Aa") thumbnail from a font file.
