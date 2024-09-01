@@ -409,9 +409,9 @@ class ThumbRenderer(QObject):
             faded (bool): Whether or not to apply a faded version of the edge.
                 Used for light themes.
         """
-        opacity: float = 0.75 if not faded else 0.6
+        opacity: float = 0.8 if not faded else 0.6
         shade_reduction: float = (
-            0.15
+            0
             if QGuiApplication.styleHints().colorScheme() is Qt.ColorScheme.Dark
             else 0.3
         )
