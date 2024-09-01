@@ -482,14 +482,24 @@ class QtDriver(QObject):
         window_menu.addAction(check_action)
 
         # Tools Menu ===========================================================
+        def create_fix_unlinked_entries_modal():
+            """Postpone the creation of the modal until it is needed."""
+            if not hasattr(self, "unlinked_modal"):
+                self.unlinked_modal = FixUnlinkedEntriesModal(self.lib, self)
+            self.unlinked_modal.show()
+
         fix_unlinked_entries_action = QAction("Fix &Unlinked Entries", menu_bar)
-        fue_modal = FixUnlinkedEntriesModal(self.lib, self)
-        fix_unlinked_entries_action.triggered.connect(lambda: fue_modal.show())
+        fix_unlinked_entries_action.triggered.connect(create_fix_unlinked_entries_modal)
         tools_menu.addAction(fix_unlinked_entries_action)
 
+        def create_dupe_files_modal():
+            """Postpone the creation of the modal until it is needed."""
+            if not hasattr(self, "dupe_modal"):
+                self.dupe_modal = FixDupeFilesModal(self.lib, self)
+            self.dupe_modal.show()
+
         fix_dupe_files_action = QAction("Fix Duplicate &Files", menu_bar)
-        fdf_modal = FixDupeFilesModal(self.lib, self)
-        fix_dupe_files_action.triggered.connect(lambda: fdf_modal.show())
+        fix_dupe_files_action.triggered.connect(create_dupe_files_modal)
         tools_menu.addAction(fix_dupe_files_action)
 
         create_collage_action = QAction("Create Collage", menu_bar)
@@ -540,9 +550,14 @@ class QtDriver(QObject):
         )
         window_menu.addAction(show_libs_list_action)
 
+        def create_folders_tags_modal():
+            """Postpone the creation of the modal until it is needed."""
+            if not hasattr(self, "folders_modal"):
+                self.folders_modal = FoldersToTagsModal(self.lib, self)
+            self.folders_modal.show()
+
         folders_to_tags_action = QAction("Folders to Tags", menu_bar)
-        ftt_modal = FoldersToTagsModal(self.lib, self)
-        folders_to_tags_action.triggered.connect(lambda: ftt_modal.show())
+        folders_to_tags_action.triggered.connect(create_folders_tags_modal)
         macros_menu.addAction(folders_to_tags_action)
 
         # Help Menu ============================================================
