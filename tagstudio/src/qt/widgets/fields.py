@@ -47,6 +47,10 @@ class FieldContainer(QWidget):
         self.edit_icon_128 = theme_fg_overlay(FieldContainer.edit_icon_128)
         self.trash_icon_128 = theme_fg_overlay(FieldContainer.trash_icon_128)
 
+        self.clipboard_icon_128 = theme_fg_overlay(FieldContainer.clipboard_icon_128)
+        self.edit_icon_128 = theme_fg_overlay(FieldContainer.edit_icon_128)
+        self.trash_icon_128 = theme_fg_overlay(FieldContainer.trash_icon_128)
+
         self.root_layout = QVBoxLayout(self)
         self.root_layout.setObjectName("baseLayout")
         self.root_layout.setContentsMargins(0, 0, 0, 0)
