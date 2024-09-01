@@ -4,6 +4,7 @@
 
 import logging
 from pathlib import Path
+import platform
 import time
 import typing
 from datetime import datetime as dt
@@ -97,7 +98,15 @@ class PreviewPanel(QWidget):
         image_layout.setContentsMargins(0, 0, 0, 0)
 
         self.open_file_action = QAction("Open file", self)
-        self.open_explorer_action = QAction("Open file in explorer", self)
+
+        system = platform.system()
+        self.open_explorer_action = QAction(
+            "Open in explorer", self
+        )  # Default (mainly going to be for linux)
+        if system == "Darwin":
+            self.open_explorer_action = QAction("Reveal in Finder", self)
+        elif system == "Windows":
+            self.open_explorer_action = QAction("Open in Explorer", self)
 
         self.preview_img = QPushButtonWrapper()
         self.preview_img.setMinimumSize(*self.img_button_size)

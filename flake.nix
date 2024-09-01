@@ -1,85 +1,187 @@
 {
+  description = "TagStudio";
+
   inputs = {
+    devenv.url = "github:cachix/devenv";
+
+    devenv-root = {
+      url = "file+file:///dev/null";
+      flake = false;
+    };
+
+    flake-parts = {
+      url = "github:hercules-ci/flake-parts";
+      inputs.nixpkgs-lib.follows = "nixpkgs";
+    };
+
+    nix2container = {
+      url = "github:nlewo/nix2container";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
 
-    qt6Nixpkgs = {
-      # Commit bumping to qt6.6.3
-      url = "github:NixOS/nixpkgs/f862bd46d3020bcfe7195b3dad638329271b0524"; 
-    };
+    # Pinned to Qt version 6.7.1
+    nixpkgs-qt6.url = "github:NixOS/nixpkgs/e6cea36f83499eb4e9cd184c8a8e823296b50ad5";
+
+    systems.url = "github:nix-systems/default-linux";
   };
 
-  outputs = { self, nixpkgs, qt6Nixpkgs }:
-  let
-    pkgs = nixpkgs.legacyPackages.x86_64-linux;
+  outputs = { flake-parts, nixpkgs, nixpkgs-qt6, self, systems, ... }@inputs:
+    flake-parts.lib.mkFlake { inherit inputs; } {
+      imports = [ inputs.devenv.flakeModule ];
 
-    qt6Pkgs = qt6Nixpkgs.legacyPackages.x86_64-linux;
-  in {
-    devShells.x86_64-linux.default = pkgs.mkShell {
-      LD_LIBRARY_PATH = pkgs.lib.makeLibraryPath [
-        pkgs.gcc-unwrapped
-        pkgs.zlib
-        pkgs.libglvnd
-        pkgs.glib
-        pkgs.stdenv.cc.cc
-        pkgs.fontconfig
-        pkgs.libxkbcommon
-        pkgs.xorg.libxcb
-        pkgs.freetype
-        pkgs.dbus
-        pkgs.zstd
-        # For PySide6 Multimedia
-        pkgs.libpulseaudio
-        pkgs.libkrb5
+      systems = import systems;
 
-        qt6Pkgs.qt6.qtwayland
-        qt6Pkgs.qt6.full
-        qt6Pkgs.qt6.qtbase
-      ];
-      buildInputs = with pkgs; [
-        cmake
-        gdb
-        zstd
-        python312Packages.pip
-        python312Full
-        python312Packages.virtualenv # run virtualenv .
-        python312Packages.pyusb # fixes the pyusb 'No backend available' when installed directly via pip
+      perSystem = { config, pkgs, system, ... }:
+        let
+          inherit (nixpkgs) lib;
 
-        libgcc
-        makeWrapper
-        bashInteractive
-        glib
-        libxkbcommon
-        freetype
-        binutils
-        dbus
-        coreutils
-        libGL
-        libGLU
-        fontconfig
-        xorg.libxcb
+          qt6Pkgs = import nixpkgs-qt6 { inherit system; };
+        in
+        {
+          devenv.shells = rec {
+            default = tagstudio;
 
-        # this is for the shellhook portion
-        makeWrapper
-        bashInteractive
-      ] ++ [
-        qt6Pkgs.qt6.qtbase
-        qt6Pkgs.qt6.full
-        qt6Pkgs.qt6.qtwayland
-        qt6Pkgs.qtcreator
+            tagstudio =
+              let
+                cfg = config.devenv.shells.tagstudio;
+              in
+              {
+                # NOTE: many things were simply transferred over from previous,
+                # there must be additional work in ensuring all relevant dependencies
+                # are in place (and no extraneous). I have already spent much
+                # work making this in the first place and just need to get it out
+                # there, especially after my promises. Would appreciate any help
+                # (possibly PRs!) on taking care of this. Otherwise, just expect
+                # this to get ironed out over time.
+                #
+                # Thank you! -Xarvex
 
-        # this is for the shellhook portion
-        qt6Pkgs.qt6.wrapQtAppsHook
-      ];
-      # set the environment variables that Qt apps expect
-      shellHook = ''
-        export QT_QPA_PLATFORM=wayland
-        export LIBRARY_PATH=/usr/lib:/usr/lib64:$LIBRARY_PATH
-        # export LD_LIBRARY_PATH=${pkgs.stdenv.cc.cc.lib}/lib/:/run/opengl-driver/lib/
-        export QT_PLUGIN_PATH=${pkgs.qt6.qtbase}/${pkgs.qt6.qtbase.qtPluginPrefix}
-        bashdir=$(mktemp -d)
-        makeWrapper "$(type -p bash)" "$bashdir/bash" "''${qtWrapperArgs[@]}"
-        exec "$bashdir/bash"
-      '';
+                devenv.root =
+                  let
+                    devenvRoot = builtins.readFile inputs.devenv-root.outPath;
+                  in
+                  # If not overriden (/dev/null), --impure is necessary.
+                  pkgs.lib.mkIf (devenvRoot != "") devenvRoot;
+
+                name = "TagStudio";
+
+                # Derived from previous flake iteration.
+                packages = (with pkgs; [
+                  cmake
+                  binutils
+                  coreutils
+                  dbus
+                  fontconfig
+                  freetype
+                  gdb
+                  glib
+                  libGL
+                  libGLU
+                  libgcc
+                  libxkbcommon
+                  mypy
+                  ruff
+                  xorg.libxcb
+                  zstd
+                ])
+                ++ (with qt6Pkgs; [
+                  qt6.full
+                  qt6.qtbase
+                  qt6.qtwayland
+                  qtcreator
+                ]);
+
+                enterShell =
+                  let
+                    setQtEnv = pkgs.runCommand "set-qt-env"
+                      {
+                        buildInputs = with qt6Pkgs.qt6; [
+                          qtbase
+                        ];
+
+                        nativeBuildInputs = (with pkgs; [
+                          makeShellWrapper
+                        ])
+                        ++ (with qt6Pkgs.qt6; [
+                          wrapQtAppsHook
+                        ]);
+                      }
+                      ''
+                        makeShellWrapper "$(type -p sh)" "$out" "''${qtWrapperArgs[@]}"
+                        sed "/^exec/d" -i "$out"
+                      '';
+                  in
+                  ''
+                    source ${setQtEnv}
+                  '';
+
+                scripts.tagstudio.exec = ''
+                  python ${cfg.devenv.root}/tagstudio/tag_studio.py
+                '';
+
+                env = {
+                  QT_QPA_PLATFORM = "wayland;xcb";
+
+                  # Derived from previous flake iteration.
+                  # Not desired given LD_LIBRARY_PATH pollution.
+                  # See supposed alternative below, further research required.
+                  LD_LIBRARY_PATH = lib.makeLibraryPath (
+                    (with pkgs; [
+                      dbus
+                      fontconfig
+                      freetype
+                      gcc-unwrapped
+                      glib
+                      libglvnd
+                      libkrb5
+                      libpulseaudio
+                      libva
+                      libxkbcommon
+                      openssl
+                      stdenv.cc.cc.lib
+                      wayland
+                      xorg.libxcb
+                      xorg.libXrandr
+                      zlib
+                      zstd
+                    ])
+                    ++ (with qt6Pkgs.qt6; [
+                      qtbase
+                      qtwayland
+                      full
+                    ])
+                  );
+                };
+
+                languages.python = {
+                  enable = true;
+                  venv = {
+                    enable = true;
+                    quiet = true;
+                    requirements =
+                      let
+                        excludeDeps = req: deps: builtins.concatStringsSep "\n"
+                          (builtins.filter (line: !(lib.any (elem: lib.hasPrefix elem line) deps))
+                            (lib.splitString "\n" req));
+                      in
+                      ''
+                        ${builtins.readFile ./requirements.txt}
+                        ${excludeDeps (builtins.readFile ./requirements-dev.txt) [
+                          "mypy"
+                          "ruff"
+                        ]}
+                      '';
+                  };
+
+                  # Should be able to replace LD_LIBRARY_PATH?
+                  # Was not quite able to get working,
+                  # will be consulting cachix community. -Xarvex
+                  # libraries = with pkgs; [ ];
+                };
+              };
+          };
+        };
     };
-  };
 }

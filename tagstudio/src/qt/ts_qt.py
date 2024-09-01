@@ -809,7 +809,10 @@ class QtDriver(QObject):
 
     def show_tag_database(self):
         self.modal = PanelModal(
-            TagDatabasePanel(self.lib), "Library Tags", "Library Tags", has_save=False
+            TagDatabasePanel(self.lib, self),
+            "Library Tags",
+            "Library Tags",
+            has_save=False,
         )
         self.modal.show()
 
@@ -1124,6 +1127,8 @@ class QtDriver(QObject):
         Args:
             index (int): The index of the item_thumbs/ComboBox list to use.
         """
+        SPACING_DIVISOR: int = 10
+        MIN_SPACING: int = 12
         # Index 2 is the default (Medium)
         if index < len(self.thumb_sizes) and index >= 0:
             self.thumb_size = self.thumb_sizes[index][1]
@@ -1142,7 +1147,9 @@ class QtDriver(QObject):
             it.setMinimumSize(self.thumb_size, self.thumb_size)
             it.setMaximumSize(self.thumb_size, self.thumb_size)
             it.thumb_button.thumb_size = (self.thumb_size, self.thumb_size)
-        self.flow_container.layout().setSpacing(min(self.thumb_size // 10, 12))
+        self.flow_container.layout().setSpacing(
+            min(self.thumb_size // SPACING_DIVISOR, MIN_SPACING)
+        )
 
     def mouse_navigation(self, event: QMouseEvent):
         # print(event.button())
