@@ -995,7 +995,9 @@ class ThumbRenderer(QObject):
                     image = self._source_engine(_filepath)
 
                 # No Rendered Thumbnail ========================================
-                if not image:
+                if not _filepath.exists():
+                    raise FileNotFoundError
+                elif not image:
                     raise UnidentifiedImageError
 
                 orig_x, orig_y = image.size
