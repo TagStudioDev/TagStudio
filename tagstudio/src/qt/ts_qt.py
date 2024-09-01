@@ -889,7 +889,7 @@ class QtDriver(QObject):
                 self.selected.clear()
 
         if deleted_count > 0:
-            self.filter_items()
+            self.refresh_frame(self.nav_frames[self.cur_frame_idx].contents)
             self.preview_panel.update_widgets()
 
         if len(self.selected) <= 1 and deleted_count == 0:
@@ -903,6 +903,8 @@ class QtDriver(QObject):
                 f"Only deleted {deleted_count} file{'' if deleted_count == 1 else 's'}! Check if any of the files are currently missing or in use."
             )
         elif len(self.selected) > 1 and deleted_count == len(self.selected):
+            self.main_window.statusbar.showMessage(f"Deleted {deleted_count} files!")
+        else:
             self.main_window.statusbar.showMessage(f"Deleted {deleted_count} files!")
         self.main_window.statusbar.repaint()
 
