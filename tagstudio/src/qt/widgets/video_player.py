@@ -82,6 +82,8 @@ class VideoPlayer(QGraphicsView):
         self.scene().addItem(self.video_preview)
         self.video_preview.setAcceptedMouseButtons(Qt.MouseButton.LeftButton)
 
+        self.setStyleSheet("border-style:solid;border-width:0px;")
+
         # Set up the video tint.
         self.video_tint = self.scene().addRect(
             0,
