@@ -3,6 +3,7 @@
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
 import logging
+import os
 from pathlib import Path
 import platform
 import time
@@ -589,13 +590,12 @@ class PreviewPanel(QWidget):
                     )
                     file_str: str = ""
                     sep_color: str = "#777777"  # Gray
-                    sep: str = "\\" if platform.system() == "Windows" else "/"
                     for i, part in enumerate(filepath.parts):
-                        part_ = part.strip(sep)
+                        part_ = part.strip(os.path.sep)
                         if i == 0:
-                            file_str += f"{"\u200b".join(part_)}<a style='color: {sep_color}'><b>{sep}</a></b>"
+                            file_str += f"{"\u200b".join(part_)}<a style='color: {sep_color}'><b>{os.path.sep}</a></b>"
                         elif i != 0 and i != len(filepath.parts) - 1:
-                            file_str += f"{"\u200b".join(part_)}<a style='color: {sep_color}'><b>{sep}</a></b>"
+                            file_str += f"{"\u200b".join(part_)}<a style='color: {sep_color}'><b>{os.path.sep}</a></b>"
                         else:
                             file_str += f"<br><b>{"\u200b".join(part_)}</b>"
                     self.file_label.setText(file_str)
