@@ -241,5 +241,5 @@ class FileOpenerLabel(QLabel):
         """
         # Don't update text if not filepath or same width
         if self.filepath and event.size().width() != event.oldSize().width():
-            self.setText(self.truncate_single_filepath(self.filepath))
+            self.setText(self.truncate_filepath(self.filepath))
         return super().resizeEvent(event)
