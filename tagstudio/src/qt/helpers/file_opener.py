@@ -11,7 +11,8 @@ import traceback
 from pathlib import Path
 
 from PySide6.QtWidgets import QLabel
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, QEvent, QTimer, Slot
+from PySide6.QtGui import Qt, QEnterEvent
 
 ERROR = f"[ERROR]"
 WARNING = f"[WARNING]"
@@ -125,6 +126,9 @@ class FileOpenerLabel(QLabel):
                 parent (QWidget, optional): The parent widget. Defaults to None.
         """
         super().__init__(text, parent)
+        self.filepath = None
+        self.timer = QTimer()
+        self.timer.timeout.connect(self._show_full_path_callback)
 
     def setFilePath(self, filepath):
         """Set the filepath to open.
@@ -133,6 +137,52 @@ class FileOpenerLabel(QLabel):
                 filepath (str): The path to the file to open.
         """
         self.filepath = filepath
+
+    def truncate_filepath(self, filepath):
+        path = Path(filepath)
+
+        if len(str(path)) > 50:
+            name_size = len(path.name) + 4
+            prev = ""
+
+            for parent in reversed(path.parents):
+                if len(str(parent)) + name_size > 50:
+                    if sys.platform == "win32":
+                        return f"{prev}\\..\\{path.name}"
+                    return f"{prev}/../{path.name}"
+                prev = parent
+        return str(path)
+
+    def setText(self, text: str):
+        if not self.filepath:
+            return super().setText(text)
+
+        filepath = Path(text)
+        file_str: str = ""
+        sep_color: str = "#777777"  # Gray
+        for i, part in enumerate(filepath.parts):
+            part_ = part.strip(os.path.sep)
+            if i == 0:
+                file_str += f"{"\u200b".join(part_)}<a style='color: {sep_color}'><b>{os.path.sep}</a></b>"
+            elif i != 0 and i != len(filepath.parts) - 1:
+                file_str += f"{"\u200b".join(part_)}<a style='color: {sep_color}'><b>{os.path.sep}</b></a>"
+            else:
+                file_str += f"<b>{"\u200b".join(part_)}</b>"
+        return super().setText(file_str)
+
+    def enterEvent(self, event: QEnterEvent) -> None:
+        if self.filepath:
+            self.timer.start(250)
+        return super().enterEvent(event)
+
+    def leaveEvent(self, event: QEvent) -> None:
+        if self.filepath:
+            self.timer.stop()
+            self.setText(self.truncate_filepath(self.filepath))
+        return super().leaveEvent(event)
+
+    def _show_full_path_callback(self):
+        self.setText(str(self.filepath))
 
     def mousePressEvent(self, event):
         """Handle mouse press events.

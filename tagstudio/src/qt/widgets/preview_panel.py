@@ -13,8 +13,8 @@ import cv2
 import rawpy
 from PIL import Image, UnidentifiedImageError, ImageFont
 from PIL.Image import DecompressionBombError
-from PySide6.QtCore import QModelIndex, Signal, Qt, QSize, QByteArray, QBuffer
-from PySide6.QtGui import QGuiApplication, QResizeEvent, QAction, QMovie
+from PySide6.QtCore import QModelIndex, Signal, Qt, QSize, QByteArray, QBuffer, QEvent
+from PySide6.QtGui import QGuiApplication, QResizeEvent, QAction, QMovie, QEnterEvent
 from PySide6.QtWidgets import (
     QWidget,
     QVBoxLayout,
@@ -528,7 +528,7 @@ class PreviewPanel(QWidget):
         if not self.driver.selected:
             if self.selected or not self.initialized:
                 self.file_label.setText("<i>No Items Selected</i>")
-                self.file_label.setFilePath("")
+                self.file_label.setFilePath(None)
                 self.file_label.setCursor(Qt.CursorShape.ArrowCursor)
 
                 self.dimensions_label.setText("")
@@ -588,17 +588,7 @@ class PreviewPanel(QWidget):
                         ratio,
                         update_on_ratio_change=True,
                     )
-                    file_str: str = ""
-                    sep_color: str = "#777777"  # Gray
-                    for i, part in enumerate(filepath.parts):
-                        part_ = part.strip(os.path.sep)
-                        if i == 0:
-                            file_str += f"{"\u200b".join(part_)}<a style='color: {sep_color}'><b>{os.path.sep}</a></b>"
-                        elif i != 0 and i != len(filepath.parts) - 1:
-                            file_str += f"{"\u200b".join(part_)}<a style='color: {sep_color}'><b>{os.path.sep}</a></b>"
-                        else:
-                            file_str += f"<br><b>{"\u200b".join(part_)}</b>"
-                    self.file_label.setText(file_str)
+                    self.file_label.setText(self.file_label.truncate_filepath(filepath))
                     self.file_label.setCursor(Qt.CursorShape.PointingHandCursor)
 
                     self.preview_img.setContextMenuPolicy(
@@ -797,7 +787,7 @@ class PreviewPanel(QWidget):
                     f"<b>{len(self.driver.selected)}</b> Items Selected"
                 )
                 self.file_label.setCursor(Qt.CursorShape.ArrowCursor)
-                self.file_label.setFilePath("")
+                self.file_label.setFilePath(None)
                 self.dimensions_label.setText("")
 
                 self.preview_img.setContextMenuPolicy(
@@ -1277,3 +1267,4 @@ class PreviewPanel(QWidget):
 
         # self.preview_gif.hide()
         # logging.info(self.preview_gif.movie())
+
