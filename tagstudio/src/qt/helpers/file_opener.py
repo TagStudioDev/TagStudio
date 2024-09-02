@@ -147,15 +147,15 @@ class FileOpenerLabel(QLabel):
         max_chars = self.width() // self.font_metrics.averageCharWidth()
 
         if len(str(path)) > max_chars:
-            name_size = len(path.name) + 4
+            name_size = len(path.name) + 3
             prev = ""
 
             # Reverse as pathlib element 0 is full path
             for parent in reversed(path.parents):
                 if len(str(parent)) + name_size > max_chars:
                     if sys.platform == "win32":
-                        return f"{prev}\\..\\{path.name}"
-                    return f"{prev}/../{path.name}"
+                        return f"{prev}\\\u2026\\{path.name}"
+                    return f"{prev}/\u2026/{path.name}"
                 prev = parent
         return str(path)
 
