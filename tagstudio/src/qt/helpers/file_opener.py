@@ -11,8 +11,8 @@ import traceback
 from pathlib import Path
 
 from PySide6.QtWidgets import QLabel
-from PySide6.QtCore import Qt, QEvent, QTimer, Slot
-from PySide6.QtGui import Qt, QEnterEvent
+from PySide6.QtCore import Qt, QEvent, QTimer
+from PySide6.QtGui import Qt, QEnterEvent, QResizeEvent, QFontMetrics
 
 ERROR = f"[ERROR]"
 WARNING = f"[WARNING]"
@@ -129,6 +129,7 @@ class FileOpenerLabel(QLabel):
         self.filepath = None
         self.timer = QTimer()
         self.timer.timeout.connect(self._show_full_path_callback)
+        self.font_metrics = QFontMetrics(self.font())
 
     def setFilePath(self, filepath):
         """Set the filepath to open.
@@ -140,13 +141,14 @@ class FileOpenerLabel(QLabel):
 
     def truncate_filepath(self, filepath):
         path = Path(filepath)
+        max_chars = self.width() // self.font_metrics.averageCharWidth()
 
-        if len(str(path)) > 50:
+        if len(str(path)) > max_chars:
             name_size = len(path.name) + 4
             prev = ""
 
             for parent in reversed(path.parents):
-                if len(str(parent)) + name_size > 50:
+                if len(str(parent)) + name_size > max_chars:
                     if sys.platform == "win32":
                         return f"{prev}\\..\\{path.name}"
                     return f"{prev}/../{path.name}"
@@ -200,3 +202,8 @@ class FileOpenerLabel(QLabel):
         elif event.button() == Qt.RightButton:
             # Show context menu
             pass
+
+    def resizeEvent(self, event: QResizeEvent) -> None:
+        if self.filepath:
+            self.setText(self.truncate_single_filepath(self.filepath))
+        return super().resizeEvent(event)
