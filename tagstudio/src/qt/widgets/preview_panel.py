@@ -3,6 +3,7 @@
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
 import logging
+import os
 from pathlib import Path
 import platform
 import time
@@ -98,6 +99,21 @@ class PreviewPanel(QWidget):
         image_layout = QHBoxLayout(self.image_container)
         image_layout.setContentsMargins(0, 0, 0, 0)
 
+        file_label_style = "font-size: 12px"
+        properties_style = (
+            f"background-color:{self.label_bg_color};"
+            "color:#FFFFFF;"
+            "font-family:Oxanium;"
+            "font-weight:bold;"
+            "font-size:12px;"
+            "border-radius:3px;"
+            "padding-top: 4px;"
+            "padding-right: 1px;"
+            "padding-bottom: 1px;"
+            "padding-left: 1px;"
+        )
+        date_style = "font-size:12px;"
+
         self.open_file_action = QAction("Open file", self)
         self.trash_term: str = "Trash"
         if platform.system() == "Windows":
@@ -157,31 +173,26 @@ class PreviewPanel(QWidget):
         image_layout.addWidget(self.preview_vid)
         image_layout.setAlignment(self.preview_vid, Qt.AlignmentFlag.AlignCenter)
         self.image_container.setMinimumSize(*self.img_button_size)
-        self.file_label = FileOpenerLabel("Filename")
+        self.file_label = FileOpenerLabel("filename")
+        self.file_label.setTextFormat(Qt.TextFormat.RichText)
         self.file_label.setWordWrap(True)
         self.file_label.setTextInteractionFlags(
             Qt.TextInteractionFlag.TextSelectableByMouse
         )
-        self.file_label.setStyleSheet("font-weight: bold; font-size: 12px")
+        self.file_label.setStyleSheet(file_label_style)
 
-        self.dimensions_label = QLabel("Dimensions")
+        self.date_created_label = QLabel("dateCreatedLabel")
+        self.date_created_label.setAlignment(Qt.AlignmentFlag.AlignLeft)
+        self.date_created_label.setTextFormat(Qt.TextFormat.RichText)
+        self.date_created_label.setStyleSheet(date_style)
+
+        self.date_modified_label = QLabel("dateModifiedLabel")
+        self.date_modified_label.setAlignment(Qt.AlignmentFlag.AlignLeft)
+        self.date_modified_label.setTextFormat(Qt.TextFormat.RichText)
+        self.date_modified_label.setStyleSheet(date_style)
+
+        self.dimensions_label = QLabel("dimensionsLabel")
         self.dimensions_label.setWordWrap(True)
-        # self.dim_label.setTextInteractionFlags(
-        # 	Qt.TextInteractionFlag.TextSelectableByMouse)
-
-        properties_style = (
-            f"background-color:{self.label_bg_color};"
-            "color:#FFFFFF;"
-            "font-family:Oxanium;"
-            "font-weight:bold;"
-            "font-size:12px;"
-            "border-radius:3px;"
-            "padding-top: 4px;"
-            "padding-right: 1px;"
-            "padding-bottom: 1px;"
-            "padding-left: 1px;"
-        )
-
         self.dimensions_label.setStyleSheet(properties_style)
 
         self.scroll_layout = QVBoxLayout()
@@ -219,7 +230,15 @@ class PreviewPanel(QWidget):
         )
         scroll_area.setWidget(scroll_container)
 
+        date_container = QWidget()
+        date_layout = QVBoxLayout(date_container)
+        date_layout.setContentsMargins(0, 2, 0, 0)
+        date_layout.setSpacing(0)
+        date_layout.addWidget(self.date_created_label)
+        date_layout.addWidget(self.date_modified_label)
+
         info_layout.addWidget(self.file_label)
+        info_layout.addWidget(date_container)
         info_layout.addWidget(self.dimensions_label)
         info_layout.addWidget(scroll_area)
 
@@ -470,6 +489,28 @@ class PreviewPanel(QWidget):
             for field_item in field_list:
                 self.lib.add_field_to_entry(item_id, field_item.row())
 
+    def update_date_label(self, filepath: Path | None = None) -> None:
+        """Update the "Date Created" and "Date Modified" file property labels."""
+        if filepath and filepath.is_file():
+            created: dt = dt.fromtimestamp(filepath.stat().st_ctime)
+            modified: dt = dt.fromtimestamp(filepath.stat().st_mtime)
+            self.date_created_label.setText(
+                f"<b>Date Created:</b> {dt.strftime(created, "%a, %x, %X")}"
+            )
+            self.date_modified_label.setText(
+                f"<b>Date Modified:</b> {dt.strftime(modified, "%a, %x, %X")}"
+            )
+            self.date_created_label.setHidden(False)
+            self.date_modified_label.setHidden(False)
+        elif filepath:
+            self.date_created_label.setText("<b>Date Created:</b> <i>N/A</i>")
+            self.date_modified_label.setText("<b>Date Modified:</b> <i>N/A</i>")
+            self.date_created_label.setHidden(False)
+            self.date_modified_label.setHidden(False)
+        else:
+            self.date_created_label.setHidden(True)
+            self.date_modified_label.setHidden(True)
+
     # def update_widgets(self, item: Union[Entry, Collation, Tag]):
     def update_widgets(self):
         """
@@ -486,11 +527,12 @@ class PreviewPanel(QWidget):
         # 0 Selected Items
         if not self.driver.selected:
             if self.selected or not self.initialized:
-                self.file_label.setText("No Items Selected")
+                self.file_label.setText("<i>No Items Selected</i>")
                 self.file_label.setFilePath("")
                 self.file_label.setCursor(Qt.CursorShape.ArrowCursor)
 
                 self.dimensions_label.setText("")
+                self.update_date_label()
                 self.preview_img.setContextMenuPolicy(
                     Qt.ContextMenuPolicy.NoContextMenu
                 )
@@ -546,7 +588,17 @@ class PreviewPanel(QWidget):
                         ratio,
                         update_on_ratio_change=True,
                     )
-                    self.file_label.setText("\u200b".join(str(filepath)))
+                    file_str: str = ""
+                    separator: str = (
+                        f"<a style='color: #777777'><b>{os.path.sep}</a>"  # Gray
+                    )
+                    for i, part in enumerate(filepath.parts):
+                        part_ = part.strip(os.path.sep)
+                        if i != len(filepath.parts) - 1:
+                            file_str += f"{"\u200b".join(part_)}{separator}</b>"
+                        else:
+                            file_str += f"<br><b>{"\u200b".join(part_)}</b>"
+                    self.file_label.setText(file_str)
                     self.file_label.setCursor(Qt.CursorShape.PointingHandCursor)
 
                     self.preview_img.setContextMenuPolicy(
@@ -675,6 +727,7 @@ class PreviewPanel(QWidget):
                             self.dimensions_label.setText(
                                 f"{ext.upper()[1:]}  •  {format_size(filepath.stat().st_size)}"
                             )
+                        self.update_date_label(filepath)
 
                         if not filepath.is_file():
                             raise FileNotFoundError
@@ -684,12 +737,14 @@ class PreviewPanel(QWidget):
                         logging.info(
                             f"[PreviewPanel][ERROR] Couldn't Render thumbnail for {filepath} (because of {e})"
                         )
+                        self.update_date_label()
 
                     except (FileNotFoundError, cv2.error) as e:
                         self.dimensions_label.setText(f"{ext.upper()[1:]}")
                         logging.info(
                             f"[PreviewPanel][ERROR] Couldn't Render thumbnail for {filepath} (because of {e})"
                         )
+                        self.update_date_label()
                     except (
                         UnidentifiedImageError,
                         DecompressionBombError,
@@ -700,6 +755,7 @@ class PreviewPanel(QWidget):
                         logging.info(
                             f"[PreviewPanel][ERROR] Couldn't Render thumbnail for {filepath} (because of {e})"
                         )
+                        self.update_date_label(filepath)
 
                     # TODO: Implement a clickable label to use for the GIF preview.
                     if self.preview_img.is_connected:
@@ -735,8 +791,11 @@ class PreviewPanel(QWidget):
             self.preview_gif.hide()
             self.preview_vid.stop()
             self.preview_vid.hide()
+            self.update_date_label()
             if self.selected != self.driver.selected:
-                self.file_label.setText(f"{len(self.driver.selected)} Items Selected")
+                self.file_label.setText(
+                    f"<b>{len(self.driver.selected)}</b> Items Selected"
+                )
                 self.file_label.setCursor(Qt.CursorShape.ArrowCursor)
                 self.file_label.setFilePath("")
                 self.dimensions_label.setText("")
