@@ -589,13 +589,13 @@ class PreviewPanel(QWidget):
                         update_on_ratio_change=True,
                     )
                     file_str: str = ""
-                    sep_color: str = "#777777"  # Gray
+                    separator: str = (
+                        f"<a style='color: #777777'><b>{os.path.sep}</a>"  # Gray
+                    )
                     for i, part in enumerate(filepath.parts):
                         part_ = part.strip(os.path.sep)
-                        if i == 0:
-                            file_str += f"{"\u200b".join(part_)}<a style='color: {sep_color}'><b>{os.path.sep}</a></b>"
-                        elif i != 0 and i != len(filepath.parts) - 1:
-                            file_str += f"{"\u200b".join(part_)}<a style='color: {sep_color}'><b>{os.path.sep}</a></b>"
+                        if i != len(filepath.parts) - 1:
+                            file_str += f"{"\u200b".join(part_)}{separator}</b>"
                         else:
                             file_str += f"<br><b>{"\u200b".join(part_)}</b>"
                     self.file_label.setText(file_str)
