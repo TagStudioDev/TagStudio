@@ -293,13 +293,15 @@ class QtDriver(QObject):
         splash_pixmap = QPixmap(":/images/splash.png")
         splash_pixmap.setDevicePixelRatio(self.main_window.devicePixelRatio())
         splash_pixmap = splash_pixmap.scaledToWidth(
-            min(
-                (
-                    QGuiApplication.primaryScreen().geometry().width()
-                    * self.main_window.devicePixelRatio()
+            math.floor(
+                min(
+                    (
+                        QGuiApplication.primaryScreen().geometry().width()
+                        * self.main_window.devicePixelRatio()
+                    )
+                    / 4,
+                    splash_pixmap.width(),
                 )
-                // 4,
-                splash_pixmap.width(),
             ),
             Qt.TransformationMode.SmoothTransformation,
         )
