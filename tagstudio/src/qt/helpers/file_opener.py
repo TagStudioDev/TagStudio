@@ -131,7 +131,7 @@ class FileOpenerLabel(QLabel):
         self.timer.timeout.connect(self._show_full_path_callback)
         self.font_metrics = QFontMetrics(self.font())
 
-    def setFilePath(self, filepath):
+    def setFilePath(self, filepath: str):
         """Set the filepath to open.
 
         Args:
@@ -139,8 +139,12 @@ class FileOpenerLabel(QLabel):
         """
         self.filepath = filepath
 
-    def truncate_filepath(self, filepath):
-        """Removes parent directories to fit path to a single line"""
+    def truncate_filepath(self, filepath: Path | str):
+        """Removes parent directories to fit path to a single line
+
+        Args:
+                filepath (Path | str): The path to the file to open.
+        """
         path = Path(filepath)
         parts = path.parts
         # Since font is not monospace, max chars comes out a little low since average is larger than most ASCII chars
