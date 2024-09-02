@@ -1267,4 +1267,3 @@ class PreviewPanel(QWidget):
 
         # self.preview_gif.hide()
         # logging.info(self.preview_gif.movie())
-

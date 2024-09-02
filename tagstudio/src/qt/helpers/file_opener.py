@@ -140,13 +140,17 @@ class FileOpenerLabel(QLabel):
         self.filepath = filepath
 
     def truncate_filepath(self, filepath):
+        """Removes parent directories to fit path to a single line"""
         path = Path(filepath)
+        # Since font is not monospace, max chars comes out a little low since average is larger than most ASCII chars
+        # Ex: Manual counted max of 50 vs computed 45 chars
         max_chars = self.width() // self.font_metrics.averageCharWidth()
 
         if len(str(path)) > max_chars:
             name_size = len(path.name) + 4
             prev = ""
 
+            # Reverse as pathlib element 0 is full path
             for parent in reversed(path.parents):
                 if len(str(parent)) + name_size > max_chars:
                     if sys.platform == "win32":
@@ -156,6 +160,7 @@ class FileOpenerLabel(QLabel):
         return str(path)
 
     def setText(self, text: str):
+        """Overwrites the text style if there is a filepath to be shown"""
         if not self.filepath:
             return super().setText(text)
 
@@ -174,16 +179,19 @@ class FileOpenerLabel(QLabel):
 
     def enterEvent(self, event: QEnterEvent) -> None:
         if self.filepath:
+            # Delay 250ms before revealing full path
             self.timer.start(250)
         return super().enterEvent(event)
 
     def leaveEvent(self, event: QEvent) -> None:
         if self.filepath:
+            # Cancel full path showing if mouse leaves before timer is up
             self.timer.stop()
             self.setText(self.truncate_filepath(self.filepath))
         return super().leaveEvent(event)
 
     def _show_full_path_callback(self):
+        """Shows the full filepath instead of truncated version"""
         self.setText(str(self.filepath))
 
     def mousePressEvent(self, event):
@@ -204,6 +212,11 @@ class FileOpenerLabel(QLabel):
             pass
 
     def resizeEvent(self, event: QResizeEvent) -> None:
+        """Handle QLabel resize events.
+
+        Updates the text truncation as the label's width is changing
+        """
+        # Don't update text if not filepath or same width
         if self.filepath and event.size().width() != event.oldSize().width():
             self.setText(self.truncate_single_filepath(self.filepath))
         return super().resizeEvent(event)
