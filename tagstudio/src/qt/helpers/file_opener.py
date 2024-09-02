@@ -142,22 +142,43 @@ class FileOpenerLabel(QLabel):
     def truncate_filepath(self, filepath):
         """Removes parent directories to fit path to a single line"""
         path = Path(filepath)
+        parts = path.parts
         # Since font is not monospace, max chars comes out a little low since average is larger than most ASCII chars
         # Ex: Manual counted max of 50 vs computed 45 chars
         max_chars = self.width() // self.font_metrics.averageCharWidth()
 
-        if len(str(path)) > max_chars:
-            name_size = len(path.name) + 3
-            prev = ""
+        if len(str(path)) < max_chars:
+            return str(path)
 
-            # Reverse as pathlib element 0 is full path
-            for parent in reversed(path.parents):
-                if len(str(parent)) + name_size > max_chars:
-                    if sys.platform == "win32":
-                        return f"{prev}\\\u2026\\{path.name}"
-                    return f"{prev}/\u2026/{path.name}"
-                prev = parent
-        return str(path)
+        length = len(parts[0]) + len(path.name) + 4
+        trunc = [path.drive, "\u2026", path.name]
+
+        j = len(parts) - 2
+        for i in range(1, len(parts) // 2):
+            # Append front dir
+            trunc.insert(i, parts[i])
+            length += len(parts[i])
+            if length > max_chars:
+                # Remove exceding element
+                trunc.pop(i)
+                break
+
+            # Append back dir
+            trunc.insert(2 + i, parts[j])
+            length += len(parts[j])
+            if length > max_chars:
+                # Remove exceding element
+                trunc.pop(2 + i)
+                break
+            j -= 1
+        # There's a small region where all dirs can be added but its still trying to truncate,
+        # remove the ellipsis in that case
+        if len(trunc) == len(parts) + 1:
+            trunc.remove("\u2026")
+
+        if sys.platform == "win32":
+            return "\\".join(trunc)
+        return "/".join(trunc)
 
     def setText(self, text: str):
         """Overwrites the text style if there is a filepath to be shown"""
