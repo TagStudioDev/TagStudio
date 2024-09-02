@@ -176,9 +176,7 @@ class FileOpenerLabel(QLabel):
         if len(trunc) == len(parts) + 1:
             trunc.remove("\u2026")
 
-        if sys.platform == "win32":
-            return "\\".join(trunc)
-        return "/".join(trunc)
+        return os.sep.join(trunc)
 
     def setText(self, text: str):
         """Overwrites the text style if there is a filepath to be shown"""
