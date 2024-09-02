@@ -204,6 +204,6 @@ class FileOpenerLabel(QLabel):
             pass
 
     def resizeEvent(self, event: QResizeEvent) -> None:
-        if self.filepath:
+        if self.filepath and event.size().width() != event.oldSize().width():
             self.setText(self.truncate_single_filepath(self.filepath))
         return super().resizeEvent(event)
