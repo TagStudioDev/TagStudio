@@ -8,6 +8,7 @@ from pathlib import Path
 
 from src.qt.helpers.vendored.ffmpeg import _probe
 
+
 def is_readable_video(filepath: Path | str):
     """Test if a video is in a readable format. Examples of unreadable videos
     include files with undetermined codecs and DRM-protected content.
