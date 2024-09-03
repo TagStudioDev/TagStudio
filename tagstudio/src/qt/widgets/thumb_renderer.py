@@ -28,7 +28,7 @@ from PIL import (
 from PIL.Image import DecompressionBombError
 from pillow_heif import register_avif_opener, register_heif_opener
 from pydub import exceptions
-from src.qt.helpers.vendored.pydub.audio_segment import _AudioSegment as AudioSegment
+from src.qt.helpers.vendored.pydub.audio_segment import _AudioSegment as AudioSegment  # type: ignore
 from PySide6.QtCore import QObject, QSize, Qt, Signal
 from PySide6.QtGui import QGuiApplication, QPixmap
 from src.core.constants import FONT_SAMPLE_SIZES, FONT_SAMPLE_TEXT

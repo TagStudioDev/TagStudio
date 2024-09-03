@@ -1,3 +1,4 @@
+# type: ignore
 # Copyright (C) 2022  James Robert (jiaaro).
 # Licensed under the MIT License.
 # Vendored from ffmpeg-python and ffmpeg-python PR#790 by amamic1803
