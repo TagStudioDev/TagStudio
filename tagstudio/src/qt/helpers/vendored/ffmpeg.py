@@ -23,10 +23,6 @@ def _probe(filename, cmd='ffprobe', timeout=None, **kwargs):
     args += ffmpeg._utils.convert_kwargs_to_cmd_line_args(kwargs)
     args += [filename]
 
-    creation_flags = 0
-    if sys.platform == "win32":
-        creation_flags = subprocess.CREATE_NO_WINDOW
-
     # PATCHED
     p = promptless_Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     communicate_kwargs = {}

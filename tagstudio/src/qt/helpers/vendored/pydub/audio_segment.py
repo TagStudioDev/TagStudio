@@ -12,7 +12,7 @@ import wave
 import sys
 import struct
 from pydub.logging_utils import log_conversion, log_subprocess_output
-from pydub.utils import mediainfo_json, fsdecode
+from pydub.utils import fsdecode
 import base64
 from collections import namedtuple
 from io import StringIO, BytesIO
@@ -40,6 +40,7 @@ from pydub.exceptions import (
     MissingAudioParameter,
 )
 
+from src.qt.helpers.vendored.pydub.utils import _mediainfo_json
 from src.qt.helpers.silent_popen import promptless_Popen
 
 if sys.version_info >= (3, 0):
@@ -726,7 +727,8 @@ class _AudioSegment(object):
         if codec:
             info = None
         else:
-            info = mediainfo_json(orig_file, read_ahead_limit=read_ahead_limit)
+            # PATCHED
+            info = _mediainfo_json(orig_file, read_ahead_limit=read_ahead_limit)
         if info:
             audio_streams = [x for x in info['streams']
                              if x['codec_type'] == 'audio']
