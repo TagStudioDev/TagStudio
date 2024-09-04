@@ -35,36 +35,35 @@ class FfmpegChecker(QMessageBox):
         self.setWindowModality(Qt.ApplicationModal)
         self.setWindowTitle("Warning: Missing dependency")
 
-        self.ffmpeg_installed = False
-        self.ffprobe_installed = False
+        self.ffmpeg_missing = True
+        self.ffprobe_missing = True
 
     def installed(self):
         """Checks if both FFmpeg and FFprobe are installed and in the PATH."""
         # Same checker that ffmpeg-python uses
         if which("ffmpeg"):
-            self.ffmpeg_installed = True
+            self.ffmpeg_missing = False
             logging.info(f"FFmpeg found!")
         if which("ffprobe"):
-            self.ffprobe_installed = True
+            self.ffprobe_missing = False
             logging.info(f"FFprobe found!")
-        return self.ffmpeg_installed and self.ffprobe_installed
+        # Reverse from missing to installed
+        return not (self.ffmpeg_missing or self.ffprobe_missing)
 
     def show_warning(self):
         """Displays the warning to the user and awaits respone."""
-        if not self.ffmpeg_installed:
-            self.setText("Warning: Could not find FFmpeg installation")
-            self.setInformativeText(
-                "FFmpeg is required for video/audio thumbnails and playback"
-            )
-        elif not self.ffprobe_installed:
-            # If ffmpeg is installed but not ffprobe
-            self.setText("Warning: Could not find FFprobe installation")
-            self.setInformativeText(
-                "FFprobe is required for video/audio thumbnails and playback"
-            )
+        missing = "FFmpeg"
+        # If ffmpeg is installed but not ffprobe
+        if self.ffprobe_missing and not self.ffmpeg_missing:
+            missing = "FFprobe"
 
+        self.setText(f"Warning: Could not find {missing} installation")
+        self.setInformativeText(
+            f"{missing} is required for multimedia thumbnails and playback"
+        )
         # Shows the dialog
         selection = self.exec()
+
         # Selection will either be QMessageBox.Help or QMessageBox.Ignore
         if selection == QMessageBox.Help:
             QDesktopServices.openUrl(QUrl(self.help_url))
