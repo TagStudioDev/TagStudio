@@ -29,6 +29,7 @@ from PySide6.QtCore import (
     QThreadPool,
     QTimer,
     QSettings,
+    QLocale,
 )
 from PySide6.QtGui import (
     QGuiApplication,
@@ -85,6 +86,7 @@ from src.qt.modals.file_extension import FileExtensionModal
 from src.qt.modals.fix_unlinked import FixUnlinkedEntriesModal
 from src.qt.modals.fix_dupes import FixDupeFilesModal
 from src.qt.modals.folders_to_tags import FoldersToTagsModal
+from src.qt.translator import TSTranslator
 
 # this import has side-effect of import PySide resources
 import src.qt.resources_rc  # pylint: disable=unused-import
@@ -244,6 +246,16 @@ class QtDriver(QObject):
         if os.name == "nt":
             sys.argv += ["-platform", "windows:darkmode=2"]
         app = QApplication(sys.argv)
+
+        translator = TSTranslator()
+        path = Path(__file__).parents[2] / "resources/translations"
+        translator.load(
+            path,
+            QLocale.languageToCode(QLocale.system().language()).lower(),
+            QLocale.countryToCode(QLocale.system().country()).lower(),
+        )
+        app.installTranslator(translator)
+
         app.setStyle("Fusion")
         # pal: QPalette = app.palette()
         # pal.setColor(QPalette.ColorGroup.Active,
