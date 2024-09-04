@@ -13,18 +13,11 @@ from PySide6.QtWidgets import QMessageBox
 class FfmpegChecker(QMessageBox):
     """A warning dialog for if FFmpeg is missing."""
 
-    warning_icon_128: Image.Image = Image.open(
-        str(Path(__file__).parents[3] / "resources/qt/images/thumb_warning.png")
-    ).resize((math.floor(24 * 1.25), math.floor(24 * 1.25)))
-    warning_icon_128.load()
-
     help_url = "https://github.com/TagStudioDev/TagStudio/blob/Alpha-v9.4/doc/utilities/ffmpeg.md"
 
     def __init__(self):
         super().__init__()
 
-        # self.warning_icon = QPixmap.fromImage(ImageQt.ImageQt(self.warning_icon_128))
-        # self.setIconPixmap(self.warning_icon)
         self.setIcon(QMessageBox.Warning)
 
         self.setText("Warning: Could not find FFmpeg installation")
