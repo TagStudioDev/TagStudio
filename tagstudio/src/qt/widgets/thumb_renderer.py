@@ -760,7 +760,7 @@ class ThumbRenderer(QObject):
             filepath (Path): The path of the file.
             size (tuple[int,int]): The size of the thumbnail.
         """
-        
+
         # Create an image to draw the svg to and a painter to do the drawing
         image: QImage = QImage(size, size, QImage.Format.Format_ARGB32)
         painter: QPainter = QPainter(image)
@@ -774,9 +774,9 @@ class ThumbRenderer(QObject):
         buffer: QBuffer = QBuffer()
         buffer.open(QBuffer.OpenModeFlag.ReadWrite)
         image.save(buffer, "PNG")
-        
+
         # Load the image from the buffer
-        im: Image.Image = Image.open(BytesIO(buffer.data()))
+        im: Image.Image = Image.open(BytesIO(buffer.data().data()))
 
         return im
 
