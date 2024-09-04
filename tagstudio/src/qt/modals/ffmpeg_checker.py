@@ -15,7 +15,7 @@ class FfmpegChecker(QMessageBox):
     ).resize((math.floor(24 * 1.25), math.floor(24 * 1.25)))
     warning_icon_128.load()
 
-    help_url = "https://github.com/TagStudioDev/TagStudio/blob/main/doc/index.md"
+    help_url = "https://github.com/TagStudioDev/TagStudio/blob/Alpha-v9.4/doc/utilities/ffmpeg.md"
 
     def __init__(self):
         super().__init__()
