@@ -27,8 +27,9 @@ from PIL import (
 from PIL.Image import DecompressionBombError
 from pillow_heif import register_avif_opener, register_heif_opener
 from pydub import AudioSegment, exceptions
-from PySide6.QtCore import QObject, QSize, Qt, Signal
-from PySide6.QtGui import QGuiApplication, QPixmap
+from PySide6.QtCore import QObject, QSize, Qt, Signal, QBuffer
+from PySide6.QtGui import QGuiApplication, QPixmap, QImage, QPainter
+from PySide6.QtSvg import QSvgRenderer
 from src.core.constants import FONT_SAMPLE_SIZES, FONT_SAMPLE_TEXT
 from src.core.media_types import MediaCategories, MediaType
 from src.core.palette import ColorType, get_ui_color
@@ -759,8 +760,24 @@ class ThumbRenderer(QObject):
             filepath (Path): The path of the file.
             size (tuple[int,int]): The size of the thumbnail.
         """
-        # TODO: Implement.
-        im: Image.Image = None
+        
+        # Create an image to draw the svg to and a painter to do the drawing
+        image: QImage = QImage(size, size, QImage.Format.Format_ARGB32)
+        painter: QPainter = QPainter(image)
+
+        # Create an svg renderer, then render to the painter
+        svg: QSvgRenderer = QSvgRenderer(str(filepath))
+        svg.render(painter)
+        del painter
+
+        # Write the image to a buffer as png
+        buffer: QBuffer = QBuffer()
+        buffer.open(QBuffer.OpenModeFlag.ReadWrite)
+        image.save(buffer, "PNG")
+        
+        # Load the image from the buffer
+        im: Image.Image = Image.open(BytesIO(buffer.data()))
+
         return im
 
     def _model_stl_thumb(self, filepath: Path, size: int) -> Image.Image:
