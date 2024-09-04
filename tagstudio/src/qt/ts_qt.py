@@ -1850,6 +1850,7 @@ class QtDriver(QObject):
         self.main_window.toggle_landing_page(False)
 
     def check_ffmpeg(self) -> None:
+        """Checks if FFmpeg is installed and displays a warning if not."""
         self.ffmpeg_checker = FfmpegChecker()
         if not self.ffmpeg_checker.installed():
             self.ffmpeg_checker.show_warning()
