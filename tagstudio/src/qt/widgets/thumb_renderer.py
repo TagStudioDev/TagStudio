@@ -763,6 +763,7 @@ class ThumbRenderer(QObject):
 
         # Create an image to draw the svg to and a painter to do the drawing
         image: QImage = QImage(size, size, QImage.Format.Format_ARGB32)
+        image.fill("#00000000")
         painter: QPainter = QPainter(image)
 
         # Create an svg renderer, then render to the painter
@@ -777,6 +778,7 @@ class ThumbRenderer(QObject):
 
         # Load the image from the buffer
         im: Image.Image = Image.open(BytesIO(buffer.data().data()))
+        buffer.close()
 
         return im
 
