@@ -30,6 +30,7 @@ from PySide6.QtCore import (
     QTimer,
     QSettings,
     QLocale,
+    QCoreApplication,
 )
 from PySide6.QtGui import (
     QGuiApplication,
@@ -309,7 +310,7 @@ class QtDriver(QObject):
         self.main_window.setMenuBar(menu_bar)
         menu_bar.setNativeMenuBar(True)
 
-        file_menu = QMenu("&File", menu_bar)
+        file_menu = QMenu(QCoreApplication.translate("MenuBar.File", "Title"), menu_bar)
         edit_menu = QMenu("&Edit", menu_bar)
         tools_menu = QMenu("&Tools", menu_bar)
         macros_menu = QMenu("&Macros", menu_bar)
@@ -320,7 +321,9 @@ class QtDriver(QObject):
         # file_menu.addAction(QAction('&New Library', menu_bar))
         # file_menu.addAction(QAction('&Open Library', menu_bar))
 
-        open_library_action = QAction("&Open/Create Library", menu_bar)
+        open_library_action = QAction(
+            QCoreApplication.translate("MenuBar.File", "OpenCreateLibrary"), menu_bar
+        )
         open_library_action.triggered.connect(lambda: self.open_library_from_dialog())
         open_library_action.setShortcut(
             QtCore.QKeyCombination(

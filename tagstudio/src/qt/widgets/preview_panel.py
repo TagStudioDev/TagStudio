@@ -12,7 +12,7 @@ import cv2
 import rawpy
 from PIL import Image, UnidentifiedImageError
 from PIL.Image import DecompressionBombError
-from PySide6.QtCore import Signal, Qt, QSize
+from PySide6.QtCore import Signal, Qt, QSize, QCoreApplication
 from PySide6.QtGui import QResizeEvent, QAction
 from PySide6.QtWidgets import (
     QWidget,
@@ -274,7 +274,7 @@ class PreviewPanel(QWidget):
         # remove any potential previous items
         clear_layout(layout)
 
-        label = QLabel("Recent Libraries")
+        label = QLabel(QCoreApplication.translate("MainWindow", "RecentLibraries"))
         label.setAlignment(Qt.AlignCenter)  # type: ignore
 
         row_layout = QHBoxLayout()
