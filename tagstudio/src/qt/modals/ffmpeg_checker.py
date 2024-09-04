@@ -21,8 +21,12 @@ class FfmpegChecker(QMessageBox):
         self.setIcon(QMessageBox.Warning)
 
         self.setText("Warning: Could not find FFmpeg installation")
-        self.setStandardButtons(QMessageBox.Help | QMessageBox.Ignore)
+        self.setStandardButtons(
+            QMessageBox.Help | QMessageBox.Ignore | QMessageBox.Cancel
+        )
         self.setDefaultButton(QMessageBox.Ignore)
+        # Enables the cancel button but hides it to allow for click X to close dialog
+        self.button(QMessageBox.Cancel).hide()
 
         # Blocks other application interactions until resolved
         self.setWindowModality(Qt.ApplicationModal)
@@ -57,6 +61,6 @@ class FfmpegChecker(QMessageBox):
         # Shows the dialog
         selection = self.exec()
 
-        # Selection will either be QMessageBox.Help or QMessageBox.Ignore
+        # Selection will either be QMessageBox.Help or (QMessageBox.Ignore | QMessageBox.Cancel) which can be ignored
         if selection == QMessageBox.Help:
             QDesktopServices.openUrl(QUrl(self.help_url))
