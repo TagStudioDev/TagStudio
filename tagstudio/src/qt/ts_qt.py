@@ -637,11 +637,12 @@ class QtDriver(QObject):
             )
             self.open_library(Path(lib))
 
-        self.check_ffmpeg()
-
         if self.args.ci:
             # gracefully terminate the app in CI environment
             self.thumb_job_queue.put((self.SIGTERM.emit, []))
+        else:
+            # Startup Checks
+            self.check_ffmpeg()
 
         app.exec()
 
