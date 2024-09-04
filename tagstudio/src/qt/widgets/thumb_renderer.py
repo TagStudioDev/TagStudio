@@ -768,8 +768,9 @@ class ThumbRenderer(QObject):
 
         # Create an svg renderer, then render to the painter
         svg: QSvgRenderer = QSvgRenderer(str(filepath))
+        svg.setAspectRatioMode(Qt.AspectRatioMode.KeepAspectRatio)
         svg.render(painter)
-        del painter
+        painter.end()
 
         # Write the image to a buffer as png
         buffer: QBuffer = QBuffer()
