@@ -14,7 +14,7 @@ from PySide6.QtGui import QEnterEvent, QAction
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QPushButton
 
 from src.core.library import Library, Tag
-from src.core.palette import ColorType, get_tag_color
+from src.qt.helpers.calculate_colors import ColorType, get_tag_color
 
 
 ERROR = f"[ERROR]"

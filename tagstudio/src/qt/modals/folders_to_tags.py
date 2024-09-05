@@ -20,7 +20,7 @@ from PySide6.QtWidgets import (
 
 from src.core.enums import FieldID
 from src.core.library import Library, Tag
-from src.core.palette import ColorType, get_tag_color
+from src.qt.helpers.calculate_colors import ColorType, get_tag_color
 from src.qt.flowlayout import FlowLayout
 
 # Only import for type checking/autocompletion, will not be imported at runtime.

@@ -9,7 +9,7 @@ from PySide6.QtGui import QGuiApplication
 from src.qt.helpers.gradient import linear_gradient
 
 # TODO: Consolidate the built-in QT theme values with the values
-# here, in enums.py, and in palette.py.
+# here, in enums.py.
 _THEME_DARK_FG: str = "#FFFFFF55"
 _THEME_LIGHT_FG: str = "#000000DD"
 
