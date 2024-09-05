@@ -29,7 +29,7 @@ class MissingRegistry:
         """Track the number of Entries that point to an invalid file path."""
         logger.info("refresh_missing_files running")
         self.missing_files = []
-        for i, entry in enumerate(self.library._entries):
+        for i, entry in enumerate(self.library.get_entries()):
             full_path = self.library.library_dir / entry.path
             if not full_path.exists() or not full_path.is_file():
                 self.missing_files.append(entry)

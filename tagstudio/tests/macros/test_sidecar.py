@@ -9,19 +9,18 @@ from src.core.library.alchemy.fields import _FieldID
 
 
 @pytest.mark.parametrize("library", [TemporaryDirectory()], indirect=True)
-def test_sidecar_macro(qt_driver, library, cwd):
-    entry = next(library._entries_full)
-    entry.path = Path("newgrounds/foo.txt")
+def test_sidecar_macro(qt_driver, library, cwd, entry_full):
+    entry_full.path = Path("newgrounds/foo.txt")
 
     fixture = cwd / "fixtures/sidecar_newgrounds.json"
-    dst = library.library_dir / "newgrounds" / (entry.path.stem + ".json")
+    dst = library.library_dir / "newgrounds" / (entry_full.path.stem + ".json")
     dst.parent.mkdir()
     shutil.copy(fixture, dst)
 
-    qt_driver.frame_content = [entry]
+    qt_driver.frame_content = [entry_full]
     qt_driver.run_macro(MacroID.SIDECAR, 0)
 
-    entry = next(library._entries_full)
+    entry = next(library.get_entries(with_joins=True))
     new_fields = (
         (_FieldID.DESCRIPTION.name, "NG description"),
         (_FieldID.ARTIST.name, "NG artist"),

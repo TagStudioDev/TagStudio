@@ -76,6 +76,16 @@ def library(request):
 
 
 @pytest.fixture
+def entry(library):
+    yield next(library.get_entries())
+
+
+@pytest.fixture
+def entry_full(library):
+    yield next(library.get_entries(with_joins=True))
+
+
+@pytest.fixture
 def qt_driver(qtbot, library):
     with TemporaryDirectory() as tmp_dir:
 
@@ -97,7 +107,7 @@ def qt_driver(qtbot, library):
             driver.lib = library
             # TODO - downsize this method and use it
             # driver.start()
-            driver.frame_content = list(library._entries)
+            driver.frame_content = list(library.get_entries())
             yield driver
 
 

@@ -5,7 +5,7 @@ from tests.test_library import generate_entry
 
 
 def test_update_widgets_not_selected(qt_driver, library):
-    qt_driver.frame_content = list(library._entries)
+    qt_driver.frame_content = list(library.get_entries())
     qt_driver.selected = []
 
     panel = PreviewPanel(library, qt_driver)
@@ -16,7 +16,7 @@ def test_update_widgets_not_selected(qt_driver, library):
 
 
 def test_update_widgets_single_selected(qt_driver, library):
-    qt_driver.frame_content = list(library._entries)
+    qt_driver.frame_content = list(library.get_entries())
     qt_driver.selected = [0]
 
     panel = PreviewPanel(library, qt_driver)
@@ -34,7 +34,7 @@ def test_update_widgets_multiple_selected(qt_driver, library):
     library.add_entries([entry])
     assert library.entries_count == 3
 
-    qt_driver.frame_content = list(library._entries)
+    qt_driver.frame_content = list(library.get_entries())
     qt_driver.selected = [0, 1, 2]
 
     panel = PreviewPanel(library, qt_driver)
@@ -50,13 +50,12 @@ def test_update_widgets_multiple_selected(qt_driver, library):
     }
 
 
-def test_write_container_text_line(qt_driver, library):
+def test_write_container_text_line(qt_driver, entry_full, library):
     # Given
     panel = PreviewPanel(library, qt_driver)
-    entry = next(library._entries_full)
 
-    field = entry.text_fields[0]
-    assert len(entry.text_fields) == 1
+    field = entry_full.text_fields[0]
+    assert len(entry_full.text_fields) == 1
     assert field.type.type == FieldTypeEnum.TEXT_LINE
     assert field.type.name == "Title"
 
@@ -77,15 +76,15 @@ def test_write_container_text_line(qt_driver, library):
     modal.save_button.click()
 
     # Then reload entry
-    entry = next(library._entries_full)
+    entry_full = next(library.get_entries(with_joins=True))
     # the value was updated
-    assert entry.text_fields[0].value == "bar"
+    assert entry_full.text_fields[0].value == "bar"
 
 
 def test_remove_field(qt_driver, library):
     # Given
     panel = PreviewPanel(library, qt_driver)
-    entries = list(library._entries_full)
+    entries = list(library.get_entries(with_joins=True))
     qt_driver.frame_content = entries
     panel.selected = [1]
 
@@ -93,26 +92,26 @@ def test_remove_field(qt_driver, library):
     panel.write_container(0, field)
     panel.remove_field(field)
 
-    entries = list(library._entries_full)
+    entries = list(library.get_entries(with_joins=True))
     assert not entries[1].text_fields
 
 
 def test_update_field(qt_driver, library):
     panel = PreviewPanel(library, qt_driver)
 
-    qt_driver.frame_content = list(library._entries)[:2]
+    qt_driver.frame_content = list(library.get_entries())[:2]
     qt_driver.selected = [0, 1]
     panel.selected = [0, 1]
 
     field = [
         x
-        for x in next(library._entries_full).text_fields
+        for x in next(library.get_entries(with_joins=True)).text_fields
         if x.type.type == FieldTypeEnum.TEXT_LINE
     ][0]
 
     panel.update_field(field, "meow")
 
-    for entry in list(library._entries_full)[:2]:
+    for entry in library.get_entries(with_joins=True):
         field = [
             x for x in entry.text_fields if x.type.type == FieldTypeEnum.TEXT_LINE
         ][0]

@@ -5,9 +5,7 @@ from src.qt.widgets.item_thumb import ItemThumb, BadgeType
 
 
 @pytest.mark.parametrize("new_value", (True, False))
-def test_badge_visual_state(library, qt_driver, new_value):
-    entry = next(qt_driver.lib._entries)
-
+def test_badge_visual_state(library, qt_driver, entry, new_value):
     thumb = ItemThumb(ItemType.ENTRY, qt_driver.lib, qt_driver, (100, 100), 0)
 
     qt_driver.frame_content = [entry]

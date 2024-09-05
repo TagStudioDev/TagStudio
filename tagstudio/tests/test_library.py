@@ -62,10 +62,9 @@ def test_create_tag(library, generate_tag):
     assert tag_inc.id == 1002
 
 
-def test_library_search(library, generate_tag):
+def test_library_search(library, generate_tag, entry_full):
     assert library.entries_count == 2
-    entry = next(library._entries_full)
-    tag = list(entry.tags)[0]
+    tag = list(entry_full.tags)[0]
 
     query_count, items = library.search_library(
         FilterState(
@@ -100,14 +99,11 @@ def test_tag_search(library):
     )
 
 
-def test_get_entry(library):
-    entry = next(library._entries)
+def test_get_entry(library, entry):
     assert entry.id
-
-    _, entries = library.search_library(FilterState(id=entry.id))
-    assert len(entries) == 1
+    cnt, entries = library.search_library(FilterState(id=entry.id))
+    assert len(entries) == cnt == 1
     entry = entries[0]
-    assert entry.path
     assert entry.tags
 
 
@@ -137,23 +133,22 @@ def test_add_field_to_entry(library):
     library.add_entry_field_type(entry.id, field_id=_FieldID.TAGS)
 
     # Then
-    entry = [x for x in library._entries_full if x.path == item_path][0]
+    entry = [x for x in library.get_entries(with_joins=True) if x.path == item_path][0]
     # meta tags and tags field present
     assert len(entry.tag_box_fields) == 3
 
 
-def test_add_field_tag(library, generate_tag):
+def test_add_field_tag(library, entry_full, generate_tag):
     # Given
     tag_name = "xxx"
     tag = generate_tag(tag_name)
-    entry = next(library._entries_full)
-    tag_field = entry.tag_box_fields[0]
+    tag_field = entry_full.tag_box_fields[0]
 
     # When
-    library.add_field_tag(entry, tag, tag_field.type_key)
+    library.add_field_tag(entry_full, tag, tag_field.type_key)
 
     # Then
-    _, entries = library.search_library(FilterState(id=entry.id))
+    _, entries = library.search_library(FilterState(id=entry_full.id))
     tag_field = entries[0].tag_box_fields[0]
     assert [x.name for x in tag_field.tags if x.name == tag_name]
 
@@ -179,7 +174,7 @@ def test_subtags_add(library, generate_tag):
 @pytest.mark.parametrize("is_exclude", [True, False])
 def test_search_filter_extensions(library, is_exclude):
     # Given
-    entries = list(library._entries)
+    entries = list(library.get_entries())
     assert len(entries) == 2, entries
 
     library.set_prefs(LibraryPrefs.IS_EXCLUDE_LIST, is_exclude)
@@ -200,7 +195,7 @@ def test_search_filter_extensions(library, is_exclude):
 
 def test_search_library_case_insensitive(library):
     # Given
-    entries = list(library._entries_full)
+    entries = list(library.get_entries(with_joins=True))
     assert len(entries) == 2, entries
 
     entry = entries[0]
@@ -240,35 +235,29 @@ def test_save_windows_path(library, generate_tag):
     assert str(found[0].path) == "foo/bar.txt"
 
 
-def test_remove_entry_field(library):
-    entry = next(library._entries_full)
+def test_remove_entry_field(library, entry_full):
+    title_field = entry_full.text_fields[0]
 
-    title_field = entry.text_fields[0]
+    library.remove_entry_field(title_field, [entry_full.id])
 
-    library.remove_entry_field(title_field, [entry.id])
-
-    entry = next(library._entries_full)
+    entry = next(library.get_entries(with_joins=True))
     assert not entry.text_fields
 
 
-def test_update_entry_field(library):
-    entry = next(library._entries_full)
-
-    title_field = entry.text_fields[0]
+def test_update_entry_field(library, entry_full):
+    title_field = entry_full.text_fields[0]
 
     library.update_entry_field(
-        entry.id,
+        entry_full.id,
         title_field,
         "new value",
     )
 
-    entry = next(library._entries_full)
+    entry = next(library.get_entries(with_joins=True))
     assert entry.text_fields[0].value == "new value"
 
 
-def test_mirror_entry_fields(library, snapshot):
-    entry = next(library._entries_full)
-
+def test_mirror_entry_fields(library, entry_full):
     target_entry = generate_entry(
         path=Path("xxx"),
         fields=[
@@ -284,7 +273,7 @@ def test_mirror_entry_fields(library, snapshot):
     _, entries = library.search_library(FilterState(id=entry_id))
     new_entry = entries[0]
 
-    library.mirror_entry_fields(new_entry, entry)
+    library.mirror_entry_fields(new_entry, entry_full)
 
     _, entries = library.search_library(FilterState(id=entry_id))
     entry = entries[0]
@@ -312,15 +301,13 @@ def test_path_search(library, item_path, found):
     assert bool(cnt) == found
 
 
-def test_remove_tag_from_field(library):
-    entry = next(library._entries_full)
-
-    for field in entry.tag_box_fields:
+def test_remove_tag_from_field(library, entry_full):
+    for field in entry_full.tag_box_fields:
         for tag in field.tags:
             removed_tag = tag.name
             library.remove_tag_from_field(tag, field)
             break
 
-    entry = next(library._entries_full)
+    entry = next(library.get_entries(with_joins=True))
     for field in entry.tag_box_fields:
         assert removed_tag not in [tag.name for tag in field.tags]

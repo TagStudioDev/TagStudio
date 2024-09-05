@@ -1,6 +1,5 @@
 from unittest.mock import patch
 
-from src.core.library import Entry
 from src.core.library.alchemy.fields import _FieldID
 from src.qt.widgets.tag import TagWidget
 from src.qt.widgets.tag_box import TagBoxWidget
@@ -9,7 +8,7 @@ from src.qt.modals.build_tag import BuildTagPanel
 
 def test_tag_widget(qtbot, library, qt_driver):
     # given
-    entry = next(library._entries_full)
+    entry = next(library.get_entries(with_joins=True))
     field = entry.tag_box_fields[0]
 
     tag_widget = TagBoxWidget(field, "title", qt_driver)
@@ -26,7 +25,7 @@ def test_tag_widget(qtbot, library, qt_driver):
 
 def test_tag_widget_add_existing_raises(qtbot, library, qt_driver):
     # Given
-    entry = next(library._entries_full)
+    entry = next(library.get_entries(with_joins=True))
     tag_field = [f for f in entry.tag_box_fields if f.type_key == _FieldID.TAGS.name][0]
 
     assert len(entry.tags) == 1
@@ -46,7 +45,7 @@ def test_tag_widget_add_existing_raises(qtbot, library, qt_driver):
 
 def test_tag_widget_add_new_pass(qtbot, library, qt_driver, generate_tag):
     # Given
-    entry = next(library._entries_full)
+    entry = next(library.get_entries(with_joins=True))
     field = entry.tag_box_fields[0]
 
     tag = generate_tag(name="new_tag")
@@ -65,14 +64,14 @@ def test_tag_widget_add_new_pass(qtbot, library, qt_driver, generate_tag):
         assert not mocked.emit.called
 
 
-def test_tag_widget_remove(qtbot, qt_driver):
-    entry: Entry = next(qt_driver.lib._entries_full)
-
-    tag = list(entry.tags)[0]
+def test_tag_widget_remove(qtbot, qt_driver, library, entry_full):
+    tag = list(entry_full.tags)[0]
     assert tag
 
-    assert entry.tag_box_fields
-    tag_field = [f for f in entry.tag_box_fields if f.type_key == _FieldID.TAGS.name][0]
+    assert entry_full.tag_box_fields
+    tag_field = [
+        f for f in entry_full.tag_box_fields if f.type_key == _FieldID.TAGS.name
+    ][0]
 
     tag_widget = TagBoxWidget(tag_field, "title", qt_driver)
     tag_widget.driver.selected = [0]
@@ -84,19 +83,19 @@ def test_tag_widget_remove(qtbot, qt_driver):
 
     tag_widget.remove_button.clicked.emit()
 
-    entry: Entry = next(qt_driver.lib._entries_full)
+    entry = next(qt_driver.lib.get_entries(with_joins=True))
     assert not entry.tag_box_fields[0].tags
 
 
-def test_tag_widget_edit(qtbot, qt_driver):
+def test_tag_widget_edit(qtbot, qt_driver, library, entry_full):
     # Given
-    entry: Entry = next(qt_driver.lib._entries_full)
-
-    tag = list(entry.tags)[0]
+    tag = list(entry_full.tags)[0]
     assert tag
 
-    assert entry.tag_box_fields
-    tag_field = [f for f in entry.tag_box_fields if f.type_key == _FieldID.TAGS.name][0]
+    assert entry_full.tag_box_fields
+    tag_field = [
+        f for f in entry_full.tag_box_fields if f.type_key == _FieldID.TAGS.name
+    ][0]
 
     tag_box_widget = TagBoxWidget(tag_field, "title", qt_driver)
     tag_box_widget.driver.selected = [0]

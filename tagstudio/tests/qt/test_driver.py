@@ -28,12 +28,10 @@ def test_update_thumbs(qt_driver):
         assert thumb.isVisible() == (idx == 0)
 
 
-def test_select_item_bridge(qt_driver):
+def test_select_item_bridge(qt_driver, entry):
     # mock some props since we're not running `start()`
     qt_driver.autofill_action = Mock()
     qt_driver.sort_fields_action = Mock()
-
-    entry = next(qt_driver.lib._entries)
 
     # set the content manually
     qt_driver.frame_content = [entry] * 3

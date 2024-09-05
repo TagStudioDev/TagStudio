@@ -217,33 +217,28 @@ class Library:
         with Session(self.engine) as session:
             return session.scalar(select(func.count(Entry.id)))
 
-    @property
-    def _entries(self) -> Iterator[Entry]:
+    def get_entries(self, with_joins: bool = False) -> Iterator[Entry]:
         """Load entries without joins."""
         with Session(self.engine) as session:
-            entries = session.execute(select(Entry).distinct()).scalars()  # .unique()
-            for entry in entries:
-                yield entry
-                session.expunge(entry)
-
-    @property
-    def _entries_full(self) -> Iterator[Entry]:
-        """Load entries with joins."""
-        with Session(self.engine) as session:
-            stmt = (
-                select(Entry)
-                .outerjoin(Entry.text_fields)
-                .outerjoin(Entry.datetime_fields)
-                .outerjoin(Entry.tag_box_fields)
-                .options(
-                    contains_eager(Entry.text_fields),
-                    contains_eager(Entry.datetime_fields),
-                    contains_eager(Entry.tag_box_fields).selectinload(TagBoxField.tags),
+            stmt = select(Entry)
+            if with_joins:
+                stmt = (
+                    stmt.outerjoin(Entry.text_fields)
+                    .outerjoin(Entry.datetime_fields)
+                    .outerjoin(Entry.tag_box_fields)
+                    .options(
+                        contains_eager(Entry.text_fields),
+                        contains_eager(Entry.datetime_fields),
+                        contains_eager(Entry.tag_box_fields).selectinload(
+                            TagBoxField.tags
+                        ),
+                    )
                 )
-                .distinct()
-            )
+            stmt = stmt.distinct()
 
-            entries = session.execute(stmt).scalars().unique()  # .all()
+            entries = session.execute(stmt).scalars()
+            if with_joins:
+                entries = entries.unique()
 
             for entry in entries:
                 yield entry
