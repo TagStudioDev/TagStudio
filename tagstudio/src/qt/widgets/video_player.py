@@ -14,6 +14,7 @@ from PySide6.QtCore import (
     QObject,
     QEvent,
     QRectF,
+    QKeyCombination,
 )
 from PySide6.QtMultimedia import QMediaPlayer, QAudioOutput, QMediaDevices
 from PySide6.QtMultimediaWidgets import QGraphicsVideoItem
@@ -128,6 +129,12 @@ class VideoPlayer(QGraphicsView):
 
         open_file_action = QAction("Open file", self)
         open_file_action.triggered.connect(self.opener.open_file)
+        open_file_action.setShortcut(
+            QKeyCombination(
+                Qt.KeyboardModifier.ControlModifier | Qt.KeyboardModifier.ShiftModifier,
+                Qt.Key.Key_O,
+            )
+        )
         open_explorer_action = QAction("Open file in explorer", self)
         open_explorer_action.triggered.connect(self.opener.open_explorer)
         self.addAction(open_file_action)
