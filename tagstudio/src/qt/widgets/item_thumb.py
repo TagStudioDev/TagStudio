@@ -218,6 +218,9 @@ class ItemThumb(FlowWidget):
 
         self.thumb_button.setContextMenuPolicy(Qt.ContextMenuPolicy.ActionsContextMenu)
         self.opener = FileOpenerHelper("")
+        self.thumb_button.clicked.connect(
+            lambda: self.opener.open_file() if self.thumb_button.selected else None
+        )
         open_file_action = QAction("Open file", self)
         open_file_action.triggered.connect(self.opener.open_file)
         open_explorer_action = QAction("Open file in explorer", self)
