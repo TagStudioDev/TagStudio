@@ -8,23 +8,23 @@ Pre-built binaries from trusted sources are available on the [FFmpeg website](ht
 To install:
 1. Download 7z or zip file and extract it (right click > Extract All)
 2. Move extracted contents to a unique folder (i.e; `c:\ffmpeg` or `c:\Program Files\ffmpeg`)
-3. Add FFmpeg to your PATH
-    a. Go to "Edit the system environment variables"
-    b. Under "User Variables", select "Path" then edit
-    c. Click new and add `<Your folder>\bin` (e.g; `c:\ffmpeg\bin` or `c:\Program Files\ffmpeg\bin`)
-    d. Click okay
+3. Add FFmpeg to your PATH 
+    1. Go to "Edit the system environment variables"
+    2. Under "User Variables", select "Path" then edit
+    3. Click new and add `<Your folder>\bin` (e.g; `c:\ffmpeg\bin` or `c:\Program Files\ffmpeg\bin`)
+    4. Click okay
 
 ## Package Managers
 FFmpeg is also available from:
 
-1. WinGet (`winget install ffmpeg)
+1. WinGet (`winget install ffmpeg`)
 2. Scoop (`scoop install main/ffmpeg`)
 3. Chocolatey (`choco install ffmpeg-full`)
 
 # Installation on Mac
 ---
 ## Homebrew
-FFmpeg is available via Homebrew and can be installed via;
+FFmpeg is available via [Homebrew](https://brew.sh/) and can be installed via;
 
 `brew install ffmpeg`
 
