@@ -60,14 +60,17 @@ class ItemType(enum.Enum):
 class FilterState:
     """Represent a state of the Library grid view."""
 
-    page_index: int = 0
-    page_size: int = 500
+    # these should remain
+    page_index: int | None = None
+    page_size: int | None = None
+    search_mode: SearchMode = SearchMode.AND  # TODO - actually implement this
+
+    # these should be erased on update
     tag: str | None = None
     id: int | None = None
     tag_id: int | None = None
     path: str | Path | None = None
     query: str | None = None
-    search_mode: SearchMode = SearchMode.AND  # TODO - actually implement this
 
     def __post_init__(self):
         # strip values automatically
@@ -78,6 +81,9 @@ class FilterState:
             else:
                 # default to tag search
                 kind, value = "tag", query
+
+            # reset the query
+            self.query = None
 
             if kind == "id":
                 self.id = int(value)
@@ -93,6 +99,11 @@ class FilterState:
             self.id = int(self.id) if self.id is not None else None
             self.tag_id = int(self.tag_id) if self.tag_id is not None else None
             self.path = self.path and str(self.path)
+
+        if self.page_index is None:
+            self.page_index = 0
+        if self.page_size is None:
+            self.page_size = 500
 
     @property
     def summary(self):

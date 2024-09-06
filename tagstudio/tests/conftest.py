@@ -76,7 +76,7 @@ def library(request):
 
 
 @pytest.fixture
-def entry(library):
+def entry_min(library):
     yield next(library.get_entries())
 
 

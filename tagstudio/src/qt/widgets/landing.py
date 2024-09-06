@@ -56,7 +56,6 @@ class LandingWidget(QWidget):
         self.logo_special_anim.setDuration(500)
 
         # Create "Open/Create Library" button ----------------------------------
-        open_shortcut_text: str = ""
         if sys.platform == "darwin":
             open_shortcut_text = "(⌘+O)"
         else:

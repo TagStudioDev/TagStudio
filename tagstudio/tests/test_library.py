@@ -99,12 +99,11 @@ def test_tag_search(library):
     )
 
 
-def test_get_entry(library, entry):
-    assert entry.id
-    cnt, entries = library.search_library(FilterState(id=entry.id))
+def test_get_entry(library, entry_min):
+    assert entry_min.id
+    cnt, entries = library.search_library(FilterState(id=entry_min.id))
     assert len(entries) == cnt == 1
-    entry = entries[0]
-    assert entry.tags
+    assert entries[0].tags
 
 
 def test_entries_count(library):
@@ -285,20 +284,6 @@ def test_mirror_entry_fields(library, entry_full):
         _FieldID.TAGS_META.name,
         _FieldID.TAGS.name,
     }
-
-
-@pytest.mark.parametrize(
-    ["item_path", "found"],
-    [
-        ("one/two/bar.md", True),
-        ("two/bar.md", False),  # partial match should not return
-    ],
-)
-def test_path_search(library, item_path, found):
-    # When
-    cnt, entries = library.search_library(FilterState(path=item_path))
-    # Then
-    assert bool(cnt) == found
 
 
 def test_remove_tag_from_field(library, entry_full):

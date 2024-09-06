@@ -331,7 +331,7 @@ class Library:
             elif search.tag_id:
                 statement = statement.where(Tag.id == search.tag_id)
             elif search.path:
-                statement = statement.where(Entry.path.ilike(search.path))
+                statement = statement.where(Entry.path.ilike(f"%{search.path}%"))
 
             extensions = self.prefs(LibraryPrefs.EXTENSION_LIST)
             is_exclude_list = self.prefs(LibraryPrefs.IS_EXCLUDE_LIST)
