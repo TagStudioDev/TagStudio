@@ -1,20 +1,20 @@
 # Tag
 
-Tags are user-defined attributes made up of one or more keywords, aliases, and relationships to other tags. A person, place, thing, concept, you name it! Tags allow for a more sophisticated way to organize and search [entries](/doc/library/entry.md) thanks to their aliases, parent tags, and more.
+Tags are user-defined attributes made up of one or more keywords, aliases, and relationships to other tags. A person, place, thing, concept, you name it! Tags allow for a more sophisticated way to organize and search [entries](entry.md) thanks to their aliases, parent tags, and more.
 Tags can be as simple or complex as wanted, so that any user can tune TagStudio to fit their needs.
 
-Among the things that make tags so useful, aliases give the ability to contain alternate names and spellings, making searches intuitive and expansive. Furthermore, parent-tags/subtags offer relational organization capabilities for the structuring and connection of the [library's](/doc/library/library.md) contents.
+Among the things that make tags so useful, aliases give the ability to contain alternate names and spellings, making searches intuitive and expansive. Furthermore, parent-tags/subtags offer relational organization capabilities for the structuring and connection of the [library's](index.md) contents.
 
 ## Tag Object Structure
 
-#### `id`
+### `id`
 
 ID for the tag.
 
 - Int, Unique, Required
 - Used for internal processing
 
-#### `name`
+### `name`
 
 The normal name of the tag, with no shortening or specification.
 
@@ -22,7 +22,7 @@ The normal name of the tag, with no shortening or specification.
 - Doesn't have to be unique
 - Used for display, searching, and storing
 
-#### `shorthand`
+### `shorthand`
 
 The shorthand name for the tag. Works like an alias but is used for specific display purposes.
 
@@ -30,7 +30,7 @@ The shorthand name for the tag. Works like an alias but is used for specific dis
 - Doesn't have to be unique
 - Used for display and searching
 
-#### `aliases`
+### `aliases`
 
 Alternate names for the tag.
 
@@ -38,14 +38,14 @@ Alternate names for the tag.
 - Recommended to be unique to this tag
 - Used for searching
 
-#### `subtags`
+### `subtags`
 
 Other Tags that make up properties of this tag. Also called "parent tags".
 
 - List of Strings, Optional
 - Used for display (first parent tag only) and searching.
 
-#### `color`
+### `color`
 
 A color name string for customizing the tag's display color
 

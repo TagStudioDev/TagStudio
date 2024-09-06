@@ -1,7 +1,7 @@
 # TagStudio (Alpha): A User-Focused Document Management System
 
 <p align="center">
-  <img width="60%" src="github_header.png">
+  <img width="60%" src="docs/assets/github_header.png">
 </p>
 
 > [!CAUTION]
@@ -11,7 +11,7 @@
 TagStudio is a photo & file organization application with an underlying system that focuses on giving freedom and flexibility to the user. No proprietary programs or formats, no sea of sidecar files, and no complete upheaval of your filesystem structure.
 
 <figure align="center">
-  <img width="80%" src="screenshot.jpg" alt="TagStudio Screenshot" align="center">
+  <img width="80%" src="docs/assets/screenshot.jpg" alt="TagStudio Screenshot" align="center">
 
   <figcaption><i>TagStudio Alpha v9.1.0 running on Windows 10.</i></figcaption>
 </figure>
@@ -53,7 +53,7 @@ TagStudio is a photo & file organization application with an underlying system t
 - Special search conditions for entries that are: `untagged`/`no tags` and `empty`/`no fields`.
 
 > [!NOTE]
-> For more information on the project itself, please see the [FAQ](#faq) section as well as the [documentation](/doc/index.md).
+> For more information on the project itself, please see the [FAQ](#faq) section as well as the [documentation](/docs/index.md).
 
 ## Contributing
 
@@ -178,7 +178,7 @@ As of writing (Alpha v9.3.0) the project is in a useable state, however it lacks
 ### What Features Are You Planning on Adding?
 
 > [!IMPORTANT]
-> See the [Planned Features](/doc/updates/planned_features.md) documentation for the latest feature lists. The lists here are currently being migrated over there with individual pages for larger features.
+> See the [Planned Features](/docs/updates/planned_features.md) documentation for the latest feature lists. The lists here are currently being migrated over there with individual pages for larger features.
 
 Of the several features I have planned for the project, these are broken up into “priority” features and “future” features. Priority features were originally intended for the first public release, however are currently absent from the Alpha v9.x.x builds.
 
