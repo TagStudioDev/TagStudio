@@ -58,6 +58,7 @@ theme:
   language: en
   features:
     - navigation.instant
+    - navigation.indexes
     - navigation.tracking
     - navigation.expand
     - navigation.sections
@@ -66,7 +67,7 @@ theme:
     #- navigation.top
     - search.suggest
     - content.code.annotate
-    - navigation.indexes
+    - content.action.edit
   icon:
     repo: fontawesome/brands/github
     tag:
