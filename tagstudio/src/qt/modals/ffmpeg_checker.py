@@ -18,9 +18,12 @@ class FfmpegChecker(QMessageBox):
     def __init__(self):
         super().__init__()
 
-        self.setIcon(QMessageBox.Warning)
-
+        self.setWindowTitle("Warning: Missing dependency")
         self.setText("Warning: Could not find FFmpeg installation")
+        self.setIcon(QMessageBox.Warning)
+        # Blocks other application interactions until resolved
+        self.setWindowModality(Qt.ApplicationModal)
+
         self.setStandardButtons(
             QMessageBox.Help | QMessageBox.Ignore | QMessageBox.Cancel
         )
@@ -28,30 +31,27 @@ class FfmpegChecker(QMessageBox):
         # Enables the cancel button but hides it to allow for click X to close dialog
         self.button(QMessageBox.Cancel).hide()
 
-        # Blocks other application interactions until resolved
-        self.setWindowModality(Qt.ApplicationModal)
-        self.setWindowTitle("Warning: Missing dependency")
-
-        self.ffmpeg_missing = True
-        self.ffprobe_missing = True
+        self.ffmpeg = False
+        self.ffprobe = False
 
     def installed(self):
         """Checks if both FFmpeg and FFprobe are installed and in the PATH."""
         # Same checker that ffmpeg-python uses
         if which("ffmpeg"):
-            self.ffmpeg_missing = False
-            logging.info(f"FFmpeg found!")
+            self.ffmpeg = True
         if which("ffprobe"):
-            self.ffprobe_missing = False
-            logging.info(f"FFprobe found!")
-        # Reverse from missing to installed
-        return not (self.ffmpeg_missing or self.ffprobe_missing)
+            self.ffprobe = True
+
+        logging.info(
+            f"[FFmpegChecker] FFmpeg found: {self.ffmpeg}, FFprobe found: {self.ffprobe}"
+        )
+        return self.ffmpeg and self.ffprobe
 
     def show_warning(self):
         """Displays the warning to the user and awaits respone."""
         missing = "FFmpeg"
         # If ffmpeg is installed but not ffprobe
-        if self.ffprobe_missing and not self.ffmpeg_missing:
+        if not self.ffprobe and self.ffmpeg:
             missing = "FFprobe"
 
         self.setText(f"Warning: Could not find {missing} installation")
