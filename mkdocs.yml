@@ -1,5 +1,14 @@
 # yaml-language-server: $schema=https://squidfunk.github.io/mkdocs-material/schema.json
 
+# MkDocs: https://www.mkdocs.org/
+# Material for MkDocs: https://squidfunk.github.io/mkdocs-material/
+
+# To install:
+# pip install mkdocs-material
+
+# To run the preview server:
+# mkdocs serve
+
 site_name: TagStudio
 site_description: "A User-Focused Photo & File Management System"
 site_url: https://tagstudiodev.github.io/tagstudio
@@ -14,6 +23,11 @@ extra:
       link: https://discord.gg/hRNnVKhF2G
   tags:
     Upcoming Feature: upcoming
+
+# by default the navigation is an alphanumerically sorted, 
+# nested list of all the Markdown files found within the /docs directory
+# where index files are always first
+# uncomment the following to configure the navigation manually:
 
 # nav:
 #   - Home:
@@ -38,20 +52,27 @@ extra:
 theme:
   name: material
   palette:
+    # Palette toggle for automatic mode
+    - media: "(prefers-color-scheme)"
+      toggle:
+        icon: material/brightness-auto
+        name: Switch to light mode
+    # Palette toggle for light mode
     - media: "(prefers-color-scheme: light)" 
       scheme: default
       primary: deep purple
       accent: deep purple
       toggle:
-        icon: material/toggle-switch-off-outline
+        icon: material/brightness-7
         name: Switch to dark mode
+    # Palette toggle for dark mode
     - media: "(prefers-color-scheme: dark)" 
       scheme: slate
       primary: deep purple
       accent: deep purple
       toggle:
-        icon: material/toggle-switch
-        name: Switch to light mode
+        icon: material/brightness-4
+        name: SSwitch to system preference
   logo: assets/icon.png
   favicon: assets/icon.ico
   font: false # use system fonts
@@ -112,5 +133,5 @@ markdown_extensions:
 plugins:
   - search
   - tags
-  - social:
-      enabled: !ENV [CI, false]
+  - social # social embed cards
+      enabled: !ENV [CI, false] # enabled only when running in CI (eg GitHub Actions)
