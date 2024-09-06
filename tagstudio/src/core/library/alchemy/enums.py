@@ -66,10 +66,19 @@ class FilterState:
     search_mode: SearchMode = SearchMode.AND  # TODO - actually implement this
 
     # these should be erased on update
+    # tag name
     tag: str | None = None
-    id: int | None = None
+    # tag ID
     tag_id: int | None = None
-    path: str | Path | None = None
+
+    # entry id
+    id: int | None = None
+    # whole path
+    path: Path | str | None = None
+    # file name
+    name: str | None = None
+
+    # a generic query to be parsed
     query: str | None = None
 
     def __post_init__(self):
@@ -82,23 +91,23 @@ class FilterState:
                 # default to tag search
                 kind, value = "tag", query
 
-            # reset the query
-            self.query = None
-
-            if kind == "id":
-                self.id = int(value)
-            elif kind == "tag_id":
+            if kind == "tag_id":
                 self.tag_id = int(value)
-            elif kind == "path":
-                self.path = value
             elif kind == "tag":
                 self.tag = value
+            elif kind == "path":
+                self.path = value
+            elif kind == "name":
+                self.name = value
+            elif kind == "id":
+                self.id = int(self.id) if str(self.id).isnumeric() else self.id
 
         else:
             self.tag = self.tag and self.tag.strip()
-            self.id = int(self.id) if self.id is not None else None
-            self.tag_id = int(self.tag_id) if self.tag_id is not None else None
-            self.path = self.path and str(self.path)
+            self.tag_id = int(self.tag_id) if str(self.tag_id).isnumeric() else self.id
+            self.path = self.path and str(self.path).strip()
+            self.name = self.name and self.name.strip()
+            self.id = int(self.id) if str(self.id).isnumeric() else self.id
 
         if self.page_index is None:
             self.page_index = 0
@@ -108,7 +117,9 @@ class FilterState:
     @property
     def summary(self):
         """Show query summary"""
-        return self.query or self.tag or self.id or self.tag_id or self.path
+        return (
+            self.query or self.tag or self.name or self.tag_id or self.path or self.id
+        )
 
     @property
     def limit(self):

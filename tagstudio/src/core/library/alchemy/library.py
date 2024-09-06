@@ -328,6 +328,15 @@ class Library:
 
             elif search.id:
                 statement = statement.where(Entry.id == search.id)
+            elif search.name:
+                statement = select(Entry).where(
+                    and_(
+                        Entry.path.ilike(f"%{search.name}%"),
+                        # dont match directory name (ie. has following slash)
+                        ~Entry.path.ilike(f"%{search.name}%/%"),
+                    )
+                )
+
             elif search.tag_id:
                 statement = statement.where(Tag.id == search.tag_id)
             elif search.path:
@@ -335,14 +344,16 @@ class Library:
 
             extensions = self.prefs(LibraryPrefs.EXTENSION_LIST)
             is_exclude_list = self.prefs(LibraryPrefs.IS_EXCLUDE_LIST)
-            if extensions and is_exclude_list:
-                statement = statement.where(
-                    Entry.path.notilike(f"%.{','.join(extensions)}")
-                )
-            elif extensions:
-                statement = statement.where(
-                    Entry.path.ilike(f"%.{','.join(extensions)}")
-                )
+
+            if not search.id:  # if `id` is set, we don't need to filter by extensions
+                if extensions and is_exclude_list:
+                    statement = statement.where(
+                        Entry.path.notilike(f"%.{','.join(extensions)}")
+                    )
+                elif extensions:
+                    statement = statement.where(
+                        Entry.path.ilike(f"%.{','.join(extensions)}")
+                    )
 
             statement = statement.options(
                 selectinload(Entry.text_fields),
