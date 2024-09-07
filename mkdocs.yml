@@ -133,5 +133,5 @@ markdown_extensions:
 plugins:
   - search
   - tags
-  - social # social embed cards
+  - social: # social embed cards
       enabled: !ENV [CI, false] # enabled only when running in CI (eg GitHub Actions)
