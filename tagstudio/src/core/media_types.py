@@ -183,6 +183,7 @@ class MediaCategories:
         ".crw",
         ".dng",
         ".nef",
+        ".orf",
         ".raw",
         ".rw2",
     }
