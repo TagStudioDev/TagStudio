@@ -460,6 +460,7 @@ class QtDriver(QObject):
         self.thumb_size = 128
         self.item_thumbs: list[ItemThumb] = []
         self.thumb_renderers: list[ThumbRenderer] = []
+        self.filter = FilterState()
 
         self.init_library_window()
 
@@ -568,19 +569,22 @@ class QtDriver(QObject):
 
     def close_library(self):
         if not self.lib.library_dir:
+            logger.info("No Library to Close")
             return
 
         logger.info("Closing Library...")
-        self.main_window.statusbar.showMessage("Closing & Saving Library...")
+        self.main_window.statusbar.showMessage("Closing Library...")
         start_time = time.time()
         self.settings.setValue(SettingItems.LAST_LIBRARY, self.lib.library_dir)
         self.settings.sync()
 
-        self.lib.clear_internal_vars()
         title_text = f"{self.base_title}"
         self.main_window.setWindowTitle(title_text)
 
-        self.selected.clear()
+        self.selected = []
+        self.frame_content = []
+        self.item_thumbs = []
+
         self.preview_panel.update_widgets()
         self.main_window.toggle_landing_page(True)
 

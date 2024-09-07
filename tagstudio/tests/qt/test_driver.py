@@ -93,3 +93,13 @@ def test_library_state_update(qt_driver):
     assert len(qt_driver.frame_content) == 1
     entry = qt_driver.frame_content[0]
     assert list(entry.tags)[0].name == "bar"
+
+
+def test_close_library(qt_driver):
+    # Given
+    qt_driver.close_library()
+
+    # Then
+    assert len(qt_driver.frame_content) == 0
+    assert len(qt_driver.item_thumbs) == 0
+    assert qt_driver.selected == []
