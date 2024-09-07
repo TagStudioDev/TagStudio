@@ -1,6 +1,6 @@
 # Field
 
-Fields are the building blocks of metadata stored in [entries](/doc/library/entry.md). Fields have several base types for representing different kinds of information, including:
+Fields are the building blocks of metadata stored in [entries](entry.md). Fields have several base types for representing different kinds of information, including:
 
 #### `text_line`
 
@@ -14,7 +14,7 @@ Fields are the building blocks of metadata stored in [entries](/doc/library/entr
 
 #### `tag_box`
 
-- A box of [tags](/doc/library/tag.md) defined and added by the user.
+- A box of [tags](tag.md) defined and added by the user.
 - Multiple tag boxes can be used to separate classifications of tags.
   - e.g: Content Tags, Meta Tags, etc.
 
@@ -31,4 +31,4 @@ Fields are the building blocks of metadata stored in [entries](/doc/library/entr
 
 #### `collation` [obsolete]
 
-- Previously used for associating files to be used in a [collation](/doc/utilities/macro.md#create-collage), will be removed in favor of a more flexible feature in future updates.
+- Previously used for associating files to be used in a [collation](../utilities/macro.md#create-collage), will be removed in favor of a more flexible feature in future updates.
