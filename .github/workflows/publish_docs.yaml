@@ -3,7 +3,11 @@ name: Publish Docs
 on:
   push:
     branches:
-      - main 
+      - main
+    paths:
+      - 'docs/**'
+      - 'mkdocs.yml'
+      - 'CHANGELOG.md'
 
 permissions:
   contents: write
