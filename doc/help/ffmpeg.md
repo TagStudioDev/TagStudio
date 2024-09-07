@@ -1,7 +1,6 @@
 FFmpeg is required for thumbnail previews and playback features on audio and video files. FFmpeg is a free Open Source project dedicated to the handling of multimedia (video, audio, etc) files.
 
 # Installation on Windows
----
 ## Prebuilt Binaries
 Pre-built binaries from trusted sources are available on the [FFmpeg website](https://www.ffmpeg.org/download.html#build-windows).
 
@@ -22,14 +21,12 @@ FFmpeg is also available from:
 3. Chocolatey (`choco install ffmpeg-full`)
 
 # Installation on Mac
----
 ## Homebrew
 FFmpeg is available via [Homebrew](https://brew.sh/) and can be installed via;
 
 `brew install ffmpeg`
 
 # Installation on Linux
----
 ## Package Managers
 FFmpeg may be installed by default on some Linux distrobutions, but if not, it is available via your distro's package manager of choice
 
@@ -38,5 +35,4 @@ FFmpeg may be installed by default on some Linux distrobutions, but if not, it i
 3. Arch (`sudo pacman -S ffmpeg`)
 
 # Help
----
 For additional help, please create an Issue on the [GitHub repository](https://github.com/TagStudioDev/TagStudio) or join the [Discord]()

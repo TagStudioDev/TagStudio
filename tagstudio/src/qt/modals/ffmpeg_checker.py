@@ -13,7 +13,7 @@ from PySide6.QtWidgets import QMessageBox
 class FfmpegChecker(QMessageBox):
     """A warning dialog for if FFmpeg is missing."""
 
-    help_url = "https://github.com/TagStudioDev/TagStudio/blob/Alpha-v9.4/doc/utilities/ffmpeg.md"
+    HELP_URL = "https://docs.tagstud.io/help/ffmpeg/"
 
     def __init__(self):
         super().__init__()
@@ -63,4 +63,4 @@ class FfmpegChecker(QMessageBox):
 
         # Selection will either be QMessageBox.Help or (QMessageBox.Ignore | QMessageBox.Cancel) which can be ignored
         if selection == QMessageBox.Help:
-            QDesktopServices.openUrl(QUrl(self.help_url))
+            QDesktopServices.openUrl(QUrl(self.HELP_URL))
