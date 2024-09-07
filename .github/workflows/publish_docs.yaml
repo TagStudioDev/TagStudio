@@ -8,6 +8,7 @@ on:
       - 'docs/**'
       - 'mkdocs.yml'
       - 'CHANGELOG.md'
+      - '.github/workflows/publish_docs.yaml'
 
 permissions:
   contents: write
