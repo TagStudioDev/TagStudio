@@ -96,23 +96,18 @@ def test_remove_field(qt_driver, library):
     assert not entries[1].text_fields
 
 
-def test_update_field(qt_driver, library):
+def test_update_field(qt_driver, library, entry_full):
     panel = PreviewPanel(library, qt_driver)
 
+    # select both entries
     qt_driver.frame_content = list(library.get_entries())[:2]
     qt_driver.selected = [0, 1]
     panel.selected = [0, 1]
 
-    field = [
-        x
-        for x in next(library.get_entries(with_joins=True)).text_fields
-        if x.type.type == FieldTypeEnum.TEXT_LINE
-    ][0]
-
-    panel.update_field(field, "meow")
+    # update field
+    title_field = entry_full.text_fields[0]
+    panel.update_field(title_field, "meow")
 
     for entry in library.get_entries(with_joins=True):
-        field = [
-            x for x in entry.text_fields if x.type.type == FieldTypeEnum.TEXT_LINE
-        ][0]
+        field = [x for x in entry.text_fields if x.type_key == title_field.type_key][0]
         assert field.value == "meow"

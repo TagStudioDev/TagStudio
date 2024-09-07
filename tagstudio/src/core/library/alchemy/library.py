@@ -469,6 +469,27 @@ class Library:
             session.add(field_)
             session.commit()
 
+    def update_field_position(self, field: Field, entry_ids: list[int]):
+        if isinstance(entry_ids, int):
+            entry_ids = [entry_ids]
+
+        FieldClass = type(field)
+
+        with Session(self.engine) as session:
+            for entry_id in entry_ids:
+                rows = session.scalars(
+                    select(FieldClass)
+                    .where(FieldClass.entry_id == entry_id)
+                    .order_by(FieldClass.position, FieldClass.id)
+                )
+
+                # Reassign `order` starting from 0
+                for index, row in enumerate(rows):
+                    row.position = index  # type: ignore
+
+                session.add(row)
+                session.commit()
+
     def remove_entry_field(
         self,
         field: Field,
@@ -491,8 +512,7 @@ class Library:
             )
 
             # Delete one matching field per entry
-            session.query(field_class).filter(field_class.id.in_(subquery)).delete()
-
+            session.query(field_class).filter(field_class.id.in_(subquery)).delete()  # type: ignore
             session.commit()
 
     def update_entry_field(
@@ -504,26 +524,26 @@ class Library:
         if isinstance(entry_ids, int):
             entry_ids = [entry_ids]
 
-        field_class = type(field)
+        FieldClass = type(field)
 
         with Session(self.engine) as session:
             # Subquery to select one matching field's id per entry
             subquery = (
-                select(field_class.id)
+                select(FieldClass.id)
                 .where(
                     and_(
-                        field_class.type == field.type,
-                        field_class.entry_id.in_(entry_ids),
+                        FieldClass.type == field.type,
+                        FieldClass.entry_id.in_(entry_ids),
                     )
                 )
-                .limit(1)
+                # .limit(1) # TODO - uncomment this when .position will be implemented
                 .subquery()
             )
 
             # Update one matching field per entry
             update_stmt = (
-                update(field_class)
-                .where(field_class.id.in_(subquery))
+                update(FieldClass)
+                .where(FieldClass.id.in_(subquery))  # type: ignore
                 .values(value=content)
             )
 

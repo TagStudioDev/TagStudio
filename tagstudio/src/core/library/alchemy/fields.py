@@ -27,6 +27,7 @@ class BooleanField(Base):
     entry: Mapped[Entry] = relationship()
 
     value: Mapped[bool]
+    position: Mapped[int] = mapped_column(default=0)
 
     def __key(self):
         return (self.type, self.value)
@@ -51,6 +52,7 @@ class TextField(Base):
     entry: Mapped[Entry] = relationship(foreign_keys=[entry_id])
 
     value: Mapped[str | None]
+    position: Mapped[int] = mapped_column(default=0)
 
     def __key(self):
         return (self.type, self.value)
@@ -77,6 +79,7 @@ class TagBoxField(Base):
     entry: Mapped[Entry] = relationship(foreign_keys=[entry_id])
 
     tags: Mapped[set[Tag]] = relationship(secondary="tag_fields")
+    position: Mapped[int] = mapped_column(default=0)
 
     def __key(self):
         return (
@@ -109,6 +112,7 @@ class DatetimeField(Base):
     entry: Mapped[Entry] = relationship(foreign_keys=[entry_id])
 
     value: Mapped[str | None]
+    position: Mapped[int] = mapped_column(default=0)
 
     def __key(self):
         return (self.type, self.value)

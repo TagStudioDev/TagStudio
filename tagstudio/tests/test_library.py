@@ -272,6 +272,8 @@ def test_update_entry_field(library, entry_full):
     assert entry.text_fields[0].value == "new value"
 
 
+# TODO - uncomment this when .position will be implemented
+@pytest.mark.skip
 def test_update_entry_with_multiple_identical_fields(library, entry_full):
     # Given
     title_field = entry_full.text_fields[0]
@@ -370,3 +372,17 @@ def test_search_entry_id(library, query_name, has_result):
     assert (
         res_count == has_result
     ), f"mismatch with query: {query_name}, result: {res_count}"
+
+
+def test_update_field_order(library, entry_full):
+    # Given
+    title_field = entry_full.text_fields[0]
+
+    # When
+    library.add_entry_field_type(entry_full.id, field_id=title_field.type_key)
+    library.update_field_position(title_field, entry_full.id)
+
+    # Then
+    entry = next(library.get_entries(with_joins=True))
+    assert entry.text_fields[0].position == 0
+    assert entry.text_fields[1].position == 1

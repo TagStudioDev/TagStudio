@@ -946,6 +946,7 @@ class PreviewPanel(QWidget):
         assert isinstance(
             field, (TextField, DatetimeField, TagBoxField)
         ), f"instance: {type(field)}"
+
         entry_ids = []
         for grid_idx in self.selected:
             entry = self.driver.frame_content[grid_idx]
