@@ -441,7 +441,8 @@ class PreviewPanel(QWidget):
             entry = self.driver.frame_content[grid_idx]
             for field_item in field_list:
                 self.lib.add_entry_field_type(
-                    entry.id, field_id=field_item.currentData()
+                    entry.id,
+                    field_id=field_item.data(Qt.ItemDataRole.UserRole),
                 )
 
     def update_widgets(self) -> bool:
@@ -495,6 +496,7 @@ class PreviewPanel(QWidget):
 
         # reload entry and fill it into the grid again
         # TODO - do this more granular
+        # TODO - Entry reload is maybe not necessary
         for grid_idx in self.driver.selected:
             entry = self.driver.frame_content[grid_idx]
             _, entries = self.lib.search_library(FilterState(id=entry.id))
@@ -800,14 +802,14 @@ class PreviewPanel(QWidget):
             else:
                 text = "<i>Mixed Data</i>"
 
-            title = f"{field.type.name} ({field.type.type})"
+            title = f"{field.type.name} ({field.type.type.value})"
             inner_container = TextWidget(title, text)
             container.set_inner_widget(inner_container)
             if not is_mixed:
                 modal = PanelModal(
                     EditTextLine(field.value),
                     title=title,
-                    window_title=f"Edit {field.type.name}",
+                    window_title=f"Edit {field.type.type.value}",
                     save_callback=(
                         lambda content: (
                             self.update_field(field, content),
@@ -822,7 +824,7 @@ class PreviewPanel(QWidget):
                 container.set_edit_callback(modal.show)
                 container.set_remove_callback(
                     lambda: self.remove_message_box(
-                        prompt=self.remove_field_prompt(field.type.name),
+                        prompt=self.remove_field_prompt(field.type.type.value),
                         callback=lambda: (
                             self.remove_field(field),
                             self.update_widgets(),

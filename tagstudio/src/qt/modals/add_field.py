@@ -83,7 +83,7 @@ class AddFieldModal(QWidget):
     def show(self):
         self.list_widget.clear()
         for df in self.lib.field_types.values():
-            item = QListWidgetItem(f"{df.name} ({df.type})")
+            item = QListWidgetItem(f"{df.name} ({df.type.value})")
             item.setData(Qt.ItemDataRole.UserRole, df.key)
             self.list_widget.addItem(item)
 

@@ -553,7 +553,7 @@ class QtDriver(QObject):
 
     def shutdown(self):
         """Save Library on Application Exit"""
-        if self.lib.library_dir:
+        if self.lib and self.lib.library_dir:
             self.settings.setValue(SettingItems.LAST_LIBRARY, self.lib.library_dir)
             self.settings.sync()
         logger.info("[SHUTDOWN] Ending Thumbnail Threads...")

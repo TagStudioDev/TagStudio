@@ -243,6 +243,22 @@ def test_remove_entry_field(library, entry_full):
     assert not entry.text_fields
 
 
+def test_remove_field_entry_with_multiple_field(library, entry_full):
+    # Given
+    title_field = entry_full.text_fields[0]
+
+    # When
+    # add identical field
+    library.add_entry_field_type(entry_full.id, field_id=title_field.type_key)
+
+    # remove entyr field
+    library.remove_entry_field(title_field, [entry_full.id])
+
+    # Then one field should remain
+    entry = next(library.get_entries(with_joins=True))
+    assert len(entry.text_fields) == 1
+
+
 def test_update_entry_field(library, entry_full):
     title_field = entry_full.text_fields[0]
 
@@ -254,6 +270,27 @@ def test_update_entry_field(library, entry_full):
 
     entry = next(library.get_entries(with_joins=True))
     assert entry.text_fields[0].value == "new value"
+
+
+def test_update_entry_with_multiple_identical_fields(library, entry_full):
+    # Given
+    title_field = entry_full.text_fields[0]
+
+    # When
+    # add identical field
+    library.add_entry_field_type(entry_full.id, field_id=title_field.type_key)
+
+    # update one of the fields
+    library.update_entry_field(
+        entry_full.id,
+        title_field,
+        "new value",
+    )
+
+    # Then only one should be updated
+    entry = next(library.get_entries(with_joins=True))
+    assert entry.text_fields[0].value == ""
+    assert entry.text_fields[1].value == "new value"
 
 
 def test_mirror_entry_fields(library, entry_full):

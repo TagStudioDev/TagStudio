@@ -325,6 +325,12 @@ class Library:
                         )
                     )
                 )
+            elif search.tag_id:
+                statement = (
+                    statement.join(Entry.tag_box_fields)
+                    .join(TagBoxField.tags)
+                    .where(Tag.id == search.tag_id)
+                )
 
             elif search.id:
                 statement = statement.where(Entry.id == search.id)
@@ -336,9 +342,6 @@ class Library:
                         ~Entry.path.ilike(f"%{search.name}%/%"),
                     )
                 )
-
-            elif search.tag_id:
-                statement = statement.where(Tag.id == search.tag_id)
             elif search.path:
                 statement = statement.where(Entry.path.ilike(f"%{search.path}%"))
 
@@ -474,12 +477,22 @@ class Library:
         field_class = type(field)
 
         with Session(self.engine) as session:
-            session.query(field_class).where(
-                and_(
-                    field_class.entry_id.in_(entry_ids),
-                    field_class.type == field.type,
+            # Subquery to select one matching field per entry
+            subquery = (
+                session.query(field_class.id)
+                .filter(
+                    and_(
+                        field_class.entry_id.in_(entry_ids),
+                        field_class.type == field.type,
+                    )
                 )
-            ).delete()
+                .limit(1)
+                .subquery()
+            )
+
+            # Delete one matching field per entry
+            session.query(field_class).filter(field_class.id.in_(subquery)).delete()
+
             session.commit()
 
     def update_entry_field(
@@ -494,14 +507,23 @@ class Library:
         field_class = type(field)
 
         with Session(self.engine) as session:
-            update_stmt = (
-                update(field_class)
+            # Subquery to select one matching field's id per entry
+            subquery = (
+                select(field_class.id)
                 .where(
                     and_(
                         field_class.type == field.type,
                         field_class.entry_id.in_(entry_ids),
                     )
                 )
+                .limit(1)
+                .subquery()
+            )
+
+            # Update one matching field per entry
+            update_stmt = (
+                update(field_class)
+                .where(field_class.id.in_(subquery))
                 .values(value=content)
             )
 
