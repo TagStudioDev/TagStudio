@@ -1,10 +1,10 @@
 import logging
 import math
 from pathlib import Path
+from shutil import which
 import subprocess
 
 from PIL import Image, ImageQt
-from pydub.utils import which
 from PySide6.QtCore import Signal, Qt, QUrl
 from PySide6.QtGui import QPixmap, QDesktopServices
 from PySide6.QtWidgets import QMessageBox
@@ -36,7 +36,6 @@ class FfmpegChecker(QMessageBox):
 
     def installed(self):
         """Checks if both FFmpeg and FFprobe are installed and in the PATH."""
-        # Same checker that ffmpeg-python uses
         if which("ffmpeg"):
             self.ffmpeg = True
         if which("ffprobe"):
