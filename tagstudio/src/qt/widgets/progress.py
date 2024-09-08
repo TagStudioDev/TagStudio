@@ -6,10 +6,10 @@
 from typing import Optional
 
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QProgressDialog
+from PySide6.QtWidgets import QWidget, QDialog, QVBoxLayout, QProgressDialog
 
 
-class ProgressWidget(QWidget):
+class ProgressWidget(QDialog):
     """Prebuilt thread-safe progress bar widget."""
 
     def __init__(

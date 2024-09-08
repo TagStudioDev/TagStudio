@@ -10,6 +10,7 @@ import typing
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QWidget,
+    QDialog,
     QVBoxLayout,
     QHBoxLayout,
     QLabel,
@@ -157,7 +158,7 @@ def generate_preview_data(library: Library):
     return tree
 
 
-class FoldersToTagsModal(QWidget):
+class FoldersToTagsModal(QDialog):
     # done = Signal(int)
     def __init__(self, library: "Library", driver: "QtDriver"):
         super().__init__()

@@ -8,6 +8,7 @@ from PySide6.QtCore import Signal, Qt, QThreadPool
 from PySide6.QtGui import QStandardItemModel, QStandardItem
 from PySide6.QtWidgets import (
     QWidget,
+    QDialog,
     QVBoxLayout,
     QHBoxLayout,
     QLabel,
@@ -25,7 +26,7 @@ if typing.TYPE_CHECKING:
     from src.qt.ts_qt import QtDriver
 
 
-class DeleteUnlinkedEntriesModal(QWidget):
+class DeleteUnlinkedEntriesModal(QDialog):
     done = Signal()
 
     def __init__(self, library: "Library", driver: "QtDriver"):

@@ -6,6 +6,7 @@
 from PySide6.QtCore import Signal, Qt
 from PySide6.QtWidgets import (
     QWidget,
+    QDialog,
     QVBoxLayout,
     QHBoxLayout,
     QLabel,
@@ -16,7 +17,7 @@ from PySide6.QtWidgets import (
 from src.core.library import Library
 
 
-class AddFieldModal(QWidget):
+class AddFieldModal(QDialog):
     done = Signal(int)
 
     def __init__(self, library: "Library"):

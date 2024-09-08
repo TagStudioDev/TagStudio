@@ -8,6 +8,7 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QHBoxLayout,
     QWidget,
+    QDialog,
     QPushButton,
     QTableWidget,
     QTableWidgetItem,

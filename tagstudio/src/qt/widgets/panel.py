@@ -6,10 +6,10 @@ from types import FunctionType
 from typing import Callable
 
 from PySide6.QtCore import Signal, Qt
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton
+from PySide6.QtWidgets import QWidget, QDialog, QVBoxLayout, QHBoxLayout, QLabel, QPushButton
 
 
-class PanelModal(QWidget):
+class PanelModal(QDialog):
     saved = Signal()
 
     # TODO: Separate callbacks from the buttons you want, and just generally
