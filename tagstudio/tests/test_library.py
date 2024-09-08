@@ -251,7 +251,7 @@ def test_remove_field_entry_with_multiple_field(library, entry_full):
     # add identical field
     library.add_entry_field_type(entry_full.id, field_id=title_field.type_key)
 
-    # remove entyr field
+    # remove entry field
     library.remove_entry_field(title_field, [entry_full.id])
 
     # Then one field should remain
@@ -272,8 +272,6 @@ def test_update_entry_field(library, entry_full):
     assert entry.text_fields[0].value == "new value"
 
 
-# TODO - uncomment this when .position will be implemented
-@pytest.mark.skip
 def test_update_entry_with_multiple_identical_fields(library, entry_full):
     # Given
     title_field = entry_full.text_fields[0]
@@ -378,11 +376,24 @@ def test_update_field_order(library, entry_full):
     # Given
     title_field = entry_full.text_fields[0]
 
-    # When
-    library.add_entry_field_type(entry_full.id, field_id=title_field.type_key)
+    # When add two more fields
+    library.add_entry_field_type(
+        entry_full.id, field_id=title_field.type_key, value="first"
+    )
+    library.add_entry_field_type(
+        entry_full.id, field_id=title_field.type_key, value="second"
+    )
+
+    # remove the one on first position
+    assert title_field.position == 0
+    library.remove_entry_field(title_field, [entry_full.id])
+
+    # recalculate the positions
     library.update_field_position(title_field, entry_full.id)
 
     # Then
     entry = next(library.get_entries(with_joins=True))
     assert entry.text_fields[0].position == 0
+    assert entry.text_fields[0].value == "first"
     assert entry.text_fields[1].position == 1
+    assert entry.text_fields[1].value == "second"

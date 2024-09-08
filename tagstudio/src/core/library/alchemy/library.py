@@ -2,6 +2,7 @@ from datetime import datetime, UTC
 import shutil
 from os import makedirs
 from pathlib import Path
+from random import randint
 from typing import Iterator, Any
 
 import structlog
@@ -480,7 +481,7 @@ class Library:
                 rows = session.scalars(
                     select(FieldClass)
                     .where(FieldClass.entry_id == entry_id)
-                    .order_by(FieldClass.position, FieldClass.id)
+                    .order_by(FieldClass.id)
                 )
 
                 # Reassign `order` starting from 0
@@ -488,32 +489,27 @@ class Library:
                     row.position = index  # type: ignore
 
                 session.add(row)
-                session.commit()
+            session.commit()
 
     def remove_entry_field(
         self,
         field: Field,
         entry_ids: list[int],
     ) -> None:
-        field_class = type(field)
+        FieldClass = type(field)
 
         with Session(self.engine) as session:
-            # Subquery to select one matching field per entry
-            subquery = (
-                session.query(field_class.id)
-                .filter(
-                    and_(
-                        field_class.entry_id.in_(entry_ids),
-                        field_class.type == field.type,
-                    )
+            session.query(FieldClass).where(
+                and_(
+                    FieldClass.entry_id.in_(entry_ids),
+                    FieldClass.type == field.type,
+                    FieldClass.position == field.position,
                 )
-                .limit(1)
-                .subquery()
-            )
-
-            # Delete one matching field per entry
-            session.query(field_class).filter(field_class.id.in_(subquery)).delete()  # type: ignore
+            ).delete()
             session.commit()
+
+        # recalculate the remaining positions
+        self.update_field_position(field, entry_ids)
 
     def update_entry_field(
         self,
@@ -527,23 +523,15 @@ class Library:
         FieldClass = type(field)
 
         with Session(self.engine) as session:
-            # Subquery to select one matching field's id per entry
-            subquery = (
-                select(FieldClass.id)
+            update_stmt = (
+                update(FieldClass)
                 .where(
                     and_(
+                        FieldClass.position == field.position,
                         FieldClass.type == field.type,
                         FieldClass.entry_id.in_(entry_ids),
                     )
                 )
-                # .limit(1) # TODO - uncomment this when .position will be implemented
-                .subquery()
-            )
-
-            # Update one matching field per entry
-            update_stmt = (
-                update(FieldClass)
-                .where(FieldClass.id.in_(subquery))  # type: ignore
                 .values(value=content)
             )
 
@@ -615,16 +603,22 @@ class Library:
             try:
                 for entry_id in entry_ids:
                     field_model.entry_id = entry_id
+                    # create random value position to avoid IntegrityError, reordering is below
+                    field_model.position = -randint(0, 100_000)
+
                     session.add(field_model)
                     session.flush()
 
                 session.commit()
-                return True
             except IntegrityError as e:
                 logger.exception(e)
                 session.rollback()
                 return False
                 # TODO - trigger error signal
+
+        # recalculate the positions of fields
+        self.update_field_position(field_model, entry_ids)
+        return True
 
     def add_tag(self, tag: Tag, subtag_ids: list[int] | None = None) -> Tag | None:
         with Session(self.engine, expire_on_commit=False) as session:
