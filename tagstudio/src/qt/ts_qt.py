@@ -175,6 +175,8 @@ class QtDriver(QObject):
 
         self.search_mode = SearchMode.AND
 
+        self.in_lib = False
+        self.menus = []
         # self.main_window = None
         # self.main_window = Ui_MainWindow()
 
@@ -227,6 +229,8 @@ class QtDriver(QObject):
         )
         if dir not in (None, ""):
             self.open_library(Path(dir))
+        self.in_lib = True
+        self.update_clipboard_actions()
 
     def signal_handler(self, sig, frame):
         if sig in (SIGINT, SIGTERM, SIGQUIT):
@@ -295,20 +299,19 @@ class QtDriver(QObject):
 
         menu_bar = QMenuBar(self.main_window)
         self.main_window.setMenuBar(menu_bar)
-        menu_bar.setNativeMenuBar(True)
-
         file_menu = QMenu("&File", menu_bar)
         edit_menu = QMenu("&Edit", menu_bar)
         tools_menu = QMenu("&Tools", menu_bar)
         macros_menu = QMenu("&Macros", menu_bar)
         window_menu = QMenu("&Window", menu_bar)
         help_menu = QMenu("&Help", menu_bar)
-
+        
         # File Menu ============================================================
         # file_menu.addAction(QAction('&New Library', menu_bar))
         # file_menu.addAction(QAction('&Open Library', menu_bar))
 
         open_library_action = QAction("&Open/Create Library", menu_bar)
+        open_library_action.setData({"disable":False})
         open_library_action.triggered.connect(lambda: self.open_library_from_dialog())
         open_library_action.setShortcut(
             QtCore.QKeyCombination(
@@ -352,6 +355,7 @@ class QtDriver(QObject):
 
         # refresh_lib_action = QAction('&Refresh Directories', self.main_window)
         # refresh_lib_action.triggered.connect(lambda: self.lib.refresh_dir())
+
         add_new_files_action = QAction("&Refresh Directories", menu_bar)
         add_new_files_action.triggered.connect(
             lambda: self.callback_library_needed_check(self.add_new_files_callback)
@@ -370,8 +374,8 @@ class QtDriver(QObject):
 
         close_library_action = QAction("&Close Library", menu_bar)
         close_library_action.triggered.connect(lambda: self.close_library())
-        file_menu.addAction(close_library_action)
 
+        file_menu.addAction(close_library_action)
         # Edit Menu ============================================================
         new_tag_action = QAction("New &Tag", menu_bar)
         new_tag_action.triggered.connect(lambda: self.add_tag_action_callback())
@@ -498,7 +502,12 @@ class QtDriver(QObject):
         )
         help_menu.addAction(self.repo_action)
         self.set_macro_menu_viability()
-
+        
+        self.update_clipboard_actions()
+        
+        self.menus.append(file_menu)
+        self.menus.append(edit_menu)
+        
         menu_bar.addMenu(file_menu)
         menu_bar.addMenu(edit_menu)
         menu_bar.addMenu(tools_menu)
@@ -527,7 +536,6 @@ class QtDriver(QObject):
             lib = self.args.open
         elif self.settings.value(SettingItems.START_LOAD_LAST, True, type=bool):
             lib = self.settings.value(SettingItems.LAST_LIBRARY)
-
             # TODO: Remove this check if the library is no longer saved with files
             if lib and not (Path(lib) / TS_FOLDER_NAME).exists():
                 logging.error(
@@ -543,6 +551,8 @@ class QtDriver(QObject):
                 QColor("#9782ff"),
             )
             self.open_library(Path(lib))
+            self.in_lib = True
+            self.update_clipboard_actions()
 
         if self.args.ci:
             # gracefully terminate the app in CI environment
@@ -552,6 +562,18 @@ class QtDriver(QObject):
 
         self.shutdown()
 
+    def update_clipboard_actions(self):
+        if self.in_lib:
+            # we are in a library! time to enable them.
+            for menu in self.menus:
+                for action in menu.actions():
+                    action.setDisabled(False)
+        else:
+            # if we are not in a library then we need to disable all the unneeded menu buttons
+            for menu in self.menus:
+                for action in menu.actions():
+                    # any button that does not need to be disabled just needs to have the "disable" data added to it with name_of_action.setData({"disable":False})
+                    action.setDisabled(True if action.data() == None else action.data()["disable"] if "disable" in action.data().keys() else True)
     def init_library_window(self):
         # self._init_landing_page() # Taken care of inside the widget now
         self._init_thumb_grid()
@@ -701,6 +723,8 @@ class QtDriver(QObject):
             self.main_window.statusbar.showMessage(
                 f"Library Saved and Closed! ({format_timespan(end_time - start_time)})"
             )
+            self.in_lib = False
+            self.update_clipboard_actions()
 
     def backup_library(self):
         logging.info(f"Backing Up Library...")
