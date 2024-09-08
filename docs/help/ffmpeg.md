@@ -5,9 +5,13 @@ FFmpeg is required for thumbnail previews and playback features on audio and vid
 Pre-built binaries from trusted sources are available on the [FFmpeg website](https://www.ffmpeg.org/download.html#build-windows).
 
 To install:
+
 1. Download 7z or zip file and extract it (right click > Extract All)
+
 2. Move extracted contents to a unique folder (i.e; `c:\ffmpeg` or `c:\Program Files\ffmpeg`)
+
 3. Add FFmpeg to your PATH 
+
     1. Go to "Edit the system environment variables"
     2. Under "User Variables", select "Path" then edit
     3. Click new and add `<Your folder>\bin` (e.g; `c:\ffmpeg\bin` or `c:\Program Files\ffmpeg\bin`)
