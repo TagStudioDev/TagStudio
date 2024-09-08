@@ -1,17 +1,17 @@
 import pathlib
 
+from src.core.library import Entry
 from src.core.utils.dupe_files import DupeRegistry
-from tests.test_library import generate_entry
 
 CWD = pathlib.Path(__file__).parent
 
 
 def test_refresh_dupe_files(library):
-    entry = generate_entry(
+    entry = Entry(
         folder=library.folder,
         path=pathlib.Path("bar/foo.txt"),
     )
-    entry2 = generate_entry(
+    entry2 = Entry(
         folder=library.folder,
         path=pathlib.Path("foo/foo.txt"),
     )

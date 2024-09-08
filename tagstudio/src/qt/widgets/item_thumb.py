@@ -438,15 +438,16 @@ class ItemThumb(FlowWidget):
         self.item_id = entry.id
 
     def assign_badge(self, badge_type: BadgeType, value: bool) -> None:
-        # mode = self.mode
-        # self.mode = None
+        mode = self.mode
+        # blank mode to avoid recursive badge updates
+        self.mode = None
         badge = self.badges[badge_type]
         self.badge_active[badge_type] = value
         if badge.isChecked() != value:
             badge.setChecked(value)
             badge.setHidden(not value)
 
-        # self.mode = mode
+        self.mode = mode
 
     def show_check_badges(self, show: bool):
         if self.mode != ItemType.TAG_GROUP:

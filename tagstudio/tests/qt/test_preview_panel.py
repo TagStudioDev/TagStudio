@@ -1,9 +1,10 @@
-from sqlalchemy.orm import Session
+from pathlib import Path
 
+
+from src.core.library import Entry
 from src.core.library.alchemy.enums import FieldTypeEnum
 from src.core.library.alchemy.fields import _FieldID, TextField
 from src.qt.widgets.preview_panel import PreviewPanel
-from tests.test_library import generate_entry
 
 
 def test_update_widgets_not_selected(qt_driver, library):
@@ -29,9 +30,10 @@ def test_update_widgets_single_selected(qt_driver, library):
 
 def test_update_widgets_multiple_selected(qt_driver, library):
     # entry with no tag fields
-    entry = generate_entry(
+    entry = Entry(
+        path=Path("test.txt"),
         folder=library.folder,
-        fields=[TextField(type_key=_FieldID.TITLE.name)],
+        fields=[TextField(type_key=_FieldID.TITLE.name, position=0)],
     )
 
     assert not entry.tag_box_fields
@@ -100,14 +102,7 @@ def test_remove_field(qt_driver, library):
     panel.remove_field(field)
 
     entries = list(library.get_entries(with_joins=True))
-    print("entry fields", entries[1].fields)
-
-    with Session(library.engine) as session:
-        entries = session.query(TextField).all()
-        for entry in entries:
-            print("entry", entry.entry_id)
-
-    # assert not entries[1].text_fields
+    assert not entries[1].text_fields
 
 
 def test_update_field(qt_driver, library, entry_full):

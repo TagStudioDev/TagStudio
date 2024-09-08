@@ -178,9 +178,9 @@ class Entry(Base):
 
         if fields is None:
             fields = [
-                TagBoxField(type_key=_FieldID.TAGS_META.name),
-                TagBoxField(type_key=_FieldID.TAGS_CONTENT.name),
-                TextField(type_key=_FieldID.TITLE.name),
+                TagBoxField(type_key=_FieldID.TAGS_META.name, position=0),
+                TagBoxField(type_key=_FieldID.TAGS_CONTENT.name, position=0),
+                TextField(type_key=_FieldID.TITLE.name, position=0),
             ]
 
         for field in fields:
@@ -225,7 +225,7 @@ class LibraryField(Base):
     key: Mapped[str] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(nullable=False)
     type: Mapped[FieldTypeEnum] = mapped_column(default=FieldTypeEnum.TEXT_LINE)
-    order: Mapped[int] = mapped_column(default=0)
+    order: Mapped[int]
 
     # add relations to other tables
     text_fields: Mapped[list[TextField]] = relationship(

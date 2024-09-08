@@ -616,9 +616,12 @@ class PreviewPanel(QWidget):
                 self.preview_img.is_connected = True
 
             self.selected = self.driver.selected
-            logger.info("rendering item fields", item=item, fields=item.tag_box_fields)
+            logger.info(
+                "rendering item fields",
+                item=item.id,
+                fields=[x.type_key for x in item.fields],
+            )
             for idx, field in enumerate(item.fields):
-                logger.info("write container in update_widgets", idx=idx, field=field)
                 self.write_container(idx, field)
 
             # Hide leftover containers
@@ -792,7 +795,6 @@ class PreviewPanel(QWidget):
             self.tags_updated.emit()
             # self.dynamic_widgets.append(inner_container)
         elif field.type.type == FieldTypeEnum.TEXT_LINE:
-            print("is text line")
             container.set_title(field.type.name)
             container.set_inline(False)
 
@@ -834,8 +836,6 @@ class PreviewPanel(QWidget):
                 )
 
         elif field.type.type == FieldTypeEnum.TEXT_BOX:
-            print("is text box")
-
             container.set_title(field.type.name)
             # container.set_editable(True)
             container.set_inline(False)

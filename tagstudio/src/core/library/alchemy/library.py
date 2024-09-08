@@ -3,7 +3,7 @@ import shutil
 from os import makedirs
 from pathlib import Path
 from random import randint
-from typing import Iterator, Any
+from typing import Iterator, Any, Type
 from uuid import uuid4
 
 import structlog
@@ -175,8 +175,6 @@ class Library:
                 session.commit()
                 self.folder = folder
 
-            print("folder", self.folder)
-
         # load ignored extensions
         self.ignored_extensions = self.prefs(LibraryPrefs.EXTENSION_LIST)
 
@@ -255,8 +253,7 @@ class Library:
                     contains_eager(Entry.tag_box_fields).selectinload(TagBoxField.tags),
                 )
 
-            stmt = stmt  # .distinct()
-            print(stmt.compile(compile_kwargs={"literal_binds": True}))
+            stmt = stmt.distinct()
 
             entries = session.execute(stmt).scalars()
             if with_joins:
@@ -491,27 +488,27 @@ class Library:
             session.add(field_)
             session.commit()
 
-    def update_field_position(self, field: Field, entry_ids: list[int]):
+    def update_field_position(
+        self,
+        field_class: Type[Field],
+        field_type: str,
+        entry_ids: list[int] | int,
+    ):
         if isinstance(entry_ids, int):
             entry_ids = [entry_ids]
 
-        FieldClass = type(field)
-
         with Session(self.engine) as session:
-            field_from_session = session.merge(field)
-            field_position = field_from_session.position
-
             for entry_id in entry_ids:
                 rows = list(
                     session.scalars(
-                        select(FieldClass)
+                        select(field_class)
                         .where(
                             and_(
-                                FieldClass.entry_id == entry_id,
-                                FieldClass.position == field_position,
+                                field_class.entry_id == entry_id,
+                                field_class.type_key == field_type,
                             )
                         )
-                        .order_by(FieldClass.id)
+                        .order_by(field_class.id)
                     )
                 )
 
@@ -519,9 +516,9 @@ class Library:
                 for index, row in enumerate(rows):
                     row.position = index  # type: ignore
                     session.add(row)
-
-            if rows:
-                session.commit()
+                    session.flush()
+                if rows:
+                    session.commit()
 
     def remove_entry_field(
         self,
@@ -549,13 +546,12 @@ class Library:
                 )
             )
 
-            print(delete_stmt.compile(compile_kwargs={"literal_binds": True}))
-
             session.execute(delete_stmt)
+
             session.commit()
 
         # recalculate the remaining positions
-        self.update_field_position(field, entry_ids)
+        # self.update_field_position(type(field), field.type, entry_ids)
 
     def update_entry_field(
         self,
@@ -591,9 +587,11 @@ class Library:
 
     def get_library_field(self, field_key: str) -> LibraryField:
         with Session(self.engine) as session:
-            return session.scalar(
+            field = session.scalar(
                 select(LibraryField).where(LibraryField.key == field_key)
             )
+            session.expunge(field)
+            return field
 
     def add_entry_field_type(
         self,
@@ -624,12 +622,13 @@ class Library:
         field_model: TextField | DatetimeField | TagBoxField
         if field.type in (FieldTypeEnum.TEXT_LINE, FieldTypeEnum.TEXT_BOX):
             field_model = TextField(
-                type=field,
+                type_key=field.key,
                 value=value or "",
+                position=randint(100, 100_000),
             )
         elif field.type == FieldTypeEnum.TAGS:
             field_model = TagBoxField(
-                type=field,
+                type_key=field.key,
             )
 
             if value:
@@ -639,7 +638,7 @@ class Library:
 
         elif field.type == FieldTypeEnum.DATETIME:
             field_model = DatetimeField(
-                type=field,
+                type_key=field.key,
                 value=value,
             )
         else:
@@ -650,7 +649,7 @@ class Library:
                 for entry_id in entry_ids:
                     field_model.entry_id = entry_id
                     # create random value position to avoid IntegrityError, reordering is below
-                    field_model.position = -randint(0, 100_000)
+                    field_model.position = randint(100, 100_000)
 
                     session.add(field_model)
                     session.flush()
@@ -663,7 +662,11 @@ class Library:
                 # TODO - trigger error signal
 
         # recalculate the positions of fields
-        self.update_field_position(field_model, entry_ids)
+        self.update_field_position(
+            field_class=type(field_model),
+            field_type=field.key,
+            entry_ids=entry_ids,
+        )
         return True
 
     def add_tag(self, tag: Tag, subtag_ids: list[int] | None = None) -> Tag | None:
@@ -718,6 +721,7 @@ class Library:
                     field = TagBoxField(
                         type_key=field_key,
                         entry_id=entry.id,
+                        position=0,
                     )
 
                 field.tags = field.tags | {tag}

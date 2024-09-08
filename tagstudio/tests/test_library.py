@@ -1,5 +1,3 @@
-import random
-import string
 from pathlib import Path, PureWindowsPath
 from tempfile import TemporaryDirectory
 
@@ -10,21 +8,6 @@ from src.core.library.alchemy import Entry
 from src.core.library.alchemy import Library
 from src.core.library.alchemy.enums import FilterState
 from src.core.library.alchemy.fields import _FieldID, TextField
-from src.core.library.alchemy.models import Folder
-
-
-def generate_entry(*, folder: Folder, path: Path = None, **kwargs) -> Entry:
-    assert folder
-    if not path:
-        # TODO - be sure no collision happens
-        name = "".join(random.choices(string.ascii_lowercase, k=10))
-        path = Path(name)
-
-    return Entry(
-        path=path,
-        folder=folder,
-        **kwargs,
-    )
 
 
 def test_library_bootstrap():
@@ -41,10 +24,11 @@ def test_library_add_file():
         file_path = Path(tmp_dir) / "bar.txt"
         file_path.write_text("bar")
 
-        entry = Entry(path=file_path)
-
         lib = Library()
         lib.open_library(tmp_dir)
+
+        entry = Entry(path=file_path, folder=lib.folder)
+
         assert not lib.has_path_entry(entry.path)
 
         assert lib.add_entries([entry])
@@ -110,7 +94,7 @@ def test_get_entry(library, entry_min):
 
 
 def test_entries_count(library):
-    entries = [generate_entry(folder=library.folder) for _ in range(10)]
+    entries = [Entry(path=Path(f"{x}.txt"), folder=library.folder) for x in range(10)]
     library.add_entries(entries)
     matches, page = library.search_library(
         FilterState(
@@ -124,10 +108,9 @@ def test_entries_count(library):
 
 def test_add_field_to_entry(library):
     # Given
-    item_path = Path("xxx")
-    entry = generate_entry(
+    entry = Entry(
         folder=library.folder,
-        path=item_path,
+        path=Path("xxx"),
     )
     # meta tags + content tags
     assert len(entry.tag_box_fields) == 2
@@ -138,7 +121,7 @@ def test_add_field_to_entry(library):
     library.add_entry_field_type(entry.id, field_id=_FieldID.TAGS)
 
     # Then
-    entry = [x for x in library.get_entries(with_joins=True) if x.path == item_path][0]
+    entry = [x for x in library.get_entries(with_joins=True) if x.path == entry.path][0]
     # meta tags and tags field present
     assert len(entry.tag_box_fields) == 3
 
@@ -225,7 +208,7 @@ def test_preferences(library):
 
 def test_save_windows_path(library, generate_tag):
     # pretend we are on windows and create `Path`
-    entry = Entry(path=PureWindowsPath("foo\\bar.txt"))
+    entry = Entry(path=PureWindowsPath("foo\\bar.txt"), folder=library.folder)
     tag = generate_tag("win_path")
     tag_name = tag.name
 
@@ -255,7 +238,7 @@ def test_remove_field_entry_with_multiple_field(library, entry_full):
 
     # When
     # add identical field
-    library.add_entry_field_type(entry_full.id, field_id=title_field.type_key)
+    assert library.add_entry_field_type(entry_full.id, field_id=title_field.type_key)
 
     # remove entry field
     library.remove_entry_field(title_field, [entry_full.id])
@@ -300,13 +283,14 @@ def test_update_entry_with_multiple_identical_fields(library, entry_full):
 
 
 def test_mirror_entry_fields(library, entry_full):
-    target_entry = generate_entry(
+    target_entry = Entry(
         folder=library.folder,
         path=Path("xxx"),
         fields=[
             TextField(
                 type_key=_FieldID.NOTES.name,
                 value="notes",
+                position=0,
             )
         ],
     )
@@ -396,7 +380,11 @@ def test_update_field_order(library, entry_full):
     library.remove_entry_field(title_field, [entry_full.id])
 
     # recalculate the positions
-    library.update_field_position(title_field, entry_full.id)
+    library.update_field_position(
+        type(title_field),
+        title_field.type_key,
+        entry_full.id,
+    )
 
     # Then
     entry = next(library.get_entries(with_joins=True))

@@ -9,10 +9,9 @@ CWD = pathlib.Path(__file__).parent
 # this needs to be above `src` imports
 sys.path.insert(0, str(CWD.parent))
 
-from src.core.library import Library, Tag
+from src.core.library import Library, Tag, Entry
 from src.core.library.alchemy.enums import TagColor
 from src.core.library.alchemy.fields import TagBoxField, _FieldID
-from tests.test_library import generate_entry
 from src.core.library import alchemy as backend
 from src.qt.ts_qt import QtDriver
 
@@ -49,23 +48,21 @@ def library(request):
     assert lib.add_tag(tag)
 
     # default item with deterministic name
-    entry = generate_entry(
+    entry = Entry(
         folder=lib.folder,
         path=pathlib.Path("foo.txt"),
     )
 
     entry.tag_box_fields = [
-        TagBoxField(
-            type_key=_FieldID.TAGS.name,
-            tags={tag},
-        ),
+        TagBoxField(type_key=_FieldID.TAGS.name, tags={tag}, position=0),
         TagBoxField(
             type_key=_FieldID.TAGS_META.name,
+            position=0,
             # tags={tag2}
         ),
     ]
 
-    entry2 = generate_entry(
+    entry2 = Entry(
         folder=lib.folder,
         path=pathlib.Path("one/two/bar.md"),
     )
@@ -73,6 +70,7 @@ def library(request):
         TagBoxField(
             tags={tag2},
             type_key=_FieldID.TAGS_META.name,
+            position=0,
         ),
     ]
 

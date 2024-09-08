@@ -31,9 +31,7 @@ logger = structlog.get_logger(__name__)
 class BuildTagPanel(PanelWidget):
     on_edit = Signal(Tag)
 
-    def __init__(
-        self, library: Library, tag_id: int | None = None, tag: Tag | None = None
-    ):
+    def __init__(self, library: Library, tag: Tag | None = None):
         super().__init__()
         self.lib = library
         # self.callback = callback
@@ -161,14 +159,9 @@ class BuildTagPanel(PanelWidget):
         self.root_layout.addWidget(self.color_widget)
         # self.parent().done.connect(self.update_tag)
 
-        if tag_id is not None:
-            tag = self.lib.get_tag(tag_id)
-        elif not tag:
-            tag = Tag(name="New Tag")
-
         # TODO - fill subtags
         self.subtags: set[int] = set()
-        self.set_tag(tag)
+        self.set_tag(tag or Tag(name="New Tag"))
 
     def add_subtag_callback(self, tag_id: int):
         logger.info("add_subtag_callback", tag_id=tag_id)
@@ -203,7 +196,12 @@ class BuildTagPanel(PanelWidget):
         # TODO: Implement aliases
         # self.aliases_field.setText("\n".join(tag.aliases))
         self.set_subtags()
-        self.color_field.setCurrentIndex(tag.color.value)
+        # select item in self.color_field where the userData value matched tag.color
+        for i in range(self.color_field.count()):
+            if self.color_field.itemData(i) == tag.color:
+                self.color_field.setCurrentIndex(i)
+                break
+
         self.tag = tag
 
     def build_tag(self) -> Tag:
