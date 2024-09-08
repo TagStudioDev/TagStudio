@@ -894,12 +894,15 @@ class Library:
                     and "tagstudio_thumbs" not in f.parts
                     and not f.is_dir()
                 ):
-                    if f.suffix.lower() not in self.ext_list and self.is_exclude_list:
+                    suffix = (
+                        f.name.lower() if f.name.startswith(".") else f.suffix.lower()
+                    )
+                    if suffix not in self.ext_list and self.is_exclude_list:
                         self.dir_file_count += 1
                         file = f.relative_to(self.library_dir)
                         if file not in self.filename_to_entry_id_map:
                             self.files_not_in_library.append(file)
-                    elif f.suffix.lower() in self.ext_list and not self.is_exclude_list:
+                    elif suffix in self.ext_list and not self.is_exclude_list:
                         self.dir_file_count += 1
                         file = f.relative_to(self.library_dir)
                         try:
@@ -907,6 +910,14 @@ class Library:
                         except KeyError:
                             # print(file)
                             self.files_not_in_library.append(file)
+                    else:
+                        entry_id = self.filename_to_entry_id_map.get(
+                            f.relative_to(self.library_dir), None
+                        )
+
+                        if entry_id:
+                            # A exclude file is in the library, let's remove it.
+                            self.remove_entry(entry_id)
             except PermissionError:
                 logging.info(
                     f"The File/Folder {f} cannot be accessed, because it requires higher permission!"
