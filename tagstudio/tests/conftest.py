@@ -39,13 +39,18 @@ def library(request):
         name="foo",
         color=TagColor.RED,
     )
+    assert lib.add_tag(tag)
+
+    subtag = Tag(
+        name="subbar",
+        color=TagColor.YELLOW,
+    )
 
     tag2 = Tag(
         name="bar",
         color=TagColor.BLUE,
+        subtags={subtag},
     )
-
-    assert lib.add_tag(tag)
 
     # default item with deterministic name
     entry = Entry(
@@ -75,7 +80,7 @@ def library(request):
     ]
 
     assert lib.add_entries([entry, entry2])
-    assert len(lib.tags) == 4
+    assert len(lib.tags) == 5
 
     yield lib
 

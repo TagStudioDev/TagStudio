@@ -273,8 +273,6 @@ class Library:
 
             for tag in tags_list:
                 session.expunge(tag)
-                for subtag in tag.subtags:
-                    session.expunge(subtag)
 
         return list(tags_list)
 
