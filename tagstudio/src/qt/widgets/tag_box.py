@@ -148,7 +148,6 @@ class TagBoxWidget(FieldWidget):
         logger.info("add_tag_callback", tag_id=tag_id, selected=self.driver.selected)
 
         tag = self.driver.lib.get_tag(tag_id=tag_id)
-
         for idx in self.driver.selected:
             entry: Entry = self.driver.frame_content[idx]
 

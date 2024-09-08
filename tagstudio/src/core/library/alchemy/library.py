@@ -723,9 +723,16 @@ class Library:
                         entry_id=entry.id,
                         position=0,
                     )
+                    session.add(field)
+                    session.flush()
 
-                field.tags = field.tags | {tag}
-                session.add(field)
+                # create record for `TagField` table
+                tag_field = TagField(
+                    tag_id=tag.id,
+                    field_id=field.id,
+                )
+                session.add(tag_field)
+
                 session.commit()
                 logger.info(
                     "tag added to field", tag=tag, field=field, entry_id=entry.id
