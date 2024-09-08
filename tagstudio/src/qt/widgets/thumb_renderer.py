@@ -565,6 +565,7 @@ class ThumbRenderer(QObject):
             logging.error(
                 f"[ThumbRenderer][WAVEFORM][ERROR]: Couldn't render waveform for {filepath.name} ({type(e).__name__})"
             )
+
         return im
 
     def _blender(self, filepath: Path) -> Image.Image:
@@ -1057,7 +1058,7 @@ class ThumbRenderer(QObject):
                     size=(adj_size, adj_size),
                     pixel_ratio=pixel_ratio,
                 )
-            except (UnidentifiedImageError, DecompressionBombError, ValueError) as e:
+            except (UnidentifiedImageError, DecompressionBombError, ValueError, ChildProcessError) as e:
                 logging.info(
                     f"[ThumbRenderer][ERROR]: Couldn't render thumbnail for {_filepath.name} ({type(e).__name__})"
                 )

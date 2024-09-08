@@ -1,7 +1,7 @@
 # type: ignore
 # Copyright (C) 2022  James Robert (jiaaro).
 # Licensed under the MIT License.
-# Vendored from ffmpeg-python and ffmpeg-python PR#790 by amamic1803
+# Vendored from pydub
 
 from __future__ import division
 
@@ -729,7 +729,10 @@ class _AudioSegment(object):
             info = None
         else:
             # PATCHED
-            info = _mediainfo_json(orig_file, read_ahead_limit=read_ahead_limit)
+            try:
+                info = _mediainfo_json(orig_file, read_ahead_limit=read_ahead_limit)
+            except FileNotFoundError:
+                raise ChildProcessError
         if info:
             audio_streams = [x for x in info['streams']
                              if x['codec_type'] == 'audio']
