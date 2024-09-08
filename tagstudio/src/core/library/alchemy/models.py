@@ -8,11 +8,11 @@ from .db import Base, PathType
 from .enums import TagColor
 from .fields import (
     DatetimeField,
-    Field,
     TagBoxField,
     TextField,
     FieldTypeEnum,
     _FieldID,
+    BaseField,
 )
 from .joins import TagSubtag
 from ...constants import TAG_FAVORITE, TAG_ARCHIVED
@@ -134,8 +134,8 @@ class Entry(Base):
     )
 
     @property
-    def fields(self) -> list[Field]:
-        fields: list[Field] = []
+    def fields(self) -> list[BaseField]:
+        fields: list[BaseField] = []
         fields.extend(self.tag_box_fields)
         fields.extend(self.text_fields)
         fields.extend(self.datetime_fields)
@@ -171,7 +171,7 @@ class Entry(Base):
         self,
         path: Path,
         folder: Folder,
-        fields: list[Field] | None = None,
+        fields: list[BaseField] | None = None,
     ) -> None:
         self.path = path
         self.folder = folder

@@ -36,9 +36,9 @@ from src.core.library.alchemy.fields import (
     TagBoxField,
     DatetimeField,
     FieldTypeEnum,
-    Field,
     _FieldID,
     TextField,
+    BaseField,
 )
 from src.qt.helpers.file_opener import FileOpenerLabel, FileOpenerHelper, open_file
 from src.qt.modals.add_field import AddFieldModal
@@ -719,7 +719,7 @@ class PreviewPanel(QWidget):
         self.tags_updated.connect(slot)
         self.is_connected = True
 
-    def write_container(self, index: int, field: Field, is_mixed: bool = False):
+    def write_container(self, index: int, field: BaseField, is_mixed: bool = False):
         """Update/Create data for a FieldContainer.
 
         :param is_mixed: Relevant when multiple items are selected. If True, field is not present in all selected items
@@ -930,7 +930,7 @@ class PreviewPanel(QWidget):
         container.setHidden(False)
         self.place_add_field_button()
 
-    def remove_field(self, field: Field):
+    def remove_field(self, field: BaseField):
         """Remove a field from all selected Entries."""
         logger.info("removing field", field=field, selected=self.selected)
         entry_ids = []
@@ -945,7 +945,7 @@ class PreviewPanel(QWidget):
         if field.type_key == _FieldID.TAGS_META.value:
             self.driver.update_badges(self.selected)
 
-    def update_field(self, field: Field, content: str) -> None:
+    def update_field(self, field: BaseField, content: str) -> None:
         """Remove a field from all selected Entries, given a field object."""
         assert isinstance(
             field, (TextField, DatetimeField, TagBoxField)

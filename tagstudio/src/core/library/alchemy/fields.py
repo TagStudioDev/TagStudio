@@ -2,10 +2,10 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from enum import Enum
-from typing import Union, Any, TYPE_CHECKING
+from typing import Any, TYPE_CHECKING
 
 from sqlalchemy import ForeignKey, ForeignKeyConstraint
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.orm import Mapped, mapped_column, relationship, declared_attr
 
 from .db import Base
 from .enums import FieldTypeEnum
@@ -13,27 +13,50 @@ from .enums import FieldTypeEnum
 if TYPE_CHECKING:
     from .models import Entry, Tag, LibraryField
 
-Field = Union["TextField", "TagBoxField", "DatetimeField"]
 
+class BaseField(Base):
+    __abstract__ = True
 
-class BooleanField(Base):
-    __tablename__ = "boolean_fields"
+    @declared_attr
+    def id(cls) -> Mapped[int]:
+        return mapped_column(primary_key=True, autoincrement=True)
 
-    id: Mapped[int] = mapped_column(primary_key=True)
-    type_key: Mapped[str] = mapped_column(ForeignKey("library_fields.key"))
-    type: Mapped[LibraryField] = relationship(foreign_keys=[type_key], lazy=False)
+    @declared_attr
+    def type_key(cls) -> Mapped[str]:
+        return mapped_column(ForeignKey("library_fields.key"))
 
-    entry_id: Mapped[int] = mapped_column(ForeignKey("entries.id"))
-    entry: Mapped[Entry] = relationship()
+    @declared_attr
+    def type(cls) -> Mapped[LibraryField]:
+        return relationship(foreign_keys=[cls.type_key], lazy=False)  # type: ignore
 
-    value: Mapped[bool]
-    position: Mapped[int]
+    @declared_attr
+    def entry_id(cls) -> Mapped[int]:
+        return mapped_column(ForeignKey("entries.id"))
 
-    def __key(self):
-        return (self.type, self.value)
+    @declared_attr
+    def entry(cls) -> Mapped[Entry]:
+        return relationship(foreign_keys=[cls.entry_id])  # type: ignore
+
+    @declared_attr
+    def position(cls) -> Mapped[int]:
+        return mapped_column()
 
     def __hash__(self):
         return hash(self.__key())
+
+    def __key(self):
+        raise NotImplementedError
+
+    value: Any
+
+
+class BooleanField(BaseField):
+    __tablename__ = "boolean_fields"
+
+    value: Mapped[bool]
+
+    def __key(self):
+        return (self.type, self.value)
 
     def __eq__(self, value) -> bool:
         if isinstance(value, BooleanField):
@@ -41,7 +64,7 @@ class BooleanField(Base):
         raise NotImplementedError
 
 
-class TextField(Base):
+class TextField(BaseField):
     __tablename__ = "text_fields"
     # constrain for combination of: entry_id, type_key and position
     __table_args__ = (
@@ -51,21 +74,10 @@ class TextField(Base):
         ),
     )
 
-    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
-    type_key: Mapped[str] = mapped_column(ForeignKey("library_fields.key"))
-    type: Mapped[LibraryField] = relationship(foreign_keys=[type_key], lazy=False)
-
-    entry_id: Mapped[int] = mapped_column(ForeignKey("entries.id"))
-    entry: Mapped[Entry] = relationship(foreign_keys=[entry_id])
-
     value: Mapped[str | None]
-    position: Mapped[int]
 
-    def __key(self):
-        return (self.type, self.value)
-
-    def __hash__(self):
-        return hash(self.__key())
+    def __key(self) -> tuple:
+        return self.type, self.value
 
     def __eq__(self, value) -> bool:
         if isinstance(value, TextField):
@@ -75,18 +87,10 @@ class TextField(Base):
         raise NotImplementedError
 
 
-class TagBoxField(Base):
+class TagBoxField(BaseField):
     __tablename__ = "tag_box_fields"
 
-    id: Mapped[int] = mapped_column(primary_key=True)
-    type_key: Mapped[str] = mapped_column(ForeignKey("library_fields.key"))
-    type: Mapped[LibraryField] = relationship(foreign_keys=[type_key], lazy=False)
-
-    entry_id: Mapped[int] = mapped_column(ForeignKey("entries.id"))
-    entry: Mapped[Entry] = relationship(foreign_keys=[entry_id])
-
     tags: Mapped[set[Tag]] = relationship(secondary="tag_fields")
-    position: Mapped[int]
 
     def __key(self):
         return (
@@ -99,33 +103,19 @@ class TagBoxField(Base):
         """For interface compatibility with other field types."""
         return None
 
-    def __hash__(self):
-        return hash(self.__key())
-
     def __eq__(self, value) -> bool:
         if isinstance(value, TagBoxField):
             return self.__key() == value.__key()
         raise NotImplementedError
 
 
-class DatetimeField(Base):
+class DatetimeField(BaseField):
     __tablename__ = "datetime_fields"
 
-    id: Mapped[int] = mapped_column(primary_key=True)
-    type_key: Mapped[str] = mapped_column(ForeignKey("library_fields.key"))
-    type: Mapped[LibraryField] = relationship(foreign_keys=[type_key], lazy=False)
-
-    entry_id: Mapped[int] = mapped_column(ForeignKey("entries.id"))
-    entry: Mapped[Entry] = relationship(foreign_keys=[entry_id])
-
     value: Mapped[str | None]
-    position: Mapped[int]
 
     def __key(self):
         return (self.type, self.value)
-
-    def __hash__(self):
-        return hash(self.__key())
 
     def __eq__(self, value) -> bool:
         if isinstance(value, DatetimeField):

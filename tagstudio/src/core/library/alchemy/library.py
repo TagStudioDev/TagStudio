@@ -35,7 +35,7 @@ from .fields import (
     TagBoxField,
     TextField,
     _FieldID,
-    Field,
+    BaseField,
 )
 from .joins import TagSubtag, TagField
 from .models import Entry, Preferences, Tag, TagAlias, LibraryField, Folder
@@ -488,7 +488,7 @@ class Library:
 
     def update_field_position(
         self,
-        field_class: Type[Field],
+        field_class: Type[BaseField],
         field_type: str,
         entry_ids: list[int] | int,
     ):
@@ -512,7 +512,7 @@ class Library:
 
                 # Reassign `order` starting from 0
                 for index, row in enumerate(rows):
-                    row.position = index  # type: ignore
+                    row.position = index
                     session.add(row)
                     session.flush()
                 if rows:
@@ -520,7 +520,7 @@ class Library:
 
     def remove_entry_field(
         self,
-        field: Field,
+        field: BaseField,
         entry_ids: list[int],
     ) -> None:
         FieldClass = type(field)
@@ -554,7 +554,7 @@ class Library:
     def update_entry_field(
         self,
         entry_ids: list[int] | int,
-        field: Field,
+        field: BaseField,
         content: str | datetime | set[Tag],
     ):
         if isinstance(entry_ids, int):
