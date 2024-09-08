@@ -1,4 +1,4 @@
-FFmpeg is required for thumbnail previews and playback features on audio and video files. FFmpeg is a free Open Source project dedicated to the handling of multimedia (video, audio, etc) files.
+FFmpeg is required for thumbnail previews and playback features on audio and video files. FFmpeg is a free Open Source project dedicated to the handling of multimedia (video, audio, etc) files. For more information see their official website at [ffmpeg.org](https://www.ffmpeg.org/).
 
 # Installation on Windows
 ## Prebuilt Binaries
@@ -35,4 +35,4 @@ FFmpeg may be installed by default on some Linux distrobutions, but if not, it i
 3. Arch (`sudo pacman -S ffmpeg`)
 
 # Help
-For additional help, please create an Issue on the [GitHub repository](https://github.com/TagStudioDev/TagStudio) or join the [Discord]()
+For additional help, please create an Issue on the [GitHub repository](https://github.com/TagStudioDev/TagStudio) or join the [Discord](https://discord.gg/hRNnVKhF2G)
