@@ -727,12 +727,17 @@ class Library:
                     session.flush()
 
                 # create record for `TagField` table
+                if not tag.id:
+                    session.add(tag)
+                    session.flush()
+
+                assert tag.id
                 tag_field = TagField(
                     tag_id=tag.id,
                     field_id=field.id,
                 )
-                session.add(tag_field)
 
+                session.add(tag_field)
                 session.commit()
                 logger.info(
                     "tag added to field", tag=tag, field=field, entry_id=entry.id
