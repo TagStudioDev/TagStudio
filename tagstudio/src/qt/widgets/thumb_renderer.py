@@ -1058,7 +1058,12 @@ class ThumbRenderer(QObject):
                     size=(adj_size, adj_size),
                     pixel_ratio=pixel_ratio,
                 )
-            except (UnidentifiedImageError, DecompressionBombError, ValueError, ChildProcessError) as e:
+            except (
+                UnidentifiedImageError,
+                DecompressionBombError,
+                ValueError,
+                ChildProcessError,
+            ) as e:
                 logging.info(
                     f"[ThumbRenderer][ERROR]: Couldn't render thumbnail for {_filepath.name} ({type(e).__name__})"
                 )
