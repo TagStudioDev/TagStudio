@@ -492,10 +492,11 @@ class PreviewPanel(QWidget):
     def update_date_label(self, filepath: Path | None = None) -> None:
         """Update the "Date Created" and "Date Modified" file property labels."""
         if filepath and filepath.is_file():
+            created: dt = None
             if platform.system() == "Windows" or platform.system() == "Darwin":
-                created: dt = dt.fromtimestamp(filepath.stat().st_birthtime)
+                created = dt.fromtimestamp(filepath.stat().st_birthtime)  # type: ignore[attr-defined]
             else:
-                created: dt = dt.fromtimestamp(filepath.stat().st_ctime)
+                created = dt.fromtimestamp(filepath.stat().st_ctime)
             modified: dt = dt.fromtimestamp(filepath.stat().st_mtime)
             self.date_created_label.setText(
                 f"<b>Date Created:</b> {dt.strftime(created, "%a, %x, %X")}"
