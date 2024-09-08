@@ -184,6 +184,7 @@ class MediaCategories:
         ".dng",
         ".nef",
         ".orf",
+        ".raf",
         ".raw",
         ".rw2",
     }
