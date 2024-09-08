@@ -28,11 +28,11 @@ FFmpeg is available via [Homebrew](https://brew.sh/) and can be installed via;
 
 # Installation on Linux
 ## Package Managers
-FFmpeg may be installed by default on some Linux distrobutions, but if not, it is available via your distro's package manager of choice
+FFmpeg may be installed by default on some Linux distributions, but if not, it is available via your distro's package manager of choice;
 
 1. Debian/Ubuntu (`sudo apt install ffmpeg`)
 2. Fedora (`sudo dnf install ffmpeg-free`)
 3. Arch (`sudo pacman -S ffmpeg`)
 
 # Help
-For additional help, please create an Issue on the [GitHub repository](https://github.com/TagStudioDev/TagStudio) or join the [Discord](https://discord.gg/hRNnVKhF2G)
+For additional help, please join the [Discord](https://discord.gg/hRNnVKhF2G) or create an Issue on the [GitHub repository](https://github.com/TagStudioDev/TagStudio)
