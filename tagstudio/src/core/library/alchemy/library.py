@@ -19,7 +19,7 @@ from sqlalchemy import (
     exists,
     delete,
 )
-from sqlalchemy.exc import IntegrityError, InvalidRequestError
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import (
     Session,
     contains_eager,
@@ -731,7 +731,6 @@ class Library:
                     session.add(tag)
                     session.flush()
 
-                assert tag.id
                 tag_field = TagField(
                     tag_id=tag.id,
                     field_id=field.id,
@@ -744,9 +743,10 @@ class Library:
                 )
 
                 return True
-            except InvalidRequestError as e:
+            except IntegrityError as e:
                 logger.exception(e)
                 session.rollback()
+
                 return False
 
     def save_library_backup_to_disk(self) -> Path:

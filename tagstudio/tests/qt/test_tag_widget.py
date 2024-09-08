@@ -1,6 +1,5 @@
 from unittest.mock import patch
 
-import pytest
 
 from src.core.library.alchemy.fields import _FieldID
 from src.qt.widgets.tag import TagWidget
@@ -25,25 +24,18 @@ def test_tag_widget(qtbot, library, qt_driver):
     assert tag_widget.add_modal.isVisible()
 
 
-@pytest.mark.skip
-def test_tag_widget_add_existing_raises(qtbot, library, qt_driver):
+def test_tag_widget_add_existing_raises(library, qt_driver, entry_full):
     # Given
-    entry = next(library.get_entries(with_joins=True))
-    print(entry.tag_box_fields)
-
-    tag_field = [f for f in entry.tag_box_fields if f.type_key == _FieldID.TAGS.name][0]
-
-    assert len(entry.tags) == 1
-    tag = next(iter(entry.tags))
-    tag_widget = TagBoxWidget(tag_field, "title", qt_driver)
+    tag_field = [
+        f for f in entry_full.tag_box_fields if f.type_key == _FieldID.TAGS.name
+    ][0]
+    assert len(entry_full.tags) == 1
+    tag = next(iter(entry_full.tags))
 
     # When
-    qtbot.add_widget(tag_widget)
-    tag_widget.driver.frame_content = [entry]
+    tag_widget = TagBoxWidget(tag_field, "title", qt_driver)
+    tag_widget.driver.frame_content = [entry_full]
     tag_widget.driver.selected = [0]
-
-    entry = next(library.get_entries(with_joins=True))
-    print(entry.tag_box_fields)
 
     # Then
     with patch.object(tag_widget, "error_occurred") as mocked:
