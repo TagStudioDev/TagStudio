@@ -29,6 +29,8 @@ from PySide6.QtCore import (
     QThreadPool,
     QTimer,
     QSettings,
+    QLocale,
+    QCoreApplication,
 )
 from PySide6.QtGui import (
     QGuiApplication,
@@ -85,6 +87,7 @@ from src.qt.modals.file_extension import FileExtensionModal
 from src.qt.modals.fix_unlinked import FixUnlinkedEntriesModal
 from src.qt.modals.fix_dupes import FixDupeFilesModal
 from src.qt.modals.folders_to_tags import FoldersToTagsModal
+from src.qt.translator import TSTranslator
 
 # this import has side-effect of import PySide resources
 import src.qt.resources_rc  # pylint: disable=unused-import
@@ -244,6 +247,16 @@ class QtDriver(QObject):
         if os.name == "nt":
             sys.argv += ["-platform", "windows:darkmode=2"]
         app = QApplication(sys.argv)
+
+        translator = TSTranslator()
+        path = Path(__file__).parents[2] / "resources/translations"
+        translator.load(
+            path,
+            QLocale.languageToCode(QLocale.system().language()).lower(),
+            QLocale.countryToCode(QLocale.system().country()).lower(),
+        )
+        app.installTranslator(translator)
+
         app.setStyle("Fusion")
         # pal: QPalette = app.palette()
         # pal.setColor(QPalette.ColorGroup.Active,
@@ -297,7 +310,7 @@ class QtDriver(QObject):
         self.main_window.setMenuBar(menu_bar)
         menu_bar.setNativeMenuBar(True)
 
-        file_menu = QMenu("&File", menu_bar)
+        file_menu = QMenu(QCoreApplication.translate("MenuBar.File", "Title"), menu_bar)
         edit_menu = QMenu("&Edit", menu_bar)
         tools_menu = QMenu("&Tools", menu_bar)
         macros_menu = QMenu("&Macros", menu_bar)
@@ -308,7 +321,9 @@ class QtDriver(QObject):
         # file_menu.addAction(QAction('&New Library', menu_bar))
         # file_menu.addAction(QAction('&Open Library', menu_bar))
 
-        open_library_action = QAction("&Open/Create Library", menu_bar)
+        open_library_action = QAction(
+            QCoreApplication.translate("MenuBar.File", "OpenCreateLibrary"), menu_bar
+        )
         open_library_action.triggered.connect(lambda: self.open_library_from_dialog())
         open_library_action.setShortcut(
             QtCore.QKeyCombination(

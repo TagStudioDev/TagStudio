@@ -196,7 +196,7 @@ class Ui_MainWindow(QMainWindow):
 
     def retranslateUi(self, MainWindow):
         MainWindow.setWindowTitle(QCoreApplication.translate(
-            "MainWindow", u"MainWindow", None))
+            "MainWindow", u"Title", None))
         # Navigation buttons
         self.backButton.setText(
             QCoreApplication.translate("MainWindow", u"<", None))
@@ -205,18 +205,18 @@ class Ui_MainWindow(QMainWindow):
   
         # Search field
         self.searchField.setPlaceholderText(
-            QCoreApplication.translate("MainWindow", u"Search Entries", None))
+            QCoreApplication.translate("MainWindow.Search", u"Entries", None))
         self.searchButton.setText(
-            QCoreApplication.translate("MainWindow", u"Search", None))
+            QCoreApplication.translate("MainWindow.Search", u"Search", None))
   
         # Search type selector
-        self.comboBox_2.setItemText(0, QCoreApplication.translate("MainWindow", "And (Includes All Tags)"))
-        self.comboBox_2.setItemText(1, QCoreApplication.translate("MainWindow", "Or (Includes Any Tag)"))
+        self.comboBox_2.setItemText(0, QCoreApplication.translate("MainWindow.Search", u"AND"))
+        self.comboBox_2.setItemText(1, QCoreApplication.translate("MainWindow.Search", u"OR"))
         self.comboBox.setCurrentText("")
   
         # Thumbnail size selector
         self.comboBox.setPlaceholderText(
-            QCoreApplication.translate("MainWindow", u"Thumbnail Size", None))
+            QCoreApplication.translate("MainWindow", u"ThumbnailSize", None))
     # retranslateUi
 
     def moveEvent(self, event) -> None:
