@@ -23,21 +23,30 @@ class RefreshDirTracker:
             yield 0
 
         for idx, entry_path in enumerate(self.files_not_in_library):
-            self.library.add_entries([Entry(path=entry_path)])
+            self.library.add_entries(
+                [
+                    Entry(
+                        path=entry_path,
+                        folder=self.library.folder,
+                    )
+                ]
+            )
             yield idx
 
         self.files_not_in_library = []
 
     def refresh_dir(self) -> Iterator[int]:
         """Scan a directory for files, and add those relative filenames to internal variables."""
-        if self.library.library_dir is None:
-            raise ValueError("No library path set.")
+        if self.library.folder is None:
+            raise ValueError("No folder set.")
 
         start_time = time.time()
         self.files_not_in_library = []
         self.dir_file_count = 0
 
-        for path in self.library.library_dir.glob("**/*"):
+        lib_path = self.library.folder.path
+
+        for path in lib_path.glob("**/*"):
             str_path = str(path)
             if (
                 path.is_dir()
@@ -52,7 +61,7 @@ class RefreshDirTracker:
                 continue
 
             self.dir_file_count += 1
-            relative_path = path.relative_to(self.library.library_dir)
+            relative_path = path.relative_to(lib_path)
             # TODO - load these in batch somehow
             if not self.library.has_path_entry(relative_path):
                 self.files_not_in_library.append(relative_path)

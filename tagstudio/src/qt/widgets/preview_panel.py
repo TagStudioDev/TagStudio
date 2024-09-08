@@ -792,6 +792,7 @@ class PreviewPanel(QWidget):
             self.tags_updated.emit()
             # self.dynamic_widgets.append(inner_container)
         elif field.type.type == FieldTypeEnum.TEXT_LINE:
+            print("is text line")
             container.set_title(field.type.name)
             container.set_inline(False)
 
@@ -833,6 +834,8 @@ class PreviewPanel(QWidget):
                 )
 
         elif field.type.type == FieldTypeEnum.TEXT_BOX:
+            print("is text box")
+
             container.set_title(field.type.name)
             # container.set_editable(True)
             container.set_inline(False)
@@ -868,8 +871,7 @@ class PreviewPanel(QWidget):
                     )
                 )
 
-        elif field.type == DatetimeField:
-            # logging.info(f'WRITING DATETIME FOR ITEM {item.id}')
+        elif field.type.type == FieldTypeEnum.DATETIME:
             if not is_mixed:
                 try:
                     container.set_title(field.type.name)
@@ -905,6 +907,7 @@ class PreviewPanel(QWidget):
                 inner_container = TextWidget(title, text)
                 container.set_inner_widget(inner_container)
         else:
+            logger.warning("write_container - unknown field", field=field)
             container.set_title(field.type.name)
             # container.set_editable(False)
             container.set_inline(False)
@@ -931,6 +934,7 @@ class PreviewPanel(QWidget):
         """Remove a field from all selected Entries."""
         logger.info("removing field", field=field, selected=self.selected)
         entry_ids = []
+
         for grid_idx in self.selected:
             entry = self.driver.frame_content[grid_idx]
             entry_ids.append(entry.id)

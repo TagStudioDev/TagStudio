@@ -10,9 +10,11 @@ from src.core.library.alchemy import Entry
 from src.core.library.alchemy import Library
 from src.core.library.alchemy.enums import FilterState
 from src.core.library.alchemy.fields import _FieldID, TextField
+from src.core.library.alchemy.models import Folder
 
 
-def generate_entry(*, path: Path = None, **kwargs) -> Entry:
+def generate_entry(*, folder: Folder, path: Path = None, **kwargs) -> Entry:
+    assert folder
     if not path:
         # TODO - be sure no collision happens
         name = "".join(random.choices(string.ascii_lowercase, k=10))
@@ -20,6 +22,7 @@ def generate_entry(*, path: Path = None, **kwargs) -> Entry:
 
     return Entry(
         path=path,
+        folder=folder,
         **kwargs,
     )
 
@@ -107,7 +110,7 @@ def test_get_entry(library, entry_min):
 
 
 def test_entries_count(library):
-    entries = [generate_entry() for _ in range(10)]
+    entries = [generate_entry(folder=library.folder) for _ in range(10)]
     library.add_entries(entries)
     matches, page = library.search_library(
         FilterState(
@@ -122,7 +125,10 @@ def test_entries_count(library):
 def test_add_field_to_entry(library):
     # Given
     item_path = Path("xxx")
-    entry = generate_entry(path=item_path)
+    entry = generate_entry(
+        folder=library.folder,
+        path=item_path,
+    )
     # meta tags + content tags
     assert len(entry.tag_box_fields) == 2
 
@@ -295,6 +301,7 @@ def test_update_entry_with_multiple_identical_fields(library, entry_full):
 
 def test_mirror_entry_fields(library, entry_full):
     target_entry = generate_entry(
+        folder=library.folder,
         path=Path("xxx"),
         fields=[
             TextField(

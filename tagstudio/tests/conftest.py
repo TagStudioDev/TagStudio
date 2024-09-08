@@ -34,6 +34,7 @@ def library(request):
 
     lib = Library()
     lib.open_library(library_path, ":memory:")
+    assert lib.folder
 
     tag = Tag(
         name="foo",
@@ -48,7 +49,10 @@ def library(request):
     assert lib.add_tag(tag)
 
     # default item with deterministic name
-    entry = generate_entry(path=pathlib.Path("foo.txt"))
+    entry = generate_entry(
+        folder=lib.folder,
+        path=pathlib.Path("foo.txt"),
+    )
 
     entry.tag_box_fields = [
         TagBoxField(
@@ -61,7 +65,10 @@ def library(request):
         ),
     ]
 
-    entry2 = generate_entry(path=pathlib.Path("one/two/bar.md"))
+    entry2 = generate_entry(
+        folder=lib.folder,
+        path=pathlib.Path("one/two/bar.md"),
+    )
     entry2.tag_box_fields = [
         TagBoxField(
             tags={tag2},

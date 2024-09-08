@@ -4,6 +4,7 @@ from os import makedirs
 from pathlib import Path
 from random import randint
 from typing import Iterator, Any
+from uuid import uuid4
 
 import structlog
 from sqlalchemy import (
@@ -16,6 +17,7 @@ from sqlalchemy import (
     update,
     URL,
     exists,
+    delete,
 )
 from sqlalchemy.exc import IntegrityError, InvalidRequestError
 from sqlalchemy.orm import (
@@ -36,7 +38,7 @@ from .fields import (
     Field,
 )
 from .joins import TagSubtag, TagField
-from .models import Entry, Preferences, Tag, TagAlias, LibraryField
+from .models import Entry, Preferences, Tag, TagAlias, LibraryField, Folder
 from ...constants import (
     LibraryPrefs,
     TS_FOLDER_NAME,
@@ -97,6 +99,7 @@ class Library:
     library_dir: Path
     storage_path: Path | str
     engine: Engine | None
+    folder: Folder | None
 
     ignored_extensions: list[str]
 
@@ -156,6 +159,23 @@ class Library:
                 except IntegrityError:
                     logger.debug("preference already exists", pref=pref)
                     session.rollback()
+
+            # check if folder matching current path exists already
+            self.folder = session.scalar(
+                select(Folder).where(Folder.path == self.library_dir)
+            )
+            if not self.folder:
+                folder = Folder(
+                    path=self.library_dir,
+                    uuid=str(uuid4()),
+                )
+                session.add(folder)
+                session.expunge(folder)
+
+                session.commit()
+                self.folder = folder
+
+            print("folder", self.folder)
 
         # load ignored extensions
         self.ignored_extensions = self.prefs(LibraryPrefs.EXTENSION_LIST)
@@ -223,19 +243,20 @@ class Library:
         with Session(self.engine) as session:
             stmt = select(Entry)
             if with_joins:
+                # load Entry with all joins and all tags
                 stmt = (
                     stmt.outerjoin(Entry.text_fields)
                     .outerjoin(Entry.datetime_fields)
                     .outerjoin(Entry.tag_box_fields)
-                    .options(
-                        contains_eager(Entry.text_fields),
-                        contains_eager(Entry.datetime_fields),
-                        contains_eager(Entry.tag_box_fields).selectinload(
-                            TagBoxField.tags
-                        ),
-                    )
                 )
-            stmt = stmt.distinct()
+                stmt = stmt.options(
+                    contains_eager(Entry.text_fields),
+                    contains_eager(Entry.datetime_fields),
+                    contains_eager(Entry.tag_box_fields).selectinload(TagBoxField.tags),
+                )
+
+            stmt = stmt  # .distinct()
+            print(stmt.compile(compile_kwargs={"literal_binds": True}))
 
             entries = session.execute(stmt).scalars()
             if with_joins:
@@ -477,19 +498,30 @@ class Library:
         FieldClass = type(field)
 
         with Session(self.engine) as session:
+            field_from_session = session.merge(field)
+            field_position = field_from_session.position
+
             for entry_id in entry_ids:
-                rows = session.scalars(
-                    select(FieldClass)
-                    .where(FieldClass.entry_id == entry_id)
-                    .order_by(FieldClass.id)
+                rows = list(
+                    session.scalars(
+                        select(FieldClass)
+                        .where(
+                            and_(
+                                FieldClass.entry_id == entry_id,
+                                FieldClass.position == field_position,
+                            )
+                        )
+                        .order_by(FieldClass.id)
+                    )
                 )
 
                 # Reassign `order` starting from 0
                 for index, row in enumerate(rows):
                     row.position = index  # type: ignore
+                    session.add(row)
 
-                session.add(row)
-            session.commit()
+            if rows:
+                session.commit()
 
     def remove_entry_field(
         self,
@@ -498,14 +530,28 @@ class Library:
     ) -> None:
         FieldClass = type(field)
 
+        logger.info(
+            "remove_entry_field",
+            field=field,
+            entry_ids=entry_ids,
+            field_type=field.type,
+            cls=FieldClass,
+            pos=field.position,
+        )
+
         with Session(self.engine) as session:
-            session.query(FieldClass).where(
+            # remove all fields matching entry and field_type
+            delete_stmt = delete(FieldClass).where(
                 and_(
-                    FieldClass.entry_id.in_(entry_ids),
-                    FieldClass.type == field.type,
                     FieldClass.position == field.position,
+                    FieldClass.type_key == field.type_key,
+                    FieldClass.entry_id.in_(entry_ids),
                 )
-            ).delete()
+            )
+
+            print(delete_stmt.compile(compile_kwargs={"literal_binds": True}))
+
+            session.execute(delete_stmt)
             session.commit()
 
         # recalculate the remaining positions

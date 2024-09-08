@@ -7,8 +7,14 @@ CWD = pathlib.Path(__file__).parent
 
 
 def test_refresh_dupe_files(library):
-    entry = generate_entry(path=pathlib.Path("bar/foo.txt"))
-    entry2 = generate_entry(path=pathlib.Path("foo/foo.txt"))
+    entry = generate_entry(
+        folder=library.folder,
+        path=pathlib.Path("bar/foo.txt"),
+    )
+    entry2 = generate_entry(
+        folder=library.folder,
+        path=pathlib.Path("foo/foo.txt"),
+    )
 
     library.add_entries([entry, entry2])
 

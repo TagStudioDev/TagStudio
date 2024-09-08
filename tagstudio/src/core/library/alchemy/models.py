@@ -101,10 +101,22 @@ class Tag(Base):
         return self.__str__()
 
 
+class Folder(Base):
+    __tablename__ = "folders"
+
+    # TODO - implement this
+    id: Mapped[int] = mapped_column(primary_key=True)
+    path: Mapped[Path] = mapped_column(PathType, unique=True)
+    uuid: Mapped[str] = mapped_column(unique=True)
+
+
 class Entry(Base):
     __tablename__ = "entries"
 
     id: Mapped[int] = mapped_column(primary_key=True)
+
+    folder_id: Mapped[int] = mapped_column(ForeignKey("folders.id"))
+    folder: Mapped[Folder] = relationship("Folder")
 
     path: Mapped[Path] = mapped_column(PathType, unique=True)
 
@@ -158,9 +170,11 @@ class Entry(Base):
     def __init__(
         self,
         path: Path,
+        folder: Folder,
         fields: list[Field] | None = None,
     ) -> None:
         self.path = path
+        self.folder = folder
 
         if fields is None:
             fields = [
