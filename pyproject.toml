@@ -7,3 +7,7 @@ disable_error_code = ["union-attr", "annotation-unchecked", "import-untyped"]
 explicit_package_bases = true
 warn_unused_ignores = true
 exclude = ['tests']
+
+[project]
+name = "TagStudio"
+version = "0.1.0"
