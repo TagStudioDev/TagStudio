@@ -9,6 +9,7 @@ Thank you so much for showing interest in contributing to TagStudio! Here are a 
 - Check the [Planned Features](https://github.com/TagStudioDev/TagStudio/blob/main/docs/updates/planned_features.md) page, [FAQ](/README.md/#faq), as well as the open [Issues](https://github.com/TagStudioDev/TagStudio/issues) and [Pull Requests](https://github.com/TagStudioDev/TagStudio/pulls).
 - If you'd like to add a feature that isn't on the roadmap or doesn't have an open issue, **PLEASE create a feature request** issue for it discussing your intentions so any feedback or important information can be given by the team first.
   - We don't want you wasting time developing a feature or making a change that can't/won't be added for any reason ranging from pre-existing refactors to design philosophy differences.
+- If you wish to discuss TagStudio further, feel free to join the [Discord server](https://discord.com/invite/hRNnVKhF2G)
 
 ### Contribution Checklist
 
