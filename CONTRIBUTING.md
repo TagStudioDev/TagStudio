@@ -1,8 +1,13 @@
 # Contributing to TagStudio
 
-_Last Updated: June 10th, 2024_
+_Last Updated: September 8th, 2024_
 
 Thank you so much for showing interest in contributing to TagStudio! Here are a set of instructions and guidelines for contributing code or documentation to the project. This document will change over time, so make sure that your contributions still line up with the requirements here before submitting a pull request.
+
+> [!CAUTION]
+> **As of Pull Request [#332](https://github.com/TagStudioDev/TagStudio/pull/332) (SQLite Migration) the `main` branch will be an open test bed to get full JSON to SQL parity operational.** Existing TagStudio libraries are not yet compatible with this change, however they will **NOT be corrupted or deleted** if opened with these versions. Once parity is reached and a stable conversion tool in place, this notice will be removed.
+>
+> For the most recent stable feature release branch, see the [`Alpha-v9.4`](https://github.com/TagStudioDev/TagStudio/tree/Alpha-v9.4) branch. These v9.4 specific features are currently being backported to the SQL-ized `main` branch. (Feel free to help!)
 
 ## Getting Started
 
