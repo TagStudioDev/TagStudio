@@ -4,7 +4,7 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any, TYPE_CHECKING
 
-from sqlalchemy import ForeignKey, ForeignKeyConstraint
+from sqlalchemy import ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship, declared_attr
 
 from .db import Base
@@ -39,7 +39,7 @@ class BaseField(Base):
 
     @declared_attr
     def position(cls) -> Mapped[int]:
-        return mapped_column()
+        return mapped_column(default=0)
 
     def __hash__(self):
         return hash(self.__key())
@@ -66,13 +66,6 @@ class BooleanField(BaseField):
 
 class TextField(BaseField):
     __tablename__ = "text_fields"
-    # constrain for combination of: entry_id, type_key and position
-    __table_args__ = (
-        ForeignKeyConstraint(
-            ["entry_id", "type_key", "position"],
-            ["text_fields.entry_id", "text_fields.type_key", "text_fields.position"],
-        ),
-    )
 
     value: Mapped[str | None]
 

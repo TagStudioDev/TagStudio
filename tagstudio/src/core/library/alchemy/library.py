@@ -2,7 +2,6 @@ from datetime import datetime, UTC
 import shutil
 from os import makedirs
 from pathlib import Path
-from random import randint
 from typing import Iterator, Any, Type
 from uuid import uuid4
 
@@ -632,7 +631,6 @@ class Library:
             field_model = TextField(
                 type_key=field.key,
                 value=value or "",
-                position=randint(100, 100_000),
             )
         elif field.type == FieldTypeEnum.TAGS:
             field_model = TagBoxField(
@@ -656,9 +654,6 @@ class Library:
             try:
                 for entry_id in entry_ids:
                     field_model.entry_id = entry_id
-                    # create random value position to avoid IntegrityError, reordering is below
-                    field_model.position = randint(100, 100_000)
-
                     session.add(field_model)
                     session.flush()
 
