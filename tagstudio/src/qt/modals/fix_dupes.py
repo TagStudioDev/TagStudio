@@ -3,7 +3,6 @@
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
 
-import os
 import typing
 
 from PySide6.QtCore import Qt
@@ -17,6 +16,7 @@ from PySide6.QtWidgets import (
 )
 
 from src.core.library import Library
+from src.core.utils.dupe_files import DupeRegistry
 from src.qt.modals.mirror_entities import MirrorEntriesModal
 
 # Only import for type checking/autocompletion, will not be imported at runtime.
@@ -32,11 +32,13 @@ class FixDupeFilesModal(QWidget):
         self.driver = driver
         self.count = -1
         self.filename = ""
-        self.setWindowTitle(f"Fix Duplicate Files")
+        self.setWindowTitle("Fix Duplicate Files")
         self.setWindowModality(Qt.WindowModality.ApplicationModal)
         self.setMinimumSize(400, 300)
         self.root_layout = QVBoxLayout(self)
         self.root_layout.setContentsMargins(6, 6, 6, 6)
+
+        self.tracker = DupeRegistry(library=self.lib)
 
         self.desc_widget = QLabel()
         self.desc_widget.setObjectName("descriptionLabel")
@@ -80,13 +82,14 @@ class FixDupeFilesModal(QWidget):
 
         self.open_button = QPushButton()
         self.open_button.setText("&Load DupeGuru File")
-        self.open_button.clicked.connect(lambda: self.select_file())
+        self.open_button.clicked.connect(self.select_file)
+
+        self.mirror_modal = MirrorEntriesModal(self.driver, self.tracker)
+        self.mirror_modal.done.connect(self.refresh_dupes)
 
         self.mirror_button = QPushButton()
-        self.mirror_modal = MirrorEntriesModal(self.lib, self.driver)
-        self.mirror_modal.done.connect(lambda: self.refresh_dupes())
         self.mirror_button.setText("&Mirror Entries")
-        self.mirror_button.clicked.connect(lambda: self.mirror_modal.show())
+        self.mirror_button.clicked.connect(self.mirror_modal.show)
         self.mirror_desc = QLabel()
         self.mirror_desc.setWordWrap(True)
         self.mirror_desc.setText(
@@ -134,7 +137,7 @@ class FixDupeFilesModal(QWidget):
         self.root_layout.addStretch(1)
         self.root_layout.addWidget(self.button_container)
 
-        self.set_dupe_count(self.count)
+        self.set_dupe_count(-1)
 
     def select_file(self):
         qfd = QFileDialog(self, "Open DupeGuru Results File", str(self.lib.library_dir))
@@ -155,15 +158,14 @@ class FixDupeFilesModal(QWidget):
         self.mirror_modal.refresh_list()
 
     def refresh_dupes(self):
-        self.lib.refresh_dupe_files(self.filename)
-        self.set_dupe_count(len(self.lib.dupe_files))
+        self.tracker.refresh_dupe_files(self.filename)
+        self.set_dupe_count(self.tracker.groups_count)
 
     def set_dupe_count(self, count: int):
-        self.count = count
-        if self.count < 0:
+        if count < 0:
             self.mirror_button.setDisabled(True)
-            self.dupe_count.setText(f"Duplicate File Matches: N/A")
-        elif self.count == 0:
+            self.dupe_count.setText("Duplicate File Matches: N/A")
+        elif count == 0:
             self.mirror_button.setDisabled(True)
             self.dupe_count.setText(f"Duplicate File Matches: {count}")
         else:

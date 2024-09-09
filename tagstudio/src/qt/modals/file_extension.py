@@ -19,13 +19,17 @@ from PySide6.QtWidgets import (
 
 from src.core.library import Library
 from src.qt.widgets.panel import PanelWidget
+from src.core.constants import LibraryPrefs
 
 
 class FileExtensionItemDelegate(QStyledItemDelegate):
     def setModelData(self, editor, model, index):
-        if isinstance(editor, QLineEdit):
-            if editor.text() and not editor.text().startswith("."):
-                editor.setText(f".{editor.text()}")
+        if (
+            isinstance(editor, QLineEdit)
+            and editor.text()
+            and not editor.text().startswith(".")
+        ):
+            editor.setText(f".{editor.text()}")
         super().setModelData(editor, model, index)
 
 
@@ -43,7 +47,7 @@ class FileExtensionModal(PanelWidget):
         self.root_layout.setContentsMargins(6, 6, 6, 6)
 
         # Create Table Widget --------------------------------------------------
-        self.table = QTableWidget(len(self.lib.ext_list), 1)
+        self.table = QTableWidget(len(self.lib.prefs(LibraryPrefs.EXTENSION_LIST)), 1)
         self.table.horizontalHeader().setVisible(False)
         self.table.verticalHeader().setVisible(False)
         self.table.horizontalHeader().setStretchLastSection(True)
@@ -65,9 +69,12 @@ class FileExtensionModal(PanelWidget):
         self.mode_label.setText("List Mode:")
         self.mode_combobox = QComboBox()
         self.mode_combobox.setEditable(False)
-        self.mode_combobox.addItem("Exclude")
         self.mode_combobox.addItem("Include")
-        self.mode_combobox.setCurrentIndex(0 if self.lib.is_exclude_list else 1)
+        self.mode_combobox.addItem("Exclude")
+
+        is_exclude_list = int(bool(self.lib.prefs(LibraryPrefs.IS_EXCLUDE_LIST)))
+
+        self.mode_combobox.setCurrentIndex(is_exclude_list)
         self.mode_combobox.currentIndexChanged.connect(
             lambda i: self.update_list_mode(i)
         )
@@ -91,23 +98,23 @@ class FileExtensionModal(PanelWidget):
 
         Args:
             mode (int): The list mode, given by the index of the mode inside
-                the mode combobox. 0 for "Exclude", 1 for "Include".
+                the mode combobox. 1 for "Exclude", 0 for "Include".
         """
-        if mode == 0:
-            self.lib.is_exclude_list = True
-        elif mode == 1:
-            self.lib.is_exclude_list = False
+        self.lib.set_prefs(LibraryPrefs.IS_EXCLUDE_LIST, bool(mode))
 
     def refresh_list(self):
-        for i, ext in enumerate(self.lib.ext_list):
+        for i, ext in enumerate(self.lib.prefs(LibraryPrefs.EXTENSION_LIST)):
             self.table.setItem(i, 0, QTableWidgetItem(ext))
 
     def add_item(self):
         self.table.insertRow(self.table.rowCount())
 
     def save(self):
-        self.lib.ext_list.clear()
+        extensions = []
         for i in range(self.table.rowCount()):
             ext = self.table.item(i, 0)
-            if ext and ext.text():
-                self.lib.ext_list.append(ext.text().lower())
+            if ext and ext.text().strip():
+                extensions.append(ext.text().strip().lower())
+
+        # save preference
+        self.lib.set_prefs(LibraryPrefs.EXTENSION_LIST, extensions)

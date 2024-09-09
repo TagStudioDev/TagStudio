@@ -1,4 +1,0 @@
-[
-  "{'id': 1, 'filename': 'foo.txt', 'path': '.', 'fields': [{6: [1001]}]}",
-  "{'id': 2, 'filename': 'bar.txt', 'path': '.', 'fields': [{6: [1000]}]}"
-]

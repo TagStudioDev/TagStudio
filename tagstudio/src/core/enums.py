@@ -19,21 +19,15 @@ class Theme(str, enum.Enum):
     COLOR_DISABLED_BG = "#65440D12"
 
 
-class SearchMode(int, enum.Enum):
-    """Operational modes for item searching."""
+class OpenStatus(enum.IntEnum):
+    NOT_FOUND = 0
+    SUCCESS = 1
+    CORRUPTED = 2
 
-    AND = 0
-    OR = 1
 
-
-class FieldID(int, enum.Enum):
-    TITLE = 0
-    AUTHOR = 1
-    ARTIST = 2
-    DESCRIPTION = 4
-    NOTES = 5
-    TAGS = 6
-    CONTENT_TAGS = 7
-    META_TAGS = 8
-    DATE_PUBLISHED = 14
-    SOURCE = 21
+class MacroID(enum.Enum):
+    AUTOFILL = "autofill"
+    SIDECAR = "sidecar"
+    BUILD_URL = "build_url"
+    MATCH = "match"
+    CLEAN_URL = "clean_url"
