@@ -38,7 +38,7 @@ from .fields import (
     BaseField,
 )
 from .joins import TagSubtag, TagField
-from .models import Entry, Preferences, Tag, TagAlias, LibraryField, Folder
+from .models import Entry, Preferences, Tag, TagAlias, ValueType, Folder
 from ...constants import (
     LibraryPrefs,
     TS_FOLDER_NAME,
@@ -148,16 +148,17 @@ class Library:
             for field in _FieldID:
                 try:
                     session.add(
-                        LibraryField(
+                        ValueType(
+                            key=field.name,
                             name=field.value.name,
                             type=field.value.type,
-                            order=field.value.id,
-                            key=field.name,
+                            position=field.value.id,
+                            is_default=field.value.is_default,
                         )
                     )
                     session.commit()
                 except IntegrityError:
-                    logger.debug("preference already exists", pref=pref)
+                    logger.debug("ValueType already exists", field=field)
                     session.rollback()
 
             # check if folder matching current path exists already
@@ -177,6 +178,17 @@ class Library:
 
         # load ignored extensions
         self.ignored_extensions = self.prefs(LibraryPrefs.EXTENSION_LIST)
+
+    @property
+    def default_fields(self) -> list[BaseField]:
+        with Session(self.engine) as session:
+            types = session.scalars(
+                select(ValueType).where(
+                    # check if field is default
+                    ValueType.is_default.is_(True)
+                )
+            )
+            return [x.as_field for x in types]
 
     def delete_item(self, item):
         logger.info("deleting item", item=item)
@@ -579,15 +591,13 @@ class Library:
             session.commit()
 
     @property
-    def field_types(self) -> dict[str, LibraryField]:
+    def field_types(self) -> dict[str, ValueType]:
         with Session(self.engine) as session:
-            return {x.key: x for x in session.scalars(select(LibraryField)).all()}
+            return {x.key: x for x in session.scalars(select(ValueType)).all()}
 
-    def get_library_field(self, field_key: str) -> LibraryField:
+    def get_value_type(self, field_key: str) -> ValueType:
         with Session(self.engine) as session:
-            field = session.scalar(
-                select(LibraryField).where(LibraryField.key == field_key)
-            )
+            field = session.scalar(select(ValueType).where(ValueType.key == field_key))
             session.expunge(field)
             return field
 
@@ -595,7 +605,7 @@ class Library:
         self,
         entry_ids: list[int] | int,
         *,
-        field: LibraryField | None = None,
+        field: ValueType | None = None,
         field_id: _FieldID | str | None = None,
         value: str | datetime | list[str] | None = None,
     ) -> bool:
@@ -615,7 +625,7 @@ class Library:
         if not field:
             if isinstance(field_id, _FieldID):
                 field_id = field_id.name
-            field = self.get_library_field(field_id)
+            field = self.get_value_type(field_id)
 
         field_model: TextField | DatetimeField | TagBoxField
         if field.type in (FieldTypeEnum.TEXT_LINE, FieldTypeEnum.TEXT_BOX):

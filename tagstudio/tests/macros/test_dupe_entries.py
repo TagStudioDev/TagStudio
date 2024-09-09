@@ -10,10 +10,13 @@ def test_refresh_dupe_files(library):
     entry = Entry(
         folder=library.folder,
         path=pathlib.Path("bar/foo.txt"),
+        fields=library.default_fields,
     )
+
     entry2 = Entry(
         folder=library.folder,
         path=pathlib.Path("foo/foo.txt"),
+        fields=library.default_fields,
     )
 
     library.add_entries([entry, entry2])

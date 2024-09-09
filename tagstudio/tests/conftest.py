@@ -56,6 +56,7 @@ def library(request):
     entry = Entry(
         folder=lib.folder,
         path=pathlib.Path("foo.txt"),
+        fields=lib.default_fields,
     )
 
     entry.tag_box_fields = [
@@ -63,13 +64,13 @@ def library(request):
         TagBoxField(
             type_key=_FieldID.TAGS_META.name,
             position=0,
-            # tags={tag2}
         ),
     ]
 
     entry2 = Entry(
         folder=lib.folder,
         path=pathlib.Path("one/two/bar.md"),
+        fields=lib.default_fields,
     )
     entry2.tag_box_fields = [
         TagBoxField(

@@ -9,7 +9,11 @@ from src.qt.widgets.item_thumb import ItemThumb
 
 def test_update_thumbs(qt_driver):
     qt_driver.frame_content = [
-        Entry(folder=qt_driver.lib.folder, path=Path("/tmp/foo"))
+        Entry(
+            folder=qt_driver.lib.folder,
+            path=Path("/tmp/foo"),
+            fields=qt_driver.lib.default_fields,
+        )
     ]
 
     qt_driver.item_thumbs = []

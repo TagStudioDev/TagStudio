@@ -1253,7 +1253,10 @@ class Library:
             path = Path(file)
             # print(os.path.split(file))
             entry = Entry(
-                id=self._next_entry_id, filename=path.name, path=path.parent, fields=[]
+                id=self._next_entry_id,
+                filename=path.name,
+                path=path.parent,
+                fields=[],
             )
             self._next_entry_id += 1
             self.add_entry_to_library(entry)

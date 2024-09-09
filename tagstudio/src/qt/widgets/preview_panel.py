@@ -676,7 +676,7 @@ class PreviewPanel(QWidget):
                         mixed_fields.append(f)
 
             self.common_fields = common_fields
-            self.mixed_fields = sorted(mixed_fields, key=lambda x: x.type.order)
+            self.mixed_fields = sorted(mixed_fields, key=lambda x: x.type.position)
 
             self.selected = list(self.driver.selected)
             logger.info(
@@ -946,7 +946,7 @@ class PreviewPanel(QWidget):
             self.driver.update_badges(self.selected)
 
     def update_field(self, field: BaseField, content: str) -> None:
-        """Remove a field from all selected Entries, given a field object."""
+        """Update a field in all selected Entries, given a field object."""
         assert isinstance(
             field, (TextField, DatetimeField, TagBoxField)
         ), f"instance: {type(field)}"

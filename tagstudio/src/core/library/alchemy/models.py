@@ -13,6 +13,7 @@ from .fields import (
     FieldTypeEnum,
     _FieldID,
     BaseField,
+    BooleanField,
 )
 from .joins import TagSubtag
 from ...constants import TAG_FAVORITE, TAG_ARCHIVED
@@ -139,7 +140,7 @@ class Entry(Base):
         fields.extend(self.tag_box_fields)
         fields.extend(self.text_fields)
         fields.extend(self.datetime_fields)
-        fields = sorted(fields, key=lambda field: field.type.order)
+        fields = sorted(fields, key=lambda field: field.type.position)
         return fields
 
     @property
@@ -171,17 +172,10 @@ class Entry(Base):
         self,
         path: Path,
         folder: Folder,
-        fields: list[BaseField] | None = None,
+        fields: list[BaseField],
     ) -> None:
         self.path = path
         self.folder = folder
-
-        if fields is None:
-            fields = [
-                TagBoxField(type_key=_FieldID.TAGS_META.name, position=0),
-                TagBoxField(type_key=_FieldID.TAGS_CONTENT.name, position=0),
-                TextField(type_key=_FieldID.TITLE.name, position=0),
-            ]
 
         for field in fields:
             if isinstance(field, TextField):
@@ -210,22 +204,25 @@ class Entry(Base):
             tag_box_field.tags.remove(tag)
 
 
-class LibraryField(Base):
+class ValueType(Base):
     """Define Field Types in the Library.
 
     Example:
         key: content_tags (this field is slugified `name`)
         name: Content Tags (this field is human readable name)
         kind: type of content (Text Line, Text Box, Tags, Datetime, Checkbox)
+        is_default: Should the field be present in new Entry?
+        order: position of the field widget in the Entry form
 
     """
 
-    __tablename__ = "library_fields"
+    __tablename__ = "value_type"
 
     key: Mapped[str] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(nullable=False)
     type: Mapped[FieldTypeEnum] = mapped_column(default=FieldTypeEnum.TEXT_LINE)
-    order: Mapped[int]
+    is_default: Mapped[bool]
+    position: Mapped[int]
 
     # add relations to other tables
     text_fields: Mapped[list[TextField]] = relationship(
@@ -237,9 +234,27 @@ class LibraryField(Base):
     tag_box_fields: Mapped[list[TagBoxField]] = relationship(
         "TagBoxField", back_populates="type"
     )
+    boolean_fields: Mapped[list[BooleanField]] = relationship(
+        "BooleanField", back_populates="type"
+    )
+
+    @property
+    def as_field(self) -> BaseField:
+        FieldClass = {
+            FieldTypeEnum.TEXT_LINE: TextField,
+            FieldTypeEnum.TEXT_BOX: TextField,
+            FieldTypeEnum.TAGS: TagBoxField,
+            FieldTypeEnum.DATETIME: DatetimeField,
+            FieldTypeEnum.BOOLEAN: BooleanField,
+        }
+
+        return FieldClass[self.type](
+            type_key=self.key,
+            position=self.position,
+        )
 
 
-@event.listens_for(LibraryField, "before_insert")
+@event.listens_for(ValueType, "before_insert")
 def slugify_field_key(mapper, connection, target):
     """Slugify the field key before inserting into the database."""
     if not target.key:

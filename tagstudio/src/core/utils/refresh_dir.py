@@ -28,6 +28,7 @@ class RefreshDirTracker:
                     Entry(
                         path=entry_path,
                         folder=self.library.folder,
+                        fields=self.library.default_fields,
                     )
                 ]
             )

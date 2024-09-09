@@ -27,7 +27,11 @@ def test_library_add_file():
         lib = Library()
         lib.open_library(tmp_dir)
 
-        entry = Entry(path=file_path, folder=lib.folder)
+        entry = Entry(
+            path=file_path,
+            folder=lib.folder,
+            fields=lib.default_fields,
+        )
 
         assert not lib.has_path_entry(entry.path)
 
@@ -94,7 +98,10 @@ def test_get_entry(library, entry_min):
 
 
 def test_entries_count(library):
-    entries = [Entry(path=Path(f"{x}.txt"), folder=library.folder) for x in range(10)]
+    entries = [
+        Entry(path=Path(f"{x}.txt"), folder=library.folder, fields=[])
+        for x in range(10)
+    ]
     library.add_entries(entries)
     matches, page = library.search_library(
         FilterState(
@@ -111,6 +118,7 @@ def test_add_field_to_entry(library):
     entry = Entry(
         folder=library.folder,
         path=Path("xxx"),
+        fields=library.default_fields,
     )
     # meta tags + content tags
     assert len(entry.tag_box_fields) == 2
@@ -208,7 +216,12 @@ def test_preferences(library):
 
 def test_save_windows_path(library, generate_tag):
     # pretend we are on windows and create `Path`
-    entry = Entry(path=PureWindowsPath("foo\\bar.txt"), folder=library.folder)
+
+    entry = Entry(
+        path=PureWindowsPath("foo\\bar.txt"),
+        folder=library.folder,
+        fields=library.default_fields,
+    )
     tag = generate_tag("win_path")
     tag_name = tag.name
 

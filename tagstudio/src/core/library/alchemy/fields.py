@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any, TYPE_CHECKING
 
@@ -11,7 +11,7 @@ from .db import Base
 from .enums import FieldTypeEnum
 
 if TYPE_CHECKING:
-    from .models import Entry, Tag, LibraryField
+    from .models import Entry, Tag, ValueType
 
 
 class BaseField(Base):
@@ -23,10 +23,10 @@ class BaseField(Base):
 
     @declared_attr
     def type_key(cls) -> Mapped[str]:
-        return mapped_column(ForeignKey("library_fields.key"))
+        return mapped_column(ForeignKey("value_type.key"))
 
     @declared_attr
-    def type(cls) -> Mapped[LibraryField]:
+    def type(cls) -> Mapped[ValueType]:
         return relationship(foreign_keys=[cls.type_key], lazy=False)  # type: ignore
 
     @declared_attr
@@ -127,21 +127,28 @@ class DatetimeField(BaseField):
 class DefaultField:
     id: int
     name: str
-    type: Any  # TextFieldTypes | TagBoxTypes | DateTimeTypes
+    type: FieldTypeEnum
+    is_default: bool = field(default=False)
 
 
 class _FieldID(Enum):
     """Only for bootstrapping content of DB table"""
 
-    TITLE = DefaultField(id=0, name="Title", type=FieldTypeEnum.TEXT_LINE)
+    TITLE = DefaultField(
+        id=0, name="Title", type=FieldTypeEnum.TEXT_LINE, is_default=True
+    )
     AUTHOR = DefaultField(id=1, name="Author", type=FieldTypeEnum.TEXT_LINE)
     ARTIST = DefaultField(id=2, name="Artist", type=FieldTypeEnum.TEXT_LINE)
     URL = DefaultField(id=3, name="URL", type=FieldTypeEnum.TEXT_LINE)
     DESCRIPTION = DefaultField(id=4, name="Description", type=FieldTypeEnum.TEXT_LINE)
     NOTES = DefaultField(id=5, name="Notes", type=FieldTypeEnum.TEXT_BOX)
     TAGS = DefaultField(id=6, name="Tags", type=FieldTypeEnum.TAGS)
-    TAGS_CONTENT = DefaultField(id=7, name="Content Tags", type=FieldTypeEnum.TAGS)
-    TAGS_META = DefaultField(id=8, name="Meta Tags", type=FieldTypeEnum.TAGS)
+    TAGS_CONTENT = DefaultField(
+        id=7, name="Content Tags", type=FieldTypeEnum.TAGS, is_default=True
+    )
+    TAGS_META = DefaultField(
+        id=8, name="Meta Tags", type=FieldTypeEnum.TAGS, is_default=True
+    )
     COLLATION = DefaultField(id=9, name="Collation", type=FieldTypeEnum.TEXT_LINE)
     DATE = DefaultField(id=10, name="Date", type=FieldTypeEnum.DATETIME)
     DATE_CREATED = DefaultField(id=11, name="Date Created", type=FieldTypeEnum.DATETIME)
