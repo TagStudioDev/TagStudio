@@ -8,7 +8,6 @@ on:
       - 'docs/**'
       - 'mkdocs.yml'
       - 'CHANGELOG.md'
-      - 'README.md'
       - '.github/workflows/publish_docs.yaml'
 
 permissions:
