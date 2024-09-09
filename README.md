@@ -11,7 +11,7 @@ TagStudio is a photo & file organization application with an underlying system t
 >
 > For the most recent stable feature release branch, see the [`Alpha-v9.4`](https://github.com/TagStudioDev/TagStudio/tree/Alpha-v9.4) branch. These v9.4 specific features are currently being backported to the SQL-ized `main` branch. [Feel free to help!](/CONTRIBUTING.md)
 
-> [!INFO]
+> [!NOTE]
 > This project is still in an early state. There are many missing optimizations and QoL features, as well as the presence of general quirks and occasional jankiness. Making frequent backups of your library save data is **always** important, regardless of what state the program is in.
 >
 > With this in mind, TagStudio will _NOT:_
