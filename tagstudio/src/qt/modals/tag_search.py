@@ -16,12 +16,13 @@ from PySide6.QtWidgets import (
     QScrollArea,
     QFrame,
 )
+from typing import Optional
 
 from src.core.library import Library
 from src.core.library.alchemy.enums import FilterState
 from src.core.palette import ColorType, get_tag_color
 from src.qt.widgets.panel import PanelWidget
-from src.qt.widgets.tag import TagWidget
+from src.qt.widgets.tag import TagWidget, Tag
 
 logger = structlog.get_logger(__name__)
 
@@ -33,7 +34,7 @@ class TagSearchPanel(PanelWidget):
         super().__init__()
         self.lib = library
         # self.callback = callback
-        self.first_tag_id = None
+        self.first_tag: Optional[Tag] = None
         self.tag_limit = 100
         # self.selected_tag: int = 0
         self.setMinimumSize(300, 400)
@@ -88,9 +89,9 @@ class TagSearchPanel(PanelWidget):
     # 	self.search_field.setFocus()
 
     def on_return(self, text: str):
-        if text and self.first_tag_id is not None:
-            # callback(self.first_tag_id)
-            self.tag_chosen.emit(self.first_tag_id)
+        if text and self.first_tag is not None:
+            # callback(self.first_tag)
+            self.tag_chosen.emit(self.first_tag.id)
             self.search_field.setText("")
             self.update_tags()
         else:
@@ -103,10 +104,13 @@ class TagSearchPanel(PanelWidget):
 
         found_tags = self.lib.search_tags(
             FilterState(
-                path=name,
+                tag=name,
                 page_size=self.tag_limit,
             )
         )
+
+        if len(found_tags) > 0:
+            self.first_tag = found_tags[0]
 
         for tag in found_tags:
             c = QWidget()
