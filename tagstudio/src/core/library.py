@@ -7,6 +7,7 @@
 import datetime
 import logging
 import os
+import platform
 import time
 import traceback
 import xml.etree.ElementTree as ET
@@ -917,12 +918,18 @@ class Library:
                 yield self.dir_file_count
                 start_time = time.time()
         # Sorts the files by date modified, descending.
-        if len(self.files_not_in_library) <= 100000:
+        if len(self.files_not_in_library) <= 150000:
             try:
-                self.files_not_in_library = sorted(
-                    self.files_not_in_library,
-                    key=lambda t: -(self.library_dir / t).stat().st_ctime,
-                )
+                if platform.system() == "Windows" or platform.system() == "Darwin":
+                    self.files_not_in_library = sorted(
+                        self.files_not_in_library,
+                        key=lambda t: -(self.library_dir / t).stat().st_birthtime,  # type: ignore[attr-defined]
+                    )
+                else:
+                    self.files_not_in_library = sorted(
+                        self.files_not_in_library,
+                        key=lambda t: -(self.library_dir / t).stat().st_ctime,
+                    )
             except (FileExistsError, FileNotFoundError):
                 print(
                     "[LIBRARY] [ERROR] Couldn't sort files, some were moved during the scanning/sorting process."
@@ -930,7 +937,7 @@ class Library:
                 pass
         else:
             print(
-                "[LIBRARY][INFO] Not bothering to sort files because there's OVER 100,000! Better sorting methods will be added in the future."
+                "[LIBRARY][INFO] Not bothering to sort files because there's OVER 150,000! Better sorting methods will be added in the future."
             )
 
     def refresh_missing_files(self):
