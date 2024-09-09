@@ -8,7 +8,7 @@ import typing
 
 import structlog
 from PySide6.QtCore import Signal, Qt
-from PySide6.QtWidgets import QPushButton
+from PySide6.QtWidgets import QPushButton, QLineEdit
 
 from src.core.constants import TAG_FAVORITE, TAG_ARCHIVED
 from src.core.library import Entry, Tag
@@ -49,6 +49,9 @@ class TagBoxWidget(FieldWidget):
         self.base_layout.setContentsMargins(0, 0, 0, 0)
         self.setLayout(self.base_layout)
 
+        self.tag_entry = QLineEdit()
+        self.base_layout.addWidget(self.tag_entry)
+
         self.add_button = QPushButton()
         self.add_button.setCursor(Qt.CursorShape.PointingHandCursor)
         self.add_button.setMinimumSize(23, 23)
@@ -72,13 +75,30 @@ class TagBoxWidget(FieldWidget):
             f"background: #555555;"
             f"}}"
         )
+
         tsp = TagSearchPanel(self.driver.lib)
-        tsp.tag_chosen.connect(lambda x: self.add_tag_callback(x))
+        tsp.tag_chosen.connect(lambda x: (
+                self.add_tag_callback(x),
+                self.tag_entry.clear(),
+            )
+        )
         self.add_modal = PanelModal(tsp, title, "Add Tags")
+
         self.add_button.clicked.connect(
             lambda: (
-                tsp.update_tags(),
                 self.add_modal.show(),
+            )
+        )
+        self.tag_entry.textChanged.connect(
+            lambda text: (
+                tsp.search_field.setText(text),
+                tsp.update_tags(tsp.search_field.text()),
+            )
+        )
+        self.tag_entry.returnPressed.connect(
+            lambda : (
+                tsp.on_return(self.tag_entry.text()),
+                self.tag_entry.clear(),
             )
         )
 
@@ -89,7 +109,7 @@ class TagBoxWidget(FieldWidget):
 
     def set_tags(self, tags: typing.Iterable[Tag]):
         is_recycled = False
-        while self.base_layout.itemAt(0) and self.base_layout.itemAt(1):
+        while self.base_layout.itemAt(0) and self.base_layout.itemAt(2):
             self.base_layout.takeAt(0).widget().deleteLater()
             is_recycled = True
 
@@ -111,15 +131,17 @@ class TagBoxWidget(FieldWidget):
             tag_widget.on_edit.connect(lambda t=tag: self.edit_tag(t))
             self.base_layout.addWidget(tag_widget)
 
-        # Move or add the '+' button.
+        # Move or add the tag entry and '+' button.
         if is_recycled:
             self.base_layout.addWidget(self.base_layout.takeAt(0).widget())
+            self.base_layout.addWidget(self.base_layout.takeAt(0).widget())
         else:
+            self.base_layout.addWidget(self.tag_entry)
             self.base_layout.addWidget(self.add_button)
 
         # Handles an edge case where there are no more tags and the '+' button
         # doesn't move all the way to the left.
-        if self.base_layout.itemAt(0) and not self.base_layout.itemAt(1):
+        if self.base_layout.itemAt(0) and not self.base_layout.itemAt(2):
             self.base_layout.update()
 
     def edit_tag(self, tag: Tag):
