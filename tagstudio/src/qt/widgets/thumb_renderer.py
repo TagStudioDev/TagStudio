@@ -44,6 +44,7 @@ from src.core.constants import FONT_SAMPLE_SIZES, FONT_SAMPLE_TEXT
 from src.core.media_types import MediaCategories, MediaType
 from src.core.palette import ColorType, get_ui_color
 from src.core.utils.encoding import detect_char_encoding
+from src.core.utils.image import replace_transparent_pixels
 from src.qt.helpers.blender_thumbnailer import blend_thumb
 from src.qt.helpers.color_overlay import theme_fg_overlay
 from src.qt.helpers.file_tester import is_readable_video
@@ -777,7 +778,8 @@ class ThumbRenderer(QObject):
         else:
             page_size *= size / page_size.width()
         # Enlarge image to improve image downscaling (kind of arbitrary)
-        page_size *= 2.5
+        IMAGE_ENLARGEMENT_FACTOR = 2.5
+        page_size *= IMAGE_ENLARGEMENT_FACTOR
         # Render image with no anti-aliasing for speed
         render_options: QPdfDocumentRenderOptions = QPdfDocumentRenderOptions()
         render_options.setRenderFlags(
@@ -789,13 +791,13 @@ class ThumbRenderer(QObject):
         rendered_qimage: QImage = document.render(0, page_size.toSize(), render_options)
         buffer: QBuffer = QBuffer()
         buffer.open(QBuffer.OpenModeFlag.ReadWrite)
-        rendered_qimage.save(buffer, "PNG")
-        pil_image: Image.Image = Image.open(BytesIO(buffer.buffer().data()))
-        buffer.close()
+        try:
+            rendered_qimage.save(buffer, "PNG")
+            pil_image: Image.Image = Image.open(BytesIO(buffer.buffer().data()))
+        finally:
+            buffer.close()
         # Replace transparent pixels with white (otherwise Background defaults to transparent)
-        pixel_array = np.asarray(pil_image.convert("RGBA")).copy()
-        pixel_array[pixel_array[:, :, 3] == 0] = [255, 255, 255, 255]
-        return Image.fromarray(pixel_array)
+        return replace_transparent_pixels(pil_image)
 
     def render(
         self,
