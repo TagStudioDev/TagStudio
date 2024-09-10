@@ -898,7 +898,7 @@ class Library:
                 ):
                     # If the file/path is not mapped in the Library:
                     if self.filename_to_entry_id_map.get(f) is None:
-                        # Discord paths and files in unwanted folders.
+                        # Discard paths and files in unwanted folders.
                         if (
                             "$RECYCLE.BIN" not in f.parts
                             and TS_FOLDER_NAME not in f.parts
