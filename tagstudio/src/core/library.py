@@ -737,7 +737,9 @@ class Library:
         """Maps a full filepath to its corresponding Entry's ID."""
         self.filename_to_entry_id_map.clear()
         for entry in self.entries:
-            self.filename_to_entry_id_map[(entry.path / entry.filename)] = entry.id
+            self.filename_to_entry_id_map[
+                (self.library_dir / entry.path / entry.filename)
+            ] = entry.id
 
     # def _map_filenames_to_entry_ids(self):
     # 	"""Maps the file paths of entries to their index in the library list."""
@@ -884,59 +886,62 @@ class Library:
 
         # Scans the directory for files, keeping track of:
         #   - Total file count
-        #   - Files without library entries
-        # for type in TYPES:
-        start_time = time.time()
+        #   - Files without Library entries
+        start_time_total = time.time()
+        start_time_loop = time.time()
+        ext_set = set(self.ext_list)  # Should be slightly faster
         for f in self.library_dir.glob("**/*"):
             try:
-                if (
-                    "$RECYCLE.BIN" not in f.parts
-                    and TS_FOLDER_NAME not in f.parts
-                    and "tagstudio_thumbs" not in f.parts
-                    and not f.is_dir()
+                ext: str = f.suffix.lower()
+                if (ext not in ext_set and self.is_exclude_list) or (
+                    ext in ext_set and not self.is_exclude_list
                 ):
-                    if f.suffix.lower() not in self.ext_list and self.is_exclude_list:
+                    # If the file/path is not mapped in the Library:
+                    if self.filename_to_entry_id_map.get(f) is None:
+                        # Discord paths and files in unwanted folders.
+                        if (
+                            "$RECYCLE.BIN" not in f.parts
+                            and TS_FOLDER_NAME not in f.parts
+                            and "tagstudio_thumbs" not in f.parts
+                            and not f.is_dir()
+                        ):
+                            self.dir_file_count += 1
+                            self.files_not_in_library.append(f)
+                    # If file is already mapped in the Library, no other checks are required.
+                    else:
                         self.dir_file_count += 1
-                        file = f.relative_to(self.library_dir)
-                        if file not in self.filename_to_entry_id_map:
-                            self.files_not_in_library.append(file)
-                    elif f.suffix.lower() in self.ext_list and not self.is_exclude_list:
-                        self.dir_file_count += 1
-                        file = f.relative_to(self.library_dir)
-                        try:
-                            _ = self.filename_to_entry_id_map[file]
-                        except KeyError:
-                            # print(file)
-                            self.files_not_in_library.append(file)
+
             except PermissionError:
-                logging.info(
-                    f"The File/Folder {f} cannot be accessed, because it requires higher permission!"
-                )
-            end_time = time.time()
-            # Yield output every 1/30 of a second
-            if (end_time - start_time) > 0.034:
+                logging.info(f'[LIBRARY] Cannot access "{f}": PermissionError')
+            end_time_loop = time.time()
+            # Yield output every 1/30 of a second.
+            if (end_time_loop - start_time_loop) > 0.034:
                 yield self.dir_file_count
-                start_time = time.time()
+                start_time_loop = time.time()
+        end_time_total = time.time()
+        logging.info(
+            f"[LIBRARY] Scanned directories in {(end_time_total - start_time_total):.3f} seconds"
+        )
         # Sorts the files by date modified, descending.
         if len(self.files_not_in_library) <= 150000:
             try:
                 if platform.system() == "Windows" or platform.system() == "Darwin":
                     self.files_not_in_library = sorted(
                         self.files_not_in_library,
-                        key=lambda t: -(self.library_dir / t).stat().st_birthtime,  # type: ignore[attr-defined]
+                        key=lambda t: -(t).stat().st_birthtime,  # type: ignore[attr-defined]
                     )
                 else:
                     self.files_not_in_library = sorted(
                         self.files_not_in_library,
-                        key=lambda t: -(self.library_dir / t).stat().st_ctime,
+                        key=lambda t: -(t).stat().st_ctime,
                     )
             except (FileExistsError, FileNotFoundError):
-                print(
-                    "[LIBRARY] [ERROR] Couldn't sort files, some were moved during the scanning/sorting process."
+                logging.info(
+                    "[LIBRARY][ERROR] Couldn't sort files, some were moved during the scanning/sorting process."
                 )
                 pass
         else:
-            print(
+            logging.info(
                 "[LIBRARY][INFO] Not bothering to sort files because there's OVER 150,000! Better sorting methods will be added in the future."
             )
 
@@ -957,7 +962,7 @@ class Library:
         # Step [1/2]:
         # Remove this Entry from the Entries list.
         entry = self.get_entry(entry_id)
-        path = entry.path / entry.filename
+        path = self.library_dir / entry.path / entry.filename
         # logging.info(f'Removing path: {path}')
 
         del self.filename_to_entry_id_map[path]
@@ -1087,8 +1092,8 @@ class Library:
                             )
                         )
                 for match in matches:
-                    file_1 = files[match[0]].relative_to(self.library_dir)
-                    file_2 = files[match[1]].relative_to(self.library_dir)
+                    file_1 = files[match[0]]
+                    file_2 = files[match[1]]
 
                     if (
                         file_1 in self.filename_to_entry_id_map.keys()
@@ -1289,8 +1294,7 @@ class Library:
         """Adds files from the `files_not_in_library` list to the Library as Entries. Returns list of added indices."""
         new_ids: list[int] = []
         for file in self.files_not_in_library:
-            path = Path(file)
-            # print(os.path.split(file))
+            path = Path(*file.parts[len(self.library_dir.parts) :])
             entry = Entry(
                 id=self._next_entry_id, filename=path.name, path=path.parent, fields=[]
             )
@@ -1300,8 +1304,6 @@ class Library:
         self._map_filenames_to_entry_ids()
         self.files_not_in_library.clear()
         return new_ids
-
-        self.files_not_in_library.clear()
 
     def get_entry(self, entry_id: int) -> Entry:
         """Returns an Entry object given an Entry ID."""
@@ -1323,9 +1325,7 @@ class Library:
         """Returns an Entry ID given the full filepath it points to."""
         try:
             if self.entries:
-                return self.filename_to_entry_id_map[
-                    Path(filename).relative_to(self.library_dir)
-                ]
+                return self.filename_to_entry_id_map[filename]
         except KeyError:
             return -1
 
