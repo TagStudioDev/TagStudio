@@ -6,17 +6,22 @@ jobs:
   pytest:
     name: Run tests
     runs-on: ubuntu-latest
-    container:
-      image: python:3.12-bullseye
 
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
 
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
       - name: Install system dependencies
         run: |
-          apt-get update && \
-          apt-get install -y --no-install-recommends \
+          # dont run update, it is slow 
+          # sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
             libxkbcommon-x11-0 \
             x11-utils \
             libyaml-dev \
@@ -29,9 +34,7 @@ jobs:
             libxcb-xinerama0 \
             libopengl0 \
             libxcb-cursor0 \
-            libpulse0 \
-            xvfb \
-            xauth
+            libpulse0
 
       - name: Install dependencies
         run: |
