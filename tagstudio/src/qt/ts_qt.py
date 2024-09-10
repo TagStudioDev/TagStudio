@@ -323,7 +323,7 @@ class QtDriver(QObject):
         file_menu.addSeparator()
 
         close_library_action = QAction("&Close Library", menu_bar)
-        close_library_action.triggered.connect(lambda: self.close_library())
+        close_library_action.triggered.connect(self.close_library)
         file_menu.addAction(close_library_action)
 
         # Edit Menu ============================================================
@@ -553,9 +553,7 @@ class QtDriver(QObject):
 
     def shutdown(self):
         """Save Library on Application Exit"""
-        if self.lib and self.lib.library_dir:
-            self.settings.setValue(SettingItems.LAST_LIBRARY, self.lib.library_dir)
-            self.settings.sync()
+        self.close_library(is_shutdown=True)
         logger.info("[SHUTDOWN] Ending Thumbnail Threads...")
         for _ in self.thumb_threads:
             self.thumb_job_queue.put(Consumer.MARKER_QUIT)
@@ -567,7 +565,7 @@ class QtDriver(QObject):
 
         QApplication.quit()
 
-    def close_library(self):
+    def close_library(self, is_shutdown: bool = False):
         if not self.lib.library_dir:
             logger.info("No Library to Close")
             return
@@ -575,15 +573,21 @@ class QtDriver(QObject):
         logger.info("Closing Library...")
         self.main_window.statusbar.showMessage("Closing Library...")
         start_time = time.time()
+
         self.settings.setValue(SettingItems.LAST_LIBRARY, self.lib.library_dir)
         self.settings.sync()
 
-        title_text = f"{self.base_title}"
-        self.main_window.setWindowTitle(title_text)
+        self.lib.close()
+
+        if is_shutdown:
+            # no need to do other things on shutdown
+            return
+
+        self.main_window.setWindowTitle(self.base_title)
 
         self.selected = []
         self.frame_content = []
-        self.item_thumbs = []
+        [x.set_mode(None) for x in self.item_thumbs]
 
         self.preview_panel.update_widgets()
         self.main_window.toggle_landing_page(True)
@@ -841,15 +845,10 @@ class QtDriver(QObject):
         self.item_thumbs[grid_idx].hide()
 
     def _init_thumb_grid(self):
-        # logger.info('Initializing Thumbnail Grid...')
         layout = FlowLayout()
         layout.setGridEfficiency(True)
-        # layout.setContentsMargins(0,0,0,0)
         layout.setSpacing(min(self.thumb_size // 10, 12))
-        # layout = QHBoxLayout()
-        # layout.setSizeConstraint(QLayout.SizeConstraint.SetMaximumSize)
-        # layout = QListView()
-        # layout.setViewMode(QListView.ViewMode.IconMode)
+        layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         # TODO - init after library is loaded, it can have different page_size
         for grid_idx in range(self.filter.page_size):
@@ -862,7 +861,6 @@ class QtDriver(QObject):
         self.flow_container: QWidget = QWidget()
         self.flow_container.setObjectName("flowContainer")
         self.flow_container.setLayout(layout)
-        layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
         sa: QScrollArea = self.main_window.scrollArea
         sa.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         sa.setWidgetResizable(True)

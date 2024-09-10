@@ -105,8 +105,6 @@ def qt_driver(qtbot, library):
             open = pathlib.Path(tmp_dir)
             ci = True
 
-        # patch CustomRunnable
-
         with patch("src.qt.ts_qt.Consumer"), patch("src.qt.ts_qt.CustomRunnable"):
             driver = QtDriver(backend, Args())
 

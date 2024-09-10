@@ -95,8 +95,8 @@ def get_default_tags() -> tuple[Tag, ...]:
 class Library:
     """Class for the Library object, and all CRUD operations made upon it."""
 
-    library_dir: Path
-    storage_path: Path | str
+    library_dir: Path | None = None
+    storage_path: Path | str | None
     engine: Engine | None
     folder: Folder | None
 
@@ -104,6 +104,13 @@ class Library:
 
     missing_tracker: "MissingRegistry"
     dupe_tracker: "DupeRegistry"
+
+    def close(self):
+        if self.engine:
+            self.engine.dispose()
+        self.library_dir = None
+        self.storage_path = None
+        self.folder = None
 
     def open_library(
         self, library_dir: Path | str, storage_path: str | None = None
