@@ -1,6 +1,7 @@
 from pathlib import Path
 from unittest.mock import Mock
 
+
 from src.core.library import Entry
 from src.core.library.alchemy.enums import FilterState
 from src.core.library.json.library import ItemType
@@ -106,6 +107,11 @@ def test_close_library(qt_driver):
     qt_driver.close_library()
 
     # Then
-    assert len(qt_driver.frame_content) == 0
-    assert len(qt_driver.item_thumbs) == 0
-    assert qt_driver.selected == []
+    assert qt_driver.lib.library_dir is None
+    assert not qt_driver.frame_content
+    assert not qt_driver.selected
+    assert not any(x.mode for x in qt_driver.item_thumbs)
+
+    # close library again to see there's no error
+    qt_driver.close_library()
+    qt_driver.close_library(is_shutdown=True)
