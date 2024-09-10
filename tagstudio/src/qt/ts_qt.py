@@ -1091,7 +1091,13 @@ class QtDriver(QObject):
             )
         )
         r = CustomRunnable(lambda: iterator.run())
-        r.done.connect(lambda: (pw.hide(), pw.deleteLater(), self.filter_items("")))
+        r.done.connect(
+            lambda: (
+                pw.hide(),
+                pw.deleteLater(),
+                self.filter_items(self.main_window.searchField.text()),
+            )
+        )
         QThreadPool.globalInstance().start(r)
 
     def new_file_macros_runnable(self, new_ids):
