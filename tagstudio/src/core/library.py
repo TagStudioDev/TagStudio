@@ -891,38 +891,47 @@ class Library:
         start_time_loop = time.time()
         ext_set = set(self.ext_list)  # Should be slightly faster
         for f in self.library_dir.glob("**/*"):
-            try:
-                ext: str = f.suffix.lower()
-                if (ext not in ext_set and self.is_exclude_list) or (
-                    ext in ext_set and not self.is_exclude_list
-                ):
-                    # If the file/path is not mapped in the Library:
-                    if self.filename_to_entry_id_map.get(f) is None:
-                        # Discard paths and files in unwanted folders.
-                        if (
-                            "$RECYCLE.BIN" not in f.parts
-                            and TS_FOLDER_NAME not in f.parts
-                            and "tagstudio_thumbs" not in f.parts
-                            and not f.is_dir()
-                        ):
-                            self.dir_file_count += 1
-                            self.files_not_in_library.append(f)
-                    # If file is already mapped in the Library, no other checks are required.
-                    else:
-                        self.dir_file_count += 1
-
-            except PermissionError:
-                logging.info(f'[LIBRARY] Cannot access "{f}": PermissionError')
             end_time_loop = time.time()
-            # Yield output every 1/30 of a second.
+            # Yield output every 1/30 of a second
             if (end_time_loop - start_time_loop) > 0.034:
                 yield self.dir_file_count
                 start_time_loop = time.time()
+            try:
+                # Skip this file if it should be excluded
+                ext: str = f.suffix.lower()
+                if (ext in ext_set and self.is_exclude_list) or (
+                    ext not in ext_set and not self.is_exclude_list
+                ):
+                    continue
+
+                # Finish if the file/path is already mapped in the Library
+                if self.filename_to_entry_id_map.get(f) is not None:
+                    # No other checks are required.
+                    self.dir_file_count += 1
+                    continue
+
+                # If the file is new, check for validity
+                if (
+                    "$RECYCLE.BIN" in f.parts
+                    or TS_FOLDER_NAME in f.parts
+                    or "tagstudio_thumbs" in f.parts
+                    or f.is_dir()
+                ):
+                    continue
+
+                # Add the validated new file to the Library
+                self.dir_file_count += 1
+                self.files_not_in_library.append(f)
+
+            except PermissionError:
+                logging.info(f'[LIBRARY] Cannot access "{f}": PermissionError')
+
+        yield self.dir_file_count
         end_time_total = time.time()
         logging.info(
             f"[LIBRARY] Scanned directories in {(end_time_total - start_time_total):.3f} seconds"
         )
-        # Sorts the files by date modified, descending.
+        # Sorts the files by date modified, descending
         if len(self.files_not_in_library) <= 150000:
             try:
                 if platform.system() == "Windows" or platform.system() == "Darwin":
