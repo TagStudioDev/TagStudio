@@ -85,6 +85,10 @@ def test_tag_search(library):
         FilterState(tag=tag.name.upper()),
     )
 
+    assert library.search_tags(
+        FilterState(tag=tag.name[2:-2])
+    )
+
     assert not library.search_tags(
         FilterState(tag=tag.name * 2),
     )
