@@ -7,8 +7,8 @@ import math
 import typing
 
 import structlog
-from PySide6.QtCore import Signal, Qt
-from PySide6.QtWidgets import QPushButton, QLineEdit
+from PySide6.QtCore import Signal, Qt, QStringListModel
+from PySide6.QtWidgets import QPushButton, QLineEdit, QCompleter
 
 from src.core.constants import TAG_FAVORITE, TAG_ARCHIVED
 from src.core.library import Entry, Tag
@@ -26,6 +26,19 @@ if typing.TYPE_CHECKING:
 
 logger = structlog.get_logger(__name__)
 
+
+class TagCompleter(QCompleter):
+    def __init__(self, parent, lib):
+        super().__init__(parent)
+        self.lib = lib
+        self.update([])
+    
+    def update(self, exclude:typing.Iterable[str]):
+        tags = [tag.name for tag in self.lib.tags]
+        for value in exclude:
+            tags.remove(value)
+        model = QStringListModel(tags, self)
+        self.setModel(model)
 
 class TagBoxWidget(FieldWidget):
     updated = Signal()
@@ -52,6 +65,10 @@ class TagBoxWidget(FieldWidget):
         self.tag_entry = QLineEdit()
         self.base_layout.addWidget(self.tag_entry)
 
+        self.tag_completer = TagCompleter(self.tag_entry, self.driver.lib)
+        self.tag_completer.setCaseSensitivity(Qt.CaseSensitivity.CaseInsensitive)
+        self.tag_completer.setWidget(self.tag_entry)
+
         self.add_button = QPushButton()
         self.add_button.setCursor(Qt.CursorShape.PointingHandCursor)
         self.add_button.setMinimumSize(23, 23)
@@ -77,27 +94,30 @@ class TagBoxWidget(FieldWidget):
         )
 
         tsp = TagSearchPanel(self.driver.lib)
-        tsp.tag_chosen.connect(lambda x: (
+        tsp.tag_chosen.connect(
+            lambda x: (
                 self.add_tag_callback(x),
                 self.tag_entry.clear(),
             )
         )
         self.add_modal = PanelModal(tsp, title, "Add Tags")
 
-        self.add_button.clicked.connect(
-            lambda: (
-                self.add_modal.show(),
-            )
-        )
+        self.add_button.clicked.connect(self.add_modal.show)
         self.tag_entry.textChanged.connect(
             lambda text: (
                 tsp.search_field.setText(text),
-                tsp.update_tags(tsp.search_field.text()),
+                tsp.update_tags(text),
+                self.tag_completer.setCompletionPrefix(text),
+                self.tag_completer.complete(),
             )
         )
         self.tag_entry.returnPressed.connect(
-            lambda : (
-                tsp.on_return(self.tag_entry.text()),
+            lambda: self.tag_completer.activated.emit(self.tag_entry.text())
+        )
+        self.tag_completer.activated.connect(
+            lambda selected: (
+                tsp.update_tags(selected),
+                tsp.on_return(selected),
                 self.tag_entry.clear(),
             )
         )
@@ -108,6 +128,7 @@ class TagBoxWidget(FieldWidget):
         self.field = field
 
     def set_tags(self, tags: typing.Iterable[Tag]):
+        self.tag_completer.update(tag.name for tag in tags)
         is_recycled = False
         while self.base_layout.itemAt(0) and self.base_layout.itemAt(2):
             self.base_layout.takeAt(0).widget().deleteLater()
