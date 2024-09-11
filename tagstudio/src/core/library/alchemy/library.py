@@ -25,7 +25,6 @@ from sqlalchemy.orm import (
     selectinload,
     make_transient,
 )
-from typing import TYPE_CHECKING
 
 from .db import make_tables
 from .enums import TagColor, FilterState, FieldTypeEnum
@@ -45,10 +44,6 @@ from ...constants import (
     TAG_FAVORITE,
     BACKUP_FOLDER_NAME,
 )
-
-if TYPE_CHECKING:
-    from ...utils.dupe_files import DupeRegistry
-    from ...utils.missing_files import MissingRegistry
 
 LIBRARY_FILENAME: str = "ts_library.sqlite"
 
@@ -99,11 +94,6 @@ class Library:
     storage_path: Path | str | None
     engine: Engine | None
     folder: Folder | None
-
-    ignored_extensions: list[str]
-
-    missing_tracker: "MissingRegistry"
-    dupe_tracker: "DupeRegistry"
 
     def close(self):
         if self.engine:
@@ -181,9 +171,6 @@ class Library:
 
                 session.commit()
                 self.folder = folder
-
-        # load ignored extensions
-        self.ignored_extensions = self.prefs(LibraryPrefs.EXTENSION_LIST)
 
     @property
     def default_fields(self) -> list[BaseField]:
