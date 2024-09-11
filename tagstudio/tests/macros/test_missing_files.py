@@ -27,5 +27,5 @@ def test_refresh_missing_files(library: Library):
     assert list(registry.fix_missing_files()) == [1, 2]
 
     # `bar.md` should be relinked to new correct path
-    _, entries = library.search_library(FilterState(path="bar.md"))
-    assert entries[0].path == pathlib.Path("bar.md")
+    results = library.search_library(FilterState(path="bar.md"))
+    assert results[0].path == pathlib.Path("bar.md")

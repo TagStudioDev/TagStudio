@@ -50,15 +50,15 @@ class DupeRegistry:
                         # The file is not in the library directory
                         continue
 
-                    _, entries = self.library.search_library(
+                    results = self.library.search_library(
                         FilterState(path=path_relative),
                     )
 
-                    if not entries:
+                    if not results:
                         # file not in library
                         continue
 
-                    files.append(entries[0])
+                    files.append(results[0])
 
                 if not len(files) > 1:
                     # only one file in the group, nothing to do

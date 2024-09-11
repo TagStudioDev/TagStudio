@@ -63,12 +63,12 @@ def update_selected_entry(driver: "QtDriver"):
     for grid_idx in driver.selected:
         entry = driver.frame_content[grid_idx]
         # reload entry
-        _, entries = driver.lib.search_library(FilterState(id=entry.id))
+        results = driver.lib.search_library(FilterState(id=entry.id))
         logger.info(
-            "found item", entries=entries, grid_idx=grid_idx, lookup_id=entry.id
+            "found item", entries=len(results), grid_idx=grid_idx, lookup_id=entry.id
         )
-        assert entries, f"Entry not found: {entry.id}"
-        driver.frame_content[grid_idx] = entries[0]
+        assert results, f"Entry not found: {entry.id}"
+        driver.frame_content[grid_idx] = next(results)
 
 
 class PreviewPanel(QWidget):
@@ -499,11 +499,14 @@ class PreviewPanel(QWidget):
         # TODO - Entry reload is maybe not necessary
         for grid_idx in self.driver.selected:
             entry = self.driver.frame_content[grid_idx]
-            _, entries = self.lib.search_library(FilterState(id=entry.id))
+            results = self.lib.search_library(FilterState(id=entry.id))
             logger.info(
-                "found item", entries=entries, grid_idx=grid_idx, lookup_id=entry.id
+                "found item",
+                entries=len(results.items),
+                grid_idx=grid_idx,
+                lookup_id=entry.id,
             )
-            self.driver.frame_content[grid_idx] = entries[0]
+            self.driver.frame_content[grid_idx] = results[0]
 
         if len(self.driver.selected) == 1:
             # 1 Selected Entry

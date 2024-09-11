@@ -487,7 +487,7 @@ class ItemThumb(FlowWidget):
             # update the entry
             self.driver.frame_content[idx] = self.lib.search_library(
                 FilterState(id=entry.id)
-            )[1][0]
+            ).items[0]
 
         self.driver.update_badges(update_items)
 
