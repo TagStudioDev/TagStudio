@@ -131,8 +131,8 @@ class VideoPlayer(QGraphicsView):
         open_file_action.triggered.connect(self.opener.open_file)
         open_file_action.setShortcut(
             QKeyCombination(
-                Qt.KeyboardModifier.ControlModifier | Qt.KeyboardModifier.ShiftModifier,
-                Qt.Key.Key_O,
+                Qt.KeyboardModifier.ControlModifier,
+                Qt.Key.Key_Down,
             )
         )
         open_explorer_action = QAction("Open file in explorer", self)

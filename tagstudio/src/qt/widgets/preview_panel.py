@@ -101,8 +101,8 @@ class PreviewPanel(QWidget):
         self.open_file_action = QAction("Open file", self)
         self.open_file_action.setShortcut(
             QKeyCombination(
-                Qt.KeyboardModifier.ControlModifier | Qt.KeyboardModifier.ShiftModifier,
-                Qt.Key.Key_O,
+                Qt.KeyboardModifier.ControlModifier,
+                Qt.Key.Key_Down,
             )
         )
         self.open_explorer_action = QAction("Open file in explorer", self)
