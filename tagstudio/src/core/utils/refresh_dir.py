@@ -5,7 +5,7 @@ from pathlib import Path
 
 import structlog
 
-from src.core.constants import TS_FOLDER_NAME, LibraryPrefs
+from src.core.constants import TS_FOLDER_NAME
 from src.core.library import Library, Entry
 
 logger = structlog.get_logger(__name__)
@@ -44,39 +44,22 @@ class RefreshDirTracker:
         if self.library.library_dir is None:
             raise ValueError("No library directory set.")
 
-        is_exclude_list = self.library.prefs(LibraryPrefs.IS_EXCLUDE_LIST)
-        exclude_list = set(self.library.prefs(LibraryPrefs.EXTENSION_LIST))
-
-        def skip_suffix(suffix: str) -> bool:
-            """Determine if the file extension should be skipped.
-
-            Declared as local function as it's faster.
-
-            - check if the suffix is in the library's "exclude list"
-            - if library uses "exclude mode", and extensions is in the list, we skip
-            - if library uses "include mode", and extensions is not in the list, we skip
-            """
-            return (suffix.lower() in exclude_list) == is_exclude_list
-
         start_time_total = time()
         start_time_loop = time()
 
         self.files_not_in_library = []
         dir_file_count = 0
 
-        for path_item in lib_path.glob("**/*"):
-            str_path = str(path_item)
-            if path_item.is_dir():
+        for path in lib_path.glob("**/*"):
+            str_path = str(path)
+            if path.is_dir():
                 continue
 
             if "$RECYCLE.BIN" in str_path or TS_FOLDER_NAME in str_path:
                 continue
 
-            if skip_suffix(path_item.suffix):
-                continue
-
             dir_file_count += 1
-            relative_path = path_item.relative_to(lib_path)
+            relative_path = path.relative_to(lib_path)
             # TODO - load these in batch somehow
             if not self.library.has_path_entry(relative_path):
                 self.files_not_in_library.append(relative_path)

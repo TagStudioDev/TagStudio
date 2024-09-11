@@ -22,9 +22,4 @@ def test_refresh_new_files(library, exclude_mode):
     assert not list(registry.refresh_dir(library.library_dir))
 
     # Then
-    if exclude_mode:
-        # .md is in the list & is_exclude_list is True - should not be registered
-        assert not registry.files_not_in_library
-    else:
-        # .md is in the list & is_exclude_list is False - should be registered
-        assert registry.files_not_in_library == [pathlib.Path("FOO.MD")]
+    assert registry.files_not_in_library == [pathlib.Path("FOO.MD")]
