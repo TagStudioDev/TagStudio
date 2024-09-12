@@ -24,7 +24,7 @@ def cwd():
 @pytest.fixture
 def library(request):
     # when no param is passed, use the default
-    library_path = "/tmp/"
+    library_path = "/dev/null/"
     if hasattr(request, "param"):
         if isinstance(request.param, TemporaryDirectory):
             library_path = request.param.name

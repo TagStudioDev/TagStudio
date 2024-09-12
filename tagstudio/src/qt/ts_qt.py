@@ -675,7 +675,7 @@ class QtDriver(QObject):
         )
         pw.show()
 
-        iterator = FunctionIterator(tracker.refresh_dir)
+        iterator = FunctionIterator(lambda: tracker.refresh_dir(self.lib.library_dir))
         iterator.value.connect(
             lambda x: (
                 pw.update_progress(x + 1),
