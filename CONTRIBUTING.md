@@ -154,11 +154,9 @@ Most of the style guidelines can be checked, fixed, and enforced via Ruff. Older
 
 #### Git/GitHub Specifics
 
+- [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0) is used as a guideline for commit messages. This allows us to easily generate changelogs for releases.
+  - See some [examples](https://www.conventionalcommits.org/en/v1.0.0/#examples) of what this looks like in practice.
 - Use clear and concise commit messages. If your commit does too much, either consider breaking it up into smaller commits or providing extra detail in the commit description.
-- Use imperative-style present-tense commit messages. Examples:
-  - "Add feature foo"
-  - "Change method bar"
-  - "Fix function foobar"
 - Pull Requests should have an adequate title and description which clearly outline your intentions and changes/additions. Feel free to provide screenshots, GIFs, or videos, especially for UI changes.
 
 ## Documentation Guidelines
