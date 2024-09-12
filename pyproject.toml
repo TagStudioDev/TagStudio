@@ -1,9 +1,13 @@
 [tool.ruff]
 exclude = ["main_window.py", "home_ui.py", "resources.py", "resources_rc.py"]
+line-length = 100
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
 
 [tool.ruff.lint]
-select = ["E", "F", "UP", "B", 'SIM']
-ignore = ["E402", "E501", "F541"]
+select = ["E", "F", "D", "I", "UP", "B", "SIM"]
+ignore = ["E402", "E501", "F541", "D103"]
 
 [tool.mypy]
 strict_optional = false
