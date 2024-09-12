@@ -423,8 +423,8 @@ class Library:
             if search.tag:
                 query = query.where(
                     or_(
-                        Tag.name.ilike(search.tag),
-                        Tag.shorthand.ilike(search.tag),
+                        Tag.name.icontains(search.tag),
+                        Tag.shorthand.icontains(search.tag),
                     )
                 )
 
