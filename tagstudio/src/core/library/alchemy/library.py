@@ -48,8 +48,6 @@ from .fields import (
 from .joins import TagField, TagSubtag
 from .models import Entry, Folder, Preferences, Tag, TagAlias, ValueType
 
-LIBRARY_FILENAME: str = "ts_library.sqlite"
-
 logger = structlog.get_logger(__name__)
 
 
@@ -115,6 +113,15 @@ class SearchResult:
         return self.items[index]
 
 
+@dataclass
+class LibraryStatus:
+    """Keep status of library opening operation."""
+
+    success: bool
+    library_path: Path | None = None
+    message: str | None = None
+
+
 class Library:
     """Class for the Library object, and all CRUD operations made upon it."""
 
@@ -123,6 +130,8 @@ class Library:
     engine: Engine | None
     folder: Folder | None
 
+    FILENAME: str = "ts_library.sqlite"
+
     def close(self):
         if self.engine:
             self.engine.dispose()
@@ -130,23 +139,19 @@ class Library:
         self.storage_path = None
         self.folder = None
 
-    def open_library(self, library_dir: Path | str, storage_path: str | None = None) -> None:
-        if isinstance(library_dir, str):
-            library_dir = Path(library_dir)
-
-        self.library_dir = library_dir
+    def open_library(self, library_dir: Path, storage_path: str | None = None) -> LibraryStatus:
         if storage_path == ":memory:":
             self.storage_path = storage_path
         else:
-            self.verify_ts_folders(self.library_dir)
-            self.storage_path = self.library_dir / TS_FOLDER_NAME / LIBRARY_FILENAME
+            self.verify_ts_folders(library_dir)
+            self.storage_path = library_dir / TS_FOLDER_NAME / self.FILENAME
 
         connection_string = URL.create(
             drivername="sqlite",
             database=str(self.storage_path),
         )
 
-        logger.info("opening library", connection_string=connection_string)
+        logger.info("opening library", library_dir=library_dir, connection_string=connection_string)
         self.engine = create_engine(connection_string)
         with Session(self.engine) as session:
             make_tables(self.engine)
@@ -183,11 +188,30 @@ class Library:
                     logger.debug("ValueType already exists", field=field)
                     session.rollback()
 
+            db_version = session.scalar(
+                select(Preferences).where(Preferences.key == LibraryPrefs.DB_VERSION.name)
+            )
+            # if the db version is different, we cant proceed
+            if db_version.value != LibraryPrefs.DB_VERSION.value:
+                logger.error(
+                    "DB version mismatch",
+                    db_version=db_version.value,
+                    expected=LibraryPrefs.DB_VERSION.value,
+                )
+                # TODO - handle migration
+                return LibraryStatus(
+                    success=False,
+                    message=(
+                        "Library version mismatch.\n"
+                        f"Found: v{db_version.value}, expected: v{LibraryPrefs.DB_VERSION.value}"
+                    ),
+                )
+
             # check if folder matching current path exists already
-            self.folder = session.scalar(select(Folder).where(Folder.path == self.library_dir))
+            self.folder = session.scalar(select(Folder).where(Folder.path == library_dir))
             if not self.folder:
                 folder = Folder(
-                    path=self.library_dir,
+                    path=library_dir,
                     uuid=str(uuid4()),
                 )
                 session.add(folder)
@@ -195,6 +219,10 @@ class Library:
 
                 session.commit()
                 self.folder = folder
+
+        # everything is fine, set the library path
+        self.library_dir = library_dir
+        return LibraryStatus(success=True, library_path=library_dir)
 
     @property
     def default_fields(self) -> list[BaseField]:
@@ -324,14 +352,17 @@ class Library:
 
         with Session(self.engine) as session:
             # add all items
-            session.add_all(items)
-            session.flush()
+
+            try:
+                session.add_all(items)
+                session.commit()
+            except IntegrityError:
+                session.rollback()
+                logger.exception("IntegrityError")
+                return []
 
             new_ids = [item.id for item in items]
-
             session.expunge_all()
-
-            session.commit()
 
         return new_ids
 
@@ -396,9 +427,9 @@ class Library:
 
             if not search.id:  # if `id` is set, we don't need to filter by extensions
                 if extensions and is_exclude_list:
-                    statement = statement.where(Entry.path.notilike(f"%.{','.join(extensions)}"))
+                    statement = statement.where(Entry.suffix.notin_(extensions))
                 elif extensions:
-                    statement = statement.where(Entry.path.ilike(f"%.{','.join(extensions)}"))
+                    statement = statement.where(Entry.suffix.in_(extensions))
 
             statement = statement.options(
                 selectinload(Entry.text_fields),
@@ -770,7 +801,7 @@ class Library:
         target_path = self.library_dir / TS_FOLDER_NAME / BACKUP_FOLDER_NAME / filename
 
         shutil.copy2(
-            self.library_dir / TS_FOLDER_NAME / LIBRARY_FILENAME,
+            self.library_dir / TS_FOLDER_NAME / self.FILENAME,
             target_path,
         )
 

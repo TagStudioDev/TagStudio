@@ -3,39 +3,26 @@ from tempfile import TemporaryDirectory
 
 import pytest
 from src.core.constants import LibraryPrefs
-from src.core.library.alchemy import Entry, Library
+from src.core.library.alchemy import Entry
 from src.core.library.alchemy.enums import FilterState
 from src.core.library.alchemy.fields import TextField, _FieldID
 
 
-def test_library_bootstrap():
-    with TemporaryDirectory() as tmp_dir:
-        lib = Library()
-        lib.open_library(tmp_dir)
-        assert lib.engine
-
-
-def test_library_add_file():
+@pytest.mark.parametrize("library", [TemporaryDirectory()], indirect=True)
+def test_library_add_file(library):
     """Check Entry.path handling for insert vs lookup"""
-    with TemporaryDirectory() as tmp_dir:
-        # create file in tmp_dir
-        file_path = Path(tmp_dir) / "bar.txt"
-        file_path.write_text("bar")
 
-        lib = Library()
-        lib.open_library(tmp_dir)
+    entry = Entry(
+        path=Path("bar.txt"),
+        folder=library.folder,
+        fields=library.default_fields,
+    )
 
-        entry = Entry(
-            path=file_path,
-            folder=lib.folder,
-            fields=lib.default_fields,
-        )
+    assert not library.has_path_entry(entry.path)
 
-        assert not lib.has_path_entry(entry.path)
+    assert library.add_entries([entry])
 
-        assert lib.add_entries([entry])
-
-        assert lib.has_path_entry(entry.path) is True
+    assert library.has_path_entry(entry.path)
 
 
 def test_create_tag(library, generate_tag):
@@ -99,7 +86,9 @@ def test_get_entry(library, entry_min):
 
 def test_entries_count(library):
     entries = [Entry(path=Path(f"{x}.txt"), folder=library.folder, fields=[]) for x in range(10)]
-    library.add_entries(entries)
+    new_ids = library.add_entries(entries)
+    assert len(new_ids) == 10
+
     results = library.search_library(
         FilterState(
             page_size=5,
@@ -120,7 +109,7 @@ def test_add_field_to_entry(library):
     # meta tags + content tags
     assert len(entry.tag_box_fields) == 2
 
-    library.add_entries([entry])
+    assert library.add_entries([entry])
 
     # When
     library.add_entry_field_type(entry.id, field_id=_FieldID.TAGS)
