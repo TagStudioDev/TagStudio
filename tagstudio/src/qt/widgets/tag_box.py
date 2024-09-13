@@ -95,7 +95,7 @@ class TagBoxWidget(FieldWidget):
             is_recycled = True
 
         for tag in tags:
-            tag_widget = TagWidget(tag, True, True)
+            tag_widget = TagWidget(tag, has_edit=True, has_remove=True)
             tag_widget.on_click.connect(
                 lambda tag_id=tag.id: (
                     self.driver.main_window.searchField.setText(f"tag_id:{tag_id}"),

@@ -67,12 +67,12 @@ class FlowLayout(QLayout):
         return True
 
     def heightForWidth(self, width):
-        height = self._do_layout(QRect(0, 0, width, 0), True)
+        height = self._do_layout(QRect(0, 0, width, 0), test_only=True)
         return height
 
     def setGeometry(self, rect):
         super().setGeometry(rect)
-        self._do_layout(rect, False)
+        self._do_layout(rect, test_only=False)
 
     def setGridEfficiency(self, value: bool):
         """Enable or Disable efficiencies when all objects are equally sized."""
