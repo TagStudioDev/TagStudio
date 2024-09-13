@@ -2,7 +2,7 @@
 exclude = ["main_window.py", "home_ui.py", "resources.py", "resources_rc.py"]
 line-length = 100
 
-[tool.ruff.per-file-ignores]
+[tool.ruff.lint.per-file-ignores]
 "tagstudio/tests/**" = ["D"]
 
 [tool.ruff.lint.pydocstyle]
