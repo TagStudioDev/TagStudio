@@ -2,7 +2,6 @@ import pathlib
 from tempfile import TemporaryDirectory
 
 import pytest
-
 from src.core.library import Library
 from src.core.library.alchemy.enums import FilterState
 from src.core.utils.missing_files import MissingRegistry

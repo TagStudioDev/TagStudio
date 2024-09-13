@@ -4,14 +4,14 @@
 
 
 import math
-from types import MethodType
 from pathlib import Path
-from typing import Optional, Callable
+from types import MethodType
+from typing import Callable, Optional
 
 from PIL import Image, ImageQt
-from PySide6.QtCore import Qt, QEvent
-from PySide6.QtGui import QPixmap, QEnterEvent
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel
+from PySide6.QtCore import QEvent, Qt
+from PySide6.QtGui import QEnterEvent, QPixmap
+from PySide6.QtWidgets import QHBoxLayout, QLabel, QVBoxLayout, QWidget
 from src.qt.helpers.qbutton_wrapper import QPushButtonWrapper
 
 
@@ -85,9 +85,7 @@ class FieldContainer(QWidget):
         self.copy_button.setMinimumSize(button_size, button_size)
         self.copy_button.setMaximumSize(button_size, button_size)
         self.copy_button.setFlat(True)
-        self.copy_button.setIcon(
-            QPixmap.fromImage(ImageQt.ImageQt(self.clipboard_icon_128))
-        )
+        self.copy_button.setIcon(QPixmap.fromImage(ImageQt.ImageQt(self.clipboard_icon_128)))
         self.copy_button.setCursor(Qt.CursorShape.PointingHandCursor)
         self.title_layout.addWidget(self.copy_button)
         self.copy_button.setHidden(True)
@@ -105,9 +103,7 @@ class FieldContainer(QWidget):
         self.remove_button.setMinimumSize(button_size, button_size)
         self.remove_button.setMaximumSize(button_size, button_size)
         self.remove_button.setFlat(True)
-        self.remove_button.setIcon(
-            QPixmap.fromImage(ImageQt.ImageQt(self.trash_icon_128))
-        )
+        self.remove_button.setIcon(QPixmap.fromImage(ImageQt.ImageQt(self.trash_icon_128)))
         self.remove_button.setCursor(Qt.CursorShape.PointingHandCursor)
         self.title_layout.addWidget(self.remove_button)
         self.remove_button.setHidden(True)

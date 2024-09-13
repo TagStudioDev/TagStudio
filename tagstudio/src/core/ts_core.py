@@ -7,8 +7,8 @@
 import json
 from pathlib import Path
 
-from src.core.library import Entry, Library
 from src.core.constants import TS_FOLDER_NAME
+from src.core.library import Entry, Library
 from src.core.library.alchemy.fields import _FieldID
 from src.core.utils.missing_files import logger
 
@@ -19,8 +19,7 @@ class TagStudioCore:
 
     @classmethod
     def get_gdl_sidecar(cls, filepath: Path, source: str = "") -> dict:
-        """
-        Attempt to open and dump a Gallery-DL Sidecar file for the filepath.
+        """Attempt to open and dump a Gallery-DL Sidecar file for the filepath.
 
         Return a formatted object with notable values or an empty object if none is found.
         """
@@ -34,9 +33,7 @@ class TagStudioCore:
             newstem = _filepath.stem[:-16] + "1" + _filepath.stem[-15:]
             _filepath = _filepath.parent / (newstem + ".json")
 
-        logger.info(
-            "get_gdl_sidecar", filepath=filepath, source=source, sidecar=_filepath
-        )
+        logger.info("get_gdl_sidecar", filepath=filepath, source=source, sidecar=_filepath)
 
         try:
             with open(_filepath, encoding="utf8") as f:
@@ -101,7 +98,6 @@ class TagStudioCore:
     @classmethod
     def match_conditions(cls, lib: Library, entry_id: int) -> bool:
         """Match defined conditions against a file to add Entry data."""
-
         # TODO - what even is this file format?
         # TODO: Make this stored somewhere better instead of temporarily in this JSON file.
         cond_file = lib.library_dir / TS_FOLDER_NAME / "conditions.json"
@@ -127,17 +123,13 @@ class TagStudioCore:
                         return False
 
                     fields = c["fields"]
-                    entry_field_types = {
-                        field.type_key: field for field in entry.fields
-                    }
+                    entry_field_types = {field.type_key: field for field in entry.fields}
 
                     for field in fields:
                         is_new = field["id"] not in entry_field_types
                         field_key = field["id"]
                         if is_new:
-                            lib.add_entry_field_type(
-                                entry.id, field_key, field["value"]
-                            )
+                            lib.add_entry_field_type(entry.id, field_key, field["value"])
                         else:
                             lib.update_entry_field(entry.id, field_key, field["value"])
 
@@ -149,7 +141,6 @@ class TagStudioCore:
     @classmethod
     def build_url(cls, entry: Entry, source: str):
         """Try to rebuild a source URL given a specific filename structure."""
-
         source = source.lower().replace("-", " ").replace("_", " ")
         if "twitter" in source:
             return cls._build_twitter_url(entry)
@@ -158,8 +149,8 @@ class TagStudioCore:
 
     @classmethod
     def _build_twitter_url(cls, entry: Entry):
-        """
-        Build a Twitter URL given a specific filename structure.
+        """Build a Twitter URL given a specific filename structure.
+
         Method expects filename to be formatted as 'USERNAME_TWEET-ID_INDEX_YEAR-MM-DD'
         """
         try:
@@ -172,8 +163,8 @@ class TagStudioCore:
 
     @classmethod
     def _build_instagram_url(cls, entry: Entry):
-        """
-        Build an Instagram URL given a specific filename structure.
+        """Build an Instagram URL given a specific filename structure.
+
         Method expects filename to be formatted as 'USERNAME_POST-ID_INDEX_YEAR-MM-DD'
         """
         try:

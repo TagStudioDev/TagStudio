@@ -2,21 +2,20 @@
 # Licensed under the GPL-3.0 License.
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
-from PySide6.QtCore import Signal, Qt, QSize
+from PySide6.QtCore import QSize, Qt, Signal
 from PySide6.QtWidgets import (
-    QWidget,
-    QVBoxLayout,
+    QFrame,
     QHBoxLayout,
     QLineEdit,
     QScrollArea,
-    QFrame,
+    QVBoxLayout,
+    QWidget,
 )
-
 from src.core.library import Library, Tag
 from src.core.library.alchemy.enums import FilterState
-from src.qt.widgets.panel import PanelWidget, PanelModal
-from src.qt.widgets.tag import TagWidget
 from src.qt.modals.build_tag import BuildTagPanel
+from src.qt.widgets.panel import PanelModal, PanelWidget
+from src.qt.widgets.tag import TagWidget
 
 
 class TagDatabasePanel(PanelWidget):
@@ -38,9 +37,7 @@ class TagDatabasePanel(PanelWidget):
         self.search_field.setObjectName("searchField")
         self.search_field.setMinimumSize(QSize(0, 32))
         self.search_field.setPlaceholderText("Search Tags")
-        self.search_field.textEdited.connect(
-            lambda: self.update_tags(self.search_field.text())
-        )
+        self.search_field.textEdited.connect(lambda: self.update_tags(self.search_field.text()))
         self.search_field.returnPressed.connect(
             lambda checked=False: self.on_return(self.search_field.text())
         )
@@ -55,9 +52,7 @@ class TagDatabasePanel(PanelWidget):
 
         self.scroll_area = QScrollArea()
         # self.scroll_area.setStyleSheet('background: #000000;')
-        self.scroll_area.setVerticalScrollBarPolicy(
-            Qt.ScrollBarPolicy.ScrollBarAlwaysOn
-        )
+        self.scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOn)
         # self.scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.scroll_area.setWidgetResizable(True)
         self.scroll_area.setFrameShadow(QFrame.Shadow.Plain)

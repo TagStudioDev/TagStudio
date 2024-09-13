@@ -6,17 +6,16 @@
 import math
 
 import structlog
-from PySide6.QtCore import Signal, Qt, QSize
+from PySide6.QtCore import QSize, Qt, Signal
 from PySide6.QtWidgets import (
-    QWidget,
-    QVBoxLayout,
-    QHBoxLayout,
-    QPushButton,
-    QLineEdit,
-    QScrollArea,
     QFrame,
+    QHBoxLayout,
+    QLineEdit,
+    QPushButton,
+    QScrollArea,
+    QVBoxLayout,
+    QWidget,
 )
-
 from src.core.library import Library
 from src.core.library.alchemy.enums import FilterState
 from src.core.palette import ColorType, get_tag_color
@@ -44,9 +43,7 @@ class TagSearchPanel(PanelWidget):
         self.search_field.setObjectName("searchField")
         self.search_field.setMinimumSize(QSize(0, 32))
         self.search_field.setPlaceholderText("Search Tags")
-        self.search_field.textEdited.connect(
-            lambda: self.update_tags(self.search_field.text())
-        )
+        self.search_field.textEdited.connect(lambda: self.update_tags(self.search_field.text()))
         self.search_field.returnPressed.connect(
             lambda checked=False: self.on_return(self.search_field.text())
         )
@@ -61,9 +58,7 @@ class TagSearchPanel(PanelWidget):
 
         self.scroll_area = QScrollArea()
         # self.scroll_area.setStyleSheet('background: #000000;')
-        self.scroll_area.setVerticalScrollBarPolicy(
-            Qt.ScrollBarPolicy.ScrollBarAlwaysOn
-        )
+        self.scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOn)
         # self.scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.scroll_area.setWidgetResizable(True)
         self.scroll_area.setFrameShadow(QFrame.Shadow.Plain)

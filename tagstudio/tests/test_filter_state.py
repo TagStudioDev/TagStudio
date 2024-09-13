@@ -1,5 +1,4 @@
 import pytest
-
 from src.core.library.alchemy.enums import FilterState
 
 

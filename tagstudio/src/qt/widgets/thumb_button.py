@@ -5,7 +5,7 @@
 
 from PySide6 import QtCore
 from PySide6.QtCore import QEvent
-from PySide6.QtGui import QEnterEvent, QPainter, QColor, QPen, QPainterPath, QPaintEvent
+from PySide6.QtGui import QColor, QEnterEvent, QPainter, QPainterPath, QPaintEvent, QPen
 from PySide6.QtWidgets import QWidget
 from src.qt.helpers.qbutton_wrapper import QPushButtonWrapper
 
@@ -47,9 +47,7 @@ class ThumbButton(QPushButtonWrapper):
             # painter.drawPath(path)
 
             if self.selected:
-                painter.setCompositionMode(
-                    QPainter.CompositionMode.CompositionMode_HardLight
-                )
+                painter.setCompositionMode(QPainter.CompositionMode.CompositionMode_HardLight)
                 color = QColor("#bb4ff0")
                 color.setAlphaF(0.5)
                 pen = QPen(color, width)
@@ -57,17 +55,13 @@ class ThumbButton(QPushButtonWrapper):
                 painter.fillPath(path, color)
                 painter.drawPath(path)
 
-                painter.setCompositionMode(
-                    QPainter.CompositionMode.CompositionMode_Source
-                )
+                painter.setCompositionMode(QPainter.CompositionMode.CompositionMode_Source)
                 color = QColor("#bb4ff0") if not self.hovered else QColor("#55bbf6")
                 pen = QPen(color, width)
                 painter.setPen(pen)
                 painter.drawPath(path)
             elif self.hovered:
-                painter.setCompositionMode(
-                    QPainter.CompositionMode.CompositionMode_Source
-                )
+                painter.setCompositionMode(QPainter.CompositionMode.CompositionMode_Source)
                 color = QColor("#55bbf6")
                 pen = QPen(color, width)
                 painter.setPen(pen)

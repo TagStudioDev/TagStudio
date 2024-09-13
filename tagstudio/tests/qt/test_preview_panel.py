@@ -2,10 +2,9 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 
 import pytest
-
 from src.core.library import Entry
 from src.core.library.alchemy.enums import FieldTypeEnum
-from src.core.library.alchemy.fields import _FieldID, TextField
+from src.core.library.alchemy.fields import TextField, _FieldID
 from src.qt.widgets.preview_panel import PreviewPanel
 
 

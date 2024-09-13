@@ -3,7 +3,6 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 
 import pytest
-
 from src.core.enums import MacroID
 from src.core.library.alchemy.fields import _FieldID
 

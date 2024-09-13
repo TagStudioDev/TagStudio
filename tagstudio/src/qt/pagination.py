@@ -5,14 +5,14 @@
 """A pagination widget created for TagStudio."""
 # I never want to see this code again.
 
-from PySide6.QtCore import QObject, Signal, QSize
+from PySide6.QtCore import QObject, QSize, Signal
 from PySide6.QtGui import QIntValidator
 from PySide6.QtWidgets import (
-    QWidget,
     QHBoxLayout,
     QLabel,
     QLineEdit,
     QSizePolicy,
+    QWidget,
 )
 from src.qt.helpers.qbutton_wrapper import QPushButtonWrapper
 
@@ -286,12 +286,10 @@ class Pagination(QWidget, QObject):
                         # print(f'Start Offset: {start_offset}')
                         # print(f' Requested i: {i-start_offset}')
                         # print(f'Setting Text "{str(i+1)}" for Local Start i:{i-start_offset}, Global i:{i}')
-                        self.start_buffer_layout.itemAt(
-                            i - start_offset
-                        ).widget().setHidden(False)
-                        self.start_buffer_layout.itemAt(
-                            i - start_offset
-                        ).widget().setText(str(i + 1))  # type: ignore
+                        self.start_buffer_layout.itemAt(i - start_offset).widget().setHidden(False)
+                        self.start_buffer_layout.itemAt(i - start_offset).widget().setText(  # type: ignore
+                            str(i + 1)
+                        )
                         self._assign_click(
                             self.start_buffer_layout.itemAt(i - start_offset).widget(),  # type: ignore
                             i,
@@ -315,9 +313,7 @@ class Pagination(QWidget, QObject):
                         # if self.start_buffer_layout.itemAt(i):
                         # 	self.start_buffer_layout.itemAt(i).widget().setHidden(True)
                         # print(f'Setting Text "{str(i+1)}" for Local End i:{i-end_offset}, Global i:{i}')
-                        self.end_buffer_layout.itemAt(
-                            i - end_offset
-                        ).widget().setHidden(False)
+                        self.end_buffer_layout.itemAt(i - end_offset).widget().setHidden(False)
                         self.end_buffer_layout.itemAt(i - end_offset).widget().setText(  # type: ignore
                             str(i + 1)
                         )

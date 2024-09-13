@@ -2,7 +2,6 @@ import pathlib
 from tempfile import TemporaryDirectory
 
 import pytest
-
 from src.core.constants import LibraryPrefs
 from src.core.utils.refresh_dir import RefreshDirTracker
 

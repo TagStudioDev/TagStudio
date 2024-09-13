@@ -10,32 +10,30 @@ from typing import TYPE_CHECKING
 
 import structlog
 from PIL import Image, ImageQt
-from PySide6.QtCore import Qt, QSize, QEvent
-from PySide6.QtGui import QPixmap, QEnterEvent, QAction
+from PySide6.QtCore import QEvent, QSize, Qt
+from PySide6.QtGui import QAction, QEnterEvent, QPixmap
 from PySide6.QtWidgets import (
-    QWidget,
-    QVBoxLayout,
-    QHBoxLayout,
-    QLabel,
     QBoxLayout,
     QCheckBox,
+    QHBoxLayout,
+    QLabel,
+    QVBoxLayout,
+    QWidget,
 )
-
 from src.core.constants import (
     AUDIO_TYPES,
-    VIDEO_TYPES,
     IMAGE_TYPES,
-    TAG_FAVORITE,
     TAG_ARCHIVED,
+    TAG_FAVORITE,
+    VIDEO_TYPES,
 )
-from src.core.library import ItemType, Entry, Library
+from src.core.library import Entry, ItemType, Library
 from src.core.library.alchemy.enums import FilterState
 from src.core.library.alchemy.fields import _FieldID
-
 from src.qt.flowlayout import FlowWidget
 from src.qt.helpers.file_opener import FileOpenerHelper
-from src.qt.widgets.thumb_renderer import ThumbRenderer
 from src.qt.widgets.thumb_button import ThumbButton
+from src.qt.widgets.thumb_renderer import ThumbRenderer
 
 if TYPE_CHECKING:
     from src.qt.ts_qt import QtDriver
@@ -74,9 +72,7 @@ def badge_update_lock(func):
 
 
 class ItemThumb(FlowWidget):
-    """
-    The thumbnail widget for a library item (Entry, Collation, Tag Group, etc.).
-    """
+    """The thumbnail widget for a library item (Entry, Collation, Tag Group, etc.)."""
 
     update_cutoff: float = time.time()
 
@@ -271,9 +267,7 @@ class ItemThumb(FlowWidget):
         self.count_badge.setStyleSheet(ItemThumb.small_text_style)
         # self.count_badge.setAlignment(Qt.AlignmentFlag.AlignBottom)
         # self.root_layout.addWidget(self.count_badge, 2, 2)
-        self.bottom_layout.addWidget(
-            self.count_badge, alignment=Qt.AlignmentFlag.AlignBottom
-        )
+        self.bottom_layout.addWidget(self.count_badge, alignment=Qt.AlignmentFlag.AlignBottom)
 
         self.top_layout.addStretch(2)
 
@@ -481,9 +475,7 @@ class ItemThumb(FlowWidget):
 
         for idx in update_items:
             entry = self.driver.frame_content[idx]
-            self.toggle_item_tag(
-                entry, toggle_value, tag_id, _FieldID.TAGS_META.name, True
-            )
+            self.toggle_item_tag(entry, toggle_value, tag_id, _FieldID.TAGS_META.name, True)
             # update the entry
             self.driver.frame_content[idx] = self.lib.search_library(
                 FilterState(id=entry.id)

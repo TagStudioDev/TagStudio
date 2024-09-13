@@ -7,14 +7,13 @@ import typing
 
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
-    QWidget,
-    QVBoxLayout,
+    QFileDialog,
     QHBoxLayout,
     QLabel,
     QPushButton,
-    QFileDialog,
+    QVBoxLayout,
+    QWidget,
 )
-
 from src.core.library import Library
 from src.core.utils.dupe_files import DupeRegistry
 from src.qt.modals.mirror_entities import MirrorEntriesModal

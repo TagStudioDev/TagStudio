@@ -4,19 +4,19 @@ from typing import Optional
 from sqlalchemy import JSON, ForeignKey, Integer, event
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
+from ...constants import TAG_ARCHIVED, TAG_FAVORITE
 from .db import Base, PathType
 from .enums import TagColor
 from .fields import (
-    DatetimeField,
-    TagBoxField,
-    TextField,
-    FieldTypeEnum,
-    _FieldID,
     BaseField,
     BooleanField,
+    DatetimeField,
+    FieldTypeEnum,
+    TagBoxField,
+    TextField,
+    _FieldID,
 )
 from .joins import TagSubtag
-from ...constants import TAG_FAVORITE, TAG_ARCHIVED
 
 
 class TagAlias(Base):
@@ -191,8 +191,9 @@ class Entry(Base):
         return tag in self.tags
 
     def remove_tag(self, tag: Tag, field: TagBoxField | None = None) -> None:
-        """
-        Removes a Tag from the Entry. If given a field index, the given Tag will
+        """Removes a Tag from the Entry.
+
+        If given a field index, the given Tag will
         only be removed from that index. If left blank, all instances of that
         Tag will be removed from the Entry.
         """
@@ -225,18 +226,12 @@ class ValueType(Base):
     position: Mapped[int]
 
     # add relations to other tables
-    text_fields: Mapped[list[TextField]] = relationship(
-        "TextField", back_populates="type"
-    )
+    text_fields: Mapped[list[TextField]] = relationship("TextField", back_populates="type")
     datetime_fields: Mapped[list[DatetimeField]] = relationship(
         "DatetimeField", back_populates="type"
     )
-    tag_box_fields: Mapped[list[TagBoxField]] = relationship(
-        "TagBoxField", back_populates="type"
-    )
-    boolean_fields: Mapped[list[BooleanField]] = relationship(
-        "BooleanField", back_populates="type"
-    )
+    tag_box_fields: Mapped[list[TagBoxField]] = relationship("TagBoxField", back_populates="type")
+    boolean_fields: Mapped[list[BooleanField]] = relationship("BooleanField", back_populates="type")
 
     @property
     def as_field(self) -> BaseField:

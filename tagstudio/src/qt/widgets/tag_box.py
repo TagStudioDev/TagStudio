@@ -7,19 +7,18 @@ import math
 import typing
 
 import structlog
-from PySide6.QtCore import Signal, Qt
+from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import QPushButton
-
-from src.core.constants import TAG_FAVORITE, TAG_ARCHIVED
+from src.core.constants import TAG_ARCHIVED, TAG_FAVORITE
 from src.core.library import Entry, Tag
 from src.core.library.alchemy.enums import FilterState
 from src.core.library.alchemy.fields import TagBoxField
 from src.qt.flowlayout import FlowLayout
-from src.qt.widgets.fields import FieldWidget
-from src.qt.widgets.tag import TagWidget
-from src.qt.widgets.panel import PanelModal
 from src.qt.modals.build_tag import BuildTagPanel
 from src.qt.modals.tag_search import TagSearchPanel
+from src.qt.widgets.fields import FieldWidget
+from src.qt.widgets.panel import PanelModal
+from src.qt.widgets.tag import TagWidget
 
 if typing.TYPE_CHECKING:
     from src.qt.ts_qt import QtDriver
@@ -42,7 +41,9 @@ class TagBoxWidget(FieldWidget):
         assert isinstance(field, TagBoxField), f"field is {type(field)}"
 
         self.field = field
-        self.driver = driver  # Used for creating tag click callbacks that search entries for that tag.
+        self.driver = (
+            driver  # Used for creating tag click callbacks that search entries for that tag.
+        )
         self.setObjectName("tagBox")
         self.base_layout = FlowLayout()
         self.base_layout.setGridEfficiency(False)

@@ -6,15 +6,14 @@
 import typing
 
 from PySide6.QtCore import Qt, QThreadPool
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton
-
+from PySide6.QtWidgets import QHBoxLayout, QLabel, QPushButton, QVBoxLayout, QWidget
 from src.core.library import Library
 from src.core.utils.missing_files import MissingRegistry
-from src.qt.helpers.function_iterator import FunctionIterator
 from src.qt.helpers.custom_runnable import CustomRunnable
+from src.qt.helpers.function_iterator import FunctionIterator
 from src.qt.modals.delete_unlinked import DeleteUnlinkedEntriesModal
-from src.qt.modals.relink_unlinked import RelinkUnlinkedEntries
 from src.qt.modals.merge_dupe_entries import MergeDuplicateEntries
+from src.qt.modals.relink_unlinked import RelinkUnlinkedEntries
 from src.qt.widgets.progress import ProgressWidget
 
 # Only import for type checking/autocompletion, will not be imported at runtime.

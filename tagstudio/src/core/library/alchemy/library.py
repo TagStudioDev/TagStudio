@@ -1,50 +1,50 @@
-from dataclasses import dataclass
-from datetime import datetime, UTC
 import shutil
+from dataclasses import dataclass
+from datetime import UTC, datetime
 from os import makedirs
 from pathlib import Path
-from typing import Iterator, Any, Type
+from typing import Any, Iterator, Type
 from uuid import uuid4
 
 import structlog
 from sqlalchemy import (
+    URL,
+    Engine,
     and_,
+    create_engine,
+    delete,
+    exists,
+    func,
     or_,
     select,
-    create_engine,
-    Engine,
-    func,
     update,
-    URL,
-    exists,
-    delete,
 )
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import (
     Session,
     contains_eager,
-    selectinload,
     make_transient,
+    selectinload,
 )
 
+from ...constants import (
+    BACKUP_FOLDER_NAME,
+    TAG_ARCHIVED,
+    TAG_FAVORITE,
+    TS_FOLDER_NAME,
+    LibraryPrefs,
+)
 from .db import make_tables
-from .enums import TagColor, FilterState, FieldTypeEnum
+from .enums import FieldTypeEnum, FilterState, TagColor
 from .fields import (
+    BaseField,
     DatetimeField,
     TagBoxField,
     TextField,
     _FieldID,
-    BaseField,
 )
-from .joins import TagSubtag, TagField
-from .models import Entry, Preferences, Tag, TagAlias, ValueType, Folder
-from ...constants import (
-    LibraryPrefs,
-    TS_FOLDER_NAME,
-    TAG_ARCHIVED,
-    TAG_FAVORITE,
-    BACKUP_FOLDER_NAME,
-)
+from .joins import TagField, TagSubtag
+from .models import Entry, Folder, Preferences, Tag, TagAlias, ValueType
 
 LIBRARY_FILENAME: str = "ts_library.sqlite"
 
@@ -130,9 +130,7 @@ class Library:
         self.storage_path = None
         self.folder = None
 
-    def open_library(
-        self, library_dir: Path | str, storage_path: str | None = None
-    ) -> None:
+    def open_library(self, library_dir: Path | str, storage_path: str | None = None) -> None:
         if isinstance(library_dir, str):
             library_dir = Path(library_dir)
 
@@ -186,9 +184,7 @@ class Library:
                     session.rollback()
 
             # check if folder matching current path exists already
-            self.folder = session.scalar(
-                select(Folder).where(Folder.path == self.library_dir)
-            )
+            self.folder = session.scalar(select(Folder).where(Folder.path == self.library_dir))
             if not self.folder:
                 folder = Folder(
                     path=self.library_dir,
@@ -400,13 +396,9 @@ class Library:
 
             if not search.id:  # if `id` is set, we don't need to filter by extensions
                 if extensions and is_exclude_list:
-                    statement = statement.where(
-                        Entry.path.notilike(f"%.{','.join(extensions)}")
-                    )
+                    statement = statement.where(Entry.path.notilike(f"%.{','.join(extensions)}"))
                 elif extensions:
-                    statement = statement.where(
-                        Entry.path.ilike(f"%.{','.join(extensions)}")
-                    )
+                    statement = statement.where(Entry.path.ilike(f"%.{','.join(extensions)}"))
 
             statement = statement.options(
                 selectinload(Entry.text_fields),
@@ -424,9 +416,7 @@ class Library:
             logger.info(
                 "searching library",
                 filter=search,
-                query_full=str(
-                    statement.compile(compile_kwargs={"literal_binds": True})
-                ),
+                query_full=str(statement.compile(compile_kwargs={"literal_binds": True})),
             )
 
             res = SearchResult(
@@ -443,7 +433,6 @@ class Library:
         search: FilterState,
     ) -> list[Tag]:
         """Return a list of Tag records matching the query."""
-
         with Session(self.engine) as session:
             query = select(Tag)
             query = query.options(
@@ -475,7 +464,6 @@ class Library:
 
     def get_all_child_tag_ids(self, tag_id: int) -> list[int]:
         """Recursively traverse a Tag's subtags and return a list of all children tags."""
-
         all_subtags: set[int] = {tag_id}
 
         with Session(self.engine) as session:
@@ -512,9 +500,7 @@ class Library:
 
     def remove_tag_from_field(self, tag: Tag, field: TagBoxField) -> None:
         with Session(self.engine) as session:
-            field_ = session.scalars(
-                select(TagBoxField).where(TagBoxField.id == field.id)
-            ).one()
+            field_ = session.scalars(select(TagBoxField).where(TagBoxField.id == field.id)).one()
 
             tag = session.scalars(select(Tag).where(Tag.id == tag.id)).one()
 
@@ -766,9 +752,7 @@ class Library:
 
                 session.add(tag_field)
                 session.commit()
-                logger.info(
-                    "tag added to field", tag=tag, field=field, entry_id=entry.id
-                )
+                logger.info("tag added to field", tag=tag, field=field, entry_id=entry.id)
 
                 return True
             except IntegrityError as e:
@@ -779,13 +763,9 @@ class Library:
 
     def save_library_backup_to_disk(self) -> Path:
         assert isinstance(self.library_dir, Path)
-        makedirs(
-            str(self.library_dir / TS_FOLDER_NAME / BACKUP_FOLDER_NAME), exist_ok=True
-        )
+        makedirs(str(self.library_dir / TS_FOLDER_NAME / BACKUP_FOLDER_NAME), exist_ok=True)
 
-        filename = (
-            f'ts_library_backup_{datetime.now(UTC).strftime("%Y_%m_%d_%H%M%S")}.sqlite'
-        )
+        filename = f'ts_library_backup_{datetime.now(UTC).strftime("%Y_%m_%d_%H%M%S")}.sqlite'
 
         target_path = self.library_dir / TS_FOLDER_NAME / BACKUP_FOLDER_NAME / filename
 
@@ -825,9 +805,7 @@ class Library:
                 return False
 
     def update_tag(self, tag: Tag, subtag_ids: list[int]) -> None:
-        """
-        Edit a Tag in the Library.
-        """
+        """Edit a Tag in the Library."""
         # TODO - maybe merge this with add_tag?
 
         if tag.shorthand:
@@ -873,17 +851,13 @@ class Library:
     def prefs(self, key: LibraryPrefs) -> Any:
         # load given item from Preferences table
         with Session(self.engine) as session:
-            return session.scalar(
-                select(Preferences).where(Preferences.key == key.name)
-            ).value
+            return session.scalar(select(Preferences).where(Preferences.key == key.name)).value
 
     def set_prefs(self, key: LibraryPrefs, value: Any) -> None:
         # set given item in Preferences table
         with Session(self.engine) as session:
             # load existing preference and update value
-            pref = session.scalar(
-                select(Preferences).where(Preferences.key == key.name)
-            )
+            pref = session.scalar(select(Preferences).where(Preferences.key == key.name))
             pref.value = value
             session.add(pref)
             session.commit()

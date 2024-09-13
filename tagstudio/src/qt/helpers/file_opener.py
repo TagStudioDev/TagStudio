@@ -2,16 +2,15 @@
 # Licensed under the GPL-3.0 License.
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
-import subprocess
 import shutil
+import subprocess
 import sys
 import traceback
 from pathlib import Path
 
 import structlog
-from PySide6.QtWidgets import QLabel
 from PySide6.QtCore import Qt
-
+from PySide6.QtWidgets import QLabel
 
 logger = structlog.get_logger(__name__)
 
@@ -82,9 +81,7 @@ def open_file(path: str | Path, file_manager: bool = False):
             if command is not None:
                 subprocess.Popen([command] + command_args, close_fds=True)
             else:
-                logger.info(
-                    "Could not find command on system PATH", command=command_name
-                )
+                logger.info("Could not find command on system PATH", command=command_name)
     except Exception:
         traceback.print_exc()
 

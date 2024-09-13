@@ -1,7 +1,6 @@
 from pathlib import Path
 from unittest.mock import Mock
 
-
 from src.core.library import Entry
 from src.core.library.alchemy.enums import FilterState
 from src.core.library.json.library import ItemType

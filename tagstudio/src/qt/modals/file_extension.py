@@ -3,32 +3,27 @@
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
 
-from PySide6.QtCore import Signal, Qt
+from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import (
-    QVBoxLayout,
+    QComboBox,
     QHBoxLayout,
-    QWidget,
+    QLabel,
+    QLineEdit,
     QPushButton,
+    QStyledItemDelegate,
     QTableWidget,
     QTableWidgetItem,
-    QStyledItemDelegate,
-    QLineEdit,
-    QComboBox,
-    QLabel,
+    QVBoxLayout,
+    QWidget,
 )
-
+from src.core.constants import LibraryPrefs
 from src.core.library import Library
 from src.qt.widgets.panel import PanelWidget
-from src.core.constants import LibraryPrefs
 
 
 class FileExtensionItemDelegate(QStyledItemDelegate):
     def setModelData(self, editor, model, index):
-        if (
-            isinstance(editor, QLineEdit)
-            and editor.text()
-            and not editor.text().startswith(".")
-        ):
+        if isinstance(editor, QLineEdit) and editor.text() and not editor.text().startswith("."):
             editor.setText(f".{editor.text()}")
         super().setModelData(editor, model, index)
 
@@ -75,9 +70,7 @@ class FileExtensionModal(PanelWidget):
         is_exclude_list = int(bool(self.lib.prefs(LibraryPrefs.IS_EXCLUDE_LIST)))
 
         self.mode_combobox.setCurrentIndex(is_exclude_list)
-        self.mode_combobox.currentIndexChanged.connect(
-            lambda i: self.update_list_mode(i)
-        )
+        self.mode_combobox.currentIndexChanged.connect(lambda i: self.update_list_mode(i))
         self.mode_layout.addWidget(self.mode_label)
         self.mode_layout.addWidget(self.mode_combobox)
         self.mode_layout.setStretch(1, 1)
@@ -85,16 +78,13 @@ class FileExtensionModal(PanelWidget):
         # Add Widgets To Layout ------------------------------------------------
         self.root_layout.addWidget(self.mode_widget)
         self.root_layout.addWidget(self.table)
-        self.root_layout.addWidget(
-            self.add_button, alignment=Qt.AlignmentFlag.AlignCenter
-        )
+        self.root_layout.addWidget(self.add_button, alignment=Qt.AlignmentFlag.AlignCenter)
 
         # Finalize Modal -------------------------------------------------------
         self.refresh_list()
 
     def update_list_mode(self, mode: int):
-        """
-        Update the mode of the extension list: "Exclude" or "Include".
+        """Update the mode of the extension list: "Exclude" or "Include".
 
         Args:
             mode (int): The list mode, given by the index of the mode inside

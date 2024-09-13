@@ -2,11 +2,10 @@
 # Copyright (C) 2022 The Qt Company Ltd.
 # SPDX-License-Identifier: LicenseRef-Qt-Commercial OR BSD-3-Clause
 
-"""PySide6 port of the widgets/layouts/flowlayout example from Qt v6.x"""
+"""PySide6 port of the widgets/layouts/flowlayout example from Qt v6.x."""
 
-from PySide6.QtCore import Qt, QMargins, QPoint, QRect, QSize
+from PySide6.QtCore import QMargins, QPoint, QRect, QSize, Qt
 from PySide6.QtWidgets import QLayout, QSizePolicy, QWidget
-
 
 # class Window(QWidget):
 #     def __init__(self):
@@ -94,9 +93,7 @@ class FlowLayout(QLayout):
             for item in self._item_list:
                 size = size.expandedTo(item.minimumSize())
 
-            size += QSize(
-                2 * self.contentsMargins().top(), 2 * self.contentsMargins().top()
-            )
+            size += QSize(2 * self.contentsMargins().top(), 2 * self.contentsMargins().top())
             return size
 
     def _do_layout(self, rect: QRect, test_only: bool) -> float:
@@ -125,16 +122,12 @@ class FlowLayout(QLayout):
             # print(issubclass(type(item.widget()), FlowWidget))
             # print(item.widget().ignore_size)
             skip_count = 0
-            if (
-                issubclass(type(item.widget()), FlowWidget)
-                and item.widget().ignore_size
-            ):
+            if issubclass(type(item.widget()), FlowWidget) and item.widget().ignore_size:
                 skip_count += 1
 
-            if (
-                issubclass(type(item.widget()), FlowWidget)
-                and not item.widget().ignore_size
-            ) or (not issubclass(type(item.widget()), FlowWidget)):
+            if (issubclass(type(item.widget()), FlowWidget) and not item.widget().ignore_size) or (
+                not issubclass(type(item.widget()), FlowWidget)
+            ):
                 # print(f'Item {i}')
                 if not self.grid_efficiency:
                     style = item.widget().style()
@@ -165,9 +158,7 @@ class FlowLayout(QLayout):
 
         # print(y + line_height - rect.y() * ((len(self._item_list) - skip_count) / len(self._item_list)))
         # print(y + line_height - rect.y()) * ((len(self._item_list) - skip_count) / len(self._item_list))
-        return (
-            y + line_height - rect.y() * ((len(self._item_list)) / len(self._item_list))
-        )
+        return y + line_height - rect.y() * ((len(self._item_list)) / len(self._item_list))
 
 
 # if __name__ == "__main__":

@@ -1,10 +1,9 @@
 from unittest.mock import patch
 
-
 from src.core.library.alchemy.fields import _FieldID
+from src.qt.modals.build_tag import BuildTagPanel
 from src.qt.widgets.tag import TagWidget
 from src.qt.widgets.tag_box import TagBoxWidget
-from src.qt.modals.build_tag import BuildTagPanel
 
 
 def test_tag_widget(qtbot, library, qt_driver):
@@ -26,9 +25,7 @@ def test_tag_widget(qtbot, library, qt_driver):
 
 def test_tag_widget_add_existing_raises(library, qt_driver, entry_full):
     # Given
-    tag_field = [
-        f for f in entry_full.tag_box_fields if f.type_key == _FieldID.TAGS.name
-    ][0]
+    tag_field = [f for f in entry_full.tag_box_fields if f.type_key == _FieldID.TAGS.name][0]
     assert len(entry_full.tags) == 1
     tag = next(iter(entry_full.tags))
 
@@ -69,9 +66,7 @@ def test_tag_widget_remove(qtbot, qt_driver, library, entry_full):
     assert tag
 
     assert entry_full.tag_box_fields
-    tag_field = [
-        f for f in entry_full.tag_box_fields if f.type_key == _FieldID.TAGS.name
-    ][0]
+    tag_field = [f for f in entry_full.tag_box_fields if f.type_key == _FieldID.TAGS.name][0]
 
     tag_widget = TagBoxWidget(tag_field, "title", qt_driver)
     tag_widget.driver.selected = [0]
@@ -93,9 +88,7 @@ def test_tag_widget_edit(qtbot, qt_driver, library, entry_full):
     assert tag
 
     assert entry_full.tag_box_fields
-    tag_field = [
-        f for f in entry_full.tag_box_fields if f.type_key == _FieldID.TAGS.name
-    ][0]
+    tag_field = [f for f in entry_full.tag_box_fields if f.type_key == _FieldID.TAGS.name][0]
 
     tag_box_widget = TagBoxWidget(tag_field, "title", qt_driver)
     tag_box_widget.driver.selected = [0]

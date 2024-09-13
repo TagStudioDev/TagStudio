@@ -2,56 +2,55 @@
 # Licensed under the GPL-3.0 License.
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 import sys
-from collections.abc import Callable
-from pathlib import Path
 import time
 import typing
+from collections.abc import Callable
 from datetime import datetime as dt
+from pathlib import Path
 
 import cv2
 import rawpy
 import structlog
+from humanfriendly import format_size
 from PIL import Image, UnidentifiedImageError
 from PIL.Image import DecompressionBombError
-from PySide6.QtCore import Signal, Qt, QSize
-from PySide6.QtGui import QResizeEvent, QAction
+from PySide6.QtCore import QSize, Qt, Signal
+from PySide6.QtGui import QAction, QResizeEvent
 from PySide6.QtWidgets import (
-    QWidget,
-    QVBoxLayout,
+    QFrame,
     QHBoxLayout,
     QLabel,
+    QMessageBox,
     QPushButton,
     QScrollArea,
-    QFrame,
-    QSplitter,
     QSizePolicy,
-    QMessageBox,
+    QSplitter,
+    QVBoxLayout,
+    QWidget,
 )
-from humanfriendly import format_size
-
+from src.core.constants import IMAGE_TYPES, RAW_IMAGE_TYPES, TS_FOLDER_NAME, VIDEO_TYPES
 from src.core.enums import SettingItems, Theme
-from src.core.constants import VIDEO_TYPES, IMAGE_TYPES, RAW_IMAGE_TYPES, TS_FOLDER_NAME
 from src.core.library.alchemy.enums import FilterState
 from src.core.library.alchemy.fields import (
-    TagBoxField,
+    BaseField,
     DatetimeField,
     FieldTypeEnum,
-    _FieldID,
+    TagBoxField,
     TextField,
-    BaseField,
+    _FieldID,
 )
-from src.qt.helpers.file_opener import FileOpenerLabel, FileOpenerHelper, open_file
+from src.core.library.alchemy.library import Library
+from src.qt.helpers.file_opener import FileOpenerHelper, FileOpenerLabel, open_file
+from src.qt.helpers.qbutton_wrapper import QPushButtonWrapper
 from src.qt.modals.add_field import AddFieldModal
-from src.qt.widgets.thumb_renderer import ThumbRenderer
 from src.qt.widgets.fields import FieldContainer
+from src.qt.widgets.panel import PanelModal
 from src.qt.widgets.tag_box import TagBoxWidget
 from src.qt.widgets.text import TextWidget
-from src.qt.widgets.panel import PanelModal
 from src.qt.widgets.text_box_edit import EditTextBox
 from src.qt.widgets.text_line_edit import EditTextLine
-from src.qt.helpers.qbutton_wrapper import QPushButtonWrapper
+from src.qt.widgets.thumb_renderer import ThumbRenderer
 from src.qt.widgets.video_player import VideoPlayer
-from src.core.library.alchemy.library import Library
 
 if typing.TYPE_CHECKING:
     from src.qt.ts_qt import QtDriver
@@ -64,9 +63,7 @@ def update_selected_entry(driver: "QtDriver"):
         entry = driver.frame_content[grid_idx]
         # reload entry
         results = driver.lib.search_library(FilterState(id=entry.id))
-        logger.info(
-            "found item", entries=len(results), grid_idx=grid_idx, lookup_id=entry.id
-        )
+        logger.info("found item", entries=len(results), grid_idx=grid_idx, lookup_id=entry.id)
         assert results, f"Entry not found: {entry.id}"
         driver.frame_content[grid_idx] = next(results)
 
@@ -111,9 +108,7 @@ class PreviewPanel(QWidget):
         self.preview_vid = VideoPlayer(driver)
         self.preview_vid.hide()
         self.thumb_renderer = ThumbRenderer()
-        self.thumb_renderer.updated.connect(
-            lambda ts, i, s: (self.preview_img.setIcon(i))
-        )
+        self.thumb_renderer.updated.connect(lambda ts, i, s: (self.preview_img.setIcon(i)))
         self.thumb_renderer.updated_ratio.connect(
             lambda ratio: (
                 self.set_image_ratio(ratio),
@@ -134,9 +129,7 @@ class PreviewPanel(QWidget):
         self.image_container.setMinimumSize(*self.img_button_size)
         self.file_label = FileOpenerLabel("Filename")
         self.file_label.setWordWrap(True)
-        self.file_label.setTextInteractionFlags(
-            Qt.TextInteractionFlag.TextSelectableByMouse
-        )
+        self.file_label.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
         self.file_label.setStyleSheet("font-weight: bold; font-size: 12px")
 
         self.dimensions_label = QLabel("Dimensions")
@@ -173,9 +166,7 @@ class PreviewPanel(QWidget):
 
         scroll_area = QScrollArea()
         scroll_area.setObjectName("entryScrollArea")
-        scroll_area.setSizePolicy(
-            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding
-        )
+        scroll_area.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
         scroll_area.setWidgetResizable(True)
         scroll_area.setFrameShadow(QFrame.Shadow.Plain)
@@ -210,9 +201,7 @@ class PreviewPanel(QWidget):
         )
 
         # set initial visibility based on settings
-        if not self.driver.settings.value(
-            SettingItems.WINDOW_SHOW_LIBS, True, type=bool
-        ):
+        if not self.driver.settings.value(SettingItems.WINDOW_SHOW_LIBS, True, type=bool):
             self.libs_flow_container.hide()
 
         splitter = QSplitter()
@@ -279,9 +268,7 @@ class PreviewPanel(QWidget):
         self.render_libs = new_keys
         self._fill_libs_widget(libs_sorted, layout)
 
-    def _fill_libs_widget(
-        self, libraries: list[tuple[str, tuple[str, str]]], layout: QVBoxLayout
-    ):
+    def _fill_libs_widget(self, libraries: list[tuple[str, tuple[str, str]]], layout: QVBoxLayout):
         def clear_layout(layout_item: QVBoxLayout):
             for i in reversed(range(layout_item.count())):
                 child = layout_item.itemAt(i)
@@ -414,9 +401,7 @@ class PreviewPanel(QWidget):
 
     def place_add_field_button(self):
         self.scroll_layout.addWidget(self.afb_container)
-        self.scroll_layout.setAlignment(
-            self.afb_container, Qt.AlignmentFlag.AlignHCenter
-        )
+        self.scroll_layout.setAlignment(self.afb_container, Qt.AlignmentFlag.AlignHCenter)
 
         if self.add_field_modal.is_connected:
             self.add_field_modal.done.disconnect()
@@ -446,9 +431,7 @@ class PreviewPanel(QWidget):
                 )
 
     def update_widgets(self) -> bool:
-        """
-        Render the panel widgets with the newest data from the Library.
-        """
+        """Render the panel widgets with the newest data from the Library."""
         logger.info("update_widgets", selected=self.driver.selected)
         self.is_open = True
         # self.tag_callback = tag_callback if tag_callback else None
@@ -464,9 +447,7 @@ class PreviewPanel(QWidget):
                 self.file_label.setCursor(Qt.CursorShape.ArrowCursor)
 
                 self.dimensions_label.setText("")
-                self.preview_img.setContextMenuPolicy(
-                    Qt.ContextMenuPolicy.NoContextMenu
-                )
+                self.preview_img.setContextMenuPolicy(Qt.ContextMenuPolicy.NoContextMenu)
                 self.preview_img.setCursor(Qt.CursorShape.ArrowCursor)
 
                 ratio = self.devicePixelRatio()
@@ -532,9 +513,7 @@ class PreviewPanel(QWidget):
                 self.file_label.setText("\u200b".join(str(filepath)))
                 self.file_label.setCursor(Qt.CursorShape.PointingHandCursor)
 
-                self.preview_img.setContextMenuPolicy(
-                    Qt.ContextMenuPolicy.ActionsContextMenu
-                )
+                self.preview_img.setContextMenuPolicy(Qt.ContextMenuPolicy.ActionsContextMenu)
                 self.preview_img.setCursor(Qt.CursorShape.PointingHandCursor)
 
                 self.opener = FileOpenerHelper(filepath)
@@ -550,9 +529,7 @@ class PreviewPanel(QWidget):
                         try:
                             with rawpy.imread(str(filepath)) as raw:
                                 rgb = raw.postprocess()
-                                image = Image.new(
-                                    "L", (rgb.shape[1], rgb.shape[0]), color="black"
-                                )
+                                image = Image.new("L", (rgb.shape[1], rgb.shape[0]), color="black")
                         except (
                             rawpy._rawpy.LibRawIOError,
                             rawpy._rawpy.LibRawFileUnsupportedError,
@@ -568,9 +545,7 @@ class PreviewPanel(QWidget):
                         image = Image.fromarray(frame)
                         if success:
                             self.preview_img.hide()
-                            self.preview_vid.play(
-                                filepath, QSize(image.width, image.height)
-                            )
+                            self.preview_vid.play(filepath, QSize(image.width, image.height))
                             self.resizeEvent(
                                 QResizeEvent(
                                     QSize(image.width, image.height),
@@ -596,9 +571,7 @@ class PreviewPanel(QWidget):
 
                 except (FileNotFoundError, cv2.error) as e:
                     self.dimensions_label.setText(f"{filepath.suffix.upper()}")
-                    logger.error(
-                        "Couldn't Render thumbnail", filepath=filepath, error=e
-                    )
+                    logger.error("Couldn't Render thumbnail", filepath=filepath, error=e)
 
                 except (
                     UnidentifiedImageError,
@@ -607,15 +580,11 @@ class PreviewPanel(QWidget):
                     self.dimensions_label.setText(
                         f"{filepath.suffix.upper()[1:]}  •  {format_size(filepath.stat().st_size)}"
                     )
-                    logger.error(
-                        "Couldn't Render thumbnail", filepath=filepath, error=e
-                    )
+                    logger.error("Couldn't Render thumbnail", filepath=filepath, error=e)
 
                 if self.preview_img.is_connected:
                     self.preview_img.clicked.disconnect()
-                self.preview_img.clicked.connect(
-                    lambda checked=False, pth=filepath: open_file(pth)
-                )
+                self.preview_img.clicked.connect(lambda checked=False, pth=filepath: open_file(pth))
                 self.preview_img.is_connected = True
 
             self.selected = self.driver.selected
@@ -646,9 +615,7 @@ class PreviewPanel(QWidget):
                 self.file_label.setFilePath("")
                 self.dimensions_label.setText("")
 
-                self.preview_img.setContextMenuPolicy(
-                    Qt.ContextMenuPolicy.NoContextMenu
-                )
+                self.preview_img.setContextMenuPolicy(Qt.ContextMenuPolicy.NoContextMenu)
                 self.preview_img.setCursor(Qt.CursorShape.ArrowCursor)
 
                 ratio = self.devicePixelRatio()
@@ -712,9 +679,7 @@ class PreviewPanel(QWidget):
         return True
 
     def set_tags_updated_slot(self, slot: object):
-        """
-        Replacement for tag_callback.
-        """
+        """Replacement for tag_callback."""
         if self.is_connected:
             self.tags_updated.disconnect()
 
@@ -971,9 +936,7 @@ class PreviewPanel(QWidget):
         remove_mb.setText(prompt)
         remove_mb.setWindowTitle("Remove Field")
         remove_mb.setIcon(QMessageBox.Icon.Warning)
-        cancel_button = remove_mb.addButton(
-            "&Cancel", QMessageBox.ButtonRole.DestructiveRole
-        )
+        cancel_button = remove_mb.addButton("&Cancel", QMessageBox.ButtonRole.DestructiveRole)
         remove_mb.addButton("&Remove", QMessageBox.ButtonRole.RejectRole)
         # remove_mb.setStandardButtons(QMessageBox.StandardButton.Cancel)
         remove_mb.setDefaultButton(cancel_button)

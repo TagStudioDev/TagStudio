@@ -10,17 +10,16 @@ from dataclasses import dataclass, field
 import structlog
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
-    QWidget,
-    QVBoxLayout,
+    QFrame,
     QHBoxLayout,
     QLabel,
     QPushButton,
     QScrollArea,
-    QFrame,
+    QVBoxLayout,
+    QWidget,
 )
-
-from src.core.constants import TAG_FAVORITE, TAG_ARCHIVED
-from src.core.library import Tag, Library
+from src.core.constants import TAG_ARCHIVED, TAG_FAVORITE
+from src.core.library import Library, Tag
 from src.core.library.alchemy.fields import _FieldID
 from src.core.palette import ColorType, get_tag_color
 from src.qt.flowlayout import FlowLayout
@@ -38,9 +37,7 @@ class BranchData:
     tag: Tag | None = None
 
 
-def add_folders_to_tree(
-    library: Library, tree: BranchData, items: tuple[str, ...]
-) -> BranchData:
+def add_folders_to_tree(library: Library, tree: BranchData, items: tuple[str, ...]) -> BranchData:
     branch = tree
     for folder in items:
         if folder not in branch.dirs:
@@ -177,9 +174,7 @@ class FoldersToTagsModal(QWidget):
         self.title_widget = QLabel()
         self.title_widget.setObjectName("title")
         self.title_widget.setWordWrap(True)
-        self.title_widget.setStyleSheet(
-            "font-weight:bold;" "font-size:14px;" "padding-top: 6px"
-        )
+        self.title_widget.setStyleSheet("font-weight:bold;" "font-size:14px;" "padding-top: 6px")
         self.title_widget.setText("Create Tags From Folders")
         self.title_widget.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
@@ -210,9 +205,7 @@ class FoldersToTagsModal(QWidget):
         self.scroll_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
 
         self.scroll_area = QScrollArea()
-        self.scroll_area.setVerticalScrollBarPolicy(
-            Qt.ScrollBarPolicy.ScrollBarAlwaysOn
-        )
+        self.scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOn)
         self.scroll_area.setWidgetResizable(True)
         self.scroll_area.setFrameShadow(QFrame.Shadow.Plain)
         self.scroll_area.setFrameShape(QFrame.Shape.NoFrame)
@@ -229,9 +222,7 @@ class FoldersToTagsModal(QWidget):
         self.root_layout.addWidget(self.desc_widget)
         self.root_layout.addWidget(self.open_close_button_w)
         self.root_layout.addWidget(self.scroll_area)
-        self.root_layout.addWidget(
-            self.apply_button, alignment=Qt.AlignmentFlag.AlignCenter
-        )
+        self.root_layout.addWidget(self.apply_button, alignment=Qt.AlignmentFlag.AlignCenter)
 
     def on_apply(self, event):
         folders_to_tags(self.library)
