@@ -344,7 +344,7 @@ class PreviewPanel(QWidget):
 
             layout.addLayout(row_layout)
 
-    def resizeEvent(self, event: QResizeEvent) -> None:
+    def resizeEvent(self, event: QResizeEvent) -> None:  # noqa: N802
         self.update_image_size(
             (self.image_container.size().width(), self.image_container.size().height())
         )

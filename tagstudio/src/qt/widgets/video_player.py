@@ -323,7 +323,7 @@ class VideoPlayer(QGraphicsView):
 
 
 class VideoPreview(QGraphicsVideoItem):
-    def boundingRect(self):
+    def boundingRect(self):  # noqa: N802
         return QRectF(0, 0, self.size().width(), self.size().height())
 
     def paint(self, painter, option, widget=None) -> None:

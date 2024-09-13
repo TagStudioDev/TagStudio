@@ -1,4 +1,6 @@
+import re
 import shutil
+import unicodedata
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from os import makedirs
@@ -49,9 +51,6 @@ from .models import Entry, Folder, Preferences, Tag, TagAlias, ValueType
 LIBRARY_FILENAME: str = "ts_library.sqlite"
 
 logger = structlog.get_logger(__name__)
-
-import re
-import unicodedata
 
 
 def slugify(input_string: str) -> str:
