@@ -1,3 +1,27 @@
 # Date: Thu, 12 Sep 2024 19:38:58 -0700
 # chore: format with ruff
 308be42bd21c3483098088ceb2ebc89208f5f26c
+
+# Date: Thu, 12 Sep 2024 21:43:01 -0700
+# ci(ruff): add E402 and F541 checks
+f52c1fc541fef0044edf5463a0818e17601e5fab
+
+# Date: Fri, 13 Sep 2024 11:43:08 +0700
+# ci(ruff): add FBT003 check
+16dd6346e4d7e86212d4df1ac91c19d9cb11c572
+
+# Date: Fri, 13 Sep 2024 11:43:08 +0700
+# Merge #500 into #499
+3baa07bd33decad5f048ff9ad7a36188bb2956b7
+
+# Date: Thu, 12 Sep 2024 21:50:00 -0700
+# ci(ruff): add T20 check
+162bcf5a6c7b2e4a39ec7e571375998c9859a42a
+
+# Date: Thu, 12 Sep 2024 22:28:24 -0700
+# ci(ruff)!: add N check, refactor method names
+5bc815cfba5b92bca8fc646b92cb4a12222f3a0e
+
+# Date: Thu, 12 Sep 2024 23:40:24 -0700
+# ci(ruff): add E501 check, refactor strings
+836bb0155d0eae3448a752e3f2690061803707b4
