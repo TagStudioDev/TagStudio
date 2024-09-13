@@ -3,11 +3,10 @@
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
 
-from PySide6.QtCore import QObject, Signal, QThreadPool
-
+from PySide6.QtCore import QObject, QThreadPool, Signal
 from src.core.utils.missing_files import MissingRegistry
-from src.qt.helpers.function_iterator import FunctionIterator
 from src.qt.helpers.custom_runnable import CustomRunnable
+from src.qt.helpers.function_iterator import FunctionIterator
 from src.qt.widgets.progress import ProgressWidget
 
 

@@ -6,17 +6,16 @@
 import math
 
 import structlog
-from PySide6.QtCore import Signal, Qt, QSize
+from PySide6.QtCore import QSize, Qt, Signal
 from PySide6.QtWidgets import (
-    QWidget,
-    QVBoxLayout,
-    QHBoxLayout,
-    QPushButton,
-    QLineEdit,
-    QScrollArea,
     QFrame,
+    QHBoxLayout,
+    QLineEdit,
+    QPushButton,
+    QScrollArea,
+    QVBoxLayout,
+    QWidget,
 )
-
 from src.core.library import Library
 from src.core.library.alchemy.enums import FilterState
 from src.core.palette import ColorType, get_tag_color
@@ -32,10 +31,8 @@ class TagSearchPanel(PanelWidget):
     def __init__(self, library: Library):
         super().__init__()
         self.lib = library
-        # self.callback = callback
         self.first_tag_id = None
         self.tag_limit = 100
-        # self.selected_tag: int = 0
         self.setMinimumSize(300, 400)
         self.root_layout = QVBoxLayout(self)
         self.root_layout.setContentsMargins(6, 0, 6, 0)
@@ -44,15 +41,10 @@ class TagSearchPanel(PanelWidget):
         self.search_field.setObjectName("searchField")
         self.search_field.setMinimumSize(QSize(0, 32))
         self.search_field.setPlaceholderText("Search Tags")
-        self.search_field.textEdited.connect(
-            lambda: self.update_tags(self.search_field.text())
-        )
+        self.search_field.textEdited.connect(lambda: self.update_tags(self.search_field.text()))
         self.search_field.returnPressed.connect(
             lambda checked=False: self.on_return(self.search_field.text())
         )
-
-        # self.content_container = QWidget()
-        # self.content_layout = QHBoxLayout(self.content_container)
 
         self.scroll_contents = QWidget()
         self.scroll_layout = QVBoxLayout(self.scroll_contents)
@@ -60,32 +52,15 @@ class TagSearchPanel(PanelWidget):
         self.scroll_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
 
         self.scroll_area = QScrollArea()
-        # self.scroll_area.setStyleSheet('background: #000000;')
-        self.scroll_area.setVerticalScrollBarPolicy(
-            Qt.ScrollBarPolicy.ScrollBarAlwaysOn
-        )
-        # self.scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOn)
         self.scroll_area.setWidgetResizable(True)
         self.scroll_area.setFrameShadow(QFrame.Shadow.Plain)
         self.scroll_area.setFrameShape(QFrame.Shape.NoFrame)
-        # sa.setMaximumWidth(self.preview_size[0])
         self.scroll_area.setWidget(self.scroll_contents)
-
-        # self.add_button = QPushButton()
-        # self.root_layout.addWidget(self.add_button)
-        # self.add_button.setText('Add Tag')
-        # # self.done_button.clicked.connect(lambda checked=False, x=1101: (callback(x), self.hide()))
-        # self.add_button.clicked.connect(lambda checked=False, x=1101: callback(x))
-        # # self.setLayout(self.root_layout)
 
         self.root_layout.addWidget(self.search_field)
         self.root_layout.addWidget(self.scroll_area)
         self.update_tags()
-
-    # def reset(self):
-    # 	self.search_field.setText('')
-    # 	self.update_tags('')
-    # 	self.search_field.setFocus()
 
     def on_return(self, text: str):
         if text and self.first_tag_id is not None:
@@ -113,7 +88,7 @@ class TagSearchPanel(PanelWidget):
             layout = QHBoxLayout(c)
             layout.setContentsMargins(0, 0, 0, 0)
             layout.setSpacing(3)
-            tw = TagWidget(tag, False, False)
+            tw = TagWidget(tag, has_edit=False, has_remove=False)
             ab = QPushButton()
             ab.setMinimumSize(23, 23)
             ab.setMaximumSize(23, 23)
@@ -145,8 +120,3 @@ class TagSearchPanel(PanelWidget):
             self.scroll_layout.addWidget(c)
 
         self.search_field.setFocus()
-
-    # def enterEvent(self, event: QEnterEvent) -> None:
-    # 	self.search_field.setFocus()
-    # 	return super().enterEvent(event)
-    # 	self.focusOutEvent

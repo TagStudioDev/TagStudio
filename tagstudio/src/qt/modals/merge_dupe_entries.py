@@ -4,12 +4,11 @@
 
 import typing
 
-from PySide6.QtCore import QObject, Signal, QThreadPool
-
+from PySide6.QtCore import QObject, QThreadPool, Signal
 from src.core.library import Library
 from src.core.utils.dupe_files import DupeRegistry
-from src.qt.helpers.function_iterator import FunctionIterator
 from src.qt.helpers.custom_runnable import CustomRunnable
+from src.qt.helpers.function_iterator import FunctionIterator
 from src.qt.widgets.progress import ProgressWidget
 
 # Only import for type checking/autocompletion, will not be imported at runtime.
@@ -39,9 +38,7 @@ class MergeDuplicateEntries(QObject):
         pw.show()
 
         iterator.value.connect(lambda x: pw.update_progress(x))
-        iterator.value.connect(
-            lambda: (pw.update_label("Merging Duplicate Entries..."))
-        )
+        iterator.value.connect(lambda: (pw.update_label("Merging Duplicate Entries...")))
 
         r = CustomRunnable(iterator.run)
         r.done.connect(lambda: (pw.hide(), pw.deleteLater(), self.done.emit()))

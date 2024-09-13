@@ -6,15 +6,14 @@
 import typing
 
 from PySide6.QtCore import Qt, QThreadPool
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton
-
+from PySide6.QtWidgets import QHBoxLayout, QLabel, QPushButton, QVBoxLayout, QWidget
 from src.core.library import Library
 from src.core.utils.missing_files import MissingRegistry
-from src.qt.helpers.function_iterator import FunctionIterator
 from src.qt.helpers.custom_runnable import CustomRunnable
+from src.qt.helpers.function_iterator import FunctionIterator
 from src.qt.modals.delete_unlinked import DeleteUnlinkedEntriesModal
-from src.qt.modals.relink_unlinked import RelinkUnlinkedEntries
 from src.qt.modals.merge_dupe_entries import MergeDuplicateEntries
+from src.qt.modals.relink_unlinked import RelinkUnlinkedEntries
 from src.qt.widgets.progress import ProgressWidget
 
 # Only import for type checking/autocompletion, will not be imported at runtime.
@@ -43,7 +42,11 @@ class FixUnlinkedEntriesModal(QWidget):
         self.unlinked_desc_widget.setWordWrap(True)
         self.unlinked_desc_widget.setStyleSheet("text-align:left;")
         self.unlinked_desc_widget.setText(
-            """Each library entry is linked to a file in one of your directories. If a file linked to an entry is moved or deleted outside of TagStudio, it is then considered unlinked. Unlinked entries may be automatically relinked via searching your directories, manually relinked by the user, or deleted if desired."""
+            "Each library entry is linked to a file in one of your directories. "
+            "If a file linked to an entry is moved or deleted outside of TagStudio, "
+            "it is then considered unlinked.\n\n"
+            "Unlinked entries may be automatically relinked via searching your directories, "
+            "manually relinked by the user, or deleted if desired."
         )
 
         self.missing_count_label = QLabel()

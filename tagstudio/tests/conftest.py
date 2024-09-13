@@ -1,7 +1,7 @@
-import sys
 import pathlib
+import sys
 from tempfile import TemporaryDirectory
-from unittest.mock import patch, Mock
+from unittest.mock import Mock, patch
 
 import pytest
 
@@ -9,10 +9,10 @@ CWD = pathlib.Path(__file__).parent
 # this needs to be above `src` imports
 sys.path.insert(0, str(CWD.parent))
 
-from src.core.library import Library, Tag, Entry
+from src.core.library import Entry, Library, Tag
+from src.core.library import alchemy as backend
 from src.core.library.alchemy.enums import TagColor
 from src.core.library.alchemy.fields import TagBoxField, _FieldID
-from src.core.library import alchemy as backend
 from src.qt.ts_qt import QtDriver
 
 

@@ -3,8 +3,7 @@
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 from typing import Callable
 
-from PySide6.QtWidgets import QVBoxLayout, QLineEdit
-
+from PySide6.QtWidgets import QLineEdit, QVBoxLayout
 from src.qt.widgets.panel import PanelWidget
 
 

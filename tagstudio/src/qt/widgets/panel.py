@@ -4,8 +4,8 @@
 import logging
 from typing import Callable
 
-from PySide6.QtCore import Signal, Qt
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton
+from PySide6.QtCore import Qt, Signal
+from PySide6.QtWidgets import QHBoxLayout, QLabel, QPushButton, QVBoxLayout, QWidget
 
 
 class PanelModal(QWidget):
@@ -35,9 +35,7 @@ class PanelModal(QWidget):
         self.title_widget = QLabel()
         self.title_widget.setObjectName("fieldTitle")
         self.title_widget.setWordWrap(True)
-        self.title_widget.setStyleSheet(
-            "font-weight:bold;" "font-size:14px;" "padding-top: 6px"
-        )
+        self.title_widget.setStyleSheet("font-weight:bold;" "font-size:14px;" "padding-top: 6px")
         self.title_widget.setText(title)
         self.title_widget.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
@@ -76,9 +74,7 @@ class PanelModal(QWidget):
                 self.save_button.clicked.connect(done_callback)
 
             if save_callback:
-                self.save_button.clicked.connect(
-                    lambda: save_callback(widget.get_content())
-                )
+                self.save_button.clicked.connect(lambda: save_callback(widget.get_content()))
 
             self.button_layout.addWidget(self.save_button)
 
@@ -94,9 +90,7 @@ class PanelModal(QWidget):
 
 
 class PanelWidget(QWidget):
-    """
-    Used for widgets that go in a modal panel, ex. for editing or searching.
-    """
+    """Used for widgets that go in a modal panel, ex. for editing or searching."""
 
     done = Signal()
 

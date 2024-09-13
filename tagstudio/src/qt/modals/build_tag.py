@@ -4,26 +4,24 @@
 
 
 import structlog
-from PySide6.QtCore import Signal, Qt
+from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import (
-    QWidget,
-    QVBoxLayout,
-    QLabel,
-    QPushButton,
-    QLineEdit,
-    QScrollArea,
-    QFrame,
-    QTextEdit,
     QComboBox,
+    QFrame,
+    QLabel,
+    QLineEdit,
+    QPushButton,
+    QScrollArea,
+    QTextEdit,
+    QVBoxLayout,
+    QWidget,
 )
-
-from src.core.library import Tag, Library
+from src.core.library import Library, Tag
 from src.core.library.alchemy.enums import TagColor
 from src.core.palette import ColorType, get_tag_color
-
-from src.qt.widgets.panel import PanelWidget, PanelModal
-from src.qt.widgets.tag import TagWidget
 from src.qt.modals.tag_search import TagSearchPanel
+from src.qt.widgets.panel import PanelModal, PanelWidget
+from src.qt.widgets.tag import TagWidget
 
 logger = structlog.get_logger(__name__)
 
@@ -145,7 +143,9 @@ class BuildTagPanel(PanelWidget):
                     "combobox-popup:0;"
                     "font-weight:600;"
                     f"color:{get_tag_color(ColorType.TEXT, self.color_field.currentData())};"
-                    f"background-color:{get_tag_color(ColorType.PRIMARY, self.color_field.currentData())};"
+                    f"background-color:{get_tag_color(
+                        ColorType.PRIMARY, 
+                        self.color_field.currentData())};"
                 )
             )
         )
@@ -183,7 +183,7 @@ class BuildTagPanel(PanelWidget):
         layout.setSpacing(3)
         for tag_id in self.subtags:
             tag = self.lib.get_tag(tag_id)
-            tw = TagWidget(tag, False, True)
+            tw = TagWidget(tag, has_edit=False, has_remove=True)
             tw.on_remove.connect(lambda t=tag_id: self.remove_subtag_callback(t))
             layout.addWidget(tw)
         self.scroll_layout.addWidget(c)

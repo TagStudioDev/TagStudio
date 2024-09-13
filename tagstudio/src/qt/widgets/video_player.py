@@ -2,36 +2,34 @@
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
 import logging
-
 import typing
 
-from PySide6.QtCore import (
-    Qt,
-    QSize,
-    QTimer,
-    QVariantAnimation,
-    QUrl,
-    QObject,
-    QEvent,
-    QRectF,
-)
-from PySide6.QtMultimedia import QMediaPlayer, QAudioOutput, QMediaDevices
-from PySide6.QtMultimediaWidgets import QGraphicsVideoItem
-from PySide6.QtWidgets import QGraphicsView, QGraphicsScene
-from PySide6.QtGui import (
-    QPen,
-    QColor,
-    QBrush,
-    QResizeEvent,
-    QWheelEvent,
-    QAction,
-    QRegion,
-    QBitmap,
-)
-from PySide6.QtSvgWidgets import QSvgWidget
-from src.qt.helpers.file_opener import FileOpenerHelper
 from PIL import Image, ImageDraw
+from PySide6.QtCore import (
+    QEvent,
+    QObject,
+    QRectF,
+    QSize,
+    Qt,
+    QTimer,
+    QUrl,
+    QVariantAnimation,
+)
+from PySide6.QtGui import (
+    QAction,
+    QBitmap,
+    QBrush,
+    QColor,
+    QPen,
+    QRegion,
+    QResizeEvent,
+)
+from PySide6.QtMultimedia import QAudioOutput, QMediaDevices, QMediaPlayer
+from PySide6.QtMultimediaWidgets import QGraphicsVideoItem
+from PySide6.QtSvgWidgets import QSvgWidget
+from PySide6.QtWidgets import QGraphicsScene, QGraphicsView
 from src.core.enums import SettingItems
+from src.qt.helpers.file_opener import FileOpenerHelper
 
 if typing.TYPE_CHECKING:
     from src.qt.ts_qt import QtDriver
@@ -49,11 +47,9 @@ class VideoPlayer(QGraphicsView):
         self.driver = driver
         self.resolution = QSize(1280, 720)
         self.animation = QVariantAnimation(self)
-        self.animation.valueChanged.connect(
-            lambda value: self.setTintTransparency(value)
-        )
+        self.animation.valueChanged.connect(lambda value: self.set_tint_opacity(value))
         self.hover_fix_timer = QTimer()
-        self.hover_fix_timer.timeout.connect(lambda: self.checkIfStillHovered())
+        self.hover_fix_timer.timeout.connect(lambda: self.check_if_hovered())
         self.hover_fix_timer.setSingleShot(True)
         self.content_visible = False
         self.filepath = None
@@ -63,16 +59,14 @@ class VideoPlayer(QGraphicsView):
         self.setScene(QGraphicsScene(self))
         self.player = QMediaPlayer(self)
         self.player.mediaStatusChanged.connect(
-            lambda: self.checkMediaStatus(self.player.mediaStatus())
+            lambda: self.check_media_status(self.player.mediaStatus())
         )
         self.video_preview = VideoPreview()
         self.player.setVideoOutput(self.video_preview)
         self.video_preview.setAcceptHoverEvents(True)
         self.video_preview.setAcceptedMouseButtons(Qt.MouseButton.RightButton)
         self.video_preview.installEventFilter(self)
-        self.player.setAudioOutput(
-            QAudioOutput(QMediaDevices().defaultAudioOutput(), self.player)
-        )
+        self.player.setAudioOutput(QAudioOutput(QMediaDevices().defaultAudioOutput(), self.player))
         self.player.audioOutput().setMuted(True)
         self.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
@@ -92,7 +86,7 @@ class VideoPlayer(QGraphicsView):
 
         # Set up the buttons.
         self.play_pause = QSvgWidget()
-        self.play_pause.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, True)
+        self.play_pause.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, on=True)
         self.play_pause.setMouseTracking(True)
         self.play_pause.installEventFilter(self)
         self.scene().addWidget(self.play_pause)
@@ -104,7 +98,7 @@ class VideoPlayer(QGraphicsView):
         self.play_pause.hide()
 
         self.mute_button = QSvgWidget()
-        self.mute_button.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, True)
+        self.mute_button.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, on=True)
         self.mute_button.setMouseTracking(True)
         self.mute_button.installEventFilter(self)
         self.scene().addWidget(self.mute_button)
@@ -121,9 +115,9 @@ class VideoPlayer(QGraphicsView):
         autoplay_action.setCheckable(True)
         self.addAction(autoplay_action)
         autoplay_action.setChecked(
-            bool(self.driver.settings.value(SettingItems.AUTOPLAY, True, type=bool))
+            bool(self.driver.settings.value(SettingItems.AUTOPLAY, defaultValue=True, type=bool))
         )
-        autoplay_action.triggered.connect(lambda: self.toggleAutoplay())
+        autoplay_action.triggered.connect(lambda: self.toggle_autoplay())
         self.autoplay = autoplay_action
 
         open_file_action = QAction("Open file", self)
@@ -137,11 +131,12 @@ class VideoPlayer(QGraphicsView):
         self.player.stop()
         super().close(*args, **kwargs)
 
-    def toggleAutoplay(self) -> None:
+    def toggle_autoplay(self) -> None:
+        """Toggle the autoplay state of the video."""
         self.driver.settings.setValue(SettingItems.AUTOPLAY, self.autoplay.isChecked())
         self.driver.settings.sync()
 
-    def checkMediaStatus(self, media_status: QMediaPlayer.MediaStatus) -> None:
+    def check_media_status(self, media_status: QMediaPlayer.MediaStatus) -> None:
         if media_status == QMediaPlayer.MediaStatus.EndOfMedia:
             # Switches current video to with video at filepath.
             # Reason for this is because Pyside6 can't handle setting a new source and freezes.
@@ -155,10 +150,11 @@ class VideoPlayer(QGraphicsView):
             else:
                 self.player.pause()
             self.opener.set_filepath(self.filepath)
-            self.keepControlsInPlace()
-        self.updateControls()
+            self.reposition_controls()
+        self.update_controls()
 
-    def updateControls(self) -> None:
+    def update_controls(self) -> None:
+        """Update the icons of the video player controls."""
         if self.player.audioOutput().isMuted():
             self.mute_button.load(self.driver.rm.volume_mute_icon)
         else:
@@ -169,19 +165,16 @@ class VideoPlayer(QGraphicsView):
         else:
             self.play_pause.load(self.driver.rm.play_icon)
 
-    def wheelEvent(self, event: QWheelEvent) -> None:
-        return
-
-    def eventFilter(self, obj: QObject, event: QEvent) -> bool:
-        # This chunk of code is for the video controls.
+    def eventFilter(self, obj: QObject, event: QEvent) -> bool:  # noqa: N802
+        """Manage events for the video player."""
         if (
             event.type() == QEvent.Type.MouseButtonPress
             and event.button() == Qt.MouseButton.LeftButton  # type: ignore
         ):
             if obj == self.play_pause and self.player.hasVideo():
-                self.pauseToggle()
+                self.toggle_pause()
             elif obj == self.mute_button and self.player.hasAudio():
-                self.muteToggle()
+                self.toggle_mute()
 
         elif obj == self.video_preview:
             if event.type() in (
@@ -192,8 +185,7 @@ class VideoPlayer(QGraphicsView):
                     self.underMouse()
                     self.hover_fix_timer.start(10)
             elif (
-                event.type()
-                in (QEvent.Type.GraphicsSceneHoverLeave, QEvent.Type.HoverLeave)
+                event.type() in (QEvent.Type.GraphicsSceneHoverLeave, QEvent.Type.HoverLeave)
                 and not self.video_preview.isUnderMouse()
             ):
                 self.hover_fix_timer.stop()
@@ -201,32 +193,37 @@ class VideoPlayer(QGraphicsView):
 
         return super().eventFilter(obj, event)
 
-    def checkIfStillHovered(self) -> None:
-        # I don't know why, but the HoverLeave event is not triggered sometimes
-        # and does not hide the controls.
-        # So, this is a workaround. This is called by a QTimer every 10ms to check if the mouse
-        # is still in the video preview.
+    def check_if_hovered(self) -> None:
+        """Check if the mouse is still hovering over the video player."""
+        # Sometimes the HoverLeave event does not trigger and is unable to hide the video controls.
+        # As a workaround, this is called by a QTimer every 10ms
+        # to check if the mouse is still in the video preview.
         if not self.video_preview.isUnderMouse():
             self.releaseMouse()
         else:
             self.hover_fix_timer.start(10)
 
-    def setTintTransparency(self, value) -> None:
-        self.video_tint.setBrush(QBrush(QColor(0, 0, 0, value)))
+    def set_tint_opacity(self, opacity: int) -> None:
+        """Set the opacity of the video player's tint.
 
-    def underMouse(self) -> bool:
+        Args:
+            opacity(int): The opacity value, from 0-255.
+        """
+        self.video_tint.setBrush(QBrush(QColor(0, 0, 0, opacity)))
+
+    def underMouse(self) -> bool:  # noqa: N802
         self.animation.setStartValue(self.video_tint.brush().color().alpha())
         self.animation.setEndValue(100)
         self.animation.setDuration(250)
         self.animation.start()
         self.play_pause.show()
         self.mute_button.show()
-        self.keepControlsInPlace()
-        self.updateControls()
+        self.reposition_controls()
+        self.update_controls()
 
         return super().underMouse()
 
-    def releaseMouse(self) -> None:
+    def releaseMouse(self) -> None:  # noqa: N802
         self.animation.setStartValue(self.video_tint.brush().color().alpha())
         self.animation.setEndValue(0)
         self.animation.setDuration(500)
@@ -236,12 +233,13 @@ class VideoPlayer(QGraphicsView):
 
         return super().releaseMouse()
 
-    def resetControlsToDefault(self) -> None:
-        # Resets the video controls to their default state.
+    def reset_controls(self) -> None:
+        """Reset the video controls to their default state."""
         self.play_pause.load(self.driver.rm.pause_icon)
         self.mute_button.load(self.driver.rm.volume_mute_icon)
 
-    def pauseToggle(self) -> None:
+    def toggle_pause(self) -> None:
+        """Toggle the pause state of the video."""
         if self.player.isPlaying():
             self.player.pause()
             self.play_pause.load(self.driver.rm.play_icon)
@@ -249,7 +247,8 @@ class VideoPlayer(QGraphicsView):
             self.player.play()
             self.play_pause.load(self.driver.rm.pause_icon)
 
-    def muteToggle(self) -> None:
+    def toggle_mute(self) -> None:
+        """Toggle the mute state of the video."""
         if self.player.audioOutput().isMuted():
             self.player.audioOutput().setMuted(False)
             self.mute_button.load(self.driver.rm.volume_icon)
@@ -258,8 +257,10 @@ class VideoPlayer(QGraphicsView):
             self.mute_button.load(self.driver.rm.volume_mute_icon)
 
     def play(self, filepath: str, resolution: QSize) -> None:
-        # Sets the filepath and sends the current player position to the very end,
-        # so that the new video can be played.
+        """Set the filepath and send the current player position to the very end.
+
+        This is used so that the new video can be played.
+        """
         logging.info(f"Playing {filepath}")
         self.resolution = resolution
         self.filepath = filepath
@@ -267,14 +268,18 @@ class VideoPlayer(QGraphicsView):
             self.player.setPosition(self.player.duration())
             self.player.play()
         else:
-            self.checkMediaStatus(QMediaPlayer.MediaStatus.EndOfMedia)
+            self.check_media_status(QMediaPlayer.MediaStatus.EndOfMedia)
 
     def stop(self) -> None:
         self.filepath = None
         self.player.stop()
 
-    def resizeVideo(self, new_size: QSize) -> None:
-        # Resizes the video preview to the new size.
+    def resize_video(self, new_size: QSize) -> None:
+        """Resize the video player.
+
+        Args:
+            new_size(QSize): The new size of the video player to set.
+        """
         self.video_preview.setSize(new_size)
         self.video_tint.setRect(
             0, 0, self.video_preview.size().width(), self.video_preview.size().height()
@@ -282,11 +287,12 @@ class VideoPlayer(QGraphicsView):
 
         contents = self.contentsRect()
         self.centerOn(self.video_preview)
-        self.roundCorners()
+        self.apply_rounded_corners()
         self.setSceneRect(0, 0, contents.width(), contents.height())
-        self.keepControlsInPlace()
+        self.reposition_controls()
 
-    def roundCorners(self) -> None:
+    def apply_rounded_corners(self) -> None:
+        """Apply a rounded corner effect to the video player."""
         width: int = int(max(self.contentsRect().size().width(), 0))
         height: int = int(max(self.contentsRect().size().height(), 0))
         mask = Image.new(
@@ -306,8 +312,8 @@ class VideoPlayer(QGraphicsView):
         final_mask = mask.getchannel("A").toqpixmap()
         self.setMask(QRegion(QBitmap(final_mask)))
 
-    def keepControlsInPlace(self) -> None:
-        # Keeps the video controls in the places they should be.
+    def reposition_controls(self) -> None:
+        """Reposition video controls to their intended locations."""
         self.play_pause.move(
             int(self.width() / 2 - self.play_pause.size().width() / 2),
             int(self.height() / 2 - self.play_pause.size().height() / 2),
@@ -317,10 +323,10 @@ class VideoPlayer(QGraphicsView):
             int(self.height() - self.mute_button.size().height() - 10),
         )
 
-    def resizeEvent(self, event: QResizeEvent) -> None:
-        # Keeps the video preview in the center of the screen.
+    def resizeEvent(self, event: QResizeEvent) -> None:  # noqa: N802
+        """Keep the video preview in the center of the screen."""
         self.centerOn(self.video_preview)
-        self.resizeVideo(
+        self.resize_video(
             QSize(
                 int(self.video_preview.size().width()),
                 int(self.video_preview.size().height()),
@@ -329,7 +335,7 @@ class VideoPlayer(QGraphicsView):
 
 
 class VideoPreview(QGraphicsVideoItem):
-    def boundingRect(self):
+    def boundingRect(self):  # noqa: N802
         return QRectF(0, 0, self.size().width(), self.size().height())
 
     def paint(self, painter, option, widget=None) -> None:

@@ -2,12 +2,10 @@
 # Licensed under the GPL-3.0 License.
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
-from PIL import Image, ImageEnhance, ImageChops
+from PIL import Image, ImageChops, ImageEnhance
 
 
-def four_corner_gradient_background(
-    image: Image.Image, adj_size, mask, hl
-) -> Image.Image:
+def four_corner_gradient_background(image: Image.Image, adj_size, mask, hl) -> Image.Image:
     if image.size != (adj_size, adj_size):
         # Old 1 color method.
         # bg_col = image.copy().resize((1, 1)).getpixel((0,0))
@@ -16,7 +14,11 @@ def four_corner_gradient_background(
         # bg = bg.resize((adj_size,adj_size), resample=Image.Resampling.NEAREST)
 
         # Small gradient background. Looks decent, and is only a one-liner.
-        # bg = image.copy().resize((2, 2), resample=Image.Resampling.BILINEAR).resize((adj_size,adj_size),resample=Image.Resampling.BILINEAR)
+        # bg = (
+        #     image.copy()
+        #     .resize((2, 2), resample=Image.Resampling.BILINEAR)
+        #     .resize((adj_size, adj_size), resample=Image.Resampling.BILINEAR)
+        # )
 
         # Four-Corner Gradient Background.
         # Not exactly a one-liner, but it's (subjectively) really cool.

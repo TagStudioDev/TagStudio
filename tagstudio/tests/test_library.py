@@ -2,12 +2,10 @@ from pathlib import Path, PureWindowsPath
 from tempfile import TemporaryDirectory
 
 import pytest
-
 from src.core.constants import LibraryPrefs
-from src.core.library.alchemy import Entry
-from src.core.library.alchemy import Library
+from src.core.library.alchemy import Entry, Library
 from src.core.library.alchemy.enums import FilterState
-from src.core.library.alchemy.fields import _FieldID, TextField
+from src.core.library.alchemy.fields import TextField, _FieldID
 
 
 def test_library_bootstrap():
@@ -100,10 +98,7 @@ def test_get_entry(library, entry_min):
 
 
 def test_entries_count(library):
-    entries = [
-        Entry(path=Path(f"{x}.txt"), folder=library.folder, fields=[])
-        for x in range(10)
-    ]
+    entries = [Entry(path=Path(f"{x}.txt"), folder=library.folder, fields=[]) for x in range(10)]
     library.add_entries(entries)
     results = library.search_library(
         FilterState(
@@ -379,12 +374,8 @@ def test_update_field_order(library, entry_full):
     title_field = entry_full.text_fields[0]
 
     # When add two more fields
-    library.add_entry_field_type(
-        entry_full.id, field_id=title_field.type_key, value="first"
-    )
-    library.add_entry_field_type(
-        entry_full.id, field_id=title_field.type_key, value="second"
-    )
+    library.add_entry_field_type(entry_full.id, field_id=title_field.type_key, value="first")
+    library.add_entry_field_type(entry_full.id, field_id=title_field.type_key, value="second")
 
     # remove the one on first position
     assert title_field.position == 0

@@ -4,7 +4,7 @@
 
 
 def strip_web_protocol(string: str) -> str:
-    """Strips a leading web protocol (ex. \"https://\") as well as \"www.\" from a string."""
+    r"""Strips a leading web protocol (ex. \"https://\") as well as \"www.\" from a string."""
     prefixes = ["https://", "http://", "www.", "www2."]
     for prefix in prefixes:
         string = string.removeprefix(prefix)
