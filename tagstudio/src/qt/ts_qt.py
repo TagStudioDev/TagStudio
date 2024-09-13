@@ -1009,26 +1009,26 @@ class QtDriver(QObject):
         self.main_window.statusbar.repaint()
         start_time = time.time()
 
-        query_count, page_items = self.lib.search_library(self.filter)
+        results = self.lib.search_library(self.filter)
 
-        logger.info("items to render", count=len(page_items))
+        logger.info("items to render", count=len(results))
 
         end_time = time.time()
         if self.filter.summary:
             self.main_window.statusbar.showMessage(
-                f'{query_count} Results Found for "{self.filter.summary}" ({format_timespan(end_time - start_time)})'
+                f'{results.total_count} Results Found for "{self.filter.summary}" ({format_timespan(end_time - start_time)})'
             )
         else:
             self.main_window.statusbar.showMessage(
-                f"{query_count} Results ({format_timespan(end_time - start_time)})"
+                f"{results.total_count} Results ({format_timespan(end_time - start_time)})"
             )
 
         # update page content
-        self.frame_content = list(page_items)
+        self.frame_content = results.items
         self.update_thumbs()
 
         # update pagination
-        self.pages_count = math.ceil(query_count / self.filter.page_size)
+        self.pages_count = math.ceil(results.total_count / self.filter.page_size)
         self.main_window.pagination.update_buttons(
             self.pages_count, self.filter.page_index, emit=False
         )

@@ -57,16 +57,16 @@ def test_library_search(library, generate_tag, entry_full):
     assert library.entries_count == 2
     tag = list(entry_full.tags)[0]
 
-    query_count, items = library.search_library(
+    results = library.search_library(
         FilterState(
             tag=tag.name,
         ),
     )
 
-    assert query_count == 1
-    assert len(items) == 1
+    assert results.total_count == 1
+    assert len(results) == 1
 
-    entry = items[0]
+    entry = results[0]
     assert {x.name for x in entry.tags} == {
         "foo",
     }
@@ -94,9 +94,9 @@ def test_tag_search(library):
 
 def test_get_entry(library, entry_min):
     assert entry_min.id
-    cnt, entries = library.search_library(FilterState(id=entry_min.id))
-    assert len(entries) == cnt == 1
-    assert entries[0].tags
+    results = library.search_library(FilterState(id=entry_min.id))
+    assert len(results) == results.total_count == 1
+    assert results[0].tags
 
 
 def test_entries_count(library):
@@ -105,14 +105,14 @@ def test_entries_count(library):
         for x in range(10)
     ]
     library.add_entries(entries)
-    matches, page = library.search_library(
+    results = library.search_library(
         FilterState(
             page_size=5,
         )
     )
 
-    assert matches == 12
-    assert len(page) == 5
+    assert results.total_count == 12
+    assert len(results) == 5
 
 
 def test_add_field_to_entry(library):
@@ -146,8 +146,8 @@ def test_add_field_tag(library, entry_full, generate_tag):
     library.add_field_tag(entry_full, tag, tag_field.type_key)
 
     # Then
-    _, entries = library.search_library(FilterState(id=entry_full.id))
-    tag_field = entries[0].tag_box_fields[0]
+    results = library.search_library(FilterState(id=entry_full.id))
+    tag_field = results[0].tag_box_fields[0]
     assert [x.name for x in tag_field.tags if x.name == tag_name]
 
 
@@ -179,15 +179,15 @@ def test_search_filter_extensions(library, is_exclude):
     library.set_prefs(LibraryPrefs.EXTENSION_LIST, ["md"])
 
     # When
-    query_count, items = library.search_library(
+    results = library.search_library(
         FilterState(),
     )
 
     # Then
-    assert query_count == 1
-    assert len(items) == 1
+    assert results.total_count == 1
+    assert len(results) == 1
 
-    entry = items[0]
+    entry = results[0]
     assert (entry.path.suffix == ".txt") == is_exclude
 
 
@@ -200,15 +200,15 @@ def test_search_library_case_insensitive(library):
     tag = list(entry.tags)[0]
 
     # When
-    query_count, items = library.search_library(
+    results = library.search_library(
         FilterState(tag=tag.name.upper()),
     )
 
     # Then
-    assert query_count == 1
-    assert len(items) == 1
+    assert results.total_count == 1
+    assert len(results) == 1
 
-    assert items[0].id == entry.id
+    assert results[0].id == entry.id
 
 
 def test_preferences(library):
@@ -231,11 +231,11 @@ def test_save_windows_path(library, generate_tag):
     # library.add_tag(tag)
     library.add_field_tag(entry, tag, create_field=True)
 
-    _, found = library.search_library(FilterState(tag=tag_name))
-    assert found
+    results = library.search_library(FilterState(tag=tag_name))
+    assert results
 
     # path should be saved in posix format
-    assert str(found[0].path) == "foo/bar.txt"
+    assert str(results[0].path) == "foo/bar.txt"
 
 
 def test_remove_entry_field(library, entry_full):
@@ -312,13 +312,13 @@ def test_mirror_entry_fields(library, entry_full):
 
     entry_id = library.add_entries([target_entry])[0]
 
-    _, entries = library.search_library(FilterState(id=entry_id))
-    new_entry = entries[0]
+    results = library.search_library(FilterState(id=entry_id))
+    new_entry = results[0]
 
     library.mirror_entry_fields(new_entry, entry_full)
 
-    _, entries = library.search_library(FilterState(id=entry_id))
-    entry = entries[0]
+    results = library.search_library(FilterState(id=entry_id))
+    entry = results[0]
 
     assert len(entry.fields) == 4
     assert {x.type_key for x in entry.fields} == {
@@ -350,13 +350,11 @@ def test_remove_tag_from_field(library, entry_full):
     ],
 )
 def test_search_file_name(library, query_name, has_result):
-    res_count, items = library.search_library(
+    results = library.search_library(
         FilterState(name=query_name),
     )
 
-    assert (
-        res_count == has_result
-    ), f"mismatch with query: {query_name}, result: {res_count}"
+    assert results.total_count == has_result
 
 
 @pytest.mark.parametrize(
@@ -369,13 +367,11 @@ def test_search_file_name(library, query_name, has_result):
     ],
 )
 def test_search_entry_id(library, query_name, has_result):
-    res_count, items = library.search_library(
+    results = library.search_library(
         FilterState(id=query_name),
     )
 
-    assert (
-        res_count == has_result
-    ), f"mismatch with query: {query_name}, result: {res_count}"
+    assert results.total_count == has_result
 
 
 def test_update_field_order(library, entry_full):

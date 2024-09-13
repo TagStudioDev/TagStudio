@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from datetime import datetime, UTC
 import shutil
 from os import makedirs
@@ -85,6 +86,33 @@ def get_default_tags() -> tuple[Tag, ...]:
     )
 
     return archive_tag, favorite_tag
+
+
+@dataclass(frozen=True)
+class SearchResult:
+    """Wrapper for search results.
+
+    :param total_count: total number of items for given query, might be different than len(items)
+    :param items: items for current page (size matches filter.page_size)
+    """
+
+    total_count: int
+    items: list[Entry]
+
+    def __bool__(self) -> bool:
+        """Boolean evaluation for the wrapper.
+
+        :return: True if there are items in the result.
+        """
+        return self.total_count > 0
+
+    def __len__(self) -> int:
+        """Return the total number of items in the result."""
+        return len(self.items)
+
+    def __getitem__(self, index: int) -> Entry:
+        """Allow to access items via index directly on the wrapper."""
+        return self.items[index]
 
 
 class Library:
@@ -325,7 +353,7 @@ class Library:
     def search_library(
         self,
         search: FilterState,
-    ) -> tuple[int, list[Entry]]:
+    ) -> SearchResult:
         """Filter library by search query.
 
         :return: number of entries matching the query and one page of results.
@@ -401,11 +429,14 @@ class Library:
                 ),
             )
 
-            entries_ = list(session.scalars(statement).unique())
+            res = SearchResult(
+                total_count=count_all,
+                items=list(session.scalars(statement).unique()),
+            )
 
             session.expunge_all()
 
-            return count_all, entries_
+            return res
 
     def search_tags(
         self,
