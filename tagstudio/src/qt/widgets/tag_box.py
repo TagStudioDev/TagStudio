@@ -46,7 +46,7 @@ class TagBoxWidget(FieldWidget):
         )
         self.setObjectName("tagBox")
         self.base_layout = FlowLayout()
-        self.base_layout.setGridEfficiency(False)
+        self.base_layout.enable_grid_optimizations(value=False)
         self.base_layout.setContentsMargins(0, 0, 0, 0)
         self.setLayout(self.base_layout)
 

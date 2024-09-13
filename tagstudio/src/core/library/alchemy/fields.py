@@ -18,27 +18,27 @@ class BaseField(Base):
     __abstract__ = True
 
     @declared_attr
-    def id(cls) -> Mapped[int]:
+    def id(cls) -> Mapped[int]:  # noqa: N805
         return mapped_column(primary_key=True, autoincrement=True)
 
     @declared_attr
-    def type_key(cls) -> Mapped[str]:
+    def type_key(cls) -> Mapped[str]:  # noqa: N805
         return mapped_column(ForeignKey("value_type.key"))
 
     @declared_attr
-    def type(cls) -> Mapped[ValueType]:
+    def type(cls) -> Mapped[ValueType]:  # noqa: N805
         return relationship(foreign_keys=[cls.type_key], lazy=False)  # type: ignore
 
     @declared_attr
-    def entry_id(cls) -> Mapped[int]:
+    def entry_id(cls) -> Mapped[int]:  # noqa: N805
         return mapped_column(ForeignKey("entries.id"))
 
     @declared_attr
-    def entry(cls) -> Mapped[Entry]:
+    def entry(cls) -> Mapped[Entry]:  # noqa: N805
         return relationship(foreign_keys=[cls.entry_id])  # type: ignore
 
     @declared_attr
-    def position(cls) -> Mapped[int]:
+    def position(cls) -> Mapped[int]:  # noqa: N805
         return mapped_column(default=0)
 
     def __hash__(self):

@@ -449,11 +449,11 @@ class ItemThumb(FlowWidget):
                 is_hidden = not (show or self.badge_active[badge_type])
                 badge.setHidden(is_hidden)
 
-    def enterEvent(self, event: QEnterEvent) -> None:
+    def enterEvent(self, event: QEnterEvent) -> None:  # noqa: N802
         self.show_check_badges(show=True)
         return super().enterEvent(event)
 
-    def leaveEvent(self, event: QEvent) -> None:
+    def leaveEvent(self, event: QEvent) -> None:  # noqa: N802
         self.show_check_badges(show=False)
         return super().leaveEvent(event)
 

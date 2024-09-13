@@ -42,46 +42,46 @@ class FlowLayout(QLayout):
         while item:
             item = self.takeAt(0)
 
-    def addItem(self, item):
+    def addItem(self, item):  # noqa: N802
         self._item_list.append(item)
 
     def count(self):
         return len(self._item_list)
 
-    def itemAt(self, index):
+    def itemAt(self, index):  # noqa: N802
         if 0 <= index < len(self._item_list):
             return self._item_list[index]
 
         return None
 
-    def takeAt(self, index):
+    def takeAt(self, index):  # noqa: N802
         if 0 <= index < len(self._item_list):
             return self._item_list.pop(index)
 
         return None
 
-    def expandingDirections(self):
+    def expandingDirections(self):  # noqa: N802
         return Qt.Orientation(0)
 
-    def hasHeightForWidth(self):
+    def hasHeightForWidth(self):  # noqa: N802
         return True
 
-    def heightForWidth(self, width):
+    def heightForWidth(self, width):  # noqa: N802
         height = self._do_layout(QRect(0, 0, width, 0), test_only=True)
         return height
 
-    def setGeometry(self, rect):
+    def setGeometry(self, rect):  # noqa: N802
         super().setGeometry(rect)
         self._do_layout(rect, test_only=False)
 
-    def setGridEfficiency(self, value: bool):
+    def enable_grid_optimizations(self, value: bool):
         """Enable or Disable efficiencies when all objects are equally sized."""
         self.grid_efficiency = value
 
-    def sizeHint(self):
+    def sizeHint(self):  # noqa: N802
         return self.minimumSize()
 
-    def minimumSize(self):
+    def minimumSize(self):  # noqa: N802
         if self.grid_efficiency:
             if self._item_list:
                 return self._item_list[0].minimumSize()

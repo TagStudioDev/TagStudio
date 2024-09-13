@@ -304,7 +304,7 @@ class TreeItem(QWidget):
 class ModifiedTagWidget(
     QWidget
 ):  # Needed to be modified because the original searched the display name in the library where it wasn't added yet
-    def __init__(self, tag: Tag, parentTag: Tag) -> None:
+    def __init__(self, tag: Tag, parent_tag: Tag) -> None:
         super().__init__()
         self.tag = tag
 
@@ -315,8 +315,8 @@ class ModifiedTagWidget(
 
         self.bg_button = QPushButton(self)
         self.bg_button.setFlat(True)
-        if parentTag is not None:
-            text = f"{tag.name} ({parentTag.name})".replace("&", "&&")
+        if parent_tag is not None:
+            text = f"{tag.name} ({parent_tag.name})".replace("&", "&&")
         else:
             text = tag.name.replace("&", "&&")
         self.bg_button.setText(text)

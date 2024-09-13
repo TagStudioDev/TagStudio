@@ -122,7 +122,7 @@ class FileOpenerLabel(QLabel):
         """
         super().__init__(text, parent)
 
-    def setFilePath(self, filepath):
+    def set_file_path(self, filepath):
         """Set the filepath to open.
 
         Args:
@@ -130,7 +130,7 @@ class FileOpenerLabel(QLabel):
         """
         self.filepath = filepath
 
-    def mousePressEvent(self, event):
+    def mousePressEvent(self, event):  # noqa: N802
         """Handle mouse press events.
 
         On a left click, open the file in the default file explorer. On a right click, show a context menu.

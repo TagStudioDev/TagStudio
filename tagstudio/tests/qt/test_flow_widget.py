@@ -9,7 +9,7 @@ def test_flow_layout_happy_path(qtbot):
             super().__init__()
 
             self.flow_layout = FlowLayout(self)
-            self.flow_layout.setGridEfficiency(value=True)
+            self.flow_layout.enable_grid_optimizations(value=True)
             self.flow_layout.addWidget(QPushButton("Short"))
 
     window = Window()

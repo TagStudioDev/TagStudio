@@ -170,7 +170,7 @@ class FieldContainer(QWidget):
     # def set_editable(self, editable:bool):
     # 	self.editable = editable
 
-    def enterEvent(self, event: QEnterEvent) -> None:
+    def enterEvent(self, event: QEnterEvent) -> None:  # noqa: N802
         # if self.field_layout.itemAt(1):
         # 	self.field_layout.itemAt(1).
         # NOTE: You could pass the hover event to the FieldWidget if needed.
@@ -182,7 +182,7 @@ class FieldContainer(QWidget):
             self.remove_button.setHidden(False)
         return super().enterEvent(event)
 
-    def leaveEvent(self, event: QEvent) -> None:
+    def leaveEvent(self, event: QEvent) -> None:  # noqa: N802
         if self.copy_callback:
             self.copy_button.setHidden(True)
         if self.edit_callback:

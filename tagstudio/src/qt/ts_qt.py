@@ -153,7 +153,7 @@ class QtDriver(QObject):
         # grid indexes of selected items
         self.selected: list[int] = []
 
-        self.SIGTERM.connect(self.handleSIGTERM)
+        self.SIGTERM.connect(self.handle_sigterm)
 
         if self.args.config_file:
             path = Path(self.args.config_file)
@@ -534,7 +534,7 @@ class QtDriver(QObject):
         if self.lib.library_dir:
             func()
 
-    def handleSIGTERM(self):
+    def handle_sigterm(self):
         self.shutdown()
 
     def shutdown(self):
@@ -826,7 +826,7 @@ class QtDriver(QObject):
 
     def _init_thumb_grid(self):
         layout = FlowLayout()
-        layout.setGridEfficiency(True)
+        layout.enable_grid_optimizations(value=True)
         layout.setSpacing(min(self.thumb_size // 10, 12))
         layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
@@ -1024,7 +1024,7 @@ class QtDriver(QObject):
 
     def update_libs_list(self, path: Path | str):
         """Add library to list in SettingItems.LIBS_LIST."""
-        ITEMS_LIMIT = 5
+        item_limit: int = 5
         path = Path(path)
 
         self.settings.beginGroup(SettingItems.LIBS_LIST)
@@ -1042,7 +1042,7 @@ class QtDriver(QObject):
         # remove previously saved items
         self.settings.clear()
 
-        for item_key, item_value in all_libs_list[:ITEMS_LIMIT]:
+        for item_key, item_value in all_libs_list[:item_limit]:
             self.settings.setValue(item_key, item_value)
 
         self.settings.endGroup()

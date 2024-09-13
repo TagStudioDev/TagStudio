@@ -166,14 +166,14 @@ class TagWidget(QWidget):
 
         # self.setMinimumSize(50,20)
 
-    def enterEvent(self, event: QEnterEvent) -> None:
+    def enterEvent(self, event: QEnterEvent) -> None:  # noqa: N802
         if self.has_remove:
             self.remove_button.setHidden(False)
         # self.edit_button.setHidden(False)
         self.update()
         return super().enterEvent(event)
 
-    def leaveEvent(self, event: QEvent) -> None:
+    def leaveEvent(self, event: QEvent) -> None:  # noqa: N802
         if self.has_remove:
             self.remove_button.setHidden(True)
         # self.edit_button.setHidden(True)

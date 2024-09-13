@@ -22,7 +22,7 @@ from src.qt.widgets.panel import PanelWidget
 
 
 class FileExtensionItemDelegate(QStyledItemDelegate):
-    def setModelData(self, editor, model, index):
+    def setModelData(self, editor, model, index):  # noqa: N802
         if isinstance(editor, QLineEdit) and editor.text() and not editor.text().startswith("."):
             editor.setText(f".{editor.text()}")
         super().setModelData(editor, model, index)

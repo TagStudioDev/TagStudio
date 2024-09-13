@@ -235,7 +235,7 @@ class ValueType(Base):
 
     @property
     def as_field(self) -> BaseField:
-        FieldClass = {
+        FieldClass = {  # noqa: N806
             FieldTypeEnum.TEXT_LINE: TextField,
             FieldTypeEnum.TEXT_BOX: TextField,
             FieldTypeEnum.TAGS: TagBoxField,

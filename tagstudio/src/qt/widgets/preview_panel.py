@@ -396,7 +396,7 @@ class PreviewPanel(QWidget):
         self.img_button_size = (int(adj_width), int(adj_height))
         self.preview_img.setMaximumSize(adj_size)
         self.preview_img.setIconSize(adj_size)
-        self.preview_vid.resizeVideo(adj_size)
+        self.preview_vid.resize_video(adj_size)
         self.preview_vid.setMaximumSize(adj_size)
         self.preview_vid.setMinimumSize(adj_size)
         # self.preview_img.setMinimumSize(adj_size)
@@ -445,7 +445,7 @@ class PreviewPanel(QWidget):
         if not self.driver.selected:
             if self.selected or not self.initialized:
                 self.file_label.setText("No Items Selected")
-                self.file_label.setFilePath("")
+                self.file_label.set_file_path("")
                 self.file_label.setCursor(Qt.CursorShape.ArrowCursor)
 
                 self.dimensions_label.setText("")
@@ -503,7 +503,7 @@ class PreviewPanel(QWidget):
             # If a new selection is made, update the thumbnail and filepath.
             if not self.selected or self.selected != self.driver.selected:
                 filepath = self.lib.library_dir / item.path
-                self.file_label.setFilePath(filepath)
+                self.file_label.set_file_path(filepath)
                 ratio = self.devicePixelRatio()
                 self.thumb_renderer.render(
                     time.time(),
@@ -614,7 +614,7 @@ class PreviewPanel(QWidget):
             if self.selected != self.driver.selected:
                 self.file_label.setText(f"{len(self.driver.selected)} Items Selected")
                 self.file_label.setCursor(Qt.CursorShape.ArrowCursor)
-                self.file_label.setFilePath("")
+                self.file_label.set_file_path("")
                 self.dimensions_label.setText("")
 
                 self.preview_img.setContextMenuPolicy(Qt.ContextMenuPolicy.NoContextMenu)

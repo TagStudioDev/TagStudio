@@ -544,7 +544,7 @@ class Library:
         field: BaseField,
         entry_ids: list[int],
     ) -> None:
-        FieldClass = type(field)
+        FieldClass = type(field)  # noqa: N806
 
         logger.info(
             "remove_entry_field",
@@ -581,7 +581,7 @@ class Library:
         if isinstance(entry_ids, int):
             entry_ids = [entry_ids]
 
-        FieldClass = type(field)
+        FieldClass = type(field)  # noqa: N806
 
         with Session(self.engine) as session:
             update_stmt = (
