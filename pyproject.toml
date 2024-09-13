@@ -9,7 +9,19 @@ line-length = 100
 convention = "google"
 
 [tool.ruff.lint]
-select = ["E", "F", "D", "I", "UP", "B", "SIM", "FBT003"]
+select = [
+	# "ANN001", 
+	"B", 
+	"D", 
+	"E", 
+	"F", 
+	"FBT003", 
+	"I", 
+	# "N",
+	"SIM",
+	"T20",
+	"UP",
+]
 ignore = [
 	"D100",
 	"D101",

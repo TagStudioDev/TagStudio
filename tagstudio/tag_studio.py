@@ -65,7 +65,7 @@ def main():
         driver.start()
     except Exception:
         traceback.print_exc()
-        print(f"\nTagStudio Frontend ({ui_name}) Crashed! Press Enter to Continue...")
+        logging.info(f"\nTagStudio Frontend ({ui_name}) Crashed! Press Enter to Continue...")
         input()
 
 

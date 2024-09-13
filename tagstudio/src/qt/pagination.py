@@ -452,5 +452,4 @@ class Validator(QIntValidator):
     def fixup(self, input: str) -> str:
         # print(input)
         input = input.strip("0")
-        print(input)
         return super().fixup(str(self.top()) if input else "1")
