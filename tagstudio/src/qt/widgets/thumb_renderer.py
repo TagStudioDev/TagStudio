@@ -89,9 +89,9 @@ class ThumbRenderer(QObject):
         filepath: str | Path,
         base_size: tuple[int, int],
         pixel_ratio: float,
-        is_loading=False,
-        gradient=False,
-        update_on_ratio_change=False,
+        is_loading: bool = False,
+        gradient: bool = False,
+        update_on_ratio_change: bool = False,
     ):
         """Internal renderer. Render an entry/element thumbnail for the GUI."""
         logger.debug("rendering thumbnail", path=filepath)

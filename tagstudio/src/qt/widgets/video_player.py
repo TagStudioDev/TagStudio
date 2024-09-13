@@ -87,7 +87,7 @@ class VideoPlayer(QGraphicsView):
 
         # Set up the buttons.
         self.play_pause = QSvgWidget()
-        self.play_pause.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, True)
+        self.play_pause.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, on=True)
         self.play_pause.setMouseTracking(True)
         self.play_pause.installEventFilter(self)
         self.scene().addWidget(self.play_pause)
@@ -99,7 +99,7 @@ class VideoPlayer(QGraphicsView):
         self.play_pause.hide()
 
         self.mute_button = QSvgWidget()
-        self.mute_button.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, True)
+        self.mute_button.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, on=True)
         self.mute_button.setMouseTracking(True)
         self.mute_button.installEventFilter(self)
         self.scene().addWidget(self.mute_button)
@@ -116,7 +116,7 @@ class VideoPlayer(QGraphicsView):
         autoplay_action.setCheckable(True)
         self.addAction(autoplay_action)
         autoplay_action.setChecked(
-            bool(self.driver.settings.value(SettingItems.AUTOPLAY, True, type=bool))
+            bool(self.driver.settings.value(SettingItems.AUTOPLAY, defaultValue=True, type=bool))
         )
         autoplay_action.triggered.connect(lambda: self.toggleAutoplay())
         self.autoplay = autoplay_action

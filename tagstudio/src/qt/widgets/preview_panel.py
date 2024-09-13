@@ -201,7 +201,9 @@ class PreviewPanel(QWidget):
         )
 
         # set initial visibility based on settings
-        if not self.driver.settings.value(SettingItems.WINDOW_SHOW_LIBS, True, type=bool):
+        if not self.driver.settings.value(
+            SettingItems.WINDOW_SHOW_LIBS, defaultValue=True, type=bool
+        ):
             self.libs_flow_container.hide()
 
         splitter = QSplitter()
@@ -456,7 +458,7 @@ class PreviewPanel(QWidget):
                     "",
                     (512, 512),
                     ratio,
-                    True,
+                    is_loading=True,
                     update_on_ratio_change=True,
                 )
                 if self.preview_img.is_connected:
@@ -624,7 +626,7 @@ class PreviewPanel(QWidget):
                     "",
                     (512, 512),
                     ratio,
-                    True,
+                    is_loading=True,
                     update_on_ratio_change=True,
                 )
                 if self.preview_img.is_connected:
