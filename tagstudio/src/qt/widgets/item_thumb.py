@@ -330,14 +330,14 @@ class ItemThumb(FlowWidget):
 
     def set_mode(self, mode: ItemType | None) -> None:
         if mode is None:
-            self.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents, True)
+            self.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents, on=True)
             self.unsetCursor()
             self.thumb_button.setHidden(True)
             # self.check_badges.setHidden(True)
             # self.ext_badge.setHidden(True)
             # self.item_type_badge.setHidden(True)
         elif mode == ItemType.ENTRY and self.mode != ItemType.ENTRY:
-            self.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents, False)
+            self.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents, on=False)
             self.setCursor(Qt.CursorShape.PointingHandCursor)
             self.thumb_button.setHidden(False)
             self.cb_container.setHidden(False)
@@ -347,7 +347,7 @@ class ItemThumb(FlowWidget):
             self.count_badge.setHidden(True)
             self.ext_badge.setHidden(True)
         elif mode == ItemType.COLLATION and self.mode != ItemType.COLLATION:
-            self.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents, False)
+            self.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents, on=False)
             self.setCursor(Qt.CursorShape.PointingHandCursor)
             self.thumb_button.setHidden(False)
             self.cb_container.setHidden(True)
@@ -356,7 +356,7 @@ class ItemThumb(FlowWidget):
             self.count_badge.setHidden(False)
             self.item_type_badge.setHidden(False)
         elif mode == ItemType.TAG_GROUP and self.mode != ItemType.TAG_GROUP:
-            self.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents, False)
+            self.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents, on=False)
             self.setCursor(Qt.CursorShape.PointingHandCursor)
             self.thumb_button.setHidden(False)
             # self.cb_container.setHidden(True)
@@ -450,11 +450,11 @@ class ItemThumb(FlowWidget):
                 badge.setHidden(is_hidden)
 
     def enterEvent(self, event: QEnterEvent) -> None:
-        self.show_check_badges(True)
+        self.show_check_badges(show=True)
         return super().enterEvent(event)
 
     def leaveEvent(self, event: QEvent) -> None:
-        self.show_check_badges(False)
+        self.show_check_badges(show=False)
         return super().leaveEvent(event)
 
     @badge_update_lock
@@ -475,7 +475,9 @@ class ItemThumb(FlowWidget):
 
         for idx in update_items:
             entry = self.driver.frame_content[idx]
-            self.toggle_item_tag(entry, toggle_value, tag_id, _FieldID.TAGS_META.name, True)
+            self.toggle_item_tag(
+                entry, toggle_value, tag_id, _FieldID.TAGS_META.name, create_field=True
+            )
             # update the entry
             self.driver.frame_content[idx] = self.lib.search_library(
                 FilterState(id=entry.id)

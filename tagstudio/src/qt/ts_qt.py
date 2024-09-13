@@ -366,7 +366,7 @@ class QtDriver(QObject):
         check_action = QAction("Open library on start", self)
         check_action.setCheckable(True)
         check_action.setChecked(
-            bool(self.settings.value(SettingItems.START_LOAD_LAST, True, type=bool))
+            bool(self.settings.value(SettingItems.START_LOAD_LAST, defaultValue=True, type=bool))
         )
         check_action.triggered.connect(
             lambda checked: self.settings.setValue(SettingItems.START_LOAD_LAST, checked)
@@ -409,7 +409,7 @@ class QtDriver(QObject):
         show_libs_list_action = QAction("Show Recent Libraries", menu_bar)
         show_libs_list_action.setCheckable(True)
         show_libs_list_action.setChecked(
-            bool(self.settings.value(SettingItems.WINDOW_SHOW_LIBS, True, type=bool))
+            bool(self.settings.value(SettingItems.WINDOW_SHOW_LIBS, defaultValue=True, type=bool))
         )
         show_libs_list_action.triggered.connect(
             lambda checked: (
@@ -461,7 +461,7 @@ class QtDriver(QObject):
         lib: str | None = None
         if self.args.open:
             lib = self.args.open
-        elif self.settings.value(SettingItems.START_LOAD_LAST, True, type=bool):
+        elif self.settings.value(SettingItems.START_LOAD_LAST, defaultValue=True, type=bool):
             lib = str(self.settings.value(SettingItems.LAST_LIBRARY))
 
             # TODO: Remove this check if the library is no longer saved with files
@@ -515,7 +515,7 @@ class QtDriver(QObject):
         # or implementing some clever loading tricks.
         self.main_window.show()
         self.main_window.activateWindow()
-        self.main_window.toggle_landing_page(True)
+        self.main_window.toggle_landing_page(enabled=True)
 
         self.main_window.pagination.index.connect(lambda i: self.page_move(page_id=i))
 
@@ -576,7 +576,7 @@ class QtDriver(QObject):
         [x.set_mode(None) for x in self.item_thumbs]
 
         self.preview_panel.update_widgets()
-        self.main_window.toggle_landing_page(True)
+        self.main_window.toggle_landing_page(enabled=True)
 
         self.main_window.pagination.setHidden(True)
 
@@ -1072,4 +1072,4 @@ class QtDriver(QObject):
         # page (re)rendering, extract eventually
         self.filter_items()
 
-        self.main_window.toggle_landing_page(False)
+        self.main_window.toggle_landing_page(enabled=False)
