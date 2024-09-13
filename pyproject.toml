@@ -7,7 +7,19 @@ convention = "google"
 
 [tool.ruff.lint]
 select = ["E", "F", "D", "I", "UP", "B", "SIM"]
-ignore = ["E402", "E501", "F541", "D103"]
+ignore = [
+	"E402",
+	"E501",
+	"F541",
+	"D100",
+	"D101",
+	"D102",
+	"D103",
+	"D104",
+	"D105",
+	"D106",
+	"D107",
+]
 
 [tool.mypy]
 strict_optional = false
