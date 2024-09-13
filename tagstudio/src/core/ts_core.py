@@ -63,9 +63,6 @@ class TagStudioCore:
                     info[_FieldID.ARTIST] = json_dump["user"].strip()
                     info[_FieldID.DESCRIPTION] = json_dump["description"].strip()
                     info[_FieldID.SOURCE] = json_dump["post_url"].strip()
-                    # else:
-                    # 	print(
-                    # 		f'[INFO]: TagStudio does not currently support sidecar files for "{source}"')
 
         except Exception:
             logger.exception("Error handling sidecar file.", path=_filepath)

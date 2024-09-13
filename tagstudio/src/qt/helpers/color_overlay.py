@@ -42,7 +42,7 @@ def gradient_overlay(image: Image.Image, gradient=list[str]) -> Image.Image:
 
 
 def _apply_overlay(image: Image.Image, overlay: Image.Image) -> Image.Image:
-    """Internal method to apply an overlay on top of an image, using the image's alpha channel as a mask.
+    """Apply an overlay on top of an image, using the image's alpha channel as a mask.
 
     Args:
         image (Image): The PIL Image object to apply an overlay to.

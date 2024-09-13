@@ -42,7 +42,11 @@ class FixUnlinkedEntriesModal(QWidget):
         self.unlinked_desc_widget.setWordWrap(True)
         self.unlinked_desc_widget.setStyleSheet("text-align:left;")
         self.unlinked_desc_widget.setText(
-            """Each library entry is linked to a file in one of your directories. If a file linked to an entry is moved or deleted outside of TagStudio, it is then considered unlinked. Unlinked entries may be automatically relinked via searching your directories, manually relinked by the user, or deleted if desired."""
+            "Each library entry is linked to a file in one of your directories. "
+            "If a file linked to an entry is moved or deleted outside of TagStudio, "
+            "it is then considered unlinked.\n\n"
+            "Unlinked entries may be automatically relinked via searching your directories, "
+            "manually relinked by the user, or deleted if desired."
         )
 
         self.missing_count_label = QLabel()

@@ -359,7 +359,6 @@ class PreviewPanel(QWidget):
         )
 
     def set_image_ratio(self, ratio: float):
-        # logging.info(f'Updating Ratio to: {ratio} #####################################################')
         self.image_ratio = ratio
 
     def update_image_size(self, size: tuple[int, int], ratio: float = None):
@@ -410,7 +409,6 @@ class PreviewPanel(QWidget):
         if self.add_field_button.is_connected:
             self.add_field_button.clicked.disconnect()
 
-        # self.afm.done.connect(lambda f: (self.lib.add_field_to_entry(self.selected[0][1], f), self.update_widgets()))
         self.add_field_modal.done.connect(
             lambda items: (
                 self.add_field_to_selected(items),
@@ -561,11 +559,14 @@ class PreviewPanel(QWidget):
                         IMAGE_TYPES + VIDEO_TYPES + RAW_IMAGE_TYPES
                     ):
                         self.dimensions_label.setText(
-                            f"{filepath.suffix.upper()[1:]}  •  {format_size(filepath.stat().st_size)}\n{image.width} x {image.height} px"
+                            f"{filepath.suffix.upper()[1:]}"
+                            f"  •  {format_size(filepath.stat().st_size)}\n{image.width} "
+                            f"x {image.height} px"
                         )
                     else:
                         self.dimensions_label.setText(
-                            f"{filepath.suffix.upper()[1:]}  •  {format_size(filepath.stat().st_size)}"
+                            f"{filepath.suffix.upper()[1:]}"
+                            f"  •  {format_size(filepath.stat().st_size)}"
                         )
 
                     if not filepath.is_file():
@@ -692,7 +693,11 @@ class PreviewPanel(QWidget):
     def write_container(self, index: int, field: BaseField, is_mixed: bool = False):
         """Update/Create data for a FieldContainer.
 
-        :param is_mixed: Relevant when multiple items are selected. If True, field is not present in all selected items
+        Args:
+            index(int): The container index.
+            field(BaseField): The type of field to write to.
+            is_mixed(bool): Relevant when multiple items are selected.
+                If True, field is not present in all selected items.
         """
         # Remove 'Add Field' button from scroll_layout, to be re-added later.
         self.scroll_layout.takeAt(self.scroll_layout.count() - 1).widget()
@@ -736,7 +741,6 @@ class PreviewPanel(QWidget):
 
                     container.set_inner_widget(inner_container)
 
-                # inner_container.field = field
                 inner_container.updated.connect(
                     lambda: (
                         self.write_container(index, field),
@@ -744,7 +748,6 @@ class PreviewPanel(QWidget):
                     )
                 )
                 # NOTE: Tag Boxes have no Edit Button (But will when you can convert field types)
-                # container.set_remove_callback(lambda: (self.lib.get_entry(item.id).fields.pop(index), self.update_widgets(item)))
                 container.set_remove_callback(
                     lambda: self.remove_message_box(
                         prompt=self.remove_field_prompt(field.type.name),
@@ -860,8 +863,6 @@ class PreviewPanel(QWidget):
                     inner_container = TextWidget(title, str(field.value))
                     container.set_inner_widget(inner_container)
 
-                # if type(item) == Entry:
-                # container.set_remove_callback(lambda: (self.lib.get_entry(item.id).fields.pop(index), self.update_widgets(item)))
                 container.set_remove_callback(
                     lambda: self.remove_message_box(
                         prompt=self.remove_field_prompt(field.type.name),
@@ -879,13 +880,10 @@ class PreviewPanel(QWidget):
         else:
             logger.warning("write_container - unknown field", field=field)
             container.set_title(field.type.name)
-            # container.set_editable(False)
             container.set_inline(False)
             title = f"{field.type.name} (Unknown Field Type)"
             inner_container = TextWidget(title, field.type.name)
             container.set_inner_widget(inner_container)
-            # if type(item) == Entry:
-            # container.set_remove_callback(lambda: (self.lib.get_entry(item.id).fields.pop(index), self.update_widgets(item)))
             container.set_remove_callback(
                 lambda: self.remove_message_box(
                     prompt=self.remove_field_prompt(field.type.name),

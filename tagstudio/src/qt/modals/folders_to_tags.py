@@ -157,7 +157,6 @@ def generate_preview_data(library: Library) -> BranchData:
 
 
 class FoldersToTagsModal(QWidget):
-    # done = Signal(int)
     def __init__(self, library: "Library", driver: "QtDriver"):
         super().__init__()
         self.library = library
@@ -182,7 +181,8 @@ class FoldersToTagsModal(QWidget):
         self.desc_widget.setObjectName("descriptionLabel")
         self.desc_widget.setWordWrap(True)
         self.desc_widget.setText(
-            """Creates tags based on your folder structure and applies them to your entries.\n The structure below shows all the tags that will be created and what entries they will be applied to."""
+            """Creates tags based on your folder structure and applies them to your entries.
+            This tree shows all tags to be created and which entries they will be applied to."""
         )
         self.desc_widget.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
@@ -301,9 +301,9 @@ class TreeItem(QWidget):
         self.label.setText(">" if self.children_widget.isHidden() else "v")
 
 
-class ModifiedTagWidget(
-    QWidget
-):  # Needed to be modified because the original searched the display name in the library where it wasn't added yet
+class ModifiedTagWidget(QWidget):
+    """Modified TagWidget that does not search for the Tag's display name in the Library."""
+
     def __init__(self, tag: Tag, parent_tag: Tag) -> None:
         super().__init__()
         self.tag = tag

@@ -10,7 +10,6 @@ convention = "google"
 
 [tool.ruff.lint]
 select = [
-	# "ANN001", 
 	"B",
 	"D",
 	"E",
@@ -31,7 +30,6 @@ ignore = [
 	"D105",
 	"D106",
 	"D107",
-	"E501",
 ]
 
 [tool.mypy]

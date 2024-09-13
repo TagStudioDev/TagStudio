@@ -143,7 +143,9 @@ class BuildTagPanel(PanelWidget):
                     "combobox-popup:0;"
                     "font-weight:600;"
                     f"color:{get_tag_color(ColorType.TEXT, self.color_field.currentData())};"
-                    f"background-color:{get_tag_color(ColorType.PRIMARY, self.color_field.currentData())};"
+                    f"background-color:{get_tag_color(
+                        ColorType.PRIMARY, 
+                        self.color_field.currentData())};"
                 )
             )
         )

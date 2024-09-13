@@ -68,7 +68,8 @@ class DupeRegistry:
     def merge_dupe_entries(self):
         """Merge the duplicate Entry items.
 
-        A duplicate Entry is defined as an Entry pointing to a file that one or more other Entries are also pointing to
+        A duplicate Entry is defined as an Entry pointing to a file
+        that one or more other Entries are also pointing to
         """
         logger.info(
             "Consolidating Entries... (This may take a while for larger libraries)",

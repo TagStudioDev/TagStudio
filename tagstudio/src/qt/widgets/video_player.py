@@ -196,7 +196,8 @@ class VideoPlayer(QGraphicsView):
     def check_if_hovered(self) -> None:
         """Check if the mouse is still hovering over the video player."""
         # Sometimes the HoverLeave event does not trigger and is unable to hide the video controls.
-        # As a workaround, this is called by a QTimer every 10ms to check if the mouse is still in the video preview.
+        # As a workaround, this is called by a QTimer every 10ms
+        # to check if the mouse is still in the video preview.
         if not self.video_preview.isUnderMouse():
             self.releaseMouse()
         else:

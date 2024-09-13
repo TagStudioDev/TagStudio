@@ -134,7 +134,6 @@ class TagBoxWidget(FieldWidget):
             done_callback=self.driver.preview_panel.update_widgets,
             has_save=True,
         )
-        # self.edit_modal.widget.update_display_name.connect(lambda t: self.edit_modal.title_widget.setText(t))
         # TODO - this was update_tag()
         self.edit_modal.saved.connect(
             lambda: self.driver.lib.update_tag(
@@ -142,7 +141,6 @@ class TagBoxWidget(FieldWidget):
                 subtag_ids=build_tag_panel.subtags,
             )
         )
-        # panel.tag_updated.connect(lambda tag: self.lib.update_tag(tag))
         self.edit_modal.show()
 
     def add_tag_callback(self, tag_id: int):

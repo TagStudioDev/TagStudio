@@ -175,7 +175,9 @@ class QtDriver(QObject):
 
         max_threads = os.cpu_count()
         for i in range(max_threads):
-            # thread = threading.Thread(target=self.consumer, name=f'ThumbRenderer_{i}',args=(), daemon=True)
+            # thread = threading.Thread(
+            #     target=self.consumer, name=f"ThumbRenderer_{i}", args=(), daemon=True
+            # )
             # thread.start()
             thread = Consumer(self.thumb_job_queue)
             thread.setObjectName(f"ThumbRenderer_{i}")
@@ -665,7 +667,9 @@ class QtDriver(QObject):
             lambda x: (
                 pw.update_progress(x + 1),
                 pw.update_label(
-                    f'Scanning Directories for New Files...\n{x + 1} File{"s" if x + 1 != 1 else ""} Searched, {tracker.files_count} New Files Found'
+                    f"Scanning Directories for New Files...\n{x + 1}"
+                    f" File{"s" if x + 1 != 1 else ""} Searched,"
+                    f" {tracker.files_count} New Files Found"
                 ),
             )
         )
@@ -680,8 +684,13 @@ class QtDriver(QObject):
         QThreadPool.globalInstance().start(r)
 
     def add_new_files_runnable(self, tracker: RefreshDirTracker):
-        """Threaded method that adds any known new files to the library and initiates running default macros on them."""
-        # pb = QProgressDialog(f'Running Configured Macros on 1/{len(new_ids)} New Entries', None, 0,len(new_ids))
+        """Adds any known new files to the library and run default macros on them.
+
+        Threaded method.
+        """
+        # pb = QProgressDialog(
+        #     f"Running Configured Macros on 1/{len(new_ids)} New Entries", None, 0, len(new_ids)
+        # )
         # pb.setFixedSize(432, 112)
         # pb.setWindowFlags(pb.windowFlags() & ~Qt.WindowType.WindowCloseButtonHint)
         # pb.setWindowTitle('Running Macros')
@@ -693,13 +702,14 @@ class QtDriver(QObject):
         # r.run()
         # # QThreadPool.globalInstance().start(r)
 
-        # # self.main_window.statusbar.showMessage(f'Running configured Macros on {len(new_ids)} new Entries...', 3)
+        # # self.main_window.statusbar.showMessage(
+        # #     f"Running configured Macros on {len(new_ids)} new Entries...", 3
+        # # )
 
         # # pb.hide()
 
         files_count = tracker.files_count
 
-        # iterator = FunctionIterator(lambda: self.new_file_macros_runnable(tracker.files_not_in_library))
         iterator = FunctionIterator(tracker.save_new_files)
         pw = ProgressWidget(
             window_title="Running Macros on New Entries",
@@ -990,9 +1000,12 @@ class QtDriver(QObject):
 
         end_time = time.time()
         if self.filter.summary:
+            # fmt: off
             self.main_window.statusbar.showMessage(
-                f'{results.total_count} Results Found for "{self.filter.summary}" ({format_timespan(end_time - start_time)})'
+                f"{results.total_count} Results Found for \"{self.filter.summary}\""
+                f" ({format_timespan(end_time - start_time)})"
             )
+            # fmt: on
         else:
             self.main_window.statusbar.showMessage(
                 f"{results.total_count} Results ({format_timespan(end_time - start_time)})"

@@ -91,8 +91,9 @@ def get_default_tags() -> tuple[Tag, ...]:
 class SearchResult:
     """Wrapper for search results.
 
-    :param total_count: total number of items for given query, might be different than len(items)
-    :param items: items for current page (size matches filter.page_size)
+    Attributes:
+        total_count(int): total number of items for given query, might be different than len(items).
+        items(list[Entry]): for current page (size matches filter.page_size).
     """
 
     total_count: int

@@ -20,8 +20,8 @@ def open_file(path: str | Path, file_manager: bool = False):
 
     Args:
             path (str): The path to the file to open.
-            file_manager (bool, optional): Whether to open the file in the file manager (e.g. Finder on macOS).
-                    Defaults to False.
+            file_manager (bool, optional): Whether to open the file in the file manager
+                (e.g. Finder on macOS). Defaults to False.
     """
     path = Path(path)
     logger.info("Opening file", path=path)
@@ -35,7 +35,8 @@ def open_file(path: str | Path, file_manager: bool = False):
             if file_manager:
                 command_name = "explorer"
                 command_args = '/select,"' + normpath + '"'
-                # For some reason, if the args are passed in a list, this will error when the path has spaces, even while surrounded in double quotes
+                # For some reason, if the args are passed in a list, this will error when the
+                # path has spaces, even while surrounded in double quotes.
                 subprocess.Popen(
                     command_name + command_args,
                     shell=True,
@@ -133,7 +134,8 @@ class FileOpenerLabel(QLabel):
     def mousePressEvent(self, event):  # noqa: N802
         """Handle mouse press events.
 
-        On a left click, open the file in the default file explorer. On a right click, show a context menu.
+        On a left click, open the file in the default file explorer.
+        On a right click, show a context menu.
 
         Args:
                 event (QMouseEvent): The mouse press event.
