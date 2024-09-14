@@ -11,6 +11,7 @@ import typing
 from datetime import datetime as dt
 import cv2
 import rawpy
+import io
 from PIL import Image, UnidentifiedImageError, ImageFont
 from PIL.Image import DecompressionBombError
 from PySide6.QtCore import QModelIndex, Signal, Qt, QSize, QByteArray, QBuffer
@@ -136,15 +137,44 @@ class PreviewPanel(QWidget):
         self.preview_img.addAction(self.open_explorer_action)
         self.preview_img.addAction(self.delete_action)
 
-        self.preview_gif = QLabel()
-        self.preview_gif.setMinimumSize(*self.img_button_size)
-        self.preview_gif.setContextMenuPolicy(Qt.ContextMenuPolicy.ActionsContextMenu)
-        self.preview_gif.setCursor(Qt.CursorShape.ArrowCursor)
-        self.preview_gif.addAction(self.open_file_action)
-        self.preview_gif.addAction(self.open_explorer_action)
-        self.preview_gif.addAction(self.delete_action)
-        self.preview_gif.hide()
-        self.gif_buffer: QBuffer = QBuffer()
+        self.preview_ani_img = QLabel()
+        self.preview_ani_img.setMinimumSize(*self.img_button_size)
+        self.preview_ani_img.setContextMenuPolicy(Qt.ContextMenuPolicy.ActionsContextMenu)
+        self.preview_ani_img.setCursor(Qt.CursorShape.ArrowCursor)
+        self.preview_ani_img.addAction(self.open_file_action)
+        self.preview_ani_img.addAction(self.open_explorer_action)
+        self.preview_ani_img.addAction(self.delete_action)
+        self.preview_ani_img.hide()
+        self.ani_img_buffer: QBuffer = QBuffer()
+
+        self.preview_ani_img_fmts = []
+
+        qmovie_formats = QMovie.supportedFormats()
+
+        self.preview_ani_img_fmts = [
+            fmt.data().decode("utf-8") for fmt in qmovie_formats
+        ]
+
+        ani_img_priority_order = ["jxl", "apng", "png", "webp", "gif"]
+
+        self.preview_ani_img_pil_map = {"apng": "png"}
+
+        self.preview_ani_img_pil_map_args = {"gif": {"disposal": 2}}
+
+        self.preview_ani_img_pil_known_good = {"webp", "gif"}
+
+        self.preview_ani_img_fmts.sort(
+            key=lambda x: ani_img_priority_order.index(x)
+            if x in ani_img_priority_order
+            else len(ani_img_priority_order)
+        )
+
+        logging.info(
+            "supported qmovie image format(s): " + str(self.preview_ani_img_fmts)
+        )
+
+        pil_exts = Image.registered_extensions()
+        self.pil_save_exts = {ex for ex, f in pil_exts.items() if f in Image.SAVE}
 
         self.preview_vid = VideoPlayer(driver)
         self.preview_vid.hide()
@@ -168,8 +198,8 @@ class PreviewPanel(QWidget):
 
         image_layout.addWidget(self.preview_img)
         image_layout.setAlignment(self.preview_img, Qt.AlignmentFlag.AlignCenter)
-        image_layout.addWidget(self.preview_gif)
-        image_layout.setAlignment(self.preview_gif, Qt.AlignmentFlag.AlignCenter)
+        image_layout.addWidget(self.preview_ani_img)
+        image_layout.setAlignment(self.preview_ani_img, Qt.AlignmentFlag.AlignCenter)
         image_layout.addWidget(self.preview_vid)
         image_layout.setAlignment(self.preview_vid, Qt.AlignmentFlag.AlignCenter)
         self.image_container.setMinimumSize(*self.img_button_size)
@@ -454,12 +484,12 @@ class PreviewPanel(QWidget):
         self.preview_vid.resizeVideo(adj_size)
         self.preview_vid.setMaximumSize(adj_size)
         self.preview_vid.setMinimumSize(adj_size)
-        self.preview_gif.setMaximumSize(adj_size)
-        self.preview_gif.setMinimumSize(adj_size)
+        self.preview_ani_img.setMaximumSize(adj_size)
+        self.preview_ani_img.setMinimumSize(adj_size)
         proxy_style = RoundedPixmapStyle(radius=8)
-        self.preview_gif.setStyle(proxy_style)
+        self.preview_ani_img.setStyle(proxy_style)
         self.preview_vid.setStyle(proxy_style)
-        m = self.preview_gif.movie()
+        m = self.preview_ani_img.movie()
         if m:
             m.setScaledSize(adj_size)
 
@@ -566,7 +596,7 @@ class PreviewPanel(QWidget):
             self.preview_img.show()
             self.preview_vid.stop()
             self.preview_vid.hide()
-            self.preview_gif.hide()
+            self.preview_ani_img.hide()
             self.selected = list(self.driver.selected)
             self.add_field_button.setHidden(True)
 
@@ -577,7 +607,7 @@ class PreviewPanel(QWidget):
                 self.preview_img.show()
                 self.preview_vid.stop()
                 self.preview_vid.hide()
-                self.preview_gif.hide()
+                self.preview_ani_img.hide()
                 item: Entry = self.lib.get_entry(self.driver.selected[0][1])
                 # If a new selection is made, update the thumbnail and filepath.
                 if not self.selected or self.selected != self.driver.selected:
@@ -630,28 +660,97 @@ class PreviewPanel(QWidget):
                     # TODO: Do this all somewhere else, this is just here temporarily.
                     ext: str = filepath.suffix.lower()
                     try:
-                        if filepath.suffix.lower() in [".gif"]:
+                        if MediaType.IMAGE_ANIMATION in MediaCategories.get_types(ext):
+                            anim_failed = False
                             with open(filepath, mode="rb") as f:
-                                if self.preview_gif.movie():
-                                    self.preview_gif.movie().stop()
-                                    self.gif_buffer.close()
 
-                                ba = f.read()
-                                self.gif_buffer.setData(ba)
-                                movie = QMovie(self.gif_buffer, QByteArray())
-                                self.preview_gif.setMovie(movie)
-                                movie.start()
+                                image = Image.open(str(filepath))
 
-                            image = Image.open(str(filepath))
-                            self.resizeEvent(
-                                QResizeEvent(
-                                    QSize(image.width, image.height),
-                                    QSize(image.width, image.height),
-                                )
-                            )
-                            self.preview_img.hide()
-                            self.preview_vid.hide()
-                            self.preview_gif.show()
+                                if hasattr(image, "n_frames"):
+                                    if image.n_frames > 1:
+                                        if self.preview_ani_img.movie():
+                                            logging.info(
+                                                "treating as animated image: "
+                                                    + str(filepath.name)
+                                                    + " with: "
+                                                    + str(image.n_frames)
+                                                    + " frames"
+                                            )
+
+                                            self.preview_ani_img.movie().stop()
+                                            self.ani_img_buffer.close()
+
+                                        ba = f.read()
+                                        movie = QMovie()
+                                        if not ext.lstrip(".") in self.preview_ani_img_fmts:
+
+                                            try:
+
+                                                logging.info(
+                                                    "converting image not nativly supported by qt"
+                                                )
+                                                save_buf = io.BytesIO()
+                                                save_ext = ""
+
+                                                for fmt_ext in self.preview_ani_img_fmts:
+                                                    fmt_ext = (
+                                                        self.preview_ani_img_pil_map.get(
+                                                            fmt_ext, fmt_ext
+                                                        )
+                                                    )
+
+                                                    if (
+                                                        fmt_ext
+                                                        in self.preview_ani_img_pil_known_good
+                                                    ):
+                                                        if (
+                                                            f".{fmt_ext}"
+                                                            in self.pil_save_exts
+                                                        ):
+                                                            save_ext = fmt_ext
+                                                            break
+
+                                                if save_ext == "":
+                                                    anim_failed = True
+
+                                                else:
+                                                    extra_args = self.preview_ani_img_pil_map_args.get(
+                                                        save_ext, {}
+                                                    )
+                                                    image.save(
+                                                        save_buf,
+                                                        format=save_ext,
+                                                        lossless=True,
+                                                        save_all=True,
+                                                        loop=0,
+                                                        **extra_args,
+                                                    )
+
+                                                    self.ani_img_buffer.setData(save_buf.getvalue())
+
+                                            except Exception as err:
+                                                anim_failed = True
+                                                print(
+                                                    f"error occurred while converting animated image: {err}"
+                                                )
+
+                                        else:
+                                            self.ani_img_buffer.setData(ba)
+
+
+                                        movie = QMovie(self.ani_img_buffer, QByteArray())
+                                        self.preview_ani_img.setMovie(movie)
+                                        movie.start()
+
+                                        self.resizeEvent(
+                                            QResizeEvent(
+                                                QSize(image.width, image.height),
+                                                QSize(image.width, image.height),
+                                            )
+                                        )
+                                        self.preview_img.hide()
+                                        self.preview_vid.hide()
+                                        self.preview_ani_img.show()
 
                         image = None
                         if (
@@ -792,7 +891,7 @@ class PreviewPanel(QWidget):
         # Multiple Selected Items
         elif len(self.driver.selected) > 1:
             self.preview_img.show()
-            self.preview_gif.hide()
+            self.preview_ani_img.hide()
             self.preview_vid.stop()
             self.preview_vid.hide()
             self.update_date_label()
