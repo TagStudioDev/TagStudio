@@ -92,6 +92,7 @@ from src.qt.modals.fix_unlinked import FixUnlinkedEntriesModal
 from src.qt.modals.fix_dupes import FixDupeFilesModal
 from src.qt.modals.folders_to_tags import FoldersToTagsModal
 from src.qt.modals.drop_import import DropImport
+from src.qt.modals.ffmpeg_checker import FfmpegChecker
 
 # this import has side-effect of import PySide resources
 import src.qt.resources_rc  # pylint: disable=unused-import
@@ -639,6 +640,9 @@ class QtDriver(QObject):
         if self.args.ci:
             # gracefully terminate the app in CI environment
             self.thumb_job_queue.put((self.SIGTERM.emit, []))
+        else:
+            # Startup Checks
+            self.check_ffmpeg()
 
         app.exec()
 
@@ -1851,6 +1855,12 @@ class QtDriver(QObject):
         self.preview_panel.update_widgets()
         self.filter_items()
         self.main_window.toggle_landing_page(False)
+
+    def check_ffmpeg(self) -> None:
+        """Checks if FFmpeg is installed and displays a warning if not."""
+        self.ffmpeg_checker = FfmpegChecker()
+        if not self.ffmpeg_checker.installed():
+            self.ffmpeg_checker.show_warning()
 
     def create_collage(self) -> None:
         """Generates and saves an image collage based on Library Entries."""
