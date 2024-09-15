@@ -1034,7 +1034,7 @@ class ThumbRenderer(QObject):
                 # 	img_buf = io.BytesIO()
                 # 	plt.savefig(img_buf, format='png')
                 # 	image = Image.open(img_buf)
-                
+
                 # Musescore File Format ========================================
                 elif _filepath.suffix.lower() == ".mscz":
                     file_path_within_zip = "Thumbnails/thumbnail.png"
