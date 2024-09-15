@@ -4,10 +4,12 @@
 import contextlib
 import logging
 import os
+import platform
 import time
 import typing
 from pathlib import Path
 from typing import Optional
+import platform
 
 from PIL import Image, ImageQt
 from PySide6.QtCore import Qt, QSize, QEvent, QMimeData, QUrl
@@ -195,10 +197,26 @@ class ItemThumb(FlowWidget):
         self.opener = FileOpenerHelper("")
         open_file_action = QAction("Open file", self)
         open_file_action.triggered.connect(self.opener.open_file)
-        open_explorer_action = QAction("Open file in explorer", self)
+
+        system = platform.system()
+        open_explorer_action = QAction(
+            "Open in explorer", self
+        )  # Default (mainly going to be for linux)
+        if system == "Darwin":
+            open_explorer_action = QAction("Reveal in Finder", self)
+        elif system == "Windows":
+            open_explorer_action = QAction("Open in Explorer", self)
+
         open_explorer_action.triggered.connect(self.opener.open_explorer)
+
+        trash_term: str = "Trash"
+        if platform.system() == "Windows":
+            trash_term = "Recycle Bin"
+        self.delete_action = QAction(f"Send file to {trash_term}", self)
+
         self.thumb_button.addAction(open_file_action)
         self.thumb_button.addAction(open_explorer_action)
+        self.thumb_button.addAction(self.delete_action)
 
         # Static Badges ========================================================
 
