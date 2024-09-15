@@ -42,6 +42,7 @@ from src.qt.helpers.gradient import four_corner_gradient
 from src.qt.helpers.text_wrapper import wrap_full_text
 from src.qt.resource_manager import ResourceManager
 from vtf2img import Parser
+import zipfile
 
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 
@@ -1004,6 +1005,49 @@ class ThumbRenderer(QObject):
                 # VTF ==========================================================
                 elif MediaType.SOURCE_ENGINE in MediaCategories.get_types(ext):
                     image = self._source_engine(_filepath)
+
+                # Plain Text ===================================================
+                elif _filepath.suffix.lower() in MediaCategories.get_types(ext):
+                    encoding = detect_char_encoding(_filepath)
+                    with open(_filepath, "r", encoding=encoding) as text_file:
+                        text = text_file.read(256)
+                    bg = Image.new("RGB", (256, 256), color="#1e1e1e")
+                    draw = ImageDraw.Draw(bg)
+                    draw.text((16, 16), text, file=(255, 255, 255))
+                    image = bg
+                # 3D ===========================================================
+                # elif extension == 'stl':
+                # 	# Create a new plot
+                # 	matplotlib.use('agg')
+                # 	figure = plt.figure()
+                # 	axes = figure.add_subplot(projection='3d')
+
+                # 	# Load the STL files and add the vectors to the plot
+                # 	your_mesh = mesh.Mesh.from_file(_filepath)
+
+                # 	poly_collection = mplot3d.art3d.Poly3DCollection(your_mesh.vectors)
+                # 	poly_collection.set_color((0,0,1))  # play with color
+                # 	scale = your_mesh.points.flatten()
+                # 	axes.auto_scale_xyz(scale, scale, scale)
+                # 	axes.add_collection3d(poly_collection)
+                # 	# plt.show()
+                # 	img_buf = io.BytesIO()
+                # 	plt.savefig(img_buf, format='png')
+                # 	image = Image.open(img_buf)
+
+                # Musescore File Format ========================================
+                elif _filepath.suffix.lower() == ".mscz":
+                    file_path_within_zip = "Thumbnails/thumbnail.png"
+                    with zipfile.ZipFile(_filepath, "r") as zip_file:
+                        # Check if the file exists in the zip
+                        if file_path_within_zip in zip_file.namelist():
+                            # Read the specific file into memory
+                            file_data = zip_file.read(file_path_within_zip)
+                            image = Image.open(BytesIO(file_data))
+                        else:
+                            logging.info(
+                                f"[ThumbRenderer][WARNING]: mscz file {_filepath.name} missing Thumbnails/thumbnail.png"
+                            )
 
                 # No Rendered Thumbnail ========================================
                 if not _filepath.exists():
