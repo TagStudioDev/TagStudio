@@ -3,6 +3,7 @@
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
 import logging
+import math
 import traceback
 from pathlib import Path
 
@@ -105,12 +106,22 @@ class CollageIconRenderer(QObject):
                             (video.get(cv2.CAP_PROP_FRAME_COUNT) // 2),
                         )
                         success, frame = video.read()
-                        if not success:
-                            # Depending on the video format, compression, and frame
-                            # count, seeking halfway does not work and the thumb
-                            # must be pulled from the earliest available frame.
-                            video.set(cv2.CAP_PROP_POS_FRAMES, 0)
+                        # NOTE: Depending on the video format, compression, and
+                        # frame count, seeking halfway does not work and the thumb
+                        # must be pulled from the earliest available frame.
+                        MAX_FRAME_SEEK: int = 10
+                        for i in range(
+                            0,
+                            min(
+                                MAX_FRAME_SEEK,
+                                math.floor(video.get(cv2.CAP_PROP_FRAME_COUNT)),
+                            ),
+                        ):
                             success, frame = video.read()
+                            if not success:
+                                video.set(cv2.CAP_PROP_POS_FRAMES, i)
+                            else:
+                                break
                         frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
                         with Image.fromarray(frame, mode="RGB") as pic:
                             if keep_aspect:

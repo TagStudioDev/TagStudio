@@ -31,7 +31,7 @@ class TagStudioCore:
         json_dump = {}
         info = {}
         _filepath: Path = Path(filepath)
-        _filepath = _filepath.parent / (_filepath.stem + ".json")
+        _filepath = _filepath.parent / (_filepath.name + ".json")
 
         # NOTE: This fixes an unknown (recent?) bug in Gallery-DL where Instagram sidecar
         # files may be downloaded with indices starting at 1 rather than 0, unlike the posts.

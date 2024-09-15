@@ -7,6 +7,7 @@
 import datetime
 import logging
 import os
+import platform
 import time
 import traceback
 import xml.etree.ElementTree as ET
@@ -736,7 +737,9 @@ class Library:
         """Maps a full filepath to its corresponding Entry's ID."""
         self.filename_to_entry_id_map.clear()
         for entry in self.entries:
-            self.filename_to_entry_id_map[(entry.path / entry.filename)] = entry.id
+            self.filename_to_entry_id_map[
+                (self.library_dir / entry.path / entry.filename)
+            ] = entry.id
 
     # def _map_filenames_to_entry_ids(self):
     # 	"""Maps the file paths of entries to their index in the library list."""
@@ -883,54 +886,72 @@ class Library:
 
         # Scans the directory for files, keeping track of:
         #   - Total file count
-        #   - Files without library entries
-        # for type in TYPES:
-        start_time = time.time()
+        #   - Files without Library entries
+        start_time_total = time.time()
+        start_time_loop = time.time()
+        ext_set = set(self.ext_list)  # Should be slightly faster
         for f in self.library_dir.glob("**/*"):
-            try:
-                if (
-                    "$RECYCLE.BIN" not in f.parts
-                    and TS_FOLDER_NAME not in f.parts
-                    and "tagstudio_thumbs" not in f.parts
-                    and not f.is_dir()
-                ):
-                    if f.suffix.lower() not in self.ext_list and self.is_exclude_list:
-                        self.dir_file_count += 1
-                        file = f.relative_to(self.library_dir)
-                        if file not in self.filename_to_entry_id_map:
-                            self.files_not_in_library.append(file)
-                    elif f.suffix.lower() in self.ext_list and not self.is_exclude_list:
-                        self.dir_file_count += 1
-                        file = f.relative_to(self.library_dir)
-                        try:
-                            _ = self.filename_to_entry_id_map[file]
-                        except KeyError:
-                            # print(file)
-                            self.files_not_in_library.append(file)
-            except PermissionError:
-                logging.info(
-                    f"The File/Folder {f} cannot be accessed, because it requires higher permission!"
-                )
-            end_time = time.time()
+            end_time_loop = time.time()
             # Yield output every 1/30 of a second
-            if (end_time - start_time) > 0.034:
+            if (end_time_loop - start_time_loop) > 0.034:
                 yield self.dir_file_count
-                start_time = time.time()
-        # Sorts the files by date modified, descending.
-        if len(self.files_not_in_library) <= 100000:
+                start_time_loop = time.time()
             try:
-                self.files_not_in_library = sorted(
-                    self.files_not_in_library,
-                    key=lambda t: -(self.library_dir / t).stat().st_ctime,
-                )
+                # Skip this file if it should be excluded
+                ext: str = f.suffix.lower()
+                if (ext in ext_set and self.is_exclude_list) or (
+                    ext not in ext_set and not self.is_exclude_list
+                ):
+                    continue
+
+                # Finish if the file/path is already mapped in the Library
+                if self.filename_to_entry_id_map.get(f) is not None:
+                    # No other checks are required.
+                    self.dir_file_count += 1
+                    continue
+
+                # If the file is new, check for validity
+                if (
+                    "$RECYCLE.BIN" in f.parts
+                    or TS_FOLDER_NAME in f.parts
+                    or "tagstudio_thumbs" in f.parts
+                    or f.is_dir()
+                ):
+                    continue
+
+                # Add the validated new file to the Library
+                self.dir_file_count += 1
+                self.files_not_in_library.append(f)
+
+            except PermissionError:
+                logging.info(f'[LIBRARY] Cannot access "{f}": PermissionError')
+
+        yield self.dir_file_count
+        end_time_total = time.time()
+        logging.info(
+            f"[LIBRARY] Scanned directories in {(end_time_total - start_time_total):.3f} seconds"
+        )
+        # Sorts the files by date modified, descending
+        if len(self.files_not_in_library) <= 150000:
+            try:
+                if platform.system() == "Windows" or platform.system() == "Darwin":
+                    self.files_not_in_library = sorted(
+                        self.files_not_in_library,
+                        key=lambda t: -(t).stat().st_birthtime,  # type: ignore[attr-defined]
+                    )
+                else:
+                    self.files_not_in_library = sorted(
+                        self.files_not_in_library,
+                        key=lambda t: -(t).stat().st_ctime,
+                    )
             except (FileExistsError, FileNotFoundError):
-                print(
-                    "[LIBRARY] [ERROR] Couldn't sort files, some were moved during the scanning/sorting process."
+                logging.info(
+                    "[LIBRARY][ERROR] Couldn't sort files, some were moved during the scanning/sorting process."
                 )
                 pass
         else:
-            print(
-                "[LIBRARY][INFO] Not bothering to sort files because there's OVER 100,000! Better sorting methods will be added in the future."
+            logging.info(
+                "[LIBRARY][INFO] Not bothering to sort files because there's OVER 150,000! Better sorting methods will be added in the future."
             )
 
     def refresh_missing_files(self):
@@ -950,7 +971,7 @@ class Library:
         # Step [1/2]:
         # Remove this Entry from the Entries list.
         entry = self.get_entry(entry_id)
-        path = entry.path / entry.filename
+        path = self.library_dir / entry.path / entry.filename
         # logging.info(f'Removing path: {path}')
 
         del self.filename_to_entry_id_map[path]
@@ -1080,25 +1101,22 @@ class Library:
                             )
                         )
                 for match in matches:
-                    # print(f'MATCHED ({match[2]}%): \n   {files[match[0]]} \n-> {files[match[1]]}')
-                    file_1 = files[match[0]].relative_to(self.library_dir)
-                    file_2 = files[match[1]].relative_to(self.library_dir)
+                    file_1 = files[match[0]]
+                    file_2 = files[match[1]]
 
                     if (
-                        file_1.resolve in self.filename_to_entry_id_map.keys()
+                        file_1 in self.filename_to_entry_id_map.keys()
                         and file_2 in self.filename_to_entry_id_map.keys()
                     ):
                         self.dupe_files.append(
                             (files[match[0]], files[match[1]], match[2])
                         )
-                print("")
 
             for dupe in self.dupe_files:
                 print(
                     f"[LIBRARY] MATCHED ({dupe[2]}%): \n   {dupe[0]} \n-> {dupe[1]}",
                     end="\n",
                 )
-                # self.dupe_files.append(full_path)
 
     def remove_missing_files(self):
         deleted = []
@@ -1285,8 +1303,7 @@ class Library:
         """Adds files from the `files_not_in_library` list to the Library as Entries. Returns list of added indices."""
         new_ids: list[int] = []
         for file in self.files_not_in_library:
-            path = Path(file)
-            # print(os.path.split(file))
+            path = Path(*file.parts[len(self.library_dir.parts) :])
             entry = Entry(
                 id=self._next_entry_id, filename=path.name, path=path.parent, fields=[]
             )
@@ -1296,8 +1313,6 @@ class Library:
         self._map_filenames_to_entry_ids()
         self.files_not_in_library.clear()
         return new_ids
-
-        self.files_not_in_library.clear()
 
     def get_entry(self, entry_id: int) -> Entry:
         """Returns an Entry object given an Entry ID."""
@@ -1319,9 +1334,7 @@ class Library:
         """Returns an Entry ID given the full filepath it points to."""
         try:
             if self.entries:
-                return self.filename_to_entry_id_map[
-                    Path(filename).relative_to(self.library_dir)
-                ]
+                return self.filename_to_entry_id_map[filename]
         except KeyError:
             return -1
 
@@ -1352,10 +1365,18 @@ class Library:
             only_missing: bool = "missing" in query or "no file" in query
             allow_adv: bool = "filename:" in query_words
             tag_only: bool = "tag_id:" in query_words
+            tag_only_ids: list[int] = []
             if allow_adv:
                 query_words.remove("filename:")
             if tag_only:
                 query_words.remove("tag_id:")
+                if query_words and query_words[0].isdigit():
+                    tag_only_ids.append(int(query_words[0]))
+                    tag_only_ids.extend(self.get_tag_cluster(int(query_words[0])))
+                else:
+                    logging.error(
+                        f"[Library][ERROR] Invalid Tag ID in query: {query_words}"
+                    )
             # TODO: Expand this to allow for dynamic fields to work.
             only_no_author: bool = "no author" in query or "no artist" in query
 
@@ -1382,15 +1403,9 @@ class Library:
                             all_tag_terms.remove(all_tag_terms[i])
                             break
 
-            # print(all_tag_terms)
-
-            # non_entry_count = 0
             # Iterate over all Entries =============================================================
             for entry in self.entries:
                 allowed_ext: bool = entry.filename.suffix.lower() not in self.ext_list
-                # try:
-                # entry: Entry = self.entries[self.file_to_library_index_map[self._source_filenames[i]]]
-                # print(f'{entry}')
 
                 if allowed_ext == self.is_exclude_list:
                     # If the entry has tags of any kind, append them to this main tag list.
@@ -1432,7 +1447,6 @@ class Library:
                     # elif query in entry.path.lower():
 
                     # NOTE: This searches path and filenames.
-
                     if allow_adv:
                         if [q for q in query_words if (q in str(entry.path).lower())]:
                             results.append((ItemType.ENTRY, entry.id))
@@ -1441,17 +1455,14 @@ class Library:
                         ]:
                             results.append((ItemType.ENTRY, entry.id))
                     elif tag_only:
-                        if entry.has_tag(self, int(query_words[0])):
-                            results.append((ItemType.ENTRY, entry.id))
+                        for id in tag_only_ids:
+                            if entry.has_tag(self, id) and entry.id not in results:
+                                results.append((ItemType.ENTRY, entry.id))
+                                break
 
-                    # elif query in entry.filename.lower():
-                    # 	self.filtered_entries.append(index)
                     elif entry_tags:
                         # function to add entry to results
                         def add_entry(entry: Entry):
-                            # self.filter_entries.append()
-                            # self.filtered_file_list.append(file)
-                            # results.append((SearchItemType.ENTRY, entry.id))
                             added = False
                             for f in entry.fields:
                                 if self.get_field_attr(f, "type") == "collation":
@@ -1521,26 +1532,6 @@ class Library:
                                             add_entry(entry)
                                         break
 
-                # sys.stdout.write(
-                #     f'\r[INFO][FILTER]: {len(self.filtered_file_list)} matches found')
-                # sys.stdout.flush()
-
-                # except:
-                #     # # Put this here to have new non-registered images show up
-                #     # if query == "untagged" or query == "no author" or query == "no artist":
-                #     #     self.filtered_file_list.append(file)
-                #     # non_entry_count = non_entry_count + 1
-                #     pass
-
-            # end_time = time.time()
-            # print(
-            # 	f'[INFO][FILTER]: {len(self.filtered_entries)} matches found ({(end_time - start_time):.3f} seconds)')
-
-            # if non_entry_count:
-            # 	print(
-            # 		f'[INFO][FILTER]: There are {non_entry_count} new files in {self.source_dir} that do not have entries. These will not appear in most filtered results.')
-            # if not self.filtered_entries:
-            # 	print("[INFO][FILTER]: Filter returned no results.")
         else:
             for entry in self.entries:
                 added = False
@@ -1565,8 +1556,6 @@ class Library:
 
                     if not added:
                         results.append((ItemType.ENTRY, entry.id))
-            # for file in self._source_filenames:
-            #     self.filtered_file_list.append(file)
         results.reverse()
         return results
 
@@ -2051,7 +2040,7 @@ class Library:
                         # elif meta_tags_field_indices:
                         # 	priority_field_index = meta_tags_field_indices[0]
 
-                        if priority_field_index > 0:
+                        if priority_field_index >= 0:
                             self.update_entry_field(
                                 entry_id, priority_field_index, [matching[0]], "append"
                             )
@@ -2309,7 +2298,7 @@ class Library:
         return self.tags[self._tag_id_to_index_map[int(tag_id)]]
 
     def get_tag_cluster(self, tag_id: int) -> list[int]:
-        """Returns a list of Tag IDs that reference this Tag."""
+        """Returns a list of Tag IDs that reference this Tag as its parent."""
         if tag_id in self._tag_id_to_cluster_map:
             return self._tag_id_to_cluster_map[int(tag_id)]
         return []

@@ -106,6 +106,7 @@ class DropImport:
                 continue
 
             dest_file = self.get_relative_path(file)
+            full_dest_path: Path = self.driver.lib.library_dir / dest_file
 
             if file in self.duplicate_files:
                 duplicated_files_progress += 1
@@ -115,14 +116,12 @@ class DropImport:
                 if self.choice == 2:  # rename
                     new_name = self.get_renamed_duplicate_filename_in_lib(dest_file)
                     dest_file = dest_file.with_name(new_name)
-                    self.driver.lib.files_not_in_library.append(dest_file)
+                    self.driver.lib.files_not_in_library.append(full_dest_path)
             else:  # override is simply copying but not adding a new entry
-                self.driver.lib.files_not_in_library.append(dest_file)
+                self.driver.lib.files_not_in_library.append(full_dest_path)
 
-            (self.driver.lib.library_dir / dest_file).parent.mkdir(
-                parents=True, exist_ok=True
-            )
-            shutil.copyfile(file, self.driver.lib.library_dir / dest_file)
+            (full_dest_path).parent.mkdir(parents=True, exist_ok=True)
+            shutil.copyfile(file, full_dest_path)
 
             fileCount += 1
             yield [fileCount, duplicated_files_progress]

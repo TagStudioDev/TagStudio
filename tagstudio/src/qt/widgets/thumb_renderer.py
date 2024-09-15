@@ -8,6 +8,7 @@ import math
 from copy import deepcopy
 from io import BytesIO
 from pathlib import Path
+import struct
 
 import cv2
 import numpy as np
@@ -26,7 +27,8 @@ from PIL import (
 )
 from PIL.Image import DecompressionBombError
 from pillow_heif import register_avif_opener, register_heif_opener
-from pydub import AudioSegment, exceptions
+from pydub import exceptions
+from src.qt.helpers.vendored.pydub.audio_segment import _AudioSegment as AudioSegment  # type: ignore
 from PySide6.QtCore import QObject, QSize, Qt, Signal, QBuffer
 from PySide6.QtGui import QGuiApplication, QPixmap, QImage, QPainter
 from PySide6.QtSvg import QSvgRenderer
@@ -40,6 +42,7 @@ from src.qt.helpers.file_tester import is_readable_video
 from src.qt.helpers.gradient import four_corner_gradient
 from src.qt.helpers.text_wrapper import wrap_full_text
 from src.qt.resource_manager import ResourceManager
+from vtf2img import Parser
 
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 
@@ -408,9 +411,9 @@ class ThumbRenderer(QObject):
             faded (bool): Whether or not to apply a faded version of the edge.
                 Used for light themes.
         """
-        opacity: float = 0.75 if not faded else 0.6
+        opacity: float = 1.0 if not faded else 0.8
         shade_reduction: float = (
-            0.15
+            0
             if QGuiApplication.styleHints().colorScheme() is Qt.ColorScheme.Dark
             else 0.3
         )
@@ -601,6 +604,33 @@ class ThumbRenderer(QObject):
                 )
         return im
 
+    def _source_engine(self, filepath: Path) -> Image.Image:
+        """
+        This is a function to convert the VTF (Valve Texture Format) files to thumbnails, it works using the VTF2IMG library for PILLOW.
+        """
+        parser = Parser(filepath)
+        im: Image.Image = None
+        try:
+            im = parser.get_image()
+
+        except (
+            AttributeError,
+            UnidentifiedImageError,
+            FileNotFoundError,
+            TypeError,
+            struct.error,
+        ) as e:
+            if str(e) == "expected string or buffer":
+                logging.info(
+                    f"[ThumbRenderer][VTF][INFO] {filepath.name} Doesn't have an embedded thumbnail. ({type(e).__name__})"
+                )
+
+            else:
+                logging.error(
+                    f"[ThumbRenderer][VTF][ERROR]: Couldn't render thumbnail for {filepath.name} ({type(e).__name__})"
+                )
+        return im
+
     def _font_short_thumb(self, filepath: Path, size: int) -> Image.Image:
         """Render a small font preview ("Aa") thumbnail from a font file.
 
@@ -760,7 +790,6 @@ class ThumbRenderer(QObject):
             filepath (Path): The path of the file.
             size (tuple[int,int]): The size of the thumbnail.
         """
-
         # Create an image to draw the svg to and a painter to do the drawing
         image: QImage = QImage(size, size, QImage.Format.Format_ARGB32)
         image.fill("#00000000")
@@ -871,12 +900,21 @@ class ThumbRenderer(QObject):
                     cv2.CAP_PROP_POS_FRAMES,
                     (video.get(cv2.CAP_PROP_FRAME_COUNT) // 2),
                 )
-                success, frame = video.read()
-                if not success:
-                    # Depending on the video format, compression, and frame
-                    # count, seeking halfway does not work and the thumb
-                    # must be pulled from the earliest available frame.
-                    video.set(cv2.CAP_PROP_POS_FRAMES, 0)
+                # NOTE: Depending on the video format, compression, and
+                # frame count, seeking halfway does not work and the thumb
+                # must be pulled from the earliest available frame.
+                MAX_FRAME_SEEK: int = 10
+                for i in range(
+                    0,
+                    min(
+                        MAX_FRAME_SEEK, math.floor(video.get(cv2.CAP_PROP_FRAME_COUNT))
+                    ),
+                ):
+                    success, frame = video.read()
+                    if not success:
+                        video.set(cv2.CAP_PROP_POS_FRAMES, i)
+                    else:
+                        break
                 frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
                 im = Image.fromarray(frame)
         except (
@@ -981,8 +1019,14 @@ class ThumbRenderer(QObject):
                 elif MediaType.BLENDER in MediaCategories.get_types(ext):
                     image = self._blender(_filepath)
 
+                # VTF ==========================================================
+                elif MediaType.SOURCE_ENGINE in MediaCategories.get_types(ext):
+                    image = self._source_engine(_filepath)
+
                 # No Rendered Thumbnail ========================================
-                if not image:
+                if not _filepath.exists():
+                    raise FileNotFoundError
+                elif not image:
                     raise UnidentifiedImageError
 
                 orig_x, orig_y = image.size
@@ -1032,7 +1076,12 @@ class ThumbRenderer(QObject):
                     size=(adj_size, adj_size),
                     pixel_ratio=pixel_ratio,
                 )
-            except (UnidentifiedImageError, DecompressionBombError, ValueError) as e:
+            except (
+                UnidentifiedImageError,
+                DecompressionBombError,
+                ValueError,
+                ChildProcessError,
+            ) as e:
                 logging.info(
                     f"[ThumbRenderer][ERROR]: Couldn't render thumbnail for {_filepath.name} ({type(e).__name__})"
                 )

@@ -47,6 +47,10 @@ class FieldContainer(QWidget):
         self.edit_icon_128 = theme_fg_overlay(FieldContainer.edit_icon_128)
         self.trash_icon_128 = theme_fg_overlay(FieldContainer.trash_icon_128)
 
+        self.clipboard_icon_128 = theme_fg_overlay(FieldContainer.clipboard_icon_128)
+        self.edit_icon_128 = theme_fg_overlay(FieldContainer.edit_icon_128)
+        self.trash_icon_128 = theme_fg_overlay(FieldContainer.trash_icon_128)
+
         self.root_layout = QVBoxLayout(self)
         self.root_layout.setObjectName("baseLayout")
         self.root_layout.setContentsMargins(0, 0, 0, 0)
@@ -120,6 +124,7 @@ class FieldContainer(QWidget):
     def set_copy_callback(self, callback: Optional[MethodType]):
         if self.copy_button.is_connected:
             self.copy_button.clicked.disconnect()
+            self.copy_button.is_connected = False
 
         self.copy_callback = callback
         self.copy_button.clicked.connect(callback)
@@ -129,6 +134,7 @@ class FieldContainer(QWidget):
     def set_edit_callback(self, callback: Optional[MethodType]):
         if self.edit_button.is_connected:
             self.edit_button.clicked.disconnect()
+            self.edit_button.is_connected = False
 
         self.edit_callback = callback
         self.edit_button.clicked.connect(callback)
@@ -138,10 +144,12 @@ class FieldContainer(QWidget):
     def set_remove_callback(self, callback: Optional[Callable]):
         if self.remove_button.is_connected:
             self.remove_button.clicked.disconnect()
+            self.remove_button.is_connected = False
 
         self.remove_callback = callback
         self.remove_button.clicked.connect(callback)
-        self.remove_button.is_connected = True
+        if callback is not None:
+            self.remove_button.is_connected = True
 
     def set_inner_widget(self, widget: "FieldWidget"):
         if self.field_layout.itemAt(0):
