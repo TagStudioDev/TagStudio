@@ -5,10 +5,10 @@
 
 import logging
 import math
+import struct
 from copy import deepcopy
 from io import BytesIO
 from pathlib import Path
-import struct
 
 import cv2
 import numpy as np
@@ -28,18 +28,18 @@ from PIL import (
 from PIL.Image import DecompressionBombError
 from pillow_heif import register_avif_opener, register_heif_opener
 from pydub import exceptions
-from src.qt.helpers.vendored.pydub.audio_segment import _AudioSegment as AudioSegment  # type: ignore
 from PySide6.QtCore import (
-     QObject,
-     QSize,
-     QSizeF,
-     Qt,
-     Signal,
-     QFile,
-     QIODeviceBase,
-     QBuffer,
+    QBuffer,
+    QFile,
+    QFileDevice,
+    QIODeviceBase,
+    QObject,
+    QSize,
+    QSizeF,
+    Qt,
+    Signal,
 )
-from PySide6.QtGui import QGuiApplication, QPixmap, QImage
+from PySide6.QtGui import QGuiApplication, QImage, QPixmap
 from PySide6.QtPdf import QPdfDocument, QPdfDocumentRenderOptions
 from src.core.constants import FONT_SAMPLE_SIZES, FONT_SAMPLE_TEXT
 from src.core.media_types import MediaCategories, MediaType
@@ -51,6 +51,9 @@ from src.qt.helpers.color_overlay import theme_fg_overlay
 from src.qt.helpers.file_tester import is_readable_video
 from src.qt.helpers.gradient import four_corner_gradient
 from src.qt.helpers.text_wrapper import wrap_full_text
+from src.qt.helpers.vendored.pydub.audio_segment import (
+    _AudioSegment as AudioSegment,  # type: ignore
+)
 from src.qt.resource_manager import ResourceManager
 from vtf2img import Parser
 
