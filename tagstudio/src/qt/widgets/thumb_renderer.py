@@ -51,9 +51,7 @@ from src.qt.helpers.color_overlay import theme_fg_overlay
 from src.qt.helpers.file_tester import is_readable_video
 from src.qt.helpers.gradient import four_corner_gradient
 from src.qt.helpers.text_wrapper import wrap_full_text
-from src.qt.helpers.vendored.pydub.audio_segment import (
-    _AudioSegment as AudioSegment,  # type: ignore
-)
+from src.qt.helpers.vendored.pydub.audio_segment import _AudioSegment as AudioSegment  # type: ignore
 from src.qt.resource_manager import ResourceManager
 from vtf2img import Parser
 
