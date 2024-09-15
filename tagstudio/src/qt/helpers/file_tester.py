@@ -6,6 +6,8 @@
 import ffmpeg
 from pathlib import Path
 
+from src.qt.helpers.vendored.ffmpeg import _probe
+
 
 def is_readable_video(filepath: Path | str):
     """Test if a video is in a readable format. Examples of unreadable videos
@@ -15,7 +17,7 @@ def is_readable_video(filepath: Path | str):
         filepath (Path | str):
     """
     try:
-        probe = ffmpeg.probe(Path(filepath))
+        probe = _probe(Path(filepath))
         for stream in probe["streams"]:
             # DRM check
             if stream.get("codec_tag_string") in [

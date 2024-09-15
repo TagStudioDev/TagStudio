@@ -4,7 +4,7 @@
 # https://creativecommons.org/licenses/by-sa/4.0/
 # Modified for TagStudio: https://github.com/CyanVoxel/TagStudio
 
-from PySide6.QtGui import QPixmap, QPainter, QBrush
+from PySide6.QtGui import QBrush, QColor, QPainter, QPixmap
 from PySide6.QtWidgets import (
     QProxyStyle,
 )
@@ -18,10 +18,10 @@ class RoundedPixmapStyle(QProxyStyle):
     def drawItemPixmap(self, painter, rectangle, alignment, pixmap):
         painter.save()
         pix = QPixmap(pixmap.size())
-        pix.fill("#00000000")
+        pix.fill(QColor("transparent"))
         p = QPainter(pix)
         p.setBrush(QBrush(pixmap))
-        p.setPen("#00000000")
+        p.setPen(QColor("transparent"))
         p.setRenderHint(QPainter.RenderHint.Antialiasing)
         p.drawRoundedRect(pixmap.rect(), self._radius, self._radius)
         p.end()

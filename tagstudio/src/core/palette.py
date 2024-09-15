@@ -284,6 +284,12 @@ _UI_COLORS: dict = {
         ColorType.LIGHT_ACCENT: "#FFFFFF",
         ColorType.DARK_ACCENT: "#1e1e1e",
     },
+    "red": {
+        ColorType.PRIMARY: "#e22c3c",
+        ColorType.BORDER: "#e54252",
+        ColorType.LIGHT_ACCENT: "#f39caa",
+        ColorType.DARK_ACCENT: "#440d12",
+    },
     "green": {
         ColorType.PRIMARY: "#28bb48",
         ColorType.BORDER: "#43c568",
@@ -295,12 +301,6 @@ _UI_COLORS: dict = {
         ColorType.BORDER: "#c364f2",
         ColorType.LIGHT_ACCENT: "#EFD4FB",
         ColorType.DARK_ACCENT: "#3E1555",
-    },
-    "red": {
-        ColorType.PRIMARY: "#e22c3c",
-        ColorType.BORDER: "#e54252",
-        ColorType.LIGHT_ACCENT: "#f39caa",
-        ColorType.DARK_ACCENT: "#440d12",
     },
     "theme_dark": {
         ColorType.PRIMARY: "#333333",
@@ -317,18 +317,18 @@ _UI_COLORS: dict = {
 }
 
 
-def get_tag_color(type, color):
+def get_tag_color(color_type, color):
     color = color.lower()
     try:
-        if type == ColorType.TEXT:
-            return get_tag_color(_TAG_COLORS[color][type], color)
+        if color_type == ColorType.TEXT:
+            return get_tag_color(_TAG_COLORS[color][color_type], color)
         else:
-            return _TAG_COLORS[color][type]
+            return _TAG_COLORS[color][color_type]
     except KeyError:
         return "#FF00FF"
 
 
-def get_ui_color(type: ColorType, color: str):
+def get_ui_color(color_type: ColorType, color: str):
     """Returns a hex value given a color name and ColorType."""
     color = color.lower()
-    return _UI_COLORS.get(color).get(type)
+    return _UI_COLORS.get(color).get(color_type)

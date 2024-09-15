@@ -31,6 +31,20 @@ class ResourceManager:
                 )
             ResourceManager._initialized = True
 
+    @staticmethod
+    def get_path(id: str) -> Path | None:
+        """Get a resource's path from the ResourceManager.
+        Args:
+            id (str): The name of the resource.
+
+        Returns:
+            Path: The resource path if found, else None.
+        """
+        res: dict = ResourceManager._map.get(id)
+        if res:
+            return Path(__file__).parents[2] / "resources" / res.get("path")
+        return None
+
     def get(self, id: str) -> Any:
         """Get a resource from the ResourceManager.
         This can include resources inside and outside of QResources, and will return

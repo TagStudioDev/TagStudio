@@ -33,7 +33,8 @@ jobs:
             libxcb-xinerama0 \
             libopengl0 \
             libxcb-cursor0 \
-            libpulse0
+            libpulse0 \
+            ffmpeg
 
       - name: Install dependencies
         run: |

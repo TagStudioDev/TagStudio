@@ -8,8 +8,7 @@ import math
 from copy import deepcopy
 from io import BytesIO
 from pathlib import Path
-import zipfile
-import io
+import struct
 
 import cv2
 import numpy as np
@@ -28,7 +27,8 @@ from PIL import (
 )
 from PIL.Image import DecompressionBombError
 from pillow_heif import register_avif_opener, register_heif_opener
-from pydub import AudioSegment, exceptions
+from pydub import exceptions
+from src.qt.helpers.vendored.pydub.audio_segment import _AudioSegment as AudioSegment  # type: ignore
 from PySide6.QtCore import QObject, QSize, Qt, Signal
 from PySide6.QtGui import QGuiApplication, QPixmap
 from src.core.constants import FONT_SAMPLE_SIZES, FONT_SAMPLE_TEXT
@@ -41,6 +41,8 @@ from src.qt.helpers.file_tester import is_readable_video
 from src.qt.helpers.gradient import four_corner_gradient
 from src.qt.helpers.text_wrapper import wrap_full_text
 from src.qt.resource_manager import ResourceManager
+from vtf2img import Parser
+import zipfile
 
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 
@@ -56,18 +58,13 @@ class ThumbRenderer(QObject):
     updated = Signal(float, QPixmap, QSize, str)
     updated_ratio = Signal(float)
 
-    # TODO: Make dynamic font sizes given different pixel ratios
-    font_pixel_ratio: float = 1
-    ext_font = ImageFont.truetype(
-        Path(__file__).parents[3] / "resources/qt/fonts/Oxanium-Bold.ttf",
-        math.floor(12 * font_pixel_ratio),
-    )
-
     def __init__(self) -> None:
+        """Initialize the class."""
         super().__init__()
 
         # Cached thumbnail elements.
-        # Key: Size + Pixel Ratio Tuple (Ex. (512, 512, 1.25))
+        # Key: Size + Pixel Ratio Tuple + Radius Scale
+        #      (Ex. (512, 512, 1.25, 4))
         self.thumb_masks: dict = {}
         self.raised_edges: dict = {}
 
@@ -76,6 +73,7 @@ class ThumbRenderer(QObject):
 
     def _get_resource_id(self, url: Path) -> str:
         """Return the name of the icon resource to use for a file type.
+
         Special terms will return special resources.
 
         Args:
@@ -99,23 +97,39 @@ class ThumbRenderer(QObject):
 
         return "file_generic"
 
-    def _get_mask(self, size: tuple[int, int], pixel_ratio: float) -> Image.Image:
+    def _get_mask(
+        self, size: tuple[int, int], pixel_ratio: float, scale_radius: bool = False
+    ) -> Image.Image:
+        """Return a thumbnail mask given a size, pixel ratio, and radius scaling option.
+
+        If one is not already cached, a new one will be rendered.
+
+        Args:
+             size (tuple[int, int]): The size of the graphic.
+             pixel_ratio (float): The screen pixel ratio.
+             scale_radius (bool): Option to scale the radius up (Used for Preview Panel).
         """
-        Returns a thumbnail mask given a size and pixel ratio.
-        If one is not already cached, then a new one will be rendered.
-        """
-        item: Image.Image = self.thumb_masks.get((*size, pixel_ratio))
+        THUMB_SCALE: int = 512
+        radius_scale: float = 1
+        if scale_radius:
+            radius_scale = max(size[0], size[1]) / THUMB_SCALE
+
+        item: Image.Image = self.thumb_masks.get((*size, pixel_ratio, radius_scale))
         if not item:
-            item = self._render_mask(size, pixel_ratio)
-            self.thumb_masks[(*size, pixel_ratio)] = item
+            item = self._render_mask(size, pixel_ratio, radius_scale)
+            self.thumb_masks[(*size, pixel_ratio, radius_scale)] = item
         return item
 
     def _get_edge(
         self, size: tuple[int, int], pixel_ratio: float
     ) -> tuple[Image.Image, Image.Image]:
-        """
-        Returns a thumbnail raised edge graphic given a size and pixel ratio.
-        If one is not already cached, then a new one will be rendered.
+        """Return a thumbnail edge given a size, pixel ratio, and radius scaling option.
+
+        If one is not already cached, a new one will be rendered.
+
+        Args:
+            size (tuple[int, int]): The size of the graphic.
+            pixel_ratio (float): The screen pixel ratio.
         """
         item: tuple[Image.Image, Image.Image] = self.raised_edges.get(
             (*size, pixel_ratio)
@@ -128,7 +142,7 @@ class ThumbRenderer(QObject):
     def _get_icon(
         self, name: str, color: str, size: tuple[int, int], pixel_ratio: float = 1.0
     ) -> Image.Image:
-        """Retrieves a new or cached icon.
+        """Return an icon given a size, pixel ratio, and radius scaling option.
 
         Args:
             name (str): The name of the icon resource. "thumb_loading" will not draw a border.
@@ -136,7 +150,6 @@ class ThumbRenderer(QObject):
             size (tuple[int,int]): The size of the icon.
             pixel_ratio (float): The screen pixel ratio.
         """
-
         draw_border: bool = True
         if name == "thumb_loading":
             draw_border = False
@@ -151,20 +164,30 @@ class ThumbRenderer(QObject):
             self.icons[(name, *color, size, pixel_ratio)] = item
         return item
 
-    def _render_mask(self, size: tuple[int, int], pixel_ratio) -> Image.Image:
-        """Renders a thumbnail mask."""
-        smooth_factor: int = 2
-        radius_factor: int = 8
+    def _render_mask(
+        self, size: tuple[int, int], pixel_ratio: float, radius_scale: float = 1
+    ) -> Image.Image:
+        """Render a thumbnail mask graphic.
+
+        Args:
+            size (tuple[int,int]): The size of the graphic.
+            pixel_ratio (float): The screen pixel ratio.
+            radius_scale (float): The scale factor of the border radius (Used by Preview Panel).
+        """
+        SMOOTH_FACTOR: int = 2
+        RADIUS_FACTOR: int = 8
 
         im: Image.Image = Image.new(
             mode="L",
-            size=tuple([d * smooth_factor for d in size]),  # type: ignore
+            size=tuple([d * SMOOTH_FACTOR for d in size]),  # type: ignore
             color="black",
         )
         draw = ImageDraw.Draw(im)
         draw.rounded_rectangle(
             (0, 0) + tuple([d - 1 for d in im.size]),
-            radius=math.ceil(radius_factor * smooth_factor * pixel_ratio),
+            radius=math.ceil(
+                RADIUS_FACTOR * SMOOTH_FACTOR * pixel_ratio * radius_scale
+            ),
             fill="white",
         )
         im = im.resize(
@@ -174,28 +197,33 @@ class ThumbRenderer(QObject):
         return im
 
     def _render_edge(
-        self, size: tuple[int, int], pixel_ratio
+        self, size: tuple[int, int], pixel_ratio: float
     ) -> tuple[Image.Image, Image.Image]:
-        """Renders a thumbnail highlight border."""
-        smooth_factor: int = 2
-        radius_factor: int = 8
-        width: int = math.floor(pixel_ratio * 2)
+        """Render a thumbnail edge graphic.
+
+        Args:
+            size (tuple[int,int]): The size of the graphic.
+            pixel_ratio (float): The screen pixel ratio.
+        """
+        SMOOTH_FACTOR: int = 2
+        RADIUS_FACTOR: int = 8
+        WIDTH: int = math.floor(pixel_ratio * 2)
 
         # Highlight
         im_hl: Image.Image = Image.new(
             mode="RGBA",
-            size=tuple([d * smooth_factor for d in size]),  # type: ignore
+            size=tuple([d * SMOOTH_FACTOR for d in size]),  # type: ignore
             color="#00000000",
         )
         draw = ImageDraw.Draw(im_hl)
         draw.rounded_rectangle(
-            (width, width) + tuple([d - (width + 1) for d in im_hl.size]),
+            (WIDTH, WIDTH) + tuple([d - (WIDTH + 1) for d in im_hl.size]),
             radius=math.ceil(
-                (radius_factor * smooth_factor * pixel_ratio) - (pixel_ratio * 3)
+                (RADIUS_FACTOR * SMOOTH_FACTOR * pixel_ratio) - (pixel_ratio * 3)
             ),
             fill=None,
             outline="white",
-            width=width,
+            width=WIDTH,
         )
         im_hl = im_hl.resize(
             size,
@@ -205,16 +233,16 @@ class ThumbRenderer(QObject):
         # Shadow
         im_sh: Image.Image = Image.new(
             mode="RGBA",
-            size=tuple([d * smooth_factor for d in size]),  # type: ignore
+            size=tuple([d * SMOOTH_FACTOR for d in size]),  # type: ignore
             color="#00000000",
         )
         draw = ImageDraw.Draw(im_sh)
         draw.rounded_rectangle(
             (0, 0) + tuple([d - 1 for d in im_sh.size]),
-            radius=math.ceil(radius_factor * smooth_factor * pixel_ratio),
+            radius=math.ceil(RADIUS_FACTOR * SMOOTH_FACTOR * pixel_ratio),
             fill=None,
             outline="black",
-            width=width,
+            width=WIDTH,
         )
         im_sh = im_sh.resize(
             size,
@@ -231,22 +259,31 @@ class ThumbRenderer(QObject):
         pixel_ratio: float,
         draw_border: bool = True,
     ) -> Image.Image:
-        border_factor: int = 5
-        smooth_factor: int = math.ceil(2 * pixel_ratio)
-        radius_factor: int = 8
-        icon_ratio: float = 1.75
+        """Render a thumbnail icon.
+
+        Args:
+            name (str): The name of the icon resource.
+            color (str): The color to use for the icon.
+            size (tuple[int,int]): The size of the icon.
+            pixel_ratio (float): The screen pixel ratio.
+            draw_border (bool): Option to draw a border.
+        """
+        BORDER_FACTOR: int = 5
+        SMOOTH_FACTOR: int = math.ceil(2 * pixel_ratio)
+        RADIUS_FACTOR: int = 8
+        ICON_RATIO: float = 1.75
 
         # Create larger blank image based on smooth_factor
         im: Image.Image = Image.new(
             "RGBA",
-            size=tuple([d * smooth_factor for d in size]),  # type: ignore
+            size=tuple([d * SMOOTH_FACTOR for d in size]),  # type: ignore
             color="#00000000",
         )
 
         # Create solid background color
         bg: Image.Image = Image.new(
             "RGB",
-            size=tuple([d * smooth_factor for d in size]),  # type: ignore
+            size=tuple([d * SMOOTH_FACTOR for d in size]),  # type: ignore
             color="#000000",
         )
 
@@ -255,8 +292,8 @@ class ThumbRenderer(QObject):
             bg,
             (0, 0),
             mask=self._get_mask(
-                tuple([d * smooth_factor for d in size]),  # type: ignore
-                (pixel_ratio * smooth_factor),
+                tuple([d * SMOOTH_FACTOR for d in size]),  # type: ignore
+                (pixel_ratio * SMOOTH_FACTOR),
             ),
         )
 
@@ -266,12 +303,12 @@ class ThumbRenderer(QObject):
             draw.rounded_rectangle(
                 (0, 0) + tuple([d - 1 for d in im.size]),
                 radius=math.ceil(
-                    (radius_factor * smooth_factor * pixel_ratio) + (pixel_ratio * 1.5)
+                    (RADIUS_FACTOR * SMOOTH_FACTOR * pixel_ratio) + (pixel_ratio * 1.5)
                 ),
                 fill="black",
                 outline="#FF0000",
                 width=math.floor(
-                    (border_factor * smooth_factor * pixel_ratio) - (pixel_ratio * 1.5)
+                    (BORDER_FACTOR * SMOOTH_FACTOR * pixel_ratio) - (pixel_ratio * 1.5)
                 ),
             )
 
@@ -295,17 +332,17 @@ class ThumbRenderer(QObject):
 
         # Resize icon to fit icon_ratio
         icon = icon.resize(
-            (math.ceil(size[0] // icon_ratio), math.ceil(size[1] // icon_ratio))
+            (math.ceil(size[0] // ICON_RATIO), math.ceil(size[1] // ICON_RATIO))
         )
 
         # Paste icon centered
         im.paste(
             im=fg.resize(
-                (math.ceil(size[0] // icon_ratio), math.ceil(size[1] // icon_ratio))
+                (math.ceil(size[0] // ICON_RATIO), math.ceil(size[1] // ICON_RATIO))
             ),
             box=(
-                math.ceil((size[0] - (size[0] // icon_ratio)) // 2),
-                math.ceil((size[1] - (size[1] // icon_ratio)) // 2),
+                math.ceil((size[0] - (size[0] // ICON_RATIO)) // 2),
+                math.ceil((size[1] - (size[1] // ICON_RATIO)) // 2),
             ),
             mask=icon.getchannel(3),
         )
@@ -320,7 +357,13 @@ class ThumbRenderer(QObject):
 
     def _apply_overlay_color(self, image: Image.Image, color: str) -> Image.Image:
         """Apply a color overlay effect to an image based on its color channel data.
-        Red channel for foreground, green channel for outline, none for background."""
+
+        Red channel for foreground, green channel for outline, none for background.
+
+        Args:
+            image (Image.Image): The image to apply an overlay to.
+            color (str): The name of the ColorType color to use.
+        """
         bg_color: str = (
             get_ui_color(ColorType.DARK_ACCENT, color)
             if QGuiApplication.styleHints().colorScheme() is Qt.ColorScheme.Dark
@@ -363,12 +406,14 @@ class ThumbRenderer(QObject):
 
         Args:
             image (Image.Image): The image to apply the edge to.
-            edge (Image.Image): The edge image to apply.
+            edge (tuple[Image.Image, Image.Image]): The edge images to apply.
+                Item 0 is the inner highlight, and item 1 is the outer shadow.
             faded (bool): Whether or not to apply a faded version of the edge.
+                Used for light themes.
         """
-        opacity: float = 0.75 if not faded else 0.6
+        opacity: float = 1.0 if not faded else 0.8
         shade_reduction: float = (
-            0.15
+            0
             if QGuiApplication.styleHints().colorScheme() is Qt.ColorScheme.Dark
             else 0.3
         )
@@ -392,7 +437,12 @@ class ThumbRenderer(QObject):
         return im
 
     def _audio_album_thumb(self, filepath: Path, ext: str) -> Image.Image | None:
-        """Gets an album cover from an audio file if one is present."""
+        """Return an album cover thumb from an audio file if a cover is present.
+
+        Args:
+            filepath (Path): The path of the file.
+            ext (str): The file extension (with leading ".").
+        """
         image: Image.Image = None
         try:
             if not filepath.is_file():
@@ -430,24 +480,32 @@ class ThumbRenderer(QObject):
     def _audio_waveform_thumb(
         self, filepath: Path, ext: str, size: int, pixel_ratio: float
     ) -> Image.Image | None:
-        """Render a waveform image from an audio file."""
+        """Render a waveform image from an audio file.
+
+        Args:
+            filepath (Path): The path of the file.
+            ext (str): The file extension (with leading ".").
+            size (tuple[int,int]): The size of the thumbnail.
+            pixel_ratio (float): The screen pixel ratio.
+        """
         # BASE_SCALE used for drawing on a larger image and resampling down
         # to provide an antialiased effect.
         BASE_SCALE: int = 2
-        size_scaled: int = size * BASE_SCALE
-        ALLOW_SMALL_MIN: bool = False
         SAMPLES_PER_BAR: int = 3
+        size_scaled: int = size * BASE_SCALE
+        allow_small_min: bool = False
         im: Image.Image = None
 
         try:
-            BARS: int = min(math.floor((size // pixel_ratio) / 5), 64)
+            BAR_COUNT: int = min(math.floor((size // pixel_ratio) / 5), 64)
             audio: AudioSegment = AudioSegment.from_file(filepath, ext[1:])
             data = np.fromstring(audio._data, np.int16)  # type: ignore
-            data_indices = np.linspace(1, len(data), num=BARS * SAMPLES_PER_BAR)
-
-            BAR_MARGIN: float = ((size_scaled / (BARS * 3)) * BASE_SCALE) / 2
-            LINE_WIDTH: float = ((size_scaled - BAR_MARGIN) / (BARS * 3)) * BASE_SCALE
-            BAR_HEIGHT: float = (size_scaled) - (size_scaled // BAR_MARGIN)
+            data_indices = np.linspace(1, len(data), num=BAR_COUNT * SAMPLES_PER_BAR)
+            bar_margin: float = ((size_scaled / (BAR_COUNT * 3)) * BASE_SCALE) / 2
+            line_width: float = (
+                (size_scaled - bar_margin) / (BAR_COUNT * 3)
+            ) * BASE_SCALE
+            bar_height: float = (size_scaled) - (size_scaled // bar_margin)
 
             count: int = 0
             maximum_item: int = 0
@@ -469,38 +527,38 @@ class ThumbRenderer(QObject):
                     maximum_item = 0
                     count = 1
 
-            line_ratio = max(highest_line / BAR_HEIGHT, 1)
+            line_ratio = max(highest_line / bar_height, 1)
 
             im = Image.new("RGB", (size_scaled, size_scaled), color="#000000")
             draw = ImageDraw.Draw(im)
 
-            current_x = BAR_MARGIN
+            current_x = bar_margin
             for item in max_array:
                 item_height = item / line_ratio
 
                 # If small minimums are not allowed, raise all values
                 # smaller than the line width to the same value.
-                if not ALLOW_SMALL_MIN:
-                    item_height = max(item_height, LINE_WIDTH)
+                if not allow_small_min:
+                    item_height = max(item_height, line_width)
 
                 current_y = (
-                    BAR_HEIGHT - item_height + (size_scaled // BAR_MARGIN)
+                    bar_height - item_height + (size_scaled // bar_margin)
                 ) // 2
 
                 draw.rounded_rectangle(
                     (
                         current_x,
                         current_y,
-                        (current_x + LINE_WIDTH),
+                        (current_x + line_width),
                         (current_y + item_height),
                     ),
                     radius=100 * BASE_SCALE,
                     fill=("#FF0000"),
                     outline=("#FFFF00"),
-                    width=max(math.ceil(LINE_WIDTH / 6), BASE_SCALE),
+                    width=max(math.ceil(line_width / 6), BASE_SCALE),
                 )
 
-                current_x = current_x + LINE_WIDTH + BAR_MARGIN
+                current_x = current_x + line_width + bar_margin
 
             im.resize((size, size), Image.Resampling.BILINEAR)
 
@@ -508,9 +566,15 @@ class ThumbRenderer(QObject):
             logging.error(
                 f"[ThumbRenderer][WAVEFORM][ERROR]: Couldn't render waveform for {filepath.name} ({type(e).__name__})"
             )
+
         return im
 
     def _blender(self, filepath: Path) -> Image.Image:
+        """Get an emended thumbnail from a Blender file, if a thumbnail is present.
+
+        Args:
+            filepath (Path): The path of the file.
+        """
         bg_color: str = (
             "#1e1e1e"
             if QGuiApplication.styleHints().colorScheme() is Qt.ColorScheme.Dark
@@ -541,8 +605,40 @@ class ThumbRenderer(QObject):
                 )
         return im
 
+    def _source_engine(self, filepath: Path) -> Image.Image:
+        """
+        This is a function to convert the VTF (Valve Texture Format) files to thumbnails, it works using the VTF2IMG library for PILLOW.
+        """
+        parser = Parser(filepath)
+        im: Image.Image = None
+        try:
+            im = parser.get_image()
+
+        except (
+            AttributeError,
+            UnidentifiedImageError,
+            FileNotFoundError,
+            TypeError,
+            struct.error,
+        ) as e:
+            if str(e) == "expected string or buffer":
+                logging.info(
+                    f"[ThumbRenderer][VTF][INFO] {filepath.name} Doesn't have an embedded thumbnail. ({type(e).__name__})"
+                )
+
+            else:
+                logging.error(
+                    f"[ThumbRenderer][VTF][ERROR]: Couldn't render thumbnail for {filepath.name} ({type(e).__name__})"
+                )
+        return im
+
     def _font_short_thumb(self, filepath: Path, size: int) -> Image.Image:
-        """Render a small font preview ("Aa") thumbnail from a font file."""
+        """Render a small font preview ("Aa") thumbnail from a font file.
+
+        Args:
+            filepath (Path): The path of the file.
+            size (tuple[int,int]): The size of the thumbnail.
+        """
         im: Image.Image = None
         try:
             bg = Image.new("RGB", (size, size), color="#000000")
@@ -599,7 +695,12 @@ class ThumbRenderer(QObject):
         return im
 
     def _font_long_thumb(self, filepath: Path, size: int) -> Image.Image:
-        """Render a large font preview ("Alphabet") thumbnail from a font file."""
+        """Render a large font preview ("Alphabet") thumbnail from a font file.
+
+        Args:
+            filepath (Path): The path of the file.
+            size (tuple[int,int]): The size of the thumbnail.
+        """
         # Scale the sample font sizes to the preview image
         # resolution,assuming the sizes are tuned for 256px.
         im: Image.Image = None
@@ -629,6 +730,11 @@ class ThumbRenderer(QObject):
         return im
 
     def _image_raw_thumb(self, filepath: Path) -> Image.Image:
+        """Render a thumbnail for a RAW image type.
+
+        Args:
+            filepath (Path): The path of the file.
+        """
         im: Image.Image = None
         try:
             with rawpy.imread(str(filepath)) as raw:
@@ -653,6 +759,11 @@ class ThumbRenderer(QObject):
         return im
 
     def _image_thumb(self, filepath: Path) -> Image.Image:
+        """Render a thumbnail for a standard image type.
+
+        Args:
+            filepath (Path): The path of the file.
+        """
         im: Image.Image = None
         try:
             im = Image.open(filepath)
@@ -674,12 +785,27 @@ class ThumbRenderer(QObject):
         return im
 
     def _image_vector_thumb(self, filepath: Path, size: int) -> Image.Image:
+        """Render a thumbnail for a vector image, such as SVG.
+
+        Args:
+            filepath (Path): The path of the file.
+            size (tuple[int,int]): The size of the thumbnail.
+        """
         # TODO: Implement.
         im: Image.Image = None
         return im
 
     def _model_stl_thumb(self, filepath: Path, size: int) -> Image.Image:
+        """Render a thumbnail for an STL file.
+
+        Args:
+            filepath (Path): The path of the file.
+            size (tuple[int,int]): The size of the icon.
+        """
         # TODO: Implement.
+        # The following commented code describes a method for rendering via
+        # matplotlib.
+        # This implementation did not play nice with multithreading.
         im: Image.Image = None
         # # Create a new plot
         # matplotlib.use('agg')
@@ -701,7 +827,12 @@ class ThumbRenderer(QObject):
 
         return im
 
-    def _text_thumb(self, filepath: Path, size: int) -> Image.Image:
+    def _text_thumb(self, filepath: Path) -> Image.Image:
+        """Render a thumbnail for a plaintext file.
+
+        Args:
+            filepath (Path): The path of the file.
+        """
         im: Image.Image = None
 
         bg_color: str = (
@@ -736,6 +867,11 @@ class ThumbRenderer(QObject):
         return im
 
     def _video_thumb(self, filepath: Path) -> Image.Image:
+        """Render a thumbnail for a video file.
+
+        Args:
+            filepath (Path): The path of the file.
+        """
         im: Image.Image = None
         try:
             if is_readable_video(filepath):
@@ -747,12 +883,21 @@ class ThumbRenderer(QObject):
                     cv2.CAP_PROP_POS_FRAMES,
                     (video.get(cv2.CAP_PROP_FRAME_COUNT) // 2),
                 )
-                success, frame = video.read()
-                if not success:
-                    # Depending on the video format, compression, and frame
-                    # count, seeking halfway does not work and the thumb
-                    # must be pulled from the earliest available frame.
-                    video.set(cv2.CAP_PROP_POS_FRAMES, 0)
+                # NOTE: Depending on the video format, compression, and
+                # frame count, seeking halfway does not work and the thumb
+                # must be pulled from the earliest available frame.
+                MAX_FRAME_SEEK: int = 10
+                for i in range(
+                    0,
+                    min(
+                        MAX_FRAME_SEEK, math.floor(video.get(cv2.CAP_PROP_FRAME_COUNT))
+                    ),
+                ):
+                    success, frame = video.read()
+                    if not success:
+                        video.set(cv2.CAP_PROP_POS_FRAMES, i)
+                    else:
+                        break
                 frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
                 im = Image.fromarray(frame)
         except (
@@ -785,7 +930,7 @@ class ThumbRenderer(QObject):
                         (".png", ".jpg", ".jpeg", ".gif", ".bmp", ".svg")
                     ):
                         image_data = zipFile.read(file_name)
-                        image = Image.open(io.BytesIO(image_data))
+                        image = Image.open(BytesIO(image_data))
                         return image
         except Exception as e:
             logging.info(
@@ -800,10 +945,22 @@ class ThumbRenderer(QObject):
         base_size: tuple[int, int],
         pixel_ratio: float,
         is_loading=False,
-        gradient=False,
+        is_grid_thumb=False,
         update_on_ratio_change=False,
     ):
-        """Internal renderer. Renders an entry/element thumbnail for the GUI."""
+        """Render a thumbnail or preview image.
+
+        Args:
+            timestamp (float): The timestamp for which this this job was dispatched.
+            filepath (str | Path): The path of the file to render a thumbnail for.
+            base_size (tuple[int,int]): The unmodified base size of the thumbnail.
+            pixel_ratio (float): The screen pixel ratio.
+            is_loading (bool): Is this a loading graphic?
+            is_grid_thumb (bool): Is this a thumbnail for the thumbnail grid?
+                Or else the Preview Pane?
+            update_on_ratio_change (bool): Should an updated ratio signal be sent?
+
+        """
         adj_size = math.ceil(max(base_size[0], base_size[1]) * pixel_ratio)
         image: Image.Image = None
         pixmap: QPixmap = None
@@ -821,13 +978,6 @@ class ThumbRenderer(QObject):
         loading_thumb: Image.Image = self._get_icon(
             "thumb_loading", theme_color, (adj_size, adj_size), pixel_ratio
         )
-
-        if ThumbRenderer.font_pixel_ratio != pixel_ratio:
-            ThumbRenderer.font_pixel_ratio = pixel_ratio
-            ThumbRenderer.ext_font = ImageFont.truetype(
-                Path(__file__).parents[3] / "resources/qt/fonts/Oxanium-Bold.ttf",
-                math.floor(12 * ThumbRenderer.font_pixel_ratio),
-            )
 
         if is_loading:
             final = loading_thumb.resize(
@@ -856,10 +1006,10 @@ class ThumbRenderer(QObject):
                     image = self._video_thumb(_filepath)
                 # Plain Text ===================================================
                 elif MediaType.PLAINTEXT in MediaCategories.get_types(ext):
-                    image = self._text_thumb(_filepath, adj_size)
+                    image = self._text_thumb(_filepath)
                 # Fonts ========================================================
                 elif MediaType.FONT in MediaCategories.get_types(ext, True):
-                    if gradient:
+                    if is_grid_thumb:
                         # Short (Aa) Preview
                         image = self._font_short_thumb(_filepath, adj_size)
                     else:
@@ -882,8 +1032,15 @@ class ThumbRenderer(QObject):
                 # Ebooks ===========================================================
                 elif MediaType.EBOOK in MediaCategories.get_types(ext):
                     image = self._epub_cover(_filepath)
+
+                # VTF ==========================================================
+                elif MediaType.SOURCE_ENGINE in MediaCategories.get_types(ext):
+                    image = self._source_engine(_filepath)
+
                 # No Rendered Thumbnail ========================================
-                if not image:
+                if not _filepath.exists():
+                    raise FileNotFoundError
+                elif not image:
                     raise UnidentifiedImageError
 
                 orig_x, orig_y = image.size
@@ -907,7 +1064,7 @@ class ThumbRenderer(QObject):
                 )
                 image = image.resize((new_x, new_y), resample=resampling_method)
                 mask: Image.Image = None
-                if gradient:
+                if is_grid_thumb:
                     mask = self._get_mask((adj_size, adj_size), pixel_ratio)
                     edge: tuple[Image.Image, Image.Image] = self._get_edge(
                         (adj_size, adj_size), pixel_ratio
@@ -917,7 +1074,7 @@ class ThumbRenderer(QObject):
                         edge,
                     )
                 else:
-                    mask = self._get_mask(image.size, pixel_ratio)
+                    mask = self._get_mask(image.size, pixel_ratio, scale_radius=True)
                     final = Image.new("RGBA", image.size, (0, 0, 0, 0))
                     final.paste(image, mask=mask.getchannel(0))
 
@@ -936,6 +1093,8 @@ class ThumbRenderer(QObject):
             except (
                 UnidentifiedImageError,
                 DecompressionBombError,
+                ValueError,
+                ChildProcessError,
             ) as e:
                 logging.info(
                     f"[ThumbRenderer][ERROR]: Couldn't render thumbnail for {_filepath.name} ({type(e).__name__})"
