@@ -2346,11 +2346,13 @@ class Filter:
 
         if entry_value is None:
             return query_is_negative
+        else:
+            entry_value = entry_value.casefold()
 
         if value in entry_value:
             return not query_is_negative
-        else:
-            return query_is_negative
+
+        return query_is_negative
 
     def handle_tag_id(self, query: str, entry_tags: list[int]) -> bool:
         try:
