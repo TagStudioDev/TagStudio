@@ -10,3 +10,9 @@ numpy==1.26.4
 rawpy==0.21.0
 pillow-heif==0.16.0
 chardet==5.2.0
+pydub==0.25.1
+mutagen==1.47.0
+numpy==1.26.4
+ffmpeg-python==0.2.0
+Send2Trash==1.8.3
+vtf2img==0.1.0

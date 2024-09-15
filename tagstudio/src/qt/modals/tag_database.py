@@ -2,32 +2,37 @@
 # Licensed under the GPL-3.0 License.
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
-from PySide6.QtCore import Signal, Qt, QSize
+import typing
+
+from PySide6.QtCore import QSize, Qt, Signal
 from PySide6.QtWidgets import (
-    QWidget,
-    QVBoxLayout,
+    QFrame,
     QHBoxLayout,
     QLineEdit,
     QScrollArea,
-    QFrame,
+    QVBoxLayout,
+    QWidget,
 )
-
-from src.core.library import Library
-from src.qt.widgets.panel import PanelWidget, PanelModal
-from src.qt.widgets.tag import TagWidget
+from src.core.constants import TAG_COLORS
 from src.qt.modals.build_tag import BuildTagPanel
+from src.qt.widgets.panel import PanelModal, PanelWidget
+from src.qt.widgets.tag import TagWidget
+
+# Only import for type checking/autocompletion, will not be imported at runtime.
+if typing.TYPE_CHECKING:
+    from src.core.library import Library, Tag
+    from src.qt.ts_qt import QtDriver
 
 
 class TagDatabasePanel(PanelWidget):
     tag_chosen = Signal(int)
 
-    def __init__(self, library):
+    def __init__(self, library: "Library", driver: "QtDriver"):
         super().__init__()
         self.lib: Library = library
-        # self.callback = callback
+        self.driver: QtDriver = driver
         self.first_tag_id = -1
         self.tag_limit = 30
-        # self.selected_tag: int = 0
 
         self.setMinimumSize(300, 400)
         self.root_layout = QVBoxLayout(self)
@@ -103,8 +108,28 @@ class TagDatabasePanel(PanelWidget):
             # Get tag ids to keep this behaviorally identical
             tags = [t.id for t in self.lib.tags]
 
+        if query:
+            # sort tags by whether the tag's name is the text that's matching the search, alphabetically, and then by color
+            sorted_tags = sorted(
+                tags,
+                key=lambda tag_id: (
+                    not self.lib.get_tag(tag_id).name.lower().startswith(query.lower()),
+                    self.lib.get_tag(tag_id).display_name(self.lib),
+                    TAG_COLORS.index(self.lib.get_tag(tag_id).color.lower()),
+                ),
+            )
+        else:
+            # sort tags by color and then alphabetically
+            sorted_tags = sorted(
+                tags,
+                key=lambda tag_id: (
+                    TAG_COLORS.index(self.lib.get_tag(tag_id).color.lower()),
+                    self.lib.get_tag(tag_id).display_name(self.lib),
+                ),
+            )
+
         first_id_set = False
-        for tag_id in tags:
+        for tag_id in sorted_tags:
             if not first_id_set:
                 self.first_tag_id = tag_id
                 first_id_set = True
@@ -112,9 +137,14 @@ class TagDatabasePanel(PanelWidget):
             row = QHBoxLayout(container)
             row.setContentsMargins(0, 0, 0, 0)
             row.setSpacing(3)
-            tw = TagWidget(self.lib, self.lib.get_tag(tag_id), True, False)
-            tw.on_edit.connect(
-                lambda checked=False, t=self.lib.get_tag(tag_id): (self.edit_tag(t.id))
+            tag: Tag = self.lib.get_tag(tag_id)
+            tw = TagWidget(self.lib, tag, True, False)
+            tw.on_edit.connect(lambda checked=False, t=tag: (self.edit_tag(t.id)))
+            tw.on_click.connect(
+                lambda checked=False, q=f"tag_id: {tag_id}": (
+                    self.driver.main_window.searchField.setText(q),
+                    self.driver.filter_items(q),
+                )
             )
             row.addWidget(tw)
             self.scroll_layout.addWidget(container)

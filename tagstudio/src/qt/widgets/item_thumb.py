@@ -4,14 +4,16 @@
 import contextlib
 import logging
 import os
+import platform
 import time
 import typing
 from pathlib import Path
 from typing import Optional
+import platform
 
 from PIL import Image, ImageQt
-from PySide6.QtCore import Qt, QSize, QEvent
-from PySide6.QtGui import QPixmap, QEnterEvent, QAction
+from PySide6.QtCore import Qt, QSize, QEvent, QMimeData, QUrl
+from PySide6.QtGui import QPixmap, QEnterEvent, QAction, QDrag
 from PySide6.QtWidgets import (
     QWidget,
     QVBoxLayout,
@@ -24,12 +26,10 @@ from PySide6.QtWidgets import (
 from src.core.enums import FieldID
 from src.core.library import ItemType, Library, Entry
 from src.core.constants import (
-    AUDIO_TYPES,
-    VIDEO_TYPES,
-    IMAGE_TYPES,
     TAG_FAVORITE,
     TAG_ARCHIVED,
 )
+from src.core.media_types import MediaCategories, MediaType
 from src.qt.flowlayout import FlowWidget
 from src.qt.helpers.file_opener import FileOpenerHelper
 from src.qt.widgets.thumb_renderer import ThumbRenderer
@@ -64,27 +64,29 @@ class ItemThumb(FlowWidget):
     tag_group_icon_128.load()
 
     small_text_style = (
-        f"background-color:rgba(0, 0, 0, 192);"
-        f"font-family:Oxanium;"
-        f"font-weight:bold;"
-        f"font-size:12px;"
-        f"border-radius:3px;"
-        f"padding-top: 4px;"
-        f"padding-right: 1px;"
-        f"padding-bottom: 1px;"
-        f"padding-left: 1px;"
+        "background-color:rgba(0, 0, 0, 192);"
+        "color:#FFFFFF;"
+        "font-family:Oxanium;"
+        "font-weight:bold;"
+        "font-size:12px;"
+        "border-radius:3px;"
+        "padding-top: 4px;"
+        "padding-right: 1px;"
+        "padding-bottom: 1px;"
+        "padding-left: 1px;"
     )
 
     med_text_style = (
-        f"background-color:rgba(0, 0, 0, 192);"
-        f"font-family:Oxanium;"
-        f"font-weight:bold;"
-        f"font-size:18px;"
-        f"border-radius:3px;"
-        f"padding-top: 4px;"
-        f"padding-right: 1px;"
-        f"padding-bottom: 1px;"
-        f"padding-left: 1px;"
+        "background-color:rgba(0, 0, 0, 192);"
+        "color:#FFFFFF;"
+        "font-family:Oxanium;"
+        "font-weight:bold;"
+        "font-size:18px;"
+        "border-radius:3px;"
+        "padding-top: 4px;"
+        "padding-right: 1px;"
+        "padding-bottom: 1px;"
+        "padding-left: 1px;"
     )
 
     def __init__(
@@ -105,6 +107,7 @@ class ItemThumb(FlowWidget):
         self.thumb_size: tuple[int, int] = thumb_size
         self.setMinimumSize(*thumb_size)
         self.setMaximumSize(*thumb_size)
+        self.setMouseTracking(True)
         check_size = 24
         # self.setStyleSheet('background-color:red;')
 
@@ -194,10 +197,26 @@ class ItemThumb(FlowWidget):
         self.opener = FileOpenerHelper("")
         open_file_action = QAction("Open file", self)
         open_file_action.triggered.connect(self.opener.open_file)
-        open_explorer_action = QAction("Open file in explorer", self)
+
+        system = platform.system()
+        open_explorer_action = QAction(
+            "Open in explorer", self
+        )  # Default (mainly going to be for linux)
+        if system == "Darwin":
+            open_explorer_action = QAction("Reveal in Finder", self)
+        elif system == "Windows":
+            open_explorer_action = QAction("Open in Explorer", self)
+
         open_explorer_action.triggered.connect(self.opener.open_explorer)
+
+        trash_term: str = "Trash"
+        if platform.system() == "Windows":
+            trash_term = "Recycle Bin"
+        self.delete_action = QAction(f"Send file to {trash_term}", self)
+
         self.thumb_button.addAction(open_file_action)
         self.thumb_button.addAction(open_explorer_action)
+        self.thumb_button.addAction(self.delete_action)
 
         # Static Badges ========================================================
 
@@ -357,10 +376,27 @@ class ItemThumb(FlowWidget):
     def set_extension(self, ext: str) -> None:
         if ext and ext.startswith(".") is False:
             ext = "." + ext
-        if ext and ext not in IMAGE_TYPES or ext in [".gif", ".apng"]:
+        if (
+            ext
+            and (MediaType.IMAGE not in MediaCategories.get_types(ext))
+            or (MediaType.IMAGE_RAW in MediaCategories.get_types(ext))
+            or (MediaType.IMAGE_VECTOR in MediaCategories.get_types(ext))
+            or (MediaType.ADOBE_PHOTOSHOP in MediaCategories.get_types(ext))
+            or ext
+            in [
+                ".apng",
+                ".avif",
+                ".exr",
+                ".gif",
+                ".jxl",
+                ".webp",
+            ]
+        ):
             self.ext_badge.setHidden(False)
             self.ext_badge.setText(ext.upper()[1:])
-            if ext in VIDEO_TYPES + AUDIO_TYPES:
+            if (MediaType.VIDEO in MediaCategories.get_types(ext)) or (
+                MediaType.AUDIO in MediaCategories.get_types(ext)
+            ):
                 self.count_badge.setHidden(False)
         else:
             if self.mode == ItemType.ENTRY:
@@ -499,3 +535,26 @@ class ItemThumb(FlowWidget):
         if self.panel.isOpen:
             self.panel.update_widgets()
         self.panel.driver.update_badges()
+
+    def mouseMoveEvent(self, event):
+        if event.buttons() is not Qt.MouseButton.LeftButton:
+            return
+
+        drag = QDrag(self.panel.driver)
+        paths = []
+        mimedata = QMimeData()
+
+        selected_ids = list(map(lambda x: x[1], self.panel.driver.selected))
+        if self.item_id not in selected_ids:
+            selected_ids = [self.item_id]
+
+        for id in selected_ids:
+            entry = self.lib.get_entry(id)
+            url = QUrl.fromLocalFile(
+                Path(self.lib.library_dir) / entry.path / entry.filename
+            )
+            paths.append(url)
+
+        mimedata.setUrls(paths)
+        drag.setMimeData(mimedata)
+        drag.exec(Qt.DropAction.CopyAction)

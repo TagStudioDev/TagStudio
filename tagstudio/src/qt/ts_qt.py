@@ -8,9 +8,11 @@
 """A Qt driver for TagStudio."""
 
 import ctypes
+import copy
 import logging
 import math
 import os
+import platform
 import sys
 import time
 import typing
@@ -52,6 +54,7 @@ from PySide6.QtWidgets import (
     QMenu,
     QMenuBar,
     QComboBox,
+    QMessageBox,
 )
 from humanfriendly import format_timespan
 
@@ -64,12 +67,15 @@ from src.core.constants import (
     TS_FOLDER_NAME,
     VERSION_BRANCH,
     VERSION,
+    TEXT_FIELDS,
     TAG_FAVORITE,
     TAG_ARCHIVED,
 )
+from src.core.palette import ColorType, get_ui_color
 from src.core.utils.web import strip_web_protocol
 from src.qt.flowlayout import FlowLayout
 from src.qt.main_window import Ui_MainWindow
+from src.qt.helpers.file_deleter import delete_file
 from src.qt.helpers.function_iterator import FunctionIterator
 from src.qt.helpers.custom_runnable import CustomRunnable
 from src.qt.resource_manager import ResourceManager
@@ -85,6 +91,8 @@ from src.qt.modals.file_extension import FileExtensionModal
 from src.qt.modals.fix_unlinked import FixUnlinkedEntriesModal
 from src.qt.modals.fix_dupes import FixDupeFilesModal
 from src.qt.modals.folders_to_tags import FoldersToTagsModal
+from src.qt.modals.drop_import import DropImport
+from src.qt.modals.ffmpeg_checker import FfmpegChecker
 
 # this import has side-effect of import PySide resources
 import src.qt.resources_rc  # pylint: disable=unused-import
@@ -269,6 +277,11 @@ class QtDriver(QObject):
         # 	f'QScrollBar::{{background:red;}}'
         # 	)
 
+        self.drop_import = DropImport(self)
+        self.main_window.dragEnterEvent = self.drop_import.dragEnterEvent  # type: ignore
+        self.main_window.dropEvent = self.drop_import.dropEvent  # type: ignore
+        self.main_window.dragMoveEvent = self.drop_import.dragMoveEvent  # type: ignore
+
         # # self.main_window.windowFlags() &
         # # self.main_window.setWindowFlag(Qt.WindowType.FramelessWindowHint, True)
         # self.main_window.setWindowFlag(Qt.WindowType.NoDropShadowWindowHint, True)
@@ -280,8 +293,20 @@ class QtDriver(QObject):
 
         splash_pixmap = QPixmap(":/images/splash.png")
         splash_pixmap.setDevicePixelRatio(self.main_window.devicePixelRatio())
+        splash_pixmap = splash_pixmap.scaledToWidth(
+            math.floor(
+                min(
+                    (
+                        QGuiApplication.primaryScreen().geometry().width()
+                        * self.main_window.devicePixelRatio()
+                    )
+                    / 4,
+                    splash_pixmap.width(),
+                )
+            ),
+            Qt.TransformationMode.SmoothTransformation,
+        )
         self.splash = QSplashScreen(splash_pixmap, Qt.WindowStaysOnTopHint)  # type: ignore
-        # self.splash.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
         self.splash.show()
 
         if os.name == "nt":
@@ -292,6 +317,9 @@ class QtDriver(QObject):
             icon = QIcon()
             icon.addFile(str(icon_path))
             app.setWindowIcon(icon)
+
+        self.copied_fields: list[dict] = []
+        self.is_buffer_merged: bool = False
 
         menu_bar = QMenuBar(self.main_window)
         self.main_window.setMenuBar(menu_bar)
@@ -386,6 +414,36 @@ class QtDriver(QObject):
 
         edit_menu.addSeparator()
 
+        # NOTE: Name is set in update_clipboard_actions()
+        self.copy_entry_fields_action = QAction(menu_bar)
+        self.copy_entry_fields_action.triggered.connect(
+            lambda: self.copy_entry_fields_callback()
+        )
+        self.copy_entry_fields_action.setShortcut(
+            QtCore.QKeyCombination(
+                QtCore.Qt.KeyboardModifier(QtCore.Qt.KeyboardModifier.ControlModifier),
+                QtCore.Qt.Key.Key_C,
+            )
+        )
+        self.copy_entry_fields_action.setToolTip("Ctrl+C")
+        edit_menu.addAction(self.copy_entry_fields_action)
+
+        # NOTE: Name is set in update_clipboard_actions()
+        self.paste_entry_fields_action = QAction(menu_bar)
+        self.paste_entry_fields_action.triggered.connect(
+            self.paste_entry_fields_callback
+        )
+        self.paste_entry_fields_action.setShortcut(
+            QtCore.QKeyCombination(
+                QtCore.Qt.KeyboardModifier(QtCore.Qt.KeyboardModifier.ControlModifier),
+                QtCore.Qt.Key.Key_V,
+            )
+        )
+        self.paste_entry_fields_action.setToolTip("Ctrl+V")
+        edit_menu.addAction(self.paste_entry_fields_action)
+
+        edit_menu.addSeparator()
+
         select_all_action = QAction("Select All", menu_bar)
         select_all_action.triggered.connect(self.select_all_action_callback)
         select_all_action.setShortcut(
@@ -402,6 +460,15 @@ class QtDriver(QObject):
         clear_select_action.setShortcut(QtCore.Qt.Key.Key_Escape)
         clear_select_action.setToolTip("Esc")
         edit_menu.addAction(clear_select_action)
+
+        edit_menu.addSeparator()
+
+        self.delete_file_action = QAction("Delete Selected File(s)", menu_bar)
+        self.delete_file_action.triggered.connect(
+            lambda f="": self.delete_files_callback(f)
+        )
+        self.delete_file_action.setShortcut(QtCore.Qt.Key.Key_Delete)
+        edit_menu.addAction(self.delete_file_action)
 
         edit_menu.addSeparator()
 
@@ -428,14 +495,24 @@ class QtDriver(QObject):
         window_menu.addAction(check_action)
 
         # Tools Menu ===========================================================
+        def create_fix_unlinked_entries_modal():
+            """Postpone the creation of the modal until it is needed."""
+            if not hasattr(self, "unlinked_modal"):
+                self.unlinked_modal = FixUnlinkedEntriesModal(self.lib, self)
+            self.unlinked_modal.show()
+
         fix_unlinked_entries_action = QAction("Fix &Unlinked Entries", menu_bar)
-        fue_modal = FixUnlinkedEntriesModal(self.lib, self)
-        fix_unlinked_entries_action.triggered.connect(lambda: fue_modal.show())
+        fix_unlinked_entries_action.triggered.connect(create_fix_unlinked_entries_modal)
         tools_menu.addAction(fix_unlinked_entries_action)
 
+        def create_dupe_files_modal():
+            """Postpone the creation of the modal until it is needed."""
+            if not hasattr(self, "dupe_modal"):
+                self.dupe_modal = FixDupeFilesModal(self.lib, self)
+            self.dupe_modal.show()
+
         fix_dupe_files_action = QAction("Fix Duplicate &Files", menu_bar)
-        fdf_modal = FixDupeFilesModal(self.lib, self)
-        fix_dupe_files_action.triggered.connect(lambda: fdf_modal.show())
+        fix_dupe_files_action.triggered.connect(create_dupe_files_modal)
         tools_menu.addAction(fix_dupe_files_action)
 
         create_collage_action = QAction("Create Collage", menu_bar)
@@ -486,18 +563,25 @@ class QtDriver(QObject):
         )
         window_menu.addAction(show_libs_list_action)
 
+        def create_folders_tags_modal():
+            """Postpone the creation of the modal until it is needed."""
+            if not hasattr(self, "folders_modal"):
+                self.folders_modal = FoldersToTagsModal(self.lib, self)
+            self.folders_modal.show()
+
         folders_to_tags_action = QAction("Folders to Tags", menu_bar)
-        ftt_modal = FoldersToTagsModal(self.lib, self)
-        folders_to_tags_action.triggered.connect(lambda: ftt_modal.show())
+        folders_to_tags_action.triggered.connect(create_folders_tags_modal)
         macros_menu.addAction(folders_to_tags_action)
 
-        # Help Menu ==========================================================
+        # Help Menu ============================================================
         self.repo_action = QAction("Visit GitHub Repository", menu_bar)
         self.repo_action.triggered.connect(
             lambda: webbrowser.open("https://github.com/TagStudioDev/TagStudio")
         )
         help_menu.addAction(self.repo_action)
-        self.set_macro_menu_viability()
+        self.set_menu_action_viability()
+
+        self.update_clipboard_actions()
 
         menu_bar.addMenu(file_menu)
         menu_bar.addMenu(edit_menu)
@@ -506,6 +590,9 @@ class QtDriver(QObject):
         menu_bar.addMenu(window_menu)
         menu_bar.addMenu(help_menu)
 
+        # ======================================================================
+
+        # Preview Panel --------------------------------------------------------
         self.preview_panel = PreviewPanel(self.lib, self)
         l: QHBoxLayout = self.main_window.splitter
         l.addWidget(self.preview_panel)
@@ -514,11 +601,17 @@ class QtDriver(QObject):
             str(Path(__file__).parents[2] / "resources/qt/fonts/Oxanium-Bold.ttf")
         )
 
+        self.thumb_sizes: list[tuple[str, int]] = [
+            ("Extra Large Thumbnails", 256),
+            ("Large Thumbnails", 192),
+            ("Medium Thumbnails", 128),
+            ("Small Thumbnails", 96),
+            ("Mini Thumbnails", 76),
+        ]
         self.thumb_size = 128
         self.max_results = 500
         self.item_thumbs: list[ItemThumb] = []
         self.thumb_renderers: list[ThumbRenderer] = []
-        self.collation_thumb_size = math.ceil(self.thumb_size * 2)
 
         self.init_library_window()
 
@@ -547,29 +640,44 @@ class QtDriver(QObject):
         if self.args.ci:
             # gracefully terminate the app in CI environment
             self.thumb_job_queue.put((self.SIGTERM.emit, []))
+        else:
+            # Startup Checks
+            self.check_ffmpeg()
 
         app.exec()
 
         self.shutdown()
 
     def init_library_window(self):
-        # self._init_landing_page() # Taken care of inside the widget now
-        self._init_thumb_grid()
-
         # TODO: Put this into its own method that copies the font file(s) into memory
         # so the resource isn't being used, then store the specific size variations
         # in a global dict for methods to access for different DPIs.
         # adj_font_size = math.floor(12 * self.main_window.devicePixelRatio())
         # self.ext_font = ImageFont.truetype(os.path.normpath(f'{Path(__file__).parents[2]}/resources/qt/fonts/Oxanium-Bold.ttf'), adj_font_size)
 
+        # Search Button
         search_button: QPushButton = self.main_window.searchButton
         search_button.clicked.connect(
             lambda: self.filter_items(self.main_window.searchField.text())
         )
+
+        # Search Field
         search_field: QLineEdit = self.main_window.searchField
         search_field.returnPressed.connect(
             lambda: self.filter_items(self.main_window.searchField.text())
         )
+
+        # Thumbnail Size ComboBox
+        thumb_size_combobox: QComboBox = self.main_window.thumb_size_combobox
+        for size in self.thumb_sizes:
+            thumb_size_combobox.addItem(size[0])
+        thumb_size_combobox.setCurrentIndex(2)  # Default: Medium
+        thumb_size_combobox.currentIndexChanged.connect(
+            lambda: self.thumb_size_callback(thumb_size_combobox.currentIndex())
+        )
+        self._init_thumb_grid()
+
+        # Search Type ComboBox
         search_type_selector: QComboBox = self.main_window.comboBox_2
         search_type_selector.currentIndexChanged.connect(
             lambda: self.set_search_type(
@@ -688,11 +796,16 @@ class QtDriver(QObject):
             self.lib.clear_internal_vars()
             title_text = f"{self.base_title}"
             self.main_window.setWindowTitle(title_text)
+            self.main_window.setAcceptDrops(False)
 
             self.nav_frames = []
             self.cur_frame_idx = -1
             self.cur_query = ""
             self.selected.clear()
+            self.copied_fields.clear()
+            self.is_buffer_merged = False
+            self.update_clipboard_actions()
+            self.set_menu_action_viability()
             self.preview_panel.update_widgets()
             self.filter_items()
             self.main_window.toggle_landing_page(True)
@@ -730,7 +843,7 @@ class QtDriver(QObject):
                 self.selected.append((item.mode, item.item_id))
                 item.thumb_button.set_selected(True)
 
-        self.set_macro_menu_viability()
+        self.set_menu_action_viability()
         self.preview_panel.update_widgets()
 
     def clear_select_action_callback(self):
@@ -738,12 +851,15 @@ class QtDriver(QObject):
         for item in self.item_thumbs:
             item.thumb_button.set_selected(False)
 
-        self.set_macro_menu_viability()
+        self.set_menu_action_viability()
         self.preview_panel.update_widgets()
 
     def show_tag_database(self):
         self.modal = PanelModal(
-            TagDatabasePanel(self.lib), "Library Tags", "Library Tags", has_save=False
+            TagDatabasePanel(self.lib, self),
+            "Library Tags",
+            "Library Tags",
+            has_save=False,
         )
         self.modal.show()
 
@@ -757,6 +873,116 @@ class QtDriver(QObject):
         )
         self.modal.saved.connect(lambda: (panel.save(), self.filter_items("")))
         self.modal.show()
+
+    def delete_files_callback(self, origin_path: str | Path):
+        """Callback to send on or more files to the system trash.
+
+        If 0-1 items are currently selected, the origin_path is used to delete the file
+        from the originating context menu item.
+        If there are currently multiple items selected,
+        then the selection buffer is used to determine the files to be deleted.
+
+        Args:
+            origin_path(str): The file path associated with the widget making the call.
+                May or may not be the file targeted, depending on the selection rules.
+        """
+        entry = None
+        pending: list[Path] = []
+        deleted_count: int = 0
+
+        if len(self.selected) <= 1 and origin_path:
+            pending.append(Path(origin_path))
+        elif (len(self.selected) > 1) or (len(self.selected) <= 1 and not origin_path):
+            for i, item_pair in enumerate(self.selected):
+                if item_pair[0] == ItemType.ENTRY:
+                    entry = self.lib.get_entry(item_pair[1])
+                    filepath: Path = self.lib.library_dir / entry.path / entry.filename
+                    pending.append(filepath)
+
+        if pending:
+            return_code = self.delete_file_confirmation(len(pending), pending[0])
+            logging.info(return_code)
+            # If there was a confirmation and not a cancellation
+            if return_code == 2 and return_code != 3:
+                for i, f in enumerate(pending):
+                    if (origin_path == f) or (not origin_path):
+                        self.preview_panel.stop_file_use()
+                    if delete_file(f):
+                        self.main_window.statusbar.showMessage(
+                            f'Deleting file [{i}/{len(pending)}]: "{f}"...'
+                        )
+                        self.main_window.statusbar.repaint()
+
+                        entry_id = self.lib.get_entry_id_from_filepath(f)
+                        self.lib.remove_entry(entry_id)
+                        self.purge_item_from_navigation(ItemType.ENTRY, entry_id)
+                        deleted_count += 1
+                self.selected.clear()
+
+        if deleted_count > 0:
+            self.refresh_frame(self.nav_frames[self.cur_frame_idx].contents)
+            self.preview_panel.update_widgets()
+
+        if len(self.selected) <= 1 and deleted_count == 0:
+            self.main_window.statusbar.showMessage("No files deleted.")
+        elif len(self.selected) <= 1 and deleted_count == 1:
+            self.main_window.statusbar.showMessage(f"Deleted {deleted_count} file!")
+        elif len(self.selected) > 1 and deleted_count == 0:
+            self.main_window.statusbar.showMessage("No files deleted.")
+        elif len(self.selected) > 1 and deleted_count < len(self.selected):
+            self.main_window.statusbar.showMessage(
+                f"Only deleted {deleted_count} file{'' if deleted_count == 1 else 's'}! Check if any of the files are currently missing or in use."
+            )
+        elif len(self.selected) > 1 and deleted_count == len(self.selected):
+            self.main_window.statusbar.showMessage(f"Deleted {deleted_count} files!")
+        else:
+            self.main_window.statusbar.showMessage(f"Deleted {deleted_count} files!")
+        self.main_window.statusbar.repaint()
+
+    def delete_file_confirmation(self, count: int, filename: Path | None = None) -> int:
+        """A confirmation dialogue box for deleting files.
+
+        Args:
+            count(int): The number of files to be deleted.
+            filename(Path | None): The filename to show if only one file is to be deleted.
+        """
+        trash_term: str = "Trash"
+        if platform.system() == "Windows":
+            trash_term = "Recycle Bin"
+        # NOTE: Windows + send2trash will PERMANENTLY delete files which cannot be moved to the Recycle Bin.
+        # This is done without any warning, so this message is currently the best way I've got to inform the user.
+        # https://github.com/arsenetar/send2trash/issues/28
+        # This warning is applied to all platforms until at least macOS and Linux can be verified to
+        # not exhibit this same behavior.
+        perm_warning: str = (
+            f"<h4 style='color: {get_ui_color(ColorType.PRIMARY, 'red')}'>"
+            f"<b>WARNING!</b> If this file can't be moved to the {trash_term}, "
+            f"</b>it will be <b>permanently deleted!</b></h4>"
+        )
+
+        msg = QMessageBox()
+        msg.setTextFormat(Qt.TextFormat.RichText)
+        msg.setWindowTitle("Delete File" if count == 1 else "Delete Files")
+        msg.setIcon(QMessageBox.Icon.Warning)
+        if count <= 1:
+            msg.setText(
+                f"<h3>Are you sure you want to move this file to the {trash_term}?</h3>"
+                "<h4>This will remove it from TagStudio <i>AND</i> your file system!</h4>"
+                f"{filename if filename else ''}"
+                f"{perm_warning}<br>"
+            )
+        elif count > 1:
+            msg.setText(
+                f"<h3>Are you sure you want to move these {count} files to the {trash_term}?</h3>"
+                "<h4>This will remove them from TagStudio <i>AND</i> your file system!</h4>"
+                f"{perm_warning}<br>"
+            )
+
+        yes_button: QPushButton = msg.addButton("&Yes", QMessageBox.ButtonRole.YesRole)
+        msg.addButton("&No", QMessageBox.ButtonRole.NoRole)
+        msg.setDefaultButton(yes_button)
+
+        return msg.exec()
 
     def add_new_files_callback(self):
         """Runs when user initiates adding new files to the Library."""
@@ -869,7 +1095,13 @@ class QtDriver(QObject):
             )
         )
         r = CustomRunnable(lambda: iterator.run())
-        r.done.connect(lambda: (pw.hide(), pw.deleteLater(), self.filter_items("")))
+        r.done.connect(
+            lambda: (
+                pw.hide(),
+                pw.deleteLater(),
+                self.filter_items(self.main_window.searchField.text()),
+            )
+        )
         QThreadPool.globalInstance().start(r)
 
     def new_file_macros_runnable(self, new_ids):
@@ -899,7 +1131,7 @@ class QtDriver(QObject):
         """Runs a specific Macro on an Entry given a Macro name."""
         entry = self.lib.get_entry(entry_id)
         path = self.lib.library_dir / entry.path / entry.filename
-        source = entry.path.parts[0]
+        source = "" if entry.path == Path(".") else entry.path.parts[0].lower()
         if name == "sidecar":
             self.lib.add_generic_data_to_entry(
                 self.core.get_gdl_sidecar(path, source), entry_id
@@ -942,6 +1174,145 @@ class QtDriver(QObject):
                             ),
                             mode="replace",
                         )
+
+    def copy_entry_fields_callback(self):
+        """Copies fields from selected Entries into to buffer."""
+        merged_fields: list[dict] = []
+        merged_count: int = 0
+        for item_type, item_id in self.selected:
+            if item_type == ItemType.ENTRY:
+                entry = self.lib.get_entry(item_id)
+
+                if len(entry.fields) > 0:
+                    merged_count += 1
+
+                for field in entry.fields:
+                    field_id: int = self.lib.get_field_attr(field, "id")
+                    content = self.lib.get_field_attr(field, "content")
+
+                    if self.lib.get_field_obj(int(field_id))["type"] == "tag_box":
+                        existing_fields: list[int] = self.lib.get_field_index_in_entry(
+                            entry, field_id
+                        )
+                        if existing_fields and merged_fields:
+                            for i in content:
+                                field_index = copy.deepcopy(existing_fields[0])
+                                if i not in merged_fields[field_index][field_id]:
+                                    merged_fields[field_index][field_id].append(
+                                        copy.deepcopy(i)
+                                    )
+                        else:
+                            merged_fields.append(copy.deepcopy({field_id: content}))
+
+                    if self.lib.get_field_obj(int(field_id))["type"] in TEXT_FIELDS:
+                        if {field_id: content} not in merged_fields:
+                            merged_fields.append(copy.deepcopy({field_id: content}))
+
+        # Only set merged state to True if multiple Entries with actual field data were copied.
+        if merged_count > 1:
+            self.is_buffer_merged = True
+        else:
+            self.is_buffer_merged = False
+
+        self.copied_fields = merged_fields
+        self.update_clipboard_actions()
+
+    def paste_entry_fields_callback(self):
+        """Pastes buffered fields into currently selected Entries."""
+        # Code ported from ts_cli.py
+        if self.copied_fields:
+            for item_type, item_id in self.selected:
+                if item_type == ItemType.ENTRY:
+                    entry = self.lib.get_entry(item_id)
+
+                    for field in self.copied_fields:
+                        field_id: int = self.lib.get_field_attr(field, "id")
+                        content = self.lib.get_field_attr(field, "content")
+
+                        if self.lib.get_field_obj(int(field_id))["type"] == "tag_box":
+                            existing_fields: list[int] = (
+                                self.lib.get_field_index_in_entry(entry, field_id)
+                            )
+                            if existing_fields:
+                                self.lib.update_entry_field(
+                                    item_id, existing_fields[0], content, "append"
+                                )
+                            else:
+                                self.lib.add_field_to_entry(item_id, field_id)
+                                self.lib.update_entry_field(
+                                    item_id, -1, content, "append"
+                                )
+
+                        if self.lib.get_field_obj(int(field_id))["type"] in TEXT_FIELDS:
+                            if not self.lib.does_field_content_exist(
+                                item_id, field_id, content
+                            ):
+                                self.lib.add_field_to_entry(item_id, field_id)
+                                self.lib.update_entry_field(
+                                    item_id, -1, content, "replace"
+                                )
+
+            self.preview_panel.update_widgets()
+            self.update_badges()
+        self.update_clipboard_actions()
+
+    def update_clipboard_actions(self):
+        """Updates the text and enabled state of the field copy & paste actions."""
+        # Buffer State Dependant
+        if self.copied_fields:
+            self.paste_entry_fields_action.setDisabled(False)
+        else:
+            self.paste_entry_fields_action.setDisabled(True)
+            self.paste_entry_fields_action.setText("&Paste Fields")
+
+        # Selection Count Dependant
+        if len(self.selected) <= 0:
+            self.copy_entry_fields_action.setDisabled(True)
+            self.paste_entry_fields_action.setDisabled(True)
+            self.copy_entry_fields_action.setText("&Copy Fields")
+        if len(self.selected) == 1:
+            self.copy_entry_fields_action.setDisabled(False)
+            self.copy_entry_fields_action.setText("&Copy Fields")
+        elif len(self.selected) > 1:
+            self.copy_entry_fields_action.setDisabled(False)
+            self.copy_entry_fields_action.setText("&Copy Combined Fields")
+
+        # Merged State Dependant
+        if self.is_buffer_merged:
+            self.paste_entry_fields_action.setText("&Paste Combined Fields")
+        else:
+            self.paste_entry_fields_action.setText("&Paste Fields")
+
+    def thumb_size_callback(self, index: int):
+        """
+        Performs actions needed when the thumbnail size selection is changed.
+
+        Args:
+            index (int): The index of the item_thumbs/ComboBox list to use.
+        """
+        SPACING_DIVISOR: int = 10
+        MIN_SPACING: int = 12
+        # Index 2 is the default (Medium)
+        if index < len(self.thumb_sizes) and index >= 0:
+            self.thumb_size = self.thumb_sizes[index][1]
+        else:
+            logging.error(
+                f"ERROR: Invalid thumbnail size index ({index}). Defaulting to 128px."
+            )
+            self.thumb_size = 128
+
+        self.update_thumbs()
+        blank_icon: QIcon = QIcon()
+        for it in self.item_thumbs:
+            it.thumb_button.setIcon(blank_icon)
+            it.resize(self.thumb_size, self.thumb_size)
+            it.thumb_size = (self.thumb_size, self.thumb_size)
+            it.setMinimumSize(self.thumb_size, self.thumb_size)
+            it.setMaximumSize(self.thumb_size, self.thumb_size)
+            it.thumb_button.thumb_size = (self.thumb_size, self.thumb_size)
+        self.flow_container.layout().setSpacing(
+            min(self.thumb_size // SPACING_DIVISOR, MIN_SPACING)
+        )
 
     def mouse_navigation(self, event: QMouseEvent):
         # print(event.button())
@@ -1110,6 +1481,7 @@ class QtDriver(QObject):
             item_thumb = ItemThumb(
                 None, self.lib, self.preview_panel, (self.thumb_size, self.thumb_size)
             )
+
             layout.addWidget(item_thumb)
             self.item_thumbs.append(item_thumb)
 
@@ -1188,16 +1560,19 @@ class QtDriver(QObject):
                 if it.mode == type and it.item_id == id:
                     self.preview_panel.set_tags_updated_slot(it.update_badges)
 
-        self.set_macro_menu_viability()
+        self.set_menu_action_viability()
+        self.update_clipboard_actions()
         self.preview_panel.update_widgets()
 
-    def set_macro_menu_viability(self):
+    def set_menu_action_viability(self):
         if len([x[1] for x in self.selected if x[0] == ItemType.ENTRY]) == 0:
             self.autofill_action.setDisabled(True)
             self.sort_fields_action.setDisabled(True)
+            self.delete_file_action.setDisabled(True)
         else:
             self.autofill_action.setDisabled(False)
             self.sort_fields_action.setDisabled(False)
+            self.delete_file_action.setDisabled(False)
 
     def update_thumbs(self):
         """Updates search thumbnails."""
@@ -1246,12 +1621,20 @@ class QtDriver(QObject):
 
         for i, item_thumb in enumerate(self.item_thumbs, start=0):
             if i < len(self.nav_frames[self.cur_frame_idx].contents):
-                filepath = ""
+                filepath: Path = None  # Initialize
                 if self.nav_frames[self.cur_frame_idx].contents[i][0] == ItemType.ENTRY:
                     entry = self.lib.get_entry(
                         self.nav_frames[self.cur_frame_idx].contents[i][1]
                     )
-                    filepath = self.lib.library_dir / entry.path / entry.filename
+                    filepath: Path = self.lib.library_dir / entry.path / entry.filename
+
+                    try:
+                        item_thumb.delete_action.triggered.disconnect()
+                    except RuntimeWarning:
+                        pass
+                    item_thumb.delete_action.triggered.connect(
+                        lambda checked=False, f=filepath: self.delete_files_callback(f)
+                    )
 
                     item_thumb.set_item_id(entry.id)
                     item_thumb.assign_archived(entry.has_tag(self.lib, TAG_ARCHIVED))
@@ -1296,7 +1679,9 @@ class QtDriver(QObject):
                         else collation.e_ids_and_pages[0][0]
                     )
                     cover_e = self.lib.get_entry(cover_id)
-                    filepath = self.lib.library_dir / cover_e.path / cover_e.filename
+                    filepath: Path = (
+                        self.lib.library_dir / cover_e.path / cover_e.filename
+                    )
                     item_thumb.set_count(str(len(collation.e_ids_and_pages)))
                     item_thumb.update_clickable(
                         clickable=(
@@ -1461,6 +1846,7 @@ class QtDriver(QObject):
         self.update_libs_list(path)
         title_text = f"{self.base_title} - Library '{self.lib.library_dir}'"
         self.main_window.setWindowTitle(title_text)
+        self.main_window.setAcceptDrops(True)
 
         self.nav_frames = []
         self.cur_frame_idx = -1
@@ -1469,6 +1855,12 @@ class QtDriver(QObject):
         self.preview_panel.update_widgets()
         self.filter_items()
         self.main_window.toggle_landing_page(False)
+
+    def check_ffmpeg(self) -> None:
+        """Checks if FFmpeg is installed and displays a warning if not."""
+        self.ffmpeg_checker = FfmpegChecker()
+        if not self.ffmpeg_checker.installed():
+            self.ffmpeg_checker.show_warning()
 
     def create_collage(self) -> None:
         """Generates and saves an image collage based on Library Entries."""
