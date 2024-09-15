@@ -1007,7 +1007,7 @@ class ThumbRenderer(QObject):
                     image = self._source_engine(_filepath)
 
                 # Plain Text ===================================================
-                elif _filepath.suffix.lower() in PLAINTEXT_TYPES:
+                elif _filepath.suffix.lower() in MediaCategories.get_types(ext):
                     encoding = detect_char_encoding(_filepath)
                     with open(_filepath, "r", encoding=encoding) as text_file:
                         text = text_file.read(256)
