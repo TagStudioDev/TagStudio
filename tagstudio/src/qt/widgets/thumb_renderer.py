@@ -1048,9 +1048,6 @@ class ThumbRenderer(QObject):
                             logging.info(
                                 f"[ThumbRenderer][WARNING]: mscz file {_filepath.name} missing Thumbnails/thumbnail.png"
                             )
-                            image = ThumbRenderer.thumb_file_default_512.resize(
-                                (adj_size, adj_size), resample=Image.Resampling.BILINEAR
-                            )
 
                 # No Rendered Thumbnail ========================================
                 if not _filepath.exists():
