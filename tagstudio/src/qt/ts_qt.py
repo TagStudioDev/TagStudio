@@ -318,6 +318,23 @@ class QtDriver(QObject):
         add_new_files_action.setStatusTip("Ctrl+R")
         # file_menu.addAction(refresh_lib_action)
         file_menu.addAction(add_new_files_action)
+
+        open_selected_action = QAction("Open selected files", self)
+        open_selected_action.triggered.connect(
+            lambda: (
+                [self.item_thumbs[selection].opener.open_file() for selection in self.selected],
+                logger.info("Opening files", count=len(self.selected)),
+            )
+        )
+        shortcut = QtCore.QKeyCombination(
+            QtCore.Qt.KeyboardModifier(QtCore.Qt.KeyboardModifier.ControlModifier),
+            QtCore.Qt.Key.Key_Down,
+        )
+        if sys.platform == "win32":
+            shortcut = Qt.Key.Key_Return
+
+        open_selected_action.setShortcut(shortcut)
+        file_menu.addAction(open_selected_action)
         file_menu.addSeparator()
 
         close_library_action = QAction("&Close Library", menu_bar)

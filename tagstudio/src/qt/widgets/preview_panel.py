@@ -14,7 +14,7 @@ import structlog
 from humanfriendly import format_size
 from PIL import Image, UnidentifiedImageError
 from PIL.Image import DecompressionBombError
-from PySide6.QtCore import QSize, Qt, Signal, QKeyCombination
+from PySide6.QtCore import QSize, Qt, Signal
 from PySide6.QtGui import QAction, QResizeEvent
 from PySide6.QtWidgets import (
     QFrame,
@@ -96,12 +96,6 @@ class PreviewPanel(QWidget):
         image_layout.setContentsMargins(0, 0, 0, 0)
 
         self.open_file_action = QAction("Open file", self)
-        self.open_file_action.setShortcut(
-            QKeyCombination(
-                Qt.KeyboardModifier.ControlModifier,
-                Qt.Key.Key_Down,
-            )
-        )
         self.open_explorer_action = QAction("Open file in explorer", self)
 
         self.preview_img = QPushButtonWrapper()
