@@ -7,10 +7,10 @@ import math
 import typing
 
 import structlog
-from PySide6.QtCore import Qt, Signal, QStringListModel, QObject
-from PySide6.QtWidgets import QPushButton, QLineEdit, QCompleter
-from src.core.constants import TAG_FAVORITE, TAG_ARCHIVED
-from src.core.library import Library, Entry, Tag
+from PySide6.QtCore import QObject, QStringListModel, Qt, Signal
+from PySide6.QtWidgets import QCompleter, QLineEdit, QPushButton
+from src.core.constants import TAG_ARCHIVED, TAG_FAVORITE
+from src.core.library import Entry, Library, Tag
 from src.core.library.alchemy.enums import FilterState
 from src.core.library.alchemy.fields import TagBoxField
 from src.qt.flowlayout import FlowLayout
@@ -35,7 +35,7 @@ class TagCompleter(QCompleter):
     def update(self, exclude: set[str]):
         tags = {tag.name for tag in self.lib.tags}
         tags -= exclude
-        model = QStringListModel(tags, self)
+        model = QStringListModel(list(tags), self)
         self.setModel(model)
 
 

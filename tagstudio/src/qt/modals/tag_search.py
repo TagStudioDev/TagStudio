@@ -4,6 +4,7 @@
 
 
 import math
+from typing import Optional
 
 import structlog
 from PySide6.QtCore import QSize, Qt, Signal
@@ -16,13 +17,11 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
-from typing import Optional
-
 from src.core.library import Library
 from src.core.library.alchemy.enums import FilterState
 from src.core.palette import ColorType, get_tag_color
 from src.qt.widgets.panel import PanelWidget
-from src.qt.widgets.tag import TagWidget, Tag
+from src.qt.widgets.tag import Tag, TagWidget
 
 logger = structlog.get_logger(__name__)
 
