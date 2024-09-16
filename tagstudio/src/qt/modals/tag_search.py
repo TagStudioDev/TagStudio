@@ -109,8 +109,7 @@ class TagSearchPanel(PanelWidget):
             )
         )
 
-        if len(found_tags) > 0:
-            self.first_tag = found_tags[0]
+        self.first_tag = found_tags[0] if found_tags else None
 
         for tag in found_tags:
             c = QWidget()
