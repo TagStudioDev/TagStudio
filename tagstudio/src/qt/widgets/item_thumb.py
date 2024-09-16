@@ -197,7 +197,7 @@ class ItemThumb(FlowWidget):
 
         self.opener = FileOpenerHelper("")
         self.thumb_button.double_clicked.connect(
-            lambda: self.opener.open_file() if self.thumb_button.selected else None
+            lambda: self.opener.open_file()
         )
         open_file_action = QAction("Open file", self)
         open_file_action.triggered.connect(self.opener.open_file)
