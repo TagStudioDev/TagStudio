@@ -7,6 +7,7 @@ CWD = pathlib.Path(__file__).parent
 
 
 def test_refresh_dupe_files(library):
+    library.library_dir = "/tmp/"
     entry = Entry(
         folder=library.folder,
         path=pathlib.Path("bar/foo.txt"),

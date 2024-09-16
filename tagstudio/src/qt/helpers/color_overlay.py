@@ -15,13 +15,11 @@ _THEME_LIGHT_FG: str = "#000000DD"
 
 
 def theme_fg_overlay(image: Image.Image) -> Image.Image:
-    """
-    Overlay the foreground theme color onto an image.
+    """Overlay the foreground theme color onto an image.
 
     Args:
         image (Image): The PIL Image object to apply an overlay to.
     """
-
     overlay_color = (
         _THEME_DARK_FG
         if QGuiApplication.styleHints().colorScheme() is Qt.ColorScheme.Dark
@@ -32,23 +30,19 @@ def theme_fg_overlay(image: Image.Image) -> Image.Image:
 
 
 def gradient_overlay(image: Image.Image, gradient=list[str]) -> Image.Image:
-    """
-    Overlay a color gradient onto an image.
+    """Overlay a color gradient onto an image.
 
     Args:
         image (Image): The PIL Image object to apply an overlay to.
         gradient (list[str): A list of string hex color codes for use as
             the colors of the gradient.
     """
-
     im: Image.Image = _apply_overlay(image, linear_gradient(image.size, gradient))
     return im
 
 
 def _apply_overlay(image: Image.Image, overlay: Image.Image) -> Image.Image:
-    """
-    Internal method to apply an overlay on top of an image, using
-    the image's alpha channel as a mask.
+    """Apply an overlay on top of an image, using the image's alpha channel as a mask.
 
     Args:
         image (Image): The PIL Image object to apply an overlay to.

@@ -1,7 +1,7 @@
-import sys
 import pathlib
+import sys
 from tempfile import TemporaryDirectory
-from unittest.mock import patch, Mock
+from unittest.mock import Mock, patch
 
 import pytest
 
@@ -9,10 +9,10 @@ CWD = pathlib.Path(__file__).parent
 # this needs to be above `src` imports
 sys.path.insert(0, str(CWD.parent))
 
-from src.core.library import Library, Tag, Entry
+from src.core.library import Entry, Library, Tag
+from src.core.library import alchemy as backend
 from src.core.library.alchemy.enums import TagColor
 from src.core.library.alchemy.fields import TagBoxField, _FieldID
-from src.core.library import alchemy as backend
 from src.qt.ts_qt import QtDriver
 
 
@@ -24,7 +24,7 @@ def cwd():
 @pytest.fixture
 def library(request):
     # when no param is passed, use the default
-    library_path = "/tmp/"
+    library_path = "/dev/null/"
     if hasattr(request, "param"):
         if isinstance(request.param, TemporaryDirectory):
             library_path = request.param.name
@@ -104,8 +104,6 @@ def qt_driver(qtbot, library):
             config_file = pathlib.Path(tmp_dir) / "tagstudio.ini"
             open = pathlib.Path(tmp_dir)
             ci = True
-
-        # patch CustomRunnable
 
         with patch("src.qt.ts_qt.Consumer"), patch("src.qt.ts_qt.CustomRunnable"):
             driver = QtDriver(backend, Args())

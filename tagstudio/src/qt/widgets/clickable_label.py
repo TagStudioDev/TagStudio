@@ -14,5 +14,5 @@ class ClickableLabel(QLabel):
     def __init__(self):
         super().__init__()
 
-    def mousePressEvent(self, event):
+    def mousePressEvent(self, event):  # noqa: N802
         self.clicked.emit()

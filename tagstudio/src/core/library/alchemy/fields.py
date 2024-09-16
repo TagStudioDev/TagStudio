@@ -2,10 +2,10 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from sqlalchemy import ForeignKey
-from sqlalchemy.orm import Mapped, mapped_column, relationship, declared_attr
+from sqlalchemy.orm import Mapped, declared_attr, mapped_column, relationship
 
 from .db import Base
 from .enums import FieldTypeEnum
@@ -18,27 +18,27 @@ class BaseField(Base):
     __abstract__ = True
 
     @declared_attr
-    def id(cls) -> Mapped[int]:
+    def id(cls) -> Mapped[int]:  # noqa: N805
         return mapped_column(primary_key=True, autoincrement=True)
 
     @declared_attr
-    def type_key(cls) -> Mapped[str]:
+    def type_key(cls) -> Mapped[str]:  # noqa: N805
         return mapped_column(ForeignKey("value_type.key"))
 
     @declared_attr
-    def type(cls) -> Mapped[ValueType]:
+    def type(cls) -> Mapped[ValueType]:  # noqa: N805
         return relationship(foreign_keys=[cls.type_key], lazy=False)  # type: ignore
 
     @declared_attr
-    def entry_id(cls) -> Mapped[int]:
+    def entry_id(cls) -> Mapped[int]:  # noqa: N805
         return mapped_column(ForeignKey("entries.id"))
 
     @declared_attr
-    def entry(cls) -> Mapped[Entry]:
+    def entry(cls) -> Mapped[Entry]:  # noqa: N805
         return relationship(foreign_keys=[cls.entry_id])  # type: ignore
 
     @declared_attr
-    def position(cls) -> Mapped[int]:
+    def position(cls) -> Mapped[int]:  # noqa: N805
         return mapped_column(default=0)
 
     def __hash__(self):
@@ -125,33 +125,23 @@ class DefaultField:
 
 
 class _FieldID(Enum):
-    """Only for bootstrapping content of DB table"""
+    """Only for bootstrapping content of DB table."""
 
-    TITLE = DefaultField(
-        id=0, name="Title", type=FieldTypeEnum.TEXT_LINE, is_default=True
-    )
+    TITLE = DefaultField(id=0, name="Title", type=FieldTypeEnum.TEXT_LINE, is_default=True)
     AUTHOR = DefaultField(id=1, name="Author", type=FieldTypeEnum.TEXT_LINE)
     ARTIST = DefaultField(id=2, name="Artist", type=FieldTypeEnum.TEXT_LINE)
     URL = DefaultField(id=3, name="URL", type=FieldTypeEnum.TEXT_LINE)
     DESCRIPTION = DefaultField(id=4, name="Description", type=FieldTypeEnum.TEXT_LINE)
     NOTES = DefaultField(id=5, name="Notes", type=FieldTypeEnum.TEXT_BOX)
     TAGS = DefaultField(id=6, name="Tags", type=FieldTypeEnum.TAGS)
-    TAGS_CONTENT = DefaultField(
-        id=7, name="Content Tags", type=FieldTypeEnum.TAGS, is_default=True
-    )
-    TAGS_META = DefaultField(
-        id=8, name="Meta Tags", type=FieldTypeEnum.TAGS, is_default=True
-    )
+    TAGS_CONTENT = DefaultField(id=7, name="Content Tags", type=FieldTypeEnum.TAGS, is_default=True)
+    TAGS_META = DefaultField(id=8, name="Meta Tags", type=FieldTypeEnum.TAGS, is_default=True)
     COLLATION = DefaultField(id=9, name="Collation", type=FieldTypeEnum.TEXT_LINE)
     DATE = DefaultField(id=10, name="Date", type=FieldTypeEnum.DATETIME)
     DATE_CREATED = DefaultField(id=11, name="Date Created", type=FieldTypeEnum.DATETIME)
-    DATE_MODIFIED = DefaultField(
-        id=12, name="Date Modified", type=FieldTypeEnum.DATETIME
-    )
+    DATE_MODIFIED = DefaultField(id=12, name="Date Modified", type=FieldTypeEnum.DATETIME)
     DATE_TAKEN = DefaultField(id=13, name="Date Taken", type=FieldTypeEnum.DATETIME)
-    DATE_PUBLISHED = DefaultField(
-        id=14, name="Date Published", type=FieldTypeEnum.DATETIME
-    )
+    DATE_PUBLISHED = DefaultField(id=14, name="Date Published", type=FieldTypeEnum.DATETIME)
     # ARCHIVED = DefaultField(id=15, name="Archived",  type=CheckboxField.checkbox)
     # FAVORITE = DefaultField(id=16, name="Favorite", type=CheckboxField.checkbox)
     BOOK = DefaultField(id=17, name="Book", type=FieldTypeEnum.TEXT_LINE)
@@ -159,18 +149,12 @@ class _FieldID(Enum):
     SERIES = DefaultField(id=19, name="Series", type=FieldTypeEnum.TEXT_LINE)
     MANGA = DefaultField(id=20, name="Manga", type=FieldTypeEnum.TEXT_LINE)
     SOURCE = DefaultField(id=21, name="Source", type=FieldTypeEnum.TEXT_LINE)
-    DATE_UPLOADED = DefaultField(
-        id=22, name="Date Uploaded", type=FieldTypeEnum.DATETIME
-    )
-    DATE_RELEASED = DefaultField(
-        id=23, name="Date Released", type=FieldTypeEnum.DATETIME
-    )
+    DATE_UPLOADED = DefaultField(id=22, name="Date Uploaded", type=FieldTypeEnum.DATETIME)
+    DATE_RELEASED = DefaultField(id=23, name="Date Released", type=FieldTypeEnum.DATETIME)
     VOLUME = DefaultField(id=24, name="Volume", type=FieldTypeEnum.TEXT_LINE)
     ANTHOLOGY = DefaultField(id=25, name="Anthology", type=FieldTypeEnum.TEXT_LINE)
     MAGAZINE = DefaultField(id=26, name="Magazine", type=FieldTypeEnum.TEXT_LINE)
     PUBLISHER = DefaultField(id=27, name="Publisher", type=FieldTypeEnum.TEXT_LINE)
-    GUEST_ARTIST = DefaultField(
-        id=28, name="Guest Artist", type=FieldTypeEnum.TEXT_LINE
-    )
+    GUEST_ARTIST = DefaultField(id=28, name="Guest Artist", type=FieldTypeEnum.TEXT_LINE)
     COMPOSER = DefaultField(id=29, name="Composer", type=FieldTypeEnum.TEXT_LINE)
     COMMENTS = DefaultField(id=30, name="Comments", type=FieldTypeEnum.TEXT_LINE)

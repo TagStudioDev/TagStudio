@@ -23,13 +23,12 @@ class ResourceManager:
         if not ResourceManager._initialized:
             with open(Path(__file__).parent / "resources.json", encoding="utf-8") as f:
                 ResourceManager._map = ujson.load(f)
-                logger.info(
-                    "resources registered", count=len(ResourceManager._map.items())
-                )
+                logger.info("resources registered", count=len(ResourceManager._map.items()))
             ResourceManager._initialized = True
 
     def get(self, id: str) -> Any:
         """Get a resource from the ResourceManager.
+
         This can include resources inside and outside of QResources, and will return
         theme-respecting variations of resources if available.
 

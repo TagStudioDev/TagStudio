@@ -3,23 +3,22 @@
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
 
-from time import sleep
 import typing
+from time import sleep
 
-from PySide6.QtCore import Signal, Qt, QThreadPool
-from PySide6.QtGui import QStandardItemModel, QStandardItem
+from PySide6.QtCore import Qt, QThreadPool, Signal
+from PySide6.QtGui import QStandardItem, QStandardItemModel
 from PySide6.QtWidgets import (
-    QWidget,
-    QVBoxLayout,
     QHBoxLayout,
     QLabel,
-    QPushButton,
     QListView,
+    QPushButton,
+    QVBoxLayout,
+    QWidget,
 )
-
 from src.core.utils.dupe_files import DupeRegistry
-from src.qt.helpers.function_iterator import FunctionIterator
 from src.qt.helpers.custom_runnable import CustomRunnable
+from src.qt.helpers.function_iterator import FunctionIterator
 from src.qt.widgets.progress import ProgressWidget
 
 # Only import for type checking/autocompletion, will not be imported at runtime.
@@ -95,9 +94,7 @@ class MirrorEntriesModal(QWidget):
         pw.show()
         iterator.value.connect(lambda x: pw.update_progress(x + 1))
         iterator.value.connect(
-            lambda x: pw.update_label(
-                f"Mirroring {x + 1}/{self.tracker.groups_count} Entries..."
-            )
+            lambda x: pw.update_label(f"Mirroring {x + 1}/{self.tracker.groups_count} Entries...")
         )
         r = CustomRunnable(iterator.run)
         QThreadPool.globalInstance().start(r)

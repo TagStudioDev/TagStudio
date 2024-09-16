@@ -2,16 +2,15 @@
 # Licensed under the GPL-3.0 License.
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
-import subprocess
 import shutil
+import subprocess
 import sys
 import traceback
 from pathlib import Path
 
 import structlog
-from PySide6.QtWidgets import QLabel
 from PySide6.QtCore import Qt
-
+from PySide6.QtWidgets import QLabel
 
 logger = structlog.get_logger(__name__)
 
@@ -21,8 +20,8 @@ def open_file(path: str | Path, file_manager: bool = False):
 
     Args:
             path (str): The path to the file to open.
-            file_manager (bool, optional): Whether to open the file in the file manager (e.g. Finder on macOS).
-                    Defaults to False.
+            file_manager (bool, optional): Whether to open the file in the file manager
+                (e.g. Finder on macOS). Defaults to False.
     """
     path = Path(path)
     logger.info("Opening file", path=path)
@@ -36,7 +35,8 @@ def open_file(path: str | Path, file_manager: bool = False):
             if file_manager:
                 command_name = "explorer"
                 command_args = '/select,"' + normpath + '"'
-                # For some reason, if the args are passed in a list, this will error when the path has spaces, even while surrounded in double quotes
+                # For some reason, if the args are passed in a list, this will error when the
+                # path has spaces, even while surrounded in double quotes.
                 subprocess.Popen(
                     command_name + command_args,
                     shell=True,
@@ -82,9 +82,7 @@ def open_file(path: str | Path, file_manager: bool = False):
             if command is not None:
                 subprocess.Popen([command] + command_args, close_fds=True)
             else:
-                logger.info(
-                    "Could not find command on system PATH", command=command_name
-                )
+                logger.info("Could not find command on system PATH", command=command_name)
     except Exception:
         traceback.print_exc()
 
@@ -125,7 +123,7 @@ class FileOpenerLabel(QLabel):
         """
         super().__init__(text, parent)
 
-    def setFilePath(self, filepath):
+    def set_file_path(self, filepath):
         """Set the filepath to open.
 
         Args:
@@ -133,10 +131,11 @@ class FileOpenerLabel(QLabel):
         """
         self.filepath = filepath
 
-    def mousePressEvent(self, event):
+    def mousePressEvent(self, event):  # noqa: N802
         """Handle mouse press events.
 
-        On a left click, open the file in the default file explorer. On a right click, show a context menu.
+        On a left click, open the file in the default file explorer.
+        On a right click, show a context menu.
 
         Args:
                 event (QMouseEvent): The mouse press event.

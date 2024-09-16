@@ -1,10 +1,9 @@
 from collections.abc import Iterator
-from dataclasses import field, dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 
 import structlog
-
-from src.core.library import Library, Entry
+from src.core.library import Entry, Library
 
 IGNORE_ITEMS = [
     "$recycle.bin",
@@ -36,11 +35,10 @@ class MissingRegistry:
             yield i
 
     def match_missing_file(self, match_item: Entry) -> list[Path]:
-        """
-        Try to find missing entry files within the library directory.
+        """Try to find missing entry files within the library directory.
+
         Works if files were just moved to different subfolders and don't have duplicate names.
         """
-
         matches = []
         for item in self.library.library_dir.glob(f"**/{match_item.path.name}"):
             if item.name == match_item.path.name:  # TODO - implement IGNORE_ITEMS

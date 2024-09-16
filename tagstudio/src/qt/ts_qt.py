@@ -19,88 +19,85 @@ from itertools import zip_longest
 from pathlib import Path
 from queue import Queue
 
+# this import has side-effect of import PySide resources
+import src.qt.resources_rc  # noqa: F401
 import structlog
+from humanfriendly import format_timespan
 from PySide6 import QtCore
 from PySide6.QtCore import (
     QObject,
-    QThread,
-    Signal,
+    QSettings,
     Qt,
+    QThread,
     QThreadPool,
     QTimer,
-    QSettings,
+    Signal,
 )
 from PySide6.QtGui import (
-    QGuiApplication,
-    QPixmap,
-    QMouseEvent,
-    QColor,
     QAction,
+    QColor,
     QFontDatabase,
+    QGuiApplication,
     QIcon,
+    QMouseEvent,
+    QPixmap,
 )
 from PySide6.QtUiTools import QUiLoader
 from PySide6.QtWidgets import (
     QApplication,
-    QWidget,
-    QPushButton,
-    QLineEdit,
-    QScrollArea,
+    QComboBox,
     QFileDialog,
-    QSplashScreen,
+    QLineEdit,
     QMenu,
     QMenuBar,
-    QComboBox,
+    QPushButton,
+    QScrollArea,
+    QSplashScreen,
+    QWidget,
 )
-from humanfriendly import format_timespan
-
-from src.core.enums import SettingItems, MacroID
-
 from src.core.constants import (
-    TS_FOLDER_NAME,
-    VERSION_BRANCH,
-    VERSION,
-    LibraryPrefs,
     TAG_ARCHIVED,
     TAG_FAVORITE,
+    TS_FOLDER_NAME,
+    VERSION,
+    VERSION_BRANCH,
+    LibraryPrefs,
 )
+from src.core.enums import MacroID, SettingItems
 from src.core.library.alchemy.enums import (
-    SearchMode,
+    FieldTypeEnum,
     FilterState,
     ItemType,
-    FieldTypeEnum,
+    SearchMode,
 )
 from src.core.library.alchemy.fields import _FieldID
 from src.core.ts_core import TagStudioCore
 from src.core.utils.refresh_dir import RefreshDirTracker
 from src.core.utils.web import strip_web_protocol
 from src.qt.flowlayout import FlowLayout
-from src.qt.main_window import Ui_MainWindow
-from src.qt.helpers.function_iterator import FunctionIterator
 from src.qt.helpers.custom_runnable import CustomRunnable
-from src.qt.resource_manager import ResourceManager
-from src.qt.widgets.panel import PanelModal
-from src.qt.widgets.thumb_renderer import ThumbRenderer
-from src.qt.widgets.progress import ProgressWidget
-from src.qt.widgets.preview_panel import PreviewPanel
-from src.qt.widgets.item_thumb import ItemThumb, BadgeType
+from src.qt.helpers.function_iterator import FunctionIterator
+from src.qt.main_window import Ui_MainWindow
 from src.qt.modals.build_tag import BuildTagPanel
-from src.qt.modals.tag_database import TagDatabasePanel
 from src.qt.modals.file_extension import FileExtensionModal
-from src.qt.modals.fix_unlinked import FixUnlinkedEntriesModal
 from src.qt.modals.fix_dupes import FixDupeFilesModal
+from src.qt.modals.fix_unlinked import FixUnlinkedEntriesModal
 from src.qt.modals.folders_to_tags import FoldersToTagsModal
-
-# this import has side-effect of import PySide resources
-import src.qt.resources_rc  # noqa: F401
+from src.qt.modals.tag_database import TagDatabasePanel
+from src.qt.resource_manager import ResourceManager
+from src.qt.widgets.item_thumb import BadgeType, ItemThumb
+from src.qt.widgets.panel import PanelModal
+from src.qt.widgets.preview_panel import PreviewPanel
+from src.qt.widgets.progress import ProgressWidget
+from src.qt.widgets.thumb_renderer import ThumbRenderer
 
 # SIGQUIT is not defined on Windows
 if sys.platform == "win32":
-    from signal import signal, SIGINT, SIGTERM
+    from signal import SIGINT, SIGTERM, signal
 
     SIGQUIT = SIGTERM
 else:
-    from signal import signal, SIGINT, SIGTERM, SIGQUIT
+    from signal import SIGINT, SIGQUIT, SIGTERM, signal
 
 logger = structlog.get_logger(__name__)
 
@@ -156,7 +153,7 @@ class QtDriver(QObject):
         # grid indexes of selected items
         self.selected: list[int] = []
 
-        self.SIGTERM.connect(self.handleSIGTERM)
+        self.SIGTERM.connect(self.handle_sigterm)
 
         if self.args.config_file:
             path = Path(self.args.config_file)
@@ -178,7 +175,9 @@ class QtDriver(QObject):
 
         max_threads = os.cpu_count()
         for i in range(max_threads):
-            # thread = threading.Thread(target=self.consumer, name=f'ThumbRenderer_{i}',args=(), daemon=True)
+            # thread = threading.Thread(
+            #     target=self.consumer, name=f"ThumbRenderer_{i}", args=(), daemon=True
+            # )
             # thread.start()
             thread = Consumer(self.thumb_job_queue)
             thread.setObjectName(f"ThumbRenderer_{i}")
@@ -206,7 +205,6 @@ class QtDriver(QObject):
 
     def start(self) -> None:
         """Launch the main Qt window."""
-
         _ = QUiLoader()
         if os.name == "nt":
             sys.argv += ["-platform", "windows:darkmode=2"]
@@ -323,7 +321,7 @@ class QtDriver(QObject):
         file_menu.addSeparator()
 
         close_library_action = QAction("&Close Library", menu_bar)
-        close_library_action.triggered.connect(lambda: self.close_library())
+        close_library_action.triggered.connect(self.close_library)
         file_menu.addAction(close_library_action)
 
         # Edit Menu ============================================================
@@ -370,12 +368,10 @@ class QtDriver(QObject):
         check_action = QAction("Open library on start", self)
         check_action.setCheckable(True)
         check_action.setChecked(
-            bool(self.settings.value(SettingItems.START_LOAD_LAST, True, type=bool))
+            bool(self.settings.value(SettingItems.START_LOAD_LAST, defaultValue=True, type=bool))
         )
         check_action.triggered.connect(
-            lambda checked: self.settings.setValue(
-                SettingItems.START_LOAD_LAST, checked
-            )
+            lambda checked: self.settings.setValue(SettingItems.START_LOAD_LAST, checked)
         )
         window_menu.addAction(check_action)
 
@@ -415,7 +411,7 @@ class QtDriver(QObject):
         show_libs_list_action = QAction("Show Recent Libraries", menu_bar)
         show_libs_list_action.setCheckable(True)
         show_libs_list_action.setChecked(
-            bool(self.settings.value(SettingItems.WINDOW_SHOW_LIBS, True, type=bool))
+            bool(self.settings.value(SettingItems.WINDOW_SHOW_LIBS, defaultValue=True, type=bool))
         )
         show_libs_list_action.triggered.connect(
             lambda checked: (
@@ -467,14 +463,12 @@ class QtDriver(QObject):
         lib: str | None = None
         if self.args.open:
             lib = self.args.open
-        elif self.settings.value(SettingItems.START_LOAD_LAST, True, type=bool):
+        elif self.settings.value(SettingItems.START_LOAD_LAST, defaultValue=True, type=bool):
             lib = str(self.settings.value(SettingItems.LAST_LIBRARY))
 
             # TODO: Remove this check if the library is no longer saved with files
             if lib and not (Path(lib) / TS_FOLDER_NAME).exists():
-                logger.error(
-                    f"[QT DRIVER] {TS_FOLDER_NAME} folder in {lib} does not exist."
-                )
+                logger.error(f"[QT DRIVER] {TS_FOLDER_NAME} folder in {lib} does not exist.")
                 self.settings.setValue(SettingItems.LAST_LIBRARY, "")
                 lib = None
 
@@ -501,22 +495,16 @@ class QtDriver(QObject):
 
         search_button: QPushButton = self.main_window.searchButton
         search_button.clicked.connect(
-            lambda: self.filter_items(
-                FilterState(query=self.main_window.searchField.text())
-            )
+            lambda: self.filter_items(FilterState(query=self.main_window.searchField.text()))
         )
         search_field: QLineEdit = self.main_window.searchField
         search_field.returnPressed.connect(
             # TODO - parse search field for filters
-            lambda: self.filter_items(
-                FilterState(query=self.main_window.searchField.text())
-            )
+            lambda: self.filter_items(FilterState(query=self.main_window.searchField.text()))
         )
         search_type_selector: QComboBox = self.main_window.comboBox_2
         search_type_selector.currentIndexChanged.connect(
-            lambda: self.set_search_type(
-                SearchMode(search_type_selector.currentIndex())
-            )
+            lambda: self.set_search_type(SearchMode(search_type_selector.currentIndex()))
         )
 
         back_button: QPushButton = self.main_window.backButton
@@ -529,7 +517,7 @@ class QtDriver(QObject):
         # or implementing some clever loading tricks.
         self.main_window.show()
         self.main_window.activateWindow()
-        self.main_window.toggle_landing_page(True)
+        self.main_window.toggle_landing_page(enabled=True)
 
         self.main_window.pagination.index.connect(lambda i: self.page_move(page_id=i))
 
@@ -544,18 +532,16 @@ class QtDriver(QObject):
         self.preview_panel.update()
 
     def callback_library_needed_check(self, func):
-        """Check if loaded library has valid path before executing the button function"""
+        """Check if loaded library has valid path before executing the button function."""
         if self.lib.library_dir:
             func()
 
-    def handleSIGTERM(self):
+    def handle_sigterm(self):
         self.shutdown()
 
     def shutdown(self):
-        """Save Library on Application Exit"""
-        if self.lib and self.lib.library_dir:
-            self.settings.setValue(SettingItems.LAST_LIBRARY, self.lib.library_dir)
-            self.settings.sync()
+        """Save Library on Application Exit."""
+        self.close_library(is_shutdown=True)
         logger.info("[SHUTDOWN] Ending Thumbnail Threads...")
         for _ in self.thumb_threads:
             self.thumb_job_queue.put(Consumer.MARKER_QUIT)
@@ -567,7 +553,7 @@ class QtDriver(QObject):
 
         QApplication.quit()
 
-    def close_library(self):
+    def close_library(self, is_shutdown: bool = False):
         if not self.lib.library_dir:
             logger.info("No Library to Close")
             return
@@ -575,18 +561,24 @@ class QtDriver(QObject):
         logger.info("Closing Library...")
         self.main_window.statusbar.showMessage("Closing Library...")
         start_time = time.time()
+
         self.settings.setValue(SettingItems.LAST_LIBRARY, self.lib.library_dir)
         self.settings.sync()
 
-        title_text = f"{self.base_title}"
-        self.main_window.setWindowTitle(title_text)
+        self.lib.close()
+
+        if is_shutdown:
+            # no need to do other things on shutdown
+            return
+
+        self.main_window.setWindowTitle(self.base_title)
 
         self.selected = []
         self.frame_content = []
-        self.item_thumbs = []
+        [x.set_mode(None) for x in self.item_thumbs]
 
         self.preview_panel.update_widgets()
-        self.main_window.toggle_landing_page(True)
+        self.main_window.toggle_landing_page(enabled=True)
 
         self.main_window.pagination.setHidden(True)
 
@@ -659,7 +651,6 @@ class QtDriver(QObject):
 
     def add_new_files_callback(self):
         """Run when user initiates adding new files to the Library."""
-
         tracker = RefreshDirTracker(self.lib)
 
         pw = ProgressWidget(
@@ -671,12 +662,14 @@ class QtDriver(QObject):
         )
         pw.show()
 
-        iterator = FunctionIterator(tracker.refresh_dir)
+        iterator = FunctionIterator(lambda: tracker.refresh_dir(self.lib.library_dir))
         iterator.value.connect(
             lambda x: (
                 pw.update_progress(x + 1),
                 pw.update_label(
-                    f'Scanning Directories for New Files...\n{x + 1} File{"s" if x + 1 != 1 else ""} Searched, {tracker.files_count} New Files Found'
+                    f"Scanning Directories for New Files...\n{x + 1}"
+                    f" File{"s" if x + 1 != 1 else ""} Searched,"
+                    f" {tracker.files_count} New Files Found"
                 ),
             )
         )
@@ -691,11 +684,13 @@ class QtDriver(QObject):
         QThreadPool.globalInstance().start(r)
 
     def add_new_files_runnable(self, tracker: RefreshDirTracker):
+        """Adds any known new files to the library and run default macros on them.
+
+        Threaded method.
         """
-        Threaded method that adds any known new files to the library and
-        initiates running default macros on them.
-        """
-        # pb = QProgressDialog(f'Running Configured Macros on 1/{len(new_ids)} New Entries', None, 0,len(new_ids))
+        # pb = QProgressDialog(
+        #     f"Running Configured Macros on 1/{len(new_ids)} New Entries", None, 0, len(new_ids)
+        # )
         # pb.setFixedSize(432, 112)
         # pb.setWindowFlags(pb.windowFlags() & ~Qt.WindowType.WindowCloseButtonHint)
         # pb.setWindowTitle('Running Macros')
@@ -707,13 +702,14 @@ class QtDriver(QObject):
         # r.run()
         # # QThreadPool.globalInstance().start(r)
 
-        # # self.main_window.statusbar.showMessage(f'Running configured Macros on {len(new_ids)} new Entries...', 3)
+        # # self.main_window.statusbar.showMessage(
+        # #     f"Running configured Macros on {len(new_ids)} new Entries...", 3
+        # # )
 
         # # pb.hide()
 
         files_count = tracker.files_count
 
-        # iterator = FunctionIterator(lambda: self.new_file_macros_runnable(tracker.files_not_in_library))
         iterator = FunctionIterator(tracker.save_new_files)
         pw = ProgressWidget(
             window_title="Running Macros on New Entries",
@@ -726,9 +722,7 @@ class QtDriver(QObject):
         iterator.value.connect(
             lambda x: (
                 pw.update_progress(x + 1),
-                pw.update_label(
-                    f"Running Configured Macros on {x + 1}/{files_count} New Entries"
-                ),
+                pw.update_label(f"Running Configured Macros on {x + 1}/{files_count} New Entries"),
             )
         )
         r = CustomRunnable(iterator.run)
@@ -841,15 +835,10 @@ class QtDriver(QObject):
         self.item_thumbs[grid_idx].hide()
 
     def _init_thumb_grid(self):
-        # logger.info('Initializing Thumbnail Grid...')
         layout = FlowLayout()
-        layout.setGridEfficiency(True)
-        # layout.setContentsMargins(0,0,0,0)
+        layout.enable_grid_optimizations(value=True)
         layout.setSpacing(min(self.thumb_size // 10, 12))
-        # layout = QHBoxLayout()
-        # layout.setSizeConstraint(QLayout.SizeConstraint.SetMaximumSize)
-        # layout = QListView()
-        # layout.setViewMode(QListView.ViewMode.IconMode)
+        layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         # TODO - init after library is loaded, it can have different page_size
         for grid_idx in range(self.filter.page_size):
@@ -862,7 +851,6 @@ class QtDriver(QObject):
         self.flow_container: QWidget = QWidget()
         self.flow_container.setObjectName("flowContainer")
         self.flow_container.setLayout(layout)
-        layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
         sa: QScrollArea = self.main_window.scrollArea
         sa.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         sa.setWidgetResizable(True)
@@ -870,9 +858,7 @@ class QtDriver(QObject):
 
     def select_item(self, grid_index: int, append: bool, bridge: bool):
         """Select one or more items in the Thumbnail Grid."""
-        logger.info(
-            "selecting item", grid_index=grid_index, append=append, bridge=bridge
-        )
+        logger.info("selecting item", grid_index=grid_index, append=append, bridge=bridge)
         if append:
             if grid_index not in self.selected:
                 self.selected.append(grid_index)
@@ -969,8 +955,7 @@ class QtDriver(QObject):
                             == Qt.KeyboardModifier.ControlModifier
                         ),
                         bridge=(
-                            QGuiApplication.keyboardModifiers()
-                            == Qt.KeyboardModifier.ShiftModifier
+                            QGuiApplication.keyboardModifiers() == Qt.KeyboardModifier.ShiftModifier
                         ),
                     )
                 )
@@ -1005,32 +990,33 @@ class QtDriver(QObject):
         if filter:
             self.filter = dataclasses.replace(self.filter, **dataclasses.asdict(filter))
 
-        self.main_window.statusbar.showMessage(
-            f'Searching Library: "{self.filter.summary}"'
-        )
+        self.main_window.statusbar.showMessage(f'Searching Library: "{self.filter.summary}"')
         self.main_window.statusbar.repaint()
         start_time = time.time()
 
-        query_count, page_items = self.lib.search_library(self.filter)
+        results = self.lib.search_library(self.filter)
 
-        logger.info("items to render", count=len(page_items))
+        logger.info("items to render", count=len(results))
 
         end_time = time.time()
         if self.filter.summary:
+            # fmt: off
             self.main_window.statusbar.showMessage(
-                f'{query_count} Results Found for "{self.filter.summary}" ({format_timespan(end_time - start_time)})'
+                f"{results.total_count} Results Found for \"{self.filter.summary}\""
+                f" ({format_timespan(end_time - start_time)})"
             )
+            # fmt: on
         else:
             self.main_window.statusbar.showMessage(
-                f"{query_count} Results ({format_timespan(end_time - start_time)})"
+                f"{results.total_count} Results ({format_timespan(end_time - start_time)})"
             )
 
         # update page content
-        self.frame_content = list(page_items)
+        self.frame_content = results.items
         self.update_thumbs()
 
         # update pagination
-        self.pages_count = math.ceil(query_count / self.filter.page_size)
+        self.pages_count = math.ceil(results.total_count / self.filter.page_size)
         self.main_window.pagination.update_buttons(
             self.pages_count, self.filter.page_index, emit=False
         )
@@ -1050,8 +1036,8 @@ class QtDriver(QObject):
         self.settings.sync()
 
     def update_libs_list(self, path: Path | str):
-        """add library to list in SettingItems.LIBS_LIST"""
-        ITEMS_LIMIT = 5
+        """Add library to list in SettingItems.LIBS_LIST."""
+        item_limit: int = 5
         path = Path(path)
 
         self.settings.beginGroup(SettingItems.LIBS_LIST)
@@ -1069,7 +1055,7 @@ class QtDriver(QObject):
         # remove previously saved items
         self.settings.clear()
 
-        for item_key, item_value in all_libs_list[:ITEMS_LIMIT]:
+        for item_key, item_value in all_libs_list[:item_limit]:
             self.settings.setValue(item_key, item_value)
 
         self.settings.endGroup()
@@ -1099,4 +1085,4 @@ class QtDriver(QObject):
         # page (re)rendering, extract eventually
         self.filter_items()
 
-        self.main_window.toggle_landing_page(False)
+        self.main_window.toggle_landing_page(enabled=False)

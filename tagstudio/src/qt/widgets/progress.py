@@ -6,7 +6,7 @@
 from typing import Optional
 
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QProgressDialog
+from PySide6.QtWidgets import QProgressDialog, QVBoxLayout, QWidget
 
 
 class ProgressWidget(QWidget):
@@ -30,9 +30,7 @@ class ProgressWidget(QWidget):
         )
         self.root.addWidget(self.pb)
         self.setFixedSize(432, 112)
-        self.setWindowFlags(
-            self.pb.windowFlags() & ~Qt.WindowType.WindowCloseButtonHint
-        )
+        self.setWindowFlags(self.pb.windowFlags() & ~Qt.WindowType.WindowCloseButtonHint)
         self.setWindowTitle(window_title)
         self.setWindowModality(Qt.WindowModality.ApplicationModal)
 

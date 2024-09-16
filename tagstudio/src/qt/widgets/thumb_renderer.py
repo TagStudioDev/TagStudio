@@ -8,30 +8,28 @@ from pathlib import Path
 
 import cv2
 import rawpy
-from pillow_heif import register_heif_opener, register_avif_opener
+import structlog
 from PIL import (
     Image,
-    UnidentifiedImageError,
-    ImageQt,
     ImageDraw,
+    ImageFile,
     ImageFont,
     ImageOps,
-    ImageFile,
+    ImageQt,
+    UnidentifiedImageError,
 )
 from PIL.Image import DecompressionBombError
-from PySide6.QtCore import QObject, Signal, QSize
+from pillow_heif import register_avif_opener, register_heif_opener
+from PySide6.QtCore import QObject, QSize, Signal
 from PySide6.QtGui import QPixmap
-
-from src.qt.helpers.gradient import four_corner_gradient_background
 from src.core.constants import (
-    PLAINTEXT_TYPES,
-    VIDEO_TYPES,
     IMAGE_TYPES,
+    PLAINTEXT_TYPES,
     RAW_IMAGE_TYPES,
+    VIDEO_TYPES,
 )
-import structlog
-
 from src.core.utils.encoding import detect_char_encoding
+from src.qt.helpers.gradient import four_corner_gradient_background
 
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 
@@ -91,12 +89,11 @@ class ThumbRenderer(QObject):
         filepath: str | Path,
         base_size: tuple[int, int],
         pixel_ratio: float,
-        is_loading=False,
-        gradient=False,
-        update_on_ratio_change=False,
+        is_loading: bool = False,
+        gradient: bool = False,
+        update_on_ratio_change: bool = False,
     ):
         """Internal renderer. Render an entry/element thumbnail for the GUI."""
-
         logger.debug("rendering thumbnail", path=filepath)
 
         image: Image.Image = None
@@ -136,9 +133,7 @@ class ThumbRenderer(QObject):
 
                         image = ImageOps.exif_transpose(image)
                     except DecompressionBombError as e:
-                        logger.error(
-                            "Couldn't Render thumbnail", filepath=filepath, error=e
-                        )
+                        logger.error("Couldn't Render thumbnail", filepath=filepath, error=e)
 
                 elif _filepath.suffix.lower() in RAW_IMAGE_TYPES:
                     try:
@@ -151,17 +146,13 @@ class ThumbRenderer(QObject):
                                 decoder_name="raw",
                             )
                     except DecompressionBombError as e:
-                        logger.error(
-                            "Couldn't Render thumbnail", filepath=filepath, error=e
-                        )
+                        logger.error("Couldn't Render thumbnail", filepath=filepath, error=e)
 
                     except (
                         rawpy._rawpy.LibRawIOError,
                         rawpy._rawpy.LibRawFileUnsupportedError,
                     ) as e:
-                        logger.error(
-                            "Couldn't Render thumbnail", filepath=filepath, error=e
-                        )
+                        logger.error("Couldn't Render thumbnail", filepath=filepath, error=e)
 
                 # Videos =======================================================
                 elif _filepath.suffix.lower() in VIDEO_TYPES:
@@ -232,8 +223,7 @@ class ThumbRenderer(QObject):
 
                 resampling_method = (
                     Image.Resampling.NEAREST
-                    if max(image.size[0], image.size[1])
-                    < max(base_size[0], base_size[1])
+                    if max(image.size[0], image.size[1]) < max(base_size[0], base_size[1])
                     else Image.Resampling.BILINEAR
                 )
                 image = image.resize((new_x, new_y), resample=resampling_method)
@@ -272,9 +262,7 @@ class ThumbRenderer(QObject):
                 UnicodeDecodeError,
             ) as e:
                 if e is not UnicodeDecodeError:
-                    logger.error(
-                        "Couldn't Render thumbnail", filepath=filepath, error=e
-                    )
+                    logger.error("Couldn't Render thumbnail", filepath=filepath, error=e)
 
                 if update_on_ratio_change:
                     self.updated_ratio.emit(1)
@@ -299,6 +287,4 @@ class ThumbRenderer(QObject):
             )
 
         else:
-            self.updated.emit(
-                timestamp, QPixmap(), QSize(*base_size), _filepath.suffix.lower()
-            )
+            self.updated.emit(timestamp, QPixmap(), QSize(*base_size), _filepath.suffix.lower())
