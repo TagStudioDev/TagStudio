@@ -108,3 +108,27 @@ def test_tag_widget_edit(qtbot, qt_driver, library, entry_full):
     assert isinstance(panel, BuildTagPanel)
     assert panel.tag.name == tag.name
     assert panel.name_field.text() == tag.name
+
+def test_tag_widget_autocomplete(qtbot, qt_driver, library):
+    # Given
+    entry = next(library.get_entries(with_joins=True))
+    field = entry.tag_box_fields[0]
+
+    tag_widget = TagBoxWidget(field, "title", qt_driver)
+    tag_widget.driver.selected = [0]
+
+    qtbot.add_widget(tag_widget)
+
+    # Test autocomplete
+    tag_widget.tag_entry.setText("arch")
+    tag_widget.tag_entry.returnPressed.emit()
+
+    entry = next(library.get_entries(with_joins=True)) # Update entry
+    assert len(entry.tags) == 2
+
+    # Test unmatched autocomplete
+    tag_widget.tag_completer.activated.emit("missing")
+
+    entry = next(library.get_entries(with_joins=True)) # Update entry
+    assert len(entry.tags) == 2
+
