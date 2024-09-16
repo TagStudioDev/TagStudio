@@ -322,7 +322,11 @@ class QtDriver(QObject):
         open_selected_action = QAction("Open selected files", self)
         open_selected_action.triggered.connect(
             lambda: (
-                [self.item_thumbs[selection].opener.open_file() for selection in self.selected],
+                (
+                    [self.item_thumbs[selection].opener.open_file() for selection in self.selected]
+                    if QApplication.focusWidget() == self.main_window.scrollArea
+                    else None
+                ),
                 logger.info("Opening files", count=len(self.selected)),
             )
         )
