@@ -101,6 +101,7 @@
                     mypy
                     ruff
                     xorg.libxcb
+                    xorg.libX11
                     zstd
                   ])
                   ++ (with qt6Pkgs; [
@@ -162,6 +163,7 @@
                       stdenv.cc.cc.lib
                       wayland
                       xorg.libxcb
+                      xorg.libX11
                       xorg.libXrandr
                       zlib
                       zstd

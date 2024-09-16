@@ -1,17 +1,27 @@
-# TagStudio (Alpha): A User-Focused Document Management System
+# TagStudio: A User-Focused Document Management System
 
 <p align="center">
-  <img width="60%" src="github_header.png">
+  <img width="60%" src="docs/assets/github_header.png">
 </p>
 
-> [!CAUTION]
-> This is still a **_very_** rough personal project of mine in its infancy. I’m open-sourcing it now in order to accept contributors sooner and to better facilitate the direction of the project from an earlier stage.
-> There **_are_** bugs, and there will **_very likely_** be breaking changes!
+TagStudio is a photo & file organization application with an underlying system that focuses on giving freedom and flexibility to the user. No proprietary programs or formats, no sea of sidecar files, and no complete upheaval of your filesystem structure. **Read the documentation and more at [docs.tagstud.io](https://docs.tagstud.io)!**
 
-TagStudio is a photo & file organization application with an underlying system that focuses on giving freedom and flexibility to the user. No proprietary programs or formats, no sea of sidecar files, and no complete upheaval of your filesystem structure.
+> [!CAUTION]
+> **As of Pull Request [#332](https://github.com/TagStudioDev/TagStudio/pull/332) (SQLite Migration) the `main` branch will be an open test bed to get full JSON to SQL parity operational.** Existing TagStudio libraries are not yet compatible with this change, however they will **NOT be corrupted or deleted** if opened with these versions. Once parity is reached and a stable conversion tool in place, this notice will be removed.
+>
+> For the most recent stable feature release branch, see the [`Alpha-v9.4`](https://github.com/TagStudioDev/TagStudio/tree/Alpha-v9.4) branch. These v9.4 specific features are currently being backported to the SQL-ized `main` branch. [Feel free to help!](/CONTRIBUTING.md)
+
+> [!NOTE]
+> This project is still in an early state. There are many missing optimizations and QoL features, as well as the presence of general quirks and occasional jankiness. Making frequent backups of your library save data is **always** important, regardless of what state the program is in.
+>
+> With this in mind, TagStudio will _NOT:_
+>
+> - Touch, move, or mess with your files in any way _(unless explicitly using the "Delete File(s)" feature, which is locked behind a confirmation dialog)_.
+> - Ask you to recreate your tags or libraries after new releases. It's our highest priority to ensure that your data safely and smoothly transfers over to newer versions.
+> - Cause you to suddenly be able to recall your 10 trillion downloaded images that you probably haven't even seen firsthand before. You're in control here, and even tools out there that use machine learning still needed to be verified by human eyes before being deemed accurate.
 
 <figure align="center">
-  <img width="80%" src="screenshot.jpg" alt="TagStudio Screenshot" align="center">
+  <img width="80%" src="docs/assets/screenshot.jpg" alt="TagStudio Screenshot" align="center">
 
   <figcaption><i>TagStudio Alpha v9.1.0 running on Windows 10.</i></figcaption>
 </figure>
@@ -53,7 +63,7 @@ TagStudio is a photo & file organization application with an underlying system t
 - Special search conditions for entries that are: `untagged`/`no tags` and `empty`/`no fields`.
 
 > [!NOTE]
-> For more information on the project itself, please see the [FAQ](#faq) section as well as the [documentation](/doc/index.md).
+> For more information on the project itself, please see the [FAQ](#faq) section as well as the [documentation](/docs/index.md).
 
 ## Contributing
 
@@ -63,7 +73,7 @@ If you're interested in contributing to TagStudio, please take a look at the [co
 
 To download TagStudio, visit the [Releases](https://github.com/TagStudioDev/TagStudio/releases) section of the GitHub repository and download the latest release for your system under the "Assets" section. TagStudio is available for **Windows**, **macOS** _(Apple Silicon & Intel)_, and **Linux**. Windows and Linux builds are also available in portable versions if you want a more self-contained executable to move around.
 
-For video thumbnails and playback, you'll also need [FFmpeg](https://ffmpeg.org/download.html) installed on your system. 
+For video thumbnails and playback, you'll also need [FFmpeg](https://ffmpeg.org/download.html) installed on your system.
 
 > [!IMPORTANT]
 > On macOS, you may be met with a message saying _""TagStudio" can't be opened because Apple cannot check it for malicious software."_ If you encounter this, then you'll need to go to the "Settings" app, navigate to "Privacy & Security", and scroll down to a section that says _""TagStudio" was blocked from use because it is not from an identified developer."_ Click the "Open Anyway" button to allow TagStudio to run. You should only have to do this once after downloading the application.
@@ -178,7 +188,7 @@ As of writing (Alpha v9.3.0) the project is in a useable state, however it lacks
 ### What Features Are You Planning on Adding?
 
 > [!IMPORTANT]
-> See the [Planned Features](/doc/updates/planned_features.md) documentation for the latest feature lists. The lists here are currently being migrated over there with individual pages for larger features.
+> See the [Planned Features](/docs/updates/planned_features.md) documentation for the latest feature lists. The lists here are currently being migrated over there with individual pages for larger features.
 
 Of the several features I have planned for the project, these are broken up into “priority” features and “future” features. Priority features were originally intended for the first public release, however are currently absent from the Alpha v9.x.x builds.
 

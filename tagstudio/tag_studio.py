@@ -1,14 +1,21 @@
+#!/usr/bin/env python
 # Copyright (C) 2024 Travis Abendshien (CyanVoxel).
 # Licensed under the GPL-3.0 License.
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
 """TagStudio launcher."""
 
-from src.core.ts_core import TagStudioCore
-from src.cli.ts_cli import CliDriver  # type: ignore
+import structlog
+import logging
+
 from src.qt.ts_qt import QtDriver
 import argparse
 import traceback
+
+
+structlog.configure(
+    wrapper_class=structlog.make_filtering_bound_logger(logging.INFO),
+)
 
 
 def main():
@@ -48,27 +55,11 @@ def main():
         type=str,
         help="User interface option for TagStudio. Options: qt, cli (Default: qt)",
     )
-    parser.add_argument(
-        "--ci",
-        action=argparse.BooleanOptionalAction,
-        help="Exit the application after checking it starts without any problem. Meant for CI check.",
-    )
     args = parser.parse_args()
+    from src.core.library import alchemy as backend
 
-    core = TagStudioCore()  # The TagStudio Core instance. UI agnostic.
-    driver = None  # The UI driver instance.
-    ui_name: str = "unknown"  # Display name for the UI, used in logs.
-
-    # Driver selection based on parameters.
-    if args.ui and args.ui == "qt":
-        driver = QtDriver(core, args)
-        ui_name = "Qt"
-    elif args.ui and args.ui == "cli":
-        driver = CliDriver(core, args)
-        ui_name = "CLI"
-    else:
-        driver = QtDriver(core, args)
-        ui_name = "Qt"
+    driver = QtDriver(backend, args)
+    ui_name = "Qt"
 
     # Run the chosen frontend driver.
     try:

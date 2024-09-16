@@ -5,78 +5,73 @@
 """The core classes and methods of TagStudio."""
 
 import json
-import os
 from pathlib import Path
-from enum import Enum
 
 from src.core.library import Entry, Library
-from src.core.constants import TS_FOLDER_NAME, TEXT_FIELDS
+from src.core.constants import TS_FOLDER_NAME
+from src.core.library.alchemy.fields import _FieldID
+from src.core.utils.missing_files import logger
 
 
 class TagStudioCore:
-    """
-    Instantiate this to establish a TagStudio session.
-    Holds all TagStudio session data and provides methods to manage it.
-    """
-
     def __init__(self):
         self.lib: Library = Library()
 
-    def get_gdl_sidecar(self, filepath: str | Path, source: str = "") -> dict:
+    @classmethod
+    def get_gdl_sidecar(cls, filepath: Path, source: str = "") -> dict:
         """
-        Attempts to open and dump a Gallery-DL Sidecar sidecar file for
-        the filepath.\n Returns a formatted object with notable values or an
-        empty object if none is found.
+        Attempt to open and dump a Gallery-DL Sidecar file for the filepath.
+
+        Return a formatted object with notable values or an empty object if none is found.
         """
-        json_dump = {}
         info = {}
-        _filepath: Path = Path(filepath)
-        _filepath = _filepath.parent / (_filepath.stem + ".json")
+        _filepath = filepath.parent / (filepath.stem + ".json")
 
         # NOTE: This fixes an unknown (recent?) bug in Gallery-DL where Instagram sidecar
         # files may be downloaded with indices starting at 1 rather than 0, unlike the posts.
         # This may only occur with sidecar files that are downloaded separate from posts.
-        if source == "instagram":
-            if not _filepath.is_file():
-                newstem = _filepath.stem[:-16] + "1" + _filepath.stem[-15:]
-                _filepath = _filepath.parent / (newstem + ".json")
+        if source == "instagram" and not _filepath.is_file():
+            newstem = _filepath.stem[:-16] + "1" + _filepath.stem[-15:]
+            _filepath = _filepath.parent / (newstem + ".json")
+
+        logger.info(
+            "get_gdl_sidecar", filepath=filepath, source=source, sidecar=_filepath
+        )
 
         try:
-            with open(_filepath, "r", encoding="utf8") as f:
+            with open(_filepath, encoding="utf8") as f:
                 json_dump = json.load(f)
+                if not json_dump:
+                    return {}
 
-                if json_dump:
-                    if source == "twitter":
-                        info["content"] = json_dump["content"].strip()
-                        info["date_published"] = json_dump["date"]
-                    elif source == "instagram":
-                        info["description"] = json_dump["description"].strip()
-                        info["date_published"] = json_dump["date"]
-                    elif source == "artstation":
-                        info["title"] = json_dump["title"].strip()
-                        info["artist"] = json_dump["user"]["full_name"].strip()
-                        info["description"] = json_dump["description"].strip()
-                        info["tags"] = json_dump["tags"]
-                        # info["tags"] = [x for x in json_dump["mediums"]["name"]]
-                        info["date_published"] = json_dump["date"]
-                    elif source == "newgrounds":
-                        # info["title"] = json_dump["title"]
-                        # info["artist"] = json_dump["artist"]
-                        # info["description"] = json_dump["description"]
-                        info["tags"] = json_dump["tags"]
-                        info["date_published"] = json_dump["date"]
-                        info["artist"] = json_dump["user"].strip()
-                        info["description"] = json_dump["description"].strip()
-                        info["source"] = json_dump["post_url"].strip()
+                if source == "twitter":
+                    info[_FieldID.DESCRIPTION] = json_dump["content"].strip()
+                    info[_FieldID.DATE_PUBLISHED] = json_dump["date"]
+                elif source == "instagram":
+                    info[_FieldID.DESCRIPTION] = json_dump["description"].strip()
+                    info[_FieldID.DATE_PUBLISHED] = json_dump["date"]
+                elif source == "artstation":
+                    info[_FieldID.TITLE] = json_dump["title"].strip()
+                    info[_FieldID.ARTIST] = json_dump["user"]["full_name"].strip()
+                    info[_FieldID.DESCRIPTION] = json_dump["description"].strip()
+                    info[_FieldID.TAGS] = json_dump["tags"]
+                    # info["tags"] = [x for x in json_dump["mediums"]["name"]]
+                    info[_FieldID.DATE_PUBLISHED] = json_dump["date"]
+                elif source == "newgrounds":
+                    # info["title"] = json_dump["title"]
+                    # info["artist"] = json_dump["artist"]
+                    # info["description"] = json_dump["description"]
+                    info[_FieldID.TAGS] = json_dump["tags"]
+                    info[_FieldID.DATE_PUBLISHED] = json_dump["date"]
+                    info[_FieldID.ARTIST] = json_dump["user"].strip()
+                    info[_FieldID.DESCRIPTION] = json_dump["description"].strip()
+                    info[_FieldID.SOURCE] = json_dump["post_url"].strip()
                     # else:
                     # 	print(
                     # 		f'[INFO]: TagStudio does not currently support sidecar files for "{source}"')
 
-        # except FileNotFoundError:
-        except:
-            # print(
-            # 	f'[INFO]: No sidecar file found at "{os.path.normpath(file_path + ".json")}"')
-            pass
+        except Exception:
+            logger.exception("Error handling sidecar file.", path=_filepath)
 
         return info
 
@@ -103,102 +98,86 @@ class TagStudioCore:
     # 	# 	# print("Could not resolve URL.")
     # 	# 	pass
 
-    def match_conditions(self, entry_id: int) -> None:
-        """Matches defined conditions against a file to add Entry data."""
+    @classmethod
+    def match_conditions(cls, lib: Library, entry_id: int) -> bool:
+        """Match defined conditions against a file to add Entry data."""
 
-        cond_file = self.lib.library_dir / TS_FOLDER_NAME / "conditions.json"
+        # TODO - what even is this file format?
         # TODO: Make this stored somewhere better instead of temporarily in this JSON file.
-        entry: Entry = self.lib.get_entry(entry_id)
+        cond_file = lib.library_dir / TS_FOLDER_NAME / "conditions.json"
+        if not cond_file.is_file():
+            return False
+
+        entry: Entry = lib.get_entry(entry_id)
+
         try:
-            if cond_file.is_file():
-                with open(cond_file, "r", encoding="utf8") as f:
-                    json_dump = json.load(f)
-                    for c in json_dump["conditions"]:
-                        match: bool = False
-                        for path_c in c["path_conditions"]:
-                            if str(Path(path_c).resolve()) in str(entry.path):
-                                match = True
-                                break
-                        if match:
-                            if fields := c.get("fields"):
-                                for field in fields:
-                                    field_id = self.lib.get_field_attr(field, "id")
-                                    content = field[field_id]
+            with open(cond_file, encoding="utf8") as f:
+                json_dump = json.load(f)
+                for c in json_dump["conditions"]:
+                    match: bool = False
+                    for path_c in c["path_conditions"]:
+                        if Path(path_c).is_relative_to(entry.path):
+                            match = True
+                            break
 
-                                    if (
-                                        self.lib.get_field_obj(int(field_id))["type"]
-                                        == "tag_box"
-                                    ):
-                                        existing_fields: list[int] = (
-                                            self.lib.get_field_index_in_entry(
-                                                entry, field_id
-                                            )
-                                        )
-                                        if existing_fields:
-                                            self.lib.update_entry_field(
-                                                entry_id,
-                                                existing_fields[0],
-                                                content,
-                                                "append",
-                                            )
-                                        else:
-                                            self.lib.add_field_to_entry(
-                                                entry_id, field_id
-                                            )
-                                            self.lib.update_entry_field(
-                                                entry_id, -1, content, "append"
-                                            )
+                    if not match:
+                        return False
 
-                                    if (
-                                        self.lib.get_field_obj(int(field_id))["type"]
-                                        in TEXT_FIELDS
-                                    ):
-                                        if not self.lib.does_field_content_exist(
-                                            entry_id, field_id, content
-                                        ):
-                                            self.lib.add_field_to_entry(
-                                                entry_id, field_id
-                                            )
-                                            self.lib.update_entry_field(
-                                                entry_id, -1, content, "replace"
-                                            )
-        except:
-            print("Error in match_conditions...")
-            # input()
-            pass
+                    if not c.get("fields"):
+                        return False
 
-    def build_url(self, entry_id: int, source: str):
-        """Tries to rebuild a source URL given a specific filename structure."""
+                    fields = c["fields"]
+                    entry_field_types = {
+                        field.type_key: field for field in entry.fields
+                    }
+
+                    for field in fields:
+                        is_new = field["id"] not in entry_field_types
+                        field_key = field["id"]
+                        if is_new:
+                            lib.add_entry_field_type(
+                                entry.id, field_key, field["value"]
+                            )
+                        else:
+                            lib.update_entry_field(entry.id, field_key, field["value"])
+
+        except Exception:
+            logger.exception("Error matching conditions.", entry=entry)
+
+        return False
+
+    @classmethod
+    def build_url(cls, entry: Entry, source: str):
+        """Try to rebuild a source URL given a specific filename structure."""
 
         source = source.lower().replace("-", " ").replace("_", " ")
         if "twitter" in source:
-            return self._build_twitter_url(entry_id)
+            return cls._build_twitter_url(entry)
         elif "instagram" in source:
-            return self._build_instagram_url(entry_id)
+            return cls._build_instagram_url(entry)
 
-    def _build_twitter_url(self, entry_id: int):
+    @classmethod
+    def _build_twitter_url(cls, entry: Entry):
         """
-        Builds an Twitter URL given a specific filename structure.
+        Build a Twitter URL given a specific filename structure.
         Method expects filename to be formatted as 'USERNAME_TWEET-ID_INDEX_YEAR-MM-DD'
         """
         try:
-            entry = self.lib.get_entry(entry_id)
-            stubs = str(entry.filename).rsplit("_", 3)
-            # print(stubs)
-            # source, author = os.path.split(entry.path)
+            stubs = str(entry.path.name).rsplit("_", 3)
             url = f"www.twitter.com/{stubs[0]}/status/{stubs[-3]}/photo/{stubs[-2]}"
             return url
-        except:
+        except Exception:
+            logger.exception("Error building Twitter URL.", entry=entry)
             return ""
 
-    def _build_instagram_url(self, entry_id: int):
+    @classmethod
+    def _build_instagram_url(cls, entry: Entry):
         """
-        Builds an Instagram URL given a specific filename structure.
+        Build an Instagram URL given a specific filename structure.
         Method expects filename to be formatted as 'USERNAME_POST-ID_INDEX_YEAR-MM-DD'
         """
         try:
-            entry = self.lib.get_entry(entry_id)
-            stubs = str(entry.filename).rsplit("_", 2)
+            stubs = str(entry.path.name).rsplit("_", 2)
             # stubs[0] = stubs[0].replace(f"{author}_", '', 1)
             # print(stubs)
             # NOTE: Both Instagram usernames AND their ID can have underscores in them,
@@ -207,5 +186,6 @@ class TagStudioCore:
             # seems to more or less be the case... for now...
             url = f"www.instagram.com/p/{stubs[-3][-11:]}"
             return url
-        except:
+        except Exception:
+            logger.exception("Error building Instagram URL.", entry=entry)
             return ""

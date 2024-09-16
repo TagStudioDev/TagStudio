@@ -1,6 +1,8 @@
-ruff==0.4.2
+ruff==0.6.4
 pre-commit==3.7.0
 pytest==8.2.0
 Pyinstaller==6.6.0
-mypy==1.10.0
-syrupy==4.6.1
+mypy==1.11.2
+syrupy==4.7.1
+pytest-qt==4.4.0
+pytest-cov==5.0.0

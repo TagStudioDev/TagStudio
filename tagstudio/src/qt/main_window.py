@@ -36,7 +36,7 @@ class Ui_MainWindow(QMainWindow):
   
     def __init__(self, driver: "QtDriver", parent=None) -> None:
         super().__init__(parent)
-        self.driver: "QtDriver" = driver
+        self.driver = driver
         self.setupUi(self)
 
         # NOTE: These are old attempts to allow for a translucent/acrylic

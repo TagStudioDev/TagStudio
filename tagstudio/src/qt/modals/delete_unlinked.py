@@ -15,7 +15,7 @@ from PySide6.QtWidgets import (
     QListView,
 )
 
-from src.core.library import ItemType, Library
+from src.core.utils.missing_files import MissingRegistry
 from src.qt.helpers.custom_runnable import CustomRunnable
 from src.qt.helpers.function_iterator import FunctionIterator
 from src.qt.widgets.progress import ProgressWidget
@@ -28,10 +28,10 @@ if typing.TYPE_CHECKING:
 class DeleteUnlinkedEntriesModal(QWidget):
     done = Signal()
 
-    def __init__(self, library: "Library", driver: "QtDriver"):
+    def __init__(self, driver: "QtDriver", tracker: MissingRegistry):
         super().__init__()
-        self.lib = library
         self.driver = driver
+        self.tracker = tracker
         self.setWindowTitle("Delete Unlinked Entries")
         self.setWindowModality(Qt.WindowModality.ApplicationModal)
         self.setMinimumSize(500, 400)
@@ -42,7 +42,7 @@ class DeleteUnlinkedEntriesModal(QWidget):
         self.desc_widget.setObjectName("descriptionLabel")
         self.desc_widget.setWordWrap(True)
         self.desc_widget.setText(f"""
-		Are you sure you want to delete the following {len(self.lib.missing_files)} entries?
+		Are you sure you want to delete the following {self.tracker.missing_files_count} entries?
 		""")
         self.desc_widget.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
@@ -73,35 +73,38 @@ class DeleteUnlinkedEntriesModal(QWidget):
 
     def refresh_list(self):
         self.desc_widget.setText(f"""
-		Are you sure you want to delete the following {len(self.lib.missing_files)} entries?
+		Are you sure you want to delete the following {self.tracker.missing_files_count} entries?
 		""")
 
         self.model.clear()
-        for i in self.lib.missing_files:
-            self.model.appendRow(QStandardItem(str(i)))
+        for i in self.tracker.missing_files:
+            self.model.appendRow(QStandardItem(str(i.path)))
 
     def delete_entries(self):
-        iterator = FunctionIterator(self.lib.remove_missing_files)
-
         pw = ProgressWidget(
             window_title="Deleting Entries",
             label_text="",
             cancel_button_text=None,
             minimum=0,
-            maximum=len(self.lib.missing_files),
+            maximum=self.tracker.missing_files_count,
         )
         pw.show()
 
-        iterator.value.connect(lambda x: pw.update_progress(x[0] + 1))
+        iterator = FunctionIterator(self.tracker.execute_deletion)
+        files_count = self.tracker.missing_files_count
         iterator.value.connect(
-            lambda x: pw.update_label(
-                f"Deleting {x[0]+1}/{len(self.lib.missing_files)} Unlinked Entries"
+            lambda idx: (
+                pw.update_progress(idx),
+                pw.update_label(f"Deleting {idx}/{files_count} Unlinked Entries"),
             )
         )
-        iterator.value.connect(
-            lambda x: self.driver.purge_item_from_navigation(ItemType.ENTRY, x[1])
-        )
 
-        r = CustomRunnable(lambda: iterator.run())
+        r = CustomRunnable(iterator.run)
         QThreadPool.globalInstance().start(r)
-        r.done.connect(lambda: (pw.hide(), pw.deleteLater(), self.done.emit()))
+        r.done.connect(
+            lambda: (
+                pw.hide(),
+                pw.deleteLater(),
+                self.done.emit(),
+            )
+        )

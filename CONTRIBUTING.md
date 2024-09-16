@@ -1,18 +1,24 @@
 # Contributing to TagStudio
 
-_Last Updated: June 10th, 2024_
+_Last Updated: September 8th, 2024_
 
 Thank you so much for showing interest in contributing to TagStudio! Here are a set of instructions and guidelines for contributing code or documentation to the project. This document will change over time, so make sure that your contributions still line up with the requirements here before submitting a pull request.
 
+> [!CAUTION]
+> **As of Pull Request [#332](https://github.com/TagStudioDev/TagStudio/pull/332) (SQLite Migration) the `main` branch will be an open test bed to get full JSON to SQL parity operational.** Existing TagStudio libraries are not yet compatible with this change, however they will **NOT be corrupted or deleted** if opened with these versions. Once parity is reached and a stable conversion tool in place, this notice will be removed.
+>
+> For the most recent stable feature release branch, see the [`Alpha-v9.4`](https://github.com/TagStudioDev/TagStudio/tree/Alpha-v9.4) branch. These v9.4 specific features are currently being backported to the SQL-ized `main` branch. (Feel free to help!)
+
 ## Getting Started
 
-- Check the [Planned Features](https://github.com/TagStudioDev/TagStudio/blob/main/doc/updates/planned_features.md) page, [FAQ](/README.md/#faq), as well as the open [Issues](https://github.com/TagStudioDev/TagStudio/issues) and [Pull Requests](https://github.com/TagStudioDev/TagStudio/pulls).
+- Check the [Planned Features](https://github.com/TagStudioDev/TagStudio/blob/main/docs/updates/planned_features.md) page, [FAQ](/README.md/#faq), as well as the open [Issues](https://github.com/TagStudioDev/TagStudio/issues) and [Pull Requests](https://github.com/TagStudioDev/TagStudio/pulls).
 - If you'd like to add a feature that isn't on the roadmap or doesn't have an open issue, **PLEASE create a feature request** issue for it discussing your intentions so any feedback or important information can be given by the team first.
   - We don't want you wasting time developing a feature or making a change that can't/won't be added for any reason ranging from pre-existing refactors to design philosophy differences.
+- If you wish to discuss TagStudio further, feel free to join the [Discord server](https://discord.com/invite/hRNnVKhF2G)
 
 ### Contribution Checklist
 
-- I've read the [Planned Features](https://github.com/TagStudioDev/TagStudio/blob/main/doc/updates/planned_features.md) page
+- I've read the [Planned Features](https://github.com/TagStudioDev/TagStudio/blob/main/docs/updates/planned_features.md) page
 - I've read the [FAQ](/README.md/#faq), including the "[Features I Likely Won't Add/Pull](/README.md/#features-i-likely-wont-addpull)" section
 - I've checked the open [Issues](https://github.com/TagStudioDev/TagStudio/issues) and [Pull Requests](https://github.com/TagStudioDev/TagStudio/pulls)
 - **I've created a new issue for my feature _before_ starting work on it**, or have at least notified others in the relevant existing issue(s) of my intention to work on it
@@ -86,7 +92,7 @@ A Python linter and code formatter. Ruff uses the `pyproject.toml` as its config
 
 #### Running Locally
 
-- Lint code with by moving into the `/tagstudio` directory with `cd tagstudio` and running `ruff --config ../pyproject.toml`.
+- Lint code by moving into the `/tagstudio` directory with `cd tagstudio` and running `ruff --config ../pyproject.toml`.
 - Format code with `ruff format` inside the repository directory
 
 Ruff is also available as a VS Code [extension](https://marketplace.visualstudio.com/items?itemName=charliermarsh.ruff), PyCharm [plugin](https://plugins.jetbrains.com/plugin/20574-ruff), and [more](https://docs.astral.sh/ruff/integrations/).

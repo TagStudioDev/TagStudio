@@ -24,7 +24,7 @@ logging.basicConfig(format="%(message)s", level=logging.INFO)
 class LandingWidget(QWidget):
     def __init__(self, driver: "QtDriver", pixel_ratio: float):
         super().__init__()
-        self.driver: "QtDriver" = driver
+        self.driver = driver
         self.logo_label: ClickableLabel = ClickableLabel()
         self._pixel_ratio: float = pixel_ratio
         self._logo_width: int = int(480 * pixel_ratio)
@@ -56,7 +56,6 @@ class LandingWidget(QWidget):
         self.logo_special_anim.setDuration(500)
 
         # Create "Open/Create Library" button ----------------------------------
-        open_shortcut_text: str = ""
         if sys.platform == "darwin":
             open_shortcut_text = "(⌘+O)"
         else:

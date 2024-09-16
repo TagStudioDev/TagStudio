@@ -3,13 +3,13 @@
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
 
-import logging
 import typing
 
 from PySide6.QtCore import Qt, QThreadPool
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton
 
 from src.core.library import Library
+from src.core.utils.missing_files import MissingRegistry
 from src.qt.helpers.function_iterator import FunctionIterator
 from src.qt.helpers.custom_runnable import CustomRunnable
 from src.qt.modals.delete_unlinked import DeleteUnlinkedEntriesModal
@@ -22,18 +22,14 @@ if typing.TYPE_CHECKING:
     from src.qt.ts_qt import QtDriver
 
 
-ERROR = "[ERROR]"
-WARNING = "[WARNING]"
-INFO = "[INFO]"
-
-logging.basicConfig(format="%(message)s", level=logging.INFO)
-
-
 class FixUnlinkedEntriesModal(QWidget):
     def __init__(self, library: "Library", driver: "QtDriver"):
         super().__init__()
         self.lib = library
         self.driver = driver
+
+        self.tracker = MissingRegistry(library=self.lib)
+
         self.missing_count = -1
         self.dupe_count = -1
         self.setWindowTitle("Fix Unlinked Entries")
@@ -50,14 +46,6 @@ class FixUnlinkedEntriesModal(QWidget):
             """Each library entry is linked to a file in one of your directories. If a file linked to an entry is moved or deleted outside of TagStudio, it is then considered unlinked. Unlinked entries may be automatically relinked via searching your directories, manually relinked by the user, or deleted if desired."""
         )
 
-        self.dupe_desc_widget = QLabel()
-        self.dupe_desc_widget.setObjectName("dupeDescriptionLabel")
-        self.dupe_desc_widget.setWordWrap(True)
-        self.dupe_desc_widget.setStyleSheet("text-align:left;")
-        self.dupe_desc_widget.setText(
-            """Duplicate entries are defined as multiple entries which point to the same file on disk. Merging these will combine the tags and metadata from all duplicates into a single consolidated entry. These are not to be confused with "duplicate files", which are duplicates of your files themselves outside of TagStudio."""
-        )
-
         self.missing_count_label = QLabel()
         self.missing_count_label.setObjectName("missingCountLabel")
         self.missing_count_label.setStyleSheet("font-weight:bold;" "font-size:14px;")
@@ -70,42 +58,37 @@ class FixUnlinkedEntriesModal(QWidget):
 
         self.refresh_unlinked_button = QPushButton()
         self.refresh_unlinked_button.setText("&Refresh All")
-        self.refresh_unlinked_button.clicked.connect(
-            lambda: self.refresh_missing_files()
-        )
+        self.refresh_unlinked_button.clicked.connect(self.refresh_missing_files)
 
         self.merge_class = MergeDuplicateEntries(self.lib, self.driver)
-        self.relink_class = RelinkUnlinkedEntries(self.lib, self.driver)
+        self.relink_class = RelinkUnlinkedEntries(self.tracker)
 
         self.search_button = QPushButton()
         self.search_button.setText("&Search && Relink")
         self.relink_class.done.connect(
-            lambda: self.refresh_and_repair_dupe_entries(self.merge_class)
+            # refresh the grid
+            lambda: (
+                self.driver.filter_items(),
+                self.refresh_missing_files(),
+            )
         )
-        self.search_button.clicked.connect(lambda: self.relink_class.repair_entries())
-
-        self.refresh_dupe_button = QPushButton()
-        self.refresh_dupe_button.setText("Refresh Duplicate Entries")
-        self.refresh_dupe_button.clicked.connect(lambda: self.refresh_dupe_entries())
-
-        self.merge_dupe_button = QPushButton()
-        self.merge_dupe_button.setText("&Merge Duplicate Entries")
-        self.merge_class.done.connect(lambda: self.set_dupe_count(-1))
-        self.merge_class.done.connect(lambda: self.set_missing_count(-1))
-        self.merge_class.done.connect(lambda: self.driver.filter_items())
-        self.merge_dupe_button.clicked.connect(lambda: self.merge_class.merge_entries())
+        self.search_button.clicked.connect(self.relink_class.repair_entries)
 
         self.manual_button = QPushButton()
         self.manual_button.setText("&Manual Relink")
+        self.manual_button.setHidden(True)
 
         self.delete_button = QPushButton()
-        self.delete_modal = DeleteUnlinkedEntriesModal(self.lib, self.driver)
+        self.delete_modal = DeleteUnlinkedEntriesModal(self.driver, self.tracker)
         self.delete_modal.done.connect(
-            lambda: self.set_missing_count(len(self.lib.missing_files))
+            lambda: (
+                self.set_missing_count(self.tracker.missing_files_count),
+                # refresh the grid
+                self.driver.filter_items(),
+            )
         )
-        self.delete_modal.done.connect(lambda: self.driver.update_thumbs())
         self.delete_button.setText("De&lete Unlinked Entries")
-        self.delete_button.clicked.connect(lambda: self.delete_modal.show())
+        self.delete_button.clicked.connect(self.delete_modal.show)
 
         self.button_container = QWidget()
         self.button_layout = QHBoxLayout(self.button_container)
@@ -122,83 +105,35 @@ class FixUnlinkedEntriesModal(QWidget):
         self.root_layout.addWidget(self.unlinked_desc_widget)
         self.root_layout.addWidget(self.refresh_unlinked_button)
         self.root_layout.addWidget(self.search_button)
-        self.manual_button.setHidden(True)
         self.root_layout.addWidget(self.manual_button)
         self.root_layout.addWidget(self.delete_button)
         self.root_layout.addStretch(1)
-        self.root_layout.addWidget(self.dupe_count_label)
-        self.root_layout.addWidget(self.dupe_desc_widget)
-        self.root_layout.addWidget(self.refresh_dupe_button)
-        self.root_layout.addWidget(self.merge_dupe_button)
         self.root_layout.addStretch(2)
         self.root_layout.addWidget(self.button_container)
 
         self.set_missing_count(self.missing_count)
-        self.set_dupe_count(self.dupe_count)
 
     def refresh_missing_files(self):
-        iterator = FunctionIterator(self.lib.refresh_missing_files)
         pw = ProgressWidget(
             window_title="Scanning Library",
             label_text="Scanning Library for Unlinked Entries...",
             cancel_button_text=None,
             minimum=0,
-            maximum=len(self.lib.entries),
+            maximum=self.lib.entries_count,
         )
+
         pw.show()
+
+        iterator = FunctionIterator(self.tracker.refresh_missing_files)
         iterator.value.connect(lambda v: pw.update_progress(v + 1))
-        r = CustomRunnable(lambda: iterator.run())
+        r = CustomRunnable(iterator.run)
         QThreadPool.globalInstance().start(r)
         r.done.connect(
             lambda: (
                 pw.hide(),
                 pw.deleteLater(),
-                self.set_missing_count(len(self.lib.missing_files)),
+                self.set_missing_count(self.tracker.missing_files_count),
                 self.delete_modal.refresh_list(),
-                self.refresh_dupe_entries(),
-            )
-        )
-
-    def refresh_dupe_entries(self):
-        iterator = FunctionIterator(self.lib.refresh_dupe_entries)
-        pw = ProgressWidget(
-            window_title="Scanning Library",
-            label_text="Scanning Library for Duplicate Entries...",
-            cancel_button_text=None,
-            minimum=0,
-            maximum=len(self.lib.entries),
-        )
-        pw.show()
-        iterator.value.connect(lambda v: pw.update_progress(v + 1))
-        r = CustomRunnable(lambda: iterator.run())
-        QThreadPool.globalInstance().start(r)
-        r.done.connect(
-            lambda: (
-                pw.hide(),
-                pw.deleteLater(),
-                self.set_dupe_count(len(self.lib.dupe_entries)),
-            )
-        )
-
-    def refresh_and_repair_dupe_entries(self, merge_class: MergeDuplicateEntries):
-        iterator = FunctionIterator(self.lib.refresh_dupe_entries)
-        pw = ProgressWidget(
-            window_title="Scanning Library",
-            label_text="Scanning Library for Duplicate Entries...",
-            cancel_button_text=None,
-            minimum=0,
-            maximum=len(self.lib.entries),
-        )
-        pw.show()
-        iterator.value.connect(lambda v: pw.update_progress(v + 1))
-        r = CustomRunnable(lambda: iterator.run())
-        QThreadPool.globalInstance().start(r)
-        r.done.connect(
-            lambda: (
-                pw.hide(),  # type: ignore
-                pw.deleteLater(),  # type: ignore
-                self.set_dupe_count(len(self.lib.dupe_entries)),
-                merge_class.merge_entries(),
             )
         )
 
@@ -208,23 +143,8 @@ class FixUnlinkedEntriesModal(QWidget):
             self.search_button.setDisabled(True)
             self.delete_button.setDisabled(True)
             self.missing_count_label.setText("Unlinked Entries: N/A")
-        elif self.missing_count == 0:
-            self.search_button.setDisabled(True)
-            self.delete_button.setDisabled(True)
-            self.missing_count_label.setText(f"Unlinked Entries: {count}")
         else:
-            self.search_button.setDisabled(False)
-            self.delete_button.setDisabled(False)
+            # disable buttons if there are no files to fix
+            self.search_button.setDisabled(self.missing_count == 0)
+            self.delete_button.setDisabled(self.missing_count == 0)
             self.missing_count_label.setText(f"Unlinked Entries: {count}")
-
-    def set_dupe_count(self, count: int):
-        self.dupe_count = count
-        if self.dupe_count < 0:
-            self.dupe_count_label.setText("Duplicate Entries: N/A")
-            self.merge_dupe_button.setDisabled(True)
-        elif self.dupe_count == 0:
-            self.dupe_count_label.setText(f"Duplicate Entries: {count}")
-            self.merge_dupe_button.setDisabled(True)
-        else:
-            self.dupe_count_label.setText(f"Duplicate Entries: {count}")
-            self.merge_dupe_button.setDisabled(False)
