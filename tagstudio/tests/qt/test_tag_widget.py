@@ -109,6 +109,7 @@ def test_tag_widget_edit(qtbot, qt_driver, library, entry_full):
     assert panel.tag.name == tag.name
     assert panel.name_field.text() == tag.name
 
+
 def test_tag_widget_autocomplete(qtbot, qt_driver, library):
     # Given
     entry = next(library.get_entries(with_joins=True))
@@ -123,12 +124,11 @@ def test_tag_widget_autocomplete(qtbot, qt_driver, library):
     tag_widget.tag_entry.setText("arch")
     tag_widget.tag_entry.returnPressed.emit()
 
-    entry = next(library.get_entries(with_joins=True)) # Update entry
+    entry = next(library.get_entries(with_joins=True))  # Update entry
     assert len(entry.tags) == 2
 
     # Test unmatched autocomplete
     tag_widget.tag_completer.activated.emit("missing")
 
-    entry = next(library.get_entries(with_joins=True)) # Update entry
+    entry = next(library.get_entries(with_joins=True))  # Update entry
     assert len(entry.tags) == 2
-
