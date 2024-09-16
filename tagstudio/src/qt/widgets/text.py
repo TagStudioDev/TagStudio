@@ -21,9 +21,7 @@ class TextWidget(FieldWidget):
         # self.text_label.textFormat(Qt.TextFormat.RichText)
         self.text_label.setStyleSheet("font-size: 12px")
         self.text_label.setWordWrap(True)
-        self.text_label.setTextInteractionFlags(
-            Qt.TextInteractionFlag.TextSelectableByMouse
-        )
+        self.text_label.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
         self.base_layout.addWidget(self.text_label)
         self.set_text(text)
 

@@ -48,22 +48,22 @@ def test_select_item_bridge(qt_driver, entry_min):
     assert len(qt_driver.item_thumbs) == 3
 
     # select first item
-    qt_driver.select_item(0, False, False)
+    qt_driver.select_item(0, append=False, bridge=False)
     assert qt_driver.selected == [0]
 
     # add second item to selection
-    qt_driver.select_item(1, False, bridge=True)
+    qt_driver.select_item(1, append=False, bridge=True)
     assert qt_driver.selected == [0, 1]
 
     # add third item to selection
-    qt_driver.select_item(2, False, bridge=True)
+    qt_driver.select_item(2, append=False, bridge=True)
     assert qt_driver.selected == [0, 1, 2]
 
     # select third item only
-    qt_driver.select_item(2, False, bridge=False)
+    qt_driver.select_item(2, append=False, bridge=False)
     assert qt_driver.selected == [2]
 
-    qt_driver.select_item(0, False, bridge=True)
+    qt_driver.select_item(0, append=False, bridge=True)
     assert qt_driver.selected == [0, 1, 2]
 
 
@@ -93,7 +93,7 @@ def test_library_state_update(qt_driver):
     entry = qt_driver.frame_content[0]
     assert list(entry.tags)[0].name == "foo"
 
-    # When state property is changed, previous one is overriden
+    # When state property is changed, previous one is overwritten
     state = FilterState(path="bar.md")
     qt_driver.filter_items(state)
     assert len(qt_driver.frame_content) == 1
@@ -106,6 +106,11 @@ def test_close_library(qt_driver):
     qt_driver.close_library()
 
     # Then
-    assert len(qt_driver.frame_content) == 0
-    assert len(qt_driver.item_thumbs) == 0
-    assert qt_driver.selected == []
+    assert qt_driver.lib.library_dir is None
+    assert not qt_driver.frame_content
+    assert not qt_driver.selected
+    assert not any(x.mode for x in qt_driver.item_thumbs)
+
+    # close library again to see there's no error
+    qt_driver.close_library()
+    qt_driver.close_library(is_shutdown=True)

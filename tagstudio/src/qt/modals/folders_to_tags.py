@@ -10,17 +10,16 @@ from dataclasses import dataclass, field
 import structlog
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
-    QWidget,
-    QVBoxLayout,
+    QFrame,
     QHBoxLayout,
     QLabel,
     QPushButton,
     QScrollArea,
-    QFrame,
+    QVBoxLayout,
+    QWidget,
 )
-
-from src.core.constants import TAG_FAVORITE, TAG_ARCHIVED
-from src.core.library import Tag, Library
+from src.core.constants import TAG_ARCHIVED, TAG_FAVORITE
+from src.core.library import Library, Tag
 from src.core.library.alchemy.fields import _FieldID
 from src.core.palette import ColorType, get_tag_color
 from src.qt.flowlayout import FlowLayout
@@ -38,9 +37,7 @@ class BranchData:
     tag: Tag | None = None
 
 
-def add_folders_to_tree(
-    library: Library, tree: BranchData, items: tuple[str, ...]
-) -> BranchData:
+def add_folders_to_tree(library: Library, tree: BranchData, items: tuple[str, ...]) -> BranchData:
     branch = tree
     for folder in items:
         if folder not in branch.dirs:
@@ -160,7 +157,6 @@ def generate_preview_data(library: Library) -> BranchData:
 
 
 class FoldersToTagsModal(QWidget):
-    # done = Signal(int)
     def __init__(self, library: "Library", driver: "QtDriver"):
         super().__init__()
         self.library = library
@@ -177,9 +173,7 @@ class FoldersToTagsModal(QWidget):
         self.title_widget = QLabel()
         self.title_widget.setObjectName("title")
         self.title_widget.setWordWrap(True)
-        self.title_widget.setStyleSheet(
-            "font-weight:bold;" "font-size:14px;" "padding-top: 6px"
-        )
+        self.title_widget.setStyleSheet("font-weight:bold;" "font-size:14px;" "padding-top: 6px")
         self.title_widget.setText("Create Tags From Folders")
         self.title_widget.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
@@ -187,7 +181,8 @@ class FoldersToTagsModal(QWidget):
         self.desc_widget.setObjectName("descriptionLabel")
         self.desc_widget.setWordWrap(True)
         self.desc_widget.setText(
-            """Creates tags based on your folder structure and applies them to your entries.\n The structure below shows all the tags that will be created and what entries they will be applied to."""
+            """Creates tags based on your folder structure and applies them to your entries.
+            This tree shows all tags to be created and which entries they will be applied to."""
         )
         self.desc_widget.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
@@ -210,9 +205,7 @@ class FoldersToTagsModal(QWidget):
         self.scroll_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
 
         self.scroll_area = QScrollArea()
-        self.scroll_area.setVerticalScrollBarPolicy(
-            Qt.ScrollBarPolicy.ScrollBarAlwaysOn
-        )
+        self.scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOn)
         self.scroll_area.setWidgetResizable(True)
         self.scroll_area.setFrameShadow(QFrame.Shadow.Plain)
         self.scroll_area.setFrameShape(QFrame.Shape.NoFrame)
@@ -229,9 +222,7 @@ class FoldersToTagsModal(QWidget):
         self.root_layout.addWidget(self.desc_widget)
         self.root_layout.addWidget(self.open_close_button_w)
         self.root_layout.addWidget(self.scroll_area)
-        self.root_layout.addWidget(
-            self.apply_button, alignment=Qt.AlignmentFlag.AlignCenter
-        )
+        self.root_layout.addWidget(self.apply_button, alignment=Qt.AlignmentFlag.AlignCenter)
 
     def on_apply(self, event):
         folders_to_tags(self.library)
@@ -310,10 +301,10 @@ class TreeItem(QWidget):
         self.label.setText(">" if self.children_widget.isHidden() else "v")
 
 
-class ModifiedTagWidget(
-    QWidget
-):  # Needed to be modified because the original searched the display name in the library where it wasn't added yet
-    def __init__(self, tag: Tag, parentTag: Tag) -> None:
+class ModifiedTagWidget(QWidget):
+    """Modified TagWidget that does not search for the Tag's display name in the Library."""
+
+    def __init__(self, tag: Tag, parent_tag: Tag) -> None:
         super().__init__()
         self.tag = tag
 
@@ -324,8 +315,8 @@ class ModifiedTagWidget(
 
         self.bg_button = QPushButton(self)
         self.bg_button.setFlat(True)
-        if parentTag is not None:
-            text = f"{tag.name} ({parentTag.name})".replace("&", "&&")
+        if parent_tag is not None:
+            text = f"{tag.name} ({parent_tag.name})".replace("&", "&&")
         else:
             text = tag.name.replace("&", "&&")
         self.bg_button.setText(text)

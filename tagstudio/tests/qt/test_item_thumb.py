@@ -1,7 +1,6 @@
 import pytest
-
 from src.core.library import ItemType
-from src.qt.widgets.item_thumb import ItemThumb, BadgeType
+from src.qt.widgets.item_thumb import BadgeType, ItemThumb
 
 
 @pytest.mark.parametrize("new_value", (True, False))

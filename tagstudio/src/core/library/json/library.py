@@ -47,9 +47,7 @@ logger = structlog.get_logger(__name__)
 class Entry:
     """A Library Entry Object. Referenced by ID."""
 
-    def __init__(
-        self, id: int, filename: str | Path, path: str | Path, fields: list[dict]
-    ) -> None:
+    def __init__(self, id: int, filename: str | Path, path: str | Path, fields: list[dict]) -> None:
         # Required Fields ======================================================
         self.id = int(id)
         self.filename = Path(filename)
@@ -138,9 +136,7 @@ class Entry:
                         while tag_id in t:
                             t.remove(tag_id)
 
-    def add_tag(
-        self, library: "Library", tag_id: int, field_id: int, field_index: int = -1
-    ):
+    def add_tag(self, library: "Library", tag_id: int, field_id: int, field_index: int = -1):
         # if self.fields:
         # if field_index != -1:
         # logger.info(f'[LIBRARY] ADD TAG to E:{self.id}, F-DI:{field_id}, F-INDEX:{field_index}')
@@ -212,9 +208,7 @@ class Tag:
         """Returns a formatted tag name intended for displaying."""
         if self.subtag_ids:
             if library.get_tag(self.subtag_ids[0]).shorthand:
-                return (
-                    f"{self.name}" f" ({library.get_tag(self.subtag_ids[0]).shorthand})"
-                )
+                return f"{self.name}" f" ({library.get_tag(self.subtag_ids[0]).shorthand})"
             else:
                 return f"{self.name}" f" ({library.get_tag(self.subtag_ids[0]).name})"
         else:
@@ -473,9 +467,7 @@ class Library:
                             "ignored_extensions", self.default_ext_exclude_list
                         )
                     else:
-                        self.ext_list = json_dump.get(
-                            "ext_list", self.default_ext_exclude_list
-                        )
+                        self.ext_list = json_dump.get("ext_list", self.default_ext_exclude_list)
 
                     # Sanitizes older lists (v9.2.1) that don't use leading periods.
                     # Without this, existing lists (including default lists)
@@ -535,9 +527,7 @@ class Library:
                                 self._map_tag_id_to_index(t, -1)
                                 self._map_tag_strings_to_tag_id(t)
                             else:
-                                logger.info(
-                                    f"[LIBRARY]Skipping Tag with duplicate ID: {tag}"
-                                )
+                                logger.info(f"[LIBRARY]Skipping Tag with duplicate ID: {tag}")
 
                         # Step 3: Map each Tag's subtags together now that all Tag objects in it.
                         for t in self.tags:
@@ -586,19 +576,14 @@ class Library:
                                         matched = False
                                         collation_id = -1
                                         for c in self.collations:
-                                            if (
-                                                c.title
-                                                == self.get_field_attr(f, "content")[
-                                                    "name"
-                                                ]
-                                            ):
+                                            if c.title == self.get_field_attr(f, "content")["name"]:
                                                 c.e_ids_and_pages.append(
                                                     (
                                                         id,
                                                         int(
-                                                            self.get_field_attr(
-                                                                f, "content"
-                                                            )["page"]
+                                                            self.get_field_attr(f, "content")[
+                                                                "page"
+                                                            ]
                                                         ),
                                                     )
                                                 )
@@ -607,9 +592,7 @@ class Library:
                                         if not matched:
                                             c = Collation(
                                                 id=self._next_collation_id,
-                                                title=self.get_field_attr(f, "content")[
-                                                    "name"
-                                                ],
+                                                title=self.get_field_attr(f, "content")["name"],
                                                 e_ids_and_pages=[],
                                                 sort_order="",
                                             )
@@ -618,11 +601,7 @@ class Library:
                                             c.e_ids_and_pages.append(
                                                 (
                                                     id,
-                                                    int(
-                                                        self.get_field_attr(
-                                                            f, "content"
-                                                        )["page"]
-                                                    ),
+                                                    int(self.get_field_attr(f, "content")["page"]),
                                                 )
                                             )
                                             self.collations.append(c)
@@ -645,9 +624,7 @@ class Library:
                             self._map_entry_id_to_index(e, -1)
 
                         end_time = time.time()
-                        logger.info(
-                            f"[LIBRARY] Entries loaded", load_time=end_time - start_time
-                        )
+                        logger.info(f"[LIBRARY] Entries loaded", load_time=end_time - start_time)
 
                     # Parse Collations -----------------------------------------
                     if "collations" in json_dump.keys():
@@ -761,9 +738,7 @@ class Library:
 
         self.verify_ts_folders()
 
-        with open(
-            self.library_dir / TS_FOLDER_NAME / filename, "w", encoding="utf-8"
-        ) as outfile:
+        with open(self.library_dir / TS_FOLDER_NAME / filename, "w", encoding="utf-8") as outfile:
             outfile.flush()
             ujson.dump(
                 self.to_json(),
@@ -773,9 +748,7 @@ class Library:
             )
             # , indent=4 <-- How to prettyprint dump
         end_time = time.time()
-        logger.info(
-            f"[LIBRARY] Library saved to disk in {(end_time - start_time):.3f} seconds"
-        )
+        logger.info(f"[LIBRARY] Library saved to disk in {(end_time - start_time):.3f} seconds")
 
     def save_library_backup_to_disk(self) -> str:
         """
@@ -1053,9 +1026,7 @@ class Library:
                         file_1.resolve in self.filename_to_entry_id_map.keys()
                         and file_2 in self.filename_to_entry_id_map.keys()
                     ):
-                        self.dupe_files.append(
-                            (files[match[0]], files[match[1]], match[2])
-                        )
+                        self.dupe_files.append((files[match[0]], files[match[1]], match[2]))
                 print("")
 
             for dupe in self.dupe_files:
@@ -1287,9 +1258,7 @@ class Library:
         """Returns an Entry ID given the full filepath it points to."""
         try:
             if self.entries:
-                return self.filename_to_entry_id_map[
-                    Path(filename).relative_to(self.library_dir)
-                ]
+                return self.filename_to_entry_id_map[Path(filename).relative_to(self.library_dir)]
         except KeyError:
             return -1
 
@@ -1334,8 +1303,7 @@ class Library:
                     for j, term in enumerate(query_words):
                         if (
                             query_words[i : j + 1]
-                            and " ".join(query_words[i : j + 1])
-                            in self._tag_strings_to_id_map
+                            and " ".join(query_words[i : j + 1]) in self._tag_strings_to_id_map
                         ):
                             all_tag_terms.append(" ".join(query_words[i : j + 1]))
                         # print(all_tag_terms)
@@ -1404,9 +1372,7 @@ class Library:
                     if allow_adv:
                         if [q for q in query_words if (q in str(entry.path).lower())]:
                             results.append((ItemType.ENTRY, entry.id))
-                        elif [
-                            q for q in query_words if (q in str(entry.filename).lower())
-                        ]:
+                        elif [q for q in query_words if (q in str(entry.filename).lower())]:
                             results.append((ItemType.ENTRY, entry.id))
                     elif tag_only:
                         if entry.has_tag(self, int(query_words[0])):
@@ -1423,19 +1389,14 @@ class Library:
                             added = False
                             for f in entry.fields:
                                 if self.get_field_attr(f, "type") == "collation":
-                                    if (
-                                        self.get_field_attr(f, "content")
-                                        not in collations_added
-                                    ):
+                                    if self.get_field_attr(f, "content") not in collations_added:
                                         results.append(
                                             (
                                                 ItemType.COLLATION,
                                                 self.get_field_attr(f, "content"),
                                             )
                                         )
-                                        collations_added.append(
-                                            self.get_field_attr(f, "content")
-                                        )
+                                        collations_added.append(self.get_field_attr(f, "content"))
                                     added = True
 
                             if not added:
@@ -1453,9 +1414,7 @@ class Library:
                                     # (You're 99.9999999% likely to just get 1 item)
                                     for id in self._tag_strings_to_id_map[term]:
                                         cluster.add(id)
-                                        cluster = cluster.union(
-                                            set(self.get_tag_cluster(id))
-                                        )
+                                        cluster = cluster.union(set(self.get_tag_cluster(id)))
                                     # print(f'Full Cluster: {cluster}')
                                     # For each of the Tag IDs in the term's ID cluster:
                                     for t in cluster:
@@ -1516,19 +1475,14 @@ class Library:
                 if allowed_ext == self.is_exclude_list:
                     for f in entry.fields:
                         if self.get_field_attr(f, "type") == "collation":
-                            if (
-                                self.get_field_attr(f, "content")
-                                not in collations_added
-                            ):
+                            if self.get_field_attr(f, "content") not in collations_added:
                                 results.append(
                                     (
                                         ItemType.COLLATION,
                                         self.get_field_attr(f, "content"),
                                     )
                                 )
-                                collations_added.append(
-                                    self.get_field_attr(f, "content")
-                                )
+                                collations_added.append(self.get_field_attr(f, "content"))
                             added = True
 
                     if not added:
@@ -1603,9 +1557,7 @@ class Library:
             if query == string:
                 exact_match = True
             elif string.startswith(query):
-                if len(query) >= (
-                    len(string) // (len(string) if threshold == 1 else threshold)
-                ):
+                if len(query) >= (len(string) // (len(string) if threshold == 1 else threshold)):
                     partial_match = True
 
             if exact_match or partial_match:
@@ -1640,9 +1592,7 @@ class Library:
                                     id_weights.append((id, 0))
 
         # Contextual Weighing
-        if context and (
-            (len(id_weights) > 1 and len(priority_ids) > 1) or (len(priority_ids) > 1)
-        ):
+        if context and ((len(id_weights) > 1 and len(priority_ids) > 1) or (len(priority_ids) > 1)):
             context_strings: list[str] = [
                 s.replace(" ", "")
                 .replace("_", "")
@@ -1691,11 +1641,7 @@ class Library:
                         split += ts.split(" ")
                 tag_strings += split
                 tag_strings = [
-                    s.replace(" ", "")
-                    .replace("_", "")
-                    .replace("-", "")
-                    .replace("'", "")
-                    .lower()
+                    s.replace(" ", "").replace("_", "").replace("-", "").replace("'", "").lower()
                     for s in tag_strings
                 ]
                 while "" in tag_strings:
@@ -1921,38 +1867,26 @@ class Library:
         if data:
             # Add a Title Field if the data doesn't already exist.
             if data.get("title"):
-                if not self.does_field_content_exist(
-                    entry_id, FieldID.TITLE, data["title"]
-                ):
+                if not self.does_field_content_exist(entry_id, FieldID.TITLE, data["title"]):
                     self.add_field_to_entry(entry_id, FieldID.TITLE)
                     self.update_entry_field(entry_id, -1, data["title"], "replace")
 
             # Add an Author Field if the data doesn't already exist.
             if data.get("author"):
-                if not self.does_field_content_exist(
-                    entry_id, FieldID.AUTHOR, data["author"]
-                ):
+                if not self.does_field_content_exist(entry_id, FieldID.AUTHOR, data["author"]):
                     self.add_field_to_entry(entry_id, FieldID.AUTHOR)
                     self.update_entry_field(entry_id, -1, data["author"], "replace")
 
             # Add an Artist Field if the data doesn't already exist.
             if data.get("artist"):
-                if not self.does_field_content_exist(
-                    entry_id, FieldID.ARTIST, data["artist"]
-                ):
+                if not self.does_field_content_exist(entry_id, FieldID.ARTIST, data["artist"]):
                     self.add_field_to_entry(entry_id, FieldID.ARTIST)
                     self.update_entry_field(entry_id, -1, data["artist"], "replace")
 
             # Add a Date Published Field if the data doesn't already exist.
             if data.get("date_published"):
-                date = str(
-                    datetime.datetime.strptime(
-                        data["date_published"], "%Y-%m-%d %H:%M:%S"
-                    )
-                )
-                if not self.does_field_content_exist(
-                    entry_id, FieldID.DATE_PUBLISHED, date
-                ):
+                date = str(datetime.datetime.strptime(data["date_published"], "%Y-%m-%d %H:%M:%S"))
+                if not self.does_field_content_exist(entry_id, FieldID.DATE_PUBLISHED, date):
                     self.add_field_to_entry(entry_id, FieldID.DATE_PUBLISHED)
                     # entry = self.entries[entry_id]
                     self.update_entry_field(entry_id, -1, date, "replace")
@@ -2025,9 +1959,7 @@ class Library:
                             )
                         else:
                             self.add_field_to_entry(entry_id, FieldID.CONTENT_TAGS)
-                            self.update_entry_field(
-                                entry_id, -1, [matching[0]], "append"
-                            )
+                            self.update_entry_field(entry_id, -1, [matching[0]], "append")
 
                 # Add all original string tags as a note.
                 str_tags = f"Original Tags: {tags}"
@@ -2041,9 +1973,7 @@ class Library:
                     entry_id, FieldID.DESCRIPTION, data["description"]
                 ):
                     self.add_field_to_entry(entry_id, FieldID.DESCRIPTION)
-                    self.update_entry_field(
-                        entry_id, -1, data["description"], "replace"
-                    )
+                    self.update_entry_field(entry_id, -1, data["description"], "replace")
             if data.get("content"):
                 if not self.does_field_content_exist(
                     entry_id, FieldID.DESCRIPTION, data["content"]
@@ -2054,9 +1984,7 @@ class Library:
                 for source in data["source"].split(" "):
                     if source and source != " ":
                         source = strip_web_protocol(string=source)
-                        if not self.does_field_content_exist(
-                            entry_id, FieldID.SOURCE, source
-                        ):
+                        if not self.does_field_content_exist(entry_id, FieldID.SOURCE, source):
                             self.add_field_to_entry(entry_id, FieldID.SOURCE)
                             self.update_entry_field(entry_id, -1, source, "replace")
 
@@ -2140,9 +2068,7 @@ class Library:
         elif attribute.lower() == "content":
             return entry_field[self.get_field_attr(entry_field, "id")]
         else:
-            return self.get_field_obj(self.get_field_attr(entry_field, "id"))[
-                attribute.lower()
-            ]
+            return self.get_field_obj(self.get_field_attr(entry_field, "id"))[attribute.lower()]
 
     def get_field_obj(self, field_id: int) -> dict:
         """
@@ -2215,11 +2141,7 @@ class Library:
                 if subtag.subtag_ids:
                     self._map_tag_id_to_cluster(
                         tag,
-                        [
-                            self.get_tag(sub_id)
-                            for sub_id in subtag.subtag_ids
-                            if sub_id != tag.id
-                        ],
+                        [self.get_tag(sub_id) for sub_id in subtag.subtag_ids if sub_id != tag.id],
                     )
 
     def _map_tag_id_to_index(self, tag: Tag, index: int) -> None:
@@ -2285,6 +2207,4 @@ class Library:
     def sort_fields(self, entry_id: int, order: list[int]) -> None:
         """Sorts an Entry's Fields given an ordered list of Field IDs."""
         entry = self.get_entry(entry_id)
-        entry.fields = sorted(
-            entry.fields, key=lambda x: order.index(self.get_field_attr(x, "id"))
-        )
+        entry.fields = sorted(entry.fields, key=lambda x: order.index(self.get_field_attr(x, "id")))

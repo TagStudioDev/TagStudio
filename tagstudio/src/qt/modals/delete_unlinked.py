@@ -4,17 +4,16 @@
 
 import typing
 
-from PySide6.QtCore import Signal, Qt, QThreadPool
-from PySide6.QtGui import QStandardItemModel, QStandardItem
+from PySide6.QtCore import Qt, QThreadPool, Signal
+from PySide6.QtGui import QStandardItem, QStandardItemModel
 from PySide6.QtWidgets import (
-    QWidget,
-    QVBoxLayout,
     QHBoxLayout,
     QLabel,
-    QPushButton,
     QListView,
+    QPushButton,
+    QVBoxLayout,
+    QWidget,
 )
-
 from src.core.utils.missing_files import MissingRegistry
 from src.qt.helpers.custom_runnable import CustomRunnable
 from src.qt.helpers.function_iterator import FunctionIterator

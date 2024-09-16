@@ -1,10 +1,9 @@
+import xml.etree.ElementTree as ET
 from dataclasses import dataclass, field
 from pathlib import Path
-import xml.etree.ElementTree as ET
 
 import structlog
-
-from src.core.library import Library, Entry
+from src.core.library import Entry, Library
 from src.core.library.alchemy.enums import FilterState
 
 logger = structlog.get_logger()
@@ -22,8 +21,8 @@ class DupeRegistry:
         return len(self.groups)
 
     def refresh_dupe_files(self, results_filepath: str | Path):
-        """
-        Refresh the list of duplicate files.
+        """Refresh the list of duplicate files.
+
         A duplicate file is defined as an identical or near-identical file as determined
         by a DupeGuru results file.
         """
@@ -50,15 +49,15 @@ class DupeRegistry:
                         # The file is not in the library directory
                         continue
 
-                    _, entries = self.library.search_library(
+                    results = self.library.search_library(
                         FilterState(path=path_relative),
                     )
 
-                    if not entries:
+                    if not results:
                         # file not in library
                         continue
 
-                    files.append(entries[0])
+                    files.append(results[0])
 
                 if not len(files) > 1:
                     # only one file in the group, nothing to do
@@ -67,9 +66,10 @@ class DupeRegistry:
             self.groups.append(files)
 
     def merge_dupe_entries(self):
-        """
-        Merge the duplicate Entry items.
-        A duplicate Entry is defined as an Entry pointing to a file that one or more other Entries are also pointing to
+        """Merge the duplicate Entry items.
+
+        A duplicate Entry is defined as an Entry pointing to a file
+        that one or more other Entries are also pointing to
         """
         logger.info(
             "Consolidating Entries... (This may take a while for larger libraries)",

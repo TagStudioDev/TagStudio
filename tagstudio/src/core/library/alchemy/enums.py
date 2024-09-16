@@ -104,9 +104,7 @@ class FilterState:
 
         else:
             self.tag = self.tag and self.tag.strip()
-            self.tag_id = (
-                int(self.tag_id) if str(self.tag_id).isnumeric() else self.tag_id
-            )
+            self.tag_id = int(self.tag_id) if str(self.tag_id).isnumeric() else self.tag_id
             self.path = self.path and str(self.path).strip()
             self.name = self.name and self.name.strip()
             self.id = int(self.id) if str(self.id).isnumeric() else self.id
@@ -118,10 +116,8 @@ class FilterState:
 
     @property
     def summary(self):
-        """Show query summary"""
-        return (
-            self.query or self.tag or self.name or self.tag_id or self.path or self.id
-        )
+        """Show query summary."""
+        return self.query or self.tag or self.name or self.tag_id or self.path or self.id
 
     @property
     def limit(self):

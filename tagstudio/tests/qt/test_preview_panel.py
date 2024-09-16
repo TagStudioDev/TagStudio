@@ -1,9 +1,10 @@
 from pathlib import Path
+from tempfile import TemporaryDirectory
 
-
+import pytest
 from src.core.library import Entry
 from src.core.library.alchemy.enums import FieldTypeEnum
-from src.core.library.alchemy.fields import _FieldID, TextField
+from src.core.library.alchemy.fields import TextField, _FieldID
 from src.qt.widgets.preview_panel import PreviewPanel
 
 
@@ -18,6 +19,7 @@ def test_update_widgets_not_selected(qt_driver, library):
     assert panel.file_label.text() == "No Items Selected"
 
 
+@pytest.mark.parametrize("library", [TemporaryDirectory()], indirect=True)
 def test_update_widgets_single_selected(qt_driver, library):
     qt_driver.frame_content = list(library.get_entries())
     qt_driver.selected = [0]

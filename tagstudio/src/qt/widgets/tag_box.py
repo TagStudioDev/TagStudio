@@ -7,19 +7,18 @@ import math
 import typing
 
 import structlog
-from PySide6.QtCore import Signal, Qt, QStringListModel, QObject
+from PySide6.QtCore import Qt, Signal, QStringListModel, QObject
 from PySide6.QtWidgets import QPushButton, QLineEdit, QCompleter
-
 from src.core.constants import TAG_FAVORITE, TAG_ARCHIVED
 from src.core.library import Library, Entry, Tag
 from src.core.library.alchemy.enums import FilterState
 from src.core.library.alchemy.fields import TagBoxField
 from src.qt.flowlayout import FlowLayout
-from src.qt.widgets.fields import FieldWidget
-from src.qt.widgets.tag import TagWidget
-from src.qt.widgets.panel import PanelModal
 from src.qt.modals.build_tag import BuildTagPanel
 from src.qt.modals.tag_search import TagSearchPanel
+from src.qt.widgets.fields import FieldWidget
+from src.qt.widgets.panel import PanelModal
+from src.qt.widgets.tag import TagWidget
 
 if typing.TYPE_CHECKING:
     from src.qt.ts_qt import QtDriver
@@ -55,10 +54,12 @@ class TagBoxWidget(FieldWidget):
         assert isinstance(field, TagBoxField), f"field is {type(field)}"
 
         self.field = field
-        self.driver = driver  # Used for creating tag click callbacks that search entries for that tag.
+        self.driver = (
+            driver  # Used for creating tag click callbacks that search entries for that tag.
+        )
         self.setObjectName("tagBox")
         self.base_layout = FlowLayout()
-        self.base_layout.setGridEfficiency(False)
+        self.base_layout.enable_grid_optimizations(value=False)
         self.base_layout.setContentsMargins(0, 0, 0, 0)
         self.setLayout(self.base_layout)
 
@@ -135,7 +136,7 @@ class TagBoxWidget(FieldWidget):
             is_recycled = True
 
         for tag in tags:
-            tag_widget = TagWidget(tag, True, True)
+            tag_widget = TagWidget(tag, has_edit=True, has_remove=True)
             tag_widget.on_click.connect(
                 lambda tag_id=tag.id: (
                     self.driver.main_window.searchField.setText(f"tag_id:{tag_id}"),
@@ -176,7 +177,6 @@ class TagBoxWidget(FieldWidget):
             done_callback=self.driver.preview_panel.update_widgets,
             has_save=True,
         )
-        # self.edit_modal.widget.update_display_name.connect(lambda t: self.edit_modal.title_widget.setText(t))
         # TODO - this was update_tag()
         self.edit_modal.saved.connect(
             lambda: self.driver.lib.update_tag(
@@ -184,7 +184,6 @@ class TagBoxWidget(FieldWidget):
                 subtag_ids=build_tag_panel.subtags,
             )
         )
-        # panel.tag_updated.connect(lambda tag: self.lib.update_tag(tag))
         self.edit_modal.show()
 
     def add_tag_callback(self, tag_id: int):

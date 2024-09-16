@@ -12,8 +12,7 @@ from PySide6.QtCore import (
     QObject,
     Signal,
 )
-
-from src.core.constants import DOC_TYPES, VIDEO_TYPES, IMAGE_TYPES
+from src.core.constants import DOC_TYPES, IMAGE_TYPES, VIDEO_TYPES
 from src.core.library import Library
 from src.core.library.alchemy.fields import _FieldID
 
@@ -84,15 +83,11 @@ class CollageIconRenderer(QObject):
                                 pic = pic.resize(size)
                             if data_tint_mode and color:
                                 pic = pic.convert(mode="RGB")
-                                pic = ImageChops.hard_light(
-                                    pic, Image.new("RGB", size, color)
-                                )
+                                pic = ImageChops.hard_light(pic, Image.new("RGB", size, color))
                             # collage.paste(pic, (y*thumb_size, x*thumb_size))
                             self.rendered.emit(pic)
                     except DecompressionBombError:
-                        logger.exception(
-                            "One of the images was too big", entry=entry.path
-                        )
+                        logger.exception("One of the images was too big", entry=entry.path)
                 elif filepath.suffix.lower() in VIDEO_TYPES:
                     video = cv2.VideoCapture(str(filepath))
                     video.set(
@@ -113,18 +108,13 @@ class CollageIconRenderer(QObject):
                         else:
                             pic = pic.resize(size)
                         if data_tint_mode and color:
-                            pic = ImageChops.hard_light(
-                                pic, Image.new("RGB", size, color)
-                            )
+                            pic = ImageChops.hard_light(pic, Image.new("RGB", size, color))
                         # collage.paste(pic, (y*thumb_size, x*thumb_size))
                         self.rendered.emit(pic)
         except (UnidentifiedImageError, FileNotFoundError):
             logger.error("Couldn't read entry", entry=entry.path)
             with Image.open(
-                str(
-                    Path(__file__).parents[2]
-                    / "resources/qt/images/thumb_broken_512.png"
-                )
+                str(Path(__file__).parents[2] / "resources/qt/images/thumb_broken_512.png")
             ) as pic:
                 pic.thumbnail(size)
                 if data_tint_mode and color:
