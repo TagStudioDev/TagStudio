@@ -7,11 +7,11 @@ import math
 import typing
 
 import structlog
-from PySide6.QtCore import Signal, Qt, QStringListModel
+from PySide6.QtCore import Signal, Qt, QStringListModel, QObject
 from PySide6.QtWidgets import QPushButton, QLineEdit, QCompleter
 
 from src.core.constants import TAG_FAVORITE, TAG_ARCHIVED
-from src.core.library import Entry, Tag
+from src.core.library import Library, Entry, Tag
 from src.core.library.alchemy.enums import FilterState
 from src.core.library.alchemy.fields import TagBoxField
 from src.qt.flowlayout import FlowLayout
@@ -28,17 +28,17 @@ logger = structlog.get_logger(__name__)
 
 
 class TagCompleter(QCompleter):
-    def __init__(self, parent, lib):
+    def __init__(self, parent: QObject, lib: Library):
         super().__init__(parent)
         self.lib = lib
-        self.update([])
-    
-    def update(self, exclude:typing.Iterable[str]):
-        tags = [tag.name for tag in self.lib.tags]
-        for value in exclude:
-            tags.remove(value)
+        self.update(set())
+
+    def update(self, exclude: set[str]):
+        tags = {tag.name for tag in self.lib.tags}
+        tags -= exclude
         model = QStringListModel(tags, self)
         self.setModel(model)
+
 
 class TagBoxWidget(FieldWidget):
     updated = Signal()
@@ -128,7 +128,7 @@ class TagBoxWidget(FieldWidget):
         self.field = field
 
     def set_tags(self, tags: typing.Iterable[Tag]):
-        self.tag_completer.update(tag.name for tag in tags)
+        self.tag_completer.update({tag.name for tag in tags})
         is_recycled = False
         while self.base_layout.itemAt(0) and self.base_layout.itemAt(2):
             self.base_layout.takeAt(0).widget().deleteLater()
