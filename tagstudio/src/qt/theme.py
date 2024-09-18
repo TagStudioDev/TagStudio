@@ -115,7 +115,7 @@ def update_palette() -> None:
     settings: QSettings = driver.settings
 
     settings.beginGroup("Appearance")
-    dark_mode_value: str = settings.value("DarkMode", -1)  # type: ignore
+    dark_mode_value: str = settings.value("DarkMode", "-1")  # type: ignore
     dark_theme_file: str | None = settings.value("DarkThemeFile", None)  # type: ignore
     light_theme_file: str | None = settings.value("LightThemeFile", None)  # type: ignore
     settings.endGroup()
