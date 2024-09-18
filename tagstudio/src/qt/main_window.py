@@ -15,15 +15,19 @@
 
 import logging
 import typing
-from PySide6.QtCore import (QCoreApplication, QMetaObject, QRect,QSize, Qt, QStringListModel)
+
+from PySide6.QtCore import (QCoreApplication, QMetaObject, QRect, QSize,
+                            QStringListModel, Qt)
 from PySide6.QtGui import QFont
-from PySide6.QtWidgets import (QComboBox, QFrame, QGridLayout,
-                               QHBoxLayout, QVBoxLayout, QLayout, QLineEdit, QMainWindow,
-                               QPushButton, QScrollArea, QSizePolicy,
-                               QStatusBar, QWidget, QSplitter, QCheckBox,
-                               QSpacerItem, QCompleter)
+from PySide6.QtWidgets import (QApplication, QCheckBox, QComboBox, QCompleter,
+                               QFrame, QGridLayout, QHBoxLayout, QLayout,
+                               QLineEdit, QMainWindow, QPushButton,
+                               QScrollArea, QSizePolicy, QSpacerItem,
+                               QSplitter, QStatusBar, QVBoxLayout, QWidget)
 from src.qt.pagination import Pagination
 from src.qt.widgets.landing import LandingWidget
+
+from . import theme
 
 # Only import for type checking/autocompletion, will not be imported at runtime.
 if typing.TYPE_CHECKING:
@@ -37,6 +41,9 @@ class Ui_MainWindow(QMainWindow):
     def __init__(self, driver: "QtDriver", parent=None) -> None:
         super().__init__(parent)
         self.driver: "QtDriver" = driver
+        # temporarily putting driver to application property
+        (QApplication.instance() or self.parent()).setProperty("driver", driver)
+        theme.update_palette()  # update palette according to theme settings
         self.setupUi(self)
 
         # NOTE: These are old attempts to allow for a translucent/acrylic
