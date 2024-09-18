@@ -73,7 +73,7 @@ def test_tag_widget_remove(qtbot, qt_driver, library, entry_full):
 
     qtbot.add_widget(tag_widget)
 
-    tag_widget = tag_widget.base_layout.itemAt(0).widget()
+    tag_widget = tag_widget.tags_layout.itemAt(0).widget()
     assert isinstance(tag_widget, TagWidget)
 
     tag_widget.remove_button.clicked.emit()
@@ -95,7 +95,7 @@ def test_tag_widget_edit(qtbot, qt_driver, library, entry_full):
 
     qtbot.add_widget(tag_box_widget)
 
-    tag_widget = tag_box_widget.base_layout.itemAt(0).widget()
+    tag_widget = tag_box_widget.tags_layout.itemAt(0).widget()
     assert isinstance(tag_widget, TagWidget)
 
     # When
