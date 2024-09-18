@@ -50,6 +50,7 @@ from PySide6.QtWidgets import (
     QLineEdit,
     QMenu,
     QMenuBar,
+    QMessageBox,
     QPushButton,
     QScrollArea,
     QSplashScreen,
@@ -89,6 +90,7 @@ from src.qt.widgets.item_thumb import BadgeType, ItemThumb
 from src.qt.widgets.panel import PanelModal
 from src.qt.widgets.preview_panel import PreviewPanel
 from src.qt.widgets.progress import ProgressWidget
+from src.qt.widgets.thumb_button import ThumbButton
 from src.qt.widgets.thumb_renderer import ThumbRenderer
 
 # SIGQUIT is not defined on Windows
@@ -320,16 +322,7 @@ class QtDriver(QObject):
         file_menu.addAction(add_new_files_action)
 
         open_selected_action = QAction("Open selected files", self)
-        open_selected_action.triggered.connect(
-            lambda: (
-                (
-                    [self.item_thumbs[selection].opener.open_file() for selection in self.selected]
-                    if QApplication.focusWidget() == self.main_window.scrollArea
-                    else None
-                ),
-                logger.info("Opening files", count=len(self.selected)),
-            )
-        )
+        open_selected_action.triggered.connect(self.open_selected_files)
         shortcut = QtCore.QKeyCombination(
             QtCore.Qt.KeyboardModifier(QtCore.Qt.KeyboardModifier.ControlModifier),
             QtCore.Qt.Key.Key_Down,
@@ -1107,3 +1100,30 @@ class QtDriver(QObject):
         self.filter_items()
 
         self.main_window.toggle_landing_page(enabled=False)
+
+    def open_selected_files(self):
+        if not (
+            QApplication.focusWidget() == self.main_window.scrollArea
+            or isinstance(QApplication.focusWidget(), ThumbButton)
+        ):
+            return
+        file_count = len(self.selected)
+        result = QMessageBox.ButtonRole.ActionRole
+
+        if file_count >= 15:  # Only confirm if we have lots of files
+            confirm_open = QMessageBox()
+            confirm_open.setText(f"Open {file_count} files?")
+            confirm_open.setWindowTitle("Open files")
+            confirm_open.setIcon(QMessageBox.Icon.Question)
+
+            cancel_button = confirm_open.addButton("&Cancel", QMessageBox.ButtonRole.RejectRole)
+            confirm_open.setEscapeButton(cancel_button)
+
+            open_button = confirm_open.addButton("&Open", QMessageBox.ButtonRole.ActionRole)
+            confirm_open.setDefaultButton(open_button)
+
+            result = confirm_open.exec()
+
+        if result == QMessageBox.ButtonRole.ActionRole.value:
+            for selection in self.selected:
+                self.item_thumbs[selection].opener.open_file()
