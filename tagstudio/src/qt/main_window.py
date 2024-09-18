@@ -21,9 +21,11 @@ from PySide6.QtWidgets import (QComboBox, QFrame, QGridLayout,
                                QHBoxLayout, QVBoxLayout, QLayout, QLineEdit, QMainWindow,
                                QPushButton, QScrollArea, QSizePolicy,
                                QStatusBar, QWidget, QSplitter, QCheckBox,
-                               QSpacerItem)
+                               QSpacerItem, QApplication)
 from src.qt.pagination import Pagination
 from src.qt.widgets.landing import LandingWidget
+
+from . import theme
 
 # Only import for type checking/autocompletion, will not be imported at runtime.
 if typing.TYPE_CHECKING:
@@ -37,6 +39,9 @@ class Ui_MainWindow(QMainWindow):
     def __init__(self, driver: "QtDriver", parent=None) -> None:
         super().__init__(parent)
         self.driver = driver
+        # temporarily putting driver to application property
+        (QApplication.instance() or self.parent()).setProperty("driver", driver)
+        theme.update_palette()  # update palette according to theme settings
         self.setupUi(self)
 
         # NOTE: These are old attempts to allow for a translucent/acrylic
