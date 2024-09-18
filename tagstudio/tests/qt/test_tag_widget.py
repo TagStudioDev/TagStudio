@@ -120,6 +120,8 @@ def test_tag_widget_autocomplete(qtbot, qt_driver, library):
 
     qtbot.add_widget(tag_widget)
 
+    assert len(entry.tags) == 1
+
     # Test autocomplete
     tag_widget.tag_entry.setText("arch")
     tag_widget.tag_entry.returnPressed.emit()
