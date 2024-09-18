@@ -66,4 +66,4 @@ else
     printf -- "❌ Error Building the app\nPlease read the logs\navailable at build/logs\n"
 fi
 
-printf -- "🏁 END OF TRANSMISSION"
+printf -- "🏁 END OF TRANSMISSION\n"
