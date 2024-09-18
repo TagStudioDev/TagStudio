@@ -103,11 +103,12 @@ class TagBoxWidget(FieldWidget):
         )
         self.add_modal = PanelModal(tsp, title, "Add Tags")
 
-        self.add_button.clicked.connect(self.add_modal.show)
+        self.add_button.clicked.connect(
+            lambda: (self.add_modal.show(), tsp.update_tags(tsp.search_field))
+        )
         self.tag_entry.textChanged.connect(
             lambda text: (
                 tsp.search_field.setText(text),
-                tsp.update_tags(text),
                 self.tag_completer.setCompletionPrefix(text),
                 self.tag_completer.complete(),
             )
@@ -118,8 +119,7 @@ class TagBoxWidget(FieldWidget):
         self.tag_completer.activated.connect(
             lambda selected: (
                 tsp.update_tags(selected),
-                tsp.on_return(selected),
-                self.tag_entry.clear(),
+                self.tag_entry.clear() if tsp.on_return(selected) else (),
             )
         )
 

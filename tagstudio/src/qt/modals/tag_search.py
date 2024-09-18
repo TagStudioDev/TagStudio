@@ -70,9 +70,11 @@ class TagSearchPanel(PanelWidget):
             self.tag_chosen.emit(self.first_tag.id)
             self.search_field.setText("")
             self.update_tags()
+            return True
         else:
             self.search_field.setFocus()
             self.parentWidget().hide()
+            return False
 
     def update_tags(self, name: str | None = None):
         while self.scroll_layout.count():
