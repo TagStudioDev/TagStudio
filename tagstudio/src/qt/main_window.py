@@ -18,7 +18,7 @@ import typing
 from PySide6.QtCore import (QCoreApplication, QMetaObject, QRect,QSize, Qt)
 from PySide6.QtGui import QFont
 from PySide6.QtWidgets import (QComboBox, QFrame, QGridLayout,
-                               QHBoxLayout, QVBoxLayout, QLayout, QLineEdit, QMainWindow,
+                               QHBoxLayout, QVBoxLayout, QLayout, QMainWindow,
                                QPushButton, QScrollArea, QSizePolicy,
                                QStatusBar, QWidget, QSplitter, QCheckBox,
                                QSpacerItem, QApplication)
@@ -26,6 +26,7 @@ from src.qt.pagination import Pagination
 from src.qt.widgets.landing import LandingWidget
 
 from . import theme
+from .widgets.line_edit_widgets import BaseLineEdit as QLineEdit
 
 # Only import for type checking/autocompletion, will not be imported at runtime.
 if typing.TYPE_CHECKING:
