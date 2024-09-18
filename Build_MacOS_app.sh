@@ -20,9 +20,9 @@ printf -- "🐍 Creating Python virtual env\n"
 python3 -m venv .venv 
 source .venv/bin/activate
 
-if [ ! -d $LOGS_PATH ]; then
+if [[ ! -d $LOGS_PATH ]]; then
   printf -- "📁 Creating Logs folder\n"
-  mkdir -p $LOGS_PATH;
+  mkdir -p "$LOGS_PATH";
 fi
 
 printf -- "💻 Installing Requirements \n"
@@ -60,10 +60,10 @@ if $COMMAND; then
   printf -- "⌛ $((duration)) seconds of build\n"
     if [[ "$OS" == 0 ]]; then
       printf -- "📁 Opening App folder \n"
-      open $DIST_PATH
+      open "$DIST_PATH"
     fi 
 else
     printf -- "❌ Error Building the app\nPlease read the logs\navailable at build/logs\n"
 fi
 
-printf -- "🏁 END OF TRANSMISSION"
+printf -- "🏁 END OF TRANSMISSION\n"
