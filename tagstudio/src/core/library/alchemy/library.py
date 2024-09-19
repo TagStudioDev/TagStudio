@@ -15,7 +15,6 @@ from sqlalchemy import (
     and_,
     create_engine,
     delete,
-    exists,
     func,
     or_,
     select,
@@ -34,6 +33,7 @@ from ...constants import (
     TAG_ARCHIVED,
     TAG_FAVORITE,
     TS_FOLDER_NAME,
+    TS_FOLDER_NOINDEX,
 )
 from ...enums import LibraryPrefs
 from .db import make_tables
@@ -362,6 +362,8 @@ class Library:
         if not full_ts_path.exists():
             logger.info("creating library directory", dir=full_ts_path)
             full_ts_path.mkdir(parents=True, exist_ok=True)
+            # create noindex file to ignore the folder
+            (full_ts_path / TS_FOLDER_NOINDEX).touch()
 
     def add_entries(self, items: list[Entry]) -> list[int]:
         """Add multiple Entry records to the Library."""
@@ -389,10 +391,10 @@ class Library:
             session.query(Entry).where(Entry.id.in_(entry_ids)).delete()
             session.commit()
 
-    def has_path_entry(self, path: Path) -> bool:
+    def get_path_entry(self, path: Path) -> Entry | None:
         """Check if item with given path is in library already."""
         with Session(self.engine) as session:
-            return session.query(exists().where(Entry.path == path)).scalar()
+            return session.scalar(select(Entry).where(Entry.path == path))
 
     def search_library(
         self,

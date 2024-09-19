@@ -18,11 +18,11 @@ def test_library_add_file(library):
         fields=library.default_fields,
     )
 
-    assert not library.has_path_entry(entry.path)
+    assert not library.get_path_entry(entry.path)
 
     assert library.add_entries([entry])
 
-    assert library.has_path_entry(entry.path)
+    assert library.get_path_entry(entry.path) is not None
 
 
 def test_create_tag(library, generate_tag):
