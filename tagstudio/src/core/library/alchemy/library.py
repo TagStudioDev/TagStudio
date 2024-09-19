@@ -15,7 +15,6 @@ from sqlalchemy import (
     and_,
     create_engine,
     delete,
-    exists,
     func,
     or_,
     select,
@@ -33,7 +32,6 @@ from ...constants import (
     BACKUP_FOLDER_NAME,
     TAG_ARCHIVED,
     TAG_FAVORITE,
-    TS_FOLDER_NAME,
 )
 from ...enums import LibraryPrefs
 from .db import make_tables
@@ -112,48 +110,55 @@ class SearchResult:
         """Allow to access items via index directly on the wrapper."""
         return self.items[index]
 
+    def __iter__(self):
+        return iter(self.items)
+
 
 @dataclass
 class LibraryStatus:
     """Keep status of library opening operation."""
 
     success: bool
-    library_path: Path | None = None
+    storage_path: Path | str | None = None
     message: str | None = None
 
 
 class Library:
     """Class for the Library object, and all CRUD operations made upon it."""
 
-    library_dir: Path | None = None
-    storage_path: Path | str | None
+    storage_path: Path | str | None = None
     engine: Engine | None
-    folder: Folder | None
 
     FILENAME: str = "ts_library.sqlite"
 
     def close(self):
         if self.engine:
             self.engine.dispose()
-        self.library_dir = None
         self.storage_path = None
-        self.folder = None
 
-    def open_library(self, library_dir: Path, storage_path: str | None = None) -> LibraryStatus:
+    def open_library(
+        self, storage_path: Path | str, library_name: str | None = None
+    ) -> LibraryStatus:
         if storage_path == ":memory:":
             self.storage_path = storage_path
             is_new = True
         else:
-            self.verify_ts_folders(library_dir)
-            self.storage_path = library_dir / TS_FOLDER_NAME / self.FILENAME
-            is_new = not self.storage_path.exists()
+            self.storage_path = Path(storage_path) / self.FILENAME
+            if is_new := not self.storage_path.exists():
+                self.storage_path.touch()
 
         connection_string = URL.create(
             drivername="sqlite",
             database=str(self.storage_path),
         )
 
-        logger.info("opening library", library_dir=library_dir, connection_string=connection_string)
+        logger.info(
+            "opening library",
+            storage_path=storage_path,
+            connection_string=connection_string,
+            is_new=is_new,
+        )
+
         self.engine = create_engine(connection_string)
         with Session(self.engine) as session:
             make_tables(self.engine)
@@ -165,21 +170,6 @@ class Library:
             except IntegrityError:
                 # default tags may exist already
                 session.rollback()
-
-            # dont check db version when creating new library
-            if not is_new:
-                db_version = session.scalar(
-                    select(Preferences).where(Preferences.key == LibraryPrefs.DB_VERSION.name)
-                )
-
-                if not db_version:
-                    return LibraryStatus(
-                        success=False,
-                        message=(
-                            "Library version mismatch.\n"
-                            f"Found: v0, expected: v{LibraryPrefs.DB_VERSION.default}"
-                        ),
-                    )
 
             for pref in LibraryPrefs:
                 try:
@@ -205,25 +195,7 @@ class Library:
                     logger.debug("ValueType already exists", field=field)
                     session.rollback()
 
-            db_version = session.scalar(
-                select(Preferences).where(Preferences.key == LibraryPrefs.DB_VERSION.name)
-            )
-            # if the db version is different, we cant proceed
-            if db_version.value != LibraryPrefs.DB_VERSION.default:
-                logger.error(
-                    "DB version mismatch",
-                    db_version=db_version.value,
-                    expected=LibraryPrefs.DB_VERSION.default,
-                )
-                # TODO - handle migration
-                return LibraryStatus(
-                    success=False,
-                    message=(
-                        "Library version mismatch.\n"
-                        f"Found: v{db_version.value}, expected: v{LibraryPrefs.DB_VERSION.default}"
-                    ),
-                )
-
+            """
             # check if folder matching current path exists already
             self.folder = session.scalar(select(Folder).where(Folder.path == library_dir))
             if not self.folder:
@@ -236,10 +208,11 @@ class Library:
 
                 session.commit()
                 self.folder = folder
+            """
 
         # everything is fine, set the library path
-        self.library_dir = library_dir
-        return LibraryStatus(success=True, library_path=library_dir)
+        self.storage_path = storage_path
+        return LibraryStatus(success=True, storage_path=storage_path)
 
     @property
     def default_fields(self) -> list[BaseField]:
@@ -305,6 +278,34 @@ class Library:
             make_transient(entry)
             return entry
 
+    def add_folder(self, path: Path | str) -> Folder | None:
+        if isinstance(path, str):
+            path = Path(path)
+
+        logger.info("add_folder", path=path)
+
+        with Session(self.engine) as session:
+            folder = Folder(path=path, uuid=str(uuid4()))
+
+            try:
+                session.add(folder)
+                session.commit()
+            except IntegrityError:
+                session.rollback()
+                logger.exception("add_folder.IntegrityError")
+                return None
+
+            session.refresh(folder)
+            session.expunge(folder)
+            return folder
+
+    def get_folders(self) -> list[Folder]:
+        with Session(self.engine) as session:
+            folders = list(session.scalars(select(Folder)))
+            session.expunge_all()
+
+            return folders
+
     @property
     def entries_count(self) -> int:
         with Session(self.engine) as session:
@@ -320,6 +321,7 @@ class Library:
                     stmt.outerjoin(Entry.text_fields)
                     .outerjoin(Entry.datetime_fields)
                     .outerjoin(Entry.tag_box_fields)
+                    .outerjoin(Entry.folder)
                 )
                 stmt = stmt.options(
                     contains_eager(Entry.text_fields),
@@ -350,19 +352,6 @@ class Library:
 
         return list(tags_list)
 
-    def verify_ts_folders(self, library_dir: Path) -> None:
-        """Verify/create folders required by TagStudio."""
-        if library_dir is None:
-            raise ValueError("No path set.")
-
-        if not library_dir.exists():
-            raise ValueError("Invalid library directory.")
-
-        full_ts_path = library_dir / TS_FOLDER_NAME
-        if not full_ts_path.exists():
-            logger.info("creating library directory", dir=full_ts_path)
-            full_ts_path.mkdir(parents=True, exist_ok=True)
-
     def add_entries(self, items: list[Entry]) -> list[int]:
         """Add multiple Entry records to the Library."""
         assert items
@@ -375,10 +364,11 @@ class Library:
                 session.commit()
             except IntegrityError:
                 session.rollback()
-                logger.exception("IntegrityError")
+                logger.exception("add_entries.IntegrityError")
                 return []
 
             new_ids = [item.id for item in items]
+
             session.expunge_all()
 
         return new_ids
@@ -389,10 +379,10 @@ class Library:
             session.query(Entry).where(Entry.id.in_(entry_ids)).delete()
             session.commit()
 
-    def has_path_entry(self, path: Path) -> bool:
+    def get_path_entry(self, path: Path) -> Entry | None:
         """Check if item with given path is in library already."""
         with Session(self.engine) as session:
-            return session.query(exists().where(Entry.path == path)).scalar()
+            return session.scalar(select(Entry).where(Entry.path == path))
 
     def search_library(
         self,
@@ -448,7 +438,13 @@ class Library:
                 elif extensions:
                     statement = statement.where(Entry.suffix.in_(extensions))
 
+                if search.exclude_folders:
+                    statement = statement.where(Entry.folder_id.notin_(search.exclude_folders))
+                elif search.include_folders:
+                    statement = statement.where(Entry.folder_id.in_(search.include_folders))
+
             statement = statement.options(
+                selectinload(Entry.folder),
                 selectinload(Entry.text_fields),
                 selectinload(Entry.datetime_fields),
                 selectinload(Entry.tag_box_fields)
@@ -810,15 +806,15 @@ class Library:
                 return False
 
     def save_library_backup_to_disk(self) -> Path:
-        assert isinstance(self.library_dir, Path)
-        makedirs(str(self.library_dir / TS_FOLDER_NAME / BACKUP_FOLDER_NAME), exist_ok=True)
+        assert isinstance(self.storage_path, Path)
+        makedirs(str(self.storage_path / BACKUP_FOLDER_NAME), exist_ok=True)
 
         filename = f'ts_library_backup_{datetime.now(UTC).strftime("%Y_%m_%d_%H%M%S")}.sqlite'
 
-        target_path = self.library_dir / TS_FOLDER_NAME / BACKUP_FOLDER_NAME / filename
+        target_path = self.storage_path / BACKUP_FOLDER_NAME / filename
 
         shutil.copy2(
-            self.library_dir / TS_FOLDER_NAME / self.FILENAME,
+            self.storage_path / self.FILENAME,
             target_path,
         )
 

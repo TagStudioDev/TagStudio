@@ -1,20 +1,12 @@
-from pathlib import Path
 from unittest.mock import Mock
 
-from src.core.library import Entry
 from src.core.library.alchemy.enums import FilterState
 from src.core.library.json.library import ItemType
 from src.qt.widgets.item_thumb import ItemThumb
 
 
-def test_update_thumbs(qt_driver):
-    qt_driver.frame_content = [
-        Entry(
-            folder=qt_driver.lib.folder,
-            path=Path("/tmp/foo"),
-            fields=qt_driver.lib.default_fields,
-        )
-    ]
+def test_update_thumbs(qt_driver, entry_full):
+    qt_driver.frame_content = [entry_full]
 
     qt_driver.item_thumbs = []
     for i in range(3):
@@ -106,7 +98,7 @@ def test_close_library(qt_driver):
     qt_driver.close_library()
 
     # Then
-    assert qt_driver.lib.library_dir is None
+    assert qt_driver.lib.storage_path is None
     assert not qt_driver.frame_content
     assert not qt_driver.selected
     assert not any(x.mode for x in qt_driver.item_thumbs)

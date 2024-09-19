@@ -12,9 +12,9 @@ def test_sidecar_macro(qt_driver, library, cwd, entry_full):
     entry_full.path = Path("newgrounds/foo.txt")
 
     fixture = cwd / "fixtures/sidecar_newgrounds.json"
-    dst = library.library_dir / "newgrounds" / (entry_full.path.stem + ".json")
-    dst.parent.mkdir()
-    shutil.copy(fixture, dst)
+    entry_dir = entry_full.absolute_path.parent
+    entry_dir.mkdir()
+    shutil.copy(fixture, entry_dir / "foo.json")  # matches entry name + json
 
     qt_driver.frame_content = [entry_full]
     qt_driver.run_macro(MacroID.SIDECAR, 0)

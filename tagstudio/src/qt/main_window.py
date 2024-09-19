@@ -1,39 +1,33 @@
-# -*- coding: utf-8 -*-
-
-################################################################################
-# Form generated from reading UI file 'home.ui'
-##
-# Created by: Qt User Interface Compiler version 6.5.1
-##
-# WARNING! All changes made in this file will be lost when recompiling UI file!
-################################################################################
-
 # Copyright (C) 2024 Travis Abendshien (CyanVoxel).
 # Licensed under the GPL-3.0 License.
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
 
-import logging
 import typing
-from PySide6.QtCore import (QCoreApplication, QMetaObject, QRect,QSize, Qt)
+
+import structlog
+from PySide6.QtCore import (QCoreApplication, QMetaObject, QRect, QSize, Qt)
 from PySide6.QtGui import QFont
 from PySide6.QtWidgets import (QComboBox, QFrame, QGridLayout,
                                QHBoxLayout, QVBoxLayout, QLayout, QLineEdit, QMainWindow,
                                QPushButton, QScrollArea, QSizePolicy,
                                QStatusBar, QWidget, QSplitter, QCheckBox,
-                               QSpacerItem)
+                               QSpacerItem, QLabel)
+
+from src.qt.enums import WindowContent
 from src.qt.pagination import Pagination
 from src.qt.widgets.landing import LandingWidget
+from src.qt.widgets.library_nodirs import LibraryNoFolders
 
 # Only import for type checking/autocompletion, will not be imported at runtime.
 if typing.TYPE_CHECKING:
     from src.qt.ts_qt import QtDriver
 
-logging.basicConfig(format="%(message)s", level=logging.INFO)
+logger = structlog.get_logger(__name__)
 
 
 class Ui_MainWindow(QMainWindow):
-  
+
     def __init__(self, driver: "QtDriver", parent=None) -> None:
         super().__init__(parent)
         self.driver: "QtDriver" = driver
@@ -52,13 +46,12 @@ class Ui_MainWindow(QMainWindow):
         # # self.setStyleSheet(
         # # 	'background:#EE000000;'
         # # 	)
-        
 
     def setupUi(self, MainWindow):
         if not MainWindow.objectName():
             MainWindow.setObjectName(u"MainWindow")
         MainWindow.resize(1300, 720)
-        
+
         self.centralwidget = QWidget(MainWindow)
         self.centralwidget.setObjectName(u"centralwidget")
         self.gridLayout = QGridLayout(self.centralwidget)
@@ -69,7 +62,7 @@ class Ui_MainWindow(QMainWindow):
         # ComboBox group for search type and thumbnail size
         self.horizontalLayout_3 = QHBoxLayout()
         self.horizontalLayout_3.setObjectName("horizontalLayout_3")
-  
+
         # left side spacer
         spacerItem = QSpacerItem(40, 20, QSizePolicy.Expanding, QSizePolicy.Minimum)
         self.horizontalLayout_3.addItem(spacerItem)
@@ -81,7 +74,7 @@ class Ui_MainWindow(QMainWindow):
         self.comboBox_2.addItem("")
         self.comboBox_2.addItem("")
         self.horizontalLayout_3.addWidget(self.comboBox_2)
-  
+
         # Thumbnail Size placeholder
         self.thumb_size_combobox = QComboBox(self.centralwidget)
         self.thumb_size_combobox.setObjectName(u"thumbSizeComboBox")
@@ -120,9 +113,14 @@ class Ui_MainWindow(QMainWindow):
         self.gridLayout_2.setContentsMargins(0, 0, 0, 8)
         self.scrollArea.setWidget(self.scrollAreaWidgetContents)
         self.frame_layout.addWidget(self.scrollArea)
-        
+
         self.landing_widget: LandingWidget = LandingWidget(self.driver, self.devicePixelRatio())
         self.frame_layout.addWidget(self.landing_widget)
+
+        # shown in case library has no folder
+        # widget with a label and a button to create a folder
+        self.lib_nofolders = LibraryNoFolders()
+        self.frame_layout.addWidget(self.lib_nofolders)
 
         self.pagination = Pagination()
         self.frame_layout.addWidget(self.pagination)
@@ -192,6 +190,7 @@ class Ui_MainWindow(QMainWindow):
         self.retranslateUi(MainWindow)
 
         QMetaObject.connectSlotsByName(MainWindow)
+
     # setupUi
 
     def retranslateUi(self, MainWindow):
@@ -202,13 +201,13 @@ class Ui_MainWindow(QMainWindow):
             QCoreApplication.translate("MainWindow", u"<", None))
         self.forwardButton.setText(
             QCoreApplication.translate("MainWindow", u">", None))
-  
+
         # Search field
         self.searchField.setPlaceholderText(
             QCoreApplication.translate("MainWindow", u"Search Entries", None))
         self.searchButton.setText(
             QCoreApplication.translate("MainWindow", u"Search", None))
-  
+
         # Search type selector
         self.comboBox_2.setItemText(0, QCoreApplication.translate("MainWindow", "And (Includes All Tags)"))
         self.comboBox_2.setItemText(1, QCoreApplication.translate("MainWindow", "Or (Includes Any Tag)"))
@@ -217,6 +216,7 @@ class Ui_MainWindow(QMainWindow):
         # Thumbnail size selector
         self.thumb_size_combobox.setPlaceholderText(
             QCoreApplication.translate("MainWindow", u"Thumbnail Size", None))
+
     # retranslateUi
 
     def moveEvent(self, event) -> None:
@@ -227,13 +227,19 @@ class Ui_MainWindow(QMainWindow):
         # time.sleep(0.02)  # sleep for 20ms
         pass
 
-    def toggle_landing_page(self, enabled: bool):
-        if enabled:
+    def set_main_content(self, content: WindowContent):
+        logger.info("set_main_content", content=content)
+        if content == WindowContent.LANDING_PAGE:
             self.scrollArea.setHidden(True)
             self.landing_widget.setHidden(False)
             self.landing_widget.animate_logo_in()
-        else:
+            self.lib_nofolders.setHidden(True)
+        elif content == WindowContent.LIBRARY_EMPTY:
+            self.scrollArea.setHidden(True)
+            self.landing_widget.setHidden(True)
+            self.lib_nofolders.setHidden(False)
+        elif content == WindowContent.LIBRARY_CONTENT:
             self.landing_widget.setHidden(True)
             self.landing_widget.set_status_label("")
             self.scrollArea.setHidden(False)
-            
+            self.lib_nofolders.setHidden(True)

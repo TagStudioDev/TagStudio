@@ -14,7 +14,8 @@ def test_refresh_missing_files(library: Library):
     registry = MissingRegistry(library=library)
 
     # touch the file `one/two/bar.md` but in wrong location to simulate a moved file
-    (library.library_dir / "bar.md").touch()
+    folder = library.get_folders()[0]
+    (folder.path / "bar.md").touch()
 
     # no files actually exist, so it should return all entries
     assert list(registry.refresh_missing_files()) == [0, 1]

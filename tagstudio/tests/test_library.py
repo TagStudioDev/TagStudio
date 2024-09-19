@@ -14,15 +14,15 @@ def test_library_add_file(library):
 
     entry = Entry(
         path=Path("bar.txt"),
-        folder=library.folder,
+        folder=library.get_folders()[0],
         fields=library.default_fields,
     )
 
-    assert not library.has_path_entry(entry.path)
+    assert not library.get_path_entry(entry.path)
 
     assert library.add_entries([entry])
 
-    assert library.has_path_entry(entry.path)
+    assert library.get_path_entry(entry.path) is not None
 
 
 def test_create_tag(library, generate_tag):
@@ -85,7 +85,15 @@ def test_get_entry(library, entry_min):
 
 
 def test_entries_count(library):
-    entries = [Entry(path=Path(f"{x}.txt"), folder=library.folder, fields=[]) for x in range(10)]
+    folder = library.get_folders()[0]
+    entries = [
+        Entry(
+            path=Path(f"{x}.txt"),
+            folder=folder,
+            fields=[],
+        )
+        for x in range(10)
+    ]
     new_ids = library.add_entries(entries)
     assert len(new_ids) == 10
 
@@ -102,7 +110,7 @@ def test_entries_count(library):
 def test_add_field_to_entry(library):
     # Given
     entry = Entry(
-        folder=library.folder,
+        folder=library.get_folders()[0],
         path=Path("xxx"),
         fields=library.default_fields,
     )
@@ -205,7 +213,7 @@ def test_save_windows_path(library, generate_tag):
 
     entry = Entry(
         path=PureWindowsPath("foo\\bar.txt"),
-        folder=library.folder,
+        folder=library.get_folders()[0],
         fields=library.default_fields,
     )
     tag = generate_tag("win_path")
@@ -283,7 +291,7 @@ def test_update_entry_with_multiple_identical_fields(library, entry_full):
 
 def test_mirror_entry_fields(library, entry_full):
     target_entry = Entry(
-        folder=library.folder,
+        folder=library.get_folders()[0],
         path=Path("xxx"),
         fields=[
             TextField(

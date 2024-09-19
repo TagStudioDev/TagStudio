@@ -7,7 +7,6 @@
 import json
 from pathlib import Path
 
-from src.core.constants import TS_FOLDER_NAME
 from src.core.library import Entry, Library
 from src.core.library.alchemy.fields import _FieldID
 from src.core.utils.missing_files import logger
@@ -97,7 +96,7 @@ class TagStudioCore:
         """Match defined conditions against a file to add Entry data."""
         # TODO - what even is this file format?
         # TODO: Make this stored somewhere better instead of temporarily in this JSON file.
-        cond_file = lib.library_dir / TS_FOLDER_NAME / "conditions.json"
+        cond_file = lib.storage_path / "conditions.json"
         if not cond_file.is_file():
             return False
 

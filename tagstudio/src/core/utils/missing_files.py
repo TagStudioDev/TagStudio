@@ -29,21 +29,23 @@ class MissingRegistry:
         logger.info("refresh_missing_files running")
         self.missing_files = []
         for i, entry in enumerate(self.library.get_entries()):
-            full_path = self.library.library_dir / entry.path
+            full_path = entry.absolute_path
             if not full_path.exists() or not full_path.is_file():
                 self.missing_files.append(entry)
             yield i
 
     def match_missing_file(self, match_item: Entry) -> list[Path]:
-        """Try to find missing entry files within the library directory.
+        """Try to find missing entry files within the library directories.
 
         Works if files were just moved to different subfolders and don't have duplicate names.
         """
         matches = []
-        for item in self.library.library_dir.glob(f"**/{match_item.path.name}"):
-            if item.name == match_item.path.name:  # TODO - implement IGNORE_ITEMS
-                new_path = Path(item).relative_to(self.library.library_dir)
-                matches.append(new_path)
+        folders = self.library.get_folders()
+        for folder in folders:
+            for item in folder.path.glob(f"**/{match_item.path.name}"):
+                if item.name == match_item.path.name:  # TODO - implement IGNORE_ITEMS
+                    new_path = Path(item).relative_to(folder.path)
+                    matches.append(new_path)
 
         return matches
 

@@ -1,5 +1,5 @@
 import enum
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 
 
@@ -50,10 +50,11 @@ class SearchMode(enum.IntEnum):
     OR = 1
 
 
-class ItemType(enum.Enum):
-    ENTRY = 0
-    COLLATION = 1
-    TAG_GROUP = 2
+class ItemType(enum.IntEnum):
+    NONE = 0
+    ENTRY = 1
+    COLLATION = 2
+    TAG_GROUP = 3
 
 
 @dataclass
@@ -61,6 +62,8 @@ class FilterState:
     """Represent a state of the Library grid view."""
 
     # these should remain
+    include_folders: set[int] = field(default_factory=set)
+    exclude_folders: set[int] = field(default_factory=set)
     page_index: int | None = None
     page_size: int | None = None
     search_mode: SearchMode = SearchMode.AND  # TODO - actually implement this
@@ -80,6 +83,13 @@ class FilterState:
 
     # a generic query to be parsed
     query: str | None = None
+
+    def toggle_folder(self, folder_id: int):
+        # check if any filter is active and adjust that one, as they are disjunctive
+        if self.include_folders:
+            self.include_folders ^= {folder_id}
+        else:
+            self.exclude_folders ^= {folder_id}
 
     def __post_init__(self):
         # strip values automatically
@@ -108,6 +118,9 @@ class FilterState:
             self.path = self.path and str(self.path).strip()
             self.name = self.name and self.name.strip()
             self.id = int(self.id) if str(self.id).isnumeric() else self.id
+
+        if self.include_folders and self.exclude_folders:
+            raise ValueError("Can't combine include_folders and exclude_folders.")
 
         if self.page_index is None:
             self.page_index = 0

@@ -4,7 +4,6 @@
 
 import io
 import os
-import platform
 import sys
 import time
 import typing
@@ -32,9 +31,6 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
-from src.core.constants import (
-    TS_FOLDER_NAME,
-)
 from src.core.enums import SettingItems, Theme
 from src.core.library.alchemy.enums import FilterState
 from src.core.library.alchemy.fields import (
@@ -54,6 +50,7 @@ from src.qt.helpers.rounded_pixmap_style import RoundedPixmapStyle
 from src.qt.modals.add_field import AddFieldModal
 from src.qt.platform_strings import PlatformStrings
 from src.qt.widgets.fields import FieldContainer
+from src.qt.widgets.library_dirs import LibraryDirsWidget
 from src.qt.widgets.panel import PanelModal
 from src.qt.widgets.tag_box import TagBoxWidget
 from src.qt.widgets.text import TextWidget
@@ -237,6 +234,8 @@ class PreviewPanel(QWidget):
         info_layout.addWidget(self.dimensions_label)
         info_layout.addWidget(scroll_area)
 
+        self.lib_dirs_container = LibraryDirsWidget(library, driver)
+
         # keep list of rendered libraries to avoid needless re-rendering
         self.render_libs: set = set()
         self.libs_layout = QVBoxLayout()
@@ -246,13 +245,13 @@ class PreviewPanel(QWidget):
         self.libs_flow_container.setObjectName("librariesList")
         self.libs_flow_container.setLayout(self.libs_layout)
         self.libs_flow_container.setSizePolicy(
-            QSizePolicy.Preferred,  # type: ignore
-            QSizePolicy.Maximum,  # type: ignore
+            QSizePolicy.Policy.Preferred,
+            QSizePolicy.Policy.Maximum,
         )
 
         # set initial visibility based on settings
         if not self.driver.settings.value(
-            SettingItems.WINDOW_SHOW_LIBS, defaultValue=True, type=bool
+            SettingItems.WINDOW_SHOW_LIBS, defaultValue=False, type=bool
         ):
             self.libs_flow_container.hide()
 
@@ -270,6 +269,7 @@ class PreviewPanel(QWidget):
 
         splitter.addWidget(self.image_container)
         splitter.addWidget(info_section)
+        splitter.addWidget(self.lib_dirs_container)
         splitter.addWidget(self.libs_flow_container)
         splitter.setStretchFactor(1, 2)
 
@@ -368,7 +368,7 @@ class PreviewPanel(QWidget):
             button.setObjectName(f"path{item_key}")
 
             lib = Path(full_val)
-            if not lib.exists() or not (lib / TS_FOLDER_NAME).exists():
+            if not lib.exists():
                 button.setDisabled(True)
                 button.setToolTip("Location is missing")
 
@@ -476,12 +476,12 @@ class PreviewPanel(QWidget):
     def update_date_label(self, filepath: Path | None = None) -> None:
         """Update the "Date Created" and "Date Modified" file property labels."""
         if filepath and filepath.is_file():
-            created: dt = None
-            if platform.system() == "Windows" or platform.system() == "Darwin":
-                created = dt.fromtimestamp(filepath.stat().st_birthtime)  # type: ignore[attr-defined]
+            file_stats = filepath.stat()
+            if st_birthtime := getattr(file_stats, "st_birthtime", None):
+                created = dt.fromtimestamp(st_birthtime)
             else:
-                created = dt.fromtimestamp(filepath.stat().st_ctime)
-            modified: dt = dt.fromtimestamp(filepath.stat().st_mtime)
+                created = dt.fromtimestamp(file_stats.st_ctime)
+            modified: dt = dt.fromtimestamp(file_stats.st_mtime)
             self.date_created_label.setText(
                 f"<b>Date Created:</b> {dt.strftime(created, "%a, %x, %X")}"
             )
@@ -508,6 +508,8 @@ class PreviewPanel(QWidget):
 
         # update list of libraries
         self.fill_libs_widget(self.libs_layout)
+
+        self.lib_dirs_container.refresh()
 
         if not self.driver.selected:
             if self.selected or not self.initialized:
@@ -572,7 +574,7 @@ class PreviewPanel(QWidget):
 
             # If a new selection is made, update the thumbnail and filepath.
             if not self.selected or self.selected != self.driver.selected:
-                filepath = self.lib.library_dir / item.path
+                filepath = item.absolute_path
                 self.file_label.set_file_path(filepath)
                 ratio = self.devicePixelRatio()
                 self.thumb_renderer.render(

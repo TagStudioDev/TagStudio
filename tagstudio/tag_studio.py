@@ -63,7 +63,7 @@ def main():
     # Run the chosen frontend driver.
     try:
         driver.start()
-    except Exception:
+    except BaseException:
         traceback.print_exc()
         logging.info(f"\nTagStudio Frontend ({ui_name}) Crashed! Press Enter to Continue...")
         input()

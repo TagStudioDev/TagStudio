@@ -34,7 +34,7 @@ def test_update_widgets_multiple_selected(qt_driver, library):
     # entry with no tag fields
     entry = Entry(
         path=Path("test.txt"),
-        folder=library.folder,
+        folder=library.get_folders()[0],
         fields=[TextField(type_key=_FieldID.TITLE.name, position=0)],
     )
 

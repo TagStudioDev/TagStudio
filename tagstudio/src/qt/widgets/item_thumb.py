@@ -295,8 +295,8 @@ class ItemThumb(FlowWidget):
     def is_archived(self):
         return self.badge_active[BadgeType.ARCHIVED]
 
-    def set_mode(self, mode: ItemType | None) -> None:
-        if mode is None:
+    def set_mode(self, mode: ItemType) -> None:
+        if mode == ItemType.NONE:
             self.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents, on=True)
             self.unsetCursor()
             self.thumb_button.setHidden(True)
@@ -401,14 +401,13 @@ class ItemThumb(FlowWidget):
         self.assign_badge(BadgeType.FAVORITE, entry.is_favorited)
 
     def set_item_id(self, entry: Entry):
-        filepath = self.lib.library_dir / entry.path
-        self.opener.set_filepath(filepath)
+        self.opener.set_filepath(entry.absolute_path)
         self.item_id = entry.id
 
     def assign_badge(self, badge_type: BadgeType, value: bool) -> None:
         mode = self.mode
-        # blank mode to avoid recursive badge updates
-        self.mode = None
+        # none mode to avoid recursive badge updates
+        self.mode = ItemType.NONE
         badge = self.badges[badge_type]
         self.badge_active[badge_type] = value
         if badge.isChecked() != value:
@@ -433,7 +432,7 @@ class ItemThumb(FlowWidget):
 
     @badge_update_lock
     def on_badge_check(self, badge_type: BadgeType):
-        if self.mode is None:
+        if self.mode == ItemType.NONE:
             return
 
         toggle_value = self.badges[badge_type].isChecked()

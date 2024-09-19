@@ -108,7 +108,7 @@ class FixDupeFilesModal(QWidget):
         self.set_dupe_count(-1)
 
     def select_file(self):
-        qfd = QFileDialog(self, "Open DupeGuru Results File", str(self.lib.library_dir))
+        qfd = QFileDialog(self, "Open DupeGuru Results File", str(self.lib.storage_path))
         qfd.setFileMode(QFileDialog.FileMode.ExistingFile)
         qfd.setNameFilter("DupeGuru Files (*.dupeguru)")
         if qfd.exec_():

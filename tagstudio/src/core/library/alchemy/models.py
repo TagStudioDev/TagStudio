@@ -117,7 +117,7 @@ class Entry(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
 
     folder_id: Mapped[int] = mapped_column(ForeignKey("folders.id"))
-    folder: Mapped[Folder] = relationship("Folder")
+    folder: Mapped[Folder] = relationship("Folder", lazy=False)
 
     path: Mapped[Path] = mapped_column(PathType, unique=True)
     suffix: Mapped[str] = mapped_column()
@@ -134,6 +134,10 @@ class Entry(Base):
         back_populates="entry",
         cascade="all, delete",
     )
+
+    @property
+    def absolute_path(self) -> Path:
+        return self.folder.path / self.path
 
     @property
     def fields(self) -> list[BaseField]:

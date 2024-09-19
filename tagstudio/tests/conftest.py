@@ -24,15 +24,15 @@ def cwd():
 @pytest.fixture
 def library(request):
     # when no param is passed, use the default
-    library_path = "/dev/null/"
+    folder_path = "/dev/null/"
     if hasattr(request, "param"):
         if isinstance(request.param, TemporaryDirectory):
-            library_path = request.param.name
+            folder_path = request.param.name
         else:
-            library_path = request.param
+            folder_path = request.param
 
     lib = Library()
-    status = lib.open_library(pathlib.Path(library_path), ":memory:")
+    status = lib.open_library(":memory:", folder_path)
     assert status.success
 
     tag = Tag(
@@ -52,9 +52,11 @@ def library(request):
         subtags={subtag},
     )
 
+    folder = lib.add_folder(folder_path)
+
     # default item with deterministic name
     entry = Entry(
-        folder=lib.folder,
+        folder=folder,
         path=pathlib.Path("foo.txt"),
         fields=lib.default_fields,
     )
@@ -68,7 +70,7 @@ def library(request):
     ]
 
     entry2 = Entry(
-        folder=lib.folder,
+        folder=folder,
         path=pathlib.Path("one/two/bar.md"),
         fields=lib.default_fields,
     )

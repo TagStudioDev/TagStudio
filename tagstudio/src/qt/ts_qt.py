@@ -59,6 +59,7 @@ from PySide6.QtWidgets import (
 from src.core.constants import (
     TAG_ARCHIVED,
     TAG_FAVORITE,
+    TS_FOLDER_NOINDEX,
     VERSION,
     VERSION_BRANCH,
 )
@@ -72,9 +73,11 @@ from src.core.library.alchemy.enums import (
 )
 from src.core.library.alchemy.fields import _FieldID
 from src.core.library.alchemy.library import LibraryStatus
+from src.core.library.alchemy.models import Folder
 from src.core.ts_core import TagStudioCore
 from src.core.utils.refresh_dir import RefreshDirTracker
 from src.core.utils.web import strip_web_protocol
+from src.qt.enums import WindowContent
 from src.qt.flowlayout import FlowLayout
 from src.qt.helpers.custom_runnable import CustomRunnable
 from src.qt.helpers.function_iterator import FunctionIterator
@@ -84,9 +87,11 @@ from src.qt.modals.file_extension import FileExtensionModal
 from src.qt.modals.fix_dupes import FixDupeFilesModal
 from src.qt.modals.fix_unlinked import FixUnlinkedEntriesModal
 from src.qt.modals.folders_to_tags import FoldersToTagsModal
+from src.qt.modals.library_name import LibraryNameDialog
 from src.qt.modals.tag_database import TagDatabasePanel
 from src.qt.resource_manager import ResourceManager
 from src.qt.widgets.item_thumb import BadgeType, ItemThumb
+from src.qt.widgets.landing import KBShortcut, get_kb_shortcut
 from src.qt.widgets.panel import PanelModal
 from src.qt.widgets.preview_panel import PreviewPanel
 from src.qt.widgets.progress import ProgressWidget
@@ -184,14 +189,23 @@ class QtDriver(DriverMixin, QObject):
                 self.thumb_threads.append(thread)
                 thread.start()
 
+    def create_library_from_dialog(self):
+        newlib_window = LibraryNameDialog()
+        if newlib_window.exec():
+            storage_dir = newlib_window.get_storage_path()
+            self.create_library(storage_dir, newlib_window.get_library_name())
+
     def open_library_from_dialog(self):
+        user_home = str(Path.home())
+
         dir = QFileDialog.getExistingDirectory(
             None,
-            "Open/Create Library",
-            "/",
+            "Open Library",
+            user_home,
             QFileDialog.Option.ShowDirsOnly,
         )
-        if dir not in (None, ""):
+
+        if dir:
             self.open_library(Path(dir))
 
     def signal_handler(self, sig, frame):
@@ -274,15 +288,26 @@ class QtDriver(DriverMixin, QObject):
         # file_menu.addAction(QAction('&New Library', menu_bar))
         # file_menu.addAction(QAction('&Open Library', menu_bar))
 
-        open_library_action = QAction("&Open/Create Library", menu_bar)
-        open_library_action.triggered.connect(lambda: self.open_library_from_dialog())
+        create_library_action = QAction("&New Library", menu_bar)
+        create_library_action.triggered.connect(self.create_library_from_dialog)
+        create_library_action.setShortcut(
+            QtCore.QKeyCombination(
+                QtCore.Qt.KeyboardModifier(QtCore.Qt.KeyboardModifier.ControlModifier),
+                QtCore.Qt.Key.Key_N,
+            )
+        )
+        create_library_action.setToolTip(get_kb_shortcut(KBShortcut.CREATE_LIB))
+        file_menu.addAction(create_library_action)
+
+        open_library_action = QAction("&Open Library", menu_bar)
+        open_library_action.triggered.connect(self.open_library_from_dialog)
         open_library_action.setShortcut(
             QtCore.QKeyCombination(
                 QtCore.Qt.KeyboardModifier(QtCore.Qt.KeyboardModifier.ControlModifier),
                 QtCore.Qt.Key.Key_O,
             )
         )
-        open_library_action.setToolTip("Ctrl+O")
+        open_library_action.setToolTip(get_kb_shortcut(KBShortcut.OPEN_LIB))
         file_menu.addAction(open_library_action)
 
         save_library_backup_action = QAction("&Save Library Backup", menu_bar)
@@ -408,10 +433,23 @@ class QtDriver(DriverMixin, QObject):
         )
         macros_menu.addAction(self.autofill_action)
 
+        show_folders = QAction("Show Library Dirs", menu_bar)
+        show_folders.setCheckable(True)
+        show_folders.setChecked(
+            bool(self.settings.value(SettingItems.WINDOW_SHOW_DIRS, defaultValue=True, type=bool))
+        )
+        show_folders.triggered.connect(
+            lambda checked: (
+                self.settings.setValue(SettingItems.WINDOW_SHOW_DIRS, checked),
+                self.toggle_lib_dirs(checked),
+            )
+        )
+        window_menu.addAction(show_folders)
+
         show_libs_list_action = QAction("Show Recent Libraries", menu_bar)
         show_libs_list_action.setCheckable(True)
         show_libs_list_action.setChecked(
-            bool(self.settings.value(SettingItems.WINDOW_SHOW_LIBS, defaultValue=True, type=bool))
+            bool(self.settings.value(SettingItems.WINDOW_SHOW_LIBS, defaultValue=False, type=bool))
         )
         show_libs_list_action.triggered.connect(
             lambda checked: (
@@ -467,13 +505,13 @@ class QtDriver(DriverMixin, QObject):
 
         path_result = self.evaluate_path(self.args.open)
         # check status of library path evaluating
-        if path_result.success and path_result.library_path:
+        if path_result.success and path_result.storage_path:
             self.splash.showMessage(
-                f'Opening Library "{path_result.library_path}"...',
+                f'Opening Library "{path_result.storage_path}"...',
                 int(Qt.AlignmentFlag.AlignBottom | Qt.AlignmentFlag.AlignHCenter),
                 QColor("#9782ff"),
             )
-            self.open_library(path_result.library_path)
+            self.open_library(path_result.storage_path)
 
         app.exec()
         self.shutdown()
@@ -536,12 +574,19 @@ class QtDriver(DriverMixin, QObject):
         # or implementing some clever loading tricks.
         self.main_window.show()
         self.main_window.activateWindow()
-        self.main_window.toggle_landing_page(enabled=True)
+        self.main_window.set_main_content(WindowContent.LANDING_PAGE)
 
         self.main_window.pagination.index.connect(lambda i: self.page_move(page_id=i))
 
         self.splash.finish(self.main_window)
         self.preview_panel.update_widgets()
+
+    def toggle_lib_dirs(self, value: bool):
+        if value:
+            self.preview_panel.lib_dirs_container.show()
+        else:
+            self.preview_panel.lib_dirs_container.hide()
+        self.preview_panel.update()
 
     def toggle_libs_list(self, value: bool):
         if value:
@@ -552,7 +597,7 @@ class QtDriver(DriverMixin, QObject):
 
     def callback_library_needed_check(self, func):
         """Check if loaded library has valid path before executing the button function."""
-        if self.lib.library_dir:
+        if self.lib.storage_path:
             func()
 
     def handle_sigterm(self):
@@ -573,7 +618,7 @@ class QtDriver(DriverMixin, QObject):
         QApplication.quit()
 
     def close_library(self, is_shutdown: bool = False):
-        if not self.lib.library_dir:
+        if not self.lib.storage_path:
             logger.info("No Library to Close")
             return
 
@@ -581,7 +626,7 @@ class QtDriver(DriverMixin, QObject):
         self.main_window.statusbar.showMessage("Closing Library...")
         start_time = time.time()
 
-        self.settings.setValue(SettingItems.LAST_LIBRARY, str(self.lib.library_dir))
+        self.settings.setValue(SettingItems.LAST_LIBRARY, str(self.lib.storage_path))
         self.settings.sync()
 
         self.lib.close()
@@ -594,10 +639,11 @@ class QtDriver(DriverMixin, QObject):
 
         self.selected = []
         self.frame_content = []
-        [x.set_mode(None) for x in self.item_thumbs]
+        for thumb in self.item_thumbs:
+            thumb.set_mode(ItemType.NONE)
 
         self.preview_panel.update_widgets()
-        self.main_window.toggle_landing_page(enabled=True)
+        self.main_window.set_main_content(WindowContent.LANDING_PAGE)
 
         self.main_window.pagination.setHidden(True)
 
@@ -668,7 +714,7 @@ class QtDriver(DriverMixin, QObject):
         self.modal.saved.connect(lambda: (panel.save(), self.filter_items()))
         self.modal.show()
 
-    def add_new_files_callback(self):
+    def add_new_files_callback(self, folders: list[Folder] | None = None):
         """Run when user initiates adding new files to the Library."""
         tracker = RefreshDirTracker(self.lib)
 
@@ -681,7 +727,10 @@ class QtDriver(DriverMixin, QObject):
         )
         pw.show()
 
-        iterator = FunctionIterator(lambda: tracker.refresh_dir(self.lib.library_dir))
+        if not folders:
+            folders = self.lib.get_folders()
+
+        iterator = FunctionIterator(lambda: tracker.refresh_dirs(folders))
         iterator.value.connect(
             lambda x: (
                 pw.update_progress(x + 1),
@@ -780,7 +829,6 @@ class QtDriver(DriverMixin, QObject):
     def run_macro(self, name: MacroID, grid_idx: int):
         """Run a specific Macro on an Entry given a Macro name."""
         entry = self.frame_content[grid_idx]
-        ful_path = self.lib.library_dir / entry.path
         source = entry.path.parts[0]
 
         logger.info(
@@ -798,7 +846,7 @@ class QtDriver(DriverMixin, QObject):
                 self.run_macro(macro_id, entry.id)
 
         elif name == MacroID.SIDECAR:
-            parsed_items = TagStudioCore.get_gdl_sidecar(ful_path, source)
+            parsed_items = TagStudioCore.get_gdl_sidecar(entry.absolute_path, source)
             for field_id, value in parsed_items.items():
                 self.lib.add_entry_field_type(
                     entry.id,
@@ -890,7 +938,7 @@ class QtDriver(DriverMixin, QObject):
         # TODO - init after library is loaded, it can have different page_size
         for grid_idx in range(self.filter.page_size):
             item_thumb = ItemThumb(
-                None, self.lib, self, (self.thumb_size, self.thumb_size), grid_idx
+                ItemType.NONE, self.lib, self, (self.thumb_size, self.thumb_size), grid_idx
             )
             layout.addWidget(item_thumb)
             self.item_thumbs.append(item_thumb)
@@ -975,7 +1023,6 @@ class QtDriver(DriverMixin, QObject):
                 item_thumb.hide()
                 continue
 
-            filepath = self.lib.library_dir / entry.path
             item_thumb = self.item_thumbs[idx]
             item_thumb.set_mode(ItemType.ENTRY)
             item_thumb.set_item_id(entry)
@@ -1015,7 +1062,7 @@ class QtDriver(DriverMixin, QObject):
             self.thumb_job_queue.put(
                 (
                     item_thumb.renderer.render,
-                    (time.time(), filepath, base_size, ratio, False, True),
+                    (time.time(), entry.absolute_path, base_size, ratio, False, True),
                 )
             )
 
@@ -1108,14 +1155,29 @@ class QtDriver(DriverMixin, QObject):
         self.settings.endGroup()
         self.settings.sync()
 
-    def open_library(self, path: Path) -> LibraryStatus:
+    def create_library(self, storage_dir: Path, library_name: str) -> LibraryStatus:
+        """Verify/create folders required by TagStudio."""
+        if storage_dir is None:
+            raise ValueError("No path set.")
+
+        if not storage_dir.exists():
+            storage_dir.mkdir()
+            (storage_dir / TS_FOLDER_NOINDEX).touch()
+
+        lib_status = self.open_library(storage_dir)
+        if lib_status.success:
+            self.lib.set_prefs(LibraryPrefs.LIBRARY_NAME, library_name)
+
+        return lib_status
+
+    def open_library(self, storage_path: Path | str) -> LibraryStatus:
         """Open a TagStudio library."""
-        open_message: str = f'Opening Library "{str(path)}"...'
+        open_message: str = f'Opening Library "{str(storage_path)}"...'
         self.main_window.landing_widget.set_status_label(open_message)
         self.main_window.statusbar.showMessage(open_message, 3)
         self.main_window.repaint()
 
-        open_status = self.lib.open_library(path)
+        open_status = self.lib.open_library(storage_path)
         if not open_status.success:
             self.show_error_message(open_status.message or "Error opening library.")
             return open_status
@@ -1124,18 +1186,22 @@ class QtDriver(DriverMixin, QObject):
 
         self.filter.page_size = self.lib.prefs(LibraryPrefs.PAGE_SIZE)
 
-        # TODO - make this call optional
-        self.add_new_files_callback()
-
-        self.update_libs_list(path)
-        title_text = f"{self.base_title} - Library '{self.lib.library_dir}'"
+        self.update_libs_list(storage_path)
+        title_text = f"{self.base_title} - Library '{self.lib.prefs(LibraryPrefs.LIBRARY_NAME)}'"
         self.main_window.setWindowTitle(title_text)
 
         self.selected.clear()
         self.preview_panel.update_widgets()
 
+        # TODO - make this call optional
+        # self.add_new_files_callback()
+
         # page (re)rendering, extract eventually
         self.filter_items()
 
-        self.main_window.toggle_landing_page(enabled=False)
+        if not self.lib.get_folders():
+            self.main_window.set_main_content(WindowContent.LIBRARY_EMPTY)
+        else:
+            self.main_window.set_main_content(WindowContent.LIBRARY_CONTENT)
+
         return open_status

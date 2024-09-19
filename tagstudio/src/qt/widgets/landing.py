@@ -3,11 +3,12 @@
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
 
-import logging
 import sys
 import typing
+from enum import IntEnum
 from pathlib import Path
 
+import structlog
 from PIL import Image, ImageQt
 from PySide6.QtCore import QEasingCurve, QPoint, QPropertyAnimation, Qt
 from PySide6.QtGui import QPixmap
@@ -19,7 +20,27 @@ from src.qt.widgets.clickable_label import ClickableLabel
 if typing.TYPE_CHECKING:
     from src.qt.ts_qt import QtDriver
 
-logging.basicConfig(format="%(message)s", level=logging.INFO)
+logger = structlog.get_logger(__name__)
+
+
+class KBShortcut(IntEnum):
+    OPEN_LIB = 0
+    CREATE_LIB = 1
+
+
+def get_kb_shortcut(shortcut: KBShortcut) -> str:
+    match (shortcut, sys.platform):
+        case (KBShortcut.OPEN_LIB, "darwin"):
+            return "(⌘+O)"
+        case (KBShortcut.OPEN_LIB, _):
+            return "(Ctrl+O)"
+        case (KBShortcut.CREATE_LIB, "darwin"):
+            return "(⌘+N)"
+        case (KBShortcut.CREATE_LIB, _):
+            return "(Ctrl+N)"
+
+    logger.error("unknown keyboard shortcut", platform=sys.platform, shortcut=shortcut)
+    return ""
 
 
 class LandingWidget(QWidget):
@@ -55,14 +76,14 @@ class LandingWidget(QWidget):
         self.logo_special_anim.setEasingCurve(QEasingCurve.Type.OutCubic)
         self.logo_special_anim.setDuration(500)
 
-        # Create "Open/Create Library" button ----------------------------------
-        if sys.platform == "darwin":
-            open_shortcut_text = "(⌘+O)"
-        else:
-            open_shortcut_text = "(Ctrl+O)"
+        self.create_button: QPushButton = QPushButton()
+        self.create_button.setMinimumWidth(200)
+        self.create_button.setText(f"Create Library {get_kb_shortcut(KBShortcut.CREATE_LIB)}")
+        self.create_button.clicked.connect(self.driver.create_library_from_dialog)
+
         self.open_button: QPushButton = QPushButton()
         self.open_button.setMinimumWidth(200)
-        self.open_button.setText(f"Open/Create Library {open_shortcut_text}")
+        self.open_button.setText(f"Open Library {get_kb_shortcut(KBShortcut.OPEN_LIB)}")
         self.open_button.clicked.connect(self.driver.open_library_from_dialog)
 
         # Create status label --------------------------------------------------
@@ -78,6 +99,7 @@ class LandingWidget(QWidget):
 
         # Add widgets to layout ------------------------------------------------
         self.landing_layout.addWidget(self.logo_label)
+        self.landing_layout.addWidget(self.create_button, alignment=Qt.AlignmentFlag.AlignCenter)
         self.landing_layout.addWidget(self.open_button, alignment=Qt.AlignmentFlag.AlignCenter)
         self.landing_layout.addWidget(self.status_label, alignment=Qt.AlignmentFlag.AlignCenter)
 
