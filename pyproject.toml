@@ -38,6 +38,7 @@ disable_error_code = ["func-returns-value", "import-untyped"]
 explicit_package_bases = true
 warn_unused_ignores = true
 check_untyped_defs = true
+mypy_path = ["tagstudio"]
 
 [[tool.mypy.overrides]]
 module = "tests.*"
