@@ -55,6 +55,14 @@ class _ProxyStyle(QProxyStyle):
 
 
 class BaseLineEdit(QLineEdit):
+    """Initialize a custom Line Edit widget with animated color changes.
+
+    This class extends QLineEdit and initializes animation handlers for changing the
+    background color, font color, and corner radius of the widget. It provides methods
+    to set corner radius, font alpha, and update colors based on the widget's state.
+    The widget triggers repaints efficiently by using a QTimer.
+    """
+
     def __init__(self, parent: QWidget) -> None:
         super().__init__(parent=parent)
 
