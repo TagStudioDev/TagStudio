@@ -132,9 +132,9 @@ def update_palette() -> None:
     true_values = ("1", "yes", "true", "on")
     false_values = ("0", "no", "false", "off")
 
-    if dark_mode_value.lower() in ("1", "yes", "true", "on"):
+    if dark_mode_value.lower() in true_values:
         dark_mode = True
-    elif dark_mode_value.lower() in ("0", "no", "false", "off"):
+    elif dark_mode_value.lower() in false_values:
         dark_mode = False
     elif dark_mode_value == "-1":
         dark_mode = -1
