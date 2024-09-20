@@ -79,6 +79,7 @@ class BuildTagPanel(PanelWidget):
         self.aliases_field = QTextEdit()
         self.aliases_field.setAcceptRichText(False)
         self.aliases_field.setMinimumHeight(40)
+        self.aliases_field.setTabChangesFocus(True)
         self.aliases_layout.addWidget(self.aliases_field)
 
         # Subtags ------------------------------------------------------------
