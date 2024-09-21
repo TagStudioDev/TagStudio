@@ -112,7 +112,7 @@ class TagBoxWidget(FieldWidget):
         self.add_modal = PanelModal(tsp, title, "Add Tags")
 
         self.add_button.clicked.connect(
-            lambda: (self.add_modal.show(), tsp.update_tags(tsp.search_field))
+            lambda: (self.add_modal.show(), tsp.update_tags(tsp.search_field.text()))
         )
         self.tag_entry.textChanged.connect(
             lambda text: (
