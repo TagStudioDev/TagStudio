@@ -323,7 +323,7 @@ class QtDriver(QObject):
 
         open_selected_action = QAction("Open selected files", self)
         open_selected_action.triggered.connect(self.open_selected_files)
-        shortcut = QtCore.QKeyCombination(
+        shortcut: QtCore.QKeyCombination | Qt.Key = QtCore.QKeyCombination(
             QtCore.Qt.KeyboardModifier(QtCore.Qt.KeyboardModifier.ControlModifier),
             QtCore.Qt.Key.Key_Down,
         )
@@ -1122,8 +1122,8 @@ class QtDriver(QObject):
             open_button = confirm_open.addButton("&Open", QMessageBox.ButtonRole.ActionRole)
             confirm_open.setDefaultButton(open_button)
 
-            result = confirm_open.exec()
+            result = QMessageBox.ButtonRole(confirm_open.exec())
 
-        if result == QMessageBox.ButtonRole.ActionRole.value:
+        if result == QMessageBox.ButtonRole.ActionRole:
             for selection in self.selected:
                 self.item_thumbs[selection].opener.open_file()
