@@ -2,6 +2,7 @@
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
 import logging
+import platform
 import typing
 
 from PIL import Image, ImageDraw
@@ -74,6 +75,8 @@ class VideoPlayer(QGraphicsView):
         self.scene().addItem(self.video_preview)
         self.video_preview.setAcceptedMouseButtons(Qt.MouseButton.LeftButton)
 
+        self.setStyleSheet("border-style:solid;border-width:0px;")
+
         # Set up the video tint.
         self.video_tint = self.scene().addRect(
             0,
@@ -115,14 +118,21 @@ class VideoPlayer(QGraphicsView):
         autoplay_action.setCheckable(True)
         self.addAction(autoplay_action)
         autoplay_action.setChecked(
-            bool(self.driver.settings.value(SettingItems.AUTOPLAY, defaultValue=True, type=bool))
+            self.driver.settings.value(SettingItems.AUTOPLAY, defaultValue=True, type=bool)  # type: ignore
         )
         autoplay_action.triggered.connect(lambda: self.toggle_autoplay())
         self.autoplay = autoplay_action
 
         open_file_action = QAction("Open file", self)
         open_file_action.triggered.connect(self.opener.open_file)
-        open_explorer_action = QAction("Open file in explorer", self)
+
+        system = platform.system()
+        open_explorer_action = QAction("Open in explorer", self)  # Default, usually Linux
+        if system == "Darwin":
+            open_explorer_action = QAction("Reveal in Finder", self)
+        elif system == "Windows":
+            open_explorer_action = QAction("Open in Explorer", self)
+
         open_explorer_action.triggered.connect(self.opener.open_explorer)
         self.addAction(open_file_action)
         self.addAction(open_explorer_action)

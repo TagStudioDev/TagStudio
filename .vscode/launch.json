@@ -5,13 +5,13 @@
 	"version": "0.2.0",
 	"configurations": [
 		{
-			"name": "TagStudio",
-			"type": "python",
-			"request": "launch",
-			"program": "${workspaceRoot}/tagstudio/tag_studio.py",
-			"console": "integratedTerminal",
-			"justMyCode": true,
-			"args": []
-		}
+      "name": "TagStudio",
+      "type": "python",
+      "request": "launch",
+      "program": "${workspaceRoot}/tagstudio/tag_studio.py",
+      "console": "integratedTerminal",
+      "justMyCode": true,
+      "args": ["-o", "F:/Example 2"]
+    }
 	]
 }

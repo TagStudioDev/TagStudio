@@ -2,13 +2,14 @@
 # Licensed under the GPL-3.0 License.
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
+import logging
 from pathlib import Path
 from typing import Any
+from PIL import Image
 
-import structlog
 import ujson
 
-logger = structlog.get_logger(__name__)
+logging.basicConfig(format="%(message)s", level=logging.INFO)
 
 
 class ResourceManager:
@@ -21,14 +22,29 @@ class ResourceManager:
     def __init__(self) -> None:
         # Load JSON resource map
         if not ResourceManager._initialized:
-            with open(Path(__file__).parent / "resources.json", encoding="utf-8") as f:
+            with open(Path(__file__).parent / "resources.json", mode="r", encoding="utf-8") as f:
                 ResourceManager._map = ujson.load(f)
-                logger.info("resources registered", count=len(ResourceManager._map.items()))
+                logging.info(
+                    f"[ResourceManager] {len(ResourceManager._map.items())} resources registered"
+                )
             ResourceManager._initialized = True
+
+    @staticmethod
+    def get_path(id: str) -> Path | None:
+        """Get a resource's path from the ResourceManager.
+        Args:
+            id (str): The name of the resource.
+
+        Returns:
+            Path: The resource path if found, else None.
+        """
+        res: dict = ResourceManager._map.get(id)
+        if res:
+            return Path(__file__).parents[2] / "resources" / res.get("path")
+        return None
 
     def get(self, id: str) -> Any:
         """Get a resource from the ResourceManager.
-
         This can include resources inside and outside of QResources, and will return
         theme-respecting variations of resources if available.
 
@@ -43,19 +59,28 @@ class ResourceManager:
             return cached_res
         else:
             res: dict = ResourceManager._map.get(id)
-            if res.get("mode") in ["r", "rb"]:
-                with open(
-                    (Path(__file__).parents[2] / "resources" / res.get("path")),
-                    res.get("mode"),
-                ) as f:
-                    data = f.read()
-                    if res.get("mode") == "rb":
-                        data = bytes(data)
-                    ResourceManager._cache[id] = data
+            try:
+                if res and res.get("mode") in ["r", "rb"]:
+                    with open(
+                        (Path(__file__).parents[2] / "resources" / res.get("path")),
+                        res.get("mode"),
+                    ) as f:
+                        data = f.read()
+                        if res.get("mode") == "rb":
+                            data = bytes(data)
+                        ResourceManager._cache[id] = data
+                        return data
+                elif res and res.get("mode") == "pil":
+                    data = Image.open(Path(__file__).parents[2] / "resources" / res.get("path"))
                     return data
-            elif res.get("mode") in ["qt"]:
-                # TODO: Qt resource loading logic
-                pass
+                elif res and res.get("mode") in ["qt"]:
+                    # TODO: Qt resource loading logic
+                    pass
+            except FileNotFoundError:
+                logging.error(
+                    f"[ResourceManager][ERROR]: Could not find resource: {Path(__file__).parents[2] / "resources" / res.get("path")}"
+                )
+                return None
 
     def __getattr__(self, __name: str) -> Any:
         attr = self.get(__name)
