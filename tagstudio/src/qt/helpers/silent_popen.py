@@ -2,7 +2,7 @@ import subprocess
 import sys
 
 
-def promptless_Popen(
+def promptless_Popen(  # noqa: N802
     args,
     bufsize=-1,
     executable=None,

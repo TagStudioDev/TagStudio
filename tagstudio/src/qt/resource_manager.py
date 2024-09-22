@@ -5,9 +5,9 @@
 import logging
 from pathlib import Path
 from typing import Any
-from PIL import Image
 
 import ujson
+from PIL import Image
 
 logging.basicConfig(format="%(message)s", level=logging.INFO)
 
@@ -22,7 +22,7 @@ class ResourceManager:
     def __init__(self) -> None:
         # Load JSON resource map
         if not ResourceManager._initialized:
-            with open(Path(__file__).parent / "resources.json", mode="r", encoding="utf-8") as f:
+            with open(Path(__file__).parent / "resources.json", encoding="utf-8") as f:
                 ResourceManager._map = ujson.load(f)
                 logging.info(
                     f"[ResourceManager] {len(ResourceManager._map.items())} resources registered"
@@ -32,6 +32,7 @@ class ResourceManager:
     @staticmethod
     def get_path(id: str) -> Path | None:
         """Get a resource's path from the ResourceManager.
+
         Args:
             id (str): The name of the resource.
 
@@ -45,6 +46,7 @@ class ResourceManager:
 
     def get(self, id: str) -> Any:
         """Get a resource from the ResourceManager.
+
         This can include resources inside and outside of QResources, and will return
         theme-respecting variations of resources if available.
 
@@ -78,7 +80,8 @@ class ResourceManager:
                     pass
             except FileNotFoundError:
                 logging.error(
-                    f"[ResourceManager][ERROR]: Could not find resource: {Path(__file__).parents[2] / "resources" / res.get("path")}"
+                    "[ResourceManager][ERROR]: Could not find resource: "
+                    f"{Path(__file__).parents[2] / "resources" / res.get("path")}"
                 )
                 return None
 

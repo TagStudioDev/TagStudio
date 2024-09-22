@@ -11,9 +11,9 @@ def wrap_line(  # type: ignore
     width: int = 256,
     draw: ImageDraw.ImageDraw = None,
 ) -> int:
-    """
-    Takes in a single line and returns the index it should be broken up at but
-    it only splits one Time
+    """Take in a single text line and return the index it should be broken up at.
+
+    Only splits once.
     """
     if draw is None:
         bg = Image.new("RGB", (width, width), color="#1e1e1e")
@@ -36,9 +36,7 @@ def wrap_full_text(
     width: int = 256,
     draw: ImageDraw.ImageDraw = None,
 ) -> str:
-    """
-    Takes in a string and breaks it up to fit in the canvas given accounts for kerning and font size etc.
-    """
+    """Break up a string to fit the canvas given a kerning value, font size, etc."""
     lines = []
     i = 0
     last_i = 0

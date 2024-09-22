@@ -15,7 +15,7 @@ class RoundedPixmapStyle(QProxyStyle):
         super().__init__()
         self._radius = radius
 
-    def drawItemPixmap(self, painter, rectangle, alignment, pixmap):
+    def drawItemPixmap(self, painter, rectangle, alignment, pixmap):  # noqa: N802
         painter.save()
         pix = QPixmap(pixmap.size())
         pix.fill(QColor("transparent"))
@@ -25,5 +25,5 @@ class RoundedPixmapStyle(QProxyStyle):
         p.setRenderHint(QPainter.RenderHint.Antialiasing)
         p.drawRoundedRect(pixmap.rect(), self._radius, self._radius)
         p.end()
-        super(RoundedPixmapStyle, self).drawItemPixmap(painter, rectangle, alignment, pix)
+        super().drawItemPixmap(painter, rectangle, alignment, pix)
         painter.restore()

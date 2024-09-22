@@ -3,17 +3,16 @@ import re
 import subprocess
 
 from pydub.utils import (
-    get_prober_name,
-    fsdecode,
     _fd_or_path_or_tempfile,
+    fsdecode,
     get_extra_info,
+    get_prober_name,
 )
-
 from src.qt.helpers.silent_popen import promptless_Popen
 
 
 def _mediainfo_json(filepath, read_ahead_limit=-1):
-    """Return json dictionary with media info(codec, duration, size, bitrate...) from filepath"""
+    """Return json dictionary with media info(codec, duration, size, bitrate...) from filepath."""
     prober = get_prober_name()
     command_args = [
         "-v",

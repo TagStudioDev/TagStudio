@@ -1,7 +1,6 @@
 # Copyright (C) 2024 Travis Abendshien (CyanVoxel).
 # Licensed under the GPL-3.0 License.
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
-import logging
 import os
 import platform
 import sys
@@ -17,7 +16,7 @@ import structlog
 from humanfriendly import format_size
 from PIL import Image, ImageFont, UnidentifiedImageError
 from PIL.Image import DecompressionBombError
-from PySide6.QtCore import QBuffer, QByteArray, QModelIndex, QSize, Qt, Signal
+from PySide6.QtCore import QBuffer, QByteArray, QSize, Qt, Signal
 from PySide6.QtGui import QAction, QGuiApplication, QMovie, QResizeEvent
 from PySide6.QtWidgets import (
     QFrame,
@@ -35,7 +34,6 @@ from src.core.constants import (
     TS_FOLDER_NAME,
 )
 from src.core.enums import SettingItems, Theme
-from src.core.library import Entry, ItemType, Library
 from src.core.library.alchemy.enums import FilterState
 from src.core.library.alchemy.fields import (
     BaseField,
@@ -52,7 +50,6 @@ from src.qt.helpers.file_tester import is_readable_video
 from src.qt.helpers.qbutton_wrapper import QPushButtonWrapper
 from src.qt.helpers.rounded_pixmap_style import RoundedPixmapStyle
 from src.qt.modals.add_field import AddFieldModal
-from src.qt.resource_manager import ResourceManager
 from src.qt.widgets.fields import FieldContainer
 from src.qt.widgets.panel import PanelModal
 from src.qt.widgets.tag_box import TagBoxWidget

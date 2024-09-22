@@ -481,7 +481,7 @@ class MediaCategories:
             mime_fallback (bool): Flag to guess MIME type if no set matches are made.
         """
         types: set[MediaType] = set()
-        mime_guess: bool = False
+        # mime_guess: bool = False
 
         for cat in MediaCategories.ALL_CATEGORIES:
             if ext in cat.extensions:
@@ -490,6 +490,6 @@ class MediaCategories:
                 type: str = mimetypes.guess_type(Path("x" + ext), strict=False)[0]
                 if type and type.startswith(cat.media_type.value):
                     types.add(cat.media_type)
-                    mime_guess = True
+                    # mime_guess = True
 
         return types
