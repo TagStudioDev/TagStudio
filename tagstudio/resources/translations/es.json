@@ -26,5 +26,19 @@
     "library.title": "Título",
     "merge.window_title": "Fusionar entradas duplicadas",
     "preview.dimensions": "Dimensiones",
-    "library.content_tags": "Etiquetas de contenido"
+    "library.content_tags": "Etiquetas de contenido",
+    "library.meta_tags": "Etiquetas de metadatos",
+    "library.collation": "Recopilación",
+    "library.date": "Fecha",
+    "library.date_created": "Fecha de creación",
+    "library.date_modified": "Fecha de modificación",
+    "library.date_taken": "Fecha de captura",
+    "library.archived": "Fecha de archivo",
+    "library.source": "Fuente",
+    "library.date_published": "Fecha de publicación",
+    "library.series": "Serie",
+    "library.favorite": "Favorito",
+    "library.book": "Libro",
+    "library.comic": "Tebeo",
+    "library.manga": "Manga"
 }
