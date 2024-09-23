@@ -1,6 +1,6 @@
 {
     "home.main_window": "Ventana principal",
-    "tag.library": "Etiquetas de archivo",
+    "tag.library": "Etiquetas de la biblioteca",
     "home.base_title": "TagStudio Alfa",
     "home.include_all_tags": "Y (Incluye todas las etiquetas)",
     "home.thumbnail_size": "Tamaño de la miniatura",
@@ -14,5 +14,16 @@
     "menu.help": "Ayuda",
     "tag.new": "Nueva etiqueta",
     "tag.add": "Añadir etiqueta",
-    "home.include_any_tag": "O (Incluye cualquier etiqueta)"
+    "home.include_any_tag": "O (Incluye cualquier etiqueta)",
+    "merge.merge_dupe_entries": "Fusionar entradas duplicadas",
+    "preview.recent": "Bibliotecas recientes",
+    "library.author": "Autor",
+    "library.Artist": "Artista",
+    "library.url": "URL",
+    "library.description": "Descripción",
+    "library.notes": "Notas",
+    "library.tags": "Etiquetas",
+    "library.title": "Título",
+    "merge.window_title": "Fusionar entradas duplicadas",
+    "preview.dimensions": "Dimensiones"
 }
