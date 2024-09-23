@@ -32,7 +32,7 @@
     "library.date": "Fecha",
     "library.date_created": "Fecha de creación",
     "library.date_modified": "Fecha de modificación",
-    "library.date_taken": "Fecha de creación",
+    "library.date_taken": "Fecha de realización",
     "library.archived": "Fecha de archivo",
     "library.source": "Fuente",
     "library.date_published": "Fecha de publicación",
@@ -68,5 +68,9 @@
     "status.results_found": "Resultados",
     "dialog.save_library": "Guardar la biblioteca",
     "dialog.refresh_directories": "Refrescar directorios",
-    "dialog.scan_directories": "Buscar archivos nuevos en los directorios...\nPreparando..."
+    "dialog.scan_directories": "Buscar archivos nuevos en los directorios...\nPreparando...",
+    "progression.running_macros.several_new_entry": "Ejecución de macros configurados en %{x + 1}/%{len(new_ids)} entradas nuevas",
+    "file_opener.open_file": "Abriendo fichero:}",
+    "file_opener.not_found": "Fichero no encontrado:",
+    "file_opener.command_not_found": "No se pudo encontrar %{command_name} en el PATH del sistema"
 }
