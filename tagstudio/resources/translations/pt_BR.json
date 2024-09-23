@@ -126,5 +126,19 @@
     "fix_unlinked.delete_unlinked": "Escluir Entradas Não Linkadas",
     "fix_dupes.mirror_description": "Espelhe os ados de entrada em cada conjunto de correspondência duplicado, combinando todos os dados sem remover ou duplicar campos. Esta operação não excluirá nenhum arquivo ou dado.",
     "relink_unlinked.title": "Relinkando Entradas",
-    "preview_panel.confirm_remove": "Você tem certeza de que quer remover o campo \"%{self.lib.get_field_attr(field, \"name\")}\"?"
+    "preview_panel.confirm_remove": "Você tem certeza de que quer remover o campo \"%{self.lib.get_field_attr(field, \"name\")}\"?",
+    "library.collation": "Colagem",
+    "library.anthology": "Coletânea",
+    "generic.remove_field": "Remover Campo",
+    "add_field.add": "Adicionar Campo",
+    "generic.search_tags": "Buscar Rótulos",
+    "build_tags.parent_tags": "Rótulos Pai",
+    "build_tags.add_parent_tags": "Adicionar Rótulo Pai",
+    "delete_unlinked.delete_unlinked": "Deletar Entradas Não Linkada",
+    "delete_unlinked.confirm": "Tem certeza que deseja deletar as seguintes %{len(self.lib.missing_files)} entradas?",
+    "delete_unlinked.delete_entries": "Deletando Entradas",
+    "delete_unlinked.deleting_number_entries": "Deletando %{x[0]+1}/{len(self.lib.missing_files)} Entradas Não Linkadas",
+    "fix_dupes.advice_label": "Após espelhagem, você estará livre para usar DupeGuru para deletar arquivos indesejados. Após, use a função \"Consertar Entradas Não Linkadas\" do TagStudio no menu de Ferramentas para deletar entradas não linkadas.",
+    "fix_unlinked.duplicate_description": "Entradas duplicadas são definidas como multiplas entradas que levam ao mesmo arquivo no disco. Mergir essas entradas irá combinar as tags e metadados de todas as duplicatas em uma única entrada consolidada. Não confundir com \"Arquivos Duplicados\" que são duplicatas dos seus arquivos fora do TagStudio.",
+    "fix_unlinked.description": "Cada entrada na biblioteca está linkada a um arquivo em um dos seus diretórios. Se um arquivo linkado a uma entrada for movido ou deletado fora do TagStudio, ele é então considerado não linkado. Entradas não linkadas podem ser automaticamente re-linkadas por buscas nos seus diretórios, manualmente re-linkadas pelo usuário, ou deletada se for desejada."
 }
