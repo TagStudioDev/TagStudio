@@ -69,6 +69,8 @@ TagStudio is a photo & file organization application with an underlying system t
 
 If you're interested in contributing to TagStudio, please take a look at the [contribution guidelines](/CONTRIBUTING.md) for how to get started!
 
+Translation services provided via [Weblate](https://hosted.weblate.org/projects/tagstudio/).
+
 ## Installation
 
 To download TagStudio, visit the [Releases](https://github.com/TagStudioDev/TagStudio/releases) section of the GitHub repository and download the latest release for your system under the "Assets" section. TagStudio is available for **Windows**, **macOS** _(Apple Silicon & Intel)_, and **Linux**. Windows and Linux builds are also available in portable versions if you want a more self-contained executable to move around.
