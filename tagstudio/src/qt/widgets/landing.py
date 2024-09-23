@@ -11,9 +11,11 @@ from pathlib import Path
 from PIL import Image, ImageQt
 from PySide6.QtCore import QEasingCurve, QPoint, QPropertyAnimation, Qt
 from PySide6.QtGui import QPixmap
-from PySide6.QtWidgets import QLabel, QPushButton, QVBoxLayout, QWidget
+from PySide6.QtWidgets import QLabel, QVBoxLayout, QWidget
 from src.qt.helpers.color_overlay import gradient_overlay, theme_fg_overlay
 from src.qt.widgets.clickable_label import ClickableLabel
+
+from .button_widgets import BasePushButton as QPushButton
 
 # Only import for type checking/autocompletion, will not be imported at runtime.
 if typing.TYPE_CHECKING:
@@ -60,8 +62,8 @@ class LandingWidget(QWidget):
             open_shortcut_text = "(⌘+O)"
         else:
             open_shortcut_text = "(Ctrl+O)"
-        self.open_button: QPushButton = QPushButton()
-        self.open_button.setMinimumWidth(200)
+        self.open_button: QPushButton = QPushButton(self)
+        self.open_button.setMinimumSize(200, 40)
         self.open_button.setText(f"Open/Create Library {open_shortcut_text}")
         self.open_button.clicked.connect(self.driver.open_library_from_dialog)
 

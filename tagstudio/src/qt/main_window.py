@@ -27,6 +27,7 @@ from src.qt.widgets.landing import LandingWidget
 
 from . import theme
 from .widgets.line_edit_widgets import BaseLineEdit as QLineEdit
+from .widgets.button_widgets import BasePushButton as QPushButton
 
 # Only import for type checking/autocompletion, will not be imported at runtime.
 if typing.TYPE_CHECKING:
