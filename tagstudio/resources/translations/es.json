@@ -25,5 +25,6 @@
     "library.tags": "Etiquetas",
     "library.title": "Título",
     "merge.window_title": "Fusionar entradas duplicadas",
-    "preview.dimensions": "Dimensiones"
+    "preview.dimensions": "Dimensiones",
+    "library.content_tags": "Etiquetas de contenido"
 }
