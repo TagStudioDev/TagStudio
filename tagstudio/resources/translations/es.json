@@ -40,5 +40,7 @@
     "library.favorite": "Favorito",
     "library.book": "Libro",
     "library.comic": "Tebeo",
-    "library.manga": "Manga"
+    "library.manga": "Manga",
+    "library.date_uploaded": "Fecha de carga",
+    "library.date_released": "Fecha de lanzamiento"
 }
