@@ -1,1 +1,14 @@
-{}
+{
+    "home.main_window": "Janela Principal",
+    "home.include_any_tag": "Ou (Inclui qualquer rótulo)",
+    "home.thumbnail_size": "Tamanho de miniatura",
+    "home.search_entries": "Buscar Entradas",
+    "home.search": "Buscar",
+    "menu.file": "Arquivo",
+    "tag.library": "Rótulos da biblioteca",
+    "preview.recent": "Bibliotecas recentes",
+    "library.content_tags": "Rótulos de conteúdo",
+    "home.base_title": "TagStudio Alfa",
+    "home.include_all_tags": "E (Inclui todos os rótulos)",
+    "menu.edit": "Editar"
+}
