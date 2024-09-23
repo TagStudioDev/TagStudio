@@ -1,1 +1,5 @@
-{}
+{
+    "home.main_window": "Ventana principal",
+    "tag.library": "Etiquetas de archivo",
+    "home.base_title": "TagStudio Alfa"
+}
