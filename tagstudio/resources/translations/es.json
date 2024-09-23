@@ -1,5 +1,18 @@
 {
     "home.main_window": "Ventana principal",
     "tag.library": "Etiquetas de archivo",
-    "home.base_title": "TagStudio Alfa"
+    "home.base_title": "TagStudio Alfa",
+    "home.include_all_tags": "Y (Incluye todas las etiquetas)",
+    "home.thumbnail_size": "Tamaño de la miniatura",
+    "home.search_entries": "Buscar entradas",
+    "home.search": "Buscar",
+    "menu.file": "Archivo",
+    "menu.edit": "Editar",
+    "menu.tools": "Herramientas",
+    "menu.macros": "Macros",
+    "menu.window": "Ventana",
+    "menu.help": "Ayuda",
+    "tag.new": "Nueva etiqueta",
+    "tag.add": "Añadir etiqueta",
+    "home.include_any_tag": "O (Incluye cualquier etiqueta)"
 }
