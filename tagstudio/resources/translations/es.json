@@ -70,7 +70,7 @@
     "dialog.refresh_directories": "Refrescar directorios",
     "dialog.scan_directories": "Buscar archivos nuevos en los directorios...\nPreparando...",
     "progression.running_macros.several_new_entry": "Ejecución de macros configurados en %{x + 1}/%{len(new_ids)} entradas nuevas",
-    "file_opener.open_file": "Abriendo archivo:}",
+    "file_opener.open_file": "Abriendo archivo :}",
     "file_opener.not_found": "Archivo no encontrado:",
     "file_opener.command_not_found": "No se pudo encontrar %{command_name} en el PATH del sistema",
     "add_field.add": "Añadir campo",
