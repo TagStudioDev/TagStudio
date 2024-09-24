@@ -90,6 +90,19 @@
     "generic.aliases": "Alias",
     "generic.color": "Color",
     "generic.delete": "Borrar",
-    "generic.refresh_all": "Actualizar todos",
-    "generic.apply": "Aplicar"
+    "generic.refresh_all": "Recargar todo",
+    "generic.apply": "Aplicar",
+    "generic.mirror": "Espejo",
+    "build_tags.parent_tags": "Etiquetas principales",
+    "build_tags.add_parent_tags": "Añadir etiquetas principales",
+    "delete_unlinked.confirm": "¿Está seguro de que desea eliminar las siguientes %{len(self.lib.missing_files)} entradas?",
+    "delete_unlinked.delete_entries": "Eliminando entradas",
+    "delete_unlinked.deleting_number_entries": "Eliminando %{x[0]+1}/{len(self.lib.missing_files)} entradas desvinculadas",
+    "file_extension.add_extension": "Añadir extensión",
+    "file_extension.list_mode": "Modo de lista:",
+    "fix_dupes.fix_dupes": "Reparar archivos duplicados",
+    "fix_dupes.no_file_selected": "No se ha seleccionado ningún archivo DupeGuru",
+    "fix_dupes.load_file": "Cargar archivo DupeGuru",
+    "generic.search_tags": "Buscar etiquetas",
+    "delete_unlinked.delete_unlinked": "Eliminar entradas no vinculadas"
 }
