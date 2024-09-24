@@ -1,1 +1,6 @@
-{}
+{
+    "home.main_window": "Hauptfenster",
+    "home.include_all_tags": "Und (enthält alle Tags)",
+    "home.include_any_tag": "Oder (enthält alle Tags)",
+    "home.base_title": "TagStudio Alpha"
+}
