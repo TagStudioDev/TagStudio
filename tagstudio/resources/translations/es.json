@@ -89,5 +89,7 @@
     "generic.shorthand": "Taquigrafía",
     "generic.aliases": "Alias",
     "generic.color": "Color",
-    "generic.delete": "Borrar"
+    "generic.delete": "Borrar",
+    "generic.refresh_all": "Actualizar todos",
+    "generic.apply": "Aplicar"
 }
