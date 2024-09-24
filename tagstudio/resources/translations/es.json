@@ -75,5 +75,8 @@
     "file_opener.command_not_found": "No se pudo encontrar %{command_name} en el PATH del sistema",
     "add_field.add": "Añadir campo",
     "generic.remove_field": "Eliminar campo",
-    "generic.file_extension": "Extensiones de archivo"
+    "generic.file_extension": "Extensiones de archivo",
+    "generic.open_file": "Abrir archivo",
+    "generic.open_file_explorer": "Abrir archivo en el explorador",
+    "generic.cancel": "Cancelar"
 }
