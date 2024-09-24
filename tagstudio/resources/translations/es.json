@@ -78,5 +78,16 @@
     "generic.file_extension": "Extensiones de archivo",
     "generic.open_file": "Abrir archivo",
     "generic.open_file_explorer": "Abrir archivo en el explorador",
-    "generic.cancel": "Cancelar"
+    "generic.cancel": "Cancelar",
+    "generic.exclude": "Excluir",
+    "generic.include": "Incluir",
+    "generic.done": "Donar",
+    "generic.open_all": "Abrir todo",
+    "generic.close_all": "Cerrar todo",
+    "generic.add": "Añadir",
+    "generic.name": "Nombre",
+    "generic.shorthand": "Taquigrafía",
+    "generic.aliases": "Alias",
+    "generic.color": "Color",
+    "generic.delete": "Borrar"
 }
