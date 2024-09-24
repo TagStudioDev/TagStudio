@@ -131,5 +131,14 @@
     "landing.open_button": "Abrir/Crear biblioteca %{open_shortcut_text}",
     "relink_unlinked.title": "Volver a vincular las entradas",
     "mirror_entities.label": "Reflejando 1/%{count} Entradas...",
-    "relink_unlinked.attempt_relink": "Intentando volver a vincular %{x[0]+1}/%{len(self.lib.missing_files)} Entradas, %{self.fixed} Reenlazado correctamente"
+    "relink_unlinked.attempt_relink": "Intentando volver a vincular %{x[0]+1}/%{len(self.lib.missing_files)} Entradas, %{self.fixed} Reenlazado correctamente",
+    "preview_panel.update_widgets": "[PANEL DE ENTRADA] ACTUALIZAR WIDGETS (%{self.driver.selected})",
+    "preview_panel.no_items_selected": "No hay elementos seleccionados",
+    "preview_panel.confirm_remove": "¿Está seguro de que desea eliminar este campo \"%{self.lib.get_field_attr(field, \"name\")}\"?",
+    "preview_panel.mixed_data": "Datos variados",
+    "text_line_edit.unknown_event_type": "tipo de suceso desconocido: %{event}",
+    "preview_panel.edit_name": "Editar",
+    "tag.add_search": "Añadir a la búsqueda",
+    "preview_panel.unknown_field_type": "Tipo de campo desconocido",
+    "tag.search_for_tag": "Buscar por etiqueta"
 }
