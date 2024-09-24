@@ -92,7 +92,7 @@
     "generic.delete": "Borrar",
     "generic.refresh_all": "Recargar todo",
     "generic.apply": "Aplicar",
-    "generic.mirror": "Espejo",
+    "generic.mirror": "Reflejar",
     "build_tags.parent_tags": "Etiquetas principales",
     "build_tags.add_parent_tags": "Añadir etiquetas principales",
     "delete_unlinked.confirm": "¿Está seguro de que desea eliminar las siguientes %{len(self.lib.missing_files)} entradas?",
