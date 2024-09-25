@@ -61,8 +61,10 @@ class ResourceManager:
             return cached_res
         else:
             res: dict = ResourceManager._map.get(id)
+            if not res:
+                return None
             try:
-                if res and res.get("mode") in ["r", "rb"]:
+                if res.get("mode") in ["r", "rb"]:
                     with open(
                         (Path(__file__).parents[2] / "resources" / res.get("path")),
                         res.get("mode"),
@@ -72,10 +74,10 @@ class ResourceManager:
                             data = bytes(data)
                         ResourceManager._cache[id] = data
                         return data
-                elif res and res.get("mode") == "pil":
+                elif res.get("mode") == "pil":
                     data = Image.open(Path(__file__).parents[2] / "resources" / res.get("path"))
                     return data
-                elif res and res.get("mode") in ["qt"]:
+                elif res.get("mode") in ["qt"]:
                     # TODO: Qt resource loading logic
                     pass
             except FileNotFoundError:
