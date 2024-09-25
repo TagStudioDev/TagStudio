@@ -4,7 +4,7 @@
 
 from PySide6.QtCore import QObject, QTranslator
 from pathlib import Path
-from json import loads
+from json import load as load_json
 
 
 class TSTranslator(QTranslator):
@@ -19,20 +19,16 @@ class TSTranslator(QTranslator):
 
     def load(self, translationDir: Path, language: str, country: str = "") -> bool:
         file = None
-        if (translationDir / (language + "_" + country + ".ini")).exists():
-            file = open(
-                translationDir / (language + "_" + country + ".ini"), encoding="utf-8"
+        if (translationDir / (language + "_" + country + ".json")).exists():
+            file = load_json(  # noqa: SIM115
+                translationDir / (language + "_" + country + ".json"), encoding="utf-8"
             )
-        elif (translationDir / (language + ".ini")).exists():
-            file = open(translationDir / (language + ".ini"), encoding="utf-8")
+        elif (translationDir / (language + ".json")).exists():
+            file = load_json(translationDir / (language + ".json"), encoding="utf-8")  # noqa: SIM115
         if file is None:
             return False
 
-        for line in file.readlines():
-            if line.startswith("#") or line == "\n":
-                continue
-            identifier, translation = line.split("=", 1)
-            self.translations[identifier] = loads(translation)
+        self.translations = file
 
         file.close()
         return True
