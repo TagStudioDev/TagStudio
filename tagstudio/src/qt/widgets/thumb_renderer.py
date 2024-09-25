@@ -906,9 +906,9 @@ class ThumbRenderer(QObject):
         filepath: str | Path,
         base_size: tuple[int, int],
         pixel_ratio: float,
-        is_loading=False,
-        is_grid_thumb=False,
-        update_on_ratio_change=False,
+        is_loading: bool = False,
+        is_grid_thumb: bool = False,
+        update_on_ratio_change: bool = False,
     ):
         """Render a thumbnail or preview image.
 

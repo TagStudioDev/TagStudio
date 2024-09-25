@@ -292,7 +292,7 @@ class PreviewPanel(QWidget):
         self.add_field_button.setMaximumSize(96, 28)
         self.add_field_button.setText("Add Field")
         self.afb_layout.addWidget(self.add_field_button)
-        self.afm = AddFieldModal(self.lib)
+        self.add_field_modal = AddFieldModal(self.lib)
         self.place_add_field_button()
         self.update_image_size(
             (self.image_container.size().width(), self.image_container.size().height())
@@ -460,14 +460,16 @@ class PreviewPanel(QWidget):
         self.scroll_layout.addWidget(self.afb_container)
         self.scroll_layout.setAlignment(self.afb_container, Qt.AlignmentFlag.AlignHCenter)
 
-        if self.afm.is_connected:
-            self.afm.done.disconnect()
+        if self.add_field_modal.is_connected:
+            self.add_field_modal.done.disconnect()
         if self.add_field_button.is_connected:
             self.add_field_button.clicked.disconnect()
 
-        self.afm.done.connect(lambda f: (self.add_field_to_selected(f), self.update_widgets()))
-        self.afm.is_connected = True
-        self.add_field_button.clicked.connect(self.afm.show)
+        self.add_field_modal.done.connect(
+            lambda f: (self.add_field_to_selected(f), self.update_widgets())
+        )
+        self.add_field_modal.is_connected = True
+        self.add_field_button.clicked.connect(self.add_field_modal.show)
 
     def add_field_to_selected(self, field_list: list):
         """Add list of entry fields to one or more selected items."""

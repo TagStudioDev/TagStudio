@@ -818,7 +818,7 @@ class QtDriver(QObject):
                     )
 
     def thumb_size_callback(self, index: int):
-        """Performs actions needed when the thumbnail size selection is changed.
+        """Perform actions needed when the thumbnail size selection is changed.
 
         Args:
             index (int): The index of the item_thumbs/ComboBox list to use.
