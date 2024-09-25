@@ -582,10 +582,7 @@ class ThumbRenderer(QObject):
                 )
 
             else:
-                logger.error(
-                    f"[ThumbRenderer][BLENDER][ERROR]: Couldn't render thumbnail for "
-                    f"{filepath.name} ({type(e).__name__})"
-                )
+                logger.error("Couldn't render thumbnail", filepath=filepath, error=e)
         return im
 
     def _source_engine(self, filepath: Path) -> Image.Image:
@@ -606,16 +603,10 @@ class ThumbRenderer(QObject):
             struct.error,
         ) as e:
             if str(e) == "expected string or buffer":
-                logger.info(
-                    f"[ThumbRenderer][VTF][INFO] {filepath.name} "
-                    f"Doesn't have an embedded thumbnail. ({type(e).__name__})"
-                )
+                logger.error("Couldn't render thumbnail", filepath=filepath, error=e)
 
             else:
-                logger.error(
-                    f"[ThumbRenderer][VTF][ERROR]: Couldn't render thumbnail for"
-                    f"{filepath.name} ({type(e).__name__})"
-                )
+                logger.error("Couldn't render thumbnail", filepath=filepath, error=e)
         return im
 
     def _font_short_thumb(self, filepath: Path, size: int) -> Image.Image:
@@ -675,10 +666,7 @@ class ThumbRenderer(QObject):
             )
             im = self._apply_overlay_color(bg, UiColor.PURPLE)
         except OSError as e:
-            logger.info(
-                f"[ThumbRenderer][FONT][ERROR] Couldn't Render thumbnail for font {filepath.name} "
-                f"({type(e).__name__})"
-            )
+            logger.error("Couldn't render thumbnail", filepath=filepath, error=e)
         return im
 
     def _font_long_thumb(self, filepath: Path, size: int) -> Image.Image:
@@ -709,10 +697,7 @@ class ThumbRenderer(QObject):
                 )[-1]
             im = theme_fg_overlay(bg, use_alpha=False)
         except OSError as e:
-            logger.info(
-                f"[ThumbRenderer][FONT][ERROR] Couldn't Render thumbnail for font {filepath.name} "
-                f"({type(e).__name__})"
-            )
+            logger.error("Couldn't render thumbnail", filepath=filepath, error=e)
         return im
 
     def _image_raw_thumb(self, filepath: Path) -> Image.Image:
@@ -732,18 +717,12 @@ class ThumbRenderer(QObject):
                     decoder_name="raw",
                 )
         except DecompressionBombError as e:
-            logger.info(
-                f"[ThumbRenderer][RAW][WARNING] Couldn't Render thumbnail for {filepath.name} "
-                f"({type(e).__name__})"
-            )
+            logger.error("Couldn't render thumbnail", filepath=filepath, error=e)
         except (
             rawpy._rawpy.LibRawIOError,
             rawpy._rawpy.LibRawFileUnsupportedError,
         ) as e:
-            logger.info(
-                f"[ThumbRenderer][RAW][ERROR] Couldn't Render thumbnail for raw image "
-                f"{filepath.name} ({type(e).__name__})"
-            )
+            logger.error("Couldn't render thumbnail", filepath=filepath, error=e)
         return im
 
     def _image_thumb(self, filepath: Path) -> Image.Image:
@@ -767,10 +746,7 @@ class ThumbRenderer(QObject):
             UnidentifiedImageError,
             DecompressionBombError,
         ) as e:
-            logger.error(
-                f"[ThumbRenderer][IMAGE][ERROR]: Couldn't render thumbnail for "
-                f"{filepath.name} ({type(e).__name__})"
-            )
+            logger.error("Couldn't render thumbnail", filepath=filepath, error=e)
         return im
 
     def _image_vector_thumb(self, filepath: Path, size: int) -> Image.Image:
@@ -850,10 +826,7 @@ class ThumbRenderer(QObject):
             UnicodeDecodeError,
             OSError,
         ) as e:
-            logger.info(
-                f"[ThumbRenderer][TEXT][ERROR]: Couldn't render thumbnail for {filepath.name}"
-                f"({type(e).__name__})"
-            )
+            logger.error("Couldn't render thumbnail", filepath=filepath, error=e)
         return im
 
     def _video_thumb(self, filepath: Path) -> Image.Image:
@@ -894,10 +867,7 @@ class ThumbRenderer(QObject):
             DecompressionBombError,
             OSError,
         ) as e:
-            logger.error(
-                "[ThumbRenderer][ERROR]: Couldn't render thumbnail for "
-                f"{filepath.name} ({type(e).__name__})"
-            )
+            logger.error("Couldn't render thumbnail", filepath=filepath, error=e)
         return im
 
     def render(
@@ -1050,10 +1020,7 @@ class ThumbRenderer(QObject):
                     final.paste(image, mask=mask.getchannel(0))
 
             except FileNotFoundError as e:
-                logger.info(
-                    f"[ThumbRenderer][ERROR]: Couldn't render thumbnail for {_filepath.name} "
-                    f"({type(e).__name__})"
-                )
+                logger.error("Couldn't render thumbnail", filepath=filepath, error=e)
                 if update_on_ratio_change:
                     self.updated_ratio.emit(1)
                 final = self._get_icon(
@@ -1068,10 +1035,7 @@ class ThumbRenderer(QObject):
                 ValueError,
                 ChildProcessError,
             ) as e:
-                logger.info(
-                    f"[ThumbRenderer][ERROR]: Couldn't render thumbnail for {_filepath.name} "
-                    f"({type(e).__name__})"
-                )
+                logger.error("Couldn't render thumbnail", filepath=filepath, error=e)
 
                 if update_on_ratio_change:
                     self.updated_ratio.emit(1)

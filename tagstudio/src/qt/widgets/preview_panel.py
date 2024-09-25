@@ -713,10 +713,7 @@ class PreviewPanel(QWidget):
 
                 except (FileNotFoundError, cv2.error) as e:
                     self.dimensions_label.setText(f"{ext.upper()[1:]}")
-                    logger.info(
-                        f"[PreviewPanel][ERROR] Couldn't Render thumbnail for {filepath} "
-                        f"(because of {e})"
-                    )
+                    logger.error("Couldn't render thumbnail", filepath=filepath, error=e)
                     self.update_date_label()
                 except (
                     UnidentifiedImageError,
@@ -725,10 +722,7 @@ class PreviewPanel(QWidget):
                     self.dimensions_label.setText(
                         f"{ext.upper()[1:]}  •  {format_size(filepath.stat().st_size)}"
                     )
-                    logger.info(
-                        f"[PreviewPanel][ERROR] Couldn't Render thumbnail for {filepath} "
-                        f"(because of {e})"
-                    )
+                    logger.error("Couldn't render thumbnail", filepath=filepath, error=e)
                     self.update_date_label(filepath)
 
                 if self.preview_img.is_connected:
