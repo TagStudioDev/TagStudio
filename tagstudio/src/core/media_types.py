@@ -4,6 +4,7 @@
 
 import logging
 import mimetypes
+from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
 
@@ -42,6 +43,7 @@ class MediaType(str, Enum):
     VIDEO: str = "video"
 
 
+@dataclass(frozen=True)
 class MediaCategory:
     """An object representing a category of media.
 
@@ -56,19 +58,13 @@ class MediaCategory:
         is_iana (bool): Represents whether or not this is an IANA registered category.
     """
 
-    def __init__(
-        self,
-        media_type: MediaType,
-        extensions: set[str],
-        is_iana: bool = False,
-    ) -> None:
-        self.media_type: MediaType = media_type
-        self.extensions: set[str] = extensions
-        self.is_iana: bool = is_iana
+    media_type: MediaType
+    extensions: set[str]
+    is_iana: bool = False
 
 
 class MediaCategories:
-    """Contains pre-made MediaCategory objects as well as methods to interact with them."""
+    """Contain pre-made MediaCategory objects as well as methods to interact with them."""
 
     # These sets are used either individually or together to form the final sets
     # for the MediaCategory(s).
@@ -474,22 +470,22 @@ class MediaCategories:
 
     @staticmethod
     def get_types(ext: str, mime_fallback: bool = False) -> set[MediaType]:
-        """Returns a set of MediaTypes given a file extension.
+        """Return a set of MediaTypes given a file extension.
 
         Args:
             ext (str): File extension with a leading "." and in all lowercase.
             mime_fallback (bool): Flag to guess MIME type if no set matches are made.
         """
-        types: set[MediaType] = set()
+        media_types: set[MediaType] = set()
         # mime_guess: bool = False
 
         for cat in MediaCategories.ALL_CATEGORIES:
             if ext in cat.extensions:
-                types.add(cat.media_type)
+                media_types.add(cat.media_type)
             elif mime_fallback and cat.is_iana:
-                type: str = mimetypes.guess_type(Path("x" + ext), strict=False)[0]
-                if type and type.startswith(cat.media_type.value):
-                    types.add(cat.media_type)
+                media_type: str = mimetypes.guess_type(Path("x" + ext), strict=False)[0]
+                if media_type and media_type.startswith(cat.media_type.value):
+                    media_types.add(cat.media_type)
                     # mime_guess = True
 
-        return types
+        return media_types
