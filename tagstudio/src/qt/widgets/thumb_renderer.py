@@ -952,25 +952,35 @@ class ThumbRenderer(QObject):
             try:
                 ext: str = _filepath.suffix.lower()
                 # Images =======================================================
-                if MediaType.IMAGE in MediaCategories.get_types(ext, mime_fallback=True):
+                if MediaCategories.is_ext_in_category(
+                    ext, MediaCategories.IMAGE_TYPES, mime_fallback=True
+                ):
                     # Raw Images -----------------------------------------------
-                    if MediaType.IMAGE_RAW in MediaCategories.get_types(ext, mime_fallback=True):
+                    if MediaCategories.is_ext_in_category(
+                        ext, MediaCategories.IMAGE_RAW_TYPES, mime_fallback=True
+                    ):
                         image = self._image_raw_thumb(_filepath)
-                    elif MediaType.IMAGE_VECTOR in MediaCategories.get_types(
-                        ext, mime_fallback=True
+                    elif MediaCategories.is_ext_in_category(
+                        ext, MediaCategories.IMAGE_VECTOR_TYPES, mime_fallback=True
                     ):
                         image = self._image_vector_thumb(_filepath, adj_size)
                     # Normal Images --------------------------------------------
                     else:
                         image = self._image_thumb(_filepath)
                 # Videos =======================================================
-                elif MediaType.VIDEO in MediaCategories.get_types(ext, mime_fallback=True):
+                if MediaCategories.is_ext_in_category(
+                    ext, MediaCategories.VIDEO_TYPES, mime_fallback=True
+                ):
                     image = self._video_thumb(_filepath)
                 # Plain Text ===================================================
-                elif MediaType.PLAINTEXT in MediaCategories.get_types(ext):
+                if MediaCategories.is_ext_in_category(
+                    ext, MediaCategories.PLAINTEXT_TYPES, mime_fallback=True
+                ):
                     image = self._text_thumb(_filepath)
                 # Fonts ========================================================
-                elif MediaType.FONT in MediaCategories.get_types(ext, mime_fallback=True):
+                if MediaCategories.is_ext_in_category(
+                    ext, MediaCategories.FONT_TYPES, mime_fallback=True
+                ):
                     if is_grid_thumb:
                         # Short (Aa) Preview
                         image = self._font_short_thumb(_filepath, adj_size)
@@ -978,7 +988,9 @@ class ThumbRenderer(QObject):
                         # Large (Full Alphabet) Preview
                         image = self._font_long_thumb(_filepath, adj_size)
                 # Audio ========================================================
-                elif MediaType.AUDIO in MediaCategories.get_types(ext, mime_fallback=True):
+                if MediaCategories.is_ext_in_category(
+                    ext, MediaCategories.AUDIO_TYPES, mime_fallback=True
+                ):
                     image = self._audio_album_thumb(_filepath, ext)
                     if image is None:
                         image = self._audio_waveform_thumb(_filepath, ext, adj_size, pixel_ratio)
@@ -986,11 +998,15 @@ class ThumbRenderer(QObject):
                             image = self._apply_overlay_color(image, UiColor.GREEN)
 
                 # Blender ===========================================================
-                elif MediaType.BLENDER in MediaCategories.get_types(ext):
+                if MediaCategories.is_ext_in_category(
+                    ext, MediaCategories.BLENDER_TYPES, mime_fallback=True
+                ):
                     image = self._blender(_filepath)
 
                 # VTF ==========================================================
-                elif MediaType.SOURCE_ENGINE in MediaCategories.get_types(ext):
+                if MediaCategories.is_ext_in_category(
+                    ext, MediaCategories.SOURCE_ENGINE_TYPES, mime_fallback=True
+                ):
                     image = self._source_engine(_filepath)
 
                 # No Rendered Thumbnail ========================================

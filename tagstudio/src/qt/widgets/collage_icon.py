@@ -15,7 +15,7 @@ from PySide6.QtCore import (
 )
 from src.core.library import Library
 from src.core.library.alchemy.fields import _FieldID
-from src.core.media_types import MediaCategories, MediaType
+from src.core.media_types import MediaCategories
 from src.qt.helpers.file_tester import is_readable_video
 
 logger = structlog.get_logger(__name__)
@@ -77,7 +77,7 @@ class CollageIconRenderer(QObject):
                 )
 
                 ext: str = filepath.suffix.lower()
-                if MediaType.IMAGE in MediaCategories.get_types(ext):
+                if MediaCategories.is_ext_in_category(ext, MediaCategories.IMAGE_TYPES):
                     try:
                         with Image.open(str(self.lib.library_dir / entry.path)) as pic:
                             if keep_aspect:
@@ -90,9 +90,9 @@ class CollageIconRenderer(QObject):
                             self.rendered.emit(pic)
                     except DecompressionBombError as e:
                         logger.info(f"[ERROR] One of the images was too big ({e})")
-                elif MediaType.VIDEO in MediaCategories.get_types(ext) and is_readable_video(
-                    filepath
-                ):
+                elif MediaCategories.is_ext_in_category(
+                    ext, MediaCategories.VIDEO_TYPES
+                ) and is_readable_video(filepath):
                     video = cv2.VideoCapture(str(filepath), cv2.CAP_FFMPEG)
                     video.set(
                         cv2.CAP_PROP_POS_FRAMES,
@@ -145,11 +145,11 @@ class CollageIconRenderer(QObject):
     def get_file_color(self, ext: str):
         if ext.lower() == "gif":
             return "\033[93m"
-        if MediaType.IMAGE in MediaCategories.get_types(ext):
+        if MediaCategories.is_ext_in_category(ext, MediaCategories.IMAGE_TYPES):
             return "\033[37m"
-        elif MediaType.VIDEO in MediaCategories.get_types(ext):
+        elif MediaCategories.is_ext_in_category(ext, MediaCategories.VIDEO_TYPES):
             return "\033[96m"
-        elif MediaType.PLAINTEXT in MediaCategories.get_types(ext):
+        elif MediaCategories.is_ext_in_category(ext, MediaCategories.PLAINTEXT_TYPES):
             return "\033[92m"
         else:
             return "\033[97m"
