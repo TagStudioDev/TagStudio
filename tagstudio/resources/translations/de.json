@@ -18,5 +18,6 @@
     "merge.window_title": "Zusammenführen von doppelten Einträgen",
     "merge.merge_dupe_entries": "Zusammenführen von doppelten Einträgen",
     "library.author": "Autor",
-    "library.url": "URL"
+    "library.url": "URL",
+    "library.date_modified": "Datum geändert"
 }
