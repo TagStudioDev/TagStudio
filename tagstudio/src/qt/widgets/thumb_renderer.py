@@ -32,7 +32,7 @@ from PySide6.QtCore import QObject, QSize, Qt, Signal
 from PySide6.QtGui import QGuiApplication, QPixmap
 from src.core.constants import FONT_SAMPLE_SIZES, FONT_SAMPLE_TEXT
 from src.core.media_types import MediaCategories, MediaType
-from src.core.palette import ColorType, get_ui_color
+from src.core.palette import ColorType, UiColor, get_ui_color
 from src.core.utils.encoding import detect_char_encoding
 from src.qt.helpers.blender_thumbnailer import blend_thumb
 from src.qt.helpers.color_overlay import theme_fg_overlay
@@ -69,7 +69,7 @@ class ThumbRenderer(QObject):
         self.thumb_masks: dict = {}
         self.raised_edges: dict = {}
 
-        # Key: ("name", "color", 512, 512, 1.25)
+        # Key: ("name", UiColor, 512, 512, 1.25)
         self.icons: dict = {}
 
     def _get_resource_id(self, url: Path) -> str:
@@ -137,7 +137,7 @@ class ThumbRenderer(QObject):
         return item
 
     def _get_icon(
-        self, name: str, color: str, size: tuple[int, int], pixel_ratio: float = 1.0
+        self, name: str, color: UiColor, size: tuple[int, int], pixel_ratio: float = 1.0
     ) -> Image.Image:
         """Return an icon given a size, pixel ratio, and radius scaling option.
 
@@ -156,7 +156,7 @@ class ThumbRenderer(QObject):
             item_flat: Image.Image = self._render_icon(name, color, size, pixel_ratio, draw_border)
             edge: tuple[Image.Image, Image.Image] = self._get_edge(size, pixel_ratio)
             item = self._apply_edge(item_flat, edge, faded=True)
-            self.icons[(name, *color, size, pixel_ratio)] = item
+            self.icons[(name, color, *size, pixel_ratio)] = item
         return item
 
     def _render_mask(
@@ -245,7 +245,7 @@ class ThumbRenderer(QObject):
     def _render_icon(
         self,
         name: str,
-        color: str,
+        color: UiColor,
         size: tuple[int, int],
         pixel_ratio: float,
         draw_border: bool = True,
@@ -254,7 +254,7 @@ class ThumbRenderer(QObject):
 
         Args:
             name (str): The name of the icon resource.
-            color (str): The color to use for the icon.
+            color (UiColor): The color to use for the icon.
             size (tuple[int,int]): The size of the icon.
             pixel_ratio (float): The screen pixel ratio.
             draw_border (bool): Option to draw a border.
@@ -342,14 +342,14 @@ class ThumbRenderer(QObject):
 
         return im
 
-    def _apply_overlay_color(self, image: Image.Image, color: str) -> Image.Image:
+    def _apply_overlay_color(self, image: Image.Image, color: UiColor) -> Image.Image:
         """Apply a color overlay effect to an image based on its color channel data.
 
         Red channel for foreground, green channel for outline, none for background.
 
         Args:
             image (Image.Image): The image to apply an overlay to.
-            color (str): The name of the ColorType color to use.
+            color (UiColor): The name of the ColorType color to use.
         """
         bg_color: str = (
             get_ui_color(ColorType.DARK_ACCENT, color)
@@ -673,7 +673,7 @@ class ThumbRenderer(QObject):
                 cropped_im,
                 box=(margin, margin + ((size - new_y) // 2)),
             )
-            im = self._apply_overlay_color(bg, "purple")
+            im = self._apply_overlay_color(bg, UiColor.PURPLE)
         except OSError as e:
             logging.info(
                 f"[ThumbRenderer][FONT][ERROR] Couldn't Render thumbnail for font {filepath.name} "
@@ -930,10 +930,10 @@ class ThumbRenderer(QObject):
         _filepath: Path = Path(filepath)
         resampling_method = Image.Resampling.BILINEAR
 
-        theme_color: str = (
-            "theme_light"
+        theme_color: UiColor = (
+            UiColor.THEME_LIGHT
             if QGuiApplication.styleHints().colorScheme() == Qt.ColorScheme.Light
-            else "theme_dark"
+            else UiColor.THEME_DARK
         )
 
         # Initialize "Loading" thumbnail
@@ -983,7 +983,7 @@ class ThumbRenderer(QObject):
                     if image is None:
                         image = self._audio_waveform_thumb(_filepath, ext, adj_size, pixel_ratio)
                         if image is not None:
-                            image = self._apply_overlay_color(image, "green")
+                            image = self._apply_overlay_color(image, UiColor.GREEN)
 
                 # Blender ===========================================================
                 elif MediaType.BLENDER in MediaCategories.get_types(ext):
@@ -1042,7 +1042,7 @@ class ThumbRenderer(QObject):
                     self.updated_ratio.emit(1)
                 final = self._get_icon(
                     name="broken_link_icon",
-                    color="red",
+                    color=UiColor.RED,
                     size=(adj_size, adj_size),
                     pixel_ratio=pixel_ratio,
                 )
