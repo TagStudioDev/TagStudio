@@ -2,14 +2,14 @@
 # Licensed under the GPL-3.0 License.
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
-import logging
 from pathlib import Path
 from typing import Any
 
+import structlog
 import ujson
 from PIL import Image
 
-logging.basicConfig(format="%(message)s", level=logging.INFO)
+logger = structlog.get_logger(__name__)
 
 
 class ResourceManager:
@@ -24,7 +24,7 @@ class ResourceManager:
         if not ResourceManager._initialized:
             with open(Path(__file__).parent / "resources.json", encoding="utf-8") as f:
                 ResourceManager._map = ujson.load(f)
-                logging.info(
+                logger.info(
                     f"[ResourceManager] {len(ResourceManager._map.items())} resources registered"
                 )
             ResourceManager._initialized = True
@@ -79,7 +79,7 @@ class ResourceManager:
                     # TODO: Qt resource loading logic
                     pass
             except FileNotFoundError:
-                logging.error(
+                logger.error(
                     "[ResourceManager][ERROR]: Could not find resource: "
                     f"{Path(__file__).parents[2] / "resources" / res.get("path")}"
                 )

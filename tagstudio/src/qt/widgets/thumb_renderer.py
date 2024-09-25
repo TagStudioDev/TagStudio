@@ -3,7 +3,6 @@
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
 
-import logging
 import math
 import struct
 from copy import deepcopy
@@ -13,6 +12,7 @@ from pathlib import Path
 import cv2
 import numpy as np
 import rawpy
+import structlog
 from mutagen import MutagenError, flac, id3, mp4
 from PIL import (
     Image,
@@ -47,7 +47,7 @@ from vtf2img import Parser
 
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 
-logging.basicConfig(format="%(message)s", level=logging.INFO)
+logger = structlog.get_logger(__name__)
 register_heif_opener()
 register_avif_opener()
 
@@ -455,7 +455,7 @@ class ThumbRenderer(QObject):
             id3.ID3NoHeaderError,
             MutagenError,
         ) as e:
-            logging.error(
+            logger.error(
                 f"[ThumbRenderer][ERROR]: Couldn't read album artwork for {filepath.name} "
                 f"({type(e).__name__})"
             )
@@ -543,7 +543,7 @@ class ThumbRenderer(QObject):
             im.resize((size, size), Image.Resampling.BILINEAR)
 
         except exceptions.CouldntDecodeError as e:
-            logging.error(
+            logger.error(
                 f"[ThumbRenderer][WAVEFORM][ERROR]: Couldn't render waveform for {filepath.name} "
                 f"({type(e).__name__})"
             )
@@ -576,13 +576,13 @@ class ThumbRenderer(QObject):
             TypeError,
         ) as e:
             if str(e) == "expected string or buffer":
-                logging.info(
+                logger.info(
                     f"[ThumbRenderer][BLENDER][INFO] {filepath.name} "
                     f"Doesn't have an embedded thumbnail. ({type(e).__name__})"
                 )
 
             else:
-                logging.error(
+                logger.error(
                     f"[ThumbRenderer][BLENDER][ERROR]: Couldn't render thumbnail for "
                     f"{filepath.name} ({type(e).__name__})"
                 )
@@ -606,13 +606,13 @@ class ThumbRenderer(QObject):
             struct.error,
         ) as e:
             if str(e) == "expected string or buffer":
-                logging.info(
+                logger.info(
                     f"[ThumbRenderer][VTF][INFO] {filepath.name} "
                     f"Doesn't have an embedded thumbnail. ({type(e).__name__})"
                 )
 
             else:
-                logging.error(
+                logger.error(
                     f"[ThumbRenderer][VTF][ERROR]: Couldn't render thumbnail for"
                     f"{filepath.name} ({type(e).__name__})"
                 )
@@ -675,7 +675,7 @@ class ThumbRenderer(QObject):
             )
             im = self._apply_overlay_color(bg, UiColor.PURPLE)
         except OSError as e:
-            logging.info(
+            logger.info(
                 f"[ThumbRenderer][FONT][ERROR] Couldn't Render thumbnail for font {filepath.name} "
                 f"({type(e).__name__})"
             )
@@ -709,7 +709,7 @@ class ThumbRenderer(QObject):
                 )[-1]
             im = theme_fg_overlay(bg, use_alpha=False)
         except OSError as e:
-            logging.info(
+            logger.info(
                 f"[ThumbRenderer][FONT][ERROR] Couldn't Render thumbnail for font {filepath.name} "
                 f"({type(e).__name__})"
             )
@@ -732,7 +732,7 @@ class ThumbRenderer(QObject):
                     decoder_name="raw",
                 )
         except DecompressionBombError as e:
-            logging.info(
+            logger.info(
                 f"[ThumbRenderer][RAW][WARNING] Couldn't Render thumbnail for {filepath.name} "
                 f"({type(e).__name__})"
             )
@@ -740,7 +740,7 @@ class ThumbRenderer(QObject):
             rawpy._rawpy.LibRawIOError,
             rawpy._rawpy.LibRawFileUnsupportedError,
         ) as e:
-            logging.info(
+            logger.info(
                 f"[ThumbRenderer][RAW][ERROR] Couldn't Render thumbnail for raw image "
                 f"{filepath.name} ({type(e).__name__})"
             )
@@ -767,7 +767,7 @@ class ThumbRenderer(QObject):
             UnidentifiedImageError,
             DecompressionBombError,
         ) as e:
-            logging.error(
+            logger.error(
                 f"[ThumbRenderer][IMAGE][ERROR]: Couldn't render thumbnail for "
                 f"{filepath.name} ({type(e).__name__})"
             )
@@ -850,7 +850,7 @@ class ThumbRenderer(QObject):
             UnicodeDecodeError,
             OSError,
         ) as e:
-            logging.info(
+            logger.info(
                 f"[ThumbRenderer][TEXT][ERROR]: Couldn't render thumbnail for {filepath.name}"
                 f"({type(e).__name__})"
             )
@@ -894,7 +894,7 @@ class ThumbRenderer(QObject):
             DecompressionBombError,
             OSError,
         ) as e:
-            logging.error(
+            logger.error(
                 "[ThumbRenderer][ERROR]: Couldn't render thumbnail for "
                 f"{filepath.name} ({type(e).__name__})"
             )
@@ -1034,7 +1034,7 @@ class ThumbRenderer(QObject):
                     final.paste(image, mask=mask.getchannel(0))
 
             except FileNotFoundError as e:
-                logging.info(
+                logger.info(
                     f"[ThumbRenderer][ERROR]: Couldn't render thumbnail for {_filepath.name} "
                     f"({type(e).__name__})"
                 )
@@ -1052,7 +1052,7 @@ class ThumbRenderer(QObject):
                 ValueError,
                 ChildProcessError,
             ) as e:
-                logging.info(
+                logger.info(
                     f"[ThumbRenderer][ERROR]: Couldn't render thumbnail for {_filepath.name} "
                     f"({type(e).__name__})"
                 )
