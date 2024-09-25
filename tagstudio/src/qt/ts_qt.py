@@ -149,7 +149,9 @@ class QtDriver(QObject):
         self.spacing = None
 
         self.branch: str = (" (" + VERSION_BRANCH + ")") if VERSION_BRANCH else ""
-        self.base_title: str = f"TagStudio Alpha {VERSION}{self.branch}"
+        self.base_title: str = QCoreApplication.translate("home", "base_title").format(
+            version=VERSION, branch=self.branch
+        )
         # self.title_text: str = self.base_title
         # self.buffer = {}
         self.thumb_job_queue: Queue = Queue()
@@ -278,19 +280,19 @@ class QtDriver(QObject):
         self.main_window.setMenuBar(menu_bar)
         menu_bar.setNativeMenuBar(True)
 
-        file_menu = QMenu(QCoreApplication.translate("MenuBar.File", "Title"), menu_bar)
-        edit_menu = QMenu("&Edit", menu_bar)
-        tools_menu = QMenu("&Tools", menu_bar)
-        macros_menu = QMenu("&Macros", menu_bar)
-        window_menu = QMenu("&Window", menu_bar)
-        help_menu = QMenu("&Help", menu_bar)
+        file_menu = QMenu(QCoreApplication.translate("menu", "file"), menu_bar)
+        edit_menu = QMenu(QCoreApplication.translate("menu", "edit"), menu_bar)
+        tools_menu = QMenu(QCoreApplication.translate("menu", "tools"), menu_bar)
+        macros_menu = QMenu(QCoreApplication.translate("menu", "macros"), menu_bar)
+        window_menu = QMenu(QCoreApplication.translate("menu", "window"), menu_bar)
+        help_menu = QMenu(QCoreApplication.translate("menu", "help"), menu_bar)
 
         # File Menu ============================================================
         # file_menu.addAction(QAction('&New Library', menu_bar))
         # file_menu.addAction(QAction('&Open Library', menu_bar))
 
         open_library_action = QAction(
-            QCoreApplication.translate("MenuBar.File", "OpenCreateLibrary"), menu_bar
+            QCoreApplication.translate("dialog", "open_create_library"), menu_bar
         )
         open_library_action.triggered.connect(lambda: self.open_library_from_dialog())
         open_library_action.setShortcut(
@@ -342,7 +344,7 @@ class QtDriver(QObject):
         file_menu.addAction(close_library_action)
 
         # Edit Menu ============================================================
-        new_tag_action = QAction("New &Tag", menu_bar)
+        new_tag_action = QAction(QCoreApplication.translate("tag", "new"), menu_bar)
         new_tag_action.triggered.connect(lambda: self.add_tag_action_callback())
         new_tag_action.setShortcut(
             QtCore.QKeyCombination(
@@ -400,7 +402,9 @@ class QtDriver(QObject):
                 self.unlinked_modal = FixUnlinkedEntriesModal(self.lib, self)
             self.unlinked_modal.show()
 
-        fix_unlinked_entries_action = QAction("Fix &Unlinked Entries", menu_bar)
+        fix_unlinked_entries_action = QAction(
+            QCoreApplication.translate("fix_unlinked", "fix_unlinked"), menu_bar
+        )
         fix_unlinked_entries_action.triggered.connect(create_fix_unlinked_entries_modal)
         tools_menu.addAction(fix_unlinked_entries_action)
 
@@ -409,7 +413,9 @@ class QtDriver(QObject):
                 self.dupe_modal = FixDupeFilesModal(self.lib, self)
             self.dupe_modal.show()
 
-        fix_dupe_files_action = QAction("Fix Duplicate &Files", menu_bar)
+        fix_dupe_files_action = QAction(
+            QCoreApplication.translate("fix_dupes", "fix_dupes"), menu_bar
+        )
         fix_dupe_files_action.triggered.connect(create_dupe_files_modal)
         tools_menu.addAction(fix_dupe_files_action)
 
@@ -495,7 +501,7 @@ class QtDriver(QObject):
 
         if lib:
             self.splash.showMessage(
-                f'Opening Library "{lib}"...',
+                QCoreApplication.translate("splash", "open_library").format(lib=lib),
                 int(Qt.AlignmentFlag.AlignBottom | Qt.AlignmentFlag.AlignHCenter),
                 QColor("#9782ff"),
             )
@@ -586,7 +592,9 @@ class QtDriver(QObject):
             return
 
         logger.info("Closing Library...")
-        self.main_window.statusbar.showMessage("Closing Library...")
+        self.main_window.statusbar.showMessage(
+            QCoreApplication.translate("logging", "closing")
+        )
         start_time = time.time()
 
         self.settings.setValue(SettingItems.LAST_LIBRARY, self.lib.library_dir)
@@ -616,7 +624,9 @@ class QtDriver(QObject):
 
     def backup_library(self):
         logger.info("Backing Up Library...")
-        self.main_window.statusbar.showMessage("Saving Library...")
+        self.main_window.statusbar.showMessage(
+            QCoreApplication.translate("logging", "saving")
+        )
         start_time = time.time()
         target_path = self.lib.save_library_backup_to_disk()
         end_time = time.time()
@@ -627,8 +637,8 @@ class QtDriver(QObject):
     def add_tag_action_callback(self):
         self.modal = PanelModal(
             BuildTagPanel(self.lib),
-            "New Tag",
-            "Add Tag",
+            QCoreApplication.translate("tag", "new"),
+            QCoreApplication.translate("tag", "add"),
             has_save=True,
         )
 
@@ -660,7 +670,10 @@ class QtDriver(QObject):
 
     def show_tag_database(self):
         self.modal = PanelModal(
-            TagDatabasePanel(self.lib), "Library Tags", "Library Tags", has_save=False
+            TagDatabasePanel(self.lib),
+            QCoreApplication.translate("tag", "library"),
+            QCoreApplication.translate("tag", "library"),
+            has_save=False,
         )
         self.modal.show()
 
@@ -668,8 +681,8 @@ class QtDriver(QObject):
         panel = FileExtensionModal(self.lib)
         self.modal = PanelModal(
             panel,
-            "File Extensions",
-            "File Extensions",
+            QCoreApplication.translate("generic", "file_extension"),
+            QCoreApplication.translate("generic", "file_extension"),
             has_save=True,
         )
 
@@ -682,8 +695,8 @@ class QtDriver(QObject):
         tracker = RefreshDirTracker(self.lib)
 
         pw = ProgressWidget(
-            window_title="Refreshing Directories",
-            label_text="Scanning Directories for New Files...\nPreparing...",
+            window_title=QCoreApplication.translate("dialog", "refresh_directories"),
+            label_text=QCoreApplication.translate("dialog", "scan_directories"),
             cancel_button_text=None,
             minimum=0,
             maximum=0,
@@ -695,7 +708,13 @@ class QtDriver(QObject):
             lambda x: (
                 pw.update_progress(x + 1),
                 pw.update_label(
-                    f'Scanning Directories for New Files...\n{x + 1} File{"s" if x + 1 != 1 else ""} Searched, {tracker.files_count} New Files Found'
+                    QCoreApplication.translate(
+                        "dialog", "scan_directories.new_files"
+                    ).format(
+                        file_count=x + 1,
+                        plural="s" if x + 1 != 1 else "",
+                        new_files=tracker.files_count,
+                    )
                 ),
             )
         )
@@ -735,8 +754,12 @@ class QtDriver(QObject):
         # iterator = FunctionIterator(lambda: self.new_file_macros_runnable(tracker.files_not_in_library))
         iterator = FunctionIterator(tracker.save_new_files)
         pw = ProgressWidget(
-            window_title="Running Macros on New Entries",
-            label_text=f"Running Configured Macros on 1/{files_count} New Entries",
+            window_title=QCoreApplication.translate(
+                "progression.running_macros", "running"
+            ),
+            label_text=QCoreApplication.translate(
+                "progression.running_macros", "new_entries"
+            ).format(done_files=1, new_files=files_count),
             cancel_button_text=None,
             minimum=0,
             maximum=files_count,
@@ -746,7 +769,9 @@ class QtDriver(QObject):
             lambda x: (
                 pw.update_progress(x + 1),
                 pw.update_label(
-                    f"Running Configured Macros on {x + 1}/{files_count} New Entries"
+                    QCoreApplication.translate(
+                        "progression.running_macros", "new_entries"
+                    ).format(done_files=x + 1, new_files=files_count)
                 ),
             )
         )
@@ -1019,7 +1044,9 @@ class QtDriver(QObject):
             self.filter = dataclasses.replace(self.filter, **dataclasses.asdict(filter))
 
         self.main_window.statusbar.showMessage(
-            f'Searching Library: "{self.filter.summary}"'
+            QCoreApplication.translate("status", "search_library_query").format(
+                query=self.filter.summary
+            )
         )
         self.main_window.statusbar.repaint()
         start_time = time.time()
@@ -1031,11 +1058,17 @@ class QtDriver(QObject):
         end_time = time.time()
         if self.filter.summary:
             self.main_window.statusbar.showMessage(
-                f'{query_count} Results Found for "{self.filter.summary}" ({format_timespan(end_time - start_time)})'
+                QCoreApplication.translate("status", "queried_results_found").format(
+                    results=query_count,
+                    query=self.filter.summary,
+                    time=format_timespan(end_time - start_time),
+                ),
             )
         else:
             self.main_window.statusbar.showMessage(
-                f"{query_count} Results ({format_timespan(end_time - start_time)})"
+                QCoreApplication.translate("status", "results_found").format(
+                    results=query_count, time=format_timespan(end_time - start_time)
+                )
             )
 
         # update page content
@@ -1090,7 +1123,9 @@ class QtDriver(QObject):
 
     def open_library(self, path: Path | str):
         """Opens a TagStudio library."""
-        open_message: str = f'Opening Library "{str(path)}"...'
+        open_message: str = QCoreApplication.translate("splash", "open_library").format(
+            lib=str(path)
+        )
         self.main_window.landing_widget.set_status_label(open_message)
         self.main_window.statusbar.showMessage(open_message, 3)
         self.main_window.repaint()
@@ -1103,7 +1138,9 @@ class QtDriver(QObject):
         self.add_new_files_callback()
 
         self.update_libs_list(path)
-        title_text = f"{self.base_title} - Library '{self.lib.library_dir}'"
+        title_text = QCoreApplication.translate("open_library", "title").format(
+            base_title=self.base_title, directory=self.lib.library_dir
+        )
         self.main_window.setWindowTitle(title_text)
 
         self.selected.clear()
