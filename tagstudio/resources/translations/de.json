@@ -2,5 +2,21 @@
     "home.main_window": "Hauptfenster",
     "home.include_all_tags": "Und (enthält alle Tags)",
     "home.include_any_tag": "Oder (enthält alle Tags)",
-    "home.base_title": "TagStudio Alpha"
+    "home.base_title": "TagStudio Alpha",
+    "menu.file": "Datei",
+    "menu.edit": "Bearbeiten",
+    "menu.macros": "Makros",
+    "tag.add": "Hinzufüge Tag",
+    "preview.dimensions": "Abmessungen",
+    "preview.recent": "Aktuelle Bibliotheken",
+    "library.title": "Titel",
+    "library.Artist": "Künstler",
+    "menu.tools": "Werkzeuge",
+    "menu.window": "Fenster",
+    "menu.help": "Hilfe",
+    "tag.new": "Neuer Tag",
+    "merge.window_title": "Zusammenführen von doppelten Einträgen",
+    "merge.merge_dupe_entries": "Zusammenführen von doppelten Einträgen",
+    "library.author": "Autor",
+    "library.url": "URL"
 }
