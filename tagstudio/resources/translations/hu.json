@@ -139,5 +139,6 @@
     "fix_dupes.no_file_match": "Nincsenek egyező fájlok",
     "fix_dupes.number_file_match": "%{count} egyező fájl",
     "fix_unlinked.description": "A könyvtár minden eleme egy fájllal van összekapcsolva a számítógépen. Ha egy kapcsolt fájl a TagSudión kívül kerül áthelyezésre vagy törésre, akkor ez a kapcsolat megszakad. Ezeket a kapcsolat nélküli elemeket a program megpróbálhatja automatikusan megkeresni, de Ön is kézileg újra összekapcsolhatja vagy törölheti őket.",
-    "fix_unlinked.duplicate_description": "Ha több elem ugyanazzal a fájllal van összekapcsolva, akkor egyezőnek számítanak. Ha egyesíti őket, akkor egy olyan elem lesz létrehozva, ami az eredeti elemek összes adatát tartalmazza. Ezeket nem szabad összetéveszteni az „egyező fájlokkal”, amelyek a TagStudión kívüli azonos tartalmú fájlok."
+    "fix_unlinked.duplicate_description": "Ha több elem ugyanazzal a fájllal van összekapcsolva, akkor egyezőnek számítanak. Ha egyesíti őket, akkor egy olyan elem lesz létrehozva, ami az eredeti elemek összes adatát tartalmazza. Ezeket nem szabad összetéveszteni az „egyező fájlokkal”, amelyek a TagStudión kívüli azonos tartalmú fájlok.",
+    "preview_panel.update_widgets": "[ENTRY PANEL] UPDATE WIDGETS (%{self.driver.selected})"
 }
