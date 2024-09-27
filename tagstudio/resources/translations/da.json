@@ -1,6 +1,5 @@
 {
-    "home.base_title": "TagStudio Alfa",
-    "home.main_window": "Hovedvindue",
     "home.include_all_tags": "Og (inkluderer alle tags)",
-    "home.include_any_tag": "Og (inkluderer envher tag)"
+    "home.include_any_tag": "Og (inkluderer envher tag)",
+    "home.main_window": "Hovedvindue"
 }

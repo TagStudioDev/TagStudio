@@ -74,7 +74,6 @@
     "generic.refresh_all": "Gjenoppfrisk alle",
     "generic.apply": "Bruk",
     "generic.search_tags": "Søk etter etiketter",
-    "text_line_edit.unknown_event_type": "ukjent begivenhetstype: %{event}",
     "library.Artist": "Artist",
     "library.publisher": "Utgiver",
     "library.author": "Forfatter",
@@ -82,7 +81,7 @@
     "status.backup_success": "Kopi av bibliotek lagret i:",
     "status.search_library_query": "Søker i biblioteket etter",
     "status.results_found": "Resultat",
-    "file_opener.open_file": "Åpner fil :}",
+    "file_opener.open_file": "Åpner fil :",
     "delete_unlinked.confirm": "Slett følgende %{len(self.lib.missing_files)} oppføringer?",
     "delete_unlinked.delete_entries": "Sletting av oppføringer",
     "file_extension.add_extension": "Legg til utvidelse",
@@ -96,7 +95,6 @@
     "preview_panel.confirm_remove": "Fjern dette «%{self.lib.get_field_attr(field, \"name\")}»-feltet?",
     "delete_unlinked.deleting_number_entries": "Sletter %{x[0]+1}/{len(self.lib.missing_files)} ulenkede oppføringer",
     "fix_unlinked.scan_library.label": "Skanner bibliotek for ulenkede oppføringer …",
-    "folders_to_tags.folders_to_tags": "Konverterer mapper til etiketter",
     "preview_panel.missing_location": "Posisjon mangler",
     "landing.open_button": "Åpne/opprett bibliotek %{open_shortcut_text}"
 }
