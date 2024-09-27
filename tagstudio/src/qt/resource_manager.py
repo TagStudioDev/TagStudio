@@ -18,15 +18,14 @@ class ResourceManager:
     _map: dict = {}
     _cache: dict[str, Any] = {}
     _initialized: bool = False
+    _res_folder: Path = Path(__file__).parents[2]
 
     def __init__(self) -> None:
         # Load JSON resource map
         if not ResourceManager._initialized:
             with open(Path(__file__).parent / "resources.json", encoding="utf-8") as f:
                 ResourceManager._map = ujson.load(f)
-                logger.info(
-                    f"[ResourceManager] {len(ResourceManager._map.items())} resources registered"
-                )
+                logger.info("resources registered", count=len(ResourceManager._map.items()))
             ResourceManager._initialized = True
 
     @staticmethod
@@ -41,7 +40,7 @@ class ResourceManager:
         """
         res: dict = ResourceManager._map.get(id)
         if res:
-            return Path(__file__).parents[2] / "resources" / res.get("path")
+            return ResourceManager._res_folder / "resources" / res.get("path")
         return None
 
     def get(self, id: str) -> Any:
@@ -66,7 +65,7 @@ class ResourceManager:
             try:
                 if res.get("mode") in ["r", "rb"]:
                     with open(
-                        (Path(__file__).parents[2] / "resources" / res.get("path")),
+                        (ResourceManager._res_folder / "resources" / res.get("path")),
                         res.get("mode"),
                     ) as f:
                         data = f.read()
@@ -74,17 +73,15 @@ class ResourceManager:
                             data = bytes(data)
                         ResourceManager._cache[id] = data
                         return data
-                elif res.get("mode") == "pil":
-                    data = Image.open(Path(__file__).parents[2] / "resources" / res.get("path"))
+                elif res and res.get("mode") == "pil":
+                    data = Image.open(ResourceManager._res_folder / "resources" / res.get("path"))
                     return data
                 elif res.get("mode") in ["qt"]:
                     # TODO: Qt resource loading logic
                     pass
             except FileNotFoundError:
-                logger.error(
-                    "[ResourceManager][ERROR]: Could not find resource: "
-                    f"{Path(__file__).parents[2] / "resources" / res.get("path")}"
-                )
+                path: Path = ResourceManager._res_folder / "resources" / res.get("path")
+                logger.error("[ResourceManager][ERROR]: Could not find resource: ", path)
                 return None
 
     def __getattr__(self, __name: str) -> Any:
