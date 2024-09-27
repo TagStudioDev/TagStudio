@@ -455,10 +455,7 @@ class ThumbRenderer(QObject):
             id3.ID3NoHeaderError,
             MutagenError,
         ) as e:
-            logger.error(
-                f"[ThumbRenderer][ERROR]: Couldn't read album artwork for {filepath.name} "
-                f"({type(e).__name__})"
-            )
+            logger.error("Couldn't read album artwork", path=filepath, error=e)
         return image
 
     def _audio_waveform_thumb(
@@ -543,10 +540,7 @@ class ThumbRenderer(QObject):
             im.resize((size, size), Image.Resampling.BILINEAR)
 
         except exceptions.CouldntDecodeError as e:
-            logger.error(
-                f"[ThumbRenderer][WAVEFORM][ERROR]: Couldn't render waveform for {filepath.name} "
-                f"({type(e).__name__})"
-            )
+            logger.error("Couldn't render waveform", path=filepath.name, error=e)
 
         return im
 
