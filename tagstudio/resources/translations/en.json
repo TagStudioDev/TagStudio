@@ -132,7 +132,7 @@
     "relink_unlinked.attempt_relink": "Attempting to Relink %{x[0]+1}/%{len(self.lib.missing_files)} Entries, %{self.fixed} Successfully Relinked",
     "landing.open_button": "Open/Create Library %{open_shortcut_text}",
     "preview_panel.missing_location": "Location is missing",
-    "preview_panel.update_widgets": "",
+    "preview_panel.update_widgets": "[ENTRY PANEL] UPDATE WIDGETS (%{self.driver.selected})",
     "preview_panel.no_items_selected": "No Items Selected",
     "preview_panel.confirm_remove": "Are you sure you want to remove this \"%{self.lib.get_field_attr(field, \"name\")}\" field?",
     "preview_panel.mixed_data": "Mixed Data",
