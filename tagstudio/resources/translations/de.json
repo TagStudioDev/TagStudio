@@ -120,6 +120,7 @@
     "preview_panel.mixed_data": "",
     "preview_panel.no_items_selected": "",
     "preview_panel.unknown_field_type": "",
+    "preview_panel.update_widgets": "",
     "progression.running_macros.new_entries": "Ausführen von Makros bei neuen Einträgen",
     "progression.running_macros.one_new_entry": "Ausführen konfigurierter Makros für 1/%{len(new_ids)} neue Einträge",
     "progression.running_macros.several_new_entry": "Ausführen konfigurierter Makros für %{x + 1}/%{len(new_ids)} neue Einträge",
