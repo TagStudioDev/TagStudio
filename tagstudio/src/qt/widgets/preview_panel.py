@@ -44,12 +44,13 @@ from src.core.library.alchemy.fields import (
     _FieldID,
 )
 from src.core.library.alchemy.library import Library
-from src.core.media_types import MediaCategories, MediaType
+from src.core.media_types import MediaCategories
 from src.qt.helpers.file_opener import FileOpenerHelper, FileOpenerLabel, open_file
 from src.qt.helpers.file_tester import is_readable_video
 from src.qt.helpers.qbutton_wrapper import QPushButtonWrapper
 from src.qt.helpers.rounded_pixmap_style import RoundedPixmapStyle
 from src.qt.modals.add_field import AddFieldModal
+from src.qt.platform_strings import PlatformStrings
 from src.qt.widgets.fields import FieldContainer
 from src.qt.widgets.panel import PanelModal
 from src.qt.widgets.tag_box import TagBoxWidget
@@ -127,16 +128,7 @@ class PreviewPanel(QWidget):
         date_style = "font-size:12px;"
 
         self.open_file_action = QAction("Open file", self)
-        self.trash_term: str = "Trash"
-        if platform.system() == "Windows":
-            self.trash_term = "Recycle Bin"
-        self.delete_action = QAction(f"Send file to {self.trash_term}", self)
-
-        self.open_explorer_action = QAction("Open in explorer", self)  # Default text (Linux, etc.)
-        if platform.system() == "Darwin":
-            self.open_explorer_action = QAction("Reveal in Finder", self)
-        elif platform.system() == "Windows":
-            self.open_explorer_action = QAction("Open in Explorer", self)
+        self.open_explorer_action = QAction(PlatformStrings.open_file_str, self)
 
         self.preview_img = QPushButtonWrapper()
         self.preview_img.setMinimumSize(*self.img_button_size)
@@ -144,7 +136,6 @@ class PreviewPanel(QWidget):
         self.preview_img.setContextMenuPolicy(Qt.ContextMenuPolicy.ActionsContextMenu)
         self.preview_img.addAction(self.open_file_action)
         self.preview_img.addAction(self.open_explorer_action)
-        self.preview_img.addAction(self.delete_action)
 
         self.preview_gif = QLabel()
         self.preview_gif.setMinimumSize(*self.img_button_size)
@@ -152,13 +143,11 @@ class PreviewPanel(QWidget):
         self.preview_gif.setCursor(Qt.CursorShape.ArrowCursor)
         self.preview_gif.addAction(self.open_file_action)
         self.preview_gif.addAction(self.open_explorer_action)
-        self.preview_gif.addAction(self.delete_action)
         self.preview_gif.hide()
         self.gif_buffer: QBuffer = QBuffer()
 
         self.preview_vid = VideoPlayer(driver)
         self.preview_vid.hide()
-        self.preview_vid.addAction(self.delete_action)
         self.thumb_renderer = ThumbRenderer()
         self.thumb_renderer.updated.connect(lambda ts, i, s: (self.preview_img.setIcon(i)))
         self.thumb_renderer.updated_ratio.connect(
@@ -637,12 +626,14 @@ class PreviewPanel(QWidget):
 
                     image = None
                     if (
-                        (MediaType.IMAGE in MediaCategories.get_types(ext))
-                        and (MediaType.IMAGE_RAW not in MediaCategories.get_types(ext))
-                        and (MediaType.IMAGE_VECTOR not in MediaCategories.get_types(ext))
+                        MediaCategories.is_ext_in_category(ext, MediaCategories.IMAGE_TYPES)
+                        and MediaCategories.is_ext_in_category(ext, MediaCategories.IMAGE_RAW_TYPES)
+                        and MediaCategories.is_ext_in_category(
+                            ext, MediaCategories.IMAGE_VECTOR_TYPES
+                        )
                     ):
                         image = Image.open(str(filepath))
-                    elif MediaType.IMAGE_RAW in MediaCategories.get_types(ext):
+                    elif MediaCategories.is_ext_in_category(ext, MediaCategories.IMAGE_RAW_TYPES):
                         try:
                             with rawpy.imread(str(filepath)) as raw:
                                 rgb = raw.postprocess()
@@ -652,9 +643,9 @@ class PreviewPanel(QWidget):
                             rawpy._rawpy.LibRawFileUnsupportedError,
                         ):
                             pass
-                    elif MediaType.VIDEO in MediaCategories.get_types(ext) and is_readable_video(
-                        filepath
-                    ):
+                    elif MediaCategories.is_ext_in_category(
+                        ext, MediaCategories.VIDEO_TYPES
+                    ) and is_readable_video(filepath):
                         video = cv2.VideoCapture(str(filepath), cv2.CAP_FFMPEG)
                         video.set(
                             cv2.CAP_PROP_POS_FRAMES,
@@ -676,18 +667,23 @@ class PreviewPanel(QWidget):
 
                     # Stats for specific file types are displayed here.
                     if image and (
-                        (MediaType.IMAGE in MediaCategories.get_types(ext))
-                        or (MediaType.VIDEO in MediaCategories.get_types(ext, mime_fallback=True))
-                        or (
-                            MediaType.IMAGE_RAW
-                            in MediaCategories.get_types(ext, mime_fallback=True)
+                        MediaCategories.is_ext_in_category(
+                            ext, MediaCategories.IMAGE_TYPES, mime_fallback=True
+                        )
+                        or MediaCategories.is_ext_in_category(
+                            ext, MediaCategories.VIDEO_TYPES, mime_fallback=True
+                        )
+                        or MediaCategories.is_ext_in_category(
+                            ext, MediaCategories.IMAGE_RAW_TYPES, mime_fallback=True
                         )
                     ):
                         self.dimensions_label.setText(
                             f"{ext.upper()[1:]}  •  {format_size(filepath.stat().st_size)}\n"
                             f"{image.width} x {image.height} px"
                         )
-                    elif MediaType.FONT in MediaCategories.get_types(ext, mime_fallback=True):
+                    elif MediaCategories.is_ext_in_category(
+                        ext, MediaCategories.FONT_TYPES, mime_fallback=True
+                    ):
                         try:
                             font = ImageFont.truetype(filepath)
                             self.dimensions_label.setText(

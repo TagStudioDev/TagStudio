@@ -30,6 +30,7 @@ from src.core.library.alchemy.fields import _FieldID
 from src.core.media_types import MediaCategories, MediaType
 from src.qt.flowlayout import FlowWidget
 from src.qt.helpers.file_opener import FileOpenerHelper
+from src.qt.platform_strings import PlatformStrings
 from src.qt.widgets.thumb_button import ThumbButton
 from src.qt.widgets.thumb_renderer import ThumbRenderer
 
@@ -198,7 +199,7 @@ class ItemThumb(FlowWidget):
         self.opener = FileOpenerHelper("")
         open_file_action = QAction("Open file", self)
         open_file_action.triggered.connect(self.opener.open_file)
-        open_explorer_action = QAction("Open file in explorer", self)
+        open_explorer_action = QAction(PlatformStrings.open_file_str, self)
         open_explorer_action.triggered.connect(self.opener.open_explorer)
         self.thumb_button.addAction(open_file_action)
         self.thumb_button.addAction(open_explorer_action)
@@ -333,10 +334,10 @@ class ItemThumb(FlowWidget):
         media_types: set[MediaType] = MediaCategories.get_types(ext)
         if (
             ext
-            and (MediaType.IMAGE not in media_types)
-            or (MediaType.IMAGE_RAW in media_types)
-            or (MediaType.IMAGE_VECTOR in media_types)
-            or (MediaType.ADOBE_PHOTOSHOP in media_types)
+            and not MediaCategories.is_ext_in_category(ext, MediaCategories.IMAGE_TYPES)
+            or MediaCategories.is_ext_in_category(ext, MediaCategories.IMAGE_RAW_TYPES)
+            or MediaCategories.is_ext_in_category(ext, MediaCategories.IMAGE_VECTOR_TYPES)
+            or MediaCategories.is_ext_in_category(ext, MediaCategories.ADOBE_PHOTOSHOP_TYPES)
             or ext
             in [
                 ".apng",

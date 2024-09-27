@@ -2,7 +2,6 @@
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
 import logging
-import platform
 import typing
 
 from PIL import Image, ImageDraw
@@ -31,6 +30,7 @@ from PySide6.QtSvgWidgets import QSvgWidget
 from PySide6.QtWidgets import QGraphicsScene, QGraphicsView
 from src.core.enums import SettingItems
 from src.qt.helpers.file_opener import FileOpenerHelper
+from src.qt.platform_strings import PlatformStrings
 
 if typing.TYPE_CHECKING:
     from src.qt.ts_qt import QtDriver
@@ -126,12 +126,7 @@ class VideoPlayer(QGraphicsView):
         open_file_action = QAction("Open file", self)
         open_file_action.triggered.connect(self.opener.open_file)
 
-        system = platform.system()
-        open_explorer_action = QAction("Open in explorer", self)  # Default, usually Linux
-        if system == "Darwin":
-            open_explorer_action = QAction("Reveal in Finder", self)
-        elif system == "Windows":
-            open_explorer_action = QAction("Open in Explorer", self)
+        open_explorer_action = QAction(PlatformStrings.open_file_str, self)
 
         open_explorer_action.triggered.connect(self.opener.open_explorer)
         self.addAction(open_file_action)
