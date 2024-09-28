@@ -1,5 +1,3 @@
-from enum import Enum
-
 VERSION: str = "9.3.2"  # Major.Minor.Patch
 VERSION_BRANCH: str = ""  # Usually "" or "Pre-Release"
 
@@ -123,11 +121,3 @@ ALL_FILE_TYPES: list[str] = (
 
 TAG_FAVORITE = 1
 TAG_ARCHIVED = 0
-
-
-class LibraryPrefs(Enum):
-    IS_EXCLUDE_LIST: bool = True
-    EXTENSION_LIST: list[str] = ["json", "xmp", "aae"]
-    PAGE_SIZE: int = 500
-    # increase in case of db breaking change (for now)
-    DB_VERSION: int = 2

@@ -1,5 +1,6 @@
 import re
 import shutil
+import sys
 import unicodedata
 from dataclasses import dataclass
 from datetime import UTC, datetime
@@ -34,8 +35,8 @@ from ...constants import (
     TAG_ARCHIVED,
     TAG_FAVORITE,
     TS_FOLDER_NAME,
-    LibraryPrefs,
 )
+from ...enums import LibraryPrefs
 from .db import make_tables
 from .enums import FieldTypeEnum, FilterState, TagColor
 from .fields import (
@@ -164,9 +165,24 @@ class Library:
                 # default tags may exist already
                 session.rollback()
 
+            if "pytest" not in sys.modules:
+                db_version = session.scalar(
+                    select(Preferences).where(Preferences.key == LibraryPrefs.DB_VERSION.name)
+                )
+
+                if not db_version:
+                    # TODO - remove after #503 is merged and LibraryPrefs.DB_VERSION increased again
+                    return LibraryStatus(
+                        success=False,
+                        message=(
+                            "Library version mismatch.\n"
+                            f"Found: v0, expected: v{LibraryPrefs.DB_VERSION.default}"
+                        ),
+                    )
+
             for pref in LibraryPrefs:
                 try:
-                    session.add(Preferences(key=pref.name, value=pref.value))
+                    session.add(Preferences(key=pref.name, value=pref.default))
                     session.commit()
                 except IntegrityError:
                     logger.debug("preference already exists", pref=pref)
@@ -192,18 +208,18 @@ class Library:
                 select(Preferences).where(Preferences.key == LibraryPrefs.DB_VERSION.name)
             )
             # if the db version is different, we cant proceed
-            if db_version.value != LibraryPrefs.DB_VERSION.value:
+            if db_version.value != LibraryPrefs.DB_VERSION.default:
                 logger.error(
                     "DB version mismatch",
                     db_version=db_version.value,
-                    expected=LibraryPrefs.DB_VERSION.value,
+                    expected=LibraryPrefs.DB_VERSION.default,
                 )
                 # TODO - handle migration
                 return LibraryStatus(
                     success=False,
                     message=(
                         "Library version mismatch.\n"
-                        f"Found: v{db_version.value}, expected: v{LibraryPrefs.DB_VERSION.value}"
+                        f"Found: v{db_version.value}, expected: v{LibraryPrefs.DB_VERSION.default}"
                     ),
                 )
 

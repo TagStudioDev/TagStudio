@@ -16,7 +16,7 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
-from src.core.constants import LibraryPrefs
+from src.core.enums import LibraryPrefs
 from src.core.library import Library
 from src.qt.widgets.panel import PanelWidget
 

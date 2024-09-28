@@ -2,7 +2,7 @@ from pathlib import Path, PureWindowsPath
 from tempfile import TemporaryDirectory
 
 import pytest
-from src.core.constants import LibraryPrefs
+from src.core.enums import DefaultEnum, LibraryPrefs
 from src.core.library.alchemy import Entry
 from src.core.library.alchemy.enums import FilterState
 from src.core.library.alchemy.fields import TextField, _FieldID
@@ -197,7 +197,7 @@ def test_search_library_case_insensitive(library):
 
 def test_preferences(library):
     for pref in LibraryPrefs:
-        assert library.prefs(pref) == pref.value
+        assert library.prefs(pref) == pref.default
 
 
 def test_save_windows_path(library, generate_tag):
@@ -383,3 +383,21 @@ def test_update_field_order(library, entry_full):
     assert entry.text_fields[0].value == "first"
     assert entry.text_fields[1].position == 1
     assert entry.text_fields[1].value == "second"
+
+
+def test_library_prefs_multiple_identical_vals():
+    # check the preferences are inherited from DefaultEnum
+    assert issubclass(LibraryPrefs, DefaultEnum)
+
+    # create custom settings with identical values
+    class TestPrefs(DefaultEnum):
+        FOO = 1
+        BAR = 1
+
+    assert TestPrefs.FOO.default == 1
+    assert TestPrefs.BAR.default == 1
+    assert TestPrefs.BAR.name == "BAR"
+
+    # accessing .value should raise exception
+    with pytest.raises(AttributeError):
+        assert TestPrefs.BAR.value

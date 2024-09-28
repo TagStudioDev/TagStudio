@@ -61,10 +61,9 @@ from src.core.constants import (
     TAG_FAVORITE,
     VERSION,
     VERSION_BRANCH,
-    LibraryPrefs,
 )
 from src.core.driver import DriverMixin
-from src.core.enums import MacroID, SettingItems
+from src.core.enums import LibraryPrefs, MacroID, SettingItems
 from src.core.library.alchemy.enums import (
     FieldTypeEnum,
     FilterState,
