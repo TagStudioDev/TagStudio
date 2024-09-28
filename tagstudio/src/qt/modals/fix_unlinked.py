@@ -90,7 +90,7 @@ class FixUnlinkedEntriesModal(QWidget):
                 self.driver.filter_items(),
             )
         )
-        self.delete_button.setText("De&lete Unlinked Entries")
+        self.delete_button.setText("&Delete Unlinked Entries")
         self.delete_button.clicked.connect(self.delete_modal.show)
 
         self.button_container = QWidget()
