@@ -28,7 +28,14 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
-from src.core.constants import IMAGE_TYPES, RAW_IMAGE_TYPES, TS_FOLDER_NAME, VIDEO_TYPES
+
+from src.core.constants import (
+    AUDIO_TYPES,
+    IMAGE_TYPES,
+    RAW_IMAGE_TYPES,
+    TS_FOLDER_NAME,
+    VIDEO_TYPES,
+)
 from src.core.enums import SettingItems, Theme
 from src.core.library.alchemy.enums import FilterState
 from src.core.library.alchemy.fields import (
@@ -43,6 +50,7 @@ from src.core.library.alchemy.library import Library
 from src.qt.helpers.file_opener import FileOpenerHelper, FileOpenerLabel, open_file
 from src.qt.helpers.qbutton_wrapper import QPushButtonWrapper
 from src.qt.modals.add_field import AddFieldModal
+from src.qt.widgets.audio_player import AudioPlayer
 from src.qt.widgets.fields import FieldContainer
 from src.qt.widgets.panel import PanelModal
 from src.qt.widgets.tag_box import TagBoxWidget
@@ -122,11 +130,17 @@ class PreviewPanel(QWidget):
             )
         )
 
+
+
         image_layout.addWidget(self.preview_img)
         image_layout.setAlignment(self.preview_img, Qt.AlignmentFlag.AlignCenter)
         image_layout.addWidget(self.preview_vid)
         image_layout.setAlignment(self.preview_vid, Qt.AlignmentFlag.AlignCenter)
         self.image_container.setMinimumSize(*self.img_button_size)
+
+        self.audio_player = AudioPlayer(driver)
+        self.audio_player.hide()
+
         self.file_label = FileOpenerLabel("Filename")
         self.file_label.setWordWrap(True)
         self.file_label.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
@@ -219,6 +233,7 @@ class PreviewPanel(QWidget):
         )
 
         splitter.addWidget(self.image_container)
+        splitter.addWidget(self.audio_player)
         splitter.addWidget(info_section)
         splitter.addWidget(self.libs_flow_container)
         splitter.setStretchFactor(1, 2)
@@ -466,6 +481,8 @@ class PreviewPanel(QWidget):
             self.preview_img.show()
             self.preview_vid.stop()
             self.preview_vid.hide()
+            self.audio_player.hide()
+            self.audio_player.stop()
             self.selected = list(self.driver.selected)
             self.add_field_button.setHidden(True)
 
@@ -497,6 +514,8 @@ class PreviewPanel(QWidget):
             self.preview_img.show()
             self.preview_vid.stop()
             self.preview_vid.hide()
+            self.audio_player.stop()
+            self.audio_player.hide()
 
             # If a new selection is made, update the thumbnail and filepath.
             if not self.selected or self.selected != self.driver.selected:
@@ -535,6 +554,9 @@ class PreviewPanel(QWidget):
                             rawpy._rawpy.LibRawFileUnsupportedError,
                         ):
                             pass
+                    elif filepath.suffix.lower() in AUDIO_TYPES:
+                        self.audio_player.show()
+                        self.audio_player.load_file(filepath)
                     elif filepath.suffix.lower() in VIDEO_TYPES:
                         video = cv2.VideoCapture(str(filepath))
                         if video.get(cv2.CAP_PROP_FRAME_COUNT) <= 0:
@@ -612,6 +634,8 @@ class PreviewPanel(QWidget):
             self.preview_img.show()
             self.preview_vid.stop()
             self.preview_vid.hide()
+            self.audio_player.stop()
+            self.audio_player.hide()
             if self.selected != self.driver.selected:
                 self.file_label.setText(f"{len(self.driver.selected)} Items Selected")
                 self.file_label.setCursor(Qt.CursorShape.ArrowCursor)
