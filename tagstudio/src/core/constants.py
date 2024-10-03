@@ -57,7 +57,6 @@ VIDEO_TYPES: list[str] = [
 ]
 AUDIO_TYPES: list[str] = [
     ".mp3",
-    ".mp4",
     ".mpeg4",
     ".m4a",
     ".aac",
