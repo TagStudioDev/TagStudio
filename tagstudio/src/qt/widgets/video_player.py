@@ -122,6 +122,7 @@ class VideoPlayer(QGraphicsView):
 
         open_file_action = QAction("Open file", self)
         open_file_action.triggered.connect(self.opener.open_file)
+
         open_explorer_action = QAction("Open file in explorer", self)
         open_explorer_action.triggered.connect(self.opener.open_explorer)
         self.addAction(open_file_action)

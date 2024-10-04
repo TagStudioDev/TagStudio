@@ -4,18 +4,30 @@
 
 
 from PySide6 import QtCore
-from PySide6.QtCore import QEvent
-from PySide6.QtGui import QColor, QEnterEvent, QPainter, QPainterPath, QPaintEvent, QPen
+from PySide6.QtCore import QEvent, Signal
+from PySide6.QtGui import (
+    QColor,
+    QEnterEvent,
+    QMouseEvent,
+    QPainter,
+    QPainterPath,
+    QPaintEvent,
+    QPen,
+)
 from PySide6.QtWidgets import QWidget
 from src.qt.helpers.qbutton_wrapper import QPushButtonWrapper
 
 
 class ThumbButton(QPushButtonWrapper):
+    double_clicked = Signal()
+
     def __init__(self, parent: QWidget, thumb_size: tuple[int, int]) -> None:
         super().__init__(parent)
         self.thumb_size: tuple[int, int] = thumb_size
         self.hovered = False
         self.selected = False
+
+        self.double_click = False
 
         # self.clicked.connect(lambda checked: self.set_selected(True))
 
@@ -81,3 +93,15 @@ class ThumbButton(QPushButtonWrapper):
     def set_selected(self, value: bool) -> None:
         self.selected = value
         self.repaint()
+
+    def mousePressEvent(self, e: QMouseEvent) -> None:  # noqa: N802
+        self.double_click = False
+
+    def mouseDoubleClickEvent(self, e: QMouseEvent) -> None:  # noqa: N802
+        self.double_click = True
+
+    def mouseReleaseEvent(self, e: QMouseEvent) -> None:  # noqa: N802
+        if self.double_click:
+            self.double_clicked.emit()
+        else:
+            self.clicked.emit()
