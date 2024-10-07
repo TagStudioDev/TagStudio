@@ -1,4 +1,6 @@
 import enum
+from typing import Any
+from uuid import uuid4
 
 
 class SettingItems(str, enum.Enum):
@@ -31,3 +33,31 @@ class MacroID(enum.Enum):
     BUILD_URL = "build_url"
     MATCH = "match"
     CLEAN_URL = "clean_url"
+
+
+class DefaultEnum(enum.Enum):
+    """Allow saving multiple identical values in property called .default."""
+
+    default: Any
+
+    def __new__(cls, value):
+        # Create the enum instance
+        obj = object.__new__(cls)
+        # make value random
+        obj._value_ = uuid4()
+        # assign the actual value into .default property
+        obj.default = value
+        return obj
+
+    @property
+    def value(self):
+        raise AttributeError("access the value via .default property instead")
+
+
+class LibraryPrefs(DefaultEnum):
+    """Library preferences with default value accessible via .default property."""
+
+    IS_EXCLUDE_LIST = True
+    EXTENSION_LIST: list[str] = [".json", ".xmp", ".aae"]
+    PAGE_SIZE: int = 500
+    DB_VERSION: int = 2

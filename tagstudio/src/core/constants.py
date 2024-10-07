@@ -1,5 +1,3 @@
-from enum import Enum
-
 VERSION: str = "9.3.2"  # Major.Minor.Patch
 VERSION_BRANCH: str = ""  # Usually "" or "Pre-Release"
 
@@ -7,7 +5,6 @@ VERSION_BRANCH: str = ""  # Usually "" or "Pre-Release"
 TS_FOLDER_NAME: str = ".TagStudio"
 BACKUP_FOLDER_NAME: str = "backups"
 COLLAGE_FOLDER_NAME: str = "collages"
-LIBRARY_FILENAME: str = "ts_library.json"
 
 # TODO: Turn this whitelist into a user-configurable blacklist.
 IMAGE_TYPES: list[str] = [
@@ -122,13 +119,5 @@ ALL_FILE_TYPES: list[str] = (
     + SHORTCUT_TYPES
 )
 
-
 TAG_FAVORITE = 1
 TAG_ARCHIVED = 0
-
-
-class LibraryPrefs(Enum):
-    IS_EXCLUDE_LIST = True
-    EXTENSION_LIST: list[str] = [".json", ".xmp", ".aae"]
-    PAGE_SIZE: int = 500
-    DB_VERSION: int = 1
