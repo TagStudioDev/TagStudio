@@ -299,6 +299,8 @@ class Collation:
 class Library:
     """Class for the Library object, and all CRUD operations made upon it."""
 
+    FILENAME: str = "ts_library.json"
+
     def __init__(self) -> None:
         # Library Info =========================================================
         self.library_dir: Path = None

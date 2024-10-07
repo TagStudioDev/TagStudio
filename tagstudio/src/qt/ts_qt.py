@@ -50,6 +50,7 @@ from PySide6.QtWidgets import (
     QLineEdit,
     QMenu,
     QMenuBar,
+    QMessageBox,
     QPushButton,
     QScrollArea,
     QSplashScreen,
@@ -58,12 +59,11 @@ from PySide6.QtWidgets import (
 from src.core.constants import (
     TAG_ARCHIVED,
     TAG_FAVORITE,
-    TS_FOLDER_NAME,
     VERSION,
     VERSION_BRANCH,
-    LibraryPrefs,
 )
-from src.core.enums import MacroID, SettingItems
+from src.core.driver import DriverMixin
+from src.core.enums import LibraryPrefs, MacroID, SettingItems
 from src.core.library.alchemy.enums import (
     FieldTypeEnum,
     FilterState,
@@ -71,6 +71,7 @@ from src.core.library.alchemy.enums import (
     SearchMode,
 )
 from src.core.library.alchemy.fields import _FieldID
+from src.core.library.alchemy.library import LibraryStatus
 from src.core.ts_core import TagStudioCore
 from src.core.utils.refresh_dir import RefreshDirTracker
 from src.core.utils.web import strip_web_protocol
@@ -120,7 +121,7 @@ class Consumer(QThread):
                 pass
 
 
-class QtDriver(QObject):
+class QtDriver(DriverMixin, QObject):
     """A Qt GUI frontend driver for TagStudio."""
 
     SIGTERM = Signal()
@@ -173,16 +174,15 @@ class QtDriver(QObject):
                 filename=self.settings.fileName(),
             )
 
-        max_threads = os.cpu_count()
-        for i in range(max_threads):
-            # thread = threading.Thread(
-            #     target=self.consumer, name=f"ThumbRenderer_{i}", args=(), daemon=True
-            # )
-            # thread.start()
-            thread = Consumer(self.thumb_job_queue)
-            thread.setObjectName(f"ThumbRenderer_{i}")
-            self.thumb_threads.append(thread)
-            thread.start()
+    def init_workers(self):
+        """Init workers for rendering thumbnails."""
+        if not self.thumb_threads:
+            max_threads = os.cpu_count()
+            for i in range(max_threads):
+                thread = Consumer(self.thumb_job_queue)
+                thread.setObjectName(f"ThumbRenderer_{i}")
+                self.thumb_threads.append(thread)
+                thread.start()
 
     def open_library_from_dialog(self):
         dir = QFileDialog.getExistingDirectory(
@@ -463,32 +463,34 @@ class QtDriver(QObject):
         self.item_thumbs: list[ItemThumb] = []
         self.thumb_renderers: list[ThumbRenderer] = []
         self.filter = FilterState()
-
         self.init_library_window()
 
-        lib: str | None = None
-        if self.args.open:
-            lib = self.args.open
-        elif self.settings.value(SettingItems.START_LOAD_LAST, defaultValue=True, type=bool):
-            lib = str(self.settings.value(SettingItems.LAST_LIBRARY))
-
-            # TODO: Remove this check if the library is no longer saved with files
-            if lib and not (Path(lib) / TS_FOLDER_NAME).exists():
-                logger.error(f"[QT DRIVER] {TS_FOLDER_NAME} folder in {lib} does not exist.")
-                self.settings.setValue(SettingItems.LAST_LIBRARY, "")
-                lib = None
-
-        if lib:
+        path_result = self.evaluate_path(self.args.open)
+        # check status of library path evaluating
+        if path_result.success and path_result.library_path:
             self.splash.showMessage(
-                f'Opening Library "{lib}"...',
+                f'Opening Library "{path_result.library_path}"...',
                 int(Qt.AlignmentFlag.AlignBottom | Qt.AlignmentFlag.AlignHCenter),
                 QColor("#9782ff"),
             )
-            self.open_library(lib)
+            self.open_library(path_result.library_path)
 
         app.exec()
-
         self.shutdown()
+
+    def show_error_message(self, message: str):
+        self.main_window.statusbar.showMessage(message, Qt.AlignmentFlag.AlignLeft)
+        self.main_window.landing_widget.set_status_label(message)
+        self.main_window.setWindowTitle(message)
+
+        msg_box = QMessageBox()
+        msg_box.setIcon(QMessageBox.Icon.Critical)
+        msg_box.setText(message)
+        msg_box.setWindowTitle("Error")
+        msg_box.addButton("Close", QMessageBox.ButtonRole.AcceptRole)
+
+        # Show the message box
+        msg_box.exec()
 
     def init_library_window(self):
         # self._init_landing_page() # Taken care of inside the widget now
@@ -579,7 +581,7 @@ class QtDriver(QObject):
         self.main_window.statusbar.showMessage("Closing Library...")
         start_time = time.time()
 
-        self.settings.setValue(SettingItems.LAST_LIBRARY, self.lib.library_dir)
+        self.settings.setValue(SettingItems.LAST_LIBRARY, str(self.lib.library_dir))
         self.settings.sync()
 
         self.lib.close()
@@ -1106,14 +1108,19 @@ class QtDriver(QObject):
         self.settings.endGroup()
         self.settings.sync()
 
-    def open_library(self, path: Path | str):
-        """Opens a TagStudio library."""
+    def open_library(self, path: Path) -> LibraryStatus:
+        """Open a TagStudio library."""
         open_message: str = f'Opening Library "{str(path)}"...'
         self.main_window.landing_widget.set_status_label(open_message)
         self.main_window.statusbar.showMessage(open_message, 3)
         self.main_window.repaint()
 
-        self.lib.open_library(path)
+        open_status = self.lib.open_library(path)
+        if not open_status.success:
+            self.show_error_message(open_status.message or "Error opening library.")
+            return open_status
+
+        self.init_workers()
 
         self.filter.page_size = self.lib.prefs(LibraryPrefs.PAGE_SIZE)
 
@@ -1131,3 +1138,4 @@ class QtDriver(QObject):
         self.filter_items()
 
         self.main_window.toggle_landing_page(enabled=False)
+        return open_status

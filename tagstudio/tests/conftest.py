@@ -32,8 +32,8 @@ def library(request):
             library_path = request.param
 
     lib = Library()
-    lib.open_library(library_path, ":memory:")
-    assert lib.folder
+    status = lib.open_library(pathlib.Path(library_path), ":memory:")
+    assert status.success
 
     tag = Tag(
         name="foo",

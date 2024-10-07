@@ -42,6 +42,7 @@ class VideoPlayer(QGraphicsView):
     video_preview = None
     play_pause = None
     mute_button = None
+    filepath: str | None
 
     def __init__(self, driver: "QtDriver") -> None:
         super().__init__()
