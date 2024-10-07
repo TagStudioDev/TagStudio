@@ -17,6 +17,7 @@ from PySide6.QtWidgets import QHBoxLayout, QPushButton, QSlider, QVBoxLayout, QW
 if typing.TYPE_CHECKING:
     from src.qt.ts_qt import QtDriver
 
+
 class AudioPlayer(QWidget):
     """A basic audio player widget.
 
@@ -35,9 +36,7 @@ class AudioPlayer(QWidget):
 
         # Set up the audio player
         self.player = QMediaPlayer(self)
-        self.player.setAudioOutput(
-            QAudioOutput(QMediaDevices().defaultAudioOutput(), self.player)
-        )
+        self.player.setAudioOutput(QAudioOutput(QMediaDevices().defaultAudioOutput(), self.player))
         self.player.positionChanged.connect(self.position_changed)
         self.player.mediaStatusChanged.connect(self.media_status_changed)
 
@@ -118,7 +117,7 @@ class AudioPlayer(QWidget):
 
     def unmute_clicked(self):
         self.media_unmute_btn.hide()
-        self.player.audioOutput().setMuted(False) 
+        self.player.audioOutput().setMuted(False)
         self.media_mute_btn.show()
 
     def slider_pressed(self):

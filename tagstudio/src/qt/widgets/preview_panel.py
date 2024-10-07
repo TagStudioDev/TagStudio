@@ -28,7 +28,6 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
-
 from src.core.constants import (
     AUDIO_TYPES,
     IMAGE_TYPES,
@@ -129,8 +128,6 @@ class PreviewPanel(QWidget):
                 ),
             )
         )
-
-
 
         image_layout.addWidget(self.preview_img)
         image_layout.setAlignment(self.preview_img, Qt.AlignmentFlag.AlignCenter)
