@@ -21,17 +21,16 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 from src.core.constants import (
-    AUDIO_TYPES,
-    IMAGE_TYPES,
     TAG_ARCHIVED,
     TAG_FAVORITE,
-    VIDEO_TYPES,
 )
 from src.core.library import Entry, ItemType, Library
 from src.core.library.alchemy.enums import FilterState
 from src.core.library.alchemy.fields import _FieldID
+from src.core.media_types import MediaCategories, MediaType
 from src.qt.flowlayout import FlowWidget
 from src.qt.helpers.file_opener import FileOpenerHelper
+from src.qt.platform_strings import PlatformStrings
 from src.qt.widgets.thumb_button import ThumbButton
 from src.qt.widgets.thumb_renderer import ThumbRenderer
 
@@ -88,6 +87,7 @@ class ItemThumb(FlowWidget):
 
     small_text_style = (
         "background-color:rgba(0, 0, 0, 192);"
+        "color:#FFFFFF;"
         "font-family:Oxanium;"
         "font-weight:bold;"
         "font-size:12px;"
@@ -100,6 +100,7 @@ class ItemThumb(FlowWidget):
 
     med_text_style = (
         "background-color:rgba(0, 0, 0, 192);"
+        "color:#FFFFFF;"
         "font-family:Oxanium;"
         "font-weight:bold;"
         "font-size:18px;"
@@ -198,7 +199,7 @@ class ItemThumb(FlowWidget):
         self.opener = FileOpenerHelper("")
         open_file_action = QAction("Open file", self)
         open_file_action.triggered.connect(self.opener.open_file)
-        open_explorer_action = QAction("Open file in explorer", self)
+        open_explorer_action = QAction(PlatformStrings.open_file_str, self)
         open_explorer_action.triggered.connect(self.opener.open_explorer)
         self.thumb_button.addAction(open_file_action)
         self.thumb_button.addAction(open_explorer_action)
@@ -330,10 +331,26 @@ class ItemThumb(FlowWidget):
     def set_extension(self, ext: str) -> None:
         if ext and ext.startswith(".") is False:
             ext = "." + ext
-        if ext and ext not in IMAGE_TYPES or ext in [".gif", ".apng"]:
+        media_types: set[MediaType] = MediaCategories.get_types(ext)
+        if (
+            ext
+            and not MediaCategories.is_ext_in_category(ext, MediaCategories.IMAGE_TYPES)
+            or MediaCategories.is_ext_in_category(ext, MediaCategories.IMAGE_RAW_TYPES)
+            or MediaCategories.is_ext_in_category(ext, MediaCategories.IMAGE_VECTOR_TYPES)
+            or MediaCategories.is_ext_in_category(ext, MediaCategories.ADOBE_PHOTOSHOP_TYPES)
+            or ext
+            in [
+                ".apng",
+                ".avif",
+                ".exr",
+                ".gif",
+                ".jxl",
+                ".webp",
+            ]
+        ):
             self.ext_badge.setHidden(False)
             self.ext_badge.setText(ext.upper()[1:])
-            if ext in VIDEO_TYPES + AUDIO_TYPES:
+            if MediaType.VIDEO in media_types or MediaType.AUDIO in media_types:
                 self.count_badge.setHidden(False)
         else:
             if self.mode == ItemType.ENTRY:

@@ -30,6 +30,7 @@ from PySide6.QtSvgWidgets import QSvgWidget
 from PySide6.QtWidgets import QGraphicsScene, QGraphicsView
 from src.core.enums import SettingItems
 from src.qt.helpers.file_opener import FileOpenerHelper
+from src.qt.platform_strings import PlatformStrings
 
 if typing.TYPE_CHECKING:
     from src.qt.ts_qt import QtDriver
@@ -75,6 +76,8 @@ class VideoPlayer(QGraphicsView):
         self.scene().addItem(self.video_preview)
         self.video_preview.setAcceptedMouseButtons(Qt.MouseButton.LeftButton)
 
+        self.setStyleSheet("border-style:solid;border-width:0px;")
+
         # Set up the video tint.
         self.video_tint = self.scene().addRect(
             0,
@@ -116,14 +119,16 @@ class VideoPlayer(QGraphicsView):
         autoplay_action.setCheckable(True)
         self.addAction(autoplay_action)
         autoplay_action.setChecked(
-            bool(self.driver.settings.value(SettingItems.AUTOPLAY, defaultValue=True, type=bool))
+            self.driver.settings.value(SettingItems.AUTOPLAY, defaultValue=True, type=bool)  # type: ignore
         )
         autoplay_action.triggered.connect(lambda: self.toggle_autoplay())
         self.autoplay = autoplay_action
 
         open_file_action = QAction("Open file", self)
         open_file_action.triggered.connect(self.opener.open_file)
-        open_explorer_action = QAction("Open file in explorer", self)
+
+        open_explorer_action = QAction(PlatformStrings.open_file_str, self)
+
         open_explorer_action.triggered.connect(self.opener.open_explorer)
         self.addAction(open_file_action)
         self.addAction(open_explorer_action)

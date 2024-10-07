@@ -16,7 +16,7 @@ def test_update_widgets_not_selected(qt_driver, library):
     panel.update_widgets()
 
     assert panel.preview_img.isVisible()
-    assert panel.file_label.text() == "No Items Selected"
+    assert panel.file_label.text() == "<i>No Items Selected</i>"
 
 
 @pytest.mark.parametrize("library", [TemporaryDirectory()], indirect=True)
