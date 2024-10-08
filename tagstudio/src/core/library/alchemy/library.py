@@ -1,6 +1,5 @@
 import re
 import shutil
-import sys
 import unicodedata
 from dataclasses import dataclass
 from datetime import UTC, datetime
@@ -143,9 +142,11 @@ class Library:
     def open_library(self, library_dir: Path, storage_path: str | None = None) -> LibraryStatus:
         if storage_path == ":memory:":
             self.storage_path = storage_path
+            is_new = True
         else:
             self.verify_ts_folders(library_dir)
             self.storage_path = library_dir / TS_FOLDER_NAME / self.FILENAME
+            is_new = not self.storage_path.exists()
 
         connection_string = URL.create(
             drivername="sqlite",
@@ -165,13 +166,13 @@ class Library:
                 # default tags may exist already
                 session.rollback()
 
-            if "pytest" not in sys.modules:
+            # dont check db version when creating new library
+            if not is_new:
                 db_version = session.scalar(
                     select(Preferences).where(Preferences.key == LibraryPrefs.DB_VERSION.name)
                 )
 
                 if not db_version:
-                    # TODO - remove after #503 is merged and LibraryPrefs.DB_VERSION increased again
                     return LibraryStatus(
                         success=False,
                         message=(
