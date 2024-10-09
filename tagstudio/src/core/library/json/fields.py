@@ -35,4 +35,5 @@ DEFAULT_FIELDS: list[dict] = [
     {"id": 28, "name": "Guest Artist", "type": "text_line"},
     {"id": 29, "name": "Composer", "type": "text_line"},
     {"id": 30, "name": "Comments", "type": "text_box"},
+    {"id": 31, "name": "Location", "type": "text_line"},
 ]
