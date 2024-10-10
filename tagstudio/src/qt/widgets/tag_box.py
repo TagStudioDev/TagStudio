@@ -7,10 +7,10 @@ import math
 import typing
 
 import structlog
-from PySide6.QtCore import Qt, Signal
-from PySide6.QtWidgets import QPushButton
+from PySide6.QtCore import QObject, QStringListModel, Qt, Signal
+from PySide6.QtWidgets import QCompleter, QHBoxLayout, QLineEdit, QPushButton, QVBoxLayout
 from src.core.constants import TAG_ARCHIVED, TAG_FAVORITE
-from src.core.library import Entry, Tag
+from src.core.library import Entry, Library, Tag
 from src.core.library.alchemy.enums import FilterState
 from src.core.library.alchemy.fields import TagBoxField
 from src.qt.flowlayout import FlowLayout
@@ -24,6 +24,20 @@ if typing.TYPE_CHECKING:
     from src.qt.ts_qt import QtDriver
 
 logger = structlog.get_logger(__name__)
+
+
+class TagCompleter(QCompleter):
+    def __init__(self, parent: QObject, lib: Library):
+        super().__init__(parent)
+        self.lib = lib
+        self.update(set())
+
+    def update(self, exclude: set[str]):
+        tags = {tag.name for tag in self.lib.tags}
+        tags -= exclude
+        model = QStringListModel(list(tags), self)
+        self.first_choice = model.stringList()[0]
+        self.setModel(model)
 
 
 class TagBoxWidget(FieldWidget):
@@ -45,10 +59,23 @@ class TagBoxWidget(FieldWidget):
             driver  # Used for creating tag click callbacks that search entries for that tag.
         )
         self.setObjectName("tagBox")
-        self.base_layout = FlowLayout()
-        self.base_layout.enable_grid_optimizations(value=False)
-        self.base_layout.setContentsMargins(0, 0, 0, 0)
+        self.base_layout = QVBoxLayout()
         self.setLayout(self.base_layout)
+
+        self.tags_layout = FlowLayout()
+        self.base_layout.addLayout(self.tags_layout)
+        self.tags_layout.enable_grid_optimizations(value=False)
+        self.tags_layout.setContentsMargins(0, 0, 0, 0)
+
+        self.add_layout = QHBoxLayout()
+        self.base_layout.addLayout(self.add_layout)
+
+        self.tag_entry = QLineEdit()
+        self.add_layout.addWidget(self.tag_entry)
+
+        self.tag_completer = TagCompleter(self.tag_entry, self.driver.lib)
+        self.tag_completer.setCaseSensitivity(Qt.CaseSensitivity.CaseInsensitive)
+        self.tag_completer.setWidget(self.tag_entry)
 
         self.add_button = QPushButton()
         self.add_button.setCursor(Qt.CursorShape.PointingHandCursor)
@@ -73,13 +100,40 @@ class TagBoxWidget(FieldWidget):
             f"background: #555555;"
             f"}}"
         )
+        self.add_layout.addWidget(self.add_button)
+
         tsp = TagSearchPanel(self.driver.lib)
-        tsp.tag_chosen.connect(lambda x: self.add_tag_callback(x))
+        tsp.tag_chosen.connect(
+            lambda x: (
+                self.add_tag_callback(x),
+                self.tag_entry.clear(),
+            )
+        )
         self.add_modal = PanelModal(tsp, title, "Add Tags")
+
         self.add_button.clicked.connect(
-            lambda: (
-                tsp.update_tags(),
-                self.add_modal.show(),
+            lambda: (self.add_modal.show(), tsp.update_tags(tsp.search_field.text()))
+        )
+        self.tag_entry.textChanged.connect(
+            lambda text: (
+                tsp.search_field.setText(text),
+                self.tag_completer.setCompletionPrefix(text),
+                self.tag_completer.complete(),
+            )
+        )
+        self.tag_entry.returnPressed.connect(
+            lambda: self.tag_completer.activated.emit(
+                self.tag_completer.first_choice
+                if (self.tag_completer.first_choice and self.tag_entry.text())
+                else self.tag_entry.text()
+            )
+            if not self.tag_completer.popup().selectedIndexes()
+            else ()
+        )
+        self.tag_completer.activated.connect(
+            lambda selected: (
+                tsp.update_tags(selected),
+                self.tag_entry.clear() if tsp.on_return(selected) else (),
             )
         )
 
@@ -89,10 +143,9 @@ class TagBoxWidget(FieldWidget):
         self.field = field
 
     def set_tags(self, tags: typing.Iterable[Tag]):
-        is_recycled = False
-        while self.base_layout.itemAt(0) and self.base_layout.itemAt(1):
-            self.base_layout.takeAt(0).widget().deleteLater()
-            is_recycled = True
+        self.tag_completer.update({tag.name for tag in tags})
+        while self.tags_layout.itemAt(0):
+            self.tags_layout.takeAt(0).widget().deleteLater()
 
         for tag in tags:
             tag_widget = TagWidget(tag, has_edit=True, has_remove=True)
@@ -110,18 +163,7 @@ class TagBoxWidget(FieldWidget):
                 )
             )
             tag_widget.on_edit.connect(lambda t=tag: self.edit_tag(t))
-            self.base_layout.addWidget(tag_widget)
-
-        # Move or add the '+' button.
-        if is_recycled:
-            self.base_layout.addWidget(self.base_layout.takeAt(0).widget())
-        else:
-            self.base_layout.addWidget(self.add_button)
-
-        # Handles an edge case where there are no more tags and the '+' button
-        # doesn't move all the way to the left.
-        if self.base_layout.itemAt(0) and not self.base_layout.itemAt(1):
-            self.base_layout.update()
+            self.tags_layout.addWidget(tag_widget)
 
     def edit_tag(self, tag: Tag):
         assert isinstance(tag, Tag), f"tag is {type(tag)}"

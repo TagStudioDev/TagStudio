@@ -73,7 +73,7 @@ def test_tag_widget_remove(qtbot, qt_driver, library, entry_full):
 
     qtbot.add_widget(tag_widget)
 
-    tag_widget = tag_widget.base_layout.itemAt(0).widget()
+    tag_widget = tag_widget.tags_layout.itemAt(0).widget()
     assert isinstance(tag_widget, TagWidget)
 
     tag_widget.remove_button.clicked.emit()
@@ -95,7 +95,7 @@ def test_tag_widget_edit(qtbot, qt_driver, library, entry_full):
 
     qtbot.add_widget(tag_box_widget)
 
-    tag_widget = tag_box_widget.base_layout.itemAt(0).widget()
+    tag_widget = tag_box_widget.tags_layout.itemAt(0).widget()
     assert isinstance(tag_widget, TagWidget)
 
     # When
@@ -108,3 +108,29 @@ def test_tag_widget_edit(qtbot, qt_driver, library, entry_full):
     assert isinstance(panel, BuildTagPanel)
     assert panel.tag.name == tag.name
     assert panel.name_field.text() == tag.name
+
+
+def test_tag_widget_autocomplete(qtbot, qt_driver, library):
+    # Given
+    entry = next(library.get_entries(with_joins=True))
+    field = entry.tag_box_fields[0]
+
+    tag_widget = TagBoxWidget(field, "title", qt_driver)
+    tag_widget.driver.selected = [0]
+
+    qtbot.add_widget(tag_widget)
+
+    assert len(entry.tags) == 1
+
+    # Test autocomplete
+    tag_widget.tag_entry.setText("arch")
+    tag_widget.tag_entry.returnPressed.emit()
+
+    entry = next(library.get_entries(with_joins=True))  # Update entry
+    assert len(entry.tags) == 2
+
+    # Test unmatched autocomplete
+    tag_widget.tag_completer.activated.emit("missing")
+
+    entry = next(library.get_entries(with_joins=True))  # Update entry
+    assert len(entry.tags) == 2
