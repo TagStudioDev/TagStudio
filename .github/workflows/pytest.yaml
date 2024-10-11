@@ -25,7 +25,7 @@ jobs:
             libxkbcommon-x11-0 \
             x11-utils \
             libyaml-dev \
-            libegl-mesa0 \
+            libegl1 \
             libxcb-icccm4 \
             libxcb-image0 \
             libxcb-keysyms1 \
