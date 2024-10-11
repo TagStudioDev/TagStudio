@@ -838,7 +838,7 @@ class ThumbRenderer(QObject):
         buffer.open(QBuffer.OpenModeFlag.ReadWrite)
         try:
             qimage.save(buffer, "PNG")
-            im: Image.Image = Image.open(BytesIO(buffer.buffer().data()))
+            im = Image.open(BytesIO(buffer.buffer().data()))
         finally:
             buffer.close()
         # Replace transparent pixels with white (otherwise Background defaults to transparent)
