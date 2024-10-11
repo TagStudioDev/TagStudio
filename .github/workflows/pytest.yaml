@@ -19,13 +19,13 @@ jobs:
 
       - name: Install system dependencies
         run: |
-          # dont run update, it is slow 
+          # dont run update, it is slow
           # sudo apt-get update
           sudo apt-get install -y --no-install-recommends \
             libxkbcommon-x11-0 \
             x11-utils \
             libyaml-dev \
-            libegl1-mesa \
+            libegl-mesa0 \
             libxcb-icccm4 \
             libxcb-image0 \
             libxcb-keysyms1 \
