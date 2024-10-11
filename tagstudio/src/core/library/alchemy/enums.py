@@ -134,3 +134,4 @@ class FieldTypeEnum(enum.Enum):
     TAGS = "Tags"
     DATETIME = "Datetime"
     BOOLEAN = "Checkbox"
+    RATING = "Rating"
