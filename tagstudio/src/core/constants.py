@@ -13,3 +13,5 @@ FONT_SAMPLE_SIZES: list[int] = [10, 15, 20]
 
 TAG_FAVORITE = 1
 TAG_ARCHIVED = 0
+
+TS_FOLDER_NOINDEX: str = ".ts_noindex"

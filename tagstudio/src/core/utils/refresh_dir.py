@@ -4,7 +4,7 @@ from pathlib import Path
 from time import time
 
 import structlog
-from src.core.constants import TS_FOLDER_NAME
+from src.core import constants
 from src.core.library import Entry, Library
 
 logger = structlog.get_logger(__name__)
@@ -39,7 +39,11 @@ class RefreshDirTracker:
         self.files_not_in_library = []
 
     def refresh_dir(self, lib_path: Path) -> Iterator[int]:
-        """Scan a directory for files, and add those relative filenames to internal variables."""
+        """Scan a directory for changes.
+
+        - Keep track of files which are not in library.
+        - Remove files from library which are in ignored dirs.
+        """
         if self.library.library_dir is None:
             raise ValueError("No library directory set.")
 
@@ -49,24 +53,43 @@ class RefreshDirTracker:
         self.files_not_in_library = []
         dir_file_count = 0
 
-        for path in lib_path.glob("**/*"):
-            str_path = str(path)
-            if path.is_dir():
+        for root, _, files in lib_path.walk():
+            if "$RECYCLE.BIN" in str(root).upper():
                 continue
 
-            if "$RECYCLE.BIN" in str_path or TS_FOLDER_NAME in str_path:
+            # - if directory contains file `.ts_noindex` then skip the directory
+            if constants.TS_FOLDER_NOINDEX in files:
+                logger.info("TS Ignore File found, skipping", directory=root)
+                # however check if the ignored files aren't in the library; if so, remove them
+                entries_to_remove = []
+                for file in files:
+                    file_path = root / file
+                    entry_path = file_path.relative_to(lib_path)
+                    if entry := self.library.get_path_entry(entry_path):
+                        entries_to_remove.append(entry.id)
+
+                    # Yield output every 1/30 of a second
+                    if (time() - start_time_loop) > 0.034:
+                        # yield but dont increase the count
+                        yield dir_file_count
+                        start_time_loop = time()
+
+                self.library.remove_entries(entries_to_remove)
                 continue
 
-            dir_file_count += 1
-            relative_path = path.relative_to(lib_path)
-            # TODO - load these in batch somehow
-            if not self.library.has_path_entry(relative_path):
-                self.files_not_in_library.append(relative_path)
+            for file in files:
+                path = root / file
+                dir_file_count += 1
 
-            # Yield output every 1/30 of a second
-            if (time() - start_time_loop) > 0.034:
-                yield dir_file_count
-                start_time_loop = time()
+                relative_path = path.relative_to(lib_path)
+                # TODO - load these in batch somehow
+                if not self.library.get_path_entry(relative_path):
+                    self.files_not_in_library.append(relative_path)
+
+                # Yield output every 1/30 of a second
+                if (time() - start_time_loop) > 0.034:
+                    yield dir_file_count
+                    start_time_loop = time()
 
         end_time_total = time()
         logger.info(
