@@ -140,4 +140,7 @@ class FlowLayout(QLayout):
                 x = next_x
                 line_height = max(line_height, item.sizeHint().height())
 
+        if len(self._item_list) == 0:
+            return 0
+
         return y + line_height - rect.y() * ((len(self._item_list)) / len(self._item_list))

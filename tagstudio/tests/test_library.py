@@ -6,6 +6,64 @@ from src.core.enums import DefaultEnum, LibraryPrefs
 from src.core.library.alchemy import Entry
 from src.core.library.alchemy.enums import FilterState
 from src.core.library.alchemy.fields import TextField, _FieldID
+from src.core.library.alchemy.models import Tag
+
+
+def test_library_add_alias(library, generate_tag):
+    tag = library.add_tag(generate_tag("xxx", id=123))
+    assert tag
+
+    subtag_ids: set[int] = set()
+    alias_ids: set[int] = set()
+    alias_names: set[str] = set()
+    alias_names.add("test_alias")
+    library.update_tag(tag, subtag_ids, alias_names, alias_ids)
+
+    # Note: ask if it is expected behaviour that you need to re-request
+    #       for the tag. Or if the tag in memory should be updated
+    alias_ids = library.get_tag(tag.id).alias_ids
+
+    assert len(alias_ids) == 1
+
+
+def test_library_get_alias(library, generate_tag):
+    tag = library.add_tag(generate_tag("xxx", id=123))
+    assert tag
+
+    subtag_ids: set[int] = set()
+    alias_ids: set[int] = set()
+    alias_names: set[str] = set()
+    alias_names.add("test_alias")
+    library.update_tag(tag, subtag_ids, alias_names, alias_ids)
+
+    alias_ids = library.get_tag(tag.id).alias_ids
+
+    assert library.get_alias(tag.id, alias_ids[0]).name == "test_alias"
+
+
+def test_library_update_alias(library, generate_tag):
+    tag: Tag = library.add_tag(generate_tag("xxx", id=123))
+    assert tag
+
+    subtag_ids: set[int] = set()
+    alias_ids: set[int] = set()
+    alias_names: set[str] = set()
+    alias_names.add("test_alias")
+    library.update_tag(tag, subtag_ids, alias_names, alias_ids)
+
+    tag = library.get_tag(tag.id)
+    alias_ids = tag.alias_ids
+
+    assert library.get_alias(tag.id, alias_ids[0]).name == "test_alias"
+
+    alias_names.remove("test_alias")
+    alias_names.add("alias_update")
+    library.update_tag(tag, subtag_ids, alias_names, alias_ids)
+
+    tag = library.get_tag(tag.id)
+
+    assert len(tag.alias_ids) == 1
+    assert library.get_alias(tag.id, tag.alias_ids[0]).name == "alias_update"
 
 
 @pytest.mark.parametrize("library", [TemporaryDirectory()], indirect=True)
@@ -38,14 +96,26 @@ def test_create_tag(library, generate_tag):
     assert tag_inc.id > 1000
 
 
+def test_tag_subtag_itself(library, generate_tag):
+    # tag already exists
+    assert not library.add_tag(generate_tag("foo"))
+
+    # new tag name
+    tag = library.add_tag(generate_tag("xxx", id=123))
+    assert tag
+    assert tag.id == 123
+
+    library.update_tag(tag, {tag.id}, {}, {})
+    tag = library.get_tag(tag.id)
+    assert len(tag.subtag_ids) == 0
+
+
 def test_library_search(library, generate_tag, entry_full):
     assert library.entries_count == 2
     tag = list(entry_full.tags)[0]
 
     results = library.search_library(
-        FilterState(
-            tag=tag.name,
-        ),
+        FilterState(tag=tag.name),
     )
 
     assert results.total_count == 1

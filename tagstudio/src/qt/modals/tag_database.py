@@ -99,5 +99,5 @@ class TagDatabasePanel(PanelWidget):
         self.edit_modal.show()
 
     def edit_tag_callback(self, btp: BuildTagPanel):
-        self.lib.add_tag(btp.build_tag())
+        self.lib.update_tag(btp.build_tag(), btp.subtag_ids, btp.alias_names, btp.alias_ids)
         self.update_tags(self.search_field.text())
