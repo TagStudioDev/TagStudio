@@ -802,7 +802,7 @@ class ThumbRenderer(QObject):
         """Render a thumbnail for a PDF file.
 
         filepath (Path): The path of the file.
-            size (tuple[int,int]): The size of the icon.
+            size (int): The size of the icon.
         """
         im: Image.Image = None
 

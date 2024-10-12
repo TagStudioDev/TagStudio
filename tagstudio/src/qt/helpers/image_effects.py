@@ -9,7 +9,7 @@ from PIL import Image
 def replace_transparent_pixels(
     img: Image.Image, color: tuple[int, int, int, int] = (255, 255, 255, 255)
 ) -> Image.Image:
-    """Replaces (copying/without mutating) all transparent pixels in an image with the color.
+    """Replace (copying/without mutating) all transparent pixels in an image with the color.
 
     Args:
         img (Image.Image):
