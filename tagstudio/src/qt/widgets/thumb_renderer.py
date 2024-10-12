@@ -759,23 +759,23 @@ class ThumbRenderer(QObject):
         # Create an svg renderer, then render to the painter
         svg: QSvgRenderer = QSvgRenderer(str(filepath))
 
-        if svg.isValid():
-            painter: QPainter = QPainter(image)
-            svg.setAspectRatioMode(Qt.AspectRatioMode.KeepAspectRatio)
-            svg.render(painter)
-            painter.end()
-
-            # Write the image to a buffer as png
-            buffer: QBuffer = QBuffer()
-            buffer.open(QBuffer.OpenModeFlag.ReadWrite)
-            image.save(buffer, "PNG")
-
-            # Load the image from the buffer
-            im = Image.new("RGB", (size, size), color="#1e1e1e")
-            im.paste(Image.open(BytesIO(buffer.data().data())))
-            im = im.convert(mode="RGB")
-        else:
+        if not svg.isValid():
             raise UnidentifiedImageError
+
+        painter: QPainter = QPainter(image)
+        svg.setAspectRatioMode(Qt.AspectRatioMode.KeepAspectRatio)
+        svg.render(painter)
+        painter.end()
+
+        # Write the image to a buffer as png
+        buffer: QBuffer = QBuffer()
+        buffer.open(QBuffer.OpenModeFlag.ReadWrite)
+        image.save(buffer, "PNG")
+
+        # Load the image from the buffer
+        im = Image.new("RGB", (size, size), color="#1e1e1e")
+        im.paste(Image.open(BytesIO(buffer.data().data())))
+        im = im.convert(mode="RGB")
 
         buffer.close()
         return im
