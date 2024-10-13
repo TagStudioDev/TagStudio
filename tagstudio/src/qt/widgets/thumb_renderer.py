@@ -5,6 +5,7 @@
 
 import math
 import struct
+import zipfile
 from copy import deepcopy
 from io import BytesIO
 from pathlib import Path
@@ -603,6 +604,27 @@ class ThumbRenderer(QObject):
                 logger.error("Couldn't render thumbnail", filepath=filepath, error=e)
         return im
 
+    def _open_doc_thumb(self, filepath: Path) -> Image.Image:
+        """Extract and render a thumbnail for an OpenDocument file.
+
+        Args:
+            filepath (Path): The path of the file.
+        """
+        file_path_within_zip = "Thumbnails/thumbnail.png"
+        im: Image.Image = None
+        with zipfile.ZipFile(filepath, "r") as zip_file:
+            # Check if the file exists in the zip
+            if file_path_within_zip in zip_file.namelist():
+                # Read the specific file into memory
+                file_data = zip_file.read(file_path_within_zip)
+                thumb_im = Image.open(BytesIO(file_data))
+                if thumb_im:
+                    im = Image.new("RGB", thumb_im.size, color="#1e1e1e")
+                    im.paste(thumb_im)
+            else:
+                logger.error("Couldn't render thumbnail", filepath=filepath)
+        return im
+
     def _font_short_thumb(self, filepath: Path, size: int) -> Image.Image:
         """Render a small font preview ("Aa") thumbnail from a font file.
 
@@ -936,6 +958,11 @@ class ThumbRenderer(QObject):
                     ext, MediaCategories.VIDEO_TYPES, mime_fallback=True
                 ):
                     image = self._video_thumb(_filepath)
+                # OpenDocument/OpenOffice ======================================
+                elif MediaCategories.is_ext_in_category(
+                    ext, MediaCategories.OPEN_DOCUMENT_TYPES, mime_fallback=True
+                ):
+                    image = self._open_doc_thumb(_filepath)
                 # Plain Text ===================================================
                 if MediaCategories.is_ext_in_category(
                     ext, MediaCategories.PLAINTEXT_TYPES, mime_fallback=True
