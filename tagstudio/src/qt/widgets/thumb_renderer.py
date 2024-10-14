@@ -39,8 +39,9 @@ from PySide6.QtCore import (
     Qt,
     Signal,
 )
-from PySide6.QtGui import QGuiApplication, QImage, QPixmap
+from PySide6.QtGui import QGuiApplication, QImage, QPainter, QPixmap
 from PySide6.QtPdf import QPdfDocument, QPdfDocumentRenderOptions
+from PySide6.QtSvg import QSvgRenderer
 from src.core.constants import FONT_SAMPLE_SIZES, FONT_SAMPLE_TEXT
 from src.core.media_types import MediaCategories, MediaType
 from src.core.palette import ColorType, UiColor, get_ui_color
@@ -762,8 +763,33 @@ class ThumbRenderer(QObject):
             filepath (Path): The path of the file.
             size (tuple[int,int]): The size of the thumbnail.
         """
-        # TODO: Implement.
         im: Image.Image = None
+        # Create an image to draw the svg to and a painter to do the drawing
+        image: QImage = QImage(size, size, QImage.Format.Format_ARGB32)
+        image.fill("#1e1e1e")
+
+        # Create an svg renderer, then render to the painter
+        svg: QSvgRenderer = QSvgRenderer(str(filepath))
+
+        if not svg.isValid():
+            raise UnidentifiedImageError
+
+        painter: QPainter = QPainter(image)
+        svg.setAspectRatioMode(Qt.AspectRatioMode.KeepAspectRatio)
+        svg.render(painter)
+        painter.end()
+
+        # Write the image to a buffer as png
+        buffer: QBuffer = QBuffer()
+        buffer.open(QBuffer.OpenModeFlag.ReadWrite)
+        image.save(buffer, "PNG")
+
+        # Load the image from the buffer
+        im = Image.new("RGB", (size, size), color="#1e1e1e")
+        im.paste(Image.open(BytesIO(buffer.data().data())))
+        im = im.convert(mode="RGB")
+
+        buffer.close()
         return im
 
     def _model_stl_thumb(self, filepath: Path, size: int) -> Image.Image:
@@ -982,6 +1008,7 @@ class ThumbRenderer(QObject):
                         ext, MediaCategories.IMAGE_RAW_TYPES, mime_fallback=True
                     ):
                         image = self._image_raw_thumb(_filepath)
+                    # Vector Images --------------------------------------------
                     elif MediaCategories.is_ext_in_category(
                         ext, MediaCategories.IMAGE_VECTOR_TYPES, mime_fallback=True
                     ):
