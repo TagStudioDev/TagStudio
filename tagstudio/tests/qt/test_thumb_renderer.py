@@ -19,8 +19,8 @@ def test_pdf_preview(cwd, snapshot):
     img.save(img_bytes, format="PNG")
     img_bytes.seek(0)
     assert img_bytes.read() == snapshot(extension_class=PNGImageSnapshotExtension)
-    
-    
+
+
 def test_svg_preview(cwd, snapshot):
     file_path: Path = cwd / "fixtures" / "sample.svg"
     renderer = ThumbRenderer()
