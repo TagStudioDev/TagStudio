@@ -10,6 +10,18 @@ from src.qt.widgets.thumb_renderer import ThumbRenderer
 from syrupy.extensions.image import PNGImageSnapshotExtension
 
 
+def test_epub_preview(cwd, snapshot):
+    file_path: Path = cwd / "fixtures" / "sample.epub"
+    tr = ThumbRenderer()
+    img: Image.Image = tr._epub_cover(file_path)
+
+    img_bytes = io.BytesIO()
+    img.save(img_bytes, format="PNG")
+    img_bytes.seek(0)
+
+    assert img_bytes.read() == snapshot(extension_class=PNGImageSnapshotExtension)
+
+
 def test_pdf_preview(cwd, snapshot):
     file_path: Path = cwd / "fixtures" / "sample.pdf"
     renderer = ThumbRenderer()
@@ -18,6 +30,7 @@ def test_pdf_preview(cwd, snapshot):
     img_bytes = io.BytesIO()
     img.save(img_bytes, format="PNG")
     img_bytes.seek(0)
+
     assert img_bytes.read() == snapshot(extension_class=PNGImageSnapshotExtension)
 
 
@@ -29,4 +42,5 @@ def test_svg_preview(cwd, snapshot):
     img_bytes = io.BytesIO()
     img.save(img_bytes, format="PNG")
     img_bytes.seek(0)
+
     assert img_bytes.read() == snapshot(extension_class=PNGImageSnapshotExtension)

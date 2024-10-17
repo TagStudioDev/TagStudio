@@ -5,6 +5,7 @@
 
 import math
 import struct
+import zipfile
 from copy import deepcopy
 from io import BytesIO
 from pathlib import Path
@@ -616,6 +617,29 @@ class ThumbRenderer(QObject):
                 logger.error("Couldn't render thumbnail", filepath=filepath, error=e)
         return im
 
+    def _epub_cover(self, filepath: Path) -> Image.Image:
+        """Extracts and returns the first image found in the ePub file at the given filepath.
+
+        Args:
+            filepath (Path): The path to the ePub file.
+
+        Returns:
+            Image: The first image found in the ePub file, or None by default.
+        """
+        im: Image.Image = None
+        try:
+            with zipfile.ZipFile(filepath, "r") as zip_file:
+                for file_name in zip_file.namelist():
+                    if file_name.lower().endswith(
+                        (".png", ".jpg", ".jpeg", ".gif", ".bmp", ".svg")
+                    ):
+                        image_data = zip_file.read(file_name)
+                        im = Image.open(BytesIO(image_data))
+        except Exception as e:
+            logger.error("Couldn't render thumbnail", filepath=filepath, error=e)
+
+        return im
+
     def _font_short_thumb(self, filepath: Path, size: int) -> Image.Image:
         """Render a small font preview ("Aa") thumbnail from a font file.
 
@@ -1045,6 +1069,11 @@ class ThumbRenderer(QObject):
                         image = self._audio_waveform_thumb(_filepath, ext, adj_size, pixel_ratio)
                         if image is not None:
                             image = self._apply_overlay_color(image, UiColor.GREEN)
+                # Ebooks =======================================================
+                elif MediaCategories.is_ext_in_category(
+                    ext, MediaCategories.EBOOK_TYPES, mime_fallback=True
+                ):
+                    image = self._epub_cover(_filepath)
                 # Blender ======================================================
                 elif MediaCategories.is_ext_in_category(
                     ext, MediaCategories.BLENDER_TYPES, mime_fallback=True
@@ -1060,7 +1089,6 @@ class ThumbRenderer(QObject):
                     ext, MediaCategories.SOURCE_ENGINE_TYPES, mime_fallback=True
                 ):
                     image = self._source_engine(_filepath)
-
                 # No Rendered Thumbnail ========================================
                 if not _filepath.exists():
                     raise FileNotFoundError
