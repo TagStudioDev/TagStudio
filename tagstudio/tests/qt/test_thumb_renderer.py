@@ -11,9 +11,6 @@ from syrupy.extensions.image import PNGImageSnapshotExtension
 
 
 def test_epub_preview(cwd, snapshot):
-    # sample.epub, aka "Garrish, Matt. Epub 3 Best Practices (Excerpt). O’Reilly, 2013."
-    # provided by https://idpf.github.io/epub3-samples/30/samples.html
-    # under the CC-BY-SA 3.0 license: https://creativecommons.org/licenses/by-sa/3.0/
     file_path: Path = cwd / "fixtures" / "sample.epub"
     tr = ThumbRenderer()
     img: Image.Image = tr._epub_cover(file_path)
