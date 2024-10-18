@@ -1035,6 +1035,7 @@ class QtDriver(DriverMixin, QObject):
         if not self.lib.library_dir:
             logger.info("Library not loaded")
             return
+        assert self.lib.engine
 
         if filter:
             self.filter = dataclasses.replace(self.filter, **dataclasses.asdict(filter))
