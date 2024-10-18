@@ -10,9 +10,80 @@ from types import FunctionType
 from PIL import Image
 from PySide6.QtCore import QEvent, Qt, Signal
 from PySide6.QtGui import QAction, QEnterEvent
-from PySide6.QtWidgets import QHBoxLayout, QPushButton, QVBoxLayout, QWidget
+from PySide6.QtWidgets import (
+    QHBoxLayout,
+    QLineEdit,
+    QPushButton,
+    QVBoxLayout,
+    QWidget,
+)
 from src.core.library import Tag
+from src.core.library.alchemy.enums import TagColor
 from src.core.palette import ColorType, get_tag_color
+
+
+class TagAliasWidget(QWidget):
+    on_remove = Signal()
+
+    def __init__(
+        self,
+        id: int | None = 0,
+        alias: str | None = None,
+        on_remove_callback=None,
+    ) -> None:
+        super().__init__()
+
+        self.id = id
+
+        # if on_click_callback:
+        self.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.base_layout = QVBoxLayout(self)
+        self.base_layout.setObjectName("baseLayout")
+        self.base_layout.setContentsMargins(0, 0, 0, 0)
+
+        self.inner_layout = QHBoxLayout()
+        self.inner_layout.setObjectName("innerLayout")
+        self.inner_layout.setContentsMargins(2, 2, 2, 2)
+
+        self.on_remove.connect(on_remove_callback)
+
+        self.text_field = QLineEdit()
+        self.base_layout.addWidget(self.text_field)
+
+        if alias is not None:
+            self.text_field.setText(alias)
+        else:
+            self.text_field.setText("")
+
+        self.remove_button = QPushButton(self)
+        self.remove_button.setFlat(True)
+        self.remove_button.setText("–")
+        self.remove_button.setHidden(True)
+        self.remove_button.setStyleSheet(
+            f"color: {get_tag_color(ColorType.PRIMARY, TagColor.DEFAULT)};"
+            f"background: {get_tag_color(ColorType.TEXT, TagColor.DEFAULT)};"
+            f"font-weight: 800;"
+            f"border-radius: 4px;"
+            f"border-width:0;"
+            f"padding-bottom: 4px;"
+            f"font-size: 14px"
+        )
+        self.remove_button.setMinimumSize(19, 19)
+        self.remove_button.setMaximumSize(19, 19)
+        self.remove_button.clicked.connect(self.on_remove.emit)
+
+        self.inner_layout.addWidget(self.remove_button)
+        self.inner_layout.addStretch(1)
+
+    def enterEvent(self, event: QEnterEvent) -> None:  # noqa: N802
+        self.remove_button.setHidden(False)
+        self.update()
+        return super().enterEvent(event)
+
+    def leaveEvent(self, event: QEvent) -> None:  # noqa: N802
+        self.remove_button.setHidden(True)
+        self.update()
+        return super().leaveEvent(event)
 
 
 class TagWidget(QWidget):

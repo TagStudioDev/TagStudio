@@ -28,9 +28,10 @@ logger = structlog.get_logger(__name__)
 class TagSearchPanel(PanelWidget):
     tag_chosen = Signal(int)
 
-    def __init__(self, library: Library):
+    def __init__(self, library: Library, exclude: list[int] | None = None):
         super().__init__()
         self.lib = library
+        self.exclude = exclude
         self.first_tag_id = None
         self.tag_limit = 100
         self.setMinimumSize(300, 400)
@@ -84,6 +85,8 @@ class TagSearchPanel(PanelWidget):
         )
 
         for tag in found_tags:
+            if self.exclude is not None and tag.id in self.exclude:
+                continue
             c = QWidget()
             layout = QHBoxLayout(c)
             layout.setContentsMargins(0, 0, 0, 0)

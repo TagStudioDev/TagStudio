@@ -3,6 +3,8 @@
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
 
+from typing import cast
+
 import structlog
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import (
@@ -12,7 +14,6 @@ from PySide6.QtWidgets import (
     QLineEdit,
     QPushButton,
     QScrollArea,
-    QTextEdit,
     QVBoxLayout,
     QWidget,
 )
@@ -21,7 +22,7 @@ from src.core.library.alchemy.enums import TagColor
 from src.core.palette import ColorType, get_tag_color
 from src.qt.modals.tag_search import TagSearchPanel
 from src.qt.widgets.panel import PanelModal, PanelWidget
-from src.qt.widgets.tag import TagWidget
+from src.qt.widgets.tag import TagAliasWidget, TagWidget
 
 logger = structlog.get_logger(__name__)
 
@@ -76,10 +77,26 @@ class BuildTagPanel(PanelWidget):
         self.aliases_title = QLabel()
         self.aliases_title.setText("Aliases")
         self.aliases_layout.addWidget(self.aliases_title)
-        self.aliases_field = QTextEdit()
-        self.aliases_field.setAcceptRichText(False)
-        self.aliases_field.setMinimumHeight(40)
-        self.aliases_layout.addWidget(self.aliases_field)
+
+        self.alias_scroll_contents = QWidget()
+
+        self.alias_scroll_layout = QVBoxLayout(self.alias_scroll_contents)
+        self.alias_scroll_layout.setContentsMargins(6, 0, 6, 0)
+        self.alias_scroll_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
+
+        self.alias_scroll_area = QScrollArea()
+        self.alias_scroll_area.setWidgetResizable(True)
+        self.alias_scroll_area.setFrameShadow(QFrame.Shadow.Plain)
+        self.alias_scroll_area.setFrameShape(QFrame.Shape.NoFrame)
+        self.alias_scroll_area.setWidget(self.alias_scroll_contents)
+
+        self.aliases_layout.addWidget(self.alias_scroll_area)
+
+        self.alias_add_button = QPushButton()
+        self.alias_add_button.setText("+")
+
+        self.alias_add_button.clicked.connect(lambda: self.add_alias_callback())
+        self.aliases_layout.addWidget(self.alias_add_button)
 
         # Subtags ------------------------------------------------------------
         self.subtags_widget = QWidget()
@@ -93,24 +110,29 @@ class BuildTagPanel(PanelWidget):
         self.subtags_title.setText("Parent Tags")
         self.subtags_layout.addWidget(self.subtags_title)
 
-        self.scroll_contents = QWidget()
-        self.scroll_layout = QVBoxLayout(self.scroll_contents)
-        self.scroll_layout.setContentsMargins(6, 0, 6, 0)
-        self.scroll_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
+        self.subtag_scroll_contents = QWidget()
+        self.subtag_scroll_layout = QVBoxLayout(self.subtag_scroll_contents)
+        self.subtag_scroll_layout.setContentsMargins(6, 0, 6, 0)
+        self.subtag_scroll_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
 
-        self.scroll_area = QScrollArea()
+        self.subtag_scroll_area = QScrollArea()
         # self.scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOn)
-        self.scroll_area.setWidgetResizable(True)
-        self.scroll_area.setFrameShadow(QFrame.Shadow.Plain)
-        self.scroll_area.setFrameShape(QFrame.Shape.NoFrame)
-        self.scroll_area.setWidget(self.scroll_contents)
+        self.subtag_scroll_area.setWidgetResizable(True)
+        self.subtag_scroll_area.setFrameShadow(QFrame.Shadow.Plain)
+        self.subtag_scroll_area.setFrameShape(QFrame.Shape.NoFrame)
+        self.subtag_scroll_area.setWidget(self.subtag_scroll_contents)
         # self.scroll_area.setMinimumHeight(60)
 
-        self.subtags_layout.addWidget(self.scroll_area)
+        self.subtags_layout.addWidget(self.subtag_scroll_area)
 
         self.subtags_add_button = QPushButton()
         self.subtags_add_button.setText("+")
-        tsp = TagSearchPanel(self.lib)
+
+        exclude_ids: list[int] = list()
+        if tag is not None:
+            exclude_ids.append(tag.id)
+
+        tsp = TagSearchPanel(self.lib, exclude_ids)
         tsp.tag_chosen.connect(lambda x: self.add_subtag_callback(x))
         self.add_tag_modal = PanelModal(tsp, "Add Parent Tags", "Add Parent Tags")
         self.subtags_add_button.clicked.connect(self.add_tag_modal.show)
@@ -159,55 +181,142 @@ class BuildTagPanel(PanelWidget):
         self.root_layout.addWidget(self.color_widget)
         # self.parent().done.connect(self.update_tag)
 
-        # TODO - fill subtags
-        self.subtags: set[int] = set()
+        self.subtag_ids: set[int] = set()
+        self.alias_ids: set[int] = set()
+        self.alias_names: set[str] = set()
+        self.new_alias_names: dict = dict()
+
         self.set_tag(tag or Tag(name="New Tag"))
 
     def add_subtag_callback(self, tag_id: int):
         logger.info("add_subtag_callback", tag_id=tag_id)
-        self.subtags.add(tag_id)
+        self.subtag_ids.add(tag_id)
         self.set_subtags()
 
     def remove_subtag_callback(self, tag_id: int):
         logger.info("removing subtag", tag_id=tag_id)
-        self.subtags.remove(tag_id)
+        self.subtag_ids.remove(tag_id)
         self.set_subtags()
 
+    def add_alias_callback(self):
+        logger.info("add_alias_callback")
+        # bug passing in the text for a here means when the text changes
+        # the remove callback uses what a whas initialy assigned
+        new_field = TagAliasWidget()
+        id = new_field.__hash__()
+        new_field.id = id
+        new_field.on_remove.connect(lambda a="": self.remove_alias_callback(a, id))
+        self.alias_ids.add(id)
+        self.new_alias_names[id] = ""
+        new_field.setMaximumHeight(25)
+        new_field.setMinimumHeight(25)
+        self.alias_scroll_layout.addWidget(new_field)
+
+    def remove_alias_callback(self, alias_name: str, alias_id: int | None = None):
+        logger.info("remove_alias_callback")
+        self.alias_ids.remove(alias_id)
+        self.set_aliases()
+
     def set_subtags(self):
-        while self.scroll_layout.itemAt(0):
-            self.scroll_layout.takeAt(0).widget().deleteLater()
+        while self.subtag_scroll_layout.itemAt(0):
+            self.subtag_scroll_layout.takeAt(0).widget().deleteLater()
 
         c = QWidget()
         layout = QVBoxLayout(c)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(3)
-        for tag_id in self.subtags:
+        for tag_id in self.subtag_ids:
             tag = self.lib.get_tag(tag_id)
             tw = TagWidget(tag, has_edit=False, has_remove=True)
             tw.on_remove.connect(lambda t=tag_id: self.remove_subtag_callback(t))
             layout.addWidget(tw)
-        self.scroll_layout.addWidget(c)
+        self.subtag_scroll_layout.addWidget(c)
+
+    def add_aliases(self):
+        fields: set[TagAliasWidget] = set()
+        for i in range(0, self.alias_scroll_layout.count()):
+            widget = self.alias_scroll_layout.itemAt(i).widget()
+
+            if not isinstance(widget, TagAliasWidget):
+                return
+
+            field: TagAliasWidget = cast(TagAliasWidget, widget)
+            fields.add(field)
+
+        remove: set[str] = self.alias_names - set([a.text_field.text() for a in fields])
+
+        self.alias_names = self.alias_names - remove
+
+        for field in fields:
+            # add new aliases
+            if field.text_field.text() != "":
+                self.alias_names.add(field.text_field.text())
+
+    def update_new_alias_name_dict(self):
+        for i in range(0, self.alias_scroll_layout.count()):
+            widget = self.alias_scroll_layout.itemAt(i).widget()
+
+            if not isinstance(widget, TagAliasWidget):
+                return
+
+            field: TagAliasWidget = cast(TagAliasWidget, widget)
+            text_field_text = field.text_field.text()
+
+            self.new_alias_names[field.id] = text_field_text
+
+    def set_aliases(self):
+        self.update_new_alias_name_dict()
+
+        while self.alias_scroll_layout.itemAt(0):
+            self.alias_scroll_layout.takeAt(0).widget().deleteLater()
+
+        self.alias_names.clear()
+
+        for alias_id in self.alias_ids:
+            alias = self.lib.get_alias(self.tag.id, alias_id)
+
+            alias_name = alias.name if alias else self.new_alias_names[alias_id]
+
+            new_field = TagAliasWidget(
+                alias_id,
+                alias_name,
+                lambda a=alias_name, id=alias_id: self.remove_alias_callback(a, id),
+            )
+            new_field.setMaximumHeight(25)
+            new_field.setMinimumHeight(25)
+            self.alias_scroll_layout.addWidget(new_field)
+            self.alias_names.add(alias_name)
 
     def set_tag(self, tag: Tag):
+        self.tag = tag
+
         logger.info("setting tag", tag=tag)
 
         self.name_field.setText(tag.name)
         self.shorthand_field.setText(tag.shorthand or "")
-        # TODO: Implement aliases
-        # self.aliases_field.setText("\n".join(tag.aliases))
+
+        for alias_id in tag.alias_ids:
+            self.alias_ids.add(alias_id)
+
+        self.set_aliases()
+
+        for subtag in tag.subtag_ids:
+            self.subtag_ids.add(subtag)
+
         self.set_subtags()
+
         # select item in self.color_field where the userData value matched tag.color
         for i in range(self.color_field.count()):
             if self.color_field.itemData(i) == tag.color:
                 self.color_field.setCurrentIndex(i)
                 break
 
-        self.tag = tag
-
     def build_tag(self) -> Tag:
         color = self.color_field.currentData() or TagColor.DEFAULT
 
         tag = self.tag
+
+        self.add_aliases()
 
         tag.name = self.name_field.text()
         tag.shorthand = self.shorthand_field.text()
