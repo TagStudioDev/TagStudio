@@ -5,26 +5,28 @@
 import io
 from pathlib import Path
 
+import pytest
 from PIL import Image
 from src.qt.widgets.thumb_renderer import ThumbRenderer
 from syrupy.extensions.image import PNGImageSnapshotExtension
 
 
-def test_odt_preview(cwd, snapshot):
-    file_path: Path = cwd / "fixtures" / "sample.odt"
-    renderer = ThumbRenderer()
-    img: Image.Image = renderer._open_doc_thumb(file_path)
-
-    img_bytes = io.BytesIO()
-    img.save(img_bytes, format="PNG")
-    img_bytes.seek(0)
-    assert img_bytes.read() == snapshot(extension_class=PNGImageSnapshotExtension)
-
-
-def test_ods_preview(cwd, snapshot):
-    file_path: Path = cwd / "fixtures" / "sample.ods"
-    renderer = ThumbRenderer()
-    img: Image.Image = renderer._open_doc_thumb(file_path)
+@pytest.mark.parametrize(
+    ["fixture_file", "thumbnailer"],
+    [
+        (
+            "sample.odt",
+            ThumbRenderer._open_doc_thumb,
+        ),
+        (
+            "sample.ods",
+            ThumbRenderer._open_doc_thumb,
+        ),
+    ],
+)
+def test_document_preview(cwd, fixture_file, thumbnailer, snapshot):
+    file_path: Path = cwd / "fixtures" / fixture_file
+    img: Image.Image = thumbnailer(file_path)
 
     img_bytes = io.BytesIO()
     img.save(img_bytes, format="PNG")

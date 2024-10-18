@@ -604,7 +604,8 @@ class ThumbRenderer(QObject):
                 logger.error("Couldn't render thumbnail", filepath=filepath, error=e)
         return im
 
-    def _open_doc_thumb(self, filepath: Path) -> Image.Image:
+    @classmethod
+    def _open_doc_thumb(cls, filepath: Path) -> Image.Image:
         """Extract and render a thumbnail for an OpenDocument file.
 
         Args:
