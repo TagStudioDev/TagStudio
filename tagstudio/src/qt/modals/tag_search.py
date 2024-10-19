@@ -4,6 +4,7 @@
 
 
 import math
+from typing import Optional
 
 import structlog
 from PySide6.QtCore import QSize, Qt, Signal
@@ -20,7 +21,7 @@ from src.core.library import Library
 from src.core.library.alchemy.enums import FilterState
 from src.core.palette import ColorType, get_tag_color
 from src.qt.widgets.panel import PanelWidget
-from src.qt.widgets.tag import TagWidget
+from src.qt.widgets.tag import Tag, TagWidget
 
 logger = structlog.get_logger(__name__)
 
@@ -31,6 +32,7 @@ class TagSearchPanel(PanelWidget):
     def __init__(self, library: Library):
         super().__init__()
         self.lib = library
+        self.first_tag: Optional[Tag] = None
         self.first_tag_id = None
         self.tag_limit = 100
         self.setMinimumSize(300, 400)
@@ -63,14 +65,16 @@ class TagSearchPanel(PanelWidget):
         self.update_tags()
 
     def on_return(self, text: str):
-        if text and self.first_tag_id is not None:
-            # callback(self.first_tag_id)
-            self.tag_chosen.emit(self.first_tag_id)
+        if text and self.first_tag is not None:
+            # callback(self.first_tag)
+            self.tag_chosen.emit(self.first_tag.id)
             self.search_field.setText("")
             self.update_tags()
+            return True
         else:
             self.search_field.setFocus()
             self.parentWidget().hide()
+            return False
 
     def update_tags(self, name: str | None = None):
         while self.scroll_layout.count():
@@ -78,10 +82,12 @@ class TagSearchPanel(PanelWidget):
 
         found_tags = self.lib.search_tags(
             FilterState(
-                path=name,
+                tag=name,
                 page_size=self.tag_limit,
             )
         )
+
+        self.first_tag = found_tags[0] if found_tags else None
 
         for tag in found_tags:
             c = QWidget()
