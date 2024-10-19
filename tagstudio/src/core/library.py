@@ -799,12 +799,13 @@ class Library:
 
         self.verify_ts_folders()
 
+        json_library: JsonLibary = self.to_json()
         with open(
             self.library_dir / TS_FOLDER_NAME / filename, "w", encoding="utf-8"
         ) as outfile:
             outfile.flush()
             ujson.dump(
-                self.to_json(),
+                json_library,
                 outfile,
                 ensure_ascii=False,
                 escape_forward_slashes=False,
