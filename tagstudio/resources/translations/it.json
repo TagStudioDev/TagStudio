@@ -1,0 +1,19 @@
+{
+    "generic.add": "Aggiungi",
+    "generic.cancel": "Annulla",
+    "generic.color": "Colore",
+    "generic.delete": "Elimina",
+    "generic.name": "Nome",
+    "home.base_title": "TagStudio Alfa",
+    "home.main_window": "Finestra principale",
+    "home.search": "Cerca",
+    "library.Artist": "Artista",
+    "library.book": "Libro",
+    "library.description": "Descrizione",
+    "library.title": "Titolo",
+    "menu.file": "File",
+    "menu.window": "Finestra",
+    "preview.recent": "Librerias Recenti",
+    "tag.add": "Aggiungi Tag",
+    "tag.new": "Nuovo Tag"
+}
