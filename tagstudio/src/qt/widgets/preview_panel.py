@@ -627,8 +627,10 @@ class PreviewPanel(QWidget):
                     image = None
                     if (
                         MediaCategories.is_ext_in_category(ext, MediaCategories.IMAGE_TYPES)
-                        or MediaCategories.is_ext_in_category(ext, MediaCategories.IMAGE_RAW_TYPES)
-                        or MediaCategories.is_ext_in_category(
+                        and not MediaCategories.is_ext_in_category(
+                            ext, MediaCategories.IMAGE_RAW_TYPES
+                        )
+                        and not MediaCategories.is_ext_in_category(
                             ext, MediaCategories.IMAGE_VECTOR_TYPES
                         )
                     ):
