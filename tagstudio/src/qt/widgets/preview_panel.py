@@ -1,6 +1,8 @@
 # Copyright (C) 2024 Travis Abendshien (CyanVoxel).
 # Licensed under the GPL-3.0 License.
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
+
+import io
 import os
 import platform
 import sys
@@ -601,19 +603,32 @@ class PreviewPanel(QWidget):
                 # TODO: Do this all somewhere else, this is just here temporarily.
                 ext: str = filepath.suffix.lower()
                 try:
-                    if filepath.suffix.lower() in [".gif"]:
-                        with open(filepath, mode="rb") as file:
-                            if self.preview_gif.movie():
-                                self.preview_gif.movie().stop()
-                                self.gif_buffer.close()
+                    if MediaCategories.is_ext_in_category(
+                        ext, MediaCategories.IMAGE_ANIMATED_TYPES, mime_fallback=True
+                    ):
+                        if self.preview_gif.movie():
+                            self.preview_gif.movie().stop()
+                            self.gif_buffer.close()
 
-                            ba = file.read()
-                            self.gif_buffer.setData(ba)
-                            movie = QMovie(self.gif_buffer, QByteArray())
-                            self.preview_gif.setMovie(movie)
-                            movie.start()
+                        image: Image.Image = Image.open(filepath)
+                        anim_image: Image.Image = image
+                        image_bytes_io: io.BytesIO = io.BytesIO()
+                        anim_image.save(
+                            image_bytes_io,
+                            "GIF",
+                            lossless=True,
+                            save_all=True,
+                            loop=0,
+                            disposal=2,
+                        )
+                        image_bytes_io.seek(0)
+                        ba: bytes = image_bytes_io.read()
 
-                        image = Image.open(str(filepath))
+                        self.gif_buffer.setData(ba)
+                        movie = QMovie(self.gif_buffer, QByteArray())
+                        self.preview_gif.setMovie(movie)
+                        movie.start()
+
                         self.resizeEvent(
                             QResizeEvent(
                                 QSize(image.width, image.height),
