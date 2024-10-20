@@ -8,7 +8,6 @@ import platform
 import sys
 import time
 import typing
-import logging
 from collections.abc import Callable
 from datetime import datetime as dt
 from pathlib import Path
@@ -169,7 +168,7 @@ class PreviewPanel(QWidget):
             else len(ani_img_priority_order)
         )
 
-        logging.info("supported qmovie image format(s): " + str(self.preview_anim_img_fmts))
+        logger.info("supported qmovie image format(s): " + str(self.preview_anim_img_fmts))
 
         pil_exts = Image.registered_extensions()
         self.pil_save_exts = {ex for ex, f in pil_exts.items() if f in Image.SAVE}
