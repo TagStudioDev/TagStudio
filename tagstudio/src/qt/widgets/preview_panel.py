@@ -646,6 +646,7 @@ class PreviewPanel(QWidget):
                             image: Image.Image = Image.open(io.BytesIO(file_bytes))
                             if hasattr(image, "n_frames"):
                                 if image.n_frames > 1:
+                                    logger.info(f"loading animated image: \"{os.path.basename(filepath)}\"")
                                     if self.preview_anim_img.movie():
                                         self.preview_anim_img.movie().stop()
                                         self.anim_img_buffer.close()
