@@ -392,6 +392,11 @@ class MediaCategories:
         extensions=_IMAGE_VECTOR_SET,
         is_iana=False,
     )
+    IMAGE_RASTER_TYPES: MediaCategory = MediaCategory(
+        media_type=MediaType.IMAGE,
+        extensions=_IMAGE_SET,
+        is_iana=False,
+    )
     IMAGE_TYPES: MediaCategory = MediaCategory(
         media_type=MediaType.IMAGE,
         extensions=_IMAGE_SET | _IMAGE_RAW_SET | _IMAGE_VECTOR_SET,
@@ -531,11 +536,3 @@ class MediaCategories:
             if mime_type and mime_type.startswith(media_cat.media_type.value):
                 return True
         return False
-
-    @staticmethod
-    def is_image_ext_raster(ext: str) -> bool:
-        return (
-            MediaCategories.is_ext_in_category(ext, MediaCategories.IMAGE_TYPES)
-            and not MediaCategories.is_ext_in_category(ext, MediaCategories.IMAGE_RAW_TYPES)
-            and not MediaCategories.is_ext_in_category(ext, MediaCategories.IMAGE_VECTOR_TYPES)
-        )

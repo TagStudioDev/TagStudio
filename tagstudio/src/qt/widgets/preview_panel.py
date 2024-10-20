@@ -625,7 +625,7 @@ class PreviewPanel(QWidget):
                         self.preview_gif.show()
 
                     image = None
-                    if MediaCategories.is_image_ext_raster(ext):
+                    if MediaCategories.is_ext_in_category(ext, MediaCategories.IMAGE_RASTER_TYPES):
                         image = Image.open(str(filepath))
                     elif MediaCategories.is_ext_in_category(ext, MediaCategories.IMAGE_RAW_TYPES):
                         try:
