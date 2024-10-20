@@ -140,36 +140,36 @@ class PreviewPanel(QWidget):
         self.preview_img.addAction(self.open_file_action)
         self.preview_img.addAction(self.open_explorer_action)
 
-        self.preview_gif = QLabel()
-        self.preview_gif.setMinimumSize(*self.img_button_size)
-        self.preview_gif.setContextMenuPolicy(Qt.ContextMenuPolicy.ActionsContextMenu)
-        self.preview_gif.setCursor(Qt.CursorShape.ArrowCursor)
-        self.preview_gif.addAction(self.open_file_action)
-        self.preview_gif.addAction(self.open_explorer_action)
-        self.preview_gif.hide()
-        self.gif_buffer: QBuffer = QBuffer()
+        self.preview_anim_img = QLabel()
+        self.preview_anim_img.setMinimumSize(*self.img_button_size)
+        self.preview_anim_img.setContextMenuPolicy(Qt.ContextMenuPolicy.ActionsContextMenu)
+        self.preview_anim_img.setCursor(Qt.CursorShape.ArrowCursor)
+        self.preview_anim_img.addAction(self.open_file_action)
+        self.preview_anim_img.addAction(self.open_explorer_action)
+        self.preview_anim_img.hide()
+        self.anim_img_buffer: QBuffer = QBuffer()
 
-        self.preview_ani_img_fmts = []
+        self.preview_anim_img_fmts = []
 
         qmovie_formats = QMovie.supportedFormats()
 
-        self.preview_ani_img_fmts = [fmt.data().decode("utf-8") for fmt in qmovie_formats]
+        self.preview_anim_img_fmts = [fmt.data().decode("utf-8") for fmt in qmovie_formats]
 
         ani_img_priority_order = ["jxl", "apng", "png", "webp", "gif"]
 
-        self.preview_ani_img_pil_map = {"apng": "png"}
+        self.preview_anim_img_pil_map = {"apng": "png"}
 
-        self.preview_ani_img_pil_map_args = {"gif": {"disposal": 2}}
+        self.preview_anim_img_pil_map_args = {"gif": {"disposal": 2}}
 
-        self.preview_ani_img_pil_known_good = {"webp", "gif"}
+        self.preview_anim_img_pil_known_good = {"webp", "gif"}
 
-        self.preview_ani_img_fmts.sort(
+        self.preview_anim_img_fmts.sort(
             key=lambda x: ani_img_priority_order.index(x)
             if x in ani_img_priority_order
             else len(ani_img_priority_order)
         )
 
-        logging.info("supported qmovie image format(s): " + str(self.preview_ani_img_fmts))
+        logging.info("supported qmovie image format(s): " + str(self.preview_anim_img_fmts))
 
         pil_exts = Image.registered_extensions()
         self.pil_save_exts = {ex for ex, f in pil_exts.items() if f in Image.SAVE}
@@ -193,8 +193,8 @@ class PreviewPanel(QWidget):
 
         image_layout.addWidget(self.preview_img)
         image_layout.setAlignment(self.preview_img, Qt.AlignmentFlag.AlignCenter)
-        image_layout.addWidget(self.preview_gif)
-        image_layout.setAlignment(self.preview_gif, Qt.AlignmentFlag.AlignCenter)
+        image_layout.addWidget(self.preview_anim_img)
+        image_layout.setAlignment(self.preview_anim_img, Qt.AlignmentFlag.AlignCenter)
         image_layout.addWidget(self.preview_vid)
         image_layout.setAlignment(self.preview_vid, Qt.AlignmentFlag.AlignCenter)
         self.image_container.setMinimumSize(*self.img_button_size)
@@ -464,12 +464,12 @@ class PreviewPanel(QWidget):
         self.preview_vid.resize_video(adj_size)
         self.preview_vid.setMaximumSize(adj_size)
         self.preview_vid.setMinimumSize(adj_size)
-        self.preview_gif.setMaximumSize(adj_size)
-        self.preview_gif.setMinimumSize(adj_size)
+        self.preview_anim_img.setMaximumSize(adj_size)
+        self.preview_anim_img.setMinimumSize(adj_size)
         proxy_style = RoundedPixmapStyle(radius=8)
-        self.preview_gif.setStyle(proxy_style)
+        self.preview_anim_img.setStyle(proxy_style)
         self.preview_vid.setStyle(proxy_style)
-        m = self.preview_gif.movie()
+        m = self.preview_anim_img.movie()
         if m:
             m.setScaledSize(adj_size)
 
@@ -526,10 +526,10 @@ class PreviewPanel(QWidget):
             self.date_modified_label.setHidden(True)
 
     def get_anim_ext(self):
-        for fmt_ext in self.preview_ani_img_fmts:
-            fmt_ext = self.preview_ani_img_pil_map.get(fmt_ext, fmt_ext)
+        for fmt_ext in self.preview_anim_img_fmts:
+            fmt_ext = self.preview_anim_img_pil_map.get(fmt_ext, fmt_ext)
 
-            if fmt_ext in self.preview_ani_img_pil_known_good:
+            if fmt_ext in self.preview_anim_img_pil_known_good:
                 if f".{fmt_ext}" in self.pil_save_exts:
                     return fmt_ext
 
@@ -572,7 +572,7 @@ class PreviewPanel(QWidget):
             self.preview_img.show()
             self.preview_vid.stop()
             self.preview_vid.hide()
-            self.preview_gif.hide()
+            self.preview_anim_img.hide()
             self.selected = list(self.driver.selected)
             self.add_field_button.setHidden(True)
 
@@ -604,7 +604,7 @@ class PreviewPanel(QWidget):
             self.preview_img.show()
             self.preview_vid.stop()
             self.preview_vid.hide()
-            self.preview_gif.hide()
+            self.preview_anim_img.hide()
 
             # If a new selection is made, update the thumbnail and filepath.
             if not self.selected or self.selected != self.driver.selected:
@@ -647,16 +647,16 @@ class PreviewPanel(QWidget):
                             image: Image.Image = Image.open(io.BytesIO(file_bytes))
                             if hasattr(image, "n_frames"):
                                 if image.n_frames > 1:
-                                    if self.preview_gif.movie():
-                                        self.preview_gif.movie().stop()
-                                        self.gif_buffer.close()
+                                    if self.preview_anim_img.movie():
+                                        self.preview_anim_img.movie().stop()
+                                        self.anim_img_buffer.close()
 
                                     buffer_bytes: bytes
-                                    if not ext.lstrip(".") in self.preview_ani_img_fmts:
+                                    if not ext.lstrip(".") in self.preview_anim_img_fmts:
                                         anim_image: Image.Image = image
                                         image_bytes_io: io.BytesIO = io.BytesIO()
                                         save_ext = self.get_anim_ext()
-                                        extra_args = self.preview_ani_img_pil_map_args.get(save_ext, {})
+                                        extra_args = self.preview_anim_img_pil_map_args.get(save_ext, {})
                                         anim_image.save(
                                             image_bytes_io,
                                             format=save_ext,
@@ -666,12 +666,12 @@ class PreviewPanel(QWidget):
                                             **extra_args,
                                         )
                                         image_bytes_io.seek(0)
-                                        self.gif_buffer.setData(image_bytes_io.read())
+                                        self.anim_img_buffer.setData(image_bytes_io.read())
                                     else:
-                                        self.gif_buffer.setData(file_bytes)
+                                        self.anim_img_buffer.setData(file_bytes)
 
-                                    movie = QMovie(self.gif_buffer, QByteArray())
-                                    self.preview_gif.setMovie(movie)
+                                    movie = QMovie(self.anim_img_buffer, QByteArray())
+                                    self.preview_anim_img.setMovie(movie)
                                     movie.start()
 
                                     self.resizeEvent(
@@ -682,7 +682,7 @@ class PreviewPanel(QWidget):
                                     )
                                     self.preview_img.hide()
                                     self.preview_vid.hide()
-                                    self.preview_gif.show()
+                                    self.preview_anim_img.show()
 
                     image = None
                     if (
@@ -806,7 +806,7 @@ class PreviewPanel(QWidget):
         # Multiple Selected Items
         elif len(self.driver.selected) > 1:
             self.preview_img.show()
-            self.preview_gif.hide()
+            self.preview_anim_img.hide()
             self.preview_vid.stop()
             self.preview_vid.hide()
             self.update_date_label()
