@@ -507,24 +507,25 @@ class Library:
 
         except (ujson.JSONDecodeError, FileNotFoundError):
             logging.info(
-                "[LIBRARY][WARNING] Blank/Corrupted Library file found. Searching for Auto Backup..."
+                "[LIBRARY][ERROR] Blank/Corrupted Library file found. Searching for Auto Backup..."
             )
             backup_folder: Path = (
                 self._fix_lib_path(path) / TS_FOLDER_NAME / BACKUP_FOLDER_NAME
             )
-            auto_backup: Path = None
-            dir_obj = os.scandir(backup_folder)
+            if backup_folder.exists():
+                auto_backup: Path = None
+                dir_obj = os.scandir(backup_folder)
 
-            for backup_file in dir_obj:
-                if backup_file.is_file() and "ts_library_backup_auto" in str(
-                    backup_file
-                ):
-                    auto_backup = Path(backup_file)
-                    break
+                for backup_file in dir_obj:
+                    if backup_file.is_file() and "ts_library_backup_auto" in str(
+                        backup_file
+                    ):
+                        auto_backup = Path(backup_file)
+                        break
 
-            if auto_backup and "ts_library_backup_auto" not in str(path):
-                logging.info(f"[LIBRARY] Loading Auto Backup: {auto_backup}")
-                return self.open_library(auto_backup, is_path_file=True)
+                if auto_backup and "ts_library_backup_auto" not in str(path):
+                    logging.info(f"[LIBRARY] Loading Auto Backup: {auto_backup}")
+                    return self.open_library(auto_backup, is_path_file=True)
 
         else:
             self.library_dir = self._fix_lib_path(path)
@@ -727,7 +728,7 @@ class Library:
                     c = Collation(
                         id=id,
                         title=title,
-                        e_ids_and_pages=e_ids_and_pages,  # type: ignore
+                        e_ids_and_pages=e_ids_and_pages,
                         sort_order=sort_order,
                         cover_id=cover_id,
                     )
