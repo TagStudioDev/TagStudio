@@ -534,12 +534,8 @@ class PreviewPanel(QWidget):
 
         return None
 
-
     def set_anim_img(self, filepath, ext, file_bytes, image):
-
-        logger.info(
-            f'loading animated image: "{os.path.basename(filepath)}"'
-        )
+        logger.info(f'loading animated image: "{os.path.basename(filepath)}"')
 
         if self.preview_anim_img.movie():
             self.preview_anim_img.movie().stop()
@@ -555,9 +551,7 @@ class PreviewPanel(QWidget):
 
             anim_image: Image.Image = image
             image_bytes_io: io.BytesIO = io.BytesIO()
-            per_format_args = self.preview_anim_img_pil_map_args.get(
-                save_ext, {}
-            )
+            per_format_args = self.preview_anim_img_pil_map_args.get(save_ext, {})
 
             anim_image.save(
                 image_bytes_io,
@@ -585,7 +579,6 @@ class PreviewPanel(QWidget):
         self.preview_img.hide()
         self.preview_vid.hide()
         self.preview_anim_img.show()
-
 
     def update_widgets(self) -> bool:
         """Render the panel widgets with the newest data from the Library."""
@@ -700,7 +693,6 @@ class PreviewPanel(QWidget):
                             if hasattr(image, "n_frames"):
                                 if image.n_frames > 1:
                                     self.set_anim_img(filepath, ext, file_bytes, image)
-
 
                     image = None
                     if (
