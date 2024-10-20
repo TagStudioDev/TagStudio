@@ -664,7 +664,7 @@ class PreviewPanel(QWidget):
 
                                         anim_image: Image.Image = image
                                         image_bytes_io: io.BytesIO = io.BytesIO()
-                                        extra_args = self.preview_anim_img_pil_map_args.get(
+                                        per_format_args = self.preview_anim_img_pil_map_args.get(
                                             save_ext, {}
                                         )
 
@@ -674,7 +674,7 @@ class PreviewPanel(QWidget):
                                             lossless=True,
                                             save_all=True,
                                             loop=0,
-                                            **extra_args,
+                                            **per_format_args,
                                         )
                                         image_bytes_io.seek(0)
                                         self.anim_img_buffer.setData(image_bytes_io.read())
