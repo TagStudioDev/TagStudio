@@ -541,7 +541,6 @@ class PreviewPanel(QWidget):
             self.preview_anim_img.movie().stop()
             self.anim_img_buffer.close()
 
-        buffer_bytes: bytes
         if not ext.lstrip(".") in self.preview_anim_img_fmts:
             save_ext = self.get_anim_ext()
 
