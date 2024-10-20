@@ -153,9 +153,7 @@ class PreviewPanel(QWidget):
 
         qmovie_formats = QMovie.supportedFormats()
 
-        self.preview_ani_img_fmts = [
-            fmt.data().decode("utf-8") for fmt in qmovie_formats
-        ]
+        self.preview_ani_img_fmts = [fmt.data().decode("utf-8") for fmt in qmovie_formats]
 
         ani_img_priority_order = ["jxl", "apng", "png", "webp", "gif"]
 
@@ -171,9 +169,7 @@ class PreviewPanel(QWidget):
             else len(ani_img_priority_order)
         )
 
-        logging.info(
-            "supported qmovie image format(s): " + str(self.preview_ani_img_fmts)
-        )
+        logging.info("supported qmovie image format(s): " + str(self.preview_ani_img_fmts))
 
         pil_exts = Image.registered_extensions()
         self.pil_save_exts = {ex for ex, f in pil_exts.items() if f in Image.SAVE}
@@ -531,24 +527,13 @@ class PreviewPanel(QWidget):
 
     def get_anim_ext(self):
         for fmt_ext in self.preview_ani_img_fmts:
-            fmt_ext = (
-                self.preview_ani_img_pil_map.get(
-                    fmt_ext, fmt_ext
-                )
-            )
+            fmt_ext = self.preview_ani_img_pil_map.get(fmt_ext, fmt_ext)
 
-            if (
-                fmt_ext
-                in self.preview_ani_img_pil_known_good
-            ):
-                if (
-                    f".{fmt_ext}"
-                    in self.pil_save_exts
-                ):
+            if fmt_ext in self.preview_ani_img_pil_known_good:
+                if f".{fmt_ext}" in self.pil_save_exts:
                     return fmt_ext
 
         return None
-
 
     def update_widgets(self) -> bool:
         """Render the panel widgets with the newest data from the Library."""
@@ -660,20 +645,16 @@ class PreviewPanel(QWidget):
                         image: Image.Image = Image.open(filepath)
                         if hasattr(image, "n_frames"):
                             if image.n_frames > 1:
-
                                 if self.preview_gif.movie():
                                     self.preview_gif.movie().stop()
                                     self.gif_buffer.close()
 
                                 ba: bytes
                                 if not ext.lstrip(".") in self.preview_ani_img_fmts:
-
                                     anim_image: Image.Image = image
                                     image_bytes_io: io.BytesIO = io.BytesIO()
                                     save_ext = self.get_anim_ext()
-                                    extra_args = self.preview_ani_img_pil_map_args.get(
-                                        save_ext, {}
-                                    )
+                                    extra_args = self.preview_ani_img_pil_map_args.get(save_ext, {})
                                     anim_image.save(
                                         image_bytes_io,
                                         format=save_ext,
