@@ -652,10 +652,14 @@ class PreviewPanel(QWidget):
 
                                     buffer_bytes: bytes
                                     if not ext.lstrip(".") in self.preview_anim_img_fmts:
+                                        save_ext = self.get_anim_ext()
+
+                                        logger.info(f"\"{ext.lstrip('.')}\" not supported by qt qmovie, converting to: \"{save_ext}\"")
+
                                         anim_image: Image.Image = image
                                         image_bytes_io: io.BytesIO = io.BytesIO()
-                                        save_ext = self.get_anim_ext()
                                         extra_args = self.preview_anim_img_pil_map_args.get(save_ext, {})
+
                                         anim_image.save(
                                             image_bytes_io,
                                             format=save_ext,
