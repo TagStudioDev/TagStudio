@@ -642,48 +642,47 @@ class PreviewPanel(QWidget):
                     if MediaCategories.is_ext_in_category(
                         ext, MediaCategories.IMAGE_ANIMATED_TYPES, mime_fallback=True
                     ):
-                        image: Image.Image = Image.open(filepath)
-                        if hasattr(image, "n_frames"):
-                            if image.n_frames > 1:
-                                if self.preview_gif.movie():
-                                    self.preview_gif.movie().stop()
-                                    self.gif_buffer.close()
+                        with open(filepath, mode="rb") as f:
+                            file_bytes: bytes = f.read()
+                            image: Image.Image = Image.open(io.BytesIO(file_bytes))
+                            if hasattr(image, "n_frames"):
+                                if image.n_frames > 1:
+                                    if self.preview_gif.movie():
+                                        self.preview_gif.movie().stop()
+                                        self.gif_buffer.close()
 
-                                ba: bytes
-                                if not ext.lstrip(".") in self.preview_ani_img_fmts:
-                                    anim_image: Image.Image = image
-                                    image_bytes_io: io.BytesIO = io.BytesIO()
-                                    save_ext = self.get_anim_ext()
-                                    extra_args = self.preview_ani_img_pil_map_args.get(save_ext, {})
-                                    anim_image.save(
-                                        image_bytes_io,
-                                        format=save_ext,
-                                        lossless=True,
-                                        save_all=True,
-                                        loop=0,
-                                        **extra_args,
+                                    buffer_bytes: bytes
+                                    if not ext.lstrip(".") in self.preview_ani_img_fmts:
+                                        anim_image: Image.Image = image
+                                        image_bytes_io: io.BytesIO = io.BytesIO()
+                                        save_ext = self.get_anim_ext()
+                                        extra_args = self.preview_ani_img_pil_map_args.get(save_ext, {})
+                                        anim_image.save(
+                                            image_bytes_io,
+                                            format=save_ext,
+                                            lossless=True,
+                                            save_all=True,
+                                            loop=0,
+                                            **extra_args,
+                                        )
+                                        image_bytes_io.seek(0)
+                                        self.gif_buffer.setData(image_bytes_io.read())
+                                    else:
+                                        self.gif_buffer.setData(file_bytes)
+
+                                    movie = QMovie(self.gif_buffer, QByteArray())
+                                    self.preview_gif.setMovie(movie)
+                                    movie.start()
+
+                                    self.resizeEvent(
+                                        QResizeEvent(
+                                            QSize(image.width, image.height),
+                                            QSize(image.width, image.height),
+                                        )
                                     )
-                                    image_bytes_io.seek(0)
-                                    ba: bytes = image_bytes_io.read()
-
-                                else:
-                                    with open(filepath, mode="rb") as f:
-                                        ba = f.read()
-
-                                self.gif_buffer.setData(ba)
-                                movie = QMovie(self.gif_buffer, QByteArray())
-                                self.preview_gif.setMovie(movie)
-                                movie.start()
-
-                                self.resizeEvent(
-                                    QResizeEvent(
-                                        QSize(image.width, image.height),
-                                        QSize(image.width, image.height),
-                                    )
-                                )
-                                self.preview_img.hide()
-                                self.preview_vid.hide()
-                                self.preview_gif.show()
+                                    self.preview_img.hide()
+                                    self.preview_vid.hide()
+                                    self.preview_gif.show()
 
                     image = None
                     if (
