@@ -662,7 +662,7 @@ class PreviewPanel(QWidget):
                     # Stats for specific file types are displayed here.
                     if image and (
                         MediaCategories.is_ext_in_category(
-                            ext, MediaCategories.IMAGE_TYPES, mime_fallback=True
+                            ext, MediaCategories.IMAGE_RASTER_TYPES, mime_fallback=True
                         )
                         or MediaCategories.is_ext_in_category(
                             ext, MediaCategories.VIDEO_TYPES, mime_fallback=True
