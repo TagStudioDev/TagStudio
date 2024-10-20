@@ -680,7 +680,6 @@ class PreviewPanel(QWidget):
                                         lossless=True,
                                         save_all=True,
                                         loop=0,
-                                        disposal=2,
                                         **extra_args,
                                     )
                                     image_bytes_io.seek(0)
