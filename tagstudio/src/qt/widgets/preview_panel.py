@@ -646,7 +646,10 @@ class PreviewPanel(QWidget):
                             image: Image.Image = Image.open(io.BytesIO(file_bytes))
                             if hasattr(image, "n_frames"):
                                 if image.n_frames > 1:
-                                    logger.info(f"loading animated image: \"{os.path.basename(filepath)}\"")
+                                    logger.info(
+                                        f'loading animated image: "{os.path.basename(filepath)}"'
+                                    )
+
                                     if self.preview_anim_img.movie():
                                         self.preview_anim_img.movie().stop()
                                         self.anim_img_buffer.close()
@@ -655,11 +658,15 @@ class PreviewPanel(QWidget):
                                     if not ext.lstrip(".") in self.preview_anim_img_fmts:
                                         save_ext = self.get_anim_ext()
 
-                                        logger.info(f"\"{ext.lstrip('.')}\" not supported by qt qmovie, converting to: \"{save_ext}\"")
+                                        logger.info(
+                                            f"\"{ext.lstrip('.')}\" not supported by qt qmovie, converting to: \"{save_ext}\""
+                                        )
 
                                         anim_image: Image.Image = image
                                         image_bytes_io: io.BytesIO = io.BytesIO()
-                                        extra_args = self.preview_anim_img_pil_map_args.get(save_ext, {})
+                                        extra_args = self.preview_anim_img_pil_map_args.get(
+                                            save_ext, {}
+                                        )
 
                                         anim_image.save(
                                             image_bytes_io,
