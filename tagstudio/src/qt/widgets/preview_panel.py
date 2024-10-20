@@ -534,6 +534,59 @@ class PreviewPanel(QWidget):
 
         return None
 
+
+    def set_anim_img(self, filepath, ext, file_bytes, image):
+
+        logger.info(
+            f'loading animated image: "{os.path.basename(filepath)}"'
+        )
+
+        if self.preview_anim_img.movie():
+            self.preview_anim_img.movie().stop()
+            self.anim_img_buffer.close()
+
+        buffer_bytes: bytes
+        if not ext.lstrip(".") in self.preview_anim_img_fmts:
+            save_ext = self.get_anim_ext()
+
+            logger.info(
+                f"\"{ext.lstrip('.')}\" not supported by qt qmovie, converting to: \"{save_ext}\""
+            )
+
+            anim_image: Image.Image = image
+            image_bytes_io: io.BytesIO = io.BytesIO()
+            per_format_args = self.preview_anim_img_pil_map_args.get(
+                save_ext, {}
+            )
+
+            anim_image.save(
+                image_bytes_io,
+                format=save_ext,
+                lossless=True,
+                save_all=True,
+                loop=0,
+                **per_format_args,
+            )
+            image_bytes_io.seek(0)
+            self.anim_img_buffer.setData(image_bytes_io.read())
+        else:
+            self.anim_img_buffer.setData(file_bytes)
+
+        movie = QMovie(self.anim_img_buffer, QByteArray())
+        self.preview_anim_img.setMovie(movie)
+        movie.start()
+
+        self.resizeEvent(
+            QResizeEvent(
+                QSize(image.width, image.height),
+                QSize(image.width, image.height),
+            )
+        )
+        self.preview_img.hide()
+        self.preview_vid.hide()
+        self.preview_anim_img.show()
+
+
     def update_widgets(self) -> bool:
         """Render the panel widgets with the newest data from the Library."""
         logger.info("update_widgets", selected=self.driver.selected)
@@ -646,54 +699,8 @@ class PreviewPanel(QWidget):
                             image: Image.Image = Image.open(io.BytesIO(file_bytes))
                             if hasattr(image, "n_frames"):
                                 if image.n_frames > 1:
-                                    logger.info(
-                                        f'loading animated image: "{os.path.basename(filepath)}"'
-                                    )
+                                    self.set_anim_img(filepath, ext, file_bytes, image)
 
-                                    if self.preview_anim_img.movie():
-                                        self.preview_anim_img.movie().stop()
-                                        self.anim_img_buffer.close()
-
-                                    buffer_bytes: bytes
-                                    if not ext.lstrip(".") in self.preview_anim_img_fmts:
-                                        save_ext = self.get_anim_ext()
-
-                                        logger.info(
-                                            f"\"{ext.lstrip('.')}\" not supported by qt qmovie, converting to: \"{save_ext}\""
-                                        )
-
-                                        anim_image: Image.Image = image
-                                        image_bytes_io: io.BytesIO = io.BytesIO()
-                                        per_format_args = self.preview_anim_img_pil_map_args.get(
-                                            save_ext, {}
-                                        )
-
-                                        anim_image.save(
-                                            image_bytes_io,
-                                            format=save_ext,
-                                            lossless=True,
-                                            save_all=True,
-                                            loop=0,
-                                            **per_format_args,
-                                        )
-                                        image_bytes_io.seek(0)
-                                        self.anim_img_buffer.setData(image_bytes_io.read())
-                                    else:
-                                        self.anim_img_buffer.setData(file_bytes)
-
-                                    movie = QMovie(self.anim_img_buffer, QByteArray())
-                                    self.preview_anim_img.setMovie(movie)
-                                    movie.start()
-
-                                    self.resizeEvent(
-                                        QResizeEvent(
-                                            QSize(image.width, image.height),
-                                            QSize(image.width, image.height),
-                                        )
-                                    )
-                                    self.preview_img.hide()
-                                    self.preview_vid.hide()
-                                    self.preview_anim_img.show()
 
                     image = None
                     if (
