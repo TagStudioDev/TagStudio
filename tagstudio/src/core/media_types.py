@@ -207,7 +207,7 @@ class MediaCategories:
         ".rw2",
     }
     _IMAGE_VECTOR_SET: set[str] = {".svg"}
-    _IMAGE_SET: set[str] = {
+    _IMAGE_RASTER_SET: set[str] = {
         ".apng",
         ".avif",
         ".bmp",
@@ -394,12 +394,12 @@ class MediaCategories:
     )
     IMAGE_RASTER_TYPES: MediaCategory = MediaCategory(
         media_type=MediaType.IMAGE,
-        extensions=_IMAGE_SET,
+        extensions=_IMAGE_RASTER_SET,
         is_iana=False,
     )
     IMAGE_TYPES: MediaCategory = MediaCategory(
         media_type=MediaType.IMAGE,
-        extensions=_IMAGE_SET | _IMAGE_RAW_SET | _IMAGE_VECTOR_SET,
+        extensions=_IMAGE_RASTER_SET | _IMAGE_RAW_SET | _IMAGE_VECTOR_SET,
         is_iana=True,
     )
     INSTALLER_TYPES: MediaCategory = MediaCategory(
