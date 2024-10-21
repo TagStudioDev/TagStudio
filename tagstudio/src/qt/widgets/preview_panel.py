@@ -78,10 +78,12 @@ def update_selected_entry(driver: "QtDriver"):
         assert results, f"Entry not found: {entry.id}"
         driver.frame_content[grid_idx] = next(results)
 
+
 class previewType(enum.Enum):
     IMG = enum.auto()
     ANIM_IMG = enum.auto()
     VID = enum.auto()
+
 
 class PreviewPanel(QWidget):
     """The Preview Panel Widget."""
@@ -531,12 +533,11 @@ class PreviewPanel(QWidget):
             self.date_created_label.setHidden(True)
             self.date_modified_label.setHidden(True)
 
-
     def set_preview_type(self, preview_type):
         self.base_preview_type = preview_type
 
         if self.base_preview_type == previewType.IMG:
-            logger.info("base preview type: "+ previewType.IMG.name)
+            logger.info("base preview type: " + previewType.IMG.name)
 
             self.preview_img.show()
 
@@ -547,9 +548,8 @@ class PreviewPanel(QWidget):
             if self.preview_anim_img.movie():
                 self.preview_anim_img.movie().stop()
 
-
         if self.base_preview_type == previewType.ANIM_IMG:
-            logger.info("base preview type: "+ previewType.ANIM_IMG.name)
+            logger.info("base preview type: " + previewType.ANIM_IMG.name)
 
             self.preview_img.hide()
             self.preview_vid.hide()
@@ -557,7 +557,7 @@ class PreviewPanel(QWidget):
             self.preview_anim_img.show()
 
         if self.base_preview_type == previewType.VID:
-            logger.info("base preview type: "+ previewType.VID.name)
+            logger.info("base preview type: " + previewType.VID.name)
 
             self.preview_img.hide()
 
@@ -566,8 +566,6 @@ class PreviewPanel(QWidget):
                 self.preview_anim_img.movie().stop()
 
             self.preview_vid.show()
-
-
 
     def get_anim_ext(self):
         for fmt_ext in self.preview_anim_img_fmts:
@@ -622,7 +620,6 @@ class PreviewPanel(QWidget):
         )
         self.set_preview_type(previewType.ANIM_IMG)
 
-
     def update_widgets(self) -> bool:
         """Render the panel widgets with the newest data from the Library."""
         logger.info("update_widgets", selected=self.driver.selected)
@@ -658,7 +655,6 @@ class PreviewPanel(QWidget):
                 for c in self.containers:
                     c.setHidden(True)
 
-
             self.set_preview_type(previewType.IMG)
 
             self.selected = list(self.driver.selected)
@@ -688,7 +684,6 @@ class PreviewPanel(QWidget):
             # 1 Selected Entry
             selected_idx = self.driver.selected[0]
             item = self.driver.frame_content[selected_idx]
-
             self.set_preview_type(previewType.IMG)
 
             # If a new selection is made, update the thumbnail and filepath.
