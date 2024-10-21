@@ -535,22 +535,32 @@ class PreviewPanel(QWidget):
         self.base_preview_type = preview_type
 
         if self.base_preview_type == previewType.IMG:
-            self.preview_img.show()
-            self.preview_anim_img.hide()
-            self.preview_vid.stop()
-            self.preview_vid.hide()
+            logger.info("base preview type: "+ previewType.IMG.name)
 
+            self.preview_img.show()
+
+            self.preview_vid.hide()
+            self.preview_vid.stop()
+
+            self.preview_anim_img.hide()
             if self.preview_anim_img.movie():
                 self.preview_anim_img.movie().stop()
 
+
         if self.base_preview_type == previewType.ANIM_IMG:
+            logger.info("base preview type: "+ previewType.ANIM_IMG.name)
+
             self.preview_img.hide()
             self.preview_vid.hide()
             self.preview_vid.stop()
             self.preview_anim_img.show()
 
         if self.base_preview_type == previewType.VID:
+            logger.info("base preview type: "+ previewType.VID.name)
+
             self.preview_img.hide()
+
+            self.preview_anim_img.hide()
             if self.preview_anim_img.movie():
                 self.preview_anim_img.movie().stop()
 
