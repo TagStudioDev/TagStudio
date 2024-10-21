@@ -531,6 +531,7 @@ class PreviewPanel(QWidget):
             self.date_created_label.setHidden(True)
             self.date_modified_label.setHidden(True)
 
+
     def set_preview_type(self, preview_type):
         self.base_preview_type = preview_type
 
