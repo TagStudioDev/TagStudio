@@ -1,6 +1,8 @@
 # Copyright (C) 2024 Travis Abendshien (CyanVoxel).
 # Licensed under the GPL-3.0 License.
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
+
+import io
 import os
 import platform
 import sys
@@ -13,6 +15,7 @@ from pathlib import Path
 import cv2
 import rawpy
 import structlog
+import enum
 from humanfriendly import format_size
 from PIL import Image, ImageFont, UnidentifiedImageError
 from PIL.Image import DecompressionBombError
@@ -76,6 +79,12 @@ def update_selected_entry(driver: "QtDriver"):
         driver.frame_content[grid_idx] = next(results)
 
 
+class previewType(enum.Enum):
+    IMG = enum.auto()
+    ANIM_IMG = enum.auto()
+    VID = enum.auto()
+
+
 class PreviewPanel(QWidget):
     """The Preview Panel Widget."""
 
@@ -130,6 +139,8 @@ class PreviewPanel(QWidget):
         self.open_file_action = QAction("Open file", self)
         self.open_explorer_action = QAction(PlatformStrings.open_file_str, self)
 
+        self.base_preview_type = previewType.IMG
+
         self.preview_img = QPushButtonWrapper()
         self.preview_img.setMinimumSize(*self.img_button_size)
         self.preview_img.setFlat(True)
@@ -137,14 +148,39 @@ class PreviewPanel(QWidget):
         self.preview_img.addAction(self.open_file_action)
         self.preview_img.addAction(self.open_explorer_action)
 
-        self.preview_gif = QLabel()
-        self.preview_gif.setMinimumSize(*self.img_button_size)
-        self.preview_gif.setContextMenuPolicy(Qt.ContextMenuPolicy.ActionsContextMenu)
-        self.preview_gif.setCursor(Qt.CursorShape.ArrowCursor)
-        self.preview_gif.addAction(self.open_file_action)
-        self.preview_gif.addAction(self.open_explorer_action)
-        self.preview_gif.hide()
-        self.gif_buffer: QBuffer = QBuffer()
+        self.preview_anim_img = QLabel()
+        self.preview_anim_img.setMinimumSize(*self.img_button_size)
+        self.preview_anim_img.setContextMenuPolicy(Qt.ContextMenuPolicy.ActionsContextMenu)
+        self.preview_anim_img.setCursor(Qt.CursorShape.ArrowCursor)
+        self.preview_anim_img.addAction(self.open_file_action)
+        self.preview_anim_img.addAction(self.open_explorer_action)
+        self.preview_anim_img.hide()
+        self.anim_img_buffer: QBuffer = QBuffer()
+
+        self.preview_anim_img_fmts = []
+
+        qmovie_formats = QMovie.supportedFormats()
+
+        self.preview_anim_img_fmts = [fmt.data().decode("utf-8") for fmt in qmovie_formats]
+
+        ani_img_priority_order = ["jxl", "apng", "png", "webp", "gif"]
+
+        self.preview_anim_img_pil_map = {"apng": "png"}
+
+        self.preview_anim_img_pil_map_args = {"gif": {"disposal": 2}}
+
+        self.preview_anim_img_pil_known_good = {"webp", "gif"}
+
+        self.preview_anim_img_fmts.sort(
+            key=lambda x: ani_img_priority_order.index(x)
+            if x in ani_img_priority_order
+            else len(ani_img_priority_order)
+        )
+
+        logger.info("supported qmovie image format(s): " + str(self.preview_anim_img_fmts))
+
+        pil_exts = Image.registered_extensions()
+        self.pil_save_exts = {ex for ex, f in pil_exts.items() if f in Image.SAVE}
 
         self.preview_vid = VideoPlayer(driver)
         self.preview_vid.hide()
@@ -165,8 +201,8 @@ class PreviewPanel(QWidget):
 
         image_layout.addWidget(self.preview_img)
         image_layout.setAlignment(self.preview_img, Qt.AlignmentFlag.AlignCenter)
-        image_layout.addWidget(self.preview_gif)
-        image_layout.setAlignment(self.preview_gif, Qt.AlignmentFlag.AlignCenter)
+        image_layout.addWidget(self.preview_anim_img)
+        image_layout.setAlignment(self.preview_anim_img, Qt.AlignmentFlag.AlignCenter)
         image_layout.addWidget(self.preview_vid)
         image_layout.setAlignment(self.preview_vid, Qt.AlignmentFlag.AlignCenter)
         self.image_container.setMinimumSize(*self.img_button_size)
@@ -436,12 +472,12 @@ class PreviewPanel(QWidget):
         self.preview_vid.resize_video(adj_size)
         self.preview_vid.setMaximumSize(adj_size)
         self.preview_vid.setMinimumSize(adj_size)
-        self.preview_gif.setMaximumSize(adj_size)
-        self.preview_gif.setMinimumSize(adj_size)
+        self.preview_anim_img.setMaximumSize(adj_size)
+        self.preview_anim_img.setMinimumSize(adj_size)
         proxy_style = RoundedPixmapStyle(radius=8)
-        self.preview_gif.setStyle(proxy_style)
+        self.preview_anim_img.setStyle(proxy_style)
         self.preview_vid.setStyle(proxy_style)
-        m = self.preview_gif.movie()
+        m = self.preview_anim_img.movie()
         if m:
             m.setScaledSize(adj_size)
 
@@ -497,6 +533,86 @@ class PreviewPanel(QWidget):
             self.date_created_label.setHidden(True)
             self.date_modified_label.setHidden(True)
 
+    def set_preview_type(self, preview_type):
+        self.base_preview_type = preview_type
+
+        if self.base_preview_type != previewType.IMG:
+            self.preview_img.hide()
+
+        if self.base_preview_type != previewType.VID:
+            self.preview_vid.hide()
+            self.preview_vid.stop()
+
+        if self.base_preview_type != previewType.ANIM_IMG:
+            self.preview_anim_img.hide()
+            if self.preview_anim_img.movie():
+                self.preview_anim_img.movie().stop()
+
+        if self.base_preview_type == previewType.IMG:
+            logger.info("base preview type: " + previewType.IMG.name)
+            self.preview_img.show()
+
+        elif self.base_preview_type == previewType.ANIM_IMG:
+            logger.info("base preview type: " + previewType.ANIM_IMG.name)
+            self.preview_anim_img.show()
+
+        elif self.base_preview_type == previewType.VID:
+            logger.info("base preview type: " + previewType.VID.name)
+            self.preview_vid.show()
+
+    def get_anim_ext(self):
+        for fmt_ext in self.preview_anim_img_fmts:
+            fmt_ext = self.preview_anim_img_pil_map.get(fmt_ext, fmt_ext)
+
+            if fmt_ext in self.preview_anim_img_pil_known_good:
+                if f".{fmt_ext}" in self.pil_save_exts:
+                    return fmt_ext
+
+        return None
+
+    def set_anim_img(self, filepath, ext, file_bytes, image):
+        logger.info(f'loading animated image: "{os.path.basename(filepath)}"')
+
+        if self.preview_anim_img.movie():
+            self.preview_anim_img.movie().stop()
+            self.anim_img_buffer.close()
+
+        if not ext.lstrip(".") in self.preview_anim_img_fmts:
+            save_ext = self.get_anim_ext()
+
+            logger.info(
+                f"\"{ext.lstrip('.')}\" not supported by qt qmovie, converting to: \"{save_ext}\""
+            )
+
+            anim_image: Image.Image = image
+            image_bytes_io: io.BytesIO = io.BytesIO()
+            per_format_args = self.preview_anim_img_pil_map_args.get(save_ext, {})
+
+            anim_image.save(
+                image_bytes_io,
+                format=save_ext,
+                lossless=True,
+                save_all=True,
+                loop=0,
+                **per_format_args,
+            )
+            image_bytes_io.seek(0)
+            self.anim_img_buffer.setData(image_bytes_io.read())
+        else:
+            self.anim_img_buffer.setData(file_bytes)
+
+        movie = QMovie(self.anim_img_buffer, QByteArray())
+        self.preview_anim_img.setMovie(movie)
+        movie.start()
+
+        self.resizeEvent(
+            QResizeEvent(
+                QSize(image.width, image.height),
+                QSize(image.width, image.height),
+            )
+        )
+        self.set_preview_type(previewType.ANIM_IMG)
+
     def update_widgets(self) -> bool:
         """Render the panel widgets with the newest data from the Library."""
         logger.info("update_widgets", selected=self.driver.selected)
@@ -531,10 +647,9 @@ class PreviewPanel(QWidget):
                     self.preview_img.clicked.disconnect()
                 for c in self.containers:
                     c.setHidden(True)
-            self.preview_img.show()
-            self.preview_vid.stop()
-            self.preview_vid.hide()
-            self.preview_gif.hide()
+
+            self.set_preview_type(previewType.IMG)
+
             self.selected = list(self.driver.selected)
             self.add_field_button.setHidden(True)
 
@@ -562,11 +677,7 @@ class PreviewPanel(QWidget):
             # 1 Selected Entry
             selected_idx = self.driver.selected[0]
             item = self.driver.frame_content[selected_idx]
-
-            self.preview_img.show()
-            self.preview_vid.stop()
-            self.preview_vid.hide()
-            self.preview_gif.hide()
+            self.set_preview_type(previewType.IMG)
 
             # If a new selection is made, update the thumbnail and filepath.
             if not self.selected or self.selected != self.driver.selected:
@@ -601,28 +712,15 @@ class PreviewPanel(QWidget):
                 # TODO: Do this all somewhere else, this is just here temporarily.
                 ext: str = filepath.suffix.lower()
                 try:
-                    if filepath.suffix.lower() in [".gif"]:
-                        with open(filepath, mode="rb") as file:
-                            if self.preview_gif.movie():
-                                self.preview_gif.movie().stop()
-                                self.gif_buffer.close()
-
-                            ba = file.read()
-                            self.gif_buffer.setData(ba)
-                            movie = QMovie(self.gif_buffer, QByteArray())
-                            self.preview_gif.setMovie(movie)
-                            movie.start()
-
-                        image = Image.open(str(filepath))
-                        self.resizeEvent(
-                            QResizeEvent(
-                                QSize(image.width, image.height),
-                                QSize(image.width, image.height),
-                            )
-                        )
-                        self.preview_img.hide()
-                        self.preview_vid.hide()
-                        self.preview_gif.show()
+                    if MediaCategories.is_ext_in_category(
+                        ext, MediaCategories.IMAGE_ANIMATED_TYPES, mime_fallback=True
+                    ):
+                        with open(filepath, mode="rb") as f:
+                            file_bytes: bytes = f.read()
+                            image: Image.Image = Image.open(io.BytesIO(file_bytes))
+                            if hasattr(image, "n_frames"):
+                                if image.n_frames > 1:
+                                    self.set_anim_img(filepath, ext, file_bytes, image)
 
                     image = None
                     if (
@@ -655,7 +753,6 @@ class PreviewPanel(QWidget):
                         frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
                         image = Image.fromarray(frame)
                         if success:
-                            self.preview_img.hide()
                             self.preview_vid.play(filepath, QSize(image.width, image.height))
                             self.resizeEvent(
                                 QResizeEvent(
@@ -663,7 +760,7 @@ class PreviewPanel(QWidget):
                                     QSize(image.width, image.height),
                                 )
                             )
-                            self.preview_vid.show()
+                            self.set_preview_type(previewType.VID)
 
                     # Stats for specific file types are displayed here.
                     if image and (
@@ -745,10 +842,8 @@ class PreviewPanel(QWidget):
 
         # Multiple Selected Items
         elif len(self.driver.selected) > 1:
-            self.preview_img.show()
-            self.preview_gif.hide()
-            self.preview_vid.stop()
-            self.preview_vid.hide()
+            self.set_preview_type(previewType.IMG)
+
             self.update_date_label()
             if self.selected != self.driver.selected:
                 self.file_label.setText(f"<b>{len(self.driver.selected)}</b> Items Selected")
