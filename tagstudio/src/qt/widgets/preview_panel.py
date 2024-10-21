@@ -617,6 +617,9 @@ class PreviewPanel(QWidget):
             self.preview_vid.stop()
             self.preview_vid.hide()
             self.preview_anim_img.hide()
+            if self.preview_anim_img.movie():
+                self.preview_anim_img.movie().stop()
+
             self.selected = list(self.driver.selected)
             self.add_field_button.setHidden(True)
 
@@ -649,6 +652,9 @@ class PreviewPanel(QWidget):
             self.preview_vid.stop()
             self.preview_vid.hide()
             self.preview_anim_img.hide()
+            if self.preview_anim_img.movie():
+                self.preview_anim_img.movie().stop()
+
 
             # If a new selection is made, update the thumbnail and filepath.
             if not self.selected or self.selected != self.driver.selected:
@@ -818,6 +824,10 @@ class PreviewPanel(QWidget):
             self.preview_anim_img.hide()
             self.preview_vid.stop()
             self.preview_vid.hide()
+
+            if self.preview_anim_img.movie():
+                self.preview_anim_img.movie().stop()
+
             self.update_date_label()
             if self.selected != self.driver.selected:
                 self.file_label.setText(f"<b>{len(self.driver.selected)}</b> Items Selected")
