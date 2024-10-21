@@ -15,6 +15,7 @@ from pathlib import Path
 import cv2
 import rawpy
 import structlog
+import enum
 from humanfriendly import format_size
 from PIL import Image, ImageFont, UnidentifiedImageError
 from PIL.Image import DecompressionBombError
@@ -77,6 +78,10 @@ def update_selected_entry(driver: "QtDriver"):
         assert results, f"Entry not found: {entry.id}"
         driver.frame_content[grid_idx] = next(results)
 
+class previewType(enum.Enum):
+    IMG = enum.auto()
+    ANIM_IMG = enum.auto()
+    VID = enum.auto()
 
 class PreviewPanel(QWidget):
     """The Preview Panel Widget."""
@@ -131,6 +136,8 @@ class PreviewPanel(QWidget):
 
         self.open_file_action = QAction("Open file", self)
         self.open_explorer_action = QAction(PlatformStrings.open_file_str, self)
+
+        self.base_preview_type = previewType.IMG
 
         self.preview_img = QPushButtonWrapper()
         self.preview_img.setMinimumSize(*self.img_button_size)
@@ -524,6 +531,33 @@ class PreviewPanel(QWidget):
             self.date_created_label.setHidden(True)
             self.date_modified_label.setHidden(True)
 
+    def set_preview_type(self, preview_type):
+        self.base_preview_type = preview_type
+
+        if self.base_preview_type == previewType.IMG:
+            self.preview_img.show()
+            self.preview_anim_img.hide()
+            self.preview_vid.stop()
+            self.preview_vid.hide()
+
+            if self.preview_anim_img.movie():
+                self.preview_anim_img.movie().stop()
+
+        if self.base_preview_type == previewType.ANIM_IMG:
+            self.preview_img.hide()
+            self.preview_vid.hide()
+            self.preview_vid.stop()
+            self.preview_anim_img.show()
+
+        if self.base_preview_type == previewType.VID:
+            self.preview_img.hide()
+            if self.preview_anim_img.movie():
+                self.preview_anim_img.movie().stop()
+
+            self.preview_vid.show()
+
+
+
     def get_anim_ext(self):
         for fmt_ext in self.preview_anim_img_fmts:
             fmt_ext = self.preview_anim_img_pil_map.get(fmt_ext, fmt_ext)
@@ -575,9 +609,8 @@ class PreviewPanel(QWidget):
                 QSize(image.width, image.height),
             )
         )
-        self.preview_img.hide()
-        self.preview_vid.hide()
-        self.preview_anim_img.show()
+        self.set_preview_type(previewType.ANIM_IMG)
+
 
     def update_widgets(self) -> bool:
         """Render the panel widgets with the newest data from the Library."""
@@ -613,12 +646,9 @@ class PreviewPanel(QWidget):
                     self.preview_img.clicked.disconnect()
                 for c in self.containers:
                     c.setHidden(True)
-            self.preview_img.show()
-            self.preview_vid.stop()
-            self.preview_vid.hide()
-            self.preview_anim_img.hide()
-            if self.preview_anim_img.movie():
-                self.preview_anim_img.movie().stop()
+
+
+            self.set_preview_type(previewType.IMG)
 
             self.selected = list(self.driver.selected)
             self.add_field_button.setHidden(True)
@@ -648,13 +678,7 @@ class PreviewPanel(QWidget):
             selected_idx = self.driver.selected[0]
             item = self.driver.frame_content[selected_idx]
 
-            self.preview_img.show()
-            self.preview_vid.stop()
-            self.preview_vid.hide()
-            self.preview_anim_img.hide()
-            if self.preview_anim_img.movie():
-                self.preview_anim_img.movie().stop()
-
+            self.set_preview_type(previewType.IMG)
 
             # If a new selection is made, update the thumbnail and filepath.
             if not self.selected or self.selected != self.driver.selected:
@@ -730,7 +754,6 @@ class PreviewPanel(QWidget):
                         frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
                         image = Image.fromarray(frame)
                         if success:
-                            self.preview_img.hide()
                             self.preview_vid.play(filepath, QSize(image.width, image.height))
                             self.resizeEvent(
                                 QResizeEvent(
@@ -738,7 +761,7 @@ class PreviewPanel(QWidget):
                                     QSize(image.width, image.height),
                                 )
                             )
-                            self.preview_vid.show()
+                            self.set_preview_type(previewType.VID)
 
                     # Stats for specific file types are displayed here.
                     if image and (
@@ -820,13 +843,7 @@ class PreviewPanel(QWidget):
 
         # Multiple Selected Items
         elif len(self.driver.selected) > 1:
-            self.preview_img.show()
-            self.preview_anim_img.hide()
-            self.preview_vid.stop()
-            self.preview_vid.hide()
-
-            if self.preview_anim_img.movie():
-                self.preview_anim_img.movie().stop()
+            self.set_preview_type(previewType.IMG)
 
             self.update_date_label()
             if self.selected != self.driver.selected:
