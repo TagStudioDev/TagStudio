@@ -57,6 +57,9 @@ coverage.xml
 cover/
 tagstudio/tests/fixtures/library/*
 
+# Migrations
+migrations/versions/*
+
 # Translations
 *.mo
 *.pot

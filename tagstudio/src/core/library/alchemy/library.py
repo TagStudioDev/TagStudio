@@ -9,6 +9,8 @@ from typing import Any, Iterator, Type
 from uuid import uuid4
 
 import structlog
+from alembic import command
+from alembic.config import Config
 from sqlalchemy import (
     URL,
     Engine,
@@ -139,6 +141,13 @@ class Library:
         self.storage_path = None
         self.folder = None
 
+    def migrate(self, db_url: str):
+        alembic_cfg = Config("alembic.ini")
+        alembic_cfg.set_main_option("sqlalchemy.url", db_url)
+        command.stamp(alembic_cfg, "head")
+        command.revision(alembic_cfg, autogenerate=True)
+        command.upgrade(alembic_cfg, "head")
+
     def open_library(self, library_dir: Path, storage_path: str | None = None) -> LibraryStatus:
         if storage_path == ":memory:":
             self.storage_path = storage_path
@@ -152,12 +161,14 @@ class Library:
             drivername="sqlite",
             database=str(self.storage_path),
         )
-
         logger.info("opening library", library_dir=library_dir, connection_string=connection_string)
         self.engine = create_engine(connection_string)
         with Session(self.engine) as session:
             make_tables(self.engine)
-
+            logger.info(
+                "creating migrations", library_dir=library_dir, connection_string=connection_string
+            )
+            self.migrate(connection_string.render_as_string(hide_password=False))
             tags = get_default_tags()
             try:
                 session.add_all(tags)
