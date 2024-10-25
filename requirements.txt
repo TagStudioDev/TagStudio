@@ -1,3 +1,4 @@
+alembic==1.13.3
 humanfriendly==10.0
 opencv_python>=4.8.0.74,<=4.9.0.80
 Pillow==10.3.0
