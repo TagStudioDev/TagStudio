@@ -168,8 +168,11 @@ class PreviewPanel(QWidget):
         self.preview_anim_img_pil_map = {"apng": "png"}
 
         self.preview_anim_img_pil_map_args = {"gif": {"disposal": 2}}
+        Image.init()
 
-        self.preview_anim_img_pil_known_good = {"webp", "apng", "png", "gif"}
+        pil_save_all = Image.SAVE_ALL.keys()
+        self.preview_anim_img_pil_anim_supported = [key.lower() for key in pil_save_all]
+        logger.info("pillow animated image types: " + str(self.preview_anim_img_pil_anim_supported))
 
         self.preview_anim_img_fmts.sort(
             key=lambda x: ani_img_priority_order.index(x)
@@ -564,7 +567,7 @@ class PreviewPanel(QWidget):
         for fmt_ext in self.preview_anim_img_fmts:
             fmt_ext = self.preview_anim_img_pil_map.get(fmt_ext, fmt_ext)
 
-            if fmt_ext in self.preview_anim_img_pil_known_good:
+            if fmt_ext in self.preview_anim_img_pil_anim_supported:
                 if f".{fmt_ext}" in self.pil_save_exts:
                     return fmt_ext
 
