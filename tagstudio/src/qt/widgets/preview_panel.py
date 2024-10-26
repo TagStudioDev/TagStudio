@@ -19,7 +19,7 @@ import enum
 from humanfriendly import format_size
 from PIL import Image, ImageFont, UnidentifiedImageError
 from PIL.Image import DecompressionBombError
-from PySide6.QtCore import QBuffer, QByteArray, QSize, Qt, Signal
+from PySide6.QtCore import QBuffer, QByteArray, QSize, Qt, Signal, QThread
 from PySide6.QtGui import QAction, QGuiApplication, QMovie, QResizeEvent
 from PySide6.QtWidgets import (
     QFrame,
@@ -82,22 +82,30 @@ def update_selected_entry(driver: "QtDriver"):
         assert results, f"Entry not found: {entry.id}"
         driver.frame_content[grid_idx] = next(results)
 
-class ThreadWithCallback(threading.Thread):
-    def __init__(self, target, args=(), kwargs=None, callback=None, callback_args=()):
+class ThreadWithCallback(QThread):
+    result_ready = Signal(object)  # Signal to emit the result
+    callback_signal = Signal(object, tuple)  # Signal for the callback
+
+    def __init__(self, target, args=(), kwargs=None, callback_signal=None, callback_args=()):
         super().__init__()
         self.target = target
         self.args = args
         self.kwargs = kwargs if kwargs is not None else {}
-        self.callback = callback
+        self.callback_signal = callback_signal
         self.callback_args = callback_args
-        self.result_queue = queue.Queue()
 
     def run(self):
+        # Call the target function and get the result
         result = self.target(*self.args, **self.kwargs)
-        self.result_queue.put(result)
 
-        if self.callback:
-            self.callback(result, *self.callback_args)
+        # Emit the result using the signal
+        self.result_ready.emit(result)
+
+        # If a callback is provided, emit the callback signal
+        if self.callback_signal:
+            self.callback_signal.emit(result, *self.callback_args)
+
+
 
 class previewType(enum.Enum):
     IMG = enum.auto()
@@ -109,6 +117,7 @@ class PreviewPanel(QWidget):
     """The Preview Panel Widget."""
 
     tags_updated = Signal()
+    conv_anim_on_complete_signal = Signal(io.BytesIO, Image.Image)
 
     def __init__(self, library: Library, driver: "QtDriver"):
         super().__init__()
@@ -122,6 +131,8 @@ class PreviewPanel(QWidget):
         self.selected: list[int] = []  # New way of tracking items
         self.tag_callback = None
         self.containers: list[FieldContainer] = []
+        self.im_conv_thread: ThreadWithCallback
+        self.conv_anim_on_complete_signal.connect(self.conv_anim_on_complete)
 
         self.img_button_size: tuple[int, int] = (266, 266)
         self.image_ratio: float = 1.0
@@ -607,6 +618,7 @@ class PreviewPanel(QWidget):
         return None
 
     def conv_anim_on_complete(self, image_bytes_io, image):
+        logger.info("transcode done \^o^/")
         image_bytes_io = image_bytes_io[0]
 
         if self.preview_anim_img.movie():
@@ -644,6 +656,7 @@ class PreviewPanel(QWidget):
             loop=0,
             **per_format_args,
         )
+        logger.info("transcoded image")
         return image_bytes_io, anim_image
 
 
@@ -665,10 +678,10 @@ class PreviewPanel(QWidget):
             anim_image: Image.Image = image
             # per_format_args = self.preview_anim_img_pil_map_args.get(save_ext, {})
 
-            thread = ThreadWithCallback(target=self.conv_anim_img, args=(result_queue, anim_image, save_ext), callback=self.conv_anim_on_complete, callback_args=(image,))
+            self.im_conv_thread = ThreadWithCallback(target=self.conv_anim_img, args=(result_queue, anim_image, save_ext), callback_signal=self.conv_anim_on_complete_signal, callback_args=(image,))
 
 
-            thread.start()
+            self.im_conv_thread.start()
             # thread.join()
             # anim_image.save(
             #     image_bytes_io,
