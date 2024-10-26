@@ -11,6 +11,7 @@ import typing
 from collections.abc import Callable
 from datetime import datetime as dt
 from pathlib import Path
+import multiprocessing
 
 import cv2
 import rawpy
@@ -81,9 +82,35 @@ def update_selected_entry(driver: "QtDriver"):
         assert results, f"Entry not found: {entry.id}"
         driver.frame_content[grid_idx] = next(results)
 
-class ThreadWithCallback(QThread):
-    result_ready = Signal(object)  # Signal to emit the result
-    callback_signal = Signal(object, tuple)  # Signal for the callback
+def conv_anim_img(result_queue, anim_image, save_ext, per_format_args):
+
+    image_bytes_io = io.BytesIO()  # Create the BytesIO object
+
+    logger.info(f"Transcoding \"{save_ext}\" with args: {per_format_args}")
+
+    try:
+        anim_image.save(
+            image_bytes_io,
+            format=save_ext,
+            lossless=True,
+            save_all=True,
+            loop=0,
+            **per_format_args,
+        )
+        logger.info("Finished image conversion function")
+
+        try:
+            result_queue.put(image_bytes_io.getvalue(), timeout=20)
+        except queue.Full:
+            logger.warning("Result queue is full, skipping put.")
+    except Exception as e:
+        logger.error(f"Error during image conversion: {e}")
+    finally:
+        image_bytes_io.close()
+
+
+class ThreadWithCallback(threading.Thread):
+    callback_signal = Signal(object, tuple)
 
     def __init__(self, target, args=(), kwargs=None, callback_signal=None, callback_args=()):
         super().__init__()
@@ -92,18 +119,30 @@ class ThreadWithCallback(QThread):
         self.kwargs = kwargs if kwargs is not None else {}
         self.callback_signal = callback_signal
         self.callback_args = callback_args
+        self.result_queue = multiprocessing.Queue()
+        self.mp = multiprocessing.Process()
 
     def run(self):
-        # Call the target function and get the result
-        result = self.target(*self.args, **self.kwargs)
+        self.mp = multiprocessing.Process(target=self.target, args=(self.result_queue, *self.args))
+        self.mp.start()
+        self.mp.join()
 
-        # Emit the result using the signal
-        self.result_ready.emit(result)
+        logger.info("finnished mp")
 
-        # If a callback is provided, emit the callback signal
-        if self.callback_signal:
-            self.callback_signal.emit(result, *self.callback_args)
+        # logger.info(self.result_queue.get())
+        if not self.result_queue.empty():
+            result = self.result_queue.get()
+            logger.info(result)
+            if self.callback_signal:
+                self.callback_signal.emit(result, *self.callback_args)
 
+    def stop(self):
+        if self.mp.is_alive():
+            self.mp.terminate()
+            self.mp.join()
+
+    def __del__(self):
+        self.stop()
 
 
 class previewType(enum.Enum):
@@ -207,7 +246,7 @@ class PreviewPanel(QWidget):
         self.preview_anim_img_pil_map = {"apng": "png"}
 
         # this is extra pillow encoding args on a per image type basis
-        self.preview_anim_img_pil_map_args = {"gif": {"disposal": 2}}
+        self.preview_anim_img_pil_map_args = {"webp": {"method": 0},"gif": {"disposal": 2}}
         Image.init()
 
         # this gets animated image types pillow supports
@@ -375,6 +414,12 @@ class PreviewPanel(QWidget):
 
     def remove_field_prompt(self, name: str) -> str:
         return f'Are you sure you want to remove field "{name}"?'
+
+
+    # def set_anim_img_conv_thread():
+    #     if self.anim_img_conv_thread.is
+    #
+    #     self.anim_img_conv_thread = ThreadWithCallback(target=self.conv_anim_img, args=(anim_image, save_ext), callback_signal=self.conv_anim_on_complete_signal, callback_args=(image,))
 
     def fill_libs_widget(self, layout: QVBoxLayout):
         settings = self.driver.settings
@@ -641,21 +686,6 @@ class PreviewPanel(QWidget):
         self.set_preview_type(previewType.ANIM_IMG)
 
 
-    def conv_anim_img(self, anim_image, save_ext):
-        image_bytes_io: io.BytesIO = io.BytesIO()
-
-        per_format_args = self.preview_anim_img_pil_map_args.get(save_ext, {})
-
-        anim_image.save(
-            image_bytes_io,
-            format=save_ext,
-            lossless=True,
-            save_all=True,
-            loop=0,
-            **per_format_args,
-        )
-        logger.info("finished image conversion function")
-        return image_bytes_io
 
 
     def set_anim_img(self, filepath, ext, file_bytes, image):
@@ -673,8 +703,9 @@ class PreviewPanel(QWidget):
             )
 
             anim_image: Image.Image = image
+            per_format_args = self.preview_anim_img_pil_map_args.get(save_ext, {})
 
-            self.anim_img_conv_thread = ThreadWithCallback(target=self.conv_anim_img, args=(anim_image, save_ext), callback_signal=self.conv_anim_on_complete_signal, callback_args=(image,))
+            self.anim_img_conv_thread = ThreadWithCallback(target=conv_anim_img, args=(anim_image, save_ext, per_format_args), callback_signal=self.conv_anim_on_complete_signal, callback_args=(image,))
 
 
             self.anim_img_conv_thread.start()
