@@ -591,7 +591,7 @@ class PreviewPanel(QWidget):
             save_ext = self.get_anim_ext()
 
             logger.info(
-                f"\"{ext.lstrip('.')}\" not supported by qt qmovie, converting to: \"{save_ext}\""
+                f"\"{ext.lstrip('.')}\" not supported by qt qmovie, trancoding to: \"{save_ext}\""
             )
 
             anim_image: Image.Image = image
