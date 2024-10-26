@@ -46,6 +46,10 @@ from src.core.library.alchemy.fields import (
     TextField,
     _FieldID,
 )
+import threading
+import asyncio
+import queue
+from concurrent.futures import ThreadPoolExecutor
 from src.core.library.alchemy.library import Library
 from src.core.media_types import MediaCategories
 from src.qt.helpers.file_opener import FileOpenerHelper, FileOpenerLabel, open_file
@@ -78,6 +82,22 @@ def update_selected_entry(driver: "QtDriver"):
         assert results, f"Entry not found: {entry.id}"
         driver.frame_content[grid_idx] = next(results)
 
+class ThreadWithCallback(threading.Thread):
+    def __init__(self, target, args=(), kwargs=None, callback=None, callback_args=()):
+        super().__init__()
+        self.target = target
+        self.args = args
+        self.kwargs = kwargs if kwargs is not None else {}
+        self.callback = callback
+        self.callback_args = callback_args
+        self.result_queue = queue.Queue()
+
+    def run(self):
+        result = self.target(*self.args, **self.kwargs)
+        self.result_queue.put(result)
+
+        if self.callback:
+            self.callback(result, *self.callback_args)
 
 class previewType(enum.Enum):
     IMG = enum.auto()
@@ -586,36 +606,15 @@ class PreviewPanel(QWidget):
 
         return None
 
-    def set_anim_img(self, filepath, ext, file_bytes, image):
-        logger.info(f'loading animated image: "{os.path.basename(filepath)}"')
+    def conv_anim_on_complete(self, image_bytes_io, image):
+        image_bytes_io = image_bytes_io[0]
 
         if self.preview_anim_img.movie():
             self.preview_anim_img.movie().stop()
             self.anim_img_buffer.close()
 
-        if not ext.lstrip(".") in self.preview_anim_img_fmts:
-            save_ext = self.get_anim_ext()
-
-            logger.info(
-                f"\"{ext.lstrip('.')}\" not supported by qt qmovie, trancoding to: \"{save_ext}\""
-            )
-
-            anim_image: Image.Image = image
-            image_bytes_io: io.BytesIO = io.BytesIO()
-            per_format_args = self.preview_anim_img_pil_map_args.get(save_ext, {})
-
-            anim_image.save(
-                image_bytes_io,
-                format=save_ext,
-                lossless=True,
-                save_all=True,
-                loop=0,
-                **per_format_args,
-            )
-            image_bytes_io.seek(0)
-            self.anim_img_buffer.setData(image_bytes_io.read())
-        else:
-            self.anim_img_buffer.setData(file_bytes)
+        image_bytes_io.seek(0)
+        self.anim_img_buffer.setData(image_bytes_io.read())
 
         movie = QMovie(self.anim_img_buffer, QByteArray())
         self.preview_anim_img.setMovie(movie)
@@ -630,6 +629,74 @@ class PreviewPanel(QWidget):
         movie.start()
 
         self.set_preview_type(previewType.ANIM_IMG)
+
+
+    def conv_anim_img(self, result_queue, anim_image, save_ext):
+        image_bytes_io: io.BytesIO = io.BytesIO()
+
+        per_format_args = self.preview_anim_img_pil_map_args.get(save_ext, {})
+
+        anim_image.save(
+            image_bytes_io,
+            format=save_ext,
+            lossless=True,
+            save_all=True,
+            loop=0,
+            **per_format_args,
+        )
+        return image_bytes_io, anim_image
+
+
+    async def set_anim_img(self, filepath, ext, file_bytes, image):
+        logger.info(f'loading animated image: "{os.path.basename(filepath)}"')
+
+        if self.preview_anim_img.movie():
+            self.preview_anim_img.movie().stop()
+            self.anim_img_buffer.close()
+
+        if not ext.lstrip(".") in self.preview_anim_img_fmts:
+            save_ext = self.get_anim_ext()
+
+            logger.info(
+                f"\"{ext.lstrip('.')}\" not supported by qt qmovie, trancoding to: \"{save_ext}\""
+            )
+            result_queue = queue.Queue()
+
+            anim_image: Image.Image = image
+            # per_format_args = self.preview_anim_img_pil_map_args.get(save_ext, {})
+
+            thread = ThreadWithCallback(target=self.conv_anim_img, args=(result_queue, anim_image, save_ext), callback=self.conv_anim_on_complete, callback_args=(image,))
+
+
+            thread.start()
+            # thread.join()
+            # anim_image.save(
+            #     image_bytes_io,
+            #     format=save_ext,
+            #     lossless=True,
+            #     save_all=True,
+            #     loop=0,
+            #     **per_format_args,
+            # )
+            # image_bytes_io = result_queue.get()
+            # image_bytes_io.seek(0)
+            # self.anim_img_buffer.setData(image_bytes_io.read())
+        else:
+            self.anim_img_buffer.setData(file_bytes)
+
+            movie = QMovie(self.anim_img_buffer, QByteArray())
+            self.preview_anim_img.setMovie(movie)
+
+            self.resizeEvent(
+                QResizeEvent(
+                    QSize(image.width, image.height),
+                    QSize(image.width, image.height),
+                )
+            )
+
+            movie.start()
+
+            self.set_preview_type(previewType.ANIM_IMG)
 
     def update_widgets(self) -> bool:
         """Render the panel widgets with the newest data from the Library."""
@@ -738,7 +805,8 @@ class PreviewPanel(QWidget):
                             image: Image.Image = Image.open(io.BytesIO(file_bytes))
                             if hasattr(image, "n_frames"):
                                 if image.n_frames > 1:
-                                    self.set_anim_img(filepath, ext, file_bytes, image)
+                                    asyncio.run(self.set_anim_img(filepath, ext, file_bytes, image))
+
 
                     image = None
                     if (
