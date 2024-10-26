@@ -169,7 +169,7 @@ class PreviewPanel(QWidget):
 
         self.preview_anim_img_pil_map_args = {"gif": {"disposal": 2}}
 
-        self.preview_anim_img_pil_known_good = {"webp", "apng", "jxl", "png", "gif"}
+        self.preview_anim_img_pil_known_good = {"webp", "apng", "png", "gif"}
 
         self.preview_anim_img_fmts.sort(
             key=lambda x: ani_img_priority_order.index(x)
