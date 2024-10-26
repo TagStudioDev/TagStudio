@@ -130,7 +130,7 @@ class PreviewPanel(QWidget):
         self.selected: list[int] = []  # New way of tracking items
         self.tag_callback = None
         self.containers: list[FieldContainer] = []
-        self.im_conv_thread: ThreadWithCallback
+        self.anim_img_conv_thread: ThreadWithCallback
         self.conv_anim_on_complete_signal.connect(self.conv_anim_on_complete)
 
         self.img_button_size: tuple[int, int] = (266, 266)
@@ -617,7 +617,7 @@ class PreviewPanel(QWidget):
         return None
 
     def conv_anim_on_complete(self, image_bytes_io, image):
-        logger.info("transcode done \^o^/")
+        logger.info("transcode done \\^o^/")
 
         if self.preview_anim_img.movie():
             self.preview_anim_img.movie().stop()
@@ -671,13 +671,13 @@ class PreviewPanel(QWidget):
             logger.info(
                 f"\"{ext.lstrip('.')}\" not supported by qt qmovie, trancoding to: \"{save_ext}\""
             )
-            result_queue = queue.Queue()
+
+            anim_image: Image.Image = image
+
+            self.anim_img_conv_thread = ThreadWithCallback(target=self.conv_anim_img, args=(anim_image, save_ext), callback_signal=self.conv_anim_on_complete_signal, callback_args=(image,))
 
 
-            self.im_conv_thread = ThreadWithCallback(target=self.conv_anim_img, args=(anim_image, save_ext), callback_signal=self.conv_anim_on_complete_signal, callback_args=(image,))
-
-
-            self.im_conv_thread.start()
+            self.anim_img_conv_thread.start()
         else:
             self.anim_img_buffer.setData(file_bytes)
 
