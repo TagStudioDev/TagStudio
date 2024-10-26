@@ -47,7 +47,6 @@ from src.core.library.alchemy.fields import (
     _FieldID,
 )
 import threading
-import asyncio
 import queue
 from concurrent.futures import ThreadPoolExecutor
 from src.core.library.alchemy.library import Library
@@ -619,7 +618,6 @@ class PreviewPanel(QWidget):
 
     def conv_anim_on_complete(self, image_bytes_io, image):
         logger.info("transcode done \^o^/")
-        image_bytes_io = image_bytes_io[0]
 
         if self.preview_anim_img.movie():
             self.preview_anim_img.movie().stop()
@@ -643,7 +641,7 @@ class PreviewPanel(QWidget):
         self.set_preview_type(previewType.ANIM_IMG)
 
 
-    def conv_anim_img(self, result_queue, anim_image, save_ext):
+    def conv_anim_img(self, anim_image, save_ext):
         image_bytes_io: io.BytesIO = io.BytesIO()
 
         per_format_args = self.preview_anim_img_pil_map_args.get(save_ext, {})
@@ -656,11 +654,11 @@ class PreviewPanel(QWidget):
             loop=0,
             **per_format_args,
         )
-        logger.info("transcoded image")
-        return image_bytes_io, anim_image
+        logger.info("finished image conversion function")
+        return image_bytes_io
 
 
-    async def set_anim_img(self, filepath, ext, file_bytes, image):
+    def set_anim_img(self, filepath, ext, file_bytes, image):
         logger.info(f'loading animated image: "{os.path.basename(filepath)}"')
 
         if self.preview_anim_img.movie():
@@ -675,25 +673,11 @@ class PreviewPanel(QWidget):
             )
             result_queue = queue.Queue()
 
-            anim_image: Image.Image = image
-            # per_format_args = self.preview_anim_img_pil_map_args.get(save_ext, {})
 
-            self.im_conv_thread = ThreadWithCallback(target=self.conv_anim_img, args=(result_queue, anim_image, save_ext), callback_signal=self.conv_anim_on_complete_signal, callback_args=(image,))
+            self.im_conv_thread = ThreadWithCallback(target=self.conv_anim_img, args=(anim_image, save_ext), callback_signal=self.conv_anim_on_complete_signal, callback_args=(image,))
 
 
             self.im_conv_thread.start()
-            # thread.join()
-            # anim_image.save(
-            #     image_bytes_io,
-            #     format=save_ext,
-            #     lossless=True,
-            #     save_all=True,
-            #     loop=0,
-            #     **per_format_args,
-            # )
-            # image_bytes_io = result_queue.get()
-            # image_bytes_io.seek(0)
-            # self.anim_img_buffer.setData(image_bytes_io.read())
         else:
             self.anim_img_buffer.setData(file_bytes)
 
@@ -818,7 +802,7 @@ class PreviewPanel(QWidget):
                             image: Image.Image = Image.open(io.BytesIO(file_bytes))
                             if hasattr(image, "n_frames"):
                                 if image.n_frames > 1:
-                                    asyncio.run(self.set_anim_img(filepath, ext, file_bytes, image))
+                                    self.set_anim_img(filepath, ext, file_bytes, image)
 
 
                     image = None
