@@ -170,7 +170,7 @@ class PreviewPanel(QWidget):
             for fmt in qmovie_formats
         ]
 
-        # extensions preview_anim_img_fmts in get ordered based on this
+        # extensions in preview_anim_img_fmts get ordered based on this
         ani_img_priority_order = ["jxl", "apng", "png", "avif", "webp", "heif"]
 
         # this maps extensions to format names pillow supports
