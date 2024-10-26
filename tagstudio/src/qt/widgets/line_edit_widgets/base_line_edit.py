@@ -4,8 +4,10 @@ from PySide6.QtGui import (
     QEnterEvent,
     QFocusEvent,
     QPainter,
+    QPainterPath,
     QPaintEvent,
     QPalette,
+    QPen,
 )
 from PySide6.QtWidgets import (
     QApplication,
@@ -46,10 +48,27 @@ class _ProxyStyle(QProxyStyle):
         """
         if widget is not None and element == QStyle.PrimitiveElement.PE_PanelLineEdit:
             painter.setRenderHint(QPainter.RenderHint.Antialiasing, on=True)
+
+            corner_radius: float = widget.property("corner_radius")
+            focus: float = widget.property("focus_anim")
+            
+            panel_path = QPainterPath()
+            panel_path.addRoundedRect(widget.contentsRect(), corner_radius, corner_radius)
+
             painter.setPen(Qt.PenStyle.NoPen)
             painter.setBrush(widget.property("background_color"))
-            corner_radius = widget.property("corner_radius")
-            painter.drawRoundedRect(widget.rect(), corner_radius, corner_radius)
+            painter.drawPath(panel_path)
+
+            if focus > 0.0:
+                pen = QPen()
+                pen.setColor(
+                    widget.palette().color(QPalette.ColorGroup.Active, QPalette.ColorRole.Accent)
+                )
+                pen.setWidthF(2 * focus)
+                painter.setPen(pen)
+                painter.setClipPath(panel_path)
+                y = widget.height() - 1
+                painter.drawLine(0, y, widget.width(), y)
             return
         return super().drawPrimitive(element, option, painter, widget)
 
@@ -58,15 +77,17 @@ class BaseLineEdit(QLineEdit):
     """Initialize a custom Line Edit widget with animated color changes.
 
     This class extends QLineEdit and initializes animation handlers for changing the
-    background color, font color, and corner radius of the widget. It provides methods
-    to set corner radius, font alpha, and update colors based on the widget's state.
+    background color, font color, focus indicator, and corner radius of the widget. It provides
+    methods to set corner radius, font alpha, and update colors based on the widget's state.
     The widget triggers repaints efficiently by using a QTimer.
     """
 
-    def __init__(self, parent: QWidget) -> None:
+    def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent=parent)
 
         theme.theme_update_hooks.append(self._update_colors)
+
+        self._font_alpha: float = 1.0
 
         self._repaint_timer: QTimer = QTimer()
         """Timer used to schedule repaints. This helps reduce the number of repaints when multiple
@@ -77,23 +98,13 @@ class BaseLineEdit(QLineEdit):
         # set defaults
         self.setTextMargins(0, 0, 0, 0)
         self.setStyle(_ProxyStyle())
+        self.setFixedHeight(35)
 
-        # parts of initialization
-        self._init_animations()
-
-        self._update_colors()
-
-    def _init_animations(self) -> None:
-        """Initialize animation handlers.
-
-        Initialize animation handlers for changing the background color, font color, and corner
-        radius of the widget. Connects valueChanged signals of the animations to schedule a repaint
-        when values change.
-        """
+        # region Initialize animation handlers.
         self.setProperty("background_color", QColor("#00000000"))
         self.setProperty("font_color", QColor("#00000000"))
-        self.setProperty("font_alpha", 1.0)
         self.setProperty("corner_radius", 10.0)
+        self.setProperty("focus_anim", 0.0)
 
         background_color_anim = QPropertyAnimation(self, b"background_color", self)
         background_color_anim.setDuration(500)
@@ -110,12 +121,21 @@ class BaseLineEdit(QLineEdit):
         corner_radius_anim.setEasingCurve(QEasingCurve.Type.OutCubic)
         corner_radius_anim.valueChanged.connect(self._schedule_repaint)
 
+        focus_anim: QPropertyAnimation = QPropertyAnimation(self, b"focus_anim", self)
+        focus_anim.setDuration(200)
+        focus_anim.valueChanged.connect(self._schedule_repaint)
+
         self._background_color_anim: QPropertyAnimation = background_color_anim
         "Animation for the background color."
         self._font_color_anim: QPropertyAnimation = font_color_anim
         "Animation for the font color."
         self._corner_radius_anim: QPropertyAnimation = corner_radius_anim
         "Animation for the corner radius."
+        self._focus_anim: QPropertyAnimation = focus_anim
+        "Animation for focus_anim. (Focus indicator)"
+        # endregion
+
+        self._update_colors()  # update colors for the first time
 
     def _schedule_repaint(self) -> None:
         """Check if the repaint timer is not active and start it with a delay of 0 if so."""
@@ -133,8 +153,7 @@ class BaseLineEdit(QLineEdit):
             animate (bool, optional): Flag to indicate whether to animate the color change.
                 Defaults to True.
         """
-        # NOTE: using self.palette() for animations. so gettings actual colors from
-        # QApplication.palette()
+        # NOTE: using self.palette() for animations. so gettings colors from QApplication.palette()
         pal = QApplication.palette()
 
         if not self.isEnabled():  # disabled
@@ -153,7 +172,7 @@ class BaseLineEdit(QLineEdit):
             bc = pal.color(pal.ColorGroup.Inactive, pal.ColorRole.Button)
             fc = pal.color(pal.ColorGroup.Inactive, pal.ColorRole.ButtonText)
 
-        fc.setAlphaF(fc.alphaF() * self.property("font_alpha"))
+        fc.setAlphaF(fc.alphaF() * self._font_alpha)
 
         self._set_colors(
             background_color=bc,
@@ -198,12 +217,33 @@ class BaseLineEdit(QLineEdit):
         if not animate:
             self._schedule_repaint()
 
+    def _set_focus(self, on: bool, animate: bool = True) -> None:
+        """Sets the focus indicator show or hide.
+
+        Args:
+            on (bool): Flag indicating whether the focus should be shown.
+            animate (bool, optional): Flag indicating whether to animate the focus change.
+                Defaults to True.
+        """
+        self._focus_anim.stop()
+
+        value = 1.0 if on else 0.0
+
+        if animate:
+            self._focus_anim.setEndValue(value)
+            self._focus_anim.start()
+        else:
+            self.setProperty("focus_anim", value)
+            self.repaint()
+
     def focusInEvent(self, arg__1: QFocusEvent) -> None:  # noqa: N802
         self._update_colors()
+        self._set_focus(on=True)
         return super().focusInEvent(arg__1)
 
     def focusOutEvent(self, arg__1: QFocusEvent) -> None:  # noqa: N802
         self._update_colors()
+        self._set_focus(on=False)
         return super().focusOutEvent(arg__1)
 
     def enterEvent(self, event: QEnterEvent) -> None:  # noqa: N802
@@ -238,15 +278,15 @@ class BaseLineEdit(QLineEdit):
             QPalette.ColorGroup.All, QPalette.ColorRole.Text, self.property("font_color")
         )
         if QApplication.styleHints().colorScheme() == Qt.ColorScheme.Dark:
-            placeholder_text_color = self.property("font_color").darker(130)
+            placeholder_text_color: QColor = self.property("font_color").darker(130)
         else:
-            placeholder_text_color = self.property("font_color").lighter(130)
+            placeholder_text_color: QColor = self.property("font_color").lighter(130)
         palette.setColor(
             QPalette.ColorGroup.All,
             QPalette.ColorRole.PlaceholderText,
             placeholder_text_color,
         )
-        self.setPalette(palette)
+        super().setPalette(palette)  # calling super().setPalette() to avoid recursion
         return super().paintEvent(arg__1)
 
     def set_corner_radius(self, corner_radius: float, animate: bool = True) -> None:
@@ -279,5 +319,5 @@ class BaseLineEdit(QLineEdit):
             animate (bool, optional): Flag to indicate whether to animate the font alpha change.
                 Defaults to True.
         """
-        self.setProperty("font_alpha", alpha)
+        self._font_alpha = alpha
         self._update_colors(animate)

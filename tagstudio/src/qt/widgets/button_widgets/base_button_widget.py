@@ -8,11 +8,9 @@ from PySide6.QtGui import (
     QPainterPath,
     QPaintEvent,
     QPalette,
+    QPen,
 )
-from PySide6.QtWidgets import (
-    QPushButton,
-    QWidget,
-)
+from PySide6.QtWidgets import QPushButton, QWidget
 
 from ... import theme
 
@@ -43,20 +41,11 @@ class BasePushButton(QPushButton):
         self._repaint_timer.setSingleShot(True)
         self._repaint_timer.timeout.connect(self.repaint)
 
-        self._init_animations()
-        self._update_colors()  # update colors for the first time
-
-    def _init_animations(self) -> None:
-        """Initialize animation handlers.
-
-        Add properties for background_color, font_color, font_alpha, and corner_radius. and
-        Initialize animation handlers for changing the background color, font color, corner
-        radius, and click animation of the widget. Connects valueChanged signals of the animations
-        to schedule a repaint when values change.
-        """
+        # region Initialize animation handlers.
         self.setProperty("background_color", QColor("#00000000"))
         self.setProperty("font_color", QColor("#00000000"))
         self.setProperty("corner_radius", 10.0)
+        self.setProperty("focus_anim", 0.0)
         self.setProperty("click_anim", 0.0)
 
         background_color_anim = QPropertyAnimation(self, b"background_color", self)
@@ -74,6 +63,10 @@ class BasePushButton(QPushButton):
         corner_radius_anim.setEasingCurve(QEasingCurve.Type.OutCubic)
         corner_radius_anim.valueChanged.connect(self._schedule_repaint)
 
+        focus_anim = QPropertyAnimation(self, b"focus_anim", self)
+        focus_anim.setDuration(300)
+        focus_anim.valueChanged.connect(self._schedule_repaint)
+
         click_anim = QPropertyAnimation(self, b"click_anim", self)
         click_anim.setDuration(750)
         click_anim.setEasingCurve(QEasingCurve.Type.OutCubic)
@@ -87,8 +80,13 @@ class BasePushButton(QPushButton):
         "Animation for the font color."
         self._corner_radius_anim: QPropertyAnimation = corner_radius_anim
         "Animation for the corner radius."
+        self._focus_anim: QPropertyAnimation = focus_anim
+        "Animation for the focus indicator."
         self._click_anim: QPropertyAnimation = click_anim
         "Animation for the button click (the circle animation)."
+        # endregion
+
+        self._update_colors()  # update colors for the first time
 
     def _schedule_repaint(self) -> None:
         """Check if the repaint timer is not active and start it with a delay of 0 if so."""
@@ -178,12 +176,33 @@ class BasePushButton(QPushButton):
         self._click_anim.stop()
         self._click_anim.start()
 
+    def _set_focus(self, on: bool, animate: bool = True) -> None:
+        """Sets the focus indicator show or hide.
+
+        Args:
+            on (bool): Flag indicating whether the focus should be shown.
+            animate (bool, optional): Flag indicating whether to animate the focus change.
+                Defaults to True.
+        """
+        self._focus_anim.stop()
+
+        value = 1.0 if on else 0.0
+
+        if animate:
+            self._focus_anim.setEndValue(value)
+            self._focus_anim.start()
+        else:
+            self.setProperty("focus_anim", value)
+            self.repaint()
+
     def focusInEvent(self, arg__1: QFocusEvent) -> None:  # noqa: N802
         self._update_colors()
+        self._set_focus(on=True)
         return super().focusInEvent(arg__1)
 
     def focusOutEvent(self, arg__1: QFocusEvent) -> None:  # noqa: N802
         self._update_colors()
+        self._set_focus(on=False)
         return super().focusOutEvent(arg__1)
 
     def enterEvent(self, event: QEnterEvent) -> None:  # noqa: N802
@@ -238,17 +257,20 @@ class BasePushButton(QPushButton):
         font_color: QColor = self.property("font_color")
         corner_radius: float = self.property("corner_radius")
         click_anim: float = self.property("click_anim")
+        focus_anim: float = self.property("focus_anim")
 
         button_path = QPainterPath()
         button_path.addRoundedRect(self.contentsRect(), corner_radius, corner_radius)
 
         with QPainter(self) as painter:
-            # painter.setRenderHints(QPainter.RenderHint.Antialiasing, on=True)
+            painter.setRenderHints(QPainter.RenderHint.Antialiasing, on=True)
 
-            # paint background if icon is not set else paint icon
+            # paint background
             painter.setPen(Qt.PenStyle.NoPen)
             painter.setBrush(background_color)
             painter.drawPath(button_path)
+
+            # if icon is not set, paint the icon
             if not self.icon().isNull():
                 self.icon().paint(painter, self.contentsRect(), Qt.AlignmentFlag.AlignCenter)
 
@@ -263,6 +285,18 @@ class BasePushButton(QPushButton):
             # paint text
             painter.setPen(font_color)
             painter.drawText(self.contentsRect(), Qt.AlignmentFlag.AlignCenter, self.text())
+
+            if focus_anim > 0.0:
+                pen = QPen(
+                    self.palette().color(QPalette.ColorGroup.Active, QPalette.ColorRole.Accent)
+                )
+                pen.setWidthF(1.5 * focus_anim)
+                painter.setPen(pen)
+                painter.setBrush(Qt.BrushStyle.NoBrush)
+
+                painter.drawRoundedRect(
+                    self.contentsRect().adjusted(1, 1, -1, -1), corner_radius, corner_radius
+                )
 
     def set_corner_radius(self, corner_radius: float, animate: bool = True) -> None:
         """Set the corner radius of the widget.
