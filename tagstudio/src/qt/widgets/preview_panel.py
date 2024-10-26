@@ -157,11 +157,7 @@ class PreviewPanel(QWidget):
         self.preview_anim_img.hide()
         self.anim_img_buffer: QBuffer = QBuffer()
 
-
-
-
         self.preview_anim_img_fmts = []
-
 
         # this gets animated image types qmovie supports
         qmovie_formats = QMovie.supportedFormats()
@@ -201,7 +197,6 @@ class PreviewPanel(QWidget):
         # checks if image can be saved at all via pillow
         pil_exts = Image.registered_extensions()
         self.pil_save_exts = {ex for ex, f in pil_exts.items() if f in Image.SAVE}
-
 
         self.preview_vid = VideoPlayer(driver)
         self.preview_vid.hide()
