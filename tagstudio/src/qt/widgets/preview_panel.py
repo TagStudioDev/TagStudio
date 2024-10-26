@@ -619,7 +619,6 @@ class PreviewPanel(QWidget):
 
         movie = QMovie(self.anim_img_buffer, QByteArray())
         self.preview_anim_img.setMovie(movie)
-        movie.start()
 
         self.resizeEvent(
             QResizeEvent(
@@ -627,6 +626,9 @@ class PreviewPanel(QWidget):
                 QSize(image.width, image.height),
             )
         )
+
+        movie.start()
+
         self.set_preview_type(previewType.ANIM_IMG)
 
     def update_widgets(self) -> bool:
