@@ -89,7 +89,6 @@ class LandingWidget(QWidget):
         Args:
             style (str): = The style of the logo. Either "mono" or "gradient".
         """
-        logo_im: Image.Image = None
         if style == "mono":
             logo_im = theme_fg_overlay(self.logo_raw)
         elif style == "gradient":

@@ -37,9 +37,9 @@ class FieldContainer(QWidget):
         self.setObjectName("fieldContainer")
         self.title: str = title
         self.inline: bool = inline
-        self.copy_callback: Callable = None
-        self.edit_callback: Callable = None
-        self.remove_callback: Callable = None
+        self.copy_callback: Callable | None = None
+        self.edit_callback: Callable | None = None
+        self.remove_callback: Callable | None = None
         button_size = 24
 
         self.root_layout = QVBoxLayout(self)
@@ -116,7 +116,7 @@ class FieldContainer(QWidget):
         if callback is not None:
             self.copy_button.is_connected = True
 
-    def set_edit_callback(self, callback: Callable):
+    def set_edit_callback(self, callback: Callable | None):
         if self.edit_button.is_connected:
             self.edit_button.clicked.disconnect()
 
@@ -125,7 +125,7 @@ class FieldContainer(QWidget):
         if callback is not None:
             self.edit_button.is_connected = True
 
-    def set_remove_callback(self, callback: Callable):
+    def set_remove_callback(self, callback: Callable | None):
         if self.remove_button.is_connected:
             self.remove_button.clicked.disconnect()
 

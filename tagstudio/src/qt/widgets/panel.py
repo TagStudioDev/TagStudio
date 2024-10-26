@@ -2,20 +2,22 @@
 # Licensed under the GPL-3.0 License.
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 import logging
-from typing import Callable
+from typing import Callable, Generic, TypeVar
 
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import QHBoxLayout, QLabel, QPushButton, QVBoxLayout, QWidget
 
+# Define a type variable for subclasses of PanelWidget
+T = TypeVar('T', bound='PanelWidget')
 
-class PanelModal(QWidget):
+class PanelModal(Generic[T], QWidget):
     saved = Signal()
 
     # TODO: Separate callbacks from the buttons you want, and just generally
     # figure out what you want from this.
     def __init__(
         self,
-        widget,
+        widget: T,
         title: str,
         window_title: str,
         done_callback: Callable | None = None,
@@ -81,7 +83,9 @@ class PanelModal(QWidget):
             # trigger save button actions when pressing enter in the widget
             self.widget.add_callback(lambda: self.save_button.click())
 
-        widget.done.connect(lambda: save_callback(widget.get_content()))
+        widget.done.connect(
+            lambda: save_callback(widget.get_content()) if save_callback is not None else None
+        )
 
         self.root_layout.addWidget(self.title_widget)
         self.root_layout.addWidget(widget)
@@ -94,14 +98,9 @@ class PanelWidget(QWidget):
 
     done = Signal()
 
-    def __init__(self):
-        super().__init__()
+    def get_content(self) -> str: ...
 
-    def get_content(self) -> str:
-        pass
-
-    def reset(self):
-        pass
+    def reset(self): ...
 
     def add_callback(self, callback: Callable, event: str = "returnPressed"):
         logging.warning(f"add_callback not implemented for {self.__class__.__name__}")

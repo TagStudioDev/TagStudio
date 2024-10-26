@@ -96,9 +96,9 @@ class ThumbRenderer(QObject):
         """Internal renderer. Render an entry/element thumbnail for the GUI."""
         logger.debug("rendering thumbnail", path=filepath)
 
-        image: Image.Image = None
-        pixmap: QPixmap = None
-        final: Image.Image = None
+        image: Image.Image | None = None
+        pixmap: QPixmap | None = None
+        final: Image.Image | None = None
         _filepath: Path = Path(filepath)
         resampling_method = Image.Resampling.BILINEAR
         if ThumbRenderer.font_pixel_ratio != pixel_ratio:
@@ -245,7 +245,7 @@ class ThumbRenderer(QObject):
                     draw = ImageDraw.Draw(rec)
                     draw.rounded_rectangle(
                         (0, 0) + rec.size,
-                        (base_size[0] // 32) * scalar * pixel_ratio,
+                        int((base_size[0] // 32) * scalar * pixel_ratio),
                         fill="red",
                     )
                     rec = rec.resize(
@@ -276,6 +276,7 @@ class ThumbRenderer(QObject):
             pixmap.setDevicePixelRatio(pixel_ratio)
 
         if pixmap:
+            assert final is not None
             self.updated.emit(
                 timestamp,
                 pixmap,

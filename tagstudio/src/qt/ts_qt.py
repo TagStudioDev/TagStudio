@@ -18,6 +18,7 @@ from collections.abc import Sequence
 from itertools import zip_longest
 from pathlib import Path
 from queue import Queue
+from typing import TYPE_CHECKING
 
 # this import has side-effect of import PySide resources
 import src.qt.resources_rc  # noqa: F401
@@ -91,6 +92,9 @@ from src.qt.widgets.preview_panel import PreviewPanel
 from src.qt.widgets.progress import ProgressWidget
 from src.qt.widgets.thumb_renderer import ThumbRenderer
 
+if TYPE_CHECKING:
+    from src.core.library import Entry, Library
+
 # SIGQUIT is not defined on Windows
 if sys.platform == "win32":
     from signal import SIGINT, SIGTERM, signal
@@ -129,12 +133,16 @@ class QtDriver(QObject):
 
     def __init__(self, backend, args):
         super().__init__()
+        self.unlinked_modal: FixUnlinkedEntriesModal
+        self.dupe_modal: FixDupeFilesModal
+        self.folders_modal: FoldersToTagsModal
+
         # prevent recursive badges update when multiple items selected
         self.badge_update_lock = False
-        self.lib = backend.Library()
+        self.lib: Library = backend.Library()
         self.rm: ResourceManager = ResourceManager()
         self.args = args
-        self.frame_content = []
+        self.frame_content: list[Entry | None] = []
         self.filter = FilterState()
         self.pages_count = 0
 
@@ -173,7 +181,7 @@ class QtDriver(QObject):
                 filename=self.settings.fileName(),
             )
 
-        max_threads = os.cpu_count()
+        max_threads = os.cpu_count() or 1
         for i in range(max_threads):
             # thread = threading.Thread(
             #     target=self.consumer, name=f"ThumbRenderer_{i}", args=(), daemon=True
@@ -662,7 +670,11 @@ class QtDriver(QObject):
         )
         pw.show()
 
-        iterator = FunctionIterator(lambda: tracker.refresh_dir(self.lib.library_dir))
+        iterator = FunctionIterator(
+            lambda: tracker.refresh_dir(self.lib.library_dir)
+            if self.lib.library_dir is not None
+            else None
+        )
         iterator.value.connect(
             lambda x: (
                 pw.update_progress(x + 1),
@@ -761,6 +773,7 @@ class QtDriver(QObject):
     def run_macro(self, name: MacroID, grid_idx: int):
         """Run a specific Macro on an Entry given a Macro name."""
         entry = self.frame_content[grid_idx]
+        assert self.lib.library_dir is not None and entry is not None
         ful_path = self.lib.library_dir / entry.path
         source = entry.path.parts[0]
 
@@ -788,7 +801,7 @@ class QtDriver(QObject):
                 )
 
         elif name == MacroID.BUILD_URL:
-            url = TagStudioCore.build_url(entry.id, source)
+            url = TagStudioCore.build_url(entry, source)
             self.lib.add_entry_field_type(entry.id, field_id=_FieldID.SOURCE, value=url)
         elif name == MacroID.MATCH:
             TagStudioCore.match_conditions(self.lib, entry.id)
@@ -797,6 +810,7 @@ class QtDriver(QObject):
                 if field.type.type == FieldTypeEnum.TEXT_LINE and field.value:
                     self.lib.update_entry_field(
                         entry_ids=entry.id,
+                        field=field,
                         content=strip_web_protocol(field.value),
                     )
 
@@ -807,7 +821,7 @@ class QtDriver(QObject):
         elif event.button() == Qt.MouseButton.BackButton:
             self.page_move(-1)
 
-    def page_move(self, delta: int = None, page_id: int = None) -> None:
+    def page_move(self, delta: int | None = None, page_id: int | None = None) -> None:
         """Navigate a step further into the navigation stack."""
         logger.info(
             "page_move",
@@ -824,7 +838,9 @@ class QtDriver(QObject):
         # sb: QScrollArea = self.main_window.scrollArea
         # sb_pos = sb.verticalScrollBar().value()
 
-        page_index = page_id if page_id is not None else self.filter.page_index + delta
+        page_index = (
+            page_id if page_id is not None else (self.filter.page_index or 1) + (delta or 0)
+        )
         page_index = max(0, min(page_index, self.pages_count - 1))
 
         self.filter.page_index = page_index
@@ -841,7 +857,7 @@ class QtDriver(QObject):
         layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         # TODO - init after library is loaded, it can have different page_size
-        for grid_idx in range(self.filter.page_size):
+        for grid_idx in range(self.filter.page_size or 0):
             item_thumb = ItemThumb(
                 None, self.lib, self, (self.thumb_size, self.thumb_size), grid_idx
             )
@@ -928,6 +944,7 @@ class QtDriver(QObject):
                 item_thumb.hide()
                 continue
 
+            assert self.lib.library_dir is not None
             filepath = self.lib.library_dir / entry.path
             item_thumb = self.item_thumbs[idx]
             item_thumb.set_mode(ItemType.ENTRY)
@@ -972,7 +989,7 @@ class QtDriver(QObject):
                 )
             )
 
-    def update_badges(self, grid_item_ids: Sequence[int] = None):
+    def update_badges(self, grid_item_ids: Sequence[int] | None = None):
         if not grid_item_ids:
             # no items passed, update all items in grid
             grid_item_ids = range(min(len(self.item_thumbs), len(self.frame_content)))
@@ -1012,11 +1029,15 @@ class QtDriver(QObject):
             )
 
         # update page content
-        self.frame_content = results.items
+        self.frame_content = list(results.items)
         self.update_thumbs()
 
         # update pagination
-        self.pages_count = math.ceil(results.total_count / self.filter.page_size)
+        if self.filter.page_size is not None:
+            self.pages_count = math.ceil(results.total_count / self.filter.page_size)
+        else:
+            self.pages_count = 0
+        assert self.filter.page_index is not None
         self.main_window.pagination.update_buttons(
             self.pages_count, self.filter.page_index, emit=False
         )

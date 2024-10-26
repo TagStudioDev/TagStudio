@@ -10,7 +10,8 @@ from pathlib import Path
 
 import structlog
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QLabel
+from PySide6.QtGui import QMouseEvent
+from PySide6.QtWidgets import QLabel, QWidget
 
 logger = structlog.get_logger(__name__)
 
@@ -92,7 +93,7 @@ class FileOpenerHelper:
         """Initialize the FileOpenerHelper.
 
         Args:
-                filepath (str): The path to the file to open.
+            filepath (str): The path to the file to open.
         """
         self.filepath = str(filepath)
 
@@ -100,7 +101,7 @@ class FileOpenerHelper:
         """Set the filepath to open.
 
         Args:
-                filepath (str): The path to the file to open.
+            filepath (str): The path to the file to open.
         """
         self.filepath = str(filepath)
 
@@ -114,34 +115,32 @@ class FileOpenerHelper:
 
 
 class FileOpenerLabel(QLabel):
-    def __init__(self, text, parent=None):
+    def __init__(self, text: str, parent: QWidget | None = None):
         """Initialize the FileOpenerLabel.
 
         Args:
-                text (str): The text to display.
-                parent (QWidget, optional): The parent widget. Defaults to None.
+            text (str): The text to display.
+            parent (QWidget, optional): The parent widget. Defaults to None.
         """
         super().__init__(text, parent)
 
-    def set_file_path(self, filepath):
+    def set_file_path(self, filepath: str | Path):
         """Set the filepath to open.
 
         Args:
-                filepath (str): The path to the file to open.
+            filepath (str): The path to the file to open.
         """
         self.filepath = filepath
 
-    def mousePressEvent(self, event):  # noqa: N802
+    def mousePressEvent(self, event: QMouseEvent):  # noqa: N802
         """Handle mouse press events.
 
         On a left click, open the file in the default file explorer.
         On a right click, show a context menu.
 
         Args:
-                event (QMouseEvent): The mouse press event.
+            event (QMouseEvent): The mouse press event.
         """
-        super().mousePressEvent(event)
-
         if event.button() == Qt.MouseButton.LeftButton:
             opener = FileOpenerHelper(self.filepath)
             opener.open_explorer()

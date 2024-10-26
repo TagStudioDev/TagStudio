@@ -29,9 +29,9 @@ class TagWidget(QWidget):
         tag: Tag,
         has_edit: bool,
         has_remove: bool,
-        on_remove_callback: FunctionType = None,
-        on_click_callback: FunctionType = None,
-        on_edit_callback: FunctionType = None,
+        on_remove_callback: FunctionType | None = None,
+        on_click_callback: FunctionType | None = None,
+        on_edit_callback: FunctionType | None = None,
     ) -> None:
         super().__init__()
         self.tag = tag

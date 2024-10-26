@@ -5,7 +5,9 @@
 from PIL import Image, ImageChops, ImageEnhance
 
 
-def four_corner_gradient_background(image: Image.Image, adj_size, mask, hl) -> Image.Image:
+def four_corner_gradient_background(
+    image: Image.Image, adj_size: int, mask: Image.Image, hl: Image.Image
+) -> Image.Image:
     if image.size != (adj_size, adj_size):
         # Old 1 color method.
         # bg_col = image.copy().resize((1, 1)).getpixel((0,0))
@@ -55,8 +57,8 @@ def four_corner_gradient_background(image: Image.Image, adj_size, mask, hl) -> I
 
 
 def linear_gradient(
-    size=tuple[int, int],
-    colors=list[str],
+    size: tuple[int, int],
+    colors: list[str],
     interpolation: Image.Resampling = Image.Resampling.BICUBIC,
 ) -> Image.Image:
     seed: Image.Image = Image.new(mode="RGBA", size=(len(colors), 1), color="#000000")

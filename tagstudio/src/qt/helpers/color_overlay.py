@@ -29,7 +29,7 @@ def theme_fg_overlay(image: Image.Image) -> Image.Image:
     return _apply_overlay(image, im)
 
 
-def gradient_overlay(image: Image.Image, gradient=list[str]) -> Image.Image:
+def gradient_overlay(image: Image.Image, gradient: list[str]) -> Image.Image:
     """Overlay a color gradient onto an image.
 
     Args:

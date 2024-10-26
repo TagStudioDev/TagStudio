@@ -61,6 +61,8 @@ logger = structlog.get_logger(__name__)
 def update_selected_entry(driver: "QtDriver"):
     for grid_idx in driver.selected:
         entry = driver.frame_content[grid_idx]
+        if entry is None:
+            continue
         # reload entry
         results = driver.lib.search_library(FilterState(id=entry.id))
         logger.info("found item", entries=len(results), grid_idx=grid_idx, lookup_id=entry.id)
@@ -361,7 +363,7 @@ class PreviewPanel(QWidget):
     def set_image_ratio(self, ratio: float):
         self.image_ratio = ratio
 
-    def update_image_size(self, size: tuple[int, int], ratio: float = None):
+    def update_image_size(self, size: tuple[int, int], ratio: float | None = None):
         if ratio:
             self.set_image_ratio(ratio)
         # self.img_button_size = size
@@ -424,6 +426,7 @@ class PreviewPanel(QWidget):
         logger.info("add_field_to_selected", selected=self.selected, fields=field_list)
         for grid_idx in self.selected:
             entry = self.driver.frame_content[grid_idx]
+            assert entry is not None
             for field_item in field_list:
                 self.lib.add_entry_field_type(
                     entry.id,
@@ -480,6 +483,7 @@ class PreviewPanel(QWidget):
         # TODO - Entry reload is maybe not necessary
         for grid_idx in self.driver.selected:
             entry = self.driver.frame_content[grid_idx]
+            assert entry is not None
             results = self.lib.search_library(FilterState(id=entry.id))
             logger.info(
                 "found item",
@@ -493,6 +497,7 @@ class PreviewPanel(QWidget):
             # 1 Selected Entry
             selected_idx = self.driver.selected[0]
             item = self.driver.frame_content[selected_idx]
+            assert self.lib.library_dir is not None and item is not None
 
             self.preview_img.show()
             self.preview_vid.stop()
@@ -545,7 +550,7 @@ class PreviewPanel(QWidget):
                         image = Image.fromarray(frame)
                         if success:
                             self.preview_img.hide()
-                            self.preview_vid.play(filepath, QSize(image.width, image.height))
+                            self.preview_vid.play(str(filepath), QSize(image.width, image.height))
                             self.resizeEvent(
                                 QResizeEvent(
                                     QSize(image.width, image.height),
@@ -636,12 +641,14 @@ class PreviewPanel(QWidget):
 
             # fill shared fields from first item
             first_item = self.driver.frame_content[self.driver.selected[0]]
+            assert first_item is not None
             common_fields = [f for f in first_item.fields]
             mixed_fields = []
 
             # iterate through other items
             for grid_idx in self.driver.selected[1:]:
                 item = self.driver.frame_content[grid_idx]
+                assert item is not None
                 item_field_types = {f.type_key for f in item.fields}
                 for f in common_fields[:]:
                     if f.type_key not in item_field_types:
@@ -905,6 +912,7 @@ class PreviewPanel(QWidget):
 
         for grid_idx in self.selected:
             entry = self.driver.frame_content[grid_idx]
+            assert entry is not None
             entry_ids.append(entry.id)
 
         self.lib.remove_entry_field(field, entry_ids)
@@ -922,6 +930,7 @@ class PreviewPanel(QWidget):
         entry_ids = []
         for grid_idx in self.selected:
             entry = self.driver.frame_content[grid_idx]
+            assert entry is not None
             entry_ids.append(entry.id)
 
         assert entry_ids, "No entries selected"
