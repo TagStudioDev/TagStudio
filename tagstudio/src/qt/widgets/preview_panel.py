@@ -157,10 +157,14 @@ class PreviewPanel(QWidget):
         self.preview_anim_img.hide()
         self.anim_img_buffer: QBuffer = QBuffer()
 
+
+
+
         self.preview_anim_img_fmts = []
 
-        qmovie_formats = QMovie.supportedFormats()
 
+        # this gets animated image types qmovie supports
+        qmovie_formats = QMovie.supportedFormats()
         self.preview_anim_img_fmts = [
             (
                 fmt_data.decode("utf-8")
@@ -170,17 +174,22 @@ class PreviewPanel(QWidget):
             for fmt in qmovie_formats
         ]
 
+        # extensions preview_anim_img_fmts in get ordered based on this
         ani_img_priority_order = ["jxl", "apng", "png", "avif", "webp", "heif"]
 
+        # this maps extensions to format names pillow supports
         self.preview_anim_img_pil_map = {"apng": "png"}
 
+        # this is extra pillow encoding args on a per image type basis
         self.preview_anim_img_pil_map_args = {"gif": {"disposal": 2}}
         Image.init()
 
+        # this gets animated image types pillow supports
         pil_save_all = Image.SAVE_ALL.keys()
         self.preview_anim_img_pil_anim_supported = [key.lower() for key in pil_save_all]
         logger.info("pillow animated image types: " + str(self.preview_anim_img_pil_anim_supported))
 
+        # sorts based on ani_img_priority_order
         self.preview_anim_img_fmts.sort(
             key=lambda x: ani_img_priority_order.index(x)
             if x in ani_img_priority_order
@@ -189,8 +198,10 @@ class PreviewPanel(QWidget):
 
         logger.info("supported qmovie image format(s): " + str(self.preview_anim_img_fmts))
 
+        # checks if image can be saved at all via pillow
         pil_exts = Image.registered_extensions()
         self.pil_save_exts = {ex for ex, f in pil_exts.items() if f in Image.SAVE}
+
 
         self.preview_vid = VideoPlayer(driver)
         self.preview_vid.hide()
