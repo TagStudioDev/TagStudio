@@ -1,11 +1,12 @@
 import re
 import shutil
 import unicodedata
+from collections.abc import Iterable, Iterator
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from os import makedirs
 from pathlib import Path
-from typing import Any, Iterator, Type
+from typing import Any, Type
 from uuid import uuid4
 
 import structlog
@@ -263,7 +264,7 @@ class Library:
     @property
     def entries_count(self) -> int:
         with Session(self.engine) as session:
-            return session.scalar(select(func.count(Entry.id)))
+            return session.scalar(select(func.count(Entry.id))) or 0
 
     def get_entries(self, with_joins: bool = False) -> Iterator[Entry]:
         """Load entries without joins."""
@@ -409,7 +410,7 @@ class Library:
             )
 
             query_count = select(func.count()).select_from(statement.alias("entries"))
-            count_all: int = session.execute(query_count).scalar()
+            count_all: int = session.execute(query_count).scalar() or 0
 
             statement = statement.limit(search.limit).offset(search.offset)
 
@@ -683,7 +684,7 @@ class Library:
         )
         return True
 
-    def add_tag(self, tag: Tag, subtag_ids: list[int] | None = None) -> Tag | None:
+    def add_tag(self, tag: Tag, subtag_ids: Iterable[int] | None = None) -> Tag | None:
         with Session(self.engine, expire_on_commit=False) as session:
             try:
                 session.add(tag)

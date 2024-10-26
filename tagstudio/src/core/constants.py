@@ -129,6 +129,6 @@ TAG_ARCHIVED = 0
 
 class LibraryPrefs(Enum):
     IS_EXCLUDE_LIST = True
-    EXTENSION_LIST: list[str] = [".json", ".xmp", ".aae"]
-    PAGE_SIZE: int = 500
-    DB_VERSION: int = 1
+    EXTENSION_LIST = [".json", ".xmp", ".aae"]
+    PAGE_SIZE = 500
+    DB_VERSION = 1

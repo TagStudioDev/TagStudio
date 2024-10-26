@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 ################################################################################
 # Form generated from reading UI file 'home.ui'
 ##
@@ -13,38 +11,46 @@
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
 
-import logging
 import typing
-from PySide6.QtCore import (QCoreApplication, QMetaObject, QRect,QSize, Qt)
+
+from PySide6.QtCore import QCoreApplication, QMetaObject, QRect, QSize, Qt
 from PySide6.QtGui import QFont
-from PySide6.QtWidgets import (QComboBox, QFrame, QGridLayout,
-                               QHBoxLayout, QVBoxLayout, QLayout, QMainWindow,
-                               QPushButton, QScrollArea, QSizePolicy,
-                               QStatusBar, QWidget, QSplitter, QCheckBox,
-                               QSpacerItem, QApplication)
+from PySide6.QtWidgets import (
+    QApplication,
+    QComboBox,
+    QFrame,
+    QGridLayout,
+    QHBoxLayout,
+    QLayout,
+    QMainWindow,
+    QScrollArea,
+    QSizePolicy,
+    QSpacerItem,
+    QSplitter,
+    QStatusBar,
+    QVBoxLayout,
+    QWidget,
+)
 from src.qt.pagination import Pagination
 from src.qt.widgets.landing import LandingWidget
 
 from . import theme
-from .widgets.line_edit_widgets import BaseLineEdit as QLineEdit
 from .widgets.button_widgets import BasePushButton as QPushButton
+from .widgets.line_edit_widgets import BaseLineEdit as QLineEdit
 
 # Only import for type checking/autocompletion, will not be imported at runtime.
 if typing.TYPE_CHECKING:
     from src.qt.ts_qt import QtDriver
 
-logging.basicConfig(format="%(message)s", level=logging.INFO)
 
-
-class Ui_MainWindow(QMainWindow):
-  
+class UIMainWindow(QMainWindow):
     def __init__(self, driver: "QtDriver", parent=None) -> None:
         super().__init__(parent)
         self.driver = driver
         # temporarily putting driver to application property
         (QApplication.instance() or self.parent()).setProperty("driver", driver)
         theme.update_palette()  # update palette according to theme settings
-        self.setupUi(self)
+        self._setup_ui()
 
         # NOTE: These are old attempts to allow for a translucent/acrylic
         # window effect. This may be attempted again in the future.
@@ -59,52 +65,50 @@ class Ui_MainWindow(QMainWindow):
         # # self.setStyleSheet(
         # # 	'background:#EE000000;'
         # # 	)
-        
 
-    def setupUi(self, MainWindow):
-        if not MainWindow.objectName():
-            MainWindow.setObjectName(u"MainWindow")
-        MainWindow.resize(1300, 720)
-        
-        self.centralwidget = QWidget(MainWindow)
-        self.centralwidget.setObjectName(u"centralwidget")
+    def _setup_ui(self) -> None:
+        if not self.objectName():
+            self.setObjectName("MainWindow")
+        self.resize(1300, 720)
+
+        self.centralwidget = QWidget(self)
+        self.centralwidget.setObjectName("centralwidget")
         self.gridLayout = QGridLayout(self.centralwidget)
-        self.gridLayout.setObjectName(u"gridLayout")
+        self.gridLayout.setObjectName("gridLayout")
         self.horizontalLayout = QHBoxLayout()
-        self.horizontalLayout.setObjectName(u"horizontalLayout")
-  
+        self.horizontalLayout.setObjectName("horizontalLayout")
+
         # ComboBox goup for search type and thumbnail size
         self.horizontalLayout_3 = QHBoxLayout()
         self.horizontalLayout_3.setObjectName("horizontalLayout_3")
-  
+
         # left side spacer
-        spacerItem = QSpacerItem(40, 20, QSizePolicy.Expanding, QSizePolicy.Minimum)
-        self.horizontalLayout_3.addItem(spacerItem)
-  
-          # Search type selector
+        spacer_item = QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+        self.horizontalLayout_3.addItem(spacer_item)
+
+        # Search type selector
         self.comboBox_2 = QComboBox(self.centralwidget)
         self.comboBox_2.setMinimumSize(QSize(165, 0))
         self.comboBox_2.setObjectName("comboBox_2")
         self.comboBox_2.addItem("")
         self.comboBox_2.addItem("")
         self.horizontalLayout_3.addWidget(self.comboBox_2)
-  
+
         # Thumbnail Size placeholder
         self.comboBox = QComboBox(self.centralwidget)
-        self.comboBox.setObjectName(u"comboBox")
-        sizePolicy = QSizePolicy(QSizePolicy.Minimum, QSizePolicy.Fixed)
-        sizePolicy.setHorizontalStretch(0)
-        sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(
-            self.comboBox.sizePolicy().hasHeightForWidth())
-        self.comboBox.setSizePolicy(sizePolicy)
+        self.comboBox.setObjectName("comboBox")
+        size_policy = QSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Fixed)
+        size_policy.setHorizontalStretch(0)
+        size_policy.setVerticalStretch(0)
+        size_policy.setHeightForWidth(self.comboBox.sizePolicy().hasHeightForWidth())
+        self.comboBox.setSizePolicy(size_policy)
         self.comboBox.setMinimumWidth(128)
         self.comboBox.setMaximumWidth(128)
         self.horizontalLayout_3.addWidget(self.comboBox)
         self.gridLayout.addLayout(self.horizontalLayout_3, 5, 0, 1, 1)
 
         self.splitter = QSplitter()
-        self.splitter.setObjectName(u"splitter")
+        self.splitter.setObjectName("splitter")
         self.splitter.setHandleWidth(12)
 
         self.frame_container = QWidget()
@@ -112,22 +116,21 @@ class Ui_MainWindow(QMainWindow):
         self.frame_layout.setSpacing(0)
 
         self.scrollArea = QScrollArea()
-        self.scrollArea.setObjectName(u"scrollArea")
-        self.scrollArea.setFocusPolicy(Qt.WheelFocus)
-        self.scrollArea.setFrameShape(QFrame.NoFrame)
-        self.scrollArea.setFrameShadow(QFrame.Plain)
+        self.scrollArea.setObjectName("scrollArea")
+        self.scrollArea.setFocusPolicy(Qt.FocusPolicy.WheelFocus)
+        self.scrollArea.setFrameShape(QFrame.Shape.NoFrame)
+        self.scrollArea.setFrameShadow(QFrame.Shadow.Plain)
         self.scrollArea.setWidgetResizable(True)
         self.scrollAreaWidgetContents = QWidget()
-        self.scrollAreaWidgetContents.setObjectName(
-            u"scrollAreaWidgetContents")
+        self.scrollAreaWidgetContents.setObjectName("scrollAreaWidgetContents")
         self.scrollAreaWidgetContents.setGeometry(QRect(0, 0, 1260, 590))
         self.gridLayout_2 = QGridLayout(self.scrollAreaWidgetContents)
         self.gridLayout_2.setSpacing(8)
-        self.gridLayout_2.setObjectName(u"gridLayout_2")
+        self.gridLayout_2.setObjectName("gridLayout_2")
         self.gridLayout_2.setContentsMargins(0, 0, 0, 8)
         self.scrollArea.setWidget(self.scrollAreaWidgetContents)
         self.frame_layout.addWidget(self.scrollArea)
-        
+
         self.landing_widget: LandingWidget = LandingWidget(self.driver, self.devicePixelRatio())
         self.frame_layout.addWidget(self.landing_widget)
 
@@ -141,10 +144,10 @@ class Ui_MainWindow(QMainWindow):
         self.gridLayout.addLayout(self.horizontalLayout, 10, 0, 1, 1)
 
         self.horizontalLayout_2 = QHBoxLayout()
-        self.horizontalLayout_2.setObjectName(u"horizontalLayout_2")
-        self.horizontalLayout_2.setSizeConstraint(QLayout.SetMinimumSize)
+        self.horizontalLayout_2.setObjectName("horizontalLayout_2")
+        self.horizontalLayout_2.setSizeConstraint(QLayout.SizeConstraint.SetMinimumSize)
         self.backButton = QPushButton(self.centralwidget)
-        self.backButton.setObjectName(u"backButton")
+        self.backButton.setObjectName("backButton")
         self.backButton.setMinimumSize(QSize(0, 32))
         self.backButton.setMaximumSize(QSize(32, 16777215))
         font = QFont()
@@ -155,7 +158,7 @@ class Ui_MainWindow(QMainWindow):
         self.horizontalLayout_2.addWidget(self.backButton)
 
         self.forwardButton = QPushButton(self.centralwidget)
-        self.forwardButton.setObjectName(u"forwardButton")
+        self.forwardButton.setObjectName("forwardButton")
         self.forwardButton.setMinimumSize(QSize(0, 32))
         self.forwardButton.setMaximumSize(QSize(32, 16777215))
         font1 = QFont()
@@ -167,7 +170,7 @@ class Ui_MainWindow(QMainWindow):
         self.horizontalLayout_2.addWidget(self.forwardButton)
 
         self.searchField = QLineEdit(self.centralwidget)
-        self.searchField.setObjectName(u"searchField")
+        self.searchField.setObjectName("searchField")
         self.searchField.setMinimumSize(QSize(0, 32))
         font2 = QFont()
         font2.setPointSize(11)
@@ -177,7 +180,7 @@ class Ui_MainWindow(QMainWindow):
         self.horizontalLayout_2.addWidget(self.searchField)
 
         self.searchButton = QPushButton(self.centralwidget)
-        self.searchButton.setObjectName(u"searchButton")
+        self.searchButton.setObjectName("searchButton")
         self.searchButton.setMinimumSize(QSize(0, 32))
         self.searchButton.setFont(font2)
 
@@ -185,52 +188,51 @@ class Ui_MainWindow(QMainWindow):
         self.gridLayout.addLayout(self.horizontalLayout_2, 3, 0, 1, 1)
         self.gridLayout_2.setContentsMargins(6, 6, 6, 6)
 
-        MainWindow.setCentralWidget(self.centralwidget)
-        self.statusbar = QStatusBar(MainWindow)
-        self.statusbar.setObjectName(u"statusbar")
-        sizePolicy1 = QSizePolicy(QSizePolicy.Preferred, QSizePolicy.Maximum)
-        sizePolicy1.setHorizontalStretch(0)
-        sizePolicy1.setVerticalStretch(0)
-        sizePolicy1.setHeightForWidth(
-            self.statusbar.sizePolicy().hasHeightForWidth())
-        self.statusbar.setSizePolicy(sizePolicy1)
-        MainWindow.setStatusBar(self.statusbar)
+        self.setCentralWidget(self.centralwidget)
+        self.statusbar = QStatusBar(self)
+        self.statusbar.setObjectName("statusbar")
+        size_policy1 = QSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Maximum)
+        size_policy1.setHorizontalStretch(0)
+        size_policy1.setVerticalStretch(0)
+        size_policy1.setHeightForWidth(self.statusbar.sizePolicy().hasHeightForWidth())
+        self.statusbar.setSizePolicy(size_policy1)
+        self.setStatusBar(self.statusbar)
 
-        self.retranslateUi(MainWindow)
+        self._retranslate_ui()
 
-        QMetaObject.connectSlotsByName(MainWindow)
-    # setupUi
+        QMetaObject.connectSlotsByName(self)
 
-    def retranslateUi(self, MainWindow):
-        MainWindow.setWindowTitle(QCoreApplication.translate(
-            "MainWindow", u"MainWindow", None))
+    def _retranslate_ui(self):
+        self.setWindowTitle(QCoreApplication.translate("MainWindow", "MainWindow", None))
         # Navigation buttons
-        self.backButton.setText(
-            QCoreApplication.translate("MainWindow", u"<", None))
-        self.forwardButton.setText(
-            QCoreApplication.translate("MainWindow", u">", None))
-  
+        self.backButton.setText(QCoreApplication.translate("MainWindow", "<", None))
+        self.forwardButton.setText(QCoreApplication.translate("MainWindow", ">", None))
+
         # Search field
         self.searchField.setPlaceholderText(
-            QCoreApplication.translate("MainWindow", u"Search Entries", None))
-        self.searchButton.setText(
-            QCoreApplication.translate("MainWindow", u"Search", None))
-  
+            QCoreApplication.translate("MainWindow", "Search Entries", None)
+        )
+        self.searchButton.setText(QCoreApplication.translate("MainWindow", "Search", None))
+
         # Search type selector
-        self.comboBox_2.setItemText(0, QCoreApplication.translate("MainWindow", "And (Includes All Tags)"))
-        self.comboBox_2.setItemText(1, QCoreApplication.translate("MainWindow", "Or (Includes Any Tag)"))
+        self.comboBox_2.setItemText(
+            0, QCoreApplication.translate("MainWindow", "And (Includes All Tags)")
+        )
+        self.comboBox_2.setItemText(
+            1, QCoreApplication.translate("MainWindow", "Or (Includes Any Tag)")
+        )
         self.comboBox.setCurrentText("")
-  
+
         # Thumbnail size selector
         self.comboBox.setPlaceholderText(
-            QCoreApplication.translate("MainWindow", u"Thumbnail Size", None))
-    # retranslateUi
+            QCoreApplication.translate("MainWindow", "Thumbnail Size", None)
+        )
 
-    def moveEvent(self, event) -> None:
+    def moveEvent(self, event) -> None:  # noqa: N802
         # time.sleep(0.02)  # sleep for 20ms
         pass
 
-    def resizeEvent(self, event) -> None:
+    def resizeEvent(self, event) -> None:  # noqa: N802
         # time.sleep(0.02)  # sleep for 20ms
         pass
 

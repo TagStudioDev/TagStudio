@@ -5,7 +5,7 @@
 """PySide6 port of the widgets/layouts/flowlayout example from Qt v6.x."""
 
 from PySide6.QtCore import QMargins, QPoint, QRect, QSize, Qt
-from PySide6.QtWidgets import QLayout, QSizePolicy, QWidget
+from PySide6.QtWidgets import QLayout, QLayoutItem, QSizePolicy, QWidget
 
 
 class FlowWidget(QWidget):
@@ -21,7 +21,7 @@ class FlowLayout(QLayout):
         if parent is not None:
             self.setContentsMargins(QMargins(0, 0, 0, 0))
 
-        self._item_list = []
+        self._item_list: list[QLayoutItem] = []
         self.grid_efficiency = False
 
     def __del__(self):
@@ -88,8 +88,6 @@ class FlowLayout(QLayout):
         y = rect.y()
         line_height = 0
         spacing = self.spacing()
-        layout_spacing_x = None
-        layout_spacing_y = None
 
         if self.grid_efficiency and self._item_list:
             item = self._item_list[0]
@@ -107,10 +105,10 @@ class FlowLayout(QLayout):
 
         for item in self._item_list:
             skip_count = 0
-            if issubclass(type(item.widget()), FlowWidget) and item.widget().ignore_size:
+            if issubclass(type(item.widget()), FlowWidget) and item.widget().ignore_size:  # type: ignore
                 skip_count += 1
 
-            if (issubclass(type(item.widget()), FlowWidget) and not item.widget().ignore_size) or (
+            if (issubclass(type(item.widget()), FlowWidget) and not item.widget().ignore_size) or (  # type: ignore
                 not issubclass(type(item.widget()), FlowWidget)
             ):
                 if not self.grid_efficiency:

@@ -77,7 +77,7 @@ from src.core.utils.web import strip_web_protocol
 from src.qt.flowlayout import FlowLayout
 from src.qt.helpers.custom_runnable import CustomRunnable
 from src.qt.helpers.function_iterator import FunctionIterator
-from src.qt.main_window import Ui_MainWindow
+from src.qt.main_window import UIMainWindow
 from src.qt.modals.build_tag import BuildTagPanel
 from src.qt.modals.file_extension import FileExtensionModal
 from src.qt.modals.fix_dupes import FixDupeFilesModal
@@ -228,7 +228,7 @@ class QtDriver(QObject):
         timer.timeout.connect(lambda: None)
 
         # self.main_window = loader.load(home_path)
-        self.main_window = Ui_MainWindow(self)
+        self.main_window = UIMainWindow(self)
         self.main_window.setWindowTitle(self.base_title)
         self.main_window.mousePressEvent = self.mouse_navigation  # type: ignore
         # self.main_window.setStyleSheet(
