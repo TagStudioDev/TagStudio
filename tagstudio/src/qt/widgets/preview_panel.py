@@ -170,7 +170,7 @@ class PreviewPanel(QWidget):
             for fmt in qmovie_formats
         ]
 
-        ani_img_priority_order = ["jxl", "apng", "png", "avif", "webp", "heif", "gif"]
+        ani_img_priority_order = ["jxl", "apng", "png", "avif", "webp", "heif"]
 
         self.preview_anim_img_pil_map = {"apng": "png"}
 
