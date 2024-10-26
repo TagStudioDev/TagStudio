@@ -161,7 +161,14 @@ class PreviewPanel(QWidget):
 
         qmovie_formats = QMovie.supportedFormats()
 
-        self.preview_anim_img_fmts = [fmt.data().decode("utf-8") for fmt in qmovie_formats]
+        self.preview_anim_img_fmts = [
+            (
+                fmt_data.decode("utf-8")
+                if isinstance(fmt_data := fmt.data(), (bytes, bytearray))
+                else ""
+            )
+            for fmt in qmovie_formats
+        ]
 
         ani_img_priority_order = ["jxl", "apng", "png", "webp", "gif"]
 
