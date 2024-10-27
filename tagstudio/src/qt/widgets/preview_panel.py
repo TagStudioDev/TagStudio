@@ -12,7 +12,6 @@ from collections.abc import Callable
 from datetime import datetime as dt
 from pathlib import Path
 
-from src.qt.ts_qt import Consumer
 
 import cv2
 import rawpy
@@ -97,14 +96,6 @@ class ThreadWithCallback(threading.Thread):
         self._stop_event = threading.Event()
 
     def run(self):
-
-            try:
-                job = self.queue.get()
-                if job == self.MARKER_QUIT:
-                    break
-                job[0](*job[1])
-            except RuntimeError:
-                pass
         result = self.target(*self.args, **self.kwargs)
 
         if self.callback_signal:
@@ -142,6 +133,12 @@ class PreviewPanel(QWidget):
 
         self.img_button_size: tuple[int, int] = (266, 266)
         self.image_ratio: float = 1.0
+
+        self.anim_img_cache_map = {}
+        self.anim_img_cache_map_working = {}
+        self.anim_img_cache_index = 0
+        self.anim_img_cache_index_size = 10
+        self.anim_img_cache = [None] * self.anim_img_cache_index_size
 
         self.label_bg_color = (
             Theme.COLOR_BG_DARK.value
@@ -186,6 +183,7 @@ class PreviewPanel(QWidget):
         self.preview_img.addAction(self.open_explorer_action)
 
         self.preview_anim_img = QLabel()
+        # self.preview_anim_img_bytes_io: io.BytesIO = io.BytesIO()
         self.preview_anim_img.setMinimumSize(*self.img_button_size)
         self.preview_anim_img.setContextMenuPolicy(Qt.ContextMenuPolicy.ActionsContextMenu)
         self.preview_anim_img.setCursor(Qt.CursorShape.ArrowCursor)
@@ -383,13 +381,27 @@ class PreviewPanel(QWidget):
     def remove_field_prompt(self, name: str) -> str:
         return f'Are you sure you want to remove field "{name}"?'
 
+    def add_anim_thread(self, new_thread: ThreadWithCallback):
+        for index, thread in enumerate(self.anim_img_conv_threads):
+            if not thread.is_alive():
+                self.anim_img_conv_threads[index] = new_thread
+                new_thread.start()
+                return
+        self.anim_img_conv_threads.append(new_thread)
+        new_thread.start()
+        return
 
 
-    def shutdown():
+    def add_cache_anim_img(self, data, filepath):
+        self.anim_img_cache[self.anim_img_cache_index] = data
 
-        for thread in self.anim_img_conv_threads:
-            thread.quit()
-            thread.wait()
+        self.anim_img_cache_map[str(filepath)] = self.anim_img_cache_index
+
+        self.anim_img_cache_index += 1
+        self.anim_img_cache_index %= self.anim_img_cache_index_size
+
+
+
 
     def fill_libs_widget(self, layout: QVBoxLayout):
         settings = self.driver.settings
@@ -631,29 +643,39 @@ class PreviewPanel(QWidget):
 
         return None
 
-    def conv_anim_on_complete(self, image_bytes_io, image):
+    def conv_anim_on_complete(self, image_bytes_io, filepath):
         logger.info("transcode done \\^o^/")
 
-        if self.preview_anim_img.movie():
-            self.preview_anim_img.movie().stop()
-            self.anim_img_buffer.close()
-
         image_bytes_io.seek(0)
-        self.anim_img_buffer.setData(image_bytes_io.read())
+        self.add_cache_anim_img(image_bytes_io.read(), filepath)
 
-        movie = QMovie(self.anim_img_buffer, QByteArray())
-        self.preview_anim_img.setMovie(movie)
+        if str(filepath) in self.anim_img_cache_map_working:
+            del self.anim_img_cache_map_working[str(filepath)]
 
-        self.resizeEvent(
-            QResizeEvent(
-                QSize(image.width, image.height),
-                QSize(image.width, image.height),
-            )
-        )
 
-        movie.start()
+        # self.update_widgets()
 
-        self.set_preview_type(previewType.ANIM_IMG)
+        # if self.preview_anim_img.movie():
+        #     self.preview_anim_img.movie().stop()
+        #     self.anim_img_buffer.close()
+        #
+        # image_bytes_io.seek(0)
+        # self.anim_img_buffer.setData(image_bytes_io.read())
+        #
+        # movie = QMovie(self.anim_img_buffer, QByteArray())
+        # self.preview_anim_img.setMovie(movie)
+        #
+        # self.resizeEvent(
+        #     QResizeEvent(
+        #         QSize(image.width, image.height),
+        #         QSize(image.width, image.height),
+        #     )
+        # )
+        #
+        # movie.start()
+        #
+        # self.set_preview_type(previewType.ANIM_IMG)
+
 
 
     def conv_anim_img(self, anim_image, save_ext):
@@ -681,19 +703,48 @@ class PreviewPanel(QWidget):
             self.preview_anim_img.movie().stop()
             self.anim_img_buffer.close()
 
+
         if not ext.lstrip(".") in self.preview_anim_img_fmts:
-            save_ext = self.get_anim_ext()
+            if str(filepath) in self.anim_img_cache_map:
+                if self.preview_anim_img.movie():
+                    self.preview_anim_img.movie().stop()
+                    self.anim_img_buffer.close()
 
-            logger.info(
-                f"\"{ext.lstrip('.')}\" not supported by qt qmovie, trancoding to: \"{save_ext}\""
-            )
+                self.anim_img_buffer.setData(self.anim_img_cache[self.anim_img_cache_map[str(filepath)]])
 
-            anim_image: Image.Image = image
+                movie = QMovie(self.anim_img_buffer, QByteArray())
+                self.preview_anim_img.setMovie(movie)
 
-            self.anim_img_conv_thread = ThreadWithCallback(target=self.conv_anim_img, args=(anim_image, save_ext), callback_signal=self.conv_anim_on_complete_signal, callback_args=(image,))
+                self.resizeEvent(
+                    QResizeEvent(
+                        QSize(image.width, image.height),
+                        QSize(image.width, image.height),
+                    )
+                )
+
+                movie.start()
+
+                self.set_preview_type(previewType.ANIM_IMG)
 
 
-            self.anim_img_conv_thread.start()
+            elif not str(filepath) in self.anim_img_cache_map_working:
+                save_ext = self.get_anim_ext()
+
+                logger.info(
+                    f"\"{ext.lstrip('.')}\" not supported by qt qmovie, trancoding to: \"{save_ext}\""
+                )
+
+                anim_image: Image.Image = image
+
+
+                self.add_anim_thread(ThreadWithCallback(target=self.conv_anim_img, args=(anim_image, save_ext), callback_signal=self.conv_anim_on_complete_signal, callback_args=(filepath,)))
+
+                self.anim_img_cache_map_working[str(filepath)] = True
+
+
+                # self.anim_img_conv_threads.start()
+            else:
+                logger.info("working on transcoding but not done")
         else:
             self.anim_img_buffer.setData(file_bytes)
 
