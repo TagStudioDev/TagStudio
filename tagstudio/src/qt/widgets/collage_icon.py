@@ -2,6 +2,7 @@
 # Licensed under the GPL-3.0 License.
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
+import math
 from pathlib import Path
 
 import cv2
@@ -12,9 +13,10 @@ from PySide6.QtCore import (
     QObject,
     Signal,
 )
-from src.core.constants import DOC_TYPES, IMAGE_TYPES, VIDEO_TYPES
 from src.core.library import Library
 from src.core.library.alchemy.fields import _FieldID
+from src.core.media_types import MediaCategories
+from src.qt.helpers.file_tester import is_readable_video
 
 logger = structlog.get_logger(__name__)
 
@@ -76,7 +78,8 @@ class CollageIconRenderer(QObject):
                     color=self.get_file_color(filepath.suffix.lower()),
                 )
 
-                if filepath.suffix.lower() in IMAGE_TYPES:
+                ext: str = filepath.suffix.lower()
+                if MediaCategories.is_ext_in_category(ext, MediaCategories.IMAGE_TYPES):
                     try:
                         with Image.open(str(lib_dir / entry.path)) as pic:
                             if keep_aspect:
@@ -86,23 +89,34 @@ class CollageIconRenderer(QObject):
                             if data_tint_mode and color:
                                 pic = pic.convert(mode="RGB")
                                 pic = ImageChops.hard_light(pic, Image.new("RGB", size, color))
-                            # collage.paste(pic, (y*thumb_size, x*thumb_size))
                             self.rendered.emit(pic)
-                    except DecompressionBombError:
-                        logger.exception("One of the images was too big", entry=entry.path)
-                elif filepath.suffix.lower() in VIDEO_TYPES:
-                    video = cv2.VideoCapture(str(filepath))
+                    except DecompressionBombError as e:
+                        logger.info(f"[ERROR] One of the images was too big ({e})")
+                elif MediaCategories.is_ext_in_category(
+                    ext, MediaCategories.VIDEO_TYPES
+                ) and is_readable_video(filepath):
+                    video = cv2.VideoCapture(str(filepath), cv2.CAP_FFMPEG)
                     video.set(
                         cv2.CAP_PROP_POS_FRAMES,
                         (video.get(cv2.CAP_PROP_FRAME_COUNT) // 2),
                     )
                     success, frame = video.read()
-                    if not success:
-                        # Depending on the video format, compression, and frame
-                        # count, seeking halfway does not work and the thumb
-                        # must be pulled from the earliest available frame.
-                        video.set(cv2.CAP_PROP_POS_FRAMES, 0)
+                    # NOTE: Depending on the video format, compression, and
+                    # frame count, seeking halfway does not work and the thumb
+                    # must be pulled from the earliest available frame.
+                    max_frame_seek: int = 10
+                    for i in range(
+                        0,
+                        min(
+                            max_frame_seek,
+                            math.floor(video.get(cv2.CAP_PROP_FRAME_COUNT)),
+                        ),
+                    ):
                         success, frame = video.read()
+                        if not success:
+                            video.set(cv2.CAP_PROP_POS_FRAMES, i)
+                        else:
+                            break
                     frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
                     with Image.fromarray(frame, mode="RGB") as pic:
                         if keep_aspect:
@@ -111,7 +125,6 @@ class CollageIconRenderer(QObject):
                             pic = pic.resize(size)
                         if data_tint_mode and color:
                             pic = ImageChops.hard_light(pic, Image.new("RGB", size, color))
-                        # collage.paste(pic, (y*thumb_size, x*thumb_size))
                         self.rendered.emit(pic)
         except (UnidentifiedImageError, FileNotFoundError):
             logger.error("Couldn't read entry", entry=entry.path)
@@ -132,13 +145,13 @@ class CollageIconRenderer(QObject):
         self.done.emit()
 
     def get_file_color(self, ext: str):
-        if ext.lower().replace(".", "", 1) == "gif":
+        if ext.lower() == "gif":
             return "\033[93m"
-        if ext.lower().replace(".", "", 1) in IMAGE_TYPES:
+        if MediaCategories.is_ext_in_category(ext, MediaCategories.IMAGE_TYPES):
             return "\033[37m"
-        elif ext.lower().replace(".", "", 1) in VIDEO_TYPES:
+        elif MediaCategories.is_ext_in_category(ext, MediaCategories.VIDEO_TYPES):
             return "\033[96m"
-        elif ext.lower().replace(".", "", 1) in DOC_TYPES:
+        elif MediaCategories.is_ext_in_category(ext, MediaCategories.PLAINTEXT_TYPES):
             return "\033[92m"
         else:
             return "\033[97m"

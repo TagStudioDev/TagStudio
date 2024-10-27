@@ -46,7 +46,7 @@ if typing.TYPE_CHECKING:
 class UIMainWindow(QMainWindow):
     def __init__(self, driver: "QtDriver", parent=None) -> None:
         super().__init__(parent)
-        self.driver = driver
+        self.driver: "QtDriver" = driver
         # temporarily putting driver to application property
         (QApplication.instance() or self.parent()).setProperty("driver", driver)
         theme.update_palette()  # update palette according to theme settings
@@ -78,7 +78,7 @@ class UIMainWindow(QMainWindow):
         self.horizontalLayout = QHBoxLayout()
         self.horizontalLayout.setObjectName("horizontalLayout")
 
-        # ComboBox goup for search type and thumbnail size
+        # ComboBox group for search type and thumbnail size
         self.horizontalLayout_3 = QHBoxLayout()
         self.horizontalLayout_3.setObjectName("horizontalLayout_3")
 
@@ -95,16 +95,16 @@ class UIMainWindow(QMainWindow):
         self.horizontalLayout_3.addWidget(self.comboBox_2)
 
         # Thumbnail Size placeholder
-        self.comboBox = QComboBox(self.centralwidget)
-        self.comboBox.setObjectName("comboBox")
+        self.thumb_size_combobox = QComboBox(self.centralwidget)
+        self.thumb_size_combobox.setObjectName("thumbSizeComboBox")
         size_policy = QSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Fixed)
         size_policy.setHorizontalStretch(0)
         size_policy.setVerticalStretch(0)
-        size_policy.setHeightForWidth(self.comboBox.sizePolicy().hasHeightForWidth())
-        self.comboBox.setSizePolicy(size_policy)
-        self.comboBox.setMinimumWidth(128)
-        self.comboBox.setMaximumWidth(128)
-        self.horizontalLayout_3.addWidget(self.comboBox)
+        size_policy.setHeightForWidth(self.thumb_size_combobox.sizePolicy().hasHeightForWidth())
+        self.thumb_size_combobox.setSizePolicy(size_policy)
+        self.thumb_size_combobox.setMinimumWidth(128)
+        self.thumb_size_combobox.setMaximumWidth(352)
+        self.horizontalLayout_3.addWidget(self.thumb_size_combobox)
         self.gridLayout.addLayout(self.horizontalLayout_3, 5, 0, 1, 1)
 
         self.splitter = QSplitter()
@@ -221,10 +221,10 @@ class UIMainWindow(QMainWindow):
         self.comboBox_2.setItemText(
             1, QCoreApplication.translate("MainWindow", "Or (Includes Any Tag)")
         )
-        self.comboBox.setCurrentText("")
+        self.thumb_size_combobox.setCurrentText("")
 
         # Thumbnail size selector
-        self.comboBox.setPlaceholderText(
+        self.thumb_size_combobox.setPlaceholderText(
             QCoreApplication.translate("MainWindow", "Thumbnail Size", None)
         )
 
@@ -245,3 +245,4 @@ class UIMainWindow(QMainWindow):
             self.landing_widget.setHidden(True)
             self.landing_widget.set_status_label("")
             self.scrollArea.setHidden(False)
+            

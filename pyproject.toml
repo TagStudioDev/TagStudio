@@ -4,6 +4,7 @@ line-length = 100
 
 [tool.ruff.lint.per-file-ignores]
 "tagstudio/tests/**" = ["D", "E402"]
+"tagstudio/src/qt/helpers/vendored/**" = ["B", "E", "N", "UP", "SIM115"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
@@ -38,6 +39,7 @@ disable_error_code = ["func-returns-value", "import-untyped"]
 explicit_package_bases = true
 warn_unused_ignores = true
 check_untyped_defs = true
+mypy_path = ["tagstudio"]
 
 [[tool.mypy.overrides]]
 module = "tests.*"

@@ -120,6 +120,7 @@ class Entry(Base):
     folder: Mapped[Folder] = relationship("Folder")
 
     path: Mapped[Path] = mapped_column(PathType, unique=True)
+    suffix: Mapped[str] = mapped_column()
 
     text_fields: Mapped[list[TextField]] = relationship(
         back_populates="entry",
@@ -176,6 +177,8 @@ class Entry(Base):
     ) -> None:
         self.path = path
         self.folder = folder
+
+        self.suffix = path.suffix.lstrip(".").lower()
 
         for field in fields:
             if isinstance(field, TextField):

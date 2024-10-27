@@ -12,3 +12,8 @@ pillow-heif==0.16.0
 chardet==5.2.0
 structlog==24.4.0
 SQLAlchemy==2.0.34
+pydub==0.25.1
+mutagen==1.47.0
+numpy==1.26.4
+ffmpeg-python==0.2.0
+vtf2img==0.1.0
