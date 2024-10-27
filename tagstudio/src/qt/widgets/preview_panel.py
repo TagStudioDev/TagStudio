@@ -135,6 +135,7 @@ class PreviewPanel(QWidget):
         self.image_ratio: float = 1.0
 
         self.anim_img_cache_map = {}
+        self.anim_img_cache_map_rev = {}
         self.anim_img_cache_map_working = {}
         self.anim_img_cache_index = 0
         self.anim_img_cache_index_size = 10
@@ -394,11 +395,12 @@ class PreviewPanel(QWidget):
 
     def add_cache_anim_img(self, data, filepath):
         self.anim_img_cache[self.anim_img_cache_index] = data
-        if self.anim_img_cache_index in self.anim_img_cache_map[]:
-            del self.anim_img_cache_map[self.anim_img_cache_index]
+        if self.anim_img_cache_index in self.anim_img_cache_map_rev:
+            del self.anim_img_cache_map[self.anim_img_cache_map_rev[self.anim_img_cache_index]]
+            del self.anim_img_cache_map_rev[self.anim_img_cache_index]
 
         self.anim_img_cache_map[str(filepath)] = self.anim_img_cache_index
-        self.anim_img_cache_map[self.anim_img_cache_index] = str(filepath)
+        self.anim_img_cache_map_rev[self.anim_img_cache_index] = str(filepath)
 
         self.anim_img_cache_index += 1
         self.anim_img_cache_index %= self.anim_img_cache_index_size
