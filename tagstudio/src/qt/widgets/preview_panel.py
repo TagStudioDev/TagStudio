@@ -394,8 +394,11 @@ class PreviewPanel(QWidget):
 
     def add_cache_anim_img(self, data, filepath):
         self.anim_img_cache[self.anim_img_cache_index] = data
+        if self.anim_img_cache_index in self.anim_img_cache_map[]:
+            del self.anim_img_cache_map[self.anim_img_cache_index]
 
         self.anim_img_cache_map[str(filepath)] = self.anim_img_cache_index
+        self.anim_img_cache_map[self.anim_img_cache_index] = str(filepath)
 
         self.anim_img_cache_index += 1
         self.anim_img_cache_index %= self.anim_img_cache_index_size
