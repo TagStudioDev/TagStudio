@@ -3,6 +3,7 @@ exclude = ["main_window.py", "home_ui.py", "resources.py", "resources_rc.py"]
 line-length = 100
 
 [tool.ruff.lint.per-file-ignores]
+"tagstudio/src/core/library/alembic/migrations/**" = ["I", "D"]
 "tagstudio/tests/**" = ["D", "E402"]
 "tagstudio/src/qt/helpers/vendored/**" = ["B", "E", "N", "UP", "SIM115"]
 
