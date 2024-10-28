@@ -145,7 +145,6 @@ class Library:
         alembic_cfg = Config("alembic.ini")
         alembic_cfg.set_main_option("sqlalchemy.url", db_url)
         command.stamp(alembic_cfg, "head")
-        command.revision(alembic_cfg, autogenerate=True)
         command.upgrade(alembic_cfg, "head")
 
     def open_library(self, library_dir: Path, storage_path: str | None = None) -> LibraryStatus:
