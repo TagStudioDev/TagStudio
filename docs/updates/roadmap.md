@@ -1,4 +1,4 @@
-# TagStudio Roadmap
+# Roadmap
 
 This checklist details the current and remaining features required at a minimum for TagStudio to be considered “Feature Complete”. This list is _not_ a definitive list for additional feature requests and PRs as they come in, but rather an outline of my personal core feature set intended for TagStudio.
 
@@ -6,9 +6,9 @@ This checklist details the current and remaining features required at a minimum 
 
 Features are broken up into the following priority levels, with nested priorities referencing their relative priority for the overall feature (i.e. A [LOW] priority feature can have a [HIGH] priority element but it otherwise still a [LOW] priority item overall):
 
--   HIGH - Core feature
--   MEDIUM - Important but not necessary
--   LOW - Just nice to have
+-   [HIGH] - Core feature
+-   [MEDIUM] - Important but not necessary
+-   [LOW] - Just nice to have
 
 ## Core Feature List
 
@@ -19,15 +19,15 @@ Features are broken up into the following priority levels, with nested prioritie
     -   [x] Tag shorthand (specific short alias for displaying) [HIGH]
     -   [x] Parent/Inheritance subtags [HIGH]
     -   [ ] Composition/HAS subtags [HIGH]
-    -   [ ] Deleting Tags [HIGH]
-    -   [ ] Merging Tags [HIGH]
-    -   [ ] Tag Icons [HIGH]
+    -   [ ] Deleting Tags [HIGH] [#148](https://github.com/TagStudioDev/TagStudio/issues/148)
+    -   [ ] Merging Tags [HIGH] [#12](https://github.com/TagStudioDev/TagStudio/issues/12)
+    -   [ ] Tag Icons [HIGH] [#195](https://github.com/TagStudioDev/TagStudio/issues/195)
         -   [ ] Small Icons [HIGH]
         -   [ ] Large Icons for Profiles [MEDIUM]
         -   [ ] Built-in Icon Packs (i.e. Boxicons) [HIGH]
         -   [ ] User Defined Icons [HIGH]
     -   [ ] Multiple Languages for Tag Strings [MEDIUM]
-    -   [ ] User-defined tag colors [HIGH]
+    -   [ ] User-defined tag colors [HIGH] [#264](https://github.com/TagStudioDev/TagStudio/issues/264)
         -   [ ] ID based, not string or hex [HIGH]
         -   [ ] Color name [HIGH]
         -   [ ] Color value (hex) [HIGH]
@@ -41,7 +41,7 @@ Features are broken up into the following priority levels, with nested prioritie
         -   [ ] Tag marked as category does not display as a tag itself [HIGH]
     -   [ ] [Tag Overrides](../library/tag_overrides.md) [MEDIUM]
         -   [ ] Per-file overrides of subtags [HIGH]
--   [ ] Tag Packs [MEDIUM]
+-   [ ] Tag Packs [MEDIUM] [#3](https://github.com/TagStudioDev/TagStudio/issues/3)
     -   [ ] Human-readable (i.e. JSON) files containing tag data [HIGH]
     -   [ ] Importable [HIGH]
     -   [ ] Exportable [HIGH]
@@ -50,7 +50,7 @@ Features are broken up into the following priority levels, with nested prioritie
         -   [ ] Human-readable (i.e. JSON) files containing tag data [HIGH]
         -   [ ] Importable [HIGH]
         -   [ ] Exportable [HIGH]
--   [ ] Exportable Library Data [HIGH]
+-   [ ] Exportable Library Data [HIGH] [#47](https://github.com/TagStudioDev/TagStudio/issues/47)
     -   [ ] Standard notation format (i.e. JSON) contacting all library data [HIGH]
 -   [ ] [Macros](../utilities/macro.md) [HIGH]
     -   [ ] Sharable Macros [MEDIUM]
@@ -71,7 +71,7 @@ Features are broken up into the following priority levels, with nested prioritie
         -   [ ] Stored in system user folder/designated folder [HIGH]
     -   [ ] Library Settings [HIGH]
         -   [ ] Stored in `.TagStudio` folder [HIGH]
--   [ ] Multiple Root Directories per Library [HIGH]
+-   [ ] Multiple Root Directories per Library [HIGH] [#295](https://github.com/TagStudioDev/TagStudio/issues/295)
 -   [ ] [Entry groups](../library/entry_groups.md) [HIGH]
     -   [ ] Groups for files/entries where the same entry can be in multiple groups [HIGH]
     -   [ ] Ability to number entries within group [HIGH]
@@ -82,29 +82,30 @@ Features are broken up into the following priority levels, with nested prioritie
 -   [ ] Fields [HIGH]
     -   [x] Text Boxes [HIGH]
     -   [x] Text Lines [HIGH]
-    -   [ ] Dates [HIGH]
+    -   [ ] Dates [HIGH] [#213](https://github.com/TagStudioDev/TagStudio/issues/213)
     -   [ ] GPS Location [LOW]
-    -   [ ] Custom field names [HIGH]
--   [ ] Search engine [HIGH]
-    -   [ ] Boolean operators [HIGH]
-    -   [ ] Tag objects + autocomplete [HIGH]
+    -   [ ] Custom field names [HIGH] [#18](https://github.com/TagStudioDev/TagStudio/issues/18)
+-   [ ] Search engine [HIGH] [#325](https://github.com/TagStudioDev/TagStudio/issues/325)
+    -   [ ] Boolean operators [HIGH] [#225](https://github.com/TagStudioDev/TagStudio/issues/225), [#314](https://github.com/TagStudioDev/TagStudio/issues/314)
+    -   [ ] Tag objects + autocomplete [HIGH] [#476 (Autocomplete)](https://github.com/TagStudioDev/TagStudio/issues/476)
     -   [ ] Filename search [HIGH]
     -   [ ] Filetype search [HIGH]
-    -   [ ] Field content search [HIGH]
+    -   [ ] Field content search [HIGH] [#272](https://github.com/TagStudioDev/TagStudio/issues/272)
     -   [ ] HAS operator for composition tags [HIGH]
     -   [ ] OCR search [LOW]
-    -   [ ] Sortable results [HIGH]
+    -   [ ] Fuzzy Search [LOW] [#400](https://github.com/TagStudioDev/TagStudio/issues/400)
+    -   [ ] Sortable results [HIGH] [#68](https://github.com/TagStudioDev/TagStudio/issues/68)
         -   [ ] Sort by relevance [HIGH]
         -   [ ] Sort by date created [HIGH]
         -   [ ] Sort by date modified [HIGH]
         -   [ ] Sort by date taken (photos) [MEDIUM]
         -   [ ] Sort by file size [HIGH]
         -   [ ] Sort by file dimension (images/video) [LOW]
--   [ ] Automatic Entry Relinking [HIGH]
+-   [ ] Automatic Entry Relinking [HIGH] [#36](https://github.com/TagStudioDev/TagStudio/issues/36)
     -   [ ] Detect Renames [HIGH]
     -   [ ] Detect Moves [HIGH]
     -   [ ] Detect Deletions [HIGH]
--   [ ] Image Collages [LOW]
+-   [ ] Image Collages [LOW] [#91](https://github.com/TagStudioDev/TagStudio/issues/91)
     -   [ ] UI [HIGH]
 -   [ ] Tagging Panel [HIGH]
     -   [ ] Top Tags [HIGH]
@@ -118,6 +119,7 @@ Features are broken up into the following priority levels, with nested prioritie
 -   [ ] Thumbnails [HIGH]
     -   [ ] File Duration Label [HIGH]
     -   [ ] 3D Model Previews [LOW]
+        -   [ ] STL Previews [HIGH] [#351](https://github.com/TagStudioDev/TagStudio/issues/351)
 -   [ ] File Preview Panel [HIGH]
     -   [ ] Video Playback [HIGH]
         -   [x] Play/Pause [HIGH]
@@ -127,7 +129,7 @@ Features are broken up into the following priority levels, with nested prioritie
         -   [x] Toggle Mute [HIGH]
         -   [ ] Timeline scrubber [HIGH]
         -   [ ] Fullscreen [MEDIUM]
-    -   [ ] Audio Playback [HIGH]
+    -   [ ] Audio Playback [HIGH] [#450](https://github.com/TagStudioDev/TagStudio/issues/450)
         -   [ ] Play/Pause [HIGH]
         -   [ ] Loop [HIGH]
         -   [ ] Toggle Autoplay [MEDIUM]
@@ -136,14 +138,14 @@ Features are broken up into the following priority levels, with nested prioritie
         -   [x] Timeline scrubber [HIGH]
         -   [ ] Fullscreen [MEDIUM]
 -   [ ] Optimizations [HIGH]
-    -   [ ] Thumbnail caching [HIGH]
+    -   [ ] Thumbnail caching [HIGH] [#104](https://github.com/TagStudioDev/TagStudio/issues/104)
     -   [ ] File property indexes [HIGH]
 
 ## Version Milestones
 
 These version milestones are rough estimations for when the previous core features will be added. For a more definitive idea for when features are coming, please reference the current GitHub [milestones](https://github.com/TagStudioDev/TagStudio/milestones).
 
-### 9.5
+### 9.5 (Alpha)
 
 -   [ ] SQL backend [HIGH]
 -   [ ] Multiple Root Directories per Library [HIGH]
@@ -178,7 +180,7 @@ These version milestones are rough estimations for when the previous core featur
 -   [ ] Optimizations [HIGH]
     -   [ ] Thumbnail caching [HIGH]
 
-### 9.6
+### 9.6 (Alpha)
 
 -   [ ] Tags [HIGH]
     -   [ ] Composition/HAS subtags [HIGH]
@@ -199,7 +201,7 @@ These version milestones are rough estimations for when the previous core featur
     -   [ ] Dates [HIGH]
     -   [ ] Custom field names [HIGH]
 
-### 9.7
+### 9.7 (Alpha)
 
 -   [ ] Configurable Thumbnails [MEDIUM]
     -   [ ] Toggle File Extension Label [MEDIUM]
@@ -241,7 +243,7 @@ These version milestones are rough estimations for when the previous core featur
         -   [ ] Set field content [HIGH]
         -   [ ] [...]
 
-### 9.9
+### 9.9 (Possible Beta)
 
 -   [ ] Tag Packs [MEDIUM]
     -   [ ] Human-readable (i.e. JSON) files containing tag data [HIGH]
@@ -255,7 +257,7 @@ These version milestones are rough estimations for when the previous core featur
 -   [ ] Exportable Library Data [HIGH]
     -   [ ] Standard notation format (i.e. JSON) contacting all library data [HIGH]
 
-### 10.0
+### 10.0 (Possible Beta/Full Release)
 
 -   [ ] All remaining [HIGH] and optional [MEDIUM] features
 
