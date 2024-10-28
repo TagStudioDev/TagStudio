@@ -5,10 +5,9 @@ title: Home
 # Welcome to the TagStudio Documentation!
 
 !!! warning
-	This documentation is still a work in progress, and is intended to aide with deconstructing and understanding of the core mechanics of TagStudio and how it operates.
+This documentation is still a work in progress, and is intended to aide with deconstructing and understanding of the core mechanics of TagStudio and how it operates.
 
 ![TagStudio Alpha](assets/github_header.png)
-
 
 TagStudio is a photo & file organization application with an underlying system that focuses on giving freedom and flexibility to the user. No proprietary programs or formats, no sea of sidecar files, and no complete upheaval of your filesystem structure.
 
@@ -19,11 +18,11 @@ TagStudio is a photo & file organization application with an underlying system t
 
 ## Goals
 
-- To achieve a portable, privacy-oriented, open, extensible, and feature-rich system of organizing and rediscovering files.
-- To provide powerful methods for organization, notably the concept of tag composition, or “taggable tags”.
-- To create an implementation of such a system that is resilient against a user’s actions outside the program (modifying, moving, or renaming files) while also not burdening the user with mandatory sidecar files or otherwise requiring them to change their existing file structures and workflows.
-- To support a wide range of users spanning across different platforms, multi-user setups, and those with large (several terabyte) libraries.
-- To make the darn thing look like nice, too. It’s 2024, not 1994.
+-   To achieve a portable, privacy-oriented, open, extensible, and feature-rich system of organizing and rediscovering files.
+-   To provide powerful methods for organization, notably the concept of tag composition, or “taggable tags”.
+-   To create an implementation of such a system that is resilient against a user’s actions outside the program (modifying, moving, or renaming files) while also not burdening the user with mandatory sidecar files or otherwise requiring them to change their existing file structures and workflows.
+-   To support a wide range of users spanning across different platforms, multi-user setups, and those with large (several terabyte) libraries.
+-   To make the darn thing look like nice, too. It’s 2024, not 1994.
 
 ## Priorities
 
@@ -34,14 +33,18 @@ TagStudio is a photo & file organization application with an underlying system t
 
 ## Current Features
 
-- Create libraries/vaults centered around a system directory. Libraries contain a series of entries: the representations of your files combined with metadata fields. Each entry represents a file in your library’s directory, and is linked to its location.
-- Add metadata to your library entries, including:
-	- Name, Author, Artist (Single-Line Text Fields)
-	- Description, Notes (Multiline Text Fields)
-	- Tags, Meta Tags, Content Tags (Tag Boxes)
-- Create rich tags composed of a name, a list of aliases, and a list of “subtags” - being tags in which these tags inherit values from.
-- Search for entries based on tags, ~~metadata~~ (TBA), or filenames/filetypes (using `filename: <query>`)
-- Special search conditions for entries that are: `untagged`/`no tags` and `empty`/`no fields`.
+-   Create libraries/vaults centered around a system directory. Libraries contain a series of entries: the representations of your files combined with metadata fields. Each entry represents a file in your library’s directory, and is linked to its location.
+-   Add metadata to your library entries, including:
+    -   Name, Author, Artist (Single-Line Text Fields)
+    -   Description, Notes (Multiline Text Fields)
+    -   Tags, Meta Tags, Content Tags (Tag Boxes)
+-   Create rich tags composed of a name, a list of aliases, and a list of “subtags” - being tags in which these tags inherit values from.
+-   Search for entries based on tags, ~~metadata~~ (TBA), or filenames/filetypes (using `filename: <query>`)
+-   Special search conditions for entries that are: `untagged`/`no tags` and `empty`/`no fields`.
+
+## Feature Roadmap
+
+The [feature roadmap](updates/roadmap.md) lists all of the planned core features for TagStudio to be considered "feature complete" along with estimated release milestones. The development and testing of these features takes priority over all other requested or submitted features unless they are later added to this roadmap. This helps ensure that TagStudio eventually sees a full release and becomes more usable by more people more quickly.
 
 ## Important Updates
 
