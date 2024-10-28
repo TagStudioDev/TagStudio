@@ -8,7 +8,8 @@ from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import QHBoxLayout, QLabel, QPushButton, QVBoxLayout, QWidget
 
 # Define a type variable for subclasses of PanelWidget
-T = TypeVar('T', bound='PanelWidget')
+T = TypeVar("T", bound="PanelWidget")
+
 
 class PanelModal(Generic[T], QWidget):
     saved = Signal()

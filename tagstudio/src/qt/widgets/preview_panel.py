@@ -479,9 +479,9 @@ class PreviewPanel(QWidget):
         if filepath and filepath.is_file():
             created: dt | None = None
             if platform.system() == "Windows" or platform.system() == "Darwin":
-                created = dt.fromtimestamp(filepath.stat().st_birthtime)
+                created = dt.fromtimestamp(filepath.stat().st_birthtime)  # type: ignore[attr-defined]
             else:
-                created = dt.fromtimestamp(filepath.stat().st_birthtime)
+                created = dt.fromtimestamp(filepath.stat().st_birthtime)  # type: ignore[attr-defined]
             modified: dt = dt.fromtimestamp(filepath.stat().st_mtime)
             self.date_created_label.setText(
                 f"<b>Date Created:</b> {dt.strftime(created, "%a, %x, %X")}"

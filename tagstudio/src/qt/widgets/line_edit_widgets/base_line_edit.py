@@ -51,7 +51,7 @@ class _ProxyStyle(QProxyStyle):
 
             corner_radius: float = widget.property("corner_radius")
             focus: float = widget.property("focus_anim")
-            
+
             panel_path = QPainterPath()
             panel_path.addRoundedRect(widget.contentsRect(), corner_radius, corner_radius)
 

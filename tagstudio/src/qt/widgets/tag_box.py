@@ -154,7 +154,7 @@ class TagBoxWidget(FieldWidget):
         for idx in self.driver.selected:
             entry = self.driver.frame_content[idx]
             assert entry is not None
-            
+
             if not self.driver.lib.add_field_tag(entry, tag, self.field.type_key):
                 # TODO - add some visible error
                 self.error_occurred.emit(Exception("Failed to add tag"))
