@@ -131,6 +131,7 @@ class QtDriver(DriverMixin, QObject):
     SIGTERM = Signal()
 
     preview_panel: PreviewPanel
+    modal: PanelModal
 
     def __init__(self, backend, args):
         super().__init__()
@@ -185,7 +186,7 @@ class QtDriver(DriverMixin, QObject):
     def init_workers(self):
         """Init workers for rendering thumbnails."""
         if not self.thumb_threads:
-            max_threads = os.cpu_count()
+            max_threads = os.cpu_count() or 1
             for i in range(max_threads):
                 thread = Consumer(self.thumb_job_queue)
                 thread.setObjectName(f"ThumbRenderer_{i}")
@@ -260,7 +261,7 @@ class QtDriver(DriverMixin, QObject):
 
         if os.name == "nt":
             appid = "cyanvoxel.tagstudio.9"
-            ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(appid)  # type: ignore
+            ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(appid)
 
         if sys.platform != "darwin":
             icon = QIcon()

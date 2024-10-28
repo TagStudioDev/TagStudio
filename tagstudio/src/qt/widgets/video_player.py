@@ -39,9 +39,6 @@ if typing.TYPE_CHECKING:
 class VideoPlayer(QGraphicsView):
     """A basic video player."""
 
-    video_preview = None
-    play_pause = None
-    mute_button = None
     filepath: str | None
 
     def __init__(self, driver: "QtDriver") -> None:
@@ -114,7 +111,7 @@ class VideoPlayer(QGraphicsView):
         self.mute_button.hide()
 
         self.setContextMenuPolicy(Qt.ContextMenuPolicy.ActionsContextMenu)
-        self.opener = FileOpenerHelper(filepath=self.filepath)
+        self.opener = FileOpenerHelper(filepath=self.filepath or "")
         autoplay_action = QAction("Autoplay", self)
         autoplay_action.setCheckable(True)
         self.addAction(autoplay_action)
@@ -149,13 +146,13 @@ class VideoPlayer(QGraphicsView):
             # Even if I stop the player before switching, it breaks.
             # On the plus side, this adds infinite looping for the video preview.
             self.player.stop()
-            self.player.setSource(QUrl().fromLocalFile(self.filepath))
+            self.player.setSource(QUrl().fromLocalFile(self.filepath or ""))
             self.player.setPosition(0)
             if self.autoplay.isChecked():
                 self.player.play()
             else:
                 self.player.pause()
-            self.opener.set_filepath(self.filepath)
+            self.opener.set_filepath(self.filepath or "")
             self.reposition_controls()
         self.update_controls()
 

@@ -209,6 +209,7 @@ class Library:
             db_version = session.scalar(
                 select(Preferences).where(Preferences.key == LibraryPrefs.DB_VERSION.name)
             )
+            assert db_version is not None
             # if the db version is different, we cant proceed
             if db_version.value != LibraryPrefs.DB_VERSION.default:
                 logger.error(

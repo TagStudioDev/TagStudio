@@ -75,7 +75,7 @@ def update_selected_entry(driver: "QtDriver"):
         results = driver.lib.search_library(FilterState(id=entry.id))
         logger.info("found item", entries=len(results), grid_idx=grid_idx, lookup_id=entry.id)
         assert results, f"Entry not found: {entry.id}"
-        driver.frame_content[grid_idx] = next(results)
+        driver.frame_content[grid_idx] = results[0]
 
 
 class PreviewPanel(QWidget):
@@ -477,11 +477,11 @@ class PreviewPanel(QWidget):
     def update_date_label(self, filepath: Path | None = None) -> None:
         """Update the "Date Created" and "Date Modified" file property labels."""
         if filepath and filepath.is_file():
-            created: dt = None
+            created: dt | None = None
             if platform.system() == "Windows" or platform.system() == "Darwin":
-                created = dt.fromtimestamp(filepath.stat().st_birthtime)  # type: ignore[attr-defined]
+                created = dt.fromtimestamp(filepath.stat().st_birthtime)
             else:
-                created = dt.fromtimestamp(filepath.stat().st_ctime)
+                created = dt.fromtimestamp(filepath.stat().st_birthtime)
             modified: dt = dt.fromtimestamp(filepath.stat().st_mtime)
             self.date_created_label.setText(
                 f"<b>Date Created:</b> {dt.strftime(created, "%a, %x, %X")}"
@@ -926,6 +926,7 @@ class PreviewPanel(QWidget):
             title = f"{field.type.name} ({field.type.type.value})"
             inner_container = TextWidget(title, text)
             container.set_inner_widget(inner_container)
+            modal: PanelModal
             if not is_mixed:
                 modal = PanelModal(
                     EditTextLine(field.value),

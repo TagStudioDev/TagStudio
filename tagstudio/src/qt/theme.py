@@ -1,4 +1,5 @@
 from collections.abc import Callable
+from typing import Literal
 
 from PySide6.QtCore import QSettings, Qt
 from PySide6.QtGui import QColor, QPalette
@@ -132,6 +133,7 @@ def update_palette() -> None:
     true_values = ("1", "yes", "true", "on")
     false_values = ("0", "no", "false", "off")
 
+    dark_mode: bool | Literal[-1]
     if dark_mode_value.lower() in true_values:
         dark_mode = True
     elif dark_mode_value.lower() in false_values:

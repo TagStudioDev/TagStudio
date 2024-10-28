@@ -225,7 +225,7 @@ class BasePushButton(QPushButton):
         Returns:
             None
         """
-        self._clicked_pos = e.pos()
+        self._clicked_pos = e.pos().toPointF()
         self._clicked = True
         self._update_colors()
         self._animate_clicked()

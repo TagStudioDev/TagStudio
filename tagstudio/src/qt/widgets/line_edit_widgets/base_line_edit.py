@@ -280,7 +280,7 @@ class BaseLineEdit(QLineEdit):
         if QApplication.styleHints().colorScheme() == Qt.ColorScheme.Dark:
             placeholder_text_color: QColor = self.property("font_color").darker(130)
         else:
-            placeholder_text_color: QColor = self.property("font_color").lighter(130)
+            placeholder_text_color = self.property("font_color").lighter(130)
         palette.setColor(
             QPalette.ColorGroup.All,
             QPalette.ColorRole.PlaceholderText,
