@@ -37,6 +37,7 @@ class MediaType(str, Enum):
     PLAINTEXT: str = "plaintext"
     PRESENTATION: str = "presentation"
     PROGRAM: str = "program"
+    SCRIPT: str = "script"
     SHORTCUT: str = "shortcut"
     SOURCE_ENGINE: str = "source_engine"
     SPREADSHEET: str = "spreadsheet"
@@ -325,6 +326,12 @@ class MediaCategories:
         ".ods",
         ".xls",
         ".xlsx",
+    }
+    _SCRIPT_SET: set[str] = {
+        ".com",
+        ".bat",
+        ".ps1", ##Powershell script
+        ".sh" ##Bash script
     }
     _VIDEO_SET: set[str] = {
         ".3gp",
