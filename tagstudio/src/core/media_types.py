@@ -218,7 +218,11 @@ class MediaCategories:
         ".raw",
         ".rw2",
     }
-    _IMAGE_VECTOR_SET: set[str] = {".svg"}
+    _IMAGE_VECTOR_SET: set[str] = {
+    ".svg", 
+    ".eps",
+    ".svgz",
+    }
     _IMAGE_SET: set[str] = {
         ".apng",
         ".avif",
