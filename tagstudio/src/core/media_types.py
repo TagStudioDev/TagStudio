@@ -311,7 +311,10 @@ class MediaCategories:
         ".ppt",
         ".pptx",
     }
-    _PROGRAM_SET: set[str] = {".app", ".exe"}
+    _PROGRAM_SET: set[str] = {
+        ".app", 
+        ".exe", 
+    }
     _SOURCE_ENGINE_SET: set[str] = {
         ".vtf",
     }
