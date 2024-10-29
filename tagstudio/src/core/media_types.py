@@ -150,7 +150,14 @@ class MediaCategories:
         ".sqlite",
         ".sqlite3",
     }
-    _DISK_IMAGE_SET: set[str] = {".bios", ".dmg", ".iso"}
+    _DISK_IMAGE_SET: set[str] = {
+        ".bios",
+        ".dmg", 
+        ".iso",
+        #".img", ##Legacy Mac Disk Image/Floppy Disk Image
+        #".vmdk" ##VM DisK image
+        #".dmg" ##Apple Disk Image
+        }
     _DOCUMENT_SET: set[str] = {
         ".doc",
         ".docm",
