@@ -18,7 +18,7 @@ Thank you so much for showing interest in contributing to TagStudio! Here are a 
 
 ### Contribution Checklist
 
-- I've read the [Planned Features](https://github.com/TagStudioDev/TagStudio/blob/main/docs/updates/planned_features.md) page
+- I've read the [Roadmap](https://github.com/TagStudioDev/TagStudio/blob/main/docs/updates/roadmap.md) page
 - I've read the [FAQ](/README.md/#faq), including the "[Features I Likely Won't Add/Pull](/README.md/#features-i-likely-wont-addpull)" section
 - I've checked the open [Issues](https://github.com/TagStudioDev/TagStudio/issues) and [Pull Requests](https://github.com/TagStudioDev/TagStudio/pulls)
 - **I've created a new issue for my feature _before_ starting work on it**, or have at least notified others in the relevant existing issue(s) of my intention to work on it
