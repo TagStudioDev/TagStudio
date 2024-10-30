@@ -156,8 +156,7 @@ class MediaCategories:
         ".dmg",
         ".iso",
         # ".img", ##Legacy Mac Disk Image/Floppy Disk Image
-        # ".vmdk" ##VM DisK image
-        # ".dmg" ##Apple Disk Image
+        # ".vmdk" ##VM Disk image
     }
     _DOCUMENT_SET: set[str] = {
         ".doc",
