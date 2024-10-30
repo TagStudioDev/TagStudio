@@ -79,17 +79,16 @@ class MediaCategories:
     _AFFINITY_PHOTO_SET: set[str] = {".afphoto"}
     _ARCHIVE_SET: set[str] = {
         ".7z",
+        # ".bz2"
+        # ".bz"
+        # ".gzip"
         ".gz",
         ".rar",
         ".s7z",
         ".tar",
         ".tgz",
-        ".zip",
         # ".xz"
-        # ".gz"
-        # ".bz2"
-        # ".bz"
-        # ".gzip"
+        ".zip",    
     }
     _AUDIO_MIDI_SET: set[str] = {
         ".mid",
@@ -331,6 +330,8 @@ class MediaCategories:
         ".bat",
         ".ps1",  ##Powershell script
         ".sh",  ##Bash script
+        ".bash",
+        ".zsh",
     }
     _VIDEO_SET: set[str] = {
         ".3gp",
