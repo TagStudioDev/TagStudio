@@ -290,13 +290,6 @@ TAG_COLORS: dict[TagColor, dict[ColorType, Any]] = {
         ColorType.LIGHT_ACCENT: "#cc8fdc",
         ColorType.DARK_ACCENT: "#41114a",
     },
-    ##Commented out because a similar colour is used internally for bug testing.
-    ##TagColor.FUCHISIA: {
-    ##ColorType.PRIMARY: "#FF19FF",
-    ##ColorType.BORDER: "#800080",
-    ##ColorType.LIGHT_ACCENT: "#FF19FF",
-    ##ColorType.DARK_ACCENT: "#E600E6",
-    # },
 }
 
 UI_COLORS: dict[UiColor, dict[ColorType, Any]] = {
