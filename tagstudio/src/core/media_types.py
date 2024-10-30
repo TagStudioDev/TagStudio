@@ -79,15 +79,15 @@ class MediaCategories:
     _AFFINITY_PHOTO_SET: set[str] = {".afphoto"}
     _ARCHIVE_SET: set[str] = {
         ".7z",
-        # ".bz2"
-        # ".bz"
-        # ".gzip"
+        ".bz2"
+        ".bz"
+        ".gzip"
         ".gz",
         ".rar",
         ".s7z",
         ".tar",
         ".tgz",
-        # ".xz"
+        ".xz"
         ".zip",
     }
     _AUDIO_MIDI_SET: set[str] = {
@@ -154,8 +154,8 @@ class MediaCategories:
         ".bios",
         ".dmg",
         ".iso",
-        # ".img", #Legacy Mac Disk Image/Floppy Disk Image
-        # ".vmdk" #VM Disk image
+        ".img", #Legacy Mac Disk Image/Floppy Disk Image
+        ".vmdk" #VM Disk image
     }
     _DOCUMENT_SET: set[str] = {
         ".doc",
@@ -219,8 +219,8 @@ class MediaCategories:
     }
     _IMAGE_VECTOR_SET: set[str] = {
         ".svg",
-        # ".eps",
-        # ".svgz",
+        ".eps",
+        ".svgz",
     }
     _IMAGE_SET: set[str] = {
         ".apng",
@@ -471,7 +471,8 @@ class MediaCategories:
         extensions=_SHORTCUT_SET,
         is_iana=False,
     )
-    SCRIPT_TYPES: MediaCategory = MediaCategory(
+    SCRIPT_TYPES: MediaCategory = MediaCategory( 
+        #We should probably treat this section's thumbnails like a plaintext file
         media_type=MediaType.SCRIPT,
         extensions=_SCRIPT_SET,
         is_iana=False,
