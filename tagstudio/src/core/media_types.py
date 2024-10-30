@@ -154,8 +154,8 @@ class MediaCategories:
         ".bios",
         ".dmg",
         ".iso",
-        # ".img", ##Legacy Mac Disk Image/Floppy Disk Image
-        # ".vmdk" ##VM Disk image
+        # ".img", #Legacy Mac Disk Image/Floppy Disk Image
+        # ".vmdk" #VM Disk image
     }
     _DOCUMENT_SET: set[str] = {
         ".doc",
@@ -318,6 +318,13 @@ class MediaCategories:
         ".exe",
         ".com",
     }
+    _SCRIPT_SET: set[str] = {
+        ".ps1",
+        ".bash",
+        ".sh",
+        ".bat",
+        ".zsh",
+    }
     _SOURCE_ENGINE_SET: set[str] = {
         ".vtf",
     }
@@ -464,6 +471,11 @@ class MediaCategories:
         extensions=_SHORTCUT_SET,
         is_iana=False,
     )
+    SCRIPT_TYPES: MediaCategory = MediaCategory(
+        media_type=MediaType.SCRIPT,
+        extensions=_SCRIPT_SET,
+        is_iana=False,
+    )
     SOURCE_ENGINE_TYPES: MediaCategory = MediaCategory(
         media_type=MediaType.SOURCE_ENGINE,
         extensions=_SOURCE_ENGINE_SET,
@@ -509,6 +521,7 @@ class MediaCategories:
         PLAINTEXT_TYPES,
         PRESENTATION_TYPES,
         PROGRAM_TYPES,
+        SCRIPT_TYPES,
         SHORTCUT_TYPES,
         SOURCE_ENGINE_TYPES,
         SPREADSHEET_TYPES,
