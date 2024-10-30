@@ -262,7 +262,6 @@ class MediaCategories:
         ".pdf",
     }
     _PLAINTEXT_SET: set[str] = {
-        ".bat",
         ".bash",
         ".bat",
         ".cfg",
