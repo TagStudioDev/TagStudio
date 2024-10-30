@@ -85,11 +85,11 @@ class MediaCategories:
         ".tar",
         ".tgz",
         ".zip",
-        #".xz"
-        #".gz"
-        #".bz2"
-        #".bz"
-        #".gzip"
+        # ".xz"
+        # ".gz"
+        # ".bz2"
+        # ".bz"
+        # ".gzip"
     }
     _AUDIO_MIDI_SET: set[str] = {
         ".mid",
@@ -153,12 +153,12 @@ class MediaCategories:
     }
     _DISK_IMAGE_SET: set[str] = {
         ".bios",
-        ".dmg", 
+        ".dmg",
         ".iso",
-        #".img", ##Legacy Mac Disk Image/Floppy Disk Image
-        #".vmdk" ##VM DisK image
-        #".dmg" ##Apple Disk Image
-        }
+        # ".img", ##Legacy Mac Disk Image/Floppy Disk Image
+        # ".vmdk" ##VM DisK image
+        # ".dmg" ##Apple Disk Image
+    }
     _DOCUMENT_SET: set[str] = {
         ".doc",
         ".docm",
@@ -220,9 +220,9 @@ class MediaCategories:
         ".rw2",
     }
     _IMAGE_VECTOR_SET: set[str] = {
-        ".svg", 
-        #".eps",
-        #".svgz",
+        ".svg",
+        # ".eps",
+        # ".svgz",
     }
     _IMAGE_SET: set[str] = {
         ".apng",
@@ -313,8 +313,8 @@ class MediaCategories:
         ".pptx",
     }
     _PROGRAM_SET: set[str] = {
-        ".app", 
-        ".exe", 
+        ".app",
+        ".exe",
     }
     _SOURCE_ENGINE_SET: set[str] = {
         ".vtf",
@@ -330,8 +330,8 @@ class MediaCategories:
     _SCRIPT_SET: set[str] = {
         ".com",
         ".bat",
-        ".ps1", ##Powershell script
-        ".sh" ##Bash script
+        ".ps1",  ##Powershell script
+        ".sh",  ##Bash script
     }
     _VIDEO_SET: set[str] = {
         ".3gp",
