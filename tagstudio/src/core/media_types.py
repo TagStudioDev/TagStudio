@@ -289,7 +289,7 @@ class MediaCategories:
         ".php",
         ".plist",
         ".prefs",
-        ".ps1",  ##Powershell script
+        ".ps1",
         ".py",
         ".pyc",
         ".qss",
