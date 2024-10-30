@@ -263,8 +263,12 @@ class MediaCategories:
     }
     _PLAINTEXT_SET: set[str] = {
         ".bat",
+        ".bash",
+        ".zsh",
+        ".bat",
         ".cfg",
         ".conf",
+        ".com",
         ".cpp",
         ".cs",
         ".css",
@@ -287,6 +291,7 @@ class MediaCategories:
         ".php",
         ".plist",
         ".prefs",
+        ".ps1",  ##Powershell script
         ".py",
         ".pyc",
         ".qss",
