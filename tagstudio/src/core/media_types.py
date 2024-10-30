@@ -264,11 +264,9 @@ class MediaCategories:
     _PLAINTEXT_SET: set[str] = {
         ".bat",
         ".bash",
-        ".zsh",
         ".bat",
         ".cfg",
         ".conf",
-        ".com",
         ".cpp",
         ".cs",
         ".css",
@@ -308,6 +306,7 @@ class MediaCategories:
         ".xml",
         ".yaml",
         ".yml",
+        ".zsh",
     }
     _PRESENTATION_SET: set[str] = {
         ".key",
@@ -318,6 +317,7 @@ class MediaCategories:
     _PROGRAM_SET: set[str] = {
         ".app",
         ".exe",
+        ".com",
     }
     _SOURCE_ENGINE_SET: set[str] = {
         ".vtf",
@@ -329,14 +329,6 @@ class MediaCategories:
         ".ods",
         ".xls",
         ".xlsx",
-    }
-    _SCRIPT_SET: set[str] = {
-        ".com",
-        ".bat",
-        ".ps1",  ##Powershell script
-        ".sh",  ##Bash script
-        ".bash",
-        ".zsh",
     }
     _VIDEO_SET: set[str] = {
         ".3gp",
