@@ -88,7 +88,7 @@ class MediaCategories:
         ".tar",
         ".tgz",
         # ".xz"
-        ".zip",    
+        ".zip",
     }
     _AUDIO_MIDI_SET: set[str] = {
         ".mid",
