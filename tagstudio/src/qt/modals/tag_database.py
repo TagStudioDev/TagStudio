@@ -7,6 +7,7 @@ from PySide6.QtWidgets import (
     QFrame,
     QHBoxLayout,
     QLineEdit,
+    QPushButton,
     QScrollArea,
     QVBoxLayout,
     QWidget,
@@ -52,8 +53,31 @@ class TagDatabasePanel(PanelWidget):
         self.scroll_area.setFrameShape(QFrame.Shape.NoFrame)
         self.scroll_area.setWidget(self.scroll_contents)
 
+        self.create_tag_button = QPushButton()
+        self.create_tag_button.setText("Create Tag")
+        self.create_tag_button.clicked.connect(lambda: self.build_tag())
+
         self.root_layout.addWidget(self.search_field)
         self.root_layout.addWidget(self.scroll_area)
+        self.root_layout.addWidget(self.create_tag_button)
+        self.update_tags()
+
+    def build_tag(self):
+        self.modal = PanelModal(
+            BuildTagPanel(self.lib),
+            "New Tag",
+            "Add Tag",
+            has_save=True,
+        )
+
+        panel: BuildTagPanel = self.modal.widget
+        self.modal.saved.connect(
+            lambda: (
+                self.lib.add_tag(panel.build_tag(), panel.subtags),
+                self.modal.hide(),
+            )
+        )
+        self.modal.show()
         self.update_tags()
 
     def on_return(self, text: str):
