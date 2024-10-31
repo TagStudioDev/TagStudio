@@ -555,6 +555,7 @@ class Library:
 
                 for subtag in subtags or []:
                     session.delete(subtag)
+                    session.expunge(subtag)
 
                 session.delete(tag)
 

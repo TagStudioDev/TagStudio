@@ -75,7 +75,7 @@ class TagDatabasePanel(PanelWidget):
             lambda: (
                 self.lib.add_tag(panel.build_tag(), panel.subtags),
                 self.modal.hide(),
-                self.update_tags()
+                self.update_tags(),
             )
         )
         self.modal.show()
@@ -103,8 +103,7 @@ class TagDatabasePanel(PanelWidget):
             row.setSpacing(3)
             tag_widget = TagWidget(tag, has_edit=True, has_remove=True)
             tag_widget.on_edit.connect(lambda checked=False, t=tag: self.edit_tag(t))
-            tag_widget.on_remove.connect(
-                lambda: self.remove_tag(tag))
+            tag_widget.on_remove.connect(lambda t=tag: self.remove_tag(t))
             row.addWidget(tag_widget)
             self.scroll_layout.addWidget(container)
 

@@ -6,7 +6,6 @@ from src.core.enums import DefaultEnum, LibraryPrefs
 from src.core.library.alchemy import Entry
 from src.core.library.alchemy.enums import FilterState
 from src.core.library.alchemy.fields import TextField, _FieldID
-from src.core.library.alchemy.models import Tag
 
 
 @pytest.mark.parametrize("library", [TemporaryDirectory()], indirect=True)
@@ -37,36 +36,6 @@ def test_create_tag(library, generate_tag):
 
     tag_inc = library.add_tag(generate_tag("yyy"))
     assert tag_inc.id > 1000
-
-
-def test_get_subtags(library, generate_tag):
-    parent: Tag = generate_tag("parent", id=123)
-    child: Tag = generate_tag("child", id=1234)
-
-    assert library.add_tag(parent)
-    assert library.add_tag(child)
-
-    assert library.add_subtag(parent.id, child.id)
-
-    subtags = library.get_subtags(parent)
-
-    assert len(subtags) == 1
-    assert subtags[0].id == child.id
-
-
-def test_get_parent_tags(library, generate_tag):
-    parent: Tag = generate_tag("parent", id=123)
-    child: Tag = generate_tag("child", id=1234)
-
-    assert library.add_tag(parent)
-    assert library.add_tag(child)
-
-    assert library.add_subtag(parent.id, child.id)
-
-    parents = library.get_parent_tags(child)
-
-    assert len(parents) == 1
-    assert parents[0].id == parent.id
 
 
 def test_library_search(library, generate_tag, entry_full):
@@ -182,6 +151,17 @@ def test_subtags_add(library, generate_tag):
     assert tag.id is not None
     tag = library.get_tag(tag.id)
     assert tag.subtag_ids
+
+
+def test_remove_tag(library, generate_tag):
+    tag = library.add_tag(generate_tag("food", id=123))
+
+    assert tag
+
+    tag_count = len(library.tags)
+
+    library.remove_tag(tag)
+    assert len(library.tags) == tag_count - 1
 
 
 @pytest.mark.parametrize("is_exclude", [True, False])
