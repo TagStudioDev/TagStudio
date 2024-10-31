@@ -75,10 +75,10 @@ class TagDatabasePanel(PanelWidget):
             lambda: (
                 self.lib.add_tag(panel.build_tag(), panel.subtags),
                 self.modal.hide(),
+                self.update_tags()
             )
         )
         self.modal.show()
-        self.update_tags()
 
     def on_return(self, text: str):
         if text and self.first_tag_id >= 0:
@@ -101,12 +101,18 @@ class TagDatabasePanel(PanelWidget):
             row = QHBoxLayout(container)
             row.setContentsMargins(0, 0, 0, 0)
             row.setSpacing(3)
-            tag_widget = TagWidget(tag, has_edit=True, has_remove=False)
+            tag_widget = TagWidget(tag, has_edit=True, has_remove=True)
             tag_widget.on_edit.connect(lambda checked=False, t=tag: self.edit_tag(t))
+            tag_widget.on_remove.connect(
+                lambda: self.remove_tag(tag))
             row.addWidget(tag_widget)
             self.scroll_layout.addWidget(container)
 
         self.search_field.setFocus()
+
+    def remove_tag(self, tag: Tag):
+        self.lib.remove_tag(tag)
+        self.update_tags()
 
     def edit_tag(self, tag: Tag):
         build_tag_panel = BuildTagPanel(self.lib, tag=tag)
