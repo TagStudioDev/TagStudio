@@ -40,6 +40,10 @@ class VideoPlayer(QGraphicsView):
     """A basic video player."""
 
     filepath: str | None
+    if not typing.TYPE_CHECKING:
+        # it's not necessary to define `video_preview = None` because it will be defined in __init__
+        # but super().__init__() calls eventFilter which requires `video_preview` to be defined.
+        video_preview = None
 
     def __init__(self, driver: "QtDriver") -> None:
         super().__init__()

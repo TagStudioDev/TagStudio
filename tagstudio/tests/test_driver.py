@@ -53,8 +53,9 @@ def test_evaluate_path_last_lib_not_exists():
 
 def test_evaluate_path_last_lib_present():
     # Given
-    settings = QSettings()
     with TemporaryDirectory() as tmpdir:
+        settings_file = (Path(tmpdir) / "test_settings.ini").as_posix()
+        settings = QSettings(settings_file, QSettings.Format.IniFormat)
         settings.setValue(SettingItems.LAST_LIBRARY, tmpdir)
         makedirs(Path(tmpdir) / TS_FOLDER_NAME)
         driver = TestDriver(settings)

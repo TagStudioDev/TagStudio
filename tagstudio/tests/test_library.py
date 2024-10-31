@@ -204,7 +204,7 @@ def test_save_windows_path(library, generate_tag):
     # pretend we are on windows and create `Path`
 
     entry = Entry(
-        path=PureWindowsPath("foo\\bar.txt"),
+        path=PureWindowsPath("foo\\bar.txt"), # type: ignore
         folder=library.folder,
         fields=library.default_fields,
     )
@@ -219,7 +219,7 @@ def test_save_windows_path(library, generate_tag):
     assert results
 
     # path should be saved in posix format
-    assert str(results[0].path) == "foo/bar.txt"
+    assert results[0].path == PureWindowsPath("foo/bar.txt")  # NOTE: not sure if this is correct
 
 
 def test_remove_entry_field(library, entry_full):

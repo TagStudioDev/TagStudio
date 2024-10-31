@@ -687,6 +687,8 @@ class Library:
         if not field:
             if isinstance(field_id, _FieldID):
                 _field_id = field_id.name
+            elif isinstance(field_id, str):
+                _field_id = field_id
             field = self.get_value_type(_field_id)
 
         field_model: TextField | DatetimeField | TagBoxField

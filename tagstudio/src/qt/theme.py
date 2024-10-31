@@ -95,6 +95,8 @@ def _save_palette_to_file(file_path: str, palette: QPalette) -> None:
                 theme.setValue(group.name, palette.color(group, role).name())
         theme.endGroup()
 
+    theme.sync()
+
 
 def update_palette() -> None:
     """Update the application palette based on the settings.
