@@ -79,15 +79,15 @@ class MediaCategories:
     _AFFINITY_PHOTO_SET: set[str] = {".afphoto"}
     _ARCHIVE_SET: set[str] = {
         ".7z",
-        ".bz2"
-        ".bz"
-        ".gzip"
+        ".bz2",
+        ".bz",
+        ".gzip",
         ".gz",
         ".rar",
         ".s7z",
         ".tar",
         ".tgz",
-        ".xz"
+        ".xz",
         ".zip",
     }
     _AUDIO_MIDI_SET: set[str] = {
@@ -154,8 +154,9 @@ class MediaCategories:
         ".bios",
         ".dmg",
         ".iso",
-        ".img", #Legacy Mac Disk Image/Floppy Disk Image
-        ".vmdk" #VM Disk image
+        ".img",
+        ".vmdk",
+        ".flp",
     }
     _DOCUMENT_SET: set[str] = {
         ".doc",
@@ -188,7 +189,7 @@ class MediaCategories:
         # ".kfx",
         # ".lit",
         # ".mobi",
-        # ".pdb"
+        # ".pdb",
         # ".prc",
     }
     _FONT_SET: set[str] = {
@@ -219,8 +220,8 @@ class MediaCategories:
     }
     _IMAGE_VECTOR_SET: set[str] = {
         ".svg",
-        ".eps",
-        ".svgz",
+        #".eps",
+        #".svgz",
     }
     _IMAGE_SET: set[str] = {
         ".apng",
