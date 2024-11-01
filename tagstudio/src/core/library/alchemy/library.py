@@ -142,7 +142,7 @@ class Library:
         self.folder = None
 
     def migrate(self, db_url: str):
-        alembic_cfg = Config("alembic.ini")
+        alembic_cfg = Config("tagstudio/src/core/library/alembic/alembic.ini")
         alembic_cfg.set_main_option("sqlalchemy.url", db_url)
         command.stamp(alembic_cfg, "head")
         command.upgrade(alembic_cfg, "head")
