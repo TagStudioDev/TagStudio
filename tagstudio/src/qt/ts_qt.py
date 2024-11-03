@@ -24,16 +24,7 @@ from typing import TYPE_CHECKING
 import src.qt.resources_rc  # noqa: F401
 import structlog
 from humanfriendly import format_timespan
-from PySide6 import QtCore
-from PySide6.QtCore import (
-    QObject,
-    QSettings,
-    Qt,
-    QThread,
-    QThreadPool,
-    QTimer,
-    Signal,
-)
+from PySide6.QtCore import QObject, QSettings, Qt, QThread, QThreadPool, QTimer, Signal
 from PySide6.QtGui import (
     QAction,
     QColor,
@@ -57,20 +48,10 @@ from PySide6.QtWidgets import (
     QSplashScreen,
     QWidget,
 )
-from src.core.constants import (
-    TAG_ARCHIVED,
-    TAG_FAVORITE,
-    VERSION,
-    VERSION_BRANCH,
-)
+from src.core.constants import TAG_ARCHIVED, TAG_FAVORITE, VERSION, VERSION_BRANCH
 from src.core.driver import DriverMixin
 from src.core.enums import LibraryPrefs, MacroID, SettingItems
-from src.core.library.alchemy.enums import (
-    FieldTypeEnum,
-    FilterState,
-    ItemType,
-    SearchMode,
-)
+from src.core.library.alchemy.enums import FieldTypeEnum, FilterState, ItemType, SearchMode
 from src.core.library.alchemy.fields import _FieldID
 from src.core.library.alchemy.library import LibraryStatus
 from src.core.ts_core import TagStudioCore
@@ -93,6 +74,9 @@ from src.qt.widgets.preview_panel import PreviewPanel
 from src.qt.widgets.progress import ProgressWidget
 from src.qt.widgets.thumb_renderer import ThumbRenderer
 
+from .shortcuts_manager import DefaultShortcuts
+
+# fpafwiueh XXX in
 if TYPE_CHECKING:
     from src.core.library import Entry, Library
 
@@ -215,8 +199,6 @@ class QtDriver(DriverMixin, QObject):
     def start(self) -> None:
         """Launch the main Qt window."""
         _ = QUiLoader()
-        if os.name == "nt":
-            sys.argv += ["-platform", "windows:darkmode=2"]
 
         app = QApplication(sys.argv)
         app.setStyle("Fusion")
@@ -240,6 +222,7 @@ class QtDriver(DriverMixin, QObject):
         self.main_window = UIMainWindow(self)
         self.main_window.setWindowTitle(self.base_title)
         self.main_window.mousePressEvent = self.mouse_navigation  # type: ignore
+        DefaultShortcuts(self.main_window)
         # self.main_window.setStyleSheet(
         # 	f'QScrollBar::{{background:red;}}'
         # 	)
@@ -283,31 +266,28 @@ class QtDriver(DriverMixin, QObject):
         # file_menu.addAction(QAction('&New Library', menu_bar))
         # file_menu.addAction(QAction('&Open Library', menu_bar))
 
-        open_library_action = QAction("&Open/Create Library", menu_bar)
+        open_library_action = QAction()
+        open_library_action.setText("&Open/Create Library")
+        open_library_action.setParent(menu_bar)
         open_library_action.triggered.connect(lambda: self.open_library_from_dialog())
-        open_library_action.setShortcut(
-            QtCore.QKeyCombination(
-                QtCore.Qt.KeyboardModifier(QtCore.Qt.KeyboardModifier.ControlModifier),
-                QtCore.Qt.Key.Key_O,
-            )
+        open_shortcut = DefaultShortcuts().OPEN
+        open_shortcut.connect_action(open_library_action)
+        open_library_action.setToolTip(open_shortcut.key().toString())
+        open_shortcut.key_changed.connect(
+            lambda _: open_library_action.setToolTip(open_shortcut.key().toString())
         )
-        open_library_action.setToolTip("Ctrl+O")
         file_menu.addAction(open_library_action)
 
         save_library_backup_action = QAction("&Save Library Backup", menu_bar)
         save_library_backup_action.triggered.connect(
             lambda: self.callback_library_needed_check(self.backup_library)
         )
-        save_library_backup_action.setShortcut(
-            QtCore.QKeyCombination(
-                QtCore.Qt.KeyboardModifier(
-                    QtCore.Qt.KeyboardModifier.ControlModifier
-                    | QtCore.Qt.KeyboardModifier.ShiftModifier
-                ),
-                QtCore.Qt.Key.Key_S,
-            )
+        save_as_shortcut = DefaultShortcuts().SAVE_AS
+        save_as_shortcut.connect_action(save_library_backup_action)
+        save_library_backup_action.setStatusTip(save_as_shortcut.key().toString())
+        save_as_shortcut.key_changed.connect(
+            lambda _: save_library_backup_action.setStatusTip(save_as_shortcut.key().toString())
         )
-        save_library_backup_action.setStatusTip("Ctrl+Shift+S")
         file_menu.addAction(save_library_backup_action)
 
         file_menu.addSeparator()
@@ -318,50 +298,57 @@ class QtDriver(DriverMixin, QObject):
         add_new_files_action.triggered.connect(
             lambda: self.callback_library_needed_check(self.add_new_files_callback)
         )
-        add_new_files_action.setShortcut(
-            QtCore.QKeyCombination(
-                QtCore.Qt.KeyboardModifier(QtCore.Qt.KeyboardModifier.ControlModifier),
-                QtCore.Qt.Key.Key_R,
-            )
+        refresh_shortcut = DefaultShortcuts().REFRESH
+        refresh_shortcut.connect_action(add_new_files_action)
+        add_new_files_action.setStatusTip(refresh_shortcut.key().toString())
+        refresh_shortcut.key_changed.connect(
+            lambda _: add_new_files_action.setStatusTip(refresh_shortcut.key().toString())
         )
-        add_new_files_action.setStatusTip("Ctrl+R")
         # file_menu.addAction(refresh_lib_action)
         file_menu.addAction(add_new_files_action)
         file_menu.addSeparator()
 
         close_library_action = QAction("&Close Library", menu_bar)
         close_library_action.triggered.connect(self.close_library)
+        close_library_shortcut = DefaultShortcuts().CLOSE_LIBRARY
+        close_library_shortcut.connect_action(close_library_action)
+        close_library_action.setStatusTip(close_library_shortcut.key().toString())
+        close_library_shortcut.key_changed.connect(
+            lambda _: close_library_action.setStatusTip(close_library_shortcut.key().toString())
+        )
         file_menu.addAction(close_library_action)
 
         # Edit Menu ============================================================
         new_tag_action = QAction("New &Tag", menu_bar)
         new_tag_action.triggered.connect(lambda: self.add_tag_action_callback())
-        new_tag_action.setShortcut(
-            QtCore.QKeyCombination(
-                QtCore.Qt.KeyboardModifier(QtCore.Qt.KeyboardModifier.ControlModifier),
-                QtCore.Qt.Key.Key_T,
-            )
+        new_tag_shortcut = DefaultShortcuts().NEW_TAG
+        new_tag_shortcut.connect_action(new_tag_action)
+        new_tag_action.setStatusTip(new_tag_shortcut.key().toString())
+        new_tag_shortcut.key_changed.connect(
+            lambda _: new_tag_action.setStatusTip(new_tag_shortcut.key().toString())
         )
-        new_tag_action.setToolTip("Ctrl+T")
         edit_menu.addAction(new_tag_action)
 
         edit_menu.addSeparator()
 
         select_all_action = QAction("Select All", menu_bar)
         select_all_action.triggered.connect(self.select_all_action_callback)
-        select_all_action.setShortcut(
-            QtCore.QKeyCombination(
-                QtCore.Qt.KeyboardModifier(QtCore.Qt.KeyboardModifier.ControlModifier),
-                QtCore.Qt.Key.Key_A,
-            )
+        select_all_shortcut = DefaultShortcuts().SELECT_ALL
+        select_all_shortcut.connect_action(select_all_action)
+        select_all_action.setStatusTip(select_all_shortcut.key().toString())
+        select_all_shortcut.key_changed.connect(
+            lambda _: select_all_action.setStatusTip(select_all_shortcut.key().toString())
         )
-        select_all_action.setToolTip("Ctrl+A")
         edit_menu.addAction(select_all_action)
 
         clear_select_action = QAction("Clear Selection", menu_bar)
         clear_select_action.triggered.connect(self.clear_select_action_callback)
-        clear_select_action.setShortcut(QtCore.Qt.Key.Key_Escape)
-        clear_select_action.setToolTip("Esc")
+        deselect_shortcut = DefaultShortcuts().DESELECT
+        deselect_shortcut.connect_action(clear_select_action)
+        clear_select_action.setStatusTip(deselect_shortcut.key().toString())
+        deselect_shortcut.key_changed.connect(
+            lambda _: clear_select_action.setStatusTip(deselect_shortcut.key().toString())
+        )
         edit_menu.addAction(clear_select_action)
 
         edit_menu.addSeparator()

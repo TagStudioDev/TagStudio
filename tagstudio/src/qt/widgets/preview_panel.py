@@ -30,9 +30,7 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
-from src.core.constants import (
-    TS_FOLDER_NAME,
-)
+from src.core.constants import TS_FOLDER_NAME
 from src.core.enums import SettingItems, Theme
 from src.core.library.alchemy.enums import FilterState
 from src.core.library.alchemy.fields import (

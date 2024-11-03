@@ -52,7 +52,7 @@ def _load_palette_from_file(file_path: str, default_palette: QPalette) -> QPalet
     for role in list(QPalette.ColorRole)[:-1]:  # remove last color role (NColorRoles)
         for group in color_groups:
             value: str | None = theme.value(f"{role.name}/{group.name}", None, str)  # type: ignore
-            if value is not None and QColor.isValidColor(value):
+            if value is not None and QColor.isValidColorName(value):
                 pal.setColor(group, role, QColor(value))
 
     return pal
