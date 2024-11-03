@@ -77,7 +77,9 @@ class DeleteUnlinkedEntriesModal(QWidget):
 
         self.model.clear()
         for i in self.tracker.missing_files:
-            self.model.appendRow(QStandardItem(str(i.path)))
+            item = QStandardItem(str(i.path))
+            item.setEditable(False)
+            self.model.appendRow(item)
 
     def delete_entries(self):
         pw = ProgressWidget(

@@ -36,6 +36,9 @@ from PySide6.QtCore import (
 from PySide6.QtGui import (
     QAction,
     QColor,
+    QDragEnterEvent,
+    QDragMoveEvent,
+    QDropEvent,
     QFontDatabase,
     QGuiApplication,
     QIcon,
@@ -80,7 +83,7 @@ from src.qt.helpers.custom_runnable import CustomRunnable
 from src.qt.helpers.function_iterator import FunctionIterator
 from src.qt.main_window import Ui_MainWindow
 from src.qt.modals.build_tag import BuildTagPanel
-from src.qt.modals.drop_import import DropImport
+from src.qt.modals.drop_import import DropImportModal
 from src.qt.modals.file_extension import FileExtensionModal
 from src.qt.modals.fix_dupes import FixDupeFilesModal
 from src.qt.modals.fix_unlinked import FixUnlinkedEntriesModal
@@ -231,24 +234,10 @@ class QtDriver(DriverMixin, QObject):
         # self.main_window = loader.load(home_path)
         self.main_window = Ui_MainWindow(self)
         self.main_window.setWindowTitle(self.base_title)
-        self.main_window.mousePressEvent = self.mouse_navigation  # type: ignore
-        # self.main_window.setStyleSheet(
-        # 	f'QScrollBar::{{background:red;}}'
-        # 	)
-
-        self.drop_import = DropImport(self)
-        self.main_window.dragEnterEvent = self.drop_import.dragEnterEvent  # type: ignore
-        self.main_window.dropEvent = self.drop_import.dropEvent  # type: ignore
-        self.main_window.dragMoveEvent = self.drop_import.dragMoveEvent  # type: ignore
-
-        # # self.main_window.windowFlags() &
-        # # self.main_window.setWindowFlag(Qt.WindowType.FramelessWindowHint, True)
-        # self.main_window.setWindowFlag(Qt.WindowType.NoDropShadowWindowHint, True)
-        # self.main_window.setWindowFlag(Qt.WindowType.WindowTransparentForInput, False)
-        # self.main_window.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
-
-        # self.windowFX = WindowEffect()
-        # self.windowFX.setAcrylicEffect(self.main_window.winId())
+        self.main_window.mousePressEvent = self.mouse_navigation  # type: ignore[method-assign]
+        self.main_window.dragEnterEvent = self.drag_enter_event  # type: ignore[method-assign]
+        self.main_window.dragMoveEvent = self.drag_move_event  # type: ignore[method-assign]
+        self.main_window.dropEvent = self.drop_event  # type: ignore[method-assign]
 
         splash_pixmap = QPixmap(":/images/splash.png")
         splash_pixmap.setDevicePixelRatio(self.main_window.devicePixelRatio())
@@ -1147,3 +1136,27 @@ class QtDriver(DriverMixin, QObject):
 
         self.main_window.toggle_landing_page(enabled=False)
         return open_status
+
+    def drop_event(self, event: QDropEvent):
+        if event.source() is self:
+            return
+
+        if not event.mimeData().hasUrls():
+            return
+
+        urls = event.mimeData().urls()
+        logger.info("New items dragged in", urls=urls)
+        drop_import = DropImportModal(self)
+        drop_import.import_urls(urls)
+
+    def drag_enter_event(self, event: QDragEnterEvent):
+        if event.mimeData().hasUrls():
+            event.accept()
+        else:
+            event.ignore()
+
+    def drag_move_event(self, event: QDragMoveEvent):
+        if event.mimeData().hasUrls():
+            event.accept()
+        else:
+            event.ignore()
