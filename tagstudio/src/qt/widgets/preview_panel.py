@@ -625,13 +625,7 @@ class PreviewPanel(QWidget):
                         self.preview_gif.show()
 
                     image = None
-                    if (
-                        MediaCategories.is_ext_in_category(ext, MediaCategories.IMAGE_TYPES)
-                        and MediaCategories.is_ext_in_category(ext, MediaCategories.IMAGE_RAW_TYPES)
-                        and MediaCategories.is_ext_in_category(
-                            ext, MediaCategories.IMAGE_VECTOR_TYPES
-                        )
-                    ):
+                    if MediaCategories.is_ext_in_category(ext, MediaCategories.IMAGE_RASTER_TYPES):
                         image = Image.open(str(filepath))
                     elif MediaCategories.is_ext_in_category(ext, MediaCategories.IMAGE_RAW_TYPES):
                         try:
@@ -668,7 +662,7 @@ class PreviewPanel(QWidget):
                     # Stats for specific file types are displayed here.
                     if image and (
                         MediaCategories.is_ext_in_category(
-                            ext, MediaCategories.IMAGE_TYPES, mime_fallback=True
+                            ext, MediaCategories.IMAGE_RASTER_TYPES, mime_fallback=True
                         )
                         or MediaCategories.is_ext_in_category(
                             ext, MediaCategories.VIDEO_TYPES, mime_fallback=True
