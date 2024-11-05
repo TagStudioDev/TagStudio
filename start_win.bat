@@ -1,2 +1,3 @@
 @echo off
-.venv\Scripts\python.exe .\TagStudio\tag_studio.py --ui qt %*
+cd tagstudio
+..\.venv\Scripts\python.exe .\tag_studio.py --ui qt %*
