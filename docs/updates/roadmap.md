@@ -124,6 +124,11 @@ Features are broken up into the following priority levels, with nested prioritie
     -   [ ] File Duration Label [HIGH]
     -   [ ] 3D Model Previews [LOW]
         -   [ ] STL Previews [HIGH] [#351](https://github.com/TagStudioDev/TagStudio/issues/351)
+-   [x] Drag and Drop [HIGH]
+    -   [x] Drag files _to_ other programs [HIGH]
+    -   [x] Drag files _to_ file explorer windows [MEDIUM]
+    -   [x] Drag files _from_ file explorer windows [MEDIUM]
+    -   [x] Drag files _from_ other programs [LOW]
 -   [ ] File Preview Panel [HIGH]
     -   [ ] Video Playback [HIGH]
         -   [x] Play/Pause [HIGH]
