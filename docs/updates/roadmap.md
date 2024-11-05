@@ -90,6 +90,9 @@ Features are broken up into the following priority levels, with nested prioritie
     -   [ ] Tag objects + autocomplete [HIGH] [#476 (Autocomplete)](https://github.com/TagStudioDev/TagStudio/issues/476)
     -   [ ] Filename search [HIGH]
     -   [ ] Filetype search [HIGH]
+        -   [ ] Search by extension (e.g. ".jpg", ".png") [HIGH]
+            -   [ ] Optional consolidation of extension synonyms (i.e. ".jpg" can equal ".jpeg") [LOW]
+        -   [ ] Search by media type (e.g. "image", "video", "document") [MEDIUM]
     -   [ ] Field content search [HIGH] [#272](https://github.com/TagStudioDev/TagStudio/issues/272)
     -   [ ] HAS operator for composition tags [HIGH]
     -   [ ] OCR search [LOW]
