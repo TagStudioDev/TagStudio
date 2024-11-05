@@ -401,3 +401,15 @@ def test_library_prefs_multiple_identical_vals():
     # accessing .value should raise exception
     with pytest.raises(AttributeError):
         assert TestPrefs.BAR.value
+
+def test_filetype_search(library, filetype, num_of_filetype):
+    results = library.search_library(
+        FilterState(filetype=filetype)
+    )
+    assert results == num_of_filetype
+
+def test_mediatype_search(library, mediatype, num_of_mediatype):
+    results = library.search_library(
+        FilterState(mediatype=mediatype)
+    )
+    assert results == num_of_mediatype

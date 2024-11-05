@@ -7,6 +7,7 @@ from os import makedirs
 from pathlib import Path
 from typing import Any, Iterator, Type
 from uuid import uuid4
+from ...media_types import MediaCategories
 
 import structlog
 from sqlalchemy import (
@@ -438,6 +439,14 @@ class Library:
                 )
             elif search.path:
                 statement = statement.where(Entry.path.ilike(f"%{search.path}%"))
+            elif search.filetype:
+                statement = statement.where(Entry.suffix.ilike(f"%{search.filetype}%"))
+            elif search.mediatype:
+                for media_cat in MediaCategories.ALL_CATEGORIES:
+                    if search.mediatype == media_cat.media_type:
+                        # need this to search db - suffixes have no dot separator, but extensions do
+                        file_suffixes = map(lambda x: x.replace(".", ""), media_cat.extensions)
+                        statement = statement.where(Entry.suffix.in_(file_suffixes))
 
             extensions = self.prefs(LibraryPrefs.EXTENSION_LIST)
             is_exclude_list = self.prefs(LibraryPrefs.IS_EXCLUDE_LIST)

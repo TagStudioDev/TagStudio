@@ -77,11 +77,15 @@ class FilterState:
     path: Path | str | None = None
     # file name
     name: str | None = None
+    # file type
+    filetype: str | None = None
+    mediatype: str | None = None
 
     # a generic query to be parsed
     query: str | None = None
 
     def __post_init__(self):
+        print("query: ", self.query)
         # strip values automatically
         if query := (self.query and self.query.strip()):
             # parse the value
@@ -101,6 +105,10 @@ class FilterState:
                 self.name = value
             elif kind == "id":
                 self.id = int(self.id) if str(self.id).isnumeric() else self.id
+            elif kind == "filetype":
+                self.filetype = value
+            elif kind == "mediatype":
+                self.mediatype = value
 
         else:
             self.tag = self.tag and self.tag.strip()
