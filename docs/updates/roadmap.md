@@ -116,6 +116,7 @@ Features are broken up into the following priority levels, with nested prioritie
     -   [ ] Tag Search [HIGH]
     -   [ ] Pinned Tags [HIGH]
 -   [ ] Configurable Thumbnails [MEDIUM]
+    -   [ ] Custom thumbnail override [HIGH]
     -   [ ] Toggle File Extension Label [MEDIUM]
     -   [ ] Toggle Duration Label [MEDIUM]
     -   [ ] Custom Tag Badges [LOW]
