@@ -51,6 +51,7 @@ from src.qt.helpers.qbutton_wrapper import QPushButtonWrapper
 from src.qt.helpers.rounded_pixmap_style import RoundedPixmapStyle
 from src.qt.modals.add_field import AddFieldModal
 from src.qt.platform_strings import PlatformStrings
+from src.qt.widgets.audio_player import AudioPlayer
 from src.qt.widgets.fields import FieldContainer
 from src.qt.widgets.panel import PanelModal
 from src.qt.widgets.tag_box import TagBoxWidget
@@ -163,6 +164,9 @@ class PreviewPanel(QWidget):
             )
         )
 
+        self.audio_player = AudioPlayer(driver)
+        self.audio_player.hide()
+
         image_layout.addWidget(self.preview_img)
         image_layout.setAlignment(self.preview_img, Qt.AlignmentFlag.AlignCenter)
         image_layout.addWidget(self.preview_gif)
@@ -267,6 +271,7 @@ class PreviewPanel(QWidget):
         )
 
         splitter.addWidget(self.image_container)
+        splitter.addWidget(self.audio_player)
         splitter.addWidget(info_section)
         splitter.addWidget(self.libs_flow_container)
         splitter.setStretchFactor(1, 2)
@@ -534,6 +539,8 @@ class PreviewPanel(QWidget):
             self.preview_img.show()
             self.preview_vid.stop()
             self.preview_vid.hide()
+            self.audio_player.hide()
+            self.audio_player.stop()
             self.preview_gif.hide()
             self.selected = list(self.driver.selected)
             self.add_field_button.setHidden(True)
@@ -566,6 +573,8 @@ class PreviewPanel(QWidget):
             self.preview_img.show()
             self.preview_vid.stop()
             self.preview_vid.hide()
+            self.audio_player.stop()
+            self.audio_player.hide()
             self.preview_gif.hide()
 
             # If a new selection is made, update the thumbnail and filepath.
@@ -637,6 +646,9 @@ class PreviewPanel(QWidget):
                             rawpy._rawpy.LibRawFileUnsupportedError,
                         ):
                             pass
+                    elif MediaCategories.is_ext_in_category(ext, MediaCategories.AUDIO_TYPES):
+                        self.audio_player.show()
+                        self.audio_player.load_file(filepath)
                     elif MediaCategories.is_ext_in_category(
                         ext, MediaCategories.VIDEO_TYPES
                     ) and is_readable_video(filepath):
@@ -743,6 +755,8 @@ class PreviewPanel(QWidget):
             self.preview_gif.hide()
             self.preview_vid.stop()
             self.preview_vid.hide()
+            self.audio_player.stop()
+            self.audio_player.hide()
             self.update_date_label()
             if self.selected != self.driver.selected:
                 self.file_label.setText(f"<b>{len(self.driver.selected)}</b> Items Selected")
