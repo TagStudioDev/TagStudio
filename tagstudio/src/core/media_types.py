@@ -193,7 +193,6 @@ class MediaCategories:
         ".apng",
         ".gif",
         ".webp",
-        ".jxl",
     }
     _IMAGE_RAW_SET: set[str] = {
         ".arw",
