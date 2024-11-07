@@ -85,7 +85,6 @@ class FilterState:
     query: str | None = None
 
     def __post_init__(self):
-        print("query: ", self.query)
         # strip values automatically
         if query := (self.query and self.query.strip()):
             # parse the value

@@ -3,11 +3,11 @@ import shutil
 import unicodedata
 from dataclasses import dataclass
 from datetime import UTC, datetime
+from ...media_types import MediaCategories
 from os import makedirs
 from pathlib import Path
 from typing import Any, Iterator, Type
 from uuid import uuid4
-from ...media_types import MediaCategories
 
 import structlog
 from sqlalchemy import (
