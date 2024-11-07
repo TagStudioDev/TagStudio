@@ -32,6 +32,7 @@ class MediaType(str, Enum):
     INSTALLER: str = "installer"
     MATERIAL: str = "material"
     MODEL: str = "model"
+    OPEN_DOCUMENT: str = "open_document"
     PACKAGE: str = "package"
     PDF: str = "pdf"
     PLAINTEXT: str = "plaintext"
@@ -234,6 +235,18 @@ class MediaCategories:
     _INSTALLER_SET: set[str] = {".appx", ".msi", ".msix"}
     _MATERIAL_SET: set[str] = {".mtl"}
     _MODEL_SET: set[str] = {".3ds", ".fbx", ".obj", ".stl"}
+    _OPEN_DOCUMENT_SET: set[str] = {
+        ".fodg",
+        ".fodp",
+        ".fods",
+        ".fodt",
+        ".mscz",
+        ".odf",
+        ".odg",
+        ".odp",
+        ".ods",
+        ".odt",
+    }
     _PACKAGE_SET: set[str] = {
         ".aab",
         ".akp",
@@ -417,6 +430,11 @@ class MediaCategories:
         extensions=_MODEL_SET,
         is_iana=True,
     )
+    OPEN_DOCUMENT_TYPES: MediaCategory = MediaCategory(
+        media_type=MediaType.OPEN_DOCUMENT,
+        extensions=_OPEN_DOCUMENT_SET,
+        is_iana=False,
+    )
     PACKAGE_TYPES: MediaCategory = MediaCategory(
         media_type=MediaType.PACKAGE,
         extensions=_PACKAGE_SET,
@@ -487,6 +505,7 @@ class MediaCategories:
         INSTALLER_TYPES,
         MATERIAL_TYPES,
         MODEL_TYPES,
+        OPEN_DOCUMENT_TYPES,
         PACKAGE_TYPES,
         PDF_TYPES,
         PLAINTEXT_TYPES,
