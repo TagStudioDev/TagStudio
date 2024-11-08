@@ -3,7 +3,6 @@ import shutil
 import unicodedata
 from dataclasses import dataclass
 from datetime import UTC, datetime
-from ...media_types import MediaCategories
 from os import makedirs
 from pathlib import Path
 from typing import Any, Iterator, Type
@@ -37,6 +36,7 @@ from ...constants import (
     TS_FOLDER_NAME,
 )
 from ...enums import LibraryPrefs
+from ...media_types import MediaCategories
 from .db import make_tables
 from .enums import FieldTypeEnum, FilterState, TagColor
 from .fields import (
