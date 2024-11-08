@@ -403,11 +403,26 @@ def test_library_prefs_multiple_identical_vals():
         assert TestPrefs.BAR.value
 
 
+@pytest.mark.parametrize(
+    ["filetype", "num_of_filetype"],
+    [
+        ("md", 1),
+        ("txt", 1),
+        ("png", 0)
+    ]
+)
 def test_filetype_search(library, filetype, num_of_filetype):
     results = library.search_library(FilterState(filetype=filetype))
-    assert results == num_of_filetype
+    assert len(results.items) == num_of_filetype
 
 
+@pytest.mark.parametrize(
+    ["mediatype", "num_of_mediatype"],
+    [
+        ("plaintext", 2),
+        ("image", 0)
+    ]
+)
 def test_mediatype_search(library, mediatype, num_of_mediatype):
     results = library.search_library(FilterState(mediatype=mediatype))
-    assert results == num_of_mediatype
+    assert len(results.items) == num_of_mediatype
