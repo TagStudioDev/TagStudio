@@ -92,8 +92,8 @@ A Python linter and code formatter. Ruff uses the `pyproject.toml` as its config
 
 #### Running Locally
 
-- Lint code by moving into the `/tagstudio` directory with `cd tagstudio` and running `ruff --config ../pyproject.toml`.
-- Format code with `ruff format` inside the repository directory
+- Lint code with `ruff check` and format code with `ruff format` inside the repository directory.
+- For more information, see the [ruff configuration discovery docs](https://docs.astral.sh/ruff/configuration/#config-file-discovery).
 
 Ruff is also available as a VS Code [extension](https://marketplace.visualstudio.com/items?itemName=charliermarsh.ruff), PyCharm [plugin](https://plugins.jetbrains.com/plugin/20574-ruff), and [more](https://docs.astral.sh/ruff/integrations/).
 
