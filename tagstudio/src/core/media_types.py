@@ -61,6 +61,7 @@ class MediaCategory:
 
     media_type: MediaType
     extensions: set[str]
+    name: str
     is_iana: bool = False
 
 
@@ -326,146 +327,175 @@ class MediaCategories:
         media_type=MediaType.ADOBE_PHOTOSHOP,
         extensions=_ADOBE_PHOTOSHOP_SET,
         is_iana=False,
+        name="photoshop",
     )
     AFFINITY_PHOTO_TYPES: MediaCategory = MediaCategory(
         media_type=MediaType.AFFINITY_PHOTO,
         extensions=_AFFINITY_PHOTO_SET,
         is_iana=False,
+        name="affinity photo",
     )
     ARCHIVE_TYPES: MediaCategory = MediaCategory(
         media_type=MediaType.ARCHIVE,
         extensions=_ARCHIVE_SET,
         is_iana=False,
+        name="archive",
     )
     AUDIO_MIDI_TYPES: MediaCategory = MediaCategory(
         media_type=MediaType.AUDIO_MIDI,
         extensions=_AUDIO_MIDI_SET,
         is_iana=False,
+        name="audio midi",
     )
     AUDIO_TYPES: MediaCategory = MediaCategory(
         media_type=MediaType.AUDIO,
         extensions=_AUDIO_SET | _AUDIO_MIDI_SET,
         is_iana=True,
+        name="audio",
     )
     BLENDER_TYPES: MediaCategory = MediaCategory(
         media_type=MediaType.BLENDER,
         extensions=_BLENDER_SET,
         is_iana=False,
+        name="blender",
     )
     DATABASE_TYPES: MediaCategory = MediaCategory(
         media_type=MediaType.DATABASE,
         extensions=_DATABASE_SET,
         is_iana=False,
+        name="database",
     )
     DISK_IMAGE_TYPES: MediaCategory = MediaCategory(
         media_type=MediaType.DISK_IMAGE,
         extensions=_DISK_IMAGE_SET,
         is_iana=False,
+        name="disk image",
     )
     DOCUMENT_TYPES: MediaCategory = MediaCategory(
         media_type=MediaType.DOCUMENT,
         extensions=_DOCUMENT_SET,
         is_iana=False,
+        name="document",
     )
     EBOOK_TYPES: MediaCategory = MediaCategory(
         media_type=MediaType.EBOOK,
         extensions=_EBOOK_SET,
         is_iana=False,
+        name="ebook",
     )
     FONT_TYPES: MediaCategory = MediaCategory(
         media_type=MediaType.FONT,
         extensions=_FONT_SET,
         is_iana=True,
+        name="font",
     )
     IMAGE_ANIMATED_TYPES: MediaCategory = MediaCategory(
         media_type=MediaType.IMAGE_ANIMATED,
         extensions=_IMAGE_ANIMATED_SET,
         is_iana=False,
+        name="animated image",
     )
     IMAGE_RAW_TYPES: MediaCategory = MediaCategory(
         media_type=MediaType.IMAGE_RAW,
         extensions=_IMAGE_RAW_SET,
         is_iana=False,
+        name="raw image",
     )
     IMAGE_VECTOR_TYPES: MediaCategory = MediaCategory(
         media_type=MediaType.IMAGE_VECTOR,
         extensions=_IMAGE_VECTOR_SET,
         is_iana=False,
+        name="vector image",
     )
     IMAGE_RASTER_TYPES: MediaCategory = MediaCategory(
         media_type=MediaType.IMAGE,
         extensions=_IMAGE_RASTER_SET,
         is_iana=False,
+        name="raster image",
     )
     IMAGE_TYPES: MediaCategory = MediaCategory(
         media_type=MediaType.IMAGE,
         extensions=_IMAGE_RASTER_SET | _IMAGE_RAW_SET | _IMAGE_VECTOR_SET,
         is_iana=True,
+        name="image",
     )
     INSTALLER_TYPES: MediaCategory = MediaCategory(
         media_type=MediaType.INSTALLER,
         extensions=_INSTALLER_SET,
         is_iana=False,
+        name="installer",
     )
     MATERIAL_TYPES: MediaCategory = MediaCategory(
         media_type=MediaType.MATERIAL,
         extensions=_MATERIAL_SET,
         is_iana=False,
+        name="material",
     )
     MODEL_TYPES: MediaCategory = MediaCategory(
         media_type=MediaType.MODEL,
         extensions=_MODEL_SET,
         is_iana=True,
+        name="model",
     )
     PACKAGE_TYPES: MediaCategory = MediaCategory(
         media_type=MediaType.PACKAGE,
         extensions=_PACKAGE_SET,
         is_iana=False,
+        name="package",
     )
     PDF_TYPES: MediaCategory = MediaCategory(
         media_type=MediaType.PDF,
         extensions=_PDF_SET,
         is_iana=False,
+        name="pdf",
     )
     PLAINTEXT_TYPES: MediaCategory = MediaCategory(
         media_type=MediaType.PLAINTEXT,
         extensions=_PLAINTEXT_SET,
         is_iana=False,
+        name="plaintext",
     )
     PRESENTATION_TYPES: MediaCategory = MediaCategory(
         media_type=MediaType.PRESENTATION,
         extensions=_PRESENTATION_SET,
         is_iana=False,
+        name="presentation",
     )
     PROGRAM_TYPES: MediaCategory = MediaCategory(
         media_type=MediaType.PROGRAM,
         extensions=_PROGRAM_SET,
         is_iana=False,
+        name="program",
     )
     SHORTCUT_TYPES: MediaCategory = MediaCategory(
         media_type=MediaType.SHORTCUT,
         extensions=_SHORTCUT_SET,
         is_iana=False,
+        name="shortcut",
     )
     SOURCE_ENGINE_TYPES: MediaCategory = MediaCategory(
         media_type=MediaType.SOURCE_ENGINE,
         extensions=_SOURCE_ENGINE_SET,
         is_iana=False,
+        name="source engine",
     )
     SPREADSHEET_TYPES: MediaCategory = MediaCategory(
         media_type=MediaType.SPREADSHEET,
         extensions=_SPREADSHEET_SET,
         is_iana=False,
+        name="spreadsheet",
     )
     TEXT_TYPES: MediaCategory = MediaCategory(
         media_type=MediaType.TEXT,
         extensions=_DOCUMENT_SET | _PLAINTEXT_SET,
         is_iana=True,
+        name="text",
     )
     VIDEO_TYPES: MediaCategory = MediaCategory(
         media_type=MediaType.VIDEO,
         extensions=_VIDEO_SET,
         is_iana=True,
+        name="video",
     )
 
     ALL_CATEGORIES: list[MediaCategory] = [
