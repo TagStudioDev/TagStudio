@@ -90,6 +90,7 @@ class FilterState:
             # parse the value
             if ":" in query:
                 kind, _, value = query.partition(":")
+                value = value.replace('"', "")
             else:
                 # default to tag search
                 kind, value = "tag", query
