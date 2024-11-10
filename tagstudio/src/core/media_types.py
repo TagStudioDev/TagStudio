@@ -453,6 +453,7 @@ class MediaCategories:
         media_type=MediaType.OPEN_DOCUMENT,
         extensions=_OPEN_DOCUMENT_SET,
         is_iana=False,
+        name="open document",
     )
     PACKAGE_TYPES: MediaCategory = MediaCategory(
         media_type=MediaType.PACKAGE,
