@@ -5,12 +5,10 @@
 
 import typing
 
-from PySide6.QtCore import Qt, QThreadPool
+from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QHBoxLayout, QLabel, QPushButton, QVBoxLayout, QWidget
 from src.core.library import Library
 from src.core.utils.missing_files import MissingRegistry
-from src.qt.helpers.custom_runnable import CustomRunnable
-from src.qt.helpers.function_iterator import FunctionIterator
 from src.qt.modals.delete_unlinked import DeleteUnlinkedEntriesModal
 from src.qt.modals.merge_dupe_entries import MergeDuplicateEntries
 from src.qt.modals.relink_unlinked import RelinkUnlinkedEntries
@@ -85,7 +83,7 @@ class FixUnlinkedEntriesModal(QWidget):
         self.delete_modal = DeleteUnlinkedEntriesModal(self.driver, self.tracker)
         self.delete_modal.done.connect(
             lambda: (
-                self.set_missing_count(self.tracker.missing_files_count),
+                self.set_missing_count(),
                 # refresh the grid
                 self.driver.filter_items(),
             )
@@ -125,23 +123,19 @@ class FixUnlinkedEntriesModal(QWidget):
             maximum=self.lib.entries_count,
         )
 
-        pw.show()
-
-        iterator = FunctionIterator(self.tracker.refresh_missing_files)
-        iterator.value.connect(lambda v: pw.update_progress(v + 1))
-        r = CustomRunnable(iterator.run)
-        QThreadPool.globalInstance().start(r)
-        r.done.connect(
-            lambda: (
-                pw.hide(),
-                pw.deleteLater(),
-                self.set_missing_count(self.tracker.missing_files_count),
-                self.delete_modal.refresh_list(),
-            )
+        pw.from_iterable_function(
+            self.tracker.refresh_missing_files,
+            None,
+            self.set_missing_count,
+            self.delete_modal.refresh_list,
         )
 
-    def set_missing_count(self, count: int):
-        self.missing_count = count
+    def set_missing_count(self, count: int | None = None):
+        if count is not None:
+            self.missing_count = count
+        else:
+            self.missing_count = self.tracker.missing_files_count
+
         if self.missing_count < 0:
             self.search_button.setDisabled(True)
             self.delete_button.setDisabled(True)

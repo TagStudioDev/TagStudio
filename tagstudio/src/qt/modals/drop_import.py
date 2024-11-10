@@ -4,10 +4,10 @@
 import enum
 import shutil
 from pathlib import Path
-from typing import TYPE_CHECKING, Callable
+from typing import TYPE_CHECKING
 
 import structlog
-from PySide6.QtCore import Qt, QThreadPool, QUrl
+from PySide6.QtCore import Qt, QUrl
 from PySide6.QtGui import QStandardItem, QStandardItemModel
 from PySide6.QtWidgets import (
     QHBoxLayout,
@@ -17,8 +17,6 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
-from src.qt.helpers.custom_runnable import CustomRunnable
-from src.qt.helpers.function_iterator import FunctionIterator
 from src.qt.widgets.progress import ProgressWidget
 
 if TYPE_CHECKING:
@@ -168,12 +166,16 @@ class DropImportModal(QWidget):
 
             return text
 
-        self.create_progress_bar(
+        pw = ProgressWidget(
+            window_title="Import Files",
+            label_text="Importing New Files...",
+            cancel_button_text=None,
+            minimum=0,
+            maximum=len(self.files),
+        )
+
+        pw.from_iterable_function(
             self.copy_files,
-            "Import Files",
-            "Importing New Files...",
-            None,
-            len(self.files),
             displayed_text,
             self.driver.add_new_files_callback,
             self.deleteLater,
@@ -225,32 +227,3 @@ class DropImportModal(QWidget):
             )
             index += 1
         return filepath.name
-
-    def create_progress_bar(
-        self,
-        function: Callable,
-        title: str,
-        text: str,
-        cancel_button_text: str | None,
-        max_value: int,
-        update_label_callback: Callable,
-        *done_callback,
-    ):
-        """Displays a progress widget from an iterable function."""
-        iterator = FunctionIterator(function)
-
-        pw = ProgressWidget(
-            window_title=title,
-            label_text=text,
-            cancel_button_text=cancel_button_text,
-            minimum=0,
-            maximum=max_value,
-        )
-        pw.show()
-
-        iterator.value.connect(lambda x: pw.update_progress(x[0] + 1))
-        iterator.value.connect(lambda x: pw.update_label(update_label_callback(x)))
-
-        r = CustomRunnable(lambda: iterator.run())
-        r.done.connect(lambda: (pw.hide(), [callback() for callback in done_callback]))  # type: ignore
-        QThreadPool.globalInstance().start(r)

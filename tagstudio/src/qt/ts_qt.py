@@ -702,26 +702,6 @@ class QtDriver(DriverMixin, QObject):
 
         Threaded method.
         """
-        # pb = QProgressDialog(
-        #     f"Running Configured Macros on 1/{len(new_ids)} New Entries", None, 0, len(new_ids)
-        # )
-        # pb.setFixedSize(432, 112)
-        # pb.setWindowFlags(pb.windowFlags() & ~Qt.WindowType.WindowCloseButtonHint)
-        # pb.setWindowTitle('Running Macros')
-        # pb.setWindowModality(Qt.WindowModality.ApplicationModal)
-        # pb.show()
-
-        # r = CustomRunnable(lambda: self.new_file_macros_runnable(pb, new_ids))
-        # r.done.connect(lambda: (pb.hide(), pb.deleteLater(), self.filter_items('')))
-        # r.run()
-        # # QThreadPool.globalInstance().start(r)
-
-        # # self.main_window.statusbar.showMessage(
-        # #     f"Running configured Macros on {len(new_ids)} new Entries...", 3
-        # # )
-
-        # # pb.hide()
-
         files_count = tracker.files_count
 
         iterator = FunctionIterator(tracker.save_new_files)
@@ -733,6 +713,7 @@ class QtDriver(DriverMixin, QObject):
             maximum=files_count,
         )
         pw.show()
+
         iterator.value.connect(
             lambda x: (
                 pw.update_progress(x + 1),
