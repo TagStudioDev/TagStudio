@@ -437,7 +437,8 @@ class Library:
                     )
                 )
             elif search.path:
-                statement = statement.where(Entry.path.ilike(search.path.replace("*", "%")))
+                search_str = str(search.path).replace("*", "%")
+                statement = statement.where(Entry.path.ilike(search_str))
 
             extensions = self.prefs(LibraryPrefs.EXTENSION_LIST)
             is_exclude_list = self.prefs(LibraryPrefs.IS_EXCLUDE_LIST)
