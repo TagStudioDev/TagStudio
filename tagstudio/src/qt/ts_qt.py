@@ -586,6 +586,7 @@ class QtDriver(DriverMixin, QObject):
 
         self.lib.close()
 
+        self.thumb_job_queue.queue.clear()
         if is_shutdown:
             # no need to do other things on shutdown
             return
