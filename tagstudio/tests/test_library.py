@@ -115,9 +115,7 @@ def test_library_search(library, generate_tag, entry_full):
     tag = list(entry_full.tags)[0]
 
     results = library.search_library(
-        FilterState(
-            tag=tag.name,
-        ),
+        FilterState(tag=tag.name),
     )
 
     assert results.total_count == 1

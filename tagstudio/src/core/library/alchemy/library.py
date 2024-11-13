@@ -24,6 +24,7 @@ from sqlalchemy import (
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import (
     Session,
+    aliased,
     contains_eager,
     make_transient,
     selectinload,
@@ -409,13 +410,18 @@ class Library:
             statement = select(Entry)
 
             if search.tag:
+                SubtagAlias = aliased(Tag)  # noqa: N806
                 statement = (
                     statement.join(Entry.tag_box_fields)
                     .join(TagBoxField.tags)
+                    .outerjoin(Tag.aliases)
+                    .outerjoin(SubtagAlias, Tag.subtags)
                     .where(
                         or_(
                             Tag.name.ilike(search.tag),
                             Tag.shorthand.ilike(search.tag),
+                            TagAlias.name.ilike(search.tag),
+                            SubtagAlias.name.ilike(search.tag),
                         )
                     )
                 )
