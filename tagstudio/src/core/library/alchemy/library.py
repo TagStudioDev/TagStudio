@@ -440,7 +440,7 @@ class Library:
             elif search.path:
                 statement = statement.where(Entry.path.ilike(f"%{search.path}%"))
             elif search.filetype:
-                statement = statement.where(Entry.suffix.ilike(f"%{search.filetype}%"))
+                statement = statement.where(Entry.suffix.ilike(f"{search.filetype}"))
             elif search.mediatype:
                 extensions: set[str] = set[str]()
                 for media_cat in MediaCategories.ALL_CATEGORIES:
