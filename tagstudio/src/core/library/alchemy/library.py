@@ -438,7 +438,8 @@ class Library:
                     )
                 )
             elif search.path:
-                statement = statement.where(Entry.path.ilike(f"%{search.path}%"))
+                search_str = str(search.path).replace("*", "%")
+                statement = statement.where(Entry.path.ilike(search_str))
             elif search.filetype:
                 statement = statement.where(Entry.suffix.ilike(f"{search.filetype}"))
             elif search.mediatype:
