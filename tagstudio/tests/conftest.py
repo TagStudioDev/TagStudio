@@ -22,6 +22,37 @@ def cwd():
 
 
 @pytest.fixture
+def file_mediatypes_library():
+    lib = Library()
+
+    status = lib.open_library(pathlib.Path(""), ":memory:")
+    assert status.success
+
+    entry1 = Entry(
+        folder=lib.folder,
+        path=pathlib.Path("foo.png"),
+        fields=lib.default_fields,
+    )
+
+    entry2 = Entry(
+        folder=lib.folder,
+        path=pathlib.Path("bar.png"),
+        fields=lib.default_fields,
+    )
+
+    entry3 = Entry(
+        folder=lib.folder,
+        path=pathlib.Path("baz.apng"),
+        fields=lib.default_fields,
+    )
+
+    assert lib.add_entries([entry1, entry2, entry3])
+    assert len(lib.tags) == 2
+
+    return lib
+
+
+@pytest.fixture
 def library(request):
     # when no param is passed, use the default
     library_path = "/dev/null/"
