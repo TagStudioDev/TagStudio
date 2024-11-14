@@ -3,18 +3,18 @@
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
 
-import math
 import sys
 
 import structlog
-from PySide6 import QtCore
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import (
     QApplication,
     QComboBox,
+    QFrame,
     QLabel,
     QLineEdit,
     QPushButton,
+    QScrollArea,
     QTableWidget,
     QTableWidgetItem,
     QVBoxLayout,
@@ -23,7 +23,6 @@ from PySide6.QtWidgets import (
 from src.core.library import Library, Tag
 from src.core.library.alchemy.enums import TagColor
 from src.core.palette import ColorType, get_tag_color
-from src.qt.flowlayout import FlowLayout
 from src.qt.modals.tag_search import TagSearchPanel
 from src.qt.widgets.panel import PanelModal, PanelWidget
 from src.qt.widgets.tag import TagWidget
@@ -90,7 +89,6 @@ class BuildTagPanel(PanelWidget):
         self.alias_add_button.setText("+")
 
         self.alias_add_button.clicked.connect(lambda: self.add_alias_callback())
-        self.aliases_layout.addWidget(self.alias_add_button)
 
         # Subtags ------------------------------------------------------------
 
@@ -105,42 +103,28 @@ class BuildTagPanel(PanelWidget):
         self.subtags_title.setText("Parent Tags")
         self.subtags_layout.addWidget(self.subtags_title)
 
-        self.subtag_flow_widget = QWidget()
-        self.subtag_flow_layout = FlowLayout(self.subtag_flow_widget)
-        self.subtag_flow_layout.setContentsMargins(0, 0, 0, 0)
-        self.subtag_flow_layout.enable_grid_optimizations(value=False)
+        self.scroll_contents = QWidget()
+        self.subtags_scroll_layout = QVBoxLayout(self.scroll_contents)
+        self.subtags_scroll_layout.setContentsMargins(6, 0, 6, 0)
+        self.subtags_scroll_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
+
+        self.scroll_area = QScrollArea()
+        # self.scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOn)
+        self.scroll_area.setWidgetResizable(True)
+        self.scroll_area.setFrameShadow(QFrame.Shadow.Plain)
+        self.scroll_area.setFrameShape(QFrame.Shape.NoFrame)
+        self.scroll_area.setWidget(self.scroll_contents)
+        # self.scroll_area.setMinimumHeight(60)
+
+        self.subtags_layout.addWidget(self.scroll_area)
 
         self.subtags_add_button = QPushButton()
-        self.subtags_add_button.setCursor(Qt.CursorShape.PointingHandCursor)
         self.subtags_add_button.setText("+")
-        self.subtags_add_button.setToolTip("CTRL + P")
-        self.subtags_add_button.setMinimumSize(23, 23)
-        self.subtags_add_button.setMaximumSize(23, 23)
-        self.subtags_add_button.setShortcut(
-            QtCore.QKeyCombination(
-                QtCore.Qt.KeyboardModifier(QtCore.Qt.KeyboardModifier.ControlModifier),
-                QtCore.Qt.Key.Key_P,
-            )
-        )
-        self.subtags_add_button.setStyleSheet(
-            f"QPushButton{{"
-            f"background: #1e1e1e;"
-            f"color: #FFFFFF;"
-            f"font-weight: bold;"
-            f"border-color: #333333;"
-            f"border-radius: 6px;"
-            f"border-style:solid;"
-            f"border-width:{math.ceil(self.devicePixelRatio())}px;"
-            f"padding-bottom: 5px;"
-            f"font-size: 20px;"
-            f"}}"
-            f"QPushButton::hover"
-            f"{{"
-            f"border-color: #CCCCCC;"
-            f"background: #555555;"
-            f"}}"
-        )
-        self.subtag_flow_layout.addWidget(self.subtags_add_button)
+        tsp = TagSearchPanel(self.lib)
+        tsp.tag_chosen.connect(lambda x: self.add_subtag_callback(x))
+        self.add_tag_modal = PanelModal(tsp, "Add Parent Tags", "Add Parent Tags")
+        self.subtags_add_button.clicked.connect(self.add_tag_modal.show)
+        self.subtags_layout.addWidget(self.subtags_add_button)
 
         exclude_ids: list[int] = list()
         if tag is not None:
@@ -186,8 +170,8 @@ class BuildTagPanel(PanelWidget):
         self.root_layout.addWidget(self.shorthand_widget)
         self.root_layout.addWidget(self.aliases_widget)
         self.root_layout.addWidget(self.aliases_table)
+        self.root_layout.addWidget(self.alias_add_button)
         self.root_layout.addWidget(self.subtags_widget)
-        self.root_layout.addWidget(self.subtag_flow_widget)
         self.root_layout.addWidget(self.color_widget)
 
         self.subtag_ids: set[int] = set()
@@ -244,16 +228,19 @@ class BuildTagPanel(PanelWidget):
         self._set_aliases()
 
     def set_subtags(self):
-        while self.subtag_flow_layout.itemAt(1):
-            self.subtag_flow_layout.takeAt(0).widget().deleteLater()
+        while self.subtags_scroll_layout.itemAt(0):
+            self.subtags_scroll_layout.takeAt(0).widget().deleteLater()
 
+        c = QWidget()
+        layout = QVBoxLayout(c)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(3)
         for tag_id in self.subtag_ids:
             tag = self.lib.get_tag(tag_id)
             tw = TagWidget(tag, has_edit=False, has_remove=True)
             tw.on_remove.connect(lambda t=tag_id: self.remove_subtag_callback(t))
-            self.subtag_flow_layout.addWidget(tw)
-
-        self.subtag_flow_layout.addWidget(self.subtags_add_button)
+            layout.addWidget(tw)
+        self.subtags_scroll_layout.addWidget(c)
 
     def add_aliases(self):
         names: set[str] = set()

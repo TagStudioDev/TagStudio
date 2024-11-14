@@ -85,7 +85,7 @@ def test_build_tag_panel_set_subtags(library, generate_tag):
     panel: BuildTagPanel = BuildTagPanel(library, child)
 
     assert len(panel.subtag_ids) == 1
-    assert panel.subtag_flow_layout.count() == 2
+    assert panel.subtags_scroll_layout.count() == 1
 
 
 def test_build_tag_panel_add_aliases(library, generate_tag):
