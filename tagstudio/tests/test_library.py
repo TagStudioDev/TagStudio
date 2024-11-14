@@ -420,7 +420,7 @@ def test_path_search_glob_both_sides(library: Library):
     assert results.total_count == 1
     assert len(results.items) == 1
 
-    
+
 @pytest.mark.parametrize(["filetype", "num_of_filetype"], [("md", 1), ("txt", 1), ("png", 0)])
 def test_filetype_search(library, filetype, num_of_filetype):
     results = library.search_library(FilterState(filetype=filetype))
