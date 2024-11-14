@@ -157,6 +157,7 @@ These version milestones are rough estimations for when the previous core featur
 ### 9.5 (Alpha)
 
 -   [ ] SQL backend [HIGH]
+-   [ ] Translations _(Any applicable)_ [MEDIUM]
 -   [ ] Multiple Root Directories per Library [HIGH]
 -   [ ] Tags [HIGH]
     -   [ ] Deleting Tags [HIGH]
