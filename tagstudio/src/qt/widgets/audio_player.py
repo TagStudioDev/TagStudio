@@ -17,6 +17,7 @@ from PySide6.QtWidgets import QHBoxLayout, QPushButton, QSlider, QVBoxLayout, QW
 if typing.TYPE_CHECKING:
     from src.qt.ts_qt import QtDriver
 
+
 class AudioPlayer(QWidget):
     """A basic audio player widget.
 
@@ -35,11 +36,16 @@ class AudioPlayer(QWidget):
 
         # Set up the audio player
         self.player = QMediaPlayer(self)
-        self.player.setAudioOutput(
-            QAudioOutput(QMediaDevices().defaultAudioOutput(), self.player)
-        )
+        self.player.setAudioOutput(QAudioOutput(QMediaDevices().defaultAudioOutput(), self.player))
         self.player.positionChanged.connect(self.position_changed)
         self.player.mediaStatusChanged.connect(self.media_status_changed)
+
+        # Used to keep track of play state.
+        # It would be nice if we could use QMediaPlayer.PlaybackState,
+        # but this will always show StoppedState when changing
+        # tracks. Therefore, we wouldn't know if the previous
+        # state was paused or playing
+        self.is_paused = False
 
         # widgets
         self.base_layout = QVBoxLayout(self)
@@ -63,17 +69,17 @@ class AudioPlayer(QWidget):
         media_btns_layout = QHBoxLayout()
 
         self.media_play_btn = QPushButton("Play", self)
-        self.media_play_btn.clicked.connect(self.play_clicked)
+        self.media_play_btn.clicked.connect(self.play)
         self.media_play_btn.hide()
 
         self.media_pause_btn = QPushButton("Pause", self)
-        self.media_pause_btn.clicked.connect(self.pause_clicked)
+        self.media_pause_btn.clicked.connect(self.pause)
 
         self.media_mute_btn = QPushButton("Mute", self)
-        self.media_mute_btn.clicked.connect(self.mute_clicked)
+        self.media_mute_btn.clicked.connect(self.mute)
 
         self.media_unmute_btn = QPushButton("Unmute", self)
-        self.media_unmute_btn.clicked.connect(self.unmute_clicked)
+        self.media_unmute_btn.clicked.connect(self.unmute)
         self.media_unmute_btn.hide()
 
         # load svg files
@@ -101,28 +107,30 @@ class AudioPlayer(QWidget):
         media_btns_layout.addWidget(self.media_unmute_btn)
         self.base_layout.addLayout(media_btns_layout)
 
-    def pause_clicked(self):
-        self.media_pause_btn.hide()
-        self.player.pause()
-        self.media_play_btn.show()
-
-    def play_clicked(self):
+    def play(self):
         # replay because we've reached the end of the track
         if self.pslider.value() == self.player.duration():
             self.player.setPosition(0)
-            
+
         self.media_play_btn.hide()
         self.player.play()
         self.media_pause_btn.show()
+        self.is_paused = False
 
-    def mute_clicked(self):
+    def pause(self):
+        self.media_pause_btn.hide()
+        self.player.pause()
+        self.media_play_btn.show()
+        self.is_paused = True
+
+    def mute(self):
         self.media_mute_btn.hide()
         self.player.audioOutput().setMuted(True)
         self.media_unmute_btn.show()
 
-    def unmute_clicked(self):
+    def unmute(self):
         self.media_unmute_btn.hide()
-        self.player.audioOutput().setMuted(False) 
+        self.player.audioOutput().setMuted(False)
         self.media_mute_btn.show()
 
     def slider_pressed(self):
@@ -132,7 +140,7 @@ class AudioPlayer(QWidget):
         self.ps_down = False
         was_playing = self.player.isPlaying()
         self.player.setPosition(self.pslider.value())
-        
+
         # Setting position causes the player to start playing again.
         # We should reset back to initial state.
         if not was_playing:
@@ -146,10 +154,11 @@ class AudioPlayer(QWidget):
             return
 
         self.pslider.setValue(position)
-        if self.player.duration() == position: 
+        if self.player.duration() == position:
             self.player.pause()
             self.media_pause_btn.hide()
             self.media_play_btn.show()
+            self.player.setPosition(0)
 
     def close(self, *args, **kwargs) -> bool:
         self.player.stop()
@@ -158,9 +167,12 @@ class AudioPlayer(QWidget):
     def load_file(self, filepath: Path) -> None:
         """Set the source of the QMediaPlayer and play."""
         self.filepath = filepath
-        self.player.stop()
-        self.player.setSource(QUrl().fromLocalFile(self.filepath))
-        self.player.play()
+        if not self.is_paused:
+            self.player.stop()
+            self.player.setSource(QUrl().fromLocalFile(self.filepath))
+            self.play()
+        else:
+            self.player.setSource(QUrl().fromLocalFile(self.filepath))
 
     def stop(self) -> None:
         """Clear the filepath and stop the player."""
