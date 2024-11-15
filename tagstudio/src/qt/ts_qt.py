@@ -11,6 +11,7 @@ import ctypes
 import dataclasses
 import math
 import os
+import re
 import sys
 import time
 import webbrowser
@@ -91,6 +92,8 @@ from src.qt.widgets.panel import PanelModal
 from src.qt.widgets.preview_panel import PreviewPanel
 from src.qt.widgets.progress import ProgressWidget
 from src.qt.widgets.thumb_renderer import ThumbRenderer
+
+from ..core.media_types import MediaCategories
 
 # SIGQUIT is not defined on Windows
 if sys.platform == "win32":
@@ -444,6 +447,8 @@ class QtDriver(DriverMixin, QObject):
         menu_bar.addMenu(macros_menu)
         menu_bar.addMenu(window_menu)
         menu_bar.addMenu(help_menu)
+
+        self.main_window.searchField.textChanged.connect(self.update_completions_list)
 
         self.preview_panel = PreviewPanel(self.lib, self)
         splitter = self.main_window.splitter
@@ -947,6 +952,40 @@ class QtDriver(DriverMixin, QObject):
 
     def set_macro_menu_viability(self):
         self.autofill_action.setDisabled(not self.selected)
+
+    def update_completions_list(self, text: str) -> None:
+        matches = re.search(r"(mediatype|filetype|path|tag_id|tag):(\"?[A-Za-z0-9\ \t]+\"?)?", text)
+        if not matches:
+            return
+
+        query_type: str
+        query_value: str | None
+        query_type, query_value = matches.groups()
+
+        completion_list: list[str] = []
+
+        if query_type == "tag":
+            completion_list = list(map(lambda x: "tag:" + x.name, self.lib.tags))
+        elif query_type == "tag_id":
+            completion_list = list(map(lambda x: "tag_id:" + str(x.id), self.lib.tags))
+        elif query_type == "path":
+            completion_list = list(map(lambda x: "path:" + x, self.lib.get_paths()))
+        elif query_type == "mediatype":
+            completion_list = list(
+                map(lambda x: 'mediatype:"' + x.name + '"', MediaCategories.ALL_CATEGORIES)
+            )
+        elif query_type == "filetype":
+            extensions_list: set[str] = set()
+            for media_cat in MediaCategories.ALL_CATEGORIES:
+                extensions_list = extensions_list | media_cat.extensions
+            completion_list = list(map(lambda x: "filetype:" + x.replace(".", ""), extensions_list))
+
+        update_completion_list: bool = (
+            completion_list != self.main_window.searchFieldCompletionList.stringList()
+            or self.main_window.searchFieldCompletionList == []
+        )
+        if update_completion_list:
+            self.main_window.searchFieldCompletionList.setStringList(completion_list)
 
     def update_thumbs(self):
         """Update search thumbnails."""
