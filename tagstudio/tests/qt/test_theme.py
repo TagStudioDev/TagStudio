@@ -27,7 +27,7 @@ def test_save_palette_to_file(tmp_path: Path):
 
 
 def test_load_palette_from_file(tmp_path: Path):
-    file = tmp_path / "test_tagstudio_theme.txt"
+    file = tmp_path / "test_tagstudio_theme_2.txt"
 
     file.write_text("[Button]\nActive=invalid color\n[Window]\nDisabled=#ff0000\nActive=blue")
 
