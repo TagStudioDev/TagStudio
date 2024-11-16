@@ -55,7 +55,7 @@ class TagDatabasePanel(PanelWidget):
 
         self.create_tag_button = QPushButton()
         self.create_tag_button.setText("Create Tag")
-        self.create_tag_button.clicked.connect(lambda: self.build_tag())
+        self.create_tag_button.clicked.connect(self.build_tag)
 
         self.root_layout.addWidget(self.search_field)
         self.root_layout.addWidget(self.scroll_area)
