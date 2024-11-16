@@ -12,6 +12,7 @@ from pathlib import Path
 
 import cv2
 import numpy as np
+import pillow_jxl  # noqa: F401
 import rawpy
 import structlog
 from mutagen import MutagenError, flac, id3, mp4
@@ -617,7 +618,31 @@ class ThumbRenderer(QObject):
                 logger.error("Couldn't render thumbnail", filepath=filepath, error=e)
         return im
 
-    def _epub_cover(self, filepath: Path) -> Image.Image:
+    @classmethod
+    def _open_doc_thumb(cls, filepath: Path) -> Image.Image:
+        """Extract and render a thumbnail for an OpenDocument file.
+
+        Args:
+            filepath (Path): The path of the file.
+        """
+        file_path_within_zip = "Thumbnails/thumbnail.png"
+        im: Image.Image = None
+        with zipfile.ZipFile(filepath, "r") as zip_file:
+            # Check if the file exists in the zip
+            if file_path_within_zip in zip_file.namelist():
+                # Read the specific file into memory
+                file_data = zip_file.read(file_path_within_zip)
+                thumb_im = Image.open(BytesIO(file_data))
+                if thumb_im:
+                    im = Image.new("RGB", thumb_im.size, color="#1e1e1e")
+                    im.paste(thumb_im)
+            else:
+                logger.error("Couldn't render thumbnail", filepath=filepath)
+
+        return im
+
+    @classmethod
+    def _epub_cover(cls, filepath: Path) -> Image.Image:
         """Extracts and returns the first image found in the ePub file at the given filepath.
 
         Args:
@@ -780,7 +805,8 @@ class ThumbRenderer(QObject):
             logger.error("Couldn't render thumbnail", filepath=filepath, error=e)
         return im
 
-    def _image_vector_thumb(self, filepath: Path, size: int) -> Image.Image:
+    @classmethod
+    def _image_vector_thumb(cls, filepath: Path, size: int) -> Image.Image:
         """Render a thumbnail for a vector image, such as SVG.
 
         Args:
@@ -848,7 +874,8 @@ class ThumbRenderer(QObject):
 
         return im
 
-    def _pdf_thumb(self, filepath: Path, size: int) -> Image.Image:
+    @classmethod
+    def _pdf_thumb(cls, filepath: Path, size: int) -> Image.Image:
         """Render a thumbnail for a PDF file.
 
         filepath (Path): The path of the file.
@@ -1045,6 +1072,11 @@ class ThumbRenderer(QObject):
                     ext, MediaCategories.VIDEO_TYPES, mime_fallback=True
                 ):
                     image = self._video_thumb(_filepath)
+                # OpenDocument/OpenOffice ======================================
+                elif MediaCategories.is_ext_in_category(
+                    ext, MediaCategories.OPEN_DOCUMENT_TYPES, mime_fallback=True
+                ):
+                    image = self._open_doc_thumb(_filepath)
                 # Plain Text ===================================================
                 elif MediaCategories.is_ext_in_category(
                     ext, MediaCategories.PLAINTEXT_TYPES, mime_fallback=True

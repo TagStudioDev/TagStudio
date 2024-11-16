@@ -3,7 +3,7 @@ from tempfile import TemporaryDirectory
 
 import pytest
 from src.core.enums import DefaultEnum, LibraryPrefs
-from src.core.library.alchemy import Entry
+from src.core.library.alchemy import Entry, Library
 from src.core.library.alchemy.enums import FilterState
 from src.core.library.alchemy.fields import TextField, _FieldID
 
@@ -401,3 +401,39 @@ def test_library_prefs_multiple_identical_vals():
     # accessing .value should raise exception
     with pytest.raises(AttributeError):
         assert TestPrefs.BAR.value
+
+
+def test_path_search_glob_after(library: Library):
+    results = library.search_library(FilterState(path="foo*"))
+    assert results.total_count == 1
+    assert len(results.items) == 1
+
+
+def test_path_search_glob_in_front(library: Library):
+    results = library.search_library(FilterState(path="*bar.md"))
+    assert results.total_count == 1
+    assert len(results.items) == 1
+
+
+def test_path_search_glob_both_sides(library: Library):
+    results = library.search_library(FilterState(path="*one/two*"))
+    assert results.total_count == 1
+    assert len(results.items) == 1
+
+
+@pytest.mark.parametrize(["filetype", "num_of_filetype"], [("md", 1), ("txt", 1), ("png", 0)])
+def test_filetype_search(library, filetype, num_of_filetype):
+    results = library.search_library(FilterState(filetype=filetype))
+    assert len(results.items) == num_of_filetype
+
+
+@pytest.mark.parametrize(["filetype", "num_of_filetype"], [("png", 2), ("apng", 1), ("ng", 0)])
+def test_filetype_return_one_filetype(file_mediatypes_library, filetype, num_of_filetype):
+    results = file_mediatypes_library.search_library(FilterState(filetype=filetype))
+    assert len(results.items) == num_of_filetype
+
+
+@pytest.mark.parametrize(["mediatype", "num_of_mediatype"], [("plaintext", 2), ("image", 0)])
+def test_mediatype_search(library, mediatype, num_of_mediatype):
+    results = library.search_library(FilterState(mediatype=mediatype))
+    assert len(results.items) == num_of_mediatype
