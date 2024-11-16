@@ -1,4 +1,5 @@
 from collections.abc import Callable
+from typing import Literal
 
 from PySide6.QtCore import QSettings, Qt
 from PySide6.QtGui import QColor, QPalette
@@ -115,7 +116,7 @@ def update_palette() -> None:
     settings: QSettings = driver.settings
 
     settings.beginGroup("Appearance")
-    dark_mode_value: str = settings.value("DarkMode", -1)  # type: ignore
+    dark_mode_value: str = settings.value("DarkMode", "-1")  # type: ignore
     dark_theme_file: str | None = settings.value("DarkThemeFile", None)  # type: ignore
     light_theme_file: str | None = settings.value("LightThemeFile", None)  # type: ignore
     settings.endGroup()
@@ -129,6 +130,7 @@ def update_palette() -> None:
     # light_theme_file: str | None
     # "Path to the light theme file."
 
+    dark_mode: bool | Literal[-1]
     true_values = ("1", "yes", "true", "on")
     false_values = ("0", "no", "false", "off")
 
