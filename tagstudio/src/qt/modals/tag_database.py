@@ -15,7 +15,6 @@ from PySide6.QtWidgets import (
 from src.core.constants import RESERVED_TAG_IDS
 from src.core.library import Library, Tag
 from src.core.library.alchemy.enums import FilterState
-from src.core.library.alchemy.library import get_default_tags
 from src.qt.modals.build_tag import BuildTagPanel
 from src.qt.widgets.panel import PanelModal, PanelWidget
 from src.qt.widgets.tag import TagWidget
@@ -117,14 +116,14 @@ class TagDatabasePanel(PanelWidget):
         self.search_field.setFocus()
 
     def remove_tag(self, tag: Tag):
-        if tag.id in get_default_tags():
+        if tag.id in RESERVED_TAG_IDS:
             return
 
         self.lib.remove_tag(tag)
         self.update_tags()
 
     def edit_tag(self, tag: Tag):
-        if tag.id in get_default_tags():
+        if tag.id in RESERVED_TAG_IDS:
             return
 
         build_tag_panel = BuildTagPanel(self.lib, tag=tag)
