@@ -12,6 +12,7 @@ import structlog
 from sqlalchemy import (
     URL,
     Engine,
+    NullPool,
     and_,
     create_engine,
     delete,
@@ -29,6 +30,7 @@ from sqlalchemy.orm import (
     make_transient,
     selectinload,
 )
+from src.core.library.json.library import Library as JsonLibrary  # type: ignore
 
 from ...constants import (
     BACKUP_FOLDER_NAME,
@@ -132,7 +134,8 @@ class Library:
     engine: Engine | None
     folder: Folder | None
 
-    FILENAME: str = "ts_library.sqlite"
+    SQL_FILENAME: str = "ts_library.sqlite"
+    JSON_FILENAME: str = "ts_library.json"
 
     def close(self):
         if self.engine:
@@ -141,32 +144,72 @@ class Library:
         self.storage_path = None
         self.folder = None
 
+    def migrate_json_to_sqlite(self, json_lib: JsonLibrary):
+        folder: Folder = Folder(path=self.library_dir, uuid=str(uuid4()))
+        self.add_entries(
+            [
+                Entry(
+                    path=x.path / x.filename,
+                    folder=folder,
+                    fields=[],
+                )
+                for x in json_lib.entries
+            ]
+        )
+
+        for tag in json_lib.tags:
+            self.add_tag(
+                Tag(
+                    name=tag.name,
+                    shorthand=tag.shorthand,
+                    aliases=None,
+                    color=TagColor(1),
+                )
+            )
+
+        self.set_prefs(LibraryPrefs.EXTENSION_LIST, list(json_lib.ext_list))
+        self.set_prefs(LibraryPrefs.IS_EXCLUDE_LIST, json_lib.is_exclude_list)
+
     def open_library(self, library_dir: Path, storage_path: str | None = None) -> LibraryStatus:
         if storage_path == ":memory:":
             self.storage_path = storage_path
             is_new = True
+            return self.open_sqlite_library(library_dir, is_new)
         else:
-            self.verify_ts_folders(library_dir)
-            self.storage_path = library_dir / TS_FOLDER_NAME / self.FILENAME
-            is_new = not self.storage_path.exists()
+            self.storage_path = library_dir / TS_FOLDER_NAME / self.SQL_FILENAME
 
+            if self.verify_ts_folder(library_dir) and (is_new := not self.storage_path.exists()):
+                json_path = library_dir / TS_FOLDER_NAME / self.JSON_FILENAME
+                if json_path.exists():
+                    return LibraryStatus(
+                        success=False,
+                        library_path=library_dir,
+                        message="[JSON] Legacy v9.4 library requires conversion to v9.5+",
+                    )
+
+        return self.open_sqlite_library(library_dir, is_new)
+
+    def open_sqlite_library(
+        self, library_dir: Path, is_new: bool, add_default_data: bool = True
+    ) -> LibraryStatus:
         connection_string = URL.create(
             drivername="sqlite",
             database=str(self.storage_path),
         )
 
         logger.info("opening library", library_dir=library_dir, connection_string=connection_string)
-        self.engine = create_engine(connection_string)
+        self.engine = create_engine(connection_string, poolclass=NullPool)
         with Session(self.engine) as session:
             make_tables(self.engine)
 
-            tags = get_default_tags()
-            try:
-                session.add_all(tags)
-                session.commit()
-            except IntegrityError:
-                # default tags may exist already
-                session.rollback()
+            if add_default_data:
+                tags = get_default_tags()
+                try:
+                    session.add_all(tags)
+                    session.commit()
+                except IntegrityError:
+                    # default tags may exist already
+                    session.rollback()
 
             # dont check db version when creating new library
             if not is_new:
@@ -217,7 +260,6 @@ class Library:
                     db_version=db_version.value,
                     expected=LibraryPrefs.DB_VERSION.default,
                 )
-                # TODO - handle migration
                 return LibraryStatus(
                     success=False,
                     message=(
@@ -352,8 +394,12 @@ class Library:
 
         return list(tags_list)
 
-    def verify_ts_folders(self, library_dir: Path) -> None:
-        """Verify/create folders required by TagStudio."""
+    def verify_ts_folder(self, library_dir: Path) -> bool:
+        """Verify/create folders required by TagStudio.
+
+        Returns:
+            bool: True if path exists, False if it needed to be created.
+        """
         if library_dir is None:
             raise ValueError("No path set.")
 
@@ -364,6 +410,8 @@ class Library:
         if not full_ts_path.exists():
             logger.info("creating library directory", dir=full_ts_path)
             full_ts_path.mkdir(parents=True, exist_ok=True)
+            return False
+        return True
 
     def add_entries(self, items: list[Entry]) -> list[int]:
         """Add multiple Entry records to the Library."""
@@ -850,7 +898,7 @@ class Library:
         target_path = self.library_dir / TS_FOLDER_NAME / BACKUP_FOLDER_NAME / filename
 
         shutil.copy2(
-            self.library_dir / TS_FOLDER_NAME / self.FILENAME,
+            self.library_dir / TS_FOLDER_NAME / self.SQL_FILENAME,
             target_path,
         )
 

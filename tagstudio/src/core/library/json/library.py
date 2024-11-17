@@ -414,17 +414,17 @@ class Library:
         """Verifies/creates folders required by TagStudio."""
 
         full_ts_path = self.library_dir / TS_FOLDER_NAME
-        full_backup_path = self.library_dir / TS_FOLDER_NAME / BACKUP_FOLDER_NAME
-        full_collage_path = self.library_dir / TS_FOLDER_NAME / COLLAGE_FOLDER_NAME
+        # full_backup_path = self.library_dir / TS_FOLDER_NAME / BACKUP_FOLDER_NAME
+        # full_collage_path = self.library_dir / TS_FOLDER_NAME / COLLAGE_FOLDER_NAME
 
         if not os.path.isdir(full_ts_path):
             os.mkdir(full_ts_path)
 
-        if not os.path.isdir(full_backup_path):
-            os.mkdir(full_backup_path)
+        # if not os.path.isdir(full_backup_path):
+        #     os.mkdir(full_backup_path)
 
-        if not os.path.isdir(full_collage_path):
-            os.mkdir(full_collage_path)
+        # if not os.path.isdir(full_collage_path):
+        #     os.mkdir(full_collage_path)
 
     def verify_default_tags(self, tag_list: list) -> list:
         """

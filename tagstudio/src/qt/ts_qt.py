@@ -89,6 +89,7 @@ from src.qt.modals.folders_to_tags import FoldersToTagsModal
 from src.qt.modals.tag_database import TagDatabasePanel
 from src.qt.resource_manager import ResourceManager
 from src.qt.widgets.item_thumb import BadgeType, ItemThumb
+from src.qt.widgets.migration_modal import JsonMigrationModal
 from src.qt.widgets.panel import PanelModal
 from src.qt.widgets.preview_panel import PreviewPanel
 from src.qt.widgets.progress import ProgressWidget
@@ -468,6 +469,7 @@ class QtDriver(DriverMixin, QObject):
         self.thumb_renderers: list[ThumbRenderer] = []
         self.filter = FilterState()
         self.init_library_window()
+        self.migration_modal: JsonMigrationModal = None
 
         path_result = self.evaluate_path(self.args.open)
         # check status of library path evaluating
@@ -1170,14 +1172,27 @@ class QtDriver(DriverMixin, QObject):
         self.settings.endGroup()
         self.settings.sync()
 
-    def open_library(self, path: Path) -> LibraryStatus:
+    def open_library(self, path: Path) -> None:
         """Open a TagStudio library."""
         open_message: str = f'Opening Library "{str(path)}"...'
         self.main_window.landing_widget.set_status_label(open_message)
         self.main_window.statusbar.showMessage(open_message, 3)
         self.main_window.repaint()
 
-        open_status = self.lib.open_library(path)
+        open_status: LibraryStatus = self.lib.open_library(path)
+
+        # Migration is required
+        if open_status.message and open_status.message.startswith("[JSON]"):
+            self.migration_modal = JsonMigrationModal(path)
+            self.migration_modal.migration_finished.connect(
+                lambda: self.init_library(path, self.lib.open_library(path))
+            )
+            self.main_window.landing_widget.set_status_label("")
+            self.migration_modal.paged_panel.show()
+        else:
+            self.init_library(path, open_status)
+
+    def init_library(self, path: Path, open_status: LibraryStatus):
         if not open_status.success:
             self.show_error_message(open_status.message or "Error opening library.")
             return open_status

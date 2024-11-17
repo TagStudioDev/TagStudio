@@ -2,7 +2,10 @@
 # Licensed under the GPL-3.0 License.
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
-from PySide6.QtCore import Qt
+from pathlib import Path
+
+import structlog
+from PySide6.QtCore import QObject, Qt, Signal
 from PySide6.QtWidgets import (
     QGridLayout,
     QHBoxLayout,
@@ -11,18 +14,34 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
+from src.core.constants import TS_FOLDER_NAME
+from src.core.enums import LibraryPrefs
+from src.core.library.alchemy.library import Library as SqliteLibrary
+from src.core.library.json.library import Library as JsonLibrary  # type: ignore
 from src.qt.helpers.qbutton_wrapper import QPushButtonWrapper
 from src.qt.widgets.paged_panel.paged_body_wrapper import PagedBodyWrapper
 from src.qt.widgets.paged_panel.paged_panel import PagedPanel
 from src.qt.widgets.paged_panel.paged_panel_state import PagedPanelState
 
+logger = structlog.get_logger(__name__)
 
-class MigrationModal:
-    """A modal for data migration."""
 
-    def __init__(self):
+class JsonMigrationModal(QObject):
+    """A modal for data migration from v9.4 JSON to v9.5+ SQLite."""
+
+    migration_cancelled = Signal()
+    migration_finished = Signal()
+
+    def __init__(self, path: Path):
+        super().__init__()
+        self.path: Path = path
+
         self.stack: list[PagedPanelState] = []
-        self.title: str = "Save Format Migration"
+        self.json_lib: JsonLibrary = None
+        self.sql_lib: SqliteLibrary = None
+        self.is_migration_initialized: bool = False
+
+        self.title: str = f'Save Format Migration: "{self.path}"'
         self.warning: str = "<b><a style='color: #e22c3c'>(!)</a></b>"
 
         self.old_entry_count: int = 0
@@ -37,7 +56,7 @@ class MigrationModal:
     def init_page_00(self) -> None:
         body_wrapper: PagedBodyWrapper = PagedBodyWrapper()
         body_label: QLabel = QLabel(
-            "Library save files created with TagStudio versions <b>v9.4 and below</b> will "
+            "Library save files created with TagStudio versions <b>9.4 and below</b> will "
             "need to be migrated to the new <b>v9.5+</b> format."
             "<br>"
             "<h2>What you need to know:</h2>"
@@ -52,7 +71,8 @@ class MigrationModal:
         body_wrapper.layout().addWidget(body_label)
 
         cancel_button: QPushButtonWrapper = QPushButtonWrapper("Cancel")
-        next_button: QPushButtonWrapper = QPushButtonWrapper("Next")
+        next_button: QPushButtonWrapper = QPushButtonWrapper("Continue")
+        cancel_button.clicked.connect(self.migration_cancelled.emit)
 
         self.stack.append(
             PagedPanelState(
@@ -73,6 +93,11 @@ class MigrationModal:
         entries_text: str = "Entries:"
         tags_text: str = "Tags:"
         ext_text: str = "File Extension List:"
+        desc_text: str = (
+            "<br>Start and preview the results of the library migration process. "
+            'The new converted library will not be used unless you click "Finish Migration". '
+            "<i>This process may take up to several minutes for larger libraries.</i>"
+        )
 
         old_lib_container: QWidget = QWidget()
         old_lib_layout: QVBoxLayout = QVBoxLayout(old_lib_container)
@@ -128,36 +153,75 @@ class MigrationModal:
         self.new_content_layout.addWidget(new_ext_count, 2, 1)
         new_lib_layout.addWidget(new_content_container)
 
-        self.update_values()
+        desc_label = QLabel(desc_text)
+        desc_label.setWordWrap(True)
 
         body_container_layout.addStretch(2)
         body_container_layout.addWidget(old_lib_container)
         body_container_layout.addStretch(1)
         body_container_layout.addWidget(new_lib_container)
         body_container_layout.addStretch(2)
-
         body_wrapper.layout().addWidget(body_container)
+        body_wrapper.layout().addWidget(desc_label)
 
         back_button: QPushButtonWrapper = QPushButtonWrapper("Back")
+        start_button: QPushButtonWrapper = QPushButtonWrapper("Start and Preview")
+        start_button.setMinimumWidth(120)
+        start_button.clicked.connect(self.init_migration)
+        start_button.clicked.connect(lambda: finish_button.setDisabled(False))
+        start_button.clicked.connect(lambda: start_button.setDisabled(True))
         finish_button: QPushButtonWrapper = QPushButtonWrapper("Finish Migration")
+        finish_button.setMinimumWidth(120)
+        finish_button.setDisabled(True)
+        finish_button.clicked.connect(self.finish_migration)
+        finish_button.clicked.connect(self.migration_finished.emit)
 
         self.stack.append(
             PagedPanelState(
                 title=self.title,
                 body_wrapper=body_wrapper,
-                buttons=[back_button, 1, finish_button],
+                buttons=[back_button, 1, start_button, 1, finish_button],
                 connect_to_back=[back_button],
                 connect_to_next=[finish_button],
             )
         )
 
-    def update_values(self):
-        self.update_old_entry_count(0)
-        self.update_old_tag_count(10)
-        self.update_old_ext_count(2000)
-        self.update_new_entry_count(0)
-        self.update_new_tag_count(100000)
-        self.update_new_ext_count(2000)
+    def init_migration(self):
+        if not self.is_migration_initialized:
+            self.paged_panel.update_frame()
+            self.paged_panel.update()
+
+            # Initialize JSON Library
+            self.json_lib = JsonLibrary()
+            self.json_lib.open_library(self.path)
+
+            self.update_old_entry_count(len(self.json_lib.entries))
+            self.update_old_tag_count(len(self.json_lib.tags))
+            self.update_old_ext_count(len(self.json_lib.ext_list))
+
+            # Convert JSON Library to SQLite
+            self.sql_lib = SqliteLibrary()
+            self.temp_path: Path = (
+                self.json_lib.library_dir / TS_FOLDER_NAME / "migration_ts_library.sqlite"
+            )
+            self.sql_lib.storage_path = self.temp_path
+            if self.temp_path.exists():
+                logger.info('Temporary migration file "temp_path" already exists. Removing...')
+                self.temp_path.unlink()
+            self.sql_lib.open_sqlite_library(self.temp_path, is_new=True, add_default_data=False)
+            self.sql_lib.migrate_json_to_sqlite(self.json_lib)
+            self.sql_lib.close()
+
+            self.update_new_entry_count(self.sql_lib.entries_count)
+            self.update_new_tag_count(len(self.sql_lib.tags))
+            self.update_new_ext_count(len(self.sql_lib.prefs(LibraryPrefs.EXTENSION_LIST)))
+
+            self.is_migration_initialized = True
+
+    def finish_migration(self):
+        final_name = self.json_lib.library_dir / TS_FOLDER_NAME / SqliteLibrary.SQL_FILENAME
+        if self.temp_path.exists():
+            self.temp_path.rename(final_name)
 
     def update_old_entry_count(self, value: int):
         self.old_entry_count = value
