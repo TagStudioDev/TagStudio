@@ -196,9 +196,17 @@ class Library:
             drivername="sqlite",
             database=str(self.storage_path),
         )
+        # NOTE: File-based databases should use NullPool to create new DB connection in order to
+        # keep connections on separate threads, which prevents the DB files from being locked
+        # even after a connection has been closed.
+        # SingletonThreadPool (the default for :memory:) should still be used for in-memory DBs.
+        # More info can be found on the SQLAlchemy docs:
+        # https://docs.sqlalchemy.org/en/20/changelog/migration_07.html
+        # Under -> sqlite-the-sqlite-dialect-now-uses-nullpool-for-file-based-databases
+        poolclass = None if self.storage_path == ":memory:" else NullPool
 
         logger.info("opening library", library_dir=library_dir, connection_string=connection_string)
-        self.engine = create_engine(connection_string, poolclass=NullPool)
+        self.engine = create_engine(connection_string, poolclass=poolclass)
         with Session(self.engine) as session:
             make_tables(self.engine)
 
