@@ -957,7 +957,7 @@ class QtDriver(DriverMixin, QObject):
 
         completion_list: list[str] = []
         if len(text) < 3:
-            completion_list: list[str] = ["mediatype:", "filetype:", "path:", "tag:"]
+            completion_list = ["mediatype:", "filetype:", "path:", "tag:"]
             self.main_window.searchFieldCompletionList.setStringList(completion_list)
 
         if not matches:
