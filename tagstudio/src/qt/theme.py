@@ -1,11 +1,12 @@
 from collections.abc import Callable
 from typing import Literal
 
+import structlog
 from PySide6.QtCore import QSettings, Qt
 from PySide6.QtGui import QColor, QPalette
 from PySide6.QtWidgets import QApplication
 
-from .qt_logger import logger
+logger = structlog.get_logger("theme")
 
 theme_update_hooks: list[Callable[[], None]] = []
 "List of callables that will be called when any theme is changed."
@@ -52,7 +53,7 @@ def _load_palette_from_file(file_path: str, default_palette: QPalette) -> QPalet
     for role in list(QPalette.ColorRole)[:-1]:  # remove last color role (NColorRoles)
         for group in color_groups:
             value: str | None = theme.value(f"{role.name}/{group.name}", None, str)  # type: ignore
-            if value is not None and QColor.isValidColor(value):
+            if value is not None and QColor.isValidColorName(value):
                 pal.setColor(group, role, QColor(value))
 
     return pal
@@ -95,6 +96,8 @@ def _save_palette_to_file(file_path: str, palette: QPalette) -> None:
                 theme.setValue(group.name, palette.color(group, role).name())
         theme.endGroup()
 
+    theme.sync()
+
 
 def update_palette() -> None:
     """Update the application palette based on the settings.
@@ -116,7 +119,7 @@ def update_palette() -> None:
     settings: QSettings = driver.settings
 
     settings.beginGroup("Appearance")
-    dark_mode_value: str = settings.value("DarkMode", "-1")  # type: ignore
+    dark_mode_value: str = settings.value("DarkMode", "auto")  # type: ignore
     dark_theme_file: str | None = settings.value("DarkThemeFile", None)  # type: ignore
     light_theme_file: str | None = settings.value("LightThemeFile", None)  # type: ignore
     settings.endGroup()
@@ -124,25 +127,25 @@ def update_palette() -> None:
 
     # TODO: get values of following from settings.
     # dark_mode: bool | Literal[-1]
-    # "True: Dark mode. False: Light mode. -1: System mode."
+    # "True: Dark mode. False: Light mode. auto: System mode."
     # dark_theme_file: str | None
     # "Path to the dark theme file."
     # light_theme_file: str | None
     # "Path to the light theme file."
 
     dark_mode: bool | Literal[-1]
-    true_values = ("1", "yes", "true", "on")
-    false_values = ("0", "no", "false", "off")
 
-    if dark_mode_value.lower() in true_values:
+    if dark_mode_value.lower() == "true":
         dark_mode = True
-    elif dark_mode_value.lower() in false_values:
+    elif dark_mode_value.lower() == "false":
         dark_mode = False
-    elif dark_mode_value == "-1":
+    elif dark_mode_value == "auto":
         dark_mode = -1
     else:
-        logger.error(f"""Invalid value for DarkMode: {dark_mode_value}. Defaulting to -1.
-                     possible values: {true_values=}, {false_values=}, system=-1""")
+        logger.warning(
+            f"Invalid value for DarkMode: {dark_mode_value}. Defaulting to auto."
+            + 'possible values: "true", "false", "auto".'
+        )
         dark_mode = -1
 
     if dark_mode == -1:

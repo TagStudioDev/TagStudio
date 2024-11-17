@@ -27,7 +27,7 @@ from PySide6.QtWidgets import (QApplication, QCheckBox, QComboBox, QCompleter,
 from src.qt.pagination import Pagination
 from src.qt.widgets.landing import LandingWidget
 
-from . import theme
+from src.qt import theme
 
 # Only import for type checking/autocompletion, will not be imported at runtime.
 if typing.TYPE_CHECKING:
