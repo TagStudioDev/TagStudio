@@ -955,6 +955,7 @@ class QtDriver(DriverMixin, QObject):
     def update_completions_list(self, text: str) -> None:
         matches = re.search(r"(mediatype|filetype|path|tag):(\"?[A-Za-z0-9\ \t]+\"?)?", text)
 
+        completion_list: list[str] = []
         if len(text) < 3:
             completion_list: list[str] = ["mediatype:", "filetype:", "path:", "tag:"]
             self.main_window.searchFieldCompletionList.setStringList(completion_list)
@@ -968,8 +969,6 @@ class QtDriver(DriverMixin, QObject):
 
         if not query_value:
             return
-
-        completion_list: list[str] = []
 
         if query_type == "tag":
             completion_list = list(map(lambda x: "tag:" + x.name, self.lib.tags))
