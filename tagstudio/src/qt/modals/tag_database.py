@@ -12,8 +12,10 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
+from src.core.constants import RESERVED_TAG_IDS
 from src.core.library import Library, Tag
 from src.core.library.alchemy.enums import FilterState
+from src.core.library.alchemy.library import get_default_tags
 from src.qt.modals.build_tag import BuildTagPanel
 from src.qt.widgets.panel import PanelModal, PanelWidget
 from src.qt.widgets.tag import TagWidget
@@ -101,7 +103,12 @@ class TagDatabasePanel(PanelWidget):
             row = QHBoxLayout(container)
             row.setContentsMargins(0, 0, 0, 0)
             row.setSpacing(3)
-            tag_widget = TagWidget(tag, has_edit=True, has_remove=True)
+
+            if tag.id in RESERVED_TAG_IDS:
+                tag_widget = TagWidget(tag, has_edit=False, has_remove=False)
+            else:
+                tag_widget = TagWidget(tag, has_edit=True, has_remove=True)
+
             tag_widget.on_edit.connect(lambda checked=False, t=tag: self.edit_tag(t))
             tag_widget.on_remove.connect(lambda t=tag: self.remove_tag(t))
             row.addWidget(tag_widget)
@@ -110,10 +117,16 @@ class TagDatabasePanel(PanelWidget):
         self.search_field.setFocus()
 
     def remove_tag(self, tag: Tag):
+        if tag.id in get_default_tags():
+            return
+
         self.lib.remove_tag(tag)
         self.update_tags()
 
     def edit_tag(self, tag: Tag):
+        if tag.id in get_default_tags():
+            return
+
         build_tag_panel = BuildTagPanel(self.lib, tag=tag)
 
         self.edit_modal = PanelModal(
