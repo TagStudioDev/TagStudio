@@ -73,6 +73,7 @@ from src.core.library.alchemy.enums import (
 )
 from src.core.library.alchemy.fields import _FieldID
 from src.core.library.alchemy.library import LibraryStatus
+from src.core.media_types import MediaCategories
 from src.core.ts_core import TagStudioCore
 from src.core.utils.refresh_dir import RefreshDirTracker
 from src.core.utils.web import strip_web_protocol
@@ -92,8 +93,6 @@ from src.qt.widgets.panel import PanelModal
 from src.qt.widgets.preview_panel import PreviewPanel
 from src.qt.widgets.progress import ProgressWidget
 from src.qt.widgets.thumb_renderer import ThumbRenderer
-
-from ..core.media_types import MediaCategories
 
 # SIGQUIT is not defined on Windows
 if sys.platform == "win32":
@@ -954,7 +953,12 @@ class QtDriver(DriverMixin, QObject):
         self.autofill_action.setDisabled(not self.selected)
 
     def update_completions_list(self, text: str) -> None:
-        matches = re.search(r"(mediatype|filetype|path|tag_id|tag):(\"?[A-Za-z0-9\ \t]+\"?)?", text)
+        matches = re.search(r"(mediatype|filetype|path|tag):(\"?[A-Za-z0-9\ \t]+\"?)?", text)
+
+        if len(text) < 3:
+            completion_list: list[str] = ["mediatype:", "filetype:", "path:", "tag:"]
+            self.main_window.searchFieldCompletionList.setStringList(completion_list)
+
         if not matches:
             return
 
@@ -962,18 +966,35 @@ class QtDriver(DriverMixin, QObject):
         query_value: str | None
         query_type, query_value = matches.groups()
 
+        if not query_value:
+            return
+
         completion_list: list[str] = []
 
         if query_type == "tag":
             completion_list = list(map(lambda x: "tag:" + x.name, self.lib.tags))
-        elif query_type == "tag_id":
-            completion_list = list(map(lambda x: "tag_id:" + str(x.id), self.lib.tags))
         elif query_type == "path":
             completion_list = list(map(lambda x: "path:" + x, self.lib.get_paths()))
         elif query_type == "mediatype":
-            completion_list = list(
-                map(lambda x: 'mediatype:"' + x.name + '"', MediaCategories.ALL_CATEGORIES)
+            single_word_completions = map(
+                lambda x: "mediatype:" + x.name,
+                filter(lambda y: " " not in y.name, MediaCategories.ALL_CATEGORIES),
             )
+            single_word_completions_quoted = map(
+                lambda x: 'mediatype:"' + x.name + '"',
+                filter(lambda y: " " not in y.name, MediaCategories.ALL_CATEGORIES),
+            )
+            multi_word_completions = map(
+                lambda x: 'mediatype:"' + x.name + '"',
+                filter(lambda y: " " in y.name, MediaCategories.ALL_CATEGORIES),
+            )
+
+            all_completions = [
+                single_word_completions,
+                single_word_completions_quoted,
+                multi_word_completions,
+            ]
+            completion_list = [j for i in all_completions for j in i]
         elif query_type == "filetype":
             extensions_list: set[str] = set()
             for media_cat in MediaCategories.ALL_CATEGORIES:
