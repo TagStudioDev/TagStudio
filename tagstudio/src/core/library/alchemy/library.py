@@ -145,15 +145,16 @@ class Library:
         self.folder = None
 
     def migrate_json_to_sqlite(self, json_lib: JsonLibrary):
+        """Migrate JSON library data to the open SQLite database."""
         folder: Folder = Folder(path=self.library_dir, uuid=str(uuid4()))
         self.add_entries(
             [
                 Entry(
-                    path=x.path / x.filename,
+                    path=entry.path / entry.filename,
                     folder=folder,
-                    fields=[],
+                    fields=self.convert_fields(entry.fields),
                 )
-                for x in json_lib.entries
+                for entry in json_lib.entries
             ]
         )
 
@@ -163,7 +164,7 @@ class Library:
                     name=tag.name,
                     shorthand=tag.shorthand,
                     aliases=None,
-                    color=TagColor(1),
+                    color=TagColor.get_color_from_str(tag.color),
                 )
             )
 
