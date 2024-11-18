@@ -539,7 +539,7 @@ class QtDriver(DriverMixin, QObject):
             for menu in self.menus:
                 for action in menu.actions():
                     # also scary but all this dose is check if the aforementioned "disable" option
-                    # is set to false and if it is then do not disable this button 
+                    # is set to false and if it is then do not disable this button
                     # when closing a library
                     action.setDisabled(
                         True if action.property("disable") is None else action.property("disable")
