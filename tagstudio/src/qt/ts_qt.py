@@ -19,6 +19,8 @@ from itertools import zip_longest
 from pathlib import Path
 from queue import Queue
 
+# this import has side-effect of import PySide resources
+import src.qt.resources_rc  # noqa: F401
 import structlog
 from humanfriendly import format_timespan
 from PySide6 import QtCore
@@ -54,9 +56,6 @@ from PySide6.QtWidgets import (
     QSplashScreen,
     QWidget,
 )
-
-# this import has side-effect of import PySide resources
-import src.qt.resources_rc  # noqa: F401
 from src.core.constants import (
     TAG_ARCHIVED,
     TAG_FAVORITE,
@@ -139,7 +138,7 @@ class QtDriver(DriverMixin, QObject):
         self.frame_content = []
         self.filter = FilterState()
         self.pages_count = 0
-        
+
         self.menus = []
 
         self.scrollbar_pos = 0
@@ -196,7 +195,7 @@ class QtDriver(DriverMixin, QObject):
         )
         if dir not in (None, ""):
             self.open_library(Path(dir))
-        self.update_clipboard_actions()
+        self.update_menu_actions()
 
     def signal_handler(self, sig, frame):
         if sig in (SIGINT, SIGTERM, SIGQUIT):
@@ -273,13 +272,13 @@ class QtDriver(DriverMixin, QObject):
         macros_menu = QMenu("&Macros", menu_bar)
         window_menu = QMenu("&Window", menu_bar)
         help_menu = QMenu("&Help", menu_bar)
-        
+
         # File Menu ============================================================
         # file_menu.addAction(QAction('&New Library', menu_bar))
         # file_menu.addAction(QAction('&Open Library', menu_bar))
 
         open_library_action = QAction("&Open/Create Library", menu_bar)
-        open_library_action.setData({"disable":False})
+        open_library_action.setProperty("disable", value=False)
         open_library_action.triggered.connect(lambda: self.open_library_from_dialog())
         open_library_action.setShortcut(
             QtCore.QKeyCombination(
@@ -405,7 +404,7 @@ class QtDriver(DriverMixin, QObject):
 
         # Macros Menu ==========================================================
         self.autofill_action = QAction("Autofill", menu_bar)
-        self.autofill_action.setData({"enable":False})
+        self.autofill_action.setProperty("enable", value=False)
         self.autofill_action.triggered.connect(
             lambda: (
                 self.run_macros(MacroID.AUTOFILL, self.selected),
@@ -443,14 +442,14 @@ class QtDriver(DriverMixin, QObject):
         )
         help_menu.addAction(self.repo_action)
         self.set_macro_menu_viability()
-        
+
         self.menus.append(file_menu)
         self.menus.append(edit_menu)
         self.menus.append(tools_menu)
         self.menus.append(macros_menu)
-        
-        self.update_clipboard_actions()
-        
+
+        self.update_menu_actions()
+
         menu_bar.addMenu(file_menu)
         menu_bar.addMenu(edit_menu)
         menu_bar.addMenu(tools_menu)
@@ -477,7 +476,7 @@ class QtDriver(DriverMixin, QObject):
         self.thumb_renderers: list[ThumbRenderer] = []
         self.filter = FilterState()
         self.init_library_window()
-        
+
         path_result = self.evaluate_path(self.args.open)
         # check status of library path evaluating
         if path_result.success and path_result.library_path:
@@ -487,7 +486,7 @@ class QtDriver(DriverMixin, QObject):
                 QColor("#9782ff"),
             )
             self.open_library(path_result.library_path)
-            self.update_clipboard_actions()
+            self.update_menu_actions()
         app.exec()
         self.shutdown()
 
@@ -504,45 +503,46 @@ class QtDriver(DriverMixin, QObject):
 
         # Show the message box
         msg_box.exec()
-        
-    def update_clipboard_actions(self):
-        # To override the enabling and disabling of buttons 
-        # there are 2 data options that can be added to a button 
+
+    def update_menu_actions(self):
+        # To override the enabling and disabling of buttons
+        # there are 2 data options that can be added to a button
         # but are not necessary
-        
+
         # name_of_action.setData({"enable":False})
-        
-        # this one should be added to buttons that do not need to be enabled when a library  
-        # is opened for example the autofil button only enables 
+
+        # this one should be added to buttons that do not need to be enabled when a library
+        # is opened for example the autofil button only enables
         # when clicked on a item not on library open
-        
+
         # name_of_action.setData({"disable":False})
-        # this one should be added to a button that needs to be enabled 
+        # this one should be added to a button that needs to be enabled
         # even when not in a library like the "open library button"
-        
+
         # if the button should be controlled here then just do not add any data objects
-        
-        
-        if self.lib.library_dir: # i think this should not return true when in a library?
+
+        if self.lib.library_dir:  # i think this should not return true when in a library?
             # we are in a library! time to enable them.
             for menu in self.menus:
                 for action in menu.actions():
-                    # scary but all this dose is check if the aforementioned "enable" option is 
+                    # scary but all this dose is check if the aforementioned "enable" option is
                     # set to false and if it is then do not enable the button
                     action.setDisabled(
-                    False if action.data() is None 
-                    else not action.data()["enable"] if "enable" in action.data() 
-                    else False
-                        )
+                        False
+                        if action.property("enable") is None
+                        else not action.property("enable")
+                        if action.property("enable") is False
+                        else False
+                    )
         else:
             # if we are not in a library then we need to disable all the unneeded menu buttons
             for menu in self.menus:
                 for action in menu.actions():
-                #also scary but all this dose is check if the aforementioned "disable" option 
-                #is set to false and if it is then do not disable this button when closing a library
+                    # also scary but all this dose is check if the aforementioned "disable" option
+                    # is set to false and if it is then do not disable this button when closing a library
                     action.setDisabled(
-                        True if action.data() is None else action.data().get("disable", True)
-                        )
+                        True if action.property("disable") is None else action.property("disable")
+                    )
 
     def init_library_window(self):
         # self._init_landing_page() # Taken care of inside the widget now
@@ -657,7 +657,7 @@ class QtDriver(DriverMixin, QObject):
         self.main_window.statusbar.showMessage(
             f"Library Closed ({format_timespan(end_time - start_time)})"
         )
-        self.update_clipboard_actions()
+        self.update_menu_actions()
 
     def backup_library(self):
         logger.info("Backing Up Library...")
@@ -1191,4 +1191,5 @@ class QtDriver(DriverMixin, QObject):
         self.filter_items()
 
         self.main_window.toggle_landing_page(enabled=False)
+        self.update_menu_actions()
         return open_status
