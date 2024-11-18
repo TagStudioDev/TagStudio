@@ -213,10 +213,10 @@ class BuildTagPanel(PanelWidget):
         def on_name_changed(self):
             if not self.name_field.text().strip():
                 self.name_field.setStyleSheet("border: 1px solid red; border-radius: 2px; height: 23px;")
-                self.save_button.setDisabled(True)
+                self.disable_save(True)
             else:
                 self.name_field.setStyleSheet("")
-                self.save_button.setDisabled(False)
+                self.enable_save(False)
 
         def build_tag(self) -> Tag:
             color = self.color_field.currentData() or TagColor.DEFAULT
