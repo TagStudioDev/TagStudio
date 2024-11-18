@@ -539,7 +539,8 @@ class QtDriver(DriverMixin, QObject):
             for menu in self.menus:
                 for action in menu.actions():
                     # also scary but all this dose is check if the aforementioned "disable" option
-                    # is set to false and if it is then do not disable this button when closing a library
+                    # is set to false and if it is then do not disable this button 
+                    # when closing a library
                     action.setDisabled(
                         True if action.property("disable") is None else action.property("disable")
                     )
@@ -638,7 +639,6 @@ class QtDriver(DriverMixin, QObject):
 
         self.lib.close()
 
-        self.thumb_job_queue.queue.clear()
         if is_shutdown:
             # no need to do other things on shutdown
             return
