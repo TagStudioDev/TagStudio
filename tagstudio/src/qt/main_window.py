@@ -15,13 +15,13 @@
 
 import logging
 import typing
-from PySide6.QtCore import (QCoreApplication, QMetaObject, QRect,QSize, Qt)
+from PySide6.QtCore import (QCoreApplication, QMetaObject, QRect,QSize, Qt, QStringListModel)
 from PySide6.QtGui import QFont
 from PySide6.QtWidgets import (QComboBox, QFrame, QGridLayout,
                                QHBoxLayout, QVBoxLayout, QLayout, QLineEdit, QMainWindow,
                                QPushButton, QScrollArea, QSizePolicy,
                                QStatusBar, QWidget, QSplitter, QCheckBox,
-                               QSpacerItem)
+                               QSpacerItem, QCompleter)
 from src.qt.pagination import Pagination
 from src.qt.widgets.landing import LandingWidget
 
@@ -166,6 +166,11 @@ class Ui_MainWindow(QMainWindow):
         font2.setPointSize(11)
         font2.setBold(False)
         self.searchField.setFont(font2)
+
+        self.searchFieldCompletionList = QStringListModel()
+        self.searchFieldCompleter = QCompleter(self.searchFieldCompletionList, self.searchField)
+        self.searchFieldCompleter.setCaseSensitivity(Qt.CaseSensitivity.CaseInsensitive)
+        self.searchField.setCompleter(self.searchFieldCompleter)
 
         self.horizontalLayout_2.addWidget(self.searchField)
 

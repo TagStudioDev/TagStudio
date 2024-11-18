@@ -395,6 +395,13 @@ class Library:
         with Session(self.engine) as session:
             return session.query(exists().where(Entry.path == path)).scalar()
 
+    def get_paths(self, glob: str | None = None) -> list[str]:
+        with Session(self.engine) as session:
+            paths = session.scalars(select(Entry.path)).unique()
+
+        path_strings: list[str] = list(map(lambda x: x.as_posix(), paths))
+        return path_strings
+
     def search_library(
         self,
         search: FilterState,
