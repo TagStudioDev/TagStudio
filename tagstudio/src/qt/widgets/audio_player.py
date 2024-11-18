@@ -4,21 +4,27 @@
 
 import logging
 import typing
-from pathlib import Path
+from typing import Any
 
-from PySide6.QtCore import (
-    Qt,
-    QUrl,
-)
+from PySide6.QtCore import Qt
 from PySide6.QtGui import QIcon, QPixmap
-from PySide6.QtMultimedia import QAudioOutput, QMediaDevices, QMediaPlayer
-from PySide6.QtWidgets import QHBoxLayout, QPushButton, QSlider, QVBoxLayout, QWidget
+from PySide6.QtMultimedia import QMediaPlayer
+from PySide6.QtWidgets import (
+    QGridLayout,
+    QHBoxLayout,
+    QLabel,
+    QPushButton,
+    QSizePolicy,
+    QSlider,
+    QWidget,
+)
+from src.qt.media_player import MediaPlayer
 
 if typing.TYPE_CHECKING:
     from src.qt.ts_qt import QtDriver
 
 
-class AudioPlayer(QWidget):
+class AudioPlayer(QWidget, MediaPlayer):
     """A basic audio player widget.
 
     This widget is enabled if the selected
@@ -28,116 +34,105 @@ class AudioPlayer(QWidget):
     def __init__(self, driver: "QtDriver") -> None:
         super().__init__()
         self.driver = driver
-        self.filepath: Path | None = None
-        self.base_size: tuple[int, int] = (266, 75)
 
-        self.setMinimumSize(*self.base_size)
-        self.setMaximumSize(*self.base_size)
+        self.setFixedHeight(50)
 
-        # Set up the audio player
-        self.player = QMediaPlayer(self)
-        self.player.setAudioOutput(QAudioOutput(QMediaDevices().defaultAudioOutput(), self.player))
+        # Subscribe to player events from MediaPlayer
         self.player.positionChanged.connect(self.position_changed)
         self.player.mediaStatusChanged.connect(self.media_status_changed)
+        self.player.playingChanged.connect(self.playing_changed)
+        self.player.audioOutput().mutedChanged.connect(self.muted_changed)
 
-        # Used to keep track of play state.
-        # It would be nice if we could use QMediaPlayer.PlaybackState,
-        # but this will always show StoppedState when changing
-        # tracks. Therefore, we wouldn't know if the previous
-        # state was paused or playing
-        self.is_paused = False
-
-        # widgets
-        self.base_layout = QVBoxLayout(self)
+        # Media controls
+        self.base_layout = QGridLayout(self)
         self.base_layout.setContentsMargins(0, 0, 0, 0)
-        self.base_layout.setSpacing(6)
+        self.base_layout.setSpacing(0)
 
         self.pslider = QSlider(self)
-        self.pslider.setMinimumWidth(266)
         self.pslider.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         self.pslider.setTickPosition(QSlider.TickPosition.NoTicks)
         self.pslider.setSingleStep(1)
         self.pslider.setOrientation(Qt.Orientation.Horizontal)
 
-        self.ps_down = False
-        self.pslider.sliderPressed.connect(self.slider_pressed)
         self.pslider.sliderReleased.connect(self.slider_released)
 
-        self.base_layout.addWidget(self.pslider)
+        self.media_btns_layout = QHBoxLayout()
 
-        # media buttons
-        media_btns_layout = QHBoxLayout()
+        policy = QSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
 
-        self.media_play_btn = QPushButton("Play", self)
-        self.media_play_btn.clicked.connect(self.play)
-        self.media_play_btn.hide()
+        self.play_pause = QPushButton("", self)
+        self.play_pause.setFlat(True)
+        self.play_pause.setSizePolicy(policy)
+        self.play_pause.clicked.connect(self.toggle_pause)
 
-        self.media_pause_btn = QPushButton("Pause", self)
-        self.media_pause_btn.clicked.connect(self.pause)
+        self.load_play_pause_icon(playing=False)
 
-        self.media_mute_btn = QPushButton("Mute", self)
-        self.media_mute_btn.clicked.connect(self.mute)
+        self.media_btns_layout.addWidget(self.play_pause)
 
-        self.media_unmute_btn = QPushButton("Unmute", self)
-        self.media_unmute_btn.clicked.connect(self.unmute)
-        self.media_unmute_btn.hide()
+        self.mute = QPushButton("", self)
+        self.mute.setFlat(True)
+        self.mute.setSizePolicy(policy)
+        self.mute.clicked.connect(self.toggle_mute)
 
-        # load svg files
+        self.load_mute_unmute_icon(muted=False)
+
+        self.media_btns_layout.addWidget(self.mute)
+
+        self.position_label = QLabel("positionLabel")
+        self.position_label.setAlignment(Qt.AlignmentFlag.AlignRight)
+
+        self.base_layout.addWidget(self.pslider, 0, 0, 1, 2)
+        self.base_layout.addLayout(self.media_btns_layout, 1, 0)
+        self.base_layout.addWidget(self.position_label, 1, 1)
+
+    def load_play_pause_icon(self, playing: bool) -> None:
+        icon = self.driver.rm.pause_icon if playing else self.driver.rm.play_icon
+        self.set_icon(self.play_pause, icon)
+
+    def load_mute_unmute_icon(self, muted: bool) -> None:
+        icon = self.driver.rm.volume_icon if muted else self.driver.rm.volume_mute_icon
+        self.set_icon(self.mute, icon)
+
+    def set_icon(self, btn: QPushButton, icon: Any) -> None:
         pix_map = QPixmap()
-        if pix_map.loadFromData(self.driver.rm.play_icon):
-            self.media_play_btn.setIcon(QIcon(pix_map))
+        if pix_map.loadFromData(icon):
+            btn.setIcon(QIcon(pix_map))
         else:
-            logging.error("failed to load play_icon svg")
-        if pix_map.loadFromData(self.driver.rm.pause_icon):
-            self.media_pause_btn.setIcon(QIcon(pix_map))
+            logging.error("failed to load svg file")
+
+    def format_time(self, time: int) -> str:
+        """Format the given time.
+
+        Formats the given time in ms to a nicer format.
+
+        Args:
+            time: Time in ms
+
+        Returns:
+            A formatted time:
+
+            "1:43"
+
+            The formatted time will only include the hour if
+            the provided time is at least 60 minutes.
+        """
+        pretty_time = ""
+        if time > (60 * 60 * 1000):
+            pretty_time += f"{int(time / (60 * 60 * 1000)) % 24}:"
+
+        if time > (60 * 1000):
+            pretty_time += f"{int(time / (60 * 1000)) % 60}:"
         else:
-            logging.error("failed to load pause_icon svg")
-        if pix_map.loadFromData(self.driver.rm.volume_mute_icon):
-            self.media_mute_btn.setIcon(QIcon(pix_map))
+            pretty_time += "0:"
+
+        if time > 1000:
+            pretty_time += f"{int(time / 1000) % 60:02d}"
         else:
-            logging.error("failed to load volume_mute_icon svg")
-        if pix_map.loadFromData(self.driver.rm.volume_icon):
-            self.media_unmute_btn.setIcon(QIcon(pix_map))
-        else:
-            logging.error("failed to load volume_icon svg")
+            pretty_time += "00"
 
-        media_btns_layout.addWidget(self.media_play_btn)
-        media_btns_layout.addWidget(self.media_pause_btn)
-        media_btns_layout.addWidget(self.media_mute_btn)
-        media_btns_layout.addWidget(self.media_unmute_btn)
-        self.base_layout.addLayout(media_btns_layout)
+        return pretty_time
 
-    def play(self):
-        # replay because we've reached the end of the track
-        if self.pslider.value() == self.player.duration():
-            self.player.setPosition(0)
-
-        self.media_play_btn.hide()
-        self.player.play()
-        self.media_pause_btn.show()
-        self.is_paused = False
-
-    def pause(self):
-        self.media_pause_btn.hide()
-        self.player.pause()
-        self.media_play_btn.show()
-        self.is_paused = True
-
-    def mute(self):
-        self.media_mute_btn.hide()
-        self.player.audioOutput().setMuted(True)
-        self.media_unmute_btn.show()
-
-    def unmute(self):
-        self.media_unmute_btn.hide()
-        self.player.audioOutput().setMuted(False)
-        self.media_mute_btn.show()
-
-    def slider_pressed(self):
-        self.ps_down = True
-
-    def slider_released(self):
-        self.ps_down = False
+    def slider_released(self) -> None:
         was_playing = self.player.isPlaying()
         self.player.setPosition(self.pslider.value())
 
@@ -145,42 +140,34 @@ class AudioPlayer(QWidget):
         # We should reset back to initial state.
         if not was_playing:
             self.player.pause()
-            self.media_pause_btn.hide()
-            self.media_play_btn.show()
 
     def position_changed(self, position: int) -> None:
         # user hasn't released the slider yet
-        if self.ps_down:
+        if self.pslider.isSliderDown():
             return
 
         self.pslider.setValue(position)
+
+        current = self.format_time(self.player.position())
+        duration = self.format_time(self.player.duration())
+        self.position_label.setText(f"{current} / {duration}")
+
         if self.player.duration() == position:
             self.player.pause()
-            self.media_pause_btn.hide()
-            self.media_play_btn.show()
             self.player.setPosition(0)
 
-    def close(self, *args, **kwargs) -> bool:
-        self.player.stop()
-        return super().close(*args, **kwargs)
+    def playing_changed(self, playing: bool) -> None:
+        self.load_play_pause_icon(playing)
 
-    def load_file(self, filepath: Path) -> None:
-        """Set the source of the QMediaPlayer and play."""
-        self.filepath = filepath
-        if not self.is_paused:
-            self.player.stop()
-            self.player.setSource(QUrl().fromLocalFile(self.filepath))
-            self.play()
-        else:
-            self.player.setSource(QUrl().fromLocalFile(self.filepath))
-
-    def stop(self) -> None:
-        """Clear the filepath and stop the player."""
-        self.filepath = None
-        self.player.stop()
+    def muted_changed(self, muted: bool) -> None:
+        self.load_mute_unmute_icon(muted)
 
     def media_status_changed(self, status: QMediaPlayer.MediaStatus) -> None:
         # We can only set the slider duration once we know the size of the media
         if status == QMediaPlayer.MediaStatus.LoadedMedia and self.filepath is not None:
             self.pslider.setMinimum(0)
             self.pslider.setMaximum(self.player.duration())
+
+            current = self.format_time(self.player.position())
+            duration = self.format_time(self.player.duration())
+            self.position_label.setText(f"{current} / {duration}")

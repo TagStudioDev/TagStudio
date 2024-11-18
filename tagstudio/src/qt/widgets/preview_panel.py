@@ -648,7 +648,7 @@ class PreviewPanel(QWidget):
                             pass
                     elif MediaCategories.is_ext_in_category(ext, MediaCategories.AUDIO_TYPES):
                         self.audio_player.show()
-                        self.audio_player.load_file(filepath)
+                        self.audio_player.play(filepath)
                     elif MediaCategories.is_ext_in_category(
                         ext, MediaCategories.VIDEO_TYPES
                     ) and is_readable_video(filepath):
