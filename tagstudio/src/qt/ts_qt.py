@@ -11,6 +11,7 @@ import ctypes
 import dataclasses
 import math
 import os
+import re
 import sys
 import time
 import webbrowser
@@ -72,6 +73,7 @@ from src.core.library.alchemy.enums import (
 )
 from src.core.library.alchemy.fields import _FieldID
 from src.core.library.alchemy.library import LibraryStatus
+from src.core.media_types import MediaCategories
 from src.core.ts_core import TagStudioCore
 from src.core.utils.refresh_dir import RefreshDirTracker
 from src.core.utils.web import strip_web_protocol
@@ -444,6 +446,8 @@ class QtDriver(DriverMixin, QObject):
         menu_bar.addMenu(macros_menu)
         menu_bar.addMenu(window_menu)
         menu_bar.addMenu(help_menu)
+
+        self.main_window.searchField.textChanged.connect(self.update_completions_list)
 
         self.preview_panel = PreviewPanel(self.lib, self)
         splitter = self.main_window.splitter
@@ -948,6 +952,61 @@ class QtDriver(DriverMixin, QObject):
 
     def set_macro_menu_viability(self):
         self.autofill_action.setDisabled(not self.selected)
+
+    def update_completions_list(self, text: str) -> None:
+        matches = re.search(r"(mediatype|filetype|path|tag):(\"?[A-Za-z0-9\ \t]+\"?)?", text)
+
+        completion_list: list[str] = []
+        if len(text) < 3:
+            completion_list = ["mediatype:", "filetype:", "path:", "tag:"]
+            self.main_window.searchFieldCompletionList.setStringList(completion_list)
+
+        if not matches:
+            return
+
+        query_type: str
+        query_value: str | None
+        query_type, query_value = matches.groups()
+
+        if not query_value:
+            return
+
+        if query_type == "tag":
+            completion_list = list(map(lambda x: "tag:" + x.name, self.lib.tags))
+        elif query_type == "path":
+            completion_list = list(map(lambda x: "path:" + x, self.lib.get_paths()))
+        elif query_type == "mediatype":
+            single_word_completions = map(
+                lambda x: "mediatype:" + x.name,
+                filter(lambda y: " " not in y.name, MediaCategories.ALL_CATEGORIES),
+            )
+            single_word_completions_quoted = map(
+                lambda x: 'mediatype:"' + x.name + '"',
+                filter(lambda y: " " not in y.name, MediaCategories.ALL_CATEGORIES),
+            )
+            multi_word_completions = map(
+                lambda x: 'mediatype:"' + x.name + '"',
+                filter(lambda y: " " in y.name, MediaCategories.ALL_CATEGORIES),
+            )
+
+            all_completions = [
+                single_word_completions,
+                single_word_completions_quoted,
+                multi_word_completions,
+            ]
+            completion_list = [j for i in all_completions for j in i]
+        elif query_type == "filetype":
+            extensions_list: set[str] = set()
+            for media_cat in MediaCategories.ALL_CATEGORIES:
+                extensions_list = extensions_list | media_cat.extensions
+            completion_list = list(map(lambda x: "filetype:" + x.replace(".", ""), extensions_list))
+
+        update_completion_list: bool = (
+            completion_list != self.main_window.searchFieldCompletionList.stringList()
+            or self.main_window.searchFieldCompletionList == []
+        )
+        if update_completion_list:
+            self.main_window.searchFieldCompletionList.setStringList(completion_list)
 
     def update_thumbs(self):
         """Update search thumbnails."""
