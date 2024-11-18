@@ -1,4 +1,4 @@
-# Roadmap
+# Feature Roadmap
 
 This checklist details the current and remaining features required at a minimum for TagStudio to be considered “Feature Complete”. This list is _not_ a definitive list for additional feature requests and PRs as they come in, but rather an outline of my personal core feature set intended for TagStudio.
 
@@ -157,6 +157,7 @@ These version milestones are rough estimations for when the previous core featur
 ### 9.5 (Alpha)
 
 -   [ ] SQL backend [HIGH]
+-   [ ] Translations _(Any applicable)_ [MEDIUM]
 -   [ ] Multiple Root Directories per Library [HIGH]
 -   [ ] Tags [HIGH]
     -   [ ] Deleting Tags [HIGH]
