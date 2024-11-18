@@ -215,10 +215,10 @@ class BuildTagPanel(PanelWidget):
             self.name_field.setStyleSheet(
                 "border: 1px solid red; border-radius: 2px; height: 23px;"
             )
-            self.disable_save(True)
+            self.disable_save.emit()
         else:
             self.name_field.setStyleSheet("")
-            self.enable_save(False)
+            self.enable_save.emit()
 
     def build_tag(self) -> Tag:
         color = self.color_field.currentData() or TagColor.DEFAULT
