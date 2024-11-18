@@ -1,4 +1,4 @@
-# Roadmap
+# Feature Roadmap
 
 This checklist details the current and remaining features required at a minimum for TagStudio to be considered “Feature Complete”. This list is _not_ a definitive list for additional feature requests and PRs as they come in, but rather an outline of my personal core feature set intended for TagStudio.
 
