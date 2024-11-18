@@ -51,6 +51,7 @@ class BuildTagPanel(PanelWidget):
         self.name_title.setText("Name")
         self.name_layout.addWidget(self.name_title)
         self.name_field = QLineEdit()
+        self.name_field.setPlaceholderText("New Tag")
         self.name_layout.addWidget(self.name_field)
 
         # Shorthand ------------------------------------------------------------
@@ -161,7 +162,7 @@ class BuildTagPanel(PanelWidget):
 
         # TODO - fill subtags
         self.subtags: set[int] = set()
-        self.set_tag(tag or Tag(name="New Tag"))
+        self.set_tag(tag or Tag(name=""))
 
     def add_subtag_callback(self, tag_id: int):
         logger.info("add_subtag_callback", tag_id=tag_id)
@@ -208,8 +209,10 @@ class BuildTagPanel(PanelWidget):
         color = self.color_field.currentData() or TagColor.DEFAULT
 
         tag = self.tag
-
-        tag.name = self.name_field.text()
+        if self.name_field.text() == "":
+            tag.name = "New Tag"
+        else:
+            tag.name = self.name_field.text()
         tag.shorthand = self.shorthand_field.text()
         tag.color = color
 
