@@ -213,7 +213,9 @@ class BuildTagPanel(PanelWidget):
         is_empty = not self.name_field.text().strip()
 
         self.name_field.setStyleSheet(
-            "border: 1px solid red; border-radius: 2px" if is_empty else ""
+            f"border: 1px solid {get_ui_color(ColorType.PRIMARY, UiColor.RED)}; border-radius: 2px"
+            if is_empty
+            else ""
         )
 
         if self.panel_save_button is not None:
