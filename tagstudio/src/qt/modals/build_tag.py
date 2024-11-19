@@ -18,7 +18,7 @@ from PySide6.QtWidgets import (
 )
 from src.core.library import Library, Tag
 from src.core.library.alchemy.enums import TagColor
-from src.core.palette import ColorType, get_tag_color
+from src.core.palette import ColorType, UiColor, get_tag_color, get_ui_color
 from src.qt.modals.tag_search import TagSearchPanel
 from src.qt.widgets.panel import PanelModal, PanelWidget
 from src.qt.widgets.tag import TagWidget
