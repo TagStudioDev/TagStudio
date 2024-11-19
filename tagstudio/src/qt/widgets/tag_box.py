@@ -135,10 +135,6 @@ class TagBoxWidget(FieldWidget):
             has_save=True,
         )
 
-        build_tag_panel.disable_save.connect(lambda: self.edit_modal.save_button.setDisabled(True))
-
-        build_tag_panel.enable_save.connect(lambda: self.edit_modal.save_button.setDisabled(False))
-
         # TODO - this was update_tag()
         self.edit_modal.saved.connect(
             lambda: self.driver.lib.update_tag(
