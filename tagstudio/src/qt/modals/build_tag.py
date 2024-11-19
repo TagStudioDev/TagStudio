@@ -53,6 +53,7 @@ class BuildTagPanel(PanelWidget):
         self.name_field = QLineEdit()
         self.name_field.setFixedHeight(24)
         self.name_field.textChanged.connect(self.on_name_changed)
+        self.name_field.setPlaceholderText("Tag Name (Required)")
         self.name_layout.addWidget(self.name_field)
 
         # Shorthand ------------------------------------------------------------
