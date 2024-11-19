@@ -88,7 +88,7 @@ class BuildTagPanel(PanelWidget):
         self.alias_add_button = QPushButton()
         self.alias_add_button.setText("+")
 
-        self.alias_add_button.clicked.connect(lambda: self.add_alias_callback())
+        self.alias_add_button.clicked.connect(self.add_alias_callback())
 
         # Subtags ------------------------------------------------------------
 
