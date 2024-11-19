@@ -381,9 +381,9 @@ class ItemThumb(FlowWidget):
     def update_clickable(self, clickable: typing.Callable):
         """Updates attributes of a thumbnail element."""
         if self.thumb_button.is_connected:
-            self.thumb_button.clicked.disconnect()
+            self.thumb_button.pressed.disconnect()
         if clickable:
-            self.thumb_button.clicked.connect(clickable)
+            self.thumb_button.pressed.connect(clickable)
             self.thumb_button.is_connected = True
 
     def refresh_badge(self, entry: Entry | None = None):

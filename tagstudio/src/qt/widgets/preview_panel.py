@@ -68,16 +68,6 @@ if typing.TYPE_CHECKING:
 logger = structlog.get_logger(__name__)
 
 
-def update_selected_entry(driver: "QtDriver"):
-    for grid_idx in driver.selected:
-        entry = driver.frame_content[grid_idx]
-        # reload entry
-        results = driver.lib.search_library(FilterState(id=entry.id))
-        logger.info("found item", entries=len(results), grid_idx=grid_idx, lookup_id=entry.id)
-        assert results, f"Entry not found: {entry.id}"
-        driver.frame_content[grid_idx] = next(results)
-
-
 class PreviewPanel(QWidget):
     """The Preview Panel Widget."""
 
@@ -292,6 +282,18 @@ class PreviewPanel(QWidget):
         root_layout = QHBoxLayout(self)
         root_layout.setContentsMargins(0, 0, 0, 0)
         root_layout.addWidget(splitter)
+
+    def update_selected_entry(self, driver: "QtDriver"):
+        for grid_idx in driver.selected:
+            entry = driver.frame_content[grid_idx]
+            results = self.lib.search_library(FilterState(id=entry.id))
+            logger.info(
+                "found item",
+                entries=len(results.items),
+                grid_idx=grid_idx,
+                lookup_id=entry.id,
+            )
+            self.driver.frame_content[grid_idx] = results[0]
 
     def remove_field_prompt(self, name: str) -> str:
         return f'Are you sure you want to remove field "{name}"?'
@@ -900,7 +902,7 @@ class PreviewPanel(QWidget):
                         prompt=self.remove_field_prompt(field.type.name),
                         callback=lambda: (
                             self.remove_field(field),
-                            update_selected_entry(self.driver),
+                            self.update_selected_entry(self.driver),
                             # reload entry and its fields
                             self.update_widgets(),
                         ),
