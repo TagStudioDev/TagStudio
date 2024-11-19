@@ -3,7 +3,8 @@ from enum import Enum
 
 class TokenType(Enum):
     KEYWORD = 1
-    IDENTIFIER = 2
+    LITERAL = 2
+    QUERY = 3
     ILLEGAL = 4
     COLON = 5
     LEFT_PAREN = 6
@@ -29,6 +30,8 @@ class QueryTokenizer:
         self.read_character()
 
     keywords = ["AND", "OR", "NOT"]
+
+    queries = ["mediatype", "filetype", "path", "tag"]
 
     @staticmethod
     def is_character(character: str) -> bool:
@@ -65,10 +68,17 @@ class QueryTokenizer:
 
     def next_identifier(self) -> Token | None:
         begin_pos = self.current_pos
-        while self.is_character(self.current_character) or self.is_numeric(self.current_character):
+        inside_literal = False
+        while (
+            self.is_character(self.current_character)
+            or self.is_numeric(self.current_character)
+            or inside_literal
+        ):
+            if self.current_character == '"' or self.current_character == "'":
+                inside_literal = not inside_literal
             self.read_character()
 
-        return Token(self.query[begin_pos : self.current_pos], TokenType.IDENTIFIER)
+        return Token((self.query[begin_pos : self.current_pos]).strip('"'), TokenType.LITERAL)
 
     def next_token(self) -> Token:
         token: Token | None = None
@@ -87,6 +97,9 @@ class QueryTokenizer:
                 ident = self.next_identifier()
                 if ident.data.upper() in self.keywords:
                     ident.type = TokenType.KEYWORD
+                    return ident
+                elif ident.data.lower() in self.queries:
+                    ident.type = TokenType.QUERY
                     return ident
                 else:
                     return ident

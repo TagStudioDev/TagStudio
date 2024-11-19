@@ -40,19 +40,48 @@ def test_parse_single_expr_query(source: str):
         tokens.append(token)
         i += 1
 
-    assert tokens[0].type == TokenType.IDENTIFIER
+    assert tokens[0].type == TokenType.QUERY
     assert tokens[1].type == TokenType.COLON
-    assert tokens[2].type == TokenType.IDENTIFIER
+    assert tokens[2].type == TokenType.LITERAL
 
 
-@pytest.mark.parametrize("source", ["mediatype:photoshop AND path:books"])
-def test_parse_multi_expr_query(source: str):
+@pytest.mark.parametrize(
+    ["source", "expected_tokens"],
+    [
+        (
+            "mediatype:photoshop AND path:books",
+            [
+                Token("mediatype", TokenType.QUERY),
+                Token(None, TokenType.COLON),
+                Token("photoshop", TokenType.LITERAL),
+                Token("AND", TokenType.KEYWORD),
+                Token("path", TokenType.QUERY),
+                Token(None, TokenType.COLON),
+                Token("books", TokenType.LITERAL),
+            ],
+        ),
+        (
+            'mediatype:"affinity photo" AND (tag:one OR tag:"this is another tag")',
+            [
+                Token("mediatype", TokenType.QUERY),
+                Token(None, TokenType.COLON),
+                Token("affinity photo", TokenType.LITERAL),
+                Token("AND", TokenType.KEYWORD),
+                Token(None, TokenType.LEFT_PAREN),
+                Token("tag", TokenType.QUERY),
+                Token(None, TokenType.COLON),
+                Token("one", TokenType.LITERAL),
+                Token("OR", TokenType.KEYWORD),
+                Token("tag", TokenType.QUERY),
+                Token(None, TokenType.COLON),
+                Token("this is another tag", TokenType.LITERAL),
+            ],
+        ),
+    ],
+)
+def test_parse_multi_expr_query(source: str, expected_tokens: list[Token]):
     query_tokenizer: QueryTokenizer = QueryTokenizer(source)
-
-    assert query_tokenizer.next_token().type == TokenType.IDENTIFIER
-    assert query_tokenizer.next_token().type == TokenType.COLON
-    assert query_tokenizer.next_token().type == TokenType.IDENTIFIER
-    assert query_tokenizer.next_token().type == TokenType.KEYWORD
-    assert query_tokenizer.next_token().type == TokenType.IDENTIFIER
-    assert query_tokenizer.next_token().type == TokenType.COLON
-    assert query_tokenizer.next_token().type == TokenType.IDENTIFIER
+    for expected_token in expected_tokens:
+        actual_token = query_tokenizer.next_token()
+        assert expected_token.type == actual_token.type
+        assert expected_token.data == actual_token.data
