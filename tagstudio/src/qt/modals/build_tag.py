@@ -18,7 +18,7 @@ from PySide6.QtWidgets import (
 )
 from src.core.library import Library, Tag
 from src.core.library.alchemy.enums import TagColor
-from src.core.palette import ColorType, get_tag_color
+from src.core.palette import ColorType, UiColor, get_tag_color, get_ui_color
 from src.qt.modals.tag_search import TagSearchPanel
 from src.qt.widgets.panel import PanelModal, PanelWidget
 from src.qt.widgets.tag import TagWidget
@@ -51,6 +51,9 @@ class BuildTagPanel(PanelWidget):
         self.name_title.setText("Name")
         self.name_layout.addWidget(self.name_title)
         self.name_field = QLineEdit()
+        self.name_field.setFixedHeight(24)
+        self.name_field.textChanged.connect(self.on_name_changed)
+        self.name_field.setPlaceholderText("Tag Name (Required)")
         self.name_layout.addWidget(self.name_field)
 
         # Shorthand ------------------------------------------------------------
@@ -162,6 +165,8 @@ class BuildTagPanel(PanelWidget):
         # TODO - fill subtags
         self.subtags: set[int] = set()
         self.set_tag(tag or Tag(name="New Tag"))
+        if tag is None:
+            self.name_field.selectAll()
 
     def add_subtag_callback(self, tag_id: int):
         logger.info("add_subtag_callback", tag_id=tag_id)
@@ -203,6 +208,18 @@ class BuildTagPanel(PanelWidget):
                 break
 
         self.tag = tag
+
+    def on_name_changed(self):
+        is_empty = not self.name_field.text().strip()
+
+        self.name_field.setStyleSheet(
+            f"border: 1px solid {get_ui_color(ColorType.PRIMARY, UiColor.RED)}; border-radius: 2px"
+            if is_empty
+            else ""
+        )
+
+        if self.panel_save_button is not None:
+            self.panel_save_button.setDisabled(is_empty)
 
     def build_tag(self) -> Tag:
         color = self.color_field.currentData() or TagColor.DEFAULT
