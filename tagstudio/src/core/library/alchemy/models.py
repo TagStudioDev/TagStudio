@@ -52,8 +52,8 @@ class Tag(Base):
 
     parent_tags: Mapped[set["Tag"]] = relationship(
         secondary=TagSubtag.__tablename__,
-        primaryjoin="Tag.id == TagSubtag.child_id",
-        secondaryjoin="Tag.id == TagSubtag.parent_id",
+        primaryjoin="Tag.id == TagSubtag.parent_id",
+        secondaryjoin="Tag.id == TagSubtag.child_id",
         back_populates="subtags",
     )
 
@@ -75,6 +75,25 @@ class Tag(Base):
     @property
     def alias_ids(self) -> list[int]:
         return [tag.id for tag in self.aliases]
+
+    @property
+    def display_name(self) -> str:
+        if len(self.parent_tags) == 0:
+            return ""
+
+        parent_tag = list(self.parent_tags)[0]
+
+        if parent_tag is None:
+            return ""
+
+        display_name = ""
+
+        if parent_tag.shorthand.strip() == "" or parent_tag.shorthand is None:
+            display_name = " (" + parent_tag.name + ")"
+        else:
+            display_name = " (" + parent_tag.shorthand + ")"
+
+        return self.name + display_name
 
     def __init__(
         self,

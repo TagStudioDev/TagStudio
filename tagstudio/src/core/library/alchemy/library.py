@@ -490,8 +490,7 @@ class Library:
         with Session(self.engine) as session:
             query = select(Tag)
             query = query.options(
-                selectinload(Tag.subtags),
-                selectinload(Tag.aliases),
+                selectinload(Tag.subtags), selectinload(Tag.aliases), selectinload(Tag.parent_tags)
             )
 
             if search.tag:
@@ -513,7 +512,6 @@ class Library:
                 results=len(res),
             )
 
-            session.expunge_all()
             return res
 
     def get_all_child_tag_ids(self, tag_id: int) -> list[int]:

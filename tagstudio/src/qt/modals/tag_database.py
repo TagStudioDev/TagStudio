@@ -77,7 +77,10 @@ class TagDatabasePanel(PanelWidget):
             row = QHBoxLayout(container)
             row.setContentsMargins(0, 0, 0, 0)
             row.setSpacing(3)
-            tag_widget = TagWidget(tag, has_edit=True, has_remove=False)
+            display_name = tag.display_name
+            tag_widget = TagWidget(
+                tag, tag_display_name=display_name, has_edit=True, has_remove=False
+            )
             tag_widget.on_edit.connect(lambda checked=False, t=tag: self.edit_tag(t))
             row.addWidget(tag_widget)
             self.scroll_layout.addWidget(container)
