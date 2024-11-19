@@ -222,6 +222,7 @@ class BuildTagPanel(PanelWidget):
         color = self.color_field.currentData() or TagColor.DEFAULT
 
         tag = self.tag
+
         tag.name = self.name_field.text()
         tag.shorthand = self.shorthand_field.text()
         tag.color = color
