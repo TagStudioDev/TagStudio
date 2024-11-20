@@ -145,22 +145,14 @@ class Library:
         self.folder = None
 
     def migrate_json_to_sqlite(self, json_lib: JsonLibrary):
-        """Migrate JSON library data to the open SQLite database."""
+        """Migrate JSON library data to the SQLite database."""
         folder: Folder = Folder(path=self.library_dir, uuid=str(uuid4()))
-        self.add_entries(
-            [
-                Entry(
-                    path=entry.path / entry.filename,
-                    folder=folder,
-                    fields=self.convert_fields(entry.fields),
-                )
-                for entry in json_lib.entries
-            ]
-        )
 
+        # Tags
         for tag in json_lib.tags:
             self.add_tag(
                 Tag(
+                    id=tag.id,
                     name=tag.name,
                     shorthand=tag.shorthand,
                     aliases=None,
@@ -168,8 +160,35 @@ class Library:
                 )
             )
 
+        # Entries
+        self.add_entries(
+            [
+                Entry(
+                    path=entry.path / entry.filename,
+                    folder=folder,
+                    fields=[],
+                )
+                for entry in json_lib.entries
+            ]
+        )
+        for entry in json_lib.entries:
+            for field in entry.fields:
+                for k, v in field.items():
+                    self.add_entry_field_type(
+                        entry_ids=(entry.id + 1),  # JSON IDs start at 0 instead of 1
+                        field_id=self.get_field_name_from_id(k),
+                        value=v,
+                    )
+
+        # Preferences
         self.set_prefs(LibraryPrefs.EXTENSION_LIST, list(json_lib.ext_list))
         self.set_prefs(LibraryPrefs.IS_EXCLUDE_LIST, json_lib.is_exclude_list)
+
+    def get_field_name_from_id(self, field_id: int) -> _FieldID:
+        for f in _FieldID:
+            if field_id == f.value.id:
+                return f
+        return None
 
     def open_library(self, library_dir: Path, storage_path: str | None = None) -> LibraryStatus:
         if storage_path == ":memory:":
@@ -562,9 +581,11 @@ class Library:
 
     def search_tags(
         self,
-        search: FilterState,
+        name: str,
     ) -> list[Tag]:
         """Return a list of Tag records matching the query."""
+        tag_limit = 100
+
         with Session(self.engine) as session:
             query = select(Tag)
             query = query.options(
@@ -572,13 +593,13 @@ class Library:
                 selectinload(Tag.aliases),
             )
 
-            if search.tag:
+            if name:
                 query = query.where(
                     or_(
-                        Tag.name.icontains(search.tag),
-                        Tag.shorthand.icontains(search.tag),
+                        Tag.name.icontains(name),
+                        Tag.shorthand.icontains(name),
                     )
-                )
+                ).limit(tag_limit)
 
             tags = session.scalars(query)
 
@@ -586,7 +607,7 @@ class Library:
 
             logger.info(
                 "searching tags",
-                search=search,
+                search=name,
                 statement=str(query),
                 results=len(res),
             )
@@ -749,7 +770,7 @@ class Library:
         *,
         field: ValueType | None = None,
         field_id: _FieldID | str | None = None,
-        value: str | datetime | list[str] | None = None,
+        value: str | datetime | list[int] | None = None,
     ) -> bool:
         logger.info(
             "add_field_to_entry",
@@ -782,8 +803,12 @@ class Library:
 
             if value:
                 assert isinstance(value, list)
-                for tag in value:
-                    field_model.tags.add(Tag(name=tag))
+                for tag_id in list(set(value)):
+                    with Session(self.engine) as session:
+                        tag = session.scalar(select(Tag).where(Tag.id == tag_id))
+                        logger.info(tag)
+                        field_model.tags.add(tag)
+                        session.flush()
 
         elif field.type == FieldTypeEnum.DATETIME:
             field_model = DatetimeField(

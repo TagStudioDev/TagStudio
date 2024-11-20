@@ -878,10 +878,6 @@ class PreviewPanel(QWidget):
                         logger.error("Failed to disconnect inner_container.updated")
 
                 else:
-                    logger.info(
-                        "inner_container is not instance of TagBoxWidget",
-                        container=inner_container,
-                    )
                     inner_container = TagBoxWidget(
                         field,
                         title,
