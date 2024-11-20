@@ -274,33 +274,6 @@ class BuildTagPanel(PanelWidget):
         else:
             self.alias_add_button.setFocus()
 
-    def keyPressEvent(self, event):  # noqa: N802
-        if event.key() == Qt.Key_Return or event.key() == Qt.Key_Enter:  # type: ignore
-            focused_widget = QApplication.focusWidget()
-            if isinstance(focused_widget.parent(), TagAliasWidget):
-                self.add_alias_callback()
-
-    def remove_selected_alias(self):
-        count = self.aliases_flow_layout.count()
-        if count <= 0:
-            return
-
-        focused_widget = QApplication.focusWidget()
-
-        if focused_widget is None:
-            return
-
-        if isinstance(focused_widget.parent(), TagAliasWidget):
-            cast(TagAliasWidget, focused_widget.parent()).on_remove.emit()
-
-        count = self.aliases_flow_layout.count()
-        if count > 1:
-            cast(
-                TagAliasWidget, self.aliases_flow_layout.itemAt(count - 2).widget()
-            ).text_field.setFocus()
-        else:
-            self.alias_add_button.setFocus()
-
     def add_subtag_callback(self, tag_id: int):
         logger.info("add_subtag_callback", tag_id=tag_id)
         self.subtag_ids.add(tag_id)
