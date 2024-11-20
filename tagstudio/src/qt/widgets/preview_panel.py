@@ -1,6 +1,8 @@
 # Copyright (C) 2024 Travis Abendshien (CyanVoxel).
 # Licensed under the GPL-3.0 License.
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
+
+import io
 import os
 import platform
 import sys
@@ -64,16 +66,6 @@ if typing.TYPE_CHECKING:
     from src.qt.ts_qt import QtDriver
 
 logger = structlog.get_logger(__name__)
-
-
-def update_selected_entry(driver: "QtDriver"):
-    for grid_idx in driver.selected:
-        entry = driver.frame_content[grid_idx]
-        # reload entry
-        results = driver.lib.search_library(FilterState(id=entry.id))
-        logger.info("found item", entries=len(results), grid_idx=grid_idx, lookup_id=entry.id)
-        assert results, f"Entry not found: {entry.id}"
-        driver.frame_content[grid_idx] = next(results)
 
 
 class PreviewPanel(QWidget):
@@ -290,6 +282,18 @@ class PreviewPanel(QWidget):
         root_layout = QHBoxLayout(self)
         root_layout.setContentsMargins(0, 0, 0, 0)
         root_layout.addWidget(splitter)
+
+    def update_selected_entry(self, driver: "QtDriver"):
+        for grid_idx in driver.selected:
+            entry = driver.frame_content[grid_idx]
+            results = self.lib.search_library(FilterState(id=entry.id))
+            logger.info(
+                "found item",
+                entries=len(results.items),
+                grid_idx=grid_idx,
+                lookup_id=entry.id,
+            )
+            self.driver.frame_content[grid_idx] = results[0]
 
     def remove_field_prompt(self, name: str) -> str:
         return f'Are you sure you want to remove field "{name}"?'
@@ -601,19 +605,32 @@ class PreviewPanel(QWidget):
                 # TODO: Do this all somewhere else, this is just here temporarily.
                 ext: str = filepath.suffix.lower()
                 try:
-                    if filepath.suffix.lower() in [".gif"]:
-                        with open(filepath, mode="rb") as file:
-                            if self.preview_gif.movie():
-                                self.preview_gif.movie().stop()
-                                self.gif_buffer.close()
+                    if MediaCategories.is_ext_in_category(
+                        ext, MediaCategories.IMAGE_ANIMATED_TYPES, mime_fallback=True
+                    ):
+                        if self.preview_gif.movie():
+                            self.preview_gif.movie().stop()
+                            self.gif_buffer.close()
 
-                            ba = file.read()
-                            self.gif_buffer.setData(ba)
-                            movie = QMovie(self.gif_buffer, QByteArray())
-                            self.preview_gif.setMovie(movie)
-                            movie.start()
+                        image: Image.Image = Image.open(filepath)
+                        anim_image: Image.Image = image
+                        image_bytes_io: io.BytesIO = io.BytesIO()
+                        anim_image.save(
+                            image_bytes_io,
+                            "GIF",
+                            lossless=True,
+                            save_all=True,
+                            loop=0,
+                            disposal=2,
+                        )
+                        image_bytes_io.seek(0)
+                        ba: bytes = image_bytes_io.read()
 
-                        image = Image.open(str(filepath))
+                        self.gif_buffer.setData(ba)
+                        movie = QMovie(self.gif_buffer, QByteArray())
+                        self.preview_gif.setMovie(movie)
+                        movie.start()
+
                         self.resizeEvent(
                             QResizeEvent(
                                 QSize(image.width, image.height),
@@ -625,13 +642,7 @@ class PreviewPanel(QWidget):
                         self.preview_gif.show()
 
                     image = None
-                    if (
-                        MediaCategories.is_ext_in_category(ext, MediaCategories.IMAGE_TYPES)
-                        and MediaCategories.is_ext_in_category(ext, MediaCategories.IMAGE_RAW_TYPES)
-                        and MediaCategories.is_ext_in_category(
-                            ext, MediaCategories.IMAGE_VECTOR_TYPES
-                        )
-                    ):
+                    if MediaCategories.is_ext_in_category(ext, MediaCategories.IMAGE_RASTER_TYPES):
                         image = Image.open(str(filepath))
                     elif MediaCategories.is_ext_in_category(ext, MediaCategories.IMAGE_RAW_TYPES):
                         try:
@@ -668,7 +679,7 @@ class PreviewPanel(QWidget):
                     # Stats for specific file types are displayed here.
                     if image and (
                         MediaCategories.is_ext_in_category(
-                            ext, MediaCategories.IMAGE_TYPES, mime_fallback=True
+                            ext, MediaCategories.IMAGE_RASTER_TYPES, mime_fallback=True
                         )
                         or MediaCategories.is_ext_in_category(
                             ext, MediaCategories.VIDEO_TYPES, mime_fallback=True
@@ -891,7 +902,7 @@ class PreviewPanel(QWidget):
                         prompt=self.remove_field_prompt(field.type.name),
                         callback=lambda: (
                             self.remove_field(field),
-                            update_selected_entry(self.driver),
+                            self.update_selected_entry(self.driver),
                             # reload entry and its fields
                             self.update_widgets(),
                         ),

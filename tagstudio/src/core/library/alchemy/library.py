@@ -37,6 +37,7 @@ from ...constants import (
     TS_FOLDER_NAME,
 )
 from ...enums import LibraryPrefs
+from ...media_types import MediaCategories
 from .db import make_tables
 from .enums import FieldTypeEnum, FilterState, TagColor
 from .fields import (
@@ -395,6 +396,13 @@ class Library:
         with Session(self.engine) as session:
             return session.query(exists().where(Entry.path == path)).scalar()
 
+    def get_paths(self, glob: str | None = None) -> list[str]:
+        with Session(self.engine) as session:
+            paths = session.scalars(select(Entry.path)).unique()
+
+        path_strings: list[str] = list(map(lambda x: x.as_posix(), paths))
+        return path_strings
+
     def search_library(
         self,
         search: FilterState,
@@ -443,7 +451,20 @@ class Library:
                     )
                 )
             elif search.path:
-                statement = statement.where(Entry.path.ilike(f"%{search.path}%"))
+                search_str = str(search.path).replace("*", "%")
+                statement = statement.where(Entry.path.ilike(search_str))
+            elif search.filetype:
+                statement = statement.where(Entry.suffix.ilike(f"{search.filetype}"))
+            elif search.mediatype:
+                extensions: set[str] = set[str]()
+                for media_cat in MediaCategories.ALL_CATEGORIES:
+                    if search.mediatype == media_cat.name:
+                        extensions = extensions | media_cat.extensions
+                        break
+                # just need to map it to search db - suffixes do not have '.'
+                statement = statement.where(
+                    Entry.suffix.in_(map(lambda x: x.replace(".", ""), extensions))
+                )
 
             extensions = self.prefs(LibraryPrefs.EXTENSION_LIST)
             is_exclude_list = self.prefs(LibraryPrefs.IS_EXCLUDE_LIST)

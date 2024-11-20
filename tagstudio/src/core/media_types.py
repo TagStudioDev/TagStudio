@@ -23,6 +23,7 @@ class MediaType(str, Enum):
     DATABASE: str = "database"
     DISK_IMAGE: str = "disk_image"
     DOCUMENT: str = "document"
+    EBOOK: str = "ebook"
     FONT: str = "font"
     IMAGE_ANIMATED: str = "image_animated"
     IMAGE_RAW: str = "image_raw"
@@ -31,6 +32,7 @@ class MediaType(str, Enum):
     INSTALLER: str = "installer"
     MATERIAL: str = "material"
     MODEL: str = "model"
+    OPEN_DOCUMENT: str = "open_document"
     PACKAGE: str = "package"
     PDF: str = "pdf"
     PLAINTEXT: str = "plaintext"
@@ -60,6 +62,7 @@ class MediaCategory:
 
     media_type: MediaType
     extensions: set[str]
+    name: str
     is_iana: bool = False
 
 
@@ -160,6 +163,25 @@ class MediaCategories:
         ".wpd",
         ".wps",
     }
+    _EBOOK_SET: set[str] = {
+        ".epub",
+        # ".azw",
+        # ".azw3",
+        # ".cb7",
+        # ".cba",
+        # ".cbr",
+        # ".cbt",
+        # ".cbz",
+        # ".djvu",
+        # ".fb2",
+        # ".ibook",
+        # ".inf",
+        # ".kfx",
+        # ".lit",
+        # ".mobi",
+        # ".pdb"
+        # ".prc",
+    }
     _FONT_SET: set[str] = {
         ".fon",
         ".otf",
@@ -172,7 +194,6 @@ class MediaCategories:
         ".apng",
         ".gif",
         ".webp",
-        ".jxl",
     }
     _IMAGE_RAW_SET: set[str] = {
         ".arw",
@@ -187,7 +208,7 @@ class MediaCategories:
         ".rw2",
     }
     _IMAGE_VECTOR_SET: set[str] = {".svg"}
-    _IMAGE_SET: set[str] = {
+    _IMAGE_RASTER_SET: set[str] = {
         ".apng",
         ".avif",
         ".bmp",
@@ -214,6 +235,18 @@ class MediaCategories:
     _INSTALLER_SET: set[str] = {".appx", ".msi", ".msix"}
     _MATERIAL_SET: set[str] = {".mtl"}
     _MODEL_SET: set[str] = {".3ds", ".fbx", ".obj", ".stl"}
+    _OPEN_DOCUMENT_SET: set[str] = {
+        ".fodg",
+        ".fodp",
+        ".fods",
+        ".fodt",
+        ".mscz",
+        ".odf",
+        ".odg",
+        ".odp",
+        ".ods",
+        ".odt",
+    }
     _PACKAGE_SET: set[str] = {
         ".aab",
         ".akp",
@@ -306,136 +339,181 @@ class MediaCategories:
         media_type=MediaType.ADOBE_PHOTOSHOP,
         extensions=_ADOBE_PHOTOSHOP_SET,
         is_iana=False,
+        name="photoshop",
     )
     AFFINITY_PHOTO_TYPES: MediaCategory = MediaCategory(
         media_type=MediaType.AFFINITY_PHOTO,
         extensions=_AFFINITY_PHOTO_SET,
         is_iana=False,
+        name="affinity photo",
     )
     ARCHIVE_TYPES: MediaCategory = MediaCategory(
         media_type=MediaType.ARCHIVE,
         extensions=_ARCHIVE_SET,
         is_iana=False,
+        name="archive",
     )
     AUDIO_MIDI_TYPES: MediaCategory = MediaCategory(
         media_type=MediaType.AUDIO_MIDI,
         extensions=_AUDIO_MIDI_SET,
         is_iana=False,
+        name="audio midi",
     )
     AUDIO_TYPES: MediaCategory = MediaCategory(
         media_type=MediaType.AUDIO,
         extensions=_AUDIO_SET | _AUDIO_MIDI_SET,
         is_iana=True,
+        name="audio",
     )
     BLENDER_TYPES: MediaCategory = MediaCategory(
         media_type=MediaType.BLENDER,
         extensions=_BLENDER_SET,
         is_iana=False,
+        name="blender",
     )
     DATABASE_TYPES: MediaCategory = MediaCategory(
         media_type=MediaType.DATABASE,
         extensions=_DATABASE_SET,
         is_iana=False,
+        name="database",
     )
     DISK_IMAGE_TYPES: MediaCategory = MediaCategory(
         media_type=MediaType.DISK_IMAGE,
         extensions=_DISK_IMAGE_SET,
         is_iana=False,
+        name="disk image",
     )
     DOCUMENT_TYPES: MediaCategory = MediaCategory(
         media_type=MediaType.DOCUMENT,
         extensions=_DOCUMENT_SET,
         is_iana=False,
+        name="document",
+    )
+    EBOOK_TYPES: MediaCategory = MediaCategory(
+        media_type=MediaType.EBOOK,
+        extensions=_EBOOK_SET,
+        is_iana=False,
+        name="ebook",
     )
     FONT_TYPES: MediaCategory = MediaCategory(
         media_type=MediaType.FONT,
         extensions=_FONT_SET,
         is_iana=True,
+        name="font",
     )
     IMAGE_ANIMATED_TYPES: MediaCategory = MediaCategory(
         media_type=MediaType.IMAGE_ANIMATED,
         extensions=_IMAGE_ANIMATED_SET,
         is_iana=False,
+        name="animated image",
     )
     IMAGE_RAW_TYPES: MediaCategory = MediaCategory(
         media_type=MediaType.IMAGE_RAW,
         extensions=_IMAGE_RAW_SET,
         is_iana=False,
+        name="raw image",
     )
     IMAGE_VECTOR_TYPES: MediaCategory = MediaCategory(
         media_type=MediaType.IMAGE_VECTOR,
         extensions=_IMAGE_VECTOR_SET,
         is_iana=False,
+        name="vector image",
+    )
+    IMAGE_RASTER_TYPES: MediaCategory = MediaCategory(
+        media_type=MediaType.IMAGE,
+        extensions=_IMAGE_RASTER_SET,
+        is_iana=False,
+        name="raster image",
     )
     IMAGE_TYPES: MediaCategory = MediaCategory(
         media_type=MediaType.IMAGE,
-        extensions=_IMAGE_SET | _IMAGE_RAW_SET | _IMAGE_VECTOR_SET,
+        extensions=_IMAGE_RASTER_SET | _IMAGE_RAW_SET | _IMAGE_VECTOR_SET,
         is_iana=True,
+        name="image",
     )
     INSTALLER_TYPES: MediaCategory = MediaCategory(
         media_type=MediaType.INSTALLER,
         extensions=_INSTALLER_SET,
         is_iana=False,
+        name="installer",
     )
     MATERIAL_TYPES: MediaCategory = MediaCategory(
         media_type=MediaType.MATERIAL,
         extensions=_MATERIAL_SET,
         is_iana=False,
+        name="material",
     )
     MODEL_TYPES: MediaCategory = MediaCategory(
         media_type=MediaType.MODEL,
         extensions=_MODEL_SET,
         is_iana=True,
+        name="model",
+    )
+    OPEN_DOCUMENT_TYPES: MediaCategory = MediaCategory(
+        media_type=MediaType.OPEN_DOCUMENT,
+        extensions=_OPEN_DOCUMENT_SET,
+        is_iana=False,
+        name="open document",
     )
     PACKAGE_TYPES: MediaCategory = MediaCategory(
         media_type=MediaType.PACKAGE,
         extensions=_PACKAGE_SET,
         is_iana=False,
+        name="package",
     )
     PDF_TYPES: MediaCategory = MediaCategory(
         media_type=MediaType.PDF,
         extensions=_PDF_SET,
         is_iana=False,
+        name="pdf",
     )
     PLAINTEXT_TYPES: MediaCategory = MediaCategory(
         media_type=MediaType.PLAINTEXT,
         extensions=_PLAINTEXT_SET,
         is_iana=False,
+        name="plaintext",
     )
     PRESENTATION_TYPES: MediaCategory = MediaCategory(
         media_type=MediaType.PRESENTATION,
         extensions=_PRESENTATION_SET,
         is_iana=False,
+        name="presentation",
     )
     PROGRAM_TYPES: MediaCategory = MediaCategory(
         media_type=MediaType.PROGRAM,
         extensions=_PROGRAM_SET,
         is_iana=False,
+        name="program",
     )
     SHORTCUT_TYPES: MediaCategory = MediaCategory(
         media_type=MediaType.SHORTCUT,
         extensions=_SHORTCUT_SET,
         is_iana=False,
+        name="shortcut",
     )
     SOURCE_ENGINE_TYPES: MediaCategory = MediaCategory(
         media_type=MediaType.SOURCE_ENGINE,
         extensions=_SOURCE_ENGINE_SET,
         is_iana=False,
+        name="source engine",
     )
     SPREADSHEET_TYPES: MediaCategory = MediaCategory(
         media_type=MediaType.SPREADSHEET,
         extensions=_SPREADSHEET_SET,
         is_iana=False,
+        name="spreadsheet",
     )
     TEXT_TYPES: MediaCategory = MediaCategory(
         media_type=MediaType.TEXT,
         extensions=_DOCUMENT_SET | _PLAINTEXT_SET,
         is_iana=True,
+        name="text",
     )
     VIDEO_TYPES: MediaCategory = MediaCategory(
         media_type=MediaType.VIDEO,
         extensions=_VIDEO_SET,
         is_iana=True,
+        name="video",
     )
 
     ALL_CATEGORIES: list[MediaCategory] = [
@@ -448,6 +526,7 @@ class MediaCategories:
         DATABASE_TYPES,
         DISK_IMAGE_TYPES,
         DOCUMENT_TYPES,
+        EBOOK_TYPES,
         FONT_TYPES,
         IMAGE_ANIMATED_TYPES,
         IMAGE_RAW_TYPES,
@@ -456,6 +535,7 @@ class MediaCategories:
         INSTALLER_TYPES,
         MATERIAL_TYPES,
         MODEL_TYPES,
+        OPEN_DOCUMENT_TYPES,
         PACKAGE_TYPES,
         PDF_TYPES,
         PLAINTEXT_TYPES,
