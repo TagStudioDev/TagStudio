@@ -1,5 +1,6 @@
 import re
 import shutil
+import time
 import unicodedata
 from dataclasses import dataclass
 from datetime import UTC, datetime
@@ -9,6 +10,7 @@ from typing import Any, Iterator, Type
 from uuid import uuid4
 
 import structlog
+from humanfriendly import format_timespan
 from sqlalchemy import (
     URL,
     Engine,
@@ -146,6 +148,8 @@ class Library:
 
     def migrate_json_to_sqlite(self, json_lib: JsonLibrary):
         """Migrate JSON library data to the SQLite database."""
+        logger.info("Starting Library Conversion...")
+        start_time = time.time()
         folder: Folder = Folder(path=self.library_dir, uuid=str(uuid4()))
 
         # Tag Aliases
@@ -160,7 +164,6 @@ class Library:
 
         # Tags
         for tag in json_lib.tags:
-
             self.add_tag(
                 Tag(
                     id=tag.id,
@@ -193,6 +196,9 @@ class Library:
         # Preferences
         self.set_prefs(LibraryPrefs.EXTENSION_LIST, list(json_lib.ext_list))
         self.set_prefs(LibraryPrefs.IS_EXCLUDE_LIST, json_lib.is_exclude_list)
+
+        end_time = time.time()
+        logger.info(f"Library Converted! ({format_timespan(end_time-start_time)})")
 
     def get_field_name_from_id(self, field_id: int) -> _FieldID:
         for f in _FieldID:
