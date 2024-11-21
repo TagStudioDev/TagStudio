@@ -191,6 +191,7 @@ class Library:
         return None
 
     def open_library(self, library_dir: Path, storage_path: str | None = None) -> LibraryStatus:
+        is_new: bool = True
         if storage_path == ":memory:":
             self.storage_path = storage_path
             is_new = True
