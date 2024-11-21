@@ -592,7 +592,7 @@ class Library:
             query = query.options(
                 selectinload(Tag.subtags),
                 selectinload(Tag.aliases),
-            )
+            ).limit(tag_limit)
 
             if name:
                 query = query.where(
@@ -600,7 +600,7 @@ class Library:
                         Tag.name.icontains(name),
                         Tag.shorthand.icontains(name),
                     )
-                ).limit(tag_limit)
+                )
 
             tags = session.scalars(query)
 
