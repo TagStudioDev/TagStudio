@@ -148,14 +148,24 @@ class Library:
         """Migrate JSON library data to the SQLite database."""
         folder: Folder = Folder(path=self.library_dir, uuid=str(uuid4()))
 
+        # Tag Aliases
+        for tag in json_lib.tags:
+            for alias in tag.aliases:
+                self.add_alias(name=alias, tag_id=tag.id)
+
+        # Tag Subtags
+        for tag in json_lib.tags:
+            for subtag_id in tag.subtag_ids:
+                self.add_subtag(parent_id=tag.id, child_id=subtag_id)
+
         # Tags
         for tag in json_lib.tags:
+
             self.add_tag(
                 Tag(
                     id=tag.id,
                     name=tag.name,
                     shorthand=tag.shorthand,
-                    aliases=None,
                     color=TagColor.get_color_from_str(tag.color),
                 )
             )
@@ -960,19 +970,35 @@ class Library:
 
         return alias
 
-    def add_subtag(self, base_id: int, new_tag_id: int) -> bool:
-        if base_id == new_tag_id:
+    def add_subtag(self, parent_id: int, child_id: int) -> bool:
+        if parent_id == child_id:
             return False
 
         # open session and save as parent tag
         with Session(self.engine) as session:
             subtag = TagSubtag(
-                parent_id=base_id,
-                child_id=new_tag_id,
+                parent_id=parent_id,
+                child_id=child_id,
             )
 
             try:
                 session.add(subtag)
+                session.commit()
+                return True
+            except IntegrityError:
+                session.rollback()
+                logger.exception("IntegrityError")
+                return False
+
+    def add_alias(self, name: str, tag_id: int) -> bool:
+        with Session(self.engine) as session:
+            alias = TagAlias(
+                name=name,
+                tag_id=tag_id,
+            )
+
+            try:
+                session.add(alias)
                 session.commit()
                 return True
             except IntegrityError:
