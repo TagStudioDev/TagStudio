@@ -24,6 +24,7 @@ from sqlalchemy import (
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import (
     Session,
+    aliased,
     contains_eager,
     make_transient,
     selectinload,
@@ -417,13 +418,18 @@ class Library:
             statement = select(Entry)
 
             if search.tag:
+                SubtagAlias = aliased(Tag)  # noqa: N806
                 statement = (
                     statement.join(Entry.tag_box_fields)
                     .join(TagBoxField.tags)
+                    .outerjoin(Tag.aliases)
+                    .outerjoin(SubtagAlias, Tag.subtags)
                     .where(
                         or_(
                             Tag.name.ilike(search.tag),
                             Tag.shorthand.ilike(search.tag),
+                            TagAlias.name.ilike(search.tag),
+                            SubtagAlias.name.ilike(search.tag),
                         )
                     )
                 )
@@ -752,18 +758,23 @@ class Library:
         )
         return True
 
-    def add_tag(self, tag: Tag, subtag_ids: list[int] | None = None) -> Tag | None:
+    def add_tag(
+        self,
+        tag: Tag,
+        subtag_ids: set[int] | None = None,
+        alias_names: set[str] | None = None,
+        alias_ids: set[int] | None = None,
+    ) -> Tag | None:
         with Session(self.engine, expire_on_commit=False) as session:
             try:
                 session.add(tag)
                 session.flush()
 
-                for subtag_id in subtag_ids or []:
-                    subtag = TagSubtag(
-                        parent_id=tag.id,
-                        child_id=subtag_id,
-                    )
-                    session.add(subtag)
+                if subtag_ids is not None:
+                    self.update_subtags(tag, subtag_ids, session)
+
+                if alias_ids is not None and alias_names is not None:
+                    self.update_aliases(tag, alias_ids, alias_names, session)
 
                 session.commit()
 
@@ -847,25 +858,38 @@ class Library:
 
     def get_tag(self, tag_id: int) -> Tag:
         with Session(self.engine) as session:
-            tags_query = select(Tag).options(selectinload(Tag.subtags))
+            tags_query = select(Tag).options(selectinload(Tag.subtags), selectinload(Tag.aliases))
             tag = session.scalar(tags_query.where(Tag.id == tag_id))
 
             session.expunge(tag)
             for subtag in tag.subtags:
                 session.expunge(subtag)
 
+            for alias in tag.aliases:
+                session.expunge(alias)
+
         return tag
 
+    def get_alias(self, tag_id: int, alias_id: int) -> TagAlias:
+        with Session(self.engine) as session:
+            alias_query = select(TagAlias).where(TagAlias.id == alias_id, TagAlias.tag_id == tag_id)
+            alias = session.scalar(alias_query.where(TagAlias.id == alias_id))
+
+        return alias
+
     def add_subtag(self, base_id: int, new_tag_id: int) -> bool:
+        if base_id == new_tag_id:
+            return False
+
         # open session and save as parent tag
         with Session(self.engine) as session:
-            tag = TagSubtag(
+            subtag = TagSubtag(
                 parent_id=base_id,
                 child_id=new_tag_id,
             )
 
             try:
-                session.add(tag)
+                session.add(subtag)
                 session.commit()
                 return True
             except IntegrityError:
@@ -873,49 +897,62 @@ class Library:
                 logger.exception("IntegrityError")
                 return False
 
-    def update_tag(self, tag: Tag, subtag_ids: list[int]) -> None:
-        """Edit a Tag in the Library."""
-        # TODO - maybe merge this with add_tag?
-
-        if tag.shorthand:
-            tag.shorthand = slugify(tag.shorthand)
-
-        if tag.aliases:
-            # TODO
-            ...
-
-        # save the tag
+    def remove_subtag(self, base_id: int, remove_tag_id: int) -> bool:
         with Session(self.engine) as session:
-            try:
-                # update the existing tag
-                session.add(tag)
-                session.flush()
+            p_id = base_id
+            r_id = remove_tag_id
+            remove = session.query(TagSubtag).filter_by(parent_id=p_id, child_id=r_id).one()
+            session.delete(remove)
+            session.commit()
 
-                # load all tag's subtag to know which to remove
-                prev_subtags = session.scalars(
-                    select(TagSubtag).where(TagSubtag.parent_id == tag.id)
-                ).all()
+        return True
 
-                for subtag in prev_subtags:
-                    if subtag.child_id not in subtag_ids:
-                        session.delete(subtag)
-                    else:
-                        # no change, remove from list
-                        subtag_ids.remove(subtag.child_id)
+    def update_tag(
+        self,
+        tag: Tag,
+        subtag_ids: set[int] | None = None,
+        alias_names: set[str] | None = None,
+        alias_ids: set[int] | None = None,
+    ) -> None:
+        """Edit a Tag in the Library."""
+        self.add_tag(tag, subtag_ids, alias_names, alias_ids)
+
+    def update_aliases(self, tag, alias_ids, alias_names, session):
+        prev_aliases = session.scalars(select(TagAlias).where(TagAlias.tag_id == tag.id)).all()
+
+        for alias in prev_aliases:
+            if alias.id not in alias_ids or alias.name not in alias_names:
+                session.delete(alias)
+            else:
+                alias_ids.remove(alias.id)
+                alias_names.remove(alias.name)
+
+        for alias_name in alias_names:
+            alias = TagAlias(alias_name, tag.id)
+            session.add(alias)
+
+    def update_subtags(self, tag, subtag_ids, session):
+        if tag.id in subtag_ids:
+            subtag_ids.remove(tag.id)
+
+        # load all tag's subtag to know which to remove
+        prev_subtags = session.scalars(select(TagSubtag).where(TagSubtag.parent_id == tag.id)).all()
+
+        for subtag in prev_subtags:
+            if subtag.child_id not in subtag_ids:
+                session.delete(subtag)
+            else:
+                # no change, remove from list
+                subtag_ids.remove(subtag.child_id)
 
                 # create remaining items
-                for subtag_id in subtag_ids:
-                    # add new subtag
-                    subtag = TagSubtag(
-                        parent_id=tag.id,
-                        child_id=subtag_id,
-                    )
-                    session.add(subtag)
-
-                session.commit()
-            except IntegrityError:
-                session.rollback()
-                logger.exception("IntegrityError")
+        for subtag_id in subtag_ids:
+            # add new subtag
+            subtag = TagSubtag(
+                parent_id=tag.id,
+                child_id=subtag_id,
+            )
+            session.add(subtag)
 
     def prefs(self, key: LibraryPrefs) -> Any:
         # load given item from Preferences table
