@@ -4,11 +4,13 @@
 
 import logging
 import typing
+from pathlib import Path
+from time import gmtime, strftime
 from typing import Any
 
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, QUrl
 from PySide6.QtGui import QIcon, QPixmap
-from PySide6.QtMultimedia import QMediaPlayer
+from PySide6.QtMultimedia import QAudioOutput, QMediaDevices, QMediaPlayer
 from PySide6.QtWidgets import (
     QGridLayout,
     QHBoxLayout,
@@ -18,17 +20,15 @@ from PySide6.QtWidgets import (
     QSlider,
     QWidget,
 )
-from src.qt.media_player import MediaPlayer
 
 if typing.TYPE_CHECKING:
     from src.qt.ts_qt import QtDriver
 
 
-class AudioPlayer(QWidget, MediaPlayer):
-    """A basic audio player widget.
+class MediaPlayer(QWidget):
+    """A basic media player widget.
 
-    This widget is enabled if the selected
-    file type is found in the AUDIO_TYPES list.
+    Gives a basic control set to manage media playback.
     """
 
     def __init__(self, driver: "QtDriver") -> None:
@@ -36,6 +36,17 @@ class AudioPlayer(QWidget, MediaPlayer):
         self.driver = driver
 
         self.setFixedHeight(50)
+
+        self.filepath: Path | None = None
+        self.player = QMediaPlayer()
+        self.player.setAudioOutput(QAudioOutput(QMediaDevices().defaultAudioOutput(), self.player))
+
+        # Used to keep track of play state.
+        # It would be nice if we could use QMediaPlayer.PlaybackState,
+        # but this will always show StoppedState when changing
+        # tracks. Therefore, we wouldn't know if the previous
+        # state was paused or playing
+        self.is_paused = False
 
         # Subscribe to player events from MediaPlayer
         self.player.positionChanged.connect(self.position_changed)
@@ -85,6 +96,64 @@ class AudioPlayer(QWidget, MediaPlayer):
         self.base_layout.addLayout(self.media_btns_layout, 1, 0)
         self.base_layout.addWidget(self.position_label, 1, 1)
 
+    def format_time(self, ms: int) -> str:
+        """Format the given time.
+
+        Formats the given time in ms to a nicer format.
+
+        Args:
+            ms: Time in ms
+
+        Returns:
+            A formatted time:
+
+            "1:43"
+
+            The formatted time will only include the hour if
+            the provided time is at least 60 minutes.
+        """
+        time = gmtime(ms / 1000)
+        fmt = "%-H:%-M:%S" if time.tm_hour > 0 else "%-M:%S"
+
+        return strftime(fmt, time)
+
+    def toggle_pause(self) -> None:
+        """Toggle the pause state of the media."""
+        if self.player.isPlaying():
+            self.player.pause()
+            self.is_paused = True
+        else:
+            self.player.play()
+            self.is_paused = False
+
+    def toggle_mute(self) -> None:
+        """Toggle the mute state of the media."""
+        if self.player.audioOutput().isMuted():
+            self.player.audioOutput().setMuted(False)
+        else:
+            self.player.audioOutput().setMuted(True)
+
+    def playing_changed(self, playing: bool) -> None:
+        self.load_play_pause_icon(playing)
+
+    def muted_changed(self, muted: bool) -> None:
+        self.load_mute_unmute_icon(muted)
+
+    def stop(self) -> None:
+        """Clear the filepath and stop the player."""
+        self.filepath = None
+        self.player.stop()
+
+    def play(self, filepath: Path) -> None:
+        """Set the source of the QMediaPlayer and play."""
+        self.filepath = filepath
+        if not self.is_paused:
+            self.player.stop()
+            self.player.setSource(QUrl.fromLocalFile(self.filepath))
+            self.player.play()
+        else:
+            self.player.setSource(QUrl.fromLocalFile(self.filepath))
+
     def load_play_pause_icon(self, playing: bool) -> None:
         icon = self.driver.rm.pause_icon if playing else self.driver.rm.play_icon
         self.set_icon(self.play_pause, icon)
@@ -99,38 +168,6 @@ class AudioPlayer(QWidget, MediaPlayer):
             btn.setIcon(QIcon(pix_map))
         else:
             logging.error("failed to load svg file")
-
-    def format_time(self, time: int) -> str:
-        """Format the given time.
-
-        Formats the given time in ms to a nicer format.
-
-        Args:
-            time: Time in ms
-
-        Returns:
-            A formatted time:
-
-            "1:43"
-
-            The formatted time will only include the hour if
-            the provided time is at least 60 minutes.
-        """
-        pretty_time = ""
-        if time > (60 * 60 * 1000):
-            pretty_time += f"{int(time / (60 * 60 * 1000)) % 24}:"
-
-        if time > (60 * 1000):
-            pretty_time += f"{int(time / (60 * 1000)) % 60}:"
-        else:
-            pretty_time += "0:"
-
-        if time > 1000:
-            pretty_time += f"{int(time / 1000) % 60:02d}"
-        else:
-            pretty_time += "00"
-
-        return pretty_time
 
     def slider_released(self) -> None:
         was_playing = self.player.isPlaying()
@@ -155,12 +192,6 @@ class AudioPlayer(QWidget, MediaPlayer):
         if self.player.duration() == position:
             self.player.pause()
             self.player.setPosition(0)
-
-    def playing_changed(self, playing: bool) -> None:
-        self.load_play_pause_icon(playing)
-
-    def muted_changed(self, muted: bool) -> None:
-        self.load_mute_unmute_icon(muted)
 
     def media_status_changed(self, status: QMediaPlayer.MediaStatus) -> None:
         # We can only set the slider duration once we know the size of the media
