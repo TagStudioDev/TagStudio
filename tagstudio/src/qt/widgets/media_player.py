@@ -49,7 +49,7 @@ class MediaPlayer(QWidget):
         self.is_paused = False
 
         # Subscribe to player events from MediaPlayer
-        self.player.positionChanged.connect(self.position_changed)
+        self.player.positionChanged.connect(self.player_position_changed)
         self.player.mediaStatusChanged.connect(self.media_status_changed)
         self.player.playingChanged.connect(self.playing_changed)
         self.player.audioOutput().mutedChanged.connect(self.muted_changed)
@@ -66,6 +66,7 @@ class MediaPlayer(QWidget):
         self.pslider.setOrientation(Qt.Orientation.Horizontal)
 
         self.pslider.sliderReleased.connect(self.slider_released)
+        self.pslider.valueChanged.connect(self.slider_value_changed)
 
         self.media_btns_layout = QHBoxLayout()
 
@@ -169,6 +170,11 @@ class MediaPlayer(QWidget):
         else:
             logging.error("failed to load svg file")
 
+    def slider_value_changed(self, value: int) -> None:
+        current = self.format_time(value)
+        duration = self.format_time(self.player.duration())
+        self.position_label.setText(f"{current} / {duration}")
+
     def slider_released(self) -> None:
         was_playing = self.player.isPlaying()
         self.player.setPosition(self.pslider.value())
@@ -178,16 +184,13 @@ class MediaPlayer(QWidget):
         if not was_playing:
             self.player.pause()
 
-    def position_changed(self, position: int) -> None:
-        # user hasn't released the slider yet
-        if self.pslider.isSliderDown():
-            return
-
-        self.pslider.setValue(position)
-
-        current = self.format_time(self.player.position())
-        duration = self.format_time(self.player.duration())
-        self.position_label.setText(f"{current} / {duration}")
+    def player_position_changed(self, position: int) -> None:
+        if not self.pslider.isSliderDown():
+            # User isn't using the slider, so update position in widgets.
+            self.pslider.setValue(position)
+            current = self.format_time(self.player.position())
+            duration = self.format_time(self.player.duration())
+            self.position_label.setText(f"{current} / {duration}")
 
         if self.player.duration() == position:
             self.player.pause()
