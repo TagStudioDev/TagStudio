@@ -48,12 +48,13 @@ class JsonMigrationModal(QObject):
         self.old_tag_count: int = 0
         self.old_ext_count: int = 0
 
-        self.init_page_00()
-        self.init_page_01()
+        self.init_page_info()
+        self.init_page_convert()
 
         self.paged_panel: PagedPanel = PagedPanel((640, 320), self.stack)
 
-    def init_page_00(self) -> None:
+    def init_page_info(self) -> None:
+        """Initialize the migration info page."""
         body_wrapper: PagedBodyWrapper = PagedBodyWrapper()
         body_label: QLabel = QLabel(
             "Library save files created with TagStudio versions <b>9.4 and below</b> will "
@@ -84,7 +85,8 @@ class JsonMigrationModal(QObject):
             )
         )
 
-    def init_page_01(self) -> None:
+    def init_page_convert(self) -> None:
+        """Initialize the migration conversion page."""
         body_wrapper: PagedBodyWrapper = PagedBodyWrapper()
         body_container: QWidget = QWidget()
         body_container_layout: QHBoxLayout = QHBoxLayout(body_container)
@@ -167,7 +169,7 @@ class JsonMigrationModal(QObject):
         back_button: QPushButtonWrapper = QPushButtonWrapper("Back")
         start_button: QPushButtonWrapper = QPushButtonWrapper("Start and Preview")
         start_button.setMinimumWidth(120)
-        start_button.clicked.connect(self.init_migration)
+        start_button.clicked.connect(self.migrate)
         start_button.clicked.connect(lambda: finish_button.setDisabled(False))
         start_button.clicked.connect(lambda: start_button.setDisabled(True))
         finish_button: QPushButtonWrapper = QPushButtonWrapper("Finish Migration")
@@ -186,18 +188,20 @@ class JsonMigrationModal(QObject):
             )
         )
 
-    def init_migration(self):
+    def migrate(self):
+        """Open and migrate the JSON library to SQLite."""
         if not self.is_migration_initialized:
             self.paged_panel.update_frame()
             self.paged_panel.update()
 
-            # Initialize JSON Library
+            # Open the JSON Library
             self.json_lib = JsonLibrary()
             self.json_lib.open_library(self.path)
 
-            self.update_old_entry_count(len(self.json_lib.entries))
-            self.update_old_tag_count(len(self.json_lib.tags))
-            self.update_old_ext_count(len(self.json_lib.ext_list))
+            # Update JSON UI
+            self.update_json_entry_count(len(self.json_lib.entries))
+            self.update_json_tag_count(len(self.json_lib.tags))
+            self.update_json_ext_count(len(self.json_lib.ext_list))
 
             # Convert JSON Library to SQLite
             self.sql_lib = SqliteLibrary()
@@ -214,45 +218,47 @@ class JsonMigrationModal(QObject):
             self.sql_lib.migrate_json_to_sqlite(self.json_lib)
             self.sql_lib.close()
 
-            self.update_new_entry_count(self.sql_lib.entries_count)
-            self.update_new_tag_count(len(self.sql_lib.tags))
-            self.update_new_ext_count(len(self.sql_lib.prefs(LibraryPrefs.EXTENSION_LIST)))
+            # Update SQLite UI
+            self.update_sql_entry_count(self.sql_lib.entries_count)
+            self.update_sql_tag_count(len(self.sql_lib.tags))
+            self.update_sql_ext_count(len(self.sql_lib.prefs(LibraryPrefs.EXTENSION_LIST)))
 
             self.is_migration_initialized = True
 
     def finish_migration(self):
+        """Finish the migration upon user approval."""
         final_name = self.json_lib.library_dir / TS_FOLDER_NAME / SqliteLibrary.SQL_FILENAME
         if self.temp_path.exists():
             self.temp_path.rename(final_name)
 
-    def update_old_entry_count(self, value: int):
+    def update_json_entry_count(self, value: int):
         self.old_entry_count = value
         label: QLabel = self.old_content_layout.itemAtPosition(0, 1).widget()  # type:ignore
         label.setText(self.color_value_default(value))
 
-    def update_old_tag_count(self, value: int):
+    def update_json_tag_count(self, value: int):
         self.old_tag_count = value
         label: QLabel = self.old_content_layout.itemAtPosition(1, 1).widget()  # type:ignore
         label.setText(self.color_value_default(value))
 
-    def update_old_ext_count(self, value: int):
+    def update_json_ext_count(self, value: int):
         self.old_ext_count = value
         label: QLabel = self.old_content_layout.itemAtPosition(2, 1).widget()  # type:ignore
         label.setText(self.color_value_default(value))
 
-    def update_new_entry_count(self, value: int):
+    def update_sql_entry_count(self, value: int):
         label: QLabel = self.new_content_layout.itemAtPosition(0, 1).widget()  # type:ignore
         warning_icon: QLabel = self.new_content_layout.itemAtPosition(0, 2).widget()  # type:ignore
         label.setText(self.color_value_conditional(self.old_entry_count, value))
         warning_icon.setText("" if self.old_entry_count == value else self.warning)
 
-    def update_new_tag_count(self, value: int):
+    def update_sql_tag_count(self, value: int):
         label: QLabel = self.new_content_layout.itemAtPosition(1, 1).widget()  # type:ignore
         warning_icon: QLabel = self.new_content_layout.itemAtPosition(1, 2).widget()  # type:ignore
         label.setText(self.color_value_conditional(self.old_tag_count, value))
         warning_icon.setText("" if self.old_tag_count == value else self.warning)
 
-    def update_new_ext_count(self, value: int):
+    def update_sql_ext_count(self, value: int):
         label: QLabel = self.new_content_layout.itemAtPosition(2, 1).widget()  # type:ignore
         warning_icon: QLabel = self.new_content_layout.itemAtPosition(2, 2).widget()  # type:ignore
         label.setText(self.color_value_conditional(self.old_ext_count, value))
@@ -263,7 +269,7 @@ class JsonMigrationModal(QObject):
         return str(f"<b><a style='color: #3b87f0'>{value}</a></b>")
 
     def color_value_conditional(self, old_value: int, new_value: int) -> str:
-        """Apply the default color to a value."""
+        """Apply a conditional color to a value."""
         red: str = "#e22c3c"
         green: str = "#28bb48"
         color = green if old_value == new_value else red

@@ -85,6 +85,7 @@ class PagedPanel(QWidget):
             self.close()
 
     def update_frame(self):
+        """Update the widgets with the current frame's content."""
         frame: PagedPanelState = self._stack[self._index]
 
         # Update Title
