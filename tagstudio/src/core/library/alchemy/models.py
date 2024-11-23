@@ -78,7 +78,7 @@ class Tag(Base):
 
     def __init__(
         self,
-        id: int,
+        id: int | None = None,
         name: str | None = None,
         shorthand: str | None = None,
         aliases: set[TagAlias] | None = None,

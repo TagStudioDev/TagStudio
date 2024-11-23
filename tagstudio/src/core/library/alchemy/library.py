@@ -820,11 +820,16 @@ class Library:
 
             if value:
                 assert isinstance(value, list)
-                for tag_id in list(set(value)):
+                for tag_name in list(set(value)):
                     with Session(self.engine) as session:
-                        tag = session.scalar(select(Tag).where(Tag.id == tag_id))
-                        logger.info(tag)
-                        field_model.tags.add(tag)
+                        # TODO: Add back in tag searching with aliases fallbacks
+                        # and context clue ranking for string searches.
+                        for tag_name in value:
+                            tag = session.scalar(select(Tag).where(Tag.name == tag_name))
+                            if tag:
+                                field_model.tags.add(tag)
+                            else:
+                                field_model.tags.add(Tag(name=tag_name))  # type: ignore
                         session.flush()
 
         elif field.type == FieldTypeEnum.DATETIME:
