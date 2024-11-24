@@ -31,7 +31,7 @@ def open_file(path: str | Path, file_manager: bool = False):
 
     try:
         if sys.platform == "win32":
-            normpath = Path(path).resolve().as_posix()
+            normpath = str(Path(path).resolve())
             if file_manager:
                 command_name = "explorer"
                 command_args = '/select,"' + normpath + '"'
