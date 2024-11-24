@@ -242,7 +242,9 @@ class Library:
         # Under -> sqlite-the-sqlite-dialect-now-uses-nullpool-for-file-based-databases
         poolclass = None if self.storage_path == ":memory:" else NullPool
 
-        logger.info("opening library", library_dir=library_dir, connection_string=connection_string)
+        logger.info(
+            "Opening SQLite Library", library_dir=library_dir, connection_string=connection_string
+        )
         self.engine = create_engine(connection_string, poolclass=poolclass)
         with Session(self.engine) as session:
             make_tables(self.engine)

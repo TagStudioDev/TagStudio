@@ -55,7 +55,6 @@ coverage.xml
 .hypothesis/
 .pytest_cache/
 cover/
-tagstudio/tests/fixtures/library/*
 
 # Translations
 *.mo
@@ -248,11 +247,14 @@ compile_commands.json
 # Ignore all local history of files
 .history
 .ionide
+# End of https://www.toptal.com/developers/gitignore/api/visualstudiocode,python,qt
 
 # TagStudio
 .TagStudio
+!*/tests/**/.TagStudio
+tagstudio/tests/fixtures/library/*
+tagstudio/tests/fixtures/json_library/.TagStudio/*.sqlite
 TagStudio.ini
-# End of https://www.toptal.com/developers/gitignore/api/visualstudiocode,python,qt
 
 .envrc
 .direnv

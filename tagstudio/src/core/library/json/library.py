@@ -449,7 +449,7 @@ class Library:
         return_code = OpenStatus.CORRUPTED
 
         _path: Path = self._fix_lib_path(path)
-        logger.info("opening library", path=_path)
+        logger.info("Opening JSON Library", path=_path)
         if (_path / TS_FOLDER_NAME / "ts_library.json").exists():
             try:
                 with open(
