@@ -34,7 +34,7 @@ def open_file(path: str | Path, file_manager: bool = False):
             normpath = str(Path(path).resolve())
             if file_manager:
                 command_name = "explorer"
-                command_args = '/select,"' + normpath + '"'
+                command_args = f'/select,"{normpath}"'
                 # For some reason, if the args are passed in a list, this will error when the
                 # path has spaces, even while surrounded in double quotes.
                 subprocess.Popen(
