@@ -820,16 +820,11 @@ class Library:
 
             if value:
                 assert isinstance(value, list)
-                for tag_name in list(set(value)):
-                    with Session(self.engine) as session:
-                        # TODO: Add back in tag searching with aliases fallbacks
-                        # and context clue ranking for string searches.
-                        for tag_name in value:
-                            tag = session.scalar(select(Tag).where(Tag.name == tag_name))
-                            if tag:
-                                field_model.tags.add(tag)
-                            else:
-                                field_model.tags.add(Tag(name=tag_name))  # type: ignore
+                with Session(self.engine) as session:
+                    for tag_id in list(set(value)):
+                        tag = session.scalar(select(Tag).where(Tag.id == tag_id))
+                        logger.info(tag)
+                        field_model.tags.add(tag)
                         session.flush()
 
         elif field.type == FieldTypeEnum.DATETIME:
@@ -861,6 +856,28 @@ class Library:
             entry_ids=entry_ids,
         )
         return True
+
+    def tag_from_strings(self, strings: list[str] | str) -> list[int]:
+        """Create a Tag from a given string."""
+        # TODO: Port over tag searching with aliases fallbacks
+        # and context clue ranking for string searches.
+        tags: list[int] = []
+
+        if isinstance(strings, str):
+            strings = [strings]
+
+        with Session(self.engine) as session:
+            for string in strings:
+                tag = session.scalar(select(Tag).where(Tag.name == string))
+                if tag:
+                    tags.append(tag.id)
+                else:
+                    new = session.add(Tag(name=string))
+                    if new:
+                        tags.append(new.id)
+                        session.flush()
+            session.commit()
+        return tags
 
     def add_tag(
         self,

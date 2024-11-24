@@ -809,6 +809,8 @@ class QtDriver(DriverMixin, QObject):
         elif name == MacroID.SIDECAR:
             parsed_items = TagStudioCore.get_gdl_sidecar(ful_path, source)
             for field_id, value in parsed_items.items():
+                if isinstance(value, list) and len(value) > 0 and isinstance(value[0], int):
+                    value = self.lib.tag_from_strings(value)
                 self.lib.add_entry_field_type(
                     entry.id,
                     field_id=field_id,
