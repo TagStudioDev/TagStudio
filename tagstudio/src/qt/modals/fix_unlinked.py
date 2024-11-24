@@ -1,11 +1,11 @@
-# Copyright (C) 2024 Travis Abendshien (CyanVoxel).
+z   # Copyright (C) 2024 Travis Abendshien (CyanVoxel).
 # Licensed under the GPL-3.0 License.
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
 
 import typing
 
-from PySide6.QtCore import Qt, QThreadPool
+from PySide6.QtCore import Qt, QThreadPool, QCoreApplication
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton
 
 from src.core.library import Library
@@ -32,7 +32,7 @@ class FixUnlinkedEntriesModal(QWidget):
 
         self.missing_count = -1
         self.dupe_count = -1
-        self.setWindowTitle("Fix Unlinked Entries")
+        self.setWindowTitle(QCoreApplication.translate("fix_unlinked", "fix_unlinked"))
         self.setWindowModality(Qt.WindowModality.ApplicationModal)
         self.setMinimumSize(400, 300)
         self.root_layout = QVBoxLayout(self)
@@ -42,9 +42,7 @@ class FixUnlinkedEntriesModal(QWidget):
         self.unlinked_desc_widget.setObjectName("unlinkedDescriptionLabel")
         self.unlinked_desc_widget.setWordWrap(True)
         self.unlinked_desc_widget.setStyleSheet("text-align:left;")
-        self.unlinked_desc_widget.setText(
-            """Each library entry is linked to a file in one of your directories. If a file linked to an entry is moved or deleted outside of TagStudio, it is then considered unlinked. Unlinked entries may be automatically relinked via searching your directories, manually relinked by the user, or deleted if desired."""
-        )
+        self.unlinked_desc_widget.setText(QCoreApplication.translate("fix_unlinked", "description"))
 
         self.missing_count_label = QLabel()
         self.missing_count_label.setObjectName("missingCountLabel")
@@ -57,14 +55,14 @@ class FixUnlinkedEntriesModal(QWidget):
         self.dupe_count_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         self.refresh_unlinked_button = QPushButton()
-        self.refresh_unlinked_button.setText("&Refresh All")
+        self.refresh_unlinked_button.setText(QCoreApplication.translate("generic", "refresh_all"))
         self.refresh_unlinked_button.clicked.connect(self.refresh_missing_files)
 
         self.merge_class = MergeDuplicateEntries(self.lib, self.driver)
         self.relink_class = RelinkUnlinkedEntries(self.tracker)
 
         self.search_button = QPushButton()
-        self.search_button.setText("&Search && Relink")
+        self.search_button.setText(QCoreApplication.translate("fix_unlinked", "search_and_relink"))
         self.relink_class.done.connect(
             # refresh the grid
             lambda: (
@@ -75,7 +73,7 @@ class FixUnlinkedEntriesModal(QWidget):
         self.search_button.clicked.connect(self.relink_class.repair_entries)
 
         self.manual_button = QPushButton()
-        self.manual_button.setText("&Manual Relink")
+        self.manual_button.setText(QCoreApplication.translate("fix_unlinked", "manual_relink"))
         self.manual_button.setHidden(True)
 
         self.delete_button = QPushButton()
@@ -87,7 +85,7 @@ class FixUnlinkedEntriesModal(QWidget):
                 self.driver.filter_items(),
             )
         )
-        self.delete_button.setText("De&lete Unlinked Entries")
+        self.delete_button.setText(QCoreApplication.translate("fix_unlinked", "fix_unlinked"))
         self.delete_button.clicked.connect(self.delete_modal.show)
 
         self.button_container = QWidget()
@@ -96,7 +94,7 @@ class FixUnlinkedEntriesModal(QWidget):
         self.button_layout.addStretch(1)
 
         self.done_button = QPushButton()
-        self.done_button.setText("&Done")
+        self.done_button.setText(QCoreApplication.translate("genric", "done"))
         self.done_button.setDefault(True)
         self.done_button.clicked.connect(self.hide)
         self.button_layout.addWidget(self.done_button)
@@ -115,8 +113,8 @@ class FixUnlinkedEntriesModal(QWidget):
 
     def refresh_missing_files(self):
         pw = ProgressWidget(
-            window_title="Scanning Library",
-            label_text="Scanning Library for Unlinked Entries...",
+            window_title=QCoreApplication.translate("fix_unlinked", "scan_library.title"),
+            label_text=QCoreApplication.translate("fix_unlinked", "scan_library.label"),
             cancel_button_text=None,
             minimum=0,
             maximum=self.lib.entries_count,

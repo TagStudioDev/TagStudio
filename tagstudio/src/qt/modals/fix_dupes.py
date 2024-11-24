@@ -5,7 +5,7 @@
 
 import typing
 
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, QCoreApplication
 from PySide6.QtWidgets import (
     QWidget,
     QVBoxLayout,
@@ -32,7 +32,7 @@ class FixDupeFilesModal(QWidget):
         self.driver = driver
         self.count = -1
         self.filename = ""
-        self.setWindowTitle("Fix Duplicate Files")
+        self.setWindowTitle(QCoreApplication.translate("fix_dupes", "fix_dupes"))
         self.setWindowModality(Qt.WindowModality.ApplicationModal)
         self.setMinimumSize(400, 300)
         self.root_layout = QVBoxLayout(self)
@@ -78,22 +78,22 @@ class FixDupeFilesModal(QWidget):
         # 								# 'padding-top: 6px'
         # 								'')
         # self.file_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.file_label.setText("No DupeGuru File Selected")
+        self.file_label.setText(QCoreApplication.translate("fix_dupes", "no_file_selected"))
 
         self.open_button = QPushButton()
-        self.open_button.setText("&Load DupeGuru File")
+        self.open_button.setText(QCoreApplication.translate("fix_dupes", "load_file"))
         self.open_button.clicked.connect(self.select_file)
 
         self.mirror_modal = MirrorEntriesModal(self.driver, self.tracker)
         self.mirror_modal.done.connect(self.refresh_dupes)
 
         self.mirror_button = QPushButton()
-        self.mirror_button.setText("&Mirror Entries")
+        self.mirror_button.setText(QCoreApplication.translate("fix_dupes", "mirror_entries"))
         self.mirror_button.clicked.connect(self.mirror_modal.show)
         self.mirror_desc = QLabel()
         self.mirror_desc.setWordWrap(True)
         self.mirror_desc.setText(
-            """Mirror the Entry data across each duplicate match set, combining all data while not removing or duplicating fields. This operation will not delete any files or data."""
+                QCoreApplication.translate("fix_dupes", "mirror_description")
         )
 
         # self.mirror_delete_button = QPushButton()
@@ -102,7 +102,7 @@ class FixDupeFilesModal(QWidget):
         self.advice_label = QLabel()
         self.advice_label.setWordWrap(True)
         self.advice_label.setText(
-            """After mirroring, you're free to use DupeGuru to delete the unwanted files. Afterwards, use TagStudio's "Fix Unlinked Entries" feature in the Tools menu in order to delete the unlinked Entries."""
+            QCoreApplication.translate("fix_dupes", "advice_label")
         )
 
         self.button_container = QWidget()
@@ -111,7 +111,7 @@ class FixDupeFilesModal(QWidget):
         self.button_layout.addStretch(1)
 
         self.done_button = QPushButton()
-        self.done_button.setText("&Done")
+        self.done_button.setText(QCoreApplication.translate("generic", "done"))
         # self.save_button.setAutoDefault(True)
         self.done_button.setDefault(True)
         self.done_button.clicked.connect(self.hide)
@@ -140,9 +140,9 @@ class FixDupeFilesModal(QWidget):
         self.set_dupe_count(-1)
 
     def select_file(self):
-        qfd = QFileDialog(self, "Open DupeGuru Results File", str(self.lib.library_dir))
+        qfd = QFileDialog(self, QCoreApplication.translate("fix_dupes", "open_results_file"), str(self.lib.library_dir))
         qfd.setFileMode(QFileDialog.FileMode.ExistingFile)
-        qfd.setNameFilter("DupeGuru Files (*.dupeguru)")
+        qfd.setNameFilter(QCoreApplication.translate("fix_dupes", "name_filter"))
         if qfd.exec_():
             filename = qfd.selectedFiles()
             if filename:
@@ -152,7 +152,7 @@ class FixDupeFilesModal(QWidget):
         if filename:
             self.file_label.setText(filename)
         else:
-            self.file_label.setText("No DupeGuru File Selected")
+            self.file_label.setText(QCoreApplication.translate("fix_dupes", "no_file_selected"))
         self.filename = filename
         self.refresh_dupes()
         self.mirror_modal.refresh_list()
@@ -164,10 +164,10 @@ class FixDupeFilesModal(QWidget):
     def set_dupe_count(self, count: int):
         if count < 0:
             self.mirror_button.setDisabled(True)
-            self.dupe_count.setText("Duplicate File Matches: N/A")
+            self.dupe_count.setText(QCoreApplication.translate("fix_dupes", "no_file_match"))
         elif count == 0:
             self.mirror_button.setDisabled(True)
-            self.dupe_count.setText(f"Duplicate File Matches: {count}")
+            self.dupe_count.setText(QCoreApplication.translate("fix_dupes", "number_file_match"))
         else:
             self.mirror_button.setDisabled(False)
-            self.dupe_count.setText(f"Duplicate File Matches: {count}")
+            self.dupe_count.setText(QCoreApplication.translate("fix_dupes", "number_file_match"))
