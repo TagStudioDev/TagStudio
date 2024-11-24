@@ -3,7 +3,7 @@
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
 
-from PySide6.QtCore import Signal, Qt
+from PySide6.QtCore import Signal, Qt, QCoreApplication
 from PySide6.QtWidgets import (
     QVBoxLayout,
     QHBoxLayout,
@@ -40,7 +40,7 @@ class FileExtensionModal(PanelWidget):
         super().__init__()
         # Initialize Modal =====================================================
         self.lib = library
-        self.setWindowTitle("File Extensions")
+        self.setWindowTitle()
         self.setWindowModality(Qt.WindowModality.ApplicationModal)
         self.setMinimumSize(240, 400)
         self.root_layout = QVBoxLayout(self)
@@ -55,7 +55,9 @@ class FileExtensionModal(PanelWidget):
 
         # Create "Add Button" Widget -------------------------------------------
         self.add_button = QPushButton()
-        self.add_button.setText("&Add Extension")
+        self.add_button.setText(
+            QCoreApplication.translate("file_extension", "add_extension")
+        )
         self.add_button.clicked.connect(self.add_item)
         self.add_button.setDefault(True)
         self.add_button.setMinimumWidth(100)
@@ -66,11 +68,13 @@ class FileExtensionModal(PanelWidget):
         self.mode_layout.setContentsMargins(0, 0, 0, 0)
         self.mode_layout.setSpacing(12)
         self.mode_label = QLabel()
-        self.mode_label.setText("List Mode:")
+        self.mode_label.setText(
+            QCoreApplication.translate("file_extension", "list_mode")
+        )
         self.mode_combobox = QComboBox()
         self.mode_combobox.setEditable(False)
-        self.mode_combobox.addItem("Include")
-        self.mode_combobox.addItem("Exclude")
+        self.mode_combobox.addItem(QCoreApplication.translate("generic", "include"))
+        self.mode_combobox.addItem(QCoreApplication.translate("generic", "exclude"))
 
         is_exclude_list = int(bool(self.lib.prefs(LibraryPrefs.IS_EXCLUDE_LIST)))
 

@@ -92,7 +92,9 @@ class BuildTagPanel(PanelWidget):
         self.subtags_layout.setAlignment(Qt.AlignmentFlag.AlignLeft)
 
         self.subtags_title = QLabel()
-        self.subtags_title.setText(QCoreApplication.translate("build_tags", "parent_tags"))
+        self.subtags_title.setText(
+            QCoreApplication.translate("build_tags", "parent_tags")
+        )
         self.subtags_layout.addWidget(self.subtags_title)
 
         self.scroll_contents = QWidget()
@@ -115,7 +117,7 @@ class BuildTagPanel(PanelWidget):
         tsp = TagSearchPanel(self.lib)
         tsp.tag_chosen.connect(lambda x: self.add_subtag_callback(x))
         self.add_tag_modal = PanelModal(
-            tsp, 
+            tsp,
             QCoreApplication.translate("build_tags", "add_parent_tags"),
             QCoreApplication.translate("build_tags", "add_parent_tags"),
         )
@@ -165,7 +167,12 @@ class BuildTagPanel(PanelWidget):
 
         # TODO - fill subtags
         self.subtags: set[int] = set()
-        self.set_tag(tag or Tag(name=QCoreApplication.translate("tag", "new"), ))
+        self.set_tag(
+            tag
+            or Tag(
+                name=QCoreApplication.translate("tag", "new"),
+            )
+        )
 
     def add_subtag_callback(self, tag_id: int):
         logger.info("add_subtag_callback", tag_id=tag_id)
