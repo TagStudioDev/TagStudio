@@ -175,6 +175,10 @@ poetry.toml
 # LSP config files
 pyrightconfig.json
 
+# Syncthing
+.stfolder/
+.stignore
+
 ### Qt ###
 # C++ objects and libs
 *.slo
