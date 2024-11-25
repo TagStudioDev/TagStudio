@@ -27,3 +27,6 @@ def test_json_migration():
     assert len(modal.json_lib.ext_list) == len(modal.sql_lib.prefs(LibraryPrefs.EXTENSION_LIST))
     # List Type
     assert modal.json_lib.is_exclude_list == modal.sql_lib.prefs(LibraryPrefs.IS_EXCLUDE_LIST)
+    # No Leading Dot
+    for ext in modal.sql_lib.prefs(LibraryPrefs.EXTENSION_LIST):
+        assert ext[0] != "."

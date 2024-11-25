@@ -194,7 +194,7 @@ class Library:
                     )
 
         # Preferences
-        self.set_prefs(LibraryPrefs.EXTENSION_LIST, list(json_lib.ext_list))
+        self.set_prefs(LibraryPrefs.EXTENSION_LIST, [x.strip(".") for x in json_lib.ext_list])
         self.set_prefs(LibraryPrefs.IS_EXCLUDE_LIST, json_lib.is_exclude_list)
 
         end_time = time.time()
