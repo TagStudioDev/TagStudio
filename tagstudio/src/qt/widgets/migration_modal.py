@@ -527,14 +527,14 @@ class JsonMigrationModal(QObject):
                     logger.info(sql_fields)
                     logger.info("\n")
 
-        return json_fields == sql_fields
+        return (json_fields == sql_fields) and json_fields is not None and sql_fields is not None
 
     def check_path_parity(self) -> bool:
         """Check if all JSON file paths match the new SQL paths."""
         with Session(self.sql_lib.engine) as session:
             json_paths: list = sorted([x.path / x.filename for x in self.json_lib.entries])
             sql_paths: list = sorted(list(session.scalars(select(Entry.path))))
-        return json_paths == sql_paths
+        return (json_paths == sql_paths) and json_paths is not None and sql_paths is not None
 
     def check_subtag_parity(self, logging: bool = False) -> bool:
         """Check if all JSON subtags match the new SQL subtags."""
@@ -561,7 +561,9 @@ class JsonMigrationModal(QObject):
                 logger.info(sql_subtags)
                 logger.info("\n")
 
-        return sql_subtags == json_subtags
+        return (
+            (sql_subtags == json_subtags) and sql_subtags is not None and json_subtags is not None
+        )
 
     def check_ext_type(self) -> bool:
         return self.json_lib.is_exclude_list == self.sql_lib.prefs(LibraryPrefs.IS_EXCLUDE_LIST)
@@ -589,7 +591,9 @@ class JsonMigrationModal(QObject):
                 logger.info(sql_aliases)
                 logger.info("\n")
 
-        return sql_aliases == json_aliases
+        return (
+            (sql_aliases == json_aliases) and sql_aliases is not None and json_aliases is not None
+        )
 
     def check_shorthand_parity(self, logging: bool = False) -> bool:
         """Check if all JSON shorthands match the new SQL shorthands."""
@@ -614,4 +618,8 @@ class JsonMigrationModal(QObject):
                 logger.info(sql_shorthands)
                 logger.info("\n")
 
-        return sql_shorthands == json_shorthands
+        return (
+            (sql_shorthands == json_shorthands)
+            and sql_shorthands is not None
+            and json_shorthands is not None
+        )
