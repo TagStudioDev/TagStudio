@@ -554,7 +554,7 @@ class Library:
                                 self._next_entry_id += 1
 
                             filename = entry.get("filename", "")
-                            e_path = entry.get("path", "")
+                            e_path = entry.get("path", "").replace("\\", "/")
                             fields: list = []
                             if "fields" in entry:
                                 # Cast JSON str keys to ints
