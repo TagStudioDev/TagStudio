@@ -6,7 +6,7 @@
 from time import sleep
 import typing
 
-from PySide6.QtCore import Signal, Qt, QThreadPool
+from PySide6.QtCore import Signal, Qt, QThreadPool, QCoreApplication
 from PySide6.QtGui import QStandardItemModel, QStandardItem
 from PySide6.QtWidgets import (
     QWidget,
@@ -33,7 +33,7 @@ class MirrorEntriesModal(QWidget):
     def __init__(self, driver: "QtDriver", tracker: DupeRegistry):
         super().__init__()
         self.driver = driver
-        self.setWindowTitle("Mirror Entries")
+        self.setWindowTitle(QCoreApplication.translate("fix_dupes", "mirror_entries"))
         self.setWindowModality(Qt.WindowModality.ApplicationModal)
         self.setMinimumSize(500, 400)
         self.root_layout = QVBoxLayout(self)
@@ -44,9 +44,7 @@ class MirrorEntriesModal(QWidget):
         self.desc_widget.setObjectName("descriptionLabel")
         self.desc_widget.setWordWrap(True)
 
-        self.desc_widget.setText(f"""
-		Are you sure you want to mirror the following {self.tracker.groups_count} Entries?
-		""")
+        self.desc_widget.setText(QCoreApplication.translate("mirror_entities", "are_you_sure"))
         self.desc_widget.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         self.list_view = QListView()
@@ -59,13 +57,13 @@ class MirrorEntriesModal(QWidget):
         self.button_layout.addStretch(1)
 
         self.cancel_button = QPushButton()
-        self.cancel_button.setText("&Cancel")
+        self.cancel_button.setText(QCoreApplication.translate("generic", "cancel"))
         self.cancel_button.setDefault(True)
         self.cancel_button.clicked.connect(self.hide)
         self.button_layout.addWidget(self.cancel_button)
 
         self.mirror_button = QPushButton()
-        self.mirror_button.setText("&Mirror")
+        self.mirror_button.setText(QCoreApplication.translate("generic", "mirror"))
         self.mirror_button.clicked.connect(self.hide)
         self.mirror_button.clicked.connect(self.mirror_entries)
         self.button_layout.addWidget(self.mirror_button)
@@ -75,9 +73,7 @@ class MirrorEntriesModal(QWidget):
         self.root_layout.addWidget(self.button_container)
 
     def refresh_list(self):
-        self.desc_widget.setText(f"""
-		Are you sure you want to mirror the following {self.tracker.groups_count} Entries?
-		""")
+        self.desc_widget.setText(QCoreApplication.translate("mirror_entities", "are_you_sure"))
 
         self.model.clear()
         for i in self.tracker.groups:
@@ -86,8 +82,8 @@ class MirrorEntriesModal(QWidget):
     def mirror_entries(self):
         iterator = FunctionIterator(self.mirror_entries_runnable)
         pw = ProgressWidget(
-            window_title="Mirroring Entries",
-            label_text=f"Mirroring 1/{self.tracker.groups_count} Entries...",
+            window_title=QCoreApplication.translate("mirror_entities", "title"),
+            label_text=QCoreApplication.translate("mirror_entities", "label"),
             cancel_button_text=None,
             minimum=0,
             maximum=self.tracker.groups_count,
@@ -96,8 +92,7 @@ class MirrorEntriesModal(QWidget):
         iterator.value.connect(lambda x: pw.update_progress(x + 1))
         iterator.value.connect(
             lambda x: pw.update_label(
-                f"Mirroring {x + 1}/{self.tracker.groups_count} Entries..."
-            )
+                QCoreApplication.translate("mirror_entities", "label")),
         )
         r = CustomRunnable(iterator.run)
         QThreadPool.globalInstance().start(r)

@@ -4,7 +4,7 @@
 
 import typing
 
-from PySide6.QtCore import QObject, Signal, QThreadPool
+from PySide6.QtCore import QObject, Signal, QThreadPool, QCoreApplication
 
 from src.core.library import Library
 from src.core.utils.dupe_files import DupeRegistry
@@ -30,7 +30,7 @@ class MergeDuplicateEntries(QObject):
         iterator = FunctionIterator(self.tracker.merge_dupe_entries)
 
         pw = ProgressWidget(
-            window_title="Merging Duplicate Entries",
+            window_title=QCoreApplication.translate("merge", "window_title"),
             label_text="",
             cancel_button_text=None,
             minimum=0,
@@ -40,7 +40,7 @@ class MergeDuplicateEntries(QObject):
 
         iterator.value.connect(lambda x: pw.update_progress(x))
         iterator.value.connect(
-            lambda: (pw.update_label("Merging Duplicate Entries..."))
+            lambda: (pw.update_label(QCoreApplication.translate("merge", "merge_dupe_entries"))
         )
 
         r = CustomRunnable(iterator.run)
