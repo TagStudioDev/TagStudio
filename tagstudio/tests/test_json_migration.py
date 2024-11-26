@@ -20,17 +20,23 @@ def test_json_migration():
     # Path Parity
     assert modal.check_path_parity()
     # Field Parity
-    assert modal.check_field_parity(show_logs=True)
+    assert modal.check_field_parity(logging=True)
 
     # Tags =====================================================================
     # Count
     assert len(modal.json_lib.tags) == len(modal.sql_lib.tags)
+    # Shorthand Parity
+    assert modal.check_shorthand_parity(logging=True)
+    # Subtag/Parent Tag Parity
+    assert modal.check_subtag_parity(logging=True)
+    # Alias Parity
+    assert modal.check_alias_parity(logging=True)
 
     # Extension Filter List ====================================================
     # Count
     assert len(modal.json_lib.ext_list) == len(modal.sql_lib.prefs(LibraryPrefs.EXTENSION_LIST))
     # List Type
-    assert modal.json_lib.is_exclude_list == modal.sql_lib.prefs(LibraryPrefs.IS_EXCLUDE_LIST)
+    assert modal.check_ext_type()
     # No Leading Dot
     for ext in modal.sql_lib.prefs(LibraryPrefs.EXTENSION_LIST):
         assert ext[0] != "."
