@@ -7,6 +7,7 @@ from pathlib import Path
 import structlog
 from PySide6.QtCore import QObject, Qt, Signal
 from PySide6.QtWidgets import (
+    QApplication,
     QGridLayout,
     QHBoxLayout,
     QLabel,
@@ -14,9 +15,15 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
+from sqlalchemy import and_, select
+from sqlalchemy.orm import Session
 from src.core.constants import TS_FOLDER_NAME
 from src.core.enums import LibraryPrefs
+from src.core.library.alchemy.enums import FieldTypeEnum
+from src.core.library.alchemy.fields import TagBoxField
+from src.core.library.alchemy.joins import TagField
 from src.core.library.alchemy.library import Library as SqliteLibrary
+from src.core.library.alchemy.models import Entry, Tag
 from src.core.library.json.library import Library as JsonLibrary  # type: ignore
 from src.qt.helpers.qbutton_wrapper import QPushButtonWrapper
 from src.qt.widgets.paged_panel.paged_body_wrapper import PagedBodyWrapper
@@ -51,7 +58,7 @@ class JsonMigrationModal(QObject):
         self.init_page_info()
         self.init_page_convert()
 
-        self.paged_panel: PagedPanel = PagedPanel((640, 320), self.stack)
+        self.paged_panel: PagedPanel = PagedPanel((640, 400), self.stack)
 
     def init_page_info(self) -> None:
         """Initialize the migration info page."""
@@ -97,9 +104,18 @@ class JsonMigrationModal(QObject):
         ext_text: str = "File Extension List:"
         desc_text: str = (
             "<br>Start and preview the results of the library migration process. "
-            'The new converted library will not be used unless you click "Finish Migration". '
-            "<i>This process may take up to several minutes for larger libraries.</i>"
+            'The converted library will <i>not</i> be used unless you click "Finish Migration". '
+            "<br><br>"
+            'Library data should either have matching values or a feature a "Matched" label. '
+            'Values that do not match will be displayed in red and feature a "<b>(!)</b>" '
+            "symbol next to them."
+            "<br><center><i>"
+            "This process may take up to several minutes for larger libraries."
+            "</i></center>"
         )
+        tab: str = "     "
+        path_parity_text: str = tab + "Paths:"
+        field_parity_text: str = tab + "Fields:"
 
         old_lib_container: QWidget = QWidget()
         old_lib_layout: QVBoxLayout = QVBoxLayout(old_lib_container)
@@ -111,8 +127,10 @@ class JsonMigrationModal(QObject):
         self.old_content_layout: QGridLayout = QGridLayout(old_content_container)
         self.old_content_layout.setContentsMargins(0, 0, 0, 0)
         self.old_content_layout.addWidget(QLabel(entries_text), 0, 0)
-        self.old_content_layout.addWidget(QLabel(tags_text), 1, 0)
-        self.old_content_layout.addWidget(QLabel(ext_text), 2, 0)
+        self.old_content_layout.addWidget(QLabel(path_parity_text), 1, 0)
+        self.old_content_layout.addWidget(QLabel(field_parity_text), 2, 0)
+        self.old_content_layout.addWidget(QLabel(tags_text), 3, 0)
+        self.old_content_layout.addWidget(QLabel(ext_text), 4, 0)
 
         old_entry_count: QLabel = QLabel()
         old_entry_count.setAlignment(Qt.AlignmentFlag.AlignRight)
@@ -122,8 +140,14 @@ class JsonMigrationModal(QObject):
         old_ext_count.setAlignment(Qt.AlignmentFlag.AlignRight)
 
         self.old_content_layout.addWidget(old_entry_count, 0, 1)
-        self.old_content_layout.addWidget(old_tag_count, 1, 1)
-        self.old_content_layout.addWidget(old_ext_count, 2, 1)
+        self.old_content_layout.addWidget(QLabel(), 1, 1)
+        self.old_content_layout.addWidget(QLabel(), 2, 1)
+        self.old_content_layout.addWidget(old_tag_count, 3, 1)
+        self.old_content_layout.addWidget(old_ext_count, 4, 1)
+
+        self.old_content_layout.addWidget(QLabel(), 1, 2)
+        self.old_content_layout.addWidget(QLabel(), 2, 2)
+
         old_lib_layout.addWidget(old_content_container)
 
         new_lib_container: QWidget = QWidget()
@@ -136,23 +160,34 @@ class JsonMigrationModal(QObject):
         self.new_content_layout: QGridLayout = QGridLayout(new_content_container)
         self.new_content_layout.setContentsMargins(0, 0, 0, 0)
         self.new_content_layout.addWidget(QLabel(entries_text), 0, 0)
-        self.new_content_layout.addWidget(QLabel(tags_text), 1, 0)
-        self.new_content_layout.addWidget(QLabel(ext_text), 2, 0)
-
-        self.new_content_layout.addWidget(QLabel(), 0, 2)
-        self.new_content_layout.addWidget(QLabel(), 1, 2)
-        self.new_content_layout.addWidget(QLabel(), 2, 2)
+        self.new_content_layout.addWidget(QLabel(path_parity_text), 1, 0)
+        self.new_content_layout.addWidget(QLabel(field_parity_text), 2, 0)
+        self.new_content_layout.addWidget(QLabel(tags_text), 3, 0)
+        self.new_content_layout.addWidget(QLabel(ext_text), 4, 0)
 
         new_entry_count: QLabel = QLabel()
         new_entry_count.setAlignment(Qt.AlignmentFlag.AlignRight)
+        path_parity_value: QLabel = QLabel()
+        path_parity_value.setAlignment(Qt.AlignmentFlag.AlignRight)
+        field_parity_value: QLabel = QLabel()
+        field_parity_value.setAlignment(Qt.AlignmentFlag.AlignRight)
         new_tag_count: QLabel = QLabel()
         new_tag_count.setAlignment(Qt.AlignmentFlag.AlignRight)
         new_ext_count: QLabel = QLabel()
         new_ext_count.setAlignment(Qt.AlignmentFlag.AlignRight)
 
         self.new_content_layout.addWidget(new_entry_count, 0, 1)
-        self.new_content_layout.addWidget(new_tag_count, 1, 1)
-        self.new_content_layout.addWidget(new_ext_count, 2, 1)
+        self.new_content_layout.addWidget(path_parity_value, 1, 1)
+        self.new_content_layout.addWidget(field_parity_value, 2, 1)
+        self.new_content_layout.addWidget(new_tag_count, 3, 1)
+        self.new_content_layout.addWidget(new_ext_count, 4, 1)
+
+        self.new_content_layout.addWidget(QLabel(), 0, 2)
+        self.new_content_layout.addWidget(QLabel(), 1, 2)
+        self.new_content_layout.addWidget(QLabel(), 2, 2)
+        self.new_content_layout.addWidget(QLabel(), 3, 2)
+        self.new_content_layout.addWidget(QLabel(), 4, 2)
+
         new_lib_layout.addWidget(new_content_container)
 
         desc_label = QLabel(desc_text)
@@ -216,12 +251,15 @@ class JsonMigrationModal(QObject):
                 self.json_lib.library_dir, is_new=True, add_default_data=False
             )
             self.sql_lib.migrate_json_to_sqlite(self.json_lib)
+            self.update_field_parity_value(self.check_field_parity())
+            self.update_path_parity_value(self.check_path_parity())
             self.sql_lib.close()
 
             # Update SQLite UI
             self.update_sql_entry_count(self.sql_lib.entries_count)
             self.update_sql_tag_count(len(self.sql_lib.tags))
             self.update_sql_ext_count(len(self.sql_lib.prefs(LibraryPrefs.EXTENSION_LIST)))
+            QApplication.beep()
 
             self.is_migration_initialized = True
 
@@ -238,12 +276,12 @@ class JsonMigrationModal(QObject):
 
     def update_json_tag_count(self, value: int):
         self.old_tag_count = value
-        label: QLabel = self.old_content_layout.itemAtPosition(1, 1).widget()  # type:ignore
+        label: QLabel = self.old_content_layout.itemAtPosition(3, 1).widget()  # type:ignore
         label.setText(self.color_value_default(value))
 
     def update_json_ext_count(self, value: int):
         self.old_ext_count = value
-        label: QLabel = self.old_content_layout.itemAtPosition(2, 1).widget()  # type:ignore
+        label: QLabel = self.old_content_layout.itemAtPosition(4, 1).widget()  # type:ignore
         label.setText(self.color_value_default(value))
 
     def update_sql_entry_count(self, value: int):
@@ -252,15 +290,37 @@ class JsonMigrationModal(QObject):
         label.setText(self.color_value_conditional(self.old_entry_count, value))
         warning_icon.setText("" if self.old_entry_count == value else self.warning)
 
+    def update_field_parity_value(self, value: bool):
+        result: str = "Matched" if value else "Discrepancy"
+        old_label: QLabel = self.old_content_layout.itemAtPosition(1, 1).widget()  # type:ignore
+        new_label: QLabel = self.new_content_layout.itemAtPosition(1, 1).widget()  # type:ignore
+        old_warning_icon: QLabel = self.old_content_layout.itemAtPosition(1, 2).widget()  # type:ignore
+        new_warning_icon: QLabel = self.new_content_layout.itemAtPosition(1, 2).widget()  # type:ignore
+        old_label.setText(self.color_value_conditional("Matched", result))
+        new_label.setText(self.color_value_conditional("Matched", result))
+        old_warning_icon.setText("" if value else self.warning)
+        new_warning_icon.setText("" if value else self.warning)
+
+    def update_path_parity_value(self, value: bool):
+        result: str = "Matched" if value else "Discrepancy"
+        old_label: QLabel = self.old_content_layout.itemAtPosition(2, 1).widget()  # type:ignore
+        new_label: QLabel = self.new_content_layout.itemAtPosition(2, 1).widget()  # type:ignore
+        old_warning_icon: QLabel = self.old_content_layout.itemAtPosition(2, 2).widget()  # type:ignore
+        new_warning_icon: QLabel = self.new_content_layout.itemAtPosition(2, 2).widget()  # type:ignore
+        old_label.setText(self.color_value_conditional("Matched", result))
+        new_label.setText(self.color_value_conditional("Matched", result))
+        old_warning_icon.setText("" if value else self.warning)
+        new_warning_icon.setText("" if value else self.warning)
+
     def update_sql_tag_count(self, value: int):
-        label: QLabel = self.new_content_layout.itemAtPosition(1, 1).widget()  # type:ignore
-        warning_icon: QLabel = self.new_content_layout.itemAtPosition(1, 2).widget()  # type:ignore
+        label: QLabel = self.new_content_layout.itemAtPosition(3, 1).widget()  # type:ignore
+        warning_icon: QLabel = self.new_content_layout.itemAtPosition(3, 2).widget()  # type:ignore
         label.setText(self.color_value_conditional(self.old_tag_count, value))
         warning_icon.setText("" if self.old_tag_count == value else self.warning)
 
     def update_sql_ext_count(self, value: int):
-        label: QLabel = self.new_content_layout.itemAtPosition(2, 1).widget()  # type:ignore
-        warning_icon: QLabel = self.new_content_layout.itemAtPosition(2, 2).widget()  # type:ignore
+        label: QLabel = self.new_content_layout.itemAtPosition(4, 1).widget()  # type:ignore
+        warning_icon: QLabel = self.new_content_layout.itemAtPosition(4, 2).widget()  # type:ignore
         label.setText(self.color_value_conditional(self.old_ext_count, value))
         warning_icon.setText("" if self.old_ext_count == value else self.warning)
 
@@ -268,9 +328,80 @@ class JsonMigrationModal(QObject):
         """Apply the default color to a value."""
         return str(f"<b><a style='color: #3b87f0'>{value}</a></b>")
 
-    def color_value_conditional(self, old_value: int, new_value: int) -> str:
+    def color_value_conditional(self, old_value: int | str, new_value: int | str) -> str:
         """Apply a conditional color to a value."""
         red: str = "#e22c3c"
         green: str = "#28bb48"
         color = green if old_value == new_value else red
         return str(f"<b><a style='color: {color}'>{new_value}</a></b>")
+
+    def check_field_parity(self, show_logs: bool = False) -> bool:
+        """Check if all JSON field data matches the new SQL field data."""
+
+        def sanitize_field(session, entry: Entry, value, type, type_key):
+            if type is FieldTypeEnum.TAGS:
+                tags = list(
+                    session.scalars(
+                        select(Tag.id)
+                        .join(TagField)
+                        .join(TagBoxField)
+                        .where(
+                            and_(
+                                TagBoxField.entry_id == entry.id,
+                                TagBoxField.id == TagField.field_id,
+                                TagBoxField.type_key == type_key,
+                            )
+                        )
+                    )
+                )
+
+                return set(tags) if tags else None
+            else:
+                return value if value else None
+
+        def sanitize_json_field(value):
+            if isinstance(value, list):
+                return set(value) if value else None
+            else:
+                return value if value else None
+
+        with Session(self.sql_lib.engine) as session:
+            for json_entry in self.json_lib.entries:
+                sql_entry: Entry = session.scalar(
+                    select(Entry).where(Entry.id == json_entry.id + 1)
+                )
+                if not sql_entry:
+                    continue
+
+                sql_fields: list[tuple] = []
+
+                for field in sql_entry.fields:
+                    sql_fields.append(
+                        (
+                            field.type.key,
+                            sanitize_field(
+                                session, sql_entry, field.value, field.type.type, field.type_key
+                            ),
+                        )
+                    )
+                json_fields = [
+                    (
+                        self.sql_lib.get_field_name_from_id(list(x.keys())[0]).name,
+                        sanitize_json_field(list(x.values())[0]),
+                    )
+                    for x in json_entry.fields
+                ]
+                if show_logs:
+                    logger.info(sorted(json_fields))
+                    logger.info("--------------------------------------")
+                    logger.info(sorted(sql_fields))
+                    logger.info("\n")
+
+        return sorted(json_fields) == sorted(sql_fields)
+
+    def check_path_parity(self) -> bool:
+        """Check if all JSON file paths match the new SQL paths."""
+        with Session(self.sql_lib.engine) as session:
+            json_paths: list = sorted([x.path / x.filename for x in self.json_lib.entries])
+            sql_paths: list = sorted(list(session.scalars(select(Entry.path))))
+        return json_paths == sql_paths

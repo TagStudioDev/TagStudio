@@ -5,7 +5,7 @@
 import pathlib
 
 from src.core.enums import LibraryPrefs
-from src.qt.widgets.migration_modal import JsonMigrationModal  # type: ignore
+from src.qt.widgets.migration_modal import JsonMigrationModal
 
 CWD = pathlib.Path(__file__)
 
@@ -17,6 +17,10 @@ def test_json_migration():
     # Entries ==================================================================
     # Count
     assert len(modal.json_lib.entries) == modal.sql_lib.entries_count
+    # Path Parity
+    assert modal.check_path_parity()
+    # Field Parity
+    assert modal.check_field_parity(show_logs=True)
 
     # Tags =====================================================================
     # Count
