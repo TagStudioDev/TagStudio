@@ -4,6 +4,7 @@
 
 import structlog
 from PySide6.QtCore import QSize, Qt, Signal
+from PySide6.QtGui import QShowEvent
 from PySide6.QtWidgets import (
     QFrame,
     QHBoxLayout,
@@ -19,6 +20,10 @@ from src.qt.widgets.tag import TagWidget
 
 logger = structlog.get_logger(__name__)
 
+# TODO: This class shares the majority of its code with tag_search.py.
+# It should either be made DRY, or be replaced with the intended and more robust
+# Tag Management tab/pane outlined on the Feature Roadmap.
+
 
 class TagDatabasePanel(PanelWidget):
     tag_chosen = Signal(int)
@@ -26,8 +31,8 @@ class TagDatabasePanel(PanelWidget):
     def __init__(self, library: Library):
         super().__init__()
         self.lib: Library = library
+        self.is_initialized: bool = False
         self.first_tag_id = -1
-        self.tag_limit = 30
 
         self.setMinimumSize(300, 400)
         self.root_layout = QVBoxLayout(self)
@@ -72,9 +77,9 @@ class TagDatabasePanel(PanelWidget):
         while self.scroll_layout.itemAt(0):
             self.scroll_layout.takeAt(0).widget().deleteLater()
 
-        tags = self.lib.search_tags(name=query)
+        tags_results = self.lib.search_tags(name=query)
 
-        for tag in tags:
+        for tag in tags_results:
             container = QWidget()
             row = QHBoxLayout(container)
             row.setContentsMargins(0, 0, 0, 0)
@@ -103,3 +108,9 @@ class TagDatabasePanel(PanelWidget):
     def edit_tag_callback(self, btp: BuildTagPanel):
         self.lib.update_tag(btp.build_tag(), btp.subtag_ids, btp.alias_names, btp.alias_ids)
         self.update_tags(self.search_field.text())
+
+    def showEvent(self, event: QShowEvent) -> None:  # noqa N802
+        if not self.is_initialized:
+            self.update_tags()
+            self.is_initialized = True
+        return super().showEvent(event)
