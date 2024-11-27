@@ -19,7 +19,7 @@ from sqlalchemy import and_, select
 from sqlalchemy.orm import Session
 from src.core.constants import TS_FOLDER_NAME
 from src.core.enums import LibraryPrefs
-from src.core.library.alchemy.enums import FieldTypeEnum
+from src.core.library.alchemy.enums import FieldTypeEnum, TagColor
 from src.core.library.alchemy.fields import TagBoxField
 from src.core.library.alchemy.joins import TagField, TagSubtag
 from src.core.library.alchemy.library import Library as SqliteLibrary
@@ -59,7 +59,7 @@ class JsonMigrationModal(QObject):
         self.init_page_info()
         self.init_page_convert()
 
-        self.paged_panel: PagedPanel = PagedPanel((640, 460), self.stack)
+        self.paged_panel: PagedPanel = PagedPanel((640, 480), self.stack)
 
     def init_page_info(self) -> None:
         """Initialize the migration info page."""
@@ -67,6 +67,8 @@ class JsonMigrationModal(QObject):
         body_label: QLabel = QLabel(
             "Library save files created with TagStudio versions <b>9.4 and below</b> will "
             "need to be migrated to the new <b>v9.5+</b> format."
+            "<br>"
+            "<br>"
             "<br>"
             "<h2>What you need to know:</h2>"
             "<ul>"
@@ -109,6 +111,7 @@ class JsonMigrationModal(QObject):
         shorthand_text: str = tab + "Shorthands:"
         subtags_text: str = tab + "Parent Tags:"
         aliases_text: str = tab + "Aliases:"
+        colors_text: str = tab + "Colors:"
         ext_text: str = "File Extension List:"
         ext_type_text: str = "Extension List Type:"
         desc_text: str = (
@@ -132,8 +135,9 @@ class JsonMigrationModal(QObject):
         self.shorthands_row: int = 4
         self.subtags_row: int = 5
         self.aliases_row: int = 6
-        self.ext_row: int = 7
-        self.ext_type_row: int = 8
+        self.colors_row: int = 7
+        self.ext_row: int = 8
+        self.ext_type_row: int = 9
 
         old_lib_container: QWidget = QWidget()
         old_lib_layout: QVBoxLayout = QVBoxLayout(old_lib_container)
@@ -152,6 +156,7 @@ class JsonMigrationModal(QObject):
         self.old_content_layout.addWidget(QLabel(shorthand_text), self.shorthands_row, 0)
         self.old_content_layout.addWidget(QLabel(subtags_text), self.subtags_row, 0)
         self.old_content_layout.addWidget(QLabel(aliases_text), self.aliases_row, 0)
+        self.old_content_layout.addWidget(QLabel(colors_text), self.colors_row, 0)
         self.old_content_layout.addWidget(QLabel(ext_text), self.ext_row, 0)
         self.old_content_layout.addWidget(QLabel(ext_type_text), self.ext_type_row, 0)
 
@@ -169,6 +174,8 @@ class JsonMigrationModal(QObject):
         old_subtag_value.setAlignment(Qt.AlignmentFlag.AlignRight)
         old_alias_value: QLabel = QLabel()
         old_alias_value.setAlignment(Qt.AlignmentFlag.AlignRight)
+        old_color_value: QLabel = QLabel()
+        old_color_value.setAlignment(Qt.AlignmentFlag.AlignRight)
         old_ext_count: QLabel = QLabel()
         old_ext_count.setAlignment(Qt.AlignmentFlag.AlignRight)
         old_ext_type: QLabel = QLabel()
@@ -181,6 +188,7 @@ class JsonMigrationModal(QObject):
         self.old_content_layout.addWidget(old_shorthand_count, self.shorthands_row, 1)
         self.old_content_layout.addWidget(old_subtag_value, self.subtags_row, 1)
         self.old_content_layout.addWidget(old_alias_value, self.aliases_row, 1)
+        self.old_content_layout.addWidget(old_color_value, self.colors_row, 1)
         self.old_content_layout.addWidget(old_ext_count, self.ext_row, 1)
         self.old_content_layout.addWidget(old_ext_type, self.ext_type_row, 1)
 
@@ -189,6 +197,7 @@ class JsonMigrationModal(QObject):
         self.old_content_layout.addWidget(QLabel(), self.shorthands_row, 2)
         self.old_content_layout.addWidget(QLabel(), self.subtags_row, 2)
         self.old_content_layout.addWidget(QLabel(), self.aliases_row, 2)
+        self.old_content_layout.addWidget(QLabel(), self.colors_row, 2)
 
         old_lib_layout.addWidget(old_content_container)
 
@@ -209,6 +218,7 @@ class JsonMigrationModal(QObject):
         self.new_content_layout.addWidget(QLabel(shorthand_text), self.shorthands_row, 0)
         self.new_content_layout.addWidget(QLabel(subtags_text), self.subtags_row, 0)
         self.new_content_layout.addWidget(QLabel(aliases_text), self.aliases_row, 0)
+        self.new_content_layout.addWidget(QLabel(colors_text), self.colors_row, 0)
         self.new_content_layout.addWidget(QLabel(ext_text), self.ext_row, 0)
         self.new_content_layout.addWidget(QLabel(ext_type_text), self.ext_type_row, 0)
 
@@ -226,6 +236,8 @@ class JsonMigrationModal(QObject):
         subtag_parity_value.setAlignment(Qt.AlignmentFlag.AlignRight)
         alias_parity_value: QLabel = QLabel()
         alias_parity_value.setAlignment(Qt.AlignmentFlag.AlignRight)
+        new_color_value: QLabel = QLabel()
+        new_color_value.setAlignment(Qt.AlignmentFlag.AlignRight)
         new_ext_count: QLabel = QLabel()
         new_ext_count.setAlignment(Qt.AlignmentFlag.AlignRight)
         new_ext_type: QLabel = QLabel()
@@ -238,6 +250,7 @@ class JsonMigrationModal(QObject):
         self.new_content_layout.addWidget(new_shorthand_count, self.shorthands_row, 1)
         self.new_content_layout.addWidget(subtag_parity_value, self.subtags_row, 1)
         self.new_content_layout.addWidget(alias_parity_value, self.aliases_row, 1)
+        self.new_content_layout.addWidget(new_color_value, self.colors_row, 1)
         self.new_content_layout.addWidget(new_ext_count, self.ext_row, 1)
         self.new_content_layout.addWidget(new_ext_type, self.ext_type_row, 1)
 
@@ -248,6 +261,7 @@ class JsonMigrationModal(QObject):
         self.new_content_layout.addWidget(QLabel(), self.tags_row, 2)
         self.new_content_layout.addWidget(QLabel(), self.subtags_row, 2)
         self.new_content_layout.addWidget(QLabel(), self.aliases_row, 2)
+        self.new_content_layout.addWidget(QLabel(), self.colors_row, 2)
         self.new_content_layout.addWidget(QLabel(), self.ext_row, 2)
         self.new_content_layout.addWidget(QLabel(), self.ext_type_row, 2)
 
@@ -315,11 +329,13 @@ class JsonMigrationModal(QObject):
                 self.json_lib.library_dir, is_new=True, add_default_data=False
             )
             self.sql_lib.migrate_json_to_sqlite(self.json_lib)
+            logger.info("Checking for parity...")
             self.update_field_parity_value(self.check_field_parity())
             self.update_path_parity_value(self.check_path_parity())
             self.update_shorthand_parity_value(self.check_shorthand_parity())
             self.update_subtag_parity_value(self.check_subtag_parity())
             self.update_alias_parity_value(self.check_alias_parity())
+            self.update_color_parity_value(self.check_color_parity())
             self.sql_lib.close()
 
             # Update SQLite UI
@@ -327,6 +343,7 @@ class JsonMigrationModal(QObject):
             self.update_sql_tag_count(len(self.sql_lib.tags))
             self.update_sql_ext_count(len(self.sql_lib.prefs(LibraryPrefs.EXTENSION_LIST)))
             self.update_sql_ext_type(self.sql_lib.prefs(LibraryPrefs.IS_EXCLUDE_LIST))
+            logger.info("Parity check complete!")
             QApplication.beep()
 
             self.is_migration_initialized = True
@@ -440,6 +457,21 @@ class JsonMigrationModal(QObject):
         old_warning_icon.setText("" if value else self.warning)
         new_warning_icon.setText("" if value else self.warning)
 
+    def update_color_parity_value(self, value: bool):
+        result: str = self.match_text if value else self.differ_text
+        old_label: QLabel = self.old_content_layout.itemAtPosition(self.colors_row, 1).widget()  # type:ignore
+        new_label: QLabel = self.new_content_layout.itemAtPosition(self.colors_row, 1).widget()  # type:ignore
+        old_warning_icon: QLabel = self.old_content_layout.itemAtPosition(
+            self.colors_row, 2
+        ).widget()  # type:ignore
+        new_warning_icon: QLabel = self.new_content_layout.itemAtPosition(
+            self.colors_row, 2
+        ).widget()  # type:ignore
+        old_label.setText(self.color_value_conditional(self.match_text, result))
+        new_label.setText(self.color_value_conditional(self.match_text, result))
+        old_warning_icon.setText("" if value else self.warning)
+        new_warning_icon.setText("" if value else self.warning)
+
     def update_sql_ext_count(self, value: int):
         label: QLabel = self.new_content_layout.itemAtPosition(self.ext_row, 1).widget()  # type:ignore
         warning_icon: QLabel = self.new_content_layout.itemAtPosition(self.ext_row, 2).widget()  # type:ignore
@@ -463,7 +495,7 @@ class JsonMigrationModal(QObject):
         color = green if old_value == new_value else red
         return str(f"<b><a style='color: {color}'>{new_value}</a></b>")
 
-    def check_field_parity(self, logging: bool = False) -> bool:
+    def check_field_parity(self) -> bool:
         """Check if all JSON field data matches the new SQL field data."""
 
         def sanitize_field(session, entry: Entry, value, type, type_key):
@@ -521,11 +553,9 @@ class JsonMigrationModal(QObject):
                     for x in json_entry.fields
                 ]
                 json_fields.sort()
-                if logging:
-                    logger.info(json_fields)
-                    logger.info("--------------------------------------")
-                    logger.info(sql_fields)
-                    logger.info("\n")
+
+        logger.info("Field Comparison:")
+        logger.info("\n".join([str(x) for x in zip(json_fields, sql_fields)]))
 
         return (json_fields == sql_fields) and json_fields is not None and sql_fields is not None
 
@@ -536,30 +566,34 @@ class JsonMigrationModal(QObject):
             sql_paths: list = sorted(list(session.scalars(select(Entry.path))))
         return (json_paths == sql_paths) and json_paths is not None and sql_paths is not None
 
-    def check_subtag_parity(self, logging: bool = False) -> bool:
+    def check_subtag_parity(self) -> bool:
         """Check if all JSON subtags match the new SQL subtags."""
         with Session(self.sql_lib.engine) as session:
-            sql_subtags: list[set[int]] = []
-            json_subtags: list[set[int]] = []
+            sql_subtags: list[tuple[int, set[int]]] = []
+            json_subtags: list[tuple[int, set[int]]] = []
 
             for sql_tag in self.sql_lib.tags:
-                subtags = set(
-                    session.scalars(
-                        select(TagSubtag.child_id).where(TagSubtag.parent_id == sql_tag.id)
-                    )
+                subtags = (
+                    sql_tag.id,
+                    set(
+                        session.scalars(
+                            select(TagSubtag.child_id).where(TagSubtag.parent_id == sql_tag.id)
+                        )
+                    ),
                 )
                 sql_subtags.append(subtags)
+                logger.info(sql_subtags[-1])
             sql_subtags.sort()
 
             for json_tag in self.json_lib.tags:
-                json_subtags.append(set(json_tag.subtag_ids).difference(set([json_tag.id])))
+                json_subtags.append(
+                    (json_tag.id, set(json_tag.subtag_ids).difference(set([json_tag.id])))
+                )
+                logger.info(json_subtags[-1])
             json_subtags.sort()
 
-            if logging:
-                logger.info(json_subtags)
-                logger.info("--------------------------------------")
-                logger.info(sql_subtags)
-                logger.info("\n")
+        logger.info("Subtag Comparison:")
+        logger.info("\n".join([str(x) for x in zip(json_subtags, sql_subtags)]))
 
         return (
             (sql_subtags == json_subtags) and sql_subtags is not None and json_subtags is not None
@@ -568,58 +602,83 @@ class JsonMigrationModal(QObject):
     def check_ext_type(self) -> bool:
         return self.json_lib.is_exclude_list == self.sql_lib.prefs(LibraryPrefs.IS_EXCLUDE_LIST)
 
-    def check_alias_parity(self, logging: bool = False) -> bool:
+    def check_alias_parity(self) -> bool:
         """Check if all JSON aliases match the new SQL aliases."""
         with Session(self.sql_lib.engine) as session:
-            sql_aliases: list[set[str]] = []
-            json_aliases: list[set[str]] = []
+            sql_aliases: list[tuple[int, set[str]]] = []
+            json_aliases: list[tuple[int, set[str]]] = []
 
             for sql_tag in self.sql_lib.tags:
-                aliases = set(
-                    session.scalars(select(TagAlias.name).where(TagAlias.tag_id == sql_tag.id))
+                aliases = (
+                    sql_tag.id,
+                    set(
+                        session.scalars(select(TagAlias.name).where(TagAlias.tag_id == sql_tag.id))
+                    ),
                 )
                 sql_aliases.append(aliases)
             sql_aliases.sort()
 
             for json_tag in self.json_lib.tags:
-                json_aliases.append(set(json_tag.aliases))
+                json_aliases.append((json_tag.id, set(json_tag.aliases)))
             json_aliases.sort()
 
-            if logging:
-                logger.info(json_aliases)
-                logger.info("--------------------------------------")
-                logger.info(sql_aliases)
-                logger.info("\n")
+        logger.info("Alias Comparison:")
+        logger.info("\n".join([str(x) for x in zip(json_aliases, sql_aliases)]))
 
         return (
             (sql_aliases == json_aliases) and sql_aliases is not None and json_aliases is not None
         )
 
-    def check_shorthand_parity(self, logging: bool = False) -> bool:
+    def check_shorthand_parity(self) -> bool:
         """Check if all JSON shorthands match the new SQL shorthands."""
         with Session(self.sql_lib.engine) as session:
-            sql_shorthands: list[set[str]] = []
-            json_shorthands: list[set[str]] = []
+            sql_shorthands: list[tuple[int, set[str]]] = []
+            json_shorthands: list[tuple[int, set[str]]] = []
 
             for sql_tag in self.sql_lib.tags:
-                shorthands = set(
-                    session.scalars(select(TagAlias.name).where(TagAlias.tag_id == sql_tag.id))
+                shorthands = (
+                    sql_tag.id,
+                    set(
+                        session.scalars(select(TagAlias.name).where(TagAlias.tag_id == sql_tag.id))
+                    ),
                 )
                 sql_shorthands.append(shorthands)
             sql_shorthands.sort()
 
             for json_tag in self.json_lib.tags:
-                json_shorthands.append(set(json_tag.aliases))
+                json_shorthands.append((json_tag.id, set(json_tag.aliases)))
             json_shorthands.sort()
 
-            if logging:
-                logger.info(json_shorthands)
-                logger.info("--------------------------------------")
-                logger.info(sql_shorthands)
-                logger.info("\n")
+        logger.info("Shorthand Comparison:")
+        logger.info("\n".join([str(x) for x in zip(json_shorthands, sql_shorthands)]))
 
         return (
             (sql_shorthands == json_shorthands)
             and sql_shorthands is not None
             and json_shorthands is not None
         )
+
+    def check_color_parity(self) -> bool:
+        """Check if all JSON tag colors match the new SQL tag colors."""
+        sql_colors: list[tuple[int, str]] = []
+        json_colors: list[tuple[int, str]] = []
+
+        for sql_tag in self.sql_lib.tags:
+            sql_colors.append((sql_tag.id, (sql_tag.color.name)))
+        sql_colors.sort()
+
+        for json_tag in self.json_lib.tags:
+            json_colors.append(
+                (
+                    json_tag.id,
+                    json_tag.color.upper().replace(" ", "_")
+                    if json_tag.color != ""
+                    else TagColor.DEFAULT.name,
+                )
+            )
+        json_colors.sort()
+
+        logger.info("Color Comparison:")
+        logger.info("\n".join([str(x) for x in zip(json_colors, sql_colors)]))
+
+        return (sql_colors == json_colors) and sql_colors is not None and json_colors is not None

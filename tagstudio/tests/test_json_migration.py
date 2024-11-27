@@ -20,17 +20,19 @@ def test_json_migration():
     # Path Parity
     assert modal.check_path_parity()
     # Field Parity
-    assert modal.check_field_parity(logging=True)
+    assert modal.check_field_parity()
 
     # Tags =====================================================================
     # Count
     assert len(modal.json_lib.tags) == len(modal.sql_lib.tags)
     # Shorthand Parity
-    assert modal.check_shorthand_parity(logging=True)
+    assert modal.check_shorthand_parity()
     # Subtag/Parent Tag Parity
-    assert modal.check_subtag_parity(logging=True)
+    assert modal.check_subtag_parity()
     # Alias Parity
-    assert modal.check_alias_parity(logging=True)
+    assert modal.check_alias_parity()
+    # Color Parity
+    assert modal.check_color_parity()
 
     # Extension Filter List ====================================================
     # Count
