@@ -1,5 +1,6 @@
+from abc import ABC, abstractmethod
 from enum import Enum
-from typing import Union
+from typing import Generic, TypeVar, Union
 
 
 class ConstraintType(Enum):  # TODO add remaining ones
@@ -75,3 +76,32 @@ class Property(AST):
         super().__init__()
         self.key = key
         self.value = value
+
+
+T = TypeVar("T")
+
+
+class BaseVisitor(ABC, Generic[T]):
+    def visit(self, node: AST) -> T:
+        return {
+            ANDList: self.visit_ANDList,
+            ORList: self.visit_ORList,
+            Constraint: self.visit_Constraint,
+            Property: self.visit_Property,
+        }[type(node)](node)
+
+    @abstractmethod
+    def visit_ANDList(self, node: ANDList) -> T:  # noqa: N802
+        raise NotImplementedError()
+
+    @abstractmethod
+    def visit_ORList(self, node: ORList) -> T:  # noqa: N802
+        raise NotImplementedError()
+
+    @abstractmethod
+    def visit_Constraint(self, node: Constraint) -> T:  # noqa: N802
+        raise NotImplementedError()
+
+    @abstractmethod
+    def visit_Property(self, node: Property) -> T:  # noqa: N802
+        raise NotImplementedError()
