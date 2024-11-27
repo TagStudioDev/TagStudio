@@ -180,6 +180,7 @@ class Library:
                     path=entry.path / entry.filename,
                     folder=folder,
                     fields=[],
+                    id=entry.id + 1,  # JSON IDs start at 0 instead of 1
                 )
                 for entry in json_lib.entries
             ]

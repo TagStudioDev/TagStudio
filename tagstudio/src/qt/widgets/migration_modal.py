@@ -454,17 +454,26 @@ class JsonMigrationModal(QObject):
 
         with Session(self.sql_lib.engine) as session:
             for json_entry in self.json_lib.entries:
+                sql_fields: list[tuple] = []
+                json_fields: list[tuple] = []
+
                 sql_entry: Entry = session.scalar(
                     select(Entry).where(Entry.id == json_entry.id + 1)
                 )
                 if not sql_entry:
-                    continue
-
-                sql_fields: list[tuple] = []
+                    logger.info(
+                        "[Field Comparison]",
+                        message=f"NEW  (SQL): SQL Entry ID mismatch: {json_entry.id+1}",
+                    )
+                    self.discrepancies.append(
+                        f"[Field Comparison]:\nNEW (SQL): SQL Entry ID not found: {json_entry.id+1}"
+                    )
+                    return False
 
                 for field in sql_entry.fields:
                     sql_fields.append(
                         (
+                            sql_entry.id,
                             field.type.key,
                             sanitize_field(
                                 session, sql_entry, field.value, field.type.type, field.type_key
@@ -472,8 +481,10 @@ class JsonMigrationModal(QObject):
                         )
                     )
                 sql_fields.sort()
+
                 json_fields = [
                     (
+                        json_entry.id + 1,  # JSON IDs start at 0 instead of 1
                         self.sql_lib.get_field_name_from_id(list(x.keys())[0]).name,
                         sanitize_json_field(list(x.values())[0]),
                     )
@@ -486,7 +497,7 @@ class JsonMigrationModal(QObject):
                     and sql_fields is not None
                 ):
                     self.discrepancies.append(
-                        f"[Field Comparison]:\nOLD (JSON):{json_fields}\nNEW (SQL):{sql_fields}"
+                        f"[Field Comparison]:\nOLD (JSON):{json_fields}\nNEW  (SQL):{sql_fields}"
                     )
                     return False
 

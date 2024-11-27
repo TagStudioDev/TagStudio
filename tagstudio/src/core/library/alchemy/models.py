@@ -177,9 +177,12 @@ class Entry(Base):
         path: Path,
         folder: Folder,
         fields: list[BaseField],
+        id: int | None = None,
     ) -> None:
         self.path = path
         self.folder = folder
+        assert not self.id
+        self.id = id
 
         self.suffix = path.suffix.lstrip(".").lower()
 
