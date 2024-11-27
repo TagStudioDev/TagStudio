@@ -1,4 +1,5 @@
 from enum import Enum
+from typing import Any
 
 from src.core.query_lang.ast import ConstraintType
 from src.core.query_lang.util import ParsingError
@@ -19,19 +20,19 @@ class TokenType(Enum):
 
 class Token:
     type: TokenType
-    value: any
+    value: Any
 
     start: int
     end: int
 
-    def __init__(self, type: TokenType, value: any, start: int = None, end: int = None) -> None:
+    def __init__(self, type: TokenType, value: Any, start: int = None, end: int = None) -> None:
         self.type = type
         self.value = value
         self.start = start
         self.end = end
     
     @staticmethod
-    def from_type(type: TokenType, pos: int = None) -> TokenType:
+    def from_type(type: TokenType, pos: int = None) -> "Token":
         return Token(type, None, pos, pos)
 
     @staticmethod

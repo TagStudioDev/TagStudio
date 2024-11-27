@@ -24,16 +24,16 @@ class AST:
         return self.__str__()
 
 class ANDList(AST):
-    elements: list["ORList"]
+    elements: list[Union["ORList", "Constraint"]]
 
-    def __init__(self, elements: list["ORList"]) -> None:
+    def __init__(self, elements: list[Union["ORList", "Constraint"]]) -> None:
         super().__init__()
         self.elements = elements
 
 class ORList(AST):
-    terms: list[Union[ANDList, "Constraint"]]
+    terms: list[ANDList]
 
-    def __init__(self, terms: list[Union[ANDList, "Constraint"]]) -> None:
+    def __init__(self, terms: list[ANDList]) -> None:
         super().__init__()
         self.terms = terms
 
