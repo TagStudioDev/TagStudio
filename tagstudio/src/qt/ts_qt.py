@@ -1030,25 +1030,38 @@ class QtDriver(DriverMixin, QObject):
         self.flow_container.layout().update()
         self.main_window.update()
 
-        for idx, (entry, item_thumb) in enumerate(
-            zip_longest(self.frame_content, self.item_thumbs)
-        ):
+        is_grid_thumb = True
+        # Show loading placeholder icons
+        for entry, item_thumb in zip_longest(self.frame_content, self.item_thumbs):
             if not entry:
                 item_thumb.hide()
                 continue
 
-            filepath = self.lib.library_dir / entry.path
-            item_thumb = self.item_thumbs[idx]
             item_thumb.set_mode(ItemType.ENTRY)
             item_thumb.set_item_id(entry)
 
             # TODO - show after item is rendered
             item_thumb.show()
 
+            is_loading = True
             self.thumb_job_queue.put(
                 (
                     item_thumb.renderer.render,
-                    (sys.float_info.max, "", base_size, ratio, True, True),
+                    (sys.float_info.max, "", base_size, ratio, is_loading, is_grid_thumb),
+                )
+            )
+
+        # Show rendered thumbnails
+        for idx, (entry, item_thumb) in enumerate(
+            zip_longest(self.frame_content, self.item_thumbs)
+        ):
+            filepath = self.lib.library_dir / entry.path
+            is_loading = False
+
+            self.thumb_job_queue.put(
+                (
+                    item_thumb.renderer.render,
+                    (time.time(), filepath, base_size, ratio, is_loading, is_grid_thumb),
                 )
             )
 
