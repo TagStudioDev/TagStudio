@@ -331,19 +331,35 @@ class JsonMigrationModal(QObject):
             )
             self.sql_lib.migrate_json_to_sqlite(self.json_lib)
             logger.info("Checking for parity...")
-            self.update_field_parity_value(self.check_field_parity())
-            self.update_path_parity_value(self.check_path_parity())
-            self.update_shorthand_parity_value(self.check_shorthand_parity())
-            self.update_subtag_parity_value(self.check_subtag_parity())
-            self.update_alias_parity_value(self.check_alias_parity())
-            self.update_color_parity_value(self.check_color_parity())
+            self.update_parity_value(self.fields_row, self.check_field_parity())
+            self.update_parity_value(self.path_row, self.check_path_parity())
+            self.update_parity_value(self.shorthands_row, self.check_shorthand_parity())
+            self.update_parity_value(self.subtags_row, self.check_subtag_parity())
+            self.update_parity_value(self.aliases_row, self.check_alias_parity())
+            self.update_parity_value(self.colors_row, self.check_color_parity())
             self.sql_lib.close()
 
             # Update SQLite UI
-            self.update_sql_entry_count(self.sql_lib.entries_count)
-            self.update_sql_tag_count(len(self.sql_lib.tags))
-            self.update_sql_ext_count(len(self.sql_lib.prefs(LibraryPrefs.EXTENSION_LIST)))
-            self.update_sql_ext_type(self.sql_lib.prefs(LibraryPrefs.IS_EXCLUDE_LIST))
+            self.update_sql_value(
+                self.entries_row,
+                self.sql_lib.entries_count,
+                self.old_entry_count,
+            )
+            self.update_sql_value(
+                self.tags_row,
+                len(self.sql_lib.tags),
+                self.old_tag_count,
+            )
+            self.update_sql_value(
+                self.ext_row,
+                len(self.sql_lib.prefs(LibraryPrefs.EXTENSION_LIST)),
+                self.old_ext_count,
+            )
+            self.update_sql_value(
+                self.ext_type_row,
+                self.sql_lib.prefs(LibraryPrefs.IS_EXCLUDE_LIST),
+                self.old_ext_type,
+            )
             logger.info("Parity check complete!")
             if self.discrepancies:
                 logger.warning("Discrepancies found:")
@@ -378,115 +394,22 @@ class JsonMigrationModal(QObject):
         label: QLabel = self.old_content_layout.itemAtPosition(self.ext_type_row, 1).widget()  # type:ignore
         label.setText(self.color_value_default(value))
 
-    def update_sql_entry_count(self, value: int):
-        label: QLabel = self.new_content_layout.itemAtPosition(self.entries_row, 1).widget()  # type:ignore
-        warning_icon: QLabel = self.new_content_layout.itemAtPosition(self.entries_row, 2).widget()  # type:ignore
-        label.setText(self.color_value_conditional(self.old_entry_count, value))
-        warning_icon.setText("" if self.old_entry_count == value else self.warning)
+    def update_sql_value(self, row: int, value: int | bool, old_value: int | bool):
+        label: QLabel = self.new_content_layout.itemAtPosition(row, 1).widget()  # type:ignore
+        warning_icon: QLabel = self.new_content_layout.itemAtPosition(row, 2).widget()  # type:ignore
+        label.setText(self.color_value_conditional(old_value, value))
+        warning_icon.setText("" if old_value == value else self.warning)
 
-    def update_path_parity_value(self, value: bool):
+    def update_parity_value(self, row: int, value: bool):
         result: str = self.match_text if value else self.differ_text
-        old_label: QLabel = self.old_content_layout.itemAtPosition(self.path_row, 1).widget()  # type:ignore
-        new_label: QLabel = self.new_content_layout.itemAtPosition(self.path_row, 1).widget()  # type:ignore
-        old_warning_icon: QLabel = self.old_content_layout.itemAtPosition(self.path_row, 2).widget()  # type:ignore
-        new_warning_icon: QLabel = self.new_content_layout.itemAtPosition(self.path_row, 2).widget()  # type:ignore
+        old_label: QLabel = self.old_content_layout.itemAtPosition(row, 1).widget()  # type:ignore
+        new_label: QLabel = self.new_content_layout.itemAtPosition(row, 1).widget()  # type:ignore
+        old_warning_icon: QLabel = self.old_content_layout.itemAtPosition(row, 2).widget()  # type:ignore
+        new_warning_icon: QLabel = self.new_content_layout.itemAtPosition(row, 2).widget()  # type:ignore
         old_label.setText(self.color_value_conditional(self.match_text, result))
         new_label.setText(self.color_value_conditional(self.match_text, result))
         old_warning_icon.setText("" if value else self.warning)
         new_warning_icon.setText("" if value else self.warning)
-
-    def update_field_parity_value(self, value: bool):
-        result: str = self.match_text if value else self.differ_text
-        old_label: QLabel = self.old_content_layout.itemAtPosition(self.fields_row, 1).widget()  # type:ignore
-        new_label: QLabel = self.new_content_layout.itemAtPosition(self.fields_row, 1).widget()  # type:ignore
-        old_warning_icon: QLabel = self.old_content_layout.itemAtPosition(
-            self.fields_row, 2
-        ).widget()  # type:ignore
-        new_warning_icon: QLabel = self.new_content_layout.itemAtPosition(
-            self.fields_row, 2
-        ).widget()  # type:ignore
-        old_label.setText(self.color_value_conditional(self.match_text, result))
-        new_label.setText(self.color_value_conditional(self.match_text, result))
-        old_warning_icon.setText("" if value else self.warning)
-        new_warning_icon.setText("" if value else self.warning)
-
-    def update_sql_tag_count(self, value: int):
-        label: QLabel = self.new_content_layout.itemAtPosition(self.tags_row, 1).widget()  # type:ignore
-        warning_icon: QLabel = self.new_content_layout.itemAtPosition(self.tags_row, 2).widget()  # type:ignore
-        label.setText(self.color_value_conditional(self.old_tag_count, value))
-        warning_icon.setText("" if self.old_tag_count == value else self.warning)
-
-    def update_shorthand_parity_value(self, value: bool):
-        result: str = self.match_text if value else self.differ_text
-        old_label: QLabel = self.old_content_layout.itemAtPosition(self.shorthands_row, 1).widget()  # type:ignore
-        new_label: QLabel = self.new_content_layout.itemAtPosition(self.shorthands_row, 1).widget()  # type:ignore
-        old_warning_icon: QLabel = self.old_content_layout.itemAtPosition(
-            self.shorthands_row, 2
-        ).widget()  # type:ignore
-        new_warning_icon: QLabel = self.new_content_layout.itemAtPosition(
-            self.shorthands_row, 2
-        ).widget()  # type:ignore
-        old_label.setText(self.color_value_conditional(self.match_text, result))
-        new_label.setText(self.color_value_conditional(self.match_text, result))
-        old_warning_icon.setText("" if value else self.warning)
-        new_warning_icon.setText("" if value else self.warning)
-
-    def update_subtag_parity_value(self, value: bool):
-        result: str = self.match_text if value else self.differ_text
-        old_label: QLabel = self.old_content_layout.itemAtPosition(self.subtags_row, 1).widget()  # type:ignore
-        new_label: QLabel = self.new_content_layout.itemAtPosition(self.subtags_row, 1).widget()  # type:ignore
-        old_warning_icon: QLabel = self.old_content_layout.itemAtPosition(
-            self.subtags_row, 2
-        ).widget()  # type:ignore
-        new_warning_icon: QLabel = self.new_content_layout.itemAtPosition(
-            self.subtags_row, 2
-        ).widget()  # type:ignore
-        old_label.setText(self.color_value_conditional(self.match_text, result))
-        new_label.setText(self.color_value_conditional(self.match_text, result))
-        old_warning_icon.setText("" if value else self.warning)
-        new_warning_icon.setText("" if value else self.warning)
-
-    def update_alias_parity_value(self, value: bool):
-        result: str = self.match_text if value else self.differ_text
-        old_label: QLabel = self.old_content_layout.itemAtPosition(self.aliases_row, 1).widget()  # type:ignore
-        new_label: QLabel = self.new_content_layout.itemAtPosition(self.aliases_row, 1).widget()  # type:ignore
-        old_warning_icon: QLabel = self.old_content_layout.itemAtPosition(
-            self.aliases_row, 2
-        ).widget()  # type:ignore
-        new_warning_icon: QLabel = self.new_content_layout.itemAtPosition(
-            self.aliases_row, 2
-        ).widget()  # type:ignore
-        old_label.setText(self.color_value_conditional(self.match_text, result))
-        new_label.setText(self.color_value_conditional(self.match_text, result))
-        old_warning_icon.setText("" if value else self.warning)
-        new_warning_icon.setText("" if value else self.warning)
-
-    def update_color_parity_value(self, value: bool):
-        result: str = self.match_text if value else self.differ_text
-        old_label: QLabel = self.old_content_layout.itemAtPosition(self.colors_row, 1).widget()  # type:ignore
-        new_label: QLabel = self.new_content_layout.itemAtPosition(self.colors_row, 1).widget()  # type:ignore
-        old_warning_icon: QLabel = self.old_content_layout.itemAtPosition(
-            self.colors_row, 2
-        ).widget()  # type:ignore
-        new_warning_icon: QLabel = self.new_content_layout.itemAtPosition(
-            self.colors_row, 2
-        ).widget()  # type:ignore
-        old_label.setText(self.color_value_conditional(self.match_text, result))
-        new_label.setText(self.color_value_conditional(self.match_text, result))
-        old_warning_icon.setText("" if value else self.warning)
-        new_warning_icon.setText("" if value else self.warning)
-
-    def update_sql_ext_count(self, value: int):
-        label: QLabel = self.new_content_layout.itemAtPosition(self.ext_row, 1).widget()  # type:ignore
-        warning_icon: QLabel = self.new_content_layout.itemAtPosition(self.ext_row, 2).widget()  # type:ignore
-        label.setText(self.color_value_conditional(self.old_ext_count, value))
-        warning_icon.setText("" if self.old_ext_count == value else self.warning)
-
-    def update_sql_ext_type(self, value: bool):
-        label: QLabel = self.new_content_layout.itemAtPosition(self.ext_type_row, 1).widget()  # type:ignore
-        warning_icon: QLabel = self.new_content_layout.itemAtPosition(self.ext_type_row, 2).widget()  # type:ignore
-        label.setText(self.color_value_conditional(self.old_ext_type, value))
-        warning_icon.setText("" if self.old_ext_type == value else self.warning)
 
     def color_value_default(self, value: int) -> str:
         """Apply the default color to a value."""
