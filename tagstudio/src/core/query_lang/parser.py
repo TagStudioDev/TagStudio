@@ -1,3 +1,5 @@
+from typing import Union
+
 from src.core.query_lang.ast import AST, ANDList, Constraint, ORList, Property
 from src.core.query_lang.tokenizer import ConstraintType, Token, Tokenizer, TokenType
 from src.core.query_lang.util import ParsingError
@@ -50,10 +52,10 @@ class Parser:
     def __is_next_or(self) -> bool:
         return self.next_token.type == TokenType.ULITERAL and self.next_token.value.upper() == "OR"
     
-    def __term(self) -> AST:
+    def __term(self) -> Union["ORList", "Constraint"]:
         if self.next_token.type == TokenType.RBRACKETO:
             self.__eat(TokenType.RBRACKETO)
-            out = self.__and_list()
+            out = self.__or_list()
             self.__eat(TokenType.RBRACKETC)
             return out
         else:
