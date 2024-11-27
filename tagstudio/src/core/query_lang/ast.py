@@ -21,6 +21,8 @@ class ConstraintType(Enum):  # TODO add remaining ones
 
 
 class AST:
+    parent: "AST" = None
+
     def __str__(self):
         class_name = self.__class__.__name__
         fields = vars(self)  # Get all instance variables as a dictionary
@@ -32,19 +34,23 @@ class AST:
 
 
 class ANDList(AST):
-    elements: list[Union["ORList", "Constraint"]]
+    terms: list[Union["ORList", "Constraint"]]
 
-    def __init__(self, elements: list[Union["ORList", "Constraint"]]) -> None:
+    def __init__(self, terms: list[Union["ORList", "Constraint"]]) -> None:
         super().__init__()
-        self.elements = elements
+        for term in terms:
+            term.parent = self
+        self.terms = terms
 
 
 class ORList(AST):
-    terms: list[ANDList]
+    elements: list[ANDList]
 
-    def __init__(self, terms: list[ANDList]) -> None:
+    def __init__(self, elements: list[ANDList]) -> None:
         super().__init__()
-        self.terms = terms
+        for element in elements:
+            element.parent = self
+        self.elements = elements
 
 
 class Constraint(AST):
@@ -54,6 +60,8 @@ class Constraint(AST):
 
     def __init__(self, type: ConstraintType, value: str, properties: list["Property"]) -> None:
         super().__init__()
+        for prop in properties:
+            prop.parent = self
         self.type = type
         self.value = value
         self.properties = properties
