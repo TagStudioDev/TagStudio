@@ -268,7 +268,7 @@ def test_save_windows_path(library, generate_tag):
     # pretend we are on windows and create `Path`
 
     entry = Entry(
-        path=PureWindowsPath("foo\\bar.txt"),
+        path=PureWindowsPath("foo\\bar.txt"),  # type: ignore
         folder=library.folder,
         fields=library.default_fields,
     )

@@ -10,7 +10,7 @@ import structlog
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import QPushButton
 from src.core.constants import TAG_ARCHIVED, TAG_FAVORITE
-from src.core.library import Entry, Tag
+from src.core.library import Tag
 from src.core.library.alchemy.enums import FilterState
 from src.core.library.alchemy.fields import TagBoxField
 from src.qt.flowlayout import FlowLayout
@@ -92,7 +92,9 @@ class TagBoxWidget(FieldWidget):
         tags_ = sorted(list(tags), key=lambda tag: tag.name)
         is_recycled = False
         while self.base_layout.itemAt(0) and self.base_layout.itemAt(1):
-            self.base_layout.takeAt(0).widget().deleteLater()
+            layout_item = self.base_layout.takeAt(0)
+            assert layout_item is not None
+            layout_item.widget().deleteLater()
             is_recycled = True
 
         for tag in tags_:
@@ -115,7 +117,9 @@ class TagBoxWidget(FieldWidget):
 
         # Move or add the '+' button.
         if is_recycled:
-            self.base_layout.addWidget(self.base_layout.takeAt(0).widget())
+            layout_item = self.base_layout.takeAt(0)
+            assert layout_item is not None
+            self.base_layout.addWidget(layout_item.widget())
         else:
             self.base_layout.addWidget(self.add_button)
 
@@ -149,7 +153,8 @@ class TagBoxWidget(FieldWidget):
 
         tag = self.driver.lib.get_tag(tag_id=tag_id)
         for idx in self.driver.selected:
-            entry: Entry = self.driver.frame_content[idx]
+            entry = self.driver.frame_content[idx]
+            assert entry is not None
 
             if not self.driver.lib.add_field_tag(entry, tag, self.field.type_key):
                 # TODO - add some visible error
@@ -172,6 +177,7 @@ class TagBoxWidget(FieldWidget):
 
         for grid_idx in self.driver.selected:
             entry = self.driver.frame_content[grid_idx]
+            assert entry is not None
             self.driver.lib.remove_field_tag(entry, tag_id, self.field.type_key)
 
             self.updated.emit()
