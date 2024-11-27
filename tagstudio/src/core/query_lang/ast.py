@@ -84,24 +84,24 @@ T = TypeVar("T")
 class BaseVisitor(ABC, Generic[T]):
     def visit(self, node: AST) -> T:
         return {
-            ANDList: self.visit_ANDList,
-            ORList: self.visit_ORList,
-            Constraint: self.visit_Constraint,
-            Property: self.visit_Property,
+            ANDList: self.visit_and_list,
+            ORList: self.visit_or_list,
+            Constraint: self.visit_constraint,
+            Property: self.visit_property,
         }[type(node)](node)
 
     @abstractmethod
-    def visit_ANDList(self, node: ANDList) -> T:  # noqa: N802
+    def visit_and_list(self, node: ANDList) -> T:
         raise NotImplementedError()
 
     @abstractmethod
-    def visit_ORList(self, node: ORList) -> T:  # noqa: N802
+    def visit_or_list(self, node: ORList) -> T:
         raise NotImplementedError()
 
     @abstractmethod
-    def visit_Constraint(self, node: Constraint) -> T:  # noqa: N802
+    def visit_constraint(self, node: Constraint) -> T:
         raise NotImplementedError()
 
     @abstractmethod
-    def visit_Property(self, node: Property) -> T:  # noqa: N802
+    def visit_property(self, node: Property) -> T:
         raise NotImplementedError()

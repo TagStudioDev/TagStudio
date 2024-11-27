@@ -18,6 +18,8 @@ class Parser:
         self.next_token = self.tokenizer.get_next_token()
 
     def parse(self) -> AST:
+        if self.next_token.type == TokenType.EOF:
+            return ORList([])
         out = self.__or_list()
         if self.next_token.type != TokenType.EOF:
             raise ParsingError(self.next_token.start, self.next_token.end, "Syntax Error")

@@ -58,7 +58,7 @@ class Tokenizer:
     def __init__(self, text: str) -> None:
         self.text = text
         self.pos = 0
-        self.current_char = self.text[self.pos]
+        self.current_char = self.text[self.pos] if len(text) > 0 else None
 
     def get_next_token(self) -> Token:
         self.__skip_whitespace()
@@ -143,9 +143,7 @@ class Tokenizer:
             self.current_char = None
 
     def __skip_whitespace(self) -> None:
-        if self.current_char is None:
-            return
-        while self.current_char.isspace():
+        while self.current_char is not None and self.current_char.isspace():
             self.__advance()
 
 
