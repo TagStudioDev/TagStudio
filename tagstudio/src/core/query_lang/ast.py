@@ -91,17 +91,17 @@ class BaseVisitor(ABC, Generic[T]):
         }[type(node)](node)
 
     @abstractmethod
-    def visit_ANDList(self, node: ANDList) -> T:  # noqa: N802
+    def visit_ANDList(self, node: AST) -> T:  # noqa: N802
         raise NotImplementedError()
 
     @abstractmethod
-    def visit_ORList(self, node: ORList) -> T:  # noqa: N802
+    def visit_ORList(self, node: AST) -> T:  # noqa: N802
         raise NotImplementedError()
 
     @abstractmethod
-    def visit_Constraint(self, node: Constraint) -> T:  # noqa: N802
+    def visit_Constraint(self, node: AST) -> T:  # noqa: N802
         raise NotImplementedError()
 
     @abstractmethod
-    def visit_Property(self, node: Property) -> T:  # noqa: N802
+    def visit_Property(self, node: AST) -> T:  # noqa: N802
         raise NotImplementedError()
