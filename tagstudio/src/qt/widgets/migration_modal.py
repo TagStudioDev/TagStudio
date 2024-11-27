@@ -47,6 +47,7 @@ class JsonMigrationModal(QObject):
         self.json_lib: JsonLibrary = None
         self.sql_lib: SqliteLibrary = None
         self.is_migration_initialized: bool = False
+        self.discrepancies: list[str] = []
 
         self.title: str = f'Save Format Migration: "{self.path}"'
         self.warning: str = "<b><a style='color: #e22c3c'>(!)</a></b>"
@@ -344,6 +345,9 @@ class JsonMigrationModal(QObject):
             self.update_sql_ext_count(len(self.sql_lib.prefs(LibraryPrefs.EXTENSION_LIST)))
             self.update_sql_ext_type(self.sql_lib.prefs(LibraryPrefs.IS_EXCLUDE_LIST))
             logger.info("Parity check complete!")
+            if self.discrepancies:
+                logger.warning("Discrepancies found:")
+                logger.warning("\n".join(self.discrepancies))
             QApplication.beep()
 
             self.is_migration_initialized = True
@@ -558,6 +562,9 @@ class JsonMigrationModal(QObject):
                     and json_fields is not None
                     and sql_fields is not None
                 ):
+                    self.discrepancies.append(
+                        f"[Field Comparison]:\nOLD (JSON):{json_fields}\nNEW (SQL):{sql_fields}"
+                    )
                     return False
 
                 logger.info(
@@ -602,6 +609,9 @@ class JsonMigrationModal(QObject):
                     and sql_subtags is not None
                     and json_subtags is not None
                 ):
+                    self.discrepancies.append(
+                        f"[Subtag Parity]:\nOLD (JSON):{json_subtags}\nNEW (SQL):{sql_subtags}"
+                    )
                     return False
 
         return True
@@ -633,6 +643,9 @@ class JsonMigrationModal(QObject):
                     and sql_aliases is not None
                     and json_aliases is not None
                 ):
+                    self.discrepancies.append(
+                        f"[Alias Parity]:\nOLD (JSON):{json_aliases}\nNEW (SQL):{sql_aliases}"
+                    )
                     return False
 
         return True
@@ -659,6 +672,9 @@ class JsonMigrationModal(QObject):
                 and sql_shorthand is not None
                 and json_shorthand is not None
             ):
+                self.discrepancies.append(
+                    f"[Shorthand Parity]:\nOLD (JSON):{json_shorthand}\nNEW (SQL):{sql_shorthand}"
+                )
                 return False
 
         return True
@@ -685,6 +701,9 @@ class JsonMigrationModal(QObject):
             )
 
             if not ((sql_color == json_color) and sql_color is not None and json_color is not None):
+                self.discrepancies.append(
+                    f"[Color Parity]:\nOLD (JSON):{json_color}\nNEW (SQL):{sql_color}"
+                )
                 return False
 
         return True
