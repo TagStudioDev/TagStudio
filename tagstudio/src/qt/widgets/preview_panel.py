@@ -32,9 +32,7 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
-from src.core.constants import (
-    TS_FOLDER_NAME,
-)
+from src.core.constants import TS_FOLDER_NAME
 from src.core.enums import SettingItems, Theme
 from src.core.library.alchemy.fields import (
     BaseField,
@@ -294,6 +292,8 @@ class PreviewPanel(QWidget):
     def update_selected_entry(self, driver: "QtDriver"):
         for grid_idx in driver.selected:
             entry = driver.frame_content[grid_idx]
+            if entry is None:
+                continue
             result = self.lib.get_entry_full(entry.id)
             logger.info(
                 "found item",
@@ -420,7 +420,7 @@ class PreviewPanel(QWidget):
     def set_image_ratio(self, ratio: float):
         self.image_ratio = ratio
 
-    def update_image_size(self, size: tuple[int, int], ratio: float = None):
+    def update_image_size(self, size: tuple[int, int], ratio: float | None = None):
         if ratio:
             self.set_image_ratio(ratio)
 
@@ -476,6 +476,7 @@ class PreviewPanel(QWidget):
         logger.info("add_field_to_selected", selected=self.selected, fields=field_list)
         for grid_idx in self.selected:
             entry = self.driver.frame_content[grid_idx]
+            assert entry is not None
             for field_item in field_list:
                 self.lib.add_entry_field_type(
                     entry.id,
@@ -485,7 +486,7 @@ class PreviewPanel(QWidget):
     def update_date_label(self, filepath: Path | None = None) -> None:
         """Update the "Date Created" and "Date Modified" file property labels."""
         if filepath and filepath.is_file():
-            created: dt = None
+            created: dt | None = None
             if platform.system() == "Windows" or platform.system() == "Darwin":
                 created = dt.fromtimestamp(filepath.stat().st_birthtime)  # type: ignore[attr-defined, unused-ignore]
             else:
@@ -562,6 +563,7 @@ class PreviewPanel(QWidget):
         # TODO - Entry reload is maybe not necessary
         for grid_idx in self.driver.selected:
             entry = self.driver.frame_content[grid_idx]
+            assert entry is not None
             result = self.lib.get_entry_full(entry.id)
             logger.info(
                 "found item",
@@ -574,6 +576,7 @@ class PreviewPanel(QWidget):
             # 1 Selected Entry
             selected_idx = self.driver.selected[0]
             item = self.driver.frame_content[selected_idx]
+            assert self.lib.library_dir is not None and item is not None
 
             self.preview_img.show()
             self.preview_vid.stop()
@@ -622,7 +625,7 @@ class PreviewPanel(QWidget):
                             self.preview_gif.movie().stop()
                             self.gif_buffer.close()
 
-                        image: Image.Image = Image.open(filepath)
+                        image: Image.Image | None = Image.open(filepath)
                         anim_image: Image.Image = image
                         image_bytes_io: io.BytesIO = io.BytesIO()
                         anim_image.save(
@@ -680,7 +683,7 @@ class PreviewPanel(QWidget):
                         image = Image.fromarray(frame)
                         if success:
                             self.preview_img.hide()
-                            self.preview_vid.play(filepath, QSize(image.width, image.height))
+                            self.preview_vid.play(str(filepath), QSize(image.width, image.height))
                             self.resizeEvent(
                                 QResizeEvent(
                                     QSize(image.width, image.height),
@@ -800,12 +803,14 @@ class PreviewPanel(QWidget):
 
             # fill shared fields from first item
             first_item = self.driver.frame_content[self.driver.selected[0]]
+            assert first_item is not None
             common_fields = [f for f in first_item.fields]
             mixed_fields = []
 
             # iterate through other items
             for grid_idx in self.driver.selected[1:]:
                 item = self.driver.frame_content[grid_idx]
+                assert item is not None
                 item_field_types = {f.type_key for f in item.fields}
                 for f in common_fields[:]:
                     if f.type_key not in item_field_types:
@@ -937,6 +942,7 @@ class PreviewPanel(QWidget):
             title = f"{field.type.name} ({field.type.type.value})"
             inner_container = TextWidget(title, text)
             container.set_inner_widget(inner_container)
+            modal: PanelModal
             if not is_mixed:
                 modal = PanelModal(
                     EditTextLine(field.value),
@@ -1061,6 +1067,7 @@ class PreviewPanel(QWidget):
 
         for grid_idx in self.selected:
             entry = self.driver.frame_content[grid_idx]
+            assert entry is not None
             entry_ids.append(entry.id)
 
         self.lib.remove_entry_field(field, entry_ids)
@@ -1078,6 +1085,7 @@ class PreviewPanel(QWidget):
         entry_ids = []
         for grid_idx in self.selected:
             entry = self.driver.frame_content[grid_idx]
+            assert entry is not None
             entry_ids.append(entry.id)
 
         assert entry_ids, "No entries selected"

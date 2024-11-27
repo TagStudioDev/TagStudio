@@ -39,10 +39,11 @@ if typing.TYPE_CHECKING:
 class VideoPlayer(QGraphicsView):
     """A basic video player."""
 
-    video_preview = None
-    play_pause = None
-    mute_button = None
     filepath: str | None
+    if not typing.TYPE_CHECKING:
+        # it's not necessary to define `video_preview = None` because it will be defined in __init__
+        # but super().__init__() calls eventFilter which requires `video_preview` to be defined.
+        video_preview = None
 
     def __init__(self, driver: "QtDriver") -> None:
         super().__init__()
@@ -114,14 +115,14 @@ class VideoPlayer(QGraphicsView):
         self.mute_button.hide()
 
         self.setContextMenuPolicy(Qt.ContextMenuPolicy.ActionsContextMenu)
-        self.opener = FileOpenerHelper(filepath=self.filepath)
+        self.opener = FileOpenerHelper(filepath=self.filepath or "")
         autoplay_action = QAction("Autoplay", self)
         autoplay_action.setCheckable(True)
         self.addAction(autoplay_action)
         autoplay_action.setChecked(
             self.driver.settings.value(SettingItems.AUTOPLAY, defaultValue=True, type=bool)  # type: ignore
         )
-        autoplay_action.triggered.connect(lambda: self.toggle_autoplay())
+        autoplay_action.triggered.connect(self.toggle_autoplay)
         self.autoplay = autoplay_action
 
         open_file_action = QAction("Open file", self)
@@ -149,13 +150,13 @@ class VideoPlayer(QGraphicsView):
             # Even if I stop the player before switching, it breaks.
             # On the plus side, this adds infinite looping for the video preview.
             self.player.stop()
-            self.player.setSource(QUrl().fromLocalFile(self.filepath))
+            self.player.setSource(QUrl.fromLocalFile(self.filepath or ""))
             self.player.setPosition(0)
             if self.autoplay.isChecked():
                 self.player.play()
             else:
                 self.player.pause()
-            self.opener.set_filepath(self.filepath)
+            self.opener.set_filepath(self.filepath or "")
             self.reposition_controls()
         self.update_controls()
 

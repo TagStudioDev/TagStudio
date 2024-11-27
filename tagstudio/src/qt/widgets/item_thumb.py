@@ -112,7 +112,7 @@ class ItemThumb(FlowWidget):
 
     def __init__(
         self,
-        mode: ItemType,
+        mode: ItemType | None,
         library: Library,
         driver: "QtDriver",
         thumb_size: tuple[int, int],
@@ -121,7 +121,7 @@ class ItemThumb(FlowWidget):
         super().__init__()
         self.grid_idx = grid_idx
         self.lib = library
-        self.mode: ItemType = mode
+        self.mode: ItemType | None = mode
         self.driver = driver
         self.item_id: int | None = None
         self.thumb_size: tuple[int, int] = thumb_size
@@ -400,7 +400,9 @@ class ItemThumb(FlowWidget):
         self.assign_badge(BadgeType.FAVORITE, entry.is_favorited)
 
     def set_item_id(self, entry: Entry):
-        filepath = self.lib.library_dir / entry.path
+        lib_dir = self.lib.library_dir
+        assert lib_dir is not None
+        filepath = lib_dir / entry.path
         self.opener.set_filepath(filepath)
         self.item_id = entry.id
 
@@ -448,6 +450,7 @@ class ItemThumb(FlowWidget):
 
         for idx in update_items:
             entry = self.driver.frame_content[idx]
+            assert entry is not None
             self.toggle_item_tag(
                 entry, toggle_value, tag_id, _FieldID.TAGS_META.name, create_field=True
             )

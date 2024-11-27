@@ -87,7 +87,6 @@ class LandingWidget(QWidget):
         Args:
             style (str): = The style of the logo. Either "mono" or "gradient".
         """
-        logo_im: Image.Image = None
         if style == "mono":
             logo_im = theme_fg_overlay(self.logo_raw)
         elif style == "gradient":
@@ -158,7 +157,7 @@ class LandingWidget(QWidget):
     #     self.status_pos_anim.setEndValue(self.status_label.pos())
     #     self.status_pos_anim.start()
 
-    def set_status_label(self, text=str):
+    def set_status_label(self, text: str) -> None:
         """Set the text of the status label.
 
         Args:

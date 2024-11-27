@@ -15,7 +15,7 @@ logger = structlog.get_logger(__name__)
 class ResourceManager:
     """A resource manager for retrieving resources."""
 
-    _map: dict = {}
+    _map: dict[str, dict] = {}
     _cache: dict[str, Any] = {}
     _initialized: bool = False
     _res_folder: Path = Path(__file__).parents[2]
@@ -38,9 +38,11 @@ class ResourceManager:
         Returns:
             Path: The resource path if found, else None.
         """
-        res: dict = ResourceManager._map.get(id)
+        res: dict | None = ResourceManager._map.get(id)
         if res:
-            return ResourceManager._res_folder / "resources" / res.get("path")
+            path = res.get("path")
+            if path:
+                return ResourceManager._res_folder / "resources" / path
         return None
 
     def get(self, id: str) -> Any:
@@ -59,28 +61,32 @@ class ResourceManager:
         if cached_res:
             return cached_res
         else:
-            res: dict = ResourceManager._map.get(id)
+            res: dict | None = ResourceManager._map.get(id)
             if not res:
                 return None
+            res_path = res.get("path")
+            res_mode = res.get("mode")
+            if not res_path or not res_mode:
+                return None
             try:
-                if res.get("mode") in ["r", "rb"]:
+                if res_mode in ["r", "rb"]:
                     with open(
-                        (ResourceManager._res_folder / "resources" / res.get("path")),
-                        res.get("mode"),
+                        (ResourceManager._res_folder / "resources" / res_path),
+                        res_mode,
                     ) as f:
                         data = f.read()
-                        if res.get("mode") == "rb":
+                        if res_mode == "rb":
                             data = bytes(data)
                         ResourceManager._cache[id] = data
                         return data
-                elif res and res.get("mode") == "pil":
-                    data = Image.open(ResourceManager._res_folder / "resources" / res.get("path"))
+                elif res and res_mode == "pil":
+                    data = Image.open(ResourceManager._res_folder / "resources" / res_path)
                     return data
-                elif res.get("mode") in ["qt"]:
+                elif res_mode in ["qt"]:
                     # TODO: Qt resource loading logic
                     pass
             except FileNotFoundError:
-                path: Path = ResourceManager._res_folder / "resources" / res.get("path")
+                path: Path = ResourceManager._res_folder / "resources" / res_path
                 logger.error("[ResourceManager][ERROR]: Could not find resource: ", path)
                 return None
 

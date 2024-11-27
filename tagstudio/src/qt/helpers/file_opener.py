@@ -10,7 +10,8 @@ from pathlib import Path
 
 import structlog
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QLabel
+from PySide6.QtGui import QMouseEvent
+from PySide6.QtWidgets import QLabel, QWidget
 
 logger = structlog.get_logger(__name__)
 
@@ -115,7 +116,7 @@ class FileOpenerHelper:
 
 
 class FileOpenerLabel(QLabel):
-    def __init__(self, parent=None):
+    def __init__(self, parent: QWidget | None = None):
         """Initialize the FileOpenerLabel.
 
         Args:
@@ -123,7 +124,7 @@ class FileOpenerLabel(QLabel):
         """
         super().__init__(parent)
 
-    def set_file_path(self, filepath):
+    def set_file_path(self, filepath: str | Path):
         """Set the filepath to open.
 
         Args:
@@ -131,7 +132,7 @@ class FileOpenerLabel(QLabel):
         """
         self.filepath = filepath
 
-    def mousePressEvent(self, event):  # noqa: N802
+    def mousePressEvent(self, event: QMouseEvent):  # noqa: N802
         """Handle mouse press events.
 
         On a left click, open the file in the default file explorer.
@@ -140,8 +141,6 @@ class FileOpenerLabel(QLabel):
         Args:
             event (QMouseEvent): The mouse press event.
         """
-        super().mousePressEvent(event)
-
         if event.button() == Qt.MouseButton.LeftButton:
             opener = FileOpenerHelper(self.filepath)
             opener.open_explorer()
