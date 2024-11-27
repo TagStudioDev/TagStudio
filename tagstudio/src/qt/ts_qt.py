@@ -1055,6 +1055,9 @@ class QtDriver(DriverMixin, QObject):
         for idx, (entry, item_thumb) in enumerate(
             zip_longest(self.frame_content, self.item_thumbs)
         ):
+            if not entry:
+                continue
+
             filepath = self.lib.library_dir / entry.path
             is_loading = False
 
