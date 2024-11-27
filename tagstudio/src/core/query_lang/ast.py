@@ -4,13 +4,20 @@ from typing import Union
 
 class ConstraintType(Enum):  # TODO add remaining ones
     Tag = 0
-    MediaType = 1
+    TagID = 1
+    MediaType = 2
+    FileType = 3
+    Path = 4
 
     @staticmethod
     def from_string(text: str) -> "ConstraintType":
-        return {"tag": ConstraintType.Tag, "mediatype": ConstraintType.MediaType}.get(
-            text.lower(), None
-        )
+        return {
+            "tag": ConstraintType.Tag,
+            "tag_id": ConstraintType.TagID,
+            "mediatype": ConstraintType.MediaType,
+            "filetype": ConstraintType.FileType,
+            "path": ConstraintType.Path,
+        }.get(text.lower(), None)
 
 
 class AST:
