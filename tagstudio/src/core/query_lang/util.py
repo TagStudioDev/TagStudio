@@ -7,7 +7,7 @@ class ParsingError(BaseException):
         self.start = start
         self.end = end
         self.msg = msg
-    
+
     def __str__(self) -> str:
         return f"Syntax Error {self.start}->{self.end}: {self.msg}"
 

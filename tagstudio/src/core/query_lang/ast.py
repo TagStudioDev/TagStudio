@@ -8,10 +8,10 @@ class ConstraintType(Enum):
 
     @staticmethod
     def from_string(text: str) -> "ConstraintType":
-        return {
-            "tag": ConstraintType.Tag,
-            "mediatype": ConstraintType.MediaType
-        }.get(text.lower(), None)
+        return {"tag": ConstraintType.Tag, "mediatype": ConstraintType.MediaType}.get(
+            text.lower(), None
+        )
+
 
 class AST:
     def __str__(self):
@@ -19,9 +19,10 @@ class AST:
         fields = vars(self)  # Get all instance variables as a dictionary
         field_str = ", ".join(f"{key}={value}" for key, value in fields.items())
         return f"{class_name}({field_str})"
-    
+
     def __repr__(self) -> str:
         return self.__str__()
+
 
 class ANDList(AST):
     elements: list[Union["ORList", "Constraint"]]
@@ -30,12 +31,14 @@ class ANDList(AST):
         super().__init__()
         self.elements = elements
 
+
 class ORList(AST):
     terms: list[ANDList]
 
     def __init__(self, terms: list[ANDList]) -> None:
         super().__init__()
         self.terms = terms
+
 
 class Constraint(AST):
     type: ConstraintType
@@ -47,6 +50,7 @@ class Constraint(AST):
         self.type = type
         self.value = value
         self.properties = properties
+
 
 class Property(AST):
     key: str

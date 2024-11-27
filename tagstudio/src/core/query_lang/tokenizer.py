@@ -6,17 +6,18 @@ from src.core.query_lang.util import ParsingError
 
 
 class TokenType(Enum):
-    EOF       = -1
-    QLITERAL  = 0 # Quoted Literal
-    ULITERAL  = 1 # Unquoted Literal (does not contain ":", " ", "[", "]", "(", ")", "=", ",")
-    RBRACKETO = 2 # Round Bracket Open
-    RBRACKETC = 3 # Round Bracket Close
-    SBRACKETO = 4 # Square Bracket Open
-    SBRACKETC = 5 # Square Bracket Close
+    EOF = -1
+    QLITERAL = 0  # Quoted Literal
+    ULITERAL = 1  # Unquoted Literal (does not contain ":", " ", "[", "]", "(", ")", "=", ",")
+    RBRACKETO = 2  # Round Bracket Open
+    RBRACKETC = 3  # Round Bracket Close
+    SBRACKETO = 4  # Square Bracket Open
+    SBRACKETC = 5  # Square Bracket Close
     CONSTRAINTTYPE = 6
-    COLON  = 10
-    COMMA  = 11
+    COLON = 10
+    COMMA = 11
     EQUALS = 12
+
 
 class Token:
     type: TokenType
@@ -30,7 +31,7 @@ class Token:
         self.value = value
         self.start = start
         self.end = end
-    
+
     @staticmethod
     def from_type(type: TokenType, pos: int = None) -> "Token":
         return Token(type, None, pos, pos)
@@ -38,12 +39,13 @@ class Token:
     @staticmethod
     def EOF() -> "Token":  # noqa: N802
         return Token.from_type(TokenType.EOF)
-    
+
     def __str__(self) -> str:
         return f"Token({self.type}, {self.value}, {self.start}, {self.end})"
-    
+
     def __repr__(self) -> str:
         return self.__str__()
+
 
 class Tokenizer:
     text: str
@@ -85,7 +87,7 @@ class Tokenizer:
             return Token.from_type(TokenType.EQUALS, self.pos - 1)
         else:
             return self.__unquoted_string_or_constraint_type()
-    
+
     def __unquoted_string_or_constraint_type(self) -> Token:
         out = ""
 
@@ -96,14 +98,14 @@ class Tokenizer:
             self.__advance()
 
         end = self.pos - 1
-        
+
         if self.current_char == ":":
             if len(out) == 0:
                 raise ParsingError(self.pos, self.pos)
             self.__advance()
             constraint_type = ConstraintType.from_string(out)
             if constraint_type is None:
-                raise ParsingError(start, end, f"Invalid ContraintType \"{out}\"")
+                raise ParsingError(start, end, f'Invalid ContraintType "{out}"')
             return Token(TokenType.CONSTRAINTTYPE, constraint_type, start, end)
         else:
             return Token(TokenType.ULITERAL, out, start, end)
@@ -139,14 +141,15 @@ class Tokenizer:
             self.current_char = self.text[self.pos]
         else:
             self.current_char = None
-    
+
     def __skip_whitespace(self) -> None:
         if self.current_char is None:
             return
         while self.current_char.isspace():
             self.__advance()
 
-if __name__ == "__main__": #TODO remove
+
+if __name__ == "__main__":  # TODO remove
     t = Tokenizer("Mario AND Luigi tag:test[parent=Color,color=red]")
     last = Token(None, None)
     while last.type != TokenType.EOF:
