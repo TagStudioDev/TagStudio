@@ -29,20 +29,16 @@ class SQLBoolExpressionBuilder(BaseVisitor):
         elif node.type == ConstraintType.TagID:
             return Tag.id == int(node.value)
         elif node.type == ConstraintType.Path:
-            return Entry.path.ilike(node.value.replace("*", "%"))  # TODO TSQLANG this is broken
+            return Entry.path.ilike(node.value.replace("*", "%"))
         elif node.type == ConstraintType.MediaType:
             extensions: set[str] = set[str]()
             for media_cat in MediaCategories.ALL_CATEGORIES:
                 if node.value == media_cat.name:
                     extensions = extensions | media_cat.extensions
                     break
-            return Entry.suffix.in_(
-                map(lambda x: x.replace(".", ""), extensions)
-            )  # TODO audio doesn't work on mp3 files (might be my library)
+            return Entry.suffix.in_(map(lambda x: x.replace(".", ""), extensions))
         elif node.type == ConstraintType.FileType:
-            return Entry.suffix.ilike(
-                node.value
-            )  # TODO TSQLANG this is broken for mp3, but works for png (might be my library)
+            return Entry.suffix.ilike(node.value)
 
         raise NotImplementedError("This type of constraint is not implemented yet")
 
