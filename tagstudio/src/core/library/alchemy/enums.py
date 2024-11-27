@@ -94,16 +94,18 @@ class FilterState:
 
         query = None
 
-        if self.query:
+        if self.query is not None:
             query = self.query
-        elif self.tag:
+        elif self.tag is not None:
             query = self.tag.strip()
             self.tag = None
-        elif self.tag_id:
+        elif self.tag_id is not None:
             query = f"tag_id:{self.tag_id}"
             self.tag_id = None
-        elif self.path:
+        elif self.path is not None:
             query = f"path:'{str(self.path).strip()}'"
+
+        self.query = query
 
         if query:
             self.ast = Parser(query).parse()
