@@ -49,6 +49,7 @@ from .fields import (
 )
 from .joins import TagField, TagSubtag
 from .models import Entry, Folder, Preferences, Tag, TagAlias, ValueType
+from .visitors import SQLBoolExpressionBuilder
 
 logger = structlog.get_logger(__name__)
 
@@ -417,7 +418,13 @@ class Library:
         with Session(self.engine, expire_on_commit=False) as session:
             statement = select(Entry)
 
-            if search.tag:
+            if search.ast:
+                statement = (
+                    statement.join(Entry.tag_box_fields)
+                    .join(TagBoxField.tags)
+                    .where(SQLBoolExpressionBuilder().visit(search.ast))
+                )
+            elif search.tag:
                 SubtagAlias = aliased(Tag)  # noqa: N806
                 statement = (
                     statement.join(Entry.tag_box_fields)
@@ -439,7 +446,6 @@ class Library:
                     .join(TagBoxField.tags)
                     .where(Tag.id == search.tag_id)
                 )
-
             elif search.id:
                 statement = statement.where(Entry.id == search.id)
             elif search.name:

@@ -2,6 +2,9 @@ import enum
 from dataclasses import dataclass
 from pathlib import Path
 
+from src.core.query_lang import AST as Query  # noqa: N811
+from src.core.query_lang import Parser
+
 
 class TagColor(enum.IntEnum):
     DEFAULT = 1
@@ -84,36 +87,27 @@ class FilterState:
     # a generic query to be parsed
     query: str | None = None
 
+    ast: Query = None
+
     def __post_init__(self):
         # strip values automatically
-        if query := (self.query and self.query.strip()):
-            # parse the value
-            if ":" in query:
-                kind, _, value = query.partition(":")
-                value = value.replace('"', "")
-            else:
-                # default to tag search
-                kind, value = "tag", query
 
-            if kind == "tag_id":
-                self.tag_id = int(value)
-            elif kind == "tag":
-                self.tag = value
-            elif kind == "path":
-                self.path = value
-            elif kind == "name":
-                self.name = value
-            elif kind == "id":
-                self.id = int(self.id) if str(self.id).isnumeric() else self.id
-            elif kind == "filetype":
-                self.filetype = value
-            elif kind == "mediatype":
-                self.mediatype = value
+        query = None
 
+        if self.query:
+            query = self.query
+        elif self.tag:
+            query = self.tag.strip()
+            self.tag = None
+        elif self.tag_id:
+            query = f"tag_id:{self.tag_id}"
+            self.tag_id = None
+        elif self.path:
+            query = f"path:'{str(self.path).strip()}'"
+
+        if query:
+            self.ast = Parser(query).parse()
         else:
-            self.tag = self.tag and self.tag.strip()
-            self.tag_id = int(self.tag_id) if str(self.tag_id).isnumeric() else self.tag_id
-            self.path = self.path and str(self.path).strip()
             self.name = self.name and self.name.strip()
             self.id = int(self.id) if str(self.id).isnumeric() else self.id
 

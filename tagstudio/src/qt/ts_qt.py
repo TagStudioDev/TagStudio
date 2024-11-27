@@ -65,6 +65,7 @@ from src.core.constants import (
 )
 from src.core.driver import DriverMixin
 from src.core.enums import LibraryPrefs, MacroID, SettingItems
+from src.core.library.alchemy import Library
 from src.core.library.alchemy.enums import (
     FieldTypeEnum,
     FilterState,
@@ -129,6 +130,8 @@ class QtDriver(DriverMixin, QObject):
     SIGTERM = Signal()
 
     preview_panel: PreviewPanel
+
+    lib: Library
 
     def __init__(self, backend, args):
         super().__init__()
@@ -1100,8 +1103,12 @@ class QtDriver(DriverMixin, QObject):
         if filter:
             self.filter = dataclasses.replace(self.filter, **dataclasses.asdict(filter))
 
+        # inform user about running search
         self.main_window.statusbar.showMessage(f'Searching Library: "{self.filter.summary}"')
         self.main_window.statusbar.repaint()
+
+        # search the library
+
         start_time = time.time()
 
         results = self.lib.search_library(self.filter)
@@ -1109,6 +1116,8 @@ class QtDriver(DriverMixin, QObject):
         logger.info("items to render", count=len(results))
 
         end_time = time.time()
+
+        # inform user about completed search
         if self.filter.summary:
             # fmt: off
             self.main_window.statusbar.showMessage(
