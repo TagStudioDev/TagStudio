@@ -83,12 +83,15 @@ T = TypeVar("T")
 
 class BaseVisitor(ABC, Generic[T]):
     def visit(self, node: AST) -> T:
-        return {
-            ANDList: self.visit_and_list,
-            ORList: self.visit_or_list,
-            Constraint: self.visit_constraint,
-            Property: self.visit_property,
-        }[type(node)](node)
+        if isinstance(node, ANDList):
+            return self.visit_and_list(node)
+        elif isinstance(node, ORList):
+            return self.visit_or_list(node)
+        elif isinstance(node, Constraint):
+            return self.visit_constraint(node)
+        elif isinstance(node, Property):
+            return self.visit_property(node)
+        raise Exception(f"Unknown Node Type of {node}")
 
     @abstractmethod
     def visit_and_list(self, node: ANDList) -> T:
