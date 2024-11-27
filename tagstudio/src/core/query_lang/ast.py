@@ -2,7 +2,7 @@ from enum import Enum
 from typing import Union
 
 
-class ConstraintType(Enum):
+class ConstraintType(Enum):  # TODO add remaining ones
     Tag = 0
     MediaType = 1
 
