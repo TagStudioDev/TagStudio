@@ -75,8 +75,8 @@ class FilterState:
     """Represent a state of the Library grid view."""
 
     # these should remain
-    page_index: int | None = None
-    page_size: int | None = None
+    page_index: int | None = 0
+    page_size: int | None = 500
     search_mode: SearchMode = SearchMode.AND  # TODO this can be removed?
 
     # these should be erased on update
@@ -100,11 +100,6 @@ class FilterState:
             self.ast = Parser(query).parse()
         else:
             self.name = self.name and self.name.strip()
-
-        if self.page_index is None:  # TODO QTLANG can this just be a default value?
-            self.page_index = 0
-        if self.page_size is None:  # TODO QTLANG can this just be a default value?
-            self.page_size = 500
 
     @property
     def summary(self):
