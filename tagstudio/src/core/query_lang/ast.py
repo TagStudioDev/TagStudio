@@ -9,6 +9,7 @@ class ConstraintType(Enum):  # TODO add remaining ones
     MediaType = 2
     FileType = 3
     Path = 4
+    Special = 5
 
     @staticmethod
     def from_string(text: str) -> "ConstraintType":
@@ -18,6 +19,7 @@ class ConstraintType(Enum):  # TODO add remaining ones
             "mediatype": ConstraintType.MediaType,
             "filetype": ConstraintType.FileType,
             "path": ConstraintType.Path,
+            "special": ConstraintType.Special,
         }.get(text.lower(), None)
 
 

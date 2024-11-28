@@ -37,6 +37,11 @@ class SQLBoolExpressionBuilder(BaseVisitor):
             return Entry.suffix.in_(map(lambda x: x.replace(".", ""), extensions))
         elif node.type == ConstraintType.FileType:
             return Entry.suffix.ilike(node.value)
+        elif node.type == ConstraintType.Special:  # noqa: SIM102 unnecessary once there is a second special constraint
+            if node.value.lower() == "untagged":
+                return ~Entry.id.in_(
+                    select(Entry.id).join(Entry.tag_box_fields).join(TagBoxField.tags)
+                )
 
         # raise exception if Constraint stays unhandled
         raise NotImplementedError("This type of constraint is not implemented yet")
