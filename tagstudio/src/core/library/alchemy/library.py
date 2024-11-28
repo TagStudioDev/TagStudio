@@ -447,9 +447,6 @@ class Library:
                     .outerjoin(TagAlias)
                     .where(SQLBoolExpressionBuilder().visit(search.ast))
                 )
-            elif search.path:
-                search_str = str(search.path).replace("*", "%")
-                statement = statement.where(Entry.path.ilike(search_str))
 
             extensions = self.prefs(LibraryPrefs.EXTENSION_LIST)
             is_exclude_list = self.prefs(LibraryPrefs.IS_EXCLUDE_LIST)

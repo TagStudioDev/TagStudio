@@ -72,22 +72,8 @@ class FilterState:
     page_size: int | None = 500
 
     # these should be erased on update
-    # whole path
-    path: Path | str | None = None
-
     # Abstract Syntax Tree Of the current Search Query
     ast: Query = None
-
-    def __post_init__(self):
-        # strip values automatically
-
-        query = None
-
-        if self.path is not None:
-            query = f"path:'{str(self.path).strip()}'"
-
-        if query is not None:
-            self.ast = Parser(query).parse()
 
     @property
     def limit(self):
