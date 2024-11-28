@@ -9,6 +9,19 @@ from src.core.library import Entry, Library
 
 logger = structlog.get_logger(__name__)
 
+GLOBAL_IGNORE_SET: set[str] = set(
+    [
+        TS_FOLDER_NAME,
+        "$RECYCLE.BIN",
+        ".Trashes",
+        ".Trash",
+        "tagstudio_thumbs",
+        ".fseventsd",
+        ".Spotlight-V100",
+        "System Volume Information",
+    ]
+)
+
 
 @dataclass
 class RefreshDirTracker:
@@ -49,29 +62,45 @@ class RefreshDirTracker:
         self.files_not_in_library = []
         dir_file_count = 0
 
-        for path in lib_path.glob("**/*"):
-            str_path = str(path)
-            if path.is_dir():
+        for f in lib_path.glob("**/*"):
+            end_time_loop = time()
+            # Yield output every 1/30 of a second
+            if (end_time_loop - start_time_loop) > 0.034:
+                yield dir_file_count
+                start_time_loop = time()
+
+            # Skip if the file/path is already mapped in the Library
+            if f in self.library.included_files:
+                dir_file_count += 1
                 continue
 
-            if "$RECYCLE.BIN" in str_path or TS_FOLDER_NAME in str_path:
+            # Ignore if the file is a directory
+            if f.is_dir():
+                continue
+
+            # Ensure new file isn't in a globally ignored folder
+            skip: bool = False
+            for part in f.parts:
+                if part in GLOBAL_IGNORE_SET:
+                    skip = True
+                    break
+            if skip:
                 continue
 
             dir_file_count += 1
-            relative_path = path.relative_to(lib_path)
+            self.library.included_files.add(f)
+
+            relative_path = f.relative_to(lib_path)
             # TODO - load these in batch somehow
             if not self.library.has_path_entry(relative_path):
                 self.files_not_in_library.append(relative_path)
 
-            # Yield output every 1/30 of a second
-            if (time() - start_time_loop) > 0.034:
-                yield dir_file_count
-                start_time_loop = time()
-
         end_time_total = time()
+        yield dir_file_count
         logger.info(
             "Directory scan time",
             path=lib_path,
             duration=(end_time_total - start_time_total),
-            new_files_count=dir_file_count,
+            files_not_in_lib=self.files_not_in_library,
+            files_scanned=dir_file_count,
         )

@@ -1203,7 +1203,8 @@ class QtDriver(DriverMixin, QObject):
         self.filter.page_size = self.lib.prefs(LibraryPrefs.PAGE_SIZE)
 
         # TODO - make this call optional
-        self.add_new_files_callback()
+        if self.lib.entries_count < 10000:
+            self.add_new_files_callback()
 
         self.update_libs_list(path)
         title_text = f"{self.base_title} - Library '{self.lib.library_dir}'"
