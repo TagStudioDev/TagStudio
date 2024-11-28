@@ -5,7 +5,7 @@
 import logging
 import typing
 from pathlib import Path
-from time import gmtime, strftime
+from time import gmtime
 from typing import Any
 
 from PySide6.QtCore import Qt, QUrl
@@ -90,7 +90,7 @@ class MediaPlayer(QWidget):
 
         self.media_btns_layout.addWidget(self.mute)
 
-        self.position_label = QLabel("positionLabel")
+        self.position_label = QLabel("0:00")
         self.position_label.setAlignment(Qt.AlignmentFlag.AlignRight)
 
         self.base_layout.addWidget(self.pslider, 0, 0, 1, 2)
@@ -114,9 +114,11 @@ class MediaPlayer(QWidget):
             the provided time is at least 60 minutes.
         """
         time = gmtime(ms / 1000)
-        fmt = "%-H:%-M:%S" if time.tm_hour > 0 else "%-M:%S"
-
-        return strftime(fmt, time)
+        return (
+            f"{time.tm_hour}:{time.tm_min}:{time.tm_sec:02}"
+            if time.tm_hour > 0
+            else f"{time.tm_min}:{time.tm_sec:02}"
+        )
 
     def toggle_pause(self) -> None:
         """Toggle the pause state of the media."""
@@ -160,7 +162,7 @@ class MediaPlayer(QWidget):
         self.set_icon(self.play_pause, icon)
 
     def load_mute_unmute_icon(self, muted: bool) -> None:
-        icon = self.driver.rm.volume_icon if muted else self.driver.rm.volume_mute_icon
+        icon = self.driver.rm.volume_mute_icon if muted else self.driver.rm.volume_icon
         self.set_icon(self.mute, icon)
 
     def set_icon(self, btn: QPushButton, icon: Any) -> None:
