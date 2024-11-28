@@ -254,7 +254,7 @@ class QtDriver(DriverMixin, QObject):
 
         if os.name == "nt":
             appid = "cyanvoxel.tagstudio.9"
-            ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(appid)  # type: ignore
+            ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(appid)  # type: ignore[attr-defined,unused-ignore]
 
         if sys.platform != "darwin":
             icon = QIcon()
@@ -823,6 +823,7 @@ class QtDriver(DriverMixin, QObject):
                 if field.type.type == FieldTypeEnum.TEXT_LINE and field.value:
                     self.lib.update_entry_field(
                         entry_ids=entry.id,
+                        field=field,
                         content=strip_web_protocol(field.value),
                     )
 
