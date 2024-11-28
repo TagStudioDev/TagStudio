@@ -455,7 +455,7 @@ class ItemThumb(FlowWidget):
             # update the entry
             self.driver.frame_content[idx] = self.lib.search_library(
                 FilterState(id=entry.id)  # TODO TSQLANG don't search, get entry directly by id
-            ).items[0]
+            ).items[0]  # self.lib.get_entry(entry.id)
 
         self.driver.update_badges(update_items)
 

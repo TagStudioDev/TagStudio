@@ -141,7 +141,7 @@ class QtDriver(DriverMixin, QObject):
         self.rm: ResourceManager = ResourceManager()
         self.args = args
         self.frame_content = []
-        self.filter = FilterState()
+        self.filter = FilterState.show_all()
         self.pages_count = 0
 
         self.scrollbar_pos = 0
@@ -469,7 +469,7 @@ class QtDriver(DriverMixin, QObject):
         ]
         self.item_thumbs: list[ItemThumb] = []
         self.thumb_renderers: list[ThumbRenderer] = []
-        self.filter = FilterState()
+        self.filter = FilterState.show_all()
         self.init_library_window()
 
         path_result = self.evaluate_path(self.args.open)
@@ -510,13 +510,17 @@ class QtDriver(DriverMixin, QObject):
         # Search Button
         search_button: QPushButton = self.main_window.searchButton
         search_button.clicked.connect(
-            lambda: self.filter_items(FilterState(query=self.main_window.searchField.text()))
+            lambda: self.filter_items(
+                FilterState.from_search_query(self.main_window.searchField.text())
+            )
         )
         # Search Field
         search_field: QLineEdit = self.main_window.searchField
         search_field.returnPressed.connect(
             # TODO - parse search field for filters
-            lambda: self.filter_items(FilterState(query=self.main_window.searchField.text()))
+            lambda: self.filter_items(
+                FilterState.from_search_query(self.main_window.searchField.text())
+            )
         )
         # Search Type Selector
         search_type_selector: QComboBox = self.main_window.comboBox_2
@@ -1142,7 +1146,7 @@ class QtDriver(DriverMixin, QObject):
 
     def set_search_type(self, mode: SearchMode = SearchMode.AND):
         self.filter_items(
-            FilterState(
+            FilterState(  # TODO TSQLANG deal with this
                 search_mode=mode,
                 path=self.main_window.searchField.text(),
             )

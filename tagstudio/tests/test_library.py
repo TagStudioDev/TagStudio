@@ -115,7 +115,7 @@ def test_library_search(library, generate_tag, entry_full):
     tag = list(entry_full.tags)[0]
 
     results = library.search_library(
-        FilterState(tag=tag.name),
+        FilterState.from_tag_name(tag.name),
     )
 
     assert results.total_count == 1
@@ -159,11 +159,7 @@ def test_entries_count(library):
     new_ids = library.add_entries(entries)
     assert len(new_ids) == 10
 
-    results = library.search_library(
-        FilterState(
-            page_size=5,
-        )
-    )
+    results = library.search_library(FilterState.show_all().with_page_size(5))
 
     assert results.total_count == 12
     assert len(results) == 5
@@ -234,7 +230,7 @@ def test_search_filter_extensions(library, is_exclude):
 
     # When
     results = library.search_library(
-        FilterState(),
+        FilterState.show_all(),
     )
 
     # Then
@@ -255,7 +251,7 @@ def test_search_library_case_insensitive(library):
 
     # When
     results = library.search_library(
-        FilterState(tag=tag.name.upper()),
+        FilterState.from_tag_name(tag.name.upper()),
     )
 
     # Then
@@ -285,7 +281,7 @@ def test_save_windows_path(library, generate_tag):
     # library.add_tag(tag)
     library.add_field_tag(entry, tag, create_field=True)
 
-    results = library.search_library(FilterState(tag=tag_name))
+    results = library.search_library(FilterState.from_tag_name(tag_name))
     assert results
 
     # path should be saved in posix format
@@ -474,36 +470,36 @@ def test_library_prefs_multiple_identical_vals():
 
 
 def test_path_search_glob_after(library: Library):
-    results = library.search_library(FilterState(path="foo*"))
+    results = library.search_library(FilterState.from_path("foo*"))
     assert results.total_count == 1
     assert len(results.items) == 1
 
 
 def test_path_search_glob_in_front(library: Library):
-    results = library.search_library(FilterState(path="*bar.md"))
+    results = library.search_library(FilterState.from_path("*bar.md"))
     assert results.total_count == 1
     assert len(results.items) == 1
 
 
 def test_path_search_glob_both_sides(library: Library):
-    results = library.search_library(FilterState(path="*one/two*"))
+    results = library.search_library(FilterState.from_path("*one/two*"))
     assert results.total_count == 1
     assert len(results.items) == 1
 
 
 @pytest.mark.parametrize(["filetype", "num_of_filetype"], [("md", 1), ("txt", 1), ("png", 0)])
 def test_filetype_search(library, filetype, num_of_filetype):
-    results = library.search_library(FilterState(filetype=filetype))
+    results = library.search_library(FilterState.from_filetype(filetype))
     assert len(results.items) == num_of_filetype
 
 
 @pytest.mark.parametrize(["filetype", "num_of_filetype"], [("png", 2), ("apng", 1), ("ng", 0)])
 def test_filetype_return_one_filetype(file_mediatypes_library, filetype, num_of_filetype):
-    results = file_mediatypes_library.search_library(FilterState(filetype=filetype))
+    results = file_mediatypes_library.search_library(FilterState.from_filetype(filetype))
     assert len(results.items) == num_of_filetype
 
 
 @pytest.mark.parametrize(["mediatype", "num_of_mediatype"], [("plaintext", 2), ("image", 0)])
 def test_mediatype_search(library, mediatype, num_of_mediatype):
-    results = library.search_library(FilterState(mediatype=mediatype))
+    results = library.search_library(FilterState.from_mediatype(mediatype))
     assert len(results.items) == num_of_mediatype

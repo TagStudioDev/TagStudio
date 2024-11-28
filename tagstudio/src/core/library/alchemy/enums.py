@@ -1,9 +1,9 @@
 import enum
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path
 
 from src.core.query_lang import AST as Query  # noqa: N811
-from src.core.query_lang import Parser
+from src.core.query_lang import Constraint, ConstraintType, Parser
 
 
 class TagColor(enum.IntEnum):
@@ -77,27 +77,17 @@ class FilterState:
     # these should remain
     page_index: int | None = None
     page_size: int | None = None
-    search_mode: SearchMode = SearchMode.AND  # TODO - actually implement this
+    search_mode: SearchMode = SearchMode.AND  # TODO this can be removed?
 
     # these should be erased on update
-    # tag name
-    tag: str | None = None
-    # tag ID
-    tag_id: int | None = None
-
     # entry id
     id: int | None = None
     # whole path
     path: Path | str | None = None
     # file name
     name: str | None = None
-    # file type
-    filetype: str | None = None
-    mediatype: str | None = None
 
-    # a generic query to be parsed
-    query: str | None = None
-
+    # Abstract Syntax Tree Of the current Search Query
     ast: Query = None
 
     def __post_init__(self):
@@ -105,34 +95,24 @@ class FilterState:
 
         query = None
 
-        if self.query is not None:
-            query = self.query
-        elif self.tag is not None:
-            query = self.tag.strip()
-            self.tag = None
-        elif self.tag_id is not None:
-            query = f"tag_id:{self.tag_id}"
-            self.tag_id = None
-        elif self.path is not None:
+        if self.path is not None:
             query = f"path:'{str(self.path).strip()}'"
 
-        self.query = query
-
-        if query:
+        if query is not None:
             self.ast = Parser(query).parse()
         else:
             self.name = self.name and self.name.strip()
             self.id = int(self.id) if str(self.id).isnumeric() else self.id
 
-        if self.page_index is None:
+        if self.page_index is None:  # TODO QTLANG can this just be a default value?
             self.page_index = 0
-        if self.page_size is None:
+        if self.page_size is None:  # TODO QTLANG can this just be a default value?
             self.page_size = 500
 
     @property
     def summary(self):
         """Show query summary."""
-        return self.query or self.tag or self.name or self.tag_id or self.path or self.id
+        return self.name or self.path or self.id
 
     @property
     def limit(self):
@@ -141,6 +121,37 @@ class FilterState:
     @property
     def offset(self):
         return self.page_size * self.page_index
+
+    @classmethod
+    def show_all(cls) -> "FilterState":
+        return FilterState()
+
+    @classmethod
+    def from_search_query(cls, search_query: str) -> "FilterState":
+        return cls(ast=Parser(search_query).parse())
+
+    @classmethod
+    def from_tag_id(cls, tag_id: int | str) -> "FilterState":
+        return cls(ast=Constraint(ConstraintType.TagID, str(tag_id), []))
+
+    @classmethod
+    def from_path(cls, path: Path | str) -> "FilterState":
+        return cls(ast=Constraint(ConstraintType.Path, str(path).strip(), []))
+
+    @classmethod
+    def from_mediatype(cls, mediatype: str) -> "FilterState":
+        return cls(ast=Constraint(ConstraintType.MediaType, mediatype, []))
+
+    @classmethod
+    def from_filetype(cls, filetype: str) -> "FilterState":
+        return cls(ast=Constraint(ConstraintType.FileType, filetype, []))
+
+    @classmethod
+    def from_tag_name(cls, tag_name: str) -> "FilterState":
+        return cls(ast=Constraint(ConstraintType.Tag, tag_name, []))
+
+    def with_page_size(self, page_size: int) -> "FilterState":
+        return replace(self, page_size=page_size)
 
 
 class FieldTypeEnum(enum.Enum):
