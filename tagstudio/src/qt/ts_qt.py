@@ -70,7 +70,6 @@ from src.core.library.alchemy.enums import (
     FieldTypeEnum,
     FilterState,
     ItemType,
-    SearchMode,
 )
 from src.core.library.alchemy.fields import _FieldID
 from src.core.library.alchemy.library import LibraryStatus
@@ -521,11 +520,6 @@ class QtDriver(DriverMixin, QObject):
             lambda: self.filter_items(
                 FilterState.from_search_query(self.main_window.searchField.text())
             )
-        )
-        # Search Type Selector
-        search_type_selector: QComboBox = self.main_window.comboBox_2
-        search_type_selector.currentIndexChanged.connect(
-            lambda: self.set_search_type(SearchMode(search_type_selector.currentIndex()))
         )
         # Thumbnail Size ComboBox
         thumb_size_combobox: QComboBox = self.main_window.thumb_size_combobox
@@ -1142,14 +1136,6 @@ class QtDriver(DriverMixin, QObject):
         self.pages_count = math.ceil(results.total_count / self.filter.page_size)
         self.main_window.pagination.update_buttons(
             self.pages_count, self.filter.page_index, emit=False
-        )
-
-    def set_search_type(self, mode: SearchMode = SearchMode.AND):
-        self.filter_items(
-            FilterState(  # TODO TSQLANG deal with this
-                search_mode=mode,
-                path=self.main_window.searchField.text(),
-            )
         )
 
     def remove_recent_library(self, item_key: str):

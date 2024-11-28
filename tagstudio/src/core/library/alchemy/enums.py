@@ -46,13 +46,6 @@ class TagColor(enum.IntEnum):
     OLIVE = 37
 
 
-class SearchMode(enum.IntEnum):
-    """Operational modes for item searching."""
-
-    AND = 0
-    OR = 1
-
-
 class ItemType(enum.Enum):
     ENTRY = 0
     COLLATION = 1
@@ -77,7 +70,6 @@ class FilterState:
     # these should remain
     page_index: int | None = 0
     page_size: int | None = 500
-    search_mode: SearchMode = SearchMode.AND  # TODO this can be removed?
 
     # these should be erased on update
     # whole path

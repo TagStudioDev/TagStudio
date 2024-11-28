@@ -74,14 +74,6 @@ class Ui_MainWindow(QMainWindow):
         spacerItem = QSpacerItem(40, 20, QSizePolicy.Expanding, QSizePolicy.Minimum)
         self.horizontalLayout_3.addItem(spacerItem)
   
-        # Search type selector
-        self.comboBox_2 = QComboBox(self.centralwidget)
-        self.comboBox_2.setMinimumSize(QSize(165, 0))
-        self.comboBox_2.setObjectName("comboBox_2")
-        self.comboBox_2.addItem("")
-        self.comboBox_2.addItem("")
-        self.horizontalLayout_3.addWidget(self.comboBox_2)
-  
         # Thumbnail Size placeholder
         self.thumb_size_combobox = QComboBox(self.centralwidget)
         self.thumb_size_combobox.setObjectName(u"thumbSizeComboBox")
@@ -214,9 +206,6 @@ class Ui_MainWindow(QMainWindow):
         self.searchButton.setText(
             QCoreApplication.translate("MainWindow", u"Search", None))
   
-        # Search type selector
-        self.comboBox_2.setItemText(0, QCoreApplication.translate("MainWindow", "And (Includes All Tags)"))
-        self.comboBox_2.setItemText(1, QCoreApplication.translate("MainWindow", "Or (Includes Any Tag)"))
         self.thumb_size_combobox.setCurrentText("")
   
         # Thumbnail size selector
