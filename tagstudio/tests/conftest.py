@@ -123,7 +123,7 @@ def entry_min(library):
 
 
 @pytest.fixture
-def entry_full(library):
+def entry_full(library: Library):
     yield next(library.get_entries(with_joins=True))
 
 

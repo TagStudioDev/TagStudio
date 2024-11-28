@@ -308,6 +308,29 @@ class Library:
             make_transient(entry)
             return entry
 
+    def get_entry_full(self, entry_id: int) -> Entry | None:
+        """Load entry an join with all joins and all tags."""
+        with Session(self.engine) as session:
+            statement = select(Entry).where(Entry.id == entry_id)
+            statement = (
+                statement.outerjoin(Entry.text_fields)
+                .outerjoin(Entry.datetime_fields)
+                .outerjoin(Entry.tag_box_fields)
+            )
+            statement = statement.options(
+                selectinload(Entry.text_fields),
+                selectinload(Entry.datetime_fields),
+                selectinload(Entry.tag_box_fields)
+                .joinedload(TagBoxField.tags)
+                .options(selectinload(Tag.aliases), selectinload(Tag.subtags)),
+            )
+            entry = session.scalar(statement)
+            if not entry:
+                return None
+            session.expunge(entry)
+            make_transient(entry)
+            return entry
+
     @property
     def entries_count(self) -> int:
         with Session(self.engine) as session:
@@ -425,8 +448,6 @@ class Library:
                     .outerjoin(TagAlias)
                     .where(SQLBoolExpressionBuilder().visit(search.ast))
                 )
-            elif search.id:
-                statement = statement.where(Entry.id == search.id)
             elif search.name:
                 statement = select(Entry).where(
                     and_(
@@ -442,11 +463,10 @@ class Library:
             extensions = self.prefs(LibraryPrefs.EXTENSION_LIST)
             is_exclude_list = self.prefs(LibraryPrefs.IS_EXCLUDE_LIST)
 
-            if not search.id:  # if `id` is set, we don't need to filter by extensions
-                if extensions and is_exclude_list:
-                    statement = statement.where(Entry.suffix.notin_(extensions))
-                elif extensions:
-                    statement = statement.where(Entry.suffix.in_(extensions))
+            if extensions and is_exclude_list:
+                statement = statement.where(Entry.suffix.notin_(extensions))
+            elif extensions:
+                statement = statement.where(Entry.suffix.in_(extensions))
 
             statement = statement.options(
                 selectinload(Entry.text_fields),

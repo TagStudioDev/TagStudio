@@ -80,8 +80,6 @@ class FilterState:
     search_mode: SearchMode = SearchMode.AND  # TODO this can be removed?
 
     # these should be erased on update
-    # entry id
-    id: int | None = None
     # whole path
     path: Path | str | None = None
     # file name
@@ -102,7 +100,6 @@ class FilterState:
             self.ast = Parser(query).parse()
         else:
             self.name = self.name and self.name.strip()
-            self.id = int(self.id) if str(self.id).isnumeric() else self.id
 
         if self.page_index is None:  # TODO QTLANG can this just be a default value?
             self.page_index = 0
@@ -112,7 +109,7 @@ class FilterState:
     @property
     def summary(self):
         """Show query summary."""
-        return self.name or self.path or self.id
+        return self.name or self.path
 
     @property
     def limit(self):

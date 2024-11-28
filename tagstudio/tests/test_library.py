@@ -147,11 +147,11 @@ def test_tag_search(library):
     )
 
 
-def test_get_entry(library, entry_min):
+def test_get_entry(library: Library, entry_min):
     assert entry_min.id
-    results = library.search_library(FilterState(id=entry_min.id))
-    assert len(results) == results.total_count == 1
-    assert results[0].tags
+    result = library.get_entry_full(entry_min.id)
+    assert result
+    assert result.tags
 
 
 def test_entries_count(library):
@@ -186,7 +186,7 @@ def test_add_field_to_entry(library):
     assert len(entry.tag_box_fields) == 3
 
 
-def test_add_field_tag(library, entry_full, generate_tag):
+def test_add_field_tag(library: Library, entry_full, generate_tag):
     # Given
     tag_name = "xxx"
     tag = generate_tag(tag_name)
@@ -196,8 +196,8 @@ def test_add_field_tag(library, entry_full, generate_tag):
     library.add_field_tag(entry_full, tag, tag_field.type_key)
 
     # Then
-    results = library.search_library(FilterState(id=entry_full.id))
-    tag_field = results[0].tag_box_fields[0]
+    results = library.get_entry_full(entry_full.id)
+    tag_field = results.tag_box_fields[0]
     assert [x.name for x in tag_field.tags if x.name == tag_name]
 
 
@@ -347,7 +347,8 @@ def test_update_entry_with_multiple_identical_fields(library, entry_full):
     assert entry.text_fields[1].value == "new value"
 
 
-def test_mirror_entry_fields(library, entry_full):
+def test_mirror_entry_fields(library: Library, entry_full):
+    # new entry
     target_entry = Entry(
         folder=library.folder,
         path=Path("xxx"),
@@ -360,16 +361,19 @@ def test_mirror_entry_fields(library, entry_full):
         ],
     )
 
+    # insert new entry and get id
     entry_id = library.add_entries([target_entry])[0]
 
-    results = library.search_library(FilterState(id=entry_id))
-    new_entry = results[0]
+    # get new entry from library
+    new_entry = library.get_entry_full(entry_id)
 
+    # mirror fields onto new entry
     library.mirror_entry_fields(new_entry, entry_full)
 
-    results = library.search_library(FilterState(id=entry_id))
-    entry = results[0]
+    # get new entry from library again
+    entry = library.get_entry_full(entry_id)
 
+    # make sure fields are there after getting it from the library again
     assert len(entry.fields) == 4
     assert {x.type_key for x in entry.fields} == {
         _FieldID.TITLE.name,
@@ -416,12 +420,10 @@ def test_search_file_name(library, query_name, has_result):
         (222, 0),
     ],
 )
-def test_search_entry_id(library, query_name, has_result):
-    results = library.search_library(
-        FilterState(id=query_name),
-    )
+def test_search_entry_id(library: Library, query_name: int, has_result):
+    result = library.get_entry(query_name)
 
-    assert results.total_count == has_result
+    assert (result is not None) == has_result
 
 
 def test_update_field_order(library, entry_full):
