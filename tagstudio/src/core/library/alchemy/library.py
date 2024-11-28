@@ -420,8 +420,9 @@ class Library:
 
             if search.ast:
                 statement = (
-                    statement.join(Entry.tag_box_fields)
-                    .join(TagBoxField.tags)
+                    statement.outerjoin(Entry.tag_box_fields)
+                    .outerjoin(TagBoxField.tags)
+                    .outerjoin(TagAlias)
                     .where(SQLBoolExpressionBuilder().visit(search.ast))
                 )
             elif search.tag:
