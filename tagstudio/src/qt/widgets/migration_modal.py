@@ -492,9 +492,9 @@ class JsonMigrationModal(QObject):
                 ]
                 json_fields.sort()
                 if not (
-                    (json_fields == sql_fields)
-                    and json_fields is not None
+                    json_fields is not None
                     and sql_fields is not None
+                    and (json_fields == sql_fields)
                 ):
                     self.discrepancies.append(
                         f"[Field Comparison]:\nOLD (JSON):{json_fields}\nNEW  (SQL):{sql_fields}"
@@ -513,7 +513,7 @@ class JsonMigrationModal(QObject):
         with Session(self.sql_lib.engine) as session:
             json_paths: list = sorted([x.path / x.filename for x in self.json_lib.entries])
             sql_paths: list = sorted(list(session.scalars(select(Entry.path))))
-        return (json_paths == sql_paths) and json_paths is not None and sql_paths is not None
+        return json_paths is not None and sql_paths is not None and (json_paths == sql_paths)
 
     def check_subtag_parity(self) -> bool:
         """Check if all JSON subtags match the new SQL subtags."""
@@ -539,9 +539,9 @@ class JsonMigrationModal(QObject):
                 )
 
                 if not (
-                    (sql_subtags == json_subtags)
-                    and sql_subtags is not None
+                    sql_subtags is not None
                     and json_subtags is not None
+                    and (sql_subtags == json_subtags)
                 ):
                     self.discrepancies.append(
                         f"[Subtag Parity]:\nOLD (JSON):{json_subtags}\nNEW (SQL):{sql_subtags}"
@@ -573,9 +573,9 @@ class JsonMigrationModal(QObject):
                     sql_aliases=sql_aliases,
                 )
                 if not (
-                    (sql_aliases == json_aliases)
-                    and sql_aliases is not None
+                    sql_aliases is not None
                     and json_aliases is not None
+                    and (sql_aliases == json_aliases)
                 ):
                     self.discrepancies.append(
                         f"[Alias Parity]:\nOLD (JSON):{json_aliases}\nNEW (SQL):{sql_aliases}"
@@ -602,9 +602,9 @@ class JsonMigrationModal(QObject):
             )
 
             if not (
-                (sql_shorthand == json_shorthand)
-                and sql_shorthand is not None
+                sql_shorthand is not None
                 and json_shorthand is not None
+                and (sql_shorthand == json_shorthand)
             ):
                 self.discrepancies.append(
                     f"[Shorthand Parity]:\nOLD (JSON):{json_shorthand}\nNEW (SQL):{sql_shorthand}"
@@ -634,7 +634,7 @@ class JsonMigrationModal(QObject):
                 sql_shorthand=sql_color,
             )
 
-            if not ((sql_color == json_color) and sql_color is not None and json_color is not None):
+            if not (sql_color is not None and json_color is not None and (sql_color == json_color)):
                 self.discrepancies.append(
                     f"[Color Parity]:\nOLD (JSON):{json_color}\nNEW (SQL):{sql_color}"
                 )
