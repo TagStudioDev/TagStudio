@@ -478,7 +478,7 @@ class PreviewPanel(QWidget):
         if filepath and filepath.is_file():
             created: dt = None
             if platform.system() == "Windows" or platform.system() == "Darwin":
-                created = dt.fromtimestamp(filepath.stat().st_birthtime)
+                created = dt.fromtimestamp(filepath.stat().st_birthtime)  # type: ignore[attr-defined]
             else:
                 created = dt.fromtimestamp(filepath.stat().st_ctime)
             modified: dt = dt.fromtimestamp(filepath.stat().st_mtime)
