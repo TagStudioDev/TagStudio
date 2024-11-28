@@ -90,11 +90,6 @@ class FilterState:
             self.ast = Parser(query).parse()
 
     @property
-    def summary(self):
-        """Show query summary."""
-        return self.path
-
-    @property
     def limit(self):
         return self.page_size
 

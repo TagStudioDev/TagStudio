@@ -1102,7 +1102,7 @@ class QtDriver(DriverMixin, QObject):
             self.filter = dataclasses.replace(self.filter, **dataclasses.asdict(filter))
 
         # inform user about running search
-        self.main_window.statusbar.showMessage(f'Searching Library: "{self.filter.summary}"')
+        self.main_window.statusbar.showMessage("Searching Library...")
         self.main_window.statusbar.repaint()
 
         # search the library
@@ -1116,17 +1116,9 @@ class QtDriver(DriverMixin, QObject):
         end_time = time.time()
 
         # inform user about completed search
-        if self.filter.summary:
-            # fmt: off
-            self.main_window.statusbar.showMessage(
-                f"{results.total_count} Results Found for \"{self.filter.summary}\""
-                f" ({format_timespan(end_time - start_time)})"
-            )
-            # fmt: on
-        else:
-            self.main_window.statusbar.showMessage(
-                f"{results.total_count} Results ({format_timespan(end_time - start_time)})"
-            )
+        self.main_window.statusbar.showMessage(
+            f"{results.total_count} Results Found ({format_timespan(end_time - start_time)})"
+        )
 
         # update page content
         self.frame_content = results.items
