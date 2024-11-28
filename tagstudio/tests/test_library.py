@@ -398,22 +398,6 @@ def test_remove_tag_from_field(library, entry_full):
 @pytest.mark.parametrize(
     ["query_name", "has_result"],
     [
-        ("foo", 1),  # filename substring
-        ("bar", 1),  # filename substring
-        ("one", 0),  # path, should not match
-    ],
-)
-def test_search_file_name(library, query_name, has_result):
-    results = library.search_library(
-        FilterState(name=query_name),
-    )
-
-    assert results.total_count == has_result
-
-
-@pytest.mark.parametrize(
-    ["query_name", "has_result"],
-    [
         (1, 1),
         ("1", 1),
         ("xxx", 0),

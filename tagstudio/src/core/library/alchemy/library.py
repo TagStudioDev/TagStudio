@@ -447,14 +447,6 @@ class Library:
                     .outerjoin(TagAlias)
                     .where(SQLBoolExpressionBuilder().visit(search.ast))
                 )
-            elif search.name:
-                statement = select(Entry).where(
-                    and_(
-                        Entry.path.ilike(f"%{search.name}%"),
-                        # dont match directory name (ie. has following slash)
-                        ~Entry.path.ilike(f"%{search.name}%/%"),
-                    )
-                )
             elif search.path:
                 search_str = str(search.path).replace("*", "%")
                 statement = statement.where(Entry.path.ilike(search_str))

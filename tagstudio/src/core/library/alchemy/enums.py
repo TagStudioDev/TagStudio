@@ -74,8 +74,6 @@ class FilterState:
     # these should be erased on update
     # whole path
     path: Path | str | None = None
-    # file name
-    name: str | None = None
 
     # Abstract Syntax Tree Of the current Search Query
     ast: Query = None
@@ -90,13 +88,11 @@ class FilterState:
 
         if query is not None:
             self.ast = Parser(query).parse()
-        else:
-            self.name = self.name and self.name.strip()
 
     @property
     def summary(self):
         """Show query summary."""
-        return self.name or self.path
+        return self.path
 
     @property
     def limit(self):
