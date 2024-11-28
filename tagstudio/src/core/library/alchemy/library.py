@@ -18,6 +18,7 @@ from sqlalchemy import (
     exists,
     func,
     or_,
+    distinct,
     select,
     update,
 )
@@ -474,9 +475,10 @@ class Library:
                 .options(selectinload(Tag.aliases), selectinload(Tag.subtags)),
             )
 
-            query_count = select(func.count()).select_from(
-                statement.alias("entries")
-            )  # TODO this should count the number of *unique* results
+            aliased_statement = statement.alias("entries")
+            query_count = select(func.count(distinct(aliased_statement.c.id))).select_from(
+                aliased_statement
+            )
             count_all: int = session.execute(query_count).scalar()
 
             statement = statement.limit(search.limit).offset(search.offset)
