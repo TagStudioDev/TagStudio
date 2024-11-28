@@ -60,6 +60,17 @@ class ItemType(enum.Enum):
 
 
 @dataclass
+class TagFilterState:
+    search: str | None = None
+    page_index: int | None = 0
+    page_size: int | None = 500
+
+    def __post_init__(self):
+        if self.search is not None:
+            self.search = self.search.strip()
+
+
+@dataclass
 class FilterState:
     """Represent a state of the Library grid view."""
 

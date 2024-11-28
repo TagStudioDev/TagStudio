@@ -39,7 +39,7 @@ from ...constants import (
 from ...enums import LibraryPrefs
 from ...media_types import MediaCategories
 from .db import make_tables
-from .enums import FieldTypeEnum, FilterState, TagColor
+from .enums import FieldTypeEnum, FilterState, TagColor, TagFilterState
 from .fields import (
     BaseField,
     DatetimeField,
@@ -512,7 +512,7 @@ class Library:
 
     def search_tags(
         self,
-        search: FilterState,  # TODO TSQLANG move this to str
+        filter_state: TagFilterState,
     ) -> list[Tag]:
         """Return a list of Tag records matching the query."""
         with Session(self.engine) as session:
@@ -522,11 +522,11 @@ class Library:
                 selectinload(Tag.aliases),
             )
 
-            if search.tag:
+            if filter_state.search:
                 query = query.where(
                     or_(
-                        Tag.name.icontains(search.tag),
-                        Tag.shorthand.icontains(search.tag),
+                        Tag.name.icontains(filter_state.search),
+                        Tag.shorthand.icontains(filter_state.search),
                     )
                 )
 
@@ -536,7 +536,7 @@ class Library:
 
             logger.info(
                 "searching tags",
-                search=search,
+                search=filter_state,
                 statement=str(query),
                 results=len(res),
             )

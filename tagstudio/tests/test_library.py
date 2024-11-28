@@ -4,7 +4,7 @@ from tempfile import TemporaryDirectory
 import pytest
 from src.core.enums import DefaultEnum, LibraryPrefs
 from src.core.library.alchemy import Entry, Library
-from src.core.library.alchemy.enums import FilterState
+from src.core.library.alchemy.enums import FilterState, TagFilterState
 from src.core.library.alchemy.fields import TextField, _FieldID
 from src.core.library.alchemy.models import Tag
 
@@ -133,17 +133,17 @@ def test_tag_search(library):
     tag = library.tags[0]
 
     assert library.search_tags(
-        FilterState(tag=tag.name.lower()),
+        TagFilterState(search=tag.name.lower()),
     )
 
     assert library.search_tags(
-        FilterState(tag=tag.name.upper()),
+        TagFilterState(search=tag.name.upper()),
     )
 
-    assert library.search_tags(FilterState(tag=tag.name[2:-2]))
+    assert library.search_tags(TagFilterState(search=tag.name[2:-2]))
 
     assert not library.search_tags(
-        FilterState(tag=tag.name * 2),
+        TagFilterState(search=tag.name * 2),
     )
 
 

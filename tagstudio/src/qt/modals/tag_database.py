@@ -12,7 +12,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 from src.core.library import Library, Tag
-from src.core.library.alchemy.enums import FilterState
+from src.core.library.alchemy.enums import TagFilterState
 from src.qt.modals.build_tag import BuildTagPanel
 from src.qt.widgets.panel import PanelModal, PanelWidget
 from src.qt.widgets.tag import TagWidget
@@ -70,7 +70,7 @@ class TagDatabasePanel(PanelWidget):
         while self.scroll_layout.itemAt(0):
             self.scroll_layout.takeAt(0).widget().deleteLater()
 
-        tags = self.lib.search_tags(FilterState(path=query, page_size=self.tag_limit))
+        tags = self.lib.search_tags(TagFilterState(search=query, page_size=self.tag_limit))
 
         for tag in tags:
             container = QWidget()
