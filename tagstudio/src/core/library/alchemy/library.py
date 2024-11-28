@@ -15,10 +15,10 @@ from sqlalchemy import (
     and_,
     create_engine,
     delete,
+    distinct,
     exists,
     func,
     or_,
-    distinct,
     select,
     update,
 )
