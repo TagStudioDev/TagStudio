@@ -27,7 +27,7 @@ class SQLBoolExpressionBuilder(BaseVisitor):
         elif node.type == ConstraintType.TagID:
             return Tag.id == int(node.value)
         elif node.type == ConstraintType.Path:
-            return Entry.path.ilike(node.value.replace("*", "%"))
+            return Entry.path.op("GLOB")(node.value)
         elif node.type == ConstraintType.MediaType:
             extensions: set[str] = set[str]()
             for media_cat in MediaCategories.ALL_CATEGORIES:
