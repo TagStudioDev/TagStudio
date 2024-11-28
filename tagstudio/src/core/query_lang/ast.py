@@ -35,9 +35,9 @@ class AST:
 
 
 class ANDList(AST):
-    terms: list[Union["ORList", "Constraint"]]
+    terms: list[Union["ORList", "Constraint", "Not"]]
 
-    def __init__(self, terms: list[Union["ORList", "Constraint"]]) -> None:
+    def __init__(self, terms: list[Union["ORList", "Constraint", "Not"]]) -> None:
         super().__init__()
         for term in terms:
             term.parent = self
@@ -78,6 +78,14 @@ class Property(AST):
         self.value = value
 
 
+class Not(AST):
+    child: AST
+
+    def __init__(self, child: AST) -> None:
+        super().__init__()
+        self.child = child
+
+
 T = TypeVar("T")
 
 
@@ -91,6 +99,8 @@ class BaseVisitor(ABC, Generic[T]):
             return self.visit_constraint(node)
         elif isinstance(node, Property):
             return self.visit_property(node)
+        elif isinstance(node, Not):
+            return self.visit_not(node)
         raise Exception(f"Unknown Node Type of {node}")
 
     @abstractmethod
@@ -107,4 +117,8 @@ class BaseVisitor(ABC, Generic[T]):
 
     @abstractmethod
     def visit_property(self, node: Property) -> T:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def visit_not(self, node: Not) -> T:
         raise NotImplementedError()

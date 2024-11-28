@@ -1,6 +1,6 @@
 from typing import Union
 
-from src.core.query_lang.ast import AST, ANDList, Constraint, ORList, Property
+from src.core.query_lang.ast import AST, ANDList, Constraint, Not, ORList, Property
 from src.core.query_lang.tokenizer import ConstraintType, Token, Tokenizer, TokenType
 from src.core.query_lang.util import ParsingError
 
@@ -25,6 +25,18 @@ class Parser:
             raise ParsingError(self.next_token.start, self.next_token.end, "Syntax Error")
         return out
 
+    def __or_list(self) -> ORList:
+        terms = [self.__and_list()]
+
+        while self.__is_next_or():
+            self.__eat(TokenType.ULITERAL)
+            terms.append(self.__and_list())
+
+        return ORList(terms)
+
+    def __is_next_or(self) -> bool:
+        return self.next_token.type == TokenType.ULITERAL and self.next_token.value.upper() == "OR"
+
     def __and_list(self) -> ANDList:
         elements = [self.__term()]
         while self.next_token.type != TokenType.EOF and not self.__is_next_or():
@@ -42,19 +54,10 @@ class Parser:
     def __is_next_and(self) -> bool:
         return self.next_token.type == TokenType.ULITERAL and self.next_token.value.upper() == "AND"
 
-    def __or_list(self) -> ORList:
-        terms = [self.__and_list()]
-
-        while self.__is_next_or():
+    def __term(self) -> Union[ORList, Constraint, Not]:
+        if self.__is_next_not():
             self.__eat(TokenType.ULITERAL)
-            terms.append(self.__and_list())
-
-        return ORList(terms)
-
-    def __is_next_or(self) -> bool:
-        return self.next_token.type == TokenType.ULITERAL and self.next_token.value.upper() == "OR"
-
-    def __term(self) -> Union["ORList", "Constraint"]:
+            return Not(self.__term())
         if self.next_token.type == TokenType.RBRACKETO:
             self.__eat(TokenType.RBRACKETO)
             out = self.__or_list()
@@ -62,6 +65,9 @@ class Parser:
             return out
         else:
             return self.__constraint()
+
+    def __is_next_not(self) -> bool:
+        return self.next_token.type == TokenType.ULITERAL and self.next_token.value.upper() == "NOT"
 
     def __constraint(self) -> Constraint:
         if self.next_token.type == TokenType.CONSTRAINTTYPE:
