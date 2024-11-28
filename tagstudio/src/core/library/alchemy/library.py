@@ -512,7 +512,7 @@ class Library:
 
     def search_tags(
         self,
-        search: FilterState,
+        search: FilterState,  # TODO TSQLANG move this to str
     ) -> list[Tag]:
         """Return a list of Tag records matching the query."""
         with Session(self.engine) as session:

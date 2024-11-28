@@ -286,7 +286,9 @@ class PreviewPanel(QWidget):
     def update_selected_entry(self, driver: "QtDriver"):
         for grid_idx in driver.selected:
             entry = driver.frame_content[grid_idx]
-            results = self.lib.search_library(FilterState(id=entry.id))
+            results = self.lib.search_library(
+                FilterState(id=entry.id)
+            )  # TODO TSQLANG don't search, get entry directly by id
             logger.info(
                 "found item",
                 entries=len(results.items),
@@ -553,7 +555,9 @@ class PreviewPanel(QWidget):
         # TODO - Entry reload is maybe not necessary
         for grid_idx in self.driver.selected:
             entry = self.driver.frame_content[grid_idx]
-            results = self.lib.search_library(FilterState(id=entry.id))
+            results = self.lib.search_library(
+                FilterState(id=entry.id)
+            )  # TODO TSQLANG don't search, get entry by directly by ID
             logger.info(
                 "found item",
                 entries=len(results.items),
