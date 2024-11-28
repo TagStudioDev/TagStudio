@@ -24,7 +24,6 @@ from sqlalchemy import (
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import (
     Session,
-    aliased,
     contains_eager,
     make_transient,
     selectinload,
@@ -37,7 +36,6 @@ from ...constants import (
     TS_FOLDER_NAME,
 )
 from ...enums import LibraryPrefs
-from ...media_types import MediaCategories
 from .db import make_tables
 from .enums import FieldTypeEnum, FilterState, TagColor, TagFilterState
 from .fields import (

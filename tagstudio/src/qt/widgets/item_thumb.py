@@ -25,7 +25,6 @@ from src.core.constants import (
     TAG_FAVORITE,
 )
 from src.core.library import Entry, ItemType, Library
-from src.core.library.alchemy.enums import FilterState
 from src.core.library.alchemy.fields import _FieldID
 from src.core.media_types import MediaCategories, MediaType
 from src.qt.flowlayout import FlowWidget
