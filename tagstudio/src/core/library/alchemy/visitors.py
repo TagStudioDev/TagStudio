@@ -1,5 +1,4 @@
 from sqlalchemy import and_, or_
-from sqlalchemy.orm import aliased
 from sqlalchemy.sql.expression import ColumnExpressionArgument
 from src.core.media_types import MediaCategories
 from src.core.query_lang import BaseVisitor
@@ -24,7 +23,6 @@ class SQLBoolExpressionBuilder(BaseVisitor):
                 Tag.name.ilike(node.value),
                 Tag.shorthand.ilike(node.value),
                 TagAlias.name.ilike(node.value),
-                aliased(Tag).name.ilike(node.value),
             )
         elif node.type == ConstraintType.TagID:
             return Tag.id == int(node.value)
