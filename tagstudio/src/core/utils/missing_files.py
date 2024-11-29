@@ -42,7 +42,8 @@ class MissingRegistry:
         """
         matches = []
         # TODO - implement IGNORE_ITEMS
-        for matched_path in filter(lambda file: file.name == match_item.path.name, self.library_file_cache):
+        item_name = match_item.path.name
+        for matched_path in filter(lambda file: file.name == item_name, self.library_file_cache):
             logger.info("match_missing_files", matched_path=matched_path)
             new_path = Path(matched_path).relative_to(self.library.library_dir)
             matches.append(new_path)
