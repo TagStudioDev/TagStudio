@@ -20,22 +20,21 @@ class RatingWidget(FieldWidget):
             self.layout.addWidget(star)
     def set_rating(self, rating_index: int = None):
         rating_index = rating_index if rating_index is None else self.stars.index(self.sender())
-        print(rating_index)
         for star in range(rating_index + 1):
             self.stars[star].setStyleSheet("font-weight: bold; font-size: 20px;")
         for star in range(rating_index + 1, len(self.stars)):
             self.stars[star].setStyleSheet("font-size: 30px;") 
         rating = rating_index + 1
-        print(rating)
-    def modify_stars(self, totalstars):
-        for star in self.stars:
-            star.deleteLater()
-        self.stars.clear()
-        for star in range(totalstars):
-            star = QPushButton("⭐")
-            star.setCheckable(True)
-            star.clicked.connect(self.set_rating)
-            star.setStyleSheet("font-size: 30px;")
-            star.setFixedSize(24, 24)
-            self.stars.append(star)
-            self.layout.addWidget(star)
+    # def modify_stars(self, totalstars):
+        # for star in self.stars:
+            # star.deleteLater()
+        # self.stars.clear()
+        # for star in range(totalstars):
+            # star = QPushButton("⭐")
+            # star.setCheckable(True)
+            # star.clicked.connect(self.set_rating)
+            # star.setStyleSheet("font-size: 30px;")
+            # star.setFixedSize(24, 24)
+            # self.stars.append(star)
+            # self.layout.addWidget(star)
+    # Used to change amount of stars to a 10 star system
