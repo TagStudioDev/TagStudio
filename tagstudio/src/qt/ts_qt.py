@@ -816,7 +816,8 @@ class QtDriver(DriverMixin, QObject):
 
         elif name == MacroID.BUILD_URL:
             url = TagStudioCore.build_url(entry, source)
-            self.lib.add_entry_field_type(entry.id, field_id=_FieldID.SOURCE, value=url)
+            if url is not None:
+                self.lib.add_entry_field_type(entry.id, field_id=_FieldID.SOURCE, value=url)
         elif name == MacroID.MATCH:
             TagStudioCore.match_conditions(self.lib, entry.id)
         elif name == MacroID.CLEAN_URL:
