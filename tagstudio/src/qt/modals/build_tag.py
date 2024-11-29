@@ -4,6 +4,7 @@
 
 
 import sys
+from typing import cast
 
 import structlog
 from PySide6.QtCore import Qt, Signal
@@ -16,7 +17,6 @@ from PySide6.QtWidgets import (
     QPushButton,
     QScrollArea,
     QTableWidget,
-    QTableWidgetItem,
     QVBoxLayout,
     QWidget,
 )
@@ -28,6 +28,25 @@ from src.qt.widgets.panel import PanelModal, PanelWidget
 from src.qt.widgets.tag import TagWidget
 
 logger = structlog.get_logger(__name__)
+
+
+class CustomTableItem(QLineEdit):
+    def __init__(self, text, on_return, on_backspace, parent=None):
+        super().__init__(parent)
+        self.setText(text)
+        self.on_return = on_return
+        self.on_backspace = on_backspace
+
+    def set_id(self, id):
+        self.id = id
+
+    def keyPressEvent(self, event):  # noqa: N802
+        if event.key() == Qt.Key.Key_Return or event.key() == Qt.Key.Key_Enter:
+            self.on_return()
+        elif event.key() == Qt.Key.Key_Backspace and self.text().strip() == "":
+            self.on_backspace()
+        else:
+            super().keyPressEvent(event)
 
 
 class BuildTagPanel(PanelWidget):
@@ -174,35 +193,44 @@ class BuildTagPanel(PanelWidget):
         self.root_layout.addWidget(self.subtags_widget)
         self.root_layout.addWidget(self.color_widget)
 
-        self.subtag_ids: set[int] = set()
-        self.alias_ids: set[int] = set()
-        self.alias_names: set[str] = set()
+        self.subtag_ids: list[int] = list()
+        self.alias_ids: list[int] = list()
+        self.alias_names: list[str] = list()
         self.new_alias_names: dict = dict()
         self.new_item_id = sys.maxsize
 
         self.set_tag(tag or Tag(name="New Tag"))
 
-    def keyPressEvent(self, event):  # noqa: N802
-        if event.key() == Qt.Key_Return or event.key() == Qt.Key_Enter:  # type: ignore
-            focused_widget = QApplication.focusWidget()
-            if isinstance(focused_widget, QTableWidget):
-                self.add_alias_callback()
+    def backspace(self):
+        focused_widget = QApplication.focusWidget()
+        row = self.aliases_table.rowCount() - 1
 
-        if event.key() == Qt.Key_Backspace:  # type: ignore
-            focused_widget = QApplication.focusWidget()
-            row = self.aliases_table.rowCount() - 1
-            is_table = isinstance(focused_widget, QTableWidget)
-            is_empty = self.aliases_table.item(row, 1).text().strip() == ""
-            if is_table and is_empty:
-                button = self.aliases_table.cellWidget(row, 0)
+        if isinstance(focused_widget, CustomTableItem) is False:
+            return
+        remove_row = 0
+        for i in range(0, row):
+            item = self.aliases_table.cellWidget(i, 1)
+            if (
+                isinstance(item, CustomTableItem)
+                and cast(CustomTableItem, item).id == cast(CustomTableItem, focused_widget).id
+            ):
+                cast(QPushButton, self.aliases_table.cellWidget(i, 0)).click()
+                remove_row = i
+                break
 
-                if button and isinstance(button, QPushButton):
-                    button.click()
-                    self.aliases_table.setCurrentCell(row - 1, 0)
+        if self.aliases_table.rowCount() <= 0:
+            return
+
+        self.aliases_table.cellWidget(remove_row - 1, 1).setFocus()
+
+    def enter(self):
+        focused_widget = QApplication.focusWidget()
+        if isinstance(focused_widget, CustomTableItem):
+            self.add_alias_callback()
 
     def add_subtag_callback(self, tag_id: int):
         logger.info("add_subtag_callback", tag_id=tag_id)
-        self.subtag_ids.add(tag_id)
+        self.subtag_ids.append(tag_id)
         self.set_subtags()
 
     def remove_subtag_callback(self, tag_id: int):
@@ -215,15 +243,20 @@ class BuildTagPanel(PanelWidget):
 
         id = self.new_item_id
 
-        self.alias_ids.add(id)
+        self.alias_ids.append(id)
         self.new_alias_names[id] = ""
 
         self.new_item_id -= 1
 
         self._set_aliases()
 
+        row = self.aliases_table.rowCount() - 1
+        item = self.aliases_table.cellWidget(row, 1)
+        item.setFocus()
+
     def remove_alias_callback(self, alias_name: str, alias_id: int | None = None):
         logger.info("remove_alias_callback")
+
         self.alias_ids.remove(alias_id)
         self._set_aliases()
 
@@ -245,25 +278,25 @@ class BuildTagPanel(PanelWidget):
     def add_aliases(self):
         names: set[str] = set()
         for i in range(0, self.aliases_table.rowCount()):
-            widget = self.aliases_table.item(i, 1)
+            widget = self.aliases_table.cellWidget(i, 1)
 
-            names.add(widget.text())
+            names.add(cast(CustomTableItem, widget).text())
 
-        remove: set[str] = self.alias_names - names
+        remove: set[str] = set(self.alias_names) - names
 
-        self.alias_names = self.alias_names - remove
+        self.alias_names = list(set(self.alias_names) - remove)
 
         for name in names:
             # add new aliases
-            if name != "":
-                self.alias_names.add(name)
+            if name.strip() != "" and name not in set(self.alias_names):
+                self.alias_names.append(name)
 
     def _update_new_alias_name_dict(self):
         row = self.aliases_table.rowCount()
         logger.info(row)
         for i in range(0, self.aliases_table.rowCount()):
-            widget = self.aliases_table.item(i, 1)
-            self.new_alias_names[widget.data(Qt.UserRole)] = widget.text()  # type: ignore
+            widget = self.aliases_table.cellWidget(i, 1)
+            self.new_alias_names[widget.id] = widget.text()  # type: ignore
 
     def _set_aliases(self):
         self._update_new_alias_name_dict()
@@ -273,12 +306,12 @@ class BuildTagPanel(PanelWidget):
 
         self.alias_names.clear()
 
-        for alias_id in list(self.alias_ids)[::-1]:
+        for alias_id in self.alias_ids:
             alias = self.lib.get_alias(self.tag.id, alias_id)
 
             alias_name = alias.name if alias else self.new_alias_names[alias_id]
 
-            self.alias_names.add(alias_name)
+            self.alias_names.append(alias_name)
 
             remove_btn = QPushButton("-")
             remove_btn.clicked.connect(
@@ -286,11 +319,11 @@ class BuildTagPanel(PanelWidget):
             )
 
             row = self.aliases_table.rowCount()
-            new_item = QTableWidgetItem(alias_name)
-            new_item.setData(Qt.UserRole, alias_id)  # type: ignore
+            new_item = CustomTableItem(alias_name, self.enter, self.backspace)
+            new_item.set_id(alias_id)
 
             self.aliases_table.insertRow(row)
-            self.aliases_table.setItem(row, 1, new_item)
+            self.aliases_table.setCellWidget(row, 1, new_item)
             self.aliases_table.setCellWidget(row, 0, remove_btn)
 
     def set_tag(self, tag: Tag):
@@ -304,12 +337,12 @@ class BuildTagPanel(PanelWidget):
         self.shorthand_field.setText(tag.shorthand or "")
 
         for alias_id in tag.alias_ids:
-            self.alias_ids.add(alias_id)
+            self.alias_ids.append(alias_id)
 
         self._set_aliases()
 
         for subtag in tag.subtag_ids:
-            self.subtag_ids.add(subtag)
+            self.subtag_ids.append(subtag)
 
         self.set_subtags()
 

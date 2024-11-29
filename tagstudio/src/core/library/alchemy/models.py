@@ -50,7 +50,7 @@ class Tag(Base):
 
     aliases: Mapped[set[TagAlias]] = relationship(back_populates="tag")
 
-    parent_tags: Mapped[set["Tag"]] = relationship(
+    parent_tags: Mapped[list["Tag"]] = relationship(
         secondary=TagSubtag.__tablename__,
         primaryjoin="Tag.id == TagSubtag.parent_id",
         secondaryjoin="Tag.id == TagSubtag.child_id",
@@ -100,7 +100,7 @@ class Tag(Base):
         name: str,
         shorthand: str | None = None,
         aliases: set[TagAlias] | None = None,
-        parent_tags: set["Tag"] | None = None,
+        parent_tags: list["Tag"] | None = None,
         subtags: set["Tag"] | None = None,
         icon: str | None = None,
         color: TagColor = TagColor.DEFAULT,
@@ -108,7 +108,7 @@ class Tag(Base):
     ):
         self.name = name
         self.aliases = aliases or set()
-        self.parent_tags = parent_tags or set()
+        self.parent_tags = parent_tags or list()
         self.subtags = subtags or set()
         self.color = color
         self.icon = icon
