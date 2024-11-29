@@ -60,7 +60,7 @@ class JsonMigrationModal(QObject):
         self.init_page_info()
         self.init_page_convert()
 
-        self.paged_panel: PagedPanel = PagedPanel((640, 480), self.stack)
+        self.paged_panel: PagedPanel = PagedPanel((640, 540), self.stack)
 
     def init_page_info(self) -> None:
         """Initialize the migration info page."""
