@@ -113,7 +113,7 @@ class FieldContainer(QWidget):
 
         self.copy_callback = callback
         self.copy_button.clicked.connect(callback)
-        self.copy_button.is_connected = isinstance(callback, Callable)
+        self.copy_button.is_connected = callable(callback)
 
     def set_edit_callback(self, callback: Callable):
         if self.edit_button.is_connected:
@@ -121,7 +121,7 @@ class FieldContainer(QWidget):
 
         self.edit_callback = callback
         self.edit_button.clicked.connect(callback)
-        self.edit_button.is_connected = isinstance(callback, Callable)
+        self.edit_button.is_connected = callable(callback)
 
     def set_remove_callback(self, callback: Callable):
         if self.remove_button.is_connected:
@@ -129,7 +129,7 @@ class FieldContainer(QWidget):
 
         self.remove_callback = callback
         self.remove_button.clicked.connect(callback)
-        self.remove_button.is_connected = isinstance(callback, Callable)
+        self.remove_button.is_connected = callable(callback)
 
     def set_inner_widget(self, widget: "FieldWidget"):
         if self.field_layout.itemAt(0):
