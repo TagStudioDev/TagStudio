@@ -19,6 +19,7 @@ class MissingRegistry:
     library: Library
     files_fixed_count: int = 0
     missing_files: list[Entry] = field(default_factory=list)
+    library_file_cache: set[Path] = None
 
     @property
     def missing_files_count(self) -> int:
@@ -40,15 +41,17 @@ class MissingRegistry:
         Works if files were just moved to different subfolders and don't have duplicate names.
         """
         matches = []
-        for item in self.library.library_dir.glob(f"**/{match_item.path.name}"):
-            if item.name == match_item.path.name:  # TODO - implement IGNORE_ITEMS
-                new_path = Path(item).relative_to(self.library.library_dir)
-                matches.append(new_path)
+        # TODO - implement IGNORE_ITEMS
+        for matched_path in filter(lambda file: file.name == match_item.path.name, self.library_file_cache):
+            logger.info("match_missing_files", matched_path=matched_path)
+            new_path = Path(matched_path).relative_to(self.library.library_dir)
+            matches.append(new_path)
 
         return matches
 
     def fix_missing_files(self) -> Iterator[int]:
         """Attempt to fix missing files by finding a match in the library directory."""
+        self.library_file_cache = set(self.library.library_dir.rglob("*"))
         self.files_fixed_count = 0
         for i, entry in enumerate(self.missing_files, start=1):
             item_matches = self.match_missing_file(entry)
@@ -59,6 +62,7 @@ class MissingRegistry:
                 # remove fixed file
                 self.missing_files.remove(entry)
             yield i
+        self.library_file_cache = None
 
     def execute_deletion(self) -> Iterator[int]:
         for i, missing in enumerate(self.missing_files, start=1):
