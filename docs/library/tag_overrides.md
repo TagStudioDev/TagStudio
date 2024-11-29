@@ -5,7 +5,7 @@ tags:
 
 # Tag Overrides
 
-Tag overrides are the ability to add or remove [parent tags](tag.md#subtags) from a [tag](tag.md) on a per- [entry](entry.md) basis. Relies on the [Database Migration](../updates/db_migration.md) update being complete.
+Tag overrides are the ability to add or remove [parent tags](tag.md#subtags) from a [tag](tag.md) on a per- [entry](entry.md) basis.
 
 ## Examples
 
