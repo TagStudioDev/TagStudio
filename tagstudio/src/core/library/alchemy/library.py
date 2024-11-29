@@ -726,7 +726,7 @@ class Library:
             if value:
                 assert isinstance(value, list)
                 for tag in value:
-                    field_model.tags.add(Tag(name=tag))
+                    field_model.tags.add(self.get_tag_by_name(tag) or Tag(name=tag))
 
         elif field.type == FieldTypeEnum.DATETIME:
             field_model = DatetimeField(
@@ -869,6 +869,15 @@ class Library:
                 session.expunge(alias)
 
         return tag
+
+    def get_tag_by_name(self, tag_name: str) -> Tag | None:
+        with Session(self.engine) as session:
+            statement = (
+                select(Tag)
+                .outerjoin(TagAlias)
+                .where(or_(Tag.name == tag_name, TagAlias.name == tag_name))
+            )
+            return session.scalar(statement)
 
     def get_alias(self, tag_id: int, alias_id: int) -> TagAlias:
         with Session(self.engine) as session:
