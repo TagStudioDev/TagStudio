@@ -20,7 +20,7 @@ from sqlalchemy.orm import Session
 from src.core.constants import TS_FOLDER_NAME
 from src.core.enums import LibraryPrefs
 from src.core.library.alchemy.enums import FieldTypeEnum, TagColor
-from src.core.library.alchemy.fields import TagBoxField
+from src.core.library.alchemy.fields import TagBoxField, _FieldID
 from src.core.library.alchemy.joins import TagField, TagSubtag
 from src.core.library.alchemy.library import Library as SqliteLibrary
 from src.core.library.alchemy.models import Entry, Tag, TagAlias
@@ -470,27 +470,73 @@ class JsonMigrationModal(QObject):
                     )
                     return False
 
-                for field in sql_entry.fields:
+                for sf in sql_entry.fields:
                     sql_fields.append(
                         (
                             sql_entry.id,
-                            field.type.key,
-                            sanitize_field(
-                                session, sql_entry, field.value, field.type.type, field.type_key
-                            ),
+                            sf.type.key,
+                            sanitize_field(session, sql_entry, sf.value, sf.type.type, sf.type_key),
                         )
                     )
                 sql_fields.sort()
 
-                json_fields = [
-                    (
-                        json_entry.id + 1,  # JSON IDs start at 0 instead of 1
-                        self.sql_lib.get_field_name_from_id(list(x.keys())[0]).name,
-                        sanitize_json_field(list(x.values())[0]),
-                    )
-                    for x in json_entry.fields
-                ]
+                # NOTE: The JSON database allowed for separate tag fields of the same type with
+                # different values. The SQL database does not, and instead merges these values
+                # across all instances of that field on an entry.
+                # TODO: ROADMAP: "Tag Categories" will merge all field tags onto the entry.
+                # All visual separation from there will be data-driven from the tag itself.
+                meta_tags_count: int = 0
+                content_tags_count: int = 0
+                tags_count: int = 0
+                merged_meta_tags: set[int] = set()
+                merged_content_tags: set[int] = set()
+                merged_tags: set[int] = set()
+                for jf in json_entry.fields:
+                    key: str = self.sql_lib.get_field_name_from_id(list(jf.keys())[0]).name
+                    value = sanitize_json_field(list(jf.values())[0])
+
+                    if key == _FieldID.TAGS_META.name:
+                        meta_tags_count += 1
+                        merged_meta_tags = merged_meta_tags.union(value or [])
+                    elif key == _FieldID.TAGS_CONTENT.name:
+                        content_tags_count += 1
+                        merged_content_tags = merged_content_tags.union(value or [])
+                    elif key == _FieldID.TAGS.name:
+                        tags_count += 1
+                        merged_tags = merged_tags.union(value or [])
+                    else:
+                        # JSON IDs start at 0 instead of 1
+                        json_fields.append((json_entry.id + 1, key, value))
+
+                if meta_tags_count:
+                    for _ in range(0, meta_tags_count):
+                        json_fields.append(
+                            (
+                                json_entry.id + 1,
+                                _FieldID.TAGS_META.name,
+                                merged_meta_tags if merged_meta_tags else None,
+                            )
+                        )
+                if content_tags_count:
+                    for _ in range(0, content_tags_count):
+                        json_fields.append(
+                            (
+                                json_entry.id + 1,
+                                _FieldID.TAGS_CONTENT.name,
+                                merged_content_tags if merged_content_tags else None,
+                            )
+                        )
+                if tags_count:
+                    for _ in range(0, tags_count):
+                        json_fields.append(
+                            (
+                                json_entry.id + 1,
+                                _FieldID.TAGS.name,
+                                merged_tags if merged_tags else None,
+                            )
+                        )
                 json_fields.sort()
+
                 if not (
                     json_fields is not None
                     and sql_fields is not None
@@ -630,8 +676,8 @@ class JsonMigrationModal(QObject):
             logger.info(
                 "[Color Parity]",
                 tag_id=tag_id,
-                json_shorthand=json_color,
-                sql_shorthand=sql_color,
+                json_color=json_color,
+                sql_color=sql_color,
             )
 
             if not (sql_color is not None and json_color is not None and (sql_color == json_color)):
