@@ -803,7 +803,7 @@ class QtDriver(DriverMixin, QObject):
             for macro_id in MacroID:
                 if macro_id == MacroID.AUTOFILL:
                     continue
-                self.run_macro(macro_id, entry.id)
+                self.run_macro(macro_id, grid_idx)
 
         elif name == MacroID.SIDECAR:
             parsed_items = TagStudioCore.get_gdl_sidecar(full_path, source)
