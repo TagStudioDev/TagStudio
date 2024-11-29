@@ -19,9 +19,9 @@ def open_file(path: str | Path, file_manager: bool = False):
     """Open a file in the default application or file explorer.
 
     Args:
-            path (str): The path to the file to open.
-            file_manager (bool, optional): Whether to open the file in the file manager
-                (e.g. Finder on macOS). Defaults to False.
+        path (str): The path to the file to open.
+        file_manager (bool, optional): Whether to open the file in the file manager
+            (e.g. Finder on macOS). Defaults to False.
     """
     path = Path(path)
     logger.info("Opening file", path=path)
@@ -93,7 +93,7 @@ class FileOpenerHelper:
         """Initialize the FileOpenerHelper.
 
         Args:
-                filepath (str): The path to the file to open.
+            filepath (str): The path to the file to open.
         """
         self.filepath = str(filepath)
 
@@ -101,7 +101,7 @@ class FileOpenerHelper:
         """Set the filepath to open.
 
         Args:
-                filepath (str): The path to the file to open.
+            filepath (str): The path to the file to open.
         """
         self.filepath = str(filepath)
 
@@ -115,20 +115,19 @@ class FileOpenerHelper:
 
 
 class FileOpenerLabel(QLabel):
-    def __init__(self, text, parent=None):
+    def __init__(self, parent=None):
         """Initialize the FileOpenerLabel.
 
         Args:
-                text (str): The text to display.
-                parent (QWidget, optional): The parent widget. Defaults to None.
+            parent (QWidget, optional): The parent widget. Defaults to None.
         """
-        super().__init__(text, parent)
+        super().__init__(parent)
 
     def set_file_path(self, filepath):
         """Set the filepath to open.
 
         Args:
-                filepath (str): The path to the file to open.
+            filepath (str): The path to the file to open.
         """
         self.filepath = filepath
 
@@ -139,7 +138,7 @@ class FileOpenerLabel(QLabel):
         On a right click, show a context menu.
 
         Args:
-                event (QMouseEvent): The mouse press event.
+            event (QMouseEvent): The mouse press event.
         """
         super().mousePressEvent(event)
 

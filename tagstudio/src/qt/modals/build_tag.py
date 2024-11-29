@@ -203,7 +203,7 @@ class BuildTagPanel(PanelWidget):
         self.color_field.setMaxVisibleItems(10)
         self.color_field.setStyleSheet("combobox-popup:0;")
         for color in TagColor:
-            self.color_field.addItem(color.name, userData=color.value)
+            self.color_field.addItem(color.name.replace("_", " ").title(), userData=color.value)
         # self.color_field.setProperty("appearance", "flat")
         self.color_field.currentIndexChanged.connect(
             lambda c: (

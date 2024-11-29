@@ -162,23 +162,27 @@ class PreviewPanel(QWidget):
         image_layout.addWidget(self.preview_vid)
         image_layout.setAlignment(self.preview_vid, Qt.AlignmentFlag.AlignCenter)
         self.image_container.setMinimumSize(*self.img_button_size)
-        self.file_label = FileOpenerLabel("filename")
+        self.file_label = FileOpenerLabel()
+        self.file_label.setObjectName("filenameLabel")
         self.file_label.setTextFormat(Qt.TextFormat.RichText)
         self.file_label.setWordWrap(True)
         self.file_label.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
         self.file_label.setStyleSheet(file_label_style)
 
-        self.date_created_label = QLabel("dateCreatedLabel")
+        self.date_created_label = QLabel()
+        self.date_created_label.setObjectName("dateCreatedLabel")
         self.date_created_label.setAlignment(Qt.AlignmentFlag.AlignLeft)
         self.date_created_label.setTextFormat(Qt.TextFormat.RichText)
         self.date_created_label.setStyleSheet(date_style)
 
-        self.date_modified_label = QLabel("dateModifiedLabel")
+        self.date_modified_label = QLabel()
+        self.date_modified_label.setObjectName("dateModifiedLabel")
         self.date_modified_label.setAlignment(Qt.AlignmentFlag.AlignLeft)
         self.date_modified_label.setTextFormat(Qt.TextFormat.RichText)
         self.date_modified_label.setStyleSheet(date_style)
 
-        self.dimensions_label = QLabel("dimensionsLabel")
+        self.dimensions_label = QLabel()
+        self.dimensions_label.setObjectName("dimensionsLabel")
         self.dimensions_label.setWordWrap(True)
         self.dimensions_label.setStyleSheet(properties_style)
 
@@ -480,7 +484,7 @@ class PreviewPanel(QWidget):
         if filepath and filepath.is_file():
             created: dt = None
             if platform.system() == "Windows" or platform.system() == "Darwin":
-                created = dt.fromtimestamp(filepath.stat().st_birthtime)  # type: ignore[attr-defined]
+                created = dt.fromtimestamp(filepath.stat().st_birthtime)  # type: ignore[attr-defined, unused-ignore]
             else:
                 created = dt.fromtimestamp(filepath.stat().st_ctime)
             modified: dt = dt.fromtimestamp(filepath.stat().st_mtime)
