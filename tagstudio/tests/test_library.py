@@ -132,19 +132,13 @@ def test_library_search(library, generate_tag, entry_full):
 def test_tag_search(library):
     tag = library.tags[0]
 
-    assert library.search_tags(
-        TagFilterState(search=tag.name.lower()),
-    )
+    assert library.search_tags(tag.name.lower())
 
-    assert library.search_tags(
-        TagFilterState(search=tag.name.upper()),
-    )
+    assert library.search_tags(tag.name.upper())
 
-    assert library.search_tags(TagFilterState(search=tag.name[2:-2]))
+    assert library.search_tags(tag.name[2:-2])
 
-    assert not library.search_tags(
-        TagFilterState(search=tag.name * 2),
-    )
+    assert not library.search_tags(tag.name * 2)
 
 
 def test_get_entry(library: Library, entry_min):
