@@ -81,8 +81,6 @@ class JsonMigrationModal(QObject):
             "Library save files created with TagStudio versions <b>9.4 and below</b> will "
             "need to be migrated to the new <b>v9.5+</b> format."
             "<br>"
-            "<br>"
-            "<br>"
             "<h2>What you need to know:</h2>"
             "<ul>"
             "<li>Your existing library save file will <b><i>NOT</i></b> be deleted</li>"
@@ -91,8 +89,10 @@ class JsonMigrationModal(QObject):
             "</ul>"
         )
         body_label.setWordWrap(True)
-        body_label.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+
+        body_label.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         body_wrapper.layout().addWidget(body_label)
+        body_wrapper.layout().setContentsMargins(0, 36, 0, 0)
 
         cancel_button: QPushButtonWrapper = QPushButtonWrapper("Cancel")
         next_button: QPushButtonWrapper = QPushButtonWrapper("Continue")
@@ -348,13 +348,16 @@ class JsonMigrationModal(QObject):
         iterator.value.connect(
             lambda x: (
                 pb.setLabelText(f"<h4>{x}</h4>"),
-                self.check_parity() if x == "Checking for Parity..." else (),
+                self.update_sql_value_ui(show_msg_box=False)
+                if x == "Checking for Parity..."
+                else (),
+                self.update_parity_ui() if x == "Checking for Parity..." else (),
             )
         )
         r = CustomRunnable(iterator.run)
         r.done.connect(
             lambda: (
-                self.update_sql_ui(show_msg_box=not skip_ui),
+                self.update_sql_value_ui(show_msg_box=not skip_ui),
                 pb.setMinimum(1),
                 pb.setValue(1),
             )
@@ -387,7 +390,7 @@ class JsonMigrationModal(QObject):
             check_set.add(self.check_subtag_parity())
             check_set.add(self.check_alias_parity())
             check_set.add(self.check_color_parity())
-            self.check_parity()
+            self.update_parity_ui()
             if False not in check_set:
                 yield "Migration Complete!"
             else:
@@ -398,8 +401,8 @@ class JsonMigrationModal(QObject):
             yield f"Error: {type(e).__name__}"
             self.done = True
 
-    def check_parity(self):
-        # Check for Parity
+    def update_parity_ui(self):
+        """Update all parity values UI."""
         self.update_parity_value(self.fields_row, self.field_parity)
         self.update_parity_value(self.path_row, self.path_parity)
         self.update_parity_value(self.shorthands_row, self.shorthand_parity)
@@ -408,8 +411,8 @@ class JsonMigrationModal(QObject):
         self.update_parity_value(self.colors_row, self.color_parity)
         self.sql_lib.close()
 
-    def update_sql_ui(self, show_msg_box: bool = True):
-        # Update SQLite UI
+    def update_sql_value_ui(self, show_msg_box: bool = True):
+        """Update the SQL value count UI."""
         self.update_sql_value(
             self.entries_row,
             self.sql_lib.entries_count,
