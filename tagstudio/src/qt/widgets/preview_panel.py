@@ -875,10 +875,6 @@ class PreviewPanel(QWidget):
         else:
             container = self.containers[index]
 
-        container.set_copy_callback(None)
-        container.set_edit_callback(None)
-        container.set_remove_callback(None)
-
         if isinstance(field, TagBoxField):
             container.set_title(field.type.name)
             container.set_inline(False)
