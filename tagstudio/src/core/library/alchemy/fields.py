@@ -103,6 +103,19 @@ class TagBoxField(BaseField):
             return self.__key() == value.__key()
         raise NotImplementedError
 
+class RatingBoxField(BaseField):
+    __tablename__ = "rating_box_fields"
+
+    value: Mapped[int | None]
+
+    def __key(self):
+        return (self.type, self.value)
+
+    def __eq__(self, value) -> bool:
+        if isinstance(value, RatingBoxField):
+            return self.__key() == value.__key()
+        raise NotImplementedError
+
 
 class DatetimeField(BaseField):
     __tablename__ = "datetime_fields"
