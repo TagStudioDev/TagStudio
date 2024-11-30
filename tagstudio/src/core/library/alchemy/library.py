@@ -126,6 +126,7 @@ class LibraryStatus:
     success: bool
     library_path: Path | None = None
     message: str | None = None
+    json_migration_req: bool = False
 
 
 class Library:
@@ -223,6 +224,7 @@ class Library:
                         success=False,
                         library_path=library_dir,
                         message="[JSON] Legacy v9.4 library requires conversion to v9.5+",
+                        json_migration_req=True,
                     )
 
         return self.open_sqlite_library(library_dir, is_new)

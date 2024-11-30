@@ -1184,7 +1184,7 @@ class QtDriver(DriverMixin, QObject):
         open_status: LibraryStatus = self.lib.open_library(path)
 
         # Migration is required
-        if open_status.message and open_status.message.startswith("[JSON]"):
+        if open_status.json_migration_req:
             self.migration_modal = JsonMigrationModal(path)
             self.migration_modal.migration_finished.connect(
                 lambda: self.init_library(path, self.lib.open_library(path))

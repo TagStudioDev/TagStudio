@@ -89,7 +89,6 @@ class JsonMigrationModal(QObject):
             "</ul>"
         )
         body_label.setWordWrap(True)
-
         body_label.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         body_wrapper.layout().addWidget(body_label)
         body_wrapper.layout().setContentsMargins(0, 36, 0, 0)
