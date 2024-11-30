@@ -17,7 +17,6 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 from src.core.library import Library
-from src.core.library.alchemy.enums import TagFilterState
 from src.core.palette import ColorType, get_tag_color
 from src.qt.widgets.panel import PanelWidget
 from src.qt.widgets.tag import TagWidget
@@ -73,18 +72,13 @@ class TagSearchPanel(PanelWidget):
             self.search_field.setFocus()
             self.parentWidget().hide()
 
-    def update_tags(self, name: str | None = None):
+    def update_tags(self, query: str | None = None):
         while self.scroll_layout.count():
             self.scroll_layout.takeAt(0).widget().deleteLater()
 
-        found_tags = self.lib.search_tags(
-            TagFilterState(
-                search=name,
-                page_size=self.tag_limit,
-            )
-        )
+        tag_results = self.lib.search_tags(name=query)
 
-        for tag in found_tags:
+        for tag in tag_results:
             if self.exclude is not None and tag.id in self.exclude:
                 continue
             c = QWidget()

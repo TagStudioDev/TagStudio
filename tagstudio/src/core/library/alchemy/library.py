@@ -38,7 +38,7 @@ from ...constants import (
 )
 from ...enums import LibraryPrefs
 from .db import make_tables
-from .enums import FieldTypeEnum, FilterState, TagColor, TagFilterState
+from .enums import FieldTypeEnum, FilterState, TagColor
 from .fields import (
     BaseField,
     DatetimeField,
@@ -489,7 +489,7 @@ class Library:
 
     def search_tags(
         self,
-        filter_state: TagFilterState,
+        name: str,
     ) -> list[Tag]:
         """Return a list of Tag records matching the query."""
         with Session(self.engine) as session:
@@ -499,11 +499,11 @@ class Library:
                 selectinload(Tag.aliases),
             )
 
-            if filter_state.search:
+            if name:
                 query = query.where(
                     or_(
-                        Tag.name.icontains(filter_state.search),
-                        Tag.shorthand.icontains(filter_state.search),
+                        Tag.name.icontains(name),
+                        Tag.shorthand.icontains(name),
                     )
                 )
 
@@ -513,7 +513,7 @@ class Library:
 
             logger.info(
                 "searching tags",
-                search=filter_state,
+                search=name,
                 statement=str(query),
                 results=len(res),
             )
