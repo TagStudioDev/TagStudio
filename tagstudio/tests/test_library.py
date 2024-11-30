@@ -4,7 +4,7 @@ from tempfile import TemporaryDirectory
 import pytest
 from src.core.enums import DefaultEnum, LibraryPrefs
 from src.core.library.alchemy import Entry, Library
-from src.core.library.alchemy.enums import FilterState, TagFilterState
+from src.core.library.alchemy.enums import FilterState
 from src.core.library.alchemy.fields import TextField, _FieldID
 from src.core.library.alchemy.models import Tag
 
