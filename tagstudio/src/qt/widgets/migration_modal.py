@@ -762,7 +762,7 @@ class JsonMigrationModal(QObject):
             tag_id = tag.id  # Tag IDs start at 0
             sql_color = tag.color.name
             json_color = (
-                self.json_lib.get_tag(tag_id).color.upper().replace(" ", "_")
+                TagColor.get_color_from_str(self.json_lib.get_tag(tag_id).color).name
                 if self.json_lib.get_tag(tag_id).color != ""
                 else TagColor.DEFAULT.name
             )
