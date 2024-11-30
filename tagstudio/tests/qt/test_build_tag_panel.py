@@ -101,12 +101,12 @@ def test_build_tag_panel_add_aliases(library, generate_tag):
 
     panel: BuildTagPanel = BuildTagPanel(library, tag)
 
-    widget = panel.aliases_table.item(0, 1)
+    widget = panel.aliases_table.cellWidget(0, 1)
 
     alias_names: set[str] = set()
     alias_names.add(widget.text())
 
-    widget = panel.aliases_table.item(1, 1)
+    widget = panel.aliases_table.cellWidget(1, 1)
     alias_names.add(widget.text())
 
     assert "alias" in alias_names

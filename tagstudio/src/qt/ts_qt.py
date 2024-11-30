@@ -11,6 +11,7 @@ import ctypes
 import dataclasses
 import math
 import os
+import re
 import sys
 import time
 import webbrowser
@@ -72,6 +73,7 @@ from src.core.library.alchemy.enums import (
 )
 from src.core.library.alchemy.fields import _FieldID
 from src.core.library.alchemy.library import LibraryStatus
+from src.core.media_types import MediaCategories
 from src.core.ts_core import TagStudioCore
 from src.core.utils.refresh_dir import RefreshDirTracker
 from src.core.utils.web import strip_web_protocol
@@ -252,7 +254,7 @@ class QtDriver(DriverMixin, QObject):
 
         if os.name == "nt":
             appid = "cyanvoxel.tagstudio.9"
-            ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(appid)  # type: ignore
+            ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(appid)  # type: ignore[attr-defined,unused-ignore]
 
         if sys.platform != "darwin":
             icon = QIcon()
@@ -445,6 +447,8 @@ class QtDriver(DriverMixin, QObject):
         menu_bar.addMenu(window_menu)
         menu_bar.addMenu(help_menu)
 
+        self.main_window.searchField.textChanged.connect(self.update_completions_list)
+
         self.preview_panel = PreviewPanel(self.lib, self)
         splitter = self.main_window.splitter
         splitter.addWidget(self.preview_panel)
@@ -586,6 +590,7 @@ class QtDriver(DriverMixin, QObject):
 
         self.lib.close()
 
+        self.thumb_job_queue.queue.clear()
         if is_shutdown:
             # no need to do other things on shutdown
             return
@@ -818,6 +823,7 @@ class QtDriver(DriverMixin, QObject):
                 if field.type.type == FieldTypeEnum.TEXT_LINE and field.value:
                     self.lib.update_entry_field(
                         entry_ids=entry.id,
+                        field=field,
                         content=strip_web_protocol(field.value),
                     )
 
@@ -950,6 +956,61 @@ class QtDriver(DriverMixin, QObject):
     def set_macro_menu_viability(self):
         self.autofill_action.setDisabled(not self.selected)
 
+    def update_completions_list(self, text: str) -> None:
+        matches = re.search(r"(mediatype|filetype|path|tag):(\"?[A-Za-z0-9\ \t]+\"?)?", text)
+
+        completion_list: list[str] = []
+        if len(text) < 3:
+            completion_list = ["mediatype:", "filetype:", "path:", "tag:"]
+            self.main_window.searchFieldCompletionList.setStringList(completion_list)
+
+        if not matches:
+            return
+
+        query_type: str
+        query_value: str | None
+        query_type, query_value = matches.groups()
+
+        if not query_value:
+            return
+
+        if query_type == "tag":
+            completion_list = list(map(lambda x: "tag:" + x.name, self.lib.tags))
+        elif query_type == "path":
+            completion_list = list(map(lambda x: "path:" + x, self.lib.get_paths()))
+        elif query_type == "mediatype":
+            single_word_completions = map(
+                lambda x: "mediatype:" + x.name,
+                filter(lambda y: " " not in y.name, MediaCategories.ALL_CATEGORIES),
+            )
+            single_word_completions_quoted = map(
+                lambda x: 'mediatype:"' + x.name + '"',
+                filter(lambda y: " " not in y.name, MediaCategories.ALL_CATEGORIES),
+            )
+            multi_word_completions = map(
+                lambda x: 'mediatype:"' + x.name + '"',
+                filter(lambda y: " " in y.name, MediaCategories.ALL_CATEGORIES),
+            )
+
+            all_completions = [
+                single_word_completions,
+                single_word_completions_quoted,
+                multi_word_completions,
+            ]
+            completion_list = [j for i in all_completions for j in i]
+        elif query_type == "filetype":
+            extensions_list: set[str] = set()
+            for media_cat in MediaCategories.ALL_CATEGORIES:
+                extensions_list = extensions_list | media_cat.extensions
+            completion_list = list(map(lambda x: "filetype:" + x.replace(".", ""), extensions_list))
+
+        update_completion_list: bool = (
+            completion_list != self.main_window.searchFieldCompletionList.stringList()
+            or self.main_window.searchFieldCompletionList == []
+        )
+        if update_completion_list:
+            self.main_window.searchFieldCompletionList.setStringList(completion_list)
+
     def update_thumbs(self):
         """Update search thumbnails."""
         # start_time = time.time()
@@ -970,25 +1031,41 @@ class QtDriver(DriverMixin, QObject):
         self.flow_container.layout().update()
         self.main_window.update()
 
-        for idx, (entry, item_thumb) in enumerate(
-            zip_longest(self.frame_content, self.item_thumbs)
-        ):
+        is_grid_thumb = True
+        # Show loading placeholder icons
+        for entry, item_thumb in zip_longest(self.frame_content, self.item_thumbs):
             if not entry:
                 item_thumb.hide()
                 continue
 
-            filepath = self.lib.library_dir / entry.path
-            item_thumb = self.item_thumbs[idx]
             item_thumb.set_mode(ItemType.ENTRY)
             item_thumb.set_item_id(entry)
 
             # TODO - show after item is rendered
             item_thumb.show()
 
+            is_loading = True
             self.thumb_job_queue.put(
                 (
                     item_thumb.renderer.render,
-                    (sys.float_info.max, "", base_size, ratio, True, True),
+                    (sys.float_info.max, "", base_size, ratio, is_loading, is_grid_thumb),
+                )
+            )
+
+        # Show rendered thumbnails
+        for idx, (entry, item_thumb) in enumerate(
+            zip_longest(self.frame_content, self.item_thumbs)
+        ):
+            if not entry:
+                continue
+
+            filepath = self.lib.library_dir / entry.path
+            is_loading = False
+
+            self.thumb_job_queue.put(
+                (
+                    item_thumb.renderer.render,
+                    (time.time(), filepath, base_size, ratio, is_loading, is_grid_thumb),
                 )
             )
 
@@ -1127,7 +1204,8 @@ class QtDriver(DriverMixin, QObject):
         self.filter.page_size = self.lib.prefs(LibraryPrefs.PAGE_SIZE)
 
         # TODO - make this call optional
-        self.add_new_files_callback()
+        if self.lib.entries_count < 10000:
+            self.add_new_files_callback()
 
         self.update_libs_list(path)
         title_text = f"{self.base_title} - Library '{self.lib.library_dir}'"

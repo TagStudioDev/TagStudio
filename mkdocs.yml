@@ -47,7 +47,7 @@ extra:
 #     - utilities/macro.md
 #   - Updates:
 #     - updates/changelog.md
-#     - updates/planned_features.md
+#     - updates/roadmap.md
 #     - updates/db_migration.md
 
 theme:

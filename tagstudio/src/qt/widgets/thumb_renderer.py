@@ -5,6 +5,7 @@
 
 import math
 import struct
+import zipfile
 from copy import deepcopy
 from io import BytesIO
 from pathlib import Path
@@ -28,9 +29,22 @@ from PIL import (
 from PIL.Image import DecompressionBombError
 from pillow_heif import register_avif_opener, register_heif_opener
 from pydub import exceptions
-from PySide6.QtCore import QObject, QSize, Qt, Signal
-from PySide6.QtGui import QGuiApplication, QPixmap
+from PySide6.QtCore import (
+    QBuffer,
+    QFile,
+    QFileDevice,
+    QIODeviceBase,
+    QObject,
+    QSize,
+    QSizeF,
+    Qt,
+    Signal,
+)
+from PySide6.QtGui import QGuiApplication, QImage, QPainter, QPixmap
+from PySide6.QtPdf import QPdfDocument, QPdfDocumentRenderOptions
+from PySide6.QtSvg import QSvgRenderer
 from src.core.constants import FONT_SAMPLE_SIZES, FONT_SAMPLE_TEXT
+from src.core.exceptions import NoRendererError
 from src.core.media_types import MediaCategories, MediaType
 from src.core.palette import ColorType, UiColor, get_ui_color
 from src.core.utils.encoding import detect_char_encoding
@@ -38,6 +52,7 @@ from src.qt.helpers.blender_thumbnailer import blend_thumb
 from src.qt.helpers.color_overlay import theme_fg_overlay
 from src.qt.helpers.file_tester import is_readable_video
 from src.qt.helpers.gradient import four_corner_gradient
+from src.qt.helpers.image_effects import replace_transparent_pixels
 from src.qt.helpers.text_wrapper import wrap_full_text
 from src.qt.helpers.vendored.pydub.audio_segment import (  # type: ignore
     _AudioSegment as AudioSegment,
@@ -455,7 +470,7 @@ class ThumbRenderer(QObject):
             id3.ID3NoHeaderError,
             MutagenError,
         ) as e:
-            logger.error("Couldn't read album artwork", path=filepath, error=e)
+            logger.error("Couldn't read album artwork", path=filepath, error=type(e).__name__)
         return image
 
     def _audio_waveform_thumb(
@@ -540,7 +555,7 @@ class ThumbRenderer(QObject):
             im.resize((size, size), Image.Resampling.BILINEAR)
 
         except exceptions.CouldntDecodeError as e:
-            logger.error("Couldn't render waveform", path=filepath.name, error=e)
+            logger.error("Couldn't render waveform", path=filepath.name, error=type(e).__name__)
 
         return im
 
@@ -566,7 +581,6 @@ class ThumbRenderer(QObject):
         except (
             AttributeError,
             UnidentifiedImageError,
-            FileNotFoundError,
             TypeError,
         ) as e:
             if str(e) == "expected string or buffer":
@@ -576,7 +590,7 @@ class ThumbRenderer(QObject):
                 )
 
             else:
-                logger.error("Couldn't render thumbnail", filepath=filepath, error=e)
+                logger.error("Couldn't render thumbnail", filepath=filepath, error=type(e).__name__)
         return im
 
     def _source_engine(self, filepath: Path) -> Image.Image:
@@ -592,15 +606,61 @@ class ThumbRenderer(QObject):
         except (
             AttributeError,
             UnidentifiedImageError,
-            FileNotFoundError,
             TypeError,
             struct.error,
         ) as e:
             if str(e) == "expected string or buffer":
-                logger.error("Couldn't render thumbnail", filepath=filepath, error=e)
+                logger.error("Couldn't render thumbnail", filepath=filepath, error=type(e).__name__)
 
             else:
-                logger.error("Couldn't render thumbnail", filepath=filepath, error=e)
+                logger.error("Couldn't render thumbnail", filepath=filepath, error=type(e).__name__)
+        return im
+
+    @classmethod
+    def _open_doc_thumb(cls, filepath: Path) -> Image.Image:
+        """Extract and render a thumbnail for an OpenDocument file.
+
+        Args:
+            filepath (Path): The path of the file.
+        """
+        file_path_within_zip = "Thumbnails/thumbnail.png"
+        im: Image.Image = None
+        with zipfile.ZipFile(filepath, "r") as zip_file:
+            # Check if the file exists in the zip
+            if file_path_within_zip in zip_file.namelist():
+                # Read the specific file into memory
+                file_data = zip_file.read(file_path_within_zip)
+                thumb_im = Image.open(BytesIO(file_data))
+                if thumb_im:
+                    im = Image.new("RGB", thumb_im.size, color="#1e1e1e")
+                    im.paste(thumb_im)
+            else:
+                logger.error("Couldn't render thumbnail", filepath=filepath)
+
+        return im
+
+    @classmethod
+    def _epub_cover(cls, filepath: Path) -> Image.Image:
+        """Extracts and returns the first image found in the ePub file at the given filepath.
+
+        Args:
+            filepath (Path): The path to the ePub file.
+
+        Returns:
+            Image: The first image found in the ePub file, or None by default.
+        """
+        im: Image.Image = None
+        try:
+            with zipfile.ZipFile(filepath, "r") as zip_file:
+                for file_name in zip_file.namelist():
+                    if file_name.lower().endswith(
+                        (".png", ".jpg", ".jpeg", ".gif", ".bmp", ".svg")
+                    ):
+                        image_data = zip_file.read(file_name)
+                        im = Image.open(BytesIO(image_data))
+        except Exception as e:
+            logger.error("Couldn't render thumbnail", filepath=filepath, error=type(e).__name__)
+
         return im
 
     def _font_short_thumb(self, filepath: Path, size: int) -> Image.Image:
@@ -660,7 +720,7 @@ class ThumbRenderer(QObject):
             )
             im = self._apply_overlay_color(bg, UiColor.PURPLE)
         except OSError as e:
-            logger.error("Couldn't render thumbnail", filepath=filepath, error=e)
+            logger.error("Couldn't render thumbnail", filepath=filepath, error=type(e).__name__)
         return im
 
     def _font_long_thumb(self, filepath: Path, size: int) -> Image.Image:
@@ -691,7 +751,7 @@ class ThumbRenderer(QObject):
                 )[-1]
             im = theme_fg_overlay(bg, use_alpha=False)
         except OSError as e:
-            logger.error("Couldn't render thumbnail", filepath=filepath, error=e)
+            logger.error("Couldn't render thumbnail", filepath=filepath, error=type(e).__name__)
         return im
 
     def _image_raw_thumb(self, filepath: Path) -> Image.Image:
@@ -710,13 +770,12 @@ class ThumbRenderer(QObject):
                     rgb,
                     decoder_name="raw",
                 )
-        except DecompressionBombError as e:
-            logger.error("Couldn't render thumbnail", filepath=filepath, error=e)
         except (
+            DecompressionBombError,
             rawpy._rawpy.LibRawIOError,
             rawpy._rawpy.LibRawFileUnsupportedError,
         ) as e:
-            logger.error("Couldn't render thumbnail", filepath=filepath, error=e)
+            logger.error("Couldn't render thumbnail", filepath=filepath, error=type(e).__name__)
         return im
 
     def _image_thumb(self, filepath: Path) -> Image.Image:
@@ -734,24 +793,49 @@ class ThumbRenderer(QObject):
                 new_bg = Image.new("RGB", im.size, color="#1e1e1e")
                 new_bg.paste(im, mask=im.getchannel(3))
                 im = new_bg
-
             im = ImageOps.exif_transpose(im)
         except (
             UnidentifiedImageError,
             DecompressionBombError,
         ) as e:
-            logger.error("Couldn't render thumbnail", filepath=filepath, error=e)
+            logger.error("Couldn't render thumbnail", filepath=filepath, error=type(e).__name__)
         return im
 
-    def _image_vector_thumb(self, filepath: Path, size: int) -> Image.Image:
+    @classmethod
+    def _image_vector_thumb(cls, filepath: Path, size: int) -> Image.Image:
         """Render a thumbnail for a vector image, such as SVG.
 
         Args:
             filepath (Path): The path of the file.
             size (tuple[int,int]): The size of the thumbnail.
         """
-        # TODO: Implement.
         im: Image.Image = None
+        # Create an image to draw the svg to and a painter to do the drawing
+        image: QImage = QImage(size, size, QImage.Format.Format_ARGB32)
+        image.fill("#1e1e1e")
+
+        # Create an svg renderer, then render to the painter
+        svg: QSvgRenderer = QSvgRenderer(str(filepath))
+
+        if not svg.isValid():
+            raise UnidentifiedImageError
+
+        painter: QPainter = QPainter(image)
+        svg.setAspectRatioMode(Qt.AspectRatioMode.KeepAspectRatio)
+        svg.render(painter)
+        painter.end()
+
+        # Write the image to a buffer as png
+        buffer: QBuffer = QBuffer()
+        buffer.open(QBuffer.OpenModeFlag.ReadWrite)
+        image.save(buffer, "PNG")
+
+        # Load the image from the buffer
+        im = Image.new("RGB", (size, size), color="#1e1e1e")
+        im.paste(Image.open(BytesIO(buffer.data().data())))
+        im = im.convert(mode="RGB")
+
+        buffer.close()
         return im
 
     def _model_stl_thumb(self, filepath: Path, size: int) -> Image.Image:
@@ -785,6 +869,53 @@ class ThumbRenderer(QObject):
         # im = Image.open(img_buf)
 
         return im
+
+    @classmethod
+    def _pdf_thumb(cls, filepath: Path, size: int) -> Image.Image:
+        """Render a thumbnail for a PDF file.
+
+        filepath (Path): The path of the file.
+            size (int): The size of the icon.
+        """
+        im: Image.Image = None
+
+        file: QFile = QFile(filepath)
+        success: bool = file.open(
+            QIODeviceBase.OpenModeFlag.ReadOnly, QFileDevice.Permission.ReadUser
+        )
+        if not success:
+            logger.error("Couldn't render thumbnail", filepath=filepath)
+            return im
+        document: QPdfDocument = QPdfDocument()
+        document.load(file)
+        # Transform page_size in points to pixels with proper aspect ratio
+        page_size: QSizeF = document.pagePointSize(0)
+        ratio_hw: float = page_size.height() / page_size.width()
+        if ratio_hw >= 1:
+            page_size *= size / page_size.height()
+        else:
+            page_size *= size / page_size.width()
+        # Enlarge image for antialiasing
+        scale_factor = 2.5
+        page_size *= scale_factor
+        # Render image with no anti-aliasing for speed
+        render_options: QPdfDocumentRenderOptions = QPdfDocumentRenderOptions()
+        render_options.setRenderFlags(
+            QPdfDocumentRenderOptions.RenderFlag.TextAliased
+            | QPdfDocumentRenderOptions.RenderFlag.ImageAliased
+            | QPdfDocumentRenderOptions.RenderFlag.PathAliased
+        )
+        # Convert QImage to PIL Image
+        qimage: QImage = document.render(0, page_size.toSize(), render_options)
+        buffer: QBuffer = QBuffer()
+        buffer.open(QBuffer.OpenModeFlag.ReadWrite)
+        try:
+            qimage.save(buffer, "PNG")
+            im = Image.open(BytesIO(buffer.buffer().data()))
+        finally:
+            buffer.close()
+        # Replace transparent pixels with white (otherwise Background defaults to transparent)
+        return replace_transparent_pixels(im)
 
     def _text_thumb(self, filepath: Path) -> Image.Image:
         """Render a thumbnail for a plaintext file.
@@ -820,7 +951,7 @@ class ThumbRenderer(QObject):
             UnicodeDecodeError,
             OSError,
         ) as e:
-            logger.error("Couldn't render thumbnail", filepath=filepath, error=e)
+            logger.error("Couldn't render thumbnail", filepath=filepath, error=type(e).__name__)
         return im
 
     def _video_thumb(self, filepath: Path) -> Image.Image:
@@ -861,7 +992,7 @@ class ThumbRenderer(QObject):
             DecompressionBombError,
             OSError,
         ) as e:
-            logger.error("Couldn't render thumbnail", filepath=filepath, error=e)
+            logger.error("Couldn't render thumbnail", filepath=filepath, error=type(e).__name__)
         return im
 
     def render(
@@ -905,6 +1036,28 @@ class ThumbRenderer(QObject):
             "thumb_loading", theme_color, (adj_size, adj_size), pixel_ratio
         )
 
+        def render_default() -> Image.Image:
+            if update_on_ratio_change:
+                self.updated_ratio.emit(1)
+            im = self._get_icon(
+                name=self._get_resource_id(_filepath),
+                color=theme_color,
+                size=(adj_size, adj_size),
+                pixel_ratio=pixel_ratio,
+            )
+            return im
+
+        def render_unlinked() -> Image.Image:
+            if update_on_ratio_change:
+                self.updated_ratio.emit(1)
+            im = self._get_icon(
+                name="broken_link_icon",
+                color=UiColor.RED,
+                size=(adj_size, adj_size),
+                pixel_ratio=pixel_ratio,
+            )
+            return im
+
         if is_loading:
             final = loading_thumb.resize((adj_size, adj_size), resample=Image.Resampling.BILINEAR)
             qim = ImageQt.ImageQt(final)
@@ -914,6 +1067,9 @@ class ThumbRenderer(QObject):
                 self.updated_ratio.emit(1)
         elif _filepath:
             try:
+                # Missing Files ================================================
+                if not _filepath.exists():
+                    raise FileNotFoundError
                 ext: str = _filepath.suffix.lower()
                 # Images =======================================================
                 if MediaCategories.is_ext_in_category(
@@ -924,6 +1080,7 @@ class ThumbRenderer(QObject):
                         ext, MediaCategories.IMAGE_RAW_TYPES, mime_fallback=True
                     ):
                         image = self._image_raw_thumb(_filepath)
+                    # Vector Images --------------------------------------------
                     elif MediaCategories.is_ext_in_category(
                         ext, MediaCategories.IMAGE_VECTOR_TYPES, mime_fallback=True
                     ):
@@ -932,17 +1089,22 @@ class ThumbRenderer(QObject):
                     else:
                         image = self._image_thumb(_filepath)
                 # Videos =======================================================
-                if MediaCategories.is_ext_in_category(
+                elif MediaCategories.is_ext_in_category(
                     ext, MediaCategories.VIDEO_TYPES, mime_fallback=True
                 ):
                     image = self._video_thumb(_filepath)
+                # OpenDocument/OpenOffice ======================================
+                elif MediaCategories.is_ext_in_category(
+                    ext, MediaCategories.OPEN_DOCUMENT_TYPES, mime_fallback=True
+                ):
+                    image = self._open_doc_thumb(_filepath)
                 # Plain Text ===================================================
-                if MediaCategories.is_ext_in_category(
+                elif MediaCategories.is_ext_in_category(
                     ext, MediaCategories.PLAINTEXT_TYPES, mime_fallback=True
                 ):
                     image = self._text_thumb(_filepath)
                 # Fonts ========================================================
-                if MediaCategories.is_ext_in_category(
+                elif MediaCategories.is_ext_in_category(
                     ext, MediaCategories.FONT_TYPES, mime_fallback=True
                 ):
                     if is_grid_thumb:
@@ -952,7 +1114,7 @@ class ThumbRenderer(QObject):
                         # Large (Full Alphabet) Preview
                         image = self._font_long_thumb(_filepath, adj_size)
                 # Audio ========================================================
-                if MediaCategories.is_ext_in_category(
+                elif MediaCategories.is_ext_in_category(
                     ext, MediaCategories.AUDIO_TYPES, mime_fallback=True
                 ):
                     image = self._audio_album_thumb(_filepath, ext)
@@ -960,24 +1122,29 @@ class ThumbRenderer(QObject):
                         image = self._audio_waveform_thumb(_filepath, ext, adj_size, pixel_ratio)
                         if image is not None:
                             image = self._apply_overlay_color(image, UiColor.GREEN)
-
-                # Blender ===========================================================
-                if MediaCategories.is_ext_in_category(
+                # Ebooks =======================================================
+                elif MediaCategories.is_ext_in_category(
+                    ext, MediaCategories.EBOOK_TYPES, mime_fallback=True
+                ):
+                    image = self._epub_cover(_filepath)
+                # Blender ======================================================
+                elif MediaCategories.is_ext_in_category(
                     ext, MediaCategories.BLENDER_TYPES, mime_fallback=True
                 ):
                     image = self._blender(_filepath)
-
+                # PDF ==========================================================
+                elif MediaCategories.is_ext_in_category(
+                    ext, MediaCategories.PDF_TYPES, mime_fallback=True
+                ):
+                    image = self._pdf_thumb(_filepath, adj_size)
                 # VTF ==========================================================
-                if MediaCategories.is_ext_in_category(
+                elif MediaCategories.is_ext_in_category(
                     ext, MediaCategories.SOURCE_ENGINE_TYPES, mime_fallback=True
                 ):
                     image = self._source_engine(_filepath)
-
                 # No Rendered Thumbnail ========================================
-                if not _filepath.exists():
-                    raise FileNotFoundError
-                elif not image:
-                    raise UnidentifiedImageError
+                if not image:
+                    raise NoRendererError
 
                 orig_x, orig_y = image.size
                 new_x, new_y = (adj_size, adj_size)
@@ -1013,32 +1180,19 @@ class ThumbRenderer(QObject):
                     final = Image.new("RGBA", image.size, (0, 0, 0, 0))
                     final.paste(image, mask=mask.getchannel(0))
 
-            except FileNotFoundError as e:
-                logger.error("Couldn't render thumbnail", filepath=filepath, error=e)
-                if update_on_ratio_change:
-                    self.updated_ratio.emit(1)
-                final = self._get_icon(
-                    name="broken_link_icon",
-                    color=UiColor.RED,
-                    size=(adj_size, adj_size),
-                    pixel_ratio=pixel_ratio,
-                )
+            except FileNotFoundError:
+                final = render_unlinked()
             except (
                 UnidentifiedImageError,
                 DecompressionBombError,
                 ValueError,
                 ChildProcessError,
             ) as e:
-                logger.error("Couldn't render thumbnail", filepath=filepath, error=e)
+                logger.error("Couldn't render thumbnail", filepath=filepath, error=type(e).__name__)
+                final = render_default()
+            except NoRendererError:
+                final = render_default()
 
-                if update_on_ratio_change:
-                    self.updated_ratio.emit(1)
-                final = self._get_icon(
-                    name=self._get_resource_id(_filepath),
-                    color=theme_color,
-                    size=(adj_size, adj_size),
-                    pixel_ratio=pixel_ratio,
-                )
             qim = ImageQt.ImageQt(final)
             if image:
                 image.close()
