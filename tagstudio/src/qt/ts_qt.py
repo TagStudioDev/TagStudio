@@ -696,7 +696,7 @@ class QtDriver(DriverMixin, QObject):
                 pw.update_progress(x + 1),
                 pw.update_label(
                     f"Scanning Directories for New Files...\n{x + 1}"
-                    f" File{"s" if x + 1 != 1 else ""} Searched,"
+                    f' File{"s" if x + 1 != 1 else ""} Searched,'
                     f" {tracker.files_count} New Files Found"
                 ),
             )
