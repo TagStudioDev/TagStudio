@@ -152,16 +152,6 @@ class Library:
         start_time = time.time()
         folder: Folder = Folder(path=self.library_dir, uuid=str(uuid4()))
 
-        # Tag Aliases
-        for tag in json_lib.tags:
-            for alias in tag.aliases:
-                self.add_alias(name=alias, tag_id=tag.id)
-
-        # Tag Subtags
-        for tag in json_lib.tags:
-            for subtag_id in tag.subtag_ids:
-                self.add_subtag(parent_id=tag.id, child_id=subtag_id)
-
         # Tags
         for tag in json_lib.tags:
             self.add_tag(
@@ -172,6 +162,16 @@ class Library:
                     color=TagColor.get_color_from_str(tag.color),
                 )
             )
+
+        # Tag Aliases
+        for tag in json_lib.tags:
+            for alias in tag.aliases:
+                self.add_alias(name=alias, tag_id=tag.id)
+
+        # Tag Subtags
+        for tag in json_lib.tags:
+            for subtag_id in tag.subtag_ids:
+                self.add_subtag(parent_id=tag.id, child_id=subtag_id)
 
         # Entries
         self.add_entries(
