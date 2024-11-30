@@ -24,7 +24,7 @@ class RatingWidget(FieldWidget):
             self.stars[star].setStyleSheet("font-weight: bold; font-size: 20px;")
         for star in range(rating_index + 1, len(self.stars)):
             self.stars[star].setStyleSheet("font-size: 30px;") 
-        rating_indexs += 1
+        rating_index += 1
     # def modify_stars(self, totalstars):
         # for star in self.stars:
             # star.deleteLater()
