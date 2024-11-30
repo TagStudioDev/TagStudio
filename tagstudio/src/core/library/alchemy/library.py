@@ -44,6 +44,7 @@ from .fields import (
     BaseField,
     DatetimeField,
     TagBoxField,
+    RatingBoxField,
     TextField,
     _FieldID,
 )
@@ -131,6 +132,7 @@ class Library:
     storage_path: Path | str | None
     engine: Engine | None
     folder: Folder | None
+    included_files: set[Path] = set()
 
     FILENAME: str = "ts_library.sqlite"
 
@@ -140,6 +142,7 @@ class Library:
         self.library_dir = None
         self.storage_path = None
         self.folder = None
+        self.included_files = set()
 
     def open_library(self, library_dir: Path, storage_path: str | None = None) -> LibraryStatus:
         if storage_path == ":memory:":
@@ -736,12 +739,7 @@ class Library:
             field_model = RatingBoxField(
                 type_key=field.key,
                 value=value,
-            )
-        elif field.type == FieldTypeEnum.DATETIME:
-            field_model = DatetimeField(
-                type_key=field.key,
-                value=value,
-            )
+            )            
         else:
             raise NotImplementedError(f"field type not implemented: {field.type}")
 
