@@ -3,10 +3,12 @@
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
 
+import math
 import sys
 from typing import cast
 
 import structlog
+from PySide6 import QtCore
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import (
     QApplication,
@@ -22,7 +24,7 @@ from PySide6.QtWidgets import (
 )
 from src.core.library import Library, Tag
 from src.core.library.alchemy.enums import TagColor
-from src.core.palette import ColorType, get_tag_color
+from src.core.palette import ColorType, UiColor, get_tag_color, get_ui_color
 from src.qt.modals.tag_search import TagSearchPanel
 from src.qt.widgets.panel import PanelModal, PanelWidget
 from src.qt.widgets.tag import TagWidget
@@ -72,6 +74,9 @@ class BuildTagPanel(PanelWidget):
         self.name_title.setText("Name")
         self.name_layout.addWidget(self.name_title)
         self.name_field = QLineEdit()
+        self.name_field.setFixedHeight(24)
+        self.name_field.textChanged.connect(self.on_name_changed)
+        self.name_field.setPlaceholderText("Tag Name (Required)")
         self.name_layout.addWidget(self.name_field)
 
         # Shorthand ------------------------------------------------------------
@@ -138,12 +143,35 @@ class BuildTagPanel(PanelWidget):
         self.subtags_layout.addWidget(self.scroll_area)
 
         self.subtags_add_button = QPushButton()
+        self.subtags_add_button.setCursor(Qt.CursorShape.PointingHandCursor)
         self.subtags_add_button.setText("+")
-        tsp = TagSearchPanel(self.lib)
-        tsp.tag_chosen.connect(lambda x: self.add_subtag_callback(x))
-        self.add_tag_modal = PanelModal(tsp, "Add Parent Tags", "Add Parent Tags")
-        self.subtags_add_button.clicked.connect(self.add_tag_modal.show)
-        self.subtags_layout.addWidget(self.subtags_add_button)
+        self.subtags_add_button.setToolTip("CTRL + P")
+        self.subtags_add_button.setMinimumSize(23, 23)
+        self.subtags_add_button.setMaximumSize(23, 23)
+        self.subtags_add_button.setShortcut(
+            QtCore.QKeyCombination(
+                QtCore.Qt.KeyboardModifier(QtCore.Qt.KeyboardModifier.ControlModifier),
+                QtCore.Qt.Key.Key_P,
+            )
+        )
+        self.subtags_add_button.setStyleSheet(
+            f"QPushButton{{"
+            f"background: #1e1e1e;"
+            f"color: #FFFFFF;"
+            f"font-weight: bold;"
+            f"border-color: #333333;"
+            f"border-radius: 6px;"
+            f"border-style:solid;"
+            f"border-width:{math.ceil(self.devicePixelRatio())}px;"
+            f"padding-bottom: 5px;"
+            f"font-size: 20px;"
+            f"}}"
+            f"QPushButton::hover"
+            f"{{"
+            f"border-color: #CCCCCC;"
+            f"background: #555555;"
+            f"}}"
+        )
 
         exclude_ids: list[int] = list()
         if tag is not None:
@@ -169,7 +197,8 @@ class BuildTagPanel(PanelWidget):
         self.color_field.setMaxVisibleItems(10)
         self.color_field.setStyleSheet("combobox-popup:0;")
         for color in TagColor:
-            self.color_field.addItem(color.name, userData=color.value)
+            self.color_field.addItem(color.name.replace("_", " ").title(), userData=color.value)
+        # self.color_field.setProperty("appearance", "flat")
         self.color_field.currentIndexChanged.connect(
             lambda c: (
                 self.color_field.setStyleSheet(
@@ -200,10 +229,12 @@ class BuildTagPanel(PanelWidget):
         self.new_item_id = sys.maxsize
 
         self.set_tag(tag or Tag(name="New Tag"))
+        if tag is None:
+            self.name_field.selectAll()
 
     def backspace(self):
         focused_widget = QApplication.focusWidget()
-        row = self.aliases_table.rowCount() - 1
+        row = self.aliases_table.rowCount() 
 
         if isinstance(focused_widget, CustomTableItem) is False:
             return
@@ -220,6 +251,9 @@ class BuildTagPanel(PanelWidget):
 
         if self.aliases_table.rowCount() <= 0:
             return
+
+        if remove_row == 0:
+            remove_row = 1
 
         self.aliases_table.cellWidget(remove_row - 1, 1).setFocus()
 
@@ -351,6 +385,18 @@ class BuildTagPanel(PanelWidget):
             if self.color_field.itemData(i) == tag.color:
                 self.color_field.setCurrentIndex(i)
                 break
+
+    def on_name_changed(self):
+        is_empty = not self.name_field.text().strip()
+
+        self.name_field.setStyleSheet(
+            f"border: 1px solid {get_ui_color(ColorType.PRIMARY, UiColor.RED)}; border-radius: 2px"
+            if is_empty
+            else ""
+        )
+
+        if self.panel_save_button is not None:
+            self.panel_save_button.setDisabled(is_empty)
 
     def build_tag(self) -> Tag:
         color = self.color_field.currentData() or TagColor.DEFAULT

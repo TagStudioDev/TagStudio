@@ -1,6 +1,8 @@
 # Copyright (C) 2024 Travis Abendshien (CyanVoxel).
 # Licensed under the GPL-3.0 License.
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
+
+import io
 import os
 import platform
 import sys
@@ -52,6 +54,7 @@ from src.qt.helpers.rounded_pixmap_style import RoundedPixmapStyle
 from src.qt.modals.add_field import AddFieldModal
 from src.qt.platform_strings import PlatformStrings
 from src.qt.widgets.fields import FieldContainer
+from src.qt.widgets.media_player import MediaPlayer
 from src.qt.widgets.panel import PanelModal
 from src.qt.widgets.tag_box import TagBoxWidget
 from src.qt.widgets.text import TextWidget
@@ -64,16 +67,6 @@ if typing.TYPE_CHECKING:
     from src.qt.ts_qt import QtDriver
 
 logger = structlog.get_logger(__name__)
-
-
-def update_selected_entry(driver: "QtDriver"):
-    for grid_idx in driver.selected:
-        entry = driver.frame_content[grid_idx]
-        # reload entry
-        results = driver.lib.search_library(FilterState(id=entry.id))
-        logger.info("found item", entries=len(results), grid_idx=grid_idx, lookup_id=entry.id)
-        assert results, f"Entry not found: {entry.id}"
-        driver.frame_content[grid_idx] = next(results)
 
 
 class PreviewPanel(QWidget):
@@ -163,6 +156,9 @@ class PreviewPanel(QWidget):
             )
         )
 
+        self.media_player = MediaPlayer(driver)
+        self.media_player.hide()
+
         image_layout.addWidget(self.preview_img)
         image_layout.setAlignment(self.preview_img, Qt.AlignmentFlag.AlignCenter)
         image_layout.addWidget(self.preview_gif)
@@ -170,23 +166,27 @@ class PreviewPanel(QWidget):
         image_layout.addWidget(self.preview_vid)
         image_layout.setAlignment(self.preview_vid, Qt.AlignmentFlag.AlignCenter)
         self.image_container.setMinimumSize(*self.img_button_size)
-        self.file_label = FileOpenerLabel("filename")
+        self.file_label = FileOpenerLabel()
+        self.file_label.setObjectName("filenameLabel")
         self.file_label.setTextFormat(Qt.TextFormat.RichText)
         self.file_label.setWordWrap(True)
         self.file_label.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
         self.file_label.setStyleSheet(file_label_style)
 
-        self.date_created_label = QLabel("dateCreatedLabel")
+        self.date_created_label = QLabel()
+        self.date_created_label.setObjectName("dateCreatedLabel")
         self.date_created_label.setAlignment(Qt.AlignmentFlag.AlignLeft)
         self.date_created_label.setTextFormat(Qt.TextFormat.RichText)
         self.date_created_label.setStyleSheet(date_style)
 
-        self.date_modified_label = QLabel("dateModifiedLabel")
+        self.date_modified_label = QLabel()
+        self.date_modified_label.setObjectName("dateModifiedLabel")
         self.date_modified_label.setAlignment(Qt.AlignmentFlag.AlignLeft)
         self.date_modified_label.setTextFormat(Qt.TextFormat.RichText)
         self.date_modified_label.setStyleSheet(date_style)
 
-        self.dimensions_label = QLabel("dimensionsLabel")
+        self.dimensions_label = QLabel()
+        self.dimensions_label.setObjectName("dimensionsLabel")
         self.dimensions_label.setWordWrap(True)
         self.dimensions_label.setStyleSheet(properties_style)
 
@@ -267,6 +267,7 @@ class PreviewPanel(QWidget):
         )
 
         splitter.addWidget(self.image_container)
+        splitter.addWidget(self.media_player)
         splitter.addWidget(info_section)
         splitter.addWidget(self.libs_flow_container)
         splitter.setStretchFactor(1, 2)
@@ -290,6 +291,18 @@ class PreviewPanel(QWidget):
         root_layout = QHBoxLayout(self)
         root_layout.setContentsMargins(0, 0, 0, 0)
         root_layout.addWidget(splitter)
+
+    def update_selected_entry(self, driver: "QtDriver"):
+        for grid_idx in driver.selected:
+            entry = driver.frame_content[grid_idx]
+            results = self.lib.search_library(FilterState(id=entry.id))
+            logger.info(
+                "found item",
+                entries=len(results.items),
+                grid_idx=grid_idx,
+                lookup_id=entry.id,
+            )
+            self.driver.frame_content[grid_idx] = results[0]
 
     def remove_field_prompt(self, name: str) -> str:
         return f'Are you sure you want to remove field "{name}"?'
@@ -476,7 +489,7 @@ class PreviewPanel(QWidget):
         if filepath and filepath.is_file():
             created: dt = None
             if platform.system() == "Windows" or platform.system() == "Darwin":
-                created = dt.fromtimestamp(filepath.stat().st_birthtime)  # type: ignore[attr-defined]
+                created = dt.fromtimestamp(filepath.stat().st_birthtime)  # type: ignore[attr-defined, unused-ignore]
             else:
                 created = dt.fromtimestamp(filepath.stat().st_ctime)
             modified: dt = dt.fromtimestamp(filepath.stat().st_mtime)
@@ -534,6 +547,8 @@ class PreviewPanel(QWidget):
             self.preview_img.show()
             self.preview_vid.stop()
             self.preview_vid.hide()
+            self.media_player.hide()
+            self.media_player.stop()
             self.preview_gif.hide()
             self.selected = list(self.driver.selected)
             self.add_field_button.setHidden(True)
@@ -566,6 +581,8 @@ class PreviewPanel(QWidget):
             self.preview_img.show()
             self.preview_vid.stop()
             self.preview_vid.hide()
+            self.media_player.stop()
+            self.media_player.hide()
             self.preview_gif.hide()
 
             # If a new selection is made, update the thumbnail and filepath.
@@ -601,19 +618,32 @@ class PreviewPanel(QWidget):
                 # TODO: Do this all somewhere else, this is just here temporarily.
                 ext: str = filepath.suffix.lower()
                 try:
-                    if filepath.suffix.lower() in [".gif"]:
-                        with open(filepath, mode="rb") as file:
-                            if self.preview_gif.movie():
-                                self.preview_gif.movie().stop()
-                                self.gif_buffer.close()
+                    if MediaCategories.is_ext_in_category(
+                        ext, MediaCategories.IMAGE_ANIMATED_TYPES, mime_fallback=True
+                    ):
+                        if self.preview_gif.movie():
+                            self.preview_gif.movie().stop()
+                            self.gif_buffer.close()
 
-                            ba = file.read()
-                            self.gif_buffer.setData(ba)
-                            movie = QMovie(self.gif_buffer, QByteArray())
-                            self.preview_gif.setMovie(movie)
-                            movie.start()
+                        image: Image.Image = Image.open(filepath)
+                        anim_image: Image.Image = image
+                        image_bytes_io: io.BytesIO = io.BytesIO()
+                        anim_image.save(
+                            image_bytes_io,
+                            "GIF",
+                            lossless=True,
+                            save_all=True,
+                            loop=0,
+                            disposal=2,
+                        )
+                        image_bytes_io.seek(0)
+                        ba: bytes = image_bytes_io.read()
 
-                        image = Image.open(str(filepath))
+                        self.gif_buffer.setData(ba)
+                        movie = QMovie(self.gif_buffer, QByteArray())
+                        self.preview_gif.setMovie(movie)
+                        movie.start()
+
                         self.resizeEvent(
                             QResizeEvent(
                                 QSize(image.width, image.height),
@@ -625,13 +655,7 @@ class PreviewPanel(QWidget):
                         self.preview_gif.show()
 
                     image = None
-                    if (
-                        MediaCategories.is_ext_in_category(ext, MediaCategories.IMAGE_TYPES)
-                        and MediaCategories.is_ext_in_category(ext, MediaCategories.IMAGE_RAW_TYPES)
-                        and MediaCategories.is_ext_in_category(
-                            ext, MediaCategories.IMAGE_VECTOR_TYPES
-                        )
-                    ):
+                    if MediaCategories.is_ext_in_category(ext, MediaCategories.IMAGE_RASTER_TYPES):
                         image = Image.open(str(filepath))
                     elif MediaCategories.is_ext_in_category(ext, MediaCategories.IMAGE_RAW_TYPES):
                         try:
@@ -643,6 +667,9 @@ class PreviewPanel(QWidget):
                             rawpy._rawpy.LibRawFileUnsupportedError,
                         ):
                             pass
+                    elif MediaCategories.is_ext_in_category(ext, MediaCategories.AUDIO_TYPES):
+                        self.media_player.show()
+                        self.media_player.play(filepath)
                     elif MediaCategories.is_ext_in_category(
                         ext, MediaCategories.VIDEO_TYPES
                     ) and is_readable_video(filepath):
@@ -668,7 +695,7 @@ class PreviewPanel(QWidget):
                     # Stats for specific file types are displayed here.
                     if image and (
                         MediaCategories.is_ext_in_category(
-                            ext, MediaCategories.IMAGE_TYPES, mime_fallback=True
+                            ext, MediaCategories.IMAGE_RASTER_TYPES, mime_fallback=True
                         )
                         or MediaCategories.is_ext_in_category(
                             ext, MediaCategories.VIDEO_TYPES, mime_fallback=True
@@ -749,6 +776,8 @@ class PreviewPanel(QWidget):
             self.preview_gif.hide()
             self.preview_vid.stop()
             self.preview_vid.hide()
+            self.media_player.stop()
+            self.media_player.hide()
             self.update_date_label()
             if self.selected != self.driver.selected:
                 self.file_label.setText(f"<b>{len(self.driver.selected)}</b> Items Selected")
@@ -891,7 +920,7 @@ class PreviewPanel(QWidget):
                         prompt=self.remove_field_prompt(field.type.name),
                         callback=lambda: (
                             self.remove_field(field),
-                            update_selected_entry(self.driver),
+                            self.update_selected_entry(self.driver),
                             # reload entry and its fields
                             self.update_widgets(),
                         ),

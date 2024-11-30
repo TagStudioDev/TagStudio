@@ -54,6 +54,7 @@ class PanelModal(QWidget):
             self.done_button.clicked.connect(self.hide)
             if done_callback:
                 self.done_button.clicked.connect(done_callback)
+            self.widget.panel_done_button = self.done_button
             self.button_layout.addWidget(self.done_button)
 
         if save_callback or has_save:
@@ -62,6 +63,7 @@ class PanelModal(QWidget):
             self.cancel_button.clicked.connect(self.hide)
             self.cancel_button.clicked.connect(widget.reset)
             # self.cancel_button.clicked.connect(cancel_callback)
+            self.widget.panel_cancel_button = self.cancel_button
             self.button_layout.addWidget(self.cancel_button)
 
             self.save_button = QPushButton()
@@ -69,6 +71,7 @@ class PanelModal(QWidget):
             self.save_button.setAutoDefault(True)
             self.save_button.clicked.connect(self.hide)
             self.save_button.clicked.connect(self.saved.emit)
+            self.widget.panel_save_button = self.save_button
 
             if done_callback:
                 self.save_button.clicked.connect(done_callback)
@@ -93,6 +96,9 @@ class PanelWidget(QWidget):
     """Used for widgets that go in a modal panel, ex. for editing or searching."""
 
     done = Signal()
+    panel_save_button: QPushButton | None = None
+    panel_cancel_button: QPushButton | None = None
+    panel_done_button: QPushButton | None = None
 
     def __init__(self):
         super().__init__()
