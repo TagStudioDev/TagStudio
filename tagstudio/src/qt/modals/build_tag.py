@@ -234,7 +234,7 @@ class BuildTagPanel(PanelWidget):
 
     def backspace(self):
         focused_widget = QApplication.focusWidget()
-        row = self.aliases_table.rowCount() 
+        row = self.aliases_table.rowCount()
 
         if isinstance(focused_widget, CustomTableItem) is False:
             return
