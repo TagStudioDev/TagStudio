@@ -135,7 +135,10 @@ class FieldContainer(QWidget):
 
     def set_inner_widget(self, widget: "FieldWidget"):
         if self.field_layout.itemAt(0):
-            self.field_layout.itemAt(0).widget().deleteLater()
+            old: QWidget = self.field_layout.itemAt(0).widget()
+            self.field_layout.removeWidget(old)
+            old.deleteLater()
+
         self.field_layout.addWidget(widget)
 
     def get_inner_widget(self):

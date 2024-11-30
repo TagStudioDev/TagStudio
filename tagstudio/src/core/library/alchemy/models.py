@@ -1,5 +1,4 @@
 from pathlib import Path
-from typing import Optional
 
 from sqlalchemy import JSON, ForeignKey, Integer, event
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -29,11 +28,11 @@ class TagAlias(Base):
     tag_id: Mapped[int] = mapped_column(ForeignKey("tags.id"))
     tag: Mapped["Tag"] = relationship(back_populates="aliases")
 
-    def __init__(self, name: str, tag: Optional["Tag"] = None):
+    def __init__(self, name: str, tag_id: int | None = None):
         self.name = name
 
-        if tag:
-            self.tag = tag
+        if tag_id is not None:
+            self.tag_id = tag_id
 
         super().__init__()
 
@@ -72,6 +71,10 @@ class Tag(Base):
     @property
     def alias_strings(self) -> list[str]:
         return [alias.name for alias in self.aliases]
+
+    @property
+    def alias_ids(self) -> list[int]:
+        return [tag.id for tag in self.aliases]
 
     def __init__(
         self,

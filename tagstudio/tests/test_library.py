@@ -3,9 +3,67 @@ from tempfile import TemporaryDirectory
 
 import pytest
 from src.core.enums import DefaultEnum, LibraryPrefs
-from src.core.library.alchemy import Entry
+from src.core.library.alchemy import Entry, Library
 from src.core.library.alchemy.enums import FilterState
 from src.core.library.alchemy.fields import TextField, _FieldID
+from src.core.library.alchemy.models import Tag
+
+
+def test_library_add_alias(library, generate_tag):
+    tag = library.add_tag(generate_tag("xxx", id=123))
+    assert tag
+
+    subtag_ids: set[int] = set()
+    alias_ids: set[int] = set()
+    alias_names: set[str] = set()
+    alias_names.add("test_alias")
+    library.update_tag(tag, subtag_ids, alias_names, alias_ids)
+
+    # Note: ask if it is expected behaviour that you need to re-request
+    #       for the tag. Or if the tag in memory should be updated
+    alias_ids = library.get_tag(tag.id).alias_ids
+
+    assert len(alias_ids) == 1
+
+
+def test_library_get_alias(library, generate_tag):
+    tag = library.add_tag(generate_tag("xxx", id=123))
+    assert tag
+
+    subtag_ids: set[int] = set()
+    alias_ids: set[int] = set()
+    alias_names: set[str] = set()
+    alias_names.add("test_alias")
+    library.update_tag(tag, subtag_ids, alias_names, alias_ids)
+
+    alias_ids = library.get_tag(tag.id).alias_ids
+
+    assert library.get_alias(tag.id, alias_ids[0]).name == "test_alias"
+
+
+def test_library_update_alias(library, generate_tag):
+    tag: Tag = library.add_tag(generate_tag("xxx", id=123))
+    assert tag
+
+    subtag_ids: set[int] = set()
+    alias_ids: set[int] = set()
+    alias_names: set[str] = set()
+    alias_names.add("test_alias")
+    library.update_tag(tag, subtag_ids, alias_names, alias_ids)
+
+    tag = library.get_tag(tag.id)
+    alias_ids = tag.alias_ids
+
+    assert library.get_alias(tag.id, alias_ids[0]).name == "test_alias"
+
+    alias_names.remove("test_alias")
+    alias_names.add("alias_update")
+    library.update_tag(tag, subtag_ids, alias_names, alias_ids)
+
+    tag = library.get_tag(tag.id)
+
+    assert len(tag.alias_ids) == 1
+    assert library.get_alias(tag.id, tag.alias_ids[0]).name == "alias_update"
 
 
 @pytest.mark.parametrize("library", [TemporaryDirectory()], indirect=True)
@@ -38,14 +96,26 @@ def test_create_tag(library, generate_tag):
     assert tag_inc.id > 1000
 
 
+def test_tag_subtag_itself(library, generate_tag):
+    # tag already exists
+    assert not library.add_tag(generate_tag("foo"))
+
+    # new tag name
+    tag = library.add_tag(generate_tag("xxx", id=123))
+    assert tag
+    assert tag.id == 123
+
+    library.update_tag(tag, {tag.id}, {}, {})
+    tag = library.get_tag(tag.id)
+    assert len(tag.subtag_ids) == 0
+
+
 def test_library_search(library, generate_tag, entry_full):
     assert library.entries_count == 2
     tag = list(entry_full.tags)[0]
 
     results = library.search_library(
-        FilterState(
-            tag=tag.name,
-        ),
+        FilterState(tag=tag.name),
     )
 
     assert results.total_count == 1
@@ -412,3 +482,39 @@ def test_library_prefs_multiple_identical_vals():
     # accessing .value should raise exception
     with pytest.raises(AttributeError):
         assert TestPrefs.BAR.value
+
+
+def test_path_search_glob_after(library: Library):
+    results = library.search_library(FilterState(path="foo*"))
+    assert results.total_count == 1
+    assert len(results.items) == 1
+
+
+def test_path_search_glob_in_front(library: Library):
+    results = library.search_library(FilterState(path="*bar.md"))
+    assert results.total_count == 1
+    assert len(results.items) == 1
+
+
+def test_path_search_glob_both_sides(library: Library):
+    results = library.search_library(FilterState(path="*one/two*"))
+    assert results.total_count == 1
+    assert len(results.items) == 1
+
+
+@pytest.mark.parametrize(["filetype", "num_of_filetype"], [("md", 1), ("txt", 1), ("png", 0)])
+def test_filetype_search(library, filetype, num_of_filetype):
+    results = library.search_library(FilterState(filetype=filetype))
+    assert len(results.items) == num_of_filetype
+
+
+@pytest.mark.parametrize(["filetype", "num_of_filetype"], [("png", 2), ("apng", 1), ("ng", 0)])
+def test_filetype_return_one_filetype(file_mediatypes_library, filetype, num_of_filetype):
+    results = file_mediatypes_library.search_library(FilterState(filetype=filetype))
+    assert len(results.items) == num_of_filetype
+
+
+@pytest.mark.parametrize(["mediatype", "num_of_mediatype"], [("plaintext", 2), ("image", 0)])
+def test_mediatype_search(library, mediatype, num_of_mediatype):
+    results = library.search_library(FilterState(mediatype=mediatype))
+    assert len(results.items) == num_of_mediatype
