@@ -181,9 +181,7 @@ class Entry(Base):
     ) -> None:
         self.path = path
         self.folder = folder
-        assert not self.id
         self.id = id
-
         self.suffix = path.suffix.lstrip(".").lower()
 
         for field in fields:
