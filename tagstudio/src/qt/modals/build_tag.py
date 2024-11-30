@@ -319,6 +319,10 @@ class BuildTagPanel(PanelWidget):
 
             alias_name = alias.name if alias else self.new_alias_names[alias_id]
 
+            # handel when an alias name changes
+            if alias_id in self.new_alias_names:
+                alias_name = self.new_alias_names[alias_id]
+
             self.alias_names.append(alias_name)
 
             remove_btn = QPushButton("-")
@@ -330,9 +334,14 @@ class BuildTagPanel(PanelWidget):
             new_item = CustomTableItem(alias_name, self.enter, self.backspace)
             new_item.set_id(alias_id)
 
+            new_item.editingFinished.connect(lambda item=new_item: self._alias_name_change(item))
+
             self.aliases_table.insertRow(row)
             self.aliases_table.setCellWidget(row, 1, new_item)
             self.aliases_table.setCellWidget(row, 0, remove_btn)
+
+    def _alias_name_change(self, item: CustomTableItem):
+        self.new_alias_names[item.id] = item.text()
 
     def set_tag(self, tag: Tag):
         self.tag = tag
