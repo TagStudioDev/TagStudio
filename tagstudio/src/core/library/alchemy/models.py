@@ -43,7 +43,7 @@ class Tag(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
 
-    name: Mapped[str] = mapped_column(unique=True)
+    name: Mapped[str]
     shorthand: Mapped[str | None]
     color: Mapped[TagColor]
     icon: Mapped[str | None]
@@ -78,14 +78,14 @@ class Tag(Base):
 
     def __init__(
         self,
-        name: str,
+        id: int | None = None,
+        name: str | None = None,
         shorthand: str | None = None,
         aliases: set[TagAlias] | None = None,
         parent_tags: set["Tag"] | None = None,
         subtags: set["Tag"] | None = None,
         icon: str | None = None,
         color: TagColor = TagColor.DEFAULT,
-        id: int | None = None,
     ):
         self.name = name
         self.aliases = aliases or set()
@@ -177,10 +177,11 @@ class Entry(Base):
         path: Path,
         folder: Folder,
         fields: list[BaseField],
+        id: int | None = None,
     ) -> None:
         self.path = path
         self.folder = folder
-
+        self.id = id
         self.suffix = path.suffix.lstrip(".").lower()
 
         for field in fields:
