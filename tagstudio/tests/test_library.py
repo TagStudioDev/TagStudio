@@ -85,7 +85,7 @@ def test_library_add_file(library):
 
 def test_create_tag(library, generate_tag):
     # tag already exists
-    assert not library.add_tag(generate_tag("foo"))
+    assert not library.add_tag(generate_tag("foo", id=1000))
 
     # new tag name
     tag = library.add_tag(generate_tag("xxx", id=123))
@@ -98,7 +98,7 @@ def test_create_tag(library, generate_tag):
 
 def test_tag_subtag_itself(library, generate_tag):
     # tag already exists
-    assert not library.add_tag(generate_tag("foo"))
+    assert not library.add_tag(generate_tag("foo", id=1000))
 
     # new tag name
     tag = library.add_tag(generate_tag("xxx", id=123))

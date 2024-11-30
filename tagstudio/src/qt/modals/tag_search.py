@@ -7,6 +7,7 @@ import math
 
 import structlog
 from PySide6.QtCore import QSize, Qt, Signal
+from PySide6.QtGui import QShowEvent
 from PySide6.QtWidgets import (
     QFrame,
     QHBoxLayout,
@@ -31,8 +32,8 @@ class TagSearchPanel(PanelWidget):
         super().__init__()
         self.lib = library
         self.exclude = exclude
+        self.is_initialized: bool = False
         self.first_tag_id = None
-        self.tag_limit = 100
         self.setMinimumSize(300, 400)
         self.root_layout = QVBoxLayout(self)
         self.root_layout.setContentsMargins(6, 0, 6, 0)
@@ -60,11 +61,9 @@ class TagSearchPanel(PanelWidget):
 
         self.root_layout.addWidget(self.search_field)
         self.root_layout.addWidget(self.scroll_area)
-        self.update_tags()
 
     def on_return(self, text: str):
         if text and self.first_tag_id is not None:
-            # callback(self.first_tag_id)
             self.tag_chosen.emit(self.first_tag_id)
             self.search_field.setText("")
             self.update_tags()
@@ -73,6 +72,7 @@ class TagSearchPanel(PanelWidget):
             self.parentWidget().hide()
 
     def update_tags(self, query: str | None = None):
+        logger.info("[Tag Search Modal] Updating Tags")
         while self.scroll_layout.count():
             self.scroll_layout.takeAt(0).widget().deleteLater()
 
@@ -81,6 +81,7 @@ class TagSearchPanel(PanelWidget):
         for tag in tag_results:
             if self.exclude is not None and tag.id in self.exclude:
                 continue
+
             c = QWidget()
             layout = QHBoxLayout(c)
             layout.setContentsMargins(0, 0, 0, 0)
@@ -117,3 +118,9 @@ class TagSearchPanel(PanelWidget):
             self.scroll_layout.addWidget(c)
 
         self.search_field.setFocus()
+
+    def showEvent(self, event: QShowEvent) -> None:  # noqa N802
+        if not self.is_initialized:
+            self.update_tags()
+            self.is_initialized = True
+        return super().showEvent(event)

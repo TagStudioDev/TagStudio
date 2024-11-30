@@ -89,6 +89,7 @@ from src.qt.modals.folders_to_tags import FoldersToTagsModal
 from src.qt.modals.tag_database import TagDatabasePanel
 from src.qt.resource_manager import ResourceManager
 from src.qt.widgets.item_thumb import BadgeType, ItemThumb
+from src.qt.widgets.migration_modal import JsonMigrationModal
 from src.qt.widgets.panel import PanelModal
 from src.qt.widgets.preview_panel import PreviewPanel
 from src.qt.widgets.progress import ProgressWidget
@@ -470,6 +471,7 @@ class QtDriver(DriverMixin, QObject):
         self.thumb_renderers: list[ThumbRenderer] = []
         self.filter = FilterState.show_all()
         self.init_library_window()
+        self.migration_modal: JsonMigrationModal = None
 
         path_result = self.evaluate_path(self.args.open)
         # check status of library path evaluating
@@ -808,6 +810,8 @@ class QtDriver(DriverMixin, QObject):
         elif name == MacroID.SIDECAR:
             parsed_items = TagStudioCore.get_gdl_sidecar(ful_path, source)
             for field_id, value in parsed_items.items():
+                if isinstance(value, list) and len(value) > 0 and isinstance(value[0], str):
+                    value = self.lib.tag_from_strings(value)
                 self.lib.add_entry_field_type(
                     entry.id,
                     field_id=field_id,
@@ -1032,25 +1036,41 @@ class QtDriver(DriverMixin, QObject):
         self.flow_container.layout().update()
         self.main_window.update()
 
-        for idx, (entry, item_thumb) in enumerate(
-            zip_longest(self.frame_content, self.item_thumbs)
-        ):
+        is_grid_thumb = True
+        # Show loading placeholder icons
+        for entry, item_thumb in zip_longest(self.frame_content, self.item_thumbs):
             if not entry:
                 item_thumb.hide()
                 continue
 
-            filepath = self.lib.library_dir / entry.path
-            item_thumb = self.item_thumbs[idx]
             item_thumb.set_mode(ItemType.ENTRY)
             item_thumb.set_item_id(entry)
 
             # TODO - show after item is rendered
             item_thumb.show()
 
+            is_loading = True
             self.thumb_job_queue.put(
                 (
                     item_thumb.renderer.render,
-                    (sys.float_info.max, "", base_size, ratio, True, True),
+                    (sys.float_info.max, "", base_size, ratio, is_loading, is_grid_thumb),
+                )
+            )
+
+        # Show rendered thumbnails
+        for idx, (entry, item_thumb) in enumerate(
+            zip_longest(self.frame_content, self.item_thumbs)
+        ):
+            if not entry:
+                continue
+
+            filepath = self.lib.library_dir / entry.path
+            is_loading = False
+
+            self.thumb_job_queue.put(
+                (
+                    item_thumb.renderer.render,
+                    (time.time(), filepath, base_size, ratio, is_loading, is_grid_thumb),
                 )
             )
 
@@ -1162,14 +1182,27 @@ class QtDriver(DriverMixin, QObject):
         self.settings.endGroup()
         self.settings.sync()
 
-    def open_library(self, path: Path) -> LibraryStatus:
+    def open_library(self, path: Path) -> None:
         """Open a TagStudio library."""
         open_message: str = f'Opening Library "{str(path)}"...'
         self.main_window.landing_widget.set_status_label(open_message)
         self.main_window.statusbar.showMessage(open_message, 3)
         self.main_window.repaint()
 
-        open_status = self.lib.open_library(path)
+        open_status: LibraryStatus = self.lib.open_library(path)
+
+        # Migration is required
+        if open_status.json_migration_req:
+            self.migration_modal = JsonMigrationModal(path)
+            self.migration_modal.migration_finished.connect(
+                lambda: self.init_library(path, self.lib.open_library(path))
+            )
+            self.main_window.landing_widget.set_status_label("")
+            self.migration_modal.paged_panel.show()
+        else:
+            self.init_library(path, open_status)
+
+    def init_library(self, path: Path, open_status: LibraryStatus):
         if not open_status.success:
             self.show_error_message(open_status.message or "Error opening library.")
             return open_status
@@ -1179,7 +1212,8 @@ class QtDriver(DriverMixin, QObject):
         self.filter.page_size = self.lib.prefs(LibraryPrefs.PAGE_SIZE)
 
         # TODO - make this call optional
-        self.add_new_files_callback()
+        if self.lib.entries_count < 10000:
+            self.add_new_files_callback()
 
         self.update_libs_list(path)
         title_text = f"{self.base_title} - Library '{self.lib.library_dir}'"
