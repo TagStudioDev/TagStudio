@@ -296,6 +296,8 @@ class BuildTagPanel(PanelWidget):
             # add new aliases
             if name.strip() != "" and name not in set(self.alias_names):
                 self.alias_names.append(name)
+            elif name.strip() == "" and name in set(self.alias_names):
+                self.alias_names.remove(name)
 
     def _update_new_alias_name_dict(self):
         row = self.aliases_table.rowCount()
