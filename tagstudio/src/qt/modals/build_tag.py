@@ -3,12 +3,10 @@
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
 
-import math
 import sys
 from typing import cast
 
 import structlog
-from PySide6 import QtCore
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import (
     QApplication,
@@ -112,7 +110,7 @@ class BuildTagPanel(PanelWidget):
         self.alias_add_button = QPushButton()
         self.alias_add_button.setText("+")
 
-        self.alias_add_button.clicked.connect(lambda: self.add_alias_callback())
+        self.alias_add_button.clicked.connect(self.add_alias_callback)
 
         # Subtags ------------------------------------------------------------
 
@@ -145,33 +143,7 @@ class BuildTagPanel(PanelWidget):
         self.subtags_add_button = QPushButton()
         self.subtags_add_button.setCursor(Qt.CursorShape.PointingHandCursor)
         self.subtags_add_button.setText("+")
-        self.subtags_add_button.setToolTip("CTRL + P")
-        self.subtags_add_button.setMinimumSize(23, 23)
-        self.subtags_add_button.setMaximumSize(23, 23)
-        self.subtags_add_button.setShortcut(
-            QtCore.QKeyCombination(
-                QtCore.Qt.KeyboardModifier(QtCore.Qt.KeyboardModifier.ControlModifier),
-                QtCore.Qt.Key.Key_P,
-            )
-        )
-        self.subtags_add_button.setStyleSheet(
-            f"QPushButton{{"
-            f"background: #1e1e1e;"
-            f"color: #FFFFFF;"
-            f"font-weight: bold;"
-            f"border-color: #333333;"
-            f"border-radius: 6px;"
-            f"border-style:solid;"
-            f"border-width:{math.ceil(self.devicePixelRatio())}px;"
-            f"padding-bottom: 5px;"
-            f"font-size: 20px;"
-            f"}}"
-            f"QPushButton::hover"
-            f"{{"
-            f"border-color: #CCCCCC;"
-            f"background: #555555;"
-            f"}}"
-        )
+        self.subtags_layout.addWidget(self.subtags_add_button)
 
         exclude_ids: list[int] = list()
         if tag is not None:
