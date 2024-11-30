@@ -3,6 +3,7 @@
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
 import pathlib
+from time import time
 
 from src.core.enums import LibraryPrefs
 from src.qt.widgets.migration_modal import JsonMigrationModal
@@ -12,7 +13,11 @@ CWD = pathlib.Path(__file__)
 
 def test_json_migration():
     modal = JsonMigrationModal(CWD.parent / "fixtures" / "json_library")
-    modal.migrate()
+    modal.migrate(skip_ui=True)
+
+    start = time()
+    while not modal.done and (time() - start < 60):
+        pass
 
     # Entries ==================================================================
     # Count

@@ -826,7 +826,6 @@ class Library:
                 with Session(self.engine) as session:
                     for tag_id in list(set(value)):
                         tag = session.scalar(select(Tag).where(Tag.id == tag_id))
-                        logger.info(tag)
                         field_model.tags.add(tag)
                         session.flush()
 

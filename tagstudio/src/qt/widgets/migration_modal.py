@@ -5,12 +5,14 @@
 from pathlib import Path
 
 import structlog
-from PySide6.QtCore import QObject, Qt, Signal
+from PySide6.QtCore import QObject, Qt, QThreadPool, Signal
 from PySide6.QtWidgets import (
     QApplication,
     QGridLayout,
     QHBoxLayout,
     QLabel,
+    QMessageBox,
+    QProgressDialog,
     QSizePolicy,
     QVBoxLayout,
     QWidget,
@@ -25,6 +27,8 @@ from src.core.library.alchemy.joins import TagField, TagSubtag
 from src.core.library.alchemy.library import Library as SqliteLibrary
 from src.core.library.alchemy.models import Entry, Tag, TagAlias
 from src.core.library.json.library import Library as JsonLibrary  # type: ignore
+from src.qt.helpers.custom_runnable import CustomRunnable
+from src.qt.helpers.function_iterator import FunctionIterator
 from src.qt.helpers.qbutton_wrapper import QPushButtonWrapper
 from src.qt.widgets.paged_panel.paged_body_wrapper import PagedBodyWrapper
 from src.qt.widgets.paged_panel.paged_panel import PagedPanel
@@ -41,6 +45,7 @@ class JsonMigrationModal(QObject):
 
     def __init__(self, path: Path):
         super().__init__()
+        self.done: bool = False
         self.path: Path = path
 
         self.stack: list[PagedPanelState] = []
@@ -57,10 +62,17 @@ class JsonMigrationModal(QObject):
         self.old_ext_count: int = 0
         self.old_ext_type: bool = None
 
+        self.field_parity: bool = False
+        self.path_parity: bool = False
+        self.shorthand_parity: bool = False
+        self.subtag_parity: bool = False
+        self.alias_parity: bool = False
+        self.color_parity: bool = False
+
         self.init_page_info()
         self.init_page_convert()
 
-        self.paged_panel: PagedPanel = PagedPanel((640, 540), self.stack)
+        self.paged_panel: PagedPanel = PagedPanel((700, 640), self.stack)
 
     def init_page_info(self) -> None:
         """Initialize the migration info page."""
@@ -98,7 +110,7 @@ class JsonMigrationModal(QObject):
 
     def init_page_convert(self) -> None:
         """Initialize the migration conversion page."""
-        body_wrapper: PagedBodyWrapper = PagedBodyWrapper()
+        self.body_wrapper_01: PagedBodyWrapper = PagedBodyWrapper()
         body_container: QWidget = QWidget()
         body_container_layout: QHBoxLayout = QHBoxLayout(body_container)
         body_container_layout.setContentsMargins(0, 0, 0, 0)
@@ -276,8 +288,9 @@ class JsonMigrationModal(QObject):
         body_container_layout.addStretch(1)
         body_container_layout.addWidget(new_lib_container)
         body_container_layout.addStretch(2)
-        body_wrapper.layout().addWidget(body_container)
-        body_wrapper.layout().addWidget(desc_label)
+        self.body_wrapper_01.layout().addWidget(body_container)
+        self.body_wrapper_01.layout().addWidget(desc_label)
+        self.body_wrapper_01.layout().setSpacing(12)
 
         back_button: QPushButtonWrapper = QPushButtonWrapper("Back")
         start_button: QPushButtonWrapper = QPushButtonWrapper("Start and Preview")
@@ -294,14 +307,14 @@ class JsonMigrationModal(QObject):
         self.stack.append(
             PagedPanelState(
                 title=self.title,
-                body_wrapper=body_wrapper,
+                body_wrapper=self.body_wrapper_01,
                 buttons=[back_button, 1, start_button, 1, finish_button],
                 connect_to_back=[back_button],
                 connect_to_next=[finish_button],
             )
         )
 
-    def migrate(self):
+    def migrate(self, skip_ui: bool = False):
         """Open and migrate the JSON library to SQLite."""
         if not self.is_migration_initialized:
             self.paged_panel.update_frame()
@@ -317,7 +330,42 @@ class JsonMigrationModal(QObject):
             self.update_json_ext_count(len(self.json_lib.ext_list))
             self.update_json_ext_type(self.json_lib.is_exclude_list)
 
+            self.migration_progress(skip_ui=skip_ui)
+            self.is_migration_initialized = True
+
+    def migration_progress(self, skip_ui: bool = False):
+        """Initialize the progress bar and iterator for the library migration."""
+        pb = QProgressDialog(
+            labelText="",
+            cancelButtonText="",
+            minimum=0,
+            maximum=0,
+        )
+        pb.setCancelButton(None)
+        self.body_wrapper_01.layout().addWidget(pb)
+
+        iterator = FunctionIterator(self.migration_iterator)
+        iterator.value.connect(
+            lambda x: (
+                pb.setLabelText(f"<h4>{x}</h4>"),
+                self.check_parity() if x == "Checking for Parity..." else (),
+            )
+        )
+        r = CustomRunnable(iterator.run)
+        r.done.connect(
+            lambda: (
+                self.update_sql_ui(show_msg_box=not skip_ui),
+                pb.setMinimum(1),
+                pb.setValue(1),
+            )
+        )
+        QThreadPool.globalInstance().start(r)
+
+    def migration_iterator(self):
+        """Iterate over the library migration process."""
+        try:
             # Convert JSON Library to SQLite
+            yield "Creating SQL Database Tables..."
             self.sql_lib = SqliteLibrary()
             self.temp_path: Path = (
                 self.json_lib.library_dir / TS_FOLDER_NAME / "migration_ts_library.sqlite"
@@ -329,44 +377,75 @@ class JsonMigrationModal(QObject):
             self.sql_lib.open_sqlite_library(
                 self.json_lib.library_dir, is_new=True, add_default_data=False
             )
+            yield f"Migrating {len(self.json_lib.entries):,d} File Entries..."
             self.sql_lib.migrate_json_to_sqlite(self.json_lib)
-            logger.info("Checking for parity...")
-            self.update_parity_value(self.fields_row, self.check_field_parity())
-            self.update_parity_value(self.path_row, self.check_path_parity())
-            self.update_parity_value(self.shorthands_row, self.check_shorthand_parity())
-            self.update_parity_value(self.subtags_row, self.check_subtag_parity())
-            self.update_parity_value(self.aliases_row, self.check_alias_parity())
-            self.update_parity_value(self.colors_row, self.check_color_parity())
-            self.sql_lib.close()
+            yield "Checking for Parity..."
+            check_set = set()
+            check_set.add(self.check_field_parity())
+            check_set.add(self.check_path_parity())
+            check_set.add(self.check_shorthand_parity())
+            check_set.add(self.check_subtag_parity())
+            check_set.add(self.check_alias_parity())
+            check_set.add(self.check_color_parity())
+            self.check_parity()
+            if False not in check_set:
+                yield "Migration Complete!"
+            else:
+                yield "Migration Complete, Discrepancies Found"
+            self.done = True
 
-            # Update SQLite UI
-            self.update_sql_value(
-                self.entries_row,
-                self.sql_lib.entries_count,
-                self.old_entry_count,
-            )
-            self.update_sql_value(
-                self.tags_row,
-                len(self.sql_lib.tags),
-                self.old_tag_count,
-            )
-            self.update_sql_value(
-                self.ext_row,
-                len(self.sql_lib.prefs(LibraryPrefs.EXTENSION_LIST)),
-                self.old_ext_count,
-            )
-            self.update_sql_value(
-                self.ext_type_row,
-                self.sql_lib.prefs(LibraryPrefs.IS_EXCLUDE_LIST),
-                self.old_ext_type,
-            )
-            logger.info("Parity check complete!")
-            if self.discrepancies:
-                logger.warning("Discrepancies found:")
-                logger.warning("\n".join(self.discrepancies))
+        except Exception as e:
+            yield f"Error: {type(e).__name__}"
+            self.done = True
+
+    def check_parity(self):
+        # Check for Parity
+        self.update_parity_value(self.fields_row, self.field_parity)
+        self.update_parity_value(self.path_row, self.path_parity)
+        self.update_parity_value(self.shorthands_row, self.shorthand_parity)
+        self.update_parity_value(self.subtags_row, self.subtag_parity)
+        self.update_parity_value(self.aliases_row, self.alias_parity)
+        self.update_parity_value(self.colors_row, self.color_parity)
+        self.sql_lib.close()
+
+    def update_sql_ui(self, show_msg_box: bool = True):
+        # Update SQLite UI
+        self.update_sql_value(
+            self.entries_row,
+            self.sql_lib.entries_count,
+            self.old_entry_count,
+        )
+        self.update_sql_value(
+            self.tags_row,
+            len(self.sql_lib.tags),
+            self.old_tag_count,
+        )
+        self.update_sql_value(
+            self.ext_row,
+            len(self.sql_lib.prefs(LibraryPrefs.EXTENSION_LIST)),
+            self.old_ext_count,
+        )
+        self.update_sql_value(
+            self.ext_type_row,
+            self.sql_lib.prefs(LibraryPrefs.IS_EXCLUDE_LIST),
+            self.old_ext_type,
+        )
+        logger.info("Parity check complete!")
+        if self.discrepancies:
+            logger.warning("Discrepancies found:")
+            logger.warning("\n".join(self.discrepancies))
             QApplication.beep()
-
-            self.is_migration_initialized = True
+            if not show_msg_box:
+                return
+            msg_box = QMessageBox()
+            msg_box.setWindowTitle("Library Discrepancies Found")
+            msg_box.setText(
+                "Discrepancies were found between the original and converted library formats. "
+                "Please review and choose to whether continue with the migration or to cancel."
+            )
+            msg_box.setDetailedText("\n".join(self.discrepancies))
+            msg_box.setIcon(QMessageBox.Icon.Warning)
+            msg_box.exec()
 
     def finish_migration(self):
         """Finish the migration upon user approval."""
@@ -468,7 +547,8 @@ class JsonMigrationModal(QObject):
                     self.discrepancies.append(
                         f"[Field Comparison]:\nNEW (SQL): SQL Entry ID not found: {json_entry.id+1}"
                     )
-                    return False
+                    self.field_parity = False
+                    return self.field_parity
 
                 for sf in sql_entry.fields:
                     sql_fields.append(
@@ -545,21 +625,26 @@ class JsonMigrationModal(QObject):
                     self.discrepancies.append(
                         f"[Field Comparison]:\nOLD (JSON):{json_fields}\nNEW  (SQL):{sql_fields}"
                     )
-                    return False
+                    self.field_parity = False
+                    return self.field_parity
 
                 logger.info(
                     "[Field Comparison]",
                     fields="\n".join([str(x) for x in zip(json_fields, sql_fields)]),
                 )
 
-        return True
+        self.field_parity = True
+        return self.field_parity
 
     def check_path_parity(self) -> bool:
         """Check if all JSON file paths match the new SQL paths."""
         with Session(self.sql_lib.engine) as session:
             json_paths: list = sorted([x.path / x.filename for x in self.json_lib.entries])
             sql_paths: list = sorted(list(session.scalars(select(Entry.path))))
-        return json_paths is not None and sql_paths is not None and (json_paths == sql_paths)
+        self.path_parity = (
+            json_paths is not None and sql_paths is not None and (json_paths == sql_paths)
+        )
+        return self.path_parity
 
     def check_subtag_parity(self) -> bool:
         """Check if all JSON subtags match the new SQL subtags."""
@@ -592,9 +677,11 @@ class JsonMigrationModal(QObject):
                     self.discrepancies.append(
                         f"[Subtag Parity]:\nOLD (JSON):{json_subtags}\nNEW (SQL):{sql_subtags}"
                     )
-                    return False
+                    self.subtag_parity = False
+                    return self.subtag_parity
 
-        return True
+        self.subtag_parity = True
+        return self.subtag_parity
 
     def check_ext_type(self) -> bool:
         return self.json_lib.is_exclude_list == self.sql_lib.prefs(LibraryPrefs.IS_EXCLUDE_LIST)
@@ -626,9 +713,11 @@ class JsonMigrationModal(QObject):
                     self.discrepancies.append(
                         f"[Alias Parity]:\nOLD (JSON):{json_aliases}\nNEW (SQL):{sql_aliases}"
                     )
-                    return False
+                    self.alias_parity = False
+                    return self.alias_parity
 
-        return True
+        self.alias_parity = True
+        return self.alias_parity
 
     def check_shorthand_parity(self) -> bool:
         """Check if all JSON shorthands match the new SQL shorthands."""
@@ -655,9 +744,11 @@ class JsonMigrationModal(QObject):
                 self.discrepancies.append(
                     f"[Shorthand Parity]:\nOLD (JSON):{json_shorthand}\nNEW (SQL):{sql_shorthand}"
                 )
-                return False
+                self.shorthand_parity = False
+                return self.shorthand_parity
 
-        return True
+        self.shorthand_parity = True
+        return self.shorthand_parity
 
     def check_color_parity(self) -> bool:
         """Check if all JSON tag colors match the new SQL tag colors."""
@@ -684,6 +775,8 @@ class JsonMigrationModal(QObject):
                 self.discrepancies.append(
                     f"[Color Parity]:\nOLD (JSON):{json_color}\nNEW (SQL):{sql_color}"
                 )
-                return False
+                self.color_parity = False
+                return self.color_parity
 
-        return True
+        self.color_parity = True
+        return self.color_parity
