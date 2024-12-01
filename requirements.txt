@@ -6,7 +6,7 @@ numpy==1.26.4
 numpy==1.26.4
 opencv_python>=4.8.0.74,<=4.9.0.80
 pillow-heif==0.16.0
-pillow-jxl-plugin==1.2.6
+pillow-jxl-plugin==1.3.0
 Pillow==10.3.0
 pydub==0.25.1
 PySide6_Addons==6.7.1
