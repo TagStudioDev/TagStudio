@@ -682,6 +682,16 @@ class Library:
                     select(TagSubtag).where(TagSubtag.parent_id == tag.id)
                 ).all()
 
+                tags_query = select(Tag).options(
+                    selectinload(Tag.subtags), selectinload(Tag.aliases)
+                )
+                tag = session.scalar(tags_query.where(Tag.id == tag.id))
+
+                aliases = session.scalars(select(TagAlias).where(TagAlias.tag_id == tag.id))
+
+                for alias in aliases or []:
+                    session.delete(alias)
+
                 for subtag in subtags or []:
                     session.delete(subtag)
                     session.expunge(subtag)
