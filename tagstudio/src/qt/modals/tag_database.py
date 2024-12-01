@@ -9,6 +9,7 @@ from PySide6.QtWidgets import (
     QFrame,
     QHBoxLayout,
     QLineEdit,
+    QMessageBox,
     QPushButton,
     QScrollArea,
     QVBoxLayout,
@@ -125,6 +126,17 @@ class TagDatabasePanel(PanelWidget):
 
     def remove_tag(self, tag: Tag):
         if tag.id in RESERVED_TAG_IDS:
+            return
+
+        message_box = QMessageBox()
+        message_box.setWindowTitle("Remove tag")
+        message_box.setText("Are you sure you want to remove " + tag.name + "?")
+        message_box.setStandardButtons(QMessageBox.Ok | QMessageBox.Cancel)
+        message_box.setIcon(QMessageBox.Question)
+
+        result = message_box.exec()
+
+        if result != QMessageBox.Ok:
             return
 
         self.lib.remove_tag(tag)
