@@ -414,17 +414,17 @@ class Library:
         """Verifies/creates folders required by TagStudio."""
 
         full_ts_path = self.library_dir / TS_FOLDER_NAME
-        full_backup_path = self.library_dir / TS_FOLDER_NAME / BACKUP_FOLDER_NAME
-        full_collage_path = self.library_dir / TS_FOLDER_NAME / COLLAGE_FOLDER_NAME
+        # full_backup_path = self.library_dir / TS_FOLDER_NAME / BACKUP_FOLDER_NAME
+        # full_collage_path = self.library_dir / TS_FOLDER_NAME / COLLAGE_FOLDER_NAME
 
         if not os.path.isdir(full_ts_path):
             os.mkdir(full_ts_path)
 
-        if not os.path.isdir(full_backup_path):
-            os.mkdir(full_backup_path)
+        # if not os.path.isdir(full_backup_path):
+        #     os.mkdir(full_backup_path)
 
-        if not os.path.isdir(full_collage_path):
-            os.mkdir(full_collage_path)
+        # if not os.path.isdir(full_collage_path):
+        #     os.mkdir(full_collage_path)
 
     def verify_default_tags(self, tag_list: list) -> list:
         """
@@ -449,7 +449,7 @@ class Library:
         return_code = OpenStatus.CORRUPTED
 
         _path: Path = self._fix_lib_path(path)
-        logger.info("opening library", path=_path)
+        logger.info("Opening JSON Library", path=_path)
         if (_path / TS_FOLDER_NAME / "ts_library.json").exists():
             try:
                 with open(
@@ -554,7 +554,7 @@ class Library:
                                 self._next_entry_id += 1
 
                             filename = entry.get("filename", "")
-                            e_path = entry.get("path", "")
+                            e_path = entry.get("path", "").replace("\\", "/")
                             fields: list = []
                             if "fields" in entry:
                                 # Cast JSON str keys to ints

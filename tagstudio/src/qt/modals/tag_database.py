@@ -2,7 +2,9 @@
 # Licensed under the GPL-3.0 License.
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
+import structlog
 from PySide6.QtCore import QSize, Qt, Signal
+from PySide6.QtGui import QShowEvent
 from PySide6.QtWidgets import (
     QFrame,
     QHBoxLayout,
@@ -14,10 +16,15 @@ from PySide6.QtWidgets import (
 )
 from src.core.constants import RESERVED_TAG_IDS
 from src.core.library import Library, Tag
-from src.core.library.alchemy.enums import FilterState
 from src.qt.modals.build_tag import BuildTagPanel
 from src.qt.widgets.panel import PanelModal, PanelWidget
 from src.qt.widgets.tag import TagWidget
+
+logger = structlog.get_logger(__name__)
+
+# TODO: This class shares the majority of its code with tag_search.py.
+# It should either be made DRY, or be replaced with the intended and more robust
+# Tag Management tab/pane outlined on the Feature Roadmap.
 
 
 class TagDatabasePanel(PanelWidget):
@@ -26,8 +33,8 @@ class TagDatabasePanel(PanelWidget):
     def __init__(self, library: Library):
         super().__init__()
         self.lib: Library = library
+        self.is_initialized: bool = False
         self.first_tag_id = -1
-        self.tag_limit = 30
 
         self.setMinimumSize(300, 400)
         self.root_layout = QVBoxLayout(self)
@@ -92,12 +99,13 @@ class TagDatabasePanel(PanelWidget):
 
     def update_tags(self, query: str | None = None):
         # TODO: Look at recycling rather than deleting and re-initializing
+        logger.info("[Tag Manager Modal] Updating Tags")
         while self.scroll_layout.itemAt(0):
             self.scroll_layout.takeAt(0).widget().deleteLater()
 
-        tags = self.lib.search_tags(FilterState(path=query, page_size=self.tag_limit))
+        tags_results = self.lib.search_tags(name=query)
 
-        for tag in tags:
+        for tag in tags_results:
             container = QWidget()
             row = QHBoxLayout(container)
             row.setContentsMargins(0, 0, 0, 0)
@@ -142,3 +150,9 @@ class TagDatabasePanel(PanelWidget):
     def edit_tag_callback(self, btp: BuildTagPanel):
         self.lib.update_tag(btp.build_tag(), btp.subtag_ids, btp.alias_names, btp.alias_ids)
         self.update_tags(self.search_field.text())
+
+    def showEvent(self, event: QShowEvent) -> None:  # noqa N802
+        if not self.is_initialized:
+            self.update_tags()
+            self.is_initialized = True
+        return super().showEvent(event)

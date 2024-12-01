@@ -42,6 +42,13 @@ class TagColor(enum.IntEnum):
     COOL_GRAY = 36
     OLIVE = 37
 
+    @staticmethod
+    def get_color_from_str(color_name: str) -> "TagColor":
+        for color in TagColor:
+            if color.name == color_name.upper().replace(" ", "_"):
+                return color
+        return TagColor.DEFAULT
+
 
 class SearchMode(enum.IntEnum):
     """Operational modes for item searching."""

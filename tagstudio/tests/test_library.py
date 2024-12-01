@@ -85,7 +85,7 @@ def test_library_add_file(library):
 
 def test_create_tag(library, generate_tag):
     # tag already exists
-    assert not library.add_tag(generate_tag("foo"))
+    assert not library.add_tag(generate_tag("foo", id=1000))
 
     # new tag name
     tag = library.add_tag(generate_tag("xxx", id=123))
@@ -98,7 +98,7 @@ def test_create_tag(library, generate_tag):
 
 def test_tag_subtag_itself(library, generate_tag):
     # tag already exists
-    assert not library.add_tag(generate_tag("foo"))
+    assert not library.add_tag(generate_tag("foo", id=1000))
 
     # new tag name
     tag = library.add_tag(generate_tag("xxx", id=123))
@@ -132,19 +132,13 @@ def test_library_search(library, generate_tag, entry_full):
 def test_tag_search(library):
     tag = library.tags[0]
 
-    assert library.search_tags(
-        FilterState(tag=tag.name.lower()),
-    )
+    assert library.search_tags(tag.name.lower())
 
-    assert library.search_tags(
-        FilterState(tag=tag.name.upper()),
-    )
+    assert library.search_tags(tag.name.upper())
 
-    assert library.search_tags(FilterState(tag=tag.name[2:-2]))
+    assert library.search_tags(tag.name[2:-2])
 
-    assert not library.search_tags(
-        FilterState(tag=tag.name * 2),
-    )
+    assert not library.search_tags(tag.name * 2)
 
 
 def test_get_entry(library, entry_min):

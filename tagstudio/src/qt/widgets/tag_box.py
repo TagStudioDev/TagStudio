@@ -89,12 +89,13 @@ class TagBoxWidget(FieldWidget):
         self.field = field
 
     def set_tags(self, tags: typing.Iterable[Tag]):
+        tags_ = sorted(list(tags), key=lambda tag: tag.name)
         is_recycled = False
         while self.base_layout.itemAt(0) and self.base_layout.itemAt(1):
             self.base_layout.takeAt(0).widget().deleteLater()
             is_recycled = True
 
-        for tag in tags:
+        for tag in tags_:
             tag_widget = TagWidget(tag, has_edit=True, has_remove=True)
             tag_widget.on_click.connect(
                 lambda tag_id=tag.id: (
