@@ -875,10 +875,6 @@ class PreviewPanel(QWidget):
         else:
             container = self.containers[index]
 
-        container.set_copy_callback(None)
-        container.set_edit_callback(None)
-        container.set_remove_callback(None)
-
         if isinstance(field, TagBoxField):
             container.set_title(field.type.name)
             container.set_inline(False)
@@ -896,10 +892,6 @@ class PreviewPanel(QWidget):
                         logger.error("Failed to disconnect inner_container.updated")
 
                 else:
-                    logger.info(
-                        "inner_container is not instance of TagBoxWidget",
-                        container=inner_container,
-                    )
                     inner_container = TagBoxWidget(
                         field,
                         title,
