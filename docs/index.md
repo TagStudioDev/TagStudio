@@ -45,9 +45,3 @@ The [Feature Roadmap](updates/roadmap.md) lists all of the planned core features
 -   Create rich tags composed of a name, a list of aliases, and a list of “subtags” - being tags in which these tags inherit values from.
 -   Search for entries based on tags, ~~metadata~~ (TBA), or filenames/filetypes (using `filename: <query>`)
 -   Special search conditions for entries that are: `untagged`/`no tags` and `empty`/`no fields`.
-
-## Important Updates
-
-### [Database Migration](updates/db_migration.md)
-
-The "Database Migration", "DB Migration", or "SQLite Migration" is an upcoming update to TagStudio which will replace the current JSON [library](library/index.md) with a SQL-based one, and will additionally include some fundamental changes to how some features such as [tags](library/tag.md) will work.
