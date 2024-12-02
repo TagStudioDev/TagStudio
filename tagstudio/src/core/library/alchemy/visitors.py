@@ -12,7 +12,23 @@ class SQLBoolExpressionBuilder(BaseVisitor):
         return or_(*[self.visit(element) for element in node.elements])
 
     def visit_and_list(self, node: ANDList) -> ColumnExpressionArgument:
-        return and_(*[self.visit(term) for term in node.terms])
+        return and_(
+            *[
+                Entry.id.in_(
+                    # TODO maybe try to figure out how to remove this code duplication
+                    # My attempts to do this lead to very weird and (to me) unexplainable
+                    # errors. Even just extracting the part up until the where to a seperate
+                    # function leads to an error eventhough that shouldn't be possible.
+                    #  -Computerdores
+                    select(Entry.id)
+                    .outerjoin(Entry.tag_box_fields)
+                    .outerjoin(TagBoxField.tags)
+                    .outerjoin(TagAlias)
+                    .where(self.visit(term))
+                )
+                for term in node.terms
+            ]
+        )
 
     def visit_constraint(self, node: Constraint) -> ColumnExpressionArgument:
         if len(node.properties) != 0:
@@ -51,7 +67,7 @@ class SQLBoolExpressionBuilder(BaseVisitor):
 
     def visit_not(self, node: Not) -> ColumnExpressionArgument:
         return ~Entry.id.in_(
-            # TODO TSQLANG there is technically code duplication from Library.search_library here
+            # TODO TSQLANG this is technically code duplication, refer to TODO above for why
             select(Entry.id)
             .outerjoin(Entry.tag_box_fields)
             .outerjoin(TagBoxField.tags)
