@@ -212,6 +212,14 @@ class Entry(Base):
             tag_box_field.tags.remove(tag)
 
 
+class UserDefinedColor(Base):
+    __tablename__ = "user_defined_colors"
+    id: Mapped[int] = mapped_column(primary=True)
+    color: Mapped[str] = mapped_column(unique=True)
+    name: Mapped[str] = mapped_column()
+    user_defined: Mapped[bool] = mapped_column(default=True)
+
+
 class ValueType(Base):
     """Define Field Types in the Library.
 
