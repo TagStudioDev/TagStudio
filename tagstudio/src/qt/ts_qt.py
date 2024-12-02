@@ -1183,7 +1183,7 @@ class QtDriver(DriverMixin, QObject):
         all_libs_list = sorted(all_libs.items(), key=lambda item: item[0], reverse=True)
 
         # remove previously saved items
-        self.settings.clear()
+        self.settings.remove("")
 
         for item_key, item_value in all_libs_list[:item_limit]:
             self.settings.setValue(item_key, item_value)
