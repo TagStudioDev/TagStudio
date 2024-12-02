@@ -11,9 +11,7 @@ from .fields import (
     BooleanField,
     DatetimeField,
     FieldTypeEnum,
-    TagBoxField,
     TextField,
-    _FieldID,
 )
 from .joins import TagSubtag
 
@@ -125,6 +123,8 @@ class Entry(Base):
     path: Mapped[Path] = mapped_column(PathType, unique=True)
     suffix: Mapped[str] = mapped_column()
 
+    tags: Mapped[set[Tag]] = relationship(secondary="tag_entries")
+
     text_fields: Mapped[list[TextField]] = relationship(
         back_populates="entry",
         cascade="all, delete",
@@ -133,43 +133,27 @@ class Entry(Base):
         back_populates="entry",
         cascade="all, delete",
     )
-    tag_box_fields: Mapped[list[TagBoxField]] = relationship(
-        back_populates="entry",
-        cascade="all, delete",
-    )
 
     @property
     def fields(self) -> list[BaseField]:
         fields: list[BaseField] = []
-        fields.extend(self.tag_box_fields)
         fields.extend(self.text_fields)
         fields.extend(self.datetime_fields)
         fields = sorted(fields, key=lambda field: field.type.position)
         return fields
 
     @property
-    def tags(self) -> set[Tag]:
-        tag_set: set[Tag] = set()
-        for tag_box_field in self.tag_box_fields:
-            tag_set.update(tag_box_field.tags)
-        return tag_set
-
-    @property
     def is_favorited(self) -> bool:
-        for tag_box_field in self.tag_box_fields:
-            if tag_box_field.type_key == _FieldID.TAGS_META.name:
-                for tag in tag_box_field.tags:
-                    if tag.id == TAG_FAVORITE:
-                        return True
+        for tag in self.tags:
+            if tag.id == TAG_FAVORITE:
+                return True
         return False
 
     @property
     def is_archived(self) -> bool:
-        for tag_box_field in self.tag_box_fields:
-            if tag_box_field.type_key == _FieldID.TAGS_META.name:
-                for tag in tag_box_field.tags:
-                    if tag.id == TAG_ARCHIVED:
-                        return True
+        for tag in self.tags:
+            if tag.id == TAG_ARCHIVED:
+                return True
         return False
 
     def __init__(
@@ -189,27 +173,15 @@ class Entry(Base):
                 self.text_fields.append(field)
             elif isinstance(field, DatetimeField):
                 self.datetime_fields.append(field)
-            elif isinstance(field, TagBoxField):
-                self.tag_box_fields.append(field)
             else:
                 raise ValueError(f"Invalid field type: {field}")
 
     def has_tag(self, tag: Tag) -> bool:
         return tag in self.tags
 
-    def remove_tag(self, tag: Tag, field: TagBoxField | None = None) -> None:
-        """Removes a Tag from the Entry.
-
-        If given a field index, the given Tag will
-        only be removed from that index. If left blank, all instances of that
-        Tag will be removed from the Entry.
-        """
-        if field:
-            field.tags.remove(tag)
-            return
-
-        for tag_box_field in self.tag_box_fields:
-            tag_box_field.tags.remove(tag)
+    def remove_tag(self, tag: Tag) -> None:
+        """Removes a Tag from the Entry."""
+        self.tags.remove(tag)
 
 
 class ValueType(Base):
@@ -237,7 +209,6 @@ class ValueType(Base):
     datetime_fields: Mapped[list[DatetimeField]] = relationship(
         "DatetimeField", back_populates="type"
     )
-    tag_box_fields: Mapped[list[TagBoxField]] = relationship("TagBoxField", back_populates="type")
     boolean_fields: Mapped[list[BooleanField]] = relationship("BooleanField", back_populates="type")
 
     @property
@@ -245,7 +216,7 @@ class ValueType(Base):
         FieldClass = {  # noqa: N806
             FieldTypeEnum.TEXT_LINE: TextField,
             FieldTypeEnum.TEXT_BOX: TextField,
-            FieldTypeEnum.TAGS: TagBoxField,
+            # FieldTypeEnum.TAGS: TagBoxField,
             FieldTypeEnum.DATETIME: DatetimeField,
             FieldTypeEnum.BOOLEAN: BooleanField,
         }
