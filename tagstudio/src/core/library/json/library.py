@@ -304,8 +304,6 @@ class Library:
     def __init__(self) -> None:
         # Library Info =========================================================
         self.library_dir: Path = None
-        # Cached result of os.walk when relinking library files
-        self._library_file_cache: list[(string, list[string], list[string])] = None
 
         # Entries ==============================================================
         # List of every Entry object.
@@ -1094,7 +1092,6 @@ class Library:
                     yield (i, True)
                 else:
                     yield (i, False)
-        self._library_file_cache = None
 
         # self._purge_empty_missing_entries()
 
@@ -1127,12 +1124,9 @@ class Library:
 
         matches = []
 
-        if self._library_file_cache is None:
-            self._library_file_cache = list(os.walk(self.library_dir))
-
         # for file in self.missing_files:
         path = Path(file)
-        for root, dirs, files in self._library_file_cache:
+        for root, dirs, files in os.walk(self.library_dir):
             for f in files:
                 # print(f'{tail} --- {f}')
                 if path.name == f and "$recycle.bin" not in str(root).lower():
