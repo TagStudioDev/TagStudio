@@ -599,7 +599,7 @@ class ThumbRenderer(QObject):
 
         It works using the VTF2IMG library for PILLOW.
         """
-        parser = Parser(filepath.as_posix())
+        parser = Parser(str(filepath))
         im: Image.Image | None = None
         try:
             im = parser.get_image()
