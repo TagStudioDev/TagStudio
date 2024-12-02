@@ -1,5 +1,3 @@
-from typing import Union
-
 from src.core.query_lang.ast import AST, ANDList, Constraint, Not, ORList, Property
 from src.core.query_lang.tokenizer import ConstraintType, Token, Tokenizer, TokenType
 from src.core.query_lang.util import ParsingError
@@ -25,24 +23,24 @@ class Parser:
             raise ParsingError(self.next_token.start, self.next_token.end, "Syntax Error")
         return out
 
-    def __or_list(self) -> ORList:
+    def __or_list(self) -> AST:
         terms = [self.__and_list()]
 
         while self.__is_next_or():
             self.__eat(TokenType.ULITERAL)
             terms.append(self.__and_list())
 
-        return ORList(terms)
+        return ORList(terms) if len(terms) > 1 else terms[0]
 
     def __is_next_or(self) -> bool:
         return self.next_token.type == TokenType.ULITERAL and self.next_token.value.upper() == "OR"
 
-    def __and_list(self) -> ANDList:
+    def __and_list(self) -> AST:
         elements = [self.__term()]
         while self.next_token.type != TokenType.EOF and not self.__is_next_or():
             self.__skip_and()
             elements.append(self.__term())
-        return ANDList(elements)
+        return ANDList(elements) if len(elements) > 1 else elements[0]
 
     def __skip_and(self) -> None:
         if self.__is_next_and():
@@ -54,7 +52,7 @@ class Parser:
     def __is_next_and(self) -> bool:
         return self.next_token.type == TokenType.ULITERAL and self.next_token.value.upper() == "AND"
 
-    def __term(self) -> Union[ORList, Constraint, Not]:
+    def __term(self) -> AST:
         if self.__is_next_not():
             self.__eat(TokenType.ULITERAL)
             return Not(self.__term())
@@ -108,9 +106,3 @@ class Parser:
 
     def __syntax_error(self, msg: str = "Syntax Error") -> ParsingError:
         return ParsingError(self.next_token.start, self.next_token.end, msg)
-
-
-if __name__ == "__main__":  # TODO remove
-    print("")  # noqa: T201
-    p = Parser("Mario AND Luigi tag:test[parent=Color,color=red] OR mediatype:test")
-    print(p.parse())  # noqa: T201

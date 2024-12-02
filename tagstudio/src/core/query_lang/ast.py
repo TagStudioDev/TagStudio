@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from enum import Enum
-from typing import Generic, TypeVar, Union
+from typing import Generic, TypeVar
 
 
 class ConstraintType(Enum):  # TODO add remaining ones
@@ -37,9 +37,9 @@ class AST:
 
 
 class ANDList(AST):
-    terms: list[Union["ORList", "Constraint", "Not"]]
+    terms: list[AST]
 
-    def __init__(self, terms: list[Union["ORList", "Constraint", "Not"]]) -> None:
+    def __init__(self, terms: list[AST]) -> None:
         super().__init__()
         for term in terms:
             term.parent = self
@@ -47,9 +47,9 @@ class ANDList(AST):
 
 
 class ORList(AST):
-    elements: list[ANDList]
+    elements: list[AST]
 
-    def __init__(self, elements: list[ANDList]) -> None:
+    def __init__(self, elements: list[AST]) -> None:
         super().__init__()
         for element in elements:
             element.parent = self
