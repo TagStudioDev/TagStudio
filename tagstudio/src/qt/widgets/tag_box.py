@@ -12,7 +12,7 @@ from PySide6.QtWidgets import QPushButton
 from src.core.constants import TAG_ARCHIVED, TAG_FAVORITE
 from src.core.library import Entry, Tag
 from src.core.library.alchemy.enums import FilterState
-from src.core.library.alchemy.fields import TagBoxField
+#from src.core.library.alchemy.fields import TagBoxField
 from src.qt.flowlayout import FlowLayout
 from src.qt.modals.build_tag import BuildTagPanel
 from src.qt.modals.tag_search import TagSearchPanel

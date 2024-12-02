@@ -47,11 +47,10 @@ from .enums import FieldTypeEnum, FilterState, TagColor
 from .fields import (
     BaseField,
     DatetimeField,
-    TagBoxField,
     TextField,
     _FieldID,
 )
-from .joins import TagField, TagSubtag
+from .joins import TagEntry, TagSubtag
 from .models import Entry, Folder, Preferences, Tag, TagAlias, ValueType
 
 logger = structlog.get_logger(__name__)
@@ -354,42 +353,43 @@ class Library:
             session.delete(item)
             session.commit()
 
-    def remove_field_tag(self, entry: Entry, tag_id: int, field_key: str) -> bool:
-        assert isinstance(field_key, str), f"field_key is {type(field_key)}"
-        with Session(self.engine) as session:
-            # find field matching entry and field_type
-            field = session.scalars(
-                select(TagBoxField).where(
-                    and_(
-                        TagBoxField.entry_id == entry.id,
-                        TagBoxField.type_key == field_key,
-                    )
-                )
-            ).first()
-
-            if not field:
-                logger.error("no field found", entry=entry, field=field)
-                return False
-
-            try:
-                # find the record in `TagField` table and delete it
-                tag_field = session.scalars(
-                    select(TagField).where(
-                        and_(
-                            TagField.tag_id == tag_id,
-                            TagField.field_id == field.id,
-                        )
-                    )
-                ).first()
-                if tag_field:
-                    session.delete(tag_field)
-                    session.commit()
-
-                return True
-            except IntegrityError as e:
-                logger.exception(e)
-                session.rollback()
-                return False
+#TODO: Remove (i think)
+#    def remove_field_tag(self, entry: Entry, tag_id: int, field_key: str) -> bool:
+#        assert isinstance(field_key, str), f"field_key is {type(field_key)}"
+#        with Session(self.engine) as session:
+#            # find field matching entry and field_type
+#            field = session.scalars(
+#                select(TagBoxField).where(
+#                    and_(
+#                        TagBoxField.entry_id == entry.id,
+#                        TagBoxField.type_key == field_key,
+#                    )
+#                )
+#            ).first()
+#
+#            if not field:
+#                logger.error("no field found", entry=entry, field=field)
+#                return False
+#
+#            try:
+#                # find the record in `TagField` table and delete it
+#                tag_field = session.scalars(
+#                    select(TagField).where(
+#                        and_(
+#                            TagField.tag_id == tag_id,
+#                            TagField.field_id == field.id,
+#                        )
+#                    )
+#                ).first()
+#                if tag_field:
+#                    session.delete(tag_field)
+#                    session.commit()
+#
+#                return True
+#            except IntegrityError as e:
+#                logger.exception(e)
+#                session.rollback()
+#                return False
 
     def get_entry(self, entry_id: int) -> Entry | None:
         """Load entry without joins."""
@@ -415,12 +415,12 @@ class Library:
                 stmt = (
                     stmt.outerjoin(Entry.text_fields)
                     .outerjoin(Entry.datetime_fields)
-                    .outerjoin(Entry.tag_box_fields)
+                    #.outerjoin(Entry.tag_box_fields)
                 )
                 stmt = stmt.options(
                     contains_eager(Entry.text_fields),
                     contains_eager(Entry.datetime_fields),
-                    contains_eager(Entry.tag_box_fields).selectinload(TagBoxField.tags),
+                    #contains_eager(Entry.tag_box_fields).selectinload(TagBoxField.tags),
                 )
 
             stmt = stmt.distinct()
@@ -520,8 +520,9 @@ class Library:
             if search.tag:
                 SubtagAlias = aliased(Tag)  # noqa: N806
                 statement = (
-                    statement.join(Entry.tag_box_fields)
-                    .join(TagBoxField.tags)
+                    statement
+                    #.join(Entry.tag_box_fields)
+                    #.join(TagBoxField.tags)
                     .outerjoin(Tag.aliases)
                     .outerjoin(SubtagAlias, Tag.subtags)
                     .where(
@@ -536,7 +537,7 @@ class Library:
             elif search.tag_id:
                 statement = (
                     statement.join(Entry.tag_box_fields)
-                    .join(TagBoxField.tags)
+                    #.join(TagBoxField.tags)
                     .where(Tag.id == search.tag_id)
                 )
 
@@ -579,7 +580,7 @@ class Library:
                 selectinload(Entry.text_fields),
                 selectinload(Entry.datetime_fields),
                 selectinload(Entry.tag_box_fields)
-                .joinedload(TagBoxField.tags)
+                #.joinedload(TagBoxField.tags)
                 .options(selectinload(Tag.aliases), selectinload(Tag.subtags)),
             )
 
@@ -675,15 +676,16 @@ class Library:
             session.execute(update_stmt)
             session.commit()
 
-    def remove_tag_from_field(self, tag: Tag, field: TagBoxField) -> None:
-        with Session(self.engine) as session:
-            field_ = session.scalars(select(TagBoxField).where(TagBoxField.id == field.id)).one()
-
-            tag = session.scalars(select(Tag).where(Tag.id == tag.id)).one()
-
-            field_.tags.remove(tag)
-            session.add(field_)
-            session.commit()
+#TODO: delete (i think)
+#    def remove_tag_from_field(self, tag: Tag, field: TcagBoxField) -> None:
+#        with Session(self.engine) as session:
+#            field_ = session.scalars(select(TagBoxField).where(TagBoxField.id == field.id)).one()
+#
+#            tag = session.scalars(select(Tag).where(Tag.id == tag.id)).one()
+#
+#            field_.tags.remove(tag)
+#            session.add(field_)
+#            session.commit()
 
     def update_field_position(
         self,
@@ -814,24 +816,24 @@ class Library:
                 field_id = field_id.name
             field = self.get_value_type(field_id)
 
-        field_model: TextField | DatetimeField | TagBoxField
+        field_model: TextField | DatetimeField #| TagBoxField
         if field.type in (FieldTypeEnum.TEXT_LINE, FieldTypeEnum.TEXT_BOX):
             field_model = TextField(
                 type_key=field.key,
                 value=value or "",
             )
-        elif field.type == FieldTypeEnum.TAGS:
-            field_model = TagBoxField(
-                type_key=field.key,
-            )
-
-            if value:
-                assert isinstance(value, list)
-                with Session(self.engine) as session:
-                    for tag_id in list(set(value)):
-                        tag = session.scalar(select(Tag).where(Tag.id == tag_id))
-                        field_model.tags.add(tag)
-                        session.flush()
+#        elif field.type == FieldTypeEnum.TAGS:
+#            field_model = TagBoxField(
+#                type_key=field.key,
+#            )
+#
+#            if value:
+#                assert isinstance(value, list)
+#                with Session(self.engine) as session:
+#                    for tag_id in list(set(value)):
+#                        tag = session.scalar(select(Tag).where(Tag.id == tag_id))
+#                        field_model.tags.add(tag)
+#                        session.flush()
 
         elif field.type == FieldTypeEnum.DATETIME:
             field_model = DatetimeField(
@@ -913,60 +915,61 @@ class Library:
                 session.rollback()
                 return None
 
-    def add_field_tag(
-        self,
-        entry: Entry,
-        tag: Tag,
-        field_key: str = _FieldID.TAGS.name,
-        create_field: bool = False,
-    ) -> bool:
-        assert isinstance(field_key, str), f"field_key is {type(field_key)}"
-
-        with Session(self.engine) as session:
-            # find field matching entry and field_type
-            field = session.scalars(
-                select(TagBoxField).where(
-                    and_(
-                        TagBoxField.entry_id == entry.id,
-                        TagBoxField.type_key == field_key,
-                    )
-                )
-            ).first()
-
-            if not field and not create_field:
-                logger.error("no field found", entry=entry, field_key=field_key)
-                return False
-
-            try:
-                if not field:
-                    field = TagBoxField(
-                        type_key=field_key,
-                        entry_id=entry.id,
-                        position=0,
-                    )
-                    session.add(field)
-                    session.flush()
-
-                # create record for `TagField` table
-                if not tag.id:
-                    session.add(tag)
-                    session.flush()
-
-                tag_field = TagField(
-                    tag_id=tag.id,
-                    field_id=field.id,
-                )
-
-                session.add(tag_field)
-                session.commit()
-                logger.info("tag added to field", tag=tag, field=field, entry_id=entry.id)
-
-                return True
-            except IntegrityError as e:
-                logger.exception(e)
-                session.rollback()
-
-                return False
+# TODO: Delete
+#    def add_field_tag(
+#        self,
+#        entry: Entry,
+#        tag: Tag,
+#        field_key: str = _FieldID.TAGS.name,
+#        create_field: bool = False,
+#    ) -> bool:
+#        assert isinstance(field_key, str), f"field_key is {type(field_key)}"
+#
+#        with Session(self.engine) as session:
+#            # find field matching entry and field_type
+#            field = session.scalars(
+#                select(TagBoxField).where(
+#                    and_(
+#                        TagBoxField.entry_id == entry.id,
+#                        TagBoxField.type_key == field_key,
+#                    )
+#                )
+#            ).first()
+#
+#            if not field and not create_field:
+#                logger.error("no field found", entry=entry, field_key=field_key)
+#                return False
+#
+#            try:
+#                if not field:
+#                    field = TagBoxField(
+#                        type_key=field_key,
+#                        entry_id=entry.id,
+#                        position=0,
+#                    )
+#                    session.add(field)
+#                    session.flush()
+#
+#                # create record for `TagField` table
+#                if not tag.id:
+#                    session.add(tag)
+#                    session.flush()
+#
+#                tag_field = TagField(
+#                    tag_id=tag.id,
+#                    field_id=field.id,
+#                )
+#
+#                session.add(tag_field)
+#                session.commit()
+#                logger.info("tag added to field", tag=tag, field=field, entry_id=entry.id)
+#
+#                return True
+#            except IntegrityError as e:
+#                logger.exception(e)
+#                session.rollback()
+#
+#                return False
 
     def save_library_backup_to_disk(self) -> Path:
         assert isinstance(self.library_dir, Path)

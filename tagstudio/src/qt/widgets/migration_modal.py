@@ -22,8 +22,10 @@ from sqlalchemy.orm import Session
 from src.core.constants import TS_FOLDER_NAME
 from src.core.enums import LibraryPrefs
 from src.core.library.alchemy.enums import FieldTypeEnum, TagColor
-from src.core.library.alchemy.fields import TagBoxField, _FieldID
-from src.core.library.alchemy.joins import TagField, TagSubtag
+#from src.core.library.alchemy.fields import TagBoxField, _FieldID
+from src.core.library.alchemy.fields import _FieldID
+#from src.core.library.alchemy.joins import TagField, TagSubtag
+from src.core.library.alchemy.joins import TagSubtag
 from src.core.library.alchemy.library import Library as SqliteLibrary
 from src.core.library.alchemy.models import Entry, Tag, TagAlias
 from src.core.library.json.library import Library as JsonLibrary  # type: ignore
@@ -507,24 +509,24 @@ class JsonMigrationModal(QObject):
         """Check if all JSON field data matches the new SQL field data."""
 
         def sanitize_field(session, entry: Entry, value, type, type_key):
-            if type is FieldTypeEnum.TAGS:
-                tags = list(
-                    session.scalars(
-                        select(Tag.id)
-                        .join(TagField)
-                        .join(TagBoxField)
-                        .where(
-                            and_(
-                                TagBoxField.entry_id == entry.id,
-                                TagBoxField.id == TagField.field_id,
-                                TagBoxField.type_key == type_key,
-                            )
-                        )
-                    )
-                )
-
-                return set(tags) if tags else None
-            else:
+#            if type is FieldTypeEnum.TAGS:
+#                tags = list(
+#                    session.scalars(
+#                        select(Tag.id)
+#                        .join(TagField)
+#                        .join(TagBoxField)
+#                        .where(
+#                            and_(
+#                                TagBoxField.entry_id == entry.id,
+#                                TagBoxField.id == TagField.field_id,
+#                                TagBoxField.type_key == type_key,
+#                            )
+#                        )
+#                    )
+#                )
+#
+#                return set(tags) if tags else None
+#            else:
                 return value if value else None
 
         def sanitize_json_field(value):
