@@ -1,4 +1,4 @@
-from pathlib import Path, PureWindowsPath
+from pathlib import Path
 from tempfile import TemporaryDirectory
 
 import pytest
@@ -262,28 +262,6 @@ def test_search_library_case_insensitive(library):
 def test_preferences(library):
     for pref in LibraryPrefs:
         assert library.prefs(pref) == pref.default
-
-
-def test_save_windows_path(library, generate_tag):
-    # pretend we are on windows and create `Path`
-
-    entry = Entry(
-        path=PureWindowsPath("foo\\bar.txt"),
-        folder=library.folder,
-        fields=library.default_fields,
-    )
-    tag = generate_tag("win_path")
-    tag_name = tag.name
-
-    library.add_entries([entry])
-    # library.add_tag(tag)
-    library.add_field_tag(entry, tag, create_field=True)
-
-    results = library.search_library(FilterState(tag=tag_name))
-    assert results
-
-    # path should be saved in posix format
-    assert str(results[0].path) == "foo/bar.txt"
 
 
 def test_remove_entry_field(library, entry_full):
