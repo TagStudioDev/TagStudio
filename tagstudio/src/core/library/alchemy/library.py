@@ -18,7 +18,6 @@ from sqlalchemy import (
     and_,
     create_engine,
     delete,
-    distinct,
     exists,
     func,
     or_,
@@ -564,10 +563,9 @@ class Library:
                 .options(selectinload(Tag.aliases), selectinload(Tag.subtags)),
             )
 
-            aliased_statement = statement.alias("entries")
-            query_count = select(func.count(distinct(aliased_statement.c.id))).select_from(
-                aliased_statement
-            )
+            statement = statement.distinct(Entry.id)
+
+            query_count = select(func.count()).select_from(statement.alias("entries"))
             start = time.time()
             count_all: int = session.execute(query_count).scalar()
             end = time.time()
@@ -584,7 +582,7 @@ class Library:
             start = time.time()
             res = SearchResult(
                 total_count=count_all,
-                items=list(session.scalars(statement).unique()),
+                items=list(session.scalars(statement)),
             )
             end = time.time()
             logger.info(f"SQL Results Query done in {format_timespan(end-start)}")
