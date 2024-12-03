@@ -85,7 +85,7 @@ class SQLBoolExpressionBuilder(BaseVisitor[ColumnExpressionArgument]):
         raise NotImplementedError("This type of constraint is not implemented yet")
 
     def visit_property(self, node: Property) -> None:
-        return  # TODO TSQLANG raise exception here
+        raise NotImplementedError("This should never be reached!")
 
     def visit_not(self, node: Not) -> ColumnExpressionArgument:
         return ~self.__entry_satisfies_ast(node.child)
