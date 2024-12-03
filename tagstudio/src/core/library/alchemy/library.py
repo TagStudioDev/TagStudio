@@ -539,13 +539,10 @@ class Library:
         with Session(self.engine, expire_on_commit=False) as session:
             statement = select(Entry)
 
-            start = time.time()
             if search.ast:
                 statement = statement.outerjoin(Entry.tag_box_fields).where(
                     SQLBoolExpressionBuilder(self).visit(search.ast)
                 )
-            end = time.time()
-            logger.info(f"Building SQL Done in {format_timespan(end-start)}")
 
             extensions = self.prefs(LibraryPrefs.EXTENSION_LIST)
             is_exclude_list = self.prefs(LibraryPrefs.IS_EXCLUDE_LIST)
@@ -566,10 +563,7 @@ class Library:
             statement = statement.distinct(Entry.id)
 
             query_count = select(func.count()).select_from(statement.alias("entries"))
-            start = time.time()
             count_all: int = session.execute(query_count).scalar()
-            end = time.time()
-            logger.info(f"SQL Count Query done in {format_timespan(end-start)}")
 
             statement = statement.limit(search.limit).offset(search.offset)
 
@@ -579,13 +573,10 @@ class Library:
                 query_full=str(statement.compile(compile_kwargs={"literal_binds": True})),
             )
 
-            start = time.time()
             res = SearchResult(
                 total_count=count_all,
                 items=list(session.scalars(statement)),
             )
-            end = time.time()
-            logger.info(f"SQL Results Query done in {format_timespan(end-start)}")
 
             session.expunge_all()
 
