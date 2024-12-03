@@ -697,7 +697,7 @@ class QtDriver(DriverMixin, QObject):
                 pw.update_progress(x + 1),
                 pw.update_label(
                     f"Scanning Directories for New Files...\n{x + 1}"
-                    f" File{"s" if x + 1 != 1 else ""} Searched,"
+                    f' File{"s" if x + 1 != 1 else ""} Searched,'
                     f" {tracker.files_count} New Files Found"
                 ),
             )
@@ -1174,7 +1174,7 @@ class QtDriver(DriverMixin, QObject):
         all_libs_list = sorted(all_libs.items(), key=lambda item: item[0], reverse=True)
 
         # remove previously saved items
-        self.settings.clear()
+        self.settings.remove("")
 
         for item_key, item_value in all_libs_list[:item_limit]:
             self.settings.setValue(item_key, item_value)
