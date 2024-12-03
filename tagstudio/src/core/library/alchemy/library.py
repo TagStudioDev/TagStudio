@@ -542,11 +542,8 @@ class Library:
 
             start = time.time()
             if search.ast:
-                statement = (
-                    statement.outerjoin(Entry.tag_box_fields)
-                    .outerjoin(TagBoxField.tags)
-                    .outerjoin(TagAlias)
-                    .where(SQLBoolExpressionBuilder().visit(search.ast))
+                statement = statement.outerjoin(Entry.tag_box_fields).where(
+                    SQLBoolExpressionBuilder(self).visit(search.ast)
                 )
             end = time.time()
             logger.info(f"Building SQL Done in {format_timespan(end-start)}")
