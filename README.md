@@ -29,9 +29,9 @@ TagStudio is a photo & file organization application with an underlying tag-base
 <p align="center">
   <img width="80%" src="docs/assets/screenshot.jpg" alt="TagStudio Screenshot">
 </p>
-<figure align="center">
-  <figcaption><i>TagStudio Alpha v9.4.2 running on Windows 10.</i></figcaption>
-</figure>
+<p align="center">
+  <i>TagStudio Alpha v9.4.2 running on Windows 10.</i>
+</p>
 
 ## Contents
 
@@ -93,8 +93,9 @@ Translation hosting generously provided by [Weblate](https://weblate.org/en/). C
 - Open files or file locations by right-clicking on thumbnails and previews and selecting the respective context menu options. You can also click on the preview panel image to open the file, and click the file path label to open its location.
 - Delete files from both your library and drive by right-clicking the thumbnail(s) and selecting the "Move to Trash"/"Move to Recycle Bin" option.
 
-> - _\* Weird files with no extension or files such as ".\_DS_Store" currently have limited support._
-> - _\*\* Audio playback coming in v9.5_
+> _\* Weird files with no extension or files such as ".\_DS_Store" currently have limited support._
+>
+> _\*\* Audio playback coming in v9.5_
 
 > [!NOTE]
 > For more information on the project itself, please see the [FAQ](#faq) section as well as the [documentation](https://docs.tagstud.io/).
@@ -118,7 +119,7 @@ Arguments available to pass to the program, either via the command line or a sho
 
 > `--open <path>` / `-o <path>`
 > Path to a TagStudio Library folder to open on start.
-
+>
 > `--config-file <path>` / `-c <path>`
 > Path to the TagStudio config file to load.
 

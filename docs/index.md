@@ -5,7 +5,7 @@ title: Home
 # Welcome to the TagStudio Documentation!
 
 !!! warning
-This documentation is still a work in progress, and is intended to aide with deconstructing and understanding of the core mechanics of TagStudio and how it operates.
+	This documentation is still a work in progress, and is intended to aide with deconstructing and understanding of the core mechanics of TagStudio and how it operates.
 
 ![TagStudio Alpha](assets/github_header.png)
 
@@ -64,5 +64,6 @@ The [Feature Roadmap](updates/roadmap.md) lists all of the planned core features
 - Open files or file locations by right-clicking on thumbnails and previews and selecting the respective context menu options. You can also click on the preview panel image to open the file, and click the file path label to open its location.
 - Delete files from both your library and drive by right-clicking the thumbnail(s) and selecting the "Move to Trash"/"Move to Recycle Bin" option.
 
-> - _\* Weird files with no extension or files such as ".\_DS_Store" currently have limited support._
-> - _\*\* Audio playback coming in v9.5_
+> _\* Weird files with no extension or files such as ".\_DS_Store" currently have limited support._
+>
+> _\*\* Audio playback coming in v9.5_
