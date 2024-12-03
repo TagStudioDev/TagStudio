@@ -1,12 +1,13 @@
 from typing import TYPE_CHECKING
 
-from sqlalchemy import and_, or_, select
+from sqlalchemy import and_, distinct, func, or_, select
 from sqlalchemy.orm import Session
-from sqlalchemy.sql.expression import ColumnExpressionArgument
+from sqlalchemy.sql.expression import BinaryExpression, ColumnExpressionArgument
 from src.core.media_types import MediaCategories
 from src.core.query_lang import BaseVisitor
-from src.core.query_lang.ast import ANDList, Constraint, ConstraintType, Not, ORList, Property
+from src.core.query_lang.ast import AST, ANDList, Constraint, ConstraintType, Not, ORList, Property
 
+from .joins import TagField
 from .models import Entry, Tag, TagAlias, TagBoxField
 
 # workaround to have autocompletion in the Editor
@@ -17,7 +18,7 @@ else:
 # PS: If you don't like this find a better way or deal with it :) -Computerdores
 
 
-class SQLBoolExpressionBuilder(BaseVisitor):
+class SQLBoolExpressionBuilder(BaseVisitor[ColumnExpressionArgument]):
     def __init__(self, lib: Library) -> None:
         super().__init__()
         self.lib = lib
@@ -26,19 +27,34 @@ class SQLBoolExpressionBuilder(BaseVisitor):
         return or_(*[self.visit(element) for element in node.elements])
 
     def visit_and_list(self, node: ANDList) -> ColumnExpressionArgument:
-        return and_(
-            *[
-                Entry.id.in_(
-                    # TODO maybe try to figure out how to remove this code duplication
-                    # My attempts to do this lead to very weird and (to me) unexplainable
-                    # errors. Even just extracting the part up until the where to a seperate
-                    # function leads to an error eventhough that shouldn't be possible.
-                    #  -Computerdores
-                    select(Entry.id).outerjoin(Entry.tag_box_fields).where(self.visit(term))
-                )
-                for term in node.terms
-            ]
-        )
+        tag_ids: list[int] = []
+        bool_expressions: list[ColumnExpressionArgument] = []
+
+        # Search for TagID / unambigous Tag Constraints and store the respective tag ids seperately
+        for term in node.terms:
+            if isinstance(term, Constraint) and len(term.properties) == 0:
+                match term.type:
+                    case ConstraintType.TagID:
+                        tag_ids.append(int(term.value))
+                        continue
+                    case ConstraintType.Tag:
+                        if len(ids := self.__get_tag_ids(term.value)) == 1:
+                            tag_ids.append(ids[0])
+                            continue
+
+            bool_expressions.append(self.__entry_satisfies_ast(term))
+
+        # If there are at least two tag ids use a relational division query
+        # to efficiently check all of them
+        if len(tag_ids) > 1:
+            bool_expressions.append(self.__entry_has_all_tags(tag_ids))
+        # If there is just one tag id, check the normal way
+        elif len(tag_ids) == 1:
+            bool_expressions.append(
+                self.__entry_satisfies_expression(TagField.tag_id == tag_ids[0])
+            )
+
+        return and_(*bool_expressions)
 
     def visit_constraint(self, node: Constraint) -> ColumnExpressionArgument:
         if len(node.properties) != 0:
@@ -69,15 +85,13 @@ class SQLBoolExpressionBuilder(BaseVisitor):
         raise NotImplementedError("This type of constraint is not implemented yet")
 
     def visit_property(self, node: Property) -> None:
-        return
+        return  # TODO TSQLANG raise exception here
 
     def visit_not(self, node: Not) -> ColumnExpressionArgument:
-        return ~Entry.id.in_(
-            # TODO TSQLANG this is technically code duplication, refer to TODO above for why
-            select(Entry.id).outerjoin(Entry.tag_box_fields).where(self.visit(node.child))
-        )
+        return ~self.__entry_satisfies_ast(node.child)
 
     def __get_tag_ids(self, tag_name: str) -> list[int]:
+        """Given a tag name find the ids of all tags that this name could refer to."""
         with Session(self.lib.engine, expire_on_commit=False) as session:
             return list(
                 session.scalars(
@@ -86,3 +100,25 @@ class SQLBoolExpressionBuilder(BaseVisitor):
                     .union(select(TagAlias.tag_id).where(TagAlias.name.ilike(tag_name)))
                 )
             )
+
+    def __entry_has_all_tags(self, tag_ids: list[int]) -> BinaryExpression[bool]:
+        """Returns Binary Expression that is true if the Entry has all provided tag ids."""
+        # Relational Division Query
+        return Entry.id.in_(
+            select(Entry.id)
+            .outerjoin(TagBoxField)
+            .outerjoin(TagField)
+            .where(TagField.tag_id.in_(tag_ids))
+            .group_by(Entry.id)
+            .having(func.count(distinct(TagField.tag_id)) == len(tag_ids))
+        )
+
+    def __entry_satisfies_ast(self, partial_query: AST) -> BinaryExpression[bool]:
+        """Returns Binary Expression that is true if the Entry satisfies the partial query."""
+        return self.__entry_satisfies_expression(self.visit(partial_query))
+
+    def __entry_satisfies_expression(
+        self, expr: ColumnExpressionArgument
+    ) -> BinaryExpression[bool]:
+        """Returns Binary Expression that is true if the Entry satisfies the column expression."""
+        return Entry.id.in_(select(Entry.id).outerjoin(Entry.tag_box_fields).where(expr))
