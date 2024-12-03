@@ -55,7 +55,10 @@ class Parser:
     def __term(self) -> AST:
         if self.__is_next_not():
             self.__eat(TokenType.ULITERAL)
-            return Not(self.__term())
+            term = self.__term()
+            if isinstance(term, Not):  # instead of Not(Not(child)) return child
+                return term.child
+            return Not(term)
         if self.next_token.type == TokenType.RBRACKETO:
             self.__eat(TokenType.RBRACKETO)
             out = self.__or_list()
