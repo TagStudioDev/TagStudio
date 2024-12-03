@@ -47,7 +47,7 @@ class SQLBoolExpressionBuilder(BaseVisitor):
         if node.type == ConstraintType.Tag:
             return TagBoxField.tags.any(Tag.id.in_(self.__get_tag_ids(node.value)))
         elif node.type == ConstraintType.TagID:
-            return Tag.id == int(node.value)
+            return TagBoxField.tags.any(Tag.id == int(node.value))
         elif node.type == ConstraintType.Path:
             return Entry.path.op("GLOB")(node.value)
         elif node.type == ConstraintType.MediaType:
