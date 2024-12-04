@@ -145,11 +145,3 @@ class Tokenizer:
     def __skip_whitespace(self) -> None:
         while self.current_char is not None and self.current_char.isspace():
             self.__advance()
-
-
-if __name__ == "__main__":  # TODO remove
-    t = Tokenizer("Mario AND Luigi tag:test[parent=Color,color=red]")
-    last = Token(None, None)
-    while last.type != TokenType.EOF:
-        last = t.get_next_token()
-        print(last)  # noqa: T201
