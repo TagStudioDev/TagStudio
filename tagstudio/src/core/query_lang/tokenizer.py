@@ -41,10 +41,10 @@ class Token:
         return Token.from_type(TokenType.EOF)
 
     def __str__(self) -> str:
-        return f"Token({self.type}, {self.value}, {self.start}, {self.end})"
+        return f"Token({self.type}, {self.value}, {self.start}, {self.end})"  # pragma: nocover
 
     def __repr__(self) -> str:
-        return self.__str__()
+        return self.__str__()  # pragma: nocover
 
 
 class Tokenizer:

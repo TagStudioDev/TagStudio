@@ -1,6 +1,7 @@
 import pytest
 from src.core.library.alchemy.enums import FilterState
 from src.core.library.alchemy.library import Library
+from src.core.query_lang.util import ParsingError
 
 
 def verify_count(lib: Library, query: str, count: int):
@@ -19,6 +20,7 @@ def verify_count(lib: Library, query: str, count: int):
         ("special:untagged", 1),
         ("filetype:png", 23),
         ("filetype:jpg", 6),
+        ("filetype:'jpg'", 6),
         ("tag_id:1011", 5),
         ("tag_id:1038", 11),
         ("doesnt exist", 0),
@@ -72,3 +74,51 @@ def test_and(search_library: Library, query: str, count: int):
 )
 def test_or(search_library: Library, query: str, count: int):
     verify_count(search_library, query, count)
+
+
+@pytest.mark.parametrize(
+    ["query", "count"],
+    [
+        ("not unexistant", 29),
+        ("not path:*", 0),
+        ("not not path:*", 29),
+        ("not special:untagged", 28),
+        ("not filetype:png", 6),
+        ("not filetype:jpg", 23),
+        ("not tag_id:1011", 24),
+        ("not tag_id:1038", 18),
+        ("not green", 24),
+        ("tag:favorite", 0),
+        ("not circle", 18),
+        ("not tag:square", 18),
+        ("circle and not square", 6),
+        ("not circle and square", 6),
+        ("special:untagged or not filetype:jpg", 24),
+        ("not square or green", 20),
+    ],
+)
+def test_not(search_library: Library, query: str, count: int):
+    verify_count(search_library, query, count)
+
+
+@pytest.mark.parametrize(
+    ["query", "count"],
+    [
+        ("(tag_id:1041)", 11),
+        ("(((tag_id:1041)))", 11),
+        ("not (not tag_id:1041)", 11),
+        ("((circle) and (not square))", 6),
+        ("(not ((square) OR (green)))", 15),
+        ("filetype:png and (tag:square or green)", 12),
+    ],
+)
+def test_parentheses(search_library: Library, query: str, count: int):
+    verify_count(search_library, query, count)
+
+
+@pytest.mark.parametrize(
+    "invalid_query", ["asd AND", "asd AND AND", "tag:(", "(asd", "asd[]", "asd]", ":", "tag: :"]
+)
+def test_syntax(search_library: Library, invalid_query: str):
+    with pytest.raises(ParsingError) as e_info:  # noqa: F841
+        search_library.search_library(FilterState.from_search_query(invalid_query))

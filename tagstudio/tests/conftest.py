@@ -120,7 +120,7 @@ def library(request):
 @pytest.fixture
 def search_library() -> Library:
     lib = Library()
-    lib.open_library(pathlib.Path("./tagstudio/tests/fixtures/search_library"))
+    lib.open_library(pathlib.Path(CWD / "fixtures" / "search_library"))
     return lib
 
 

@@ -9,7 +9,7 @@ class ParsingError(BaseException):
         self.msg = msg
 
     def __str__(self) -> str:
-        return f"Syntax Error {self.start}->{self.end}: {self.msg}"
+        return f"Syntax Error {self.start}->{self.end}: {self.msg}"  # pragma: nocover
 
     def __repr__(self) -> str:
-        return self.__str__()
+        return self.__str__()  # pragma: nocover

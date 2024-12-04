@@ -103,24 +103,24 @@ class BaseVisitor(ABC, Generic[T]):
             return self.visit_property(node)
         elif isinstance(node, Not):
             return self.visit_not(node)
-        raise Exception(f"Unknown Node Type of {node}")
+        raise Exception(f"Unknown Node Type of {node}")  # pragma: nocover
 
     @abstractmethod
     def visit_and_list(self, node: ANDList) -> T:
-        raise NotImplementedError()
+        raise NotImplementedError()  # pragma: nocover
 
     @abstractmethod
     def visit_or_list(self, node: ORList) -> T:
-        raise NotImplementedError()
+        raise NotImplementedError()  # pragma: nocover
 
     @abstractmethod
     def visit_constraint(self, node: Constraint) -> T:
-        raise NotImplementedError()
+        raise NotImplementedError()  # pragma: nocover
 
     @abstractmethod
     def visit_property(self, node: Property) -> T:
-        raise NotImplementedError()
+        raise NotImplementedError()  # pragma: nocover
 
     @abstractmethod
     def visit_not(self, node: Not) -> T:
-        raise NotImplementedError()
+        raise NotImplementedError()  # pragma: nocover
