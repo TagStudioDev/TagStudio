@@ -118,6 +118,13 @@ def library(request):
 
 
 @pytest.fixture
+def search_library() -> Library:
+    lib = Library()
+    lib.open_library(pathlib.Path("./tagstudio/tests/fixtures/search_library"))
+    return lib
+
+
+@pytest.fixture
 def entry_min(library):
     yield next(library.get_entries())
 
