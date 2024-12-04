@@ -3,7 +3,7 @@ from enum import Enum
 from typing import Generic, TypeVar
 
 
-class ConstraintType(Enum):  # TODO add remaining ones
+class ConstraintType(Enum):
     Tag = 0
     TagID = 1
     MediaType = 2
