@@ -1,8 +1,8 @@
 from enum import Enum
 from typing import Any
 
-from src.core.query_lang.ast import ConstraintType
-from src.core.query_lang.util import ParsingError
+from .ast import ConstraintType
+from .util import ParsingError
 
 
 class TokenType(Enum):
