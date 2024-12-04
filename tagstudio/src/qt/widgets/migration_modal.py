@@ -699,7 +699,7 @@ class JsonMigrationModal(QObject):
                 sql_aliases = set(
                     session.scalars(select(TagAlias.name).where(TagAlias.tag_id == tag.id))
                 )
-                json_aliases = set(self.json_lib.get_tag(tag_id).aliases)
+                json_aliases = set([x for x in self.json_lib.get_tag(tag_id).aliases if x])
 
                 logger.info(
                     "[Alias Parity]",

@@ -170,6 +170,8 @@ class Library:
         # Tag Aliases
         for tag in json_lib.tags:
             for alias in tag.aliases:
+                if not alias:
+                    break
                 self.add_alias(name=alias, tag_id=tag.id)
 
         # Tag Subtags
@@ -1027,6 +1029,9 @@ class Library:
 
     def add_alias(self, name: str, tag_id: int) -> bool:
         with Session(self.engine) as session:
+            if not name:
+                logger.warning("[LIBRARY][add_alias] Alias value must not be empty")
+                return False
             alias = TagAlias(
                 name=name,
                 tag_id=tag_id,
