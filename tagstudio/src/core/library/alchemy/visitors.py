@@ -120,4 +120,6 @@ class SQLBoolExpressionBuilder(BaseVisitor[ColumnExpressionArgument]):
         self, expr: ColumnExpressionArgument
     ) -> BinaryExpression[bool]:
         """Returns Binary Expression that is true if the Entry satisfies the column expression."""
-        return Entry.id.in_(select(Entry.id).outerjoin(Entry.tag_box_fields).where(expr))
+        return Entry.id.in_(
+            select(Entry.id).outerjoin(Entry.tag_box_fields).outerjoin(TagField).where(expr)
+        )
