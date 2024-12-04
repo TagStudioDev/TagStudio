@@ -1,6 +1,6 @@
-from src.core.query_lang.ast import AST, ANDList, Constraint, Not, ORList, Property
-from src.core.query_lang.tokenizer import ConstraintType, Token, Tokenizer, TokenType
-from src.core.query_lang.util import ParsingError
+from .ast import AST, ANDList, Constraint, Not, ORList, Property
+from .tokenizer import ConstraintType, Token, Tokenizer, TokenType
+from .util import ParsingError
 
 
 class Parser:
@@ -37,7 +37,7 @@ class Parser:
 
     def __and_list(self) -> AST:
         elements = [self.__term()]
-        while self.next_token.type != TokenType.EOF and not self.__is_next_or():
+        while self.next_token.type in [TokenType.QLITERAL, TokenType.ULITERAL, TokenType.CONSTRAINTTYPE, TokenType.RBRACKETO] and not self.__is_next_or():
             self.__skip_and()
             elements.append(self.__term())
         return ANDList(elements) if len(elements) > 1 else elements[0]
