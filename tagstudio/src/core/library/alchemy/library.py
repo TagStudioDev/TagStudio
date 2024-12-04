@@ -52,7 +52,7 @@ from .fields import (
     _FieldID,
 )
 from .joins import TagField, TagSubtag
-from .models import Entry, Folder, Preferences, Tag, TagAlias, ValueType
+from .models import Entry, Folder, Preferences, Tag, TagAlias, ValueType, Color, ColorNamespace
 
 logger = structlog.get_logger(__name__)
 
@@ -89,6 +89,51 @@ def get_default_tags() -> tuple[Tag, ...]:
     )
 
     return archive_tag, favorite_tag
+
+
+def get_default_colors(namespace: ColorNamespace) -> list[Color]:
+    colors: list[Color] = [
+        #TODO: reduce this to limited tagstudio standard color set
+        Color(id=1, hex_value="#1e1e1e", name="Default", user_defined=False, namespace_id=namespace.id),
+        Color(id=2, hex_value="#111018", name="BLACK", user_defined=False, namespace_id=namespace.id),
+        Color(id=3, hex_value="#24232a", name="DARK_GRAY", user_defined=False, namespace_id=namespace.id),
+        Color(id=4, hex_value="#53525a", name="GRAY", user_defined=False, namespace_id=namespace.id),
+        Color(id=5, hex_value="#aaa9b0", name="LIGHT_GRAY", user_defined=False, namespace_id=namespace.id),
+        Color(id=6, hex_value="#f2f1f8", name="WHITE", user_defined=False, namespace_id=namespace.id),
+        Color(id=7, hex_value="#ff99c4", name="LIGHT_PINK", user_defined=False, namespace_id=namespace.id),
+        Color(id=8, hex_value="#ff99c4", name="PINK", user_defined=False, namespace_id=namespace.id),
+        Color(id=9, hex_value="#f6466f", name="MAGENTA", user_defined=False, namespace_id=namespace.id),
+        Color(id=10, hex_value="#e22c3c", name="RED", user_defined=False, namespace_id=namespace.id),
+        Color(id=11, hex_value="#e83726", name="RED_ORANGE", user_defined=False, namespace_id=namespace.id),
+        Color(id=12, hex_value="#f65848", name="SALMON", user_defined=False, namespace_id=namespace.id),
+        Color(id=13, hex_value="#ed6022", name="ORANGE", user_defined=False, namespace_id=namespace.id),
+        Color(id=14, hex_value="#fa9a2c", name="YELLOW_ORANGE", user_defined=False, namespace_id=namespace.id),
+        Color(id=15, hex_value="#ffd63d", name="YELLOW", user_defined=False, namespace_id=namespace.id),
+        Color(id=16, hex_value="#4aed90", name="MINT", user_defined=False, namespace_id=namespace.id),
+        Color(id=17, hex_value="#92e649", name="LIME", user_defined=False, namespace_id=namespace.id),
+        Color(id=18, hex_value="#85ec76", name="LIGHT_GREEN", user_defined=False, namespace_id=namespace.id),
+        Color(id=19, hex_value="#28bb48", name="GREEN", user_defined=False, namespace_id=namespace.id),
+        Color(id=20, hex_value="#1ad9b2", name="TEAL", user_defined=False, namespace_id=namespace.id),
+        Color(id=21, hex_value="#49e4d5", name="CYAN", user_defined=False, namespace_id=namespace.id),
+        Color(id=22, hex_value="#55bbf6", name="LIGHT_BLUE", user_defined=False, namespace_id=namespace.id),
+        Color(id=23, hex_value="#3b87f0", name="BLUE", user_defined=False, namespace_id=namespace.id),
+        Color(id=24, hex_value="#5948f2", name="BLUE_VIOLET", user_defined=False, namespace_id=namespace.id),
+        Color(id=25, hex_value="#874ff5", name="VIOLET", user_defined=False, namespace_id=namespace.id),
+        Color(id=26, hex_value="#bb4ff0", name="PURPLE", user_defined=False, namespace_id=namespace.id),
+        Color(id=27, hex_value="#f1c69c", name="PEACH", user_defined=False, namespace_id=namespace.id),
+        Color(id=28, hex_value="#823216", name="BROWN", user_defined=False, namespace_id=namespace.id),
+        Color(id=29, hex_value="#ad8eef", name="LAVENDER", user_defined=False, namespace_id=namespace.id),
+        Color(id=31, hex_value="#efc664", name="BLONDE", user_defined=False, namespace_id=namespace.id),
+        Color(id=32, hex_value="#a13220", name="AUBURN", user_defined=False, namespace_id=namespace.id),
+        Color(id=33, hex_value="#be5b2d", name="LIGHT_BROWN", user_defined=False, namespace_id=namespace.id),
+        Color(id=34, hex_value="#4c2315", name="DARK_BROWN", user_defined=False, namespace_id=namespace.id),
+        Color(id=35, hex_value="#515768", name="COOL_GRAY", user_defined=False, namespace_id=namespace.id),
+        Color(id=36, hex_value="#625550", name="WARM_GRAY", user_defined=False, namespace_id=namespace.id),
+        Color(id=37, hex_value="#4c652e", name="OLIVE", user_defined=False, namespace_id=namespace.id),
+        Color(id=38, hex_value="#9f2aa7", name="BERRY", user_defined=False, namespace_id=namespace.id),
+    ]
+
+    return colors
 
 
 @dataclass(frozen=True)
@@ -256,12 +301,34 @@ class Library:
 
             if add_default_data:
                 tags = get_default_tags()
+
                 try:
                     session.add_all(tags)
                     session.commit()
                 except IntegrityError:
                     # default tags may exist already
                     session.rollback()
+
+                #the default namespace shouldnt exist yet but we will check anyway
+                ts_std_namespace_name = "tagstudio_std" #TODO: move this elsewhere maybe
+                statement = select(ColorNamespace).where(ColorNamespace.name == ts_std_namespace_name)
+                ts_std_namespace = session.scalar(statement)
+
+                if ts_std_namespace is None:
+                    ts_std_namespace = ColorNamespace(name=ts_std_namespace_name)
+                    session.add(ts_std_namespace)
+                    session.commit()
+
+                try:
+                    colors = get_default_colors(ts_std_namespace)
+                    session.add_all(
+                        colors
+                    )
+                    session.commit()
+                except IntegrityError:
+                    #colors already exist
+                    session.rollback()
+
 
             # dont check db version when creating new library
             if not is_new:

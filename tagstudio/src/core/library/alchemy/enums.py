@@ -3,6 +3,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 
+# TODO: REMOVE
 class TagColor(enum.IntEnum):
     DEFAULT = 1
     BLACK = 2
@@ -42,12 +43,19 @@ class TagColor(enum.IntEnum):
     COOL_GRAY = 36
     OLIVE = 37
 
-    @staticmethod
-    def get_color_from_str(color_name: str) -> "TagColor":
-        for color in TagColor:
-            if color.name == color_name.upper().replace(" ", "_"):
-                return color
-        return TagColor.DEFAULT
+#class TSStandardColors(enum.IntEnum):
+#    RED=1,
+#    YELLOW=2,
+#    CYAN=3,
+#    BLUE=4
+#    #etc..
+
+#    @staticmethod
+#    def get_color_from_str(color_name: str) -> "TagColor":
+#        for color in TagColor:
+#            if color.name == color_name.upper().replace(" ", "_"):
+#                return color
+#        return TagColor.DEFAULT
 
 
 class SearchMode(enum.IntEnum):

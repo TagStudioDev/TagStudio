@@ -43,51 +43,8 @@ def make_tables(engine: Engine) -> None:
 
         conn.execute(
             text(
-                """INSERT INTO user_defined_colors (color, name, user_defined) VALUES
-            ('#1e1e1e', 'DEFAULT', FALSE),
-            ('#111018', 'BLACK', FALSE),
-            ('#24232a', 'DARK_GRAY', FALSE),
-            ('#53525a', 'GRAY', FALSE),
-            ('#aaa9b0', 'LIGHT_GRAY', FALSE),
-            ('#f2f1f8', 'WHITE', FALSE),
-            ('#ff99c4', 'LIGHT_PINK', FALSE),
-            ('#ff99c4', 'PINK', FALSE),
-            ('#f6466f', 'MAGENTA', FALSE),
-            ('#e22c3c', 'RED', FALSE),
-            ('#e83726', 'RED_ORANGE', FALSE),
-            ('#f65848', 'SALMON', FALSE),
-            ('#ed6022', 'ORANGE', FALSE),
-            ('#fa9a2c', 'YELLOW_ORANGE', FALSE),
-            ('#ffd63d', 'YELLOW', FALSE),
-            ('#4aed90', 'MINT', FALSE),
-            ('#92e649', 'LIME', FALSE),
-            ('#85ec76', 'LIGHT_GREEN', FALSE),
-            ('#28bb48', 'GREEN', FALSE),
-            ('#1ad9b2', 'TEAL', FALSE),
-            ('#49e4d5', 'CYAN', FALSE),
-            ('#55bbf6', 'LIGHT_BLUE', FALSE),
-            ('#3b87f0', 'BLUE', FALSE),
-            ('#5948f2', 'BLUE_VIOLET', FALSE),
-            ('#874ff5', 'VIOLET', FALSE),
-            ('#bb4ff0', 'PURPLE', FALSE),
-            ('#f1c69c', 'PEACH', FALSE),
-            ('#823216', 'BROWN', FALSE),
-            ('#ad8eef', 'LAVENDER', FALSE),
-            ('#efc664', 'BLONDE', FALSE),
-            ('#a13220', 'AUBURN', FALSE),
-            ('#be5b2d', 'LIGHT_BROWN', FALSE),
-            ('#4c2315', 'DARK_BROWN', FALSE),
-            ('#515768', 'COOL_GRAY', FALSE),
-            ('#625550', 'WARM_GRAY', FALSE),
-            ('#4c652e', 'OLIVE', FALSE),
-            ('#9f2aa7', 'BERRY', FALSE)"""
-            )
-        )
-
-        conn.execute(
-            text(
                 """
-            CREATE TRIGGER delete_color BEFORE DELETE ON user_defined_colors
+            CREATE TRIGGER IF NOT EXISTS delete_color BEFORE DELETE ON colors
             WHEN OLD.user_defined = FALSE
             BEGIN
                 SELECT RAISE(ABORT, 'Cannot delete program-defined colors');
