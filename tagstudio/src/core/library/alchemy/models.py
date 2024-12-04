@@ -221,12 +221,11 @@ class ColorNamespace(Base):
 class Color(Base):
     __tablename__ = "colors"
 
-    id: Mapped[int] = mapped_column(primary_key=True)
+    slug: Mapped[str] = mapped_column(primary_key=True)
     namespace_id: Mapped[int] = mapped_column(ForeignKey("color_namespaces.id"), primary_key = True)
 
     hex_value: Mapped[str] = mapped_column()
     name: Mapped[str] = mapped_column()
-    user_defined: Mapped[bool] = mapped_column(default=True)
 
 class ValueType(Base):
     """Define Field Types in the Library.

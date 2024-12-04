@@ -40,18 +40,6 @@ def make_tables(engine: Engine) -> None:
     with engine.connect() as conn:
         conn.execute(text("INSERT INTO tags (id, name, color) VALUES (999, 'temp', 1)"))
         conn.execute(text("DELETE FROM tags WHERE id = 999"))
-
-        conn.execute(
-            text(
-                """
-            CREATE TRIGGER IF NOT EXISTS delete_color BEFORE DELETE ON colors
-            WHEN OLD.user_defined = FALSE
-            BEGIN
-                SELECT RAISE(ABORT, 'Cannot delete program-defined colors');
-            END;
-            """
-            )
-        )
         conn.commit()
 
 
