@@ -15,7 +15,6 @@ if TYPE_CHECKING:
     from .library import Library
 else:
     Library = None  # don't import .library because of circular imports
-# PS: If you don't like this find a better way or deal with it :) -Computerdores
 
 
 class SQLBoolExpressionBuilder(BaseVisitor[ColumnExpressionArgument]):
