@@ -2,11 +2,12 @@ import re
 import shutil
 import time
 import unicodedata
+from collections.abc import Iterator
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from os import makedirs
 from pathlib import Path
-from typing import Any, Iterator, Type
+from typing import Any
 from uuid import uuid4
 
 import structlog
@@ -687,7 +688,7 @@ class Library:
 
     def update_field_position(
         self,
-        field_class: Type[BaseField],
+        field_class: type[BaseField],
         field_type: str,
         entry_ids: list[int] | int,
     ):
