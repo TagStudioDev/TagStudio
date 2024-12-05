@@ -3,13 +3,34 @@
 # Vendored from ffmpeg-python and ffmpeg-python PR#790 by amamic1803
 
 import json
+import platform
+import shutil
 import subprocess
 
 import ffmpeg
+import structlog
 from src.qt.helpers.silent_popen import promptless_Popen
 
+logger = structlog.get_logger(__name__)
 
-def _probe(filename, cmd="ffprobe", timeout=None, **kwargs):
+FFMPEG_MACOS_LOCATIONS: list[str] = ["", "/opt/homebrew/bin/", "/usr/local/bin/"]
+
+
+def _get_ffprobe_location() -> str:
+    cmd: str = "ffprobe"
+    if platform.system() == "Darwin":
+        for loc in FFMPEG_MACOS_LOCATIONS:
+            if shutil.which(loc + cmd):
+                cmd = loc + cmd
+                break
+    logger.info(f"[FFPROBE] Using FFmpeg location: {cmd}")
+    return cmd
+
+
+FFPROBE_CMD = _get_ffprobe_location()
+
+
+def _probe(filename, cmd=FFPROBE_CMD, timeout=None, **kwargs):
     """Run ffprobe on the specified file and return a JSON representation of the output.
 
     Raises:

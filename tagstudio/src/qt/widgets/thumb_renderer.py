@@ -812,8 +812,8 @@ class ThumbRenderer(QObject):
         """
         im: Image.Image = None
         # Create an image to draw the svg to and a painter to do the drawing
-        image: QImage = QImage(size, size, QImage.Format.Format_ARGB32)
-        image.fill("#1e1e1e")
+        q_image: QImage = QImage(size, size, QImage.Format.Format_ARGB32)
+        q_image.fill("#1e1e1e")
 
         # Create an svg renderer, then render to the painter
         svg: QSvgRenderer = QSvgRenderer(str(filepath))
@@ -821,7 +821,7 @@ class ThumbRenderer(QObject):
         if not svg.isValid():
             raise UnidentifiedImageError
 
-        painter: QPainter = QPainter(image)
+        painter: QPainter = QPainter(q_image)
         svg.setAspectRatioMode(Qt.AspectRatioMode.KeepAspectRatio)
         svg.render(painter)
         painter.end()
@@ -829,7 +829,7 @@ class ThumbRenderer(QObject):
         # Write the image to a buffer as png
         buffer: QBuffer = QBuffer()
         buffer.open(QBuffer.OpenModeFlag.ReadWrite)
-        image.save(buffer, "PNG")
+        q_image.save(buffer, "PNG")  # type: ignore[call-overload]
 
         # Load the image from the buffer
         im = Image.new("RGB", (size, size), color="#1e1e1e")
@@ -907,11 +907,11 @@ class ThumbRenderer(QObject):
             | QPdfDocumentRenderOptions.RenderFlag.PathAliased
         )
         # Convert QImage to PIL Image
-        qimage: QImage = document.render(0, page_size.toSize(), render_options)
+        q_image: QImage = document.render(0, page_size.toSize(), render_options)
         buffer: QBuffer = QBuffer()
         buffer.open(QBuffer.OpenModeFlag.ReadWrite)
         try:
-            qimage.save(buffer, "PNG")
+            q_image.save(buffer, "PNG")  # type: ignore[call-overload]
             im = Image.open(BytesIO(buffer.buffer().data()))
         finally:
             buffer.close()
