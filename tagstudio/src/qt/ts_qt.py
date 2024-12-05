@@ -72,7 +72,7 @@ from src.core.library.alchemy.enums import (
     SearchMode,
 )
 from src.core.library.alchemy.fields import _FieldID
-from src.core.library.alchemy.library import LibraryStatus
+from src.core.library.alchemy.library import Entry, Library, LibraryStatus
 from src.core.media_types import MediaCategories
 from src.core.ts_core import TagStudioCore
 from src.core.utils.refresh_dir import RefreshDirTracker
@@ -130,6 +130,7 @@ class QtDriver(DriverMixin, QObject):
     SIGTERM = Signal()
 
     preview_panel: PreviewPanel
+    lib: Library
 
     def __init__(self, backend, args):
         super().__init__()
@@ -788,9 +789,9 @@ class QtDriver(DriverMixin, QObject):
 
     def run_macro(self, name: MacroID, grid_idx: int):
         """Run a specific Macro on an Entry given a Macro name."""
-        entry = self.frame_content[grid_idx]
-        ful_path = self.lib.library_dir / entry.path
-        source = entry.path.parts[0]
+        entry: Entry = self.frame_content[grid_idx]
+        full_path = self.lib.library_dir / entry.path
+        source = "" if entry.path.parent == Path(".") else entry.path.parts[0].lower()
 
         logger.info(
             "running macro",
@@ -804,10 +805,10 @@ class QtDriver(DriverMixin, QObject):
             for macro_id in MacroID:
                 if macro_id == MacroID.AUTOFILL:
                     continue
-                self.run_macro(macro_id, entry.id)
+                self.run_macro(macro_id, grid_idx)
 
         elif name == MacroID.SIDECAR:
-            parsed_items = TagStudioCore.get_gdl_sidecar(ful_path, source)
+            parsed_items = TagStudioCore.get_gdl_sidecar(full_path, source)
             for field_id, value in parsed_items.items():
                 if isinstance(value, list) and len(value) > 0 and isinstance(value[0], str):
                     value = self.lib.tag_from_strings(value)
@@ -818,8 +819,9 @@ class QtDriver(DriverMixin, QObject):
                 )
 
         elif name == MacroID.BUILD_URL:
-            url = TagStudioCore.build_url(entry.id, source)
-            self.lib.add_entry_field_type(entry.id, field_id=_FieldID.SOURCE, value=url)
+            url = TagStudioCore.build_url(entry, source)
+            if url is not None:
+                self.lib.add_entry_field_type(entry.id, field_id=_FieldID.SOURCE, value=url)
         elif name == MacroID.MATCH:
             TagStudioCore.match_conditions(self.lib, entry.id)
         elif name == MacroID.CLEAN_URL:

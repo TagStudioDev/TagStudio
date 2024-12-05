@@ -998,6 +998,15 @@ class Library:
 
         return tag
 
+    def get_tag_by_name(self, tag_name: str) -> Tag | None:
+        with Session(self.engine) as session:
+            statement = (
+                select(Tag)
+                .outerjoin(TagAlias)
+                .where(or_(Tag.name == tag_name, TagAlias.name == tag_name))
+            )
+            return session.scalar(statement)
+
     def get_alias(self, tag_id: int, alias_id: int) -> TagAlias:
         with Session(self.engine) as session:
             alias_query = select(TagAlias).where(TagAlias.id == alias_id, TagAlias.tag_id == tag_id)
