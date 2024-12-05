@@ -16,7 +16,6 @@ from PySide6.QtWidgets import (
 )
 from src.core.utils.missing_files import MissingRegistry
 from src.qt.helpers.custom_runnable import CustomRunnable
-from src.qt.helpers.function_iterator import FunctionIterator
 from src.qt.widgets.progress import ProgressWidget
 
 # Only import for type checking/autocompletion, will not be imported at runtime.
@@ -81,24 +80,15 @@ class DeleteUnlinkedEntriesModal(QWidget):
 
     def delete_entries(self):
         pw = ProgressWidget(
-            window_title="Deleting Entries",
+            window_title=f"Deleting {self.tracker.missing_files_count} Entries",
             label_text="",
             cancel_button_text=None,
             minimum=0,
-            maximum=self.tracker.missing_files_count,
+            maximum=0,
         )
         pw.show()
 
-        iterator = FunctionIterator(self.tracker.execute_deletion)
-        files_count = self.tracker.missing_files_count
-        iterator.value.connect(
-            lambda idx: (
-                pw.update_progress(idx),
-                pw.update_label(f"Deleting {idx}/{files_count} Unlinked Entries"),
-            )
-        )
-
-        r = CustomRunnable(iterator.run)
+        r = CustomRunnable(self.tracker.execute_deletion)
         QThreadPool.globalInstance().start(r)
         r.done.connect(
             lambda: (
