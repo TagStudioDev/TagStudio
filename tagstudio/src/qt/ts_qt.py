@@ -1115,6 +1115,9 @@ class QtDriver(DriverMixin, QObject):
             self.item_thumbs[grid_idx].refresh_badge(entry)
 
     def filter_items(self, filter: FilterState | None = None) -> None:
+        if not self.lib.library_dir:
+            logger.info("Library not loaded")
+            return
         assert self.lib.engine
 
         if filter:
