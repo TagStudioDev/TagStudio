@@ -72,7 +72,7 @@ from src.core.library.alchemy.enums import (
     ItemType,
 )
 from src.core.library.alchemy.fields import _FieldID
-from src.core.library.alchemy.library import Entry, Library, LibraryStatus
+from src.core.library.alchemy.library import Entry, LibraryStatus
 from src.core.media_types import MediaCategories
 from src.core.ts_core import TagStudioCore
 from src.core.utils.refresh_dir import RefreshDirTracker
@@ -130,8 +130,6 @@ class QtDriver(DriverMixin, QObject):
     SIGTERM = Signal()
 
     preview_panel: PreviewPanel
-    lib: Library
-
     lib: Library
 
     def __init__(self, backend, args):
