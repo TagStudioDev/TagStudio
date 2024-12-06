@@ -190,8 +190,8 @@ def test_add_field_tag(library: Library, entry_full, generate_tag):
     library.add_field_tag(entry_full, tag, tag_field.type_key)
 
     # Then
-    results = library.get_entry_full(entry_full.id)
-    tag_field = results.tag_box_fields[0]
+    result = library.get_entry_full(entry_full.id)
+    tag_field = result.tag_box_fields[0]
     assert [x.name for x in tag_field.tags if x.name == tag_name]
 
 
