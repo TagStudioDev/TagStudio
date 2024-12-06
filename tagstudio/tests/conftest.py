@@ -118,12 +118,19 @@ def library(request):
 
 
 @pytest.fixture
+def search_library() -> Library:
+    lib = Library()
+    lib.open_library(pathlib.Path(CWD / "fixtures" / "search_library"))
+    return lib
+
+
+@pytest.fixture
 def entry_min(library):
     yield next(library.get_entries())
 
 
 @pytest.fixture
-def entry_full(library):
+def entry_full(library: Library):
     yield next(library.get_entries(with_joins=True))
 
 

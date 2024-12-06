@@ -28,7 +28,6 @@ from sqlalchemy import (
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import (
     Session,
-    aliased,
     contains_eager,
     make_transient,
     selectinload,
@@ -42,7 +41,6 @@ from ...constants import (
     TS_FOLDER_NAME,
 )
 from ...enums import LibraryPrefs
-from ...media_types import MediaCategories
 from .db import make_tables
 from .enums import FieldTypeEnum, FilterState, TagColor
 from .fields import (
@@ -54,6 +52,7 @@ from .fields import (
 )
 from .joins import TagField, TagSubtag
 from .models import Entry, Folder, Preferences, Tag, TagAlias, ValueType
+from .visitors import SQLBoolExpressionBuilder
 
 logger = structlog.get_logger(__name__)
 
@@ -402,6 +401,29 @@ class Library:
             make_transient(entry)
             return entry
 
+    def get_entry_full(self, entry_id: int) -> Entry | None:
+        """Load entry an join with all joins and all tags."""
+        with Session(self.engine) as session:
+            statement = select(Entry).where(Entry.id == entry_id)
+            statement = (
+                statement.outerjoin(Entry.text_fields)
+                .outerjoin(Entry.datetime_fields)
+                .outerjoin(Entry.tag_box_fields)
+            )
+            statement = statement.options(
+                selectinload(Entry.text_fields),
+                selectinload(Entry.datetime_fields),
+                selectinload(Entry.tag_box_fields)
+                .joinedload(TagBoxField.tags)
+                .options(selectinload(Tag.aliases), selectinload(Tag.subtags)),
+            )
+            entry = session.scalar(statement)
+            if not entry:
+                return None
+            session.expunge(entry)
+            make_transient(entry)
+            return entry
+
     @property
     def entries_count(self) -> int:
         with Session(self.engine) as session:
@@ -518,63 +540,18 @@ class Library:
         with Session(self.engine, expire_on_commit=False) as session:
             statement = select(Entry)
 
-            if search.tag:
-                SubtagAlias = aliased(Tag)  # noqa: N806
-                statement = (
-                    statement.join(Entry.tag_box_fields)
-                    .join(TagBoxField.tags)
-                    .outerjoin(Tag.aliases)
-                    .outerjoin(SubtagAlias, Tag.subtags)
-                    .where(
-                        or_(
-                            Tag.name.ilike(search.tag),
-                            Tag.shorthand.ilike(search.tag),
-                            TagAlias.name.ilike(search.tag),
-                            SubtagAlias.name.ilike(search.tag),
-                        )
-                    )
-                )
-            elif search.tag_id:
-                statement = (
-                    statement.join(Entry.tag_box_fields)
-                    .join(TagBoxField.tags)
-                    .where(Tag.id == search.tag_id)
-                )
-
-            elif search.id:
-                statement = statement.where(Entry.id == search.id)
-            elif search.name:
-                statement = select(Entry).where(
-                    and_(
-                        Entry.path.ilike(f"%{search.name}%"),
-                        # dont match directory name (ie. has following slash)
-                        ~Entry.path.ilike(f"%{search.name}%/%"),
-                    )
-                )
-            elif search.path:
-                search_str = str(search.path).replace("*", "%")
-                statement = statement.where(Entry.path.ilike(search_str))
-            elif search.filetype:
-                statement = statement.where(Entry.suffix.ilike(f"{search.filetype}"))
-            elif search.mediatype:
-                extensions: set[str] = set[str]()
-                for media_cat in MediaCategories.ALL_CATEGORIES:
-                    if search.mediatype == media_cat.name:
-                        extensions = extensions | media_cat.extensions
-                        break
-                # just need to map it to search db - suffixes do not have '.'
-                statement = statement.where(
-                    Entry.suffix.in_(map(lambda x: x.replace(".", ""), extensions))
+            if search.ast:
+                statement = statement.outerjoin(Entry.tag_box_fields).where(
+                    SQLBoolExpressionBuilder(self).visit(search.ast)
                 )
 
             extensions = self.prefs(LibraryPrefs.EXTENSION_LIST)
             is_exclude_list = self.prefs(LibraryPrefs.IS_EXCLUDE_LIST)
 
-            if not search.id:  # if `id` is set, we don't need to filter by extensions
-                if extensions and is_exclude_list:
-                    statement = statement.where(Entry.suffix.notin_(extensions))
-                elif extensions:
-                    statement = statement.where(Entry.suffix.in_(extensions))
+            if extensions and is_exclude_list:
+                statement = statement.where(Entry.suffix.notin_(extensions))
+            elif extensions:
+                statement = statement.where(Entry.suffix.in_(extensions))
 
             statement = statement.options(
                 selectinload(Entry.text_fields),
@@ -583,6 +560,8 @@ class Library:
                 .joinedload(TagBoxField.tags)
                 .options(selectinload(Tag.aliases), selectinload(Tag.subtags)),
             )
+
+            statement = statement.distinct(Entry.id)
 
             query_count = select(func.count()).select_from(statement.alias("entries"))
             count_all: int = session.execute(query_count).scalar()
@@ -597,7 +576,7 @@ class Library:
 
             res = SearchResult(
                 total_count=count_all,
-                items=list(session.scalars(statement).unique()),
+                items=list(session.scalars(statement)),
             )
 
             session.expunge_all()

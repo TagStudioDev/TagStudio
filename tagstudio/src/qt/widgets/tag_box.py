@@ -100,7 +100,7 @@ class TagBoxWidget(FieldWidget):
             tag_widget.on_click.connect(
                 lambda tag_id=tag.id: (
                     self.driver.main_window.searchField.setText(f"tag_id:{tag_id}"),
-                    self.driver.filter_items(FilterState(tag_id=tag_id)),
+                    self.driver.filter_items(FilterState.from_tag_id(tag_id)),
                 )
             )
 
