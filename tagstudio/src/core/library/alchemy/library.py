@@ -2,11 +2,12 @@ import re
 import shutil
 import time
 import unicodedata
+from collections.abc import Iterator
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from os import makedirs
 from pathlib import Path
-from typing import Any, Iterator, Type
+from typing import Any
 from uuid import uuid4
 
 import structlog
@@ -666,7 +667,7 @@ class Library:
 
     def update_field_position(
         self,
-        field_class: Type[BaseField],
+        field_class: type[BaseField],
         field_type: str,
         entry_ids: list[int] | int,
     ):
@@ -975,6 +976,15 @@ class Library:
                 session.expunge(alias)
 
         return tag
+
+    def get_tag_by_name(self, tag_name: str) -> Tag | None:
+        with Session(self.engine) as session:
+            statement = (
+                select(Tag)
+                .outerjoin(TagAlias)
+                .where(or_(Tag.name == tag_name, TagAlias.name == tag_name))
+            )
+            return session.scalar(statement)
 
     def get_alias(self, tag_id: int, alias_id: int) -> TagAlias:
         with Session(self.engine) as session:
