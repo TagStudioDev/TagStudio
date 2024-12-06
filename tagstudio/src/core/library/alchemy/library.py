@@ -53,7 +53,7 @@ from .fields import (
     _FieldID,
 )
 from .joins import TagField, TagSubtag
-from .models import Entry, Folder, Preferences, Tag, TagAlias, ValueType
+from .models import Entry, Folder, Preferences, Tag, TagAlias, ValueType, Color, ColorNamespace
 
 logger = structlog.get_logger(__name__)
 
@@ -90,6 +90,16 @@ def get_default_tags() -> tuple[Tag, ...]:
     )
 
     return archive_tag, favorite_tag
+
+
+def get_default_colors(namespace: ColorNamespace) -> list[Color]:
+    colors: list[Color] = [
+        #TODO: make this the full tagstudio standard color set
+        Color(slug='red', hex_value="#e22c3c", name="RED", namespace_id=namespace.id),
+        Color(slug='yellow', hex_value="#ffd63d", name="YELLOW", namespace_id=namespace.id),
+    ]
+
+    return colors
 
 
 @dataclass(frozen=True)
@@ -257,12 +267,34 @@ class Library:
 
             if add_default_data:
                 tags = get_default_tags()
+
                 try:
                     session.add_all(tags)
                     session.commit()
                 except IntegrityError:
                     # default tags may exist already
                     session.rollback()
+
+                #the default namespace shouldnt exist yet but we will check anyway
+                ts_std_namespace_name = "tagstudio_std" #TODO: move this elsewhere maybe
+                statement = select(ColorNamespace).where(ColorNamespace.name == ts_std_namespace_name)
+                ts_std_namespace = session.scalar(statement)
+
+                if ts_std_namespace is None:
+                    ts_std_namespace = ColorNamespace(name=ts_std_namespace_name)
+                    session.add(ts_std_namespace)
+                    session.commit()
+
+                try:
+                    colors = get_default_colors(ts_std_namespace)
+                    session.add_all(
+                        colors
+                    )
+                    session.commit()
+                except IntegrityError:
+                    #colors already exist
+                    session.rollback()
+
 
             # dont check db version when creating new library
             if not is_new:

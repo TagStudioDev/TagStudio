@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from sqlalchemy import JSON, ForeignKey, Integer, event
+from sqlalchemy import JSON, ForeignKey, Integer, event, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from ...constants import TAG_ARCHIVED, TAG_FAVORITE
@@ -211,6 +211,21 @@ class Entry(Base):
         for tag_box_field in self.tag_box_fields:
             tag_box_field.tags.remove(tag)
 
+#TODO: maybe make this a general namespace to be used for colors, tags, etc?
+class ColorNamespace(Base):
+    __tablename__ = "color_namespaces"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    name: Mapped[str] = mapped_column()
+    colors: Mapped[list["Color"]] = relationship()
+
+class Color(Base):
+    __tablename__ = "colors"
+
+    slug: Mapped[str] = mapped_column(primary_key=True)
+    namespace_id: Mapped[int] = mapped_column(ForeignKey("color_namespaces.id"), primary_key = True)
+
+    hex_value: Mapped[str] = mapped_column()
+    name: Mapped[str] = mapped_column()
 
 class ValueType(Base):
     """Define Field Types in the Library.
