@@ -4,7 +4,7 @@
 
 import typing
 
-from PySide6.QtCore import Qt, QThreadPool, Signal
+from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QStandardItem, QStandardItemModel
 from PySide6.QtWidgets import (
     QHBoxLayout,
@@ -15,8 +15,6 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 from src.core.utils.missing_files import MissingRegistry
-from src.qt.helpers.custom_runnable import CustomRunnable
-from src.qt.helpers.function_iterator import FunctionIterator
 from src.qt.widgets.progress import ProgressWidget
 
 # Only import for type checking/autocompletion, will not be imported at runtime.
@@ -77,9 +75,14 @@ class DeleteUnlinkedEntriesModal(QWidget):
 
         self.model.clear()
         for i in self.tracker.missing_files:
-            self.model.appendRow(QStandardItem(str(i.path)))
+            item = QStandardItem(str(i.path))
+            item.setEditable(False)
+            self.model.appendRow(item)
 
     def delete_entries(self):
+        def displayed_text(x):
+            return f"Deleting {x}/{self.tracker.missing_files_count} Unlinked Entries"
+
         pw = ProgressWidget(
             window_title="Deleting Entries",
             label_text="",
@@ -87,23 +90,5 @@ class DeleteUnlinkedEntriesModal(QWidget):
             minimum=0,
             maximum=self.tracker.missing_files_count,
         )
-        pw.show()
 
-        iterator = FunctionIterator(self.tracker.execute_deletion)
-        files_count = self.tracker.missing_files_count
-        iterator.value.connect(
-            lambda idx: (
-                pw.update_progress(idx),
-                pw.update_label(f"Deleting {idx}/{files_count} Unlinked Entries"),
-            )
-        )
-
-        r = CustomRunnable(iterator.run)
-        QThreadPool.globalInstance().start(r)
-        r.done.connect(
-            lambda: (
-                pw.hide(),
-                pw.deleteLater(),
-                self.done.emit(),
-            )
-        )
+        pw.from_iterable_function(self.tracker.execute_deletion, displayed_text, self.done.emit)

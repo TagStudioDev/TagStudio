@@ -6,7 +6,7 @@
 import typing
 from time import sleep
 
-from PySide6.QtCore import Qt, QThreadPool, Signal
+from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QStandardItem, QStandardItemModel
 from PySide6.QtWidgets import (
     QHBoxLayout,
@@ -17,8 +17,6 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 from src.core.utils.dupe_files import DupeRegistry
-from src.qt.helpers.custom_runnable import CustomRunnable
-from src.qt.helpers.function_iterator import FunctionIterator
 from src.qt.widgets.progress import ProgressWidget
 
 # Only import for type checking/autocompletion, will not be imported at runtime.
@@ -83,28 +81,22 @@ class MirrorEntriesModal(QWidget):
             self.model.appendRow(QStandardItem(str(i)))
 
     def mirror_entries(self):
-        iterator = FunctionIterator(self.mirror_entries_runnable)
+        def displayed_text(x):
+            return f"Mirroring {x + 1}/{self.tracker.groups_count} Entries..."
+
         pw = ProgressWidget(
             window_title="Mirroring Entries",
-            label_text=f"Mirroring 1/{self.tracker.groups_count} Entries...",
+            label_text="",
             cancel_button_text=None,
             minimum=0,
             maximum=self.tracker.groups_count,
         )
-        pw.show()
-        iterator.value.connect(lambda x: pw.update_progress(x + 1))
-        iterator.value.connect(
-            lambda x: pw.update_label(f"Mirroring {x + 1}/{self.tracker.groups_count} Entries...")
-        )
-        r = CustomRunnable(iterator.run)
-        QThreadPool.globalInstance().start(r)
-        r.done.connect(
-            lambda: (
-                pw.hide(),
-                pw.deleteLater(),
-                self.driver.preview_panel.update_widgets(),
-                self.done.emit(),
-            )
+
+        pw.from_iterable_function(
+            self.mirror_entries_runnable,
+            displayed_text,
+            self.driver.preview_panel.update_widgets,
+            self.done.emit,
         )
 
     def mirror_entries_runnable(self):
