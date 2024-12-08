@@ -20,7 +20,6 @@ from PySide6.QtWidgets import (
 )
 from src.core.constants import TAG_ARCHIVED, TAG_FAVORITE
 from src.core.library import Library, Tag
-from src.core.library.alchemy.fields import _FieldID
 from src.core.palette import ColorType, get_tag_color
 from src.qt.flowlayout import FlowLayout
 from src.qt.translations import Translations
@@ -73,7 +72,7 @@ def folders_to_tags(library: Library):
 
         tag = add_folders_to_tree(library, tree, folders).tag
         if tag and not entry.has_tag(tag):
-            library.add_field_tag(entry, tag, _FieldID.TAGS.name, create_field=True)
+            library.add_tags_to_entry(entry.id, tag.id)
 
     logger.info("Done")
 
@@ -127,11 +126,10 @@ def generate_preview_data(library: Library) -> BranchData:
         branch = _add_folders_to_tree(folders)
         if branch:
             has_tag = False
-            for tag_field in entry.tag_box_fields:
-                for tag in tag_field.tags:
-                    if tag.name == branch.tag.name:
-                        has_tag = True
-                        break
+            for tag in entry.tags:
+                if tag.name == branch.tag.name:
+                    has_tag = True
+                    break
             if not has_tag:
                 branch.files.append(entry.path.name)
 

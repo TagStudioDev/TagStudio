@@ -76,7 +76,7 @@ def library(request):
         color=TagColor.YELLOW,
     )
 
-    tag2 = Tag(
+    Tag(
         name="bar",
         color=TagColor.BLUE,
         subtags={subtag},
