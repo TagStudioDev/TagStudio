@@ -12,7 +12,6 @@ sys.path.insert(0, str(CWD.parent))
 from src.core.library import Entry, Library, Tag
 from src.core.library import alchemy as backend
 from src.core.library.alchemy.enums import TagColor
-from src.core.library.alchemy.fields import TagBoxField, _FieldID
 from src.qt.ts_qt import QtDriver
 
 
@@ -90,26 +89,26 @@ def library(request):
         fields=lib.default_fields,
     )
 
-    entry.tag_box_fields = [
-        TagBoxField(type_key=_FieldID.TAGS.name, tags={tag}, position=0),
-        TagBoxField(
-            type_key=_FieldID.TAGS_META.name,
-            position=0,
-        ),
-    ]
+    # entry.tag_box_fields = [
+    #     TagBoxField(type_key=_FieldID.TAGS.name, tags={tag}, position=0),
+    #     TagBoxField(
+    #         type_key=_FieldID.TAGS_META.name,
+    #         position=0,
+    #     ),
+    # ]
 
     entry2 = Entry(
         folder=lib.folder,
         path=pathlib.Path("one/two/bar.md"),
         fields=lib.default_fields,
     )
-    entry2.tag_box_fields = [
-        TagBoxField(
-            tags={tag2},
-            type_key=_FieldID.TAGS_META.name,
-            position=0,
-        ),
-    ]
+    # entry2.tag_box_fields = [
+    #     TagBoxField(
+    #         tags={tag2},
+    #         type_key=_FieldID.TAGS_META.name,
+    #         position=0,
+    #     ),
+    # ]
 
     assert lib.add_entries([entry, entry2])
     assert len(lib.tags) == 5

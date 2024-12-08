@@ -42,7 +42,6 @@ from src.core.library.alchemy.fields import (
     FieldTypeEnum,
     # TagBoxField,
     TextField,
-    _FieldID,
 )
 from src.core.library.alchemy.library import Library
 from src.core.media_types import MediaCategories
@@ -907,7 +906,8 @@ class PreviewPanel(QWidget):
         #                        self.update_widgets(),
         #                    )
         #                )
-        #                # NOTE: Tag Boxes have no Edit Button (But will when you can convert field types)
+        #                # NOTE: Tag Boxes have no Edit Button
+        # (But will when you can convert field types)
         #                container.set_remove_callback(
         #                    lambda: self.remove_message_box(
         #                        prompt=self.remove_field_prompt(field.type.name),
@@ -1070,9 +1070,9 @@ class PreviewPanel(QWidget):
 
         self.lib.remove_entry_field(field, entry_ids)
 
-        # if the field is meta tags, update the badges
-        if field.type_key == _FieldID.TAGS_META.value:
-            self.driver.update_badges(self.selected)
+        # # if the field is meta tags, update the badges
+        # if field.type_key == _FieldID.TAGS_META.value:
+        #     self.driver.update_badges(self.selected)
 
     def update_field(self, field: BaseField, content: str) -> None:
         """Update a field in all selected Entries, given a field object."""
