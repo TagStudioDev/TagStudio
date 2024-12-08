@@ -38,7 +38,9 @@ def make_tables(engine: Engine) -> None:
     # create tag and delete it to bump the autoincrement sequence
     # TODO - find a better way
     with engine.connect() as conn:
-        conn.execute(text("INSERT INTO tags (id, name, color) VALUES (999, 'temp', 1)"))
+        conn.execute(
+            text("INSERT INTO tags (id, name, color, is_category) VALUES (999, 'temp', 1, false)")
+        )
         conn.execute(text("DELETE FROM tags WHERE id = 999"))
         conn.commit()
 

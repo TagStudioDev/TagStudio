@@ -41,9 +41,8 @@ from src.core.library.alchemy.fields import (
     BaseField,
     DatetimeField,
     FieldTypeEnum,
-    #TagBoxField,
+    # TagBoxField,
     TextField,
-    _FieldID,
 )
 from src.core.library.alchemy.library import Library
 from src.core.media_types import MediaCategories
@@ -56,7 +55,8 @@ from src.qt.platform_strings import PlatformStrings
 from src.qt.widgets.fields import FieldContainer
 from src.qt.widgets.media_player import MediaPlayer
 from src.qt.widgets.panel import PanelModal
-from src.qt.widgets.tag_box import TagBoxWidget
+
+# from src.qt.widgets.tag_box import TagBoxWidget
 from src.qt.widgets.text import TextWidget
 from src.qt.widgets.text_box_edit import EditTextBox
 from src.qt.widgets.text_line_edit import EditTextLine
@@ -875,58 +875,59 @@ class PreviewPanel(QWidget):
         else:
             container = self.containers[index]
 
-#        if isinstance(field, TagBoxField):
-#            container.set_title(field.type.name)
-#            container.set_inline(False)
-#            title = f"{field.type.name} (Tag Box)"
-#
-#            if not is_mixed:
-#                inner_container = container.get_inner_widget()
-#                if isinstance(inner_container, TagBoxWidget):
-#                    inner_container.set_field(field)
-#                    inner_container.set_tags(list(field.tags))
-#
-#                    try:
-#                        inner_container.updated.disconnect()
-#                    except RuntimeError:
-#                        logger.error("Failed to disconnect inner_container.updated")
-#
-#                else:
-#                    inner_container = TagBoxWidget(
-#                        field,
-#                        title,
-#                        self.driver,
-#                    )
-#
-#                    container.set_inner_widget(inner_container)
-#
-#                inner_container.updated.connect(
-#                    lambda: (
-#                        self.write_container(index, field),
-#                        self.update_widgets(),
-#                    )
-#                )
-#                # NOTE: Tag Boxes have no Edit Button (But will when you can convert field types)
-#                container.set_remove_callback(
-#                    lambda: self.remove_message_box(
-#                        prompt=self.remove_field_prompt(field.type.name),
-#                        callback=lambda: (
-#                            self.remove_field(field),
-#                            self.update_selected_entry(self.driver),
-#                            # reload entry and its fields
-#                            self.update_widgets(),
-#                        ),
-#                    )
-#                )
-#            else:
-#                text = "<i>Mixed Data</i>"
-#                title = f"{field.type.name} (Wacky Tag Box)"
-#                inner_container = TextWidget(title, text)
-#                container.set_inner_widget(inner_container)
-#
-#            self.tags_updated.emit()
-#            # self.dynamic_widgets.append(inner_container)
-#       elif field.type.type == FieldTypeEnum.TEXT_LINE:
+        #        if isinstance(field, TagBoxField):
+        #            container.set_title(field.type.name)
+        #            container.set_inline(False)
+        #            title = f"{field.type.name} (Tag Box)"
+        #
+        #            if not is_mixed:
+        #                inner_container = container.get_inner_widget()
+        #                if isinstance(inner_container, TagBoxWidget):
+        #                    inner_container.set_field(field)
+        #                    inner_container.set_tags(list(field.tags))
+        #
+        #                    try:
+        #                        inner_container.updated.disconnect()
+        #                    except RuntimeError:
+        #                        logger.error("Failed to disconnect inner_container.updated")
+        #
+        #                else:
+        #                    inner_container = TagBoxWidget(
+        #                        field,
+        #                        title,
+        #                        self.driver,
+        #                    )
+        #
+        #                    container.set_inner_widget(inner_container)
+        #
+        #                inner_container.updated.connect(
+        #                    lambda: (
+        #                        self.write_container(index, field),
+        #                        self.update_widgets(),
+        #                    )
+        #                )
+        #                # NOTE: Tag Boxes have no Edit Button
+        # (But will when you can convert field types)
+        #                container.set_remove_callback(
+        #                    lambda: self.remove_message_box(
+        #                        prompt=self.remove_field_prompt(field.type.name),
+        #                        callback=lambda: (
+        #                            self.remove_field(field),
+        #                            self.update_selected_entry(self.driver),
+        #                            # reload entry and its fields
+        #                            self.update_widgets(),
+        #                        ),
+        #                    )
+        #                )
+        #            else:
+        #                text = "<i>Mixed Data</i>"
+        #                title = f"{field.type.name} (Wacky Tag Box)"
+        #                inner_container = TextWidget(title, text)
+        #                container.set_inner_widget(inner_container)
+        #
+        #            self.tags_updated.emit()
+        #            # self.dynamic_widgets.append(inner_container)
+        #       elif field.type.type == FieldTypeEnum.TEXT_LINE:
         if field.type.type == FieldTypeEnum.TEXT_LINE:
             container.set_title(field.type.name)
             container.set_inline(False)
@@ -1069,14 +1070,15 @@ class PreviewPanel(QWidget):
 
         self.lib.remove_entry_field(field, entry_ids)
 
-        # if the field is meta tags, update the badges
-        if field.type_key == _FieldID.TAGS_META.value:
-            self.driver.update_badges(self.selected)
+        # # if the field is meta tags, update the badges
+        # if field.type_key == _FieldID.TAGS_META.value:
+        #     self.driver.update_badges(self.selected)
 
     def update_field(self, field: BaseField, content: str) -> None:
         """Update a field in all selected Entries, given a field object."""
         assert isinstance(
-            field, (TextField, DatetimeField)#, TagBoxField)
+            field,
+            (TextField, DatetimeField),  # , TagBoxField)
         ), f"instance: {type(field)}"
 
         entry_ids = []

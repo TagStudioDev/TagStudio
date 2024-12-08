@@ -11,7 +11,7 @@ from .db import Base
 from .enums import FieldTypeEnum
 
 if TYPE_CHECKING:
-    from .models import Entry, Tag, ValueType
+    from .models import Entry, ValueType
 
 
 class BaseField(Base):
@@ -79,8 +79,9 @@ class TextField(BaseField):
             return False
         raise NotImplementedError
 
-#TODO: Remove
-#class TagBoxField(BaseField):
+
+# TODO: Remove
+# class TagBoxField(BaseField):
 #    __tablename__ = "tag_box_fields"
 #
 #    tags: Mapped[set[Tag]] = relationship(secondary="tag_fields")
@@ -133,10 +134,10 @@ class _FieldID(Enum):
     URL = DefaultField(id=3, name="URL", type=FieldTypeEnum.TEXT_LINE)
     DESCRIPTION = DefaultField(id=4, name="Description", type=FieldTypeEnum.TEXT_LINE)
     NOTES = DefaultField(id=5, name="Notes", type=FieldTypeEnum.TEXT_BOX)
-    #TODO: Remove (i think)
-    #TAGS = DefaultField(id=6, name="Tags", type=FieldTypeEnum.TAGS)
-    #TAGS_CONTENT = DefaultField(id=7, name="Content Tags", type=FieldTypeEnum.TAGS, is_default=True)
-    #TAGS_META = DefaultField(id=8, name="Meta Tags", type=FieldTypeEnum.TAGS, is_default=True)
+    # TODO: Remove (i think)
+    # TAGS = DefaultField(id=6, name="Tags", type=FieldTypeEnum.TAGS)
+    # TAGS_CONTENT=DefaultField(id=7, name="Content Tags", type=FieldTypeEnum.TAGS, is_default=True)
+    # TAGS_META = DefaultField(id=8, name="Meta Tags", type=FieldTypeEnum.TAGS, is_default=True)
     COLLATION = DefaultField(id=9, name="Collation", type=FieldTypeEnum.TEXT_LINE)
     DATE = DefaultField(id=10, name="Date", type=FieldTypeEnum.DATETIME)
     DATE_CREATED = DefaultField(id=11, name="Date Created", type=FieldTypeEnum.DATETIME)

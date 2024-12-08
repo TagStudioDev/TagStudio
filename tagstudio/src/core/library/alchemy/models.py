@@ -12,7 +12,6 @@ from .fields import (
     DatetimeField,
     FieldTypeEnum,
     TextField,
-    _FieldID,
 )
 from .joins import TagSubtag
 
@@ -45,6 +44,7 @@ class Tag(Base):
     name: Mapped[str]
     shorthand: Mapped[str | None]
     color: Mapped[TagColor]
+    is_category: Mapped[bool]
     icon: Mapped[str | None]
 
     aliases: Mapped[set[TagAlias]] = relationship(back_populates="tag")
@@ -85,6 +85,7 @@ class Tag(Base):
         subtags: set["Tag"] | None = None,
         icon: str | None = None,
         color: TagColor = TagColor.DEFAULT,
+        is_category: bool = False,
     ):
         self.name = name
         self.aliases = aliases or set()
@@ -93,6 +94,7 @@ class Tag(Base):
         self.color = color
         self.icon = icon
         self.shorthand = shorthand
+        self.is_category = is_category
         assert not self.id
         self.id = id
         super().__init__()
@@ -145,17 +147,11 @@ class Entry(Base):
 
     @property
     def is_favorited(self) -> bool:
-        for tag in self.tags:
-            if tag.id == TAG_FAVORITE:
-                return True
-        return False
+        return any(tag.id == TAG_FAVORITE for tag in self.tags)
 
     @property
     def is_archived(self) -> bool:
-        for tag in self.tags:
-            if tag.id == TAG_ARCHIVED:
-                return True
-        return False
+        return any(tag.id == TAG_ARCHIVED for tag in self.tags)
 
     def __init__(
         self,
@@ -181,9 +177,9 @@ class Entry(Base):
         return tag in self.tags
 
     def remove_tag(self, tag: Tag) -> None:
-        """Removes a Tag from the Entry.
-        """
+        """Removes a Tag from the Entry."""
         self.tags.remove(tag)
+
 
 class ValueType(Base):
     """Define Field Types in the Library.
@@ -217,7 +213,7 @@ class ValueType(Base):
         FieldClass = {  # noqa: N806
             FieldTypeEnum.TEXT_LINE: TextField,
             FieldTypeEnum.TEXT_BOX: TextField,
-            #FieldTypeEnum.TAGS: TagBoxField,
+            # FieldTypeEnum.TAGS: TagBoxField,
             FieldTypeEnum.DATETIME: DatetimeField,
             FieldTypeEnum.BOOLEAN: BooleanField,
         }
