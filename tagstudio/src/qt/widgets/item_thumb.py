@@ -25,7 +25,6 @@ from src.core.constants import (
     TAG_FAVORITE,
 )
 from src.core.library import Entry, ItemType, Library
-from src.core.library.alchemy.fields import _FieldID
 from src.core.media_types import MediaCategories, MediaType
 from src.qt.flowlayout import FlowWidget
 from src.qt.helpers.file_opener import FileOpenerHelper
@@ -505,9 +504,7 @@ class ItemThumb(FlowWidget):
 
         for idx in update_items:
             entry = self.driver.frame_content[idx]
-            self.toggle_item_tag(
-                entry, toggle_value, tag_id, _FieldID.TAGS_META.name, create_field=True
-            )
+            self.toggle_item_tag(entry.id, toggle_value, tag_id)
             # update the entry
             self.driver.frame_content[idx] = self.lib.get_entry_full(entry.id)
 
@@ -515,25 +512,16 @@ class ItemThumb(FlowWidget):
 
     def toggle_item_tag(
         self,
-        entry: Entry,
+        entry_id: int,
         toggle_value: bool,
         tag_id: int,
-        field_key: str,
-        create_field: bool = False,
     ):
-        logger.info(
-            "toggle_item_tag",
-            entry_id=entry.id,
-            toggle_value=toggle_value,
-            tag_id=tag_id,
-            field_key=field_key,
-        )
+        logger.info("toggle_item_tag", entry_id=entry_id, toggle_value=toggle_value, tag_id=tag_id)
 
-        tag = self.lib.get_tag(tag_id)
         if toggle_value:
-            self.lib.add_field_tag(entry, tag, field_key, create_field)
+            self.lib.add_tags_to_entry(entry_id, tag_id)
         else:
-            self.lib.remove_field_tag(entry, tag.id, field_key)
+            self.lib.remove_tag_from_entry(entry_id, tag_id)
 
         if self.driver.preview_panel.is_open:
             self.driver.preview_panel.update_widgets()

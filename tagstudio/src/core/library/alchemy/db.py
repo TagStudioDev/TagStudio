@@ -44,7 +44,9 @@ def make_tables(engine: Engine) -> None:
         autoincrement_val = result.scalar()
         if not autoincrement_val or autoincrement_val <= RESERVED_TAG_END:
             conn.execute(
-                text(f"INSERT INTO tags (id, name, color) VALUES ({RESERVED_TAG_END}, 'temp', 1)")
+                text(
+                    f"INSERT INTO tags (id, name, color, is_category) VALUES ({RESERVED_TAG_END}, 'temp', 1, false)"
+                )
             )
             conn.execute(text(f"DELETE FROM tags WHERE id = {RESERVED_TAG_END}"))
             conn.commit()
