@@ -8,9 +8,9 @@ pillow-heif==0.16.0
 pillow-jxl-plugin==1.3.0
 Pillow==10.3.0
 pydub==0.25.1
-PySide6_Addons==6.7.1
-PySide6_Essentials==6.7.1
-PySide6==6.7.1
+PySide6_Addons==6.8.0.1
+PySide6_Essentials==6.8.0.1
+PySide6==6.8.0.1
 rawpy==0.22.0
 SQLAlchemy==2.0.34
 structlog==24.4.0
