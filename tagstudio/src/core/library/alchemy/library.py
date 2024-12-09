@@ -657,6 +657,39 @@ class Library:
             session.execute(update_stmt)
             session.commit()
 
+    def remove_tag(self, tag: Tag):
+        with Session(self.engine, expire_on_commit=False) as session:
+            try:
+                subtags = session.scalars(
+                    select(TagSubtag).where(TagSubtag.parent_id == tag.id)
+                ).all()
+
+                tags_query = select(Tag).options(
+                    selectinload(Tag.subtags), selectinload(Tag.aliases)
+                )
+                tag = session.scalar(tags_query.where(Tag.id == tag.id))
+
+                aliases = session.scalars(select(TagAlias).where(TagAlias.tag_id == tag.id))
+
+                for alias in aliases or []:
+                    session.delete(alias)
+
+                for subtag in subtags or []:
+                    session.delete(subtag)
+                    session.expunge(subtag)
+
+                session.delete(tag)
+
+                session.commit()
+
+                session.expunge(tag)
+                return tag
+
+            except IntegrityError as e:
+                logger.exception(e)
+                session.rollback()
+                return None
+
     def remove_tag_from_field(self, tag: Tag, field: TagBoxField) -> None:
         with Session(self.engine) as session:
             field_ = session.scalars(select(TagBoxField).where(TagBoxField.id == field.id)).one()
