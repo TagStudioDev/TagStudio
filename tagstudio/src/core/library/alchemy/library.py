@@ -618,7 +618,6 @@ class Library:
                 results=len(res),
             )
 
-            session.expunge_all()
             return res
 
     def get_all_child_tag_ids(self, tag_id: int) -> list[int]:

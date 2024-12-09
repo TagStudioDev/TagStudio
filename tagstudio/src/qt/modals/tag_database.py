@@ -84,7 +84,10 @@ class TagDatabasePanel(PanelWidget):
             row = QHBoxLayout(container)
             row.setContentsMargins(0, 0, 0, 0)
             row.setSpacing(3)
-            tag_widget = TagWidget(tag, has_edit=True, has_remove=False)
+            display_name = tag.display_name
+            tag_widget = TagWidget(
+                tag, tag_display_name=display_name, has_edit=True, has_remove=False
+            )
             tag_widget.on_edit.connect(lambda checked=False, t=tag: self.edit_tag(t))
             row.addWidget(tag_widget)
             self.scroll_layout.addWidget(container)
@@ -106,7 +109,9 @@ class TagDatabasePanel(PanelWidget):
         self.edit_modal.show()
 
     def edit_tag_callback(self, btp: BuildTagPanel):
-        self.lib.update_tag(btp.build_tag(), btp.subtag_ids, btp.alias_names, btp.alias_ids)
+        self.lib.update_tag(
+            btp.build_tag(), set(btp.subtag_ids), set(btp.alias_names), set(btp.alias_ids)
+        )
         self.update_tags(self.search_field.text())
 
     def showEvent(self, event: QShowEvent) -> None:  # noqa N802
