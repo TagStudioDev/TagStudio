@@ -12,7 +12,7 @@ def test_sidecar_macro(qt_driver, library, cwd, entry_full):
     entry_full.path = Path("newgrounds/foo.txt")
 
     fixture = cwd / "fixtures/sidecar_newgrounds.json"
-    dst = library.library_dir / "newgrounds" / (entry_full.path.stem + ".json")
+    dst = library.library_dir / "newgrounds" / (entry_full.path.name + ".json")
     dst.parent.mkdir()
     shutil.copy(fixture, dst)
 

@@ -36,7 +36,6 @@ from src.core.constants import (
     TS_FOLDER_NAME,
 )
 from src.core.enums import SettingItems, Theme
-from src.core.library.alchemy.enums import FilterState
 from src.core.library.alchemy.fields import (
     BaseField,
     DatetimeField,
@@ -295,14 +294,13 @@ class PreviewPanel(QWidget):
     def update_selected_entry(self, driver: "QtDriver"):
         for grid_idx in driver.selected:
             entry = driver.frame_content[grid_idx]
-            results = self.lib.search_library(FilterState(id=entry.id))
+            result = self.lib.get_entry_full(entry.id)
             logger.info(
                 "found item",
-                entries=len(results.items),
                 grid_idx=grid_idx,
                 lookup_id=entry.id,
             )
-            self.driver.frame_content[grid_idx] = results[0]
+            self.driver.frame_content[grid_idx] = result
 
     def remove_field_prompt(self, name: str) -> str:
         return f'Are you sure you want to remove field "{name}"?'
@@ -564,14 +562,13 @@ class PreviewPanel(QWidget):
         # TODO - Entry reload is maybe not necessary
         for grid_idx in self.driver.selected:
             entry = self.driver.frame_content[grid_idx]
-            results = self.lib.search_library(FilterState(id=entry.id))
+            result = self.lib.get_entry_full(entry.id)
             logger.info(
                 "found item",
-                entries=len(results.items),
                 grid_idx=grid_idx,
                 lookup_id=entry.id,
             )
-            self.driver.frame_content[grid_idx] = results[0]
+            self.driver.frame_content[grid_idx] = result
 
         if len(self.driver.selected) == 1:
             # 1 Selected Entry

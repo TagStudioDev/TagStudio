@@ -115,7 +115,7 @@ def test_library_search(library, generate_tag, entry_full):
     tag = list(entry_full.tags)[0]
 
     results = library.search_library(
-        FilterState(tag=tag.name),
+        FilterState.from_tag_name(tag.name),
     )
 
     assert results.total_count == 1
@@ -141,11 +141,11 @@ def test_tag_search(library):
     assert not library.search_tags(tag.name * 2)
 
 
-def test_get_entry(library, entry_min):
+def test_get_entry(library: Library, entry_min):
     assert entry_min.id
-    results = library.search_library(FilterState(id=entry_min.id))
-    assert len(results) == results.total_count == 1
-    assert results[0].tags
+    result = library.get_entry_full(entry_min.id)
+    assert result
+    assert result.tags
 
 
 def test_entries_count(library):
@@ -153,11 +153,7 @@ def test_entries_count(library):
     new_ids = library.add_entries(entries)
     assert len(new_ids) == 10
 
-    results = library.search_library(
-        FilterState(
-            page_size=5,
-        )
-    )
+    results = library.search_library(FilterState.show_all().with_page_size(5))
 
     assert results.total_count == 12
     assert len(results) == 5
@@ -184,7 +180,7 @@ def test_add_field_to_entry(library):
     assert len(entry.tag_box_fields) == 3
 
 
-def test_add_field_tag(library, entry_full, generate_tag):
+def test_add_field_tag(library: Library, entry_full, generate_tag):
     # Given
     tag_name = "xxx"
     tag = generate_tag(tag_name)
@@ -194,8 +190,8 @@ def test_add_field_tag(library, entry_full, generate_tag):
     library.add_field_tag(entry_full, tag, tag_field.type_key)
 
     # Then
-    results = library.search_library(FilterState(id=entry_full.id))
-    tag_field = results[0].tag_box_fields[0]
+    result = library.get_entry_full(entry_full.id)
+    tag_field = result.tag_box_fields[0]
     assert [x.name for x in tag_field.tags if x.name == tag_name]
 
 
@@ -228,7 +224,7 @@ def test_search_filter_extensions(library, is_exclude):
 
     # When
     results = library.search_library(
-        FilterState(),
+        FilterState.show_all(),
     )
 
     # Then
@@ -249,7 +245,7 @@ def test_search_library_case_insensitive(library):
 
     # When
     results = library.search_library(
-        FilterState(tag=tag.name.upper()),
+        FilterState.from_tag_name(tag.name.upper()),
     )
 
     # Then
@@ -323,7 +319,8 @@ def test_update_entry_with_multiple_identical_fields(library, entry_full):
     assert entry.text_fields[1].value == "new value"
 
 
-def test_mirror_entry_fields(library, entry_full):
+def test_mirror_entry_fields(library: Library, entry_full):
+    # new entry
     target_entry = Entry(
         folder=library.folder,
         path=Path("xxx"),
@@ -336,16 +333,19 @@ def test_mirror_entry_fields(library, entry_full):
         ],
     )
 
+    # insert new entry and get id
     entry_id = library.add_entries([target_entry])[0]
 
-    results = library.search_library(FilterState(id=entry_id))
-    new_entry = results[0]
+    # get new entry from library
+    new_entry = library.get_entry_full(entry_id)
 
+    # mirror fields onto new entry
     library.mirror_entry_fields(new_entry, entry_full)
 
-    results = library.search_library(FilterState(id=entry_id))
-    entry = results[0]
+    # get new entry from library again
+    entry = library.get_entry_full(entry_id)
 
+    # make sure fields are there after getting it from the library again
     assert len(entry.fields) == 4
     assert {x.type_key for x in entry.fields} == {
         _FieldID.TITLE.name,
@@ -370,34 +370,16 @@ def test_remove_tag_from_field(library, entry_full):
 @pytest.mark.parametrize(
     ["query_name", "has_result"],
     [
-        ("foo", 1),  # filename substring
-        ("bar", 1),  # filename substring
-        ("one", 0),  # path, should not match
-    ],
-)
-def test_search_file_name(library, query_name, has_result):
-    results = library.search_library(
-        FilterState(name=query_name),
-    )
-
-    assert results.total_count == has_result
-
-
-@pytest.mark.parametrize(
-    ["query_name", "has_result"],
-    [
         (1, 1),
         ("1", 1),
         ("xxx", 0),
         (222, 0),
     ],
 )
-def test_search_entry_id(library, query_name, has_result):
-    results = library.search_library(
-        FilterState(id=query_name),
-    )
+def test_search_entry_id(library: Library, query_name: int, has_result):
+    result = library.get_entry(query_name)
 
-    assert results.total_count == has_result
+    assert (result is not None) == has_result
 
 
 def test_update_field_order(library, entry_full):
@@ -446,36 +428,36 @@ def test_library_prefs_multiple_identical_vals():
 
 
 def test_path_search_glob_after(library: Library):
-    results = library.search_library(FilterState(path="foo*"))
+    results = library.search_library(FilterState.from_path("foo*"))
     assert results.total_count == 1
     assert len(results.items) == 1
 
 
 def test_path_search_glob_in_front(library: Library):
-    results = library.search_library(FilterState(path="*bar.md"))
+    results = library.search_library(FilterState.from_path("*bar.md"))
     assert results.total_count == 1
     assert len(results.items) == 1
 
 
 def test_path_search_glob_both_sides(library: Library):
-    results = library.search_library(FilterState(path="*one/two*"))
+    results = library.search_library(FilterState.from_path("*one/two*"))
     assert results.total_count == 1
     assert len(results.items) == 1
 
 
 @pytest.mark.parametrize(["filetype", "num_of_filetype"], [("md", 1), ("txt", 1), ("png", 0)])
 def test_filetype_search(library, filetype, num_of_filetype):
-    results = library.search_library(FilterState(filetype=filetype))
+    results = library.search_library(FilterState.from_filetype(filetype))
     assert len(results.items) == num_of_filetype
 
 
 @pytest.mark.parametrize(["filetype", "num_of_filetype"], [("png", 2), ("apng", 1), ("ng", 0)])
 def test_filetype_return_one_filetype(file_mediatypes_library, filetype, num_of_filetype):
-    results = file_mediatypes_library.search_library(FilterState(filetype=filetype))
+    results = file_mediatypes_library.search_library(FilterState.from_filetype(filetype))
     assert len(results.items) == num_of_filetype
 
 
 @pytest.mark.parametrize(["mediatype", "num_of_mediatype"], [("plaintext", 2), ("image", 0)])
 def test_mediatype_search(library, mediatype, num_of_mediatype):
-    results = library.search_library(FilterState(mediatype=mediatype))
+    results = library.search_library(FilterState.from_mediatype(mediatype))
     assert len(results.items) == num_of_mediatype

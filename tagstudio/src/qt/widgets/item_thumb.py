@@ -25,7 +25,6 @@ from src.core.constants import (
     TAG_FAVORITE,
 )
 from src.core.library import Entry, ItemType, Library
-from src.core.library.alchemy.enums import FilterState
 from src.core.library.alchemy.fields import _FieldID
 from src.core.media_types import MediaCategories, MediaType
 from src.qt.flowlayout import FlowWidget
@@ -453,9 +452,7 @@ class ItemThumb(FlowWidget):
                 entry, toggle_value, tag_id, _FieldID.TAGS_META.name, create_field=True
             )
             # update the entry
-            self.driver.frame_content[idx] = self.lib.search_library(
-                FilterState(id=entry.id)
-            ).items[0]
+            self.driver.frame_content[idx] = self.lib.get_entry_full(entry.id)
 
         self.driver.update_badges(update_items)
 

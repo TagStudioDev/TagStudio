@@ -65,14 +65,14 @@ from src.core.constants import (
 )
 from src.core.driver import DriverMixin
 from src.core.enums import LibraryPrefs, MacroID, SettingItems
+from src.core.library.alchemy import Library
 from src.core.library.alchemy.enums import (
     FieldTypeEnum,
     FilterState,
     ItemType,
-    SearchMode,
 )
 from src.core.library.alchemy.fields import _FieldID
-from src.core.library.alchemy.library import LibraryStatus
+from src.core.library.alchemy.library import Entry, LibraryStatus
 from src.core.media_types import MediaCategories
 from src.core.ts_core import TagStudioCore
 from src.core.utils.refresh_dir import RefreshDirTracker
@@ -130,6 +130,7 @@ class QtDriver(DriverMixin, QObject):
     SIGTERM = Signal()
 
     preview_panel: PreviewPanel
+    lib: Library
 
     def __init__(self, backend, args):
         super().__init__()
@@ -139,7 +140,7 @@ class QtDriver(DriverMixin, QObject):
         self.rm: ResourceManager = ResourceManager()
         self.args = args
         self.frame_content = []
-        self.filter = FilterState()
+        self.filter = FilterState.show_all()
         self.pages_count = 0
 
         self.scrollbar_pos = 0
@@ -467,7 +468,7 @@ class QtDriver(DriverMixin, QObject):
         ]
         self.item_thumbs: list[ItemThumb] = []
         self.thumb_renderers: list[ThumbRenderer] = []
-        self.filter = FilterState()
+        self.filter = FilterState.show_all()
         self.init_library_window()
         self.migration_modal: JsonMigrationModal = None
 
@@ -509,18 +510,17 @@ class QtDriver(DriverMixin, QObject):
         # Search Button
         search_button: QPushButton = self.main_window.searchButton
         search_button.clicked.connect(
-            lambda: self.filter_items(FilterState(query=self.main_window.searchField.text()))
+            lambda: self.filter_items(
+                FilterState.from_search_query(self.main_window.searchField.text())
+            )
         )
         # Search Field
         search_field: QLineEdit = self.main_window.searchField
         search_field.returnPressed.connect(
             # TODO - parse search field for filters
-            lambda: self.filter_items(FilterState(query=self.main_window.searchField.text()))
-        )
-        # Search Type Selector
-        search_type_selector: QComboBox = self.main_window.comboBox_2
-        search_type_selector.currentIndexChanged.connect(
-            lambda: self.set_search_type(SearchMode(search_type_selector.currentIndex()))
+            lambda: self.filter_items(
+                FilterState.from_search_query(self.main_window.searchField.text())
+            )
         )
         # Thumbnail Size ComboBox
         thumb_size_combobox: QComboBox = self.main_window.thumb_size_combobox
@@ -788,9 +788,9 @@ class QtDriver(DriverMixin, QObject):
 
     def run_macro(self, name: MacroID, grid_idx: int):
         """Run a specific Macro on an Entry given a Macro name."""
-        entry = self.frame_content[grid_idx]
-        ful_path = self.lib.library_dir / entry.path
-        source = entry.path.parts[0]
+        entry: Entry = self.frame_content[grid_idx]
+        full_path = self.lib.library_dir / entry.path
+        source = "" if entry.path.parent == Path(".") else entry.path.parts[0].lower()
 
         logger.info(
             "running macro",
@@ -804,10 +804,10 @@ class QtDriver(DriverMixin, QObject):
             for macro_id in MacroID:
                 if macro_id == MacroID.AUTOFILL:
                     continue
-                self.run_macro(macro_id, entry.id)
+                self.run_macro(macro_id, grid_idx)
 
         elif name == MacroID.SIDECAR:
-            parsed_items = TagStudioCore.get_gdl_sidecar(ful_path, source)
+            parsed_items = TagStudioCore.get_gdl_sidecar(full_path, source)
             for field_id, value in parsed_items.items():
                 if isinstance(value, list) and len(value) > 0 and isinstance(value[0], str):
                     value = self.lib.tag_from_strings(value)
@@ -818,8 +818,9 @@ class QtDriver(DriverMixin, QObject):
                 )
 
         elif name == MacroID.BUILD_URL:
-            url = TagStudioCore.build_url(entry.id, source)
-            self.lib.add_entry_field_type(entry.id, field_id=_FieldID.SOURCE, value=url)
+            url = TagStudioCore.build_url(entry, source)
+            if url is not None:
+                self.lib.add_entry_field_type(entry.id, field_id=_FieldID.SOURCE, value=url)
         elif name == MacroID.MATCH:
             TagStudioCore.match_conditions(self.lib, entry.id)
         elif name == MacroID.CLEAN_URL:
@@ -961,11 +962,20 @@ class QtDriver(DriverMixin, QObject):
         self.autofill_action.setDisabled(not self.selected)
 
     def update_completions_list(self, text: str) -> None:
-        matches = re.search(r"(mediatype|filetype|path|tag):(\"?[A-Za-z0-9\ \t]+\"?)?", text)
+        matches = re.search(
+            r"((?:.* )?)(mediatype|filetype|path|tag|tag_id):(\"?[A-Za-z0-9\ \t]+\"?)?", text
+        )
 
         completion_list: list[str] = []
         if len(text) < 3:
-            completion_list = ["mediatype:", "filetype:", "path:", "tag:"]
+            completion_list = [
+                "mediatype:",
+                "filetype:",
+                "path:",
+                "tag:",
+                "tag_id:",
+                "special:untagged",
+            ]
             self.main_window.searchFieldCompletionList.setStringList(completion_list)
 
         if not matches:
@@ -973,26 +983,28 @@ class QtDriver(DriverMixin, QObject):
 
         query_type: str
         query_value: str | None
-        query_type, query_value = matches.groups()
+        prefix, query_type, query_value = matches.groups()
 
         if not query_value:
             return
 
         if query_type == "tag":
-            completion_list = list(map(lambda x: "tag:" + x.name, self.lib.tags))
+            completion_list = list(map(lambda x: prefix + "tag:" + x.name, self.lib.tags))
+        elif query_type == "tag_id":
+            completion_list = list(map(lambda x: prefix + "tag_id:" + str(x.id), self.lib.tags))
         elif query_type == "path":
-            completion_list = list(map(lambda x: "path:" + x, self.lib.get_paths()))
+            completion_list = list(map(lambda x: prefix + "path:" + x, self.lib.get_paths()))
         elif query_type == "mediatype":
             single_word_completions = map(
-                lambda x: "mediatype:" + x.name,
+                lambda x: prefix + "mediatype:" + x.name,
                 filter(lambda y: " " not in y.name, MediaCategories.ALL_CATEGORIES),
             )
             single_word_completions_quoted = map(
-                lambda x: 'mediatype:"' + x.name + '"',
+                lambda x: prefix + 'mediatype:"' + x.name + '"',
                 filter(lambda y: " " not in y.name, MediaCategories.ALL_CATEGORIES),
             )
             multi_word_completions = map(
-                lambda x: 'mediatype:"' + x.name + '"',
+                lambda x: prefix + 'mediatype:"' + x.name + '"',
                 filter(lambda y: " " in y.name, MediaCategories.ALL_CATEGORIES),
             )
 
@@ -1006,7 +1018,9 @@ class QtDriver(DriverMixin, QObject):
             extensions_list: set[str] = set()
             for media_cat in MediaCategories.ALL_CATEGORIES:
                 extensions_list = extensions_list | media_cat.extensions
-            completion_list = list(map(lambda x: "filetype:" + x.replace(".", ""), extensions_list))
+            completion_list = list(
+                map(lambda x: prefix + "filetype:" + x.replace(".", ""), extensions_list)
+            )
 
         update_completion_list: bool = (
             completion_list != self.main_window.searchFieldCompletionList.stringList()
@@ -1115,13 +1129,20 @@ class QtDriver(DriverMixin, QObject):
             self.item_thumbs[grid_idx].refresh_badge(entry)
 
     def filter_items(self, filter: FilterState | None = None) -> None:
+        if not self.lib.library_dir:
+            logger.info("Library not loaded")
+            return
         assert self.lib.engine
 
         if filter:
             self.filter = dataclasses.replace(self.filter, **dataclasses.asdict(filter))
 
-        self.main_window.statusbar.showMessage(f'Searching Library: "{self.filter.summary}"')
+        # inform user about running search
+        self.main_window.statusbar.showMessage("Searching Library...")
         self.main_window.statusbar.repaint()
+
+        # search the library
+
         start_time = time.time()
 
         results = self.lib.search_library(self.filter)
@@ -1129,17 +1150,11 @@ class QtDriver(DriverMixin, QObject):
         logger.info("items to render", count=len(results))
 
         end_time = time.time()
-        if self.filter.summary:
-            # fmt: off
-            self.main_window.statusbar.showMessage(
-                f"{results.total_count} Results Found for \"{self.filter.summary}\""
-                f" ({format_timespan(end_time - start_time)})"
-            )
-            # fmt: on
-        else:
-            self.main_window.statusbar.showMessage(
-                f"{results.total_count} Results ({format_timespan(end_time - start_time)})"
-            )
+
+        # inform user about completed search
+        self.main_window.statusbar.showMessage(
+            f"{results.total_count} Results Found ({format_timespan(end_time - start_time)})"
+        )
 
         # update page content
         self.frame_content = results.items
@@ -1149,14 +1164,6 @@ class QtDriver(DriverMixin, QObject):
         self.pages_count = math.ceil(results.total_count / self.filter.page_size)
         self.main_window.pagination.update_buttons(
             self.pages_count, self.filter.page_index, emit=False
-        )
-
-    def set_search_type(self, mode: SearchMode = SearchMode.AND):
-        self.filter_items(
-            FilterState(
-                search_mode=mode,
-                path=self.main_window.searchField.text(),
-            )
         )
 
     def remove_recent_library(self, item_key: str):
