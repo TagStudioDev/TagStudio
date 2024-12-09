@@ -36,9 +36,9 @@ def test_library_get_alias(library, generate_tag):
     alias_names.add("test_alias")
     library.update_tag(tag, subtag_ids, alias_names, alias_ids)
 
-    alias_ids = library.get_tag(tag.id).alias_ids
+    _alias_ids = library.get_tag(tag.id).alias_ids
 
-    assert library.get_alias(tag.id, alias_ids[0]).name == "test_alias"
+    assert library.get_alias(tag.id, _alias_ids[0]).name == "test_alias"
 
 
 def test_library_update_alias(library, generate_tag):
@@ -52,9 +52,9 @@ def test_library_update_alias(library, generate_tag):
     library.update_tag(tag, subtag_ids, alias_names, alias_ids)
 
     tag = library.get_tag(tag.id)
-    alias_ids = tag.alias_ids
+    _alias_ids = tag.alias_ids
 
-    assert library.get_alias(tag.id, alias_ids[0]).name == "test_alias"
+    assert library.get_alias(tag.id, _alias_ids[0]).name == "test_alias"
 
     alias_names.remove("test_alias")
     alias_names.add("alias_update")
@@ -191,6 +191,7 @@ def test_add_field_tag(library: Library, entry_full, generate_tag):
 
     # Then
     result = library.get_entry_full(entry_full.id)
+    assert result is not None
     tag_field = result.tag_box_fields[0]
     assert [x.name for x in tag_field.tags if x.name == tag_name]
 
@@ -320,6 +321,7 @@ def test_update_entry_with_multiple_identical_fields(library, entry_full):
 
 
 def test_mirror_entry_fields(library: Library, entry_full):
+    assert library.folder is not None
     # new entry
     target_entry = Entry(
         folder=library.folder,
@@ -338,12 +340,14 @@ def test_mirror_entry_fields(library: Library, entry_full):
 
     # get new entry from library
     new_entry = library.get_entry_full(entry_id)
+    assert new_entry is not None
 
     # mirror fields onto new entry
     library.mirror_entry_fields(new_entry, entry_full)
 
     # get new entry from library again
     entry = library.get_entry_full(entry_id)
+    assert entry is not None
 
     # make sure fields are there after getting it from the library again
     assert len(entry.fields) == 4

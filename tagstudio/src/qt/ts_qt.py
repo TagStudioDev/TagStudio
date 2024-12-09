@@ -784,7 +784,7 @@ class QtDriver(DriverMixin, QObject):
 
     def run_macro(self, name: MacroID, grid_idx: int):
         """Run a specific Macro on an Entry given a Macro name."""
-        entry: Entry = self.frame_content[grid_idx]
+        entry: Entry | None = self.frame_content[grid_idx]
         assert self.lib.library_dir is not None and entry is not None
         full_path = self.lib.library_dir / entry.path
         source = "" if entry.path.parent == Path(".") else entry.path.parts[0].lower()
