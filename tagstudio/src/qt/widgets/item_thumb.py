@@ -110,6 +110,8 @@ class ItemThumb(FlowWidget):
         "padding-left: 1px;"
     )
 
+    filename_style = "font-size:10px;"
+
     def __init__(
         self,
         mode: ItemType,
@@ -125,9 +127,17 @@ class ItemThumb(FlowWidget):
         self.driver = driver
         self.item_id: int | None = None
         self.thumb_size: tuple[int, int] = thumb_size
-        self.setMinimumSize(*thumb_size)
-        self.setMaximumSize(*thumb_size)
+        label_height = 16
+        label_spacing = 3
         check_size = 24
+        self.setMinimumSize(thumb_size[0], thumb_size[1] + label_height + label_spacing)
+        self.setMaximumSize(thumb_size[0], thumb_size[1] + label_height + label_spacing)
+
+        self.thumb_container = QWidget()
+        self.real_base_layout = QVBoxLayout(self)
+        self.real_base_layout.setContentsMargins(0, 0, 0, 0)
+        self.real_base_layout.setSpacing(label_spacing)
+        self.setLayout(self.real_base_layout)
 
         # +----------+
         # |   ARC FAV| Top Right: Favorite & Archived Badges
@@ -135,6 +145,8 @@ class ItemThumb(FlowWidget):
         # |          |
         # |EXT      #| Lower Left: File Type, Tag Group Icon, or Collation Icon
         # +----------+ Lower Right: Collation Count, Video Length, or Word Count
+        #
+        #   Filename   Underneath: (Optional) Filename
 
         # Thumbnail ============================================================
 
@@ -144,7 +156,7 @@ class ItemThumb(FlowWidget):
         # ||        ||
         # |*--------*|
         # +----------+
-        self.base_layout = QVBoxLayout(self)
+        self.base_layout = QVBoxLayout(self.thumb_container)
         self.base_layout.setObjectName("baseLayout")
         self.base_layout.setContentsMargins(0, 0, 0, 0)
 
@@ -182,12 +194,13 @@ class ItemThumb(FlowWidget):
         self.bottom_container.setLayout(self.bottom_layout)
         self.base_layout.addWidget(self.bottom_container)
 
-        self.thumb_button = ThumbButton(self, thumb_size)
+        self.thumb_button = ThumbButton(self.thumb_container, thumb_size)
         self.renderer = ThumbRenderer()
         self.renderer.updated.connect(
-            lambda ts, i, s, ext: (
+            lambda ts, i, s, fn, ext: (
                 self.update_thumb(ts, image=i),
                 self.update_size(ts, size=s),
+                self.update_filename(fn),
                 self.set_extension(ext),
             )
         )
@@ -284,6 +297,14 @@ class ItemThumb(FlowWidget):
             self.badges[badge_type] = badge
             self.cb_layout.addWidget(badge)
 
+        # Filename Label =======================================================
+        self.file_label = QLabel(text="Filename")
+        self.file_label.setStyleSheet(ItemThumb.filename_style)
+        self.file_label.setMaximumHeight(label_height)
+
+        self.real_base_layout.addWidget(self.thumb_container)
+        self.real_base_layout.addWidget(self.file_label)
+
         self.set_mode(mode)
 
     @property
@@ -364,6 +385,9 @@ class ItemThumb(FlowWidget):
             if self.mode == ItemType.ENTRY:
                 self.ext_badge.setHidden(True)
                 self.count_badge.setHidden(True)
+
+    def update_filename(self, filename: Path | str | None):
+        self.file_label.setText(str(filename))
 
     def update_thumb(self, timestamp: float, image: QPixmap | None = None):
         """Update attributes of a thumbnail element."""
