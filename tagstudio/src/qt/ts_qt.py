@@ -37,6 +37,9 @@ from PySide6.QtCore import (
 from PySide6.QtGui import (
     QAction,
     QColor,
+    QDragEnterEvent,
+    QDragMoveEvent,
+    QDropEvent,
     QFontDatabase,
     QGuiApplication,
     QIcon,
@@ -82,6 +85,7 @@ from src.qt.helpers.custom_runnable import CustomRunnable
 from src.qt.helpers.function_iterator import FunctionIterator
 from src.qt.main_window import Ui_MainWindow
 from src.qt.modals.build_tag import BuildTagPanel
+from src.qt.modals.drop_import import DropImportModal
 from src.qt.modals.file_extension import FileExtensionModal
 from src.qt.modals.fix_dupes import FixDupeFilesModal
 from src.qt.modals.fix_unlinked import FixUnlinkedEntriesModal
@@ -234,19 +238,10 @@ class QtDriver(DriverMixin, QObject):
         # self.main_window = loader.load(home_path)
         self.main_window = Ui_MainWindow(self)
         self.main_window.setWindowTitle(self.base_title)
-        self.main_window.mousePressEvent = self.mouse_navigation  # type: ignore
-        # self.main_window.setStyleSheet(
-        # 	f'QScrollBar::{{background:red;}}'
-        # 	)
-
-        # # self.main_window.windowFlags() &
-        # # self.main_window.setWindowFlag(Qt.WindowType.FramelessWindowHint, True)
-        # self.main_window.setWindowFlag(Qt.WindowType.NoDropShadowWindowHint, True)
-        # self.main_window.setWindowFlag(Qt.WindowType.WindowTransparentForInput, False)
-        # self.main_window.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
-
-        # self.windowFX = WindowEffect()
-        # self.windowFX.setAcrylicEffect(self.main_window.winId())
+        self.main_window.mousePressEvent = self.mouse_navigation  # type: ignore[method-assign]
+        self.main_window.dragEnterEvent = self.drag_enter_event  # type: ignore[method-assign]
+        self.main_window.dragMoveEvent = self.drag_move_event  # type: ignore[method-assign]
+        self.main_window.dropEvent = self.drop_event  # type: ignore[method-assign]
 
         splash_pixmap = QPixmap(":/images/splash.png")
         splash_pixmap.setDevicePixelRatio(self.main_window.devicePixelRatio())
@@ -716,26 +711,6 @@ class QtDriver(DriverMixin, QObject):
 
         Threaded method.
         """
-        # pb = QProgressDialog(
-        #     f"Running Configured Macros on 1/{len(new_ids)} New Entries", None, 0, len(new_ids)
-        # )
-        # pb.setFixedSize(432, 112)
-        # pb.setWindowFlags(pb.windowFlags() & ~Qt.WindowType.WindowCloseButtonHint)
-        # pb.setWindowTitle('Running Macros')
-        # pb.setWindowModality(Qt.WindowModality.ApplicationModal)
-        # pb.show()
-
-        # r = CustomRunnable(lambda: self.new_file_macros_runnable(pb, new_ids))
-        # r.done.connect(lambda: (pb.hide(), pb.deleteLater(), self.filter_items('')))
-        # r.run()
-        # # QThreadPool.globalInstance().start(r)
-
-        # # self.main_window.statusbar.showMessage(
-        # #     f"Running configured Macros on {len(new_ids)} new Entries...", 3
-        # # )
-
-        # # pb.hide()
-
         files_count = tracker.files_count
 
         iterator = FunctionIterator(tracker.save_new_files)
@@ -747,6 +722,7 @@ class QtDriver(DriverMixin, QObject):
             maximum=files_count,
         )
         pw.show()
+
         iterator.value.connect(
             lambda x: (
                 pw.update_progress(x + 1),
@@ -905,6 +881,7 @@ class QtDriver(DriverMixin, QObject):
             item_thumb = ItemThumb(
                 None, self.lib, self, (self.thumb_size, self.thumb_size), grid_idx
             )
+
             layout.addWidget(item_thumb)
             self.item_thumbs.append(item_thumb)
 
@@ -1234,6 +1211,7 @@ class QtDriver(DriverMixin, QObject):
         self.update_libs_list(path)
         title_text = f"{self.base_title} - Library '{self.lib.library_dir}'"
         self.main_window.setWindowTitle(title_text)
+        self.main_window.setAcceptDrops(True)
 
         self.selected.clear()
         self.preview_panel.update_widgets()
@@ -1243,3 +1221,27 @@ class QtDriver(DriverMixin, QObject):
 
         self.main_window.toggle_landing_page(enabled=False)
         return open_status
+
+    def drop_event(self, event: QDropEvent):
+        if event.source() is self:
+            return
+
+        if not event.mimeData().hasUrls():
+            return
+
+        urls = event.mimeData().urls()
+        logger.info("New items dragged in", urls=urls)
+        drop_import = DropImportModal(self)
+        drop_import.import_urls(urls)
+
+    def drag_enter_event(self, event: QDragEnterEvent):
+        if event.mimeData().hasUrls():
+            event.accept()
+        else:
+            event.ignore()
+
+    def drag_move_event(self, event: QDragMoveEvent):
+        if event.mimeData().hasUrls():
+            event.accept()
+        else:
+            event.ignore()
