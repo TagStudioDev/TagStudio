@@ -119,6 +119,7 @@ class ItemThumb(FlowWidget):
         driver: "QtDriver",
         thumb_size: tuple[int, int],
         grid_idx: int,
+        show_filename_label: bool = False,
     ):
         super().__init__()
         self.grid_idx = grid_idx
@@ -127,16 +128,19 @@ class ItemThumb(FlowWidget):
         self.driver = driver
         self.item_id: int | None = None
         self.thumb_size: tuple[int, int] = thumb_size
-        label_height = 16
-        label_spacing = 3
+        self.show_filename_label: bool = show_filename_label
+        self.label_height = 16
+        self.label_spacing = 3
         check_size = 24
-        self.setMinimumSize(thumb_size[0], thumb_size[1] + label_height + label_spacing)
-        self.setMaximumSize(thumb_size[0], thumb_size[1] + label_height + label_spacing)
+        self.setFixedSize(
+            thumb_size[0],
+            thumb_size[1]
+            + ((self.label_height + self.label_spacing) if show_filename_label else 0),
+        )
 
         self.thumb_container = QWidget()
         self.real_base_layout = QVBoxLayout(self)
         self.real_base_layout.setContentsMargins(0, 0, 0, 0)
-        self.real_base_layout.setSpacing(label_spacing)
         self.setLayout(self.real_base_layout)
 
         # +----------+
@@ -200,7 +204,7 @@ class ItemThumb(FlowWidget):
             lambda ts, i, s, fn, ext: (
                 self.update_thumb(ts, image=i),
                 self.update_size(ts, size=s),
-                self.update_filename(fn),
+                self.set_filename(fn),
                 self.set_extension(ext),
             )
         )
@@ -300,7 +304,8 @@ class ItemThumb(FlowWidget):
         # Filename Label =======================================================
         self.file_label = QLabel(text="Filename")
         self.file_label.setStyleSheet(ItemThumb.filename_style)
-        self.file_label.setMaximumHeight(label_height)
+        self.file_label.setFixedHeight(12)
+        self.file_label.setHidden(not show_filename_label)
 
         self.real_base_layout.addWidget(self.thumb_container)
         self.real_base_layout.addWidget(self.file_label)
@@ -386,8 +391,22 @@ class ItemThumb(FlowWidget):
                 self.ext_badge.setHidden(True)
                 self.count_badge.setHidden(True)
 
-    def update_filename(self, filename: Path | str | None):
+    def set_filename(self, filename: Path | str | None):
         self.file_label.setText(str(filename))
+
+    def toggle_filename(self, value: bool):
+        """Toggle the visibility of the filename label.
+
+        Args:
+            value (bool): Show the filename, true or false.
+        """
+        if value:
+            self.file_label.setHidden(False)
+            self.setFixedHeight(self.thumb_size[1] + self.label_height + self.label_spacing)
+        else:
+            self.file_label.setHidden(True)
+            self.setFixedHeight(self.thumb_size[1])
+        self.show_filename_label = value
 
     def update_thumb(self, timestamp: float, image: QPixmap | None = None):
         """Update attributes of a thumbnail element."""
@@ -395,8 +414,16 @@ class ItemThumb(FlowWidget):
             self.thumb_button.setIcon(image if image else QPixmap())
 
     def update_size(self, timestamp: float, size: QSize):
-        """Updates attributes of a thumbnail element."""
-        if timestamp > ItemThumb.update_cutoff and self.thumb_button.iconSize != size:
+        """Updates attributes of a thumbnail element.
+
+        Args:
+            timestamp (float | None): The UTC timestamp for when this call was
+                originally dispatched. Used to skip outdated jobs.
+
+            size (QSize): The new thumbnail size to set.
+        """
+        if timestamp > ItemThumb.update_cutoff:
+            self.thumb_size = size.toTuple()  # type: ignore
             self.thumb_button.setIconSize(size)
             self.thumb_button.setMinimumSize(size)
             self.thumb_button.setMaximumSize(size)

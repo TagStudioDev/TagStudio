@@ -25,15 +25,7 @@ import src.qt.resources_rc  # noqa: F401
 import structlog
 from humanfriendly import format_timespan
 from PySide6 import QtCore
-from PySide6.QtCore import (
-    QObject,
-    QSettings,
-    Qt,
-    QThread,
-    QThreadPool,
-    QTimer,
-    Signal,
-)
+from PySide6.QtCore import QObject, QSettings, Qt, QThread, QThreadPool, QTimer, Signal
 from PySide6.QtGui import (
     QAction,
     QColor,
@@ -404,6 +396,19 @@ class QtDriver(DriverMixin, QObject):
         )
         view_menu.addAction(show_libs_list_action)
 
+        show_filenames_action = QAction("Show Filenames in Grid", menu_bar)
+        show_filenames_action.setCheckable(True)
+        show_filenames_action.setChecked(
+            bool(self.settings.value(SettingItems.SHOW_FILENAMES, defaultValue=True, type=bool))
+        )
+        show_filenames_action.triggered.connect(
+            lambda checked: (
+                self.settings.setValue(SettingItems.SHOW_FILENAMES, checked),
+                self.toggle_grid_filenames(checked),
+            )
+        )
+        view_menu.addAction(show_filenames_action)
+
         # Tools Menu ===========================================================
         def create_fix_unlinked_entries_modal():
             if not hasattr(self, "unlinked_modal"):
@@ -567,6 +572,10 @@ class QtDriver(DriverMixin, QObject):
         else:
             self.preview_panel.libs_flow_container.hide()
         self.preview_panel.update()
+
+    def toggle_grid_filenames(self, value: bool):
+        for thumb in self.item_thumbs:
+            thumb.toggle_filename(value)
 
     def callback_library_needed_check(self, func):
         """Check if loaded library has valid path before executing the button function."""
@@ -865,9 +874,9 @@ class QtDriver(DriverMixin, QObject):
             it.thumb_button.setIcon(blank_icon)
             it.resize(self.thumb_size, self.thumb_size)
             it.thumb_size = (self.thumb_size, self.thumb_size)
-            it.setMinimumSize(self.thumb_size, self.thumb_size)
-            it.setMaximumSize(self.thumb_size, self.thumb_size)
+            it.setFixedSize(self.thumb_size, self.thumb_size)
             it.thumb_button.thumb_size = (self.thumb_size, self.thumb_size)
+            it.toggle_filename(it.show_filename_label)
         self.flow_container.layout().setSpacing(
             min(self.thumb_size // spacing_divisor, min_spacing)
         )
@@ -915,7 +924,14 @@ class QtDriver(DriverMixin, QObject):
         # TODO - init after library is loaded, it can have different page_size
         for grid_idx in range(self.filter.page_size):
             item_thumb = ItemThumb(
-                None, self.lib, self, (self.thumb_size, self.thumb_size), grid_idx
+                None,
+                self.lib,
+                self,
+                (self.thumb_size, self.thumb_size),
+                grid_idx,
+                bool(
+                    self.settings.value(SettingItems.SHOW_FILENAMES, defaultValue=True, type=bool)
+                ),
             )
             layout.addWidget(item_thumb)
             self.item_thumbs.append(item_thumb)
