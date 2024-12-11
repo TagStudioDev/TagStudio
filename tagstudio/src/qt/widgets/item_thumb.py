@@ -129,8 +129,8 @@ class ItemThumb(FlowWidget):
         self.item_id: int | None = None
         self.thumb_size: tuple[int, int] = thumb_size
         self.show_filename_label: bool = show_filename_label
-        self.label_height = 16
-        self.label_spacing = 3
+        self.label_height = 12
+        self.label_spacing = 4
         check_size = 24
         self.setFixedSize(
             thumb_size[0],
@@ -139,9 +139,10 @@ class ItemThumb(FlowWidget):
         )
 
         self.thumb_container = QWidget()
-        self.real_base_layout = QVBoxLayout(self)
-        self.real_base_layout.setContentsMargins(0, 0, 0, 0)
-        self.setLayout(self.real_base_layout)
+        self.base_layout = QVBoxLayout(self)
+        self.base_layout.setContentsMargins(0, 0, 0, 0)
+        self.base_layout.setSpacing(0)
+        self.setLayout(self.base_layout)
 
         # +----------+
         # |   ARC FAV| Top Right: Favorite & Archived Badges
@@ -160,9 +161,9 @@ class ItemThumb(FlowWidget):
         # ||        ||
         # |*--------*|
         # +----------+
-        self.base_layout = QVBoxLayout(self.thumb_container)
-        self.base_layout.setObjectName("baseLayout")
-        self.base_layout.setContentsMargins(0, 0, 0, 0)
+        self.thumb_layout = QVBoxLayout(self.thumb_container)
+        self.thumb_layout.setObjectName("baseLayout")
+        self.thumb_layout.setContentsMargins(0, 0, 0, 0)
 
         # +----------+
         # |[~~~~~~~~]|
@@ -175,7 +176,7 @@ class ItemThumb(FlowWidget):
         self.top_layout.setContentsMargins(6, 6, 6, 6)
         self.top_container = QWidget()
         self.top_container.setLayout(self.top_layout)
-        self.base_layout.addWidget(self.top_container)
+        self.thumb_layout.addWidget(self.top_container)
 
         # +----------+
         # |[~~~~~~~~]|
@@ -183,7 +184,7 @@ class ItemThumb(FlowWidget):
         # |     |    |
         # |     v    |
         # +----------+
-        self.base_layout.addStretch(2)
+        self.thumb_layout.addStretch(2)
 
         # +----------+
         # |[~~~~~~~~]|
@@ -196,7 +197,7 @@ class ItemThumb(FlowWidget):
         self.bottom_layout.setContentsMargins(6, 6, 6, 6)
         self.bottom_container = QWidget()
         self.bottom_container.setLayout(self.bottom_layout)
-        self.base_layout.addWidget(self.bottom_container)
+        self.thumb_layout.addWidget(self.bottom_container)
 
         self.thumb_button = ThumbButton(self.thumb_container, thumb_size)
         self.renderer = ThumbRenderer()
@@ -209,7 +210,7 @@ class ItemThumb(FlowWidget):
             )
         )
         self.thumb_button.setFlat(True)
-        self.thumb_button.setLayout(self.base_layout)
+        self.thumb_button.setLayout(self.thumb_layout)
         self.thumb_button.setContextMenuPolicy(Qt.ContextMenuPolicy.ActionsContextMenu)
 
         self.opener = FileOpenerHelper("")
@@ -304,11 +305,11 @@ class ItemThumb(FlowWidget):
         # Filename Label =======================================================
         self.file_label = QLabel(text="Filename")
         self.file_label.setStyleSheet(ItemThumb.filename_style)
-        self.file_label.setFixedHeight(12)
+        self.file_label.setMaximumHeight(self.label_height)
         self.file_label.setHidden(not show_filename_label)
 
-        self.real_base_layout.addWidget(self.thumb_container)
-        self.real_base_layout.addWidget(self.file_label)
+        self.base_layout.addWidget(self.thumb_container)
+        self.base_layout.addWidget(self.file_label)
 
         self.set_mode(mode)
 
