@@ -11,7 +11,6 @@ line-length = 100
 "tagstudio/src/qt/renderer.py" = ["E", "N", "I"]
 "tagstudio/src/qt/*.pyi" = ["E", "N", "I"]
 "tagstudio/src/qt/loader.py" = ["SIM108"]
-"tagstudio/src/qt/qt_wrapper.py" = ["T203"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
