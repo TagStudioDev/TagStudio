@@ -3,8 +3,7 @@
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
 
-from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QHBoxLayout, QLabel
+from src.qt.core import QHBoxLayout, QLabel, Qt
 from src.qt.widgets.fields import FieldWidget
 
 

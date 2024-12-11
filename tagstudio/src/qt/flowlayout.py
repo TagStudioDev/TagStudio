@@ -2,10 +2,18 @@
 # Copyright (C) 2022 The Qt Company Ltd.
 # SPDX-License-Identifier: LicenseRef-Qt-Commercial OR BSD-3-Clause
 
-"""PySide6 port of the widgets/layouts/flowlayout example from Qt v6.x."""
+"""port of the widgets/layouts/flowlayout example from Qt v6.x."""
 
-from PySide6.QtCore import QMargins, QPoint, QRect, QSize, Qt
-from PySide6.QtWidgets import QLayout, QSizePolicy, QWidget
+from src.qt.core import (
+    QLayout,
+    QMargins,
+    QPoint,
+    QRect,
+    QSize,
+    QSizePolicy,
+    Qt,
+    QWidget,
+)
 
 
 class FlowWidget(QWidget):

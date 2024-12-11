@@ -3,7 +3,7 @@
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
 
-from PySide6.QtWidgets import QPlainTextEdit, QVBoxLayout
+from src.qt.core import QPlainTextEdit, QVBoxLayout
 from src.qt.widgets.panel import PanelWidget
 
 

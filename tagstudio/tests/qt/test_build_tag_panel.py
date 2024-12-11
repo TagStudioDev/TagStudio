@@ -1,7 +1,7 @@
 from typing import cast
 
-from PySide6.QtWidgets import QApplication, QMainWindow
 from src.core.library.alchemy.models import Tag
+from src.qt.core import QApplication, QMainWindow
 from src.qt.modals.build_tag import BuildTagPanel
 from src.qt.widgets.tag import TagAliasWidget
 

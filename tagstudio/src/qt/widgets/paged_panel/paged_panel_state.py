@@ -3,7 +3,7 @@
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
 
-from PySide6.QtWidgets import QPushButton
+from src.qt.core import QPushButton
 from src.qt.widgets.paged_panel.paged_body_wrapper import PagedBodyWrapper
 
 

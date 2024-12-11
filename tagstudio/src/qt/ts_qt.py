@@ -24,39 +24,6 @@ from queue import Queue
 import src.qt.resources_rc  # noqa: F401
 import structlog
 from humanfriendly import format_timespan
-from PySide6 import QtCore
-from PySide6.QtCore import (
-    QObject,
-    QSettings,
-    Qt,
-    QThread,
-    QThreadPool,
-    QTimer,
-    Signal,
-)
-from PySide6.QtGui import (
-    QAction,
-    QColor,
-    QFontDatabase,
-    QGuiApplication,
-    QIcon,
-    QMouseEvent,
-    QPixmap,
-)
-from PySide6.QtUiTools import QUiLoader
-from PySide6.QtWidgets import (
-    QApplication,
-    QComboBox,
-    QFileDialog,
-    QLineEdit,
-    QMenu,
-    QMenuBar,
-    QMessageBox,
-    QPushButton,
-    QScrollArea,
-    QSplashScreen,
-    QWidget,
-)
 from src.core.constants import (
     TAG_ARCHIVED,
     TAG_FAVORITE,
@@ -77,6 +44,34 @@ from src.core.media_types import MediaCategories
 from src.core.ts_core import TagStudioCore
 from src.core.utils.refresh_dir import RefreshDirTracker
 from src.core.utils.web import strip_web_protocol
+from src.qt.core import (
+    QAction,
+    QApplication,
+    QColor,
+    QComboBox,
+    QFileDialog,
+    QFontDatabase,
+    QGuiApplication,
+    QIcon,
+    QKeyCombination,
+    QLineEdit,
+    QMenu,
+    QMenuBar,
+    QMessageBox,
+    QMouseEvent,
+    QObject,
+    QPixmap,
+    QPushButton,
+    QScrollArea,
+    QSettings,
+    QSplashScreen,
+    Qt,
+    QThread,
+    QThreadPool,
+    QTimer,
+    QWidget,
+    Signal,
+)
 from src.qt.flowlayout import FlowLayout
 from src.qt.helpers.custom_runnable import CustomRunnable
 from src.qt.helpers.function_iterator import FunctionIterator
@@ -88,6 +83,7 @@ from src.qt.modals.fix_unlinked import FixUnlinkedEntriesModal
 from src.qt.modals.folders_to_tags import FoldersToTagsModal
 from src.qt.modals.tag_database import TagDatabasePanel
 from src.qt.resource_manager import ResourceManager
+from src.qt.ui_tools import QUiLoader
 from src.qt.widgets.item_thumb import BadgeType, ItemThumb
 from src.qt.widgets.migration_modal import JsonMigrationModal
 from src.qt.widgets.panel import PanelModal
@@ -281,9 +277,9 @@ class QtDriver(DriverMixin, QObject):
         open_library_action = QAction("&Open/Create Library", menu_bar)
         open_library_action.triggered.connect(lambda: self.open_library_from_dialog())
         open_library_action.setShortcut(
-            QtCore.QKeyCombination(
-                QtCore.Qt.KeyboardModifier(QtCore.Qt.KeyboardModifier.ControlModifier),
-                QtCore.Qt.Key.Key_O,
+            QKeyCombination(
+                Qt.KeyboardModifier(Qt.KeyboardModifier.ControlModifier),
+                Qt.Key.Key_O,
             )
         )
         open_library_action.setToolTip("Ctrl+O")
@@ -294,12 +290,11 @@ class QtDriver(DriverMixin, QObject):
             lambda: self.callback_library_needed_check(self.backup_library)
         )
         save_library_backup_action.setShortcut(
-            QtCore.QKeyCombination(
-                QtCore.Qt.KeyboardModifier(
-                    QtCore.Qt.KeyboardModifier.ControlModifier
-                    | QtCore.Qt.KeyboardModifier.ShiftModifier
+            QKeyCombination(
+                Qt.KeyboardModifier(
+                    Qt.KeyboardModifier.ControlModifier | Qt.KeyboardModifier.ShiftModifier
                 ),
-                QtCore.Qt.Key.Key_S,
+                Qt.Key.Key_S,
             )
         )
         save_library_backup_action.setStatusTip("Ctrl+Shift+S")
@@ -314,9 +309,9 @@ class QtDriver(DriverMixin, QObject):
             lambda: self.callback_library_needed_check(self.add_new_files_callback)
         )
         add_new_files_action.setShortcut(
-            QtCore.QKeyCombination(
-                QtCore.Qt.KeyboardModifier(QtCore.Qt.KeyboardModifier.ControlModifier),
-                QtCore.Qt.Key.Key_R,
+            QKeyCombination(
+                Qt.KeyboardModifier(Qt.KeyboardModifier.ControlModifier),
+                Qt.Key.Key_R,
             )
         )
         add_new_files_action.setStatusTip("Ctrl+R")
@@ -332,9 +327,9 @@ class QtDriver(DriverMixin, QObject):
         new_tag_action = QAction("New &Tag", menu_bar)
         new_tag_action.triggered.connect(lambda: self.add_tag_action_callback())
         new_tag_action.setShortcut(
-            QtCore.QKeyCombination(
-                QtCore.Qt.KeyboardModifier(QtCore.Qt.KeyboardModifier.ControlModifier),
-                QtCore.Qt.Key.Key_T,
+            QKeyCombination(
+                Qt.KeyboardModifier(Qt.KeyboardModifier.ControlModifier),
+                Qt.Key.Key_T,
             )
         )
         new_tag_action.setToolTip("Ctrl+T")
@@ -345,9 +340,9 @@ class QtDriver(DriverMixin, QObject):
         select_all_action = QAction("Select All", menu_bar)
         select_all_action.triggered.connect(self.select_all_action_callback)
         select_all_action.setShortcut(
-            QtCore.QKeyCombination(
-                QtCore.Qt.KeyboardModifier(QtCore.Qt.KeyboardModifier.ControlModifier),
-                QtCore.Qt.Key.Key_A,
+            QKeyCombination(
+                Qt.KeyboardModifier(Qt.KeyboardModifier.ControlModifier),
+                Qt.Key.Key_A,
             )
         )
         select_all_action.setToolTip("Ctrl+A")
@@ -355,7 +350,7 @@ class QtDriver(DriverMixin, QObject):
 
         clear_select_action = QAction("Clear Selection", menu_bar)
         clear_select_action.triggered.connect(self.clear_select_action_callback)
-        clear_select_action.setShortcut(QtCore.Qt.Key.Key_Escape)
+        clear_select_action.setShortcut(Qt.Key.Key_Escape)
         clear_select_action.setToolTip("Esc")
         edit_menu.addAction(clear_select_action)
 

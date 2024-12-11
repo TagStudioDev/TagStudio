@@ -3,17 +3,19 @@
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
 import structlog
-from PySide6.QtCore import QSize, Qt, Signal
-from PySide6.QtGui import QShowEvent
-from PySide6.QtWidgets import (
+from src.core.library import Library, Tag
+from src.qt.core import (
     QFrame,
     QHBoxLayout,
     QLineEdit,
     QScrollArea,
+    QShowEvent,
+    QSize,
+    Qt,
     QVBoxLayout,
     QWidget,
+    Signal,
 )
-from src.core.library import Library, Tag
 from src.qt.modals.build_tag import BuildTagPanel
 from src.qt.widgets.panel import PanelModal, PanelWidget
 from src.qt.widgets.tag import TagWidget

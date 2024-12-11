@@ -5,10 +5,17 @@
 
 import typing
 
-from PySide6.QtCore import Qt, QThreadPool
-from PySide6.QtWidgets import QHBoxLayout, QLabel, QPushButton, QVBoxLayout, QWidget
 from src.core.library import Library
 from src.core.utils.missing_files import MissingRegistry
+from src.qt.core import (
+    QHBoxLayout,
+    QLabel,
+    QPushButton,
+    Qt,
+    QThreadPool,
+    QVBoxLayout,
+    QWidget,
+)
 from src.qt.helpers.custom_runnable import CustomRunnable
 from src.qt.helpers.function_iterator import FunctionIterator
 from src.qt.modals.delete_unlinked import DeleteUnlinkedEntriesModal

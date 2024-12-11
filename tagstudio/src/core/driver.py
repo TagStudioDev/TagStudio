@@ -1,10 +1,10 @@
 from pathlib import Path
 
 import structlog
-from PySide6.QtCore import QSettings
 from src.core.constants import TS_FOLDER_NAME
 from src.core.enums import SettingItems
 from src.core.library.alchemy.library import LibraryStatus
+from src.qt.core import QSettings
 
 logger = structlog.get_logger(__name__)
 

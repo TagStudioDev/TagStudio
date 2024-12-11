@@ -5,30 +5,31 @@ import logging
 import typing
 
 from PIL import Image, ImageDraw
-from PySide6.QtCore import (
+from src.core.enums import SettingItems
+from src.qt.core import (
+    QAction,
+    QAudioOutput,
+    QBitmap,
+    QBrush,
+    QColor,
     QEvent,
+    QGraphicsScene,
+    QGraphicsVideoItem,
+    QGraphicsView,
+    QMediaDevices,
+    QMediaPlayer,
     QObject,
+    QPen,
     QRectF,
+    QRegion,
+    QResizeEvent,
     QSize,
+    QSvgWidget,
     Qt,
     QTimer,
     QUrl,
     QVariantAnimation,
 )
-from PySide6.QtGui import (
-    QAction,
-    QBitmap,
-    QBrush,
-    QColor,
-    QPen,
-    QRegion,
-    QResizeEvent,
-)
-from PySide6.QtMultimedia import QAudioOutput, QMediaDevices, QMediaPlayer
-from PySide6.QtMultimediaWidgets import QGraphicsVideoItem
-from PySide6.QtSvgWidgets import QSvgWidget
-from PySide6.QtWidgets import QGraphicsScene, QGraphicsView
-from src.core.enums import SettingItems
 from src.qt.helpers.file_opener import FileOpenerHelper
 from src.qt.platform_strings import PlatformStrings
 

@@ -3,13 +3,7 @@
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
 import structlog
-from PySide6.QtCore import Qt
-from PySide6.QtWidgets import (
-    QHBoxLayout,
-    QLabel,
-    QVBoxLayout,
-    QWidget,
-)
+from src.qt.core import QHBoxLayout, QLabel, Qt, QVBoxLayout, QWidget
 from src.qt.widgets.paged_panel.paged_panel_state import PagedPanelState
 
 logger = structlog.get_logger(__name__)

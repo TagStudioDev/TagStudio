@@ -5,18 +5,6 @@
 from pathlib import Path
 
 import structlog
-from PySide6.QtCore import QObject, Qt, QThreadPool, Signal
-from PySide6.QtWidgets import (
-    QApplication,
-    QGridLayout,
-    QHBoxLayout,
-    QLabel,
-    QMessageBox,
-    QProgressDialog,
-    QSizePolicy,
-    QVBoxLayout,
-    QWidget,
-)
 from sqlalchemy import and_, select
 from sqlalchemy.orm import Session
 from src.core.constants import TS_FOLDER_NAME
@@ -27,6 +15,21 @@ from src.core.library.alchemy.joins import TagField, TagSubtag
 from src.core.library.alchemy.library import Library as SqliteLibrary
 from src.core.library.alchemy.models import Entry, Tag, TagAlias
 from src.core.library.json.library import Library as JsonLibrary  # type: ignore
+from src.qt.core import (
+    QApplication,
+    QGridLayout,
+    QHBoxLayout,
+    QLabel,
+    QMessageBox,
+    QObject,
+    QProgressDialog,
+    QSizePolicy,
+    Qt,
+    QThreadPool,
+    QVBoxLayout,
+    QWidget,
+    Signal,
+)
 from src.qt.helpers.custom_runnable import CustomRunnable
 from src.qt.helpers.function_iterator import FunctionIterator
 from src.qt.helpers.qbutton_wrapper import QPushButtonWrapper

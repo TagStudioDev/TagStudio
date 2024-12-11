@@ -10,16 +10,6 @@ from typing import TYPE_CHECKING
 
 import structlog
 from PIL import Image, ImageQt
-from PySide6.QtCore import QEvent, QSize, Qt
-from PySide6.QtGui import QAction, QEnterEvent, QPixmap
-from PySide6.QtWidgets import (
-    QBoxLayout,
-    QCheckBox,
-    QHBoxLayout,
-    QLabel,
-    QVBoxLayout,
-    QWidget,
-)
 from src.core.constants import (
     TAG_ARCHIVED,
     TAG_FAVORITE,
@@ -27,6 +17,20 @@ from src.core.constants import (
 from src.core.library import Entry, ItemType, Library
 from src.core.library.alchemy.fields import _FieldID
 from src.core.media_types import MediaCategories, MediaType
+from src.qt.core import (
+    QAction,
+    QBoxLayout,
+    QCheckBox,
+    QEnterEvent,
+    QEvent,
+    QHBoxLayout,
+    QLabel,
+    QPixmap,
+    QSize,
+    Qt,
+    QVBoxLayout,
+    QWidget,
+)
 from src.qt.flowlayout import FlowWidget
 from src.qt.helpers.file_opener import FileOpenerHelper
 from src.qt.platform_strings import PlatformStrings

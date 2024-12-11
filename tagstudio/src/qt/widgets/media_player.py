@@ -8,16 +8,20 @@ from pathlib import Path
 from time import gmtime
 from typing import Any
 
-from PySide6.QtCore import Qt, QUrl
-from PySide6.QtGui import QIcon, QPixmap
-from PySide6.QtMultimedia import QAudioOutput, QMediaDevices, QMediaPlayer
-from PySide6.QtWidgets import (
+from src.qt.core import (
+    QAudioOutput,
     QGridLayout,
     QHBoxLayout,
+    QIcon,
     QLabel,
+    QMediaDevices,
+    QMediaPlayer,
+    QPixmap,
     QPushButton,
     QSizePolicy,
     QSlider,
+    Qt,
+    QUrl,
     QWidget,
 )
 

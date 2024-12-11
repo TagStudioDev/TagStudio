@@ -9,13 +9,10 @@ import cv2
 import structlog
 from PIL import Image, ImageChops, UnidentifiedImageError
 from PIL.Image import DecompressionBombError
-from PySide6.QtCore import (
-    QObject,
-    Signal,
-)
 from src.core.library import Library
 from src.core.library.alchemy.fields import _FieldID
 from src.core.media_types import MediaCategories
+from src.qt.core import QObject, Signal
 from src.qt.helpers.file_tester import is_readable_video
 
 logger = structlog.get_logger(__name__)

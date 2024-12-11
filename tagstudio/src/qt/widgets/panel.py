@@ -4,8 +4,15 @@
 import logging
 from typing import Callable
 
-from PySide6.QtCore import Qt, Signal
-from PySide6.QtWidgets import QHBoxLayout, QLabel, QPushButton, QVBoxLayout, QWidget
+from src.qt.core import (
+    QHBoxLayout,
+    QLabel,
+    QPushButton,
+    Qt,
+    QVBoxLayout,
+    QWidget,
+    Signal,
+)
 
 
 class PanelModal(QWidget):

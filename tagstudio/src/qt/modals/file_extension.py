@@ -3,21 +3,22 @@
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
 
-from PySide6.QtCore import Qt, Signal
-from PySide6.QtWidgets import (
+from src.core.enums import LibraryPrefs
+from src.core.library import Library
+from src.qt.core import (
     QComboBox,
     QHBoxLayout,
     QLabel,
     QLineEdit,
     QPushButton,
     QStyledItemDelegate,
+    Qt,
     QTableWidget,
     QTableWidgetItem,
     QVBoxLayout,
     QWidget,
+    Signal,
 )
-from src.core.enums import LibraryPrefs
-from src.core.library import Library
 from src.qt.widgets.panel import PanelWidget
 
 

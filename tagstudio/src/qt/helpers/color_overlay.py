@@ -4,8 +4,7 @@
 
 
 from PIL import Image
-from PySide6.QtCore import Qt
-from PySide6.QtGui import QGuiApplication
+from src.qt.core import QGuiApplication, Qt
 from src.qt.helpers.gradient import linear_gradient
 
 # TODO: Consolidate the built-in QT theme values with the values

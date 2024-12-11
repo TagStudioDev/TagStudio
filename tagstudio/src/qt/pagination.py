@@ -4,14 +4,16 @@
 
 """A pagination widget created for TagStudio."""
 
-from PySide6.QtCore import QObject, QSize, Signal
-from PySide6.QtGui import QIntValidator
-from PySide6.QtWidgets import (
+from src.qt.core import (
     QHBoxLayout,
+    QIntValidator,
     QLabel,
     QLineEdit,
+    QObject,
+    QSize,
     QSizePolicy,
     QWidget,
+    Signal,
 )
 from src.qt.helpers.qbutton_wrapper import QPushButtonWrapper
 

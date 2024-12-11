@@ -7,23 +7,22 @@ import math
 from typing import cast
 
 import structlog
-from PySide6 import QtCore
-from PySide6.QtCore import Qt, Signal
-from PySide6.QtGui import (
-    QAction,
-)
-from PySide6.QtWidgets import (
-    QApplication,
-    QComboBox,
-    QLabel,
-    QLineEdit,
-    QPushButton,
-    QVBoxLayout,
-    QWidget,
-)
 from src.core.library import Library, Tag
 from src.core.library.alchemy.enums import TagColor
 from src.core.palette import ColorType, UiColor, get_tag_color, get_ui_color
+from src.qt.core import (
+    QAction,
+    QApplication,
+    QComboBox,
+    QKeyCombination,
+    QLabel,
+    QLineEdit,
+    QPushButton,
+    Qt,
+    QVBoxLayout,
+    QWidget,
+    Signal,
+)
 from src.qt.flowlayout import FlowLayout
 from src.qt.modals.tag_search import TagSearchPanel
 from src.qt.widgets.panel import PanelModal, PanelWidget
@@ -97,9 +96,9 @@ class BuildTagPanel(PanelWidget):
         self.alias_add_button.setText("+")
         self.alias_add_button.setToolTip("CTRL + A")
         self.alias_add_button.setShortcut(
-            QtCore.QKeyCombination(
-                QtCore.Qt.KeyboardModifier(QtCore.Qt.KeyboardModifier.ControlModifier),
-                QtCore.Qt.Key.Key_A,
+            QKeyCombination(
+                Qt.KeyboardModifier(Qt.KeyboardModifier.ControlModifier),
+                Qt.Key.Key_A,
             )
         )
         self.alias_add_button.setStyleSheet(
@@ -149,9 +148,9 @@ class BuildTagPanel(PanelWidget):
         self.subtags_add_button.setMinimumSize(23, 23)
         self.subtags_add_button.setMaximumSize(23, 23)
         self.subtags_add_button.setShortcut(
-            QtCore.QKeyCombination(
-                QtCore.Qt.KeyboardModifier(QtCore.Qt.KeyboardModifier.ControlModifier),
-                QtCore.Qt.Key.Key_P,
+            QKeyCombination(
+                Qt.KeyboardModifier(Qt.KeyboardModifier.ControlModifier),
+                Qt.Key.Key_P,
             )
         )
         self.subtags_add_button.setStyleSheet(
@@ -221,9 +220,9 @@ class BuildTagPanel(PanelWidget):
         remove_selected_alias_action = QAction("remove selected alias", self)
         remove_selected_alias_action.triggered.connect(self.remove_selected_alias)
         remove_selected_alias_action.setShortcut(
-            QtCore.QKeyCombination(
-                QtCore.Qt.KeyboardModifier(QtCore.Qt.KeyboardModifier.ControlModifier),
-                QtCore.Qt.Key.Key_D,
+            QKeyCombination(
+                Qt.KeyboardModifier(Qt.KeyboardModifier.ControlModifier),
+                Qt.Key.Key_D,
             )
         )
         self.addAction(remove_selected_alias_action)
