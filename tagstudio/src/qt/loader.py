@@ -2,8 +2,11 @@
 # License: GPL v3 Copyright: 2021, Kovid Goyal <kovid@kovidgoyal.net>
 # Created for calibre: https://github.com/kovidgoyal/calibre
 
-import sys
 from importlib import import_module
+
+import structlog
+
+logger = structlog.get_logger(__name__)
 
 
 def dynamic_load(name, name_map, already_imported, qt_modules, module_names=()):
@@ -18,9 +21,7 @@ def dynamic_load(name, name_map, already_imported, qt_modules, module_names=()):
                 mod = qt_modules[mod_name] = import_module(mod_name)
             except ImportError as err:
                 mod = qt_modules[mod_name] = False
-                print(
-                    "Failed to import PyQt module:", mod_name, "with error:", err, file=sys.stderr
-                )
+                logger.error(f"Failed to import PySide6 module: {mod_name} with error: {err}")
         if mod is not False:
             if name in module_names:
                 q = mod
