@@ -324,11 +324,11 @@ class ItemThumb(FlowWidget):
     def set_mode(self, mode: ItemType | None) -> None:
         if mode is None:
             self.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents, on=True)
-            self.unsetCursor()
+            self.thumb_button.unsetCursor()
             self.thumb_button.setHidden(True)
         elif mode == ItemType.ENTRY and self.mode != ItemType.ENTRY:
             self.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents, on=False)
-            self.setCursor(Qt.CursorShape.PointingHandCursor)
+            self.thumb_button.setCursor(Qt.CursorShape.PointingHandCursor)
             self.thumb_button.setHidden(False)
             self.cb_container.setHidden(False)
             # Count Badge depends on file extension (video length, word count)
@@ -338,7 +338,7 @@ class ItemThumb(FlowWidget):
             self.ext_badge.setHidden(True)
         elif mode == ItemType.COLLATION and self.mode != ItemType.COLLATION:
             self.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents, on=False)
-            self.setCursor(Qt.CursorShape.PointingHandCursor)
+            self.thumb_button.setCursor(Qt.CursorShape.PointingHandCursor)
             self.thumb_button.setHidden(False)
             self.cb_container.setHidden(True)
             self.ext_badge.setHidden(True)
@@ -347,7 +347,7 @@ class ItemThumb(FlowWidget):
             self.item_type_badge.setHidden(False)
         elif mode == ItemType.TAG_GROUP and self.mode != ItemType.TAG_GROUP:
             self.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents, on=False)
-            self.setCursor(Qt.CursorShape.PointingHandCursor)
+            self.thumb_button.setCursor(Qt.CursorShape.PointingHandCursor)
             self.thumb_button.setHidden(False)
             self.ext_badge.setHidden(True)
             self.count_badge.setHidden(False)
