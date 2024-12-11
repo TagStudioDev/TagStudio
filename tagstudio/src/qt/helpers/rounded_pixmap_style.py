@@ -4,10 +4,7 @@
 # https://creativecommons.org/licenses/by-sa/4.0/
 # Modified for TagStudio: https://github.com/CyanVoxel/TagStudio
 
-from PySide6.QtGui import QBrush, QColor, QPainter, QPixmap
-from PySide6.QtWidgets import (
-    QProxyStyle,
-)
+from src.qt.core import QBrush, QColor, QPainter, QPixmap, QProxyStyle
 
 
 class RoundedPixmapStyle(QProxyStyle):

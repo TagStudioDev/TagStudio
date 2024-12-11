@@ -9,8 +9,7 @@ import traceback
 from pathlib import Path
 
 import structlog
-from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QLabel
+from src.qt.core import QLabel, Qt
 
 logger = structlog.get_logger(__name__)
 

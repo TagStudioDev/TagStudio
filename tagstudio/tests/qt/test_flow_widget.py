@@ -1,5 +1,4 @@
-from PySide6.QtCore import QRect
-from PySide6.QtWidgets import QPushButton, QWidget
+from src.qt.core import QPushButton, QRect, QWidget
 from src.qt.flowlayout import FlowLayout
 
 

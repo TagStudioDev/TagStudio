@@ -2,11 +2,11 @@ from os import makedirs
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-from PySide6.QtCore import QSettings
 from src.core.constants import TS_FOLDER_NAME
 from src.core.driver import DriverMixin
 from src.core.enums import SettingItems
 from src.core.library.alchemy.library import LibraryStatus
+from src.qt.core import QSettings
 
 
 class TestDriver(DriverMixin):

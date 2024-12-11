@@ -8,20 +8,20 @@ import typing
 from dataclasses import dataclass, field
 
 import structlog
-from PySide6.QtCore import Qt
-from PySide6.QtWidgets import (
+from src.core.constants import TAG_ARCHIVED, TAG_FAVORITE
+from src.core.library import Library, Tag
+from src.core.library.alchemy.fields import _FieldID
+from src.core.palette import ColorType, get_tag_color
+from src.qt.core import (
     QFrame,
     QHBoxLayout,
     QLabel,
     QPushButton,
     QScrollArea,
+    Qt,
     QVBoxLayout,
     QWidget,
 )
-from src.core.constants import TAG_ARCHIVED, TAG_FAVORITE
-from src.core.library import Library, Tag
-from src.core.library.alchemy.fields import _FieldID
-from src.core.palette import ColorType, get_tag_color
 from src.qt.flowlayout import FlowLayout
 
 if typing.TYPE_CHECKING:

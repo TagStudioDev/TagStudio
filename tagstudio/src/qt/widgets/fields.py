@@ -9,9 +9,16 @@ from types import MethodType
 from typing import Callable, Optional
 
 from PIL import Image, ImageQt
-from PySide6.QtCore import QEvent, Qt
-from PySide6.QtGui import QEnterEvent, QPixmap
-from PySide6.QtWidgets import QHBoxLayout, QLabel, QVBoxLayout, QWidget
+from src.qt.core import (
+    QEnterEvent,
+    QEvent,
+    QHBoxLayout,
+    QLabel,
+    QPixmap,
+    Qt,
+    QVBoxLayout,
+    QWidget,
+)
 from src.qt.helpers.qbutton_wrapper import QPushButtonWrapper
 
 

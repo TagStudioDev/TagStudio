@@ -9,9 +9,17 @@ import typing
 from pathlib import Path
 
 from PIL import Image, ImageQt
-from PySide6.QtCore import QEasingCurve, QPoint, QPropertyAnimation, Qt
-from PySide6.QtGui import QPixmap
-from PySide6.QtWidgets import QLabel, QPushButton, QVBoxLayout, QWidget
+from src.qt.core import (
+    QEasingCurve,
+    QLabel,
+    QPixmap,
+    QPoint,
+    QPropertyAnimation,
+    QPushButton,
+    Qt,
+    QVBoxLayout,
+    QWidget,
+)
 from src.qt.helpers.color_overlay import gradient_overlay, theme_fg_overlay
 from src.qt.widgets.clickable_label import ClickableLabel
 

@@ -18,20 +18,6 @@ import structlog
 from humanfriendly import format_size
 from PIL import Image, ImageFont, UnidentifiedImageError
 from PIL.Image import DecompressionBombError
-from PySide6.QtCore import QBuffer, QByteArray, QSize, Qt, Signal
-from PySide6.QtGui import QAction, QGuiApplication, QMovie, QResizeEvent
-from PySide6.QtWidgets import (
-    QFrame,
-    QHBoxLayout,
-    QLabel,
-    QMessageBox,
-    QPushButton,
-    QScrollArea,
-    QSizePolicy,
-    QSplitter,
-    QVBoxLayout,
-    QWidget,
-)
 from src.core.constants import (
     TS_FOLDER_NAME,
 )
@@ -46,6 +32,27 @@ from src.core.library.alchemy.fields import (
 )
 from src.core.library.alchemy.library import Library
 from src.core.media_types import MediaCategories
+from src.qt.core import (
+    QAction,
+    QBuffer,
+    QByteArray,
+    QFrame,
+    QGuiApplication,
+    QHBoxLayout,
+    QLabel,
+    QMessageBox,
+    QMovie,
+    QPushButton,
+    QResizeEvent,
+    QScrollArea,
+    QSize,
+    QSizePolicy,
+    QSplitter,
+    Qt,
+    QVBoxLayout,
+    QWidget,
+    Signal,
+)
 from src.qt.helpers.file_opener import FileOpenerHelper, FileOpenerLabel, open_file
 from src.qt.helpers.file_tester import is_readable_video
 from src.qt.helpers.qbutton_wrapper import QPushButtonWrapper

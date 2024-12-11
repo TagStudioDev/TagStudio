@@ -30,25 +30,26 @@ from PIL import (
 from PIL.Image import DecompressionBombError
 from pillow_heif import register_avif_opener, register_heif_opener
 from pydub import exceptions
-from PySide6.QtCore import (
-    QBuffer,
-    QFile,
-    QFileDevice,
-    QIODeviceBase,
-    QObject,
-    QSize,
-    QSizeF,
-    Qt,
-    Signal,
-)
-from PySide6.QtGui import QGuiApplication, QImage, QPainter, QPixmap
-from PySide6.QtPdf import QPdfDocument, QPdfDocumentRenderOptions
-from PySide6.QtSvg import QSvgRenderer
 from src.core.constants import FONT_SAMPLE_SIZES, FONT_SAMPLE_TEXT
 from src.core.exceptions import NoRendererError
 from src.core.media_types import MediaCategories, MediaType
 from src.core.palette import ColorType, UiColor, get_ui_color
 from src.core.utils.encoding import detect_char_encoding
+from src.qt.core import (
+    QBuffer,
+    QFile,
+    QFileDevice,
+    QGuiApplication,
+    QImage,
+    QIODeviceBase,
+    QObject,
+    QPainter,
+    QPixmap,
+    QSize,
+    QSizeF,
+    Qt,
+    Signal,
+)
 from src.qt.helpers.blender_thumbnailer import blend_thumb
 from src.qt.helpers.color_overlay import theme_fg_overlay
 from src.qt.helpers.file_tester import is_readable_video
@@ -58,6 +59,7 @@ from src.qt.helpers.text_wrapper import wrap_full_text
 from src.qt.helpers.vendored.pydub.audio_segment import (  # type: ignore
     _AudioSegment as AudioSegment,
 )
+from src.qt.renderer import QPdfDocument, QPdfDocumentRenderOptions, QSvgRenderer
 from src.qt.resource_manager import ResourceManager
 from vtf2img import Parser
 

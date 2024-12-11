@@ -8,18 +8,22 @@ from pathlib import Path
 from types import FunctionType
 
 from PIL import Image
-from PySide6.QtCore import QEvent, Qt, Signal
-from PySide6.QtGui import QAction, QEnterEvent, QFontMetrics
-from PySide6.QtWidgets import (
-    QHBoxLayout,
-    QLineEdit,
-    QPushButton,
-    QVBoxLayout,
-    QWidget,
-)
 from src.core.library import Tag
 from src.core.library.alchemy.enums import TagColor
 from src.core.palette import ColorType, get_tag_color
+from src.qt.core import (
+    QAction,
+    QEnterEvent,
+    QEvent,
+    QFontMetrics,
+    QHBoxLayout,
+    QLineEdit,
+    QPushButton,
+    Qt,
+    QVBoxLayout,
+    QWidget,
+    Signal,
+)
 
 
 class TagAliasWidget(QWidget):

@@ -3,18 +3,18 @@
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
 
-from PySide6 import QtCore
-from PySide6.QtCore import QEvent
-from PySide6.QtGui import (
+from src.qt.core import (
     QColor,
     QEnterEvent,
+    QEvent,
     QPainter,
     QPainterPath,
     QPaintEvent,
     QPalette,
     QPen,
+    QRectF,
+    QWidget,
 )
-from PySide6.QtWidgets import QWidget
 from src.qt.helpers.qbutton_wrapper import QPushButtonWrapper
 
 
@@ -61,7 +61,7 @@ class ThumbButton(QPushButtonWrapper):
             width = 3
             radius = 6
             path.addRoundedRect(
-                QtCore.QRectF(
+                QRectF(
                     width / 2,
                     width / 2,
                     self.thumb_size[0] - width,

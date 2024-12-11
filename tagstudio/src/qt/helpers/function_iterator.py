@@ -3,7 +3,7 @@
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 from collections.abc import Callable
 
-from PySide6.QtCore import QObject, Signal
+from src.qt.core import QObject, Signal
 
 
 class FunctionIterator(QObject):

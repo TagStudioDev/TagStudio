@@ -6,19 +6,21 @@
 import math
 
 import structlog
-from PySide6.QtCore import QSize, Qt, Signal
-from PySide6.QtGui import QShowEvent
-from PySide6.QtWidgets import (
+from src.core.library import Library
+from src.core.palette import ColorType, get_tag_color
+from src.qt.core import (
     QFrame,
     QHBoxLayout,
     QLineEdit,
     QPushButton,
     QScrollArea,
+    QShowEvent,
+    QSize,
+    Qt,
     QVBoxLayout,
     QWidget,
+    Signal,
 )
-from src.core.library import Library
-from src.core.palette import ColorType, get_tag_color
 from src.qt.widgets.panel import PanelWidget
 from src.qt.widgets.tag import TagWidget
 

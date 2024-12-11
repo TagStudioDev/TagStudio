@@ -3,17 +3,18 @@
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
 
-from PySide6.QtCore import Qt, Signal
-from PySide6.QtWidgets import (
+from src.core.library import Library
+from src.qt.core import (
     QHBoxLayout,
     QLabel,
     QListWidget,
     QListWidgetItem,
     QPushButton,
+    Qt,
     QVBoxLayout,
     QWidget,
+    Signal,
 )
-from src.core.library import Library
 
 
 class AddFieldModal(QWidget):

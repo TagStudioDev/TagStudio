@@ -5,17 +5,17 @@
 
 import typing
 
-from PySide6.QtCore import Qt
-from PySide6.QtWidgets import (
+from src.core.library import Library
+from src.core.utils.dupe_files import DupeRegistry
+from src.qt.core import (
     QFileDialog,
     QHBoxLayout,
     QLabel,
     QPushButton,
+    Qt,
     QVBoxLayout,
     QWidget,
 )
-from src.core.library import Library
-from src.core.utils.dupe_files import DupeRegistry
 from src.qt.modals.mirror_entities import MirrorEntriesModal
 
 # Only import for type checking/autocompletion, will not be imported at runtime.
