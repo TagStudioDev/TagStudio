@@ -1,4 +1,5 @@
-VERSION: str = "9.5.0"  # Major.Minor.Patch
+VERSION_NUMERIC: tuple[int, int, int] = (9, 5, 0)  # Major, Minor, Patch
+VERSION: str = ".".join(map(str, VERSION_NUMERIC))
 VERSION_BRANCH: str = "EXPERIMENTAL"  # Usually "" or "Pre-Release"
 
 # The folder & file names where TagStudio keeps its data relative to a library.
