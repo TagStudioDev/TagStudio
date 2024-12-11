@@ -8,7 +8,7 @@ import importlib
 import os
 from pprint import pprint
 
-QT_WRAPPER = "PySide6"
+QT_WRAPPER: str = "PySide6"
 
 base = os.path.dirname(os.path.abspath(__file__))
 module_lists = {
@@ -68,7 +68,7 @@ def __getattr__(name):
         print(")", file=f)
 
 
-top_level_module_names = ()
+top_level_module_names: tuple[str, ...] = ()
 for name in module_lists:
     top_level_module_names += module_lists[name]
     scan(name)
