@@ -26,7 +26,7 @@ jobs:
             x11-utils \
             libyaml-dev \
             libgl1 \
-            libglx-mesa-0 \
+            libglx-mesa0 \
             libxcb-icccm4 \
             libxcb-image0 \
             libxcb-keysyms1 \
