@@ -5,7 +5,7 @@ on: [ push, pull_request ]
 jobs:
   pytest:
     name: Run tests
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
 
     steps:
       - name: Checkout repo
@@ -25,6 +25,8 @@ jobs:
             libxkbcommon-x11-0 \
             x11-utils \
             libyaml-dev \
+            libgl1 \
+            libglx-mesa-0 \
             libxcb-icccm4 \
             libxcb-image0 \
             libxcb-keysyms1 \
