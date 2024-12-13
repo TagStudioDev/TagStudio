@@ -635,7 +635,10 @@ class QtDriver(DriverMixin, QObject):
         self.modal.saved.connect(
             lambda: (
                 self.lib.add_tag(
-                    panel.build_tag(), panel.subtag_ids, panel.alias_names, panel.alias_ids
+                    panel.build_tag(),
+                    set(panel.subtag_ids),
+                    set(panel.alias_names),
+                    set(panel.alias_ids),
                 ),
                 self.modal.hide(),
             )
