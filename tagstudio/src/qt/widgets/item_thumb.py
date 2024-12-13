@@ -309,7 +309,8 @@ class ItemThumb(FlowWidget):
         self.file_label = QLabel(text="Filename")
         self.file_label.setStyleSheet(ItemThumb.filename_style)
         self.file_label.setMaximumHeight(self.label_height)
-        self.file_label.setHidden(not show_filename_label)
+        if not show_filename_label:
+            self.file_label.setHidden(True)
 
         self.base_layout.addWidget(self.thumb_container)
         self.base_layout.addWidget(self.file_label)
@@ -405,7 +406,8 @@ class ItemThumb(FlowWidget):
             value (bool): Show the filename, true or false.
         """
         if value:
-            self.file_label.setHidden(False)
+            if self.file_label.isHidden():
+                self.file_label.setHidden(False)
             self.setFixedHeight(self.thumb_size[1] + self.label_height + self.label_spacing)
         else:
             self.file_label.setHidden(True)
