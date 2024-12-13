@@ -139,7 +139,7 @@ class TagBoxWidget(FieldWidget):
         self.edit_modal.saved.connect(
             lambda: self.driver.lib.update_tag(
                 build_tag_panel.build_tag(),
-                subtag_ids=set(build_tag_panel.subtag_ids),               
+                subtag_ids=set(build_tag_panel.subtag_ids),
                 alias_names=set(build_tag_panel.alias_names),
                 alias_ids=set(build_tag_panel.alias_ids),
             )
