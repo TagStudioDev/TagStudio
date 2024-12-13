@@ -208,7 +208,7 @@ class ItemThumb(FlowWidget):
             lambda ts, i, s, fn, ext: (
                 self.update_thumb(ts, image=i),
                 self.update_size(ts, size=s),
-                self.set_filename(fn),
+                self.set_filename_text(fn),
                 self.set_extension(ext),
             )
         )
@@ -396,23 +396,23 @@ class ItemThumb(FlowWidget):
                 self.ext_badge.setHidden(True)
                 self.count_badge.setHidden(True)
 
-    def set_filename(self, filename: Path | str | None):
+    def set_filename_text(self, filename: Path | str | None):
         self.file_label.setText(str(filename))
 
-    def toggle_filename(self, value: bool):
+    def set_filename_visibility(self, set_visible: bool):
         """Toggle the visibility of the filename label.
 
         Args:
-            value (bool): Show the filename, true or false.
+            set_visible (bool): Show the filename, true or false.
         """
-        if value:
+        if set_visible:
             if self.file_label.isHidden():
                 self.file_label.setHidden(False)
             self.setFixedHeight(self.thumb_size[1] + self.label_height + self.label_spacing)
         else:
             self.file_label.setHidden(True)
             self.setFixedHeight(self.thumb_size[1])
-        self.show_filename_label = value
+        self.show_filename_label = set_visible
 
     def update_thumb(self, timestamp: float, image: QPixmap | None = None):
         """Update attributes of a thumbnail element."""

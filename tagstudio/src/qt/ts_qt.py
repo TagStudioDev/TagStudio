@@ -399,7 +399,7 @@ class QtDriver(DriverMixin, QObject):
         show_filenames_action.triggered.connect(
             lambda checked: (
                 self.settings.setValue(SettingItems.SHOW_FILENAMES, checked),
-                self.toggle_grid_filenames(checked),
+                self.show_grid_filenames(checked),
             )
         )
         view_menu.addAction(show_filenames_action)
@@ -568,9 +568,9 @@ class QtDriver(DriverMixin, QObject):
             self.preview_panel.libs_flow_container.hide()
         self.preview_panel.update()
 
-    def toggle_grid_filenames(self, value: bool):
+    def show_grid_filenames(self, value: bool):
         for thumb in self.item_thumbs:
-            thumb.toggle_filename(value)
+            thumb.set_filename_visibility(value)
 
     def callback_library_needed_check(self, func):
         """Check if loaded library has valid path before executing the button function."""
@@ -852,7 +852,7 @@ class QtDriver(DriverMixin, QObject):
             it.thumb_size = (self.thumb_size, self.thumb_size)
             it.setFixedSize(self.thumb_size, self.thumb_size)
             it.thumb_button.thumb_size = (self.thumb_size, self.thumb_size)
-            it.toggle_filename(it.show_filename_label)
+            it.set_filename_visibility(it.show_filename_label)
         self.flow_container.layout().setSpacing(
             min(self.thumb_size // spacing_divisor, min_spacing)
         )
