@@ -661,7 +661,10 @@ class QtDriver(DriverMixin, QObject):
 
     def show_tag_database(self):
         self.modal = PanelModal(
-            TagDatabasePanel(self.lib), "Library Tags", "Library Tags", has_save=False
+            TagDatabasePanel(self.lib),
+            "Library Tags",
+            "Library Tags",
+            has_save=False,
         )
         self.modal.show()
 

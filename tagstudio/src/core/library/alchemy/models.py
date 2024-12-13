@@ -50,7 +50,7 @@ class Tag(Base):
 
     aliases: Mapped[set[TagAlias]] = relationship(back_populates="tag")
 
-    parent_tags: Mapped[list["Tag"]] = relationship(
+    parent_tags: Mapped[set["Tag"]] = relationship(
         secondary=TagSubtag.__tablename__,
         primaryjoin="Tag.id == TagSubtag.parent_id",
         secondaryjoin="Tag.id == TagSubtag.child_id",
@@ -76,39 +76,20 @@ class Tag(Base):
     def alias_ids(self) -> list[int]:
         return [tag.id for tag in self.aliases]
 
-    @property
-    def display_name(self) -> str:
-        if len(self.parent_tags) == 0:
-            return ""
-
-        parent_tag = list(self.parent_tags)[0]
-
-        if parent_tag is None:
-            return ""
-
-        display_name = ""
-
-        if parent_tag.shorthand.strip() == "" or parent_tag.shorthand is None:
-            display_name = " (" + parent_tag.name + ")"
-        else:
-            display_name = " (" + parent_tag.shorthand + ")"
-
-        return self.name + display_name
-
     def __init__(
         self,
         id: int | None = None,
         name: str | None = None,
         shorthand: str | None = None,
         aliases: set[TagAlias] | None = None,
-        parent_tags: list["Tag"] | None = None,
+        parent_tags: set["Tag"] | None = None,
         subtags: set["Tag"] | None = None,
         icon: str | None = None,
         color: TagColor = TagColor.DEFAULT,
     ):
         self.name = name
         self.aliases = aliases or set()
-        self.parent_tags = parent_tags or list()
+        self.parent_tags = parent_tags or set()
         self.subtags = subtags or set()
         self.color = color
         self.icon = icon

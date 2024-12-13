@@ -105,7 +105,6 @@ class TagWidget(QWidget):
         tag: Tag,
         has_edit: bool,
         has_remove: bool,
-        tag_display_name: str = None,
         on_remove_callback: FunctionType = None,
         on_click_callback: FunctionType = None,
         on_edit_callback: FunctionType = None,
@@ -125,7 +124,7 @@ class TagWidget(QWidget):
 
         self.bg_button = QPushButton(self)
         self.bg_button.setFlat(True)
-        self.bg_button.setText(tag_display_name or tag.name)
+        self.bg_button.setText(tag.name)
         if has_edit:
             edit_action = QAction("Edit", self)
             edit_action.triggered.connect(on_edit_callback)
