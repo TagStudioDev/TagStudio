@@ -262,9 +262,6 @@ class QtDriver(DriverMixin, QObject):
         help_menu = QMenu("&Help", menu_bar)
 
         # File Menu ============================================================
-        # file_menu.addAction(QAction('&New Library', menu_bar))
-        # file_menu.addAction(QAction('&Open Library', menu_bar))
-
         open_library_action = QAction("&Open/Create Library", menu_bar)
         open_library_action.triggered.connect(lambda: self.open_library_from_dialog())
         open_library_action.setShortcut(
@@ -294,8 +291,6 @@ class QtDriver(DriverMixin, QObject):
 
         file_menu.addSeparator()
 
-        # refresh_lib_action = QAction('&Refresh Directories', self.main_window)
-        # refresh_lib_action.triggered.connect(lambda: self.lib.refresh_dir())
         add_new_files_action = QAction("&Refresh Directories", menu_bar)
         add_new_files_action.triggered.connect(
             lambda: self.callback_library_needed_check(self.add_new_files_callback)
@@ -307,7 +302,6 @@ class QtDriver(DriverMixin, QObject):
             )
         )
         add_new_files_action.setStatusTip("Ctrl+R")
-        # file_menu.addAction(refresh_lib_action)
         file_menu.addAction(add_new_files_action)
         file_menu.addSeparator()
 
@@ -368,16 +362,6 @@ class QtDriver(DriverMixin, QObject):
         edit_menu.addAction(tag_database_action)
 
         # View Menu ============================================================
-        open_on_start_action = QAction("Open Library on Start", self)
-        open_on_start_action.setCheckable(True)
-        open_on_start_action.setChecked(
-            bool(self.settings.value(SettingItems.START_LOAD_LAST, defaultValue=True, type=bool))
-        )
-        open_on_start_action.triggered.connect(
-            lambda checked: self.settings.setValue(SettingItems.START_LOAD_LAST, checked)
-        )
-        view_menu.addAction(open_on_start_action)
-
         show_libs_list_action = QAction("Show Recent Libraries", menu_bar)
         show_libs_list_action.setCheckable(True)
         show_libs_list_action.setChecked(
