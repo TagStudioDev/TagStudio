@@ -1,13 +1,16 @@
-import pathlib
 import sys
+from pathlib import Path
 from tempfile import TemporaryDirectory
+from typing import Generator
 from unittest.mock import Mock, patch
 
 import pytest
 
-CWD = pathlib.Path(__file__).parent
+CWD = Path(__file__).parent
 # this needs to be above `src` imports
 sys.path.insert(0, str(CWD.parent))
+
+import shutil
 
 from src.core.library import Entry, Library, Tag
 from src.core.library import alchemy as backend
@@ -25,24 +28,24 @@ def cwd():
 def file_mediatypes_library():
     lib = Library()
 
-    status = lib.open_library(pathlib.Path(""), ":memory:")
+    status = lib.open_library(Path(""), ":memory:")
     assert status.success
 
     entry1 = Entry(
         folder=lib.folder,
-        path=pathlib.Path("foo.png"),
+        path=Path("foo.png"),
         fields=lib.default_fields,
     )
 
     entry2 = Entry(
         folder=lib.folder,
-        path=pathlib.Path("bar.png"),
+        path=Path("bar.png"),
         fields=lib.default_fields,
     )
 
     entry3 = Entry(
         folder=lib.folder,
-        path=pathlib.Path("baz.apng"),
+        path=Path("baz.apng"),
         fields=lib.default_fields,
     )
 
@@ -63,7 +66,7 @@ def library(request):
             library_path = request.param
 
     lib = Library()
-    status = lib.open_library(pathlib.Path(library_path), ":memory:")
+    status = lib.open_library(Path(library_path), ":memory:")
     assert status.success
 
     tag = Tag(
@@ -86,7 +89,7 @@ def library(request):
     # default item with deterministic name
     entry = Entry(
         folder=lib.folder,
-        path=pathlib.Path("foo.txt"),
+        path=Path("foo.txt"),
         fields=lib.default_fields,
     )
 
@@ -100,7 +103,7 @@ def library(request):
 
     entry2 = Entry(
         folder=lib.folder,
-        path=pathlib.Path("one/two/bar.md"),
+        path=Path("one/two/bar.md"),
         fields=lib.default_fields,
     )
     entry2.tag_box_fields = [
@@ -118,10 +121,13 @@ def library(request):
 
 
 @pytest.fixture
-def search_library() -> Library:
+def search_library() -> Generator[Library, None, None]:
+    dir = TemporaryDirectory()
+    new_path = Path(dir.name) / "search_library"
+    shutil.copytree(Path(CWD / "fixtures" / "search_library"), new_path)
     lib = Library()
-    lib.open_library(pathlib.Path(CWD / "fixtures" / "search_library"))
-    return lib
+    lib.open_library(new_path)
+    yield lib
 
 
 @pytest.fixture
@@ -139,8 +145,8 @@ def qt_driver(qtbot, library):
     with TemporaryDirectory() as tmp_dir:
 
         class Args:
-            config_file = pathlib.Path(tmp_dir) / "tagstudio.ini"
-            open = pathlib.Path(tmp_dir)
+            config_file = Path(tmp_dir) / "tagstudio.ini"
+            open = Path(tmp_dir)
             ci = True
 
         with patch("src.qt.ts_qt.Consumer"), patch("src.qt.ts_qt.CustomRunnable"):
