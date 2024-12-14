@@ -151,9 +151,6 @@ Most of the style guidelines can be checked, fixed, and enforced via Ruff. Older
 
 ### Commit and Pull Request Style
 
-> [!CAUTION]
-> Please do not close and re-open pull requests. This makes it **much** more difficult to re-pull during reviews. If you would like to signal that your pull request is not ready, please mark is as a draft instead.
-
 -   Use [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0) as a guideline for commit messages. This allows us to easily generate changelogs for releases.
     -   See some [examples](https://www.conventionalcommits.org/en/v1.0.0/#examples) of what this looks like in practice.
 -   Use clear and concise commit messages. If your commit does too much, either consider breaking it up into smaller commits or providing extra detail in the commit description.
