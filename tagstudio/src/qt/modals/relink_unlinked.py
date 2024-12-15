@@ -3,10 +3,8 @@
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
 
-from PySide6.QtCore import QObject, QThreadPool, Signal
+from PySide6.QtCore import QObject, Signal
 from src.core.utils.missing_files import MissingRegistry
-from src.qt.helpers.custom_runnable import CustomRunnable
-from src.qt.helpers.function_iterator import FunctionIterator
 from src.qt.widgets.progress import ProgressWidget
 
 
@@ -18,7 +16,10 @@ class RelinkUnlinkedEntries(QObject):
         self.tracker = tracker
 
     def repair_entries(self):
-        iterator = FunctionIterator(self.tracker.fix_missing_files)
+        def displayed_text(x):
+            text = f"Attempting to Relink {x}/{self.tracker.missing_files_count} Entries. \n"
+            text += f"{self.tracker.files_fixed_count} Successfully Relinked."
+            return text
 
         pw = ProgressWidget(
             window_title="Relinking Entries",
@@ -28,24 +29,4 @@ class RelinkUnlinkedEntries(QObject):
             maximum=self.tracker.missing_files_count,
         )
 
-        pw.show()
-
-        iterator.value.connect(
-            lambda idx: (
-                pw.update_progress(idx),
-                pw.update_label(
-                    f"Attempting to Relink {idx}/{self.tracker.missing_files_count} Entries. "
-                    f"{self.tracker.files_fixed_count} Successfully Relinked."
-                ),
-            )
-        )
-
-        r = CustomRunnable(iterator.run)
-        r.done.connect(
-            lambda: (
-                pw.hide(),
-                pw.deleteLater(),
-                self.done.emit(),
-            )
-        )
-        QThreadPool.globalInstance().start(r)
+        pw.from_iterable_function(self.tracker.fix_missing_files, displayed_text, self.done.emit)

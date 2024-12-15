@@ -23,7 +23,7 @@ class TagAlias(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
 
-    name: Mapped[str]
+    name: Mapped[str] = mapped_column(nullable=False)
 
     tag_id: Mapped[int] = mapped_column(ForeignKey("tags.id"))
     tag: Mapped["Tag"] = relationship(back_populates="aliases")

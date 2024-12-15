@@ -100,7 +100,7 @@ class TagBoxWidget(FieldWidget):
             tag_widget.on_click.connect(
                 lambda tag_id=tag.id: (
                     self.driver.main_window.searchField.setText(f"tag_id:{tag_id}"),
-                    self.driver.filter_items(FilterState(tag_id=tag_id)),
+                    self.driver.filter_items(FilterState.from_tag_id(tag_id)),
                 )
             )
 
@@ -140,6 +140,8 @@ class TagBoxWidget(FieldWidget):
             lambda: self.driver.lib.update_tag(
                 build_tag_panel.build_tag(),
                 subtag_ids=set(build_tag_panel.subtag_ids),
+                alias_names=set(build_tag_panel.alias_names),
+                alias_ids=set(build_tag_panel.alias_ids),
             )
         )
         self.edit_modal.show()
