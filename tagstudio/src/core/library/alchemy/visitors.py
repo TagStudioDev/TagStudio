@@ -16,6 +16,15 @@ if TYPE_CHECKING:
 else:
     Library = None  # don't import .library because of circular imports
 
+FILETYPE_EQUIVALENTS = [set(["jpg", "jpeg"])]
+
+
+def get_filetype_equivalency_list(item: str) -> list[str] | set[str]:
+    for s in FILETYPE_EQUIVALENTS:
+        if item in s:
+            return s
+    return [item]
+
 
 class SQLBoolExpressionBuilder(BaseVisitor[ColumnExpressionArgument]):
     def __init__(self, lib: Library) -> None:
@@ -73,7 +82,9 @@ class SQLBoolExpressionBuilder(BaseVisitor[ColumnExpressionArgument]):
                     break
             return Entry.suffix.in_(map(lambda x: x.replace(".", ""), extensions))
         elif node.type == ConstraintType.FileType:
-            return Entry.suffix.ilike(node.value)
+            return or_(
+                *[Entry.suffix.ilike(ft) for ft in get_filetype_equivalency_list(node.value)]
+            )
         elif node.type == ConstraintType.Special:  # noqa: SIM102 unnecessary once there is a second special constraint
             if node.value.lower() == "untagged":
                 return ~Entry.id.in_(
