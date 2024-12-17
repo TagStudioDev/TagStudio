@@ -37,10 +37,14 @@ def make_tables(engine: Engine) -> None:
     # tag IDs < 1000 are reserved
     # create tag and delete it to bump the autoincrement sequence
     # TODO - find a better way
+    # is this the better way?
     with engine.connect() as conn:
-        conn.execute(text("INSERT INTO tags (id, name, color) VALUES (999, 'temp', 1)"))
-        conn.execute(text("DELETE FROM tags WHERE id = 999"))
-        conn.commit()
+        result = conn.execute(text("SELECT SEQ FROM sqlite_sequence WHERE name='tags'"))
+        autoincrement_val = result.scalar()
+        if not autoincrement_val or autoincrement_val < 1000:
+            conn.execute(text("INSERT INTO tags (id, name, color) VALUES (999, 'temp', 1)"))
+            conn.execute(text("DELETE FROM tags WHERE id = 999"))
+            conn.commit()
 
 
 def drop_tables(engine: Engine) -> None:
