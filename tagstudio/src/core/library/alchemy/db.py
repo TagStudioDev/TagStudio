@@ -2,7 +2,7 @@ from pathlib import Path
 
 import structlog
 from sqlalchemy import Dialect, Engine, String, TypeDecorator, create_engine, text
-from sqlalchemy.orm import DeclarativeBase, sessionmaker
+from sqlalchemy.orm import DeclarativeBase
 
 logger = structlog.getLogger(__name__)
 
@@ -38,15 +38,10 @@ def make_tables(engine: Engine) -> None:
     # create tag and delete it to bump the autoincrement sequence
     # TODO - find a better way
     # is this the better way?
-    Session = sessionmaker(bind=engine)  # noqa: N806
-    session = Session()
-    result = session.execute(text("SELECT SEQ FROM sqlite_sequence WHERE name='tags'"))
-    autoincrement_val = result.fetchone()
-    if autoincrement_val:
-        # fetchone returns a tuple even when there is only one value
-        autoincrement_val = autoincrement_val[0]
-    if not autoincrement_val or autoincrement_val < 1000:
-        with engine.connect() as conn:
+    with engine.connect() as conn:
+        result = conn.execute(text("SELECT SEQ FROM sqlite_sequence WHERE name='tags'"))
+        autoincrement_val = result.scalar()
+        if not autoincrement_val or autoincrement_val < 1000:
             conn.execute(text("INSERT INTO tags (id, name, color) VALUES (999, 'temp', 1)"))
             conn.execute(text("DELETE FROM tags WHERE id = 999"))
             conn.commit()
