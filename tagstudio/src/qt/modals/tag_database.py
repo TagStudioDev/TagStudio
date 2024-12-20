@@ -82,7 +82,12 @@ class TagDatabasePanel(PanelWidget):
         panel: BuildTagPanel = self.modal.widget
         self.modal.saved.connect(
             lambda: (
-                self.lib.add_tag(panel.build_tag(), panel.subtag_ids),
+                self.lib.add_tag(
+                    tag=panel.build_tag(),
+                    subtag_ids=panel.subtag_ids,
+                    alias_names=panel.alias_names,
+                    alias_ids=panel.alias_ids,
+                ),
                 self.modal.hide(),
                 self.update_tags(),
             )
