@@ -72,7 +72,7 @@ class ThumbRenderer(QObject):
     """A class for rendering image and file thumbnails."""
 
     rm: ResourceManager = ResourceManager()
-    updated = Signal(float, QPixmap, QSize, str)
+    updated = Signal(float, QPixmap, QSize, str, str)
     updated_ratio = Signal(float)
 
     def __init__(self) -> None:
@@ -1208,8 +1208,15 @@ class ThumbRenderer(QObject):
                     math.ceil(adj_size / pixel_ratio),
                     math.ceil(final.size[1] / pixel_ratio),
                 ),
+                str(_filepath.name),
                 _filepath.suffix.lower(),
             )
 
         else:
-            self.updated.emit(timestamp, QPixmap(), QSize(*base_size), _filepath.suffix.lower())
+            self.updated.emit(
+                timestamp,
+                QPixmap(),
+                QSize(*base_size),
+                str(_filepath.name),
+                _filepath.suffix.lower(),
+            )
