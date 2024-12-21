@@ -15,7 +15,7 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
-from src.core.constants import RESERVED_TAG_IDS
+from src.core.constants import RESERVED_TAG_END, RESERVED_TAG_START
 from src.core.library import Library, Tag
 from src.qt.modals.build_tag import BuildTagPanel
 from src.qt.widgets.panel import PanelModal, PanelWidget
@@ -117,7 +117,7 @@ class TagDatabasePanel(PanelWidget):
             row.setContentsMargins(0, 0, 0, 0)
             row.setSpacing(3)
 
-            if tag.id in RESERVED_TAG_IDS:
+            if tag.id in range(RESERVED_TAG_START, RESERVED_TAG_END):
                 tag_widget = TagWidget(tag, has_edit=False, has_remove=False)
             else:
                 tag_widget = TagWidget(tag, has_edit=True, has_remove=True)
@@ -130,7 +130,7 @@ class TagDatabasePanel(PanelWidget):
         self.search_field.setFocus()
 
     def remove_tag(self, tag: Tag):
-        if tag.id in RESERVED_TAG_IDS:
+        if tag.id in range(RESERVED_TAG_START, RESERVED_TAG_END):
             return
 
         message_box = QMessageBox()
@@ -148,7 +148,7 @@ class TagDatabasePanel(PanelWidget):
         self.update_tags()
 
     def edit_tag(self, tag: Tag):
-        if tag.id in RESERVED_TAG_IDS:
+        if tag.id in range(RESERVED_TAG_START, RESERVED_TAG_END):
             return
 
         build_tag_panel = BuildTagPanel(self.lib, tag=tag)
