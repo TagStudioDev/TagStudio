@@ -663,12 +663,10 @@ class Library:
                 subtags = session.scalars(
                     select(TagSubtag).where(TagSubtag.parent_id == tag.id)
                 ).all()
-
                 tags_query = select(Tag).options(
                     selectinload(Tag.subtags), selectinload(Tag.aliases)
                 )
                 tag = session.scalar(tags_query.where(Tag.id == tag.id))
-
                 aliases = session.scalars(select(TagAlias).where(TagAlias.tag_id == tag.id))
 
                 for alias in aliases or []:
@@ -679,15 +677,15 @@ class Library:
                     session.expunge(subtag)
 
                 session.delete(tag)
-
                 session.commit()
-
                 session.expunge(tag)
+
                 return tag
 
             except IntegrityError as e:
                 logger.exception(e)
                 session.rollback()
+
                 return None
 
     def remove_tag_from_field(self, tag: Tag, field: TagBoxField) -> None:
@@ -919,7 +917,6 @@ class Library:
                     self.update_aliases(tag, alias_ids, alias_names, session)
 
                 session.commit()
-
                 session.expunge(tag)
                 return tag
 
