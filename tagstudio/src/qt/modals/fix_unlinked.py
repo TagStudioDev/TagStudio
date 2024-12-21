@@ -144,4 +144,4 @@ class FixUnlinkedEntriesModal(QWidget):
             # disable buttons if there are no files to fix
             self.search_button.setDisabled(self.missing_count == 0)
             self.delete_button.setDisabled(self.missing_count == 0)
-            self.missing_count_label.setText(f"Unlinked Entries: {count}")
+            self.missing_count_label.setText(f"Unlinked Entries: {self.missing_count}")
