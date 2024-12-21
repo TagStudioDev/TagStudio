@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING
 from sqlalchemy import and_, distinct, func, or_, select
 from sqlalchemy.orm import Session
 from sqlalchemy.sql.expression import BinaryExpression, ColumnExpressionArgument
-from src.core.media_types import MediaCategories
+from src.core.media_types import FILETYPE_EQUIVALENTS, MediaCategories
 from src.core.query_lang import BaseVisitor
 from src.core.query_lang.ast import AST, ANDList, Constraint, ConstraintType, Not, ORList, Property
 
@@ -15,6 +15,13 @@ if TYPE_CHECKING:
     from .library import Library
 else:
     Library = None  # don't import .library because of circular imports
+
+
+def get_filetype_equivalency_list(item: str) -> list[str] | set[str]:
+    for s in FILETYPE_EQUIVALENTS:
+        if item in s:
+            return s
+    return [item]
 
 
 class SQLBoolExpressionBuilder(BaseVisitor[ColumnExpressionArgument]):
@@ -73,7 +80,9 @@ class SQLBoolExpressionBuilder(BaseVisitor[ColumnExpressionArgument]):
                     break
             return Entry.suffix.in_(map(lambda x: x.replace(".", ""), extensions))
         elif node.type == ConstraintType.FileType:
-            return Entry.suffix.ilike(node.value)
+            return or_(
+                *[Entry.suffix.ilike(ft) for ft in get_filetype_equivalency_list(node.value)]
+            )
         elif node.type == ConstraintType.Special:  # noqa: SIM102 unnecessary once there is a second special constraint
             if node.value.lower() == "untagged":
                 return ~Entry.id.in_(
