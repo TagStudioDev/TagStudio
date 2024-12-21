@@ -33,7 +33,7 @@ class TagSearchPanel(PanelWidget):
         self.lib = library
         self.exclude = exclude
         self.is_initialized: bool = False
-        self.first_tag_id = None
+        self.first_tag_id: int = None
         self.setMinimumSize(300, 400)
         self.root_layout = QVBoxLayout(self)
         self.root_layout.setContentsMargins(6, 0, 6, 0)
