@@ -309,13 +309,17 @@ class BuildTagPanel(PanelWidget):
         while self.subtag_flow_layout.itemAt(1):
             self.subtag_flow_layout.takeAt(0).widget().deleteLater()
 
+        last: QWidget = self.alias_add_button
         for tag_id in self.subtag_ids:
             tag = self.lib.get_tag(tag_id)
             tw = TagWidget(tag, has_edit=False, has_remove=True)
             tw.on_remove.connect(lambda t=tag_id: self.remove_subtag_callback(t))
             self.subtag_flow_layout.addWidget(tw)
+            self.setTabOrder(last, tw.bg_button)
+            last = tw.bg_button
 
         self.subtag_flow_layout.addWidget(self.subtags_add_button)
+        self.setTabOrder(last, self.subtags_add_button)
 
     def add_aliases(self):
         fields: set[TagAliasWidget] = set()
@@ -357,6 +361,7 @@ class BuildTagPanel(PanelWidget):
 
         self.alias_names.clear()
 
+        last: QWidget = self.shorthand_field
         for alias_id in self.alias_ids:
             alias = self.lib.get_alias(self.tag.id, alias_id)
 
@@ -372,7 +377,12 @@ class BuildTagPanel(PanelWidget):
             self.aliases_flow_layout.addWidget(new_field)
             self.alias_names.add(alias_name)
 
+            self.setTabOrder(last, new_field.text_field)
+            self.setTabOrder(new_field.text_field, new_field.remove_button)
+            last = new_field.remove_button
+
         self.aliases_flow_layout.addWidget(self.alias_add_button)
+        self.setTabOrder(last, self.alias_add_button)
 
     def set_tag(self, tag: Tag):
         self.tag = tag
