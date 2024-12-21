@@ -3,6 +3,7 @@ from pathlib import Path
 import structlog
 from sqlalchemy import Dialect, Engine, String, TypeDecorator, create_engine, text
 from sqlalchemy.orm import DeclarativeBase
+from src.core.constants import RESERVED_TAG_END
 
 logger = structlog.getLogger(__name__)
 
@@ -37,10 +38,16 @@ def make_tables(engine: Engine) -> None:
     # tag IDs < 1000 are reserved
     # create tag and delete it to bump the autoincrement sequence
     # TODO - find a better way
+    # is this the better way?
     with engine.connect() as conn:
-        conn.execute(text("INSERT INTO tags (id, name, color) VALUES (999, 'temp', 1)"))
-        conn.execute(text("DELETE FROM tags WHERE id = 999"))
-        conn.commit()
+        result = conn.execute(text("SELECT SEQ FROM sqlite_sequence WHERE name='tags'"))
+        autoincrement_val = result.scalar()
+        if not autoincrement_val or autoincrement_val <= RESERVED_TAG_END:
+            conn.execute(
+                text(f"INSERT INTO tags (id, name, color) VALUES ({RESERVED_TAG_END}, 'temp', 1)")
+            )
+            conn.execute(text(f"DELETE FROM tags WHERE id = {RESERVED_TAG_END}"))
+            conn.commit()
 
 
 def drop_tables(engine: Engine) -> None:

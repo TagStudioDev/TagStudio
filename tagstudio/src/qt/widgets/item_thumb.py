@@ -10,8 +10,8 @@ from typing import TYPE_CHECKING
 
 import structlog
 from PIL import Image, ImageQt
-from PySide6.QtCore import QEvent, QSize, Qt
-from PySide6.QtGui import QAction, QEnterEvent, QPixmap
+from PySide6.QtCore import QEvent, QMimeData, QSize, Qt, QUrl
+from PySide6.QtGui import QAction, QDrag, QEnterEvent, QPixmap
 from PySide6.QtWidgets import (
     QBoxLayout,
     QCheckBox,
@@ -21,17 +21,15 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 from src.core.constants import (
-    AUDIO_TYPES,
-    IMAGE_TYPES,
     TAG_ARCHIVED,
     TAG_FAVORITE,
-    VIDEO_TYPES,
 )
 from src.core.library import Entry, ItemType, Library
-from src.core.library.alchemy.enums import FilterState
 from src.core.library.alchemy.fields import _FieldID
+from src.core.media_types import MediaCategories, MediaType
 from src.qt.flowlayout import FlowWidget
 from src.qt.helpers.file_opener import FileOpenerHelper
+from src.qt.platform_strings import PlatformStrings
 from src.qt.widgets.thumb_button import ThumbButton
 from src.qt.widgets.thumb_renderer import ThumbRenderer
 
@@ -88,6 +86,7 @@ class ItemThumb(FlowWidget):
 
     small_text_style = (
         "background-color:rgba(0, 0, 0, 192);"
+        "color:#FFFFFF;"
         "font-family:Oxanium;"
         "font-weight:bold;"
         "font-size:12px;"
@@ -100,6 +99,7 @@ class ItemThumb(FlowWidget):
 
     med_text_style = (
         "background-color:rgba(0, 0, 0, 192);"
+        "color:#FFFFFF;"
         "font-family:Oxanium;"
         "font-weight:bold;"
         "font-size:18px;"
@@ -110,6 +110,8 @@ class ItemThumb(FlowWidget):
         "padding-left: 1px;"
     )
 
+    filename_style = "font-size:10px;"
+
     def __init__(
         self,
         mode: ItemType,
@@ -117,6 +119,7 @@ class ItemThumb(FlowWidget):
         driver: "QtDriver",
         thumb_size: tuple[int, int],
         grid_idx: int,
+        show_filename_label: bool = False,
     ):
         super().__init__()
         self.grid_idx = grid_idx
@@ -125,9 +128,24 @@ class ItemThumb(FlowWidget):
         self.driver = driver
         self.item_id: int | None = None
         self.thumb_size: tuple[int, int] = thumb_size
+        self.show_filename_label: bool = show_filename_label
+        self.label_height = 12
+        self.label_spacing = 4
         self.setMinimumSize(*thumb_size)
         self.setMaximumSize(*thumb_size)
+        self.setMouseTracking(True)
         check_size = 24
+        self.setFixedSize(
+            thumb_size[0],
+            thumb_size[1]
+            + ((self.label_height + self.label_spacing) if show_filename_label else 0),
+        )
+
+        self.thumb_container = QWidget()
+        self.base_layout = QVBoxLayout(self)
+        self.base_layout.setContentsMargins(0, 0, 0, 0)
+        self.base_layout.setSpacing(0)
+        self.setLayout(self.base_layout)
 
         # +----------+
         # |   ARC FAV| Top Right: Favorite & Archived Badges
@@ -135,6 +153,8 @@ class ItemThumb(FlowWidget):
         # |          |
         # |EXT      #| Lower Left: File Type, Tag Group Icon, or Collation Icon
         # +----------+ Lower Right: Collation Count, Video Length, or Word Count
+        #
+        #   Filename   Underneath: (Optional) Filename
 
         # Thumbnail ============================================================
 
@@ -144,9 +164,9 @@ class ItemThumb(FlowWidget):
         # ||        ||
         # |*--------*|
         # +----------+
-        self.base_layout = QVBoxLayout(self)
-        self.base_layout.setObjectName("baseLayout")
-        self.base_layout.setContentsMargins(0, 0, 0, 0)
+        self.thumb_layout = QVBoxLayout(self.thumb_container)
+        self.thumb_layout.setObjectName("baseLayout")
+        self.thumb_layout.setContentsMargins(0, 0, 0, 0)
 
         # +----------+
         # |[~~~~~~~~]|
@@ -159,7 +179,7 @@ class ItemThumb(FlowWidget):
         self.top_layout.setContentsMargins(6, 6, 6, 6)
         self.top_container = QWidget()
         self.top_container.setLayout(self.top_layout)
-        self.base_layout.addWidget(self.top_container)
+        self.thumb_layout.addWidget(self.top_container)
 
         # +----------+
         # |[~~~~~~~~]|
@@ -167,7 +187,7 @@ class ItemThumb(FlowWidget):
         # |     |    |
         # |     v    |
         # +----------+
-        self.base_layout.addStretch(2)
+        self.thumb_layout.addStretch(2)
 
         # +----------+
         # |[~~~~~~~~]|
@@ -180,25 +200,26 @@ class ItemThumb(FlowWidget):
         self.bottom_layout.setContentsMargins(6, 6, 6, 6)
         self.bottom_container = QWidget()
         self.bottom_container.setLayout(self.bottom_layout)
-        self.base_layout.addWidget(self.bottom_container)
+        self.thumb_layout.addWidget(self.bottom_container)
 
-        self.thumb_button = ThumbButton(self, thumb_size)
+        self.thumb_button = ThumbButton(self.thumb_container, thumb_size)
         self.renderer = ThumbRenderer()
         self.renderer.updated.connect(
-            lambda ts, i, s, ext: (
+            lambda ts, i, s, fn, ext: (
                 self.update_thumb(ts, image=i),
                 self.update_size(ts, size=s),
+                self.set_filename_text(fn),
                 self.set_extension(ext),
             )
         )
         self.thumb_button.setFlat(True)
-        self.thumb_button.setLayout(self.base_layout)
+        self.thumb_button.setLayout(self.thumb_layout)
         self.thumb_button.setContextMenuPolicy(Qt.ContextMenuPolicy.ActionsContextMenu)
 
         self.opener = FileOpenerHelper("")
         open_file_action = QAction("Open file", self)
         open_file_action.triggered.connect(self.opener.open_file)
-        open_explorer_action = QAction("Open file in explorer", self)
+        open_explorer_action = QAction(PlatformStrings.open_file_str, self)
         open_explorer_action.triggered.connect(self.opener.open_explorer)
         self.thumb_button.addAction(open_file_action)
         self.thumb_button.addAction(open_explorer_action)
@@ -284,6 +305,16 @@ class ItemThumb(FlowWidget):
             self.badges[badge_type] = badge
             self.cb_layout.addWidget(badge)
 
+        # Filename Label =======================================================
+        self.file_label = QLabel(text="Filename")
+        self.file_label.setStyleSheet(ItemThumb.filename_style)
+        self.file_label.setMaximumHeight(self.label_height)
+        if not show_filename_label:
+            self.file_label.setHidden(True)
+
+        self.base_layout.addWidget(self.thumb_container)
+        self.base_layout.addWidget(self.file_label)
+
         self.set_mode(mode)
 
     @property
@@ -297,11 +328,11 @@ class ItemThumb(FlowWidget):
     def set_mode(self, mode: ItemType | None) -> None:
         if mode is None:
             self.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents, on=True)
-            self.unsetCursor()
+            self.thumb_button.unsetCursor()
             self.thumb_button.setHidden(True)
         elif mode == ItemType.ENTRY and self.mode != ItemType.ENTRY:
             self.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents, on=False)
-            self.setCursor(Qt.CursorShape.PointingHandCursor)
+            self.thumb_button.setCursor(Qt.CursorShape.PointingHandCursor)
             self.thumb_button.setHidden(False)
             self.cb_container.setHidden(False)
             # Count Badge depends on file extension (video length, word count)
@@ -311,7 +342,7 @@ class ItemThumb(FlowWidget):
             self.ext_badge.setHidden(True)
         elif mode == ItemType.COLLATION and self.mode != ItemType.COLLATION:
             self.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents, on=False)
-            self.setCursor(Qt.CursorShape.PointingHandCursor)
+            self.thumb_button.setCursor(Qt.CursorShape.PointingHandCursor)
             self.thumb_button.setHidden(False)
             self.cb_container.setHidden(True)
             self.ext_badge.setHidden(True)
@@ -320,7 +351,7 @@ class ItemThumb(FlowWidget):
             self.item_type_badge.setHidden(False)
         elif mode == ItemType.TAG_GROUP and self.mode != ItemType.TAG_GROUP:
             self.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents, on=False)
-            self.setCursor(Qt.CursorShape.PointingHandCursor)
+            self.thumb_button.setCursor(Qt.CursorShape.PointingHandCursor)
             self.thumb_button.setHidden(False)
             self.ext_badge.setHidden(True)
             self.count_badge.setHidden(False)
@@ -330,10 +361,26 @@ class ItemThumb(FlowWidget):
     def set_extension(self, ext: str) -> None:
         if ext and ext.startswith(".") is False:
             ext = "." + ext
-        if ext and ext not in IMAGE_TYPES or ext in [".gif", ".apng"]:
+        media_types: set[MediaType] = MediaCategories.get_types(ext)
+        if (
+            ext
+            and not MediaCategories.is_ext_in_category(ext, MediaCategories.IMAGE_TYPES)
+            or MediaCategories.is_ext_in_category(ext, MediaCategories.IMAGE_RAW_TYPES)
+            or MediaCategories.is_ext_in_category(ext, MediaCategories.IMAGE_VECTOR_TYPES)
+            or MediaCategories.is_ext_in_category(ext, MediaCategories.ADOBE_PHOTOSHOP_TYPES)
+            or ext
+            in [
+                ".apng",
+                ".avif",
+                ".exr",
+                ".gif",
+                ".jxl",
+                ".webp",
+            ]
+        ):
             self.ext_badge.setHidden(False)
             self.ext_badge.setText(ext.upper()[1:])
-            if ext in VIDEO_TYPES + AUDIO_TYPES:
+            if MediaType.VIDEO in media_types or MediaType.AUDIO in media_types:
                 self.count_badge.setHidden(False)
         else:
             if self.mode == ItemType.ENTRY:
@@ -349,14 +396,40 @@ class ItemThumb(FlowWidget):
                 self.ext_badge.setHidden(True)
                 self.count_badge.setHidden(True)
 
+    def set_filename_text(self, filename: Path | str | None):
+        self.file_label.setText(str(filename))
+
+    def set_filename_visibility(self, set_visible: bool):
+        """Toggle the visibility of the filename label.
+
+        Args:
+            set_visible (bool): Show the filename, true or false.
+        """
+        if set_visible:
+            if self.file_label.isHidden():
+                self.file_label.setHidden(False)
+            self.setFixedHeight(self.thumb_size[1] + self.label_height + self.label_spacing)
+        else:
+            self.file_label.setHidden(True)
+            self.setFixedHeight(self.thumb_size[1])
+        self.show_filename_label = set_visible
+
     def update_thumb(self, timestamp: float, image: QPixmap | None = None):
         """Update attributes of a thumbnail element."""
         if timestamp > ItemThumb.update_cutoff:
             self.thumb_button.setIcon(image if image else QPixmap())
 
     def update_size(self, timestamp: float, size: QSize):
-        """Updates attributes of a thumbnail element."""
-        if timestamp > ItemThumb.update_cutoff and self.thumb_button.iconSize != size:
+        """Updates attributes of a thumbnail element.
+
+        Args:
+            timestamp (float | None): The UTC timestamp for when this call was
+                originally dispatched. Used to skip outdated jobs.
+
+            size (QSize): The new thumbnail size to set.
+        """
+        if timestamp > ItemThumb.update_cutoff:
+            self.thumb_size = size.toTuple()  # type: ignore
             self.thumb_button.setIconSize(size)
             self.thumb_button.setMinimumSize(size)
             self.thumb_button.setMaximumSize(size)
@@ -364,9 +437,9 @@ class ItemThumb(FlowWidget):
     def update_clickable(self, clickable: typing.Callable):
         """Updates attributes of a thumbnail element."""
         if self.thumb_button.is_connected:
-            self.thumb_button.clicked.disconnect()
+            self.thumb_button.pressed.disconnect()
         if clickable:
-            self.thumb_button.clicked.connect(clickable)
+            self.thumb_button.pressed.connect(clickable)
             self.thumb_button.is_connected = True
 
     def refresh_badge(self, entry: Entry | None = None):
@@ -436,9 +509,7 @@ class ItemThumb(FlowWidget):
                 entry, toggle_value, tag_id, _FieldID.TAGS_META.name, create_field=True
             )
             # update the entry
-            self.driver.frame_content[idx] = self.lib.search_library(
-                FilterState(id=entry.id)
-            ).items[0]
+            self.driver.frame_content[idx] = self.lib.get_entry_full(entry.id)
 
         self.driver.update_badges(update_items)
 
@@ -466,3 +537,29 @@ class ItemThumb(FlowWidget):
 
         if self.driver.preview_panel.is_open:
             self.driver.preview_panel.update_widgets()
+
+    def mouseMoveEvent(self, event):  # noqa: N802
+        if event.buttons() is not Qt.MouseButton.LeftButton:
+            return
+
+        drag = QDrag(self.driver)
+        paths = []
+        mimedata = QMimeData()
+
+        selected_idxs = self.driver.selected
+        if self.grid_idx not in selected_idxs:
+            selected_idxs = [self.grid_idx]
+
+        for grid_idx in selected_idxs:
+            id = self.driver.item_thumbs[grid_idx].item_id
+            entry = self.lib.get_entry(id)
+            if not entry:
+                continue
+
+            url = QUrl.fromLocalFile(Path(self.lib.library_dir) / entry.path)
+            paths.append(url)
+
+        mimedata.setUrls(paths)
+        drag.setMimeData(mimedata)
+        drag.exec(Qt.DropAction.CopyAction)
+        logger.info("dragged files to external program", thumbnail_indexs=selected_idxs)

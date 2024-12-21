@@ -1,5 +1,4 @@
 from pathlib import Path
-from typing import Optional
 
 from sqlalchemy import JSON, ForeignKey, Integer, event
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -24,16 +23,16 @@ class TagAlias(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
 
-    name: Mapped[str]
+    name: Mapped[str] = mapped_column(nullable=False)
 
     tag_id: Mapped[int] = mapped_column(ForeignKey("tags.id"))
     tag: Mapped["Tag"] = relationship(back_populates="aliases")
 
-    def __init__(self, name: str, tag: Optional["Tag"] = None):
+    def __init__(self, name: str, tag_id: int | None = None):
         self.name = name
 
-        if tag:
-            self.tag = tag
+        if tag_id is not None:
+            self.tag_id = tag_id
 
         super().__init__()
 
@@ -44,7 +43,7 @@ class Tag(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
 
-    name: Mapped[str] = mapped_column(unique=True)
+    name: Mapped[str]
     shorthand: Mapped[str | None]
     color: Mapped[TagColor]
     icon: Mapped[str | None]
@@ -73,16 +72,20 @@ class Tag(Base):
     def alias_strings(self) -> list[str]:
         return [alias.name for alias in self.aliases]
 
+    @property
+    def alias_ids(self) -> list[int]:
+        return [tag.id for tag in self.aliases]
+
     def __init__(
         self,
-        name: str,
+        id: int | None = None,
+        name: str | None = None,
         shorthand: str | None = None,
         aliases: set[TagAlias] | None = None,
         parent_tags: set["Tag"] | None = None,
         subtags: set["Tag"] | None = None,
         icon: str | None = None,
         color: TagColor = TagColor.DEFAULT,
-        id: int | None = None,
     ):
         self.name = name
         self.aliases = aliases or set()
@@ -120,6 +123,7 @@ class Entry(Base):
     folder: Mapped[Folder] = relationship("Folder")
 
     path: Mapped[Path] = mapped_column(PathType, unique=True)
+    suffix: Mapped[str] = mapped_column()
 
     text_fields: Mapped[list[TextField]] = relationship(
         back_populates="entry",
@@ -173,9 +177,12 @@ class Entry(Base):
         path: Path,
         folder: Folder,
         fields: list[BaseField],
+        id: int | None = None,
     ) -> None:
         self.path = path
         self.folder = folder
+        self.id = id
+        self.suffix = path.suffix.lstrip(".").lower()
 
         for field in fields:
             if isinstance(field, TextField):

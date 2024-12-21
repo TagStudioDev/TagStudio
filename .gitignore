@@ -55,7 +55,6 @@ coverage.xml
 .hypothesis/
 .pytest_cache/
 cover/
-tagstudio/tests/fixtures/library/*
 
 # Translations
 *.mo
@@ -141,6 +140,9 @@ venv.bak/
 # Rope project settings
 .ropeproject
 
+# macoS
+*.DS_Store
+
 # mkdocs documentation
 /site
 
@@ -163,7 +165,7 @@ cython_debug/
 #  be found at https://github.com/github/gitignore/blob/main/Global/JetBrains.gitignore
 #  and can be added to the global gitignore or merged into this file.  For a more nuclear
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
-#.idea/
+.idea/
 
 ### Python Patch ###
 # Poetry local configuration file - https://python-poetry.org/docs/configuration/#local-configuration
@@ -174,6 +176,10 @@ poetry.toml
 
 # LSP config files
 pyrightconfig.json
+
+# Syncthing
+.stfolder/
+.stignore
 
 ### Qt ###
 # C++ objects and libs
@@ -232,11 +238,11 @@ compile_commands.json
 
 ### VisualStudioCode ###
 .vscode/*
-!.vscode/settings.json
-!.vscode/tasks.json
-!.vscode/launch.json
-!.vscode/extensions.json
-!.vscode/*.code-snippets
+# !.vscode/settings.json
+# !.vscode/tasks.json
+# !.vscode/launch.json
+# !.vscode/extensions.json
+# !.vscode/*.code-snippets
 
 # Local History for Visual Studio Code
 .history/
@@ -248,11 +254,14 @@ compile_commands.json
 # Ignore all local history of files
 .history
 .ionide
+# End of https://www.toptal.com/developers/gitignore/api/visualstudiocode,python,qt
 
 # TagStudio
 .TagStudio
+!*/tests/**/.TagStudio
+tagstudio/tests/fixtures/library/*
+tagstudio/tests/fixtures/json_library/.TagStudio/*.sqlite
 TagStudio.ini
-# End of https://www.toptal.com/developers/gitignore/api/visualstudiocode,python,qt
 
 .envrc
 .direnv

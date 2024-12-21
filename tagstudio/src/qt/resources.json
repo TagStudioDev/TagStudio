@@ -14,5 +14,85 @@
   "volume_mute_icon": {
     "path": "qt/images/volume_mute.svg",
     "mode": "rb"
+  },
+  "broken_link_icon": {
+    "path": "qt/images/broken_link_icon.png",
+    "mode": "pil"
+  },
+  "adobe_illustrator": {
+    "path": "qt/images/file_icons/adobe_illustrator.png",
+    "mode": "pil"
+  },
+  "adobe_photoshop": {
+    "path": "qt/images/file_icons/adobe_photoshop.png",
+    "mode": "pil"
+  },
+  "affinity_photo": {
+    "path": "qt/images/file_icons/affinity_photo.png",
+    "mode": "pil"
+  },
+  "audio": {
+    "path": "qt/images/file_icons/audio.png",
+    "mode": "pil"
+  },
+  "blender": {
+    "path": "qt/images/file_icons/blender.png",
+    "mode": "pil"
+  },
+  "document": {
+    "path": "qt/images/file_icons/document.png",
+    "mode": "pil"
+  },
+  "file_generic": {
+    "path": "qt/images/file_icons/file_generic.png",
+    "mode": "pil"
+  },
+  "font": {
+    "path": "qt/images/file_icons/font.png",
+    "mode": "pil"
+  },
+  "image": {
+    "path": "qt/images/file_icons/image.png",
+    "mode": "pil"
+  },
+  "image_vector": {
+    "path": "qt/images/file_icons/image_vector.png",
+    "mode": "pil"
+  },
+  "material": {
+    "path": "qt/images/file_icons/material.png",
+    "mode": "pil"
+  },
+  "model": {
+    "path": "qt/images/file_icons/model.png",
+    "mode": "pil"
+  },
+  "presentation": {
+    "path": "qt/images/file_icons/presentation.png",
+    "mode": "pil"
+  },
+  "program": {
+    "path": "qt/images/file_icons/program.png",
+    "mode": "pil"
+  },
+  "spreadsheet": {
+    "path": "qt/images/file_icons/spreadsheet.png",
+    "mode": "pil"
+  },
+  "text": {
+    "path": "qt/images/file_icons/text.png",
+    "mode": "pil"
+  },
+  "video": {
+    "path": "qt/images/file_icons/video.png",
+    "mode": "pil"
+  },
+  "thumb_loading": {
+    "path": "qt/images/thumb_loading.png",
+    "mode": "pil"
+  },
+  "placeholder_mp4": {
+    "path": "qt/videos/placeholder.mp4",
+    "mode": "rb"
   }
 }

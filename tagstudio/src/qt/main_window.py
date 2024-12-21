@@ -15,13 +15,13 @@
 
 import logging
 import typing
-from PySide6.QtCore import (QCoreApplication, QMetaObject, QRect,QSize, Qt)
+from PySide6.QtCore import (QCoreApplication, QMetaObject, QRect,QSize, Qt, QStringListModel)
 from PySide6.QtGui import QFont
 from PySide6.QtWidgets import (QComboBox, QFrame, QGridLayout,
                                QHBoxLayout, QVBoxLayout, QLayout, QLineEdit, QMainWindow,
                                QPushButton, QScrollArea, QSizePolicy,
                                QStatusBar, QWidget, QSplitter, QCheckBox,
-                               QSpacerItem)
+                               QSpacerItem, QCompleter)
 from src.qt.pagination import Pagination
 from src.qt.widgets.landing import LandingWidget
 
@@ -36,7 +36,7 @@ class Ui_MainWindow(QMainWindow):
   
     def __init__(self, driver: "QtDriver", parent=None) -> None:
         super().__init__(parent)
-        self.driver = driver
+        self.driver: "QtDriver" = driver
         self.setupUi(self)
 
         # NOTE: These are old attempts to allow for a translucent/acrylic
@@ -66,7 +66,7 @@ class Ui_MainWindow(QMainWindow):
         self.horizontalLayout = QHBoxLayout()
         self.horizontalLayout.setObjectName(u"horizontalLayout")
   
-        # ComboBox goup for search type and thumbnail size
+        # ComboBox group for search type and thumbnail size
         self.horizontalLayout_3 = QHBoxLayout()
         self.horizontalLayout_3.setObjectName("horizontalLayout_3")
   
@@ -74,26 +74,18 @@ class Ui_MainWindow(QMainWindow):
         spacerItem = QSpacerItem(40, 20, QSizePolicy.Expanding, QSizePolicy.Minimum)
         self.horizontalLayout_3.addItem(spacerItem)
   
-          # Search type selector
-        self.comboBox_2 = QComboBox(self.centralwidget)
-        self.comboBox_2.setMinimumSize(QSize(165, 0))
-        self.comboBox_2.setObjectName("comboBox_2")
-        self.comboBox_2.addItem("")
-        self.comboBox_2.addItem("")
-        self.horizontalLayout_3.addWidget(self.comboBox_2)
-  
         # Thumbnail Size placeholder
-        self.comboBox = QComboBox(self.centralwidget)
-        self.comboBox.setObjectName(u"comboBox")
+        self.thumb_size_combobox = QComboBox(self.centralwidget)
+        self.thumb_size_combobox.setObjectName(u"thumbSizeComboBox")
         sizePolicy = QSizePolicy(QSizePolicy.Minimum, QSizePolicy.Fixed)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(
-            self.comboBox.sizePolicy().hasHeightForWidth())
-        self.comboBox.setSizePolicy(sizePolicy)
-        self.comboBox.setMinimumWidth(128)
-        self.comboBox.setMaximumWidth(128)
-        self.horizontalLayout_3.addWidget(self.comboBox)
+            self.thumb_size_combobox.sizePolicy().hasHeightForWidth())
+        self.thumb_size_combobox.setSizePolicy(sizePolicy)
+        self.thumb_size_combobox.setMinimumWidth(128)
+        self.thumb_size_combobox.setMaximumWidth(352)
+        self.horizontalLayout_3.addWidget(self.thumb_size_combobox)
         self.gridLayout.addLayout(self.horizontalLayout_3, 5, 0, 1, 1)
 
         self.splitter = QSplitter()
@@ -167,6 +159,11 @@ class Ui_MainWindow(QMainWindow):
         font2.setBold(False)
         self.searchField.setFont(font2)
 
+        self.searchFieldCompletionList = QStringListModel()
+        self.searchFieldCompleter = QCompleter(self.searchFieldCompletionList, self.searchField)
+        self.searchFieldCompleter.setCaseSensitivity(Qt.CaseSensitivity.CaseInsensitive)
+        self.searchField.setCompleter(self.searchFieldCompleter)
+
         self.horizontalLayout_2.addWidget(self.searchField)
 
         self.searchButton = QPushButton(self.centralwidget)
@@ -209,13 +206,10 @@ class Ui_MainWindow(QMainWindow):
         self.searchButton.setText(
             QCoreApplication.translate("MainWindow", u"Search", None))
   
-        # Search type selector
-        self.comboBox_2.setItemText(0, QCoreApplication.translate("MainWindow", "And (Includes All Tags)"))
-        self.comboBox_2.setItemText(1, QCoreApplication.translate("MainWindow", "Or (Includes Any Tag)"))
-        self.comboBox.setCurrentText("")
+        self.thumb_size_combobox.setCurrentText("")
   
         # Thumbnail size selector
-        self.comboBox.setPlaceholderText(
+        self.thumb_size_combobox.setPlaceholderText(
             QCoreApplication.translate("MainWindow", u"Thumbnail Size", None))
     # retranslateUi
 
@@ -236,3 +230,4 @@ class Ui_MainWindow(QMainWindow):
             self.landing_widget.setHidden(True)
             self.landing_widget.set_status_label("")
             self.scrollArea.setHidden(False)
+            

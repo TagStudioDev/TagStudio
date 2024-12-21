@@ -19,6 +19,15 @@ class ColorType(IntEnum):
     DARK_ACCENT = 4
 
 
+class UiColor(IntEnum):
+    DEFAULT = 0
+    THEME_DARK = 1
+    THEME_LIGHT = 2
+    RED = 3
+    GREEN = 4
+    PURPLE = 5
+
+
 TAG_COLORS: dict[TagColor, dict[ColorType, Any]] = {
     TagColor.DEFAULT: {
         ColorType.PRIMARY: "#1e1e1e",
@@ -283,8 +292,56 @@ TAG_COLORS: dict[TagColor, dict[ColorType, Any]] = {
     },
 }
 
+UI_COLORS: dict[UiColor, dict[ColorType, Any]] = {
+    UiColor.DEFAULT: {
+        ColorType.PRIMARY: "#333333",
+        ColorType.BORDER: "#555555",
+        ColorType.LIGHT_ACCENT: "#FFFFFF",
+        ColorType.DARK_ACCENT: "#1e1e1e",
+    },
+    UiColor.RED: {
+        ColorType.PRIMARY: "#e22c3c",
+        ColorType.BORDER: "#e54252",
+        ColorType.LIGHT_ACCENT: "#f39caa",
+        ColorType.DARK_ACCENT: "#440d12",
+    },
+    UiColor.GREEN: {
+        ColorType.PRIMARY: "#28bb48",
+        ColorType.BORDER: "#43c568",
+        ColorType.LIGHT_ACCENT: "#DDFFCC",
+        ColorType.DARK_ACCENT: "#0d3828",
+    },
+    UiColor.PURPLE: {
+        ColorType.PRIMARY: "#C76FF3",
+        ColorType.BORDER: "#c364f2",
+        ColorType.LIGHT_ACCENT: "#EFD4FB",
+        ColorType.DARK_ACCENT: "#3E1555",
+    },
+    UiColor.THEME_DARK: {
+        ColorType.PRIMARY: "#333333",
+        ColorType.BORDER: "#555555",
+        ColorType.LIGHT_ACCENT: "#FFFFFF",
+        ColorType.DARK_ACCENT: "#1e1e1e",
+    },
+    UiColor.THEME_LIGHT: {
+        ColorType.PRIMARY: "#FFFFFF",
+        ColorType.BORDER: "#333333",
+        ColorType.LIGHT_ACCENT: "#999999",
+        ColorType.DARK_ACCENT: "#888888",
+    },
+}
+
 
 def get_tag_color(color_type: ColorType, color_id: TagColor) -> str:
+    """Return a hex value given a tag color name and ColorType.
+
+    Args:
+        color_type (ColorType): The ColorType category to retrieve from.
+        color_id (ColorType): The color name enum to retrieve from.
+
+    Return:
+        A hex value string representing a color with a leading "#".
+    """
     try:
         if color_type == ColorType.TEXT:
             text_account: ColorType = TAG_COLORS[color_id][color_type]
@@ -293,5 +350,23 @@ def get_tag_color(color_type: ColorType, color_id: TagColor) -> str:
         return TAG_COLORS[color_id][color_type]
     except KeyError:
         traceback.print_stack()
-        logger.error("Color not found", color_id=color_id)
+        logger.error("[PALETTE] Tag color not found.", color_id=color_id)
+        return "#FF00FF"
+
+
+def get_ui_color(color_type: ColorType, color_id: UiColor) -> str:
+    """Return a hex value given a UI color name and ColorType.
+
+    Args:
+        color_type (ColorType): The ColorType category to retrieve from.
+        color_id (UiColor): The color name enum to retrieve from.
+
+    Return:
+        A hex value string representing a color with a leading "#".
+    """
+    try:
+        return UI_COLORS[color_id][color_type]
+    except KeyError:
+        traceback.print_stack()
+        logger.error("[PALETTE] UI color not found", color_id=color_id)
         return "#FF00FF"

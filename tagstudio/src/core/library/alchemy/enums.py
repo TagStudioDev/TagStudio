@@ -1,6 +1,9 @@
 import enum
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path
+
+from src.core.query_lang import AST as Query  # noqa: N811
+from src.core.query_lang import Constraint, ConstraintType, Parser
 
 
 class TagColor(enum.IntEnum):
@@ -42,12 +45,12 @@ class TagColor(enum.IntEnum):
     COOL_GRAY = 36
     OLIVE = 37
 
-
-class SearchMode(enum.IntEnum):
-    """Operational modes for item searching."""
-
-    AND = 0
-    OR = 1
+    @staticmethod
+    def get_color_from_str(color_name: str) -> "TagColor":
+        for color in TagColor:
+            if color.name == color_name.upper().replace(" ", "_"):
+                return color
+        return TagColor.DEFAULT
 
 
 class ItemType(enum.Enum):
@@ -61,63 +64,12 @@ class FilterState:
     """Represent a state of the Library grid view."""
 
     # these should remain
-    page_index: int | None = None
-    page_size: int | None = None
-    search_mode: SearchMode = SearchMode.AND  # TODO - actually implement this
+    page_index: int | None = 0
+    page_size: int | None = 500
 
     # these should be erased on update
-    # tag name
-    tag: str | None = None
-    # tag ID
-    tag_id: int | None = None
-
-    # entry id
-    id: int | None = None
-    # whole path
-    path: Path | str | None = None
-    # file name
-    name: str | None = None
-
-    # a generic query to be parsed
-    query: str | None = None
-
-    def __post_init__(self):
-        # strip values automatically
-        if query := (self.query and self.query.strip()):
-            # parse the value
-            if ":" in query:
-                kind, _, value = query.partition(":")
-            else:
-                # default to tag search
-                kind, value = "tag", query
-
-            if kind == "tag_id":
-                self.tag_id = int(value)
-            elif kind == "tag":
-                self.tag = value
-            elif kind == "path":
-                self.path = value
-            elif kind == "name":
-                self.name = value
-            elif kind == "id":
-                self.id = int(self.id) if str(self.id).isnumeric() else self.id
-
-        else:
-            self.tag = self.tag and self.tag.strip()
-            self.tag_id = int(self.tag_id) if str(self.tag_id).isnumeric() else self.tag_id
-            self.path = self.path and str(self.path).strip()
-            self.name = self.name and self.name.strip()
-            self.id = int(self.id) if str(self.id).isnumeric() else self.id
-
-        if self.page_index is None:
-            self.page_index = 0
-        if self.page_size is None:
-            self.page_size = 500
-
-    @property
-    def summary(self):
-        """Show query summary."""
-        return self.query or self.tag or self.name or self.tag_id or self.path or self.id
+    # Abstract Syntax Tree Of the current Search Query
+    ast: Query = None
 
     @property
     def limit(self):
@@ -126,6 +78,37 @@ class FilterState:
     @property
     def offset(self):
         return self.page_size * self.page_index
+
+    @classmethod
+    def show_all(cls) -> "FilterState":
+        return FilterState()
+
+    @classmethod
+    def from_search_query(cls, search_query: str) -> "FilterState":
+        return cls(ast=Parser(search_query).parse())
+
+    @classmethod
+    def from_tag_id(cls, tag_id: int | str) -> "FilterState":
+        return cls(ast=Constraint(ConstraintType.TagID, str(tag_id), []))
+
+    @classmethod
+    def from_path(cls, path: Path | str) -> "FilterState":
+        return cls(ast=Constraint(ConstraintType.Path, str(path).strip(), []))
+
+    @classmethod
+    def from_mediatype(cls, mediatype: str) -> "FilterState":
+        return cls(ast=Constraint(ConstraintType.MediaType, mediatype, []))
+
+    @classmethod
+    def from_filetype(cls, filetype: str) -> "FilterState":
+        return cls(ast=Constraint(ConstraintType.FileType, filetype, []))
+
+    @classmethod
+    def from_tag_name(cls, tag_name: str) -> "FilterState":
+        return cls(ast=Constraint(ConstraintType.Tag, tag_name, []))
+
+    def with_page_size(self, page_size: int) -> "FilterState":
+        return replace(self, page_size=page_size)
 
 
 class FieldTypeEnum(enum.Enum):

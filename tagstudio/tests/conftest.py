@@ -22,6 +22,37 @@ def cwd():
 
 
 @pytest.fixture
+def file_mediatypes_library():
+    lib = Library()
+
+    status = lib.open_library(pathlib.Path(""), ":memory:")
+    assert status.success
+
+    entry1 = Entry(
+        folder=lib.folder,
+        path=pathlib.Path("foo.png"),
+        fields=lib.default_fields,
+    )
+
+    entry2 = Entry(
+        folder=lib.folder,
+        path=pathlib.Path("bar.png"),
+        fields=lib.default_fields,
+    )
+
+    entry3 = Entry(
+        folder=lib.folder,
+        path=pathlib.Path("baz.apng"),
+        fields=lib.default_fields,
+    )
+
+    assert lib.add_entries([entry1, entry2, entry3])
+    assert len(lib.tags) == 2
+
+    return lib
+
+
+@pytest.fixture
 def library(request):
     # when no param is passed, use the default
     library_path = "/dev/null/"
@@ -32,8 +63,8 @@ def library(request):
             library_path = request.param
 
     lib = Library()
-    lib.open_library(library_path, ":memory:")
-    assert lib.folder
+    status = lib.open_library(pathlib.Path(library_path), ":memory:")
+    assert status.success
 
     tag = Tag(
         name="foo",
@@ -87,12 +118,19 @@ def library(request):
 
 
 @pytest.fixture
+def search_library() -> Library:
+    lib = Library()
+    lib.open_library(pathlib.Path(CWD / "fixtures" / "search_library"))
+    return lib
+
+
+@pytest.fixture
 def entry_min(library):
     yield next(library.get_entries())
 
 
 @pytest.fixture
-def entry_full(library):
+def entry_full(library: Library):
     yield next(library.get_entries(with_joins=True))
 
 
