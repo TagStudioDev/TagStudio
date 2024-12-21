@@ -134,8 +134,8 @@ class TagDatabasePanel(PanelWidget):
             return
 
         message_box = QMessageBox()
-        message_box.setWindowTitle("Remove tag")
-        message_box.setText("Are you sure you want to remove " + tag.name + "?")
+        message_box.setWindowTitle("Remove Tag")
+        message_box.setText(f'Are you sure you want to delete the tag "{tag.name}"?')
         message_box.setStandardButtons(QMessageBox.Ok | QMessageBox.Cancel)  # type: ignore
         message_box.setIcon(QMessageBox.Question)  # type: ignore
 
