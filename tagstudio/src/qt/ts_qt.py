@@ -69,6 +69,7 @@ from src.core.library.alchemy.enums import (
 from src.core.library.alchemy.fields import _FieldID
 from src.core.library.alchemy.library import Entry, LibraryStatus
 from src.core.media_types import MediaCategories
+from src.core.settings import TSSettings
 from src.core.ts_core import TagStudioCore
 from src.core.utils.refresh_dir import RefreshDirTracker
 from src.core.utils.web import strip_web_protocol
@@ -82,6 +83,7 @@ from src.qt.modals.file_extension import FileExtensionModal
 from src.qt.modals.fix_dupes import FixDupeFilesModal
 from src.qt.modals.fix_unlinked import FixUnlinkedEntriesModal
 from src.qt.modals.folders_to_tags import FoldersToTagsModal
+from src.qt.modals.settings_modal import SettingsModal
 from src.qt.modals.tag_database import TagDatabasePanel
 from src.qt.resource_manager import ResourceManager
 from src.qt.widgets.item_thumb import BadgeType, ItemThumb
@@ -235,6 +237,13 @@ class QtDriver(DriverMixin, QObject):
         self.main_window.dragMoveEvent = self.drag_move_event  # type: ignore[method-assign]
         self.main_window.dropEvent = self.drop_event  # type: ignore[method-assign]
 
+        self.settings_path = (
+            Path.home() / ".config/TagStudio" / "settings.toml"
+        )  # TODO: put this somewhere else
+        self.newSettings = TSSettings.read_settings(
+            self.settings_path
+        )  # TODO: make this cross-platform
+
         splash_pixmap = QPixmap(":/images/splash.png")
         splash_pixmap.setDevicePixelRatio(self.main_window.devicePixelRatio())
         self.splash = QSplashScreen(splash_pixmap, Qt.WindowType.WindowStaysOnTopHint)
@@ -321,6 +330,12 @@ class QtDriver(DriverMixin, QObject):
         file_menu.addAction(open_on_start_action)
 
         # Edit Menu ============================================================
+        settings_menu_action = QAction("&Settings", menu_bar)
+        settings_menu_action.triggered.connect(lambda: self.open_settings_menu())
+        edit_menu.addAction(settings_menu_action)
+
+        edit_menu.addSeparator()
+
         new_tag_action = QAction("New &Tag", menu_bar)
         new_tag_action.triggered.connect(lambda: self.add_tag_action_callback())
         new_tag_action.setShortcut(
@@ -641,6 +656,21 @@ class QtDriver(DriverMixin, QObject):
             )
         )
         self.modal.show()
+
+    def open_settings_menu(self):
+        self.modal = PanelModal(
+            SettingsModal(self.newSettings),
+            "Settings",
+            "Settings",
+            has_save=True,
+            save_callback=(lambda x: self.update_settings(x)),
+        )
+
+        self.modal.show()
+
+    def update_settings(self, settings: TSSettings):
+        self.newSettings = settings
+        self.newSettings.save(self.settings_path)
 
     def select_all_action_callback(self):
         self.selected = list(range(0, len(self.frame_content)))
