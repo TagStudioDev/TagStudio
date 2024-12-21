@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING
 from sqlalchemy import and_, distinct, func, or_, select
 from sqlalchemy.orm import Session
 from sqlalchemy.sql.expression import BinaryExpression, ColumnExpressionArgument
-from src.core.media_types import MediaCategories
+from src.core.media_types import FILETYPE_EQUIVALENTS, MediaCategories
 from src.core.query_lang import BaseVisitor
 from src.core.query_lang.ast import AST, ANDList, Constraint, ConstraintType, Not, ORList, Property
 
@@ -15,8 +15,6 @@ if TYPE_CHECKING:
     from .library import Library
 else:
     Library = None  # don't import .library because of circular imports
-
-FILETYPE_EQUIVALENTS = [set(["jpg", "jpeg"])]
 
 
 def get_filetype_equivalency_list(item: str) -> list[str] | set[str]:
