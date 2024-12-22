@@ -1,4 +1,5 @@
 from pathlib import Path
+from typing import Callable
 
 import ujson
 from PySide6.QtCore import QObject, Signal
@@ -45,15 +46,32 @@ class Translator:
         for k in self._strings:
             self._strings[k].value = translated.get(k, None)
 
-    def translate_widget(self, widget: QObject, key: str):
+    def translate_widget(self, widget: QObject, key: str, **kwargs):
+        """Translates the text of the QObject using :func:`translate_with_setter`."""
         if isinstance(widget, (QLabel, QAction, QPushButton)):
-            if key in self._strings:
-                self._strings[key].changed.connect(widget.setText)
-            widget.setText(self.translate(key))
+            self.translate_with_setter(widget.setText, key, **kwargs)
+        elif isinstance(widget, (QMenu)):
+            self.translate_with_setter(widget.setTitle, key, **kwargs)
         else:
             raise RuntimeError
 
-    def translate(self, key: str) -> str:
+    def translate_with_setter(self, setter: Callable[[str], None], key: str, **kwargs):
+        """Calls `setter` everytime the language changes and passes the translated string for `key`.
+
+        Also formats the translation with the given keyword arguments.
+        """
+
+        def set_text(text: str):
+            setter(text.format(**kwargs))
+
+        if key in self._strings:
+            self._strings[key].changed.connect(set_text)
+        set_text(self.translate(key))
+
+    def translate(self, key: str, **kwargs) -> str:
+        return self[key].format(**kwargs)
+
+    def __getitem__(self, key: str) -> str:
         return self._strings[key].value if key in self._strings else "Not Translated"
 
 
