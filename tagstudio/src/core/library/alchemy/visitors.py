@@ -7,8 +7,8 @@ from src.core.media_types import MediaCategories
 from src.core.query_lang import BaseVisitor
 from src.core.query_lang.ast import AST, ANDList, Constraint, ConstraintType, Not, ORList, Property
 
-from .joins import TagField
-from .models import Entry, Tag, TagAlias, TagBoxField
+from .joins import TagEntry
+from .models import Entry, Tag, TagAlias
 
 # workaround to have autocompletion in the Editor
 if TYPE_CHECKING:
@@ -50,19 +50,20 @@ class SQLBoolExpressionBuilder(BaseVisitor[ColumnExpressionArgument]):
         # If there is just one tag id, check the normal way
         elif len(tag_ids) == 1:
             bool_expressions.append(
-                self.__entry_satisfies_expression(TagField.tag_id == tag_ids[0])
+                self.__entry_satisfies_expression(TagEntry.tag_id == tag_ids[0])
             )
 
         return and_(*bool_expressions)
 
     def visit_constraint(self, node: Constraint) -> ColumnExpressionArgument:
+        """Returns a Boolean Expression that is true, if the Entry satisfies the constraint."""
         if len(node.properties) != 0:
             raise NotImplementedError("Properties are not implemented yet")  # TODO TSQLANG
 
         if node.type == ConstraintType.Tag:
-            return TagBoxField.tags.any(Tag.id.in_(self.__get_tag_ids(node.value)))
+            return Entry.tags.any(Tag.id.in_(self.__get_tag_ids(node.value)))
         elif node.type == ConstraintType.TagID:
-            return TagBoxField.tags.any(Tag.id == int(node.value))
+            return Entry.tags.any(Tag.id == int(node.value))
         elif node.type == ConstraintType.Path:
             return Entry.path.op("GLOB")(node.value)
         elif node.type == ConstraintType.MediaType:
@@ -76,9 +77,7 @@ class SQLBoolExpressionBuilder(BaseVisitor[ColumnExpressionArgument]):
             return Entry.suffix.ilike(node.value)
         elif node.type == ConstraintType.Special:  # noqa: SIM102 unnecessary once there is a second special constraint
             if node.value.lower() == "untagged":
-                return ~Entry.id.in_(
-                    select(Entry.id).join(Entry.tag_box_fields).join(TagBoxField.tags)
-                )
+                return ~Entry.id.in_(select(Entry.id).join(TagEntry))
 
         # raise exception if Constraint stays unhandled
         raise NotImplementedError("This type of constraint is not implemented yet")
@@ -105,11 +104,10 @@ class SQLBoolExpressionBuilder(BaseVisitor[ColumnExpressionArgument]):
         # Relational Division Query
         return Entry.id.in_(
             select(Entry.id)
-            .outerjoin(TagBoxField)
-            .outerjoin(TagField)
-            .where(TagField.tag_id.in_(tag_ids))
+            .outerjoin(TagEntry)
+            .where(TagEntry.tag_id.in_(tag_ids))
             .group_by(Entry.id)
-            .having(func.count(distinct(TagField.tag_id)) == len(tag_ids))
+            .having(func.count(distinct(TagEntry.tag_id)) == len(tag_ids))
         )
 
     def __entry_satisfies_ast(self, partial_query: AST) -> BinaryExpression[bool]:
@@ -119,7 +117,8 @@ class SQLBoolExpressionBuilder(BaseVisitor[ColumnExpressionArgument]):
     def __entry_satisfies_expression(
         self, expr: ColumnExpressionArgument
     ) -> BinaryExpression[bool]:
-        """Returns Binary Expression that is true if the Entry satisfies the column expression."""
-        return Entry.id.in_(
-            select(Entry.id).outerjoin(Entry.tag_box_fields).outerjoin(TagField).where(expr)
-        )
+        """Returns Binary Expression that is true if the Entry satisfies the column expression.
+
+        Executed on: Entry ⟕ TagEntry (Entry LEFT OUTER JOIN TagEntry).
+        """
+        return Entry.id.in_(select(Entry.id).outerjoin(TagEntry).where(expr))
