@@ -137,6 +137,8 @@ class QtDriver(DriverMixin, QObject):
         self.args = args
         self.frame_content = []
         self.filter = FilterState.show_all()
+        self.frame_content: list[Entry] = []
+        self.filter = FilterState().show_all()
         self.pages_count = 0
 
         self.scrollbar_pos = 0
@@ -599,7 +601,7 @@ class QtDriver(DriverMixin, QObject):
 
         self.main_window.setWindowTitle(self.base_title)
 
-        self.selected = []
+        self.selected: list[int] = []
         self.frame_content = []
         [x.set_mode(None) for x in self.item_thumbs]
 
