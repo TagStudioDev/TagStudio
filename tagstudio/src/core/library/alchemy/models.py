@@ -52,8 +52,8 @@ class Tag(Base):
 
     parent_tags: Mapped[set["Tag"]] = relationship(
         secondary=TagSubtag.__tablename__,
-        primaryjoin="Tag.id == TagSubtag.parent_id",
-        secondaryjoin="Tag.id == TagSubtag.child_id",
+        primaryjoin="Tag.id == TagSubtag.child_id",
+        secondaryjoin="Tag.id == TagSubtag.parent_id",
         back_populates="subtags",
     )
 
