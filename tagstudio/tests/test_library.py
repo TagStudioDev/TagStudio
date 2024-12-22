@@ -214,6 +214,17 @@ def test_subtags_add(library, generate_tag):
     assert tag.subtag_ids
 
 
+def test_remove_tag(library, generate_tag):
+    tag = library.add_tag(generate_tag("food", id=123))
+
+    assert tag
+
+    tag_count = len(library.tags)
+
+    library.remove_tag(tag)
+    assert len(library.tags) == tag_count - 1
+
+
 @pytest.mark.parametrize("is_exclude", [True, False])
 def test_search_filter_extensions(library, is_exclude):
     # Given

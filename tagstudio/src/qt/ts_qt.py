@@ -30,6 +30,9 @@ from PySide6.QtCore import QObject, QSettings, Qt, QThread, QThreadPool, QTimer,
 from PySide6.QtGui import (
     QAction,
     QColor,
+    QDragEnterEvent,
+    QDragMoveEvent,
+    QDropEvent,
     QFontDatabase,
     QGuiApplication,
     QIcon,
@@ -66,6 +69,7 @@ from src.qt.helpers.custom_runnable import CustomRunnable
 from src.qt.helpers.function_iterator import FunctionIterator
 from src.qt.main_window import UIMainWindow
 from src.qt.modals.build_tag import BuildTagPanel
+from src.qt.modals.drop_import import DropImportModal
 from src.qt.modals.file_extension import FileExtensionModal
 from src.qt.modals.fix_dupes import FixDupeFilesModal
 from src.qt.modals.fix_unlinked import FixUnlinkedEntriesModal
@@ -226,19 +230,10 @@ class QtDriver(DriverMixin, QObject):
         # self.main_window = loader.load(home_path)
         self.main_window = UIMainWindow(self)
         self.main_window.setWindowTitle(self.base_title)
-        self.main_window.mousePressEvent = self.mouse_navigation  # type: ignore
-        # self.main_window.setStyleSheet(
-        # 	f'QScrollBar::{{background:red;}}'
-        # 	)
-
-        # # self.main_window.windowFlags() &
-        # # self.main_window.setWindowFlag(Qt.WindowType.FramelessWindowHint, True)
-        # self.main_window.setWindowFlag(Qt.WindowType.NoDropShadowWindowHint, True)
-        # self.main_window.setWindowFlag(Qt.WindowType.WindowTransparentForInput, False)
-        # self.main_window.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
-
-        # self.windowFX = WindowEffect()
-        # self.windowFX.setAcrylicEffect(self.main_window.winId())
+        self.main_window.mousePressEvent = self.mouse_navigation  # type: ignore[method-assign]
+        self.main_window.dragEnterEvent = self.drag_enter_event  # type: ignore[method-assign]
+        self.main_window.dragMoveEvent = self.drag_move_event  # type: ignore[method-assign]
+        self.main_window.dropEvent = self.drop_event  # type: ignore[method-assign]
 
         splash_pixmap = QPixmap(":/images/splash.png")
         splash_pixmap.setDevicePixelRatio(self.main_window.devicePixelRatio())
@@ -261,15 +256,12 @@ class QtDriver(DriverMixin, QObject):
 
         file_menu = QMenu("&File", menu_bar)
         edit_menu = QMenu("&Edit", menu_bar)
+        view_menu = QMenu("&View", menu_bar)
         tools_menu = QMenu("&Tools", menu_bar)
         macros_menu = QMenu("&Macros", menu_bar)
-        window_menu = QMenu("&Window", menu_bar)
         help_menu = QMenu("&Help", menu_bar)
 
         # File Menu ============================================================
-        # file_menu.addAction(QAction('&New Library', menu_bar))
-        # file_menu.addAction(QAction('&Open Library', menu_bar))
-
         open_library_action = QAction("&Open/Create Library", menu_bar)
         open_library_action.triggered.connect(self.open_library_from_dialog)
         open_library_action.setShortcut(
@@ -299,8 +291,6 @@ class QtDriver(DriverMixin, QObject):
 
         file_menu.addSeparator()
 
-        # refresh_lib_action = QAction('&Refresh Directories', self.main_window)
-        # refresh_lib_action.triggered.connect(self.lib.refresh_dir)
         add_new_files_action = QAction("&Refresh Directories", menu_bar)
         add_new_files_action.triggered.connect(
             lambda: self.callback_library_needed_check(self.add_new_files_callback)
@@ -312,13 +302,23 @@ class QtDriver(DriverMixin, QObject):
             )
         )
         add_new_files_action.setStatusTip("Ctrl+R")
-        # file_menu.addAction(refresh_lib_action)
         file_menu.addAction(add_new_files_action)
         file_menu.addSeparator()
 
         close_library_action = QAction("&Close Library", menu_bar)
         close_library_action.triggered.connect(self.close_library)
         file_menu.addAction(close_library_action)
+        file_menu.addSeparator()
+
+        open_on_start_action = QAction("Open Library on Start", self)
+        open_on_start_action.setCheckable(True)
+        open_on_start_action.setChecked(
+            bool(self.settings.value(SettingItems.START_LOAD_LAST, defaultValue=True, type=bool))
+        )
+        open_on_start_action.triggered.connect(
+            lambda checked: self.settings.setValue(SettingItems.START_LOAD_LAST, checked)
+        )
+        file_menu.addAction(open_on_start_action)
 
         # Edit Menu ============================================================
         new_tag_action = QAction("New &Tag", menu_bar)
@@ -361,15 +361,32 @@ class QtDriver(DriverMixin, QObject):
         tag_database_action.triggered.connect(self.show_tag_database)
         edit_menu.addAction(tag_database_action)
 
-        check_action = QAction("Open library on start", self)
-        check_action.setCheckable(True)
-        check_action.setChecked(
-            bool(self.settings.value(SettingItems.START_LOAD_LAST, defaultValue=True, type=bool))
+        # View Menu ============================================================
+        show_libs_list_action = QAction("Show Recent Libraries", menu_bar)
+        show_libs_list_action.setCheckable(True)
+        show_libs_list_action.setChecked(
+            bool(self.settings.value(SettingItems.WINDOW_SHOW_LIBS, defaultValue=True, type=bool))
         )
-        check_action.triggered.connect(
-            lambda checked: self.settings.setValue(SettingItems.START_LOAD_LAST, checked)
+        show_libs_list_action.triggered.connect(
+            lambda checked: (
+                self.settings.setValue(SettingItems.WINDOW_SHOW_LIBS, checked),
+                self.toggle_libs_list(checked),
+            )
         )
-        window_menu.addAction(check_action)
+        view_menu.addAction(show_libs_list_action)
+
+        show_filenames_action = QAction("Show Filenames in Grid", menu_bar)
+        show_filenames_action.setCheckable(True)
+        show_filenames_action.setChecked(
+            bool(self.settings.value(SettingItems.SHOW_FILENAMES, defaultValue=True, type=bool))
+        )
+        show_filenames_action.triggered.connect(
+            lambda checked: (
+                self.settings.setValue(SettingItems.SHOW_FILENAMES, checked),
+                self.show_grid_filenames(checked),
+            )
+        )
+        view_menu.addAction(show_filenames_action)
 
         # Tools Menu ===========================================================
         def create_fix_unlinked_entries_modal():
@@ -404,19 +421,6 @@ class QtDriver(DriverMixin, QObject):
         )
         macros_menu.addAction(self.autofill_action)
 
-        show_libs_list_action = QAction("Show Recent Libraries", menu_bar)
-        show_libs_list_action.setCheckable(True)
-        show_libs_list_action.setChecked(
-            bool(self.settings.value(SettingItems.WINDOW_SHOW_LIBS, defaultValue=True, type=bool))
-        )
-        show_libs_list_action.triggered.connect(
-            lambda checked: (
-                self.settings.setValue(SettingItems.WINDOW_SHOW_LIBS, checked),
-                self.toggle_libs_list(checked),
-            )
-        )
-        window_menu.addAction(show_libs_list_action)
-
         def create_folders_tags_modal():
             if not hasattr(self, "folders_modal"):
                 self.folders_modal = FoldersToTagsModal(self.lib, self)
@@ -426,7 +430,7 @@ class QtDriver(DriverMixin, QObject):
         folders_to_tags_action.triggered.connect(create_folders_tags_modal)
         macros_menu.addAction(folders_to_tags_action)
 
-        # Help Menu ==========================================================
+        # Help Menu ============================================================
         self.repo_action = QAction("Visit GitHub Repository", menu_bar)
         self.repo_action.triggered.connect(
             lambda: webbrowser.open("https://github.com/TagStudioDev/TagStudio")
@@ -436,9 +440,9 @@ class QtDriver(DriverMixin, QObject):
 
         menu_bar.addMenu(file_menu)
         menu_bar.addMenu(edit_menu)
+        menu_bar.addMenu(view_menu)
         menu_bar.addMenu(tools_menu)
         menu_bar.addMenu(macros_menu)
-        menu_bar.addMenu(window_menu)
         menu_bar.addMenu(help_menu)
 
         self.main_window.searchField.textChanged.connect(self.update_completions_list)
@@ -548,6 +552,10 @@ class QtDriver(DriverMixin, QObject):
             self.preview_panel.libs_flow_container.hide()
         self.preview_panel.update()
 
+    def show_grid_filenames(self, value: bool):
+        for thumb in self.item_thumbs:
+            thumb.set_filename_visibility(value)
+
     def callback_library_needed_check(self, func):
         """Check if loaded library has valid path before executing the button function."""
         if self.lib.library_dir:
@@ -653,7 +661,11 @@ class QtDriver(DriverMixin, QObject):
 
     def show_tag_database(self):
         self.modal = PanelModal(
-            TagDatabasePanel(self.lib), "Library Tags", "Library Tags", has_save=False
+            widget=TagDatabasePanel(self.lib),
+            title="Library Tags",
+            window_title="Library Tags",
+            done_callback=self.preview_panel.update_widgets,
+            has_save=False,
         )
         self.modal.show()
 
@@ -712,26 +724,6 @@ class QtDriver(DriverMixin, QObject):
 
         Threaded method.
         """
-        # pb = QProgressDialog(
-        #     f"Running Configured Macros on 1/{len(new_ids)} New Entries", None, 0, len(new_ids)
-        # )
-        # pb.setFixedSize(432, 112)
-        # pb.setWindowFlags(pb.windowFlags() & ~Qt.WindowType.WindowCloseButtonHint)
-        # pb.setWindowTitle('Running Macros')
-        # pb.setWindowModality(Qt.WindowModality.ApplicationModal)
-        # pb.show()
-
-        # r = CustomRunnable(lambda: self.new_file_macros_runnable(pb, new_ids))
-        # r.done.connect(lambda: (pb.hide(), pb.deleteLater(), self.filter_items('')))
-        # r.run()
-        # # QThreadPool.globalInstance().start(r)
-
-        # # self.main_window.statusbar.showMessage(
-        # #     f"Running configured Macros on {len(new_ids)} new Entries...", 3
-        # # )
-
-        # # pb.hide()
-
         files_count = tracker.files_count
 
         iterator = FunctionIterator(tracker.save_new_files)
@@ -743,6 +735,7 @@ class QtDriver(DriverMixin, QObject):
             maximum=files_count,
         )
         pw.show()
+
         iterator.value.connect(
             lambda x: (
                 pw.update_progress(x + 1),
@@ -850,9 +843,9 @@ class QtDriver(DriverMixin, QObject):
             it.thumb_button.setIcon(blank_icon)
             it.resize(self.thumb_size, self.thumb_size)
             it.thumb_size = (self.thumb_size, self.thumb_size)
-            it.setMinimumSize(self.thumb_size, self.thumb_size)
-            it.setMaximumSize(self.thumb_size, self.thumb_size)
+            it.setFixedSize(self.thumb_size, self.thumb_size)
             it.thumb_button.thumb_size = (self.thumb_size, self.thumb_size)
+            it.set_filename_visibility(it.show_filename_label)
         self.flow_container.layout().setSpacing(
             min(self.thumb_size // spacing_divisor, min_spacing)
         )
@@ -902,8 +895,16 @@ class QtDriver(DriverMixin, QObject):
         # TODO - init after library is loaded, it can have different page_size
         for grid_idx in range(self.filter.page_size or 0):
             item_thumb = ItemThumb(
-                None, self.lib, self, (self.thumb_size, self.thumb_size), grid_idx
+                None,
+                self.lib,
+                self,
+                (self.thumb_size, self.thumb_size),
+                grid_idx,
+                bool(
+                    self.settings.value(SettingItems.SHOW_FILENAMES, defaultValue=True, type=bool)
+                ),
             )
+
             layout.addWidget(item_thumb)
             self.item_thumbs.append(item_thumb)
 
@@ -1238,6 +1239,7 @@ class QtDriver(DriverMixin, QObject):
         self.update_libs_list(path)
         title_text = f"{self.base_title} - Library '{self.lib.library_dir}'"
         self.main_window.setWindowTitle(title_text)
+        self.main_window.setAcceptDrops(True)
 
         self.selected.clear()
         self.preview_panel.update_widgets()
@@ -1247,3 +1249,27 @@ class QtDriver(DriverMixin, QObject):
 
         self.main_window.toggle_landing_page(enabled=False)
         return open_status
+
+    def drop_event(self, event: QDropEvent):
+        if event.source() is self:
+            return
+
+        if not event.mimeData().hasUrls():
+            return
+
+        urls = event.mimeData().urls()
+        logger.info("New items dragged in", urls=urls)
+        drop_import = DropImportModal(self)
+        drop_import.import_urls(urls)
+
+    def drag_enter_event(self, event: QDragEnterEvent):
+        if event.mimeData().hasUrls():
+            event.accept()
+        else:
+            event.ignore()
+
+    def drag_move_event(self, event: QDragMoveEvent):
+        if event.mimeData().hasUrls():
+            event.accept()
+        else:
+            event.ignore()

@@ -33,7 +33,7 @@ class TagSearchPanel(PanelWidget):
         self.lib = library
         self.exclude = exclude
         self.is_initialized: bool = False
-        self.first_tag_id = None
+        self.first_tag_id: int = None
         self.setMinimumSize(300, 400)
         self.root_layout = QVBoxLayout(self)
         self.root_layout.setContentsMargins(6, 0, 6, 0)
@@ -69,7 +69,7 @@ class TagSearchPanel(PanelWidget):
             self.update_tags()
         else:
             self.search_field.setFocus()
-            self.parentWidget().hide()
+        self.parentWidget().hide()
 
     def update_tags(self, query: str | None = None):
         logger.info("[Tag Search Modal] Updating Tags")
@@ -77,6 +77,10 @@ class TagSearchPanel(PanelWidget):
             self.scroll_layout.takeAt(0).widget().deleteLater()
 
         tag_results = self.lib.search_tags(name=query)
+        if len(tag_results) > 0:
+            self.first_tag_id = tag_results[0].id
+        else:
+            self.first_tag_id = None
 
         for tag in tag_results:
             if self.exclude is not None and tag.id in self.exclude:

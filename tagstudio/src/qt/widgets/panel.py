@@ -96,6 +96,10 @@ class PanelModal(Generic[T], QWidget):
         self.root_layout.setStretch(1, 2)
         self.root_layout.addWidget(self.button_container)
 
+    def closeEvent(self, event):  # noqa: N802
+        self.done_button.click()
+        event.accept()
+
 
 class PanelWidget(QWidget):
     """Used for widgets that go in a modal panel, ex. for editing or searching."""
