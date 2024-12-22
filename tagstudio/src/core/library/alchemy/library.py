@@ -49,7 +49,7 @@ from .fields import (
     TextField,
     _FieldID,
 )
-from .joins import TagSubtag
+from .joins import TagEntry, TagSubtag
 from .models import Entry, Folder, Preferences, Tag, TagAlias, ValueType
 from .visitors import SQLBoolExpressionBuilder
 
@@ -559,8 +559,7 @@ class Library:
 
             if search.ast:
                 start_time = time.time()
-
-                statement = statement.outerjoin(Entry.tag_box_fields).where(
+                statement = statement.outerjoin(TagEntry).where(
                     SQLBoolExpressionBuilder(self).visit(search.ast)
                 )
 
