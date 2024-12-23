@@ -29,7 +29,7 @@ class FixUnlinkedEntriesModal(QWidget):
 
         self.missing_count = -1
         self.dupe_count = -1
-        self.setWindowTitle("Fix Unlinked Entries")
+        self.setWindowTitle("Fix Unlinked Entries")  # TODO translate
         self.setWindowModality(Qt.WindowModality.ApplicationModal)
         self.setMinimumSize(400, 300)
         self.root_layout = QVBoxLayout(self)
@@ -45,7 +45,7 @@ class FixUnlinkedEntriesModal(QWidget):
             "it is then considered unlinked.\n\n"
             "Unlinked entries may be automatically relinked via searching your directories, "
             "manually relinked by the user, or deleted if desired."
-        )
+        )  # TODO translate
 
         self.missing_count_label = QLabel()
         self.missing_count_label.setObjectName("missingCountLabel")
@@ -58,14 +58,14 @@ class FixUnlinkedEntriesModal(QWidget):
         self.dupe_count_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         self.refresh_unlinked_button = QPushButton()
-        self.refresh_unlinked_button.setText("&Refresh All")
+        self.refresh_unlinked_button.setText("&Refresh All")  # TODO translate
         self.refresh_unlinked_button.clicked.connect(self.refresh_missing_files)
 
         self.merge_class = MergeDuplicateEntries(self.lib, self.driver)
         self.relink_class = RelinkUnlinkedEntries(self.tracker)
 
         self.search_button = QPushButton()
-        self.search_button.setText("&Search && Relink")
+        self.search_button.setText("&Search && Relink")  # TODO translate
         self.relink_class.done.connect(
             # refresh the grid
             lambda: (
@@ -76,7 +76,7 @@ class FixUnlinkedEntriesModal(QWidget):
         self.search_button.clicked.connect(self.relink_class.repair_entries)
 
         self.manual_button = QPushButton()
-        self.manual_button.setText("&Manual Relink")
+        self.manual_button.setText("&Manual Relink")  # TODO translate
         self.manual_button.setHidden(True)
 
         self.delete_button = QPushButton()
@@ -88,7 +88,7 @@ class FixUnlinkedEntriesModal(QWidget):
                 self.driver.filter_items(),
             )
         )
-        self.delete_button.setText("De&lete Unlinked Entries")
+        self.delete_button.setText("De&lete Unlinked Entries")  # TODO translate
         self.delete_button.clicked.connect(self.delete_modal.show)
 
         self.button_container = QWidget()
@@ -97,7 +97,7 @@ class FixUnlinkedEntriesModal(QWidget):
         self.button_layout.addStretch(1)
 
         self.done_button = QPushButton()
-        self.done_button.setText("&Done")
+        self.done_button.setText("&Done")  # TODO translate
         self.done_button.setDefault(True)
         self.done_button.clicked.connect(self.hide)
         self.button_layout.addWidget(self.done_button)
@@ -116,8 +116,8 @@ class FixUnlinkedEntriesModal(QWidget):
 
     def refresh_missing_files(self):
         pw = ProgressWidget(
-            window_title="Scanning Library",
-            label_text="Scanning Library for Unlinked Entries...",
+            window_title="Scanning Library",  # TODO translate
+            label_text="Scanning Library for Unlinked Entries...",  # TODO translate
             cancel_button_text=None,
             minimum=0,
             maximum=self.lib.entries_count,
@@ -139,9 +139,11 @@ class FixUnlinkedEntriesModal(QWidget):
         if self.missing_count < 0:
             self.search_button.setDisabled(True)
             self.delete_button.setDisabled(True)
-            self.missing_count_label.setText("Unlinked Entries: N/A")
+            self.missing_count_label.setText("Unlinked Entries: N/A")  # TODO translate
         else:
             # disable buttons if there are no files to fix
             self.search_button.setDisabled(self.missing_count == 0)
             self.delete_button.setDisabled(self.missing_count == 0)
-            self.missing_count_label.setText(f"Unlinked Entries: {self.missing_count}")
+            self.missing_count_label.setText(
+                f"Unlinked Entries: {self.missing_count}"
+            )  # TODO translate

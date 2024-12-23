@@ -44,7 +44,7 @@ class TagDatabasePanel(PanelWidget):
         self.search_field = QLineEdit()
         self.search_field.setObjectName("searchField")
         self.search_field.setMinimumSize(QSize(0, 32))
-        self.search_field.setPlaceholderText("Search Tags")
+        self.search_field.setPlaceholderText("Search Tags")  # TODO translate
         self.search_field.textEdited.connect(lambda: self.update_tags(self.search_field.text()))
         self.search_field.returnPressed.connect(
             lambda checked=False: self.on_return(self.search_field.text())
@@ -63,7 +63,7 @@ class TagDatabasePanel(PanelWidget):
         self.scroll_area.setWidget(self.scroll_contents)
 
         self.create_tag_button = QPushButton()
-        self.create_tag_button.setText("Create Tag")
+        self.create_tag_button.setText("Create Tag")  # TODO translate
         self.create_tag_button.clicked.connect(self.build_tag)
 
         self.root_layout.addWidget(self.search_field)
@@ -74,8 +74,8 @@ class TagDatabasePanel(PanelWidget):
     def build_tag(self):
         self.modal = PanelModal(
             BuildTagPanel(self.lib),
-            "New Tag",
-            "Add Tag",
+            "New Tag",  # TODO translate
+            "Add Tag",  # TODO translate
             has_save=True,
         )
 
@@ -134,8 +134,10 @@ class TagDatabasePanel(PanelWidget):
             return
 
         message_box = QMessageBox()
-        message_box.setWindowTitle("Remove Tag")
-        message_box.setText(f'Are you sure you want to delete the tag "{tag.name}"?')
+        message_box.setWindowTitle("Remove Tag")  # TODO translate
+        message_box.setText(
+            f'Are you sure you want to delete the tag "{tag.name}"?'
+        )  # TODO translate
         message_box.setStandardButtons(QMessageBox.Ok | QMessageBox.Cancel)  # type: ignore
         message_box.setIcon(QMessageBox.Question)  # type: ignore
 
@@ -156,7 +158,7 @@ class TagDatabasePanel(PanelWidget):
         self.edit_modal = PanelModal(
             build_tag_panel,
             tag.name,
-            "Edit Tag",
+            "Edit Tag",  # TODO translate
             done_callback=(self.update_tags(self.search_field.text())),
             has_save=True,
         )

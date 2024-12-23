@@ -164,7 +164,7 @@ class FoldersToTagsModal(QWidget):
         self.count = -1
         self.filename = ""
 
-        self.setWindowTitle("Create Tags From Folders")
+        self.setWindowTitle("Create Tags From Folders")  # TODO translate
         self.setWindowModality(Qt.WindowModality.ApplicationModal)
         self.setMinimumSize(640, 640)
         self.root_layout = QVBoxLayout(self)
@@ -174,7 +174,7 @@ class FoldersToTagsModal(QWidget):
         self.title_widget.setObjectName("title")
         self.title_widget.setWordWrap(True)
         self.title_widget.setStyleSheet("font-weight:bold;" "font-size:14px;" "padding-top: 6px")
-        self.title_widget.setText("Create Tags From Folders")
+        self.title_widget.setText("Create Tags From Folders")  # TODO translate
         self.title_widget.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         self.desc_widget = QLabel()
@@ -190,10 +190,10 @@ class FoldersToTagsModal(QWidget):
         self.open_close_button_layout = QHBoxLayout(self.open_close_button_w)
 
         self.open_all_button = QPushButton()
-        self.open_all_button.setText("Open All")
+        self.open_all_button.setText("Open All")  # TODO translate
         self.open_all_button.clicked.connect(lambda: self.set_all_branches(False))
         self.close_all_button = QPushButton()
-        self.close_all_button.setText("Close All")
+        self.close_all_button.setText("Close All")  # TODO translate
         self.close_all_button.clicked.connect(lambda: self.set_all_branches(True))
 
         self.open_close_button_layout.addWidget(self.open_all_button)
@@ -212,7 +212,7 @@ class FoldersToTagsModal(QWidget):
         self.scroll_area.setWidget(self.scroll_contents)
 
         self.apply_button = QPushButton()
-        self.apply_button.setText("&Apply")
+        self.apply_button.setText("&Apply")  # TODO translate
         self.apply_button.setMinimumWidth(100)
         self.apply_button.clicked.connect(self.on_apply)
 

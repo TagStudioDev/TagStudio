@@ -11,6 +11,6 @@ class PlatformStrings:
     open_file_str: str = "Open in file explorer"
 
     if platform.system() == "Windows":
-        open_file_str = "Open in Explorer"
+        open_file_str = "Open in Explorer"  # TODO translate
     elif platform.system() == "Darwin":
-        open_file_str = "Reveal in Finder"
+        open_file_str = "Reveal in Finder"  # TODO translate

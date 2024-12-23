@@ -59,7 +59,7 @@ class BuildTagPanel(PanelWidget):
         self.name_field = QLineEdit()
         self.name_field.setFixedHeight(24)
         self.name_field.textChanged.connect(self.on_name_changed)
-        self.name_field.setPlaceholderText("Tag Name (Required)")
+        self.name_field.setPlaceholderText("Tag Name (Required)")  # TODO translate
         self.name_layout.addWidget(self.name_field)
 
         # Shorthand ------------------------------------------------------------
@@ -70,7 +70,7 @@ class BuildTagPanel(PanelWidget):
         self.shorthand_layout.setSpacing(0)
         self.shorthand_layout.setAlignment(Qt.AlignmentFlag.AlignLeft)
         self.shorthand_title = QLabel()
-        self.shorthand_title.setText("Shorthand")
+        self.shorthand_title.setText("Shorthand")  # TODO translate
         self.shorthand_layout.addWidget(self.shorthand_title)
         self.shorthand_field = QLineEdit()
         self.shorthand_layout.addWidget(self.shorthand_field)
@@ -83,7 +83,7 @@ class BuildTagPanel(PanelWidget):
         self.aliases_layout.setSpacing(0)
         self.aliases_layout.setAlignment(Qt.AlignmentFlag.AlignLeft)
         self.aliases_title = QLabel()
-        self.aliases_title.setText("Aliases")
+        self.aliases_title.setText("Aliases")  # TODO translate
         self.aliases_layout.addWidget(self.aliases_title)
 
         self.aliases_flow_widget = QWidget()
@@ -134,7 +134,7 @@ class BuildTagPanel(PanelWidget):
         self.subtags_layout.setAlignment(Qt.AlignmentFlag.AlignLeft)
 
         self.subtags_title = QLabel()
-        self.subtags_title.setText("Parent Tags")
+        self.subtags_title.setText("Parent Tags")  # TODO translate
         self.subtags_layout.addWidget(self.subtags_title)
 
         self.subtag_flow_widget = QWidget()
@@ -180,7 +180,7 @@ class BuildTagPanel(PanelWidget):
 
         tsp = TagSearchPanel(self.lib, exclude_ids)
         tsp.tag_chosen.connect(lambda x: self.add_subtag_callback(x))
-        self.add_tag_modal = PanelModal(tsp, "Add Parent Tags", "Add Parent Tags")
+        self.add_tag_modal = PanelModal(tsp, "Add Parent Tags", "Add Parent Tags")  # TODO translate
         self.subtags_add_button.clicked.connect(self.add_tag_modal.show)
         # self.subtags_layout.addWidget(self.subtags_add_button)
 
@@ -196,7 +196,7 @@ class BuildTagPanel(PanelWidget):
         self.color_layout.setSpacing(0)
         self.color_layout.setAlignment(Qt.AlignmentFlag.AlignLeft)
         self.color_title = QLabel()
-        self.color_title.setText("Color")
+        self.color_title.setText("Color")  # TODO translate
         self.color_layout.addWidget(self.color_title)
         self.color_field = QComboBox()
         self.color_field.setEditable(False)
@@ -218,7 +218,7 @@ class BuildTagPanel(PanelWidget):
             )
         )
         self.color_layout.addWidget(self.color_field)
-        remove_selected_alias_action = QAction("remove selected alias", self)
+        remove_selected_alias_action = QAction("remove selected alias", self)  # TODO translate
         remove_selected_alias_action.triggered.connect(self.remove_selected_alias)
         remove_selected_alias_action.setShortcut(
             QtCore.QKeyCombination(
@@ -243,7 +243,7 @@ class BuildTagPanel(PanelWidget):
         self.alias_names: set[str] = set()
         self.new_alias_names: dict = dict()
 
-        self.set_tag(tag or Tag(name="New Tag"))
+        self.set_tag(tag or Tag(name="New Tag"))  # TODO translate
         if tag is None:
             self.name_field.selectAll()
 

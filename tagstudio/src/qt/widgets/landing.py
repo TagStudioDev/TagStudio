@@ -62,7 +62,7 @@ class LandingWidget(QWidget):
             open_shortcut_text = "(Ctrl+O)"
         self.open_button: QPushButton = QPushButton()
         self.open_button.setMinimumWidth(200)
-        self.open_button.setText(f"Open/Create Library {open_shortcut_text}")
+        self.open_button.setText(f"Open/Create Library {open_shortcut_text}")  # TODO translate
         self.open_button.clicked.connect(self.driver.open_library_from_dialog)
 
         # Create status label --------------------------------------------------

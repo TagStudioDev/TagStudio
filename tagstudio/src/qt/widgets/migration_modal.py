@@ -54,7 +54,7 @@ class JsonMigrationModal(QObject):
         self.is_migration_initialized: bool = False
         self.discrepancies: list[str] = []
 
-        self.title: str = f'Save Format Migration: "{self.path}"'
+        self.title: str = f'Save Format Migration: "{self.path}"'  # TODO translate
         self.warning: str = "<b><a style='color: #e22c3c'>(!)</a></b>"
 
         self.old_entry_count: int = 0
@@ -77,7 +77,7 @@ class JsonMigrationModal(QObject):
     def init_page_info(self) -> None:
         """Initialize the migration info page."""
         body_wrapper: PagedBodyWrapper = PagedBodyWrapper()
-        body_label: QLabel = QLabel(
+        body_label: QLabel = QLabel(  # TODO translate
             "Library save files created with TagStudio versions <b>9.4 and below</b> will "
             "need to be migrated to the new <b>v9.5+</b> format."
             "<br>"
@@ -93,8 +93,8 @@ class JsonMigrationModal(QObject):
         body_wrapper.layout().addWidget(body_label)
         body_wrapper.layout().setContentsMargins(0, 36, 0, 0)
 
-        cancel_button: QPushButtonWrapper = QPushButtonWrapper("Cancel")
-        next_button: QPushButtonWrapper = QPushButtonWrapper("Continue")
+        cancel_button: QPushButtonWrapper = QPushButtonWrapper("Cancel")  # TODO translate
+        next_button: QPushButtonWrapper = QPushButtonWrapper("Continue")  # TODO translate
         cancel_button.clicked.connect(self.migration_cancelled.emit)
 
         self.stack.append(
@@ -115,18 +115,18 @@ class JsonMigrationModal(QObject):
         body_container_layout.setContentsMargins(0, 0, 0, 0)
 
         tab: str = "     "
-        self.match_text: str = "Matched"
-        self.differ_text: str = "Discrepancy"
+        self.match_text: str = "Matched"  # TODO translate
+        self.differ_text: str = "Discrepancy"  # TODO translate
 
-        entries_text: str = "Entries:"
-        tags_text: str = "Tags:"
-        shorthand_text: str = tab + "Shorthands:"
-        subtags_text: str = tab + "Parent Tags:"
-        aliases_text: str = tab + "Aliases:"
-        colors_text: str = tab + "Colors:"
-        ext_text: str = "File Extension List:"
-        ext_type_text: str = "Extension List Type:"
-        desc_text: str = (
+        entries_text: str = "Entries:"  # TODO translate
+        tags_text: str = "Tags:"  # TODO translate
+        shorthand_text: str = tab + "Shorthands:"  # TODO translate
+        subtags_text: str = tab + "Parent Tags:"  # TODO translate
+        aliases_text: str = tab + "Aliases:"  # TODO translate
+        colors_text: str = tab + "Colors:"  # TODO translate
+        ext_text: str = "File Extension List:"  # TODO translate
+        ext_type_text: str = "Extension List Type:"  # TODO translate
+        desc_text: str = (  # TODO translate
             "<br>Start and preview the results of the library migration process. "
             'The converted library will <i>not</i> be used unless you click "Finish Migration". '
             "<br><br>"
@@ -137,8 +137,8 @@ class JsonMigrationModal(QObject):
             "This process may take up to several minutes for larger libraries."
             "</i></center>"
         )
-        path_parity_text: str = tab + "Paths:"
-        field_parity_text: str = tab + "Fields:"
+        path_parity_text: str = tab + "Paths:"  # TODO translate
+        field_parity_text: str = tab + "Fields:"  # TODO translate
 
         self.entries_row: int = 0
         self.path_row: int = 1
@@ -153,7 +153,7 @@ class JsonMigrationModal(QObject):
 
         old_lib_container: QWidget = QWidget()
         old_lib_layout: QVBoxLayout = QVBoxLayout(old_lib_container)
-        old_lib_title: QLabel = QLabel("<h2>v9.4 Library</h2>")
+        old_lib_title: QLabel = QLabel("<h2>v9.4 Library</h2>")  # TODO translate
         old_lib_title.setAlignment(Qt.AlignmentFlag.AlignCenter)
         old_lib_layout.addWidget(old_lib_title)
 
@@ -215,7 +215,7 @@ class JsonMigrationModal(QObject):
 
         new_lib_container: QWidget = QWidget()
         new_lib_layout: QVBoxLayout = QVBoxLayout(new_lib_container)
-        new_lib_title: QLabel = QLabel("<h2>v9.5+ Library</h2>")
+        new_lib_title: QLabel = QLabel("<h2>v9.5+ Library</h2>")  # TODO translate
         new_lib_title.setAlignment(Qt.AlignmentFlag.AlignCenter)
         new_lib_layout.addWidget(new_lib_title)
 
@@ -291,13 +291,13 @@ class JsonMigrationModal(QObject):
         self.body_wrapper_01.layout().addWidget(desc_label)
         self.body_wrapper_01.layout().setSpacing(12)
 
-        back_button: QPushButtonWrapper = QPushButtonWrapper("Back")
-        start_button: QPushButtonWrapper = QPushButtonWrapper("Start and Preview")
+        back_button: QPushButtonWrapper = QPushButtonWrapper("Back")  # TODO translate
+        start_button: QPushButtonWrapper = QPushButtonWrapper("Start and Preview")  # TODO translate
         start_button.setMinimumWidth(120)
         start_button.clicked.connect(self.migrate)
         start_button.clicked.connect(lambda: finish_button.setDisabled(False))
         start_button.clicked.connect(lambda: start_button.setDisabled(True))
-        finish_button: QPushButtonWrapper = QPushButtonWrapper("Finish Migration")
+        finish_button: QPushButtonWrapper = QPushButtonWrapper("Finish Migration")  # TODO translate
         finish_button.setMinimumWidth(120)
         finish_button.setDisabled(True)
         finish_button.clicked.connect(self.finish_migration)
@@ -348,9 +348,9 @@ class JsonMigrationModal(QObject):
             lambda x: (
                 pb.setLabelText(f"<h4>{x}</h4>"),
                 self.update_sql_value_ui(show_msg_box=False)
-                if x == "Checking for Parity..."
+                if x == "Checking for Parity..."  # TODO translate
                 else (),
-                self.update_parity_ui() if x == "Checking for Parity..." else (),
+                self.update_parity_ui() if x == "Checking for Parity..." else (),  # TODO translate
             )
         )
         r = CustomRunnable(iterator.run)
@@ -367,21 +367,23 @@ class JsonMigrationModal(QObject):
         """Iterate over the library migration process."""
         try:
             # Convert JSON Library to SQLite
-            yield "Creating SQL Database Tables..."
+            yield "Creating SQL Database Tables..."  # TODO translate
             self.sql_lib = SqliteLibrary()
             self.temp_path: Path = (
                 self.json_lib.library_dir / TS_FOLDER_NAME / "migration_ts_library.sqlite"
             )
             self.sql_lib.storage_path = self.temp_path
             if self.temp_path.exists():
-                logger.info('Temporary migration file "temp_path" already exists. Removing...')
+                logger.info(
+                    'Temporary migration file "temp_path" already exists. Removing...'
+                )  # TODO translate
                 self.temp_path.unlink()
             self.sql_lib.open_sqlite_library(
                 self.json_lib.library_dir, is_new=True, add_default_data=False
             )
-            yield f"Migrating {len(self.json_lib.entries):,d} File Entries..."
+            yield f"Migrating {len(self.json_lib.entries):,d} File Entries..."  # TODO translate
             self.sql_lib.migrate_json_to_sqlite(self.json_lib)
-            yield "Checking for Parity..."
+            yield "Checking for Parity..."  # TODO translate
             check_set = set()
             check_set.add(self.check_field_parity())
             check_set.add(self.check_path_parity())
@@ -391,9 +393,9 @@ class JsonMigrationModal(QObject):
             check_set.add(self.check_color_parity())
             self.update_parity_ui()
             if False not in check_set:
-                yield "Migration Complete!"
+                yield "Migration Complete!"  # TODO translate
             else:
-                yield "Migration Complete, Discrepancies Found"
+                yield "Migration Complete, Discrepancies Found"  # TODO translate
             self.done = True
 
         except Exception as e:
@@ -432,16 +434,16 @@ class JsonMigrationModal(QObject):
             self.sql_lib.prefs(LibraryPrefs.IS_EXCLUDE_LIST),
             self.old_ext_type,
         )
-        logger.info("Parity check complete!")
+        logger.info("Parity check complete!")  # TODO translate
         if self.discrepancies:
-            logger.warning("Discrepancies found:")
+            logger.warning("Discrepancies found:")  # TODO translate
             logger.warning("\n".join(self.discrepancies))
             QApplication.beep()
             if not show_msg_box:
                 return
             msg_box = QMessageBox()
-            msg_box.setWindowTitle("Library Discrepancies Found")
-            msg_box.setText(
+            msg_box.setWindowTitle("Library Discrepancies Found")  # TODO translate
+            msg_box.setText(  # TODO translate
                 "Discrepancies were found between the original and converted library formats. "
                 "Please review and choose to whether continue with the migration or to cancel."
             )
@@ -546,7 +548,7 @@ class JsonMigrationModal(QObject):
                         "[Field Comparison]",
                         message=f"NEW  (SQL): SQL Entry ID mismatch: {json_entry.id+1}",
                     )
-                    self.discrepancies.append(
+                    self.discrepancies.append(  # TODO translate
                         f"[Field Comparison]:\nNEW (SQL): SQL Entry ID not found: {json_entry.id+1}"
                     )
                     self.field_parity = False
@@ -624,7 +626,7 @@ class JsonMigrationModal(QObject):
                     and sql_fields is not None
                     and (json_fields == sql_fields)
                 ):
-                    self.discrepancies.append(
+                    self.discrepancies.append(  # TODO translate
                         f"[Field Comparison]:\nOLD (JSON):{json_fields}\nNEW  (SQL):{sql_fields}"
                     )
                     self.field_parity = False
@@ -676,7 +678,7 @@ class JsonMigrationModal(QObject):
                     and json_subtags is not None
                     and (sql_subtags == json_subtags)
                 ):
-                    self.discrepancies.append(
+                    self.discrepancies.append(  # TODO translate
                         f"[Subtag Parity]:\nOLD (JSON):{json_subtags}\nNEW (SQL):{sql_subtags}"
                     )
                     self.subtag_parity = False
@@ -712,7 +714,7 @@ class JsonMigrationModal(QObject):
                     and json_aliases is not None
                     and (sql_aliases == json_aliases)
                 ):
-                    self.discrepancies.append(
+                    self.discrepancies.append(  # TODO translate
                         f"[Alias Parity]:\nOLD (JSON):{json_aliases}\nNEW (SQL):{sql_aliases}"
                     )
                     self.alias_parity = False
@@ -743,7 +745,7 @@ class JsonMigrationModal(QObject):
                 and json_shorthand is not None
                 and (sql_shorthand == json_shorthand)
             ):
-                self.discrepancies.append(
+                self.discrepancies.append(  # TODO translate
                     f"[Shorthand Parity]:\nOLD (JSON):{json_shorthand}\nNEW (SQL):{sql_shorthand}"
                 )
                 self.shorthand_parity = False
@@ -774,7 +776,7 @@ class JsonMigrationModal(QObject):
             )
 
             if not (sql_color is not None and json_color is not None and (sql_color == json_color)):
-                self.discrepancies.append(
+                self.discrepancies.append(  # TODO translate
                     f"[Color Parity]:\nOLD (JSON):{json_color}\nNEW (SQL):{sql_color}"
                 )
                 self.color_parity = False

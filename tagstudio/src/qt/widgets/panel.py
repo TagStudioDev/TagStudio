@@ -49,7 +49,7 @@ class PanelModal(QWidget):
 
         if not (save_callback or has_save):
             self.done_button = QPushButton()
-            self.done_button.setText("Done")
+            self.done_button.setText("Done")  # TODO translate
             self.done_button.setAutoDefault(True)
             self.done_button.clicked.connect(self.hide)
             if done_callback:
@@ -59,7 +59,7 @@ class PanelModal(QWidget):
 
         if save_callback or has_save:
             self.cancel_button = QPushButton()
-            self.cancel_button.setText("Cancel")
+            self.cancel_button.setText("Cancel")  # TODO translate
             self.cancel_button.clicked.connect(self.hide)
             self.cancel_button.clicked.connect(widget.reset)
             # self.cancel_button.clicked.connect(cancel_callback)
@@ -67,7 +67,7 @@ class PanelModal(QWidget):
             self.button_layout.addWidget(self.cancel_button)
 
             self.save_button = QPushButton()
-            self.save_button.setText("Save")
+            self.save_button.setText("Save")  # TODO translate
             self.save_button.setAutoDefault(True)
             self.save_button.clicked.connect(self.hide)
             self.save_button.clicked.connect(self.saved.emit)

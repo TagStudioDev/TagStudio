@@ -25,8 +25,8 @@ class MergeDuplicateEntries(QObject):
 
     def merge_entries(self):
         pw = ProgressWidget(
-            window_title="Merging Duplicate Entries",
-            label_text="Merging Duplicate Entries...",
+            window_title="Merging Duplicate Entries",  # TODO translate
+            label_text="Merging Duplicate Entries...",  # TODO translate
             cancel_button_text=None,
             minimum=0,
             maximum=self.tracker.groups_count,

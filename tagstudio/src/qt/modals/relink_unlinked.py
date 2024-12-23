@@ -17,12 +17,12 @@ class RelinkUnlinkedEntries(QObject):
 
     def repair_entries(self):
         def displayed_text(x):
-            text = f"Attempting to Relink {x}/{self.tracker.missing_files_count} Entries. \n"
-            text += f"{self.tracker.files_fixed_count} Successfully Relinked."
+            text = f"Attempting to Relink {x}/{self.tracker.missing_files_count} Entries. \n"  # TODO translate
+            text += f"{self.tracker.files_fixed_count} Successfully Relinked."  # TODO translate
             return text
 
         pw = ProgressWidget(
-            window_title="Relinking Entries",
+            window_title="Relinking Entries",  # TODO translate
             label_text="",
             cancel_button_text=None,
             minimum=0,

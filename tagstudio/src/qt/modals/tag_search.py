@@ -41,7 +41,7 @@ class TagSearchPanel(PanelWidget):
         self.search_field = QLineEdit()
         self.search_field.setObjectName("searchField")
         self.search_field.setMinimumSize(QSize(0, 32))
-        self.search_field.setPlaceholderText("Search Tags")
+        self.search_field.setPlaceholderText("Search Tags")  # TODO translate
         self.search_field.textEdited.connect(lambda: self.update_tags(self.search_field.text()))
         self.search_field.returnPressed.connect(
             lambda checked=False: self.on_return(self.search_field.text())

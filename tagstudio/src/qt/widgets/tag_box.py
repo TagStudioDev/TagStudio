@@ -75,7 +75,7 @@ class TagBoxWidget(FieldWidget):
         )
         tsp = TagSearchPanel(self.driver.lib)
         tsp.tag_chosen.connect(lambda x: self.add_tag_callback(x))
-        self.add_modal = PanelModal(tsp, title, "Add Tags")
+        self.add_modal = PanelModal(tsp, title, "Add Tags")  # TODO translate
         self.add_button.clicked.connect(
             lambda: (
                 tsp.update_tags(),
@@ -131,7 +131,7 @@ class TagBoxWidget(FieldWidget):
         self.edit_modal = PanelModal(
             build_tag_panel,
             tag.name,  # TODO - display name including subtags
-            "Edit Tag",
+            "Edit Tag",  # TODO translate
             done_callback=self.driver.preview_panel.update_widgets,
             has_save=True,
         )

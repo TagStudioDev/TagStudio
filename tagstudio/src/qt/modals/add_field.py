@@ -26,7 +26,7 @@ class AddFieldModal(QWidget):
         super().__init__()
         self.is_connected = False
         self.lib = library
-        self.setWindowTitle("Add Field")
+        self.setWindowTitle("Add Field")  # TODO translate
         self.setWindowModality(Qt.WindowModality.ApplicationModal)
         self.setMinimumSize(400, 300)
         self.root_layout = QVBoxLayout(self)
@@ -40,7 +40,7 @@ class AddFieldModal(QWidget):
             # 'text-align:center;'
             "font-weight:bold;" "font-size:14px;" "padding-top: 6px" ""
         )
-        self.title_widget.setText("Add Field")
+        self.title_widget.setText("Add Field")  # TODO translate
         self.title_widget.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         self.list_widget = QListWidget()
@@ -54,13 +54,13 @@ class AddFieldModal(QWidget):
         # self.cancel_button.setText('Cancel')
 
         self.cancel_button = QPushButton()
-        self.cancel_button.setText("Cancel")
+        self.cancel_button.setText("Cancel")  # TODO translate
         self.cancel_button.clicked.connect(self.hide)
         # self.cancel_button.clicked.connect(widget.reset)
         self.button_layout.addWidget(self.cancel_button)
 
         self.save_button = QPushButton()
-        self.save_button.setText("Add")
+        self.save_button.setText("Add")  # TODO translate
         # self.save_button.setAutoDefault(True)
         self.save_button.setDefault(True)
         self.save_button.clicked.connect(self.hide)

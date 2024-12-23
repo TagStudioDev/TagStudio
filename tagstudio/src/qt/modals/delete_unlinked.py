@@ -29,7 +29,7 @@ class DeleteUnlinkedEntriesModal(QWidget):
         super().__init__()
         self.driver = driver
         self.tracker = tracker
-        self.setWindowTitle("Delete Unlinked Entries")
+        self.setWindowTitle("Delete Unlinked Entries")  # TODO translate
         self.setWindowModality(Qt.WindowModality.ApplicationModal)
         self.setMinimumSize(500, 400)
         self.root_layout = QVBoxLayout(self)
@@ -40,7 +40,7 @@ class DeleteUnlinkedEntriesModal(QWidget):
         self.desc_widget.setWordWrap(True)
         self.desc_widget.setText(f"""
 		Are you sure you want to delete the following {self.tracker.missing_files_count} entries?
-		""")
+		""")  # TODO translate
         self.desc_widget.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         self.list_view = QListView()
@@ -53,13 +53,13 @@ class DeleteUnlinkedEntriesModal(QWidget):
         self.button_layout.addStretch(1)
 
         self.cancel_button = QPushButton()
-        self.cancel_button.setText("&Cancel")
+        self.cancel_button.setText("&Cancel")  # TODO translate
         self.cancel_button.setDefault(True)
         self.cancel_button.clicked.connect(self.hide)
         self.button_layout.addWidget(self.cancel_button)
 
         self.delete_button = QPushButton()
-        self.delete_button.setText("&Delete")
+        self.delete_button.setText("&Delete")  # TODO translate
         self.delete_button.clicked.connect(self.hide)
         self.delete_button.clicked.connect(lambda: self.delete_entries())
         self.button_layout.addWidget(self.delete_button)
@@ -71,7 +71,7 @@ class DeleteUnlinkedEntriesModal(QWidget):
     def refresh_list(self):
         self.desc_widget.setText(f"""
 		Are you sure you want to delete the following {self.tracker.missing_files_count} entries?
-		""")
+		""")  # TODO translate
 
         self.model.clear()
         for i in self.tracker.missing_files:
@@ -81,10 +81,10 @@ class DeleteUnlinkedEntriesModal(QWidget):
 
     def delete_entries(self):
         def displayed_text(x):
-            return f"Deleting {x}/{self.tracker.missing_files_count} Unlinked Entries"
+            return f"Deleting {x}/{self.tracker.missing_files_count} Unlinked Entries"  # TODO translate
 
         pw = ProgressWidget(
-            window_title="Deleting Entries",
+            window_title="Deleting Entries",  # TODO translate
             label_text="",
             cancel_button_text=None,
             minimum=0,

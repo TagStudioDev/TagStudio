@@ -30,7 +30,7 @@ class MirrorEntriesModal(QWidget):
     def __init__(self, driver: "QtDriver", tracker: DupeRegistry):
         super().__init__()
         self.driver = driver
-        self.setWindowTitle("Mirror Entries")
+        self.setWindowTitle("Mirror Entries")  # TODO translate
         self.setWindowModality(Qt.WindowModality.ApplicationModal)
         self.setMinimumSize(500, 400)
         self.root_layout = QVBoxLayout(self)
@@ -43,7 +43,7 @@ class MirrorEntriesModal(QWidget):
 
         self.desc_widget.setText(f"""
 		Are you sure you want to mirror the following {self.tracker.groups_count} Entries?
-		""")
+		""")  # TODO translate
         self.desc_widget.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         self.list_view = QListView()
@@ -56,13 +56,13 @@ class MirrorEntriesModal(QWidget):
         self.button_layout.addStretch(1)
 
         self.cancel_button = QPushButton()
-        self.cancel_button.setText("&Cancel")
+        self.cancel_button.setText("&Cancel")  # TODO translate
         self.cancel_button.setDefault(True)
         self.cancel_button.clicked.connect(self.hide)
         self.button_layout.addWidget(self.cancel_button)
 
         self.mirror_button = QPushButton()
-        self.mirror_button.setText("&Mirror")
+        self.mirror_button.setText("&Mirror")  # TODO translate
         self.mirror_button.clicked.connect(self.hide)
         self.mirror_button.clicked.connect(self.mirror_entries)
         self.button_layout.addWidget(self.mirror_button)
@@ -82,10 +82,10 @@ class MirrorEntriesModal(QWidget):
 
     def mirror_entries(self):
         def displayed_text(x):
-            return f"Mirroring {x + 1}/{self.tracker.groups_count} Entries..."
+            return f"Mirroring {x + 1}/{self.tracker.groups_count} Entries..."  # TODO translate
 
         pw = ProgressWidget(
-            window_title="Mirroring Entries",
+            window_title="Mirroring Entries",  # TODO translate
             label_text="",
             cancel_button_text=None,
             minimum=0,
