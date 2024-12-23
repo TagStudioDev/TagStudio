@@ -872,7 +872,7 @@ class Library:
         self,
         tag: Tag,
         subtag_ids: list[int] | set[int] | None = None,
-        alias_names: list[int] | set[str] | None = None,
+        alias_names: list[str] | set[str] | None = None,
         alias_ids: list[int] | set[int] | None = None,
     ) -> Tag | None:
         with Session(self.engine, expire_on_commit=False) as session:
@@ -1049,7 +1049,7 @@ class Library:
         self,
         tag: Tag,
         subtag_ids: list[int] | set[int] | None = None,
-        alias_names: list[int] | set[str] | None = None,
+        alias_names: list[str] | set[str] | None = None,
         alias_ids: list[int] | set[int] | None = None,
     ) -> None:
         """Edit a Tag in the Library."""
