@@ -46,7 +46,7 @@ class Translator:
         for k in self._strings:
             self._strings[k].value = translated.get(k, None)
 
-    def translate_widget(self, widget: QObject, key: str, **kwargs):
+    def translate_qobject(self, widget: QObject, key: str, **kwargs):
         """Translates the text of the QObject using :func:`translate_with_setter`."""
         if isinstance(widget, (QLabel, QAction, QPushButton)):
             self.translate_with_setter(widget.setText, key, **kwargs)
@@ -66,9 +66,9 @@ class Translator:
 
         if key in self._strings:
             self._strings[key].changed.connect(set_text)
-        set_text(self.translate(key))
+        set_text(self.translate_formatted(key))
 
-    def translate(self, key: str, **kwargs) -> str:
+    def translate_formatted(self, key: str, **kwargs) -> str:
         return self[key].format(**kwargs)
 
     def __getitem__(self, key: str) -> str:
