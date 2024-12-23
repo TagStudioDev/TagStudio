@@ -10,6 +10,8 @@ from pathlib import Path
 
 logging.basicConfig(format="%(message)s", level=logging.INFO)
 
+FILETYPE_EQUIVALENTS = [set(["jpg", "jpeg"])]
+
 
 class MediaType(str, Enum):
     """Names of media types."""

@@ -619,6 +619,7 @@ class Library:
             )
 
             session.expunge_all()
+
             return res
 
     def get_all_child_tag_ids(self, tag_id: int) -> list[int]:
@@ -901,9 +902,9 @@ class Library:
     def add_tag(
         self,
         tag: Tag,
-        subtag_ids: set[int] | None = None,
-        alias_names: set[str] | None = None,
-        alias_ids: set[int] | None = None,
+        subtag_ids: list[int] | set[int] | None = None,
+        alias_names: list[str] | set[str] | None = None,
+        alias_ids: list[int] | set[int] | None = None,
     ) -> Tag | None:
         with Session(self.engine, expire_on_commit=False) as session:
             try:
@@ -1077,9 +1078,9 @@ class Library:
     def update_tag(
         self,
         tag: Tag,
-        subtag_ids: set[int] | None = None,
-        alias_names: set[str] | None = None,
-        alias_ids: set[int] | None = None,
+        subtag_ids: list[int] | set[int] | None = None,
+        alias_names: list[str] | set[str] | None = None,
+        alias_ids: list[int] | set[int] | None = None,
     ) -> None:
         """Edit a Tag in the Library."""
         self.add_tag(tag, subtag_ids, alias_names, alias_ids)
