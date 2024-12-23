@@ -15,7 +15,7 @@ class PanelModal(QWidget):
     # figure out what you want from this.
     def __init__(
         self,
-        widget,
+        widget: "PanelWidget",
         title: str,
         window_title: str,
         done_callback: Callable | None = None,
@@ -88,8 +88,10 @@ class PanelModal(QWidget):
 
         self.root_layout.addWidget(self.title_widget)
         self.root_layout.addWidget(widget)
+        widget.parent_modal = self
         self.root_layout.setStretch(1, 2)
         self.root_layout.addWidget(self.button_container)
+        widget.parent_post_init()
 
     def closeEvent(self, event):  # noqa: N802
         self.done_button.click()
@@ -100,6 +102,7 @@ class PanelWidget(QWidget):
     """Used for widgets that go in a modal panel, ex. for editing or searching."""
 
     done = Signal()
+    parent_modal: PanelModal = None
     panel_save_button: QPushButton | None = None
     panel_cancel_button: QPushButton | None = None
     panel_done_button: QPushButton | None = None
@@ -111,6 +114,9 @@ class PanelWidget(QWidget):
         pass
 
     def reset(self):
+        pass
+
+    def parent_post_init(self):
         pass
 
     def add_callback(self, callback: Callable, event: str = "returnPressed"):

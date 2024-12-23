@@ -106,6 +106,8 @@ class BuildTagPanel(PanelWidget):
         self.aliases_table.verticalHeader().setVisible(False)
         self.aliases_table.horizontalHeader().setStretchLastSection(True)
         self.aliases_table.setColumnWidth(0, 35)
+        self.aliases_table.setTabKeyNavigation(False)
+        self.aliases_table.setFocusPolicy(Qt.FocusPolicy.NoFocus)
 
         self.alias_add_button = QPushButton()
         self.alias_add_button.setText("+")
@@ -131,6 +133,7 @@ class BuildTagPanel(PanelWidget):
         self.subtags_scroll_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
 
         self.scroll_area = QScrollArea()
+        self.scroll_area.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         # self.scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOn)
         self.scroll_area.setWidgetResizable(True)
         self.scroll_area.setFrameShadow(QFrame.Shadow.Plain)
@@ -268,7 +271,7 @@ class BuildTagPanel(PanelWidget):
         while self.subtags_scroll_layout.itemAt(0):
             self.subtags_scroll_layout.takeAt(0).widget().deleteLater()
 
-        last: QWidget = self.alias_add_button
+        last: QWidget = self.aliases_table.cellWidget(self.aliases_table.rowCount() - 1, 1)
         c = QWidget()
         layout = QVBoxLayout(c)
         layout.setContentsMargins(0, 0, 0, 0)
@@ -281,7 +284,7 @@ class BuildTagPanel(PanelWidget):
             self.setTabOrder(last, tw.bg_button)
             last = tw.bg_button
         self.subtags_scroll_layout.addWidget(c)
-        self.setTabOrder(last, self.subtags_add_button)
+        self.setTabOrder(last, self.name_field)
 
     def add_aliases(self):
         names: set[str] = set()
@@ -316,6 +319,7 @@ class BuildTagPanel(PanelWidget):
 
         self.alias_names.clear()
 
+        last: QWidget = self.panel_save_button or self.color_field
         for alias_id in self.alias_ids:
             alias = self.lib.get_alias(self.tag.id, alias_id)
 
@@ -341,6 +345,12 @@ class BuildTagPanel(PanelWidget):
             self.aliases_table.insertRow(row)
             self.aliases_table.setCellWidget(row, 1, new_item)
             self.aliases_table.setCellWidget(row, 0, remove_btn)
+
+            self.setTabOrder(last, self.aliases_table.cellWidget(row, 1))
+            self.setTabOrder(
+                self.aliases_table.cellWidget(row, 1), self.aliases_table.cellWidget(row, 0)
+            )
+            last = self.aliases_table.cellWidget(row, 0)
 
     def _alias_name_change(self, item: CustomTableItem):
         self.new_alias_names[item.id] = item.text()
@@ -369,8 +379,6 @@ class BuildTagPanel(PanelWidget):
                 self.color_field.setCurrentIndex(i)
                 break
 
-        self.name_field.selectAll()
-
     def on_name_changed(self):
         is_empty = not self.name_field.text().strip()
 
@@ -396,3 +404,14 @@ class BuildTagPanel(PanelWidget):
 
         logger.info("built tag", tag=tag)
         return tag
+
+    def parent_post_init(self):
+        self.setTabOrder(self.name_field, self.shorthand_field)
+        self.setTabOrder(self.shorthand_field, self.alias_add_button)
+        self.setTabOrder(self.alias_add_button, self.subtags_add_button)
+        self.setTabOrder(self.subtags_add_button, self.color_field)
+        self.setTabOrder(self.color_field, self.panel_cancel_button)
+        self.setTabOrder(self.panel_cancel_button, self.panel_save_button)
+        self.setTabOrder(self.panel_save_button, self.aliases_table.cellWidget(0, 1))
+        self.name_field.selectAll()
+        self.name_field.setFocus()
