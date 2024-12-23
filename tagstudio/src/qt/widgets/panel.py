@@ -16,8 +16,8 @@ class PanelModal(QWidget):
     def __init__(
         self,
         widget,
-        title: str,
-        window_title: str,
+        title: str = "",
+        window_title: str = "",
         done_callback: Callable | None = None,
         save_callback: Callable | None = None,
         has_save: bool = False,
@@ -36,7 +36,7 @@ class PanelModal(QWidget):
         self.title_widget.setObjectName("fieldTitle")
         self.title_widget.setWordWrap(True)
         self.title_widget.setStyleSheet("font-weight:bold;" "font-size:14px;" "padding-top: 6px")
-        self.title_widget.setText(title)
+        self.setTitle(title)
         self.title_widget.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         self.button_container = QWidget()
@@ -94,6 +94,9 @@ class PanelModal(QWidget):
     def closeEvent(self, event):  # noqa: N802
         self.done_button.click()
         event.accept()
+
+    def setTitle(self, title: str):  # noqa: N802
+        self.title_widget.setText(title)
 
 
 class PanelWidget(QWidget):
