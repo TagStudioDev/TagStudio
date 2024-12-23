@@ -4,9 +4,9 @@ from typing import Callable
 import ujson
 from PySide6.QtCore import QObject, Signal
 from PySide6.QtGui import QAction
-from PySide6.QtWidgets import QLabel, QPushButton
+from PySide6.QtWidgets import QLabel, QMenu, QPushButton
 
-DEFAULT_TRANSLATION = "en"
+DEFAULT_TRANSLATION = "de"
 
 
 class TranslatedString(QObject):
@@ -18,6 +18,7 @@ class TranslatedString(QObject):
     def __init__(self, value: str):
         super().__init__()
         self.__default_value = value
+        self.__value = self.__default_value  # TODO remove this line
 
     @property
     def value(self) -> str:
@@ -26,7 +27,7 @@ class TranslatedString(QObject):
     @value.setter
     def value(self, value: str):
         if self.__value != value:
-            self.__value = value
+            self.__value = value or "Not Translated"  # TODO remove `or "Not Translated"`
             self.changed.emit(self.__value)
 
 
