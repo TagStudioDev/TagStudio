@@ -72,14 +72,14 @@ class TagDatabasePanel(PanelWidget):
         self.update_tags()
 
     def build_tag(self):
+        panel = BuildTagPanel(self.lib)
         self.modal = PanelModal(
-            BuildTagPanel(self.lib),
+            panel,
             "New Tag",
             "Add Tag",
             has_save=True,
         )
 
-        panel: BuildTagPanel = self.modal.widget
         self.modal.saved.connect(
             lambda: (
                 self.lib.add_tag(
