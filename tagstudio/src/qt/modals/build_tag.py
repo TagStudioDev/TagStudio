@@ -194,10 +194,10 @@ class BuildTagPanel(PanelWidget):
         self.root_layout.addWidget(self.subtags_widget)
         self.root_layout.addWidget(self.color_widget)
 
-        self.subtag_ids: list[int] = list()
-        self.alias_ids: list[int] = list()
-        self.alias_names: list[str] = list()
-        self.new_alias_names: dict = dict()
+        self.subtag_ids: list[int] = []
+        self.alias_ids: list[int] = []
+        self.alias_names: list[str] = []
+        self.new_alias_names: dict = {}
         self.new_item_id = sys.maxsize
 
         self.set_tag(tag or Tag(name="New Tag"))
@@ -344,8 +344,6 @@ class BuildTagPanel(PanelWidget):
         self.new_alias_names[item.id] = item.text()
 
     def set_tag(self, tag: Tag):
-        self.tag = tag
-
         self.tag = tag
 
         logger.info("setting tag", tag=tag)
