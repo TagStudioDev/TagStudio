@@ -8,7 +8,7 @@ from PySide6.QtWidgets import QLabel, QMenu, QMessageBox, QPushButton
 
 from .helpers.qbutton_wrapper import QPushButtonWrapper
 
-DEFAULT_TRANSLATION = "de"
+DEFAULT_TRANSLATION = "en"
 
 
 class TranslatedString(QObject):
@@ -20,7 +20,6 @@ class TranslatedString(QObject):
     def __init__(self, value: str):
         super().__init__()
         self.__default_value = value
-        self.__value = self.__default_value  # TODO remove this line
 
     @property
     def value(self) -> str:
@@ -29,7 +28,7 @@ class TranslatedString(QObject):
     @value.setter
     def value(self, value: str):
         if self.__value != value:
-            self.__value = value or "Not Translated"  # TODO remove `or "Not Translated"`
+            self.__value = value
             self.changed.emit(self.__value)
 
 
@@ -75,7 +74,7 @@ class Translator:
         return self[key].format(**kwargs)
 
     def __getitem__(self, key: str) -> str:
-        return self._strings[key].value if key in self._strings else "Not Translated"
+        return "???"  # self._strings[key].value if key in self._strings else "Not Translated"
 
 
 Translations = Translator()
