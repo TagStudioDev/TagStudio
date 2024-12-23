@@ -74,7 +74,8 @@ class Translator:
         return self[key].format(**kwargs)
 
     def __getitem__(self, key: str) -> str:
-        return "???"  # self._strings[key].value if key in self._strings else "Not Translated"
+        # return "???"
+        return self._strings[key].value if key in self._strings else "Not Translated"
 
 
 Translations = Translator()
