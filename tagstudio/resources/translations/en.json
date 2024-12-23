@@ -163,7 +163,6 @@
     "tag.parent_tags": "Parent Tags",
     "tag.search_for_tag": "Search for Tag",
     "tag.shorthand": "Shorthand",
-    "tag.remove_alias": "Remove selected alias",
     "tag.tag_name_required": "Tag Name (Required)",
     "view.size.0": "Mini",
     "view.size.1": "Small",
@@ -181,5 +180,5 @@
     "drop_import.progress.label.plural": "Importing New Files...\n{count} Files Imported.{suffix}",
     "drop_import.progress.window_title": "Import Files",
     "drop_import.duplicates_choice.singular": "The following file has a filename that already exists in the library.",
-    "drop_import.duplicates_choice.plural": "The following {count} files have filenames that already exist in the library.",
+    "drop_import.duplicates_choice.plural": "The following {count} files have filenames that already exist in the library."
 }

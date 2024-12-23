@@ -262,6 +262,7 @@ compile_commands.json
 tagstudio/tests/fixtures/library/*
 tagstudio/tests/fixtures/json_library/.TagStudio/*.sqlite
 TagStudio.ini
+*.sqlite-journal
 
 .envrc
 .direnv
