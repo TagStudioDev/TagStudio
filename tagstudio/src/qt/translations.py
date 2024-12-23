@@ -68,7 +68,7 @@ class Translator:
 
         if key in self._strings:
             self._strings[key].changed.connect(set_text)
-        set_text(self.translate_formatted(key))
+        set_text(self.translate_formatted(key, **kwargs))
 
     def translate_formatted(self, key: str, **kwargs) -> str:
         return self[key].format(**kwargs)
