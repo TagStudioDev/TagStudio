@@ -6,11 +6,13 @@
 
 import platform
 
+from .translations import Translations
+
 
 class PlatformStrings:
-    open_file_str: str = "Open in file explorer"
+    open_file_str: str = Translations["file.open_file.other"]
 
     if platform.system() == "Windows":
-        open_file_str = "Open in Explorer"  # TODO translate
+        open_file_str = Translations["file.open_file.windows"]
     elif platform.system() == "Darwin":
-        open_file_str = "Reveal in Finder"  # TODO translate
+        open_file_str = Translations["file.open_file.macos"]

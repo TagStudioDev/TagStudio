@@ -33,6 +33,8 @@ from src.qt.platform_strings import PlatformStrings
 from src.qt.widgets.thumb_button import ThumbButton
 from src.qt.widgets.thumb_renderer import ThumbRenderer
 
+from ..translations import Translations
+
 if TYPE_CHECKING:
     from src.qt.ts_qt import QtDriver
 
@@ -217,7 +219,8 @@ class ItemThumb(FlowWidget):
         self.thumb_button.setContextMenuPolicy(Qt.ContextMenuPolicy.ActionsContextMenu)
 
         self.opener = FileOpenerHelper("")
-        open_file_action = QAction("Open file", self)  # TODO translate
+        open_file_action = QAction(self)
+        Translations.translate_qobject(open_file_action, "file.open_file")
         open_file_action.triggered.connect(self.opener.open_file)
         open_explorer_action = QAction(PlatformStrings.open_file_str, self)
         open_explorer_action.triggered.connect(self.opener.open_explorer)
@@ -306,7 +309,8 @@ class ItemThumb(FlowWidget):
             self.cb_layout.addWidget(badge)
 
         # Filename Label =======================================================
-        self.file_label = QLabel(text="Filename")  # TODO translate
+        self.file_label = QLabel()
+        Translations.translate_qobject(self.file_label, "generic.filename")
         self.file_label.setStyleSheet(ItemThumb.filename_style)
         self.file_label.setMaximumHeight(self.label_height)
         if not show_filename_label:

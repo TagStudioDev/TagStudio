@@ -25,6 +25,8 @@ from PySide6.QtWidgets import (QComboBox, QFrame, QGridLayout,
 from src.qt.pagination import Pagination
 from src.qt.widgets.landing import LandingWidget
 
+from .translations import Translations
+
 # Only import for type checking/autocompletion, will not be imported at runtime.
 if typing.TYPE_CHECKING:
     from src.qt.ts_qt import QtDriver
@@ -77,6 +79,8 @@ class Ui_MainWindow(QMainWindow):
         # Thumbnail Size placeholder
         self.thumb_size_combobox = QComboBox(self.centralwidget)
         self.thumb_size_combobox.setObjectName(u"thumbSizeComboBox")
+        Translations.translate_with_setter(self.thumb_size_combobox.setPlaceholderText, "home.thumbnail_size")
+        self.thumb_size_combobox.setCurrentText("")
         sizePolicy = QSizePolicy(QSizePolicy.Minimum, QSizePolicy.Fixed)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
@@ -128,7 +132,7 @@ class Ui_MainWindow(QMainWindow):
         self.horizontalLayout_2 = QHBoxLayout()
         self.horizontalLayout_2.setObjectName(u"horizontalLayout_2")
         self.horizontalLayout_2.setSizeConstraint(QLayout.SetMinimumSize)
-        self.backButton = QPushButton(self.centralwidget)
+        self.backButton = QPushButton("<", self.centralwidget)
         self.backButton.setObjectName(u"backButton")
         self.backButton.setMinimumSize(QSize(0, 32))
         self.backButton.setMaximumSize(QSize(32, 16777215))
@@ -139,7 +143,7 @@ class Ui_MainWindow(QMainWindow):
 
         self.horizontalLayout_2.addWidget(self.backButton)
 
-        self.forwardButton = QPushButton(self.centralwidget)
+        self.forwardButton = QPushButton(">", self.centralwidget)
         self.forwardButton.setObjectName(u"forwardButton")
         self.forwardButton.setMinimumSize(QSize(0, 32))
         self.forwardButton.setMaximumSize(QSize(32, 16777215))
@@ -152,6 +156,7 @@ class Ui_MainWindow(QMainWindow):
         self.horizontalLayout_2.addWidget(self.forwardButton)
 
         self.searchField = QLineEdit(self.centralwidget)
+        Translations.translate_with_setter(self.searchField.setPlaceholderText, "home.search_entries")
         self.searchField.setObjectName(u"searchField")
         self.searchField.setMinimumSize(QSize(0, 32))
         font2 = QFont()
@@ -167,6 +172,7 @@ class Ui_MainWindow(QMainWindow):
         self.horizontalLayout_2.addWidget(self.searchField)
 
         self.searchButton = QPushButton(self.centralwidget)
+        Translations.translate_qobject(self.searchButton, "home.search")
         self.searchButton.setObjectName(u"searchButton")
         self.searchButton.setMinimumSize(QSize(0, 32))
         self.searchButton.setFont(font2)
@@ -186,32 +192,8 @@ class Ui_MainWindow(QMainWindow):
         self.statusbar.setSizePolicy(sizePolicy1)
         MainWindow.setStatusBar(self.statusbar)
 
-        self.retranslateUi(MainWindow)
-
         QMetaObject.connectSlotsByName(MainWindow)
     # setupUi
-
-    def retranslateUi(self, MainWindow):
-        MainWindow.setWindowTitle(QCoreApplication.translate(
-            "MainWindow", u"MainWindow", None))
-        # Navigation buttons
-        self.backButton.setText(
-            QCoreApplication.translate("MainWindow", u"<", None)) #TODO translate
-        self.forwardButton.setText(
-            QCoreApplication.translate("MainWindow", u">", None)) #TODO translate
-  
-        # Search field
-        self.searchField.setPlaceholderText(
-            QCoreApplication.translate("MainWindow", u"Search Entries", None)) #TODO translate
-        self.searchButton.setText(
-            QCoreApplication.translate("MainWindow", u"Search", None)) #TODO translate
-  
-        self.thumb_size_combobox.setCurrentText("")
-  
-        # Thumbnail size selector
-        self.thumb_size_combobox.setPlaceholderText(
-            QCoreApplication.translate("MainWindow", u"Thumbnail Size", None)) #TODO translate
-    # retranslateUi
 
     def moveEvent(self, event) -> None:
         # time.sleep(0.02)  # sleep for 20ms

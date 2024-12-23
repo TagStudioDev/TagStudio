@@ -50,6 +50,9 @@
     "file.not_found": "File Not Found",
     "file.open_file_with": "Open file with",
     "file.open_file": "Open file",
+    "file.open_file.windows": "Open file in Explorer",
+    "file.open_file.macos": "Open file in Finder",
+    "file.open_file.other": "Open file in file explorer",
     "file.open_location.generic": "Show file in explorer",
     "file.open_location.mac": "Reveal in Finder",
     "file.open_location.windows": "Show in File Explorer",
@@ -81,6 +84,7 @@
     "generic.navigation.next": "Next",
     "generic.paste": "Paste",
     "generic.recent_libraries": "Recent Libraries",
+    "generic.filename": "Filename",
     "help.visit_github": "Visit GitHub Repository",
     "home.search_entries": "Search Entries",
     "home.search_library": "Search Library",
@@ -180,5 +184,6 @@
     "drop_import.progress.label.plural": "Importing New Files...\n{count} Files Imported.{suffix}",
     "drop_import.progress.window_title": "Import Files",
     "drop_import.duplicates_choice.singular": "The following file has a filename that already exists in the library.",
-    "drop_import.duplicates_choice.plural": "The following {count} files have filenames that already exist in the library."
+    "drop_import.duplicates_choice.plural": "The following {count} files have filenames that already exist in the library.",
+    "landing.open_create_library": "Open/Create Library {shortcut}"
 }
