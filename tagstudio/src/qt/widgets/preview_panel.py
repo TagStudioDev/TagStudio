@@ -62,6 +62,8 @@ from src.qt.widgets.text_line_edit import EditTextLine
 from src.qt.widgets.thumb_renderer import ThumbRenderer
 from src.qt.widgets.video_player import VideoPlayer
 
+from ..translations import Translations
+
 if typing.TYPE_CHECKING:
     from src.qt.ts_qt import QtDriver
 
@@ -119,7 +121,8 @@ class PreviewPanel(QWidget):
         )
         date_style = "font-size:12px;"
 
-        self.open_file_action = QAction("Open file", self)  # TODO translate
+        self.open_file_action = QAction(self)
+        Translations.translate_qobject(self.open_file_action, "file.open_file")
         self.open_explorer_action = QAction(PlatformStrings.open_file_str, self)
 
         self.preview_img = QPushButtonWrapper()
@@ -279,7 +282,7 @@ class PreviewPanel(QWidget):
         self.add_field_button.setCursor(Qt.CursorShape.PointingHandCursor)
         self.add_field_button.setMinimumSize(96, 28)
         self.add_field_button.setMaximumSize(96, 28)
-        self.add_field_button.setText("Add Field")  # TODO translate
+        Translations.translate_qobject(self.add_field_button, "library.field.add")
         self.afb_layout.addWidget(self.add_field_button)
         self.add_field_modal = AddFieldModal(self.lib)
         self.place_add_field_button()
@@ -303,7 +306,7 @@ class PreviewPanel(QWidget):
             self.driver.frame_content[grid_idx] = result
 
     def remove_field_prompt(self, name: str) -> str:
-        return f'Are you sure you want to remove field "{name}"?'  # TODO translate
+        return Translations.translate_formatted("library.field.confirm_remove", name=name)
 
     def fill_libs_widget(self, layout: QVBoxLayout):
         settings = self.driver.settings
@@ -341,7 +344,8 @@ class PreviewPanel(QWidget):
         # remove any potential previous items
         clear_layout(layout)
 
-        label = QLabel("Recent Libraries")  # TODO translate
+        label = QLabel()
+        Translations.translate_qobject(label, "generic.recent_libraries")
         label.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         row_layout = QHBoxLayout()
@@ -379,7 +383,7 @@ class PreviewPanel(QWidget):
             lib = Path(full_val)
             if not lib.exists() or not (lib / TS_FOLDER_NAME).exists():
                 button.setDisabled(True)
-                button.setToolTip("Location is missing")  # TODO translate
+                Translations.translate_with_setter(button.setToolTip, "library.missing")
 
             def open_library_button_clicked(path):
                 return lambda: self.driver.open_library(Path(path))
@@ -1096,8 +1100,8 @@ class PreviewPanel(QWidget):
         remove_mb.setWindowTitle("Remove Field")  # TODO translate
         remove_mb.setIcon(QMessageBox.Icon.Warning)
         cancel_button = remove_mb.addButton(
-            "&Cancel", QMessageBox.ButtonRole.DestructiveRole
-        )  # TODO translate
+            Translations["generic.cancel_alt"], QMessageBox.ButtonRole.DestructiveRole
+        )
         remove_mb.addButton("&Remove", QMessageBox.ButtonRole.RejectRole)  # TODO translate
         # remove_mb.setStandardButtons(QMessageBox.StandardButton.Cancel)
         remove_mb.setDefaultButton(cancel_button)

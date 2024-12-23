@@ -259,7 +259,7 @@ class QtDriver(DriverMixin, QObject):
         file_menu = QMenu(menu_bar)
         Translations.translate_qobject(file_menu, "menu.file")
         edit_menu = QMenu(menu_bar)
-        Translations.translate_qobject(edit_menu, "menu.edit")
+        Translations.translate_qobject(edit_menu, "generic.edit_alt")
         view_menu = QMenu(menu_bar)
         Translations.translate_qobject(view_menu, "menu.view")
         tools_menu = QMenu(menu_bar)

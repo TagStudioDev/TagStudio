@@ -7,6 +7,8 @@ from typing import Callable
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import QHBoxLayout, QLabel, QPushButton, QVBoxLayout, QWidget
 
+from ..translations import Translations
+
 
 class PanelModal(QWidget):
     saved = Signal()
@@ -49,7 +51,7 @@ class PanelModal(QWidget):
 
         if not (save_callback or has_save):
             self.done_button = QPushButton()
-            self.done_button.setText("Done")  # TODO translate
+            Translations.translate_qobject(self.done_button, "generic.done")
             self.done_button.setAutoDefault(True)
             self.done_button.clicked.connect(self.hide)
             if done_callback:
@@ -59,7 +61,7 @@ class PanelModal(QWidget):
 
         if save_callback or has_save:
             self.cancel_button = QPushButton()
-            self.cancel_button.setText("Cancel")  # TODO translate
+            Translations.translate_qobject(self.cancel_button, "generic.cancel")
             self.cancel_button.clicked.connect(self.hide)
             self.cancel_button.clicked.connect(widget.reset)
             # self.cancel_button.clicked.connect(cancel_callback)
@@ -67,7 +69,7 @@ class PanelModal(QWidget):
             self.button_layout.addWidget(self.cancel_button)
 
             self.save_button = QPushButton()
-            self.save_button.setText("Save")  # TODO translate
+            Translations.translate_qobject(self.save_button, "generic.save")
             self.save_button.setAutoDefault(True)
             self.save_button.clicked.connect(self.hide)
             self.save_button.clicked.connect(self.saved.emit)
