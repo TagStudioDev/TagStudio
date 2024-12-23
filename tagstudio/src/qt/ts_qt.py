@@ -522,7 +522,7 @@ class QtDriver(DriverMixin, QObject):
         msg_box.setIcon(QMessageBox.Icon.Critical)
         msg_box.setText(message)
         msg_box.setWindowTitle(Translations["window.title.error"])
-        msg_box.addButton(Translations["window.button.close"], QMessageBox.ButtonRole.AcceptRole)
+        msg_box.addButton(Translations["generic.close"], QMessageBox.ButtonRole.AcceptRole)
 
         # Show the message box
         msg_box.exec()

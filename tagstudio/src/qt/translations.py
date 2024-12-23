@@ -4,7 +4,7 @@ from typing import Callable
 import ujson
 from PySide6.QtCore import QObject, Signal
 from PySide6.QtGui import QAction
-from PySide6.QtWidgets import QLabel, QMenu, QPushButton
+from PySide6.QtWidgets import QLabel, QMenu, QMessageBox, QPushButton
 
 DEFAULT_TRANSLATION = "de"
 
@@ -49,7 +49,7 @@ class Translator:
 
     def translate_qobject(self, widget: QObject, key: str, **kwargs):
         """Translates the text of the QObject using :func:`translate_with_setter`."""
-        if isinstance(widget, (QLabel, QAction, QPushButton)):
+        if isinstance(widget, (QLabel, QAction, QPushButton, QMessageBox)):
             self.translate_with_setter(widget.setText, key, **kwargs)
         elif isinstance(widget, (QMenu)):
             self.translate_with_setter(widget.setTitle, key, **kwargs)

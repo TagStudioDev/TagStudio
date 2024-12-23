@@ -17,6 +17,8 @@ from PySide6.QtWidgets import (
 from src.core.utils.missing_files import MissingRegistry
 from src.qt.widgets.progress import ProgressWidget
 
+from ..translations import Translations
+
 # Only import for type checking/autocompletion, will not be imported at runtime.
 if typing.TYPE_CHECKING:
     from src.qt.ts_qt import QtDriver
@@ -29,7 +31,7 @@ class DeleteUnlinkedEntriesModal(QWidget):
         super().__init__()
         self.driver = driver
         self.tracker = tracker
-        self.setWindowTitle("Delete Unlinked Entries")  # TODO translate
+        Translations.translate_with_setter(self.setWindowTitle, "entries.unlinked.delete")
         self.setWindowModality(Qt.WindowModality.ApplicationModal)
         self.setMinimumSize(500, 400)
         self.root_layout = QVBoxLayout(self)
@@ -38,9 +40,11 @@ class DeleteUnlinkedEntriesModal(QWidget):
         self.desc_widget = QLabel()
         self.desc_widget.setObjectName("descriptionLabel")
         self.desc_widget.setWordWrap(True)
-        self.desc_widget.setText(f"""
-		Are you sure you want to delete the following {self.tracker.missing_files_count} entries?
-		""")  # TODO translate
+        Translations.translate_qobject(
+            self.desc_widget,
+            "entries.unlinked.delete.confirm",
+            count=self.tracker.missing_files_count,
+        )
         self.desc_widget.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         self.list_view = QListView()
@@ -53,13 +57,13 @@ class DeleteUnlinkedEntriesModal(QWidget):
         self.button_layout.addStretch(1)
 
         self.cancel_button = QPushButton()
-        self.cancel_button.setText("&Cancel")  # TODO translate
+        Translations.translate_qobject(self.cancel_button, "generic.cancel_alt")
         self.cancel_button.setDefault(True)
         self.cancel_button.clicked.connect(self.hide)
         self.button_layout.addWidget(self.cancel_button)
 
         self.delete_button = QPushButton()
-        self.delete_button.setText("&Delete")  # TODO translate
+        Translations.translate_qobject(self.delete_button, "generic.delete_alt")
         self.delete_button.clicked.connect(self.hide)
         self.delete_button.clicked.connect(lambda: self.delete_entries())
         self.button_layout.addWidget(self.delete_button)
@@ -69,9 +73,11 @@ class DeleteUnlinkedEntriesModal(QWidget):
         self.root_layout.addWidget(self.button_container)
 
     def refresh_list(self):
-        self.desc_widget.setText(f"""
-		Are you sure you want to delete the following {self.tracker.missing_files_count} entries?
-		""")  # TODO translate
+        self.desc_widget.setText(
+            Translations.translate_formatted(
+                "entries.unlinked.delete.confirm", count=self.tracker.missing_files_count
+            )
+        )
 
         self.model.clear()
         for i in self.tracker.missing_files:
@@ -81,14 +87,17 @@ class DeleteUnlinkedEntriesModal(QWidget):
 
     def delete_entries(self):
         def displayed_text(x):
-            return f"Deleting {x}/{self.tracker.missing_files_count} Unlinked Entries"  # TODO translate
+            return Translations.translate_formatted(
+                "entries.unlinked.delete.deleting_count",
+                idx=x,
+                count=self.tracker.missing_files_count,
+            )
 
         pw = ProgressWidget(
-            window_title="Deleting Entries",  # TODO translate
-            label_text="",
             cancel_button_text=None,
             minimum=0,
             maximum=self.tracker.missing_files_count,
         )
+        Translations.translate_with_setter(pw.setWindowTitle, "entries.unlinked.delete.deleting")
 
         pw.from_iterable_function(self.tracker.execute_deletion, displayed_text, self.done.emit)

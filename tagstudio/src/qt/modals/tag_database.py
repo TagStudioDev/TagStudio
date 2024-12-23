@@ -21,6 +21,8 @@ from src.qt.modals.build_tag import BuildTagPanel
 from src.qt.widgets.panel import PanelModal, PanelWidget
 from src.qt.widgets.tag import TagWidget
 
+from ..translations import Translations
+
 logger = structlog.get_logger(__name__)
 
 # TODO: This class shares the majority of its code with tag_search.py.
@@ -44,7 +46,7 @@ class TagDatabasePanel(PanelWidget):
         self.search_field = QLineEdit()
         self.search_field.setObjectName("searchField")
         self.search_field.setMinimumSize(QSize(0, 32))
-        self.search_field.setPlaceholderText("Search Tags")  # TODO translate
+        Translations.translate_with_setter(self.search_field.setPlaceholderText, "home.search_tags")
         self.search_field.textEdited.connect(lambda: self.update_tags(self.search_field.text()))
         self.search_field.returnPressed.connect(
             lambda checked=False: self.on_return(self.search_field.text())
@@ -63,7 +65,7 @@ class TagDatabasePanel(PanelWidget):
         self.scroll_area.setWidget(self.scroll_contents)
 
         self.create_tag_button = QPushButton()
-        self.create_tag_button.setText("Create Tag")  # TODO translate
+        Translations.translate_qobject(self.create_tag_button, "tag.create")
         self.create_tag_button.clicked.connect(self.build_tag)
 
         self.root_layout.addWidget(self.search_field)
@@ -72,14 +74,14 @@ class TagDatabasePanel(PanelWidget):
         self.update_tags()
 
     def build_tag(self):
+        panel = BuildTagPanel(self.lib)
         self.modal = PanelModal(
-            BuildTagPanel(self.lib),
-            "New Tag",  # TODO translate
-            "Add Tag",  # TODO translate
+            panel,
             has_save=True,
         )
+        Translations.translate_with_setter(self.modal.setTitle, "tag.new")
+        Translations.translate_with_setter(self.modal.setWindowTitle, "tag.add")
 
-        panel: BuildTagPanel = self.modal.widget
         self.modal.saved.connect(
             lambda: (
                 self.lib.add_tag(
@@ -134,10 +136,8 @@ class TagDatabasePanel(PanelWidget):
             return
 
         message_box = QMessageBox()
-        message_box.setWindowTitle("Remove Tag")  # TODO translate
-        message_box.setText(
-            f'Are you sure you want to delete the tag "{tag.name}"?'
-        )  # TODO translate
+        Translations.translate_with_setter(message_box.setWindowTitle, "tag.remove")
+        Translations.translate_qobject(message_box, "tag_database.confirmation", tag_name=tag.name)
         message_box.setStandardButtons(QMessageBox.Ok | QMessageBox.Cancel)  # type: ignore
         message_box.setIcon(QMessageBox.Question)  # type: ignore
 
@@ -158,10 +158,10 @@ class TagDatabasePanel(PanelWidget):
         self.edit_modal = PanelModal(
             build_tag_panel,
             tag.name,
-            "Edit Tag",  # TODO translate
             done_callback=(self.update_tags(self.search_field.text())),
             has_save=True,
         )
+        Translations.translate_with_setter(self.edit_modal.setWindowTitle, "tag.edit")
         # TODO Check Warning: Expected type 'BuildTagPanel', got 'PanelWidget' instead
         self.edit_modal.saved.connect(lambda: self.edit_tag_callback(build_tag_panel))
         self.edit_modal.show()

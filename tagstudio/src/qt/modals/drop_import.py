@@ -19,6 +19,8 @@ from PySide6.QtWidgets import (
 )
 from src.qt.widgets.progress import ProgressWidget
 
+from ..translations import Translations
+
 if TYPE_CHECKING:
     from src.qt.ts_qt import QtDriver
 
@@ -41,7 +43,7 @@ class DropImportModal(QWidget):
         self.driver: QtDriver = driver
 
         # Widget ======================
-        self.setWindowTitle("Conflicting File(s)")  # TODO translate
+        Translations.translate_with_setter(self.setWindowTitle, "drop_import.title")
         self.setWindowModality(Qt.WindowModality.ApplicationModal)
         self.setMinimumSize(500, 400)
         self.root_layout = QVBoxLayout(self)
@@ -50,9 +52,7 @@ class DropImportModal(QWidget):
         self.desc_widget = QLabel()
         self.desc_widget.setObjectName("descriptionLabel")
         self.desc_widget.setWordWrap(True)
-        self.desc_widget.setText(
-            "The following files have filenames already exist in the library"
-        )  # TODO translate
+        self.desc_widget.setText(Translations["drop_import.decription"])
         self.desc_widget.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         # Duplicate File List ========
@@ -67,25 +67,25 @@ class DropImportModal(QWidget):
         self.button_layout.addStretch(1)
 
         self.skip_button = QPushButton()
-        self.skip_button.setText("&Skip")  # TODO translate
+        Translations.translate_qobject(self.skip_button, "generic.skip_alt")
         self.skip_button.setDefault(True)
         self.skip_button.clicked.connect(lambda: self.begin_transfer(DuplicateChoice.SKIP))
         self.button_layout.addWidget(self.skip_button)
 
         self.overwrite_button = QPushButton()
-        self.overwrite_button.setText("&Overwrite")  # TODO translate
+        Translations.translate_qobject(self.overwrite_button, "generic.overwrite_alt")
         self.overwrite_button.clicked.connect(
             lambda: self.begin_transfer(DuplicateChoice.OVERWRITE)
         )
         self.button_layout.addWidget(self.overwrite_button)
 
         self.rename_button = QPushButton()
-        self.rename_button.setText("&Rename")  # TODO translate
+        Translations.translate_qobject(self.rename_button, "generic.rename_alt")
         self.rename_button.clicked.connect(lambda: self.begin_transfer(DuplicateChoice.RENAME))
         self.button_layout.addWidget(self.rename_button)
 
         self.cancel_button = QPushButton()
-        self.cancel_button.setText("&Cancel")  # TODO translate
+        Translations.translate_qobject(self.cancel_button, "generic.cancel_alt")
         self.cancel_button.clicked.connect(lambda: self.begin_transfer(DuplicateChoice.CANCEL))
         self.button_layout.addWidget(self.cancel_button)
 
@@ -139,8 +139,12 @@ class DropImportModal(QWidget):
     def ask_duplicates_choice(self):
         """Display the message widgeth with a list of the duplicated files."""
         self.desc_widget.setText(
-            f"The following {len(self.duplicate_files)} file(s) have filenames already exist in the library."  # noqa: E501
-        )  # TODO translate
+            Translations["drop_import.duplicates_choice.singular"]
+            if len(self.duplicate_files) == 1
+            else Translations.translate_formatted(
+                "drop_import.duplicates_choice.plural", count=len(self.duplicate_files)
+            )
+        )
 
         self.model.clear()
         for dupe in self.duplicate_files:
@@ -160,19 +164,21 @@ class DropImportModal(QWidget):
             return
 
         def displayed_text(x):
-            text = f"Importing New Files...\n{x[0] + 1} File{'s' if x[0] + 1 != 1 else ''} Imported."  # TODO translate
-            if self.choice:
-                text += f" {x[1]} {self.choice.value}"
-
-            return text
+            return Translations.translate_formatted(
+                "drop_import.progress.label.singular"
+                if x[0] + 1 == 1
+                else "drop_import.progress.label.plural",
+                count=x[0] + 1,
+                suffix=f" {x[1]} {self.choice.value}" if self.choice else "",
+            )
 
         pw = ProgressWidget(
-            window_title="Import Files",  # TODO translate
-            label_text="Importing New Files...",  # TODO translate
             cancel_button_text=None,
             minimum=0,
             maximum=len(self.files),
         )
+        Translations.translate_with_setter(pw.setWindowTitle, "drop_import.progress.window_title")
+        Translations.translate_with_setter(pw.update_label, "drop_import.progress.label.initial")
 
         pw.from_iterable_function(
             self.copy_files,
