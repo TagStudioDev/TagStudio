@@ -468,7 +468,7 @@ class QtDriver(DriverMixin, QObject):
         self.init_library_window()
         self.migration_modal: JsonMigrationModal = None
 
-        path_result = self.evaluate_path(self.args.open)
+        path_result = self.evaluate_path(str(self.args.open).strip())
         # check status of library path evaluating
         if path_result.success and path_result.library_path:
             self.splash.showMessage(
