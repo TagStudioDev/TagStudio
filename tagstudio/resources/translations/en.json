@@ -212,5 +212,5 @@
     "json_migration.heading.extension_list_type": "Extension List Type:",
     "json_migration.heading.paths": "Paths:",
     "json_migration.heading.fields": "Fields:",
-    "json_migration.description": "<br>Start and preview the results of the library migration process. The converted library will <i>not</i> be used unless you click \"Finish Migration\". <br><br>Library data should either have matching values or a feature a \"Matched\" label. Values that do not match will be displayed in red and feature a \"<b>(!)</b>\" symbol next to them.<br><center><i>This process may take up to several minutes for larger libraries.</i></center>"
+    "json_migration.description": "<br>Start and preview the results of the library migration process. The converted library will <i>not</i> be used unless you click \"Finish Migration\". <br><br>Library data should either have matching values or feature a \"Matched\" label. Values that do not match will be displayed in red and feature a \"<b>(!)</b>\" symbol next to them.<br><center><i>This process may take up to several minutes for larger libraries.</i></center>"
 }
