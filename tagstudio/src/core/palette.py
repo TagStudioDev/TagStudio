@@ -79,11 +79,11 @@ TAG_COLORS: dict[TagColor, dict[ColorType, Any]] = {
         ColorType.DARK_ACCENT: "#6c2e3b",
     },
     TagColor.PINK: {
-        ColorType.PRIMARY: "#ff99c4",
+        ColorType.PRIMARY: "#F96BB1",
         ColorType.TEXT: ColorType.DARK_ACCENT,
-        ColorType.BORDER: "#ffaad0",
-        ColorType.LIGHT_ACCENT: "#ffcbe7",
-        ColorType.DARK_ACCENT: "#6c2e3b",
+        ColorType.BORDER: "#FA7EBC",
+        ColorType.LIGHT_ACCENT: "#FDB6DC",
+        ColorType.DARK_ACCENT: "#5B2135",
     },
     TagColor.MAGENTA: {
         ColorType.PRIMARY: "#f6466f",
