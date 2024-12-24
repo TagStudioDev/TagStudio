@@ -10,9 +10,9 @@ from .translations import Translations
 
 
 class PlatformStrings:
-    open_file_str: str = Translations["file.open_file.other"]
+    open_file_str: str = Translations["file.open_location.generic"]
 
     if platform.system() == "Windows":
-        open_file_str = Translations["file.open_file.windows"]
+        open_file_str = Translations["file.open_location.windows"]
     elif platform.system() == "Darwin":
-        open_file_str = Translations["file.open_file.macos"]
+        open_file_str = Translations["file.open_location.mac"]

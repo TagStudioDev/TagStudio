@@ -438,8 +438,7 @@ class QtDriver(DriverMixin, QObject):
         # tools_menu.addAction(create_collage_action)
 
         # Macros Menu ==========================================================
-        self.autofill_action = QAction(menu_bar)
-        Translations.translate_qobject(self.autofill_action, "menu.macros.autofill")
+        self.autofill_action = QAction("Autofill", menu_bar)
         self.autofill_action.triggered.connect(
             lambda: (
                 self.run_macros(MacroID.AUTOFILL, self.selected),

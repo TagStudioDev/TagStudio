@@ -137,7 +137,7 @@ class TagDatabasePanel(PanelWidget):
 
         message_box = QMessageBox()
         Translations.translate_with_setter(message_box.setWindowTitle, "tag.remove")
-        Translations.translate_qobject(message_box, "tag_database.confirmation", tag_name=tag.name)
+        Translations.translate_qobject(message_box, "tag.confirm_delete", tag_name=tag.name)
         message_box.setStandardButtons(QMessageBox.Ok | QMessageBox.Cancel)  # type: ignore
         message_box.setIcon(QMessageBox.Question)  # type: ignore
 
