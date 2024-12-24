@@ -13,9 +13,8 @@ from PySide6.QtCore import QEasingCurve, QPoint, QPropertyAnimation, Qt
 from PySide6.QtGui import QPixmap
 from PySide6.QtWidgets import QLabel, QPushButton, QVBoxLayout, QWidget
 from src.qt.helpers.color_overlay import gradient_overlay, theme_fg_overlay
+from src.qt.translations import Translations
 from src.qt.widgets.clickable_label import ClickableLabel
-
-from ..translations import Translations
 
 # Only import for type checking/autocompletion, will not be imported at runtime.
 if typing.TYPE_CHECKING:

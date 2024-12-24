@@ -7,9 +7,8 @@ import typing
 from PySide6.QtCore import QObject, Signal
 from src.core.library import Library
 from src.core.utils.dupe_files import DupeRegistry
+from src.qt.translations import Translations
 from src.qt.widgets.progress import ProgressWidget
-
-from ..translations import Translations
 
 # Only import for type checking/autocompletion, will not be imported at runtime.
 if typing.TYPE_CHECKING:

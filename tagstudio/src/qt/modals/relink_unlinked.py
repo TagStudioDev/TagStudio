@@ -5,9 +5,8 @@
 
 from PySide6.QtCore import QObject, Signal
 from src.core.utils.missing_files import MissingRegistry
+from src.qt.translations import Translations
 from src.qt.widgets.progress import ProgressWidget
-
-from ..translations import Translations
 
 
 class RelinkUnlinkedEntries(QObject):

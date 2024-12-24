@@ -6,7 +6,7 @@
 
 import platform
 
-from .translations import Translations
+from src.qt.translations import Translations
 
 
 class PlatformStrings:

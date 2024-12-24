@@ -6,8 +6,7 @@ from typing import Callable
 
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import QHBoxLayout, QLabel, QPushButton, QVBoxLayout, QWidget
-
-from ..translations import Translations
+from src.qt.translations import Translations
 
 
 class PanelModal(QWidget):

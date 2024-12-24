@@ -25,7 +25,7 @@ from PySide6.QtWidgets import (QComboBox, QFrame, QGridLayout,
 from src.qt.pagination import Pagination
 from src.qt.widgets.landing import LandingWidget
 
-from .translations import Translations
+from src.qt.translations import Translations
 
 # Only import for type checking/autocompletion, will not be imported at runtime.
 if typing.TYPE_CHECKING:

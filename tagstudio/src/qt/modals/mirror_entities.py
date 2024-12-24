@@ -17,9 +17,8 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 from src.core.utils.dupe_files import DupeRegistry
+from src.qt.translations import Translations
 from src.qt.widgets.progress import ProgressWidget
-
-from ..translations import Translations
 
 # Only import for type checking/autocompletion, will not be imported at runtime.
 if typing.TYPE_CHECKING:

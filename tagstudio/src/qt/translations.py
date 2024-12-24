@@ -79,3 +79,4 @@ class Translator:
 
 
 Translations = Translator()
+# Translations.change_language("de")

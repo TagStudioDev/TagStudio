@@ -84,14 +84,13 @@ from src.qt.modals.fix_unlinked import FixUnlinkedEntriesModal
 from src.qt.modals.folders_to_tags import FoldersToTagsModal
 from src.qt.modals.tag_database import TagDatabasePanel
 from src.qt.resource_manager import ResourceManager
+from src.qt.translations import Translations
 from src.qt.widgets.item_thumb import BadgeType, ItemThumb
 from src.qt.widgets.migration_modal import JsonMigrationModal
 from src.qt.widgets.panel import PanelModal
 from src.qt.widgets.preview_panel import PreviewPanel
 from src.qt.widgets.progress import ProgressWidget
 from src.qt.widgets.thumb_renderer import ThumbRenderer
-
-from .translations import Translations
 
 # SIGQUIT is not defined on Windows
 if sys.platform == "win32":

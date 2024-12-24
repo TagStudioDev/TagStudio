@@ -15,9 +15,8 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 from src.core.utils.missing_files import MissingRegistry
+from src.qt.translations import Translations
 from src.qt.widgets.progress import ProgressWidget
-
-from ..translations import Translations
 
 # Only import for type checking/autocompletion, will not be imported at runtime.
 if typing.TYPE_CHECKING:

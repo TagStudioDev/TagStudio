@@ -18,7 +18,7 @@
     "entries.unlinked.delete.deleting": "Deleting Entries",
     "entries.unlinked.delete": "Delete Unlinked Entries",
     "entries.unlinked.delete_alt": "De&lete Unlinked Entries",
-    "entries.unlinked.description": "Each library entry is linked to a file in one of your directories. If a file linked to an entry is moved or deleted outside of TagStudio, it is then considered unlinked. Unlinked entries may be automatically relinked via searching your directories or deleted if desired.",
+    "entries.unlinked.description": "Each library entry is linked to a file in one of your directories. If a file linked to an entry is moved or deleted outside of TagStudio, it is then considered unlinked.<br><br>Unlinked entries may be automatically relinked via searching your directories or deleted if desired.",
     "entries.unlinked.refresh_all": "&Refresh All",
     "entries.unlinked.relink.attempting": "Attempting to Relink {idx}/{missing_count} Entries, {fixed_count} Successfully Relinked",
     "entries.unlinked.relink.manual": "&Manual Relink",

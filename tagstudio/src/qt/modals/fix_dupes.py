@@ -17,8 +17,7 @@ from PySide6.QtWidgets import (
 from src.core.library import Library
 from src.core.utils.dupe_files import DupeRegistry
 from src.qt.modals.mirror_entities import MirrorEntriesModal
-
-from ..translations import Translations
+from src.qt.translations import Translations
 
 # Only import for type checking/autocompletion, will not be imported at runtime.
 if typing.TYPE_CHECKING:

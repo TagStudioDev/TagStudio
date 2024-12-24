@@ -18,10 +18,9 @@ from PySide6.QtWidgets import (
 from src.core.constants import RESERVED_TAG_END, RESERVED_TAG_START
 from src.core.library import Library, Tag
 from src.qt.modals.build_tag import BuildTagPanel
+from src.qt.translations import Translations
 from src.qt.widgets.panel import PanelModal, PanelWidget
 from src.qt.widgets.tag import TagWidget
-
-from ..translations import Translations
 
 logger = structlog.get_logger(__name__)
 

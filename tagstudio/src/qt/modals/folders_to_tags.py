@@ -23,8 +23,7 @@ from src.core.library import Library, Tag
 from src.core.library.alchemy.fields import _FieldID
 from src.core.palette import ColorType, get_tag_color
 from src.qt.flowlayout import FlowLayout
-
-from ..translations import Translations
+from src.qt.translations import Translations
 
 if typing.TYPE_CHECKING:
     from src.qt.ts_qt import QtDriver

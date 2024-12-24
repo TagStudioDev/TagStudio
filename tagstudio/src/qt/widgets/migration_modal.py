@@ -30,11 +30,10 @@ from src.core.library.json.library import Library as JsonLibrary  # type: ignore
 from src.qt.helpers.custom_runnable import CustomRunnable
 from src.qt.helpers.function_iterator import FunctionIterator
 from src.qt.helpers.qbutton_wrapper import QPushButtonWrapper
+from src.qt.translations import Translations
 from src.qt.widgets.paged_panel.paged_body_wrapper import PagedBodyWrapper
 from src.qt.widgets.paged_panel.paged_panel import PagedPanel
 from src.qt.widgets.paged_panel.paged_panel_state import PagedPanelState
-
-from ..translations import Translations
 
 logger = structlog.get_logger(__name__)
 

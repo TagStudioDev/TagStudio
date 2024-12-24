@@ -20,8 +20,7 @@ from PySide6.QtWidgets import (
 from src.core.library import Tag
 from src.core.library.alchemy.enums import TagColor
 from src.core.palette import ColorType, get_tag_color
-
-from ..translations import Translations
+from src.qt.translations import Translations
 
 
 class TagAliasWidget(QWidget):

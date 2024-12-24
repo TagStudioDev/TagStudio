@@ -17,9 +17,8 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
+from src.qt.translations import Translations
 from src.qt.widgets.progress import ProgressWidget
-
-from ..translations import Translations
 
 if TYPE_CHECKING:
     from src.qt.ts_qt import QtDriver

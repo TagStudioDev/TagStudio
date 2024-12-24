@@ -52,6 +52,7 @@ from src.qt.helpers.qbutton_wrapper import QPushButtonWrapper
 from src.qt.helpers.rounded_pixmap_style import RoundedPixmapStyle
 from src.qt.modals.add_field import AddFieldModal
 from src.qt.platform_strings import PlatformStrings
+from src.qt.translations import Translations
 from src.qt.widgets.fields import FieldContainer
 from src.qt.widgets.media_player import MediaPlayer
 from src.qt.widgets.panel import PanelModal
@@ -61,8 +62,6 @@ from src.qt.widgets.text_box_edit import EditTextBox
 from src.qt.widgets.text_line_edit import EditTextLine
 from src.qt.widgets.thumb_renderer import ThumbRenderer
 from src.qt.widgets.video_player import VideoPlayer
-
-from ..translations import Translations
 
 if typing.TYPE_CHECKING:
     from src.qt.ts_qt import QtDriver

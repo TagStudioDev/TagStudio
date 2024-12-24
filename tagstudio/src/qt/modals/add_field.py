@@ -14,8 +14,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 from src.core.library import Library
-
-from ..translations import Translations
+from src.qt.translations import Translations
 
 
 class AddFieldModal(QWidget):

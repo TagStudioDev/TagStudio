@@ -18,9 +18,8 @@ from PySide6.QtWidgets import (
 )
 from src.core.enums import LibraryPrefs
 from src.core.library import Library
+from src.qt.translations import Translations
 from src.qt.widgets.panel import PanelWidget
-
-from ..translations import Translations
 
 
 class FileExtensionItemDelegate(QStyledItemDelegate):
@@ -72,7 +71,7 @@ class FileExtensionModal(PanelWidget):
             lambda text: self.mode_combobox.setItemText(0, text), "ignore_list.mode.include"
         )
         Translations.translate_with_setter(
-            lambda text: self.mode_combobox.setItemText(0, text), "ignore_list.mode.exclude"
+            lambda text: self.mode_combobox.setItemText(1, text), "ignore_list.mode.exclude"
         )
 
         is_exclude_list = int(bool(self.lib.prefs(LibraryPrefs.IS_EXCLUDE_LIST)))

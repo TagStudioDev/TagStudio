@@ -30,10 +30,9 @@ from src.core.media_types import MediaCategories, MediaType
 from src.qt.flowlayout import FlowWidget
 from src.qt.helpers.file_opener import FileOpenerHelper
 from src.qt.platform_strings import PlatformStrings
+from src.qt.translations import Translations
 from src.qt.widgets.thumb_button import ThumbButton
 from src.qt.widgets.thumb_renderer import ThumbRenderer
-
-from ..translations import Translations
 
 if TYPE_CHECKING:
     from src.qt.ts_qt import QtDriver

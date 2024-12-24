@@ -12,9 +12,8 @@ from src.core.utils.missing_files import MissingRegistry
 from src.qt.modals.delete_unlinked import DeleteUnlinkedEntriesModal
 from src.qt.modals.merge_dupe_entries import MergeDuplicateEntries
 from src.qt.modals.relink_unlinked import RelinkUnlinkedEntries
+from src.qt.translations import Translations
 from src.qt.widgets.progress import ProgressWidget
-
-from ..translations import Translations
 
 # Only import for type checking/autocompletion, will not be imported at runtime.
 if typing.TYPE_CHECKING:

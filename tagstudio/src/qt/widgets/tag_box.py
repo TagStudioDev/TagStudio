@@ -16,11 +16,10 @@ from src.core.library.alchemy.fields import TagBoxField
 from src.qt.flowlayout import FlowLayout
 from src.qt.modals.build_tag import BuildTagPanel
 from src.qt.modals.tag_search import TagSearchPanel
+from src.qt.translations import Translations
 from src.qt.widgets.fields import FieldWidget
 from src.qt.widgets.panel import PanelModal
 from src.qt.widgets.tag import TagWidget
-
-from ..translations import Translations
 
 if typing.TYPE_CHECKING:
     from src.qt.ts_qt import QtDriver

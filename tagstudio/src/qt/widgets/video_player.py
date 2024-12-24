@@ -31,8 +31,7 @@ from PySide6.QtWidgets import QGraphicsScene, QGraphicsView
 from src.core.enums import SettingItems
 from src.qt.helpers.file_opener import FileOpenerHelper
 from src.qt.platform_strings import PlatformStrings
-
-from ..translations import Translations
+from src.qt.translations import Translations
 
 if typing.TYPE_CHECKING:
     from src.qt.ts_qt import QtDriver
