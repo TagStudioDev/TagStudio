@@ -194,7 +194,7 @@ class BuildTagPanel(PanelWidget):
         self.root_layout.addWidget(self.subtags_widget)
         self.root_layout.addWidget(self.color_widget)
 
-        self.subtag_ids: list[int] = []
+        self.subtag_ids: set[int] = set()
         self.alias_ids: list[int] = []
         self.alias_names: list[str] = []
         self.new_alias_names: dict = {}
@@ -236,7 +236,7 @@ class BuildTagPanel(PanelWidget):
 
     def add_subtag_callback(self, tag_id: int):
         logger.info("add_subtag_callback", tag_id=tag_id)
-        self.subtag_ids.append(tag_id)
+        self.subtag_ids.add(tag_id)
         self.set_subtags()
 
     def remove_subtag_callback(self, tag_id: int):
@@ -357,7 +357,7 @@ class BuildTagPanel(PanelWidget):
         self._set_aliases()
 
         for subtag in tag.subtag_ids:
-            self.subtag_ids.append(subtag)
+            self.subtag_ids.add(subtag)
 
         self.set_subtags()
 
