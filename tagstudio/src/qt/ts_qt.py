@@ -572,6 +572,7 @@ class QtDriver(DriverMixin, QObject):
     def shutdown(self):
         """Save Library on Application Exit."""
         self.close_library(is_shutdown=True)
+        self.cache.save()
         logger.info("[SHUTDOWN] Ending Thumbnail Threads...")
         for _ in self.thumb_threads:
             self.thumb_job_queue.put(Consumer.MARKER_QUIT)
