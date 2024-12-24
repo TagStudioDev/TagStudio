@@ -542,10 +542,7 @@ class JsonMigrationModal(QObject):
                         message=f"NEW  (SQL): SQL Entry ID mismatch: {json_entry.id+1}",
                     )
                     self.discrepancies.append(
-                        Translations.translate_formatted(
-                            "json_migration.discrepancies.sql_entry_id_missing",
-                            id=json_entry.id + 1,
-                        )
+                        f"[Field Comparison]:\nNEW (SQL): SQL Entry ID not found: {json_entry.id+1}"
                     )
                     self.field_parity = False
                     return self.field_parity
@@ -623,11 +620,7 @@ class JsonMigrationModal(QObject):
                     and (json_fields == sql_fields)
                 ):
                     self.discrepancies.append(
-                        Translations.translate_formatted(
-                            "json_migration.discrepancies.fields",
-                            json_fields=json_fields,
-                            sql_fields=sql_fields,
-                        )
+                        f"[Field Comparison]:\nOLD (JSON):{json_fields}\nNEW  (SQL):{sql_fields}"
                     )
                     self.field_parity = False
                     return self.field_parity
@@ -679,11 +672,7 @@ class JsonMigrationModal(QObject):
                     and (sql_subtags == json_subtags)
                 ):
                     self.discrepancies.append(
-                        Translations.translate_formatted(
-                            "json_migration.discrepancies.subtag",
-                            json_subtags=json_subtags,
-                            sql_subtags=sql_subtags,
-                        )
+                        f"[Subtag Parity]:\nOLD (JSON):{json_subtags}\nNEW (SQL):{sql_subtags}"
                     )
                     self.subtag_parity = False
                     return self.subtag_parity
@@ -719,11 +708,7 @@ class JsonMigrationModal(QObject):
                     and (sql_aliases == json_aliases)
                 ):
                     self.discrepancies.append(
-                        Translations.translate_formatted(
-                            "json_migration.discrepancies.alias",
-                            json_aliases=json_aliases,
-                            sql_aliases=sql_aliases,
-                        )
+                        f"[Alias Parity]:\nOLD (JSON):{json_aliases}\nNEW (SQL):{sql_aliases}"
                     )
                     self.alias_parity = False
                     return self.alias_parity
@@ -754,11 +739,7 @@ class JsonMigrationModal(QObject):
                 and (sql_shorthand == json_shorthand)
             ):
                 self.discrepancies.append(
-                    Translations.translate_formatted(
-                        "json_migration.discrepancies.shorthand",
-                        json_shorthand=json_shorthand,
-                        sql_shorthand=sql_shorthand,
-                    )
+                    f"[Shorthand Parity]:\nOLD (JSON):{json_shorthand}\nNEW (SQL):{sql_shorthand}"
                 )
                 self.shorthand_parity = False
                 return self.shorthand_parity
@@ -789,11 +770,7 @@ class JsonMigrationModal(QObject):
 
             if not (sql_color is not None and json_color is not None and (sql_color == json_color)):
                 self.discrepancies.append(
-                    Translations.translate_formatted(
-                        "json_migration.discrepancies.color",
-                        json_color=json_color,
-                        sql_color=sql_color,
-                    )
+                    f"[Color Parity]:\nOLD (JSON):{json_color}\nNEW (SQL):{sql_color}"
                 )
                 self.color_parity = False
                 return self.color_parity
