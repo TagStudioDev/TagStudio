@@ -66,9 +66,23 @@ class SettingsModal(PanelWidget):
         )
 
         # ---
-        self.main.addLayout(self.darkMode_Row)
+        self.show_filenames_Label = QLabel()
+        self.show_filenames_Value = QCheckBox()
+        self.show_filenames_Row = QHBoxLayout()
+        self.show_filenames_Row.addWidget(self.show_filenames_Label)
+        self.show_filenames_Row.addWidget(self.show_filenames_Value)
+        # TODO: use value from translations
+        self.show_filenames_Label.setText("Show filenames in grid")
+        self.show_filenames_Value.setChecked(self.tempSettings.show_filenames_in_grid)
+
+        self.show_filenames_Value.stateChanged.connect(
+            lambda state: setattr(self.tempSettings, "show_filenames_in_grid", bool(state))
+        )
+        # ---
         self.main.addLayout(self.language_Row)
+        self.main.addLayout(self.darkMode_Row)
         self.main.addLayout(self.show_library_list_Row)
+        self.main.addLayout(self.show_filenames_Row)
 
     def set_property(self, prop_name: str, value: any) -> None:
         setattr(self.tempSettings, prop_name, value)
