@@ -5,7 +5,6 @@ import structlog
 import toml
 from appdirs import user_cache_dir
 from pydantic import BaseModel, ConfigDict, Field
-from src.core.library.alchemy.library import Library
 
 logger = structlog.get_logger(__name__)
 
@@ -15,7 +14,7 @@ cache_location = cache_dir / "cache.toml"
 
 class TSCachedData(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
-    last_library: Library | None = Field(default=None)
+    last_library: str | None = Field(default=None)
     library_history: dict[datetime, str] = Field(default_factory=dict[datetime, str])
 
     path: str = Field()
@@ -41,5 +40,5 @@ class TSCachedData(BaseModel):
         return cached_data
 
     def save(self):
-        with open(self.path, "wb") as f:
-            f.writelines(toml.dumps(self))
+        with open(self.path, "w") as f:
+            toml.dump(dict(self), f)

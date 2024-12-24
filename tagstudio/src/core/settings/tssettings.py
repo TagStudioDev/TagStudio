@@ -40,13 +40,14 @@ class TSSettings(BaseModel):
         return d
 
     def save(self, path: Path | str | None = None) -> None:
+        path_value: Path
         if isinstance(path, str):
-            path = Path(path)
+            path_value = Path(path)
 
         if path is None:
-            path = self.filename
-        if not path.parent.exists():
-            path.parent.mkdir(parents=True, exist_ok=True)
+            path_value = Path(self.filename)
+        if not path_value.parent.exists():
+            path_value.parent.mkdir(parents=True, exist_ok=True)
 
-        with open(path, "w") as f:
+        with open(path_value, "w") as f:
             toml.dump(self.to_dict(), f)
