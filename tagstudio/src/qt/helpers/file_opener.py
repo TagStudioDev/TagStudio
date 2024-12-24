@@ -46,11 +46,9 @@ def open_file(path: str | Path, file_manager: bool = False):
                     | subprocess.CREATE_BREAKAWAY_FROM_JOB,
                 )
             else:
-                command_name = "start"
-                # first parameter is for title, NOT filepath
-                command_args = ["", normpath]
+                command = f'"{normpath}"'
                 subprocess.Popen(
-                    [command_name] + command_args,
+                    command,
                     shell=True,
                     close_fds=True,
                     creationflags=subprocess.CREATE_NEW_PROCESS_GROUP
