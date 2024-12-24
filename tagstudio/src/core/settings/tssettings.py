@@ -15,6 +15,7 @@ class TSSettings(BaseModel):
     open_last_loaded_on_startup: bool = Field(default=False)
     show_library_list: bool = Field(default=True)
     autoplay: bool = Field(default=False)
+    show_filenames_in_grid: bool = Field(default=False)
 
     filename: str = Field()
 
@@ -38,7 +39,7 @@ class TSSettings(BaseModel):
 
         return d
 
-    def save(self, path: Path | str | None) -> None:
+    def save(self, path: Path | str | None = None) -> None:
         if isinstance(path, str):
             path = Path(path)
 

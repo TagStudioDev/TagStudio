@@ -321,11 +321,9 @@ class QtDriver(DriverMixin, QObject):
 
         open_on_start_action = QAction("Open Library on Start", self)
         open_on_start_action.setCheckable(True)
-        open_on_start_action.setChecked(
-            bool(self.settings.value(SettingItems.START_LOAD_LAST, defaultValue=True, type=bool))
-        )
+        open_on_start_action.setChecked(self.settings.open_last_loaded_on_startup)
         open_on_start_action.triggered.connect(
-            lambda checked: self.settings.setValue(SettingItems.START_LOAD_LAST, checked)
+            lambda checked: setattr(self.settings, "open_last_loaded_on_startup", checked)
         )
         file_menu.addAction(open_on_start_action)
 
@@ -382,7 +380,7 @@ class QtDriver(DriverMixin, QObject):
         check_action.triggered.connect(
             lambda checked: setattr(self.settings, "open_last_loaded_on_startup", checked)
         )
-        window_menu.addAction(check_action)
+        # window_menu.addAction(check_action)
 
         # Tools Menu ===========================================================
         def create_fix_unlinked_entries_modal():
@@ -426,7 +424,7 @@ class QtDriver(DriverMixin, QObject):
                 self.toggle_libs_list(checked),
             )
         )
-        window_menu.addAction(show_libs_list_action)
+        # window_menu.addAction(show_libs_list_action)
 
         def create_folders_tags_modal():
             if not hasattr(self, "folders_modal"):
@@ -595,7 +593,7 @@ class QtDriver(DriverMixin, QObject):
         start_time = time.time()
 
         self.cache.last_library = self.lib.library_dir
-        self.settings.sync()
+        self.settings.save()
 
         self.lib.close()
 
@@ -915,9 +913,7 @@ class QtDriver(DriverMixin, QObject):
                 self,
                 (self.thumb_size, self.thumb_size),
                 grid_idx,
-                bool(
-                    self.settings.value(SettingItems.SHOW_FILENAMES, defaultValue=True, type=bool)
-                ),
+                bool(self.settings.show_filenames_in_grid),
             )
 
             layout.addWidget(item_thumb)
