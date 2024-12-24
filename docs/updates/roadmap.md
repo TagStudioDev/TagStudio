@@ -86,13 +86,13 @@ Features are broken up into the following priority levels, with nested prioritie
     -   [ ] GPS Location [LOW]
     -   [ ] Custom field names [HIGH] [#18](https://github.com/TagStudioDev/TagStudio/issues/18)
 -   [ ] Search engine [HIGH] [#325](https://github.com/TagStudioDev/TagStudio/issues/325)
-    -   [ ] Boolean operators [HIGH] [#225](https://github.com/TagStudioDev/TagStudio/issues/225), [#314](https://github.com/TagStudioDev/TagStudio/issues/314)
+    -   [x] Boolean operators [HIGH] [#225](https://github.com/TagStudioDev/TagStudio/issues/225), [#314](https://github.com/TagStudioDev/TagStudio/issues/314)
     -   [ ] Tag objects + autocomplete [HIGH] [#476 (Autocomplete)](https://github.com/TagStudioDev/TagStudio/issues/476)
-    -   [ ] Filename search [HIGH]
-    -   [ ] Filetype search [HIGH]
-        -   [ ] Search by extension (e.g. ".jpg", ".png") [HIGH]
-            -   [ ] Optional consolidation of extension synonyms (i.e. ".jpg" can equal ".jpeg") [LOW]
-        -   [ ] Search by media type (e.g. "image", "video", "document") [MEDIUM]
+    -   [x] Filename search [HIGH]
+    -   [x] Filetype search [HIGH]
+        -   [x] Search by extension (e.g. ".jpg", ".png") [HIGH]
+            -   [x] Optional consolidation of extension synonyms (i.e. ".jpg" can equal ".jpeg") [LOW]
+        -   [x] Search by media type (e.g. "image", "video", "document") [MEDIUM]
     -   [ ] Field content search [HIGH] [#272](https://github.com/TagStudioDev/TagStudio/issues/272)
     -   [ ] HAS operator for composition tags [HIGH]
     -   [ ] OCR search [LOW]
@@ -172,12 +172,12 @@ These version milestones are rough estimations for when the previous core featur
     -   [ ] [Tag Categories](../library/tag_categories.md) [HIGH]
         -   [ ] Property available for tags that allow the tag and any inheriting from it to be displayed separately in the preview panel under a title [HIGH]
 -   [ ] Search engine [HIGH]
-    -   [ ] Boolean operators [HIGH]
+    -   [x] Boolean operators [HIGH]
     -   [ ] Tag objects + autocomplete [HIGH]
     -   [x] Filename search [HIGH]
     -   [x] Filetype search [HIGH]
         -   [x] Search by extension (e.g. ".jpg", ".png") [HIGH]
-            -   [ ] Optional consolidation of extension synonyms (i.e. ".jpg" can equal ".jpeg") [LOW]
+            -   [x] Optional consolidation of extension synonyms (i.e. ".jpg" can equal ".jpeg") [LOW]
         -   [x] Search by media type (e.g. "image", "video", "document") [MEDIUM]
     -   [ ] Field content search [HIGH]
     -   [ ] Sortable results [HIGH]

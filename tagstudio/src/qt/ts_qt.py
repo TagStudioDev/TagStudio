@@ -265,15 +265,12 @@ class QtDriver(DriverMixin, QObject):
 
         file_menu = QMenu("&File", menu_bar)
         edit_menu = QMenu("&Edit", menu_bar)
+        view_menu = QMenu("&View", menu_bar)
         tools_menu = QMenu("&Tools", menu_bar)
         macros_menu = QMenu("&Macros", menu_bar)
-        window_menu = QMenu("&Window", menu_bar)
         help_menu = QMenu("&Help", menu_bar)
 
         # File Menu ============================================================
-        # file_menu.addAction(QAction('&New Library', menu_bar))
-        # file_menu.addAction(QAction('&Open Library', menu_bar))
-
         open_library_action = QAction("&Open/Create Library", menu_bar)
         open_library_action.triggered.connect(lambda: self.open_library_from_dialog())
         open_library_action.setShortcut(
@@ -303,8 +300,6 @@ class QtDriver(DriverMixin, QObject):
 
         file_menu.addSeparator()
 
-        # refresh_lib_action = QAction('&Refresh Directories', self.main_window)
-        # refresh_lib_action.triggered.connect(lambda: self.lib.refresh_dir())
         add_new_files_action = QAction("&Refresh Directories", menu_bar)
         add_new_files_action.triggered.connect(
             lambda: self.callback_library_needed_check(self.add_new_files_callback)
@@ -316,13 +311,23 @@ class QtDriver(DriverMixin, QObject):
             )
         )
         add_new_files_action.setStatusTip("Ctrl+R")
-        # file_menu.addAction(refresh_lib_action)
         file_menu.addAction(add_new_files_action)
         file_menu.addSeparator()
 
         close_library_action = QAction("&Close Library", menu_bar)
         close_library_action.triggered.connect(self.close_library)
         file_menu.addAction(close_library_action)
+        file_menu.addSeparator()
+
+        open_on_start_action = QAction("Open Library on Start", self)
+        open_on_start_action.setCheckable(True)
+        open_on_start_action.setChecked(
+            bool(self.settings.value(SettingItems.START_LOAD_LAST, defaultValue=True, type=bool))
+        )
+        open_on_start_action.triggered.connect(
+            lambda checked: self.settings.setValue(SettingItems.START_LOAD_LAST, checked)
+        )
+        file_menu.addAction(open_on_start_action)
 
         # Edit Menu ============================================================
         settings_menu_action = QAction("&Settings", menu_bar)
@@ -432,7 +437,7 @@ class QtDriver(DriverMixin, QObject):
         folders_to_tags_action.triggered.connect(create_folders_tags_modal)
         macros_menu.addAction(folders_to_tags_action)
 
-        # Help Menu ==========================================================
+        # Help Menu ============================================================
         self.repo_action = QAction("Visit GitHub Repository", menu_bar)
         self.repo_action.triggered.connect(
             lambda: webbrowser.open("https://github.com/TagStudioDev/TagStudio")
@@ -442,9 +447,9 @@ class QtDriver(DriverMixin, QObject):
 
         menu_bar.addMenu(file_menu)
         menu_bar.addMenu(edit_menu)
+        menu_bar.addMenu(view_menu)
         menu_bar.addMenu(tools_menu)
         menu_bar.addMenu(macros_menu)
-        menu_bar.addMenu(window_menu)
         menu_bar.addMenu(help_menu)
 
         self.main_window.searchField.textChanged.connect(self.update_completions_list)
@@ -553,6 +558,10 @@ class QtDriver(DriverMixin, QObject):
         else:
             self.preview_panel.libs_flow_container.hide()
         self.preview_panel.update()
+
+    def show_grid_filenames(self, value: bool):
+        for thumb in self.item_thumbs:
+            thumb.set_filename_visibility(value)
 
     def callback_library_needed_check(self, func):
         """Check if loaded library has valid path before executing the button function."""
@@ -851,9 +860,9 @@ class QtDriver(DriverMixin, QObject):
             it.thumb_button.setIcon(blank_icon)
             it.resize(self.thumb_size, self.thumb_size)
             it.thumb_size = (self.thumb_size, self.thumb_size)
-            it.setMinimumSize(self.thumb_size, self.thumb_size)
-            it.setMaximumSize(self.thumb_size, self.thumb_size)
+            it.setFixedSize(self.thumb_size, self.thumb_size)
             it.thumb_button.thumb_size = (self.thumb_size, self.thumb_size)
+            it.set_filename_visibility(it.show_filename_label)
         self.flow_container.layout().setSpacing(
             min(self.thumb_size // spacing_divisor, min_spacing)
         )
@@ -901,7 +910,14 @@ class QtDriver(DriverMixin, QObject):
         # TODO - init after library is loaded, it can have different page_size
         for grid_idx in range(self.filter.page_size):
             item_thumb = ItemThumb(
-                None, self.lib, self, (self.thumb_size, self.thumb_size), grid_idx
+                None,
+                self.lib,
+                self,
+                (self.thumb_size, self.thumb_size),
+                grid_idx,
+                bool(
+                    self.settings.value(SettingItems.SHOW_FILENAMES, defaultValue=True, type=bool)
+                ),
             )
 
             layout.addWidget(item_thumb)
