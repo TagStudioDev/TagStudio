@@ -128,7 +128,7 @@ def generate_preview_data(library: Library) -> BranchData:
             has_tag = False
             for tag_field in entry.tag_box_fields:
                 for tag in tag_field.tags:
-                    if tag.name == branch.tag.name:
+                    if branch.tag and tag.name == branch.tag.name:
                         has_tag = True
                         break
             if not has_tag:
@@ -263,8 +263,10 @@ class TreeItem(QWidget):
 
         self.label = QLabel()
         self.tag_layout.addWidget(self.label)
+        if data.tag is None or parent_tag is None:
+            raise Exception("data.tag or parent_tag is None")
         self.tag_widget = ModifiedTagWidget(data.tag, parent_tag)
-        self.tag_widget.bg_button.clicked.connect(lambda: self.hide_show())
+        self.tag_widget.bg_button.clicked.connect(self.hide_show)
         self.tag_layout.addWidget(self.tag_widget)
 
         self.children_widget = QWidget()
