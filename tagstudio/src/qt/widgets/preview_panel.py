@@ -35,7 +35,7 @@ from PySide6.QtWidgets import (
 from src.core.constants import (
     TS_FOLDER_NAME,
 )
-from src.core.enums import SettingItems, Theme
+from src.core.enums import Theme
 from src.core.library.alchemy.fields import (
     BaseField,
     DatetimeField,
@@ -248,10 +248,10 @@ class PreviewPanel(QWidget):
         )
 
         # set initial visibility based on settings
-        if not self.driver.settings.value(
-            SettingItems.WINDOW_SHOW_LIBS, defaultValue=True, type=bool
-        ):
+        if not self.driver.settings.show_library_list:
             self.libs_flow_container.hide()
+        else:
+            self.libs_flow_container.show()
 
         splitter = QSplitter()
         splitter.setOrientation(Qt.Orientation.Vertical)
@@ -306,28 +306,47 @@ class PreviewPanel(QWidget):
         return f'Are you sure you want to remove field "{name}"?'
 
     def fill_libs_widget(self, layout: QVBoxLayout):
-        settings = self.driver.settings
-        settings.beginGroup(SettingItems.LIBS_LIST)
         lib_items: dict[str, tuple[str, str]] = {}
-        for item_tstamp in settings.allKeys():
-            val = str(settings.value(item_tstamp, type=str))
-            cut_val = val
-            if len(val) > 45:
-                cut_val = f"{val[0:10]} ... {val[-10:]}"
-            lib_items[item_tstamp] = (val, cut_val)
-
-        settings.endGroup()
+        for access_time in self.driver.cache.library_history:
+            lib_dir = self.driver.cache.library_history[access_time]
+            cut_val = lib_dir
+            if len(str(lib_dir)) > 45:
+                cut_val = f"{lib_dir[0:10]} ... {lib_dir[-10:]}"
+            lib_items[str(access_time)] = (str(lib_dir), cut_val)
 
         new_keys = set(lib_items.keys())
+
         if new_keys == self.render_libs:
             # no need to re-render
             return
 
-        # sort lib_items by the key
         libs_sorted = sorted(lib_items.items(), key=lambda item: item[0], reverse=True)
-
         self.render_libs = new_keys
         self._fill_libs_widget(libs_sorted, layout)
+
+    # def fill_libs_widget(self, layout: QVBoxLayout):
+    #    settings = self.driver.settings
+    #    settings.beginGroup(SettingItems.LIBS_LIST)
+    #    lib_items: dict[str, tuple[str, str]] = {}
+    #    for item_tstamp in settings.allKeys():
+    #        val = str(settings.value(item_tstamp, type=str))
+    #        cut_val = val
+    #        if len(val) > 45:
+    #            cut_val = f"{val[0:10]} ... {val[-10:]}"
+    #        lib_items[item_tstamp] = (val, cut_val)
+
+    #    settings.endGroup()
+
+    #    new_keys = set(lib_items.keys())
+    #    if new_keys == self.render_libs:
+    #        # no need to re-render
+    #        return
+
+    #    # sort lib_items by the key
+    #    libs_sorted = sorted(lib_items.items(), key=lambda item: item[0], reverse=True)
+
+    #    self.render_libs = new_keys
+    #    self._fill_libs_widget(libs_sorted, layout)
 
     def _fill_libs_widget(self, libraries: list[tuple[str, tuple[str, str]]], layout: QVBoxLayout):
         def clear_layout(layout_item: QVBoxLayout):

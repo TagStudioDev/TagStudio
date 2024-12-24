@@ -14,6 +14,9 @@ PySide6==6.8.0.1
 rawpy==0.22.0
 SQLAlchemy==2.0.34
 structlog==24.4.0
-typing_extensions>=3.10.0.0,<=4.11.0
+typing_extensions
 ujson>=5.8.0,<=5.9.0
 vtf2img==0.1.0
+toml==0.10.2
+appdirs==1.4.4
+pydantic==2.10.4
