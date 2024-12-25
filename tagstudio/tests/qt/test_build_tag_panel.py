@@ -1,5 +1,6 @@
 from src.core.library.alchemy.models import Tag
 from src.qt.modals.build_tag import BuildTagPanel
+from src.qt.translations import Translations
 
 
 def test_build_tag_panel_add_sub_tag_callback(library, generate_tag):
@@ -155,4 +156,4 @@ def test_build_tag_panel_build_tag(library):
     tag: Tag = panel.build_tag()
 
     assert tag
-    assert tag.name == "New Tag"
+    assert tag.name == Translations["tag.new"]

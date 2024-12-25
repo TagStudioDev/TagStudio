@@ -31,6 +31,7 @@ from PySide6.QtWidgets import QGraphicsScene, QGraphicsView
 from src.core.enums import SettingItems
 from src.qt.helpers.file_opener import FileOpenerHelper
 from src.qt.platform_strings import PlatformStrings
+from src.qt.translations import Translations
 
 if typing.TYPE_CHECKING:
     from src.qt.ts_qt import QtDriver
@@ -115,7 +116,8 @@ class VideoPlayer(QGraphicsView):
 
         self.setContextMenuPolicy(Qt.ContextMenuPolicy.ActionsContextMenu)
         self.opener = FileOpenerHelper(filepath=self.filepath)
-        autoplay_action = QAction("Autoplay", self)
+        autoplay_action = QAction(self)
+        Translations.translate_qobject(autoplay_action, "media_player.autoplay")
         autoplay_action.setCheckable(True)
         self.addAction(autoplay_action)
         autoplay_action.setChecked(
@@ -124,7 +126,8 @@ class VideoPlayer(QGraphicsView):
         autoplay_action.triggered.connect(lambda: self.toggle_autoplay())
         self.autoplay = autoplay_action
 
-        open_file_action = QAction("Open file", self)
+        open_file_action = QAction(self)
+        Translations.translate_qobject(open_file_action, "file.open_file")
         open_file_action.triggered.connect(self.opener.open_file)
 
         open_explorer_action = QAction(PlatformStrings.open_file_str, self)

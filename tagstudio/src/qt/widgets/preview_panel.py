@@ -52,6 +52,7 @@ from src.qt.helpers.qbutton_wrapper import QPushButtonWrapper
 from src.qt.helpers.rounded_pixmap_style import RoundedPixmapStyle
 from src.qt.modals.add_field import AddFieldModal
 from src.qt.platform_strings import PlatformStrings
+from src.qt.translations import Translations
 from src.qt.widgets.fields import FieldContainer
 from src.qt.widgets.media_player import MediaPlayer
 from src.qt.widgets.panel import PanelModal
@@ -119,7 +120,8 @@ class PreviewPanel(QWidget):
         )
         date_style = "font-size:12px;"
 
-        self.open_file_action = QAction("Open file", self)
+        self.open_file_action = QAction(self)
+        Translations.translate_qobject(self.open_file_action, "file.open_file")
         self.open_explorer_action = QAction(PlatformStrings.open_file_str, self)
 
         self.preview_img = QPushButtonWrapper()
@@ -279,7 +281,7 @@ class PreviewPanel(QWidget):
         self.add_field_button.setCursor(Qt.CursorShape.PointingHandCursor)
         self.add_field_button.setMinimumSize(96, 28)
         self.add_field_button.setMaximumSize(96, 28)
-        self.add_field_button.setText("Add Field")
+        Translations.translate_qobject(self.add_field_button, "library.field.add")
         self.afb_layout.addWidget(self.add_field_button)
         self.add_field_modal = AddFieldModal(self.lib)
         self.place_add_field_button()
@@ -303,7 +305,7 @@ class PreviewPanel(QWidget):
             self.driver.frame_content[grid_idx] = result
 
     def remove_field_prompt(self, name: str) -> str:
-        return f'Are you sure you want to remove field "{name}"?'
+        return Translations.translate_formatted("library.field.confirm_remove", name=name)
 
     def fill_libs_widget(self, layout: QVBoxLayout):
         settings = self.driver.settings
@@ -341,7 +343,8 @@ class PreviewPanel(QWidget):
         # remove any potential previous items
         clear_layout(layout)
 
-        label = QLabel("Recent Libraries")
+        label = QLabel()
+        Translations.translate_qobject(label, "generic.recent_libraries")
         label.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         row_layout = QHBoxLayout()
@@ -379,7 +382,7 @@ class PreviewPanel(QWidget):
             lib = Path(full_val)
             if not lib.exists() or not (lib / TS_FOLDER_NAME).exists():
                 button.setDisabled(True)
-                button.setToolTip("Location is missing")
+                Translations.translate_with_setter(button.setToolTip, "library.missing")
 
             def open_library_button_clicked(path):
                 return lambda: self.driver.open_library(Path(path))
@@ -492,16 +495,16 @@ class PreviewPanel(QWidget):
                 created = dt.fromtimestamp(filepath.stat().st_ctime)
             modified: dt = dt.fromtimestamp(filepath.stat().st_mtime)
             self.date_created_label.setText(
-                f"<b>Date Created:</b> {dt.strftime(created, "%a, %x, %X")}"
+                f"<b>Date Created:</b> {dt.strftime(created, "%a, %x, %X")}"  # TODO translate
             )
             self.date_modified_label.setText(
-                f"<b>Date Modified:</b> {dt.strftime(modified, "%a, %x, %X")}"
+                f"<b>Date Modified:</b> {dt.strftime(modified, "%a, %x, %X")}"  # TODO translate
             )
             self.date_created_label.setHidden(False)
             self.date_modified_label.setHidden(False)
         elif filepath:
-            self.date_created_label.setText("<b>Date Created:</b> <i>N/A</i>")
-            self.date_modified_label.setText("<b>Date Modified:</b> <i>N/A</i>")
+            self.date_created_label.setText("<b>Date Created:</b> <i>N/A</i>")  # TODO translate
+            self.date_modified_label.setText("<b>Date Modified:</b> <i>N/A</i>")  # TODO translate
             self.date_created_label.setHidden(False)
             self.date_modified_label.setHidden(False)
         else:
@@ -520,7 +523,7 @@ class PreviewPanel(QWidget):
 
         if not self.driver.selected:
             if self.selected or not self.initialized:
-                self.file_label.setText("<i>No Items Selected</i>")
+                self.file_label.setText("<i>No Items Selected</i>")  # TODO translate
                 self.file_label.set_file_path("")
                 self.file_label.setCursor(Qt.CursorShape.ArrowCursor)
 
@@ -777,7 +780,9 @@ class PreviewPanel(QWidget):
             self.media_player.hide()
             self.update_date_label()
             if self.selected != self.driver.selected:
-                self.file_label.setText(f"<b>{len(self.driver.selected)}</b> Items Selected")
+                self.file_label.setText(
+                    f"<b>{len(self.driver.selected)}</b> Items Selected"
+                )  # TODO translate
                 self.file_label.setCursor(Qt.CursorShape.ArrowCursor)
                 self.file_label.set_file_path("")
                 self.dimensions_label.setText("")
@@ -872,10 +877,11 @@ class PreviewPanel(QWidget):
         else:
             container = self.containers[index]
 
+        # TODO this is in severe need of refactoring due to exessive code duplication
         if isinstance(field, TagBoxField):
             container.set_title(field.type.name)
             container.set_inline(False)
-            title = f"{field.type.name} (Tag Box)"
+            title = f"{field.type.name} (Tag Box)"  # TODO translate
 
             if not is_mixed:
                 inner_container = container.get_inner_widget()
@@ -916,8 +922,8 @@ class PreviewPanel(QWidget):
                     )
                 )
             else:
-                text = "<i>Mixed Data</i>"
-                title = f"{field.type.name} (Wacky Tag Box)"
+                text = "<i>Mixed Data</i>"  # TODO translate
+                title = f"{field.type.name} (Wacky Tag Box)"  # TODO translate
                 inner_container = TextWidget(title, text)
                 container.set_inner_widget(inner_container)
 
@@ -932,7 +938,7 @@ class PreviewPanel(QWidget):
                 assert isinstance(field.value, (str, type(None)))
                 text = field.value or ""
             else:
-                text = "<i>Mixed Data</i>"
+                text = "<i>Mixed Data</i>"  # TODO translate
 
             title = f"{field.type.name} ({field.type.type.value})"
             inner_container = TextWidget(title, text)
@@ -941,7 +947,7 @@ class PreviewPanel(QWidget):
                 modal = PanelModal(
                     EditTextLine(field.value),
                     title=title,
-                    window_title=f"Edit {field.type.type.value}",
+                    window_title=f"Edit {field.type.type.value}",  # TODO translate
                     save_callback=(
                         lambda content: (
                             self.update_field(field, content),
@@ -973,15 +979,15 @@ class PreviewPanel(QWidget):
                 assert isinstance(field.value, (str, type(None)))
                 text = (field.value or "").replace("\r", "\n")
             else:
-                text = "<i>Mixed Data</i>"
-            title = f"{field.type.name} (Text Box)"
+                text = "<i>Mixed Data</i>"  # TODO translate
+            title = f"{field.type.name} (Text Box)"  # TODO translate
             inner_container = TextWidget(title, text)
             container.set_inner_widget(inner_container)
             if not is_mixed:
                 modal = PanelModal(
                     EditTextBox(field.value),
                     title=title,
-                    window_title=f"Edit {field.type.name}",
+                    window_title=f"Edit {field.type.name}",  # TODO translate
                     save_callback=(
                         lambda content: (
                             self.update_field(field, content),
@@ -1008,14 +1014,14 @@ class PreviewPanel(QWidget):
                     container.set_inline(False)
                     # TODO: Localize this and/or add preferences.
                     date = dt.strptime(field.value, "%Y-%m-%d %H:%M:%S")
-                    title = f"{field.type.name} (Date)"
+                    title = f"{field.type.name} (Date)"  # TODO translate
                     inner_container = TextWidget(title, date.strftime("%D - %r"))
                     container.set_inner_widget(inner_container)
                 except Exception:
                     container.set_title(field.type.name)
                     # container.set_editable(False)
                     container.set_inline(False)
-                    title = f"{field.type.name} (Date) (Unknown Format)"
+                    title = f"{field.type.name} (Date) (Unknown Format)"  # TODO translate
                     inner_container = TextWidget(title, str(field.value))
                     container.set_inner_widget(inner_container)
 
@@ -1029,15 +1035,15 @@ class PreviewPanel(QWidget):
                     )
                 )
             else:
-                text = "<i>Mixed Data</i>"
-                title = f"{field.type.name} (Wacky Date)"
+                text = "<i>Mixed Data</i>"  # TODO translate
+                title = f"{field.type.name} (Wacky Date)"  # TODO translate
                 inner_container = TextWidget(title, text)
                 container.set_inner_widget(inner_container)
         else:
             logger.warning("write_container - unknown field", field=field)
             container.set_title(field.type.name)
             container.set_inline(False)
-            title = f"{field.type.name} (Unknown Field Type)"
+            title = f"{field.type.name} (Unknown Field Type)"  # TODO translate
             inner_container = TextWidget(title, field.type.name)
             container.set_inner_widget(inner_container)
             container.set_remove_callback(
@@ -1090,10 +1096,12 @@ class PreviewPanel(QWidget):
     def remove_message_box(self, prompt: str, callback: Callable) -> None:
         remove_mb = QMessageBox()
         remove_mb.setText(prompt)
-        remove_mb.setWindowTitle("Remove Field")
+        remove_mb.setWindowTitle("Remove Field")  # TODO translate
         remove_mb.setIcon(QMessageBox.Icon.Warning)
-        cancel_button = remove_mb.addButton("&Cancel", QMessageBox.ButtonRole.DestructiveRole)
-        remove_mb.addButton("&Remove", QMessageBox.ButtonRole.RejectRole)
+        cancel_button = remove_mb.addButton(
+            Translations["generic.cancel_alt"], QMessageBox.ButtonRole.DestructiveRole
+        )
+        remove_mb.addButton("&Remove", QMessageBox.ButtonRole.RejectRole)  # TODO translate
         # remove_mb.setStandardButtons(QMessageBox.StandardButton.Cancel)
         remove_mb.setDefaultButton(cancel_button)
         remove_mb.setEscapeButton(cancel_button)

@@ -23,6 +23,7 @@ from src.core.library import Library, Tag
 from src.core.library.alchemy.fields import _FieldID
 from src.core.palette import ColorType, get_tag_color
 from src.qt.flowlayout import FlowLayout
+from src.qt.translations import Translations
 
 if typing.TYPE_CHECKING:
     from src.qt.ts_qt import QtDriver
@@ -164,7 +165,7 @@ class FoldersToTagsModal(QWidget):
         self.count = -1
         self.filename = ""
 
-        self.setWindowTitle("Create Tags From Folders")
+        Translations.translate_with_setter(self.setWindowTitle, "folders_to_tags.title")
         self.setWindowModality(Qt.WindowModality.ApplicationModal)
         self.setMinimumSize(640, 640)
         self.root_layout = QVBoxLayout(self)
@@ -174,7 +175,7 @@ class FoldersToTagsModal(QWidget):
         self.title_widget.setObjectName("title")
         self.title_widget.setWordWrap(True)
         self.title_widget.setStyleSheet("font-weight:bold;" "font-size:14px;" "padding-top: 6px")
-        self.title_widget.setText("Create Tags From Folders")
+        Translations.translate_qobject(self.title_widget, "folders_to_tags.title")
         self.title_widget.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         self.desc_widget = QLabel()
@@ -190,10 +191,10 @@ class FoldersToTagsModal(QWidget):
         self.open_close_button_layout = QHBoxLayout(self.open_close_button_w)
 
         self.open_all_button = QPushButton()
-        self.open_all_button.setText("Open All")
+        Translations.translate_qobject(self.open_all_button, "folders_to_tags.open_all")
         self.open_all_button.clicked.connect(lambda: self.set_all_branches(False))
         self.close_all_button = QPushButton()
-        self.close_all_button.setText("Close All")
+        Translations.translate_qobject(self.close_all_button, "folders_to_tags.close_all")
         self.close_all_button.clicked.connect(lambda: self.set_all_branches(True))
 
         self.open_close_button_layout.addWidget(self.open_all_button)
@@ -212,7 +213,7 @@ class FoldersToTagsModal(QWidget):
         self.scroll_area.setWidget(self.scroll_contents)
 
         self.apply_button = QPushButton()
-        self.apply_button.setText("&Apply")
+        Translations.translate_qobject(self.apply_button, "generic.apply_alt")
         self.apply_button.setMinimumWidth(100)
         self.apply_button.clicked.connect(self.on_apply)
 
