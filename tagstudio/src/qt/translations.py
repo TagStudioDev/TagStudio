@@ -40,7 +40,10 @@ class Translator:
             self._strings[k] = TranslatedString(v)
 
     def __get_translation_dict(self, lang: str) -> dict[str, str]:
-        with open(Path(__file__).parents[2] / "resources" / "translations" / f"{lang}.json") as f:
+        with open(
+            Path(__file__).parents[2] / "resources" / "translations" / f"{lang}.json",
+            encoding="utf-8",
+        ) as f:
             return ujson.loads(f.read())
 
     def change_language(self, lang: str):
@@ -79,4 +82,4 @@ class Translator:
 
 
 Translations = Translator()
-# Translations.change_language("de")
+Translations.change_language("de")
