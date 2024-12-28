@@ -117,6 +117,20 @@ def test_parentheses(search_library: Library, query: str, count: int):
 
 
 @pytest.mark.parametrize(
+    ["query", "count"],
+    [
+        ("ellipse", 17),
+        ("yellow", 15),
+        ("color", 24),
+        ("shape", 24),
+        ("yellow not green", 10),
+    ],
+)
+def test_parent_tags(search_library: Library, query: str, count: int):
+    verify_count(search_library, query, count)
+
+
+@pytest.mark.parametrize(
     "invalid_query", ["asd AND", "asd AND AND", "tag:(", "(asd", "asd[]", "asd]", ":", "tag: :"]
 )
 def test_syntax(search_library: Library, invalid_query: str):
