@@ -82,4 +82,4 @@ class Translator:
 
 
 Translations = Translator()
-Translations.change_language("de")
+# Translations.change_language("de")
