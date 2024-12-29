@@ -125,7 +125,7 @@ class SQLBoolExpressionBuilder(BaseVisitor[ColumnExpressionArgument]):
             )
             if len(tag_ids) > 1:
                 logger.debug(
-                    f'Tag Constraint "{tag_name}" is ambiguos, {len(tag_ids)} matching tags found',
+                    f'Tag Constraint "{tag_name}" is ambiguous, {len(tag_ids)} matching tags found',
                     tag_ids=tag_ids,
                     include_children=include_children,
                 )
