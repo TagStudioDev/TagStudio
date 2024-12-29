@@ -1,12 +1,15 @@
 from pathlib import Path
 from typing import Callable
 
+import structlog
 import ujson
 from PySide6.QtCore import QObject, Signal
 from PySide6.QtGui import QAction
 from PySide6.QtWidgets import QLabel, QMenu, QMessageBox, QPushButton
 
 from .helpers.qbutton_wrapper import QPushButtonWrapper
+
+logger = structlog.get_logger(__name__)
 
 DEFAULT_TRANSLATION = "en"
 
@@ -34,6 +37,7 @@ class TranslatedString(QObject):
 
 class Translator:
     _strings: dict[str, TranslatedString] = {}
+    _lang: str = DEFAULT_TRANSLATION
 
     def __init__(self):
         for k, v in self.__get_translation_dict(DEFAULT_TRANSLATION).items():
@@ -47,6 +51,7 @@ class Translator:
             return ujson.loads(f.read())
 
     def change_language(self, lang: str):
+        self._lang = lang
         translated = self.__get_translation_dict(lang)
         for k in self._strings:
             self._strings[k].value = translated.get(k, None)
@@ -65,16 +70,21 @@ class Translator:
 
         Also formats the translation with the given keyword arguments.
         """
-
-        def set_text(text: str):
-            setter(text.format(**kwargs))
-
         if key in self._strings:
-            self._strings[key].changed.connect(set_text)
-        set_text(self.translate_formatted(key, **kwargs))
+            self._strings[key].changed.connect(lambda text: setter(self.__format(text, **kwargs)))
+        setter(self.translate_formatted(key, **kwargs))
+
+    def __format(self, text: str, **kwargs) -> str:
+        try:
+            return text.format(**kwargs)
+        except KeyError:
+            logger.warning(
+                "Error while formatting translation.", text=text, kwargs=kwargs, language=self._lang
+            )
+            return text
 
     def translate_formatted(self, key: str, **kwargs) -> str:
-        return self[key].format(**kwargs)
+        return self.__format(self[key], **kwargs)
 
     def __getitem__(self, key: str) -> str:
         # return "???"
@@ -82,4 +92,4 @@ class Translator:
 
 
 Translations = Translator()
-# Translations.change_language("de")
+Translations.change_language("de")
