@@ -84,6 +84,7 @@ class FilterState:
     page_index: int | None = 0
     page_size: int | None = 500
     sorting_mode: SortingModeEnum = SortingModeEnum.DATE_CREATED
+    ascending: bool = True
 
     # these should be erased on update
     # Abstract Syntax Tree Of the current Search Query
