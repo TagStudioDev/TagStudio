@@ -37,33 +37,6 @@ class FileAttributes(QWidget):
 
     tags_updated = Signal()
 
-    label_bg_color = (
-        Theme.COLOR_BG_DARK.value
-        if QGuiApplication.styleHints().colorScheme() is Qt.ColorScheme.Dark
-        else Theme.COLOR_DARK_LABEL.value
-    )
-
-    # panel_bg_color = (
-    #     Theme.COLOR_BG_DARK.value
-    #     if QGuiApplication.styleHints().colorScheme() is Qt.ColorScheme.Dark
-    #     else Theme.COLOR_BG_LIGHT.value
-    # )
-
-    file_label_style = "font-size: 12px"
-    properties_style = (
-        f"background-color:{label_bg_color};"
-        "color:#FFFFFF;"
-        "font-family:Oxanium;"
-        "font-weight:bold;"
-        "font-size:12px;"
-        "border-radius:3px;"
-        "padding-top: 4px;"
-        "padding-right: 1px;"
-        "padding-bottom: 1px;"
-        "padding-left: 1px;"
-    )
-    date_style = "font-size:12px;"
-
     def __init__(self, library: Library, driver: "QtDriver"):
         super().__init__()
         # self.is_connected = False
@@ -76,29 +49,56 @@ class FileAttributes(QWidget):
         root_layout.setContentsMargins(0, 0, 0, 0)
         root_layout.setSpacing(6)
 
+        label_bg_color = (
+            Theme.COLOR_BG_DARK.value
+            if QGuiApplication.styleHints().colorScheme() is Qt.ColorScheme.Dark
+            else Theme.COLOR_DARK_LABEL.value
+        )
+
+        # panel_bg_color = (
+        #     Theme.COLOR_BG_DARK.value
+        #     if QGuiApplication.styleHints().colorScheme() is Qt.ColorScheme.Dark
+        #     else Theme.COLOR_BG_LIGHT.value
+        # )
+
+        self.date_style = "font-size:12px;"
+        self.file_label_style = "font-size: 12px"
+        self.properties_style = (
+            f"background-color:{label_bg_color};"
+            "color:#FFFFFF;"
+            "font-family:Oxanium;"
+            "font-weight:bold;"
+            "font-size:12px;"
+            "border-radius:3px;"
+            "padding-top: 4px;"
+            "padding-right: 1px;"
+            "padding-bottom: 1px;"
+            "padding-left: 1px;"
+        )
+
         self.file_label = FileOpenerLabel()
         self.file_label.setObjectName("filenameLabel")
         self.file_label.setTextFormat(Qt.TextFormat.RichText)
         self.file_label.setWordWrap(True)
         self.file_label.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
-        self.file_label.setStyleSheet(FileAttributes.file_label_style)
+        self.file_label.setStyleSheet(self.file_label_style)
 
         self.date_created_label = QLabel()
         self.date_created_label.setObjectName("dateCreatedLabel")
         self.date_created_label.setAlignment(Qt.AlignmentFlag.AlignLeft)
         self.date_created_label.setTextFormat(Qt.TextFormat.RichText)
-        self.date_created_label.setStyleSheet(FileAttributes.date_style)
+        self.date_created_label.setStyleSheet(self.date_style)
 
         self.date_modified_label = QLabel()
         self.date_modified_label.setObjectName("dateModifiedLabel")
         self.date_modified_label.setAlignment(Qt.AlignmentFlag.AlignLeft)
         self.date_modified_label.setTextFormat(Qt.TextFormat.RichText)
-        self.date_modified_label.setStyleSheet(FileAttributes.date_style)
+        self.date_modified_label.setStyleSheet(self.date_style)
 
         self.dimensions_label = QLabel()
         self.dimensions_label.setObjectName("dimensionsLabel")
         self.dimensions_label.setWordWrap(True)
-        self.dimensions_label.setStyleSheet(FileAttributes.properties_style)
+        self.dimensions_label.setStyleSheet(self.properties_style)
 
         self.date_container = QWidget()
         date_layout = QVBoxLayout(self.date_container)
