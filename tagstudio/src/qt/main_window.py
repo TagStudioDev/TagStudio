@@ -74,6 +74,11 @@ class Ui_MainWindow(QMainWindow):
         spacerItem = QSpacerItem(40, 20, QSizePolicy.Expanding, QSizePolicy.Minimum)
         self.horizontalLayout_3.addItem(spacerItem)
   
+        # Sorting Dropdown
+        self.sorting_mode_combobox = QComboBox(self.centralwidget)
+        self.sorting_mode_combobox.setObjectName(u"sortingModeComboBox")
+        self.horizontalLayout_3.addWidget(self.sorting_mode_combobox)
+
         # Thumbnail Size placeholder
         self.thumb_size_combobox = QComboBox(self.centralwidget)
         self.thumb_size_combobox.setObjectName(u"thumbSizeComboBox")

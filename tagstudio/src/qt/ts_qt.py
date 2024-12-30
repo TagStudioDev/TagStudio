@@ -65,6 +65,7 @@ from src.core.library.alchemy.enums import (
     FieldTypeEnum,
     FilterState,
     ItemType,
+    SortingModeEnum,
 )
 from src.core.library.alchemy.fields import _FieldID
 from src.core.library.alchemy.library import Entry, LibraryStatus
@@ -518,6 +519,15 @@ class QtDriver(DriverMixin, QObject):
                 FilterState.from_search_query(self.main_window.searchField.text())
             )
         )
+        # Sorting Dropdown
+        sorting_dropdown: QComboBox = self.main_window.sorting_mode_combobox
+        for sorting_mode in SortingModeEnum:
+            sorting_dropdown.addItem(str(sorting_mode), sorting_mode)
+        sorting_dropdown.setCurrentIndex(
+            list(SortingModeEnum).index(SortingModeEnum.DATE_CREATED)
+        )  # Default: DATE_CREATED
+        sorting_dropdown.currentIndexChanged.connect(self.sorting_mode_callback)
+
         # Thumbnail Size ComboBox
         thumb_size_combobox: QComboBox = self.main_window.thumb_size_combobox
         for size in self.thumb_sizes:
@@ -819,6 +829,13 @@ class QtDriver(DriverMixin, QObject):
                         field=field,
                         content=strip_web_protocol(field.value),
                     )
+
+    @property
+    def sorting_mode(self) -> SortingModeEnum:
+        return self.main_window.sorting_mode_combobox.currentData()
+
+    def sorting_mode_callback(self):
+        logger.info("Sorting Mode Changed", mode=self.sorting_mode)
 
     def thumb_size_callback(self, index: int):
         """Perform actions needed when the thumbnail size selection is changed.

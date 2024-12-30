@@ -117,3 +117,20 @@ class FieldTypeEnum(enum.Enum):
     TAGS = "Tags"
     DATETIME = "Datetime"
     BOOLEAN = "Checkbox"
+
+
+class SortingModeEnum(enum.Enum):
+    DATE_CREATED = "sorting_mode.date.created"
+    DATE_MODIFIED = "sorting_mode.date.modified"
+    FILE_SIZE = "sorting_mode.file_size"
+
+    def __str__(self):
+        # TODO use translation here once #662 is merged
+        match self.value:
+            case "sorting_mode.date.created":
+                return "Date Created"
+            case "sorting_mode.date.modified":
+                return "Date Modified"
+            case "sorting_mode.file_size":
+                return "File Size"
+        return self.value
