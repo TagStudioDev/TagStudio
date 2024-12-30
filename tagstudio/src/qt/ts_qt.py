@@ -508,7 +508,9 @@ class QtDriver(DriverMixin, QObject):
         search_button: QPushButton = self.main_window.searchButton
         search_button.clicked.connect(
             lambda: self.filter_items(
-                FilterState.from_search_query(self.main_window.searchField.text())
+                FilterState.from_search_query(
+                    self.main_window.searchField.text()
+                ).with_sorting_mode(self.sorting_mode)
             )
         )
         # Search Field
@@ -516,7 +518,9 @@ class QtDriver(DriverMixin, QObject):
         search_field.returnPressed.connect(
             # TODO - parse search field for filters
             lambda: self.filter_items(
-                FilterState.from_search_query(self.main_window.searchField.text())
+                FilterState.from_search_query(
+                    self.main_window.searchField.text()
+                ).with_sorting_mode(self.sorting_mode)
             )
         )
         # Sorting Dropdown
@@ -524,8 +528,8 @@ class QtDriver(DriverMixin, QObject):
         for sorting_mode in SortingModeEnum:
             sorting_dropdown.addItem(str(sorting_mode), sorting_mode)
         sorting_dropdown.setCurrentIndex(
-            list(SortingModeEnum).index(SortingModeEnum.DATE_CREATED)
-        )  # Default: DATE_CREATED
+            list(SortingModeEnum).index(self.filter.sorting_mode)
+        )  # set according to self.filter
         sorting_dropdown.currentIndexChanged.connect(self.sorting_mode_callback)
 
         # Thumbnail Size ComboBox

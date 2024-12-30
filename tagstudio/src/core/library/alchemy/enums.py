@@ -59,6 +59,23 @@ class ItemType(enum.Enum):
     TAG_GROUP = 2
 
 
+class SortingModeEnum(enum.Enum):
+    DATE_CREATED = "sorting_mode.date.created"
+    DATE_MODIFIED = "sorting_mode.date.modified"
+    FILE_SIZE = "sorting_mode.file_size"
+
+    def __str__(self):
+        # TODO use translation here once #662 is merged
+        match self.value:
+            case "sorting_mode.date.created":
+                return "Date Created"
+            case "sorting_mode.date.modified":
+                return "Date Modified"
+            case "sorting_mode.file_size":
+                return "File Size"
+        return self.value
+
+
 @dataclass
 class FilterState:
     """Represent a state of the Library grid view."""
@@ -66,6 +83,7 @@ class FilterState:
     # these should remain
     page_index: int | None = 0
     page_size: int | None = 500
+    sorting_mode: SortingModeEnum = SortingModeEnum.DATE_CREATED
 
     # these should be erased on update
     # Abstract Syntax Tree Of the current Search Query
@@ -110,6 +128,9 @@ class FilterState:
     def with_page_size(self, page_size: int) -> "FilterState":
         return replace(self, page_size=page_size)
 
+    def with_sorting_mode(self, mode: "SortingModeEnum") -> "FilterState":
+        return replace(self, sorting_mode=mode)
+
 
 class FieldTypeEnum(enum.Enum):
     TEXT_LINE = "Text Line"
@@ -117,20 +138,3 @@ class FieldTypeEnum(enum.Enum):
     TAGS = "Tags"
     DATETIME = "Datetime"
     BOOLEAN = "Checkbox"
-
-
-class SortingModeEnum(enum.Enum):
-    DATE_CREATED = "sorting_mode.date.created"
-    DATE_MODIFIED = "sorting_mode.date.modified"
-    FILE_SIZE = "sorting_mode.file_size"
-
-    def __str__(self):
-        # TODO use translation here once #662 is merged
-        match self.value:
-            case "sorting_mode.date.created":
-                return "Date Created"
-            case "sorting_mode.date.modified":
-                return "Date Modified"
-            case "sorting_mode.file_size":
-                return "File Size"
-        return self.value
