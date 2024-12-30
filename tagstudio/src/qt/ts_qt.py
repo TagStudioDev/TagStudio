@@ -845,8 +845,8 @@ class QtDriver(DriverMixin, QObject):
         return self.main_window.sorting_direction_combobox.currentData()
 
     def sorting_direction_callback(self):
-        logger.info("Sorting Direction Changed", direction=self.sorting_direction)
-        # TODO update ui
+        logger.info("Sorting Direction Changed", ascending=self.sorting_direction)
+        self.filter_items()
 
     @property
     def sorting_mode(self) -> SortingModeEnum:
@@ -855,7 +855,7 @@ class QtDriver(DriverMixin, QObject):
 
     def sorting_mode_callback(self):
         logger.info("Sorting Mode Changed", mode=self.sorting_mode)
-        # TODO update ui
+        self.filter_items()
 
     def thumb_size_callback(self, index: int):
         """Perform actions needed when the thumbnail size selection is changed.
@@ -1169,6 +1169,9 @@ class QtDriver(DriverMixin, QObject):
 
         if filter:
             self.filter = dataclasses.replace(self.filter, **dataclasses.asdict(filter))
+        else:
+            self.filter.sorting_mode = self.sorting_mode
+            self.filter.ascending = self.sorting_direction
 
         # inform user about running search
         self.main_window.statusbar.showMessage("Searching Library...")
