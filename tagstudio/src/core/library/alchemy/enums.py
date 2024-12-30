@@ -129,8 +129,11 @@ class FilterState:
     def with_page_size(self, page_size: int) -> "FilterState":
         return replace(self, page_size=page_size)
 
-    def with_sorting_mode(self, mode: "SortingModeEnum") -> "FilterState":
+    def with_sorting_mode(self, mode: SortingModeEnum) -> "FilterState":
         return replace(self, sorting_mode=mode)
+
+    def with_sorting_direction(self, ascending: bool) -> "FilterState":
+        return replace(self, ascending=ascending)
 
 
 class FieldTypeEnum(enum.Enum):
