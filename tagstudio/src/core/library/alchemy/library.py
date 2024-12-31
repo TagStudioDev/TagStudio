@@ -558,9 +558,7 @@ class Library:
             statement = select(Entry)
 
             if search.ast:
-                statement = statement.outerjoin(TagEntry).where(
-                    SQLBoolExpressionBuilder(self).visit(search.ast)
-                )
+                statement = statement.where(SQLBoolExpressionBuilder(self).visit(search.ast))
 
             extensions = self.prefs(LibraryPrefs.EXTENSION_LIST)
             is_exclude_list = self.prefs(LibraryPrefs.IS_EXCLUDE_LIST)
