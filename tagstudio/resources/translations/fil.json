@@ -37,7 +37,6 @@
     "library.field.add": "Magdagdag ng Field",
     "library.field.remove": "Tanggalin ang Field",
     "library.name": "Library",
-    "library.refresh.scanning": "Sina-scan ang Mga Direktoryo para sa Mga Bagong File...\n%{x + 1} %{\"mga\" if x + 1 != 1 else \"\"} File na nahanap, %{len(self.lib.files_not_in_library)} Mga Bagong File na Nahanap",
     "library.refresh.scanning_preparing": "Sina-scan ang Mga Direktoryo para sa Mga Bagong File...\nNaghahanda...",
     "library.refresh.title": "Nire-refresh ang Mga Direktoryo",
     "macros.running.dialog.new_entries": "Tinatakbo ang Mga Naka-configure na Macro sa %{x + 1}/%{len(new_ids)} Mga Bagong Entry",
