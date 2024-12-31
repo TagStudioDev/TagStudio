@@ -81,7 +81,6 @@
     "library.field.remove": "Supprimer un Champ",
     "library.missing": "Emplacement Manquant",
     "library.name": "Bibliothèque",
-    "library.refresh.scanning": "Recherche de Nouveaux Fichiers dans les Dossiers...\n%{x + 1} Fichiers%{\"s\" if x + 1 != 1 else \"\"} Recherchés, %{len(self.lib.files_not_in_library)} Nouveaux Fichiers Trouvés",
     "library.refresh.scanning_preparing": "Recherche de Nouveaux Fichiers dans les Dossiers...\nPréparation...",
     "library.refresh.title": "Rafraîchissement des Dossiers",
     "library.scan_library.title": "Balayage de la Bibliothèque",

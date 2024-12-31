@@ -79,7 +79,6 @@
     "library.field.remove": "移除欄位",
     "library.missing": "找不到資料庫路徑",
     "library.name": "資料庫",
-    "library.refresh.scanning": "正在掃描資料夾中的新檔案...\n%{x + 1} File%{\"s\" if x + 1 != 1 else \"\"} 搜尋, 找到 %{len(self.lib.files_not_in_library)} 個新檔案",
     "library.refresh.scanning_preparing": "正在掃描資料夾中的新檔案...\n準備中...",
     "library.refresh.title": "重新整理路徑中",
     "library.scan_library.title": "掃描資料庫中",

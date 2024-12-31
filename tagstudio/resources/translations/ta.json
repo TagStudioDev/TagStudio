@@ -61,7 +61,6 @@
     "library.field.remove": "புலத்தை அகற்று",
     "library.missing": "இடம் காணவில்லை",
     "library.name": "நூலகம்",
-    "library.refresh.scanning": "புதிய கோப்புகளுக்கான அடைவுகள் சோதனை செய்யப்படுகின்றது...\n%{x + 1} கோப்பு%{\"s\" if x + 1 != 1 else \"\"} தேடப்பட்டது, %{len(self.lib.files_not_in_library)} புதிய கோப்புகள் கிடைத்தன",
     "library.refresh.scanning_preparing": "புதிய கோப்புகளுக்கான அடைவுகள் சோதனை செய்யப்படுகின்றது...\nதயாராகிறது...",
     "library.refresh.title": "கோப்பகங்கள் புதுப்பிக்கப்படுகின்றன",
     "library.scan_library.title": "புத்தககல்லரி சோதனை செய்யப்படுகிறது",

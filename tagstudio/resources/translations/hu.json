@@ -81,7 +81,6 @@
     "library.field.remove": "Mező eltávolítása",
     "library.missing": "Hiányzó hely",
     "library.name": "Könyvtár",
-    "library.refresh.scanning": "Új fájlok keresése a mappákban…\n%{x + 1} fájl megvizsgálva; ebből %{len(self.lib.files_not_in_library)} új",
     "library.refresh.scanning_preparing": "Új fájlok keresése a mappákban…\nElőkészítés…",
     "library.refresh.title": "Mappák frissítése",
     "library.scan_library.title": "Könyvtár vizsgálata",

@@ -61,7 +61,6 @@
     "library.field.remove": "Alan Kaldır",
     "library.missing": "Lokasyon bulunamadı",
     "library.name": "Kütüphane",
-    "library.refresh.scanning": "Yeni Dosyalar için Dizinler Taranıyor...\n%{x + 1} File%{\"s\" if x + 1 != 1 else \"\"} Arandı, %{len(self.lib.files_not_in_library)} Yeni Dosya Bulundu",
     "library.refresh.scanning_preparing": "Yeni Dosyalar için Dizinler Taranıyor...\nHazırlanıyor...",
     "library.refresh.title": "Dizinler Yenileniyor",
     "library.scan_library.title": "Kütüphane Taranıyor",
