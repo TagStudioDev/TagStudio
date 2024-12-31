@@ -23,46 +23,50 @@ class RecentLibraries(QWidget):
     def __init__(self, library: Library, driver: "QtDriver"):
         super().__init__()
 
+    #         # keep list of rendered libraries to avoid needless re-rendering
+    #         self.render_libs: set = set()
+    #         self.library = library
+    #         self.driver = driver
+    #         layout = QVBoxLayout()
 
-#         # keep list of rendered libraries to avoid needless re-rendering
-#         self.render_libs: set = set()
-#         self.library = library
-#         self.driver = driver
-#         layout = QVBoxLayout()
+    #         settings = driver.settings
+    #         settings.beginGroup(SettingItems.LIBS_LIST)
+    #         lib_items: dict[str, tuple[str, str]] = {}
+    #         for item_tstamp in settings.allKeys():
+    #             val = str(settings.value(item_tstamp, type=str))
+    #             cut_val = val
+    #             if len(val) > 45:
+    #                 cut_val = f"{val[0:10]} ... {val[-10:]}"
+    #             lib_items[item_tstamp] = (val, cut_val)
 
-#         settings = driver.settings
-#         settings.beginGroup(SettingItems.LIBS_LIST)
-#         lib_items: dict[str, tuple[str, str]] = {}
-#         for item_tstamp in settings.allKeys():
-#             val = str(settings.value(item_tstamp, type=str))
-#             cut_val = val
-#             if len(val) > 45:
-#                 cut_val = f"{val[0:10]} ... {val[-10:]}"
-#             lib_items[item_tstamp] = (val, cut_val)
+    #         settings.endGroup()
 
-#         settings.endGroup()
+    #         new_keys = set(lib_items.keys())
+    #         if new_keys == self.render_libs:
+    #             # no need to re-render
+    #             return
 
-#         new_keys = set(lib_items.keys())
-#         if new_keys == self.render_libs:
-#             # no need to re-render
-#             return
+    #         # sort lib_items by the key
+    #         libs_sorted = sorted(lib_items.items(), key=lambda item: item[0], reverse=True)
 
-#         # sort lib_items by the key
-#         libs_sorted = sorted(lib_items.items(), key=lambda item: item[0], reverse=True)
+    #         self.render_libs = new_keys
+    #         self.setLayout(layout)
 
-#         self.render_libs = new_keys
-#         self.setLayout(layout)
+    #         self._fill_libs_widget(libs_sorted, layout)
 
-#         self._fill_libs_widget(libs_sorted, layout)
+    # def _fill_libs_widget(
+    #     self,
+    #     libraries: list[tuple[str, tuple[str, str]]],
+    #     layout: QVBoxLayout,
+    # ):
+    #     def clear_layout(layout_item: QVBoxLayout):
+    #         for i in reversed(range(layout_item.count())):
+    #             child = layout_item.itemAt(i)
+    #             if child.widget() is not None:
+    #                 child.widget().deleteLater()
+    #             elif child.layout() is not None:
+    #                 clear_layout(child.layout())  # type: ignore
 
-#     def _fill_libs_widget(self, libraries: list[tuple[str, tuple[str, str]]], layout: QVBoxLayout):
-#         def clear_layout(layout_item: QVBoxLayout):
-#             for i in reversed(range(layout_item.count())):
-#                 child = layout_item.itemAt(i)
-#                 if child.widget() is not None:
-#                     child.widget().deleteLater()
-#                 elif child.layout() is not None:
-#                     clear_layout(child.layout())  # type: ignore
 
 #         # remove any potential previous items
 #         clear_layout(layout)

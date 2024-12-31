@@ -524,6 +524,7 @@ class ItemThumb(FlowWidget):
         if toggle_value:
             self.lib.add_tags_to_entry(entry_id, tag_id)
         else:
+            # TODO: Implement
             self.lib.remove_tag_from_entry(entry_id, tag_id)
 
         if self.driver.preview_panel.is_open:

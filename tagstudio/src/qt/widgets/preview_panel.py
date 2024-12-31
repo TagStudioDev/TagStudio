@@ -2,6 +2,7 @@
 # Licensed under the GPL-3.0 License.
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
+import traceback
 import typing
 from pathlib import Path
 
@@ -64,8 +65,9 @@ class PreviewPanel(QWidget):
         splitter.addWidget(self.thumb)
         splitter.addWidget(self.thumb.media_player)
         splitter.addWidget(self.file_attrs)
+        splitter.addWidget(self.fields)
         # splitter.addWidget(self.libs_flow_container)
-        splitter.setStretchFactor(1, 2)
+        splitter.setStretchFactor(3, 2)
 
         root_layout = QHBoxLayout(self)
         root_layout.setContentsMargins(0, 0, 0, 0)
@@ -91,7 +93,8 @@ class PreviewPanel(QWidget):
             # self.file_attrs.update_blank()
             self.file_attrs.update_stats()
             self.file_attrs.update_date_label()
-            pass
+
+        # One Item Selected
         elif len(self.driver.selected) == 1:
             entry: Entry = items[0]
             filepath: Path = self.lib.library_dir / entry.path
@@ -99,19 +102,21 @@ class PreviewPanel(QWidget):
 
             stats: dict = self.thumb.update_preview(filepath, ext)
             logger.info("stats", stats=stats, ext=ext)
-            self.file_attrs.update_stats(filepath, ext, stats)
-            self.file_attrs.update_date_label(filepath)
-            # TODO: Render regular single selection
-            # TODO: Return known attributes from thumb, and give those to field_attrs
-            # self.file_attrs.update_filename()
-            pass
+            try:
+                self.file_attrs.update_stats(filepath, ext, stats)
+                self.file_attrs.update_date_label(filepath)
+                self.fields.update_from_entry(entry)
+            except Exception as e:
+                logger.error("[Preview Panel] Error updating selection", error=e)
+                traceback.print_exc()
+
         # Multiple Selected Items
         elif len(self.driver.selected) > 1:
             # Render mixed selection
             self.file_attrs.update_multi_selection(len(self.driver.selected))
             self.file_attrs.update_date_label()
+            # self.fields.update_from_entries(items)
             # self.file_attrs.update_selection_count()
-            pass
 
         # self.thumb.update_widgets()
         # # self.file_attrs.update_widgets()
