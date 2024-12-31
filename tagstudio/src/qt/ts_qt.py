@@ -555,15 +555,21 @@ class QtDriver(DriverMixin, QObject):
         # Sorting Dropdowns
         sort_mode_dropdown: QComboBox = self.main_window.sorting_mode_combobox
         for sort_mode in SortingModeEnum:
-            sort_mode_dropdown.addItem(str(sort_mode), sort_mode)
+            sort_mode_dropdown.addItem(Translations[sort_mode.value], sort_mode)
         sort_mode_dropdown.setCurrentIndex(
             list(SortingModeEnum).index(self.filter.sorting_mode)
         )  # set according to self.filter
         sort_mode_dropdown.currentIndexChanged.connect(self.sorting_mode_callback)
 
         sort_dir_dropdown: QComboBox = self.main_window.sorting_direction_combobox
-        sort_dir_dropdown.addItem("Ascending", userData=True)  # TODO translate
-        sort_dir_dropdown.addItem("Descending", userData=False)  # TODO translate
+        sort_dir_dropdown.addItem("Ascending", userData=True)
+        sort_dir_dropdown.addItem("Descending", userData=False)
+        Translations.translate_with_setter(
+            lambda text: sort_dir_dropdown.setItemText(0, text), "sorting.direction.ascending"
+        )
+        Translations.translate_with_setter(
+            lambda text: sort_dir_dropdown.setItemText(1, text), "sorting.direction.descending"
+        )
         sort_dir_dropdown.setCurrentIndex(0)  # Default: Ascending
         sort_dir_dropdown.currentIndexChanged.connect(self.sorting_direction_callback)
 

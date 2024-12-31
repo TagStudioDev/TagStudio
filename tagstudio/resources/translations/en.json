@@ -212,5 +212,10 @@
     "view.size.4": "Extra Large",
     "window.message.error_opening_library": "Error opening library.",
     "window.title.error": "Error",
-    "window.title.open_create_library": "Open/Create Library"
+    "window.title.open_create_library": "Open/Create Library",
+    "sorting.direction.ascending": "Ascending",
+    "sorting.direction.descending": "Descending",
+    "sorting.mode.date.added": "Date Added",
+    "sorting.mode.date.created": "Date Created",
+    "sorting.mode.date.modified": "Date Modified"
 }

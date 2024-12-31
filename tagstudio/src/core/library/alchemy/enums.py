@@ -60,14 +60,7 @@ class ItemType(enum.Enum):
 
 
 class SortingModeEnum(enum.Enum):
-    DATE_ADDED = "sorting_mode.date.added"
-
-    def __str__(self):
-        # TODO use translation here once #662 is merged
-        match self.value:
-            case "sorting_mode.date.added":
-                return "Date Added"
-        return self.value
+    DATE_ADDED = "sorting.mode.date.added"
 
 
 @dataclass
