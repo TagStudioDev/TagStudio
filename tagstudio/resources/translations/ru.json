@@ -61,7 +61,6 @@
     "library.field.remove": "Удалить Категорию",
     "library.missing": "Путь не найден",
     "library.name": "Библиотека",
-    "library.refresh.scanning": "Сканирование на наличие новых файлов...\n%{x + 1} File%{\"s\" if x + 1 != 1 else \"\"} Searched, %{len(self.lib.files_not_in_library)} Найдены новые файлы",
     "library.refresh.scanning_preparing": "Сканирование каталога на наличие новых файлов...\nПодготовка...",
     "library.refresh.title": "Обновление Каталога",
     "library.scan_library.title": "Сканирование Библиотеки",

@@ -85,6 +85,7 @@ from src.qt.modals.fix_unlinked import FixUnlinkedEntriesModal
 from src.qt.modals.folders_to_tags import FoldersToTagsModal
 from src.qt.modals.tag_database import TagDatabasePanel
 from src.qt.resource_manager import ResourceManager
+from src.qt.translations import Translations
 from src.qt.widgets.item_thumb import BadgeType, ItemThumb
 from src.qt.widgets.migration_modal import JsonMigrationModal
 from src.qt.widgets.panel import PanelModal
@@ -187,10 +188,10 @@ class QtDriver(DriverMixin, QObject):
 
     def open_library_from_dialog(self):
         dir = QFileDialog.getExistingDirectory(
-            None,
-            "Open/Create Library",
-            "/",
-            QFileDialog.Option.ShowDirsOnly,
+            parent=None,
+            caption=Translations["window.title.open_create_library"],
+            dir="/",
+            options=QFileDialog.Option.ShowDirsOnly,
         )
         if dir not in (None, ""):
             self.open_library(Path(dir))
@@ -255,15 +256,22 @@ class QtDriver(DriverMixin, QObject):
         self.main_window.setMenuBar(menu_bar)
         menu_bar.setNativeMenuBar(True)
 
-        file_menu = QMenu("&File", menu_bar)
-        edit_menu = QMenu("&Edit", menu_bar)
-        view_menu = QMenu("&View", menu_bar)
-        tools_menu = QMenu("&Tools", menu_bar)
-        macros_menu = QMenu("&Macros", menu_bar)
-        help_menu = QMenu("&Help", menu_bar)
+        file_menu = QMenu(menu_bar)
+        Translations.translate_qobject(file_menu, "menu.file")
+        edit_menu = QMenu(menu_bar)
+        Translations.translate_qobject(edit_menu, "generic.edit_alt")
+        view_menu = QMenu(menu_bar)
+        Translations.translate_qobject(view_menu, "menu.view")
+        tools_menu = QMenu(menu_bar)
+        Translations.translate_qobject(tools_menu, "menu.tools")
+        macros_menu = QMenu(menu_bar)
+        Translations.translate_qobject(macros_menu, "menu.macros")
+        help_menu = QMenu(menu_bar)
+        Translations.translate_qobject(help_menu, "menu.help")
 
         # File Menu ============================================================
-        open_library_action = QAction("&Open/Create Library", menu_bar)
+        open_library_action = QAction(menu_bar)
+        Translations.translate_qobject(open_library_action, "menu.file.open_create_library")
         open_library_action.triggered.connect(lambda: self.open_library_from_dialog())
         open_library_action.setShortcut(
             QtCore.QKeyCombination(
@@ -274,7 +282,8 @@ class QtDriver(DriverMixin, QObject):
         open_library_action.setToolTip("Ctrl+O")
         file_menu.addAction(open_library_action)
 
-        save_library_backup_action = QAction("&Save Library Backup", menu_bar)
+        save_library_backup_action = QAction(menu_bar)
+        Translations.translate_qobject(save_library_backup_action, "menu.file.save_backup")
         save_library_backup_action.triggered.connect(
             lambda: self.callback_library_needed_check(self.backup_library)
         )
@@ -292,7 +301,8 @@ class QtDriver(DriverMixin, QObject):
 
         file_menu.addSeparator()
 
-        add_new_files_action = QAction("&Refresh Directories", menu_bar)
+        add_new_files_action = QAction(menu_bar)
+        Translations.translate_qobject(add_new_files_action, "menu.file.refresh_directories")
         add_new_files_action.triggered.connect(
             lambda: self.callback_library_needed_check(self.add_new_files_callback)
         )
@@ -306,12 +316,14 @@ class QtDriver(DriverMixin, QObject):
         file_menu.addAction(add_new_files_action)
         file_menu.addSeparator()
 
-        close_library_action = QAction("&Close Library", menu_bar)
+        close_library_action = QAction(menu_bar)
+        Translations.translate_qobject(close_library_action, "menu.file.close_library")
         close_library_action.triggered.connect(self.close_library)
         file_menu.addAction(close_library_action)
         file_menu.addSeparator()
 
-        open_on_start_action = QAction("Open Library on Start", self)
+        open_on_start_action = QAction(self)
+        Translations.translate_qobject(open_on_start_action, "settings.open_library_on_start")
         open_on_start_action.setCheckable(True)
         open_on_start_action.setChecked(
             bool(self.settings.value(SettingItems.START_LOAD_LAST, defaultValue=True, type=bool))
@@ -322,7 +334,8 @@ class QtDriver(DriverMixin, QObject):
         file_menu.addAction(open_on_start_action)
 
         # Edit Menu ============================================================
-        new_tag_action = QAction("New &Tag", menu_bar)
+        new_tag_action = QAction(menu_bar)
+        Translations.translate_qobject(new_tag_action, "menu.edit.new_tag")
         new_tag_action.triggered.connect(lambda: self.add_tag_action_callback())
         new_tag_action.setShortcut(
             QtCore.QKeyCombination(
@@ -335,7 +348,8 @@ class QtDriver(DriverMixin, QObject):
 
         edit_menu.addSeparator()
 
-        select_all_action = QAction("Select All", menu_bar)
+        select_all_action = QAction(menu_bar)
+        Translations.translate_qobject(select_all_action, "select.all")
         select_all_action.triggered.connect(self.select_all_action_callback)
         select_all_action.setShortcut(
             QtCore.QKeyCombination(
@@ -346,7 +360,8 @@ class QtDriver(DriverMixin, QObject):
         select_all_action.setToolTip("Ctrl+A")
         edit_menu.addAction(select_all_action)
 
-        clear_select_action = QAction("Clear Selection", menu_bar)
+        clear_select_action = QAction(menu_bar)
+        Translations.translate_qobject(clear_select_action, "select.clear")
         clear_select_action.triggered.connect(self.clear_select_action_callback)
         clear_select_action.setShortcut(QtCore.Qt.Key.Key_Escape)
         clear_select_action.setToolTip("Esc")
@@ -354,16 +369,21 @@ class QtDriver(DriverMixin, QObject):
 
         edit_menu.addSeparator()
 
-        manage_file_extensions_action = QAction("Manage File Extensions", menu_bar)
+        manage_file_extensions_action = QAction(menu_bar)
+        Translations.translate_qobject(
+            manage_file_extensions_action, "menu.edit.manage_file_extensions"
+        )
         manage_file_extensions_action.triggered.connect(self.show_file_extension_modal)
         edit_menu.addAction(manage_file_extensions_action)
 
-        tag_database_action = QAction("Manage Tags", menu_bar)
+        tag_database_action = QAction(menu_bar)
+        Translations.translate_qobject(tag_database_action, "menu.edit.manage_tags")
         tag_database_action.triggered.connect(lambda: self.show_tag_database())
         edit_menu.addAction(tag_database_action)
 
         # View Menu ============================================================
-        show_libs_list_action = QAction("Show Recent Libraries", menu_bar)
+        show_libs_list_action = QAction(menu_bar)
+        Translations.translate_qobject(show_libs_list_action, "settings.show_recent_libraries")
         show_libs_list_action.setCheckable(True)
         show_libs_list_action.setChecked(
             bool(self.settings.value(SettingItems.WINDOW_SHOW_LIBS, defaultValue=True, type=bool))
@@ -376,7 +396,8 @@ class QtDriver(DriverMixin, QObject):
         )
         view_menu.addAction(show_libs_list_action)
 
-        show_filenames_action = QAction("Show Filenames in Grid", menu_bar)
+        show_filenames_action = QAction(menu_bar)
+        Translations.translate_qobject(show_filenames_action, "settings.show_filenames_in_grid")
         show_filenames_action.setCheckable(True)
         show_filenames_action.setChecked(
             bool(self.settings.value(SettingItems.SHOW_FILENAMES, defaultValue=True, type=bool))
@@ -395,7 +416,10 @@ class QtDriver(DriverMixin, QObject):
                 self.unlinked_modal = FixUnlinkedEntriesModal(self.lib, self)
             self.unlinked_modal.show()
 
-        fix_unlinked_entries_action = QAction("Fix &Unlinked Entries", menu_bar)
+        fix_unlinked_entries_action = QAction(menu_bar)
+        Translations.translate_qobject(
+            fix_unlinked_entries_action, "menu.tools.fix_unlinked_entries"
+        )
         fix_unlinked_entries_action.triggered.connect(create_fix_unlinked_entries_modal)
         tools_menu.addAction(fix_unlinked_entries_action)
 
@@ -404,7 +428,8 @@ class QtDriver(DriverMixin, QObject):
                 self.dupe_modal = FixDupeFilesModal(self.lib, self)
             self.dupe_modal.show()
 
-        fix_dupe_files_action = QAction("Fix Duplicate &Files", menu_bar)
+        fix_dupe_files_action = QAction(menu_bar)
+        Translations.translate_qobject(fix_dupe_files_action, "menu.tools.fix_duplicate_files")
         fix_dupe_files_action.triggered.connect(create_dupe_files_modal)
         tools_menu.addAction(fix_dupe_files_action)
 
@@ -427,12 +452,14 @@ class QtDriver(DriverMixin, QObject):
                 self.folders_modal = FoldersToTagsModal(self.lib, self)
             self.folders_modal.show()
 
-        folders_to_tags_action = QAction("Folders to Tags", menu_bar)
+        folders_to_tags_action = QAction(menu_bar)
+        Translations.translate_qobject(folders_to_tags_action, "menu.macros.folders_to_tags")
         folders_to_tags_action.triggered.connect(create_folders_tags_modal)
         macros_menu.addAction(folders_to_tags_action)
 
         # Help Menu ============================================================
-        self.repo_action = QAction("Visit GitHub Repository", menu_bar)
+        self.repo_action = QAction(menu_bar)
+        Translations.translate_qobject(self.repo_action, "help.visit_github")
         self.repo_action.triggered.connect(
             lambda: webbrowser.open("https://github.com/TagStudioDev/TagStudio")
         )
@@ -456,12 +483,13 @@ class QtDriver(DriverMixin, QObject):
             str(Path(__file__).parents[2] / "resources/qt/fonts/Oxanium-Bold.ttf")
         )
 
+        # TODO this doesn't update when the language is changed
         self.thumb_sizes: list[tuple[str, int]] = [
-            ("Extra Large Thumbnails", 256),
-            ("Large Thumbnails", 192),
-            ("Medium Thumbnails", 128),
-            ("Small Thumbnails", 96),
-            ("Mini Thumbnails", 76),
+            (Translations["home.thumbnail_size.extra_large"], 256),
+            (Translations["home.thumbnail_size.large"], 192),
+            (Translations["home.thumbnail_size.medium"], 128),
+            (Translations["home.thumbnail_size.small"], 96),
+            (Translations["home.thumbnail_size.mini"], 76),
         ]
         self.item_thumbs: list[ItemThumb] = []
         self.thumb_renderers: list[ThumbRenderer] = []
@@ -473,7 +501,9 @@ class QtDriver(DriverMixin, QObject):
         # check status of library path evaluating
         if path_result.success and path_result.library_path:
             self.splash.showMessage(
-                f'Opening Library "{path_result.library_path}"...',
+                Translations.translate_formatted(
+                    "splash.opening_library", library_path=path_result.library_path
+                ),
                 int(Qt.AlignmentFlag.AlignBottom | Qt.AlignmentFlag.AlignHCenter),
                 QColor("#9782ff"),
             )
@@ -490,8 +520,8 @@ class QtDriver(DriverMixin, QObject):
         msg_box = QMessageBox()
         msg_box.setIcon(QMessageBox.Icon.Critical)
         msg_box.setText(message)
-        msg_box.setWindowTitle("Error")
-        msg_box.addButton("Close", QMessageBox.ButtonRole.AcceptRole)
+        msg_box.setWindowTitle(Translations["window.title.error"])
+        msg_box.addButton(Translations["generic.close"], QMessageBox.ButtonRole.AcceptRole)
 
         # Show the message box
         msg_box.exec()
@@ -603,7 +633,7 @@ class QtDriver(DriverMixin, QObject):
             return
 
         logger.info("Closing Library...")
-        self.main_window.statusbar.showMessage("Closing Library...")
+        self.main_window.statusbar.showMessage(Translations["status.library_closing"])
         start_time = time.time()
 
         self.settings.setValue(SettingItems.LAST_LIBRARY, str(self.lib.library_dir))
@@ -629,26 +659,32 @@ class QtDriver(DriverMixin, QObject):
 
         end_time = time.time()
         self.main_window.statusbar.showMessage(
-            f"Library Closed ({format_timespan(end_time - start_time)})"
+            Translations.translate_formatted(
+                "status.library_closed", time_span=format_timespan(end_time - start_time)
+            )
         )
 
     def backup_library(self):
         logger.info("Backing Up Library...")
-        self.main_window.statusbar.showMessage("Saving Library...")
+        self.main_window.statusbar.showMessage(Translations["status.library_backup_in_progress"])
         start_time = time.time()
         target_path = self.lib.save_library_backup_to_disk()
         end_time = time.time()
         self.main_window.statusbar.showMessage(
-            f'Library Backup Saved at: "{target_path}" ({format_timespan(end_time - start_time)})'
+            Translations.translate_formatted(
+                "status.library_backup_success",
+                path=target_path,
+                time_span=format_timespan(end_time - start_time),
+            )
         )
 
     def add_tag_action_callback(self):
         self.modal = PanelModal(
             BuildTagPanel(self.lib),
-            "New Tag",
-            "Add Tag",
             has_save=True,
         )
+        Translations.translate_with_setter(self.modal.setTitle, "tag.new")
+        Translations.translate_with_setter(self.modal.setWindowTitle, "tag.add")
 
         panel: BuildTagPanel = self.modal.widget
         self.modal.saved.connect(
@@ -684,21 +720,21 @@ class QtDriver(DriverMixin, QObject):
     def show_tag_database(self):
         self.modal = PanelModal(
             widget=TagDatabasePanel(self.lib),
-            title="Library Tags",
-            window_title="Library Tags",
             done_callback=self.preview_panel.update_widgets,
             has_save=False,
         )
+        Translations.translate_with_setter(self.modal.setTitle, "tag_manager.title")
+        Translations.translate_with_setter(self.modal.setWindowTitle, "tag_manager.title")
         self.modal.show()
 
     def show_file_extension_modal(self):
         panel = FileExtensionModal(self.lib)
         self.modal = PanelModal(
             panel,
-            "File Extensions",
-            "File Extensions",
             has_save=True,
         )
+        Translations.translate_with_setter(self.modal.setTitle, "ignore_list.title")
+        Translations.translate_with_setter(self.modal.setWindowTitle, "ignore_list.title")
 
         self.modal.saved.connect(lambda: (panel.save(), self.filter_items()))
         self.modal.show()
@@ -708,12 +744,13 @@ class QtDriver(DriverMixin, QObject):
         tracker = RefreshDirTracker(self.lib)
 
         pw = ProgressWidget(
-            window_title="Refreshing Directories",
-            label_text="Scanning Directories for New Files...\nPreparing...",
             cancel_button_text=None,
             minimum=0,
             maximum=0,
         )
+        Translations.translate_with_setter(pw.setWindowTitle, "library.refresh.title")
+        Translations.translate_with_setter(pw.update_label, "library.refresh.scanning_preparing")
+
         pw.show()
 
         iterator = FunctionIterator(lambda: tracker.refresh_dir(self.lib.library_dir))
@@ -721,9 +758,13 @@ class QtDriver(DriverMixin, QObject):
             lambda x: (
                 pw.update_progress(x + 1),
                 pw.update_label(
-                    f"Scanning Directories for New Files...\n{x + 1}"
-                    f' File{"s" if x + 1 != 1 else ""} Searched,'
-                    f" {tracker.files_count} New Files Found"
+                    Translations.translate_formatted(
+                        "library.refresh.scanning.plural"
+                        if x + 1 != 1
+                        else "library.refresh.scanning.singular",
+                        searched_count=x + 1,
+                        found_count=tracker.files_count,
+                    )
                 ),
             )
         )
@@ -746,18 +787,24 @@ class QtDriver(DriverMixin, QObject):
 
         iterator = FunctionIterator(tracker.save_new_files)
         pw = ProgressWidget(
-            window_title="Running Macros on New Entries",
-            label_text=f"Running Configured Macros on 1/{files_count} New Entries",
             cancel_button_text=None,
             minimum=0,
             maximum=files_count,
+        )
+        Translations.translate_with_setter(pw.setWindowTitle, "macros.running.dialog.title")
+        Translations.translate_with_setter(
+            pw.update_label, "macros.running.dialog.new_entries", count=1, total=files_count
         )
         pw.show()
 
         iterator.value.connect(
             lambda x: (
                 pw.update_progress(x + 1),
-                pw.update_label(f"Running Configured Macros on {x + 1}/{files_count} New Entries"),
+                pw.update_label(
+                    Translations.translate_formatted(
+                        "macros.running.dialog.new_entries", count=x + 1, total=files_count
+                    )
+                ),
             )
         )
         r = CustomRunnable(iterator.run)
@@ -1174,7 +1221,7 @@ class QtDriver(DriverMixin, QObject):
             self.filter.ascending = self.sorting_direction
 
         # inform user about running search
-        self.main_window.statusbar.showMessage("Searching Library...")
+        self.main_window.statusbar.showMessage(Translations["status.library_search_query"])
         self.main_window.statusbar.repaint()
 
         # search the library
@@ -1189,7 +1236,11 @@ class QtDriver(DriverMixin, QObject):
 
         # inform user about completed search
         self.main_window.statusbar.showMessage(
-            f"{results.total_count} Results Found ({format_timespan(end_time - start_time)})"
+            Translations.translate_formatted(
+                "status.results_found",
+                count=results.total_count,
+                time_span=format_timespan(end_time - start_time),
+            )
         )
 
         # update page content
@@ -1236,9 +1287,13 @@ class QtDriver(DriverMixin, QObject):
 
     def open_library(self, path: Path) -> None:
         """Open a TagStudio library."""
-        open_message: str = f'Opening Library "{str(path)}"...'
-        self.main_window.landing_widget.set_status_label(open_message)
-        self.main_window.statusbar.showMessage(open_message, 3)
+        translation_params = {"key": "splash.opening_library", "library_path": str(path)}
+        Translations.translate_with_setter(
+            self.main_window.landing_widget.set_status_label, **translation_params
+        )
+        self.main_window.statusbar.showMessage(
+            Translations.translate_formatted(**translation_params), 3
+        )
         self.main_window.repaint()
 
         open_status: LibraryStatus = self.lib.open_library(path)
@@ -1256,7 +1311,9 @@ class QtDriver(DriverMixin, QObject):
 
     def init_library(self, path: Path, open_status: LibraryStatus):
         if not open_status.success:
-            self.show_error_message(open_status.message or "Error opening library.")
+            self.show_error_message(
+                open_status.message or Translations["window.message.error_opening_library"]
+            )
             return open_status
 
         self.init_workers()
@@ -1268,8 +1325,12 @@ class QtDriver(DriverMixin, QObject):
             self.add_new_files_callback()
 
         self.update_libs_list(path)
-        title_text = f"{self.base_title} - Library '{self.lib.library_dir}'"
-        self.main_window.setWindowTitle(title_text)
+        Translations.translate_with_setter(
+            self.main_window.setWindowTitle,
+            "app.title",
+            base_title=self.base_title,
+            library_dir=self.lib.library_dir,
+        )
         self.main_window.setAcceptDrops(True)
 
         self.selected.clear()

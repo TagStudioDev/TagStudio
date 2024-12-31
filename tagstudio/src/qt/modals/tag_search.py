@@ -19,6 +19,7 @@ from PySide6.QtWidgets import (
 )
 from src.core.library import Library
 from src.core.palette import ColorType, get_tag_color
+from src.qt.translations import Translations
 from src.qt.widgets.panel import PanelWidget
 from src.qt.widgets.tag import TagWidget
 
@@ -41,7 +42,7 @@ class TagSearchPanel(PanelWidget):
         self.search_field = QLineEdit()
         self.search_field.setObjectName("searchField")
         self.search_field.setMinimumSize(QSize(0, 32))
-        self.search_field.setPlaceholderText("Search Tags")
+        Translations.translate_with_setter(self.search_field.setPlaceholderText, "home.search_tags")
         self.search_field.textEdited.connect(lambda: self.update_tags(self.search_field.text()))
         self.search_field.returnPressed.connect(
             lambda checked=False: self.on_return(self.search_field.text())
