@@ -559,12 +559,8 @@ class Library:
 
             if search.ast:
                 start_time = time.time()
-                statement = statement.outerjoin(TagEntry).where(
-                    SQLBoolExpressionBuilder(self).visit(search.ast)
-                )
-
+                statement = statement.where(SQLBoolExpressionBuilder(self).visit(search.ast))
                 end_time = time.time()
-
                 logger.info(
                     f"SQL Expression Builder finished ({format_timespan(end_time - start_time)})"
                 )
