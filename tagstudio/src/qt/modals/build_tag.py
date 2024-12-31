@@ -24,6 +24,7 @@ from src.core.library import Library, Tag
 from src.core.library.alchemy.enums import TagColor
 from src.core.palette import ColorType, UiColor, get_tag_color, get_ui_color
 from src.qt.modals.tag_search import TagSearchPanel
+from src.qt.translations import Translations
 from src.qt.widgets.panel import PanelModal, PanelWidget
 from src.qt.widgets.tag import TagWidget
 
@@ -69,12 +70,14 @@ class BuildTagPanel(PanelWidget):
         self.name_layout.setSpacing(0)
         self.name_layout.setAlignment(Qt.AlignmentFlag.AlignLeft)
         self.name_title = QLabel()
-        self.name_title.setText("Name")
+        Translations.translate_qobject(self.name_title, "tag.name")
         self.name_layout.addWidget(self.name_title)
         self.name_field = QLineEdit()
         self.name_field.setFixedHeight(24)
         self.name_field.textChanged.connect(self.on_name_changed)
-        self.name_field.setPlaceholderText("Tag Name (Required)")
+        Translations.translate_with_setter(
+            self.name_field.setPlaceholderText, "tag.tag_name_required"
+        )
         self.name_layout.addWidget(self.name_field)
 
         # Shorthand ------------------------------------------------------------
@@ -85,7 +88,7 @@ class BuildTagPanel(PanelWidget):
         self.shorthand_layout.setSpacing(0)
         self.shorthand_layout.setAlignment(Qt.AlignmentFlag.AlignLeft)
         self.shorthand_title = QLabel()
-        self.shorthand_title.setText("Shorthand")
+        Translations.translate_qobject(self.shorthand_title, "tag.shorthand")
         self.shorthand_layout.addWidget(self.shorthand_title)
         self.shorthand_field = QLineEdit()
         self.shorthand_layout.addWidget(self.shorthand_field)
@@ -98,7 +101,7 @@ class BuildTagPanel(PanelWidget):
         self.aliases_layout.setSpacing(0)
         self.aliases_layout.setAlignment(Qt.AlignmentFlag.AlignLeft)
         self.aliases_title = QLabel()
-        self.aliases_title.setText("Aliases")
+        Translations.translate_qobject(self.aliases_title, "tag.aliases")
         self.aliases_layout.addWidget(self.aliases_title)
 
         self.aliases_table = QTableWidget(0, 2)
@@ -122,7 +125,7 @@ class BuildTagPanel(PanelWidget):
         self.subtags_layout.setAlignment(Qt.AlignmentFlag.AlignLeft)
 
         self.subtags_title = QLabel()
-        self.subtags_title.setText("Parent Tags")
+        Translations.translate_qobject(self.subtags_title, "tag.parent_tags")
         self.subtags_layout.addWidget(self.subtags_title)
 
         self.scroll_contents = QWidget()
@@ -151,7 +154,9 @@ class BuildTagPanel(PanelWidget):
 
         tsp = TagSearchPanel(self.lib, exclude_ids)
         tsp.tag_chosen.connect(lambda x: self.add_subtag_callback(x))
-        self.add_tag_modal = PanelModal(tsp, "Add Parent Tags", "Add Parent Tags")
+        self.add_tag_modal = PanelModal(tsp)
+        Translations.translate_with_setter(self.add_tag_modal.setTitle, "tag.parent_tags.add")
+        Translations.translate_with_setter(self.add_tag_modal.setWindowTitle, "tag.parent_tags.add")
         self.subtags_add_button.clicked.connect(self.add_tag_modal.show)
 
         # Shorthand ------------------------------------------------------------
@@ -162,7 +167,7 @@ class BuildTagPanel(PanelWidget):
         self.color_layout.setSpacing(0)
         self.color_layout.setAlignment(Qt.AlignmentFlag.AlignLeft)
         self.color_title = QLabel()
-        self.color_title.setText("Color")
+        Translations.translate_qobject(self.color_title, "tag.color")
         self.color_layout.addWidget(self.color_title)
         self.color_field = QComboBox()
         self.color_field.setEditable(False)
@@ -200,7 +205,7 @@ class BuildTagPanel(PanelWidget):
         self.new_alias_names: dict = {}
         self.new_item_id = sys.maxsize
 
-        self.set_tag(tag or Tag(name="New Tag"))
+        self.set_tag(tag or Tag(name=Translations["tag.new"]))
         if tag is None:
             self.name_field.selectAll()
 

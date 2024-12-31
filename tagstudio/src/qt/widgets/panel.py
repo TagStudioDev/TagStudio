@@ -6,6 +6,7 @@ from typing import Callable
 
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import QHBoxLayout, QLabel, QPushButton, QVBoxLayout, QWidget
+from src.qt.translations import Translations
 
 
 class PanelModal(QWidget):
@@ -16,8 +17,8 @@ class PanelModal(QWidget):
     def __init__(
         self,
         widget,
-        title: str,
-        window_title: str,
+        title: str = "",
+        window_title: str = "",
         done_callback: Callable | None = None,
         save_callback: Callable | None = None,
         has_save: bool = False,
@@ -36,7 +37,7 @@ class PanelModal(QWidget):
         self.title_widget.setObjectName("fieldTitle")
         self.title_widget.setWordWrap(True)
         self.title_widget.setStyleSheet("font-weight:bold;" "font-size:14px;" "padding-top: 6px")
-        self.title_widget.setText(title)
+        self.setTitle(title)
         self.title_widget.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         self.button_container = QWidget()
@@ -49,7 +50,7 @@ class PanelModal(QWidget):
 
         if not (save_callback or has_save):
             self.done_button = QPushButton()
-            self.done_button.setText("Done")
+            Translations.translate_qobject(self.done_button, "generic.done")
             self.done_button.setAutoDefault(True)
             self.done_button.clicked.connect(self.hide)
             if done_callback:
@@ -59,7 +60,7 @@ class PanelModal(QWidget):
 
         if save_callback or has_save:
             self.cancel_button = QPushButton()
-            self.cancel_button.setText("Cancel")
+            Translations.translate_qobject(self.cancel_button, "generic.cancel")
             self.cancel_button.clicked.connect(self.hide)
             self.cancel_button.clicked.connect(widget.reset)
             # self.cancel_button.clicked.connect(cancel_callback)
@@ -67,7 +68,7 @@ class PanelModal(QWidget):
             self.button_layout.addWidget(self.cancel_button)
 
             self.save_button = QPushButton()
-            self.save_button.setText("Save")
+            Translations.translate_qobject(self.save_button, "generic.save")
             self.save_button.setAutoDefault(True)
             self.save_button.clicked.connect(self.hide)
             self.save_button.clicked.connect(self.saved.emit)
@@ -94,6 +95,9 @@ class PanelModal(QWidget):
     def closeEvent(self, event):  # noqa: N802
         self.done_button.click()
         event.accept()
+
+    def setTitle(self, title: str):  # noqa: N802
+        self.title_widget.setText(title)
 
 
 class PanelWidget(QWidget):

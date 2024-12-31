@@ -16,6 +16,7 @@ from src.core.library.alchemy.fields import TagBoxField
 from src.qt.flowlayout import FlowLayout
 from src.qt.modals.build_tag import BuildTagPanel
 from src.qt.modals.tag_search import TagSearchPanel
+from src.qt.translations import Translations
 from src.qt.widgets.fields import FieldWidget
 from src.qt.widgets.panel import PanelModal
 from src.qt.widgets.tag import TagWidget
@@ -75,7 +76,8 @@ class TagBoxWidget(FieldWidget):
         )
         tsp = TagSearchPanel(self.driver.lib)
         tsp.tag_chosen.connect(lambda x: self.add_tag_callback(x))
-        self.add_modal = PanelModal(tsp, title, "Add Tags")
+        self.add_modal = PanelModal(tsp, title)
+        Translations.translate_with_setter(self.add_modal.setWindowTitle, "tag.add.plural")
         self.add_button.clicked.connect(
             lambda: (
                 tsp.update_tags(),
@@ -130,11 +132,11 @@ class TagBoxWidget(FieldWidget):
 
         self.edit_modal = PanelModal(
             build_tag_panel,
-            tag.name,  # TODO - display name including subtags
-            "Edit Tag",
+            title=tag.name,  # TODO - display name including subtags
             done_callback=self.driver.preview_panel.update_widgets,
             has_save=True,
         )
+        Translations.translate_with_setter(self.edit_modal.setWindowTitle, "tag.edit")
         # TODO - this was update_tag()
         self.edit_modal.saved.connect(
             lambda: self.driver.lib.update_tag(
