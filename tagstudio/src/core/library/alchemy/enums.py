@@ -60,13 +60,13 @@ class ItemType(enum.Enum):
 
 
 class SortingModeEnum(enum.Enum):
-    DATE_CREATED = "sorting_mode.date.created"
+    DATE_ADDED = "sorting_mode.date.added"
 
     def __str__(self):
         # TODO use translation here once #662 is merged
         match self.value:
-            case "sorting_mode.date.created":
-                return "Date Created"
+            case "sorting_mode.date.added":
+                return "Date Added"
         return self.value
 
 
@@ -77,7 +77,7 @@ class FilterState:
     # these should remain
     page_index: int | None = 0
     page_size: int | None = 500
-    sorting_mode: SortingModeEnum = SortingModeEnum.DATE_CREATED
+    sorting_mode: SortingModeEnum = SortingModeEnum.DATE_ADDED
     ascending: bool = True
 
     # these should be erased on update

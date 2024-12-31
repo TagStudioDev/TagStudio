@@ -573,7 +573,7 @@ class Library:
 
             sort_on: ColumnExpressionArgument = Entry.id
             match search.sorting_mode:
-                case SortingModeEnum.DATE_CREATED:
+                case SortingModeEnum.DATE_ADDED:
                     sort_on = Entry.id
 
             statement = statement.order_by(asc(sort_on) if search.ascending else desc(sort_on))
