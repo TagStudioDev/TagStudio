@@ -51,7 +51,7 @@ class DropImportModal(QWidget):
         self.desc_widget = QLabel()
         self.desc_widget.setObjectName("descriptionLabel")
         self.desc_widget.setWordWrap(True)
-        self.desc_widget.setText(Translations["drop_import.decription"])
+        self.desc_widget.setText(Translations["drop_import.description"])
         self.desc_widget.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         # Duplicate File List ========
