@@ -135,7 +135,6 @@ class QtDriver(DriverMixin, QObject):
         self.lib = backend.Library()
         self.rm: ResourceManager = ResourceManager()
         self.args = args
-        self.frame_content = []
         self.filter = FilterState.show_all()
         self.frame_content: list[Entry] = []
         self.filter = FilterState().show_all()
@@ -601,7 +600,7 @@ class QtDriver(DriverMixin, QObject):
 
         self.main_window.setWindowTitle(self.base_title)
 
-        self.selected: list[int] = []
+        self.selected = []
         self.frame_content = []
         [x.set_mode(None) for x in self.item_thumbs]
 
