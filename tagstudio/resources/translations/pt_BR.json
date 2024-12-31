@@ -61,7 +61,6 @@
     "library.field.remove": "Remover Campo",
     "library.missing": "Localização Ausente",
     "library.name": "Biblioteca",
-    "library.refresh.scanning": "Escaneando Diretórios por Novos Arquivos...\n%{x + 1} Arquivo%{\"s\" if x + 1 != 1 else \"\"} Pesquisado%{\"s\" if x + 1 != 1 else \"\"}, %{len(self.lib.files_not_in_library)} Novo(s) Arquivo(s) Encontrado(s)",
     "library.refresh.scanning_preparing": "Escaneando Diretórios por Novos Arquivos...\nPreparando...",
     "library.refresh.title": "Atualizando Diretórios",
     "library.scan_library.title": "Escaneando Biblioteca",
