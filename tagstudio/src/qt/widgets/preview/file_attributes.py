@@ -6,13 +6,12 @@ import os
 import platform
 import typing
 from datetime import datetime as dt
+from datetime import timedelta
 from pathlib import Path
 
-import cv2
 import structlog
 from humanfriendly import format_size
-from PIL import ImageFont, UnidentifiedImageError
-from PIL.Image import DecompressionBombError
+from PIL import ImageFont
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QGuiApplication
 from PySide6.QtWidgets import (
@@ -138,7 +137,7 @@ class FileAttributes(QWidget):
             self.date_created_label.setHidden(True)
             self.date_modified_label.setHidden(True)
 
-    def update_stats(self, filepath: Path | None = None, stats: dict = None):
+    def update_stats(self, filepath: Path | None = None, ext: str = ".", stats: dict = None):
         """Render the panel widgets with the newest data from the Library."""
         logger.info("update_stats", selected=filepath)
 
@@ -169,52 +168,68 @@ class FileAttributes(QWidget):
             # Translations.translate_qobject(self.open_file_action, "file.open_file")
             # self.open_explorer_action = QAction(PlatformStrings.open_file_str, self)
 
-            # TODO: Do this all somewhere else, this is just here temporarily.
-            ext: str = filepath.suffix.lower()
-            try:
-                self.dimensions_label.setText(
-                    f"{ext.upper()[1:]}  •  {format_size(filepath.stat().st_size)}\n"
-                    f"{stats.get("width")} x {stats.get("height")} px"
-                )
-                if MediaCategories.is_ext_in_category(
-                    ext, MediaCategories.FONT_TYPES, mime_fallback=True
-                ):
-                    try:
+            # Initialize the possible stat variables
+            stats_label_text = ""
+            ext_display: str = ""
+            file_size: str = ""
+            width_px_text: str = ""
+            height_px_text: str = ""
+            duration_text: str = ""
+            font_family: str = ""
+
+            # Attempt to populate the stat variables
+            width_px_text = stats.get("width", "")
+            height_px_text = stats.get("height", "")
+            duration_text = stats.get("duration", "")
+            font_family = stats.get("font_family", "")
+            if ext:
+                ext_display = ext.upper()[1:]
+            if filepath:
+                try:
+                    file_size = format_size(filepath.stat().st_size)
+
+                    if MediaCategories.is_ext_in_category(
+                        ext, MediaCategories.FONT_TYPES, mime_fallback=True
+                    ):
                         font = ImageFont.truetype(filepath)
-                        self.dimensions_label.setText(
-                            f"{ext.upper()[1:]} •  {format_size(filepath.stat().st_size)}\n"
-                            f"{font.getname()[0]} ({font.getname()[1]}) "
-                        )
-                    except OSError:
-                        self.dimensions_label.setText(
-                            f"{ext.upper()[1:]}  •  {format_size(filepath.stat().st_size)}"
-                        )
-                        logger.info(f"[PreviewPanel][ERROR] Couldn't read font file: {filepath}")
-                else:
-                    self.dimensions_label.setText(f"{ext.upper()[1:]}")
-                    self.dimensions_label.setText(
-                        f"{ext.upper()[1:]}  •  {format_size(filepath.stat().st_size)}"
+                        font_family = f"{font.getname()[0]} ({font.getname()[1]}) "
+                except (FileNotFoundError, OSError) as e:
+                    logger.error(
+                        "[FileAttributes] Could not process file stats", filepath=filepath, error=e
                     )
-                # self.update_date_label(filepath)
 
-                if not filepath.is_file():
-                    raise FileNotFoundError
+            # Format and display any stat variables
+            def add_newline(stats_label_text: str) -> str:
+                logger.info(stats_label_text[-2:])
+                if stats_label_text and stats_label_text[-2:] != "\n":
+                    return stats_label_text + "\n"
+                return stats_label_text
 
-            except (FileNotFoundError, cv2.error) as e:
-                self.dimensions_label.setText(f"{ext.upper()[1:]}")
-                logger.error("Couldn't render thumbnail", filepath=filepath, error=e)
-                # self.update_date_label()
-            except (
-                UnidentifiedImageError,
-                DecompressionBombError,  # noqa: F821
-            ) as e:
-                self.dimensions_label.setText(
-                    f"{ext.upper()[1:]}  •  {format_size(filepath.stat().st_size)}"
-                )
-                logger.error("Couldn't render thumbnail", filepath=filepath, error=e)
-                # self.update_date_label(filepath)
+            if ext_display:
+                stats_label_text += ext_display
+                if file_size:
+                    stats_label_text += f"  •  {file_size}"
+            elif file_size:
+                stats_label_text += file_size
 
-        return stats
+            if width_px_text and height_px_text:
+                stats_label_text = add_newline(stats_label_text)
+                stats_label_text += f"{width_px_text} x {height_px_text} px"
+
+            if duration_text:
+                stats_label_text = add_newline(stats_label_text)
+                dur_str = str(timedelta(seconds=float(duration_text)))[:-7]
+                if dur_str.startswith("0:"):
+                    dur_str = dur_str[2:]
+                if dur_str.startswith("0"):
+                    dur_str = dur_str[1:]
+                stats_label_text += f"{dur_str}"
+
+            if font_family:
+                stats_label_text = add_newline(stats_label_text)
+                stats_label_text += f"{font_family}"
+
+            self.dimensions_label.setText(stats_label_text)
 
     def update_multi_selection(self, count: int):
         # Multiple Selected Items

@@ -82,12 +82,6 @@ class PreviewPanel(QWidget):
             )
             self.driver.frame_content[grid_idx] = result
 
-    # def resizeEvent(self, event: QResizeEvent) -> None:  # noqa: N802
-    #     # self.thumb.update_image_size(
-    #     #     (self.thumb.image_container.size().width(), self.thumb.image_container.size().height())
-    #     # )
-    #     return super().resizeEvent(event)
-
     def update_widgets(self) -> bool:
         """Render the panel widgets with the newest data from the Library."""
         # No Items Selected
@@ -101,10 +95,11 @@ class PreviewPanel(QWidget):
         elif len(self.driver.selected) == 1:
             entry: Entry = items[0]
             filepath: Path = self.lib.library_dir / entry.path
+            ext: str = filepath.suffix.lower()
 
-            stats: dict = self.thumb.update_preview(filepath)
-            logger.info(stats)
-            self.file_attrs.update_stats(filepath)
+            stats: dict = self.thumb.update_preview(filepath, ext)
+            logger.info("stats", stats=stats, ext=ext)
+            self.file_attrs.update_stats(filepath, ext, stats)
             self.file_attrs.update_date_label(filepath)
             # TODO: Render regular single selection
             # TODO: Return known attributes from thumb, and give those to field_attrs
