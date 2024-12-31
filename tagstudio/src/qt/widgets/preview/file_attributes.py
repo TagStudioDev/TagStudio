@@ -11,7 +11,7 @@ from pathlib import Path
 import cv2
 import structlog
 from humanfriendly import format_size
-from PIL import Image, ImageFont, UnidentifiedImageError
+from PIL import ImageFont, UnidentifiedImageError
 from PIL.Image import DecompressionBombError
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QGuiApplication
@@ -138,9 +138,12 @@ class FileAttributes(QWidget):
             self.date_created_label.setHidden(True)
             self.date_modified_label.setHidden(True)
 
-    def update_stats(self, filepath: Path | None = None):
+    def update_stats(self, filepath: Path | None = None, stats: dict = None):
         """Render the panel widgets with the newest data from the Library."""
         logger.info("update_stats", selected=filepath)
+
+        if not stats:
+            stats = {}
 
         if not filepath:
             self.file_label.setText("<i>No Items Selected</i>")
@@ -169,24 +172,11 @@ class FileAttributes(QWidget):
             # TODO: Do this all somewhere else, this is just here temporarily.
             ext: str = filepath.suffix.lower()
             try:
-                image: Image.Image = Image.open(filepath)
-                # Stats for specific file types are displayed here.
-                if image and (
-                    MediaCategories.is_ext_in_category(
-                        ext, MediaCategories.IMAGE_RASTER_TYPES, mime_fallback=True
-                    )
-                    or MediaCategories.is_ext_in_category(
-                        ext, MediaCategories.VIDEO_TYPES, mime_fallback=True
-                    )
-                    or MediaCategories.is_ext_in_category(
-                        ext, MediaCategories.IMAGE_RAW_TYPES, mime_fallback=True
-                    )
-                ):
-                    self.dimensions_label.setText(
-                        f"{ext.upper()[1:]}  •  {format_size(filepath.stat().st_size)}\n"
-                        f"{image.width} x {image.height} px"
-                    )
-                elif MediaCategories.is_ext_in_category(
+                self.dimensions_label.setText(
+                    f"{ext.upper()[1:]}  •  {format_size(filepath.stat().st_size)}\n"
+                    f"{stats.get("width")} x {stats.get("height")} px"
+                )
+                if MediaCategories.is_ext_in_category(
                     ext, MediaCategories.FONT_TYPES, mime_fallback=True
                 ):
                     try:
@@ -205,7 +195,7 @@ class FileAttributes(QWidget):
                     self.dimensions_label.setText(
                         f"{ext.upper()[1:]}  •  {format_size(filepath.stat().st_size)}"
                     )
-                self.update_date_label(filepath)
+                # self.update_date_label(filepath)
 
                 if not filepath.is_file():
                     raise FileNotFoundError
@@ -213,7 +203,7 @@ class FileAttributes(QWidget):
             except (FileNotFoundError, cv2.error) as e:
                 self.dimensions_label.setText(f"{ext.upper()[1:]}")
                 logger.error("Couldn't render thumbnail", filepath=filepath, error=e)
-                self.update_date_label()
+                # self.update_date_label()
             except (
                 UnidentifiedImageError,
                 DecompressionBombError,  # noqa: F821
@@ -222,7 +212,9 @@ class FileAttributes(QWidget):
                     f"{ext.upper()[1:]}  •  {format_size(filepath.stat().st_size)}"
                 )
                 logger.error("Couldn't render thumbnail", filepath=filepath, error=e)
-                self.update_date_label(filepath)
+                # self.update_date_label(filepath)
+
+        return stats
 
     def update_multi_selection(self, count: int):
         # Multiple Selected Items

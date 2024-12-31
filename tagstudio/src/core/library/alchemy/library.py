@@ -426,14 +426,14 @@ class Library:
             statement = (
                 statement.outerjoin(Entry.text_fields)
                 .outerjoin(Entry.datetime_fields)
-                .outerjoin(Entry.tag_box_fields)
+                .outerjoin(Entry.tags)
             )
             statement = statement.options(
                 selectinload(Entry.text_fields),
                 selectinload(Entry.datetime_fields),
-                selectinload(Entry.tag_box_fields)
-                .joinedload(TagBoxField.tags)
-                .options(selectinload(Tag.aliases), selectinload(Tag.subtags)),
+                selectinload(Entry.tags).options(
+                    selectinload(Tag.aliases), selectinload(Tag.subtags)
+                ),
             )
             entry = session.scalar(statement)
             if not entry:

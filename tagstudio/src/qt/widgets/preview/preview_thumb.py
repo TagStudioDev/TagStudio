@@ -11,21 +11,20 @@ import cv2
 import rawpy
 import structlog
 from PIL import Image, UnidentifiedImageError
-from PIL.Image import DecompressionBombError
 from PySide6.QtCore import QBuffer, QByteArray, QSize, Qt, Signal
-from PySide6.QtGui import QMovie, QResizeEvent
+from PySide6.QtGui import QAction, QMovie, QResizeEvent
 from PySide6.QtWidgets import (
     QHBoxLayout,
     QLabel,
     QWidget,
 )
 from src.core.library.alchemy.library import Library
-from src.core.library.alchemy.models import Entry
 from src.core.media_types import MediaCategories
 from src.qt.helpers.file_opener import FileOpenerHelper, open_file
 from src.qt.helpers.file_tester import is_readable_video
 from src.qt.helpers.qbutton_wrapper import QPushButtonWrapper
 from src.qt.helpers.rounded_pixmap_style import RoundedPixmapStyle
+from src.qt.platform_strings import PlatformStrings
 from src.qt.translations import Translations
 from src.qt.widgets.media_player import MediaPlayer
 from src.qt.widgets.thumb_renderer import ThumbRenderer
@@ -58,26 +57,26 @@ class PreviewThumb(QWidget):
         #     else Theme.COLOR_BG_LIGHT.value
         # )
 
-        self.image_container = QWidget()
-        image_layout = QHBoxLayout(self.image_container)
+        # self.image_container = QWidget()
+        image_layout = QHBoxLayout(self)
         image_layout.setContentsMargins(0, 0, 0, 0)
 
-        # self.open_file_action = QAction("Open file", self)
-        # self.open_explorer_action = QAction(PlatformStrings.open_file_str, self)
+        self.open_file_action = QAction("Open file", self)
+        self.open_explorer_action = QAction(PlatformStrings.open_file_str, self)
 
         self.preview_img = QPushButtonWrapper()
         self.preview_img.setMinimumSize(*self.img_button_size)
         self.preview_img.setFlat(True)
         self.preview_img.setContextMenuPolicy(Qt.ContextMenuPolicy.ActionsContextMenu)
-        # self.preview_img.addAction(self.open_file_action)
-        # self.preview_img.addAction(self.open_explorer_action)
+        self.preview_img.addAction(self.open_file_action)
+        self.preview_img.addAction(self.open_explorer_action)
 
         self.preview_gif = QLabel()
         self.preview_gif.setMinimumSize(*self.img_button_size)
         self.preview_gif.setContextMenuPolicy(Qt.ContextMenuPolicy.ActionsContextMenu)
         self.preview_gif.setCursor(Qt.CursorShape.ArrowCursor)
-        # self.preview_gif.addAction(self.open_file_action)
-        # self.preview_gif.addAction(self.open_explorer_action)
+        self.preview_gif.addAction(self.open_file_action)
+        self.preview_gif.addAction(self.open_explorer_action)
         self.preview_gif.hide()
         self.gif_buffer: QBuffer = QBuffer()
 
@@ -90,8 +89,8 @@ class PreviewThumb(QWidget):
                 self.set_image_ratio(ratio),
                 self.update_image_size(
                     (
-                        self.image_container.size().width(),
-                        self.image_container.size().height(),
+                        self.size().width(),
+                        self.size().height(),
                     ),
                     ratio,
                 ),
@@ -107,7 +106,7 @@ class PreviewThumb(QWidget):
         image_layout.setAlignment(self.preview_gif, Qt.AlignmentFlag.AlignCenter)
         image_layout.addWidget(self.preview_vid)
         image_layout.setAlignment(self.preview_vid, Qt.AlignmentFlag.AlignCenter)
-        self.image_container.setMinimumSize(*self.img_button_size)
+        self.setMinimumSize(*self.img_button_size)
 
     def set_image_ratio(self, ratio: float):
         self.image_ratio = ratio
@@ -150,12 +149,217 @@ class PreviewThumb(QWidget):
 
     def get_preview_size(self) -> tuple[int, int]:
         return (
-            self.image_container.size().width(),
-            self.image_container.size().height(),
+            self.size().width(),
+            self.size().height(),
         )
 
-    def update_preview(self, entry: Entry, filepath: Path) -> dict:
+    def switch_preview(self, preview: str):
+        if preview != "image" and preview != "media":
+            self.preview_img.hide()
+
+        if preview != "video_legacy":
+            self.preview_vid.stop()
+            self.preview_vid.hide()
+
+        if preview != "media":
+            self.media_player.stop()
+            self.media_player.hide()
+
+        if preview != "animated":
+            if self.preview_gif.movie():
+                self.preview_gif.movie().stop()
+                self.gif_buffer.close()
+            self.preview_gif.hide()
+
+    def _update_image(self, filepath: Path, ext: str) -> dict:
+        """Update the static image preview from a filepath."""
+        stats: dict = {}
+        self.switch_preview("image")
+
+        image: Image.Image = None
+
+        if MediaCategories.is_ext_in_category(
+            ext, MediaCategories.IMAGE_RAW_TYPES, mime_fallback=True
+        ):
+            try:
+                with rawpy.imread(str(filepath)) as raw:
+                    rgb = raw.postprocess()
+                    image = Image.new("L", (rgb.shape[1], rgb.shape[0]), color="black")
+                    stats["width"] = image.width
+                    stats["height"] = image.height
+            except (
+                rawpy._rawpy.LibRawIOError,
+                rawpy._rawpy.LibRawFileUnsupportedError,
+            ):
+                pass
+        elif MediaCategories.is_ext_in_category(
+            ext, MediaCategories.IMAGE_RASTER_TYPES, mime_fallback=True
+        ):
+            try:
+                image = Image.open(str(filepath))
+                stats["width"] = image.width
+                stats["height"] = image.height
+            except UnidentifiedImageError:
+                logger.error("welp", filepath=filepath)
+        elif MediaCategories.is_ext_in_category(
+            ext, MediaCategories.IMAGE_VECTOR_TYPES, mime_fallback=True
+        ):
+            pass
+
+        self.preview_img.show()
+
+        return stats
+
+    def _update_animation(self, filepath: Path, ext: str) -> dict:
+        """Update the animated image preview from a filepath."""
+        stats: dict = {}
+
+        # Ensure that any movie and buffer from previous animations are cleared.
+        if self.preview_gif.movie():
+            self.preview_gif.movie().stop()
+            self.gif_buffer.close()
+
+        image: Image.Image = Image.open(filepath)
+        stats["width"] = image.width
+        stats["height"] = image.height
+        self.update_image_size((image.width, image.height), image.width / image.height)
+        anim_image: Image.Image = image
+        image_bytes_io: io.BytesIO = io.BytesIO()
+        anim_image.save(
+            image_bytes_io,
+            "GIF",
+            lossless=True,
+            save_all=True,
+            loop=0,
+            disposal=2,
+        )
+        image_bytes_io.seek(0)
+        ba: bytes = image_bytes_io.read()
+        self.gif_buffer.setData(ba)
+        movie = QMovie(self.gif_buffer, QByteArray())
+        self.preview_gif.setMovie(movie)
+
+        # If the animation only has 1 frame, display it like a normal image.
+        if movie.frameCount() == 1:
+            self.switch_preview("image")
+            self.thumb_renderer.render(
+                time.time(),
+                filepath,
+                (512, 512),
+                self.devicePixelRatio(),
+                update_on_ratio_change=True,
+            )
+            self.preview_img.show()
+            return stats
+
+        # The animation has more than 1 frame, continue displaying it as an animation
+        self.switch_preview("animated")
+        self.resizeEvent(
+            QResizeEvent(
+                QSize(image.width, image.height),
+                QSize(image.width, image.height),
+            )
+        )
+        movie.start()
+        self.preview_gif.show()
+
+        stats["duration"] = movie.frameCount() // 60
+        return stats
+
+    def _update_video_legacy(self, filepath: Path) -> dict:
+        stats: dict = {}
+        self.switch_preview("video_legacy")
+
+        video = cv2.VideoCapture(str(filepath), cv2.CAP_FFMPEG)
+        video.set(
+            cv2.CAP_PROP_POS_FRAMES,
+            (video.get(cv2.CAP_PROP_FRAME_COUNT) // 2),
+        )
+        success, frame = video.read()
+        frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        image = Image.fromarray(frame)
+        stats["width"] = image.width
+        stats["height"] = image.height
+        if success:
+            self.preview_vid.play(str(filepath), QSize(image.width, image.height))
+            self.update_image_size((image.width, image.height), image.width / image.height)
+            self.resizeEvent(
+                QResizeEvent(
+                    QSize(image.width, image.height),
+                    QSize(image.width, image.height),
+                )
+            )
+            self.preview_vid.show()
+
+        stats["duration"] = video.get(cv2.CAP_PROP_FRAME_COUNT) / video.get(cv2.CAP_PROP_FPS)
+        return stats
+
+    def _update_media(self, filepath: Path) -> dict:
+        stats: dict = {}
+        self.switch_preview("media")
+
+        self.preview_img.show()
+        self.media_player.show()
+        self.media_player.play(filepath)
+
+        stats["duration"] = self.media_player.player.duration()
+        return stats
+
+    def update_preview(self, filepath: Path) -> dict:
         """Render a single file preview."""
+        stats: dict = {}
+        ext: str = filepath.suffix.lower()
+        stats["ext"] = ext
+
+        if MediaCategories.is_ext_in_category(
+            ext, MediaCategories.VIDEO_TYPES, mime_fallback=True
+        ) and is_readable_video(filepath):
+            stats = self._update_video_legacy(filepath)
+
+        elif MediaCategories.is_ext_in_category(
+            ext, MediaCategories.AUDIO_TYPES, mime_fallback=True
+        ):
+            self._update_image(filepath, ext)
+            stats = self._update_media(filepath)
+            self.thumb_renderer.render(
+                time.time(),
+                filepath,
+                (512, 512),
+                self.devicePixelRatio(),
+                update_on_ratio_change=True,
+            )
+
+        elif MediaCategories.is_ext_in_category(
+            ext, MediaCategories.IMAGE_ANIMATED_TYPES, mime_fallback=True
+        ):
+            stats = self._update_animation(filepath, ext)
+
+        else:
+            # TODO: Get thumb renderer to return this stuff to pass on
+            stats = self._update_image(filepath, ext)
+
+            self.thumb_renderer.render(
+                time.time(),
+                filepath,
+                (512, 512),
+                self.devicePixelRatio(),
+                update_on_ratio_change=True,
+            )
+
+        if self.preview_img.is_connected:
+            self.preview_img.clicked.disconnect()
+        self.preview_img.clicked.connect(lambda checked=False, path=filepath: open_file(path))
+        self.preview_img.is_connected = True
+
+        self.preview_img.setContextMenuPolicy(Qt.ContextMenuPolicy.ActionsContextMenu)
+        self.preview_img.setCursor(Qt.CursorShape.PointingHandCursor)
+
+        self.opener = FileOpenerHelper(filepath)
+        self.open_file_action.triggered.connect(self.opener.open_file)
+        self.open_explorer_action.triggered.connect(self.opener.open_explorer)
+
+        return stats
+
         # self.tag_callback = tag_callback if tag_callback else None
 
         # # update list of libraries
@@ -189,112 +393,109 @@ class PreviewThumb(QWidget):
         # selected_idx = self.driver.selected[0]
         # item = self.driver.frame_content[selected_idx]
 
-        self.preview_img.show()
-        self.preview_vid.stop()
-        self.preview_vid.hide()
-        self.media_player.stop()
-        self.media_player.hide()
-        self.preview_gif.hide()
-
         # If a new selection is made, update the thumbnail and filepath.
-        ratio = self.devicePixelRatio()
-        self.thumb_renderer.render(
-            time.time(),
-            filepath,
-            (512, 512),
-            ratio,
-            update_on_ratio_change=True,
-        )
+        # ratio = self.devicePixelRatio()
+        # self.thumb_renderer.render(
+        #     time.time(),
+        #     filepath,
+        #     (512, 512),
+        #     ratio,
+        #     update_on_ratio_change=True,
+        # )
 
-        self.preview_img.setContextMenuPolicy(Qt.ContextMenuPolicy.ActionsContextMenu)
-        self.preview_img.setCursor(Qt.CursorShape.PointingHandCursor)
+        # self.preview_img.setContextMenuPolicy(Qt.ContextMenuPolicy.ActionsContextMenu)
+        # self.preview_img.setCursor(Qt.CursorShape.PointingHandCursor)
 
-        self.opener = FileOpenerHelper(filepath)
+        # self.opener = FileOpenerHelper(filepath)
         # self.open_file_action.triggered.connect(self.opener.open_file)
         # self.open_explorer_action.triggered.connect(self.opener.open_explorer)
 
-        # TODO: Do this all somewhere else, this is just here temporarily.
-        ext: str = filepath.suffix.lower()
-        try:
-            if MediaCategories.is_ext_in_category(
-                ext, MediaCategories.IMAGE_ANIMATED_TYPES, mime_fallback=True
-            ):
-                if self.preview_gif.movie():
-                    self.preview_gif.movie().stop()
-                    self.gif_buffer.close()
+        # # TODO: Do this all somewhere else, this is just here temporarily.
+        # ext: str = filepath.suffix.lower()
+        # try:
+        #     if MediaCategories.is_ext_in_category(
+        #         ext, MediaCategories.IMAGE_ANIMATED_TYPES, mime_fallback=True
+        #     ):
+        #         if self.preview_gif.movie():
+        #             self.preview_gif.movie().stop()
+        #             self.gif_buffer.close()
 
-            image: Image.Image = Image.open(filepath)
-            anim_image: Image.Image = image
-            image_bytes_io: io.BytesIO = io.BytesIO()
-            anim_image.save(
-                image_bytes_io,
-                "GIF",
-                lossless=True,
-                save_all=True,
-                loop=0,
-                disposal=2,
-            )
-            image_bytes_io.seek(0)
-            ba: bytes = image_bytes_io.read()
+        #     image: Image.Image = Image.open(filepath)
+        #     anim_image: Image.Image = image
+        #     image_bytes_io: io.BytesIO = io.BytesIO()
+        #     anim_image.save(
+        #         image_bytes_io,
+        #         "GIF",
+        #         lossless=True,
+        #         save_all=True,
+        #         loop=0,
+        #         disposal=2,
+        #     )
+        #     image_bytes_io.seek(0)
+        #     ba: bytes = image_bytes_io.read()
 
-            self.gif_buffer.setData(ba)
-            movie = QMovie(self.gif_buffer, QByteArray())
-            self.preview_gif.setMovie(movie)
-            movie.start()
+        #     self.gif_buffer.setData(ba)
+        #     movie = QMovie(self.gif_buffer, QByteArray())
+        #     self.preview_gif.setMovie(movie)
+        #     movie.start()
 
-            self.resizeEvent(
-                QResizeEvent(
-                    QSize(image.width, image.height),
-                    QSize(image.width, image.height),
-                )
-            )
-            self.preview_img.hide()
-            self.preview_vid.hide()
-            self.preview_gif.show()
+        #     # self.resizeEvent(
+        #     #     QResizeEvent(
+        #     #         QSize(image.width, image.height),
+        #     #         QSize(image.width, image.height),
+        #     #     )
+        #     # )
+        #     self.preview_img.hide()
+        #     self.preview_vid.hide()
+        #     self.preview_gif.show()
 
-            image = None
-            if MediaCategories.is_ext_in_category(ext, MediaCategories.IMAGE_RASTER_TYPES):
-                image = Image.open(str(filepath))
-            elif MediaCategories.is_ext_in_category(ext, MediaCategories.IMAGE_RAW_TYPES):
-                try:
-                    with rawpy.imread(str(filepath)) as raw:
-                        rgb = raw.postprocess()
-                        image = Image.new("L", (rgb.shape[1], rgb.shape[0]), color="black")
-                except (
-                    rawpy._rawpy.LibRawIOError,
-                    rawpy._rawpy.LibRawFileUnsupportedError,
-                ):
-                    pass
-            elif MediaCategories.is_ext_in_category(ext, MediaCategories.AUDIO_TYPES):
-                self.media_player.show()
-                self.media_player.play(filepath)
-            elif MediaCategories.is_ext_in_category(
-                ext, MediaCategories.VIDEO_TYPES
-            ) and is_readable_video(filepath):
-                video = cv2.VideoCapture(str(filepath), cv2.CAP_FFMPEG)
-                video.set(
-                    cv2.CAP_PROP_POS_FRAMES,
-                    (video.get(cv2.CAP_PROP_FRAME_COUNT) // 2),
-                )
-                success, frame = video.read()
-                frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-                image = Image.fromarray(frame)
-                if success:
-                    self.preview_img.hide()
-                    self.preview_vid.play(str(filepath), QSize(image.width, image.height))
-                    self.resizeEvent(
-                        QResizeEvent(
-                            QSize(image.width, image.height),
-                            QSize(image.width, image.height),
-                        )
-                    )
-                    self.preview_vid.show()
+        #     image = None
+        #     if MediaCategories.is_ext_in_category(ext, MediaCategories.IMAGE_RASTER_TYPES):
+        #         image = Image.open(str(filepath))
+        #     elif MediaCategories.is_ext_in_category(ext, MediaCategories.IMAGE_RAW_TYPES):
+        #         try:
+        #             with rawpy.imread(str(filepath)) as raw:
+        #                 rgb = raw.postprocess()
+        #                 image = Image.new("L", (rgb.shape[1], rgb.shape[0]), color="black")
+        #         except (
+        #             rawpy._rawpy.LibRawIOError,
+        #             rawpy._rawpy.LibRawFileUnsupportedError,
+        #         ):
+        #             pass
+        #     elif MediaCategories.is_ext_in_category(ext, MediaCategories.AUDIO_TYPES):
+        #         self.media_player.show()
+        #         self.media_player.play(filepath)
+        #     elif MediaCategories.is_ext_in_category(
+        #         ext, MediaCategories.VIDEO_TYPES
+        #     ) and is_readable_video(filepath):
+        #         video = cv2.VideoCapture(str(filepath), cv2.CAP_FFMPEG)
+        #         video.set(
+        #             cv2.CAP_PROP_POS_FRAMES,
+        #             (video.get(cv2.CAP_PROP_FRAME_COUNT) // 2),
+        #         )
+        #         success, frame = video.read()
+        #         frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        #         image = Image.fromarray(frame)
+        #         if success:
+        #             self.preview_img.hide()
+        #             self.preview_vid.play(str(filepath), QSize(image.width, image.height))
+        #             # self.resizeEvent(
+        #             #     QResizeEvent(
+        #             #         QSize(image.width, image.height),
+        #             #         QSize(image.width, image.height),
+        #             #     )
+        #             # )
+        #             self.preview_vid.show()
 
-        except (FileNotFoundError, cv2.error, UnidentifiedImageError, DecompressionBombError) as e:
-            if self.preview_img.is_connected:
-                self.preview_img.clicked.disconnect()
-            self.preview_img.clicked.connect(lambda checked=False, pth=filepath: open_file(pth))
-            self.preview_img.is_connected = True
-            logger.error(f"Preview thumb error: {e} - {filepath}")
+        # except (FileNotFoundError, cv2.error, UnidentifiedImageError, DecompressionBombError) as e:
+        #     if self.preview_img.is_connected:
+        #         self.preview_img.clicked.disconnect()
+        #     self.preview_img.clicked.connect(lambda checked=False, pth=filepath: open_file(pth))
+        #     self.preview_img.is_connected = True
+        #     logger.error(f"Preview thumb error: {e} - {filepath}")
 
-        return {}
+        # return stats
+
+    def resizeEvent(self, event: QResizeEvent) -> None:  # noqa: N802
+        self.update_image_size((self.size().width(), self.size().height()))
+        return super().resizeEvent(event)

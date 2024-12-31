@@ -7,12 +7,7 @@ from pathlib import Path
 
 import structlog
 from PySide6.QtCore import Qt, Signal
-from PySide6.QtGui import QResizeEvent
-from PySide6.QtWidgets import (
-    QHBoxLayout,
-    QSplitter,
-    QWidget,
-)
+from PySide6.QtWidgets import QHBoxLayout, QSplitter, QWidget
 from src.core.library.alchemy.library import Library
 from src.core.library.alchemy.models import Entry
 from src.qt.widgets.preview.field_containers import FieldContainers
@@ -66,6 +61,8 @@ class PreviewPanel(QWidget):
 
         # splitter.addWidget(self.thumb.image_container)
         # splitter.addWidget(self.thumb.media_player)
+        splitter.addWidget(self.thumb)
+        splitter.addWidget(self.thumb.media_player)
         splitter.addWidget(self.file_attrs)
         # splitter.addWidget(self.libs_flow_container)
         splitter.setStretchFactor(1, 2)
@@ -85,11 +82,11 @@ class PreviewPanel(QWidget):
             )
             self.driver.frame_content[grid_idx] = result
 
-    def resizeEvent(self, event: QResizeEvent) -> None:  # noqa: N802
-        # self.thumb.update_image_size(
-        #     (self.thumb.image_container.size().width(), self.thumb.image_container.size().height())
-        # )
-        return super().resizeEvent(event)
+    # def resizeEvent(self, event: QResizeEvent) -> None:  # noqa: N802
+    #     # self.thumb.update_image_size(
+    #     #     (self.thumb.image_container.size().width(), self.thumb.image_container.size().height())
+    #     # )
+    #     return super().resizeEvent(event)
 
     def update_widgets(self) -> bool:
         """Render the panel widgets with the newest data from the Library."""
@@ -105,7 +102,8 @@ class PreviewPanel(QWidget):
             entry: Entry = items[0]
             filepath: Path = self.lib.library_dir / entry.path
 
-            stats: dict = self.thumb.update_preview(entry, filepath)
+            stats: dict = self.thumb.update_preview(filepath)
+            logger.info(stats)
             self.file_attrs.update_stats(filepath)
             self.file_attrs.update_date_label(filepath)
             # TODO: Render regular single selection
