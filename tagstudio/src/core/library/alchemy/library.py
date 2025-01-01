@@ -546,8 +546,16 @@ class Library:
             statement = select(Entry)
 
             if search.ast:
+                start_time = time.time()
+
                 statement = statement.outerjoin(Entry.tag_box_fields).where(
                     SQLBoolExpressionBuilder(self).visit(search.ast)
+                )
+
+                end_time = time.time()
+
+                logger.info(
+                    f"SQL Expression Builder finished ({format_timespan(end_time - start_time)})"
                 )
 
             extensions = self.prefs(LibraryPrefs.EXTENSION_LIST)
