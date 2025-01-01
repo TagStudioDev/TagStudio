@@ -138,7 +138,6 @@ class QtDriver(DriverMixin, QObject):
         self.args = args
         self.filter = FilterState.show_all()
         self.frame_content: list[Entry] = []
-        self.filter = FilterState().show_all()
         self.pages_count = 0
 
         self.scrollbar_pos = 0
