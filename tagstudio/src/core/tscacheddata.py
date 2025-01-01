@@ -8,14 +8,15 @@ from pydantic import BaseModel, ConfigDict, Field
 
 logger = structlog.get_logger(__name__)
 
-cache_dir = Path(user_cache_dir()) / ".TagStudio"
+cache_dir = Path(user_cache_dir()) / "TagStudio"
 cache_location = cache_dir / "cache.toml"
 
 
 class TSCachedData(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
     last_library: str | None = Field(default=None)
-    library_history: dict[datetime, str] = Field(default_factory=dict[datetime, str])
+    # a dict of ISO formatted date strings -> paths
+    library_history: dict[str, str] = Field(default_factory=dict[datetime, str])
 
     path: str = Field()
 
@@ -41,4 +42,6 @@ class TSCachedData(BaseModel):
 
     def save(self):
         with open(self.path, "w") as f:
-            toml.dump(dict(self), f)
+            file_data = dict(self)
+            file_data.pop("path")
+            toml.dump(file_data, f)

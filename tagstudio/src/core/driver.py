@@ -21,7 +21,7 @@ class DriverMixin:
             if not library_path.exists():
                 logger.error("Path does not exist.", open_path=open_path)
                 return LibraryStatus(success=False, message="Path does not exist.")
-        elif self.settings.open_last_loaded_on_startup and self.cache.last_lib:
+        elif self.settings.open_last_loaded_on_startup and self.cache.last_library:
             library_path = Path(str(self.cache.last_library))
             if not (library_path / TS_FOLDER_NAME).exists():
                 logger.error(

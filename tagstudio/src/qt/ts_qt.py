@@ -175,7 +175,7 @@ class QtDriver(DriverMixin, QObject):
             logger.info("Using Config File", path=path)
             self.settings = TSSettings.read_settings(path)
         else:
-            path = ""
+            path = Path()
             if sys.platform == "win32":
                 path = Path.home() / "AppData" / "Roaming" / "TagStudio" / "config.toml"
             else:  # "linux" and "darwin" should use the same config directory
@@ -628,7 +628,7 @@ class QtDriver(DriverMixin, QObject):
         self.main_window.statusbar.showMessage(Translations["status.library_closing"])
         start_time = time.time()
 
-        self.cache.last_library = self.lib.library_dir
+        self.cache.last_library = str(self.lib.library_dir)
         self.settings.save()
 
         self.lib.close()
@@ -1238,13 +1238,13 @@ class QtDriver(DriverMixin, QObject):
         )
 
     def remove_recent_library(self, item_key: str) -> None:
-        self.cache.library_history.pop(datetime.datetime.strptime(item_key))
+        self.cache.library_history.pop(item_key)
 
     def update_libs_list(self, path: Path | str):
         item_limit: int = 5
         path = Path(path)
 
-        all_libs = {str(time.time()): str(path)}
+        all_libs = {datetime.datetime.fromtimestamp(time.time()).isoformat(): str(path)}
 
         for access_time in self.cache.library_history:
             lib = self.cache.library_history[access_time]

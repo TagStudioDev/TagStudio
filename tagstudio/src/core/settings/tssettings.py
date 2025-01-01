@@ -2,6 +2,7 @@ from pathlib import Path
 
 import toml
 from pydantic import BaseModel, Field
+from typing import Any
 
 
 # NOTE: pydantic also has a BaseSettings class (from pydantic-settings) that allows any settings
@@ -21,8 +22,9 @@ class TSSettings(BaseModel):
 
     @staticmethod
     def read_settings(path: Path | str, **kwargs) -> "TSSettings":
-        settings_data: dict[str, any] = dict()
-        if path.exists():
+        path_value = Path(path)
+        settings_data: dict[str, Any] = dict()
+        if path_value.exists():
             with open(path, "rb") as file:
                 filecontents = file.read()
                 if len(filecontents.strip()) != 0:
@@ -32,8 +34,8 @@ class TSSettings(BaseModel):
         settings = TSSettings(**settings_data)
         return settings
 
-    def to_dict(self) -> dict[str, any]:
-        d = dict[str, any]()
+    def to_dict(self) -> dict[str, Any]:
+        d = dict[str, Any]()
         for prop_name, prop_value in self:
             d[prop_name] = prop_value
 

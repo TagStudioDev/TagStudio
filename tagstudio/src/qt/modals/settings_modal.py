@@ -7,14 +7,15 @@ from PySide6.QtWidgets import (
     QLabel,
     QVBoxLayout,
 )
-from src.core.settings import tssettings
+from src.core.settings import TSSettings 
 from src.qt.widgets.panel import PanelWidget
+from typing import Any
 
 
 class SettingsModal(PanelWidget):
-    def __init__(self, settings: tssettings):
+    def __init__(self, settings: TSSettings):
         super().__init__()
-        self.tempSettings = copy.deepcopy(settings)
+        self.tempSettings: TSSettings = copy.deepcopy(settings)
 
         self.main = QVBoxLayout(self)
 
@@ -84,8 +85,8 @@ class SettingsModal(PanelWidget):
         self.main.addLayout(self.show_library_list_Row)
         self.main.addLayout(self.show_filenames_Row)
 
-    def set_property(self, prop_name: str, value: any) -> None:
+    def set_property(self, prop_name: str, value: Any) -> None:
         setattr(self.tempSettings, prop_name, value)
 
-    def get_content(self) -> tssettings:
+    def get_content(self):
         return self.tempSettings

@@ -252,8 +252,6 @@ class PreviewPanel(QWidget):
         # set initial visibility based on settings
         if not self.driver.settings.show_library_list:
             self.libs_flow_container.hide()
-        else:
-            self.libs_flow_container.show()
 
         splitter = QSplitter()
         splitter.setOrientation(Qt.Orientation.Vertical)
