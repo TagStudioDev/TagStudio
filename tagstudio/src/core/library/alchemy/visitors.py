@@ -5,7 +5,7 @@ from sqlalchemy import ColumnElement, and_, distinct, func, or_, select, text
 from sqlalchemy.orm import Session
 from src.core.media_types import FILETYPE_EQUIVALENTS, MediaCategories
 from src.core.query_lang import BaseVisitor
-from src.core.query_lang.ast import AST, ANDList, Constraint, ConstraintType, Not, ORList, Property
+from src.core.query_lang.ast import ANDList, Constraint, ConstraintType, Not, ORList, Property
 
 from .joins import TagField
 from .models import Entry, Tag, TagAlias, TagBoxField
@@ -62,7 +62,7 @@ class SQLBoolExpressionBuilder(BaseVisitor[ColumnElement[bool]]):
                             tag_ids.append(ids[0])
                             continue
 
-            bool_expressions.append(self.__entry_satisfies_ast(term))
+            bool_expressions.append(self.visit(term))
 
         # If there are at least two tag ids use a relational division query
         # to efficiently check all of them
@@ -110,7 +110,7 @@ class SQLBoolExpressionBuilder(BaseVisitor[ColumnElement[bool]]):
         raise NotImplementedError("This should never be reached!")
 
     def visit_not(self, node: Not) -> ColumnElement[bool]:
-        return ~self.__entry_satisfies_ast(node.child)
+        return ~self.visit(node.child)
 
     def __entry_matches_tag_ids(self, tag_ids: list[int]) -> ColumnElement[bool]:
         """Returns a boolean expression that is true if the entry has at least one of the supplied tags."""  # noqa: E501
@@ -155,10 +155,6 @@ class SQLBoolExpressionBuilder(BaseVisitor[ColumnElement[bool]]):
             .group_by(Entry.id)
             .having(func.count(distinct(TagField.tag_id)) == len(tag_ids))
         )
-
-    def __entry_satisfies_ast(self, partial_query: AST) -> ColumnElement[bool]:
-        """Returns Binary Expression that is true if the Entry satisfies the partial query."""
-        return self.visit(partial_query)
 
     def __entry_satisfies_expression(self, expr: ColumnElement[bool]) -> ColumnElement[bool]:
         """Returns Binary Expression that is true if the Entry satisfies the column expression."""
