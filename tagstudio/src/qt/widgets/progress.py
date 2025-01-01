@@ -15,8 +15,9 @@ class ProgressWidget(QWidget):
 
     def __init__(
         self,
-        window_title: str,
-        label_text: str,
+        *,
+        window_title: str = "",
+        label_text: str = "",
         cancel_button_text: Optional[str],
         minimum: int,
         maximum: int,

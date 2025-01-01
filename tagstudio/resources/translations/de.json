@@ -61,7 +61,6 @@
     "library.field.remove": "Feld entfernen",
     "library.missing": "Dateiort fehlt",
     "library.name": "Bibliothek",
-    "library.refresh.scanning": "Durchsuche Verzeichnisse nach neuen Dateien...\n%{x + 1} Datei%{„en“ if x + 1 != 1 else „“} durchsucht, %{len(self.lib.files_not_in_library)} Neue Datei%{„en“ if len(self.lib.files_not_in_library) != 1 else „“} gefunden",
     "library.refresh.scanning_preparing": "Überprüfe Verzeichnisse auf neue Dateien...\nBereite vor...",
     "library.refresh.title": "Verzeichnisse werden aktualisiert",
     "library.scan_library.title": "Bibliothek wird scannen",

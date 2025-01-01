@@ -79,11 +79,11 @@ TAG_COLORS: dict[TagColor, dict[ColorType, Any]] = {
         ColorType.DARK_ACCENT: "#6c2e3b",
     },
     TagColor.PINK: {
-        ColorType.PRIMARY: "#ff99c4",
+        ColorType.PRIMARY: "#F96BB1",
         ColorType.TEXT: ColorType.DARK_ACCENT,
-        ColorType.BORDER: "#ffaad0",
-        ColorType.LIGHT_ACCENT: "#ffcbe7",
-        ColorType.DARK_ACCENT: "#6c2e3b",
+        ColorType.BORDER: "#FA7EBC",
+        ColorType.LIGHT_ACCENT: "#FDB6DC",
+        ColorType.DARK_ACCENT: "#5B2135",
     },
     TagColor.MAGENTA: {
         ColorType.PRIMARY: "#f6466f",
@@ -95,8 +95,7 @@ TAG_COLORS: dict[TagColor, dict[ColorType, Any]] = {
     TagColor.RED: {
         ColorType.PRIMARY: "#e22c3c",
         ColorType.TEXT: ColorType.DARK_ACCENT,
-        ColorType.BORDER: "#b21f2d",
-        # ColorType.BORDER: '#e54252',
+        ColorType.BORDER: "#e54252",
         ColorType.LIGHT_ACCENT: "#f39caa",
         ColorType.DARK_ACCENT: "#440d12",
     },
@@ -131,8 +130,7 @@ TAG_COLORS: dict[TagColor, dict[ColorType, Any]] = {
     TagColor.YELLOW: {
         ColorType.PRIMARY: "#ffd63d",
         ColorType.TEXT: ColorType.DARK_ACCENT,
-        #    ColorType.BORDER: '#ffe071',
-        ColorType.BORDER: "#e8af31",
+        ColorType.BORDER: "#ffe071",
         ColorType.LIGHT_ACCENT: "#fff3c4",
         ColorType.DARK_ACCENT: "#754312",
     },
