@@ -146,7 +146,7 @@ class Entry(Base):
         return fields
 
     @property
-    def is_favorited(self) -> bool:
+    def is_favorite(self) -> bool:
         return any(tag.id == TAG_FAVORITE for tag in self.tags)
 
     @property
