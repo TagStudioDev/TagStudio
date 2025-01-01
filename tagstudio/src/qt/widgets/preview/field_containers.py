@@ -119,7 +119,7 @@ class FieldContainers(QWidget):
 
     def update_from_entry(self, entry: Entry):
         """Update tags and fields from a single Entry source."""
-        self.selected = [entry]
+        self.selected = [self.lib.get_entry_full(entry.id)]
         logger.info(
             "[Field Containers] Updating Selection",
             entry=entry,
@@ -127,33 +127,17 @@ class FieldContainers(QWidget):
             tags=entry.tags,
         )
 
-        # # reload entry and fill it into the grid again
-        # # TODO - do this more granular
-        # # TODO - Entry reload is maybe not necessary
-        # for grid_idx in self.driver.selected:
-        #     entry = self.driver.frame_content[grid_idx]
-        #     results = self.lib.search_library(FilterState(id=entry.id))
-        #     logger.info(
-        #         "found item",
-        #         entries=len(results.items),
-        #         grid_idx=grid_idx,
-        #         lookup_id=entry.id,
-        #     )
-        #     self.driver.frame_content[grid_idx] = results[0]
-
-        # for index in self.driver.selected:
-        #     self.driver.frame_content[index] = self.lib.get_entry(self.selected[0].id)
-
-        for idx, field in enumerate(entry.fields):
+        entry_ = self.selected[0]
+        for idx, field in enumerate(entry_.fields):
             self.write_container(idx, field, is_mixed=False)
-        if entry.tags:
+        if entry_.tags:
             # TODO: Display the tag categories
             pass
 
         # Hide leftover containers
-        if len(self.containers) > len(entry.fields):
+        if len(self.containers) > len(entry_.fields):
             for i, c in enumerate(self.containers):
-                if i > (len(entry.fields) - 1):
+                if i > (len(entry_.fields) - 1):
                     c.setHidden(True)
 
         self.add_field_button.setHidden(False)
@@ -170,17 +154,16 @@ class FieldContainers(QWidget):
         if self.add_field_button.is_connected:
             self.add_field_button.clicked.disconnect()
 
-        # self.add_field_modal.done.connect(
-        #     lambda f: (self.add_field_to_selected(f), self.update_widgets())
-        # )
+        self.add_field_modal.done.connect(
+            lambda f: (self.add_field_to_selected(f), self.update_from_entry(self.selected[0]))
+        )
         self.add_field_modal.is_connected = True
         self.add_field_button.clicked.connect(self.add_field_modal.show)
 
     def add_field_to_selected(self, field_list: list):
         """Add list of entry fields to one or more selected items."""
         logger.info("add_field_to_selected", selected=self.selected, fields=field_list)
-        for grid_idx in self.selected:
-            entry = self.driver.frame_content[grid_idx]
+        for entry in self.selected:
             for field_item in field_list:
                 self.lib.add_entry_field_type(
                     entry.id,
@@ -393,12 +376,7 @@ class FieldContainers(QWidget):
     def remove_field(self, field: BaseField):
         """Remove a field from all selected Entries."""
         logger.info("removing field", field=field, selected=self.selected)
-        entry_ids = []
-
-        for grid_idx in self.selected:
-            entry = self.driver.frame_content[grid_idx]
-            entry_ids.append(entry.id)
-
+        entry_ids = [e.id for e in self.selected]
         self.lib.remove_entry_field(field, entry_ids)
 
         # # if the field is meta tags, update the badges
@@ -412,12 +390,7 @@ class FieldContainers(QWidget):
             (TextField, DatetimeField),  # , TagBoxField)
         ), f"instance: {type(field)}"
 
-        entry_ids = []
-        # for grid_idx in self.selected:
-        #     entry = self.driver.frame_content[grid_idx]
-        #     entry_ids.append(entry.id)
-        for entry in self.selected:
-            entry_ids.append(entry.id)
+        entry_ids = [e.id for e in self.selected]
 
         assert entry_ids, "No entries selected"
         self.lib.update_entry_field(

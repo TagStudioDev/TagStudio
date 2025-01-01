@@ -16,7 +16,6 @@ import sys
 import time
 import webbrowser
 from collections.abc import Sequence
-from itertools import zip_longest
 from pathlib import Path
 from queue import Queue
 
@@ -53,8 +52,6 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 from src.core.constants import (
-    TAG_ARCHIVED,
-    TAG_FAVORITE,
     VERSION,
     VERSION_BRANCH,
 )
@@ -137,7 +134,7 @@ class QtDriver(DriverMixin, QObject):
         self.rm: ResourceManager = ResourceManager()
         self.args = args
         self.filter = FilterState.show_all()
-        self.frame_content: list[Entry] = []
+        self.frame_content: list[int] = []  # List of Entry IDs on the current page
         self.pages_count = 0
 
         self.scrollbar_pos = 0
@@ -151,9 +148,7 @@ class QtDriver(DriverMixin, QObject):
         self.thumb_job_queue: Queue = Queue()
         self.thumb_threads: list[Consumer] = []
         self.thumb_cutoff: float = time.time()
-
-        # grid indexes of selected items
-        self.selected: list[int] = []
+        self.selected: list[int] = []  # Selected Entry IDs
 
         self.SIGTERM.connect(self.handle_sigterm)
 
@@ -589,11 +584,13 @@ class QtDriver(DriverMixin, QObject):
         self.preview_panel.update_widgets()
 
     def toggle_libs_list(self, value: bool):
-        if value:
-            self.preview_panel.libs_flow_container.show()
-        else:
-            self.preview_panel.libs_flow_container.hide()
-        self.preview_panel.update()
+        # TODO: Reimplement or remove
+        # if value:
+        #     self.preview_panel.libs_flow_container.show()
+        # else:
+        #     self.preview_panel.libs_flow_container.hide()
+        # self.preview_panel.update()
+        pass
 
     def show_grid_filenames(self, value: bool):
         for thumb in self.item_thumbs:
@@ -695,10 +692,12 @@ class QtDriver(DriverMixin, QObject):
         self.modal.show()
 
     def select_all_action_callback(self):
-        self.selected = list(range(0, len(self.frame_content)))
-
-        for grid_idx in self.selected:
-            self.item_thumbs[grid_idx].thumb_button.set_selected(True)
+        """Set the selection to all visible items."""
+        self.selected.clear()
+        for item in self.item_thumbs:
+            if item.mode and item.item_id not in self.selected:
+                self.selected.append(item.item_id)
+                item.thumb_button.set_selected(True)
 
         self.set_macro_menu_viability()
         self.preview_panel.update_widgets()
@@ -829,14 +828,14 @@ class QtDriver(DriverMixin, QObject):
         # sleep(5)
         # pb.deleteLater()
 
-    def run_macros(self, name: MacroID, grid_idx: list[int]):
+    def run_macros(self, name: MacroID, entry_ids: list[int]):
         """Run a specific Macro on a group of given entry_ids."""
-        for gid in grid_idx:
-            self.run_macro(name, gid)
+        for entry_id in entry_ids:
+            self.run_macro(name, entry_id)
 
-    def run_macro(self, name: MacroID, grid_idx: int):
+    def run_macro(self, name: MacroID, entry_id: int):
         """Run a specific Macro on an Entry given a Macro name."""
-        entry: Entry = self.frame_content[grid_idx]
+        entry: Entry = self.lib.get_entry(entry_id)
         full_path = self.lib.library_dir / entry.path
         source = "" if entry.path.parent == Path(".") else entry.path.parts[0].lower()
 
@@ -845,14 +844,14 @@ class QtDriver(DriverMixin, QObject):
             source=source,
             macro=name,
             entry_id=entry.id,
-            grid_idx=grid_idx,
+            grid_idx=entry_id,
         )
 
         if name == MacroID.AUTOFILL:
             for macro_id in MacroID:
                 if macro_id == MacroID.AUTOFILL:
                     continue
-                self.run_macro(macro_id, grid_idx)
+                self.run_macro(macro_id, entry_id)
 
         elif name == MacroID.SIDECAR:
             parsed_items = TagStudioCore.get_gdl_sidecar(full_path, source)
@@ -949,13 +948,12 @@ class QtDriver(DriverMixin, QObject):
         layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         # TODO - init after library is loaded, it can have different page_size
-        for grid_idx in range(self.filter.page_size):
+        for _ in range(self.filter.page_size):
             item_thumb = ItemThumb(
                 None,
                 self.lib,
                 self,
                 (self.thumb_size, self.thumb_size),
-                grid_idx,
                 bool(
                     self.settings.value(SettingItems.SHOW_FILENAMES, defaultValue=True, type=bool)
                 ),
@@ -972,44 +970,55 @@ class QtDriver(DriverMixin, QObject):
         sa.setWidgetResizable(True)
         sa.setWidget(self.flow_container)
 
-    def select_item(self, grid_index: int, append: bool, bridge: bool):
+    def select_item(self, item_id: int, append: bool, bridge: bool):
         """Select one or more items in the Thumbnail Grid."""
-        logger.info("selecting item", grid_index=grid_index, append=append, bridge=bridge)
+        logger.info("[QtDriver] Selecting Items:", item_id=item_id, append=append, bridge=bridge)
         if append:
-            if grid_index not in self.selected:
-                self.selected.append(grid_index)
-                self.item_thumbs[grid_index].thumb_button.set_selected(True)
+            if item_id not in self.selected:
+                self.selected.append(item_id)
+                for it in self.item_thumbs:
+                    if it.item_id == item_id:
+                        it.thumb_button.set_selected(True)
             else:
-                self.selected.remove(grid_index)
-                self.item_thumbs[grid_index].thumb_button.set_selected(False)
+                self.selected.remove(item_id)
+                for it in self.item_thumbs:
+                    if it.item_id == item_id:
+                        it.thumb_button.set_selected(False)
 
         elif bridge and self.selected:
-            select_from = min(self.selected)
-            select_to = max(self.selected)
+            contents = self.frame_content
+            last_index = self.frame_content.index(self.selected[-1])
+            current_index = self.frame_content.index(item_id)
+            index_range: list = contents[
+                min(last_index, current_index) : max(last_index, current_index) + 1
+            ]
+            # Preserve bridge direction for correct appending order.
+            if last_index < current_index:
+                index_range.reverse()
+            for entry_id in index_range:
+                for it in self.item_thumbs:
+                    if it.item_id == entry_id:
+                        it.thumb_button.set_selected(True)
+                        if entry_id not in self.selected:
+                            self.selected.append(entry_id)
 
-            if select_to < grid_index:
-                index_range = range(select_from, grid_index + 1)
-            else:
-                index_range = range(grid_index, select_to + 1)
-
-            self.selected = list(index_range)
-
-            for selected_idx in self.selected:
-                self.item_thumbs[selected_idx].thumb_button.set_selected(True)
         else:
-            self.selected = [grid_index]
-            for thumb_idx, item_thumb in enumerate(self.item_thumbs):
-                item_matched = thumb_idx == grid_index
-                item_thumb.thumb_button.set_selected(item_matched)
-
-        # NOTE: By using the preview panel's "set_tags_updated_slot" method,
-        # only the last of multiple identical item selections are connected.
-        # If attaching the slot to multiple duplicate selections is needed,
-        # just bypass the method and manually disconnect and connect the slots.
-        if len(self.selected) == 1:
+            self.selected.clear()
+            self.selected.append(item_id)
             for it in self.item_thumbs:
-                if it.item_id == id:
-                    self.preview_panel.set_tags_updated_slot(it.refresh_badge)
+                if it.item_id == item_id:
+                    it.thumb_button.set_selected(True)
+                else:
+                    it.thumb_button.set_selected(False)
+
+        # # NOTE: By using the preview panel's "set_tags_updated_slot" method,
+        # # only the last of multiple identical item selections are connected.
+        # # If attaching the slot to multiple duplicate selections is needed,
+        # # just bypass the method and manually disconnect and connect the slots.
+        # if len(self.selected) == 1:
+        #     for it in self.item_thumbs:
+        #         if it.item_id == item_id:
+        #             self.preview_panel.set_tags_updated_slot(it.refresh_badge)
 
         self.set_macro_menu_viability()
         self.preview_panel.update_widgets()
@@ -1106,18 +1115,26 @@ class QtDriver(DriverMixin, QObject):
         self.main_window.update()
 
         is_grid_thumb = True
-        # Show loading placeholder icons
-        for entry, item_thumb in zip_longest(self.frame_content, self.item_thumbs):
-            if not entry:
+        logger.info("[QtDriver] Loading Entries...")
+        # TODO: Grab all entries at once
+        entries: list[Entry] = [self.lib.get_entry_full(e_id) for e_id in self.frame_content]
+        logger.info("[QtDriver] Building Filenames...")
+        filenames: list[Path] = [self.lib.library_dir / e.path for e in entries]
+        logger.info("[QtDriver] Done! Processing ItemThumbs...")
+        for index, item_thumb in enumerate(self.item_thumbs, start=0):
+            entry = None
+            try:
+                entry = entries[index]
+            except IndexError:
                 item_thumb.hide()
                 continue
-
+            if not entry:
+                continue
             item_thumb.set_mode(ItemType.ENTRY)
-            item_thumb.set_item_id(entry)
+            item_thumb.set_item_id(entry.id)
 
             # TODO - show after item is rendered
             item_thumb.show()
-
             is_loading = True
             self.thumb_job_queue.put(
                 (
@@ -1127,29 +1144,29 @@ class QtDriver(DriverMixin, QObject):
             )
 
         # Show rendered thumbnails
-        for idx, (entry, item_thumb) in enumerate(
-            zip_longest(self.frame_content, self.item_thumbs)
-        ):
+        for index, item_thumb in enumerate(self.item_thumbs, start=0):
+            entry = None
+            try:
+                entry = entries[index]
+            except IndexError:
+                item_thumb.hide()
+                continue
             if not entry:
                 continue
 
-            filepath = self.lib.library_dir / entry.path
             is_loading = False
-
             self.thumb_job_queue.put(
                 (
                     item_thumb.renderer.render,
-                    (time.time(), filepath, base_size, ratio, is_loading, is_grid_thumb),
+                    (time.time(), filenames[index], base_size, ratio, is_loading, is_grid_thumb),
                 )
             )
-
-            entry_tag_ids = {tag.id for tag in entry.tags}
-            item_thumb.assign_badge(BadgeType.ARCHIVED, TAG_ARCHIVED in entry_tag_ids)
-            item_thumb.assign_badge(BadgeType.FAVORITE, TAG_FAVORITE in entry_tag_ids)
+            item_thumb.assign_badge(BadgeType.ARCHIVED, entry.is_archived)
+            item_thumb.assign_badge(BadgeType.FAVORITE, entry.is_favorite)
             item_thumb.update_clickable(
                 clickable=(
-                    lambda checked=False, index=idx: self.select_item(
-                        index,
+                    lambda checked=False, item_id=entry.id: self.select_item(
+                        item_id,
                         append=(
                             QGuiApplication.keyboardModifiers()
                             == Qt.KeyboardModifier.ControlModifier
@@ -1165,24 +1182,15 @@ class QtDriver(DriverMixin, QObject):
             is_selected = (item_thumb.mode, item_thumb.item_id) in self.selected
             item_thumb.thumb_button.set_selected(is_selected)
 
-            self.thumb_job_queue.put(
-                (
-                    item_thumb.renderer.render,
-                    (time.time(), filepath, base_size, ratio, False, True),
-                )
-            )
-
-    def update_badges(self, grid_item_ids: Sequence[int] = None):
-        if not grid_item_ids:
+    def update_badges(self, item_ids: Sequence[int] = None):
+        if not item_ids:
             # no items passed, update all items in grid
-            grid_item_ids = range(min(len(self.item_thumbs), len(self.frame_content)))
+            item_ids = range(min(len(self.item_thumbs), len(self.frame_content)))
 
-        logger.info("updating badges for items", grid_item_ids=grid_item_ids)
-
-        for grid_idx in grid_item_ids:
-            # get the entry from grid to avoid loading from db again
-            entry = self.frame_content[grid_idx]
-            self.item_thumbs[grid_idx].refresh_badge(entry)
+        item_ids_ = set(item_ids)
+        for it in self.item_thumbs:
+            if it.item_id in item_ids_:
+                it.refresh_badge()
 
     def filter_items(self, filter: FilterState | None = None) -> None:
         if not self.lib.library_dir:
@@ -1217,7 +1225,7 @@ class QtDriver(DriverMixin, QObject):
         )
 
         # update page content
-        self.frame_content = results.items
+        self.frame_content = [item.id for item in results.items]
         self.update_thumbs()
 
         # update pagination

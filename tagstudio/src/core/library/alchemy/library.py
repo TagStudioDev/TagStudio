@@ -420,7 +420,7 @@ class Library:
             return entry
 
     def get_entry_full(self, entry_id: int) -> Entry | None:
-        """Load entry an join with all joins and all tags."""
+        """Load entry and join with all joins and all tags."""
         with Session(self.engine) as session:
             statement = select(Entry).where(Entry.id == entry_id)
             statement = (
@@ -454,7 +454,9 @@ class Library:
             if with_joins:
                 # load Entry with all joins and all tags
                 stmt = (
-                    stmt.outerjoin(Entry.text_fields).outerjoin(Entry.datetime_fields)
+                    stmt.outerjoin(Entry.text_fields)
+                    .outerjoin(Entry.datetime_fields)
+                    .outerjoin(Entry.tags)
                     # .outerjoin(Entry.tag_box_fields)
                 )
                 stmt = stmt.options(
@@ -935,12 +937,37 @@ class Library:
                 return None
 
     def add_tags_to_entry(self, entry_id: int, tag_ids: int | list[int] | set[int]) -> bool:
+        """Add one or more tags to an entry."""
         tag_ids_ = [tag_ids] if isinstance(tag_ids, int) else tag_ids
         with Session(self.engine, expire_on_commit=False) as session:
             try:
                 for tag_id in tag_ids_:
                     session.add(TagEntry(tag_id=tag_id, entry_id=entry_id))
                     session.flush()
+                session.commit()
+                return True
+            except IntegrityError as e:
+                logger.warning("[add_tags_to_entry]", warning=e)
+                session.rollback()
+                return False
+
+    def remove_tags_from_entry(self, entry_id: int, tag_ids: int | list[int] | set[int]) -> bool:
+        """Remove one or more tags from an entry."""
+        tag_ids_ = [tag_ids] if isinstance(tag_ids, int) else tag_ids
+        with Session(self.engine, expire_on_commit=False) as session:
+            try:
+                for tag_id in tag_ids_:
+                    tag_entry = session.scalars(
+                        select(TagEntry).where(
+                            and_(
+                                TagEntry.tag_id == tag_id,
+                                TagEntry.entry_id == entry_id,
+                            )
+                        )
+                    ).first()
+                    if tag_entry:
+                        session.delete(tag_entry)
+                        session.commit()
                 session.commit()
                 return True
             except IntegrityError as e:

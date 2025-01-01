@@ -200,7 +200,6 @@ class FileAttributes(QWidget):
 
             # Format and display any stat variables
             def add_newline(stats_label_text: str) -> str:
-                logger.info(stats_label_text[-2:])
                 if stats_label_text and stats_label_text[-2:] != "\n":
                     return stats_label_text + "\n"
                 return stats_label_text

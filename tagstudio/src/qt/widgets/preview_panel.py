@@ -8,7 +8,7 @@ from pathlib import Path
 
 import structlog
 from PySide6.QtCore import Qt, Signal
-from PySide6.QtWidgets import QHBoxLayout, QSplitter, QWidget
+from PySide6.QtWidgets import QHBoxLayout, QSplitter, QVBoxLayout, QWidget
 from src.core.library.alchemy.library import Library
 from src.core.library.alchemy.models import Entry
 from src.qt.widgets.preview.field_containers import FieldContainers
@@ -40,13 +40,15 @@ class PreviewPanel(QWidget):
         self.file_attrs = FileAttributes(library, driver)
         self.fields = FieldContainers(library, driver)
 
-        # info_section = QWidget()
-        # info_layout = QVBoxLayout(info_section)
-        # info_layout.setContentsMargins(0, 0, 0, 0)
-        # info_layout.setSpacing(6)
+        preview_section = QWidget()
+        preview_layout = QVBoxLayout(preview_section)
+        preview_layout.setContentsMargins(0, 0, 0, 0)
+        preview_layout.setSpacing(6)
 
-        # info_layout.addWidget(self.file_attrs)
-        # info_layout.addWidget(self.fields.scroll_area)
+        info_section = QWidget()
+        info_layout = QVBoxLayout(info_section)
+        info_layout.setContentsMargins(0, 0, 0, 0)
+        info_layout.setSpacing(6)
 
         splitter = QSplitter()
         splitter.setOrientation(Qt.Orientation.Vertical)
@@ -59,35 +61,24 @@ class PreviewPanel(QWidget):
         #         )
         #     )
         # )
+        preview_layout.addWidget(self.thumb)
+        preview_layout.addWidget(self.thumb.media_player)
+        info_layout.addWidget(self.file_attrs)
+        info_layout.addWidget(self.fields)
 
-        # splitter.addWidget(self.thumb.image_container)
-        # splitter.addWidget(self.thumb.media_player)
-        splitter.addWidget(self.thumb)
-        splitter.addWidget(self.thumb.media_player)
-        splitter.addWidget(self.file_attrs)
-        splitter.addWidget(self.fields)
+        splitter.addWidget(preview_section)
+        splitter.addWidget(info_section)
         # splitter.addWidget(self.libs_flow_container)
-        splitter.setStretchFactor(3, 2)
+        splitter.setStretchFactor(1, 2)
 
         root_layout = QHBoxLayout(self)
         root_layout.setContentsMargins(0, 0, 0, 0)
         root_layout.addWidget(splitter)
 
-    def update_selected_entry(self, driver: "QtDriver"):
-        for grid_idx in driver.selected:
-            entry = driver.frame_content[grid_idx]
-            result = self.lib.get_entry_full(entry.id)
-            logger.info(
-                "found item",
-                grid_idx=grid_idx,
-                lookup_id=entry.id,
-            )
-            self.driver.frame_content[grid_idx] = result
-
     def update_widgets(self) -> bool:
         """Render the panel widgets with the newest data from the Library."""
         # No Items Selected
-        items: list[Entry] = [self.driver.frame_content[x] for x in self.driver.selected]
+        # items: list[Entry] = [self.driver.frame_content[x] for x in self.driver.selected]
         if len(self.driver.selected) == 0:
             # TODO: Clear everything to default
             # self.file_attrs.update_blank()
@@ -96,7 +87,7 @@ class PreviewPanel(QWidget):
 
         # One Item Selected
         elif len(self.driver.selected) == 1:
-            entry: Entry = items[0]
+            entry: Entry = self.lib.get_entry_full(self.driver.selected[0])
             filepath: Path = self.lib.library_dir / entry.path
             ext: str = filepath.suffix.lower()
 
