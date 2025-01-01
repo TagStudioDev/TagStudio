@@ -934,7 +934,7 @@ class Library:
                 session.rollback()
                 return None
 
-    def add_tags_to_entry(self, entry_id: int, tag_ids: int | list[int] | set[int]):
+    def add_tags_to_entry(self, entry_id: int, tag_ids: int | list[int] | set[int]) -> bool:
         tag_ids_ = [tag_ids] if isinstance(tag_ids, int) else tag_ids
         with Session(self.engine, expire_on_commit=False) as session:
             try:
@@ -942,10 +942,11 @@ class Library:
                     session.add(TagEntry(tag_id=tag_id, entry_id=entry_id))
                     session.flush()
                 session.commit()
+                return True
             except IntegrityError as e:
                 logger.exception(e)
                 session.rollback()
-                return None
+                return False
 
     def save_library_backup_to_disk(self) -> Path:
         assert isinstance(self.library_dir, Path)
