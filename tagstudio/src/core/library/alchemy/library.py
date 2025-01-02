@@ -573,7 +573,9 @@ class Library:
 
             statement = statement.distinct(Entry.id)
 
-            query_count = select(func.count()).select_from(statement.alias("entries"))
+            # only selecting the id and counting on that is quicker when using the ORM
+            counting_statement = select(statement.alias("result").c[0])
+            query_count = select(func.count()).select_from(counting_statement.alias("entries"))
             count_all: int = session.execute(query_count).scalar()
 
             statement = statement.limit(search.limit).offset(search.offset)
