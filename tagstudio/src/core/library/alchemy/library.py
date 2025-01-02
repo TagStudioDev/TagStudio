@@ -586,9 +586,14 @@ class Library:
                 query_full=str(statement.compile(compile_kwargs={"literal_binds": True})),
             )
 
+            start_time = time.time()
+            items = session.scalars(statement).fetchall()
+            end_time = time.time()
+            logger.info(f"SQL Execution finished ({format_timespan(end_time - start_time)})")
+
             res = SearchResult(
                 total_count=count_all,
-                items=list(session.scalars(statement)),
+                items=list(items),
             )
 
             session.expunge_all()
