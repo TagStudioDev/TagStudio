@@ -367,38 +367,38 @@ class JsonMigrationModal(QObject):
 
     def migration_iterator(self):
         """Iterate over the library migration process."""
-        # try:
-        # Convert JSON Library to SQLite
-        yield "Creating SQL Database Tables..."
-        self.sql_lib = SqliteLibrary()
-        self.temp_path: Path = (
-            self.json_lib.library_dir / TS_FOLDER_NAME / "migration_ts_library.sqlite"
-        )
-        self.sql_lib.storage_path = self.temp_path
-        if self.temp_path.exists():
-            logger.info('Temporary migration file "temp_path" already exists. Removing...')
-            self.temp_path.unlink()
-        self.sql_lib.open_sqlite_library(self.json_lib.library_dir, is_new=True)
-        yield f"Migrating {len(self.json_lib.entries):,d} File Entries..."
-        self.sql_lib.migrate_json_to_sqlite(self.json_lib)
-        yield "Checking for Parity..."
-        check_set = set()
-        check_set.add(self.check_field_parity())
-        check_set.add(self.check_path_parity())
-        check_set.add(self.check_shorthand_parity())
-        check_set.add(self.check_subtag_parity())
-        check_set.add(self.check_alias_parity())
-        check_set.add(self.check_color_parity())
-        self.update_parity_ui()
-        if False not in check_set:
-            yield "Migration Complete!"
-        else:
-            yield "Migration Complete, Discrepancies Found"
-        self.done = True
+        try:
+            # Convert JSON Library to SQLite
+            yield "Creating SQL Database Tables..."
+            self.sql_lib = SqliteLibrary()
+            self.temp_path: Path = (
+                self.json_lib.library_dir / TS_FOLDER_NAME / "migration_ts_library.sqlite"
+            )
+            self.sql_lib.storage_path = self.temp_path
+            if self.temp_path.exists():
+                logger.info('Temporary migration file "temp_path" already exists. Removing...')
+                self.temp_path.unlink()
+            self.sql_lib.open_sqlite_library(self.json_lib.library_dir, is_new=True)
+            yield f"Migrating {len(self.json_lib.entries):,d} File Entries..."
+            self.sql_lib.migrate_json_to_sqlite(self.json_lib)
+            yield "Checking for Parity..."
+            check_set = set()
+            check_set.add(self.check_field_parity())
+            check_set.add(self.check_path_parity())
+            check_set.add(self.check_shorthand_parity())
+            check_set.add(self.check_subtag_parity())
+            check_set.add(self.check_alias_parity())
+            check_set.add(self.check_color_parity())
+            self.update_parity_ui()
+            if False not in check_set:
+                yield "Migration Complete!"
+            else:
+                yield "Migration Complete, Discrepancies Found"
+            self.done = True
 
-        # except Exception as e:
-        #     yield f"Error: {type(e).__name__}"
-        self.done = True
+        except Exception as e:
+            yield f"Error: {type(e).__name__}"
+            self.done = True
 
     def update_parity_ui(self):
         """Update all parity values UI."""
