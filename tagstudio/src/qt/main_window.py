@@ -184,6 +184,7 @@ class Ui_MainWindow(QMainWindow):
         sizePolicy1.setHeightForWidth(
             self.statusbar.sizePolicy().hasHeightForWidth())
         self.statusbar.setSizePolicy(sizePolicy1)
+        self.statusbar.setSizeGripEnabled(False)
         MainWindow.setStatusBar(self.statusbar)
 
         self.retranslateUi(MainWindow)
