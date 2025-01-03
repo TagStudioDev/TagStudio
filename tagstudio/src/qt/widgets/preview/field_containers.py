@@ -111,17 +111,16 @@ class FieldContainers(QWidget):
         self.selected = [self.lib.get_entry_full(entry.id)]
         logger.info(
             "[FieldContainers] Updating Selection",
-            entry=entry,
+            path=entry.path,
             fields=entry.fields,
             tags=entry.tags,
         )
 
         entry_ = self.selected[0]
         container_len: int = len(entry_.fields)
-        # for index, tag in enumerate(entry_.tags):
-        #     self.write_tag_container(index, )
-        # TODO: Break up into categories
         container_index = 0
+
+        # Write tag container(s)
         if entry_.tags:
             categories = self.get_tag_categories(entry_.tags)
             for cat, tags in sorted(categories.items(), key=lambda kv: (kv[0] is None, kv)):
@@ -130,16 +129,18 @@ class FieldContainers(QWidget):
                 )
                 container_index += 1
                 container_len += 1
+        # Write field container(s)
         for index, field in enumerate(entry_.fields, start=container_index):
             self.write_container(index, field, is_mixed=False)
 
-        # Hide leftover containers
+        # Hide leftover container(s)
         if len(self.containers) > container_len:
             for i, c in enumerate(self.containers):
                 if i > (container_len - 1):
                     c.setHidden(True)
 
     def get_tag_categories(self, tags: set[Tag]) -> dict[Tag, set[Tag | None]]:
+        """Get a dictionary of category tags mapped to their respective tags."""
         cats: dict[Tag, set[Tag | None]] = {}
         cats[None] = set()
 
@@ -151,6 +152,7 @@ class FieldContainers(QWidget):
                     cats[p_tag] = set()
         logger.info("Blank Tag Categories", cats=cats)
 
+        # Add tags to any applicable categories
         for tag in tags:
             is_general = True
             for p_tag in list(cats.keys()):
@@ -167,6 +169,7 @@ class FieldContainers(QWidget):
             if is_general:
                 cats[None].add(tag)
 
+        # Remove unused categories
         empty: list[Tag] = []
         for k, v in list(cats.items()):
             if not v:
@@ -183,7 +186,9 @@ class FieldContainers(QWidget):
     def add_field_to_selected(self, field_list: list):
         """Add list of entry fields to one or more selected items."""
         logger.info(
-            "[FieldContainers][add_field_to_selected]", selected=self.selected, fields=field_list
+            "[FieldContainers][add_field_to_selected]",
+            selected=[x.path for x in self.selected],
+            fields=field_list,
         )
         for entry in self.selected:
             for field_item in field_list:
@@ -194,7 +199,11 @@ class FieldContainers(QWidget):
 
     def add_tags_to_selected(self, tags: list[int]):
         """Add list of tags to one or more selected items."""
-        logger.info("[FieldContainers][add_tags_to_selected]", selected=self.selected, tags=tags)
+        logger.info(
+            "[FieldContainers][add_tags_to_selected]",
+            selected=[x.path for x in self.selected],
+            tags=tags,
+        )
         for entry in self.selected:
             self.lib.add_tags_to_entry(
                 entry.id,
@@ -377,6 +386,7 @@ class FieldContainers(QWidget):
             inner_widget = container.get_inner_widget()
 
             if isinstance(inner_widget, TagBoxWidget):
+                logger.warning("recycling")
                 inner_widget.set_tags(tags)
                 try:
                     inner_widget.updated.disconnect()
@@ -384,6 +394,7 @@ class FieldContainers(QWidget):
                     logger.error("[FieldContainers] Failed to disconnect inner_container.updated")
 
             else:
+                logger.warning("creating new")
                 inner_widget = TagBoxWidget(
                     tags,
                     "Tags",
@@ -408,7 +419,11 @@ class FieldContainers(QWidget):
 
     def remove_field(self, field: BaseField):
         """Remove a field from all selected Entries."""
-        logger.info("[FieldContainers] Removing Field", field=field, selected=self.selected)
+        logger.info(
+            "[FieldContainers] Removing Field",
+            field=field,
+            selected=[x.path for x in self.selected],
+        )
         entry_ids = [e.id for e in self.selected]
         self.lib.remove_entry_field(field, entry_ids)
 

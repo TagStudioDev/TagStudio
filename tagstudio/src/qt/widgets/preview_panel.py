@@ -5,6 +5,7 @@
 import traceback
 import typing
 from pathlib import Path
+from warnings import catch_warnings
 
 import structlog
 from PySide6.QtCore import Qt, Signal
@@ -161,9 +162,8 @@ class PreviewPanel(QWidget):
         self.add_field_button.clicked.connect(self.add_field_modal.show)
 
     def update_add_tag_button(self, entry: Entry):
-        # if self.add_tag_modal.is_connected:
-        #     self.add_tag_modal.done.disconnect()
-        if self.add_tag_button.is_connected:
+        with catch_warnings(record=True):
+            self.add_tag_modal.widget.tag_chosen.disconnect()
             self.add_tag_button.clicked.disconnect()
 
         self.add_tag_modal.widget.tag_chosen.connect(
@@ -172,11 +172,10 @@ class PreviewPanel(QWidget):
                 self.fields.update_from_entry(entry),
             )
         )
-        # self.add_tag_modal.is_connected = True
 
         self.add_tag_button.clicked.connect(
             lambda: (
-                # self.add_tag_modal.widget.update_tags(),
+                self.add_tag_modal.widget.update_tags(),
                 self.add_tag_modal.show(),
             )
         )

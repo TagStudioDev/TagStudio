@@ -780,7 +780,7 @@ class Library:
         self,
         entry_ids: list[int] | int,
         field: BaseField,
-        content: str | datetime | set[Tag],
+        content: str | datetime,
     ):
         if isinstance(entry_ids, int):
             entry_ids = [entry_ids]
@@ -840,24 +840,12 @@ class Library:
                 field_id = field_id.name
             field = self.get_value_type(field_id)
 
-        field_model: TextField | DatetimeField  # | TagBoxField
+        field_model: TextField | DatetimeField
         if field.type in (FieldTypeEnum.TEXT_LINE, FieldTypeEnum.TEXT_BOX):
             field_model = TextField(
                 type_key=field.key,
                 value=value or "",
             )
-        #        elif field.type == FieldTypeEnum.TAGS:
-        #            field_model = TagBoxField(
-        #                type_key=field.key,
-        #            )
-        #
-        #            if value:
-        #                assert isinstance(value, list)
-        #                with Session(self.engine) as session:
-        #                    for tag_id in list(set(value)):
-        #                        tag = session.scalar(select(Tag).where(Tag.id == tag_id))
-        #                        field_model.tags.add(tag)
-        #                        session.flush()
 
         elif field.type == FieldTypeEnum.DATETIME:
             field_model = DatetimeField(
