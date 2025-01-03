@@ -73,8 +73,8 @@ class PreviewPanel(QWidget):
         self.file_attrs = FileAttributes(library, driver)
         self.fields = FieldContainers(library, driver)
 
-        tsp = TagSearchPanel(self.driver.lib)
-        self.add_tag_modal = PanelModal(tsp, "Add Tags", "Add Tags")
+        tag_search_panel = TagSearchPanel(self.driver.lib)
+        self.add_tag_modal = PanelModal(tag_search_panel, "Add Tags", "Add Tags")
 
         self.add_field_modal = AddFieldModal(self.lib)
 
@@ -121,7 +121,7 @@ class PreviewPanel(QWidget):
 
         splitter.addWidget(preview_section)
         splitter.addWidget(info_section)
-        # splitter.addWidget(self.libs_flow_container)
+        # splitter.addWidget(self.libs_flow_container) # TODO: Determine fate of this; Move to menu
         splitter.setStretchFactor(1, 2)
 
         root_layout = QVBoxLayout(self)
@@ -160,22 +160,15 @@ class PreviewPanel(QWidget):
         # Multiple Selected Items
         elif len(self.driver.selected) > 1:
             # items: list[Entry] = [self.lib.get_entry_full(x) for x in self.driver.selected]
-            # TODO: Render mixed selection
-            self.thumb.hide_preview()  # TODO: Allow for mixed editing
+            self.thumb.hide_preview()  # TODO: Render mixed selection
             self.file_attrs.update_multi_selection(len(self.driver.selected))
             self.file_attrs.update_date_label()
             self.fields.hide_containers()  # TODO: Allow for mixed editing
             self.update_add_tag_button()
             self.update_add_field_button()
-            # self.fields.update_from_entries(items)
-            # self.file_attrs.update_selection_count()
 
             self.add_tag_button.setEnabled(True)
             self.add_field_button.setEnabled(True)
-
-        # self.thumb.update_widgets()
-        # # self.file_attrs.update_widgets()
-        # self.fields.update_widgets()
 
         return True
 

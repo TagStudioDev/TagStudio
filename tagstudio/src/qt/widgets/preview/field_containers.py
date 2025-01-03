@@ -89,11 +89,11 @@ class FieldContainers(QWidget):
         self.scroll_area.setWidgetResizable(True)
         self.scroll_area.setFrameShadow(QFrame.Shadow.Plain)
         self.scroll_area.setFrameShape(QFrame.Shape.NoFrame)
+
         # NOTE: I would rather have this style applied to the scroll_area
         # background and NOT the scroll container background, so that the
         # rounded corners are maintained when scrolling. I was unable to
         # find the right trick to only select that particular element.
-
         self.scroll_area.setStyleSheet(
             "QWidget#entryScrollContainer{"
             f"background:{self.panel_bg_color};"
@@ -437,15 +437,11 @@ class FieldContainers(QWidget):
         entry_ids = [e.id for e in self.cached_entries]
         self.lib.remove_entry_field(field, entry_ids)
 
-        # # if the field is meta tags, update the badges
-        # if field.type_key == _FieldID.TAGS_META.value:
-        #     self.driver.update_badges(self.selected)
-
     def update_field(self, field: BaseField, content: str) -> None:
         """Update a field in all selected Entries, given a field object."""
         assert isinstance(
             field,
-            (TextField, DatetimeField),  # , TagBoxField)
+            (TextField, DatetimeField),
         ), f"instance: {type(field)}"
 
         entry_ids = [e.id for e in self.cached_entries]
@@ -466,11 +462,9 @@ class FieldContainers(QWidget):
             Translations["generic.cancel_alt"], QMessageBox.ButtonRole.DestructiveRole
         )
         remove_mb.addButton("&Remove", QMessageBox.ButtonRole.RejectRole)
-        # remove_mb.setStandardButtons(QMessageBox.StandardButton.Cancel)
         remove_mb.setDefaultButton(cancel_button)
         remove_mb.setEscapeButton(cancel_button)
         result = remove_mb.exec_()
-        # logging.info(result)
         if result == 3:  # TODO - what is this magic number?
             callback()
 
