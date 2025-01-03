@@ -51,12 +51,18 @@ class SQLBoolExpressionBuilder(BaseVisitor[ColumnExpressionArgument]):
         tag_ids: list[int] = []
         bool_expressions: list[ColumnExpressionArgument] = []
 
-        # Search for TagID / unambigous Tag Constraints and store the respective tag ids seperately
+        # Search for TagID / unambiguous Tag Constraints and store the respective tag ids separately
         for term in node.terms:
             if isinstance(term, Constraint) and len(term.properties) == 0:
                 match term.type:
                     case ConstraintType.TagID:
-                        tag_ids.append(int(term.value))
+                        try:
+                            tag_ids.append(int(term.value))
+                        except ValueError:
+                            logger.error(
+                                "[SQLBoolExpressionBuilder] Could not cast value to an int Tag ID",
+                                value=term.value,
+                            )
                         continue
                     case ConstraintType.Tag:
                         if len(ids := self.__get_tag_ids(term.value)) == 1:
