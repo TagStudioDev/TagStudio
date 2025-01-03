@@ -115,7 +115,7 @@ class FieldContainers(QWidget):
             tags=entry.tags,
         )
 
-        self.cached_entries = [self.lib.get_entry_full(entry.id)]
+        self.cached_entries = [self.lib.get_entry_full(entry.id, with_fields=False)]
         entry_ = self.cached_entries[0]
         container_len: int = len(entry_.fields)
         container_index = 0
@@ -129,6 +129,8 @@ class FieldContainers(QWidget):
                 )
                 container_index += 1
                 container_len += 1
+            if categories:
+                self.tags_updated.emit()
         # Write field container(s)
         for index, field in enumerate(entry_.fields, start=container_index):
             self.write_container(index, field, is_mixed=False)
@@ -410,18 +412,12 @@ class FieldContainers(QWidget):
                 )
                 container.set_inner_widget(inner_widget)
 
-            inner_widget.updated.connect(
-                lambda: (
-                    self.write_tag_container(index, tags, category_tag),
-                    self.update_from_entry(self.cached_entries[0]),
-                )
-            )
+            inner_widget.updated.connect(lambda: (self.update_from_entry(self.cached_entries[0])))
         else:
             text = "<i>Mixed Data</i>"
             inner_widget = TextWidget("Mixed Tags", text)
             container.set_inner_widget(inner_widget)
 
-        self.tags_updated.emit()
         container.set_edit_callback()
         container.set_remove_callback()
         container.setHidden(False)
