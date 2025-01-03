@@ -112,7 +112,6 @@ class FileAttributes(QWidget):
 
     def update_date_label(self, filepath: Path | None = None) -> None:
         """Update the "Date Created" and "Date Modified" file property labels."""
-        logger.info(filepath)
         if filepath and filepath.is_file():
             created: dt = None
             if platform.system() == "Windows" or platform.system() == "Darwin":
@@ -139,8 +138,6 @@ class FileAttributes(QWidget):
 
     def update_stats(self, filepath: Path | None = None, ext: str = ".", stats: dict = None):
         """Render the panel widgets with the newest data from the Library."""
-        logger.info("update_stats", selected=filepath)
-
         if not stats:
             stats = {}
 

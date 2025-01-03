@@ -11,6 +11,12 @@ from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import QHBoxLayout, QSplitter, QVBoxLayout, QWidget
 from src.core.library.alchemy.library import Library
 from src.core.library.alchemy.models import Entry
+from src.qt.helpers.qbutton_wrapper import QPushButtonWrapper
+from src.qt.modals.add_field import AddFieldModal
+from src.qt.modals.tag_search import TagSearchPanel
+from src.qt.widgets.panel import PanelModal
+
+# from src.qt.modals.add_tag import AddTagModal
 from src.qt.widgets.preview.field_containers import FieldContainers
 from src.qt.widgets.preview.file_attributes import FileAttributes
 from src.qt.widgets.preview.preview_thumb import PreviewThumb
@@ -34,11 +40,17 @@ class PreviewPanel(QWidget):
         self.driver: QtDriver = driver
         self.initialized = False
         self.is_open: bool = False
-        # self.selected: list[int] = []  # New way of tracking items
 
         self.thumb = PreviewThumb(library, driver)
         self.file_attrs = FileAttributes(library, driver)
         self.fields = FieldContainers(library, driver)
+
+        tsp = TagSearchPanel(self.driver.lib)
+        # tsp.tag_chosen.connect(lambda x: self.add_tag_callback(x))
+        self.add_tag_modal = PanelModal(tsp, "Add Tags", "Add Tags")
+
+        # self.add_tag_modal = AddTagModal(self.lib)
+        self.add_field_modal = AddFieldModal(self.lib)
 
         preview_section = QWidget()
         preview_layout = QVBoxLayout(preview_section)
@@ -61,6 +73,22 @@ class PreviewPanel(QWidget):
         #         )
         #     )
         # )
+        add_buttons_container = QWidget()
+        add_buttons_layout = QHBoxLayout(add_buttons_container)
+        add_buttons_layout.setContentsMargins(0, 0, 0, 0)
+        add_buttons_layout.setSpacing(6)
+
+        self.add_tag_button = QPushButtonWrapper()
+        self.add_tag_button.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.add_tag_button.setText("Add Tag")
+
+        self.add_field_button = QPushButtonWrapper()
+        self.add_field_button.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.add_field_button.setText("Add Field")
+
+        add_buttons_layout.addWidget(self.add_tag_button)
+        add_buttons_layout.addWidget(self.add_field_button)
+
         preview_layout.addWidget(self.thumb)
         preview_layout.addWidget(self.thumb.media_player)
         info_layout.addWidget(self.file_attrs)
@@ -71,9 +99,10 @@ class PreviewPanel(QWidget):
         # splitter.addWidget(self.libs_flow_container)
         splitter.setStretchFactor(1, 2)
 
-        root_layout = QHBoxLayout(self)
+        root_layout = QVBoxLayout(self)
         root_layout.setContentsMargins(0, 0, 0, 0)
         root_layout.addWidget(splitter)
+        root_layout.addWidget(add_buttons_container)
 
     def update_widgets(self) -> bool:
         """Render the panel widgets with the newest data from the Library."""
@@ -92,11 +121,12 @@ class PreviewPanel(QWidget):
             ext: str = filepath.suffix.lower()
 
             stats: dict = self.thumb.update_preview(filepath, ext)
-            logger.info("stats", stats=stats, ext=ext)
             try:
                 self.file_attrs.update_stats(filepath, ext, stats)
                 self.file_attrs.update_date_label(filepath)
                 self.fields.update_from_entry(entry)
+                self.update_add_tag_button(entry)
+                self.update_add_field_button(entry)
             except Exception as e:
                 logger.error("[Preview Panel] Error updating selection", error=e)
                 traceback.print_exc()
@@ -114,3 +144,42 @@ class PreviewPanel(QWidget):
         # self.fields.update_widgets()
 
         return True
+
+    def update_add_field_button(self, entry: Entry):
+        if self.add_field_modal.is_connected:
+            self.add_field_modal.done.disconnect()
+        if self.add_field_button.is_connected:
+            self.add_field_button.clicked.disconnect()
+
+        self.add_field_modal.done.connect(
+            lambda f: (
+                self.fields.add_field_to_selected(f),
+                self.fields.update_from_entry(entry),
+            )
+        )
+        self.add_field_modal.is_connected = True
+        self.add_field_button.clicked.connect(self.add_field_modal.show)
+
+    def update_add_tag_button(self, entry: Entry):
+        # if self.add_tag_modal.is_connected:
+        #     self.add_tag_modal.done.disconnect()
+        if self.add_tag_button.is_connected:
+            self.add_tag_button.clicked.disconnect()
+
+        self.add_tag_modal.widget.tag_chosen.connect(
+            lambda t: (
+                self.fields.add_tags_to_selected(t),
+                self.fields.update_from_entry(entry),
+            )
+        )
+        # self.add_tag_modal.is_connected = True
+
+        self.add_tag_button.clicked.connect(
+            lambda: (
+                # self.add_tag_modal.widget.update_tags(),
+                self.add_tag_modal.show(),
+            )
+        )
+        self.add_tag_button.is_connected = True
+
+        # self.add_field_button.clicked.connect(self.add_tag_modal.show)

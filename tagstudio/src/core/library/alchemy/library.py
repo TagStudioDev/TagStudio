@@ -432,7 +432,9 @@ class Library:
                 selectinload(Entry.text_fields),
                 selectinload(Entry.datetime_fields),
                 selectinload(Entry.tags).options(
-                    selectinload(Tag.aliases), selectinload(Tag.subtags)
+                    selectinload(Tag.aliases),
+                    selectinload(Tag.subtags),
+                    selectinload(Tag.parent_tags),
                 ),
             )
             entry = session.scalar(statement)
