@@ -47,7 +47,7 @@ class ThumbButton(QPushButtonWrapper):
         self.hover_color.setHsl(
             self.hover_color.hslHue(),
             self.hover_color.hslSaturation(),
-            min(self.hover_color.lightness() + 80, 255),
+            min(self.hover_color.lightness() + 80, 200),
             self.hover_color.alpha(),
         )
 
