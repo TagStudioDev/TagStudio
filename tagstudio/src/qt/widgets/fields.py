@@ -5,14 +5,13 @@
 
 import math
 from pathlib import Path
-from types import MethodType
-from typing import Callable, Optional
+from typing import Callable
+from warnings import catch_warnings
 
 from PIL import Image, ImageQt
 from PySide6.QtCore import QEvent, Qt
 from PySide6.QtGui import QEnterEvent, QPixmap
-from PySide6.QtWidgets import QHBoxLayout, QLabel, QVBoxLayout, QWidget
-from src.qt.helpers.qbutton_wrapper import QPushButtonWrapper
+from PySide6.QtWidgets import QHBoxLayout, QLabel, QPushButton, QVBoxLayout, QWidget
 
 
 class FieldContainer(QWidget):
@@ -72,7 +71,7 @@ class FieldContainer(QWidget):
         self.title_layout.addWidget(self.title_widget)
         self.title_layout.addStretch(2)
 
-        self.copy_button = QPushButtonWrapper()
+        self.copy_button = QPushButton()
         self.copy_button.setMinimumSize(button_size, button_size)
         self.copy_button.setMaximumSize(button_size, button_size)
         self.copy_button.setFlat(True)
@@ -81,7 +80,7 @@ class FieldContainer(QWidget):
         self.title_layout.addWidget(self.copy_button)
         self.copy_button.setHidden(True)
 
-        self.edit_button = QPushButtonWrapper()
+        self.edit_button = QPushButton()
         self.edit_button.setMinimumSize(button_size, button_size)
         self.edit_button.setMaximumSize(button_size, button_size)
         self.edit_button.setFlat(True)
@@ -90,7 +89,7 @@ class FieldContainer(QWidget):
         self.title_layout.addWidget(self.edit_button)
         self.edit_button.setHidden(True)
 
-        self.remove_button = QPushButtonWrapper()
+        self.remove_button = QPushButton()
         self.remove_button.setMinimumSize(button_size, button_size)
         self.remove_button.setMaximumSize(button_size, button_size)
         self.remove_button.setFlat(True)
@@ -107,29 +106,29 @@ class FieldContainer(QWidget):
         self.field_container.setLayout(self.field_layout)
         self.inner_layout.addWidget(self.field_container)
 
-    def set_copy_callback(self, callback: Optional[MethodType]):
-        if self.copy_button.is_connected:
+    def set_copy_callback(self, callback: Callable | None = None):
+        with catch_warnings(record=True):
             self.copy_button.clicked.disconnect()
 
         self.copy_callback = callback
-        self.copy_button.clicked.connect(callback)
-        self.copy_button.is_connected = callable(callback)
+        if callback:
+            self.copy_button.clicked.connect(callback)
 
-    def set_edit_callback(self, callback: Callable):
-        if self.edit_button.is_connected:
+    def set_edit_callback(self, callback: Callable | None = None):
+        with catch_warnings(record=True):
             self.edit_button.clicked.disconnect()
 
         self.edit_callback = callback
-        self.edit_button.clicked.connect(callback)
-        self.edit_button.is_connected = callable(callback)
+        if callback:
+            self.edit_button.clicked.connect(callback)
 
-    def set_remove_callback(self, callback: Callable):
-        if self.remove_button.is_connected:
+    def set_remove_callback(self, callback: Callable | None = None):
+        with catch_warnings(record=True):
             self.remove_button.clicked.disconnect()
 
         self.remove_callback = callback
-        self.remove_button.clicked.connect(callback)
-        self.remove_button.is_connected = callable(callback)
+        if callback:
+            self.remove_button.clicked.connect(callback)
 
     def set_inner_widget(self, widget: "FieldWidget"):
         if self.field_layout.itemAt(0):

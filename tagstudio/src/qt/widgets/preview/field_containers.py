@@ -321,7 +321,6 @@ class FieldContainers(QWidget):
             if not is_mixed:
                 try:
                     container.set_title(field.type.name)
-                    # container.set_editable(False)
                     container.set_inline(False)
                     # TODO: Localize this and/or add preferences.
                     date = dt.strptime(field.value, "%Y-%m-%d %H:%M:%S")
@@ -330,12 +329,12 @@ class FieldContainers(QWidget):
                     container.set_inner_widget(inner_widget)
                 except Exception:
                     container.set_title(field.type.name)
-                    # container.set_editable(False)
                     container.set_inline(False)
                     title = f"{field.type.name} (Date) (Unknown Format)"
                     inner_widget = TextWidget(title, str(field.value))
                     container.set_inner_widget(inner_widget)
 
+                container.set_edit_callback()
                 container.set_remove_callback(
                     lambda: self.remove_message_box(
                         prompt=self.remove_field_prompt(field.type.name),
@@ -367,7 +366,6 @@ class FieldContainers(QWidget):
                 )
             )
 
-        container.edit_button.setHidden(True)
         container.setHidden(False)
 
     def write_tag_container(
@@ -424,7 +422,8 @@ class FieldContainers(QWidget):
             container.set_inner_widget(inner_widget)
 
         self.tags_updated.emit()
-        container.edit_button.setHidden(True)
+        container.set_edit_callback()
+        container.set_remove_callback()
         container.setHidden(False)
 
     def remove_field(self, field: BaseField):
