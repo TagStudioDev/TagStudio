@@ -36,11 +36,10 @@ class PreviewPanel(QWidget):
 
     def __init__(self, library: Library, driver: "QtDriver"):
         super().__init__()
-        self.is_connected = False
         self.lib = library
         self.driver: QtDriver = driver
         self.initialized = False
-        self.is_open: bool = False
+        self.is_open: bool = True
 
         self.thumb = PreviewThumb(library, driver)
         self.file_attrs = FileAttributes(library, driver)
@@ -147,10 +146,12 @@ class PreviewPanel(QWidget):
         return True
 
     def update_add_field_button(self, entry: Entry):
-        if self.add_field_modal.is_connected:
+        with catch_warnings(record=True):
             self.add_field_modal.done.disconnect()
-        if self.add_field_button.is_connected:
             self.add_field_button.clicked.disconnect()
+            # TODO: Remove all "is_connected" instances across the codebase
+            self.add_field_modal.is_connected = False
+            self.add_field_button.is_connected = False
 
         self.add_field_modal.done.connect(
             lambda f: (

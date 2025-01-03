@@ -322,7 +322,7 @@ class ItemThumb(FlowWidget):
         return self.badge_active[BadgeType.FAVORITE]
 
     @property
-    def is_archived(self):
+    def is_archived(self) -> bool:
         return self.badge_active[BadgeType.ARCHIVED]
 
     def set_mode(self, mode: ItemType | None) -> None:

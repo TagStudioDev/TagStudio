@@ -1011,14 +1011,14 @@ class QtDriver(DriverMixin, QObject):
                 else:
                     it.thumb_button.set_selected(False)
 
-        # # NOTE: By using the preview panel's "set_tags_updated_slot" method,
-        # # only the last of multiple identical item selections are connected.
-        # # If attaching the slot to multiple duplicate selections is needed,
-        # # just bypass the method and manually disconnect and connect the slots.
-        # if len(self.selected) == 1:
-        #     for it in self.item_thumbs:
-        #         if it.item_id == item_id:
-        #             self.preview_panel.set_tags_updated_slot(it.refresh_badge)
+        # NOTE: By using the preview panel's "set_tags_updated_slot" method,
+        # only the last of multiple identical item selections are connected.
+        # If attaching the slot to multiple duplicate selections is needed,
+        # just bypass the method and manually disconnect and connect the slots.
+        if len(self.selected) == 1:
+            for it in self.item_thumbs:
+                if it.item_id == item_id:
+                    self.preview_panel.fields.set_tags_updated_slot(it.refresh_badge)
 
         self.set_macro_menu_viability()
         self.preview_panel.update_widgets()

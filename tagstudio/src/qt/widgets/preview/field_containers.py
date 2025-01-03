@@ -6,6 +6,7 @@ import sys
 import typing
 from collections.abc import Callable
 from datetime import datetime as dt
+from warnings import catch_warnings
 
 import structlog
 from PySide6.QtCore import Qt, Signal
@@ -53,7 +54,6 @@ class FieldContainers(QWidget):
     def __init__(self, library: Library, driver: "QtDriver"):
         super().__init__()
 
-        self.is_connected = False
         self.lib = library
         self.driver: QtDriver = driver
         self.initialized = False
@@ -209,6 +209,7 @@ class FieldContainers(QWidget):
                 entry.id,
                 tag_ids=tags,
             )
+        self.tags_updated.emit()
 
     def write_container(self, index: int, field: BaseField, is_mixed: bool = False):
         """Update/Create data for a FieldContainer.
@@ -388,10 +389,8 @@ class FieldContainers(QWidget):
             if isinstance(inner_widget, TagBoxWidget):
                 logger.warning("recycling")
                 inner_widget.set_tags(tags)
-                try:
+                with catch_warnings(record=True):
                     inner_widget.updated.disconnect()
-                except RuntimeError:
-                    logger.error("[FieldContainers] Failed to disconnect inner_container.updated")
 
             else:
                 logger.warning("creating new")
@@ -466,9 +465,8 @@ class FieldContainers(QWidget):
 
     def set_tags_updated_slot(self, slot: object):
         """Replacement for tag_callback."""
-        if self.is_connected:
+        with catch_warnings(record=True):
             self.tags_updated.disconnect()
 
         logger.info("[FieldContainers][set_tags_updated_slot] Setting tags updated slot")
         self.tags_updated.connect(slot)
-        self.is_connected = True
