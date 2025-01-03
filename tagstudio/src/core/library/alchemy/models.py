@@ -105,6 +105,18 @@ class Tag(Base):
     def __repr__(self) -> str:
         return self.__str__()
 
+    def __lt__(self, other) -> bool:
+        return self.name < other.name
+
+    def __le__(self, other) -> bool:
+        return self.name <= other.name
+
+    def __gt__(self, other) -> bool:
+        return self.name > other.name
+
+    def __ge__(self, other) -> bool:
+        return self.name >= other.name
+
 
 class Folder(Base):
     __tablename__ = "folders"
