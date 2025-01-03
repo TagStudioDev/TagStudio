@@ -37,12 +37,6 @@ class FileAttributes(QWidget):
 
     def __init__(self, library: Library, driver: "QtDriver"):
         super().__init__()
-        # self.is_connected = False
-        # self.lib = library
-        # self.driver: QtDriver = driver
-        # self.initialized = False
-        # self.is_open: bool = False
-
         root_layout = QVBoxLayout(self)
         root_layout.setContentsMargins(0, 0, 0, 0)
         root_layout.setSpacing(0)
@@ -52,12 +46,6 @@ class FileAttributes(QWidget):
             if QGuiApplication.styleHints().colorScheme() is Qt.ColorScheme.Dark
             else Theme.COLOR_DARK_LABEL.value
         )
-
-        # panel_bg_color = (
-        #     Theme.COLOR_BG_DARK.value
-        #     if QGuiApplication.styleHints().colorScheme() is Qt.ColorScheme.Dark
-        #     else Theme.COLOR_BG_LIGHT.value
-        # )
 
         self.date_style = "font-size:12px;"
         self.file_label_style = "font-size: 12px"
@@ -167,10 +155,7 @@ class FileAttributes(QWidget):
                     file_str += f"<br><b>{"\u200b".join(part_)}</b>"
             self.file_label.setText(file_str)
             self.file_label.setCursor(Qt.CursorShape.PointingHandCursor)
-
             self.opener = FileOpenerHelper(filepath)
-            # self.open_file_action.triggered.connect(self.opener.open_file)
-            # self.open_explorer_action.triggered.connect(self.opener.open_explorer)
 
             # Initialize the possible stat variables
             stats_label_text = ""
@@ -235,7 +220,7 @@ class FileAttributes(QWidget):
             self.dimensions_label.setText(stats_label_text)
 
     def update_multi_selection(self, count: int):
-        # Multiple Selected Items
+        """Format attributes for multiple selected items."""
         self.layout().setSpacing(0)
         self.file_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.file_label.setText(f"<b>{count}</b> Items Selected")
