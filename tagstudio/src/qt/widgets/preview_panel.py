@@ -2,22 +2,26 @@
 # Licensed under the GPL-3.0 License.
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
-import traceback
 import typing
 from pathlib import Path
 from warnings import catch_warnings
 
 import structlog
 from PySide6.QtCore import Qt, Signal
-from PySide6.QtWidgets import QHBoxLayout, QSplitter, QVBoxLayout, QWidget
+from PySide6.QtWidgets import (
+    QHBoxLayout,
+    QPushButton,
+    QSplitter,
+    QVBoxLayout,
+    QWidget,
+)
+from src.core.enums import Theme
 from src.core.library.alchemy.library import Library
 from src.core.library.alchemy.models import Entry
-from src.qt.helpers.qbutton_wrapper import QPushButtonWrapper
+from src.core.palette import ColorType, UiColor, get_ui_color
 from src.qt.modals.add_field import AddFieldModal
 from src.qt.modals.tag_search import TagSearchPanel
 from src.qt.widgets.panel import PanelModal
-
-# from src.qt.modals.add_tag import AddTagModal
 from src.qt.widgets.preview.field_containers import FieldContainers
 from src.qt.widgets.preview.file_attributes import FileAttributes
 from src.qt.widgets.preview.preview_thumb import PreviewThumb
@@ -34,6 +38,30 @@ class PreviewPanel(QWidget):
 
     tags_updated = Signal()
 
+    # TODO: There should be a global button theme somewhere.
+    button_style = (
+        f"QPushButton{{"
+        f"background-color:{Theme.COLOR_BG.value};"
+        "border-radius:6px;"
+        "text-align: center;"
+        f"}}"
+        f"QPushButton::hover{{"
+        f"background-color:{Theme.COLOR_HOVER.value};"
+        f"border-color:{get_ui_color(ColorType.BORDER, UiColor.THEME_DARK)};"
+        f"border-style:solid;"
+        f"border-width: 2px;"
+        f"}}"
+        f"QPushButton::pressed{{"
+        f"background-color:{Theme.COLOR_PRESSED.value};"
+        f"border-color:{get_ui_color(ColorType.LIGHT_ACCENT, UiColor.THEME_DARK)};"
+        f"border-style:solid;"
+        f"border-width: 2px;"
+        f"}}"
+        f"QPushButton::disabled{{"
+        f"background-color:{Theme.COLOR_DISABLED_BG.value};"
+        f"}}"
+    )
+
     def __init__(self, library: Library, driver: "QtDriver"):
         super().__init__()
         self.lib = library
@@ -46,10 +74,8 @@ class PreviewPanel(QWidget):
         self.fields = FieldContainers(library, driver)
 
         tsp = TagSearchPanel(self.driver.lib)
-        # tsp.tag_chosen.connect(lambda x: self.add_tag_callback(x))
         self.add_tag_modal = PanelModal(tsp, "Add Tags", "Add Tags")
 
-        # self.add_tag_modal = AddTagModal(self.lib)
         self.add_field_modal = AddFieldModal(self.lib)
 
         preview_section = QWidget()
@@ -65,25 +91,24 @@ class PreviewPanel(QWidget):
         splitter = QSplitter()
         splitter.setOrientation(Qt.Orientation.Vertical)
         splitter.setHandleWidth(12)
-        # splitter.splitterMoved.connect(
-        #     lambda: self.thumb.update_image_size(
-        #         (
-        #             self.thumb.image_container.size().width(),
-        #             self.thumb.image_container.size().height(),
-        #         )
-        #     )
-        # )
+
         add_buttons_container = QWidget()
         add_buttons_layout = QHBoxLayout(add_buttons_container)
         add_buttons_layout.setContentsMargins(0, 0, 0, 0)
         add_buttons_layout.setSpacing(6)
 
-        self.add_tag_button = QPushButtonWrapper()
+        self.add_tag_button = QPushButton()
+        self.add_tag_button.setEnabled(False)
         self.add_tag_button.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.add_tag_button.setMinimumHeight(28)
+        self.add_tag_button.setStyleSheet(PreviewPanel.button_style)
         self.add_tag_button.setText("Add Tag")
 
-        self.add_field_button = QPushButtonWrapper()
+        self.add_field_button = QPushButton()
+        self.add_field_button.setEnabled(False)
         self.add_field_button.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.add_field_button.setMinimumHeight(28)
+        self.add_field_button.setStyleSheet(PreviewPanel.button_style)
         self.add_field_button.setText("Add Field")
 
         add_buttons_layout.addWidget(self.add_tag_button)
@@ -107,12 +132,14 @@ class PreviewPanel(QWidget):
     def update_widgets(self) -> bool:
         """Render the panel widgets with the newest data from the Library."""
         # No Items Selected
-        # items: list[Entry] = [self.driver.frame_content[x] for x in self.driver.selected]
         if len(self.driver.selected) == 0:
-            # TODO: Clear everything to default
-            # self.file_attrs.update_blank()
+            self.thumb.hide_preview()
             self.file_attrs.update_stats()
             self.file_attrs.update_date_label()
+            self.fields.hide_containers()
+
+            self.add_tag_button.setEnabled(False)
+            self.add_field_button.setEnabled(False)
 
         # One Item Selected
         elif len(self.driver.selected) == 1:
@@ -121,23 +148,30 @@ class PreviewPanel(QWidget):
             ext: str = filepath.suffix.lower()
 
             stats: dict = self.thumb.update_preview(filepath, ext)
-            try:
-                self.file_attrs.update_stats(filepath, ext, stats)
-                self.file_attrs.update_date_label(filepath)
-                self.fields.update_from_entry(entry)
-                self.update_add_tag_button(entry)
-                self.update_add_field_button(entry)
-            except Exception as e:
-                logger.error("[Preview Panel] Error updating selection", error=e)
-                traceback.print_exc()
+            self.file_attrs.update_stats(filepath, ext, stats)
+            self.file_attrs.update_date_label(filepath)
+            self.fields.update_from_entry(entry)
+            self.update_add_tag_button(entry)
+            self.update_add_field_button(entry)
+
+            self.add_tag_button.setEnabled(True)
+            self.add_field_button.setEnabled(True)
 
         # Multiple Selected Items
         elif len(self.driver.selected) > 1:
-            # Render mixed selection
+            # items: list[Entry] = [self.lib.get_entry_full(x) for x in self.driver.selected]
+            # TODO: Render mixed selection
+            self.thumb.hide_preview()  # TODO: Allow for mixed editing
             self.file_attrs.update_multi_selection(len(self.driver.selected))
             self.file_attrs.update_date_label()
+            self.fields.hide_containers()  # TODO: Allow for mixed editing
+            self.update_add_tag_button()
+            self.update_add_field_button()
             # self.fields.update_from_entries(items)
             # self.file_attrs.update_selection_count()
+
+            self.add_tag_button.setEnabled(True)
+            self.add_field_button.setEnabled(True)
 
         # self.thumb.update_widgets()
         # # self.file_attrs.update_widgets()
@@ -145,24 +179,23 @@ class PreviewPanel(QWidget):
 
         return True
 
-    def update_add_field_button(self, entry: Entry):
+    def update_add_field_button(self, entry: Entry | None = None):
         with catch_warnings(record=True):
             self.add_field_modal.done.disconnect()
             self.add_field_button.clicked.disconnect()
             # TODO: Remove all "is_connected" instances across the codebase
             self.add_field_modal.is_connected = False
-            self.add_field_button.is_connected = False
 
         self.add_field_modal.done.connect(
             lambda f: (
                 self.fields.add_field_to_selected(f),
-                self.fields.update_from_entry(entry),
+                (self.fields.update_from_entry(entry) if entry else ()),
             )
         )
         self.add_field_modal.is_connected = True
         self.add_field_button.clicked.connect(self.add_field_modal.show)
 
-    def update_add_tag_button(self, entry: Entry):
+    def update_add_tag_button(self, entry: Entry = None):
         with catch_warnings(record=True):
             self.add_tag_modal.widget.tag_chosen.disconnect()
             self.add_tag_button.clicked.disconnect()
@@ -170,7 +203,7 @@ class PreviewPanel(QWidget):
         self.add_tag_modal.widget.tag_chosen.connect(
             lambda t: (
                 self.fields.add_tags_to_selected(t),
-                self.fields.update_from_entry(entry),
+                (self.fields.update_from_entry(entry) if entry else ()),
             )
         )
 
@@ -180,6 +213,3 @@ class PreviewPanel(QWidget):
                 self.add_tag_modal.show(),
             )
         )
-        self.add_tag_button.is_connected = True
-
-        # self.add_field_button.clicked.connect(self.add_tag_modal.show)

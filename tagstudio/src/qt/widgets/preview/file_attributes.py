@@ -46,7 +46,7 @@ class FileAttributes(QWidget):
 
         root_layout = QVBoxLayout(self)
         root_layout.setContentsMargins(0, 0, 0, 0)
-        root_layout.setSpacing(6)
+        root_layout.setSpacing(0)
 
         label_bg_color = (
             Theme.COLOR_BG_DARK.value
@@ -87,17 +87,20 @@ class FileAttributes(QWidget):
         self.date_created_label.setAlignment(Qt.AlignmentFlag.AlignLeft)
         self.date_created_label.setTextFormat(Qt.TextFormat.RichText)
         self.date_created_label.setStyleSheet(self.date_style)
+        self.date_created_label.setHidden(True)
 
         self.date_modified_label = QLabel()
         self.date_modified_label.setObjectName("dateModifiedLabel")
         self.date_modified_label.setAlignment(Qt.AlignmentFlag.AlignLeft)
         self.date_modified_label.setTextFormat(Qt.TextFormat.RichText)
         self.date_modified_label.setStyleSheet(self.date_style)
+        self.date_modified_label.setHidden(True)
 
         self.dimensions_label = QLabel()
         self.dimensions_label.setObjectName("dimensionsLabel")
         self.dimensions_label.setWordWrap(True)
         self.dimensions_label.setStyleSheet(self.properties_style)
+        self.dimensions_label.setHidden(True)
 
         self.date_container = QWidget()
         date_layout = QVBoxLayout(self.date_container)
@@ -142,12 +145,18 @@ class FileAttributes(QWidget):
             stats = {}
 
         if not filepath:
+            self.layout().setSpacing(0)
+            self.file_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
             self.file_label.setText("<i>No Items Selected</i>")
             self.file_label.set_file_path("")
             self.file_label.setCursor(Qt.CursorShape.ArrowCursor)
             self.dimensions_label.setText("")
+            self.dimensions_label.setHidden(True)
         else:
+            self.layout().setSpacing(6)
+            self.file_label.setAlignment(Qt.AlignmentFlag.AlignLeft)
             self.file_label.set_file_path(filepath)
+            self.dimensions_label.setHidden(False)
 
             file_str: str = ""
             separator: str = f"<a style='color: #777777'><b>{os.path.sep}</a>"  # Gray
@@ -229,7 +238,10 @@ class FileAttributes(QWidget):
 
     def update_multi_selection(self, count: int):
         # Multiple Selected Items
+        self.layout().setSpacing(0)
+        self.file_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.file_label.setText(f"<b>{count}</b> Items Selected")
         self.file_label.setCursor(Qt.CursorShape.ArrowCursor)
         self.file_label.set_file_path("")
         self.dimensions_label.setText("")
+        self.dimensions_label.setHidden(True)

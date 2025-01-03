@@ -60,7 +60,7 @@ class FieldContainers(QWidget):
         self.is_open: bool = False
         self.common_fields: list = []
         self.mixed_fields: list = []
-        self.selected: list[Entry] = []
+        self.cached_entries: list[Entry] = []
         self.containers: list[FieldContainer] = []
 
         self.panel_bg_color = (
@@ -108,7 +108,7 @@ class FieldContainers(QWidget):
 
     def update_from_entry(self, entry: Entry):
         """Update tags and fields from a single Entry source."""
-        self.selected = [self.lib.get_entry_full(entry.id)]
+        self.cached_entries = [self.lib.get_entry_full(entry.id)]
         logger.info(
             "[FieldContainers] Updating Selection",
             path=entry.path,
@@ -116,7 +116,7 @@ class FieldContainers(QWidget):
             tags=entry.tags,
         )
 
-        entry_ = self.selected[0]
+        entry_ = self.cached_entries[0]
         container_len: int = len(entry_.fields)
         container_index = 0
 
@@ -138,6 +138,11 @@ class FieldContainers(QWidget):
             for i, c in enumerate(self.containers):
                 if i > (container_len - 1):
                     c.setHidden(True)
+
+    def hide_containers(self):
+        """Hide all field and tag containers."""
+        for c in self.containers:
+            c.setHidden(True)
 
     def get_tag_categories(self, tags: set[Tag]) -> dict[Tag, set[Tag | None]]:
         """Get a dictionary of category tags mapped to their respective tags."""
@@ -184,29 +189,35 @@ class FieldContainers(QWidget):
         return Translations.translate_formatted("library.field.confirm_remove", name=name)
 
     def add_field_to_selected(self, field_list: list):
-        """Add list of entry fields to one or more selected items."""
+        """Add list of entry fields to one or more selected items.
+
+        Uses the current driver selection, NOT the field containers cache.
+        """
         logger.info(
             "[FieldContainers][add_field_to_selected]",
-            selected=[x.path for x in self.selected],
+            selected=self.driver.selected,
             fields=field_list,
         )
-        for entry in self.selected:
+        for entry_id in self.driver.selected:
             for field_item in field_list:
                 self.lib.add_entry_field_type(
-                    entry.id,
+                    entry_id,
                     field_id=field_item.data(Qt.ItemDataRole.UserRole),
                 )
 
     def add_tags_to_selected(self, tags: list[int]):
-        """Add list of tags to one or more selected items."""
+        """Add list of tags to one or more selected items.
+
+        Uses the current driver selection, NOT the field containers cache.
+        """
         logger.info(
             "[FieldContainers][add_tags_to_selected]",
-            selected=[x.path for x in self.selected],
+            selected=self.driver.selected,
             tags=tags,
         )
-        for entry in self.selected:
+        for entry_id in self.driver.selected:
             self.lib.add_tags_to_entry(
-                entry.id,
+                entry_id,
                 tag_ids=tags,
             )
         self.tags_updated.emit()
@@ -251,7 +262,7 @@ class FieldContainers(QWidget):
                     save_callback=(
                         lambda content: (
                             self.update_field(field, content),
-                            self.update_from_entry(self.selected[0]),
+                            self.update_from_entry(self.cached_entries[0]),
                         )
                     ),
                 )
@@ -265,7 +276,7 @@ class FieldContainers(QWidget):
                         prompt=self.remove_field_prompt(field.type.type.value),
                         callback=lambda: (
                             self.remove_field(field),
-                            self.update_from_entry(self.selected[0]),
+                            self.update_from_entry(self.cached_entries[0]),
                         ),
                     )
                 )
@@ -291,7 +302,7 @@ class FieldContainers(QWidget):
                     save_callback=(
                         lambda content: (
                             self.update_field(field, content),
-                            self.update_from_entry(self.selected[0]),
+                            self.update_from_entry(self.cached_entries[0]),
                         )
                     ),
                 )
@@ -301,7 +312,7 @@ class FieldContainers(QWidget):
                         prompt=self.remove_field_prompt(field.type.name),
                         callback=lambda: (
                             self.remove_field(field),
-                            self.update_from_entry(self.selected[0]),
+                            self.update_from_entry(self.cached_entries[0]),
                         ),
                     )
                 )
@@ -330,7 +341,7 @@ class FieldContainers(QWidget):
                         prompt=self.remove_field_prompt(field.type.name),
                         callback=lambda: (
                             self.remove_field(field),
-                            self.update_from_entry(self.selected[0]),
+                            self.update_from_entry(self.cached_entries[0]),
                         ),
                     )
                 )
@@ -351,7 +362,7 @@ class FieldContainers(QWidget):
                     prompt=self.remove_field_prompt(field.type.name),
                     callback=lambda: (
                         self.remove_field(field),
-                        self.update_from_entry(self.selected[0]),
+                        self.update_from_entry(self.cached_entries[0]),
                     ),
                 )
             )
@@ -404,7 +415,7 @@ class FieldContainers(QWidget):
             inner_widget.updated.connect(
                 lambda: (
                     self.write_tag_container(index, tags, category_tag),
-                    self.update_from_entry(self.selected[0]),
+                    self.update_from_entry(self.cached_entries[0]),
                 )
             )
         else:
@@ -421,9 +432,9 @@ class FieldContainers(QWidget):
         logger.info(
             "[FieldContainers] Removing Field",
             field=field,
-            selected=[x.path for x in self.selected],
+            selected=[x.path for x in self.cached_entries],
         )
-        entry_ids = [e.id for e in self.selected]
+        entry_ids = [e.id for e in self.cached_entries]
         self.lib.remove_entry_field(field, entry_ids)
 
         # # if the field is meta tags, update the badges
@@ -437,7 +448,7 @@ class FieldContainers(QWidget):
             (TextField, DatetimeField),  # , TagBoxField)
         ), f"instance: {type(field)}"
 
-        entry_ids = [e.id for e in self.selected]
+        entry_ids = [e.id for e in self.cached_entries]
 
         assert entry_ids, "No entries selected"
         self.lib.update_entry_field(

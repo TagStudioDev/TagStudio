@@ -368,6 +368,10 @@ class PreviewThumb(QWidget):
 
         return stats
 
+    def hide_preview(self):
+        """Completely hide the file preview."""
+        self.switch_preview("")
+
     def resizeEvent(self, event: QResizeEvent) -> None:  # noqa: N802
         self.update_image_size((self.size().width(), self.size().height()))
         return super().resizeEvent(event)
