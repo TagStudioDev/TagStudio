@@ -419,15 +419,16 @@ class Library:
             make_transient(entry)
             return entry
 
-    def get_entry_full(self, entry_id: int) -> Entry | None:
+    def get_entry_full(
+        self, entry_id: int, with_fields: bool = True, with_tags: bool = True
+    ) -> Entry | None:
         """Load entry and join with all joins and all tags."""
         with Session(self.engine) as session:
             statement = select(Entry).where(Entry.id == entry_id)
-            statement = (
-                statement.outerjoin(Entry.text_fields)
-                .outerjoin(Entry.datetime_fields)
-                .outerjoin(Entry.tags)
-            )
+            if with_fields:
+                statement = statement.outerjoin(Entry.text_fields).outerjoin(Entry.datetime_fields)
+            if with_tags:
+                statement = statement.outerjoin(Entry.tags)
             statement = statement.options(
                 selectinload(Entry.text_fields),
                 selectinload(Entry.datetime_fields),

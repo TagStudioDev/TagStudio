@@ -98,10 +98,10 @@ class TagBoxWidget(FieldWidget):
             selected=self.driver.selected,
         )
 
+        if tag_id in (TAG_FAVORITE, TAG_ARCHIVED):
+            self.driver.update_badges(self.driver.selected)
+
         for entry_id in self.driver.selected:
             self.driver.lib.remove_tags_from_entry(entry_id, tag_id)
 
         self.updated.emit()
-
-        if tag_id in (TAG_FAVORITE, TAG_ARCHIVED):
-            self.driver.update_badges(self.driver.selected)
