@@ -143,7 +143,7 @@ class PreviewPanel(QWidget):
 
         # One Item Selected
         elif len(self.driver.selected) == 1:
-            entry: Entry = self.lib.get_entry_full(self.driver.selected[0])
+            entry: Entry = self.lib.get_entry(self.driver.selected[0])
             filepath: Path = self.lib.library_dir / entry.path
             ext: str = filepath.suffix.lower()
 

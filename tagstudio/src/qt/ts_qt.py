@@ -1116,8 +1116,7 @@ class QtDriver(DriverMixin, QObject):
 
         is_grid_thumb = True
         logger.info("[QtDriver] Loading Entries...")
-        # TODO: Grab all entries at once
-        entries: list[Entry] = [self.lib.get_entry_full(e_id) for e_id in self.frame_content]
+        entries: list[Entry] = list(self.lib.get_entries_full(self.frame_content))
         logger.info("[QtDriver] Building Filenames...")
         filenames: list[Path] = [self.lib.library_dir / e.path for e in entries]
         logger.info("[QtDriver] Done! Processing ItemThumbs...")

@@ -108,7 +108,6 @@ class FieldContainers(QWidget):
 
     def update_from_entry(self, entry: Entry):
         """Update tags and fields from a single Entry source."""
-        self.cached_entries = [self.lib.get_entry_full(entry.id)]
         logger.info(
             "[FieldContainers] Updating Selection",
             path=entry.path,
@@ -116,6 +115,7 @@ class FieldContainers(QWidget):
             tags=entry.tags,
         )
 
+        self.cached_entries = [self.lib.get_entry_full(entry.id)]
         entry_ = self.cached_entries[0]
         container_len: int = len(entry_.fields)
         container_index = 0

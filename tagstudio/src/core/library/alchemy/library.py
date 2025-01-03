@@ -434,7 +434,6 @@ class Library:
                 selectinload(Entry.tags).options(
                     selectinload(Tag.aliases),
                     selectinload(Tag.subtags),
-                    selectinload(Tag.parent_tags),
                 ),
             )
             entry = session.scalar(statement)
@@ -443,6 +442,32 @@ class Library:
             session.expunge(entry)
             make_transient(entry)
             return entry
+
+    def get_entries_full(self, entry_ids: list[int] | set[int]) -> Iterator[Entry]:
+        """Load entry and join with all joins and all tags."""
+        with Session(self.engine) as session:
+            statement = select(Entry).where(Entry.id.in_(set(entry_ids)))
+            statement = (
+                statement.outerjoin(Entry.text_fields)
+                .outerjoin(Entry.datetime_fields)
+                .outerjoin(Entry.tags)
+            )
+            statement = statement.options(
+                selectinload(Entry.text_fields),
+                selectinload(Entry.datetime_fields),
+                selectinload(Entry.tags).options(
+                    selectinload(Tag.aliases),
+                    selectinload(Tag.subtags),
+                ),
+            )
+            statement = statement.distinct()
+
+            entries = session.execute(statement).scalars()
+            entries = entries.unique()
+
+            for entry in entries:
+                yield entry
+                session.expunge(entry)
 
     @property
     def entries_count(self) -> int:
