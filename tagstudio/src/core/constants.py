@@ -1,3 +1,7 @@
+# Copyright (C) 2025 Travis Abendshien (CyanVoxel).
+# Licensed under the GPL-3.0 License.
+# Created for TagStudio: https://github.com/CyanVoxel/TagStudio
+
 VERSION: str = "9.5.0"  # Major.Minor.Patch
 VERSION_BRANCH: str = "EXPERIMENTAL"  # Usually "" or "Pre-Release"
 
