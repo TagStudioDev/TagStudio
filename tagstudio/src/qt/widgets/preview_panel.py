@@ -2,6 +2,7 @@
 # Licensed under the GPL-3.0 License.
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
+import traceback
 import typing
 from pathlib import Path
 from warnings import catch_warnings
@@ -132,45 +133,50 @@ class PreviewPanel(QWidget):
     def update_widgets(self) -> bool:
         """Render the panel widgets with the newest data from the Library."""
         # No Items Selected
-        if len(self.driver.selected) == 0:
-            self.thumb.hide_preview()
-            self.file_attrs.update_stats()
-            self.file_attrs.update_date_label()
-            self.fields.hide_containers()
+        try:
+            if len(self.driver.selected) == 0:
+                self.thumb.hide_preview()
+                self.file_attrs.update_stats()
+                self.file_attrs.update_date_label()
+                self.fields.hide_containers()
 
-            self.add_tag_button.setEnabled(False)
-            self.add_field_button.setEnabled(False)
+                self.add_tag_button.setEnabled(False)
+                self.add_field_button.setEnabled(False)
 
-        # One Item Selected
-        elif len(self.driver.selected) == 1:
-            entry: Entry = self.lib.get_entry(self.driver.selected[0])
-            filepath: Path = self.lib.library_dir / entry.path
-            ext: str = filepath.suffix.lower()
+            # One Item Selected
+            elif len(self.driver.selected) == 1:
+                entry: Entry = self.lib.get_entry(self.driver.selected[0])
+                filepath: Path = self.lib.library_dir / entry.path
+                ext: str = filepath.suffix.lower()
 
-            stats: dict = self.thumb.update_preview(filepath, ext)
-            self.file_attrs.update_stats(filepath, ext, stats)
-            self.file_attrs.update_date_label(filepath)
-            self.fields.update_from_entry(entry)
-            self.update_add_tag_button(entry)
-            self.update_add_field_button(entry)
+                stats: dict = self.thumb.update_preview(filepath, ext)
+                self.file_attrs.update_stats(filepath, ext, stats)
+                self.file_attrs.update_date_label(filepath)
+                self.fields.update_from_entry(entry)
+                self.update_add_tag_button(entry)
+                self.update_add_field_button(entry)
 
-            self.add_tag_button.setEnabled(True)
-            self.add_field_button.setEnabled(True)
+                self.add_tag_button.setEnabled(True)
+                self.add_field_button.setEnabled(True)
 
-        # Multiple Selected Items
-        elif len(self.driver.selected) > 1:
-            # items: list[Entry] = [self.lib.get_entry_full(x) for x in self.driver.selected]
-            self.thumb.hide_preview()  # TODO: Render mixed selection
-            self.file_attrs.update_multi_selection(len(self.driver.selected))
-            self.file_attrs.update_date_label()
-            self.fields.hide_containers()  # TODO: Allow for mixed editing
-            self.update_add_tag_button()
-            self.update_add_field_button()
+            # Multiple Selected Items
+            elif len(self.driver.selected) > 1:
+                # items: list[Entry] = [self.lib.get_entry_full(x) for x in self.driver.selected]
+                self.thumb.hide_preview()  # TODO: Render mixed selection
+                self.file_attrs.update_multi_selection(len(self.driver.selected))
+                self.file_attrs.update_date_label()
+                self.fields.hide_containers()  # TODO: Allow for mixed editing
+                self.update_add_tag_button()
+                self.update_add_field_button()
 
-            self.add_tag_button.setEnabled(True)
-            self.add_field_button.setEnabled(True)
+                self.add_tag_button.setEnabled(True)
+                self.add_field_button.setEnabled(True)
 
-        return True
+            return True
+        except Exception as e:
+            logger.error("[Preview Panel] Error updating selection", error=e)
+            traceback.print_exc()
+            return False
 
     def update_add_field_button(self, entry: Entry | None = None):
         with catch_warnings(record=True):
