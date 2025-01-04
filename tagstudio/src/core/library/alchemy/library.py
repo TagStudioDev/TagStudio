@@ -28,6 +28,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import (
     Session,
     contains_eager,
+    joinedload,
     make_transient,
     selectinload,
 )
@@ -426,17 +427,22 @@ class Library:
         with Session(self.engine) as session:
             statement = select(Entry).where(Entry.id == entry_id)
             if with_fields:
-                statement = statement.outerjoin(Entry.text_fields).outerjoin(Entry.datetime_fields)
+                statement = (
+                    statement.outerjoin(Entry.text_fields)
+                    .outerjoin(Entry.datetime_fields)
+                    .options(selectinload(Entry.text_fields), selectinload(Entry.datetime_fields))
+                )
             if with_tags:
-                statement = statement.outerjoin(Entry.tags)
-            statement = statement.options(
-                selectinload(Entry.text_fields),
-                selectinload(Entry.datetime_fields),
-                selectinload(Entry.tags).options(
-                    selectinload(Tag.aliases),
-                    selectinload(Tag.subtags),
-                ),
-            )
+                statement = (
+                    statement.outerjoin(Entry.tags)
+                    .outerjoin(TagAlias)
+                    .options(
+                        selectinload(Entry.tags).options(
+                            joinedload(Tag.aliases),
+                            joinedload(Tag.subtags),
+                        )
+                    )
+                )
             entry = session.scalar(statement)
             if not entry:
                 return None
