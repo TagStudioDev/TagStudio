@@ -84,29 +84,6 @@ class TextField(BaseField):
         raise NotImplementedError
 
 
-# TODO: Remove
-# class TagBoxField(BaseField):
-#    __tablename__ = "tag_box_fields"
-#
-#    tags: Mapped[set[Tag]] = relationship(secondary="tag_fields")
-#
-#    def __key(self):
-#        return (
-#            self.entry_id,
-#            self.type_key,
-#        )
-#
-#    @property
-#    def value(self) -> None:
-#        """For interface compatibility with other field types."""
-#        return None
-#
-#    def __eq__(self, value) -> bool:
-#        if isinstance(value, TagBoxField):
-#            return self.__key() == value.__key()
-#        raise NotImplementedError
-
-
 class DatetimeField(BaseField):
     __tablename__ = "datetime_fields"
 

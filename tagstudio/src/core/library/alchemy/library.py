@@ -376,44 +376,6 @@ class Library:
             session.delete(item)
             session.commit()
 
-    # TODO: Remove (i think)
-    #    def remove_field_tag(self, entry: Entry, tag_id: int, field_key: str) -> bool:
-    #        assert isinstance(field_key, str), f"field_key is {type(field_key)}"
-    #        with Session(self.engine) as session:
-    #            # find field matching entry and field_type
-    #            field = session.scalars(
-    #                select(TagBoxField).where(
-    #                    and_(
-    #                        TagBoxField.entry_id == entry.id,
-    #                        TagBoxField.type_key == field_key,
-    #                    )
-    #                )
-    #            ).first()
-    #
-    #            if not field:
-    #                logger.error("no field found", entry=entry, field=field)
-    #                return False
-    #
-    #            try:
-    #                # find the record in `TagField` table and delete it
-    #                tag_field = session.scalars(
-    #                    select(TagField).where(
-    #                        and_(
-    #                            TagField.tag_id == tag_id,
-    #                            TagField.field_id == field.id,
-    #                        )
-    #                    )
-    #                ).first()
-    #                if tag_field:
-    #                    session.delete(tag_field)
-    #                    session.commit()
-    #
-    #                return True
-    #            except IntegrityError as e:
-    #                logger.exception(e)
-    #                session.rollback()
-    #                return False
-
     def get_entry(self, entry_id: int) -> Entry | None:
         """Load entry without joins."""
         with Session(self.engine) as session:
@@ -495,12 +457,10 @@ class Library:
                     stmt.outerjoin(Entry.text_fields)
                     .outerjoin(Entry.datetime_fields)
                     .outerjoin(Entry.tags)
-                    # .outerjoin(Entry.tag_box_fields)
                 )
                 stmt = stmt.options(
                     contains_eager(Entry.text_fields),
                     contains_eager(Entry.datetime_fields),
-                    # contains_eager(Entry.tag_box_fields).selectinload(TagBoxField.tags),
                 )
 
             stmt = stmt.distinct()

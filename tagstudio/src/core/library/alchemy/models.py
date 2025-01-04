@@ -229,7 +229,6 @@ class ValueType(Base):
         FieldClass = {  # noqa: N806
             FieldTypeEnum.TEXT_LINE: TextField,
             FieldTypeEnum.TEXT_BOX: TextField,
-            # FieldTypeEnum.TAGS: TagBoxField,
             FieldTypeEnum.DATETIME: DatetimeField,
             FieldTypeEnum.BOOLEAN: BooleanField,
         }

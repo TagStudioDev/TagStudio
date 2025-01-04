@@ -326,7 +326,6 @@ class FieldContainers(QWidget):
 
         elif field.type.type == FieldTypeEnum.TEXT_BOX:
             container.set_title(field.type.name)
-            # container.set_editable(True)
             container.set_inline(False)
             # Normalize line endings in any text content.
             if not is_mixed:
