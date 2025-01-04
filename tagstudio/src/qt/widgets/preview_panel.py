@@ -182,8 +182,6 @@ class PreviewPanel(QWidget):
         with catch_warnings(record=True):
             self.add_field_modal.done.disconnect()
             self.add_field_button.clicked.disconnect()
-            # TODO: Remove all "is_connected" instances across the codebase
-            self.add_field_modal.is_connected = False
 
         self.add_field_modal.done.connect(
             lambda f: (
@@ -191,7 +189,6 @@ class PreviewPanel(QWidget):
                 (self.fields.update_from_entry(entry) if entry else ()),
             )
         )
-        self.add_field_modal.is_connected = True
         self.add_field_button.clicked.connect(self.add_field_modal.show)
 
     def update_add_tag_button(self, entry: Entry = None):
