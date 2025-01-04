@@ -115,7 +115,7 @@ class FieldContainers(QWidget):
             tags=entry.tags,
         )
 
-        self.cached_entries = [self.lib.get_entry_full(entry.id, with_fields=False)]
+        self.cached_entries = [self.lib.get_entry_full(entry.id)]
         entry_ = self.cached_entries[0]
         container_len: int = len(entry_.fields)
         container_index = 0
