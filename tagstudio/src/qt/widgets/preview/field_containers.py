@@ -146,9 +146,9 @@ class FieldContainers(QWidget):
         for c in self.containers:
             c.setHidden(True)
 
-    def get_tag_categories(self, tags: set[Tag]) -> dict[Tag, set[Tag | None]]:
+    def get_tag_categories(self, tags: set[Tag]) -> dict[Tag | None, set[Tag]]:
         """Get a dictionary of category tags mapped to their respective tags."""
-        cats: dict[Tag, set[Tag | None]] = {}
+        cats: dict[Tag | None, set[Tag]] = {}
         cats[None] = set()
 
         # Initialize all categories from parents
