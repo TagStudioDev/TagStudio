@@ -367,9 +367,7 @@ class JsonMigrationModal(QObject):
             if self.temp_path.exists():
                 logger.info('Temporary migration file "temp_path" already exists. Removing...')
                 self.temp_path.unlink()
-            self.sql_lib.open_sqlite_library(
-                self.json_lib.library_dir, is_new=True, add_default_data=False
-            )
+            self.sql_lib.open_sqlite_library(self.json_lib.library_dir, is_new=True)
             yield Translations.translate_formatted(
                 "json_migration.migrating_files_entries", entries=len(self.json_lib.entries)
             )

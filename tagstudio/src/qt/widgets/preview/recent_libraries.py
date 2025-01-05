@@ -9,7 +9,6 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 from src.core.library.alchemy.library import Library
-from src.qt.translations import Translations
 
 if typing.TYPE_CHECKING:
     from src.qt.ts_qt import QtDriver

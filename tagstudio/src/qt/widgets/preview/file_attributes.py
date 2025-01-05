@@ -23,7 +23,6 @@ from src.core.enums import Theme
 from src.core.library.alchemy.library import Library
 from src.core.media_types import MediaCategories
 from src.qt.helpers.file_opener import FileOpenerHelper, FileOpenerLabel
-from src.qt.translations import Translations
 
 if typing.TYPE_CHECKING:
     from src.qt.ts_qt import QtDriver
@@ -111,16 +110,16 @@ class FileAttributes(QWidget):
                 created = dt.fromtimestamp(filepath.stat().st_ctime)
             modified: dt = dt.fromtimestamp(filepath.stat().st_mtime)
             self.date_created_label.setText(
-                f"<b>Date Created:</b> {dt.strftime(created, "%a, %x, %X")}"
+                f"<b>Date Created:</b> {dt.strftime(created, "%a, %x, %X")}"  # TODO: Translate
             )
             self.date_modified_label.setText(
-                f"<b>Date Modified:</b> {dt.strftime(modified, "%a, %x, %X")}"
+                f"<b>Date Modified:</b> {dt.strftime(modified, "%a, %x, %X")}"  # TODO: Translate
             )
             self.date_created_label.setHidden(False)
             self.date_modified_label.setHidden(False)
         elif filepath:
-            self.date_created_label.setText("<b>Date Created:</b> <i>N/A</i>")
-            self.date_modified_label.setText("<b>Date Modified:</b> <i>N/A</i>")
+            self.date_created_label.setText("<b>Date Created:</b> <i>N/A</i>")  # TODO: Translate
+            self.date_modified_label.setText("<b>Date Modified:</b> <i>N/A</i>")  # TODO: Translate
             self.date_created_label.setHidden(False)
             self.date_modified_label.setHidden(False)
         else:
@@ -135,7 +134,7 @@ class FileAttributes(QWidget):
         if not filepath:
             self.layout().setSpacing(0)
             self.file_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            self.file_label.setText("<i>No Items Selected</i>")
+            self.file_label.setText("<i>No Items Selected</i>")  # TODO: Translate
             self.file_label.set_file_path("")
             self.file_label.setCursor(Qt.CursorShape.ArrowCursor)
             self.dimensions_label.setText("")
@@ -224,7 +223,7 @@ class FileAttributes(QWidget):
         """Format attributes for multiple selected items."""
         self.layout().setSpacing(0)
         self.file_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.file_label.setText(f"<b>{count}</b> Items Selected")
+        self.file_label.setText(f"<b>{count}</b> Items Selected")  # TODO: Translate
         self.file_label.setCursor(Qt.CursorShape.ArrowCursor)
         self.file_label.set_file_path("")
         self.dimensions_label.setText("")

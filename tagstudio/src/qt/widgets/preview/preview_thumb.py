@@ -54,7 +54,8 @@ class PreviewThumb(QWidget):
         image_layout = QHBoxLayout(self)
         image_layout.setContentsMargins(0, 0, 0, 0)
 
-        self.open_file_action = QAction("Open file", self)
+        self.open_file_action = QAction(self)
+        Translations.translate_qobject(self.open_file_action, "file.open_file")
         self.open_explorer_action = QAction(PlatformStrings.open_file_str, self)
 
         self.preview_img = QPushButtonWrapper()

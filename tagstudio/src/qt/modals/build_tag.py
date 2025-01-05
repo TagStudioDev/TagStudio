@@ -224,17 +224,6 @@ class BuildTagPanel(PanelWidget):
         self.cat_layout.addWidget(self.cat_checkbox)
         self.cat_layout.addWidget(self.cat_title)
 
-        # Keyboard Actions =====================================================
-        remove_selected_alias_action = QAction("remove selected alias", self)
-        remove_selected_alias_action.triggered.connect(self.remove_selected_alias)
-        remove_selected_alias_action.setShortcut(
-            QtCore.QKeyCombination(
-                QtCore.Qt.KeyboardModifier(QtCore.Qt.KeyboardModifier.ControlModifier),
-                QtCore.Qt.Key.Key_D,
-            )
-        )
-        self.addAction(remove_selected_alias_action)
-
         # Add Widgets to Layout ================================================
         self.root_layout.addWidget(self.name_widget)
         self.root_layout.addWidget(self.shorthand_widget)
@@ -301,12 +290,9 @@ class BuildTagPanel(PanelWidget):
         logger.info("add_alias_callback")
 
         id = self.new_item_id
-
         self.alias_ids.append(id)
         self.new_alias_names[id] = ""
-
         self.new_item_id -= 1
-
         self._set_aliases()
 
         row = self.aliases_table.rowCount() - 1
@@ -402,12 +388,12 @@ class BuildTagPanel(PanelWidget):
         self.name_field.setText(tag.name)
         self.shorthand_field.setText(tag.shorthand or "")
 
+        for alias_id in tag.alias_ids:
+            self.alias_ids.append(alias_id)
+        self._set_aliases()
+
         for subtag in tag.subtag_ids:
             self.subtag_ids.add(subtag)
-
-        for alias_id in tag.alias_ids:
-            self.alias_ids.add(alias_id)
-
         self.set_subtags()
 
         # select item in self.color_field where the userData value matched tag.color

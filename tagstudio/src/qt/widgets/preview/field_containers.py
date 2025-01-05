@@ -28,11 +28,8 @@ from src.core.library.alchemy.fields import (
     TextField,
 )
 from src.core.library.alchemy.library import Library
-from src.qt.translations import Translations
-from src.core.library.alchemy.models import Entry
-from src.qt.helpers.qbutton_wrapper import QPushButtonWrapper
-from src.qt.modals.add_field import AddFieldModal
 from src.core.library.alchemy.models import Entry, Tag
+from src.qt.translations import Translations
 from src.qt.widgets.fields import FieldContainer
 from src.qt.widgets.panel import PanelModal
 from src.qt.widgets.tag_box import TagBoxWidget

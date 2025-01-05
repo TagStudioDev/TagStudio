@@ -22,11 +22,11 @@ from src.core.library.alchemy.models import Entry
 from src.core.palette import ColorType, UiColor, get_ui_color
 from src.qt.modals.add_field import AddFieldModal
 from src.qt.modals.tag_search import TagSearchPanel
+from src.qt.translations import Translations
 from src.qt.widgets.panel import PanelModal
 from src.qt.widgets.preview.field_containers import FieldContainers
 from src.qt.widgets.preview.file_attributes import FileAttributes
 from src.qt.widgets.preview.preview_thumb import PreviewThumb
-from src.qt.translations import Translations
 
 if typing.TYPE_CHECKING:
     from src.qt.ts_qt import QtDriver
@@ -75,7 +75,10 @@ class PreviewPanel(QWidget):
         self.fields = FieldContainers(library, driver)
 
         tag_search_panel = TagSearchPanel(self.driver.lib)
-        self.add_tag_modal = PanelModal(tag_search_panel, "Add Tags", "Add Tags")
+        self.add_tag_modal = PanelModal(
+            tag_search_panel, Translations.translate_formatted("tag.add.plural")
+        )
+        Translations.translate_with_setter(self.add_tag_modal.setWindowTitle, "tag.add.plural")
 
         self.add_field_modal = AddFieldModal(self.lib)
 
@@ -103,14 +106,14 @@ class PreviewPanel(QWidget):
         self.add_tag_button.setCursor(Qt.CursorShape.PointingHandCursor)
         self.add_tag_button.setMinimumHeight(28)
         self.add_tag_button.setStyleSheet(PreviewPanel.button_style)
-        self.add_tag_button.setText("Add Tag")
+        self.add_tag_button.setText("Add Tag")  # TODO: Translate
 
         self.add_field_button = QPushButton()
         self.add_field_button.setEnabled(False)
         self.add_field_button.setCursor(Qt.CursorShape.PointingHandCursor)
         self.add_field_button.setMinimumHeight(28)
         self.add_field_button.setStyleSheet(PreviewPanel.button_style)
-        self.add_field_button.setText("Add Field")
+        self.add_field_button.setText("Add Field")  # TODO: Translate
 
         add_buttons_layout.addWidget(self.add_tag_button)
         add_buttons_layout.addWidget(self.add_field_button)
