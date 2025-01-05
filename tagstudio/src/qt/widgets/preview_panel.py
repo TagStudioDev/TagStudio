@@ -44,6 +44,7 @@ class PreviewPanel(QWidget):
         f"QPushButton{{"
         f"background-color:{Theme.COLOR_BG.value};"
         "border-radius:6px;"
+        "font-weight: 500;"
         "text-align: center;"
         f"}}"
         f"QPushButton::hover{{"

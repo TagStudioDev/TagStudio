@@ -68,7 +68,8 @@ class FieldContainers(QWidget):
 
         self.scroll_layout = QVBoxLayout()
         self.scroll_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
-        self.scroll_layout.setContentsMargins(6, 1, 6, 6)
+        self.scroll_layout.setContentsMargins(3, 3, 3, 3)
+        self.scroll_layout.setSpacing(0)
 
         scroll_container: QWidget = QWidget()
         scroll_container.setObjectName("entryScrollContainer")
@@ -77,7 +78,7 @@ class FieldContainers(QWidget):
         info_section = QWidget()
         info_layout = QVBoxLayout(info_section)
         info_layout.setContentsMargins(0, 0, 0, 0)
-        info_layout.setSpacing(6)
+        info_layout.setSpacing(0)
 
         self.scroll_area = QScrollArea()
         self.scroll_area.setObjectName("entryScrollArea")
