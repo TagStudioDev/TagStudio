@@ -200,7 +200,7 @@ class FieldContainers(QWidget):
             if key:
                 logger.info("Key cluster:", key=key, cluster=cluster_map.get(key.id))
 
-                if final_tags := cluster_map.get(key.id).union([key.id]):
+                if final_tags := cluster_map.get(key.id, set()).union([key.id]):
                     cats[key] = {self.lib.get_tag(x) for x in final_tags if x in base_tag_ids}
                     added_ids = added_ids.union({x for x in final_tags if x in base_tag_ids})
 
