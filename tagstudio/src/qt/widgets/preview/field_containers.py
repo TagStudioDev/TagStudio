@@ -129,8 +129,7 @@ class FieldContainers(QWidget):
                 )
                 container_index += 1
                 container_len += 1
-            if categories:
-                self.tags_updated.emit()
+        self.tags_updated.emit()
         # Write field container(s)
         for index, field in enumerate(entry_.fields, start=container_index):
             self.write_container(index, field, is_mixed=False)
