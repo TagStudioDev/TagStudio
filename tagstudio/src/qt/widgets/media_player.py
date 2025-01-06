@@ -218,5 +218,5 @@ class MediaPlayer(QWidget):
             self.position_label.setText(f"{current} / {duration}")
 
     def volume_slider_changed(self, position: int) -> None:
-        """Position is divided by 100 since volume is between 0.0f and 1.0f"""
+        """Position is divided by 100 since volume is between 0.0f and 1.0f."""
         self.player.audioOutput().setVolume(position / 100)
