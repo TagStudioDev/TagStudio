@@ -139,8 +139,10 @@ class MediaPlayer(QWidget):
         """Toggle the mute state of the media."""
         if self.player.audioOutput().isMuted():
             self.player.audioOutput().setMuted(False)
+            self.volume_slider.setValue(int(self.player.audioOutput().volume() * 100))
         else:
             self.player.audioOutput().setMuted(True)
+            self.volume_slider.setValue(0)
 
     def playing_changed(self, playing: bool) -> None:
         self.load_play_pause_icon(playing)
@@ -215,4 +217,5 @@ class MediaPlayer(QWidget):
             self.position_label.setText(f"{current} / {duration}")
 
     def volume_slider_changed(self, position: int) -> None:
+        """Position is divided by 100 since volume is between 0.0f and 1.0f"""
         self.player.audioOutput().setVolume(position / 100)
