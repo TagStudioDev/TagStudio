@@ -51,10 +51,6 @@ class Ui_MainWindow(QMainWindow):
         # self.windowFX = WindowEffect()
         # self.windowFX.setAcrylicEffect(self.winId(), isEnableShadow=False)
 
-        # # self.setStyleSheet(
-        # # 	'background:#EE000000;'
-        # # 	)
-        
 
     def setupUi(self, MainWindow):
         if not MainWindow.objectName():
@@ -126,9 +122,9 @@ class Ui_MainWindow(QMainWindow):
         self.horizontalLayout.addWidget(self.splitter)
         self.splitter.addWidget(self.frame_container)
         self.splitter.setStretchFactor(0, 1)
-
         self.gridLayout.addLayout(self.horizontalLayout, 10, 0, 1, 1)
 
+        nav_button_style = "font-size:14;font-weight:bold;"
         self.horizontalLayout_2 = QHBoxLayout()
         self.horizontalLayout_2.setObjectName(u"horizontalLayout_2")
         self.horizontalLayout_2.setSizeConstraint(QLayout.SetMinimumSize)
@@ -136,46 +132,31 @@ class Ui_MainWindow(QMainWindow):
         self.backButton.setObjectName(u"backButton")
         self.backButton.setMinimumSize(QSize(0, 32))
         self.backButton.setMaximumSize(QSize(32, 16777215))
-        font = QFont()
-        font.setPointSize(14)
-        font.setBold(True)
-        self.backButton.setFont(font)
-
+        self.backButton.setStyleSheet(nav_button_style)
         self.horizontalLayout_2.addWidget(self.backButton)
 
         self.forwardButton = QPushButton(">", self.centralwidget)
         self.forwardButton.setObjectName(u"forwardButton")
         self.forwardButton.setMinimumSize(QSize(0, 32))
         self.forwardButton.setMaximumSize(QSize(32, 16777215))
-        font1 = QFont()
-        font1.setPointSize(14)
-        font1.setBold(True)
-        font1.setKerning(True)
-        self.forwardButton.setFont(font1)
-
+        self.forwardButton.setStyleSheet(nav_button_style)
         self.horizontalLayout_2.addWidget(self.forwardButton)
 
         self.searchField = QLineEdit(self.centralwidget)
         Translations.translate_with_setter(self.searchField.setPlaceholderText, "home.search_entries")
         self.searchField.setObjectName(u"searchField")
         self.searchField.setMinimumSize(QSize(0, 32))
-        font2 = QFont()
-        font2.setPointSize(11)
-        font2.setBold(False)
-        self.searchField.setFont(font2)
 
         self.searchFieldCompletionList = QStringListModel()
         self.searchFieldCompleter = QCompleter(self.searchFieldCompletionList, self.searchField)
         self.searchFieldCompleter.setCaseSensitivity(Qt.CaseSensitivity.CaseInsensitive)
         self.searchField.setCompleter(self.searchFieldCompleter)
-
         self.horizontalLayout_2.addWidget(self.searchField)
 
         self.searchButton = QPushButton(self.centralwidget)
         Translations.translate_qobject(self.searchButton, "home.search")
         self.searchButton.setObjectName(u"searchButton")
         self.searchButton.setMinimumSize(QSize(0, 32))
-        self.searchButton.setFont(font2)
 
         self.horizontalLayout_2.addWidget(self.searchButton)
         self.gridLayout.addLayout(self.horizontalLayout_2, 3, 0, 1, 1)
