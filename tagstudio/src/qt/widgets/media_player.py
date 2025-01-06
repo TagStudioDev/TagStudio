@@ -91,6 +91,7 @@ class MediaPlayer(QWidget):
         self.media_btns_layout.addWidget(self.mute)
 
         self.volume_slider = QSlider()
+        self.volume_slider.setValue(50)
         self.volume_slider.setOrientation(Qt.Orientation.Horizontal)
         self.volume_slider.sliderMoved.connect(self.volume_slider_changed)
 
