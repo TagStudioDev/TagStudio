@@ -65,14 +65,14 @@ class TagDatabasePanel(PanelWidget):
 
         self.create_tag_button = QPushButton()
         Translations.translate_qobject(self.create_tag_button, "tag.create")
-        self.create_tag_button.clicked.connect(self.build_tag)
+        self.create_tag_button.clicked.connect(lambda: self.build_tag(self.search_field.text()))
 
         self.root_layout.addWidget(self.search_field)
         self.root_layout.addWidget(self.scroll_area)
         self.root_layout.addWidget(self.create_tag_button)
         self.update_tags()
 
-    def build_tag(self):
+    def build_tag(self, name: str):
         panel = BuildTagPanel(self.lib)
         self.modal = PanelModal(
             panel,
@@ -80,6 +80,8 @@ class TagDatabasePanel(PanelWidget):
         )
         Translations.translate_with_setter(self.modal.setTitle, "tag.new")
         Translations.translate_with_setter(self.modal.setWindowTitle, "tag.add")
+        if name.strip():
+            panel.name_field.setText(name)
 
         self.modal.saved.connect(
             lambda: (
