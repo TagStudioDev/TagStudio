@@ -73,7 +73,7 @@ def test_build_tag_panel_remove_alias_callback(library, generate_tag):
     assert alias.name not in panel.alias_names
 
 
-def test_build_tag_panel_set_subtags(library, generate_tag):
+def test_build_tag_panel_set_parent_tags(library, generate_tag):
     parent = library.add_tag(generate_tag("parent", id=123))
     child = library.add_tag(generate_tag("child", id=124))
     assert parent

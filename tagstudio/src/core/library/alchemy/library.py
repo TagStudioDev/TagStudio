@@ -461,6 +461,7 @@ class Library:
                 stmt = stmt.options(
                     contains_eager(Entry.text_fields),
                     contains_eager(Entry.datetime_fields),
+                    contains_eager(Entry.tags),
                 )
 
             stmt = stmt.distinct()
