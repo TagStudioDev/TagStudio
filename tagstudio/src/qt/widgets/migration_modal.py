@@ -22,7 +22,7 @@ from sqlalchemy.orm import Session
 from src.core.constants import TS_FOLDER_NAME
 from src.core.enums import LibraryPrefs
 from src.core.library.alchemy.enums import TagColor
-from src.core.library.alchemy.joins import TagSubtag
+from src.core.library.alchemy.joins import TagParent
 from src.core.library.alchemy.library import DEFAULT_TAG_DIFF
 from src.core.library.alchemy.library import Library as SqliteLibrary
 from src.core.library.alchemy.models import Entry, TagAlias
@@ -115,7 +115,7 @@ class JsonMigrationModal(QObject):
         entries_text: str = Translations["json_migration.heading.entires"]
         tags_text: str = Translations["json_migration.heading.tags"]
         shorthand_text: str = tab + Translations["json_migration.heading.shorthands"]
-        subtags_text: str = tab + Translations["json_migration.heading.parent_tags"]
+        parent_tags_text: str = tab + Translations["json_migration.heading.parent_tags"]
         aliases_text: str = tab + Translations["json_migration.heading.aliases"]
         colors_text: str = tab + Translations["json_migration.heading.colors"]
         ext_text: str = Translations["json_migration.heading.file_extension_list"]
@@ -129,7 +129,7 @@ class JsonMigrationModal(QObject):
         self.fields_row: int = 2
         self.tags_row: int = 3
         self.shorthands_row: int = 4
-        self.subtags_row: int = 5
+        self.parent_tags_row: int = 5
         self.aliases_row: int = 6
         self.colors_row: int = 7
         self.ext_row: int = 8
@@ -151,7 +151,7 @@ class JsonMigrationModal(QObject):
         self.old_content_layout.addWidget(QLabel(field_parity_text), self.fields_row, 0)
         self.old_content_layout.addWidget(QLabel(tags_text), self.tags_row, 0)
         self.old_content_layout.addWidget(QLabel(shorthand_text), self.shorthands_row, 0)
-        self.old_content_layout.addWidget(QLabel(subtags_text), self.subtags_row, 0)
+        self.old_content_layout.addWidget(QLabel(parent_tags_text), self.parent_tags_row, 0)
         self.old_content_layout.addWidget(QLabel(aliases_text), self.aliases_row, 0)
         self.old_content_layout.addWidget(QLabel(colors_text), self.colors_row, 0)
         self.old_content_layout.addWidget(QLabel(ext_text), self.ext_row, 0)
@@ -183,7 +183,7 @@ class JsonMigrationModal(QObject):
         self.old_content_layout.addWidget(old_field_value, self.fields_row, 1)
         self.old_content_layout.addWidget(old_tag_count, self.tags_row, 1)
         self.old_content_layout.addWidget(old_shorthand_count, self.shorthands_row, 1)
-        self.old_content_layout.addWidget(old_subtag_value, self.subtags_row, 1)
+        self.old_content_layout.addWidget(old_subtag_value, self.parent_tags_row, 1)
         self.old_content_layout.addWidget(old_alias_value, self.aliases_row, 1)
         self.old_content_layout.addWidget(old_color_value, self.colors_row, 1)
         self.old_content_layout.addWidget(old_ext_count, self.ext_row, 1)
@@ -192,7 +192,7 @@ class JsonMigrationModal(QObject):
         self.old_content_layout.addWidget(QLabel(), self.path_row, 2)
         self.old_content_layout.addWidget(QLabel(), self.fields_row, 2)
         self.old_content_layout.addWidget(QLabel(), self.shorthands_row, 2)
-        self.old_content_layout.addWidget(QLabel(), self.subtags_row, 2)
+        self.old_content_layout.addWidget(QLabel(), self.parent_tags_row, 2)
         self.old_content_layout.addWidget(QLabel(), self.aliases_row, 2)
         self.old_content_layout.addWidget(QLabel(), self.colors_row, 2)
 
@@ -214,7 +214,7 @@ class JsonMigrationModal(QObject):
         self.new_content_layout.addWidget(QLabel(field_parity_text), self.fields_row, 0)
         self.new_content_layout.addWidget(QLabel(tags_text), self.tags_row, 0)
         self.new_content_layout.addWidget(QLabel(shorthand_text), self.shorthands_row, 0)
-        self.new_content_layout.addWidget(QLabel(subtags_text), self.subtags_row, 0)
+        self.new_content_layout.addWidget(QLabel(parent_tags_text), self.parent_tags_row, 0)
         self.new_content_layout.addWidget(QLabel(aliases_text), self.aliases_row, 0)
         self.new_content_layout.addWidget(QLabel(colors_text), self.colors_row, 0)
         self.new_content_layout.addWidget(QLabel(ext_text), self.ext_row, 0)
@@ -246,7 +246,7 @@ class JsonMigrationModal(QObject):
         self.new_content_layout.addWidget(field_parity_value, self.fields_row, 1)
         self.new_content_layout.addWidget(new_tag_count, self.tags_row, 1)
         self.new_content_layout.addWidget(new_shorthand_count, self.shorthands_row, 1)
-        self.new_content_layout.addWidget(subtag_parity_value, self.subtags_row, 1)
+        self.new_content_layout.addWidget(subtag_parity_value, self.parent_tags_row, 1)
         self.new_content_layout.addWidget(alias_parity_value, self.aliases_row, 1)
         self.new_content_layout.addWidget(new_color_value, self.colors_row, 1)
         self.new_content_layout.addWidget(new_ext_count, self.ext_row, 1)
@@ -257,7 +257,7 @@ class JsonMigrationModal(QObject):
         self.new_content_layout.addWidget(QLabel(), self.fields_row, 2)
         self.new_content_layout.addWidget(QLabel(), self.shorthands_row, 2)
         self.new_content_layout.addWidget(QLabel(), self.tags_row, 2)
-        self.new_content_layout.addWidget(QLabel(), self.subtags_row, 2)
+        self.new_content_layout.addWidget(QLabel(), self.parent_tags_row, 2)
         self.new_content_layout.addWidget(QLabel(), self.aliases_row, 2)
         self.new_content_layout.addWidget(QLabel(), self.colors_row, 2)
         self.new_content_layout.addWidget(QLabel(), self.ext_row, 2)
@@ -396,7 +396,7 @@ class JsonMigrationModal(QObject):
         self.update_parity_value(self.fields_row, self.field_parity)
         self.update_parity_value(self.path_row, self.path_parity)
         self.update_parity_value(self.shorthands_row, self.shorthand_parity)
-        self.update_parity_value(self.subtags_row, self.subtag_parity)
+        self.update_parity_value(self.parent_tags_row, self.subtag_parity)
         self.update_parity_value(self.aliases_row, self.alias_parity)
         self.update_parity_value(self.colors_row, self.color_parity)
         self.sql_lib.close()
@@ -639,39 +639,39 @@ class JsonMigrationModal(QObject):
         return self.path_parity
 
     def check_subtag_parity(self) -> bool:
-        """Check if all JSON subtags match the new SQL subtags."""
-        sql_subtags: set[int] = None
-        json_subtags: set[int] = None
+        """Check if all JSON parent tags match the new SQL parent tags."""
+        sql_parent_tags: set[int] = None
+        json_parent_tags: set[int] = None
 
         with Session(self.sql_lib.engine) as session:
             for tag in self.sql_lib.tags:
                 if tag.id in range(0, 1000):
                     break
                 tag_id = tag.id  # Tag IDs start at 0
-                sql_subtags = set(
-                    session.scalars(select(TagSubtag.child_id).where(TagSubtag.parent_id == tag.id))
+                sql_parent_tags = set(
+                    session.scalars(select(TagParent.child_id).where(TagParent.parent_id == tag.id))
                 )
-                # sql_subtags = sql_subtags.difference([x for x in range(0, 1000)])
+                # sql_parent_tags = sql_parent_tags.difference([x for x in range(0, 1000)])
 
                 # JSON tags allowed self-parenting; SQL tags no longer allow this.
-                json_subtags = set(self.json_lib.get_tag(tag_id).subtag_ids)
-                json_subtags.discard(tag_id)
+                json_parent_tags = set(self.json_lib.get_tag(tag_id).subtag_ids)
+                json_parent_tags.discard(tag_id)
 
                 logger.info(
                     "[Subtag Parity]",
                     tag_id=tag_id,
-                    json_subtags=json_subtags,
-                    sql_subtags=sql_subtags,
+                    json_parent_tags=json_parent_tags,
+                    sql_parent_tags=sql_parent_tags,
                 )
 
                 if not (
-                    sql_subtags is not None
-                    and json_subtags is not None
-                    and (sql_subtags == json_subtags)
+                    sql_parent_tags is not None
+                    and json_parent_tags is not None
+                    and (sql_parent_tags == json_parent_tags)
                 ):
                     self.discrepancies.append(
                         f"[Subtag Parity][Tag ID: {tag_id}]:"
-                        f"\nOLD (JSON):{json_subtags}\nNEW (SQL):{sql_subtags}"
+                        f"\nOLD (JSON):{json_parent_tags}\nNEW (SQL):{sql_parent_tags}"
                     )
                     self.subtag_parity = False
                     return self.subtag_parity

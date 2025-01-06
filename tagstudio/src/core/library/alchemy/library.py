@@ -54,7 +54,7 @@ from .fields import (
     TextField,
     _FieldID,
 )
-from .joins import TagEntry, TagSubtag
+from .joins import TagEntry, TagParent
 from .models import Entry, Folder, Preferences, Tag, TagAlias, ValueType
 from .visitors import SQLBoolExpressionBuilder
 
@@ -85,7 +85,7 @@ def get_default_tags() -> tuple[Tag, ...]:
         id=TAG_ARCHIVED,
         name="Archived",
         aliases={TagAlias(name="Archive")},
-        subtags={meta_tag},
+        parent_tags={meta_tag},
         color=TagColor.RED,
     )
     favorite_tag = Tag(
@@ -95,7 +95,7 @@ def get_default_tags() -> tuple[Tag, ...]:
             TagAlias(name="Favorited"),
             TagAlias(name="Favorites"),
         },
-        subtags={meta_tag},
+        parent_tags={meta_tag},
         color=TagColor.YELLOW,
     )
 
@@ -192,10 +192,10 @@ class Library:
                     break
                 self.add_alias(name=alias, tag_id=tag.id)
 
-        # Tag Subtags
+        # Parent Tags (Previously known as "Subtags" in JSON)
         for tag in json_lib.tags:
-            for subtag_id in tag.subtag_ids:
-                self.add_subtag(parent_id=tag.id, child_id=subtag_id)
+            for child_id in tag.subtag_ids:
+                self.add_parent_tag(parent_id=tag.id, child_id=child_id)
 
         # Entries
         self.add_entries(
@@ -216,8 +216,8 @@ class Library:
                     if k in {6, 7, 8}:
                         self.add_tags_to_entry(entry_id=entry.id + 1, tag_ids=v)
                     else:
-                        self.add_entry_field_type(
-                            entry_ids=(entry.id + 1),  # JSON IDs start at 0 instead of 1
+                        self.add_field_to_entry(
+                            entry_id=(entry.id + 1),  # JSON IDs start at 0 instead of 1
                             field_id=self.get_field_name_from_id(k),
                             value=v,
                         )
@@ -405,7 +405,7 @@ class Library:
                     .options(
                         selectinload(Entry.tags).options(
                             joinedload(Tag.aliases),
-                            joinedload(Tag.subtags),
+                            joinedload(Tag.parent_tags),
                         )
                     )
                 )
@@ -430,7 +430,7 @@ class Library:
                 selectinload(Entry.datetime_fields),
                 selectinload(Entry.tags).options(
                     selectinload(Tag.aliases),
-                    selectinload(Tag.subtags),
+                    selectinload(Tag.parent_tags),
                 ),
             )
             statement = statement.distinct()
@@ -476,8 +476,8 @@ class Library:
     @property
     def tags(self) -> list[Tag]:
         with Session(self.engine) as session:
-            # load all tags and join subtags
-            tags_query = select(Tag).options(selectinload(Tag.subtags))
+            # load all tags and join parent tags
+            tags_query = select(Tag).options(selectinload(Tag.parent_tags))
             tags = session.scalars(tags_query).unique()
             tags_list = list(tags)
 
@@ -577,7 +577,7 @@ class Library:
                 selectinload(Entry.text_fields),
                 selectinload(Entry.datetime_fields),
                 selectinload(Entry.tags).options(
-                    selectinload(Tag.aliases), selectinload(Tag.subtags)
+                    selectinload(Tag.aliases), selectinload(Tag.parent_tags)
                 ),
             )
 
@@ -613,7 +613,7 @@ class Library:
         with Session(self.engine) as session:
             query = select(Tag)
             query = query.options(
-                selectinload(Tag.subtags),
+                selectinload(Tag.parent_tags),
                 selectinload(Tag.aliases),
             ).limit(tag_limit)
 
@@ -641,22 +641,22 @@ class Library:
             return res
 
     def get_all_child_tag_ids(self, tag_id: int) -> list[int]:
-        """Recursively traverse a Tag's subtags and return a list of all children tags."""
-        all_subtags: set[int] = {tag_id}
+        """Recursively traverse a Tag's parent tags and return a list of all children tags."""
+        all_parent_ids: set[int] = {tag_id}
 
         with Session(self.engine) as session:
-            tag = session.scalar(select(Tag).where(Tag.id == tag_id))
+            tag: Tag | None = session.scalar(select(Tag).where(Tag.id == tag_id))
             if tag is None:
                 raise ValueError(f"No tag found with id {tag_id}.")
 
-            subtag_ids = tag.subtag_ids
+            parent_ids = tag.parent_ids
 
-        all_subtags.update(subtag_ids)
+        all_parent_ids.update(parent_ids)
 
-        for sub_id in subtag_ids:
-            all_subtags.update(self.get_all_child_tag_ids(sub_id))
+        for child_id in parent_ids:
+            all_parent_ids.update(self.get_all_child_tag_ids(child_id))
 
-        return list(all_subtags)
+        return list(all_parent_ids)
 
     def update_entry_path(self, entry_id: int | Entry, path: Path) -> None:
         if isinstance(entry_id, Entry):
@@ -679,11 +679,11 @@ class Library:
     def remove_tag(self, tag: Tag):
         with Session(self.engine, expire_on_commit=False) as session:
             try:
-                subtags = session.scalars(
-                    select(TagSubtag).where(TagSubtag.parent_id == tag.id)
+                parent_tags = session.scalars(
+                    select(TagParent).where(TagParent.parent_id == tag.id)
                 ).all()
                 tags_query = select(Tag).options(
-                    selectinload(Tag.subtags), selectinload(Tag.aliases)
+                    selectinload(Tag.parent_tags), selectinload(Tag.aliases)
                 )
                 tag = session.scalar(tags_query.where(Tag.id == tag.id))
                 aliases = session.scalars(select(TagAlias).where(TagAlias.tag_id == tag.id))
@@ -691,9 +691,9 @@ class Library:
                 for alias in aliases or []:
                     session.delete(alias)
 
-                for subtag in subtags or []:
-                    session.delete(subtag)
-                    session.expunge(subtag)
+                for parent_tag in parent_tags or []:
+                    session.delete(parent_tag)
+                    session.expunge(parent_tag)
 
                 session.delete(tag)
                 session.commit()
@@ -810,26 +810,23 @@ class Library:
             session.expunge(field)
             return field
 
-    def add_entry_field_type(
+    def add_field_to_entry(
         self,
-        entry_ids: list[int] | int,
+        entry_id: int,
         *,
         field: ValueType | None = None,
         field_id: _FieldID | str | None = None,
-        value: str | datetime | list[int] | None = None,
+        value: str | datetime | None = None,
     ) -> bool:
         logger.info(
             "add_field_to_entry",
-            entry_ids=entry_ids,
+            entry_id=entry_id,
             field_type=field,
             field_id=field_id,
             value=value,
         )
         # supply only instance or ID, not both
         assert bool(field) != (field_id is not None)
-
-        if isinstance(entry_ids, int):
-            entry_ids = [entry_ids]
 
         if not field:
             if isinstance(field_id, _FieldID):
@@ -853,11 +850,9 @@ class Library:
 
         with Session(self.engine) as session:
             try:
-                for entry_id in entry_ids:
-                    field_model.entry_id = entry_id
-                    session.add(field_model)
-                    session.flush()
-
+                field_model.entry_id = entry_id
+                session.add(field_model)
+                session.flush()
                 session.commit()
             except IntegrityError as e:
                 logger.exception(e)
@@ -869,7 +864,7 @@ class Library:
         self.update_field_position(
             field_class=type(field_model),
             field_type=field.key,
-            entry_ids=entry_ids,
+            entry_ids=entry_id,
         )
         return True
 
@@ -898,7 +893,7 @@ class Library:
     def add_tag(
         self,
         tag: Tag,
-        subtag_ids: list[int] | set[int] | None = None,
+        parent_ids: list[int] | set[int] | None = None,
         alias_names: list[str] | set[str] | None = None,
         alias_ids: list[int] | set[int] | None = None,
     ) -> Tag | None:
@@ -907,8 +902,8 @@ class Library:
                 session.add(tag)
                 session.flush()
 
-                if subtag_ids is not None:
-                    self.update_subtags(tag, subtag_ids, session)
+                if parent_ids is not None:
+                    self.update_parent_tags(tag, parent_ids, session)
 
                 if alias_ids is not None and alias_names is not None:
                     self.update_aliases(tag, alias_ids, alias_names, session)
@@ -978,12 +973,14 @@ class Library:
 
     def get_tag(self, tag_id: int) -> Tag:
         with Session(self.engine) as session:
-            tags_query = select(Tag).options(selectinload(Tag.subtags), selectinload(Tag.aliases))
+            tags_query = select(Tag).options(
+                selectinload(Tag.parent_tags), selectinload(Tag.aliases)
+            )
             tag = session.scalar(tags_query.where(Tag.id == tag_id))
 
             session.expunge(tag)
-            for subtag in tag.subtags:
-                session.expunge(subtag)
+            for parent in tag.parent_tags:
+                session.expunge(parent)
 
             for alias in tag.aliases:
                 session.expunge(alias)
@@ -1006,19 +1003,19 @@ class Library:
 
         return alias
 
-    def add_subtag(self, parent_id: int, child_id: int) -> bool:
+    def add_parent_tag(self, parent_id: int, child_id: int) -> bool:
         if parent_id == child_id:
             return False
 
         # open session and save as parent tag
         with Session(self.engine) as session:
-            subtag = TagSubtag(
+            parent_tag = TagParent(
                 parent_id=parent_id,
                 child_id=child_id,
             )
 
             try:
-                session.add(subtag)
+                session.add(parent_tag)
                 session.commit()
                 return True
             except IntegrityError:
@@ -1045,11 +1042,11 @@ class Library:
                 logger.exception("IntegrityError")
                 return False
 
-    def remove_subtag(self, base_id: int, remove_tag_id: int) -> bool:
+    def remove_parent_tag(self, base_id: int, remove_tag_id: int) -> bool:
         with Session(self.engine) as session:
             p_id = base_id
             r_id = remove_tag_id
-            remove = session.query(TagSubtag).filter_by(parent_id=p_id, child_id=r_id).one()
+            remove = session.query(TagParent).filter_by(parent_id=p_id, child_id=r_id).one()
             session.delete(remove)
             session.commit()
 
@@ -1058,12 +1055,12 @@ class Library:
     def update_tag(
         self,
         tag: Tag,
-        subtag_ids: list[int] | set[int] | None = None,
+        parent_ids: list[int] | set[int] | None = None,
         alias_names: list[str] | set[str] | None = None,
         alias_ids: list[int] | set[int] | None = None,
     ) -> None:
         """Edit a Tag in the Library."""
-        self.add_tag(tag, subtag_ids, alias_names, alias_ids)
+        self.add_tag(tag, parent_ids, alias_names, alias_ids)
 
     def update_aliases(self, tag, alias_ids, alias_names, session):
         prev_aliases = session.scalars(select(TagAlias).where(TagAlias.tag_id == tag.id)).all()
@@ -1079,28 +1076,30 @@ class Library:
             alias = TagAlias(alias_name, tag.id)
             session.add(alias)
 
-    def update_subtags(self, tag, subtag_ids, session):
-        if tag.id in subtag_ids:
-            subtag_ids.remove(tag.id)
+    def update_parent_tags(self, tag, parent_ids, session):
+        if tag.id in parent_ids:
+            parent_ids.remove(tag.id)
 
-        # load all tag's subtag to know which to remove
-        prev_subtags = session.scalars(select(TagSubtag).where(TagSubtag.parent_id == tag.id)).all()
+        # load all tag's parent tags to know which to remove
+        prev_parent_tags = session.scalars(
+            select(TagParent).where(TagParent.parent_id == tag.id)
+        ).all()
 
-        for subtag in prev_subtags:
-            if subtag.child_id not in subtag_ids:
-                session.delete(subtag)
+        for parent_tag in prev_parent_tags:
+            if parent_tag.child_id not in parent_ids:
+                session.delete(parent_tag)
             else:
                 # no change, remove from list
-                subtag_ids.remove(subtag.child_id)
+                parent_ids.remove(parent_tag.child_id)
 
                 # create remaining items
-        for subtag_id in subtag_ids:
-            # add new subtag
-            subtag = TagSubtag(
+        for parent_id in parent_ids:
+            # add new parent tag
+            parent_tag = TagParent(
                 parent_id=tag.id,
-                child_id=subtag_id,
+                child_id=parent_id,
             )
-            session.add(subtag)
+            session.add(parent_tag)
 
     def prefs(self, key: LibraryPrefs):
         # load given item from Preferences table
@@ -1130,8 +1129,8 @@ class Library:
         for entry in entries:
             for field_key, field in fields.items():
                 if field_key not in existing_fields:
-                    self.add_entry_field_type(
-                        entry_ids=entry.id,
+                    self.add_field_to_entry(
+                        entry_id=entry.id,
                         field_id=field.type_key,
                         value=field.value,
                     )

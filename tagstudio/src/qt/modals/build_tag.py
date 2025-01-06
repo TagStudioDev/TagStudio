@@ -118,21 +118,21 @@ class BuildTagPanel(PanelWidget):
         self.alias_add_button.clicked.connect(self.add_alias_callback)
 
         # Parent Tags ----------------------------------------------------------
-        self.subtags_widget = QWidget()
-        self.subtags_layout = QVBoxLayout(self.subtags_widget)
-        self.subtags_layout.setStretch(1, 1)
-        self.subtags_layout.setContentsMargins(0, 0, 0, 0)
-        self.subtags_layout.setSpacing(0)
-        self.subtags_layout.setAlignment(Qt.AlignmentFlag.AlignLeft)
+        self.parent_tags_widget = QWidget()
+        self.parent_tags_layout = QVBoxLayout(self.parent_tags_widget)
+        self.parent_tags_layout.setStretch(1, 1)
+        self.parent_tags_layout.setContentsMargins(0, 0, 0, 0)
+        self.parent_tags_layout.setSpacing(0)
+        self.parent_tags_layout.setAlignment(Qt.AlignmentFlag.AlignLeft)
 
-        self.subtags_title = QLabel()
-        Translations.translate_qobject(self.subtags_title, "tag.parent_tags")
-        self.subtags_layout.addWidget(self.subtags_title)
+        self.parent_tags_title = QLabel()
+        Translations.translate_qobject(self.parent_tags_title, "tag.parent_tags")
+        self.parent_tags_layout.addWidget(self.parent_tags_title)
 
         self.scroll_contents = QWidget()
-        self.subtags_scroll_layout = QVBoxLayout(self.scroll_contents)
-        self.subtags_scroll_layout.setContentsMargins(6, 0, 6, 0)
-        self.subtags_scroll_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
+        self.parent_tags_scroll_layout = QVBoxLayout(self.scroll_contents)
+        self.parent_tags_scroll_layout.setContentsMargins(6, 0, 6, 0)
+        self.parent_tags_scroll_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
 
         self.scroll_area = QScrollArea()
         # self.scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOn)
@@ -142,23 +142,23 @@ class BuildTagPanel(PanelWidget):
         self.scroll_area.setWidget(self.scroll_contents)
         # self.scroll_area.setMinimumHeight(60)
 
-        self.subtags_layout.addWidget(self.scroll_area)
+        self.parent_tags_layout.addWidget(self.scroll_area)
 
-        self.subtags_add_button = QPushButton()
-        self.subtags_add_button.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.subtags_add_button.setText("+")
-        self.subtags_layout.addWidget(self.subtags_add_button)
+        self.parent_tags_add_button = QPushButton()
+        self.parent_tags_add_button.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.parent_tags_add_button.setText("+")
+        self.parent_tags_layout.addWidget(self.parent_tags_add_button)
 
         exclude_ids: list[int] = list()
         if tag is not None:
             exclude_ids.append(tag.id)
 
         tsp = TagSearchPanel(self.lib, exclude_ids)
-        tsp.tag_chosen.connect(lambda x: self.add_subtag_callback(x))
+        tsp.tag_chosen.connect(lambda x: self.add_parent_tag_callback(x))
         self.add_tag_modal = PanelModal(tsp)
         Translations.translate_with_setter(self.add_tag_modal.setTitle, "tag.parent_tags.add")
         Translations.translate_with_setter(self.add_tag_modal.setWindowTitle, "tag.parent_tags.add")
-        self.subtags_add_button.clicked.connect(self.add_tag_modal.show)
+        self.parent_tags_add_button.clicked.connect(self.add_tag_modal.show)
 
         # Color ----------------------------------------------------------------
         self.color_widget = QWidget()
@@ -230,13 +230,13 @@ class BuildTagPanel(PanelWidget):
         self.root_layout.addWidget(self.aliases_widget)
         self.root_layout.addWidget(self.aliases_table)
         self.root_layout.addWidget(self.alias_add_button)
-        self.root_layout.addWidget(self.subtags_widget)
+        self.root_layout.addWidget(self.parent_tags_widget)
         self.root_layout.addWidget(self.color_widget)
         self.root_layout.addWidget(QLabel("<h3>Properties</h3>"))
         self.root_layout.addWidget(self.cat_widget)
         # self.parent().done.connect(self.update_tag)
 
-        self.subtag_ids: set[int] = set()
+        self.parent_ids: set[int] = set()
         self.alias_ids: list[int] = []
         self.alias_names: list[str] = []
         self.new_alias_names: dict = {}
@@ -276,15 +276,15 @@ class BuildTagPanel(PanelWidget):
         if isinstance(focused_widget, CustomTableItem):
             self.add_alias_callback()
 
-    def add_subtag_callback(self, tag_id: int):
-        logger.info("add_subtag_callback", tag_id=tag_id)
-        self.subtag_ids.add(tag_id)
-        self.set_subtags()
+    def add_parent_tag_callback(self, tag_id: int):
+        logger.info("add_parent_tag_callback", tag_id=tag_id)
+        self.parent_ids.add(tag_id)
+        self.set_parent_tags()
 
-    def remove_subtag_callback(self, tag_id: int):
-        logger.info("removing subtag", tag_id=tag_id)
-        self.subtag_ids.remove(tag_id)
-        self.set_subtags()
+    def remove_parent_tag_callback(self, tag_id: int):
+        logger.info("remove_parent_tag_callback", tag_id=tag_id)
+        self.parent_ids.remove(tag_id)
+        self.set_parent_tags()
 
     def add_alias_callback(self):
         logger.info("add_alias_callback")
@@ -305,20 +305,20 @@ class BuildTagPanel(PanelWidget):
         self.alias_ids.remove(alias_id)
         self._set_aliases()
 
-    def set_subtags(self):
-        while self.subtags_scroll_layout.itemAt(0):
-            self.subtags_scroll_layout.takeAt(0).widget().deleteLater()
+    def set_parent_tags(self):
+        while self.parent_tags_scroll_layout.itemAt(0):
+            self.parent_tags_scroll_layout.takeAt(0).widget().deleteLater()
 
         c = QWidget()
         layout = QVBoxLayout(c)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(3)
-        for tag_id in self.subtag_ids:
+        for tag_id in self.parent_ids:
             tag = self.lib.get_tag(tag_id)
             tw = TagWidget(tag, has_edit=False, has_remove=True)
-            tw.on_remove.connect(lambda t=tag_id: self.remove_subtag_callback(t))
+            tw.on_remove.connect(lambda t=tag_id: self.remove_parent_tag_callback(t))
             layout.addWidget(tw)
-        self.subtags_scroll_layout.addWidget(c)
+        self.parent_tags_scroll_layout.addWidget(c)
 
     def add_aliases(self):
         names: set[str] = set()
@@ -392,9 +392,9 @@ class BuildTagPanel(PanelWidget):
             self.alias_ids.append(alias_id)
         self._set_aliases()
 
-        for subtag in tag.subtag_ids:
-            self.subtag_ids.add(subtag)
-        self.set_subtags()
+        for parent_id in tag.parent_ids:
+            self.parent_ids.add(parent_id)
+        self.set_parent_tags()
 
         # select item in self.color_field where the userData value matched tag.color
         for i in range(self.color_field.count()):

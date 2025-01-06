@@ -76,7 +76,7 @@ class TagBoxWidget(FieldWidget):
 
         self.edit_modal = PanelModal(
             build_tag_panel,
-            tag.name,  # TODO - display name including subtags
+            tag.name,  # TODO - display name including parent tags
             "Edit Tag",
             done_callback=self.driver.preview_panel.update_widgets,
             has_save=True,
@@ -85,7 +85,7 @@ class TagBoxWidget(FieldWidget):
         self.edit_modal.saved.connect(
             lambda: self.driver.lib.update_tag(
                 build_tag_panel.build_tag(),
-                subtag_ids=set(build_tag_panel.subtag_ids),
+                parent_ids=set(build_tag_panel.parent_ids),
                 alias_names=set(build_tag_panel.alias_names),
                 alias_ids=set(build_tag_panel.alias_ids),
             )

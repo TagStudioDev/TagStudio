@@ -87,7 +87,7 @@ class TagDatabasePanel(PanelWidget):
             lambda: (
                 self.lib.add_tag(
                     tag=panel.build_tag(),
-                    subtag_ids=panel.subtag_ids,
+                    parent_ids=panel.parent_ids,
                     alias_names=panel.alias_names,
                     alias_ids=panel.alias_ids,
                 ),
@@ -169,7 +169,7 @@ class TagDatabasePanel(PanelWidget):
 
     def edit_tag_callback(self, btp: BuildTagPanel):
         self.lib.update_tag(
-            btp.build_tag(), set(btp.subtag_ids), set(btp.alias_names), set(btp.alias_ids)
+            btp.build_tag(), set(btp.parent_ids), set(btp.alias_names), set(btp.alias_ids)
         )
         self.update_tags(self.search_field.text())
 

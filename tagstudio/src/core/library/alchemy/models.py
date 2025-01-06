@@ -17,16 +17,14 @@ from .fields import (
     FieldTypeEnum,
     TextField,
 )
-from .joins import TagSubtag
+from .joins import TagParent
 
 
 class TagAlias(Base):
     __tablename__ = "tag_aliases"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-
     name: Mapped[str] = mapped_column(nullable=False)
-
     tag_id: Mapped[int] = mapped_column(ForeignKey("tags.id"))
     tag: Mapped["Tag"] = relationship(back_populates="aliases")
 
@@ -54,22 +52,15 @@ class Tag(Base):
     aliases: Mapped[set[TagAlias]] = relationship(back_populates="tag")
 
     parent_tags: Mapped[set["Tag"]] = relationship(
-        secondary=TagSubtag.__tablename__,
-        primaryjoin="Tag.id == TagSubtag.child_id",
-        secondaryjoin="Tag.id == TagSubtag.parent_id",
-        back_populates="subtags",
-    )
-
-    subtags: Mapped[set["Tag"]] = relationship(
-        secondary=TagSubtag.__tablename__,
-        primaryjoin="Tag.id == TagSubtag.parent_id",
-        secondaryjoin="Tag.id == TagSubtag.child_id",
+        secondary=TagParent.__tablename__,
+        primaryjoin="Tag.id == TagParent.parent_id",
+        secondaryjoin="Tag.id == TagParent.child_id",
         back_populates="parent_tags",
     )
 
     @property
-    def subtag_ids(self) -> list[int]:
-        return [tag.id for tag in self.subtags]
+    def parent_ids(self) -> list[int]:
+        return [tag.id for tag in self.parent_tags]
 
     @property
     def alias_strings(self) -> list[str]:
@@ -86,7 +77,6 @@ class Tag(Base):
         shorthand: str | None = None,
         aliases: set[TagAlias] | None = None,
         parent_tags: set["Tag"] | None = None,
-        subtags: set["Tag"] | None = None,
         icon: str | None = None,
         color: TagColor = TagColor.DEFAULT,
         is_category: bool = False,
@@ -94,7 +84,6 @@ class Tag(Base):
         self.name = name
         self.aliases = aliases or set()
         self.parent_tags = parent_tags or set()
-        self.subtags = subtags or set()
         self.color = color
         self.icon = icon
         self.shorthand = shorthand

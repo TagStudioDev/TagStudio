@@ -41,7 +41,7 @@ def add_folders_to_tree(library: Library, tree: BranchData, items: tuple[str, ..
     branch = tree
     for folder in items:
         if folder not in branch.dirs:
-            # TODO - subtags
+            # TODO: Reimplement parent tags
             new_tag = Tag(name=folder)
             library.add_tag(new_tag)
             branch.dirs[folder] = BranchData(tag=new_tag)
@@ -81,11 +81,11 @@ def reverse_tag(library: Library, tag: Tag, items: list[Tag] | None) -> list[Tag
     items = items or []
     items.append(tag)
 
-    if not tag.subtag_ids:
+    if not tag.parent_ids:
         items.reverse()
         return items
 
-    for subtag_id in tag.subtag_ids:
+    for subtag_id in tag.parent_ids:
         subtag = library.get_tag(subtag_id)
     return reverse_tag(library, subtag, items)
 

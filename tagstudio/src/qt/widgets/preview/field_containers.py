@@ -163,7 +163,7 @@ class FieldContainers(QWidget):
             """
             tag_obj = self.lib.get_tag(tag_id)  # Get full object
             if p_ids is None:
-                p_ids = tag_obj.subtag_ids
+                p_ids = tag_obj.parent_ids
 
             for p_id in p_ids:
                 if cluster_map.get(p_id) is None:
@@ -172,10 +172,10 @@ class FieldContainers(QWidget):
                 if tag.id not in cluster_map[p_id]:
                     cluster_map[p_id].add(tag.id)
                     p_tag = self.lib.get_tag(p_id)  # Get full object
-                    if p_tag.subtag_ids:
+                    if p_tag.parent_ids:
                         add_to_cluster(
                             tag_id,
-                            [sub_id for sub_id in p_tag.subtag_ids if sub_id != tag_id],
+                            [sub_id for sub_id in p_tag.parent_ids if sub_id != tag_id],
                         )
                 exhausted.add(p_id)
             exhausted.add(tag_id)
@@ -240,7 +240,7 @@ class FieldContainers(QWidget):
         )
         for entry_id in self.driver.selected:
             for field_item in field_list:
-                self.lib.add_entry_field_type(
+                self.lib.add_field_to_entry(
                     entry_id,
                     field_id=field_item.data(Qt.ItemDataRole.UserRole),
                 )

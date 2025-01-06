@@ -23,16 +23,17 @@ else:
 
 logger = structlog.get_logger(__name__)
 
+# TODO: Reevaluate after subtags -> parent tags name change
 CHILDREN_QUERY = text("""
--- Note for this entire query that tag_subtags.child_id is the parent id and tag_subtags.parent_id is the child id due to bad naming
-WITH RECURSIVE Subtags AS (
+-- Note for this entire query that tag_parents.child_id is the parent id and tag_parents.parent_id is the child id due to bad naming
+WITH RECURSIVE ChildTags AS (
     SELECT :tag_id AS child_id
     UNION ALL
-    SELECT ts.parent_id AS child_id
-	FROM tag_subtags ts
-    INNER JOIN Subtags s ON ts.child_id = s.child_id
+    SELECT tp.parent_id AS child_id
+	FROM tag_parents tp
+    INNER JOIN ChildTags c ON tp.child_id = c.child_id
 )
-SELECT * FROM Subtags;
+SELECT * FROM ChildTags;
 """)  # noqa: E501
 
 

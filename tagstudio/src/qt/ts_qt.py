@@ -682,7 +682,7 @@ class QtDriver(DriverMixin, QObject):
             lambda: (
                 self.lib.add_tag(
                     panel.build_tag(),
-                    set(panel.subtag_ids),
+                    set(panel.parent_ids),
                     set(panel.alias_names),
                     set(panel.alias_ids),
                 ),
@@ -858,7 +858,7 @@ class QtDriver(DriverMixin, QObject):
             for field_id, value in parsed_items.items():
                 if isinstance(value, list) and len(value) > 0 and isinstance(value[0], str):
                     value = self.lib.tag_from_strings(value)
-                self.lib.add_entry_field_type(
+                self.lib.add_field_to_entry(
                     entry.id,
                     field_id=field_id,
                     value=value,
@@ -867,7 +867,7 @@ class QtDriver(DriverMixin, QObject):
         elif name == MacroID.BUILD_URL:
             url = TagStudioCore.build_url(entry, source)
             if url is not None:
-                self.lib.add_entry_field_type(entry.id, field_id=_FieldID.SOURCE, value=url)
+                self.lib.add_field_to_entry(entry.id, field_id=_FieldID.SOURCE, value=url)
         elif name == MacroID.MATCH:
             TagStudioCore.match_conditions(self.lib, entry.id)
         elif name == MacroID.CLEAN_URL:
