@@ -1276,7 +1276,12 @@ class QtDriver(DriverMixin, QObject):
         )
         self.main_window.repaint()
 
-        open_status: LibraryStatus = self.lib.open_library(path)
+        open_status: LibraryStatus = None
+        try:
+            open_status = self.lib.open_library(path)
+        except Exception as e:
+            logger.exception(e)
+            open_status = LibraryStatus(success=False, library_path=path, message=type(e).__name__)
 
         # Migration is required
         if open_status.json_migration_req:
