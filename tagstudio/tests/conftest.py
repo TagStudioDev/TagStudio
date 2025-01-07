@@ -142,6 +142,7 @@ def qt_driver(qtbot, library):
             driver.preview_panel = Mock()
             driver.flow_container = Mock()
             driver.item_thumbs = []
+            driver.autofill_action = Mock()
 
             driver.lib = library
             # TODO - downsize this method and use it
