@@ -206,14 +206,10 @@ class BuildTagPanel(PanelWidget):
             "QCheckBox::indicator{"
             "width: 19px; height: 19px;"
             # f"background: #1e1e1e;"
-            # # f"color: #FFFFFF;"
-            # # f"font-weight: bold;"
             # f"border-color: #333333;"
             # f"border-radius: 6px;"
             # f"border-style:solid;"
             # f"border-width:{math.ceil(self.devicePixelRatio())}px;"
-            # f"padding-bottom: 5px;"
-            # f"font-size: 20p+x;"
             "}"
             # f"QCheckBox::indicator::hover"
             # f"{{"
@@ -234,7 +230,6 @@ class BuildTagPanel(PanelWidget):
         self.root_layout.addWidget(self.color_widget)
         self.root_layout.addWidget(QLabel("<h3>Properties</h3>"))
         self.root_layout.addWidget(self.cat_widget)
-        # self.parent().done.connect(self.update_tag)
 
         self.parent_ids: set[int] = set()
         self.alias_ids: list[int] = []

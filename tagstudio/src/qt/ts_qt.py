@@ -293,7 +293,6 @@ class QtDriver(DriverMixin, QObject):
         Translations.translate_qobject(
             self.open_recent_library_menu, "menu.file.open_recent_library"
         )
-        # open_recent_library_menu.set
         file_menu.addMenu(self.open_recent_library_menu)
         self.update_recent_lib_menu()
 
@@ -405,13 +404,6 @@ class QtDriver(DriverMixin, QObject):
         show_libs_list_action.setChecked(
             bool(self.settings.value(SettingItems.WINDOW_SHOW_LIBS, defaultValue=True, type=bool))
         )
-        show_libs_list_action.triggered.connect(
-            lambda checked: (
-                self.settings.setValue(SettingItems.WINDOW_SHOW_LIBS, checked),
-                self.toggle_libs_list(checked),
-            )
-        )
-        view_menu.addAction(show_libs_list_action)
 
         show_filenames_action = QAction(menu_bar)
         Translations.translate_qobject(show_filenames_action, "settings.show_filenames_in_grid")
@@ -592,15 +584,6 @@ class QtDriver(DriverMixin, QObject):
 
         self.splash.finish(self.main_window)
         self.preview_panel.update_widgets()
-
-    def toggle_libs_list(self, value: bool):
-        # TODO: Reimplement or remove
-        # if value:
-        #     self.preview_panel.libs_flow_container.show()
-        # else:
-        #     self.preview_panel.libs_flow_container.hide()
-        # self.preview_panel.update()
-        pass
 
     def show_grid_filenames(self, value: bool):
         for thumb in self.item_thumbs:
@@ -823,20 +806,11 @@ class QtDriver(DriverMixin, QObject):
 
     def new_file_macros_runnable(self, new_ids):
         """Threaded method that runs macros on a set of Entry IDs."""
-        # sleep(1)
         # for i, id in enumerate(new_ids):
         # 	# pb.setValue(i)
         # 	# pb.setLabelText(f'Running Configured Macros on {i}/{len(new_ids)} New Entries')
         # 	# self.run_macro('autofill', id)
-
-        # NOTE: I don't know. I don't know why it needs this. The whole program
-        # falls apart if this method doesn't run, and it DOESN'T DO ANYTHING
         yield 0
-
-        # self.main_window.statusbar.showMessage('', 3)
-
-        # sleep(5)
-        # pb.deleteLater()
 
     def run_macros(self, name: MacroID, entry_ids: list[int]):
         """Run a specific Macro on a group of given entry_ids."""

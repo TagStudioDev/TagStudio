@@ -126,7 +126,6 @@ class PreviewPanel(QWidget):
 
         splitter.addWidget(preview_section)
         splitter.addWidget(info_section)
-        # splitter.addWidget(self.libs_flow_container) # TODO: Determine fate of this; Move to menu
         splitter.setStretchFactor(1, 2)
 
         root_layout = QVBoxLayout(self)
