@@ -12,6 +12,7 @@ from datetime import UTC, datetime
 from os import makedirs
 from pathlib import Path
 from uuid import uuid4
+from warnings import catch_warnings
 
 import structlog
 from humanfriendly import format_timespan
@@ -301,12 +302,13 @@ class Library:
                     )
 
             for pref in LibraryPrefs:
-                try:
-                    session.add(Preferences(key=pref.name, value=pref.default))
-                    session.commit()
-                except IntegrityError:
-                    logger.debug("preference already exists", pref=pref)
-                    session.rollback()
+                with catch_warnings(record=True):
+                    try:
+                        session.add(Preferences(key=pref.name, value=pref.default))
+                        session.commit()
+                    except IntegrityError:
+                        logger.debug("preference already exists", pref=pref)
+                        session.rollback()
 
             for field in _FieldID:
                 try:
