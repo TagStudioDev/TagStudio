@@ -1309,12 +1309,10 @@ class QtDriver(DriverMixin, QObject):
 
         # Clear previous actions
         for action in self.open_recent_library_menu.actions():
-            logger.info(action)
             self.open_recent_library_menu.removeAction(action)
 
         # Add new actions
         for action in actions:
-            logger.info(action.text())
             self.open_recent_library_menu.addAction(action)
 
         # Only enable add "clear recent" if there are still recent libraries.

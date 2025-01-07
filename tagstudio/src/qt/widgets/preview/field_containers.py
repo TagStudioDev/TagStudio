@@ -183,23 +183,25 @@ class FieldContainers(QWidget):
         for tag in tags:
             add_to_cluster(tag.id)
 
-        logger.info("Entry Cluster", entry_cluster=exhausted)
-        logger.info("Cluster Map", cluster_map=cluster_map)
+        logger.info("[FieldContainers] Entry Cluster", entry_cluster=exhausted)
+        logger.info("[FieldContainers] Cluster Map", cluster_map=cluster_map)
 
         # Initialize all categories from parents.
         tags_ = {self.lib.get_tag(x) for x in exhausted}
         for tag in tags_:
             if tag.is_category:
                 cats[tag] = set()
-        logger.info("Blank Tag Categories", cats=cats)
+        logger.info("[FieldContainers] Blank Tag Categories", cats=cats)
 
         # Add tags to any applicable categories.
         added_ids: set[int] = set()
         for key in cats:
-            logger.info("Checking category tag key", key=key)
+            logger.info("[FieldContainers] Checking category tag key", key=key)
 
             if key:
-                logger.info("Key cluster:", key=key, cluster=cluster_map.get(key.id))
+                logger.info(
+                    "[FieldContainers] Key cluster:", key=key, cluster=cluster_map.get(key.id)
+                )
 
                 if final_tags := cluster_map.get(key.id, set()).union([key.id]):
                     cats[key] = {self.lib.get_tag(x) for x in final_tags if x in base_tag_ids}
@@ -208,7 +210,7 @@ class FieldContainers(QWidget):
         # Add remaining tags to None key (general case).
         cats[None] = {self.lib.get_tag(x) for x in base_tag_ids if x not in added_ids}
         logger.info(
-            f"[{key}] Key cluster: None, general case!",
+            f"[FieldContainers] [{key}] Key cluster: None, general case!",
             general_tags=cats[key],
             added=added_ids,
             base_tag_ids=base_tag_ids,
@@ -222,7 +224,7 @@ class FieldContainers(QWidget):
         for key in empty:
             cats.pop(key, None)
 
-        logger.info("Tag Categories", cats=cats)
+        logger.info("[FieldContainers] Tag Categories", cats=cats)
         return cats
 
     def remove_field_prompt(self, name: str) -> str:
@@ -272,7 +274,7 @@ class FieldContainers(QWidget):
 
             If True, field is not present in all selected items.
         """
-        logger.info("[write_field_container]", index=index)
+        logger.info("[FieldContainers][write_field_container]", index=index)
         if len(self.containers) < (index + 1):
             container = FieldContainer()
             self.containers.append(container)
@@ -420,7 +422,7 @@ class FieldContainers(QWidget):
 
             If True, field is not present in all selected items.
         """
-        logger.info("[write_tag_container]", index=index)
+        logger.info("[FieldContainers][write_tag_container]", index=index)
         if len(self.containers) < (index + 1):
             container = FieldContainer()
             self.containers.append(container)
@@ -435,13 +437,11 @@ class FieldContainers(QWidget):
             inner_widget = container.get_inner_widget()
 
             if isinstance(inner_widget, TagBoxWidget):
-                logger.warning("recycling")
                 inner_widget.set_tags(tags)
                 with catch_warnings(record=True):
                     inner_widget.updated.disconnect()
 
             else:
-                logger.warning("creating new")
                 inner_widget = TagBoxWidget(
                     tags,
                     "Tags",
