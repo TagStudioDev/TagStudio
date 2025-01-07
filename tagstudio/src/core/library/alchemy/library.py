@@ -41,6 +41,7 @@ from src.core.library.json.library import Library as JsonLibrary  # type: ignore
 
 from ...constants import (
     BACKUP_FOLDER_NAME,
+    LEGACY_TAG_FIELD_IDS,
     TAG_ARCHIVED,
     TAG_FAVORITE,
     TAG_META,
@@ -214,7 +215,7 @@ class Library:
             for field in entry.fields:
                 for k, v in field.items():
                     # Old tag fields get added as tags
-                    if k in {6, 7, 8}:
+                    if k in LEGACY_TAG_FIELD_IDS:
                         self.add_tags_to_entry(entry_id=entry.id + 1, tag_ids=v)
                     else:
                         self.add_field_to_entry(

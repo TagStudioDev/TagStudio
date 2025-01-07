@@ -19,7 +19,7 @@ from PySide6.QtWidgets import (
 )
 from sqlalchemy import select
 from sqlalchemy.orm import Session
-from src.core.constants import TS_FOLDER_NAME
+from src.core.constants import LEGACY_TAG_FIELD_IDS, RESERVED_TAG_END, TAG_META, TS_FOLDER_NAME
 from src.core.enums import LibraryPrefs
 from src.core.library.alchemy.enums import TagColor
 from src.core.library.alchemy.joins import TagParent
@@ -283,7 +283,6 @@ class JsonMigrationModal(QObject):
         Translations.translate_qobject(start_button, "json_migration.start_and_preview")
         start_button.setMinimumWidth(120)
         start_button.clicked.connect(self.migrate)
-        start_button.clicked.connect(lambda: finish_button.setDisabled(False))
         start_button.clicked.connect(lambda: start_button.setDisabled(True))
         finish_button: QPushButtonWrapper = QPushButtonWrapper()
         Translations.translate_qobject(finish_button, "json_migration.finish_migration")
@@ -350,6 +349,8 @@ class JsonMigrationModal(QObject):
                 self.update_sql_value_ui(show_msg_box=not skip_ui),
                 pb.setMinimum(1),
                 pb.setValue(1),
+                # Enable the finish button
+                self.stack[1].buttons[4].setDisabled(False),  # type: ignore
             )
         )
         QThreadPool.globalInstance().start(r)
@@ -380,16 +381,20 @@ class JsonMigrationModal(QObject):
             check_set.add(self.check_subtag_parity())
             check_set.add(self.check_alias_parity())
             check_set.add(self.check_color_parity())
-            self.update_parity_ui()
             if False not in check_set:
                 yield Translations["json_migration.migration_complete"]
             else:
                 yield Translations["json_migration.migration_complete_with_discrepancies"]
+            self.update_parity_ui()
+            QApplication.beep()
+            QApplication.alert(self.paged_panel)
             self.done = True
 
         except Exception as e:
             yield f"Error: {type(e).__name__}"
-        self.done = True
+            QApplication.beep()
+            QApplication.alert(self.paged_panel)
+            self.done = True
 
     def update_parity_ui(self):
         """Update all parity values UI."""
@@ -427,7 +432,7 @@ class JsonMigrationModal(QObject):
         if self.discrepancies:
             logger.warning("Discrepancies found:")
             logger.warning("\n".join(self.discrepancies))
-            QApplication.beep()
+            QApplication.alert(self.paged_panel)
             if not show_msg_box:
                 return
             msg_box = QMessageBox()
@@ -496,27 +501,9 @@ class JsonMigrationModal(QObject):
         return str(f"<b><a style='color: {color}'>{new_value}</a></b>")
 
     def check_field_parity(self) -> bool:
-        """Check if all JSON field data matches the new SQL field data."""
+        """Check if all JSON field and tag data matches the new SQL data."""
 
-        def sanitize_field(session, entry: Entry, value, type, type_key):
-            #            if type is FieldTypeEnum.TAGS:
-            #                tags = list(
-            #                    session.scalars(
-            #                        select(Tag.id)
-            #                        .join(TagField)
-            #                        .join(TagBoxField)
-            #                        .where(
-            #                            and_(
-            #                                TagBoxField.entry_id == entry.id,
-            #                                TagBoxField.id == TagField.field_id,
-            #                                TagBoxField.type_key == type_key,
-            #                            )
-            #                        )
-            #                    )
-            #                )
-            #
-            #                return set(tags) if tags else None
-            #            else:
+        def sanitize_field(entry: Entry, value, type, type_key):
             return value if value else None
 
         def sanitize_json_field(value):
@@ -525,105 +512,68 @@ class JsonMigrationModal(QObject):
             else:
                 return value if value else None
 
-        with Session(self.sql_lib.engine) as session:
-            for json_entry in self.json_lib.entries:
-                sql_fields: list[tuple] = []
-                json_fields: list[tuple] = []
+        for json_entry in self.json_lib.entries:
+            sql_fields: list[tuple] = []
+            json_fields: list[tuple] = []
 
-                sql_entry: Entry = session.scalar(
-                    select(Entry).where(Entry.id == json_entry.id + 1)
-                )
-                if not sql_entry:
-                    logger.info(
-                        "[Field Comparison]",
-                        message=f"NEW  (SQL): SQL Entry ID mismatch: {json_entry.id+1}",
-                    )
-                    self.discrepancies.append(
-                        f"[Field Comparison]:\nNEW (SQL): SQL Entry ID not found: {json_entry.id+1}"
-                    )
-                    self.field_parity = False
-                    return self.field_parity
-
-                for sf in sql_entry.fields:
-                    if sf.type.type.value not in {6, 7, 8}:
-                        sql_fields.append(
-                            (
-                                sql_entry.id,
-                                sf.type.key,
-                                sanitize_field(
-                                    session, sql_entry, sf.value, sf.type.type, sf.type_key
-                                ),
-                            )
-                        )
-                sql_fields.sort()
-
-                # NOTE: The JSON database allowed for separate tag fields of the same type with
-                # different values. The SQL database does not, and instead merges these values
-                # across all instances of that field on an entry.
-                # TODO: ROADMAP: "Tag Categories" will merge all field tags onto the entry.
-                # All visual separation from there will be data-driven from the tag itself.
-                # meta_tags_count: int = 0
-                # content_tags_count: int = 0
-                tags_count: int = 0
-                # merged_meta_tags: set[int] = set()
-                # merged_content_tags: set[int] = set()
-                merged_tags: set[int] = set()
-                for jf in json_entry.fields:
-                    int_key: int = list(jf.keys())[0]
-                    value = sanitize_json_field(list(jf.values())[0])
-                    if int_key in {6, 7, 8}:
-                        tags_count += 1
-                        merged_tags = merged_tags.union(value or [])
-                        pass
-                    else:
-                        key: str = self.sql_lib.get_field_name_from_id(int_key).name
-                        json_fields.append((json_entry.id + 1, key, value))
-
-                # TODO: DO NOT IGNORE TAGS
-                # if meta_tags_count:
-                #     for _ in range(0, meta_tags_count):
-                #         json_fields.append(
-                #             (
-                #                 json_entry.id + 1,
-                #                 _FieldID.TAGS_META.name,
-                #                 merged_meta_tags if merged_meta_tags else None,
-                #             )
-                #         )
-                # if content_tags_count:
-                #     for _ in range(0, content_tags_count):
-                #         json_fields.append(
-                #             (
-                #                 json_entry.id + 1,
-                #                 _FieldID.TAGS_CONTENT.name,
-                #                 merged_content_tags if merged_content_tags else None,
-                #             )
-                #         )
-                # if tags_count:
-                #     for _ in range(0, tags_count):
-                #         json_fields.append(
-                #             (
-                #                 json_entry.id + 1,
-                #                 "TAGS",
-                #                 merged_tags if merged_tags else None,
-                #             )
-                #         )
-                json_fields.sort()
-
-                if not (
-                    json_fields is not None
-                    and sql_fields is not None
-                    and (json_fields == sql_fields)
-                ):
-                    self.discrepancies.append(
-                        f"[Field Comparison]:\nOLD (JSON):{json_fields}\nNEW  (SQL):{sql_fields}"
-                    )
-                    self.field_parity = False
-                    return self.field_parity
-
+            sql_entry: Entry = self.sql_lib.get_entry_full(json_entry.id + 1)
+            if not sql_entry:
                 logger.info(
                     "[Field Comparison]",
-                    fields="\n".join([str(x) for x in zip(json_fields, sql_fields)]),
+                    message=f"NEW  (SQL): SQL Entry ID mismatch: {json_entry.id+1}",
                 )
+                self.discrepancies.append(
+                    f"[Field Comparison]:\nNEW (SQL): SQL Entry ID not found: {json_entry.id+1}"
+                )
+                self.field_parity = False
+                return self.field_parity
+
+            for sf in sql_entry.fields:
+                if sf.type.type.value not in LEGACY_TAG_FIELD_IDS:
+                    sql_fields.append(
+                        (
+                            sql_entry.id,
+                            sf.type.key,
+                            sanitize_field(sql_entry, sf.value, sf.type.type, sf.type_key),
+                        )
+                    )
+            sql_fields.sort()
+
+            # NOTE: The JSON database stored tags inside of special "tag field" types which
+            # no longer exist. The SQL database instead associates tags directly with entries.
+            tags_count: int = 0
+            json_tags: set[int] = set()
+            for jf in json_entry.fields:
+                int_key: int = list(jf.keys())[0]
+                value = sanitize_json_field(list(jf.values())[0])
+                if int_key in LEGACY_TAG_FIELD_IDS:
+                    tags_count += 1
+                    json_tags = json_tags.union(value or [])
+                else:
+                    key: str = self.sql_lib.get_field_name_from_id(int_key).name
+                    json_fields.append((json_entry.id + 1, key, value))
+            json_fields.sort()
+
+            sql_tags = {t.id for t in sql_entry.tags}
+
+            if not (
+                json_fields is not None
+                and sql_fields is not None
+                and (json_fields == sql_fields)
+                and (json_tags == sql_tags)
+            ):
+                self.discrepancies.append(
+                    f"[Field Comparison]:\n"
+                    f"OLD (JSON):{json_fields}\n{json_tags}\n"
+                    f"NEW  (SQL):{sql_fields}\n{sql_tags}"
+                )
+                self.field_parity = False
+                return self.field_parity
+
+            logger.info(
+                "[Field Comparison]",
+                fields="\n".join([str(x) for x in zip(json_fields, sql_fields)]),
+            )
 
         self.field_parity = True
         return self.field_parity
@@ -645,13 +595,13 @@ class JsonMigrationModal(QObject):
 
         with Session(self.sql_lib.engine) as session:
             for tag in self.sql_lib.tags:
-                if tag.id in range(0, 1000):
+                # NOTE: Don't check subtag parity for built-in tags.
+                if tag.id in range(0, RESERVED_TAG_END + 1):
                     break
                 tag_id = tag.id  # Tag IDs start at 0
                 sql_parent_tags = set(
                     session.scalars(select(TagParent.child_id).where(TagParent.parent_id == tag.id))
                 )
-                # sql_parent_tags = sql_parent_tags.difference([x for x in range(0, 1000)])
 
                 # JSON tags allowed self-parenting; SQL tags no longer allow this.
                 json_parent_tags = set(self.json_lib.get_tag(tag_id).subtag_ids)
@@ -689,7 +639,9 @@ class JsonMigrationModal(QObject):
 
         with Session(self.sql_lib.engine) as session:
             for tag in self.sql_lib.tags:
-                if tag.id in range(0, 1000):
+                # NOTE: Do not check alias parity for built-in tags added
+                # after "Favorite" and "Archived".
+                if tag.id in range(TAG_META, RESERVED_TAG_END + 1):
                     break
                 tag_id = tag.id  # Tag IDs start at 0
                 sql_aliases = set(
@@ -724,7 +676,8 @@ class JsonMigrationModal(QObject):
         json_shorthand: str = None
 
         for tag in self.sql_lib.tags:
-            if tag.id in range(0, 1000):
+            # NOTE: Don't check shorthand parity for built-in tags.
+            if tag.id in range(0, RESERVED_TAG_END + 1):
                 break
             tag_id = tag.id  # Tag IDs start at 0
             sql_shorthand = tag.shorthand
@@ -758,7 +711,8 @@ class JsonMigrationModal(QObject):
         json_color: str = None
 
         for tag in self.sql_lib.tags:
-            if tag.id in range(0, 1000):
+            # NOTE: Don't check tag color parity for built-in tags.
+            if tag.id in range(0, RESERVED_TAG_END + 1):
                 break
             tag_id = tag.id  # Tag IDs start at 0
             sql_color = tag.color.name
