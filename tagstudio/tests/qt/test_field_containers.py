@@ -113,3 +113,60 @@ def test_add_tag_to_selection_multiple(qt_driver, library):
 
     assert tag_present_on_some
     assert not tag_absent_on_some
+
+
+def test_meta_tag_category(qt_driver, library, entry_full):
+    panel = PreviewPanel(library, qt_driver)
+
+    # Ensure the Favorite tag is on entry_full
+    library.add_tags_to_entry(1, entry_full.id)
+
+    # Select the single entry
+    qt_driver.select_item(entry_full.id, append=False, bridge=False)
+    panel.update_widgets()
+
+    # FieldContainer should hide all containers
+    assert len(panel.fields.containers) == 3
+    for i, container in enumerate(panel.fields.containers):
+        match i:
+            case 0:
+                # Check if the container is the Meta Tags category
+                assert container.title == f"<h4>{library.get_tag(2).name}</h4>"
+            case 1:
+                # Check if the container is the Tags category
+                assert container.title == "<h4>Tags</h4>"
+            case 2:
+                # Make sure the container isn't a duplicate Tags category
+                assert container.title != "<h4>Tags</h4>"
+
+
+def test_custom_tag_category(qt_driver, library, entry_full):
+    panel = PreviewPanel(library, qt_driver)
+
+    # Set tag 1000 (foo) as a category
+    tag = library.get_tag(1000)
+    tag.is_category = True
+    library.update_tag(
+        tag,
+    )
+
+    # Ensure the Favorite tag is on entry_full
+    library.add_tags_to_entry(1, entry_full.id)
+
+    # Select the single entry
+    qt_driver.select_item(entry_full.id, append=False, bridge=False)
+    panel.update_widgets()
+
+    # FieldContainer should hide all containers
+    assert len(panel.fields.containers) == 3
+    for i, container in enumerate(panel.fields.containers):
+        match i:
+            case 0:
+                # Check if the container is the Meta Tags category
+                assert container.title == f"<h4>{library.get_tag(2).name}</h4>"
+            case 1:
+                # Check if the container is the custom "foo" category
+                assert container.title == f"<h4>{tag.name}</h4>"
+            case 2:
+                # Make sure the container isn't a plain Tags category
+                assert container.title != "<h4>Tags</h4>"
