@@ -158,6 +158,8 @@
     "menu.file.close_library": "&Close Library",
     "menu.file.new_library": "New Library",
     "menu.file.open_create_library": "&Open/Create Library",
+    "menu.file.open_recent_library": "Open Recent",
+    "menu.file.clear_recent_libraries": "Clear Recent",
     "menu.file.open_library": "Open Library",
     "menu.file.refresh_directories": "&Refresh Directories",
     "menu.file.save_backup": "&Save Library Backup",

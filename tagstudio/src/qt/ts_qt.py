@@ -289,6 +289,27 @@ class QtDriver(DriverMixin, QObject):
         open_library_action.setToolTip("Ctrl+O")
         file_menu.addAction(open_library_action)
 
+        self.open_recent_library_menu = QMenu(menu_bar)
+        Translations.translate_qobject(
+            self.open_recent_library_menu, "menu.file.open_recent_library"
+        )
+        # open_recent_library_menu.set
+        file_menu.addMenu(self.open_recent_library_menu)
+        self.update_recent_lib_menu()
+
+        open_on_start_action = QAction(self)
+        Translations.translate_qobject(open_on_start_action, "settings.open_library_on_start")
+        open_on_start_action.setCheckable(True)
+        open_on_start_action.setChecked(
+            bool(self.settings.value(SettingItems.START_LOAD_LAST, defaultValue=True, type=bool))
+        )
+        open_on_start_action.triggered.connect(
+            lambda checked: self.settings.setValue(SettingItems.START_LOAD_LAST, checked)
+        )
+        file_menu.addAction(open_on_start_action)
+
+        file_menu.addSeparator()
+
         save_library_backup_action = QAction(menu_bar)
         Translations.translate_qobject(save_library_backup_action, "menu.file.save_backup")
         save_library_backup_action.triggered.connect(
@@ -328,17 +349,6 @@ class QtDriver(DriverMixin, QObject):
         close_library_action.triggered.connect(self.close_library)
         file_menu.addAction(close_library_action)
         file_menu.addSeparator()
-
-        open_on_start_action = QAction(self)
-        Translations.translate_qobject(open_on_start_action, "settings.open_library_on_start")
-        open_on_start_action.setCheckable(True)
-        open_on_start_action.setChecked(
-            bool(self.settings.value(SettingItems.START_LOAD_LAST, defaultValue=True, type=bool))
-        )
-        open_on_start_action.triggered.connect(
-            lambda checked: self.settings.setValue(SettingItems.START_LOAD_LAST, checked)
-        )
-        file_menu.addAction(open_on_start_action)
 
         # Edit Menu ============================================================
         new_tag_action = QAction(menu_bar)
@@ -1264,6 +1274,65 @@ class QtDriver(DriverMixin, QObject):
 
         self.settings.endGroup()
         self.settings.sync()
+        self.update_recent_lib_menu()
+
+    def update_recent_lib_menu(self):
+        """Updates the recent library menu from the latest values from the settings file."""
+        actions: list[QAction] = []
+        lib_items: dict[str, tuple[str, str]] = {}
+
+        settings = self.settings
+        settings.beginGroup(SettingItems.LIBS_LIST)
+        for item_tstamp in settings.allKeys():
+            val = str(settings.value(item_tstamp, type=str))
+            cut_val = val
+            if len(val) > 45:
+                cut_val = f"{val[0:10]} ... {val[-10:]}"
+            lib_items[item_tstamp] = (val, cut_val)
+
+        # Sort lib_items by the key
+        libs_sorted = sorted(lib_items.items(), key=lambda item: item[0], reverse=True)
+        settings.endGroup()
+
+        # Create actions for each library
+        for library_key in libs_sorted:
+            path = Path(library_key[1][0])
+            action = QAction(self.open_recent_library_menu)
+            action.setText(str(path))
+            action.triggered.connect(lambda checked=False, p=path: self.open_library(p))
+            actions.append(action)
+
+        clear_recent_action = QAction(self.open_recent_library_menu)
+        Translations.translate_qobject(clear_recent_action, "menu.file.clear_recent_libraries")
+        clear_recent_action.triggered.connect(self.clear_recent_libs)
+        actions.append(clear_recent_action)
+
+        # Clear previous actions
+        for action in self.open_recent_library_menu.actions():
+            logger.info(action)
+            self.open_recent_library_menu.removeAction(action)
+
+        # Add new actions
+        for action in actions:
+            logger.info(action.text())
+            self.open_recent_library_menu.addAction(action)
+
+        # Only enable add "clear recent" if there are still recent libraries.
+        if len(actions) > 1:
+            self.open_recent_library_menu.setDisabled(False)
+            self.open_recent_library_menu.addSeparator()
+            self.open_recent_library_menu.addAction(clear_recent_action)
+        else:
+            self.open_recent_library_menu.setDisabled(True)
+
+    def clear_recent_libs(self):
+        """Clear the list of recent libraries from the settings file."""
+        settings = self.settings
+        settings.beginGroup(SettingItems.LIBS_LIST)
+        self.settings.remove("")
+        self.settings.endGroup()
+        self.settings.sync()
+        self.update_recent_lib_menu()
 
     def open_library(self, path: Path) -> None:
         """Open a TagStudio library."""
