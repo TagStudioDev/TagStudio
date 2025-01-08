@@ -91,9 +91,10 @@ class MediaPlayer(QWidget):
         self.media_btns_layout.addWidget(self.mute)
 
         self.volume_slider = QSlider()
-        self.volume_slider.setValue(50)
         self.volume_slider.setOrientation(Qt.Orientation.Horizontal)
-        self.volume_slider.sliderMoved.connect(self.volume_slider_changed)
+        self.volume_slider.valueChanged.connect(self.volume_slider_changed)
+        # set slider value to current volume
+        self.volume_slider.setValue(int(self.player.audioOutput().volume() * 100))
 
         self.media_btns_layout.addWidget(self.volume_slider)
 
@@ -143,7 +144,6 @@ class MediaPlayer(QWidget):
             self.volume_slider.setValue(int(self.player.audioOutput().volume() * 100))
         else:
             self.player.audioOutput().setMuted(True)
-            self.volume_slider.setValue(0)
 
     def playing_changed(self, playing: bool) -> None:
         self.load_play_pause_icon(playing)
@@ -218,5 +218,4 @@ class MediaPlayer(QWidget):
             self.position_label.setText(f"{current} / {duration}")
 
     def volume_slider_changed(self, position: int) -> None:
-        """Position is divided by 100 since volume is between 0.0f and 1.0f."""
         self.player.audioOutput().setVolume(position / 100)
