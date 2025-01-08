@@ -15,7 +15,6 @@ import re
 import sys
 import time
 import webbrowser
-from collections.abc import Sequence
 from pathlib import Path
 from queue import Queue
 
@@ -52,6 +51,8 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 from src.core.constants import (
+    TAG_ARCHIVED,
+    TAG_FAVORITE,
     VERSION,
     VERSION_BRANCH,
 )
@@ -88,6 +89,12 @@ from src.qt.widgets.panel import PanelModal
 from src.qt.widgets.preview_panel import PreviewPanel
 from src.qt.widgets.progress import ProgressWidget
 from src.qt.widgets.thumb_renderer import ThumbRenderer
+
+BADGE_TAGS = {
+    BadgeType.FAVORITE: TAG_FAVORITE,
+    BadgeType.ARCHIVED: TAG_ARCHIVED,
+}
+
 
 # SIGQUIT is not defined on Windows
 if sys.platform == "win32":
@@ -485,6 +492,17 @@ class QtDriver(DriverMixin, QObject):
         self.main_window.searchField.textChanged.connect(self.update_completions_list)
 
         self.preview_panel = PreviewPanel(self.lib, self)
+        self.preview_panel.fields.archived_updated.connect(
+            lambda hidden: self.update_badges(
+                {BadgeType.ARCHIVED: hidden}, origin_id=0, add_tags=False
+            )
+        )
+        self.preview_panel.fields.favorite_updated.connect(
+            lambda hidden: self.update_badges(
+                {BadgeType.FAVORITE: hidden}, origin_id=0, add_tags=False
+            )
+        )
+
         splitter = self.main_window.splitter
         splitter.addWidget(self.preview_panel)
 
@@ -919,6 +937,8 @@ class QtDriver(DriverMixin, QObject):
         page_index = max(0, min(page_index, self.pages_count - 1))
 
         self.filter.page_index = page_index
+        # TODO: Re-allow selecting entries across multiple pages at once.
+        # This works fine with additive selection but becomes a nightmare with bridging.
         self.filter_items()
 
     def remove_grid_item(self, grid_idx: int):
@@ -957,6 +977,7 @@ class QtDriver(DriverMixin, QObject):
     def select_item(self, item_id: int, append: bool, bridge: bool):
         """Select one or more items in the Thumbnail Grid."""
         logger.info("[QtDriver] Selecting Items:", item_id=item_id, append=append, bridge=bridge)
+
         if append:
             if item_id not in self.selected:
                 self.selected.append(item_id)
@@ -969,40 +990,45 @@ class QtDriver(DriverMixin, QObject):
                     if it.item_id == item_id:
                         it.thumb_button.set_selected(False)
 
+        #  TODO: Allow bridge selecting across pages.
         elif bridge and self.selected:
-            contents = self.frame_content
-            last_index = self.frame_content.index(self.selected[-1])
-            current_index = self.frame_content.index(item_id)
-            index_range: list = contents[
-                min(last_index, current_index) : max(last_index, current_index) + 1
-            ]
-            # Preserve bridge direction for correct appending order.
-            if last_index < current_index:
-                index_range.reverse()
-            for entry_id in index_range:
-                for it in self.item_thumbs:
-                    if it.item_id == entry_id:
-                        it.thumb_button.set_selected(True)
-                        if entry_id not in self.selected:
-                            self.selected.append(entry_id)
+            last_index = -1
+            current_index = -1
+            try:
+                contents = self.frame_content
+                last_index = self.frame_content.index(self.selected[-1])
+                current_index = self.frame_content.index(item_id)
+                index_range: list = contents[
+                    min(last_index, current_index) : max(last_index, current_index) + 1
+                ]
+
+                # Preserve bridge direction for correct appending order.
+                if last_index < current_index:
+                    index_range.reverse()
+                for entry_id in index_range:
+                    for it in self.item_thumbs:
+                        if it.item_id == entry_id:
+                            it.thumb_button.set_selected(True)
+                            if entry_id not in self.selected:
+                                self.selected.append(entry_id)
+            except Exception as e:
+                # TODO: Allow bridge selecting across pages.
+                logger.error(
+                    "[QtDriver] Previous selected item not on current page!",
+                    error=e,
+                    item_id=item_id,
+                    current_index=current_index,
+                    last_index=last_index,
+                )
 
         else:
             self.selected.clear()
             self.selected.append(item_id)
-            for it in self.item_thumbs:
-                if it.item_id == item_id:
-                    it.thumb_button.set_selected(True)
-                else:
-                    it.thumb_button.set_selected(False)
-
-        # NOTE: By using the preview panel's "set_tags_updated_slot" method,
-        # only the last of multiple identical item selections are connected.
-        # If attaching the slot to multiple duplicate selections is needed,
-        # just bypass the method and manually disconnect and connect the slots.
-        if len(self.selected) == 1:
-            for it in self.item_thumbs:
-                if it.item_id == item_id:
-                    self.preview_panel.fields.set_tags_updated_slot(it.refresh_badge)
+        for it in self.item_thumbs:
+            if it.item_id in self.selected:
+                it.thumb_button.set_selected(True)
+            else:
+                it.thumb_button.set_selected(False)
 
         self.set_macro_menu_viability()
         self.preview_panel.update_widgets()
@@ -1113,10 +1139,9 @@ class QtDriver(DriverMixin, QObject):
                 continue
             if not entry:
                 continue
+
             item_thumb.set_mode(ItemType.ENTRY)
             item_thumb.set_item_id(entry.id)
-
-            # TODO - show after item is rendered
             item_thumb.show()
             is_loading = True
             self.thumb_job_queue.put(
@@ -1162,18 +1187,28 @@ class QtDriver(DriverMixin, QObject):
             )
 
             # Restore Selected Borders
-            is_selected = (item_thumb.mode, item_thumb.item_id) in self.selected
+            is_selected = item_thumb.item_id in self.selected
             item_thumb.thumb_button.set_selected(is_selected)
 
-    def update_badges(self, item_ids: Sequence[int] = None):
-        if not item_ids:
-            # no items passed, update all items in grid
-            item_ids = range(min(len(self.item_thumbs), len(self.frame_content)))
+    def update_badges(self, badge_values: dict[BadgeType, bool], origin_id: int, add_tags=True):
+        """Update the tag badges for item_thumbs.
 
-        item_ids_ = set(item_ids)
+        Args:
+            badge_values(dict[BadgeType, bool]): The BadgeType and associated viability state.
+            origin_id(int): The ID of the item_thumb calling this method. If the ID is found as a
+                part of the current selection, or if the ID is 0, the the entire current selection
+                will be updated. Otherwise, only item_thumbs with that ID will be updated.
+            add_tags(bool): Flag determining if tags associated with the badges need to be added to
+                the items. Defaults to True.
+        """
+        item_ids = self.selected if (not origin_id or origin_id in self.selected) else [origin_id]
+
         for it in self.item_thumbs:
-            if it.item_id in item_ids_:
-                it.refresh_badge()
+            if it.item_id in item_ids:
+                for badge_type, value in badge_values.items():
+                    if add_tags:
+                        it.toggle_item_tag(it.item_id, value, BADGE_TAGS[badge_type])
+                    it.assign_badge(badge_type, value)
 
     def filter_items(self, filter: FilterState | None = None) -> None:
         if not self.lib.library_dir:
@@ -1189,13 +1224,9 @@ class QtDriver(DriverMixin, QObject):
         self.main_window.statusbar.repaint()
 
         # search the library
-
         start_time = time.time()
-
         results = self.lib.search_library(self.filter)
-
         logger.info("items to render", count=len(results))
-
         end_time = time.time()
 
         # inform user about completed search

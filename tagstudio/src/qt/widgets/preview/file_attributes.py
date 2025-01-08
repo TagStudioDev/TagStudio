@@ -12,7 +12,7 @@ from pathlib import Path
 import structlog
 from humanfriendly import format_size
 from PIL import ImageFont
-from PySide6.QtCore import Qt, Signal
+from PySide6.QtCore import Qt
 from PySide6.QtGui import QGuiApplication
 from PySide6.QtWidgets import (
     QLabel,
@@ -32,8 +32,6 @@ logger = structlog.get_logger(__name__)
 
 class FileAttributes(QWidget):
     """The Preview Panel Widget."""
-
-    tags_updated = Signal()
 
     def __init__(self, library: Library, driver: "QtDriver"):
         super().__init__()

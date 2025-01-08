@@ -7,7 +7,6 @@ import typing
 
 import structlog
 from PySide6.QtCore import Signal
-from src.core.constants import TAG_ARCHIVED, TAG_FAVORITE
 from src.core.library import Tag
 from src.core.library.alchemy.enums import FilterState
 from src.qt.flowlayout import FlowLayout
@@ -97,9 +96,6 @@ class TagBoxWidget(FieldWidget):
             "[TagBoxWidget] remove_tag",
             selected=self.driver.selected,
         )
-
-        if tag_id in (TAG_FAVORITE, TAG_ARCHIVED):
-            self.driver.update_badges(self.driver.selected)
 
         for entry_id in self.driver.selected:
             self.driver.lib.remove_tags_from_entry(entry_id, tag_id)

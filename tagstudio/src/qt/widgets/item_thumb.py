@@ -7,6 +7,7 @@ from enum import Enum
 from functools import wraps
 from pathlib import Path
 from typing import TYPE_CHECKING
+from warnings import catch_warnings
 
 import structlog
 from PIL import Image, ImageQt
@@ -437,18 +438,10 @@ class ItemThumb(FlowWidget):
 
     def update_clickable(self, clickable: typing.Callable):
         """Updates attributes of a thumbnail element."""
-        if self.thumb_button.is_connected:
-            self.thumb_button.pressed.disconnect()
         if clickable:
+            with catch_warnings(record=True):
+                self.thumb_button.pressed.disconnect()
             self.thumb_button.pressed.connect(clickable)
-            self.thumb_button.is_connected = True
-
-    def refresh_badge(self, entry_id: int | None = None):
-        entry = self.lib.get_entry_full(self.item_id)
-        if not entry:
-            return
-        self.assign_badge(BadgeType.ARCHIVED, entry.is_archived)
-        self.assign_badge(BadgeType.FAVORITE, entry.is_favorite)
 
     def set_item_id(self, item_id: int):
         self.item_id = item_id
@@ -489,20 +482,9 @@ class ItemThumb(FlowWidget):
             return
 
         toggle_value = self.badges[badge_type].isChecked()
-
         self.badge_active[badge_type] = toggle_value
-        tag_id = BADGE_TAGS[badge_type]
-
-        # check if current item is selected. if so, update all selected items
-        if self.item_id in self.driver.selected:
-            items_to_update = self.driver.selected
-        else:
-            items_to_update = [self.item_id]
-
-        for item_id in items_to_update:
-            self.toggle_item_tag(item_id, toggle_value, tag_id)
-
-        self.driver.update_badges(items_to_update)
+        badge_values: dict[BadgeType, bool] = {badge_type: toggle_value}
+        self.driver.update_badges(badge_values, self.item_id)
 
     def toggle_item_tag(
         self,

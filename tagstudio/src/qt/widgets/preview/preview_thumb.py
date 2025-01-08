@@ -11,7 +11,7 @@ import cv2
 import rawpy
 import structlog
 from PIL import Image, UnidentifiedImageError
-from PySide6.QtCore import QBuffer, QByteArray, QSize, Qt, Signal
+from PySide6.QtCore import QBuffer, QByteArray, QSize, Qt
 from PySide6.QtGui import QAction, QMovie, QResizeEvent
 from PySide6.QtWidgets import (
     QHBoxLayout,
@@ -38,8 +38,6 @@ logger = structlog.get_logger(__name__)
 
 class PreviewThumb(QWidget):
     """The Preview Panel Widget."""
-
-    tags_updated = Signal()
 
     def __init__(self, library: Library, driver: "QtDriver"):
         super().__init__()

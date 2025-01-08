@@ -8,7 +8,7 @@ from pathlib import Path
 from warnings import catch_warnings
 
 import structlog
-from PySide6.QtCore import Qt, Signal
+from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QHBoxLayout,
     QPushButton,
@@ -36,8 +36,6 @@ logger = structlog.get_logger(__name__)
 
 class PreviewPanel(QWidget):
     """The Preview Panel Widget."""
-
-    tags_updated = Signal()
 
     # TODO: There should be a global button theme somewhere.
     button_style = (
@@ -149,15 +147,16 @@ class PreviewPanel(QWidget):
             # One Item Selected
             elif len(self.driver.selected) == 1:
                 entry: Entry = self.lib.get_entry(self.driver.selected[0])
+                entry_id = self.driver.selected[0]
                 filepath: Path = self.lib.library_dir / entry.path
                 ext: str = filepath.suffix.lower()
 
                 stats: dict = self.thumb.update_preview(filepath, ext)
                 self.file_attrs.update_stats(filepath, ext, stats)
                 self.file_attrs.update_date_label(filepath)
-                self.fields.update_from_entry(entry)
-                self.update_add_tag_button(entry)
-                self.update_add_field_button(entry)
+                self.fields.update_from_entry(entry_id)
+                self.update_add_tag_button(entry_id)
+                self.update_add_field_button(entry_id)
 
                 self.add_tag_button.setEnabled(True)
                 self.add_field_button.setEnabled(True)
@@ -181,7 +180,7 @@ class PreviewPanel(QWidget):
             traceback.print_exc()
             return False
 
-    def update_add_field_button(self, entry: Entry | None = None):
+    def update_add_field_button(self, entry_id: int | None = None):
         with catch_warnings(record=True):
             self.add_field_modal.done.disconnect()
             self.add_field_button.clicked.disconnect()
@@ -189,12 +188,12 @@ class PreviewPanel(QWidget):
         self.add_field_modal.done.connect(
             lambda f: (
                 self.fields.add_field_to_selected(f),
-                (self.fields.update_from_entry(entry) if entry else ()),
+                (self.fields.update_from_entry(entry_id) if entry_id else ()),
             )
         )
         self.add_field_button.clicked.connect(self.add_field_modal.show)
 
-    def update_add_tag_button(self, entry: Entry = None):
+    def update_add_tag_button(self, entry_id: int = None):
         with catch_warnings(record=True):
             self.add_tag_modal.widget.tag_chosen.disconnect()
             self.add_tag_button.clicked.disconnect()
@@ -202,7 +201,7 @@ class PreviewPanel(QWidget):
         self.add_tag_modal.widget.tag_chosen.connect(
             lambda t: (
                 self.fields.add_tags_to_selected(t),
-                (self.fields.update_from_entry(entry) if entry else ()),
+                (self.fields.update_from_entry(entry_id) if entry_id else ()),
             )
         )
 

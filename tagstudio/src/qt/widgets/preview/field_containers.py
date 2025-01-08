@@ -20,6 +20,10 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
+from src.core.constants import (
+    TAG_ARCHIVED,
+    TAG_FAVORITE,
+)
 from src.core.enums import Theme
 from src.core.library.alchemy.fields import (
     BaseField,
@@ -46,7 +50,8 @@ logger = structlog.get_logger(__name__)
 class FieldContainers(QWidget):
     """The Preview Panel Widget."""
 
-    tags_updated = Signal()
+    favorite_updated = Signal(bool)
+    archived_updated = Signal(bool)
 
     def __init__(self, library: Library, driver: "QtDriver"):
         super().__init__()
@@ -104,16 +109,11 @@ class FieldContainers(QWidget):
         root_layout.setContentsMargins(0, 0, 0, 0)
         root_layout.addWidget(self.scroll_area)
 
-    def update_from_entry(self, entry: Entry):
+    def update_from_entry(self, entry_id: int, update_badges: bool = True):
         """Update tags and fields from a single Entry source."""
-        logger.info(
-            "[FieldContainers] Updating Selection",
-            path=entry.path,
-            fields=entry.fields,
-            tags=entry.tags,
-        )
+        logger.warning("[FieldContainers] Updating Selection", entry_id=entry_id)
 
-        self.cached_entries = [self.lib.get_entry_full(entry.id)]
+        self.cached_entries = [self.lib.get_entry_full(entry_id)]
         entry_ = self.cached_entries[0]
         container_len: int = len(entry_.fields)
         container_index = 0
@@ -127,7 +127,9 @@ class FieldContainers(QWidget):
                 )
                 container_index += 1
                 container_len += 1
-        self.tags_updated.emit()
+        if update_badges:
+            self.emit_badge_signals({t.id for t in entry_.tags})
+
         # Write field container(s)
         for index, field in enumerate(entry_.fields, start=container_index):
             self.write_container(index, field, is_mixed=False)
@@ -224,7 +226,7 @@ class FieldContainers(QWidget):
         for key in empty:
             cats.pop(key, None)
 
-        logger.info("[FieldContainers] Tag Categories", cats=cats)
+        logger.info("[FieldContainers] Tag Categories", categories=cats)
         return cats
 
     def remove_field_prompt(self, name: str) -> str:
@@ -247,11 +249,13 @@ class FieldContainers(QWidget):
                     field_id=field_item.data(Qt.ItemDataRole.UserRole),
                 )
 
-    def add_tags_to_selected(self, tags: list[int]):
+    def add_tags_to_selected(self, tags: int | list[int]):
         """Add list of tags to one or more selected items.
 
         Uses the current driver selection, NOT the field containers cache.
         """
+        if isinstance(tags, int):
+            tags = [tags]
         logger.info(
             "[FieldContainers][add_tags_to_selected]",
             selected=self.driver.selected,
@@ -262,7 +266,7 @@ class FieldContainers(QWidget):
                 entry_id,
                 tag_ids=tags,
             )
-        self.tags_updated.emit()
+        self.emit_badge_signals(tags, emit_on_absent=False)
 
     def write_container(self, index: int, field: BaseField, is_mixed: bool = False):
         """Update/Create data for a FieldContainer.
@@ -304,7 +308,7 @@ class FieldContainers(QWidget):
                     save_callback=(
                         lambda content: (
                             self.update_field(field, content),
-                            self.update_from_entry(self.cached_entries[0]),
+                            self.update_from_entry(self.cached_entries[0].id),
                         )
                     ),
                 )
@@ -318,7 +322,7 @@ class FieldContainers(QWidget):
                         prompt=self.remove_field_prompt(field.type.type.value),
                         callback=lambda: (
                             self.remove_field(field),
-                            self.update_from_entry(self.cached_entries[0]),
+                            self.update_from_entry(self.cached_entries[0].id),
                         ),
                     )
                 )
@@ -343,7 +347,7 @@ class FieldContainers(QWidget):
                     save_callback=(
                         lambda content: (
                             self.update_field(field, content),
-                            self.update_from_entry(self.cached_entries[0]),
+                            self.update_from_entry(self.cached_entries[0].id),
                         )
                     ),
                 )
@@ -353,7 +357,7 @@ class FieldContainers(QWidget):
                         prompt=self.remove_field_prompt(field.type.name),
                         callback=lambda: (
                             self.remove_field(field),
-                            self.update_from_entry(self.cached_entries[0]),
+                            self.update_from_entry(self.cached_entries[0].id),
                         ),
                     )
                 )
@@ -381,7 +385,7 @@ class FieldContainers(QWidget):
                         prompt=self.remove_field_prompt(field.type.name),
                         callback=lambda: (
                             self.remove_field(field),
-                            self.update_from_entry(self.cached_entries[0]),
+                            self.update_from_entry(self.cached_entries[0].id),
                         ),
                     )
                 )
@@ -402,7 +406,7 @@ class FieldContainers(QWidget):
                     prompt=self.remove_field_prompt(field.type.name),
                     callback=lambda: (
                         self.remove_field(field),
-                        self.update_from_entry(self.cached_entries[0]),
+                        self.update_from_entry(self.cached_entries[0].id),
                     ),
                 )
             )
@@ -449,7 +453,9 @@ class FieldContainers(QWidget):
                 )
                 container.set_inner_widget(inner_widget)
 
-            inner_widget.updated.connect(lambda: (self.update_from_entry(self.cached_entries[0])))
+            inner_widget.updated.connect(
+                lambda: (self.update_from_entry(self.cached_entries[0].id, update_badges=True))
+            )
         else:
             text = "<i>Mixed Data</i>"
             inner_widget = TextWidget("Mixed Tags", text)
@@ -500,10 +506,15 @@ class FieldContainers(QWidget):
         if result == 3:  # TODO - what is this magic number?
             callback()
 
-    def set_tags_updated_slot(self, slot: object):
-        """Replacement for tag_callback."""
-        with catch_warnings(record=True):
-            self.tags_updated.disconnect()
+    def emit_badge_signals(self, tag_ids: list[int] | set[int], emit_on_absent: bool = True):
+        """Emit any connected signals for updating badge icons."""
+        logger.info("[emit_badge_signals] Emitting", tag_ids=tag_ids, emit_on_absent=emit_on_absent)
+        if TAG_ARCHIVED in tag_ids:
+            self.archived_updated.emit(True)  # noqa: FBT003
+        elif emit_on_absent:
+            self.archived_updated.emit(False)  # noqa: FBT003
 
-        logger.info("[FieldContainers][set_tags_updated_slot] Setting tags updated slot")
-        self.tags_updated.connect(slot)
+        if TAG_FAVORITE in tag_ids:
+            self.favorite_updated.emit(True)  # noqa: FBT003
+        elif emit_on_absent:
+            self.favorite_updated.emit(False)  # noqa: FBT003
