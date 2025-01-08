@@ -1,17 +1,19 @@
 # Copyright (C) 2024 Travis Abendshien (CyanVoxel).
 # Licensed under the GPL-3.0 License.
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
-
-
+import functools
+import hashlib
 import math
 import struct
 import zipfile
 from copy import deepcopy
+from functools import lru_cache
 from io import BytesIO
 from pathlib import Path
 
 import cv2
 import numpy as np
+import open3d
 import pillow_jxl  # noqa: F401
 import rawpy
 import structlog
@@ -44,6 +46,8 @@ from PySide6.QtCore import (
 from PySide6.QtGui import QGuiApplication, QImage, QPainter, QPixmap
 from PySide6.QtPdf import QPdfDocument, QPdfDocumentRenderOptions
 from PySide6.QtSvg import QSvgRenderer
+
+from core.open3d_renderer import Open3DRenderer
 from src.core.constants import FONT_SAMPLE_SIZES, FONT_SAMPLE_TEXT
 from src.core.exceptions import NoRendererError
 from src.core.media_types import MediaCategories, MediaType
@@ -617,6 +621,9 @@ class ThumbRenderer(QObject):
                 logger.error("Couldn't render thumbnail", filepath=filepath, error=type(e).__name__)
         return im
 
+    def _render_using_open3d(self, filepath: Path, size: tuple[int, int]) -> Image.Image:
+        return Open3DRenderer().render(filepath, size)
+
     @classmethod
     def _open_doc_thumb(cls, filepath: Path) -> Image.Image:
         """Extract and render a thumbnail for an OpenDocument file.
@@ -1143,6 +1150,9 @@ class ThumbRenderer(QObject):
                     ext, MediaCategories.SOURCE_ENGINE_TYPES, mime_fallback=True
                 ):
                     image = self._source_engine(_filepath)
+                # Model Files ==================================================
+                elif MediaCategories.is_ext_in_category(ext, MediaCategories.MODEL_TYPES, mime_fallback=True):
+                    image = self._render_using_open3d(_filepath, (adj_size, adj_size))
                 # No Rendered Thumbnail ========================================
                 if not image:
                     raise NoRendererError
