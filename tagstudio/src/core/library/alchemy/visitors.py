@@ -147,12 +147,15 @@ class SQLBoolExpressionBuilder(BaseVisitor[ColumnElement[bool]]):
     def __entry_has_all_tags(self, tag_ids: list[int]) -> ColumnElement[bool]:
         """Returns Binary Expression that is true if the Entry has all provided tag ids."""
         # Relational Division Query
-        return Entry.id.in_(
-            select(Entry.id)
-            .outerjoin(TagBoxField)
-            .outerjoin(TagField)
+        # The changes to this technically introduce a bug
+        # which occurs when the tags are split across multiple tag box fields,
+        # but since those will be removed soon the bug will also disappear soon
+        # (also this method isn't used in every query that has an AND,
+        #  so the bug doesn't even have that many chances to rear its ugly head)
+        return TagBoxField.id.in_(
+            select(TagField.field_id)
             .where(TagField.tag_id.in_(tag_ids))
-            .group_by(Entry.id)
+            .group_by(TagField.field_id)
             .having(func.count(distinct(TagField.tag_id)) == len(tag_ids))
         )
 
