@@ -2,7 +2,7 @@
 # Licensed under the GPL-3.0 License.
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
-
+import hashlib
 import math
 import struct
 import zipfile
@@ -44,7 +44,7 @@ from PySide6.QtCore import (
 from PySide6.QtGui import QGuiApplication, QImage, QPainter, QPixmap
 from PySide6.QtPdf import QPdfDocument, QPdfDocumentRenderOptions
 from PySide6.QtSvg import QSvgRenderer
-from src.core.constants import FONT_SAMPLE_SIZES, FONT_SAMPLE_TEXT
+from src.core.constants import FONT_SAMPLE_SIZES, FONT_SAMPLE_TEXT, THUMB_CACHE_NAME, TS_FOLDER_NAME
 from src.core.exceptions import NoRendererError
 from src.core.media_types import MediaCategories, MediaType
 from src.core.palette import ColorType, UiColor, get_ui_color
@@ -75,9 +75,11 @@ class ThumbRenderer(QObject):
     updated = Signal(float, QPixmap, QSize, Path, str)
     updated_ratio = Signal(float)
 
-    def __init__(self) -> None:
+    def __init__(self, library) -> None:
         """Initialize the class."""
         super().__init__()
+        self.lib = library
+        self.cached_resolution: int = 512
 
         # Cached thumbnail elements.
         # Key: Size + Pixel Ratio Tuple + Radius Scale
@@ -404,7 +406,7 @@ class ThumbRenderer(QObject):
         image: Image.Image,
         edge: tuple[Image.Image, Image.Image],
         faded: bool = False,
-    ):
+    ) -> Image.Image:
         """Apply a given edge effect to an image.
 
         Args:
@@ -999,7 +1001,7 @@ class ThumbRenderer(QObject):
     def render(
         self,
         timestamp: float,
-        filepath: str | Path,
+        filepath: Path | str,
         base_size: tuple[int, int],
         pixel_ratio: float,
         is_loading: bool = False,
@@ -1017,56 +1019,176 @@ class ThumbRenderer(QObject):
             is_grid_thumb (bool): Is this a thumbnail for the thumbnail grid?
                 Or else the Preview Pane?
             update_on_ratio_change (bool): Should an updated ratio signal be sent?
-
         """
+        render_mask_and_edge: bool = True
+        cached_path: Path | None = None
         adj_size = math.ceil(max(base_size[0], base_size[1]) * pixel_ratio)
-        image: Image.Image = None
-        pixmap: QPixmap = None
-        final: Image.Image = None
-        _filepath: Path = Path(filepath)
-        resampling_method = Image.Resampling.BILINEAR
-
         theme_color: UiColor = (
             UiColor.THEME_LIGHT
             if QGuiApplication.styleHints().colorScheme() == Qt.ColorScheme.Light
             else UiColor.THEME_DARK
         )
+        if isinstance(filepath, str):
+            filepath = Path(filepath)
 
-        # Initialize "Loading" thumbnail
-        loading_thumb: Image.Image = self._get_icon(
-            "thumb_loading", theme_color, (adj_size, adj_size), pixel_ratio
-        )
-
-        def render_default() -> Image.Image:
-            if update_on_ratio_change:
-                self.updated_ratio.emit(1)
+        def render_default(size: tuple[int, int], pixel_ratio: float) -> Image.Image:
             im = self._get_icon(
-                name=self._get_resource_id(_filepath),
+                name=self._get_resource_id(filepath),
                 color=theme_color,
-                size=(adj_size, adj_size),
+                size=size,
                 pixel_ratio=pixel_ratio,
             )
             return im
 
-        def render_unlinked() -> Image.Image:
-            if update_on_ratio_change:
-                self.updated_ratio.emit(1)
+        def render_unlinked(size: tuple[int, int], pixel_ratio: float) -> Image.Image:
             im = self._get_icon(
                 name="broken_link_icon",
                 color=UiColor.RED,
-                size=(adj_size, adj_size),
+                size=size,
                 pixel_ratio=pixel_ratio,
             )
             return im
 
-        if is_loading:
-            final = loading_thumb.resize((adj_size, adj_size), resample=Image.Resampling.BILINEAR)
-            qim = ImageQt.ImageQt(final)
-            pixmap = QPixmap.fromImage(qim)
-            pixmap.setDevicePixelRatio(pixel_ratio)
-            if update_on_ratio_change:
-                self.updated_ratio.emit(1)
-        elif _filepath:
+        image: Image.Image | None = None
+        # Try to get a non-loading thumbnail for the grid.
+        if not is_loading and is_grid_thumb and filepath and filepath != ".":
+            # Attempt to retrieve cached image from disk
+            hash_value = hashlib.shake_128(str(filepath).encode("utf-8")).hexdigest(8)
+            if hash_value and self.lib.library_dir:
+                cached_path = (
+                    self.lib.library_dir / TS_FOLDER_NAME / THUMB_CACHE_NAME / f"{hash_value}.webp"
+                )
+            if cached_path.exists() and not cached_path.is_dir():
+                try:
+                    image = Image.open(cached_path)
+                    if not image:
+                        raise UnidentifiedImageError
+                except Exception as e:
+                    logger.error(
+                        "[ThumbRenderer] Can't open cached thumbnail!", path=cached_path, error=e
+                    )
+                    # If the cached thumbnail failed, try rendering a new one
+                    image = self._render(
+                        timestamp,
+                        filepath,
+                        (self.cached_resolution, self.cached_resolution),
+                        1,
+                        is_grid_thumb,
+                        save_to_file=cached_path,
+                    )
+            else:
+                # Render from file, return result, and try to save a cached version.
+                # TODO: Audio waveforms are dynamically sized based on the base_size, so hardcoding
+                # the resolution breaks that.
+                image = self._render(
+                    timestamp,
+                    filepath,
+                    (self.cached_resolution, self.cached_resolution),
+                    1,
+                    is_grid_thumb,
+                    save_to_file=cached_path,
+                )
+                # If the normal renderer failed, fallback the the defaults
+                # (with native non-cached sizing!)
+                if not image:
+                    image = (
+                        render_unlinked((adj_size, adj_size), pixel_ratio)
+                        if not filepath.exists()
+                        else render_default((adj_size, adj_size), pixel_ratio)
+                    )
+                    render_mask_and_edge = False
+
+            # Apply the mask and edge
+            if image:
+                image = self._resize_image(image, (adj_size, adj_size))
+                if render_mask_and_edge:
+                    mask = self._get_mask((adj_size, adj_size), pixel_ratio)
+                    edge: tuple[Image.Image, Image.Image] = self._get_edge(
+                        (adj_size, adj_size), pixel_ratio
+                    )
+                    image = self._apply_edge(
+                        four_corner_gradient(image, (adj_size, adj_size), mask), edge
+                    )
+
+        # A loading thumbnail (cached in memory)
+        elif is_loading:
+            # Initialize "Loading" thumbnail
+            loading_thumb: Image.Image = self._get_icon(
+                "thumb_loading", theme_color, (adj_size, adj_size), pixel_ratio
+            )
+            image = loading_thumb.resize((adj_size, adj_size), resample=Image.Resampling.BILINEAR)
+
+        # A full preview image (never cached)
+        elif not is_grid_thumb:
+            image = self._render(timestamp, filepath, base_size, pixel_ratio)
+            if not image:
+                image = (
+                    render_unlinked((512, 512), 2)
+                    if not filepath.exists()
+                    else render_default((512, 512), 2)
+                )
+                render_mask_and_edge = False
+            mask = self._get_mask(image.size, pixel_ratio, scale_radius=True)
+            bg = Image.new("RGBA", image.size, (0, 0, 0, 0))
+            bg.paste(image, mask=mask.getchannel(0))
+            image = bg
+
+        # If the image couldn't be rendered, use a default media image.
+        if not image:
+            image = Image.new("RGBA", (128, 128), color="#FF00FF")
+
+        # Convert the final image to a pixmap to emit.
+        qim = ImageQt.ImageQt(image)
+        pixmap = QPixmap.fromImage(qim)
+        pixmap.setDevicePixelRatio(pixel_ratio)
+        self.updated_ratio.emit(image.size[0] / image.size[1])
+        if pixmap:
+            self.updated.emit(
+                timestamp,
+                pixmap,
+                QSize(
+                    math.ceil(adj_size / pixel_ratio),
+                    math.ceil(image.size[1] / pixel_ratio),
+                ),
+                filepath,
+                filepath.suffix.lower(),
+            )
+        else:
+            self.updated.emit(
+                timestamp,
+                QPixmap(),
+                QSize(*base_size),
+                filepath,
+                filepath.suffix.lower(),
+            )
+
+    def _render(
+        self,
+        timestamp: float,
+        filepath: str | Path,
+        base_size: tuple[int, int],
+        pixel_ratio: float,
+        is_grid_thumb: bool = False,
+        save_to_file: Path | None = None,
+    ) -> Image.Image | None:
+        """Render a thumbnail or preview image.
+
+        Args:
+            timestamp (float): The timestamp for which this this job was dispatched.
+            filepath (str | Path): The path of the file to render a thumbnail for.
+            base_size (tuple[int,int]): The unmodified base size of the thumbnail.
+            pixel_ratio (float): The screen pixel ratio.
+            is_grid_thumb (bool): Is this a thumbnail for the thumbnail grid?
+                Or else the Preview Pane?
+            save_to_file(Path | None): A filepath to optionally save the output to.
+
+        """
+        adj_size = math.ceil(max(base_size[0], base_size[1]) * pixel_ratio)
+        image: Image.Image = None
+        _filepath: Path = Path(filepath)
+        savable_media_type: bool = True
+
+        if _filepath:
             try:
                 # Missing Files ================================================
                 if not _filepath.exists():
@@ -1121,6 +1243,7 @@ class ThumbRenderer(QObject):
                     image = self._audio_album_thumb(_filepath, ext)
                     if image is None:
                         image = self._audio_waveform_thumb(_filepath, ext, adj_size, pixel_ratio)
+                        savable_media_type = False
                         if image is not None:
                             image = self._apply_overlay_color(image, UiColor.GREEN)
                 # Ebooks =======================================================
@@ -1147,42 +1270,18 @@ class ThumbRenderer(QObject):
                 if not image:
                     raise NoRendererError
 
-                orig_x, orig_y = image.size
-                new_x, new_y = (adj_size, adj_size)
+                if image:
+                    image = self._resize_image(image, (adj_size, adj_size))
 
-                if orig_x > orig_y:
-                    new_x = adj_size
-                    new_y = math.ceil(adj_size * (orig_y / orig_x))
-                elif orig_y > orig_x:
-                    new_y = adj_size
-                    new_x = math.ceil(adj_size * (orig_x / orig_y))
-
-                if update_on_ratio_change:
-                    self.updated_ratio.emit(new_x / new_y)
-
-                resampling_method = (
-                    Image.Resampling.NEAREST
-                    if max(image.size[0], image.size[1]) < max(base_size[0], base_size[1])
-                    else Image.Resampling.BILINEAR
-                )
-                image = image.resize((new_x, new_y), resample=resampling_method)
-                mask: Image.Image = None
-                if is_grid_thumb:
-                    mask = self._get_mask((adj_size, adj_size), pixel_ratio)
-                    edge: tuple[Image.Image, Image.Image] = self._get_edge(
-                        (adj_size, adj_size), pixel_ratio
+                if save_to_file and savable_media_type and image:
+                    # Ensure thumbnail cache path exists
+                    Path(self.lib.library_dir / TS_FOLDER_NAME / THUMB_CACHE_NAME).mkdir(
+                        exist_ok=True
                     )
-                    final = self._apply_edge(
-                        four_corner_gradient(image, (adj_size, adj_size), mask),
-                        edge,
-                    )
-                else:
-                    mask = self._get_mask(image.size, pixel_ratio, scale_radius=True)
-                    final = Image.new("RGBA", image.size, (0, 0, 0, 0))
-                    final.paste(image, mask=mask.getchannel(0))
+                    image.save(save_to_file, mode="RGBA")
 
             except FileNotFoundError:
-                final = render_unlinked()
+                image = None
             except (
                 UnidentifiedImageError,
                 DecompressionBombError,
@@ -1190,33 +1289,33 @@ class ThumbRenderer(QObject):
                 ChildProcessError,
             ) as e:
                 logger.error("Couldn't render thumbnail", filepath=filepath, error=type(e).__name__)
-                final = render_default()
+                image = None
             except NoRendererError:
-                final = render_default()
+                image = None
+            except Exception as e:
+                logger.error(
+                    "UNKNOWN: Couldn't render thumbnail", filepath=filepath, error=type(e).__name__
+                )
+                image = None
 
-            qim = ImageQt.ImageQt(final)
-            if image:
-                image.close()
-            pixmap = QPixmap.fromImage(qim)
-            pixmap.setDevicePixelRatio(pixel_ratio)
+        return image
 
-        if pixmap:
-            self.updated.emit(
-                timestamp,
-                pixmap,
-                QSize(
-                    math.ceil(adj_size / pixel_ratio),
-                    math.ceil(final.size[1] / pixel_ratio),
-                ),
-                _filepath,
-                _filepath.suffix.lower(),
-            )
+    def _resize_image(self, image, size: tuple[int, int]) -> Image.Image:
+        orig_x, orig_y = image.size
+        new_x, new_y = size
 
-        else:
-            self.updated.emit(
-                timestamp,
-                QPixmap(),
-                QSize(*base_size),
-                _filepath,
-                _filepath.suffix.lower(),
-            )
+        if orig_x > orig_y:
+            new_x = size[0]
+            new_y = math.ceil(size[1] * (orig_y / orig_x))
+        elif orig_y > orig_x:
+            new_y = size[1]
+            new_x = math.ceil(size[0] * (orig_x / orig_y))
+
+        resampling_method = (
+            Image.Resampling.NEAREST
+            if max(image.size[0], image.size[1]) < max(size)
+            else Image.Resampling.BILINEAR
+        )
+        image = image.resize((new_x, new_y), resample=resampling_method)
+
+        return image

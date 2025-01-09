@@ -74,7 +74,7 @@ class PreviewThumb(QWidget):
 
         self.preview_vid = VideoPlayer(driver)
         self.preview_vid.hide()
-        self.thumb_renderer = ThumbRenderer()
+        self.thumb_renderer = ThumbRenderer(self.lib)
         self.thumb_renderer.updated.connect(lambda ts, i, s: (self.preview_img.setIcon(i)))
         self.thumb_renderer.updated_ratio.connect(
             lambda ratio: (

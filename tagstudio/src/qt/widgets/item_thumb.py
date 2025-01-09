@@ -202,7 +202,7 @@ class ItemThumb(FlowWidget):
         self.thumb_layout.addWidget(self.bottom_container)
 
         self.thumb_button = ThumbButton(self.thumb_container, thumb_size)
-        self.renderer = ThumbRenderer()
+        self.renderer = ThumbRenderer(self.lib)
         self.renderer.updated.connect(
             lambda timestamp, image, size, filename, ext: (
                 self.update_thumb(timestamp, image=image),
