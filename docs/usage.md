@@ -11,19 +11,20 @@ In order to scan for new files or file changes, you’ll need to manually go to 
 !!! note
     In the future, library refreshing will also be automatically done in the background, or additionally on app startup.
 
-## Adding Metadata to Entries
+## Adding Tags to File Entries
+Click the "Add Tag" button at the bottom of the preview panel with one or more tags selected. Search for existing inside the new dialog popup or create a new one from. Click the “+” button next to whichever tags you want to add. Alternatively, after you search for a tag, press the Enter/Return key to add the first item in the list. Press Enter/Return once more to close the dialog box.
 
-To add a metadata field to a file entry, start by clicking the “Add Field” button under the file preview in the right-hand preview panel. From the dropdown menu, select the type of metadata field you’d like to add to the entry.
+To remove a tag from a file entry, hover over the tag in the preview panel and click on the "-" icon that appears.
+
+## Adding Metadata Fields to File Entries
+
+To add a metadata field to a file entry, start by clicking the “Add Field” button at the bottom of the preview panel. From the dropdown menu, select the type of metadata field you’d like to add to the entry.
 
 ## Editing Metadata Fields
 
 ### Text Line / Text Box
 
 Hover over the field and click the pencil icon. From there, add or edit text in the dialog box popup.
-
-### Tag Box
-
-Click the “+” button at the end of the Tags list, and search for tags to add inside the new dialog popup. Click the “+” button next to whichever tags you want to add. Alternatively, after you search for a tag, press the Enter/Return key to add the add the first item in the list. Press Enter/Return once more to close the dialog box
 
 !!! warning
     Keyboard control and navigation is currently _very_ buggy, but will be improved in future versions.
@@ -50,6 +51,10 @@ Inevitably, some of the files inside your library will be renamed, moved, or del
 
 !!! warning
     If multiple matches for a moved file are found (matches are currently defined as files with a matching filename as the original), TagStudio will currently ignore the match groups. Adding a GUI for manual selection, as well as smarter automated relinking, are top priorities for future versions.
+
+## Deleting Tags
+
+To delete a tag from your library, go to File -> Tag Manager, hover over the tag you wish to delete, and click the "-" icon that appears. You will be prompted to make sure you wish to delete this tag from your library and across all file entries.
 
 ## Saving the Library
 
