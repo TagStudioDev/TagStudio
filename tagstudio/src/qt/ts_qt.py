@@ -239,7 +239,11 @@ class QtDriver(DriverMixin, QObject):
         self.main_window.dragMoveEvent = self.drag_move_event  # type: ignore[method-assign]
         self.main_window.dropEvent = self.drop_event  # type: ignore[method-assign]
 
-        splash_pixmap = QPixmap(":/images/splash.png")
+        splash_name = "splash_goo_gears"
+        splash_pixmap: QPixmap = self.rm.get(splash_name)
+        if not splash_pixmap:
+            splash_pixmap = self.rm.get("splash_goo_gears")
+
         splash_pixmap.setDevicePixelRatio(self.main_window.devicePixelRatio())
         splash_pixmap = splash_pixmap.scaledToWidth(
             math.floor(
@@ -255,8 +259,19 @@ class QtDriver(DriverMixin, QObject):
             Qt.TransformationMode.SmoothTransformation,
         )
         self.splash = QSplashScreen(splash_pixmap, Qt.WindowType.WindowStaysOnTopHint)
-        # self.splash.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
         self.splash.show()
+
+        path_result = self.evaluate_path(str(self.args.open).lstrip().rstrip())
+        # check status of library path evaluating
+        if path_result.success and path_result.library_path:
+            self.splash.showMessage(
+                Translations.translate_formatted(
+                    "splash.opening_library", library_path=path_result.library_path
+                ),
+                int(Qt.AlignmentFlag.AlignBottom | Qt.AlignmentFlag.AlignHCenter),
+                QColor("#9782ff"),
+            )
+            self.open_library(path_result.library_path)
 
         if os.name == "nt":
             appid = "cyanvoxel.tagstudio.9"
@@ -524,18 +539,6 @@ class QtDriver(DriverMixin, QObject):
         self.filter = FilterState.show_all()
         self.init_library_window()
         self.migration_modal: JsonMigrationModal = None
-
-        path_result = self.evaluate_path(str(self.args.open).lstrip().rstrip())
-        # check status of library path evaluating
-        if path_result.success and path_result.library_path:
-            self.splash.showMessage(
-                Translations.translate_formatted(
-                    "splash.opening_library", library_path=path_result.library_path
-                ),
-                int(Qt.AlignmentFlag.AlignBottom | Qt.AlignmentFlag.AlignHCenter),
-                QColor("#9782ff"),
-            )
-            self.open_library(path_result.library_path)
 
         app.exec()
         self.shutdown()

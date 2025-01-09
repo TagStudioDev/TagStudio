@@ -7,7 +7,11 @@ from typing import Any
 
 import structlog
 import ujson
-from PIL import Image
+from PIL import (
+    Image,
+    ImageQt,
+)
+from PySide6.QtGui import QPixmap
 
 logger = structlog.get_logger(__name__)
 
@@ -76,9 +80,12 @@ class ResourceManager:
                 elif res and res.get("mode") == "pil":
                     data = Image.open(ResourceManager._res_folder / "resources" / res.get("path"))
                     return data
-                elif res.get("mode") in ["qt"]:
-                    # TODO: Qt resource loading logic
-                    pass
+                elif res.get("mode") in ["qpixmap"]:
+                    data = Image.open(ResourceManager._res_folder / "resources" / res.get("path"))
+                    qim = ImageQt.ImageQt(data)
+                    pixmap = QPixmap.fromImage(qim)
+                    ResourceManager._cache[id] = pixmap
+                    return pixmap
             except FileNotFoundError:
                 path: Path = ResourceManager._res_folder / "resources" / res.get("path")
                 logger.error("[ResourceManager][ERROR]: Could not find resource: ", path)
