@@ -573,8 +573,11 @@ class Library:
 
             statement = statement.distinct(Entry.id)
 
+            start_time = time.time()
             query_count = select(func.count()).select_from(statement.alias("entries"))
             count_all: int = session.execute(query_count).scalar()
+            end_time = time.time()
+            logger.info(f"finished counting ({format_timespan(end_time-start_time)})")
 
             statement = statement.limit(search.limit).offset(search.offset)
 
