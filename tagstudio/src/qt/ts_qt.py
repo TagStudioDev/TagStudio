@@ -1126,6 +1126,8 @@ class QtDriver(DriverMixin, QObject):
 
         is_grid_thumb = True
         logger.info("[QtDriver] Loading Entries...")
+        # TODO: The full entries with joins don't need to be grabbed here.
+        # Use a method that only selects the frame content but doesn't include the joins.
         entries: list[Entry] = list(self.lib.get_entries_full(self.frame_content))
         logger.info("[QtDriver] Building Filenames...")
         filenames: list[Path] = [self.lib.library_dir / e.path for e in entries]
