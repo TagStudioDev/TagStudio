@@ -683,8 +683,8 @@ class Library:
     def remove_tag(self, tag: Tag):
         with Session(self.engine, expire_on_commit=False) as session:
             try:
-                parent_tags = session.scalars(
-                    select(TagParent).where(TagParent.parent_id == tag.id)
+                child_tags = session.scalars(
+                    select(TagParent).where(TagParent.child_id == tag.id)
                 ).all()
                 tags_query = select(Tag).options(
                     selectinload(Tag.parent_tags), selectinload(Tag.aliases)
@@ -695,9 +695,9 @@ class Library:
                 for alias in aliases or []:
                     session.delete(alias)
 
-                for parent_tag in parent_tags or []:
-                    session.delete(parent_tag)
-                    session.expunge(parent_tag)
+                for child_tag in child_tags or []:
+                    session.delete(child_tag)
+                    session.expunge(child_tag)
 
                 session.delete(tag)
                 session.commit()
