@@ -171,8 +171,8 @@ class FieldContainers(QWidget):
                 if cluster_map.get(p_id) is None:
                     cluster_map[p_id] = set()
                 # If the p_tag has p_tags of its own, recursively link those to the original Tag.
-                if tag.id not in cluster_map[p_id]:
-                    cluster_map[p_id].add(tag.id)
+                if tag_id not in cluster_map[p_id]:
+                    cluster_map[p_id].add(tag_id)
                     p_tag = self.lib.get_tag(p_id)  # Get full object
                     if p_tag.parent_ids:
                         add_to_cluster(
