@@ -155,7 +155,7 @@ class FieldContainers(QWidget):
         cluster_map: dict[int, set[int]] = {}
 
         def add_to_cluster(tag_id: int, p_ids: list[int] | None = None):
-            """Maps a Tag's subtag's ID's back to it's parent Tag's ID.
+            """Maps a Tag's child tags' IDs back to it's parent tag's ID.
 
             Example:
             Tag: ["Johnny Bravo", Parent Tags: "Cartoon Network (TV)", "Character"] maps to:
