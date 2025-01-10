@@ -59,6 +59,10 @@ class ItemType(enum.Enum):
     TAG_GROUP = 2
 
 
+class SortingModeEnum(enum.Enum):
+    DATE_ADDED = "file.date_added"
+
+
 @dataclass
 class FilterState:
     """Represent a state of the Library grid view."""
@@ -66,6 +70,8 @@ class FilterState:
     # these should remain
     page_index: int | None = 0
     page_size: int | None = 500
+    sorting_mode: SortingModeEnum = SortingModeEnum.DATE_ADDED
+    ascending: bool = True
 
     # these should be erased on update
     # Abstract Syntax Tree Of the current Search Query
@@ -109,6 +115,12 @@ class FilterState:
 
     def with_page_size(self, page_size: int) -> "FilterState":
         return replace(self, page_size=page_size)
+
+    def with_sorting_mode(self, mode: SortingModeEnum) -> "FilterState":
+        return replace(self, sorting_mode=mode)
+
+    def with_sorting_direction(self, ascending: bool) -> "FilterState":
+        return replace(self, ascending=ascending)
 
 
 class FieldTypeEnum(enum.Enum):
