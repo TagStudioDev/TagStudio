@@ -642,24 +642,6 @@ class Library:
 
             return res
 
-    def get_all_child_tag_ids(self, tag_id: int) -> list[int]:
-        """Recursively traverse a Tag's parent tags and return a list of all children tags."""
-        all_parent_ids: set[int] = {tag_id}
-
-        with Session(self.engine) as session:
-            tag: Tag | None = session.scalar(select(Tag).where(Tag.id == tag_id))
-            if tag is None:
-                raise ValueError(f"No tag found with id {tag_id}.")
-
-            parent_ids = tag.parent_ids
-
-        all_parent_ids.update(parent_ids)
-
-        for child_id in parent_ids:
-            all_parent_ids.update(self.get_all_child_tag_ids(child_id))
-
-        return list(all_parent_ids)
-
     def update_entry_path(self, entry_id: int | Entry, path: Path) -> None:
         if isinstance(entry_id, Entry):
             entry_id = entry_id.id
