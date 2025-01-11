@@ -934,6 +934,7 @@ class Library:
         tag_ids_ = [tag_ids] if isinstance(tag_ids, int) else tag_ids
         with Session(self.engine, expire_on_commit=False) as session:
             try:
+                # TODO: Optimize this by using a single query to update.
                 for tag_id in tag_ids_:
                     session.add(TagEntry(tag_id=tag_id, entry_id=entry_id))
                     session.flush()
