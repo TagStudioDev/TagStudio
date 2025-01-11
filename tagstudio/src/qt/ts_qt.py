@@ -63,6 +63,7 @@ from src.core.library.alchemy.enums import (
     FieldTypeEnum,
     FilterState,
     ItemType,
+    SortingModeEnum,
 )
 from src.core.library.alchemy.fields import _FieldID
 from src.core.library.alchemy.library import Entry, LibraryStatus
@@ -566,16 +567,40 @@ class QtDriver(DriverMixin, QObject):
         search_button.clicked.connect(
             lambda: self.filter_items(
                 FilterState.from_search_query(self.main_window.searchField.text())
+                .with_sorting_mode(self.sorting_mode)
+                .with_sorting_direction(self.sorting_direction)
             )
         )
         # Search Field
         search_field: QLineEdit = self.main_window.searchField
         search_field.returnPressed.connect(
-            # TODO - parse search field for filters
             lambda: self.filter_items(
                 FilterState.from_search_query(self.main_window.searchField.text())
+                .with_sorting_mode(self.sorting_mode)
+                .with_sorting_direction(self.sorting_direction)
             )
         )
+        # Sorting Dropdowns
+        sort_mode_dropdown: QComboBox = self.main_window.sorting_mode_combobox
+        for sort_mode in SortingModeEnum:
+            sort_mode_dropdown.addItem(Translations[sort_mode.value], sort_mode)
+        sort_mode_dropdown.setCurrentIndex(
+            list(SortingModeEnum).index(self.filter.sorting_mode)
+        )  # set according to self.filter
+        sort_mode_dropdown.currentIndexChanged.connect(self.sorting_mode_callback)
+
+        sort_dir_dropdown: QComboBox = self.main_window.sorting_direction_combobox
+        sort_dir_dropdown.addItem("Ascending", userData=True)
+        sort_dir_dropdown.addItem("Descending", userData=False)
+        Translations.translate_with_setter(
+            lambda text: sort_dir_dropdown.setItemText(0, text), "sorting.direction.ascending"
+        )
+        Translations.translate_with_setter(
+            lambda text: sort_dir_dropdown.setItemText(1, text), "sorting.direction.descending"
+        )
+        sort_dir_dropdown.setCurrentIndex(0)  # Default: Ascending
+        sort_dir_dropdown.currentIndexChanged.connect(self.sorting_direction_callback)
+
         # Thumbnail Size ComboBox
         thumb_size_combobox: QComboBox = self.main_window.thumb_size_combobox
         for size in self.thumb_sizes:
@@ -880,6 +905,24 @@ class QtDriver(DriverMixin, QObject):
                         field=field,
                         content=strip_web_protocol(field.value),
                     )
+
+    @property
+    def sorting_direction(self) -> bool:
+        """Whether to Sort the results in ascending order."""
+        return self.main_window.sorting_direction_combobox.currentData()
+
+    def sorting_direction_callback(self):
+        logger.info("Sorting Direction Changed", ascending=self.sorting_direction)
+        self.filter_items()
+
+    @property
+    def sorting_mode(self) -> SortingModeEnum:
+        """What to sort by."""
+        return self.main_window.sorting_mode_combobox.currentData()
+
+    def sorting_mode_callback(self):
+        logger.info("Sorting Mode Changed", mode=self.sorting_mode)
+        self.filter_items()
 
     def thumb_size_callback(self, index: int):
         """Perform actions needed when the thumbnail size selection is changed.
@@ -1233,6 +1276,9 @@ class QtDriver(DriverMixin, QObject):
 
         if filter:
             self.filter = dataclasses.replace(self.filter, **dataclasses.asdict(filter))
+        else:
+            self.filter.sorting_mode = self.sorting_mode
+            self.filter.ascending = self.sorting_direction
 
         # inform user about running search
         self.main_window.statusbar.showMessage(Translations["status.library_search_query"])

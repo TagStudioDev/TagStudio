@@ -18,11 +18,14 @@ import structlog
 from humanfriendly import format_timespan
 from sqlalchemy import (
     URL,
+    ColumnExpressionArgument,
     Engine,
     NullPool,
     and_,
+    asc,
     create_engine,
     delete,
+    desc,
     exists,
     func,
     or_,
@@ -51,7 +54,7 @@ from ...constants import (
 )
 from ...enums import LibraryPrefs
 from .db import make_tables
-from .enums import FieldTypeEnum, FilterState, TagColor
+from .enums import FieldTypeEnum, FilterState, SortingModeEnum, TagColor
 from .fields import (
     BaseField,
     DatetimeField,
@@ -588,6 +591,13 @@ class Library:
             statement = statement.distinct(Entry.id)
             query_count = select(func.count()).select_from(statement.alias("entries"))
             count_all: int = session.execute(query_count).scalar()
+
+            sort_on: ColumnExpressionArgument = Entry.id
+            match search.sorting_mode:
+                case SortingModeEnum.DATE_ADDED:
+                    sort_on = Entry.id
+
+            statement = statement.order_by(asc(sort_on) if search.ascending else desc(sort_on))
             statement = statement.limit(search.limit).offset(search.offset)
 
             logger.info(

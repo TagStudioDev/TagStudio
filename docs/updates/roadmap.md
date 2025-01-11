@@ -99,6 +99,7 @@ Features are broken up into the following priority levels, with nested prioritie
     -   [ ] Fuzzy Search [LOW] [#400](https://github.com/TagStudioDev/TagStudio/issues/400)
     -   [ ] Sortable results [HIGH] [#68](https://github.com/TagStudioDev/TagStudio/issues/68)
         -   [ ] Sort by relevance [HIGH]
+        -   [x] Sort by date added [HIGH]
         -   [ ] Sort by date created [HIGH]
         -   [ ] Sort by date modified [HIGH]
         -   [ ] Sort by date taken (photos) [MEDIUM]
@@ -182,6 +183,7 @@ These version milestones are rough estimations for when the previous core featur
     -   [ ] Field content search [HIGH]
     -   [ ] Sortable results [HIGH]
         -   [ ] Sort by relevance [HIGH]
+        -   [x] Sort by date added [HIGH]
         -   [ ] Sort by date created [HIGH]
         -   [ ] Sort by date modified [HIGH]
         -   [ ] Sort by date taken (photos) [MEDIUM]
