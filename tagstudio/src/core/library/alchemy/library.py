@@ -585,19 +585,9 @@ class Library:
             elif extensions:
                 statement = statement.where(Entry.suffix.in_(extensions))
 
-            statement = statement.options(
-                selectinload(Entry.text_fields),
-                selectinload(Entry.datetime_fields),
-                selectinload(Entry.tags).options(
-                    selectinload(Tag.aliases), selectinload(Tag.parent_tags)
-                ),
-            )
-
             statement = statement.distinct(Entry.id)
-
             query_count = select(func.count()).select_from(statement.alias("entries"))
             count_all: int = session.execute(query_count).scalar()
-
             statement = statement.limit(search.limit).offset(search.offset)
 
             logger.info(

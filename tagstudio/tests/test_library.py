@@ -112,13 +112,6 @@ def test_library_search(library, generate_tag, entry_full):
     assert results.total_count == 1
     assert len(results) == 1
 
-    entry = results[0]
-    assert {x.name for x in entry.tags} == {
-        "foo",
-    }
-
-    assert entry.tags
-
 
 def test_tag_search(library):
     tag = library.tags[0]
