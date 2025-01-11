@@ -974,8 +974,21 @@ class QtDriver(DriverMixin, QObject):
         sa.setWidgetResizable(True)
         sa.setWidget(self.flow_container)
 
-    def select_item(self, item_id: int, append: bool, bridge: bool):
-        """Select one or more items in the Thumbnail Grid."""
+    def toggle_item_selection(self, item_id: int, append: bool, bridge: bool):
+        """Toggle the selection of an item in the Thumbnail Grid.
+
+        If an item is not selected, this selects it. If an item is already selected, this will
+        deselect it as long as append and bridge are False.
+
+        Args:
+            item_id(int): The ID of the item/entry to select.
+            append(bool): Whether or not to add this item to the previous selection
+                or to restart the selection with this item.
+                Setting to True acts like "Ctrl + Click" selecting.
+            bridge(bool): Whether or not to select items in the visual range of the last item
+                selected and this current item.
+                Setting to True acts like "Shift + Click" selecting.
+        """
         logger.info("[QtDriver] Selecting Items:", item_id=item_id, append=append, bridge=bridge)
 
         if append:
@@ -1175,7 +1188,7 @@ class QtDriver(DriverMixin, QObject):
             item_thumb.assign_badge(BadgeType.FAVORITE, entry.is_favorite)
             item_thumb.update_clickable(
                 clickable=(
-                    lambda checked=False, item_id=entry.id: self.select_item(
+                    lambda checked=False, item_id=entry.id: self.toggle_item_selection(
                         item_id,
                         append=(
                             QGuiApplication.keyboardModifiers()

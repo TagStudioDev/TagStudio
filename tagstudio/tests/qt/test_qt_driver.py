@@ -29,7 +29,7 @@ from src.qt.widgets.item_thumb import ItemThumb
 #         assert thumb.isVisible() == (idx == 0)
 
 
-# def test_select_item_bridge(qt_driver, entry_min):
+# def test_toggle_item_selection_bridge(qt_driver, entry_min):
 #     # mock some props since we're not running `start()`
 #     qt_driver.autofill_action = Mock()
 #     qt_driver.sort_fields_action = Mock()
@@ -42,22 +42,22 @@ from src.qt.widgets.item_thumb import ItemThumb
 #     assert len(qt_driver.item_thumbs) == 3
 
 #     # select first item
-#     qt_driver.select_item(0, append=False, bridge=False)
+#     qt_driver.toggle_item_selection(0, append=False, bridge=False)
 #     assert qt_driver.selected == [0]
 
 #     # add second item to selection
-#     qt_driver.select_item(1, append=False, bridge=True)
+#     qt_driver.toggle_item_selection(1, append=False, bridge=True)
 #     assert qt_driver.selected == [0, 1]
 
 #     # add third item to selection
-#     qt_driver.select_item(2, append=False, bridge=True)
+#     qt_driver.toggle_item_selection(2, append=False, bridge=True)
 #     assert qt_driver.selected == [0, 1, 2]
 
 #     # select third item only
-#     qt_driver.select_item(2, append=False, bridge=False)
+#     qt_driver.toggle_item_selection(2, append=False, bridge=False)
 #     assert qt_driver.selected == [2]
 
-#     qt_driver.select_item(0, append=False, bridge=True)
+#     qt_driver.toggle_item_selection(0, append=False, bridge=True)
 #     assert qt_driver.selected == [0, 1, 2]
 
 

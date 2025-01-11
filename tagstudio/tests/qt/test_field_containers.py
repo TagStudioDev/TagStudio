@@ -5,8 +5,8 @@ def test_update_selection_empty(qt_driver, library):
     panel = PreviewPanel(library, qt_driver)
 
     # Clear the library selection (selecting 1 then unselecting 1)
-    qt_driver.select_item(1, append=False, bridge=False)
-    qt_driver.select_item(1, append=True, bridge=False)
+    qt_driver.toggle_item_selection(1, append=False, bridge=False)
+    qt_driver.toggle_item_selection(1, append=True, bridge=False)
     panel.update_widgets()
 
     # FieldContainer should hide all containers
@@ -18,7 +18,7 @@ def test_update_selection_single(qt_driver, library, entry_full):
     panel = PreviewPanel(library, qt_driver)
 
     # Select the single entry
-    qt_driver.select_item(entry_full.id, append=False, bridge=False)
+    qt_driver.toggle_item_selection(entry_full.id, append=False, bridge=False)
     panel.update_widgets()
 
     # FieldContainer should show all applicable tags and field containers
@@ -32,8 +32,8 @@ def test_update_selection_multiple(qt_driver, library):
     panel = PreviewPanel(library, qt_driver)
 
     # Select the multiple entries
-    qt_driver.select_item(1, append=False, bridge=False)
-    qt_driver.select_item(2, append=True, bridge=False)
+    qt_driver.toggle_item_selection(1, append=False, bridge=False)
+    qt_driver.toggle_item_selection(2, append=True, bridge=False)
     panel.update_widgets()
 
     # FieldContainer should show mixed field editing
@@ -47,7 +47,7 @@ def test_add_tag_to_selection_single(qt_driver, library, entry_full):
     assert {t.id for t in entry_full.tags} == {1000}
 
     # Select the single entry
-    qt_driver.select_item(entry_full.id, append=False, bridge=False)
+    qt_driver.toggle_item_selection(entry_full.id, append=False, bridge=False)
     panel.update_widgets()
 
     # Add new tag
@@ -64,7 +64,7 @@ def test_add_same_tag_to_selection_single(qt_driver, library, entry_full):
     assert {t.id for t in entry_full.tags} == {1000}
 
     # Select the single entry
-    qt_driver.select_item(entry_full.id, append=False, bridge=False)
+    qt_driver.toggle_item_selection(entry_full.id, append=False, bridge=False)
     panel.update_widgets()
 
     # Add an existing tag
@@ -94,7 +94,7 @@ def test_add_tag_to_selection_multiple(qt_driver, library):
 
     # Select the multiple entries
     for i, e in enumerate(library.get_entries(with_joins=True), start=0):
-        qt_driver.select_item(e.id, append=(True if i == 0 else False), bridge=False)  # noqa: SIM210
+        qt_driver.toggle_item_selection(e.id, append=(True if i == 0 else False), bridge=False)  # noqa: SIM210
     panel.update_widgets()
 
     # Add new tag
@@ -122,7 +122,7 @@ def test_meta_tag_category(qt_driver, library, entry_full):
     library.add_tags_to_entry(1, entry_full.id)
 
     # Select the single entry
-    qt_driver.select_item(entry_full.id, append=False, bridge=False)
+    qt_driver.toggle_item_selection(entry_full.id, append=False, bridge=False)
     panel.update_widgets()
 
     # FieldContainer should hide all containers
@@ -154,7 +154,7 @@ def test_custom_tag_category(qt_driver, library, entry_full):
     library.add_tags_to_entry(1, entry_full.id)
 
     # Select the single entry
-    qt_driver.select_item(entry_full.id, append=False, bridge=False)
+    qt_driver.toggle_item_selection(entry_full.id, append=False, bridge=False)
     panel.update_widgets()
 
     # FieldContainer should hide all containers
