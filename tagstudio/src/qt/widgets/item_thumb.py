@@ -397,7 +397,7 @@ class ItemThumb(FlowWidget):
                 self.ext_badge.setHidden(True)
                 self.count_badge.setHidden(True)
 
-    def set_filename_text(self, filename: Path | str | None):
+    def set_filename_text(self, filename: Path | None):
         self.set_item_path(filename)
         self.file_label.setText(str(filename.name))
 
