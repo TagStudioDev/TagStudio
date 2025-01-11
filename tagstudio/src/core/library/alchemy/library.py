@@ -42,6 +42,8 @@ from src.core.library.json.library import Library as JsonLibrary  # type: ignore
 from ...constants import (
     BACKUP_FOLDER_NAME,
     LEGACY_TAG_FIELD_IDS,
+    RESERVED_TAG_END,
+    RESERVED_TAG_START,
     TAG_ARCHIVED,
     TAG_FAVORITE,
     TAG_META,
@@ -105,7 +107,7 @@ def get_default_tags() -> tuple[Tag, ...]:
 
 
 # The difference in the number of default JSON tags vs default tags in the current version.
-DEFAULT_TAG_DIFF: int = len(get_default_tags()) - 2
+DEFAULT_TAG_DIFF: int = len(get_default_tags()) - len([TAG_ARCHIVED, TAG_FAVORITE])
 
 
 @dataclass(frozen=True)
@@ -174,25 +176,30 @@ class Library:
 
         # Tags
         for tag in json_lib.tags:
-            if tag.id == TAG_ARCHIVED or tag.id == TAG_FAVORITE:
-                # Update built-in
-                pass
+            new_tag = Tag(
+                id=tag.id,
+                name=tag.name,
+                shorthand=tag.shorthand,
+                color=TagColor.get_color_from_str(tag.color),
+            )
+            if tag.id in range(RESERVED_TAG_START, RESERVED_TAG_END + 1):
+                self.update_tag(new_tag)  # NOTE: This just calls add_tag??
             else:
-                self.add_tag(
-                    Tag(
-                        id=tag.id,
-                        name=tag.name,
-                        shorthand=tag.shorthand,
-                        color=TagColor.get_color_from_str(tag.color),
-                    )
-                )
+                self.add_tag(new_tag)
 
         # Tag Aliases
         for tag in json_lib.tags:
             for alias in tag.aliases:
                 if not alias:
                     break
-                self.add_alias(name=alias, tag_id=tag.id)
+                # Only add new (user-created) aliases to the default tags.
+                # This prevents pre-existing built-in aliases from being added as duplicates.
+                if tag.id in range(RESERVED_TAG_START, RESERVED_TAG_END + 1):
+                    for dt in get_default_tags():
+                        if dt.id == tag.id and alias not in dt.alias_strings:
+                            self.add_alias(name=alias, tag_id=tag.id)
+                else:
+                    self.add_alias(name=alias, tag_id=tag.id)
 
         # Parent Tags (Previously known as "Subtags" in JSON)
         for tag in json_lib.tags:
@@ -279,13 +286,14 @@ class Library:
         with Session(self.engine) as session:
             make_tables(self.engine)
 
-            tags = get_default_tags()
-            try:
-                session.add_all(tags)
-                session.commit()
-            except IntegrityError:
-                # default tags may exist already
-                session.rollback()
+            # Add default tags to new libraries only.
+            if is_new:
+                tags = get_default_tags()
+                try:
+                    session.add_all(tags)
+                    session.commit()
+                except IntegrityError:
+                    session.rollback()
 
             # dont check db version when creating new library
             if not is_new:

@@ -121,7 +121,7 @@ class TagDatabasePanel(PanelWidget):
             row.setSpacing(3)
 
             if tag.id in range(RESERVED_TAG_START, RESERVED_TAG_END):
-                tag_widget = TagWidget(tag, has_edit=False, has_remove=False)
+                tag_widget = TagWidget(tag, has_edit=True, has_remove=False)
             else:
                 tag_widget = TagWidget(tag, has_edit=True, has_remove=True)
 
@@ -151,9 +151,6 @@ class TagDatabasePanel(PanelWidget):
         self.update_tags()
 
     def edit_tag(self, tag: Tag):
-        if tag.id in range(RESERVED_TAG_START, RESERVED_TAG_END):
-            return
-
         build_tag_panel = BuildTagPanel(self.lib, tag=tag)
 
         self.edit_modal = PanelModal(

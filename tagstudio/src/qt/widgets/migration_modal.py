@@ -19,14 +19,15 @@ from PySide6.QtWidgets import (
 )
 from sqlalchemy import select
 from sqlalchemy.orm import Session
-from src.core.constants import LEGACY_TAG_FIELD_IDS, RESERVED_TAG_END, TAG_META, TS_FOLDER_NAME
+from src.core.constants import LEGACY_TAG_FIELD_IDS, TS_FOLDER_NAME
 from src.core.enums import LibraryPrefs
 from src.core.library.alchemy.enums import TagColor
 from src.core.library.alchemy.joins import TagParent
-from src.core.library.alchemy.library import DEFAULT_TAG_DIFF
+from src.core.library.alchemy.library import TAG_ARCHIVED, TAG_FAVORITE, TAG_META
 from src.core.library.alchemy.library import Library as SqliteLibrary
 from src.core.library.alchemy.models import Entry, TagAlias
 from src.core.library.json.library import Library as JsonLibrary  # type: ignore
+from src.core.library.json.library import Tag as JsonTag  # type: ignore
 from src.qt.helpers.custom_runnable import CustomRunnable
 from src.qt.helpers.function_iterator import FunctionIterator
 from src.qt.helpers.qbutton_wrapper import QPushButtonWrapper
@@ -310,6 +311,7 @@ class JsonMigrationModal(QObject):
             # Open the JSON Library
             self.json_lib = JsonLibrary()
             self.json_lib.open_library(self.path)
+            self.update_json_builtins()
 
             # Update JSON UI
             self.update_json_entry_count(len(self.json_lib.entries))
@@ -319,6 +321,28 @@ class JsonMigrationModal(QObject):
 
             self.migration_progress(skip_ui=skip_ui)
             self.is_migration_initialized = True
+
+    def update_json_builtins(self):
+        """Updates the built-in JSON values to include any future changes or additions.
+
+        Used to preserve user-modified built-in tags and to
+        match values between JSON and SQL during parity checking.
+        """
+        # v9.5.0: Add "Meta Tags" tag and parent that to "Archived" and "Favorite".
+        meta_tags: JsonTag = JsonTag(TAG_META, "Meta Tags", "", ["Meta", "Meta Tag"], [], "")
+        logger.warning(self.json_lib.tags)
+        # self.json_lib.add_tag_to_library(meta_tags)
+        self.json_lib.tags.append(meta_tags)
+        self.json_lib._map_tag_id_to_index(meta_tags, len(self.json_lib.tags) - 1)
+        logger.warning(self.json_lib.tags)
+
+        archived_tag: JsonTag = self.json_lib.get_tag(TAG_ARCHIVED)
+        archived_tag.subtag_ids.append(TAG_META)
+        self.json_lib.update_tag(archived_tag)
+
+        favorite_tag: JsonTag = self.json_lib.get_tag(TAG_FAVORITE)
+        favorite_tag.subtag_ids.append(TAG_META)
+        self.json_lib.update_tag(favorite_tag)
 
     def migration_progress(self, skip_ui: bool = False):
         """Initialize the progress bar and iterator for the library migration."""
@@ -415,7 +439,7 @@ class JsonMigrationModal(QObject):
         )
         self.update_sql_value(
             self.tags_row,
-            (len(self.sql_lib.tags) - DEFAULT_TAG_DIFF),
+            len(self.sql_lib.tags),
             self.old_tag_count,
         )
         self.update_sql_value(
@@ -595,9 +619,6 @@ class JsonMigrationModal(QObject):
 
         with Session(self.sql_lib.engine) as session:
             for tag in self.sql_lib.tags:
-                # NOTE: Don't check subtag parity for built-in tags.
-                if tag.id in range(0, RESERVED_TAG_END + 1):
-                    break
                 tag_id = tag.id  # Tag IDs start at 0
                 sql_parent_tags = set(
                     session.scalars(select(TagParent.child_id).where(TagParent.parent_id == tag.id))
@@ -639,10 +660,6 @@ class JsonMigrationModal(QObject):
 
         with Session(self.sql_lib.engine) as session:
             for tag in self.sql_lib.tags:
-                # NOTE: Do not check alias parity for built-in tags added
-                # after "Favorite" and "Archived".
-                if tag.id in range(TAG_META, RESERVED_TAG_END + 1):
-                    break
                 tag_id = tag.id  # Tag IDs start at 0
                 sql_aliases = set(
                     session.scalars(select(TagAlias.name).where(TagAlias.tag_id == tag.id))
@@ -675,13 +692,14 @@ class JsonMigrationModal(QObject):
         sql_shorthand: str = None
         json_shorthand: str = None
 
+        def sanitize(value):
+            """Return value or convert a "not" value into None."""
+            return value if value else None
+
         for tag in self.sql_lib.tags:
-            # NOTE: Don't check shorthand parity for built-in tags.
-            if tag.id in range(0, RESERVED_TAG_END + 1):
-                break
             tag_id = tag.id  # Tag IDs start at 0
-            sql_shorthand = tag.shorthand
-            json_shorthand = self.json_lib.get_tag(tag_id).shorthand
+            sql_shorthand = sanitize(tag.shorthand)
+            json_shorthand = sanitize(self.json_lib.get_tag(tag_id).shorthand)
 
             logger.info(
                 "[Shorthand Parity]",
@@ -690,11 +708,7 @@ class JsonMigrationModal(QObject):
                 sql_shorthand=sql_shorthand,
             )
 
-            if not (
-                sql_shorthand is not None
-                and json_shorthand is not None
-                and (sql_shorthand == json_shorthand)
-            ):
+            if sql_shorthand != json_shorthand:
                 self.discrepancies.append(
                     f"[Shorthand Parity][Tag ID: {tag_id}]:"
                     f"\nOLD (JSON):{json_shorthand}\nNEW (SQL):{sql_shorthand}"
@@ -711,9 +725,6 @@ class JsonMigrationModal(QObject):
         json_color: str = None
 
         for tag in self.sql_lib.tags:
-            # NOTE: Don't check tag color parity for built-in tags.
-            if tag.id in range(0, RESERVED_TAG_END + 1):
-                break
             tag_id = tag.id  # Tag IDs start at 0
             sql_color = tag.color.name
             json_color = (

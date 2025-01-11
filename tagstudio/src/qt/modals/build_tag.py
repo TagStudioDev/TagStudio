@@ -58,6 +58,7 @@ class BuildTagPanel(PanelWidget):
     def __init__(self, library: Library, tag: Tag | None = None):
         super().__init__()
         self.lib = library
+        self.tag: Tag  # NOTE: This gets set at the end of the init.
 
         self.setMinimumSize(300, 400)
         self.root_layout = QVBoxLayout(self)
