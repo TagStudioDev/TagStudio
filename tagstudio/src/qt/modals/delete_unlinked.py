@@ -4,7 +4,7 @@
 
 import typing
 
-from PySide6.QtCore import Qt, Signal, QThreadPool
+from PySide6.QtCore import Qt, QThreadPool, Signal
 from PySide6.QtGui import QStandardItem, QStandardItemModel
 from PySide6.QtWidgets import (
     QHBoxLayout,
@@ -15,8 +15,8 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 from src.core.utils.missing_files import MissingRegistry
-from src.qt.translations import Translations
 from src.qt.helpers.custom_runnable import CustomRunnable
+from src.qt.translations import Translations
 from src.qt.widgets.progress import ProgressWidget
 
 # Only import for type checking/autocompletion, will not be imported at runtime.
