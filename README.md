@@ -62,7 +62,7 @@ TagStudio is a photo & file organization application with an underlying tag-base
 
 If you're interested in contributing to TagStudio, please take a look at the [contribution guidelines](/CONTRIBUTING.md) for how to get started!
 
-Translation hosting generously provided by [Weblate](https://weblate.org/en/). Check out our [project page](<(https://hosted.weblate.org/projects/tagstudio/)>) to help translate TagStudio!
+Translation hosting generously provided by [Weblate](https://weblate.org/en/). Check out our [project page](https://hosted.weblate.org/projects/tagstudio/) to help translate TagStudio!
 
 ## Current Features
 
