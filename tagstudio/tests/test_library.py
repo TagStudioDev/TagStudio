@@ -101,6 +101,25 @@ def test_tag_self_parent(library, generate_tag):
     assert len(tag.parent_ids) == 0
 
 
+def test_library_search(library, generate_tag, entry_full):
+    assert library.entries_count == 2
+    tag = list(entry_full.tags)[0]
+
+    results = library.search_library(
+        FilterState.from_tag_name(tag.name),
+    )
+
+    assert results.total_count == 1
+    assert len(results) == 1
+
+    entry = results[0]
+    assert {x.name for x in entry.tags} == {
+        "foo",
+    }
+
+    assert entry.tags
+
+
 def test_tag_search(library):
     tag = library.tags[0]
 
