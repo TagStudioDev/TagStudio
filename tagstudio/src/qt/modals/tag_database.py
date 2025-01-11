@@ -65,14 +65,14 @@ class TagDatabasePanel(PanelWidget):
 
         self.create_tag_button = QPushButton()
         Translations.translate_qobject(self.create_tag_button, "tag.create")
-        self.create_tag_button.clicked.connect(self.build_tag)
+        self.create_tag_button.clicked.connect(lambda: self.build_tag(self.search_field.text()))
 
         self.root_layout.addWidget(self.search_field)
         self.root_layout.addWidget(self.scroll_area)
         self.root_layout.addWidget(self.create_tag_button)
         self.update_tags()
 
-    def build_tag(self):
+    def build_tag(self, name: str):
         panel = BuildTagPanel(self.lib)
         self.modal = PanelModal(
             panel,
@@ -80,12 +80,14 @@ class TagDatabasePanel(PanelWidget):
         )
         Translations.translate_with_setter(self.modal.setTitle, "tag.new")
         Translations.translate_with_setter(self.modal.setWindowTitle, "tag.add")
+        if name.strip():
+            panel.name_field.setText(name)
 
         self.modal.saved.connect(
             lambda: (
                 self.lib.add_tag(
                     tag=panel.build_tag(),
-                    subtag_ids=panel.subtag_ids,
+                    parent_ids=panel.parent_ids,
                     alias_names=panel.alias_names,
                     alias_ids=panel.alias_ids,
                 ),
@@ -119,7 +121,7 @@ class TagDatabasePanel(PanelWidget):
             row.setSpacing(3)
 
             if tag.id in range(RESERVED_TAG_START, RESERVED_TAG_END):
-                tag_widget = TagWidget(tag, has_edit=False, has_remove=False)
+                tag_widget = TagWidget(tag, has_edit=True, has_remove=False)
             else:
                 tag_widget = TagWidget(tag, has_edit=True, has_remove=True)
 
@@ -149,9 +151,6 @@ class TagDatabasePanel(PanelWidget):
         self.update_tags()
 
     def edit_tag(self, tag: Tag):
-        if tag.id in range(RESERVED_TAG_START, RESERVED_TAG_END):
-            return
-
         build_tag_panel = BuildTagPanel(self.lib, tag=tag)
 
         self.edit_modal = PanelModal(
@@ -167,7 +166,7 @@ class TagDatabasePanel(PanelWidget):
 
     def edit_tag_callback(self, btp: BuildTagPanel):
         self.lib.update_tag(
-            btp.build_tag(), set(btp.subtag_ids), set(btp.alias_names), set(btp.alias_ids)
+            btp.build_tag(), set(btp.parent_ids), set(btp.alias_names), set(btp.alias_ids)
         )
         self.update_tags(self.search_field.text())
 

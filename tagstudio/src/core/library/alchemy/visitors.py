@@ -1,3 +1,7 @@
+# Copyright (C) 2025
+# Licensed under the GPL-3.0 License.
+# Created for TagStudio: https://github.com/CyanVoxel/TagStudio
+
 from typing import TYPE_CHECKING
 
 import structlog
@@ -8,8 +12,8 @@ from src.core.media_types import FILETYPE_EQUIVALENTS, MediaCategories
 from src.core.query_lang import BaseVisitor
 from src.core.query_lang.ast import AST, ANDList, Constraint, ConstraintType, Not, ORList, Property
 
-from .joins import TagField
-from .models import Entry, Tag, TagAlias, TagBoxField
+from .joins import TagEntry
+from .models import Entry, Tag, TagAlias
 
 # workaround to have autocompletion in the Editor
 if TYPE_CHECKING:
@@ -19,16 +23,17 @@ else:
 
 logger = structlog.get_logger(__name__)
 
+# TODO: Reevaluate after subtags -> parent tags name change
 CHILDREN_QUERY = text("""
--- Note for this entire query that tag_subtags.child_id is the parent id and tag_subtags.parent_id is the child id due to bad naming
-WITH RECURSIVE Subtags AS (
+-- Note for this entire query that tag_parents.child_id is the parent id and tag_parents.parent_id is the child id due to bad naming
+WITH RECURSIVE ChildTags AS (
     SELECT :tag_id AS child_id
     UNION ALL
-    SELECT ts.parent_id AS child_id
-	FROM tag_subtags ts
-    INNER JOIN Subtags s ON ts.child_id = s.child_id
+    SELECT tp.parent_id AS child_id
+	FROM tag_parents tp
+    INNER JOIN ChildTags c ON tp.child_id = c.child_id
 )
-SELECT * FROM Subtags;
+SELECT * FROM ChildTags;
 """)  # noqa: E501
 
 
@@ -51,12 +56,18 @@ class SQLBoolExpressionBuilder(BaseVisitor[ColumnExpressionArgument]):
         tag_ids: list[int] = []
         bool_expressions: list[ColumnExpressionArgument] = []
 
-        # Search for TagID / unambigous Tag Constraints and store the respective tag ids seperately
+        # Search for TagID / unambiguous Tag Constraints and store the respective tag ids separately
         for term in node.terms:
             if isinstance(term, Constraint) and len(term.properties) == 0:
                 match term.type:
                     case ConstraintType.TagID:
-                        tag_ids.append(int(term.value))
+                        try:
+                            tag_ids.append(int(term.value))
+                        except ValueError:
+                            logger.error(
+                                "[SQLBoolExpressionBuilder] Could not cast value to an int Tag ID",
+                                value=term.value,
+                            )
                         continue
                     case ConstraintType.Tag:
                         if len(ids := self.__get_tag_ids(term.value)) == 1:
@@ -72,19 +83,20 @@ class SQLBoolExpressionBuilder(BaseVisitor[ColumnExpressionArgument]):
         # If there is just one tag id, check the normal way
         elif len(tag_ids) == 1:
             bool_expressions.append(
-                self.__entry_satisfies_expression(TagField.tag_id == tag_ids[0])
+                self.__entry_satisfies_expression(TagEntry.tag_id == tag_ids[0])
             )
 
         return and_(*bool_expressions)
 
     def visit_constraint(self, node: Constraint) -> ColumnExpressionArgument:
+        """Returns a Boolean Expression that is true, if the Entry satisfies the constraint."""
         if len(node.properties) != 0:
             raise NotImplementedError("Properties are not implemented yet")  # TODO TSQLANG
 
         if node.type == ConstraintType.Tag:
-            return TagBoxField.tags.any(Tag.id.in_(self.__get_tag_ids(node.value)))
+            return Entry.tags.any(Tag.id.in_(self.__get_tag_ids(node.value)))
         elif node.type == ConstraintType.TagID:
-            return TagBoxField.tags.any(Tag.id == int(node.value))
+            return Entry.tags.any(Tag.id == int(node.value))
         elif node.type == ConstraintType.Path:
             return Entry.path.op("GLOB")(node.value)
         elif node.type == ConstraintType.MediaType:
@@ -100,9 +112,7 @@ class SQLBoolExpressionBuilder(BaseVisitor[ColumnExpressionArgument]):
             )
         elif node.type == ConstraintType.Special:  # noqa: SIM102 unnecessary once there is a second special constraint
             if node.value.lower() == "untagged":
-                return ~Entry.id.in_(
-                    select(Entry.id).join(Entry.tag_box_fields).join(TagBoxField.tags)
-                )
+                return ~Entry.id.in_(select(Entry.id).join(TagEntry))
 
         # raise exception if Constraint stays unhandled
         raise NotImplementedError("This type of constraint is not implemented yet")
@@ -141,11 +151,10 @@ class SQLBoolExpressionBuilder(BaseVisitor[ColumnExpressionArgument]):
         # Relational Division Query
         return Entry.id.in_(
             select(Entry.id)
-            .outerjoin(TagBoxField)
-            .outerjoin(TagField)
-            .where(TagField.tag_id.in_(tag_ids))
+            .outerjoin(TagEntry)
+            .where(TagEntry.tag_id.in_(tag_ids))
             .group_by(Entry.id)
-            .having(func.count(distinct(TagField.tag_id)) == len(tag_ids))
+            .having(func.count(distinct(TagEntry.tag_id)) == len(tag_ids))
         )
 
     def __entry_satisfies_ast(self, partial_query: AST) -> BinaryExpression[bool]:
@@ -155,7 +164,8 @@ class SQLBoolExpressionBuilder(BaseVisitor[ColumnExpressionArgument]):
     def __entry_satisfies_expression(
         self, expr: ColumnExpressionArgument
     ) -> BinaryExpression[bool]:
-        """Returns Binary Expression that is true if the Entry satisfies the column expression."""
-        return Entry.id.in_(
-            select(Entry.id).outerjoin(Entry.tag_box_fields).outerjoin(TagField).where(expr)
-        )
+        """Returns Binary Expression that is true if the Entry satisfies the column expression.
+
+        Executed on: Entry ⟕ TagEntry (Entry LEFT OUTER JOIN TagEntry).
+        """
+        return Entry.id.in_(select(Entry.id).outerjoin(TagEntry).where(expr))

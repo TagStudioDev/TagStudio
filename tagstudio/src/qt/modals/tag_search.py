@@ -70,7 +70,7 @@ class TagSearchPanel(PanelWidget):
             self.update_tags()
         else:
             self.search_field.setFocus()
-        self.parentWidget().hide()
+            self.parentWidget().hide()
 
     def update_tags(self, query: str | None = None):
         logger.info("[Tag Search Modal] Updating Tags")
