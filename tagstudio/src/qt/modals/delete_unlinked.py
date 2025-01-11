@@ -99,6 +99,7 @@ class DeleteUnlinkedEntriesModal(QWidget):
             maximum=0,
         )
         Translations.translate_with_setter(pw.setWindowTitle, "entries.unlinked.delete.deleting")
+        Translations.translate_with_setter(pw.update_label, "entries.unlinked.delete.deleting")
         pw.show()
 
         r = CustomRunnable(self.tracker.execute_deletion)
