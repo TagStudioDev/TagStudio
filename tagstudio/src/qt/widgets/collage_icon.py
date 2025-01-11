@@ -1,4 +1,4 @@
-# Copyright (C) 2024 Travis Abendshien (CyanVoxel).
+# Copyright (C) 2025 Travis Abendshien (CyanVoxel).
 # Licensed under the GPL-3.0 License.
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
@@ -14,7 +14,6 @@ from PySide6.QtCore import (
     Signal,
 )
 from src.core.library import Library
-from src.core.library.alchemy.fields import _FieldID
 from src.core.media_types import MediaCategories
 from src.qt.helpers.file_tester import is_readable_video
 
@@ -43,27 +42,7 @@ class CollageIconRenderer(QObject):
 
         try:
             if data_tint_mode or data_only_mode:
-                if entry.fields:
-                    has_any_tags: bool = False
-                    has_content_tags: bool = False
-                    has_meta_tags: bool = False
-                    for field in entry.tag_box_fields:
-                        if field.tags:
-                            has_any_tags = True
-                            if field.type_key == _FieldID.TAGS_CONTENT.name:
-                                has_content_tags = True
-                            elif field.type_key == _FieldID.TAGS_META.name:
-                                has_meta_tags = True
-                    if has_content_tags and has_meta_tags:
-                        color = "#28bb48"  # Green
-                    elif has_any_tags:
-                        color = "#ffd63d"  # Yellow
-                        # color = '#95e345' # Yellow-Green
-                    else:
-                        # color = '#fa9a2c' # Yellow-Orange
-                        color = "#ed8022"  # Orange
-                else:
-                    color = "#e22c3c"  # Red
+                color = "#28bb48" if entry.tags else "#e22c3c"
 
                 if data_only_mode:
                     pic = Image.new("RGB", size, color)

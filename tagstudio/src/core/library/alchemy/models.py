@@ -1,3 +1,7 @@
+# Copyright (C) 2025
+# Licensed under the GPL-3.0 License.
+# Created for TagStudio: https://github.com/CyanVoxel/TagStudio
+
 from pathlib import Path
 
 from sqlalchemy import JSON, ForeignKey, Integer, event
@@ -11,20 +15,16 @@ from .fields import (
     BooleanField,
     DatetimeField,
     FieldTypeEnum,
-    TagBoxField,
     TextField,
-    _FieldID,
 )
-from .joins import TagSubtag
+from .joins import TagParent
 
 
 class TagAlias(Base):
     __tablename__ = "tag_aliases"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-
     name: Mapped[str] = mapped_column(nullable=False)
-
     tag_id: Mapped[int] = mapped_column(ForeignKey("tags.id"))
     tag: Mapped["Tag"] = relationship(back_populates="aliases")
 
@@ -46,27 +46,21 @@ class Tag(Base):
     name: Mapped[str]
     shorthand: Mapped[str | None]
     color: Mapped[TagColor]
+    is_category: Mapped[bool]
     icon: Mapped[str | None]
 
     aliases: Mapped[set[TagAlias]] = relationship(back_populates="tag")
 
     parent_tags: Mapped[set["Tag"]] = relationship(
-        secondary=TagSubtag.__tablename__,
-        primaryjoin="Tag.id == TagSubtag.child_id",
-        secondaryjoin="Tag.id == TagSubtag.parent_id",
-        back_populates="subtags",
-    )
-
-    subtags: Mapped[set["Tag"]] = relationship(
-        secondary=TagSubtag.__tablename__,
-        primaryjoin="Tag.id == TagSubtag.parent_id",
-        secondaryjoin="Tag.id == TagSubtag.child_id",
+        secondary=TagParent.__tablename__,
+        primaryjoin="Tag.id == TagParent.parent_id",
+        secondaryjoin="Tag.id == TagParent.child_id",
         back_populates="parent_tags",
     )
 
     @property
-    def subtag_ids(self) -> list[int]:
-        return [tag.id for tag in self.subtags]
+    def parent_ids(self) -> list[int]:
+        return [tag.id for tag in self.parent_tags]
 
     @property
     def alias_strings(self) -> list[str]:
@@ -83,17 +77,17 @@ class Tag(Base):
         shorthand: str | None = None,
         aliases: set[TagAlias] | None = None,
         parent_tags: set["Tag"] | None = None,
-        subtags: set["Tag"] | None = None,
         icon: str | None = None,
         color: TagColor = TagColor.DEFAULT,
+        is_category: bool = False,
     ):
         self.name = name
         self.aliases = aliases or set()
         self.parent_tags = parent_tags or set()
-        self.subtags = subtags or set()
         self.color = color
         self.icon = icon
         self.shorthand = shorthand
+        self.is_category = is_category
         assert not self.id
         self.id = id
         super().__init__()
@@ -103,6 +97,18 @@ class Tag(Base):
 
     def __repr__(self) -> str:
         return self.__str__()
+
+    def __lt__(self, other) -> bool:
+        return self.name < other.name
+
+    def __le__(self, other) -> bool:
+        return self.name <= other.name
+
+    def __gt__(self, other) -> bool:
+        return self.name > other.name
+
+    def __ge__(self, other) -> bool:
+        return self.name >= other.name
 
 
 class Folder(Base):
@@ -125,6 +131,8 @@ class Entry(Base):
     path: Mapped[Path] = mapped_column(PathType, unique=True)
     suffix: Mapped[str] = mapped_column()
 
+    tags: Mapped[set[Tag]] = relationship(secondary="tag_entries")
+
     text_fields: Mapped[list[TextField]] = relationship(
         back_populates="entry",
         cascade="all, delete",
@@ -133,44 +141,22 @@ class Entry(Base):
         back_populates="entry",
         cascade="all, delete",
     )
-    tag_box_fields: Mapped[list[TagBoxField]] = relationship(
-        back_populates="entry",
-        cascade="all, delete",
-    )
 
     @property
     def fields(self) -> list[BaseField]:
         fields: list[BaseField] = []
-        fields.extend(self.tag_box_fields)
         fields.extend(self.text_fields)
         fields.extend(self.datetime_fields)
         fields = sorted(fields, key=lambda field: field.type.position)
         return fields
 
     @property
-    def tags(self) -> set[Tag]:
-        tag_set: set[Tag] = set()
-        for tag_box_field in self.tag_box_fields:
-            tag_set.update(tag_box_field.tags)
-        return tag_set
-
-    @property
-    def is_favorited(self) -> bool:
-        for tag_box_field in self.tag_box_fields:
-            if tag_box_field.type_key == _FieldID.TAGS_META.name:
-                for tag in tag_box_field.tags:
-                    if tag.id == TAG_FAVORITE:
-                        return True
-        return False
+    def is_favorite(self) -> bool:
+        return any(tag.id == TAG_FAVORITE for tag in self.tags)
 
     @property
     def is_archived(self) -> bool:
-        for tag_box_field in self.tag_box_fields:
-            if tag_box_field.type_key == _FieldID.TAGS_META.name:
-                for tag in tag_box_field.tags:
-                    if tag.id == TAG_ARCHIVED:
-                        return True
-        return False
+        return any(tag.id == TAG_ARCHIVED for tag in self.tags)
 
     def __init__(
         self,
@@ -189,27 +175,15 @@ class Entry(Base):
                 self.text_fields.append(field)
             elif isinstance(field, DatetimeField):
                 self.datetime_fields.append(field)
-            elif isinstance(field, TagBoxField):
-                self.tag_box_fields.append(field)
             else:
                 raise ValueError(f"Invalid field type: {field}")
 
     def has_tag(self, tag: Tag) -> bool:
         return tag in self.tags
 
-    def remove_tag(self, tag: Tag, field: TagBoxField | None = None) -> None:
-        """Removes a Tag from the Entry.
-
-        If given a field index, the given Tag will
-        only be removed from that index. If left blank, all instances of that
-        Tag will be removed from the Entry.
-        """
-        if field:
-            field.tags.remove(tag)
-            return
-
-        for tag_box_field in self.tag_box_fields:
-            tag_box_field.tags.remove(tag)
+    def remove_tag(self, tag: Tag) -> None:
+        """Removes a Tag from the Entry."""
+        self.tags.remove(tag)
 
 
 class ValueType(Base):
@@ -237,7 +211,6 @@ class ValueType(Base):
     datetime_fields: Mapped[list[DatetimeField]] = relationship(
         "DatetimeField", back_populates="type"
     )
-    tag_box_fields: Mapped[list[TagBoxField]] = relationship("TagBoxField", back_populates="type")
     boolean_fields: Mapped[list[BooleanField]] = relationship("BooleanField", back_populates="type")
 
     @property
@@ -245,7 +218,6 @@ class ValueType(Base):
         FieldClass = {  # noqa: N806
             FieldTypeEnum.TEXT_LINE: TextField,
             FieldTypeEnum.TEXT_BOX: TextField,
-            FieldTypeEnum.TAGS: TagBoxField,
             FieldTypeEnum.DATETIME: DatetimeField,
             FieldTypeEnum.BOOLEAN: BooleanField,
         }

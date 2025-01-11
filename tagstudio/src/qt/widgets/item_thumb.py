@@ -1,4 +1,4 @@
-# Copyright (C) 2024 Travis Abendshien (CyanVoxel).
+# Copyright (C) 2025 Travis Abendshien (CyanVoxel).
 # Licensed under the GPL-3.0 License.
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 import time
@@ -7,6 +7,7 @@ from enum import Enum
 from functools import wraps
 from pathlib import Path
 from typing import TYPE_CHECKING
+from warnings import catch_warnings
 
 import structlog
 from PIL import Image, ImageQt
@@ -24,8 +25,7 @@ from src.core.constants import (
     TAG_ARCHIVED,
     TAG_FAVORITE,
 )
-from src.core.library import Entry, ItemType, Library
-from src.core.library.alchemy.fields import _FieldID
+from src.core.library import ItemType, Library
 from src.core.media_types import MediaCategories, MediaType
 from src.qt.flowlayout import FlowWidget
 from src.qt.helpers.file_opener import FileOpenerHelper
@@ -119,11 +119,9 @@ class ItemThumb(FlowWidget):
         library: Library,
         driver: "QtDriver",
         thumb_size: tuple[int, int],
-        grid_idx: int,
         show_filename_label: bool = False,
     ):
         super().__init__()
-        self.grid_idx = grid_idx
         self.lib = library
         self.mode: ItemType = mode
         self.driver = driver
@@ -206,10 +204,10 @@ class ItemThumb(FlowWidget):
         self.thumb_button = ThumbButton(self.thumb_container, thumb_size)
         self.renderer = ThumbRenderer()
         self.renderer.updated.connect(
-            lambda ts, i, s, fn, ext: (
-                self.update_thumb(ts, image=i),
-                self.update_size(ts, size=s),
-                self.set_filename_text(fn),
+            lambda timestamp, image, size, filename, ext: (
+                self.update_thumb(timestamp, image=image),
+                self.update_size(timestamp, size=size),
+                self.set_filename_text(filename),
                 self.set_extension(ext),
             )
         )
@@ -325,7 +323,7 @@ class ItemThumb(FlowWidget):
         return self.badge_active[BadgeType.FAVORITE]
 
     @property
-    def is_archived(self):
+    def is_archived(self) -> bool:
         return self.badge_active[BadgeType.ARCHIVED]
 
     def set_mode(self, mode: ItemType | None) -> None:
@@ -399,8 +397,9 @@ class ItemThumb(FlowWidget):
                 self.ext_badge.setHidden(True)
                 self.count_badge.setHidden(True)
 
-    def set_filename_text(self, filename: Path | str | None):
-        self.file_label.setText(str(filename))
+    def set_filename_text(self, filename: Path | None):
+        self.set_item_path(filename)
+        self.file_label.setText(str(filename.name))
 
     def set_filename_visibility(self, set_visible: bool):
         """Toggle the visibility of the filename label.
@@ -439,30 +438,17 @@ class ItemThumb(FlowWidget):
 
     def update_clickable(self, clickable: typing.Callable):
         """Updates attributes of a thumbnail element."""
-        if self.thumb_button.is_connected:
-            self.thumb_button.pressed.disconnect()
         if clickable:
+            with catch_warnings(record=True):
+                self.thumb_button.pressed.disconnect()
             self.thumb_button.pressed.connect(clickable)
-            self.thumb_button.is_connected = True
 
-    def refresh_badge(self, entry: Entry | None = None):
-        if not entry:
-            if not self.item_id:
-                logger.error("missing both entry and item_id")
-                return None
+    def set_item_id(self, item_id: int):
+        self.item_id = item_id
 
-            entry = self.lib.get_entry(self.item_id)
-            if not entry:
-                logger.error("Entry not found", item_id=self.item_id)
-                return
-
-        self.assign_badge(BadgeType.ARCHIVED, entry.is_archived)
-        self.assign_badge(BadgeType.FAVORITE, entry.is_favorited)
-
-    def set_item_id(self, entry: Entry):
-        filepath = self.lib.library_dir / entry.path
-        self.opener.set_filepath(filepath)
-        self.item_id = entry.id
+    def set_item_path(self, path: Path | str | None):
+        """Set the absolute filepath for the item. Used for locating on disk."""
+        self.opener.set_filepath(path)
 
     def assign_badge(self, badge_type: BadgeType, value: bool) -> None:
         mode = self.mode
@@ -496,47 +482,22 @@ class ItemThumb(FlowWidget):
             return
 
         toggle_value = self.badges[badge_type].isChecked()
-
         self.badge_active[badge_type] = toggle_value
-        tag_id = BADGE_TAGS[badge_type]
-
-        # check if current item is selected. if so, update all selected items
-        if self.grid_idx in self.driver.selected:
-            update_items = self.driver.selected
-        else:
-            update_items = [self.grid_idx]
-
-        for idx in update_items:
-            entry = self.driver.frame_content[idx]
-            self.toggle_item_tag(
-                entry, toggle_value, tag_id, _FieldID.TAGS_META.name, create_field=True
-            )
-            # update the entry
-            self.driver.frame_content[idx] = self.lib.get_entry_full(entry.id)
-
-        self.driver.update_badges(update_items)
+        badge_values: dict[BadgeType, bool] = {badge_type: toggle_value}
+        self.driver.update_badges(badge_values, self.item_id)
 
     def toggle_item_tag(
         self,
-        entry: Entry,
+        entry_id: int,
         toggle_value: bool,
         tag_id: int,
-        field_key: str,
-        create_field: bool = False,
     ):
-        logger.info(
-            "toggle_item_tag",
-            entry_id=entry.id,
-            toggle_value=toggle_value,
-            tag_id=tag_id,
-            field_key=field_key,
-        )
+        logger.info("toggle_item_tag", entry_id=entry_id, toggle_value=toggle_value, tag_id=tag_id)
 
-        tag = self.lib.get_tag(tag_id)
         if toggle_value:
-            self.lib.add_field_tag(entry, tag, field_key, create_field)
+            self.lib.add_tags_to_entry(entry_id, tag_id)
         else:
-            self.lib.remove_field_tag(entry, tag.id, field_key)
+            self.lib.remove_tags_from_entry(entry_id, tag_id)
 
         if self.driver.preview_panel.is_open:
             self.driver.preview_panel.update_widgets()
@@ -549,13 +510,13 @@ class ItemThumb(FlowWidget):
         paths = []
         mimedata = QMimeData()
 
-        selected_idxs = self.driver.selected
-        if self.grid_idx not in selected_idxs:
-            selected_idxs = [self.grid_idx]
+        selected_ids = self.driver.selected
+        if self.item_id not in selected_ids:
+            selected_ids = [self.item_id]
 
-        for grid_idx in selected_idxs:
-            id = self.driver.item_thumbs[grid_idx].item_id
-            entry = self.lib.get_entry(id)
+        for selected_id in selected_ids:
+            item_id = self.driver.item_thumbs[selected_id].item_id
+            entry = self.lib.get_entry(item_id)
             if not entry:
                 continue
 
@@ -565,4 +526,4 @@ class ItemThumb(FlowWidget):
         mimedata.setUrls(paths)
         drag.setMimeData(mimedata)
         drag.exec(Qt.DropAction.CopyAction)
-        logger.info("dragged files to external program", thumbnail_indexs=selected_idxs)
+        logger.info("dragged files to external program", thumbnail_indexs=selected_ids)

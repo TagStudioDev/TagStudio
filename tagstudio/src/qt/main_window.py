@@ -1,14 +1,4 @@
-# -*- coding: utf-8 -*-
-
-################################################################################
-# Form generated from reading UI file 'home.ui'
-##
-# Created by: Qt User Interface Compiler version 6.5.1
-##
-# WARNING! All changes made in this file will be lost when recompiling UI file!
-################################################################################
-
-# Copyright (C) 2024 Travis Abendshien (CyanVoxel).
+# Copyright (C) 2025 Travis Abendshien (CyanVoxel).
 # Licensed under the GPL-3.0 License.
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
@@ -180,6 +170,7 @@ class Ui_MainWindow(QMainWindow):
         sizePolicy1.setHeightForWidth(
             self.statusbar.sizePolicy().hasHeightForWidth())
         self.statusbar.setSizePolicy(sizePolicy1)
+        self.statusbar.setSizeGripEnabled(False)
         MainWindow.setStatusBar(self.statusbar)
 
         QMetaObject.connectSlotsByName(MainWindow)

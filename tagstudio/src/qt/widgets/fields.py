@@ -1,18 +1,18 @@
-# Copyright (C) 2024 Travis Abendshien (CyanVoxel).
+# Copyright (C) 2025 Travis Abendshien (CyanVoxel).
 # Licensed under the GPL-3.0 License.
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
 
 import math
 from pathlib import Path
-from types import MethodType
-from typing import Callable, Optional
+from typing import Callable
+from warnings import catch_warnings
 
 from PIL import Image, ImageQt
 from PySide6.QtCore import QEvent, Qt
 from PySide6.QtGui import QEnterEvent, QPixmap
-from PySide6.QtWidgets import QHBoxLayout, QLabel, QVBoxLayout, QWidget
-from src.qt.helpers.qbutton_wrapper import QPushButtonWrapper
+from PySide6.QtWidgets import QHBoxLayout, QLabel, QPushButton, QVBoxLayout, QWidget
+from src.core.enums import Theme
 
 
 class FieldContainer(QWidget):
@@ -32,6 +32,19 @@ class FieldContainer(QWidget):
     ).resize((math.floor(24 * 1.25), math.floor(24 * 1.25)))
     trash_icon_128.load()
 
+    # TODO: There should be a global button theme somewhere.
+    container_style = (
+        f"QWidget#fieldContainer{{"
+        "border-radius:4px;"
+        f"}}"
+        f"QWidget#fieldContainer::hover{{"
+        f"background-color:{Theme.COLOR_HOVER.value};"
+        f"}}"
+        f"QWidget#fieldContainer::pressed{{"
+        f"background-color:{Theme.COLOR_PRESSED.value};"
+        f"}}"
+    )
+
     def __init__(self, title: str = "Field", inline: bool = True) -> None:
         super().__init__()
         self.setObjectName("fieldContainer")
@@ -48,12 +61,12 @@ class FieldContainer(QWidget):
 
         self.inner_layout = QVBoxLayout()
         self.inner_layout.setObjectName("innerLayout")
-        self.inner_layout.setContentsMargins(0, 0, 0, 0)
+        self.inner_layout.setContentsMargins(6, 0, 6, 6)
         self.inner_layout.setSpacing(0)
-        self.inner_container = QWidget()
-        self.inner_container.setObjectName("innerContainer")
-        self.inner_container.setLayout(self.inner_layout)
-        self.root_layout.addWidget(self.inner_container)
+        self.field_container = QWidget()
+        self.field_container.setObjectName("fieldContainer")
+        self.field_container.setLayout(self.inner_layout)
+        self.root_layout.addWidget(self.field_container)
 
         self.title_container = QWidget()
         self.title_layout = QHBoxLayout(self.title_container)
@@ -67,12 +80,12 @@ class FieldContainer(QWidget):
         self.title_widget.setMinimumHeight(button_size)
         self.title_widget.setObjectName("fieldTitle")
         self.title_widget.setWordWrap(True)
-        self.title_widget.setStyleSheet("font-weight: bold; font-size: 14px;")
         self.title_widget.setText(title)
         self.title_layout.addWidget(self.title_widget)
         self.title_layout.addStretch(2)
 
-        self.copy_button = QPushButtonWrapper()
+        self.copy_button = QPushButton()
+        self.copy_button.setObjectName("copyButton")
         self.copy_button.setMinimumSize(button_size, button_size)
         self.copy_button.setMaximumSize(button_size, button_size)
         self.copy_button.setFlat(True)
@@ -81,7 +94,8 @@ class FieldContainer(QWidget):
         self.title_layout.addWidget(self.copy_button)
         self.copy_button.setHidden(True)
 
-        self.edit_button = QPushButtonWrapper()
+        self.edit_button = QPushButton()
+        self.edit_button.setObjectName("editButton")
         self.edit_button.setMinimumSize(button_size, button_size)
         self.edit_button.setMaximumSize(button_size, button_size)
         self.edit_button.setFlat(True)
@@ -90,7 +104,8 @@ class FieldContainer(QWidget):
         self.title_layout.addWidget(self.edit_button)
         self.edit_button.setHidden(True)
 
-        self.remove_button = QPushButtonWrapper()
+        self.remove_button = QPushButton()
+        self.remove_button.setObjectName("removeButton")
         self.remove_button.setMinimumSize(button_size, button_size)
         self.remove_button.setMaximumSize(button_size, button_size)
         self.remove_button.setFlat(True)
@@ -99,37 +114,39 @@ class FieldContainer(QWidget):
         self.title_layout.addWidget(self.remove_button)
         self.remove_button.setHidden(True)
 
-        self.field_container = QWidget()
-        self.field_container.setObjectName("fieldContainer")
+        self.field = QWidget()
+        self.field.setObjectName("field")
         self.field_layout = QHBoxLayout()
         self.field_layout.setObjectName("fieldLayout")
         self.field_layout.setContentsMargins(0, 0, 0, 0)
-        self.field_container.setLayout(self.field_layout)
-        self.inner_layout.addWidget(self.field_container)
+        self.field.setLayout(self.field_layout)
+        self.inner_layout.addWidget(self.field)
 
-    def set_copy_callback(self, callback: Optional[MethodType]):
-        if self.copy_button.is_connected:
+        self.setStyleSheet(FieldContainer.container_style)
+
+    def set_copy_callback(self, callback: Callable | None = None):
+        with catch_warnings(record=True):
             self.copy_button.clicked.disconnect()
 
         self.copy_callback = callback
-        self.copy_button.clicked.connect(callback)
-        self.copy_button.is_connected = callable(callback)
+        if callback:
+            self.copy_button.clicked.connect(callback)
 
-    def set_edit_callback(self, callback: Callable):
-        if self.edit_button.is_connected:
+    def set_edit_callback(self, callback: Callable | None = None):
+        with catch_warnings(record=True):
             self.edit_button.clicked.disconnect()
 
         self.edit_callback = callback
-        self.edit_button.clicked.connect(callback)
-        self.edit_button.is_connected = callable(callback)
+        if callback:
+            self.edit_button.clicked.connect(callback)
 
-    def set_remove_callback(self, callback: Callable):
-        if self.remove_button.is_connected:
+    def set_remove_callback(self, callback: Callable | None = None):
+        with catch_warnings(record=True):
             self.remove_button.clicked.disconnect()
 
         self.remove_callback = callback
-        self.remove_button.clicked.connect(callback)
-        self.remove_button.is_connected = callable(callback)
+        if callback:
+            self.remove_button.clicked.connect(callback)
 
     def set_inner_widget(self, widget: "FieldWidget"):
         if self.field_layout.itemAt(0):
@@ -145,8 +162,8 @@ class FieldContainer(QWidget):
         return None
 
     def set_title(self, title: str):
-        self.title = title
-        self.title_widget.setText(title)
+        self.title = self.title = f"<h4>{title}</h4>"
+        self.title_widget.setText(self.title)
 
     def set_inline(self, inline: bool):
         self.inline = inline
