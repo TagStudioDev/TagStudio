@@ -109,6 +109,9 @@ To download TagStudio, visit the [Releases](https://github.com/TagStudioDev/TagS
 > [!IMPORTANT]
 > On macOS, you may be met with a message saying _""TagStudio" can't be opened because Apple cannot check it for malicious software."_ If you encounter this, then you'll need to go to the "Settings" app, navigate to "Privacy & Security", and scroll down to a section that says _""TagStudio" was blocked from use because it is not from an identified developer."_ Click the "Open Anyway" button to allow TagStudio to run. You should only have to do this once after downloading the application.
 
+> [!IMPORTANT]
+> On Linux with non-Qt based Desktop Environments you may be unable to open TagStudio. You need to make sure that "xcb-cursor0" or "libxcb-cursor0" packages are installed. For more info check [Missing linux dependencies](https://github.com/TagStudioDev/TagStudio/discussions/182#discussioncomment-9452896)
+
 ### Third-Party Dependencies
 
 - For video thumbnails and playback, you'll also need [FFmpeg](https://ffmpeg.org/download.html) installed on your system.
