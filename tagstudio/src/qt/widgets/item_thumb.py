@@ -399,7 +399,7 @@ class ItemThumb(FlowWidget):
 
     def set_filename_text(self, filename: Path | str | None):
         self.set_item_path(filename)
-        self.file_label.setText(str(filename))
+        self.file_label.setText(str(filename.name))
 
     def set_filename_visibility(self, set_visible: bool):
         """Toggle the visibility of the filename label.
