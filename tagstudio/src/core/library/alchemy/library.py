@@ -54,7 +54,7 @@ from ...constants import (
 )
 from ...enums import LibraryPrefs
 from .db import make_tables
-from .enums import FieldTypeEnum, FilterState, SortingModeEnum, TagColor
+from .enums import MAX_SQL_VARIABLES, FieldTypeEnum, FilterState, SortingModeEnum, TagColor
 from .fields import (
     BaseField,
     DatetimeField,
@@ -546,7 +546,11 @@ class Library:
     def remove_entries(self, entry_ids: list[int]) -> None:
         """Remove Entry items matching supplied IDs from the Library."""
         with Session(self.engine) as session:
-            session.query(Entry).where(Entry.id.in_(entry_ids)).delete()
+            for sub_list in [
+                entry_ids[i : i + MAX_SQL_VARIABLES]
+                for i in range(0, len(entry_ids), MAX_SQL_VARIABLES)
+            ]:
+                session.query(Entry).where(Entry.id.in_(sub_list)).delete()
             session.commit()
 
     def has_path_entry(self, path: Path) -> bool:

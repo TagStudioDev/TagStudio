@@ -60,10 +60,7 @@ class MissingRegistry:
                 self.missing_files.remove(entry)
             yield i
 
-    def execute_deletion(self) -> Iterator[int]:
-        for i, missing in enumerate(self.missing_files, start=1):
-            # TODO - optimize this by removing multiple entries at once
-            self.library.remove_entries([missing.id])
-            yield i
+    def execute_deletion(self) -> None:
+        self.library.remove_entries(list(map(lambda missing: missing.id, self.missing_files)))
 
         self.missing_files = []

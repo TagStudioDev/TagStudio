@@ -4,7 +4,7 @@
 
 import typing
 
-from PySide6.QtCore import Qt, Signal
+from PySide6.QtCore import Qt, QThreadPool, Signal
 from PySide6.QtGui import QStandardItem, QStandardItemModel
 from PySide6.QtWidgets import (
     QHBoxLayout,
@@ -15,6 +15,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 from src.core.utils.missing_files import MissingRegistry
+from src.qt.helpers.custom_runnable import CustomRunnable
 from src.qt.translations import Translations
 from src.qt.widgets.progress import ProgressWidget
 
@@ -95,8 +96,18 @@ class DeleteUnlinkedEntriesModal(QWidget):
         pw = ProgressWidget(
             cancel_button_text=None,
             minimum=0,
-            maximum=self.tracker.missing_files_count,
+            maximum=0,
         )
         Translations.translate_with_setter(pw.setWindowTitle, "entries.unlinked.delete.deleting")
+        Translations.translate_with_setter(pw.update_label, "entries.unlinked.delete.deleting")
+        pw.show()
 
-        pw.from_iterable_function(self.tracker.execute_deletion, displayed_text, self.done.emit)
+        r = CustomRunnable(self.tracker.execute_deletion)
+        QThreadPool.globalInstance().start(r)
+        r.done.connect(
+            lambda: (
+                pw.hide(),
+                pw.deleteLater(),
+                self.done.emit(),
+            )
+        )
