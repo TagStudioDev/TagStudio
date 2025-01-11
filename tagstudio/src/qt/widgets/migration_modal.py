@@ -330,11 +330,9 @@ class JsonMigrationModal(QObject):
         """
         # v9.5.0: Add "Meta Tags" tag and parent that to "Archived" and "Favorite".
         meta_tags: JsonTag = JsonTag(TAG_META, "Meta Tags", "", ["Meta", "Meta Tag"], [], "")
-        logger.warning(self.json_lib.tags)
         # self.json_lib.add_tag_to_library(meta_tags)
         self.json_lib.tags.append(meta_tags)
         self.json_lib._map_tag_id_to_index(meta_tags, len(self.json_lib.tags) - 1)
-        logger.warning(self.json_lib.tags)
 
         archived_tag: JsonTag = self.json_lib.get_tag(TAG_ARCHIVED)
         archived_tag.subtag_ids.append(TAG_META)

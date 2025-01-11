@@ -179,16 +179,19 @@ class Library:
 
         # Tags
         for tag in json_lib.tags:
-            new_tag = Tag(
-                id=tag.id,
-                name=tag.name,
-                shorthand=tag.shorthand,
-                color=TagColor.get_color_from_str(tag.color),
+            self.add_tag(
+                Tag(
+                    id=tag.id,
+                    name=tag.name,
+                    shorthand=tag.shorthand,
+                    color=TagColor.get_color_from_str(tag.color),
+                )
             )
+            # Apply user edits to built-in JSON tags.
             if tag.id in range(RESERVED_TAG_START, RESERVED_TAG_END + 1):
-                self.update_tag(new_tag)  # NOTE: This just calls add_tag??
-            else:
-                self.add_tag(new_tag)
+                updated_tag = self.get_tag(tag.id)
+                updated_tag.color = TagColor.get_color_from_str(tag.color)
+                self.update_tag(updated_tag)  # NOTE: This just calls add_tag?
 
         # Tag Aliases
         for tag in json_lib.tags:

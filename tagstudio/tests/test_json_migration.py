@@ -6,7 +6,6 @@ import pathlib
 from time import time
 
 from src.core.enums import LibraryPrefs
-from src.core.library.alchemy.library import DEFAULT_TAG_DIFF
 from src.qt.widgets.migration_modal import JsonMigrationModal
 
 CWD = pathlib.Path(__file__)
@@ -30,7 +29,7 @@ def test_json_migration():
 
     # Tags =====================================================================
     # Count
-    assert len(modal.json_lib.tags) == (len(modal.sql_lib.tags) - DEFAULT_TAG_DIFF)
+    assert len(modal.json_lib.tags) == len(modal.sql_lib.tags)
     # Shorthand Parity
     assert modal.check_shorthand_parity()
     # Subtag/Parent Tag Parity
