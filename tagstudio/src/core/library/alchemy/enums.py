@@ -2,6 +2,8 @@ import enum
 from dataclasses import dataclass
 from pathlib import Path
 
+MAX_SQL_VARIABLES = 32766  # 32766 is the max sql bind parameter count as defined here: https://github.com/sqlite/sqlite/blob/master/src/sqliteLimit.h#L140
+
 
 class TagColor(enum.IntEnum):
     DEFAULT = 1
