@@ -62,7 +62,7 @@ TagStudio is a photo & file organization application with an underlying tag-base
 
 If you're interested in contributing to TagStudio, please take a look at the [contribution guidelines](/CONTRIBUTING.md) for how to get started!
 
-Translation hosting generously provided by [Weblate](https://weblate.org/en/). Check out our [project page](<(https://hosted.weblate.org/projects/tagstudio/)>) to help translate TagStudio!
+Translation hosting generously provided by [Weblate](https://weblate.org/en/). Check out our [project page](https://hosted.weblate.org/projects/tagstudio/) to help translate TagStudio!
 
 ## Current Features
 
@@ -71,12 +71,12 @@ Translation hosting generously provided by [Weblate](https://weblate.org/en/). C
 - Create libraries/vaults centered around a system directory. Libraries contain a series of entries: the representations of your files combined with metadata fields. Each entry represents a file in your library’s directory, and is linked to its location.
 - Address moved, deleted, or otherwise "unlinked" files by using the "Fix Unlinked Entries" option in the Tools menu.
 
-### Metadata + Tagging
+### Tagging + Custom Metadata
 
+- Add custom powerful tags to your library entries
 - Add metadata to your library entries, including:
   - Name, Author, Artist (Single-Line Text Fields)
   - Description, Notes (Multiline Text Fields)
-  - Tags, Meta Tags, Content Tags (Tag Boxes)
 - Create rich tags composed of a name, a list of aliases, and a list of “parent tags” - being tags in which these tags inherit values from.
 - Copy and paste tags and fields across file entries
 - Generate tags from your existing folder structure with the "Folders to Tags" macro (NOTE: these tags do NOT sync with folders after they are created)
@@ -109,6 +109,9 @@ To download TagStudio, visit the [Releases](https://github.com/TagStudioDev/TagS
 > [!IMPORTANT]
 > On macOS, you may be met with a message saying _""TagStudio" can't be opened because Apple cannot check it for malicious software."_ If you encounter this, then you'll need to go to the "Settings" app, navigate to "Privacy & Security", and scroll down to a section that says _""TagStudio" was blocked from use because it is not from an identified developer."_ Click the "Open Anyway" button to allow TagStudio to run. You should only have to do this once after downloading the application.
 
+> [!IMPORTANT]
+> On Linux with non-Qt based Desktop Environments you may be unable to open TagStudio. You need to make sure that "xcb-cursor0" or "libxcb-cursor0" packages are installed. For more info check [Missing linux dependencies](https://github.com/TagStudioDev/TagStudio/discussions/182#discussioncomment-9452896)
+
 ### Third-Party Dependencies
 
 - For video thumbnails and playback, you'll also need [FFmpeg](https://ffmpeg.org/download.html) installed on your system.
@@ -136,19 +139,21 @@ In order to scan for new files or file changes, you’ll need to manually go to 
 > [!NOTE]
 > In the future, library refreshing will also be automatically done in the background, or additionally on app startup.
 
-### Adding Metadata to Entries
+### Adding Tags to File Entries
 
-To add a metadata field to a file entry, start by clicking the “Add Field” button under the file preview in the right-hand preview panel. From the dropdown menu, select the type of metadata field you’d like to add to the entry.
+Click the "Add Tag" button at the bottom of the preview panel with one or more tags selected. Search for existing inside the new dialog popup or create a new one from here. Click the “+” button next to whichever tags you want to add. Alternatively, after you search for a tag, press the Enter/Return key to add the first item in the list. Press Enter/Return once more to close the dialog box.
+
+To remove a tag from a file entry, hover over the tag in the preview panel and click on the "-" icon that appears.
+
+### Adding Metadata to File Entries
+
+To add a metadata field to a file entry, start by clicking the “Add Field” button at the bottom of the preview panel. From the dropdown menu, select the type of metadata field you’d like to add to the entry
 
 ### Editing Metadata Fields
 
 #### Text Line / Text Box
 
 Hover over the field and click the pencil icon. From there, add or edit text in the dialog box popup.
-
-#### Tag Box
-
-Click the “+” button at the end of the Tags list, and search for tags to add inside the new dialog popup. Click the “+” button next to whichever tags you want to add. Alternatively, after you search for a tag, press the Enter/Return key to add the add the first item in the list. Press Enter/Return once more to close the dialog box
 
 > [!WARNING]
 > Keyboard control and navigation is currently _very_ buggy, but will be improved in future versions.

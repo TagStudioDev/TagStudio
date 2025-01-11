@@ -1,4 +1,4 @@
-# Copyright (C) 2024 Travis Abendshien (CyanVoxel).
+# Copyright (C) 2025 Travis Abendshien (CyanVoxel).
 # Licensed under the GPL-3.0 License.
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
@@ -10,8 +10,10 @@ import structlog
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import (
     QApplication,
+    QCheckBox,
     QComboBox,
     QFrame,
+    QHBoxLayout,
     QLabel,
     QLineEdit,
     QPushButton,
@@ -56,6 +58,7 @@ class BuildTagPanel(PanelWidget):
     def __init__(self, library: Library, tag: Tag | None = None):
         super().__init__()
         self.lib = library
+        self.tag: Tag  # NOTE: This gets set at the end of the init.
 
         self.setMinimumSize(300, 400)
         self.root_layout = QVBoxLayout(self)
@@ -115,23 +118,22 @@ class BuildTagPanel(PanelWidget):
 
         self.alias_add_button.clicked.connect(self.add_alias_callback)
 
-        # Subtags ------------------------------------------------------------
+        # Parent Tags ----------------------------------------------------------
+        self.parent_tags_widget = QWidget()
+        self.parent_tags_layout = QVBoxLayout(self.parent_tags_widget)
+        self.parent_tags_layout.setStretch(1, 1)
+        self.parent_tags_layout.setContentsMargins(0, 0, 0, 0)
+        self.parent_tags_layout.setSpacing(0)
+        self.parent_tags_layout.setAlignment(Qt.AlignmentFlag.AlignLeft)
 
-        self.subtags_widget = QWidget()
-        self.subtags_layout = QVBoxLayout(self.subtags_widget)
-        self.subtags_layout.setStretch(1, 1)
-        self.subtags_layout.setContentsMargins(0, 0, 0, 0)
-        self.subtags_layout.setSpacing(0)
-        self.subtags_layout.setAlignment(Qt.AlignmentFlag.AlignLeft)
-
-        self.subtags_title = QLabel()
-        Translations.translate_qobject(self.subtags_title, "tag.parent_tags")
-        self.subtags_layout.addWidget(self.subtags_title)
+        self.parent_tags_title = QLabel()
+        Translations.translate_qobject(self.parent_tags_title, "tag.parent_tags")
+        self.parent_tags_layout.addWidget(self.parent_tags_title)
 
         self.scroll_contents = QWidget()
-        self.subtags_scroll_layout = QVBoxLayout(self.scroll_contents)
-        self.subtags_scroll_layout.setContentsMargins(6, 0, 6, 0)
-        self.subtags_scroll_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
+        self.parent_tags_scroll_layout = QVBoxLayout(self.scroll_contents)
+        self.parent_tags_scroll_layout.setContentsMargins(6, 0, 6, 0)
+        self.parent_tags_scroll_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
 
         self.scroll_area = QScrollArea()
         # self.scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOn)
@@ -141,29 +143,29 @@ class BuildTagPanel(PanelWidget):
         self.scroll_area.setWidget(self.scroll_contents)
         # self.scroll_area.setMinimumHeight(60)
 
-        self.subtags_layout.addWidget(self.scroll_area)
+        self.parent_tags_layout.addWidget(self.scroll_area)
 
-        self.subtags_add_button = QPushButton()
-        self.subtags_add_button.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.subtags_add_button.setText("+")
-        self.subtags_layout.addWidget(self.subtags_add_button)
+        self.parent_tags_add_button = QPushButton()
+        self.parent_tags_add_button.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.parent_tags_add_button.setText("+")
+        self.parent_tags_layout.addWidget(self.parent_tags_add_button)
 
         exclude_ids: list[int] = list()
         if tag is not None:
             exclude_ids.append(tag.id)
 
         tsp = TagSearchPanel(self.lib, exclude_ids)
-        tsp.tag_chosen.connect(lambda x: self.add_subtag_callback(x))
+        tsp.tag_chosen.connect(lambda x: self.add_parent_tag_callback(x))
         self.add_tag_modal = PanelModal(tsp)
         Translations.translate_with_setter(self.add_tag_modal.setTitle, "tag.parent_tags.add")
         Translations.translate_with_setter(self.add_tag_modal.setWindowTitle, "tag.parent_tags.add")
-        self.subtags_add_button.clicked.connect(self.add_tag_modal.show)
+        self.parent_tags_add_button.clicked.connect(self.add_tag_modal.show)
 
-        # Shorthand ------------------------------------------------------------
+        # Color ----------------------------------------------------------------
         self.color_widget = QWidget()
         self.color_layout = QVBoxLayout(self.color_widget)
         self.color_layout.setStretch(1, 1)
-        self.color_layout.setContentsMargins(0, 0, 0, 0)
+        self.color_layout.setContentsMargins(0, 0, 0, 24)
         self.color_layout.setSpacing(0)
         self.color_layout.setAlignment(Qt.AlignmentFlag.AlignLeft)
         self.color_title = QLabel()
@@ -190,16 +192,47 @@ class BuildTagPanel(PanelWidget):
         )
         self.color_layout.addWidget(self.color_field)
 
+        # Category -------------------------------------------------------------
+        self.cat_widget = QWidget()
+        self.cat_layout = QHBoxLayout(self.cat_widget)
+        self.cat_layout.setStretch(1, 1)
+        self.cat_layout.setContentsMargins(0, 0, 0, 0)
+        self.cat_layout.setSpacing(0)
+        self.cat_layout.setAlignment(Qt.AlignmentFlag.AlignLeft)
+        self.cat_title = QLabel()
+        self.cat_title.setText("Is Category")
+        self.cat_checkbox = QCheckBox()
+        # TODO: Style checkbox
+        self.cat_checkbox.setStyleSheet(
+            "QCheckBox::indicator{"
+            "width: 19px; height: 19px;"
+            # f"background: #1e1e1e;"
+            # f"border-color: #333333;"
+            # f"border-radius: 6px;"
+            # f"border-style:solid;"
+            # f"border-width:{math.ceil(self.devicePixelRatio())}px;"
+            "}"
+            # f"QCheckBox::indicator::hover"
+            # f"{{"
+            # f"border-color: #CCCCCC;"
+            # f"background: #555555;"
+            # f"}}"
+        )
+        self.cat_layout.addWidget(self.cat_checkbox)
+        self.cat_layout.addWidget(self.cat_title)
+
         # Add Widgets to Layout ================================================
         self.root_layout.addWidget(self.name_widget)
         self.root_layout.addWidget(self.shorthand_widget)
         self.root_layout.addWidget(self.aliases_widget)
         self.root_layout.addWidget(self.aliases_table)
         self.root_layout.addWidget(self.alias_add_button)
-        self.root_layout.addWidget(self.subtags_widget)
+        self.root_layout.addWidget(self.parent_tags_widget)
         self.root_layout.addWidget(self.color_widget)
+        self.root_layout.addWidget(QLabel("<h3>Properties</h3>"))
+        self.root_layout.addWidget(self.cat_widget)
 
-        self.subtag_ids: set[int] = set()
+        self.parent_ids: set[int] = set()
         self.alias_ids: list[int] = []
         self.alias_names: list[str] = []
         self.new_alias_names: dict = {}
@@ -239,26 +272,23 @@ class BuildTagPanel(PanelWidget):
         if isinstance(focused_widget, CustomTableItem):
             self.add_alias_callback()
 
-    def add_subtag_callback(self, tag_id: int):
-        logger.info("add_subtag_callback", tag_id=tag_id)
-        self.subtag_ids.add(tag_id)
-        self.set_subtags()
+    def add_parent_tag_callback(self, tag_id: int):
+        logger.info("add_parent_tag_callback", tag_id=tag_id)
+        self.parent_ids.add(tag_id)
+        self.set_parent_tags()
 
-    def remove_subtag_callback(self, tag_id: int):
-        logger.info("removing subtag", tag_id=tag_id)
-        self.subtag_ids.remove(tag_id)
-        self.set_subtags()
+    def remove_parent_tag_callback(self, tag_id: int):
+        logger.info("remove_parent_tag_callback", tag_id=tag_id)
+        self.parent_ids.remove(tag_id)
+        self.set_parent_tags()
 
     def add_alias_callback(self):
         logger.info("add_alias_callback")
 
         id = self.new_item_id
-
         self.alias_ids.append(id)
         self.new_alias_names[id] = ""
-
         self.new_item_id -= 1
-
         self._set_aliases()
 
         row = self.aliases_table.rowCount() - 1
@@ -271,20 +301,20 @@ class BuildTagPanel(PanelWidget):
         self.alias_ids.remove(alias_id)
         self._set_aliases()
 
-    def set_subtags(self):
-        while self.subtags_scroll_layout.itemAt(0):
-            self.subtags_scroll_layout.takeAt(0).widget().deleteLater()
+    def set_parent_tags(self):
+        while self.parent_tags_scroll_layout.itemAt(0):
+            self.parent_tags_scroll_layout.takeAt(0).widget().deleteLater()
 
         c = QWidget()
         layout = QVBoxLayout(c)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(3)
-        for tag_id in self.subtag_ids:
+        for tag_id in self.parent_ids:
             tag = self.lib.get_tag(tag_id)
             tw = TagWidget(tag, has_edit=False, has_remove=True)
-            tw.on_remove.connect(lambda t=tag_id: self.remove_subtag_callback(t))
+            tw.on_remove.connect(lambda t=tag_id: self.remove_parent_tag_callback(t))
             layout.addWidget(tw)
-        self.subtags_scroll_layout.addWidget(c)
+        self.parent_tags_scroll_layout.addWidget(c)
 
     def add_aliases(self):
         names: set[str] = set()
@@ -349,28 +379,26 @@ class BuildTagPanel(PanelWidget):
         self.new_alias_names[item.id] = item.text()
 
     def set_tag(self, tag: Tag):
+        logger.info("[BuildTagPanel] Setting Tag", tag=tag)
         self.tag = tag
-
-        logger.info("setting tag", tag=tag)
-
         self.name_field.setText(tag.name)
         self.shorthand_field.setText(tag.shorthand or "")
 
         for alias_id in tag.alias_ids:
             self.alias_ids.append(alias_id)
-
         self._set_aliases()
 
-        for subtag in tag.subtag_ids:
-            self.subtag_ids.add(subtag)
-
-        self.set_subtags()
+        for parent_id in tag.parent_ids:
+            self.parent_ids.add(parent_id)
+        self.set_parent_tags()
 
         # select item in self.color_field where the userData value matched tag.color
         for i in range(self.color_field.count()):
             if self.color_field.itemData(i) == tag.color:
                 self.color_field.setCurrentIndex(i)
                 break
+
+        self.cat_checkbox.setChecked(tag.is_category)
 
     def on_name_changed(self):
         is_empty = not self.name_field.text().strip()
@@ -386,14 +414,13 @@ class BuildTagPanel(PanelWidget):
 
     def build_tag(self) -> Tag:
         color = self.color_field.currentData() or TagColor.DEFAULT
-
         tag = self.tag
-
         self.add_aliases()
 
         tag.name = self.name_field.text()
         tag.shorthand = self.shorthand_field.text()
         tag.color = color
+        tag.is_category = self.cat_checkbox.isChecked()
 
         logger.info("built tag", tag=tag)
         return tag

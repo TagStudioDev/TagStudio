@@ -1,4 +1,4 @@
-# Copyright (C) 2024 Travis Abendshien (CyanVoxel).
+# Copyright (C) 2025 Travis Abendshien (CyanVoxel).
 # Licensed under the GPL-3.0 License.
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
@@ -114,8 +114,6 @@ class TagWidget(QWidget):
         self.tag = tag
         self.has_edit = has_edit
         self.has_remove = has_remove
-        # self.bg_label = QLabel()
-        # self.setStyleSheet('background-color:blue;')
 
         # if on_click_callback:
         self.setCursor(Qt.CursorShape.PointingHandCursor)
@@ -148,7 +146,7 @@ class TagWidget(QWidget):
         self.inner_layout.setContentsMargins(2, 2, 2, 2)
 
         self.bg_button.setLayout(self.inner_layout)
-        self.bg_button.setMinimumSize(math.ceil(22 * 1.5), 22)
+        self.bg_button.setMinimumSize(math.ceil(22 * 2), 22)
 
         self.bg_button.setStyleSheet(
             f"QPushButton{{"

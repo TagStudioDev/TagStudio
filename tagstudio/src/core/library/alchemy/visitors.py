@@ -1,3 +1,7 @@
+# Copyright (C) 2025
+# Licensed under the GPL-3.0 License.
+# Created for TagStudio: https://github.com/CyanVoxel/TagStudio
+
 from typing import TYPE_CHECKING
 
 import structlog
@@ -7,8 +11,8 @@ from src.core.media_types import FILETYPE_EQUIVALENTS, MediaCategories
 from src.core.query_lang import BaseVisitor
 from src.core.query_lang.ast import ANDList, Constraint, ConstraintType, Not, ORList, Property
 
-from .joins import TagField
-from .models import Entry, Tag, TagAlias, TagBoxField
+from .joins import TagEntry
+from .models import Entry, Tag, TagAlias
 
 # workaround to have autocompletion in the Editor
 if TYPE_CHECKING:
@@ -18,16 +22,17 @@ else:
 
 logger = structlog.get_logger(__name__)
 
+# TODO: Reevaluate after subtags -> parent tags name change
 CHILDREN_QUERY = text("""
--- Note for this entire query that tag_subtags.child_id is the parent id and tag_subtags.parent_id is the child id due to bad naming
-WITH RECURSIVE Subtags AS (
+-- Note for this entire query that tag_parents.child_id is the parent id and tag_parents.parent_id is the child id due to bad naming
+WITH RECURSIVE ChildTags AS (
     SELECT :tag_id AS child_id
     UNION ALL
-    SELECT ts.parent_id AS child_id
-	FROM tag_subtags ts
-    INNER JOIN Subtags s ON ts.child_id = s.child_id
+    SELECT tp.parent_id AS child_id
+	FROM tag_parents tp
+    INNER JOIN ChildTags c ON tp.child_id = c.child_id
 )
-SELECT * FROM Subtags;
+SELECT child_id FROM ChildTags;
 """)  # noqa: E501
 
 
@@ -50,12 +55,18 @@ class SQLBoolExpressionBuilder(BaseVisitor[ColumnElement[bool]]):
         tag_ids: list[int] = []
         bool_expressions: list[ColumnElement[bool]] = []
 
-        # Search for TagID / unambigous Tag Constraints and store the respective tag ids seperately
+        # Search for TagID / unambiguous Tag Constraints and store the respective tag ids separately
         for term in node.terms:
             if isinstance(term, Constraint) and len(term.properties) == 0:
                 match term.type:
                     case ConstraintType.TagID:
-                        tag_ids.append(int(term.value))
+                        try:
+                            tag_ids.append(int(term.value))
+                        except ValueError:
+                            logger.error(
+                                "[SQLBoolExpressionBuilder] Could not cast value to an int Tag ID",
+                                value=term.value,
+                            )
                         continue
                     case ConstraintType.Tag:
                         if len(ids := self.__get_tag_ids(term.value)) == 1:
@@ -71,12 +82,13 @@ class SQLBoolExpressionBuilder(BaseVisitor[ColumnElement[bool]]):
         # If there is just one tag id, check the normal way
         elif len(tag_ids) == 1:
             bool_expressions.append(
-                self.__entry_satisfies_expression(TagField.tag_id == tag_ids[0])
+                self.__entry_satisfies_expression(TagEntry.tag_id == tag_ids[0])
             )
 
         return and_(*bool_expressions)
 
     def visit_constraint(self, node: Constraint) -> ColumnElement[bool]:
+        """Returns a Boolean Expression that is true, if the Entry satisfies the constraint."""
         if len(node.properties) != 0:
             raise NotImplementedError("Properties are not implemented yet")  # TODO TSQLANG
 
@@ -99,9 +111,7 @@ class SQLBoolExpressionBuilder(BaseVisitor[ColumnElement[bool]]):
             )
         elif node.type == ConstraintType.Special:  # noqa: SIM102 unnecessary once there is a second special constraint
             if node.value.lower() == "untagged":
-                return ~Entry.id.in_(
-                    select(Entry.id).join(Entry.tag_box_fields).join(TagBoxField.tags)
-                )
+                return ~Entry.id.in_(select(Entry.id).join(TagEntry))
 
         # raise exception if Constraint stays unhandled
         raise NotImplementedError("This type of constraint is not implemented yet")
@@ -116,8 +126,8 @@ class SQLBoolExpressionBuilder(BaseVisitor[ColumnElement[bool]]):
         """Returns a boolean expression that is true if the entry has at least one of the supplied tags."""  # noqa: E501
         return (
             select(1)
-            .correlate(TagBoxField)
-            .where(and_(TagField.field_id == TagBoxField.id, TagField.tag_id.in_(tag_ids)))
+            .correlate(Entry)
+            .where(and_(TagEntry.entry_id == Entry.id, TagEntry.tag_id.in_(tag_ids)))
             .exists()
         )
 
@@ -147,20 +157,16 @@ class SQLBoolExpressionBuilder(BaseVisitor[ColumnElement[bool]]):
     def __entry_has_all_tags(self, tag_ids: list[int]) -> ColumnElement[bool]:
         """Returns Binary Expression that is true if the Entry has all provided tag ids."""
         # Relational Division Query
-        # The changes to this technically introduce a bug
-        # which occurs when the tags are split across multiple tag box fields,
-        # but since those will be removed soon the bug will also disappear soon
-        # (also this method isn't used in every query that has an AND,
-        #  so the bug doesn't even have that many chances to rear its ugly head)
-        return TagBoxField.id.in_(
-            select(TagField.field_id)
-            .where(TagField.tag_id.in_(tag_ids))
-            .group_by(TagField.field_id)
-            .having(func.count(distinct(TagField.tag_id)) == len(tag_ids))
+        return Entry.id.in_(
+            select(TagEntry.entry_id)
+            .where(TagEntry.tag_id.in_(tag_ids))
+            .group_by(TagEntry.entry_id)
+            .having(func.count(distinct(TagEntry.tag_id)) == len(tag_ids))
         )
 
     def __entry_satisfies_expression(self, expr: ColumnElement[bool]) -> ColumnElement[bool]:
-        """Returns Binary Expression that is true if the Entry satisfies the column expression."""
-        return Entry.id.in_(
-            select(Entry.id).outerjoin(Entry.tag_box_fields).outerjoin(TagField).where(expr)
-        )
+        """Returns Binary Expression that is true if the Entry satisfies the column expression.
+
+        Executed on: Entry ⟕ TagEntry (Entry LEFT OUTER JOIN TagEntry).
+        """
+        return Entry.id.in_(select(Entry.id).outerjoin(TagEntry).where(expr))

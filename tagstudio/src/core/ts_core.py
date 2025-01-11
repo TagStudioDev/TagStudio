@@ -126,7 +126,7 @@ class TagStudioCore:
                         is_new = field["id"] not in entry_field_types
                         field_key = field["id"]
                         if is_new:
-                            lib.add_entry_field_type(entry.id, field_key, field["value"])
+                            lib.add_field_to_entry(entry.id, field_key, field["value"])
                         else:
                             lib.update_entry_field(entry.id, field_key, field["value"])
 

@@ -11,9 +11,9 @@ def test_build_tag_panel_add_sub_tag_callback(library, generate_tag):
 
     panel: BuildTagPanel = BuildTagPanel(library, child)
 
-    panel.add_subtag_callback(parent.id)
+    panel.add_parent_tag_callback(parent.id)
 
-    assert len(panel.subtag_ids) == 1
+    assert len(panel.parent_ids) == 1
 
 
 def test_build_tag_panel_remove_subtag_callback(library, generate_tag):
@@ -30,9 +30,9 @@ def test_build_tag_panel_remove_subtag_callback(library, generate_tag):
 
     panel: BuildTagPanel = BuildTagPanel(library, child)
 
-    panel.remove_subtag_callback(parent.id)
+    panel.remove_parent_tag_callback(parent.id)
 
-    assert len(panel.subtag_ids) == 0
+    assert len(panel.parent_ids) == 0
 
 
 import os
@@ -73,20 +73,20 @@ def test_build_tag_panel_remove_alias_callback(library, generate_tag):
     assert alias.name not in panel.alias_names
 
 
-def test_build_tag_panel_set_subtags(library, generate_tag):
+def test_build_tag_panel_set_parent_tags(library, generate_tag):
     parent = library.add_tag(generate_tag("parent", id=123))
     child = library.add_tag(generate_tag("child", id=124))
     assert parent
     assert child
 
-    library.add_subtag(child.id, parent.id)
+    library.add_parent_tag(child.id, parent.id)
 
     child = library.get_tag(child.id)
 
     panel: BuildTagPanel = BuildTagPanel(library, child)
 
-    assert len(panel.subtag_ids) == 1
-    assert panel.subtags_scroll_layout.count() == 1
+    assert len(panel.parent_ids) == 1
+    assert panel.parent_tags_scroll_layout.count() == 1
 
 
 def test_build_tag_panel_add_aliases(library, generate_tag):

@@ -1,4 +1,4 @@
-# Copyright (C) 2024 Travis Abendshien (CyanVoxel).
+# Copyright (C) 2025
 # Licensed under the GPL-3.0 License.
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
@@ -20,7 +20,6 @@ from PySide6.QtWidgets import (
 )
 from src.core.constants import TAG_ARCHIVED, TAG_FAVORITE
 from src.core.library import Library, Tag
-from src.core.library.alchemy.fields import _FieldID
 from src.core.palette import ColorType, get_tag_color
 from src.qt.flowlayout import FlowLayout
 from src.qt.translations import Translations
@@ -42,7 +41,7 @@ def add_folders_to_tree(library: Library, tree: BranchData, items: tuple[str, ..
     branch = tree
     for folder in items:
         if folder not in branch.dirs:
-            # TODO - subtags
+            # TODO: Reimplement parent tags
             new_tag = Tag(name=folder)
             library.add_tag(new_tag)
             branch.dirs[folder] = BranchData(tag=new_tag)
@@ -73,7 +72,7 @@ def folders_to_tags(library: Library):
 
         tag = add_folders_to_tree(library, tree, folders).tag
         if tag and not entry.has_tag(tag):
-            library.add_field_tag(entry, tag, _FieldID.TAGS.name, create_field=True)
+            library.add_tags_to_entry(entry.id, tag.id)
 
     logger.info("Done")
 
@@ -82,11 +81,11 @@ def reverse_tag(library: Library, tag: Tag, items: list[Tag] | None) -> list[Tag
     items = items or []
     items.append(tag)
 
-    if not tag.subtag_ids:
+    if not tag.parent_ids:
         items.reverse()
         return items
 
-    for subtag_id in tag.subtag_ids:
+    for subtag_id in tag.parent_ids:
         subtag = library.get_tag(subtag_id)
     return reverse_tag(library, subtag, items)
 
@@ -127,11 +126,10 @@ def generate_preview_data(library: Library) -> BranchData:
         branch = _add_folders_to_tree(folders)
         if branch:
             has_tag = False
-            for tag_field in entry.tag_box_fields:
-                for tag in tag_field.tags:
-                    if tag.name == branch.tag.name:
-                        has_tag = True
-                        break
+            for tag in entry.tags:
+                if tag.name == branch.tag.name:
+                    has_tag = True
+                    break
             if not has_tag:
                 branch.files.append(entry.path.name)
 

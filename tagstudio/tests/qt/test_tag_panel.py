@@ -10,7 +10,7 @@ def test_tag_panel(qtbot, library):
 
 def test_add_tag_callback(qt_driver):
     # Given
-    assert len(qt_driver.lib.tags) == 5
+    assert len(qt_driver.lib.tags) == 6
     qt_driver.add_tag_action_callback()
 
     # When
@@ -20,5 +20,5 @@ def test_add_tag_callback(qt_driver):
 
     # Then
     tags: set[Tag] = qt_driver.lib.tags
-    assert len(tags) == 6
+    assert len(tags) == 7
     assert "xxx" in {tag.name for tag in tags}
