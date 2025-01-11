@@ -34,8 +34,8 @@ Features are broken up into the following priority levels, with nested prioritie
         -   [ ] Existing colors are now a set of base colors [HIGH]
             -   [ ] Editable [MEDIUM]
             -   [ ] Non-removable [HIGH]
-    -   [ ] [Tag Categories](../library/tag_categories.md) [HIGH]
-        -   [ ] Property available for tags that allow the tag and any inheriting from it to be displayed separately in the preview panel under a title [HIGH]
+    -   [x] [Tag Categories](../library/tag_categories.md) [HIGH]
+        -   [x] Property available for tags that allow the tag and any inheriting from it to be displayed separately in the preview panel under a title [HIGH]
         -   [ ] Title is tag name [HIGH]
         -   [ ] Title has tag color [MEDIUM]
         -   [ ] Tag marked as category does not display as a tag itself [HIGH]
@@ -86,19 +86,20 @@ Features are broken up into the following priority levels, with nested prioritie
     -   [ ] GPS Location [LOW]
     -   [ ] Custom field names [HIGH] [#18](https://github.com/TagStudioDev/TagStudio/issues/18)
 -   [ ] Search engine [HIGH] [#325](https://github.com/TagStudioDev/TagStudio/issues/325)
-    -   [ ] Boolean operators [HIGH] [#225](https://github.com/TagStudioDev/TagStudio/issues/225), [#314](https://github.com/TagStudioDev/TagStudio/issues/314)
+    -   [x] Boolean operators [HIGH] [#225](https://github.com/TagStudioDev/TagStudio/issues/225), [#314](https://github.com/TagStudioDev/TagStudio/issues/314)
     -   [ ] Tag objects + autocomplete [HIGH] [#476 (Autocomplete)](https://github.com/TagStudioDev/TagStudio/issues/476)
-    -   [ ] Filename search [HIGH]
-    -   [ ] Filetype search [HIGH]
-        -   [ ] Search by extension (e.g. ".jpg", ".png") [HIGH]
-            -   [ ] Optional consolidation of extension synonyms (i.e. ".jpg" can equal ".jpeg") [LOW]
-        -   [ ] Search by media type (e.g. "image", "video", "document") [MEDIUM]
+    -   [x] Filename search [HIGH]
+    -   [x] Filetype search [HIGH]
+        -   [x] Search by extension (e.g. ".jpg", ".png") [HIGH]
+            -   [x] Optional consolidation of extension synonyms (i.e. ".jpg" can equal ".jpeg") [LOW]
+        -   [x] Search by media type (e.g. "image", "video", "document") [MEDIUM]
     -   [ ] Field content search [HIGH] [#272](https://github.com/TagStudioDev/TagStudio/issues/272)
     -   [ ] HAS operator for composition tags [HIGH]
     -   [ ] OCR search [LOW]
     -   [ ] Fuzzy Search [LOW] [#400](https://github.com/TagStudioDev/TagStudio/issues/400)
     -   [ ] Sortable results [HIGH] [#68](https://github.com/TagStudioDev/TagStudio/issues/68)
         -   [ ] Sort by relevance [HIGH]
+        -   [x] Sort by date added [HIGH]
         -   [ ] Sort by date created [HIGH]
         -   [ ] Sort by date modified [HIGH]
         -   [ ] Sort by date taken (photos) [MEDIUM]
@@ -156,7 +157,7 @@ These version milestones are rough estimations for when the previous core featur
 
 ### 9.5 (Alpha)
 
--   [ ] SQL backend [HIGH]
+-   [x] SQL backend [HIGH]
 -   [ ] Translations _(Any applicable)_ [MEDIUM]
 -   [ ] Multiple Root Directories per Library [HIGH]
 -   [ ] Tags [HIGH]
@@ -169,14 +170,20 @@ These version milestones are rough estimations for when the previous core featur
         -   [ ] Existing colors are now a set of base colors [HIGH]
             -   [ ] Editable [MEDIUM]
             -   [ ] Non-removable [HIGH]
+    -   [x] [Tag Categories](../library/tag_categories.md) [HIGH]
+        -   [x] Property available for tags that allow the tag and any inheriting from it to be displayed separately in the preview panel under a title [HIGH]
 -   [ ] Search engine [HIGH]
-    -   [ ] Boolean operators [HIGH]
+    -   [x] Boolean operators [HIGH]
     -   [ ] Tag objects + autocomplete [HIGH]
-    -   [ ] Filename search [HIGH]
-    -   [ ] Filetype search [HIGH]
+    -   [x] Filename search [HIGH]
+    -   [x] Filetype search [HIGH]
+        -   [x] Search by extension (e.g. ".jpg", ".png") [HIGH]
+            -   [x] Optional consolidation of extension synonyms (i.e. ".jpg" can equal ".jpeg") [LOW]
+        -   [x] Search by media type (e.g. "image", "video", "document") [MEDIUM]
     -   [ ] Field content search [HIGH]
     -   [ ] Sortable results [HIGH]
         -   [ ] Sort by relevance [HIGH]
+        -   [x] Sort by date added [HIGH]
         -   [ ] Sort by date created [HIGH]
         -   [ ] Sort by date modified [HIGH]
         -   [ ] Sort by date taken (photos) [MEDIUM]
@@ -200,8 +207,6 @@ These version milestones are rough estimations for when the previous core featur
         -   [ ] Built-in Icon Packs (i.e. Boxicons) [HIGH]
         -   [ ] User Defined Icons [HIGH]
     -   [ ] Multiple Languages for Tag Strings [MEDIUM]
-    -   [ ] [Tag Categories](../library/tag_categories.md) [HIGH]
-        -   [ ] Property available for tags that allow the tag and any inheriting from it to be displayed separately in the preview panel under a title [HIGH]
         -   [ ] Title is tag name [HIGH]
         -   [ ] Title has tag color [MEDIUM]
         -   [ ] Tag marked as category does not display as a tag itself [HIGH]

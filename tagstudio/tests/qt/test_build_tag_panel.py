@@ -1,9 +1,6 @@
-from typing import cast
-
-from PySide6.QtWidgets import QApplication, QMainWindow
 from src.core.library.alchemy.models import Tag
 from src.qt.modals.build_tag import BuildTagPanel
-from src.qt.widgets.tag import TagAliasWidget
+from src.qt.translations import Translations
 
 
 def test_build_tag_panel_add_sub_tag_callback(library, generate_tag):
@@ -14,9 +11,9 @@ def test_build_tag_panel_add_sub_tag_callback(library, generate_tag):
 
     panel: BuildTagPanel = BuildTagPanel(library, child)
 
-    panel.add_subtag_callback(parent.id)
+    panel.add_parent_tag_callback(parent.id)
 
-    assert len(panel.subtag_ids) == 1
+    assert len(panel.parent_ids) == 1
 
 
 def test_build_tag_panel_remove_subtag_callback(library, generate_tag):
@@ -33,37 +30,14 @@ def test_build_tag_panel_remove_subtag_callback(library, generate_tag):
 
     panel: BuildTagPanel = BuildTagPanel(library, child)
 
-    panel.remove_subtag_callback(parent.id)
+    panel.remove_parent_tag_callback(parent.id)
 
-    assert len(panel.subtag_ids) == 0
+    assert len(panel.parent_ids) == 0
 
 
 import os
 
 os.environ["QT_QPA_PLATFORM"] = "offscreen"
-
-
-def test_build_tag_panel_remove_selected_alias(library, generate_tag):
-    app = QApplication.instance() or QApplication([])
-
-    window = QMainWindow()
-    parent_tag = library.add_tag(generate_tag("xxx", id=123))
-    panel = BuildTagPanel(library, parent_tag)
-    panel.setParent(window)
-
-    panel.add_alias_callback()
-    window.show()
-
-    assert panel.aliases_flow_layout.count() == 2
-
-    alias_widget = panel.aliases_flow_layout.itemAt(0).widget()
-    alias_widget.text_field.setFocus()
-
-    app.processEvents()
-
-    panel.remove_selected_alias()
-
-    assert panel.aliases_flow_layout.count() == 1
 
 
 def test_build_tag_panel_add_alias_callback(library, generate_tag):
@@ -74,7 +48,7 @@ def test_build_tag_panel_add_alias_callback(library, generate_tag):
 
     panel.add_alias_callback()
 
-    assert panel.aliases_flow_layout.count() == 2
+    assert panel.aliases_table.rowCount() == 1
 
 
 def test_build_tag_panel_remove_alias_callback(library, generate_tag):
@@ -99,20 +73,20 @@ def test_build_tag_panel_remove_alias_callback(library, generate_tag):
     assert alias.name not in panel.alias_names
 
 
-def test_build_tag_panel_set_subtags(library, generate_tag):
+def test_build_tag_panel_set_parent_tags(library, generate_tag):
     parent = library.add_tag(generate_tag("parent", id=123))
     child = library.add_tag(generate_tag("child", id=124))
     assert parent
     assert child
 
-    library.add_subtag(child.id, parent.id)
+    library.add_parent_tag(child.id, parent.id)
 
     child = library.get_tag(child.id)
 
     panel: BuildTagPanel = BuildTagPanel(library, child)
 
-    assert len(panel.subtag_ids) == 1
-    assert panel.subtag_flow_layout.count() == 2
+    assert len(panel.parent_ids) == 1
+    assert panel.parent_tags_scroll_layout.count() == 1
 
 
 def test_build_tag_panel_add_aliases(library, generate_tag):
@@ -128,19 +102,19 @@ def test_build_tag_panel_add_aliases(library, generate_tag):
 
     panel: BuildTagPanel = BuildTagPanel(library, tag)
 
-    widget = panel.aliases_flow_layout.itemAt(0).widget()
+    widget = panel.aliases_table.cellWidget(0, 1)
 
     alias_names: set[str] = set()
-    alias_names.add(cast(TagAliasWidget, widget).text_field.text())
+    alias_names.add(widget.text())
 
-    widget = panel.aliases_flow_layout.itemAt(1).widget()
-    alias_names.add(cast(TagAliasWidget, widget).text_field.text())
+    widget = panel.aliases_table.cellWidget(1, 1)
+    alias_names.add(widget.text())
 
     assert "alias" in alias_names
     assert "alias_2" in alias_names
 
-    old_text = cast(TagAliasWidget, widget).text_field.text()
-    cast(TagAliasWidget, widget).text_field.setText("alias_update")
+    old_text = widget.text()
+    widget.setText("alias_update")
 
     panel.add_aliases()
 
@@ -161,7 +135,7 @@ def test_build_tag_panel_set_aliases(library, generate_tag):
 
     panel: BuildTagPanel = BuildTagPanel(library, tag)
 
-    assert panel.aliases_flow_layout.count() == 2
+    assert panel.aliases_table.rowCount() == 1
     assert len(panel.alias_names) == 1
     assert len(panel.alias_ids) == 1
 
@@ -182,4 +156,4 @@ def test_build_tag_panel_build_tag(library):
     tag: Tag = panel.build_tag()
 
     assert tag
-    assert tag.name == "New Tag"
+    assert tag.name == Translations["tag.new"]

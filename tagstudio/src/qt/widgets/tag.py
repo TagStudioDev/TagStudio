@@ -1,4 +1,4 @@
-# Copyright (C) 2024 Travis Abendshien (CyanVoxel).
+# Copyright (C) 2025 Travis Abendshien (CyanVoxel).
 # Licensed under the GPL-3.0 License.
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
@@ -20,6 +20,7 @@ from PySide6.QtWidgets import (
 from src.core.library import Tag
 from src.core.library.alchemy.enums import TagColor
 from src.core.palette import ColorType, get_tag_color
+from src.qt.translations import Translations
 
 
 class TagAliasWidget(QWidget):
@@ -113,8 +114,6 @@ class TagWidget(QWidget):
         self.tag = tag
         self.has_edit = has_edit
         self.has_remove = has_remove
-        # self.bg_label = QLabel()
-        # self.setStyleSheet('background-color:blue;')
 
         # if on_click_callback:
         self.setCursor(Qt.CursorShape.PointingHandCursor)
@@ -126,17 +125,20 @@ class TagWidget(QWidget):
         self.bg_button.setFlat(True)
         self.bg_button.setText(tag.name)
         if has_edit:
-            edit_action = QAction("Edit", self)
+            edit_action = QAction(self)
+            Translations.translate_qobject(edit_action, "generic.edit")
             edit_action.triggered.connect(on_edit_callback)
             edit_action.triggered.connect(self.on_edit.emit)
             self.bg_button.addAction(edit_action)
         # if on_click_callback:
         self.bg_button.setContextMenuPolicy(Qt.ContextMenuPolicy.ActionsContextMenu)
 
-        search_for_tag_action = QAction("Search for Tag", self)
+        search_for_tag_action = QAction(self)
+        Translations.translate_qobject(search_for_tag_action, "tag.search_for_tag")
         search_for_tag_action.triggered.connect(self.on_click.emit)
         self.bg_button.addAction(search_for_tag_action)
-        add_to_search_action = QAction("Add to Search", self)
+        add_to_search_action = QAction(self)
+        Translations.translate_qobject(add_to_search_action, "tag.add_to_search")
         self.bg_button.addAction(add_to_search_action)
 
         self.inner_layout = QHBoxLayout()
@@ -144,7 +146,7 @@ class TagWidget(QWidget):
         self.inner_layout.setContentsMargins(2, 2, 2, 2)
 
         self.bg_button.setLayout(self.inner_layout)
-        self.bg_button.setMinimumSize(math.ceil(22 * 1.5), 22)
+        self.bg_button.setMinimumSize(math.ceil(22 * 2), 22)
 
         self.bg_button.setStyleSheet(
             f"QPushButton{{"

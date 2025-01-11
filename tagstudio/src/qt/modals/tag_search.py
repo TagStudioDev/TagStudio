@@ -7,6 +7,7 @@ import math
 
 import structlog
 from PySide6.QtCore import QSize, Qt, Signal
+from PySide6.QtGui import QShowEvent
 from PySide6.QtWidgets import (
     QFrame,
     QHBoxLayout,
@@ -17,8 +18,8 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 from src.core.library import Library
-from src.core.library.alchemy.enums import FilterState
 from src.core.palette import ColorType, get_tag_color
+from src.qt.translations import Translations
 from src.qt.widgets.panel import PanelWidget
 from src.qt.widgets.tag import TagWidget
 
@@ -32,8 +33,8 @@ class TagSearchPanel(PanelWidget):
         super().__init__()
         self.lib = library
         self.exclude = exclude
-        self.first_tag_id = None
-        self.tag_limit = 100
+        self.is_initialized: bool = False
+        self.first_tag_id: int = None
         self.setMinimumSize(300, 400)
         self.root_layout = QVBoxLayout(self)
         self.root_layout.setContentsMargins(6, 0, 6, 0)
@@ -41,7 +42,7 @@ class TagSearchPanel(PanelWidget):
         self.search_field = QLineEdit()
         self.search_field.setObjectName("searchField")
         self.search_field.setMinimumSize(QSize(0, 32))
-        self.search_field.setPlaceholderText("Search Tags")
+        Translations.translate_with_setter(self.search_field.setPlaceholderText, "home.search_tags")
         self.search_field.textEdited.connect(lambda: self.update_tags(self.search_field.text()))
         self.search_field.returnPressed.connect(
             lambda checked=False: self.on_return(self.search_field.text())
@@ -61,11 +62,9 @@ class TagSearchPanel(PanelWidget):
 
         self.root_layout.addWidget(self.search_field)
         self.root_layout.addWidget(self.scroll_area)
-        self.update_tags()
 
     def on_return(self, text: str):
         if text and self.first_tag_id is not None:
-            # callback(self.first_tag_id)
             self.tag_chosen.emit(self.first_tag_id)
             self.search_field.setText("")
             self.update_tags()
@@ -73,20 +72,21 @@ class TagSearchPanel(PanelWidget):
             self.search_field.setFocus()
             self.parentWidget().hide()
 
-    def update_tags(self, name: str | None = None):
+    def update_tags(self, query: str | None = None):
+        logger.info("[Tag Search Modal] Updating Tags")
         while self.scroll_layout.count():
             self.scroll_layout.takeAt(0).widget().deleteLater()
 
-        found_tags = self.lib.search_tags(
-            FilterState(
-                path=name,
-                page_size=self.tag_limit,
-            )
-        )
+        tag_results = self.lib.search_tags(name=query)
+        if len(tag_results) > 0:
+            self.first_tag_id = tag_results[0].id
+        else:
+            self.first_tag_id = None
 
-        for tag in found_tags:
+        for tag in tag_results:
             if self.exclude is not None and tag.id in self.exclude:
                 continue
+
             c = QWidget()
             layout = QHBoxLayout(c)
             layout.setContentsMargins(0, 0, 0, 0)
@@ -123,3 +123,9 @@ class TagSearchPanel(PanelWidget):
             self.scroll_layout.addWidget(c)
 
         self.search_field.setFocus()
+
+    def showEvent(self, event: QShowEvent) -> None:  # noqa N802
+        if not self.is_initialized:
+            self.update_tags()
+            self.is_initialized = True
+        return super().showEvent(event)

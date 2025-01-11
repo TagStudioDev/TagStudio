@@ -5,7 +5,7 @@ on: [ push, pull_request ]
 jobs:
   pytest:
     name: Run tests
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
 
     steps:
       - name: Checkout repo
@@ -20,11 +20,12 @@ jobs:
       - name: Install system dependencies
         run: |
           # dont run update, it is slow
-          # sudo apt-get update
+          sudo apt-get update
           sudo apt-get install -y --no-install-recommends \
             libxkbcommon-x11-0 \
             x11-utils \
             libyaml-dev \
+            libgl1 \
             libegl1 \
             libxcb-icccm4 \
             libxcb-image0 \

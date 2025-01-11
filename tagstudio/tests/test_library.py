@@ -1,4 +1,4 @@
-from pathlib import Path, PureWindowsPath
+from pathlib import Path
 from tempfile import TemporaryDirectory
 
 import pytest
@@ -13,14 +13,11 @@ def test_library_add_alias(library, generate_tag):
     tag = library.add_tag(generate_tag("xxx", id=123))
     assert tag
 
-    subtag_ids: set[int] = set()
+    parent_ids: set[int] = set()
     alias_ids: set[int] = set()
     alias_names: set[str] = set()
     alias_names.add("test_alias")
-    library.update_tag(tag, subtag_ids, alias_names, alias_ids)
-
-    # Note: ask if it is expected behaviour that you need to re-request
-    #       for the tag. Or if the tag in memory should be updated
+    library.update_tag(tag, parent_ids, alias_names, alias_ids)
     alias_ids = library.get_tag(tag.id).alias_ids
 
     assert len(alias_ids) == 1
@@ -30,12 +27,11 @@ def test_library_get_alias(library, generate_tag):
     tag = library.add_tag(generate_tag("xxx", id=123))
     assert tag
 
-    subtag_ids: set[int] = set()
+    parent_ids: set[int] = set()
     alias_ids: set[int] = set()
     alias_names: set[str] = set()
     alias_names.add("test_alias")
-    library.update_tag(tag, subtag_ids, alias_names, alias_ids)
-
+    library.update_tag(tag, parent_ids, alias_names, alias_ids)
     alias_ids = library.get_tag(tag.id).alias_ids
 
     assert library.get_alias(tag.id, alias_ids[0]).name == "test_alias"
@@ -45,23 +41,20 @@ def test_library_update_alias(library, generate_tag):
     tag: Tag = library.add_tag(generate_tag("xxx", id=123))
     assert tag
 
-    subtag_ids: set[int] = set()
+    parent_ids: set[int] = set()
     alias_ids: set[int] = set()
     alias_names: set[str] = set()
     alias_names.add("test_alias")
-    library.update_tag(tag, subtag_ids, alias_names, alias_ids)
-
-    tag = library.get_tag(tag.id)
-    alias_ids = tag.alias_ids
+    library.update_tag(tag, parent_ids, alias_names, alias_ids)
+    alias_ids = library.get_tag(tag.id).alias_ids
 
     assert library.get_alias(tag.id, alias_ids[0]).name == "test_alias"
 
     alias_names.remove("test_alias")
     alias_names.add("alias_update")
-    library.update_tag(tag, subtag_ids, alias_names, alias_ids)
+    library.update_tag(tag, parent_ids, alias_names, alias_ids)
 
     tag = library.get_tag(tag.id)
-
     assert len(tag.alias_ids) == 1
     assert library.get_alias(tag.id, tag.alias_ids[0]).name == "alias_update"
 
@@ -77,15 +70,13 @@ def test_library_add_file(library):
     )
 
     assert not library.has_path_entry(entry.path)
-
     assert library.add_entries([entry])
-
     assert library.has_path_entry(entry.path)
 
 
 def test_create_tag(library, generate_tag):
     # tag already exists
-    assert not library.add_tag(generate_tag("foo"))
+    assert not library.add_tag(generate_tag("foo", id=1000))
 
     # new tag name
     tag = library.add_tag(generate_tag("xxx", id=123))
@@ -96,9 +87,9 @@ def test_create_tag(library, generate_tag):
     assert tag_inc.id > 1000
 
 
-def test_tag_subtag_itself(library, generate_tag):
+def test_tag_self_parent(library, generate_tag):
     # tag already exists
-    assert not library.add_tag(generate_tag("foo"))
+    assert not library.add_tag(generate_tag("foo", id=1000))
 
     # new tag name
     tag = library.add_tag(generate_tag("xxx", id=123))
@@ -107,7 +98,7 @@ def test_tag_subtag_itself(library, generate_tag):
 
     library.update_tag(tag, {tag.id}, {}, {})
     tag = library.get_tag(tag.id)
-    assert len(tag.subtag_ids) == 0
+    assert len(tag.parent_ids) == 0
 
 
 def test_library_search(library, generate_tag, entry_full):
@@ -115,43 +106,27 @@ def test_library_search(library, generate_tag, entry_full):
     tag = list(entry_full.tags)[0]
 
     results = library.search_library(
-        FilterState(tag=tag.name),
+        FilterState.from_tag_name(tag.name),
     )
 
     assert results.total_count == 1
     assert len(results) == 1
 
-    entry = results[0]
-    assert {x.name for x in entry.tags} == {
-        "foo",
-    }
-
-    assert entry.tag_box_fields
-
 
 def test_tag_search(library):
     tag = library.tags[0]
 
-    assert library.search_tags(
-        FilterState(tag=tag.name.lower()),
-    )
-
-    assert library.search_tags(
-        FilterState(tag=tag.name.upper()),
-    )
-
-    assert library.search_tags(FilterState(tag=tag.name[2:-2]))
-
-    assert not library.search_tags(
-        FilterState(tag=tag.name * 2),
-    )
+    assert library.search_tags(tag.name.lower())
+    assert library.search_tags(tag.name.upper())
+    assert library.search_tags(tag.name[2:-2])
+    assert not library.search_tags(tag.name * 2)
 
 
-def test_get_entry(library, entry_min):
+def test_get_entry(library: Library, entry_min):
     assert entry_min.id
-    results = library.search_library(FilterState(id=entry_min.id))
-    assert len(results) == results.total_count == 1
-    assert results[0].tags
+    result = library.get_entry_full(entry_min.id)
+    assert result
+    assert len(result.tags) == 1
 
 
 def test_entries_count(library):
@@ -159,68 +134,39 @@ def test_entries_count(library):
     new_ids = library.add_entries(entries)
     assert len(new_ids) == 10
 
-    results = library.search_library(
-        FilterState(
-            page_size=5,
-        )
-    )
+    results = library.search_library(FilterState.show_all().with_page_size(5))
 
     assert results.total_count == 12
     assert len(results) == 5
 
 
-def test_add_field_to_entry(library):
+def test_parents_add(library, generate_tag):
     # Given
-    entry = Entry(
-        folder=library.folder,
-        path=Path("xxx"),
-        fields=library.default_fields,
-    )
-    # meta tags + content tags
-    assert len(entry.tag_box_fields) == 2
-
-    assert library.add_entries([entry])
-
-    # When
-    library.add_entry_field_type(entry.id, field_id=_FieldID.TAGS)
-
-    # Then
-    entry = [x for x in library.get_entries(with_joins=True) if x.path == entry.path][0]
-    # meta tags and tags field present
-    assert len(entry.tag_box_fields) == 3
-
-
-def test_add_field_tag(library, entry_full, generate_tag):
-    # Given
-    tag_name = "xxx"
-    tag = generate_tag(tag_name)
-    tag_field = entry_full.tag_box_fields[0]
-
-    # When
-    library.add_field_tag(entry_full, tag, tag_field.type_key)
-
-    # Then
-    results = library.search_library(FilterState(id=entry_full.id))
-    tag_field = results[0].tag_box_fields[0]
-    assert [x.name for x in tag_field.tags if x.name == tag_name]
-
-
-def test_subtags_add(library, generate_tag):
-    # Given
-    tag = library.tags[0]
+    tag: Tag = library.tags[0]
     assert tag.id is not None
 
-    subtag = generate_tag("subtag1")
-    subtag = library.add_tag(subtag)
-    assert subtag.id is not None
+    parent_tag = generate_tag("parent_tag_01")
+    parent_tag = library.add_tag(parent_tag)
+    assert parent_tag.id is not None
 
     # When
-    assert library.add_subtag(tag.id, subtag.id)
+    assert library.add_parent_tag(tag.id, parent_tag.id)
 
     # Then
     assert tag.id is not None
     tag = library.get_tag(tag.id)
-    assert tag.subtag_ids
+    assert tag.parent_ids
+
+
+def test_remove_tag(library, generate_tag):
+    tag = library.add_tag(generate_tag("food", id=123))
+
+    assert tag
+
+    tag_count = len(library.tags)
+
+    library.remove_tag(tag)
+    assert len(library.tags) == tag_count - 1
 
 
 @pytest.mark.parametrize("is_exclude", [True, False])
@@ -234,7 +180,7 @@ def test_search_filter_extensions(library, is_exclude):
 
     # When
     results = library.search_library(
-        FilterState(),
+        FilterState.show_all(),
     )
 
     # Then
@@ -255,7 +201,7 @@ def test_search_library_case_insensitive(library):
 
     # When
     results = library.search_library(
-        FilterState(tag=tag.name.upper()),
+        FilterState.from_tag_name(tag.name.upper()),
     )
 
     # Then
@@ -268,28 +214,6 @@ def test_search_library_case_insensitive(library):
 def test_preferences(library):
     for pref in LibraryPrefs:
         assert library.prefs(pref) == pref.default
-
-
-def test_save_windows_path(library, generate_tag):
-    # pretend we are on windows and create `Path`
-
-    entry = Entry(
-        path=PureWindowsPath("foo\\bar.txt"),
-        folder=library.folder,
-        fields=library.default_fields,
-    )
-    tag = generate_tag("win_path")
-    tag_name = tag.name
-
-    library.add_entries([entry])
-    # library.add_tag(tag)
-    library.add_field_tag(entry, tag, create_field=True)
-
-    results = library.search_library(FilterState(tag=tag_name))
-    assert results
-
-    # path should be saved in posix format
-    assert str(results[0].path) == "foo/bar.txt"
 
 
 def test_remove_entry_field(library, entry_full):
@@ -307,7 +231,7 @@ def test_remove_field_entry_with_multiple_field(library, entry_full):
 
     # When
     # add identical field
-    assert library.add_entry_field_type(entry_full.id, field_id=title_field.type_key)
+    assert library.add_field_to_entry(entry_full.id, field_id=title_field.type_key)
 
     # remove entry field
     library.remove_entry_field(title_field, [entry_full.id])
@@ -336,7 +260,7 @@ def test_update_entry_with_multiple_identical_fields(library, entry_full):
 
     # When
     # add identical field
-    library.add_entry_field_type(entry_full.id, field_id=title_field.type_key)
+    library.add_field_to_entry(entry_full.id, field_id=title_field.type_key)
 
     # update one of the fields
     library.update_entry_field(
@@ -351,7 +275,8 @@ def test_update_entry_with_multiple_identical_fields(library, entry_full):
     assert entry.text_fields[1].value == "new value"
 
 
-def test_mirror_entry_fields(library, entry_full):
+def test_mirror_entry_fields(library: Library, entry_full):
+    # new entry
     target_entry = Entry(
         folder=library.folder,
         path=Path("xxx"),
@@ -364,51 +289,34 @@ def test_mirror_entry_fields(library, entry_full):
         ],
     )
 
+    # insert new entry and get id
     entry_id = library.add_entries([target_entry])[0]
 
-    results = library.search_library(FilterState(id=entry_id))
-    new_entry = results[0]
+    # get new entry from library
+    new_entry = library.get_entry_full(entry_id)
 
+    # mirror fields onto new entry
     library.mirror_entry_fields(new_entry, entry_full)
 
-    results = library.search_library(FilterState(id=entry_id))
-    entry = results[0]
+    # get new entry from library again
+    entry = library.get_entry_full(entry_id)
 
-    assert len(entry.fields) == 4
+    # make sure fields are there after getting it from the library again
+    assert len(entry.fields) == 2
     assert {x.type_key for x in entry.fields} == {
         _FieldID.TITLE.name,
         _FieldID.NOTES.name,
-        _FieldID.TAGS_META.name,
-        _FieldID.TAGS.name,
     }
 
 
-def test_remove_tag_from_field(library, entry_full):
-    for field in entry_full.tag_box_fields:
-        for tag in field.tags:
-            removed_tag = tag.name
-            library.remove_tag_from_field(tag, field)
-            break
+def test_remove_tag_from_entry(library, entry_full):
+    removed_tag_id = -1
+    for tag in entry_full.tags:
+        removed_tag_id = tag.id
+        library.remove_tags_from_entry(entry_full.id, tag.id)
 
     entry = next(library.get_entries(with_joins=True))
-    for field in entry.tag_box_fields:
-        assert removed_tag not in [tag.name for tag in field.tags]
-
-
-@pytest.mark.parametrize(
-    ["query_name", "has_result"],
-    [
-        ("foo", 1),  # filename substring
-        ("bar", 1),  # filename substring
-        ("one", 0),  # path, should not match
-    ],
-)
-def test_search_file_name(library, query_name, has_result):
-    results = library.search_library(
-        FilterState(name=query_name),
-    )
-
-    assert results.total_count == has_result
+    assert removed_tag_id not in [t.id for t in entry.tags]
 
 
 @pytest.mark.parametrize(
@@ -420,12 +328,10 @@ def test_search_file_name(library, query_name, has_result):
         (222, 0),
     ],
 )
-def test_search_entry_id(library, query_name, has_result):
-    results = library.search_library(
-        FilterState(id=query_name),
-    )
+def test_search_entry_id(library: Library, query_name: int, has_result):
+    result = library.get_entry(query_name)
 
-    assert results.total_count == has_result
+    assert (result is not None) == has_result
 
 
 def test_update_field_order(library, entry_full):
@@ -433,8 +339,8 @@ def test_update_field_order(library, entry_full):
     title_field = entry_full.text_fields[0]
 
     # When add two more fields
-    library.add_entry_field_type(entry_full.id, field_id=title_field.type_key, value="first")
-    library.add_entry_field_type(entry_full.id, field_id=title_field.type_key, value="second")
+    library.add_field_to_entry(entry_full.id, field_id=title_field.type_key, value="first")
+    library.add_field_to_entry(entry_full.id, field_id=title_field.type_key, value="second")
 
     # remove the one on first position
     assert title_field.position == 0
@@ -474,36 +380,36 @@ def test_library_prefs_multiple_identical_vals():
 
 
 def test_path_search_glob_after(library: Library):
-    results = library.search_library(FilterState(path="foo*"))
+    results = library.search_library(FilterState.from_path("foo*"))
     assert results.total_count == 1
     assert len(results.items) == 1
 
 
 def test_path_search_glob_in_front(library: Library):
-    results = library.search_library(FilterState(path="*bar.md"))
+    results = library.search_library(FilterState.from_path("*bar.md"))
     assert results.total_count == 1
     assert len(results.items) == 1
 
 
 def test_path_search_glob_both_sides(library: Library):
-    results = library.search_library(FilterState(path="*one/two*"))
+    results = library.search_library(FilterState.from_path("*one/two*"))
     assert results.total_count == 1
     assert len(results.items) == 1
 
 
 @pytest.mark.parametrize(["filetype", "num_of_filetype"], [("md", 1), ("txt", 1), ("png", 0)])
 def test_filetype_search(library, filetype, num_of_filetype):
-    results = library.search_library(FilterState(filetype=filetype))
+    results = library.search_library(FilterState.from_filetype(filetype))
     assert len(results.items) == num_of_filetype
 
 
 @pytest.mark.parametrize(["filetype", "num_of_filetype"], [("png", 2), ("apng", 1), ("ng", 0)])
 def test_filetype_return_one_filetype(file_mediatypes_library, filetype, num_of_filetype):
-    results = file_mediatypes_library.search_library(FilterState(filetype=filetype))
+    results = file_mediatypes_library.search_library(FilterState.from_filetype(filetype))
     assert len(results.items) == num_of_filetype
 
 
 @pytest.mark.parametrize(["mediatype", "num_of_mediatype"], [("plaintext", 2), ("image", 0)])
 def test_mediatype_search(library, mediatype, num_of_mediatype):
-    results = library.search_library(FilterState(mediatype=mediatype))
+    results = library.search_library(FilterState.from_mediatype(mediatype))
     assert len(results.items) == num_of_mediatype

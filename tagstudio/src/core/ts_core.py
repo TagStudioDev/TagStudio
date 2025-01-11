@@ -24,7 +24,7 @@ class TagStudioCore:
         Return a formatted object with notable values or an empty object if none is found.
         """
         info = {}
-        _filepath = filepath.parent / (filepath.stem + ".json")
+        _filepath = filepath.parent / (filepath.name + ".json")
 
         # NOTE: This fixes an unknown (recent?) bug in Gallery-DL where Instagram sidecar
         # files may be downloaded with indices starting at 1 rather than 0, unlike the posts.
@@ -126,7 +126,7 @@ class TagStudioCore:
                         is_new = field["id"] not in entry_field_types
                         field_key = field["id"]
                         if is_new:
-                            lib.add_entry_field_type(entry.id, field_key, field["value"])
+                            lib.add_field_to_entry(entry.id, field_key, field["value"])
                         else:
                             lib.update_entry_field(entry.id, field_key, field["value"])
 

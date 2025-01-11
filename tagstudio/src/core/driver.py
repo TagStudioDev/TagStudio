@@ -16,7 +16,7 @@ class DriverMixin:
         """Check if the path of library is valid."""
         library_path: Path | None = None
         if open_path:
-            library_path = Path(open_path)
+            library_path = Path(open_path).expanduser()
             if not library_path.exists():
                 logger.error("Path does not exist.", open_path=open_path)
                 return LibraryStatus(success=False, message="Path does not exist.")

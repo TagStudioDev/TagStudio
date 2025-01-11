@@ -12,7 +12,6 @@ sys.path.insert(0, str(CWD.parent))
 from src.core.library import Entry, Library, Tag
 from src.core.library import alchemy as backend
 from src.core.library.alchemy.enums import TagColor
-from src.core.library.alchemy.fields import TagBoxField, _FieldID
 from src.qt.ts_qt import QtDriver
 
 
@@ -47,7 +46,7 @@ def file_mediatypes_library():
     )
 
     assert lib.add_entries([entry1, entry2, entry3])
-    assert len(lib.tags) == 2
+    assert len(lib.tags) == 3
 
     return lib
 
@@ -72,49 +71,49 @@ def library(request):
     )
     assert lib.add_tag(tag)
 
-    subtag = Tag(
+    parent_tag = Tag(
+        id=1500,
         name="subbar",
         color=TagColor.YELLOW,
     )
+    assert lib.add_tag(parent_tag)
 
     tag2 = Tag(
+        id=2000,
         name="bar",
         color=TagColor.BLUE,
-        subtags={subtag},
+        parent_tags={parent_tag},
     )
+    assert lib.add_tag(tag2)
 
     # default item with deterministic name
     entry = Entry(
+        id=1,
         folder=lib.folder,
         path=pathlib.Path("foo.txt"),
         fields=lib.default_fields,
     )
-
-    entry.tag_box_fields = [
-        TagBoxField(type_key=_FieldID.TAGS.name, tags={tag}, position=0),
-        TagBoxField(
-            type_key=_FieldID.TAGS_META.name,
-            position=0,
-        ),
-    ]
+    assert lib.add_tags_to_entry(entry.id, tag.id)
 
     entry2 = Entry(
+        id=2,
         folder=lib.folder,
         path=pathlib.Path("one/two/bar.md"),
         fields=lib.default_fields,
     )
-    entry2.tag_box_fields = [
-        TagBoxField(
-            tags={tag2},
-            type_key=_FieldID.TAGS_META.name,
-            position=0,
-        ),
-    ]
+    assert lib.add_tags_to_entry(entry2.id, tag2.id)
 
     assert lib.add_entries([entry, entry2])
-    assert len(lib.tags) == 5
+    assert len(lib.tags) == 6
 
     yield lib
+
+
+@pytest.fixture
+def search_library() -> Library:
+    lib = Library()
+    lib.open_library(pathlib.Path(CWD / "fixtures" / "search_library"))
+    return lib
 
 
 @pytest.fixture
@@ -123,7 +122,7 @@ def entry_min(library):
 
 
 @pytest.fixture
-def entry_full(library):
+def entry_full(library: Library):
     yield next(library.get_entries(with_joins=True))
 
 
@@ -143,6 +142,7 @@ def qt_driver(qtbot, library):
             driver.preview_panel = Mock()
             driver.flow_container = Mock()
             driver.item_thumbs = []
+            driver.autofill_action = Mock()
 
             driver.lib = library
             # TODO - downsize this method and use it

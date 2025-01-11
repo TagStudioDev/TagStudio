@@ -1,3 +1,7 @@
+# Copyright (C) 2025
+# Licensed under the GPL-3.0 License.
+# Created for TagStudio: https://github.com/CyanVoxel/TagStudio
+
 from __future__ import annotations
 
 from dataclasses import dataclass, field
@@ -11,7 +15,7 @@ from .db import Base
 from .enums import FieldTypeEnum
 
 if TYPE_CHECKING:
-    from .models import Entry, Tag, ValueType
+    from .models import Entry, ValueType
 
 
 class BaseField(Base):
@@ -75,30 +79,8 @@ class TextField(BaseField):
     def __eq__(self, value) -> bool:
         if isinstance(value, TextField):
             return self.__key() == value.__key()
-        elif isinstance(value, (TagBoxField, DatetimeField)):
+        elif isinstance(value, DatetimeField):
             return False
-        raise NotImplementedError
-
-
-class TagBoxField(BaseField):
-    __tablename__ = "tag_box_fields"
-
-    tags: Mapped[set[Tag]] = relationship(secondary="tag_fields")
-
-    def __key(self):
-        return (
-            self.entry_id,
-            self.type_key,
-        )
-
-    @property
-    def value(self) -> None:
-        """For interface compatibility with other field types."""
-        return None
-
-    def __eq__(self, value) -> bool:
-        if isinstance(value, TagBoxField):
-            return self.__key() == value.__key()
         raise NotImplementedError
 
 
@@ -133,9 +115,6 @@ class _FieldID(Enum):
     URL = DefaultField(id=3, name="URL", type=FieldTypeEnum.TEXT_LINE)
     DESCRIPTION = DefaultField(id=4, name="Description", type=FieldTypeEnum.TEXT_LINE)
     NOTES = DefaultField(id=5, name="Notes", type=FieldTypeEnum.TEXT_BOX)
-    TAGS = DefaultField(id=6, name="Tags", type=FieldTypeEnum.TAGS)
-    TAGS_CONTENT = DefaultField(id=7, name="Content Tags", type=FieldTypeEnum.TAGS, is_default=True)
-    TAGS_META = DefaultField(id=8, name="Meta Tags", type=FieldTypeEnum.TAGS, is_default=True)
     COLLATION = DefaultField(id=9, name="Collation", type=FieldTypeEnum.TEXT_LINE)
     DATE = DefaultField(id=10, name="Date", type=FieldTypeEnum.DATETIME)
     DATE_CREATED = DefaultField(id=11, name="Date Created", type=FieldTypeEnum.DATETIME)

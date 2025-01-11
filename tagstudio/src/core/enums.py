@@ -1,3 +1,7 @@
+# Copyright (C) 2025
+# Licensed under the GPL-3.0 License.
+# Created for TagStudio: https://github.com/CyanVoxel/TagStudio
+
 import enum
 from typing import Any
 from uuid import uuid4
@@ -10,6 +14,7 @@ class SettingItems(str, enum.Enum):
     LAST_LIBRARY = "last_library"
     LIBS_LIST = "libs_list"
     WINDOW_SHOW_LIBS = "window_show_libs"
+    SHOW_FILENAMES = "show_filenames"
     AUTOPLAY = "autoplay_videos"
 
 
@@ -19,10 +24,11 @@ class Theme(str, enum.Enum):
     COLOR_DARK_LABEL = "#DD000000"
     COLOR_BG = "#65000000"
 
-    COLOR_HOVER = "#65AAAAAA"
-    COLOR_PRESSED = "#65EEEEEE"
-    COLOR_DISABLED = "#65F39CAA"
-    COLOR_DISABLED_BG = "#65440D12"
+    COLOR_HOVER = "#65444444"
+    COLOR_PRESSED = "#65777777"
+    COLOR_DISABLED_BG = "#30000000"
+    COLOR_FORBIDDEN = "#65F39CAA"
+    COLOR_FORBIDDEN_BG = "#65440D12"
 
 
 class OpenStatus(enum.IntEnum):
@@ -64,4 +70,4 @@ class LibraryPrefs(DefaultEnum):
     IS_EXCLUDE_LIST = True
     EXTENSION_LIST: list[str] = [".json", ".xmp", ".aae"]
     PAGE_SIZE: int = 500
-    DB_VERSION: int = 2
+    DB_VERSION: int = 3

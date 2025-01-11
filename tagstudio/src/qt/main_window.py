@@ -1,14 +1,4 @@
-# -*- coding: utf-8 -*-
-
-################################################################################
-# Form generated from reading UI file 'home.ui'
-##
-# Created by: Qt User Interface Compiler version 6.5.1
-##
-# WARNING! All changes made in this file will be lost when recompiling UI file!
-################################################################################
-
-# Copyright (C) 2024 Travis Abendshien (CyanVoxel).
+# Copyright (C) 2025 Travis Abendshien (CyanVoxel).
 # Licensed under the GPL-3.0 License.
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
@@ -24,6 +14,8 @@ from PySide6.QtWidgets import (QComboBox, QFrame, QGridLayout,
                                QSpacerItem, QCompleter)
 from src.qt.pagination import Pagination
 from src.qt.widgets.landing import LandingWidget
+
+from src.qt.translations import Translations
 
 # Only import for type checking/autocompletion, will not be imported at runtime.
 if typing.TYPE_CHECKING:
@@ -49,10 +41,6 @@ class Ui_MainWindow(QMainWindow):
         # self.windowFX = WindowEffect()
         # self.windowFX.setAcrylicEffect(self.winId(), isEnableShadow=False)
 
-        # # self.setStyleSheet(
-        # # 	'background:#EE000000;'
-        # # 	)
-        
 
     def setupUi(self, MainWindow):
         if not MainWindow.objectName():
@@ -74,17 +62,20 @@ class Ui_MainWindow(QMainWindow):
         spacerItem = QSpacerItem(40, 20, QSizePolicy.Expanding, QSizePolicy.Minimum)
         self.horizontalLayout_3.addItem(spacerItem)
   
-        # Search type selector
-        self.comboBox_2 = QComboBox(self.centralwidget)
-        self.comboBox_2.setMinimumSize(QSize(165, 0))
-        self.comboBox_2.setObjectName("comboBox_2")
-        self.comboBox_2.addItem("")
-        self.comboBox_2.addItem("")
-        self.horizontalLayout_3.addWidget(self.comboBox_2)
-  
+        # Sorting Dropdowns
+        self.sorting_mode_combobox = QComboBox(self.centralwidget)
+        self.sorting_mode_combobox.setObjectName(u"sortingModeComboBox")
+        self.horizontalLayout_3.addWidget(self.sorting_mode_combobox)
+        
+        self.sorting_direction_combobox = QComboBox(self.centralwidget)
+        self.sorting_direction_combobox.setObjectName(u"sortingDirectionCombobox")
+        self.horizontalLayout_3.addWidget(self.sorting_direction_combobox)
+
         # Thumbnail Size placeholder
         self.thumb_size_combobox = QComboBox(self.centralwidget)
         self.thumb_size_combobox.setObjectName(u"thumbSizeComboBox")
+        Translations.translate_with_setter(self.thumb_size_combobox.setPlaceholderText, "home.thumbnail_size")
+        self.thumb_size_combobox.setCurrentText("")
         sizePolicy = QSizePolicy(QSizePolicy.Minimum, QSizePolicy.Fixed)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
@@ -130,54 +121,41 @@ class Ui_MainWindow(QMainWindow):
         self.horizontalLayout.addWidget(self.splitter)
         self.splitter.addWidget(self.frame_container)
         self.splitter.setStretchFactor(0, 1)
-
         self.gridLayout.addLayout(self.horizontalLayout, 10, 0, 1, 1)
 
+        nav_button_style = "font-size:14;font-weight:bold;"
         self.horizontalLayout_2 = QHBoxLayout()
         self.horizontalLayout_2.setObjectName(u"horizontalLayout_2")
         self.horizontalLayout_2.setSizeConstraint(QLayout.SetMinimumSize)
-        self.backButton = QPushButton(self.centralwidget)
+        self.backButton = QPushButton("<", self.centralwidget)
         self.backButton.setObjectName(u"backButton")
         self.backButton.setMinimumSize(QSize(0, 32))
         self.backButton.setMaximumSize(QSize(32, 16777215))
-        font = QFont()
-        font.setPointSize(14)
-        font.setBold(True)
-        self.backButton.setFont(font)
-
+        self.backButton.setStyleSheet(nav_button_style)
         self.horizontalLayout_2.addWidget(self.backButton)
 
-        self.forwardButton = QPushButton(self.centralwidget)
+        self.forwardButton = QPushButton(">", self.centralwidget)
         self.forwardButton.setObjectName(u"forwardButton")
         self.forwardButton.setMinimumSize(QSize(0, 32))
         self.forwardButton.setMaximumSize(QSize(32, 16777215))
-        font1 = QFont()
-        font1.setPointSize(14)
-        font1.setBold(True)
-        font1.setKerning(True)
-        self.forwardButton.setFont(font1)
-
+        self.forwardButton.setStyleSheet(nav_button_style)
         self.horizontalLayout_2.addWidget(self.forwardButton)
 
         self.searchField = QLineEdit(self.centralwidget)
+        Translations.translate_with_setter(self.searchField.setPlaceholderText, "home.search_entries")
         self.searchField.setObjectName(u"searchField")
         self.searchField.setMinimumSize(QSize(0, 32))
-        font2 = QFont()
-        font2.setPointSize(11)
-        font2.setBold(False)
-        self.searchField.setFont(font2)
 
         self.searchFieldCompletionList = QStringListModel()
         self.searchFieldCompleter = QCompleter(self.searchFieldCompletionList, self.searchField)
         self.searchFieldCompleter.setCaseSensitivity(Qt.CaseSensitivity.CaseInsensitive)
         self.searchField.setCompleter(self.searchFieldCompleter)
-
         self.horizontalLayout_2.addWidget(self.searchField)
 
         self.searchButton = QPushButton(self.centralwidget)
+        Translations.translate_qobject(self.searchButton, "home.search")
         self.searchButton.setObjectName(u"searchButton")
         self.searchButton.setMinimumSize(QSize(0, 32))
-        self.searchButton.setFont(font2)
 
         self.horizontalLayout_2.addWidget(self.searchButton)
         self.gridLayout.addLayout(self.horizontalLayout_2, 3, 0, 1, 1)
@@ -192,37 +170,11 @@ class Ui_MainWindow(QMainWindow):
         sizePolicy1.setHeightForWidth(
             self.statusbar.sizePolicy().hasHeightForWidth())
         self.statusbar.setSizePolicy(sizePolicy1)
+        self.statusbar.setSizeGripEnabled(False)
         MainWindow.setStatusBar(self.statusbar)
-
-        self.retranslateUi(MainWindow)
 
         QMetaObject.connectSlotsByName(MainWindow)
     # setupUi
-
-    def retranslateUi(self, MainWindow):
-        MainWindow.setWindowTitle(QCoreApplication.translate(
-            "MainWindow", u"MainWindow", None))
-        # Navigation buttons
-        self.backButton.setText(
-            QCoreApplication.translate("MainWindow", u"<", None))
-        self.forwardButton.setText(
-            QCoreApplication.translate("MainWindow", u">", None))
-  
-        # Search field
-        self.searchField.setPlaceholderText(
-            QCoreApplication.translate("MainWindow", u"Search Entries", None))
-        self.searchButton.setText(
-            QCoreApplication.translate("MainWindow", u"Search", None))
-  
-        # Search type selector
-        self.comboBox_2.setItemText(0, QCoreApplication.translate("MainWindow", "And (Includes All Tags)"))
-        self.comboBox_2.setItemText(1, QCoreApplication.translate("MainWindow", "Or (Includes Any Tag)"))
-        self.thumb_size_combobox.setCurrentText("")
-  
-        # Thumbnail size selector
-        self.thumb_size_combobox.setPlaceholderText(
-            QCoreApplication.translate("MainWindow", u"Thumbnail Size", None))
-    # retranslateUi
 
     def moveEvent(self, event) -> None:
         # time.sleep(0.02)  # sleep for 20ms

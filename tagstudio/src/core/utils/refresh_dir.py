@@ -19,6 +19,7 @@ GLOBAL_IGNORE_SET: set[str] = set(
         ".fseventsd",
         ".Spotlight-V100",
         "System Volume Information",
+        ".DS_Store",
     ]
 )
 

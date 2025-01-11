@@ -1,4 +1,4 @@
-# Copyright (C) 2024 Travis Abendshien (CyanVoxel).
+# Copyright (C) 2025
 # Licensed under the GPL-3.0 License.
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
@@ -20,9 +20,9 @@ from PySide6.QtWidgets import (
 )
 from src.core.constants import TAG_ARCHIVED, TAG_FAVORITE
 from src.core.library import Library, Tag
-from src.core.library.alchemy.fields import _FieldID
 from src.core.palette import ColorType, get_tag_color
 from src.qt.flowlayout import FlowLayout
+from src.qt.translations import Translations
 
 if typing.TYPE_CHECKING:
     from src.qt.ts_qt import QtDriver
@@ -41,7 +41,7 @@ def add_folders_to_tree(library: Library, tree: BranchData, items: tuple[str, ..
     branch = tree
     for folder in items:
         if folder not in branch.dirs:
-            # TODO - subtags
+            # TODO: Reimplement parent tags
             new_tag = Tag(name=folder)
             library.add_tag(new_tag)
             branch.dirs[folder] = BranchData(tag=new_tag)
@@ -72,7 +72,7 @@ def folders_to_tags(library: Library):
 
         tag = add_folders_to_tree(library, tree, folders).tag
         if tag and not entry.has_tag(tag):
-            library.add_field_tag(entry, tag, _FieldID.TAGS.name, create_field=True)
+            library.add_tags_to_entry(entry.id, tag.id)
 
     logger.info("Done")
 
@@ -81,11 +81,11 @@ def reverse_tag(library: Library, tag: Tag, items: list[Tag] | None) -> list[Tag
     items = items or []
     items.append(tag)
 
-    if not tag.subtag_ids:
+    if not tag.parent_ids:
         items.reverse()
         return items
 
-    for subtag_id in tag.subtag_ids:
+    for subtag_id in tag.parent_ids:
         subtag = library.get_tag(subtag_id)
     return reverse_tag(library, subtag, items)
 
@@ -126,11 +126,10 @@ def generate_preview_data(library: Library) -> BranchData:
         branch = _add_folders_to_tree(folders)
         if branch:
             has_tag = False
-            for tag_field in entry.tag_box_fields:
-                for tag in tag_field.tags:
-                    if tag.name == branch.tag.name:
-                        has_tag = True
-                        break
+            for tag in entry.tags:
+                if tag.name == branch.tag.name:
+                    has_tag = True
+                    break
             if not has_tag:
                 branch.files.append(entry.path.name)
 
@@ -164,7 +163,7 @@ class FoldersToTagsModal(QWidget):
         self.count = -1
         self.filename = ""
 
-        self.setWindowTitle("Create Tags From Folders")
+        Translations.translate_with_setter(self.setWindowTitle, "folders_to_tags.title")
         self.setWindowModality(Qt.WindowModality.ApplicationModal)
         self.setMinimumSize(640, 640)
         self.root_layout = QVBoxLayout(self)
@@ -174,7 +173,7 @@ class FoldersToTagsModal(QWidget):
         self.title_widget.setObjectName("title")
         self.title_widget.setWordWrap(True)
         self.title_widget.setStyleSheet("font-weight:bold;" "font-size:14px;" "padding-top: 6px")
-        self.title_widget.setText("Create Tags From Folders")
+        Translations.translate_qobject(self.title_widget, "folders_to_tags.title")
         self.title_widget.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         self.desc_widget = QLabel()
@@ -190,10 +189,10 @@ class FoldersToTagsModal(QWidget):
         self.open_close_button_layout = QHBoxLayout(self.open_close_button_w)
 
         self.open_all_button = QPushButton()
-        self.open_all_button.setText("Open All")
+        Translations.translate_qobject(self.open_all_button, "folders_to_tags.open_all")
         self.open_all_button.clicked.connect(lambda: self.set_all_branches(False))
         self.close_all_button = QPushButton()
-        self.close_all_button.setText("Close All")
+        Translations.translate_qobject(self.close_all_button, "folders_to_tags.close_all")
         self.close_all_button.clicked.connect(lambda: self.set_all_branches(True))
 
         self.open_close_button_layout.addWidget(self.open_all_button)
@@ -212,7 +211,7 @@ class FoldersToTagsModal(QWidget):
         self.scroll_area.setWidget(self.scroll_contents)
 
         self.apply_button = QPushButton()
-        self.apply_button.setText("&Apply")
+        Translations.translate_qobject(self.apply_button, "generic.apply_alt")
         self.apply_button.setMinimumWidth(100)
         self.apply_button.clicked.connect(self.on_apply)
 
