@@ -148,13 +148,13 @@ class TagSearchPanel(PanelWidget):
         return super().showEvent(event)
 
     def remove_tag(self, tag: Tag):
-        raise NotImplementedError
+        pass
 
     def edit_tag(self, tag: Tag):
         # only import here because of circular imports
         from src.qt.modals.build_tag import BuildTagPanel
 
-        def edit_tag_callback(btp: BuildTagPanel):
+        def callback(btp: BuildTagPanel):
             self.lib.update_tag(
                 btp.build_tag(), set(btp.parent_ids), set(btp.alias_names), set(btp.alias_ids)
             )
@@ -170,5 +170,5 @@ class TagSearchPanel(PanelWidget):
         )
         Translations.translate_with_setter(self.edit_modal.setWindowTitle, "tag.edit")
 
-        self.edit_modal.saved.connect(lambda: edit_tag_callback(build_tag_panel))
+        self.edit_modal.saved.connect(lambda: callback(build_tag_panel))
         self.edit_modal.show()
