@@ -33,13 +33,13 @@ class TagSearchPanel(PanelWidget):
     is_initialized: bool = False
     first_tag_id: int = None
     is_tag_chooser: bool
+    exclude: list[int]
 
-    def __init__(
-        self, library: Library, exclude: list[int] | None = None, is_tag_chooser: bool = True
-    ):
+    def __init__(self, library: Library, exclude: list[int] = None, is_tag_chooser: bool = True):
         super().__init__()
         self.lib = library
-        self.exclude = exclude
+        self.exclude = exclude or []
+
         self.is_tag_chooser = is_tag_chooser
 
         self.setMinimumSize(300, 400)
@@ -68,6 +68,54 @@ class TagSearchPanel(PanelWidget):
         self.root_layout.addWidget(self.search_field)
         self.root_layout.addWidget(self.scroll_area)
 
+    def __build_row_item_widget(self, tag: Tag):
+        container = QWidget()
+        row = QHBoxLayout(container)
+        row.setContentsMargins(0, 0, 0, 0)
+        row.setSpacing(3)
+
+        has_remove_button = False
+        if not self.is_tag_chooser:
+            has_remove_button = tag.id not in range(RESERVED_TAG_START, RESERVED_TAG_END)
+
+        tag_widget = TagWidget(
+            tag,
+            has_edit=True,
+            has_remove=has_remove_button,
+        )
+
+        tag_widget.on_edit.connect(lambda t=tag: self.edit_tag(t))
+        tag_widget.on_remove.connect(lambda t=tag: self.remove_tag(t))
+        row.addWidget(tag_widget)
+
+        if self.is_tag_chooser:
+            add_button = QPushButton()
+            add_button.setMinimumSize(23, 23)
+            add_button.setMaximumSize(23, 23)
+            add_button.setText("+")
+            add_button.setStyleSheet(
+                f"QPushButton{{"
+                f"background: {get_tag_color(ColorType.PRIMARY, tag.color)};"
+                f"color: {get_tag_color(ColorType.TEXT, tag.color)};"
+                f"font-weight: 600;"
+                f"border-color:{get_tag_color(ColorType.BORDER, tag.color)};"
+                f"border-radius: 6px;"
+                f"border-style:solid;"
+                f"border-width: {math.ceil(self.devicePixelRatio())}px;"
+                f"padding-bottom: 5px;"
+                f"font-size: 20px;"
+                f"}}"
+                f"QPushButton::hover"
+                f"{{"
+                f"border-color:{get_tag_color(ColorType.LIGHT_ACCENT, tag.color)};"
+                f"color: {get_tag_color(ColorType.DARK_ACCENT, tag.color)};"
+                f"background: {get_tag_color(ColorType.LIGHT_ACCENT, tag.color)};"
+                f"}}"
+            )
+            add_button.clicked.connect(lambda x=tag.id: self.tag_chosen.emit(x))
+            row.addWidget(add_button)
+        return container
+
     def update_tags(self, query: str | None = None):
         logger.info("[Tag Search Super Class] Updating Tags")
 
@@ -82,52 +130,8 @@ class TagSearchPanel(PanelWidget):
             self.first_tag_id = None
 
         for tag in tag_results:
-            if self.exclude is not None and tag.id in self.exclude:
-                continue
-
-            container = QWidget()
-            row = QHBoxLayout(container)
-            row.setContentsMargins(0, 0, 0, 0)
-            row.setSpacing(3)
-
-            tag_widget = TagWidget(
-                tag,
-                has_edit=True,
-                has_remove=(not self.is_tag_chooser)
-                and (tag.id not in range(RESERVED_TAG_START, RESERVED_TAG_END)),
-            )
-            tag_widget.on_edit.connect(lambda t=tag: self.edit_tag(t))
-            tag_widget.on_remove.connect(lambda t=tag: self.remove_tag(t))
-            row.addWidget(tag_widget)
-
-            if self.is_tag_chooser:
-                add_button = QPushButton()
-                add_button.setMinimumSize(23, 23)
-                add_button.setMaximumSize(23, 23)
-                add_button.setText("+")
-                add_button.setStyleSheet(
-                    f"QPushButton{{"
-                    f"background: {get_tag_color(ColorType.PRIMARY, tag.color)};"
-                    f"color: {get_tag_color(ColorType.TEXT, tag.color)};"
-                    f"font-weight: 600;"
-                    f"border-color:{get_tag_color(ColorType.BORDER, tag.color)};"
-                    f"border-radius: 6px;"
-                    f"border-style:solid;"
-                    f"border-width: {math.ceil(self.devicePixelRatio())}px;"
-                    f"padding-bottom: 5px;"
-                    f"font-size: 20px;"
-                    f"}}"
-                    f"QPushButton::hover"
-                    f"{{"
-                    f"border-color:{get_tag_color(ColorType.LIGHT_ACCENT, tag.color)};"
-                    f"color: {get_tag_color(ColorType.DARK_ACCENT, tag.color)};"
-                    f"background: {get_tag_color(ColorType.LIGHT_ACCENT, tag.color)};"
-                    f"}}"
-                )
-                add_button.clicked.connect(lambda x=tag.id: self.tag_chosen.emit(x))
-                row.addWidget(add_button)
-
-            self.scroll_layout.addWidget(container)
+            if tag.id not in self.exclude:
+                self.scroll_layout.addWidget(self.__build_row_item_widget(tag))
 
         self.search_field.setFocus()
 
