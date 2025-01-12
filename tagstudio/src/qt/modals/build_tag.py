@@ -441,8 +441,8 @@ class BuildTagPanel(PanelWidget):
     def parent_post_init(self):
         self.setTabOrder(self.name_field, self.shorthand_field)
         self.setTabOrder(self.shorthand_field, self.alias_add_button)
-        self.setTabOrder(self.alias_add_button, self.subtags_add_button)
-        self.setTabOrder(self.subtags_add_button, self.color_field)
+        self.setTabOrder(self.alias_add_button, self.parent_tags_add_button)
+        self.setTabOrder(self.parent_tags_add_button, self.color_field)
         self.setTabOrder(self.color_field, self.panel_cancel_button)
         self.setTabOrder(self.panel_cancel_button, self.panel_save_button)
         self.setTabOrder(self.panel_save_button, self.aliases_table.cellWidget(0, 1))
