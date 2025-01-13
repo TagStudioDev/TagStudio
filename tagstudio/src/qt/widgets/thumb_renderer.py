@@ -1059,9 +1059,6 @@ class ThumbRenderer(QObject):
             image: Image.Image | None = None
             cached_path: Path | None = None
 
-            if not cached_path:
-                return
-
             if hash_value and self.lib.library_dir:
                 cached_path = (
                     self.lib.library_dir
@@ -1070,7 +1067,7 @@ class ThumbRenderer(QObject):
                     / folder
                     / f"{hash_value}{self.cache_ext}"
                 )
-            if cached_path.exists() and not cached_path.is_dir():
+            if cached_path and cached_path.exists() and not cached_path.is_dir():
                 try:
                     image = Image.open(cached_path)
                     if not image:
