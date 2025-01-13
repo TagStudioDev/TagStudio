@@ -665,6 +665,10 @@ class QtDriver(DriverMixin, QObject):
         self.settings.setValue(SettingItems.LAST_LIBRARY, str(self.lib.library_dir))
         self.settings.sync()
 
+        self.preview_panel.update_widgets()
+        self.main_window.searchField.setText("")
+        self.filter = FilterState.show_all()
+
         self.lib.close()
 
         self.thumb_job_queue.queue.clear()
@@ -1407,9 +1411,9 @@ class QtDriver(DriverMixin, QObject):
             Translations.translate_formatted(**translation_params), 3
         )
         self.main_window.repaint()
-        self.preview_panel.update_widgets()
-        self.main_window.searchField.setText("")
-        self.filter = FilterState.show_all()
+
+        if self.lib.library_dir:
+            self.close_library()
 
         open_status: LibraryStatus = None
         try:
