@@ -626,7 +626,6 @@ class QtDriver(DriverMixin, QObject):
         self.main_window.pagination.index.connect(lambda i: self.page_move(page_id=i))
 
         self.splash.finish(self.main_window)
-        self.preview_panel.update_widgets()
 
     def show_grid_filenames(self, value: bool):
         for thumb in self.item_thumbs:
@@ -1408,6 +1407,9 @@ class QtDriver(DriverMixin, QObject):
             Translations.translate_formatted(**translation_params), 3
         )
         self.main_window.repaint()
+        self.preview_panel.update_widgets()
+        self.main_window.searchField.setText("")
+        self.filter = FilterState.show_all()
 
         open_status: LibraryStatus = None
         try:
