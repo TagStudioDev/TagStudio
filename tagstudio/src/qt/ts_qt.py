@@ -822,7 +822,7 @@ class QtDriver(DriverMixin, QObject):
         )
         Translations.translate_with_setter(pw.setWindowTitle, "macros.running.dialog.title")
         Translations.translate_with_setter(
-            pw.update_label, "macros.running.dialog.new_entries", count=1, total=files_count
+            pw.update_label, "entries.running.dialog.new_entries", count=1, total=files_count
         )
         pw.show()
 
@@ -831,7 +831,7 @@ class QtDriver(DriverMixin, QObject):
                 pw.update_progress(x + 1),
                 pw.update_label(
                     Translations.translate_formatted(
-                        "macros.running.dialog.new_entries", count=x + 1, total=files_count
+                        "entries.running.dialog.new_entries", count=x + 1, total=files_count
                     )
                 ),
             )
