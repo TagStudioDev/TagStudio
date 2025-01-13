@@ -71,6 +71,7 @@ from src.core.media_types import MediaCategories
 from src.core.ts_core import TagStudioCore
 from src.core.utils.refresh_dir import RefreshDirTracker
 from src.core.utils.web import strip_web_protocol
+from src.qt.cache_manager import CacheManager
 from src.qt.flowlayout import FlowLayout
 from src.qt.helpers.custom_runnable import CustomRunnable
 from src.qt.helpers.function_iterator import FunctionIterator
@@ -449,6 +450,16 @@ class QtDriver(DriverMixin, QObject):
         Translations.translate_qobject(fix_dupe_files_action, "menu.tools.fix_duplicate_files")
         fix_dupe_files_action.triggered.connect(create_dupe_files_modal)
         tools_menu.addAction(fix_dupe_files_action)
+
+        tools_menu.addSeparator()
+
+        # TODO: Move this to a settings screen.
+        clear_thumb_cache_action = QAction(menu_bar)
+        Translations.translate_qobject(clear_thumb_cache_action, "settings.clear_thumb_cache.title")
+        clear_thumb_cache_action.triggered.connect(
+            lambda: CacheManager.clear_cache(self.lib.library_dir)
+        )
+        tools_menu.addAction(clear_thumb_cache_action)
 
         # create_collage_action = QAction("Create Collage", menu_bar)
         # create_collage_action.triggered.connect(lambda: self.create_collage())

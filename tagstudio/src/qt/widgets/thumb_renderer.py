@@ -1059,6 +1059,9 @@ class ThumbRenderer(QObject):
             image: Image.Image | None = None
             cached_path: Path | None = None
 
+            if not cached_path:
+                return
+
             if hash_value and self.lib.library_dir:
                 cached_path = (
                     self.lib.library_dir
