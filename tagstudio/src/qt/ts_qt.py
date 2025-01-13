@@ -820,7 +820,7 @@ class QtDriver(DriverMixin, QObject):
             minimum=0,
             maximum=files_count,
         )
-        Translations.translate_with_setter(pw.setWindowTitle, "macros.running.dialog.title")
+        Translations.translate_with_setter(pw.setWindowTitle, "entries.running.dialog.title")
         Translations.translate_with_setter(
             pw.update_label, "entries.running.dialog.new_entries", count=1, total=files_count
         )
