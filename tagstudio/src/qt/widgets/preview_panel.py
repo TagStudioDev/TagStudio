@@ -131,8 +131,13 @@ class PreviewPanel(QWidget):
         root_layout.addWidget(splitter)
         root_layout.addWidget(add_buttons_container)
 
-    def update_widgets(self) -> bool:
-        """Render the panel widgets with the newest data from the Library."""
+    def update_widgets(self, update_preview: bool = True) -> bool:
+        """Render the panel widgets with the newest data from the Library.
+
+        Args:
+            update_preview(bool): Should the file preview be updated?
+            (Only works with one or more items selected)
+        """
         # No Items Selected
         try:
             if len(self.driver.selected) == 0:
@@ -151,8 +156,9 @@ class PreviewPanel(QWidget):
                 filepath: Path = self.lib.library_dir / entry.path
                 ext: str = filepath.suffix.lower()
 
-                stats: dict = self.thumb.update_preview(filepath, ext)
-                self.file_attrs.update_stats(filepath, ext, stats)
+                if update_preview:
+                    stats: dict = self.thumb.update_preview(filepath, ext)
+                    self.file_attrs.update_stats(filepath, ext, stats)
                 self.file_attrs.update_date_label(filepath)
                 self.fields.update_from_entry(entry_id)
                 self.update_add_tag_button(entry_id)
