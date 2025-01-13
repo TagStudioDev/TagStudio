@@ -32,7 +32,7 @@ class TranslatedString(QObject):
     def value(self, value: str):
         if self.__value != value:
             self.__value = value
-            self.changed.emit(self.__value)
+            self.changed.emit(self.value)
 
 
 class Translator:

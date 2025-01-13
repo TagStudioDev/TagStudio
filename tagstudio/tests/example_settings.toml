@@ -1,0 +1,4 @@
+language = "en"
+open_last_loaded_on_startup = false
+show_filenames_in_grid = true
+autoplay = false

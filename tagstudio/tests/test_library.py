@@ -175,8 +175,8 @@ def test_search_filter_extensions(library, is_exclude):
     entries = list(library.get_entries())
     assert len(entries) == 2, entries
 
-    library.set_prefs(LibraryPrefs.IS_EXCLUDE_LIST, is_exclude)
-    library.set_prefs(LibraryPrefs.EXTENSION_LIST, ["md"])
+    library.settings.is_exclude_list = is_exclude
+    library.settings.extension_list = ["md"]
 
     # When
     results = library.search_library(

@@ -53,6 +53,7 @@ from ...constants import (
     TS_FOLDER_NAME,
 )
 from ...enums import LibraryPrefs
+from ...settings import LibSettings
 from .db import make_tables
 from .enums import MAX_SQL_VARIABLES, FieldTypeEnum, FilterState, SortingModeEnum, TagColor
 from .fields import (
@@ -159,6 +160,7 @@ class Library:
     engine: Engine | None
     folder: Folder | None
     included_files: set[Path] = set()
+    settings: LibSettings | None = None
 
     SQL_FILENAME: str = "ts_library.sqlite"
     JSON_FILENAME: str = "ts_library.json"
@@ -238,8 +240,8 @@ class Library:
                         )
 
         # Preferences
-        self.set_prefs(LibraryPrefs.EXTENSION_LIST, [x.strip(".") for x in json_lib.ext_list])
-        self.set_prefs(LibraryPrefs.IS_EXCLUDE_LIST, json_lib.is_exclude_list)
+        self.settings.extension_list = [x.strip(".") for x in json_lib.ext_list]
+        self.settings.is_exclude_list = json_lib.is_exclude_list
 
         end_time = time.time()
         logger.info(f"Library Converted! ({format_timespan(end_time-start_time)})")
@@ -258,6 +260,9 @@ class Library:
             return self.open_sqlite_library(library_dir, is_new)
         else:
             self.storage_path = library_dir / TS_FOLDER_NAME / self.SQL_FILENAME
+            settings_path = library_dir / TS_FOLDER_NAME / "libsettings.toml"
+
+            self.settings = LibSettings.open(settings_path)
 
             if self.verify_ts_folder(library_dir) and (is_new := not self.storage_path.exists()):
                 json_path = library_dir / TS_FOLDER_NAME / self.JSON_FILENAME
@@ -587,10 +592,9 @@ class Library:
                     f"SQL Expression Builder finished ({format_timespan(end_time - start_time)})"
                 )
 
-            extensions = self.prefs(LibraryPrefs.EXTENSION_LIST)
-            is_exclude_list = self.prefs(LibraryPrefs.IS_EXCLUDE_LIST)
+            extensions = self.settings.extension_list
 
-            if extensions and is_exclude_list:
+            if extensions and self.settings.is_exclude_list:
                 statement = statement.where(Entry.suffix.notin_(extensions))
             elif extensions:
                 statement = statement.where(Entry.suffix.in_(extensions))

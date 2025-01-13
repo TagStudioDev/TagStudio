@@ -5,7 +5,6 @@
 import pathlib
 from time import time
 
-from src.core.enums import LibraryPrefs
 from src.qt.widgets.migration_modal import JsonMigrationModal
 
 CWD = pathlib.Path(__file__)
@@ -41,9 +40,9 @@ def test_json_migration():
 
     # Extension Filter List ====================================================
     # Count
-    assert len(modal.json_lib.ext_list) == len(modal.sql_lib.prefs(LibraryPrefs.EXTENSION_LIST))
+    assert len(modal.json_lib.ext_list) == len(modal.sql_lib.settings.extension_list)
     # List Type
     assert modal.check_ext_type()
     # No Leading Dot
-    for ext in modal.sql_lib.prefs(LibraryPrefs.EXTENSION_LIST):
+    for ext in modal.sql_lib.settings.extension_list:
         assert ext[0] != "."
