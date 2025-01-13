@@ -112,7 +112,8 @@ class TagSearchPanel(PanelWidget):
                 f"background: {get_tag_color(ColorType.LIGHT_ACCENT, tag.color)};"
                 f"}}"
             )
-            add_button.clicked.connect(lambda x=tag.id: self.tag_chosen.emit(x))
+            tag_id = tag.id
+            add_button.clicked.connect(lambda: self.tag_chosen.emit(tag_id))
             row.addWidget(add_button)
         return container
 
