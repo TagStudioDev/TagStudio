@@ -81,7 +81,7 @@ class ResourceManager:
                     pass
             except FileNotFoundError:
                 path: Path = ResourceManager._res_folder / "resources" / res.get("path")
-                logger.error("[ResourceManager][ERROR]: Could not find resource: ", path)
+                logger.error("[ResourceManager][ERROR]: Could not find resource: ", path=path)
                 return None
 
     def __getattr__(self, __name: str) -> Any:

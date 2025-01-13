@@ -49,6 +49,7 @@ from src.core.exceptions import NoRendererError
 from src.core.media_types import MediaCategories, MediaType
 from src.core.palette import ColorType, UiColor, get_ui_color
 from src.core.utils.encoding import detect_char_encoding
+from src.qt.cache_manager import CacheManager
 from src.qt.helpers.blender_thumbnailer import blend_thumb
 from src.qt.helpers.color_overlay import theme_fg_overlay
 from src.qt.helpers.file_tester import is_readable_video
@@ -72,6 +73,7 @@ class ThumbRenderer(QObject):
     """A class for rendering image and file thumbnails."""
 
     rm: ResourceManager = ResourceManager()
+    cache: CacheManager = CacheManager()
     updated = Signal(float, QPixmap, QSize, Path, str)
     updated_ratio = Signal(float)
 
@@ -79,7 +81,11 @@ class ThumbRenderer(QObject):
         """Initialize the class."""
         super().__init__()
         self.lib = library
-        self.cached_resolution: int = 512
+        ThumbRenderer.cache.set_library(self.lib)
+        self.cached_resolution: int = 256
+        self.cache_ext: str = ".webp"  # TODO: Pull this from config
+
+        self.last_cache_folder: Path = None
 
         # Cached thumbnail elements.
         # Key: Size + Pixel Ratio Tuple + Radius Scale
@@ -1021,7 +1027,6 @@ class ThumbRenderer(QObject):
             update_on_ratio_change (bool): Should an updated ratio signal be sent?
         """
         render_mask_and_edge: bool = True
-        cached_path: Path | None = None
         adj_size = math.ceil(max(base_size[0], base_size[1]) * pixel_ratio)
         theme_color: UiColor = (
             UiColor.THEME_LIGHT
@@ -1049,23 +1054,29 @@ class ThumbRenderer(QObject):
             )
             return im
 
-        image: Image.Image | None = None
-        # Try to get a non-loading thumbnail for the grid.
-        if not is_loading and is_grid_thumb and filepath and filepath != ".":
-            # Attempt to retrieve cached image from disk
-            hash_value = hashlib.shake_128(str(filepath).encode("utf-8")).hexdigest(8)
+        def fetch_cached_image(folder: Path):
+            image: Image.Image | None = None
+            cached_path: Path | None = None
+
             if hash_value and self.lib.library_dir:
                 cached_path = (
-                    self.lib.library_dir / TS_FOLDER_NAME / THUMB_CACHE_NAME / f"{hash_value}.webp"
+                    self.lib.library_dir
+                    / TS_FOLDER_NAME
+                    / THUMB_CACHE_NAME
+                    / folder
+                    / f"{hash_value}{self.cache_ext}"
                 )
             if cached_path.exists() and not cached_path.is_dir():
                 try:
                     image = Image.open(cached_path)
                     if not image:
                         raise UnidentifiedImageError
+                    self.last_cache_folder = folder
                 except Exception as e:
                     logger.error(
-                        "[ThumbRenderer] Can't open cached thumbnail!", path=cached_path, error=e
+                        "[ThumbRenderer] Couldn't open cached thumbnail!",
+                        path=cached_path,
+                        error=e,
                     )
                     # If the cached thumbnail failed, try rendering a new one
                     image = self._render(
@@ -1076,7 +1087,32 @@ class ThumbRenderer(QObject):
                         is_grid_thumb,
                         save_to_file=cached_path,
                     )
-            else:
+
+            return image
+
+        image: Image.Image | None = None
+        # Try to get a non-loading thumbnail for the grid.
+        if not is_loading and is_grid_thumb and filepath and filepath != ".":
+            # Attempt to retrieve cached image from disk
+            hash_value = hashlib.shake_128(str(filepath).encode("utf-8")).hexdigest(8)
+
+            # Check the last successful folder first.
+            if self.last_cache_folder:
+                image = fetch_cached_image(self.last_cache_folder)
+
+            # If there was no last folder or the check failed, check all folders.
+            if not image:
+                thumb_folders: list[Path] = []
+                for f in (self.lib.library_dir / TS_FOLDER_NAME / THUMB_CACHE_NAME).glob("*"):
+                    if f.is_dir() and f is not self.last_cache_folder:
+                        thumb_folders.append(f)
+
+                for folder in thumb_folders:
+                    image = fetch_cached_image(folder)
+                    if image:
+                        self.last_cache_folder = folder
+                        break
+            if not image:
                 # Render from file, return result, and try to save a cached version.
                 # TODO: Audio waveforms are dynamically sized based on the base_size, so hardcoding
                 # the resolution breaks that.
@@ -1086,7 +1122,7 @@ class ThumbRenderer(QObject):
                     (self.cached_resolution, self.cached_resolution),
                     1,
                     is_grid_thumb,
-                    save_to_file=cached_path,
+                    save_to_file=Path(f"{hash_value}{self.cache_ext}"),
                 )
                 # If the normal renderer failed, fallback the the defaults
                 # (with native non-cached sizing!)
@@ -1274,11 +1310,7 @@ class ThumbRenderer(QObject):
                     image = self._resize_image(image, (adj_size, adj_size))
 
                 if save_to_file and savable_media_type and image:
-                    # Ensure thumbnail cache path exists
-                    Path(self.lib.library_dir / TS_FOLDER_NAME / THUMB_CACHE_NAME).mkdir(
-                        exist_ok=True
-                    )
-                    image.save(save_to_file, mode="RGBA")
+                    ThumbRenderer.cache.save_image(image, save_to_file, mode="RGBA")
 
             except FileNotFoundError:
                 image = None
@@ -1291,11 +1323,6 @@ class ThumbRenderer(QObject):
                 logger.error("Couldn't render thumbnail", filepath=filepath, error=type(e).__name__)
                 image = None
             except NoRendererError:
-                image = None
-            except Exception as e:
-                logger.error(
-                    "UNKNOWN: Couldn't render thumbnail", filepath=filepath, error=type(e).__name__
-                )
                 image = None
 
         return image
