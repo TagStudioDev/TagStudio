@@ -2,6 +2,7 @@
 # Licensed under the GPL-3.0 License.
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
+import contextlib
 import hashlib
 import math
 import struct
@@ -1094,7 +1095,11 @@ class ThumbRenderer(QObject):
         # Try to get a non-loading thumbnail for the grid.
         if not is_loading and is_grid_thumb and filepath and filepath != ".":
             # Attempt to retrieve cached image from disk
-            hash_value = hashlib.shake_128(str(filepath).encode("utf-8")).hexdigest(8)
+            mod_time: str = ""
+            with contextlib.suppress(Exception):
+                mod_time = str(filepath.stat().st_mtime_ns)
+            hashable_str: str = f"{str(filepath)}{mod_time}"
+            hash_value = hashlib.shake_128(hashable_str.encode("utf-8")).hexdigest(8)
 
             # Check the last successful folder first.
             if self.last_cache_folder:

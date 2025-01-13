@@ -17,7 +17,7 @@ logger = structlog.get_logger(__name__)
 
 
 class CacheManager:
-    FOLDER_SIZE = 100000000  # Each cache folder assumed to be 100 MiB
+    FOLDER_SIZE = 10000000  # Each cache folder assumed to be 10 MiB
 
     def __init__(self):
         self.lib = None
