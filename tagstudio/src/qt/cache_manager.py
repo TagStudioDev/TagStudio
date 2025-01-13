@@ -19,14 +19,12 @@ logger = structlog.get_logger(__name__)
 
 class CacheManager:
     FOLDER_SIZE = 10000000  # Each cache folder assumed to be 10 MiB
+    size_limit = 500000000  # 500 MiB default # TODO: Pull this from config
 
     def __init__(self):
         self.lib = None
         self.last_lib_path = None
         self.folder_dict: dict[Path, int] = {}
-
-        self.size_limit = 500000000  # 500 MiB # TODO: Pull this from config
-        # self.age_limit = 172800  # 2 days # TODO: Pull this from config
 
     @staticmethod
     def clear_cache(library_dir: Path) -> bool:
@@ -133,7 +131,7 @@ class CacheManager:
 
     def cull_folders(self):
         """Remove folders and their cached context based on size or age limits."""
-        if len(self.folder_dict) > (self.size_limit / CacheManager.FOLDER_SIZE):
+        if len(self.folder_dict) > (CacheManager.size_limit / CacheManager.FOLDER_SIZE):
             f = sorted(self.folder_dict.keys())[0]
             folder = self.cache_dir() / f
             logger.info("[CacheManager] Removing folder due to size limit", folder=folder)

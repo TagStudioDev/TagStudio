@@ -78,13 +78,14 @@ class ThumbRenderer(QObject):
     updated = Signal(float, QPixmap, QSize, Path, str)
     updated_ratio = Signal(float)
 
+    cached_img_res: int = 256  # TODO: Pull this from config
+    cached_img_ext: str = ".webp"  # TODO: Pull this from config
+
     def __init__(self, library) -> None:
         """Initialize the class."""
         super().__init__()
         self.lib = library
         ThumbRenderer.cache.set_library(self.lib)
-        self.cached_resolution: int = 256
-        self.cache_ext: str = ".webp"  # TODO: Pull this from config
 
         self.last_cache_folder: Path = None
 
@@ -1065,7 +1066,7 @@ class ThumbRenderer(QObject):
                     / TS_FOLDER_NAME
                     / THUMB_CACHE_NAME
                     / folder
-                    / f"{hash_value}{self.cache_ext}"
+                    / f"{hash_value}{ThumbRenderer.cached_img_ext}"
                 )
             if cached_path and cached_path.exists() and not cached_path.is_dir():
                 try:
@@ -1083,7 +1084,7 @@ class ThumbRenderer(QObject):
                     image = self._render(
                         timestamp,
                         filepath,
-                        (self.cached_resolution, self.cached_resolution),
+                        (ThumbRenderer.cached_img_res, ThumbRenderer.cached_img_res),
                         1,
                         is_grid_thumb,
                         save_to_file=cached_path,
@@ -1124,10 +1125,10 @@ class ThumbRenderer(QObject):
                 image = self._render(
                     timestamp,
                     filepath,
-                    (self.cached_resolution, self.cached_resolution),
+                    (ThumbRenderer.cached_img_res, ThumbRenderer.cached_img_res),
                     1,
                     is_grid_thumb,
-                    save_to_file=Path(f"{hash_value}{self.cache_ext}"),
+                    save_to_file=Path(f"{hash_value}{ThumbRenderer.cached_img_ext}"),
                 )
                 # If the normal renderer failed, fallback the the defaults
                 # (with native non-cached sizing!)
