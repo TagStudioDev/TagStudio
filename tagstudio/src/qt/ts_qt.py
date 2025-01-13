@@ -665,8 +665,11 @@ class QtDriver(DriverMixin, QObject):
         self.settings.setValue(SettingItems.LAST_LIBRARY, str(self.lib.library_dir))
         self.settings.sync()
 
+        # Reset library state
         self.preview_panel.update_widgets()
         self.main_window.searchField.setText("")
+        scrollbar: QScrollArea = self.main_window.scrollArea
+        scrollbar.verticalScrollBar().setValue(0)
         self.filter = FilterState.show_all()
 
         self.lib.close()
