@@ -73,9 +73,9 @@ class PreviewPanel(QWidget):
         self.file_attrs = FileAttributes(library, driver)
         self.fields = FieldContainers(library, driver)
 
-        tag_search_panel = TagSearchPanel(self.driver.lib)
+        self.tag_search_panel = TagSearchPanel(self.driver.lib)
         self.add_tag_modal = PanelModal(
-            tag_search_panel, Translations.translate_formatted("tag.add.plural")
+            self.tag_search_panel, Translations.translate_formatted("tag.add.plural")
         )
         Translations.translate_with_setter(self.add_tag_modal.setWindowTitle, "tag.add.plural")
 
@@ -195,10 +195,10 @@ class PreviewPanel(QWidget):
 
     def update_add_tag_button(self, entry_id: int = None):
         with catch_warnings(record=True):
-            self.add_tag_modal.widget.tag_chosen.disconnect()
+            self.tag_search_panel.tag_chosen.disconnect()
             self.add_tag_button.clicked.disconnect()
 
-        self.add_tag_modal.widget.tag_chosen.connect(
+        self.tag_search_panel.tag_chosen.connect(
             lambda t: (
                 self.fields.add_tags_to_selected(t),
                 (self.fields.update_from_entry(entry_id) if entry_id else ()),
@@ -207,7 +207,7 @@ class PreviewPanel(QWidget):
 
         self.add_tag_button.clicked.connect(
             lambda: (
-                self.add_tag_modal.widget.update_tags(),
+                self.tag_search_panel.update_tags(),
                 self.add_tag_modal.show(),
             )
         )

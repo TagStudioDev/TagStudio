@@ -706,14 +706,14 @@ class QtDriver(DriverMixin, QObject):
         )
 
     def add_tag_action_callback(self):
+        panel = BuildTagPanel(self.lib)
         self.modal = PanelModal(
-            BuildTagPanel(self.lib),
+            panel,
             has_save=True,
         )
         Translations.translate_with_setter(self.modal.setTitle, "tag.new")
         Translations.translate_with_setter(self.modal.setWindowTitle, "tag.add")
 
-        panel: BuildTagPanel = self.modal.widget
         self.modal.saved.connect(
             lambda: (
                 self.lib.add_tag(
