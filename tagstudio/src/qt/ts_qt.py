@@ -178,7 +178,6 @@ class QtDriver(DriverMixin, QObject):
             logger.info("Using Config File", path=path)
             self.settings = TSSettings.read_settings(path)
         else:
-            path = Path()
             if sys.platform == "win32":
                 path = Path.home() / "AppData" / "Roaming" / "TagStudio" / "config.toml"
             else:  # "linux" and "darwin" should use the same config directory
