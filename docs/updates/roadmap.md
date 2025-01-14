@@ -19,7 +19,7 @@ Features are broken up into the following priority levels, with nested prioritie
     -   [x] Tag shorthand (specific short alias for displaying) [HIGH]
     -   [x] Parent/Inheritance subtags [HIGH]
     -   [ ] Composition/HAS subtags [HIGH]
-    -   [ ] Deleting Tags [HIGH] [#148](https://github.com/TagStudioDev/TagStudio/issues/148)
+    -   [x] Deleting Tags [HIGH] [#148]
     -   [ ] Merging Tags [HIGH] [#12](https://github.com/TagStudioDev/TagStudio/issues/12)
     -   [ ] Tag Icons [HIGH] [#195](https://github.com/TagStudioDev/TagStudio/issues/195)
         -   [ ] Small Icons [HIGH]
@@ -36,9 +36,7 @@ Features are broken up into the following priority levels, with nested prioritie
             -   [ ] Non-removable [HIGH]
     -   [x] [Tag Categories](../library/tag_categories.md) [HIGH]
         -   [x] Property available for tags that allow the tag and any inheriting from it to be displayed separately in the preview panel under a title [HIGH]
-        -   [ ] Title is tag name [HIGH]
-        -   [ ] Title has tag color [MEDIUM]
-        -   [ ] Tag marked as category does not display as a tag itself [HIGH]
+        -   [x] Title is tag name [HIGH]
     -   [ ] [Tag Overrides](../library/tag_overrides.md) [MEDIUM]
         -   [ ] Per-file overrides of subtags [HIGH]
 -   [ ] Tag Packs [MEDIUM] [#3](https://github.com/TagStudioDev/TagStudio/issues/3)
@@ -83,10 +81,9 @@ Features are broken up into the following priority levels, with nested prioritie
     -   [x] Text Boxes [HIGH]
     -   [x] Text Lines [HIGH]
     -   [ ] Dates [HIGH] [#213](https://github.com/TagStudioDev/TagStudio/issues/213)
-    -   [ ] GPS Location [LOW]
-    -   [ ] Custom field names [HIGH] [#18](https://github.com/TagStudioDev/TagStudio/issues/18)
--   [ ] Search engine [HIGH] [#325](https://github.com/TagStudioDev/TagStudio/issues/325)
-    -   [x] Boolean operators [HIGH] [#225](https://github.com/TagStudioDev/TagStudio/issues/225), [#314](https://github.com/TagStudioDev/TagStudio/issues/314)
+    -   [ ] Custom field names [HIGH]
+-   [ ] Search engine [HIGH]
+    -   [x] Boolean operators [HIGH]
     -   [ ] Tag objects + autocomplete [HIGH] [#476 (Autocomplete)](https://github.com/TagStudioDev/TagStudio/issues/476)
     -   [x] Filename search [HIGH]
     -   [x] Filetype search [HIGH]
@@ -123,8 +120,8 @@ Features are broken up into the following priority levels, with nested prioritie
     -   [ ] Custom Tag Badges [LOW]
 -   [ ] Thumbnails [HIGH]
     -   [ ] File Duration Label [HIGH]
-    -   [ ] 3D Model Previews [LOW]
-        -   [ ] STL Previews [HIGH] [#351](https://github.com/TagStudioDev/TagStudio/issues/351)
+    -   [ ] 3D Model Previews [MEDIUM]
+        -   [ ] STL Previews [HIGH]
 -   [x] Drag and Drop [HIGH]
     -   [x] Drag files _to_ other programs [HIGH]
     -   [x] Drag files _to_ file explorer windows [MEDIUM]
@@ -158,11 +155,9 @@ These version milestones are rough estimations for when the previous core featur
 ### 9.5 (Alpha)
 
 -   [x] SQL backend [HIGH]
--   [ ] Translations _(Any applicable)_ [MEDIUM]
--   [ ] Multiple Root Directories per Library [HIGH]
+-   [x] Translations _(Any applicable)_ [MEDIUM]
 -   [ ] Tags [HIGH]
-    -   [ ] Deleting Tags [HIGH]
-    -   [ ] Merging Tags [HIGH]
+    -   [x] Deleting Tags [HIGH]
     -   [ ] User-defined tag colors [HIGH]
         -   [ ] ID based, not string or hex [HIGH]
         -   [ ] Color name [HIGH]
@@ -200,6 +195,7 @@ These version milestones are rough estimations for when the previous core featur
 ### 9.6 (Alpha)
 
 -   [ ] Tags [HIGH]
+    -   [ ] Merging Tags [HIGH]
     -   [ ] Composition/HAS subtags [HIGH]
     -   [ ] Tag Icons [HIGH]
         -   [ ] Small Icons [HIGH]
@@ -215,6 +211,15 @@ These version milestones are rough estimations for when the previous core featur
 -   [ ] Fields [HIGH]
     -   [ ] Dates [HIGH]
     -   [ ] Custom field names [HIGH]
+-   [ ] Multiple Root Directories per Library [HIGH]
+-   [ ] `.ts_ignore` (`.gitignore`-style glob ignoring) [HIGH]
+-   [ ] Tagging Panel [HIGH]
+    -   [ ] Top Tags [HIGH]
+    -   [ ] Recent Tags [HIGH]
+    -   [ ] Tag Search [HIGH]
+    -   [ ] Pinned Tags [HIGH]
+-   [ ] Search engine [HIGH]
+    -   [ ] HAS operator for composition tags [HIGH]
 
 ### 9.7 (Alpha)
 
@@ -231,11 +236,6 @@ These version milestones are rough estimations for when the previous core featur
     -   [ ] Ability to set custom thumbnail for group [HIGH]
     -   [ ] Group is treated as entry with tags and metadata [HIGH]
     -   [ ] Nested groups [MEDIUM]
--   [ ] Tagging Panel [HIGH]
-    -   [ ] Top Tags [HIGH]
-    -   [ ] Recent Tags [HIGH]
-    -   [ ] Tag Search [HIGH]
-    -   [ ] Pinned Tags [HIGH]
 
 ### 9.8 (Possible Beta)
 
