@@ -62,12 +62,3 @@ class DefaultEnum(enum.Enum):
     @property
     def value(self):
         raise AttributeError("access the value via .default property instead")
-
-
-class LibraryPrefs(DefaultEnum):
-    """Library preferences with default value accessible via .default property."""
-
-    IS_EXCLUDE_LIST = True
-    EXTENSION_LIST: list[str] = [".json", ".xmp", ".aae"]
-    PAGE_SIZE: int = 500
-    DB_VERSION: int = 3

@@ -4,6 +4,8 @@ import structlog
 import toml
 from pydantic import BaseModel, Field
 
+from ..constants import DEFAULT_LIB_VERSION
+
 logger = structlog.get_logger(__name__)
 
 
@@ -11,7 +13,7 @@ class LibSettings(BaseModel):
     is_exclude_list: bool = Field(default=True)
     extension_list: list[str] = Field(default=[".json", ".xmp", ".aae"])
     page_size: int = Field(default=500)
-    db_version: int = Field(default=2)
+    db_version: int = Field(default=DEFAULT_LIB_VERSION)
     filename: str = Field(default="")
 
     @staticmethod
@@ -27,10 +29,12 @@ class LibSettings(BaseModel):
                     return LibSettings(**settings_data)
 
         # either settings file did not exist or was empty - either way, use default settings
-        settings = LibSettings(**dict(filename=str(path)))
+        settings = LibSettings(filename=str(path))
         return settings
 
     def save(self):
+        if self.filename == "":  # assume settings were opened for in-memory library
+            return
         if not (parent_path := Path(self.filename).parent).exists():
             parent_path.mkdir()
 

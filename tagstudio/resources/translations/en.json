@@ -177,6 +177,7 @@
     "preview.no_selection": "No Items Selected",
     "select.all": "Select All",
     "select.clear": "Clear Selection",
+    "settings.language": "Language",
     "settings.open_library_on_start": "Open Library on Start",
     "settings.show_filenames_in_grid": "Show Filenames in Grid",
     "settings.show_recent_libraries": "Show Recent Libraries",

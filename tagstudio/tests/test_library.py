@@ -2,7 +2,7 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 
 import pytest
-from src.core.enums import DefaultEnum, LibraryPrefs
+from src.core.enums import DefaultEnum
 from src.core.library.alchemy import Entry, Library
 from src.core.library.alchemy.enums import FilterState
 from src.core.library.alchemy.fields import TextField, _FieldID
@@ -211,11 +211,6 @@ def test_search_library_case_insensitive(library):
     assert results[0].id == entry.id
 
 
-def test_preferences(library):
-    for pref in LibraryPrefs:
-        assert library.prefs(pref) == pref.default
-
-
 def test_remove_entry_field(library, entry_full):
     title_field = entry_full.text_fields[0]
 
@@ -362,9 +357,6 @@ def test_update_field_order(library, entry_full):
 
 
 def test_library_prefs_multiple_identical_vals():
-    # check the preferences are inherited from DefaultEnum
-    assert issubclass(LibraryPrefs, DefaultEnum)
-
     # create custom settings with identical values
     class TestPrefs(DefaultEnum):
         FOO = 1

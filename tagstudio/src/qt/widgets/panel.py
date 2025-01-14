@@ -2,7 +2,7 @@
 # Licensed under the GPL-3.0 License.
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 import logging
-from typing import Callable
+from typing import Any, Callable
 
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import QHBoxLayout, QLabel, QPushButton, QVBoxLayout, QWidget
@@ -111,7 +111,7 @@ class PanelWidget(QWidget):
     def __init__(self):
         super().__init__()
 
-    def get_content(self) -> str:
+    def get_content(self) -> Any:
         pass
 
     def reset(self):

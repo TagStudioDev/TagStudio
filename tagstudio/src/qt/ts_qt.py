@@ -318,11 +318,9 @@ class QtDriver(DriverMixin, QObject):
         open_on_start_action = QAction(self)
         Translations.translate_qobject(open_on_start_action, "settings.open_library_on_start")
         open_on_start_action.setCheckable(True)
-        open_on_start_action.setChecked(
-            bool(self.settings.value(SettingItems.START_LOAD_LAST, defaultValue=True, type=bool))
-        )
+        open_on_start_action.setChecked(self.settings.open_last_loaded_on_startup)
         open_on_start_action.triggered.connect(
-            lambda checked: self.settings.setValue(SettingItems.START_LOAD_LAST, checked)
+            lambda checked: setattr(self.settings, "open_last_loaded_on_startup", checked)
         )
         file_menu.addAction(open_on_start_action)
 
@@ -367,11 +365,11 @@ class QtDriver(DriverMixin, QObject):
         close_library_action.triggered.connect(self.close_library)
         file_menu.addAction(close_library_action)
         file_menu.addSeparator()
-
-        # Edit Menu ============================================================
         settings_menu_action = QAction("&Settings", menu_bar)
         settings_menu_action.triggered.connect(lambda: self.open_settings_menu())
         file_menu.addAction(settings_menu_action)
+
+        # Edit Menu ============================================================
 
         new_tag_action = QAction(menu_bar)
         Translations.translate_qobject(new_tag_action, "menu.edit.new_tag")
@@ -424,23 +422,7 @@ class QtDriver(DriverMixin, QObject):
         show_libs_list_action = QAction(menu_bar)
         Translations.translate_qobject(show_libs_list_action, "settings.show_recent_libraries")
         show_libs_list_action.setCheckable(True)
-        show_libs_list_action.setChecked(
-            bool(self.settings.value(SettingItems.WINDOW_SHOW_LIBS, defaultValue=True, type=bool))
-        )
-
-        show_filenames_action = QAction(menu_bar)
-        Translations.translate_qobject(show_filenames_action, "settings.show_filenames_in_grid")
-        show_filenames_action.setCheckable(True)
-        show_filenames_action.setChecked(
-            bool(self.settings.value(SettingItems.SHOW_FILENAMES, defaultValue=True, type=bool))
-        )
-        show_filenames_action.triggered.connect(
-            lambda checked: (
-                self.settings.setValue(SettingItems.SHOW_FILENAMES, checked),
-                self.show_grid_filenames(checked),
-            )
-        )
-        view_menu.addAction(show_filenames_action)
+        show_libs_list_action.setChecked(self.settings.show_library_list)
 
         # Tools Menu ===========================================================
         def create_fix_unlinked_entries_modal():
@@ -478,18 +460,6 @@ class QtDriver(DriverMixin, QObject):
             )
         )
         macros_menu.addAction(self.autofill_action)
-
-        show_libs_list_action = QAction(menu_bar)
-        Translations.translate_qobject(show_libs_list_action, "settings.show_recent_libraries")
-        show_libs_list_action.setCheckable(True)
-        show_libs_list_action.setChecked(self.settings.show_library_list)
-        show_libs_list_action.triggered.connect(
-            lambda checked: (
-                setattr(self.settings, "show_library_list", checked),
-                self.toggle_libs_list(checked),
-            )
-        )
-        # window_menu.addAction(show_libs_list_action)
 
         def create_folders_tags_modal():
             if not hasattr(self, "folders_modal"):
@@ -654,10 +624,6 @@ class QtDriver(DriverMixin, QObject):
         self.splash.finish(self.main_window)
         self.preview_panel.update_widgets()
 
-    def show_grid_filenames(self, value: bool):
-        for thumb in self.item_thumbs:
-            thumb.set_filename_visibility(value)
-
     def callback_library_needed_check(self, func):
         """Check if loaded library has valid path before executing the button function."""
         if self.lib.library_dir:
@@ -669,7 +635,6 @@ class QtDriver(DriverMixin, QObject):
     def shutdown(self):
         """Save Library on Application Exit."""
         self.close_library(is_shutdown=True)
-        self.cache.save()
         logger.info("[SHUTDOWN] Ending Thumbnail Threads...")
         for _ in self.thumb_threads:
             self.thumb_job_queue.put(Consumer.MARKER_QUIT)
@@ -693,6 +658,7 @@ class QtDriver(DriverMixin, QObject):
         self.cache.last_library = str(self.lib.library_dir)
         self.settings.save()
         self.lib.settings.save()
+        self.cache.save()
 
         self.lib.close()
 
@@ -761,13 +727,17 @@ class QtDriver(DriverMixin, QObject):
             "Settings",
             "Settings",
             has_save=True,
-            save_callback = (lambda x: self.update_settings(x))
+            save_callback=(lambda x: self.update_settings(x)),
         )
+        self.modal.show()
 
     def update_settings(self, settings: TSSettings):
         self.settings = settings
         self.settings.save(self.settings.filename)
         Translations.change_language(self.settings.language)
+
+        for thumb in self.item_thumbs:
+            thumb.set_filename_visibility(self.settings.show_filenames_in_grid)
 
     def select_all_action_callback(self):
         """Set the selection to all visible items."""
@@ -1043,10 +1013,7 @@ class QtDriver(DriverMixin, QObject):
                 self.lib,
                 self,
                 (self.thumb_size, self.thumb_size),
-                grid_idx,
-                bool(
-                    self.settings.show_filenames_in_grid
-                ),
+                self.settings.show_filenames_in_grid,
             )
 
             layout.addWidget(item_thumb)
@@ -1364,18 +1331,16 @@ class QtDriver(DriverMixin, QObject):
         for access_time in self.cache.library_history:
             lib = self.cache.library_history[access_time]
             if Path(lib) != path:
-                all_libs[str(access_time)] = lib
+                all_libs[access_time] = lib
 
         all_libs_list = sorted(all_libs.items(), key=lambda item: item[0], reverse=True)
 
-        # remove previously saved items
-        self.settings.remove("")
-
+        lib_hist = {}
         for item_key, item_value in all_libs_list[:item_limit]:
-            self.settings.setValue(item_key, item_value)
+            lib_hist[item_key] = item_value
 
-        self.settings.endGroup()
-        self.settings.sync()
+        self.cache.library_history = lib_hist
+
         self.update_recent_lib_menu()
 
     def update_recent_lib_menu(self):
@@ -1383,10 +1348,8 @@ class QtDriver(DriverMixin, QObject):
         actions: list[QAction] = []
         lib_items: dict[str, tuple[str, str]] = {}
 
-        settings = self.settings
-        settings.beginGroup(SettingItems.LIBS_LIST)
-        for item_tstamp in settings.allKeys():
-            val = str(settings.value(item_tstamp, type=str))
+        for item_tstamp in self.cache.library_history:
+            val = str(self.cache.library_history[item_tstamp])
             cut_val = val
             if len(val) > 45:
                 cut_val = f"{val[0:10]} ... {val[-10:]}"
@@ -1394,7 +1357,6 @@ class QtDriver(DriverMixin, QObject):
 
         # Sort lib_items by the key
         libs_sorted = sorted(lib_items.items(), key=lambda item: item[0], reverse=True)
-        settings.endGroup()
 
         # Create actions for each library
         for library_key in libs_sorted:
@@ -1427,11 +1389,7 @@ class QtDriver(DriverMixin, QObject):
 
     def clear_recent_libs(self):
         """Clear the list of recent libraries from the settings file."""
-        settings = self.settings
-        settings.beginGroup(SettingItems.LIBS_LIST)
-        self.settings.remove("")
-        self.settings.endGroup()
-        self.settings.sync()
+        self.cache.library_history = dict()
         self.update_recent_lib_menu()
 
     def open_library(self, path: Path) -> None:

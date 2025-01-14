@@ -18,7 +18,7 @@ class TestDriver(DriverMixin):
 
 def test_evaluate_path_empty():
     # Given
-    settings = TSSettings(**dict(filename=""))
+    settings = TSSettings(filename="")
     driver = TestDriver(settings)
 
     # When
@@ -30,7 +30,7 @@ def test_evaluate_path_empty():
 
 def test_evaluate_path_missing():
     # Given
-    settings = TSSettings(**dict(filename=""))
+    settings = TSSettings(filename="")
     driver = TestDriver(settings)
 
     # When
@@ -42,7 +42,7 @@ def test_evaluate_path_missing():
 
 def test_evaluate_path_last_lib_not_exists():
     # Given
-    settings = TSSettings(**dict(filename=""))
+    settings = TSSettings(filename="")
     cache = TSCachedData.open()
     cache.last_library = "/0/4/5/1/"
     driver = TestDriver(settings, cache)
@@ -63,9 +63,7 @@ def test_evaluate_path_last_lib_present():
         cache.save()
 
         makedirs(Path(tmpdir) / TS_FOLDER_NAME)
-        driver = TestDriver(
-            TSSettings(**dict(filename="", open_last_loaded_on_startup=True)), cache
-        )
+        driver = TestDriver(TSSettings(filename="", open_last_loaded_on_startup=True), cache)
 
         # When
         result = driver.evaluate_path(None)

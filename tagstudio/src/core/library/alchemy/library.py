@@ -12,7 +12,6 @@ from datetime import UTC, datetime
 from os import makedirs
 from pathlib import Path
 from uuid import uuid4
-from warnings import catch_warnings
 
 import structlog
 from humanfriendly import format_timespan
@@ -30,6 +29,7 @@ from sqlalchemy import (
     func,
     or_,
     select,
+    text,
     update,
 )
 from sqlalchemy.exc import IntegrityError
@@ -44,6 +44,7 @@ from src.core.library.json.library import Library as JsonLibrary  # type: ignore
 
 from ...constants import (
     BACKUP_FOLDER_NAME,
+    DEFAULT_LIB_VERSION,
     LEGACY_TAG_FIELD_IDS,
     RESERVED_TAG_END,
     RESERVED_TAG_START,
@@ -52,7 +53,6 @@ from ...constants import (
     TAG_META,
     TS_FOLDER_NAME,
 )
-from ...enums import LibraryPrefs
 from ...settings import LibSettings
 from .db import make_tables
 from .enums import MAX_SQL_VARIABLES, FieldTypeEnum, FilterState, SortingModeEnum, TagColor
@@ -257,13 +257,10 @@ class Library:
         if storage_path == ":memory:":
             self.storage_path = storage_path
             is_new = True
+            self.settings = LibSettings(filename="")
             return self.open_sqlite_library(library_dir, is_new)
         else:
             self.storage_path = library_dir / TS_FOLDER_NAME / self.SQL_FILENAME
-            settings_path = library_dir / TS_FOLDER_NAME / "libsettings.toml"
-
-            self.settings = LibSettings.open(settings_path)
-
             if self.verify_ts_folder(library_dir) and (is_new := not self.storage_path.exists()):
                 json_path = library_dir / TS_FOLDER_NAME / self.JSON_FILENAME
                 if json_path.exists():
@@ -307,29 +304,6 @@ class Library:
                     session.rollback()
 
             # dont check db version when creating new library
-            if not is_new:
-                db_version = session.scalar(
-                    select(Preferences).where(Preferences.key == LibraryPrefs.DB_VERSION.name)
-                )
-
-                if not db_version:
-                    return LibraryStatus(
-                        success=False,
-                        message=(
-                            "Library version mismatch.\n"
-                            f"Found: v0, expected: v{LibraryPrefs.DB_VERSION.default}"
-                        ),
-                    )
-
-            for pref in LibraryPrefs:
-                with catch_warnings(record=True):
-                    try:
-                        session.add(Preferences(key=pref.name, value=pref.default))
-                        session.commit()
-                    except IntegrityError:
-                        logger.debug("preference already exists", pref=pref)
-                        session.rollback()
-
             for field in _FieldID:
                 try:
                     session.add(
@@ -346,21 +320,58 @@ class Library:
                     logger.debug("ValueType already exists", field=field)
                     session.rollback()
 
-            db_version = session.scalar(
-                select(Preferences).where(Preferences.key == LibraryPrefs.DB_VERSION.name)
-            )
+            settings_path = library_dir / TS_FOLDER_NAME / "notafile.toml"
+
+            # Will be set already if library was opened in-memory
+            if self.settings is None:
+                if settings_path.exists():
+                    self.settings = LibSettings.open(settings_path)
+                else:
+                    if (
+                        session.execute(
+                            text(
+                                """
+                                SELECT count(*) 
+                                FROM sqlite_master
+                                WHERE type='table' AND lower(name)='preferences';
+                                """
+                            )
+                        ).scalar()
+                        == 0
+                    ):
+                        # db was not created when settings were in db;
+                        # use default settings, store at default location
+                        self.settings = LibSettings(filename=str(settings_path))
+                    else:
+                        # copy settings from db, store them in default location on next save
+                        prefs = session.scalars(select(Preferences))
+                        settings = LibSettings(filename=str(settings_path))
+                        for pref in prefs:
+                            # the type ignores below are due to the fact that a Preference's value
+                            # is defined as a dict, while none of them are actually dicts.
+                            # i dont know why that is how it is, but it is
+                            if pref.key == "IS_EXCLUDE_LIST":
+                                settings.is_exclude_list = pref.value  # type: ignore
+                            elif pref.key == "EXTENSION_LIST":
+                                settings.extension_list = pref.value  # type: ignore
+                            elif pref.key == "PAGE_SIZE":
+                                settings.page_size = pref.value  # type: ignore
+                            elif pref.key == "DB_VERSION":
+                                settings.db_version = pref.value  # type: ignore
+
+                        self.settings = settings
             # if the db version is different, we cant proceed
-            if db_version.value != LibraryPrefs.DB_VERSION.default:
+            if not is_new and self.settings.db_version != DEFAULT_LIB_VERSION:
                 logger.error(
                     "DB version mismatch",
-                    db_version=db_version.value,
-                    expected=LibraryPrefs.DB_VERSION.default,
+                    db_version=self.settings.db_version,
+                    expected=DEFAULT_LIB_VERSION,
                 )
                 return LibraryStatus(
                     success=False,
                     message=(
                         "Library version mismatch.\n"
-                        f"Found: v{db_version.value}, expected: v{LibraryPrefs.DB_VERSION.default}"
+                        f"Found: v{self.settings.db_version}, expected: v{DEFAULT_LIB_VERSION}"
                     ),
                 )
 
@@ -1106,21 +1117,6 @@ class Library:
                 child_id=parent_id,
             )
             session.add(parent_tag)
-
-    def prefs(self, key: LibraryPrefs):
-        # load given item from Preferences table
-        with Session(self.engine) as session:
-            return session.scalar(select(Preferences).where(Preferences.key == key.name)).value
-
-    def set_prefs(self, key: LibraryPrefs, value) -> None:
-        # set given item in Preferences table
-        with Session(self.engine) as session:
-            # load existing preference and update value
-            pref = session.scalar(select(Preferences).where(Preferences.key == key.name))
-            pref.value = value
-            session.add(pref)
-            session.commit()
-            # TODO - try/except
 
     def mirror_entry_fields(self, *entries: Entry) -> None:
         """Mirror fields among multiple Entry items."""

@@ -10,6 +10,7 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
 )
 from src.core.settings import TSSettings
+from src.qt.translations import Translations
 from src.qt.widgets.panel import PanelWidget
 
 
@@ -21,50 +22,38 @@ class SettingsModal(PanelWidget):
         self.main = QVBoxLayout(self)
 
         # ---
-        self.language_Label = QLabel()
-        self.language_Value = QComboBox()
-        self.language_Row = QHBoxLayout()
-        self.language_Row.addWidget(self.language_Label)
-        self.language_Row.addWidget(self.language_Value)
+        language_row = QHBoxLayout(self)
+        language_label = QLabel(self)
+        Translations.translate_qobject(language_label, "settings.language")
+        language_value = QComboBox(self)
+        language_row.addWidget(language_label)
+        language_row.addWidget(language_value)
 
-        self.language_Label.setText("Language")
         translations_folder = Path("tagstudio/resources/translations")
         language_list = [x.stem for x in translations_folder.glob("*.json")]
-        self.language_Value.addItems(language_list)
-        self.language_Value.setCurrentIndex(language_list.index(self.tempSettings.language))
-        self.language_Value.currentTextChanged.connect(
+        language_value.addItems(language_list)
+        language_value.setCurrentIndex(language_list.index(self.tempSettings.language))
+        language_value.currentTextChanged.connect(
             lambda text: setattr(self.tempSettings, "language", text)
         )
 
         # ---
-        self.show_library_list_Label = QLabel()
-        self.show_library_list_Value = QCheckBox()
-        self.show_library_list_Row = QHBoxLayout()
-        self.show_library_list_Row.addWidget(self.show_library_list_Label)
-        self.show_library_list_Row.addWidget(self.show_library_list_Value)
-        self.show_library_list_Label.setText("Load library list on startup (requires restart):")
-        self.show_library_list_Value.setChecked(self.tempSettings.show_library_list)
+        show_filenames_row = QHBoxLayout(self)
+        show_filenames_label = QLabel(self)
+        Translations.translate_qobject(show_filenames_label, "settings.show_filenames_in_grid")
+        show_filenames_value = QCheckBox(self)
 
-        self.show_library_list_Value.stateChanged.connect(
-            lambda state: setattr(self.tempSettings, "show_library_list", bool(state))
-        )
+        show_filenames_value.setChecked(self.tempSettings.show_filenames_in_grid)
+        show_filenames_row.addWidget(show_filenames_label)
+        show_filenames_row.addWidget(show_filenames_value)
 
-        # ---
-        self.show_filenames_Label = QLabel()
-        self.show_filenames_Value = QCheckBox()
-        self.show_filenames_Row = QHBoxLayout()
-        self.show_filenames_Row.addWidget(self.show_filenames_Label)
-        self.show_filenames_Row.addWidget(self.show_filenames_Value)
-        self.show_filenames_Label.setText("Show filenames in grid (requires restart)")
-        self.show_filenames_Value.setChecked(self.tempSettings.show_filenames_in_grid)
-
-        self.show_filenames_Value.stateChanged.connect(
+        show_filenames_value.stateChanged.connect(
             lambda state: setattr(self.tempSettings, "show_filenames_in_grid", bool(state))
         )
         # ---
-        self.main.addLayout(self.language_Row)
-        self.main.addLayout(self.show_library_list_Row)
-        self.main.addLayout(self.show_filenames_Row)
+
+        self.main.addLayout(language_row)
+        self.main.addLayout(show_filenames_row)
 
     def set_property(self, prop_name: str, value: Any) -> None:
         setattr(self.tempSettings, prop_name, value)

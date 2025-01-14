@@ -1,4 +1,3 @@
-from datetime import datetime
 from pathlib import Path
 
 import structlog
@@ -16,7 +15,7 @@ class TSCachedData(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
     last_library: str | None = Field(default=None)
     # a dict of ISO formatted date strings -> paths
-    library_history: dict[str, str] = Field(default_factory=dict[datetime, str])
+    library_history: dict[str, str] = Field(default_factory=dict[str, str])
 
     path: str = Field()
 
@@ -44,7 +43,7 @@ class TSCachedData(BaseModel):
                     logger.info("opening cache file at ", cache_location=path)
                     return TSCachedData(**cache_data)
 
-        return TSCachedData(**dict(path=str(default_cache_location)))
+        return TSCachedData(path=str(default_cache_location))
 
     def save(self):
         with open(self.path, "w") as f:

@@ -27,13 +27,15 @@ class TSSettings(BaseModel):
                 filecontents = file.read()
                 if len(filecontents.strip()) != 0:
                     settings_data = toml.loads(filecontents)
-                    settings = TSSettings(**settings_data)
-                    return settings
+                    return TSSettings(**settings_data)
 
-        return TSSettings(**dict(filename=str(path)))
+        return TSSettings(filename=str(path))
 
     def save(self, path: Path | str | None = None) -> None:
         path_value: Path = Path(path) if isinstance(path, str) else Path(self.filename)
+        if path_value == "":
+            pass
+            # settings were probably opened for an in-memory library - save to preferences table
 
         if not path_value.parent.exists():
             path_value.parent.mkdir(parents=True, exist_ok=True)
