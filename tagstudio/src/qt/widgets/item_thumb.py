@@ -507,16 +507,13 @@ class ItemThumb(FlowWidget):
             return
 
         drag = QDrag(self.driver)
-        paths = []
+        paths: list[QUrl] = []
         mimedata = QMimeData()
 
         selected_ids = self.driver.selected
-        if self.item_id not in selected_ids:
-            selected_ids = [self.item_id]
 
-        for selected_id in selected_ids:
-            item_id = self.driver.item_thumbs[selected_id].item_id
-            entry = self.lib.get_entry(item_id)
+        for entry_id in selected_ids:
+            entry = self.lib.get_entry(entry_id)
             if not entry:
                 continue
 
@@ -526,4 +523,4 @@ class ItemThumb(FlowWidget):
         mimedata.setUrls(paths)
         drag.setMimeData(mimedata)
         drag.exec(Qt.DropAction.CopyAction)
-        logger.info("dragged files to external program", thumbnail_indexs=selected_ids)
+        logger.info("[ItemThumb] Dragging Files:", entry_ids=selected_ids)
