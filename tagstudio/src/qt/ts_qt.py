@@ -26,7 +26,6 @@ from PySide6 import QtCore
 from PySide6.QtCore import QObject, QSettings, Qt, QThread, QThreadPool, QTimer, Signal
 from PySide6.QtGui import (
     QAction,
-    QColor,
     QDragEnterEvent,
     QDragMoveEvent,
     QDropEvent,
@@ -34,7 +33,6 @@ from PySide6.QtGui import (
     QGuiApplication,
     QIcon,
     QMouseEvent,
-    QPixmap,
 )
 from PySide6.QtUiTools import QUiLoader
 from PySide6.QtWidgets import (
@@ -47,7 +45,6 @@ from PySide6.QtWidgets import (
     QMessageBox,
     QPushButton,
     QScrollArea,
-    QSplashScreen,
     QWidget,
 )
 from src.core.constants import (
@@ -83,6 +80,7 @@ from src.qt.modals.fix_unlinked import FixUnlinkedEntriesModal
 from src.qt.modals.folders_to_tags import FoldersToTagsModal
 from src.qt.modals.tag_database import TagDatabasePanel
 from src.qt.resource_manager import ResourceManager
+from src.qt.splash import Splash
 from src.qt.translations import Translations
 from src.qt.widgets.item_thumb import BadgeType, ItemThumb
 from src.qt.widgets.migration_modal import JsonMigrationModal
@@ -215,13 +213,6 @@ class QtDriver(DriverMixin, QObject):
 
         app = QApplication(sys.argv)
         app.setStyle("Fusion")
-        # pal: QPalette = app.palette()
-        # pal.setColor(QPalette.ColorGroup.Active,
-        # 			 QPalette.ColorRole.Highlight, QColor('#6E4BCE'))
-        # pal.setColor(QPalette.ColorGroup.Normal,
-        # 			 QPalette.ColorRole.Window, QColor('#110F1B'))
-        # app.setPalette(pal)
-        # home_path = Path(__file__).parent / "ui/home.ui"
         icon_path = Path(__file__).parents[2] / "resources/icon.png"
 
         # Handle OS signals
@@ -239,39 +230,13 @@ class QtDriver(DriverMixin, QObject):
         self.main_window.dragMoveEvent = self.drag_move_event  # type: ignore[method-assign]
         self.main_window.dropEvent = self.drop_event  # type: ignore[method-assign]
 
-        splash_name = "splash_goo_gears"
-        splash_pixmap: QPixmap = self.rm.get(splash_name)
-        if not splash_pixmap:
-            splash_pixmap = self.rm.get("splash_goo_gears")
-
-        splash_pixmap.setDevicePixelRatio(self.main_window.devicePixelRatio())
-        splash_pixmap = splash_pixmap.scaledToWidth(
-            math.floor(
-                min(
-                    (
-                        QGuiApplication.primaryScreen().geometry().width()
-                        * self.main_window.devicePixelRatio()
-                    )
-                    / 4,
-                    splash_pixmap.width(),
-                )
-            ),
-            Qt.TransformationMode.SmoothTransformation,
+        self.splash: Splash = Splash(
+            resource_manager=self.rm,
+            screen_width=QGuiApplication.primaryScreen().geometry().width(),
+            splash_name="",  # TODO: Get splash name from config
+            device_ratio=self.main_window.devicePixelRatio(),
         )
-        self.splash = QSplashScreen(splash_pixmap, Qt.WindowType.WindowStaysOnTopHint)
         self.splash.show()
-
-        path_result = self.evaluate_path(str(self.args.open).lstrip().rstrip())
-        # check status of library path evaluating
-        if path_result.success and path_result.library_path:
-            self.splash.showMessage(
-                Translations.translate_formatted(
-                    "splash.opening_library", library_path=path_result.library_path
-                ),
-                int(Qt.AlignmentFlag.AlignBottom | Qt.AlignmentFlag.AlignHCenter),
-                QColor("#9782ff"),
-            )
-            self.open_library(path_result.library_path)
 
         if os.name == "nt":
             appid = "cyanvoxel.tagstudio.9"
@@ -539,6 +504,10 @@ class QtDriver(DriverMixin, QObject):
         self.filter = FilterState.show_all()
         self.init_library_window()
         self.migration_modal: JsonMigrationModal = None
+
+        path_result = self.evaluate_path(str(self.args.open).lstrip().rstrip())
+        if path_result.success and path_result.library_path:
+            self.open_library(path_result.library_path)
 
         app.exec()
         self.shutdown()
