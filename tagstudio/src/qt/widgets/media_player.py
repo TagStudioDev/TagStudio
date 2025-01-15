@@ -92,9 +92,9 @@ class MediaPlayer(QWidget):
 
         self.volume_slider = QSlider()
         self.volume_slider.setOrientation(Qt.Orientation.Horizontal)
-        self.volume_slider.valueChanged.connect(self.volume_slider_changed)
         # set slider value to current volume
         self.volume_slider.setValue(int(self.player.audioOutput().volume() * 100))
+        self.volume_slider.valueChanged.connect(self.volume_slider_changed)
 
         self.media_btns_layout.addWidget(self.volume_slider)
 
