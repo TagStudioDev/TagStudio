@@ -29,7 +29,10 @@ class ResourceManager:
         if not ResourceManager._initialized:
             with open(Path(__file__).parent / "resources.json", encoding="utf-8") as f:
                 ResourceManager._map = ujson.load(f)
-                logger.info("resources registered", count=len(ResourceManager._map.items()))
+                logger.info(
+                    "[ResourceManager] Resources Registered:",
+                    count=len(ResourceManager._map.items()),
+                )
             ResourceManager._initialized = True
 
     @staticmethod
