@@ -40,6 +40,11 @@ def silent_Popen(  # noqa: N802
     """Call subprocess.Popen without creating a console window."""
     if sys.platform == "win32":
         creationflags |= subprocess.CREATE_NO_WINDOW
+    elif sys.platform == "linux" or sys.platform.startswith("freebsd") or sys.platform.startswith("openbsd"):
+        # pass clean environment to the subprocess
+        env = os.environ
+        original_env = env.get("LD_LIBRARY_PATH_ORIG")
+        env["LD_LIBRARY_PATH"] = original_env if original_env else ""
 
     return subprocess.Popen(
         args=args,
