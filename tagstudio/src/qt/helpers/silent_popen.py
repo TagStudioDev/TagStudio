@@ -3,11 +3,12 @@
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 import subprocess
 import sys
+import os
 
 """Implementation of subprocess.Popen that does not spawn console windows or log output."""
 
 
-def promptless_Popen(  # noqa: N802
+def silent_Popen(  # noqa: N802
     args,
     bufsize=-1,
     executable=None,
@@ -21,6 +22,7 @@ def promptless_Popen(  # noqa: N802
     env=None,
     universal_newlines=None,
     startupinfo=None,
+    creationflags=0,
     restore_signals=True,
     start_new_session=False,
     pass_fds=(),
@@ -36,9 +38,8 @@ def promptless_Popen(  # noqa: N802
     process_group=None,
 ):
     """Call subprocess.Popen without creating a console window."""
-    creation_flags = 0
     if sys.platform == "win32":
-        creation_flags = subprocess.CREATE_NO_WINDOW
+        creationflags |= subprocess.CREATE_NO_WINDOW
 
     return subprocess.Popen(
         args=args,
@@ -54,7 +55,7 @@ def promptless_Popen(  # noqa: N802
         env=env,
         universal_newlines=universal_newlines,
         startupinfo=startupinfo,
-        creationflags=creation_flags,
+        creationflags=creationflags,
         restore_signals=restore_signals,
         start_new_session=start_new_session,
         pass_fds=pass_fds,

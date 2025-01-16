@@ -12,6 +12,8 @@ import structlog
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QLabel
 
+from src.qt.helpers.silent_popen import silent_Popen 
+
 logger = structlog.get_logger(__name__)
 
 
@@ -38,7 +40,7 @@ def open_file(path: str | Path, file_manager: bool = False):
 
                 # For some reason, if the args are passed in a list, this will error when the
                 # path has spaces, even while surrounded in double quotes.
-                subprocess.Popen(
+                silent_Popen(
                     command_name + command_arg,
                     shell=True,
                     close_fds=True,
@@ -47,7 +49,7 @@ def open_file(path: str | Path, file_manager: bool = False):
                 )
             else:
                 command = f'"{normpath}"'
-                subprocess.Popen(
+                silent_Popen(
                     command,
                     shell=True,
                     close_fds=True,
@@ -79,7 +81,7 @@ def open_file(path: str | Path, file_manager: bool = False):
                     command_args = [str(path)]
             command = shutil.which(command_name)
             if command is not None:
-                subprocess.Popen([command] + command_args, close_fds=True)
+                silent_Popen([command] + command_args, close_fds=True)
             else:
                 logger.info("Could not find command on system PATH", command=command_name)
     except Exception:
