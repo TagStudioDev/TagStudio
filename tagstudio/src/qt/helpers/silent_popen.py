@@ -5,7 +5,8 @@ import os
 import subprocess
 import sys
 
-"""Implementation of subprocess.Popen that does not spawn console windows or log output."""
+"""Implementation of subprocess.Popen that does not spawn console windows or log output
+and sanitizes pyinstall environment variables."""
 
 
 def silent_Popen(  # noqa: N802
