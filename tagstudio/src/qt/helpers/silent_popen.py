@@ -1,9 +1,9 @@
 # Copyright (C) 2024 Travis Abendshien (CyanVoxel).
 # Licensed under the GPL-3.0 License.
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
+import os
 import subprocess
 import sys
-import os
 
 """Implementation of subprocess.Popen that does not spawn console windows or log output."""
 
@@ -41,8 +41,13 @@ def silent_Popen(  # noqa: N802
     if sys.platform == "win32":
         creationflags |= subprocess.CREATE_NO_WINDOW
         import ctypes
+
         ctypes.windll.kernel32.SetDllDirectoryW(None)
-    elif sys.platform == "linux" or sys.platform.startswith("freebsd") or sys.platform.startswith("openbsd"):
+    elif (
+        sys.platform == "linux"
+        or sys.platform.startswith("freebsd")
+        or sys.platform.startswith("openbsd")
+    ):
         # pass clean environment to the subprocess
         env = os.environ
         original_env = env.get("LD_LIBRARY_PATH_ORIG")

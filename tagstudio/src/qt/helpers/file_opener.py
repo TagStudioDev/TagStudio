@@ -11,8 +11,7 @@ from pathlib import Path
 import structlog
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QLabel
-
-from src.qt.helpers.silent_popen import silent_Popen 
+from src.qt.helpers.silent_popen import silent_Popen
 
 logger = structlog.get_logger(__name__)
 
