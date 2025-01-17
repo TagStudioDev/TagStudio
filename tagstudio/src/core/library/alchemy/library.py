@@ -38,6 +38,7 @@ from sqlalchemy.orm import (
     contains_eager,
     joinedload,
     make_transient,
+    noload,
     selectinload,
 )
 from src.core.library.json.library import Library as JsonLibrary  # type: ignore
@@ -93,7 +94,9 @@ def get_default_tags() -> tuple[Tag, ...]:
         name="Archived",
         aliases={TagAlias(name="Archive")},
         parent_tags={meta_tag},
-        color=TagColor(slug="red", namespace="ts_std", name="Red", primary="#E22C3C"),
+        color_slug="red",
+        color_namespace="ts-std",
+        # color=TagColor(slug="red", namespace="ts-std", name="Red", primary="#E22C3C"),
     )
     favorite_tag = Tag(
         id=TAG_FAVORITE,
@@ -103,7 +106,9 @@ def get_default_tags() -> tuple[Tag, ...]:
             TagAlias(name="Favorites"),
         },
         parent_tags={meta_tag},
-        color=TagColor(slug="yellow", namespace="ts_std", name="Yellow", primary="#FFD63D"),
+        color_slug="yellow",
+        color_namespace="ts-std",
+        # color=TagColor(slug="yellow", namespace="ts-std", name="Yellow", primary="#FFD63D"),
     )
 
     return archive_tag, favorite_tag, meta_tag
@@ -390,16 +395,18 @@ class Library:
                     id=tag.id,
                     name=tag.name,
                     shorthand=tag.shorthand,
-                    color=self.get_tag_color(tag.color, namespace="ts_std"),
+                    color_namespace="ts-std",
+                    color_slug=tag.color.lower(),
+                    # color=self.get_tag_color(tag.color, namespace="ts-std"),
                     # color=TagColorEnum.get_color_from_str(tag.color),
                 )
             )
             # Apply user edits to built-in JSON tags.
-            if tag.id in range(RESERVED_TAG_START, RESERVED_TAG_END + 1):
-                updated_tag = self.get_tag(tag.id)
-                # updated_tag.color = TagColorEnum.get_color_from_str(tag.color)
-                # updated_tag.color = self.get_tag_color(tag.color, namespace="ts_std")
-                self.update_tag(updated_tag)  # NOTE: This just calls add_tag?
+            # if tag.id in range(RESERVED_TAG_START, RESERVED_TAG_END + 1):
+            #     updated_tag = self.get_tag(tag.id)
+            #     # updated_tag.color = TagColorEnum.get_color_from_str(tag.color)
+            #     # updated_tag.color = self.get_tag_color(tag.color, namespace="ts-std")
+            #     self.update_tag(updated_tag)  # NOTE: This just calls add_tag?
 
         # Tag Aliases
         for tag in json_lib.tags:
@@ -1202,7 +1209,7 @@ class Library:
     def get_tag(self, tag_id: int) -> Tag:
         with Session(self.engine) as session:
             tags_query = select(Tag).options(
-                selectinload(Tag.parent_tags), selectinload(Tag.aliases)
+                selectinload(Tag.parent_tags), selectinload(Tag.aliases), selectinload(Tag.color)
             )
             tag = session.scalar(tags_query.where(Tag.id == tag_id))
 

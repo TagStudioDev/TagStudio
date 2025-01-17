@@ -5,7 +5,7 @@
 from pathlib import Path
 
 from sqlalchemy import JSON, ForeignKey, ForeignKeyConstraint, Integer, event
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.orm import Mapped, joinedload, mapped_column, relationship
 
 from ...constants import TAG_ARCHIVED, TAG_FAVORITE
 from .db import Base, PathType
@@ -70,10 +70,13 @@ class Tag(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     name: Mapped[str]
     shorthand: Mapped[str | None]
-    color: Mapped[TagColor | None]
-    # = mapped_column(
-    #     ForeignKey("[TagColor.slug, TagColor.namespace]")
-    # )
+    color_namespace: Mapped[str | None] = mapped_column(ForeignKey("tag_colors.namespace"))
+    color_slug: Mapped[str | None] = mapped_column(ForeignKey("tag_colors.slug"))
+    color: Mapped[TagColor | None] = relationship(
+        secondary=TagColor.__tablename__,
+        primaryjoin="Tag.color_namespace == TagColor.namespace",
+        secondaryjoin="Tag.color_slug == TagColor.slug",
+    )
     is_category: Mapped[bool]
     icon: Mapped[str | None]
     aliases: Mapped[set[TagAlias]] = relationship(back_populates="tag")
@@ -109,13 +112,17 @@ class Tag(Base):
         aliases: set[TagAlias] | None = None,
         parent_tags: set["Tag"] | None = None,
         icon: str | None = None,
-        color: TagColor | None = None,
+        # color: TagColor | None = None,
+        color_namespace: str | None = None,
+        color_slug: str | None = None,
         is_category: bool = False,
     ):
         self.name = name
         self.aliases = aliases or set()
         self.parent_tags = parent_tags or set()
-        self.color = color
+        # self.color = color
+        self.color_namespace = color_namespace
+        self.color_slug = color_slug
         self.icon = icon
         self.shorthand = shorthand
         self.is_category = is_category

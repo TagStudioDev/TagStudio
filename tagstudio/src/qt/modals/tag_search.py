@@ -19,6 +19,8 @@ from PySide6.QtWidgets import (
 )
 from src.core.constants import RESERVED_TAG_END, RESERVED_TAG_START
 from src.core.library import Library, Tag
+from src.core.library.alchemy.enums import TagColorEnum
+from src.core.library.alchemy.models import TagColor
 from src.core.palette import ColorType, get_tag_color
 from src.qt.translations import Translations
 from src.qt.widgets.panel import PanelModal, PanelWidget
@@ -95,10 +97,10 @@ class TagSearchPanel(PanelWidget):
             add_button.setText("+")
             add_button.setStyleSheet(
                 f"QPushButton{{"
-                f"background: {get_tag_color(ColorType.PRIMARY, tag.color)};"
-                f"color: {get_tag_color(ColorType.TEXT, tag.color)};"
+                f"background: {get_tag_color(ColorType.PRIMARY, TagColorEnum.DEFAULT)};"
+                f"color: {get_tag_color(ColorType.TEXT, TagColorEnum.DEFAULT)};"
                 f"font-weight: 600;"
-                f"border-color:{get_tag_color(ColorType.BORDER, tag.color)};"
+                f"border-color:{get_tag_color(ColorType.BORDER, TagColorEnum.DEFAULT)};"
                 f"border-radius: 6px;"
                 f"border-style:solid;"
                 f"border-width: {math.ceil(self.devicePixelRatio())}px;"
@@ -107,9 +109,9 @@ class TagSearchPanel(PanelWidget):
                 f"}}"
                 f"QPushButton::hover"
                 f"{{"
-                f"border-color:{get_tag_color(ColorType.LIGHT_ACCENT, tag.color)};"
-                f"color: {get_tag_color(ColorType.DARK_ACCENT, tag.color)};"
-                f"background: {get_tag_color(ColorType.LIGHT_ACCENT, tag.color)};"
+                f"border-color:{get_tag_color(ColorType.LIGHT_ACCENT, TagColorEnum.DEFAULT)};"
+                f"color: {get_tag_color(ColorType.DARK_ACCENT, TagColorEnum.DEFAULT)};"
+                f"background: {get_tag_color(ColorType.LIGHT_ACCENT, TagColorEnum.DEFAULT)};"
                 f"}}"
             )
             tag_id = tag.id

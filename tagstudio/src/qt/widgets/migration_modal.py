@@ -4,6 +4,7 @@
 
 from pathlib import Path
 
+import traceback
 import structlog
 from PySide6.QtCore import QObject, Qt, QThreadPool, Signal
 from PySide6.QtWidgets import (
@@ -413,6 +414,7 @@ class JsonMigrationModal(QObject):
             self.done = True
 
         except Exception as e:
+            traceback.print_stack()
             logger.error("[MigrationModal] Error:", error=e)
             yield f"Error: {type(e).__name__}"
             QApplication.beep()
@@ -725,12 +727,15 @@ class JsonMigrationModal(QObject):
 
         for tag in self.sql_lib.tags:
             tag_id = tag.id  # Tag IDs start at 0
-            sql_color = tag.color.name
-            json_color = (
-                TagColorEnum.get_color_from_str(self.json_lib.get_tag(tag_id).color).name
-                if (self.json_lib.get_tag(tag_id).color) != ""
-                else TagColorEnum.DEFAULT.name
-            )
+            sql_color = tag.color_slug
+            # json_color = (
+            #     TagColorEnum.get_color_from_str(self.json_lib.get_tag(tag_id).color).name
+            #     if (self.json_lib.get_tag(tag_id).color) != ""
+            #     else TagColorEnum.DEFAULT.name
+            # )
+            json_color = self.json_lib.get_tag(tag_id).color.lower()
+            if not json_color:
+                json_color = None
 
             logger.info(
                 "[Color Parity]",

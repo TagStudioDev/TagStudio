@@ -150,10 +150,10 @@ class TagWidget(QWidget):
 
         self.bg_button.setStyleSheet(
             f"QPushButton{{"
-            f"background: {get_tag_color(ColorType.PRIMARY, tag.color)};"
-            f"color: {get_tag_color(ColorType.TEXT, tag.color)};"
+            f"background: {tag.color.primary};"
+            f"color: {get_tag_color(ColorType.TEXT, TagColorEnum.DEFAULT)};"
             f"font-weight: 600;"
-            f"border-color:{get_tag_color(ColorType.BORDER, tag.color)};"
+            f"border-color:{get_tag_color(ColorType.BORDER, TagColorEnum.DEFAULT)};"
             f"border-radius: 6px;"
             f"border-style:solid;"
             f"border-width: {math.ceil(self.devicePixelRatio())}px;"
@@ -163,7 +163,7 @@ class TagWidget(QWidget):
             f"font-size: 13px"
             f"}}"
             f"QPushButton::hover{{"
-            f"border-color:{get_tag_color(ColorType.LIGHT_ACCENT, tag.color)};"
+            f"border-color:{get_tag_color(ColorType.LIGHT_ACCENT, TagColorEnum.DEFAULT)};"
             f"}}"
         )
 
@@ -175,8 +175,8 @@ class TagWidget(QWidget):
             self.remove_button.setText("–")
             self.remove_button.setHidden(True)
             self.remove_button.setStyleSheet(
-                f"color: {get_tag_color(ColorType.PRIMARY, tag.color)};"
-                f"background: {get_tag_color(ColorType.TEXT, tag.color)};"
+                f"color: {get_tag_color(ColorType.PRIMARY, TagColorEnum.DEFAULT)};"
+                f"background: {get_tag_color(ColorType.TEXT, TagColorEnum.DEFAULT)};"
                 f"font-weight: 800;"
                 f"border-radius: 4px;"
                 f"border-width:0;"
