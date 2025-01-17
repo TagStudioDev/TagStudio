@@ -66,7 +66,7 @@ class LandingWidget(QWidget):
         Translations.translate_qobject(
             self.open_button, "landing.open_create_library", shortcut=open_shortcut_text
         )
-        self.open_button.clicked.connect(self.driver.open_library_from_dialog)
+        self.open_button.clicked.connect(self.driver.open_create_library_modal)
 
         # Create status label --------------------------------------------------
         self.status_label = QLabel()
