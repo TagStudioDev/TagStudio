@@ -21,7 +21,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 from src.core.constants import LEGACY_TAG_FIELD_IDS, TS_FOLDER_NAME
 from src.core.enums import LibraryPrefs
-from src.core.library.alchemy.enums import TagColor
+from src.core.library.alchemy.enums import TagColorEnum
 from src.core.library.alchemy.joins import TagParent
 from src.core.library.alchemy.library import TAG_ARCHIVED, TAG_FAVORITE, TAG_META
 from src.core.library.alchemy.library import Library as SqliteLibrary
@@ -413,6 +413,7 @@ class JsonMigrationModal(QObject):
             self.done = True
 
         except Exception as e:
+            logger.error("[MigrationModal] Error:", error=e)
             yield f"Error: {type(e).__name__}"
             QApplication.beep()
             QApplication.alert(self.paged_panel)
@@ -719,16 +720,16 @@ class JsonMigrationModal(QObject):
 
     def check_color_parity(self) -> bool:
         """Check if all JSON tag colors match the new SQL tag colors."""
-        sql_color: str = None
-        json_color: str = None
+        sql_color: str | None = None
+        json_color: str | None = None
 
         for tag in self.sql_lib.tags:
             tag_id = tag.id  # Tag IDs start at 0
             sql_color = tag.color.name
             json_color = (
-                TagColor.get_color_from_str(self.json_lib.get_tag(tag_id).color).name
+                TagColorEnum.get_color_from_str(self.json_lib.get_tag(tag_id).color).name
                 if (self.json_lib.get_tag(tag_id).color) != ""
-                else TagColor.DEFAULT.name
+                else TagColorEnum.DEFAULT.name
             )
 
             logger.info(

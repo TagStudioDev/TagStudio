@@ -4,12 +4,12 @@
 
 from pathlib import Path
 
-from sqlalchemy import JSON, ForeignKey, Integer, event
+from sqlalchemy import JSON, ForeignKey, ForeignKeyConstraint, Integer, event
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from ...constants import TAG_ARCHIVED, TAG_FAVORITE
 from .db import Base, PathType
-from .enums import TagColor
+from .enums import TagColorEnum
 from .fields import (
     BaseField,
     BooleanField,
@@ -37,25 +37,56 @@ class TagAlias(Base):
         super().__init__()
 
 
+class TagColor(Base):
+    __tablename__ = "tag_colors"
+
+    slug: Mapped[str] = mapped_column(primary_key=True)
+    namespace: Mapped[str] = mapped_column(primary_key=True)
+    name: Mapped[str]
+    primary: Mapped[str]
+    secondary: Mapped[str | None]
+
+    # TODO: Determine if slug and namespace can be optional and generated/added here if needed.
+    def __init__(
+        self,
+        slug: str,
+        namespace: str,
+        name: str,
+        primary: str,
+        secondary: str | None = None,
+    ):
+        self.slug = slug
+        self.namespace = namespace
+        self.name = name
+        self.primary = primary
+        if secondary:
+            self.secondary = secondary
+        super().__init__()
+
+
 class Tag(Base):
     __tablename__ = "tags"
-    __table_args__ = {"sqlite_autoincrement": True}
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-
     name: Mapped[str]
     shorthand: Mapped[str | None]
-    color: Mapped[TagColor]
+    color: Mapped[TagColor | None]
+    # = mapped_column(
+    #     ForeignKey("[TagColor.slug, TagColor.namespace]")
+    # )
     is_category: Mapped[bool]
     icon: Mapped[str | None]
-
     aliases: Mapped[set[TagAlias]] = relationship(back_populates="tag")
-
     parent_tags: Mapped[set["Tag"]] = relationship(
         secondary=TagParent.__tablename__,
         primaryjoin="Tag.id == TagParent.parent_id",
         secondaryjoin="Tag.id == TagParent.child_id",
         back_populates="parent_tags",
+    )
+
+    __table_args__ = (
+        # ForeignKeyConstraint([color], [TagColor.namespace, TagColor.slug]),
+        {"sqlite_autoincrement": True},
     )
 
     @property
@@ -78,7 +109,7 @@ class Tag(Base):
         aliases: set[TagAlias] | None = None,
         parent_tags: set["Tag"] | None = None,
         icon: str | None = None,
-        color: TagColor = TagColor.DEFAULT,
+        color: TagColor | None = None,
         is_category: bool = False,
     ):
         self.name = name

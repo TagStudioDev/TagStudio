@@ -18,7 +18,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 from src.core.library import Tag
-from src.core.library.alchemy.enums import TagColor
+from src.core.library.alchemy.enums import TagColorEnum
 from src.core.palette import ColorType, get_tag_color
 from src.qt.translations import Translations
 
@@ -59,8 +59,8 @@ class TagAliasWidget(QWidget):
         self.remove_button.setText("–")
         self.remove_button.setHidden(False)
         self.remove_button.setStyleSheet(
-            f"color: {get_tag_color(ColorType.PRIMARY, TagColor.DEFAULT)};"
-            f"background: {get_tag_color(ColorType.TEXT, TagColor.DEFAULT)};"
+            f"color: {get_tag_color(ColorType.PRIMARY, TagColorEnum.DEFAULT)};"
+            f"background: {get_tag_color(ColorType.TEXT, TagColorEnum.DEFAULT)};"
             f"font-weight: 800;"
             f"border-radius: 4px;"
             f"border-width:0;"

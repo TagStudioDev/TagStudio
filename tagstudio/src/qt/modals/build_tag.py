@@ -23,7 +23,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 from src.core.library import Library, Tag
-from src.core.library.alchemy.enums import TagColor
+from src.core.library.alchemy.enums import TagColorEnum
 from src.core.palette import ColorType, UiColor, get_tag_color, get_ui_color
 from src.qt.modals.tag_search import TagSearchPanel
 from src.qt.translations import Translations
@@ -178,7 +178,7 @@ class BuildTagPanel(PanelWidget):
         self.color_field.setEditable(False)
         self.color_field.setMaxVisibleItems(10)
         self.color_field.setStyleSheet("combobox-popup:0;")
-        for color in TagColor:
+        for color in TagColorEnum:
             self.color_field.addItem(color.name.replace("_", " ").title(), userData=color.value)
         # self.color_field.setProperty("appearance", "flat")
         self.color_field.currentIndexChanged.connect(
@@ -426,7 +426,7 @@ class BuildTagPanel(PanelWidget):
             self.panel_save_button.setDisabled(is_empty)
 
     def build_tag(self) -> Tag:
-        color = self.color_field.currentData() or TagColor.DEFAULT
+        color = self.color_field.currentData() or TagColorEnum.DEFAULT
         tag = self.tag
         self.add_aliases()
 
