@@ -66,6 +66,9 @@ If you wish to launch the source version of TagStudio outside of your IDE:
 -   Windows w/Powershell: `.venv\Scripts\Activate.ps1`
 -   Windows w/Command Prompt: `.venv\Scripts\activate.bat`
 -   Linux/macOS: `source .venv/bin/activate`
+       If you use an alternative shell like fish or csh, you may wish to switch to the default shell (Usually bash) for this project, or alternatively, you can see the other activation scripts left by Python such as:
+       - Fish: `source .venv/bin/activate.fish`
+       - CSH: `source .venv/bin/activate.csh`
 
 4. Install the required packages:
 
