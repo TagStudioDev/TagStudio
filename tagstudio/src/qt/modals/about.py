@@ -14,9 +14,9 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 from src.core.constants import VERSION, VERSION_BRANCH
+from src.qt.modals.ffmpeg_checker import FfmpegChecker
 from src.qt.resource_manager import ResourceManager
 from src.qt.translations import Translations
-from src.qt.helpers.vendored.ffmpeg import ffprobe_version
 
 
 class AboutModal(QWidget):
@@ -24,6 +24,7 @@ class AboutModal(QWidget):
         super().__init__()
         Translations.translate_with_setter(self.setWindowTitle, "about.title")
 
+        self.fc: FfmpegChecker = FfmpegChecker()
         self.rm: ResourceManager = ResourceManager()
 
         self.setWindowModality(Qt.WindowModality.ApplicationModal)
@@ -44,15 +45,21 @@ class AboutModal(QWidget):
         self.content_widget = QLabel()
         self.content_widget.setObjectName("contentLabel")
         self.content_widget.setWordWrap(True)
-        ffmpeg = ffprobe_version()
-        ffmpeg = ffmpeg if ffmpeg is not None else "N/A"
+        ff_version = self.fc.version()
+        ffmpeg = '<span style="color:red">Missing</span>'
+        if ff_version["ffmpeg"] is not None:
+            ffmpeg = '<span style="color:green">Found</span> (' + ff_version["ffmpeg"] + ")"
+        ffprobe = '<span style="color:red">Missing</span>'
+        if ff_version["ffprobe"] is not None:
+            ffprobe = '<span style="color:green">Found</span> (' + ff_version["ffprobe"] + ")"
         Translations.translate_qobject(
             self.content_widget,
             "about.content",
             version=VERSION,
             branch=VERSION_BRANCH,
             config_path="",
-            ffmpeg=ffmpeg
+            ffmpeg=ffmpeg,
+            ffprobe=ffprobe,
         )
         self.content_widget.setAlignment(Qt.AlignmentFlag.AlignHCenter)
 

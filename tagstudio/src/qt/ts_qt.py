@@ -14,7 +14,6 @@ import os
 import re
 import sys
 import time
-import webbrowser
 from pathlib import Path
 from queue import Queue
 
@@ -78,6 +77,7 @@ from src.qt.main_window import Ui_MainWindow
 from src.qt.modals.about import AboutModal
 from src.qt.modals.build_tag import BuildTagPanel
 from src.qt.modals.drop_import import DropImportModal
+from src.qt.modals.ffmpeg_checker import FfmpegChecker
 from src.qt.modals.file_extension import FileExtensionModal
 from src.qt.modals.fix_dupes import FixDupeFilesModal
 from src.qt.modals.fix_unlinked import FixUnlinkedEntriesModal
@@ -540,6 +540,11 @@ class QtDriver(DriverMixin, QObject):
                 QColor("#9782ff"),
             )
             self.open_library(path_result.library_path)
+
+        # check ffmpeg and show warning if not
+        self.ffmpeg_checker = FfmpegChecker()
+        if not self.ffmpeg_checker.installed():
+            self.ffmpeg_checker.show_warning()
 
         app.exec()
         self.shutdown()
