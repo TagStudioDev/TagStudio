@@ -2,9 +2,8 @@
 # Licensed under the GPL-3.0 License.
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
-from pathlib import Path
 
-from PIL import Image, ImageQt
+from PIL import ImageQt
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QPixmap
 from PySide6.QtWidgets import (
@@ -15,6 +14,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 from src.core.constants import VERSION, VERSION_BRANCH
+from src.qt.resource_manager import ResourceManager
 from src.qt.translations import Translations
 
 
@@ -22,6 +22,9 @@ class AboutModal(QWidget):
     def __init__(self):
         super().__init__()
         Translations.translate_with_setter(self.setWindowTitle, "about.title")
+
+        self.rm: ResourceManager = ResourceManager()
+
         self.setWindowModality(Qt.WindowModality.ApplicationModal)
         self.setMinimumSize(400, 500)
         self.root_layout = QVBoxLayout(self)
@@ -29,10 +32,7 @@ class AboutModal(QWidget):
 
         self.logo_widget = QLabel()
         self.logo_widget.setObjectName("logo")
-        logo: Image.Image = Image.open(
-            Path(__file__).parents[3] / "resources/qt/images/tag_group_icon_dark_128.png"
-        )
-        self.logo_pixmap = QPixmap.fromImage(ImageQt.ImageQt(logo))
+        self.logo_pixmap = QPixmap.fromImage(ImageQt.ImageQt(self.rm.get("logo")))
         self.logo_pixmap = self.logo_pixmap.scaledToWidth(
             128, Qt.TransformationMode.SmoothTransformation
         )
