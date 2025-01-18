@@ -21,14 +21,18 @@ class FfmpegChecker(QMessageBox):
 
         self.setWindowTitle("Warning: Missing dependency")
         self.setText("Warning: Could not find FFmpeg installation")
-        self.setIcon(QMessageBox.Warning)
+        self.setIcon(QMessageBox.Icon.Warning)
         # Blocks other application interactions until resolved
-        self.setWindowModality(Qt.ApplicationModal)
+        self.setWindowModality(Qt.WindowModality.ApplicationModal)
 
-        self.setStandardButtons(QMessageBox.Help | QMessageBox.Ignore | QMessageBox.Cancel)
-        self.setDefaultButton(QMessageBox.Ignore)
+        self.setStandardButtons(
+            QMessageBox.StandardButton.Help
+            | QMessageBox.StandardButton.Ignore
+            | QMessageBox.StandardButton.Cancel
+        )
+        self.setDefaultButton(QMessageBox.StandardButton.Ignore)
         # Enables the cancel button but hides it to allow for click X to close dialog
-        self.button(QMessageBox.Cancel).hide()
+        self.button(QMessageBox.StandardButton.Cancel).hide()
 
         self.ffmpeg = False
         self.ffprobe = False
@@ -45,7 +49,7 @@ class FfmpegChecker(QMessageBox):
 
     def version(self):
         """Checks the version of ffprobe and ffmpeg and returns None if they dont exist."""
-        version = {"ffprobe": None, "ffmpeg": None}
+        version: dict[str, str | None] = {"ffprobe": None, "ffmpeg": None}
         self.installed()
         if self.ffprobe:
             ret = subprocess.run(
@@ -76,5 +80,5 @@ class FfmpegChecker(QMessageBox):
         selection = self.exec()
 
         # Selection will either be QMessageBox.Help or (QMessageBox.Ignore | QMessageBox.Cancel)
-        if selection == QMessageBox.Help:
+        if selection == QMessageBox.StandardButton.Help:
             QDesktopServices.openUrl(QUrl(self.HELP_URL))
