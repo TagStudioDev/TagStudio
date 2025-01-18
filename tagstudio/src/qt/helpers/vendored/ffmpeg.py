@@ -20,7 +20,7 @@ def ffprobe_version():
     if FFPROBE_CMD and shutil.which(FFPROBE_CMD):
         ret = subprocess.run([FFPROBE_CMD, "-version"], shell=False, capture_output=True, text=True)
         if ret.returncode == 0:
-            arr = ret.stdout.split(" ")
+            arr = ret.stdout.replace("-", " ").split(" ")
             if len(arr) >= 3:
                 version = " ".join(ret.stdout.split(' ')[1:3])
     return version
