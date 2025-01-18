@@ -25,7 +25,6 @@ from src.core.palette import ColorType, get_tag_color
 from src.qt.translations import Translations
 from src.qt.widgets.panel import PanelModal, PanelWidget
 from src.qt.widgets.tag import TagWidget
-from src.qt import translations
 
 logger = structlog.get_logger(__name__)
 
@@ -165,20 +164,20 @@ class TagSearchPanel(PanelWidget):
         """Opens "Create Tag" panel to create and add a new tag with given name."""
         logger.info("Quick Create Tag", name=name)
 
+        def on_tag_modal_saved():
+            """Callback for actions to perform when a new tag is confirmed created."""
+            self.lib.add_tag(self.build_tag_modal.build_tag())
+            self.add_tag_modal.hide()
+            self.update_tags()
+
         self.build_tag_modal: bt.BuildTagPanel = bt.BuildTagPanel(self.lib)
         self.add_tag_modal: PanelModal = PanelModal(
             self.build_tag_modal, "New Tag", "Add Tag", has_save=True
         )
         self.build_tag_modal.name_field.setText(name)
-        self.add_tag_modal.saved.connect(self.on_tag_modal_saved)
+        self.add_tag_modal.saved.connect(on_tag_modal_saved)
         self.add_tag_modal.save_button.setFocus()
         self.add_tag_modal.show()
-
-    def on_tag_modal_saved(self):
-        """Callback for actions to perform when a new tag is confirmed created."""
-        self.lib.add_tag(self.build_tag_modal.build_tag())
-        self.add_tag_modal.hide()
-        self.update_tags()
 
     def update_tags(self, query: str | None = None):
         logger.info("[Tag Search Super Class] Updating Tags")
@@ -224,16 +223,13 @@ class TagSearchPanel(PanelWidget):
         pass
 
     def edit_tag(self, tag: Tag):
-        # only import here because of circular imports
-        from src.qt.modals.build_tag import BuildTagPanel
-
-        def callback(btp: BuildTagPanel):
+        def callback(btp: bt.BuildTagPanel):
             self.lib.update_tag(
                 btp.build_tag(), set(btp.parent_ids), set(btp.alias_names), set(btp.alias_ids)
             )
             self.update_tags(self.search_field.text())
 
-        build_tag_panel = BuildTagPanel(self.lib, tag=tag)
+        build_tag_panel = bt.BuildTagPanel(self.lib, tag=tag)
 
         self.edit_modal = PanelModal(
             build_tag_panel,
