@@ -25,6 +25,7 @@ from src.core.palette import ColorType, get_tag_color
 from src.qt.translations import Translations
 from src.qt.widgets.panel import PanelModal, PanelWidget
 from src.qt.widgets.tag import TagWidget
+from src.qt import translations
 
 logger = structlog.get_logger(__name__)
 
@@ -127,14 +128,8 @@ class TagSearchPanel(PanelWidget):
         row.setSpacing(3)
 
         create_button = QPushButton(self)
+        Translations.translate_qobject(create_button, "tag.create_quick", query=query)
         create_button.setFlat(True)
-        create_button.setText(f"Create \"{query.replace('&', '&&')}\"")
-
-        row.setSpacing(3)
-
-        create_button = QPushButton(self)
-        create_button.setFlat(True)
-        create_button.setText(f"Create \"{query.replace("&", "&&")}\"")
 
         inner_layout = QHBoxLayout()
         inner_layout.setObjectName("innerLayout")
