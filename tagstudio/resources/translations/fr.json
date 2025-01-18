@@ -115,7 +115,7 @@
     "tag.add_to_search": "Ajouter à la Recherche",
     "tag.aliases": "Alias",
     "tag.color": "Couleur",
-	"tag.create_quick": "Créer \"{query}\""
+    "tag.create_quick": "Créer \"{query}\""
     "tag.name": "Nom",
     "tag.new": "Nouveau Label",
     "tag.parent_tags": "Labels Parent",

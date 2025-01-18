@@ -197,7 +197,7 @@
     "tag.color": "Color",
     "tag.confirm_delete": "Are you sure you want to delete the tag \"{tag_name}\"?",
     "tag.create": "Create Tag",
-	"tag.create_quick": "Create \"{query}\"",
+    "tag.create_quick": "Create \"{query}\"",
     "tag.edit": "Edit Tag",
     "tag.name": "Name",
     "tag.new": "New Tag",
