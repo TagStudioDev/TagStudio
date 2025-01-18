@@ -119,7 +119,7 @@ class TagSearchPanel(PanelWidget):
             row.addWidget(add_button)
         return container
 
-    def create_tag_button(self, query: str | None):
+    def construct_tag_button(self, query: str | None):
         """Constructs a Create Tag Button."""
         container = QWidget()
         row = QHBoxLayout(container)
@@ -204,7 +204,7 @@ class TagSearchPanel(PanelWidget):
 
         # If query doesnt exist add create button
         if len(tag_results) == 0:
-            c = self.create_tag_button(query)
+            c = self.construct_tag_button(query)
             self.scroll_layout.addWidget(c)
 
         self.search_field.setFocus()
