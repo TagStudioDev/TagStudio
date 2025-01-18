@@ -61,13 +61,17 @@ class Splash:
             pixmap = QPixmap(960, 540)
             pixmap.fill(QColor("black"))
         painter = QPainter(pixmap)
+        point_size_scale: float = 1.0
+        match painter.font().family():
+            case "Segoe UI":
+                point_size_scale = 0.75
 
         # TODO: Store any differing data elsewhere and load dynamically instead of hardcoding.
         match self.splash_name:
             case Splash.SPLASH_CLASSIC:
                 # Copyright
                 font = painter.font()
-                font.setPointSize(22)
+                font.setPointSize(math.floor(22 * point_size_scale))
                 painter.setFont(font)
                 pen = QPen(QColor("#9782ff"))
                 painter.setPen(pen)
@@ -88,7 +92,7 @@ class Splash:
             case Splash.SPLASH_GOO_GEARS:
                 # Copyright
                 font = painter.font()
-                font.setPointSize(22)
+                font.setPointSize(math.floor(22 * point_size_scale))
                 painter.setFont(font)
                 pen = QPen(QColor("#9782ff"))
                 painter.setPen(pen)
@@ -98,7 +102,7 @@ class Splash:
                 )
                 # Version
                 font = painter.font()
-                font.setPointSize(22)
+                font.setPointSize(math.floor(22 * point_size_scale))
                 painter.setFont(font)
                 pen = QPen(QColor("#809782ff"))
                 painter.setPen(pen)
@@ -111,7 +115,8 @@ class Splash:
                 # Copyright
                 font = QFont()
                 font.setFamily("Times")
-                font.setPointSize(22)
+                font.setPointSize(math.floor(22 * point_size_scale))
+                font.setWeight(QFont.Weight.DemiBold)
                 font.setStyleHint(QFont.StyleHint.Serif)
                 painter.setFont(font)
                 pen = QPen(QColor("#000000"))
@@ -122,7 +127,7 @@ class Splash:
                     Splash.COPYRIGHT_STR,
                 )
                 # Version
-                font.setPointSize(22)
+                font.setPointSize(math.floor(22 * point_size_scale))
                 painter.setFont(font)
                 pen = QPen(QColor("#AA2A0044"))
                 painter.setPen(pen)
