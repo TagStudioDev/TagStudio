@@ -75,6 +75,7 @@ from src.qt.flowlayout import FlowLayout
 from src.qt.helpers.custom_runnable import CustomRunnable
 from src.qt.helpers.function_iterator import FunctionIterator
 from src.qt.main_window import Ui_MainWindow
+from src.qt.modals.about import AboutModal
 from src.qt.modals.build_tag import BuildTagPanel
 from src.qt.modals.drop_import import DropImportModal
 from src.qt.modals.file_extension import FileExtensionModal
@@ -481,6 +482,16 @@ class QtDriver(DriverMixin, QObject):
             lambda: webbrowser.open("https://github.com/TagStudioDev/TagStudio")
         )
         help_menu.addAction(self.repo_action)
+
+        def create_about_modal():
+            if not hasattr(self, "about_modal"):
+                self.about_modal = AboutModal()
+            self.about_modal.show()
+
+        self.about_action = QAction(menu_bar)
+        Translations.translate_qobject(self.about_action, "menu.help.about")
+        self.about_action.triggered.connect(create_about_modal)
+        help_menu.addAction(self.about_action)
         self.set_macro_menu_viability()
 
         menu_bar.addMenu(file_menu)
