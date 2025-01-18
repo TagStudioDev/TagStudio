@@ -5,6 +5,7 @@
 
 import math
 
+import src.qt.modals.build_tag as bt
 import structlog
 from PySide6.QtCore import QSize, Qt, Signal
 from PySide6.QtGui import QShowEvent
@@ -19,6 +20,7 @@ from PySide6.QtWidgets import (
 )
 from src.core.constants import RESERVED_TAG_END, RESERVED_TAG_START
 from src.core.library import Library, Tag
+from src.core.library.alchemy.enums import TagColor
 from src.core.palette import ColorType, get_tag_color
 from src.qt.translations import Translations
 from src.qt.widgets.panel import PanelModal, PanelWidget
@@ -117,6 +119,72 @@ class TagSearchPanel(PanelWidget):
             row.addWidget(add_button)
         return container
 
+    def create_tag_button(self, query: str | None):
+        """Constructs a Create Tag Button."""
+        container = QWidget()
+        row = QHBoxLayout(container)
+        row.setContentsMargins(0, 0, 0, 0)
+        row.setSpacing(3)
+
+        create_button = QPushButton(self)
+        create_button.setFlat(True)
+        create_button.setText(f"Create \"{query.replace('&', '&&')}\"")
+
+        row.setSpacing(3)
+
+        create_button = QPushButton(self)
+        create_button.setFlat(True)
+        create_button.setText(f"Create \"{query.replace("&", "&&")}\"")
+
+        inner_layout = QHBoxLayout()
+        inner_layout.setObjectName("innerLayout")
+        inner_layout.setContentsMargins(2, 2, 2, 2)
+        create_button.setLayout(inner_layout)
+        create_button.setMinimumSize(math.ceil(22 * 1.5), 22)
+
+        create_button.setStyleSheet(
+            f"QPushButton{{"
+            f"background: {get_tag_color(ColorType.PRIMARY, TagColor.DEFAULT)};"
+            f"color: {get_tag_color(ColorType.TEXT, TagColor.DEFAULT)};"
+            f"font-weight: 600;"
+            f"border-color:{get_tag_color(ColorType.BORDER, TagColor.DEFAULT)};"
+            f"border-radius: 6px;"
+            f"border-style:solid;"
+            f"border-width: {math.ceil(self.devicePixelRatio())}px;"
+            f"padding-right: 4px;"
+            f"padding-bottom: 1px;"
+            f"padding-left: 4px;"
+            f"font-size: 13px"
+            f"}}"
+            f"QPushButton::hover{{"
+            f"border-color:{get_tag_color(ColorType.LIGHT_ACCENT, TagColor.DEFAULT)};"
+            f"}}"
+        )
+
+        create_button.clicked.connect(lambda: self.create_and_add_tag(query))
+        row.addWidget(create_button)
+
+        return container
+
+    def create_and_add_tag(self, name: str):
+        """Opens "Create Tag" panel to create and add a new tag with given name."""
+        logger.info("Quick Create Tag", name=name)
+
+        self.build_tag_modal: bt.BuildTagPanel = bt.BuildTagPanel(self.lib)
+        self.add_tag_modal: PanelModal = PanelModal(
+            self.build_tag_modal, "New Tag", "Add Tag", has_save=True
+        )
+        self.build_tag_modal.name_field.setText(name)
+        self.add_tag_modal.saved.connect(self.on_tag_modal_saved)
+        self.add_tag_modal.save_button.setFocus()
+        self.add_tag_modal.show()
+
+    def on_tag_modal_saved(self):
+        """Callback for actions to perform when a new tag is confirmed created."""
+        self.lib.add_tag(self.build_tag_modal.build_tag())
+        self.add_tag_modal.hide()
+        self.update_tags()
+
     def update_tags(self, query: str | None = None):
         logger.info("[Tag Search Super Class] Updating Tags")
 
@@ -133,6 +201,11 @@ class TagSearchPanel(PanelWidget):
         for tag in tag_results:
             if tag.id not in self.exclude:
                 self.scroll_layout.addWidget(self.__build_row_item_widget(tag))
+
+        # If query doesnt exist add create button
+        if len(tag_results) == 0:
+            c = self.create_tag_button(query)
+            self.scroll_layout.addWidget(c)
 
         self.search_field.setFocus()
 
