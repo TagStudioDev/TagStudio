@@ -20,6 +20,7 @@ from PySide6.QtWidgets import (
 )
 from src.core.constants import TAG_ARCHIVED, TAG_FAVORITE
 from src.core.library import Library, Tag
+from src.core.library.alchemy.enums import TagColorEnum
 from src.core.palette import ColorType, get_tag_color
 from src.qt.flowlayout import FlowLayout
 from src.qt.translations import Translations
@@ -329,10 +330,10 @@ class ModifiedTagWidget(QWidget):
 
         self.bg_button.setStyleSheet(
             f"QPushButton{{"
-            f"background: {get_tag_color(ColorType.PRIMARY, tag.color)};"
-            f"color: {get_tag_color(ColorType.TEXT, tag.color)};"
+            f"background: {get_tag_color(ColorType.PRIMARY, TagColorEnum.DEFAULT)};"
+            f"color: {get_tag_color(ColorType.TEXT, TagColorEnum.DEFAULT)};"
             f"font-weight: 600;"
-            f"border-color:{get_tag_color(ColorType.BORDER, tag.color)};"
+            f"border-color:{get_tag_color(ColorType.BORDER, TagColorEnum.DEFAULT)};"
             f"border-radius: 6px;"
             f"border-style:inset;"
             f"border-width: {math.ceil(self.devicePixelRatio())}px;"
@@ -342,7 +343,7 @@ class ModifiedTagWidget(QWidget):
             f"font-size: 13px"
             f"}}"
             f"QPushButton::hover{{"
-            f"border-color:{get_tag_color(ColorType.LIGHT_ACCENT, tag.color)};"
+            f"border-color:{get_tag_color(ColorType.LIGHT_ACCENT, TagColorEnum.DEFAULT)};"
             f"}}"
         )
 

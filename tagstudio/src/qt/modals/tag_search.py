@@ -20,7 +20,6 @@ from PySide6.QtWidgets import (
 from src.core.constants import RESERVED_TAG_END, RESERVED_TAG_START
 from src.core.library import Library, Tag
 from src.core.library.alchemy.enums import TagColorEnum
-from src.core.library.alchemy.models import TagColor
 from src.core.palette import ColorType, get_tag_color
 from src.qt.translations import Translations
 from src.qt.widgets.panel import PanelModal, PanelWidget

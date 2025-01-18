@@ -9,7 +9,7 @@ import unicodedata
 from collections.abc import Iterator
 from dataclasses import dataclass
 from datetime import UTC, datetime
-from os import makedirs, name
+from os import makedirs
 from pathlib import Path
 from uuid import uuid4
 from warnings import catch_warnings
@@ -38,7 +38,6 @@ from sqlalchemy.orm import (
     contains_eager,
     joinedload,
     make_transient,
-    noload,
     selectinload,
 )
 from src.core.library.json.library import Library as JsonLibrary  # type: ignore
@@ -55,7 +54,7 @@ from ...constants import (
 )
 from ...enums import LibraryPrefs
 from .db import make_tables
-from .enums import MAX_SQL_VARIABLES, FieldTypeEnum, FilterState, SortingModeEnum, TagColorEnum
+from .enums import MAX_SQL_VARIABLES, FieldTypeEnum, FilterState, SortingModeEnum
 from .fields import (
     BaseField,
     DatetimeField,
@@ -88,6 +87,8 @@ def get_default_tags() -> tuple[Tag, ...]:
         name="Meta Tags",
         aliases={TagAlias(name="Meta"), TagAlias(name="Meta Tag")},
         is_category=True,
+        color_slug="default",
+        color_namespace="ts-std",
     )
     archive_tag = Tag(
         id=TAG_ARCHIVED,
@@ -1206,10 +1207,22 @@ class Library:
 
         return target_path
 
-    def get_tag(self, tag_id: int) -> Tag:
+    def get_tag(self, tag_id: int) -> Tag | None:
         with Session(self.engine) as session:
-            tags_query = select(Tag).options(
-                selectinload(Tag.parent_tags), selectinload(Tag.aliases), selectinload(Tag.color)
+            tags_query = (
+                select(Tag)
+                # .outerjoin(
+                #     TagColor,
+                #     onclause=and_(
+                #         Tag.color_namespace == TagColor.namespace,
+                #         Tag.color_slug == TagColor.slug,
+                #     ),
+                # )
+                .options(
+                    selectinload(Tag.parent_tags),
+                    selectinload(Tag.aliases),
+                    joinedload(Tag.color),
+                )
             )
             tag = session.scalar(tags_query.where(Tag.id == tag_id))
 

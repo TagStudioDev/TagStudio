@@ -150,7 +150,7 @@ class TagWidget(QWidget):
 
         self.bg_button.setStyleSheet(
             f"QPushButton{{"
-            f"background: {tag.color.primary};"
+            f"background: {TagColorEnum.DEFAULT if not tag.color else tag.color.primary};"
             f"color: {get_tag_color(ColorType.TEXT, TagColorEnum.DEFAULT)};"
             f"font-weight: 600;"
             f"border-color:{get_tag_color(ColorType.BORDER, TagColorEnum.DEFAULT)};"

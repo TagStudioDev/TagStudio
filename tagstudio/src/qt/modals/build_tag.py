@@ -426,13 +426,13 @@ class BuildTagPanel(PanelWidget):
             self.panel_save_button.setDisabled(is_empty)
 
     def build_tag(self) -> Tag:
-        color = self.color_field.currentData() or TagColorEnum.DEFAULT
+        # color = self.color_field.currentData() or TagColorEnum.DEFAULT
         tag = self.tag
         self.add_aliases()
 
         tag.name = self.name_field.text()
         tag.shorthand = self.shorthand_field.text()
-        tag.color = color
+        tag.color = None
         tag.is_category = self.cat_checkbox.isChecked()
 
         logger.info("built tag", tag=tag)

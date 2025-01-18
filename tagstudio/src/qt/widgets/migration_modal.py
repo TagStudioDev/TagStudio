@@ -2,9 +2,9 @@
 # Licensed under the GPL-3.0 License.
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
+import traceback
 from pathlib import Path
 
-import traceback
 import structlog
 from PySide6.QtCore import QObject, Qt, QThreadPool, Signal
 from PySide6.QtWidgets import (
@@ -22,7 +22,6 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 from src.core.constants import LEGACY_TAG_FIELD_IDS, TS_FOLDER_NAME
 from src.core.enums import LibraryPrefs
-from src.core.library.alchemy.enums import TagColorEnum
 from src.core.library.alchemy.joins import TagParent
 from src.core.library.alchemy.library import TAG_ARCHIVED, TAG_FAVORITE, TAG_META
 from src.core.library.alchemy.library import Library as SqliteLibrary
