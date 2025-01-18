@@ -476,13 +476,6 @@ class QtDriver(DriverMixin, QObject):
         macros_menu.addAction(folders_to_tags_action)
 
         # Help Menu ============================================================
-        self.repo_action = QAction(menu_bar)
-        Translations.translate_qobject(self.repo_action, "help.visit_github")
-        self.repo_action.triggered.connect(
-            lambda: webbrowser.open("https://github.com/TagStudioDev/TagStudio")
-        )
-        help_menu.addAction(self.repo_action)
-
         def create_about_modal():
             if not hasattr(self, "about_modal"):
                 self.about_modal = AboutModal()
