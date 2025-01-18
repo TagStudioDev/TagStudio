@@ -16,6 +16,7 @@ from PySide6.QtWidgets import (
 from src.core.constants import VERSION, VERSION_BRANCH
 from src.qt.resource_manager import ResourceManager
 from src.qt.translations import Translations
+from src.qt.helpers.vendored.ffmpeg import ffprobe_version
 
 
 class AboutModal(QWidget):
@@ -43,13 +44,15 @@ class AboutModal(QWidget):
         self.content_widget = QLabel()
         self.content_widget.setObjectName("contentLabel")
         self.content_widget.setWordWrap(True)
+        ffmpeg = ffprobe_version()
+        ffmpeg = ffmpeg if ffmpeg is not None else "N/A"
         Translations.translate_qobject(
             self.content_widget,
             "about.content",
             version=VERSION,
             branch=VERSION_BRANCH,
             config_path="",
-            ffmpeg=""
+            ffmpeg=ffmpeg
         )
         self.content_widget.setAlignment(Qt.AlignmentFlag.AlignHCenter)
 

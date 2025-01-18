@@ -15,6 +15,15 @@ logger = structlog.get_logger(__name__)
 
 FFMPEG_MACOS_LOCATIONS: list[str] = ["", "/opt/homebrew/bin/", "/usr/local/bin/"]
 
+def ffprobe_version():
+    version = None
+    if FFPROBE_CMD and shutil.which(FFPROBE_CMD):
+        ret = subprocess.run([FFPROBE_CMD, "-version"], shell=False, capture_output=True, text=True)
+        if ret.returncode == 0:
+            arr = ret.stdout.split(" ")
+            if len(arr) >= 3:
+                version = " ".join(ret.stdout.split(' ')[1:3])
+    return version
 
 def _get_ffprobe_location() -> str:
     cmd: str = "ffprobe"
