@@ -5,7 +5,7 @@
 
 import math
 
-import src.qt.modals.build_tag as bt
+import src.qt.modals.build_tag as build_tag
 import structlog
 from PySide6.QtCore import QSize, Qt, Signal
 from PySide6.QtGui import QShowEvent
@@ -127,7 +127,7 @@ class TagSearchPanel(PanelWidget):
         row.setSpacing(3)
 
         create_button = QPushButton(self)
-        Translations.translate_qobject(create_button, "tag.create_quick", query=query)
+        Translations.translate_qobject(create_button, "tag.create_add", query=query)
         create_button.setFlat(True)
 
         inner_layout = QHBoxLayout()
@@ -162,7 +162,7 @@ class TagSearchPanel(PanelWidget):
 
     def create_and_add_tag(self, name: str):
         """Opens "Create Tag" panel to create and add a new tag with given name."""
-        logger.info("Quick Create Tag", name=name)
+        logger.info("Create and Add Tag", name=name)
 
         def on_tag_modal_saved():
             """Callback for actions to perform when a new tag is confirmed created."""
@@ -171,12 +171,14 @@ class TagSearchPanel(PanelWidget):
             self.add_tag_modal.hide()
 
             self.tag_chosen.emit(tag.id)
+            self.search_field.setText("")
             self.update_tags()
 
-        self.build_tag_modal: bt.BuildTagPanel = bt.BuildTagPanel(self.lib)
-        self.add_tag_modal: PanelModal = PanelModal(
-            self.build_tag_modal, "New Tag", "Add Tag", has_save=True
-        )
+        self.build_tag_modal: build_tag.BuildTagPanel = build_tag.BuildTagPanel(self.lib)
+        self.add_tag_modal: PanelModal = PanelModal(self.build_tag_modal, has_save=True)
+        Translations.translate_with_setter(self.add_tag_modal.setTitle, "tag.new")
+        Translations.translate_with_setter(self.add_tag_modal.setWindowTitle, "tag.add")
+
         self.build_tag_modal.name_field.setText(name)
         self.add_tag_modal.saved.connect(on_tag_modal_saved)
         self.add_tag_modal.save_button.setFocus()
@@ -226,13 +228,13 @@ class TagSearchPanel(PanelWidget):
         pass
 
     def edit_tag(self, tag: Tag):
-        def callback(btp: bt.BuildTagPanel):
+        def callback(btp: build_tag.BuildTagPanel):
             self.lib.update_tag(
                 btp.build_tag(), set(btp.parent_ids), set(btp.alias_names), set(btp.alias_ids)
             )
             self.update_tags(self.search_field.text())
 
-        build_tag_panel = bt.BuildTagPanel(self.lib, tag=tag)
+        build_tag_panel = build_tag.BuildTagPanel(self.lib, tag=tag)
 
         self.edit_modal = PanelModal(
             build_tag_panel,
