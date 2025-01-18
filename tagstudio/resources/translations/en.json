@@ -67,7 +67,7 @@
     "folders_to_tags.open_all": "Open All",
     "folders_to_tags.title": "Create Tags From Folders",
     "about.title": "About",
-    "about.content": "<h2>TagStudio {version} {branch}</h2><p>TagStudio is a photo & file organization application with an underlying tag-based system that focuses on giving freedom and flexibility to the user. No proprietary programs or formats, no sea of sidecar files, and no complete upheaval of your filesystem structure.</p>License: GPLv3<br>Config path:<br>FFmpeg:<br>GitHub:<br>Documentation:<br>Discord:<br>",
+    "about.content": "<h2>TagStudio {version} {branch}</h2><p>TagStudio is a photo & file organization application with an underlying tag-based system that focuses on giving freedom and flexibility to the user. No proprietary programs or formats, no sea of sidecar files, and no complete upheaval of your filesystem structure.</p>License: GPLv3<br>Config path: {config_path}<br>FFmpeg: {ffmpeg}<br><a href=\"https://github.com/TagStudioDev/TagStudio\">GitHub</a> | <a href=\"https://docs.tagstud.io\">Documentation</a> | <a href=\"https://discord.com/invite/hRNnVKhF2G\">Discord</a>",
     "generic.add": "Add",
     "generic.apply_alt": "&Apply",
     "generic.apply": "Apply",

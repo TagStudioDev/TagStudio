@@ -48,6 +48,8 @@ class AboutModal(QWidget):
             "about.content",
             version=VERSION,
             branch=VERSION_BRANCH,
+            config_path="",
+            ffmpeg=""
         )
         self.content_widget.setAlignment(Qt.AlignmentFlag.AlignHCenter)
 
