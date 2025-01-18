@@ -166,8 +166,11 @@ class TagSearchPanel(PanelWidget):
 
         def on_tag_modal_saved():
             """Callback for actions to perform when a new tag is confirmed created."""
-            self.lib.add_tag(self.build_tag_modal.build_tag())
+            tag: Tag = self.build_tag_modal.build_tag()
+            self.lib.add_tag(tag)
             self.add_tag_modal.hide()
+
+            self.tag_chosen.emit(tag.id)
             self.update_tags()
 
         self.build_tag_modal: bt.BuildTagPanel = bt.BuildTagPanel(self.lib)
