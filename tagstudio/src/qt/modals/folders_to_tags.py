@@ -168,6 +168,7 @@ class FoldersToTagsModal(QWidget):
         self.setMinimumSize(640, 640)
         self.root_layout = QVBoxLayout(self)
         self.root_layout.setContentsMargins(6, 6, 6, 6)
+        self.setWindowFlag(Qt.Dialog, on=True) # type: ignore
 
         self.title_widget = QLabel()
         self.title_widget.setObjectName("title")

@@ -41,6 +41,7 @@ class FileExtensionModal(PanelWidget):
         self.setMinimumSize(240, 400)
         self.root_layout = QVBoxLayout(self)
         self.root_layout.setContentsMargins(6, 6, 6, 6)
+        self.setWindowFlag(Qt.Dialog, on=True) # type: ignore
 
         # Create Table Widget --------------------------------------------------
         self.table = QTableWidget(len(self.lib.prefs(LibraryPrefs.EXTENSION_LIST)), 1)
