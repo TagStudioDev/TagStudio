@@ -157,6 +157,11 @@ Most of the style guidelines can be checked, fixed, and enforced via Ruff. Older
 -   Pull requests should have an adequate title and description which clearly outline your intentions and changes/additions. Feel free to provide screenshots, GIFs, or videos, especially for UI changes.
 -   Pull requests should ideally be limited to **a single** feature or fix.
 
+> [!IMPORTANT]
+> Please do not force push if your PR is open for review!
+> 
+> Force pushing makes it impossible to discern which changes have already been reviewed and which haven't. This means a reviewer will then have to rereview all the already reviewed code, which is a lot of unnecessary work for reviewers.
+
 > [!TIP]
 > If you're unsure where to stop the scope of your PR, ask yourself: _"If I broke this up, could any parts of it still be used by the project in the meantime?"_
 
