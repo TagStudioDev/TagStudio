@@ -20,7 +20,6 @@ from PySide6.QtWidgets import (
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 from src.core.constants import LEGACY_TAG_FIELD_IDS, TS_FOLDER_NAME
-from src.core.enums import LibraryPrefs
 from src.core.library.alchemy.enums import TagColor
 from src.core.library.alchemy.joins import TagParent
 from src.core.library.alchemy.library import TAG_ARCHIVED, TAG_FAVORITE, TAG_META
@@ -442,12 +441,12 @@ class JsonMigrationModal(QObject):
         )
         self.update_sql_value(
             self.ext_row,
-            len(self.sql_lib.prefs(LibraryPrefs.EXTENSION_LIST)),
+            len(self.sql_lib.settings.extension_list),
             self.old_ext_count,
         )
         self.update_sql_value(
             self.ext_type_row,
-            self.sql_lib.prefs(LibraryPrefs.IS_EXCLUDE_LIST),
+            self.sql_lib.settings.is_exclude_list,
             self.old_ext_type,
         )
         logger.info("Parity check complete!")
@@ -649,7 +648,7 @@ class JsonMigrationModal(QObject):
         return self.subtag_parity
 
     def check_ext_type(self) -> bool:
-        return self.json_lib.is_exclude_list == self.sql_lib.prefs(LibraryPrefs.IS_EXCLUDE_LIST)
+        return self.json_lib.is_exclude_list == self.sql_lib.settings.is_exclude_list
 
     def check_alias_parity(self) -> bool:
         """Check if all JSON aliases match the new SQL aliases."""

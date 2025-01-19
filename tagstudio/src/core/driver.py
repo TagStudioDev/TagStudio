@@ -1,16 +1,17 @@
 from pathlib import Path
 
 import structlog
-from PySide6.QtCore import QSettings
 from src.core.constants import TS_FOLDER_NAME
-from src.core.enums import SettingItems
 from src.core.library.alchemy.library import LibraryStatus
+from src.core.settings import TSSettings
+from src.core.tscacheddata import TSCachedData
 
 logger = structlog.get_logger(__name__)
 
 
 class DriverMixin:
-    settings: QSettings
+    settings: TSSettings
+    cache: TSCachedData
 
     def evaluate_path(self, open_path: str | None) -> LibraryStatus:
         """Check if the path of library is valid."""
@@ -20,17 +21,15 @@ class DriverMixin:
             if not library_path.exists():
                 logger.error("Path does not exist.", open_path=open_path)
                 return LibraryStatus(success=False, message="Path does not exist.")
-        elif self.settings.value(
-            SettingItems.START_LOAD_LAST, defaultValue=True, type=bool
-        ) and self.settings.value(SettingItems.LAST_LIBRARY):
-            library_path = Path(str(self.settings.value(SettingItems.LAST_LIBRARY)))
+        elif self.settings.open_last_loaded_on_startup and self.cache.last_library:
+            library_path = Path(str(self.cache.last_library))
             if not (library_path / TS_FOLDER_NAME).exists():
                 logger.error(
                     "TagStudio folder does not exist.",
                     library_path=library_path,
                     ts_folder=TS_FOLDER_NAME,
                 )
-                self.settings.setValue(SettingItems.LAST_LIBRARY, "")
+                self.cache.last_library = ""
                 # dont consider this a fatal error, just skip opening the library
                 library_path = None
 
