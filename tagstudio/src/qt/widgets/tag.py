@@ -7,9 +7,10 @@ import math
 from pathlib import Path
 from types import FunctionType
 
+import structlog
 from PIL import Image
 from PySide6.QtCore import QEvent, Qt, Signal
-from PySide6.QtGui import QAction, QEnterEvent, QFontMetrics
+from PySide6.QtGui import QAction, QColor, QEnterEvent, QFontMetrics
 from PySide6.QtWidgets import (
     QHBoxLayout,
     QLineEdit,
@@ -21,6 +22,8 @@ from src.core.library import Tag
 from src.core.library.alchemy.enums import TagColorEnum
 from src.core.palette import ColorType, get_tag_color
 from src.qt.translations import Translations
+
+logger = structlog.get_logger(__name__)
 
 
 class TagAliasWidget(QWidget):
@@ -148,15 +151,34 @@ class TagWidget(QWidget):
         self.bg_button.setLayout(self.inner_layout)
         self.bg_button.setMinimumSize(math.ceil(22 * 2), 22)
 
+        primary = QColor(
+            get_tag_color(ColorType.PRIMARY, TagColorEnum.DEFAULT)
+            if not tag.color
+            else tag.color.primary
+        )
+
+        secondary: QColor = QColor(primary)
+        secondary.setRed(min(secondary.red() + 20, 255))
+        secondary.setGreen(min(secondary.green() + 20, 255))
+        secondary.setBlue(min(secondary.blue() + 20, 255))
+
+        text_color: QColor = QColor(primary)
+        text_color = text_color.toHsl()
+        if text_color.lightness() > 120:
+            text_color.setHsl(text_color.hue(), text_color.saturation(), 50, 255)
+        else:
+            text_color.setHsl(text_color.hue(), min(text_color.saturation(), 200), 225, 255)
+        text_color = text_color.toRgb()
+
         self.bg_button.setStyleSheet(
             f"QPushButton{{"
-            f"background: {TagColorEnum.DEFAULT if not tag.color else tag.color.primary};"
-            f"color: {get_tag_color(ColorType.TEXT, TagColorEnum.DEFAULT)};"
+            f"background: rgba{primary.toTuple()};"
+            f"color: rgba{text_color.toTuple()};"
             f"font-weight: 600;"
-            f"border-color:{get_tag_color(ColorType.BORDER, TagColorEnum.DEFAULT)};"
+            f"border-color: rgba{secondary.toTuple()};"
             f"border-radius: 6px;"
             f"border-style:solid;"
-            f"border-width: {math.ceil(self.devicePixelRatio())}px;"
+            f"border-width: 2px;"
             f"padding-right: 4px;"
             f"padding-bottom: 1px;"
             f"padding-left: 4px;"
