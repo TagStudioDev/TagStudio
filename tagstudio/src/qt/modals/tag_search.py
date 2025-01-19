@@ -209,11 +209,14 @@ class TagSearchPanel(PanelWidget):
         self.search_field.setFocus()
 
     def on_return(self, text: str):
-        if text and self.first_tag_id is not None:
-            if self.is_tag_chooser:
-                self.tag_chosen.emit(self.first_tag_id)
-            self.search_field.setText("")
-            self.update_tags()
+        if text:
+            if self.first_tag_id is not None:
+                if self.is_tag_chooser:
+                    self.tag_chosen.emit(self.first_tag_id)
+                self.search_field.setText("")
+                self.update_tags()
+            else:
+                self.create_and_add_tag(text)
         else:
             self.search_field.setFocus()
             self.parentWidget().hide()
