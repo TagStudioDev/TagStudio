@@ -11,7 +11,6 @@ sys.path.insert(0, str(CWD.parent))
 
 from src.core.library import Entry, Library, Tag
 from src.core.library import alchemy as backend
-from src.core.library.alchemy.enums import TagColorEnum
 from src.qt.ts_qt import QtDriver
 
 
@@ -67,21 +66,24 @@ def library(request):
 
     tag = Tag(
         name="foo",
-        color=TagColorEnum.RED,
+        color_namespace="tagstudio-standard",
+        color_slug="red",
     )
     assert lib.add_tag(tag)
 
     parent_tag = Tag(
         id=1500,
         name="subbar",
-        color=TagColorEnum.YELLOW,
+        color_namespace="tagstudio-standard",
+        color_slug="yellow",
     )
     assert lib.add_tag(parent_tag)
 
     tag2 = Tag(
         id=2000,
         name="bar",
-        color=TagColorEnum.BLUE,
+        color_namespace="tagstudio-standard",
+        color_slug="blue",
         parent_tags={parent_tag},
     )
     assert lib.add_tag(tag2)
@@ -154,7 +156,7 @@ def qt_driver(qtbot, library):
 @pytest.fixture
 def generate_tag():
     def inner(name, **kwargs):
-        params = dict(name=name, color=TagColorEnum.RED) | kwargs
+        params = dict(name=name, color_namespace="tagstudio-standard", color_slug="red") | kwargs
         return Tag(**params)
 
     yield inner

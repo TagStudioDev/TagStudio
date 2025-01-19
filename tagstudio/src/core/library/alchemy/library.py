@@ -53,6 +53,7 @@ from ...constants import (
     TS_FOLDER_NAME,
 )
 from ...enums import LibraryPrefs
+from . import default_color_groups
 from .db import make_tables
 from .enums import MAX_SQL_VARIABLES, FieldTypeEnum, FilterState, SortingModeEnum
 from .fields import (
@@ -62,7 +63,7 @@ from .fields import (
     _FieldID,
 )
 from .joins import TagEntry, TagParent
-from .models import Entry, Folder, Preferences, Tag, TagAlias, TagColor, ValueType
+from .models import Entry, Folder, Preferences, Tag, TagAlias, TagColorGroup, ValueType
 from .visitors import SQLBoolExpressionBuilder
 
 logger = structlog.get_logger(__name__)
@@ -87,8 +88,6 @@ def get_default_tags() -> tuple[Tag, ...]:
         name="Meta Tags",
         aliases={TagAlias(name="Meta"), TagAlias(name="Meta Tag")},
         is_category=True,
-        color_slug="default",
-        color_namespace="ts-std",
     )
     archive_tag = Tag(
         id=TAG_ARCHIVED,
@@ -96,8 +95,7 @@ def get_default_tags() -> tuple[Tag, ...]:
         aliases={TagAlias(name="Archive")},
         parent_tags={meta_tag},
         color_slug="red",
-        color_namespace="ts-std",
-        # color=TagColor(slug="red", namespace="ts-std", name="Red", primary="#E22C3C"),
+        color_namespace="tagstudio-standard",
     )
     favorite_tag = Tag(
         id=TAG_FAVORITE,
@@ -108,217 +106,10 @@ def get_default_tags() -> tuple[Tag, ...]:
         },
         parent_tags={meta_tag},
         color_slug="yellow",
-        color_namespace="ts-std",
-        # color=TagColor(slug="yellow", namespace="ts-std", name="Yellow", primary="#FFD63D"),
+        color_namespace="tagstudio-standard",
     )
 
     return archive_tag, favorite_tag, meta_tag
-
-
-def get_std_tag_colors() -> list[TagColor]:
-    red = TagColor(
-        slug="red",
-        namespace="ts-std",
-        name="Red",
-        primary="#E22C3C",
-    )
-    orange = TagColor(
-        slug="orange",
-        namespace="ts-std",
-        name="Orange",
-        primary="#ED6022",
-    )
-    yellow = TagColor(
-        slug="yellow",
-        namespace="ts-std",
-        name="Yellow",
-        primary="#FFD63D",
-    )
-    green = TagColor(
-        slug="green",
-        namespace="ts-std",
-        name="Green",
-        primary="#28BB48",
-    )
-    cyan = TagColor(
-        slug="cyan",
-        namespace="ts-std",
-        name="Cyan",
-        primary="#49E4D5",
-    )
-    blue = TagColor(
-        slug="blue",
-        namespace="ts-std",
-        name="Blue",
-        primary="#3B87F0",
-    )
-    purple = TagColor(
-        slug="purple",
-        namespace="ts-std",
-        name="Purple",
-        primary="#BB4FF0",
-    )
-    pink = TagColor(
-        slug="pink",
-        namespace="ts-std",
-        name="Pink",
-        primary="#F96BB1",
-    )
-    brown = TagColor(
-        slug="brown",
-        namespace="ts-std",
-        name="Brown",
-        primary="#823216",
-    )
-    black = TagColor(
-        slug="black",
-        namespace="ts-std",
-        name="Black",
-        primary="#111018",
-    )
-    gray = TagColor(
-        slug="gray",
-        namespace="ts-std",
-        name="Gray",
-        primary="#53525A",
-    )
-    white = TagColor(
-        slug="white",
-        namespace="ts-std",
-        name="White",
-        primary="#F2F1F8",
-    )
-    return [red, orange, yellow, green, cyan, blue, purple, pink, brown, black, gray, white]
-
-
-# def get_ext_tag_colors() -> list[TagColor]:
-#     dark_gray = TagColor(
-#         slug="dark-gray",
-#         namespace="ts-ext",
-#         name="Dark Gray",
-#         primary="#24232A",
-#     )
-#     light_gray = TagColor(
-#         slug="light-gray",
-#         namespace="ts-ext",
-#         name="Light Gray",
-#         primary="#AAA9B0",
-#     )
-#     light_pink = TagColor(
-#         slug="light-pink",
-#         namespace="ts-ext",
-#         name="Light Pink",
-#         primary="#FF99C4",
-#     )
-#     magenta = TagColor(
-#         slug="magenta",
-#         namespace="ts-ext",
-#         name="Magenta",
-#         primary="#F6466F",
-#     )
-#     red_orange = TagColor(
-#         slug="red-orange",
-#         namespace="ts-ext",
-#         name="Red Orange",
-#         primary="#E83726",
-#     )
-#     salmon = TagColor(
-#         slug="salmon",
-#         namespace="ts-ext",
-#         name="Salmon",
-#         primary="#F65848",
-#     )
-#     yellow_orange = TagColor(
-#         slug="yellow-orange",
-#         namespace="ts-ext",
-#         name="Yellow Orange",
-#         primary="#FA9A2C",
-#     )
-#     mint = TagColor(
-#         slug="mint",
-#         namespace="ts-ext",
-#         name="Mint",
-#         primary="#4AED90",
-#     )
-#     lime = TagColor(
-#         slug="lime",
-#         namespace="ts-ext",
-#         name="Lime",
-#         primary="#92E649",
-#     )
-#     light_green = TagColor(
-#         slug="light-green",
-#         namespace="ts-ext",
-#         name="Mint",
-#         primary="#4AED90",
-#     )
-#     mint = TagColor(
-#         slug="mint",
-#         namespace="ts-ext",
-#         name="Mint",
-#         primary="#4AED90",
-#     )
-#     mint = TagColor(
-#         slug="mint",
-#         namespace="ts-ext",
-#         name="Mint",
-#         primary="#4AED90",
-#     )
-#     mint = TagColor(
-#         slug="mint",
-#         namespace="ts-ext",
-#         name="Mint",
-#         primary="#4AED90",
-#     )
-#     mint = TagColor(
-#         slug="mint",
-#         namespace="ts-ext",
-#         name="Mint",
-#         primary="#4AED90",
-#     )
-#     mint = TagColor(
-#         slug="mint",
-#         namespace="ts-ext",
-#         name="Mint",
-#         primary="#4AED90",
-#     )
-#     mint = TagColor(
-#         slug="mint",
-#         namespace="ts-ext",
-#         name="Mint",
-#         primary="#4AED90",
-#     )
-#     mint = TagColor(
-#         slug="mint",
-#         namespace="ts-ext",
-#         name="Mint",
-#         primary="#4AED90",
-#     )
-#     mint = TagColor(
-#         slug="mint",
-#         namespace="ts-ext",
-#         name="Mint",
-#         primary="#4AED90",
-#     )
-#     mint = TagColor(
-#         slug="mint",
-#         namespace="ts-ext",
-#         name="Mint",
-#         primary="#4AED90",
-#     )
-#     mint = TagColor(
-#         slug="mint",
-#         namespace="ts-ext",
-#         name="Mint",
-#         primary="#4AED90",
-#     )
-#     mint = TagColor(
-#         slug="mint",
-#         namespace="ts-ext",
-#         name="Mint",
-#         primary="#4AED90",
-#     )
-#     return [magenta]
 
 
 # The difference in the number of default JSON tags vs default tags in the current version.
@@ -391,23 +182,24 @@ class Library:
 
         # Tags
         for tag in json_lib.tags:
+            color_namespace, color_slug = default_color_groups.json_to_sql_color(tag.color)
             self.add_tag(
                 Tag(
                     id=tag.id,
                     name=tag.name,
                     shorthand=tag.shorthand,
-                    color_namespace="ts-std",
-                    color_slug=tag.color.lower(),
-                    # color=self.get_tag_color(tag.color, namespace="ts-std"),
-                    # color=TagColorEnum.get_color_from_str(tag.color),
+                    color_namespace=color_namespace,
+                    color_slug=color_slug,
                 )
             )
             # Apply user edits to built-in JSON tags.
-            # if tag.id in range(RESERVED_TAG_START, RESERVED_TAG_END + 1):
-            #     updated_tag = self.get_tag(tag.id)
-            #     # updated_tag.color = TagColorEnum.get_color_from_str(tag.color)
-            #     # updated_tag.color = self.get_tag_color(tag.color, namespace="ts-std")
-            #     self.update_tag(updated_tag)  # NOTE: This just calls add_tag?
+            if tag.id in range(RESERVED_TAG_START, RESERVED_TAG_END + 1):
+                updated_tag = self.get_tag(tag.id)
+                if not updated_tag:
+                    continue
+                updated_tag.color_namespace = color_namespace
+                updated_tag.color_slug = color_slug
+                self.update_tag(updated_tag)  # NOTE: This just calls add_tag?
 
         # Tag Aliases
         for tag in json_lib.tags:
@@ -519,7 +311,11 @@ class Library:
 
             # Add default tag colors to new libraries only.
             if is_new:
-                tag_colors = get_std_tag_colors()
+                tag_colors: list[TagColorGroup] = default_color_groups.standard()
+                tag_colors += default_color_groups.pastels()
+                tag_colors += default_color_groups.shades()
+                tag_colors += default_color_groups.grayscale()
+                tag_colors += default_color_groups.earth_tones()
                 try:
                     session.add_all(tag_colors)
                     session.commit()
@@ -1250,10 +1046,10 @@ class Library:
 
             return session.scalar(alias_query.where(TagAlias.id == alias_id))
 
-    def get_tag_color(self, slug: str, namespace: str) -> TagColor | None:
+    def get_tag_color(self, slug: str, namespace: str) -> TagColorGroup | None:
         with Session(self.engine) as session:
-            statement = select(TagColor).where(
-                and_(TagColor.slug == slug, TagColor.namespace == namespace)
+            statement = select(TagColorGroup).where(
+                and_(TagColorGroup.slug == slug, TagColorGroup.namespace == namespace)
             )
 
             return session.scalar(statement)

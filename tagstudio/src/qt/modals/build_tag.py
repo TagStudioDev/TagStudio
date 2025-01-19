@@ -405,11 +405,11 @@ class BuildTagPanel(PanelWidget):
             self.parent_ids.add(parent_id)
         self.set_parent_tags()
 
-        # select item in self.color_field where the userData value matched tag.color
-        for i in range(self.color_field.count()):
-            if self.color_field.itemData(i) == tag.color:
-                self.color_field.setCurrentIndex(i)
-                break
+        # # select item in self.color_field where the userData value matched tag.color
+        # for i in range(self.color_field.count()):
+        #     if self.color_field.itemData(i) == tag.color:
+        #         self.color_field.setCurrentIndex(i)
+        #         break
 
         self.cat_checkbox.setChecked(tag.is_category)
 
@@ -432,7 +432,7 @@ class BuildTagPanel(PanelWidget):
 
         tag.name = self.name_field.text()
         tag.shorthand = self.shorthand_field.text()
-        tag.color = None
+        # tag.color = None
         tag.is_category = self.cat_checkbox.isChecked()
 
         logger.info("built tag", tag=tag)

@@ -22,6 +22,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 from src.core.constants import LEGACY_TAG_FIELD_IDS, TS_FOLDER_NAME
 from src.core.enums import LibraryPrefs
+from src.core.library.alchemy import default_color_groups
 from src.core.library.alchemy.joins import TagParent
 from src.core.library.alchemy.library import TAG_ARCHIVED, TAG_FAVORITE, TAG_META
 from src.core.library.alchemy.library import Library as SqliteLibrary
@@ -721,20 +722,13 @@ class JsonMigrationModal(QObject):
 
     def check_color_parity(self) -> bool:
         """Check if all JSON tag colors match the new SQL tag colors."""
-        sql_color: str | None = None
-        json_color: str | None = None
+        sql_color: tuple[str | None, str | None] = (None, None)
+        json_color: tuple[str | None, str | None] = (None, None)
 
         for tag in self.sql_lib.tags:
             tag_id = tag.id  # Tag IDs start at 0
-            sql_color = tag.color_slug
-            # json_color = (
-            #     TagColorEnum.get_color_from_str(self.json_lib.get_tag(tag_id).color).name
-            #     if (self.json_lib.get_tag(tag_id).color) != ""
-            #     else TagColorEnum.DEFAULT.name
-            # )
-            json_color = self.json_lib.get_tag(tag_id).color.lower()
-            if not json_color:
-                json_color = None
+            sql_color = (tag.color_namespace, tag.color_slug)
+            json_color = default_color_groups.json_to_sql_color(self.json_lib.get_tag(tag_id).color)
 
             logger.info(
                 "[Color Parity]",
@@ -743,7 +737,7 @@ class JsonMigrationModal(QObject):
                 sql_color=sql_color,
             )
 
-            if not (sql_color is not None and json_color is not None and (sql_color == json_color)):
+            if sql_color != json_color:
                 self.discrepancies.append(
                     f"[Color Parity][Tag ID: {tag_id}]:"
                     f"\nOLD (JSON):{json_color}\nNEW (SQL):{sql_color}"

@@ -36,14 +36,18 @@ class TagAlias(Base):
         super().__init__()
 
 
-class TagColor(Base):
+class TagColorGroup(Base):
     __tablename__ = "tag_colors"
 
     slug: Mapped[str] = mapped_column(primary_key=True)
     namespace: Mapped[str] = mapped_column(primary_key=True)
     name: Mapped[str]
+    # Required - The main color used.
     primary: Mapped[str]
+    # Optional - If None, will default to darker/lighter version of primary.
     secondary: Mapped[str | None]
+    # Optional - If None, will default to secondary.
+    text: Mapped[str | None]
 
     # TODO: Determine if slug and namespace can be optional and generated/added here if needed.
     def __init__(
@@ -53,6 +57,7 @@ class TagColor(Base):
         name: str,
         primary: str,
         secondary: str | None = None,
+        text: str | None = None,
     ):
         self.slug = slug
         self.namespace = namespace
@@ -60,6 +65,8 @@ class TagColor(Base):
         self.primary = primary
         if secondary:
             self.secondary = secondary
+        if text:
+            self.text = text
         super().__init__()
 
 
@@ -71,7 +78,7 @@ class Tag(Base):
     shorthand: Mapped[str | None]
     color_namespace: Mapped[str | None] = mapped_column()
     color_slug: Mapped[str | None] = mapped_column()
-    color: Mapped[TagColor | None] = relationship()
+    color: Mapped[TagColorGroup | None] = relationship(lazy="joined")
     is_category: Mapped[bool]
     icon: Mapped[str | None]
     aliases: Mapped[set[TagAlias]] = relationship(back_populates="tag")
@@ -83,7 +90,9 @@ class Tag(Base):
     )
 
     __table_args__ = (
-        ForeignKeyConstraint([color_namespace, color_slug], [TagColor.namespace, TagColor.slug]),
+        ForeignKeyConstraint(
+            [color_namespace, color_slug], [TagColorGroup.namespace, TagColorGroup.slug]
+        ),
         {"sqlite_autoincrement": True},
     )
 
