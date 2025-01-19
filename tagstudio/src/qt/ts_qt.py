@@ -261,12 +261,8 @@ class QtDriver(DriverMixin, QObject):
         self.menu_bar = MenuBar(self.main_window, self.settings, self.lib, self)
         self.menu_bar.create_library_modal_signal.connect(self.open_create_library_modal)
         self.menu_bar.open_library_signal.connect(self.open_library)
-        self.menu_bar.backup_library_signal.connect(
-            lambda: self.backup_library() if self.lib.library_dir else ()
-        )
-        self.menu_bar.refresh_directories_signal.connect(
-            lambda: self.refresh_directories() if self.lib.library_dir else ()
-        )
+        self.menu_bar.backup_library_signal.connect(self.backup_library)
+        self.menu_bar.refresh_directories_signal.connect(self.refresh_directories)
         self.menu_bar.close_library_signal.connect(self.close_library)
         self.menu_bar.select_all_items_signal.connect(self.select_all_items)
         self.menu_bar.clear_selection_signal.connect(self.clear_selection)
@@ -481,6 +477,8 @@ class QtDriver(DriverMixin, QObject):
         )
 
     def backup_library(self):
+        if not self.lib.library_dir:
+            return
         logger.info("Backing Up Library...")
         self.main_window.statusbar.showMessage(Translations["status.library_backup_in_progress"])
         start_time = time.time()
@@ -525,6 +523,9 @@ class QtDriver(DriverMixin, QObject):
 
     def refresh_directories(self):
         """Run when user initiates adding new files to the Library."""
+        if not self.lib.library_dir:
+            return
+
         tracker = RefreshDirTracker(self.lib)
 
         pw = ProgressWidget(
@@ -1060,12 +1061,6 @@ class QtDriver(DriverMixin, QObject):
         self.main_window.pagination.update_buttons(
             self.pages_count, self.filter.page_index, emit=False
         )
-
-    def remove_recent_library(self, item_key: str):
-        self.settings.beginGroup(SettingItems.LIBS_LIST)
-        self.settings.remove(item_key)
-        self.settings.endGroup()
-        self.settings.sync()
 
     def update_libs_list(self, path: Path | str):
         """Add library to list in SettingItems.LIBS_LIST."""

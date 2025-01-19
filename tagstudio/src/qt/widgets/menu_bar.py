@@ -301,6 +301,12 @@ class MenuBar(QMenuBar):
         self.settings.sync()
         self.update_recent_lib_menu()
 
+    def _remove_recent_library(self, item_key: str):
+        self.settings.beginGroup(SettingItems.LIBS_LIST)
+        self.settings.remove(item_key)
+        self.settings.endGroup()
+        self.settings.sync()
+
     def set_library_actions_disabled(self, value: bool):
         actions: list[QAction] = [
             self.save_library_backup_action,
