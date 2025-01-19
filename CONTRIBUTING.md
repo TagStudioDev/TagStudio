@@ -158,7 +158,7 @@ Most of the style guidelines can be checked, fixed, and enforced via Ruff. Older
 -   Pull requests should ideally be limited to **a single** feature or fix.
 
 > [!IMPORTANT]
-> Please do not force push after a review of your PR has been made!
+> Please do not force push if your PR is open for review!
 > 
 > Force pushing makes it impossible to discern which changes have already been reviewed and which haven't. This means a reviewer will then have to rereview all the already reviewed code, which is a lot of unnecessary work for reviewers.
 
