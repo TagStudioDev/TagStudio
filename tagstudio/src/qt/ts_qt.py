@@ -279,8 +279,9 @@ class QtDriver(DriverMixin, QObject):
                 self.preview_panel.update_widgets(),
             )
         )
-        self.menu_bar.set_macro_menu_viability(not self.selected)
+        self.menu_bar.set_macro_actions_disabled(not self.selected)
         self.main_window.setMenuBar(self.menu_bar)
+        self.menu_bar.set_library_actions_disabled(True)
 
         self.main_window.searchField.textChanged.connect(self.update_completions_list)
 
@@ -454,6 +455,7 @@ class QtDriver(DriverMixin, QObject):
         self.settings.sync()
 
         self.lib.close()
+        self.menu_bar.set_library_actions_disabled(True)
 
         self.thumb_job_queue.queue.clear()
         if is_shutdown:
@@ -500,7 +502,7 @@ class QtDriver(DriverMixin, QObject):
                 self.selected.append(item.item_id)
                 item.thumb_button.set_selected(True)
 
-        self.menu_bar.set_macro_menu_viability(not self.selected)
+        self.menu_bar.set_macro_actions_disabled(not self.selected)
         self.preview_panel.update_widgets()
 
     def clear_selection(self):
@@ -508,7 +510,7 @@ class QtDriver(DriverMixin, QObject):
         for item in self.item_thumbs:
             item.thumb_button.set_selected(False)
 
-        self.menu_bar.set_macro_menu_viability(not self.selected)
+        self.menu_bar.set_macro_actions_disabled(not self.selected)
         self.preview_panel.update_widgets()
 
     def open_tag_database_modal(self):
@@ -839,7 +841,7 @@ class QtDriver(DriverMixin, QObject):
             else:
                 it.thumb_button.set_selected(False)
 
-        self.menu_bar.set_macro_menu_viability(not self.selected)
+        self.menu_bar.set_macro_actions_disabled(not self.selected)
         self.preview_panel.update_widgets()
 
     def update_completions_list(self, text: str) -> None:
@@ -1152,6 +1154,7 @@ class QtDriver(DriverMixin, QObject):
         self.filter_items()
 
         self.main_window.toggle_landing_page(enabled=False)
+        self.menu_bar.set_library_actions_disabled(False)
         return open_status
 
     def drop_event(self, event: QDropEvent):
