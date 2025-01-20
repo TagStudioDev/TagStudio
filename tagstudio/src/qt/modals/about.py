@@ -20,7 +20,7 @@ from src.qt.translations import Translations
 
 
 class AboutModal(QWidget):
-    def __init__(self):
+    def __init__(self, config_path):
         super().__init__()
         Translations.translate_with_setter(self.setWindowTitle, "about.title")
 
@@ -57,7 +57,7 @@ class AboutModal(QWidget):
             "about.content",
             version=VERSION,
             branch=VERSION_BRANCH,
-            config_path="",
+            config_path=config_path,
             ffmpeg=ffmpeg,
             ffprobe=ffprobe,
         )

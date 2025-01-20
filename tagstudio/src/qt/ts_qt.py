@@ -160,13 +160,15 @@ class QtDriver(DriverMixin, QObject):
         self.selected: list[int] = []  # Selected Entry IDs
 
         self.SIGTERM.connect(self.handle_sigterm)
-
+    
+        self.config_path = ""
         if self.args.config_file:
             path = Path(self.args.config_file)
             if not path.exists():
                 logger.warning("Config File does not exist creating", path=path)
             logger.info("Using Config File", path=path)
             self.settings = QSettings(str(path), QSettings.Format.IniFormat)
+            self.config_path = str(path)
         else:
             self.settings = QSettings(
                 QSettings.Format.IniFormat,
@@ -178,6 +180,7 @@ class QtDriver(DriverMixin, QObject):
                 "Config File not specified, using default one",
                 filename=self.settings.fileName(),
             )
+            self.config_path = self.settings.fileName()
 
     def init_workers(self):
         """Init workers for rendering thumbnails."""
@@ -478,7 +481,7 @@ class QtDriver(DriverMixin, QObject):
         # Help Menu ============================================================
         def create_about_modal():
             if not hasattr(self, "about_modal"):
-                self.about_modal = AboutModal()
+                self.about_modal = AboutModal(self.config_path)
             self.about_modal.show()
 
         self.about_action = QAction(menu_bar)
