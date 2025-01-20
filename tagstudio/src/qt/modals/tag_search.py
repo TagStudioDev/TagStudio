@@ -3,8 +3,6 @@
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
 
-import math
-
 import structlog
 from PySide6.QtCore import QSize, Qt, Signal
 from PySide6.QtGui import QShowEvent
@@ -19,11 +17,15 @@ from PySide6.QtWidgets import (
 )
 from src.core.constants import RESERVED_TAG_END, RESERVED_TAG_START
 from src.core.library import Library, Tag
-from src.core.library.alchemy.enums import TagColorEnum
-from src.core.palette import ColorType, get_tag_color
 from src.qt.translations import Translations
 from src.qt.widgets.panel import PanelModal, PanelWidget
-from src.qt.widgets.tag import TagWidget
+from src.qt.widgets.tag import (
+    TagWidget,
+    get_border_color,
+    get_highlight_color,
+    get_primary_color,
+    get_text_color,
+)
 
 logger = structlog.get_logger(__name__)
 
@@ -89,28 +91,33 @@ class TagSearchPanel(PanelWidget):
         tag_widget.on_remove.connect(lambda t=tag: self.remove_tag(t))
         row.addWidget(tag_widget)
 
+        primary_color = get_primary_color(tag)
+        border_color = get_border_color(primary_color)
+        highlight_color = get_highlight_color(primary_color)
+        text_color = get_text_color(primary_color, highlight_color)
+
         if self.is_tag_chooser:
             add_button = QPushButton()
-            add_button.setMinimumSize(23, 23)
-            add_button.setMaximumSize(23, 23)
+            add_button.setMinimumSize(22, 22)
+            add_button.setMaximumSize(22, 22)
             add_button.setText("+")
             add_button.setStyleSheet(
                 f"QPushButton{{"
-                f"background: {get_tag_color(ColorType.PRIMARY, TagColorEnum.DEFAULT)};"
-                f"color: {get_tag_color(ColorType.TEXT, TagColorEnum.DEFAULT)};"
+                f"background: rgba{primary_color.toTuple()};"
+                f"color: rgba{text_color.toTuple()};"
                 f"font-weight: 600;"
-                f"border-color:{get_tag_color(ColorType.BORDER, TagColorEnum.DEFAULT)};"
+                f"border-color: rgba{border_color.toTuple()};"
                 f"border-radius: 6px;"
                 f"border-style:solid;"
-                f"border-width: {math.ceil(self.devicePixelRatio())}px;"
-                f"padding-bottom: 5px;"
+                f"border-width: 2px;"
+                f"padding-bottom: 4px;"
                 f"font-size: 20px;"
                 f"}}"
                 f"QPushButton::hover"
                 f"{{"
-                f"border-color:{get_tag_color(ColorType.LIGHT_ACCENT, TagColorEnum.DEFAULT)};"
-                f"color: {get_tag_color(ColorType.DARK_ACCENT, TagColorEnum.DEFAULT)};"
-                f"background: {get_tag_color(ColorType.LIGHT_ACCENT, TagColorEnum.DEFAULT)};"
+                f"border-color: rgba{highlight_color.toTuple()};"
+                f"color: rgba{primary_color.toTuple()};"
+                f"background: rgba{highlight_color.toTuple()};"
                 f"}}"
             )
             tag_id = tag.id
