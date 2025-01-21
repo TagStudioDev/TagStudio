@@ -46,8 +46,6 @@ class TagColorGroup(Base):
     primary: Mapped[str]
     # Optional - If None, will default to darker/lighter version of primary.
     secondary: Mapped[str | None]
-    # Optional - If None, will default to secondary.
-    text: Mapped[str | None]
 
     # TODO: Determine if slug and namespace can be optional and generated/added here if needed.
     def __init__(
@@ -57,7 +55,6 @@ class TagColorGroup(Base):
         name: str,
         primary: str,
         secondary: str | None = None,
-        text: str | None = None,
     ):
         self.slug = slug
         self.namespace = namespace
@@ -65,8 +62,6 @@ class TagColorGroup(Base):
         self.primary = primary
         if secondary:
             self.secondary = secondary
-        if text:
-            self.text = text
         super().__init__()
 
 
