@@ -160,7 +160,7 @@ class QtDriver(DriverMixin, QObject):
         self.selected: list[int] = []  # Selected Entry IDs
 
         self.SIGTERM.connect(self.handle_sigterm)
-    
+
         self.config_path = ""
         if self.args.config_file:
             path = Path(self.args.config_file)
