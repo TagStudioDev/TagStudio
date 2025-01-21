@@ -316,6 +316,7 @@ class Library:
                 tag_colors += default_color_groups.shades()
                 tag_colors += default_color_groups.grayscale()
                 tag_colors += default_color_groups.earth_tones()
+                tag_colors += default_color_groups.neon()
                 try:
                     session.add_all(tag_colors)
                     session.commit()
