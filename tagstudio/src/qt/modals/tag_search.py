@@ -5,7 +5,7 @@
 
 import structlog
 from PySide6.QtCore import QSize, Qt, Signal
-from PySide6.QtGui import QShowEvent
+from PySide6.QtGui import QColor, QShowEvent
 from PySide6.QtWidgets import (
     QFrame,
     QHBoxLayout,
@@ -92,9 +92,21 @@ class TagSearchPanel(PanelWidget):
         row.addWidget(tag_widget)
 
         primary_color = get_primary_color(tag)
-        border_color = get_border_color(primary_color)
-        highlight_color = get_highlight_color(primary_color)
-        text_color = get_text_color(primary_color, highlight_color)
+        border_color = (
+            get_border_color(primary_color)
+            if not (tag.color and tag.color.secondary)
+            else (QColor(tag.color.secondary))
+        )
+        highlight_color = get_highlight_color(
+            primary_color
+            if not (tag.color and tag.color.secondary)
+            else QColor(tag.color.secondary)
+        )
+        text_color: QColor
+        if tag.color and tag.color.secondary:
+            text_color = QColor(tag.color.secondary)
+        else:
+            text_color = get_text_color(primary_color, highlight_color)
 
         if self.is_tag_chooser:
             add_button = QPushButton()

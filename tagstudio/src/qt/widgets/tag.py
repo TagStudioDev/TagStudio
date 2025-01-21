@@ -146,9 +146,21 @@ class TagWidget(QWidget):
         self.bg_button.setMinimumSize(math.ceil(22 * 2), 22)
 
         primary_color = get_primary_color(tag)
-        border_color = get_border_color(primary_color)
-        highlight_color = get_highlight_color(primary_color)
-        text_color = get_text_color(primary_color, highlight_color)
+        border_color = (
+            get_border_color(primary_color)
+            if not (tag.color and tag.color.secondary)
+            else (QColor(tag.color.secondary))
+        )
+        highlight_color = get_highlight_color(
+            primary_color
+            if not (tag.color and tag.color.secondary)
+            else QColor(tag.color.secondary)
+        )
+        text_color: QColor
+        if tag.color and tag.color.secondary:
+            text_color = QColor(tag.color.secondary)
+        else:
+            text_color = get_text_color(primary_color, highlight_color)
 
         self.bg_button.setStyleSheet(
             f"QPushButton{{"
