@@ -3,7 +3,6 @@
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
 
-import math
 from types import FunctionType
 
 import structlog
@@ -143,7 +142,7 @@ class TagWidget(QWidget):
         self.inner_layout.setContentsMargins(2, 2, 2, 2)
 
         self.bg_button.setLayout(self.inner_layout)
-        self.bg_button.setMinimumSize(math.ceil(22 * 2), 22)
+        self.bg_button.setMinimumSize(22, 22)
 
         primary_color = get_primary_color(tag)
         border_color = (

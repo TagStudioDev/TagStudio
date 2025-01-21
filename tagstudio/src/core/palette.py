@@ -31,7 +31,7 @@ class UiColor(IntEnum):
 
 TAG_COLORS: dict[TagColorEnum, dict[ColorType, Any]] = {
     TagColorEnum.DEFAULT: {
-        ColorType.PRIMARY: "#1e1e1e",
+        ColorType.PRIMARY: "#111111",
         ColorType.TEXT: ColorType.LIGHT_ACCENT,
         ColorType.BORDER: "#333333",
         ColorType.LIGHT_ACCENT: "#FFFFFF",

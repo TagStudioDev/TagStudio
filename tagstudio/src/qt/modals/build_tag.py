@@ -11,7 +11,6 @@ from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import (
     QApplication,
     QCheckBox,
-    QComboBox,
     QFrame,
     QHBoxLayout,
     QLabel,
@@ -23,12 +22,12 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 from src.core.library import Library, Tag
-from src.core.library.alchemy.enums import TagColorEnum
-from src.core.palette import ColorType, UiColor, get_tag_color, get_ui_color
+from src.core.palette import ColorType, UiColor, get_ui_color
 from src.qt.modals.tag_search import TagSearchPanel
 from src.qt.translations import Translations
 from src.qt.widgets.panel import PanelModal, PanelWidget
 from src.qt.widgets.tag import TagWidget
+from src.qt.widgets.tag_color_preview import TagColorPreview
 
 logger = structlog.get_logger(__name__)
 
@@ -111,14 +110,13 @@ class BuildTagPanel(PanelWidget):
         self.aliases_table.horizontalHeader().setVisible(False)
         self.aliases_table.verticalHeader().setVisible(False)
         self.aliases_table.horizontalHeader().setStretchLastSection(True)
-        self.aliases_table.setColumnWidth(0, 35)
+        self.aliases_table.setColumnWidth(0, 32)
         self.aliases_table.setTabKeyNavigation(False)
         self.aliases_table.setFocusPolicy(Qt.FocusPolicy.NoFocus)
 
-        self.alias_add_button = QPushButton()
-        self.alias_add_button.setText("+")
-
-        self.alias_add_button.clicked.connect(self.add_alias_callback)
+        self.aliases_add_button = QPushButton()
+        self.aliases_add_button.setText("+")
+        self.aliases_add_button.clicked.connect(self.add_alias_callback)
 
         # Parent Tags ----------------------------------------------------------
         self.parent_tags_widget = QWidget()
@@ -134,18 +132,15 @@ class BuildTagPanel(PanelWidget):
 
         self.scroll_contents = QWidget()
         self.parent_tags_scroll_layout = QVBoxLayout(self.scroll_contents)
-        self.parent_tags_scroll_layout.setContentsMargins(6, 0, 6, 0)
+        self.parent_tags_scroll_layout.setContentsMargins(6, 6, 6, 0)
         self.parent_tags_scroll_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
 
         self.scroll_area = QScrollArea()
         self.scroll_area.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        # self.scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOn)
         self.scroll_area.setWidgetResizable(True)
         self.scroll_area.setFrameShadow(QFrame.Shadow.Plain)
         self.scroll_area.setFrameShape(QFrame.Shape.NoFrame)
         self.scroll_area.setWidget(self.scroll_contents)
-        # self.scroll_area.setMinimumHeight(60)
-
         self.parent_tags_layout.addWidget(self.scroll_area)
 
         self.parent_tags_add_button = QPushButton()
@@ -168,32 +163,34 @@ class BuildTagPanel(PanelWidget):
         self.color_widget = QWidget()
         self.color_layout = QVBoxLayout(self.color_widget)
         self.color_layout.setStretch(1, 1)
-        self.color_layout.setContentsMargins(0, 0, 0, 24)
-        self.color_layout.setSpacing(0)
+        self.color_layout.setContentsMargins(0, 0, 0, 6)
+        self.color_layout.setSpacing(6)
         self.color_layout.setAlignment(Qt.AlignmentFlag.AlignLeft)
         self.color_title = QLabel()
         Translations.translate_qobject(self.color_title, "tag.color")
         self.color_layout.addWidget(self.color_title)
-        self.color_field = QComboBox()
-        self.color_field.setEditable(False)
-        self.color_field.setMaxVisibleItems(10)
-        self.color_field.setStyleSheet("combobox-popup:0;")
-        for color in TagColorEnum:
-            self.color_field.addItem(color.name.replace("_", " ").title(), userData=color.value)
-        # self.color_field.setProperty("appearance", "flat")
-        self.color_field.currentIndexChanged.connect(
-            lambda c: (
-                self.color_field.setStyleSheet(
-                    "combobox-popup:0;"
-                    "font-weight:600;"
-                    f"color:{get_tag_color(ColorType.TEXT, self.color_field.currentData())};"
-                    f"background-color:{get_tag_color(
-                        ColorType.PRIMARY,
-                        self.color_field.currentData())};"
-                )
-            )
-        )
-        self.color_layout.addWidget(self.color_field)
+        self.color_example = TagColorPreview(tag)
+        self.color_layout.addWidget(self.color_example)
+        # self.color_field = QComboBox()
+        # self.color_field.setEditable(False)
+        # self.color_field.setMaxVisibleItems(10)
+        # self.color_field.setStyleSheet("combobox-popup:0;")
+        # for color in TagColorEnum:
+        #     self.color_field.addItem(color.name.replace("_", " ").title(), userData=color.value)
+        # # self.color_field.setProperty("appearance", "flat")
+        # self.color_field.currentIndexChanged.connect(
+        #     lambda c: (
+        #         self.color_field.setStyleSheet(
+        #             "combobox-popup:0;"
+        #             "font-weight:600;"
+        #             f"color:{get_tag_color(ColorType.TEXT, self.color_field.currentData())};"
+        #             f"background-color:{get_tag_color(
+        #                 ColorType.PRIMARY,
+        #                 self.color_field.currentData())};"
+        #         )
+        #     )
+        # )
+        # self.color_layout.addWidget(self.color_field)
 
         # Category -------------------------------------------------------------
         self.cat_widget = QWidget()
@@ -229,7 +226,7 @@ class BuildTagPanel(PanelWidget):
         self.root_layout.addWidget(self.shorthand_widget)
         self.root_layout.addWidget(self.aliases_widget)
         self.root_layout.addWidget(self.aliases_table)
-        self.root_layout.addWidget(self.alias_add_button)
+        self.root_layout.addWidget(self.aliases_add_button)
         self.root_layout.addWidget(self.parent_tags_widget)
         self.root_layout.addWidget(self.color_widget)
         self.root_layout.addWidget(QLabel("<h3>Properties</h3>"))
@@ -326,11 +323,9 @@ class BuildTagPanel(PanelWidget):
         names: set[str] = set()
         for i in range(0, self.aliases_table.rowCount()):
             widget = self.aliases_table.cellWidget(i, 1)
-
             names.add(cast(CustomTableItem, widget).text())
 
         remove: set[str] = set(self.alias_names) - names
-
         self.alias_names = list(set(self.alias_names) - remove)
 
         for name in names:
@@ -355,7 +350,7 @@ class BuildTagPanel(PanelWidget):
 
         self.alias_names.clear()
 
-        last: QWidget = self.panel_save_button or self.color_field
+        last: QWidget = self.panel_save_button
         for alias_id in self.alias_ids:
             alias = self.lib.get_alias(self.tag.id, alias_id)
 
@@ -394,6 +389,7 @@ class BuildTagPanel(PanelWidget):
     def set_tag(self, tag: Tag):
         logger.info("[BuildTagPanel] Setting Tag", tag=tag)
         self.tag = tag
+
         self.name_field.setText(tag.name)
         self.shorthand_field.setText(tag.shorthand or "")
 
@@ -404,6 +400,8 @@ class BuildTagPanel(PanelWidget):
         for parent_id in tag.parent_ids:
             self.parent_ids.add(parent_id)
         self.set_parent_tags()
+
+        self.color_example.set_tag(tag)
 
         # # select item in self.color_field where the userData value matched tag.color
         # for i in range(self.color_field.count()):
@@ -440,10 +438,10 @@ class BuildTagPanel(PanelWidget):
 
     def parent_post_init(self):
         self.setTabOrder(self.name_field, self.shorthand_field)
-        self.setTabOrder(self.shorthand_field, self.alias_add_button)
-        self.setTabOrder(self.alias_add_button, self.parent_tags_add_button)
-        self.setTabOrder(self.parent_tags_add_button, self.color_field)
-        self.setTabOrder(self.color_field, self.panel_cancel_button)
+        self.setTabOrder(self.shorthand_field, self.aliases_add_button)
+        self.setTabOrder(self.aliases_add_button, self.parent_tags_add_button)
+        self.setTabOrder(self.parent_tags_add_button, self.color_example)
+        self.setTabOrder(self.color_example, self.panel_cancel_button)
         self.setTabOrder(self.panel_cancel_button, self.panel_save_button)
         self.setTabOrder(self.panel_save_button, self.aliases_table.cellWidget(0, 1))
         self.name_field.selectAll()
