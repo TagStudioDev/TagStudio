@@ -22,7 +22,9 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 from src.core.library import Library, Tag
+from src.core.library.alchemy.models import TagColorGroup
 from src.core.palette import ColorType, UiColor, get_ui_color
+from src.qt.modals.tag_color_selection import TagColorSelection
 from src.qt.modals.tag_search import TagSearchPanel
 from src.qt.translations import Translations
 from src.qt.widgets.panel import PanelModal, PanelWidget
@@ -58,6 +60,8 @@ class BuildTagPanel(PanelWidget):
         super().__init__()
         self.lib = library
         self.tag: Tag  # NOTE: This gets set at the end of the init.
+        self.tag_color_namespace: str | None
+        self.tag_color_slug: str | None
 
         self.setMinimumSize(300, 400)
         self.root_layout = QVBoxLayout(self)
@@ -169,8 +173,24 @@ class BuildTagPanel(PanelWidget):
         self.color_title = QLabel()
         Translations.translate_qobject(self.color_title, "tag.color")
         self.color_layout.addWidget(self.color_title)
-        self.color_example = TagColorPreview(tag)
-        self.color_layout.addWidget(self.color_example)
+        self.color_button: TagColorPreview
+        try:
+            self.color_button = TagColorPreview(tag.color)
+        except Exception as e:
+            # TODO: Investigate why this happens during tests
+            logger.error("[BuildTag] Could not access Tag member attributes", error=e)
+            self.color_button = TagColorPreview(None)
+        self.tag_color_selection = TagColorSelection(self.lib)
+        self.choose_color_modal = PanelModal(
+            self.tag_color_selection,
+            "Choose Tag Color",
+            "Choose Tag Color",
+            done_callback=lambda: self.choose_color_callback(
+                self.tag_color_selection.selected_color
+            ),
+        )
+        self.color_button.button.clicked.connect(self.choose_color_modal.show)
+        self.color_layout.addWidget(self.color_button)
         # self.color_field = QComboBox()
         # self.color_field.setEditable(False)
         # self.color_field.setMaxVisibleItems(10)
@@ -299,6 +319,16 @@ class BuildTagPanel(PanelWidget):
         self.alias_ids.remove(alias_id)
         self._set_aliases()
 
+    def choose_color_callback(self, tag_color_group: TagColorGroup | None):
+        logger.info("choose_color_callback", tag_color_group=tag_color_group)
+        if tag_color_group:
+            self.tag_color_namespace = tag_color_group.namespace
+            self.tag_color_slug = tag_color_group.slug
+        else:
+            self.tag_color_namespace = None
+            self.tag_color_slug = None
+        self.color_button.set_tag_color_group(tag_color_group)
+
     def set_parent_tags(self):
         while self.parent_tags_scroll_layout.itemAt(0):
             self.parent_tags_scroll_layout.takeAt(0).widget().deleteLater()
@@ -401,7 +431,15 @@ class BuildTagPanel(PanelWidget):
             self.parent_ids.add(parent_id)
         self.set_parent_tags()
 
-        self.color_example.set_tag(tag)
+        try:
+            self.tag_color_namespace = tag.color_namespace
+            self.tag_color_slug = tag.color_slug
+            self.color_button.set_tag_color_group(tag.color)
+            self.tag_color_selection.select_radio_button(tag.color)
+        except Exception as e:
+            # TODO: Investigate why this happens during tests
+            logger.error("[BuildTag] Could not access Tag member attributes", error=e)
+            self.color_button.set_tag_color_group(None)
 
         # # select item in self.color_field where the userData value matched tag.color
         # for i in range(self.color_field.count()):
@@ -433,6 +471,9 @@ class BuildTagPanel(PanelWidget):
         # tag.color = None
         tag.is_category = self.cat_checkbox.isChecked()
 
+        tag.color_namespace = self.tag_color_namespace
+        tag.color_slug = self.tag_color_slug
+
         logger.info("built tag", tag=tag)
         return tag
 
@@ -440,8 +481,8 @@ class BuildTagPanel(PanelWidget):
         self.setTabOrder(self.name_field, self.shorthand_field)
         self.setTabOrder(self.shorthand_field, self.aliases_add_button)
         self.setTabOrder(self.aliases_add_button, self.parent_tags_add_button)
-        self.setTabOrder(self.parent_tags_add_button, self.color_example)
-        self.setTabOrder(self.color_example, self.panel_cancel_button)
+        self.setTabOrder(self.parent_tags_add_button, self.color_button)
+        self.setTabOrder(self.color_button, self.panel_cancel_button)
         self.setTabOrder(self.panel_cancel_button, self.panel_save_button)
         self.setTabOrder(self.panel_save_button, self.aliases_table.cellWidget(0, 1))
         self.name_field.selectAll()

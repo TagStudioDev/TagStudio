@@ -1186,3 +1186,16 @@ class Library:
                         field_id=field.type_key,
                         value=field.value,
                     )
+
+    @property
+    def tag_color_groups(self) -> dict[str, list[TagColorGroup]]:
+        """Return every TagColorGroup in the library."""
+        with Session(self.engine) as session:
+            color_groups: dict[str, list[TagColorGroup]] = {}
+            results = session.scalars(select(TagColorGroup).order_by(asc(TagColorGroup.namespace)))
+            for color in results:
+                if not color_groups.get(color.namespace):
+                    color_groups[color.namespace] = []
+                color_groups[color.namespace].append(color)
+                session.expunge(color)
+        return color_groups

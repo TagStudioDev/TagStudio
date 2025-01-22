@@ -11,8 +11,8 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
-from src.core.library import Tag
 from src.core.library.alchemy.enums import TagColorEnum
+from src.core.library.alchemy.models import TagColorGroup
 from src.core.palette import ColorType, get_tag_color
 
 logger = structlog.get_logger(__name__)
@@ -23,61 +23,52 @@ class TagColorPreview(QWidget):
 
     def __init__(
         self,
-        tag: Tag | None,
+        tag_color_group: TagColorGroup | None,
     ) -> None:
         super().__init__()
-        self.tag = tag
+        self.tag_color_group = tag_color_group
 
         self.setCursor(Qt.CursorShape.PointingHandCursor)
         self.base_layout = QVBoxLayout(self)
         self.base_layout.setObjectName("baseLayout")
         self.base_layout.setContentsMargins(0, 0, 0, 0)
 
-        self.bg_button = QPushButton(self)
-        self.bg_button.setFlat(True)
-        self.bg_button.setMinimumSize(56, 28)
-        self.bg_button.setMaximumHeight(28)
-        self.bg_button.clicked.connect(self.on_click.emit)
+        self.button = QPushButton(self)
+        self.button.setFlat(True)
+        self.button.setMinimumSize(56, 28)
+        self.button.setMaximumHeight(28)
+        self.button.clicked.connect(self.on_click.emit)
 
-        self.base_layout.addWidget(self.bg_button)
+        self.base_layout.addWidget(self.button)
 
-        self.set_tag(tag)
+        self.set_tag_color_group(tag_color_group)
 
-    def set_tag(self, tag: Tag | None):
-        self.tag = tag
+    def set_tag_color_group(self, tag_color_group: TagColorGroup | None):
+        self.tag_color_group = tag_color_group
 
-        try:
-            if tag and tag.color:
-                self.bg_button.setText(tag.color.name)
-            else:
-                self.bg_button.setText("None")
-        except Exception as e:
-            # TODO: Investigate why this happens during tests
-            logger.error("[TagColorPreview] Could not access Tag member attributes", error=e)
-            self.bg_button.setText("Default Color")
-            return
+        if tag_color_group:
+            self.button.setText(tag_color_group.name)
+        else:
+            self.button.setText("None")
 
-        if not tag:
-            return
-
-        primary_color = get_primary_color(tag)
+        primary_color = get_primary_color(tag_color_group)
         border_color = (
             get_border_color(primary_color)
-            if not (tag.color and tag.color.secondary)
-            else (QColor(tag.color.secondary))
+            if not (tag_color_group and tag_color_group.secondary)
+            else (QColor(tag_color_group.secondary))
         )
         highlight_color = get_highlight_color(
             primary_color
-            if not (tag.color and tag.color.secondary)
-            else QColor(tag.color.secondary)
+            if not (tag_color_group and tag_color_group.secondary)
+            else QColor(tag_color_group.secondary)
         )
         text_color: QColor
-        if tag.color and tag.color.secondary:
-            text_color = QColor(tag.color.secondary)
+        if tag_color_group and tag_color_group.secondary:
+            text_color = QColor(tag_color_group.secondary)
         else:
             text_color = get_text_color(primary_color, highlight_color)
 
-        self.bg_button.setStyleSheet(
+        self.button.setStyleSheet(
             f"QPushButton{{"
             f"background: rgba{primary_color.toTuple()};"
             f"color: rgba{text_color.toTuple()};"
@@ -95,22 +86,17 @@ class TagColorPreview(QWidget):
             f"border-color: rgba{highlight_color.toTuple()};"
             f"}}"
         )
-        self.bg_button.setMaximumWidth(self.bg_button.sizeHint().width())
+        self.button.setMaximumWidth(self.button.sizeHint().width())
 
 
-def get_primary_color(tag: Tag) -> QColor:
-    try:
-        primary_color = QColor(
-            get_tag_color(ColorType.PRIMARY, TagColorEnum.DEFAULT)
-            if not tag.color
-            else tag.color.primary
-        )
+def get_primary_color(tag_color_group: TagColorGroup | None) -> QColor:
+    primary_color = QColor(
+        get_tag_color(ColorType.PRIMARY, TagColorEnum.DEFAULT)
+        if not tag_color_group
+        else tag_color_group.primary
+    )
 
-        return primary_color
-    except Exception as e:
-        # TODO: Investigate why this happens during tests
-        logger.error("[TagColorPreview] Could not access Tag member attributes", error=e)
-        return QColor()
+    return primary_color
 
 
 def get_border_color(primary_color: QColor) -> QColor:
