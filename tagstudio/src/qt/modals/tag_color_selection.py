@@ -69,6 +69,7 @@ class TagColorSelection(PanelWidget):
 
                 radio_button = QRadioButton()
                 radio_button.setObjectName(f"{color.namespace}.{color.slug}")
+                radio_button.setToolTip(color.name)
                 radio_button.setFixedSize(24, 24)
                 radio_button.setStyleSheet(
                     f"QRadioButton{{"
@@ -117,6 +118,7 @@ class TagColorSelection(PanelWidget):
 
         radio_button = QRadioButton()
         radio_button.setObjectName("None")
+        radio_button.setToolTip("No Color")
         radio_button.setFixedSize(24, 24)
         radio_button.setStyleSheet(
             f"QRadioButton{{"
