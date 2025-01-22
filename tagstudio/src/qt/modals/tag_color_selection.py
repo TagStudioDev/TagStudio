@@ -10,6 +10,7 @@ from PySide6.QtWidgets import (
     QButtonGroup,
     QLabel,
     QRadioButton,
+    QSpacerItem,
     QVBoxLayout,
     QWidget,
 )
@@ -37,6 +38,7 @@ class TagColorSelection(PanelWidget):
         self.setMinimumSize(308, 540)
         self.root_layout = QVBoxLayout(self)
         self.root_layout.setContentsMargins(6, 0, 6, 0)
+        self.root_layout.setSpacing(6)
         self.root_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
 
         # Add Widgets to Layout ================================================
@@ -44,6 +46,7 @@ class TagColorSelection(PanelWidget):
         self.button_group = QButtonGroup(self)
 
         self.add_no_color_widget()
+        self.root_layout.addSpacerItem(QSpacerItem(1, 12))
         for group, colors in tag_color_groups.items():
             display_name: str = self.lib.get_namespace_name(group)
             self.root_layout.addWidget(
@@ -101,6 +104,7 @@ class TagColorSelection(PanelWidget):
                 color_group_layout.addWidget(radio_button)
                 self.button_group.addButton(radio_button)
             self.root_layout.addWidget(color_box_widget)
+            self.root_layout.addSpacerItem(QSpacerItem(1, 12))
 
     def add_no_color_widget(self):
         no_color_str: str = Translations.translate_formatted("color.title.no_color")
