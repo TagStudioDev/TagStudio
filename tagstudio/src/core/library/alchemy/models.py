@@ -60,9 +60,7 @@ class TagColorGroup(Base):
         ForeignKey("namespaces.namespace"), primary_key=True, nullable=False
     )
     name: Mapped[str] = mapped_column()
-    # Required - The main color used.
     primary: Mapped[str] = mapped_column(nullable=False)
-    # Optional - If None, will default to darker/lighter version of primary.
     secondary: Mapped[str | None]
 
     # TODO: Determine if slug and namespace can be optional and generated/added here if needed.

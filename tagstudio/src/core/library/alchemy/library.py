@@ -300,7 +300,9 @@ class Library:
         with Session(self.engine) as session:
             make_tables(self.engine)
 
-            # Add default tag color namespaces
+            # TODO: Determine a good way of updating built-in data after updates.
+
+            # Add default tag color namespaces.
             if is_new:
                 namespaces = default_color_groups.namespaces()
                 try:
@@ -310,16 +312,7 @@ class Library:
                     logger.error("[Library] Couldn't add default tag color namespaces", error=e)
                     session.rollback()
 
-            # Add default tags to new libraries only.
-            if is_new:
-                tags = get_default_tags()
-                try:
-                    session.add_all(tags)
-                    session.commit()
-                except IntegrityError:
-                    session.rollback()
-
-            # Add default tag colors to new libraries only.
+            # Add default tag colors.
             if is_new:
                 tag_colors: list[TagColorGroup] = default_color_groups.standard()
                 tag_colors += default_color_groups.pastels()
@@ -332,6 +325,15 @@ class Library:
                     session.commit()
                 except IntegrityError as e:
                     logger.error("[Library] Couldn't add default tag colors", error=e)
+                    session.rollback()
+
+            # Add default tags.
+            if is_new:
+                tags = get_default_tags()
+                try:
+                    session.add_all(tags)
+                    session.commit()
+                except IntegrityError:
                     session.rollback()
 
             # dont check db version when creating new library
@@ -1016,20 +1018,10 @@ class Library:
 
     def get_tag(self, tag_id: int) -> Tag | None:
         with Session(self.engine) as session:
-            tags_query = (
-                select(Tag)
-                # .outerjoin(
-                #     TagColor,
-                #     onclause=and_(
-                #         Tag.color_namespace == TagColor.namespace,
-                #         Tag.color_slug == TagColor.slug,
-                #     ),
-                # )
-                .options(
-                    selectinload(Tag.parent_tags),
-                    selectinload(Tag.aliases),
-                    joinedload(Tag.color),
-                )
+            tags_query = select(Tag).options(
+                selectinload(Tag.parent_tags),
+                selectinload(Tag.aliases),
+                joinedload(Tag.color),
             )
             tag = session.scalar(tags_query.where(Tag.id == tag_id))
 
