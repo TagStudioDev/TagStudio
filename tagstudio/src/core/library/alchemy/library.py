@@ -459,6 +459,32 @@ class Library:
                 yield entry
                 session.expunge(entry)
 
+    def get_entry_full_by_path(self, path: Path) -> Entry | None:
+        """Get the entry with the corresponding path."""
+        with Session(self.engine) as session:
+            stmt = select(Entry).where(Entry.path == path)
+            stmt = (
+                stmt.outerjoin(Entry.text_fields)
+                .outerjoin(Entry.datetime_fields)
+                .options(selectinload(Entry.text_fields), selectinload(Entry.datetime_fields))
+            )
+            stmt = (
+                stmt.outerjoin(Entry.tags)
+                .outerjoin(TagAlias)
+                .options(
+                    selectinload(Entry.tags).options(
+                        joinedload(Tag.aliases),
+                        joinedload(Tag.parent_tags),
+                    )
+                )
+            )
+            entry = session.scalar(stmt)
+            if not entry:
+                return None
+            session.expunge(entry)
+            make_transient(entry)
+            return entry
+
     @property
     def entries_count(self) -> int:
         with Session(self.engine) as session:
@@ -667,7 +693,13 @@ class Library:
 
             return res
 
-    def update_entry_path(self, entry_id: int | Entry, path: Path) -> None:
+    def update_entry_path(self, entry_id: int | Entry, path: Path) -> bool:
+        """Set the path field of an entry.
+
+        Returns True if the action succeeded and False if the path already exists.
+        """
+        if self.has_path_entry(path):
+            return False
         if isinstance(entry_id, Entry):
             entry_id = entry_id.id
 
@@ -684,6 +716,7 @@ class Library:
 
             session.execute(update_stmt)
             session.commit()
+        return True
 
     def remove_tag(self, tag: Tag):
         with Session(self.engine, expire_on_commit=False) as session:
@@ -1144,3 +1177,15 @@ class Library:
                         field_id=field.type_key,
                         value=field.value,
                     )
+
+    def merge_entries(self, from_entry: Entry, into_entry: Entry) -> None:
+        """Add fields and tags from the first entry to the second, and then delete the first."""
+        for field in from_entry.fields:
+            self.add_field_to_entry(
+                entry_id=into_entry.id,
+                field_id=field.type_key,
+                value=field.value,
+            )
+        tag_ids = [tag.id for tag in from_entry.tags]
+        self.add_tags_to_entry(into_entry.id, tag_ids)
+        self.remove_entries([from_entry.id])
