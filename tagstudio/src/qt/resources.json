@@ -1,4 +1,8 @@
 {
+  "logo": {
+    "path": "icon.png",
+    "mode": "pil"
+  },
   "play_icon": {
     "path": "qt/images/play.svg",
     "mode": "rb"
