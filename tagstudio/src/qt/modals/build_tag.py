@@ -366,8 +366,6 @@ class BuildTagPanel(PanelWidget):
                 self.alias_names.remove(name)
 
     def _update_new_alias_name_dict(self):
-        row = self.aliases_table.rowCount()
-        logger.info(row)
         for i in range(0, self.aliases_table.rowCount()):
             widget = self.aliases_table.cellWidget(i, 1)
             self.new_alias_names[widget.id] = widget.text()  # type: ignore

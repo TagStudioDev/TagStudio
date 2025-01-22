@@ -402,99 +402,106 @@ def neon() -> list[TagColorGroup]:
         slug="neon-red",
         namespace="tagstudio-neon",
         name="Neon Red",
-        primary="#000000",
+        primary="#180607",
         secondary="#E22C3C",
     )
     neon_red_orange = TagColorGroup(
         slug="neon-red-orange",
         namespace="tagstudio-neon",
         name="Neon Red Orange",
-        primary="#000000",
+        primary="#220905",
         secondary="#E83726",
     )
     neon_orange = TagColorGroup(
         slug="neon-orange",
         namespace="tagstudio-neon",
         name="Neon Orange",
-        primary="#000000",
+        primary="#1F0D05",
         secondary="#ED6022",
     )
     neon_amber = TagColorGroup(
         slug="neon-amber",
         namespace="tagstudio-neon",
         name="Neon Amber",
-        primary="#000000",
+        primary="#251507",
         secondary="#FA9A2C",
     )
     neon_yellow = TagColorGroup(
         slug="neon-yellow",
         namespace="tagstudio-neon",
         name="Neon Yellow",
-        primary="#000000",
+        primary="#2B1C0B",
         secondary="#FFD63D",
     )
     neon_lime = TagColorGroup(
         slug="neon-lime",
         namespace="tagstudio-neon",
         name="Neon Lime",
-        primary="#000000",
+        primary="#1B220C",
         secondary="#92E649",
     )
     neon_green = TagColorGroup(
         slug="neon-green",
         namespace="tagstudio-neon",
         name="Neon Green",
-        primary="#000000",
+        primary="#091610",
         secondary="#45D649",
     )
     neon_teal = TagColorGroup(
         slug="neon-teal",
         namespace="tagstudio-neon",
         name="Neon Teal",
-        primary="#000000",
+        primary="#09191D",
         secondary="#22D589",
     )
     neon_cyan = TagColorGroup(
         slug="neon-cyan",
         namespace="tagstudio-neon",
         name="Neon Cyan",
-        primary="#000000",
+        primary="#0B191C",
         secondary="#3DDBDB",
     )
     neon_blue = TagColorGroup(
         slug="neon-blue",
         namespace="tagstudio-neon",
         name="Neon Blue",
-        primary="#000000",
+        primary="#09101C",
         secondary="#3B87F0",
     )
     neon_indigo = TagColorGroup(
         slug="neon-indigo",
         namespace="tagstudio-neon",
         name="Neon Indigo",
-        primary="#000000",
+        primary="#150B24",
         secondary="#874FF5",
     )
     neon_purple = TagColorGroup(
         slug="neon-purple",
         namespace="tagstudio-neon",
         name="Neon Purple",
-        primary="#000000",
+        primary="#1E0B26",
         secondary="#BB4FF0",
     )
     neon_magenta = TagColorGroup(
         slug="neon-magenta",
         namespace="tagstudio-neon",
         name="Neon Magenta",
-        primary="#000000",
+        primary="#220A13",
         secondary="#F64680",
     )
     neon_pink = TagColorGroup(
         slug="neon-pink",
         namespace="tagstudio-neon",
         name="Neon Pink",
-        primary="#000000",
+        primary="#210E15",
         secondary="#FF62AF",
+    )
+    neon_white = TagColorGroup(
+        slug="neon-white",
+        namespace="tagstudio-neon",
+        name="Neon White",
+        primary="#131315",
+        secondary="#F2F1F8",
     )
     return [
         neon_red,
@@ -511,4 +518,5 @@ def neon() -> list[TagColorGroup]:
         neon_purple,
         neon_pink,
         neon_magenta,
+        neon_white,
     ]

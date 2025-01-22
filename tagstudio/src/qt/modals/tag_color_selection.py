@@ -33,7 +33,7 @@ class TagColorSelection(PanelWidget):
         self.lib = library
         self.selected_color: TagColorGroup | None = None
 
-        self.setMinimumSize(400, 400)
+        self.setMinimumSize(308, 540)
         self.root_layout = QVBoxLayout(self)
         self.root_layout.setContentsMargins(6, 0, 6, 0)
         self.root_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
