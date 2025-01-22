@@ -53,8 +53,18 @@ class MissingRegistry:
         for i, entry in enumerate(self.missing_files, start=1):
             item_matches = self.match_missing_file(entry)
             if len(item_matches) == 1:
-                logger.info("fix_missing_files", entry=entry, item_matches=item_matches)
-                self.library.update_entry_path(entry.id, item_matches[0])
+                logger.info(
+                    "fix_missing_files",
+                    entry=entry.path.as_posix(),
+                    item_matches=item_matches[0].as_posix(),
+                )
+                if not self.library.update_entry_path(entry.id, item_matches[0]):
+                    try:
+                        match = self.library.get_entry_full_by_path(item_matches[0])
+                        entry_full = self.library.get_entry_full(entry.id)
+                        self.library.merge_entries(entry_full, match)
+                    except AttributeError:
+                        continue
                 self.files_fixed_count += 1
                 # remove fixed file
                 self.missing_files.remove(entry)
