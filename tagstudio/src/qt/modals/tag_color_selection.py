@@ -16,6 +16,7 @@ from PySide6.QtWidgets import (
 from src.core.library import Library
 from src.core.library.alchemy.models import TagColorGroup
 from src.qt.flowlayout import FlowLayout
+from src.qt.translations import Translations
 from src.qt.widgets.panel import PanelWidget
 from src.qt.widgets.tag_color_preview import (
     get_border_color,
@@ -102,7 +103,8 @@ class TagColorSelection(PanelWidget):
             self.root_layout.addWidget(color_box_widget)
 
     def add_no_color_widget(self):
-        self.root_layout.addWidget(QLabel("<h4>No Color</h4>"))
+        no_color_str: str = Translations.translate_formatted("color.title.no_color")
+        self.root_layout.addWidget(QLabel(f"<h4>{no_color_str}</h4>"))
         color_box_widget = QWidget()
         color_group_layout = FlowLayout()
         color_group_layout.setSpacing(4)
@@ -120,8 +122,8 @@ class TagColorSelection(PanelWidget):
             text_color = get_text_color(primary_color, highlight_color)
 
         radio_button = QRadioButton()
-        radio_button.setObjectName("None")
-        radio_button.setToolTip("No Color")
+        radio_button.setObjectName("None")  # NOTE: Internal use, no translation needed.
+        radio_button.setToolTip(no_color_str)
         radio_button.setFixedSize(24, 24)
         radio_button.setStyleSheet(
             f"QRadioButton{{"

@@ -14,6 +14,7 @@ from PySide6.QtWidgets import (
 from src.core.library.alchemy.enums import TagColorEnum
 from src.core.library.alchemy.models import TagColorGroup
 from src.core.palette import ColorType, get_tag_color
+from src.qt.translations import Translations
 
 logger = structlog.get_logger(__name__)
 
@@ -49,7 +50,7 @@ class TagColorPreview(QWidget):
         if tag_color_group:
             self.button.setText(tag_color_group.name)
         else:
-            self.button.setText("None")
+            Translations.translate_qobject(self.button, "generic.none")
 
         primary_color = get_primary_color(tag_color_group)
         border_color = (

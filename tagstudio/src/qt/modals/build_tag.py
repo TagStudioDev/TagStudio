@@ -181,36 +181,17 @@ class BuildTagPanel(PanelWidget):
             logger.error("[BuildTag] Could not access Tag member attributes", error=e)
             self.color_button = TagColorPreview(None)
         self.tag_color_selection = TagColorSelection(self.lib)
+        chose_tag_color_title = Translations.translate_formatted("tag.choose_color")
         self.choose_color_modal = PanelModal(
             self.tag_color_selection,
-            "Choose Tag Color",
-            "Choose Tag Color",
+            chose_tag_color_title,
+            chose_tag_color_title,
             done_callback=lambda: self.choose_color_callback(
                 self.tag_color_selection.selected_color
             ),
         )
         self.color_button.button.clicked.connect(self.choose_color_modal.show)
         self.color_layout.addWidget(self.color_button)
-        # self.color_field = QComboBox()
-        # self.color_field.setEditable(False)
-        # self.color_field.setMaxVisibleItems(10)
-        # self.color_field.setStyleSheet("combobox-popup:0;")
-        # for color in TagColorEnum:
-        #     self.color_field.addItem(color.name.replace("_", " ").title(), userData=color.value)
-        # # self.color_field.setProperty("appearance", "flat")
-        # self.color_field.currentIndexChanged.connect(
-        #     lambda c: (
-        #         self.color_field.setStyleSheet(
-        #             "combobox-popup:0;"
-        #             "font-weight:600;"
-        #             f"color:{get_tag_color(ColorType.TEXT, self.color_field.currentData())};"
-        #             f"background-color:{get_tag_color(
-        #                 ColorType.PRIMARY,
-        #                 self.color_field.currentData())};"
-        #         )
-        #     )
-        # )
-        # self.color_layout.addWidget(self.color_field)
 
         # Category -------------------------------------------------------------
         self.cat_widget = QWidget()
@@ -439,12 +420,6 @@ class BuildTagPanel(PanelWidget):
             logger.error("[BuildTag] Could not access Tag member attributes", error=e)
             self.color_button.set_tag_color_group(None)
 
-        # # select item in self.color_field where the userData value matched tag.color
-        # for i in range(self.color_field.count()):
-        #     if self.color_field.itemData(i) == tag.color:
-        #         self.color_field.setCurrentIndex(i)
-        #         break
-
         self.cat_checkbox.setChecked(tag.is_category)
 
     def on_name_changed(self):
@@ -460,13 +435,11 @@ class BuildTagPanel(PanelWidget):
             self.panel_save_button.setDisabled(is_empty)
 
     def build_tag(self) -> Tag:
-        # color = self.color_field.currentData() or TagColorEnum.DEFAULT
         tag = self.tag
         self.add_aliases()
 
         tag.name = self.name_field.text()
         tag.shorthand = self.shorthand_field.text()
-        # tag.color = None
         tag.is_category = self.cat_checkbox.isChecked()
 
         tag.color_namespace = self.tag_color_namespace
