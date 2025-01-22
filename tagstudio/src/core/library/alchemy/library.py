@@ -63,7 +63,7 @@ from .fields import (
     _FieldID,
 )
 from .joins import TagEntry, TagParent
-from .models import Entry, Folder, Preferences, Tag, TagAlias, TagColorGroup, ValueType
+from .models import Entry, Folder, Namespace, Preferences, Tag, TagAlias, TagColorGroup, ValueType
 from .visitors import SQLBoolExpressionBuilder
 
 logger = structlog.get_logger(__name__)
@@ -300,6 +300,16 @@ class Library:
         with Session(self.engine) as session:
             make_tables(self.engine)
 
+            # Add default tag color namespaces
+            if is_new:
+                namespaces = default_color_groups.namespaces()
+                try:
+                    session.add_all(namespaces)
+                    session.commit()
+                except IntegrityError as e:
+                    logger.error("[Library] Couldn't add default tag color namespaces", error=e)
+                    session.rollback()
+
             # Add default tags to new libraries only.
             if is_new:
                 tags = get_default_tags()
@@ -321,7 +331,7 @@ class Library:
                     session.add_all(tag_colors)
                     session.commit()
                 except IntegrityError as e:
-                    logger.error("Couldn't add default tag colors", error=e)
+                    logger.error("[Library] Couldn't add default tag colors", error=e)
                     session.rollback()
 
             # dont check db version when creating new library
@@ -1199,3 +1209,11 @@ class Library:
                 color_groups[color.namespace].append(color)
                 session.expunge(color)
         return color_groups
+
+    def get_namespace_name(self, namespace: str) -> str:
+        with Session(self.engine) as session:
+            result = session.scalar(select(Namespace).where(Namespace.namespace == namespace))
+            if result:
+                session.expunge(result)
+
+        return "" if not result else result.name

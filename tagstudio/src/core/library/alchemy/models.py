@@ -19,6 +19,22 @@ from .fields import (
 from .joins import TagParent
 
 
+class Namespace(Base):
+    __tablename__ = "namespaces"
+
+    namespace: Mapped[str] = mapped_column(primary_key=True, nullable=False)
+    name: Mapped[str] = mapped_column(nullable=False)
+
+    def __init__(
+        self,
+        namespace: str,
+        name: str,
+    ):
+        self.namespace = namespace
+        self.name = name
+        super().__init__()
+
+
 class TagAlias(Base):
     __tablename__ = "tag_aliases"
 
@@ -39,11 +55,13 @@ class TagAlias(Base):
 class TagColorGroup(Base):
     __tablename__ = "tag_colors"
 
-    slug: Mapped[str] = mapped_column(primary_key=True)
-    namespace: Mapped[str] = mapped_column(primary_key=True)
-    name: Mapped[str]
+    slug: Mapped[str] = mapped_column(primary_key=True, nullable=False)
+    namespace: Mapped[str] = mapped_column(
+        ForeignKey("namespaces.namespace"), primary_key=True, nullable=False
+    )
+    name: Mapped[str] = mapped_column()
     # Required - The main color used.
-    primary: Mapped[str]
+    primary: Mapped[str] = mapped_column(nullable=False)
     # Optional - If None, will default to darker/lighter version of primary.
     secondary: Mapped[str | None]
 

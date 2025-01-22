@@ -5,9 +5,26 @@
 
 import structlog
 
-from .models import TagColorGroup
+from .models import Namespace, TagColorGroup
 
 logger = structlog.get_logger(__name__)
+
+
+def namespaces() -> list[Namespace]:
+    tagstudio_standard = Namespace("tagstudio-standard", "TagStudio Standard")
+    tagstudio_pastels = Namespace("tagstudio-pastels", "TagStudio Pastels")
+    tagstudio_shades = Namespace("tagstudio-shades", "TagStudio Shades")
+    tagstudio_earth_tones = Namespace("tagstudio-earth-tones", "TagStudio Earth Tones")
+    tagstudio_grayscale = Namespace("tagstudio-grayscale", "TagStudio Grayscale")
+    tagstudio_neon = Namespace("tagstudio-neon", "TagStudio Neon")
+    return [
+        tagstudio_standard,
+        tagstudio_pastels,
+        tagstudio_shades,
+        tagstudio_earth_tones,
+        tagstudio_grayscale,
+        tagstudio_neon,
+    ]
 
 
 def json_to_sql_color(json_color: str) -> tuple[str | None, str | None]:

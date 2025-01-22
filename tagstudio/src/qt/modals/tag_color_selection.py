@@ -44,7 +44,10 @@ class TagColorSelection(PanelWidget):
 
         self.add_no_color_widget()
         for group, colors in tag_color_groups.items():
-            self.root_layout.addWidget(QLabel(f"<h3>{group}</h3>"))
+            display_name: str = self.lib.get_namespace_name(group)
+            self.root_layout.addWidget(
+                QLabel(f"<h4>{display_name if display_name else group}</h4>")
+            )
             color_box_widget = QWidget()
             color_group_layout = FlowLayout()
             color_group_layout.setSpacing(4)
@@ -99,7 +102,7 @@ class TagColorSelection(PanelWidget):
             self.root_layout.addWidget(color_box_widget)
 
     def add_no_color_widget(self):
-        self.root_layout.addWidget(QLabel("<h3>No Color</h3>"))
+        self.root_layout.addWidget(QLabel("<h4>No Color</h4>"))
         color_box_widget = QWidget()
         color_group_layout = FlowLayout()
         color_group_layout.setSpacing(4)
