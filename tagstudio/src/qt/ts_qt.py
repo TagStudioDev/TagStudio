@@ -1050,7 +1050,13 @@ class QtDriver(DriverMixin, QObject):
             for field in self.copy_buffer["fields"]:
                 self.lib.add_field_to_entry(id, field_id=field.type_key, value=field.value)
             self.lib.add_tags_to_entry(id, self.copy_buffer["tags"])
-        self.preview_panel.update_widgets()
+        if len(self.selected) > 1:
+            if TAG_ARCHIVED in self.copy_buffer["tags"]:
+                self.update_badges({BadgeType.ARCHIVED: True}, origin_id=0, add_tags=False)
+            if TAG_FAVORITE in self.copy_buffer["tags"]:
+                self.update_badges({BadgeType.FAVORITE: True}, origin_id=0, add_tags=False)
+        else:
+            self.preview_panel.update_widgets()
 
     def toggle_item_selection(self, item_id: int, append: bool, bridge: bool):
         """Toggle the selection of an item in the Thumbnail Grid.
