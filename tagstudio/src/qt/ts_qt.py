@@ -378,7 +378,7 @@ class QtDriver(DriverMixin, QObject):
         self.copy_buffer: dict = {"fields": [], "tags": []}
 
         self.copy_fields_action = QAction(menu_bar)
-        Translations.translate_qobject(self.copy_fields_action, "copypaste.copy_fields")
+        Translations.translate_qobject(self.copy_fields_action, "edit.copy_fields")
         self.copy_fields_action.triggered.connect(self.copy_fields_action_callback)
         self.copy_fields_action.setShortcut(
             QtCore.QKeyCombination(
@@ -391,7 +391,7 @@ class QtDriver(DriverMixin, QObject):
         edit_menu.addAction(self.copy_fields_action)
 
         self.paste_fields_action = QAction(menu_bar)
-        Translations.translate_qobject(self.paste_fields_action, "copypaste.paste_fields")
+        Translations.translate_qobject(self.paste_fields_action, "edit.paste_fields")
         self.paste_fields_action.triggered.connect(self.paste_fields_action_callback)
         self.paste_fields_action.setShortcut(
             QtCore.QKeyCombination(
