@@ -202,7 +202,7 @@ class TagSearchPanel(PanelWidget):
                     results_2.append(tag)
             results_1.sort(key=lambda tag: len(tag.name))
             results_2.sort()
-            for tag in results_1 + results_2: 
+            for tag in results_1 + results_2:
                 self.scroll_layout.addWidget(self.__build_row_item_widget(tag))
         else:
             # If query doesnt exist add create button
