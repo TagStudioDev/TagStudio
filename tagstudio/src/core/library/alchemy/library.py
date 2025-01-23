@@ -632,7 +632,7 @@ class Library:
 
     def search_tags(
         self,
-        name: str,
+        name: str | None,
     ) -> list[Tag]:
         """Return a list of Tag records matching the query."""
         tag_limit = 100

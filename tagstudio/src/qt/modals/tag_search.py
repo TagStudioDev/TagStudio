@@ -186,26 +186,28 @@ class TagSearchPanel(PanelWidget):
 
     def update_tags(self, query: str | None = None):
         logger.info("[Tag Search Super Class] Updating Tags")
-
         # TODO: Look at recycling rather than deleting and re-initializing
         while self.scroll_layout.count():
             self.scroll_layout.takeAt(0).widget().deleteLater()
-
         tag_results = self.lib.search_tags(name=query)
         if len(tag_results) > 0:
-            self.first_tag_id = tag_results[0].id
-        else:
-            self.first_tag_id = None
-
-        for tag in tag_results:
-            if tag.id not in self.exclude:
+            results_1 = []
+            results_2 = []
+            for tag in tag_results:
+                if tag.id in self.exclude:
+                    continue
+                elif query and tag.name.lower().startswith(query.lower()):
+                    results_1.append(tag)
+                else:
+                    results_2.append(tag)
+            results_1.sort(key=lambda tag: len(tag.name))
+            results_2.sort()
+            for tag in results_1 + results_2:
                 self.scroll_layout.addWidget(self.__build_row_item_widget(tag))
-
-        # If query doesnt exist add create button
-        if len(tag_results) == 0:
+        else:
+            # If query doesnt exist add create button
             c = self.construct_tag_button(query)
             self.scroll_layout.addWidget(c)
-
         self.search_field.setFocus()
 
     def on_return(self, text: str):
