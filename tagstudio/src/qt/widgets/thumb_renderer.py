@@ -29,7 +29,6 @@ from PIL import (
 )
 from PIL.Image import DecompressionBombError
 from pillow_heif import register_avif_opener, register_heif_opener
-from pydub import exceptions
 from PySide6.QtCore import (
     QBuffer,
     QFile,
@@ -555,7 +554,7 @@ class ThumbRenderer(QObject):
 
             im.resize((size, size), Image.Resampling.BILINEAR)
 
-        except exceptions.CouldntDecodeError as e:
+        except Exception as e:
             logger.error("Couldn't render waveform", path=filepath.name, error=type(e).__name__)
 
         return im

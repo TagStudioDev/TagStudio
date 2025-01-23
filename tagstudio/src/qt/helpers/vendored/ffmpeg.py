@@ -23,11 +23,23 @@ def _get_ffprobe_location() -> str:
             if shutil.which(loc + cmd):
                 cmd = loc + cmd
                 break
-    logger.info(f"[FFPROBE] Using FFmpeg location: {cmd}")
+    logger.info(f"[FFMPEG] Using FFprobe location: {cmd}")
+    return cmd
+
+
+def _get_ffmpeg_location() -> str:
+    cmd: str = "ffmpeg"
+    if platform.system() == "Darwin":
+        for loc in FFMPEG_MACOS_LOCATIONS:
+            if shutil.which(loc + cmd):
+                cmd = loc + cmd
+                break
+    logger.info(f"[FFMPEG] Using FFmpeg location: {cmd}")
     return cmd
 
 
 FFPROBE_CMD = _get_ffprobe_location()
+FFMPEG_CMD = _get_ffmpeg_location()
 
 
 def _probe(filename, cmd=FFPROBE_CMD, timeout=None, **kwargs):
