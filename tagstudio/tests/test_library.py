@@ -308,20 +308,23 @@ def test_mirror_entry_fields(library: Library, entry_full):
         _FieldID.NOTES.name,
     }
 
+
 def test_merge_entries(library: Library):
     a = Entry(
-        folder=library.folder, path=Path("a"),
+        folder=library.folder,
+        path=Path("a"),
         fields=[
             TextField(type_key=_FieldID.AUTHOR.name, value="Author McAuthorson", position=0),
             TextField(type_key=_FieldID.DESCRIPTION.name, value="test description", position=2),
-        ]
+        ],
     )
     b = Entry(
-        folder=library.folder, path=Path("b"),
-        fields=[ TextField(type_key=_FieldID.NOTES.name, value="test note", position=1) ]
+        folder=library.folder,
+        path=Path("b"),
+        fields=[TextField(type_key=_FieldID.NOTES.name, value="test note", position=1)],
     )
     try:
-        ids = library.add_entries([a, b])  
+        ids = library.add_entries([a, b])
         entry_a = library.get_entry_full(ids[0])
         entry_b = library.get_entry_full(ids[1])
         tag_0 = library.add_tag(Tag(id=1000, name="tag_0"))
@@ -339,6 +342,7 @@ def test_merge_entries(library: Library):
         assert b.has_tag(tag_0) and b.has_tag(tag_1) and b.has_tag(tag_2)
     except AttributeError:
         AssertionError()
+
 
 def test_remove_tag_from_entry(library, entry_full):
     removed_tag_id = -1
