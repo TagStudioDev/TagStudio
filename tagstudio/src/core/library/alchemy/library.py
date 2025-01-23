@@ -638,7 +638,7 @@ class Library:
         tag_limit = 100
 
         with Session(self.engine) as session:
-            query = select(Tag)
+            query = select(Tag).outerjoin(TagAlias)
             query = query.options(
                 selectinload(Tag.parent_tags),
                 selectinload(Tag.aliases),
@@ -649,12 +649,12 @@ class Library:
                     or_(
                         Tag.name.icontains(name),
                         Tag.shorthand.icontains(name),
+                        TagAlias.name.icontains(name),
                     )
                 )
 
             tags = session.scalars(query)
-
-            res = list(tags)
+            res = list(set(tags))
 
             logger.info(
                 "searching tags",
