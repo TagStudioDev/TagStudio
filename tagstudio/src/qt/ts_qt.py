@@ -14,7 +14,6 @@ import os
 import re
 import sys
 import time
-import webbrowser
 from pathlib import Path
 from queue import Queue
 
@@ -72,8 +71,10 @@ from src.qt.flowlayout import FlowLayout
 from src.qt.helpers.custom_runnable import CustomRunnable
 from src.qt.helpers.function_iterator import FunctionIterator
 from src.qt.main_window import Ui_MainWindow
+from src.qt.modals.about import AboutModal
 from src.qt.modals.build_tag import BuildTagPanel
 from src.qt.modals.drop_import import DropImportModal
+from src.qt.modals.ffmpeg_checker import FfmpegChecker
 from src.qt.modals.file_extension import FileExtensionModal
 from src.qt.modals.fix_dupes import FixDupeFilesModal
 from src.qt.modals.fix_unlinked import FixUnlinkedEntriesModal
@@ -158,12 +159,14 @@ class QtDriver(DriverMixin, QObject):
 
         self.SIGTERM.connect(self.handle_sigterm)
 
+        self.config_path = ""
         if self.args.config_file:
             path = Path(self.args.config_file)
             if not path.exists():
                 logger.warning("Config File does not exist creating", path=path)
             logger.info("Using Config File", path=path)
             self.settings = QSettings(str(path), QSettings.Format.IniFormat)
+            self.config_path = str(path)
         else:
             self.settings = QSettings(
                 QSettings.Format.IniFormat,
@@ -175,6 +178,7 @@ class QtDriver(DriverMixin, QObject):
                 "Config File not specified, using default one",
                 filename=self.settings.fileName(),
             )
+            self.config_path = self.settings.fileName()
 
     def init_workers(self):
         """Init workers for rendering thumbnails."""
@@ -439,7 +443,7 @@ class QtDriver(DriverMixin, QObject):
         self.autofill_action.triggered.connect(
             lambda: (
                 self.run_macros(MacroID.AUTOFILL, self.selected),
-                self.preview_panel.update_widgets(),
+                self.preview_panel.update_widgets(update_preview=False),
             )
         )
         macros_menu.addAction(self.autofill_action)
@@ -455,12 +459,15 @@ class QtDriver(DriverMixin, QObject):
         macros_menu.addAction(folders_to_tags_action)
 
         # Help Menu ============================================================
-        self.repo_action = QAction(menu_bar)
-        Translations.translate_qobject(self.repo_action, "help.visit_github")
-        self.repo_action.triggered.connect(
-            lambda: webbrowser.open("https://github.com/TagStudioDev/TagStudio")
-        )
-        help_menu.addAction(self.repo_action)
+        def create_about_modal():
+            if not hasattr(self, "about_modal"):
+                self.about_modal = AboutModal(self.config_path)
+            self.about_modal.show()
+
+        self.about_action = QAction(menu_bar)
+        Translations.translate_qobject(self.about_action, "menu.help.about")
+        self.about_action.triggered.connect(create_about_modal)
+        help_menu.addAction(self.about_action)
         self.set_macro_menu_viability()
 
         menu_bar.addMenu(file_menu)
@@ -508,6 +515,11 @@ class QtDriver(DriverMixin, QObject):
         path_result = self.evaluate_path(str(self.args.open).lstrip().rstrip())
         if path_result.success and path_result.library_path:
             self.open_library(path_result.library_path)
+
+        # check ffmpeg and show warning if not
+        self.ffmpeg_checker = FfmpegChecker()
+        if not self.ffmpeg_checker.installed():
+            self.ffmpeg_checker.show_warning()
 
         app.exec()
         self.shutdown()
@@ -598,7 +610,6 @@ class QtDriver(DriverMixin, QObject):
         self.main_window.pagination.index.connect(lambda i: self.page_move(page_id=i))
 
         self.splash.finish(self.main_window)
-        self.preview_panel.update_widgets()
 
     def show_grid_filenames(self, value: bool):
         for thumb in self.item_thumbs:
@@ -637,6 +648,13 @@ class QtDriver(DriverMixin, QObject):
 
         self.settings.setValue(SettingItems.LAST_LIBRARY, str(self.lib.library_dir))
         self.settings.sync()
+
+        # Reset library state
+        self.preview_panel.update_widgets()
+        self.main_window.searchField.setText("")
+        scrollbar: QScrollArea = self.main_window.scrollArea
+        scrollbar.verticalScrollBar().setValue(0)
+        self.filter = FilterState.show_all()
 
         self.lib.close()
 
@@ -708,7 +726,7 @@ class QtDriver(DriverMixin, QObject):
                 item.thumb_button.set_selected(True)
 
         self.set_macro_menu_viability()
-        self.preview_panel.update_widgets()
+        self.preview_panel.update_widgets(update_preview=False)
 
     def clear_select_action_callback(self):
         self.selected.clear()
@@ -721,7 +739,7 @@ class QtDriver(DriverMixin, QObject):
     def show_tag_database(self):
         self.modal = PanelModal(
             widget=TagDatabasePanel(self.lib),
-            done_callback=self.preview_panel.update_widgets,
+            done_callback=lambda: self.preview_panel.update_widgets(update_preview=False),
             has_save=False,
         )
         Translations.translate_with_setter(self.modal.setTitle, "tag_manager.title")
@@ -792,9 +810,9 @@ class QtDriver(DriverMixin, QObject):
             minimum=0,
             maximum=files_count,
         )
-        Translations.translate_with_setter(pw.setWindowTitle, "macros.running.dialog.title")
+        Translations.translate_with_setter(pw.setWindowTitle, "entries.running.dialog.title")
         Translations.translate_with_setter(
-            pw.update_label, "macros.running.dialog.new_entries", count=1, total=files_count
+            pw.update_label, "entries.running.dialog.new_entries", count=1, total=files_count
         )
         pw.show()
 
@@ -803,7 +821,7 @@ class QtDriver(DriverMixin, QObject):
                 pw.update_progress(x + 1),
                 pw.update_label(
                     Translations.translate_formatted(
-                        "macros.running.dialog.new_entries", count=x + 1, total=files_count
+                        "entries.running.dialog.new_entries", count=x + 1, total=files_count
                     )
                 ),
             )
@@ -1380,6 +1398,9 @@ class QtDriver(DriverMixin, QObject):
             Translations.translate_formatted(**translation_params), 3
         )
         self.main_window.repaint()
+
+        if self.lib.library_dir:
+            self.close_library()
 
         open_status: LibraryStatus = None
         try:

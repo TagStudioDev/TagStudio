@@ -63,7 +63,7 @@ class TagBoxWidget(FieldWidget):
             tag_widget.on_remove.connect(
                 lambda tag_id=tag.id: (
                     self.remove_tag(tag_id),
-                    self.driver.preview_panel.update_widgets(),
+                    self.driver.preview_panel.update_widgets(update_preview=False),
                 )
             )
             tag_widget.on_edit.connect(lambda t=tag: self.edit_tag(t))
@@ -77,7 +77,7 @@ class TagBoxWidget(FieldWidget):
             build_tag_panel,
             tag.name,  # TODO - display name including parent tags
             "Edit Tag",
-            done_callback=self.driver.preview_panel.update_widgets,
+            done_callback=lambda: self.driver.preview_panel.update_widgets(update_preview=False),
             has_save=True,
         )
         # TODO - this was update_tag()
