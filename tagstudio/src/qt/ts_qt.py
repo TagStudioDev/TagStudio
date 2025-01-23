@@ -463,7 +463,7 @@ class QtDriver(DriverMixin, QObject):
         self.autofill_action.triggered.connect(
             lambda: (
                 self.run_macros(MacroID.AUTOFILL, self.selected),
-                self.preview_panel.update_widgets(),
+                self.preview_panel.update_widgets(update_preview=False),
             )
         )
         macros_menu.addAction(self.autofill_action)
@@ -638,7 +638,6 @@ class QtDriver(DriverMixin, QObject):
         self.main_window.pagination.index.connect(lambda i: self.page_move(page_id=i))
 
         self.splash.finish(self.main_window)
-        self.preview_panel.update_widgets()
 
     def show_grid_filenames(self, value: bool):
         for thumb in self.item_thumbs:
@@ -677,6 +676,13 @@ class QtDriver(DriverMixin, QObject):
 
         self.settings.setValue(SettingItems.LAST_LIBRARY, str(self.lib.library_dir))
         self.settings.sync()
+
+        # Reset library state
+        self.preview_panel.update_widgets()
+        self.main_window.searchField.setText("")
+        scrollbar: QScrollArea = self.main_window.scrollArea
+        scrollbar.verticalScrollBar().setValue(0)
+        self.filter = FilterState.show_all()
 
         self.lib.close()
 
@@ -748,7 +754,7 @@ class QtDriver(DriverMixin, QObject):
                 item.thumb_button.set_selected(True)
 
         self.set_macro_menu_viability()
-        self.preview_panel.update_widgets()
+        self.preview_panel.update_widgets(update_preview=False)
 
     def clear_select_action_callback(self):
         self.selected.clear()
@@ -761,7 +767,7 @@ class QtDriver(DriverMixin, QObject):
     def show_tag_database(self):
         self.modal = PanelModal(
             widget=TagDatabasePanel(self.lib),
-            done_callback=self.preview_panel.update_widgets,
+            done_callback=lambda: self.preview_panel.update_widgets(update_preview=False),
             has_save=False,
         )
         Translations.translate_with_setter(self.modal.setTitle, "tag_manager.title")
@@ -1420,6 +1426,9 @@ class QtDriver(DriverMixin, QObject):
             Translations.translate_formatted(**translation_params), 3
         )
         self.main_window.repaint()
+
+        if self.lib.library_dir:
+            self.close_library()
 
         open_status: LibraryStatus = None
         try:
