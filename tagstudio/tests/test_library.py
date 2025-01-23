@@ -308,6 +308,37 @@ def test_mirror_entry_fields(library: Library, entry_full):
         _FieldID.NOTES.name,
     }
 
+def test_merge_entries(library: Library):
+    a = Entry(
+        folder=library.folder, path=Path("a"),
+        fields=[
+            TextField(type_key=_FieldID.AUTHOR.name, value="Author McAuthorson", position=0),
+            TextField(type_key=_FieldID.DESCRIPTION.name, value="test description", position=2),
+        ]
+    )
+    b = Entry(
+        folder=library.folder, path=Path("b"),
+        fields=[ TextField(type_key=_FieldID.NOTES.name, value="test note", position=1) ]
+    )
+    try:
+        ids = library.add_entries([a, b])  
+        entry_a = library.get_entry_full(ids[0])
+        entry_b = library.get_entry_full(ids[1])
+        tag_0 = library.add_tag(Tag(id=1000, name="tag_0"))
+        tag_1 = library.add_tag(Tag(id=1001, name="tag_1"))
+        tag_2 = library.add_tag(Tag(id=1002, name="tag_2"))
+        library.add_tags_to_entry(ids[0], [tag_0.id, tag_2.id])
+        library.add_tags_to_entry(ids[1], [tag_1.id])
+        library.merge_entries(entry_a, entry_b)
+        assert library.has_path_entry(Path("b"))
+        assert not library.has_path_entry(Path("a"))
+        fields = [field.value for field in entry_a.fields]
+        assert "Author McAuthorson" in fields
+        assert "test description" in fields
+        assert "test note" in fields
+        assert b.has_tag(tag_0) and b.has_tag(tag_1) and b.has_tag(tag_2)
+    except AttributeError:
+        AssertionError()
 
 def test_remove_tag_from_entry(library, entry_full):
     removed_tag_id = -1
