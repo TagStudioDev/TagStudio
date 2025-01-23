@@ -375,6 +375,34 @@ class QtDriver(DriverMixin, QObject):
         clear_select_action.setToolTip("Esc")
         edit_menu.addAction(clear_select_action)
 
+        self.copy_buffer: dict = {"fields": [], "tags": []}
+
+        self.copy_fields_action = QAction(menu_bar)
+        Translations.translate_qobject(self.copy_fields_action, "copypaste.copy_fields")
+        self.copy_fields_action.triggered.connect(self.copy_fields_action_callback)
+        self.copy_fields_action.setShortcut(
+            QtCore.QKeyCombination(
+                QtCore.Qt.KeyboardModifier(QtCore.Qt.KeyboardModifier.ControlModifier),
+                QtCore.Qt.Key.Key_C,
+            )
+        )
+        self.copy_fields_action.setToolTip("Ctrl+C")
+        self.copy_fields_action.setEnabled(False)
+        edit_menu.addAction(self.copy_fields_action)
+
+        self.paste_fields_action = QAction(menu_bar)
+        Translations.translate_qobject(self.paste_fields_action, "copypaste.paste_fields")
+        self.paste_fields_action.triggered.connect(self.paste_fields_action_callback)
+        self.paste_fields_action.setShortcut(
+            QtCore.QKeyCombination(
+                QtCore.Qt.KeyboardModifier(QtCore.Qt.KeyboardModifier.ControlModifier),
+                QtCore.Qt.Key.Key_V,
+            )
+        )
+        self.paste_fields_action.setToolTip("Ctrl+V")
+        self.paste_fields_action.setEnabled(False)
+        edit_menu.addAction(self.paste_fields_action)
+
         edit_menu.addSeparator()
 
         manage_file_extensions_action = QAction(menu_bar)
@@ -726,6 +754,7 @@ class QtDriver(DriverMixin, QObject):
                 item.thumb_button.set_selected(True)
 
         self.set_macro_menu_viability()
+        self.set_copypaste_menu_viability()
         self.preview_panel.update_widgets(update_preview=False)
 
     def clear_select_action_callback(self):
@@ -734,6 +763,7 @@ class QtDriver(DriverMixin, QObject):
             item.thumb_button.set_selected(False)
 
         self.set_macro_menu_viability()
+        self.set_copypaste_menu_viability()
         self.preview_panel.update_widgets()
 
     def show_tag_database(self):
@@ -1007,6 +1037,21 @@ class QtDriver(DriverMixin, QObject):
         sa.setWidgetResizable(True)
         sa.setWidget(self.flow_container)
 
+    def copy_fields_action_callback(self):
+        if len(self.selected) > 0:
+            entry = self.lib.get_entry_full(self.selected[0])
+            if entry:
+                self.copy_buffer["fields"] = entry.fields
+                self.copy_buffer["tags"] = [tag.id for tag in entry.tags]
+        self.set_copypaste_menu_viability()
+
+    def paste_fields_action_callback(self):
+        for id in self.selected:
+            for field in self.copy_buffer["fields"]:
+                self.lib.add_field_to_entry(id, field_id=field.type_key, value=field.value)
+            self.lib.add_tags_to_entry(id, self.copy_buffer["tags"])
+        self.preview_panel.update_widgets()
+
     def toggle_item_selection(self, item_id: int, append: bool, bridge: bool):
         """Toggle the selection of an item in the Thumbnail Grid.
 
@@ -1077,10 +1122,21 @@ class QtDriver(DriverMixin, QObject):
                 it.thumb_button.set_selected(False)
 
         self.set_macro_menu_viability()
+        self.set_copypaste_menu_viability()
         self.preview_panel.update_widgets()
 
     def set_macro_menu_viability(self):
         self.autofill_action.setDisabled(not self.selected)
+
+    def set_copypaste_menu_viability(self):
+        if len(self.selected) == 1:
+            self.copy_fields_action.setEnabled(True)
+        else:
+            self.copy_fields_action.setEnabled(False)
+        if self.selected and (self.copy_buffer["fields"] or self.copy_buffer["tags"]):
+            self.paste_fields_action.setEnabled(True)
+        else:
+            self.paste_fields_action.setEnabled(False)
 
     def update_completions_list(self, text: str) -> None:
         matches = re.search(
