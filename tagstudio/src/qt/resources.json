@@ -1,4 +1,12 @@
 {
+  "splash_classic": {
+    "path": "qt/images/splash/classic.png",
+    "mode": "qpixmap"
+  },
+  "splash_goo_gears": {
+    "path": "qt/images/splash/goo_gears.png",
+    "mode": "qpixmap"
+  },
   "logo": {
     "path": "icon.png",
     "mode": "pil"
