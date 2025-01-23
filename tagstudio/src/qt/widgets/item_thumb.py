@@ -441,7 +441,9 @@ class ItemThumb(FlowWidget):
         if clickable:
             with catch_warnings(record=True):
                 self.thumb_button.pressed.disconnect()
-            self.thumb_button.pressed.connect(clickable)
+            self.thumb_button.pressed.connect(
+                lambda: clickable() if not self.thumb_button.selected else None
+            )
 
     def set_item_id(self, item_id: int):
         self.item_id = item_id
@@ -500,23 +502,20 @@ class ItemThumb(FlowWidget):
             self.lib.remove_tags_from_entry(entry_id, tag_id)
 
         if self.driver.preview_panel.is_open:
-            self.driver.preview_panel.update_widgets()
+            self.driver.preview_panel.update_widgets(update_preview=False)
 
     def mouseMoveEvent(self, event):  # noqa: N802
         if event.buttons() is not Qt.MouseButton.LeftButton:
             return
 
         drag = QDrag(self.driver)
-        paths = []
+        paths: list[QUrl] = []
         mimedata = QMimeData()
 
         selected_ids = self.driver.selected
-        if self.item_id not in selected_ids:
-            selected_ids = [self.item_id]
 
-        for selected_id in selected_ids:
-            item_id = self.driver.item_thumbs[selected_id].item_id
-            entry = self.lib.get_entry(item_id)
+        for entry_id in selected_ids:
+            entry = self.lib.get_entry(entry_id)
             if not entry:
                 continue
 
@@ -526,4 +525,4 @@ class ItemThumb(FlowWidget):
         mimedata.setUrls(paths)
         drag.setMimeData(mimedata)
         drag.exec(Qt.DropAction.CopyAction)
-        logger.info("dragged files to external program", thumbnail_indexs=selected_ids)
+        logger.info("[ItemThumb] Dragging Files:", entry_ids=selected_ids)
