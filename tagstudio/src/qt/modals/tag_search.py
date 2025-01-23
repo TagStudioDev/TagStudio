@@ -155,7 +155,7 @@ class TagSearchPanel(PanelWidget):
         inner_layout.setObjectName("innerLayout")
         inner_layout.setContentsMargins(2, 2, 2, 2)
         create_button.setLayout(inner_layout)
-        create_button.setMinimumSize(math.ceil(22 * 1.5), 22)
+        create_button.setMinimumSize(22, 22)
 
         create_button.setStyleSheet(
             f"QPushButton{{"
@@ -165,7 +165,7 @@ class TagSearchPanel(PanelWidget):
             f"border-color:{get_tag_color(ColorType.BORDER, TagColorEnum.DEFAULT)};"
             f"border-radius: 6px;"
             f"border-style:solid;"
-            f"border-width: {math.ceil(self.devicePixelRatio())}px;"
+            f"border-width: 2px;"
             f"padding-right: 4px;"
             f"padding-bottom: 1px;"
             f"padding-left: 4px;"
