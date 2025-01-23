@@ -144,6 +144,10 @@ def qt_driver(qtbot, library):
             driver.item_thumbs = []
             driver.autofill_action = Mock()
 
+            driver.copy_buffer = {"fields": [], "tags": []}
+            driver.copy_fields_action = Mock()
+            driver.paste_fields_action = Mock()
+
             driver.lib = library
             # TODO - downsize this method and use it
             # driver.start()
