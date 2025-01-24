@@ -21,7 +21,7 @@ from queue import Queue
 # this import has side-effect of import PySide resources
 import src.qt.resources_rc  # noqa: F401
 import structlog
-from humanfriendly import format_timespan
+from humanfriendly import format_size, format_timespan
 from PySide6 import QtCore
 from PySide6.QtCore import QObject, QSettings, Qt, QThread, QThreadPool, QTimer, Signal
 from PySide6.QtGui import (
@@ -164,8 +164,8 @@ class QtDriver(DriverMixin, QObject):
         if self.args.config_file:
             path = Path(self.args.config_file)
             if not path.exists():
-                logger.warning("Config File does not exist creating", path=path)
-            logger.info("Using Config File", path=path)
+                logger.warning("[Config] Config File does not exist creating", path=path)
+            logger.info("[Config] Using Config File", path=path)
             self.settings = QSettings(str(path), QSettings.Format.IniFormat)
         else:
             self.settings = QSettings(
@@ -175,9 +175,27 @@ class QtDriver(DriverMixin, QObject):
                 "TagStudio",
             )
             logger.info(
-                "Config File not specified, using default one",
+                "[Config] Config File not specified, using default one",
                 filename=self.settings.fileName(),
             )
+
+        # NOTE: This should be a per-library setting rather than an application setting.
+        thumb_cache_size_limit: int = int(
+            str(
+                self.settings.value(
+                    SettingItems.THUMB_CACHE_SIZE_LIMIT,
+                    defaultValue=CacheManager.size_limit,
+                    type=int,
+                )
+            )
+        )
+
+        CacheManager.size_limit = thumb_cache_size_limit
+        self.settings.setValue(SettingItems.THUMB_CACHE_SIZE_LIMIT, CacheManager.size_limit)
+        self.settings.sync()
+        logger.info(
+            f"[Config] Thumbnail cache size limit: {format_size(CacheManager.size_limit)}",
+        )
 
     def init_workers(self):
         """Init workers for rendering thumbnails."""
