@@ -32,6 +32,7 @@ from sqlalchemy import (
     select,
     update,
 )
+from sqlalchemy.dialects.sqlite import insert
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import (
     Session,
@@ -928,19 +929,18 @@ class Library:
 
     def add_tags_to_entry(self, entry_id: int, tag_ids: int | list[int] | set[int]) -> bool:
         """Add one or more tags to an entry."""
-        tag_ids_ = [tag_ids] if isinstance(tag_ids, int) else tag_ids
+        _tag_ids = [tag_ids] if isinstance(tag_ids, int) else tag_ids
+        tags = [{"tag_id": tag_id, "entry_id": entry_id} for tag_id in _tag_ids]
         with Session(self.engine, expire_on_commit=False) as session:
+            stmt = insert(TagEntry).values(tags).on_conflict_do_nothing()
             try:
-                # TODO: Optimize this by using a single query to update.
-                for tag_id in tag_ids_:
-                    session.add(TagEntry(tag_id=tag_id, entry_id=entry_id))
-                    session.flush()
+                session.execute(stmt)
                 session.commit()
-                return True
             except IntegrityError as e:
                 logger.warning("[add_tags_to_entry]", warning=e)
                 session.rollback()
                 return False
+            return True
 
     def remove_tags_from_entry(self, entry_id: int, tag_ids: int | list[int] | set[int]) -> bool:
         """Remove one or more tags from an entry."""
