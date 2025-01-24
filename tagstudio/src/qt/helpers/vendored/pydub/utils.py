@@ -8,7 +8,7 @@ from pydub.utils import (
     get_extra_info,
     get_prober_name,
 )
-from src.qt.helpers.silent_popen import promptless_Popen
+from src.qt.helpers.silent_popen import silent_Popen
 
 
 def _mediainfo_json(filepath, read_ahead_limit=-1):
@@ -38,7 +38,7 @@ def _mediainfo_json(filepath, read_ahead_limit=-1):
 
     command = [prober, "-of", "json"] + command_args
     # PATCHED
-    res = promptless_Popen(
+    res = silent_Popen(
         command, stdin=stdin_parameter, stdout=subprocess.PIPE, stderr=subprocess.PIPE
     )
     output, stderr = res.communicate(input=stdin_data)

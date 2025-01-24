@@ -40,7 +40,7 @@ from pydub.utils import (
     get_encoder_name,
     ratio_to_db,
 )
-from src.qt.helpers.silent_popen import promptless_Popen
+from src.qt.helpers.silent_popen import silent_Popen
 from src.qt.helpers.vendored.pydub.utils import _mediainfo_json
 
 basestring = str
@@ -606,7 +606,7 @@ class _AudioSegment:
 
         with open(os.devnull, "rb") as devnull:
             # PATCHED
-            p = promptless_Popen(
+            p = silent_Popen(
                 conversion_command, stdin=devnull, stdout=subprocess.PIPE, stderr=subprocess.PIPE
             )
         p_out, p_err = p.communicate()
@@ -785,7 +785,7 @@ class _AudioSegment:
         log_conversion(conversion_command)
 
         # PATCHED
-        p = promptless_Popen(
+        p = silent_Popen(
             conversion_command,
             stdin=stdin_parameter,
             stdout=subprocess.PIPE,
@@ -1012,7 +1012,7 @@ class _AudioSegment:
         # read stdin / write stdout
         with open(os.devnull, "rb") as devnull:
             # PATCHED
-            p = promptless_Popen(
+            p = silent_Popen(
                 conversion_command, stdin=devnull, stdout=subprocess.PIPE, stderr=subprocess.PIPE
             )
         p_out, p_err = p.communicate()
