@@ -10,6 +10,7 @@ from pydub.utils import (
 from src.qt.helpers.silent_popen import silent_Popen
 from src.qt.helpers.vendored.ffmpeg import FFPROBE_CMD
 
+
 def _mediainfo_json(filepath, read_ahead_limit=-1):
     """Return json dictionary with media info(codec, duration, size, bitrate...) from filepath."""
     prober = FFPROBE_CMD
