@@ -33,7 +33,7 @@ class TagSearchPanel(PanelWidget):
     tag_chosen = Signal(int)
     lib: Library
     is_initialized: bool = False
-    first_tag_id: int = None
+    first_tag_id: int | None = None
     is_tag_chooser: bool
     exclude: list[int]
 
@@ -202,10 +202,12 @@ class TagSearchPanel(PanelWidget):
                     results_2.append(tag)
             results_1.sort(key=lambda tag: len(tag.name))
             results_2.sort()
+            self.first_tag_id = results_1[0].id if len(results_1) > 0 else tag_results[0].id
             for tag in results_1 + results_2:
                 self.scroll_layout.addWidget(self.__build_row_item_widget(tag))
         else:
             # If query doesnt exist add create button
+            self.first_tag_id = None
             c = self.construct_tag_button(query)
             self.scroll_layout.addWidget(c)
         self.search_field.setFocus()
