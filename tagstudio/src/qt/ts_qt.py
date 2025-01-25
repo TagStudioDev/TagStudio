@@ -515,6 +515,11 @@ class QtDriver(DriverMixin, QObject):
         path_result = self.evaluate_path(str(self.args.open).lstrip().rstrip())
         if path_result.success and path_result.library_path:
             self.open_library(path_result.library_path)
+        elif self.settings.value(SettingItems.START_LOAD_LAST):
+            # evaluate_path() with argument 'None' returns a LibraryStatus for the last library
+            path_result = self.evaluate_path(None)
+            if path_result.success and path_result.library_path:
+                self.open_library(path_result.library_path)
 
         # check ffmpeg and show warning if not
         self.ffmpeg_checker = FfmpegChecker()

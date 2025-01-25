@@ -9,7 +9,7 @@ import subprocess
 
 import ffmpeg
 import structlog
-from src.qt.helpers.silent_popen import promptless_Popen
+from src.qt.helpers.silent_popen import silent_Popen
 
 logger = structlog.get_logger(__name__)
 
@@ -56,7 +56,7 @@ def _probe(filename, cmd=FFPROBE_CMD, timeout=None, **kwargs):
     args += [filename]
 
     # PATCHED
-    p = promptless_Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    p = silent_Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     communicate_kwargs = {}
     if timeout is not None:
         communicate_kwargs["timeout"] = timeout
