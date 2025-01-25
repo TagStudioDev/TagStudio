@@ -5,6 +5,7 @@
 import contextlib
 import math
 import shutil
+import typing
 from datetime import datetime as dt
 from pathlib import Path
 
@@ -14,6 +15,10 @@ from PIL import (
 )
 from src.core.constants import THUMB_CACHE_NAME, TS_FOLDER_NAME
 
+# Only import for type checking/autocompletion, will not be imported at runtime.
+if typing.TYPE_CHECKING:
+    from src.core.library import Library
+
 logger = structlog.get_logger(__name__)
 
 
@@ -22,8 +27,8 @@ class CacheManager:
     size_limit = 500000000  # 500 MiB default
 
     def __init__(self):
-        self.lib = None
-        self.last_lib_path = None
+        self.lib: Library | None = None
+        self.last_lib_path: Path | None = None
         self.folder_dict: dict[Path, int] = {}
 
     @staticmethod
@@ -50,7 +55,7 @@ class CacheManager:
         if library.library_dir:
             self.check_folder_status()
 
-    def cache_dir(self) -> Path:
+    def cache_dir(self) -> Path | None:
         """Return the current cache directory, not including folder slugs."""
         if not self.lib.library_dir:
             return None
@@ -77,7 +82,7 @@ class CacheManager:
         ):
             self.register_existing_folders()
 
-        def create_folder() -> Path:
+        def create_folder() -> Path | None:
             """Create a new cache folder."""
             if not self.lib.library_dir:
                 return None
