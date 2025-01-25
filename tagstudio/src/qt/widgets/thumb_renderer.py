@@ -81,13 +81,13 @@ class ThumbRenderer(QObject):
     cached_img_res: int = 256  # TODO: Pull this from config
     cached_img_ext: str = ".webp"  # TODO: Pull this from config
 
+    last_cache_folder: Path | None = None
+
     def __init__(self, library) -> None:
         """Initialize the class."""
         super().__init__()
         self.lib = library
         ThumbRenderer.cache.set_library(self.lib)
-
-        self.last_cache_folder: Path = None
 
         # Cached thumbnail elements.
         # Key: Size + Pixel Ratio Tuple + Radius Scale
@@ -1073,7 +1073,7 @@ class ThumbRenderer(QObject):
                     image = Image.open(cached_path)
                     if not image:
                         raise UnidentifiedImageError
-                    self.last_cache_folder = folder
+                    ThumbRenderer.last_cache_folder = folder
                 except Exception as e:
                     logger.error(
                         "[ThumbRenderer] Couldn't open cached thumbnail!",
@@ -1103,20 +1103,20 @@ class ThumbRenderer(QObject):
             hash_value = hashlib.shake_128(hashable_str.encode("utf-8")).hexdigest(8)
 
             # Check the last successful folder first.
-            if self.last_cache_folder:
-                image = fetch_cached_image(self.last_cache_folder)
+            if ThumbRenderer.last_cache_folder:
+                image = fetch_cached_image(ThumbRenderer.last_cache_folder)
 
             # If there was no last folder or the check failed, check all folders.
             if not image:
                 thumb_folders: list[Path] = []
                 for f in (self.lib.library_dir / TS_FOLDER_NAME / THUMB_CACHE_NAME).glob("*"):
-                    if f.is_dir() and f is not self.last_cache_folder:
+                    if f.is_dir() and f is not ThumbRenderer.last_cache_folder:
                         thumb_folders.append(f)
 
                 for folder in thumb_folders:
                     image = fetch_cached_image(folder)
                     if image:
-                        self.last_cache_folder = folder
+                        ThumbRenderer.last_cache_folder = folder
                         break
             if not image:
                 # Render from file, return result, and try to save a cached version.
