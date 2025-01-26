@@ -6,7 +6,6 @@
 from types import FunctionType
 
 import structlog
-from types import FunctionType
 from PySide6.QtCore import QEvent, Qt, Signal
 from PySide6.QtGui import QAction, QColor, QEnterEvent, QFontMetrics
 from PySide6.QtWidgets import (
