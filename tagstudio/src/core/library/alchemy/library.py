@@ -295,7 +295,6 @@ class Library:
                 db_version = session.scalar(
                     select(Preferences).where(Preferences.key == LibraryPrefs.DB_VERSION.name)
                 )
-                logger.info(db_version.value)
 
                 if not db_version or db_version.value != LibraryPrefs.DB_VERSION.default:
                     return LibraryStatus(
