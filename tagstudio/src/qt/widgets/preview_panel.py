@@ -73,7 +73,7 @@ class PreviewPanel(QWidget):
         self.file_attrs = FileAttributes(library, driver)
         self.fields = FieldContainers(library, driver)
 
-        self.tag_search_panel = TagSearchPanel(self.driver.lib)
+        self.tag_search_panel = TagSearchPanel(self.driver.lib, is_tag_chooser=True)
         self.add_tag_modal = PanelModal(
             self.tag_search_panel, Translations.translate_formatted("tag.add.plural")
         )

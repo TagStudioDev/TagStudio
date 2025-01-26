@@ -37,7 +37,7 @@ class TagSearchPanel(PanelWidget):
     tag_chosen = Signal(int)
     lib: Library
     is_initialized: bool = False
-    first_tag_id: int = None
+    first_tag_id: int | None = None
     is_tag_chooser: bool
     exclude: list[int]
 
@@ -56,7 +56,7 @@ class TagSearchPanel(PanelWidget):
         self.search_field.setObjectName("searchField")
         self.search_field.setMinimumSize(QSize(0, 32))
         Translations.translate_with_setter(self.search_field.setPlaceholderText, "home.search_tags")
-        self.search_field.textEdited.connect(lambda: self.update_tags(self.search_field.text()))
+        self.search_field.textEdited.connect(lambda text: self.update_tags(text))
         self.search_field.returnPressed.connect(lambda: self.on_return(self.search_field.text()))
 
         self.scroll_contents = QWidget()
@@ -140,7 +140,7 @@ class TagSearchPanel(PanelWidget):
             row.addWidget(add_button)
         return container
 
-    def construct_tag_button(self, query: str | None):
+    def build_create_tag_button(self, query: str | None):
         """Constructs a Create Tag Button."""
         container = QWidget()
         row = QHBoxLayout(container)
@@ -207,26 +207,30 @@ class TagSearchPanel(PanelWidget):
 
     def update_tags(self, query: str | None = None):
         logger.info("[Tag Search Super Class] Updating Tags")
-
         # TODO: Look at recycling rather than deleting and re-initializing
         while self.scroll_layout.count():
             self.scroll_layout.takeAt(0).widget().deleteLater()
-
         tag_results = self.lib.search_tags(name=query)
         if len(tag_results) > 0:
-            self.first_tag_id = tag_results[0].id
-        else:
-            self.first_tag_id = None
-
-        for tag in tag_results:
-            if tag.id not in self.exclude:
+            results_1 = []
+            results_2 = []
+            for tag in tag_results:
+                if tag.id in self.exclude:
+                    continue
+                elif query and tag.name.lower().startswith(query.lower()):
+                    results_1.append(tag)
+                else:
+                    results_2.append(tag)
+            results_1.sort(key=lambda tag: len(tag.name))
+            results_2.sort()
+            self.first_tag_id = results_1[0].id if len(results_1) > 0 else tag_results[0].id
+            for tag in results_1 + results_2:
                 self.scroll_layout.addWidget(self.__build_row_item_widget(tag))
-
-        # If query doesnt exist add create button
-        if len(tag_results) == 0:
-            c = self.construct_tag_button(query)
+        else:
+            # If query doesnt exist add create button
+            self.first_tag_id = None
+            c = self.build_create_tag_button(query)
             self.scroll_layout.addWidget(c)
-
         self.search_field.setFocus()
 
     def on_return(self, text: str):

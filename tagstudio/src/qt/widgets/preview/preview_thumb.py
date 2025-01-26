@@ -273,30 +273,31 @@ class PreviewThumb(QWidget):
 
     def _update_video_legacy(self, filepath: Path) -> dict:
         stats: dict = {}
+        filepath_ = str(filepath)
         self.switch_preview("video_legacy")
 
-        video = cv2.VideoCapture(str(filepath), cv2.CAP_FFMPEG)
-        video.set(
-            cv2.CAP_PROP_POS_FRAMES,
-            (video.get(cv2.CAP_PROP_FRAME_COUNT) // 2),
-        )
-        success, frame = video.read()
-        frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-        image = Image.fromarray(frame)
-        stats["width"] = image.width
-        stats["height"] = image.height
-        if success:
-            self.preview_vid.play(str(filepath), QSize(image.width, image.height))
-            self.update_image_size((image.width, image.height), image.width / image.height)
-            self.resizeEvent(
-                QResizeEvent(
-                    QSize(image.width, image.height),
-                    QSize(image.width, image.height),
+        try:
+            video = cv2.VideoCapture(filepath_, cv2.CAP_FFMPEG)
+            success, frame = video.read()
+            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            image = Image.fromarray(frame)
+            stats["width"] = image.width
+            stats["height"] = image.height
+            if success:
+                self.preview_vid.play(filepath_, QSize(image.width, image.height))
+                self.update_image_size((image.width, image.height), image.width / image.height)
+                self.resizeEvent(
+                    QResizeEvent(
+                        QSize(image.width, image.height),
+                        QSize(image.width, image.height),
+                    )
                 )
-            )
-            self.preview_vid.show()
+                self.preview_vid.show()
 
-        stats["duration"] = video.get(cv2.CAP_PROP_FRAME_COUNT) / video.get(cv2.CAP_PROP_FPS)
+            stats["duration"] = video.get(cv2.CAP_PROP_FRAME_COUNT) / video.get(cv2.CAP_PROP_FPS)
+        except cv2.error as e:
+            logger.error("[PreviewThumb] Could not play video", filepath=filepath_, error=e)
+
         return stats
 
     def _update_media(self, filepath: Path) -> dict:
