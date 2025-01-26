@@ -52,7 +52,7 @@ class TagSearchPanel(PanelWidget):
         self.search_field.setObjectName("searchField")
         self.search_field.setMinimumSize(QSize(0, 32))
         Translations.translate_with_setter(self.search_field.setPlaceholderText, "home.search_tags")
-        self.search_field.textEdited.connect(lambda: self.update_tags(self.search_field.text()))
+        self.search_field.textEdited.connect(lambda text: self.update_tags(text))
         self.search_field.returnPressed.connect(lambda: self.on_return(self.search_field.text()))
 
         self.scroll_contents = QWidget()
@@ -119,7 +119,7 @@ class TagSearchPanel(PanelWidget):
             row.addWidget(add_button)
         return container
 
-    def construct_tag_button(self, query: str | None):
+    def build_create_tag_button(self, query: str | None):
         """Constructs a Create Tag Button."""
         container = QWidget()
         row = QHBoxLayout(container)
@@ -208,7 +208,7 @@ class TagSearchPanel(PanelWidget):
         else:
             # If query doesnt exist add create button
             self.first_tag_id = None
-            c = self.construct_tag_button(query)
+            c = self.build_create_tag_button(query)
             self.scroll_layout.addWidget(c)
         self.search_field.setFocus()
 

@@ -4,10 +4,8 @@
 
 
 import math
-from pathlib import Path
 from types import FunctionType
 
-from PIL import Image
 from PySide6.QtCore import QEvent, Qt, Signal
 from PySide6.QtGui import QAction, QEnterEvent, QFontMetrics
 from PySide6.QtWidgets import (
@@ -93,10 +91,6 @@ class TagAliasWidget(QWidget):
 
 
 class TagWidget(QWidget):
-    edit_icon_128: Image.Image = Image.open(
-        str(Path(__file__).parents[3] / "resources/qt/images/edit_icon_128.png")
-    ).resize((math.floor(14 * 1.25), math.floor(14 * 1.25)))
-    edit_icon_128.load()
     on_remove = Signal()
     on_click = Signal()
     on_edit = Signal()
