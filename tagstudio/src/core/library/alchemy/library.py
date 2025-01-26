@@ -455,7 +455,7 @@ class Library:
             entries: ScalarResult[Entry] | list[Entry] = session.execute(statement).scalars()
             entries = entries.unique()  # type: ignore
 
-            entry_order_dict = {order: e_id for e_id, order in enumerate(entry_ids)}
+            entry_order_dict = {e_id: order for order, e_id in enumerate(entry_ids)}
             entries = sorted(entries, key=lambda e: entry_order_dict[e.id])
 
             for entry in entries:
