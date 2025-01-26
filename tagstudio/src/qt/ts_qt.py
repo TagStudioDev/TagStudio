@@ -754,7 +754,7 @@ class QtDriver(DriverMixin, QObject):
                 item.thumb_button.set_selected(True)
 
         self.set_macro_menu_viability()
-        self.set_copypaste_menu_viability()
+        self.set_clipboard_menu_viability()
         self.preview_panel.update_widgets(update_preview=False)
 
     def clear_select_action_callback(self):
@@ -763,7 +763,7 @@ class QtDriver(DriverMixin, QObject):
             item.thumb_button.set_selected(False)
 
         self.set_macro_menu_viability()
-        self.set_copypaste_menu_viability()
+        self.set_clipboard_menu_viability()
         self.preview_panel.update_widgets()
 
     def show_tag_database(self):
@@ -1043,12 +1043,21 @@ class QtDriver(DriverMixin, QObject):
             if entry:
                 self.copy_buffer["fields"] = entry.fields
                 self.copy_buffer["tags"] = [tag.id for tag in entry.tags]
-        self.set_copypaste_menu_viability()
+        self.set_clipboard_menu_viability()
 
     def paste_fields_action_callback(self):
         for id in self.selected:
+            entry = self.lib.get_entry_full(id, with_fields=True, with_tags=False)
+            if not entry:
+                continue
+            existing_fields = entry.fields
             for field in self.copy_buffer["fields"]:
-                self.lib.add_field_to_entry(id, field_id=field.type_key, value=field.value)
+                exists = False
+                for e in existing_fields:
+                    if field.type_key == e.type_key and field.value == e.value:
+                        exists = True
+                if not exists:
+                    self.lib.add_field_to_entry(id, field_id=field.type_key, value=field.value)
             self.lib.add_tags_to_entry(id, self.copy_buffer["tags"])
         if len(self.selected) > 1:
             if TAG_ARCHIVED in self.copy_buffer["tags"]:
@@ -1128,13 +1137,13 @@ class QtDriver(DriverMixin, QObject):
                 it.thumb_button.set_selected(False)
 
         self.set_macro_menu_viability()
-        self.set_copypaste_menu_viability()
+        self.set_clipboard_menu_viability()
         self.preview_panel.update_widgets()
 
     def set_macro_menu_viability(self):
         self.autofill_action.setDisabled(not self.selected)
 
-    def set_copypaste_menu_viability(self):
+    def set_clipboard_menu_viability(self):
         if len(self.selected) == 1:
             self.copy_fields_action.setEnabled(True)
         else:
