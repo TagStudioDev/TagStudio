@@ -4,10 +4,8 @@
 
 
 import math
-from pathlib import Path
 from types import FunctionType
 
-from PIL import Image
 from PySide6.QtCore import QEvent, Qt, Signal
 from PySide6.QtGui import QAction, QEnterEvent, QFontMetrics
 from PySide6.QtWidgets import (
@@ -93,10 +91,6 @@ class TagAliasWidget(QWidget):
 
 
 class TagWidget(QWidget):
-    edit_icon_128: Image.Image = Image.open(
-        str(Path(__file__).parents[3] / "resources/qt/images/edit_icon_128.png")
-    ).resize((math.floor(14 * 1.25), math.floor(14 * 1.25)))
-    edit_icon_128.load()
     on_remove = Signal()
     on_click = Signal()
     on_edit = Signal()
@@ -126,20 +120,22 @@ class TagWidget(QWidget):
         self.bg_button.setText(tag.name)
         if has_edit:
             edit_action = QAction(self)
-            Translations.translate_qobject(edit_action, "generic.edit")
+            edit_action.setText(Translations.translate_formatted("generic.edit"))
             edit_action.triggered.connect(on_edit_callback)
             edit_action.triggered.connect(self.on_edit.emit)
             self.bg_button.addAction(edit_action)
         # if on_click_callback:
         self.bg_button.setContextMenuPolicy(Qt.ContextMenuPolicy.ActionsContextMenu)
 
+        # TODO: This currently doesn't work in "Add Tag" menus. Either fix this or
+        # disable it in that context.
         search_for_tag_action = QAction(self)
-        Translations.translate_qobject(search_for_tag_action, "tag.search_for_tag")
+        search_for_tag_action.setText(Translations.translate_formatted("tag.search_for_tag"))
         search_for_tag_action.triggered.connect(self.on_click.emit)
         self.bg_button.addAction(search_for_tag_action)
-        add_to_search_action = QAction(self)
-        Translations.translate_qobject(add_to_search_action, "tag.add_to_search")
-        self.bg_button.addAction(add_to_search_action)
+        # add_to_search_action = QAction(self)
+        # add_to_search_action.setText(Translations.translate_formatted("tag.add_to_search"))
+        # self.bg_button.addAction(add_to_search_action)
 
         self.inner_layout = QHBoxLayout()
         self.inner_layout.setObjectName("innerLayout")
