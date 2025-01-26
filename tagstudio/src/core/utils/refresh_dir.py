@@ -33,24 +33,22 @@ class RefreshDirTracker:
     def files_count(self) -> int:
         return len(self.files_not_in_library)
 
-    def save_new_files(self) -> Iterator[int]:
+    def save_new_files(self):
         """Save the list of files that are not in the library."""
-        if not self.files_not_in_library:
-            yield 0
-
-        for idx, entry_path in enumerate(self.files_not_in_library):
-            self.library.add_entries(
-                [
-                    Entry(
-                        path=entry_path,
-                        folder=self.library.folder,
-                        fields=[],
-                    )
-                ]
-            )
-            yield idx
+        if self.files_not_in_library:
+            entries = [
+                Entry(
+                    path=entry_path,
+                    folder=self.library.folder,
+                    fields=[],
+                )
+                for entry_path in self.files_not_in_library
+            ]
+            self.library.add_entries(entries)
 
         self.files_not_in_library = []
+
+        yield
 
     def refresh_dir(self, lib_path: Path) -> Iterator[int]:
         """Scan a directory for files, and add those relative filenames to internal variables."""
