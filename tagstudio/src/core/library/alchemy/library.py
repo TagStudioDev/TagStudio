@@ -290,6 +290,23 @@ class Library:
         )
         self.engine = create_engine(connection_string, poolclass=poolclass)
         with Session(self.engine) as session:
+            # dont check db version when creating new library
+            if not is_new:
+                db_version = session.scalar(
+                    select(Preferences).where(Preferences.key == LibraryPrefs.DB_VERSION.name)
+                )
+                logger.info(db_version.value)
+
+                if not db_version or db_version.value != LibraryPrefs.DB_VERSION.default:
+                    return LibraryStatus(
+                        success=False,
+                        message=(
+                            "Library Version Mismatch!\n"
+                            f"Found: v{0 if not db_version else db_version.value}, "
+                            f"Expected: v{LibraryPrefs.DB_VERSION.default}"
+                        ),
+                    )
+
             make_tables(self.engine)
 
             # Add default tags to new libraries only.
@@ -300,21 +317,6 @@ class Library:
                     session.commit()
                 except IntegrityError:
                     session.rollback()
-
-            # dont check db version when creating new library
-            if not is_new:
-                db_version = session.scalar(
-                    select(Preferences).where(Preferences.key == LibraryPrefs.DB_VERSION.name)
-                )
-
-                if not db_version:
-                    return LibraryStatus(
-                        success=False,
-                        message=(
-                            "Library version mismatch.\n"
-                            f"Found: v0, expected: v{LibraryPrefs.DB_VERSION.default}"
-                        ),
-                    )
 
             for pref in LibraryPrefs:
                 with catch_warnings(record=True):
