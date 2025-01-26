@@ -6,7 +6,7 @@ import structlog
 from PySide6.QtCore import Qt, QUrl
 from PySide6.QtGui import QDesktopServices
 from PySide6.QtWidgets import QMessageBox
-from src.qt.helpers.vendored.ffmpeg import FFPROBE_CMD
+from src.qt.helpers.vendored.ffmpeg import FFMPEG_CMD, FFPROBE_CMD
 
 logger = structlog.get_logger(__name__)
 
@@ -39,7 +39,7 @@ class FfmpegChecker(QMessageBox):
 
     def installed(self):
         """Checks if both FFmpeg and FFprobe are installed and in the PATH."""
-        if which("ffmpeg"):
+        if which(FFMPEG_CMD):
             self.ffmpeg = True
         if which(FFPROBE_CMD):
             self.ffprobe = True
@@ -60,7 +60,7 @@ class FfmpegChecker(QMessageBox):
                     version["ffprobe"] = ret.stdout.split("\n")[1].replace("-", "=").split("=")[1]
         if self.ffmpeg:
             ret = subprocess.run(
-                ["ffmpeg", "-version"], shell=False, capture_output=True, text=True
+                [FFMPEG_CMD, "-version"], shell=False, capture_output=True, text=True
             )
             if ret.returncode == 0:
                 with contextlib.suppress(Exception):
@@ -68,7 +68,7 @@ class FfmpegChecker(QMessageBox):
         return version
 
     def show_warning(self):
-        """Displays the warning to the user and awaits respone."""
+        """Displays the warning to the user and awaits response."""
         missing = "FFmpeg"
         # If ffmpeg is installed but not ffprobe
         if not self.ffprobe and self.ffmpeg:

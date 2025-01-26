@@ -17,6 +17,7 @@ from tempfile import NamedTemporaryFile
 
 from pydub.logging_utils import log_conversion, log_subprocess_output
 from pydub.utils import fsdecode
+from src.qt.helpers.vendored.ffmpeg import FFMPEG_CMD
 
 try:
     from itertools import izip
@@ -37,7 +38,6 @@ from pydub.utils import (
     audioop,
     db_to_float,
     get_array_type,
-    get_encoder_name,
     ratio_to_db,
 )
 from src.qt.helpers.silent_popen import silent_Popen
@@ -159,7 +159,7 @@ class _AudioSegment:
         slice = a[5000:10000] # get a slice from 5 to 10 seconds of an mp3
     """
 
-    converter = get_encoder_name()  # either ffmpeg or avconv
+    converter = FFMPEG_CMD
 
     # TODO: remove in 1.0 release
     # maintain backwards compatibility for ffmpeg attr (now called converter)
@@ -725,7 +725,7 @@ class _AudioSegment:
             stdin_parameter = None
             stdin_data = None
         else:
-            if cls.converter == "ffmpeg":
+            if cls.converter == FFMPEG_CMD:
                 conversion_command += [
                     "-read_ahead_limit",
                     str(read_ahead_limit),
@@ -737,14 +737,8 @@ class _AudioSegment:
             stdin_parameter = subprocess.PIPE
             stdin_data = file.read()
 
-        if codec:
-            info = None
-        else:
-            # PATCHED
-            try:
-                info = _mediainfo_json(orig_file, read_ahead_limit=read_ahead_limit)
-            except FileNotFoundError:
-                raise ChildProcessError
+        # PATCHED
+        info = None if codec else _mediainfo_json(orig_file, read_ahead_limit=read_ahead_limit)
         if info:
             audio_streams = [x for x in info["streams"] if x["codec_type"] == "audio"]
             # This is a workaround for some ffprobe versions that always say
