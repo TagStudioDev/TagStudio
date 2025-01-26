@@ -1109,9 +1109,15 @@ class ThumbRenderer(QObject):
             # If there was no last folder or the check failed, check all folders.
             if not image:
                 thumb_folders: list[Path] = []
-                for f in (self.lib.library_dir / TS_FOLDER_NAME / THUMB_CACHE_NAME).glob("*"):
-                    if f.is_dir() and f is not ThumbRenderer.last_cache_folder:
-                        thumb_folders.append(f)
+                try:
+                    for f in (self.lib.library_dir / TS_FOLDER_NAME / THUMB_CACHE_NAME).glob("*"):
+                        if f.is_dir() and f is not ThumbRenderer.last_cache_folder:
+                            thumb_folders.append(f)
+                except TypeError:
+                    logger.error(
+                        "[ThumbRenderer] Couldn't check thumb cache folder, is the library closed?",
+                        library_dir=self.lib.library_dir,
+                    )
 
                 for folder in thumb_folders:
                     image = fetch_cached_image(folder)

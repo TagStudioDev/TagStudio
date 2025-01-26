@@ -4,7 +4,6 @@
 
 import contextlib
 import math
-import shutil
 import typing
 from datetime import datetime as dt
 from pathlib import Path
@@ -14,6 +13,7 @@ from PIL import (
     Image,
 )
 from src.core.constants import THUMB_CACHE_NAME, TS_FOLDER_NAME
+from src.core.singleton import Singleton
 
 # Only import for type checking/autocompletion, will not be imported at runtime.
 if typing.TYPE_CHECKING:
@@ -22,14 +22,15 @@ if typing.TYPE_CHECKING:
 logger = structlog.get_logger(__name__)
 
 
-class CacheManager:
+class CacheManager(metaclass=Singleton):
     FOLDER_SIZE = 10000000  # Each cache folder assumed to be 10 MiB
     size_limit = 500000000  # 500 MiB default
+
+    folder_dict: dict[Path, int] = {}
 
     def __init__(self):
         self.lib: Library | None = None
         self.last_lib_path: Path | None = None
-        self.folder_dict: dict[Path, int] = {}
 
     @staticmethod
     def clear_cache(library_dir: Path) -> bool:
@@ -38,15 +39,39 @@ class CacheManager:
         Returns:
             bool: True if successfully deleted, else False.
         """
+        cleared = True
+
         if library_dir:
-            try:
-                shutil.rmtree(library_dir / TS_FOLDER_NAME / THUMB_CACHE_NAME)
+            tree: Path = library_dir / TS_FOLDER_NAME / THUMB_CACHE_NAME
+
+            for folder in tree.glob("*"):
+                for file in folder.glob("*"):
+                    # NOTE: On macOS with non-native file systems, this will commonly raise
+                    # FileNotFound errors due to trying to delete "._" files that have
+                    # already been deleted: https://bugs.python.org/issue29699
+                    with contextlib.suppress(FileNotFoundError):
+                        file.unlink()
+                try:
+                    folder.rmdir()
+                    with contextlib.suppress(KeyError):
+                        CacheManager.folder_dict.pop(folder)
+                except Exception as e:
+                    logger.error(
+                        "[CacheManager] Couldn't unlink empty cache folder!",
+                        error=e,
+                        folder=folder,
+                        tree=tree,
+                    )
+
+            for _ in tree.glob("*"):
+                cleared = False
+
+            if cleared:
                 logger.info("[CacheManager] Cleared cache!")
-                return True
-            except Exception:
-                logger.error("[CacheManager] Couldn't delete cache!")
-                return False
-        return False
+            else:
+                logger.error("[CacheManager] Couldn't delete cache!", tree=tree)
+
+        return cleared
 
     def set_library(self, library):
         """Set the TagStudio library for the cache manager."""
@@ -68,7 +93,7 @@ class CacheManager:
             image_path: Path = folder / path
             image.save(image_path, mode=mode)
             with contextlib.suppress(KeyError):
-                self.folder_dict[folder] += image_path.stat().st_size
+                CacheManager.folder_dict[folder] += image_path.stat().st_size
 
     def check_folder_status(self):
         """Check the status of the cache folders.
@@ -95,27 +120,27 @@ class CacheManager:
             return folder_path
 
         # Get size of most recent folder, if any exist.
-        if self.folder_dict:
-            last_folder = sorted(self.folder_dict.keys())[-1]
+        if CacheManager.folder_dict:
+            last_folder = sorted(CacheManager.folder_dict.keys())[-1]
 
-            if self.folder_dict[last_folder] > CacheManager.FOLDER_SIZE:
+            if CacheManager.folder_dict[last_folder] > CacheManager.FOLDER_SIZE:
                 new_folder = create_folder()
-                self.folder_dict[new_folder] = 0
+                CacheManager.folder_dict[new_folder] = 0
         else:
             new_folder = create_folder()
-            self.folder_dict[new_folder] = 0
+            CacheManager.folder_dict[new_folder] = 0
 
     def get_current_folder(self) -> Path:
         """Get the current cache folder path that should be used."""
         self.check_folder_status()
         self.cull_folders()
 
-        return sorted(self.folder_dict.keys())[-1]
+        return sorted(CacheManager.folder_dict.keys())[-1]
 
     def register_existing_folders(self):
         """Scan and register any pre-existing cache folders with the most recent size."""
         self.last_lib_path = self.lib.library_dir
-        self.folder_dict.clear()
+        CacheManager.folder_dict.clear()
 
         # NOTE: The /dev/null check is a workaround for current test assumptions.
         if self.last_lib_path and self.last_lib_path != Path("/dev/null"):
@@ -125,29 +150,43 @@ class CacheManager:
             for f in sorted(self.cache_dir().glob("*")):
                 if f.is_dir():
                     # A folder is found. Add it to the class dict.BlockingIOError
-                    self.folder_dict[f] = 0
-            self.folder_dict = dict(sorted(self.folder_dict.items(), key=lambda kv: kv[0]))
+                    CacheManager.folder_dict[f] = 0
+            CacheManager.folder_dict = dict(
+                sorted(CacheManager.folder_dict.items(), key=lambda kv: kv[0])
+            )
 
-            if self.folder_dict:
-                last_folder = sorted(self.folder_dict.keys())[-1]
+            if CacheManager.folder_dict:
+                last_folder = sorted(CacheManager.folder_dict.keys())[-1]
                 for f in last_folder.glob("*"):
                     if not f.is_dir():
-                        self.folder_dict[last_folder] += f.stat().st_size
+                        with contextlib.suppress(KeyError):
+                            CacheManager.folder_dict[last_folder] += f.stat().st_size
 
     def cull_folders(self):
         """Remove folders and their cached context based on size or age limits."""
-        if len(self.folder_dict) > (CacheManager.size_limit / CacheManager.FOLDER_SIZE):
-            f = sorted(self.folder_dict.keys())[0]
+        # Ensure that the user's configured size limit isn't less than the internal folder size.
+        size_limit = max(CacheManager.size_limit, CacheManager.FOLDER_SIZE)
+
+        if len(CacheManager.folder_dict) > (size_limit / CacheManager.FOLDER_SIZE):
+            f = sorted(CacheManager.folder_dict.keys())[0]
             folder = self.cache_dir() / f
             logger.info("[CacheManager] Removing folder due to size limit", folder=folder)
 
             for file in folder.glob("*"):
-                with contextlib.suppress(FileNotFoundError):
+                try:
                     file.unlink()
+                except Exception as e:
+                    logger.error(
+                        "[CacheManager] Couldn't cull file inside of folder!",
+                        error=e,
+                        file=file,
+                        folder=folder,
+                    )
             try:
                 folder.rmdir()
                 with contextlib.suppress(KeyError):
-                    self.folder_dict.pop(f)
+                    CacheManager.folder_dict.pop(f)
                 self.cull_folders()
-            except FileNotFoundError:
+            except Exception as e:
+                logger.error("[CacheManager] Couldn't cull folder!", error=e, folder=folder)
                 pass
