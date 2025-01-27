@@ -21,7 +21,7 @@
     "entries.mirror.title": "Mirroring Entries",
     "entries.mirror.window_title": "Mirror Entries",
     "entries.mirror": "&Mirror",
-    "entries.running.dialog.new_entries": "Adding {count}/{total} New File Entries...",
+    "entries.running.dialog.new_entries": "Adding {total} New File Entries...",
     "entries.running.dialog.title": "Adding New File Entries",
     "entries.tags": "Tags",
     "entries.unlinked.delete_alt": "De&lete Unlinked Entries",

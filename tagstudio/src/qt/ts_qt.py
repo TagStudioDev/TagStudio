@@ -815,8 +815,8 @@ class QtDriver(DriverMixin, QObject):
                         "library.refresh.scanning.plural"
                         if x + 1 != 1
                         else "library.refresh.scanning.singular",
-                        searched_count=x + 1,
-                        found_count=tracker.files_count,
+                        searched_count=f"{x+1:n}",
+                        found_count=f"{tracker.files_count:n}",
                     )
                 ),
             )
@@ -842,20 +842,19 @@ class QtDriver(DriverMixin, QObject):
         pw = ProgressWidget(
             cancel_button_text=None,
             minimum=0,
-            maximum=files_count,
+            maximum=0,
         )
         Translations.translate_with_setter(pw.setWindowTitle, "entries.running.dialog.title")
         Translations.translate_with_setter(
-            pw.update_label, "entries.running.dialog.new_entries", count=1, total=files_count
+            pw.update_label, "entries.running.dialog.new_entries", total=f"{files_count:n}"
         )
         pw.show()
 
         iterator.value.connect(
-            lambda x: (
-                pw.update_progress(x + 1),
+            lambda: (
                 pw.update_label(
                     Translations.translate_formatted(
-                        "entries.running.dialog.new_entries", count=x + 1, total=files_count
+                        "entries.running.dialog.new_entries", total=f"{files_count:n}"
                     )
                 ),
             )
