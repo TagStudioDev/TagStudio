@@ -42,6 +42,7 @@ from sqlalchemy.orm import (
     selectinload,
 )
 from src.core.library.json.library import Library as JsonLibrary  # type: ignore
+from src.qt.translations import Translations
 
 from ...constants import (
     BACKUP_FOLDER_NAME,
@@ -295,10 +296,35 @@ class Library:
         poolclass = None if self.storage_path == ":memory:" else NullPool
 
         logger.info(
-            "Opening SQLite Library", library_dir=library_dir, connection_string=connection_string
+            "[Library] Opening SQLite Library",
+            library_dir=library_dir,
+            connection_string=connection_string,
         )
         self.engine = create_engine(connection_string, poolclass=poolclass)
         with Session(self.engine) as session:
+            # dont check db version when creating new library
+            if not is_new:
+                db_version = session.scalar(
+                    select(Preferences).where(Preferences.key == LibraryPrefs.DB_VERSION.name)
+                )
+
+                if not db_version or db_version.value != LibraryPrefs.DB_VERSION.default:
+                    mismatch_text = Translations.translate_formatted(
+                        "status.library_version_mismatch"
+                    )
+                    found_text = Translations.translate_formatted("status.library_version_found")
+                    expected_text = Translations.translate_formatted(
+                        "status.library_version_expected"
+                    )
+                    return LibraryStatus(
+                        success=False,
+                        message=(
+                            f"{mismatch_text}\n"
+                            f"{found_text} v{0 if not db_version else db_version.value}, "
+                            f"{expected_text} v{LibraryPrefs.DB_VERSION.default}"
+                        ),
+                    )
+
             make_tables(self.engine)
 
             # TODO: Determine a good way of updating built-in data after updates.
@@ -337,21 +363,6 @@ class Library:
                 except IntegrityError:
                     session.rollback()
 
-            # dont check db version when creating new library
-            if not is_new:
-                db_version = session.scalar(
-                    select(Preferences).where(Preferences.key == LibraryPrefs.DB_VERSION.name)
-                )
-
-                if not db_version:
-                    return LibraryStatus(
-                        success=False,
-                        message=(
-                            "Library version mismatch.\n"
-                            f"Found: v0, expected: v{LibraryPrefs.DB_VERSION.default}"
-                        ),
-                    )
-
             for pref in LibraryPrefs:
                 with catch_warnings(record=True):
                     try:
@@ -376,24 +387,6 @@ class Library:
                 except IntegrityError:
                     logger.debug("ValueType already exists", field=field)
                     session.rollback()
-
-            db_version = session.scalar(
-                select(Preferences).where(Preferences.key == LibraryPrefs.DB_VERSION.name)
-            )
-            # if the db version is different, we cant proceed
-            if db_version.value != LibraryPrefs.DB_VERSION.default:
-                logger.error(
-                    "DB version mismatch",
-                    db_version=db_version.value,
-                    expected=LibraryPrefs.DB_VERSION.default,
-                )
-                return LibraryStatus(
-                    success=False,
-                    message=(
-                        "Library version mismatch.\n"
-                        f"Found: v{db_version.value}, expected: v{LibraryPrefs.DB_VERSION.default}"
-                    ),
-                )
 
             # check if folder matching current path exists already
             self.folder = session.scalar(select(Folder).where(Folder.path == library_dir))
