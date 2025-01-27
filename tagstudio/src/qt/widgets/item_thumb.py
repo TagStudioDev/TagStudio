@@ -426,17 +426,20 @@ class ItemThumb(FlowWidget):
             self.thumb_button.setIcon(image if image else QPixmap())
 
     def update_count_badge(self, filename) -> None:
+        """Updates the count badge."""
         args = [
             ffmpeg.FFPROBE_CMD,
-            "-v", 
+            "-v",
             "error",
-            "-show_entries", 
+            "-show_entries",
             "format=duration",
-            "-of", 
+            "-of",
             "default=noprint_wrappers=1:nokey=1",
             filename,
         ]
-        def get_and_update():
+
+        def set_video_audio():
+            """Gets length of audio or video and sets count badge."""
             probe = subprocess.run(args, capture_output=True)
             probe_result: str = probe.stdout.strip().decode("utf-8")
             if probe_result != "N/A" and probe_result != "":
@@ -445,10 +448,8 @@ class ItemThumb(FlowWidget):
                 seconds: int = int(duration - (minutes * 60))
                 self.count_badge.setText(f"{minutes:02}:{seconds:02}")
 
-
-        runnable = CustomRunnable(get_and_update)
+        runnable = CustomRunnable(set_video_audio)
         QThreadPool.globalInstance().start(runnable)
-
 
     def update_size(self, timestamp: float, size: QSize):
         """Updates attributes of a thumbnail element.
