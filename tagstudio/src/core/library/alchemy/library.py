@@ -21,6 +21,7 @@ from sqlalchemy import (
     ColumnExpressionArgument,
     Engine,
     NullPool,
+    ScalarResult,
     and_,
     asc,
     create_engine,
@@ -486,9 +487,11 @@ class Library:
                 ),
             )
             statement = statement.distinct()
+            entries: ScalarResult[Entry] | list[Entry] = session.execute(statement).scalars()
+            entries = entries.unique()  # type: ignore
 
-            entries = session.execute(statement).scalars()
-            entries = entries.unique()
+            entry_order_dict = {e_id: order for order, e_id in enumerate(entry_ids)}
+            entries = sorted(entries, key=lambda e: entry_order_dict[e.id])
 
             for entry in entries:
                 yield entry
