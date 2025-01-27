@@ -20,7 +20,7 @@ from queue import Queue
 # this import has side-effect of import PySide resources
 import src.qt.resources_rc  # noqa: F401
 import structlog
-from humanfriendly import format_timespan
+from humanfriendly import format_size, format_timespan
 from PySide6 import QtCore
 from PySide6.QtCore import QObject, QSettings, Qt, QThread, QThreadPool, QTimer, Signal
 from PySide6.QtGui import (
@@ -67,6 +67,7 @@ from src.core.media_types import MediaCategories
 from src.core.ts_core import TagStudioCore
 from src.core.utils.refresh_dir import RefreshDirTracker
 from src.core.utils.web import strip_web_protocol
+from src.qt.cache_manager import CacheManager
 from src.qt.flowlayout import FlowLayout
 from src.qt.helpers.custom_runnable import CustomRunnable
 from src.qt.helpers.function_iterator import FunctionIterator
@@ -163,8 +164,8 @@ class QtDriver(DriverMixin, QObject):
         if self.args.config_file:
             path = Path(self.args.config_file)
             if not path.exists():
-                logger.warning("Config File does not exist creating", path=path)
-            logger.info("Using Config File", path=path)
+                logger.warning("[Config] Config File does not exist creating", path=path)
+            logger.info("[Config] Using Config File", path=path)
             self.settings = QSettings(str(path), QSettings.Format.IniFormat)
             self.config_path = str(path)
         else:
@@ -175,10 +176,28 @@ class QtDriver(DriverMixin, QObject):
                 "TagStudio",
             )
             logger.info(
-                "Config File not specified, using default one",
+                "[Config] Config File not specified, using default one",
                 filename=self.settings.fileName(),
             )
             self.config_path = self.settings.fileName()
+
+        # NOTE: This should be a per-library setting rather than an application setting.
+        thumb_cache_size_limit: int = int(
+            str(
+                self.settings.value(
+                    SettingItems.THUMB_CACHE_SIZE_LIMIT,
+                    defaultValue=CacheManager.size_limit,
+                    type=int,
+                )
+            )
+        )
+
+        CacheManager.size_limit = thumb_cache_size_limit
+        self.settings.setValue(SettingItems.THUMB_CACHE_SIZE_LIMIT, CacheManager.size_limit)
+        self.settings.sync()
+        logger.info(
+            f"[Config] Thumbnail cache size limit: {format_size(CacheManager.size_limit)}",
+        )
 
     def init_workers(self):
         """Init workers for rendering thumbnails."""
@@ -433,6 +452,16 @@ class QtDriver(DriverMixin, QObject):
         Translations.translate_qobject(fix_dupe_files_action, "menu.tools.fix_duplicate_files")
         fix_dupe_files_action.triggered.connect(create_dupe_files_modal)
         tools_menu.addAction(fix_dupe_files_action)
+
+        tools_menu.addSeparator()
+
+        # TODO: Move this to a settings screen.
+        clear_thumb_cache_action = QAction(menu_bar)
+        Translations.translate_qobject(clear_thumb_cache_action, "settings.clear_thumb_cache.title")
+        clear_thumb_cache_action.triggered.connect(
+            lambda: CacheManager.clear_cache(self.lib.library_dir)
+        )
+        tools_menu.addAction(clear_thumb_cache_action)
 
         # create_collage_action = QAction("Create Collage", menu_bar)
         # create_collage_action.triggered.connect(lambda: self.create_collage())
@@ -786,8 +815,8 @@ class QtDriver(DriverMixin, QObject):
                         "library.refresh.scanning.plural"
                         if x + 1 != 1
                         else "library.refresh.scanning.singular",
-                        searched_count=x + 1,
-                        found_count=tracker.files_count,
+                        searched_count=f"{x+1:n}",
+                        found_count=f"{tracker.files_count:n}",
                     )
                 ),
             )
@@ -813,20 +842,19 @@ class QtDriver(DriverMixin, QObject):
         pw = ProgressWidget(
             cancel_button_text=None,
             minimum=0,
-            maximum=files_count,
+            maximum=0,
         )
         Translations.translate_with_setter(pw.setWindowTitle, "entries.running.dialog.title")
         Translations.translate_with_setter(
-            pw.update_label, "entries.running.dialog.new_entries", count=1, total=files_count
+            pw.update_label, "entries.running.dialog.new_entries", total=f"{files_count:n}"
         )
         pw.show()
 
         iterator.value.connect(
-            lambda x: (
-                pw.update_progress(x + 1),
+            lambda: (
                 pw.update_label(
                     Translations.translate_formatted(
-                        "entries.running.dialog.new_entries", count=x + 1, total=files_count
+                        "entries.running.dialog.new_entries", total=f"{files_count:n}"
                     )
                 ),
             )

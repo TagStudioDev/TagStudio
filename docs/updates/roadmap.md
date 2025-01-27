@@ -145,7 +145,7 @@ Features are broken up into the following priority levels, with nested prioritie
         -   [x] Timeline scrubber [HIGH]
         -   [ ] Fullscreen [MEDIUM]
 -   [ ] Optimizations [HIGH]
-    -   [ ] Thumbnail caching [HIGH] [#104](https://github.com/TagStudioDev/TagStudio/issues/104)
+    -   [x] Thumbnail caching [HIGH]
     -   [ ] File property indexes [HIGH]
 
 ## Version Milestones
@@ -190,7 +190,7 @@ These version milestones are rough estimations for when the previous core featur
     -   [ ] Library Settings [HIGH]
         -   [ ] Stored in `.TagStudio` folder [HIGH]
 -   [ ] Optimizations [HIGH]
-    -   [ ] Thumbnail caching [HIGH]
+    -   [x] Thumbnail caching [HIGH]
 
 ### 9.6 (Alpha)
 
