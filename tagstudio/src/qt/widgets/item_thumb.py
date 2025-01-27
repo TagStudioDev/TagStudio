@@ -1,6 +1,7 @@
 # Copyright (C) 2025 Travis Abendshien (CyanVoxel).
 # Licensed under the GPL-3.0 License.
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
+import subprocess
 import time
 import typing
 from enum import Enum
@@ -9,9 +10,10 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 from warnings import catch_warnings
 
+import src.qt.helpers.vendored.ffmpeg as ffmpeg
 import structlog
 from PIL import Image, ImageQt
-from PySide6.QtCore import QEvent, QMimeData, QSize, Qt, QUrl
+from PySide6.QtCore import QEvent, QMimeData, QSize, Qt, QThreadPool, QUrl
 from PySide6.QtGui import QAction, QDrag, QEnterEvent, QPixmap
 from PySide6.QtWidgets import (
     QBoxLayout,
@@ -28,6 +30,7 @@ from src.core.constants import (
 from src.core.library import ItemType, Library
 from src.core.media_types import MediaCategories, MediaType
 from src.qt.flowlayout import FlowWidget
+from src.qt.helpers.custom_runnable import CustomRunnable
 from src.qt.helpers.file_opener import FileOpenerHelper
 from src.qt.platform_strings import PlatformStrings
 from src.qt.translations import Translations
@@ -206,6 +209,7 @@ class ItemThumb(FlowWidget):
         self.renderer.updated.connect(
             lambda timestamp, image, size, filename, ext: (
                 self.update_thumb(timestamp, image=image),
+                self.update_count_badge(filename),
                 self.update_size(timestamp, size=size),
                 self.set_filename_text(filename),
                 self.set_extension(ext),
@@ -420,6 +424,31 @@ class ItemThumb(FlowWidget):
         """Update attributes of a thumbnail element."""
         if timestamp > ItemThumb.update_cutoff:
             self.thumb_button.setIcon(image if image else QPixmap())
+
+    def update_count_badge(self, filename) -> None:
+        args = [
+            ffmpeg.FFPROBE_CMD,
+            "-v", 
+            "error",
+            "-show_entries", 
+            "format=duration",
+            "-of", 
+            "default=noprint_wrappers=1:nokey=1",
+            filename,
+        ]
+        def get_and_update():
+            probe = subprocess.run(args, capture_output=True)
+            probe_result: str = probe.stdout.strip().decode("utf-8")
+            if probe_result != "N/A" and probe_result != "":
+                duration: float = float(probe_result)
+                minutes: int = int(duration // 60)
+                seconds: int = int(duration - (minutes * 60))
+                self.count_badge.setText(f"{minutes:02}:{seconds:02}")
+
+
+        runnable = CustomRunnable(get_and_update)
+        QThreadPool.globalInstance().start(runnable)
+
 
     def update_size(self, timestamp: float, size: QSize):
         """Updates attributes of a thumbnail element.
