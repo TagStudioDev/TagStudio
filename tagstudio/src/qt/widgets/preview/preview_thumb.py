@@ -207,7 +207,7 @@ class PreviewThumb(QWidget):
                 image = Image.open(str(filepath))
                 stats["width"] = image.width
                 stats["height"] = image.height
-            except UnidentifiedImageError as e:
+            except (UnidentifiedImageError, FileNotFoundError) as e:
                 logger.error("[PreviewThumb] Could not get image stats", filepath=filepath, error=e)
         elif MediaCategories.is_ext_in_category(
             ext, MediaCategories.IMAGE_VECTOR_TYPES, mime_fallback=True

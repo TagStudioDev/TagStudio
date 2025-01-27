@@ -53,8 +53,9 @@ from ...constants import (
     TS_FOLDER_NAME,
 )
 from ...enums import LibraryPrefs
+from . import default_color_groups
 from .db import make_tables
-from .enums import MAX_SQL_VARIABLES, FieldTypeEnum, FilterState, SortingModeEnum, TagColor
+from .enums import MAX_SQL_VARIABLES, FieldTypeEnum, FilterState, SortingModeEnum
 from .fields import (
     BaseField,
     DatetimeField,
@@ -62,7 +63,7 @@ from .fields import (
     _FieldID,
 )
 from .joins import TagEntry, TagParent
-from .models import Entry, Folder, Preferences, Tag, TagAlias, ValueType
+from .models import Entry, Folder, Namespace, Preferences, Tag, TagAlias, TagColorGroup, ValueType
 from .visitors import SQLBoolExpressionBuilder
 
 logger = structlog.get_logger(__name__)
@@ -93,7 +94,8 @@ def get_default_tags() -> tuple[Tag, ...]:
         name="Archived",
         aliases={TagAlias(name="Archive")},
         parent_tags={meta_tag},
-        color=TagColor.RED,
+        color_slug="red",
+        color_namespace="tagstudio-standard",
     )
     favorite_tag = Tag(
         id=TAG_FAVORITE,
@@ -103,7 +105,8 @@ def get_default_tags() -> tuple[Tag, ...]:
             TagAlias(name="Favorites"),
         },
         parent_tags={meta_tag},
-        color=TagColor.YELLOW,
+        color_slug="yellow",
+        color_namespace="tagstudio-standard",
     )
 
     return archive_tag, favorite_tag, meta_tag
@@ -179,18 +182,23 @@ class Library:
 
         # Tags
         for tag in json_lib.tags:
+            color_namespace, color_slug = default_color_groups.json_to_sql_color(tag.color)
             self.add_tag(
                 Tag(
                     id=tag.id,
                     name=tag.name,
                     shorthand=tag.shorthand,
-                    color=TagColor.get_color_from_str(tag.color),
+                    color_namespace=color_namespace,
+                    color_slug=color_slug,
                 )
             )
             # Apply user edits to built-in JSON tags.
             if tag.id in range(RESERVED_TAG_START, RESERVED_TAG_END + 1):
                 updated_tag = self.get_tag(tag.id)
-                updated_tag.color = TagColor.get_color_from_str(tag.color)
+                if not updated_tag:
+                    continue
+                updated_tag.color_namespace = color_namespace
+                updated_tag.color_slug = color_slug
                 self.update_tag(updated_tag)  # NOTE: This just calls add_tag?
 
         # Tag Aliases
@@ -292,7 +300,34 @@ class Library:
         with Session(self.engine) as session:
             make_tables(self.engine)
 
-            # Add default tags to new libraries only.
+            # TODO: Determine a good way of updating built-in data after updates.
+
+            # Add default tag color namespaces.
+            if is_new:
+                namespaces = default_color_groups.namespaces()
+                try:
+                    session.add_all(namespaces)
+                    session.commit()
+                except IntegrityError as e:
+                    logger.error("[Library] Couldn't add default tag color namespaces", error=e)
+                    session.rollback()
+
+            # Add default tag colors.
+            if is_new:
+                tag_colors: list[TagColorGroup] = default_color_groups.standard()
+                tag_colors += default_color_groups.pastels()
+                tag_colors += default_color_groups.shades()
+                tag_colors += default_color_groups.grayscale()
+                tag_colors += default_color_groups.earth_tones()
+                tag_colors += default_color_groups.neon()
+                try:
+                    session.add_all(tag_colors)
+                    session.commit()
+                except IntegrityError as e:
+                    logger.error("[Library] Couldn't add default tag colors", error=e)
+                    session.rollback()
+
+            # Add default tags.
             if is_new:
                 tags = get_default_tags()
                 try:
@@ -981,10 +1016,12 @@ class Library:
 
         return target_path
 
-    def get_tag(self, tag_id: int) -> Tag:
+    def get_tag(self, tag_id: int) -> Tag | None:
         with Session(self.engine) as session:
             tags_query = select(Tag).options(
-                selectinload(Tag.parent_tags), selectinload(Tag.aliases)
+                selectinload(Tag.parent_tags),
+                selectinload(Tag.aliases),
+                joinedload(Tag.color),
             )
             tag = session.scalar(tags_query.where(Tag.id == tag_id))
 
@@ -1006,12 +1043,19 @@ class Library:
             )
             return session.scalar(statement)
 
-    def get_alias(self, tag_id: int, alias_id: int) -> TagAlias:
+    def get_alias(self, tag_id: int, alias_id: int) -> TagAlias | None:
         with Session(self.engine) as session:
             alias_query = select(TagAlias).where(TagAlias.id == alias_id, TagAlias.tag_id == tag_id)
-            alias = session.scalar(alias_query.where(TagAlias.id == alias_id))
 
-        return alias
+            return session.scalar(alias_query.where(TagAlias.id == alias_id))
+
+    def get_tag_color(self, slug: str, namespace: str) -> TagColorGroup | None:
+        with Session(self.engine) as session:
+            statement = select(TagColorGroup).where(
+                and_(TagColorGroup.slug == slug, TagColorGroup.namespace == namespace)
+            )
+
+            return session.scalar(statement)
 
     def add_parent_tag(self, parent_id: int, child_id: int) -> bool:
         if parent_id == child_id:
@@ -1144,3 +1188,24 @@ class Library:
                         field_id=field.type_key,
                         value=field.value,
                     )
+
+    @property
+    def tag_color_groups(self) -> dict[str, list[TagColorGroup]]:
+        """Return every TagColorGroup in the library."""
+        with Session(self.engine) as session:
+            color_groups: dict[str, list[TagColorGroup]] = {}
+            results = session.scalars(select(TagColorGroup).order_by(asc(TagColorGroup.namespace)))
+            for color in results:
+                if not color_groups.get(color.namespace):
+                    color_groups[color.namespace] = []
+                color_groups[color.namespace].append(color)
+                session.expunge(color)
+        return color_groups
+
+    def get_namespace_name(self, namespace: str) -> str:
+        with Session(self.engine) as session:
+            result = session.scalar(select(Namespace).where(Namespace.namespace == namespace))
+            if result:
+                session.expunge(result)
+
+        return "" if not result else result.name
