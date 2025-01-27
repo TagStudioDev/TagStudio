@@ -166,7 +166,7 @@ class Library:
     def close(self):
         if self.engine:
             self.engine.dispose()
-        self.library_dir = None
+        self.library_dir: Path | None = None
         self.storage_path = None
         self.folder = None
         self.included_files = set()
