@@ -43,7 +43,7 @@ class DeleteUnlinkedEntriesModal(QWidget):
         Translations.translate_qobject(
             self.desc_widget,
             "entries.unlinked.delete.confirm",
-            count=self.tracker.missing_files_count,
+            count=self.tracker.missing_file_entries_count,
         )
         self.desc_widget.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
@@ -75,7 +75,7 @@ class DeleteUnlinkedEntriesModal(QWidget):
     def refresh_list(self):
         self.desc_widget.setText(
             Translations.translate_formatted(
-                "entries.unlinked.delete.confirm", count=self.tracker.missing_files_count
+                "entries.unlinked.delete.confirm", count=self.tracker.missing_file_entries_count
             )
         )
 
@@ -90,7 +90,7 @@ class DeleteUnlinkedEntriesModal(QWidget):
             return Translations.translate_formatted(
                 "entries.unlinked.delete.deleting_count",
                 idx=x,
-                count=self.tracker.missing_files_count,
+                count=self.tracker.missing_file_entries_count,
             )
 
         pw = ProgressWidget(

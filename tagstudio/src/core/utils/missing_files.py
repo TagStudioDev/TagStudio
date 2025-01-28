@@ -18,7 +18,7 @@ class MissingRegistry:
     missing_file_entries: list[Entry] = field(default_factory=list)
 
     @property
-    def missing_files_count(self) -> int:
+    def missing_file_entries_count(self) -> int:
         return len(self.missing_file_entries)
 
     def refresh_missing_files(self) -> Iterator[int]:
