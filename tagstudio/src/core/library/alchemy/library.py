@@ -230,6 +230,7 @@ class Library:
                     folder=folder,
                     fields=[],
                     id=entry.id + 1,  # JSON IDs start at 0 instead of 1
+                    date_added=datetime.now(),
                 )
                 for entry in json_lib.entries
             ]

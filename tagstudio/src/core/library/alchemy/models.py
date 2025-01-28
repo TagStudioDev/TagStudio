@@ -219,6 +219,9 @@ class Entry(Base):
         folder: Folder,
         fields: list[BaseField],
         id: int | None = None,
+        date_created: dt.datetime | None = None,
+        date_modified: dt.datetime | None = None,
+        date_added: dt.datetime | None = None,
     ) -> None:
         self.path = path
         self.folder = folder
@@ -227,11 +230,11 @@ class Entry(Base):
 
         # The date the file associated with this entry was created.
         # st_birthtime on Windows and Mac, st_ctime on Linux.
-        self.date_created = None
+        self.date_created = date_created
         # The date the file associated with this entry was last modified: st_mtime.
-        self.date_modified = None
+        self.date_modified = date_modified
         # The date this entry was added to the library.
-        self.date_added = None
+        self.date_added = date_added
 
         for field in fields:
             if isinstance(field, TextField):
