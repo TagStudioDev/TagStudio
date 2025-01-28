@@ -427,6 +427,7 @@ class ItemThumb(FlowWidget):
 
     def update_count_badge(self, filename) -> None:
         """Updates the count badge."""
+
         def set_video_audio():
             """Gets length of audio or video and sets count badge."""
             args = [
