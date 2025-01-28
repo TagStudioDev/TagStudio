@@ -21,7 +21,7 @@ class RelinkUnlinkedEntries(QObject):
             return Translations.translate_formatted(
                 "entries.unlinked.relink.attempting",
                 idx=x,
-                missing_count=self.tracker.missing_files_count,
+                missing_count=self.tracker.missing_file_entries_count,
                 fixed_count=self.tracker.files_fixed_count,
             )
 
@@ -29,8 +29,8 @@ class RelinkUnlinkedEntries(QObject):
             label_text="",
             cancel_button_text=None,
             minimum=0,
-            maximum=self.tracker.missing_files_count,
+            maximum=self.tracker.missing_file_entries_count,
         )
         Translations.translate_with_setter(pw.setWindowTitle, "entries.unlinked.relink.title")
 
-        pw.from_iterable_function(self.tracker.fix_missing_files, displayed_text, self.done.emit)
+        pw.from_iterable_function(self.tracker.fix_unlinked_entries, displayed_text, self.done.emit)

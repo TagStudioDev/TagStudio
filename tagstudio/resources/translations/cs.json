@@ -1,0 +1,6 @@
+{
+    "app.pre_release": "Beta verze",
+    "drop_import.description": "Tyto soubory v knihovně již existují",
+    "drop_import.progress.label.initial": "Importuji nové soubory...",
+    "edit.tag_manager": "Spravovat tagy"
+}

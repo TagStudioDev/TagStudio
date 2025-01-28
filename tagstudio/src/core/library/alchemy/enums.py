@@ -8,7 +8,7 @@ from src.core.query_lang import Constraint, ConstraintType, Parser
 MAX_SQL_VARIABLES = 32766  # 32766 is the max sql bind parameter count as defined here: https://github.com/sqlite/sqlite/blob/master/src/sqliteLimit.h#L140
 
 
-class TagColor(enum.IntEnum):
+class TagColorEnum(enum.IntEnum):
     DEFAULT = 1
     BLACK = 2
     DARK_GRAY = 3
@@ -48,11 +48,11 @@ class TagColor(enum.IntEnum):
     OLIVE = 37
 
     @staticmethod
-    def get_color_from_str(color_name: str) -> "TagColor":
-        for color in TagColor:
+    def get_color_from_str(color_name: str) -> "TagColorEnum":
+        for color in TagColorEnum:
             if color.name == color_name.upper().replace(" ", "_"):
                 return color
-        return TagColor.DEFAULT
+        return TagColorEnum.DEFAULT
 
 
 class ItemType(enum.Enum):
