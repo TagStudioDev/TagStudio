@@ -2,6 +2,7 @@
 # Licensed under the GPL-3.0 License.
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
+import datetime as dt
 from pathlib import Path
 
 from sqlalchemy import JSON, ForeignKey, ForeignKeyConstraint, Integer, event
@@ -181,6 +182,9 @@ class Entry(Base):
 
     path: Mapped[Path] = mapped_column(PathType, unique=True)
     suffix: Mapped[str] = mapped_column()
+    date_created: Mapped[dt.datetime | None]
+    date_modified: Mapped[dt.datetime | None]
+    date_added: Mapped[dt.datetime | None]
 
     tags: Mapped[set[Tag]] = relationship(secondary="tag_entries")
 
@@ -220,6 +224,14 @@ class Entry(Base):
         self.folder = folder
         self.id = id
         self.suffix = path.suffix.lstrip(".").lower()
+
+        # The date the file associated with this entry was created.
+        # st_birthtime on Windows and Mac, st_ctime on Linux.
+        self.date_created = None
+        # The date the file associated with this entry was last modified: st_mtime.
+        self.date_modified = None
+        # The date this entry was added to the library.
+        self.date_added = None
 
         for field in fields:
             if isinstance(field, TextField):
