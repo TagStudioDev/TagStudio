@@ -592,7 +592,7 @@ class Library:
                 session.commit()
             except IntegrityError:
                 session.rollback()
-                logger.exception("IntegrityError")
+                logger.error("IntegrityError")
                 return []
 
             new_ids = [item.id for item in items]
@@ -775,7 +775,7 @@ class Library:
                 return tag
 
             except IntegrityError as e:
-                logger.exception(e)
+                logger.error(e)
                 session.rollback()
 
                 return None
@@ -928,7 +928,7 @@ class Library:
                 session.flush()
                 session.commit()
             except IntegrityError as e:
-                logger.exception(e)
+                logger.error(e)
                 session.rollback()
                 return False
                 # TODO - trigger error signal
@@ -986,7 +986,7 @@ class Library:
                 return tag
 
             except IntegrityError as e:
-                logger.exception(e)
+                logger.error(e)
                 session.rollback()
                 return None
 
@@ -1026,7 +1026,7 @@ class Library:
                 session.commit()
                 return True
             except IntegrityError as e:
-                logger.exception(e)
+                logger.error(e)
                 session.rollback()
                 return False
 
@@ -1103,7 +1103,7 @@ class Library:
                 return True
             except IntegrityError:
                 session.rollback()
-                logger.exception("IntegrityError")
+                logger.error("IntegrityError")
                 return False
 
     def add_alias(self, name: str, tag_id: int) -> bool:
@@ -1122,7 +1122,7 @@ class Library:
                 return True
             except IntegrityError:
                 session.rollback()
-                logger.exception("IntegrityError")
+                logger.error("IntegrityError")
                 return False
 
     def remove_parent_tag(self, base_id: int, remove_tag_id: int) -> bool:
