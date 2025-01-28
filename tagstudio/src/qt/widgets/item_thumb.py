@@ -440,10 +440,8 @@ class ItemThumb(FlowWidget):
         """Updates attributes of a thumbnail element."""
         if clickable:
             with catch_warnings(record=True):
-                self.thumb_button.pressed.disconnect()
-            self.thumb_button.pressed.connect(
-                lambda: clickable() if not self.thumb_button.selected else None
-            )
+                self.thumb_button.clicked.disconnect()
+            self.thumb_button.clicked.connect(clickable)
 
     def set_item_id(self, item_id: int):
         self.item_id = item_id
