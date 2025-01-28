@@ -10,7 +10,6 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 from warnings import catch_warnings
 
-import src.qt.helpers.vendored.ffmpeg as ffmpeg
 import structlog
 from PIL import Image, ImageQt
 from PySide6.QtCore import QEvent, QMimeData, QSize, Qt, QThreadPool, QUrl
@@ -32,6 +31,7 @@ from src.core.media_types import MediaCategories, MediaType
 from src.qt.flowlayout import FlowWidget
 from src.qt.helpers.custom_runnable import CustomRunnable
 from src.qt.helpers.file_opener import FileOpenerHelper
+from src.qt.helpers.vendored.ffmpeg import FFPROBE_CMD
 from src.qt.platform_strings import PlatformStrings
 from src.qt.translations import Translations
 from src.qt.widgets.thumb_button import ThumbButton
@@ -427,19 +427,18 @@ class ItemThumb(FlowWidget):
 
     def update_count_badge(self, filename) -> None:
         """Updates the count badge."""
-        args = [
-            ffmpeg.FFPROBE_CMD,
-            "-v",
-            "error",
-            "-show_entries",
-            "format=duration",
-            "-of",
-            "default=noprint_wrappers=1:nokey=1",
-            filename,
-        ]
-
         def set_video_audio():
             """Gets length of audio or video and sets count badge."""
+            args = [
+                FFPROBE_CMD,
+                "-v",
+                "error",
+                "-show_entries",
+                "format=duration",
+                "-of",
+                "default=noprint_wrappers=1:nokey=1",
+                filename,
+            ]
             probe = subprocess.run(args, capture_output=True)
             probe_result: str = probe.stdout.strip().decode("utf-8")
             if probe_result != "N/A" and probe_result != "":
