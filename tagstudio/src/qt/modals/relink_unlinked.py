@@ -33,4 +33,4 @@ class RelinkUnlinkedEntries(QObject):
         )
         Translations.translate_with_setter(pw.setWindowTitle, "entries.unlinked.relink.title")
 
-        pw.from_iterable_function(self.tracker.fix_missing_files, displayed_text, self.done.emit)
+        pw.from_iterable_function(self.tracker.fix_unlinked_entries, displayed_text, self.done.emit)
