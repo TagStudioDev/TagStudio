@@ -1218,7 +1218,6 @@ class Library:
                         value=field.value,
                     )
 
-
     def merge_entries(self, from_entry: Entry, into_entry: Entry) -> None:
         """Add fields and tags from the first entry to the second, and then delete the first."""
         for field in from_entry.fields:
