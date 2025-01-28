@@ -8,6 +8,5 @@
         <!-- <file alias = "images/edit_icon_128.png">../../resources/qt/images/edit_icon_128.png</file> -->
         <!-- <file alias = "images/trash_icon_128.png">../../resources/qt/images/trash_icon_128.png</file> -->
         <!-- <file alias = "images/clipboard_icon_128.png">../../resources/qt/images/clipboard_icon_128.png</file> -->
-        <file alias = "images/splash.png">../../resources/qt/images/splash.png</file>
     </qresource>
 </RCC>

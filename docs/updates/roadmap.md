@@ -137,15 +137,15 @@ Features are broken up into the following priority levels, with nested prioritie
         -   [ ] Timeline scrubber [HIGH]
         -   [ ] Fullscreen [MEDIUM]
     -   [ ] Audio Playback [HIGH] [#450](https://github.com/TagStudioDev/TagStudio/issues/450)
-        -   [ ] Play/Pause [HIGH]
+        -   [x] Play/Pause [HIGH]
         -   [ ] Loop [HIGH]
         -   [ ] Toggle Autoplay [MEDIUM]
-        -   [ ] Volume Control [HIGH]
-        -   [ ] Toggle Mute [HIGH]
+        -   [x] Volume Control [HIGH]
+        -   [x] Toggle Mute [HIGH]
         -   [x] Timeline scrubber [HIGH]
         -   [ ] Fullscreen [MEDIUM]
 -   [ ] Optimizations [HIGH]
-    -   [ ] Thumbnail caching [HIGH] [#104](https://github.com/TagStudioDev/TagStudio/issues/104)
+    -   [x] Thumbnail caching [HIGH]
     -   [ ] File property indexes [HIGH]
 
 ## Version Milestones
@@ -190,7 +190,7 @@ These version milestones are rough estimations for when the previous core featur
     -   [ ] Library Settings [HIGH]
         -   [ ] Stored in `.TagStudio` folder [HIGH]
 -   [ ] Optimizations [HIGH]
-    -   [ ] Thumbnail caching [HIGH]
+    -   [x] Thumbnail caching [HIGH]
 
 ### 9.6 (Alpha)
 

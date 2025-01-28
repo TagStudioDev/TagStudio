@@ -202,7 +202,7 @@ class ItemThumb(FlowWidget):
         self.thumb_layout.addWidget(self.bottom_container)
 
         self.thumb_button = ThumbButton(self.thumb_container, thumb_size)
-        self.renderer = ThumbRenderer()
+        self.renderer = ThumbRenderer(self.lib)
         self.renderer.updated.connect(
             lambda timestamp, image, size, filename, ext: (
                 self.update_thumb(timestamp, image=image),
@@ -441,7 +441,9 @@ class ItemThumb(FlowWidget):
         if clickable:
             with catch_warnings(record=True):
                 self.thumb_button.pressed.disconnect()
-            self.thumb_button.pressed.connect(clickable)
+            self.thumb_button.pressed.connect(
+                lambda: clickable() if not self.thumb_button.selected else None
+            )
 
     def set_item_id(self, item_id: int):
         self.item_id = item_id
@@ -500,7 +502,7 @@ class ItemThumb(FlowWidget):
             self.lib.remove_tags_from_entry(entry_id, tag_id)
 
         if self.driver.preview_panel.is_open:
-            self.driver.preview_panel.update_widgets()
+            self.driver.preview_panel.update_widgets(update_preview=False)
 
     def mouseMoveEvent(self, event):  # noqa: N802
         if event.buttons() is not Qt.MouseButton.LeftButton:

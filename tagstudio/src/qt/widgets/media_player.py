@@ -90,6 +90,14 @@ class MediaPlayer(QWidget):
 
         self.media_btns_layout.addWidget(self.mute)
 
+        self.volume_slider = QSlider()
+        self.volume_slider.setOrientation(Qt.Orientation.Horizontal)
+        # set slider value to current volume
+        self.volume_slider.setValue(int(self.player.audioOutput().volume() * 100))
+        self.volume_slider.valueChanged.connect(self.volume_slider_changed)
+
+        self.media_btns_layout.addWidget(self.volume_slider)
+
         self.position_label = QLabel("0:00")
         self.position_label.setAlignment(Qt.AlignmentFlag.AlignRight)
 
@@ -207,3 +215,6 @@ class MediaPlayer(QWidget):
             current = self.format_time(self.player.position())
             duration = self.format_time(self.player.duration())
             self.position_label.setText(f"{current} / {duration}")
+
+    def volume_slider_changed(self, position: int) -> None:
+        self.player.audioOutput().setVolume(position / 100)
