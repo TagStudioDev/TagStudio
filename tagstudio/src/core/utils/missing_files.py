@@ -45,12 +45,16 @@ class MissingRegistry:
                 new_path = Path(item).relative_to(self.library.library_dir)
                 matches.append(new_path)
 
+        logger.info("Matches", matches=matches)
         return matches
 
     def fix_missing_files(self) -> Iterator[int]:
         """Attempt to fix missing files by finding a match in the library directory."""
         self.files_fixed_count = 0
-        for i, entry in enumerate(self.missing_files, start=1):
+        files_to_remove = []
+        logger.error(self.missing_files)
+        for i, entry in enumerate(self.missing_files):
+            logger.error(entry.path)
             item_matches = self.match_missing_file(entry)
             if len(item_matches) == 1:
                 logger.info(
@@ -66,9 +70,11 @@ class MissingRegistry:
                     except AttributeError:
                         continue
                 self.files_fixed_count += 1
-                # remove fixed file
-                self.missing_files.remove(entry)
+                files_to_remove.append(entry)
             yield i
+
+        for entry in files_to_remove:
+            self.missing_files.remove(entry)
 
     def execute_deletion(self) -> None:
         self.library.remove_entries(list(map(lambda missing: missing.id, self.missing_files)))

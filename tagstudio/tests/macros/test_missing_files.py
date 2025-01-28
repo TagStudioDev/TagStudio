@@ -9,6 +9,7 @@ from src.core.utils.missing_files import MissingRegistry
 CWD = pathlib.Path(__file__).parent
 
 
+# NOTE: Does this test actually work?
 @pytest.mark.parametrize("library", [TemporaryDirectory()], indirect=True)
 def test_refresh_missing_files(library: Library):
     registry = MissingRegistry(library=library)
@@ -23,7 +24,7 @@ def test_refresh_missing_files(library: Library):
     assert len(registry.missing_files) == 2
 
     # iterate through two files
-    assert list(registry.fix_missing_files()) == [1, 2]
+    assert list(registry.fix_missing_files()) == [0, 1]
 
     # `bar.md` should be relinked to new correct path
     results = library.search_library(FilterState.from_path("bar.md"))
