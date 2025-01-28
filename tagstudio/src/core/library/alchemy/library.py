@@ -698,7 +698,8 @@ class Library:
             paths = session.scalars(select(Entry.path)).unique()
             path_strings = list(map(lambda x: x.as_posix(), paths))
 
-        return path_strings
+            path_strings: list[str] = list(map(lambda x: x.as_posix(), paths))
+            return path_strings
 
     def search_library(
         self,
