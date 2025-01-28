@@ -198,6 +198,7 @@ class PreviewThumb(QWidget):
             except (
                 rawpy._rawpy.LibRawIOError,
                 rawpy._rawpy.LibRawFileUnsupportedError,
+                FileNotFoundError,
             ):
                 pass
         elif MediaCategories.is_ext_in_category(
