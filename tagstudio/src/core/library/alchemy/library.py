@@ -517,6 +517,15 @@ class Library:
             make_transient(entry)
             return entry
 
+    def get_entry_by_path(self, path: Path) -> Entry | None:
+        """Get the entry with the corresponding path."""
+        with Session(self.engine) as session:
+            entry = session.scalar(select(Entry).where(Entry.path == path))
+            if entry:
+                session.expunge(entry)
+                make_transient(entry)
+            return entry
+
     @property
     def entries_count(self) -> int:
         with Session(self.engine) as session:
