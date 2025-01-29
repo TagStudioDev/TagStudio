@@ -773,7 +773,7 @@ class ThumbRenderer(QObject):
         im: Image.Image = None
         try:
             with rawpy.imread(str(filepath)) as raw:
-                rgb = raw.postprocess()
+                rgb = raw.postprocess(use_camera_wb=True)
                 im = Image.frombytes(
                     "RGB",
                     (rgb.shape[1], rgb.shape[0]),
