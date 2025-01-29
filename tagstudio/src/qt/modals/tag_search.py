@@ -86,6 +86,7 @@ class TagSearchPanel(PanelWidget):
 
         tag_widget = TagWidget(
             tag,
+            library=self.lib,
             has_edit=True,
             has_remove=has_remove_button,
         )
@@ -266,7 +267,7 @@ class TagSearchPanel(PanelWidget):
 
         self.edit_modal = PanelModal(
             build_tag_panel,
-            tag.name,
+            self.lib.tag_display_name(tag.id),
             done_callback=(self.update_tags(self.search_field.text())),
             has_save=True,
         )

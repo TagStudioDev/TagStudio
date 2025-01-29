@@ -8,14 +8,17 @@ from typing import cast
 
 import structlog
 from PySide6.QtCore import Qt, Signal
+from PySide6.QtGui import QColor
 from PySide6.QtWidgets import (
     QApplication,
+    QButtonGroup,
     QCheckBox,
     QFrame,
     QHBoxLayout,
     QLabel,
     QLineEdit,
     QPushButton,
+    QRadioButton,
     QScrollArea,
     QTableWidget,
     QVBoxLayout,
@@ -28,7 +31,13 @@ from src.qt.modals.tag_color_selection import TagColorSelection
 from src.qt.modals.tag_search import TagSearchPanel
 from src.qt.translations import Translations
 from src.qt.widgets.panel import PanelModal, PanelWidget
-from src.qt.widgets.tag import TagWidget
+from src.qt.widgets.tag import (
+    TagWidget,
+    get_border_color,
+    get_highlight_color,
+    get_primary_color,
+    get_text_color,
+)
 from src.qt.widgets.tag_color_preview import TagColorPreview
 
 logger = structlog.get_logger(__name__)
@@ -62,6 +71,7 @@ class BuildTagPanel(PanelWidget):
         self.tag: Tag  # NOTE: This gets set at the end of the init.
         self.tag_color_namespace: str | None
         self.tag_color_slug: str | None
+        self.disambiguation_id: int | None
 
         self.setMinimumSize(300, 400)
         self.root_layout = QVBoxLayout(self)
@@ -129,6 +139,7 @@ class BuildTagPanel(PanelWidget):
         self.parent_tags_layout.setContentsMargins(0, 0, 0, 0)
         self.parent_tags_layout.setSpacing(0)
         self.parent_tags_layout.setAlignment(Qt.AlignmentFlag.AlignLeft)
+        self.disam_button_group = QButtonGroup(self)
 
         self.parent_tags_title = QLabel()
         Translations.translate_qobject(self.parent_tags_title, "tag.parent_tags")
@@ -319,16 +330,92 @@ class BuildTagPanel(PanelWidget):
         layout = QVBoxLayout(c)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(3)
-        for tag_id in self.parent_ids:
-            tag = self.lib.get_tag(tag_id)
-            tw = TagWidget(tag, has_edit=False, has_remove=True)
-            tw.on_remove.connect(lambda t=tag_id: self.remove_parent_tag_callback(t))
-            layout.addWidget(tw)
-            self.setTabOrder(last, tw.bg_button)
-            last = tw.bg_button
+        for parent_id in self.parent_ids:
+            tag = self.lib.get_tag(parent_id)
+            if not tag:
+                continue
+            is_disam = parent_id == self.disambiguation_id
+            layout.addWidget(self.__build_row_item_widget(tag, parent_id, is_disam))
+            # self.setTabOrder(last, tw.bg_button)
+            # last = tw.bg_button
         self.setTabOrder(last, self.name_field)
 
         self.parent_tags_scroll_layout.addWidget(c)
+
+    def __build_row_item_widget(self, tag: Tag, parent_id: int, is_disambiguation: bool):
+        container = QWidget()
+        row = QHBoxLayout(container)
+        row.setContentsMargins(0, 0, 0, 0)
+        row.setSpacing(3)
+
+        # Init Colors
+        primary_color = get_primary_color(tag)
+        border_color = (
+            get_border_color(primary_color)
+            if not (tag.color and tag.color.secondary)
+            else (QColor(tag.color.secondary))
+        )
+        highlight_color = get_highlight_color(
+            primary_color
+            if not (tag.color and tag.color.secondary)
+            else QColor(tag.color.secondary)
+        )
+        text_color: QColor
+        if tag.color and tag.color.secondary:
+            text_color = QColor(tag.color.secondary)
+        else:
+            text_color = get_text_color(primary_color, highlight_color)
+
+        # Add Disambiguation Tag Button
+        disam_button = QRadioButton()
+        disam_button.setObjectName(f"disambiguationButton.{parent_id}")
+        disam_button.setFixedSize(22, 22)
+        disam_button.setToolTip(Translations.translate_formatted("tag.disambiguation.tooltip"))
+        disam_button.setStyleSheet(
+            f"QRadioButton{{"
+            f"background: rgba{primary_color.toTuple()};"
+            f"color: rgba{text_color.toTuple()};"
+            f"border-color: rgba{border_color.toTuple()};"
+            f"border-radius: 6px;"
+            f"border-style:solid;"
+            f"border-width: 2px;"
+            f"}}"
+            f"QRadioButton::indicator{{"
+            f"width: 10px;"
+            f"height: 10px;"
+            f"border-radius: 2px;"
+            f"margin: 4px;"
+            f"}}"
+            f"QRadioButton::indicator:checked{{"
+            f"background: rgba{text_color.toTuple()};"
+            f"}}"
+            f"QRadioButton::hover{{"
+            f"border-color: rgba{highlight_color.toTuple()};"
+            f"}}"
+        )
+
+        if is_disambiguation:
+            disam_button.setChecked(True)
+
+        disam_button.clicked.connect(lambda checked=False: self.set_disambiguation_id(parent_id))
+        self.disam_button_group.addButton(disam_button)
+        row.addWidget(disam_button)
+
+        # Add Tag Widget
+        tag_widget = TagWidget(
+            tag,
+            library=self.lib,
+            has_edit=False,
+            has_remove=True,
+        )
+
+        tag_widget.on_remove.connect(lambda t=parent_id: self.remove_parent_tag_callback(t))
+        row.addWidget(tag_widget)
+
+        return container
+
+    def set_disambiguation_id(self, disambiguation_id: int | None):
+        self.disambiguation_id = disambiguation_id
 
     def add_aliases(self):
         names: set[str] = set()
@@ -406,6 +493,7 @@ class BuildTagPanel(PanelWidget):
             self.alias_ids.append(alias_id)
         self._set_aliases()
 
+        self.disambiguation_id = tag.disambiguation_id
         for parent_id in tag.parent_ids:
             self.parent_ids.add(parent_id)
         self.set_parent_tags()
@@ -440,10 +528,10 @@ class BuildTagPanel(PanelWidget):
 
         tag.name = self.name_field.text()
         tag.shorthand = self.shorthand_field.text()
-        tag.is_category = self.cat_checkbox.isChecked()
-
+        tag.disambiguation_id = self.disambiguation_id
         tag.color_namespace = self.tag_color_namespace
         tag.color_slug = self.tag_color_slug
+        tag.is_category = self.cat_checkbox.isChecked()
 
         logger.info("built tag", tag=tag)
         return tag
