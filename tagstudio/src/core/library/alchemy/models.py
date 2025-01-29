@@ -100,6 +100,7 @@ class Tag(Base):
         secondaryjoin="Tag.id == TagParent.child_id",
         back_populates="parent_tags",
     )
+    disambiguation_tag: Mapped[int | None]
 
     __table_args__ = (
         ForeignKeyConstraint(
@@ -130,6 +131,7 @@ class Tag(Base):
         icon: str | None = None,
         color_namespace: str | None = None,
         color_slug: str | None = None,
+        disambiguation_tag: int | None = None,
         is_category: bool = False,
     ):
         self.name = name
@@ -139,6 +141,7 @@ class Tag(Base):
         self.color_slug = color_slug
         self.icon = icon
         self.shorthand = shorthand
+        self.disambiguation_tag = disambiguation_tag
         self.is_category = is_category
         assert not self.id
         self.id = id
