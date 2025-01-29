@@ -140,6 +140,7 @@ class BuildTagPanel(PanelWidget):
         self.parent_tags_layout.setSpacing(0)
         self.parent_tags_layout.setAlignment(Qt.AlignmentFlag.AlignLeft)
         self.disam_button_group = QButtonGroup(self)
+        self.disam_button_group.setExclusive(False)
 
         self.parent_tags_title = QLabel()
         Translations.translate_qobject(self.parent_tags_title, "tag.parent_tags")
@@ -394,11 +395,13 @@ class BuildTagPanel(PanelWidget):
             f"}}"
         )
 
+        self.disam_button_group.addButton(disam_button)
+
         if is_disambiguation:
             disam_button.setChecked(True)
 
-        disam_button.clicked.connect(lambda checked=False: self.set_disambiguation_id(parent_id))
-        self.disam_button_group.addButton(disam_button)
+        disam_button.clicked.connect(lambda checked=False: self.toggle_disam_id(parent_id))
+
         row.addWidget(disam_button)
 
         # Add Tag Widget
@@ -414,8 +417,19 @@ class BuildTagPanel(PanelWidget):
 
         return container
 
-    def set_disambiguation_id(self, disambiguation_id: int | None):
-        self.disambiguation_id = disambiguation_id
+    def toggle_disam_id(self, disambiguation_id: int | None):
+        if self.disambiguation_id == disambiguation_id:
+            self.disambiguation_id = None
+        else:
+            self.disambiguation_id = disambiguation_id
+
+        for button in self.disam_button_group.buttons():
+            if button.objectName() == f"disambiguationButton.{self.disambiguation_id}":
+                logger.info("setting checked", disambiguation_id=self.disambiguation_id)
+                button.setChecked(True)
+            else:
+                logger.info("unchecking", disambiguation_id=self.disambiguation_id)
+                button.setChecked(False)
 
     def add_aliases(self):
         names: set[str] = set()
