@@ -326,21 +326,25 @@ class BuildTagPanel(PanelWidget):
         while self.parent_tags_scroll_layout.itemAt(0):
             self.parent_tags_scroll_layout.takeAt(0).widget().deleteLater()
 
-        last: QWidget = self.aliases_table.cellWidget(self.aliases_table.rowCount() - 1, 1)
         c = QWidget()
         layout = QVBoxLayout(c)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(3)
+        last_tab: QWidget = self.aliases_table.cellWidget(self.aliases_table.rowCount() - 1, 1)
+        next_tab: QWidget = last_tab
+
         for parent_id in self.parent_ids:
             tag = self.lib.get_tag(parent_id)
             if not tag:
                 continue
             is_disam = parent_id == self.disambiguation_id
-            layout.addWidget(self.__build_row_item_widget(tag, parent_id, is_disam))
-            # self.setTabOrder(last, tw.bg_button)
-            # last = tw.bg_button
-        self.setTabOrder(last, self.name_field)
+            last_tab, next_tab, container = self.__build_row_item_widget(tag, parent_id, is_disam)
+            layout.addWidget(container)
+            # TODO: Disam buttons after the first currently can't be added due to this error:
+            # QWidget::setTabOrder: 'first' and 'second' must be in the same window
+            self.setTabOrder(last_tab, next_tab)
 
+        self.setTabOrder(next_tab, self.name_field)
         self.parent_tags_scroll_layout.addWidget(c)
 
     def __build_row_item_widget(self, tag: Tag, parent_id: int, is_disambiguation: bool):
@@ -396,12 +400,10 @@ class BuildTagPanel(PanelWidget):
         )
 
         self.disam_button_group.addButton(disam_button)
-
         if is_disambiguation:
             disam_button.setChecked(True)
 
         disam_button.clicked.connect(lambda checked=False: self.toggle_disam_id(parent_id))
-
         row.addWidget(disam_button)
 
         # Add Tag Widget
@@ -415,7 +417,7 @@ class BuildTagPanel(PanelWidget):
         tag_widget.on_remove.connect(lambda t=parent_id: self.remove_parent_tag_callback(t))
         row.addWidget(tag_widget)
 
-        return container
+        return disam_button, tag_widget.bg_button, container
 
     def toggle_disam_id(self, disambiguation_id: int | None):
         if self.disambiguation_id == disambiguation_id:
@@ -425,10 +427,8 @@ class BuildTagPanel(PanelWidget):
 
         for button in self.disam_button_group.buttons():
             if button.objectName() == f"disambiguationButton.{self.disambiguation_id}":
-                logger.info("setting checked", disambiguation_id=self.disambiguation_id)
                 button.setChecked(True)
             else:
-                logger.info("unchecking", disambiguation_id=self.disambiguation_id)
                 button.setChecked(False)
 
     def add_aliases(self):
