@@ -81,6 +81,7 @@ from src.qt.modals.fix_dupes import FixDupeFilesModal
 from src.qt.modals.fix_unlinked import FixUnlinkedEntriesModal
 from src.qt.modals.folders_to_tags import FoldersToTagsModal
 from src.qt.modals.tag_database import TagDatabasePanel
+from src.qt.modals.tag_search import TagSearchPanel
 from src.qt.resource_manager import ResourceManager
 from src.qt.splash import Splash
 from src.qt.translations import Translations
@@ -132,6 +133,9 @@ class QtDriver(DriverMixin, QObject):
     SIGTERM = Signal()
 
     preview_panel: PreviewPanel
+    tag_search_panel: TagSearchPanel
+    add_tag_modal: PanelModal
+
     lib: Library
 
     def __init__(self, backend, args):
@@ -270,6 +274,18 @@ class QtDriver(DriverMixin, QObject):
             icon.addFile(str(icon_path))
             app.setWindowIcon(icon)
 
+        # Initialize the main window's tag search panel
+        self.tag_search_panel = TagSearchPanel(self.lib, is_tag_chooser=True)
+        self.add_tag_modal = PanelModal(
+            self.tag_search_panel, Translations.translate_formatted("tag.add.plural")
+        )
+        self.tag_search_panel.tag_chosen.connect(
+            lambda t: (
+                self.add_tags_to_selected_callback(t),
+                self.preview_panel.update_widgets(),
+            )
+        )
+
         menu_bar = QMenuBar(self.main_window)
         self.main_window.setMenuBar(menu_bar)
         menu_bar.setNativeMenuBar(True)
@@ -393,6 +409,21 @@ class QtDriver(DriverMixin, QObject):
         clear_select_action.setShortcut(QtCore.Qt.Key.Key_Escape)
         clear_select_action.setToolTip("Esc")
         edit_menu.addAction(clear_select_action)
+
+        add_tag_to_selected_action = QAction(menu_bar)
+        Translations.translate_qobject(add_tag_to_selected_action, "select.add_tag_to_selected")
+        add_tag_to_selected_action.triggered.connect(self.add_tag_modal.show)
+        add_tag_to_selected_action.setShortcut(
+            QtCore.QKeyCombination(
+                QtCore.Qt.KeyboardModifier(
+                    QtCore.Qt.KeyboardModifier.ControlModifier
+                    ^ QtCore.Qt.KeyboardModifier.ShiftModifier
+                ),
+                QtCore.Qt.Key.Key_T,
+            )
+        )
+        add_tag_to_selected_action.setToolTip("Ctrl+Shift+T")
+        edit_menu.addAction(add_tag_to_selected_action)
 
         edit_menu.addSeparator()
 
@@ -551,6 +582,7 @@ class QtDriver(DriverMixin, QObject):
                 self.open_library(path_result.library_path)
 
         # check ffmpeg and show warning if not
+        # NOTE: Does this need to use self?
         self.ffmpeg_checker = FfmpegChecker()
         if not self.ffmpeg_checker.installed():
             self.ffmpeg_checker.show_warning()
@@ -769,6 +801,10 @@ class QtDriver(DriverMixin, QObject):
 
         self.set_macro_menu_viability()
         self.preview_panel.update_widgets()
+
+    def add_tags_to_selected_callback(self, tag_ids: list[int]):
+        for entry_id in self.selected:
+            self.lib.add_tags_to_entry(entry_id, tag_ids)
 
     def show_tag_database(self):
         self.modal = PanelModal(

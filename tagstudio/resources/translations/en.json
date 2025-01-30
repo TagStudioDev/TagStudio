@@ -183,6 +183,7 @@
     "menu.view": "&View",
     "menu.window": "Window",
     "preview.no_selection": "No Items Selected",
+    "select.add_tag_to_selected": "Add Tag to Selected",
     "select.all": "Select All",
     "select.clear": "Clear Selection",
     "settings.clear_thumb_cache.title": "Clear Thumbnail Cache",
