@@ -185,6 +185,9 @@ class Library:
         # Tags
         for tag in json_lib.tags:
             color_namespace, color_slug = default_color_groups.json_to_sql_color(tag.color)
+            disambiguation_id: int | None = None
+            if tag.subtag_ids and tag.subtag_ids[0] != tag.id:
+                disambiguation_id = tag.subtag_ids[0]
             self.add_tag(
                 Tag(
                     id=tag.id,
@@ -192,6 +195,7 @@ class Library:
                     shorthand=tag.shorthand,
                     color_namespace=color_namespace,
                     color_slug=color_slug,
+                    disambiguation_id=disambiguation_id,
                 )
             )
             # Apply user edits to built-in JSON tags.
@@ -262,6 +266,23 @@ class Library:
             if field_id == f.value.id:
                 return f
         return None
+
+    def tag_display_name(self, tag_id: int) -> str:
+        with Session(self.engine) as session:
+            tag = session.scalar(select(Tag).where(Tag.id == tag_id))
+            if not tag:
+                return "<NO TAG>"
+
+            if tag.disambiguation_id:
+                disam_tag = session.scalar(select(Tag).where(Tag.id == tag.disambiguation_id))
+                if not disam_tag:
+                    return "<NO DISAM TAG>"
+                disam_name = disam_tag.shorthand
+                if not disam_name:
+                    disam_name = disam_tag.name
+                return f"{tag.name} ({disam_name})"
+            else:
+                return tag.name
 
     def open_library(self, library_dir: Path, storage_path: str | None = None) -> LibraryStatus:
         is_new: bool = True
@@ -1162,9 +1183,12 @@ class Library:
             alias = TagAlias(alias_name, tag.id)
             session.add(alias)
 
-    def update_parent_tags(self, tag, parent_ids, session):
+    def update_parent_tags(self, tag: Tag, parent_ids: list[int] | set[int], session):
         if tag.id in parent_ids:
             parent_ids.remove(tag.id)
+
+        if tag.disambiguation_id not in parent_ids:
+            tag.disambiguation_id = None
 
         # load all tag's parent tags to know which to remove
         prev_parent_tags = session.scalars(

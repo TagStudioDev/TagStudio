@@ -3,6 +3,7 @@
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
 
+import typing
 from types import FunctionType
 
 import structlog
@@ -21,6 +22,10 @@ from src.core.palette import ColorType, get_tag_color
 from src.qt.translations import Translations
 
 logger = structlog.get_logger(__name__)
+
+# Only import for type checking/autocompletion, will not be imported at runtime.
+if typing.TYPE_CHECKING:
+    from src.core.library.alchemy import Library
 
 
 class TagAliasWidget(QWidget):
@@ -102,12 +107,14 @@ class TagWidget(QWidget):
         tag: Tag,
         has_edit: bool,
         has_remove: bool,
+        library: "Library | None" = None,
         on_remove_callback: FunctionType = None,
         on_click_callback: FunctionType = None,
         on_edit_callback: FunctionType = None,
     ) -> None:
         super().__init__()
         self.tag = tag
+        self.lib: Library | None = library
         self.has_edit = has_edit
         self.has_remove = has_remove
 
@@ -119,7 +126,10 @@ class TagWidget(QWidget):
 
         self.bg_button = QPushButton(self)
         self.bg_button.setFlat(True)
-        self.bg_button.setText(tag.name)
+        if self.lib:
+            self.bg_button.setText(self.lib.tag_display_name(tag.id))
+        else:
+            self.bg_button.setText(tag.name)
         if has_edit:
             edit_action = QAction(self)
             edit_action.setText(Translations.translate_formatted("generic.edit"))
