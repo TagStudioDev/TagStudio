@@ -199,6 +199,8 @@ class Library:
                 updated_tag = self.get_tag(tag.id)
                 if not updated_tag:
                     continue
+                updated_tag.name = tag.name
+                updated_tag.shorthand = tag.shorthand
                 updated_tag.color_namespace = color_namespace
                 updated_tag.color_slug = color_slug
                 self.update_tag(updated_tag)  # NOTE: This just calls add_tag?
