@@ -51,7 +51,7 @@ class TagBoxWidget(FieldWidget):
             self.base_layout.takeAt(0).widget().deleteLater()
 
         for tag in tags_:
-            tag_widget = TagWidget(tag, has_edit=True, has_remove=True)
+            tag_widget = TagWidget(tag, library=self.driver.lib, has_edit=True, has_remove=True)
             tag_widget.on_click.connect(lambda t=tag: self.edit_tag(t))
 
             tag_widget.on_remove.connect(
