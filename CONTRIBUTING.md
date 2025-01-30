@@ -1,20 +1,15 @@
 # Contributing to TagStudio
 
-_Last Updated: December 12th, 2024_
+_Last Updated: January 30th, 2025_
 
 Thank you so much for showing interest in contributing to TagStudio! Here are a set of instructions and guidelines for contributing code or documentation to the project. This document will change over time, so make sure that your contributions still line up with the requirements here before submitting a pull request.
-
-> [!CAUTION]
-> **As of Pull Request [#332](https://github.com/TagStudioDev/TagStudio/pull/332) (SQLite Migration) the `main` branch will marked as experimental before full JSON to SQL parity is operational.** Existing TagStudio libraries are not yet compatible with this change, however they will **NOT be corrupted or deleted** if opened with these versions. Once parity is reached and a stable conversion tool in place, this notice will be removed. UPDATE: As of November 19th, 2024, full parity is rapidly approaching.
->
-> For the most recent stable feature release branch, see the [`Alpha-v9.4`](https://github.com/TagStudioDev/TagStudio/tree/Alpha-v9.4) branch. These v9.4 specific features are currently being backported to the SQL-ized `main` branch. (Feel free to help!)
 
 ## Getting Started
 
 -   Check the [Feature Roadmap](/docs/updates/roadmap.md) page to see what priority features there are, the [FAQ](/README.md/#faq), as well as the open [Issues](https://github.com/TagStudioDev/TagStudio/issues) and [Pull Requests](https://github.com/TagStudioDev/TagStudio/pulls).
 -   If you'd like to add a feature that isn't on the feature roadmap or doesn't have an open issue, **PLEASE create a feature request** issue for it discussing your intentions so any feedback or important information can be given by the team first.
     -   We don't want you wasting time developing a feature or making a change that can't/won't be added for any reason ranging from pre-existing refactors to design philosophy differences.
-- **Please don't** create pull requests that consist of large refactors, *especially* without discussing them with us first. These end up doing more harm than good for the project by continuously delaying progress and disrupting everyone else's work.
+-   **Please don't** create pull requests that consist of large refactors, _especially_ without discussing them with us first. These end up doing more harm than good for the project by continuously delaying progress and disrupting everyone else's work.
 -   If you wish to discuss TagStudio further, feel free to join the [Discord Server](https://discord.com/invite/hRNnVKhF2G)
 
 ### Contribution Checklist
@@ -141,13 +136,14 @@ Most of the style guidelines can be checked, fixed, and enforced via Ruff. Older
 
 ### Modules & Implementations
 
+-   **Do not** modify legacy library code in the `src/core/library/json/` directory
 -   Avoid direct calls to `os`
     -   Use `Pathlib` library instead of `os.path`
     -   Use `platform.system()` instead of `os.name` and `sys.platform`
 -   Don't prepend local imports with `tagstudio`, stick to `src`
 -   Use the `logger` system instead of `print` statements
 -   Avoid nested f-strings
--   Use HTML-like tags inside Qt widgets over stylesheets where possible.
+-   Use HTML-like tags inside Qt widgets over stylesheets where possible
 
 ### Commit and Pull Request Style
 
@@ -159,7 +155,7 @@ Most of the style guidelines can be checked, fixed, and enforced via Ruff. Older
 
 > [!IMPORTANT]
 > Please do not force push if your PR is open for review!
-> 
+>
 > Force pushing makes it impossible to discern which changes have already been reviewed and which haven't. This means a reviewer will then have to rereview all the already reviewed code, which is a lot of unnecessary work for reviewers.
 
 > [!TIP]
@@ -172,9 +168,9 @@ Most of the style guidelines can be checked, fixed, and enforced via Ruff. Older
     -   macOS: 12.0+
     -   Linux: _Varies_
 -   Final code must **_NOT:_**
-    -   Contain superfluous or unnecessary logging statements.
-    -   Cause unreasonable slowdowns to the program outside of a progress-indicated task.
-    -   Cause undesirable visual glitches or artifacts on screen.
+    -   Contain superfluous or unnecessary logging statements
+    -   Cause unreasonable slowdowns to the program outside of a progress-indicated task
+    -   Cause undesirable visual glitches or artifacts on screen
 
 ## Documentation Guidelines
 
