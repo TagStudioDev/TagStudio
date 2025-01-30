@@ -30,6 +30,8 @@ def test_json_migration():
     # Tags =====================================================================
     # Count
     assert len(modal.json_lib.tags) == len(modal.sql_lib.tags)
+    # Name Parity
+    assert modal.check_name_parity()
     # Shorthand Parity
     assert modal.check_shorthand_parity()
     # Subtag/Parent Tag Parity

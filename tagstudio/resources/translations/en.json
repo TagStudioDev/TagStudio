@@ -129,6 +129,7 @@
     "json_migration.heading.fields": "Fields:",
     "json_migration.heading.file_extension_list": "File Extension List:",
     "json_migration.heading.match": "Matched",
+    "json_migration.heading.names": "Names:",
     "json_migration.heading.parent_tags": "Parent Tags:",
     "json_migration.heading.paths": "Paths:",
     "json_migration.heading.shorthands": "Shorthands:",
