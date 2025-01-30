@@ -203,6 +203,8 @@ class QtDriver(DriverMixin, QObject):
             f"[Config] Thumbnail cache size limit: {format_size(CacheManager.size_limit)}",
         )
 
+        self.add_tag_to_selected_action: QAction | None = None
+
     def init_workers(self):
         """Init workers for rendering thumbnails."""
         if not self.thumb_threads:
@@ -410,10 +412,12 @@ class QtDriver(DriverMixin, QObject):
         clear_select_action.setToolTip("Esc")
         edit_menu.addAction(clear_select_action)
 
-        add_tag_to_selected_action = QAction(menu_bar)
-        Translations.translate_qobject(add_tag_to_selected_action, "select.add_tag_to_selected")
-        add_tag_to_selected_action.triggered.connect(self.add_tag_modal.show)
-        add_tag_to_selected_action.setShortcut(
+        self.add_tag_to_selected_action = QAction(menu_bar)
+        Translations.translate_qobject(
+            self.add_tag_to_selected_action, "select.add_tag_to_selected"
+        )
+        self.add_tag_to_selected_action.triggered.connect(self.add_tag_modal.show)
+        self.add_tag_to_selected_action.setShortcut(
             QtCore.QKeyCombination(
                 QtCore.Qt.KeyboardModifier(
                     QtCore.Qt.KeyboardModifier.ControlModifier
@@ -422,8 +426,9 @@ class QtDriver(DriverMixin, QObject):
                 QtCore.Qt.Key.Key_T,
             )
         )
-        add_tag_to_selected_action.setToolTip("Ctrl+Shift+T")
-        edit_menu.addAction(add_tag_to_selected_action)
+        self.add_tag_to_selected_action.setToolTip("Ctrl+Shift+T")
+        self.add_tag_to_selected_action.setEnabled(False)
+        edit_menu.addAction(self.add_tag_to_selected_action)
 
         edit_menu.addSeparator()
 
@@ -737,8 +742,11 @@ class QtDriver(DriverMixin, QObject):
 
         self.preview_panel.update_widgets()
         self.main_window.toggle_landing_page(enabled=True)
-
         self.main_window.pagination.setHidden(True)
+
+        # NOTE: Doesn't try to disable during tests
+        if self.add_tag_to_selected_action:
+            self.add_tag_to_selected_action.setEnabled(False)
 
         end_time = time.time()
         self.main_window.statusbar.showMessage(
@@ -792,10 +800,12 @@ class QtDriver(DriverMixin, QObject):
                 item.thumb_button.set_selected(True)
 
         self.set_macro_menu_viability()
+        self.set_add_to_selected_visibility()
         self.preview_panel.update_widgets(update_preview=False)
 
     def clear_select_action_callback(self):
         self.selected.clear()
+        self.set_add_to_selected_visibility()
         for item in self.item_thumbs:
             item.thumb_button.set_selected(False)
 
@@ -1146,10 +1156,20 @@ class QtDriver(DriverMixin, QObject):
                 it.thumb_button.set_selected(False)
 
         self.set_macro_menu_viability()
+        self.set_add_to_selected_visibility()
         self.preview_panel.update_widgets()
 
     def set_macro_menu_viability(self):
         self.autofill_action.setDisabled(not self.selected)
+
+    def set_add_to_selected_visibility(self):
+        if not self.add_tag_to_selected_action:
+            return
+
+        if self.selected:
+            self.add_tag_to_selected_action.setEnabled(True)
+        else:
+            self.add_tag_to_selected_action.setEnabled(False)
 
     def update_completions_list(self, text: str) -> None:
         matches = re.search(
@@ -1514,6 +1534,7 @@ class QtDriver(DriverMixin, QObject):
         self.main_window.setAcceptDrops(True)
 
         self.selected.clear()
+        self.set_add_to_selected_visibility()
         self.preview_panel.update_widgets()
 
         # page (re)rendering, extract eventually
