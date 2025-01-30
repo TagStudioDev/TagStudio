@@ -15,7 +15,7 @@ TagStudio is a photo & file organization application with an underlying tag-base
 > [!NOTE]
 > Thank you for being patient as we've migrated our database backend from JSON to SQL! The previous warnings about the main branch being experimental and unsupported have now been removed, and any pre-existing library save files created with official TagStudio releases are able to be opened and migrated with the new v9.5+ releases!
 
-> [!NOTE]
+> [!IMPORTANT]
 > This project is still in an early state. There are many missing optimizations and QoL features, as well as the presence of general quirks and occasional jankiness. Making frequent backups of your library save data is **always** important, regardless of what state the program is in.
 >
 > With this in mind, TagStudio will _NOT:_
@@ -162,7 +162,7 @@ Create a new tag by accessing the "New Tag" option from the Edit menu or by pres
 -   **Aliases** are alternate names for a tag. These let you search for terms other than the exact tag name in order to find the tag again.
 -   **Parent Tags** are tags in which this this tag can substitute for in searches. In other words, tags under this section are parents of this tag.
     -   Parent tags with the disambiguation check next to them will be used to help disambiguate tag names that may not be unique.
-    -   For example: If you had a tag for "Freddy Fazbear", you might add "Five Nights at Freddy's" as one of the parent tags. If the disambiguation box is checked next to "Five Nights at Freddy's" parent tag, then the tag "Freddy Fazbear" will display as "Freddy Fazbear (Five Nights at Freddy's)". Furthermore, if the "Five Nights at Freddy's" tag as a shorthand like "FNAF", then the "Freddy Fazbear" tag will display as "Freddy Fazbear (FNAF)".
+    -   For example: If you had a tag for "Freddy Fazbear", you might add "Five Nights at Freddy's" as one of the parent tags. If the disambiguation box is checked next to "Five Nights at Freddy's" parent tag, then the tag "Freddy Fazbear" will display as "Freddy Fazbear (Five Nights at Freddy's)". Furthermore, if the "Five Nights at Freddy's" tag has a shorthand like "FNAF", then the "Freddy Fazbear" tag will display as "Freddy Fazbear (FNAF)".
 -   The **color** option lets you select an optional color palette to use for your tag.
 -   The **"Is Cagegory"** property lets you treat this tag as a category under which itself and any child tags inheriting from it will be sorted by inside the preview panel.
 
