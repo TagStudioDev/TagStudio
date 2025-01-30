@@ -3,7 +3,7 @@
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
 VERSION: str = "9.5.0"  # Major.Minor.Patch
-VERSION_BRANCH: str = "EXPERIMENTAL"  # Usually "" or "Pre-Release"
+VERSION_BRANCH: str = "Pre-Release 1"  # Usually "" or "Pre-Release"
 
 # The folder & file names where TagStudio keeps its data relative to a library.
 TS_FOLDER_NAME: str = ".TagStudio"
