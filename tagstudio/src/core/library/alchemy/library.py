@@ -185,7 +185,9 @@ class Library:
         # Tags
         for tag in json_lib.tags:
             color_namespace, color_slug = default_color_groups.json_to_sql_color(tag.color)
-            disambiguation_id = None if not tag.subtag_ids else tag.subtag_ids[0]
+            disambiguation_id: int | None = None
+            if tag.subtag_ids and tag.subtag_ids[0] != tag.id:
+                disambiguation_id = tag.subtag_ids[0]
             self.add_tag(
                 Tag(
                     id=tag.id,
