@@ -46,7 +46,7 @@ class MediaPlayer(QWidget):
         # but this will always show StoppedState when changing
         # tracks. Therefore, we wouldn't know if the previous
         # state was paused or playing
-        self.is_paused = False
+        self.is_paused = True
 
         # Subscribe to player events from MediaPlayer
         self.player.positionChanged.connect(self.player_position_changed)
