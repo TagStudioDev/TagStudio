@@ -141,10 +141,9 @@ class TagWidget(QWidget):
 
         # TODO: This currently doesn't work in "Add Tag" menus. Either fix this or
         # disable it in that context.
-        search_for_tag_action = QAction(self)
-        search_for_tag_action.setText(Translations.translate_formatted("tag.search_for_tag"))
-        search_for_tag_action.triggered.connect(self.on_click.emit)
-        self.bg_button.addAction(search_for_tag_action)
+        self.search_for_tag_action = QAction(self)
+        self.search_for_tag_action.setText(Translations.translate_formatted("tag.search_for_tag"))
+        self.bg_button.addAction(self.search_for_tag_action)
         # add_to_search_action = QAction(self)
         # add_to_search_action.setText(Translations.translate_formatted("tag.add_to_search"))
         # self.bg_button.addAction(add_to_search_action)

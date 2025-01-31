@@ -3,6 +3,8 @@
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
 
+import typing
+
 import src.qt.modals.build_tag as build_tag
 import structlog
 from PySide6.QtCore import QSize, Qt, Signal
@@ -32,6 +34,10 @@ from src.qt.widgets.tag import (
 
 logger = structlog.get_logger(__name__)
 
+# Only import for type checking/autocompletion, will not be imported at runtime.
+if typing.TYPE_CHECKING:
+    from src.qt.modals.build_tag import BuildTagPanel
+
 
 class TagSearchPanel(PanelWidget):
     tag_chosen = Signal(int)
@@ -41,7 +47,12 @@ class TagSearchPanel(PanelWidget):
     is_tag_chooser: bool
     exclude: list[int]
 
-    def __init__(self, library: Library, exclude: list[int] = None, is_tag_chooser: bool = True):
+    def __init__(
+        self,
+        library: Library,
+        exclude: list[int] = None,
+        is_tag_chooser: bool = True,
+    ):
         super().__init__()
         self.lib = library
         self.exclude = exclude or []
@@ -93,6 +104,17 @@ class TagSearchPanel(PanelWidget):
 
         tag_widget.on_edit.connect(lambda t=tag: self.edit_tag(t))
         tag_widget.on_remove.connect(lambda t=tag: self.remove_tag(t))
+
+        # NOTE: A solution to this would be to pass the driver to TagSearchPanel, however that
+        # creates an exponential amount of work trying to fix the preexisting tests.
+
+        # tag_widget.search_for_tag_action.triggered.connect(
+        #     lambda checked=False, tag_id=tag.id: (
+        #         self.driver.main_window.searchField.setText(f"tag_id:{tag_id}"),
+        #         self.driver.filter_items(FilterState.from_tag_id(tag_id)),
+        #     )
+        # )
+
         row.addWidget(tag_widget)
 
         primary_color = get_primary_color(tag)
@@ -196,7 +218,7 @@ class TagSearchPanel(PanelWidget):
             self.search_field.setText("")
             self.update_tags()
 
-        self.build_tag_modal: build_tag.BuildTagPanel = build_tag.BuildTagPanel(self.lib)
+        self.build_tag_modal: BuildTagPanel = build_tag.BuildTagPanel(self.lib)
         self.add_tag_modal: PanelModal = PanelModal(self.build_tag_modal, has_save=True)
         Translations.translate_with_setter(self.add_tag_modal.setTitle, "tag.new")
         Translations.translate_with_setter(self.add_tag_modal.setWindowTitle, "tag.add")
