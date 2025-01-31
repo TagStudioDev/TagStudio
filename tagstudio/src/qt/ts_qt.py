@@ -25,6 +25,7 @@ from PySide6 import QtCore
 from PySide6.QtCore import QObject, QSettings, Qt, QThread, QThreadPool, QTimer, Signal
 from PySide6.QtGui import (
     QAction,
+    QColor,
     QDragEnterEvent,
     QDragMoveEvent,
     QDropEvent,
@@ -32,6 +33,7 @@ from PySide6.QtGui import (
     QGuiApplication,
     QIcon,
     QMouseEvent,
+    QPalette,
 )
 from PySide6.QtUiTools import QUiLoader
 from PySide6.QtWidgets import (
@@ -243,6 +245,18 @@ class QtDriver(DriverMixin, QObject):
         app = QApplication(sys.argv)
         app.setStyle("Fusion")
         icon_path = Path(__file__).parents[2] / "resources/icon.png"
+
+        if QGuiApplication.styleHints().colorScheme() is Qt.ColorScheme.Dark:
+            pal: QPalette = app.palette()
+            pal.setColor(QPalette.ColorGroup.Normal, QPalette.ColorRole.Window, QColor("#1e1e1e"))
+            pal.setColor(QPalette.ColorGroup.Normal, QPalette.ColorRole.Button, QColor("#1e1e1e"))
+            pal.setColor(QPalette.ColorGroup.Inactive, QPalette.ColorRole.Window, QColor("#232323"))
+            pal.setColor(QPalette.ColorGroup.Inactive, QPalette.ColorRole.Button, QColor("#232323"))
+            pal.setColor(
+                QPalette.ColorGroup.Inactive, QPalette.ColorRole.ButtonText, QColor("#666666")
+            )
+
+            app.setPalette(pal)
 
         # Handle OS signals
         self.setup_signals()
