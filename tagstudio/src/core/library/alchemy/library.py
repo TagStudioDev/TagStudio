@@ -1016,19 +1016,21 @@ class Library:
 
     def add_tags_to_entry(self, entry_id: int, tag_ids: int | list[int] | set[int]) -> bool:
         """Add one or more tags to an entry."""
-        tag_ids_ = [tag_ids] if isinstance(tag_ids, int) else tag_ids
+        tag_ids = [tag_ids] if isinstance(tag_ids, int) else tag_ids
         with Session(self.engine, expire_on_commit=False) as session:
-            try:
-                # TODO: Optimize this by using a single query to update.
-                for tag_id in tag_ids_:
+            for tag_id in tag_ids:
+                try:
                     session.add(TagEntry(tag_id=tag_id, entry_id=entry_id))
                     session.flush()
+                except IntegrityError:
+                    session.rollback()
+            try:
                 session.commit()
-                return True
             except IntegrityError as e:
                 logger.warning("[add_tags_to_entry]", warning=e)
                 session.rollback()
                 return False
+            return True
 
     def remove_tags_from_entry(self, entry_id: int, tag_ids: int | list[int] | set[int]) -> bool:
         """Remove one or more tags from an entry."""

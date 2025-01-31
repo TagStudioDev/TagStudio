@@ -186,6 +186,8 @@
     "select.add_tag_to_selected": "Add Tag to Selected",
     "select.all": "Select All",
     "select.clear": "Clear Selection",
+    "edit.copy_fields": "Copy Fields",
+    "edit.paste_fields": "Paste Fields",
     "settings.clear_thumb_cache.title": "Clear Thumbnail Cache",
     "settings.open_library_on_start": "Open Library on Start",
     "settings.show_filenames_in_grid": "Show Filenames in Grid",
