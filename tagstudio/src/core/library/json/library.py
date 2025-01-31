@@ -444,7 +444,7 @@ class Library:
 
     def open_library(self, path: str | Path) -> OpenStatus:
         """
-        Open a TagStudio v9+ Library.
+        Open a TagStudio v9.0 - v9.4.2 JSON Library.
         """
         return_code = OpenStatus.CORRUPTED
 

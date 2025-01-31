@@ -19,27 +19,25 @@ Features are broken up into the following priority levels, with nested prioritie
     -   [x] Tag shorthand (specific short alias for displaying) [HIGH]
     -   [x] Parent/Inheritance subtags [HIGH]
     -   [ ] Composition/HAS subtags [HIGH]
-    -   [x] Deleting Tags [HIGH] [#148]
-    -   [ ] Merging Tags [HIGH] [#12](https://github.com/TagStudioDev/TagStudio/issues/12)
-    -   [ ] Tag Icons [HIGH] [#195](https://github.com/TagStudioDev/TagStudio/issues/195)
+    -   [x] Deleting Tags [HIGH]
+    -   [ ] Merging Tags [HIGH]
+    -   [ ] Tag Icons [HIGH]
         -   [ ] Small Icons [HIGH]
         -   [ ] Large Icons for Profiles [MEDIUM]
         -   [ ] Built-in Icon Packs (i.e. Boxicons) [HIGH]
         -   [ ] User Defined Icons [HIGH]
     -   [ ] Multiple Languages for Tag Strings [MEDIUM]
-    -   [ ] User-defined tag colors [HIGH] [#264](https://github.com/TagStudioDev/TagStudio/issues/264)
-        -   [ ] ID based, not string or hex [HIGH]
-        -   [ ] Color name [HIGH]
-        -   [ ] Color value (hex) [HIGH]
-        -   [ ] Existing colors are now a set of base colors [HIGH]
-            -   [ ] Editable [MEDIUM]
-            -   [ ] Non-removable [HIGH]
+    -   [ ] User-defined tag colors [HIGH]
+        -   [x] ID based, not string or hex [HIGH]
+        -   [x] Color name [HIGH]
+        -   [x] Color value (hex) [HIGH]
+        -   [x] Existing colors are now a set of base colors [HIGH]
     -   [x] [Tag Categories](../library/tag_categories.md) [HIGH]
         -   [x] Property available for tags that allow the tag and any inheriting from it to be displayed separately in the preview panel under a title [HIGH]
         -   [x] Title is tag name [HIGH]
     -   [ ] [Tag Overrides](../library/tag_overrides.md) [MEDIUM]
         -   [ ] Per-file overrides of subtags [HIGH]
--   [ ] Tag Packs [MEDIUM] [#3](https://github.com/TagStudioDev/TagStudio/issues/3)
+-   [ ] Tag Packs [MEDIUM]
     -   [ ] Human-readable (i.e. JSON) files containing tag data [HIGH]
     -   [ ] Importable [HIGH]
     -   [ ] Exportable [HIGH]
@@ -48,7 +46,7 @@ Features are broken up into the following priority levels, with nested prioritie
         -   [ ] Human-readable (i.e. JSON) files containing tag data [HIGH]
         -   [ ] Importable [HIGH]
         -   [ ] Exportable [HIGH]
--   [ ] Exportable Library Data [HIGH] [#47](https://github.com/TagStudioDev/TagStudio/issues/47)
+-   [ ] Exportable Library Data [HIGH]
     -   [ ] Standard notation format (i.e. JSON) contacting all library data [HIGH]
 -   [ ] [Macros](../utilities/macro.md) [HIGH]
     -   [ ] Sharable Macros [MEDIUM]
@@ -69,7 +67,7 @@ Features are broken up into the following priority levels, with nested prioritie
         -   [ ] Stored in system user folder/designated folder [HIGH]
     -   [ ] Library Settings [HIGH]
         -   [ ] Stored in `.TagStudio` folder [HIGH]
--   [ ] Multiple Root Directories per Library [HIGH] [#295](https://github.com/TagStudioDev/TagStudio/issues/295)
+-   [ ] Multiple Root Directories per Library [HIGH]
 -   [ ] [Entry groups](../library/entry_groups.md) [HIGH]
     -   [ ] Groups for files/entries where the same entry can be in multiple groups [HIGH]
     -   [ ] Ability to number entries within group [HIGH]
@@ -80,21 +78,21 @@ Features are broken up into the following priority levels, with nested prioritie
 -   [ ] Fields [HIGH]
     -   [x] Text Boxes [HIGH]
     -   [x] Text Lines [HIGH]
-    -   [ ] Dates [HIGH] [#213](https://github.com/TagStudioDev/TagStudio/issues/213)
+    -   [ ] Dates [HIGH]
     -   [ ] Custom field names [HIGH]
 -   [ ] Search engine [HIGH]
     -   [x] Boolean operators [HIGH]
-    -   [ ] Tag objects + autocomplete [HIGH] [#476 (Autocomplete)](https://github.com/TagStudioDev/TagStudio/issues/476)
+    -   [ ] Tag objects + autocomplete [HIGH]
     -   [x] Filename search [HIGH]
     -   [x] Filetype search [HIGH]
         -   [x] Search by extension (e.g. ".jpg", ".png") [HIGH]
             -   [x] Optional consolidation of extension synonyms (i.e. ".jpg" can equal ".jpeg") [LOW]
         -   [x] Search by media type (e.g. "image", "video", "document") [MEDIUM]
-    -   [ ] Field content search [HIGH] [#272](https://github.com/TagStudioDev/TagStudio/issues/272)
+    -   [ ] Field content search [HIGH]
     -   [ ] HAS operator for composition tags [HIGH]
     -   [ ] OCR search [LOW]
-    -   [ ] Fuzzy Search [LOW] [#400](https://github.com/TagStudioDev/TagStudio/issues/400)
-    -   [ ] Sortable results [HIGH] [#68](https://github.com/TagStudioDev/TagStudio/issues/68)
+    -   [ ] Fuzzy Search [LOW]
+    -   [ ] Sortable results [HIGH]
         -   [ ] Sort by relevance [HIGH]
         -   [x] Sort by date added [HIGH]
         -   [ ] Sort by date created [HIGH]
@@ -136,21 +134,22 @@ Features are broken up into the following priority levels, with nested prioritie
         -   [x] Toggle Mute [HIGH]
         -   [ ] Timeline scrubber [HIGH]
         -   [ ] Fullscreen [MEDIUM]
-    -   [ ] Audio Playback [HIGH] [#450](https://github.com/TagStudioDev/TagStudio/issues/450)
+    -   [x] Audio Playback [HIGH]
         -   [x] Play/Pause [HIGH]
         -   [ ] Loop [HIGH]
         -   [ ] Toggle Autoplay [MEDIUM]
         -   [x] Volume Control [HIGH]
         -   [x] Toggle Mute [HIGH]
         -   [x] Timeline scrubber [HIGH]
-        -   [ ] Fullscreen [MEDIUM]
 -   [ ] Optimizations [HIGH]
     -   [x] Thumbnail caching [HIGH]
-    -   [ ] File property indexes [HIGH]
+    -   [ ] File property caching/indexes [HIGH]
 
 ## Version Milestones
 
 These version milestones are rough estimations for when the previous core features will be added. For a more definitive idea for when features are coming, please reference the current GitHub [milestones](https://github.com/TagStudioDev/TagStudio/milestones).
+
+_(This list was created after the release of version 9.4)_
 
 ### 9.5 (Alpha)
 
@@ -159,12 +158,10 @@ These version milestones are rough estimations for when the previous core featur
 -   [ ] Tags [HIGH]
     -   [x] Deleting Tags [HIGH]
     -   [ ] User-defined tag colors [HIGH]
-        -   [ ] ID based, not string or hex [HIGH]
-        -   [ ] Color name [HIGH]
-        -   [ ] Color value (hex) [HIGH]
-        -   [ ] Existing colors are now a set of base colors [HIGH]
-            -   [ ] Editable [MEDIUM]
-            -   [ ] Non-removable [HIGH]
+        -   [x] ID based, not string or hex [HIGH]
+        -   [x] Color name [HIGH]
+        -   [x] Color value (hex) [HIGH]
+        -   [x] Existing colors are now a set of base colors [HIGH]
     -   [x] [Tag Categories](../library/tag_categories.md) [HIGH]
         -   [x] Property available for tags that allow the tag and any inheriting from it to be displayed separately in the preview panel under a title [HIGH]
 -   [ ] Search engine [HIGH]
@@ -177,13 +174,9 @@ These version milestones are rough estimations for when the previous core featur
         -   [x] Search by media type (e.g. "image", "video", "document") [MEDIUM]
     -   [ ] Field content search [HIGH]
     -   [ ] Sortable results [HIGH]
-        -   [ ] Sort by relevance [HIGH]
         -   [x] Sort by date added [HIGH]
         -   [ ] Sort by date created [HIGH]
         -   [ ] Sort by date modified [HIGH]
-        -   [ ] Sort by date taken (photos) [MEDIUM]
-        -   [ ] Sort by file size [HIGH]
-        -   [ ] Sort by file dimension (images/video) [LOW]
 -   [ ] Settings Menu [HIGH]
     -   [ ] Application Settings [HIGH]
         -   [ ] Stored in system user folder/designated folder [HIGH]
