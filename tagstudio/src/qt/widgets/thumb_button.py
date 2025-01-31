@@ -36,6 +36,12 @@ class ThumbButton(QPushButtonWrapper):
                 QPalette.ColorGroup.Active,
                 QPalette.ColorRole.AlternateBase,
             )
+            self.select_color.setHsl(
+                self.select_color.hslHue(),
+                self.select_color.hslSaturation(),
+                max(self.select_color.lightness(), 100),
+                255,
+            )
         else:
             self.select_color = QPalette.color(
                 self.palette(),
@@ -57,6 +63,12 @@ class ThumbButton(QPushButtonWrapper):
                 self.palette(),
                 QPalette.ColorGroup.Active,
                 QPalette.ColorRole.AlternateBase,
+            )
+            self.hover_color.setHsl(
+                self.hover_color.hslHue(),
+                self.hover_color.hslSaturation(),
+                max(self.hover_color.lightness(), 100),
+                255,
             )
         else:
             self.hover_color = QPalette.color(
