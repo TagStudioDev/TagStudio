@@ -8,6 +8,7 @@ import typing
 import structlog
 from PySide6.QtCore import Signal
 from src.core.library import Tag
+from src.core.library.alchemy.enums import FilterState
 from src.qt.flowlayout import FlowLayout
 from src.qt.modals.build_tag import BuildTagPanel
 from src.qt.widgets.fields import FieldWidget
@@ -61,6 +62,14 @@ class TagBoxWidget(FieldWidget):
                 )
             )
             tag_widget.on_edit.connect(lambda t=tag: self.edit_tag(t))
+
+            tag_widget.search_for_tag_action.triggered.connect(
+                lambda checked=False, tag_id=tag.id: (
+                    self.driver.main_window.searchField.setText(f"tag_id:{tag_id}"),
+                    self.driver.filter_items(FilterState.from_tag_id(tag_id)),
+                )
+            )
+
             self.base_layout.addWidget(tag_widget)
 
     def edit_tag(self, tag: Tag):
