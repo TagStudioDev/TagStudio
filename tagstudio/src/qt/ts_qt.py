@@ -844,7 +844,7 @@ class QtDriver(DriverMixin, QObject):
         self.set_macro_menu_viability()
         self.set_clipboard_menu_viability()
         self.set_add_to_selected_visibility()
-  
+
         self.preview_panel.update_widgets(update_preview=False)
 
     def clear_select_action_callback(self):
