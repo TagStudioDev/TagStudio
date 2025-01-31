@@ -4,9 +4,6 @@ title: Home
 
 # Welcome to the TagStudio Documentation!
 
-!!! warning
-	This documentation is still a work in progress, and is intended to aide with deconstructing and understanding of the core mechanics of TagStudio and how it operates.
-
 ![TagStudio Alpha](assets/github_header.png)
 
 TagStudio is a photo & file organization application with an underlying tag-based system that focuses on giving freedom and flexibility to the user. No proprietary programs or formats, no sea of sidecar files, and no complete upheaval of your filesystem structure.
