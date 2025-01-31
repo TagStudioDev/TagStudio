@@ -25,8 +25,9 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 from src.core.library import Library, Tag
+from src.core.library.alchemy.enums import TagColorEnum
 from src.core.library.alchemy.models import TagColorGroup
-from src.core.palette import ColorType, UiColor, get_ui_color
+from src.core.palette import ColorType, UiColor, get_tag_color, get_ui_color
 from src.qt.modals.tag_color_selection import TagColorSelection
 from src.qt.modals.tag_search import TagSearchPanel
 from src.qt.translations import Translations
@@ -73,7 +74,7 @@ class BuildTagPanel(PanelWidget):
         self.tag_color_slug: str | None
         self.disambiguation_id: int | None
 
-        self.setMinimumSize(300, 400)
+        self.setMinimumSize(300, 460)
         self.root_layout = QVBoxLayout(self)
         self.root_layout.setContentsMargins(6, 0, 6, 0)
         self.root_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
@@ -134,6 +135,7 @@ class BuildTagPanel(PanelWidget):
 
         # Parent Tags ----------------------------------------------------------
         self.parent_tags_widget = QWidget()
+        self.parent_tags_widget.setMinimumHeight(128)
         self.parent_tags_layout = QVBoxLayout(self.parent_tags_widget)
         self.parent_tags_layout.setStretch(1, 1)
         self.parent_tags_layout.setContentsMargins(0, 0, 0, 0)
@@ -210,26 +212,39 @@ class BuildTagPanel(PanelWidget):
         self.cat_layout = QHBoxLayout(self.cat_widget)
         self.cat_layout.setStretch(1, 1)
         self.cat_layout.setContentsMargins(0, 0, 0, 0)
-        self.cat_layout.setSpacing(0)
+        self.cat_layout.setSpacing(6)
         self.cat_layout.setAlignment(Qt.AlignmentFlag.AlignLeft)
         self.cat_title = QLabel()
         self.cat_title.setText("Is Category")
         self.cat_checkbox = QCheckBox()
-        # TODO: Style checkbox
+        self.cat_checkbox.setFixedSize(22, 22)
+
+        primary_color = QColor(get_tag_color(ColorType.PRIMARY, TagColorEnum.DEFAULT))
+        border_color = get_border_color(primary_color)
+        highlight_color = get_highlight_color(primary_color)
+        text_color: QColor = get_text_color(primary_color, highlight_color)
+
         self.cat_checkbox.setStyleSheet(
-            "QCheckBox::indicator{"
-            "width: 19px; height: 19px;"
-            # f"background: #1e1e1e;"
-            # f"border-color: #333333;"
-            # f"border-radius: 6px;"
-            # f"border-style:solid;"
-            # f"border-width:{math.ceil(self.devicePixelRatio())}px;"
-            "}"
-            # f"QCheckBox::indicator::hover"
-            # f"{{"
-            # f"border-color: #CCCCCC;"
-            # f"background: #555555;"
-            # f"}}"
+            f"QCheckBox{{"
+            f"background: rgba{primary_color.toTuple()};"
+            f"color: rgba{text_color.toTuple()};"
+            f"border-color: rgba{border_color.toTuple()};"
+            f"border-radius: 6px;"
+            f"border-style:solid;"
+            f"border-width: 2px;"
+            f"}}"
+            f"QCheckBox::indicator{{"
+            f"width: 10px;"
+            f"height: 10px;"
+            f"border-radius: 2px;"
+            f"margin: 4px;"
+            f"}}"
+            f"QCheckBox::indicator:checked{{"
+            f"background: rgba{text_color.toTuple()};"
+            f"}}"
+            f"QCheckBox::hover{{"
+            f"border-color: rgba{highlight_color.toTuple()};"
+            f"}}"
         )
         self.cat_layout.addWidget(self.cat_checkbox)
         self.cat_layout.addWidget(self.cat_title)
