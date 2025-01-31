@@ -6,14 +6,14 @@ from pydub.utils import (
     _fd_or_path_or_tempfile,
     fsdecode,
     get_extra_info,
-    get_prober_name,
 )
-from src.qt.helpers.silent_popen import promptless_Popen
+from src.qt.helpers.silent_popen import silent_Popen
+from src.qt.helpers.vendored.ffmpeg import FFPROBE_CMD
 
 
 def _mediainfo_json(filepath, read_ahead_limit=-1):
     """Return json dictionary with media info(codec, duration, size, bitrate...) from filepath."""
-    prober = get_prober_name()
+    prober = FFPROBE_CMD
     command_args = [
         "-v",
         "info",
@@ -38,7 +38,7 @@ def _mediainfo_json(filepath, read_ahead_limit=-1):
 
     command = [prober, "-of", "json"] + command_args
     # PATCHED
-    res = promptless_Popen(
+    res = silent_Popen(
         command, stdin=stdin_parameter, stdout=subprocess.PIPE, stderr=subprocess.PIPE
     )
     output, stderr = res.communicate(input=stdin_data)

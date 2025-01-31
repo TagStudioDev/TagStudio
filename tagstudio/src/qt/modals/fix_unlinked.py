@@ -129,7 +129,7 @@ class FixUnlinkedEntriesModal(QWidget):
         if count is not None:
             self.missing_count = count
         else:
-            self.missing_count = self.tracker.missing_files_count
+            self.missing_count = self.tracker.missing_file_entries_count
 
         if self.missing_count < 0:
             self.search_button.setDisabled(True)

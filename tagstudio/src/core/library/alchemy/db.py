@@ -6,6 +6,7 @@ from pathlib import Path
 
 import structlog
 from sqlalchemy import Dialect, Engine, String, TypeDecorator, create_engine, text
+from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import DeclarativeBase
 from src.core.constants import RESERVED_TAG_END
 
@@ -36,7 +37,7 @@ def make_engine(connection_string: str) -> Engine:
 
 
 def make_tables(engine: Engine) -> None:
-    logger.info("creating db tables")
+    logger.info("[Library] Creating DB tables...")
     Base.metadata.create_all(engine)
 
     # tag IDs < 1000 are reserved
@@ -47,14 +48,19 @@ def make_tables(engine: Engine) -> None:
         result = conn.execute(text("SELECT SEQ FROM sqlite_sequence WHERE name='tags'"))
         autoincrement_val = result.scalar()
         if not autoincrement_val or autoincrement_val <= RESERVED_TAG_END:
-            conn.execute(
-                text(
-                    "INSERT INTO tags (id, name, color, is_category) VALUES "
-                    f"({RESERVED_TAG_END}, 'temp', 1, false)"
+            try:
+                conn.execute(
+                    text(
+                        "INSERT INTO tags "
+                        "(id, name, color_namespace, color_slug, is_category) VALUES "
+                        f"({RESERVED_TAG_END}, 'temp', NULL, NULL, false)"
+                    )
                 )
-            )
-            conn.execute(text(f"DELETE FROM tags WHERE id = {RESERVED_TAG_END}"))
-            conn.commit()
+                conn.execute(text(f"DELETE FROM tags WHERE id = {RESERVED_TAG_END}"))
+                conn.commit()
+            except OperationalError as e:
+                logger.error("Could not initialize built-in tags", error=e)
+                conn.rollback()
 
 
 def drop_tables(engine: Engine) -> None:

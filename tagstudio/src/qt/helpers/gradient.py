@@ -6,7 +6,7 @@ from PIL import Image
 
 
 def four_corner_gradient(
-    image: Image.Image, size: tuple[int, int], mask: Image.Image
+    image: Image.Image, size: tuple[int, int], mask: Image.Image | None = None
 ) -> Image.Image:
     if image.size != size:
         # Four-Corner Gradient Background.
@@ -29,11 +29,17 @@ def four_corner_gradient(
         )
 
         final = Image.new("RGBA", bg.size, (0, 0, 0, 0))
-        final.paste(bg, mask=mask.getchannel(0))
+        if mask:
+            final.paste(bg, mask=mask.getchannel(0))
+        else:
+            final = bg
 
     else:
         final = Image.new("RGBA", size, (0, 0, 0, 0))
-        final.paste(image, mask=mask.getchannel(0))
+        if mask:
+            final.paste(image, mask=mask.getchannel(0))
+        else:
+            final = image
 
     if final.mode != "RGBA":
         final = final.convert("RGBA")

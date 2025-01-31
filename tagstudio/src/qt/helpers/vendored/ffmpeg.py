@@ -9,7 +9,7 @@ import subprocess
 
 import ffmpeg
 import structlog
-from src.qt.helpers.silent_popen import promptless_Popen
+from src.qt.helpers.silent_popen import silent_Popen
 
 logger = structlog.get_logger(__name__)
 
@@ -23,11 +23,23 @@ def _get_ffprobe_location() -> str:
             if shutil.which(loc + cmd):
                 cmd = loc + cmd
                 break
-    logger.info(f"[FFPROBE] Using FFmpeg location: {cmd}")
+    logger.info(f"[FFMPEG] Using FFprobe location: {cmd}")
+    return cmd
+
+
+def _get_ffmpeg_location() -> str:
+    cmd: str = "ffmpeg"
+    if platform.system() == "Darwin":
+        for loc in FFMPEG_MACOS_LOCATIONS:
+            if shutil.which(loc + cmd):
+                cmd = loc + cmd
+                break
+    logger.info(f"[FFMPEG] Using FFmpeg location: {cmd}")
     return cmd
 
 
 FFPROBE_CMD = _get_ffprobe_location()
+FFMPEG_CMD = _get_ffmpeg_location()
 
 
 def _probe(filename, cmd=FFPROBE_CMD, timeout=None, **kwargs):
@@ -44,7 +56,7 @@ def _probe(filename, cmd=FFPROBE_CMD, timeout=None, **kwargs):
     args += [filename]
 
     # PATCHED
-    p = promptless_Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    p = silent_Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     communicate_kwargs = {}
     if timeout is not None:
         communicate_kwargs["timeout"] = timeout

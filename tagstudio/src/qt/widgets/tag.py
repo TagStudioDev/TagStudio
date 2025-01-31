@@ -3,13 +3,12 @@
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
 
-import math
-from pathlib import Path
+import typing
 from types import FunctionType
 
-from PIL import Image
+import structlog
 from PySide6.QtCore import QEvent, Qt, Signal
-from PySide6.QtGui import QAction, QEnterEvent, QFontMetrics
+from PySide6.QtGui import QAction, QColor, QEnterEvent, QFontMetrics
 from PySide6.QtWidgets import (
     QHBoxLayout,
     QLineEdit,
@@ -18,9 +17,15 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 from src.core.library import Tag
-from src.core.library.alchemy.enums import TagColor
+from src.core.library.alchemy.enums import TagColorEnum
 from src.core.palette import ColorType, get_tag_color
 from src.qt.translations import Translations
+
+logger = structlog.get_logger(__name__)
+
+# Only import for type checking/autocompletion, will not be imported at runtime.
+if typing.TYPE_CHECKING:
+    from src.core.library.alchemy import Library
 
 
 class TagAliasWidget(QWidget):
@@ -59,8 +64,8 @@ class TagAliasWidget(QWidget):
         self.remove_button.setText("–")
         self.remove_button.setHidden(False)
         self.remove_button.setStyleSheet(
-            f"color: {get_tag_color(ColorType.PRIMARY, TagColor.DEFAULT)};"
-            f"background: {get_tag_color(ColorType.TEXT, TagColor.DEFAULT)};"
+            f"color: {get_tag_color(ColorType.PRIMARY, TagColorEnum.DEFAULT)};"
+            f"background: {get_tag_color(ColorType.TEXT, TagColorEnum.DEFAULT)};"
             f"font-weight: 800;"
             f"border-radius: 4px;"
             f"border-width:0;"
@@ -93,10 +98,6 @@ class TagAliasWidget(QWidget):
 
 
 class TagWidget(QWidget):
-    edit_icon_128: Image.Image = Image.open(
-        str(Path(__file__).parents[3] / "resources/qt/images/edit_icon_128.png")
-    ).resize((math.floor(14 * 1.25), math.floor(14 * 1.25)))
-    edit_icon_128.load()
     on_remove = Signal()
     on_click = Signal()
     on_edit = Signal()
@@ -106,12 +107,14 @@ class TagWidget(QWidget):
         tag: Tag,
         has_edit: bool,
         has_remove: bool,
+        library: "Library | None" = None,
         on_remove_callback: FunctionType = None,
         on_click_callback: FunctionType = None,
         on_edit_callback: FunctionType = None,
     ) -> None:
         super().__init__()
         self.tag = tag
+        self.lib: Library | None = library
         self.has_edit = has_edit
         self.has_remove = has_remove
 
@@ -123,49 +126,72 @@ class TagWidget(QWidget):
 
         self.bg_button = QPushButton(self)
         self.bg_button.setFlat(True)
-        self.bg_button.setText(tag.name)
+        if self.lib:
+            self.bg_button.setText(self.lib.tag_display_name(tag.id))
+        else:
+            self.bg_button.setText(tag.name)
         if has_edit:
             edit_action = QAction(self)
-            Translations.translate_qobject(edit_action, "generic.edit")
+            edit_action.setText(Translations.translate_formatted("generic.edit"))
             edit_action.triggered.connect(on_edit_callback)
             edit_action.triggered.connect(self.on_edit.emit)
             self.bg_button.addAction(edit_action)
         # if on_click_callback:
         self.bg_button.setContextMenuPolicy(Qt.ContextMenuPolicy.ActionsContextMenu)
 
-        search_for_tag_action = QAction(self)
-        Translations.translate_qobject(search_for_tag_action, "tag.search_for_tag")
-        search_for_tag_action.triggered.connect(self.on_click.emit)
-        self.bg_button.addAction(search_for_tag_action)
-        add_to_search_action = QAction(self)
-        Translations.translate_qobject(add_to_search_action, "tag.add_to_search")
-        self.bg_button.addAction(add_to_search_action)
+        # TODO: This currently doesn't work in "Add Tag" menus. Either fix this or
+        # disable it in that context.
+        self.search_for_tag_action = QAction(self)
+        self.search_for_tag_action.setText(Translations.translate_formatted("tag.search_for_tag"))
+        self.bg_button.addAction(self.search_for_tag_action)
+        # add_to_search_action = QAction(self)
+        # add_to_search_action.setText(Translations.translate_formatted("tag.add_to_search"))
+        # self.bg_button.addAction(add_to_search_action)
 
         self.inner_layout = QHBoxLayout()
         self.inner_layout.setObjectName("innerLayout")
         self.inner_layout.setContentsMargins(2, 2, 2, 2)
 
         self.bg_button.setLayout(self.inner_layout)
-        self.bg_button.setMinimumSize(math.ceil(22 * 2), 22)
+        self.bg_button.setMinimumSize(22, 22)
+
+        primary_color = get_primary_color(tag)
+        border_color = (
+            get_border_color(primary_color)
+            if not (tag.color and tag.color.secondary)
+            else (QColor(tag.color.secondary))
+        )
+        highlight_color = get_highlight_color(
+            primary_color
+            if not (tag.color and tag.color.secondary)
+            else QColor(tag.color.secondary)
+        )
+        text_color: QColor
+        if tag.color and tag.color.secondary:
+            text_color = QColor(tag.color.secondary)
+        else:
+            text_color = get_text_color(primary_color, highlight_color)
 
         self.bg_button.setStyleSheet(
             f"QPushButton{{"
-            f"background: {get_tag_color(ColorType.PRIMARY, tag.color)};"
-            f"color: {get_tag_color(ColorType.TEXT, tag.color)};"
+            f"background: rgba{primary_color.toTuple()};"
+            f"color: rgba{text_color.toTuple()};"
             f"font-weight: 600;"
-            f"border-color:{get_tag_color(ColorType.BORDER, tag.color)};"
+            f"border-color: rgba{border_color.toTuple()};"
             f"border-radius: 6px;"
             f"border-style:solid;"
-            f"border-width: {math.ceil(self.devicePixelRatio())}px;"
+            f"border-width: 2px;"
             f"padding-right: 4px;"
             f"padding-bottom: 1px;"
             f"padding-left: 4px;"
             f"font-size: 13px"
             f"}}"
             f"QPushButton::hover{{"
-            f"border-color:{get_tag_color(ColorType.LIGHT_ACCENT, tag.color)};"
+            f"border-color: rgba{highlight_color.toTuple()};"
             f"}}"
         )
+        self.bg_button.setMinimumHeight(22)
+        self.bg_button.setMaximumHeight(22)
 
         self.base_layout.addWidget(self.bg_button)
 
@@ -175,16 +201,16 @@ class TagWidget(QWidget):
             self.remove_button.setText("–")
             self.remove_button.setHidden(True)
             self.remove_button.setStyleSheet(
-                f"color: {get_tag_color(ColorType.PRIMARY, tag.color)};"
-                f"background: {get_tag_color(ColorType.TEXT, tag.color)};"
+                f"color: rgba{primary_color.toTuple()};"
+                f"background: rgba{text_color.toTuple()};"
                 f"font-weight: 800;"
-                f"border-radius: 4px;"
+                f"border-radius: 3px;"
                 f"border-width:0;"
                 f"padding-bottom: 4px;"
                 f"font-size: 14px"
             )
-            self.remove_button.setMinimumSize(19, 19)
-            self.remove_button.setMaximumSize(19, 19)
+            self.remove_button.setMinimumSize(18, 18)
+            self.remove_button.setMaximumSize(18, 18)
             self.remove_button.clicked.connect(self.on_remove.emit)
 
         if has_remove:
@@ -207,3 +233,41 @@ class TagWidget(QWidget):
             self.remove_button.setHidden(True)
         self.update()
         return super().leaveEvent(event)
+
+
+def get_primary_color(tag: Tag) -> QColor:
+    primary_color = QColor(
+        get_tag_color(ColorType.PRIMARY, TagColorEnum.DEFAULT)
+        if not tag.color
+        else tag.color.primary
+    )
+
+    return primary_color
+
+
+def get_border_color(primary_color: QColor) -> QColor:
+    border_color: QColor = QColor(primary_color)
+    border_color.setRed(min(border_color.red() + 20, 255))
+    border_color.setGreen(min(border_color.green() + 20, 255))
+    border_color.setBlue(min(border_color.blue() + 20, 255))
+
+    return border_color
+
+
+def get_highlight_color(primary_color: QColor) -> QColor:
+    highlight_color: QColor = QColor(primary_color)
+    highlight_color = highlight_color.toHsl()
+    highlight_color.setHsl(highlight_color.hue(), min(highlight_color.saturation(), 200), 225, 255)
+    highlight_color = highlight_color.toRgb()
+
+    return highlight_color
+
+
+def get_text_color(primary_color: QColor, highlight_color: QColor) -> QColor:
+    if primary_color.lightness() > 120:
+        text_color = QColor(primary_color)
+        text_color = text_color.toHsl()
+        text_color.setHsl(text_color.hue(), text_color.saturation(), 50, 255)
+        return text_color.toRgb()
+    else:
+        return highlight_color

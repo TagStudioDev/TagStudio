@@ -15,7 +15,7 @@ def test_add_tag_callback(qt_driver):
 
     # When
     qt_driver.modal.widget.name_field.setText("xxx")
-    qt_driver.modal.widget.color_field.setCurrentIndex(1)
+    # qt_driver.modal.widget.color_field.setCurrentIndex(1)
     qt_driver.modal.saved.emit()
 
     # Then

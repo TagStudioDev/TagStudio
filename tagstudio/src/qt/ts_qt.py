@@ -20,11 +20,12 @@ from queue import Queue
 # this import has side-effect of import PySide resources
 import src.qt.resources_rc  # noqa: F401
 import structlog
-from humanfriendly import format_timespan
+from humanfriendly import format_size, format_timespan
 from PySide6 import QtCore
 from PySide6.QtCore import QObject, QSettings, Qt, QThread, QThreadPool, QTimer, Signal
 from PySide6.QtGui import (
     QAction,
+    QColor,
     QDragEnterEvent,
     QDragMoveEvent,
     QDropEvent,
@@ -32,6 +33,7 @@ from PySide6.QtGui import (
     QGuiApplication,
     QIcon,
     QMouseEvent,
+    QPalette,
 )
 from PySide6.QtUiTools import QUiLoader
 from PySide6.QtWidgets import (
@@ -67,6 +69,7 @@ from src.core.media_types import MediaCategories
 from src.core.ts_core import TagStudioCore
 from src.core.utils.refresh_dir import RefreshDirTracker
 from src.core.utils.web import strip_web_protocol
+from src.qt.cache_manager import CacheManager
 from src.qt.flowlayout import FlowLayout
 from src.qt.helpers.custom_runnable import CustomRunnable
 from src.qt.helpers.function_iterator import FunctionIterator
@@ -80,6 +83,7 @@ from src.qt.modals.fix_dupes import FixDupeFilesModal
 from src.qt.modals.fix_unlinked import FixUnlinkedEntriesModal
 from src.qt.modals.folders_to_tags import FoldersToTagsModal
 from src.qt.modals.tag_database import TagDatabasePanel
+from src.qt.modals.tag_search import TagSearchPanel
 from src.qt.resource_manager import ResourceManager
 from src.qt.splash import Splash
 from src.qt.translations import Translations
@@ -131,6 +135,9 @@ class QtDriver(DriverMixin, QObject):
     SIGTERM = Signal()
 
     preview_panel: PreviewPanel
+    tag_search_panel: TagSearchPanel
+    add_tag_modal: PanelModal
+
     lib: Library
 
     def __init__(self, backend, args):
@@ -163,8 +170,8 @@ class QtDriver(DriverMixin, QObject):
         if self.args.config_file:
             path = Path(self.args.config_file)
             if not path.exists():
-                logger.warning("Config File does not exist creating", path=path)
-            logger.info("Using Config File", path=path)
+                logger.warning("[Config] Config File does not exist creating", path=path)
+            logger.info("[Config] Using Config File", path=path)
             self.settings = QSettings(str(path), QSettings.Format.IniFormat)
             self.config_path = str(path)
         else:
@@ -175,10 +182,30 @@ class QtDriver(DriverMixin, QObject):
                 "TagStudio",
             )
             logger.info(
-                "Config File not specified, using default one",
+                "[Config] Config File not specified, using default one",
                 filename=self.settings.fileName(),
             )
             self.config_path = self.settings.fileName()
+
+        # NOTE: This should be a per-library setting rather than an application setting.
+        thumb_cache_size_limit: int = int(
+            str(
+                self.settings.value(
+                    SettingItems.THUMB_CACHE_SIZE_LIMIT,
+                    defaultValue=CacheManager.size_limit,
+                    type=int,
+                )
+            )
+        )
+
+        CacheManager.size_limit = thumb_cache_size_limit
+        self.settings.setValue(SettingItems.THUMB_CACHE_SIZE_LIMIT, CacheManager.size_limit)
+        self.settings.sync()
+        logger.info(
+            f"[Config] Thumbnail cache size limit: {format_size(CacheManager.size_limit)}",
+        )
+
+        self.add_tag_to_selected_action: QAction | None = None
 
     def init_workers(self):
         """Init workers for rendering thumbnails."""
@@ -219,6 +246,18 @@ class QtDriver(DriverMixin, QObject):
         app.setStyle("Fusion")
         icon_path = Path(__file__).parents[2] / "resources/icon.png"
 
+        if QGuiApplication.styleHints().colorScheme() is Qt.ColorScheme.Dark:
+            pal: QPalette = app.palette()
+            pal.setColor(QPalette.ColorGroup.Normal, QPalette.ColorRole.Window, QColor("#1e1e1e"))
+            pal.setColor(QPalette.ColorGroup.Normal, QPalette.ColorRole.Button, QColor("#1e1e1e"))
+            pal.setColor(QPalette.ColorGroup.Inactive, QPalette.ColorRole.Window, QColor("#232323"))
+            pal.setColor(QPalette.ColorGroup.Inactive, QPalette.ColorRole.Button, QColor("#232323"))
+            pal.setColor(
+                QPalette.ColorGroup.Inactive, QPalette.ColorRole.ButtonText, QColor("#666666")
+            )
+
+            app.setPalette(pal)
+
         # Handle OS signals
         self.setup_signals()
         # allow to process input from console, eg. SIGTERM
@@ -250,6 +289,18 @@ class QtDriver(DriverMixin, QObject):
             icon = QIcon()
             icon.addFile(str(icon_path))
             app.setWindowIcon(icon)
+
+        # Initialize the main window's tag search panel
+        self.tag_search_panel = TagSearchPanel(self.lib, is_tag_chooser=True)
+        self.add_tag_modal = PanelModal(
+            self.tag_search_panel, Translations.translate_formatted("tag.add.plural")
+        )
+        self.tag_search_panel.tag_chosen.connect(
+            lambda t: (
+                self.add_tags_to_selected_callback(t),
+                self.preview_panel.update_widgets(),
+            )
+        )
 
         menu_bar = QMenuBar(self.main_window)
         self.main_window.setMenuBar(menu_bar)
@@ -403,6 +454,24 @@ class QtDriver(DriverMixin, QObject):
         self.paste_fields_action.setEnabled(False)
         edit_menu.addAction(self.paste_fields_action)
 
+        self.add_tag_to_selected_action = QAction(menu_bar)
+        Translations.translate_qobject(
+            self.add_tag_to_selected_action, "select.add_tag_to_selected"
+        )
+        self.add_tag_to_selected_action.triggered.connect(self.add_tag_modal.show)
+        self.add_tag_to_selected_action.setShortcut(
+            QtCore.QKeyCombination(
+                QtCore.Qt.KeyboardModifier(
+                    QtCore.Qt.KeyboardModifier.ControlModifier
+                    ^ QtCore.Qt.KeyboardModifier.ShiftModifier
+                ),
+                QtCore.Qt.Key.Key_T,
+            )
+        )
+        self.add_tag_to_selected_action.setToolTip("Ctrl+Shift+T")
+        self.add_tag_to_selected_action.setEnabled(False)
+        edit_menu.addAction(self.add_tag_to_selected_action)
+
         edit_menu.addSeparator()
 
         manage_file_extensions_action = QAction(menu_bar)
@@ -461,6 +530,16 @@ class QtDriver(DriverMixin, QObject):
         Translations.translate_qobject(fix_dupe_files_action, "menu.tools.fix_duplicate_files")
         fix_dupe_files_action.triggered.connect(create_dupe_files_modal)
         tools_menu.addAction(fix_dupe_files_action)
+
+        tools_menu.addSeparator()
+
+        # TODO: Move this to a settings screen.
+        clear_thumb_cache_action = QAction(menu_bar)
+        Translations.translate_qobject(clear_thumb_cache_action, "settings.clear_thumb_cache.title")
+        clear_thumb_cache_action.triggered.connect(
+            lambda: CacheManager.clear_cache(self.lib.library_dir)
+        )
+        tools_menu.addAction(clear_thumb_cache_action)
 
         # create_collage_action = QAction("Create Collage", menu_bar)
         # create_collage_action.triggered.connect(lambda: self.create_collage())
@@ -543,8 +622,14 @@ class QtDriver(DriverMixin, QObject):
         path_result = self.evaluate_path(str(self.args.open).lstrip().rstrip())
         if path_result.success and path_result.library_path:
             self.open_library(path_result.library_path)
+        elif self.settings.value(SettingItems.START_LOAD_LAST):
+            # evaluate_path() with argument 'None' returns a LibraryStatus for the last library
+            path_result = self.evaluate_path(None)
+            if path_result.success and path_result.library_path:
+                self.open_library(path_result.library_path)
 
         # check ffmpeg and show warning if not
+        # NOTE: Does this need to use self?
         self.ffmpeg_checker = FfmpegChecker()
         if not self.ffmpeg_checker.installed():
             self.ffmpeg_checker.show_warning()
@@ -699,8 +784,11 @@ class QtDriver(DriverMixin, QObject):
 
         self.preview_panel.update_widgets()
         self.main_window.toggle_landing_page(enabled=True)
-
         self.main_window.pagination.setHidden(True)
+
+        # NOTE: Doesn't try to disable during tests
+        if self.add_tag_to_selected_action:
+            self.add_tag_to_selected_action.setEnabled(False)
 
         end_time = time.time()
         self.main_window.statusbar.showMessage(
@@ -755,16 +843,23 @@ class QtDriver(DriverMixin, QObject):
 
         self.set_macro_menu_viability()
         self.set_clipboard_menu_viability()
+        self.set_add_to_selected_visibility()
+  
         self.preview_panel.update_widgets(update_preview=False)
 
     def clear_select_action_callback(self):
         self.selected.clear()
+        self.set_add_to_selected_visibility()
         for item in self.item_thumbs:
             item.thumb_button.set_selected(False)
 
         self.set_macro_menu_viability()
         self.set_clipboard_menu_viability()
         self.preview_panel.update_widgets()
+
+    def add_tags_to_selected_callback(self, tag_ids: list[int]):
+        for entry_id in self.selected:
+            self.lib.add_tags_to_entry(entry_id, tag_ids)
 
     def show_tag_database(self):
         self.modal = PanelModal(
@@ -811,8 +906,8 @@ class QtDriver(DriverMixin, QObject):
                         "library.refresh.scanning.plural"
                         if x + 1 != 1
                         else "library.refresh.scanning.singular",
-                        searched_count=x + 1,
-                        found_count=tracker.files_count,
+                        searched_count=f"{x+1:n}",
+                        found_count=f"{tracker.files_count:n}",
                     )
                 ),
             )
@@ -838,20 +933,19 @@ class QtDriver(DriverMixin, QObject):
         pw = ProgressWidget(
             cancel_button_text=None,
             minimum=0,
-            maximum=files_count,
+            maximum=0,
         )
         Translations.translate_with_setter(pw.setWindowTitle, "entries.running.dialog.title")
         Translations.translate_with_setter(
-            pw.update_label, "entries.running.dialog.new_entries", count=1, total=files_count
+            pw.update_label, "entries.running.dialog.new_entries", total=f"{files_count:n}"
         )
         pw.show()
 
         iterator.value.connect(
-            lambda x: (
-                pw.update_progress(x + 1),
+            lambda: (
                 pw.update_label(
                     Translations.translate_formatted(
-                        "entries.running.dialog.new_entries", count=x + 1, total=files_count
+                        "entries.running.dialog.new_entries", total=f"{files_count:n}"
                     )
                 ),
             )
@@ -1138,6 +1232,8 @@ class QtDriver(DriverMixin, QObject):
 
         self.set_macro_menu_viability()
         self.set_clipboard_menu_viability()
+        self.set_add_to_selected_visibility()
+
         self.preview_panel.update_widgets()
 
     def set_macro_menu_viability(self):
@@ -1152,6 +1248,15 @@ class QtDriver(DriverMixin, QObject):
             self.paste_fields_action.setEnabled(True)
         else:
             self.paste_fields_action.setEnabled(False)
+
+    def set_add_to_selected_visibility(self):
+        if not self.add_tag_to_selected_action:
+            return
+
+        if self.selected:
+            self.add_tag_to_selected_action.setEnabled(True)
+        else:
+            self.add_tag_to_selected_action.setEnabled(False)
 
     def update_completions_list(self, text: str) -> None:
         matches = re.search(
@@ -1516,6 +1621,7 @@ class QtDriver(DriverMixin, QObject):
         self.main_window.setAcceptDrops(True)
 
         self.selected.clear()
+        self.set_add_to_selected_visibility()
         self.preview_panel.update_widgets()
 
         # page (re)rendering, extract eventually

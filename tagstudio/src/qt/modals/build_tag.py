@@ -8,27 +8,38 @@ from typing import cast
 
 import structlog
 from PySide6.QtCore import Qt, Signal
+from PySide6.QtGui import QColor
 from PySide6.QtWidgets import (
     QApplication,
+    QButtonGroup,
     QCheckBox,
-    QComboBox,
     QFrame,
     QHBoxLayout,
     QLabel,
     QLineEdit,
     QPushButton,
+    QRadioButton,
     QScrollArea,
     QTableWidget,
     QVBoxLayout,
     QWidget,
 )
 from src.core.library import Library, Tag
-from src.core.library.alchemy.enums import TagColor
+from src.core.library.alchemy.enums import TagColorEnum
+from src.core.library.alchemy.models import TagColorGroup
 from src.core.palette import ColorType, UiColor, get_tag_color, get_ui_color
+from src.qt.modals.tag_color_selection import TagColorSelection
 from src.qt.modals.tag_search import TagSearchPanel
 from src.qt.translations import Translations
 from src.qt.widgets.panel import PanelModal, PanelWidget
-from src.qt.widgets.tag import TagWidget
+from src.qt.widgets.tag import (
+    TagWidget,
+    get_border_color,
+    get_highlight_color,
+    get_primary_color,
+    get_text_color,
+)
+from src.qt.widgets.tag_color_preview import TagColorPreview
 
 logger = structlog.get_logger(__name__)
 
@@ -59,8 +70,11 @@ class BuildTagPanel(PanelWidget):
         super().__init__()
         self.lib = library
         self.tag: Tag  # NOTE: This gets set at the end of the init.
+        self.tag_color_namespace: str | None
+        self.tag_color_slug: str | None
+        self.disambiguation_id: int | None
 
-        self.setMinimumSize(300, 400)
+        self.setMinimumSize(300, 460)
         self.root_layout = QVBoxLayout(self)
         self.root_layout.setContentsMargins(6, 0, 6, 0)
         self.root_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
@@ -111,22 +125,24 @@ class BuildTagPanel(PanelWidget):
         self.aliases_table.horizontalHeader().setVisible(False)
         self.aliases_table.verticalHeader().setVisible(False)
         self.aliases_table.horizontalHeader().setStretchLastSection(True)
-        self.aliases_table.setColumnWidth(0, 35)
+        self.aliases_table.setColumnWidth(0, 32)
         self.aliases_table.setTabKeyNavigation(False)
         self.aliases_table.setFocusPolicy(Qt.FocusPolicy.NoFocus)
 
-        self.alias_add_button = QPushButton()
-        self.alias_add_button.setText("+")
-
-        self.alias_add_button.clicked.connect(self.add_alias_callback)
+        self.aliases_add_button = QPushButton()
+        self.aliases_add_button.setText("+")
+        self.aliases_add_button.clicked.connect(self.add_alias_callback)
 
         # Parent Tags ----------------------------------------------------------
         self.parent_tags_widget = QWidget()
+        self.parent_tags_widget.setMinimumHeight(128)
         self.parent_tags_layout = QVBoxLayout(self.parent_tags_widget)
         self.parent_tags_layout.setStretch(1, 1)
         self.parent_tags_layout.setContentsMargins(0, 0, 0, 0)
         self.parent_tags_layout.setSpacing(0)
         self.parent_tags_layout.setAlignment(Qt.AlignmentFlag.AlignLeft)
+        self.disam_button_group = QButtonGroup(self)
+        self.disam_button_group.setExclusive(False)
 
         self.parent_tags_title = QLabel()
         Translations.translate_qobject(self.parent_tags_title, "tag.parent_tags")
@@ -134,18 +150,15 @@ class BuildTagPanel(PanelWidget):
 
         self.scroll_contents = QWidget()
         self.parent_tags_scroll_layout = QVBoxLayout(self.scroll_contents)
-        self.parent_tags_scroll_layout.setContentsMargins(6, 0, 6, 0)
+        self.parent_tags_scroll_layout.setContentsMargins(6, 6, 6, 0)
         self.parent_tags_scroll_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
 
         self.scroll_area = QScrollArea()
         self.scroll_area.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        # self.scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOn)
         self.scroll_area.setWidgetResizable(True)
         self.scroll_area.setFrameShadow(QFrame.Shadow.Plain)
         self.scroll_area.setFrameShape(QFrame.Shape.NoFrame)
         self.scroll_area.setWidget(self.scroll_contents)
-        # self.scroll_area.setMinimumHeight(60)
-
         self.parent_tags_layout.addWidget(self.scroll_area)
 
         self.parent_tags_add_button = QPushButton()
@@ -168,58 +181,70 @@ class BuildTagPanel(PanelWidget):
         self.color_widget = QWidget()
         self.color_layout = QVBoxLayout(self.color_widget)
         self.color_layout.setStretch(1, 1)
-        self.color_layout.setContentsMargins(0, 0, 0, 24)
-        self.color_layout.setSpacing(0)
+        self.color_layout.setContentsMargins(0, 0, 0, 6)
+        self.color_layout.setSpacing(6)
         self.color_layout.setAlignment(Qt.AlignmentFlag.AlignLeft)
         self.color_title = QLabel()
         Translations.translate_qobject(self.color_title, "tag.color")
         self.color_layout.addWidget(self.color_title)
-        self.color_field = QComboBox()
-        self.color_field.setEditable(False)
-        self.color_field.setMaxVisibleItems(10)
-        self.color_field.setStyleSheet("combobox-popup:0;")
-        for color in TagColor:
-            self.color_field.addItem(color.name.replace("_", " ").title(), userData=color.value)
-        # self.color_field.setProperty("appearance", "flat")
-        self.color_field.currentIndexChanged.connect(
-            lambda c: (
-                self.color_field.setStyleSheet(
-                    "combobox-popup:0;"
-                    "font-weight:600;"
-                    f"color:{get_tag_color(ColorType.TEXT, self.color_field.currentData())};"
-                    f"background-color:{get_tag_color(
-                        ColorType.PRIMARY,
-                        self.color_field.currentData())};"
-                )
-            )
+        self.color_button: TagColorPreview
+        try:
+            self.color_button = TagColorPreview(tag.color)
+        except Exception as e:
+            # TODO: Investigate why this happens during tests
+            logger.error("[BuildTag] Could not access Tag member attributes", error=e)
+            self.color_button = TagColorPreview(None)
+        self.tag_color_selection = TagColorSelection(self.lib)
+        chose_tag_color_title = Translations.translate_formatted("tag.choose_color")
+        self.choose_color_modal = PanelModal(
+            self.tag_color_selection,
+            chose_tag_color_title,
+            chose_tag_color_title,
+            done_callback=lambda: self.choose_color_callback(
+                self.tag_color_selection.selected_color
+            ),
         )
-        self.color_layout.addWidget(self.color_field)
+        self.color_button.button.clicked.connect(self.choose_color_modal.show)
+        self.color_layout.addWidget(self.color_button)
 
         # Category -------------------------------------------------------------
         self.cat_widget = QWidget()
         self.cat_layout = QHBoxLayout(self.cat_widget)
         self.cat_layout.setStretch(1, 1)
         self.cat_layout.setContentsMargins(0, 0, 0, 0)
-        self.cat_layout.setSpacing(0)
+        self.cat_layout.setSpacing(6)
         self.cat_layout.setAlignment(Qt.AlignmentFlag.AlignLeft)
         self.cat_title = QLabel()
         self.cat_title.setText("Is Category")
         self.cat_checkbox = QCheckBox()
-        # TODO: Style checkbox
+        self.cat_checkbox.setFixedSize(22, 22)
+
+        primary_color = QColor(get_tag_color(ColorType.PRIMARY, TagColorEnum.DEFAULT))
+        border_color = get_border_color(primary_color)
+        highlight_color = get_highlight_color(primary_color)
+        text_color: QColor = get_text_color(primary_color, highlight_color)
+
         self.cat_checkbox.setStyleSheet(
-            "QCheckBox::indicator{"
-            "width: 19px; height: 19px;"
-            # f"background: #1e1e1e;"
-            # f"border-color: #333333;"
-            # f"border-radius: 6px;"
-            # f"border-style:solid;"
-            # f"border-width:{math.ceil(self.devicePixelRatio())}px;"
-            "}"
-            # f"QCheckBox::indicator::hover"
-            # f"{{"
-            # f"border-color: #CCCCCC;"
-            # f"background: #555555;"
-            # f"}}"
+            f"QCheckBox{{"
+            f"background: rgba{primary_color.toTuple()};"
+            f"color: rgba{text_color.toTuple()};"
+            f"border-color: rgba{border_color.toTuple()};"
+            f"border-radius: 6px;"
+            f"border-style:solid;"
+            f"border-width: 2px;"
+            f"}}"
+            f"QCheckBox::indicator{{"
+            f"width: 10px;"
+            f"height: 10px;"
+            f"border-radius: 2px;"
+            f"margin: 4px;"
+            f"}}"
+            f"QCheckBox::indicator:checked{{"
+            f"background: rgba{text_color.toTuple()};"
+            f"}}"
+            f"QCheckBox::hover{{"
+            f"border-color: rgba{highlight_color.toTuple()};"
+            f"}}"
         )
         self.cat_layout.addWidget(self.cat_checkbox)
         self.cat_layout.addWidget(self.cat_title)
@@ -229,7 +254,7 @@ class BuildTagPanel(PanelWidget):
         self.root_layout.addWidget(self.shorthand_widget)
         self.root_layout.addWidget(self.aliases_widget)
         self.root_layout.addWidget(self.aliases_table)
-        self.root_layout.addWidget(self.alias_add_button)
+        self.root_layout.addWidget(self.aliases_add_button)
         self.root_layout.addWidget(self.parent_tags_widget)
         self.root_layout.addWidget(self.color_widget)
         self.root_layout.addWidget(QLabel("<h3>Properties</h3>"))
@@ -302,35 +327,132 @@ class BuildTagPanel(PanelWidget):
         self.alias_ids.remove(alias_id)
         self._set_aliases()
 
+    def choose_color_callback(self, tag_color_group: TagColorGroup | None):
+        logger.info("choose_color_callback", tag_color_group=tag_color_group)
+        if tag_color_group:
+            self.tag_color_namespace = tag_color_group.namespace
+            self.tag_color_slug = tag_color_group.slug
+        else:
+            self.tag_color_namespace = None
+            self.tag_color_slug = None
+        self.color_button.set_tag_color_group(tag_color_group)
+
     def set_parent_tags(self):
         while self.parent_tags_scroll_layout.itemAt(0):
             self.parent_tags_scroll_layout.takeAt(0).widget().deleteLater()
 
-        last: QWidget = self.aliases_table.cellWidget(self.aliases_table.rowCount() - 1, 1)
         c = QWidget()
         layout = QVBoxLayout(c)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(3)
-        for tag_id in self.parent_ids:
-            tag = self.lib.get_tag(tag_id)
-            tw = TagWidget(tag, has_edit=False, has_remove=True)
-            tw.on_remove.connect(lambda t=tag_id: self.remove_parent_tag_callback(t))
-            layout.addWidget(tw)
-            self.setTabOrder(last, tw.bg_button)
-            last = tw.bg_button
-        self.setTabOrder(last, self.name_field)
+        last_tab: QWidget = self.aliases_table.cellWidget(self.aliases_table.rowCount() - 1, 1)
+        next_tab: QWidget = last_tab
 
+        for parent_id in self.parent_ids:
+            tag = self.lib.get_tag(parent_id)
+            if not tag:
+                continue
+            is_disam = parent_id == self.disambiguation_id
+            last_tab, next_tab, container = self.__build_row_item_widget(tag, parent_id, is_disam)
+            layout.addWidget(container)
+            # TODO: Disam buttons after the first currently can't be added due to this error:
+            # QWidget::setTabOrder: 'first' and 'second' must be in the same window
+            self.setTabOrder(last_tab, next_tab)
+
+        self.setTabOrder(next_tab, self.name_field)
         self.parent_tags_scroll_layout.addWidget(c)
+
+    def __build_row_item_widget(self, tag: Tag, parent_id: int, is_disambiguation: bool):
+        container = QWidget()
+        row = QHBoxLayout(container)
+        row.setContentsMargins(0, 0, 0, 0)
+        row.setSpacing(3)
+
+        # Init Colors
+        primary_color = get_primary_color(tag)
+        border_color = (
+            get_border_color(primary_color)
+            if not (tag.color and tag.color.secondary)
+            else (QColor(tag.color.secondary))
+        )
+        highlight_color = get_highlight_color(
+            primary_color
+            if not (tag.color and tag.color.secondary)
+            else QColor(tag.color.secondary)
+        )
+        text_color: QColor
+        if tag.color and tag.color.secondary:
+            text_color = QColor(tag.color.secondary)
+        else:
+            text_color = get_text_color(primary_color, highlight_color)
+
+        # Add Disambiguation Tag Button
+        disam_button = QRadioButton()
+        disam_button.setObjectName(f"disambiguationButton.{parent_id}")
+        disam_button.setFixedSize(22, 22)
+        disam_button.setToolTip(Translations.translate_formatted("tag.disambiguation.tooltip"))
+        disam_button.setStyleSheet(
+            f"QRadioButton{{"
+            f"background: rgba{primary_color.toTuple()};"
+            f"color: rgba{text_color.toTuple()};"
+            f"border-color: rgba{border_color.toTuple()};"
+            f"border-radius: 6px;"
+            f"border-style:solid;"
+            f"border-width: 2px;"
+            f"}}"
+            f"QRadioButton::indicator{{"
+            f"width: 10px;"
+            f"height: 10px;"
+            f"border-radius: 2px;"
+            f"margin: 4px;"
+            f"}}"
+            f"QRadioButton::indicator:checked{{"
+            f"background: rgba{text_color.toTuple()};"
+            f"}}"
+            f"QRadioButton::hover{{"
+            f"border-color: rgba{highlight_color.toTuple()};"
+            f"}}"
+        )
+
+        self.disam_button_group.addButton(disam_button)
+        if is_disambiguation:
+            disam_button.setChecked(True)
+
+        disam_button.clicked.connect(lambda checked=False: self.toggle_disam_id(parent_id))
+        row.addWidget(disam_button)
+
+        # Add Tag Widget
+        tag_widget = TagWidget(
+            tag,
+            library=self.lib,
+            has_edit=False,
+            has_remove=True,
+        )
+
+        tag_widget.on_remove.connect(lambda t=parent_id: self.remove_parent_tag_callback(t))
+        row.addWidget(tag_widget)
+
+        return disam_button, tag_widget.bg_button, container
+
+    def toggle_disam_id(self, disambiguation_id: int | None):
+        if self.disambiguation_id == disambiguation_id:
+            self.disambiguation_id = None
+        else:
+            self.disambiguation_id = disambiguation_id
+
+        for button in self.disam_button_group.buttons():
+            if button.objectName() == f"disambiguationButton.{self.disambiguation_id}":
+                button.setChecked(True)
+            else:
+                button.setChecked(False)
 
     def add_aliases(self):
         names: set[str] = set()
         for i in range(0, self.aliases_table.rowCount()):
             widget = self.aliases_table.cellWidget(i, 1)
-
             names.add(cast(CustomTableItem, widget).text())
 
         remove: set[str] = set(self.alias_names) - names
-
         self.alias_names = list(set(self.alias_names) - remove)
 
         for name in names:
@@ -341,8 +463,6 @@ class BuildTagPanel(PanelWidget):
                 self.alias_names.remove(name)
 
     def _update_new_alias_name_dict(self):
-        row = self.aliases_table.rowCount()
-        logger.info(row)
         for i in range(0, self.aliases_table.rowCount()):
             widget = self.aliases_table.cellWidget(i, 1)
             self.new_alias_names[widget.id] = widget.text()  # type: ignore
@@ -355,7 +475,7 @@ class BuildTagPanel(PanelWidget):
 
         self.alias_names.clear()
 
-        last: QWidget = self.panel_save_button or self.color_field
+        last: QWidget = self.panel_save_button
         for alias_id in self.alias_ids:
             alias = self.lib.get_alias(self.tag.id, alias_id)
 
@@ -394,6 +514,7 @@ class BuildTagPanel(PanelWidget):
     def set_tag(self, tag: Tag):
         logger.info("[BuildTagPanel] Setting Tag", tag=tag)
         self.tag = tag
+
         self.name_field.setText(tag.name)
         self.shorthand_field.setText(tag.shorthand or "")
 
@@ -401,15 +522,20 @@ class BuildTagPanel(PanelWidget):
             self.alias_ids.append(alias_id)
         self._set_aliases()
 
+        self.disambiguation_id = tag.disambiguation_id
         for parent_id in tag.parent_ids:
             self.parent_ids.add(parent_id)
         self.set_parent_tags()
 
-        # select item in self.color_field where the userData value matched tag.color
-        for i in range(self.color_field.count()):
-            if self.color_field.itemData(i) == tag.color:
-                self.color_field.setCurrentIndex(i)
-                break
+        try:
+            self.tag_color_namespace = tag.color_namespace
+            self.tag_color_slug = tag.color_slug
+            self.color_button.set_tag_color_group(tag.color)
+            self.tag_color_selection.select_radio_button(tag.color)
+        except Exception as e:
+            # TODO: Investigate why this happens during tests
+            logger.error("[BuildTag] Could not access Tag member attributes", error=e)
+            self.color_button.set_tag_color_group(None)
 
         self.cat_checkbox.setChecked(tag.is_category)
 
@@ -426,13 +552,14 @@ class BuildTagPanel(PanelWidget):
             self.panel_save_button.setDisabled(is_empty)
 
     def build_tag(self) -> Tag:
-        color = self.color_field.currentData() or TagColor.DEFAULT
         tag = self.tag
         self.add_aliases()
 
         tag.name = self.name_field.text()
         tag.shorthand = self.shorthand_field.text()
-        tag.color = color
+        tag.disambiguation_id = self.disambiguation_id
+        tag.color_namespace = self.tag_color_namespace
+        tag.color_slug = self.tag_color_slug
         tag.is_category = self.cat_checkbox.isChecked()
 
         logger.info("built tag", tag=tag)
@@ -440,10 +567,10 @@ class BuildTagPanel(PanelWidget):
 
     def parent_post_init(self):
         self.setTabOrder(self.name_field, self.shorthand_field)
-        self.setTabOrder(self.shorthand_field, self.alias_add_button)
-        self.setTabOrder(self.alias_add_button, self.parent_tags_add_button)
-        self.setTabOrder(self.parent_tags_add_button, self.color_field)
-        self.setTabOrder(self.color_field, self.panel_cancel_button)
+        self.setTabOrder(self.shorthand_field, self.aliases_add_button)
+        self.setTabOrder(self.aliases_add_button, self.parent_tags_add_button)
+        self.setTabOrder(self.parent_tags_add_button, self.color_button)
+        self.setTabOrder(self.color_button, self.panel_cancel_button)
         self.setTabOrder(self.panel_cancel_button, self.panel_save_button)
         self.setTabOrder(self.panel_save_button, self.aliases_table.cellWidget(0, 1))
         self.name_field.selectAll()

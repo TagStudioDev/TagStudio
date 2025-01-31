@@ -2,14 +2,14 @@
 # Licensed under the GPL-3.0 License.
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
+import datetime as dt
 from pathlib import Path
 
-from sqlalchemy import JSON, ForeignKey, Integer, event
+from sqlalchemy import JSON, ForeignKey, ForeignKeyConstraint, Integer, event
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from ...constants import TAG_ARCHIVED, TAG_FAVORITE
 from .db import Base, PathType
-from .enums import TagColor
 from .fields import (
     BaseField,
     BooleanField,
@@ -18,6 +18,22 @@ from .fields import (
     TextField,
 )
 from .joins import TagParent
+
+
+class Namespace(Base):
+    __tablename__ = "namespaces"
+
+    namespace: Mapped[str] = mapped_column(primary_key=True, nullable=False)
+    name: Mapped[str] = mapped_column(nullable=False)
+
+    def __init__(
+        self,
+        namespace: str,
+        name: str,
+    ):
+        self.namespace = namespace
+        self.name = name
+        super().__init__()
 
 
 class TagAlias(Base):
@@ -37,25 +53,60 @@ class TagAlias(Base):
         super().__init__()
 
 
+class TagColorGroup(Base):
+    __tablename__ = "tag_colors"
+
+    slug: Mapped[str] = mapped_column(primary_key=True, nullable=False)
+    namespace: Mapped[str] = mapped_column(
+        ForeignKey("namespaces.namespace"), primary_key=True, nullable=False
+    )
+    name: Mapped[str] = mapped_column()
+    primary: Mapped[str] = mapped_column(nullable=False)
+    secondary: Mapped[str | None]
+
+    # TODO: Determine if slug and namespace can be optional and generated/added here if needed.
+    def __init__(
+        self,
+        slug: str,
+        namespace: str,
+        name: str,
+        primary: str,
+        secondary: str | None = None,
+    ):
+        self.slug = slug
+        self.namespace = namespace
+        self.name = name
+        self.primary = primary
+        if secondary:
+            self.secondary = secondary
+        super().__init__()
+
+
 class Tag(Base):
     __tablename__ = "tags"
-    __table_args__ = {"sqlite_autoincrement": True}
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-
     name: Mapped[str]
     shorthand: Mapped[str | None]
-    color: Mapped[TagColor]
+    color_namespace: Mapped[str | None] = mapped_column()
+    color_slug: Mapped[str | None] = mapped_column()
+    color: Mapped[TagColorGroup | None] = relationship(lazy="joined")
     is_category: Mapped[bool]
     icon: Mapped[str | None]
-
     aliases: Mapped[set[TagAlias]] = relationship(back_populates="tag")
-
     parent_tags: Mapped[set["Tag"]] = relationship(
         secondary=TagParent.__tablename__,
         primaryjoin="Tag.id == TagParent.parent_id",
         secondaryjoin="Tag.id == TagParent.child_id",
         back_populates="parent_tags",
+    )
+    disambiguation_id: Mapped[int | None]
+
+    __table_args__ = (
+        ForeignKeyConstraint(
+            [color_namespace, color_slug], [TagColorGroup.namespace, TagColorGroup.slug]
+        ),
+        {"sqlite_autoincrement": True},
     )
 
     @property
@@ -78,15 +129,19 @@ class Tag(Base):
         aliases: set[TagAlias] | None = None,
         parent_tags: set["Tag"] | None = None,
         icon: str | None = None,
-        color: TagColor = TagColor.DEFAULT,
+        color_namespace: str | None = None,
+        color_slug: str | None = None,
+        disambiguation_id: int | None = None,
         is_category: bool = False,
     ):
         self.name = name
         self.aliases = aliases or set()
         self.parent_tags = parent_tags or set()
-        self.color = color
+        self.color_namespace = color_namespace
+        self.color_slug = color_slug
         self.icon = icon
         self.shorthand = shorthand
+        self.disambiguation_id = disambiguation_id
         self.is_category = is_category
         assert not self.id
         self.id = id
@@ -130,6 +185,9 @@ class Entry(Base):
 
     path: Mapped[Path] = mapped_column(PathType, unique=True)
     suffix: Mapped[str] = mapped_column()
+    date_created: Mapped[dt.datetime | None]
+    date_modified: Mapped[dt.datetime | None]
+    date_added: Mapped[dt.datetime | None]
 
     tags: Mapped[set[Tag]] = relationship(secondary="tag_entries")
 
@@ -164,11 +222,22 @@ class Entry(Base):
         folder: Folder,
         fields: list[BaseField],
         id: int | None = None,
+        date_created: dt.datetime | None = None,
+        date_modified: dt.datetime | None = None,
+        date_added: dt.datetime | None = None,
     ) -> None:
         self.path = path
         self.folder = folder
         self.id = id
         self.suffix = path.suffix.lstrip(".").lower()
+
+        # The date the file associated with this entry was created.
+        # st_birthtime on Windows and Mac, st_ctime on Linux.
+        self.date_created = date_created
+        # The date the file associated with this entry was last modified: st_mtime.
+        self.date_modified = date_modified
+        # The date this entry was added to the library.
+        self.date_added = date_added
 
         for field in fields:
             if isinstance(field, TextField):
