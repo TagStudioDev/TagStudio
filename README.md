@@ -83,7 +83,7 @@ Translation hosting generously provided by [Weblate](https://weblate.org/en/). C
 ### Search
 
 -   Search for file entries based on tags, file path (`path:`), file types (`filetype:`), and even media types! (`mediatype:`)
--   Use and combine boolean operators (`AND`, `OR`, `NOT`) along with parenthases groups, quotation escaping, and underscore substitution to create detailed search queries
+-   Use and combine boolean operators (`AND`, `OR`, `NOT`) along with parentheses groups, quotation escaping, and underscore substitution to create detailed search queries
 -   Use special search conditions (`special:untagged` and `special:empty`) to find file entries without tags or fields, respectively
 
 ### File Entries
@@ -110,7 +110,7 @@ To download TagStudio, visit the [Releases](https://github.com/TagStudioDev/TagS
 
 ### Third-Party Dependencies
 
--   For video thumbnails and playback, you'll also need [FFmpeg](https://ffmpeg.org/download.html) installed on your system.
+-   For video thumbnails and playback, you'll also need [FFmpeg](https://ffmpeg.org/download.html) installed on your system. If you encounter any issues with this, please reference our [FFmpeg Help](/docs/help/ffmpeg.md) guide.
 
 ### Optional Arguments
 

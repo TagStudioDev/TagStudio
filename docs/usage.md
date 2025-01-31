@@ -6,19 +6,19 @@ With TagStudio opened, start by creating a new library or opening an existing on
 
 ## Refreshing the Library
 
-In order to scan for new files or file changes, you’ll need to manually go to File -> Refresh Directories.
-
-!!! note
-    In the future, library refreshing will also be automatically done in the background, or additionally on app startup.
+Libraries under 10,000 files automatically scan for new or modified files when opened. In order to refresh the library manually, select "Refresh Directories" under the File menu.
 
 ## Adding Tags to File Entries
-Click the "Add Tag" button at the bottom of the preview panel with one or more tags selected. Search for existing inside the new dialog popup or create a new one from. Click the “+” button next to whichever tags you want to add. Alternatively, after you search for a tag, press the Enter/Return key to add the first item in the list. Press Enter/Return once more to close the dialog box.
+
+Access the "Add Tag" search box by either clicking on the "Add Tag" button at the bottom of the right sidebar, accessing the "Add Tags to Selected" option from the File menu, or by pressing <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>T</kbd>.
+
+From here you can search for existing tags or create a new one if the one you're looking for doesn't exist. Click the “+” button next to any tags you want to to the currently selected file entries. To quickly add the top result, press the <kbd>Enter</kbd>/<kbd>Return</kbd> key to add the the topmost tag and reset the tag search. Press <kbd>Enter</kbd>/<kbd>Return</kbd> once more to close the dialog box. By using this method, you can quickly add various tags in quick succession just by using the keyboard!
 
 To remove a tag from a file entry, hover over the tag in the preview panel and click on the "-" icon that appears.
 
-## Adding Metadata Fields to File Entries
+## Adding Metadata to File Entries
 
-To add a metadata field to a file entry, start by clicking the “Add Field” button at the bottom of the preview panel. From the dropdown menu, select the type of metadata field you’d like to add to the entry.
+To add a metadata field to a file entry, start by clicking the “Add Field” button at the bottom of the preview panel. From the dropdown menu, select the type of metadata field you’d like to add to the entry
 
 ## Editing Metadata Fields
 
@@ -26,66 +26,33 @@ To add a metadata field to a file entry, start by clicking the “Add Field” b
 
 Hover over the field and click the pencil icon. From there, add or edit text in the dialog box popup.
 
-!!! warning
-    Keyboard control and navigation is currently _very_ buggy, but will be improved in future versions.
-
 ## Creating Tags
 
-To create a new tag, click on Edit -> New Tag from the menu bar. From there, enter a tag name, shorthand name, any tag aliases separated by newlines, any subtags, and an optional color.
+Create a new tag by accessing the "New Tag" option from the Edit menu or by pressing <kbd>Ctrl</kbd>+<kbd>T</kbd>. In the tag creation panel, enter a tag name, optional shorthand name, optional tag aliases, optional parent tags, and an optional color.
 
-- The tag **shorthand** is a type of alias that displays in situations when screen space is more valuable (ex. as a subtag for other tags).
-- **Aliases** are alternate names for a tag. These let you search for terms other than the exact tag name in order to find the tag again.
-- **Subtags** are tags in which this tag is a child tag of. In other words, tags under this section are parents of this tag. For example, if you had a tag for a character from a show, you would make the show a subtag of this character. This would display as “Character (Show)” in most areas of the app. The first tag in this list is used as the tag shown in parentheses for specification.
-- The **color** dropdown lets you select an optional color for this tag to display as.
+-   The tag **name** is the base name of the tag. **_This does NOT have to be unique!_**
+-   The tag **shorthand** is a special type of alias that displays in situations where screen space is more valuable, notably with name disambiguation.
+-   **Aliases** are alternate names for a tag. These let you search for terms other than the exact tag name in order to find the tag again.
+-   **Parent Tags** are tags in which this this tag can substitute for in searches. In other words, tags under this section are parents of this tag.
+    -   Parent tags with the disambiguation check next to them will be used to help disambiguate tag names that may not be unique.
+    -   For example: If you had a tag for "Freddy Fazbear", you might add "Five Nights at Freddy's" as one of the parent tags. If the disambiguation box is checked next to "Five Nights at Freddy's" parent tag, then the tag "Freddy Fazbear" will display as "Freddy Fazbear (Five Nights at Freddy's)". Furthermore, if the "Five Nights at Freddy's" tag has a shorthand like "FNAF", then the "Freddy Fazbear" tag will display as "Freddy Fazbear (FNAF)".
+-   The **color** option lets you select an optional color palette to use for your tag.
+-   The **"Is Cagegory"** property lets you treat this tag as a category under which itself and any child tags inheriting from it will be sorted by inside the preview panel.
 
 ## Editing Tags
 
-To edit a tag, right-click the tag in the tag field of the preview pane and select “Edit Tag”
+To edit a tag, click on it inside the preview panel or right-click the tag and select “Edit Tag” from the context menu.
 
-## Relinking Renamed/Moved Files
+## Relinking Moved Files
 
-Inevitably, some of the files inside your library will be renamed, moved, or deleted. If a file has been renamed or moved, TagStudio will display the thumbnail as a red tag with a cross through it _(this icon is also used for items with broken thumbnails)._ To relink moved files or delete these entries, go to Tools -> Manage Unlinked Entries. Click the “Refresh” button to scan your library for unlinked entries. Once complete, you can attempt to “Search & Relink” any unlinked entries to their respective files, or “Delete Unlinked Entries” in the event the original files have been deleted and you no longer wish to keep their metadata entries inside your library.
-
-!!! warning
-    There is currently no method to relink entries to files that have been renamed - only moved or deleted. This is a top priority for future releases.
+Inevitably some of the files inside your library will be renamed, moved, or deleted. If a file has been renamed or moved, TagStudio will display the thumbnail as a red broken chain link. To relink moved files or delete these entries, select the "Manage Unlinked Entries" option under the Tools menu. Click the "Refresh" button to scan your library for unlinked entries. Once complete, you can attempt to “Search & Relink” any unlinked file entries to their respective files, or “Delete Unlinked Entries” in the event the original files have been deleted and you no longer wish to keep their entries inside your library.
 
 !!! warning
-    If multiple matches for a moved file are found (matches are currently defined as files with a matching filename as the original), TagStudio will currently ignore the match groups. Adding a GUI for manual selection, as well as smarter automated relinking, are top priorities for future versions.
+    There is currently no method to relink entries to files that have been renamed - only moved or deleted. This is a high priority for future releases.
 
-## Deleting Tags
+!!! warning
+    If multiple matches for a moved file are found (matches are currently defined as files with a matching filename as the original), TagStudio will currently ignore the match groups. Adding a GUI for manual selection, as well as smarter automated relinking, are high priorities for future versions.
 
-To delete a tag from your library, go to File -> Tag Manager, hover over the tag you wish to delete, and click the "-" icon that appears. You will be prompted to make sure you wish to delete this tag from your library and across all file entries.
+### Saving the Library
 
-## Saving the Library
-
-Libraries are saved upon exiting the program. To manually save, select File -> Save Library from the menu bar. To save a backup of your library, select File -> Save Library Backup from the menu bar.
-
-## Half-Implemented Features
-
-### Fix Duplicate Files
-
-Load in a .dupeguru file generated by [dupeGuru](https://github.com/arsenetar/dupeguru/) and mirror metadata across entries marked as duplicates. After mirroring, return to dupeGuru to manage deletion of the duplicate files. After deletion, use the “Fix Unlinked Entries” feature in TagStudio to delete the duplicate set of entries for the now-deleted files
-
-!!! danger "Caution"
-    While this feature is functional, it’s a pretty roundabout process and can be streamlined in the future.
-
-### Image Collage
-
-Create an image collage of your photos and videos.
-
-!!! danger "Caution"
-    Collage sizes and options are hardcoded, and there's no GUI indicating the process of the collage creation.
-
-### Macros
-
-Apply tags and other metadata automatically depending on certain criteria. Set specific macros to run when the files are added to the library. Part of this includes applying tags automatically based on parent folders.
-
-!!! danger "Caution"
-    Macro options are hardcoded, and there’s currently no way for the user to interface with this (still incomplete) system at all.
-
-### Gallery-dl Sidecar Importing
-
-Import JSON sidecar data generated by [gallery-dl](https://github.com/mikf/gallery-dl).
-
-!!! danger "Caution"
-    This feature is not supported or documented in any official capacity whatsoever. It will likely be rolled-in to a larger and more generalized sidecar importing feature in the future.
+As of version 9.5, libraries are saved automatically as you go. To save a backup of your library, select File -> Save Library Backup from the menu bar.
