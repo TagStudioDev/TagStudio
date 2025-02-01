@@ -67,6 +67,7 @@ class JsonMigrationModal(QObject):
 
         self.field_parity: bool = False
         self.path_parity: bool = False
+        self.name_parity: bool = False
         self.shorthand_parity: bool = False
         self.subtag_parity: bool = False
         self.alias_parity: bool = False
@@ -116,6 +117,7 @@ class JsonMigrationModal(QObject):
 
         entries_text: str = Translations["json_migration.heading.entires"]
         tags_text: str = Translations["json_migration.heading.tags"]
+        names_text: str = tab + Translations["json_migration.heading.names"]
         shorthand_text: str = tab + Translations["json_migration.heading.shorthands"]
         parent_tags_text: str = tab + Translations["json_migration.heading.parent_tags"]
         aliases_text: str = tab + Translations["json_migration.heading.aliases"]
@@ -130,12 +132,13 @@ class JsonMigrationModal(QObject):
         self.path_row: int = 1
         self.fields_row: int = 2
         self.tags_row: int = 3
-        self.shorthands_row: int = 4
-        self.parent_tags_row: int = 5
-        self.aliases_row: int = 6
-        self.colors_row: int = 7
-        self.ext_row: int = 8
-        self.ext_type_row: int = 9
+        self.names_row: int = 4
+        self.shorthands_row: int = 5
+        self.parent_tags_row: int = 6
+        self.aliases_row: int = 7
+        self.colors_row: int = 8
+        self.ext_row: int = 9
+        self.ext_type_row: int = 10
 
         old_lib_container: QWidget = QWidget()
         old_lib_layout: QVBoxLayout = QVBoxLayout(old_lib_container)
@@ -152,6 +155,7 @@ class JsonMigrationModal(QObject):
         self.old_content_layout.addWidget(QLabel(path_parity_text), self.path_row, 0)
         self.old_content_layout.addWidget(QLabel(field_parity_text), self.fields_row, 0)
         self.old_content_layout.addWidget(QLabel(tags_text), self.tags_row, 0)
+        self.old_content_layout.addWidget(QLabel(names_text), self.names_row, 0)
         self.old_content_layout.addWidget(QLabel(shorthand_text), self.shorthands_row, 0)
         self.old_content_layout.addWidget(QLabel(parent_tags_text), self.parent_tags_row, 0)
         self.old_content_layout.addWidget(QLabel(aliases_text), self.aliases_row, 0)
@@ -167,6 +171,8 @@ class JsonMigrationModal(QObject):
         old_field_value.setAlignment(Qt.AlignmentFlag.AlignRight)
         old_tag_count: QLabel = QLabel()
         old_tag_count.setAlignment(Qt.AlignmentFlag.AlignRight)
+        old_name_value: QLabel = QLabel()
+        old_name_value.setAlignment(Qt.AlignmentFlag.AlignRight)
         old_shorthand_count: QLabel = QLabel()
         old_shorthand_count.setAlignment(Qt.AlignmentFlag.AlignRight)
         old_subtag_value: QLabel = QLabel()
@@ -184,6 +190,7 @@ class JsonMigrationModal(QObject):
         self.old_content_layout.addWidget(old_path_value, self.path_row, 1)
         self.old_content_layout.addWidget(old_field_value, self.fields_row, 1)
         self.old_content_layout.addWidget(old_tag_count, self.tags_row, 1)
+        self.old_content_layout.addWidget(old_name_value, self.names_row, 1)
         self.old_content_layout.addWidget(old_shorthand_count, self.shorthands_row, 1)
         self.old_content_layout.addWidget(old_subtag_value, self.parent_tags_row, 1)
         self.old_content_layout.addWidget(old_alias_value, self.aliases_row, 1)
@@ -193,6 +200,7 @@ class JsonMigrationModal(QObject):
 
         self.old_content_layout.addWidget(QLabel(), self.path_row, 2)
         self.old_content_layout.addWidget(QLabel(), self.fields_row, 2)
+        self.old_content_layout.addWidget(QLabel(), self.names_row, 2)
         self.old_content_layout.addWidget(QLabel(), self.shorthands_row, 2)
         self.old_content_layout.addWidget(QLabel(), self.parent_tags_row, 2)
         self.old_content_layout.addWidget(QLabel(), self.aliases_row, 2)
@@ -215,6 +223,7 @@ class JsonMigrationModal(QObject):
         self.new_content_layout.addWidget(QLabel(path_parity_text), self.path_row, 0)
         self.new_content_layout.addWidget(QLabel(field_parity_text), self.fields_row, 0)
         self.new_content_layout.addWidget(QLabel(tags_text), self.tags_row, 0)
+        self.new_content_layout.addWidget(QLabel(names_text), self.names_row, 0)
         self.new_content_layout.addWidget(QLabel(shorthand_text), self.shorthands_row, 0)
         self.new_content_layout.addWidget(QLabel(parent_tags_text), self.parent_tags_row, 0)
         self.new_content_layout.addWidget(QLabel(aliases_text), self.aliases_row, 0)
@@ -230,6 +239,8 @@ class JsonMigrationModal(QObject):
         field_parity_value.setAlignment(Qt.AlignmentFlag.AlignRight)
         new_tag_count: QLabel = QLabel()
         new_tag_count.setAlignment(Qt.AlignmentFlag.AlignRight)
+        new_name_value: QLabel = QLabel()
+        new_name_value.setAlignment(Qt.AlignmentFlag.AlignRight)
         new_shorthand_count: QLabel = QLabel()
         new_shorthand_count.setAlignment(Qt.AlignmentFlag.AlignRight)
         subtag_parity_value: QLabel = QLabel()
@@ -247,6 +258,7 @@ class JsonMigrationModal(QObject):
         self.new_content_layout.addWidget(path_parity_value, self.path_row, 1)
         self.new_content_layout.addWidget(field_parity_value, self.fields_row, 1)
         self.new_content_layout.addWidget(new_tag_count, self.tags_row, 1)
+        self.new_content_layout.addWidget(new_name_value, self.names_row, 1)
         self.new_content_layout.addWidget(new_shorthand_count, self.shorthands_row, 1)
         self.new_content_layout.addWidget(subtag_parity_value, self.parent_tags_row, 1)
         self.new_content_layout.addWidget(alias_parity_value, self.aliases_row, 1)
@@ -259,6 +271,7 @@ class JsonMigrationModal(QObject):
         self.new_content_layout.addWidget(QLabel(), self.fields_row, 2)
         self.new_content_layout.addWidget(QLabel(), self.shorthands_row, 2)
         self.new_content_layout.addWidget(QLabel(), self.tags_row, 2)
+        self.new_content_layout.addWidget(QLabel(), self.names_row, 2)
         self.new_content_layout.addWidget(QLabel(), self.parent_tags_row, 2)
         self.new_content_layout.addWidget(QLabel(), self.aliases_row, 2)
         self.new_content_layout.addWidget(QLabel(), self.colors_row, 2)
@@ -400,6 +413,7 @@ class JsonMigrationModal(QObject):
             check_set = set()
             check_set.add(self.check_field_parity())
             check_set.add(self.check_path_parity())
+            check_set.add(self.check_name_parity())
             check_set.add(self.check_shorthand_parity())
             check_set.add(self.check_subtag_parity())
             check_set.add(self.check_alias_parity())
@@ -425,6 +439,7 @@ class JsonMigrationModal(QObject):
         """Update all parity values UI."""
         self.update_parity_value(self.fields_row, self.field_parity)
         self.update_parity_value(self.path_row, self.path_parity)
+        self.update_parity_value(self.names_row, self.name_parity)
         self.update_parity_value(self.shorthands_row, self.shorthand_parity)
         self.update_parity_value(self.parent_tags_row, self.subtag_parity)
         self.update_parity_value(self.aliases_row, self.alias_parity)
@@ -687,6 +702,38 @@ class JsonMigrationModal(QObject):
 
         self.alias_parity = True
         return self.alias_parity
+
+    def check_name_parity(self) -> bool:
+        """Check if all JSON tag names match the new SQL tag names."""
+        sql_name: str = None
+        json_name: str = None
+
+        def sanitize(value):
+            """Return value or convert a "not" value into None."""
+            return value if value else None
+
+        for tag in self.sql_lib.tags:
+            tag_id = tag.id  # Tag IDs start at 0
+            sql_name = sanitize(tag.name)
+            json_name = sanitize(self.json_lib.get_tag(tag_id).name)
+
+            logger.info(
+                "[Name Parity]",
+                tag_id=tag_id,
+                json_shorthand=json_name,
+                sql_shorthand=sql_name,
+            )
+
+            if sql_name != json_name:
+                self.discrepancies.append(
+                    f"[Name Parity][Tag ID: {tag_id}]:"
+                    f"\nOLD (JSON):{json_name}\nNEW (SQL):{sql_name}"
+                )
+                self.name_parity = False
+                return self.name_parity
+
+        self.name_parity = True
+        return self.name_parity
 
     def check_shorthand_parity(self) -> bool:
         """Check if all JSON shorthands match the new SQL shorthands."""

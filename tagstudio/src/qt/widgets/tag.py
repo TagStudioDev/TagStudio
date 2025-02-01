@@ -3,6 +3,7 @@
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
 
+import typing
 from types import FunctionType
 
 import structlog
@@ -21,6 +22,10 @@ from src.core.palette import ColorType, get_tag_color
 from src.qt.translations import Translations
 
 logger = structlog.get_logger(__name__)
+
+# Only import for type checking/autocompletion, will not be imported at runtime.
+if typing.TYPE_CHECKING:
+    from src.core.library.alchemy import Library
 
 
 class TagAliasWidget(QWidget):
@@ -102,12 +107,14 @@ class TagWidget(QWidget):
         tag: Tag,
         has_edit: bool,
         has_remove: bool,
+        library: "Library | None" = None,
         on_remove_callback: FunctionType = None,
         on_click_callback: FunctionType = None,
         on_edit_callback: FunctionType = None,
     ) -> None:
         super().__init__()
         self.tag = tag
+        self.lib: Library | None = library
         self.has_edit = has_edit
         self.has_remove = has_remove
 
@@ -119,7 +126,10 @@ class TagWidget(QWidget):
 
         self.bg_button = QPushButton(self)
         self.bg_button.setFlat(True)
-        self.bg_button.setText(tag.name)
+        if self.lib:
+            self.bg_button.setText(self.lib.tag_display_name(tag.id))
+        else:
+            self.bg_button.setText(tag.name)
         if has_edit:
             edit_action = QAction(self)
             edit_action.setText(Translations.translate_formatted("generic.edit"))
@@ -131,10 +141,9 @@ class TagWidget(QWidget):
 
         # TODO: This currently doesn't work in "Add Tag" menus. Either fix this or
         # disable it in that context.
-        search_for_tag_action = QAction(self)
-        search_for_tag_action.setText(Translations.translate_formatted("tag.search_for_tag"))
-        search_for_tag_action.triggered.connect(self.on_click.emit)
-        self.bg_button.addAction(search_for_tag_action)
+        self.search_for_tag_action = QAction(self)
+        self.search_for_tag_action.setText(Translations.translate_formatted("tag.search_for_tag"))
+        self.bg_button.addAction(self.search_for_tag_action)
         # add_to_search_action = QAction(self)
         # add_to_search_action.setText(Translations.translate_formatted("tag.add_to_search"))
         # self.bg_button.addAction(add_to_search_action)

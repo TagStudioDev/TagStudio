@@ -25,6 +25,7 @@ from PySide6 import QtCore
 from PySide6.QtCore import QObject, QSettings, Qt, QThread, QThreadPool, QTimer, Signal
 from PySide6.QtGui import (
     QAction,
+    QColor,
     QDragEnterEvent,
     QDragMoveEvent,
     QDropEvent,
@@ -32,6 +33,7 @@ from PySide6.QtGui import (
     QGuiApplication,
     QIcon,
     QMouseEvent,
+    QPalette,
 )
 from PySide6.QtUiTools import QUiLoader
 from PySide6.QtWidgets import (
@@ -81,6 +83,7 @@ from src.qt.modals.fix_dupes import FixDupeFilesModal
 from src.qt.modals.fix_unlinked import FixUnlinkedEntriesModal
 from src.qt.modals.folders_to_tags import FoldersToTagsModal
 from src.qt.modals.tag_database import TagDatabasePanel
+from src.qt.modals.tag_search import TagSearchPanel
 from src.qt.resource_manager import ResourceManager
 from src.qt.splash import Splash
 from src.qt.translations import Translations
@@ -132,6 +135,9 @@ class QtDriver(DriverMixin, QObject):
     SIGTERM = Signal()
 
     preview_panel: PreviewPanel
+    tag_search_panel: TagSearchPanel
+    add_tag_modal: PanelModal
+
     lib: Library
 
     def __init__(self, backend, args):
@@ -199,6 +205,8 @@ class QtDriver(DriverMixin, QObject):
             f"[Config] Thumbnail cache size limit: {format_size(CacheManager.size_limit)}",
         )
 
+        self.add_tag_to_selected_action: QAction | None = None
+
     def init_workers(self):
         """Init workers for rendering thumbnails."""
         if not self.thumb_threads:
@@ -238,6 +246,18 @@ class QtDriver(DriverMixin, QObject):
         app.setStyle("Fusion")
         icon_path = Path(__file__).parents[2] / "resources/icon.png"
 
+        if QGuiApplication.styleHints().colorScheme() is Qt.ColorScheme.Dark:
+            pal: QPalette = app.palette()
+            pal.setColor(QPalette.ColorGroup.Normal, QPalette.ColorRole.Window, QColor("#1e1e1e"))
+            pal.setColor(QPalette.ColorGroup.Normal, QPalette.ColorRole.Button, QColor("#1e1e1e"))
+            pal.setColor(QPalette.ColorGroup.Inactive, QPalette.ColorRole.Window, QColor("#232323"))
+            pal.setColor(QPalette.ColorGroup.Inactive, QPalette.ColorRole.Button, QColor("#232323"))
+            pal.setColor(
+                QPalette.ColorGroup.Inactive, QPalette.ColorRole.ButtonText, QColor("#666666")
+            )
+
+            app.setPalette(pal)
+
         # Handle OS signals
         self.setup_signals()
         # allow to process input from console, eg. SIGTERM
@@ -269,6 +289,18 @@ class QtDriver(DriverMixin, QObject):
             icon = QIcon()
             icon.addFile(str(icon_path))
             app.setWindowIcon(icon)
+
+        # Initialize the main window's tag search panel
+        self.tag_search_panel = TagSearchPanel(self.lib, is_tag_chooser=True)
+        self.add_tag_modal = PanelModal(
+            self.tag_search_panel, Translations.translate_formatted("tag.add.plural")
+        )
+        self.tag_search_panel.tag_chosen.connect(
+            lambda t: (
+                self.add_tags_to_selected_callback(t),
+                self.preview_panel.update_widgets(),
+            )
+        )
 
         menu_bar = QMenuBar(self.main_window)
         self.main_window.setMenuBar(menu_bar)
@@ -393,6 +425,52 @@ class QtDriver(DriverMixin, QObject):
         clear_select_action.setShortcut(QtCore.Qt.Key.Key_Escape)
         clear_select_action.setToolTip("Esc")
         edit_menu.addAction(clear_select_action)
+
+        self.copy_buffer: dict = {"fields": [], "tags": []}
+
+        self.copy_fields_action = QAction(menu_bar)
+        Translations.translate_qobject(self.copy_fields_action, "edit.copy_fields")
+        self.copy_fields_action.triggered.connect(self.copy_fields_action_callback)
+        self.copy_fields_action.setShortcut(
+            QtCore.QKeyCombination(
+                QtCore.Qt.KeyboardModifier(QtCore.Qt.KeyboardModifier.ControlModifier),
+                QtCore.Qt.Key.Key_C,
+            )
+        )
+        self.copy_fields_action.setToolTip("Ctrl+C")
+        self.copy_fields_action.setEnabled(False)
+        edit_menu.addAction(self.copy_fields_action)
+
+        self.paste_fields_action = QAction(menu_bar)
+        Translations.translate_qobject(self.paste_fields_action, "edit.paste_fields")
+        self.paste_fields_action.triggered.connect(self.paste_fields_action_callback)
+        self.paste_fields_action.setShortcut(
+            QtCore.QKeyCombination(
+                QtCore.Qt.KeyboardModifier(QtCore.Qt.KeyboardModifier.ControlModifier),
+                QtCore.Qt.Key.Key_V,
+            )
+        )
+        self.paste_fields_action.setToolTip("Ctrl+V")
+        self.paste_fields_action.setEnabled(False)
+        edit_menu.addAction(self.paste_fields_action)
+
+        self.add_tag_to_selected_action = QAction(menu_bar)
+        Translations.translate_qobject(
+            self.add_tag_to_selected_action, "select.add_tag_to_selected"
+        )
+        self.add_tag_to_selected_action.triggered.connect(self.add_tag_modal.show)
+        self.add_tag_to_selected_action.setShortcut(
+            QtCore.QKeyCombination(
+                QtCore.Qt.KeyboardModifier(
+                    QtCore.Qt.KeyboardModifier.ControlModifier
+                    ^ QtCore.Qt.KeyboardModifier.ShiftModifier
+                ),
+                QtCore.Qt.Key.Key_T,
+            )
+        )
+        self.add_tag_to_selected_action.setToolTip("Ctrl+Shift+T")
+        self.add_tag_to_selected_action.setEnabled(False)
+        edit_menu.addAction(self.add_tag_to_selected_action)
 
         edit_menu.addSeparator()
 
@@ -551,6 +629,7 @@ class QtDriver(DriverMixin, QObject):
                 self.open_library(path_result.library_path)
 
         # check ffmpeg and show warning if not
+        # NOTE: Does this need to use self?
         self.ffmpeg_checker = FfmpegChecker()
         if not self.ffmpeg_checker.installed():
             self.ffmpeg_checker.show_warning()
@@ -705,8 +784,11 @@ class QtDriver(DriverMixin, QObject):
 
         self.preview_panel.update_widgets()
         self.main_window.toggle_landing_page(enabled=True)
-
         self.main_window.pagination.setHidden(True)
+
+        # NOTE: Doesn't try to disable during tests
+        if self.add_tag_to_selected_action:
+            self.add_tag_to_selected_action.setEnabled(False)
 
         end_time = time.time()
         self.main_window.statusbar.showMessage(
@@ -760,15 +842,24 @@ class QtDriver(DriverMixin, QObject):
                 item.thumb_button.set_selected(True)
 
         self.set_macro_menu_viability()
+        self.set_clipboard_menu_viability()
+        self.set_add_to_selected_visibility()
+
         self.preview_panel.update_widgets(update_preview=False)
 
     def clear_select_action_callback(self):
         self.selected.clear()
+        self.set_add_to_selected_visibility()
         for item in self.item_thumbs:
             item.thumb_button.set_selected(False)
 
         self.set_macro_menu_viability()
+        self.set_clipboard_menu_viability()
         self.preview_panel.update_widgets()
+
+    def add_tags_to_selected_callback(self, tag_ids: list[int]):
+        for entry_id in self.selected:
+            self.lib.add_tags_to_entry(entry_id, tag_ids)
 
     def show_tag_database(self):
         self.modal = PanelModal(
@@ -1040,6 +1131,36 @@ class QtDriver(DriverMixin, QObject):
         sa.setWidgetResizable(True)
         sa.setWidget(self.flow_container)
 
+    def copy_fields_action_callback(self):
+        if len(self.selected) > 0:
+            entry = self.lib.get_entry_full(self.selected[0])
+            if entry:
+                self.copy_buffer["fields"] = entry.fields
+                self.copy_buffer["tags"] = [tag.id for tag in entry.tags]
+        self.set_clipboard_menu_viability()
+
+    def paste_fields_action_callback(self):
+        for id in self.selected:
+            entry = self.lib.get_entry_full(id, with_fields=True, with_tags=False)
+            if not entry:
+                continue
+            existing_fields = entry.fields
+            for field in self.copy_buffer["fields"]:
+                exists = False
+                for e in existing_fields:
+                    if field.type_key == e.type_key and field.value == e.value:
+                        exists = True
+                if not exists:
+                    self.lib.add_field_to_entry(id, field_id=field.type_key, value=field.value)
+            self.lib.add_tags_to_entry(id, self.copy_buffer["tags"])
+        if len(self.selected) > 1:
+            if TAG_ARCHIVED in self.copy_buffer["tags"]:
+                self.update_badges({BadgeType.ARCHIVED: True}, origin_id=0, add_tags=False)
+            if TAG_FAVORITE in self.copy_buffer["tags"]:
+                self.update_badges({BadgeType.FAVORITE: True}, origin_id=0, add_tags=False)
+        else:
+            self.preview_panel.update_widgets()
+
     def toggle_item_selection(self, item_id: int, append: bool, bridge: bool):
         """Toggle the selection of an item in the Thumbnail Grid.
 
@@ -1110,10 +1231,32 @@ class QtDriver(DriverMixin, QObject):
                 it.thumb_button.set_selected(False)
 
         self.set_macro_menu_viability()
+        self.set_clipboard_menu_viability()
+        self.set_add_to_selected_visibility()
+
         self.preview_panel.update_widgets()
 
     def set_macro_menu_viability(self):
         self.autofill_action.setDisabled(not self.selected)
+
+    def set_clipboard_menu_viability(self):
+        if len(self.selected) == 1:
+            self.copy_fields_action.setEnabled(True)
+        else:
+            self.copy_fields_action.setEnabled(False)
+        if self.selected and (self.copy_buffer["fields"] or self.copy_buffer["tags"]):
+            self.paste_fields_action.setEnabled(True)
+        else:
+            self.paste_fields_action.setEnabled(False)
+
+    def set_add_to_selected_visibility(self):
+        if not self.add_tag_to_selected_action:
+            return
+
+        if self.selected:
+            self.add_tag_to_selected_action.setEnabled(True)
+        else:
+            self.add_tag_to_selected_action.setEnabled(False)
 
     def update_completions_list(self, text: str) -> None:
         matches = re.search(
@@ -1478,6 +1621,7 @@ class QtDriver(DriverMixin, QObject):
         self.main_window.setAcceptDrops(True)
 
         self.selected.clear()
+        self.set_add_to_selected_visibility()
         self.preview_panel.update_widgets()
 
         # page (re)rendering, extract eventually

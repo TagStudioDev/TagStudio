@@ -3,6 +3,8 @@
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
 
+import sys
+
 from PySide6 import QtCore
 from PySide6.QtCore import QEvent
 from PySide6.QtGui import (
@@ -25,11 +27,27 @@ class ThumbButton(QPushButtonWrapper):
         self.hovered = False
         self.selected = False
 
-        self.select_color: QColor = QPalette.color(
-            self.palette(),
-            QPalette.ColorGroup.Active,
-            QPalette.ColorRole.Accent,
-        )
+        # NOTE: As of PySide 6.8.0.1, the QPalette.ColorRole.Accent role no longer works on Windows.
+        # The QPalette.ColorRole.AlternateBase does for some reason, but not on macOS.
+        self.select_color: QColor
+        if sys.platform == "win32":
+            self.select_color = QPalette.color(
+                self.palette(),
+                QPalette.ColorGroup.Active,
+                QPalette.ColorRole.AlternateBase,
+            )
+            self.select_color.setHsl(
+                self.select_color.hslHue(),
+                self.select_color.hslSaturation(),
+                max(self.select_color.lightness(), 100),
+                255,
+            )
+        else:
+            self.select_color = QPalette.color(
+                self.palette(),
+                QPalette.ColorGroup.Active,
+                QPalette.ColorRole.Accent,
+            )
 
         self.select_color_faded: QColor = QColor(self.select_color)
         self.select_color_faded.setHsl(
@@ -39,11 +57,26 @@ class ThumbButton(QPushButtonWrapper):
             127,
         )
 
-        self.hover_color: QColor = QPalette.color(
-            self.palette(),
-            QPalette.ColorGroup.Active,
-            QPalette.ColorRole.Accent,
-        )
+        self.hover_color: QColor
+        if sys.platform == "win32":
+            self.hover_color = QPalette.color(
+                self.palette(),
+                QPalette.ColorGroup.Active,
+                QPalette.ColorRole.AlternateBase,
+            )
+            self.hover_color.setHsl(
+                self.hover_color.hslHue(),
+                self.hover_color.hslSaturation(),
+                max(self.hover_color.lightness(), 100),
+                255,
+            )
+        else:
+            self.hover_color = QPalette.color(
+                self.palette(),
+                QPalette.ColorGroup.Active,
+                QPalette.ColorRole.Accent,
+            )
+
         self.hover_color.setHsl(
             self.hover_color.hslHue(),
             self.hover_color.hslSaturation(),
