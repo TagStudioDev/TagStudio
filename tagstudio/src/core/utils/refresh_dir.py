@@ -1,8 +1,9 @@
-import datetime as dt
+import datetime as dt, timezone
 from collections.abc import Iterator
 from dataclasses import dataclass, field
 from pathlib import Path
 from time import time
+import platform
 
 import structlog
 from src.core.constants import TS_FOLDER_NAME
@@ -34,18 +35,39 @@ class RefreshDirTracker:
     def files_count(self) -> int:
         return len(self.files_not_in_library)
 
+    def get_file_times(self, file_path: Path):
+        """Get the creation and modification times of a file."""
+        stat = file_path.stat()
+        system = platform.system()
+        if system == 'Windows':  # Windows
+            date_created = dt.fromtimestamp(stat.st_ctime, timezone.utc)
+        elif system == 'Darwin':  # macOS
+            date_created = dt.fromtimestamp(stat.st_birthtime, timezone.utc)
+        else:  # Linux and other systems
+            try:
+                date_created = dt.fromtimestamp(stat.st_birthtime, timezone.utc)
+            except AttributeError:
+                # st_birthtime is not available on some Linux filesystems
+                date_created = dt.fromtimestamp(stat.st_ctime, timezone.utc)
+        date_modified = dt.fromtimestamp(stat.st_mtime, timezone.utc)
+        return date_created, date_modified
+
     def save_new_files(self):
         """Save the list of files that are not in the library."""
         if self.files_not_in_library:
-            entries = [
-                Entry(
-                    path=entry_path,
-                    folder=self.library.folder,
-                    fields=[],
-                    date_added=dt.datetime.now(),
+            entries = []
+            for entry_path in self.files_not_in_library:
+                date_created, date_modified = self.get_file_times(entry_path)
+                entries.append(
+                    Entry(
+                        path=entry_path,
+                        folder=self.library.folder,
+                        fields=[],
+                        date_added=dt.now(timezone.utc),
+                        date_created=date_created,
+                        date_modified=date_modified,
+                    )
                 )
-                for entry_path in self.files_not_in_library
-            ]
             self.library.add_entries(entries)
 
         self.files_not_in_library = []
@@ -97,6 +119,15 @@ class RefreshDirTracker:
             # TODO - load these in batch somehow
             if not self.library.has_path_entry(relative_path):
                 self.files_not_in_library.append(relative_path)
+            else:
+                # Update date_modified for existing entries if it has changed
+                entry = self.library.get_entry_by_path(relative_path)
+                if entry:
+                    date_modified = datetime.fromtimestamp(f.stat().st_mtime, timezone.utc)
+                    if entry.date_modified != date_modified:
+                        entry.date_modified = date_modified
+                        self.library.update_entry(entry)
+               
 
         end_time_total = time()
         yield dir_file_count
