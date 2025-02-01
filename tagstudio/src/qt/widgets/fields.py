@@ -70,7 +70,7 @@ class FieldContainer(QWidget):
 
         self.title_container = QWidget()
         self.title_layout = QHBoxLayout(self.title_container)
-        self.title_layout.setAlignment(Qt.AlignmentFlag.AlignHCenter)
+        self.title_layout.setAlignment(Qt.AlignmentFlag.AlignLeft)
         self.title_layout.setObjectName("fieldLayout")
         self.title_layout.setContentsMargins(0, 0, 0, 0)
         self.title_layout.setSpacing(0)
@@ -78,6 +78,7 @@ class FieldContainer(QWidget):
 
         self.title_widget = QLabel()
         self.title_widget.setMinimumHeight(button_size)
+        self.title_widget.setMinimumWidth(240)
         self.title_widget.setObjectName("fieldTitle")
         self.title_widget.setWordWrap(True)
         self.title_widget.setText(title)
