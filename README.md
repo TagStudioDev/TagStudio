@@ -166,6 +166,10 @@ Create a new tag by accessing the "New Tag" option from the Edit menu or by pres
 -   The **color** option lets you select an optional color palette to use for your tag.
 -   The **"Is Cagegory"** property lets you treat this tag as a category under which itself and any child tags inheriting from it will be sorted by inside the preview panel.
 
+#### Tag Manager
+
+You can manage your library of tags from opening the "Tag Manager" panel from Edit -> "Tag Manager". From here you can create, search for, edit, and permanently delete any tags you've created in your library.
+
 ### Editing Tags
 
 To edit a tag, click on it inside the preview panel or right-click the tag and select “Edit Tag” from the context menu.
