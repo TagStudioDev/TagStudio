@@ -1,34 +1,23 @@
-# Field
+# Fields
 
-Fields are the building blocks of metadata stored in [entries](entry.md). Fields have several base types for representing different kinds of information, including:
+Fields are additional types of metadata that you can attach to [file entries](entry.md). Like [tags](tag.md), fields are not stored inside files themselves nor in sidecar files, but rather inside the respective TagStudio [library](index.md) save file.
 
-#### `text_line`
+## Field Types
 
-- A string of text, displayed as a single line.
-  - e.g: Title, Author, Artist, URL, etc.
+### Text Line
 
-#### `text_box`
+A string of text, displayed as a single line.
 
-- A long string of text displayed as a box of text.
-  - e.g: Description, Notes, etc.
+-   e.g: Title, Author, Artist, URL, etc.
 
-#### `tag_box`
+### Text Box
 
-- A box of [tags](tag.md) defined and added by the user.
-- Multiple tag boxes can be used to separate classifications of tags.
-  - e.g: Content Tags, Meta Tags, etc.
+A long string of text displayed as a box of text.
 
-#### `datetime` [WIP]
+-   e.g: Description, Notes, etc.
 
-- A date and time value.
-  - e.g: Date Created, Date Modified, Date Taken, etc.
+### Datetime [WIP]
 
-#### `checkbox` [WIP]
+A date and time value.
 
-- A simple two-state checkbox.
-- Can be associated with a tag for quick organization.
-  - e.g: Archive, Favorite, etc.
-
-#### `collation` [obsolete]
-
-- Previously used for associating files to be used in a [collation](../utilities/macro.md#create-collage), will be removed in favor of a more flexible feature in future updates.
+-   e.g: Date Published, Date Taken, etc.
