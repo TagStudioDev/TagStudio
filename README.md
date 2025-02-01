@@ -82,7 +82,7 @@ Translation hosting generously provided by [Weblate](https://weblate.org/en/). C
 
 ### Search
 
--   Search for file entries based on tags, file path (`path:`), file types (`filetype:`), and even media types! (`mediatype:`)
+-   Search for file entries based on tags, file path (`path:`), file types (`filetype:`), and even media types! (`mediatype:`). Path searches currently use [glob](<https://en.wikipedia.org/wiki/Glob_(programming)>) syntax, so you may need to wrap your filename or filepath in asterisks while searching. This will not be strictly necessary in future versions of the program.
 -   Use and combine boolean operators (`AND`, `OR`, `NOT`) along with parentheses groups, quotation escaping, and underscore substitution to create detailed search queries
 -   Use special search conditions (`special:untagged` and `special:empty`) to find file entries without tags or fields, respectively
 
