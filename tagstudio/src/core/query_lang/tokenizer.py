@@ -108,7 +108,6 @@ class Tokenizer:
             out += self.current_char
             self.__advance()
 
-
         end = self.pos - 1
         return Token(TokenType.ULITERAL, out, start, end)
 
