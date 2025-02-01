@@ -13,7 +13,6 @@ from pathlib import Path
 
 import cv2
 import numpy as np
-import pillow_jxl  # noqa: F401
 import rawpy
 import structlog
 from mutagen import MutagenError, flac, id3, mp4
@@ -67,6 +66,11 @@ ImageFile.LOAD_TRUNCATED_IMAGES = True
 logger = structlog.get_logger(__name__)
 register_heif_opener()
 register_avif_opener()
+
+try:
+    import pillow_jxl  # noqa: F401
+except ImportError:
+    logger.exception('[ThumbRenderer] Could not import the "pillow_jxl" module')
 
 
 class ThumbRenderer(QObject):
