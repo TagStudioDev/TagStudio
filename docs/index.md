@@ -11,6 +11,7 @@ TagStudio is a photo & file organization application with an underlying tag-base
 <figure width="60%" markdown="span">
 
   ![TagStudio screenshot](assets/screenshot.png)
+  
   <figcaption>TagStudio Alpha v9.5.0 running on macOS Sequoia.</figcaption>
 
 </figure>
