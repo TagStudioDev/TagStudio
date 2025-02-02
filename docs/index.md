@@ -9,8 +9,11 @@ title: Home
 TagStudio is a photo & file organization application with an underlying tag-based system that focuses on giving freedom and flexibility to the user. No proprietary programs or formats, no sea of sidecar files, and no complete upheaval of your filesystem structure.
 
 <figure width="60%" markdown="span">
+
   ![TagStudio screenshot](assets/screenshot.png)
+  
   <figcaption>TagStudio Alpha v9.5.0 running on macOS Sequoia.</figcaption>
+
 </figure>
 
 ## Feature Roadmap
