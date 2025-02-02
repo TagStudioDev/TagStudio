@@ -93,22 +93,23 @@ class Tokenizer:
 
         start = self.pos
 
-        while self.current_char not in self.NOT_IN_ULITERAL and self.current_char is not None:
+        while self.current_char is not None:
+            if self.current_char in self.NOT_IN_ULITERAL:
+                if self.current_char == ":":
+                    if len(out) == 0:
+                        raise ParsingError(self.pos, self.pos)
+                    constraint_type = ConstraintType.from_string(out)
+                    if constraint_type is not None:
+                        self.__advance()
+                        return Token(TokenType.CONSTRAINTTYPE, constraint_type, start, self.pos)
+                else:
+                    break
+
             out += self.current_char
             self.__advance()
 
         end = self.pos - 1
-
-        if self.current_char == ":":
-            if len(out) == 0:
-                raise ParsingError(self.pos, self.pos)
-            self.__advance()
-            constraint_type = ConstraintType.from_string(out)
-            if constraint_type is None:
-                raise ParsingError(start, end, f'Invalid ContraintType "{out}"')
-            return Token(TokenType.CONSTRAINTTYPE, constraint_type, start, end)
-        else:
-            return Token(TokenType.ULITERAL, out, start, end)
+        return Token(TokenType.ULITERAL, out, start, end)
 
     def __quoted_string(self) -> Token:
         start = self.pos
