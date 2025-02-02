@@ -66,6 +66,7 @@ from src.core.library.alchemy.enums import (
 from src.core.library.alchemy.fields import _FieldID
 from src.core.library.alchemy.library import Entry, LibraryStatus
 from src.core.media_types import MediaCategories
+from src.core.query_lang.util import ParsingError
 from src.core.ts_core import TagStudioCore
 from src.core.utils.refresh_dir import RefreshDirTracker
 from src.core.utils.web import strip_web_protocol
@@ -666,7 +667,11 @@ class QtDriver(DriverMixin, QObject):
                     .with_sorting_mode(self.sorting_mode)
                     .with_sorting_direction(self.sorting_direction)
                 )
-            except Exception as e:
+            except ParsingError as e:
+                self.main_window.statusbar.showMessage(
+                    f"{Translations["status.results.invalid_syntax"]} "
+                    f"\"{self.main_window.searchField.text()}\""
+                )
                 logger.error("[QtDriver] Could not filter items", error=e)
 
         # Search Button

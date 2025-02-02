@@ -5,7 +5,6 @@ from pathlib import Path
 import structlog
 from src.core.query_lang import AST as Query  # noqa: N811
 from src.core.query_lang import Constraint, ConstraintType, Parser
-from src.core.query_lang.util import ParsingError
 
 MAX_SQL_VARIABLES = 32766  # 32766 is the max sql bind parameter count as defined here: https://github.com/sqlite/sqlite/blob/master/src/sqliteLimit.h#L140
 
@@ -97,14 +96,7 @@ class FilterState:
 
     @classmethod
     def from_search_query(cls, search_query: str) -> "FilterState":
-        filter_state: FilterState
-        try:
-            filter_state = cls(ast=Parser(search_query).parse())
-        except ParsingError as e:
-            logger.error("[FilterState] Could not parse search query", error=e)
-            filter_state = FilterState(ast=Parser("tag_id:-1").parse())  # Don't return any results
-
-        return filter_state
+        return cls(ast=Parser(search_query).parse())
 
     @classmethod
     def from_tag_id(cls, tag_id: int | str) -> "FilterState":

@@ -1,6 +1,7 @@
 import pytest
 from src.core.library.alchemy.enums import FilterState
 from src.core.library.alchemy.library import Library
+from src.core.query_lang.util import ParsingError
 
 
 def verify_count(lib: Library, query: str, count: int):
@@ -133,5 +134,5 @@ def test_parent_tags(search_library: Library, query: str, count: int):
     "invalid_query", ["asd AND", "asd AND AND", "tag:(", "(asd", "asd[]", "asd]", ":", "tag: :"]
 )
 def test_syntax(search_library: Library, invalid_query: str):
-    results = search_library.search_library(FilterState.from_search_query(invalid_query))
-    assert not results
+    with pytest.raises(ParsingError) as e_info:  # noqa: F841
+        search_library.search_library(FilterState.from_search_query(invalid_query))
