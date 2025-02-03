@@ -1,3 +1,10 @@
+[project]
+name = "TagStudio"
+description = "A User-Focused Photo & File Management System."
+version = "9.5.0-pre1"
+license = "GPL-3.0-only"
+readme = "README.md"
+
 [tool.ruff]
 exclude = ["main_window.py", "home_ui.py", "resources.py", "resources_rc.py"]
 line-length = 100
@@ -10,28 +17,8 @@ line-length = 100
 convention = "google"
 
 [tool.ruff.lint]
-select = [
-	"B",
-	"D",
-	"E",
-	"F",
-	"FBT003",
-	"I",
-	"N",
-	"SIM",
-	"T20",
-	"UP",
-]
-ignore = [
-	"D100",
-	"D101",
-	"D102",
-	"D103",
-	"D104",
-	"D105",
-	"D106",
-	"D107",
-]
+select = ["B", "D", "E", "F", "FBT003", "I", "N", "SIM", "T20", "UP"]
+ignore = ["D100", "D101", "D102", "D103", "D104", "D105", "D106", "D107"]
 
 [tool.mypy]
 strict_optional = false
