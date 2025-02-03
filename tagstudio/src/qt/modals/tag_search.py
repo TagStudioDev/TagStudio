@@ -249,7 +249,7 @@ class TagSearchPanel(PanelWidget):
                     results_1.append(tag)
                 else:
                     results_2.append(tag)
-            results_1.sort(key=lambda tag: self.lib.tag_display_name(tag.id))
+            results_1.sort(key=lambda tag: tag.name)
             results_1.sort(key=lambda tag: len(self.lib.tag_display_name(tag.id)))
             results_2.sort(key=lambda tag: self.lib.tag_display_name(tag.id))
             self.first_tag_id = results_1[0].id if len(results_1) > 0 else tag_results[0].id

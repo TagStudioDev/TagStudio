@@ -31,6 +31,7 @@ from sqlalchemy import (
     func,
     or_,
     select,
+    text,
     update,
 )
 from sqlalchemy.exc import IntegrityError
@@ -69,6 +70,18 @@ from .models import Entry, Folder, Namespace, Preferences, Tag, TagAlias, TagCol
 from .visitors import SQLBoolExpressionBuilder
 
 logger = structlog.get_logger(__name__)
+
+TAG_CHILDREN_QUERY = text("""
+-- Note for this entire query that tag_parents.child_id is the parent id and tag_parents.parent_id is the child id due to bad naming
+WITH RECURSIVE ChildTags AS (
+    SELECT :tag_id AS child_id
+    UNION ALL
+    SELECT tp.parent_id AS child_id
+	FROM tag_parents tp
+    INNER JOIN ChildTags c ON tp.child_id = c.child_id
+)
+SELECT * FROM ChildTags;
+""")  # noqa: E501
 
 
 def slugify(input_string: str) -> str:
@@ -775,8 +788,20 @@ class Library:
                     )
                 )
 
-            tags = session.scalars(query)
-            res = list(set(tags))
+            tags = set(session.scalars(query))
+            ancestor_tag_ids: list[Tag] = []
+            for tag in tags:
+                ancestor_tag_ids.extend(
+                    list(session.scalars(TAG_CHILDREN_QUERY, {"tag_id": tag.id}))
+                )
+
+            ancestor_tags = session.scalars(
+                select(Tag)
+                .where(Tag.id.in_(ancestor_tag_ids))
+                .options(selectinload(Tag.parent_tags), selectinload(Tag.aliases))
+            )
+
+            res = list(tags.union(ancestor_tags))
 
             logger.info(
                 "searching tags",
