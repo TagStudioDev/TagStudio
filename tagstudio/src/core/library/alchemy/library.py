@@ -335,7 +335,7 @@ class Library:
                 if db_result:
                     db_version = db_result.value  # type: ignore
 
-                if db_version != LibraryPrefs.DB_VERSION.default:
+                if db_version < 6:  # NOTE: DB_VERSION 6 is the first supported SQL DB version.
                     mismatch_text = Translations.translate_formatted(
                         "status.library_version_mismatch"
                     )
@@ -423,17 +423,19 @@ class Library:
                 )
                 session.add(folder)
                 session.expunge(folder)
-
                 session.commit()
                 self.folder = folder
 
             # Apply any post-SQL migration patches.
             if not is_new:
                 # NOTE: DB_VERSION 6 was first used in v9.5.0-pr1
-                if db_version >= 6:
+                if db_version == 6:
                     self.apply_db6_patches(session)
                 else:
                     pass
+
+            # Update DB_VERSION
+            self.set_prefs(LibraryPrefs.DB_VERSION, LibraryPrefs.DB_VERSION.default)
 
         # everything is fine, set the library path
         self.library_dir = library_dir
@@ -444,14 +446,27 @@ class Library:
 
         DB_VERSION 6 was first used in v9.5.0-pr1.
         """
+        logger.info("[Library] Applying patches to DB_VERSION: 6 library...")
         with session:
-            # Repair "Description" fields with a TEXT_LINE key instead of a TEXT_BOX key
-            statement = (
+            # Repair "Description" fields with a TEXT_LINE key instead of a TEXT_BOX key.
+            desc_stmd = (
                 update(ValueType)
                 .where(ValueType.key == _FieldID.DESCRIPTION.name)
                 .values(type=FieldTypeEnum.TEXT_BOX.name)
             )
-            session.execute(statement)
+            session.execute(desc_stmd)
+            session.flush()
+
+            # Repair tags that may have a disambiguation_id pointing towards a deleted tag.
+            all_tag_ids: set[int] = {tag.id for tag in self.tags}
+            disam_stmt = (
+                update(Tag)
+                .where(Tag.disambiguation_id.not_in(all_tag_ids))
+                .values(disambiguation_id=None)
+            )
+            session.execute(disam_stmt)
+            session.flush()
+
             session.commit()
 
     @property
@@ -816,6 +831,14 @@ class Library:
                 for child_tag in child_tags or []:
                     session.delete(child_tag)
                     session.expunge(child_tag)
+
+                disam_stmt = (
+                    update(Tag)
+                    .where(Tag.disambiguation_id == tag.id)
+                    .values(disambiguation_id=None)
+                )
+                session.execute(disam_stmt)
+                session.flush()
 
                 session.delete(tag)
                 session.commit()
