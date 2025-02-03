@@ -294,7 +294,9 @@ class QtDriver(DriverMixin, QObject):
         # Initialize the main window's tag search panel
         self.tag_search_panel = TagSearchPanel(self.lib, is_tag_chooser=True)
         self.add_tag_modal = PanelModal(
-            self.tag_search_panel, Translations.translate_formatted("tag.add.plural")
+            widget=self.tag_search_panel,
+            title=Translations.translate_formatted("tag.add.plural"),
+            window_title=Translations.translate_formatted("tag.add.plural"),
         )
         self.tag_search_panel.tag_chosen.connect(
             lambda t: (
