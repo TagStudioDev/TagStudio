@@ -66,6 +66,7 @@ from src.core.library.alchemy.enums import (
 from src.core.library.alchemy.fields import _FieldID
 from src.core.library.alchemy.library import Entry, LibraryStatus
 from src.core.media_types import MediaCategories
+from src.core.query_lang.util import ParsingError
 from src.core.ts_core import TagStudioCore
 from src.core.utils.refresh_dir import RefreshDirTracker
 from src.core.utils.web import strip_web_protocol
@@ -659,24 +660,26 @@ class QtDriver(DriverMixin, QObject):
         # in a global dict for methods to access for different DPIs.
         # adj_font_size = math.floor(12 * self.main_window.devicePixelRatio())
 
+        def _filter_items():
+            try:
+                self.filter_items(
+                    FilterState.from_search_query(self.main_window.searchField.text())
+                    .with_sorting_mode(self.sorting_mode)
+                    .with_sorting_direction(self.sorting_direction)
+                )
+            except ParsingError as e:
+                self.main_window.statusbar.showMessage(
+                    f"{Translations["status.results.invalid_syntax"]} "
+                    f"\"{self.main_window.searchField.text()}\""
+                )
+                logger.error("[QtDriver] Could not filter items", error=e)
+
         # Search Button
         search_button: QPushButton = self.main_window.searchButton
-        search_button.clicked.connect(
-            lambda: self.filter_items(
-                FilterState.from_search_query(self.main_window.searchField.text())
-                .with_sorting_mode(self.sorting_mode)
-                .with_sorting_direction(self.sorting_direction)
-            )
-        )
+        search_button.clicked.connect(_filter_items)
         # Search Field
         search_field: QLineEdit = self.main_window.searchField
-        search_field.returnPressed.connect(
-            lambda: self.filter_items(
-                FilterState.from_search_query(self.main_window.searchField.text())
-                .with_sorting_mode(self.sorting_mode)
-                .with_sorting_direction(self.sorting_direction)
-            )
-        )
+        search_field.returnPressed.connect(_filter_items)
         # Sorting Dropdowns
         sort_mode_dropdown: QComboBox = self.main_window.sorting_mode_combobox
         for sort_mode in SortingModeEnum:

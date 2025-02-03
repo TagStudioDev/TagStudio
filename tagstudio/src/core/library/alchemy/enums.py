@@ -2,10 +2,13 @@ import enum
 from dataclasses import dataclass, replace
 from pathlib import Path
 
+import structlog
 from src.core.query_lang import AST as Query  # noqa: N811
 from src.core.query_lang import Constraint, ConstraintType, Parser
 
 MAX_SQL_VARIABLES = 32766  # 32766 is the max sql bind parameter count as defined here: https://github.com/sqlite/sqlite/blob/master/src/sqliteLimit.h#L140
+
+logger = structlog.get_logger(__name__)
 
 
 class TagColorEnum(enum.IntEnum):

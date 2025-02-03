@@ -205,6 +205,7 @@
     "status.library_version_found": "Found:",
     "status.library_version_mismatch": "Library Version Mismatch!",
     "status.results_found": "{count} Results Found ({time_span})",
+    "status.results.invalid_syntax": "Invalid Search Syntax:",
     "status.results": "Results",
     "tag_manager.title": "Library Tags",
     "tag.add_to_search": "Add to Search",
