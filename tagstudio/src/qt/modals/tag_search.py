@@ -3,7 +3,6 @@
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
 
-from datetime import datetime as dt
 import typing
 
 import src.qt.modals.build_tag as build_tag
@@ -243,18 +242,19 @@ class TagSearchPanel(PanelWidget):
         if len(tag_results) > 0:
             results_1 = []
             results_2 = []
+            query_lower = "" if not query else query.lower()
             for tag in tag_results:
                 if tag.id in self.exclude:
                     continue
-                elif query and tag.name.lower().startswith(query.lower()):
+                elif query and tag.name.lower().startswith(query_lower):
                     results_1.append(tag)
                 else:
                     results_2.append(tag)
             results_1.sort(key=lambda tag: tag.name)
-            results_1.sort(key=lambda tag: len(self.lib.tag_display_name(tag.id)))
-            results_2.sort(key=lambda tag: self.lib.tag_display_name(tag.id))
+            results_1.sort(key=lambda tag: len(tag.name))
+            results_2.sort(key=lambda tag: tag.name)
             self.first_tag_id = results_1[0].id if len(results_1) > 0 else tag_results[0].id
-            for tag in results_1 + results_2:
+            for tag in list(results_1 + results_2)[:100]:
                 self.scroll_layout.addWidget(self.__build_row_item_widget(tag))
         else:
             # If query doesnt exist add create button
