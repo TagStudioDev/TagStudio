@@ -221,6 +221,7 @@ class TagSearchPanel(PanelWidget):
 
             self.tag_chosen.emit(tag.id)
             self.search_field.setText("")
+            self.search_field.setFocus()
             self.update_tags()
 
         self.build_tag_modal: BuildTagPanel = build_tag.BuildTagPanel(self.lib)
@@ -239,17 +240,20 @@ class TagSearchPanel(PanelWidget):
         while self.scroll_layout.count():
             self.scroll_layout.takeAt(0).widget().deleteLater()
         tag_results = self.lib.search_tags(name=query)
-        if len(tag_results) > 0:
-            results_1 = []
-            results_2 = []
-            query_lower = "" if not query else query.lower()
-            for tag in tag_results:
-                if tag.id in self.exclude:
-                    continue
-                elif query and tag.name.lower().startswith(query_lower):
-                    results_1.append(tag)
-                else:
-                    results_2.append(tag)
+
+        results_1 = []
+        results_2 = []
+        query_lower = "" if not query else query.lower()
+        for tag in tag_results:
+            if tag.id in self.exclude:
+                continue
+            elif query and tag.name.lower().startswith(query_lower):
+                results_1.append(tag)
+            else:
+                results_2.append(tag)
+        if results_1 or results_2:
+            self.first_tag_id = None
+
             results_1.sort(key=lambda tag: tag.name)
             results_1.sort(key=lambda tag: len(tag.name))
             results_2.sort(key=lambda tag: tag.name)
@@ -257,8 +261,9 @@ class TagSearchPanel(PanelWidget):
             for tag in list(results_1 + results_2)[:100]:
                 self.scroll_layout.addWidget(self.__build_row_item_widget(tag))
         else:
-            # If query doesnt exist add create button
             self.first_tag_id = None
+
+        if query and query.strip():
             c = self.build_create_tag_button(query)
             self.scroll_layout.addWidget(c)
 
