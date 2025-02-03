@@ -1,4 +1,4 @@
-import datetime as dt
+from datetime import datetime as dt
 from collections.abc import Iterator
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -42,7 +42,7 @@ class RefreshDirTracker:
                     path=entry_path,
                     folder=self.library.folder,
                     fields=[],
-                    date_added=dt.datetime.now(),
+                    date_added=dt.now(),
                 )
                 for entry_path in self.files_not_in_library
             ]

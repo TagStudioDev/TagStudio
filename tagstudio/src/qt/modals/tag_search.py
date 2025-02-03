@@ -3,6 +3,7 @@
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
 
+from datetime import datetime as dt
 import typing
 
 import src.qt.modals.build_tag as build_tag
