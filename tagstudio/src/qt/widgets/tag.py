@@ -151,10 +151,10 @@ class TagWidget(QWidget):
 
         self.inner_layout = QHBoxLayout()
         self.inner_layout.setObjectName("innerLayout")
-        self.inner_layout.setContentsMargins(2, 2, 2, 2)
+        self.inner_layout.setContentsMargins(0, 0, 0, 0)
 
         self.bg_button.setLayout(self.inner_layout)
-        self.bg_button.setMinimumSize(22, 22)
+        self.bg_button.setMinimumSize(44, 22)
 
         primary_color = get_primary_color(tag)
         border_color = (
@@ -211,16 +211,34 @@ class TagWidget(QWidget):
             self.remove_button.setText("–")
             self.remove_button.setHidden(True)
             self.remove_button.setStyleSheet(
+                f"QPushButton{{"
                 f"color: rgba{primary_color.toTuple()};"
                 f"background: rgba{text_color.toTuple()};"
                 f"font-weight: 800;"
-                f"border-radius: 3px;"
-                f"border-width:0;"
+                f"border-radius: 5px;"
+                f"border-width: 4;"
+                f"border-color: rgba(0,0,0,0);"
                 f"padding-bottom: 4px;"
                 f"font-size: 14px"
+                f"}}"
+                f"QPushButton::hover{{"
+                f"background: rgba{primary_color.toTuple()};"
+                f"color: rgba{text_color.toTuple()};"
+                f"border-color: rgba{highlight_color.toTuple()};"
+                f"border-width: 2;"
+                f"border-radius: 6px;"
+                f"}}"
+                f"QPushButton::pressed{{"
+                f"background: rgba{border_color.toTuple()};"
+                f"color: rgba{highlight_color.toTuple()};"
+                f"}}"
+                f"QPushButton::focus{{"
+                f"background: rgba{border_color.toTuple()};"
+                f"outline:none;"
+                f"}}"
             )
-            self.remove_button.setMinimumSize(18, 18)
-            self.remove_button.setMaximumSize(18, 18)
+            self.remove_button.setMinimumSize(22, 22)
+            self.remove_button.setMaximumSize(22, 22)
             self.remove_button.clicked.connect(self.on_remove.emit)
 
         if has_remove:
