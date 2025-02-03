@@ -4,6 +4,7 @@
 import logging
 from typing import Callable
 
+from PySide6 import QtCore, QtGui
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import QHBoxLayout, QLabel, QPushButton, QVBoxLayout, QWidget
 from src.qt.translations import Translations
@@ -125,3 +126,11 @@ class PanelWidget(QWidget):
 
     def add_callback(self, callback: Callable, event: str = "returnPressed"):
         logging.warning(f"add_callback not implemented for {self.__class__.__name__}")
+
+    def keyPressEvent(self, event: QtGui.QKeyEvent) -> None:  # noqa N802
+        if event.key() == QtCore.Qt.Key.Key_Escape:
+            if self.panel_cancel_button:
+                self.panel_cancel_button.click()
+        else:  # Other key presses
+            pass
+        return super().keyPressEvent(event)
