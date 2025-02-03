@@ -260,7 +260,6 @@ class TagSearchPanel(PanelWidget):
             self.first_tag_id = None
             c = self.build_create_tag_button(query)
             self.scroll_layout.addWidget(c)
-        self.search_field.setFocus()
 
     def on_return(self, text: str):
         if text:
@@ -276,9 +275,9 @@ class TagSearchPanel(PanelWidget):
             self.parentWidget().hide()
 
     def showEvent(self, event: QShowEvent) -> None:  # noqa N802
-        if not self.is_initialized:
-            self.update_tags()
-            self.is_initialized = True
+        self.update_tags()
+        self.search_field.setText("")
+        self.search_field.setFocus()
         return super().showEvent(event)
 
     def remove_tag(self, tag: Tag):
