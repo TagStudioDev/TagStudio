@@ -78,7 +78,7 @@ class FieldContainer(QWidget):
 
         self.title_widget = QLabel()
         self.title_widget.setMinimumHeight(button_size)
-        self.title_widget.setMinimumWidth(240)
+        self.title_widget.setMinimumWidth(200)
         self.title_widget.setObjectName("fieldTitle")
         self.title_widget.setWordWrap(True)
         self.title_widget.setText(title)
