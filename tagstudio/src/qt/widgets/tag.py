@@ -19,6 +19,7 @@ from PySide6.QtWidgets import (
 from src.core.library import Tag
 from src.core.library.alchemy.enums import TagColorEnum
 from src.core.palette import ColorType, get_tag_color
+from src.qt.helpers.escape_text import escape_text
 from src.qt.translations import Translations
 
 logger = structlog.get_logger(__name__)
@@ -127,9 +128,9 @@ class TagWidget(QWidget):
         self.bg_button = QPushButton(self)
         self.bg_button.setFlat(True)
         if self.lib:
-            self.bg_button.setText(self.lib.tag_display_name(tag.id))
+            self.bg_button.setText(escape_text(self.lib.tag_display_name(tag.id)))
         else:
-            self.bg_button.setText(tag.name)
+            self.bg_button.setText(escape_text(tag.name))
         if has_edit:
             edit_action = QAction(self)
             edit_action.setText(Translations.translate_formatted("generic.edit"))
