@@ -190,6 +190,15 @@ class TagWidget(QWidget):
             f"QPushButton::hover{{"
             f"border-color: rgba{highlight_color.toTuple()};"
             f"}}"
+            f"QPushButton::pressed{{"
+            f"background: rgba{highlight_color.toTuple()};"
+            f"color: rgba{primary_color.toTuple()};"
+            f"border-color: rgba{primary_color.toTuple()};"
+            f"}}"
+            f"QPushButton::focus{{"
+            f"border-color: rgba{highlight_color.toTuple()};"
+            f"outline:none;"
+            f"}}"
         )
         self.bg_button.setMinimumHeight(22)
         self.bg_button.setMaximumHeight(22)

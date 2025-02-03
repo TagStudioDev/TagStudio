@@ -8,7 +8,7 @@ import typing
 import src.qt.modals.build_tag as build_tag
 import structlog
 from PySide6.QtCore import QSize, Qt, Signal
-from PySide6.QtGui import QColor, QShowEvent
+from PySide6.QtGui import QShowEvent
 from PySide6.QtWidgets import (
     QFrame,
     QHBoxLayout,
@@ -26,10 +26,6 @@ from src.qt.translations import Translations
 from src.qt.widgets.panel import PanelModal, PanelWidget
 from src.qt.widgets.tag import (
     TagWidget,
-    get_border_color,
-    get_highlight_color,
-    get_primary_color,
-    get_text_color,
 )
 
 logger = structlog.get_logger(__name__)
@@ -85,12 +81,7 @@ class TagSearchPanel(PanelWidget):
         self.root_layout.addWidget(self.search_field)
         self.root_layout.addWidget(self.scroll_area)
 
-    def __build_row_item_widget(self, tag: Tag):
-        container = QWidget()
-        row = QHBoxLayout(container)
-        row.setContentsMargins(0, 0, 0, 0)
-        row.setSpacing(3)
-
+    def __build_tag_widget(self, tag: Tag):
         has_remove_button = False
         if not self.is_tag_chooser:
             has_remove_button = tag.id not in range(RESERVED_TAG_START, RESERVED_TAG_END)
@@ -115,53 +106,9 @@ class TagSearchPanel(PanelWidget):
         #     )
         # )
 
-        row.addWidget(tag_widget)
-
-        primary_color = get_primary_color(tag)
-        border_color = (
-            get_border_color(primary_color)
-            if not (tag.color and tag.color.secondary)
-            else (QColor(tag.color.secondary))
-        )
-        highlight_color = get_highlight_color(
-            primary_color
-            if not (tag.color and tag.color.secondary)
-            else QColor(tag.color.secondary)
-        )
-        text_color: QColor
-        if tag.color and tag.color.secondary:
-            text_color = QColor(tag.color.secondary)
-        else:
-            text_color = get_text_color(primary_color, highlight_color)
-
-        if self.is_tag_chooser:
-            add_button = QPushButton()
-            add_button.setMinimumSize(22, 22)
-            add_button.setMaximumSize(22, 22)
-            add_button.setText("+")
-            add_button.setStyleSheet(
-                f"QPushButton{{"
-                f"background: rgba{primary_color.toTuple()};"
-                f"color: rgba{text_color.toTuple()};"
-                f"font-weight: 600;"
-                f"border-color: rgba{border_color.toTuple()};"
-                f"border-radius: 6px;"
-                f"border-style:solid;"
-                f"border-width: 2px;"
-                f"padding-bottom: 4px;"
-                f"font-size: 20px;"
-                f"}}"
-                f"QPushButton::hover"
-                f"{{"
-                f"border-color: rgba{highlight_color.toTuple()};"
-                f"color: rgba{primary_color.toTuple()};"
-                f"background: rgba{highlight_color.toTuple()};"
-                f"}}"
-            )
-            tag_id = tag.id
-            add_button.clicked.connect(lambda: self.tag_chosen.emit(tag_id))
-            row.addWidget(add_button)
-        return container
+        tag_id = tag.id
+        tag_widget.bg_button.clicked.connect(lambda: self.tag_chosen.emit(tag_id))
+        return tag_widget
 
     def build_create_tag_button(self, query: str | None):
         """Constructs a Create Tag Button."""
@@ -267,7 +214,7 @@ class TagSearchPanel(PanelWidget):
             self.first_tag_id = None
             self.first_tag_id = all_results[0].id if len(all_results) > 0 else all_results[0].id
             for tag in all_results:
-                self.scroll_layout.addWidget(self.__build_row_item_widget(tag))
+                self.scroll_layout.addWidget(self.__build_tag_widget(tag))
         else:
             self.first_tag_id = None
 
