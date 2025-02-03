@@ -7,6 +7,7 @@ import typing
 
 import src.qt.modals.build_tag as build_tag
 import structlog
+from PySide6 import QtCore, QtGui
 from PySide6.QtCore import QSize, Qt, Signal
 from PySide6.QtGui import QShowEvent
 from PySide6.QtWidgets import (
@@ -240,6 +241,17 @@ class TagSearchPanel(PanelWidget):
         self.search_field.setText("")
         self.search_field.setFocus()
         return super().showEvent(event)
+
+    def keyPressEvent(self, event: QtGui.QKeyEvent) -> None:  # noqa N802
+        # When Escape is pressed, focus back on the search box.
+        # If focus is already on the search box, close the modal.
+        if event.key() == QtCore.Qt.Key.Key_Escape:
+            if self.search_field.hasFocus():
+                self.parentWidget().hide()
+            else:
+                self.search_field.setFocus()
+                self.search_field.selectAll()
+        return super().keyPressEvent(event)
 
     def remove_tag(self, tag: Tag):
         pass
