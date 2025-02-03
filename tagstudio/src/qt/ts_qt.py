@@ -485,6 +485,13 @@ class QtDriver(DriverMixin, QObject):
         tag_database_action = QAction(menu_bar)
         Translations.translate_qobject(tag_database_action, "menu.edit.manage_tags")
         tag_database_action.triggered.connect(lambda: self.show_tag_database())
+        tag_database_action.setShortcut(
+            QtCore.QKeyCombination(
+                QtCore.Qt.KeyboardModifier(QtCore.Qt.KeyboardModifier.ControlModifier),
+                QtCore.Qt.Key.Key_M,
+            )
+        )
+        save_library_backup_action.setStatusTip("Ctrl+M")
         edit_menu.addAction(tag_database_action)
 
         # View Menu ============================================================
