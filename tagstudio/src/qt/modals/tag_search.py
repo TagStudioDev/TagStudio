@@ -236,29 +236,37 @@ class TagSearchPanel(PanelWidget):
 
     def update_tags(self, query: str | None = None):
         logger.info("[Tag Search Super Class] Updating Tags")
+
         # TODO: Look at recycling rather than deleting and re-initializing
         while self.scroll_layout.count():
             self.scroll_layout.takeAt(0).widget().deleteLater()
-        tag_results = self.lib.search_tags(name=query)
 
-        results_1 = []
-        results_2 = []
         query_lower = "" if not query else query.lower()
-        for tag in tag_results:
-            if tag.id in self.exclude:
-                continue
-            elif query and tag.name.lower().startswith(query_lower):
-                results_1.append(tag)
-            else:
-                results_2.append(tag)
-        if results_1 or results_2:
-            self.first_tag_id = None
+        tag_results: list[set[Tag]] = self.lib.search_tags(name=query)
+        tag_results[0] = {t for t in tag_results[0] if t.id not in self.exclude}
+        tag_results[1] = {t for t in tag_results[1] if t.id not in self.exclude}
 
-            results_1.sort(key=lambda tag: tag.name)
-            results_1.sort(key=lambda tag: len(tag.name))
-            results_2.sort(key=lambda tag: tag.name)
-            self.first_tag_id = results_1[0].id if len(results_1) > 0 else tag_results[0].id
-            for tag in list(results_1 + results_2)[:100]:
+        results_0 = list(tag_results[0])
+        results_0.sort(key=lambda tag: tag.name.lower())
+        results_1 = list(tag_results[1])
+        results_1.sort(key=lambda tag: tag.name.lower())
+        raw_results = list(results_0 + results_1)[:100]
+        priority_results: set[Tag] = set()
+        all_results: list[Tag] = []
+
+        if query and query.strip():
+            for tag in raw_results:
+                if tag.name.lower().startswith(query_lower):
+                    priority_results.add(tag)
+
+        all_results = sorted(list(priority_results), key=lambda tag: len(tag.name)) + [
+            r for r in raw_results if r not in priority_results
+        ]
+
+        if all_results:
+            self.first_tag_id = None
+            self.first_tag_id = all_results[0].id if len(all_results) > 0 else all_results[0].id
+            for tag in all_results:
                 self.scroll_layout.addWidget(self.__build_row_item_widget(tag))
         else:
             self.first_tag_id = None

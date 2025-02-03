@@ -765,10 +765,7 @@ class Library:
 
             return res
 
-    def search_tags(
-        self,
-        name: str | None,
-    ) -> list[Tag]:
+    def search_tags(self, name: str | None) -> list[set[Tag]]:
         """Return a list of Tag records matching the query."""
         tag_limit = 100
 
@@ -788,9 +785,9 @@ class Library:
                     )
                 )
 
-            tags = set(session.scalars(query))
+            direct_tags = set(session.scalars(query))
             ancestor_tag_ids: list[Tag] = []
-            for tag in tags:
+            for tag in direct_tags:
                 ancestor_tag_ids.extend(
                     list(session.scalars(TAG_CHILDREN_QUERY, {"tag_id": tag.id}))
                 )
@@ -801,7 +798,10 @@ class Library:
                 .options(selectinload(Tag.parent_tags), selectinload(Tag.aliases))
             )
 
-            res = list(tags.union(ancestor_tags))
+            res = [
+                direct_tags,
+                {at for at in ancestor_tags if at not in direct_tags},
+            ]
 
             logger.info(
                 "searching tags",
