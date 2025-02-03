@@ -318,6 +318,7 @@ class Library:
         # https://docs.sqlalchemy.org/en/20/changelog/migration_07.html
         # Under -> sqlite-the-sqlite-dialect-now-uses-nullpool-for-file-based-databases
         poolclass = None if self.storage_path == ":memory:" else NullPool
+        db_version: int = 0
 
         logger.info(
             "[Library] Opening SQLite Library",
@@ -328,11 +329,13 @@ class Library:
         with Session(self.engine) as session:
             # dont check db version when creating new library
             if not is_new:
-                db_version = session.scalar(
+                db_result = session.scalar(
                     select(Preferences).where(Preferences.key == LibraryPrefs.DB_VERSION.name)
                 )
+                if db_result:
+                    db_version = db_result.value  # type: ignore
 
-                if not db_version or db_version.value != LibraryPrefs.DB_VERSION.default:
+                if db_version != LibraryPrefs.DB_VERSION.default:
                     mismatch_text = Translations.translate_formatted(
                         "status.library_version_mismatch"
                     )
@@ -344,14 +347,13 @@ class Library:
                         success=False,
                         message=(
                             f"{mismatch_text}\n"
-                            f"{found_text} v{0 if not db_version else db_version.value}, "
+                            f"{found_text} v{db_version}, "
                             f"{expected_text} v{LibraryPrefs.DB_VERSION.default}"
                         ),
                     )
 
+            logger.info(f"[Library] DB_VERSION: {db_version}")
             make_tables(self.engine)
-
-            # TODO: Determine a good way of updating built-in data after updates.
 
             # Add default tag color namespaces.
             if is_new:
@@ -425,9 +427,32 @@ class Library:
                 session.commit()
                 self.folder = folder
 
+            # Apply any post-SQL migration patches.
+            if not is_new:
+                # NOTE: DB_VERSION 6 was first used in v9.5.0-pr1
+                if db_version >= 6:
+                    self.apply_db6_patches(session)
+                else:
+                    pass
+
         # everything is fine, set the library path
         self.library_dir = library_dir
         return LibraryStatus(success=True, library_path=library_dir)
+
+    def apply_db6_patches(self, session: Session):
+        """Apply migration patches to a library with DB_VERSION 6.
+
+        DB_VERSION 6 was first used in v9.5.0-pr1.
+        """
+        with session:
+            # Repair "Description" fields with a TEXT_LINE key instead of a TEXT_BOX key
+            statement = (
+                update(ValueType)
+                .where(ValueType.key == _FieldID.DESCRIPTION.name)
+                .values(type=FieldTypeEnum.TEXT_BOX.name)
+            )
+            session.execute(statement)
+            session.commit()
 
     @property
     def default_fields(self) -> list[BaseField]:
