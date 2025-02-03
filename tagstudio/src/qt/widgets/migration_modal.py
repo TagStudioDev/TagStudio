@@ -367,29 +367,35 @@ class JsonMigrationModal(QObject):
         pb.setCancelButton(None)
         self.body_wrapper_01.layout().addWidget(pb)
 
-        iterator = FunctionIterator(self.migration_iterator)
-        iterator.value.connect(
-            lambda x: (
-                pb.setLabelText(f"<h4>{x}</h4>"),
-                self.update_sql_value_ui(show_msg_box=False)
-                if x == Translations["json_migration.checking_for_parity"]
-                else (),
-                self.update_parity_ui()
-                if x == Translations["json_migration.checking_for_parity"]
-                else (),
+        try:
+            iterator = FunctionIterator(self.migration_iterator)
+            iterator.value.connect(
+                lambda x: (
+                    pb.setLabelText(f"<h4>{x}</h4>"),
+                    self.update_sql_value_ui(show_msg_box=False)
+                    if x == Translations["json_migration.checking_for_parity"]
+                    else (),
+                    self.update_parity_ui()
+                    if x == Translations["json_migration.checking_for_parity"]
+                    else (),
+                )
             )
-        )
-        r = CustomRunnable(iterator.run)
-        r.done.connect(
-            lambda: (
-                self.update_sql_value_ui(show_msg_box=not skip_ui),
-                pb.setMinimum(1),
-                pb.setValue(1),
-                # Enable the finish button
-                self.stack[1].buttons[4].setDisabled(False),  # type: ignore
+            r = CustomRunnable(iterator.run)
+            r.done.connect(
+                lambda: (
+                    self.update_sql_value_ui(show_msg_box=not skip_ui),
+                    pb.setMinimum(1),
+                    pb.setValue(1),
+                    # Enable the finish button
+                    self.stack[1].buttons[4].setDisabled(False),  # type: ignore
+                )
             )
-        )
-        QThreadPool.globalInstance().start(r)
+            QThreadPool.globalInstance().start(r)
+        except Exception as e:
+            logger.error("[MigrationModal][Iterator] Error:", error=e)
+            pb.setLabelText(f"<h4>{type(e).__name__}</h4>")
+            pb.setMinimum(1)
+            pb.setValue(1)
 
     def migration_iterator(self):
         """Iterate over the library migration process."""
