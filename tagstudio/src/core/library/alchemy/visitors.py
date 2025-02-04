@@ -23,7 +23,7 @@ else:
 logger = structlog.get_logger(__name__)
 
 # TODO: Reevaluate after subtags -> parent tags name change
-CHILDREN_QUERY = text("""
+TAG_CHILDREN_ID_QUERY = text("""
 -- Note for this entire query that tag_parents.child_id is the parent id and tag_parents.parent_id is the child id due to bad naming
 WITH RECURSIVE ChildTags AS (
     SELECT :tag_id AS child_id
@@ -151,7 +151,7 @@ class SQLBoolExpressionBuilder(BaseVisitor[ColumnElement[bool]]):
                 return tag_ids
             outp = []
             for tag_id in tag_ids:
-                outp.extend(list(session.scalars(CHILDREN_QUERY, {"tag_id": tag_id})))
+                outp.extend(list(session.scalars(TAG_CHILDREN_ID_QUERY, {"tag_id": tag_id})))
             return outp
 
     def __entry_has_all_tags(self, tag_ids: list[int]) -> ColumnElement[bool]:

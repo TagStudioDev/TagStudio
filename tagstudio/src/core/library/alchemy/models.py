@@ -2,7 +2,7 @@
 # Licensed under the GPL-3.0 License.
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
-import datetime as dt
+from datetime import datetime as dt
 from pathlib import Path
 
 from sqlalchemy import JSON, ForeignKey, ForeignKeyConstraint, Integer, event
@@ -185,9 +185,9 @@ class Entry(Base):
 
     path: Mapped[Path] = mapped_column(PathType, unique=True)
     suffix: Mapped[str] = mapped_column()
-    date_created: Mapped[dt.datetime | None]
-    date_modified: Mapped[dt.datetime | None]
-    date_added: Mapped[dt.datetime | None]
+    date_created: Mapped[dt | None]
+    date_modified: Mapped[dt | None]
+    date_added: Mapped[dt | None]
 
     tags: Mapped[set[Tag]] = relationship(secondary="tag_entries")
 
@@ -222,9 +222,9 @@ class Entry(Base):
         folder: Folder,
         fields: list[BaseField],
         id: int | None = None,
-        date_created: dt.datetime | None = None,
-        date_modified: dt.datetime | None = None,
-        date_added: dt.datetime | None = None,
+        date_created: dt | None = None,
+        date_modified: dt | None = None,
+        date_added: dt | None = None,
     ) -> None:
         self.path = path
         self.folder = folder

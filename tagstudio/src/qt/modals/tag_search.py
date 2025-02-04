@@ -7,8 +7,9 @@ import typing
 
 import src.qt.modals.build_tag as build_tag
 import structlog
+from PySide6 import QtCore, QtGui
 from PySide6.QtCore import QSize, Qt, Signal
-from PySide6.QtGui import QColor, QShowEvent
+from PySide6.QtGui import QShowEvent
 from PySide6.QtWidgets import (
     QFrame,
     QHBoxLayout,
@@ -26,10 +27,6 @@ from src.qt.translations import Translations
 from src.qt.widgets.panel import PanelModal, PanelWidget
 from src.qt.widgets.tag import (
     TagWidget,
-    get_border_color,
-    get_highlight_color,
-    get_primary_color,
-    get_text_color,
 )
 
 logger = structlog.get_logger(__name__)
@@ -85,12 +82,7 @@ class TagSearchPanel(PanelWidget):
         self.root_layout.addWidget(self.search_field)
         self.root_layout.addWidget(self.scroll_area)
 
-    def __build_row_item_widget(self, tag: Tag):
-        container = QWidget()
-        row = QHBoxLayout(container)
-        row.setContentsMargins(0, 0, 0, 0)
-        row.setSpacing(3)
-
+    def __build_tag_widget(self, tag: Tag):
         has_remove_button = False
         if not self.is_tag_chooser:
             has_remove_button = tag.id not in range(RESERVED_TAG_START, RESERVED_TAG_END)
@@ -115,53 +107,9 @@ class TagSearchPanel(PanelWidget):
         #     )
         # )
 
-        row.addWidget(tag_widget)
-
-        primary_color = get_primary_color(tag)
-        border_color = (
-            get_border_color(primary_color)
-            if not (tag.color and tag.color.secondary)
-            else (QColor(tag.color.secondary))
-        )
-        highlight_color = get_highlight_color(
-            primary_color
-            if not (tag.color and tag.color.secondary)
-            else QColor(tag.color.secondary)
-        )
-        text_color: QColor
-        if tag.color and tag.color.secondary:
-            text_color = QColor(tag.color.secondary)
-        else:
-            text_color = get_text_color(primary_color, highlight_color)
-
-        if self.is_tag_chooser:
-            add_button = QPushButton()
-            add_button.setMinimumSize(22, 22)
-            add_button.setMaximumSize(22, 22)
-            add_button.setText("+")
-            add_button.setStyleSheet(
-                f"QPushButton{{"
-                f"background: rgba{primary_color.toTuple()};"
-                f"color: rgba{text_color.toTuple()};"
-                f"font-weight: 600;"
-                f"border-color: rgba{border_color.toTuple()};"
-                f"border-radius: 6px;"
-                f"border-style:solid;"
-                f"border-width: 2px;"
-                f"padding-bottom: 4px;"
-                f"font-size: 20px;"
-                f"}}"
-                f"QPushButton::hover"
-                f"{{"
-                f"border-color: rgba{highlight_color.toTuple()};"
-                f"color: rgba{primary_color.toTuple()};"
-                f"background: rgba{highlight_color.toTuple()};"
-                f"}}"
-            )
-            tag_id = tag.id
-            add_button.clicked.connect(lambda: self.tag_chosen.emit(tag_id))
-            row.addWidget(add_button)
-        return container
+        tag_id = tag.id
+        tag_widget.bg_button.clicked.connect(lambda: self.tag_chosen.emit(tag_id))
+        return tag_widget
 
     def build_create_tag_button(self, query: str | None):
         """Constructs a Create Tag Button."""
@@ -187,7 +135,7 @@ class TagSearchPanel(PanelWidget):
             f"font-weight: 600;"
             f"border-color:{get_tag_color(ColorType.BORDER, TagColorEnum.DEFAULT)};"
             f"border-radius: 6px;"
-            f"border-style:solid;"
+            f"border-style:dashed;"
             f"border-width: 2px;"
             f"padding-right: 4px;"
             f"padding-bottom: 1px;"
@@ -196,6 +144,15 @@ class TagSearchPanel(PanelWidget):
             f"}}"
             f"QPushButton::hover{{"
             f"border-color:{get_tag_color(ColorType.LIGHT_ACCENT, TagColorEnum.DEFAULT)};"
+            f"}}"
+            f"QPushButton::pressed{{"
+            f"background: {get_tag_color(ColorType.LIGHT_ACCENT, TagColorEnum.DEFAULT)};"
+            f"color: {get_tag_color(ColorType.PRIMARY, TagColorEnum.DEFAULT)};"
+            f"border-color: {get_tag_color(ColorType.PRIMARY, TagColorEnum.DEFAULT)};"
+            f"}}"
+            f"QPushButton::focus{{"
+            f"border-color: {get_tag_color(ColorType.LIGHT_ACCENT, TagColorEnum.DEFAULT)};"
+            f"outline:none;"
             f"}}"
         )
 
@@ -221,6 +178,7 @@ class TagSearchPanel(PanelWidget):
 
             self.tag_chosen.emit(tag.id)
             self.search_field.setText("")
+            self.search_field.setFocus()
             self.update_tags()
 
         self.build_tag_modal: BuildTagPanel = build_tag.BuildTagPanel(self.lib)
@@ -235,32 +193,44 @@ class TagSearchPanel(PanelWidget):
 
     def update_tags(self, query: str | None = None):
         logger.info("[Tag Search Super Class] Updating Tags")
+
         # TODO: Look at recycling rather than deleting and re-initializing
         while self.scroll_layout.count():
             self.scroll_layout.takeAt(0).widget().deleteLater()
-        tag_results = self.lib.search_tags(name=query)
-        if len(tag_results) > 0:
-            results_1 = []
-            results_2 = []
-            for tag in tag_results:
-                if tag.id in self.exclude:
-                    continue
-                elif query and tag.name.lower().startswith(query.lower()):
-                    results_1.append(tag)
-                else:
-                    results_2.append(tag)
-            results_1.sort(key=lambda tag: self.lib.tag_display_name(tag.id))
-            results_1.sort(key=lambda tag: len(self.lib.tag_display_name(tag.id)))
-            results_2.sort(key=lambda tag: self.lib.tag_display_name(tag.id))
-            self.first_tag_id = results_1[0].id if len(results_1) > 0 else tag_results[0].id
-            for tag in results_1 + results_2:
-                self.scroll_layout.addWidget(self.__build_row_item_widget(tag))
-        else:
-            # If query doesnt exist add create button
+
+        query_lower = "" if not query else query.lower()
+        tag_results: list[set[Tag]] = self.lib.search_tags(name=query)
+        tag_results[0] = {t for t in tag_results[0] if t.id not in self.exclude}
+        tag_results[1] = {t for t in tag_results[1] if t.id not in self.exclude}
+
+        results_0 = list(tag_results[0])
+        results_0.sort(key=lambda tag: tag.name.lower())
+        results_1 = list(tag_results[1])
+        results_1.sort(key=lambda tag: tag.name.lower())
+        raw_results = list(results_0 + results_1)[:100]
+        priority_results: set[Tag] = set()
+        all_results: list[Tag] = []
+
+        if query and query.strip():
+            for tag in raw_results:
+                if tag.name.lower().startswith(query_lower):
+                    priority_results.add(tag)
+
+        all_results = sorted(list(priority_results), key=lambda tag: len(tag.name)) + [
+            r for r in raw_results if r not in priority_results
+        ]
+
+        if all_results:
             self.first_tag_id = None
+            self.first_tag_id = all_results[0].id if len(all_results) > 0 else all_results[0].id
+            for tag in all_results:
+                self.scroll_layout.addWidget(self.__build_tag_widget(tag))
+        else:
+            self.first_tag_id = None
+
+        if query and query.strip():
             c = self.build_create_tag_button(query)
             self.scroll_layout.addWidget(c)
-        self.search_field.setFocus()
 
     def on_return(self, text: str):
         if text:
@@ -276,10 +246,21 @@ class TagSearchPanel(PanelWidget):
             self.parentWidget().hide()
 
     def showEvent(self, event: QShowEvent) -> None:  # noqa N802
-        if not self.is_initialized:
-            self.update_tags()
-            self.is_initialized = True
+        self.update_tags()
+        self.search_field.setText("")
+        self.search_field.setFocus()
         return super().showEvent(event)
+
+    def keyPressEvent(self, event: QtGui.QKeyEvent) -> None:  # noqa N802
+        # When Escape is pressed, focus back on the search box.
+        # If focus is already on the search box, close the modal.
+        if event.key() == QtCore.Qt.Key.Key_Escape:
+            if self.search_field.hasFocus():
+                self.parentWidget().hide()
+            else:
+                self.search_field.setFocus()
+                self.search_field.selectAll()
+        return super().keyPressEvent(event)
 
     def remove_tag(self, tag: Tag):
         pass

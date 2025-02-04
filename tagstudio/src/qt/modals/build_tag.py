@@ -386,6 +386,16 @@ class BuildTagPanel(PanelWidget):
         else:
             text_color = get_text_color(primary_color, highlight_color)
 
+        # Add Tag Widget
+        tag_widget = TagWidget(
+            tag,
+            library=self.lib,
+            has_edit=False,
+            has_remove=True,
+        )
+        tag_widget.on_remove.connect(lambda t=parent_id: self.remove_parent_tag_callback(t))
+        row.addWidget(tag_widget)
+
         # Add Disambiguation Tag Button
         disam_button = QRadioButton()
         disam_button.setObjectName(f"disambiguationButton.{parent_id}")
@@ -412,6 +422,15 @@ class BuildTagPanel(PanelWidget):
             f"QRadioButton::hover{{"
             f"border-color: rgba{highlight_color.toTuple()};"
             f"}}"
+            f"QRadioButton::pressed{{"
+            f"background: rgba{border_color.toTuple()};"
+            f"color: rgba{primary_color.toTuple()};"
+            f"border-color: rgba{primary_color.toTuple()};"
+            f"}}"
+            f"QRadioButton::focus{{"
+            f"border-color: rgba{highlight_color.toTuple()};"
+            f"outline:none;"
+            f"}}"
         )
 
         self.disam_button_group.addButton(disam_button)
@@ -421,18 +440,7 @@ class BuildTagPanel(PanelWidget):
         disam_button.clicked.connect(lambda checked=False: self.toggle_disam_id(parent_id))
         row.addWidget(disam_button)
 
-        # Add Tag Widget
-        tag_widget = TagWidget(
-            tag,
-            library=self.lib,
-            has_edit=False,
-            has_remove=True,
-        )
-
-        tag_widget.on_remove.connect(lambda t=parent_id: self.remove_parent_tag_callback(t))
-        row.addWidget(tag_widget)
-
-        return disam_button, tag_widget.bg_button, container
+        return tag_widget.bg_button, disam_button, container
 
     def toggle_disam_id(self, disambiguation_id: int | None):
         if self.disambiguation_id == disambiguation_id:
