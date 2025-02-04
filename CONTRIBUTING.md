@@ -49,15 +49,30 @@ If you wish to launch the source version of TagStudio outside of your IDE:
 > [!TIP]
 > On Linux and macOS, you can launch the `tagstudio.sh` script to skip the following process, minus the `requirements-dev.txt` installation step. _Using the script is fine if you just want to launch the program from source._
 
-1. In the root repository directory, create a python virtual environment:  
+1. Make sure you're using the correct Python version:
+   -   If the output matches `Python 3.12.x` (where the x is any number) then you're using the correct Python version and can skip to step 2. Otherwise, you can install the correct Python version from the [Python](https://www.python.org/downloads/) website, or you can use a tool like [pyenv](https://github.com/pyenv/pyenv/) to install the correct version without changes to your system:
+      1. Follow pyenv's [install instructions](https://github.com/pyenv/pyenv/?tab=readme-ov-file#installation) for your system.
+      2. Install the appropriate Python version with pyenv by running `pyenv install 3.12` (This will **not** mess with your existing Python installation).
+      3. Navigate to the repository root folder in your terminal and run `pyenv local 3.12`.
+      - You could alternatively use `pyenv shell 3.12` or `pyenv global 3.12` instead to set the Python version for the current terminal session or the entire system respectively, however using `local` is recommended.
+
+2. In the root repository directory, create a python virtual environment:  
    `python3 -m venv .venv`
-2. Activate your environment:
+3. Activate your environment:
 
 -   Windows w/Powershell: `.venv\Scripts\Activate.ps1`
 -   Windows w/Command Prompt: `.venv\Scripts\activate.bat`
 -   Linux/macOS: `source .venv/bin/activate`
+       Depending on your system, the regular activation script *might* not work on alternative shells. In this case, refer to the table below for supported shells:
+       |Shell   |Script                   |
+       |-------:|:------------------------|
+       |Bash/ZSH|`.venv/bin/activate`     |
+       |Fish    |`.venv/bin/activate.fish`|
+       |CSH/TCSH|`.venv/bin/activate.csh` |
+       |PWSH    |`.venv/bin/activate.ps1` |
+       
 
-3. Install the required packages:
+4. Install the required packages:
 
 -   `pip install -r requirements.txt`
 -   If developing (includes Ruff and Mypy): `pip install -r requirements-dev.txt`
@@ -65,6 +80,8 @@ If you wish to launch the source version of TagStudio outside of your IDE:
 _Learn more about setting up a virtual environment [here](https://docs.python.org/3/tutorial/venv.html)._
 
 ### Manually Launching (Outside of an IDE)
+
+If you encounter errors about the Python version, or seemingly vague script errors, [pyenv](https://github.com/pyenv/pyenv/) may solve your issue. See step 1 of [Creating a Python Virtual Environment](#creating-a-python-virtual-environment).
 
 -   **Windows** (start_win.bat)
 
