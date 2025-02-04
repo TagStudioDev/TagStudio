@@ -3,9 +3,11 @@
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
 import io
+import platform
 import time
 import typing
 from pathlib import Path
+from warnings import catch_warnings
 
 import cv2
 import rawpy
@@ -25,6 +27,7 @@ from src.qt.helpers.file_tester import is_readable_video
 from src.qt.helpers.qbutton_wrapper import QPushButtonWrapper
 from src.qt.helpers.rounded_pixmap_style import RoundedPixmapStyle
 from src.qt.platform_strings import PlatformStrings
+from src.qt.resource_manager import ResourceManager
 from src.qt.translations import Translations
 from src.qt.widgets.media_player import MediaPlayer
 from src.qt.widgets.thumb_renderer import ThumbRenderer
@@ -55,6 +58,10 @@ class PreviewThumb(QWidget):
         self.open_file_action = QAction(self)
         Translations.translate_qobject(self.open_file_action, "file.open_file")
         self.open_explorer_action = QAction(PlatformStrings.open_file_str, self)
+        self.trash_term: str = "Trash"
+        if platform.system() == "Windows":
+            self.trash_term = "Recycle Bin"
+        self.delete_action = QAction(f"Send file to {self.trash_term}", self)
 
         self.preview_img = QPushButtonWrapper()
         self.preview_img.setMinimumSize(*self.img_button_size)
@@ -62,6 +69,7 @@ class PreviewThumb(QWidget):
         self.preview_img.setContextMenuPolicy(Qt.ContextMenuPolicy.ActionsContextMenu)
         self.preview_img.addAction(self.open_file_action)
         self.preview_img.addAction(self.open_explorer_action)
+        self.preview_img.addAction(self.delete_action)
 
         self.preview_gif = QLabel()
         self.preview_gif.setMinimumSize(*self.img_button_size)
@@ -69,10 +77,12 @@ class PreviewThumb(QWidget):
         self.preview_gif.setCursor(Qt.CursorShape.ArrowCursor)
         self.preview_gif.addAction(self.open_file_action)
         self.preview_gif.addAction(self.open_explorer_action)
+        self.preview_gif.addAction(self.delete_action)
         self.preview_gif.hide()
         self.gif_buffer: QBuffer = QBuffer()
 
         self.preview_vid = VideoPlayer(driver)
+        self.preview_vid.addAction(self.delete_action)
         self.preview_vid.hide()
         self.thumb_renderer = ThumbRenderer(self.lib)
         self.thumb_renderer.updated.connect(lambda ts, i, s: (self.preview_img.setIcon(i)))
@@ -355,7 +365,7 @@ class PreviewThumb(QWidget):
                 update_on_ratio_change=True,
             )
 
-        if self.preview_img.is_connected:
+        with catch_warnings(record=True):
             self.preview_img.clicked.disconnect()
         self.preview_img.clicked.connect(lambda checked=False, path=filepath: open_file(path))
         self.preview_img.is_connected = True
@@ -367,11 +377,28 @@ class PreviewThumb(QWidget):
         self.open_file_action.triggered.connect(self.opener.open_file)
         self.open_explorer_action.triggered.connect(self.opener.open_explorer)
 
+        with catch_warnings(record=True):
+            self.delete_action.triggered.disconnect()
+
+        self.delete_action.setText(f"Send file to {self.trash_term}")
+        self.delete_action.triggered.connect(
+            lambda checked=False, f=filepath: self.driver.delete_files_callback(f)
+        )
+        self.delete_action.setEnabled(bool(filepath))
+
         return stats
 
     def hide_preview(self):
         """Completely hide the file preview."""
         self.switch_preview("")
+
+    def stop_file_use(self):
+        """Stops the use of the currently previewed file. Used to release file permissions."""
+        logger.info("[PreviewThumb] Stopping file use in video playback...")
+        # This swaps the video out for a placeholder so the previous video's file
+        # is no longer in use by this object.
+        self.preview_vid.play(str(ResourceManager.get_path("placeholder_mp4")), QSize(8, 8))
+        self.preview_vid.hide()
 
     def resizeEvent(self, event: QResizeEvent) -> None:  # noqa: N802
         self.update_image_size((self.size().width(), self.size().height()))

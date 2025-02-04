@@ -1,6 +1,7 @@
 # Copyright (C) 2025 Travis Abendshien (CyanVoxel).
 # Licensed under the GPL-3.0 License.
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
+import platform
 import time
 import typing
 from enum import Enum
@@ -221,8 +222,15 @@ class ItemThumb(FlowWidget):
         open_file_action.triggered.connect(self.opener.open_file)
         open_explorer_action = QAction(PlatformStrings.open_file_str, self)
         open_explorer_action.triggered.connect(self.opener.open_explorer)
+
+        trash_term: str = "Trash"
+        if platform.system() == "Windows":
+            trash_term = "Recycle Bin"
+        self.delete_action: QAction = QAction(f"Send file to {trash_term}", self)
+
         self.thumb_button.addAction(open_file_action)
         self.thumb_button.addAction(open_explorer_action)
+        self.thumb_button.addAction(self.delete_action)
 
         # Static Badges ========================================================
 
