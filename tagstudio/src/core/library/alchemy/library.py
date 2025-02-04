@@ -770,7 +770,7 @@ class Library:
         tag_limit = 100
 
         with Session(self.engine) as session:
-            query = select(Tag).outerjoin(TagAlias)
+            query = select(Tag).outerjoin(TagAlias).order_by(func.lower(Tag.name))
             query = query.options(
                 selectinload(Tag.parent_tags),
                 selectinload(Tag.aliases),
