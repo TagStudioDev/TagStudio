@@ -158,21 +158,24 @@ class TagSearchPanel(PanelWidget):
         self.add_tag_modal.show()
 
     def update_tags(self, query: str | None = None):
+        """Update the tag list given a search query."""
         logger.info("[TagSearchPanel] Updating Tags")
 
-        # Remove the create button if one exists
+        # Remove the "Create & Add" button if one exists
         create_button: QPushButton | None = None
         if self.create_button_in_layout and self.scroll_layout.count():
             create_button = self.scroll_layout.takeAt(self.scroll_layout.count() - 1).widget()  # type: ignore
             create_button.deleteLater()
             self.create_button_in_layout = False
 
+        # Get results for the search query
         query_lower = "" if not query else query.lower()
         tag_results: list[set[Tag]] = self.lib.search_tags(name=query)
         if self.exclude:
             tag_results[0] = {t for t in tag_results[0] if t.id not in self.exclude}
             tag_results[1] = {t for t in tag_results[1] if t.id not in self.exclude}
 
+        # Sort and prioritize the results
         results_0 = list(tag_results[0])
         results_0.sort(key=lambda tag: tag.name.lower())
         results_1 = list(tag_results[1])
@@ -197,12 +200,14 @@ class TagSearchPanel(PanelWidget):
         else:
             self.first_tag_id = None
 
+        # Update every tag widget with the new search result data
         for i in range(0, TagSearchPanel.TAG_LIMIT):
             tag = None
             with contextlib.suppress(IndexError):
                 tag = all_results[i]
             self.set_tag_widget(tag=tag, index=i)
 
+        # Add back the "Create & Add" button
         if query and query.strip():
             cb: QPushButton = self.build_create_button(query)
             with catch_warnings(record=True):
@@ -213,24 +218,24 @@ class TagSearchPanel(PanelWidget):
             self.create_button_in_layout = True
 
     def set_tag_widget(self, tag: Tag | None, index: int):
-        # If the index is greater than the number of TagWidgets
+        """Set the tag of a tag widget at a specific index."""
+        # Create any new tag widgets needed up to the given index
         if self.scroll_layout.count() <= index:
             while self.scroll_layout.count() <= index:
                 new_tw = TagWidget(tag=None, has_edit=True, has_remove=True, library=self.lib)
                 new_tw.setHidden(True)
                 self.scroll_layout.addWidget(new_tw)
 
+        # Assign the tag to the widget at the given index.
         tag_widget: TagWidget = self.scroll_layout.itemAt(index).widget()  # type: ignore
         tag_widget.set_tag(tag)
 
-        if tag:
-            tag_widget.setHidden(False)
-        else:
-            tag_widget.setHidden(True)
-
+        # Set tag widget viability and potentially return early
+        tag_widget.setHidden(bool(not tag))
         if not tag:
             return
 
+        # Configure any other aspects of the tag widget
         has_remove_button = False
         if not self.is_tag_chooser:
             has_remove_button = tag.id not in range(RESERVED_TAG_START, RESERVED_TAG_END)
