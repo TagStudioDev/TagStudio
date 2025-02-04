@@ -163,7 +163,7 @@ class TagSearchPanel(PanelWidget):
         # Remove the create button if one exists
         create_button: QPushButton | None = None
         if self.create_button_in_layout and self.scroll_layout.count():
-            create_button = self.scroll_layout.takeAt(self.scroll_layout.count() - 1).widget()
+            create_button = self.scroll_layout.takeAt(self.scroll_layout.count() - 1).widget()  # type: ignore
             create_button.deleteLater()
             self.create_button_in_layout = False
 
@@ -203,7 +203,7 @@ class TagSearchPanel(PanelWidget):
             self.set_tag_widget(tag=tag, index=i)
 
         if query and query.strip():
-            cb: QPushButton = self.build_create_button(query)  # type: ignore
+            cb: QPushButton = self.build_create_button(query)
             with catch_warnings(record=True):
                 cb.clicked.disconnect()
             cb.clicked.connect(lambda: self.create_and_add_tag(query or ""))
