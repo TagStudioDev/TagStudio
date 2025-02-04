@@ -78,7 +78,7 @@ app = BUNDLE(
     name='TagStudio.app',
     icon=icon,
     bundle_identifier='com.cyanvoxel.tagstudio',
-    version='9.5.0',
+    version='9.5.0-pr2',
     info_plist={
         'NSAppleScriptEnabled': False,
         'NSPrincipalClass': 'NSApplication',
