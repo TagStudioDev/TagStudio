@@ -31,7 +31,6 @@ class TagDatabasePanel(TagSearchPanel):
         self.create_tag_button.clicked.connect(lambda: self.build_tag(self.search_field.text()))
 
         self.root_layout.addWidget(self.create_tag_button)
-        self.update_tags()
 
     def build_tag(self, name: str):
         panel = BuildTagPanel(self.lib)
