@@ -293,6 +293,7 @@ class QtDriver(DriverMixin, QObject):
 
         # Initialize the main window's tag search panel
         self.tag_search_panel = TagSearchPanel(self.lib, is_tag_chooser=True)
+        self.tag_search_panel.set_driver(self)
         self.add_tag_modal = PanelModal(
             widget=self.tag_search_panel,
             title=Translations.translate_formatted("tag.add.plural"),
@@ -875,7 +876,7 @@ class QtDriver(DriverMixin, QObject):
 
     def show_tag_database(self):
         self.modal = PanelModal(
-            widget=TagDatabasePanel(self.lib),
+            widget=TagDatabasePanel(self, self.lib),
             done_callback=lambda: self.preview_panel.update_widgets(update_preview=False),
             has_save=False,
         )
