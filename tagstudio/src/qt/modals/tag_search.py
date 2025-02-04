@@ -169,8 +169,9 @@ class TagSearchPanel(PanelWidget):
 
         query_lower = "" if not query else query.lower()
         tag_results: list[set[Tag]] = self.lib.search_tags(name=query)
-        tag_results[0] = {t for t in tag_results[0] if t.id not in self.exclude}
-        tag_results[1] = {t for t in tag_results[1] if t.id not in self.exclude}
+        if self.exclude:
+            tag_results[0] = {t for t in tag_results[0] if t.id not in self.exclude}
+            tag_results[1] = {t for t in tag_results[1] if t.id not in self.exclude}
 
         results_0 = list(tag_results[0])
         results_0.sort(key=lambda tag: tag.name.lower())
