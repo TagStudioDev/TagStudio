@@ -829,7 +829,7 @@ class QtDriver(DriverMixin, QObject):
         [x.set_mode(None) for x in self.item_thumbs]
 
         self.set_clipboard_menu_viability()
-        self.set_add_to_selected_visibility()
+        self.set_select_actions_visibility()
 
         self.preview_panel.update_widgets()
         self.main_window.toggle_landing_page(enabled=True)
