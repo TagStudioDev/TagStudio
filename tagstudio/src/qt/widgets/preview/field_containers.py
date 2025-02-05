@@ -500,10 +500,9 @@ class FieldContainers(QWidget):
             Translations["generic.cancel_alt"], QMessageBox.ButtonRole.DestructiveRole
         )
         remove_mb.addButton("&Remove", QMessageBox.ButtonRole.RejectRole)
-        remove_mb.setDefaultButton(cancel_button)
         remove_mb.setEscapeButton(cancel_button)
         result = remove_mb.exec_()
-        if result == 3:  # TODO - what is this magic number?
+        if result == QMessageBox.ButtonRole.ActionRole.value:
             callback()
 
     def emit_badge_signals(self, tag_ids: list[int] | set[int], emit_on_absent: bool = True):
