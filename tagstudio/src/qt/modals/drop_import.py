@@ -1,12 +1,14 @@
+# Copyright (C) 2025
 # Licensed under the GPL-3.0 License.
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
 import enum
 import shutil
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, override
 
 import structlog
+from PySide6 import QtCore, QtGui
 from PySide6.QtCore import Qt, QUrl
 from PySide6.QtGui import QStandardItem, QStandardItemModel
 from PySide6.QtWidgets import (
@@ -232,3 +234,11 @@ class DropImportModal(QWidget):
             )
             index += 1
         return filepath.name
+
+    @override
+    def keyPressEvent(self, event: QtGui.QKeyEvent) -> None:  # noqa N802
+        if event.key() == QtCore.Qt.Key.Key_Escape:
+            self.cancel_button.click()
+        else:  # Other key presses
+            pass
+        return super().keyPressEvent(event)
