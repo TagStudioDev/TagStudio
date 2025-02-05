@@ -12,7 +12,6 @@ import ctypes
 import dataclasses
 import math
 import os
-import platform
 import re
 import sys
 import time
@@ -90,6 +89,7 @@ from src.qt.modals.fix_unlinked import FixUnlinkedEntriesModal
 from src.qt.modals.folders_to_tags import FoldersToTagsModal
 from src.qt.modals.tag_database import TagDatabasePanel
 from src.qt.modals.tag_search import TagSearchPanel
+from src.qt.platform_strings import trash_term
 from src.qt.resource_manager import ResourceManager
 from src.qt.splash import Splash
 from src.qt.translations import Translations
@@ -489,12 +489,8 @@ class QtDriver(DriverMixin, QObject):
         edit_menu.addSeparator()
 
         self.delete_file_action = QAction(menu_bar)
-        trash_term: str = Translations["trash.name.trash"]
-        if platform.system() == "Windows":
-            trash_term = Translations["trash.name.recycle_bin"]
-
         Translations.translate_qobject(
-            self.delete_file_action, "menu.delete_selected_files_ambiguous", trash_term=trash_term
+            self.delete_file_action, "menu.delete_selected_files_ambiguous", trash_term=trash_term()
         )
         self.delete_file_action.triggered.connect(lambda f="": self.delete_files_callback(f))
         self.delete_file_action.setShortcut(QtCore.Qt.Key.Key_Delete)
@@ -949,7 +945,7 @@ class QtDriver(DriverMixin, QObject):
                     origin_id_ = self.selected[0]
 
             pending.append((origin_id_, Path(origin_path)))
-        elif (len(self.selected) > 1) or (len(self.selected) <= 1 and not origin_path):
+        elif (len(self.selected) > 1) or (len(self.selected) <= 1):
             for item in self.selected:
                 entry = self.lib.get_entry(item)
                 filepath: Path = entry.path
@@ -957,9 +953,11 @@ class QtDriver(DriverMixin, QObject):
 
         if pending:
             return_code = self.delete_file_confirmation(len(pending), pending[0][1])
-            logger.info(return_code)
             # If there was a confirmation and not a cancellation
-            if return_code == 2 and return_code != 3:
+            if (
+                return_code == QMessageBox.ButtonRole.DestructiveRole.value
+                and return_code != QMessageBox.ButtonRole.ActionRole.value
+            ):
                 for i, tup in enumerate(pending):
                     e_id, f = tup
                     if (origin_path == f) or (not origin_path):
@@ -1007,9 +1005,6 @@ class QtDriver(DriverMixin, QObject):
             count(int): The number of files to be deleted.
             filename(Path | None): The filename to show if only one file is to be deleted.
         """
-        trash_term: str = Translations["trash.name.trash"]
-        if platform.system() == "Windows":
-            trash_term = Translations["trash.name.recycle_bin"]
         # NOTE: Windows + send2trash will PERMANENTLY delete files which cannot be moved to the
         # Recycle Bin. This is done without any warning, so this message is currently the
         # best way I've got to inform the user.
@@ -1017,8 +1012,7 @@ class QtDriver(DriverMixin, QObject):
         # This warning is applied to all platforms until at least macOS and Linux can be verified
         # to not exhibit this same behavior.
         perm_warning_msg = Translations.translate_formatted(
-            "trash.dialog.permanent_delete_warning",
-            trash_term=trash_term,
+            "trash.dialog.permanent_delete_warning", trash_term=trash_term()
         )
         perm_warning: str = (
             f"<h4 style='color: {get_ui_color(ColorType.PRIMARY, UiColor.RED)}'>"
@@ -1036,7 +1030,7 @@ class QtDriver(DriverMixin, QObject):
         msg.setIcon(QMessageBox.Icon.Warning)
         if count <= 1:
             msg_text = Translations.translate_formatted(
-                "trash.dialog.move.confirmation.singular", trash_term=trash_term
+                "trash.dialog.move.confirmation.singular", trash_term=trash_term()
             )
             msg.setText(
                 f"<h3>{msg_text}</h3>"
@@ -1046,7 +1040,9 @@ class QtDriver(DriverMixin, QObject):
             )
         elif count > 1:
             msg_text = Translations.translate_formatted(
-                "trash.dialog.move.confirmation.plural", count=count, trash_term=trash_term
+                "trash.dialog.move.confirmation.plural",
+                count=count,
+                trash_term=trash_term(),
             )
             msg.setText(
                 f"<h3>{msg_text}</h3>"

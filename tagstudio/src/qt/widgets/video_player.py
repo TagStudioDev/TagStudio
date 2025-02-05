@@ -30,7 +30,7 @@ from PySide6.QtSvgWidgets import QSvgWidget
 from PySide6.QtWidgets import QGraphicsScene, QGraphicsView
 from src.core.enums import SettingItems
 from src.qt.helpers.file_opener import FileOpenerHelper
-from src.qt.platform_strings import PlatformStrings
+from src.qt.platform_strings import open_file_str
 from src.qt.translations import Translations
 
 if typing.TYPE_CHECKING:
@@ -130,7 +130,7 @@ class VideoPlayer(QGraphicsView):
         Translations.translate_qobject(open_file_action, "file.open_file")
         open_file_action.triggered.connect(self.opener.open_file)
 
-        open_explorer_action = QAction(PlatformStrings.open_file_str, self)
+        open_explorer_action = QAction(open_file_str(), self)
 
         open_explorer_action.triggered.connect(self.opener.open_explorer)
         self.addAction(open_file_action)

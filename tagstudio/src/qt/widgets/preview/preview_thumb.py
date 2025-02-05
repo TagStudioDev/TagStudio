@@ -3,7 +3,6 @@
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
 import io
-import platform
 import time
 import typing
 from pathlib import Path
@@ -26,7 +25,7 @@ from src.qt.helpers.file_opener import FileOpenerHelper, open_file
 from src.qt.helpers.file_tester import is_readable_video
 from src.qt.helpers.qbutton_wrapper import QPushButtonWrapper
 from src.qt.helpers.rounded_pixmap_style import RoundedPixmapStyle
-from src.qt.platform_strings import PlatformStrings
+from src.qt.platform_strings import open_file_str, trash_term
 from src.qt.resource_manager import ResourceManager
 from src.qt.translations import Translations
 from src.qt.widgets.media_player import MediaPlayer
@@ -57,13 +56,10 @@ class PreviewThumb(QWidget):
 
         self.open_file_action = QAction(self)
         Translations.translate_qobject(self.open_file_action, "file.open_file")
-        self.open_explorer_action = QAction(PlatformStrings.open_file_str, self)
-        self.trash_term: str = Translations["trash.name.trash"]
-        if platform.system() == "Windows":
-            self.trash_term = Translations["trash.name.recycle_bin"]
+        self.open_explorer_action = QAction(open_file_str(), self)
         self.delete_action = QAction(self)
         Translations.translate_qobject(
-            self.delete_action, "trash.context.ambiguous", trash_term=self.trash_term
+            self.delete_action, "trash.context.ambiguous", trash_term=trash_term()
         )
 
         self.preview_img = QPushButtonWrapper()
@@ -383,7 +379,9 @@ class PreviewThumb(QWidget):
         with catch_warnings(record=True):
             self.delete_action.triggered.disconnect()
 
-        self.delete_action.setText(f"Send file to {self.trash_term}")
+        self.delete_action.setText(
+            Translations.translate_formatted("trash.context.singular", trash_term=trash_term())
+        )
         self.delete_action.triggered.connect(
             lambda checked=False, f=filepath: self.driver.delete_files_callback(f)
         )
