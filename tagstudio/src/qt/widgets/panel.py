@@ -98,12 +98,9 @@ class PanelModal(QWidget):
         widget.parent_post_init()
 
     def closeEvent(self, event):  # noqa: N802
-        logger.info("[Panel] Close Event", huh=event)
         if self.cancel_button:
-            logger.info("[Panel] Canceling")
             self.cancel_button.click()
         elif self.done_button:
-            logger.info("[Panel] Done")
             self.done_button.click()
         event.accept()
 
@@ -136,7 +133,6 @@ class PanelWidget(QWidget):
         logger.warning(f"[PanelModal] add_callback not implemented for {self.__class__.__name__}")
 
     def keyPressEvent(self, event: QtGui.QKeyEvent) -> None:  # noqa N802
-        logger.info("[Panel] KeyPressEvent", huh=event)
         if event.key() == QtCore.Qt.Key.Key_Escape:
             if self.panel_cancel_button:
                 self.panel_cancel_button.click()
