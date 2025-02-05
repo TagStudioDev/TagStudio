@@ -13,7 +13,10 @@ from PySide6 import QtCore, QtGui
 from PySide6.QtCore import QSize, Qt, Signal
 from PySide6.QtGui import QShowEvent
 from PySide6.QtWidgets import (
+    QComboBox,
     QFrame,
+    QHBoxLayout,
+    QLabel,
     QLineEdit,
     QPushButton,
     QScrollArea,
@@ -45,7 +48,10 @@ class TagSearchPanel(PanelWidget):
     is_tag_chooser: bool
     exclude: list[int]
 
-    TAG_LIMIT = 100
+    _limit_items: list[int | str] = [25, 50, 100, 250, 500, Translations["tag.all_tags"]]
+    _default_limit_idx: int = 0  # 50 Tag Limit (Default)
+    cur_limit_idx: int = _default_limit_idx
+    tag_limit: int | str = _limit_items[_default_limit_idx]
 
     def __init__(
         self,
@@ -64,6 +70,27 @@ class TagSearchPanel(PanelWidget):
         self.setMinimumSize(300, 400)
         self.root_layout = QVBoxLayout(self)
         self.root_layout.setContentsMargins(6, 0, 6, 0)
+
+        self.limit_container = QWidget()
+        self.limit_layout = QHBoxLayout(self.limit_container)
+        self.limit_layout.setContentsMargins(0, 0, 0, 0)
+        self.limit_layout.setSpacing(12)
+        self.limit_layout.addStretch(1)
+
+        self.limit_title = QLabel()
+        Translations.translate_qobject(self.limit_title, "tag.view_limit")
+        self.limit_layout.addWidget(self.limit_title)
+
+        self.limit_combobox = QComboBox()
+        self.limit_combobox.setEditable(False)
+        self.limit_combobox.addItems([str(x) for x in TagSearchPanel._limit_items])
+        self.limit_combobox.setCurrentIndex(TagSearchPanel._default_limit_idx)
+        self.limit_combobox.currentIndexChanged.connect(self.update_limit)
+        self.previous_limit: int = (
+            TagSearchPanel.tag_limit if isinstance(TagSearchPanel.tag_limit, int) else -1
+        )
+        self.limit_layout.addWidget(self.limit_combobox)
+        self.limit_layout.addStretch(1)
 
         self.search_field = QLineEdit()
         self.search_field.setObjectName("searchField")
@@ -84,6 +111,7 @@ class TagSearchPanel(PanelWidget):
         self.scroll_area.setFrameShape(QFrame.Shape.NoFrame)
         self.scroll_area.setWidget(self.scroll_contents)
 
+        self.root_layout.addWidget(self.limit_container)
         self.root_layout.addWidget(self.search_field)
         self.root_layout.addWidget(self.scroll_area)
 
@@ -170,7 +198,9 @@ class TagSearchPanel(PanelWidget):
 
         # Get results for the search query
         query_lower = "" if not query else query.lower()
-        tag_results: list[set[Tag]] = self.lib.search_tags(name=query)
+        # Only use the tag limit if it's an actual number (aka not "All Tags")
+        tag_limit = TagSearchPanel.tag_limit if isinstance(TagSearchPanel.tag_limit, int) else -1
+        tag_results: list[set[Tag]] = self.lib.search_tags(name=query, limit=tag_limit)
         if self.exclude:
             tag_results[0] = {t for t in tag_results[0] if t.id not in self.exclude}
             tag_results[1] = {t for t in tag_results[1] if t.id not in self.exclude}
@@ -180,7 +210,7 @@ class TagSearchPanel(PanelWidget):
         results_0.sort(key=lambda tag: tag.name.lower())
         results_1 = list(tag_results[1])
         results_1.sort(key=lambda tag: tag.name.lower())
-        raw_results = list(results_0 + results_1)[: TagSearchPanel.TAG_LIMIT]
+        raw_results = list(results_0 + results_1)
         priority_results: set[Tag] = set()
         all_results: list[Tag] = []
 
@@ -192,6 +222,8 @@ class TagSearchPanel(PanelWidget):
         all_results = sorted(list(priority_results), key=lambda tag: len(tag.name)) + [
             r for r in raw_results if r not in priority_results
         ]
+        if tag_limit > 0:
+            all_results = all_results[:tag_limit]
 
         if all_results:
             self.first_tag_id = None
@@ -201,11 +233,15 @@ class TagSearchPanel(PanelWidget):
             self.first_tag_id = None
 
         # Update every tag widget with the new search result data
-        for i in range(0, TagSearchPanel.TAG_LIMIT):
+        norm_previous = self.previous_limit if self.previous_limit > 0 else len(self.lib.tags)
+        norm_limit = tag_limit if tag_limit > 0 else len(self.lib.tags)
+        range_limit = max(norm_previous, norm_limit)
+        for i in range(0, range_limit):
             tag = None
             with contextlib.suppress(IndexError):
                 tag = all_results[i]
             self.set_tag_widget(tag=tag, index=i)
+        self.previous_limit = tag_limit
 
         # Add back the "Create & Add" button
         if query and query.strip():
@@ -262,6 +298,24 @@ class TagSearchPanel(PanelWidget):
         else:
             tag_widget.search_for_tag_action.setEnabled(False)
 
+    def update_limit(self, index: int):
+        logger.info("[TagSearchPanel] Updating tag limit")
+        TagSearchPanel.cur_limit_idx = index
+
+        if index < len(self._limit_items) - 1:
+            TagSearchPanel.tag_limit = int(self._limit_items[index])
+        else:
+            TagSearchPanel.tag_limit = -1
+
+        # Method was called outside the limit_combobox callback
+        if index != self.limit_combobox.currentIndex():
+            self.limit_combobox.setCurrentIndex(index)
+
+        if self.previous_limit == TagSearchPanel.tag_limit:
+            return
+
+        self.update_tags(self.search_field.text())
+
     def on_return(self, text: str):
         if text:
             if self.first_tag_id is not None:
@@ -276,7 +330,9 @@ class TagSearchPanel(PanelWidget):
             self.parentWidget().hide()
 
     def showEvent(self, event: QShowEvent) -> None:  # noqa N802
+        self.update_limit(TagSearchPanel.cur_limit_idx)
         self.update_tags()
+        self.scroll_area.verticalScrollBar().setValue(0)
         self.search_field.setText("")
         self.search_field.setFocus()
         return super().showEvent(event)

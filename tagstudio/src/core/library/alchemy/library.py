@@ -765,16 +765,16 @@ class Library:
 
             return res
 
-    def search_tags(self, name: str | None) -> list[set[Tag]]:
+    def search_tags(self, name: str | None, limit: int = 100) -> list[set[Tag]]:
         """Return a list of Tag records matching the query."""
-        tag_limit = 100
-
         with Session(self.engine) as session:
             query = select(Tag).outerjoin(TagAlias).order_by(func.lower(Tag.name))
             query = query.options(
                 selectinload(Tag.parent_tags),
                 selectinload(Tag.aliases),
-            ).limit(tag_limit)
+            )
+            if limit > 0:
+                query = query.limit(limit)
 
             if name:
                 query = query.where(
@@ -806,6 +806,7 @@ class Library:
             logger.info(
                 "searching tags",
                 search=name,
+                limit=limit,
                 statement=str(query),
                 results=len(res),
             )
