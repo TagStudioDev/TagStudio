@@ -58,10 +58,13 @@ class PreviewThumb(QWidget):
         self.open_file_action = QAction(self)
         Translations.translate_qobject(self.open_file_action, "file.open_file")
         self.open_explorer_action = QAction(PlatformStrings.open_file_str, self)
-        self.trash_term: str = "Trash"
+        self.trash_term: str = Translations["trash.name.trash"]
         if platform.system() == "Windows":
-            self.trash_term = "Recycle Bin"
-        self.delete_action = QAction(f"Send file to {self.trash_term}", self)
+            self.trash_term = Translations["trash.name.recycle_bin"]
+        self.delete_action = QAction(self)
+        Translations.translate_qobject(
+            self.delete_action, "trash.context.ambiguous", trash_term=self.trash_term
+        )
 
         self.preview_img = QPushButtonWrapper()
         self.preview_img.setMinimumSize(*self.img_button_size)

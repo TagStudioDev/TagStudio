@@ -223,10 +223,13 @@ class ItemThumb(FlowWidget):
         open_explorer_action = QAction(PlatformStrings.open_file_str, self)
         open_explorer_action.triggered.connect(self.opener.open_explorer)
 
-        trash_term: str = "Trash"
+        trash_term: str = Translations["trash.name.trash"]
         if platform.system() == "Windows":
-            trash_term = "Recycle Bin"
-        self.delete_action: QAction = QAction(f"Send file to {trash_term}", self)
+            trash_term = Translations["trash.name.recycle_bin"]
+        self.delete_action = QAction(self)
+        Translations.translate_qobject(
+            self.delete_action, "trash.context.ambiguous", trash_term=trash_term
+        )
 
         self.thumb_button.addAction(open_file_action)
         self.thumb_button.addAction(open_explorer_action)

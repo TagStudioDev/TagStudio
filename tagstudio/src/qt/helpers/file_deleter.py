@@ -11,7 +11,7 @@ logging.basicConfig(format="%(message)s", level=logging.INFO)
 
 
 def delete_file(path: str | Path) -> bool:
-    """Sends a file to the system trash.
+    """Send a file to the system trash.
 
     Args:
         path (str | Path): The path of the file to delete.

@@ -488,9 +488,17 @@ class QtDriver(DriverMixin, QObject):
 
         edit_menu.addSeparator()
 
-        self.delete_file_action = QAction("Delete Selected File(s)", menu_bar)
+        self.delete_file_action = QAction(menu_bar)
+        trash_term: str = Translations["trash.name.trash"]
+        if platform.system() == "Windows":
+            trash_term = Translations["trash.name.recycle_bin"]
+
+        Translations.translate_qobject(
+            self.delete_file_action, "menu.delete_selected_files_ambiguous", trash_term=trash_term
+        )
         self.delete_file_action.triggered.connect(lambda f="": self.delete_files_callback(f))
         self.delete_file_action.setShortcut(QtCore.Qt.Key.Key_Delete)
+        self.delete_file_action.setEnabled(False)
         edit_menu.addAction(self.delete_file_action)
 
         edit_menu.addSeparator()
@@ -816,9 +824,12 @@ class QtDriver(DriverMixin, QObject):
 
         self.main_window.setWindowTitle(self.base_title)
 
-        self.selected = []
-        self.frame_content = []
+        self.selected.clear()
+        self.frame_content.clear()
         [x.set_mode(None) for x in self.item_thumbs]
+
+        self.set_clipboard_menu_viability()
+        self.set_add_to_selected_visibility()
 
         self.preview_panel.update_widgets()
         self.main_window.toggle_landing_page(enabled=True)
@@ -955,7 +966,9 @@ class QtDriver(DriverMixin, QObject):
                         self.preview_panel.thumb.stop_file_use()
                     if delete_file(self.lib.library_dir / f):
                         self.main_window.statusbar.showMessage(
-                            f'Deleting file [{i}/{len(pending)}]: "{f}"...'
+                            Translations.translate_formatted(
+                                "status.deleting_file", i=i, count=len(pending), path=f
+                            )
                         )
                         self.main_window.statusbar.repaint()
                         self.lib.remove_entries([e_id])
@@ -968,18 +981,23 @@ class QtDriver(DriverMixin, QObject):
             self.preview_panel.update_widgets()
 
         if len(self.selected) <= 1 and deleted_count == 0:
-            self.main_window.statusbar.showMessage("No files deleted.")
+            self.main_window.statusbar.showMessage(Translations["status.deleted_none"])
         elif len(self.selected) <= 1 and deleted_count == 1:
-            self.main_window.statusbar.showMessage(f"Deleted {deleted_count} file!")
+            self.main_window.statusbar.showMessage(
+                Translations.translate_formatted("status.deleted_file_plural", count=deleted_count)
+            )
         elif len(self.selected) > 1 and deleted_count == 0:
-            self.main_window.statusbar.showMessage("No files deleted.")
+            self.main_window.statusbar.showMessage(Translations["status.deleted_none"])
         elif len(self.selected) > 1 and deleted_count < len(self.selected):
             self.main_window.statusbar.showMessage(
-                f"Only deleted {deleted_count} file{'' if deleted_count == 1 else 's'}! "
-                f"Check if any of the files are currently missing or in use."
+                Translations.translate_formatted(
+                    "status.deleted_partial_warning", count=deleted_count
+                )
             )
         elif len(self.selected) > 1 and deleted_count == len(self.selected):
-            self.main_window.statusbar.showMessage(f"Deleted {deleted_count} files!")
+            self.main_window.statusbar.showMessage(
+                Translations.translate_formatted("status.deleted_file_plural", count=deleted_count)
+            )
         self.main_window.statusbar.repaint()
 
     def delete_file_confirmation(self, count: int, filename: Path | None = None) -> int:
@@ -989,36 +1007,50 @@ class QtDriver(DriverMixin, QObject):
             count(int): The number of files to be deleted.
             filename(Path | None): The filename to show if only one file is to be deleted.
         """
-        trash_term: str = "Trash"
-        if platform.system == "Windows":
-            trash_term = "Recycle Bin"
+        trash_term: str = Translations["trash.name.trash"]
+        if platform.system() == "Windows":
+            trash_term = Translations["trash.name.recycle_bin"]
         # NOTE: Windows + send2trash will PERMANENTLY delete files which cannot be moved to the
         # Recycle Bin. This is done without any warning, so this message is currently the
         # best way I've got to inform the user.
         # https://github.com/arsenetar/send2trash/issues/28
         # This warning is applied to all platforms until at least macOS and Linux can be verified
         # to not exhibit this same behavior.
+        perm_warning_msg = Translations.translate_formatted(
+            "trash.dialog.permanent_delete_warning",
+            trash_term=trash_term,
+        )
         perm_warning: str = (
             f"<h4 style='color: {get_ui_color(ColorType.PRIMARY, UiColor.RED)}'>"
-            f"<b>WARNING!</b> If this file can't be moved to the {trash_term}, "
-            f"</b>it will be <b>permanently deleted!</b></h4>"
+            f"{perm_warning_msg}</h4>"
         )
 
         msg = QMessageBox()
+        msg.setStyleSheet("font-weight:normal;")
         msg.setTextFormat(Qt.TextFormat.RichText)
-        msg.setWindowTitle("Delete File" if count == 1 else "Delete Files")
+        msg.setWindowTitle(
+            Translations["trash.title.singular"]
+            if count == 1
+            else Translations["trash.title.plural"]
+        )
         msg.setIcon(QMessageBox.Icon.Warning)
         if count <= 1:
+            msg_text = Translations.translate_formatted(
+                "trash.dialog.move.confirmation.singular", trash_term=trash_term
+            )
             msg.setText(
-                f"<h3>Are you sure you want to move this file to the {trash_term}?</h3>"
-                "<h4>This will remove it from TagStudio <i>AND</i> your file system!</h4>"
+                f"<h3>{msg_text}</h3>"
+                f"<h4>{Translations["trash.dialog.disambiguation_warning.singular"]}</h4>"
                 f"{filename if filename else ''}"
                 f"{perm_warning}<br>"
             )
         elif count > 1:
+            msg_text = Translations.translate_formatted(
+                "trash.dialog.move.confirmation.plural", count=count, trash_term=trash_term
+            )
             msg.setText(
-                f"<h3>Are you sure you want to move these {count} files to the {trash_term}?</h3>"
-                "<h4>This will remove them from TagStudio <i>AND</i> your file system!</h4>"
+                f"<h3>{msg_text}</h3>"
+                f"<h4>{Translations["trash.dialog.disambiguation_warning.plural"]}</h4>"
                 f"{perm_warning}<br>"
             )
 
@@ -1428,9 +1460,11 @@ class QtDriver(DriverMixin, QObject):
         if self.selected:
             self.add_tag_to_selected_action.setEnabled(True)
             self.clear_select_action.setEnabled(True)
+            self.delete_file_action.setEnabled(True)
         else:
             self.add_tag_to_selected_action.setEnabled(False)
             self.clear_select_action.setEnabled(False)
+            self.delete_file_action.setEnabled(False)
 
     def update_completions_list(self, text: str) -> None:
         matches = re.search(
