@@ -32,7 +32,6 @@ class PanelModal(QWidget):
         self.setWindowModality(Qt.WindowModality.ApplicationModal)
         self.root_layout = QVBoxLayout(self)
         self.root_layout.setContentsMargins(6, 0, 6, 6)
-        self.setWindowFlag(Qt.Dialog, on=True)  # type: ignore
 
         self.title_widget = QLabel()
         self.title_widget.setObjectName("fieldTitle")

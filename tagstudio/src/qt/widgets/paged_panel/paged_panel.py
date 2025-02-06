@@ -31,7 +31,6 @@ class PagedPanel(QWidget):
         self.root_layout.setObjectName("baseLayout")
         self.root_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.root_layout.setContentsMargins(0, 0, 0, 0)
-        self.setWindowFlag(Qt.Dialog, on=True)  # type: ignore
 
         self.content_container = QWidget()
         self.content_layout = QVBoxLayout(self.content_container)

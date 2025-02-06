@@ -35,7 +35,6 @@ class FixUnlinkedEntriesModal(QWidget):
         self.setMinimumSize(400, 300)
         self.root_layout = QVBoxLayout(self)
         self.root_layout.setContentsMargins(6, 6, 6, 6)
-        self.setWindowFlag(Qt.Dialog, on=True)  # type: ignore
 
         self.unlinked_desc_widget = QLabel()
         self.unlinked_desc_widget.setObjectName("unlinkedDescriptionLabel")
