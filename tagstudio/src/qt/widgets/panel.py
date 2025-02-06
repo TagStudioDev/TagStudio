@@ -138,6 +138,11 @@ class PanelWidget(QWidget):
                 self.panel_cancel_button.click()
             elif self.panel_done_button:
                 self.panel_done_button.click()
+        elif event.key() == Qt.Key.Key_Return or event.key() == Qt.Key.Key_Enter:
+            if self.panel_save_button:
+                self.panel_save_button.click()
+            elif self.panel_done_button:
+                self.panel_done_button.click()
         else:  # Other key presses
             pass
         return super().keyPressEvent(event)
