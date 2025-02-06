@@ -3,7 +3,9 @@
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
 
+import contextlib
 import typing
+from warnings import catch_warnings
 
 import src.qt.modals.build_tag as build_tag
 import structlog
@@ -11,8 +13,10 @@ from PySide6 import QtCore, QtGui
 from PySide6.QtCore import QSize, Qt, Signal
 from PySide6.QtGui import QShowEvent
 from PySide6.QtWidgets import (
+    QComboBox,
     QFrame,
     QHBoxLayout,
+    QLabel,
     QLineEdit,
     QPushButton,
     QScrollArea,
@@ -21,7 +25,7 @@ from PySide6.QtWidgets import (
 )
 from src.core.constants import RESERVED_TAG_END, RESERVED_TAG_START
 from src.core.library import Library, Tag
-from src.core.library.alchemy.enums import TagColorEnum
+from src.core.library.alchemy.enums import FilterState, TagColorEnum
 from src.core.palette import ColorType, get_tag_color
 from src.qt.translations import Translations
 from src.qt.widgets.panel import PanelModal, PanelWidget
@@ -44,6 +48,11 @@ class TagSearchPanel(PanelWidget):
     is_tag_chooser: bool
     exclude: list[int]
 
+    _limit_items: list[int | str] = [25, 50, 100, 250, 500, Translations["tag.all_tags"]]
+    _default_limit_idx: int = 0  # 50 Tag Limit (Default)
+    cur_limit_idx: int = _default_limit_idx
+    tag_limit: int | str = _limit_items[_default_limit_idx]
+
     def __init__(
         self,
         library: Library,
@@ -52,13 +61,36 @@ class TagSearchPanel(PanelWidget):
     ):
         super().__init__()
         self.lib = library
+        self.driver = None
         self.exclude = exclude or []
 
         self.is_tag_chooser = is_tag_chooser
+        self.create_button_in_layout: bool = False
 
         self.setMinimumSize(300, 400)
         self.root_layout = QVBoxLayout(self)
         self.root_layout.setContentsMargins(6, 0, 6, 0)
+
+        self.limit_container = QWidget()
+        self.limit_layout = QHBoxLayout(self.limit_container)
+        self.limit_layout.setContentsMargins(0, 0, 0, 0)
+        self.limit_layout.setSpacing(12)
+        self.limit_layout.addStretch(1)
+
+        self.limit_title = QLabel()
+        Translations.translate_qobject(self.limit_title, "tag.view_limit")
+        self.limit_layout.addWidget(self.limit_title)
+
+        self.limit_combobox = QComboBox()
+        self.limit_combobox.setEditable(False)
+        self.limit_combobox.addItems([str(x) for x in TagSearchPanel._limit_items])
+        self.limit_combobox.setCurrentIndex(TagSearchPanel._default_limit_idx)
+        self.limit_combobox.currentIndexChanged.connect(self.update_limit)
+        self.previous_limit: int = (
+            TagSearchPanel.tag_limit if isinstance(TagSearchPanel.tag_limit, int) else -1
+        )
+        self.limit_layout.addWidget(self.limit_combobox)
+        self.limit_layout.addStretch(1)
 
         self.search_field = QLineEdit()
         self.search_field.setObjectName("searchField")
@@ -79,53 +111,19 @@ class TagSearchPanel(PanelWidget):
         self.scroll_area.setFrameShape(QFrame.Shape.NoFrame)
         self.scroll_area.setWidget(self.scroll_contents)
 
+        self.root_layout.addWidget(self.limit_container)
         self.root_layout.addWidget(self.search_field)
         self.root_layout.addWidget(self.scroll_area)
 
-    def __build_tag_widget(self, tag: Tag):
-        has_remove_button = False
-        if not self.is_tag_chooser:
-            has_remove_button = tag.id not in range(RESERVED_TAG_START, RESERVED_TAG_END)
+    def set_driver(self, driver):
+        """Set the QtDriver for this search panel. Used for main window operations."""
+        self.driver = driver
 
-        tag_widget = TagWidget(
-            tag,
-            library=self.lib,
-            has_edit=True,
-            has_remove=has_remove_button,
-        )
-
-        tag_widget.on_edit.connect(lambda t=tag: self.edit_tag(t))
-        tag_widget.on_remove.connect(lambda t=tag: self.remove_tag(t))
-
-        # NOTE: A solution to this would be to pass the driver to TagSearchPanel, however that
-        # creates an exponential amount of work trying to fix the preexisting tests.
-
-        # tag_widget.search_for_tag_action.triggered.connect(
-        #     lambda checked=False, tag_id=tag.id: (
-        #         self.driver.main_window.searchField.setText(f"tag_id:{tag_id}"),
-        #         self.driver.filter_items(FilterState.from_tag_id(tag_id)),
-        #     )
-        # )
-
-        tag_id = tag.id
-        tag_widget.bg_button.clicked.connect(lambda: self.tag_chosen.emit(tag_id))
-        return tag_widget
-
-    def build_create_tag_button(self, query: str | None):
-        """Constructs a Create Tag Button."""
-        container = QWidget()
-        row = QHBoxLayout(container)
-        row.setContentsMargins(0, 0, 0, 0)
-        row.setSpacing(3)
-
+    def build_create_button(self, query: str | None):
+        """Constructs a "Create & Add Tag" QPushButton."""
         create_button = QPushButton(self)
-        Translations.translate_qobject(create_button, "tag.create_add", query=query)
         create_button.setFlat(True)
 
-        inner_layout = QHBoxLayout()
-        inner_layout.setObjectName("innerLayout")
-        inner_layout.setContentsMargins(2, 2, 2, 2)
-        create_button.setLayout(inner_layout)
         create_button.setMinimumSize(22, 22)
 
         create_button.setStyleSheet(
@@ -156,10 +154,7 @@ class TagSearchPanel(PanelWidget):
             f"}}"
         )
 
-        create_button.clicked.connect(lambda: self.create_and_add_tag(query))
-        row.addWidget(create_button)
-
-        return container
+        return create_button
 
     def create_and_add_tag(self, name: str):
         """Opens "Create Tag" panel to create and add a new tag with given name."""
@@ -188,26 +183,34 @@ class TagSearchPanel(PanelWidget):
 
         self.build_tag_modal.name_field.setText(name)
         self.add_tag_modal.saved.connect(on_tag_modal_saved)
-        self.add_tag_modal.save_button.setFocus()
         self.add_tag_modal.show()
 
     def update_tags(self, query: str | None = None):
-        logger.info("[Tag Search Super Class] Updating Tags")
+        """Update the tag list given a search query."""
+        logger.info("[TagSearchPanel] Updating Tags")
 
-        # TODO: Look at recycling rather than deleting and re-initializing
-        while self.scroll_layout.count():
-            self.scroll_layout.takeAt(0).widget().deleteLater()
+        # Remove the "Create & Add" button if one exists
+        create_button: QPushButton | None = None
+        if self.create_button_in_layout and self.scroll_layout.count():
+            create_button = self.scroll_layout.takeAt(self.scroll_layout.count() - 1).widget()  # type: ignore
+            create_button.deleteLater()
+            self.create_button_in_layout = False
 
+        # Get results for the search query
         query_lower = "" if not query else query.lower()
-        tag_results: list[set[Tag]] = self.lib.search_tags(name=query)
-        tag_results[0] = {t for t in tag_results[0] if t.id not in self.exclude}
-        tag_results[1] = {t for t in tag_results[1] if t.id not in self.exclude}
+        # Only use the tag limit if it's an actual number (aka not "All Tags")
+        tag_limit = TagSearchPanel.tag_limit if isinstance(TagSearchPanel.tag_limit, int) else -1
+        tag_results: list[set[Tag]] = self.lib.search_tags(name=query, limit=tag_limit)
+        if self.exclude:
+            tag_results[0] = {t for t in tag_results[0] if t.id not in self.exclude}
+            tag_results[1] = {t for t in tag_results[1] if t.id not in self.exclude}
 
+        # Sort and prioritize the results
         results_0 = list(tag_results[0])
         results_0.sort(key=lambda tag: tag.name.lower())
         results_1 = list(tag_results[1])
         results_1.sort(key=lambda tag: tag.name.lower())
-        raw_results = list(results_0 + results_1)[:100]
+        raw_results = list(results_0 + results_1)
         priority_results: set[Tag] = set()
         all_results: list[Tag] = []
 
@@ -219,18 +222,99 @@ class TagSearchPanel(PanelWidget):
         all_results = sorted(list(priority_results), key=lambda tag: len(tag.name)) + [
             r for r in raw_results if r not in priority_results
         ]
+        if tag_limit > 0:
+            all_results = all_results[:tag_limit]
 
         if all_results:
             self.first_tag_id = None
             self.first_tag_id = all_results[0].id if len(all_results) > 0 else all_results[0].id
-            for tag in all_results:
-                self.scroll_layout.addWidget(self.__build_tag_widget(tag))
+
         else:
             self.first_tag_id = None
 
+        # Update every tag widget with the new search result data
+        norm_previous = self.previous_limit if self.previous_limit > 0 else len(self.lib.tags)
+        norm_limit = tag_limit if tag_limit > 0 else len(self.lib.tags)
+        range_limit = max(norm_previous, norm_limit)
+        for i in range(0, range_limit):
+            tag = None
+            with contextlib.suppress(IndexError):
+                tag = all_results[i]
+            self.set_tag_widget(tag=tag, index=i)
+        self.previous_limit = tag_limit
+
+        # Add back the "Create & Add" button
         if query and query.strip():
-            c = self.build_create_tag_button(query)
-            self.scroll_layout.addWidget(c)
+            cb: QPushButton = self.build_create_button(query)
+            with catch_warnings(record=True):
+                cb.clicked.disconnect()
+            cb.clicked.connect(lambda: self.create_and_add_tag(query or ""))
+            Translations.translate_qobject(cb, "tag.create_add", query=query)
+            self.scroll_layout.addWidget(cb)
+            self.create_button_in_layout = True
+
+    def set_tag_widget(self, tag: Tag | None, index: int):
+        """Set the tag of a tag widget at a specific index."""
+        # Create any new tag widgets needed up to the given index
+        if self.scroll_layout.count() <= index:
+            while self.scroll_layout.count() <= index:
+                new_tw = TagWidget(tag=None, has_edit=True, has_remove=True, library=self.lib)
+                new_tw.setHidden(True)
+                self.scroll_layout.addWidget(new_tw)
+
+        # Assign the tag to the widget at the given index.
+        tag_widget: TagWidget = self.scroll_layout.itemAt(index).widget()  # type: ignore
+        tag_widget.set_tag(tag)
+
+        # Set tag widget viability and potentially return early
+        tag_widget.setHidden(bool(not tag))
+        if not tag:
+            return
+
+        # Configure any other aspects of the tag widget
+        has_remove_button = False
+        if not self.is_tag_chooser:
+            has_remove_button = tag.id not in range(RESERVED_TAG_START, RESERVED_TAG_END)
+        tag_widget.has_remove = has_remove_button
+
+        with catch_warnings(record=True):
+            tag_widget.on_edit.disconnect()
+            tag_widget.on_remove.disconnect()
+            tag_widget.bg_button.clicked.disconnect()
+
+        tag_id = tag.id
+        tag_widget.on_edit.connect(lambda t=tag: self.edit_tag(t))
+        tag_widget.on_remove.connect(lambda t=tag: self.remove_tag(t))
+        tag_widget.bg_button.clicked.connect(lambda: self.tag_chosen.emit(tag_id))
+
+        if self.driver:
+            tag_widget.search_for_tag_action.triggered.connect(
+                lambda checked=False, tag_id=tag.id: (
+                    self.driver.main_window.searchField.setText(f"tag_id:{tag_id}"),
+                    self.driver.filter_items(FilterState.from_tag_id(tag_id)),
+                )
+            )
+            tag_widget.search_for_tag_action.setEnabled(True)
+        else:
+            tag_widget.search_for_tag_action.setEnabled(False)
+
+    def update_limit(self, index: int):
+        logger.info("[TagSearchPanel] Updating tag limit")
+        TagSearchPanel.cur_limit_idx = index
+
+        if index < len(self._limit_items) - 1:
+            TagSearchPanel.tag_limit = int(self._limit_items[index])
+        else:
+            TagSearchPanel.tag_limit = -1
+
+        # Method was called outside the limit_combobox callback
+        if index != self.limit_combobox.currentIndex():
+            self.limit_combobox.setCurrentIndex(index)
+
+        if self.previous_limit == TagSearchPanel.tag_limit:
+            return
+
+        self.update_tags(self.search_field.text())
 
     def on_return(self, text: str):
         if text:
@@ -246,7 +330,9 @@ class TagSearchPanel(PanelWidget):
             self.parentWidget().hide()
 
     def showEvent(self, event: QShowEvent) -> None:  # noqa N802
+        self.update_limit(TagSearchPanel.cur_limit_idx)
         self.update_tags()
+        self.scroll_area.verticalScrollBar().setValue(0)
         self.search_field.setText("")
         self.search_field.setFocus()
         return super().showEvent(event)

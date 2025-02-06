@@ -211,9 +211,4 @@ class PreviewPanel(QWidget):
             )
         )
 
-        self.add_tag_button.clicked.connect(
-            lambda: (
-                self.tag_search_panel.update_tags(),
-                self.add_tag_modal.show(),
-            )
-        )
+        self.add_tag_button.clicked.connect(self.add_tag_modal.show)
