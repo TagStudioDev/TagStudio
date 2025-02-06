@@ -119,7 +119,7 @@ def test_meta_tag_category(qt_driver, library, entry_full):
     panel = PreviewPanel(library, qt_driver)
 
     # Ensure the Favorite tag is on entry_full
-    library.add_tags_to_entry(1, entry_full.id)
+    library.add_tags_to_entries(1, entry_full.id)
 
     # Select the single entry
     qt_driver.toggle_item_selection(entry_full.id, append=False, bridge=False)
@@ -151,7 +151,7 @@ def test_custom_tag_category(qt_driver, library, entry_full):
     )
 
     # Ensure the Favorite tag is on entry_full
-    library.add_tags_to_entry(1, entry_full.id)
+    library.add_tags_to_entries(1, entry_full.id)
 
     # Select the single entry
     qt_driver.toggle_item_selection(entry_full.id, append=False, bridge=False)

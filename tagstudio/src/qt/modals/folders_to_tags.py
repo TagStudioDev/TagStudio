@@ -73,7 +73,7 @@ def folders_to_tags(library: Library):
 
         tag = add_folders_to_tree(library, tree, folders).tag
         if tag and not entry.has_tag(tag):
-            library.add_tags_to_entry(entry.id, tag.id)
+            library.add_tags_to_entries(entry.id, tag.id)
 
     logger.info("Done")
 

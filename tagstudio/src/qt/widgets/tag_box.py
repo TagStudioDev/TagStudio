@@ -101,6 +101,6 @@ class TagBoxWidget(FieldWidget):
         )
 
         for entry_id in self.driver.selected:
-            self.driver.lib.remove_tags_from_entry(entry_id, tag_id)
+            self.driver.lib.remove_tags_from_entries(entry_id, tag_id)
 
         self.updated.emit()

@@ -330,8 +330,8 @@ def test_merge_entries(library: Library):
         tag_0 = library.add_tag(Tag(id=1000, name="tag_0"))
         tag_1 = library.add_tag(Tag(id=1001, name="tag_1"))
         tag_2 = library.add_tag(Tag(id=1002, name="tag_2"))
-        library.add_tags_to_entry(ids[0], [tag_0.id, tag_2.id])
-        library.add_tags_to_entry(ids[1], [tag_1.id])
+        library.add_tags_to_entries(ids[0], [tag_0.id, tag_2.id])
+        library.add_tags_to_entries(ids[1], [tag_1.id])
         library.merge_entries(entry_a, entry_b)
         assert library.has_path_entry(Path("b"))
         assert not library.has_path_entry(Path("a"))
@@ -344,11 +344,11 @@ def test_merge_entries(library: Library):
         AssertionError()
 
 
-def test_remove_tag_from_entry(library, entry_full):
+def test_remove_tags_from_entries(library, entry_full):
     removed_tag_id = -1
     for tag in entry_full.tags:
         removed_tag_id = tag.id
-        library.remove_tags_from_entry(entry_full.id, tag.id)
+        library.remove_tags_from_entries(entry_full.id, tag.id)
 
     entry = next(library.get_entries(with_joins=True))
     assert removed_tag_id not in [t.id for t in entry.tags]

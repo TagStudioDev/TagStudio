@@ -3,14 +3,12 @@
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
 import sys
-import time
 import typing
 from collections.abc import Callable
 from datetime import datetime as dt
 from warnings import catch_warnings
 
 import structlog
-from humanfriendly import format_timespan
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QGuiApplication
 from PySide6.QtWidgets import (
@@ -115,19 +113,14 @@ class FieldContainers(QWidget):
         """Update tags and fields from a single Entry source."""
         logger.warning("[FieldContainers] Updating Selection", entry_id=entry_id)
 
-        start_time = time.time()
         self.cached_entries = [self.lib.get_entry_full(entry_id)]
-        end_time = time.time()
-        logger.error(
-            f"[FieldContainers] Time it took to get full entry: "
-            f"{format_timespan(end_time-start_time, max_units=5)}"
-        )
         entry = self.cached_entries[0]
         self.update_granular(entry.tags, entry.fields, update_badges)
 
     def update_granular(
         self, entry_tags: set[Tag], entry_fields: list[BaseField], update_badges: bool = True
     ):
+        """Individually update elements of the item preview."""
         container_len: int = len(entry_fields)
         container_index = 0
         # Write tag container(s)
@@ -153,6 +146,7 @@ class FieldContainers(QWidget):
                     c.setHidden(True)
 
     def update_toggled_tag(self, tag_id: int, toggle_value: bool):
+        """Visually add or remove a tag from the item preview without needing to query the db."""
         entry = self.cached_entries[0]
         tag = self.lib.get_tag(tag_id)
         if not tag:
@@ -284,7 +278,7 @@ class FieldContainers(QWidget):
             tags=tags,
         )
         for entry_id in self.driver.selected:
-            self.lib.add_tags_to_entry(
+            self.lib.add_tags_to_entries(
                 entry_id,
                 tag_ids=tags,
             )
