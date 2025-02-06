@@ -506,7 +506,7 @@ class ItemThumb(FlowWidget):
         else:
             self.lib.remove_tags_from_entry(entry_id, tag_id)
 
-        if self.driver.preview_panel.is_open:
+        if entry_id in self.driver.selected and self.driver.preview_panel.is_open:
             self.driver.preview_panel.update_widgets(update_preview=False)
 
     def mouseMoveEvent(self, event):  # noqa: N802
