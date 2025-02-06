@@ -769,6 +769,7 @@ class QtDriver(DriverMixin, QObject):
         if self.file_extension_panel:
             with catch_warnings(record=True):
                 self.manage_file_ext_action.triggered.disconnect()
+                self.file_extension_panel.saved.disconnect()
             self.file_extension_panel.deleteLater()
             self.file_extension_panel = None
 
