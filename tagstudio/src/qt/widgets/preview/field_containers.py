@@ -3,12 +3,14 @@
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
 import sys
+import time
 import typing
 from collections.abc import Callable
 from datetime import datetime as dt
 from warnings import catch_warnings
 
 import structlog
+from humanfriendly import format_timespan
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QGuiApplication
 from PySide6.QtWidgets import (
@@ -113,14 +115,24 @@ class FieldContainers(QWidget):
         """Update tags and fields from a single Entry source."""
         logger.warning("[FieldContainers] Updating Selection", entry_id=entry_id)
 
+        start_time = time.time()
         self.cached_entries = [self.lib.get_entry_full(entry_id)]
-        entry_ = self.cached_entries[0]
-        container_len: int = len(entry_.fields)
-        container_index = 0
+        end_time = time.time()
+        logger.error(
+            f"[FieldContainers] Time it took to get full entry: "
+            f"{format_timespan(end_time-start_time, max_units=5)}"
+        )
+        entry = self.cached_entries[0]
+        self.update_granular(entry.tags, entry.fields, update_badges)
 
+    def update_granular(
+        self, entry_tags: set[Tag], entry_fields: list[BaseField], update_badges: bool = True
+    ):
+        container_len: int = len(entry_fields)
+        container_index = 0
         # Write tag container(s)
-        if entry_.tags:
-            categories = self.get_tag_categories(entry_.tags)
+        if entry_tags:
+            categories = self.get_tag_categories(entry_tags)
             for cat, tags in sorted(categories.items(), key=lambda kv: (kv[0] is None, kv)):
                 self.write_tag_container(
                     container_index, tags=tags, category_tag=cat, is_mixed=False
@@ -128,10 +140,10 @@ class FieldContainers(QWidget):
                 container_index += 1
                 container_len += 1
         if update_badges:
-            self.emit_badge_signals({t.id for t in entry_.tags})
+            self.emit_badge_signals({t.id for t in entry_tags})
 
         # Write field container(s)
-        for index, field in enumerate(entry_.fields, start=container_index):
+        for index, field in enumerate(entry_fields, start=container_index):
             self.write_container(index, field, is_mixed=False)
 
         # Hide leftover container(s)
@@ -139,6 +151,16 @@ class FieldContainers(QWidget):
             for i, c in enumerate(self.containers):
                 if i > (container_len - 1):
                     c.setHidden(True)
+
+    def update_toggled_tag(self, tag_id: int, toggle_value: bool):
+        entry = self.cached_entries[0]
+        tag = self.lib.get_tag(tag_id)
+        if not tag:
+            return
+        new_tags = (
+            entry.tags.union({tag}) if toggle_value else {t for t in entry.tags if t.id != tag_id}
+        )
+        self.update_granular(entry_tags=new_tags, entry_fields=entry.fields, update_badges=False)
 
     def hide_containers(self):
         """Hide all field and tag containers."""
