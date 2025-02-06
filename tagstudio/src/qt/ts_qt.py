@@ -16,6 +16,7 @@ import sys
 import time
 from pathlib import Path
 from queue import Queue
+from warnings import catch_warnings
 
 # this import has side-effect of import PySide resources
 import src.qt.resources_rc  # noqa: F401
@@ -136,6 +137,8 @@ class QtDriver(DriverMixin, QObject):
     SIGTERM = Signal()
 
     preview_panel: PreviewPanel
+    tag_manager_panel: PanelModal
+    file_extension_panel: PanelModal | None = None
     tag_search_panel: TagSearchPanel
     add_tag_modal: PanelModal
 
@@ -291,8 +294,20 @@ class QtDriver(DriverMixin, QObject):
             icon.addFile(str(icon_path))
             app.setWindowIcon(icon)
 
-        # Initialize the main window's tag search panel
+        # Initialize the Tag Manager panel
+        self.tag_manager_panel = PanelModal(
+            widget=TagDatabasePanel(self, self.lib),
+            done_callback=lambda: self.preview_panel.update_widgets(update_preview=False),
+            has_save=False,
+        )
+        Translations.translate_with_setter(self.tag_manager_panel.setTitle, "tag_manager.title")
+        Translations.translate_with_setter(
+            self.tag_manager_panel.setWindowTitle, "tag_manager.title"
+        )
+
+        # Initialize the Tag Search panel
         self.tag_search_panel = TagSearchPanel(self.lib, is_tag_chooser=True)
+        self.tag_search_panel.set_driver(self)
         self.add_tag_modal = PanelModal(
             widget=self.tag_search_panel,
             title=Translations.translate_formatted("tag.add.plural"),
@@ -487,13 +502,12 @@ class QtDriver(DriverMixin, QObject):
         Translations.translate_qobject(
             self.manage_file_ext_action, "menu.edit.manage_file_extensions"
         )
-        self.manage_file_ext_action.triggered.connect(self.show_file_extension_modal)
         edit_menu.addAction(self.manage_file_ext_action)
         self.manage_file_ext_action.setEnabled(False)
 
         self.tag_manager_action = QAction(menu_bar)
         Translations.translate_qobject(self.tag_manager_action, "menu.edit.manage_tags")
-        self.tag_manager_action.triggered.connect(lambda: self.show_tag_manager())
+        self.tag_manager_action.triggered.connect(self.tag_manager_panel.show)
         self.tag_manager_action.setShortcut(
             QtCore.QKeyCombination(
                 QtCore.Qt.KeyboardModifier(QtCore.Qt.KeyboardModifier.ControlModifier),
@@ -750,6 +764,27 @@ class QtDriver(DriverMixin, QObject):
 
         self.splash.finish(self.main_window)
 
+    def init_file_extension_manager(self):
+        """Initialize the File Extension panel."""
+        if self.file_extension_panel:
+            with catch_warnings(record=True):
+                self.manage_file_ext_action.triggered.disconnect()
+                self.file_extension_panel.saved.disconnect()
+            self.file_extension_panel.deleteLater()
+            self.file_extension_panel = None
+
+        panel = FileExtensionModal(self.lib)
+        self.file_extension_panel = PanelModal(
+            panel,
+            has_save=True,
+        )
+        Translations.translate_with_setter(self.file_extension_panel.setTitle, "ignore_list.title")
+        Translations.translate_with_setter(
+            self.file_extension_panel.setWindowTitle, "ignore_list.title"
+        )
+        self.file_extension_panel.saved.connect(lambda: (panel.save(), self.filter_items()))
+        self.manage_file_ext_action.triggered.connect(self.file_extension_panel.show)
+
     def show_grid_filenames(self, value: bool):
         for thumb in self.item_thumbs:
             thumb.set_filename_visibility(value)
@@ -901,28 +936,6 @@ class QtDriver(DriverMixin, QObject):
     def add_tags_to_selected_callback(self, tag_ids: list[int]):
         for entry_id in self.selected:
             self.lib.add_tags_to_entry(entry_id, tag_ids)
-
-    def show_tag_manager(self):
-        self.modal = PanelModal(
-            widget=TagDatabasePanel(self.lib),
-            done_callback=lambda: self.preview_panel.update_widgets(update_preview=False),
-            has_save=False,
-        )
-        Translations.translate_with_setter(self.modal.setTitle, "tag_manager.title")
-        Translations.translate_with_setter(self.modal.setWindowTitle, "tag_manager.title")
-        self.modal.show()
-
-    def show_file_extension_modal(self):
-        panel = FileExtensionModal(self.lib)
-        self.modal = PanelModal(
-            panel,
-            has_save=True,
-        )
-        Translations.translate_with_setter(self.modal.setTitle, "ignore_list.title")
-        Translations.translate_with_setter(self.modal.setWindowTitle, "ignore_list.title")
-
-        self.modal.saved.connect(lambda: (panel.save(), self.filter_items()))
-        self.modal.show()
 
     def add_new_files_callback(self):
         """Run when user initiates adding new files to the Library."""
@@ -1667,6 +1680,8 @@ class QtDriver(DriverMixin, QObject):
             library_dir=self.lib.library_dir,
         )
         self.main_window.setAcceptDrops(True)
+
+        self.init_file_extension_manager()
 
         self.selected.clear()
         self.set_select_actions_visibility()

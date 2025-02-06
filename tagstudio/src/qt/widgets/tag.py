@@ -105,7 +105,7 @@ class TagWidget(QWidget):
 
     def __init__(
         self,
-        tag: Tag,
+        tag: Tag | None,
         has_edit: bool,
         has_remove: bool,
         library: "Library | None" = None,
@@ -127,10 +127,7 @@ class TagWidget(QWidget):
 
         self.bg_button = QPushButton(self)
         self.bg_button.setFlat(True)
-        if self.lib:
-            self.bg_button.setText(escape_text(self.lib.tag_display_name(tag.id)))
-        else:
-            self.bg_button.setText(escape_text(tag.name))
+
         if has_edit:
             edit_action = QAction(self)
             edit_action.setText(Translations.translate_formatted("generic.edit"))
@@ -153,8 +150,37 @@ class TagWidget(QWidget):
         self.inner_layout.setObjectName("innerLayout")
         self.inner_layout.setContentsMargins(0, 0, 0, 0)
 
+        self.remove_button = QPushButton(self)
+        self.remove_button.setFlat(True)
+        self.remove_button.setText("–")
+        self.remove_button.setHidden(True)
+        self.remove_button.setMinimumSize(22, 22)
+        self.remove_button.setMaximumSize(22, 22)
+        self.remove_button.clicked.connect(self.on_remove.emit)
+        self.remove_button.setHidden(True)
+        self.inner_layout.addWidget(self.remove_button)
+        self.inner_layout.addStretch(1)
+
         self.bg_button.setLayout(self.inner_layout)
         self.bg_button.setMinimumSize(44, 22)
+
+        self.bg_button.setMinimumHeight(22)
+        self.bg_button.setMaximumHeight(22)
+
+        self.base_layout.addWidget(self.bg_button)
+
+        # NOTE: Do this if you don't want the tag to stretch, like in a search.
+        # self.bg_button.setMaximumWidth(self.bg_button.sizeHint().width())
+
+        self.bg_button.clicked.connect(self.on_click.emit)
+
+        self.set_tag(tag)
+
+    def set_tag(self, tag: Tag | None) -> None:
+        self.tag = tag
+
+        if not tag:
+            return
 
         primary_color = get_primary_color(tag)
         border_color = (
@@ -200,55 +226,42 @@ class TagWidget(QWidget):
             f"outline:none;"
             f"}}"
         )
-        self.bg_button.setMinimumHeight(22)
-        self.bg_button.setMaximumHeight(22)
 
-        self.base_layout.addWidget(self.bg_button)
+        self.remove_button.setStyleSheet(
+            f"QPushButton{{"
+            f"color: rgba{primary_color.toTuple()};"
+            f"background: rgba{text_color.toTuple()};"
+            f"font-weight: 800;"
+            f"border-radius: 5px;"
+            f"border-width: 4;"
+            f"border-color: rgba(0,0,0,0);"
+            f"padding-bottom: 4px;"
+            f"font-size: 14px"
+            f"}}"
+            f"QPushButton::hover{{"
+            f"background: rgba{primary_color.toTuple()};"
+            f"color: rgba{text_color.toTuple()};"
+            f"border-color: rgba{highlight_color.toTuple()};"
+            f"border-width: 2;"
+            f"border-radius: 6px;"
+            f"}}"
+            f"QPushButton::pressed{{"
+            f"background: rgba{border_color.toTuple()};"
+            f"color: rgba{highlight_color.toTuple()};"
+            f"}}"
+            f"QPushButton::focus{{"
+            f"background: rgba{border_color.toTuple()};"
+            f"outline:none;"
+            f"}}"
+        )
 
-        if has_remove:
-            self.remove_button = QPushButton(self)
-            self.remove_button.setFlat(True)
-            self.remove_button.setText("–")
-            self.remove_button.setHidden(True)
-            self.remove_button.setStyleSheet(
-                f"QPushButton{{"
-                f"color: rgba{primary_color.toTuple()};"
-                f"background: rgba{text_color.toTuple()};"
-                f"font-weight: 800;"
-                f"border-radius: 5px;"
-                f"border-width: 4;"
-                f"border-color: rgba(0,0,0,0);"
-                f"padding-bottom: 4px;"
-                f"font-size: 14px"
-                f"}}"
-                f"QPushButton::hover{{"
-                f"background: rgba{primary_color.toTuple()};"
-                f"color: rgba{text_color.toTuple()};"
-                f"border-color: rgba{highlight_color.toTuple()};"
-                f"border-width: 2;"
-                f"border-radius: 6px;"
-                f"}}"
-                f"QPushButton::pressed{{"
-                f"background: rgba{border_color.toTuple()};"
-                f"color: rgba{highlight_color.toTuple()};"
-                f"}}"
-                f"QPushButton::focus{{"
-                f"background: rgba{border_color.toTuple()};"
-                f"outline:none;"
-                f"}}"
-            )
-            self.remove_button.setMinimumSize(22, 22)
-            self.remove_button.setMaximumSize(22, 22)
-            self.remove_button.clicked.connect(self.on_remove.emit)
+        if self.lib:
+            self.bg_button.setText(escape_text(self.lib.tag_display_name(tag.id)))
+        else:
+            self.bg_button.setText(escape_text(tag.name))
 
-        if has_remove:
-            self.inner_layout.addWidget(self.remove_button)
-        self.inner_layout.addStretch(1)
-
-        # NOTE: Do this if you don't want the tag to stretch, like in a search.
-        # self.bg_button.setMaximumWidth(self.bg_button.sizeHint().width())
-
-        self.bg_button.clicked.connect(self.on_click.emit)
+    def set_has_remove(self, has_remove: bool):
+        self.has_remove = has_remove
 
     def enterEvent(self, event: QEnterEvent) -> None:  # noqa: N802
         if self.has_remove:
