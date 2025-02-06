@@ -7,6 +7,7 @@
 
 """A Qt driver for TagStudio."""
 
+import contextlib
 import ctypes
 import dataclasses
 import math
@@ -67,6 +68,7 @@ from src.core.library.alchemy.enums import (
 from src.core.library.alchemy.fields import _FieldID
 from src.core.library.alchemy.library import Entry, LibraryStatus
 from src.core.media_types import MediaCategories
+from src.core.palette import ColorType, UiColor, get_ui_color
 from src.core.query_lang.util import ParsingError
 from src.core.ts_core import TagStudioCore
 from src.core.utils.refresh_dir import RefreshDirTracker
@@ -74,6 +76,7 @@ from src.core.utils.web import strip_web_protocol
 from src.qt.cache_manager import CacheManager
 from src.qt.flowlayout import FlowLayout
 from src.qt.helpers.custom_runnable import CustomRunnable
+from src.qt.helpers.file_deleter import delete_file
 from src.qt.helpers.function_iterator import FunctionIterator
 from src.qt.main_window import Ui_MainWindow
 from src.qt.modals.about import AboutModal
@@ -86,6 +89,7 @@ from src.qt.modals.fix_unlinked import FixUnlinkedEntriesModal
 from src.qt.modals.folders_to_tags import FoldersToTagsModal
 from src.qt.modals.tag_database import TagDatabasePanel
 from src.qt.modals.tag_search import TagSearchPanel
+from src.qt.platform_strings import trash_term
 from src.qt.resource_manager import ResourceManager
 from src.qt.splash import Splash
 from src.qt.translations import Translations
@@ -498,6 +502,17 @@ class QtDriver(DriverMixin, QObject):
 
         edit_menu.addSeparator()
 
+        self.delete_file_action = QAction(menu_bar)
+        Translations.translate_qobject(
+            self.delete_file_action, "menu.delete_selected_files_ambiguous", trash_term=trash_term()
+        )
+        self.delete_file_action.triggered.connect(lambda f="": self.delete_files_callback(f))
+        self.delete_file_action.setShortcut(QtCore.Qt.Key.Key_Delete)
+        self.delete_file_action.setEnabled(False)
+        edit_menu.addAction(self.delete_file_action)
+
+        edit_menu.addSeparator()
+
         self.manage_file_ext_action = QAction(menu_bar)
         Translations.translate_qobject(
             self.manage_file_ext_action, "menu.edit.manage_file_extensions"
@@ -839,9 +854,12 @@ class QtDriver(DriverMixin, QObject):
 
         self.main_window.setWindowTitle(self.base_title)
 
-        self.selected = []
-        self.frame_content = []
+        self.selected.clear()
+        self.frame_content.clear()
         [x.set_mode(None) for x in self.item_thumbs]
+
+        self.set_clipboard_menu_viability()
+        self.set_select_actions_visibility()
 
         self.preview_panel.update_widgets()
         self.main_window.toggle_landing_page(enabled=True)
@@ -936,6 +954,141 @@ class QtDriver(DriverMixin, QObject):
     def add_tags_to_selected_callback(self, tag_ids: list[int]):
         for entry_id in self.selected:
             self.lib.add_tags_to_entry(entry_id, tag_ids)
+
+    def delete_files_callback(self, origin_path: str | Path, origin_id: int | None = None):
+        """Callback to send on or more files to the system trash.
+
+        If 0-1 items are currently selected, the origin_path is used to delete the file
+        from the originating context menu item.
+        If there are currently multiple items selected,
+        then the selection buffer is used to determine the files to be deleted.
+
+        Args:
+            origin_path(str): The file path associated with the widget making the call.
+                May or may not be the file targeted, depending on the selection rules.
+            origin_id(id): The entry ID associated with the widget making the call.
+        """
+        entry: Entry | None = None
+        pending: list[tuple[int, Path]] = []
+        deleted_count: int = 0
+
+        if len(self.selected) <= 1 and origin_path:
+            origin_id_ = origin_id
+            if not origin_id_:
+                with contextlib.suppress(IndexError):
+                    origin_id_ = self.selected[0]
+
+            pending.append((origin_id_, Path(origin_path)))
+        elif (len(self.selected) > 1) or (len(self.selected) <= 1):
+            for item in self.selected:
+                entry = self.lib.get_entry(item)
+                filepath: Path = entry.path
+                pending.append((item, filepath))
+
+        if pending:
+            return_code = self.delete_file_confirmation(len(pending), pending[0][1])
+            # If there was a confirmation and not a cancellation
+            if (
+                return_code == QMessageBox.ButtonRole.DestructiveRole.value
+                and return_code != QMessageBox.ButtonRole.ActionRole.value
+            ):
+                for i, tup in enumerate(pending):
+                    e_id, f = tup
+                    if (origin_path == f) or (not origin_path):
+                        self.preview_panel.thumb.stop_file_use()
+                    if delete_file(self.lib.library_dir / f):
+                        self.main_window.statusbar.showMessage(
+                            Translations.translate_formatted(
+                                "status.deleting_file", i=i, count=len(pending), path=f
+                            )
+                        )
+                        self.main_window.statusbar.repaint()
+                        self.lib.remove_entries([e_id])
+
+                        deleted_count += 1
+                self.selected.clear()
+
+        if deleted_count > 0:
+            self.filter_items()
+            self.preview_panel.update_widgets()
+
+        if len(self.selected) <= 1 and deleted_count == 0:
+            self.main_window.statusbar.showMessage(Translations["status.deleted_none"])
+        elif len(self.selected) <= 1 and deleted_count == 1:
+            self.main_window.statusbar.showMessage(
+                Translations.translate_formatted("status.deleted_file_plural", count=deleted_count)
+            )
+        elif len(self.selected) > 1 and deleted_count == 0:
+            self.main_window.statusbar.showMessage(Translations["status.deleted_none"])
+        elif len(self.selected) > 1 and deleted_count < len(self.selected):
+            self.main_window.statusbar.showMessage(
+                Translations.translate_formatted(
+                    "status.deleted_partial_warning", count=deleted_count
+                )
+            )
+        elif len(self.selected) > 1 and deleted_count == len(self.selected):
+            self.main_window.statusbar.showMessage(
+                Translations.translate_formatted("status.deleted_file_plural", count=deleted_count)
+            )
+        self.main_window.statusbar.repaint()
+
+    def delete_file_confirmation(self, count: int, filename: Path | None = None) -> int:
+        """A confirmation dialogue box for deleting files.
+
+        Args:
+            count(int): The number of files to be deleted.
+            filename(Path | None): The filename to show if only one file is to be deleted.
+        """
+        # NOTE: Windows + send2trash will PERMANENTLY delete files which cannot be moved to the
+        # Recycle Bin. This is done without any warning, so this message is currently the
+        # best way I've got to inform the user.
+        # https://github.com/arsenetar/send2trash/issues/28
+        # This warning is applied to all platforms until at least macOS and Linux can be verified
+        # to not exhibit this same behavior.
+        perm_warning_msg = Translations.translate_formatted(
+            "trash.dialog.permanent_delete_warning", trash_term=trash_term()
+        )
+        perm_warning: str = (
+            f"<h4 style='color: {get_ui_color(ColorType.PRIMARY, UiColor.RED)}'>"
+            f"{perm_warning_msg}</h4>"
+        )
+
+        msg = QMessageBox()
+        msg.setStyleSheet("font-weight:normal;")
+        msg.setTextFormat(Qt.TextFormat.RichText)
+        msg.setWindowTitle(
+            Translations["trash.title.singular"]
+            if count == 1
+            else Translations["trash.title.plural"]
+        )
+        msg.setIcon(QMessageBox.Icon.Warning)
+        if count <= 1:
+            msg_text = Translations.translate_formatted(
+                "trash.dialog.move.confirmation.singular", trash_term=trash_term()
+            )
+            msg.setText(
+                f"<h3>{msg_text}</h3>"
+                f"<h4>{Translations["trash.dialog.disambiguation_warning.singular"]}</h4>"
+                f"{filename if filename else ''}"
+                f"{perm_warning}<br>"
+            )
+        elif count > 1:
+            msg_text = Translations.translate_formatted(
+                "trash.dialog.move.confirmation.plural",
+                count=count,
+                trash_term=trash_term(),
+            )
+            msg.setText(
+                f"<h3>{msg_text}</h3>"
+                f"<h4>{Translations["trash.dialog.disambiguation_warning.plural"]}</h4>"
+                f"{perm_warning}<br>"
+            )
+
+        yes_button: QPushButton = msg.addButton("&Yes", QMessageBox.ButtonRole.YesRole)
+        msg.addButton("&No", QMessageBox.ButtonRole.NoRole)
+        msg.setDefaultButton(yes_button)
+
+        return msg.exec()
 
     def add_new_files_callback(self):
         """Run when user initiates adding new files to the Library."""
@@ -1315,9 +1468,11 @@ class QtDriver(DriverMixin, QObject):
         if self.selected:
             self.add_tag_to_selected_action.setEnabled(True)
             self.clear_select_action.setEnabled(True)
+            self.delete_file_action.setEnabled(True)
         else:
             self.add_tag_to_selected_action.setEnabled(False)
             self.clear_select_action.setEnabled(False)
+            self.delete_file_action.setEnabled(False)
 
     def update_completions_list(self, text: str) -> None:
         matches = re.search(
@@ -1425,6 +1580,9 @@ class QtDriver(DriverMixin, QObject):
             if not entry:
                 continue
 
+            with catch_warnings(record=True):
+                item_thumb.delete_action.triggered.disconnect()
+
             item_thumb.set_mode(ItemType.ENTRY)
             item_thumb.set_item_id(entry.id)
             item_thumb.show()
@@ -1468,6 +1626,11 @@ class QtDriver(DriverMixin, QObject):
                             QGuiApplication.keyboardModifiers() == Qt.KeyboardModifier.ShiftModifier
                         ),
                     )
+                )
+            )
+            item_thumb.delete_action.triggered.connect(
+                lambda checked=False, f=filenames[index], e_id=entry.id: self.delete_files_callback(
+                    f, e_id
                 )
             )
 

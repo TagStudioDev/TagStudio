@@ -1,4 +1,4 @@
-# Copyright (C) 2024 Travis Abendshien (CyanVoxel).
+# Copyright (C) 2025 Travis Abendshien (CyanVoxel).
 # Licensed under the GPL-3.0 License.
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
@@ -9,10 +9,17 @@ import platform
 from src.qt.translations import Translations
 
 
-class PlatformStrings:
-    open_file_str: str = Translations["file.open_location.generic"]
-
+def open_file_str() -> str:
     if platform.system() == "Windows":
-        open_file_str = Translations["file.open_location.windows"]
+        return Translations["file.open_location.windows"]
     elif platform.system() == "Darwin":
-        open_file_str = Translations["file.open_location.mac"]
+        return Translations["file.open_location.mac"]
+    else:
+        return Translations["file.open_location.generic"]
+
+
+def trash_term() -> str:
+    if platform.system() == "Windows":
+        return Translations["trash.name.windows"]
+    else:
+        return Translations["trash.name.generic"]
