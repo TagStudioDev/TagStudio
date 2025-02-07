@@ -692,10 +692,13 @@ class Library:
         with Session(self.engine) as session:
             return session.query(exists().where(Entry.path == path)).scalar()
 
-    def get_paths(self, glob: str | None = None) -> list[str]:
+    def get_paths(self, glob: str | None = None, limit: int = -1) -> list[str]:
         path_strings: list[str] = []
         with Session(self.engine) as session:
-            paths = session.scalars(select(Entry.path)).unique()
+            if limit > 0:
+                paths = session.scalars(select(Entry.path).limit(limit)).unique()
+            else:
+                paths = session.scalars(select(Entry.path)).unique()
             path_strings = list(map(lambda x: x.as_posix(), paths))
             return path_strings
 
