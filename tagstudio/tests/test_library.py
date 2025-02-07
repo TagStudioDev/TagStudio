@@ -414,6 +414,24 @@ def test_library_prefs_multiple_identical_vals():
         assert TestPrefs.BAR.value
 
 
+def test_path_search_ilike(library: Library):
+    results = library.search_library(FilterState.from_path("bar.md"))
+    assert results.total_count == 1
+    assert len(results.items) == 1
+
+
+def test_path_search_like(library: Library):
+    results = library.search_library(FilterState.from_path("BAR.MD"))
+    assert results.total_count == 0
+    assert len(results.items) == 0
+
+
+def test_path_search_default_with_sep(library: Library):
+    results = library.search_library(FilterState.from_path("one/two"))
+    assert results.total_count == 1
+    assert len(results.items) == 1
+
+
 def test_path_search_glob_after(library: Library):
     results = library.search_library(FilterState.from_path("foo*"))
     assert results.total_count == 1
@@ -430,6 +448,50 @@ def test_path_search_glob_both_sides(library: Library):
     results = library.search_library(FilterState.from_path("*one/two*"))
     assert results.total_count == 1
     assert len(results.items) == 1
+
+
+def test_path_search_ilike_glob_equality(library: Library):
+    results_ilike = library.search_library(FilterState.from_path("one/two"))
+    results_glob = library.search_library(FilterState.from_path("*one/two*"))
+    assert [e.id for e in results_ilike.items] == [e.id for e in results_glob.items]
+    results_ilike, results_glob = None, None
+
+    results_ilike = library.search_library(FilterState.from_path("bar.md"))
+    results_glob = library.search_library(FilterState.from_path("*bar.md*"))
+    assert [e.id for e in results_ilike.items] == [e.id for e in results_glob.items]
+    results_ilike, results_glob = None, None
+
+    results_ilike = library.search_library(FilterState.from_path("bar"))
+    results_glob = library.search_library(FilterState.from_path("*bar*"))
+    assert [e.id for e in results_ilike.items] == [e.id for e in results_glob.items]
+    results_ilike, results_glob = None, None
+
+    results_ilike = library.search_library(FilterState.from_path("bar.md"))
+    results_glob = library.search_library(FilterState.from_path("*bar.md*"))
+    assert [e.id for e in results_ilike.items] == [e.id for e in results_glob.items]
+    results_ilike, results_glob = None, None
+
+
+def test_path_search_like_glob_equality(library: Library):
+    results_ilike = library.search_library(FilterState.from_path("ONE/two"))
+    results_glob = library.search_library(FilterState.from_path("*ONE/two*"))
+    assert [e.id for e in results_ilike.items] == [e.id for e in results_glob.items]
+    results_ilike, results_glob = None, None
+
+    results_ilike = library.search_library(FilterState.from_path("BAR.MD"))
+    results_glob = library.search_library(FilterState.from_path("*BAR.MD*"))
+    assert [e.id for e in results_ilike.items] == [e.id for e in results_glob.items]
+    results_ilike, results_glob = None, None
+
+    results_ilike = library.search_library(FilterState.from_path("BAR.MD"))
+    results_glob = library.search_library(FilterState.from_path("*bar.md*"))
+    assert [e.id for e in results_ilike.items] != [e.id for e in results_glob.items]
+    results_ilike, results_glob = None, None
+
+    results_ilike = library.search_library(FilterState.from_path("bar.md"))
+    results_glob = library.search_library(FilterState.from_path("*BAR.MD*"))
+    assert [e.id for e in results_ilike.items] != [e.id for e in results_glob.items]
+    results_ilike, results_glob = None, None
 
 
 @pytest.mark.parametrize(["filetype", "num_of_filetype"], [("md", 1), ("txt", 1), ("png", 0)])
