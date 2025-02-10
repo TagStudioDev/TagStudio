@@ -499,15 +499,11 @@ class ItemThumb(FlowWidget):
         toggle_value: bool,
         tag_id: int,
     ):
-        logger.info("toggle_item_tag", entry_id=entry_id, toggle_value=toggle_value, tag_id=tag_id)
-
-        if toggle_value:
-            self.lib.add_tags_to_entry(entry_id, tag_id)
-        else:
-            self.lib.remove_tags_from_entry(entry_id, tag_id)
-
-        if self.driver.preview_panel.is_open:
-            self.driver.preview_panel.update_widgets(update_preview=False)
+        if entry_id in self.driver.selected and self.driver.preview_panel.is_open:
+            if len(self.driver.selected) == 1:
+                self.driver.preview_panel.fields.update_toggled_tag(tag_id, toggle_value)
+            else:
+                pass
 
     def mouseMoveEvent(self, event):  # noqa: N802
         if event.buttons() is not Qt.MouseButton.LeftButton:

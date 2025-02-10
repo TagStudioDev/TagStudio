@@ -95,7 +95,7 @@ def library(request):
         path=pathlib.Path("foo.txt"),
         fields=lib.default_fields,
     )
-    assert lib.add_tags_to_entry(entry.id, tag.id)
+    assert lib.add_tags_to_entries(entry.id, tag.id)
 
     entry2 = Entry(
         id=2,
@@ -103,7 +103,7 @@ def library(request):
         path=pathlib.Path("one/two/bar.md"),
         fields=lib.default_fields,
     )
-    assert lib.add_tags_to_entry(entry2.id, tag2.id)
+    assert lib.add_tags_to_entries(entry2.id, tag2.id)
 
     assert lib.add_entries([entry, entry2])
     assert len(lib.tags) == 6

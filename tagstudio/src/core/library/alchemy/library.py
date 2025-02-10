@@ -11,6 +11,7 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 from os import makedirs
 from pathlib import Path
+from typing import TYPE_CHECKING
 from uuid import uuid4
 from warnings import catch_warnings
 
@@ -68,6 +69,10 @@ from .fields import (
 from .joins import TagEntry, TagParent
 from .models import Entry, Folder, Namespace, Preferences, Tag, TagAlias, TagColorGroup, ValueType
 from .visitors import SQLBoolExpressionBuilder
+
+if TYPE_CHECKING:
+    from sqlalchemy import Select
+
 
 logger = structlog.get_logger(__name__)
 
@@ -259,7 +264,7 @@ class Library:
                 for k, v in field.items():
                     # Old tag fields get added as tags
                     if k in LEGACY_TAG_FIELD_IDS:
-                        self.add_tags_to_entry(entry_id=entry.id + 1, tag_ids=v)
+                        self.add_tags_to_entries(entry_ids=entry.id + 1, tag_ids=v)
                     else:
                         self.add_field_to_entry(
                             entry_id=(entry.id + 1),  # JSON IDs start at 0 instead of 1
@@ -513,30 +518,49 @@ class Library:
         self, entry_id: int, with_fields: bool = True, with_tags: bool = True
     ) -> Entry | None:
         """Load entry and join with all joins and all tags."""
+        # NOTE: TODO: Currently this method makes multiple separate queries to the db and combines
+        # those into a final Entry object (if using "with" args). This was done due to it being
+        # much more efficient than the existing join query, however there likely exists a single
+        # query that can accomplish the same task without exhibiting the same slowdown.
         with Session(self.engine) as session:
-            statement = select(Entry).where(Entry.id == entry_id)
+            tags: set[Tag] | None = None
+            tag_stmt: Select[tuple[Tag]]
+            entry_stmt = select(Entry).where(Entry.id == entry_id).limit(1)
             if with_fields:
-                statement = (
-                    statement.outerjoin(Entry.text_fields)
+                entry_stmt = (
+                    entry_stmt.outerjoin(Entry.text_fields)
                     .outerjoin(Entry.datetime_fields)
                     .options(selectinload(Entry.text_fields), selectinload(Entry.datetime_fields))
                 )
+            # if with_tags:
+            #     entry_stmt = entry_stmt.outerjoin(Entry.tags).options(selectinload(Entry.tags))
             if with_tags:
-                statement = (
-                    statement.outerjoin(Entry.tags)
-                    .outerjoin(TagAlias)
-                    .options(
-                        selectinload(Entry.tags).options(
-                            joinedload(Tag.aliases),
-                            joinedload(Tag.parent_tags),
-                        )
+                tag_stmt = select(Tag).where(
+                    and_(
+                        TagEntry.tag_id == Tag.id,
+                        TagEntry.entry_id == entry_id,
                     )
                 )
-            entry = session.scalar(statement)
+
+            start_time = time.time()
+            entry = session.scalar(entry_stmt)
+            if with_tags:
+                tags = set(session.scalars(tag_stmt))  # pyright: ignore [reportPossiblyUnboundVariable]
+            end_time = time.time()
+            logger.info(
+                f"[Library] Time it took to get entry: "
+                f"{format_timespan(end_time-start_time, max_units=5)}",
+                with_fields=with_fields,
+                with_tags=with_tags,
+            )
             if not entry:
                 return None
             session.expunge(entry)
             make_transient(entry)
+
+            # Recombine the separately queried tags with the base entry object.
+            if with_tags and tags:
+                entry.tags = tags
             return entry
 
     def get_entries_full(self, entry_ids: list[int] | set[int]) -> Iterator[Entry]:
@@ -1089,41 +1113,49 @@ class Library:
                 session.rollback()
                 return None
 
-    def add_tags_to_entry(self, entry_id: int, tag_ids: int | list[int] | set[int]) -> bool:
-        """Add one or more tags to an entry."""
-        tag_ids = [tag_ids] if isinstance(tag_ids, int) else tag_ids
+    def add_tags_to_entries(
+        self, entry_ids: int | list[int], tag_ids: int | list[int] | set[int]
+    ) -> bool:
+        """Add one or more tags to one or more entries."""
+        entry_ids_ = [entry_ids] if isinstance(entry_ids, int) else entry_ids
+        tag_ids_ = [tag_ids] if isinstance(tag_ids, int) else tag_ids
         with Session(self.engine, expire_on_commit=False) as session:
-            for tag_id in tag_ids:
-                try:
-                    session.add(TagEntry(tag_id=tag_id, entry_id=entry_id))
-                    session.flush()
-                except IntegrityError:
-                    session.rollback()
+            for tag_id in tag_ids_:
+                for entry_id in entry_ids_:
+                    try:
+                        session.add(TagEntry(tag_id=tag_id, entry_id=entry_id))
+                        session.flush()
+                    except IntegrityError:
+                        session.rollback()
             try:
                 session.commit()
             except IntegrityError as e:
-                logger.warning("[add_tags_to_entry]", warning=e)
+                logger.warning("[Library][add_tags_to_entries]", warning=e)
                 session.rollback()
                 return False
             return True
 
-    def remove_tags_from_entry(self, entry_id: int, tag_ids: int | list[int] | set[int]) -> bool:
-        """Remove one or more tags from an entry."""
+    def remove_tags_from_entries(
+        self, entry_ids: int | list[int], tag_ids: int | list[int] | set[int]
+    ) -> bool:
+        """Remove one or more tags from one or more entries."""
+        entry_ids_ = [entry_ids] if isinstance(entry_ids, int) else entry_ids
         tag_ids_ = [tag_ids] if isinstance(tag_ids, int) else tag_ids
         with Session(self.engine, expire_on_commit=False) as session:
             try:
                 for tag_id in tag_ids_:
-                    tag_entry = session.scalars(
-                        select(TagEntry).where(
-                            and_(
-                                TagEntry.tag_id == tag_id,
-                                TagEntry.entry_id == entry_id,
+                    for entry_id in entry_ids_:
+                        tag_entry = session.scalars(
+                            select(TagEntry).where(
+                                and_(
+                                    TagEntry.tag_id == tag_id,
+                                    TagEntry.entry_id == entry_id,
+                                )
                             )
-                        )
-                    ).first()
-                    if tag_entry:
-                        session.delete(tag_entry)
-                        session.commit()
+                        ).first()
+                        if tag_entry:
+                            session.delete(tag_entry)
+                            session.flush()
                 session.commit()
                 return True
             except IntegrityError as e:
@@ -1331,7 +1363,7 @@ class Library:
                 value=field.value,
             )
         tag_ids = [tag.id for tag in from_entry.tags]
-        self.add_tags_to_entry(into_entry.id, tag_ids)
+        self.add_tags_to_entries(into_entry.id, tag_ids)
         self.remove_entries([from_entry.id])
 
     @property

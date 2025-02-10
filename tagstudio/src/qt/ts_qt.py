@@ -952,8 +952,7 @@ class QtDriver(DriverMixin, QObject):
         self.preview_panel.update_widgets()
 
     def add_tags_to_selected_callback(self, tag_ids: list[int]):
-        for entry_id in self.selected:
-            self.lib.add_tags_to_entry(entry_id, tag_ids)
+        self.lib.add_tags_to_entries(self.selected, tag_ids)
 
     def delete_files_callback(self, origin_path: str | Path, origin_id: int | None = None):
         """Callback to send on or more files to the system trash.
@@ -1359,7 +1358,7 @@ class QtDriver(DriverMixin, QObject):
                         exists = True
                 if not exists:
                     self.lib.add_field_to_entry(id, field_id=field.type_key, value=field.value)
-            self.lib.add_tags_to_entry(id, self.copy_buffer["tags"])
+            self.lib.add_tags_to_entries(id, self.copy_buffer["tags"])
         if len(self.selected) > 1:
             if TAG_ARCHIVED in self.copy_buffer["tags"]:
                 self.update_badges({BadgeType.ARCHIVED: True}, origin_id=0, add_tags=False)
@@ -1650,13 +1649,40 @@ class QtDriver(DriverMixin, QObject):
                 the items. Defaults to True.
         """
         item_ids = self.selected if (not origin_id or origin_id in self.selected) else [origin_id]
+        pending_entries: dict[BadgeType, list[int]] = {}
 
+        logger.info(
+            "[QtDriver][update_badges] Updating ItemThumb badges",
+            badge_values=badge_values,
+            origin_id=origin_id,
+            add_tags=add_tags,
+        )
         for it in self.item_thumbs:
             if it.item_id in item_ids:
                 for badge_type, value in badge_values.items():
                     if add_tags:
+                        if not pending_entries.get(badge_type):
+                            pending_entries[badge_type] = []
+                        pending_entries[badge_type].append(it.item_id)
                         it.toggle_item_tag(it.item_id, value, BADGE_TAGS[badge_type])
                     it.assign_badge(badge_type, value)
+
+        if not add_tags:
+            return
+
+        logger.info(
+            "[QtDriver][update_badges] Adding tags to updated entries",
+            pending_entries=pending_entries,
+        )
+        for badge_type, value in badge_values.items():
+            if value:
+                self.lib.add_tags_to_entries(
+                    pending_entries.get(badge_type, []), BADGE_TAGS[badge_type]
+                )
+            else:
+                self.lib.remove_tags_from_entries(
+                    pending_entries.get(badge_type, []), BADGE_TAGS[badge_type]
+                )
 
     def filter_items(self, filter: FilterState | None = None) -> None:
         if not self.lib.library_dir:
