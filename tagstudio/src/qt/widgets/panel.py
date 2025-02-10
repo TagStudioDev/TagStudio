@@ -1,13 +1,15 @@
-# Copyright (C) 2024 Travis Abendshien (CyanVoxel).
+# Copyright (C) 2025 Travis Abendshien (CyanVoxel).
 # Licensed under the GPL-3.0 License.
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
-import logging
 from typing import Callable
 
+import structlog
 from PySide6 import QtCore, QtGui
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import QHBoxLayout, QLabel, QPushButton, QVBoxLayout, QWidget
 from src.qt.translations import Translations
+
+logger = structlog.get_logger(__name__)
 
 
 class PanelModal(QWidget):
@@ -96,7 +98,10 @@ class PanelModal(QWidget):
         widget.parent_post_init()
 
     def closeEvent(self, event):  # noqa: N802
-        self.done_button.click()
+        if self.cancel_button:
+            self.cancel_button.click()
+        elif self.done_button:
+            self.done_button.click()
         event.accept()
 
     def setTitle(self, title: str):  # noqa: N802
@@ -125,12 +130,19 @@ class PanelWidget(QWidget):
         pass
 
     def add_callback(self, callback: Callable, event: str = "returnPressed"):
-        logging.warning(f"add_callback not implemented for {self.__class__.__name__}")
+        logger.warning(f"[PanelModal] add_callback not implemented for {self.__class__.__name__}")
 
     def keyPressEvent(self, event: QtGui.QKeyEvent) -> None:  # noqa N802
         if event.key() == QtCore.Qt.Key.Key_Escape:
             if self.panel_cancel_button:
                 self.panel_cancel_button.click()
+            elif self.panel_done_button:
+                self.panel_done_button.click()
+        elif event.key() == Qt.Key.Key_Return or event.key() == Qt.Key.Key_Enter:
+            if self.panel_save_button:
+                self.panel_save_button.click()
+            elif self.panel_done_button:
+                self.panel_done_button.click()
         else:  # Other key presses
             pass
         return super().keyPressEvent(event)

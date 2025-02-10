@@ -1,8 +1,10 @@
-# Copyright (C) 2024 Travis Abendshien (CyanVoxel).
+# Copyright (C) 2025 Travis Abendshien (CyanVoxel).
 # Licensed under the GPL-3.0 License.
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
 
+import structlog
+from PySide6 import QtCore, QtGui
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import (
     QHBoxLayout,
@@ -16,7 +18,10 @@ from PySide6.QtWidgets import (
 from src.core.library import Library
 from src.qt.translations import Translations
 
+logger = structlog.get_logger(__name__)
 
+
+# NOTE: This class doesn't inherit from PanelWidget? Seems like it predates that system?
 class AddFieldModal(QWidget):
     done = Signal(list)
 
@@ -35,11 +40,7 @@ class AddFieldModal(QWidget):
         self.title_widget = QLabel()
         self.title_widget.setObjectName("fieldTitle")
         self.title_widget.setWordWrap(True)
-        self.title_widget.setStyleSheet(
-            # 'background:blue;'
-            # 'text-align:center;'
-            "font-weight:bold;" "font-size:14px;" "padding-top: 6px" ""
-        )
+        self.title_widget.setStyleSheet("font-weight:bold;" "font-size:14px;" "padding-top: 6px;")
         Translations.translate_qobject(self.title_widget, "library.field.add")
         self.title_widget.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
@@ -50,18 +51,13 @@ class AddFieldModal(QWidget):
         self.button_layout.setContentsMargins(6, 6, 6, 6)
         self.button_layout.addStretch(1)
 
-        # self.cancel_button = QPushButton()
-        # self.cancel_button.setText('Cancel')
-
         self.cancel_button = QPushButton()
         Translations.translate_qobject(self.cancel_button, "generic.cancel")
         self.cancel_button.clicked.connect(self.hide)
-        # self.cancel_button.clicked.connect(widget.reset)
         self.button_layout.addWidget(self.cancel_button)
 
         self.save_button = QPushButton()
         Translations.translate_qobject(self.save_button, "generic.add")
-        # self.save_button.setAutoDefault(True)
         self.save_button.setDefault(True)
         self.save_button.clicked.connect(self.hide)
         self.save_button.clicked.connect(
@@ -74,8 +70,6 @@ class AddFieldModal(QWidget):
 
         self.root_layout.addWidget(self.title_widget)
         self.root_layout.addWidget(self.list_widget)
-        # self.root_layout.setStretch(1,2)
-
         self.root_layout.addStretch(1)
         self.root_layout.addWidget(self.button_container)
 
@@ -85,5 +79,13 @@ class AddFieldModal(QWidget):
             item = QListWidgetItem(f"{df.name} ({df.type.value})")
             item.setData(Qt.ItemDataRole.UserRole, df.key)
             self.list_widget.addItem(item)
+        self.list_widget.setFocus()
 
         super().show()
+
+    def keyPressEvent(self, event: QtGui.QKeyEvent) -> None:  # noqa N802
+        if event.key() == QtCore.Qt.Key.Key_Escape:
+            self.cancel_button.click()
+        else:  # Other key presses
+            pass
+        return super().keyPressEvent(event)

@@ -1,10 +1,10 @@
-# Copyright (C) 2024 Travis Abendshien (CyanVoxel).
+# Copyright (C) 2025 Travis Abendshien (CyanVoxel).
 # Licensed under the GPL-3.0 License.
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
 
 import contextlib
-import typing
+from typing import TYPE_CHECKING, override
 from warnings import catch_warnings
 
 import src.qt.modals.build_tag as build_tag
@@ -36,7 +36,7 @@ from src.qt.widgets.tag import (
 logger = structlog.get_logger(__name__)
 
 # Only import for type checking/autocompletion, will not be imported at runtime.
-if typing.TYPE_CHECKING:
+if TYPE_CHECKING:
     from src.qt.modals.build_tag import BuildTagPanel
 
 
@@ -337,16 +337,16 @@ class TagSearchPanel(PanelWidget):
         self.search_field.setFocus()
         return super().showEvent(event)
 
+    @override
     def keyPressEvent(self, event: QtGui.QKeyEvent) -> None:  # noqa N802
         # When Escape is pressed, focus back on the search box.
         # If focus is already on the search box, close the modal.
         if event.key() == QtCore.Qt.Key.Key_Escape:
             if self.search_field.hasFocus():
-                self.parentWidget().hide()
+                return super().keyPressEvent(event)
             else:
                 self.search_field.setFocus()
                 self.search_field.selectAll()
-        return super().keyPressEvent(event)
 
     def remove_tag(self, tag: Tag):
         pass

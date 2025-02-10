@@ -4,10 +4,12 @@
 
 
 import math
-import typing
+from collections.abc import Sequence
 from dataclasses import dataclass, field
+from typing import TYPE_CHECKING, override
 
 import structlog
+from PySide6 import QtCore, QtGui
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QFrame,
@@ -25,7 +27,7 @@ from src.core.palette import ColorType, get_tag_color
 from src.qt.flowlayout import FlowLayout
 from src.qt.translations import Translations
 
-if typing.TYPE_CHECKING:
+if TYPE_CHECKING:
     from src.qt.ts_qt import QtDriver
 
 logger = structlog.get_logger(__name__)
@@ -104,7 +106,7 @@ def generate_preview_data(library: Library) -> BranchData:
                 branch.dirs[tag.name] = BranchData(tag=tag)
             branch = branch.dirs[tag.name]
 
-    def _add_folders_to_tree(items: typing.Sequence[str]) -> BranchData:
+    def _add_folders_to_tree(items: Sequence[str]) -> BranchData:
         branch = tree
         for folder in items:
             if folder not in branch.dirs:
@@ -244,6 +246,14 @@ class FoldersToTagsModal(QWidget):
             child = self.scroll_layout.itemAt(i).widget()
             if isinstance(child, TreeItem):
                 child.set_all_branches(hidden)
+
+    @override
+    def keyPressEvent(self, event: QtGui.QKeyEvent) -> None:  # noqa N802
+        if event.key() == QtCore.Qt.Key.Key_Escape:
+            self.close()
+        else:  # Other key presses
+            pass
+        return super().keyPressEvent(event)
 
 
 class TreeItem(QWidget):

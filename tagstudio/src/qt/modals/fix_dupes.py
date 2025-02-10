@@ -1,10 +1,11 @@
-# Copyright (C) 2024 Travis Abendshien (CyanVoxel).
+# Copyright (C) 2025 Travis Abendshien (CyanVoxel).
 # Licensed under the GPL-3.0 License.
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
 
-import typing
+from typing import TYPE_CHECKING, override
 
+from PySide6 import QtCore, QtGui
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QFileDialog,
@@ -20,7 +21,7 @@ from src.qt.modals.mirror_entities import MirrorEntriesModal
 from src.qt.translations import Translations
 
 # Only import for type checking/autocompletion, will not be imported at runtime.
-if typing.TYPE_CHECKING:
+if TYPE_CHECKING:
     from src.qt.ts_qt import QtDriver
 
 
@@ -135,3 +136,11 @@ class FixDupeFilesModal(QWidget):
             self.dupe_count.setText(
                 Translations.translate_formatted("file.duplicates.matches", count=count)
             )
+
+    @override
+    def keyPressEvent(self, event: QtGui.QKeyEvent) -> None:  # noqa N802
+        if event.key() == QtCore.Qt.Key.Key_Escape:
+            self.done_button.click()
+        else:  # Other key presses
+            pass
+        return super().keyPressEvent(event)
