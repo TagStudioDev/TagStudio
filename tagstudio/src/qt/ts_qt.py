@@ -1505,7 +1505,9 @@ class QtDriver(DriverMixin, QObject):
         elif query_type == "tag_id":
             completion_list = list(map(lambda x: prefix + "tag_id:" + str(x.id), self.lib.tags))
         elif query_type == "path":
-            completion_list = list(map(lambda x: prefix + "path:" + x, self.lib.get_paths()))
+            completion_list = list(
+                map(lambda x: prefix + "path:" + x, self.lib.get_paths(limit=100))
+            )
         elif query_type == "mediatype":
             single_word_completions = map(
                 lambda x: prefix + "mediatype:" + x.name,
