@@ -189,6 +189,7 @@ class Library:
     def close(self):
         if self.engine:
             self.engine.dispose()
+            del self.engine
         self.library_dir: Path | None = None
         self.storage_path = None
         self.folder = None
