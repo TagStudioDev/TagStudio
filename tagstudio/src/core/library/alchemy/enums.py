@@ -63,7 +63,7 @@ class ItemType(enum.Enum):
 
 class SortingModeEnum(enum.Enum):
     DATE_ADDED = "file.date_added"
-    Date_CREATED = "file.date_created"
+    DATE_CREATED = "file.date_created"
     DATE_MODIFIED = "file.date_modified"
 
 

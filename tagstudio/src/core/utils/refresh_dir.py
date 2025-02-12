@@ -1,4 +1,4 @@
-import datetime as dt, timezone
+from datetime import datetime as dt
 from collections.abc import Iterator
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -40,16 +40,16 @@ class RefreshDirTracker:
         stat = file_path.stat()
         system = platform.system()
         if system == 'Windows':  # Windows
-            date_created = dt.fromtimestamp(stat.st_ctime, timezone.utc)
+            date_created = dt.fromtimestamp(stat.st_ctime, dt.timezone.utc)
         elif system == 'Darwin':  # macOS
-            date_created = dt.fromtimestamp(stat.st_birthtime, timezone.utc)
+            date_created = dt.fromtimestamp(stat.st_birthtime, dt.timezone.utc)
         else:  # Linux and other systems
             try:
-                date_created = dt.fromtimestamp(stat.st_birthtime, timezone.utc)
+                date_created = dt.fromtimestamp(stat.st_birthtime, dt.timezone.utc)
             except AttributeError:
                 # st_birthtime is not available on some Linux filesystems
-                date_created = dt.fromtimestamp(stat.st_ctime, timezone.utc)
-        date_modified = dt.fromtimestamp(stat.st_mtime, timezone.utc)
+                date_created = dt.fromtimestamp(stat.st_ctime, dt.timezone.utc)
+        date_modified = dt.fromtimestamp(stat.st_mtime, dt.timezone.utc)
         return date_created, date_modified
 
     def save_new_files(self):
@@ -58,12 +58,14 @@ class RefreshDirTracker:
             entries = []
             for entry_path in self.files_not_in_library:
                 date_created, date_modified = self.get_file_times(entry_path)
+                if date_created is None or date_modified is None:
+                    continue  # Skip files that could not be processed
                 entries.append(
                     Entry(
                         path=entry_path,
                         folder=self.library.folder,
                         fields=[],
-                        date_added=dt.now(timezone.utc),
+                        date_added=dt.now(),
                         date_created=date_created,
                         date_modified=date_modified,
                     )
@@ -123,11 +125,10 @@ class RefreshDirTracker:
                 # Update date_modified for existing entries if it has changed
                 entry = self.library.get_entry_by_path(relative_path)
                 if entry:
-                    date_modified = datetime.fromtimestamp(f.stat().st_mtime, timezone.utc)
+                    date_modified = dt.fromtimestamp(f.stat().st_mtime, dt.timezone.utc)
                     if entry.date_modified != date_modified:
                         entry.date_modified = date_modified
                         self.library.update_entry(entry)
-               
 
         end_time_total = time()
         yield dir_file_count

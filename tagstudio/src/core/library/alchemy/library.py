@@ -673,6 +673,10 @@ class Library:
             match search.sorting_mode:
                 case SortingModeEnum.DATE_ADDED:
                     sort_on = Entry.id
+                case SortingModeEnum.DATE_CREATED:
+                    sort_on = Entry.date_created
+                case SortingModeEnum.DATE_MODIFIED:
+                    sort_on = Entry.date_modified
 
             statement = statement.order_by(asc(sort_on) if search.ascending else desc(sort_on))
             statement = statement.limit(search.limit).offset(search.offset)
