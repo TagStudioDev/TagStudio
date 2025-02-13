@@ -66,8 +66,8 @@ class RefreshDirTracker:
                         folder=self.library.folder,
                         fields=[],
                         date_added=dt.now(),
-                        date_created=date_created,
-                        date_modified=date_modified,
+                        date_created=dt.now(),
+                        date_modified=dt.now(),
                     )
                 )
             self.library.add_entries(entries)
