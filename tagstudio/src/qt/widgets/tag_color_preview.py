@@ -106,6 +106,10 @@ class TagColorPreview(QWidget):
             f"QPushButton::hover{{"
             f"border-color: rgba{highlight_color.toTuple()};"
             f"}}"
+            f"QPushButton::focus{{"
+            f"border-color: rgba{highlight_color.toTuple()};"
+            f"outline:none;"
+            f"}}"
         )
         self.button.setMaximumWidth(self.button.sizeHint().width())
 
