@@ -45,6 +45,7 @@ class AboutModal(QWidget):
         self.content_widget = QLabel()
         self.content_widget.setObjectName("contentLabel")
         self.content_widget.setWordWrap(True)
+        self.content_widget.setOpenExternalLinks(True)
         ff_version = self.fc.version()
         ffmpeg = '<span style="color:red">Missing</span>'
         if ff_version["ffmpeg"] is not None:
