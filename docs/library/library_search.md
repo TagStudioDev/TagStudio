@@ -1,5 +1,7 @@
 # Library Search
 
+TagStudio provides various methods to search your library, ranging from TagStudio data such as tags to inherent file data such as paths or media types.
+
 ## Boolean Operators
 
 TagStudio allows you to use common [boolean search](https://en.wikipedia.org/wiki/Full-text_search#Boolean_queries) operators when searching your library, along with [grouping](#grouping-and-nesting), [nesting](#grouping-and-nesting), and [character escaping](#escaping-characters). Note that you may need to use grouping in order to get the desired results you're looking for.
@@ -54,40 +56,58 @@ _[Field](field.md) search is currently not in the program, however is coming in 
 
 ## File Entry Search
 
-### Filename + Filepath
+### Filename + Path
 
-Currently (v9.5.0-PR1) the filepath search uses [glob](<https://en.wikipedia.org/wiki/Glob_(programming)>) syntax, meaning you'll likely have to wrap your filename or partial filepath inside asterisks for results to appear. This search is also currently case sensitive. Use the `path:` keyword prefix followed by the filename or path, with asterisks surrounding partial names.
+Filename and path search is available via the `path:` keyword and comes in a few different styles. By default, any string that follows the `path:` keyword will be searched as a substring inside a file's complete filepath. This means that given a file `folder/my_file.txt`, searching for `path: my_file` or `path: folder` will both return results for that file.
+
+#### Case Sensitivity
+
+TagStudio uses a "[smartcase](https://neovim.io/doc/user/options.html#'smartcase')"-like system for case sensitivity. This means that a search term typed in `lowercase` will be treated as **case-insensitive**, while a term typed in any `MixedCase` will be treated as **case-sensitive**. This makes it quicker to type searches when case sensitivity isn't required, while also providing a simple option to leverage case sensitivity when desired. Note that this means there's technically no way to currently search for a lowercase term while respecting case sensitivity.
+
+#### Glob Syntax
+
+Optionally, you may use [glob](<https://en.wikipedia.org/wiki/Glob_(programming)>) syntax to search filepaths.
 
 #### Examples
 
-Given a file "artwork/piece.jpg", these searches will return results with it:
+Given a file "Artwork/Piece.jpg", the following searches will return results for it:
 
--   `path: artwork/piece.jpg` _(Note how no asterisks are required if the full path is given)_
--   `path: *piece.jpg*`
--   `path: *artwork*`
--   `path: *rtwor*`
--   `path: *ece.jpg*`
--   `path: *iec*`
-
-And these (currently) won't:
-
+-   `path: artwork/piece.jpg`
+-   `path: Artwork/Piece.jpg`
 -   `path: piece.jpg`
--   `path: piece.jpg`
+-   `path: Piece.jpg`
 -   `path: artwork`
 -   `path: rtwor`
 -   `path: ece.jpg`
 -   `path: iec`
+-   `path: artwork/*`
+-   `path: Artwork/*`
+-   `path: *piece.jpg*`
+-   `path: *Piece.jpg*`
+-   `path: *artwork*`
+-   `path: *Artwork*`
+-   `path: *rtwor*`
+-   `path: *ece.jpg*`
+-   `path: *iec*`
+-   `path: *.jpg`
+
+While the following searches will **NOT:**
+
+-   `path: ARTWORK/Piece.jpg` _(Reason: Mismatched case)_
+-   `path: *aRtWoRk/Piece*` _(Reason: Mismatched case)_
+-   `path: PieCe.jpg` _(Reason: Mismatched case)_
+-   `path: *PieCe.jpg*` _(Reason: Mismatched case)_
 
 ## Special Searches
 
-"Special" searches use the `special:` keyword prefix and give quick results for certain special search queries.
+Some predefined searches use the `special:` keyword prefix and give quick results for certain special search queries.
 
 ### Untagged
 
-To see all your file entries which don't contain any tags, use the `special:untagged` search.
+To see all your file entries which don't contain any tags, use the `special: untagged` search.
 
 ### Empty
 
-**_NOTE:_** _Currently unavailable in v9.5.0-PR1_
+**_NOTE:_** _Currently unavailable in v9.5.0_
 
-To see all your file entries which don't contain any tags _and_ any fields, use the `special:empty` search.
+To see all your file entries which don't contain any tags _and_ any fields, use the `special: empty` search.
