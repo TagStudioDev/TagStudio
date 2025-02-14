@@ -121,6 +121,10 @@ class TagColorSelection(PanelWidget):
                     f"QRadioButton::hover{{"
                     f"border-color: rgba{highlight_color.toTuple()};"
                     f"}}"
+                    f"QRadioButton::focus{{"
+                    f"border-color: rgba{highlight_color.toTuple()};"
+                    f"outline:none;"
+                    f"}}"
                 )
                 radio_button.clicked.connect(lambda checked=False, x=color: self.select_color(x))
                 color_group_layout.addWidget(radio_button)
@@ -172,6 +176,10 @@ class TagColorSelection(PanelWidget):
             f"QRadioButton::hover{{"
             f"border-color: rgba{highlight_color.toTuple()};"
             f"}}"
+            f"QRadioButton::focus{{"
+            f"border-color: rgba{highlight_color.toTuple()};"
+            f"outline:none;"
+            f"}}"
         )
         radio_button.clicked.connect(lambda checked=False, x=color: self.select_color(x))
         color_group_layout.addWidget(radio_button)
@@ -194,5 +202,4 @@ class TagColorSelection(PanelWidget):
             if not tag_color_group
             else tag_color_group.primary
         )
-
         return primary_color

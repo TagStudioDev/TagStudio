@@ -1538,7 +1538,9 @@ class Library:
                     color_groups[en.namespace] = []
                 session.expunge(en)
 
-        return color_groups
+        return dict(
+            sorted(color_groups.items(), key=lambda kv: self.get_namespace_name(kv[0]).lower())
+        )
 
     def get_namespace_name(self, namespace: str) -> str:
         with Session(self.engine) as session:
