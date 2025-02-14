@@ -3,6 +3,8 @@
     "app.pre_release": "Pre-Release",
     "app.title": "{base_title} - Library '{library_dir}'",
     "color_manager.title": "Manage Tag Colors",
+    "color.confirm_delete": "Are you sure you want to delete the color \"{color_name}\"?",
+    "color.delete": "Delete Tag",
     "color.import_pack": "Import Color Pack",
     "color.name": "Name",
     "color.namespace.delete.prompt": "Are you sure you want to delete this color namespace? This will delete ALL colors in the namespace along with it!",

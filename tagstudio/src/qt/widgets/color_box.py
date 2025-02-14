@@ -8,13 +8,14 @@ from collections.abc import Iterable
 
 import structlog
 from PySide6.QtCore import Signal
-from PySide6.QtWidgets import QPushButton
+from PySide6.QtWidgets import QMessageBox, QPushButton
 from src.core.constants import RESERVED_NAMESPACE_PREFIX
 from src.core.library.alchemy.enums import TagColorEnum
 from src.core.library.alchemy.models import TagColorGroup
 from src.core.palette import ColorType, get_tag_color
 from src.qt.flowlayout import FlowLayout
 from src.qt.modals.build_color import BuildColorPanel
+from src.qt.translations import Translations
 from src.qt.widgets.fields import FieldWidget
 from src.qt.widgets.panel import PanelModal
 from src.qt.widgets.tag_color_label import TagColorLabel
@@ -99,7 +100,7 @@ class ColorBoxWidget(FieldWidget):
             if hint > max_width:
                 max_width = hint
             color_widget.on_click.connect(lambda c=color: self.edit_color(c))
-            color_widget.on_remove.connect(lambda c=color: self.remove_color(c))
+            color_widget.on_remove.connect(lambda c=color: self.delete_color(c))
 
             color_widgets.append(color_widget)
             self.base_layout.addWidget(color_widget)
@@ -141,8 +142,25 @@ class ColorBoxWidget(FieldWidget):
         )
         self.edit_modal.show()
 
-    def remove_color(self, color: TagColorGroup):
-        # TODO: Add confirmation
-        logger.info("[ColorBoxWidget] Removing color", color=color)
-        self.lib.delete_color(color)
+    def delete_color(self, color_group: TagColorGroup):
+        message_box = QMessageBox()
+        Translations.translate_with_setter(message_box.setWindowTitle, "color.delete")
+        Translations.translate_qobject(
+            message_box, "color.confirm_delete", color_name=color_group.name
+        )
+        message_box.setIcon(QMessageBox.Icon.Warning)
+        cancel_button = message_box.addButton(
+            Translations["generic.cancel_alt"], QMessageBox.ButtonRole.RejectRole
+        )
+        message_box.addButton(
+            Translations["generic.delete_alt"], QMessageBox.ButtonRole.DestructiveRole
+        )
+        message_box.setEscapeButton(cancel_button)
+        result = message_box.exec_()
+        logger.info(QMessageBox.ButtonRole.DestructiveRole.value)
+        if result != QMessageBox.ButtonRole.ActionRole.value:
+            return
+
+        logger.info("[ColorBoxWidget] Removing color", color=color_group)
+        self.lib.delete_color(color_group)
         self.updated.emit()

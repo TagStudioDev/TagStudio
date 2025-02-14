@@ -130,7 +130,7 @@ class TagColorManager(QWidget):
                 field_container.set_inner_widget(color_box)
                 if not group.startswith(RESERVED_NAMESPACE_PREFIX):
                     field_container.set_remove_callback(
-                        lambda checked=False, g=group: self.remove_message_box(
+                        lambda checked=False, g=group: self.delete_namespace_dialog(
                             prompt=Translations["color.namespace.delete.prompt"],
                             callback=lambda namespace=g: (
                                 self.lib.delete_namespace(namespace),
@@ -175,20 +175,24 @@ class TagColorManager(QWidget):
 
         self.create_namespace_modal.show()
 
-    def remove_message_box(self, prompt: str, callback: Callable) -> None:
-        remove_mb = QMessageBox()
-        remove_mb.setText(prompt)
-        remove_mb.setWindowTitle(Translations["color.namespace.delete.title"])
-        remove_mb.setIcon(QMessageBox.Icon.Warning)
-        cancel_button = remove_mb.addButton(
-            Translations["generic.cancel_alt"], QMessageBox.ButtonRole.DestructiveRole
+    def delete_namespace_dialog(self, prompt: str, callback: Callable) -> None:
+        message_box = QMessageBox()
+        message_box.setText(prompt)
+        Translations.translate_with_setter(
+            message_box.setWindowTitle, "color.namespace.delete.title"
         )
-        remove_mb.addButton("&Remove", QMessageBox.ButtonRole.RejectRole)
-        remove_mb.setDefaultButton(cancel_button)
-        remove_mb.setEscapeButton(cancel_button)
-        result = remove_mb.exec_()
-        if result == QMessageBox.ButtonRole.ActionRole.value:
-            callback()
+        message_box.setIcon(QMessageBox.Icon.Warning)
+        cancel_button = message_box.addButton(
+            Translations["generic.cancel_alt"], QMessageBox.ButtonRole.RejectRole
+        )
+        message_box.addButton(
+            Translations["generic.delete_alt"], QMessageBox.ButtonRole.DestructiveRole
+        )
+        message_box.setEscapeButton(cancel_button)
+        result = message_box.exec_()
+        if result != QMessageBox.ButtonRole.ActionRole.value:
+            return
+        callback()
 
     @override
     def showEvent(self, event: QtGui.QShowEvent) -> None:  # noqa N802

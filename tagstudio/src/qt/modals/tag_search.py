@@ -284,7 +284,7 @@ class TagSearchPanel(PanelWidget):
 
         tag_id = tag.id
         tag_widget.on_edit.connect(lambda t=tag: self.edit_tag(t))
-        tag_widget.on_remove.connect(lambda t=tag: self.remove_tag(t))
+        tag_widget.on_remove.connect(lambda t=tag: self.delete_tag(t))
         tag_widget.bg_button.clicked.connect(lambda: self.tag_chosen.emit(tag_id))
 
         if self.driver:
@@ -348,7 +348,7 @@ class TagSearchPanel(PanelWidget):
                 self.search_field.setFocus()
                 self.search_field.selectAll()
 
-    def remove_tag(self, tag: Tag):
+    def delete_tag(self, tag: Tag):
         pass
 
     def edit_tag(self, tag: Tag):
