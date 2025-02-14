@@ -49,6 +49,7 @@ from src.qt.translations import Translations
 from ...constants import (
     BACKUP_FOLDER_NAME,
     LEGACY_TAG_FIELD_IDS,
+    RESERVED_NAMESPACE_PREFIX,
     RESERVED_TAG_END,
     RESERVED_TAG_START,
     TAG_ARCHIVED,
@@ -89,6 +90,15 @@ SELECT * FROM ChildTags;
 """)  # noqa: E501
 
 
+class ReservedNamespaceError(Exception):
+    """Raise during an unauthorized attempt to create or modify a reserved namespace value.
+
+    Reserved namespace prefix: "tagstudio".
+    """
+
+    pass
+
+
 def slugify(input_string: str) -> str:
     # Convert to lowercase and normalize unicode characters
     slug = unicodedata.normalize("NFKD", input_string.lower())
@@ -98,6 +108,9 @@ def slugify(input_string: str) -> str:
 
     # Replace spaces with hyphens
     slug = re.sub(r"[-\s]+", "-", slug)
+
+    if slug.startswith(RESERVED_NAMESPACE_PREFIX):
+        raise ReservedNamespaceError
 
     return slug
 
@@ -179,7 +192,7 @@ class Library:
 
     library_dir: Path | None = None
     storage_path: Path | str | None
-    engine: Engine | None
+    engine: Engine | None = None
     folder: Folder | None
     included_files: set[Path] = set()
 
@@ -1088,6 +1101,80 @@ class Library:
             session.commit()
         return tags
 
+    def add_namespace(self, namespace: Namespace) -> bool:
+        """Add a namespace value to the library.
+
+        Args:
+            namespace(str): The namespace slug. No special characters
+        """
+        with Session(self.engine) as session:
+            if not namespace.namespace:
+                logger.warning("[LIBRARY][add_namespace] Namespace slug must not be empty")
+                return False
+
+            slug = namespace.namespace
+            try:
+                slug = slugify(namespace.namespace)
+            except ReservedNamespaceError:
+                logger.error(
+                    f"[LIBRARY][add_namespace] Will not add a namespace with the reserved prefix:"
+                    f"{RESERVED_NAMESPACE_PREFIX}",
+                    namespace=namespace,
+                )
+            logger.error("Should not see me")
+
+            namespace_obj = Namespace(
+                namespace=slug,
+                name=namespace.name,
+            )
+
+            try:
+                session.add(namespace_obj)
+                session.commit()
+                return True
+            except IntegrityError:
+                session.rollback()
+                logger.error("IntegrityError")
+                return False
+
+    def delete_namespace(self, namespace: Namespace | str):
+        """Delete a namespace and any connected data from the library."""
+        if isinstance(namespace, str):
+            if namespace.startswith(RESERVED_NAMESPACE_PREFIX):
+                raise ReservedNamespaceError
+        else:
+            if namespace.namespace.startswith(RESERVED_NAMESPACE_PREFIX):
+                raise ReservedNamespaceError
+
+        with Session(self.engine, expire_on_commit=False) as session:
+            try:
+                namespace_: Namespace | None = None
+                if isinstance(namespace, str):
+                    namespace_ = session.scalar(
+                        select(Namespace).where(Namespace.namespace == namespace)
+                    )
+                else:
+                    namespace_ = namespace
+
+                if not namespace_:
+                    raise Exception
+                session.delete(namespace_)
+                session.flush()
+
+                colors = session.scalars(
+                    select(TagColorGroup).where(TagColorGroup.namespace == namespace_.namespace)
+                )
+                for color in colors:
+                    session.delete(color)
+                    session.flush()
+
+                session.commit()
+
+            except IntegrityError as e:
+                logger.error(e)
+                session.rollback()
+                return None
+
     def add_tag(
         self,
         tag: Tag,
@@ -1164,6 +1251,33 @@ class Library:
                 logger.error(e)
                 session.rollback()
                 return False
+
+    def add_color(self, color_group: TagColorGroup) -> TagColorGroup | None:
+        with Session(self.engine, expire_on_commit=False) as session:
+            try:
+                session.add(color_group)
+                session.commit()
+                session.expunge(color_group)
+                return color_group
+
+            except IntegrityError as e:
+                logger.error(
+                    "[Library] Could not add color, trying to update existing value instead.",
+                    error=e,
+                )
+                session.rollback()
+                return None
+
+    def delete_color(self, color: TagColorGroup):
+        with Session(self.engine, expire_on_commit=False) as session:
+            try:
+                session.delete(color)
+                session.commit()
+
+            except IntegrityError as e:
+                logger.error(e)
+                session.rollback()
+                return None
 
     def save_library_backup_to_disk(self) -> Path:
         assert isinstance(self.library_dir, Path)
@@ -1280,6 +1394,39 @@ class Library:
         """Edit a Tag in the Library."""
         self.add_tag(tag, parent_ids, alias_names, alias_ids)
 
+    def update_color(self, old_color_group: TagColorGroup, new_color_group: TagColorGroup) -> None:
+        """Update a TagColorGroup in the Library. If it doesn't already exist, create it."""
+        with Session(self.engine) as session:
+            existing_color = session.scalar(
+                select(TagColorGroup).where(
+                    and_(
+                        TagColorGroup.namespace == old_color_group.namespace,
+                        TagColorGroup.slug == old_color_group.slug,
+                    )
+                )
+            )
+            if existing_color:
+                statement = (
+                    update(TagColorGroup)
+                    .where(
+                        and_(
+                            TagColorGroup.namespace == old_color_group.namespace,
+                            TagColorGroup.slug == old_color_group.slug,
+                        )
+                    )
+                    .values(
+                        slug=new_color_group.slug,
+                        namespace=new_color_group.namespace,
+                        name=new_color_group.name,
+                        primary=new_color_group.primary,
+                        secondary=new_color_group.secondary,
+                    )
+                )
+                session.execute(statement)
+                session.commit()
+            else:
+                self.add_color(new_color_group)
+
     def update_aliases(self, tag, alias_ids, alias_names, session):
         prev_aliases = session.scalars(select(TagAlias).where(TagAlias.tag_id == tag.id)).all()
 
@@ -1379,6 +1526,18 @@ class Library:
                     color_groups[color.namespace] = []
                 color_groups[color.namespace].append(color)
                 session.expunge(color)
+
+            # Add empty namespaces that are available for use.
+            empty_namespaces = session.scalars(
+                select(Namespace)
+                .where(Namespace.namespace.not_in(color_groups.keys()))
+                .order_by(asc(Namespace.namespace))
+            )
+            for en in empty_namespaces:
+                if not color_groups.get(en.namespace):
+                    color_groups[en.namespace] = []
+                session.expunge(en)
+
         return color_groups
 
     def get_namespace_name(self, namespace: str) -> str:

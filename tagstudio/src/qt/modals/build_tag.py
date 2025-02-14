@@ -189,11 +189,11 @@ class BuildTagPanel(PanelWidget):
         self.color_layout.addWidget(self.color_title)
         self.color_button: TagColorPreview
         try:
-            self.color_button = TagColorPreview(tag.color)
+            self.color_button = TagColorPreview(self.lib, tag.color)
         except Exception as e:
             # TODO: Investigate why this happens during tests
             logger.error("[BuildTag] Could not access Tag member attributes", error=e)
-            self.color_button = TagColorPreview(None)
+            self.color_button = TagColorPreview(self.lib, None)
         self.tag_color_selection = TagColorSelection(self.lib)
         chose_tag_color_title = Translations.translate_formatted("tag.choose_color")
         self.choose_color_modal = PanelModal(

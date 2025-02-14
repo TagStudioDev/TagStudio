@@ -305,6 +305,7 @@ def get_highlight_color(primary_color: QColor) -> QColor:
 
 
 def get_text_color(primary_color: QColor, highlight_color: QColor) -> QColor:
+    # logger.info("[TagWidget] Evaluating tag text color", lightness=primary_color.lightness())
     if primary_color.lightness() > 120:
         text_color = QColor(primary_color)
         text_color = text_color.toHsl()

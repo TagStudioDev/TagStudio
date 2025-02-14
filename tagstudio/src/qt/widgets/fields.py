@@ -123,6 +123,7 @@ class FieldContainer(QWidget):
         self.field.setLayout(self.field_layout)
         self.inner_layout.addWidget(self.field)
 
+        self.set_title(title)
         self.setStyleSheet(FieldContainer.container_style)
 
     def set_copy_callback(self, callback: Callable | None = None):
