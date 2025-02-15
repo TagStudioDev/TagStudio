@@ -9,6 +9,7 @@ import structlog
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QColor
 from PySide6.QtWidgets import (
+    QCheckBox,
     QColorDialog,
     QHBoxLayout,
     QLabel,
@@ -22,7 +23,7 @@ from src.core.library import Library
 from src.core.library.alchemy.enums import TagColorEnum
 from src.core.library.alchemy.library import ReservedNamespaceError, slugify
 from src.core.library.alchemy.models import TagColorGroup
-from src.core.palette import ColorType, UiColor, get_ui_color
+from src.core.palette import ColorType, UiColor, get_tag_color, get_ui_color
 from src.qt.translations import Translations
 from src.qt.widgets.panel import PanelWidget
 from src.qt.widgets.tag import (
@@ -50,6 +51,16 @@ class BuildColorPanel(PanelWidget):
         self.root_layout = QVBoxLayout(self)
         self.root_layout.setContentsMargins(6, 0, 6, 0)
         self.root_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
+
+        # Preview Tag ----------------------------------------------------------
+        self.preview_widget = QWidget()
+        self.preview_layout = QVBoxLayout(self.preview_widget)
+        self.preview_layout.setStretch(1, 1)
+        self.preview_layout.setContentsMargins(0, 0, 0, 6)
+        self.preview_layout.setSpacing(6)
+        self.preview_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.preview_button = TagColorPreview(self.lib, None)
+        self.preview_layout.addWidget(self.preview_button)
 
         # Name -----------------------------------------------------------------
         self.name_widget = QWidget()
@@ -126,15 +137,54 @@ class BuildColorPanel(PanelWidget):
         self.secondary_reset_button.clicked.connect(self.update_secondary)
         self.secondary_layout.addWidget(self.secondary_reset_button)
 
-        # Preview Tag ----------------------------------------------------------
-        self.preview_widget = QWidget()
-        self.preview_layout = QVBoxLayout(self.preview_widget)
-        self.preview_layout.setStretch(1, 1)
-        self.preview_layout.setContentsMargins(0, 0, 0, 6)
-        self.preview_layout.setSpacing(6)
-        self.preview_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.preview_button = TagColorPreview(self.lib, None)
-        self.preview_layout.addWidget(self.preview_button)
+        # Color Border ---------------------------------------------------------
+        self.border_widget = QWidget()
+        self.border_layout = QHBoxLayout(self.border_widget)
+        self.border_layout.setStretch(1, 1)
+        self.border_layout.setContentsMargins(0, 0, 0, 0)
+        self.border_layout.setSpacing(6)
+        self.border_layout.setAlignment(Qt.AlignmentFlag.AlignLeft)
+        self.border_checkbox = QCheckBox()
+        self.border_checkbox.setFixedSize(22, 22)
+        self.border_checkbox.clicked.connect(
+            lambda checked: self.update_secondary(
+                color=QColor(self.preview_button.tag_color_group.secondary)
+                if self.preview_button.tag_color_group.secondary
+                else None,
+                color_border=checked,
+            )
+        )
+        self.border_layout.addWidget(self.border_checkbox)
+        self.border_label = QLabel()
+        Translations.translate_qobject(self.border_label, "color.color_border")
+        self.border_layout.addWidget(self.border_label)
+
+        primary_color = QColor(get_tag_color(ColorType.PRIMARY, TagColorEnum.DEFAULT))
+        border_color = get_border_color(primary_color)
+        highlight_color = get_highlight_color(primary_color)
+        text_color: QColor = get_text_color(primary_color, highlight_color)
+        self.border_checkbox.setStyleSheet(
+            f"QCheckBox{{"
+            f"background: rgba{primary_color.toTuple()};"
+            f"color: rgba{text_color.toTuple()};"
+            f"border-color: rgba{border_color.toTuple()};"
+            f"border-radius: 6px;"
+            f"border-style:solid;"
+            f"border-width: 2px;"
+            f"}}"
+            f"QCheckBox::indicator{{"
+            f"width: 10px;"
+            f"height: 10px;"
+            f"border-radius: 2px;"
+            f"margin: 4px;"
+            f"}}"
+            f"QCheckBox::indicator:checked{{"
+            f"background: rgba{text_color.toTuple()};"
+            f"}}"
+            f"QCheckBox::hover{{"
+            f"border-color: rgba{highlight_color.toTuple()};"
+            f"}}"
+        )
 
         # Add Widgets to Layout ================================================
         self.root_layout.addWidget(self.preview_widget)
@@ -142,6 +192,7 @@ class BuildColorPanel(PanelWidget):
         self.root_layout.addWidget(self.slug_widget)
         self.root_layout.addWidget(self.primary_widget)
         self.root_layout.addWidget(self.secondary_widget)
+        self.root_layout.addWidget(self.border_widget)
 
         self.set_color(color_group or TagColorGroup("", "", Translations["color.new"], ""))
         self.update_primary(QColor(color_group.primary))
@@ -152,6 +203,7 @@ class BuildColorPanel(PanelWidget):
         logger.info("[BuildColorPanel] Setting Color", color=color_group)
         self.color_group = color_group
 
+        self.preview_button.set_tag_color_group(color_group)
         self.name_field.setText(color_group.name)
         self.primary_button.setText(color_group.primary)
         self.edit_primary_modal.setCurrentColor(color_group.primary)
@@ -161,7 +213,7 @@ class BuildColorPanel(PanelWidget):
             else str(color_group.secondary)
         )
         self.edit_secondary_modal.setCurrentColor(color_group.secondary or QColor(0, 0, 0, 255))
-        self.preview_button.set_tag_color_group(color_group)
+        self.border_checkbox.setChecked(color_group.color_border)
 
     def primary_color_callback(self) -> None:
         initial = (
@@ -227,7 +279,7 @@ class BuildColorPanel(PanelWidget):
         )
         self.preview_button.set_tag_color_group(self.build_color()[1])
 
-    def update_secondary(self, color: QColor | None = None):
+    def update_secondary(self, color: QColor | None = None, color_border: bool = False):
         logger.info("[BuildColorPanel] Updating Secondary", color=color)
 
         color_ = color or QColor(palette.get_tag_color(ColorType.PRIMARY, TagColorEnum.DEFAULT))
@@ -315,6 +367,8 @@ class BuildColorPanel(PanelWidget):
         secondary: str | None = (
             self.secondary_button.text() if self.secondary_button.text().startswith("#") else None
         )
+        logger.warning(self.border_checkbox.isChecked())
+        color_border: bool = self.border_checkbox.isChecked()
 
         new_color = TagColorGroup(
             slug=slug,
@@ -322,15 +376,17 @@ class BuildColorPanel(PanelWidget):
             name=name,
             primary=primary,
             secondary=secondary,
+            color_border=color_border,
         )
 
         logger.info(
             "[BuildColorPanel] Built Color",
-            slug=slug,
-            namespace=self.color_group.namespace,
-            name=name,
-            primary=primary,
-            secondary=secondary,
+            slug=new_color.slug,
+            namespace=new_color.namespace,
+            name=new_color.name,
+            primary=new_color.primary,
+            secondary=new_color.secondary,
+            color_border=new_color.color_border,
         )
         return (self.color_group, new_color)
 

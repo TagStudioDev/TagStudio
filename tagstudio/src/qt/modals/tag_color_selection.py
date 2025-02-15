@@ -146,7 +146,7 @@ class TagColorSelection(PanelWidget):
         border_color = get_border_color(primary_color)
         highlight_color = get_highlight_color(primary_color)
         text_color: QColor
-        if color and color.secondary:
+        if color and color.secondary and color.color_border:
             text_color = QColor(color.secondary)
         else:
             text_color = get_text_color(primary_color, highlight_color)

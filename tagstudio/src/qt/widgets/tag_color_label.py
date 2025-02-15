@@ -107,7 +107,7 @@ class TagColorLabel(QWidget):
         primary_color = self._get_primary_color(color)
         border_color = (
             get_border_color(primary_color)
-            if not (color and color.secondary)
+            if not (color and color.secondary and color.color_border)
             else (QColor(color.secondary))
         )
         highlight_color = get_highlight_color(
@@ -133,9 +133,9 @@ class TagColorLabel(QWidget):
             f"padding-left: 4px;"
             f"font-size: 13px"
             f"}}"
-            # f"QPushButton::hover{{"
-            # f"border-color: rgba{highlight_color.toTuple()};"
-            # f"}}"
+            f"QPushButton::hover{{"
+            f"border-color: rgba{highlight_color.toTuple()};"
+            f"}}"
             f"QPushButton::pressed{{"
             f"background: rgba{highlight_color.toTuple()};"
             f"color: rgba{primary_color.toTuple()};"

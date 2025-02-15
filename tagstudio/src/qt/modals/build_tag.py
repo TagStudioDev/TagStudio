@@ -215,7 +215,7 @@ class BuildTagPanel(PanelWidget):
         self.cat_layout.setSpacing(6)
         self.cat_layout.setAlignment(Qt.AlignmentFlag.AlignLeft)
         self.cat_title = QLabel()
-        self.cat_title.setText("Is Category")
+        Translations.translate_qobject(self.cat_title, "tag.is_category")
         self.cat_checkbox = QCheckBox()
         self.cat_checkbox.setFixedSize(22, 22)
 
@@ -372,7 +372,7 @@ class BuildTagPanel(PanelWidget):
         primary_color = get_primary_color(tag)
         border_color = (
             get_border_color(primary_color)
-            if not (tag.color and tag.color.secondary)
+            if not (tag.color and tag.color.secondary and tag.color.color_border)
             else (QColor(tag.color.secondary))
         )
         highlight_color = get_highlight_color(

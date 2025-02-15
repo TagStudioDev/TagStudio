@@ -75,7 +75,7 @@ class TagColorPreview(QWidget):
         primary_color = self._get_primary_color(color_group)
         border_color = (
             get_border_color(primary_color)
-            if not (color_group and color_group.secondary)
+            if not (color_group and color_group.secondary and color_group.color_border)
             else (QColor(color_group.secondary))
         )
         highlight_color = get_highlight_color(

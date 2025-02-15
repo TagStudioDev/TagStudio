@@ -185,7 +185,7 @@ class TagWidget(QWidget):
         primary_color = get_primary_color(tag)
         border_color = (
             get_border_color(primary_color)
-            if not (tag.color and tag.color.secondary)
+            if not (tag.color and tag.color.secondary and tag.color.color_border)
             else (QColor(tag.color.secondary))
         )
         highlight_color = get_highlight_color(

@@ -404,12 +404,13 @@ class Library:
                 tag_colors += default_color_groups.grayscale()
                 tag_colors += default_color_groups.earth_tones()
                 tag_colors += default_color_groups.neon()
-                try:
-                    session.add_all(tag_colors)
-                    session.commit()
-                except IntegrityError as e:
-                    logger.error("[Library] Couldn't add default tag colors", error=e)
-                    session.rollback()
+                if is_new:
+                    try:
+                        session.add_all(tag_colors)
+                        session.commit()
+                    except IntegrityError as e:
+                        logger.error("[Library] Couldn't add default tag colors", error=e)
+                        session.rollback()
 
             # Add default tags.
             if is_new:
@@ -459,14 +460,14 @@ class Library:
 
             # Apply any post-SQL migration patches.
             if not is_new:
-                # NOTE: DB_VERSION 6 was first used in v9.5.0-pr1
                 if db_version == 6:
                     self.apply_db6_patches(session)
-                else:
-                    pass
+                if db_version >= 6 and db_version < 8:
+                    self.apply_db7_patches(session)
 
             # Update DB_VERSION
-            self.set_prefs(LibraryPrefs.DB_VERSION, LibraryPrefs.DB_VERSION.default)
+            if LibraryPrefs.DB_VERSION.default > db_version:
+                self.set_prefs(LibraryPrefs.DB_VERSION, LibraryPrefs.DB_VERSION.default)
 
         # everything is fine, set the library path
         self.library_dir = library_dir
@@ -475,9 +476,9 @@ class Library:
     def apply_db6_patches(self, session: Session):
         """Apply migration patches to a library with DB_VERSION 6.
 
-        DB_VERSION 6 was first used in v9.5.0-pr1.
+        DB_VERSION 6 was only used in v9.5.0-pr1.
         """
-        logger.info("[Library] Applying patches to DB_VERSION: 6 library...")
+        logger.info("[Library][Migration] Applying patches to DB_VERSION: 6 library...")
         with session:
             # Repair "Description" fields with a TEXT_LINE key instead of a TEXT_BOX key.
             desc_stmd = (
@@ -499,6 +500,75 @@ class Library:
             session.flush()
 
             session.commit()
+
+    def apply_db7_patches(self, session: Session):
+        """Apply migration patches to a library with DB_VERSION 7 or earlier.
+
+        DB_VERSION 7 was used from v9.5.0-pr2 to v9.5.0-pr3.
+        """
+        # TODO: Use Alembic for this part instead
+        # Add the missing color_border column to the TagColorGroups table.
+        color_border_stmt = text(
+            "ALTER TABLE tag_colors ADD COLUMN color_border BOOLEAN DEFAULT FALSE NOT NULL"
+        )
+        try:
+            session.execute(color_border_stmt)
+            session.commit()
+            logger.info("[Library][Migration] Added color_border column to tag_colors table")
+        except Exception as e:
+            logger.error(
+                "[Library][Migration] Could not create color_border column in tag_colors table!",
+                error=e,
+            )
+            session.rollback()
+
+        tag_colors: list[TagColorGroup] = default_color_groups.standard()
+        tag_colors += default_color_groups.pastels()
+        tag_colors += default_color_groups.shades()
+        tag_colors += default_color_groups.grayscale()
+        tag_colors += default_color_groups.earth_tones()
+        # tag_colors += default_color_groups.neon() # NOTE: Neon is handled separately
+
+        # Add any new default colors introduced in DB_VERSION 8
+        for color in tag_colors:
+            try:
+                session.add(color)
+                logger.info(
+                    "[Library][Migration] Migrated tag color to DB_VERSION 8+",
+                    color_name=color.name,
+                )
+                session.commit()
+            except IntegrityError:
+                session.rollback()
+
+        # Update Neon colors to use the the color_border property
+        for color in default_color_groups.neon():
+            try:
+                neon_stmt = (
+                    update(TagColorGroup)
+                    .where(
+                        and_(
+                            TagColorGroup.namespace == color.namespace,
+                            TagColorGroup.slug == color.slug,
+                        )
+                    )
+                    .values(
+                        slug=color.slug,
+                        namespace=color.namespace,
+                        name=color.name,
+                        primary=color.primary,
+                        secondary=color.secondary,
+                        color_border=color.color_border,
+                    )
+                )
+                session.execute(neon_stmt)
+                session.commit()
+            except IntegrityError as e:
+                logger.error(
+                    "[Library] Could not migrate Neon colors to DB_VERSION 8+!",
+                    error=e,
+                )
+                session.rollback()
 
     @property
     def default_fields(self) -> list[BaseField]:
@@ -1420,6 +1490,7 @@ class Library:
                         name=new_color_group.name,
                         primary=new_color_group.primary,
                         secondary=new_color_group.secondary,
+                        color_border=new_color_group.color_border,
                     )
                 )
                 session.execute(statement)
