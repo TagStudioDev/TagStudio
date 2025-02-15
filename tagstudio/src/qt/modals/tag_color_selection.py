@@ -68,7 +68,7 @@ class TagColorSelection(PanelWidget):
         self.button_group = QButtonGroup(self)
 
         self.add_no_color_widget()
-        self.scroll_layout.addSpacerItem(QSpacerItem(1, 12))
+        self.scroll_layout.addSpacerItem(QSpacerItem(1, 6))
         for group, colors in tag_color_groups.items():
             display_name: str = self.lib.get_namespace_name(group)
             self.scroll_layout.addWidget(
@@ -130,7 +130,7 @@ class TagColorSelection(PanelWidget):
                 color_group_layout.addWidget(radio_button)
                 self.button_group.addButton(radio_button)
             self.scroll_layout.addWidget(color_box_widget)
-            self.scroll_layout.addSpacerItem(QSpacerItem(1, 12))
+            self.scroll_layout.addSpacerItem(QSpacerItem(1, 6))
 
     def add_no_color_widget(self):
         no_color_str: str = Translations.translate_formatted("color.title.no_color")
