@@ -194,7 +194,7 @@ class TagColorSelection(PanelWidget):
         self.button_group.addButton(radio_button)
         self.scroll_layout.addWidget(color_box_widget)
 
-    def select_color(self, color: TagColorGroup):
+    def select_color(self, color: TagColorGroup | None):
         self.selected_color = color
 
     def select_radio_button(self, color: TagColorGroup | None):
@@ -202,6 +202,7 @@ class TagColorSelection(PanelWidget):
         for button in self.button_group.buttons():
             if button.objectName() == object_name:
                 button.setChecked(True)
+                self.select_color(color)
                 break
 
     def _get_primary_color(self, tag_color_group: TagColorGroup | None) -> QColor:
