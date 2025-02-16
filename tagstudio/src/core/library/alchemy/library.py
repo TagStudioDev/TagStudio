@@ -99,7 +99,7 @@ class ReservedNamespaceError(Exception):
     pass
 
 
-def slugify(input_string: str) -> str:
+def slugify(input_string: str, allow_reserved: bool = False) -> str:
     # Convert to lowercase and normalize unicode characters
     slug = unicodedata.normalize("NFKD", input_string.lower())
 
@@ -109,7 +109,7 @@ def slugify(input_string: str) -> str:
     # Replace spaces with hyphens
     slug = re.sub(r"[-\s]+", "-", slug)
 
-    if slug.startswith(RESERVED_NAMESPACE_PREFIX):
+    if not allow_reserved and slug.startswith(RESERVED_NAMESPACE_PREFIX):
         raise ReservedNamespaceError
 
     return slug
@@ -1612,6 +1612,13 @@ class Library:
         return dict(
             sorted(color_groups.items(), key=lambda kv: self.get_namespace_name(kv[0]).lower())
         )
+
+    @property
+    def namespaces(self) -> list[Namespace]:
+        """Return every Namespace in the library."""
+        with Session(self.engine) as session:
+            namespaces = session.scalars(select(Namespace).order_by(asc(Namespace.name)))
+            return list(namespaces)
 
     def get_namespace_name(self, namespace: str) -> str:
         with Session(self.engine) as session:

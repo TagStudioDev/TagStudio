@@ -3,8 +3,6 @@
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
 
-from uuid import uuid4
-
 import structlog
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QColor
@@ -21,7 +19,7 @@ from PySide6.QtWidgets import (
 from src.core import palette
 from src.core.library import Library
 from src.core.library.alchemy.enums import TagColorEnum
-from src.core.library.alchemy.library import ReservedNamespaceError, slugify
+from src.core.library.alchemy.library import slugify
 from src.core.library.alchemy.models import TagColorGroup
 from src.core.palette import ColorType, UiColor, get_tag_color, get_ui_color
 from src.qt.translations import Translations
@@ -42,10 +40,13 @@ class BuildColorPanel(PanelWidget):
     def __init__(self, library: Library, color_group: TagColorGroup):
         super().__init__()
         self.lib = library
-        self.color_group: TagColorGroup
+        self.color_group: TagColorGroup = color_group
         self.tag_color_namespace: str | None
         self.tag_color_slug: str | None
         self.disambiguation_id: int | None
+
+        self.known_colors: set[str]
+        self.update_known_colors()
 
         self.setMinimumSize(340, 240)
         self.root_layout = QVBoxLayout(self)
@@ -326,6 +327,11 @@ class BuildColorPanel(PanelWidget):
         )
         self.preview_button.set_tag_color_group(self.build_color()[1])
 
+    def update_known_colors(self):
+        groups = self.lib.tag_color_groups
+        colors = groups.get(self.color_group.namespace, [])
+        self.known_colors = {c.slug for c in colors}
+
     def update_preview_text(self):
         self.preview_button.button.setText(
             f"{self.name_field.text().strip() or Translations["color.placeholder"]} "
@@ -333,20 +339,30 @@ class BuildColorPanel(PanelWidget):
         )
         self.preview_button.button.setMaximumWidth(self.preview_button.button.sizeHint().width())
 
+    def no_collide(self, slug: str) -> str:
+        """Return a slug name that's verified not to collide with other known color slugs."""
+        if slug and slug in self.known_colors:
+            split_slug: list[str] = slug.rsplit("-", 1)
+            suffix: str = ""
+            if len(split_slug) > 1:
+                suffix = split_slug[1]
+
+            if suffix:
+                try:
+                    suffix_num: int = int(suffix)
+                    return self.no_collide(f"{split_slug[0]}-{suffix_num+1}")
+                except ValueError:
+                    return self.no_collide(f"{slug}-2")
+            else:
+                return self.no_collide(f"{slug}-2")
+        return slug
+
     def on_text_changed(self):
-        try:
-            self.slug_field.setText(slugify(self.name_field.text()))
-        except ReservedNamespaceError:
-            self.slug_field.setText(str(uuid4()))
+        slug = self.no_collide(slugify(self.name_field.text().strip(), allow_reserved=True))
 
         is_name_empty = not self.name_field.text().strip()
-        is_slug_empty = not self.slug_field.text().strip()
-        is_invalid = not self.slug_field.text().strip()
-
-        try:
-            slugify(self.slug_field.text())
-        except ReservedNamespaceError:
-            is_invalid = True
+        is_slug_empty = not slug
+        is_invalid = False
 
         self.name_field.setStyleSheet(
             f"border: 1px solid {get_ui_color(ColorType.PRIMARY, UiColor.RED)}; border-radius: 2px"
@@ -360,6 +376,7 @@ class BuildColorPanel(PanelWidget):
             else ""
         )
 
+        self.slug_field.setText(slug)
         self.update_preview_text()
 
         if self.panel_save_button is not None:

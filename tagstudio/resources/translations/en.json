@@ -204,6 +204,8 @@
     "menu.tools": "&Tools",
     "menu.view": "&View",
     "menu.window": "Window",
+    "namespace.create.description_color": "Tag colors use namespaces as color palette groups. All custom colors must be under a namespace group first.",
+    "namespace.create.description": "Namespaces are used by TagStudio to separate groups of items such as tags and colors in a way that makes them easy to export and share. Namespaces starting with \"tagstudio\" are reserved by TagStudio for internal use.",
     "namespace.create.title": "Create Namespace",
     "namespace.new.button": "New Namespace",
     "preview.no_selection": "No Items Selected",

@@ -13,6 +13,7 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
+from src.core.constants import RESERVED_NAMESPACE_PREFIX
 from src.core.library import Library
 from src.core.library.alchemy.library import ReservedNamespaceError, slugify
 from src.core.library.alchemy.models import Namespace
@@ -31,7 +32,10 @@ class BuildNamespacePanel(PanelWidget):
         self.lib = library
         self.namespace: Namespace | None
 
-        self.setMinimumSize(340, 240)
+        self.known_namespaces: set[str]
+        self.update_known_namespaces()
+
+        self.setMinimumSize(360, 260)
         self.root_layout = QVBoxLayout(self)
         self.root_layout.setContentsMargins(6, 0, 6, 0)
         self.root_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
@@ -66,15 +70,29 @@ class BuildNamespacePanel(PanelWidget):
         self.slug_layout.addWidget(self.slug_title)
         self.slug_field = QLineEdit()
         self.slug_field.setFixedHeight(24)
-        self.slug_field.textChanged.connect(self.on_text_changed)
+        self.slug_field.setEnabled(False)
         Translations.translate_with_setter(
             self.slug_field.setPlaceholderText, "library_object.slug_required"
         )
         self.slug_layout.addWidget(self.slug_field)
 
+        # Description -----------------------------------------------------------------
+        self.desc_label = QLabel()
+        self.desc_label.setWordWrap(True)
+        Translations.translate_with_setter(self.desc_label.setText, "namespace.create.description")
+        self.desc_color_label = QLabel()
+        self.desc_color_label.setWordWrap(True)
+        Translations.translate_with_setter(
+            self.desc_color_label.setText, "namespace.create.description_color"
+        )
+
         # Add Widgets to Layout ================================================
         self.root_layout.addWidget(self.name_widget)
         self.root_layout.addWidget(self.slug_widget)
+        self.root_layout.addSpacing(12)
+        self.root_layout.addWidget(self.desc_label)
+        self.root_layout.addSpacing(6)
+        self.root_layout.addWidget(self.desc_color_label)
 
         self.set_namespace(namespace)
 
@@ -87,17 +105,23 @@ class BuildNamespacePanel(PanelWidget):
             self.slug_field.setText(namespace.namespace)
         else:
             self.name_field.setText("User Colors")
-            self.slug_field.setText(f"user-{uuid4()}")
+
+    def update_known_namespaces(self):
+        namespaces = self.lib.namespaces
+        self.known_namespaces = {n.namespace for n in namespaces}
 
     def on_text_changed(self):
-        is_name_empty = not self.name_field.text().strip()
-        is_slug_empty = not self.slug_field.text().strip()
-        is_invalid = not self.slug_field.text().strip()
-
+        slug = ""
         try:
-            slugify(self.slug_field.text())
+            slug = self.no_collide(slugify(self.name_field.text().strip()))
         except ReservedNamespaceError:
-            is_invalid = True
+            raw_name = self.name_field.text().strip()
+            raw_name = raw_name.replace(RESERVED_NAMESPACE_PREFIX, str(uuid4()).split("-", 1)[0])
+            slug = self.no_collide(slugify(raw_name))
+
+        is_name_empty = not self.name_field.text().strip()
+        is_slug_empty = not slug
+        is_invalid = False
 
         self.name_field.setStyleSheet(
             f"border: 1px solid {get_ui_color(ColorType.PRIMARY, UiColor.RED)}; border-radius: 2px"
@@ -111,8 +135,29 @@ class BuildNamespacePanel(PanelWidget):
             else ""
         )
 
+        self.slug_field.setText(slug)
+
         if self.panel_save_button is not None:
             self.panel_save_button.setDisabled(is_name_empty)
+
+    def no_collide(self, slug: str) -> str:
+        """Return a slug name that's verified not to collide with other known namespace slugs."""
+        logger.info("known", known=self.known_namespaces)
+        if slug and slug in self.known_namespaces:
+            split_slug: list[str] = slug.rsplit("-", 1)
+            suffix: str = ""
+            if len(split_slug) > 1:
+                suffix = split_slug[1]
+
+            if suffix:
+                try:
+                    suffix_num: int = int(suffix)
+                    return self.no_collide(f"{split_slug[0]}-{suffix_num+1}")
+                except ValueError:
+                    return self.no_collide(f"{slug}-2")
+            else:
+                return self.no_collide(f"{slug}-2")
+        return slug
 
     def build_namespace(self) -> Namespace:
         name = self.name_field.text()
