@@ -76,7 +76,7 @@ class BuildNamespacePanel(PanelWidget):
         )
         self.slug_layout.addWidget(self.slug_field)
 
-        # Description -----------------------------------------------------------------
+        # Description ----------------------------------------------------------
         self.desc_label = QLabel()
         self.desc_label.setWordWrap(True)
         Translations.translate_with_setter(self.desc_label.setText, "namespace.create.description")
@@ -142,7 +142,6 @@ class BuildNamespacePanel(PanelWidget):
 
     def no_collide(self, slug: str) -> str:
         """Return a slug name that's verified not to collide with other known namespace slugs."""
-        logger.info("known", known=self.known_namespaces)
         if slug and slug in self.known_namespaces:
             split_slug: list[str] = slug.rsplit("-", 1)
             suffix: str = ""
@@ -166,7 +165,7 @@ class BuildNamespacePanel(PanelWidget):
 
         namespace = Namespace(namespace=slug, name=name)
 
-        logger.info("[BuildNamespacePanel]", slug=slug, name=name)
+        logger.info("[BuildNamespacePanel] Built Namespace", slug=slug, name=name)
         return namespace
 
     def parent_post_init(self):

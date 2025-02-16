@@ -208,6 +208,7 @@
     "namespace.create.description": "Namespaces are used by TagStudio to separate groups of items such as tags and colors in a way that makes them easy to export and share. Namespaces starting with \"tagstudio\" are reserved by TagStudio for internal use.",
     "namespace.create.title": "Create Namespace",
     "namespace.new.button": "New Namespace",
+    "namespace.new.prompt": "Create a New Namespace to Start Adding Custom Colors!",
     "preview.no_selection": "No Items Selected",
     "select.add_tag_to_selected": "Add Tag to Selected",
     "select.all": "Select All",

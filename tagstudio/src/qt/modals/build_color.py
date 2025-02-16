@@ -389,7 +389,6 @@ class BuildColorPanel(PanelWidget):
         secondary: str | None = (
             self.secondary_button.text() if self.secondary_button.text().startswith("#") else None
         )
-        logger.warning(self.border_checkbox.isChecked())
         color_border: bool = self.border_checkbox.isChecked()
 
         new_color = TagColorGroup(

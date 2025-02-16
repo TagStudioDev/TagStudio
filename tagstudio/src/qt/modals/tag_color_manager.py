@@ -46,7 +46,7 @@ class TagColorManager(QWidget):
         self.lib = driver.lib
         Translations.translate_with_setter(self.setWindowTitle, "color_manager.title")
         self.setWindowModality(Qt.WindowModality.ApplicationModal)
-        self.setMinimumSize(720, 540)
+        self.setMinimumSize(720, 580)
         self.is_initialized = False
         self.root_layout = QVBoxLayout(self)
         self.root_layout.setContentsMargins(6, 6, 6, 6)
@@ -73,6 +73,7 @@ class TagColorManager(QWidget):
 
         self.scroll_area = QScrollArea()
         self.scroll_area.setObjectName("entryScrollArea")
+        self.scroll_area.setAlignment(Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignCenter)
         self.scroll_area.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         self.scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
         self.scroll_area.setWidgetResizable(True)
@@ -90,10 +91,10 @@ class TagColorManager(QWidget):
         self.button_layout = QHBoxLayout(self.button_container)
         self.button_layout.setContentsMargins(6, 6, 6, 6)
 
-        self.new_group_button = QPushButton()
-        Translations.translate_qobject(self.new_group_button, "namespace.new.button")
-        self.new_group_button.clicked.connect(self.create_namespace)
-        self.button_layout.addWidget(self.new_group_button)
+        self.new_namespace_button = QPushButton()
+        Translations.translate_qobject(self.new_namespace_button, "namespace.new.button")
+        self.new_namespace_button.clicked.connect(self.create_namespace)
+        self.button_layout.addWidget(self.new_namespace_button)
 
         # self.import_pack_button = QPushButton()
         # Translations.translate_qobject(self.import_pack_button, "color.import_pack")
@@ -112,8 +113,11 @@ class TagColorManager(QWidget):
         logger.info(self.root_layout.dumpObjectTree())
 
     def setup_color_groups(self):
+        all_default = True
         if self.driver.lib.engine:
             for group, colors in self.driver.lib.tag_color_groups.items():
+                if not group.startswith(RESERVED_NAMESPACE_PREFIX):
+                    all_default = False
                 color_box = ColorBoxWidget(group, colors, self.driver.lib)
                 color_box.updated.connect(
                     lambda: (
@@ -146,6 +150,19 @@ class TagColorManager(QWidget):
                     )
 
                 self.scroll_layout.addWidget(field_container)
+
+            if all_default:
+                ns_container = QWidget()
+                ns_layout = QHBoxLayout(ns_container)
+                ns_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
+                ns_layout.setContentsMargins(0, 18, 0, 18)
+                namespace_prompt = QPushButton()
+                Translations.translate_qobject(namespace_prompt, "namespace.new.prompt")
+                namespace_prompt.setFixedSize(namespace_prompt.sizeHint().width() + 8, 24)
+                namespace_prompt.clicked.connect(self.create_namespace)
+                ns_layout.addWidget(namespace_prompt)
+                self.scroll_layout.addWidget(ns_container)
+
             self.is_initialized = True
 
     def reset(self):
