@@ -115,7 +115,7 @@ class BuildNamespacePanel(PanelWidget):
         try:
             slug = self.no_collide(slugify(self.name_field.text().strip()))
         except ReservedNamespaceError:
-            raw_name = self.name_field.text().strip()
+            raw_name = self.name_field.text().strip().lower()
             raw_name = raw_name.replace(RESERVED_NAMESPACE_PREFIX, str(uuid4()).split("-", 1)[0])
             slug = self.no_collide(slugify(raw_name))
 
