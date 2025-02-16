@@ -60,6 +60,7 @@ class BuildColorPanel(PanelWidget):
         self.preview_layout.setSpacing(6)
         self.preview_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.preview_button = TagColorPreview(self.lib, None)
+        self.preview_button.setEnabled(False)
         self.preview_layout.addWidget(self.preview_button)
 
         # Name -----------------------------------------------------------------
@@ -183,6 +184,10 @@ class BuildColorPanel(PanelWidget):
             f"}}"
             f"QCheckBox::hover{{"
             f"border-color: rgba{highlight_color.toTuple()};"
+            f"}}"
+            f"QCheckBox::focus{{"
+            f"border-color: rgba{highlight_color.toTuple()};"
+            f"outline:none;"
             f"}}"
         )
 

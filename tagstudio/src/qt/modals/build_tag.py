@@ -245,6 +245,10 @@ class BuildTagPanel(PanelWidget):
             f"QCheckBox::hover{{"
             f"border-color: rgba{highlight_color.toTuple()};"
             f"}}"
+            f"QCheckBox::focus{{"
+            f"border-color: rgba{highlight_color.toTuple()};"
+            f"outline:none;"
+            f"}}"
         )
         self.cat_layout.addWidget(self.cat_checkbox)
         self.cat_layout.addWidget(self.cat_title)

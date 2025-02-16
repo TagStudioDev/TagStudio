@@ -99,7 +99,6 @@ class TagColorPreview(QWidget):
             f"border-style:solid;"
             f"border-width: 2px;"
             f"padding-right: 8px;"
-            f"padding-bottom: 1px;"
             f"padding-left: 8px;"
             f"font-size: 14px"
             f"}}"
@@ -107,11 +106,18 @@ class TagColorPreview(QWidget):
             f"border-color: rgba{highlight_color.toTuple()};"
             f"}}"
             f"QPushButton::focus{{"
-            f"border-color: rgba{highlight_color.toTuple()};"
-            f"outline:none;"
+            f"padding-right: 0px;"
+            f"padding-left: 0px;"
+            f"outline-style: solid;"
+            f"outline-width: 1px;"
+            f"outline-radius: 4px;"
+            f"outline-color: rgba{text_color.toTuple()};"
             f"}}"
         )
-        self.button.setMaximumWidth(self.button.sizeHint().width())
+        # Add back the padding if the hint is generated while the button has focus (no padding)
+        self.button.setMinimumWidth(
+            self.button.sizeHint().width() + (16 if self.button.hasFocus() else 0)
+        )
 
     def _get_primary_color(self, tag_color_group: TagColorGroup | None) -> QColor:
         primary_color = QColor(

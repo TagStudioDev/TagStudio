@@ -84,7 +84,7 @@ class TagColorSelection(PanelWidget):
                 primary_color = self._get_primary_color(color)
                 border_color = (
                     get_border_color(primary_color)
-                    if not (color and color.secondary)
+                    if not (color and color.secondary and color.color_border)
                     else (QColor(color.secondary))
                 )
                 highlight_color = get_highlight_color(
@@ -100,11 +100,15 @@ class TagColorSelection(PanelWidget):
                 radio_button.setObjectName(f"{color.namespace}.{color.slug}")
                 radio_button.setToolTip(color.name)
                 radio_button.setFixedSize(24, 24)
+                bottom_color: str = (
+                    f"border-bottom-color: rgba{text_color.toTuple()};" if color.secondary else ""
+                )
                 radio_button.setStyleSheet(
                     f"QRadioButton{{"
                     f"background: rgba{primary_color.toTuple()};"
                     f"color: rgba{text_color.toTuple()};"
                     f"border-color: rgba{border_color.toTuple()};"
+                    f"{bottom_color}"
                     f"border-radius: 3px;"
                     f"border-style:solid;"
                     f"border-width: 2px;"
@@ -122,8 +126,10 @@ class TagColorSelection(PanelWidget):
                     f"border-color: rgba{highlight_color.toTuple()};"
                     f"}}"
                     f"QRadioButton::focus{{"
-                    f"border-color: rgba{highlight_color.toTuple()};"
-                    f"outline:none;"
+                    f"outline-style: solid;"
+                    f"outline-width: 2px;"
+                    f"outline-radius: 3px;"
+                    f"outline-color: rgba{highlight_color.toTuple()};"
                     f"}}"
                 )
                 radio_button.clicked.connect(lambda checked=False, x=color: self.select_color(x))
@@ -177,8 +183,10 @@ class TagColorSelection(PanelWidget):
             f"border-color: rgba{highlight_color.toTuple()};"
             f"}}"
             f"QRadioButton::focus{{"
-            f"border-color: rgba{highlight_color.toTuple()};"
-            f"outline:none;"
+            f"outline-style: solid;"
+            f"outline-width: 2px;"
+            f"outline-radius: 3px;"
+            f"outline-color: rgba{highlight_color.toTuple()};"
             f"}}"
         )
         radio_button.clicked.connect(lambda checked=False, x=color: self.select_color(x))
