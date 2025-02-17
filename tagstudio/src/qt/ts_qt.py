@@ -88,6 +88,7 @@ from src.qt.modals.fix_dupes import FixDupeFilesModal
 from src.qt.modals.fix_unlinked import FixUnlinkedEntriesModal
 from src.qt.modals.folders_to_tags import FoldersToTagsModal
 from src.qt.modals.settings_panel import SettingsPanel
+from src.qt.modals.tag_color_manager import TagColorManager
 from src.qt.modals.tag_database import TagDatabasePanel
 from src.qt.modals.tag_search import TagSearchPanel
 from src.qt.platform_strings import trash_term
@@ -141,11 +142,12 @@ class QtDriver(DriverMixin, QObject):
 
     SIGTERM = Signal()
 
-    preview_panel: PreviewPanel
-    tag_manager_panel: PanelModal
+    preview_panel: PreviewPanel | None = None
+    tag_manager_panel: PanelModal | None = None
+    color_manager_panel: TagColorManager | None = None
     file_extension_panel: PanelModal | None = None
-    tag_search_panel: TagSearchPanel
-    add_tag_modal: PanelModal
+    tag_search_panel: TagSearchPanel | None = None
+    add_tag_modal: PanelModal | None = None
 
     lib: Library
 
@@ -313,6 +315,9 @@ class QtDriver(DriverMixin, QObject):
         Translations.translate_with_setter(
             self.tag_manager_panel.setWindowTitle, "tag_manager.title"
         )
+
+        # Initialize the Color Group Manager panel
+        self.color_manager_panel = TagColorManager(self)
 
         # Initialize the Tag Search panel
         self.tag_search_panel = TagSearchPanel(self.lib, is_tag_chooser=True)
@@ -541,6 +546,12 @@ class QtDriver(DriverMixin, QObject):
         self.tag_manager_action.setEnabled(False)
         self.tag_manager_action.setToolTip("Ctrl+M")
         edit_menu.addAction(self.tag_manager_action)
+
+        self.color_manager_action = QAction(menu_bar)
+        Translations.translate_qobject(self.color_manager_action, "edit.color_manager")
+        self.color_manager_action.triggered.connect(self.color_manager_panel.show)
+        self.color_manager_action.setEnabled(False)
+        edit_menu.addAction(self.color_manager_action)
 
         # View Menu ============================================================
         show_libs_list_action = QAction(menu_bar)
@@ -866,6 +877,8 @@ class QtDriver(DriverMixin, QObject):
         self.selected.clear()
         self.frame_content.clear()
         [x.set_mode(None) for x in self.item_thumbs]
+        if self.color_manager_panel:
+            self.color_manager_panel.reset()
 
         self.set_clipboard_menu_viability()
         self.set_select_actions_visibility()
@@ -878,6 +891,7 @@ class QtDriver(DriverMixin, QObject):
             self.close_library_action.setEnabled(False)
             self.refresh_dir_action.setEnabled(False)
             self.tag_manager_action.setEnabled(False)
+            self.color_manager_action.setEnabled(False)
             self.manage_file_ext_action.setEnabled(False)
             self.new_tag_action.setEnabled(False)
             self.fix_unlinked_entries_action.setEnabled(False)
@@ -1907,6 +1921,7 @@ class QtDriver(DriverMixin, QObject):
         self.close_library_action.setEnabled(True)
         self.refresh_dir_action.setEnabled(True)
         self.tag_manager_action.setEnabled(True)
+        self.color_manager_action.setEnabled(True)
         self.manage_file_ext_action.setEnabled(True)
         self.new_tag_action.setEnabled(True)
         self.fix_dupe_files_action.setEnabled(True)

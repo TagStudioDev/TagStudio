@@ -8,11 +8,14 @@ from pathlib import Path
 from typing import Callable
 from warnings import catch_warnings
 
+import structlog
 from PIL import Image, ImageQt
 from PySide6.QtCore import QEvent, Qt
-from PySide6.QtGui import QEnterEvent, QPixmap
+from PySide6.QtGui import QEnterEvent, QPixmap, QResizeEvent
 from PySide6.QtWidgets import QHBoxLayout, QLabel, QPushButton, QVBoxLayout, QWidget
 from src.core.enums import Theme
+
+logger = structlog.get_logger(__name__)
 
 
 class FieldContainer(QWidget):
@@ -78,7 +81,6 @@ class FieldContainer(QWidget):
 
         self.title_widget = QLabel()
         self.title_widget.setMinimumHeight(button_size)
-        self.title_widget.setMinimumWidth(200)
         self.title_widget.setObjectName("fieldTitle")
         self.title_widget.setWordWrap(True)
         self.title_widget.setText(title)
@@ -123,6 +125,7 @@ class FieldContainer(QWidget):
         self.field.setLayout(self.field_layout)
         self.inner_layout.addWidget(self.field)
 
+        self.set_title(title)
         self.setStyleSheet(FieldContainer.container_style)
 
     def set_copy_callback(self, callback: Callable | None = None):
@@ -187,6 +190,10 @@ class FieldContainer(QWidget):
         if self.remove_callback:
             self.remove_button.setHidden(True)
         return super().leaveEvent(event)
+
+    def resizeEvent(self, event: QResizeEvent) -> None:  # noqa: N802
+        self.title_widget.setFixedWidth(int(event.size().width() // 1.5))
+        return super().resizeEvent(event)
 
 
 class FieldWidget(QWidget):

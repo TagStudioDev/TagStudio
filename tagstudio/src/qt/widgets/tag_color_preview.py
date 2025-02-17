@@ -3,6 +3,8 @@
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
 
+import typing
+
 import structlog
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QColor
@@ -15,6 +17,14 @@ from src.core.library.alchemy.enums import TagColorEnum
 from src.core.library.alchemy.models import TagColorGroup
 from src.core.palette import ColorType, get_tag_color
 from src.qt.translations import Translations
+from src.qt.widgets.tag import (
+    get_border_color,
+    get_highlight_color,
+    get_text_color,
+)
+
+if typing.TYPE_CHECKING:
+    from src.core.library import Library
 
 logger = structlog.get_logger(__name__)
 
@@ -24,9 +34,11 @@ class TagColorPreview(QWidget):
 
     def __init__(
         self,
+        library: "Library",
         tag_color_group: TagColorGroup | None,
     ) -> None:
         super().__init__()
+        self.lib: Library = library
         self.tag_color_group = tag_color_group
 
         self.setCursor(Qt.CursorShape.PointingHandCursor)
@@ -44,28 +56,36 @@ class TagColorPreview(QWidget):
 
         self.set_tag_color_group(tag_color_group)
 
-    def set_tag_color_group(self, tag_color_group: TagColorGroup | None):
-        self.tag_color_group = tag_color_group
+    def set_tag_color_group(self, color_group: TagColorGroup | None):
+        logger.info(
+            "[TagColorPreview] Setting tag color",
+            primary=color_group.primary if color_group else None,
+            secondary=color_group.secondary if color_group else None,
+        )
+        self.tag_color_group = color_group
 
-        if tag_color_group:
-            self.button.setText(tag_color_group.name)
+        if color_group:
+            self.button.setText(color_group.name)
+            self.button.setText(
+                f"{color_group.name} ({self.lib.get_namespace_name(color_group.namespace)})"
+            )
         else:
-            Translations.translate_qobject(self.button, "generic.none")
+            Translations.translate_qobject(self.button, "color.title.no_color")
 
-        primary_color = get_primary_color(tag_color_group)
+        primary_color = self._get_primary_color(color_group)
         border_color = (
             get_border_color(primary_color)
-            if not (tag_color_group and tag_color_group.secondary)
-            else (QColor(tag_color_group.secondary))
+            if not (color_group and color_group.secondary and color_group.color_border)
+            else (QColor(color_group.secondary))
         )
         highlight_color = get_highlight_color(
             primary_color
-            if not (tag_color_group and tag_color_group.secondary)
-            else QColor(tag_color_group.secondary)
+            if not (color_group and color_group.secondary)
+            else QColor(color_group.secondary)
         )
         text_color: QColor
-        if tag_color_group and tag_color_group.secondary:
-            text_color = QColor(tag_color_group.secondary)
+        if color_group and color_group.secondary:
+            text_color = QColor(color_group.secondary)
         else:
             text_color = get_text_color(primary_color, highlight_color)
 
@@ -79,50 +99,31 @@ class TagColorPreview(QWidget):
             f"border-style:solid;"
             f"border-width: 2px;"
             f"padding-right: 8px;"
-            f"padding-bottom: 1px;"
             f"padding-left: 8px;"
             f"font-size: 14px"
             f"}}"
             f"QPushButton::hover{{"
             f"border-color: rgba{highlight_color.toTuple()};"
             f"}}"
+            f"QPushButton::focus{{"
+            f"padding-right: 0px;"
+            f"padding-left: 0px;"
+            f"outline-style: solid;"
+            f"outline-width: 1px;"
+            f"outline-radius: 4px;"
+            f"outline-color: rgba{text_color.toTuple()};"
+            f"}}"
         )
-        self.button.setMaximumWidth(self.button.sizeHint().width())
+        # Add back the padding if the hint is generated while the button has focus (no padding)
+        self.button.setMinimumWidth(
+            self.button.sizeHint().width() + (16 if self.button.hasFocus() else 0)
+        )
 
+    def _get_primary_color(self, tag_color_group: TagColorGroup | None) -> QColor:
+        primary_color = QColor(
+            get_tag_color(ColorType.PRIMARY, TagColorEnum.DEFAULT)
+            if not tag_color_group
+            else tag_color_group.primary
+        )
 
-def get_primary_color(tag_color_group: TagColorGroup | None) -> QColor:
-    primary_color = QColor(
-        get_tag_color(ColorType.PRIMARY, TagColorEnum.DEFAULT)
-        if not tag_color_group
-        else tag_color_group.primary
-    )
-
-    return primary_color
-
-
-def get_border_color(primary_color: QColor) -> QColor:
-    border_color: QColor = QColor(primary_color)
-    border_color.setRed(min(border_color.red() + 20, 255))
-    border_color.setGreen(min(border_color.green() + 20, 255))
-    border_color.setBlue(min(border_color.blue() + 20, 255))
-
-    return border_color
-
-
-def get_highlight_color(primary_color: QColor) -> QColor:
-    highlight_color: QColor = QColor(primary_color)
-    highlight_color = highlight_color.toHsl()
-    highlight_color.setHsl(highlight_color.hue(), min(highlight_color.saturation(), 200), 225, 255)
-    highlight_color = highlight_color.toRgb()
-
-    return highlight_color
-
-
-def get_text_color(primary_color: QColor, highlight_color: QColor) -> QColor:
-    if primary_color.lightness() > 120:
-        text_color = QColor(primary_color)
-        text_color = text_color.toHsl()
-        text_color.setHsl(text_color.hue(), text_color.saturation(), 50, 255)
-        return text_color.toRgb()
-    else:
-        return highlight_color
+        return primary_color
