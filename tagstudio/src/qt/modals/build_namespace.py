@@ -3,6 +3,7 @@
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
 
+import contextlib
 from uuid import uuid4
 
 import structlog
@@ -110,7 +111,8 @@ class BuildNamespacePanel(PanelWidget):
         namespaces = self.lib.namespaces
         self.known_namespaces = {n.namespace for n in namespaces}
         if self.namespace:
-            self.known_namespaces = self.known_namespaces.difference(self.namespace.namespace)
+            with contextlib.suppress(KeyError):
+                self.known_namespaces.remove(self.namespace.namespace)
 
     def on_text_changed(self):
         slug = ""

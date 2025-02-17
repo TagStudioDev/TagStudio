@@ -3,6 +3,8 @@
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
 
+import contextlib
+
 import structlog
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QColor
@@ -320,7 +322,8 @@ class BuildColorPanel(PanelWidget):
         groups = self.lib.tag_color_groups
         colors = groups.get(self.color_group.namespace, [])
         self.known_colors = {c.slug for c in colors}
-        self.known_colors = self.known_colors.difference(self.color_group.slug)
+        with contextlib.suppress(KeyError):
+            self.known_colors.remove(self.color_group.slug)
 
     def update_preview_text(self):
         self.preview_button.button.setText(
