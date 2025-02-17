@@ -307,6 +307,12 @@ def pastels() -> list[TagColorGroup]:
 
 
 def shades() -> list[TagColorGroup]:
+    burgundy = TagColorGroup(
+        slug="burgundy",
+        namespace="tagstudio-shades",
+        name="Burgundy",
+        primary="#6E1C24",
+    )
     auburn = TagColorGroup(
         slug="auburn",
         namespace="tagstudio-shades",
@@ -319,11 +325,23 @@ def shades() -> list[TagColorGroup]:
         name="Olive",
         primary="#4C652E",
     )
+    dark_teal = TagColorGroup(
+        slug="dark-teal",
+        namespace="tagstudio-shades",
+        name="Dark Teal",
+        primary="#1F5E47",
+    )
     navy = TagColorGroup(
         slug="navy",
         namespace="tagstudio-shades",
         name="Navy",
         primary="#104B98",
+    )
+    dark_lavender = TagColorGroup(
+        slug="dark_lavender",
+        namespace="tagstudio-shades",
+        name="Dark Lavender",
+        primary="#3D3B6C",
     )
     berry = TagColorGroup(
         slug="berry",
@@ -331,7 +349,7 @@ def shades() -> list[TagColorGroup]:
         name="Berry",
         primary="#9F2AA7",
     )
-    return [auburn, olive, navy, berry]
+    return [burgundy, auburn, olive, dark_teal, navy, dark_lavender, berry]
 
 
 def earth_tones() -> list[TagColorGroup]:
