@@ -30,7 +30,7 @@ class BuildNamespacePanel(PanelWidget):
     def __init__(self, library: Library, namespace: Namespace | None = None):
         super().__init__()
         self.lib = library
-        self.namespace: Namespace | None
+        self.namespace: Namespace | None = namespace
 
         self.known_namespaces: set[str]
         self.update_known_namespaces()
@@ -109,6 +109,8 @@ class BuildNamespacePanel(PanelWidget):
     def update_known_namespaces(self):
         namespaces = self.lib.namespaces
         self.known_namespaces = {n.namespace for n in namespaces}
+        if self.namespace:
+            self.known_namespaces = self.known_namespaces.difference(self.namespace.namespace)
 
     def on_text_changed(self):
         slug = ""
