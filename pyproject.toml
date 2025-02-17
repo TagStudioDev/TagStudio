@@ -20,6 +20,17 @@ convention = "google"
 select = ["B", "D", "E", "F", "FBT003", "I", "N", "SIM", "T20", "UP"]
 ignore = ["D100", "D101", "D102", "D103", "D104", "D105", "D106", "D107"]
 
+[tool.pyright]
+ignore = [".venv/**"]
+include = ["tagstudio/**"]
+reportAny = false
+reportImplicitStringConcatenation = false
+# reportOptionalMemberAccess = false
+reportUnannotatedClassAttribute = false
+reportUnknownArgumentType = false
+reportUnknownMemberType = false
+reportUnusedCallResult = false
+
 [tool.mypy]
 strict_optional = false
 disable_error_code = ["func-returns-value", "import-untyped"]
