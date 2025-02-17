@@ -87,6 +87,7 @@ from src.qt.modals.file_extension import FileExtensionModal
 from src.qt.modals.fix_dupes import FixDupeFilesModal
 from src.qt.modals.fix_unlinked import FixUnlinkedEntriesModal
 from src.qt.modals.folders_to_tags import FoldersToTagsModal
+from src.qt.modals.settings_panel import SettingsPanel
 from src.qt.modals.tag_database import TagDatabasePanel
 from src.qt.modals.tag_search import TagSearchPanel
 from src.qt.platform_strings import trash_term
@@ -194,6 +195,10 @@ class QtDriver(DriverMixin, QObject):
                 filename=self.settings.fileName(),
             )
             self.config_path = self.settings.fileName()
+
+        Translations.change_language(
+            str(self.settings.value(SettingItems.LANGUAGE, defaultValue="en", type=str))
+        )
 
         # NOTE: This should be a per-library setting rather than an application setting.
         thumb_cache_size_limit: int = int(
@@ -361,19 +366,6 @@ class QtDriver(DriverMixin, QObject):
         file_menu.addMenu(self.open_recent_library_menu)
         self.update_recent_lib_menu()
 
-        open_on_start_action = QAction(self)
-        Translations.translate_qobject(open_on_start_action, "settings.open_library_on_start")
-        open_on_start_action.setCheckable(True)
-        open_on_start_action.setChecked(
-            bool(self.settings.value(SettingItems.START_LOAD_LAST, defaultValue=True, type=bool))
-        )
-        open_on_start_action.triggered.connect(
-            lambda checked: self.settings.setValue(SettingItems.START_LOAD_LAST, checked)
-        )
-        file_menu.addAction(open_on_start_action)
-
-        file_menu.addSeparator()
-
         self.save_library_backup_action = QAction(menu_bar)
         Translations.translate_qobject(self.save_library_backup_action, "menu.file.save_backup")
         self.save_library_backup_action.triggered.connect(
@@ -391,6 +383,23 @@ class QtDriver(DriverMixin, QObject):
         self.save_library_backup_action.setStatusTip("Ctrl+Shift+S")
         self.save_library_backup_action.setEnabled(False)
         file_menu.addAction(self.save_library_backup_action)
+
+        file_menu.addSeparator()
+        settings_action = QAction(self)
+        Translations.translate_qobject(settings_action, "menu.settings")
+        settings_action.triggered.connect(self.open_settings_modal)
+        file_menu.addAction(settings_action)
+
+        open_on_start_action = QAction(self)
+        Translations.translate_qobject(open_on_start_action, "settings.open_library_on_start")
+        open_on_start_action.setCheckable(True)
+        open_on_start_action.setChecked(
+            bool(self.settings.value(SettingItems.START_LOAD_LAST, defaultValue=True, type=bool))
+        )
+        open_on_start_action.triggered.connect(
+            lambda checked: self.settings.setValue(SettingItems.START_LOAD_LAST, checked)
+        )
+        file_menu.addAction(open_on_start_action)
 
         file_menu.addSeparator()
 
@@ -1815,6 +1824,24 @@ class QtDriver(DriverMixin, QObject):
         self.settings.endGroup()
         self.settings.sync()
         self.update_recent_lib_menu()
+
+    def open_settings_modal(self):
+        # TODO: Implement a proper settings panel, and don't re-create it each time it's opened.
+        settings_panel = SettingsPanel(self)
+        modal = PanelModal(
+            widget=settings_panel,
+            done_callback=lambda: self.update_language_settings(settings_panel.get_language()),
+            has_save=False,
+        )
+        Translations.translate_with_setter(modal.setTitle, "settings.title")
+        Translations.translate_with_setter(modal.setWindowTitle, "settings.title")
+        modal.show()
+
+    def update_language_settings(self, language: str):
+        Translations.change_language(language)
+
+        self.settings.setValue(SettingItems.LANGUAGE, language)
+        self.settings.sync()
 
     def open_library(self, path: Path) -> None:
         """Open a TagStudio library."""

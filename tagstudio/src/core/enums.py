@@ -17,6 +17,7 @@ class SettingItems(str, enum.Enum):
     SHOW_FILENAMES = "show_filenames"
     AUTOPLAY = "autoplay_videos"
     THUMB_CACHE_SIZE_LIMIT = "thumb_cache_size_limit"
+    LANGUAGE = "language"
 
 
 class Theme(str, enum.Enum):
