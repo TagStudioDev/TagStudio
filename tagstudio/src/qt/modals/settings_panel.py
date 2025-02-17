@@ -34,6 +34,7 @@ class SettingsPanel(PanelWidget):
             "Chinese (Traditional)": "zh_Hant",
             # "Czech": "cs",  # Minimal
             # "Danish": "da",  # Minimal
+            "Dutch": "nl",
             "English": "en",
             "Filipino": "fil",
             "French": "fr",
