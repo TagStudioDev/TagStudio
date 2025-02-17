@@ -49,6 +49,7 @@ from src.qt.translations import Translations
 from ...constants import (
     BACKUP_FOLDER_NAME,
     LEGACY_TAG_FIELD_IDS,
+    RESERVED_NAMESPACE_PREFIX,
     RESERVED_TAG_END,
     RESERVED_TAG_START,
     TAG_ARCHIVED,
@@ -89,7 +90,16 @@ SELECT * FROM ChildTags;
 """)  # noqa: E501
 
 
-def slugify(input_string: str) -> str:
+class ReservedNamespaceError(Exception):
+    """Raise during an unauthorized attempt to create or modify a reserved namespace value.
+
+    Reserved namespace prefix: "tagstudio".
+    """
+
+    pass
+
+
+def slugify(input_string: str, allow_reserved: bool = False) -> str:
     # Convert to lowercase and normalize unicode characters
     slug = unicodedata.normalize("NFKD", input_string.lower())
 
@@ -98,6 +108,9 @@ def slugify(input_string: str) -> str:
 
     # Replace spaces with hyphens
     slug = re.sub(r"[-\s]+", "-", slug)
+
+    if not allow_reserved and slug.startswith(RESERVED_NAMESPACE_PREFIX):
+        raise ReservedNamespaceError
 
     return slug
 
@@ -179,7 +192,7 @@ class Library:
 
     library_dir: Path | None = None
     storage_path: Path | str | None
-    engine: Engine | None
+    engine: Engine | None = None
     folder: Folder | None
     included_files: set[Path] = set()
 
@@ -391,12 +404,13 @@ class Library:
                 tag_colors += default_color_groups.grayscale()
                 tag_colors += default_color_groups.earth_tones()
                 tag_colors += default_color_groups.neon()
-                try:
-                    session.add_all(tag_colors)
-                    session.commit()
-                except IntegrityError as e:
-                    logger.error("[Library] Couldn't add default tag colors", error=e)
-                    session.rollback()
+                if is_new:
+                    try:
+                        session.add_all(tag_colors)
+                        session.commit()
+                    except IntegrityError as e:
+                        logger.error("[Library] Couldn't add default tag colors", error=e)
+                        session.rollback()
 
             # Add default tags.
             if is_new:
@@ -446,14 +460,14 @@ class Library:
 
             # Apply any post-SQL migration patches.
             if not is_new:
-                # NOTE: DB_VERSION 6 was first used in v9.5.0-pr1
                 if db_version == 6:
                     self.apply_db6_patches(session)
-                else:
-                    pass
+                if db_version >= 6 and db_version < 8:
+                    self.apply_db7_patches(session)
 
             # Update DB_VERSION
-            self.set_prefs(LibraryPrefs.DB_VERSION, LibraryPrefs.DB_VERSION.default)
+            if LibraryPrefs.DB_VERSION.default > db_version:
+                self.set_prefs(LibraryPrefs.DB_VERSION, LibraryPrefs.DB_VERSION.default)
 
         # everything is fine, set the library path
         self.library_dir = library_dir
@@ -462,9 +476,9 @@ class Library:
     def apply_db6_patches(self, session: Session):
         """Apply migration patches to a library with DB_VERSION 6.
 
-        DB_VERSION 6 was first used in v9.5.0-pr1.
+        DB_VERSION 6 was only used in v9.5.0-pr1.
         """
-        logger.info("[Library] Applying patches to DB_VERSION: 6 library...")
+        logger.info("[Library][Migration] Applying patches to DB_VERSION: 6 library...")
         with session:
             # Repair "Description" fields with a TEXT_LINE key instead of a TEXT_BOX key.
             desc_stmd = (
@@ -486,6 +500,75 @@ class Library:
             session.flush()
 
             session.commit()
+
+    def apply_db7_patches(self, session: Session):
+        """Apply migration patches to a library with DB_VERSION 7 or earlier.
+
+        DB_VERSION 7 was used from v9.5.0-pr2 to v9.5.0-pr3.
+        """
+        # TODO: Use Alembic for this part instead
+        # Add the missing color_border column to the TagColorGroups table.
+        color_border_stmt = text(
+            "ALTER TABLE tag_colors ADD COLUMN color_border BOOLEAN DEFAULT FALSE NOT NULL"
+        )
+        try:
+            session.execute(color_border_stmt)
+            session.commit()
+            logger.info("[Library][Migration] Added color_border column to tag_colors table")
+        except Exception as e:
+            logger.error(
+                "[Library][Migration] Could not create color_border column in tag_colors table!",
+                error=e,
+            )
+            session.rollback()
+
+        tag_colors: list[TagColorGroup] = default_color_groups.standard()
+        tag_colors += default_color_groups.pastels()
+        tag_colors += default_color_groups.shades()
+        tag_colors += default_color_groups.grayscale()
+        tag_colors += default_color_groups.earth_tones()
+        # tag_colors += default_color_groups.neon() # NOTE: Neon is handled separately
+
+        # Add any new default colors introduced in DB_VERSION 8
+        for color in tag_colors:
+            try:
+                session.add(color)
+                logger.info(
+                    "[Library][Migration] Migrated tag color to DB_VERSION 8+",
+                    color_name=color.name,
+                )
+                session.commit()
+            except IntegrityError:
+                session.rollback()
+
+        # Update Neon colors to use the the color_border property
+        for color in default_color_groups.neon():
+            try:
+                neon_stmt = (
+                    update(TagColorGroup)
+                    .where(
+                        and_(
+                            TagColorGroup.namespace == color.namespace,
+                            TagColorGroup.slug == color.slug,
+                        )
+                    )
+                    .values(
+                        slug=color.slug,
+                        namespace=color.namespace,
+                        name=color.name,
+                        primary=color.primary,
+                        secondary=color.secondary,
+                        color_border=color.color_border,
+                    )
+                )
+                session.execute(neon_stmt)
+                session.commit()
+            except IntegrityError as e:
+                logger.error(
+                    "[Library] Could not migrate Neon colors to DB_VERSION 8+!",
+                    error=e,
+                )
+                session.rollback()
 
     @property
     def default_fields(self) -> list[BaseField]:
@@ -1088,6 +1171,80 @@ class Library:
             session.commit()
         return tags
 
+    def add_namespace(self, namespace: Namespace) -> bool:
+        """Add a namespace value to the library.
+
+        Args:
+            namespace(str): The namespace slug. No special characters
+        """
+        with Session(self.engine) as session:
+            if not namespace.namespace:
+                logger.warning("[LIBRARY][add_namespace] Namespace slug must not be empty")
+                return False
+
+            slug = namespace.namespace
+            try:
+                slug = slugify(namespace.namespace)
+            except ReservedNamespaceError:
+                logger.error(
+                    f"[LIBRARY][add_namespace] Will not add a namespace with the reserved prefix:"
+                    f"{RESERVED_NAMESPACE_PREFIX}",
+                    namespace=namespace,
+                )
+            logger.error("Should not see me")
+
+            namespace_obj = Namespace(
+                namespace=slug,
+                name=namespace.name,
+            )
+
+            try:
+                session.add(namespace_obj)
+                session.commit()
+                return True
+            except IntegrityError:
+                session.rollback()
+                logger.error("IntegrityError")
+                return False
+
+    def delete_namespace(self, namespace: Namespace | str):
+        """Delete a namespace and any connected data from the library."""
+        if isinstance(namespace, str):
+            if namespace.startswith(RESERVED_NAMESPACE_PREFIX):
+                raise ReservedNamespaceError
+        else:
+            if namespace.namespace.startswith(RESERVED_NAMESPACE_PREFIX):
+                raise ReservedNamespaceError
+
+        with Session(self.engine, expire_on_commit=False) as session:
+            try:
+                namespace_: Namespace | None = None
+                if isinstance(namespace, str):
+                    namespace_ = session.scalar(
+                        select(Namespace).where(Namespace.namespace == namespace)
+                    )
+                else:
+                    namespace_ = namespace
+
+                if not namespace_:
+                    raise Exception
+                session.delete(namespace_)
+                session.flush()
+
+                colors = session.scalars(
+                    select(TagColorGroup).where(TagColorGroup.namespace == namespace_.namespace)
+                )
+                for color in colors:
+                    session.delete(color)
+                    session.flush()
+
+                session.commit()
+
+            except IntegrityError as e:
+                logger.error(e)
+                session.rollback()
+                return None
+
     def add_tag(
         self,
         tag: Tag,
@@ -1164,6 +1321,33 @@ class Library:
                 logger.error(e)
                 session.rollback()
                 return False
+
+    def add_color(self, color_group: TagColorGroup) -> TagColorGroup | None:
+        with Session(self.engine, expire_on_commit=False) as session:
+            try:
+                session.add(color_group)
+                session.commit()
+                session.expunge(color_group)
+                return color_group
+
+            except IntegrityError as e:
+                logger.error(
+                    "[Library] Could not add color, trying to update existing value instead.",
+                    error=e,
+                )
+                session.rollback()
+                return None
+
+    def delete_color(self, color: TagColorGroup):
+        with Session(self.engine, expire_on_commit=False) as session:
+            try:
+                session.delete(color)
+                session.commit()
+
+            except IntegrityError as e:
+                logger.error(e)
+                session.rollback()
+                return None
 
     def save_library_backup_to_disk(self) -> Path:
         assert isinstance(self.library_dir, Path)
@@ -1280,6 +1464,55 @@ class Library:
         """Edit a Tag in the Library."""
         self.add_tag(tag, parent_ids, alias_names, alias_ids)
 
+    def update_color(self, old_color_group: TagColorGroup, new_color_group: TagColorGroup) -> None:
+        """Update a TagColorGroup in the Library. If it doesn't already exist, create it."""
+        with Session(self.engine) as session:
+            existing_color = session.scalar(
+                select(TagColorGroup).where(
+                    and_(
+                        TagColorGroup.namespace == old_color_group.namespace,
+                        TagColorGroup.slug == old_color_group.slug,
+                    )
+                )
+            )
+            if existing_color:
+                update_color_stmt = (
+                    update(TagColorGroup)
+                    .where(
+                        and_(
+                            TagColorGroup.namespace == old_color_group.namespace,
+                            TagColorGroup.slug == old_color_group.slug,
+                        )
+                    )
+                    .values(
+                        slug=new_color_group.slug,
+                        namespace=new_color_group.namespace,
+                        name=new_color_group.name,
+                        primary=new_color_group.primary,
+                        secondary=new_color_group.secondary,
+                        color_border=new_color_group.color_border,
+                    )
+                )
+                session.execute(update_color_stmt)
+                session.flush()
+                update_tags_stmt = (
+                    update(Tag)
+                    .where(
+                        and_(
+                            Tag.color_namespace == old_color_group.namespace,
+                            Tag.color_slug == old_color_group.slug,
+                        )
+                    )
+                    .values(
+                        color_namespace=new_color_group.namespace,
+                        color_slug=new_color_group.slug,
+                    )
+                )
+                session.execute(update_tags_stmt)
+                session.commit()
+            else:
+                self.add_color(new_color_group)
+
     def update_aliases(self, tag, alias_ids, alias_names, session):
         prev_aliases = session.scalars(select(TagAlias).where(TagAlias.tag_id == tag.id)).all()
 
@@ -1379,7 +1612,28 @@ class Library:
                     color_groups[color.namespace] = []
                 color_groups[color.namespace].append(color)
                 session.expunge(color)
-        return color_groups
+
+            # Add empty namespaces that are available for use.
+            empty_namespaces = session.scalars(
+                select(Namespace)
+                .where(Namespace.namespace.not_in(color_groups.keys()))
+                .order_by(asc(Namespace.namespace))
+            )
+            for en in empty_namespaces:
+                if not color_groups.get(en.namespace):
+                    color_groups[en.namespace] = []
+                session.expunge(en)
+
+        return dict(
+            sorted(color_groups.items(), key=lambda kv: self.get_namespace_name(kv[0]).lower())
+        )
+
+    @property
+    def namespaces(self) -> list[Namespace]:
+        """Return every Namespace in the library."""
+        with Session(self.engine) as session:
+            namespaces = session.scalars(select(Namespace).order_by(asc(Namespace.name)))
+            return list(namespaces)
 
     def get_namespace_name(self, namespace: str) -> str:
         with Session(self.engine) as session:

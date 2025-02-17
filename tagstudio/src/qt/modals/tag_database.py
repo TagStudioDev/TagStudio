@@ -57,7 +57,7 @@ class TagDatabasePanel(TagSearchPanel):
         )
         self.modal.show()
 
-    def remove_tag(self, tag: Tag):
+    def delete_tag(self, tag: Tag):
         if tag.id in range(RESERVED_TAG_START, RESERVED_TAG_END):
             return
 

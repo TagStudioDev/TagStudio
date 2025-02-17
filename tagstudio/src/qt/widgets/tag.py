@@ -185,7 +185,7 @@ class TagWidget(QWidget):
         primary_color = get_primary_color(tag)
         border_color = (
             get_border_color(primary_color)
-            if not (tag.color and tag.color.secondary)
+            if not (tag.color and tag.color.secondary and tag.color.color_border)
             else (QColor(tag.color.secondary))
         )
         highlight_color = get_highlight_color(
@@ -209,7 +209,6 @@ class TagWidget(QWidget):
             f"border-style:solid;"
             f"border-width: 2px;"
             f"padding-right: 4px;"
-            f"padding-bottom: 1px;"
             f"padding-left: 4px;"
             f"font-size: 13px"
             f"}}"
@@ -222,8 +221,12 @@ class TagWidget(QWidget):
             f"border-color: rgba{primary_color.toTuple()};"
             f"}}"
             f"QPushButton::focus{{"
-            f"border-color: rgba{highlight_color.toTuple()};"
-            f"outline:none;"
+            f"padding-right: 0px;"
+            f"padding-left: 0px;"
+            f"outline-style: solid;"
+            f"outline-width: 1px;"
+            f"outline-radius: 4px;"
+            f"outline-color: rgba{text_color.toTuple()};"
             f"}}"
         )
 
@@ -305,6 +308,7 @@ def get_highlight_color(primary_color: QColor) -> QColor:
 
 
 def get_text_color(primary_color: QColor, highlight_color: QColor) -> QColor:
+    # logger.info("[TagWidget] Evaluating tag text color", lightness=primary_color.lightness())
     if primary_color.lightness() > 120:
         text_color = QColor(primary_color)
         text_color = text_color.toHsl()

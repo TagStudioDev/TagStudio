@@ -189,11 +189,11 @@ class BuildTagPanel(PanelWidget):
         self.color_layout.addWidget(self.color_title)
         self.color_button: TagColorPreview
         try:
-            self.color_button = TagColorPreview(tag.color)
+            self.color_button = TagColorPreview(self.lib, tag.color)
         except Exception as e:
             # TODO: Investigate why this happens during tests
             logger.error("[BuildTag] Could not access Tag member attributes", error=e)
-            self.color_button = TagColorPreview(None)
+            self.color_button = TagColorPreview(self.lib, None)
         self.tag_color_selection = TagColorSelection(self.lib)
         chose_tag_color_title = Translations.translate_formatted("tag.choose_color")
         self.choose_color_modal = PanelModal(
@@ -215,7 +215,7 @@ class BuildTagPanel(PanelWidget):
         self.cat_layout.setSpacing(6)
         self.cat_layout.setAlignment(Qt.AlignmentFlag.AlignLeft)
         self.cat_title = QLabel()
-        self.cat_title.setText("Is Category")
+        Translations.translate_qobject(self.cat_title, "tag.is_category")
         self.cat_checkbox = QCheckBox()
         self.cat_checkbox.setFixedSize(22, 22)
 
@@ -244,6 +244,10 @@ class BuildTagPanel(PanelWidget):
             f"}}"
             f"QCheckBox::hover{{"
             f"border-color: rgba{highlight_color.toTuple()};"
+            f"}}"
+            f"QCheckBox::focus{{"
+            f"border-color: rgba{highlight_color.toTuple()};"
+            f"outline:none;"
             f"}}"
         )
         self.cat_layout.addWidget(self.cat_checkbox)
@@ -372,7 +376,7 @@ class BuildTagPanel(PanelWidget):
         primary_color = get_primary_color(tag)
         border_color = (
             get_border_color(primary_color)
-            if not (tag.color and tag.color.secondary)
+            if not (tag.color and tag.color.secondary and tag.color.color_border)
             else (QColor(tag.color.secondary))
         )
         highlight_color = get_highlight_color(

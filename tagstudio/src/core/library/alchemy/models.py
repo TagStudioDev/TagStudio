@@ -63,6 +63,7 @@ class TagColorGroup(Base):
     name: Mapped[str] = mapped_column()
     primary: Mapped[str] = mapped_column(nullable=False)
     secondary: Mapped[str | None]
+    color_border: Mapped[bool] = mapped_column(nullable=False, default=False)
 
     # TODO: Determine if slug and namespace can be optional and generated/added here if needed.
     def __init__(
@@ -72,6 +73,7 @@ class TagColorGroup(Base):
         name: str,
         primary: str,
         secondary: str | None = None,
+        color_border: bool = False,
     ):
         self.slug = slug
         self.namespace = namespace
@@ -79,6 +81,7 @@ class TagColorGroup(Base):
         self.primary = primary
         if secondary:
             self.secondary = secondary
+        self.color_border = color_border
         super().__init__()
 
 
