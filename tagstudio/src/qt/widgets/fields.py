@@ -192,7 +192,7 @@ class FieldContainer(QWidget):
         return super().leaveEvent(event)
 
     def resizeEvent(self, event: QResizeEvent) -> None:  # noqa: N802
-        self.title_widget.setFixedWidth(int(event.size().width() // 1.125))
+        self.title_widget.setFixedWidth(int(event.size().width() // 1.5))
         return super().resizeEvent(event)
 
 
