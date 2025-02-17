@@ -1476,7 +1476,7 @@ class Library:
                 )
             )
             if existing_color:
-                statement = (
+                update_color_stmt = (
                     update(TagColorGroup)
                     .where(
                         and_(
@@ -1493,7 +1493,22 @@ class Library:
                         color_border=new_color_group.color_border,
                     )
                 )
-                session.execute(statement)
+                session.execute(update_color_stmt)
+                session.flush()
+                update_tags_stmt = (
+                    update(Tag)
+                    .where(
+                        and_(
+                            Tag.color_namespace == old_color_group.namespace,
+                            Tag.color_slug == old_color_group.slug,
+                        )
+                    )
+                    .values(
+                        color_namespace=new_color_group.namespace,
+                        color_slug=new_color_group.slug,
+                    )
+                )
+                session.execute(update_tags_stmt)
                 session.commit()
             else:
                 self.add_color(new_color_group)
