@@ -29,35 +29,35 @@ class SettingsPanel(PanelWidget):
 
         language_label = QLabel()
         Translations.translate_qobject(language_label, "settings.language")
-        languages = [
-            # "cs", # Minimal
-            # "da", # Minimal
-            "de",
-            "en",
-            "es",
-            "fil",
-            "fr",
-            "hu",
-            # "it", # Minimal
-            "nb_NO",
-            "pl",
-            "pt_BR",
-            # "pt", # Empty
-            "ru",
-            "sv",
-            "ta",
-            "tok",
-            "tr",
-            # "yue_Hant", # Empty
-            "zh_Hant",
-        ]
+        self.languages = {
+            # "Cantonese (Traditional)": "yue_Hant",  # Empty
+            "Chinese (Traditional)": "zh_Hant",
+            # "Czech": "cs",  # Minimal
+            # "Danish": "da",  # Minimal
+            "English": "en",
+            "Filipino": "fil",
+            "French": "fr",
+            "German": "de",
+            "Hungarian": "hu",
+            # "Italian": "it",  # Minimal
+            "Norwegian Bokmål": "nb_NO",
+            "Polish": "pl",
+            "Portuguese (Brazil)": "pt_BR",
+            # "Portuguese (Portugal)": "pt",  # Empty
+            "Russian": "ru",
+            "Spanish": "es",
+            "Swedish": "sv",
+            "Tamil": "ta",
+            "Toki Pona": "tok",
+            "Turkish": "tr",
+        }
         self.language_combobox = QComboBox()
-        self.language_combobox.addItems(languages)
+        self.language_combobox.addItems(list(self.languages.keys()))
         current_lang: str = str(
             driver.settings.value(SettingItems.LANGUAGE, defaultValue="en", type=str)
         )
-        current_lang = "en" if current_lang not in languages else current_lang
-        self.language_combobox.setCurrentIndex(languages.index(current_lang))
+        current_lang = "en" if current_lang not in self.languages.values() else current_lang
+        self.language_combobox.setCurrentIndex(list(self.languages.values()).index(current_lang))
         self.language_combobox.currentIndexChanged.connect(
             lambda: self.restart_label.setHidden(False)
         )
@@ -68,4 +68,5 @@ class SettingsPanel(PanelWidget):
         self.root_layout.addWidget(self.restart_label)
 
     def get_language(self) -> str:
-        return self.language_combobox.currentText()
+        values: list[str] = list(self.languages.values())
+        return values[self.language_combobox.currentIndex()]
