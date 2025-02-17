@@ -9,6 +9,7 @@ from PySide6.QtGui import QColor
 from PySide6.QtWidgets import (
     QCheckBox,
     QColorDialog,
+    QFormLayout,
     QHBoxLayout,
     QLabel,
     QLineEdit,
@@ -53,80 +54,60 @@ class BuildColorPanel(PanelWidget):
         self.root_layout.setContentsMargins(6, 0, 6, 0)
         self.root_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
 
+        self.form_container = QWidget()
+        self.form_layout = QFormLayout(self.form_container)
+        self.form_layout.setLabelAlignment(Qt.AlignmentFlag.AlignRight)
+        self.form_layout.setFormAlignment(Qt.AlignmentFlag.AlignLeft)
+
         # Preview Tag ----------------------------------------------------------
         self.preview_widget = QWidget()
         self.preview_layout = QVBoxLayout(self.preview_widget)
         self.preview_layout.setStretch(1, 1)
         self.preview_layout.setContentsMargins(0, 0, 0, 6)
-        self.preview_layout.setSpacing(6)
         self.preview_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.preview_button = TagColorPreview(self.lib, None)
         self.preview_button.setEnabled(False)
         self.preview_layout.addWidget(self.preview_button)
 
         # Name -----------------------------------------------------------------
-        self.name_widget = QWidget()
-        self.name_layout = QVBoxLayout(self.name_widget)
-        self.name_layout.setStretch(1, 1)
-        self.name_layout.setContentsMargins(0, 0, 0, 0)
-        self.name_layout.setSpacing(0)
-        self.name_layout.setAlignment(Qt.AlignmentFlag.AlignLeft)
         self.name_title = QLabel()
         Translations.translate_qobject(self.name_title, "library_object.name")
-        self.name_layout.addWidget(self.name_title)
         self.name_field = QLineEdit()
         self.name_field.setFixedHeight(24)
         self.name_field.textChanged.connect(self.on_text_changed)
         Translations.translate_with_setter(
             self.name_field.setPlaceholderText, "library_object.name_required"
         )
-        self.name_layout.addWidget(self.name_field)
+        self.form_layout.addRow(self.name_title, self.name_field)
 
         # Slug -----------------------------------------------------------------
-        self.slug_widget = QWidget()
-        self.slug_layout = QVBoxLayout(self.slug_widget)
-        self.slug_layout.setStretch(1, 1)
-        self.slug_layout.setContentsMargins(0, 0, 0, 0)
-        self.slug_layout.setSpacing(0)
-        self.slug_layout.setAlignment(Qt.AlignmentFlag.AlignLeft)
         self.slug_title = QLabel()
         Translations.translate_qobject(self.slug_title, "library_object.slug")
-        self.slug_layout.addWidget(self.slug_title)
         self.slug_field = QLineEdit()
         self.slug_field.setEnabled(False)
         self.slug_field.setFixedHeight(24)
         Translations.translate_with_setter(
             self.slug_field.setPlaceholderText, "library_object.slug_required"
         )
-        self.slug_layout.addWidget(self.slug_field)
+        self.form_layout.addRow(self.slug_title, self.slug_field)
 
         # Primary --------------------------------------------------------------
-        self.primary_widget = QWidget()
-        self.primary_layout = QHBoxLayout(self.primary_widget)
-        self.primary_layout.setStretch(1, 1)
-        self.primary_layout.setContentsMargins(0, 0, 0, 0)
-        self.primary_layout.setSpacing(6)
-        self.primary_layout.setAlignment(Qt.AlignmentFlag.AlignLeft)
         self.primary_title = QLabel()
         Translations.translate_qobject(self.primary_title, "color.primary")
-        self.primary_layout.addWidget(self.primary_title)
         self.primary_button = QPushButton()
         self.primary_button.setMinimumSize(44, 22)
         self.primary_button.setMaximumHeight(22)
         self.edit_primary_modal = QColorDialog()
         self.primary_button.clicked.connect(self.primary_color_callback)
-        self.primary_layout.addWidget(self.primary_button)
+        self.form_layout.addRow(self.primary_title, self.primary_button)
 
         # Secondary ------------------------------------------------------------
         self.secondary_widget = QWidget()
         self.secondary_layout = QHBoxLayout(self.secondary_widget)
-        self.secondary_layout.setStretch(1, 1)
         self.secondary_layout.setContentsMargins(0, 0, 0, 0)
         self.secondary_layout.setSpacing(6)
-        self.secondary_layout.setAlignment(Qt.AlignmentFlag.AlignLeft)
         self.secondary_title = QLabel()
         Translations.translate_qobject(self.secondary_title, "color.secondary")
-        self.secondary_layout.addWidget(self.secondary_title)
         self.secondary_button = QPushButton()
         self.secondary_button.setMinimumSize(44, 22)
         self.secondary_button.setMaximumHeight(22)
@@ -138,6 +119,9 @@ class BuildColorPanel(PanelWidget):
         Translations.translate_qobject(self.secondary_reset_button, "generic.reset")
         self.secondary_reset_button.clicked.connect(self.update_secondary)
         self.secondary_layout.addWidget(self.secondary_reset_button)
+        self.secondary_layout.setStretch(0, 3)
+        self.secondary_layout.setStretch(1, 1)
+        self.form_layout.addRow(self.secondary_title, self.secondary_widget)
 
         # Color Border ---------------------------------------------------------
         self.border_widget = QWidget()
@@ -194,10 +178,7 @@ class BuildColorPanel(PanelWidget):
 
         # Add Widgets to Layout ================================================
         self.root_layout.addWidget(self.preview_widget)
-        self.root_layout.addWidget(self.name_widget)
-        self.root_layout.addWidget(self.slug_widget)
-        self.root_layout.addWidget(self.primary_widget)
-        self.root_layout.addWidget(self.secondary_widget)
+        self.root_layout.addWidget(self.form_container)
         self.root_layout.addWidget(self.border_widget)
 
         self.set_color(color_group or TagColorGroup("", "", Translations["color.new"], ""))
@@ -279,8 +260,12 @@ class BuildColorPanel(PanelWidget):
             f"border-color: rgba{color.toTuple()};"
             f"}}"
             f"QPushButton::focus{{"
-            f"border-color: rgba{highlight_color.toTuple()};"
-            f"outline:none;"
+            f"padding-right: 0px;"
+            f"padding-left: 0px;"
+            f"outline-style: solid;"
+            f"outline-width: 1px;"
+            f"outline-radius: 4px;"
+            f"outline-color: rgba{text_color.toTuple()};"
             f"}}"
         )
         self.preview_button.set_tag_color_group(self.build_color()[1])
@@ -321,8 +306,12 @@ class BuildColorPanel(PanelWidget):
             f"border-color: rgba{color_.toTuple()};"
             f"}}"
             f"QPushButton::focus{{"
-            f"border-color: rgba{highlight_color.toTuple()};"
-            f"outline:none;"
+            f"padding-right: 0px;"
+            f"padding-left: 0px;"
+            f"outline-style: solid;"
+            f"outline-width: 1px;"
+            f"outline-radius: 4px;"
+            f"outline-color: rgba{text_color.toTuple()};"
             f"}}"
         )
         self.preview_button.set_tag_color_group(self.build_color()[1])
