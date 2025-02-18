@@ -6,7 +6,6 @@ import io
 import time
 import typing
 from pathlib import Path
-from warnings import catch_warnings
 
 import cv2
 import rawpy
@@ -14,7 +13,7 @@ import structlog
 from PIL import Image, UnidentifiedImageError
 from PySide6.QtCore import QBuffer, QByteArray, QSize, Qt
 from PySide6.QtGui import QAction, QMovie, QResizeEvent
-from PySide6.QtWidgets import QHBoxLayout, QLabel, QWidget
+from PySide6.QtWidgets import QLabel, QStackedLayout, QWidget
 
 from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.media_types import MediaCategories
@@ -22,12 +21,10 @@ from tagstudio.qt.helpers.file_opener import FileOpenerHelper, open_file
 from tagstudio.qt.helpers.file_tester import is_readable_video
 from tagstudio.qt.helpers.qbutton_wrapper import QPushButtonWrapper
 from tagstudio.qt.helpers.rounded_pixmap_style import RoundedPixmapStyle
-from tagstudio.qt.platform_strings import open_file_str, trash_term
-from tagstudio.qt.resource_manager import ResourceManager
+from tagstudio.qt.platform_strings import open_file_str
 from tagstudio.qt.translations import Translations
 from tagstudio.qt.widgets.media_player import MediaPlayer
 from tagstudio.qt.widgets.thumb_renderer import ThumbRenderer
-from tagstudio.qt.widgets.video_player import VideoPlayer
 
 if typing.TYPE_CHECKING:
     from tagstudio.qt.ts_qt import QtDriver
@@ -48,15 +45,14 @@ class PreviewThumb(QWidget):
         self.img_button_size: tuple[int, int] = (266, 266)
         self.image_ratio: float = 1.0
 
-        image_layout = QHBoxLayout(self)
+        # image_layout = QHBoxLayout(self)
+        image_layout = QStackedLayout(self)
+        image_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        image_layout.setStackingMode(QStackedLayout.StackingMode.StackAll)
         image_layout.setContentsMargins(0, 0, 0, 0)
 
         self.open_file_action = QAction(Translations["file.open_file"], self)
         self.open_explorer_action = QAction(open_file_str(), self)
-        self.delete_action = QAction(
-            Translations.format("trash.context.ambiguous", trash_term=trash_term()),
-            self,
-        )
 
         self.preview_img = QPushButtonWrapper()
         self.preview_img.setMinimumSize(*self.img_button_size)
@@ -64,7 +60,6 @@ class PreviewThumb(QWidget):
         self.preview_img.setContextMenuPolicy(Qt.ContextMenuPolicy.ActionsContextMenu)
         self.preview_img.addAction(self.open_file_action)
         self.preview_img.addAction(self.open_explorer_action)
-        self.preview_img.addAction(self.delete_action)
 
         self.preview_gif = QLabel()
         self.preview_gif.setMinimumSize(*self.img_button_size)
@@ -72,13 +67,11 @@ class PreviewThumb(QWidget):
         self.preview_gif.setCursor(Qt.CursorShape.ArrowCursor)
         self.preview_gif.addAction(self.open_file_action)
         self.preview_gif.addAction(self.open_explorer_action)
-        self.preview_gif.addAction(self.delete_action)
         self.preview_gif.hide()
         self.gif_buffer: QBuffer = QBuffer()
 
-        self.preview_vid = VideoPlayer(driver)
-        self.preview_vid.addAction(self.delete_action)
-        self.preview_vid.hide()
+        # self.preview_vid = VideoPlayer(driver)
+        # self.preview_vid.hide()
         self.thumb_renderer = ThumbRenderer(self.lib)
         self.thumb_renderer.updated.connect(lambda ts, i, s: (self.preview_img.setIcon(i)))
         self.thumb_renderer.updated_ratio.connect(
@@ -95,15 +88,19 @@ class PreviewThumb(QWidget):
         )
 
         self.media_player = MediaPlayer(driver)
+        self.media_player.set_size(QSize(*self.img_button_size))
         self.media_player.hide()
 
         image_layout.addWidget(self.preview_img)
         image_layout.setAlignment(self.preview_img, Qt.AlignmentFlag.AlignCenter)
         image_layout.addWidget(self.preview_gif)
         image_layout.setAlignment(self.preview_gif, Qt.AlignmentFlag.AlignCenter)
-        image_layout.addWidget(self.preview_vid)
-        image_layout.setAlignment(self.preview_vid, Qt.AlignmentFlag.AlignCenter)
+        # image_layout.addItem(self.preview_vid)
+        # image_layout.setAlignment(self.preview_vid, Qt.AlignmentFlag.AlignCenter)
+        image_layout.addWidget(self.media_player)
+        image_layout.setAlignment(self.media_player, Qt.AlignmentFlag.AlignCenter)
         self.setMinimumSize(*self.img_button_size)
+        image_layout.setCurrentWidget(self.media_player)
 
     def set_image_ratio(self, ratio: float):
         self.image_ratio = ratio
@@ -129,17 +126,24 @@ class PreviewThumb(QWidget):
             adj_height = size[1]
 
         adj_size = QSize(int(adj_width), int(adj_height))
+
         self.img_button_size = (int(adj_width), int(adj_height))
         self.preview_img.setMaximumSize(adj_size)
         self.preview_img.setIconSize(adj_size)
-        self.preview_vid.resize_video(adj_size)
-        self.preview_vid.setMaximumSize(adj_size)
-        self.preview_vid.setMinimumSize(adj_size)
+
+        # self.preview_vid.resize_video(adj_size)
+        # self.preview_vid.setMaximumSize(adj_size)
+        # self.preview_vid.setMinimumSize(adj_size)
         self.preview_gif.setMaximumSize(adj_size)
         self.preview_gif.setMinimumSize(adj_size)
+
+        self.media_player.setMaximumSize(adj_size)
+        self.media_player.setMinimumSize(adj_size)
+        self.media_player.set_size(adj_size)
         proxy_style = RoundedPixmapStyle(radius=8)
         self.preview_gif.setStyle(proxy_style)
-        self.preview_vid.setStyle(proxy_style)
+        # self.preview_vid.setStyle(proxy_style)
+        self.media_player.setStyle(proxy_style)
         m = self.preview_gif.movie()
         if m:
             m.setScaledSize(adj_size)
@@ -155,8 +159,9 @@ class PreviewThumb(QWidget):
             self.preview_img.hide()
 
         if preview != "video_legacy":
-            self.preview_vid.stop()
-            self.preview_vid.hide()
+            pass
+            # self.preview_vid.stop()
+            # self.preview_vid.hide()
 
         if preview != "media":
             self.media_player.stop()
@@ -290,7 +295,8 @@ class PreviewThumb(QWidget):
             stats["width"] = image.width
             stats["height"] = image.height
             if success:
-                self.preview_vid.play(filepath_, QSize(image.width, image.height))
+                self.media_player.play(filepath)
+                # self.preview_vid.play(filepath_, QSize(image.width, image.height))
                 self.update_image_size((image.width, image.height), image.width / image.height)
                 self.resizeEvent(
                     QResizeEvent(
@@ -298,7 +304,8 @@ class PreviewThumb(QWidget):
                         QSize(image.width, image.height),
                     )
                 )
-                self.preview_vid.show()
+                # self.preview_vid.show()
+                self.media_player.show()
 
             stats["duration"] = video.get(cv2.CAP_PROP_FRAME_COUNT) / video.get(cv2.CAP_PROP_FPS)
         except cv2.error as e:
@@ -360,7 +367,7 @@ class PreviewThumb(QWidget):
                 update_on_ratio_change=True,
             )
 
-        with catch_warnings(record=True):
+        if self.preview_img.is_connected:
             self.preview_img.clicked.disconnect()
         self.preview_img.clicked.connect(lambda checked=False, path=filepath: open_file(path))
         self.preview_img.is_connected = True
@@ -368,34 +375,21 @@ class PreviewThumb(QWidget):
         self.preview_img.setContextMenuPolicy(Qt.ContextMenuPolicy.ActionsContextMenu)
         self.preview_img.setCursor(Qt.CursorShape.PointingHandCursor)
 
+        if self.media_player.click_connected:
+            self.media_player.clicked.disconnect()
+
+        self.media_player.clicked.connect(lambda path=filepath: open_file(path))
+        self.media_player.click_connected = True
+
         self.opener = FileOpenerHelper(filepath)
         self.open_file_action.triggered.connect(self.opener.open_file)
         self.open_explorer_action.triggered.connect(self.opener.open_explorer)
-
-        with catch_warnings(record=True):
-            self.delete_action.triggered.disconnect()
-
-        self.delete_action.setText(
-            Translations.format("trash.context.singular", trash_term=trash_term())
-        )
-        self.delete_action.triggered.connect(
-            lambda checked=False, f=filepath: self.driver.delete_files_callback(f)
-        )
-        self.delete_action.setEnabled(bool(filepath))
 
         return stats
 
     def hide_preview(self):
         """Completely hide the file preview."""
         self.switch_preview("")
-
-    def stop_file_use(self):
-        """Stops the use of the currently previewed file. Used to release file permissions."""
-        logger.info("[PreviewThumb] Stopping file use in video playback...")
-        # This swaps the video out for a placeholder so the previous video's file
-        # is no longer in use by this object.
-        self.preview_vid.play(str(ResourceManager.get_path("placeholder_mp4")), QSize(8, 8))
-        self.preview_vid.hide()
 
     def resizeEvent(self, event: QResizeEvent) -> None:  # noqa: N802
         self.update_image_size((self.size().width(), self.size().height()))
