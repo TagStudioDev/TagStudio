@@ -10,8 +10,9 @@ from typing import TYPE_CHECKING
 from warnings import catch_warnings
 
 import structlog
+import subprocess
 from PIL import Image, ImageQt
-from PySide6.QtCore import QEvent, QMimeData, QSize, Qt, QUrl
+from PySide6.QtCore import QEvent, QMimeData, QSize, QThreadPool, Qt, QUrl
 from PySide6.QtGui import QAction, QDrag, QEnterEvent, QPixmap
 from PySide6.QtWidgets import (
     QBoxLayout,
@@ -33,6 +34,8 @@ from src.qt.platform_strings import open_file_str, trash_term
 from src.qt.translations import Translations
 from src.qt.widgets.thumb_button import ThumbButton
 from src.qt.widgets.thumb_renderer import ThumbRenderer
+from src.qt.helpers.vendored.ffmpeg import FFPROBE_CMD
+from src.qt.helpers.custom_runnable import CustomRunnable
 
 if TYPE_CHECKING:
     from src.qt.ts_qt import QtDriver
@@ -127,6 +130,7 @@ class ItemThumb(FlowWidget):
         self.driver = driver
         self.item_id: int | None = None
         self.thumb_size: tuple[int, int] = thumb_size
+        self.filename: Path | None = None
         self.show_filename_label: bool = show_filename_label
         self.label_height = 12
         self.label_spacing = 4
@@ -261,6 +265,7 @@ class ItemThumb(FlowWidget):
 
         # Count Badge ----------------------------------------------------------
         # Used for Tag Group + Collation counts, video length, word count, etc.
+        self.count_badge_set: bool = False
         self.count_badge = QLabel()
         self.count_badge.setObjectName("countBadge")
         self.count_badge.setText("-:--")
@@ -405,6 +410,7 @@ class ItemThumb(FlowWidget):
                 self.count_badge.setHidden(True)
 
     def set_filename_text(self, filename: Path | None):
+        self.filename = filename
         self.set_item_path(filename)
         self.file_label.setText(str(filename.name))
 
@@ -422,6 +428,35 @@ class ItemThumb(FlowWidget):
             self.file_label.setHidden(True)
             self.setFixedHeight(self.thumb_size[1])
         self.show_filename_label = set_visible
+
+    def update_count_badge(self, filename) -> None:
+        """Updates the count badge."""
+        if self.count_badge_set:
+            return
+
+        def set_video_audio():
+            """Gets length of audio or video and sets count badge."""
+            args = [
+                FFPROBE_CMD,
+                "-v",
+                "error",
+                "-show_entries",
+                "format=duration",
+                "-of",
+                "default=noprint_wrappers=1:nokey=1",
+                filename,
+            ]
+            probe = subprocess.run(args, capture_output=True)
+            probe_result: str = probe.stdout.strip().decode("utf-8")
+            if probe_result != "N/A" and probe_result != "":
+                duration: float = float(probe_result)
+                minutes: int = int(duration // 60)
+                seconds: int = int(duration - (minutes * 60))
+                self.count_badge.setText(f"{minutes:02}:{seconds:02}")
+                self.count_badge_set = True
+
+        runnable = CustomRunnable(set_video_audio)
+        QThreadPool.globalInstance().start(runnable)
 
     def update_thumb(self, timestamp: float, image: QPixmap | None = None):
         """Update attributes of a thumbnail element."""
@@ -476,6 +511,7 @@ class ItemThumb(FlowWidget):
                 badge.setHidden(is_hidden)
 
     def enterEvent(self, event: QEnterEvent) -> None:  # noqa: N802
+        self.update_count_badge(self.filename)
         self.show_check_badges(show=True)
         return super().enterEvent(event)
 
