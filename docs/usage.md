@@ -41,7 +41,7 @@ Create a new tag by accessing the "New Tag" option from the Edit menu or by pres
 
 ### Tag Manager
 
-You can manage your library of tags from opening the "Tag Manager" panel from Edit -> "Tag Manager". From here you can create, search for, edit, and permanently delete any tags you've created in your library.
+You can manage your library of tags from opening the "Tag Manager" panel from Edit -> "Manage Tags". From here you can create, search for, edit, and permanently delete any tags you've created in your library.
 
 ## Editing Tags
 
