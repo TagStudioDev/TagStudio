@@ -1,6 +1,7 @@
 # Copyright (C) 2025 Travis Abendshien (CyanVoxel).
 # Licensed under the GPL-3.0 License.
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
+import subprocess
 import time
 import typing
 from enum import Enum
@@ -10,9 +11,8 @@ from typing import TYPE_CHECKING
 from warnings import catch_warnings
 
 import structlog
-import subprocess
 from PIL import Image, ImageQt
-from PySide6.QtCore import QEvent, QMimeData, QSize, QThreadPool, Qt, QUrl
+from PySide6.QtCore import QEvent, QMimeData, QSize, Qt, QThreadPool, QUrl
 from PySide6.QtGui import QAction, QDrag, QEnterEvent, QPixmap
 from PySide6.QtWidgets import (
     QBoxLayout,
@@ -29,13 +29,13 @@ from src.core.constants import (
 from src.core.library import ItemType, Library
 from src.core.media_types import MediaCategories, MediaType
 from src.qt.flowlayout import FlowWidget
+from src.qt.helpers.custom_runnable import CustomRunnable
 from src.qt.helpers.file_opener import FileOpenerHelper
+from src.qt.helpers.vendored.ffmpeg import FFPROBE_CMD
 from src.qt.platform_strings import open_file_str, trash_term
 from src.qt.translations import Translations
 from src.qt.widgets.thumb_button import ThumbButton
 from src.qt.widgets.thumb_renderer import ThumbRenderer
-from src.qt.helpers.vendored.ffmpeg import FFPROBE_CMD
-from src.qt.helpers.custom_runnable import CustomRunnable
 
 if TYPE_CHECKING:
     from src.qt.ts_qt import QtDriver
@@ -431,7 +431,7 @@ class ItemThumb(FlowWidget):
 
     def update_count_badge(self, filename) -> None:
         """Updates the count badge."""
-        if self.count_badge_set:
+        if self.count_badge_set and self.filename is not None:
             return
 
         def set_video_audio():
