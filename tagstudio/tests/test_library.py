@@ -119,7 +119,7 @@ def test_tag_search(library):
     assert library.search_tags(tag.name.lower())
     assert library.search_tags(tag.name.upper())
     assert library.search_tags(tag.name[2:-2])
-    assert not library.search_tags(tag.name * 2)
+    assert library.search_tags(tag.name * 2) == [set(), set()]
 
 
 def test_get_entry(library: Library, entry_min):
@@ -309,11 +309,46 @@ def test_mirror_entry_fields(library: Library, entry_full):
     }
 
 
-def test_remove_tag_from_entry(library, entry_full):
+def test_merge_entries(library: Library):
+    a = Entry(
+        folder=library.folder,
+        path=Path("a"),
+        fields=[
+            TextField(type_key=_FieldID.AUTHOR.name, value="Author McAuthorson", position=0),
+            TextField(type_key=_FieldID.DESCRIPTION.name, value="test description", position=2),
+        ],
+    )
+    b = Entry(
+        folder=library.folder,
+        path=Path("b"),
+        fields=[TextField(type_key=_FieldID.NOTES.name, value="test note", position=1)],
+    )
+    try:
+        ids = library.add_entries([a, b])
+        entry_a = library.get_entry_full(ids[0])
+        entry_b = library.get_entry_full(ids[1])
+        tag_0 = library.add_tag(Tag(id=1000, name="tag_0"))
+        tag_1 = library.add_tag(Tag(id=1001, name="tag_1"))
+        tag_2 = library.add_tag(Tag(id=1002, name="tag_2"))
+        library.add_tags_to_entries(ids[0], [tag_0.id, tag_2.id])
+        library.add_tags_to_entries(ids[1], [tag_1.id])
+        library.merge_entries(entry_a, entry_b)
+        assert library.has_path_entry(Path("b"))
+        assert not library.has_path_entry(Path("a"))
+        fields = [field.value for field in entry_a.fields]
+        assert "Author McAuthorson" in fields
+        assert "test description" in fields
+        assert "test note" in fields
+        assert b.has_tag(tag_0) and b.has_tag(tag_1) and b.has_tag(tag_2)
+    except AttributeError:
+        AssertionError()
+
+
+def test_remove_tags_from_entries(library, entry_full):
     removed_tag_id = -1
     for tag in entry_full.tags:
         removed_tag_id = tag.id
-        library.remove_tags_from_entry(entry_full.id, tag.id)
+        library.remove_tags_from_entries(entry_full.id, tag.id)
 
     entry = next(library.get_entries(with_joins=True))
     assert removed_tag_id not in [t.id for t in entry.tags]
@@ -379,6 +414,24 @@ def test_library_prefs_multiple_identical_vals():
         assert TestPrefs.BAR.value
 
 
+def test_path_search_ilike(library: Library):
+    results = library.search_library(FilterState.from_path("bar.md"))
+    assert results.total_count == 1
+    assert len(results.items) == 1
+
+
+def test_path_search_like(library: Library):
+    results = library.search_library(FilterState.from_path("BAR.MD"))
+    assert results.total_count == 0
+    assert len(results.items) == 0
+
+
+def test_path_search_default_with_sep(library: Library):
+    results = library.search_library(FilterState.from_path("one/two"))
+    assert results.total_count == 1
+    assert len(results.items) == 1
+
+
 def test_path_search_glob_after(library: Library):
     results = library.search_library(FilterState.from_path("foo*"))
     assert results.total_count == 1
@@ -395,6 +448,50 @@ def test_path_search_glob_both_sides(library: Library):
     results = library.search_library(FilterState.from_path("*one/two*"))
     assert results.total_count == 1
     assert len(results.items) == 1
+
+
+def test_path_search_ilike_glob_equality(library: Library):
+    results_ilike = library.search_library(FilterState.from_path("one/two"))
+    results_glob = library.search_library(FilterState.from_path("*one/two*"))
+    assert [e.id for e in results_ilike.items] == [e.id for e in results_glob.items]
+    results_ilike, results_glob = None, None
+
+    results_ilike = library.search_library(FilterState.from_path("bar.md"))
+    results_glob = library.search_library(FilterState.from_path("*bar.md*"))
+    assert [e.id for e in results_ilike.items] == [e.id for e in results_glob.items]
+    results_ilike, results_glob = None, None
+
+    results_ilike = library.search_library(FilterState.from_path("bar"))
+    results_glob = library.search_library(FilterState.from_path("*bar*"))
+    assert [e.id for e in results_ilike.items] == [e.id for e in results_glob.items]
+    results_ilike, results_glob = None, None
+
+    results_ilike = library.search_library(FilterState.from_path("bar.md"))
+    results_glob = library.search_library(FilterState.from_path("*bar.md*"))
+    assert [e.id for e in results_ilike.items] == [e.id for e in results_glob.items]
+    results_ilike, results_glob = None, None
+
+
+def test_path_search_like_glob_equality(library: Library):
+    results_ilike = library.search_library(FilterState.from_path("ONE/two"))
+    results_glob = library.search_library(FilterState.from_path("*ONE/two*"))
+    assert [e.id for e in results_ilike.items] == [e.id for e in results_glob.items]
+    results_ilike, results_glob = None, None
+
+    results_ilike = library.search_library(FilterState.from_path("BAR.MD"))
+    results_glob = library.search_library(FilterState.from_path("*BAR.MD*"))
+    assert [e.id for e in results_ilike.items] == [e.id for e in results_glob.items]
+    results_ilike, results_glob = None, None
+
+    results_ilike = library.search_library(FilterState.from_path("BAR.MD"))
+    results_glob = library.search_library(FilterState.from_path("*bar.md*"))
+    assert [e.id for e in results_ilike.items] != [e.id for e in results_glob.items]
+    results_ilike, results_glob = None, None
+
+    results_ilike = library.search_library(FilterState.from_path("bar.md"))
+    results_glob = library.search_library(FilterState.from_path("*BAR.MD*"))
+    assert [e.id for e in results_ilike.items] != [e.id for e in results_glob.items]
+    results_ilike, results_glob = None, None
 
 
 @pytest.mark.parametrize(["filetype", "num_of_filetype"], [("md", 1), ("txt", 1), ("png", 0)])

@@ -16,6 +16,8 @@ class SettingItems(str, enum.Enum):
     WINDOW_SHOW_LIBS = "window_show_libs"
     SHOW_FILENAMES = "show_filenames"
     AUTOPLAY = "autoplay_videos"
+    THUMB_CACHE_SIZE_LIMIT = "thumb_cache_size_limit"
+    LANGUAGE = "language"
 
 
 class Theme(str, enum.Enum):
@@ -70,4 +72,4 @@ class LibraryPrefs(DefaultEnum):
     IS_EXCLUDE_LIST = True
     EXTENSION_LIST: list[str] = [".json", ".xmp", ".aae"]
     PAGE_SIZE: int = 500
-    DB_VERSION: int = 3
+    DB_VERSION: int = 8

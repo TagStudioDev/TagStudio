@@ -10,225 +10,120 @@ Features are broken up into the following priority levels, with nested prioritie
 -   [MEDIUM] - Important but not necessary
 -   [LOW] - Just nice to have
 
-## Core Feature List
-
--   [ ] Tags [HIGH]
-    -   [x] ID-based, not string based [HIGH]
-    -   [x] Tag name [HIGH]
-    -   [x] Tag alias list, aka alternate names [HIGH]
-    -   [x] Tag shorthand (specific short alias for displaying) [HIGH]
-    -   [x] Parent/Inheritance subtags [HIGH]
-    -   [ ] Composition/HAS subtags [HIGH]
-    -   [x] Deleting Tags [HIGH] [#148]
-    -   [ ] Merging Tags [HIGH] [#12](https://github.com/TagStudioDev/TagStudio/issues/12)
-    -   [ ] Tag Icons [HIGH] [#195](https://github.com/TagStudioDev/TagStudio/issues/195)
-        -   [ ] Small Icons [HIGH]
-        -   [ ] Large Icons for Profiles [MEDIUM]
-        -   [ ] Built-in Icon Packs (i.e. Boxicons) [HIGH]
-        -   [ ] User Defined Icons [HIGH]
-    -   [ ] Multiple Languages for Tag Strings [MEDIUM]
-    -   [ ] User-defined tag colors [HIGH] [#264](https://github.com/TagStudioDev/TagStudio/issues/264)
-        -   [ ] ID based, not string or hex [HIGH]
-        -   [ ] Color name [HIGH]
-        -   [ ] Color value (hex) [HIGH]
-        -   [ ] Existing colors are now a set of base colors [HIGH]
-            -   [ ] Editable [MEDIUM]
-            -   [ ] Non-removable [HIGH]
-    -   [x] [Tag Categories](../library/tag_categories.md) [HIGH]
-        -   [x] Property available for tags that allow the tag and any inheriting from it to be displayed separately in the preview panel under a title [HIGH]
-        -   [x] Title is tag name [HIGH]
-    -   [ ] [Tag Overrides](../library/tag_overrides.md) [MEDIUM]
-        -   [ ] Per-file overrides of subtags [HIGH]
--   [ ] Tag Packs [MEDIUM] [#3](https://github.com/TagStudioDev/TagStudio/issues/3)
-    -   [ ] Human-readable (i.e. JSON) files containing tag data [HIGH]
-    -   [ ] Importable [HIGH]
-    -   [ ] Exportable [HIGH]
-    -   [ ] Conflict resolution [HIGH]
-    -   [ ] Color Packs [MEDIUM]
-        -   [ ] Human-readable (i.e. JSON) files containing tag data [HIGH]
-        -   [ ] Importable [HIGH]
-        -   [ ] Exportable [HIGH]
--   [ ] Exportable Library Data [HIGH] [#47](https://github.com/TagStudioDev/TagStudio/issues/47)
-    -   [ ] Standard notation format (i.e. JSON) contacting all library data [HIGH]
--   [ ] [Macros](../utilities/macro.md) [HIGH]
-    -   [ ] Sharable Macros [MEDIUM]
-        -   [ ] Standard notation format (i.e. JSON) contacting macro instructions [HIGH]
-        -   [ ] Exportable [HIGH]
-        -   [ ] Importable [HIGH]
-    -   [ ] Triggers [HIGH]
-        -   [ ] On new file [HIGH]
-        -   [ ] On library refresh [HIGH]
-        -   [...]
-    -   [ ] Actions [HIGH]
-        -   [ ] Add tag(s) [HIGH]
-        -   [ ] Add field(s) [HIGH]
-        -   [ ] Set field content [HIGH]
-        -   [ ] [...]
--   [ ] Settings Menu [HIGH]
-    -   [ ] Application Settings [HIGH]
-        -   [ ] Stored in system user folder/designated folder [HIGH]
-    -   [ ] Library Settings [HIGH]
-        -   [ ] Stored in `.TagStudio` folder [HIGH]
--   [ ] Multiple Root Directories per Library [HIGH] [#295](https://github.com/TagStudioDev/TagStudio/issues/295)
--   [ ] [Entry groups](../library/entry_groups.md) [HIGH]
-    -   [ ] Groups for files/entries where the same entry can be in multiple groups [HIGH]
-    -   [ ] Ability to number entries within group [HIGH]
-    -   [ ] Ability to set sorting method for group [HIGH]
-    -   [ ] Ability to set custom thumbnail for group [HIGH]
-    -   [ ] Group is treated as entry with tags and metadata [HIGH]
-    -   [ ] Nested groups [MEDIUM]
--   [ ] Fields [HIGH]
-    -   [x] Text Boxes [HIGH]
-    -   [x] Text Lines [HIGH]
-    -   [ ] Dates [HIGH] [#213](https://github.com/TagStudioDev/TagStudio/issues/213)
-    -   [ ] Custom field names [HIGH]
--   [ ] Search engine [HIGH]
-    -   [x] Boolean operators [HIGH]
-    -   [ ] Tag objects + autocomplete [HIGH] [#476 (Autocomplete)](https://github.com/TagStudioDev/TagStudio/issues/476)
-    -   [x] Filename search [HIGH]
-    -   [x] Filetype search [HIGH]
-        -   [x] Search by extension (e.g. ".jpg", ".png") [HIGH]
-            -   [x] Optional consolidation of extension synonyms (i.e. ".jpg" can equal ".jpeg") [LOW]
-        -   [x] Search by media type (e.g. "image", "video", "document") [MEDIUM]
-    -   [ ] Field content search [HIGH] [#272](https://github.com/TagStudioDev/TagStudio/issues/272)
-    -   [ ] HAS operator for composition tags [HIGH]
-    -   [ ] OCR search [LOW]
-    -   [ ] Fuzzy Search [LOW] [#400](https://github.com/TagStudioDev/TagStudio/issues/400)
-    -   [ ] Sortable results [HIGH] [#68](https://github.com/TagStudioDev/TagStudio/issues/68)
-        -   [ ] Sort by relevance [HIGH]
-        -   [x] Sort by date added [HIGH]
-        -   [ ] Sort by date created [HIGH]
-        -   [ ] Sort by date modified [HIGH]
-        -   [ ] Sort by date taken (photos) [MEDIUM]
-        -   [ ] Sort by file size [HIGH]
-        -   [ ] Sort by file dimension (images/video) [LOW]
--   [ ] Automatic Entry Relinking [HIGH] [#36](https://github.com/TagStudioDev/TagStudio/issues/36)
-    -   [ ] Detect Renames [HIGH]
-    -   [ ] Detect Moves [HIGH]
-    -   [ ] Detect Deletions [HIGH]
--   [ ] Image Collages [LOW] [#91](https://github.com/TagStudioDev/TagStudio/issues/91)
-    -   [ ] UI [HIGH]
--   [ ] Tagging Panel [HIGH]
-    -   [ ] Top Tags [HIGH]
-    -   [ ] Recent Tags [HIGH]
-    -   [ ] Tag Search [HIGH]
-    -   [ ] Pinned Tags [HIGH]
--   [ ] Configurable Thumbnails [MEDIUM]
-    -   [ ] Custom thumbnail override [HIGH]
-    -   [ ] Toggle File Extension Label [MEDIUM]
-    -   [ ] Toggle Duration Label [MEDIUM]
-    -   [ ] Custom Tag Badges [LOW]
--   [ ] Thumbnails [HIGH]
-    -   [ ] File Duration Label [HIGH]
-    -   [ ] 3D Model Previews [MEDIUM]
-        -   [ ] STL Previews [HIGH]
--   [x] Drag and Drop [HIGH]
-    -   [x] Drag files _to_ other programs [HIGH]
-    -   [x] Drag files _to_ file explorer windows [MEDIUM]
-    -   [x] Drag files _from_ file explorer windows [MEDIUM]
-    -   [x] Drag files _from_ other programs [LOW]
--   [ ] File Preview Panel [HIGH]
-    -   [ ] Video Playback [HIGH]
-        -   [x] Play/Pause [HIGH]
-        -   [x] Loop [HIGH]
-        -   [x] Toggle Autoplay [MEDIUM]
-        -   [ ] Volume Control [HIGH]
-        -   [x] Toggle Mute [HIGH]
-        -   [ ] Timeline scrubber [HIGH]
-        -   [ ] Fullscreen [MEDIUM]
-    -   [ ] Audio Playback [HIGH] [#450](https://github.com/TagStudioDev/TagStudio/issues/450)
-        -   [ ] Play/Pause [HIGH]
-        -   [ ] Loop [HIGH]
-        -   [ ] Toggle Autoplay [MEDIUM]
-        -   [ ] Volume Control [HIGH]
-        -   [ ] Toggle Mute [HIGH]
-        -   [x] Timeline scrubber [HIGH]
-        -   [ ] Fullscreen [MEDIUM]
--   [ ] Optimizations [HIGH]
-    -   [ ] Thumbnail caching [HIGH] [#104](https://github.com/TagStudioDev/TagStudio/issues/104)
-    -   [ ] File property indexes [HIGH]
-
 ## Version Milestones
 
 These version milestones are rough estimations for when the previous core features will be added. For a more definitive idea for when features are coming, please reference the current GitHub [milestones](https://github.com/TagStudioDev/TagStudio/milestones).
 
-### 9.5 (Alpha)
+!!! note
+    This list was created after the release of version 9.4
+
+### v9.5
+
+#### Core
 
 -   [x] SQL backend [HIGH]
--   [x] Translations _(Any applicable)_ [MEDIUM]
--   [ ] Tags [HIGH]
-    -   [x] Deleting Tags [HIGH]
-    -   [ ] User-defined tag colors [HIGH]
-        -   [ ] ID based, not string or hex [HIGH]
-        -   [ ] Color name [HIGH]
-        -   [ ] Color value (hex) [HIGH]
-        -   [ ] Existing colors are now a set of base colors [HIGH]
-            -   [ ] Editable [MEDIUM]
-            -   [ ] Non-removable [HIGH]
-    -   [x] [Tag Categories](../library/tag_categories.md) [HIGH]
-        -   [x] Property available for tags that allow the tag and any inheriting from it to be displayed separately in the preview panel under a title [HIGH]
--   [ ] Search engine [HIGH]
-    -   [x] Boolean operators [HIGH]
-    -   [ ] Tag objects + autocomplete [HIGH]
-    -   [x] Filename search [HIGH]
-    -   [x] Filetype search [HIGH]
-        -   [x] Search by extension (e.g. ".jpg", ".png") [HIGH]
-            -   [x] Optional consolidation of extension synonyms (i.e. ".jpg" can equal ".jpeg") [LOW]
-        -   [x] Search by media type (e.g. "image", "video", "document") [MEDIUM]
-    -   [ ] Field content search [HIGH]
-    -   [ ] Sortable results [HIGH]
-        -   [ ] Sort by relevance [HIGH]
-        -   [x] Sort by date added [HIGH]
-        -   [ ] Sort by date created [HIGH]
-        -   [ ] Sort by date modified [HIGH]
-        -   [ ] Sort by date taken (photos) [MEDIUM]
-        -   [ ] Sort by file size [HIGH]
-        -   [ ] Sort by file dimension (images/video) [LOW]
--   [ ] Settings Menu [HIGH]
-    -   [ ] Application Settings [HIGH]
-        -   [ ] Stored in system user folder/designated folder [HIGH]
-    -   [ ] Library Settings [HIGH]
-        -   [ ] Stored in `.TagStudio` folder [HIGH]
--   [ ] Optimizations [HIGH]
-    -   [ ] Thumbnail caching [HIGH]
 
-### 9.6 (Alpha)
+#### Tags
 
--   [ ] Tags [HIGH]
-    -   [ ] Merging Tags [HIGH]
-    -   [ ] Composition/HAS subtags [HIGH]
-    -   [ ] Tag Icons [HIGH]
-        -   [ ] Small Icons [HIGH]
-        -   [ ] Large Icons for Profiles [MEDIUM]
-        -   [ ] Built-in Icon Packs (i.e. Boxicons) [HIGH]
-        -   [ ] User Defined Icons [HIGH]
-    -   [ ] Multiple Languages for Tag Strings [MEDIUM]
-        -   [ ] Title is tag name [HIGH]
-        -   [ ] Title has tag color [MEDIUM]
-        -   [ ] Tag marked as category does not display as a tag itself [HIGH]
-    -   [ ] [Tag Overrides](../library/tag_overrides.md) [MEDIUM]
-        -   [ ] Per-file overrides of subtags [HIGH]
--   [ ] Fields [HIGH]
-    -   [ ] Dates [HIGH]
-    -   [ ] Custom field names [HIGH]
+-   [x] Deleting Tags [HIGH]
+-   [ ] User-defined tag colors [HIGH]
+    -   [x] ID based, not string or hex [HIGH]
+    -   [x] Color name [HIGH]
+    -   [x] Color value (hex) [HIGH]
+    -   [x] Existing colors are now a set of base colors [HIGH]
+-   [x] [Tag Categories](../library/tag_categories.md) [HIGH]
+    -   [x] Property available for tags that allow the tag and any inheriting from it to be displayed separately in the preview panel under a title [HIGH]
+
+#### Search
+
+-   [x] Boolean operators [HIGH]
+-   [x] Filename search [HIGH]
+-   [x] Filetype search [HIGH]
+    -   [x] Search by extension (e.g. ".jpg", ".png") [HIGH]
+        -   [x] Optional consolidation of extension synonyms (i.e. ".jpg" can equal ".jpeg") [LOW]
+    -   [x] Search by media type (e.g. "image", "video", "document") [MEDIUM]
+-   [x] Sort by date added [HIGH]
+
+#### UI
+
+-   [ ] Translations _(Any applicable)_ [MEDIUM]
+
+#### Performance
+
+-   [x] Thumbnail caching [HIGH]
+
+### v9.6
+
+#### Core
+
+-   [ ] Cached file property table (media duration, word count, dimensions, etc.) [MEDIUM]
+
+#### Library
+
 -   [ ] Multiple Root Directories per Library [HIGH]
 -   [ ] `.ts_ignore` (`.gitignore`-style glob ignoring) [HIGH]
+-   [ ] Sharable Color Packs [MEDIUM]
+    -   [ ] Human-readable (TOML) files containing tag data [HIGH]
+    -   [ ] Importable [HIGH]
+    -   [ ] Exportable [HIGH]
+
+#### Tags
+
+-   [ ] Merging Tags [HIGH]
+-   [ ] [Component/HAS](../library/tag.md#component-tags) subtags [HIGH]
+-   [ ] Tag Icons [HIGH]
+    -   [ ] Small Icons [HIGH]
+    -   [ ] Large Icons for Profiles [MEDIUM]
+    -   [ ] Built-in Icon Packs (i.e. Boxicons) [HIGH]
+    -   [ ] User Defined Icons [HIGH]
+-   [ ] Multiple Languages for Tag Strings [MEDIUM]
+    -   [ ] Title is tag name [HIGH]
+    -   [ ] Title has tag color [MEDIUM]
+    -   [ ] Tag marked as category does not display as a tag itself [HIGH]
+-   [ ] [Tag Overrides](../library/tag_overrides.md) [MEDIUM]
+    -   [ ] Per-file overrides of subtags [HIGH]
+
+#### Fields
+
+-   [ ] Datetime fields [HIGH]
+-   [ ] Custom field names [HIGH]
+
+#### Search
+
+-   [ ] Field content search [HIGH]
+-   [ ] Sort by date created [HIGH]
+-   [ ] Sort by date modified [HIGH]
+-   [ ] HAS operator for composition tags [HIGH]
+-   [ ] Search bar rework
+    -   [ ] Improved tag autocomplete [HIGH]
+    -   [ ] Tags appear as widgets in search bar [HIGH]
+
+#### UI
+
+-   [ ] File duration on video thumbnails [HIGH]
+-   [ ] 3D Model Previews [MEDIUM]
+    -   [ ] STL Previews [HIGH]
+-   [ ] Word count/line count on text thumbnails [LOW]
+-   [ ] Settings Menu [HIGH]
+-   [ ] Application Settings [HIGH]
+    -   [ ] Stored in system user folder/designated folder [HIGH]
+-   [ ] Library Settings [HIGH]
+    -   [ ] Stored in `.TagStudio` folder [HIGH]
 -   [ ] Tagging Panel [HIGH]
+
+    Togglebale persistent main window panel or popout. Replaces the current tag manager.
+
     -   [ ] Top Tags [HIGH]
     -   [ ] Recent Tags [HIGH]
     -   [ ] Tag Search [HIGH]
     -   [ ] Pinned Tags [HIGH]
--   [ ] Search engine [HIGH]
-    -   [ ] HAS operator for composition tags [HIGH]
 
-### 9.7 (Alpha)
+-   [ ] New tabbed tag building UI to support the new tag features [HIGH]
 
--   [ ] Configurable Thumbnails [MEDIUM]
-    -   [ ] Toggle File Extension Label [MEDIUM]
-    -   [ ] Toggle Duration Label [MEDIUM]
-    -   [ ] Custom Tag Badges [LOW]
--   [ ] Thumbnails [HIGH]
-    -   [ ] File Duration Label [HIGH]
+### v9.7
+
+#### Library
+
 -   [ ] [Entry groups](../library/entry_groups.md) [HIGH]
     -   [ ] Groups for files/entries where the same entry can be in multiple groups [HIGH]
     -   [ ] Ability to number entries within group [HIGH]
@@ -237,46 +132,84 @@ These version milestones are rough estimations for when the previous core featur
     -   [ ] Group is treated as entry with tags and metadata [HIGH]
     -   [ ] Nested groups [MEDIUM]
 
-### 9.8 (Possible Beta)
+#### Search
+
+-   [ ] Sort by relevance [HIGH]
+-   [ ] Sort by date taken (photos) [MEDIUM]
+-   [ ] Sort by file size [HIGH]
+-   [ ] Sort by file dimension (images/video) [LOW]
+
+#### [Macros](../utilities/macro.md)
+
+-   [ ] Sharable Macros [MEDIUM]
+    -   [ ] Standard notation format (TOML) contacting macro instructions [HIGH]
+    -   [ ] Exportable [HIGH]
+    -   [ ] Importable [HIGH]
+-   [ ] Triggers [HIGH]
+    -   [ ] On new file [HIGH]
+    -   [ ] On library refresh [HIGH]
+    -   [ ] [...]
+-   [ ] Actions [HIGH]
+    -   [ ] Add tag(s) [HIGH]
+    -   [ ] Add field(s) [HIGH]
+    -   [ ] Set field content [HIGH]
+    -   [ ] [...]
+
+#### UI
+
+-   [ ] Custom thumbnail overrides [MEDIUM]
+-   [ ] Toggle File Extension Label [MEDIUM]
+-   [ ] Toggle Duration Label [MEDIUM]
+-   [ ] Custom Tag Badges [LOW]
+-   [ ] Unified Media Player [HIGH]
+    -   [ ] Auto-hiding player controls
+    -   [x] Play/Pause [HIGH]
+    -   [x] Loop [HIGH]
+    -   [x] Toggle Autoplay [MEDIUM]
+    -   [ ] Volume Control [HIGH]
+    -   [x] Toggle Mute [HIGH]
+    -   [ ] Timeline scrubber [HIGH]
+    -   [ ] Fullscreen [MEDIUM]
+-   [ ] Library list view [HIGH]
+-   [ ] Configurable page size [HIGH]
+
+### v9.8
+
+#### Library
 
 -   [ ] Automatic Entry Relinking [HIGH]
     -   [ ] Detect Renames [HIGH]
     -   [ ] Detect Moves [HIGH]
     -   [ ] Detect Deletions [HIGH]
--   [ ] [Macros](../utilities/macro.md) [HIGH]
-    -   [ ] Sharable Macros [MEDIUM]
-        -   [ ] Standard notation format (i.e. JSON) contacting macro instructions [HIGH]
-        -   [ ] Exportable [HIGH]
-        -   [ ] Importable [HIGH]
-    -   [ ] Triggers [HIGH]
-        -   [ ] On new file [HIGH]
-        -   [ ] On library refresh [HIGH]
-        -   [...]
-    -   [ ] Actions [HIGH]
-        -   [ ] Add tag(s) [HIGH]
-        -   [ ] Add field(s) [HIGH]
-        -   [ ] Set field content [HIGH]
-        -   [ ] [...]
 
-### 9.9 (Possible Beta)
+#### Search
 
--   [ ] Tag Packs [MEDIUM]
-    -   [ ] Human-readable (i.e. JSON) files containing tag data [HIGH]
-    -   [ ] Importable [HIGH]
-    -   [ ] Exportable [HIGH]
-    -   [ ] Conflict resolution [HIGH]
-    -   [ ] Color Packs [MEDIUM]
-        -   [ ] Human-readable (i.e. JSON) files containing tag data [HIGH]
-        -   [ ] Importable [HIGH]
-        -   [ ] Exportable [HIGH]
+-   [ ] OCR search [LOW]
+-   [ ] Fuzzy Search [LOW]
+
+### v9.9
+
+#### Library
+
 -   [ ] Exportable Library Data [HIGH]
     -   [ ] Standard notation format (i.e. JSON) contacting all library data [HIGH]
 
-### 10.0 (Possible Beta/Full Release)
+#### Tags
+
+-   [ ] Tag Packs [MEDIUM]
+    -   [ ] Human-readable (TOML) files containing tag data [HIGH]
+    -   [ ] Multiple Languages for Tag Strings [MEDIUM]
+    -   [ ] Importable [HIGH]
+    -   [ ] Exportable [HIGH]
+    -   [ ] Conflict resolution [HIGH]
+
+### v10.0
 
 -   [ ] All remaining [HIGH] and optional [MEDIUM] features
 
-### Post 10.0
+### Post v10.0
+
+#### Core
 
 -   [ ] Core Library/API
 -   [ ] Plugin Support

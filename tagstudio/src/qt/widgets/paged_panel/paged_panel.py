@@ -1,8 +1,11 @@
-# Copyright (C) 2024 Travis Abendshien (CyanVoxel).
+# Copyright (C) 2025 Travis Abendshien (CyanVoxel).
 # Licensed under the GPL-3.0 License.
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
+from typing import override
+
 import structlog
+from PySide6 import QtCore, QtGui
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QHBoxLayout,
@@ -111,3 +114,11 @@ class PagedPanel(QWidget):
                 item.setHidden(False)
             elif isinstance(item, int):
                 self.button_nav_layout.addStretch(item)
+
+    @override
+    def keyPressEvent(self, event: QtGui.QKeyEvent) -> None:  # noqa N802
+        if event.key() == QtCore.Qt.Key.Key_Escape:
+            self.close()
+        else:  # Other key presses
+            pass
+        return super().keyPressEvent(event)

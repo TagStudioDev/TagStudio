@@ -1,9 +1,10 @@
-# Copyright (C) 2024 Travis Abendshien (CyanVoxel).
+# Copyright (C) 2025 Travis Abendshien (CyanVoxel).
 # Licensed under the GPL-3.0 License.
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
-import typing
+from typing import TYPE_CHECKING, override
 
+from PySide6 import QtCore, QtGui
 from PySide6.QtCore import Qt, QThreadPool, Signal
 from PySide6.QtGui import QStandardItem, QStandardItemModel
 from PySide6.QtWidgets import (
@@ -20,7 +21,7 @@ from src.qt.translations import Translations
 from src.qt.widgets.progress import ProgressWidget
 
 # Only import for type checking/autocompletion, will not be imported at runtime.
-if typing.TYPE_CHECKING:
+if TYPE_CHECKING:
     from src.qt.ts_qt import QtDriver
 
 
@@ -44,7 +45,7 @@ class DeleteUnlinkedEntriesModal(QWidget):
         Translations.translate_qobject(
             self.desc_widget,
             "entries.unlinked.delete.confirm",
-            count=self.tracker.missing_files_count,
+            count=self.tracker.missing_file_entries_count,
         )
         self.desc_widget.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
@@ -76,12 +77,12 @@ class DeleteUnlinkedEntriesModal(QWidget):
     def refresh_list(self):
         self.desc_widget.setText(
             Translations.translate_formatted(
-                "entries.unlinked.delete.confirm", count=self.tracker.missing_files_count
+                "entries.unlinked.delete.confirm", count=self.tracker.missing_file_entries_count
             )
         )
 
         self.model.clear()
-        for i in self.tracker.missing_files:
+        for i in self.tracker.missing_file_entries:
             item = QStandardItem(str(i.path))
             item.setEditable(False)
             self.model.appendRow(item)
@@ -91,7 +92,7 @@ class DeleteUnlinkedEntriesModal(QWidget):
             return Translations.translate_formatted(
                 "entries.unlinked.delete.deleting_count",
                 idx=x,
-                count=self.tracker.missing_files_count,
+                count=self.tracker.missing_file_entries_count,
             )
 
         pw = ProgressWidget(
@@ -112,3 +113,11 @@ class DeleteUnlinkedEntriesModal(QWidget):
                 self.done.emit(),
             )
         )
+
+    @override
+    def keyPressEvent(self, event: QtGui.QKeyEvent) -> None:  # noqa N802
+        if event.key() == QtCore.Qt.Key.Key_Escape:
+            self.cancel_button.click()
+        else:  # Other key presses
+            pass
+        return super().keyPressEvent(event)

@@ -18,19 +18,19 @@ logger = structlog.get_logger(__name__)
 
 # TODO: Once this class is removed, the `is_tag_chooser` option of `TagSearchPanel`
 # will most likely be enabled in every case
-# and the possibilty of disabling it can therefore be removed
+# and the possibility of disabling it can therefore be removed
 
 
 class TagDatabasePanel(TagSearchPanel):
-    def __init__(self, library: Library):
+    def __init__(self, driver, library: Library):
         super().__init__(library, is_tag_chooser=False)
+        self.driver = driver
 
         self.create_tag_button = QPushButton()
         Translations.translate_qobject(self.create_tag_button, "tag.create")
         self.create_tag_button.clicked.connect(lambda: self.build_tag(self.search_field.text()))
 
         self.root_layout.addWidget(self.create_tag_button)
-        self.update_tags()
 
     def build_tag(self, name: str):
         panel = BuildTagPanel(self.lib)
@@ -39,7 +39,7 @@ class TagDatabasePanel(TagSearchPanel):
             has_save=True,
         )
         Translations.translate_with_setter(self.modal.setTitle, "tag.new")
-        Translations.translate_with_setter(self.modal.setWindowTitle, "tag.add")
+        Translations.translate_with_setter(self.modal.setWindowTitle, "tag.new")
         if name.strip():
             panel.name_field.setText(name)
 
@@ -57,13 +57,15 @@ class TagDatabasePanel(TagSearchPanel):
         )
         self.modal.show()
 
-    def remove_tag(self, tag: Tag):
+    def delete_tag(self, tag: Tag):
         if tag.id in range(RESERVED_TAG_START, RESERVED_TAG_END):
             return
 
         message_box = QMessageBox()
         Translations.translate_with_setter(message_box.setWindowTitle, "tag.remove")
-        Translations.translate_qobject(message_box, "tag.confirm_delete", tag_name=tag.name)
+        Translations.translate_qobject(
+            message_box, "tag.confirm_delete", tag_name=self.lib.tag_display_name(tag.id)
+        )
         message_box.setStandardButtons(QMessageBox.Ok | QMessageBox.Cancel)  # type: ignore
         message_box.setIcon(QMessageBox.Question)  # type: ignore
 

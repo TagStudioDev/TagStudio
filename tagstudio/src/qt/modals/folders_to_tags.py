@@ -4,10 +4,12 @@
 
 
 import math
-import typing
+from collections.abc import Sequence
 from dataclasses import dataclass, field
+from typing import TYPE_CHECKING, override
 
 import structlog
+from PySide6 import QtCore, QtGui
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QFrame,
@@ -20,11 +22,12 @@ from PySide6.QtWidgets import (
 )
 from src.core.constants import TAG_ARCHIVED, TAG_FAVORITE
 from src.core.library import Library, Tag
+from src.core.library.alchemy.enums import TagColorEnum
 from src.core.palette import ColorType, get_tag_color
 from src.qt.flowlayout import FlowLayout
 from src.qt.translations import Translations
 
-if typing.TYPE_CHECKING:
+if TYPE_CHECKING:
     from src.qt.ts_qt import QtDriver
 
 logger = structlog.get_logger(__name__)
@@ -72,7 +75,7 @@ def folders_to_tags(library: Library):
 
         tag = add_folders_to_tree(library, tree, folders).tag
         if tag and not entry.has_tag(tag):
-            library.add_tags_to_entry(entry.id, tag.id)
+            library.add_tags_to_entries(entry.id, tag.id)
 
     logger.info("Done")
 
@@ -103,7 +106,7 @@ def generate_preview_data(library: Library) -> BranchData:
                 branch.dirs[tag.name] = BranchData(tag=tag)
             branch = branch.dirs[tag.name]
 
-    def _add_folders_to_tree(items: typing.Sequence[str]) -> BranchData:
+    def _add_folders_to_tree(items: Sequence[str]) -> BranchData:
         branch = tree
         for folder in items:
             if folder not in branch.dirs:
@@ -227,7 +230,7 @@ class FoldersToTagsModal(QWidget):
     def on_apply(self, event):
         folders_to_tags(self.library)
         self.close()
-        self.driver.preview_panel.update_widgets()
+        self.driver.preview_panel.update_widgets(update_preview=False)
 
     def on_open(self, event):
         for i in reversed(range(self.scroll_layout.count())):
@@ -244,6 +247,14 @@ class FoldersToTagsModal(QWidget):
             child = self.scroll_layout.itemAt(i).widget()
             if isinstance(child, TreeItem):
                 child.set_all_branches(hidden)
+
+    @override
+    def keyPressEvent(self, event: QtGui.QKeyEvent) -> None:  # noqa N802
+        if event.key() == QtCore.Qt.Key.Key_Escape:
+            self.close()
+        else:  # Other key presses
+            pass
+        return super().keyPressEvent(event)
 
 
 class TreeItem(QWidget):
@@ -330,10 +341,10 @@ class ModifiedTagWidget(QWidget):
 
         self.bg_button.setStyleSheet(
             f"QPushButton{{"
-            f"background: {get_tag_color(ColorType.PRIMARY, tag.color)};"
-            f"color: {get_tag_color(ColorType.TEXT, tag.color)};"
+            f"background: {get_tag_color(ColorType.PRIMARY, TagColorEnum.DEFAULT)};"
+            f"color: {get_tag_color(ColorType.TEXT, TagColorEnum.DEFAULT)};"
             f"font-weight: 600;"
-            f"border-color:{get_tag_color(ColorType.BORDER, tag.color)};"
+            f"border-color:{get_tag_color(ColorType.BORDER, TagColorEnum.DEFAULT)};"
             f"border-radius: 6px;"
             f"border-style:inset;"
             f"border-width: {math.ceil(self.devicePixelRatio())}px;"
@@ -343,7 +354,7 @@ class ModifiedTagWidget(QWidget):
             f"font-size: 13px"
             f"}}"
             f"QPushButton::hover{{"
-            f"border-color:{get_tag_color(ColorType.LIGHT_ACCENT, tag.color)};"
+            f"border-color:{get_tag_color(ColorType.LIGHT_ACCENT, TagColorEnum.DEFAULT)};"
             f"}}"
         )
 

@@ -2,11 +2,13 @@
 # Licensed under the GPL-3.0 License.
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
+import re
 from typing import TYPE_CHECKING
 
 import structlog
 from sqlalchemy import ColumnElement, and_, distinct, func, or_, select, text
 from sqlalchemy.orm import Session
+from sqlalchemy.sql.operators import ilike_op
 from src.core.media_types import FILETYPE_EQUIVALENTS, MediaCategories
 from src.core.query_lang import BaseVisitor
 from src.core.query_lang.ast import ANDList, Constraint, ConstraintType, Not, ORList, Property
@@ -14,7 +16,7 @@ from src.core.query_lang.ast import ANDList, Constraint, ConstraintType, Not, OR
 from .joins import TagEntry
 from .models import Entry, Tag, TagAlias
 
-# workaround to have autocompletion in the Editor
+# Only import for type checking/autocompletion, will not be imported at runtime.
 if TYPE_CHECKING:
     from .library import Library
 else:
@@ -23,7 +25,7 @@ else:
 logger = structlog.get_logger(__name__)
 
 # TODO: Reevaluate after subtags -> parent tags name change
-CHILDREN_QUERY = text("""
+TAG_CHILDREN_ID_QUERY = text("""
 -- Note for this entire query that tag_parents.child_id is the parent id and tag_parents.parent_id is the child id due to bad naming
 WITH RECURSIVE ChildTags AS (
     SELECT :tag_id AS child_id
@@ -97,7 +99,29 @@ class SQLBoolExpressionBuilder(BaseVisitor[ColumnElement[bool]]):
         elif node.type == ConstraintType.TagID:
             return self.__entry_matches_tag_ids([int(node.value)])
         elif node.type == ConstraintType.Path:
-            return Entry.path.op("GLOB")(node.value)
+            ilike = False
+            glob = False
+
+            # Smartcase check
+            if node.value == node.value.lower():
+                ilike = True
+            if node.value.startswith("*") or node.value.endswith("*"):
+                glob = True
+
+            if ilike and glob:
+                logger.info("ConstraintType.Path", ilike=True, glob=True)
+                return func.lower(Entry.path).op("GLOB")(f"{node.value.lower()}")
+            elif ilike:
+                logger.info("ConstraintType.Path", ilike=True, glob=False)
+                return ilike_op(Entry.path, f"%{node.value}%")
+            elif glob:
+                logger.info("ConstraintType.Path", ilike=False, glob=True)
+                return Entry.path.op("GLOB")(node.value)
+            else:
+                logger.info(
+                    "ConstraintType.Path", ilike=False, glob=False, re=re.escape(node.value)
+                )
+                return Entry.path.regexp_match(re.escape(node.value))
         elif node.type == ConstraintType.MediaType:
             extensions: set[str] = set[str]()
             for media_cat in MediaCategories.ALL_CATEGORIES:
@@ -151,7 +175,7 @@ class SQLBoolExpressionBuilder(BaseVisitor[ColumnElement[bool]]):
                 return tag_ids
             outp = []
             for tag_id in tag_ids:
-                outp.extend(list(session.scalars(CHILDREN_QUERY, {"tag_id": tag_id})))
+                outp.extend(list(session.scalars(TAG_CHILDREN_ID_QUERY, {"tag_id": tag_id})))
             return outp
 
     def __entry_has_all_tags(self, tag_ids: list[int]) -> ColumnElement[bool]:

@@ -12,6 +12,7 @@ PySide6_Addons==6.8.0.1
 PySide6_Essentials==6.8.0.1
 PySide6==6.8.0.1
 rawpy==0.22.0
+Send2Trash==1.8.3
 SQLAlchemy==2.0.34
 structlog==24.4.0
 typing_extensions>=3.10.0.0,<=4.11.0

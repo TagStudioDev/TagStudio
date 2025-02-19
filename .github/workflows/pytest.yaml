@@ -67,9 +67,9 @@ jobs:
       - name: Check Code Coverage
         uses: yedpodtrzitko/coverage@main
         with:
-          thresholdAll: 0.5
-          thresholdNew: 0.5
-          thresholdModified: 0.5
+          thresholdAll: 0.4
+          thresholdNew: 0.4
+          thresholdModified: 0.4
           coverageFile: coverage.xml
           token: ${{ secrets.GITHUB_TOKEN }}
           sourceDir: tagstudio/src

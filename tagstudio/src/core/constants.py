@@ -3,12 +3,13 @@
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
 VERSION: str = "9.5.0"  # Major.Minor.Patch
-VERSION_BRANCH: str = "EXPERIMENTAL"  # Usually "" or "Pre-Release"
+VERSION_BRANCH: str = "Pre-Release 4"  # Usually "" or "Pre-Release"
 
 # The folder & file names where TagStudio keeps its data relative to a library.
 TS_FOLDER_NAME: str = ".TagStudio"
 BACKUP_FOLDER_NAME: str = "backups"
 COLLAGE_FOLDER_NAME: str = "collages"
+THUMB_CACHE_NAME: str = "thumbs"
 
 FONT_SAMPLE_TEXT: str = (
     """ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!?@$%(){}[]"""
@@ -24,3 +25,5 @@ TAG_FAVORITE = 1
 TAG_META = 2
 RESERVED_TAG_START = 0
 RESERVED_TAG_END = 999
+
+RESERVED_NAMESPACE_PREFIX = "tagstudio"

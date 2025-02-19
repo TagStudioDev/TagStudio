@@ -11,7 +11,6 @@ sys.path.insert(0, str(CWD.parent))
 
 from src.core.library import Entry, Library, Tag
 from src.core.library import alchemy as backend
-from src.core.library.alchemy.enums import TagColor
 from src.qt.ts_qt import QtDriver
 
 
@@ -67,21 +66,24 @@ def library(request):
 
     tag = Tag(
         name="foo",
-        color=TagColor.RED,
+        color_namespace="tagstudio-standard",
+        color_slug="red",
     )
     assert lib.add_tag(tag)
 
     parent_tag = Tag(
         id=1500,
         name="subbar",
-        color=TagColor.YELLOW,
+        color_namespace="tagstudio-standard",
+        color_slug="yellow",
     )
     assert lib.add_tag(parent_tag)
 
     tag2 = Tag(
         id=2000,
         name="bar",
-        color=TagColor.BLUE,
+        color_namespace="tagstudio-standard",
+        color_slug="blue",
         parent_tags={parent_tag},
     )
     assert lib.add_tag(tag2)
@@ -93,7 +95,7 @@ def library(request):
         path=pathlib.Path("foo.txt"),
         fields=lib.default_fields,
     )
-    assert lib.add_tags_to_entry(entry.id, tag.id)
+    assert lib.add_tags_to_entries(entry.id, tag.id)
 
     entry2 = Entry(
         id=2,
@@ -101,7 +103,7 @@ def library(request):
         path=pathlib.Path("one/two/bar.md"),
         fields=lib.default_fields,
     )
-    assert lib.add_tags_to_entry(entry2.id, tag2.id)
+    assert lib.add_tags_to_entries(entry2.id, tag2.id)
 
     assert lib.add_entries([entry, entry2])
     assert len(lib.tags) == 6
@@ -144,6 +146,10 @@ def qt_driver(qtbot, library):
             driver.item_thumbs = []
             driver.autofill_action = Mock()
 
+            driver.copy_buffer = {"fields": [], "tags": []}
+            driver.copy_fields_action = Mock()
+            driver.paste_fields_action = Mock()
+
             driver.lib = library
             # TODO - downsize this method and use it
             # driver.start()
@@ -154,7 +160,7 @@ def qt_driver(qtbot, library):
 @pytest.fixture
 def generate_tag():
     def inner(name, **kwargs):
-        params = dict(name=name, color=TagColor.RED) | kwargs
+        params = dict(name=name, color_namespace="tagstudio-standard", color_slug="red") | kwargs
         return Tag(**params)
 
     yield inner

@@ -29,7 +29,7 @@ from src.core.library import ItemType, Library
 from src.core.media_types import MediaCategories, MediaType
 from src.qt.flowlayout import FlowWidget
 from src.qt.helpers.file_opener import FileOpenerHelper
-from src.qt.platform_strings import PlatformStrings
+from src.qt.platform_strings import open_file_str, trash_term
 from src.qt.translations import Translations
 from src.qt.widgets.thumb_button import ThumbButton
 from src.qt.widgets.thumb_renderer import ThumbRenderer
@@ -202,7 +202,7 @@ class ItemThumb(FlowWidget):
         self.thumb_layout.addWidget(self.bottom_container)
 
         self.thumb_button = ThumbButton(self.thumb_container, thumb_size)
-        self.renderer = ThumbRenderer()
+        self.renderer = ThumbRenderer(self.lib)
         self.renderer.updated.connect(
             lambda timestamp, image, size, filename, ext: (
                 self.update_thumb(timestamp, image=image),
@@ -219,10 +219,17 @@ class ItemThumb(FlowWidget):
         open_file_action = QAction(self)
         Translations.translate_qobject(open_file_action, "file.open_file")
         open_file_action.triggered.connect(self.opener.open_file)
-        open_explorer_action = QAction(PlatformStrings.open_file_str, self)
+        open_explorer_action = QAction(open_file_str(), self)
         open_explorer_action.triggered.connect(self.opener.open_explorer)
+
+        self.delete_action = QAction(self)
+        Translations.translate_qobject(
+            self.delete_action, "trash.context.ambiguous", trash_term=trash_term()
+        )
+
         self.thumb_button.addAction(open_file_action)
         self.thumb_button.addAction(open_explorer_action)
+        self.thumb_button.addAction(self.delete_action)
 
         # Static Badges ========================================================
 
@@ -440,8 +447,8 @@ class ItemThumb(FlowWidget):
         """Updates attributes of a thumbnail element."""
         if clickable:
             with catch_warnings(record=True):
-                self.thumb_button.pressed.disconnect()
-            self.thumb_button.pressed.connect(clickable)
+                self.thumb_button.clicked.disconnect()
+            self.thumb_button.clicked.connect(clickable)
 
     def set_item_id(self, item_id: int):
         self.item_id = item_id
@@ -492,15 +499,11 @@ class ItemThumb(FlowWidget):
         toggle_value: bool,
         tag_id: int,
     ):
-        logger.info("toggle_item_tag", entry_id=entry_id, toggle_value=toggle_value, tag_id=tag_id)
-
-        if toggle_value:
-            self.lib.add_tags_to_entry(entry_id, tag_id)
-        else:
-            self.lib.remove_tags_from_entry(entry_id, tag_id)
-
-        if self.driver.preview_panel.is_open:
-            self.driver.preview_panel.update_widgets()
+        if entry_id in self.driver.selected and self.driver.preview_panel.is_open:
+            if len(self.driver.selected) == 1:
+                self.driver.preview_panel.fields.update_toggled_tag(tag_id, toggle_value)
+            else:
+                pass
 
     def mouseMoveEvent(self, event):  # noqa: N802
         if event.buttons() is not Qt.MouseButton.LeftButton:

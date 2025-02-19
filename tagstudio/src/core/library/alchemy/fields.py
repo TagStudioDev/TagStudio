@@ -113,7 +113,7 @@ class _FieldID(Enum):
     AUTHOR = DefaultField(id=1, name="Author", type=FieldTypeEnum.TEXT_LINE)
     ARTIST = DefaultField(id=2, name="Artist", type=FieldTypeEnum.TEXT_LINE)
     URL = DefaultField(id=3, name="URL", type=FieldTypeEnum.TEXT_LINE)
-    DESCRIPTION = DefaultField(id=4, name="Description", type=FieldTypeEnum.TEXT_LINE)
+    DESCRIPTION = DefaultField(id=4, name="Description", type=FieldTypeEnum.TEXT_BOX)
     NOTES = DefaultField(id=5, name="Notes", type=FieldTypeEnum.TEXT_BOX)
     COLLATION = DefaultField(id=9, name="Collation", type=FieldTypeEnum.TEXT_LINE)
     DATE = DefaultField(id=10, name="Date", type=FieldTypeEnum.DATETIME)

@@ -1,20 +1,15 @@
 # Contributing to TagStudio
 
-_Last Updated: December 12th, 2024_
+_Last Updated: January 30th, 2025_
 
 Thank you so much for showing interest in contributing to TagStudio! Here are a set of instructions and guidelines for contributing code or documentation to the project. This document will change over time, so make sure that your contributions still line up with the requirements here before submitting a pull request.
-
-> [!CAUTION]
-> **As of Pull Request [#332](https://github.com/TagStudioDev/TagStudio/pull/332) (SQLite Migration) the `main` branch will marked as experimental before full JSON to SQL parity is operational.** Existing TagStudio libraries are not yet compatible with this change, however they will **NOT be corrupted or deleted** if opened with these versions. Once parity is reached and a stable conversion tool in place, this notice will be removed. UPDATE: As of November 19th, 2024, full parity is rapidly approaching.
->
-> For the most recent stable feature release branch, see the [`Alpha-v9.4`](https://github.com/TagStudioDev/TagStudio/tree/Alpha-v9.4) branch. These v9.4 specific features are currently being backported to the SQL-ized `main` branch. (Feel free to help!)
 
 ## Getting Started
 
 -   Check the [Feature Roadmap](/docs/updates/roadmap.md) page to see what priority features there are, the [FAQ](/README.md/#faq), as well as the open [Issues](https://github.com/TagStudioDev/TagStudio/issues) and [Pull Requests](https://github.com/TagStudioDev/TagStudio/pulls).
 -   If you'd like to add a feature that isn't on the feature roadmap or doesn't have an open issue, **PLEASE create a feature request** issue for it discussing your intentions so any feedback or important information can be given by the team first.
     -   We don't want you wasting time developing a feature or making a change that can't/won't be added for any reason ranging from pre-existing refactors to design philosophy differences.
-- **Please don't** create pull requests that consist of large refactors, *especially* without discussing them with us first. These end up doing more harm than good for the project by continuously delaying progress and disrupting everyone else's work.
+-   **Please don't** create pull requests that consist of large refactors, _especially_ without discussing them with us first. These end up doing more harm than good for the project by continuously delaying progress and disrupting everyone else's work.
 -   If you wish to discuss TagStudio further, feel free to join the [Discord Server](https://discord.com/invite/hRNnVKhF2G)
 
 ### Contribution Checklist
@@ -49,15 +44,30 @@ If you wish to launch the source version of TagStudio outside of your IDE:
 > [!TIP]
 > On Linux and macOS, you can launch the `tagstudio.sh` script to skip the following process, minus the `requirements-dev.txt` installation step. _Using the script is fine if you just want to launch the program from source._
 
-1. In the root repository directory, create a python virtual environment:  
+1. Make sure you're using the correct Python version:
+   -   If the output matches `Python 3.12.x` (where the x is any number) then you're using the correct Python version and can skip to step 2. Otherwise, you can install the correct Python version from the [Python](https://www.python.org/downloads/) website, or you can use a tool like [pyenv](https://github.com/pyenv/pyenv/) to install the correct version without changes to your system:
+      1. Follow pyenv's [install instructions](https://github.com/pyenv/pyenv/?tab=readme-ov-file#installation) for your system.
+      2. Install the appropriate Python version with pyenv by running `pyenv install 3.12` (This will **not** mess with your existing Python installation).
+      3. Navigate to the repository root folder in your terminal and run `pyenv local 3.12`.
+      - You could alternatively use `pyenv shell 3.12` or `pyenv global 3.12` instead to set the Python version for the current terminal session or the entire system respectively, however using `local` is recommended.
+
+2. In the root repository directory, create a python virtual environment:  
    `python3 -m venv .venv`
-2. Activate your environment:
+3. Activate your environment:
 
 -   Windows w/Powershell: `.venv\Scripts\Activate.ps1`
 -   Windows w/Command Prompt: `.venv\Scripts\activate.bat`
 -   Linux/macOS: `source .venv/bin/activate`
+       Depending on your system, the regular activation script *might* not work on alternative shells. In this case, refer to the table below for supported shells:
+       |Shell   |Script                   |
+       |-------:|:------------------------|
+       |Bash/ZSH|`.venv/bin/activate`     |
+       |Fish    |`.venv/bin/activate.fish`|
+       |CSH/TCSH|`.venv/bin/activate.csh` |
+       |PWSH    |`.venv/bin/activate.ps1` |
+       
 
-3. Install the required packages:
+4. Install the required packages:
 
 -   `pip install -r requirements.txt`
 -   If developing (includes Ruff and Mypy): `pip install -r requirements-dev.txt`
@@ -65,6 +75,8 @@ If you wish to launch the source version of TagStudio outside of your IDE:
 _Learn more about setting up a virtual environment [here](https://docs.python.org/3/tutorial/venv.html)._
 
 ### Manually Launching (Outside of an IDE)
+
+If you encounter errors about the Python version, or seemingly vague script errors, [pyenv](https://github.com/pyenv/pyenv/) may solve your issue. See step 1 of [Creating a Python Virtual Environment](#creating-a-python-virtual-environment).
 
 -   **Windows** (start_win.bat)
 
@@ -141,13 +153,14 @@ Most of the style guidelines can be checked, fixed, and enforced via Ruff. Older
 
 ### Modules & Implementations
 
+-   **Do not** modify legacy library code in the `src/core/library/json/` directory
 -   Avoid direct calls to `os`
     -   Use `Pathlib` library instead of `os.path`
     -   Use `platform.system()` instead of `os.name` and `sys.platform`
 -   Don't prepend local imports with `tagstudio`, stick to `src`
 -   Use the `logger` system instead of `print` statements
 -   Avoid nested f-strings
--   Use HTML-like tags inside Qt widgets over stylesheets where possible.
+-   Use HTML-like tags inside Qt widgets over stylesheets where possible
 
 ### Commit and Pull Request Style
 
@@ -156,6 +169,11 @@ Most of the style guidelines can be checked, fixed, and enforced via Ruff. Older
 -   Use clear and concise commit messages. If your commit does too much, either consider breaking it up into smaller commits or providing extra detail in the commit description.
 -   Pull requests should have an adequate title and description which clearly outline your intentions and changes/additions. Feel free to provide screenshots, GIFs, or videos, especially for UI changes.
 -   Pull requests should ideally be limited to **a single** feature or fix.
+
+> [!IMPORTANT]
+> Please do not force push if your PR is open for review!
+>
+> Force pushing makes it impossible to discern which changes have already been reviewed and which haven't. This means a reviewer will then have to rereview all the already reviewed code, which is a lot of unnecessary work for reviewers.
 
 > [!TIP]
 > If you're unsure where to stop the scope of your PR, ask yourself: _"If I broke this up, could any parts of it still be used by the project in the meantime?"_
@@ -167,9 +185,9 @@ Most of the style guidelines can be checked, fixed, and enforced via Ruff. Older
     -   macOS: 12.0+
     -   Linux: _Varies_
 -   Final code must **_NOT:_**
-    -   Contain superfluous or unnecessary logging statements.
-    -   Cause unreasonable slowdowns to the program outside of a progress-indicated task.
-    -   Cause undesirable visual glitches or artifacts on screen.
+    -   Contain superfluous or unnecessary logging statements
+    -   Cause unreasonable slowdowns to the program outside of a progress-indicated task
+    -   Cause undesirable visual glitches or artifacts on screen
 
 ## Documentation Guidelines
 

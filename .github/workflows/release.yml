@@ -35,9 +35,9 @@ jobs:
   macos:
     strategy:
       matrix:
-        os-version: ['12', '14']
+        os-version: ['13', '14']
         include:
-          - os-version: '12'
+          - os-version: '13'
             arch: x86_64
           - os-version: '14'
             arch: aarch64

@@ -1,0 +1,20 @@
+{
+    "app.pre_release": "Beta verze",
+    "drop_import.description": "Tyto soubory v knihovně již existují",
+    "drop_import.progress.label.initial": "Importuji nové soubory...",
+    "edit.tag_manager": "Spravovat tagy",
+    "entries.unlinked.relink.manual": "Znovu propojit ručně",
+    "entries.unlinked.relink.title": "Propojuji záznamy",
+    "entries.unlinked.scanning": "Skenuji knihovnu pro nepropojené záznamy...",
+    "entries.unlinked.title": "Opravit nepropojené záznamy",
+    "field.copy": "Zkopírovat políčko",
+    "field.edit": "Upravit políčko",
+    "field.paste": "Vložit políčko",
+    "file.date_added": "Datum přidání",
+    "file.date_created": "Datum vytvoření",
+    "file.date_modified": "Datum změny",
+    "file.dimensions": "Rozměry",
+    "file.duplicates.description": "TagStudio podporuje import výsledku z DupeGuru pro správu duplikátních souborů.",
+    "file.duplicates.dupeguru.file_extension": "DupeGuru soubory (*.dupeguru)",
+    "file.duplicates.fix": "Opravit duplikátní soubory"
+}

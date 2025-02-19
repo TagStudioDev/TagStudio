@@ -70,16 +70,20 @@ class Translator:
 
         Also formats the translation with the given keyword arguments.
         """
-        if key in self._strings:
-            self._strings[key].changed.connect(lambda text: setter(self.__format(text, **kwargs)))
+        # TODO: Fix so deleted Qt objects aren't referenced any longer
+        # if key in self._strings:
+        #     self._strings[key].changed.connect(lambda text: setter(self.__format(text, **kwargs)))
         setter(self.translate_formatted(key, **kwargs))
 
     def __format(self, text: str, **kwargs) -> str:
         try:
             return text.format(**kwargs)
-        except KeyError:
-            logger.warning(
-                "Error while formatting translation.", text=text, kwargs=kwargs, language=self._lang
+        except (KeyError, ValueError):
+            logger.error(
+                "[Translations] Error while formatting translation.",
+                text=text,
+                kwargs=kwargs,
+                language=self._lang,
             )
             return text
 
@@ -87,9 +91,7 @@ class Translator:
         return self.__format(self[key], **kwargs)
 
     def __getitem__(self, key: str) -> str:
-        # return "???"
-        return self._strings[key].value if key in self._strings else "Not Translated"
+        return self._strings[key].value if key in self._strings else f"[{key}]"
 
 
 Translations = Translator()
-# Translations.change_language("de")

@@ -7,7 +7,11 @@ from typing import Any
 
 import structlog
 import ujson
-from PIL import Image
+from PIL import (
+    Image,
+    ImageQt,
+)
+from PySide6.QtGui import QPixmap
 
 logger = structlog.get_logger(__name__)
 
@@ -25,7 +29,10 @@ class ResourceManager:
         if not ResourceManager._initialized:
             with open(Path(__file__).parent / "resources.json", encoding="utf-8") as f:
                 ResourceManager._map = ujson.load(f)
-                logger.info("resources registered", count=len(ResourceManager._map.items()))
+                logger.info(
+                    "[ResourceManager] Resources Registered:",
+                    count=len(ResourceManager._map.items()),
+                )
             ResourceManager._initialized = True
 
     @staticmethod
@@ -76,12 +83,15 @@ class ResourceManager:
                 elif res and res.get("mode") == "pil":
                     data = Image.open(ResourceManager._res_folder / "resources" / res.get("path"))
                     return data
-                elif res.get("mode") in ["qt"]:
-                    # TODO: Qt resource loading logic
-                    pass
+                elif res.get("mode") in ["qpixmap"]:
+                    data = Image.open(ResourceManager._res_folder / "resources" / res.get("path"))
+                    qim = ImageQt.ImageQt(data)
+                    pixmap = QPixmap.fromImage(qim)
+                    ResourceManager._cache[id] = pixmap
+                    return pixmap
             except FileNotFoundError:
                 path: Path = ResourceManager._res_folder / "resources" / res.get("path")
-                logger.error("[ResourceManager][ERROR]: Could not find resource: ", path)
+                logger.error("[ResourceManager][ERROR]: Could not find resource: ", path=path)
                 return None
 
     def __getattr__(self, __name: str) -> Any:
