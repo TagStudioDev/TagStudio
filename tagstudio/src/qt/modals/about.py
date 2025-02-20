@@ -31,6 +31,7 @@ class AboutModal(QWidget):
         self.setMinimumSize(400, 500)
         self.root_layout = QVBoxLayout(self)
         self.root_layout.setContentsMargins(20, 20, 20, 6)
+        self.setWindowFlag(Qt.Dialog, on=True)  # type: ignore
 
         self.logo_widget = QLabel()
         self.logo_widget.setObjectName("logo")
