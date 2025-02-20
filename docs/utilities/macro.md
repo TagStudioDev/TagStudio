@@ -43,4 +43,4 @@ Tool is in development, will allow for user-defined sorting of [fields](../libra
 
 ### Folders to Tags
 
-Creates tags from the existing folder structure in the library, which are previewed in a hierarchy view for the user to confirm. A tag will be created for each folder and applied to all entries, with each subfolder being linked to the parent folder as a [parent tag](../library/tag.md#subtags). Tags will initially be named after the folders, but can be fully edited and customized afterwards.
+Creates tags from the existing folder structure in the library, which are previewed in a hierarchy view for the user to confirm. A tag will be created for each folder and applied to all entries, with each subfolder being linked to the parent folder as a [parent tag](../library/tag.md#parent-tags). Tags will initially be named after the folders, but can be fully edited and customized afterwards.

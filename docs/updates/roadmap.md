@@ -14,6 +14,7 @@ Features are broken up into the following priority levels, with nested prioritie
 
 These version milestones are rough estimations for when the previous core features will be added. For a more definitive idea for when features are coming, please reference the current GitHub [milestones](https://github.com/TagStudioDev/TagStudio/milestones).
 
+<!-- prettier-ignore -->
 !!! note
     This list was created after the release of version 9.4
 

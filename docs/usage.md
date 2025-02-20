@@ -51,9 +51,11 @@ To edit a tag, click on it inside the preview panel or right-click the tag and s
 
 Inevitably some of the files inside your library will be renamed, moved, or deleted. If a file has been renamed or moved, TagStudio will display the thumbnail as a red broken chain link. To relink moved files or delete these entries, select the "Manage Unlinked Entries" option under the Tools menu. Click the "Refresh" button to scan your library for unlinked entries. Once complete, you can attempt to “Search & Relink” any unlinked file entries to their respective files, or “Delete Unlinked Entries” in the event the original files have been deleted and you no longer wish to keep their entries inside your library.
 
+<!-- prettier-ignore -->
 !!! warning
     There is currently no method to relink entries to files that have been renamed - only moved or deleted. This is a high priority for future releases.
 
+<!-- prettier-ignore -->
 !!! warning
     If multiple matches for a moved file are found (matches are currently defined as files with a matching filename as the original), TagStudio will currently ignore the match groups. Adding a GUI for manual selection, as well as smarter automated relinking, are high priorities for future versions.
 

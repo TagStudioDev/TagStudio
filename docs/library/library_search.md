@@ -10,29 +10,37 @@ TagStudio allows you to use common [boolean search](https://en.wikipedia.org/wik
 
 The `AND` operator will only return results that match **both** sides of the operator. `AND` is used implicitly when no boolean operators are given. To use the `AND` operator explicitly, simply type "and" (case insensitive) in-between items of your search.
 
-> For example, searching for "Tag1 Tag2" will be treated the same as "Tag1 `AND` Tag2" and will only return results that contain both Tag1 and Tag2.
+<!-- prettier-ignore -->
+!!! example
+    Searching for "Tag1 Tag2" will be treated the same as "Tag1 `AND` Tag2" and will only return results that contain both Tag1 and Tag2.
 
 ### OR
 
 The `OR` operator will return results that match **either** the left or right side of the operator. To use the `OR` operator simply type "or" (case insensitive) in-between items of your search.
 
-> For example, searching for "Tag1 `OR` Tag2" will return results that contain either "Tag1", "Tag2", or both.
+<!-- prettier-ignore -->
+!!! example
+    Searching for "Tag1 `OR` Tag2" will return results that contain either "Tag1", "Tag2", or both.
 
 ### NOT
 
 The `NOT` operator will returns results where the condition on the right is **false.** To use the `NOT` operator simply type "not" (case insensitive) in-between items of your search. You can also begin your search with `NOT` to only view results that do not contain the next term that follows.
 
-> For example, searching for "Tag1 `NOT` Tag2" will only return results that contain "Tag1" while also not containing "Tag2".
+<!-- prettier-ignore -->
+!!! example
+    Searching for "Tag1 `NOT` Tag2" will only return results that contain "Tag1" while also not containing "Tag2".
 
 ### Grouping and Nesting
 
 Searches can be grouped and nested by using parentheses to surround parts of your search query.
 
-> For example, searching for "(Tag1 `OR` Tag2) `AND` Tag3" will return results any results that contain Tag3, plus one or the other (or both) of Tag1 and Tag2.
+<!-- prettier-ignore -->
+!!! example
+    Searching for "(Tag1 `OR` Tag2) `AND` Tag3" will return results any results that contain Tag3, plus one or the other (or both) of Tag1 and Tag2.
 
 ### Escaping Characters
 
-Sometimes search queries have ambiguous characters and need to be "escaped". This is most common with tag names which contain spaces, or overlap with existing search keywords such as "[path:](#filename--filepath) of exile". To escape most search terms, surround the section of your search in plain quotes. Alternatively, spaces in tag names can be replaced by underscores.
+Sometimes search queries have ambiguous characters and need to be "escaped". This is most common with tag names which contain spaces, or overlap with existing search keywords such as "[path:](#filename-and-path) of exile". To escape most search terms, surround the section of your search in plain quotes. Alternatively, spaces in tag names can be replaced by underscores.
 
 #### Valid Escaped Tag Searches
 
@@ -56,7 +64,7 @@ _[Field](field.md) search is currently not in the program, however is coming in 
 
 ## File Entry Search
 
-### Filename + Path
+### Filename and Path
 
 Filename and path search is available via the `path:` keyword and comes in a few different styles. By default, any string that follows the `path:` keyword will be searched as a substring inside a file's complete filepath. This means that given a file `folder/my_file.txt`, searching for `path: my_file` or `path: folder` will both return results for that file.
 
