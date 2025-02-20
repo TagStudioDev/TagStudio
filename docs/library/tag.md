@@ -68,11 +68,15 @@ Component tags will be built from a composition-based, or "HAS" type relationshi
 
 ### Color
 
-Tags use a default uncolored appearance by default, however can take on a number of built-in and user-created\* colors and color palettes! Tag color palettes can be based on a single color value (see: TagStudio Standard, TagStudio Shades, TagStudio Pastels) or use an optional secondary color to override the border and text colors (see: TagStudio Neon).
+Tags use a default uncolored appearance by default, however can take on a number of built-in and user-created colors and color palettes! Tag color palettes can be based on a single color value (see: TagStudio Standard, TagStudio Shades, TagStudio Pastels) or use an optional secondary color use for the text and optionally the tag border (e.g. TagStudio Neon).
 
 ![Tag Color Selection](../assets/tag_color_selection.png)
 
-\*_Coming in the full version 9.5.0 release_
+#### User-Created Colors
+
+Custom palettes and colors can be created via the [Tag Color Manager](./tag_color.md). These colors will display alongside the built-in colors inside the tag selection window and are separated by their namespace names. Colors which use the secondary color for the tag border will be outlined in that color, otherwise they will only display the secondary color on the bottom of the swatch to indicate at a glance that the text colors are different.
+
+![Custom Tag Color Selection](../assets/custom_tag_color_selection.png)
 
 ### Icon
 
