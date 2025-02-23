@@ -64,6 +64,7 @@ class PreviewPanelView(QWidget):
         super().__init__()
         self.lib = library
 
+        self._selected = []
         self.__thumb = PreviewThumb(self.lib, driver)
         self.__file_attrs = FileAttributes(self.lib, driver)
         self._fields = FieldContainers(
@@ -132,7 +133,7 @@ class PreviewPanelView(QWidget):
     def _set_selection_callback(self):
         raise NotImplementedError()
 
-    def set_selection(self, selected: list[int], update_preview: bool = True):
+    def set_selection(self, selected: list[int] | None = None, update_preview: bool = True):
         """Render the panel widgets with the newest data from the Library.
 
         Args:
@@ -140,10 +141,10 @@ class PreviewPanelView(QWidget):
             update_preview (bool): Should the file preview be updated?
             (Only works with one or more items selected)
         """
-        self._selected = selected
+        self._selected = selected or []
         try:
             # No Items Selected
-            if len(selected) == 0:
+            if len(self._selected) == 0:
                 self.__thumb.hide_preview()
                 self.__file_attrs.update_stats()
                 self.__file_attrs.update_date_label()
@@ -152,8 +153,8 @@ class PreviewPanelView(QWidget):
                 self.add_buttons_enabled = False
 
             # One Item Selected
-            elif len(selected) == 1:
-                entry_id = selected[0]
+            elif len(self._selected) == 1:
+                entry_id = self._selected[0]
                 entry: Entry = unwrap(self.lib.get_entry(entry_id))
 
                 filepath: Path = unwrap(self.lib.library_dir) / entry.path
@@ -169,10 +170,10 @@ class PreviewPanelView(QWidget):
                 self.add_buttons_enabled = True
 
             # Multiple Selected Items
-            elif len(selected) > 1:
+            elif len(self._selected) > 1:
                 # items: list[Entry] = [self.lib.get_entry_full(x) for x in self.driver.selected]
                 self.__thumb.hide_preview()  # TODO: Render mixed selection
-                self.__file_attrs.update_multi_selection(len(selected))
+                self.__file_attrs.update_multi_selection(len(self._selected))
                 self.__file_attrs.update_date_label()
                 self._fields.hide_containers()  # TODO: Allow for mixed editing
 

@@ -52,14 +52,6 @@ class OpenStatus(enum.IntEnum):
     CORRUPTED = 2
 
 
-class MacroID(enum.Enum):
-    AUTOFILL = "autofill"
-    SIDECAR = "sidecar"
-    BUILD_URL = "build_url"
-    MATCH = "match"
-    CLEAN_URL = "clean_url"
-
-
 class DefaultEnum(enum.Enum):
     """Allow saving multiple identical values in property called .default."""
 
