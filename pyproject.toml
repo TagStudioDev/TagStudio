@@ -24,6 +24,7 @@ dependencies = [
     "Send2Trash==1.8.3",
     "SQLAlchemy==2.0.34",
     "structlog==24.4.0",
+    "toml==0.10.2",
     "typing_extensions>=3.10.0.0,<4.11.0",
     "ujson>=5.8.0,<5.9.0",
     "vtf2img==0.1.0",
