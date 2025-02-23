@@ -45,6 +45,31 @@ These version milestones are rough estimations for when the previous core featur
     -   [x] Search by media type (e.g. "image", "video", "document") [MEDIUM]
 -   [x] Sort by date added [HIGH]
 
+#### [Macros](../utilities/macro.md)
+
+<!-- prettier-ignore -->
+!!! note
+    These macro features are coming in version 9.5.1.
+
+-   [x] Sharable Macros [MEDIUM]
+    -   [x] Standard notation format (TOML) contacting macro instructions [HIGH]
+    -   [x] Exportable [HIGH]
+    -   [x] Importable [HIGH]
+-   [ ] Triggers [HIGH]
+    -   [ ] On new file added [HIGH]
+    -   [ ] On library opened [HIGH]
+    -   [ ] On library directories refreshed [HIGH]
+-   [ ] Actions [HIGH]
+    -   [x] Import from JSON file [HIGH]
+    -   [ ] Import from plaintext file [HIGH]
+    -   [ ] Import from XML file [MEDIUM]
+    -   [x] Create templated fields from other table keys [MEDIUM]
+    -   [x] Remove tag prefixes from import sources [HIGH]
+    -   [x] Specify tag delimiters from import sources [HIGH]
+    -   [x] Add data (tags + fields) configured in macro [HIGH]
+    -   [x] Glob filter for entry file [HIGH]
+    -   [x] Map source tags to TagStudio tags [HIGH]
+
 #### UI
 
 -   [ ] Translations _(Any applicable)_ [MEDIUM]
@@ -140,22 +165,6 @@ These version milestones are rough estimations for when the previous core featur
 -   [ ] Sort by date taken (photos) [MEDIUM]
 -   [ ] Sort by file size [HIGH]
 -   [ ] Sort by file dimension (images/video) [LOW]
-
-#### [Macros](../utilities/macro.md)
-
--   [ ] Sharable Macros [MEDIUM]
-    -   [ ] Standard notation format (TOML) contacting macro instructions [HIGH]
-    -   [ ] Exportable [HIGH]
-    -   [ ] Importable [HIGH]
--   [ ] Triggers [HIGH]
-    -   [ ] On new file [HIGH]
-    -   [ ] On library refresh [HIGH]
-    -   [ ] [...]
--   [ ] Actions [HIGH]
-    -   [ ] Add tag(s) [HIGH]
-    -   [ ] Add field(s) [HIGH]
-    -   [ ] Set field content [HIGH]
-    -   [ ] [...]
 
 #### UI
 

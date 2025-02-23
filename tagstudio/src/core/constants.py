@@ -9,6 +9,7 @@ VERSION_BRANCH: str = ""  # Usually "" or "Pre-Release"
 TS_FOLDER_NAME: str = ".TagStudio"
 BACKUP_FOLDER_NAME: str = "backups"
 COLLAGE_FOLDER_NAME: str = "collages"
+MACROS_FOLDER_NAME: str = "macros"
 THUMB_CACHE_NAME: str = "thumbs"
 
 FONT_SAMPLE_TEXT: str = (
