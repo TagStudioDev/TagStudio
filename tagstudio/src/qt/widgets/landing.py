@@ -161,7 +161,7 @@ class LandingWidget(QWidget):
     #     self.status_pos_anim.setEndValue(self.status_label.pos())
     #     self.status_pos_anim.start()
 
-    def set_status_label(self, text=str):
+    def set_status_label(self, text: str):
         """Set the text of the status label.
 
         Args:

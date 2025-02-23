@@ -710,14 +710,16 @@ class QtDriver(DriverMixin, QObject):
         app.exec()
         self.shutdown()
 
-    def show_error_message(self, message: str):
-        self.main_window.statusbar.showMessage(message, Qt.AlignmentFlag.AlignLeft)
-        self.main_window.landing_widget.set_status_label(message)
-        self.main_window.setWindowTitle(message)
+    def show_error_message(self, error_name: str, error_desc: str | None = None):
+        self.main_window.statusbar.showMessage(error_name, Qt.AlignmentFlag.AlignLeft)
+        self.main_window.landing_widget.set_status_label(error_name)
+        self.main_window.setWindowTitle(f"{self.base_title} - {error_name}")
 
         msg_box = QMessageBox()
         msg_box.setIcon(QMessageBox.Icon.Critical)
-        msg_box.setText(message)
+        msg_box.setText(error_name)
+        if error_desc:
+            msg_box.setInformativeText(error_desc)
         msg_box.setWindowTitle(Translations["window.title.error"])
         msg_box.addButton(Translations["generic.close"], QMessageBox.ButtonRole.AcceptRole)
 
@@ -1871,12 +1873,14 @@ class QtDriver(DriverMixin, QObject):
         if self.lib.library_dir:
             self.close_library()
 
-        open_status: LibraryStatus = None
+        open_status: LibraryStatus | None = None
         try:
             open_status = self.lib.open_library(path)
         except Exception as e:
             logger.exception(e)
-            open_status = LibraryStatus(success=False, library_path=path, message=type(e).__name__)
+            open_status = LibraryStatus(
+                success=False, library_path=path, message=type(e).__name__, msg_description=str(e)
+            )
 
         # Migration is required
         if open_status.json_migration_req:
@@ -1892,7 +1896,9 @@ class QtDriver(DriverMixin, QObject):
     def init_library(self, path: Path, open_status: LibraryStatus):
         if not open_status.success:
             self.show_error_message(
-                open_status.message or Translations["window.message.error_opening_library"]
+                error_name=open_status.message
+                or Translations["window.message.error_opening_library"],
+                error_desc=open_status.msg_description,
             )
             return open_status
 
