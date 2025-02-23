@@ -877,8 +877,8 @@ class Library:
             if search_query:
                 query = query.where(
                     or_(
-                        Tag.name.icontains(search_query),
-                        Tag.shorthand.icontains(search_query),
+                        Tag.name.istartswith(search_query),
+                        Tag.shorthand.istartswith(search_query),
                     )
                 )
 
@@ -886,7 +886,7 @@ class Library:
 
             if search_query:
                 query = select(TagAlias.tag_id, TagAlias.name).where(
-                    TagAlias.name.icontains(search_query)
+                    TagAlias.name.istartswith(search_query)
                 )
                 tags.extend(session.execute(query))
 
@@ -1484,6 +1484,7 @@ class Library:
 
         return tag
 
+    # TODO: Fix and consolidate code with search_tags()
     def get_tag_by_name(self, tag_name: str) -> Tag | None:
         with Session(self.engine) as session:
             statement = (

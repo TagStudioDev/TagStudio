@@ -47,6 +47,7 @@ nav:
       - preview-support.md
       - search.md
       - ignore.md
+      - relinking.md
       - macros.md
       - Tags & Fields:
           - tags.md
