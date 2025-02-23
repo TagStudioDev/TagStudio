@@ -25,3 +25,7 @@ A long string of text displayed as a box of text.
 A date and time value.
 
 -   e.g: Date Published, Date Taken, etc.
+
+<!-- prettier-ignore -->
+!!! note
+    Datetime types are a work in progress, and can't currently be manually created or edited.

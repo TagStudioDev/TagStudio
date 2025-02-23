@@ -45,24 +45,34 @@ from PySide6.QtWidgets import (
     QScrollArea,
 )
 
-import tagstudio.qt.resources_rc  # noqa: F401
-from tagstudio.core.constants import TAG_ARCHIVED, TAG_FAVORITE, VERSION, VERSION_BRANCH
+# This import has side-effect of import PySide resources
+import tagstudio.qt.resources_rc  # noqa: F401 # pyright: ignore [reportUnusedImport]
+from tagstudio.core.constants import (
+    MACROS_FOLDER_NAME,
+    TAG_ARCHIVED,
+    TAG_FAVORITE,
+    TS_FOLDER_NAME,
+    VERSION,
+    VERSION_BRANCH,
+)
 from tagstudio.core.driver import DriverMixin
-from tagstudio.core.enums import MacroID, SettingItems, ShowFilepathOption
+from tagstudio.core.enums import SettingItems, ShowFilepathOption
 from tagstudio.core.library.alchemy.enums import (
     BrowsingState,
-    FieldTypeEnum,
     SortingModeEnum,
 )
-from tagstudio.core.library.alchemy.fields import FieldID
 from tagstudio.core.library.alchemy.library import Library, LibraryStatus
-from tagstudio.core.library.alchemy.models import Entry
+from tagstudio.core.library.alchemy.models import Entry, Tag
 from tagstudio.core.library.ignore import Ignore
 from tagstudio.core.library.refresh import RefreshTracker
+from tagstudio.core.macro_parser import (
+    DataResult,
+    FieldResult,
+    TagResult,
+    parse_macro_file,
+)
 from tagstudio.core.media_types import MediaCategories
 from tagstudio.core.query_lang.util import ParsingError
-from tagstudio.core.ts_core import TagStudioCore
-from tagstudio.core.utils.str_formatting import strip_web_protocol
 from tagstudio.core.utils.types import unwrap
 from tagstudio.qt.cache_manager import CacheManager
 from tagstudio.qt.controllers.ffmpeg_missing_message_box import FfmpegMissingMessageBox
@@ -308,10 +318,20 @@ class QtDriver(DriverMixin, QObject):
             pal: QPalette = self.app.palette()
             pal.setColor(QPalette.ColorGroup.Normal, QPalette.ColorRole.Window, QColor("#1e1e1e"))
             pal.setColor(QPalette.ColorGroup.Normal, QPalette.ColorRole.Button, QColor("#1e1e1e"))
-            pal.setColor(QPalette.ColorGroup.Inactive, QPalette.ColorRole.Window, QColor("#232323"))
-            pal.setColor(QPalette.ColorGroup.Inactive, QPalette.ColorRole.Button, QColor("#232323"))
             pal.setColor(
-                QPalette.ColorGroup.Inactive, QPalette.ColorRole.ButtonText, QColor("#666666")
+                QPalette.ColorGroup.Inactive,
+                QPalette.ColorRole.Window,
+                QColor("#232323"),
+            )
+            pal.setColor(
+                QPalette.ColorGroup.Inactive,
+                QPalette.ColorRole.Button,
+                QColor("#232323"),
+            )
+            pal.setColor(
+                QPalette.ColorGroup.Inactive,
+                QPalette.ColorRole.ButtonText,
+                QColor("#666666"),
             )
 
             self.app.setPalette(pal)
@@ -534,6 +554,21 @@ class QtDriver(DriverMixin, QObject):
         # endregion
 
         # region Macros Menu ==========================================================
+
+        self.main_window.menu_bar.test_macro_1_action.triggered.connect(
+            lambda: (
+                self.run_macros(self.main_window.menu_bar.test_macro_1, self.selected),
+                # self.main_window.preview_panel.update_widgets(update_preview=False),
+            )
+        )
+
+        self.main_window.menu_bar.test_macro_2_action.triggered.connect(
+            lambda: (
+                self.run_macros(self.main_window.menu_bar.test_macro_2, self.selected),
+                # self.preview_panel.update_widgets(update_preview=False),
+            )
+        )
+
         def create_folders_tags_modal():
             if not hasattr(self, "folders_modal"):
                 self.folders_modal = FoldersToTagsModal(self.lib, self)
@@ -782,7 +817,8 @@ class QtDriver(DriverMixin, QObject):
         end_time = time.time()
         self.main_window.status_bar.showMessage(
             Translations.format(
-                "status.library_closed", time_span=format_timespan(end_time - start_time)
+                "status.library_closed",
+                time_span=format_timespan(end_time - start_time),
             )
         )
 
@@ -1075,56 +1111,85 @@ class QtDriver(DriverMixin, QObject):
         # 	# self.run_macro('autofill', id)
         yield 0
 
-    def run_macros(self, name: MacroID, entry_ids: list[int]):
+    def run_macros(self, macro_name: str, entry_ids: list[int]):
         """Run a specific Macro on a group of given entry_ids."""
         for entry_id in entry_ids:
-            self.run_macro(name, entry_id)
+            self.run_macro(macro_name, entry_id)
 
-    def run_macro(self, name: MacroID, entry_id: int):
+    def run_macro(self, macro_name: str, entry_id: int):
         """Run a specific Macro on an Entry given a Macro name."""
-        entry: Entry = self.lib.get_entry(entry_id)
+        if not self.lib.library_dir:
+            logger.error("[QtDriver] Can't run macro when no library is open!")
+            return
+
+        entry: Entry | None = self.lib.get_entry(entry_id)
+        if not entry:
+            logger.error(f"[QtDriver] No Entry given ID {entry_id}!")
+            return
+
         full_path = self.lib.library_dir / entry.path
-        source = "" if entry.path.parent == Path(".") else entry.path.parts[0].lower()
+        # macro_path = Path(
+        #     self.lib.library_dir / TS_FOLDER_NAME / MACROS_FOLDER_NAME / f"{macro_name}.toml"
+        # )
+        macro_path = Path(self.lib.library_dir / TS_FOLDER_NAME / MACROS_FOLDER_NAME / macro_name)
 
         logger.info(
-            "running macro",
-            source=source,
-            macro=name,
+            "[QtDriver] Running Macro",
+            macro_path=macro_name,
             entry_id=entry.id,
-            grid_idx=entry_id,
         )
 
-        if name == MacroID.AUTOFILL:
-            for macro_id in MacroID:
-                if macro_id == MacroID.AUTOFILL:
-                    continue
-                self.run_macro(macro_id, entry_id)
+        results: list[DataResult] = parse_macro_file(macro_path, full_path)
+        for result in results:
+            if isinstance(result, TagResult):
+                tag_ids: set[int] = set()
+                for string in result.tag_strings:
+                    if not string.strip():
+                        continue
+                    # NOTE: The following code overlaps with update_tags() in tag_search.py
+                    # Sort and prioritize the results
+                    tag_results: list[set[Tag]] = self.lib.search_tags(name=string, limit=-1)
+                    results_0 = list(tag_results[0])
+                    results_0.sort(key=lambda tag: tag.name.lower())
+                    results_1 = list(tag_results[1])
+                    results_1.sort(key=lambda tag: tag.name.lower())
+                    raw_results = list(results_0 + results_1)
+                    priority_results: set[Tag] = set()
 
-        elif name == MacroID.SIDECAR:
-            parsed_items = TagStudioCore.get_gdl_sidecar(full_path, source)
-            for field_id, value in parsed_items.items():
-                if isinstance(value, list) and len(value) > 0 and isinstance(value[0], str):
-                    value = self.lib.tag_from_strings(value)
+                    for tag in raw_results:
+                        if (
+                            tag.name.lower().startswith(string.strip().lower())
+                            and tag not in priority_results
+                        ):
+                            priority_results.add(tag)
+                    all_results = sorted(list(priority_results), key=lambda tag: len(tag.name)) + [
+                        r for r in raw_results if r not in priority_results
+                    ]
+
+                    final_tag: Tag | None = None
+                    if len(all_results) > 0:
+                        final_tag = all_results[0]
+                    # tag = self.lib.get_tag_by_name(string)
+                    if final_tag:
+                        tag_ids.add(final_tag.id)
+
+                if not tag_ids:
+                    continue
+
+                self.lib.add_tags_to_entries(entry_id, tag_ids)
+
+            elif isinstance(result, FieldResult):
                 self.lib.add_field_to_entry(
-                    entry.id,
-                    field_id=field_id,
-                    value=value,
+                    entry_id,
+                    field_id=result.name,
+                    value=result.content,
+                    skip_on_exists=True,
                 )
 
-        elif name == MacroID.BUILD_URL:
-            url = TagStudioCore.build_url(entry, source)
-            if url is not None:
-                self.lib.add_field_to_entry(entry.id, field_id=FieldID.SOURCE, value=url)
-        elif name == MacroID.MATCH:
-            TagStudioCore.match_conditions(self.lib, entry.id)
-        elif name == MacroID.CLEAN_URL:
-            for field in entry.text_fields:
-                if field.type.type == FieldTypeEnum.TEXT_LINE and field.value:
-                    self.lib.update_entry_field(
-                        entry_ids=entry.id,
-                        field=field,
-                        content=strip_web_protocol(field.value),
-                    )
+    @property
+    def sorting_direction(self) -> bool:
+        """Whether to Sort the results in ascending order."""
+        return self.main_window.sorting_direction_combobox.currentData()
 
     def sorting_direction_callback(self):
         logger.info("Sorting Direction Changed", ascending=self.main_window.sorting_direction)
@@ -1248,6 +1313,9 @@ class QtDriver(DriverMixin, QObject):
 
         self.main_window.preview_panel.set_selection(self.selected)
 
+    def set_macro_menu_viability(self):
+        self.main_window.menu_bar.test_macro_1_action.setDisabled(not self.selected)
+
     def set_clipboard_menu_viability(self):
         if len(self.selected) == 1:
             self.main_window.menu_bar.copy_fields_action.setEnabled(True)
@@ -1280,7 +1348,8 @@ class QtDriver(DriverMixin, QObject):
 
     def update_completions_list(self, text: str) -> None:
         matches = re.search(
-            r"((?:.* )?)(mediatype|filetype|path|tag|tag_id):(\"?[A-Za-z0-9\ \t]+\"?)?", text
+            r"((?:.* )?)(mediatype|filetype|path|tag|tag_id):(\"?[A-Za-z0-9\ \t]+\"?)?",
+            text,
         )
 
         completion_list: list[str] = []
@@ -1551,7 +1620,10 @@ class QtDriver(DriverMixin, QObject):
         except Exception as e:
             logger.error(e)
             open_status = LibraryStatus(
-                success=False, library_path=path, message=type(e).__name__, msg_description=str(e)
+                success=False,
+                library_path=path,
+                message=type(e).__name__,
+                msg_description=str(e),
             )
         self.cache_manager = CacheManager(
             path,

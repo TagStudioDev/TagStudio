@@ -43,8 +43,10 @@ nav:
       - entries.md
       - preview-support.md
       - search.md
-      - ignore.md
       - macros.md
+      - Management:
+        - relinking.md
+        - ignore.md
       - Fields:
         - fields.md
       - Tags:
