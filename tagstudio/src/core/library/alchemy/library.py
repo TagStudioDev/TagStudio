@@ -184,6 +184,7 @@ class LibraryStatus:
     success: bool
     library_path: Path | None = None
     message: str | None = None
+    msg_description: str | None = None
     json_migration_req: bool = False
 
 
