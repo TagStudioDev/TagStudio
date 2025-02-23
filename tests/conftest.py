@@ -145,7 +145,7 @@ def qt_driver(qtbot, library):
             driver.preview_panel = Mock()
             driver.flow_container = Mock()
             driver.item_thumbs = []
-            driver.autofill_action = Mock()
+            driver.test_macro_1_action = Mock()
 
             driver.copy_buffer = {"fields": [], "tags": []}
             driver.copy_fields_action = Mock()
