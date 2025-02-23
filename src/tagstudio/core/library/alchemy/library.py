@@ -1062,19 +1062,21 @@ class Library:
                 selectinload(Tag.parent_tags),
                 selectinload(Tag.aliases),
             )
+
             if limit > 0:
                 query = query.limit(limit)
 
             if name:
                 query = query.where(
                     or_(
-                        Tag.name.icontains(name),
-                        Tag.shorthand.icontains(name),
-                        TagAlias.name.icontains(name),
+                        Tag.name.istartswith(name),
+                        Tag.shorthand.istartswith(name),
+                        TagAlias.name.istartswith(name),
                     )
                 )
 
             direct_tags = set(session.scalars(query))
+
             ancestor_tag_ids: list[Tag] = []
             for tag in direct_tags:
                 ancestor_tag_ids.extend(
@@ -1092,13 +1094,13 @@ class Library:
                 {at for at in ancestor_tags if at not in direct_tags},
             ]
 
-            logger.info(
-                "searching tags",
-                search=name,
-                limit=limit,
-                statement=str(query),
-                results=len(res),
-            )
+            # logger.info(
+            #     "searching tags",
+            #     search=name,
+            #     limit=limit,
+            #     statement=str(query),
+            #     results=len(res),
+            # )
 
             session.expunge_all()
 
@@ -1256,7 +1258,7 @@ class Library:
         with Session(self.engine) as session:
             return {x.key: x for x in session.scalars(select(ValueType)).all()}
 
-    def get_value_type(self, field_key: str) -> ValueType:
+    def get_value_type(self, field_key: str | None) -> ValueType | None:
         with Session(self.engine) as session:
             field = unwrap(session.scalar(select(ValueType).where(ValueType.key == field_key)))
             session.expunge(field)
@@ -1269,6 +1271,7 @@ class Library:
         field: ValueType | None = None,
         field_id: FieldID | str | None = None,
         value: str | datetime | None = None,
+        skip_on_exists: bool = False,
     ) -> bool:
         logger.info(
             "[Library][add_field_to_entry]",
@@ -1284,6 +1287,27 @@ class Library:
             if isinstance(field_id, FieldID):
                 field_id = field_id.name
             field = self.get_value_type(unwrap(field_id))
+
+        if not field:
+            logger.error(
+                "[Library] Could not add field to entry, invalid field type.", entry_id=entry_id
+            )
+            return False
+
+        if skip_on_exists:
+            entry = self.get_entry_full(entry_id, with_tags=False)
+            if not entry:
+                logger.exception("[Library] Entry does not exist", entry_id=entry_id)
+                return False
+            for field_ in entry.fields:
+                if field_.value == value and field_.type_key == field_id:
+                    logger.info(
+                        "[Library] Field value already exists for entry",
+                        entry_id=entry_id,
+                        value=value,
+                        type=field_id,
+                    )
+                    return False
 
         field_model: TextField | DatetimeField
         if field.type in (FieldTypeEnum.TEXT_LINE, FieldTypeEnum.TEXT_BOX):
@@ -1463,10 +1487,21 @@ class Library:
             for tag_id in tag_ids_:
                 for entry_id in entry_ids_:
                     try:
+                        logger.info(
+                            "[Library][add_tags_to_entries] Adding tag to entry...",
+                            tag_id=tag_id,
+                            entry_id=entry_id,
+                        )
                         session.add(TagEntry(tag_id=tag_id, entry_id=entry_id))
                         total_added += 1
                         session.commit()
-                    except IntegrityError:
+                    except IntegrityError as e:
+                        logger.warning(
+                            "[Library][add_tags_to_entries] Tag already on entry",
+                            warning=e,
+                            tag_id=tag_id,
+                            entry_id=entry_id,
+                        )
                         session.rollback()
 
         return total_added
@@ -1563,6 +1598,7 @@ class Library:
 
         return tag
 
+    # TODO: Fix and consolidate code with search_tags()
     def get_tag_by_name(self, tag_name: str) -> Tag | None:
         with Session(self.engine) as session:
             statement = (
