@@ -477,10 +477,7 @@ class Library:
         return LibraryStatus(success=True, library_path=library_dir)
 
     def apply_repairs_for_db6(self, session: Session):
-        """Apply database repairs introduced in DB_VERSION 7.
-
-        DB_VERSION 6 was only used in v9.5.0-pr1.
-        """
+        """Apply database repairs introduced in DB_VERSION 7."""
         logger.info("[Library][Migration] Applying patches to DB_VERSION: 6 library...")
         with session:
             # Repair "Description" fields with a TEXT_LINE key instead of a TEXT_BOX key.
@@ -523,10 +520,7 @@ class Library:
             session.rollback()
 
     def apply_db8_default_data(self, session: Session):
-        """Apply default data changes introduced in DB_VERSION 8.
-
-        DB_VERSION 7 was used from v9.5.0-pr2 to v9.5.0-pr3.
-        """
+        """Apply default data changes introduced in DB_VERSION 8."""
         tag_colors: list[TagColorGroup] = default_color_groups.standard()
         tag_colors += default_color_groups.pastels()
         tag_colors += default_color_groups.shades()
