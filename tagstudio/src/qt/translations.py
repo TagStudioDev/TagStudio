@@ -114,11 +114,60 @@ class TranslationWatcher:
         pass
 
 
+# TODO: there is a LOT of duplicated code in these following classes -
+# maybe generate them from a template (if that is even possible)?
+
+
 class TQPushButton(QPushButton, TranslationWatcher):
-    def __init__(self, key: str, parent: QWidget | None = None):
+    def __init__(self, text_key: str, parent: QWidget | None = None, **kwargs):
         super().__init__(parent)
-        self.key: str = key
+        self.text_key: str = text_key
+        self.format_args = kwargs
         self.update_text()
 
     def update_text(self):
-        self.setText(Translations.translate_formatted(self.key))
+        self.setText(Translations.translate_formatted(self.text_key, **self.format_args))
+
+
+class TQLabel(QLabel, TranslationWatcher):
+    def __init__(self, text_key: str, parent: QWidget | None = None, **kwargs):
+        super().__init__(parent)
+        self.text_key: str = text_key
+        self.format_args = kwargs
+        self.update_text()
+
+    def update_text(self):
+        self.setText(Translations.translate_formatted(self.text_key, **self.format_args))
+
+
+class TQAction(QAction, TranslationWatcher):
+    def __init__(self, text_key: str, parent: QObject | None = None, **kwargs):
+        super().__init__(parent)
+        self.text_key: str = text_key
+        self.format_args = kwargs
+        self.update_text()
+
+    def update_text(self):
+        self.setText(Translations.translate_formatted(self.text_key, **self.format_args))
+
+
+class TQMessageBox(QMessageBox, TranslationWatcher):
+    def __init__(self, text_key: str, parent: QWidget | None = None, **kwargs):
+        super().__init__(parent)
+        self.text_key: str = text_key
+        self.format_args = kwargs
+        self.update_text()
+
+    def update_text(self):
+        self.setText(Translations.translate_formatted(self.text_key, **self.format_args))
+
+
+class TQMenu(QMenu, TranslationWatcher):
+    def __init__(self, title_key: str, parent: QWidget | None = None, **kwargs):
+        super().__init__(parent)
+        self.title_key: str = title_key
+        self.format_args = kwargs
+        self.update_text()
+
+    def update_text(self):
+        self.setTitle(Translations.translate_formatted(self.title_key, **self.format_args))
