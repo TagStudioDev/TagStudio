@@ -184,6 +184,7 @@ class LibraryStatus:
     success: bool
     library_path: Path | None = None
     message: str | None = None
+    msg_description: str | None = None
     json_migration_req: bool = False
 
 
@@ -460,10 +461,12 @@ class Library:
 
             # Apply any post-SQL migration patches.
             if not is_new:
+                if db_version < 8:
+                    self.apply_db8_schema_changes(session)
                 if db_version == 6:
-                    self.apply_db6_patches(session)
+                    self.apply_repairs_for_db6(session)
                 if db_version >= 6 and db_version < 8:
-                    self.apply_db7_patches(session)
+                    self.apply_db8_default_data(session)
 
             # Update DB_VERSION
             if LibraryPrefs.DB_VERSION.default > db_version:
@@ -473,11 +476,8 @@ class Library:
         self.library_dir = library_dir
         return LibraryStatus(success=True, library_path=library_dir)
 
-    def apply_db6_patches(self, session: Session):
-        """Apply migration patches to a library with DB_VERSION 6.
-
-        DB_VERSION 6 was only used in v9.5.0-pr1.
-        """
+    def apply_repairs_for_db6(self, session: Session):
+        """Apply database repairs introduced in DB_VERSION 7."""
         logger.info("[Library][Migration] Applying patches to DB_VERSION: 6 library...")
         with session:
             # Repair "Description" fields with a TEXT_LINE key instead of a TEXT_BOX key.
@@ -501,11 +501,8 @@ class Library:
 
             session.commit()
 
-    def apply_db7_patches(self, session: Session):
-        """Apply migration patches to a library with DB_VERSION 7 or earlier.
-
-        DB_VERSION 7 was used from v9.5.0-pr2 to v9.5.0-pr3.
-        """
+    def apply_db8_schema_changes(self, session: Session):
+        """Apply database schema changes introduced in DB_VERSION 8."""
         # TODO: Use Alembic for this part instead
         # Add the missing color_border column to the TagColorGroups table.
         color_border_stmt = text(
@@ -522,6 +519,8 @@ class Library:
             )
             session.rollback()
 
+    def apply_db8_default_data(self, session: Session):
+        """Apply default data changes introduced in DB_VERSION 8."""
         tag_colors: list[TagColorGroup] = default_color_groups.standard()
         tag_colors += default_color_groups.pastels()
         tag_colors += default_color_groups.shades()
