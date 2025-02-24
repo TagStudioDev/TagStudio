@@ -43,7 +43,6 @@ from PySide6.QtWidgets import (
     QComboBox,
     QFileDialog,
     QLineEdit,
-    QMenu,
     QMenuBar,
     QMessageBox,
     QPushButton,
@@ -94,7 +93,7 @@ from src.qt.modals.tag_search import TagSearchPanel
 from src.qt.platform_strings import trash_term
 from src.qt.resource_manager import ResourceManager
 from src.qt.splash import Splash
-from src.qt.translations import Translations
+from src.qt.translations import TQAction, TQMenu, Translations
 from src.qt.widgets.item_thumb import BadgeType, ItemThumb
 from src.qt.widgets.migration_modal import JsonMigrationModal
 from src.qt.widgets.panel import PanelModal
@@ -338,22 +337,15 @@ class QtDriver(DriverMixin, QObject):
         self.main_window.setMenuBar(menu_bar)
         menu_bar.setNativeMenuBar(True)
 
-        file_menu = QMenu(menu_bar)
-        Translations.translate_qobject(file_menu, "menu.file")
-        edit_menu = QMenu(menu_bar)
-        Translations.translate_qobject(edit_menu, "generic.edit_alt")
-        view_menu = QMenu(menu_bar)
-        Translations.translate_qobject(view_menu, "menu.view")
-        tools_menu = QMenu(menu_bar)
-        Translations.translate_qobject(tools_menu, "menu.tools")
-        macros_menu = QMenu(menu_bar)
-        Translations.translate_qobject(macros_menu, "menu.macros")
-        help_menu = QMenu(menu_bar)
-        Translations.translate_qobject(help_menu, "menu.help")
+        file_menu = TQMenu("menu.file", menu_bar)
+        edit_menu = TQMenu("generic.edit_alt", menu_bar)
+        view_menu = TQMenu("menu.view", menu_bar)
+        tools_menu = TQMenu("menu.tools", menu_bar)
+        macros_menu = TQMenu("menu.macros", menu_bar)
+        help_menu = TQMenu("menu.help", menu_bar)
 
         # File Menu ============================================================
-        open_library_action = QAction(menu_bar)
-        Translations.translate_qobject(open_library_action, "menu.file.open_create_library")
+        open_library_action = TQAction("menu.file.open_create_library", menu_bar)
         open_library_action.triggered.connect(lambda: self.open_library_from_dialog())
         open_library_action.setShortcut(
             QtCore.QKeyCombination(
@@ -364,15 +356,11 @@ class QtDriver(DriverMixin, QObject):
         open_library_action.setToolTip("Ctrl+O")
         file_menu.addAction(open_library_action)
 
-        self.open_recent_library_menu = QMenu(menu_bar)
-        Translations.translate_qobject(
-            self.open_recent_library_menu, "menu.file.open_recent_library"
-        )
+        self.open_recent_library_menu = TQMenu("menu.file.open_recent_library", menu_bar)
         file_menu.addMenu(self.open_recent_library_menu)
         self.update_recent_lib_menu()
 
-        self.save_library_backup_action = QAction(menu_bar)
-        Translations.translate_qobject(self.save_library_backup_action, "menu.file.save_backup")
+        self.save_library_backup_action = TQAction("menu.file.save_backup", menu_bar)
         self.save_library_backup_action.triggered.connect(
             lambda: self.callback_library_needed_check(self.backup_library)
         )
@@ -390,13 +378,11 @@ class QtDriver(DriverMixin, QObject):
         file_menu.addAction(self.save_library_backup_action)
 
         file_menu.addSeparator()
-        settings_action = QAction(self)
-        Translations.translate_qobject(settings_action, "menu.settings")
+        settings_action = TQAction("menu.settings", self)
         settings_action.triggered.connect(self.open_settings_modal)
         file_menu.addAction(settings_action)
 
-        open_on_start_action = QAction(self)
-        Translations.translate_qobject(open_on_start_action, "settings.open_library_on_start")
+        open_on_start_action = TQAction("settings.open_library_on_start", self)
         open_on_start_action.setCheckable(True)
         open_on_start_action.setChecked(
             bool(self.settings.value(SettingItems.START_LOAD_LAST, defaultValue=True, type=bool))
@@ -408,8 +394,7 @@ class QtDriver(DriverMixin, QObject):
 
         file_menu.addSeparator()
 
-        self.refresh_dir_action = QAction(menu_bar)
-        Translations.translate_qobject(self.refresh_dir_action, "menu.file.refresh_directories")
+        self.refresh_dir_action = TQAction("menu.file.refresh_directories", menu_bar)
         self.refresh_dir_action.triggered.connect(
             lambda: self.callback_library_needed_check(self.add_new_files_callback)
         )
@@ -424,16 +409,14 @@ class QtDriver(DriverMixin, QObject):
         file_menu.addAction(self.refresh_dir_action)
         file_menu.addSeparator()
 
-        self.close_library_action = QAction(menu_bar)
-        Translations.translate_qobject(self.close_library_action, "menu.file.close_library")
+        self.close_library_action = TQAction("menu.file.close_library", menu_bar)
         self.close_library_action.triggered.connect(self.close_library)
         self.close_library_action.setEnabled(False)
         file_menu.addAction(self.close_library_action)
         file_menu.addSeparator()
 
         # Edit Menu ============================================================
-        self.new_tag_action = QAction(menu_bar)
-        Translations.translate_qobject(self.new_tag_action, "menu.edit.new_tag")
+        self.new_tag_action = TQAction("menu.edit.new_tag", menu_bar)
         self.new_tag_action.triggered.connect(lambda: self.add_tag_action_callback())
         self.new_tag_action.setShortcut(
             QtCore.QKeyCombination(
@@ -447,8 +430,7 @@ class QtDriver(DriverMixin, QObject):
 
         edit_menu.addSeparator()
 
-        self.select_all_action = QAction(menu_bar)
-        Translations.translate_qobject(self.select_all_action, "select.all")
+        self.select_all_action = TQAction("select.all", menu_bar)
         self.select_all_action.triggered.connect(self.select_all_action_callback)
         self.select_all_action.setShortcut(
             QtCore.QKeyCombination(
@@ -460,8 +442,7 @@ class QtDriver(DriverMixin, QObject):
         self.select_all_action.setEnabled(False)
         edit_menu.addAction(self.select_all_action)
 
-        self.clear_select_action = QAction(menu_bar)
-        Translations.translate_qobject(self.clear_select_action, "select.clear")
+        self.clear_select_action = TQAction("select.clear", menu_bar)
         self.clear_select_action.triggered.connect(self.clear_select_action_callback)
         self.clear_select_action.setShortcut(QtCore.Qt.Key.Key_Escape)
         self.clear_select_action.setToolTip("Esc")
@@ -470,8 +451,7 @@ class QtDriver(DriverMixin, QObject):
 
         self.copy_buffer: dict = {"fields": [], "tags": []}
 
-        self.copy_fields_action = QAction(menu_bar)
-        Translations.translate_qobject(self.copy_fields_action, "edit.copy_fields")
+        self.copy_fields_action = QAction("edit.copy_fields", menu_bar)
         self.copy_fields_action.triggered.connect(self.copy_fields_action_callback)
         self.copy_fields_action.setShortcut(
             QtCore.QKeyCombination(
@@ -483,8 +463,7 @@ class QtDriver(DriverMixin, QObject):
         self.copy_fields_action.setEnabled(False)
         edit_menu.addAction(self.copy_fields_action)
 
-        self.paste_fields_action = QAction(menu_bar)
-        Translations.translate_qobject(self.paste_fields_action, "edit.paste_fields")
+        self.paste_fields_action = TQAction("edit.paste_fields", menu_bar)
         self.paste_fields_action.triggered.connect(self.paste_fields_action_callback)
         self.paste_fields_action.setShortcut(
             QtCore.QKeyCombination(
@@ -496,10 +475,7 @@ class QtDriver(DriverMixin, QObject):
         self.paste_fields_action.setEnabled(False)
         edit_menu.addAction(self.paste_fields_action)
 
-        self.add_tag_to_selected_action = QAction(menu_bar)
-        Translations.translate_qobject(
-            self.add_tag_to_selected_action, "select.add_tag_to_selected"
-        )
+        self.add_tag_to_selected_action = TQAction("select.add_tag_to_selected", menu_bar)
         self.add_tag_to_selected_action.triggered.connect(self.add_tag_modal.show)
         self.add_tag_to_selected_action.setShortcut(
             QtCore.QKeyCombination(
@@ -516,9 +492,8 @@ class QtDriver(DriverMixin, QObject):
 
         edit_menu.addSeparator()
 
-        self.delete_file_action = QAction(menu_bar)
-        Translations.translate_qobject(
-            self.delete_file_action, "menu.delete_selected_files_ambiguous", trash_term=trash_term()
+        self.delete_file_action = TQAction(
+            "menu.delete_selected_files_ambiguous", menu_bar, trash_term=trash_term()
         )
         self.delete_file_action.triggered.connect(lambda f="": self.delete_files_callback(f))
         self.delete_file_action.setShortcut(QtCore.Qt.Key.Key_Delete)
@@ -527,15 +502,11 @@ class QtDriver(DriverMixin, QObject):
 
         edit_menu.addSeparator()
 
-        self.manage_file_ext_action = QAction(menu_bar)
-        Translations.translate_qobject(
-            self.manage_file_ext_action, "menu.edit.manage_file_extensions"
-        )
+        self.manage_file_ext_action = TQAction("menu.edit.manage_file_extensions", menu_bar)
         edit_menu.addAction(self.manage_file_ext_action)
         self.manage_file_ext_action.setEnabled(False)
 
-        self.tag_manager_action = QAction(menu_bar)
-        Translations.translate_qobject(self.tag_manager_action, "menu.edit.manage_tags")
+        self.tag_manager_action = TQAction("menu.edit.manage_tags", menu_bar)
         self.tag_manager_action.triggered.connect(self.tag_manager_panel.show)
         self.tag_manager_action.setShortcut(
             QtCore.QKeyCombination(
@@ -547,22 +518,19 @@ class QtDriver(DriverMixin, QObject):
         self.tag_manager_action.setToolTip("Ctrl+M")
         edit_menu.addAction(self.tag_manager_action)
 
-        self.color_manager_action = QAction(menu_bar)
-        Translations.translate_qobject(self.color_manager_action, "edit.color_manager")
+        self.color_manager_action = TQAction("edit.color_manager", menu_bar)
         self.color_manager_action.triggered.connect(self.color_manager_panel.show)
         self.color_manager_action.setEnabled(False)
         edit_menu.addAction(self.color_manager_action)
 
         # View Menu ============================================================
-        show_libs_list_action = QAction(menu_bar)
-        Translations.translate_qobject(show_libs_list_action, "settings.show_recent_libraries")
+        show_libs_list_action = TQAction("settings.show_recent_libraries", menu_bar)
         show_libs_list_action.setCheckable(True)
         show_libs_list_action.setChecked(
             bool(self.settings.value(SettingItems.WINDOW_SHOW_LIBS, defaultValue=True, type=bool))
         )
 
-        show_filenames_action = QAction(menu_bar)
-        Translations.translate_qobject(show_filenames_action, "settings.show_filenames_in_grid")
+        show_filenames_action = TQAction("settings.show_filenames_in_grid", menu_bar)
         show_filenames_action.setCheckable(True)
         show_filenames_action.setChecked(
             bool(self.settings.value(SettingItems.SHOW_FILENAMES, defaultValue=True, type=bool))
@@ -581,10 +549,7 @@ class QtDriver(DriverMixin, QObject):
                 self.unlinked_modal = FixUnlinkedEntriesModal(self.lib, self)
             self.unlinked_modal.show()
 
-        self.fix_unlinked_entries_action = QAction(menu_bar)
-        Translations.translate_qobject(
-            self.fix_unlinked_entries_action, "menu.tools.fix_unlinked_entries"
-        )
+        self.fix_unlinked_entries_action = TQAction("menu.tools.fix_unlinked_entries", menu_bar)
         self.fix_unlinked_entries_action.triggered.connect(create_fix_unlinked_entries_modal)
         self.fix_unlinked_entries_action.setEnabled(False)
         tools_menu.addAction(self.fix_unlinked_entries_action)
@@ -594,8 +559,7 @@ class QtDriver(DriverMixin, QObject):
                 self.dupe_modal = FixDupeFilesModal(self.lib, self)
             self.dupe_modal.show()
 
-        self.fix_dupe_files_action = QAction(menu_bar)
-        Translations.translate_qobject(self.fix_dupe_files_action, "menu.tools.fix_duplicate_files")
+        self.fix_dupe_files_action = TQAction("menu.tools.fix_duplicate_files", menu_bar)
         self.fix_dupe_files_action.triggered.connect(create_dupe_files_modal)
         self.fix_dupe_files_action.setEnabled(False)
         tools_menu.addAction(self.fix_dupe_files_action)
@@ -603,10 +567,7 @@ class QtDriver(DriverMixin, QObject):
         tools_menu.addSeparator()
 
         # TODO: Move this to a settings screen.
-        self.clear_thumb_cache_action = QAction(menu_bar)
-        Translations.translate_qobject(
-            self.clear_thumb_cache_action, "settings.clear_thumb_cache.title"
-        )
+        self.clear_thumb_cache_action = TQAction("settings.clear_thumb_cache.title", menu_bar)
         self.clear_thumb_cache_action.triggered.connect(
             lambda: CacheManager.clear_cache(self.lib.library_dir)
         )
@@ -632,8 +593,7 @@ class QtDriver(DriverMixin, QObject):
                 self.folders_modal = FoldersToTagsModal(self.lib, self)
             self.folders_modal.show()
 
-        self.folders_to_tags_action = QAction(menu_bar)
-        Translations.translate_qobject(self.folders_to_tags_action, "menu.macros.folders_to_tags")
+        self.folders_to_tags_action = TQAction("menu.macros.folders_to_tags", menu_bar)
         self.folders_to_tags_action.triggered.connect(create_folders_tags_modal)
         self.folders_to_tags_action.setEnabled(False)
         macros_menu.addAction(self.folders_to_tags_action)
@@ -644,8 +604,7 @@ class QtDriver(DriverMixin, QObject):
                 self.about_modal = AboutModal(self.config_path)
             self.about_modal.show()
 
-        self.about_action = QAction(menu_bar)
-        Translations.translate_qobject(self.about_action, "menu.help.about")
+        self.about_action = TQAction("menu.help.about", menu_bar)
         self.about_action.triggered.connect(create_about_modal)
         help_menu.addAction(self.about_action)
         self.set_macro_menu_viability()
@@ -1809,8 +1768,9 @@ class QtDriver(DriverMixin, QObject):
             action.triggered.connect(lambda checked=False, p=path: self.open_library(p))
             actions.append(action)
 
-        clear_recent_action = QAction(self.open_recent_library_menu)
-        Translations.translate_qobject(clear_recent_action, "menu.file.clear_recent_libraries")
+        clear_recent_action = TQAction(
+            "menu.file.clear_recent_libraries", self.open_recent_library_menu
+        )
         clear_recent_action.triggered.connect(self.clear_recent_libs)
         actions.append(clear_recent_action)
 

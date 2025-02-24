@@ -13,7 +13,6 @@ from PySide6.QtWidgets import (
     QColorDialog,
     QFormLayout,
     QHBoxLayout,
-    QLabel,
     QLineEdit,
     QPushButton,
     QVBoxLayout,
@@ -25,7 +24,7 @@ from src.core.library.alchemy.enums import TagColorEnum
 from src.core.library.alchemy.library import slugify
 from src.core.library.alchemy.models import TagColorGroup
 from src.core.palette import ColorType, UiColor, get_tag_color, get_ui_color
-from src.qt.translations import Translations
+from src.qt.translations import TQLabel, TQPushButton, Translations
 from src.qt.widgets.panel import PanelWidget
 from src.qt.widgets.tag import (
     get_border_color,
@@ -72,8 +71,7 @@ class BuildColorPanel(PanelWidget):
         self.preview_layout.addWidget(self.preview_button)
 
         # Name -----------------------------------------------------------------
-        self.name_title = QLabel()
-        Translations.translate_qobject(self.name_title, "library_object.name")
+        self.name_title = TQLabel("library_object.name")
         self.name_field = QLineEdit()
         self.name_field.setFixedHeight(24)
         self.name_field.textChanged.connect(self.on_text_changed)
@@ -83,8 +81,7 @@ class BuildColorPanel(PanelWidget):
         self.form_layout.addRow(self.name_title, self.name_field)
 
         # Slug -----------------------------------------------------------------
-        self.slug_title = QLabel()
-        Translations.translate_qobject(self.slug_title, "library_object.slug")
+        self.slug_title = TQLabel("library_object.slug")
         self.slug_field = QLineEdit()
         self.slug_field.setEnabled(False)
         self.slug_field.setFixedHeight(24)
@@ -94,8 +91,7 @@ class BuildColorPanel(PanelWidget):
         self.form_layout.addRow(self.slug_title, self.slug_field)
 
         # Primary --------------------------------------------------------------
-        self.primary_title = QLabel()
-        Translations.translate_qobject(self.primary_title, "color.primary")
+        self.primary_title = TQLabel("color.primary")
         self.primary_button = QPushButton()
         self.primary_button.setMinimumSize(44, 22)
         self.primary_button.setMaximumHeight(22)
@@ -108,8 +104,7 @@ class BuildColorPanel(PanelWidget):
         self.secondary_layout = QHBoxLayout(self.secondary_widget)
         self.secondary_layout.setContentsMargins(0, 0, 0, 0)
         self.secondary_layout.setSpacing(6)
-        self.secondary_title = QLabel()
-        Translations.translate_qobject(self.secondary_title, "color.secondary")
+        self.secondary_title = TQLabel("color.secondary")
         self.secondary_button = QPushButton()
         self.secondary_button.setMinimumSize(44, 22)
         self.secondary_button.setMaximumHeight(22)
@@ -117,8 +112,7 @@ class BuildColorPanel(PanelWidget):
         self.secondary_button.clicked.connect(self.secondary_color_callback)
         self.secondary_layout.addWidget(self.secondary_button)
 
-        self.secondary_reset_button = QPushButton()
-        Translations.translate_qobject(self.secondary_reset_button, "generic.reset")
+        self.secondary_reset_button = TQPushButton("generic.reset")
         self.secondary_reset_button.clicked.connect(self.update_secondary)
         self.secondary_layout.addWidget(self.secondary_reset_button)
         self.secondary_layout.setStretch(0, 3)
@@ -143,8 +137,7 @@ class BuildColorPanel(PanelWidget):
             )
         )
         self.border_layout.addWidget(self.border_checkbox)
-        self.border_label = QLabel()
-        Translations.translate_qobject(self.border_label, "color.color_border")
+        self.border_label = TQLabel("color.color_border")
         self.border_layout.addWidget(self.border_label)
 
         primary_color = QColor(get_tag_color(ColorType.PRIMARY, TagColorEnum.DEFAULT))

@@ -9,14 +9,13 @@ from PySide6.QtGui import QPixmap
 from PySide6.QtWidgets import (
     QHBoxLayout,
     QLabel,
-    QPushButton,
     QVBoxLayout,
     QWidget,
 )
 from src.core.constants import VERSION, VERSION_BRANCH
 from src.qt.modals.ffmpeg_checker import FfmpegChecker
 from src.qt.resource_manager import ResourceManager
-from src.qt.translations import Translations
+from src.qt.translations import TQLabel, TQPushButton, Translations
 
 
 class AboutModal(QWidget):
@@ -42,10 +41,6 @@ class AboutModal(QWidget):
         self.logo_widget.setAlignment(Qt.AlignmentFlag.AlignHCenter)
         self.logo_widget.setContentsMargins(0, 0, 0, 20)
 
-        self.content_widget = QLabel()
-        self.content_widget.setObjectName("contentLabel")
-        self.content_widget.setWordWrap(True)
-        self.content_widget.setOpenExternalLinks(True)
         ff_version = self.fc.version()
         ffmpeg = '<span style="color:red">Missing</span>'
         if ff_version["ffmpeg"] is not None:
@@ -53,8 +48,7 @@ class AboutModal(QWidget):
         ffprobe = '<span style="color:red">Missing</span>'
         if ff_version["ffprobe"] is not None:
             ffprobe = '<span style="color:green">Found</span> (' + ff_version["ffprobe"] + ")"
-        Translations.translate_qobject(
-            self.content_widget,
+        self.content_widget = TQLabel(
             "about.content",
             version=VERSION,
             branch=VERSION_BRANCH,
@@ -62,14 +56,16 @@ class AboutModal(QWidget):
             ffmpeg=ffmpeg,
             ffprobe=ffprobe,
         )
+        self.content_widget.setObjectName("contentLabel")
+        self.content_widget.setWordWrap(True)
+        self.content_widget.setOpenExternalLinks(True)
         self.content_widget.setAlignment(Qt.AlignmentFlag.AlignHCenter)
 
         self.button_widget = QWidget()
         self.button_layout = QHBoxLayout(self.button_widget)
         self.button_layout.addStretch(1)
 
-        self.close_button = QPushButton()
-        Translations.translate_qobject(self.close_button, "generic.close")
+        self.close_button = TQPushButton("generic.close")
         self.close_button.clicked.connect(lambda: self.close())
         self.close_button.setMaximumWidth(80)
 

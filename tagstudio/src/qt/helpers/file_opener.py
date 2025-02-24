@@ -12,6 +12,7 @@ import structlog
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QLabel
 from src.qt.helpers.silent_popen import silent_Popen
+from src.qt.translations import TQLabel
 
 logger = structlog.get_logger(__name__)
 
@@ -113,14 +114,16 @@ class FileOpenerHelper:
         open_file(self.filepath, file_manager=True)
 
 
-class FileOpenerLabel(QLabel):
-    def __init__(self, parent=None):
+class FileOpenerLabel(TQLabel):
+    def __init__(self, text_key: str, parent=None, **kwargs):
         """Initialize the FileOpenerLabel.
 
         Args:
+            text_key (str): The translation key that is passed to the super class.
             parent (QWidget, optional): The parent widget. Defaults to None.
+            kwargs: Further keyword arguments that are passed to the super class.
         """
-        super().__init__(parent)
+        super().__init__(text_key, parent, **kwargs)
 
     def set_file_path(self, filepath):
         """Set the filepath to open.

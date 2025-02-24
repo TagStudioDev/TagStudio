@@ -7,7 +7,7 @@ import structlog
 from PySide6 import QtCore, QtGui
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import QHBoxLayout, QLabel, QPushButton, QVBoxLayout, QWidget
-from src.qt.translations import Translations
+from src.qt.translations import TQPushButton
 
 logger = structlog.get_logger(__name__)
 
@@ -52,8 +52,7 @@ class PanelModal(QWidget):
         # self.cancel_button.setText('Cancel')
 
         if not (save_callback or has_save):
-            self.done_button = QPushButton()
-            Translations.translate_qobject(self.done_button, "generic.done")
+            self.done_button = TQPushButton("generic.done")
             self.done_button.setAutoDefault(True)
             self.done_button.clicked.connect(self.hide)
             if done_callback:
@@ -62,16 +61,14 @@ class PanelModal(QWidget):
             self.button_layout.addWidget(self.done_button)
 
         if save_callback or has_save:
-            self.cancel_button = QPushButton()
-            Translations.translate_qobject(self.cancel_button, "generic.cancel")
+            self.cancel_button = TQPushButton("generic.cancel")
             self.cancel_button.clicked.connect(self.hide)
             self.cancel_button.clicked.connect(widget.reset)
             # self.cancel_button.clicked.connect(cancel_callback)
             self.widget.panel_cancel_button = self.cancel_button
             self.button_layout.addWidget(self.cancel_button)
 
-            self.save_button = QPushButton()
-            Translations.translate_qobject(self.save_button, "generic.save")
+            self.save_button = TQPushButton("generic.save")
             self.save_button.setAutoDefault(True)
             self.save_button.clicked.connect(self.hide)
             self.save_button.clicked.connect(self.saved.emit)

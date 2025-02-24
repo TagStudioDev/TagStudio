@@ -11,14 +11,13 @@ from PySide6.QtWidgets import (
     QFileDialog,
     QHBoxLayout,
     QLabel,
-    QPushButton,
     QVBoxLayout,
     QWidget,
 )
 from src.core.library import Library
 from src.core.utils.dupe_files import DupeRegistry
 from src.qt.modals.mirror_entities import MirrorEntriesModal
-from src.qt.translations import Translations
+from src.qt.translations import TQLabel, TQPushButton, Translations
 
 # Only import for type checking/autocompletion, will not be imported at runtime.
 if TYPE_CHECKING:
@@ -40,11 +39,10 @@ class FixDupeFilesModal(QWidget):
 
         self.tracker = DupeRegistry(library=self.lib)
 
-        self.desc_widget = QLabel()
+        self.desc_widget = TQLabel("file.duplicates.description")
         self.desc_widget.setObjectName("descriptionLabel")
         self.desc_widget.setWordWrap(True)
         self.desc_widget.setStyleSheet("text-align:left;")
-        Translations.translate_qobject(self.desc_widget, "file.duplicates.description")
         self.desc_widget.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         self.dupe_count = QLabel()
@@ -52,35 +50,29 @@ class FixDupeFilesModal(QWidget):
         self.dupe_count.setStyleSheet("font-weight:bold;" "font-size:14px;" "")
         self.dupe_count.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
-        self.file_label = QLabel()
+        self.file_label = TQLabel("file.duplicates.dupeguru.no_file")
         self.file_label.setObjectName("fileLabel")
-        Translations.translate_qobject(self.file_label, "file.duplicates.dupeguru.no_file")
 
-        self.open_button = QPushButton()
-        Translations.translate_qobject(self.open_button, "file.duplicates.dupeguru.load_file")
+        self.open_button = TQPushButton("file.duplicates.dupeguru.load_file")
         self.open_button.clicked.connect(self.select_file)
 
         self.mirror_modal = MirrorEntriesModal(self.driver, self.tracker)
         self.mirror_modal.done.connect(self.refresh_dupes)
 
-        self.mirror_button = QPushButton()
-        Translations.translate_qobject(self.mirror_button, "file.duplicates.mirror_entries")
+        self.mirror_button = TQPushButton("file.duplicates.mirror_entries")
         self.mirror_button.clicked.connect(self.mirror_modal.show)
-        self.mirror_desc = QLabel()
+        self.mirror_desc = TQLabel("file.duplicates.mirror.description")
         self.mirror_desc.setWordWrap(True)
-        Translations.translate_qobject(self.mirror_desc, "file.duplicates.mirror.description")
 
-        self.advice_label = QLabel()
+        self.advice_label = TQLabel("file.duplicates.dupeguru.advice")
         self.advice_label.setWordWrap(True)
-        Translations.translate_qobject(self.advice_label, "file.duplicates.dupeguru.advice")
 
         self.button_container = QWidget()
         self.button_layout = QHBoxLayout(self.button_container)
         self.button_layout.setContentsMargins(6, 6, 6, 6)
         self.button_layout.addStretch(1)
 
-        self.done_button = QPushButton()
-        Translations.translate_qobject(self.done_button, "generic.done_alt")
+        self.done_button = TQPushButton("generic.done_alt")
         self.done_button.setDefault(True)
         self.done_button.clicked.connect(self.hide)
         self.button_layout.addWidget(self.done_button)

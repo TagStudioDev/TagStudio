@@ -7,13 +7,13 @@ from typing import TYPE_CHECKING, override
 
 from PySide6 import QtCore, QtGui
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QHBoxLayout, QLabel, QPushButton, QVBoxLayout, QWidget
+from PySide6.QtWidgets import QHBoxLayout, QLabel, QVBoxLayout, QWidget
 from src.core.library import Library
 from src.core.utils.missing_files import MissingRegistry
 from src.qt.modals.delete_unlinked import DeleteUnlinkedEntriesModal
 from src.qt.modals.merge_dupe_entries import MergeDuplicateEntries
 from src.qt.modals.relink_unlinked import RelinkUnlinkedEntries
-from src.qt.translations import Translations
+from src.qt.translations import TQLabel, TQPushButton, Translations
 from src.qt.widgets.progress import ProgressWidget
 
 # Only import for type checking/autocompletion, will not be imported at runtime.
@@ -37,11 +37,10 @@ class FixUnlinkedEntriesModal(QWidget):
         self.root_layout = QVBoxLayout(self)
         self.root_layout.setContentsMargins(6, 6, 6, 6)
 
-        self.unlinked_desc_widget = QLabel()
+        self.unlinked_desc_widget = TQLabel("entries.unlinked.description")
         self.unlinked_desc_widget.setObjectName("unlinkedDescriptionLabel")
         self.unlinked_desc_widget.setWordWrap(True)
         self.unlinked_desc_widget.setStyleSheet("text-align:left;")
-        Translations.translate_qobject(self.unlinked_desc_widget, "entries.unlinked.description")
 
         self.missing_count_label = QLabel()
         self.missing_count_label.setObjectName("missingCountLabel")
@@ -53,15 +52,13 @@ class FixUnlinkedEntriesModal(QWidget):
         self.dupe_count_label.setStyleSheet("font-weight:bold;" "font-size:14px;")
         self.dupe_count_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
-        self.refresh_unlinked_button = QPushButton()
-        Translations.translate_qobject(self.refresh_unlinked_button, "entries.unlinked.refresh_all")
+        self.refresh_unlinked_button = TQPushButton("entries.unlinked.refresh_all")
         self.refresh_unlinked_button.clicked.connect(self.refresh_missing_files)
 
         self.merge_class = MergeDuplicateEntries(self.lib, self.driver)
         self.relink_class = RelinkUnlinkedEntries(self.tracker)
 
-        self.search_button = QPushButton()
-        Translations.translate_qobject(self.search_button, "entries.unlinked.search_and_relink")
+        self.search_button = TQPushButton("entries.unlinked.search_and_relink")
         self.relink_class.done.connect(
             # refresh the grid
             lambda: (
@@ -71,11 +68,10 @@ class FixUnlinkedEntriesModal(QWidget):
         )
         self.search_button.clicked.connect(self.relink_class.repair_entries)
 
-        self.manual_button = QPushButton()
-        Translations.translate_qobject(self.manual_button, "entries.unlinked.relink.manual")
+        self.manual_button = TQPushButton("entries.unlinked.relink.manual")
         self.manual_button.setHidden(True)
 
-        self.delete_button = QPushButton()
+        self.delete_button = TQPushButton("entries.unlinked.delete_alt")
         self.delete_modal = DeleteUnlinkedEntriesModal(self.driver, self.tracker)
         self.delete_modal.done.connect(
             lambda: (
@@ -84,7 +80,6 @@ class FixUnlinkedEntriesModal(QWidget):
                 self.driver.filter_items(),
             )
         )
-        Translations.translate_qobject(self.delete_button, "entries.unlinked.delete_alt")
         self.delete_button.clicked.connect(self.delete_modal.show)
 
         self.button_container = QWidget()
@@ -92,8 +87,7 @@ class FixUnlinkedEntriesModal(QWidget):
         self.button_layout.setContentsMargins(6, 6, 6, 6)
         self.button_layout.addStretch(1)
 
-        self.done_button = QPushButton()
-        Translations.translate_qobject(self.done_button, "generic.done_alt")
+        self.done_button = TQPushButton("generic.done_alt")
         self.done_button.setDefault(True)
         self.done_button.clicked.connect(self.hide)
         self.button_layout.addWidget(self.done_button)

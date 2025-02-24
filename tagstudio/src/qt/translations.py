@@ -9,8 +9,6 @@ from PySide6.QtCore import QObject, Signal
 from PySide6.QtGui import QAction
 from PySide6.QtWidgets import QLabel, QMenu, QMessageBox, QPushButton, QWidget
 
-from .helpers.qbutton_wrapper import QPushButtonWrapper
-
 logger = structlog.get_logger(__name__)
 
 DEFAULT_TRANSLATION = "en"
@@ -63,15 +61,6 @@ class Translator:
             self._strings[k].value = translated.get(k, None)
         for w in self._watchers:
             w.update_text()
-
-    def translate_qobject(self, widget: QObject, key: str, **kwargs):
-        """Translates the text of the QObject using :func:`translate_with_setter`."""
-        if isinstance(widget, (QLabel, QAction, QPushButton, QMessageBox, QPushButtonWrapper)):
-            self.translate_with_setter(widget.setText, key, **kwargs)
-        elif isinstance(widget, (QMenu)):
-            self.translate_with_setter(widget.setTitle, key, **kwargs)
-        else:
-            raise RuntimeError
 
     def translate_with_setter(self, setter: Callable[[str], None], key: str, **kwargs):
         """Calls `setter` everytime the language changes and passes the translated string for `key`.

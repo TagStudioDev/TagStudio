@@ -16,7 +16,6 @@ from PySide6.QtWidgets import (
     QComboBox,
     QFrame,
     QHBoxLayout,
-    QLabel,
     QLineEdit,
     QPushButton,
     QScrollArea,
@@ -27,7 +26,7 @@ from src.core.constants import RESERVED_TAG_END, RESERVED_TAG_START
 from src.core.library import Library, Tag
 from src.core.library.alchemy.enums import FilterState, TagColorEnum
 from src.core.palette import ColorType, get_tag_color
-from src.qt.translations import Translations
+from src.qt.translations import TQLabel, TQPushButton, Translations
 from src.qt.widgets.panel import PanelModal, PanelWidget
 from src.qt.widgets.tag import (
     TagWidget,
@@ -77,8 +76,7 @@ class TagSearchPanel(PanelWidget):
         self.limit_layout.setSpacing(12)
         self.limit_layout.addStretch(1)
 
-        self.limit_title = QLabel()
-        Translations.translate_qobject(self.limit_title, "tag.view_limit")
+        self.limit_title = TQLabel("tag.view_limit")
         self.limit_layout.addWidget(self.limit_title)
 
         self.limit_combobox = QComboBox()
@@ -119,9 +117,9 @@ class TagSearchPanel(PanelWidget):
         """Set the QtDriver for this search panel. Used for main window operations."""
         self.driver = driver
 
-    def build_create_button(self, query: str | None):
+    def build_create_button(self, query: str | None, key: str, format_args: dict):
         """Constructs a "Create & Add Tag" QPushButton."""
-        create_button = QPushButton(self)
+        create_button = TQPushButton(key, self, **format_args)
         create_button.setFlat(True)
 
         create_button.setMinimumSize(22, 22)
@@ -245,11 +243,10 @@ class TagSearchPanel(PanelWidget):
 
         # Add back the "Create & Add" button
         if query and query.strip():
-            cb: QPushButton = self.build_create_button(query)
+            cb: QPushButton = self.build_create_button(query, "tag.create_add", {"query": query})
             with catch_warnings(record=True):
                 cb.clicked.disconnect()
             cb.clicked.connect(lambda: self.create_and_add_tag(query or ""))
-            Translations.translate_qobject(cb, "tag.create_add", query=query)
             self.scroll_layout.addWidget(cb)
             self.create_button_in_layout = True
 

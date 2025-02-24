@@ -30,7 +30,7 @@ from src.core.library.alchemy.models import TagColorGroup
 from src.core.palette import ColorType, UiColor, get_tag_color, get_ui_color
 from src.qt.modals.tag_color_selection import TagColorSelection
 from src.qt.modals.tag_search import TagSearchPanel
-from src.qt.translations import Translations
+from src.qt.translations import TQLabel, Translations
 from src.qt.widgets.panel import PanelModal, PanelWidget
 from src.qt.widgets.tag import (
     TagWidget,
@@ -86,8 +86,7 @@ class BuildTagPanel(PanelWidget):
         self.name_layout.setContentsMargins(0, 0, 0, 0)
         self.name_layout.setSpacing(0)
         self.name_layout.setAlignment(Qt.AlignmentFlag.AlignLeft)
-        self.name_title = QLabel()
-        Translations.translate_qobject(self.name_title, "tag.name")
+        self.name_title = TQLabel("tag.name")
         self.name_layout.addWidget(self.name_title)
         self.name_field = QLineEdit()
         self.name_field.setFixedHeight(24)
@@ -104,8 +103,7 @@ class BuildTagPanel(PanelWidget):
         self.shorthand_layout.setContentsMargins(0, 0, 0, 0)
         self.shorthand_layout.setSpacing(0)
         self.shorthand_layout.setAlignment(Qt.AlignmentFlag.AlignLeft)
-        self.shorthand_title = QLabel()
-        Translations.translate_qobject(self.shorthand_title, "tag.shorthand")
+        self.shorthand_title = TQLabel("tag.shorthand")
         self.shorthand_layout.addWidget(self.shorthand_title)
         self.shorthand_field = QLineEdit()
         self.shorthand_layout.addWidget(self.shorthand_field)
@@ -117,8 +115,7 @@ class BuildTagPanel(PanelWidget):
         self.aliases_layout.setContentsMargins(0, 0, 0, 0)
         self.aliases_layout.setSpacing(0)
         self.aliases_layout.setAlignment(Qt.AlignmentFlag.AlignLeft)
-        self.aliases_title = QLabel()
-        Translations.translate_qobject(self.aliases_title, "tag.aliases")
+        self.aliases_title = TQLabel("tag.aliases")
         self.aliases_layout.addWidget(self.aliases_title)
 
         self.aliases_table = QTableWidget(0, 2)
@@ -144,8 +141,7 @@ class BuildTagPanel(PanelWidget):
         self.disam_button_group = QButtonGroup(self)
         self.disam_button_group.setExclusive(False)
 
-        self.parent_tags_title = QLabel()
-        Translations.translate_qobject(self.parent_tags_title, "tag.parent_tags")
+        self.parent_tags_title = TQLabel("tag.parent_tags")
         self.parent_tags_layout.addWidget(self.parent_tags_title)
 
         self.scroll_contents = QWidget()
@@ -184,8 +180,7 @@ class BuildTagPanel(PanelWidget):
         self.color_layout.setContentsMargins(0, 0, 0, 6)
         self.color_layout.setSpacing(6)
         self.color_layout.setAlignment(Qt.AlignmentFlag.AlignLeft)
-        self.color_title = QLabel()
-        Translations.translate_qobject(self.color_title, "tag.color")
+        self.color_title = TQLabel("tag.color")
         self.color_layout.addWidget(self.color_title)
         self.color_button: TagColorPreview
         try:
@@ -214,8 +209,7 @@ class BuildTagPanel(PanelWidget):
         self.cat_layout.setContentsMargins(0, 0, 0, 0)
         self.cat_layout.setSpacing(6)
         self.cat_layout.setAlignment(Qt.AlignmentFlag.AlignLeft)
-        self.cat_title = QLabel()
-        Translations.translate_qobject(self.cat_title, "tag.is_category")
+        self.cat_title = TQLabel("tag.is_category")
         self.cat_checkbox = QCheckBox()
         self.cat_checkbox.setFixedSize(22, 22)
 

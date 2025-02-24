@@ -5,13 +5,12 @@
 import structlog
 from PySide6.QtWidgets import (
     QMessageBox,
-    QPushButton,
 )
 from src.core.constants import RESERVED_TAG_END, RESERVED_TAG_START
 from src.core.library import Library, Tag
 from src.qt.modals.build_tag import BuildTagPanel
 from src.qt.modals.tag_search import TagSearchPanel
-from src.qt.translations import Translations
+from src.qt.translations import TQMessageBox, TQPushButton, Translations
 from src.qt.widgets.panel import PanelModal
 
 logger = structlog.get_logger(__name__)
@@ -26,8 +25,7 @@ class TagDatabasePanel(TagSearchPanel):
         super().__init__(library, is_tag_chooser=False)
         self.driver = driver
 
-        self.create_tag_button = QPushButton()
-        Translations.translate_qobject(self.create_tag_button, "tag.create")
+        self.create_tag_button = TQPushButton("tag.create")
         self.create_tag_button.clicked.connect(lambda: self.build_tag(self.search_field.text()))
 
         self.root_layout.addWidget(self.create_tag_button)
@@ -61,11 +59,8 @@ class TagDatabasePanel(TagSearchPanel):
         if tag.id in range(RESERVED_TAG_START, RESERVED_TAG_END):
             return
 
-        message_box = QMessageBox()
+        message_box = TQMessageBox("tag.confirm_delete", tag_name=self.lib.tag_display_name(tag.id))
         Translations.translate_with_setter(message_box.setWindowTitle, "tag.remove")
-        Translations.translate_qobject(
-            message_box, "tag.confirm_delete", tag_name=self.lib.tag_display_name(tag.id)
-        )
         message_box.setStandardButtons(QMessageBox.Ok | QMessageBox.Cancel)  # type: ignore
         message_box.setIcon(QMessageBox.Question)  # type: ignore
 

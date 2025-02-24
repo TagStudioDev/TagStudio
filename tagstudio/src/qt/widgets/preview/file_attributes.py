@@ -61,7 +61,7 @@ class FileAttributes(QWidget):
             "padding-left: 1px;"
         )
 
-        self.file_label = FileOpenerLabel()
+        self.file_label = FileOpenerLabel("preview.multiple_selection", count=0)
         self.file_label.setObjectName("filenameLabel")
         self.file_label.setTextFormat(Qt.TextFormat.RichText)
         self.file_label.setWordWrap(True)
@@ -228,7 +228,7 @@ class FileAttributes(QWidget):
         """Format attributes for multiple selected items."""
         self.layout().setSpacing(0)
         self.file_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        Translations.translate_qobject(self.file_label, "preview.multiple_selection", count=count)
+        self.file_label.format_args = {"count": count}
         self.file_label.setCursor(Qt.CursorShape.ArrowCursor)
         self.file_label.set_file_path("")
         self.dimensions_label.setText("")

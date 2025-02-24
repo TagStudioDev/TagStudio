@@ -7,9 +7,7 @@ from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import (
     QComboBox,
     QHBoxLayout,
-    QLabel,
     QLineEdit,
-    QPushButton,
     QStyledItemDelegate,
     QTableWidget,
     QTableWidgetItem,
@@ -18,7 +16,7 @@ from PySide6.QtWidgets import (
 )
 from src.core.enums import LibraryPrefs
 from src.core.library import Library
-from src.qt.translations import Translations
+from src.qt.translations import TQLabel, TQPushButton, Translations
 from src.qt.widgets.panel import PanelWidget
 
 
@@ -50,8 +48,7 @@ class FileExtensionModal(PanelWidget):
         self.table.setItemDelegate(FileExtensionItemDelegate())
 
         # Create "Add Button" Widget -------------------------------------------
-        self.add_button = QPushButton()
-        Translations.translate_qobject(self.add_button, "ignore_list.add_extension")
+        self.add_button = TQPushButton("ignore_list.add_extension")
         self.add_button.clicked.connect(self.add_item)
         self.add_button.setDefault(True)
         self.add_button.setMinimumWidth(100)
@@ -61,8 +58,7 @@ class FileExtensionModal(PanelWidget):
         self.mode_layout = QHBoxLayout(self.mode_widget)
         self.mode_layout.setContentsMargins(0, 0, 0, 0)
         self.mode_layout.setSpacing(12)
-        self.mode_label = QLabel()
-        Translations.translate_qobject(self.mode_label, "ignore_list.mode.label")
+        self.mode_label = TQLabel("ignore_list.mode.label")
         self.mode_combobox = QComboBox()
         self.mode_combobox.setEditable(False)
         self.mode_combobox.addItem("")

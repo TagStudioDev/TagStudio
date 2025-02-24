@@ -31,8 +31,8 @@ from src.core.library.json.library import Library as JsonLibrary  # type: ignore
 from src.core.library.json.library import Tag as JsonTag  # type: ignore
 from src.qt.helpers.custom_runnable import CustomRunnable
 from src.qt.helpers.function_iterator import FunctionIterator
-from src.qt.helpers.qbutton_wrapper import QPushButtonWrapper
-from src.qt.translations import Translations
+from src.qt.helpers.qbutton_wrapper import TQPushButtonWrapper
+from src.qt.translations import TQLabel, TQMessageBox, Translations
 from src.qt.widgets.paged_panel.paged_body_wrapper import PagedBodyWrapper
 from src.qt.widgets.paged_panel.paged_panel import PagedPanel
 from src.qt.widgets.paged_panel.paged_panel_state import PagedPanelState
@@ -81,17 +81,14 @@ class JsonMigrationModal(QObject):
     def init_page_info(self) -> None:
         """Initialize the migration info page."""
         body_wrapper: PagedBodyWrapper = PagedBodyWrapper()
-        body_label = QLabel()
-        Translations.translate_qobject(body_label, "json_migration.info.description")
+        body_label = TQLabel("json_migration.info.description")
         body_label.setWordWrap(True)
         body_label.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         body_wrapper.layout().addWidget(body_label)
         body_wrapper.layout().setContentsMargins(0, 36, 0, 0)
 
-        cancel_button = QPushButtonWrapper()
-        Translations.translate_qobject(cancel_button, "generic.cancel")
-        next_button = QPushButtonWrapper()
-        Translations.translate_qobject(next_button, "generic.continue")
+        cancel_button = TQPushButtonWrapper("generic.cancel")
+        next_button = TQPushButtonWrapper("generic.continue")
         cancel_button.clicked.connect(self.migration_cancelled.emit)
 
         self.stack.append(
@@ -142,8 +139,7 @@ class JsonMigrationModal(QObject):
 
         old_lib_container: QWidget = QWidget()
         old_lib_layout: QVBoxLayout = QVBoxLayout(old_lib_container)
-        old_lib_title = QLabel()
-        Translations.translate_qobject(old_lib_title, "json_migration.title.old_lib")
+        old_lib_title = TQLabel("json_migration.title.old_lib")
         old_lib_title.setAlignment(Qt.AlignmentFlag.AlignCenter)
         old_lib_layout.addWidget(old_lib_title)
 
@@ -210,8 +206,7 @@ class JsonMigrationModal(QObject):
 
         new_lib_container: QWidget = QWidget()
         new_lib_layout: QVBoxLayout = QVBoxLayout(new_lib_container)
-        new_lib_title = QLabel()
-        Translations.translate_qobject(new_lib_title, "json_migration.title.new_lib")
+        new_lib_title = TQLabel("json_migration.title.new_lib")
         new_lib_title.setAlignment(Qt.AlignmentFlag.AlignCenter)
         new_lib_layout.addWidget(new_lib_title)
 
@@ -292,15 +287,12 @@ class JsonMigrationModal(QObject):
         self.body_wrapper_01.layout().addWidget(desc_label)
         self.body_wrapper_01.layout().setSpacing(12)
 
-        back_button = QPushButtonWrapper()
-        Translations.translate_qobject(back_button, "generic.navigation.back")
-        start_button = QPushButtonWrapper()
-        Translations.translate_qobject(start_button, "json_migration.start_and_preview")
+        back_button = TQPushButtonWrapper("generic.navigation.back")
+        start_button = TQPushButtonWrapper("json_migration.start_and_preview")
         start_button.setMinimumWidth(120)
         start_button.clicked.connect(self.migrate)
         start_button.clicked.connect(lambda: start_button.setDisabled(True))
-        finish_button: QPushButtonWrapper = QPushButtonWrapper()
-        Translations.translate_qobject(finish_button, "json_migration.finish_migration")
+        finish_button: TQPushButtonWrapper = TQPushButtonWrapper("json_migration.finish_migration")
         finish_button.setMinimumWidth(120)
         finish_button.setDisabled(True)
         finish_button.clicked.connect(self.finish_migration)
@@ -481,12 +473,9 @@ class JsonMigrationModal(QObject):
             QApplication.alert(self.paged_panel)
             if not show_msg_box:
                 return
-            msg_box = QMessageBox()
+            msg_box = TQMessageBox("json_migration.discrepancies_found.description")
             Translations.translate_with_setter(
                 msg_box.setWindowTitle, "json_migration.discrepancies_found"
-            )
-            Translations.translate_qobject(
-                msg_box, "json_migration.discrepancies_found.description"
             )
             msg_box.setDetailedText("\n".join(self.discrepancies))
             msg_box.setIcon(QMessageBox.Icon.Warning)
