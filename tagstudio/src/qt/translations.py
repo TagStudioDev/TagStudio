@@ -1,11 +1,13 @@
+from abc import abstractmethod
 from pathlib import Path
 from typing import Callable
+from weakref import WeakSet
 
 import structlog
 import ujson
 from PySide6.QtCore import QObject, Signal
 from PySide6.QtGui import QAction
-from PySide6.QtWidgets import QLabel, QMenu, QMessageBox, QPushButton
+from PySide6.QtWidgets import QLabel, QMenu, QMessageBox, QPushButton, QWidget
 
 from .helpers.qbutton_wrapper import QPushButtonWrapper
 
@@ -29,13 +31,14 @@ class TranslatedString(QObject):
         return self.__value or self.__default_value
 
     @value.setter
-    def value(self, value: str):
+    def value(self, value: str | None):
         if self.__value != value:
             self.__value = value
             self.changed.emit(self.__value)
 
 
 class Translator:
+    _watchers: WeakSet["TranslationWatcher"] = WeakSet()
     _strings: dict[str, TranslatedString] = {}
     _lang: str = DEFAULT_TRANSLATION
 
@@ -50,11 +53,16 @@ class Translator:
         ) as f:
             return ujson.loads(f.read())
 
+    def register_translation_watcher(self, widget: "TranslationWatcher"):
+        self._watchers.add(widget)
+
     def change_language(self, lang: str):
         self._lang = lang
         translated = self.__get_translation_dict(lang)
         for k in self._strings:
             self._strings[k].value = translated.get(k, None)
+        for w in self._watchers:
+            w.update_text()
 
     def translate_qobject(self, widget: QObject, key: str, **kwargs):
         """Translates the text of the QObject using :func:`translate_with_setter`."""
@@ -95,3 +103,22 @@ class Translator:
 
 
 Translations = Translator()
+
+
+class TranslationWatcher:
+    def __init__(self):
+        Translations.register_translation_watcher(self)
+
+    @abstractmethod
+    def update_text(self):
+        pass
+
+
+class TQPushButton(QPushButton, TranslationWatcher):
+    def __init__(self, key: str, parent: QWidget | None = None):
+        super().__init__(parent)
+        self.key: str = key
+        self.update_text()
+
+    def update_text(self):
+        self.setText(Translations.translate_formatted(self.key))
