@@ -86,15 +86,12 @@ class BuildTagPanel(PanelWidget):
         self.name_layout.setContentsMargins(0, 0, 0, 0)
         self.name_layout.setSpacing(0)
         self.name_layout.setAlignment(Qt.AlignmentFlag.AlignLeft)
-        self.name_title = QLabel()
-        Translations.translate_qobject(self.name_title, "tag.name")
+        self.name_title = QLabel(Translations["tag.name"])
         self.name_layout.addWidget(self.name_title)
         self.name_field = QLineEdit()
         self.name_field.setFixedHeight(24)
         self.name_field.textChanged.connect(self.on_name_changed)
-        Translations.translate_with_setter(
-            self.name_field.setPlaceholderText, "tag.tag_name_required"
-        )
+        self.name_field.setPlaceholderText(Translations["tag.tag_name_required"])
         self.name_layout.addWidget(self.name_field)
 
         # Shorthand ------------------------------------------------------------
@@ -104,8 +101,7 @@ class BuildTagPanel(PanelWidget):
         self.shorthand_layout.setContentsMargins(0, 0, 0, 0)
         self.shorthand_layout.setSpacing(0)
         self.shorthand_layout.setAlignment(Qt.AlignmentFlag.AlignLeft)
-        self.shorthand_title = QLabel()
-        Translations.translate_qobject(self.shorthand_title, "tag.shorthand")
+        self.shorthand_title = QLabel(Translations["tag.shorthand"])
         self.shorthand_layout.addWidget(self.shorthand_title)
         self.shorthand_field = QLineEdit()
         self.shorthand_layout.addWidget(self.shorthand_field)
@@ -117,8 +113,7 @@ class BuildTagPanel(PanelWidget):
         self.aliases_layout.setContentsMargins(0, 0, 0, 0)
         self.aliases_layout.setSpacing(0)
         self.aliases_layout.setAlignment(Qt.AlignmentFlag.AlignLeft)
-        self.aliases_title = QLabel()
-        Translations.translate_qobject(self.aliases_title, "tag.aliases")
+        self.aliases_title = QLabel(Translations["tag.aliases"])
         self.aliases_layout.addWidget(self.aliases_title)
 
         self.aliases_table = QTableWidget(0, 2)
@@ -144,8 +139,7 @@ class BuildTagPanel(PanelWidget):
         self.disam_button_group = QButtonGroup(self)
         self.disam_button_group.setExclusive(False)
 
-        self.parent_tags_title = QLabel()
-        Translations.translate_qobject(self.parent_tags_title, "tag.parent_tags")
+        self.parent_tags_title = QLabel(Translations["tag.parent_tags"])
         self.parent_tags_layout.addWidget(self.parent_tags_title)
 
         self.scroll_contents = QWidget()
@@ -173,8 +167,8 @@ class BuildTagPanel(PanelWidget):
         tsp = TagSearchPanel(self.lib, exclude_ids)
         tsp.tag_chosen.connect(lambda x: self.add_parent_tag_callback(x))
         self.add_tag_modal = PanelModal(tsp)
-        Translations.translate_with_setter(self.add_tag_modal.setTitle, "tag.parent_tags.add")
-        Translations.translate_with_setter(self.add_tag_modal.setWindowTitle, "tag.parent_tags.add")
+        self.add_tag_modal.setTitle(Translations["tag.parent_tags.add"])
+        self.add_tag_modal.setWindowTitle(Translations["tag.parent_tags.add"])
         self.parent_tags_add_button.clicked.connect(self.add_tag_modal.show)
 
         # Color ----------------------------------------------------------------
@@ -184,8 +178,7 @@ class BuildTagPanel(PanelWidget):
         self.color_layout.setContentsMargins(0, 0, 0, 6)
         self.color_layout.setSpacing(6)
         self.color_layout.setAlignment(Qt.AlignmentFlag.AlignLeft)
-        self.color_title = QLabel()
-        Translations.translate_qobject(self.color_title, "tag.color")
+        self.color_title = QLabel(Translations["tag.color"])
         self.color_layout.addWidget(self.color_title)
         self.color_button: TagColorPreview
         try:
@@ -195,7 +188,7 @@ class BuildTagPanel(PanelWidget):
             logger.error("[BuildTag] Could not access Tag member attributes", error=e)
             self.color_button = TagColorPreview(self.lib, None)
         self.tag_color_selection = TagColorSelection(self.lib)
-        chose_tag_color_title = Translations.translate_formatted("tag.choose_color")
+        chose_tag_color_title = Translations["tag.choose_color"]
         self.choose_color_modal = PanelModal(
             self.tag_color_selection,
             chose_tag_color_title,
@@ -214,8 +207,7 @@ class BuildTagPanel(PanelWidget):
         self.cat_layout.setContentsMargins(0, 0, 0, 0)
         self.cat_layout.setSpacing(6)
         self.cat_layout.setAlignment(Qt.AlignmentFlag.AlignLeft)
-        self.cat_title = QLabel()
-        Translations.translate_qobject(self.cat_title, "tag.is_category")
+        self.cat_title = QLabel(Translations["tag.is_category"])
         self.cat_checkbox = QCheckBox()
         self.cat_checkbox.setFixedSize(22, 22)
 
@@ -404,7 +396,7 @@ class BuildTagPanel(PanelWidget):
         disam_button = QRadioButton()
         disam_button.setObjectName(f"disambiguationButton.{parent_id}")
         disam_button.setFixedSize(22, 22)
-        disam_button.setToolTip(Translations.translate_formatted("tag.disambiguation.tooltip"))
+        disam_button.setToolTip(Translations["tag.disambiguation.tooltip"])
         disam_button.setStyleSheet(
             f"QRadioButton{{"
             f"background: rgba{primary_color.toTuple()};"

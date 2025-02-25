@@ -48,15 +48,12 @@ class BuildNamespacePanel(PanelWidget):
         self.name_layout.setContentsMargins(0, 0, 0, 0)
         self.name_layout.setSpacing(0)
         self.name_layout.setAlignment(Qt.AlignmentFlag.AlignLeft)
-        self.name_title = QLabel()
-        Translations.translate_qobject(self.name_title, "library_object.name")
+        self.name_title = QLabel(Translations["library_object.name"])
         self.name_layout.addWidget(self.name_title)
         self.name_field = QLineEdit()
         self.name_field.setFixedHeight(24)
         self.name_field.textChanged.connect(self.on_text_changed)
-        Translations.translate_with_setter(
-            self.name_field.setPlaceholderText, "library_object.name_required"
-        )
+        self.name_field.setPlaceholderText(Translations["library_object.name_required"])
         self.name_layout.addWidget(self.name_field)
 
         # Slug -----------------------------------------------------------------
@@ -66,26 +63,19 @@ class BuildNamespacePanel(PanelWidget):
         self.slug_layout.setContentsMargins(0, 0, 0, 0)
         self.slug_layout.setSpacing(0)
         self.slug_layout.setAlignment(Qt.AlignmentFlag.AlignLeft)
-        self.slug_title = QLabel()
-        Translations.translate_qobject(self.slug_title, "library_object.slug")
+        self.slug_title = QLabel(Translations["library_object.slug"])
         self.slug_layout.addWidget(self.slug_title)
         self.slug_field = QLineEdit()
         self.slug_field.setFixedHeight(24)
         self.slug_field.setEnabled(False)
-        Translations.translate_with_setter(
-            self.slug_field.setPlaceholderText, "library_object.slug_required"
-        )
+        self.slug_field.setPlaceholderText(Translations["library_object.slug_required"])
         self.slug_layout.addWidget(self.slug_field)
 
         # Description ----------------------------------------------------------
-        self.desc_label = QLabel()
+        self.desc_label = QLabel(Translations["namespace.create.description"])
         self.desc_label.setWordWrap(True)
-        Translations.translate_with_setter(self.desc_label.setText, "namespace.create.description")
-        self.desc_color_label = QLabel()
+        self.desc_color_label = QLabel(Translations["namespace.create.description_color"])
         self.desc_color_label.setWordWrap(True)
-        Translations.translate_with_setter(
-            self.desc_color_label.setText, "namespace.create.description_color"
-        )
 
         # Add Widgets to Layout ================================================
         self.root_layout.addWidget(self.name_widget)

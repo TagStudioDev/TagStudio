@@ -143,12 +143,11 @@ class ColorBoxWidget(FieldWidget):
         self.edit_modal.show()
 
     def delete_color(self, color_group: TagColorGroup):
-        message_box = QMessageBox()
-        Translations.translate_with_setter(message_box.setWindowTitle, "color.delete")
-        Translations.translate_qobject(
-            message_box, "color.confirm_delete", color_name=color_group.name
+        message_box = QMessageBox(
+            QMessageBox.Icon.Warning,
+            Translations["color.delete"],
+            Translations["color.confirm_delete"].format(color_name=color_group.name),
         )
-        message_box.setIcon(QMessageBox.Icon.Warning)
         cancel_button = message_box.addButton(
             Translations["generic.cancel_alt"], QMessageBox.ButtonRole.RejectRole
         )
