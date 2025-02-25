@@ -190,7 +190,7 @@ class BuildTagPanel(PanelWidget):
             logger.error("[BuildTag] Could not access Tag member attributes", error=e)
             self.color_button = TagColorPreview(self.lib, None)
         self.tag_color_selection = TagColorSelection(self.lib)
-        chose_tag_color_title = Translations.formatted("tag.choose_color")
+        chose_tag_color_title = Translations["tag.choose_color"]
         self.choose_color_modal = PanelModal(
             self.tag_color_selection,
             chose_tag_color_title,
@@ -398,7 +398,7 @@ class BuildTagPanel(PanelWidget):
         disam_button = QRadioButton()
         disam_button.setObjectName(f"disambiguationButton.{parent_id}")
         disam_button.setFixedSize(22, 22)
-        disam_button.setToolTip(Translations.formatted("tag.disambiguation.tooltip"))
+        disam_button.setToolTip(Translations["tag.disambiguation.tooltip"])
         disam_button.setStyleSheet(
             f"QRadioButton{{"
             f"background: rgba{primary_color.toTuple()};"

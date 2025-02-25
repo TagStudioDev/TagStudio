@@ -466,7 +466,7 @@ class QtDriver(DriverMixin, QObject):
         self.copy_fields_action.setEnabled(False)
         edit_menu.addAction(self.copy_fields_action)
 
-        self.paste_fields_action = QAction(Translations.formatted("edit.paste_fields"), menu_bar)
+        self.paste_fields_action = QAction(Translations["edit.paste_fields"], menu_bar)
         self.paste_fields_action.triggered.connect(self.paste_fields_action_callback)
         self.paste_fields_action.setShortcut(
             QtCore.QKeyCombination(

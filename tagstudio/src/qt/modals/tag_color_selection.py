@@ -139,7 +139,7 @@ class TagColorSelection(PanelWidget):
             self.scroll_layout.addSpacerItem(QSpacerItem(1, 6))
 
     def add_no_color_widget(self):
-        no_color_str: str = Translations.formatted("color.title.no_color")
+        no_color_str: str = Translations["color.title.no_color"]
         self.scroll_layout.addWidget(QLabel(f"<h4>{no_color_str}</h4>"))
         color_box_widget = QWidget()
         color_group_layout = FlowLayout()

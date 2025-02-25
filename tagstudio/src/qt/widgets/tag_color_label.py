@@ -60,7 +60,7 @@ class TagColorLabel(QWidget):
         self.bg_button.setFlat(True)
 
         edit_action = QAction(self)
-        edit_action.setText(Translations.formatted("generic.edit"))
+        edit_action.setText(Translations["generic.edit"])
         edit_action.triggered.connect(self.on_click.emit)
         self.bg_button.addAction(edit_action)
         self.bg_button.setContextMenuPolicy(Qt.ContextMenuPolicy.ActionsContextMenu)
