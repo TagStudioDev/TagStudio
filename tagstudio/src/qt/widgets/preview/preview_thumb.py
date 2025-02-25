@@ -57,7 +57,7 @@ class PreviewThumb(QWidget):
         self.open_file_action = QAction(Translations["file.open_file"], self)
         self.open_explorer_action = QAction(open_file_str(), self)
         self.delete_action = QAction(
-            Translations.formatted("trash.context.ambiguous", trash_term=trash_term()), self
+            Translations["trash.context.ambiguous"].format(trash_term=trash_term()), self
         )
 
         self.preview_img = QPushButtonWrapper()
@@ -378,7 +378,7 @@ class PreviewThumb(QWidget):
             self.delete_action.triggered.disconnect()
 
         self.delete_action.setText(
-            Translations.formatted("trash.context.singular", trash_term=trash_term())
+            Translations["trash.context.singular"].format(trash_term=trash_term())
         )
         self.delete_action.triggered.connect(
             lambda checked=False, f=filepath: self.driver.delete_files_callback(f)

@@ -62,7 +62,7 @@ class LandingWidget(QWidget):
         else:
             open_shortcut_text = "(Ctrl+O)"
         self.open_button: QPushButton = QPushButton(
-            Translations.formatted("landing.open_create_library", shortcut=open_shortcut_text)
+            Translations["landing.open_create_library"].format(shortcut=open_shortcut_text)
         )
         self.open_button.setMinimumWidth(200)
         self.open_button.clicked.connect(self.driver.open_library_from_dialog)
@@ -160,7 +160,7 @@ class LandingWidget(QWidget):
     #     self.status_pos_anim.setEndValue(self.status_label.pos())
     #     self.status_pos_anim.start()
 
-    def set_status_label(self, text=str):
+    def set_status_label(self, text: str):
         """Set the text of the status label.
 
         Args:

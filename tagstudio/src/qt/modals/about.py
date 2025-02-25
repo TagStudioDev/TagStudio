@@ -44,8 +44,7 @@ class AboutModal(QWidget):
         if ff_version["ffprobe"] is not None:
             ffprobe = '<span style="color:green">Found</span> (' + ff_version["ffprobe"] + ")"
         self.content_widget = QLabel(
-            Translations.formatted(
-                "about.content",
+            Translations["about.content"].format(
                 version=VERSION,
                 branch=VERSION_BRANCH,
                 config_path=config_path,

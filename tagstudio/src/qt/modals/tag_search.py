@@ -120,7 +120,7 @@ class TagSearchPanel(PanelWidget):
 
     def build_create_button(self, query: str | None, key: str, format_args: dict):
         """Constructs a "Create & Add Tag" QPushButton."""
-        create_button = QPushButton(Translations.formatted(key, **format_args), self)
+        create_button = QPushButton(Translations[key].format(**format_args), self)
         create_button.setFlat(True)
 
         create_button.setMinimumSize(22, 22)

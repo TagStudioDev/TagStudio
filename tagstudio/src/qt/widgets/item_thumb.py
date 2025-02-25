@@ -222,7 +222,7 @@ class ItemThumb(FlowWidget):
         open_explorer_action.triggered.connect(self.opener.open_explorer)
 
         self.delete_action = QAction(
-            Translations.formatted("trash.context.ambiguous", trash_term=trash_term()), self
+            Translations["trash.context.ambiguous"].format(trash_term=trash_term()), self
         )
 
         self.thumb_button.addAction(open_file_action)

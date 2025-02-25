@@ -3,16 +3,13 @@ from typing import Callable
 
 import structlog
 import ujson
-from PySide6.QtCore import QObject, Signal
 
 logger = structlog.get_logger(__name__)
 
 DEFAULT_TRANSLATION = "en"
 
 
-class TranslatedString(QObject):
-    changed = Signal(str)
-
+class TranslatedString:
     __default_value: str
     __value: str | None = None
 
@@ -26,9 +23,7 @@ class TranslatedString(QObject):
 
     @value.setter
     def value(self, value: str | None):
-        if self.__value != value:
-            self.__value = value
-            self.changed.emit(self.__value)
+        self.__value = value
 
 
 class Translator:
@@ -57,25 +52,8 @@ class Translator:
 
         Also formats the translation with the given keyword arguments.
         """
-        # TODO: Fix so deleted Qt objects aren't referenced any longer
-        # if key in self._strings:
-        #     self._strings[key].changed.connect(lambda text: setter(self.__format(text, **kwargs)))
-        setter(self.formatted(key, **kwargs))
-
-    def __format(self, text: str, **kwargs) -> str:
-        try:
-            return text.format(**kwargs)
-        except (KeyError, ValueError):
-            logger.error(
-                "[Translations] Error while formatting translation.",
-                text=text,
-                kwargs=kwargs,
-                language=self._lang,
-            )
-            return text
-
-    def formatted(self, key: str, **kwargs) -> str:
-        return self.__format(self[key], **kwargs)
+        # TODO replace calls to this method with direct calls to setter
+        setter(Translations[key].format(**kwargs))
 
     def __getitem__(self, key: str) -> str:
         return self._strings[key].value if key in self._strings else f"[{key}]"
