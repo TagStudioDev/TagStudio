@@ -24,7 +24,7 @@ class MirrorEntriesModal(QWidget):
     def __init__(self, driver: "QtDriver", tracker: DupeRegistry):
         super().__init__()
         self.driver = driver
-        Translations.translate_with_setter(self.setWindowTitle, "entries.mirror.window_title")
+        self.setWindowTitle(Translations["entries.mirror.window_title"])
         self.setWindowModality(Qt.WindowModality.ApplicationModal)
         self.setMinimumSize(500, 400)
         self.root_layout = QVBoxLayout(self)
@@ -81,7 +81,7 @@ class MirrorEntriesModal(QWidget):
             minimum=0,
             maximum=self.tracker.groups_count,
         )
-        Translations.translate_with_setter(pw.setWindowTitle, "entries.mirror.title")
+        pw.setWindowTitle(Translations["entries.mirror.title"])
 
         pw.from_iterable_function(
             self.mirror_entries_runnable,

@@ -166,7 +166,7 @@ class FoldersToTagsModal(QWidget):
         self.count = -1
         self.filename = ""
 
-        Translations.translate_with_setter(self.setWindowTitle, "folders_to_tags.title")
+        self.setWindowTitle(Translations["folders_to_tags.title"])
         self.setWindowModality(Qt.WindowModality.ApplicationModal)
         self.setMinimumSize(640, 640)
         self.root_layout = QVBoxLayout(self)

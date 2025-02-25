@@ -75,7 +75,7 @@ class PreviewPanel(QWidget):
 
         self.tag_search_panel = TagSearchPanel(self.driver.lib, is_tag_chooser=True)
         self.add_tag_modal = PanelModal(self.tag_search_panel, Translations["tag.add.plural"])
-        Translations.translate_with_setter(self.add_tag_modal.setWindowTitle, "tag.add.plural")
+        self.add_tag_modal.setWindowTitle(Translations["tag.add.plural"])
 
         self.add_field_modal = AddFieldModal(self.lib)
 

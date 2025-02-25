@@ -44,7 +44,7 @@ class TagColorManager(QWidget):
         super().__init__()
         self.driver = driver
         self.lib = driver.lib
-        Translations.translate_with_setter(self.setWindowTitle, "color_manager.title")
+        self.setWindowTitle(Translations["color_manager.title"])
         self.setWindowModality(Qt.WindowModality.ApplicationModal)
         self.setMinimumSize(800, 600)
         self.is_initialized = False
@@ -192,9 +192,7 @@ class TagColorManager(QWidget):
     def delete_namespace_dialog(self, prompt: str, callback: Callable) -> None:
         message_box = QMessageBox()
         message_box.setText(prompt)
-        Translations.translate_with_setter(
-            message_box.setWindowTitle, "color.namespace.delete.title"
-        )
+        message_box.setWindowTitle(Translations["color.namespace.delete.title"])
         message_box.setIcon(QMessageBox.Icon.Warning)
         cancel_button = message_box.addButton(
             Translations["generic.cancel_alt"], QMessageBox.ButtonRole.RejectRole

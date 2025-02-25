@@ -30,6 +30,6 @@ class RelinkUnlinkedEntries(QObject):
             minimum=0,
             maximum=self.tracker.missing_file_entries_count,
         )
-        Translations.translate_with_setter(pw.setWindowTitle, "entries.unlinked.relink.title")
+        pw.setWindowTitle(Translations["entries.unlinked.relink.title"])
 
         pw.from_iterable_function(self.tracker.fix_unlinked_entries, displayed_text, self.done.emit)

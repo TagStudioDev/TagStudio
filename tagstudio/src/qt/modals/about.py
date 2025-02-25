@@ -16,7 +16,7 @@ from src.qt.translations import Translations
 class AboutModal(QWidget):
     def __init__(self, config_path):
         super().__init__()
-        Translations.translate_with_setter(self.setWindowTitle, "about.title")
+        self.setWindowTitle(Translations["about.title"])
 
         self.fc: FfmpegChecker = FfmpegChecker()
         self.rm: ResourceManager = ResourceManager()

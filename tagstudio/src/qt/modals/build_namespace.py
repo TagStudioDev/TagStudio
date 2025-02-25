@@ -53,9 +53,7 @@ class BuildNamespacePanel(PanelWidget):
         self.name_field = QLineEdit()
         self.name_field.setFixedHeight(24)
         self.name_field.textChanged.connect(self.on_text_changed)
-        Translations.translate_with_setter(
-            self.name_field.setPlaceholderText, "library_object.name_required"
-        )
+        self.name_field.setPlaceholderText(Translations["library_object.name_required"])
         self.name_layout.addWidget(self.name_field)
 
         # Slug -----------------------------------------------------------------
@@ -70,9 +68,7 @@ class BuildNamespacePanel(PanelWidget):
         self.slug_field = QLineEdit()
         self.slug_field.setFixedHeight(24)
         self.slug_field.setEnabled(False)
-        Translations.translate_with_setter(
-            self.slug_field.setPlaceholderText, "library_object.slug_required"
-        )
+        self.slug_field.setPlaceholderText(Translations["library_object.slug_required"])
         self.slug_layout.addWidget(self.slug_field)
 
         # Description ----------------------------------------------------------

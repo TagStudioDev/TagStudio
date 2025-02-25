@@ -25,7 +25,7 @@ class DeleteUnlinkedEntriesModal(QWidget):
         super().__init__()
         self.driver = driver
         self.tracker = tracker
-        Translations.translate_with_setter(self.setWindowTitle, "entries.unlinked.delete")
+        self.setWindowTitle(Translations["entries.unlinked.delete"])
         self.setWindowModality(Qt.WindowModality.ApplicationModal)
         self.setMinimumSize(500, 400)
         self.root_layout = QVBoxLayout(self)
@@ -82,8 +82,8 @@ class DeleteUnlinkedEntriesModal(QWidget):
             minimum=0,
             maximum=0,
         )
-        Translations.translate_with_setter(pw.setWindowTitle, "entries.unlinked.delete.deleting")
-        Translations.translate_with_setter(pw.update_label, "entries.unlinked.delete.deleting")
+        pw.setWindowTitle(Translations["entries.unlinked.delete.deleting"])
+        pw.update_label(Translations["entries.unlinked.delete.deleting"])
         pw.show()
 
         r = CustomRunnable(self.tracker.execute_deletion)

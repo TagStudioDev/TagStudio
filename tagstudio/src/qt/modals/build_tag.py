@@ -91,9 +91,7 @@ class BuildTagPanel(PanelWidget):
         self.name_field = QLineEdit()
         self.name_field.setFixedHeight(24)
         self.name_field.textChanged.connect(self.on_name_changed)
-        Translations.translate_with_setter(
-            self.name_field.setPlaceholderText, "tag.tag_name_required"
-        )
+        self.name_field.setPlaceholderText(Translations["tag.tag_name_required"])
         self.name_layout.addWidget(self.name_field)
 
         # Shorthand ------------------------------------------------------------
@@ -169,8 +167,8 @@ class BuildTagPanel(PanelWidget):
         tsp = TagSearchPanel(self.lib, exclude_ids)
         tsp.tag_chosen.connect(lambda x: self.add_parent_tag_callback(x))
         self.add_tag_modal = PanelModal(tsp)
-        Translations.translate_with_setter(self.add_tag_modal.setTitle, "tag.parent_tags.add")
-        Translations.translate_with_setter(self.add_tag_modal.setWindowTitle, "tag.parent_tags.add")
+        self.add_tag_modal.setTitle(Translations["tag.parent_tags.add"])
+        self.add_tag_modal.setWindowTitle(Translations["tag.parent_tags.add"])
         self.parent_tags_add_button.clicked.connect(self.add_tag_modal.show)
 
         # Color ----------------------------------------------------------------

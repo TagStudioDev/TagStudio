@@ -94,7 +94,7 @@ class TagSearchPanel(PanelWidget):
         self.search_field = QLineEdit()
         self.search_field.setObjectName("searchField")
         self.search_field.setMinimumSize(QSize(0, 32))
-        Translations.translate_with_setter(self.search_field.setPlaceholderText, "home.search_tags")
+        self.search_field.setPlaceholderText(Translations["home.search_tags"])
         self.search_field.textEdited.connect(lambda text: self.update_tags(text))
         self.search_field.returnPressed.connect(lambda: self.on_return(self.search_field.text()))
 
@@ -177,8 +177,8 @@ class TagSearchPanel(PanelWidget):
 
         self.build_tag_modal: BuildTagPanel = build_tag.BuildTagPanel(self.lib)
         self.add_tag_modal: PanelModal = PanelModal(self.build_tag_modal, has_save=True)
-        Translations.translate_with_setter(self.add_tag_modal.setTitle, "tag.new")
-        Translations.translate_with_setter(self.add_tag_modal.setWindowTitle, "tag.add")
+        self.add_tag_modal.setTitle(Translations["tag.new"])
+        self.add_tag_modal.setWindowTitle(Translations["tag.add"])
 
         self.build_tag_modal.name_field.setText(name)
         self.add_tag_modal.saved.connect(on_tag_modal_saved)
@@ -364,7 +364,7 @@ class TagSearchPanel(PanelWidget):
             done_callback=(self.update_tags(self.search_field.text())),
             has_save=True,
         )
-        Translations.translate_with_setter(self.edit_modal.setWindowTitle, "tag.edit")
+        self.edit_modal.setWindowTitle(Translations["tag.edit"])
 
         self.edit_modal.saved.connect(lambda: callback(build_tag_panel))
         self.edit_modal.show()

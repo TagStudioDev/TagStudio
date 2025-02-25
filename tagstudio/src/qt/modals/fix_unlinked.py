@@ -31,7 +31,7 @@ class FixUnlinkedEntriesModal(QWidget):
 
         self.missing_count = -1
         self.dupe_count = -1
-        Translations.translate_with_setter(self.setWindowTitle, "entries.unlinked.title")
+        self.setWindowTitle(Translations["entries.unlinked.title"])
         self.setWindowModality(Qt.WindowModality.ApplicationModal)
         self.setMinimumSize(400, 300)
         self.root_layout = QVBoxLayout(self)
@@ -110,8 +110,8 @@ class FixUnlinkedEntriesModal(QWidget):
             minimum=0,
             maximum=self.lib.entries_count,
         )
-        Translations.translate_with_setter(pw.setWindowTitle, "library.scan_library.title")
-        Translations.translate_with_setter(pw.update_label, "entries.unlinked.scanning")
+        pw.setWindowTitle(Translations["library.scan_library.title"])
+        pw.update_label(Translations["entries.unlinked.scanning"])
 
         pw.from_iterable_function(
             self.tracker.refresh_missing_files,

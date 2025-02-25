@@ -37,7 +37,7 @@ class DropImportModal(QWidget):
         self.driver: QtDriver = driver
 
         # Widget ======================
-        Translations.translate_with_setter(self.setWindowTitle, "drop_import.title")
+        self.setWindowTitle(Translations["drop_import.title"])
         self.setWindowModality(Qt.WindowModality.ApplicationModal)
         self.setMinimumSize(500, 400)
         self.root_layout = QVBoxLayout(self)
@@ -168,8 +168,8 @@ class DropImportModal(QWidget):
             minimum=0,
             maximum=len(self.files),
         )
-        Translations.translate_with_setter(pw.setWindowTitle, "drop_import.progress.window_title")
-        Translations.translate_with_setter(pw.update_label, "drop_import.progress.label.initial")
+        pw.setWindowTitle(Translations["drop_import.progress.window_title"])
+        pw.update_label(Translations["drop_import.progress.label.initial"])
 
         pw.from_iterable_function(
             self.copy_files,

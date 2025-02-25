@@ -1,5 +1,4 @@
 from pathlib import Path
-from typing import Callable
 
 import structlog
 import ujson
@@ -27,14 +26,6 @@ class Translator:
     def change_language(self, lang: str):
         self._lang = lang
         self._strings = self.__get_translation_dict(lang)
-
-    def translate_with_setter(self, setter: Callable[[str], None], key: str, **kwargs):
-        """Calls `setter` everytime the language changes and passes the translated string for `key`.
-
-        Also formats the translation with the given keyword arguments.
-        """
-        # TODO replace calls to this method with direct calls to setter
-        setter(Translations[key].format(**kwargs))
 
     def __getitem__(self, key: str) -> str:
         return self._strings.get(key) or self._default_strings.get(key) or f"[{key}]"

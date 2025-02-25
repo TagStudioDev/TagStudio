@@ -311,10 +311,8 @@ class QtDriver(DriverMixin, QObject):
             done_callback=lambda: self.preview_panel.update_widgets(update_preview=False),
             has_save=False,
         )
-        Translations.translate_with_setter(self.tag_manager_panel.setTitle, "tag_manager.title")
-        Translations.translate_with_setter(
-            self.tag_manager_panel.setWindowTitle, "tag_manager.title"
-        )
+        self.tag_manager_panel.setTitle(Translations["tag_manager.title"])
+        self.tag_manager_panel.setWindowTitle(Translations["tag_manager.title"])
 
         # Initialize the Color Group Manager panel
         self.color_manager_panel = TagColorManager(self)
@@ -454,7 +452,7 @@ class QtDriver(DriverMixin, QObject):
 
         self.copy_buffer: dict = {"fields": [], "tags": []}
 
-        self.copy_fields_action = QAction("edit.copy_fields", menu_bar)
+        self.copy_fields_action = QAction(Translations["edit.copy_fields"], menu_bar)
         self.copy_fields_action.triggered.connect(self.copy_fields_action_callback)
         self.copy_fields_action.setShortcut(
             QtCore.QKeyCombination(
@@ -737,12 +735,8 @@ class QtDriver(DriverMixin, QObject):
         sort_dir_dropdown: QComboBox = self.main_window.sorting_direction_combobox
         sort_dir_dropdown.addItem("Ascending", userData=True)
         sort_dir_dropdown.addItem("Descending", userData=False)
-        Translations.translate_with_setter(
-            lambda text: sort_dir_dropdown.setItemText(0, text), "sorting.direction.ascending"
-        )
-        Translations.translate_with_setter(
-            lambda text: sort_dir_dropdown.setItemText(1, text), "sorting.direction.descending"
-        )
+        sort_dir_dropdown.setItemText(0, Translations["sorting.direction.ascending"])
+        sort_dir_dropdown.setItemText(1, Translations["sorting.direction.descending"])
         sort_dir_dropdown.setCurrentIndex(0)  # Default: Ascending
         sort_dir_dropdown.currentIndexChanged.connect(self.sorting_direction_callback)
 
@@ -786,10 +780,8 @@ class QtDriver(DriverMixin, QObject):
             panel,
             has_save=True,
         )
-        Translations.translate_with_setter(self.file_extension_panel.setTitle, "ignore_list.title")
-        Translations.translate_with_setter(
-            self.file_extension_panel.setWindowTitle, "ignore_list.title"
-        )
+        self.file_extension_panel.setTitle(Translations["ignore_list.title"])
+        self.file_extension_panel.setWindowTitle(Translations["ignore_list.title"])
         self.file_extension_panel.saved.connect(lambda: (panel.save(), self.filter_items()))
         self.manage_file_ext_action.triggered.connect(self.file_extension_panel.show)
 
@@ -906,8 +898,8 @@ class QtDriver(DriverMixin, QObject):
             panel,
             has_save=True,
         )
-        Translations.translate_with_setter(self.modal.setTitle, "tag.new")
-        Translations.translate_with_setter(self.modal.setWindowTitle, "tag.add")
+        self.modal.setTitle(Translations["tag.new"])
+        self.modal.setWindowTitle(Translations["tag.add"])
 
         self.modal.saved.connect(
             lambda: (
@@ -1090,8 +1082,8 @@ class QtDriver(DriverMixin, QObject):
             minimum=0,
             maximum=0,
         )
-        Translations.translate_with_setter(pw.setWindowTitle, "library.refresh.title")
-        Translations.translate_with_setter(pw.update_label, "library.refresh.scanning_preparing")
+        pw.setWindowTitle(Translations["library.refresh.title"])
+        pw.update_label(Translations["library.refresh.scanning_preparing"])
 
         pw.show()
 
@@ -1134,9 +1126,9 @@ class QtDriver(DriverMixin, QObject):
             minimum=0,
             maximum=0,
         )
-        Translations.translate_with_setter(pw.setWindowTitle, "entries.running.dialog.title")
-        Translations.translate_with_setter(
-            pw.update_label, "entries.running.dialog.new_entries", total=f"{files_count:n}"
+        pw.setWindowTitle(Translations["entries.running.dialog.title"])
+        pw.update_label(
+            Translations["entries.running.dialog.new_entries"].format(total=f"{files_count:n}")
         )
         pw.show()
 
@@ -1817,8 +1809,8 @@ class QtDriver(DriverMixin, QObject):
             done_callback=lambda: self.update_language_settings(settings_panel.get_language()),
             has_save=False,
         )
-        Translations.translate_with_setter(modal.setTitle, "settings.title")
-        Translations.translate_with_setter(modal.setWindowTitle, "settings.title")
+        modal.setTitle(Translations["settings.title"])
+        modal.setWindowTitle(Translations["settings.title"])
         modal.show()
 
     def update_language_settings(self, language: str):
@@ -1871,11 +1863,10 @@ class QtDriver(DriverMixin, QObject):
             self.add_new_files_callback()
 
         self.update_libs_list(path)
-        Translations.translate_with_setter(
-            self.main_window.setWindowTitle,
-            "app.title",
-            base_title=self.base_title,
-            library_dir=self.lib.library_dir,
+        self.main_window.setWindowTitle(
+            Translations["app.title"].format(
+                base_title=self.base_title, library_dir=self.lib.library_dir
+            )
         )
         self.main_window.setAcceptDrops(True)
 
