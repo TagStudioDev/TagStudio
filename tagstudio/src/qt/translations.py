@@ -9,30 +9,13 @@ logger = structlog.get_logger(__name__)
 DEFAULT_TRANSLATION = "en"
 
 
-class TranslatedString:
-    __default_value: str
-    __value: str | None = None
-
-    def __init__(self, value: str):
-        super().__init__()
-        self.__default_value = value
-
-    @property
-    def value(self) -> str:
-        return self.__value or self.__default_value
-
-    @value.setter
-    def value(self, value: str | None):
-        self.__value = value
-
-
 class Translator:
-    _strings: dict[str, TranslatedString] = {}
+    _default_strings: dict[str, str]
+    _strings: dict[str, str] = {}
     _lang: str = DEFAULT_TRANSLATION
 
     def __init__(self):
-        for k, v in self.__get_translation_dict(DEFAULT_TRANSLATION).items():
-            self._strings[k] = TranslatedString(v)
+        self._default_strings = self.__get_translation_dict(DEFAULT_TRANSLATION)
 
     def __get_translation_dict(self, lang: str) -> dict[str, str]:
         with open(
@@ -43,9 +26,7 @@ class Translator:
 
     def change_language(self, lang: str):
         self._lang = lang
-        translated = self.__get_translation_dict(lang)
-        for k in self._strings:
-            self._strings[k].value = translated.get(k, None)
+        self._strings = self.__get_translation_dict(lang)
 
     def translate_with_setter(self, setter: Callable[[str], None], key: str, **kwargs):
         """Calls `setter` everytime the language changes and passes the translated string for `key`.
@@ -56,7 +37,7 @@ class Translator:
         setter(Translations[key].format(**kwargs))
 
     def __getitem__(self, key: str) -> str:
-        return self._strings[key].value if key in self._strings else f"[{key}]"
+        return self._strings.get(key) or self._default_strings.get(key) or f"[{key}]"
 
 
 Translations = Translator()
