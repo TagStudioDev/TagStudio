@@ -30,7 +30,7 @@ from src.core.media_types import MediaCategories, MediaType
 from src.qt.flowlayout import FlowWidget
 from src.qt.helpers.file_opener import FileOpenerHelper
 from src.qt.platform_strings import open_file_str, trash_term
-from src.qt.translations import TQAction, TQLabel
+from src.qt.translations import Translations
 from src.qt.widgets.thumb_button import ThumbButton
 from src.qt.widgets.thumb_renderer import ThumbRenderer
 
@@ -216,12 +216,14 @@ class ItemThumb(FlowWidget):
         self.thumb_button.setContextMenuPolicy(Qt.ContextMenuPolicy.ActionsContextMenu)
 
         self.opener = FileOpenerHelper("")
-        open_file_action = TQAction("file.open_file", self)
+        open_file_action = QAction(Translations["file.open_file"], self)
         open_file_action.triggered.connect(self.opener.open_file)
         open_explorer_action = QAction(open_file_str(), self)
         open_explorer_action.triggered.connect(self.opener.open_explorer)
 
-        self.delete_action = TQAction("trash.context.ambiguous", self, trash_term=trash_term())
+        self.delete_action = QAction(
+            Translations.formatted("trash.context.ambiguous", trash_term=trash_term()), self
+        )
 
         self.thumb_button.addAction(open_file_action)
         self.thumb_button.addAction(open_explorer_action)
@@ -309,7 +311,7 @@ class ItemThumb(FlowWidget):
             self.cb_layout.addWidget(badge)
 
         # Filename Label =======================================================
-        self.file_label = TQLabel("generic.filename")
+        self.file_label = QLabel(Translations["generic.filename"])
         self.file_label.setStyleSheet(ItemThumb.filename_style)
         self.file_label.setMaximumHeight(self.label_height)
         if not show_filename_label:

@@ -30,7 +30,7 @@ from src.core.library.alchemy.models import TagColorGroup
 from src.core.palette import ColorType, UiColor, get_tag_color, get_ui_color
 from src.qt.modals.tag_color_selection import TagColorSelection
 from src.qt.modals.tag_search import TagSearchPanel
-from src.qt.translations import TQLabel, Translations
+from src.qt.translations import Translations
 from src.qt.widgets.panel import PanelModal, PanelWidget
 from src.qt.widgets.tag import (
     TagWidget,
@@ -86,7 +86,7 @@ class BuildTagPanel(PanelWidget):
         self.name_layout.setContentsMargins(0, 0, 0, 0)
         self.name_layout.setSpacing(0)
         self.name_layout.setAlignment(Qt.AlignmentFlag.AlignLeft)
-        self.name_title = TQLabel("tag.name")
+        self.name_title = QLabel(Translations["tag.name"])
         self.name_layout.addWidget(self.name_title)
         self.name_field = QLineEdit()
         self.name_field.setFixedHeight(24)
@@ -103,7 +103,7 @@ class BuildTagPanel(PanelWidget):
         self.shorthand_layout.setContentsMargins(0, 0, 0, 0)
         self.shorthand_layout.setSpacing(0)
         self.shorthand_layout.setAlignment(Qt.AlignmentFlag.AlignLeft)
-        self.shorthand_title = TQLabel("tag.shorthand")
+        self.shorthand_title = QLabel(Translations["tag.shorthand"])
         self.shorthand_layout.addWidget(self.shorthand_title)
         self.shorthand_field = QLineEdit()
         self.shorthand_layout.addWidget(self.shorthand_field)
@@ -115,7 +115,7 @@ class BuildTagPanel(PanelWidget):
         self.aliases_layout.setContentsMargins(0, 0, 0, 0)
         self.aliases_layout.setSpacing(0)
         self.aliases_layout.setAlignment(Qt.AlignmentFlag.AlignLeft)
-        self.aliases_title = TQLabel("tag.aliases")
+        self.aliases_title = QLabel(Translations["tag.aliases"])
         self.aliases_layout.addWidget(self.aliases_title)
 
         self.aliases_table = QTableWidget(0, 2)
@@ -141,7 +141,7 @@ class BuildTagPanel(PanelWidget):
         self.disam_button_group = QButtonGroup(self)
         self.disam_button_group.setExclusive(False)
 
-        self.parent_tags_title = TQLabel("tag.parent_tags")
+        self.parent_tags_title = QLabel(Translations["tag.parent_tags"])
         self.parent_tags_layout.addWidget(self.parent_tags_title)
 
         self.scroll_contents = QWidget()
@@ -180,7 +180,7 @@ class BuildTagPanel(PanelWidget):
         self.color_layout.setContentsMargins(0, 0, 0, 6)
         self.color_layout.setSpacing(6)
         self.color_layout.setAlignment(Qt.AlignmentFlag.AlignLeft)
-        self.color_title = TQLabel("tag.color")
+        self.color_title = QLabel(Translations["tag.color"])
         self.color_layout.addWidget(self.color_title)
         self.color_button: TagColorPreview
         try:
@@ -190,7 +190,7 @@ class BuildTagPanel(PanelWidget):
             logger.error("[BuildTag] Could not access Tag member attributes", error=e)
             self.color_button = TagColorPreview(self.lib, None)
         self.tag_color_selection = TagColorSelection(self.lib)
-        chose_tag_color_title = Translations.translate_formatted("tag.choose_color")
+        chose_tag_color_title = Translations.formatted("tag.choose_color")
         self.choose_color_modal = PanelModal(
             self.tag_color_selection,
             chose_tag_color_title,
@@ -209,7 +209,7 @@ class BuildTagPanel(PanelWidget):
         self.cat_layout.setContentsMargins(0, 0, 0, 0)
         self.cat_layout.setSpacing(6)
         self.cat_layout.setAlignment(Qt.AlignmentFlag.AlignLeft)
-        self.cat_title = TQLabel("tag.is_category")
+        self.cat_title = QLabel(Translations["tag.is_category"])
         self.cat_checkbox = QCheckBox()
         self.cat_checkbox.setFixedSize(22, 22)
 
@@ -398,7 +398,7 @@ class BuildTagPanel(PanelWidget):
         disam_button = QRadioButton()
         disam_button.setObjectName(f"disambiguationButton.{parent_id}")
         disam_button.setFixedSize(22, 22)
-        disam_button.setToolTip(Translations.translate_formatted("tag.disambiguation.tooltip"))
+        disam_button.setToolTip(Translations.formatted("tag.disambiguation.tooltip"))
         disam_button.setStyleSheet(
             f"QRadioButton{{"
             f"background: rgba{primary_color.toTuple()};"

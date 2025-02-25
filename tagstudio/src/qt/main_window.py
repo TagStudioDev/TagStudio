@@ -15,7 +15,7 @@ from PySide6.QtWidgets import (QComboBox, QFrame, QGridLayout,
 from src.qt.pagination import Pagination
 from src.qt.widgets.landing import LandingWidget
 
-from src.qt.translations import Translations, TQPushButton
+from src.qt.translations import Translations
 
 # Only import for type checking/autocompletion, will not be imported at runtime.
 if typing.TYPE_CHECKING:
@@ -152,7 +152,7 @@ class Ui_MainWindow(QMainWindow):
         self.searchField.setCompleter(self.searchFieldCompleter)
         self.horizontalLayout_2.addWidget(self.searchField)
 
-        self.searchButton = TQPushButton("home.search", self.centralwidget)
+        self.searchButton = QPushButton(Translations["home.search"], self.centralwidget)
         self.searchButton.setObjectName(u"searchButton")
         self.searchButton.setMinimumSize(QSize(0, 32))
 

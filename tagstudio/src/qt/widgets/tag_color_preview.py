@@ -70,7 +70,7 @@ class TagColorPreview(QWidget):
                 f"{color_group.name} ({self.lib.get_namespace_name(color_group.namespace)})"
             )
         else:
-            self.button.setText(Translations.translate_formatted("color.title.no_color"))
+            self.button.setText(Translations.formatted("color.title.no_color"))
 
         primary_color = self._get_primary_color(color_group)
         border_color = (

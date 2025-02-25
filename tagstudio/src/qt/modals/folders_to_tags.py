@@ -25,7 +25,7 @@ from src.core.library import Library, Tag
 from src.core.library.alchemy.enums import TagColorEnum
 from src.core.palette import ColorType, get_tag_color
 from src.qt.flowlayout import FlowLayout
-from src.qt.translations import TQLabel, TQPushButton, Translations
+from src.qt.translations import Translations
 
 if TYPE_CHECKING:
     from src.qt.ts_qt import QtDriver
@@ -172,7 +172,7 @@ class FoldersToTagsModal(QWidget):
         self.root_layout = QVBoxLayout(self)
         self.root_layout.setContentsMargins(6, 6, 6, 6)
 
-        self.title_widget = TQLabel("folders_to_tags.title")
+        self.title_widget = QLabel(Translations["folders_to_tags.title"])
         self.title_widget.setObjectName("title")
         self.title_widget.setWordWrap(True)
         self.title_widget.setStyleSheet("font-weight:bold;" "font-size:14px;" "padding-top: 6px")
@@ -190,9 +190,9 @@ class FoldersToTagsModal(QWidget):
         self.open_close_button_w = QWidget()
         self.open_close_button_layout = QHBoxLayout(self.open_close_button_w)
 
-        self.open_all_button = TQPushButton("folders_to_tags.open_all")
+        self.open_all_button = QPushButton(Translations["folders_to_tags.open_all"])
         self.open_all_button.clicked.connect(lambda: self.set_all_branches(False))
-        self.close_all_button = TQPushButton("folders_to_tags.close_all")
+        self.close_all_button = QPushButton(Translations["folders_to_tags.close_all"])
         self.close_all_button.clicked.connect(lambda: self.set_all_branches(True))
 
         self.open_close_button_layout.addWidget(self.open_all_button)
@@ -210,7 +210,7 @@ class FoldersToTagsModal(QWidget):
         self.scroll_area.setFrameShape(QFrame.Shape.NoFrame)
         self.scroll_area.setWidget(self.scroll_contents)
 
-        self.apply_button = TQPushButton("generic.apply_alt")
+        self.apply_button = QPushButton(Translations["generic.apply_alt"])
         self.apply_button.setMinimumWidth(100)
         self.apply_button.clicked.connect(self.on_apply)
 

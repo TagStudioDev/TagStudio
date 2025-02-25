@@ -15,7 +15,7 @@ from src.core.library.alchemy.models import TagColorGroup
 from src.core.palette import ColorType, get_tag_color
 from src.qt.flowlayout import FlowLayout
 from src.qt.modals.build_color import BuildColorPanel
-from src.qt.translations import TQMessageBox, Translations
+from src.qt.translations import Translations
 from src.qt.widgets.fields import FieldWidget
 from src.qt.widgets.panel import PanelModal
 from src.qt.widgets.tag_color_label import TagColorLabel
@@ -143,9 +143,11 @@ class ColorBoxWidget(FieldWidget):
         self.edit_modal.show()
 
     def delete_color(self, color_group: TagColorGroup):
-        message_box = TQMessageBox("color.confirm_delete", color_name=color_group.name)
-        Translations.translate_with_setter(message_box.setWindowTitle, "color.delete")
-        message_box.setIcon(QMessageBox.Icon.Warning)
+        message_box = QMessageBox(
+            QMessageBox.Icon.Warning,
+            Translations["color.delete"],
+            Translations.formatted("color.confirm_delete", color_name=color_group.name),
+        )
         cancel_button = message_box.addButton(
             Translations["generic.cancel_alt"], QMessageBox.ButtonRole.RejectRole
         )

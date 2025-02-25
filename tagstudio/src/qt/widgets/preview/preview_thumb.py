@@ -27,7 +27,7 @@ from src.qt.helpers.qbutton_wrapper import QPushButtonWrapper
 from src.qt.helpers.rounded_pixmap_style import RoundedPixmapStyle
 from src.qt.platform_strings import open_file_str, trash_term
 from src.qt.resource_manager import ResourceManager
-from src.qt.translations import TQAction, Translations
+from src.qt.translations import Translations
 from src.qt.widgets.media_player import MediaPlayer
 from src.qt.widgets.thumb_renderer import ThumbRenderer
 from src.qt.widgets.video_player import VideoPlayer
@@ -54,9 +54,11 @@ class PreviewThumb(QWidget):
         image_layout = QHBoxLayout(self)
         image_layout.setContentsMargins(0, 0, 0, 0)
 
-        self.open_file_action = TQAction("file.open_file", self)
+        self.open_file_action = QAction(Translations["file.open_file"], self)
         self.open_explorer_action = QAction(open_file_str(), self)
-        self.delete_action = TQAction("trash.context.ambiguous", self, trash_term=trash_term())
+        self.delete_action = QAction(
+            Translations.formatted("trash.context.ambiguous", trash_term=trash_term()), self
+        )
 
         self.preview_img = QPushButtonWrapper()
         self.preview_img.setMinimumSize(*self.img_button_size)
@@ -376,7 +378,7 @@ class PreviewThumb(QWidget):
             self.delete_action.triggered.disconnect()
 
         self.delete_action.setText(
-            Translations.translate_formatted("trash.context.singular", trash_term=trash_term())
+            Translations.formatted("trash.context.singular", trash_term=trash_term())
         )
         self.delete_action.triggered.connect(
             lambda checked=False, f=filepath: self.driver.delete_files_callback(f)

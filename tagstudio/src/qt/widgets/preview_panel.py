@@ -22,7 +22,7 @@ from src.core.library.alchemy.models import Entry
 from src.core.palette import ColorType, UiColor, get_ui_color
 from src.qt.modals.add_field import AddFieldModal
 from src.qt.modals.tag_search import TagSearchPanel
-from src.qt.translations import TQPushButton, Translations
+from src.qt.translations import Translations
 from src.qt.widgets.panel import PanelModal
 from src.qt.widgets.preview.field_containers import FieldContainers
 from src.qt.widgets.preview.file_attributes import FileAttributes
@@ -75,7 +75,7 @@ class PreviewPanel(QWidget):
 
         self.tag_search_panel = TagSearchPanel(self.driver.lib, is_tag_chooser=True)
         self.add_tag_modal = PanelModal(
-            self.tag_search_panel, Translations.translate_formatted("tag.add.plural")
+            self.tag_search_panel, Translations.formatted("tag.add.plural")
         )
         Translations.translate_with_setter(self.add_tag_modal.setWindowTitle, "tag.add.plural")
 
@@ -100,13 +100,13 @@ class PreviewPanel(QWidget):
         add_buttons_layout.setContentsMargins(0, 0, 0, 0)
         add_buttons_layout.setSpacing(6)
 
-        self.add_tag_button = TQPushButton("tag.add")
+        self.add_tag_button = QPushButton(Translations["tag.add"])
         self.add_tag_button.setEnabled(False)
         self.add_tag_button.setCursor(Qt.CursorShape.PointingHandCursor)
         self.add_tag_button.setMinimumHeight(28)
         self.add_tag_button.setStyleSheet(PreviewPanel.button_style)
 
-        self.add_field_button = TQPushButton("library.field.add")
+        self.add_field_button = QPushButton(Translations["library.field.add"])
         self.add_field_button.setEnabled(False)
         self.add_field_button.setCursor(Qt.CursorShape.PointingHandCursor)
         self.add_field_button.setMinimumHeight(28)

@@ -4,7 +4,6 @@
 
 
 from PySide6.QtWidgets import QPushButton
-from src.qt.translations import TQPushButton
 from src.qt.widgets.paged_panel.paged_body_wrapper import PagedBodyWrapper
 
 
@@ -16,11 +15,11 @@ class PagedPanelState:
         title: str,
         body_wrapper: PagedBodyWrapper,
         buttons: list[QPushButton | int],
-        connect_to_back: list[TQPushButton],
-        connect_to_next: list[TQPushButton],
+        connect_to_back: list[QPushButton],
+        connect_to_next: list[QPushButton],
     ):
         self.title: str = title
         self.body_wrapper: PagedBodyWrapper = body_wrapper
         self.buttons: list[QPushButton | int] = buttons
-        self.connect_to_back: list[TQPushButton] = connect_to_back
-        self.connect_to_next: list[TQPushButton] = connect_to_next
+        self.connect_to_back: list[QPushButton] = connect_to_back
+        self.connect_to_next: list[QPushButton] = connect_to_next

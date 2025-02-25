@@ -130,7 +130,7 @@ class TagWidget(QWidget):
 
         if has_edit:
             edit_action = QAction(self)
-            edit_action.setText(Translations.translate_formatted("generic.edit"))
+            edit_action.setText(Translations.formatted("generic.edit"))
             edit_action.triggered.connect(on_edit_callback)
             edit_action.triggered.connect(self.on_edit.emit)
             self.bg_button.addAction(edit_action)
@@ -140,7 +140,7 @@ class TagWidget(QWidget):
         # TODO: This currently doesn't work in "Add Tag" menus. Either fix this or
         # disable it in that context.
         self.search_for_tag_action = QAction(self)
-        self.search_for_tag_action.setText(Translations.translate_formatted("tag.search_for_tag"))
+        self.search_for_tag_action.setText(Translations.formatted("tag.search_for_tag"))
         self.bg_button.addAction(self.search_for_tag_action)
         # add_to_search_action = QAction(self)
         # add_to_search_action.setText(Translations.translate_formatted("tag.add_to_search"))

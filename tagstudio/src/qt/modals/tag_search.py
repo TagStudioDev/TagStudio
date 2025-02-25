@@ -16,6 +16,7 @@ from PySide6.QtWidgets import (
     QComboBox,
     QFrame,
     QHBoxLayout,
+    QLabel,
     QLineEdit,
     QPushButton,
     QScrollArea,
@@ -26,7 +27,7 @@ from src.core.constants import RESERVED_TAG_END, RESERVED_TAG_START
 from src.core.library import Library, Tag
 from src.core.library.alchemy.enums import FilterState, TagColorEnum
 from src.core.palette import ColorType, get_tag_color
-from src.qt.translations import TQLabel, TQPushButton, Translations
+from src.qt.translations import Translations
 from src.qt.widgets.panel import PanelModal, PanelWidget
 from src.qt.widgets.tag import (
     TagWidget,
@@ -76,7 +77,7 @@ class TagSearchPanel(PanelWidget):
         self.limit_layout.setSpacing(12)
         self.limit_layout.addStretch(1)
 
-        self.limit_title = TQLabel("tag.view_limit")
+        self.limit_title = QLabel(Translations["tag.view_limit"])
         self.limit_layout.addWidget(self.limit_title)
 
         self.limit_combobox = QComboBox()
@@ -119,7 +120,7 @@ class TagSearchPanel(PanelWidget):
 
     def build_create_button(self, query: str | None, key: str, format_args: dict):
         """Constructs a "Create & Add Tag" QPushButton."""
-        create_button = TQPushButton(key, self, **format_args)
+        create_button = QPushButton(Translations.formatted(key, **format_args), self)
         create_button.setFlat(True)
 
         create_button.setMinimumSize(22, 22)

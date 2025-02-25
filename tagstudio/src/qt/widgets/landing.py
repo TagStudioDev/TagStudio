@@ -13,7 +13,7 @@ from PySide6.QtCore import QEasingCurve, QPoint, QPropertyAnimation, Qt
 from PySide6.QtGui import QPixmap
 from PySide6.QtWidgets import QLabel, QPushButton, QVBoxLayout, QWidget
 from src.qt.helpers.color_overlay import gradient_overlay, theme_fg_overlay
-from src.qt.translations import TQPushButton
+from src.qt.translations import Translations
 from src.qt.widgets.clickable_label import ClickableLabel
 
 # Only import for type checking/autocompletion, will not be imported at runtime.
@@ -61,8 +61,8 @@ class LandingWidget(QWidget):
             open_shortcut_text = "(⌘+O)"
         else:
             open_shortcut_text = "(Ctrl+O)"
-        self.open_button: QPushButton = TQPushButton(
-            "landing.open_create_library", shortcut=open_shortcut_text
+        self.open_button: QPushButton = QPushButton(
+            Translations.formatted("landing.open_create_library", shortcut=open_shortcut_text)
         )
         self.open_button.setMinimumWidth(200)
         self.open_button.clicked.connect(self.driver.open_library_from_dialog)

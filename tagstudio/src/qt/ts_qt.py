@@ -43,6 +43,7 @@ from PySide6.QtWidgets import (
     QComboBox,
     QFileDialog,
     QLineEdit,
+    QMenu,
     QMenuBar,
     QMessageBox,
     QPushButton,
@@ -93,7 +94,7 @@ from src.qt.modals.tag_search import TagSearchPanel
 from src.qt.platform_strings import trash_term
 from src.qt.resource_manager import ResourceManager
 from src.qt.splash import Splash
-from src.qt.translations import TQAction, TQMenu, Translations
+from src.qt.translations import Translations
 from src.qt.widgets.item_thumb import BadgeType, ItemThumb
 from src.qt.widgets.migration_modal import JsonMigrationModal
 from src.qt.widgets.panel import PanelModal
@@ -323,8 +324,8 @@ class QtDriver(DriverMixin, QObject):
         self.tag_search_panel.set_driver(self)
         self.add_tag_modal = PanelModal(
             widget=self.tag_search_panel,
-            title=Translations.translate_formatted("tag.add.plural"),
-            window_title=Translations.translate_formatted("tag.add.plural"),
+            title=Translations.formatted("tag.add.plural"),
+            window_title=Translations.formatted("tag.add.plural"),
         )
         self.tag_search_panel.tag_chosen.connect(
             lambda t: (
@@ -337,15 +338,15 @@ class QtDriver(DriverMixin, QObject):
         self.main_window.setMenuBar(menu_bar)
         menu_bar.setNativeMenuBar(True)
 
-        file_menu = TQMenu("menu.file", menu_bar)
-        edit_menu = TQMenu("generic.edit_alt", menu_bar)
-        view_menu = TQMenu("menu.view", menu_bar)
-        tools_menu = TQMenu("menu.tools", menu_bar)
-        macros_menu = TQMenu("menu.macros", menu_bar)
-        help_menu = TQMenu("menu.help", menu_bar)
+        file_menu = QMenu(Translations["menu.file"], menu_bar)
+        edit_menu = QMenu(Translations["generic.edit_alt"], menu_bar)
+        view_menu = QMenu(Translations["menu.view"], menu_bar)
+        tools_menu = QMenu(Translations["menu.tools"], menu_bar)
+        macros_menu = QMenu(Translations["menu.macros"], menu_bar)
+        help_menu = QMenu(Translations["menu.help"], menu_bar)
 
         # File Menu ============================================================
-        open_library_action = TQAction("menu.file.open_create_library", menu_bar)
+        open_library_action = QAction(Translations["menu.file.open_create_library"], menu_bar)
         open_library_action.triggered.connect(lambda: self.open_library_from_dialog())
         open_library_action.setShortcut(
             QtCore.QKeyCombination(
@@ -356,11 +357,13 @@ class QtDriver(DriverMixin, QObject):
         open_library_action.setToolTip("Ctrl+O")
         file_menu.addAction(open_library_action)
 
-        self.open_recent_library_menu = TQMenu("menu.file.open_recent_library", menu_bar)
+        self.open_recent_library_menu = QMenu(
+            Translations["menu.file.open_recent_library"], menu_bar
+        )
         file_menu.addMenu(self.open_recent_library_menu)
         self.update_recent_lib_menu()
 
-        self.save_library_backup_action = TQAction("menu.file.save_backup", menu_bar)
+        self.save_library_backup_action = QAction(Translations["menu.file.save_backup"], menu_bar)
         self.save_library_backup_action.triggered.connect(
             lambda: self.callback_library_needed_check(self.backup_library)
         )
@@ -378,11 +381,11 @@ class QtDriver(DriverMixin, QObject):
         file_menu.addAction(self.save_library_backup_action)
 
         file_menu.addSeparator()
-        settings_action = TQAction("menu.settings", self)
+        settings_action = QAction(Translations["menu.settings"], self)
         settings_action.triggered.connect(self.open_settings_modal)
         file_menu.addAction(settings_action)
 
-        open_on_start_action = TQAction("settings.open_library_on_start", self)
+        open_on_start_action = QAction(Translations["settings.open_library_on_start"], self)
         open_on_start_action.setCheckable(True)
         open_on_start_action.setChecked(
             bool(self.settings.value(SettingItems.START_LOAD_LAST, defaultValue=True, type=bool))
@@ -394,7 +397,7 @@ class QtDriver(DriverMixin, QObject):
 
         file_menu.addSeparator()
 
-        self.refresh_dir_action = TQAction("menu.file.refresh_directories", menu_bar)
+        self.refresh_dir_action = QAction(Translations["menu.file.refresh_directories"], menu_bar)
         self.refresh_dir_action.triggered.connect(
             lambda: self.callback_library_needed_check(self.add_new_files_callback)
         )
@@ -409,14 +412,14 @@ class QtDriver(DriverMixin, QObject):
         file_menu.addAction(self.refresh_dir_action)
         file_menu.addSeparator()
 
-        self.close_library_action = TQAction("menu.file.close_library", menu_bar)
+        self.close_library_action = QAction(Translations["menu.file.close_library"], menu_bar)
         self.close_library_action.triggered.connect(self.close_library)
         self.close_library_action.setEnabled(False)
         file_menu.addAction(self.close_library_action)
         file_menu.addSeparator()
 
         # Edit Menu ============================================================
-        self.new_tag_action = TQAction("menu.edit.new_tag", menu_bar)
+        self.new_tag_action = QAction(Translations["menu.edit.new_tag"], menu_bar)
         self.new_tag_action.triggered.connect(lambda: self.add_tag_action_callback())
         self.new_tag_action.setShortcut(
             QtCore.QKeyCombination(
@@ -430,7 +433,7 @@ class QtDriver(DriverMixin, QObject):
 
         edit_menu.addSeparator()
 
-        self.select_all_action = TQAction("select.all", menu_bar)
+        self.select_all_action = QAction(Translations["select.all"], menu_bar)
         self.select_all_action.triggered.connect(self.select_all_action_callback)
         self.select_all_action.setShortcut(
             QtCore.QKeyCombination(
@@ -442,7 +445,7 @@ class QtDriver(DriverMixin, QObject):
         self.select_all_action.setEnabled(False)
         edit_menu.addAction(self.select_all_action)
 
-        self.clear_select_action = TQAction("select.clear", menu_bar)
+        self.clear_select_action = QAction(Translations["select.clear"], menu_bar)
         self.clear_select_action.triggered.connect(self.clear_select_action_callback)
         self.clear_select_action.setShortcut(QtCore.Qt.Key.Key_Escape)
         self.clear_select_action.setToolTip("Esc")
@@ -463,7 +466,7 @@ class QtDriver(DriverMixin, QObject):
         self.copy_fields_action.setEnabled(False)
         edit_menu.addAction(self.copy_fields_action)
 
-        self.paste_fields_action = TQAction("edit.paste_fields", menu_bar)
+        self.paste_fields_action = QAction(Translations.formatted("edit.paste_fields"), menu_bar)
         self.paste_fields_action.triggered.connect(self.paste_fields_action_callback)
         self.paste_fields_action.setShortcut(
             QtCore.QKeyCombination(
@@ -475,7 +478,9 @@ class QtDriver(DriverMixin, QObject):
         self.paste_fields_action.setEnabled(False)
         edit_menu.addAction(self.paste_fields_action)
 
-        self.add_tag_to_selected_action = TQAction("select.add_tag_to_selected", menu_bar)
+        self.add_tag_to_selected_action = QAction(
+            Translations["select.add_tag_to_selected"], menu_bar
+        )
         self.add_tag_to_selected_action.triggered.connect(self.add_tag_modal.show)
         self.add_tag_to_selected_action.setShortcut(
             QtCore.QKeyCombination(
@@ -492,8 +497,9 @@ class QtDriver(DriverMixin, QObject):
 
         edit_menu.addSeparator()
 
-        self.delete_file_action = TQAction(
-            "menu.delete_selected_files_ambiguous", menu_bar, trash_term=trash_term()
+        self.delete_file_action = QAction(
+            Translations.formatted("menu.delete_selected_files_ambiguous", trash_term=trash_term()),
+            menu_bar,
         )
         self.delete_file_action.triggered.connect(lambda f="": self.delete_files_callback(f))
         self.delete_file_action.setShortcut(QtCore.Qt.Key.Key_Delete)
@@ -502,11 +508,13 @@ class QtDriver(DriverMixin, QObject):
 
         edit_menu.addSeparator()
 
-        self.manage_file_ext_action = TQAction("menu.edit.manage_file_extensions", menu_bar)
+        self.manage_file_ext_action = QAction(
+            Translations["menu.edit.manage_file_extensions"], menu_bar
+        )
         edit_menu.addAction(self.manage_file_ext_action)
         self.manage_file_ext_action.setEnabled(False)
 
-        self.tag_manager_action = TQAction("menu.edit.manage_tags", menu_bar)
+        self.tag_manager_action = QAction(Translations["menu.edit.manage_tags"], menu_bar)
         self.tag_manager_action.triggered.connect(self.tag_manager_panel.show)
         self.tag_manager_action.setShortcut(
             QtCore.QKeyCombination(
@@ -518,19 +526,19 @@ class QtDriver(DriverMixin, QObject):
         self.tag_manager_action.setToolTip("Ctrl+M")
         edit_menu.addAction(self.tag_manager_action)
 
-        self.color_manager_action = TQAction("edit.color_manager", menu_bar)
+        self.color_manager_action = QAction(Translations["edit.color_manager"], menu_bar)
         self.color_manager_action.triggered.connect(self.color_manager_panel.show)
         self.color_manager_action.setEnabled(False)
         edit_menu.addAction(self.color_manager_action)
 
         # View Menu ============================================================
-        show_libs_list_action = TQAction("settings.show_recent_libraries", menu_bar)
+        show_libs_list_action = QAction(Translations["settings.show_recent_libraries"], menu_bar)
         show_libs_list_action.setCheckable(True)
         show_libs_list_action.setChecked(
             bool(self.settings.value(SettingItems.WINDOW_SHOW_LIBS, defaultValue=True, type=bool))
         )
 
-        show_filenames_action = TQAction("settings.show_filenames_in_grid", menu_bar)
+        show_filenames_action = QAction(Translations["settings.show_filenames_in_grid"], menu_bar)
         show_filenames_action.setCheckable(True)
         show_filenames_action.setChecked(
             bool(self.settings.value(SettingItems.SHOW_FILENAMES, defaultValue=True, type=bool))
@@ -549,7 +557,9 @@ class QtDriver(DriverMixin, QObject):
                 self.unlinked_modal = FixUnlinkedEntriesModal(self.lib, self)
             self.unlinked_modal.show()
 
-        self.fix_unlinked_entries_action = TQAction("menu.tools.fix_unlinked_entries", menu_bar)
+        self.fix_unlinked_entries_action = QAction(
+            Translations["menu.tools.fix_unlinked_entries"], menu_bar
+        )
         self.fix_unlinked_entries_action.triggered.connect(create_fix_unlinked_entries_modal)
         self.fix_unlinked_entries_action.setEnabled(False)
         tools_menu.addAction(self.fix_unlinked_entries_action)
@@ -559,7 +569,9 @@ class QtDriver(DriverMixin, QObject):
                 self.dupe_modal = FixDupeFilesModal(self.lib, self)
             self.dupe_modal.show()
 
-        self.fix_dupe_files_action = TQAction("menu.tools.fix_duplicate_files", menu_bar)
+        self.fix_dupe_files_action = QAction(
+            Translations["menu.tools.fix_duplicate_files"], menu_bar
+        )
         self.fix_dupe_files_action.triggered.connect(create_dupe_files_modal)
         self.fix_dupe_files_action.setEnabled(False)
         tools_menu.addAction(self.fix_dupe_files_action)
@@ -567,7 +579,9 @@ class QtDriver(DriverMixin, QObject):
         tools_menu.addSeparator()
 
         # TODO: Move this to a settings screen.
-        self.clear_thumb_cache_action = TQAction("settings.clear_thumb_cache.title", menu_bar)
+        self.clear_thumb_cache_action = QAction(
+            Translations["settings.clear_thumb_cache.title"], menu_bar
+        )
         self.clear_thumb_cache_action.triggered.connect(
             lambda: CacheManager.clear_cache(self.lib.library_dir)
         )
@@ -593,7 +607,7 @@ class QtDriver(DriverMixin, QObject):
                 self.folders_modal = FoldersToTagsModal(self.lib, self)
             self.folders_modal.show()
 
-        self.folders_to_tags_action = TQAction("menu.macros.folders_to_tags", menu_bar)
+        self.folders_to_tags_action = QAction(Translations["menu.macros.folders_to_tags"], menu_bar)
         self.folders_to_tags_action.triggered.connect(create_folders_tags_modal)
         self.folders_to_tags_action.setEnabled(False)
         macros_menu.addAction(self.folders_to_tags_action)
@@ -604,7 +618,7 @@ class QtDriver(DriverMixin, QObject):
                 self.about_modal = AboutModal(self.config_path)
             self.about_modal.show()
 
-        self.about_action = TQAction("menu.help.about", menu_bar)
+        self.about_action = QAction(Translations["menu.help.about"], menu_bar)
         self.about_action.triggered.connect(create_about_modal)
         help_menu.addAction(self.about_action)
         self.set_macro_menu_viability()
@@ -868,7 +882,7 @@ class QtDriver(DriverMixin, QObject):
 
         end_time = time.time()
         self.main_window.statusbar.showMessage(
-            Translations.translate_formatted(
+            Translations.formatted(
                 "status.library_closed", time_span=format_timespan(end_time - start_time)
             )
         )
@@ -880,7 +894,7 @@ class QtDriver(DriverMixin, QObject):
         target_path = self.lib.save_library_backup_to_disk()
         end_time = time.time()
         self.main_window.statusbar.showMessage(
-            Translations.translate_formatted(
+            Translations.formatted(
                 "status.library_backup_success",
                 path=target_path,
                 time_span=format_timespan(end_time - start_time),
@@ -979,7 +993,7 @@ class QtDriver(DriverMixin, QObject):
                         self.preview_panel.thumb.stop_file_use()
                     if delete_file(self.lib.library_dir / f):
                         self.main_window.statusbar.showMessage(
-                            Translations.translate_formatted(
+                            Translations.formatted(
                                 "status.deleting_file", i=i, count=len(pending), path=f
                             )
                         )
@@ -997,19 +1011,17 @@ class QtDriver(DriverMixin, QObject):
             self.main_window.statusbar.showMessage(Translations["status.deleted_none"])
         elif len(self.selected) <= 1 and deleted_count == 1:
             self.main_window.statusbar.showMessage(
-                Translations.translate_formatted("status.deleted_file_plural", count=deleted_count)
+                Translations.formatted("status.deleted_file_plural", count=deleted_count)
             )
         elif len(self.selected) > 1 and deleted_count == 0:
             self.main_window.statusbar.showMessage(Translations["status.deleted_none"])
         elif len(self.selected) > 1 and deleted_count < len(self.selected):
             self.main_window.statusbar.showMessage(
-                Translations.translate_formatted(
-                    "status.deleted_partial_warning", count=deleted_count
-                )
+                Translations.formatted("status.deleted_partial_warning", count=deleted_count)
             )
         elif len(self.selected) > 1 and deleted_count == len(self.selected):
             self.main_window.statusbar.showMessage(
-                Translations.translate_formatted("status.deleted_file_plural", count=deleted_count)
+                Translations.formatted("status.deleted_file_plural", count=deleted_count)
             )
         self.main_window.statusbar.repaint()
 
@@ -1026,7 +1038,7 @@ class QtDriver(DriverMixin, QObject):
         # https://github.com/arsenetar/send2trash/issues/28
         # This warning is applied to all platforms until at least macOS and Linux can be verified
         # to not exhibit this same behavior.
-        perm_warning_msg = Translations.translate_formatted(
+        perm_warning_msg = Translations.formatted(
             "trash.dialog.permanent_delete_warning", trash_term=trash_term()
         )
         perm_warning: str = (
@@ -1044,7 +1056,7 @@ class QtDriver(DriverMixin, QObject):
         )
         msg.setIcon(QMessageBox.Icon.Warning)
         if count <= 1:
-            msg_text = Translations.translate_formatted(
+            msg_text = Translations.formatted(
                 "trash.dialog.move.confirmation.singular", trash_term=trash_term()
             )
             msg.setText(
@@ -1054,7 +1066,7 @@ class QtDriver(DriverMixin, QObject):
                 f"{perm_warning}<br>"
             )
         elif count > 1:
-            msg_text = Translations.translate_formatted(
+            msg_text = Translations.formatted(
                 "trash.dialog.move.confirmation.plural",
                 count=count,
                 trash_term=trash_term(),
@@ -1090,7 +1102,7 @@ class QtDriver(DriverMixin, QObject):
             lambda x: (
                 pw.update_progress(x + 1),
                 pw.update_label(
-                    Translations.translate_formatted(
+                    Translations.formatted(
                         "library.refresh.scanning.plural"
                         if x + 1 != 1
                         else "library.refresh.scanning.singular",
@@ -1132,7 +1144,7 @@ class QtDriver(DriverMixin, QObject):
         iterator.value.connect(
             lambda: (
                 pw.update_label(
-                    Translations.translate_formatted(
+                    Translations.formatted(
                         "entries.running.dialog.new_entries", total=f"{files_count:n}"
                     )
                 ),
@@ -1692,7 +1704,7 @@ class QtDriver(DriverMixin, QObject):
 
         # inform user about completed search
         self.main_window.statusbar.showMessage(
-            Translations.translate_formatted(
+            Translations.formatted(
                 "status.results_found",
                 count=results.total_count,
                 time_span=format_timespan(end_time - start_time),
@@ -1768,8 +1780,8 @@ class QtDriver(DriverMixin, QObject):
             action.triggered.connect(lambda checked=False, p=path: self.open_library(p))
             actions.append(action)
 
-        clear_recent_action = TQAction(
-            "menu.file.clear_recent_libraries", self.open_recent_library_menu
+        clear_recent_action = QAction(
+            Translations["menu.file.clear_recent_libraries"], self.open_recent_library_menu
         )
         clear_recent_action.triggered.connect(self.clear_recent_libs)
         actions.append(clear_recent_action)
@@ -1823,9 +1835,7 @@ class QtDriver(DriverMixin, QObject):
         Translations.translate_with_setter(
             self.main_window.landing_widget.set_status_label, **translation_params
         )
-        self.main_window.statusbar.showMessage(
-            Translations.translate_formatted(**translation_params), 3
-        )
+        self.main_window.statusbar.showMessage(Translations.formatted(**translation_params), 3)
         self.main_window.repaint()
 
         if self.lib.library_dir:

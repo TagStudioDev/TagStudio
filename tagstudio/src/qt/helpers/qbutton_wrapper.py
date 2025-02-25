@@ -3,7 +3,6 @@
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
 from PySide6.QtWidgets import QPushButton
-from src.qt.translations import TQPushButton
 
 
 class QPushButtonWrapper(QPushButton):
@@ -15,16 +14,4 @@ class QPushButtonWrapper(QPushButton):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.is_connected = False
-
-
-class TQPushButtonWrapper(TQPushButton):
-    """Custom QPushButton wrapper.
-
-    This is a customized implementation of the PySide6 QPushButton that allows to suppress
-    the warning that is triggered by disconnecting a signal that is not currently connected.
-    """
-
-    def __init__(self, text_key: str, *args, **kwargs):
-        super().__init__(text_key, *args, **kwargs)
         self.is_connected = False

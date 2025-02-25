@@ -8,13 +8,15 @@ from PySide6 import QtCore, QtGui
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import (
     QHBoxLayout,
+    QLabel,
     QListWidget,
     QListWidgetItem,
+    QPushButton,
     QVBoxLayout,
     QWidget,
 )
 from src.core.library import Library
-from src.qt.translations import TQLabel, TQPushButton, Translations
+from src.qt.translations import Translations
 
 logger = structlog.get_logger(__name__)
 
@@ -35,7 +37,7 @@ class AddFieldModal(QWidget):
         self.root_layout = QVBoxLayout(self)
         self.root_layout.setContentsMargins(6, 6, 6, 6)
 
-        self.title_widget = TQLabel("library.field.add")
+        self.title_widget = QLabel(Translations["library.field.add"])
         self.title_widget.setObjectName("fieldTitle")
         self.title_widget.setWordWrap(True)
         self.title_widget.setStyleSheet("font-weight:bold;" "font-size:14px;" "padding-top: 6px;")
@@ -48,11 +50,11 @@ class AddFieldModal(QWidget):
         self.button_layout.setContentsMargins(6, 6, 6, 6)
         self.button_layout.addStretch(1)
 
-        self.cancel_button = TQPushButton("generic.cancel")
+        self.cancel_button = QPushButton(Translations["generic.cancel"])
         self.cancel_button.clicked.connect(self.hide)
         self.button_layout.addWidget(self.cancel_button)
 
-        self.save_button = TQPushButton("generic.add")
+        self.save_button = QPushButton(Translations["generic.add"])
         self.save_button.setDefault(True)
         self.save_button.clicked.connect(self.hide)
         self.save_button.clicked.connect(

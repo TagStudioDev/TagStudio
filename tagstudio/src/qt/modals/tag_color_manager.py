@@ -13,6 +13,7 @@ from PySide6.QtWidgets import (
     QHBoxLayout,
     QLabel,
     QMessageBox,
+    QPushButton,
     QScrollArea,
     QSizePolicy,
     QVBoxLayout,
@@ -21,7 +22,7 @@ from PySide6.QtWidgets import (
 from src.core.constants import RESERVED_NAMESPACE_PREFIX
 from src.core.enums import Theme
 from src.qt.modals.build_namespace import BuildNamespacePanel
-from src.qt.translations import TQPushButton, Translations
+from src.qt.translations import Translations
 from src.qt.widgets.color_box import ColorBoxWidget
 from src.qt.widgets.fields import FieldContainer
 from src.qt.widgets.panel import PanelModal
@@ -90,7 +91,7 @@ class TagColorManager(QWidget):
         self.button_layout = QHBoxLayout(self.button_container)
         self.button_layout.setContentsMargins(6, 6, 6, 6)
 
-        self.new_namespace_button = TQPushButton("namespace.new.button")
+        self.new_namespace_button = QPushButton(Translations["namespace.new.button"])
         self.new_namespace_button.clicked.connect(self.create_namespace)
         self.button_layout.addWidget(self.new_namespace_button)
 
@@ -100,7 +101,7 @@ class TagColorManager(QWidget):
 
         self.button_layout.addStretch(1)
 
-        self.done_button = TQPushButton("generic.done_alt")
+        self.done_button = QPushButton(Translations["generic.done_alt"])
         self.done_button.clicked.connect(self.hide)
         self.button_layout.addWidget(self.done_button)
 
@@ -153,7 +154,7 @@ class TagColorManager(QWidget):
                 ns_layout = QHBoxLayout(ns_container)
                 ns_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
                 ns_layout.setContentsMargins(0, 18, 0, 18)
-                namespace_prompt = TQPushButton("namespace.new.prompt")
+                namespace_prompt = QPushButton(Translations["namespace.new.prompt"])
                 namespace_prompt.setFixedSize(namespace_prompt.sizeHint().width() + 8, 24)
                 namespace_prompt.clicked.connect(self.create_namespace)
                 ns_layout.addWidget(namespace_prompt)

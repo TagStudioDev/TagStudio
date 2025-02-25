@@ -11,14 +11,8 @@ import structlog
 from PySide6 import QtCore, QtGui
 from PySide6.QtCore import Qt, QUrl
 from PySide6.QtGui import QStandardItem, QStandardItemModel
-from PySide6.QtWidgets import (
-    QHBoxLayout,
-    QLabel,
-    QListView,
-    QVBoxLayout,
-    QWidget,
-)
-from src.qt.translations import TQPushButton, Translations
+from PySide6.QtWidgets import QHBoxLayout, QLabel, QListView, QPushButton, QVBoxLayout, QWidget
+from src.qt.translations import Translations
 from src.qt.widgets.progress import ProgressWidget
 
 if TYPE_CHECKING:
@@ -66,22 +60,22 @@ class DropImportModal(QWidget):
         self.button_layout.setContentsMargins(6, 6, 6, 6)
         self.button_layout.addStretch(1)
 
-        self.skip_button = TQPushButton("generic.skip_alt")
+        self.skip_button = QPushButton(Translations["generic.skip_alt"])
         self.skip_button.setDefault(True)
         self.skip_button.clicked.connect(lambda: self.begin_transfer(DuplicateChoice.SKIP))
         self.button_layout.addWidget(self.skip_button)
 
-        self.overwrite_button = TQPushButton("generic.overwrite_alt")
+        self.overwrite_button = QPushButton(Translations["generic.overwrite_alt"])
         self.overwrite_button.clicked.connect(
             lambda: self.begin_transfer(DuplicateChoice.OVERWRITE)
         )
         self.button_layout.addWidget(self.overwrite_button)
 
-        self.rename_button = TQPushButton("generic.rename_alt")
+        self.rename_button = QPushButton(Translations["generic.rename_alt"])
         self.rename_button.clicked.connect(lambda: self.begin_transfer(DuplicateChoice.RENAME))
         self.button_layout.addWidget(self.rename_button)
 
-        self.cancel_button = TQPushButton("generic.cancel_alt")
+        self.cancel_button = QPushButton(Translations["generic.cancel_alt"])
         self.cancel_button.clicked.connect(lambda: self.begin_transfer(DuplicateChoice.CANCEL))
         self.button_layout.addWidget(self.cancel_button)
 
@@ -137,7 +131,7 @@ class DropImportModal(QWidget):
         self.desc_widget.setText(
             Translations["drop_import.duplicates_choice.singular"]
             if len(self.duplicate_files) == 1
-            else Translations.translate_formatted(
+            else Translations.formatted(
                 "drop_import.duplicates_choice.plural", count=len(self.duplicate_files)
             )
         )
@@ -160,7 +154,7 @@ class DropImportModal(QWidget):
             return
 
         def displayed_text(x):
-            return Translations.translate_formatted(
+            return Translations.formatted(
                 "drop_import.progress.label.singular"
                 if x[0] + 1 == 1
                 else "drop_import.progress.label.plural",
