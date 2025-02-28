@@ -381,12 +381,6 @@ class PreviewThumb(QWidget):
         self.preview_img.setContextMenuPolicy(Qt.ContextMenuPolicy.ActionsContextMenu)
         self.preview_img.setCursor(Qt.CursorShape.PointingHandCursor)
 
-        if self.media_player.click_connected:
-            self.media_player.clicked.disconnect()
-
-        self.media_player.clicked.connect(lambda path=filepath: open_file(path))
-        self.media_player.click_connected = True
-
         self.opener = FileOpenerHelper(filepath)
         self.open_file_action.triggered.connect(self.opener.open_file)
         self.open_explorer_action.triggered.connect(self.opener.open_explorer)
