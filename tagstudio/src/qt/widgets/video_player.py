@@ -116,8 +116,7 @@ class VideoPlayer(QGraphicsView):
 
         self.setContextMenuPolicy(Qt.ContextMenuPolicy.ActionsContextMenu)
         self.opener = FileOpenerHelper(filepath=self.filepath)
-        autoplay_action = QAction(self)
-        Translations.translate_qobject(autoplay_action, "media_player.autoplay")
+        autoplay_action = QAction(Translations["media_player.autoplay"], self)
         autoplay_action.setCheckable(True)
         self.addAction(autoplay_action)
         autoplay_action.setChecked(
@@ -126,8 +125,7 @@ class VideoPlayer(QGraphicsView):
         autoplay_action.triggered.connect(lambda: self.toggle_autoplay())
         self.autoplay = autoplay_action
 
-        open_file_action = QAction(self)
-        Translations.translate_qobject(open_file_action, "file.open_file")
+        open_file_action = QAction(Translations["file.open_file"], self)
         open_file_action.triggered.connect(self.opener.open_file)
 
         open_explorer_action = QAction(open_file_str(), self)

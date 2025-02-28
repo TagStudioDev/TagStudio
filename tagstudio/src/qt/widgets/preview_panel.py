@@ -74,10 +74,8 @@ class PreviewPanel(QWidget):
         self.fields = FieldContainers(library, driver)
 
         self.tag_search_panel = TagSearchPanel(self.driver.lib, is_tag_chooser=True)
-        self.add_tag_modal = PanelModal(
-            self.tag_search_panel, Translations.translate_formatted("tag.add.plural")
-        )
-        Translations.translate_with_setter(self.add_tag_modal.setWindowTitle, "tag.add.plural")
+        self.add_tag_modal = PanelModal(self.tag_search_panel, Translations["tag.add.plural"])
+        self.add_tag_modal.setWindowTitle(Translations["tag.add.plural"])
 
         self.add_field_modal = AddFieldModal(self.lib)
 
@@ -100,19 +98,17 @@ class PreviewPanel(QWidget):
         add_buttons_layout.setContentsMargins(0, 0, 0, 0)
         add_buttons_layout.setSpacing(6)
 
-        self.add_tag_button = QPushButton()
+        self.add_tag_button = QPushButton(Translations["tag.add"])
         self.add_tag_button.setEnabled(False)
         self.add_tag_button.setCursor(Qt.CursorShape.PointingHandCursor)
         self.add_tag_button.setMinimumHeight(28)
         self.add_tag_button.setStyleSheet(PreviewPanel.button_style)
-        Translations.translate_qobject(self.add_tag_button, "tag.add")
 
-        self.add_field_button = QPushButton()
+        self.add_field_button = QPushButton(Translations["library.field.add"])
         self.add_field_button.setEnabled(False)
         self.add_field_button.setCursor(Qt.CursorShape.PointingHandCursor)
         self.add_field_button.setMinimumHeight(28)
         self.add_field_button.setStyleSheet(PreviewPanel.button_style)
-        Translations.translate_qobject(self.add_field_button, "library.field.add")
 
         add_buttons_layout.addWidget(self.add_tag_button)
         add_buttons_layout.addWidget(self.add_field_button)

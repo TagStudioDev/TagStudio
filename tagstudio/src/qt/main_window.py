@@ -74,7 +74,7 @@ class Ui_MainWindow(QMainWindow):
         # Thumbnail Size placeholder
         self.thumb_size_combobox = QComboBox(self.centralwidget)
         self.thumb_size_combobox.setObjectName(u"thumbSizeComboBox")
-        Translations.translate_with_setter(self.thumb_size_combobox.setPlaceholderText, "home.thumbnail_size")
+        self.thumb_size_combobox.setPlaceholderText(Translations["home.thumbnail_size"])
         self.thumb_size_combobox.setCurrentText("")
         sizePolicy = QSizePolicy(QSizePolicy.Minimum, QSizePolicy.Fixed)
         sizePolicy.setHorizontalStretch(0)
@@ -142,7 +142,7 @@ class Ui_MainWindow(QMainWindow):
         self.horizontalLayout_2.addWidget(self.forwardButton)
 
         self.searchField = QLineEdit(self.centralwidget)
-        Translations.translate_with_setter(self.searchField.setPlaceholderText, "home.search_entries")
+        self.searchField.setPlaceholderText(Translations["home.search_entries"])
         self.searchField.setObjectName(u"searchField")
         self.searchField.setMinimumSize(QSize(0, 32))
 
@@ -152,8 +152,7 @@ class Ui_MainWindow(QMainWindow):
         self.searchField.setCompleter(self.searchFieldCompleter)
         self.horizontalLayout_2.addWidget(self.searchField)
 
-        self.searchButton = QPushButton(self.centralwidget)
-        Translations.translate_qobject(self.searchButton, "home.search")
+        self.searchButton = QPushButton(Translations["home.search"], self.centralwidget)
         self.searchButton.setObjectName(u"searchButton")
         self.searchButton.setMinimumSize(QSize(0, 32))
 

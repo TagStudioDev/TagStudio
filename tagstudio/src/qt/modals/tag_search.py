@@ -77,8 +77,7 @@ class TagSearchPanel(PanelWidget):
         self.limit_layout.setSpacing(12)
         self.limit_layout.addStretch(1)
 
-        self.limit_title = QLabel()
-        Translations.translate_qobject(self.limit_title, "tag.view_limit")
+        self.limit_title = QLabel(Translations["tag.view_limit"])
         self.limit_layout.addWidget(self.limit_title)
 
         self.limit_combobox = QComboBox()
@@ -95,7 +94,7 @@ class TagSearchPanel(PanelWidget):
         self.search_field = QLineEdit()
         self.search_field.setObjectName("searchField")
         self.search_field.setMinimumSize(QSize(0, 32))
-        Translations.translate_with_setter(self.search_field.setPlaceholderText, "home.search_tags")
+        self.search_field.setPlaceholderText(Translations["home.search_tags"])
         self.search_field.textEdited.connect(lambda text: self.update_tags(text))
         self.search_field.returnPressed.connect(lambda: self.on_return(self.search_field.text()))
 
@@ -119,9 +118,9 @@ class TagSearchPanel(PanelWidget):
         """Set the QtDriver for this search panel. Used for main window operations."""
         self.driver = driver
 
-    def build_create_button(self, query: str | None):
+    def build_create_button(self, query: str | None, key: str, format_args: dict):
         """Constructs a "Create & Add Tag" QPushButton."""
-        create_button = QPushButton(self)
+        create_button = QPushButton(Translations[key].format(**format_args), self)
         create_button.setFlat(True)
 
         create_button.setMinimumSize(22, 22)
@@ -178,8 +177,8 @@ class TagSearchPanel(PanelWidget):
 
         self.build_tag_modal: BuildTagPanel = build_tag.BuildTagPanel(self.lib)
         self.add_tag_modal: PanelModal = PanelModal(self.build_tag_modal, has_save=True)
-        Translations.translate_with_setter(self.add_tag_modal.setTitle, "tag.new")
-        Translations.translate_with_setter(self.add_tag_modal.setWindowTitle, "tag.add")
+        self.add_tag_modal.setTitle(Translations["tag.new"])
+        self.add_tag_modal.setWindowTitle(Translations["tag.add"])
 
         self.build_tag_modal.name_field.setText(name)
         self.add_tag_modal.saved.connect(on_tag_modal_saved)
@@ -245,11 +244,10 @@ class TagSearchPanel(PanelWidget):
 
         # Add back the "Create & Add" button
         if query and query.strip():
-            cb: QPushButton = self.build_create_button(query)
+            cb: QPushButton = self.build_create_button(query, "tag.create_add", {"query": query})
             with catch_warnings(record=True):
                 cb.clicked.disconnect()
             cb.clicked.connect(lambda: self.create_and_add_tag(query or ""))
-            Translations.translate_qobject(cb, "tag.create_add", query=query)
             self.scroll_layout.addWidget(cb)
             self.create_button_in_layout = True
 
@@ -366,7 +364,7 @@ class TagSearchPanel(PanelWidget):
             done_callback=(self.update_tags(self.search_field.text())),
             has_save=True,
         )
-        Translations.translate_with_setter(self.edit_modal.setWindowTitle, "tag.edit")
+        self.edit_modal.setWindowTitle(Translations["tag.edit"])
 
         self.edit_modal.saved.connect(lambda: callback(build_tag_panel))
         self.edit_modal.show()

@@ -18,8 +18,7 @@ class RelinkUnlinkedEntries(QObject):
 
     def repair_entries(self):
         def displayed_text(x):
-            return Translations.translate_formatted(
-                "entries.unlinked.relink.attempting",
+            return Translations["entries.unlinked.relink.attempting"].format(
                 idx=x,
                 missing_count=self.tracker.missing_file_entries_count,
                 fixed_count=self.tracker.files_fixed_count,
@@ -31,6 +30,6 @@ class RelinkUnlinkedEntries(QObject):
             minimum=0,
             maximum=self.tracker.missing_file_entries_count,
         )
-        Translations.translate_with_setter(pw.setWindowTitle, "entries.unlinked.relink.title")
+        pw.setWindowTitle(Translations["entries.unlinked.relink.title"])
 
         pw.from_iterable_function(self.tracker.fix_unlinked_entries, displayed_text, self.done.emit)

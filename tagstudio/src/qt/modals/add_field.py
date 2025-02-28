@@ -31,17 +31,16 @@ class AddFieldModal(QWidget):
         # [Cancel] [Save]
         super().__init__()
         self.lib = library
-        Translations.translate_with_setter(self.setWindowTitle, "library.field.add")
+        self.setWindowTitle(Translations["library.field.add"])
         self.setWindowModality(Qt.WindowModality.ApplicationModal)
         self.setMinimumSize(400, 300)
         self.root_layout = QVBoxLayout(self)
         self.root_layout.setContentsMargins(6, 6, 6, 6)
 
-        self.title_widget = QLabel()
+        self.title_widget = QLabel(Translations["library.field.add"])
         self.title_widget.setObjectName("fieldTitle")
         self.title_widget.setWordWrap(True)
         self.title_widget.setStyleSheet("font-weight:bold;" "font-size:14px;" "padding-top: 6px;")
-        Translations.translate_qobject(self.title_widget, "library.field.add")
         self.title_widget.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         self.list_widget = QListWidget()
@@ -51,13 +50,11 @@ class AddFieldModal(QWidget):
         self.button_layout.setContentsMargins(6, 6, 6, 6)
         self.button_layout.addStretch(1)
 
-        self.cancel_button = QPushButton()
-        Translations.translate_qobject(self.cancel_button, "generic.cancel")
+        self.cancel_button = QPushButton(Translations["generic.cancel"])
         self.cancel_button.clicked.connect(self.hide)
         self.button_layout.addWidget(self.cancel_button)
 
-        self.save_button = QPushButton()
-        Translations.translate_qobject(self.save_button, "generic.add")
+        self.save_button = QPushButton(Translations["generic.add"])
         self.save_button.setDefault(True)
         self.save_button.clicked.connect(self.hide)
         self.save_button.clicked.connect(
