@@ -17,6 +17,7 @@ from PySide6.QtGui import QAction, QMovie, QResizeEvent
 from PySide6.QtWidgets import (
     QHBoxLayout,
     QLabel,
+    QStackedLayout,
     QWidget,
 )
 from src.core.library.alchemy.library import Library
@@ -30,7 +31,6 @@ from src.qt.resource_manager import ResourceManager
 from src.qt.translations import Translations
 from src.qt.widgets.media_player import MediaPlayer
 from src.qt.widgets.thumb_renderer import ThumbRenderer
-from src.qt.widgets.video_player import VideoPlayer
 
 if typing.TYPE_CHECKING:
     from src.qt.ts_qt import QtDriver
@@ -51,7 +51,9 @@ class PreviewThumb(QWidget):
         self.img_button_size: tuple[int, int] = (266, 266)
         self.image_ratio: float = 1.0
 
-        image_layout = QHBoxLayout(self)
+        image_layout = QStackedLayout(self)
+        image_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        image_layout.setStackingMode(QStackedLayout.StackingMode.StackAll)
         image_layout.setContentsMargins(0, 0, 0, 0)
 
         self.open_file_action = QAction(self)
@@ -70,19 +72,24 @@ class PreviewThumb(QWidget):
         self.preview_img.addAction(self.open_explorer_action)
         self.preview_img.addAction(self.delete_action)
 
+        # In testing, it didn't seem possible to center the widgets directly
+        # on the QStackedLayout. Adding sublayouts allows us to center the widgets.
+        self.preview_img_page = QWidget()
+        self._stacked_page_setup(self.preview_img_page, self.preview_img)
+
         self.preview_gif = QLabel()
         self.preview_gif.setMinimumSize(*self.img_button_size)
         self.preview_gif.setContextMenuPolicy(Qt.ContextMenuPolicy.ActionsContextMenu)
         self.preview_gif.setCursor(Qt.CursorShape.ArrowCursor)
         self.preview_gif.addAction(self.open_file_action)
         self.preview_gif.addAction(self.open_explorer_action)
-        self.preview_gif.addAction(self.delete_action)
         self.preview_gif.hide()
         self.gif_buffer: QBuffer = QBuffer()
 
-        self.preview_vid = VideoPlayer(driver)
-        self.preview_vid.addAction(self.delete_action)
-        self.preview_vid.hide()
+        self.preview_gif_page = QWidget()
+        self.preview_img_page.setContentsMargins(0, 0, 0, 0)
+        self._stacked_page_setup(self.preview_gif_page, self.preview_gif)
+
         self.thumb_renderer = ThumbRenderer(self.lib)
         self.thumb_renderer.updated.connect(lambda ts, i, s: (self.preview_img.setIcon(i)))
         self.thumb_renderer.updated_ratio.connect(
@@ -101,13 +108,23 @@ class PreviewThumb(QWidget):
         self.media_player = MediaPlayer(driver)
         self.media_player.hide()
 
-        image_layout.addWidget(self.preview_img)
-        image_layout.setAlignment(self.preview_img, Qt.AlignmentFlag.AlignCenter)
-        image_layout.addWidget(self.preview_gif)
-        image_layout.setAlignment(self.preview_gif, Qt.AlignmentFlag.AlignCenter)
-        image_layout.addWidget(self.preview_vid)
-        image_layout.setAlignment(self.preview_vid, Qt.AlignmentFlag.AlignCenter)
+        self.media_player_page = QWidget()
+        self.preview_img_page.setContentsMargins(0, 0, 0, 0)
+        self._stacked_page_setup(self.media_player_page, self.media_player)
+
+        image_layout.addWidget(self.preview_img_page)
+        image_layout.addWidget(self.preview_gif_page)
+        image_layout.addWidget(self.media_player_page)
+
         self.setMinimumSize(*self.img_button_size)
+        image_layout.setCurrentWidget(self.media_player_page)
+
+    def _stacked_page_setup(self, page: QWidget, widget: QWidget):
+        layout = QHBoxLayout(page)
+        layout.addWidget(widget)
+        layout.setAlignment(widget, Qt.AlignmentFlag.AlignCenter)
+        layout.setContentsMargins(0, 0, 0, 0)
+        page.setLayout(layout)
 
     def set_image_ratio(self, ratio: float):
         self.image_ratio = ratio
@@ -133,17 +150,18 @@ class PreviewThumb(QWidget):
             adj_height = size[1]
 
         adj_size = QSize(int(adj_width), int(adj_height))
+
         self.img_button_size = (int(adj_width), int(adj_height))
         self.preview_img.setMaximumSize(adj_size)
         self.preview_img.setIconSize(adj_size)
-        self.preview_vid.resize_video(adj_size)
-        self.preview_vid.setMaximumSize(adj_size)
-        self.preview_vid.setMinimumSize(adj_size)
         self.preview_gif.setMaximumSize(adj_size)
         self.preview_gif.setMinimumSize(adj_size)
+
+        self.media_player.setMaximumSize(adj_size)
+        self.media_player.setMinimumSize(adj_size)
         proxy_style = RoundedPixmapStyle(radius=8)
         self.preview_gif.setStyle(proxy_style)
-        self.preview_vid.setStyle(proxy_style)
+        self.media_player.setStyle(proxy_style)
         m = self.preview_gif.movie()
         if m:
             m.setScaledSize(adj_size)
@@ -158,11 +176,7 @@ class PreviewThumb(QWidget):
         if preview != "image" and preview != "media":
             self.preview_img.hide()
 
-        if preview != "video_legacy":
-            self.preview_vid.stop()
-            self.preview_vid.hide()
-
-        if preview != "media":
+        if preview not in ["media", "video_legacy"]:
             self.media_player.stop()
             self.media_player.hide()
 
@@ -294,7 +308,7 @@ class PreviewThumb(QWidget):
             stats["width"] = image.width
             stats["height"] = image.height
             if success:
-                self.preview_vid.play(filepath_, QSize(image.width, image.height))
+                self.media_player.show()
                 self.update_image_size((image.width, image.height), image.width / image.height)
                 self.resizeEvent(
                     QResizeEvent(
@@ -302,7 +316,7 @@ class PreviewThumb(QWidget):
                         QSize(image.width, image.height),
                     )
                 )
-                self.preview_vid.show()
+                self.media_player.play(filepath)
 
             stats["duration"] = video.get(cv2.CAP_PROP_FRAME_COUNT) / video.get(cv2.CAP_PROP_FPS)
         except cv2.error as e:
@@ -398,8 +412,8 @@ class PreviewThumb(QWidget):
         logger.info("[PreviewThumb] Stopping file use in video playback...")
         # This swaps the video out for a placeholder so the previous video's file
         # is no longer in use by this object.
-        self.preview_vid.play(str(ResourceManager.get_path("placeholder_mp4")), QSize(8, 8))
-        self.preview_vid.hide()
+        self.media_player.play(ResourceManager.get_path("placeholder_mp4"))
+        self.media_player.hide()
 
     def resizeEvent(self, event: QResizeEvent) -> None:  # noqa: N802
         self.update_image_size((self.size().width(), self.size().height()))
