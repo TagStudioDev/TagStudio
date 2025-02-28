@@ -7,16 +7,8 @@ from pathlib import Path
 from time import gmtime
 
 from PIL import Image, ImageDraw
-from PySide6.QtCore import QEvent, QObject, QRectF, Qt, QUrl, QVariantAnimation, Signal
-from PySide6.QtGui import (
-    QBitmap,
-    QBrush,
-    QColor,
-    QFont,
-    QPen,
-    QRegion,
-    QResizeEvent,
-)
+from PySide6.QtCore import QEvent, QObject, QRectF, Qt, QUrl, QVariantAnimation
+from PySide6.QtGui import QAction, QBitmap, QBrush, QColor, QFont, QPen, QRegion, QResizeEvent
 from PySide6.QtMultimedia import QAudioOutput, QMediaDevices, QMediaPlayer
 from PySide6.QtMultimediaWidgets import QGraphicsVideoItem
 from PySide6.QtSvgWidgets import QSvgWidget
@@ -25,6 +17,11 @@ from PySide6.QtWidgets import (
     QGraphicsView,
     QSlider,
 )
+from src.core.enums import SettingItems
+from src.qt.helpers.file_opener import FileOpenerHelper
+from src.qt.helpers.qslider_wrapper import QClickSlider
+from src.qt.platform_strings import open_file_str
+from src.qt.translations import Translations
 
 if typing.TYPE_CHECKING:
     from src.qt.ts_qt import QtDriver
@@ -35,9 +32,6 @@ class MediaPlayer(QGraphicsView):
 
     Gives a basic control set to manage media playback.
     """
-
-    clicked = Signal()
-    click_connected = False
 
     # These mouse_over_* variables are used to help
     # determine if a mouse click should be handled
@@ -94,7 +88,11 @@ class MediaPlayer(QGraphicsView):
         self.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.setStyleSheet("background: transparent;")
+        self.setStyleSheet("""
+            QGraphicsView {
+               background: transparent;
+            }
+        """)
         self.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         self.video_preview = VideoPreview()
@@ -137,7 +135,7 @@ class MediaPlayer(QGraphicsView):
         self.player.audioOutput().mutedChanged.connect(self.muted_changed)
 
         # Media controls
-        self.pslider = QSlider()
+        self.pslider = QClickSlider()
         self.pslider.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         self.pslider.setTickPosition(QSlider.TickPosition.NoTicks)
         self.pslider.setSingleStep(1)
@@ -165,7 +163,7 @@ class MediaPlayer(QGraphicsView):
         self.mute_unmute.resize(24, 24)
         self.mute_unmute.hide()
 
-        self.volume_slider = QSlider()
+        self.volume_slider = QClickSlider()
         self.volume_slider.setOrientation(Qt.Orientation.Horizontal)
         self.volume_slider.setValue(int(self.player.audioOutput().volume() * 100))
         self.volume_slider.valueChanged.connect(self.volume_slider_changed)
@@ -187,8 +185,35 @@ class MediaPlayer(QGraphicsView):
         self.scene().addWidget(self.mute_unmute)
         self.scene().addWidget(self.volume_slider)
 
+        self.setContextMenuPolicy(Qt.ContextMenuPolicy.ActionsContextMenu)
+        self.opener = FileOpenerHelper(filepath=self.filepath)
+        autoplay_action = QAction(self)
+        Translations.translate_qobject(autoplay_action, "media_player.autoplay")
+        autoplay_action.setCheckable(True)
+        self.addAction(autoplay_action)
+        autoplay_action.setChecked(
+            self.driver.settings.value(SettingItems.AUTOPLAY, defaultValue=True, type=bool)  # type: ignore
+        )
+        autoplay_action.triggered.connect(lambda: self.toggle_autoplay())
+        self.autoplay = autoplay_action
+
+        open_file_action = QAction(self)
+        Translations.translate_qobject(open_file_action, "file.open_file")
+        open_file_action.triggered.connect(self.opener.open_file)
+
+        open_explorer_action = QAction(open_file_str(), self)
+
+        open_explorer_action.triggered.connect(self.opener.open_explorer)
+        self.addAction(open_file_action)
+        self.addAction(open_explorer_action)
+
     def set_video_output(self, video: QGraphicsVideoItem):
         self.player.setVideoOutput(video)
+
+    def toggle_autoplay(self) -> None:
+        """Toggle the autoplay state of the video."""
+        self.driver.settings.setValue(SettingItems.AUTOPLAY, self.autoplay.isChecked())
+        self.driver.settings.sync()
 
     def apply_rounded_corners(self) -> None:
         """Apply a rounded corner effect to the video player."""
@@ -262,8 +287,8 @@ class MediaPlayer(QGraphicsView):
                 self.toggle_play()
             elif obj == self.mute_unmute:
                 self.toggle_mute()
-            elif self.mouse_over_elements() is False:  # let someone else handle this event
-                self.clicked.emit()
+            elif self.mouse_over_elements() is False:
+                self.toggle_play()
         elif event.type() is QEvent.Type.Enter:
             if obj == self or obj == self.video_preview:
                 self.underMouse()
@@ -349,9 +374,13 @@ class MediaPlayer(QGraphicsView):
         if not self.is_paused:
             self.player.stop()
             self.player.setSource(QUrl.fromLocalFile(self.filepath))
-            self.player.play()
+
+            if self.autoplay.isChecked():
+                self.player.play()
         else:
             self.player.setSource(QUrl.fromLocalFile(self.filepath))
+
+        self.opener.set_filepath(self.filepath)
 
     def load_toggle_play_icon(self, playing: bool) -> None:
         icon = self.driver.rm.pause_icon if playing else self.driver.rm.play_icon
@@ -378,7 +407,10 @@ class MediaPlayer(QGraphicsView):
             self.player.pause()
 
     def player_position_changed(self, position: int) -> None:
-        if not self.pslider.isSliderDown():
+        if self.pslider.mouse_pressed:
+            self.player.setPosition(self.pslider.value())
+            self.pslider.mouse_pressed = False
+        elif not self.pslider.isSliderDown():
             # User isn't using the slider, so update position in widgets.
             self.pslider.setValue(position)
             current = self.format_time(self.player.position())
