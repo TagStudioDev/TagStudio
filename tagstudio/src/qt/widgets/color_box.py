@@ -120,7 +120,7 @@ class ColorBoxWidget(FieldWidget):
                         slug="slug",
                         namespace=self.namespace,
                         name="Color",
-                        primary="#000000",
+                        primary="#FFFFFF",
                         secondary=None,
                     )
                 )
