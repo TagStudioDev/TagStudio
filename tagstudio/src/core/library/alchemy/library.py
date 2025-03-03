@@ -367,7 +367,8 @@ class Library:
                 if db_result:
                     db_version = db_result.value  # type: ignore
 
-                if db_version < 6:  # NOTE: DB_VERSION 6 is the first supported SQL DB version.
+                # NOTE: DB_VERSION 6 is the first supported SQL DB version.
+                if db_version < 6 or db_version > LibraryPrefs.DB_VERSION.default:
                     mismatch_text = Translations["status.library_version_mismatch"]
                     found_text = Translations["status.library_version_found"]
                     expected_text = Translations["status.library_version_expected"]
