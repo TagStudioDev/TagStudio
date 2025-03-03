@@ -211,11 +211,14 @@ class FileAttributes(QWidget):
 
             if duration_text:
                 stats_label_text = add_newline(stats_label_text)
-                dur_str = str(timedelta(seconds=float(duration_text)))[:-7]
-                if dur_str.startswith("0:"):
-                    dur_str = dur_str[2:]
-                if dur_str.startswith("0"):
-                    dur_str = dur_str[1:]
+                try:
+                    dur_str = str(timedelta(seconds=float(duration_text)))[:-7]
+                    if dur_str.startswith("0:"):
+                        dur_str = dur_str[2:]
+                    if dur_str.startswith("0"):
+                        dur_str = dur_str[1:]
+                except OverflowError:
+                    dur_str = "-:--"
                 stats_label_text += f"{dur_str}"
 
             if font_family:
