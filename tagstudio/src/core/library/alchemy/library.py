@@ -1186,7 +1186,6 @@ class Library:
                     f"{RESERVED_NAMESPACE_PREFIX}",
                     namespace=namespace,
                 )
-            logger.error("Should not see me")
 
             namespace_obj = Namespace(
                 namespace=slug,
