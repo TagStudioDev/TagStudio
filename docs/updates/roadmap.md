@@ -94,6 +94,7 @@ These version milestones are rough estimations for when the previous core featur
 -   [ ] Field content search [HIGH]
 -   [ ] Sort by date created [HIGH]
 -   [ ] Sort by date modified [HIGH]
+-   [ ] Sort by filename [HIGH]
 -   [ ] HAS operator for composition tags [HIGH]
 -   [ ] Search bar rework
     -   [ ] Improved tag autocomplete [HIGH]
