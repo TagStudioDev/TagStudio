@@ -11,14 +11,7 @@ import structlog
 from PySide6 import QtCore, QtGui
 from PySide6.QtCore import Qt, QUrl
 from PySide6.QtGui import QStandardItem, QStandardItemModel
-from PySide6.QtWidgets import (
-    QHBoxLayout,
-    QLabel,
-    QListView,
-    QPushButton,
-    QVBoxLayout,
-    QWidget,
-)
+from PySide6.QtWidgets import QHBoxLayout, QLabel, QListView, QPushButton, QVBoxLayout, QWidget
 from src.qt.translations import Translations
 from src.qt.widgets.progress import ProgressWidget
 
@@ -44,7 +37,7 @@ class DropImportModal(QWidget):
         self.driver: QtDriver = driver
 
         # Widget ======================
-        Translations.translate_with_setter(self.setWindowTitle, "drop_import.title")
+        self.setWindowTitle(Translations["drop_import.title"])
         self.setWindowModality(Qt.WindowModality.ApplicationModal)
         self.setMinimumSize(500, 400)
         self.root_layout = QVBoxLayout(self)
@@ -67,26 +60,22 @@ class DropImportModal(QWidget):
         self.button_layout.setContentsMargins(6, 6, 6, 6)
         self.button_layout.addStretch(1)
 
-        self.skip_button = QPushButton()
-        Translations.translate_qobject(self.skip_button, "generic.skip_alt")
+        self.skip_button = QPushButton(Translations["generic.skip_alt"])
         self.skip_button.setDefault(True)
         self.skip_button.clicked.connect(lambda: self.begin_transfer(DuplicateChoice.SKIP))
         self.button_layout.addWidget(self.skip_button)
 
-        self.overwrite_button = QPushButton()
-        Translations.translate_qobject(self.overwrite_button, "generic.overwrite_alt")
+        self.overwrite_button = QPushButton(Translations["generic.overwrite_alt"])
         self.overwrite_button.clicked.connect(
             lambda: self.begin_transfer(DuplicateChoice.OVERWRITE)
         )
         self.button_layout.addWidget(self.overwrite_button)
 
-        self.rename_button = QPushButton()
-        Translations.translate_qobject(self.rename_button, "generic.rename_alt")
+        self.rename_button = QPushButton(Translations["generic.rename_alt"])
         self.rename_button.clicked.connect(lambda: self.begin_transfer(DuplicateChoice.RENAME))
         self.button_layout.addWidget(self.rename_button)
 
-        self.cancel_button = QPushButton()
-        Translations.translate_qobject(self.cancel_button, "generic.cancel_alt")
+        self.cancel_button = QPushButton(Translations["generic.cancel_alt"])
         self.cancel_button.clicked.connect(lambda: self.begin_transfer(DuplicateChoice.CANCEL))
         self.button_layout.addWidget(self.cancel_button)
 
@@ -142,8 +131,8 @@ class DropImportModal(QWidget):
         self.desc_widget.setText(
             Translations["drop_import.duplicates_choice.singular"]
             if len(self.duplicate_files) == 1
-            else Translations.translate_formatted(
-                "drop_import.duplicates_choice.plural", count=len(self.duplicate_files)
+            else Translations["drop_import.duplicates_choice.plural"].format(
+                count=len(self.duplicate_files)
             )
         )
 
@@ -165,10 +154,11 @@ class DropImportModal(QWidget):
             return
 
         def displayed_text(x):
-            return Translations.translate_formatted(
+            return Translations[
                 "drop_import.progress.label.singular"
                 if x[0] + 1 == 1
-                else "drop_import.progress.label.plural",
+                else "drop_import.progress.label.plural"
+            ].format(
                 count=x[0] + 1,
                 suffix=f" {x[1]} {self.choice.value}" if self.choice else "",
             )
@@ -178,8 +168,8 @@ class DropImportModal(QWidget):
             minimum=0,
             maximum=len(self.files),
         )
-        Translations.translate_with_setter(pw.setWindowTitle, "drop_import.progress.window_title")
-        Translations.translate_with_setter(pw.update_label, "drop_import.progress.label.initial")
+        pw.setWindowTitle(Translations["drop_import.progress.window_title"])
+        pw.update_label(Translations["drop_import.progress.label.initial"])
 
         pw.from_iterable_function(
             self.copy_files,

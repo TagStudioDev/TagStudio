@@ -57,7 +57,7 @@ class JsonMigrationModal(QObject):
         self.is_migration_initialized: bool = False
         self.discrepancies: list[str] = []
 
-        self.title: str = Translations.translate_formatted("json_migration.title", path=self.path)
+        self.title: str = Translations["json_migration.title"].format(path=self.path)
         self.warning: str = "<b><a style='color: #e22c3c'>(!)</a></b>"
 
         self.old_entry_count: int = 0
@@ -81,17 +81,14 @@ class JsonMigrationModal(QObject):
     def init_page_info(self) -> None:
         """Initialize the migration info page."""
         body_wrapper: PagedBodyWrapper = PagedBodyWrapper()
-        body_label = QLabel()
-        Translations.translate_qobject(body_label, "json_migration.info.description")
+        body_label = QLabel(Translations["json_migration.info.description"])
         body_label.setWordWrap(True)
         body_label.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         body_wrapper.layout().addWidget(body_label)
         body_wrapper.layout().setContentsMargins(0, 36, 0, 0)
 
-        cancel_button = QPushButtonWrapper()
-        Translations.translate_qobject(cancel_button, "generic.cancel")
-        next_button = QPushButtonWrapper()
-        Translations.translate_qobject(next_button, "generic.continue")
+        cancel_button = QPushButtonWrapper(Translations["generic.cancel"])
+        next_button = QPushButtonWrapper(Translations["generic.continue"])
         cancel_button.clicked.connect(self.migration_cancelled.emit)
 
         self.stack.append(
@@ -142,8 +139,7 @@ class JsonMigrationModal(QObject):
 
         old_lib_container: QWidget = QWidget()
         old_lib_layout: QVBoxLayout = QVBoxLayout(old_lib_container)
-        old_lib_title = QLabel()
-        Translations.translate_qobject(old_lib_title, "json_migration.title.old_lib")
+        old_lib_title = QLabel(Translations["json_migration.title.old_lib"])
         old_lib_title.setAlignment(Qt.AlignmentFlag.AlignCenter)
         old_lib_layout.addWidget(old_lib_title)
 
@@ -210,8 +206,7 @@ class JsonMigrationModal(QObject):
 
         new_lib_container: QWidget = QWidget()
         new_lib_layout: QVBoxLayout = QVBoxLayout(new_lib_container)
-        new_lib_title = QLabel()
-        Translations.translate_qobject(new_lib_title, "json_migration.title.new_lib")
+        new_lib_title = QLabel(Translations["json_migration.title.new_lib"])
         new_lib_title.setAlignment(Qt.AlignmentFlag.AlignCenter)
         new_lib_layout.addWidget(new_lib_title)
 
@@ -292,15 +287,14 @@ class JsonMigrationModal(QObject):
         self.body_wrapper_01.layout().addWidget(desc_label)
         self.body_wrapper_01.layout().setSpacing(12)
 
-        back_button = QPushButtonWrapper()
-        Translations.translate_qobject(back_button, "generic.navigation.back")
-        start_button = QPushButtonWrapper()
-        Translations.translate_qobject(start_button, "json_migration.start_and_preview")
+        back_button = QPushButtonWrapper(Translations["generic.navigation.back"])
+        start_button = QPushButtonWrapper(Translations["json_migration.start_and_preview"])
         start_button.setMinimumWidth(120)
         start_button.clicked.connect(self.migrate)
         start_button.clicked.connect(lambda: start_button.setDisabled(True))
-        finish_button: QPushButtonWrapper = QPushButtonWrapper()
-        Translations.translate_qobject(finish_button, "json_migration.finish_migration")
+        finish_button: QPushButtonWrapper = QPushButtonWrapper(
+            Translations["json_migration.finish_migration"]
+        )
         finish_button.setMinimumWidth(120)
         finish_button.setDisabled(True)
         finish_button.clicked.connect(self.finish_migration)
@@ -411,8 +405,8 @@ class JsonMigrationModal(QObject):
                 logger.info('Temporary migration file "temp_path" already exists. Removing...')
                 self.temp_path.unlink()
             self.sql_lib.open_sqlite_library(self.json_lib.library_dir, is_new=True)
-            yield Translations.translate_formatted(
-                "json_migration.migrating_files_entries", entries=len(self.json_lib.entries)
+            yield Translations["json_migration.migrating_files_entries"].format(
+                entries=len(self.json_lib.entries)
             )
             self.sql_lib.migrate_json_to_sqlite(self.json_lib)
             yield Translations["json_migration.checking_for_parity"]
@@ -481,15 +475,12 @@ class JsonMigrationModal(QObject):
             QApplication.alert(self.paged_panel)
             if not show_msg_box:
                 return
-            msg_box = QMessageBox()
-            Translations.translate_with_setter(
-                msg_box.setWindowTitle, "json_migration.discrepancies_found"
-            )
-            Translations.translate_qobject(
-                msg_box, "json_migration.discrepancies_found.description"
+            msg_box = QMessageBox(
+                QMessageBox.Icon.Warning,
+                Translations["json_migration.discrepancies_found"],
+                Translations["json_migration.discrepancies_found.description"],
             )
             msg_box.setDetailedText("\n".join(self.discrepancies))
-            msg_box.setIcon(QMessageBox.Icon.Warning)
             msg_box.exec()
 
     def finish_migration(self):

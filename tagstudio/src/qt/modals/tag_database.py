@@ -3,10 +3,7 @@
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
 import structlog
-from PySide6.QtWidgets import (
-    QMessageBox,
-    QPushButton,
-)
+from PySide6.QtWidgets import QMessageBox, QPushButton
 from src.core.constants import RESERVED_TAG_END, RESERVED_TAG_START
 from src.core.library import Library, Tag
 from src.qt.modals.build_tag import BuildTagPanel
@@ -26,8 +23,7 @@ class TagDatabasePanel(TagSearchPanel):
         super().__init__(library, is_tag_chooser=False)
         self.driver = driver
 
-        self.create_tag_button = QPushButton()
-        Translations.translate_qobject(self.create_tag_button, "tag.create")
+        self.create_tag_button = QPushButton(Translations["tag.create"])
         self.create_tag_button.clicked.connect(lambda: self.build_tag(self.search_field.text()))
 
         self.root_layout.addWidget(self.create_tag_button)
@@ -38,8 +34,8 @@ class TagDatabasePanel(TagSearchPanel):
             panel,
             has_save=True,
         )
-        Translations.translate_with_setter(self.modal.setTitle, "tag.new")
-        Translations.translate_with_setter(self.modal.setWindowTitle, "tag.new")
+        self.modal.setTitle(Translations["tag.new"])
+        self.modal.setWindowTitle(Translations["tag.new"])
         if name.strip():
             panel.name_field.setText(name)
 
@@ -61,13 +57,14 @@ class TagDatabasePanel(TagSearchPanel):
         if tag.id in range(RESERVED_TAG_START, RESERVED_TAG_END):
             return
 
-        message_box = QMessageBox()
-        Translations.translate_with_setter(message_box.setWindowTitle, "tag.remove")
-        Translations.translate_qobject(
-            message_box, "tag.confirm_delete", tag_name=self.lib.tag_display_name(tag.id)
+        message_box = QMessageBox(
+            QMessageBox.Question,  # type: ignore
+            Translations["tag.remove"],
+            Translations["tag.confirm_delete"].format(
+                tag_name=self.lib.tag_display_name(tag.id),
+            ),
+            QMessageBox.Ok | QMessageBox.Cancel,  # type: ignore
         )
-        message_box.setStandardButtons(QMessageBox.Ok | QMessageBox.Cancel)  # type: ignore
-        message_box.setIcon(QMessageBox.Question)  # type: ignore
 
         result = message_box.exec()
 

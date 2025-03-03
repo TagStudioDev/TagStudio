@@ -30,7 +30,7 @@ class MergeDuplicateEntries(QObject):
             minimum=0,
             maximum=self.tracker.groups_count,
         )
-        Translations.translate_with_setter(pw.setWindowTitle, "entries.duplicate.merge.label")
-        Translations.translate_with_setter(pw.update_label, "entries.duplicate.merge.label")
+        pw.setWindowTitle(Translations["entries.duplicate.merge.label"])
+        pw.update_label(Translations["entries.duplicate.merge.label"])
 
         pw.from_iterable_function(self.tracker.merge_dupe_entries, None, self.done.emit)

@@ -228,7 +228,7 @@ class FileAttributes(QWidget):
         """Format attributes for multiple selected items."""
         self.layout().setSpacing(0)
         self.file_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        Translations.translate_qobject(self.file_label, "preview.multiple_selection", count=count)
+        self.file_label.setText(Translations["preview.multiple_selection"].format(count=count))
         self.file_label.setCursor(Qt.CursorShape.ArrowCursor)
         self.file_label.set_file_path("")
         self.dimensions_label.setText("")

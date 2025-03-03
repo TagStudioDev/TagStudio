@@ -36,7 +36,7 @@ class FileExtensionModal(PanelWidget):
         super().__init__()
         # Initialize Modal =====================================================
         self.lib = library
-        Translations.translate_with_setter(self.setWindowTitle, "ignore_list.title")
+        self.setWindowTitle(Translations["ignore_list.title"])
         self.setWindowModality(Qt.WindowModality.ApplicationModal)
         self.setMinimumSize(240, 400)
         self.root_layout = QVBoxLayout(self)
@@ -50,8 +50,7 @@ class FileExtensionModal(PanelWidget):
         self.table.setItemDelegate(FileExtensionItemDelegate())
 
         # Create "Add Button" Widget -------------------------------------------
-        self.add_button = QPushButton()
-        Translations.translate_qobject(self.add_button, "ignore_list.add_extension")
+        self.add_button = QPushButton(Translations["ignore_list.add_extension"])
         self.add_button.clicked.connect(self.add_item)
         self.add_button.setDefault(True)
         self.add_button.setMinimumWidth(100)
@@ -61,18 +60,13 @@ class FileExtensionModal(PanelWidget):
         self.mode_layout = QHBoxLayout(self.mode_widget)
         self.mode_layout.setContentsMargins(0, 0, 0, 0)
         self.mode_layout.setSpacing(12)
-        self.mode_label = QLabel()
-        Translations.translate_qobject(self.mode_label, "ignore_list.mode.label")
+        self.mode_label = QLabel(Translations["ignore_list.mode.label"])
         self.mode_combobox = QComboBox()
         self.mode_combobox.setEditable(False)
         self.mode_combobox.addItem("")
         self.mode_combobox.addItem("")
-        Translations.translate_with_setter(
-            lambda text: self.mode_combobox.setItemText(0, text), "ignore_list.mode.include"
-        )
-        Translations.translate_with_setter(
-            lambda text: self.mode_combobox.setItemText(1, text), "ignore_list.mode.exclude"
-        )
+        self.mode_combobox.setItemText(0, Translations["ignore_list.mode.include"])
+        self.mode_combobox.setItemText(1, Translations["ignore_list.mode.exclude"])
 
         is_exclude_list = int(bool(self.lib.prefs(LibraryPrefs.IS_EXCLUDE_LIST)))
 

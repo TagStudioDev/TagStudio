@@ -22,13 +22,11 @@ class SettingsPanel(PanelWidget):
         self.form_layout = QFormLayout(self.form_container)
         self.form_layout.setContentsMargins(0, 0, 0, 0)
 
-        self.restart_label = QLabel()
+        self.restart_label = QLabel(Translations["settings.restart_required"])
         self.restart_label.setHidden(True)
-        Translations.translate_qobject(self.restart_label, "settings.restart_required")
         self.restart_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
-        language_label = QLabel()
-        Translations.translate_qobject(language_label, "settings.language")
+        language_label = QLabel(Translations["settings.language"])
         self.languages = {
             # "Cantonese (Traditional)": "yue_Hant",  # Empty
             "Chinese (Traditional)": "zh_Hant",

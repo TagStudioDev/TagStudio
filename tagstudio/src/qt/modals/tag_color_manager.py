@@ -44,7 +44,7 @@ class TagColorManager(QWidget):
         super().__init__()
         self.driver = driver
         self.lib = driver.lib
-        Translations.translate_with_setter(self.setWindowTitle, "color_manager.title")
+        self.setWindowTitle(Translations["color_manager.title"])
         self.setWindowModality(Qt.WindowModality.ApplicationModal)
         self.setMinimumSize(800, 600)
         self.is_initialized = False
@@ -91,8 +91,7 @@ class TagColorManager(QWidget):
         self.button_layout = QHBoxLayout(self.button_container)
         self.button_layout.setContentsMargins(6, 6, 6, 6)
 
-        self.new_namespace_button = QPushButton()
-        Translations.translate_qobject(self.new_namespace_button, "namespace.new.button")
+        self.new_namespace_button = QPushButton(Translations["namespace.new.button"])
         self.new_namespace_button.clicked.connect(self.create_namespace)
         self.button_layout.addWidget(self.new_namespace_button)
 
@@ -102,8 +101,7 @@ class TagColorManager(QWidget):
 
         self.button_layout.addStretch(1)
 
-        self.done_button = QPushButton()
-        Translations.translate_qobject(self.done_button, "generic.done_alt")
+        self.done_button = QPushButton(Translations["generic.done_alt"])
         self.done_button.clicked.connect(self.hide)
         self.button_layout.addWidget(self.done_button)
 
@@ -156,8 +154,7 @@ class TagColorManager(QWidget):
                 ns_layout = QHBoxLayout(ns_container)
                 ns_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
                 ns_layout.setContentsMargins(0, 18, 0, 18)
-                namespace_prompt = QPushButton()
-                Translations.translate_qobject(namespace_prompt, "namespace.new.prompt")
+                namespace_prompt = QPushButton(Translations["namespace.new.prompt"])
                 namespace_prompt.setFixedSize(namespace_prompt.sizeHint().width() + 8, 24)
                 namespace_prompt.clicked.connect(self.create_namespace)
                 ns_layout.addWidget(namespace_prompt)
@@ -195,9 +192,7 @@ class TagColorManager(QWidget):
     def delete_namespace_dialog(self, prompt: str, callback: Callable) -> None:
         message_box = QMessageBox()
         message_box.setText(prompt)
-        Translations.translate_with_setter(
-            message_box.setWindowTitle, "color.namespace.delete.title"
-        )
+        message_box.setWindowTitle(Translations["color.namespace.delete.title"])
         message_box.setIcon(QMessageBox.Icon.Warning)
         cancel_button = message_box.addButton(
             Translations["generic.cancel_alt"], QMessageBox.ButtonRole.RejectRole

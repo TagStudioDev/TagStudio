@@ -15,8 +15,8 @@ class PagedPanelState:
         title: str,
         body_wrapper: PagedBodyWrapper,
         buttons: list[QPushButton | int],
-        connect_to_back=list[QPushButton],
-        connect_to_next=list[QPushButton],
+        connect_to_back: list[QPushButton],
+        connect_to_next: list[QPushButton],
     ):
         self.title: str = title
         self.body_wrapper: PagedBodyWrapper = body_wrapper
