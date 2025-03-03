@@ -1,7 +1,7 @@
 [project]
 name = "TagStudio"
 description = "A User-Focused Photo & File Management System."
-version = "9.5.0-pre4"
+version = "9.5.0"
 license = "GPL-3.0-only"
 readme = "README.md"
 
