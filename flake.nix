@@ -27,19 +27,35 @@
     systems.url = "github:nix-systems/default-linux";
   };
 
-  outputs = { flake-parts, nixpkgs, nixpkgs-qt6, self, systems, ... }@inputs:
+  outputs =
+    {
+      flake-parts,
+      nixpkgs,
+      nixpkgs-qt6,
+      self,
+      systems,
+      ...
+    }@inputs:
     flake-parts.lib.mkFlake { inherit inputs; } {
       imports = [ inputs.devenv.flakeModule ];
 
       systems = import systems;
 
-      perSystem = { config, pkgs, system, ... }:
+      perSystem =
+        {
+          config,
+          pkgs,
+          system,
+          ...
+        }:
         let
           inherit (nixpkgs) lib;
 
           qt6Pkgs = import nixpkgs-qt6 { inherit system; };
         in
         {
+          formatter = pkgs.nixfmt-rfc-style;
+
           devenv.shells = rec {
             default = tagstudio;
 
@@ -68,50 +84,54 @@
                 name = "TagStudio";
 
                 # Derived from previous flake iteration.
-                packages = (with pkgs; [
-                  cmake
-                  binutils
-                  coreutils
-                  dbus
-                  fontconfig
-                  freetype
-                  gdb
-                  glib
-                  libGL
-                  libGLU
-                  libgcc
-                  libxkbcommon
-                  mypy
-                  ruff
-                  xorg.libxcb
-                  zstd
-                ])
-                ++ (with qt6Pkgs; [
-                  qt6.full
-                  qt6.qtbase
-                  qt6.qtwayland
-                  qtcreator
-                ]);
+                packages =
+                  (with pkgs; [
+                    cmake
+                    binutils
+                    coreutils
+                    dbus
+                    fontconfig
+                    freetype
+                    gdb
+                    glib
+                    libGL
+                    libGLU
+                    libgcc
+                    libxkbcommon
+                    mypy
+                    ruff
+                    xorg.libxcb
+                    xorg.libX11
+                    zstd
+                  ])
+                  ++ (with qt6Pkgs; [
+                    qt6.full
+                    qt6.qtbase
+                    qt6.qtwayland
+                    qtcreator
+                  ]);
 
                 enterShell =
                   let
-                    setQtEnv = pkgs.runCommand "set-qt-env"
-                      {
-                        buildInputs = with qt6Pkgs.qt6; [
-                          qtbase
-                        ];
+                    setQtEnv =
+                      pkgs.runCommand "set-qt-env"
+                        {
+                          buildInputs = with qt6Pkgs.qt6; [
+                            qtbase
+                          ];
 
-                        nativeBuildInputs = (with pkgs; [
-                          makeShellWrapper
-                        ])
-                        ++ (with qt6Pkgs.qt6; [
-                          wrapQtAppsHook
-                        ]);
-                      }
-                      ''
-                        makeShellWrapper "$(type -p sh)" "$out" "''${qtWrapperArgs[@]}"
-                        sed "/^exec/d" -i "$out"
-                      '';
+                          nativeBuildInputs =
+                            (with pkgs; [
+                              makeShellWrapper
+                            ])
+                            ++ (with qt6Pkgs.qt6; [
+                              wrapQtAppsHook
+                            ]);
+                        }
+                        ''
+                          makeShellWrapper "$(type -p sh)" "$out" "''${qtWrapperArgs[@]}"
+                          sed "/^exec/d" -i "$out"
+                        '';
                   in
                   ''
                     source ${setQtEnv}
@@ -143,6 +163,7 @@
                       stdenv.cc.cc.lib
                       wayland
                       xorg.libxcb
+                      xorg.libX11
                       xorg.libXrandr
                       zlib
                       zstd
@@ -162,9 +183,11 @@
                     quiet = true;
                     requirements =
                       let
-                        excludeDeps = req: deps: builtins.concatStringsSep "\n"
-                          (builtins.filter (line: !(lib.any (elem: lib.hasPrefix elem line) deps))
-                            (lib.splitString "\n" req));
+                        excludeDeps =
+                          req: deps:
+                          builtins.concatStringsSep "\n" (
+                            builtins.filter (line: !(lib.any (elem: lib.hasPrefix elem line) deps)) (lib.splitString "\n" req)
+                          );
                       in
                       ''
                         ${builtins.readFile ./requirements.txt}

@@ -1,0 +1,138 @@
+# yaml-language-server: $schema=https://squidfunk.github.io/mkdocs-material/schema.json
+
+# MkDocs: https://www.mkdocs.org/
+# Material for MkDocs: https://squidfunk.github.io/mkdocs-material/
+
+# To install:
+# pip install mkdocs-material
+
+# To run the preview server:
+# mkdocs serve
+
+site_name: TagStudio
+site_description: "A User-Focused Photo & File Management System"
+site_url: https://docs.tagstud.io/
+repo_url: https://github.com/TagStudioDev/TagStudio
+edit_uri: blob/main/docs/
+repo_name: TagStudioDev/TagStudio
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/TagStudioDev
+    - icon: fontawesome/brands/discord
+      link: https://discord.gg/hRNnVKhF2G
+  tags:
+    Upcoming Feature: upcoming
+
+# by default the navigation is an alphanumerically sorted, 
+# nested list of all the Markdown files found within the /docs directory
+# where index files are always first
+# uncomment the following to configure the navigation manually:
+
+# nav:
+#   - Home:
+#     - index.md
+#     - install.md
+#     - usage.md
+#   - Library:
+#     - library/index.md
+#     - library/entry.md
+#     - library/entry_groups.md
+#     - library/field.md
+#     - library/tag.md
+#     - library/tag_categories.md
+#     - library/tag_overrides.md
+#   - Utilities:
+#     - utilities/macro.md
+#   - Updates:
+#     - updates/changelog.md
+#     - updates/roadmap.md
+#     - updates/db_migration.md
+
+theme:
+  name: material
+  palette:
+    # Palette toggle for automatic mode
+    - media: "(prefers-color-scheme)"
+      toggle:
+        icon: material/brightness-auto
+        name: Switch to light mode
+    # Palette toggle for light mode
+    - media: "(prefers-color-scheme: light)" 
+      scheme: default
+      primary: deep purple
+      accent: deep purple
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    # Palette toggle for dark mode
+    - media: "(prefers-color-scheme: dark)" 
+      scheme: slate
+      primary: deep purple
+      accent: deep purple
+      toggle:
+        icon: material/brightness-4
+        name: SSwitch to system preference
+  logo: assets/icon.png
+  favicon: assets/icon.ico
+  font: false # use system fonts
+  language: en
+  features:
+    - navigation.instant
+    - navigation.indexes
+    - navigation.tracking
+    - navigation.expand
+    - navigation.sections
+    #- navigation.tabs
+    #- content.tabs.link
+    #- navigation.top
+    - search.suggest
+    - content.code.annotate
+    - content.action.edit
+  icon:
+    repo: fontawesome/brands/github
+    tag:
+      upcoming: material/flask-outline
+
+markdown_extensions:
+
+  # Python Markdown
+  - abbr
+  - admonition
+  - attr_list
+  - def_list
+  - footnotes
+  - md_in_html
+  - toc:
+      permalink: true
+
+  # Python Markdown Extensions
+  - pymdownx.arithmatex:
+      generic: true
+  - pymdownx.betterem:
+      smart_enable: all
+  - pymdownx.caret
+  - pymdownx.details
+  - pymdownx.highlight
+  - pymdownx.inlinehilite
+  - pymdownx.keys
+  - pymdownx.mark
+  - pymdownx.smartsymbols
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.tasklist:
+      custom_checkbox: true
+  - pymdownx.tilde
+  - pymdownx.snippets
+
+plugins:
+  - search
+  - tags
+  - social: # social embed cards
+      enabled: !ENV [CI, false] # enabled only when running in CI (eg GitHub Actions)

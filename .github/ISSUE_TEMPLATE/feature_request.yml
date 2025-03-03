@@ -8,7 +8,7 @@ body:
       value: |
         *Please add an appropriate title for this feature request.*
 
-        Before suggesting, read the [documentation](https://github.com/TagStudioDev/TagStudio/blob/main/doc/index.md) and search existing [issues](https://github.com/TagStudioDev/TagStudio/issues).
+        Before suggesting, read the [documentation](https://github.com/TagStudioDev/TagStudio/blob/main/docs/index.md) and search existing [issues](https://github.com/TagStudioDev/TagStudio/issues).
         Validate that you are using an up-to-date version[^1], your feature might already be implemented!
         Questions, guidance, and usage goes in [discussions](https://github.com/TagStudioDev/TagStudio/discussions). Invalid issues will be closed.
 
@@ -20,7 +20,7 @@ body:
       options:
         - label: I am using an up-to-date version.
           required: true
-        - label: I have read the [documentation](https://github.com/TagStudioDev/TagStudio/blob/main/doc/index.md).
+        - label: I have read the [documentation](https://github.com/TagStudioDev/TagStudio/blob/main/docs/index.md).
           required: true
         - label: I have searched existing [issues](https://github.com/TagStudioDev/TagStudio/issues).
           required: true

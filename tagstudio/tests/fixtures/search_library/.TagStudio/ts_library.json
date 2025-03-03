@@ -1,0 +1,431 @@
+{
+    "ts-version": "9.4.2",
+    "ext_list": [".json", ".xmp", ".aae", ".txt"],
+    "is_exclude_list": true,
+    "tags": [
+        { "id": 0, "name": "Archived", "aliases": ["Archive"], "color": "Red" },
+        {
+            "id": 1,
+            "name": "Favorite",
+            "aliases": ["Favorited", "Favorites"],
+            "color": "Yellow"
+        },
+        { "id": 1000, "name": "Parent", "aliases": [""], "subtag_ids": [1000] },
+        { "id": 1001, "name": "Default", "aliases": [""] },
+        {
+            "id": 1002,
+            "name": "Black",
+            "aliases": [""],
+            "subtag_ids": [1040],
+            "color": "black"
+        },
+        {
+            "id": 1003,
+            "name": "Dark Gray",
+            "aliases": ["Dark Grey"],
+            "subtag_ids": [1040, 1002, 1004],
+            "color": "dark gray"
+        },
+        {
+            "id": 1004,
+            "name": "Gray",
+            "aliases": ["Grey"],
+            "subtag_ids": [1040, 1002, 1006],
+            "color": "gray"
+        },
+        {
+            "id": 1005,
+            "name": "Light Gray",
+            "aliases": ["Light Grey"],
+            "subtag_ids": [1040, 1006, 1004],
+            "color": "light gray"
+        },
+        {
+            "id": 1006,
+            "name": "White",
+            "aliases": [""],
+            "subtag_ids": [1040],
+            "color": "white"
+        },
+        {
+            "id": 1007,
+            "name": "Light Pink",
+            "aliases": [""],
+            "subtag_ids": [1040, 1009, 1006],
+            "color": "light pink"
+        },
+        {
+            "id": 1008,
+            "name": "Pink",
+            "aliases": [""],
+            "subtag_ids": [1040, 1006, 1009],
+            "color": "pink"
+        },
+        {
+            "id": 1009,
+            "name": "Red",
+            "aliases": [""],
+            "subtag_ids": [1040],
+            "color": "red"
+        },
+        {
+            "id": 1010,
+            "name": "Red Orange",
+            "aliases": [""],
+            "subtag_ids": [1040, 1009, 1011],
+            "color": "red orange"
+        },
+        {
+            "id": 1011,
+            "name": "Orange",
+            "aliases": [""],
+            "subtag_ids": [1040, 1009, 1013],
+            "color": "orange"
+        },
+        {
+            "id": 1012,
+            "name": "Yellow Orange",
+            "aliases": [""],
+            "subtag_ids": [1040, 1011],
+            "color": "yellow orange"
+        },
+        {
+            "id": 1013,
+            "name": "Yellow",
+            "aliases": [""],
+            "subtag_ids": [1040],
+            "color": "yellow"
+        },
+        {
+            "id": 1014,
+            "name": "Lime",
+            "aliases": [""],
+            "subtag_ids": [1040, 1017, 1006],
+            "color": "lime"
+        },
+        {
+            "id": 1015,
+            "name": "Light Green",
+            "aliases": [""],
+            "color": "light green"
+        },
+        {
+            "id": 1016,
+            "name": "Mint",
+            "aliases": [""],
+            "subtag_ids": [1040, 1017, 1019],
+            "color": "mint"
+        },
+        {
+            "id": 1017,
+            "name": "Green",
+            "aliases": [""],
+            "subtag_ids": [1040, 1021, 1013],
+            "color": "green"
+        },
+        {
+            "id": 1018,
+            "name": "Teal",
+            "aliases": [""],
+            "subtag_ids": [1040, 1017, 1021],
+            "color": "teal"
+        },
+        {
+            "id": 1019,
+            "name": "Cyan",
+            "aliases": [""],
+            "subtag_ids": [1040, 1017, 1021],
+            "color": "cyan"
+        },
+        {
+            "id": 1020,
+            "name": "Light Blue",
+            "aliases": [""],
+            "subtag_ids": [1040, 1021, 1006],
+            "color": "light blue"
+        },
+        {
+            "id": 1021,
+            "name": "Blue",
+            "aliases": [""],
+            "subtag_ids": [1040],
+            "color": "blue"
+        },
+        {
+            "id": 1022,
+            "name": "Blue Violet",
+            "aliases": [""],
+            "subtag_ids": [1040, 1021, 1023],
+            "color": "blue violet"
+        },
+        {
+            "id": 1023,
+            "name": "Violet",
+            "aliases": [""],
+            "subtag_ids": [1040, 1009, 1021],
+            "color": "violet"
+        },
+        {
+            "id": 1024,
+            "name": "Purple",
+            "aliases": [""],
+            "subtag_ids": [1040, 1009, 1021],
+            "color": "purple"
+        },
+        {
+            "id": 1025,
+            "name": "Lavender",
+            "aliases": [""],
+            "subtag_ids": [1040, 1024, 1006],
+            "color": "lavender"
+        },
+        { "id": 1026, "name": "Berry", "aliases": [""], "color": "berry" },
+        { "id": 1027, "name": "Magenta", "aliases": [""], "color": "magenta" },
+        { "id": 1028, "name": "Salmon", "aliases": [""], "color": "salmon" },
+        { "id": 1029, "name": "Auburn", "aliases": [""], "color": "auburn" },
+        {
+            "id": 1030,
+            "name": "Dark Brown",
+            "aliases": [""],
+            "color": "dark brown"
+        },
+        { "id": 1031, "name": "Brown", "aliases": [""], "color": "brown" },
+        {
+            "id": 1032,
+            "name": "Light Brown",
+            "aliases": [""],
+            "color": "light brown"
+        },
+        { "id": 1033, "name": "Blonde", "aliases": [""], "color": "blonde" },
+        { "id": 1034, "name": "Peach", "aliases": [""], "color": "peach" },
+        {
+            "id": 1035,
+            "name": "Warm Gray",
+            "aliases": ["Warm Grey"],
+            "subtag_ids": [1040, 1004, 1011],
+            "color": "warm gray"
+        },
+        {
+            "id": 1036,
+            "name": "Cool Gray",
+            "aliases": ["Cool Grey"],
+            "subtag_ids": [1040, 1004, 1021],
+            "color": "cool gray"
+        },
+        {
+            "id": 1037,
+            "name": "Olive",
+            "aliases": [""],
+            "subtag_ids": [1040, 1017, 1004],
+            "color": "olive"
+        },
+        { "id": 1038, "name": "Square", "aliases": [""], "subtag_ids": [1039] },
+        { "id": 1039, "name": "Shape", "aliases": [""] },
+        { "id": 1040, "name": "Color", "aliases": [""] },
+        {
+            "id": 1041,
+            "name": "Circle",
+            "aliases": [""],
+            "subtag_ids": [1039, 1042]
+        },
+        {
+            "id": 1042,
+            "name": "Ellipse",
+            "aliases": [""],
+            "subtag_ids": [1039, 1043]
+        },
+        { "id": 1043, "name": "Round", "aliases": [""] }
+    ],
+    "collations": [],
+    "fields": [],
+    "macros": [],
+    "entries": [
+        {
+            "id": 0,
+            "filename": "red.jpg",
+            "path": "inherit colors shapes",
+            "fields": [{ "6": [1009] }]
+        },
+        {
+            "id": 1,
+            "filename": "red_square.jpg",
+            "path": "inherit colors shapes",
+            "fields": [{ "6": [1009, 1038] }]
+        },
+        {
+            "id": 2,
+            "filename": "red_circle.jpg",
+            "path": "inherit colors shapes",
+            "fields": [{ "6": [1041, 1009] }]
+        },
+        {
+            "id": 3,
+            "filename": "blue_circle.jpg",
+            "path": "inherit colors shapes",
+            "fields": [{ "6": [1021, 1041] }]
+        },
+        {
+            "id": 4,
+            "filename": "blue_square.jpg",
+            "path": "inherit colors shapes",
+            "fields": [{ "6": [1021, 1038] }]
+        },
+        {
+            "id": 5,
+            "filename": "blue.jpg",
+            "path": "inherit colors shapes",
+            "fields": [{ "6": [1021] }]
+        },
+        {
+            "id": 10,
+            "filename": "green_circle.png",
+            "path": "inherit colors shapes",
+            "fields": [{ "6": [1041, 1017] }]
+        },
+        {
+            "id": 11,
+            "filename": "green.png",
+            "path": "inherit colors shapes",
+            "fields": [{ "6": [1017] }]
+        },
+        {
+            "id": 12,
+            "filename": "green_square.png",
+            "path": "inherit colors shapes",
+            "fields": [{ "6": [1017, 1038] }]
+        },
+        {
+            "id": 13,
+            "filename": "yellow_circle.png",
+            "path": "inherit colors shapes",
+            "fields": [{ "6": [1041, 1013] }]
+        },
+        {
+            "id": 14,
+            "filename": "yellow_square.png",
+            "path": "inherit colors shapes",
+            "fields": [{ "6": [1038, 1013] }]
+        },
+        {
+            "id": 15,
+            "filename": "yellow.png",
+            "path": "inherit colors shapes",
+            "fields": [{ "6": [1013] }]
+        },
+        {
+            "id": 16,
+            "filename": "square.png",
+            "path": "inherit colors shapes",
+            "fields": [{ "6": [1038] }]
+        },
+        {
+            "id": 17,
+            "filename": "circle.png",
+            "path": "inherit colors shapes",
+            "fields": [{ "6": [1041] }]
+        },
+        {
+            "id": 18,
+            "filename": "shape.png",
+            "path": "inherit colors shapes",
+            "fields": [{ "6": [1039] }]
+        },
+        {
+            "id": 19,
+            "filename": "orange_circle.png",
+            "path": "inherit colors shapes",
+            "fields": [{ "6": [1041, 1011] }]
+        },
+        {
+            "id": 20,
+            "filename": "orange_square.png",
+            "path": "inherit colors shapes",
+            "fields": [{ "6": [1011, 1038] }]
+        },
+        {
+            "id": 21,
+            "filename": "orange.png",
+            "path": "inherit colors shapes",
+            "fields": [{ "6": [1011] }]
+        },
+        {
+            "id": 22,
+            "filename": "yellow_ellipse.png",
+            "path": "inherit colors shapes",
+            "fields": [{ "6": [1042, 1013] }]
+        },
+        {
+            "id": 23,
+            "filename": "ellipse.png",
+            "path": "inherit colors shapes",
+            "fields": [{ "6": [1042] }]
+        },
+        {
+            "id": 24,
+            "filename": "red_ellipse.png",
+            "path": "inherit colors shapes",
+            "fields": [{ "6": [1042, 1009] }]
+        },
+        {
+            "id": 25,
+            "filename": "blue_ellipse.png",
+            "path": "inherit colors shapes",
+            "fields": [{ "6": [1021, 1042] }]
+        },
+        {
+            "id": 26,
+            "filename": "green_ellipse.png",
+            "path": "inherit colors shapes",
+            "fields": [{ "6": [1042, 1017] }]
+        },
+        {
+            "id": 27,
+            "filename": "orange_ellipse.png",
+            "path": "inherit colors shapes",
+            "fields": [{ "6": [1042, 1011] }]
+        },
+        {
+            "id": 30,
+            "filename": "r_circle_b_square.png",
+            "path": "comp colors shapes",
+            "fields": [{ "6": [1021, 1041, 1009, 1038] }]
+        },
+        {
+            "id": 31,
+            "filename": "r_circle_g_square.png",
+            "path": "comp colors shapes",
+            "fields": [{ "6": [1041, 1017, 1009, 1038] }]
+        },
+        {
+            "id": 32,
+            "filename": "r_circle_y_square.png",
+            "path": "comp colors shapes",
+            "fields": [{ "6": [1041, 1009, 1038, 1013] }]
+        },
+        {
+            "id": 33,
+            "filename": "r_circle_o_square.png",
+            "path": "comp colors shapes",
+            "fields": [{ "6": [1041, 1011, 1009, 1038] }]
+        },
+        {
+            "id": 34,
+            "filename": "r_circle_r_square.png",
+            "path": "comp colors shapes",
+            "fields": [{ "6": [1041, 1009, 1038] }]
+        },
+        {
+            "id": 35,
+            "filename": "untagged.txt",
+            "path": ".",
+            "fields": [{ "0": "" }]
+        },
+        {
+            "id": 36,
+            "filename": "untagged.png",
+            "path": ".",
+            "fields": [{ "0": "I have fields, but no tags. I am not empty." }]
+        },
+        { "id": 37, "filename": "empty.png", "path": "." }
+    ]
+}

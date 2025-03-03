@@ -1,0 +1,16 @@
+# vi: ft=bash
+#
+# If you wish to use this file, copy or symlink it to `.envrc` for direnv to read it.
+# This will use the flake development shell.
+
+if ! has nix_direnv_version || ! nix_direnv_version 3.0.5; then
+    source_url "https://raw.githubusercontent.com/nix-community/nix-direnv/3.0.5/direnvrc" "sha256-RuwIS+QKFj/T9M2TFXScjBsLR6V3A17YVoEW/Q6AZ1w="
+fi
+
+devenv_root_file="$(mktemp -t devenv-root-XXXXXXXX)"
+printf %s "${PWD}" >"${devenv_root_file}"
+if ! use flake . --override-input devenv-root "file+file://${devenv_root_file}"; then
+    printf '%s\n' "devenv could not be built. The devenv environment was not loaded. Make the necessary changes to devenv.nix and hit enter to try again." >&2
+fi
+rm "${devenv_root_file}"
+unset devenv_root_file

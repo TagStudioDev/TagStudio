@@ -1,12 +1,63 @@
+[project]
+name = "TagStudio"
+description = "A User-Focused Photo & File Management System."
+version = "9.5.0-pre4"
+license = "GPL-3.0-only"
+readme = "README.md"
+
 [tool.ruff]
 exclude = ["main_window.py", "home_ui.py", "resources.py", "resources_rc.py"]
+line-length = 100
+
+[tool.ruff.lint.per-file-ignores]
+"tagstudio/tests/**" = ["D", "E402"]
+"tagstudio/src/qt/helpers/vendored/**" = ["B", "E", "N", "UP", "SIM115"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.ruff.lint]
+select = ["B", "D", "E", "F", "FBT003", "I", "N", "SIM", "T20", "UP"]
+ignore = ["D100", "D101", "D102", "D103", "D104", "D105", "D106", "D107"]
+
+[tool.pyright]
+ignore = [".venv/**"]
+include = ["tagstudio/**"]
+reportAny = false
+reportImplicitStringConcatenation = false
+# reportOptionalMemberAccess = false
+reportUnannotatedClassAttribute = false
+reportUnknownArgumentType = false
+reportUnknownMemberType = false
+reportUnusedCallResult = false
 
 [tool.mypy]
 strict_optional = false
-disable_error_code = ["union-attr", "annotation-unchecked", "import-untyped"]
+disable_error_code = ["func-returns-value", "import-untyped"]
 explicit_package_bases = true
 warn_unused_ignores = true
-exclude = ['tests']
+check_untyped_defs = true
+mypy_path = ["tagstudio"]
+
+[[tool.mypy.overrides]]
+module = "tests.*"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = "src.qt.main_window"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = "src.qt.ui.home_ui"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = "src.core.ts_core"
+ignore_errors = true
+
+[tool.pytest.ini_options]
+#addopts = "-m 'not qt'"
+qt_api = "pyside6"
 
 [tool.poetry]
 name = "tagstudio"
@@ -18,13 +69,6 @@ packages = [
   {include = "tagstudio/resources"},
   {include = "tagstudio/__init__.py"}
 ]
-
-description = "User-Focused Photo & File Management System"
-readme = "README.md"
-authors = ["Travis Abendshien"]
-license = "GPL-3.0-only"
-repository = "https://github.com/TagStudioDev/TagStudio"
-maintainers = [] # Maybe someone can find a way to export this from GitHub?
 
 [tool.poetry.urls]
 Discord = "https://discord.gg/hRNnVKhF2G"

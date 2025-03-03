@@ -77,8 +77,8 @@ app = BUNDLE(
     exe if coll is None else coll,
     name='TagStudio.app',
     icon=icon,
-    bundle_identifier='com.github.tagstudiodev',
-    version='0.0.0',
+    bundle_identifier='com.cyanvoxel.tagstudio',
+    version='9.5.0-pr4',
     info_plist={
         'NSAppleScriptEnabled': False,
         'NSPrincipalClass': 'NSApplication',

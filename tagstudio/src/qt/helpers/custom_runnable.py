@@ -3,7 +3,7 @@
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
 
-from PySide6.QtCore import Signal, QRunnable, QObject
+from PySide6.QtCore import QObject, QRunnable, Signal
 
 
 class CustomRunnable(QRunnable, QObject):

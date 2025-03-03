@@ -1,0 +1,10 @@
+<results>
+    <group>
+        <file path="/tmp/bar/foo.txt" words="" is_ref="n" marked="n"/>
+        <file path="/tmp/foo.txt" words="" is_ref="n" marked="n"/>
+        <file path="/tmp/foo/foo.txt" words="" is_ref="n" marked="n"/>
+        <match first="1" second="0" percentage="100"/>
+        <match first="0" second="2" percentage="100"/>
+        <match first="1" second="2" percentage="100"/>
+    </group>
+</results>

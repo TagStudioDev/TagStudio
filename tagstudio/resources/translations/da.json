@@ -1,0 +1,13 @@
+{
+    "app.pre_release": "Forududgivelse",
+    "color.title.no_color": "Ingen Farve",
+    "drop_import.description": "De følgende filer har allerede eksisterende stier i biblioteket",
+    "drop_import.duplicates_choice.plural": "Følgende {mængde} filer passer allerede til stier der eksistere i biblioteket.",
+    "drop_import.duplicates_choice.singular": "Den følgende fil matcher en allerede eksisterende sti i biblioteket.",
+    "drop_import.progress.label.initial": "Importere nye filer...",
+    "drop_import.progress.label.plural": "Importere nye filer...\n{mængde] Filer importeret.{suffiks}",
+    "drop_import.progress.label.singular": "Importere nye filer...\n1 fil importeret.{suffiks}",
+    "drop_import.progress.window_title": "Importer Filer",
+    "drop_import.title": "Konflikterende Fil(er)",
+    "edit.tag_manager": "Håndtere Tags"
+}

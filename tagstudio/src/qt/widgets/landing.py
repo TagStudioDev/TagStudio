@@ -7,12 +7,14 @@ import logging
 import sys
 import typing
 from pathlib import Path
+
 from PIL import Image, ImageQt
-from PySide6.QtCore import Qt, QPropertyAnimation, QPoint, QEasingCurve
+from PySide6.QtCore import QEasingCurve, QPoint, QPropertyAnimation, Qt
 from PySide6.QtGui import QPixmap
-from PySide6.QtWidgets import QWidget, QLabel, QVBoxLayout, QPushButton
-from src.qt.widgets.clickable_label import ClickableLabel
+from PySide6.QtWidgets import QLabel, QPushButton, QVBoxLayout, QWidget
 from src.qt.helpers.color_overlay import gradient_overlay, theme_fg_overlay
+from src.qt.translations import Translations
+from src.qt.widgets.clickable_label import ClickableLabel
 
 # Only import for type checking/autocompletion, will not be imported at runtime.
 if typing.TYPE_CHECKING:
@@ -24,7 +26,7 @@ logging.basicConfig(format="%(message)s", level=logging.INFO)
 class LandingWidget(QWidget):
     def __init__(self, driver: "QtDriver", pixel_ratio: float):
         super().__init__()
-        self.driver: "QtDriver" = driver
+        self.driver = driver
         self.logo_label: ClickableLabel = ClickableLabel()
         self._pixel_ratio: float = pixel_ratio
         self._logo_width: int = int(480 * pixel_ratio)
@@ -39,8 +41,7 @@ class LandingWidget(QWidget):
         # Create landing logo --------------------------------------------------
         # self.landing_logo_pixmap = QPixmap(":/images/tagstudio_logo_text_mono.png")
         self.logo_raw: Image.Image = Image.open(
-            Path(__file__).parents[3]
-            / "resources/qt/images/tagstudio_logo_text_mono.png"
+            Path(__file__).parents[3] / "resources/qt/images/tagstudio_logo_text_mono.png"
         )
         self.landing_pixmap: QPixmap = QPixmap()
         self.update_logo_color()
@@ -56,14 +57,15 @@ class LandingWidget(QWidget):
         self.logo_special_anim.setDuration(500)
 
         # Create "Open/Create Library" button ----------------------------------
-        open_shortcut_text: str = ""
         if sys.platform == "darwin":
             open_shortcut_text = "(⌘+O)"
         else:
             open_shortcut_text = "(Ctrl+O)"
         self.open_button: QPushButton = QPushButton()
         self.open_button.setMinimumWidth(200)
-        self.open_button.setText(f"Open/Create Library {open_shortcut_text}")
+        Translations.translate_qobject(
+            self.open_button, "landing.open_create_library", shortcut=open_shortcut_text
+        )
         self.open_button.clicked.connect(self.driver.open_library_from_dialog)
 
         # Create status label --------------------------------------------------
@@ -79,21 +81,15 @@ class LandingWidget(QWidget):
 
         # Add widgets to layout ------------------------------------------------
         self.landing_layout.addWidget(self.logo_label)
-        self.landing_layout.addWidget(
-            self.open_button, alignment=Qt.AlignmentFlag.AlignCenter
-        )
-        self.landing_layout.addWidget(
-            self.status_label, alignment=Qt.AlignmentFlag.AlignCenter
-        )
+        self.landing_layout.addWidget(self.open_button, alignment=Qt.AlignmentFlag.AlignCenter)
+        self.landing_layout.addWidget(self.status_label, alignment=Qt.AlignmentFlag.AlignCenter)
 
     def update_logo_color(self, style: str = "mono"):
-        """
-        Update the color of the TagStudio logo.
+        """Update the color of the TagStudio logo.
 
         Args:
             style (str): = The style of the logo. Either "mono" or "gradient".
         """
-
         logo_im: Image.Image = None
         if style == "mono":
             logo_im = theme_fg_overlay(self.logo_raw)
@@ -101,9 +97,7 @@ class LandingWidget(QWidget):
             gradient_colors: list[str] = ["#d27bf4", "#7992f5", "#63c6e3", "#63f5cf"]
             logo_im = gradient_overlay(self.logo_raw, gradient_colors)
 
-        logo_final: Image.Image = Image.new(
-            mode="RGBA", size=self.logo_raw.size, color="#00000000"
-        )
+        logo_final: Image.Image = Image.new(mode="RGBA", size=self.logo_raw.size, color="#00000000")
 
         logo_final.paste(logo_im, (0, 0), mask=self.logo_raw)
 
@@ -119,9 +113,9 @@ class LandingWidget(QWidget):
         self.logo_label.setPixmap(self.landing_pixmap)
 
     def _update_special_click(self):
-        """
-        Increment the click count for the logo easter egg if it has not
-        been triggered. If it reaches the click threshold, this triggers it
+        """Increment the click count for the logo easter egg if it has not been triggered.
+
+        If it reaches the click threshold, this triggers it
         and prevents it from triggering again.
         """
         if self._special_click_count >= 0:
@@ -138,9 +132,7 @@ class LandingWidget(QWidget):
         # the cause of this is, so I've just done this workaround to disable
         # the animation if the y position is too incorrect.
         if self.logo_label.y() > 50:
-            self.logo_pos_anim.setStartValue(
-                QPoint(self.logo_label.x(), self.logo_label.y() - 100)
-            )
+            self.logo_pos_anim.setStartValue(QPoint(self.logo_label.x(), self.logo_label.y() - 100))
             self.logo_pos_anim.setEndValue(self.logo_label.pos())
             self.logo_pos_anim.start()
 
@@ -169,9 +161,8 @@ class LandingWidget(QWidget):
     #     self.status_pos_anim.setEndValue(self.status_label.pos())
     #     self.status_pos_anim.start()
 
-    def set_status_label(self, text=str):
-        """
-        Set the text of the status label.
+    def set_status_label(self, text: str):
+        """Set the text of the status label.
 
         Args:
             text (str): Text of the status to set.

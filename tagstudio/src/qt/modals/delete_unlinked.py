@@ -1,38 +1,38 @@
-# Copyright (C) 2024 Travis Abendshien (CyanVoxel).
+# Copyright (C) 2025 Travis Abendshien (CyanVoxel).
 # Licensed under the GPL-3.0 License.
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
-import typing
+from typing import TYPE_CHECKING, override
 
-from PySide6.QtCore import Signal, Qt, QThreadPool
-from PySide6.QtGui import QStandardItemModel, QStandardItem
+from PySide6 import QtCore, QtGui
+from PySide6.QtCore import Qt, QThreadPool, Signal
+from PySide6.QtGui import QStandardItem, QStandardItemModel
 from PySide6.QtWidgets import (
-    QWidget,
-    QVBoxLayout,
     QHBoxLayout,
     QLabel,
-    QPushButton,
     QListView,
+    QPushButton,
+    QVBoxLayout,
+    QWidget,
 )
-
-from src.core.library import ItemType, Library
+from src.core.utils.missing_files import MissingRegistry
 from src.qt.helpers.custom_runnable import CustomRunnable
-from src.qt.helpers.function_iterator import FunctionIterator
+from src.qt.translations import Translations
 from src.qt.widgets.progress import ProgressWidget
 
 # Only import for type checking/autocompletion, will not be imported at runtime.
-if typing.TYPE_CHECKING:
+if TYPE_CHECKING:
     from src.qt.ts_qt import QtDriver
 
 
 class DeleteUnlinkedEntriesModal(QWidget):
     done = Signal()
 
-    def __init__(self, library: "Library", driver: "QtDriver"):
+    def __init__(self, driver: "QtDriver", tracker: MissingRegistry):
         super().__init__()
-        self.lib = library
         self.driver = driver
-        self.setWindowTitle("Delete Unlinked Entries")
+        self.tracker = tracker
+        Translations.translate_with_setter(self.setWindowTitle, "entries.unlinked.delete")
         self.setWindowModality(Qt.WindowModality.ApplicationModal)
         self.setMinimumSize(500, 400)
         self.root_layout = QVBoxLayout(self)
@@ -41,9 +41,11 @@ class DeleteUnlinkedEntriesModal(QWidget):
         self.desc_widget = QLabel()
         self.desc_widget.setObjectName("descriptionLabel")
         self.desc_widget.setWordWrap(True)
-        self.desc_widget.setText(f"""
-		Are you sure you want to delete the following {len(self.lib.missing_files)} entries?
-		""")
+        Translations.translate_qobject(
+            self.desc_widget,
+            "entries.unlinked.delete.confirm",
+            count=self.tracker.missing_file_entries_count,
+        )
         self.desc_widget.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         self.list_view = QListView()
@@ -56,13 +58,13 @@ class DeleteUnlinkedEntriesModal(QWidget):
         self.button_layout.addStretch(1)
 
         self.cancel_button = QPushButton()
-        self.cancel_button.setText("&Cancel")
+        Translations.translate_qobject(self.cancel_button, "generic.cancel_alt")
         self.cancel_button.setDefault(True)
         self.cancel_button.clicked.connect(self.hide)
         self.button_layout.addWidget(self.cancel_button)
 
         self.delete_button = QPushButton()
-        self.delete_button.setText("&Delete")
+        Translations.translate_qobject(self.delete_button, "generic.delete_alt")
         self.delete_button.clicked.connect(self.hide)
         self.delete_button.clicked.connect(lambda: self.delete_entries())
         self.button_layout.addWidget(self.delete_button)
@@ -72,36 +74,49 @@ class DeleteUnlinkedEntriesModal(QWidget):
         self.root_layout.addWidget(self.button_container)
 
     def refresh_list(self):
-        self.desc_widget.setText(f"""
-		Are you sure you want to delete the following {len(self.lib.missing_files)} entries?
-		""")
-
-        self.model.clear()
-        for i in self.lib.missing_files:
-            self.model.appendRow(QStandardItem(str(i)))
-
-    def delete_entries(self):
-        iterator = FunctionIterator(self.lib.remove_missing_files)
-
-        pw = ProgressWidget(
-            window_title="Deleting Entries",
-            label_text="",
-            cancel_button_text=None,
-            minimum=0,
-            maximum=len(self.lib.missing_files),
-        )
-        pw.show()
-
-        iterator.value.connect(lambda x: pw.update_progress(x[0] + 1))
-        iterator.value.connect(
-            lambda x: pw.update_label(
-                f"Deleting {x[0]+1}/{len(self.lib.missing_files)} Unlinked Entries"
+        self.desc_widget.setText(
+            Translations.translate_formatted(
+                "entries.unlinked.delete.confirm", count=self.tracker.missing_file_entries_count
             )
         )
-        iterator.value.connect(
-            lambda x: self.driver.purge_item_from_navigation(ItemType.ENTRY, x[1])
+
+        self.model.clear()
+        for i in self.tracker.missing_file_entries:
+            item = QStandardItem(str(i.path))
+            item.setEditable(False)
+            self.model.appendRow(item)
+
+    def delete_entries(self):
+        def displayed_text(x):
+            return Translations.translate_formatted(
+                "entries.unlinked.delete.deleting_count",
+                idx=x,
+                count=self.tracker.missing_file_entries_count,
+            )
+
+        pw = ProgressWidget(
+            cancel_button_text=None,
+            minimum=0,
+            maximum=0,
+        )
+        Translations.translate_with_setter(pw.setWindowTitle, "entries.unlinked.delete.deleting")
+        Translations.translate_with_setter(pw.update_label, "entries.unlinked.delete.deleting")
+        pw.show()
+
+        r = CustomRunnable(self.tracker.execute_deletion)
+        QThreadPool.globalInstance().start(r)
+        r.done.connect(
+            lambda: (
+                pw.hide(),
+                pw.deleteLater(),
+                self.done.emit(),
+            )
         )
 
-        r = CustomRunnable(lambda: iterator.run())
-        QThreadPool.globalInstance().start(r)
-        r.done.connect(lambda: (pw.hide(), pw.deleteLater(), self.done.emit()))
+    @override
+    def keyPressEvent(self, event: QtGui.QKeyEvent) -> None:  # noqa N802
+        if event.key() == QtCore.Qt.Key.Key_Escape:
+            self.cancel_button.click()
+        else:  # Other key presses
+            pass
+        return super().keyPressEvent(event)

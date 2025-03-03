@@ -3,29 +3,93 @@
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
 
+import sys
+
 from PySide6 import QtCore
 from PySide6.QtCore import QEvent
-from PySide6.QtGui import QEnterEvent, QPainter, QColor, QPen, QPainterPath, QPaintEvent
+from PySide6.QtGui import (
+    QColor,
+    QEnterEvent,
+    QPainter,
+    QPainterPath,
+    QPaintEvent,
+    QPalette,
+    QPen,
+)
 from PySide6.QtWidgets import QWidget
 from src.qt.helpers.qbutton_wrapper import QPushButtonWrapper
 
 
 class ThumbButton(QPushButtonWrapper):
-    def __init__(self, parent: QWidget, thumb_size: tuple[int, int]) -> None:
+    def __init__(self, parent: QWidget, thumb_size: tuple[int, int]) -> None:  # noqa: N802
         super().__init__(parent)
         self.thumb_size: tuple[int, int] = thumb_size
         self.hovered = False
         self.selected = False
 
-        # self.clicked.connect(lambda checked: self.set_selected(True))
+        # NOTE: As of PySide 6.8.0.1, the QPalette.ColorRole.Accent role no longer works on Windows.
+        # The QPalette.ColorRole.AlternateBase does for some reason, but not on macOS.
+        self.select_color: QColor
+        if sys.platform == "win32":
+            self.select_color = QPalette.color(
+                self.palette(),
+                QPalette.ColorGroup.Active,
+                QPalette.ColorRole.AlternateBase,
+            )
+            self.select_color.setHsl(
+                self.select_color.hslHue(),
+                self.select_color.hslSaturation(),
+                max(self.select_color.lightness(), 100),
+                255,
+            )
+        else:
+            self.select_color = QPalette.color(
+                self.palette(),
+                QPalette.ColorGroup.Active,
+                QPalette.ColorRole.Accent,
+            )
 
-    def paintEvent(self, event: QPaintEvent) -> None:
+        self.select_color_faded: QColor = QColor(self.select_color)
+        self.select_color_faded.setHsl(
+            self.select_color_faded.hslHue(),
+            self.select_color_faded.hslSaturation(),
+            max(self.select_color_faded.lightness(), 127),
+            127,
+        )
+
+        self.hover_color: QColor
+        if sys.platform == "win32":
+            self.hover_color = QPalette.color(
+                self.palette(),
+                QPalette.ColorGroup.Active,
+                QPalette.ColorRole.AlternateBase,
+            )
+            self.hover_color.setHsl(
+                self.hover_color.hslHue(),
+                self.hover_color.hslSaturation(),
+                max(self.hover_color.lightness(), 100),
+                255,
+            )
+        else:
+            self.hover_color = QPalette.color(
+                self.palette(),
+                QPalette.ColorGroup.Active,
+                QPalette.ColorRole.Accent,
+            )
+
+        self.hover_color.setHsl(
+            self.hover_color.hslHue(),
+            self.hover_color.hslSaturation(),
+            min(self.hover_color.lightness() + 80, 255),
+            self.hover_color.alpha(),
+        )
+
+    def paintEvent(self, event: QPaintEvent) -> None:  # noqa: N802
         super().paintEvent(event)
         if self.hovered or self.selected:
             painter = QPainter()
             painter.begin(self)
             painter.setRenderHint(QPainter.RenderHint.Antialiasing)
-            # painter.setCompositionMode(QPainter.CompositionMode.CompositionMode_Source)
             path = QPainterPath()
             width = 3
             radius = 6
@@ -40,50 +104,36 @@ class ThumbButton(QPushButtonWrapper):
                 radius,
             )
 
-            # color = QColor('#bb4ff0') if self.selected else QColor('#55bbf6')
-            # pen = QPen(color, width)
-            # painter.setPen(pen)
-            # # brush.setColor(fill)
-            # painter.drawPath(path)
-
             if self.selected:
-                painter.setCompositionMode(
-                    QPainter.CompositionMode.CompositionMode_HardLight
-                )
-                color = QColor("#bb4ff0")
-                color.setAlphaF(0.5)
-                pen = QPen(color, width)
+                painter.setCompositionMode(QPainter.CompositionMode.CompositionMode_HardLight)
+                pen = QPen(self.select_color_faded, width)
                 painter.setPen(pen)
-                painter.fillPath(path, color)
+                painter.fillPath(path, self.select_color_faded)
                 painter.drawPath(path)
 
-                painter.setCompositionMode(
-                    QPainter.CompositionMode.CompositionMode_Source
-                )
-                color = QColor("#bb4ff0") if not self.hovered else QColor("#55bbf6")
+                painter.setCompositionMode(QPainter.CompositionMode.CompositionMode_Source)
+                color: QColor = self.select_color if not self.hovered else self.hover_color
                 pen = QPen(color, width)
                 painter.setPen(pen)
                 painter.drawPath(path)
             elif self.hovered:
-                painter.setCompositionMode(
-                    QPainter.CompositionMode.CompositionMode_Source
-                )
-                color = QColor("#55bbf6")
-                pen = QPen(color, width)
+                painter.setCompositionMode(QPainter.CompositionMode.CompositionMode_Source)
+                pen = QPen(self.hover_color, width)
                 painter.setPen(pen)
                 painter.drawPath(path)
+
             painter.end()
 
-    def enterEvent(self, event: QEnterEvent) -> None:
+    def enterEvent(self, event: QEnterEvent) -> None:  # noqa: N802
         self.hovered = True
         self.repaint()
         return super().enterEvent(event)
 
-    def leaveEvent(self, event: QEvent) -> None:
+    def leaveEvent(self, event: QEvent) -> None:  # noqa: N802
         self.hovered = False
         self.repaint()
         return super().leaveEvent(event)
 
-    def set_selected(self, value: bool) -> None:
+    def set_selected(self, value: bool) -> None:  # noqa: N802
         self.selected = value
         self.repaint()
