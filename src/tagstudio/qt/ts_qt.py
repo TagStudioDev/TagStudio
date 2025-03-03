@@ -1834,11 +1834,7 @@ class QtDriver(DriverMixin, QObject):
         filepath_option: str = str(
             self.settings.value(SettingItems.SHOW_FILEPATH, defaultValue="show full path", type=str)
         )
-        library_dir_display = "show full path"
-        if filepath_option == "show full path":
-            library_dir_display = path
-        else:
-            library_dir_display = path.name
+        library_dir_display = path if filepath_option == "show full path" else path.name
         self.main_window.repaint()
 
         if self.lib.library_dir:

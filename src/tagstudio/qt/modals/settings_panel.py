@@ -90,3 +90,15 @@ class SettingsPanel(PanelWidget):
         selected_value = self.filepath_combobox.currentText()
         self.driver.settings.setValue(SettingItems.SHOW_FILEPATH, selected_value)
         self.driver.update_recent_lib_menu()
+        self.driver.preview_panel.update_widgets()
+        library_directory = self.driver.lib.library_dir
+        if selected_value == "show full path":
+            display_path = library_directory
+        else:
+            display_path = library_directory.name
+        Translations.translate_with_setter(
+            self.driver.main_window.setWindowTitle,
+            "app.title",
+            base_title=self.driver.base_title,
+            library_dir=display_path,
+        )

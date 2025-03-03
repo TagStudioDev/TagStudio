@@ -17,7 +17,7 @@ from PySide6.QtCore import Qt
 from PySide6.QtGui import QGuiApplication
 from PySide6.QtWidgets import QLabel, QVBoxLayout, QWidget
 
-from tagstudio.core.enums import Theme, SettingItems
+from tagstudio.core.enums import SettingItems, Theme
 from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.media_types import MediaCategories
 from tagstudio.qt.helpers.file_opener import FileOpenerHelper, FileOpenerLabel
@@ -166,19 +166,12 @@ class FileAttributes(QWidget):
             separator: str = f"<a style='color: #777777'><b>{os.path.sep}</a>"  # Gray
             for i, part in enumerate(display_path.parts):
                 part_ = part.strip(os.path.sep)
-<<<<<<< HEAD:src/tagstudio/qt/widgets/preview/file_attributes.py
-                if i != len(filepath.parts) - 1:
-                    file_str += f"{'\u200b'.join(part_)}{separator}</b>"
-                else:
-                    file_str += f"<br><b>{'\u200b'.join(part_)}</b>"
-=======
                 if i != len(display_path.parts) - 1:
                     file_str += f"{"\u200b".join(part_)}{separator}</b>"
                 else:
                     if file_str != "":
-                        file_str += f"<br>"
+                        file_str += "<br>"
                     file_str += f"<b>{"\u200b".join(part_)}</b>"
->>>>>>> 1e61888 (feat: implement file path option for file attributes (#10)):tagstudio/src/qt/widgets/preview/file_attributes.py
             self.file_label.setText(file_str)
             self.file_label.setCursor(Qt.CursorShape.PointingHandCursor)
             self.opener = FileOpenerHelper(filepath)
