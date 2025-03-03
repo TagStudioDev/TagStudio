@@ -739,7 +739,7 @@ class QtDriver(DriverMixin, QObject):
         sort_dir_dropdown.addItem("Descending", userData=False)
         sort_dir_dropdown.setItemText(0, Translations["sorting.direction.ascending"])
         sort_dir_dropdown.setItemText(1, Translations["sorting.direction.descending"])
-        sort_dir_dropdown.setCurrentIndex(0)  # Default: Ascending
+        sort_dir_dropdown.setCurrentIndex(1)  # Default: Descending
         sort_dir_dropdown.currentIndexChanged.connect(self.sorting_direction_callback)
 
         # Thumbnail Size ComboBox
