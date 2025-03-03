@@ -17,7 +17,7 @@ from PySide6.QtCore import Qt
 from PySide6.QtGui import QGuiApplication
 from PySide6.QtWidgets import QLabel, QVBoxLayout, QWidget
 
-from tagstudio.core.enums import Theme
+from tagstudio.core.enums import Theme, SettingItems
 from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.media_types import MediaCategories
 from tagstudio.qt.helpers.file_opener import FileOpenerHelper, FileOpenerLabel
@@ -96,6 +96,8 @@ class FileAttributes(QWidget):
         root_layout.addWidget(self.file_label)
         root_layout.addWidget(self.date_container)
         root_layout.addWidget(self.dimensions_label)
+        self.library = library
+        self.driver = driver
 
     def update_date_label(self, filepath: Path | None = None) -> None:
         """Update the "Date Created" and "Date Modified" file property labels."""
@@ -142,6 +144,19 @@ class FileAttributes(QWidget):
             self.dimensions_label.setText("")
             self.dimensions_label.setHidden(True)
         else:
+            filepath_option = self.driver.settings.value(
+                SettingItems.SHOW_FILEPATH, defaultValue="show full path", type=str
+            )
+
+            self.library_path = self.library.library_dir
+            display_path = filepath
+            if filepath_option == "show full path":
+                display_path = filepath
+            elif filepath_option == "show relative path":
+                display_path = Path(filepath).relative_to(self.library_path)
+            elif filepath_option == "show only file name":
+                display_path = Path(filepath.name)
+
             self.layout().setSpacing(6)
             self.file_label.setAlignment(Qt.AlignmentFlag.AlignLeft)
             self.file_label.set_file_path(filepath)
@@ -149,12 +164,21 @@ class FileAttributes(QWidget):
 
             file_str: str = ""
             separator: str = f"<a style='color: #777777'><b>{os.path.sep}</a>"  # Gray
-            for i, part in enumerate(filepath.parts):
+            for i, part in enumerate(display_path.parts):
                 part_ = part.strip(os.path.sep)
+<<<<<<< HEAD:src/tagstudio/qt/widgets/preview/file_attributes.py
                 if i != len(filepath.parts) - 1:
                     file_str += f"{'\u200b'.join(part_)}{separator}</b>"
                 else:
                     file_str += f"<br><b>{'\u200b'.join(part_)}</b>"
+=======
+                if i != len(display_path.parts) - 1:
+                    file_str += f"{"\u200b".join(part_)}{separator}</b>"
+                else:
+                    if file_str != "":
+                        file_str += f"<br>"
+                    file_str += f"<b>{"\u200b".join(part_)}</b>"
+>>>>>>> 1e61888 (feat: implement file path option for file attributes (#10)):tagstudio/src/qt/widgets/preview/file_attributes.py
             self.file_label.setText(file_str)
             self.file_label.setCursor(Qt.CursorShape.PointingHandCursor)
             self.opener = FileOpenerHelper(filepath)
