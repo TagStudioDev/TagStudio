@@ -591,14 +591,14 @@ class QtDriver(DriverMixin, QObject):
         # tools_menu.addAction(create_collage_action)
 
         # Macros Menu ==========================================================
-        self.autofill_action = QAction("Autofill", menu_bar)
-        self.autofill_action.triggered.connect(
-            lambda: (
-                self.run_macros(MacroID.AUTOFILL, self.selected),
-                self.preview_panel.update_widgets(update_preview=False),
-            )
-        )
-        macros_menu.addAction(self.autofill_action)
+        # self.autofill_action = QAction("Autofill", menu_bar)
+        # self.autofill_action.triggered.connect(
+        #     lambda: (
+        #         self.run_macros(MacroID.AUTOFILL, self.selected),
+        #         self.preview_panel.update_widgets(update_preview=False),
+        #     )
+        # )
+        # macros_menu.addAction(self.autofill_action)
 
         def create_folders_tags_modal():
             if not hasattr(self, "folders_modal"):
@@ -1430,7 +1430,8 @@ class QtDriver(DriverMixin, QObject):
         self.preview_panel.update_widgets()
 
     def set_macro_menu_viability(self):
-        self.autofill_action.setDisabled(not self.selected)
+        # self.autofill_action.setDisabled(not self.selected)
+        pass
 
     def set_clipboard_menu_viability(self):
         if len(self.selected) == 1:
