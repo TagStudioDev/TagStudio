@@ -139,7 +139,7 @@ If you encounter errors about the Python version, or seemingly vague script erro
 
 When pushing your code, several automated workflows will check it against predefined tests and style checks. It's _highly recommended_ that you run these checks locally beforehand to avoid having to fight back-and-forth with the workflow checks inside your pull requests.
 These tools are installed into your environment if you ran `poetry install --with dev`. 
-You can get a shell with these tools on the activated on the path with `poetry shell`. 
+You can run the tools by prepending `poetry run` to the command. Like `poetry run ruff`.
 
 > [!TIP]
 > To format the code automatically before each commit, there's a configured action available for the `pre-commit` hook. Install it by running `pre-commit install`. The hook will be executed each time on running `git commit`.
