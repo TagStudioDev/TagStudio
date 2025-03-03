@@ -75,7 +75,7 @@ class SettingsPanel(PanelWidget):
             "show full path" if show_filepath not in self.filepath_options else show_filepath
         )
         self.filepath_combobox.setCurrentIndex(self.filepath_options.index(show_filepath))
-        self.filepath_combobox.currentIndexChanged.connect(lambda: self.save_filepath_setting())
+        self.filepath_combobox.currentIndexChanged.connect(lambda: self.apply_filepath_setting())
         self.form_layout.addRow("Show file path", self.filepath_combobox)
 
         self.root_layout.addWidget(self.form_container)
@@ -86,6 +86,7 @@ class SettingsPanel(PanelWidget):
         values: list[str] = list(self.languages.values())
         return values[self.language_combobox.currentIndex()]
 
-    def save_filepath_setting(self):
+    def apply_filepath_setting(self):
         selected_value = self.filepath_combobox.currentText()
         self.driver.settings.setValue(SettingItems.SHOW_FILEPATH, selected_value)
+        self.driver.update_recent_lib_menu()
