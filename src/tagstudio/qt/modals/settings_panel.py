@@ -63,6 +63,21 @@ class SettingsPanel(PanelWidget):
         )
         self.form_layout.addRow(language_label, self.language_combobox)
 
+        self.filepath_options = ["show full path", "show relative path", "show only file name"]
+        self.filepath_combobox = QComboBox()
+        self.filepath_combobox.addItems(self.filepath_options)
+        show_filepath: str = str(
+            driver.settings.value(
+                SettingItems.SHOW_FILEPATH, defaultValue="show full path", type=str
+            )
+        )
+        show_filepath = (
+            "show full path" if show_filepath not in self.filepath_options else show_filepath
+        )
+        self.filepath_combobox.setCurrentIndex(self.filepath_options.index(show_filepath))
+        self.filepath_combobox.currentIndexChanged.connect(lambda: self.save_filepath_setting())
+        self.form_layout.addRow("Show file path", self.filepath_combobox)
+
         self.root_layout.addWidget(self.form_container)
         self.root_layout.addStretch(1)
         self.root_layout.addWidget(self.restart_label)
@@ -70,3 +85,7 @@ class SettingsPanel(PanelWidget):
     def get_language(self) -> str:
         values: list[str] = list(self.languages.values())
         return values[self.language_combobox.currentIndex()]
+
+    def save_filepath_setting(self):
+        selected_value = self.filepath_combobox.currentText()
+        self.driver.settings.setValue(SettingItems.SHOW_FILEPATH, selected_value)
