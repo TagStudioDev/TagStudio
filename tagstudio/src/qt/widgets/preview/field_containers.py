@@ -246,7 +246,7 @@ class FieldContainers(QWidget):
         return cats
 
     def remove_field_prompt(self, name: str) -> str:
-        return Translations["library.field.confirm_remove"].format(name=name)
+        return Translations.translate_formatted("library.field.confirm_remove", name=name)
 
     def add_field_to_selected(self, field_list: list):
         """Add list of entry fields to one or more selected items.

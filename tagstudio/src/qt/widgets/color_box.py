@@ -146,7 +146,7 @@ class ColorBoxWidget(FieldWidget):
         message_box = QMessageBox(
             QMessageBox.Icon.Warning,
             Translations["color.delete"],
-            Translations["color.confirm_delete"].format(color_name=color_group.name),
+            Translations.translate_formatted("color.confirm_delete", color_name=color_group.name),
         )
         cancel_button = message_box.addButton(
             Translations["generic.cancel_alt"], QMessageBox.ButtonRole.RejectRole

@@ -27,6 +27,21 @@ class Translator:
         self._lang = lang
         self._strings = self.__get_translation_dict(lang)
 
+    def __format(self, text: str, **kwargs) -> str:
+        try:
+            return text.format(**kwargs)
+        except (KeyError, ValueError):
+            logger.error(
+                "[Translations] Error while formatting translation.",
+                text=text,
+                kwargs=kwargs,
+                language=self._lang,
+            )
+            return text
+
+    def translate_formatted(self, key: str, **kwargs) -> str:
+        return self.__format(self[key], **kwargs)
+
     def __getitem__(self, key: str) -> str:
         return self._strings.get(key) or self._default_strings.get(key) or f"[{key}]"
 

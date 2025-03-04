@@ -118,9 +118,9 @@ class TagSearchPanel(PanelWidget):
         """Set the QtDriver for this search panel. Used for main window operations."""
         self.driver = driver
 
-    def build_create_button(self, query: str | None, key: str, format_args: dict):
+    def build_create_button(self, query: str | None):
         """Constructs a "Create & Add Tag" QPushButton."""
-        create_button = QPushButton(Translations[key].format(**format_args), self)
+        create_button = QPushButton(self)
         create_button.setFlat(True)
 
         create_button.setMinimumSize(22, 22)
@@ -244,7 +244,9 @@ class TagSearchPanel(PanelWidget):
 
         # Add back the "Create & Add" button
         if query and query.strip():
-            cb: QPushButton = self.build_create_button(query, "tag.create_add", {"query": query})
+            cb: QPushButton = self.build_create_button(
+                Translations.translate_formatted("tag.create_add", query=query)
+            )
             with catch_warnings(record=True):
                 cb.clicked.disconnect()
             cb.clicked.connect(lambda: self.create_and_add_tag(query or ""))

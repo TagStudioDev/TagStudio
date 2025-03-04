@@ -114,10 +114,14 @@ class FixDupeFilesModal(QWidget):
             self.dupe_count.setText(Translations["file.duplicates.matches_uninitialized"])
         elif count == 0:
             self.mirror_button.setDisabled(True)
-            self.dupe_count.setText(Translations["file.duplicates.matches"].format(count=count))
+            self.dupe_count.setText(
+                Translations.translate_formatted("file.duplicates.matches", count=count)
+            )
         else:
             self.mirror_button.setDisabled(False)
-            self.dupe_count.setText(Translations["file.duplicates.matches"].format(count=count))
+            self.dupe_count.setText(
+                Translations.translate_formatted("file.duplicates.matches", count=count)
+            )
 
     @override
     def keyPressEvent(self, event: QtGui.QKeyEvent) -> None:  # noqa N802

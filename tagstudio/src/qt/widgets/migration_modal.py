@@ -57,7 +57,7 @@ class JsonMigrationModal(QObject):
         self.is_migration_initialized: bool = False
         self.discrepancies: list[str] = []
 
-        self.title: str = Translations["json_migration.title"].format(path=self.path)
+        self.title: str = Translations.translate_formatted("json_migration.title", path=self.path)
         self.warning: str = "<b><a style='color: #e22c3c'>(!)</a></b>"
 
         self.old_entry_count: int = 0
@@ -405,8 +405,8 @@ class JsonMigrationModal(QObject):
                 logger.info('Temporary migration file "temp_path" already exists. Removing...')
                 self.temp_path.unlink()
             self.sql_lib.open_sqlite_library(self.json_lib.library_dir, is_new=True)
-            yield Translations["json_migration.migrating_files_entries"].format(
-                entries=len(self.json_lib.entries)
+            yield Translations.translate_formatted(
+                "json_migration.migrating_files_entries", entries=len(self.json_lib.entries)
             )
             self.sql_lib.migrate_json_to_sqlite(self.json_lib)
             yield Translations["json_migration.checking_for_parity"]

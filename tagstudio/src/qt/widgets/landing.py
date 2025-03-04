@@ -62,7 +62,9 @@ class LandingWidget(QWidget):
         else:
             open_shortcut_text = "(Ctrl+O)"
         self.open_button: QPushButton = QPushButton(
-            Translations["landing.open_create_library"].format(shortcut=open_shortcut_text)
+            Translations.translate_formatted(
+                "landing.open_create_library", shortcut=open_shortcut_text
+            )
         )
         self.open_button.setMinimumWidth(200)
         self.open_button.clicked.connect(self.driver.open_library_from_dialog)
