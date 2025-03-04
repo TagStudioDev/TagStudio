@@ -30,6 +30,7 @@ class MirrorEntriesModal(QWidget):
         self.root_layout = QVBoxLayout(self)
         self.root_layout.setContentsMargins(6, 6, 6, 6)
         self.tracker = tracker
+        self.setWindowFlag(Qt.Dialog, on=True)  # type: ignore
 
         self.desc_widget = QLabel(
             Translations["entries.mirror.confirmation"].format(count=self.tracker.groups_count)

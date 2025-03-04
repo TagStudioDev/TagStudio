@@ -50,6 +50,7 @@ class TagColorManager(QWidget):
         self.is_initialized = False
         self.root_layout = QVBoxLayout(self)
         self.root_layout.setContentsMargins(6, 6, 6, 6)
+        self.setWindowFlag(Qt.Dialog, on=True)  # type: ignore
 
         panel_bg_color = (
             Theme.COLOR_BG_DARK.value

@@ -30,6 +30,7 @@ class DeleteUnlinkedEntriesModal(QWidget):
         self.setMinimumSize(500, 400)
         self.root_layout = QVBoxLayout(self)
         self.root_layout.setContentsMargins(6, 6, 6, 6)
+        self.setWindowFlag(Qt.Dialog, on=True)  # type: ignore
 
         self.desc_widget = QLabel(
             Translations["entries.unlinked.delete.confirm"].format(
