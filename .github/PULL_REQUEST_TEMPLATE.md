@@ -1,3 +1,5 @@
+### Summary
+
 <!--
 ^^^ Summarize the changes done and why they were done above.
 
@@ -10,18 +12,19 @@ of communication with maintainers was already conducted in terms of approving.
 Thank you for your eagerness to contribute!
 -->
 
-## Tasks Completed
+### Tasks Completed
 
 <!-- No requirements, just context for reviewers. -->
 
-- Tested on:
-  - [ ] Windows x86
-  - [ ] Windows ARM
-  - [ ] macOS x86
-  - [ ] macOS ARM
-  - [ ] Linux x86
-  - [ ] Linux ARM
-  <!-- If an unspecified platform was tested, please add it here! -->
-- Tested:
-  - [ ] Basic functionality
-  - [ ] PyInstaller executable
+-   Platforms Tested:
+    -   [ ] Windows x86
+    -   [ ] Windows ARM
+    -   [ ] macOS x86
+    -   [ ] macOS ARM
+    -   [ ] Linux x86
+    -   [ ] Linux ARM
+    <!-- If an unspecified platform was tested, please add it here -->
+-   Tested For:
+    -   [ ] Basic functionality
+    -   [ ] PyInstaller executable <!-- Not necessarily required, but appreciated! -->
+    <!-- If other important criteria was tested for, please add it here -->
