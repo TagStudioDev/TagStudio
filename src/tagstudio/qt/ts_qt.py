@@ -1146,9 +1146,19 @@ class QtDriver(DriverMixin, QObject):
                 for string in result.tag_strings:
                     if not string.strip():
                         continue
+                    base_and_parent = string.split("(")
+                    parent = ""
+                    base = base_and_parent[0].strip(" ")
+                    parent_results: list[int] = []
+                    if len(base_and_parent) > 1:
+                        parent = base_and_parent[1].split(")")[0]
+                        r: list[set[Tag]] = self.lib.search_tags(name=parent, limit=-1)
+                        if len(r) > 0:
+                            parent_results = [t.id for t in r[0]]
+                    logger.warning("split", string=string, base=base, parent=parent)
                     # NOTE: The following code overlaps with update_tags() in tag_search.py
                     # Sort and prioritize the results
-                    tag_results: list[set[Tag]] = self.lib.search_tags(name=string, limit=-1)
+                    tag_results: list[set[Tag]] = self.lib.search_tags(name=base, limit=-1)
                     results_0 = list(tag_results[0])
                     results_0.sort(key=lambda tag: tag.name.lower())
                     results_1 = list(tag_results[1])
@@ -1157,14 +1167,30 @@ class QtDriver(DriverMixin, QObject):
                     priority_results: set[Tag] = set()
 
                     for tag in raw_results:
-                        if (
-                            tag.name.lower().startswith(string.strip().lower())
-                            and tag not in priority_results
-                        ):
+                        if tag.name.lower().startswith(base.strip().lower()):
                             priority_results.add(tag)
                     all_results = sorted(list(priority_results), key=lambda tag: len(tag.name)) + [
                         r for r in raw_results if r not in priority_results
                     ]
+
+                    logger.warning("parents", parent=parent, parent_results=parent_results)
+                    if parent and parent_results:
+                        filtered_parents: list[Tag] = []
+                        for tag in all_results:
+                            logger.warning(
+                                "parent_ids",
+                                tag_id=tag.id,
+                                p_ids=tag.parent_ids,
+                                parent_results=parent_results,
+                            )
+                            for p_id in tag.parent_ids:
+                                if p_id in parent_results:
+                                    filtered_parents.append(tag)
+                                    break
+                        all_results = [t for t in all_results if t in filtered_parents]
+                        logger.warning(
+                            "removed", to_remove=filtered_parents, all_results=all_results
+                        )
 
                     final_tag: Tag | None = None
                     if len(all_results) > 0:
