@@ -17,7 +17,7 @@
     "color.primary_required": "Cor Primária (Obrigatório)",
     "color.secondary": "Cor Secundária",
     "color.title.no_color": "Nenhuma Cor",
-    "color_manager.title": "Gerenciar Tag Colors",
+    "color_manager.title": "Gerenciar Cores de Tags",
     "drop_import.description": "Os seguintes arquivos correspondem a caminhos de arquivos que já existem na biblioteca",
     "drop_import.duplicates_choice.plural": "Os seguintes arquivos {count} correspondem a caminhos de arquivo que já existem na biblioteca.",
     "drop_import.duplicates_choice.singular": "O arquivo a seguir corresponde a um caminho de arquivo que já existe na biblioteca.",
