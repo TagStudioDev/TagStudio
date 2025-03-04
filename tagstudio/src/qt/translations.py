@@ -1,3 +1,4 @@
+from collections import defaultdict
 from pathlib import Path
 
 import structlog
@@ -6,6 +7,29 @@ import ujson
 logger = structlog.get_logger(__name__)
 
 DEFAULT_TRANSLATION = "en"
+
+
+class ErrorlessFormatString(str):
+    __translator: "Translator"
+
+    def __new__(cls, translator: "Translator", object: object = ""):
+        obj = super().__new__(cls, object)
+        obj.__translator = translator
+        return obj
+
+    def format(self, *args: object, **kwargs: object) -> str:
+        try:
+            return super().format(*args, **kwargs)
+        except KeyError:
+            logger.error(
+                "[Translations] Error while formatting translation.",
+                text=self,
+                language=self.__translator._lang,
+                kwargs=kwargs,
+            )
+            params: defaultdict = defaultdict(lambda: "{missing_key}")
+            params.update(kwargs)
+            return super().format_map(params)
 
 
 class Translator:
@@ -28,7 +52,9 @@ class Translator:
         self._strings = self.__get_translation_dict(lang)
 
     def __getitem__(self, key: str) -> str:
-        return self._strings.get(key) or self._default_strings.get(key) or f"[{key}]"
+        return ErrorlessFormatString(
+            self, self._strings.get(key) or self._default_strings.get(key) or f"[{key}]"
+        )
 
 
 Translations = Translator()
