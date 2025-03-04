@@ -39,7 +39,7 @@ class Translator:
             )
             return text
 
-    def translate_formatted(self, key: str, **kwargs) -> str:
+    def format(self, key: str, **kwargs) -> str:
         return self.__format(self[key], **kwargs)
 
     def __getitem__(self, key: str) -> str:

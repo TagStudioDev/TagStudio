@@ -135,9 +135,7 @@ class FixUnlinkedEntriesModal(QWidget):
             self.search_button.setDisabled(self.missing_count == 0)
             self.delete_button.setDisabled(self.missing_count == 0)
             self.missing_count_label.setText(
-                Translations.translate_formatted(
-                    "entries.unlinked.missing_count.some", count=self.missing_count
-                )
+                Translations.format("entries.unlinked.missing_count.some", count=self.missing_count)
             )
 
     @override

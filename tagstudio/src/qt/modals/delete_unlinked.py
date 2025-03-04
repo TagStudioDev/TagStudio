@@ -32,7 +32,7 @@ class DeleteUnlinkedEntriesModal(QWidget):
         self.root_layout.setContentsMargins(6, 6, 6, 6)
 
         self.desc_widget = QLabel(
-            Translations.translate_formatted(
+            Translations.format(
                 "entries.unlinked.delete.confirm",
                 count=self.tracker.missing_file_entries_count,
             )
@@ -66,7 +66,7 @@ class DeleteUnlinkedEntriesModal(QWidget):
 
     def refresh_list(self):
         self.desc_widget.setText(
-            Translations.translate_formatted(
+            Translations.format(
                 "entries.unlinked.delete.confirm", count=self.tracker.missing_file_entries_count
             )
         )

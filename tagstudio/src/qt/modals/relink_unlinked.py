@@ -18,7 +18,7 @@ class RelinkUnlinkedEntries(QObject):
 
     def repair_entries(self):
         def displayed_text(x):
-            return Translations.translate_formatted(
+            return Translations.format(
                 "entries.unlinked.relink.attempting",
                 idx=x,
                 missing_count=self.tracker.missing_file_entries_count,

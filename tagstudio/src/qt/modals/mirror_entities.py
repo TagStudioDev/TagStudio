@@ -32,9 +32,7 @@ class MirrorEntriesModal(QWidget):
         self.tracker = tracker
 
         self.desc_widget = QLabel(
-            Translations.translate_formatted(
-                "entries.mirror.confirmation", count=self.tracker.groups_count
-            )
+            Translations.format("entries.mirror.confirmation", count=self.tracker.groups_count)
         )
         self.desc_widget.setObjectName("descriptionLabel")
         self.desc_widget.setWordWrap(True)
@@ -65,9 +63,7 @@ class MirrorEntriesModal(QWidget):
 
     def refresh_list(self):
         self.desc_widget.setText(
-            Translations.translate_formatted(
-                "entries.mirror.confirmation", count=self.tracker.groups_count
-            )
+            Translations.format("entries.mirror.confirmation", count=self.tracker.groups_count)
         )
 
         self.model.clear()
@@ -76,7 +72,7 @@ class MirrorEntriesModal(QWidget):
 
     def mirror_entries(self):
         def displayed_text(x):
-            return Translations.translate_formatted(
+            return Translations.format(
                 "entries.mirror.label", idx=x + 1, count=self.tracker.groups_count
             )
 
