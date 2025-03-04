@@ -122,7 +122,15 @@ def parse_macro_file(
         return results
 
     with open(macro_path) as f:
-        macro = toml.load(f)
+        try:
+            macro = toml.load(f)
+        except toml.TomlDecodeError as e:
+            logger.error(
+                "[MacroParser] Could not parse macro",
+                path=macro_path,
+                error=e,
+            )
+            return results
 
     logger.info(macro)
 
