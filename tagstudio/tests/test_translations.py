@@ -1,10 +1,15 @@
 import string
 from pathlib import Path
 
+import pytest
 import ujson as json
 
 CWD = Path(__file__).parent
 TRANSLATION_DIR = CWD / ".." / "resources" / "translations"
+
+
+def get_translation_filenames() -> list[str]:
+    return [a.name for a in TRANSLATION_DIR.glob("*.json")]
 
 
 def find_format_keys(format_string: str) -> set[str]:
@@ -21,21 +26,23 @@ def foreach_translation(callback):
         callback(default_translation, translation, translation_path)
 
 
-def test_validate_format_keys():
-    def validate_format_keys(default_translation: dict, translation: dict, translation_path: Path):
-        for key in default_translation:
-            if key not in translation:
-                continue
-            default_keys = find_format_keys(default_translation[key])
-            translation_keys = find_format_keys(translation[key])
-            assert default_keys.issuperset(
-                translation_keys
-            ), f"Translation {translation_path.name} for key {key} is using an invalid format key"
-            assert translation_keys.issuperset(
-                default_keys
-            ), f"Translation {translation_path.name} for key {key} is missing format keys"
-
-    foreach_translation(validate_format_keys)
+@pytest.mark.parametrize(["translation_filename"], [(fn,) for fn in get_translation_filenames()])
+def test_validate_format_keys(translation_filename: str):
+    with open(TRANSLATION_DIR / "en.json", encoding="utf-8") as f:
+        default_translation = json.loads(f.read())
+    with open(TRANSLATION_DIR / translation_filename, encoding="utf-8") as f:
+        translation = json.load(f)
+    for key in default_translation:
+        if key not in translation:
+            continue
+        default_keys = find_format_keys(default_translation[key])
+        translation_keys = find_format_keys(translation[key])
+        assert default_keys.issuperset(
+            translation_keys
+        ), f"Translation {translation_filename} for key {key} is using an invalid format key"
+        assert translation_keys.issuperset(
+            default_keys
+        ), f"Translation {translation_filename} for key {key} is missing format keys"
 
 
 def test_translation_completeness():
