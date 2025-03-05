@@ -29,12 +29,42 @@ Thank you so much for showing interest in contributing to TagStudio! Here are a 
 
 ### Prerequisites
 
--   [Python](https://www.python.org/downloads/) 3.12
--   [Ruff](https://github.com/astral-sh/ruff) (Included in `requirements-dev.txt`)
--   [Mypy](https://github.com/python/mypy) (Included in `requirements-dev.txt`)
--   [PyTest](https://docs.pytest.org) (Included in `requirements-dev.txt`)
+- [Python](https://www.python.org/downloads/) 3.12
+- [Poetry](https://python-poetry.org/docs/)
+- [Ruff](https://github.com/astral-sh/ruff) (Included in `requirements-dev.txt`)
+- [Mypy](https://github.com/python/mypy) (Included in `requirements-dev.txt`)
+- [PyTest](https://docs.pytest.org) (Included in `requirements-dev.txt`)
+
+> [!TIP]
+> On Linux and macOS, you can launch the `tagstudio.sh` script to skip the following process, minus the `requirements-dev.txt` installation step. _Using the script is fine if you just want to launch the program from source._
 
 ### Creating a Python Virtual Environment
+
+There are two ways to create a virtual Environment. 
+Using a poetry or using pyvenv.
+
+#### Poetry
+
+After installing poetry and python you can install the dependencies with the following command:
+
+```shell
+poetry install
+```
+
+If you plan to make a pull request or develop the code run this instead to also install the dev dependencies:
+
+```shell
+poetry install --with dev
+```
+You should run these (or any other poetry command) at the root of the project where the pyproject.toml file is located.
+
+You can start tag studio with:
+
+```shell
+poetry run tagstudio
+```
+ 
+#### Pyvenv
 
 If you wish to launch the source version of TagStudio outside of your IDE:
 
@@ -44,6 +74,7 @@ If you wish to launch the source version of TagStudio outside of your IDE:
 > [!TIP]
 > On Linux and macOS, you can launch the `tagstudio.sh` script to skip the following process, minus the `requirements-dev.txt` installation step. _Using the script is fine if you just want to launch the program from source._
 
+If you plan to make a pull request or develop the code run this instead to also install the dev dependencies:
 1. Make sure you're using the correct Python version:
    -   If the output matches `Python 3.12.x` (where the x is any number) then you're using the correct Python version and can skip to step 2. Otherwise, you can install the correct Python version from the [Python](https://www.python.org/downloads/) website, or you can use a tool like [pyenv](https://github.com/pyenv/pyenv/) to install the correct version without changes to your system:
       1. Follow pyenv's [install instructions](https://github.com/pyenv/pyenv/?tab=readme-ov-file#installation) for your system.
@@ -66,7 +97,6 @@ If you wish to launch the source version of TagStudio outside of your IDE:
        |CSH/TCSH|`.venv/bin/activate.csh` |
        |PWSH    |`.venv/bin/activate.ps1` |
        
-
 4. Install the required packages:
 
 -   `pip install -r requirements.txt`
@@ -76,7 +106,14 @@ _Learn more about setting up a virtual environment [here](https://docs.python.or
 
 ### Manually Launching (Outside of an IDE)
 
-If you encounter errors about the Python version, or seemingly vague script errors, [pyenv](https://github.com/pyenv/pyenv/) may solve your issue. See step 1 of [Creating a Python Virtual Environment](#creating-a-python-virtual-environment).
+
+If you are using poetry just run 
+
+```shell
+poetry run tagstudio
+```
+
+You can also use the following scripts:
 
 -   **Windows** (start_win.bat)
 
@@ -96,9 +133,13 @@ If you encounter errors about the Python version, or seemingly vague script erro
 
     -   Alternatively, with the virtual environment loaded, run the python file at `tagstudio\tag_studio.py` from your terminal. If you're in the project's root directory, simply run `python3 tagstudio/tag_studio.py`.
 
+If you encounter errors about the Python version, or seemingly vague script errors, [pyenv](https://github.com/pyenv/pyenv/) may solve your issue. See step 1 of [Creating a Python Virtual Environment](#creating-a-python-virtual-environment).
+
 ## Workflow Checks
 
 When pushing your code, several automated workflows will check it against predefined tests and style checks. It's _highly recommended_ that you run these checks locally beforehand to avoid having to fight back-and-forth with the workflow checks inside your pull requests.
+These tools are installed into your environment if you ran `poetry install --with dev`. 
+You can run the tools by prepending `poetry run` to the command. Like `poetry run ruff`.
 
 > [!TIP]
 > To format the code automatically before each commit, there's a configured action available for the `pre-commit` hook. Install it by running `pre-commit install`. The hook will be executed each time on running `git commit`.
@@ -188,6 +229,27 @@ Most of the style guidelines can be checked, fixed, and enforced via Ruff. Older
     -   Contain superfluous or unnecessary logging statements
     -   Cause unreasonable slowdowns to the program outside of a progress-indicated task
     -   Cause undesirable visual glitches or artifacts on screen
+
+#### Adding dependencies
+
+If you want to add a dependency to the project use `poetry add <dependency-name>`.  
+For example: `poetry add httpx`.
+If you decide you did not want to add the dependency after all you can use `poetry remove <dependency-name>`.
+
+If you decide to commit this change be sure to also update the requirements.txt file by generating it from the pyproject.toml with:
+
+```shell
+poetry export --without-hashes --format=requirements.txt > requirements.txt
+```
+
+If you want to add a dev dependency instead use: `poetry add <name> --group dev`. 
+To regenerate the requirements-dev.txt use: 
+
+```shell
+poetry export --without-hashes --without main --with dev --format=requirements.txt > requirements-dev.txt
+```
+
+Do not forget to actually commit the updated requirement.txt and pyproject.toml and poetry.lock files when you change/add dependencies.
 
 ## Documentation Guidelines
 
