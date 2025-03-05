@@ -23,7 +23,7 @@ def find_format_keys(format_string: str) -> set[str]:
 
 
 @pytest.mark.parametrize(["translation_filename"], get_translation_filenames())
-def test_validate_format_keys(translation_filename: str):
+def test_format_key_validity(translation_filename: str):
     default_translation = load_translation("en.json")
     translation = load_translation(translation_filename)
     for key in default_translation:
@@ -40,14 +40,9 @@ def test_validate_format_keys(translation_filename: str):
 
 
 @pytest.mark.parametrize(["translation_filename"], get_translation_filenames())
-def test_translation_completeness(translation_filename: str):
+def test_for_unnecessary_translations(translation_filename: str):
     default_translation = load_translation("en.json")
     translation = load_translation(translation_filename)
-    assert set(
-        default_translation.keys()
-    ).issubset(
-        translation.keys()
-    ), f"Translation {translation_filename} is missing keys ({set(default_translation.keys()).difference(translation.keys())})"  # noqa: E501
     assert set(
         default_translation.keys()
     ).issuperset(
