@@ -2,13 +2,13 @@
 # Licensed under the GPL-3.0 License.
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
-import pathlib
+from pathlib import Path
 from time import time
 
 from src.core.enums import LibraryPrefs
 from src.qt.widgets.migration_modal import JsonMigrationModal
 
-CWD = pathlib.Path(__file__)
+CWD = Path(__file__)
 
 
 def test_json_migration():
