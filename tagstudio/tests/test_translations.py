@@ -17,15 +17,6 @@ def find_format_keys(format_string: str) -> set[str]:
     return set([field[1] for field in formatter.parse(format_string) if field[1] is not None])
 
 
-def foreach_translation(callback):
-    with open(TRANSLATION_DIR / "en.json", encoding="utf-8") as f:
-        default_translation = json.loads(f.read())
-    for translation_path in TRANSLATION_DIR.glob("*.json"):
-        with open(translation_path, encoding="utf-8") as f:
-            translation = json.load(f)
-        callback(default_translation, translation, translation_path)
-
-
 @pytest.mark.parametrize(["translation_filename"], [(fn,) for fn in get_translation_filenames()])
 def test_validate_format_keys(translation_filename: str):
     with open(TRANSLATION_DIR / "en.json", encoding="utf-8") as f:
