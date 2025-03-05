@@ -39,10 +39,10 @@ def test_validate_format_keys(translation_filename: str):
         translation_keys = find_format_keys(translation[key])
         assert default_keys.issuperset(
             translation_keys
-        ), f"Translation {translation_filename} for key {key} is using an invalid format key"
+        ), f"Translation {translation_filename} for key {key} is using an invalid format key ({translation_keys.difference(default_keys)})"  # noqa: E501
         assert translation_keys.issuperset(
             default_keys
-        ), f"Translation {translation_filename} for key {key} is missing format keys"
+        ), f"Translation {translation_filename} for key {key} is missing format keys ({default_keys.difference(translation_keys)})"  # noqa: E501
 
 
 @pytest.mark.parametrize(["translation_filename"], [(fn,) for fn in get_translation_filenames()])
