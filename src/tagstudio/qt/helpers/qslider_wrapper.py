@@ -26,7 +26,6 @@ class QClickSlider(QSlider):
         """
         opt = QStyleOptionSlider()
         self.initStyleOption(opt)
-        opt.subControls = QStyle.SubControl.SC_SliderGroove | QStyle.SubControl.SC_SliderHandle
         handle_rect = self.style().subControlRect(
             QStyle.ComplexControl.CC_Slider, opt, QStyle.SubControl.SC_SliderHandle, self
         )
@@ -42,3 +41,16 @@ class QClickSlider(QSlider):
                 )
             )
             self.mouse_pressed = True
+
+    def observe_mouse(self) -> bool:
+        """Getter for the mouse_pressed property.
+
+        This will also clear the mouse_pressed property
+        if it is set. We do this so that consumers of slider
+        events can modify the sliders position.
+        """
+        if self.mouse_pressed:
+            self.mouse_pressed = False
+            return True
+
+        return False

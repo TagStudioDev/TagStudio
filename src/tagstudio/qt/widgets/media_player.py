@@ -206,6 +206,9 @@ class MediaPlayer(QGraphicsView):
         self.addAction(open_file_action)
         self.addAction(open_explorer_action)
 
+        # start the player muted
+        self.player.audioOutput().setMuted(True)
+
     def set_video_output(self, video: QGraphicsVideoItem):
         self.player.setVideoOutput(video)
 
@@ -406,9 +409,8 @@ class MediaPlayer(QGraphicsView):
             self.player.pause()
 
     def player_position_changed(self, position: int) -> None:
-        if self.pslider.mouse_pressed:
+        if self.pslider.observe_mouse():
             self.player.setPosition(self.pslider.value())
-            self.pslider.mouse_pressed = False
         elif not self.pslider.isSliderDown():
             # User isn't using the slider, so update position in widgets.
             self.pslider.setValue(position)
