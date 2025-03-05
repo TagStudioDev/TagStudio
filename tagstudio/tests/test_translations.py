@@ -45,13 +45,15 @@ def test_validate_format_keys(translation_filename: str):
         ), f"Translation {translation_filename} for key {key} is missing format keys"
 
 
-def test_translation_completeness():
-    def check_completeness(default_translation: dict, translation: dict, translation_path: Path):
-        assert set(default_translation.keys()).issubset(
-            translation.keys()
-        ), f"Translation {translation_path.name} is missing keys"
-        assert set(default_translation.keys()).issuperset(
-            translation.keys()
-        ), f"Translation {translation_path.name} has unnecessary keys"
-
-    foreach_translation(check_completeness)
+@pytest.mark.parametrize(["translation_filename"], [(fn,) for fn in get_translation_filenames()])
+def test_translation_completeness(translation_filename: str):
+    with open(TRANSLATION_DIR / "en.json", encoding="utf-8") as f:
+        default_translation = json.loads(f.read())
+    with open(TRANSLATION_DIR / translation_filename, encoding="utf-8") as f:
+        translation = json.load(f)
+    assert set(default_translation.keys()).issubset(
+        translation.keys()
+    ), f"Translation {translation_filename} is missing keys"
+    assert set(default_translation.keys()).issuperset(
+        translation.keys()
+    ), f"Translation {translation_filename} has unnecessary keys"
