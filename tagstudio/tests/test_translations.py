@@ -8,6 +8,11 @@ CWD = Path(__file__).parent
 TRANSLATION_DIR = CWD / ".." / "resources" / "translations"
 
 
+def load_translation(filename: str) -> dict[str, str]:
+    with open(TRANSLATION_DIR / filename, encoding="utf-8") as f:
+        return json.load(f)
+
+
 def get_translation_filenames() -> list[str]:
     return [a.name for a in TRANSLATION_DIR.glob("*.json")]
 
@@ -19,10 +24,8 @@ def find_format_keys(format_string: str) -> set[str]:
 
 @pytest.mark.parametrize(["translation_filename"], [(fn,) for fn in get_translation_filenames()])
 def test_validate_format_keys(translation_filename: str):
-    with open(TRANSLATION_DIR / "en.json", encoding="utf-8") as f:
-        default_translation = json.loads(f.read())
-    with open(TRANSLATION_DIR / translation_filename, encoding="utf-8") as f:
-        translation = json.load(f)
+    default_translation = load_translation("en.json")
+    translation = load_translation(translation_filename)
     for key in default_translation:
         if key not in translation:
             continue
@@ -38,10 +41,8 @@ def test_validate_format_keys(translation_filename: str):
 
 @pytest.mark.parametrize(["translation_filename"], [(fn,) for fn in get_translation_filenames()])
 def test_translation_completeness(translation_filename: str):
-    with open(TRANSLATION_DIR / "en.json", encoding="utf-8") as f:
-        default_translation = json.loads(f.read())
-    with open(TRANSLATION_DIR / translation_filename, encoding="utf-8") as f:
-        translation = json.load(f)
+    default_translation = load_translation("en.json")
+    translation = load_translation(translation_filename)
     assert set(default_translation.keys()).issubset(
         translation.keys()
     ), f"Translation {translation_filename} is missing keys"
