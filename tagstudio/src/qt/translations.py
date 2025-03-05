@@ -1,4 +1,6 @@
+from collections import defaultdict
 from pathlib import Path
+from typing import Any
 
 import structlog
 import ujson
@@ -37,7 +39,9 @@ class Translator:
                 kwargs=kwargs,
                 language=self._lang,
             )
-            return text
+            params: defaultdict[str, Any] = defaultdict(lambda: "{unknown_key}")
+            params.update(kwargs)
+            return text.format_map(params)
 
     def format(self, key: str, **kwargs) -> str:
         return self.__format(self[key], **kwargs)
