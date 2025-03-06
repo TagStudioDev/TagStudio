@@ -7,7 +7,7 @@
     "entries.duplicate.refresh": "o kama jo e sona tan ijo sama",
     "entries.duplicates.description": "ken la, ijo mute li jo e ijo lon sama. ni li \"ijo sama\". sina wan e ona la, ijo sama li kama wan li jo e sona ale tan ijo sama ale.",
     "entries.mirror": "jasima",
-    "entries.mirror.confirmation": "mi jasima e ijo %{len(self.lib.dupe_files)}. ni li pona anu seme?",
+    "entries.mirror.confirmation": "mi jasima e ijo {count}. ni li pona anu seme?",
     "entries.mirror.label": "mi jasima e ijo 1/%{count}...",
     "entries.mirror.title": "mi jasima e ijo",
     "entries.tags": "poki",
