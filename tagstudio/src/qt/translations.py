@@ -1,4 +1,6 @@
+from collections import defaultdict
 from pathlib import Path
+from typing import Any
 
 import structlog
 import ujson
@@ -26,6 +28,23 @@ class Translator:
     def change_language(self, lang: str):
         self._lang = lang
         self._strings = self.__get_translation_dict(lang)
+
+    def __format(self, text: str, **kwargs) -> str:
+        try:
+            return text.format(**kwargs)
+        except (KeyError, ValueError):
+            logger.error(
+                "[Translations] Error while formatting translation.",
+                text=text,
+                kwargs=kwargs,
+                language=self._lang,
+            )
+            params: defaultdict[str, Any] = defaultdict(lambda: "{unknown_key}")
+            params.update(kwargs)
+            return text.format_map(params)
+
+    def format(self, key: str, **kwargs) -> str:
+        return self.__format(self[key], **kwargs)
 
     def __getitem__(self, key: str) -> str:
         return self._strings.get(key) or self._default_strings.get(key) or f"[{key}]"

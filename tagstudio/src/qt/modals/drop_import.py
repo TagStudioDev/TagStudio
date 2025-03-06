@@ -131,8 +131,8 @@ class DropImportModal(QWidget):
         self.desc_widget.setText(
             Translations["drop_import.duplicates_choice.singular"]
             if len(self.duplicate_files) == 1
-            else Translations["drop_import.duplicates_choice.plural"].format(
-                count=len(self.duplicate_files)
+            else Translations.format(
+                "drop_import.duplicates_choice.plural", count=len(self.duplicate_files)
             )
         )
 
@@ -154,11 +154,10 @@ class DropImportModal(QWidget):
             return
 
         def displayed_text(x):
-            return Translations[
+            return Translations.format(
                 "drop_import.progress.label.singular"
                 if x[0] + 1 == 1
-                else "drop_import.progress.label.plural"
-            ].format(
+                else "drop_import.progress.label.plural",
                 count=x[0] + 1,
                 suffix=f" {x[1]} {self.choice.value}" if self.choice else "",
             )

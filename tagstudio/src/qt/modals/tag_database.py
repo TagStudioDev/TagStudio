@@ -60,9 +60,7 @@ class TagDatabasePanel(TagSearchPanel):
         message_box = QMessageBox(
             QMessageBox.Question,  # type: ignore
             Translations["tag.remove"],
-            Translations["tag.confirm_delete"].format(
-                tag_name=self.lib.tag_display_name(tag.id),
-            ),
+            Translations.format("tag.confirm_delete", tag_name=self.lib.tag_display_name(tag.id)),
             QMessageBox.Ok | QMessageBox.Cancel,  # type: ignore
         )
 

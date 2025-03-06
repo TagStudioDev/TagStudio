@@ -496,7 +496,7 @@ class QtDriver(DriverMixin, QObject):
         edit_menu.addSeparator()
 
         self.delete_file_action = QAction(
-            Translations["menu.delete_selected_files_ambiguous"].format(trash_term=trash_term()),
+            Translations.format("menu.delete_selected_files_ambiguous", trash_term=trash_term()),
             menu_bar,
         )
         self.delete_file_action.triggered.connect(lambda f="": self.delete_files_callback(f))
@@ -876,8 +876,8 @@ class QtDriver(DriverMixin, QObject):
 
         end_time = time.time()
         self.main_window.statusbar.showMessage(
-            Translations["status.library_closed"].format(
-                time_span=format_timespan(end_time - start_time)
+            Translations.format(
+                "status.library_closed", time_span=format_timespan(end_time - start_time)
             )
         )
 
@@ -888,7 +888,8 @@ class QtDriver(DriverMixin, QObject):
         target_path = self.lib.save_library_backup_to_disk()
         end_time = time.time()
         self.main_window.statusbar.showMessage(
-            Translations["status.library_backup_success"].format(
+            Translations.format(
+                "status.library_backup_success",
                 path=target_path,
                 time_span=format_timespan(end_time - start_time),
             )
@@ -986,8 +987,8 @@ class QtDriver(DriverMixin, QObject):
                         self.preview_panel.thumb.stop_file_use()
                     if delete_file(self.lib.library_dir / f):
                         self.main_window.statusbar.showMessage(
-                            Translations["status.deleting_file"].format(
-                                i=i, count=len(pending), path=f
+                            Translations.format(
+                                "status.deleting_file", i=i, count=len(pending), path=f
                             )
                         )
                         self.main_window.statusbar.repaint()
@@ -1004,17 +1005,17 @@ class QtDriver(DriverMixin, QObject):
             self.main_window.statusbar.showMessage(Translations["status.deleted_none"])
         elif len(self.selected) <= 1 and deleted_count == 1:
             self.main_window.statusbar.showMessage(
-                Translations["status.deleted_file_plural"].format(count=deleted_count)
+                Translations.format("status.deleted_file_plural", count=deleted_count)
             )
         elif len(self.selected) > 1 and deleted_count == 0:
             self.main_window.statusbar.showMessage(Translations["status.deleted_none"])
         elif len(self.selected) > 1 and deleted_count < len(self.selected):
             self.main_window.statusbar.showMessage(
-                Translations["status.deleted_partial_warning"].format(count=deleted_count)
+                Translations.format("status.deleted_partial_warning", count=deleted_count)
             )
         elif len(self.selected) > 1 and deleted_count == len(self.selected):
             self.main_window.statusbar.showMessage(
-                Translations["status.deleted_file_plural"].format(count=deleted_count)
+                Translations.format("status.deleted_file_plural", count=deleted_count)
             )
         self.main_window.statusbar.repaint()
 
@@ -1031,8 +1032,8 @@ class QtDriver(DriverMixin, QObject):
         # https://github.com/arsenetar/send2trash/issues/28
         # This warning is applied to all platforms until at least macOS and Linux can be verified
         # to not exhibit this same behavior.
-        perm_warning_msg = Translations["trash.dialog.permanent_delete_warning"].format(
-            trash_term=trash_term()
+        perm_warning_msg = Translations.format(
+            "trash.dialog.permanent_delete_warning", trash_term=trash_term()
         )
         perm_warning: str = (
             f"<h4 style='color: {get_ui_color(ColorType.PRIMARY, UiColor.RED)}'>"
@@ -1049,8 +1050,8 @@ class QtDriver(DriverMixin, QObject):
         )
         msg.setIcon(QMessageBox.Icon.Warning)
         if count <= 1:
-            msg_text = Translations["trash.dialog.move.confirmation.singular"].format(
-                trash_term=trash_term()
+            msg_text = Translations.format(
+                "trash.dialog.move.confirmation.singular", trash_term=trash_term()
             )
             msg.setText(
                 f"<h3>{msg_text}</h3>"
@@ -1059,7 +1060,8 @@ class QtDriver(DriverMixin, QObject):
                 f"{perm_warning}<br>"
             )
         elif count > 1:
-            msg_text = Translations["trash.dialog.move.confirmation.plural"].format(
+            msg_text = Translations.format(
+                "trash.dialog.move.confirmation.plural",
                 count=count,
                 trash_term=trash_term(),
             )
@@ -1094,11 +1096,10 @@ class QtDriver(DriverMixin, QObject):
             lambda x: (
                 pw.update_progress(x + 1),
                 pw.update_label(
-                    Translations[
+                    Translations.format(
                         "library.refresh.scanning.plural"
                         if x + 1 != 1
-                        else "library.refresh.scanning.singular"
-                    ].format(
+                        else "library.refresh.scanning.singular",
                         searched_count=f"{x+1:n}",
                         found_count=f"{tracker.files_count:n}",
                     )
@@ -1130,15 +1131,15 @@ class QtDriver(DriverMixin, QObject):
         )
         pw.setWindowTitle(Translations["entries.running.dialog.title"])
         pw.update_label(
-            Translations["entries.running.dialog.new_entries"].format(total=f"{files_count:n}")
+            Translations.format("entries.running.dialog.new_entries", total=f"{files_count:n}")
         )
         pw.show()
 
         iterator.value.connect(
             lambda: (
                 pw.update_label(
-                    Translations["entries.running.dialog.new_entries"].format(
-                        total=f"{files_count:n}"
+                    Translations.format(
+                        "entries.running.dialog.new_entries", total=f"{files_count:n}"
                     )
                 ),
             )
@@ -1698,7 +1699,8 @@ class QtDriver(DriverMixin, QObject):
 
         # inform user about completed search
         self.main_window.statusbar.showMessage(
-            Translations["status.results_found"].format(
+            Translations.format(
+                "status.results_found",
                 count=results.total_count,
                 time_span=format_timespan(end_time - start_time),
             )
@@ -1824,7 +1826,7 @@ class QtDriver(DriverMixin, QObject):
 
     def open_library(self, path: Path) -> None:
         """Open a TagStudio library."""
-        message = Translations["splash.opening_library"].format(library_path=str(path))
+        message = Translations.format("splash.opening_library", library_path=str(path))
         self.main_window.landing_widget.set_status_label(message)
         self.main_window.statusbar.showMessage(message, 3)
         self.main_window.repaint()
@@ -1871,8 +1873,10 @@ class QtDriver(DriverMixin, QObject):
 
         self.update_libs_list(path)
         self.main_window.setWindowTitle(
-            Translations["app.title"].format(
-                base_title=self.base_title, library_dir=self.lib.library_dir
+            Translations.format(
+                "app.title",
+                base_title=self.base_title,
+                library_dir=self.lib.library_dir,
             )
         )
         self.main_window.setAcceptDrops(True)
