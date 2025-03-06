@@ -429,16 +429,14 @@ def _fill_template(
     """
     key = template_key or table_key
     value = table.get(table_key, "")
-    template_ = template
 
     if isinstance(value, dict):
         for v in value:
             normalized_key: str = f"{key}[{str(v)}]"
-            template_.replace(f"{{{normalized_key}}}", f"{{{str(v)}}}")
-            template_ = _fill_template(template_, value, str(v), normalized_key)
+            template = _fill_template(template, value, str(v), normalized_key)
 
     value = str(value)
-    return template_.replace(f"{{{key}}}", f"{value}")
+    return template.replace(f"{{{key}}}", f"{value}")
 
 
 def exec_instructions(library: "Library", entry_id: int, results: list[Instruction]) -> None:
