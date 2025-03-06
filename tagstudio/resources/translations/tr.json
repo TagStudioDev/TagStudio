@@ -3,7 +3,7 @@
     "entries.duplicate.refresh": "Yinelenen Kayıtları Yenile",
     "entries.duplicates.description": "Yinelenen kayıtlar, diskinizde aynı dosyaya işaret eden birden fazla kayıt olarak tanımlanmaktadır. Bu kayıtları birleştirdiğinizde, yinelenen tüm kayıtların içerisindeki etiketler ve metadata bilgisi tek bir tane kayıt üzerinde birleştirilecektir. Bu, \"yinelenen dosyalar\" ile karıştırılmamalıdır. Yinelenen dosyalar, TagStudio'nun dışında birden fazla kere bulunan dosyalarınızdır.",
     "entries.mirror": "Yansıt",
-    "entries.mirror.confirmation": "%{len(self.lib.dupe_files)} kaydı yansıtmak istediğinden emin misin?",
+    "entries.mirror.confirmation": "{count} kaydı yansıtmak istediğinden emin misin?",
     "entries.mirror.label": "1/%{count} Kayıt Yansıtılıyor...",
     "entries.mirror.title": "Kayıtlar Yansıtılıyor",
     "entries.tags": "Etiketler",
