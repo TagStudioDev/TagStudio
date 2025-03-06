@@ -29,7 +29,7 @@
     "entries.unlinked.missing_count.none": "未連結項目：無",
     "entries.unlinked.missing_count.some": "未連結項目：{count}",
     "entries.unlinked.refresh_all": "&重新整理",
-    "entries.unlinked.relink.attempting": "正在重新連結{idx}/{missing_files)count}個項目, 成功重新連結{fixed_count}",
+    "entries.unlinked.relink.attempting": "正在重新連結{idx}/{missing_count}個項目, 成功重新連結{fixed_count}",
     "entries.unlinked.relink.manual": "&手動重新連結",
     "entries.unlinked.relink.title": "正在重新連結項目",
     "entries.unlinked.scanning": "正在掃描資料庫以尋找未連結的項目...",
