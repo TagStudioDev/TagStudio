@@ -1146,6 +1146,7 @@ class QtDriver(DriverMixin, QObject):
                 for string in result.tag_strings:
                     if not string.strip():
                         continue
+                    string = string.replace("_", " ")
                     base_and_parent = string.split("(")
                     parent = ""
                     base = base_and_parent[0].strip(" ")
