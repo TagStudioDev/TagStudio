@@ -2,7 +2,7 @@
     "entries.duplicate.merge.label": "Fletter duplikatoppføringer …",
     "entries.mirror": "Speil",
     "entries.tags": "Etiketter",
-    "entries.unlinked.delete.confirm": "Slett følgende %{len(self.lib.missing_files)} oppføringer?",
+    "entries.unlinked.delete.confirm": "Slett følgende {count} oppføringer?",
     "entries.unlinked.delete.deleting": "Sletting av oppføringer",
     "entries.unlinked.delete.deleting_count": "Sletter %{x[0]+1}/{len(self.lib.missing_files)} ulenkede oppføringer",
     "entries.unlinked.refresh_all": "Gjenoppfrisk alle",
