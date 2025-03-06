@@ -3,6 +3,7 @@
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
 import json
+from copy import deepcopy
 from enum import StrEnum
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, override
@@ -324,7 +325,7 @@ def _import_data(table: dict[str, Any], table_key: str, filepath: Path) -> list[
                             # If no delimiter is provided, assume the string is a single tag
                             tag_strings.append(content_value)
                     else:
-                        tag_strings = content_value
+                        tag_strings = deepcopy(content_value)
 
                     # Remove a prefix (if given) from all tags strings (if any)
                     prefix = str(obj.get(PREFIX, ""))
@@ -344,6 +345,8 @@ def _import_data(table: dict[str, Any], table_key: str, filepath: Path) -> list[
                                     mapped.append(map_value)
                                 tag_strings.remove(map_key)
                         tag_strings.extend(mapped)
+
+                    tag_strings = [t.strip() for t in tag_strings if t.strip()]
 
                     logger.info("[MacroParser] Found tags", tag_strings=tag_strings)
                     results.append(
@@ -426,15 +429,16 @@ def _fill_template(
     """
     key = template_key or table_key
     value = table.get(table_key, "")
+    template_ = template
 
     if isinstance(value, dict):
         for v in value:
             normalized_key: str = f"{key}[{str(v)}]"
-            template.replace(f"{{{normalized_key}}}", f"{{{str(v)}}}")
-            template = _fill_template(template, value, str(v), normalized_key)
+            template_.replace(f"{{{normalized_key}}}", f"{{{str(v)}}}")
+            template_ = _fill_template(template_, value, str(v), normalized_key)
 
     value = str(value)
-    return template.replace(f"{{{key}}}", f"{value}")
+    return template_.replace(f"{{{key}}}", f"{value}")
 
 
 def exec_instructions(library: "Library", entry_id: int, results: list[Instruction]) -> None:
