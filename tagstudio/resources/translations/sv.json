@@ -73,7 +73,7 @@
     "menu.tools": "Verktyg",
     "menu.window": "Fönster",
     "preview.no_selection": "Inga valda objekt",
-    "status.library_backup_success": "Bibliotekets säkerhetskopia sparad i:",
+    "status.library_backup_success": "Bibliotekets säkerhetskopia sparad i: \"{path}\" ({time_span})",
     "status.library_save_success": "Bibliotek sparat och stängt!",
     "status.library_search_query": "Söker i biblioteket efter",
     "status.results": "Resultat",

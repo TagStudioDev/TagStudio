@@ -246,7 +246,7 @@
     "tag.color": "Kolor",
     "tag.confirm_delete": "Jesteś pewien że chcesz usunąć tag \"{tag_name}\"?",
     "tag.create": "Stwórz tag",
-    "tag.create_add": "Stwórz && dodaj \"zapytanie\"",
+    "tag.create_add": "Stwórz && dodaj \"{query}\"",
     "tag.disambiguation.tooltip": "Uzyj tego tagu dla uściślenia",
     "tag.edit": "Edytuj tag",
     "tag.is_category": "Jest kategorią",
