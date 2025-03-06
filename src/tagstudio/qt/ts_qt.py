@@ -62,13 +62,12 @@ from tagstudio.core.library.alchemy.enums import (
     SortingModeEnum,
 )
 from tagstudio.core.library.alchemy.library import Library, LibraryStatus
-from tagstudio.core.library.alchemy.models import Entry, Tag
+from tagstudio.core.library.alchemy.models import Entry
 from tagstudio.core.library.ignore import Ignore
 from tagstudio.core.library.refresh import RefreshTracker
 from tagstudio.core.macro_parser import (
-    DataResult,
-    FieldResult,
-    TagResult,
+    Instruction,
+    exec_instructions,
     parse_macro_file,
 )
 from tagstudio.core.media_types import MediaCategories
@@ -1139,79 +1138,8 @@ class QtDriver(DriverMixin, QObject):
             entry_id=entry.id,
         )
 
-        results: list[DataResult] = parse_macro_file(macro_path, full_path)
-        for result in results:
-            if isinstance(result, TagResult):
-                tag_ids: set[int] = set()
-                for string in result.tag_strings:
-                    if not string.strip():
-                        continue
-                    string = string.replace("_", " ")
-                    base_and_parent = string.split("(")
-                    parent = ""
-                    base = base_and_parent[0].strip(" ")
-                    parent_results: list[int] = []
-                    if len(base_and_parent) > 1:
-                        parent = base_and_parent[1].split(")")[0]
-                        r: list[set[Tag]] = self.lib.search_tags(name=parent, limit=-1)
-                        if len(r) > 0:
-                            parent_results = [t.id for t in r[0]]
-                    logger.warning("split", string=string, base=base, parent=parent)
-                    # NOTE: The following code overlaps with update_tags() in tag_search.py
-                    # Sort and prioritize the results
-                    tag_results: list[set[Tag]] = self.lib.search_tags(name=base, limit=-1)
-                    results_0 = list(tag_results[0])
-                    results_0.sort(key=lambda tag: tag.name.lower())
-                    results_1 = list(tag_results[1])
-                    results_1.sort(key=lambda tag: tag.name.lower())
-                    raw_results = list(results_0 + results_1)
-                    priority_results: set[Tag] = set()
-
-                    for tag in raw_results:
-                        if tag.name.lower().startswith(base.strip().lower()):
-                            priority_results.add(tag)
-                    all_results = sorted(list(priority_results), key=lambda tag: len(tag.name)) + [
-                        r for r in raw_results if r not in priority_results
-                    ]
-
-                    logger.warning("parents", parent=parent, parent_results=parent_results)
-                    if parent and parent_results:
-                        filtered_parents: list[Tag] = []
-                        for tag in all_results:
-                            logger.warning(
-                                "parent_ids",
-                                tag_id=tag.id,
-                                p_ids=tag.parent_ids,
-                                parent_results=parent_results,
-                            )
-                            for p_id in tag.parent_ids:
-                                if p_id in parent_results:
-                                    filtered_parents.append(tag)
-                                    break
-                        all_results = [t for t in all_results if t in filtered_parents]
-                        logger.warning(
-                            "removed", to_remove=filtered_parents, all_results=all_results
-                        )
-
-                    final_tag: Tag | None = None
-                    if len(all_results) > 0:
-                        final_tag = all_results[0]
-                    # tag = self.lib.get_tag_by_name(string)
-                    if final_tag:
-                        tag_ids.add(final_tag.id)
-
-                if not tag_ids:
-                    continue
-
-                self.lib.add_tags_to_entries(entry_id, tag_ids)
-
-            elif isinstance(result, FieldResult):
-                self.lib.add_field_to_entry(
-                    entry_id,
-                    field_id=result.name,
-                    value=result.content,
-                    skip_on_exists=True,
-                )
+        results: list[Instruction] = parse_macro_file(macro_path, full_path)
+        exec_instructions(self.lib, entry_id, results)
 
     @property
     def sorting_direction(self) -> bool:
