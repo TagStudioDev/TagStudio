@@ -317,7 +317,7 @@ on_missing = "create"
 
 ### Manual Tag Mapping
 
-If the results from the standard tag matching system aren't good enough to properly import specific source data into your TagStudio library, you have the option to manually specify mappings between source and destination tags. A table with the `.map` or `.reverse_map` suffixes will be used to map tags in the nearest scope.
+If the results from the standard tag matching system aren't good enough to properly import specific source data into your TagStudio library, you have the option to manually specify mappings between source and destination tags. A table with the `.map` or `.inverse_map` suffixes will be used to map tags in the nearest scope.
 
 <!-- prettier-ignore -->
 === "Global Scope"
@@ -337,7 +337,7 @@ If the results from the standard tag matching system aren't good enough to prope
     ```
 
 -   `map`: Used for [1 to 0](#1-to-0-ignore-matches), [1 to 1](#1-to-1), and [1 to Many](#1-to-many) mappings.
--   `reverse_map`: Used for [Many to 1](#many-to-1-reverse-map) mappings.
+-   `inverse_map`: Used for [Many to 1](#many-to-1-inverse-map) mappings.
 
 #### 1 to 0 (Ignore Matches)
 
@@ -374,12 +374,12 @@ drawing = ["Drawing (2D)", "Image (Meta Tags)"]
 video = ["Animation (2D)", "Animated (Meta Tags)"]
 ```
 
-#### Many to 1 (Reverse Map)
+#### Many to 1 (Inverse Map)
 
 By mapping a key of the name of one of your TagStudio tags to a list of source tags, you can declare a combination of required source tags that result in a wholly new matched TagStudio tag. This is useful if you use a single tag in your TagStudio library that is represented by multiple split tags from your source.
 
 ```toml
-[newgrounds.tags.reverse_map]
+[newgrounds.tags.inverse_map]
 # TagStudio Tag Name = List of Source Tag Names
 "Animation (2D)" = ["drawing", "video"]
 "Animation (3D)" = ["3D", "video"]
