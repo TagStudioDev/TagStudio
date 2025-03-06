@@ -1,22 +1,22 @@
-import pathlib
+from pathlib import Path
 
 from src.core.library import Entry
 from src.core.utils.dupe_files import DupeRegistry
 
-CWD = pathlib.Path(__file__).parent
+CWD = Path(__file__).parent
 
 
 def test_refresh_dupe_files(library):
     library.library_dir = "/tmp/"
     entry = Entry(
         folder=library.folder,
-        path=pathlib.Path("bar/foo.txt"),
+        path=Path("bar/foo.txt"),
         fields=library.default_fields,
     )
 
     entry2 = Entry(
         folder=library.folder,
-        path=pathlib.Path("foo/foo.txt"),
+        path=Path("foo/foo.txt"),
         fields=library.default_fields,
     )
 
@@ -30,7 +30,7 @@ def test_refresh_dupe_files(library):
     assert len(registry.groups) == 1
     paths = [entry.path for entry in registry.groups[0]]
     assert paths == [
-        pathlib.Path("bar/foo.txt"),
-        pathlib.Path("foo.txt"),
-        pathlib.Path("foo/foo.txt"),
+        Path("bar/foo.txt"),
+        Path("foo.txt"),
+        Path("foo/foo.txt"),
     ]

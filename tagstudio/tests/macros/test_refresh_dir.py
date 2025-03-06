@@ -1,11 +1,11 @@
-import pathlib
+from pathlib import Path
 from tempfile import TemporaryDirectory
 
 import pytest
 from src.core.enums import LibraryPrefs
 from src.core.utils.refresh_dir import RefreshDirTracker
 
-CWD = pathlib.Path(__file__).parent
+CWD = Path(__file__).parent
 
 
 @pytest.mark.parametrize("exclude_mode", [True, False])
@@ -22,4 +22,4 @@ def test_refresh_new_files(library, exclude_mode):
     assert len(list(registry.refresh_dir(library.library_dir))) == 1
 
     # Then
-    assert registry.files_not_in_library == [pathlib.Path("FOO.MD")]
+    assert registry.files_not_in_library == [Path("FOO.MD")]
