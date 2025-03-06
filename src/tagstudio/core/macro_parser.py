@@ -48,7 +48,7 @@ EXIF = "exif"
 ID3 = "id3"
 
 MAP = "map"
-REVERSE_MAP = "reverse_map"
+INVERSE_MAP = "inverse_map"
 
 
 class Actions(StrEnum):
