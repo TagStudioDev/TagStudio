@@ -68,6 +68,7 @@ class ItemType(enum.Enum):
 class SortingModeEnum(enum.Enum):
     DATE_ADDED = "file.date_added"
     FILE_NAME = "file.name"
+    PATH = "file.path"
 
 
 @dataclass

@@ -64,6 +64,7 @@
     "file.date_created": "Erstellungsdatum",
     "file.date_modified": "Datum geändert",
     "file.name": "Dateiname",
+    "file.path": "Dateipfad",
     "file.dimensions": "Abmessungen",
     "file.duplicates.description": "TagStudio unterstützt das Importieren von DupeGuru-Ergebnissen um Dateiduplikate zu verwalten.",
     "file.duplicates.dupeguru.advice": "Nach dem Kopiervorgang kann DupeGuru benutzt werden und ungewollte Dateien zu löschen. Anschließend kann TagStudios \"Unverknüpfte Einträge reparieren\" Funktion im \"Werkzeuge\" Menü benutzt werden um die nicht verknüpften Einträge zu löschen.",
