@@ -1,5 +1,5 @@
 {
-    "about.content": "<h2>TagStudio Alpha {version} ({branch})</h2><p>TagStudio é uma aplicação de organização de fotos e arquivos com um sistema de tags que tem como foco conceder liberdade e flexibilidade ao usuário. Sem programas ou formatos proprietários, sem imensidão de arquivos Sidecar, e sem total transtorno de sua estrutura de sistema de arquivos.</p>Licença: GPLv3<br>Diretório de Configuração: {config_path}<br>FFmpeg: {ffmpeg}<br>FFprobe: {ffprobe}<p><a href=\"https://github.com/TagStudioDev/TagStudio\">GitHub</a> | <a href=\"https://docs.tagstud.io\">Documentação</a> | <a href=\"https://discord.com/invite/hRNnVKhF2G\">Discord</a></p>",
+    "about.content": "<p>TagStudio é uma aplicação de organização de fotos e arquivos com um sistema de tags que tem como foco conceder liberdade e flexibilidade ao usuário. Sem programas ou formatos proprietários, sem imensidão de arquivos Sidecar, e sem total transtorno de sua estrutura de sistema de arquivos.</p>Licença: GPLv3<br>Diretório de Configuração: {config_path}<br>FFmpeg: {ffmpeg}<br>FFprobe: {ffprobe}<p><a href=\"https://github.com/TagStudioDev/TagStudio\">GitHub</a> | <a href=\"https://docs.tagstud.io\">Documentação</a> | <a href=\"https://discord.com/invite/hRNnVKhF2G\">Discord</a></p>",
     "about.title": "Sobre",
     "app.git": "Confirmação do Git",
     "app.pre_release": "Pré-Lançamento",
