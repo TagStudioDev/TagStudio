@@ -852,7 +852,7 @@ class Library:
             statement = statement.distinct(Entry.id)
             start_time = time.time()
             query_count = select(func.count()).select_from(statement.alias("entries"))
-            count_all: int = session.execute(query_count).scalar()
+            count_all: int = session.execute(query_count).scalar() or 0
             end_time = time.time()
             logger.info(f"finished counting ({format_timespan(end_time - start_time)})")
 
@@ -860,6 +860,8 @@ class Library:
             match search.sorting_mode:
                 case SortingModeEnum.DATE_ADDED:
                     sort_on = Entry.id
+                case SortingModeEnum.PATH:
+                    sort_on = func.lower(Entry.path)
 
             statement = statement.order_by(asc(sort_on) if search.ascending else desc(sort_on))
             statement = statement.limit(search.limit).offset(search.offset)
