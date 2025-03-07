@@ -7,7 +7,6 @@ from PIL import ImageQt
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QPixmap
 from PySide6.QtWidgets import QHBoxLayout, QLabel, QPushButton, QVBoxLayout, QWidget
-
 from src.core.constants import VERSION, VERSION_BRANCH
 from src.core.palette import ColorType, UiColor, get_ui_color
 from src.qt.modals.ffmpeg_checker import FfmpegChecker
