@@ -4,7 +4,8 @@
 
 
 from PySide6.QtWidgets import QPlainTextEdit, QVBoxLayout
-from src.qt.widgets.panel import PanelWidget
+
+from tagstudio.qt.widgets.panel import PanelWidget
 
 
 class EditTextBox(PanelWidget):

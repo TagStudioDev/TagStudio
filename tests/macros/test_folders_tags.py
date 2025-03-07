@@ -1,4 +1,4 @@
-from src.qt.modals.folders_to_tags import folders_to_tags
+from tagstudio.qt.modals.folders_to_tags import folders_to_tags
 
 
 def test_folders_to_tags(library):

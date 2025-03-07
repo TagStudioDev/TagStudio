@@ -8,8 +8,9 @@ from pathlib import Path
 
 import pytest
 from PIL import Image
-from src.qt.widgets.thumb_renderer import ThumbRenderer
 from syrupy.extensions.image import PNGImageSnapshotExtension
+
+from tagstudio.qt.widgets.thumb_renderer import ThumbRenderer
 
 
 @pytest.mark.parametrize(

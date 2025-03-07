@@ -2,12 +2,14 @@
 # Licensed under the GPL-3.0 License.
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
-from typing import Callable, Optional
+
+from typing import Callable
 
 from PySide6.QtCore import Qt, QThreadPool
 from PySide6.QtWidgets import QProgressDialog, QVBoxLayout, QWidget
-from src.qt.helpers.custom_runnable import CustomRunnable
-from src.qt.helpers.function_iterator import FunctionIterator
+
+from tagstudio.qt.helpers.custom_runnable import CustomRunnable
+from tagstudio.qt.helpers.function_iterator import FunctionIterator
 
 
 class ProgressWidget(QWidget):
@@ -18,7 +20,7 @@ class ProgressWidget(QWidget):
         *,
         window_title: str = "",
         label_text: str = "",
-        cancel_button_text: Optional[str],
+        cancel_button_text: str | None,
         minimum: int,
         maximum: int,
     ):
@@ -61,6 +63,6 @@ class ProgressWidget(QWidget):
 
         r = CustomRunnable(lambda: iterator.run())
         r.done.connect(
-            lambda: (self.hide(), self.deleteLater(), [callback() for callback in done_callbacks])
+            lambda: (self.hide(), self.deleteLater(), [callback() for callback in done_callbacks])  # type: ignore
         )
         QThreadPool.globalInstance().start(r)

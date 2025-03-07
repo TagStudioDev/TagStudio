@@ -2,13 +2,15 @@
 # Licensed under the GPL-3.0 License.
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
+
 from pathlib import Path
 
 import structlog
 from sqlalchemy import Dialect, Engine, String, TypeDecorator, create_engine, text
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import DeclarativeBase
-from src.core.constants import RESERVED_TAG_END
+
+from tagstudio.core.constants import RESERVED_TAG_END
 
 logger = structlog.getLogger(__name__)
 

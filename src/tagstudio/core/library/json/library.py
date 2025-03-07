@@ -7,29 +7,28 @@
 """The Library object and related methods for TagStudio."""
 
 import datetime
+from enum import Enum
 import os
+from pathlib import Path
 import time
 import traceback
+from typing import Generator, cast
 import xml.etree.ElementTree as ET
 
 import structlog
+from typing_extensions import Self
 import ujson
 
-from enum import Enum
-from pathlib import Path
-from typing import cast, Generator
-from typing_extensions import Self
-
-from .fields import DEFAULT_FIELDS, TEXT_FIELDS
-from src.core.enums import OpenStatus
-from src.core.utils.str import strip_punctuation
-from src.core.utils.web import strip_web_protocol
-from src.core.constants import (
+from tagstudio.core.constants import (
     BACKUP_FOLDER_NAME,
     COLLAGE_FOLDER_NAME,
     TS_FOLDER_NAME,
     VERSION,
 )
+from tagstudio.core.enums import OpenStatus
+from tagstudio.core.library.json.fields import DEFAULT_FIELDS, TEXT_FIELDS
+from tagstudio.core.utils.str import strip_punctuation
+from tagstudio.core.utils.web import strip_web_protocol
 
 TYPE = ["file", "meta", "alt", "mask"]
 
@@ -128,7 +127,7 @@ class Entry:
                     if field_index >= 0 and field_index == i:
                         t: list[int] = library.get_field_attr(f, "content")
                         logger.info(
-                            f't:{tag_id}, i:{i}, idx:{field_index}, c:{library.get_field_attr(f, "content")}'
+                            f"t:{tag_id}, i:{i}, idx:{field_index}, c:{library.get_field_attr(f, 'content')}"
                         )
                         t.remove(tag_id)
                     elif field_index < 0:
@@ -208,9 +207,9 @@ class Tag:
         """Returns a formatted tag name intended for displaying."""
         if self.subtag_ids:
             if library.get_tag(self.subtag_ids[0]).shorthand:
-                return f"{self.name}" f" ({library.get_tag(self.subtag_ids[0]).shorthand})"
+                return f"{self.name} ({library.get_tag(self.subtag_ids[0]).shorthand})"
             else:
-                return f"{self.name}" f" ({library.get_tag(self.subtag_ids[0]).name})"
+                return f"{self.name} ({library.get_tag(self.subtag_ids[0]).name})"
         else:
             return f"{self.name}"
 
@@ -759,7 +758,7 @@ class Library:
 
         logger.info(f"[LIBRARY] Saving Library Backup to Disk...")
         start_time = time.time()
-        filename = f'ts_library_backup_{datetime.datetime.utcnow().strftime("%F_%T").replace(":", "")}.json'
+        filename = f"ts_library_backup_{datetime.datetime.utcnow().strftime('%F_%T').replace(':', '')}.json"
 
         self.verify_ts_folders()
         with open(

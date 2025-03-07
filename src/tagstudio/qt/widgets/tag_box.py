@@ -7,16 +7,17 @@ import typing
 
 import structlog
 from PySide6.QtCore import Signal
-from src.core.library import Tag
-from src.core.library.alchemy.enums import FilterState
-from src.qt.flowlayout import FlowLayout
-from src.qt.modals.build_tag import BuildTagPanel
-from src.qt.widgets.fields import FieldWidget
-from src.qt.widgets.panel import PanelModal
-from src.qt.widgets.tag import TagWidget
+
+from tagstudio.core.library.alchemy.enums import FilterState
+from tagstudio.core.library.alchemy.models import Tag
+from tagstudio.qt.flowlayout import FlowLayout
+from tagstudio.qt.modals.build_tag import BuildTagPanel
+from tagstudio.qt.widgets.fields import FieldWidget
+from tagstudio.qt.widgets.panel import PanelModal
+from tagstudio.qt.widgets.tag import TagWidget
 
 if typing.TYPE_CHECKING:
-    from src.qt.ts_qt import QtDriver
+    from tagstudio.qt.ts_qt import QtDriver
 
 logger = structlog.get_logger(__name__)
 

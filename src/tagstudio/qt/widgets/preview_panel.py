@@ -2,6 +2,7 @@
 # Licensed under the GPL-3.0 License.
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
+
 import traceback
 import typing
 from pathlib import Path
@@ -9,27 +10,22 @@ from warnings import catch_warnings
 
 import structlog
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import (
-    QHBoxLayout,
-    QPushButton,
-    QSplitter,
-    QVBoxLayout,
-    QWidget,
-)
-from src.core.enums import Theme
-from src.core.library.alchemy.library import Library
-from src.core.library.alchemy.models import Entry
-from src.core.palette import ColorType, UiColor, get_ui_color
-from src.qt.modals.add_field import AddFieldModal
-from src.qt.modals.tag_search import TagSearchPanel
-from src.qt.translations import Translations
-from src.qt.widgets.panel import PanelModal
-from src.qt.widgets.preview.field_containers import FieldContainers
-from src.qt.widgets.preview.file_attributes import FileAttributes
-from src.qt.widgets.preview.preview_thumb import PreviewThumb
+from PySide6.QtWidgets import QHBoxLayout, QPushButton, QSplitter, QVBoxLayout, QWidget
+
+from tagstudio.core.enums import Theme
+from tagstudio.core.library.alchemy.library import Library
+from tagstudio.core.library.alchemy.models import Entry
+from tagstudio.core.palette import ColorType, UiColor, get_ui_color
+from tagstudio.qt.modals.add_field import AddFieldModal
+from tagstudio.qt.modals.tag_search import TagSearchPanel
+from tagstudio.qt.translations import Translations
+from tagstudio.qt.widgets.panel import PanelModal
+from tagstudio.qt.widgets.preview.field_containers import FieldContainers
+from tagstudio.qt.widgets.preview.file_attributes import FileAttributes
+from tagstudio.qt.widgets.preview.preview_thumb import PreviewThumb
 
 if typing.TYPE_CHECKING:
-    from src.qt.ts_qt import QtDriver
+    from tagstudio.qt.ts_qt import QtDriver
 
 logger = structlog.get_logger(__name__)
 

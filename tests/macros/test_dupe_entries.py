@@ -1,7 +1,7 @@
 from pathlib import Path
 
-from src.core.library import Entry
-from src.core.utils.dupe_files import DupeRegistry
+from tagstudio.core.library.alchemy.models import Entry
+from tagstudio.core.utils.dupe_files import DupeRegistry
 
 CWD = Path(__file__).parent
 

@@ -4,7 +4,8 @@
 
 
 from PySide6.QtWidgets import QPushButton
-from src.qt.widgets.paged_panel.paged_body_wrapper import PagedBodyWrapper
+
+from tagstudio.qt.widgets.paged_panel.paged_body_wrapper import PagedBodyWrapper
 
 
 class PagedPanelState:

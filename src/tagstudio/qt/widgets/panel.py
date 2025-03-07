@@ -1,13 +1,16 @@
 # Copyright (C) 2025 Travis Abendshien (CyanVoxel).
 # Licensed under the GPL-3.0 License.
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
-from typing import Callable
+
+
+from typing import Callable, override
 
 import structlog
 from PySide6 import QtCore, QtGui
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import QHBoxLayout, QLabel, QPushButton, QVBoxLayout, QWidget
-from src.qt.translations import Translations
+
+from tagstudio.qt.translations import Translations
 
 logger = structlog.get_logger(__name__)
 
@@ -39,7 +42,7 @@ class PanelModal(QWidget):
         self.title_widget = QLabel()
         self.title_widget.setObjectName("fieldTitle")
         self.title_widget.setWordWrap(True)
-        self.title_widget.setStyleSheet("font-weight:bold;" "font-size:14px;" "padding-top: 6px")
+        self.title_widget.setStyleSheet("font-weight:bold;font-size:14px;padding-top: 6px")
         self.setTitle(title)
         self.title_widget.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
@@ -129,6 +132,7 @@ class PanelWidget(QWidget):
     def add_callback(self, callback: Callable, event: str = "returnPressed"):
         logger.warning(f"[PanelModal] add_callback not implemented for {self.__class__.__name__}")
 
+    @override
     def keyPressEvent(self, event: QtGui.QKeyEvent) -> None:  # noqa N802
         if event.key() == QtCore.Qt.Key.Key_Escape:
             if self.panel_cancel_button:

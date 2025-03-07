@@ -9,7 +9,8 @@ import subprocess
 
 import ffmpeg
 import structlog
-from src.qt.helpers.silent_popen import silent_Popen
+
+from tagstudio.qt.helpers.silent_popen import silent_Popen
 
 logger = structlog.get_logger(__name__)
 

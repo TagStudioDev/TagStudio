@@ -8,19 +8,14 @@ from uuid import uuid4
 
 import structlog
 from PySide6.QtCore import Qt, Signal
-from PySide6.QtWidgets import (
-    QLabel,
-    QLineEdit,
-    QVBoxLayout,
-    QWidget,
-)
-from src.core.constants import RESERVED_NAMESPACE_PREFIX
-from src.core.library import Library
-from src.core.library.alchemy.library import ReservedNamespaceError, slugify
-from src.core.library.alchemy.models import Namespace
-from src.core.palette import ColorType, UiColor, get_ui_color
-from src.qt.translations import Translations
-from src.qt.widgets.panel import PanelWidget
+from PySide6.QtWidgets import QLabel, QLineEdit, QVBoxLayout, QWidget
+
+from tagstudio.core.constants import RESERVED_NAMESPACE_PREFIX
+from tagstudio.core.library.alchemy.library import Library, ReservedNamespaceError, slugify
+from tagstudio.core.library.alchemy.models import Namespace
+from tagstudio.core.palette import ColorType, UiColor, get_ui_color
+from tagstudio.qt.translations import Translations
+from tagstudio.qt.widgets.panel import PanelWidget
 
 logger = structlog.get_logger(__name__)
 
@@ -145,7 +140,7 @@ class BuildNamespacePanel(PanelWidget):
             if suffix:
                 try:
                     suffix_num: int = int(suffix)
-                    return self.no_collide(f"{split_slug[0]}-{suffix_num+1}")
+                    return self.no_collide(f"{split_slug[0]}-{suffix_num + 1}")
                 except ValueError:
                     return self.no_collide(f"{slug}-2")
             else:

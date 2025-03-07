@@ -5,6 +5,7 @@
 # SIGTERM handling based on the implementation by Virgil Dupras for dupeGuru:
 # https://github.com/arsenetar/dupeguru/blob/master/run.py#L71
 
+
 """A Qt driver for TagStudio."""
 
 import contextlib
@@ -19,8 +20,6 @@ from pathlib import Path
 from queue import Queue
 from warnings import catch_warnings
 
-# this import has side-effect of import PySide resources
-import src.qt.resources_rc  # noqa: F401
 import structlog
 from humanfriendly import format_size, format_timespan
 from PySide6 import QtCore
@@ -50,57 +49,55 @@ from PySide6.QtWidgets import (
     QScrollArea,
     QWidget,
 )
-from src.core.constants import (
-    TAG_ARCHIVED,
-    TAG_FAVORITE,
-    VERSION,
-    VERSION_BRANCH,
-)
-from src.core.driver import DriverMixin
-from src.core.enums import LibraryPrefs, MacroID, SettingItems
-from src.core.library.alchemy import Library
-from src.core.library.alchemy.enums import (
+
+# this import has side-effect of import PySide resources
+import tagstudio.qt.resources_rc  # noqa: F401
+from tagstudio.core.constants import TAG_ARCHIVED, TAG_FAVORITE, VERSION, VERSION_BRANCH
+from tagstudio.core.driver import DriverMixin
+from tagstudio.core.enums import LibraryPrefs, MacroID, SettingItems
+from tagstudio.core.library.alchemy.enums import (
     FieldTypeEnum,
     FilterState,
     ItemType,
     SortingModeEnum,
 )
-from src.core.library.alchemy.fields import _FieldID
-from src.core.library.alchemy.library import Entry, LibraryStatus
-from src.core.media_types import MediaCategories
-from src.core.palette import ColorType, UiColor, get_ui_color
-from src.core.query_lang.util import ParsingError
-from src.core.ts_core import TagStudioCore
-from src.core.utils.refresh_dir import RefreshDirTracker
-from src.core.utils.web import strip_web_protocol
-from src.qt.cache_manager import CacheManager
-from src.qt.flowlayout import FlowLayout
-from src.qt.helpers.custom_runnable import CustomRunnable
-from src.qt.helpers.file_deleter import delete_file
-from src.qt.helpers.function_iterator import FunctionIterator
-from src.qt.main_window import Ui_MainWindow
-from src.qt.modals.about import AboutModal
-from src.qt.modals.build_tag import BuildTagPanel
-from src.qt.modals.drop_import import DropImportModal
-from src.qt.modals.ffmpeg_checker import FfmpegChecker
-from src.qt.modals.file_extension import FileExtensionModal
-from src.qt.modals.fix_dupes import FixDupeFilesModal
-from src.qt.modals.fix_unlinked import FixUnlinkedEntriesModal
-from src.qt.modals.folders_to_tags import FoldersToTagsModal
-from src.qt.modals.settings_panel import SettingsPanel
-from src.qt.modals.tag_color_manager import TagColorManager
-from src.qt.modals.tag_database import TagDatabasePanel
-from src.qt.modals.tag_search import TagSearchPanel
-from src.qt.platform_strings import trash_term
-from src.qt.resource_manager import ResourceManager
-from src.qt.splash import Splash
-from src.qt.translations import Translations
-from src.qt.widgets.item_thumb import BadgeType, ItemThumb
-from src.qt.widgets.migration_modal import JsonMigrationModal
-from src.qt.widgets.panel import PanelModal
-from src.qt.widgets.preview_panel import PreviewPanel
-from src.qt.widgets.progress import ProgressWidget
-from src.qt.widgets.thumb_renderer import ThumbRenderer
+from tagstudio.core.library.alchemy.fields import _FieldID
+from tagstudio.core.library.alchemy.library import Library, LibraryStatus
+from tagstudio.core.library.alchemy.models import Entry
+from tagstudio.core.media_types import MediaCategories
+from tagstudio.core.palette import ColorType, UiColor, get_ui_color
+from tagstudio.core.query_lang.util import ParsingError
+from tagstudio.core.ts_core import TagStudioCore
+from tagstudio.core.utils.refresh_dir import RefreshDirTracker
+from tagstudio.core.utils.web import strip_web_protocol
+from tagstudio.qt.cache_manager import CacheManager
+from tagstudio.qt.flowlayout import FlowLayout
+from tagstudio.qt.helpers.custom_runnable import CustomRunnable
+from tagstudio.qt.helpers.file_deleter import delete_file
+from tagstudio.qt.helpers.function_iterator import FunctionIterator
+from tagstudio.qt.main_window import Ui_MainWindow
+from tagstudio.qt.modals.about import AboutModal
+from tagstudio.qt.modals.build_tag import BuildTagPanel
+from tagstudio.qt.modals.drop_import import DropImportModal
+from tagstudio.qt.modals.ffmpeg_checker import FfmpegChecker
+from tagstudio.qt.modals.file_extension import FileExtensionModal
+from tagstudio.qt.modals.fix_dupes import FixDupeFilesModal
+from tagstudio.qt.modals.fix_unlinked import FixUnlinkedEntriesModal
+from tagstudio.qt.modals.folders_to_tags import FoldersToTagsModal
+from tagstudio.qt.modals.settings_panel import SettingsPanel
+from tagstudio.qt.modals.tag_color_manager import TagColorManager
+from tagstudio.qt.modals.tag_database import TagDatabasePanel
+from tagstudio.qt.modals.tag_search import TagSearchPanel
+from tagstudio.qt.platform_strings import trash_term
+from tagstudio.qt.resource_manager import ResourceManager
+from tagstudio.qt.splash import Splash
+from tagstudio.qt.translations import Translations
+from tagstudio.qt.widgets.item_thumb import BadgeType, ItemThumb
+from tagstudio.qt.widgets.migration_modal import JsonMigrationModal
+from tagstudio.qt.widgets.panel import PanelModal
+from tagstudio.qt.widgets.preview_panel import PreviewPanel
+from tagstudio.qt.widgets.progress import ProgressWidget
+from tagstudio.qt.widgets.thumb_renderer import ThumbRenderer
 
 BADGE_TAGS = {
     BadgeType.FAVORITE: TAG_FAVORITE,
@@ -151,11 +148,11 @@ class QtDriver(DriverMixin, QObject):
 
     lib: Library
 
-    def __init__(self, backend, args):
+    def __init__(self, args):
         super().__init__()
         # prevent recursive badges update when multiple items selected
         self.badge_update_lock = False
-        self.lib = backend.Library()
+        self.lib = Library()
         self.rm: ResourceManager = ResourceManager()
         self.args = args
         self.filter = FilterState.show_all()
@@ -259,7 +256,6 @@ class QtDriver(DriverMixin, QObject):
 
         app = QApplication(sys.argv)
         app.setStyle("Fusion")
-        icon_path = Path(__file__).parents[2] / "resources/icon.png"
 
         if QGuiApplication.styleHints().colorScheme() is Qt.ColorScheme.Dark:
             pal: QPalette = app.palette()
@@ -283,10 +279,10 @@ class QtDriver(DriverMixin, QObject):
         # self.main_window = loader.load(home_path)
         self.main_window = Ui_MainWindow(self)
         self.main_window.setWindowTitle(self.base_title)
-        self.main_window.mousePressEvent = self.mouse_navigation  # type: ignore[method-assign]
-        self.main_window.dragEnterEvent = self.drag_enter_event  # type: ignore[method-assign]
-        self.main_window.dragMoveEvent = self.drag_move_event  # type: ignore[method-assign]
-        self.main_window.dropEvent = self.drop_event  # type: ignore[method-assign]
+        self.main_window.mousePressEvent = self.mouse_navigation
+        self.main_window.dragEnterEvent = self.drag_enter_event
+        self.main_window.dragMoveEvent = self.drag_move_event
+        self.main_window.dropEvent = self.drop_event
 
         self.splash: Splash = Splash(
             resource_manager=self.rm,
@@ -302,7 +298,7 @@ class QtDriver(DriverMixin, QObject):
 
         if sys.platform != "darwin":
             icon = QIcon()
-            icon.addFile(str(icon_path))
+            icon.addFile(str(self.rm.get_path("icon")))
             app.setWindowIcon(icon)
 
         # Initialize the Tag Manager panel
@@ -646,7 +642,7 @@ class QtDriver(DriverMixin, QObject):
         splitter.addWidget(self.preview_panel)
 
         QFontDatabase.addApplicationFont(
-            str(Path(__file__).parents[2] / "resources/qt/fonts/Oxanium-Bold.ttf")
+            str(Path(__file__).parents[1] / "resources/qt/fonts/Oxanium-Bold.ttf")
         )
 
         # TODO this doesn't update when the language is changed
@@ -714,8 +710,8 @@ class QtDriver(DriverMixin, QObject):
                 )
             except ParsingError as e:
                 self.main_window.statusbar.showMessage(
-                    f"{Translations["status.results.invalid_syntax"]} "
-                    f"\"{self.main_window.searchField.text()}\""
+                    f"{Translations['status.results.invalid_syntax']} "
+                    f'"{self.main_window.searchField.text()}"'
                 )
                 logger.error("[QtDriver] Could not filter items", error=e)
 
@@ -1055,7 +1051,7 @@ class QtDriver(DriverMixin, QObject):
             )
             msg.setText(
                 f"<h3>{msg_text}</h3>"
-                f"<h4>{Translations["trash.dialog.disambiguation_warning.singular"]}</h4>"
+                f"<h4>{Translations['trash.dialog.disambiguation_warning.singular']}</h4>"
                 f"{filename if filename else ''}"
                 f"{perm_warning}<br>"
             )
@@ -1067,7 +1063,7 @@ class QtDriver(DriverMixin, QObject):
             )
             msg.setText(
                 f"<h3>{msg_text}</h3>"
-                f"<h4>{Translations["trash.dialog.disambiguation_warning.plural"]}</h4>"
+                f"<h4>{Translations['trash.dialog.disambiguation_warning.plural']}</h4>"
                 f"{perm_warning}<br>"
             )
 
@@ -1100,7 +1096,7 @@ class QtDriver(DriverMixin, QObject):
                         "library.refresh.scanning.plural"
                         if x + 1 != 1
                         else "library.refresh.scanning.singular",
-                        searched_count=f"{x+1:n}",
+                        searched_count=f"{x + 1:n}",
                         found_count=f"{tracker.files_count:n}",
                     )
                 ),
@@ -1150,7 +1146,7 @@ class QtDriver(DriverMixin, QObject):
                 pw.hide(),
                 pw.deleteLater(),
                 # refresh the library only when new items are added
-                files_count and self.filter_items(),
+                files_count and self.filter_items(),  # type: ignore
             )
         )
         QThreadPool.globalInstance().start(r)

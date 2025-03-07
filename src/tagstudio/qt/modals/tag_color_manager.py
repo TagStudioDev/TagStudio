@@ -19,19 +19,20 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
-from src.core.constants import RESERVED_NAMESPACE_PREFIX
-from src.core.enums import Theme
-from src.qt.modals.build_namespace import BuildNamespacePanel
-from src.qt.translations import Translations
-from src.qt.widgets.color_box import ColorBoxWidget
-from src.qt.widgets.fields import FieldContainer
-from src.qt.widgets.panel import PanelModal
+
+from tagstudio.core.constants import RESERVED_NAMESPACE_PREFIX
+from tagstudio.core.enums import Theme
+from tagstudio.qt.modals.build_namespace import BuildNamespacePanel
+from tagstudio.qt.translations import Translations
+from tagstudio.qt.widgets.color_box import ColorBoxWidget
+from tagstudio.qt.widgets.fields import FieldContainer
+from tagstudio.qt.widgets.panel import PanelModal
 
 logger = structlog.get_logger(__name__)
 
 # Only import for type checking/autocompletion, will not be imported at runtime.
 if TYPE_CHECKING:
-    from src.qt.ts_qt import QtDriver
+    from tagstudio.qt.ts_qt import QtDriver
 
 
 class TagColorManager(QWidget):
@@ -60,7 +61,7 @@ class TagColorManager(QWidget):
         self.title_label = QLabel()
         self.title_label.setObjectName("titleLabel")
         self.title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.title_label.setText(f"<h3>{Translations["color_manager.title"]}</h3>")
+        self.title_label.setText(f"<h3>{Translations['color_manager.title']}</h3>")
 
         self.scroll_layout = QVBoxLayout()
         self.scroll_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
@@ -81,7 +82,7 @@ class TagColorManager(QWidget):
         self.scroll_area.setFrameShape(QFrame.Shape.NoFrame)
 
         self.scroll_area.setStyleSheet(
-            "QWidget#entryScrollContainer{" f"background:{panel_bg_color};" "border-radius:6px;" "}"
+            f"QWidget#entryScrollContainer{{background:{panel_bg_color};border-radius:6px;}}"
         )
         self.scroll_area.setWidget(scroll_container)
 
@@ -108,7 +109,6 @@ class TagColorManager(QWidget):
         self.root_layout.addWidget(self.title_label)
         self.root_layout.addWidget(self.scroll_area)
         self.root_layout.addWidget(self.button_container)
-        logger.info(self.root_layout.dumpObjectTree())
 
     def setup_color_groups(self):
         all_default = True

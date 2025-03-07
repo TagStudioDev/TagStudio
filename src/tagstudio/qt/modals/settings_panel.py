@@ -5,9 +5,10 @@
 
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QComboBox, QFormLayout, QLabel, QVBoxLayout, QWidget
-from src.core.enums import SettingItems
-from src.qt.translations import Translations
-from src.qt.widgets.panel import PanelWidget
+
+from tagstudio.core.enums import SettingItems
+from tagstudio.qt.translations import Translations
+from tagstudio.qt.widgets.panel import PanelWidget
 
 
 class SettingsPanel(PanelWidget):

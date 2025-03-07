@@ -2,6 +2,7 @@
 # Licensed under the GPL-3.0 License.
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
+
 import math
 from pathlib import Path
 
@@ -9,13 +10,11 @@ import cv2
 import structlog
 from PIL import Image, ImageChops, UnidentifiedImageError
 from PIL.Image import DecompressionBombError
-from PySide6.QtCore import (
-    QObject,
-    Signal,
-)
-from src.core.library import Library
-from src.core.media_types import MediaCategories
-from src.qt.helpers.file_tester import is_readable_video
+from PySide6.QtCore import QObject, Signal
+
+from tagstudio.core.library.alchemy.library import Library
+from tagstudio.core.media_types import MediaCategories
+from tagstudio.qt.helpers.file_tester import is_readable_video
 
 logger = structlog.get_logger(__name__)
 
@@ -106,7 +105,7 @@ class CollageIconRenderer(QObject):
         except (UnidentifiedImageError, FileNotFoundError):
             logger.error("Couldn't read entry", entry=entry.path)
             with Image.open(
-                str(Path(__file__).parents[2] / "resources/qt/images/thumb_broken_512.png")
+                str(Path(__file__).parents[1] / "resources/qt/images/thumb_broken_512.png")
             ) as pic:
                 pic.thumbnail(size)
                 if data_tint_mode and color:

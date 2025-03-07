@@ -3,8 +3,8 @@
 # from tempfile import TemporaryDirectory
 
 # import pytest
-# from src.core.enums import MacroID
-# from src.core.library.alchemy.fields import _FieldID
+# from tagstudio.core.enums import MacroID
+# from tagstudio.core.library.alchemy.fields import _FieldID
 
 
 # @pytest.mark.parametrize("library", [TemporaryDirectory()], indirect=True)

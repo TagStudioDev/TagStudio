@@ -1,4 +1,4 @@
-from src.qt.widgets.preview_panel import PreviewPanel
+from tagstudio.qt.widgets.preview_panel import PreviewPanel
 
 
 def test_update_selection_empty(qt_driver, library):

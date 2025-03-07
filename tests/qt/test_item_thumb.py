@@ -1,6 +1,7 @@
 import pytest
-from src.core.library import ItemType
-from src.qt.widgets.item_thumb import BadgeType, ItemThumb
+
+from tagstudio.core.library.alchemy.enums import ItemType
+from tagstudio.qt.widgets.item_thumb import BadgeType, ItemThumb
 
 
 @pytest.mark.parametrize("new_value", (True, False))

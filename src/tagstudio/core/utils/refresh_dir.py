@@ -5,8 +5,10 @@ from pathlib import Path
 from time import time
 
 import structlog
-from src.core.constants import TS_FOLDER_NAME
-from src.core.library import Entry, Library
+
+from tagstudio.core.constants import TS_FOLDER_NAME
+from tagstudio.core.library.alchemy.library import Library
+from tagstudio.core.library.alchemy.models import Entry
 
 logger = structlog.get_logger(__name__)
 

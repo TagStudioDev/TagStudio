@@ -1,4 +1,4 @@
-from src.qt.modals.folders_to_tags import generate_preview_data
+from tagstudio.qt.modals.folders_to_tags import generate_preview_data
 
 
 def test_generate_preview_data(library, snapshot):

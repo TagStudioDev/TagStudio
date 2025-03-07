@@ -3,8 +3,9 @@ from dataclasses import dataclass, replace
 from pathlib import Path
 
 import structlog
-from src.core.query_lang import AST as Query  # noqa: N811
-from src.core.query_lang import Constraint, ConstraintType, Parser
+
+from tagstudio.core.query_lang.ast import AST, Constraint, ConstraintType
+from tagstudio.core.query_lang.parser import Parser
 
 MAX_SQL_VARIABLES = 32766  # 32766 is the max sql bind parameter count as defined here: https://github.com/sqlite/sqlite/blob/master/src/sqliteLimit.h#L140
 
@@ -80,7 +81,7 @@ class FilterState:
 
     # these should be erased on update
     # Abstract Syntax Tree Of the current Search Query
-    ast: Query = None
+    ast: AST = None
 
     @property
     def limit(self):

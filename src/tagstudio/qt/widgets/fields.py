@@ -13,25 +13,26 @@ from PIL import Image, ImageQt
 from PySide6.QtCore import QEvent, Qt
 from PySide6.QtGui import QEnterEvent, QPixmap, QResizeEvent
 from PySide6.QtWidgets import QHBoxLayout, QLabel, QPushButton, QVBoxLayout, QWidget
-from src.core.enums import Theme
+
+from tagstudio.core.enums import Theme
 
 logger = structlog.get_logger(__name__)
 
 
 class FieldContainer(QWidget):
-    # TODO: reference a resources folder rather than path.parents[3]?
+    # TODO: reference a resources folder rather than path.parents[2]?
     clipboard_icon_128: Image.Image = Image.open(
-        str(Path(__file__).parents[3] / "resources/qt/images/clipboard_icon_128.png")
+        str(Path(__file__).parents[2] / "resources/qt/images/clipboard_icon_128.png")
     ).resize((math.floor(24 * 1.25), math.floor(24 * 1.25)))
     clipboard_icon_128.load()
 
     edit_icon_128: Image.Image = Image.open(
-        str(Path(__file__).parents[3] / "resources/qt/images/edit_icon_128.png")
+        str(Path(__file__).parents[2] / "resources/qt/images/edit_icon_128.png")
     ).resize((math.floor(24 * 1.25), math.floor(24 * 1.25)))
     edit_icon_128.load()
 
     trash_icon_128: Image.Image = Image.open(
-        str(Path(__file__).parents[3] / "resources/qt/images/trash_icon_128.png")
+        str(Path(__file__).parents[2] / "resources/qt/images/trash_icon_128.png")
     ).resize((math.floor(24 * 1.25), math.floor(24 * 1.25)))
     trash_icon_128.load()
 

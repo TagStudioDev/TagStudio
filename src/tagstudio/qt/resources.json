@@ -7,7 +7,7 @@
     "path": "qt/images/splash/goo_gears.png",
     "mode": "qpixmap"
   },
-  "logo": {
+  "icon": {
     "path": "icon.png",
     "mode": "pil"
   },

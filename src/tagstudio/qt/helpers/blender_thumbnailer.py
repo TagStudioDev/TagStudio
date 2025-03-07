@@ -29,10 +29,7 @@ import os
 import struct
 from io import BufferedReader
 
-from PIL import (
-    Image,
-    ImageOps,
-)
+from PIL import Image, ImageOps
 
 
 def blend_extract_thumb(path):

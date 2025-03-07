@@ -2,6 +2,7 @@
 # Licensed under the GPL-3.0 License.
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
+
 import re
 import shutil
 import time
@@ -43,10 +44,8 @@ from sqlalchemy.orm import (
     make_transient,
     selectinload,
 )
-from src.core.library.json.library import Library as JsonLibrary  # type: ignore
-from src.qt.translations import Translations
 
-from ...constants import (
+from tagstudio.core.constants import (
     BACKUP_FOLDER_NAME,
     LEGACY_TAG_FIELD_IDS,
     RESERVED_NAMESPACE_PREFIX,
@@ -57,19 +56,35 @@ from ...constants import (
     TAG_META,
     TS_FOLDER_NAME,
 )
-from ...enums import LibraryPrefs
-from . import default_color_groups
-from .db import make_tables
-from .enums import MAX_SQL_VARIABLES, FieldTypeEnum, FilterState, SortingModeEnum
-from .fields import (
+from tagstudio.core.enums import LibraryPrefs
+from tagstudio.core.library.alchemy import default_color_groups
+from tagstudio.core.library.alchemy.db import make_tables
+from tagstudio.core.library.alchemy.enums import (
+    MAX_SQL_VARIABLES,
+    FieldTypeEnum,
+    FilterState,
+    SortingModeEnum,
+)
+from tagstudio.core.library.alchemy.fields import (
     BaseField,
     DatetimeField,
     TextField,
     _FieldID,
 )
-from .joins import TagEntry, TagParent
-from .models import Entry, Folder, Namespace, Preferences, Tag, TagAlias, TagColorGroup, ValueType
-from .visitors import SQLBoolExpressionBuilder
+from tagstudio.core.library.alchemy.joins import TagEntry, TagParent
+from tagstudio.core.library.alchemy.models import (
+    Entry,
+    Folder,
+    Namespace,
+    Preferences,
+    Tag,
+    TagAlias,
+    TagColorGroup,
+    ValueType,
+)
+from tagstudio.core.library.alchemy.visitors import SQLBoolExpressionBuilder
+from tagstudio.core.library.json.library import Library as JsonLibrary
+from tagstudio.qt.translations import Translations
 
 if TYPE_CHECKING:
     from sqlalchemy import Select
@@ -192,7 +207,7 @@ class Library:
     """Class for the Library object, and all CRUD operations made upon it."""
 
     library_dir: Path | None = None
-    storage_path: Path | str | None
+    storage_path: Path | None
     engine: Engine | None = None
     folder: Folder | None
     included_files: set[Path] = set()
@@ -291,7 +306,7 @@ class Library:
         self.set_prefs(LibraryPrefs.IS_EXCLUDE_LIST, json_lib.is_exclude_list)
 
         end_time = time.time()
-        logger.info(f"Library Converted! ({format_timespan(end_time-start_time)})")
+        logger.info(f"Library Converted! ({format_timespan(end_time - start_time)})")
 
     def get_field_name_from_id(self, field_id: int) -> _FieldID:
         for f in _FieldID:
@@ -316,7 +331,7 @@ class Library:
             else:
                 return tag.name
 
-    def open_library(self, library_dir: Path, storage_path: str | None = None) -> LibraryStatus:
+    def open_library(self, library_dir: Path, storage_path: Path | None = None) -> LibraryStatus:
         is_new: bool = True
         if storage_path == ":memory:":
             self.storage_path = storage_path
@@ -324,7 +339,6 @@ class Library:
             return self.open_sqlite_library(library_dir, is_new)
         else:
             self.storage_path = library_dir / TS_FOLDER_NAME / self.SQL_FILENAME
-
             if self.verify_ts_folder(library_dir) and (is_new := not self.storage_path.exists()):
                 json_path = library_dir / TS_FOLDER_NAME / self.JSON_FILENAME
                 if json_path.exists():
@@ -365,7 +379,7 @@ class Library:
                     select(Preferences).where(Preferences.key == LibraryPrefs.DB_VERSION.name)
                 )
                 if db_result:
-                    db_version = db_result.value  # type: ignore
+                    db_version = db_result.value
 
                 # NOTE: DB_VERSION 6 is the first supported SQL DB version.
                 if db_version < 6 or db_version > LibraryPrefs.DB_VERSION.default:
@@ -628,7 +642,7 @@ class Library:
             end_time = time.time()
             logger.info(
                 f"[Library] Time it took to get entry: "
-                f"{format_timespan(end_time-start_time, max_units=5)}",
+                f"{format_timespan(end_time - start_time, max_units=5)}",
                 with_fields=with_fields,
                 with_tags=with_tags,
             )
@@ -840,7 +854,7 @@ class Library:
             query_count = select(func.count()).select_from(statement.alias("entries"))
             count_all: int = session.execute(query_count).scalar()
             end_time = time.time()
-            logger.info(f"finished counting ({format_timespan(end_time-start_time)})")
+            logger.info(f"finished counting ({format_timespan(end_time - start_time)})")
 
             sort_on: ColumnExpressionArgument = Entry.id
             match search.sorting_mode:
@@ -1160,7 +1174,7 @@ class Library:
                 if tag:
                     tags.append(tag.id)
                 else:
-                    new = session.add(Tag(name=string))
+                    new = session.add(Tag(name=string))  # type: ignore
                     if new:
                         tags.append(new.id)
                         session.flush()
@@ -1348,7 +1362,7 @@ class Library:
         assert isinstance(self.library_dir, Path)
         makedirs(str(self.library_dir / TS_FOLDER_NAME / BACKUP_FOLDER_NAME), exist_ok=True)
 
-        filename = f'ts_library_backup_{datetime.now(UTC).strftime("%Y_%m_%d_%H%M%S")}.sqlite'
+        filename = f"ts_library_backup_{datetime.now(UTC).strftime('%Y_%m_%d_%H%M%S')}.sqlite"
 
         target_path = self.library_dir / TS_FOLDER_NAME / BACKUP_FOLDER_NAME / filename
 

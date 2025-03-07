@@ -20,15 +20,17 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
-from src.core.constants import TAG_ARCHIVED, TAG_FAVORITE
-from src.core.library import Library, Tag
-from src.core.library.alchemy.enums import TagColorEnum
-from src.core.palette import ColorType, get_tag_color
-from src.qt.flowlayout import FlowLayout
-from src.qt.translations import Translations
+
+from tagstudio.core.constants import TAG_ARCHIVED, TAG_FAVORITE
+from tagstudio.core.library.alchemy.enums import TagColorEnum
+from tagstudio.core.library.alchemy.library import Library
+from tagstudio.core.library.alchemy.models import Tag
+from tagstudio.core.palette import ColorType, get_tag_color
+from tagstudio.qt.flowlayout import FlowLayout
+from tagstudio.qt.translations import Translations
 
 if TYPE_CHECKING:
-    from src.qt.ts_qt import QtDriver
+    from tagstudio.qt.ts_qt import QtDriver
 
 logger = structlog.get_logger(__name__)
 
@@ -175,7 +177,7 @@ class FoldersToTagsModal(QWidget):
         self.title_widget = QLabel(Translations["folders_to_tags.title"])
         self.title_widget.setObjectName("title")
         self.title_widget.setWordWrap(True)
-        self.title_widget.setStyleSheet("font-weight:bold;" "font-size:14px;" "padding-top: 6px")
+        self.title_widget.setStyleSheet("font-weight:bold;font-size:14px;padding-top: 6px")
         self.title_widget.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         self.desc_widget = QLabel()

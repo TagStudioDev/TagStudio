@@ -7,11 +7,12 @@ from PIL import ImageQt
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QPixmap
 from PySide6.QtWidgets import QHBoxLayout, QLabel, QPushButton, QVBoxLayout, QWidget
-from src.core.constants import VERSION, VERSION_BRANCH
-from src.core.palette import ColorType, UiColor, get_ui_color
-from src.qt.modals.ffmpeg_checker import FfmpegChecker
-from src.qt.resource_manager import ResourceManager
-from src.qt.translations import Translations
+
+from tagstudio.core.constants import VERSION, VERSION_BRANCH
+from tagstudio.core.palette import ColorType, UiColor, get_ui_color
+from tagstudio.qt.modals.ffmpeg_checker import FfmpegChecker
+from tagstudio.qt.resource_manager import ResourceManager
+from tagstudio.qt.translations import Translations
 
 
 class AboutModal(QWidget):
@@ -31,7 +32,7 @@ class AboutModal(QWidget):
 
         self.logo_widget = QLabel()
         self.logo_widget.setObjectName("logo")
-        self.logo_pixmap = QPixmap.fromImage(ImageQt.ImageQt(self.rm.get("logo")))
+        self.logo_pixmap = QPixmap.fromImage(ImageQt.ImageQt(self.rm.get("icon")))
         self.logo_pixmap = self.logo_pixmap.scaledToWidth(
             128, Qt.TransformationMode.SmoothTransformation
         )

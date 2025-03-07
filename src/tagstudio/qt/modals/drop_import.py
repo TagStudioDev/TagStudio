@@ -2,6 +2,7 @@
 # Licensed under the GPL-3.0 License.
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
+
 import enum
 import shutil
 from pathlib import Path
@@ -11,12 +12,20 @@ import structlog
 from PySide6 import QtCore, QtGui
 from PySide6.QtCore import Qt, QUrl
 from PySide6.QtGui import QStandardItem, QStandardItemModel
-from PySide6.QtWidgets import QHBoxLayout, QLabel, QListView, QPushButton, QVBoxLayout, QWidget
-from src.qt.translations import Translations
-from src.qt.widgets.progress import ProgressWidget
+from PySide6.QtWidgets import (
+    QHBoxLayout,
+    QLabel,
+    QListView,
+    QPushButton,
+    QVBoxLayout,
+    QWidget,
+)
+
+from tagstudio.qt.translations import Translations
+from tagstudio.qt.widgets.progress import ProgressWidget
 
 if TYPE_CHECKING:
-    from src.qt.ts_qt import QtDriver
+    from tagstudio.qt.ts_qt import QtDriver
 
 logger = structlog.get_logger(__name__)
 

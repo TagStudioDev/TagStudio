@@ -2,6 +2,7 @@
 # Licensed under the GPL-3.0 License.
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
+
 import os
 import platform
 import typing
@@ -14,19 +15,16 @@ from humanfriendly import format_size
 from PIL import ImageFont
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QGuiApplication
-from PySide6.QtWidgets import (
-    QLabel,
-    QVBoxLayout,
-    QWidget,
-)
-from src.core.enums import Theme
-from src.core.library.alchemy.library import Library
-from src.core.media_types import MediaCategories
-from src.qt.helpers.file_opener import FileOpenerHelper, FileOpenerLabel
-from src.qt.translations import Translations
+from PySide6.QtWidgets import QLabel, QVBoxLayout, QWidget
+
+from tagstudio.core.enums import Theme
+from tagstudio.core.library.alchemy.library import Library
+from tagstudio.core.media_types import MediaCategories
+from tagstudio.qt.helpers.file_opener import FileOpenerHelper, FileOpenerLabel
+from tagstudio.qt.translations import Translations
 
 if typing.TYPE_CHECKING:
-    from src.qt.ts_qt import QtDriver
+    from tagstudio.qt.ts_qt import QtDriver
 
 logger = structlog.get_logger(__name__)
 
@@ -109,21 +107,20 @@ class FileAttributes(QWidget):
                 created = dt.fromtimestamp(filepath.stat().st_ctime)
             modified: dt = dt.fromtimestamp(filepath.stat().st_mtime)
             self.date_created_label.setText(
-                f"<b>{Translations["file.date_created"]}:</b> "
-                f"{dt.strftime(created, "%a, %x, %X")}"
+                f"<b>{Translations['file.date_created']}:</b> {dt.strftime(created, '%a, %x, %X')}"
             )
             self.date_modified_label.setText(
-                f"<b>{Translations["file.date_modified"]}:</b> "
-                f"{dt.strftime(modified, "%a, %x, %X")}"
+                f"<b>{Translations['file.date_modified']}:</b> "
+                f"{dt.strftime(modified, '%a, %x, %X')}"
             )
             self.date_created_label.setHidden(False)
             self.date_modified_label.setHidden(False)
         elif filepath:
             self.date_created_label.setText(
-                f"<b>{Translations["file.date_created"]}:</b> <i>N/A</i>"
+                f"<b>{Translations['file.date_created']}:</b> <i>N/A</i>"
             )
             self.date_modified_label.setText(
-                f"<b>{Translations["file.date_modified"]}:</b> <i>N/A</i>"
+                f"<b>{Translations['file.date_modified']}:</b> <i>N/A</i>"
             )
             self.date_created_label.setHidden(False)
             self.date_modified_label.setHidden(False)
@@ -139,7 +136,7 @@ class FileAttributes(QWidget):
         if not filepath:
             self.layout().setSpacing(0)
             self.file_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            self.file_label.setText(f"<i>{Translations["preview.no_selection"]}</i>")
+            self.file_label.setText(f"<i>{Translations['preview.no_selection']}</i>")
             self.file_label.set_file_path("")
             self.file_label.setCursor(Qt.CursorShape.ArrowCursor)
             self.dimensions_label.setText("")
@@ -155,9 +152,9 @@ class FileAttributes(QWidget):
             for i, part in enumerate(filepath.parts):
                 part_ = part.strip(os.path.sep)
                 if i != len(filepath.parts) - 1:
-                    file_str += f"{"\u200b".join(part_)}{separator}</b>"
+                    file_str += f"{'\u200b'.join(part_)}{separator}</b>"
                 else:
-                    file_str += f"<br><b>{"\u200b".join(part_)}</b>"
+                    file_str += f"<br><b>{'\u200b'.join(part_)}</b>"
             self.file_label.setText(file_str)
             self.file_label.setCursor(Qt.CursorShape.PointingHandCursor)
             self.opener = FileOpenerHelper(filepath)

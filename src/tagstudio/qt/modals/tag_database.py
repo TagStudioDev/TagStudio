@@ -2,14 +2,17 @@
 # Licensed under the GPL-3.0 License.
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
+
 import structlog
 from PySide6.QtWidgets import QMessageBox, QPushButton
-from src.core.constants import RESERVED_TAG_END, RESERVED_TAG_START
-from src.core.library import Library, Tag
-from src.qt.modals.build_tag import BuildTagPanel
-from src.qt.modals.tag_search import TagSearchPanel
-from src.qt.translations import Translations
-from src.qt.widgets.panel import PanelModal
+
+from tagstudio.core.constants import RESERVED_TAG_END, RESERVED_TAG_START
+from tagstudio.core.library.alchemy.library import Library
+from tagstudio.core.library.alchemy.models import Tag
+from tagstudio.qt.modals.build_tag import BuildTagPanel
+from tagstudio.qt.modals.tag_search import TagSearchPanel
+from tagstudio.qt.translations import Translations
+from tagstudio.qt.widgets.panel import PanelModal
 
 logger = structlog.get_logger(__name__)
 

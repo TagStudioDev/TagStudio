@@ -2,26 +2,16 @@
 # Licensed under the GPL-3.0 License.
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
+
 import math
 
 import structlog
 from PySide6.QtCore import QRect, Qt
-from PySide6.QtGui import (
-    QColor,
-    QFont,
-    QPainter,
-    QPen,
-    QPixmap,
-)
-from PySide6.QtWidgets import (
-    QSplashScreen,
-    QWidget,
-)
-from src.core.constants import (
-    VERSION,
-    VERSION_BRANCH,
-)
-from src.qt.resource_manager import ResourceManager
+from PySide6.QtGui import QColor, QFont, QPainter, QPen, QPixmap
+from PySide6.QtWidgets import QSplashScreen, QWidget
+
+from tagstudio.core.constants import VERSION, VERSION_BRANCH
+from tagstudio.qt.resource_manager import ResourceManager
 
 logger = structlog.get_logger(__name__)
 
@@ -32,7 +22,7 @@ class Splash:
     COPYRIGHT_YEARS: str = "2021-2025"
     COPYRIGHT_STR: str = f"© {COPYRIGHT_YEARS} Travis Abendshien (CyanVoxel)"
     VERSION_STR: str = (
-        f"Version {VERSION} {(" (" + VERSION_BRANCH + ")") if VERSION_BRANCH else ""}"
+        f"Version {VERSION} {(' (' + VERSION_BRANCH + ')') if VERSION_BRANCH else ''}"
     )
 
     SPLASH_CLASSIC: str = "classic"

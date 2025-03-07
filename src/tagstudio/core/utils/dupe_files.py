@@ -3,8 +3,10 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 import structlog
-from src.core.library import Entry, Library
-from src.core.library.alchemy.enums import FilterState
+
+from tagstudio.core.library.alchemy.enums import FilterState
+from tagstudio.core.library.alchemy.library import Library
+from tagstudio.core.library.alchemy.models import Entry
 
 logger = structlog.get_logger()
 

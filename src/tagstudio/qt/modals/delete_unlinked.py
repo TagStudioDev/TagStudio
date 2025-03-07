@@ -2,20 +2,29 @@
 # Licensed under the GPL-3.0 License.
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
+
 from typing import TYPE_CHECKING, override
 
 from PySide6 import QtCore, QtGui
 from PySide6.QtCore import Qt, QThreadPool, Signal
 from PySide6.QtGui import QStandardItem, QStandardItemModel
-from PySide6.QtWidgets import QHBoxLayout, QLabel, QListView, QPushButton, QVBoxLayout, QWidget
-from src.core.utils.missing_files import MissingRegistry
-from src.qt.helpers.custom_runnable import CustomRunnable
-from src.qt.translations import Translations
-from src.qt.widgets.progress import ProgressWidget
+from PySide6.QtWidgets import (
+    QHBoxLayout,
+    QLabel,
+    QListView,
+    QPushButton,
+    QVBoxLayout,
+    QWidget,
+)
+
+from tagstudio.core.utils.missing_files import MissingRegistry
+from tagstudio.qt.helpers.custom_runnable import CustomRunnable
+from tagstudio.qt.translations import Translations
+from tagstudio.qt.widgets.progress import ProgressWidget
 
 # Only import for type checking/autocompletion, will not be imported at runtime.
 if TYPE_CHECKING:
-    from src.qt.ts_qt import QtDriver
+    from tagstudio.qt.ts_qt import QtDriver
 
 
 class DeleteUnlinkedEntriesModal(QWidget):

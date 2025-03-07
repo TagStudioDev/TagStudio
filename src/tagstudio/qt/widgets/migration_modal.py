@@ -2,6 +2,7 @@
 # Licensed under the GPL-3.0 License.
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
+
 import traceback
 from pathlib import Path
 
@@ -20,22 +21,28 @@ from PySide6.QtWidgets import (
 )
 from sqlalchemy import select
 from sqlalchemy.orm import Session
-from src.core.constants import LEGACY_TAG_FIELD_IDS, TS_FOLDER_NAME
-from src.core.enums import LibraryPrefs
-from src.core.library.alchemy import default_color_groups
-from src.core.library.alchemy.joins import TagParent
-from src.core.library.alchemy.library import TAG_ARCHIVED, TAG_FAVORITE, TAG_META
-from src.core.library.alchemy.library import Library as SqliteLibrary
-from src.core.library.alchemy.models import Entry, TagAlias
-from src.core.library.json.library import Library as JsonLibrary  # type: ignore
-from src.core.library.json.library import Tag as JsonTag  # type: ignore
-from src.qt.helpers.custom_runnable import CustomRunnable
-from src.qt.helpers.function_iterator import FunctionIterator
-from src.qt.helpers.qbutton_wrapper import QPushButtonWrapper
-from src.qt.translations import Translations
-from src.qt.widgets.paged_panel.paged_body_wrapper import PagedBodyWrapper
-from src.qt.widgets.paged_panel.paged_panel import PagedPanel
-from src.qt.widgets.paged_panel.paged_panel_state import PagedPanelState
+
+from tagstudio.core.constants import (
+    LEGACY_TAG_FIELD_IDS,
+    TAG_ARCHIVED,
+    TAG_FAVORITE,
+    TAG_META,
+    TS_FOLDER_NAME,
+)
+from tagstudio.core.enums import LibraryPrefs
+from tagstudio.core.library.alchemy import default_color_groups
+from tagstudio.core.library.alchemy.joins import TagParent
+from tagstudio.core.library.alchemy.library import Library as SqliteLibrary
+from tagstudio.core.library.alchemy.models import Entry, TagAlias
+from tagstudio.core.library.json.library import Library as JsonLibrary
+from tagstudio.core.library.json.library import Tag as JsonTag
+from tagstudio.qt.helpers.custom_runnable import CustomRunnable
+from tagstudio.qt.helpers.function_iterator import FunctionIterator
+from tagstudio.qt.helpers.qbutton_wrapper import QPushButtonWrapper
+from tagstudio.qt.translations import Translations
+from tagstudio.qt.widgets.paged_panel.paged_body_wrapper import PagedBodyWrapper
+from tagstudio.qt.widgets.paged_panel.paged_panel import PagedPanel
+from tagstudio.qt.widgets.paged_panel.paged_panel_state import PagedPanelState
 
 logger = structlog.get_logger(__name__)
 
@@ -365,7 +372,7 @@ class JsonMigrationModal(QObject):
             iterator = FunctionIterator(self.migration_iterator)
             iterator.value.connect(
                 lambda x: (
-                    pb.setLabelText(f"<h4>{x}</h4>"),
+                    pb.setLabelText(f"<h4>{x}</h4>"),  # type: ignore
                     self.update_sql_value_ui(show_msg_box=False)
                     if x == Translations["json_migration.checking_for_parity"]
                     else (),
@@ -378,10 +385,10 @@ class JsonMigrationModal(QObject):
             r.done.connect(
                 lambda: (
                     self.update_sql_value_ui(show_msg_box=not skip_ui),
-                    pb.setMinimum(1),
-                    pb.setValue(1),
+                    pb.setMinimum(1),  # type: ignore
+                    pb.setValue(1),  # type: ignore
                     # Enable the finish button
-                    self.stack[1].buttons[4].setDisabled(False),  # type: ignore
+                    self.stack[1].buttons[4].setDisabled(False),
                 )
             )
             QThreadPool.globalInstance().start(r)
@@ -557,10 +564,10 @@ class JsonMigrationModal(QObject):
             if not sql_entry:
                 logger.info(
                     "[Field Comparison]",
-                    message=f"NEW  (SQL): SQL Entry ID mismatch: {json_entry.id+1}",
+                    message=f"NEW  (SQL): SQL Entry ID mismatch: {json_entry.id + 1}",
                 )
                 self.discrepancies.append(
-                    f"[Field Comparison]:\nNEW (SQL): SQL Entry ID not found: {json_entry.id+1}"
+                    f"[Field Comparison]:\nNEW (SQL): SQL Entry ID not found: {json_entry.id + 1}"
                 )
                 self.field_parity = False
                 return self.field_parity

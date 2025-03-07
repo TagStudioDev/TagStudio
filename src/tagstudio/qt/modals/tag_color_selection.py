@@ -17,14 +17,15 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
-from src.core.library import Library
-from src.core.library.alchemy.enums import TagColorEnum
-from src.core.library.alchemy.models import TagColorGroup
-from src.core.palette import ColorType, get_tag_color
-from src.qt.flowlayout import FlowLayout
-from src.qt.translations import Translations
-from src.qt.widgets.panel import PanelWidget
-from src.qt.widgets.tag import (
+
+from tagstudio.core.library.alchemy.enums import TagColorEnum
+from tagstudio.core.library.alchemy.library import Library
+from tagstudio.core.library.alchemy.models import TagColorGroup
+from tagstudio.core.palette import ColorType, get_tag_color
+from tagstudio.qt.flowlayout import FlowLayout
+from tagstudio.qt.translations import Translations
+from tagstudio.qt.widgets.panel import PanelWidget
+from tagstudio.qt.widgets.tag import (
     get_border_color,
     get_highlight_color,
     get_text_color,

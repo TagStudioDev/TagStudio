@@ -8,23 +8,20 @@ import typing
 import structlog
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QColor
-from PySide6.QtWidgets import (
-    QPushButton,
-    QVBoxLayout,
-    QWidget,
-)
-from src.core.library.alchemy.enums import TagColorEnum
-from src.core.library.alchemy.models import TagColorGroup
-from src.core.palette import ColorType, get_tag_color
-from src.qt.translations import Translations
-from src.qt.widgets.tag import (
+from PySide6.QtWidgets import QPushButton, QVBoxLayout, QWidget
+
+from tagstudio.core.library.alchemy.enums import TagColorEnum
+from tagstudio.core.library.alchemy.models import TagColorGroup
+from tagstudio.core.palette import ColorType, get_tag_color
+from tagstudio.qt.translations import Translations
+from tagstudio.qt.widgets.tag import (
     get_border_color,
     get_highlight_color,
     get_text_color,
 )
 
 if typing.TYPE_CHECKING:
-    from src.core.library import Library
+    from tagstudio.core.library.alchemy.library import Library
 
 logger = structlog.get_logger(__name__)
 

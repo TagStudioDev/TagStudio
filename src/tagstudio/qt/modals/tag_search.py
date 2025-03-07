@@ -4,10 +4,9 @@
 
 
 import contextlib
-from typing import TYPE_CHECKING, override
+from typing import TYPE_CHECKING
 from warnings import catch_warnings
 
-import src.qt.modals.build_tag as build_tag
 import structlog
 from PySide6 import QtCore, QtGui
 from PySide6.QtCore import QSize, Qt, Signal
@@ -23,21 +22,22 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
-from src.core.constants import RESERVED_TAG_END, RESERVED_TAG_START
-from src.core.library import Library, Tag
-from src.core.library.alchemy.enums import FilterState, TagColorEnum
-from src.core.palette import ColorType, get_tag_color
-from src.qt.translations import Translations
-from src.qt.widgets.panel import PanelModal, PanelWidget
-from src.qt.widgets.tag import (
-    TagWidget,
-)
+
+from tagstudio.core.constants import RESERVED_TAG_END, RESERVED_TAG_START
+from tagstudio.core.library.alchemy.enums import FilterState, TagColorEnum
+from tagstudio.core.library.alchemy.library import Library
+from tagstudio.core.library.alchemy.models import Tag
+from tagstudio.core.palette import ColorType, get_tag_color
+from tagstudio.qt.modals import build_tag
+from tagstudio.qt.translations import Translations
+from tagstudio.qt.widgets.panel import PanelModal, PanelWidget
+from tagstudio.qt.widgets.tag import TagWidget
 
 logger = structlog.get_logger(__name__)
 
 # Only import for type checking/autocompletion, will not be imported at runtime.
 if TYPE_CHECKING:
-    from src.qt.modals.build_tag import BuildTagPanel
+    from tagstudio.qt.modals.build_tag import BuildTagPanel
 
 
 class TagSearchPanel(PanelWidget):
@@ -262,7 +262,7 @@ class TagSearchPanel(PanelWidget):
                 self.scroll_layout.addWidget(new_tw)
 
         # Assign the tag to the widget at the given index.
-        tag_widget: TagWidget = self.scroll_layout.itemAt(index).widget()  # type: ignore
+        tag_widget: TagWidget = self.scroll_layout.itemAt(index).widget()
         tag_widget.set_tag(tag)
 
         # Set tag widget viability and potentially return early
@@ -336,7 +336,6 @@ class TagSearchPanel(PanelWidget):
         self.search_field.setFocus()
         return super().showEvent(event)
 
-    @override
     def keyPressEvent(self, event: QtGui.QKeyEvent) -> None:  # noqa N802
         # When Escape is pressed, focus back on the search box.
         # If focus is already on the search box, close the modal.

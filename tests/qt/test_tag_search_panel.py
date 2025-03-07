@@ -1,4 +1,4 @@
-from src.qt.modals.tag_search import TagSearchPanel
+from tagstudio.qt.modals.tag_search import TagSearchPanel
 
 
 def test_update_tags(qtbot, library):

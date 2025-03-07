@@ -5,21 +5,34 @@
 
 import logging
 import typing
-from PySide6.QtCore import (QCoreApplication, QMetaObject, QRect,QSize, Qt, QStringListModel)
-from PySide6.QtGui import QFont
-from PySide6.QtWidgets import (QComboBox, QFrame, QGridLayout,
-                               QHBoxLayout, QVBoxLayout, QLayout, QLineEdit, QMainWindow,
-                               QPushButton, QScrollArea, QSizePolicy,
-                               QStatusBar, QWidget, QSplitter, QCheckBox,
-                               QSpacerItem, QCompleter)
-from src.qt.pagination import Pagination
-from src.qt.widgets.landing import LandingWidget
 
-from src.qt.translations import Translations
+from PySide6.QtCore import QMetaObject, QRect, QSize, QStringListModel, Qt
+from PySide6.QtWidgets import (
+    QComboBox,
+    QCompleter,
+    QFrame,
+    QGridLayout,
+    QHBoxLayout,
+    QLayout,
+    QLineEdit,
+    QMainWindow,
+    QPushButton,
+    QScrollArea,
+    QSizePolicy,
+    QSpacerItem,
+    QSplitter,
+    QStatusBar,
+    QVBoxLayout,
+    QWidget,
+)
+
+from tagstudio.qt.pagination import Pagination
+from tagstudio.qt.translations import Translations
+from tagstudio.qt.widgets.landing import LandingWidget
 
 # Only import for type checking/autocompletion, will not be imported at runtime.
 if typing.TYPE_CHECKING:
-    from src.qt.ts_qt import QtDriver
+    from tagstudio.qt.ts_qt import QtDriver
 
 logging.basicConfig(format="%(message)s", level=logging.INFO)
 

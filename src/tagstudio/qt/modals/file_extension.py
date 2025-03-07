@@ -16,10 +16,11 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
-from src.core.enums import LibraryPrefs
-from src.core.library import Library
-from src.qt.translations import Translations
-from src.qt.widgets.panel import PanelWidget
+
+from tagstudio.core.enums import LibraryPrefs
+from tagstudio.core.library.alchemy.library import Library
+from tagstudio.qt.translations import Translations
+from tagstudio.qt.widgets.panel import PanelWidget
 
 
 class FileExtensionItemDelegate(QStyledItemDelegate):

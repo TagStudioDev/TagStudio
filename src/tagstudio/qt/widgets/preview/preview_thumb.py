@@ -14,26 +14,23 @@ import structlog
 from PIL import Image, UnidentifiedImageError
 from PySide6.QtCore import QBuffer, QByteArray, QSize, Qt
 from PySide6.QtGui import QAction, QMovie, QResizeEvent
-from PySide6.QtWidgets import (
-    QHBoxLayout,
-    QLabel,
-    QWidget,
-)
-from src.core.library.alchemy.library import Library
-from src.core.media_types import MediaCategories
-from src.qt.helpers.file_opener import FileOpenerHelper, open_file
-from src.qt.helpers.file_tester import is_readable_video
-from src.qt.helpers.qbutton_wrapper import QPushButtonWrapper
-from src.qt.helpers.rounded_pixmap_style import RoundedPixmapStyle
-from src.qt.platform_strings import open_file_str, trash_term
-from src.qt.resource_manager import ResourceManager
-from src.qt.translations import Translations
-from src.qt.widgets.media_player import MediaPlayer
-from src.qt.widgets.thumb_renderer import ThumbRenderer
-from src.qt.widgets.video_player import VideoPlayer
+from PySide6.QtWidgets import QHBoxLayout, QLabel, QWidget
+
+from tagstudio.core.library.alchemy.library import Library
+from tagstudio.core.media_types import MediaCategories
+from tagstudio.qt.helpers.file_opener import FileOpenerHelper, open_file
+from tagstudio.qt.helpers.file_tester import is_readable_video
+from tagstudio.qt.helpers.qbutton_wrapper import QPushButtonWrapper
+from tagstudio.qt.helpers.rounded_pixmap_style import RoundedPixmapStyle
+from tagstudio.qt.platform_strings import open_file_str, trash_term
+from tagstudio.qt.resource_manager import ResourceManager
+from tagstudio.qt.translations import Translations
+from tagstudio.qt.widgets.media_player import MediaPlayer
+from tagstudio.qt.widgets.thumb_renderer import ThumbRenderer
+from tagstudio.qt.widgets.video_player import VideoPlayer
 
 if typing.TYPE_CHECKING:
-    from src.qt.ts_qt import QtDriver
+    from tagstudio.qt.ts_qt import QtDriver
 
 logger = structlog.get_logger(__name__)
 

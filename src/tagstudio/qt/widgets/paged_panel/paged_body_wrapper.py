@@ -2,11 +2,9 @@
 # Licensed under the GPL-3.0 License.
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
+
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import (
-    QVBoxLayout,
-    QWidget,
-)
+from PySide6.QtWidgets import QVBoxLayout, QWidget
 
 
 class PagedBodyWrapper(QWidget):

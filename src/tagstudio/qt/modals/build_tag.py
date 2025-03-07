@@ -4,11 +4,11 @@
 
 
 import sys
-from typing import cast
+from typing import cast, override
 
 import structlog
 from PySide6.QtCore import Qt, Signal
-from PySide6.QtGui import QColor
+from PySide6.QtGui import QColor, QKeyEvent
 from PySide6.QtWidgets import (
     QApplication,
     QButtonGroup,
@@ -24,22 +24,23 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
-from src.core.library import Library, Tag
-from src.core.library.alchemy.enums import TagColorEnum
-from src.core.library.alchemy.models import TagColorGroup
-from src.core.palette import ColorType, UiColor, get_tag_color, get_ui_color
-from src.qt.modals.tag_color_selection import TagColorSelection
-from src.qt.modals.tag_search import TagSearchPanel
-from src.qt.translations import Translations
-from src.qt.widgets.panel import PanelModal, PanelWidget
-from src.qt.widgets.tag import (
+
+from tagstudio.core.library.alchemy.enums import TagColorEnum
+from tagstudio.core.library.alchemy.library import Library
+from tagstudio.core.library.alchemy.models import Tag, TagColorGroup
+from tagstudio.core.palette import ColorType, UiColor, get_tag_color, get_ui_color
+from tagstudio.qt.modals.tag_color_selection import TagColorSelection
+from tagstudio.qt.modals.tag_search import TagSearchPanel
+from tagstudio.qt.translations import Translations
+from tagstudio.qt.widgets.panel import PanelModal, PanelWidget
+from tagstudio.qt.widgets.tag import (
     TagWidget,
     get_border_color,
     get_highlight_color,
     get_primary_color,
     get_text_color,
 )
-from src.qt.widgets.tag_color_preview import TagColorPreview
+from tagstudio.qt.widgets.tag_color_preview import TagColorPreview
 
 logger = structlog.get_logger(__name__)
 
@@ -54,19 +55,20 @@ class CustomTableItem(QLineEdit):
     def set_id(self, id):
         self.id = id
 
-    def keyPressEvent(self, event):  # noqa: N802
-        if event.key() == Qt.Key.Key_Return or event.key() == Qt.Key.Key_Enter:
+    @override
+    def keyPressEvent(self, arg__1: QKeyEvent):  # noqa: N802
+        if arg__1.key() == Qt.Key.Key_Return or arg__1.key() == Qt.Key.Key_Enter:
             self.on_return()
-        elif event.key() == Qt.Key.Key_Backspace and self.text().strip() == "":
+        elif arg__1.key() == Qt.Key.Key_Backspace and self.text().strip() == "":
             self.on_backspace()
         else:
-            super().keyPressEvent(event)
+            super().keyPressEvent(arg__1)
 
 
 class BuildTagPanel(PanelWidget):
     on_edit = Signal(Tag)
 
-    def __init__(self, library: Library, tag: Tag | None = None):
+    def __init__(self, library: Library, tag: Tag | None = None) -> None:
         super().__init__()
         self.lib = library
         self.tag: Tag  # NOTE: This gets set at the end of the init.
@@ -469,7 +471,7 @@ class BuildTagPanel(PanelWidget):
     def _update_new_alias_name_dict(self):
         for i in range(0, self.aliases_table.rowCount()):
             widget = self.aliases_table.cellWidget(i, 1)
-            self.new_alias_names[widget.id] = widget.text()  # type: ignore
+            self.new_alias_names[widget.id] = widget.text()
 
     def _set_aliases(self):
         self._update_new_alias_name_dict()

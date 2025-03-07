@@ -4,11 +4,11 @@ TagStudio provides various methods to search your library, ranging from TagStudi
 
 ## Boolean Operators
 
-TagStudio allows you to use common [boolean search](https://en.wikipedia.org/wiki/Full-text_search#Boolean_queries) operators when searching your library, along with [grouping](#grouping-and-nesting), [nesting](#grouping-and-nesting), and [character escaping](#escaping-characters). Note that you may need to use grouping in order to get the desired results you're looking for.
+TagStudio allows you to use common [Boolean search](https://en.wikipedia.org/wiki/Full-text_search#Boolean_queries) operators when searching your library, along with [grouping](#grouping-and-nesting), [nesting](#grouping-and-nesting), and [character escaping](#escaping-characters). Note that you may need to use grouping in order to get the desired results you're looking for.
 
 ### AND
 
-The `AND` operator will only return results that match **both** sides of the operator. `AND` is used implicitly when no boolean operators are given. To use the `AND` operator explicitly, simply type "and" (case insensitive) in-between items of your search.
+The `AND` operator will only return results that match **both** sides of the operator. `AND` is used implicitly when no Boolean operators are given. To use the `AND` operator explicitly, simply type "and" (case insensitive) in-between items of your search.
 
 <!-- prettier-ignore -->
 !!! example
@@ -74,7 +74,7 @@ TagStudio uses a "[smartcase](https://neovim.io/doc/user/options.html#'smartcase
 
 #### Glob Syntax
 
-Optionally, you may use [glob](<https://en.wikipedia.org/wiki/Glob_(programming)>) syntax to search filepaths.
+Optionally, you may use [glob](https://en.wikipedia.org/wiki/Glob_(programming)) syntax to search filepaths.
 
 #### Examples
 

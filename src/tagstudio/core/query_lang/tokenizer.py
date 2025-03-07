@@ -1,8 +1,8 @@
 from enum import Enum
 from typing import Any
 
-from .ast import ConstraintType
-from .util import ParsingError
+from tagstudio.core.query_lang.ast import ConstraintType
+from tagstudio.core.query_lang.util import ParsingError
 
 
 class TokenType(Enum):

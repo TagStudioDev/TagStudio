@@ -2,10 +2,11 @@
 # Licensed under the GPL-3.0 License.
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
+
 from sqlalchemy import ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column
 
-from .db import Base
+from tagstudio.core.library.alchemy.db import Base
 
 
 class TagParent(Base):

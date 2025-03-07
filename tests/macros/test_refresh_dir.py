@@ -2,8 +2,9 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 
 import pytest
-from src.core.enums import LibraryPrefs
-from src.core.utils.refresh_dir import RefreshDirTracker
+
+from tagstudio.core.enums import LibraryPrefs
+from tagstudio.core.utils.refresh_dir import RefreshDirTracker
 
 CWD = Path(__file__).parent
 

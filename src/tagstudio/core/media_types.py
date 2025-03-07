@@ -16,35 +16,35 @@ FILETYPE_EQUIVALENTS = [set(["jpg", "jpeg"])]
 class MediaType(str, Enum):
     """Names of media types."""
 
-    ADOBE_PHOTOSHOP: str = "adobe_photoshop"
-    AFFINITY_PHOTO: str = "affinity_photo"
-    ARCHIVE: str = "archive"
-    AUDIO_MIDI: str = "audio_midi"
-    AUDIO: str = "audio"
-    BLENDER: str = "blender"
-    DATABASE: str = "database"
-    DISK_IMAGE: str = "disk_image"
-    DOCUMENT: str = "document"
-    EBOOK: str = "ebook"
-    FONT: str = "font"
-    IMAGE_ANIMATED: str = "image_animated"
-    IMAGE_RAW: str = "image_raw"
-    IMAGE_VECTOR: str = "image_vector"
-    IMAGE: str = "image"
-    INSTALLER: str = "installer"
-    MATERIAL: str = "material"
-    MODEL: str = "model"
-    OPEN_DOCUMENT: str = "open_document"
-    PACKAGE: str = "package"
-    PDF: str = "pdf"
-    PLAINTEXT: str = "plaintext"
-    PRESENTATION: str = "presentation"
-    PROGRAM: str = "program"
-    SHORTCUT: str = "shortcut"
-    SOURCE_ENGINE: str = "source_engine"
-    SPREADSHEET: str = "spreadsheet"
-    TEXT: str = "text"
-    VIDEO: str = "video"
+    ADOBE_PHOTOSHOP = "adobe_photoshop"
+    AFFINITY_PHOTO = "affinity_photo"
+    ARCHIVE = "archive"
+    AUDIO_MIDI = "audio_midi"
+    AUDIO = "audio"
+    BLENDER = "blender"
+    DATABASE = "database"
+    DISK_IMAGE = "disk_image"
+    DOCUMENT = "document"
+    EBOOK = "ebook"
+    FONT = "font"
+    IMAGE_ANIMATED = "image_animated"
+    IMAGE_RAW = "image_raw"
+    IMAGE_VECTOR = "image_vector"
+    IMAGE = "image"
+    INSTALLER = "installer"
+    MATERIAL = "material"
+    MODEL = "model"
+    OPEN_DOCUMENT = "open_document"
+    PACKAGE = "package"
+    PDF = "pdf"
+    PLAINTEXT = "plaintext"
+    PRESENTATION = "presentation"
+    PROGRAM = "program"
+    SHORTCUT = "shortcut"
+    SOURCE_ENGINE = "source_engine"
+    SPREADSHEET = "spreadsheet"
+    TEXT = "text"
+    VIDEO = "video"
 
 
 @dataclass(frozen=True)
@@ -337,188 +337,188 @@ class MediaCategories:
         ".wmv",
     }
 
-    ADOBE_PHOTOSHOP_TYPES: MediaCategory = MediaCategory(
+    ADOBE_PHOTOSHOP_TYPES = MediaCategory(
         media_type=MediaType.ADOBE_PHOTOSHOP,
         extensions=_ADOBE_PHOTOSHOP_SET,
         is_iana=False,
         name="photoshop",
     )
-    AFFINITY_PHOTO_TYPES: MediaCategory = MediaCategory(
+    AFFINITY_PHOTO_TYPES = MediaCategory(
         media_type=MediaType.AFFINITY_PHOTO,
         extensions=_AFFINITY_PHOTO_SET,
         is_iana=False,
         name="affinity photo",
     )
-    ARCHIVE_TYPES: MediaCategory = MediaCategory(
+    ARCHIVE_TYPES = MediaCategory(
         media_type=MediaType.ARCHIVE,
         extensions=_ARCHIVE_SET,
         is_iana=False,
         name="archive",
     )
-    AUDIO_MIDI_TYPES: MediaCategory = MediaCategory(
+    AUDIO_MIDI_TYPES = MediaCategory(
         media_type=MediaType.AUDIO_MIDI,
         extensions=_AUDIO_MIDI_SET,
         is_iana=False,
         name="audio midi",
     )
-    AUDIO_TYPES: MediaCategory = MediaCategory(
+    AUDIO_TYPES = MediaCategory(
         media_type=MediaType.AUDIO,
         extensions=_AUDIO_SET | _AUDIO_MIDI_SET,
         is_iana=True,
         name="audio",
     )
-    BLENDER_TYPES: MediaCategory = MediaCategory(
+    BLENDER_TYPES = MediaCategory(
         media_type=MediaType.BLENDER,
         extensions=_BLENDER_SET,
         is_iana=False,
         name="blender",
     )
-    DATABASE_TYPES: MediaCategory = MediaCategory(
+    DATABASE_TYPES = MediaCategory(
         media_type=MediaType.DATABASE,
         extensions=_DATABASE_SET,
         is_iana=False,
         name="database",
     )
-    DISK_IMAGE_TYPES: MediaCategory = MediaCategory(
+    DISK_IMAGE_TYPES = MediaCategory(
         media_type=MediaType.DISK_IMAGE,
         extensions=_DISK_IMAGE_SET,
         is_iana=False,
         name="disk image",
     )
-    DOCUMENT_TYPES: MediaCategory = MediaCategory(
+    DOCUMENT_TYPES = MediaCategory(
         media_type=MediaType.DOCUMENT,
         extensions=_DOCUMENT_SET,
         is_iana=False,
         name="document",
     )
-    EBOOK_TYPES: MediaCategory = MediaCategory(
+    EBOOK_TYPES = MediaCategory(
         media_type=MediaType.EBOOK,
         extensions=_EBOOK_SET,
         is_iana=False,
         name="ebook",
     )
-    FONT_TYPES: MediaCategory = MediaCategory(
+    FONT_TYPES = MediaCategory(
         media_type=MediaType.FONT,
         extensions=_FONT_SET,
         is_iana=True,
         name="font",
     )
-    IMAGE_ANIMATED_TYPES: MediaCategory = MediaCategory(
+    IMAGE_ANIMATED_TYPES = MediaCategory(
         media_type=MediaType.IMAGE_ANIMATED,
         extensions=_IMAGE_ANIMATED_SET,
         is_iana=False,
         name="animated image",
     )
-    IMAGE_RAW_TYPES: MediaCategory = MediaCategory(
+    IMAGE_RAW_TYPES = MediaCategory(
         media_type=MediaType.IMAGE_RAW,
         extensions=_IMAGE_RAW_SET,
         is_iana=False,
         name="raw image",
     )
-    IMAGE_VECTOR_TYPES: MediaCategory = MediaCategory(
+    IMAGE_VECTOR_TYPES = MediaCategory(
         media_type=MediaType.IMAGE_VECTOR,
         extensions=_IMAGE_VECTOR_SET,
         is_iana=False,
         name="vector image",
     )
-    IMAGE_RASTER_TYPES: MediaCategory = MediaCategory(
+    IMAGE_RASTER_TYPES = MediaCategory(
         media_type=MediaType.IMAGE,
         extensions=_IMAGE_RASTER_SET,
         is_iana=False,
         name="raster image",
     )
-    IMAGE_TYPES: MediaCategory = MediaCategory(
+    IMAGE_TYPES = MediaCategory(
         media_type=MediaType.IMAGE,
         extensions=_IMAGE_RASTER_SET | _IMAGE_RAW_SET | _IMAGE_VECTOR_SET,
         is_iana=True,
         name="image",
     )
-    INSTALLER_TYPES: MediaCategory = MediaCategory(
+    INSTALLER_TYPES = MediaCategory(
         media_type=MediaType.INSTALLER,
         extensions=_INSTALLER_SET,
         is_iana=False,
         name="installer",
     )
-    MATERIAL_TYPES: MediaCategory = MediaCategory(
+    MATERIAL_TYPES = MediaCategory(
         media_type=MediaType.MATERIAL,
         extensions=_MATERIAL_SET,
         is_iana=False,
         name="material",
     )
-    MODEL_TYPES: MediaCategory = MediaCategory(
+    MODEL_TYPES = MediaCategory(
         media_type=MediaType.MODEL,
         extensions=_MODEL_SET,
         is_iana=True,
         name="model",
     )
-    OPEN_DOCUMENT_TYPES: MediaCategory = MediaCategory(
+    OPEN_DOCUMENT_TYPES = MediaCategory(
         media_type=MediaType.OPEN_DOCUMENT,
         extensions=_OPEN_DOCUMENT_SET,
         is_iana=False,
         name="open document",
     )
-    PACKAGE_TYPES: MediaCategory = MediaCategory(
+    PACKAGE_TYPES = MediaCategory(
         media_type=MediaType.PACKAGE,
         extensions=_PACKAGE_SET,
         is_iana=False,
         name="package",
     )
-    PDF_TYPES: MediaCategory = MediaCategory(
+    PDF_TYPES = MediaCategory(
         media_type=MediaType.PDF,
         extensions=_PDF_SET,
         is_iana=False,
         name="pdf",
     )
-    PLAINTEXT_TYPES: MediaCategory = MediaCategory(
+    PLAINTEXT_TYPES = MediaCategory(
         media_type=MediaType.PLAINTEXT,
         extensions=_PLAINTEXT_SET,
         is_iana=False,
         name="plaintext",
     )
-    PRESENTATION_TYPES: MediaCategory = MediaCategory(
+    PRESENTATION_TYPES = MediaCategory(
         media_type=MediaType.PRESENTATION,
         extensions=_PRESENTATION_SET,
         is_iana=False,
         name="presentation",
     )
-    PROGRAM_TYPES: MediaCategory = MediaCategory(
+    PROGRAM_TYPES = MediaCategory(
         media_type=MediaType.PROGRAM,
         extensions=_PROGRAM_SET,
         is_iana=False,
         name="program",
     )
-    SHORTCUT_TYPES: MediaCategory = MediaCategory(
+    SHORTCUT_TYPES = MediaCategory(
         media_type=MediaType.SHORTCUT,
         extensions=_SHORTCUT_SET,
         is_iana=False,
         name="shortcut",
     )
-    SOURCE_ENGINE_TYPES: MediaCategory = MediaCategory(
+    SOURCE_ENGINE_TYPES = MediaCategory(
         media_type=MediaType.SOURCE_ENGINE,
         extensions=_SOURCE_ENGINE_SET,
         is_iana=False,
         name="source engine",
     )
-    SPREADSHEET_TYPES: MediaCategory = MediaCategory(
+    SPREADSHEET_TYPES = MediaCategory(
         media_type=MediaType.SPREADSHEET,
         extensions=_SPREADSHEET_SET,
         is_iana=False,
         name="spreadsheet",
     )
-    TEXT_TYPES: MediaCategory = MediaCategory(
+    TEXT_TYPES = MediaCategory(
         media_type=MediaType.TEXT,
         extensions=_DOCUMENT_SET | _PLAINTEXT_SET,
         is_iana=True,
         name="text",
     )
-    VIDEO_TYPES: MediaCategory = MediaCategory(
+    VIDEO_TYPES = MediaCategory(
         media_type=MediaType.VIDEO,
         extensions=_VIDEO_SET,
         is_iana=True,
         name="video",
     )
 
-    ALL_CATEGORIES: list[MediaCategory] = [
+    ALL_CATEGORIES = [
         ADOBE_PHOTOSHOP_TYPES,
         AFFINITY_PHOTO_TYPES,
         ARCHIVE_TYPES,

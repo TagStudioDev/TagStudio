@@ -3,6 +3,8 @@
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
 
+from typing import override
+
 import structlog
 from PySide6 import QtCore, QtGui
 from PySide6.QtCore import Qt, Signal
@@ -15,8 +17,9 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
-from src.core.library import Library
-from src.qt.translations import Translations
+
+from tagstudio.core.library.alchemy.library import Library
+from tagstudio.qt.translations import Translations
 
 logger = structlog.get_logger(__name__)
 
@@ -40,7 +43,7 @@ class AddFieldModal(QWidget):
         self.title_widget = QLabel(Translations["library.field.add"])
         self.title_widget.setObjectName("fieldTitle")
         self.title_widget.setWordWrap(True)
-        self.title_widget.setStyleSheet("font-weight:bold;" "font-size:14px;" "padding-top: 6px;")
+        self.title_widget.setStyleSheet("font-weight:bold;font-size:14px;padding-top: 6px;")
         self.title_widget.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         self.list_widget = QListWidget()
@@ -80,6 +83,7 @@ class AddFieldModal(QWidget):
 
         super().show()
 
+    @override
     def keyPressEvent(self, event: QtGui.QKeyEvent) -> None:  # noqa N802
         if event.key() == QtCore.Qt.Key.Key_Escape:
             self.cancel_button.click()

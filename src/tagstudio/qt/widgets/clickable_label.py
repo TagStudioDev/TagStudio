@@ -2,6 +2,7 @@
 # Licensed under the GPL-3.0 License.
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
+
 from PySide6.QtCore import Signal
 from PySide6.QtWidgets import QLabel
 

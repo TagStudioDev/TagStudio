@@ -2,18 +2,15 @@
 # Licensed under the GPL-3.0 License.
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
+
 from typing import override
 
 import structlog
 from PySide6 import QtCore, QtGui
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import (
-    QHBoxLayout,
-    QLabel,
-    QVBoxLayout,
-    QWidget,
-)
-from src.qt.widgets.paged_panel.paged_panel_state import PagedPanelState
+from PySide6.QtWidgets import QHBoxLayout, QLabel, QVBoxLayout, QWidget
+
+from tagstudio.qt.widgets.paged_panel.paged_panel_state import PagedPanelState
 
 logger = structlog.get_logger(__name__)
 

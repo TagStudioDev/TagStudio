@@ -7,10 +7,11 @@
 import json
 from pathlib import Path
 
-from src.core.constants import TS_FOLDER_NAME
-from src.core.library import Entry, Library
-from src.core.library.alchemy.fields import _FieldID
-from src.core.utils.missing_files import logger
+from tagstudio.core.constants import TS_FOLDER_NAME
+from tagstudio.core.library.alchemy.fields import _FieldID
+from tagstudio.core.library.alchemy.library import Library
+from tagstudio.core.library.alchemy.models import Entry
+from tagstudio.core.utils.missing_files import logger
 
 
 class TagStudioCore:

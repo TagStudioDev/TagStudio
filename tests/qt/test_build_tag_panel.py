@@ -1,6 +1,6 @@
-from src.core.library.alchemy.models import Tag
-from src.qt.modals.build_tag import BuildTagPanel
-from src.qt.translations import Translations
+from tagstudio.core.library.alchemy.models import Tag
+from tagstudio.qt.modals.build_tag import BuildTagPanel
+from tagstudio.qt.translations import Translations
 
 
 def test_build_tag_panel_add_sub_tag_callback(library, generate_tag):

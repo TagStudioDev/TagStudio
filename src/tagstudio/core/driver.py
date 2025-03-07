@@ -2,9 +2,10 @@ from pathlib import Path
 
 import structlog
 from PySide6.QtCore import QSettings
-from src.core.constants import TS_FOLDER_NAME
-from src.core.enums import SettingItems
-from src.core.library.alchemy.library import LibraryStatus
+
+from tagstudio.core.constants import TS_FOLDER_NAME
+from tagstudio.core.enums import SettingItems
+from tagstudio.core.library.alchemy.library import LibraryStatus
 
 logger = structlog.get_logger(__name__)
 

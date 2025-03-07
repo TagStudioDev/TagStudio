@@ -7,8 +7,9 @@ from pydub.utils import (
     fsdecode,
     get_extra_info,
 )
-from src.qt.helpers.silent_popen import silent_Popen
-from src.qt.helpers.vendored.ffmpeg import FFPROBE_CMD
+
+from tagstudio.qt.helpers.silent_popen import silent_Popen
+from tagstudio.qt.helpers.vendored.ffmpeg import FFPROBE_CMD
 
 
 def _mediainfo_json(filepath, read_ahead_limit=-1):

@@ -1,6 +1,8 @@
 # Copyright (C) 2025 Travis Abendshien (CyanVoxel).
 # Licensed under the GPL-3.0 License.
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
+
+
 import time
 import typing
 from enum import Enum
@@ -21,21 +23,20 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
-from src.core.constants import (
-    TAG_ARCHIVED,
-    TAG_FAVORITE,
-)
-from src.core.library import ItemType, Library
-from src.core.media_types import MediaCategories, MediaType
-from src.qt.flowlayout import FlowWidget
-from src.qt.helpers.file_opener import FileOpenerHelper
-from src.qt.platform_strings import open_file_str, trash_term
-from src.qt.translations import Translations
-from src.qt.widgets.thumb_button import ThumbButton
-from src.qt.widgets.thumb_renderer import ThumbRenderer
+
+from tagstudio.core.constants import TAG_ARCHIVED, TAG_FAVORITE
+from tagstudio.core.library.alchemy.enums import ItemType
+from tagstudio.core.library.alchemy.library import Library
+from tagstudio.core.media_types import MediaCategories, MediaType
+from tagstudio.qt.flowlayout import FlowWidget
+from tagstudio.qt.helpers.file_opener import FileOpenerHelper
+from tagstudio.qt.platform_strings import open_file_str, trash_term
+from tagstudio.qt.translations import Translations
+from tagstudio.qt.widgets.thumb_button import ThumbButton
+from tagstudio.qt.widgets.thumb_renderer import ThumbRenderer
 
 if TYPE_CHECKING:
-    from src.qt.ts_qt import QtDriver
+    from tagstudio.qt.ts_qt import QtDriver
 
 logger = structlog.get_logger(__name__)
 
@@ -76,12 +77,12 @@ class ItemThumb(FlowWidget):
     update_cutoff: float = time.time()
 
     collation_icon_128: Image.Image = Image.open(
-        str(Path(__file__).parents[3] / "resources/qt/images/collation_icon_128.png")
+        str(Path(__file__).parents[2] / "resources/qt/images/collation_icon_128.png")
     )
     collation_icon_128.load()
 
     tag_group_icon_128: Image.Image = Image.open(
-        str(Path(__file__).parents[3] / "resources/qt/images/tag_group_icon_128.png")
+        str(Path(__file__).parents[2] / "resources/qt/images/tag_group_icon_128.png")
     )
     tag_group_icon_128.load()
 
@@ -208,7 +209,7 @@ class ItemThumb(FlowWidget):
                 self.update_thumb(timestamp, image=image),
                 self.update_size(timestamp, size=size),
                 self.set_filename_text(filename),
-                self.set_extension(ext),
+                self.set_extension(ext),  # type: ignore
             )
         )
         self.thumb_button.setFlat(True)

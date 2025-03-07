@@ -1,6 +1,6 @@
-from src.core.library.alchemy.enums import FilterState
-from src.core.library.json.library import ItemType
-from src.qt.widgets.item_thumb import ItemThumb
+from tagstudio.core.library.alchemy.enums import FilterState
+from tagstudio.core.library.json.library import ItemType
+from tagstudio.qt.widgets.item_thumb import ItemThumb
 
 # def test_update_thumbs(qt_driver):
 #     qt_driver.frame_content = [

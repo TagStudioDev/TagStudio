@@ -9,13 +9,14 @@ from time import sleep
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QStandardItem, QStandardItemModel
 from PySide6.QtWidgets import QHBoxLayout, QLabel, QListView, QPushButton, QVBoxLayout, QWidget
-from src.core.utils.dupe_files import DupeRegistry
-from src.qt.translations import Translations
-from src.qt.widgets.progress import ProgressWidget
+
+from tagstudio.core.utils.dupe_files import DupeRegistry
+from tagstudio.qt.translations import Translations
+from tagstudio.qt.widgets.progress import ProgressWidget
 
 # Only import for type checking/autocompletion, will not be imported at runtime.
 if typing.TYPE_CHECKING:
-    from src.qt.ts_qt import QtDriver
+    from tagstudio.qt.ts_qt import QtDriver
 
 
 class MirrorEntriesModal(QWidget):

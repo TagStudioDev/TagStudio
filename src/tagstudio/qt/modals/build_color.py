@@ -19,20 +19,20 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
-from src.core import palette
-from src.core.library import Library
-from src.core.library.alchemy.enums import TagColorEnum
-from src.core.library.alchemy.library import slugify
-from src.core.library.alchemy.models import TagColorGroup
-from src.core.palette import ColorType, UiColor, get_tag_color, get_ui_color
-from src.qt.translations import Translations
-from src.qt.widgets.panel import PanelWidget
-from src.qt.widgets.tag import (
+
+from tagstudio.core import palette
+from tagstudio.core.library.alchemy.enums import TagColorEnum
+from tagstudio.core.library.alchemy.library import Library, slugify
+from tagstudio.core.library.alchemy.models import TagColorGroup
+from tagstudio.core.palette import ColorType, UiColor, get_tag_color, get_ui_color
+from tagstudio.qt.translations import Translations
+from tagstudio.qt.widgets.panel import PanelWidget
+from tagstudio.qt.widgets.tag import (
     get_border_color,
     get_highlight_color,
     get_text_color,
 )
-from src.qt.widgets.tag_color_preview import TagColorPreview
+from tagstudio.qt.widgets.tag_color_preview import TagColorPreview
 
 logger = structlog.get_logger(__name__)
 
@@ -317,7 +317,7 @@ class BuildColorPanel(PanelWidget):
 
     def update_preview_text(self):
         self.preview_button.button.setText(
-            f"{self.name_field.text().strip() or Translations["color.placeholder"]} "
+            f"{self.name_field.text().strip() or Translations['color.placeholder']} "
             f"({self.lib.get_namespace_name(self.color_group.namespace)})"
         )
         self.preview_button.button.setMaximumWidth(self.preview_button.button.sizeHint().width())
@@ -333,7 +333,7 @@ class BuildColorPanel(PanelWidget):
             if suffix:
                 try:
                     suffix_num: int = int(suffix)
-                    return self.no_collide(f"{split_slug[0]}-{suffix_num+1}")
+                    return self.no_collide(f"{split_slug[0]}-{suffix_num + 1}")
                 except ValueError:
                     return self.no_collide(f"{slug}-2")
             else:

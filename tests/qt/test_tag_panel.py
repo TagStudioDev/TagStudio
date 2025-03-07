@@ -1,5 +1,5 @@
-from src.core.library import Tag
-from src.qt.modals.build_tag import BuildTagPanel
+from tagstudio.core.library.alchemy.models import Tag
+from tagstudio.qt.modals.build_tag import BuildTagPanel
 
 
 def test_tag_panel(qtbot, library):

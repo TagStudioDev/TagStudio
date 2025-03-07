@@ -2,6 +2,7 @@
 # Licensed under the GPL-3.0 License.
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
+
 import sys
 import typing
 from collections.abc import Callable
@@ -20,29 +21,27 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
-from src.core.constants import (
-    TAG_ARCHIVED,
-    TAG_FAVORITE,
-)
-from src.core.enums import Theme
-from src.core.library.alchemy.fields import (
+
+from tagstudio.core.constants import TAG_ARCHIVED, TAG_FAVORITE
+from tagstudio.core.enums import Theme
+from tagstudio.core.library.alchemy.fields import (
     BaseField,
     DatetimeField,
     FieldTypeEnum,
     TextField,
 )
-from src.core.library.alchemy.library import Library
-from src.core.library.alchemy.models import Entry, Tag
-from src.qt.translations import Translations
-from src.qt.widgets.fields import FieldContainer
-from src.qt.widgets.panel import PanelModal
-from src.qt.widgets.tag_box import TagBoxWidget
-from src.qt.widgets.text import TextWidget
-from src.qt.widgets.text_box_edit import EditTextBox
-from src.qt.widgets.text_line_edit import EditTextLine
+from tagstudio.core.library.alchemy.library import Library
+from tagstudio.core.library.alchemy.models import Entry, Tag
+from tagstudio.qt.translations import Translations
+from tagstudio.qt.widgets.fields import FieldContainer
+from tagstudio.qt.widgets.panel import PanelModal
+from tagstudio.qt.widgets.tag_box import TagBoxWidget
+from tagstudio.qt.widgets.text import TextWidget
+from tagstudio.qt.widgets.text_box_edit import EditTextBox
+from tagstudio.qt.widgets.text_line_edit import EditTextLine
 
 if typing.TYPE_CHECKING:
-    from src.qt.ts_qt import QtDriver
+    from tagstudio.qt.ts_qt import QtDriver
 
 logger = structlog.get_logger(__name__)
 
@@ -98,10 +97,7 @@ class FieldContainers(QWidget):
         # rounded corners are maintained when scrolling. I was unable to
         # find the right trick to only select that particular element.
         self.scroll_area.setStyleSheet(
-            "QWidget#entryScrollContainer{"
-            f"background:{self.panel_bg_color};"
-            "border-radius:6px;"
-            "}"
+            f"QWidget#entryScrollContainer{{background:{self.panel_bg_color};border-radius:6px;}}"
         )
         self.scroll_area.setWidget(scroll_container)
 
@@ -323,14 +319,14 @@ class FieldContainers(QWidget):
                     window_title=f"Edit {field.type.type.value}",
                     save_callback=(
                         lambda content: (
-                            self.update_field(field, content),
+                            self.update_field(field, content),  # type: ignore
                             self.update_from_entry(self.cached_entries[0].id),
                         )
                     ),
                 )
                 if "pytest" in sys.modules:
                     # for better testability
-                    container.modal = modal  # type: ignore
+                    container.modal = modal
 
                 container.set_edit_callback(modal.show)
                 container.set_remove_callback(
@@ -362,7 +358,7 @@ class FieldContainers(QWidget):
                     window_title=f"Edit {field.type.name}",
                     save_callback=(
                         lambda content: (
-                            self.update_field(field, content),
+                            self.update_field(field, content),  # type: ignore
                             self.update_from_entry(self.cached_entries[0].id),
                         )
                     ),

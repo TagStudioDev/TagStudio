@@ -2,15 +2,13 @@
 # Licensed under the GPL-3.0 License.
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
+
 from pathlib import Path
 from typing import Any
 
 import structlog
 import ujson
-from PIL import (
-    Image,
-    ImageQt,
-)
+from PIL import Image, ImageQt
 from PySide6.QtGui import QPixmap
 
 logger = structlog.get_logger(__name__)
@@ -22,7 +20,7 @@ class ResourceManager:
     _map: dict = {}
     _cache: dict[str, Any] = {}
     _initialized: bool = False
-    _res_folder: Path = Path(__file__).parents[2]
+    _res_folder: Path = Path(__file__).parents[1]
 
     def __init__(self) -> None:
         # Load JSON resource map

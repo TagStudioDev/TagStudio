@@ -6,7 +6,8 @@
 from pathlib import Path
 
 import ffmpeg
-from src.qt.helpers.vendored.ffmpeg import _probe
+
+from tagstudio.qt.helpers.vendored.ffmpeg import _probe
 
 
 def is_readable_video(filepath: Path | str):

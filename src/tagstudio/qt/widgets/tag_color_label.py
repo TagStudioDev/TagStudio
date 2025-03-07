@@ -8,16 +8,12 @@ import typing
 import structlog
 from PySide6.QtCore import QEvent, Qt, Signal
 from PySide6.QtGui import QAction, QColor, QEnterEvent
-from PySide6.QtWidgets import (
-    QHBoxLayout,
-    QPushButton,
-    QVBoxLayout,
-    QWidget,
-)
-from src.core.library.alchemy.models import TagColorGroup
-from src.qt.helpers.escape_text import escape_text
-from src.qt.translations import Translations
-from src.qt.widgets.tag import (
+from PySide6.QtWidgets import QHBoxLayout, QPushButton, QVBoxLayout, QWidget
+
+from tagstudio.core.library.alchemy.models import TagColorGroup
+from tagstudio.qt.helpers.escape_text import escape_text
+from tagstudio.qt.translations import Translations
+from tagstudio.qt.widgets.tag import (
     get_border_color,
     get_highlight_color,
     get_text_color,
@@ -27,7 +23,7 @@ logger = structlog.get_logger(__name__)
 
 # Only import for type checking/autocompletion, will not be imported at runtime.
 if typing.TYPE_CHECKING:
-    from src.core.library.alchemy import Library
+    from tagstudio.core.library.alchemy.library import Library
 
 
 class TagColorLabel(QWidget):

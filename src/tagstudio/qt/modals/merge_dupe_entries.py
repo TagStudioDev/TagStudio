@@ -2,17 +2,19 @@
 # Licensed under the GPL-3.0 License.
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
+
 import typing
 
 from PySide6.QtCore import QObject, Signal
-from src.core.library import Library
-from src.core.utils.dupe_files import DupeRegistry
-from src.qt.translations import Translations
-from src.qt.widgets.progress import ProgressWidget
+
+from tagstudio.core.library.alchemy.library import Library
+from tagstudio.core.utils.dupe_files import DupeRegistry
+from tagstudio.qt.translations import Translations
+from tagstudio.qt.widgets.progress import ProgressWidget
 
 # Only import for type checking/autocompletion, will not be imported at runtime.
 if typing.TYPE_CHECKING:
-    from src.qt.ts_qt import QtDriver
+    from tagstudio.qt.ts_qt import QtDriver
 
 
 class MergeDuplicateEntries(QObject):

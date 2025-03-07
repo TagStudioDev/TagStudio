@@ -1,12 +1,14 @@
 # Copyright (C) 2025 Travis Abendshien (CyanVoxel).
 # Licensed under the GPL-3.0 License.
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
+
 import traceback
 from enum import IntEnum
 from typing import Any
 
 import structlog
-from src.core.library.alchemy.enums import TagColorEnum
+
+from tagstudio.core.library.alchemy.enums import TagColorEnum
 
 logger = structlog.get_logger(__name__)
 

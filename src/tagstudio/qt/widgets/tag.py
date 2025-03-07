@@ -9,24 +9,19 @@ from types import FunctionType
 import structlog
 from PySide6.QtCore import QEvent, Qt, Signal
 from PySide6.QtGui import QAction, QColor, QEnterEvent, QFontMetrics
-from PySide6.QtWidgets import (
-    QHBoxLayout,
-    QLineEdit,
-    QPushButton,
-    QVBoxLayout,
-    QWidget,
-)
-from src.core.library import Tag
-from src.core.library.alchemy.enums import TagColorEnum
-from src.core.palette import ColorType, get_tag_color
-from src.qt.helpers.escape_text import escape_text
-from src.qt.translations import Translations
+from PySide6.QtWidgets import QHBoxLayout, QLineEdit, QPushButton, QVBoxLayout, QWidget
+
+from tagstudio.core.library.alchemy.enums import TagColorEnum
+from tagstudio.core.library.alchemy.models import Tag
+from tagstudio.core.palette import ColorType, get_tag_color
+from tagstudio.qt.helpers.escape_text import escape_text
+from tagstudio.qt.translations import Translations
 
 logger = structlog.get_logger(__name__)
 
 # Only import for type checking/autocompletion, will not be imported at runtime.
 if typing.TYPE_CHECKING:
-    from src.core.library.alchemy import Library
+    from tagstudio.core.library.alchemy.library import Library
 
 
 class TagAliasWidget(QWidget):

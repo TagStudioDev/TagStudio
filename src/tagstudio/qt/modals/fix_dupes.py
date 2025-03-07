@@ -7,15 +7,23 @@ from typing import TYPE_CHECKING, override
 
 from PySide6 import QtCore, QtGui
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QFileDialog, QHBoxLayout, QLabel, QPushButton, QVBoxLayout, QWidget
-from src.core.library import Library
-from src.core.utils.dupe_files import DupeRegistry
-from src.qt.modals.mirror_entities import MirrorEntriesModal
-from src.qt.translations import Translations
+from PySide6.QtWidgets import (
+    QFileDialog,
+    QHBoxLayout,
+    QLabel,
+    QPushButton,
+    QVBoxLayout,
+    QWidget,
+)
+
+from tagstudio.core.library.alchemy.library import Library
+from tagstudio.core.utils.dupe_files import DupeRegistry
+from tagstudio.qt.modals.mirror_entities import MirrorEntriesModal
+from tagstudio.qt.translations import Translations
 
 # Only import for type checking/autocompletion, will not be imported at runtime.
 if TYPE_CHECKING:
-    from src.qt.ts_qt import QtDriver
+    from tagstudio.qt.ts_qt import QtDriver
 
 
 class FixDupeFilesModal(QWidget):
@@ -41,7 +49,7 @@ class FixDupeFilesModal(QWidget):
 
         self.dupe_count = QLabel()
         self.dupe_count.setObjectName("dupeCountLabel")
-        self.dupe_count.setStyleSheet("font-weight:bold;" "font-size:14px;" "")
+        self.dupe_count.setStyleSheet("font-weight:bold;font-size:14px;")
         self.dupe_count.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         self.file_label = QLabel(Translations["file.duplicates.dupeguru.no_file"])

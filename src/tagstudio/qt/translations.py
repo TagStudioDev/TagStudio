@@ -20,7 +20,7 @@ class Translator:
 
     def __get_translation_dict(self, lang: str) -> dict[str, str]:
         with open(
-            Path(__file__).parents[2] / "resources" / "translations" / f"{lang}.json",
+            Path(__file__).parents[1] / "resources" / "translations" / f"{lang}.json",
             encoding="utf-8",
         ) as f:
             return ujson.loads(f.read())

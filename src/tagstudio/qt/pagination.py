@@ -2,18 +2,14 @@
 # Licensed under the GPL-3.0 License.
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
+
 """A pagination widget created for TagStudio."""
 
 from PySide6.QtCore import QObject, QSize, Signal
 from PySide6.QtGui import QIntValidator
-from PySide6.QtWidgets import (
-    QHBoxLayout,
-    QLabel,
-    QLineEdit,
-    QSizePolicy,
-    QWidget,
-)
-from src.qt.helpers.qbutton_wrapper import QPushButtonWrapper
+from PySide6.QtWidgets import QHBoxLayout, QLabel, QLineEdit, QSizePolicy, QWidget
+
+from tagstudio.qt.helpers.qbutton_wrapper import QPushButtonWrapper
 
 
 class Pagination(QWidget, QObject):
@@ -215,7 +211,7 @@ class Pagination(QWidget, QObject):
                             str(i + 1)
                         )
                         self._assign_click(
-                            self.start_buffer_layout.itemAt(i - start_offset).widget(),  # type: ignore
+                            self.start_buffer_layout.itemAt(i - start_offset).widget(),
                             i,
                         )
                         sbc += 1
@@ -231,7 +227,7 @@ class Pagination(QWidget, QObject):
                             str(i + 1)
                         )
                         self._assign_click(
-                            self.end_buffer_layout.itemAt(i - end_offset).widget(),  # type: ignore
+                            self.end_buffer_layout.itemAt(i - end_offset).widget(),
                             i,
                         )
                     else:

@@ -8,16 +8,16 @@ from pathlib import Path
 from sqlalchemy import JSON, ForeignKey, ForeignKeyConstraint, Integer, event
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from ...constants import TAG_ARCHIVED, TAG_FAVORITE
-from .db import Base, PathType
-from .fields import (
+from tagstudio.core.constants import TAG_ARCHIVED, TAG_FAVORITE
+from tagstudio.core.library.alchemy.db import Base, PathType
+from tagstudio.core.library.alchemy.enums import FieldTypeEnum
+from tagstudio.core.library.alchemy.fields import (
     BaseField,
     BooleanField,
     DatetimeField,
-    FieldTypeEnum,
     TextField,
 )
-from .joins import TagParent
+from tagstudio.core.library.alchemy.joins import TagParent
 
 
 class Namespace(Base):
@@ -304,7 +304,7 @@ class ValueType(Base):
 def slugify_field_key(mapper, connection, target):
     """Slugify the field key before inserting into the database."""
     if not target.key:
-        from .library import slugify
+        from tagstudio.core.library.alchemy.library import slugify
 
         target.key = slugify(target.tag)
 

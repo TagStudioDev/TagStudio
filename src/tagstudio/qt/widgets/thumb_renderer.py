@@ -2,6 +2,7 @@
 # Licensed under the GPL-3.0 License.
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
+
 import contextlib
 import hashlib
 import math
@@ -43,23 +44,29 @@ from PySide6.QtCore import (
 from PySide6.QtGui import QGuiApplication, QImage, QPainter, QPixmap
 from PySide6.QtPdf import QPdfDocument, QPdfDocumentRenderOptions
 from PySide6.QtSvg import QSvgRenderer
-from src.core.constants import FONT_SAMPLE_SIZES, FONT_SAMPLE_TEXT, THUMB_CACHE_NAME, TS_FOLDER_NAME
-from src.core.exceptions import NoRendererError
-from src.core.media_types import MediaCategories, MediaType
-from src.core.palette import ColorType, UiColor, get_ui_color
-from src.core.utils.encoding import detect_char_encoding
-from src.qt.cache_manager import CacheManager
-from src.qt.helpers.blender_thumbnailer import blend_thumb
-from src.qt.helpers.color_overlay import theme_fg_overlay
-from src.qt.helpers.file_tester import is_readable_video
-from src.qt.helpers.gradient import four_corner_gradient
-from src.qt.helpers.image_effects import replace_transparent_pixels
-from src.qt.helpers.text_wrapper import wrap_full_text
-from src.qt.helpers.vendored.pydub.audio_segment import (  # type: ignore
+from vtf2img import Parser
+
+from tagstudio.core.constants import (
+    FONT_SAMPLE_SIZES,
+    FONT_SAMPLE_TEXT,
+    THUMB_CACHE_NAME,
+    TS_FOLDER_NAME,
+)
+from tagstudio.core.exceptions import NoRendererError
+from tagstudio.core.media_types import MediaCategories, MediaType
+from tagstudio.core.palette import ColorType, UiColor, get_ui_color
+from tagstudio.core.utils.encoding import detect_char_encoding
+from tagstudio.qt.cache_manager import CacheManager
+from tagstudio.qt.helpers.blender_thumbnailer import blend_thumb
+from tagstudio.qt.helpers.color_overlay import theme_fg_overlay
+from tagstudio.qt.helpers.file_tester import is_readable_video
+from tagstudio.qt.helpers.gradient import four_corner_gradient
+from tagstudio.qt.helpers.image_effects import replace_transparent_pixels
+from tagstudio.qt.helpers.text_wrapper import wrap_full_text
+from tagstudio.qt.helpers.vendored.pydub.audio_segment import (
     _AudioSegment as AudioSegment,
 )
-from src.qt.resource_manager import ResourceManager
-from vtf2img import Parser
+from tagstudio.qt.resource_manager import ResourceManager
 
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 

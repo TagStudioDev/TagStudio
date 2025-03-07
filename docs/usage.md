@@ -12,13 +12,13 @@ Libraries under 10,000 files automatically scan for new or modified files when o
 
 Access the "Add Tag" search box by either clicking on the "Add Tag" button at the bottom of the right sidebar, accessing the "Add Tags to Selected" option from the File menu, or by pressing <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>T</kbd>.
 
-From here you can search for existing tags or create a new one if the one you're looking for doesn't exist. Click the “+” button next to any tags you want to to the currently selected file entries. To quickly add the top result, press the <kbd>Enter</kbd>/<kbd>Return</kbd> key to add the the topmost tag and reset the tag search. Press <kbd>Enter</kbd>/<kbd>Return</kbd> once more to close the dialog box. By using this method, you can quickly add various tags in quick succession just by using the keyboard!
+From here you can search for existing tags or create a new one if the one you're looking for doesn't exist. Click the "+" button next to any tags you want to the currently selected file entries. To quickly add the top result, press the <kbd>Enter</kbd>/<kbd>Return</kbd> key to add the the topmost tag and reset the tag search. Press <kbd>Enter</kbd>/<kbd>Return</kbd> once more to close the dialog box. By using this method, you can quickly add various tags in quick succession just by using the keyboard!
 
 To remove a tag from a file entry, hover over the tag in the preview panel and click on the "-" icon that appears.
 
 ## Adding Metadata to File Entries
 
-To add a metadata field to a file entry, start by clicking the “Add Field” button at the bottom of the preview panel. From the dropdown menu, select the type of metadata field you’d like to add to the entry
+To add a metadata field to a file entry, start by clicking the "Add Field" button at the bottom of the preview panel. From the dropdown menu, select the type of metadata field you’d like to add to the entry
 
 ## Editing Metadata Fields
 
@@ -33,7 +33,7 @@ Create a new tag by accessing the "New Tag" option from the Edit menu or by pres
 -   The tag **name** is the base name of the tag. **_This does NOT have to be unique!_**
 -   The tag **shorthand** is a special type of alias that displays in situations where screen space is more valuable, notably with name disambiguation.
 -   **Aliases** are alternate names for a tag. These let you search for terms other than the exact tag name in order to find the tag again.
--   **Parent Tags** are tags in which this this tag can substitute for in searches. In other words, tags under this section are parents of this tag.
+-   **Parent Tags** are tags in which this tag can substitute for in searches. In other words, tags under this section are parents of this tag.
     -   Parent tags with the disambiguation check next to them will be used to help disambiguate tag names that may not be unique.
     -   For example: If you had a tag for "Freddy Fazbear", you might add "Five Nights at Freddy's" as one of the parent tags. If the disambiguation box is checked next to "Five Nights at Freddy's" parent tag, then the tag "Freddy Fazbear" will display as "Freddy Fazbear (Five Nights at Freddy's)". Furthermore, if the "Five Nights at Freddy's" tag has a shorthand like "FNAF", then the "Freddy Fazbear" tag will display as "Freddy Fazbear (FNAF)".
 -   The **color** option lets you select an optional color palette to use for your tag.
@@ -45,11 +45,11 @@ You can manage your library of tags from opening the "Tag Manager" panel from Ed
 
 ## Editing Tags
 
-To edit a tag, click on it inside the preview panel or right-click the tag and select “Edit Tag” from the context menu.
+To edit a tag, click on it inside the preview panel or right-click the tag and select "Edit Tag" from the context menu.
 
 ## Relinking Moved Files
 
-Inevitably some of the files inside your library will be renamed, moved, or deleted. If a file has been renamed or moved, TagStudio will display the thumbnail as a red broken chain link. To relink moved files or delete these entries, select the "Manage Unlinked Entries" option under the Tools menu. Click the "Refresh" button to scan your library for unlinked entries. Once complete, you can attempt to “Search & Relink” any unlinked file entries to their respective files, or “Delete Unlinked Entries” in the event the original files have been deleted and you no longer wish to keep their entries inside your library.
+Inevitably some of the files inside your library will be renamed, moved, or deleted. If a file has been renamed or moved, TagStudio will display the thumbnail as a red broken chain link. To relink moved files or delete these entries, select the "Manage Unlinked Entries" option under the Tools menu. Click the "Refresh" button to scan your library for unlinked entries. Once complete, you can attempt to "Search & Relink" any unlinked file entries to their respective files, or "Delete Unlinked Entries" in the event the original files have been deleted and you no longer wish to keep their entries inside your library.
 
 <!-- prettier-ignore -->
 !!! warning

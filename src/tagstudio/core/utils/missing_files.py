@@ -3,8 +3,10 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 import structlog
-from src.core.library import Entry, Library
-from src.core.utils.refresh_dir import GLOBAL_IGNORE_SET
+
+from tagstudio.core.library.alchemy.library import Library
+from tagstudio.core.library.alchemy.models import Entry
+from tagstudio.core.utils.refresh_dir import GLOBAL_IGNORE_SET
 
 logger = structlog.get_logger()
 

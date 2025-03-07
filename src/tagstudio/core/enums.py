@@ -70,6 +70,6 @@ class LibraryPrefs(DefaultEnum):
     """Library preferences with default value accessible via .default property."""
 
     IS_EXCLUDE_LIST = True
-    EXTENSION_LIST: list[str] = [".json", ".xmp", ".aae"]
-    PAGE_SIZE: int = 500
-    DB_VERSION: int = 8
+    EXTENSION_LIST = [".json", ".xmp", ".aae"]
+    PAGE_SIZE = 500
+    DB_VERSION = 8

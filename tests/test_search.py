@@ -1,7 +1,8 @@
 import pytest
-from src.core.library.alchemy.enums import FilterState
-from src.core.library.alchemy.library import Library
-from src.core.query_lang.util import ParsingError
+
+from tagstudio.core.library.alchemy.enums import FilterState
+from tagstudio.core.library.alchemy.library import Library
+from tagstudio.core.query_lang.util import ParsingError
 
 
 def verify_count(lib: Library, query: str, count: int):

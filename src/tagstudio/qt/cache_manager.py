@@ -9,15 +9,14 @@ from datetime import datetime as dt
 from pathlib import Path
 
 import structlog
-from PIL import (
-    Image,
-)
-from src.core.constants import THUMB_CACHE_NAME, TS_FOLDER_NAME
-from src.core.singleton import Singleton
+from PIL import Image
+
+from tagstudio.core.constants import THUMB_CACHE_NAME, TS_FOLDER_NAME
+from tagstudio.core.singleton import Singleton
 
 # Only import for type checking/autocompletion, will not be imported at runtime.
 if typing.TYPE_CHECKING:
-    from src.core.library import Library
+    from tagstudio.core.library import Library
 
 logger = structlog.get_logger(__name__)
 

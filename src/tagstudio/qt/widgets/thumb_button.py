@@ -17,7 +17,8 @@ from PySide6.QtGui import (
     QPen,
 )
 from PySide6.QtWidgets import QWidget
-from src.qt.helpers.qbutton_wrapper import QPushButtonWrapper
+
+from tagstudio.qt.helpers.qbutton_wrapper import QPushButtonWrapper
 
 
 class ThumbButton(QPushButtonWrapper):

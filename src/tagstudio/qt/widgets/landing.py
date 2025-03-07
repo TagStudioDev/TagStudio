@@ -12,13 +12,14 @@ from PIL import Image, ImageQt
 from PySide6.QtCore import QEasingCurve, QPoint, QPropertyAnimation, Qt
 from PySide6.QtGui import QPixmap
 from PySide6.QtWidgets import QLabel, QPushButton, QVBoxLayout, QWidget
-from src.qt.helpers.color_overlay import gradient_overlay, theme_fg_overlay
-from src.qt.translations import Translations
-from src.qt.widgets.clickable_label import ClickableLabel
+
+from tagstudio.qt.helpers.color_overlay import gradient_overlay, theme_fg_overlay
+from tagstudio.qt.translations import Translations
+from tagstudio.qt.widgets.clickable_label import ClickableLabel
 
 # Only import for type checking/autocompletion, will not be imported at runtime.
 if typing.TYPE_CHECKING:
-    from src.qt.ts_qt import QtDriver
+    from tagstudio.qt.ts_qt import QtDriver
 
 logging.basicConfig(format="%(message)s", level=logging.INFO)
 
@@ -41,7 +42,7 @@ class LandingWidget(QWidget):
         # Create landing logo --------------------------------------------------
         # self.landing_logo_pixmap = QPixmap(":/images/tagstudio_logo_text_mono.png")
         self.logo_raw: Image.Image = Image.open(
-            Path(__file__).parents[3] / "resources/qt/images/tagstudio_logo_text_mono.png"
+            Path(__file__).parents[2] / "resources/qt/images/tagstudio_logo_text_mono.png"
         )
         self.landing_pixmap: QPixmap = QPixmap()
         self.update_logo_color()

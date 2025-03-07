@@ -22,7 +22,7 @@ from PySide6.QtWidgets import (
 )
 
 if typing.TYPE_CHECKING:
-    from src.qt.ts_qt import QtDriver
+    from tagstudio.qt.ts_qt import QtDriver
 
 
 class MediaPlayer(QWidget):

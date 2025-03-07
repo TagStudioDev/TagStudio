@@ -1,6 +1,14 @@
-from .ast import AST, ANDList, Constraint, Not, ORList, Property
-from .tokenizer import ConstraintType, Token, Tokenizer, TokenType
-from .util import ParsingError
+from tagstudio.core.query_lang.ast import (
+    AST,
+    ANDList,
+    Constraint,
+    ConstraintType,
+    Not,
+    ORList,
+    Property,
+)
+from tagstudio.core.query_lang.tokenizer import Token, Tokenizer, TokenType
+from tagstudio.core.query_lang.util import ParsingError
 
 
 class Parser:

@@ -8,17 +8,18 @@ from typing import TYPE_CHECKING, override
 from PySide6 import QtCore, QtGui
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QHBoxLayout, QLabel, QPushButton, QVBoxLayout, QWidget
-from src.core.library import Library
-from src.core.utils.missing_files import MissingRegistry
-from src.qt.modals.delete_unlinked import DeleteUnlinkedEntriesModal
-from src.qt.modals.merge_dupe_entries import MergeDuplicateEntries
-from src.qt.modals.relink_unlinked import RelinkUnlinkedEntries
-from src.qt.translations import Translations
-from src.qt.widgets.progress import ProgressWidget
+
+from tagstudio.core.library.alchemy.library import Library
+from tagstudio.core.utils.missing_files import MissingRegistry
+from tagstudio.qt.modals.delete_unlinked import DeleteUnlinkedEntriesModal
+from tagstudio.qt.modals.merge_dupe_entries import MergeDuplicateEntries
+from tagstudio.qt.modals.relink_unlinked import RelinkUnlinkedEntries
+from tagstudio.qt.translations import Translations
+from tagstudio.qt.widgets.progress import ProgressWidget
 
 # Only import for type checking/autocompletion, will not be imported at runtime.
 if TYPE_CHECKING:
-    from src.qt.ts_qt import QtDriver
+    from tagstudio.qt.ts_qt import QtDriver
 
 
 class FixUnlinkedEntriesModal(QWidget):
@@ -44,12 +45,12 @@ class FixUnlinkedEntriesModal(QWidget):
 
         self.missing_count_label = QLabel()
         self.missing_count_label.setObjectName("missingCountLabel")
-        self.missing_count_label.setStyleSheet("font-weight:bold;" "font-size:14px;")
+        self.missing_count_label.setStyleSheet("font-weight:bold;font-size:14px;")
         self.missing_count_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         self.dupe_count_label = QLabel()
         self.dupe_count_label.setObjectName("dupeCountLabel")
-        self.dupe_count_label.setStyleSheet("font-weight:bold;" "font-size:14px;")
+        self.dupe_count_label.setStyleSheet("font-weight:bold;font-size:14px;")
         self.dupe_count_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         self.refresh_unlinked_button = QPushButton(Translations["entries.unlinked.refresh_all"])

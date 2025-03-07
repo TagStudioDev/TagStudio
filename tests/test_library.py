@@ -2,11 +2,12 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 
 import pytest
-from src.core.enums import DefaultEnum, LibraryPrefs
-from src.core.library.alchemy import Entry, Library
-from src.core.library.alchemy.enums import FilterState
-from src.core.library.alchemy.fields import TextField, _FieldID
-from src.core.library.alchemy.models import Tag
+
+from tagstudio.core.enums import DefaultEnum, LibraryPrefs
+from tagstudio.core.library.alchemy.enums import FilterState
+from tagstudio.core.library.alchemy.fields import TextField, _FieldID
+from tagstudio.core.library.alchemy.library import Library
+from tagstudio.core.library.alchemy.models import Entry, Tag
 
 
 def test_library_add_alias(library, generate_tag):

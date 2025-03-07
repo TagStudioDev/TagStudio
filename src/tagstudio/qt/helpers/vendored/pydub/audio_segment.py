@@ -17,7 +17,8 @@ from tempfile import NamedTemporaryFile
 
 from pydub.logging_utils import log_conversion, log_subprocess_output
 from pydub.utils import fsdecode
-from src.qt.helpers.vendored.ffmpeg import FFMPEG_CMD
+
+from tagstudio.qt.helpers.vendored.ffmpeg import FFMPEG_CMD
 
 try:
     from itertools import izip
@@ -40,8 +41,9 @@ from pydub.utils import (
     get_array_type,
     ratio_to_db,
 )
-from src.qt.helpers.silent_popen import silent_Popen
-from src.qt.helpers.vendored.pydub.utils import _mediainfo_json
+
+from tagstudio.qt.helpers.silent_popen import silent_Popen
+from tagstudio.qt.helpers.vendored.pydub.utils import _mediainfo_json
 
 basestring = str
 xrange = range
@@ -361,11 +363,11 @@ class _AudioSegment:
         """Permit use of sum() builtin with an iterable of AudioSegments."""
         if rarg == 0:
             return self
-        raise TypeError("Gains must be the second addend after the " "AudioSegment")
+        raise TypeError("Gains must be the second addend after the AudioSegment")
 
     def __sub__(self, arg):
         if isinstance(arg, _AudioSegment):
-            raise TypeError("AudioSegment objects can't be subtracted from " "each other")
+            raise TypeError("AudioSegment objects can't be subtracted from each other")
         else:
             return self.apply_gain(-arg)
 
@@ -1345,8 +1347,7 @@ class _AudioSegment:
         """
         if None not in [duration, end, start]:
             raise TypeError(
-                'Only two of the three arguments, "start", '
-                '"end", and "duration" may be specified'
+                'Only two of the three arguments, "start", "end", and "duration" may be specified'
             )
 
         # no fade == the same audio

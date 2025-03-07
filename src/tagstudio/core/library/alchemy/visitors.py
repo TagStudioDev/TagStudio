@@ -9,18 +9,25 @@ import structlog
 from sqlalchemy import ColumnElement, and_, distinct, func, or_, select, text
 from sqlalchemy.orm import Session
 from sqlalchemy.sql.operators import ilike_op
-from src.core.media_types import FILETYPE_EQUIVALENTS, MediaCategories
-from src.core.query_lang import BaseVisitor
-from src.core.query_lang.ast import ANDList, Constraint, ConstraintType, Not, ORList, Property
 
-from .joins import TagEntry
-from .models import Entry, Tag, TagAlias
+from tagstudio.core.library.alchemy.joins import TagEntry
+from tagstudio.core.library.alchemy.models import Entry, Tag, TagAlias
+from tagstudio.core.media_types import FILETYPE_EQUIVALENTS, MediaCategories
+from tagstudio.core.query_lang.ast import (
+    ANDList,
+    BaseVisitor,
+    Constraint,
+    ConstraintType,
+    Not,
+    ORList,
+    Property,
+)
 
 # Only import for type checking/autocompletion, will not be imported at runtime.
 if TYPE_CHECKING:
-    from .library import Library
+    from tagstudio.core.library.alchemy.library import Library
 else:
-    Library = None  # don't import .library because of circular imports
+    Library = None  # don't import library because of circular imports
 
 logger = structlog.get_logger(__name__)
 

@@ -6,7 +6,8 @@ import structlog
 from PySide6.QtCore import Qt, QUrl
 from PySide6.QtGui import QDesktopServices
 from PySide6.QtWidgets import QMessageBox
-from src.qt.helpers.vendored.ffmpeg import FFMPEG_CMD, FFPROBE_CMD
+
+from tagstudio.qt.helpers.vendored.ffmpeg import FFMPEG_CMD, FFPROBE_CMD
 
 logger = structlog.get_logger(__name__)
 

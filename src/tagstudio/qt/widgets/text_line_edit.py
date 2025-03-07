@@ -1,10 +1,13 @@
 # Copyright (C) 2025 Travis Abendshien (CyanVoxel).
 # Licensed under the GPL-3.0 License.
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
+
+
 from typing import Callable
 
 from PySide6.QtWidgets import QLineEdit, QVBoxLayout
-from src.qt.widgets.panel import PanelWidget
+
+from tagstudio.qt.widgets.panel import PanelWidget
 
 
 class EditTextLine(PanelWidget):

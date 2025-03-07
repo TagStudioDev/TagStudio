@@ -5,7 +5,7 @@
 
 import structlog
 
-from .models import Namespace, TagColorGroup
+from tagstudio.core.library.alchemy.models import Namespace, TagColorGroup
 
 logger = structlog.get_logger(__name__)
 

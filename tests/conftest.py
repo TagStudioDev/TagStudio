@@ -9,9 +9,9 @@ CWD = Path(__file__).parent
 # this needs to be above `src` imports
 sys.path.insert(0, str(CWD.parent))
 
-from src.core.library import Entry, Library, Tag
-from src.core.library import alchemy as backend
-from src.qt.ts_qt import QtDriver
+from tagstudio.core.library.alchemy.library import Library
+from tagstudio.core.library.alchemy.models import Entry, Tag
+from tagstudio.qt.ts_qt import QtDriver
 
 
 @pytest.fixture
@@ -137,8 +137,8 @@ def qt_driver(qtbot, library):
             open = Path(tmp_dir)
             ci = True
 
-        with patch("src.qt.ts_qt.Consumer"), patch("src.qt.ts_qt.CustomRunnable"):
-            driver = QtDriver(backend, Args())
+        with patch("tagstudio.qt.ts_qt.Consumer"), patch("tagstudio.qt.ts_qt.CustomRunnable"):
+            driver = QtDriver(Args())
 
             driver.main_window = Mock()
             driver.preview_panel = Mock()

@@ -15,26 +15,19 @@ from PySide6.QtCore import (
     QUrl,
     QVariantAnimation,
 )
-from PySide6.QtGui import (
-    QAction,
-    QBitmap,
-    QBrush,
-    QColor,
-    QPen,
-    QRegion,
-    QResizeEvent,
-)
+from PySide6.QtGui import QAction, QBitmap, QBrush, QColor, QPen, QRegion, QResizeEvent
 from PySide6.QtMultimedia import QAudioOutput, QMediaDevices, QMediaPlayer
 from PySide6.QtMultimediaWidgets import QGraphicsVideoItem
 from PySide6.QtSvgWidgets import QSvgWidget
 from PySide6.QtWidgets import QGraphicsScene, QGraphicsView
-from src.core.enums import SettingItems
-from src.qt.helpers.file_opener import FileOpenerHelper
-from src.qt.platform_strings import open_file_str
-from src.qt.translations import Translations
+
+from tagstudio.core.enums import SettingItems
+from tagstudio.qt.helpers.file_opener import FileOpenerHelper
+from tagstudio.qt.platform_strings import open_file_str
+from tagstudio.qt.translations import Translations
 
 if typing.TYPE_CHECKING:
-    from src.qt.ts_qt import QtDriver
+    from tagstudio.qt.ts_qt import QtDriver
 
 
 class VideoPlayer(QGraphicsView):
@@ -120,7 +113,7 @@ class VideoPlayer(QGraphicsView):
         autoplay_action.setCheckable(True)
         self.addAction(autoplay_action)
         autoplay_action.setChecked(
-            self.driver.settings.value(SettingItems.AUTOPLAY, defaultValue=True, type=bool)  # type: ignore
+            self.driver.settings.value(SettingItems.AUTOPLAY, defaultValue=True, type=bool)
         )
         autoplay_action.triggered.connect(lambda: self.toggle_autoplay())
         self.autoplay = autoplay_action

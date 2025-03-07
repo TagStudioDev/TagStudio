@@ -2,6 +2,7 @@
 # Licensed under the GPL-3.0 License.
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
+
 from __future__ import annotations
 
 from dataclasses import dataclass, field
@@ -11,11 +12,11 @@ from typing import TYPE_CHECKING, Any
 from sqlalchemy import ForeignKey
 from sqlalchemy.orm import Mapped, declared_attr, mapped_column, relationship
 
-from .db import Base
-from .enums import FieldTypeEnum
+from tagstudio.core.library.alchemy.db import Base
+from tagstudio.core.library.alchemy.enums import FieldTypeEnum
 
 if TYPE_CHECKING:
-    from .models import Entry, ValueType
+    from tagstudio.core.library.alchemy.models import Entry, ValueType
 
 
 class BaseField(Base):

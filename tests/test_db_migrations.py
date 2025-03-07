@@ -2,12 +2,14 @@
 # Licensed under the GPL-3.0 License.
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
+
 import shutil
 from pathlib import Path
 
 import pytest
-from src.core.constants import TS_FOLDER_NAME
-from src.core.library.alchemy.library import Library
+
+from tagstudio.core.constants import TS_FOLDER_NAME
+from tagstudio.core.library.alchemy.library import Library
 
 CWD = Path(__file__)
 FIXTURES = "fixtures"

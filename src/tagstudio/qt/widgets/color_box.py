@@ -9,19 +9,20 @@ from collections.abc import Iterable
 import structlog
 from PySide6.QtCore import Signal
 from PySide6.QtWidgets import QMessageBox, QPushButton
-from src.core.constants import RESERVED_NAMESPACE_PREFIX
-from src.core.library.alchemy.enums import TagColorEnum
-from src.core.library.alchemy.models import TagColorGroup
-from src.core.palette import ColorType, get_tag_color
-from src.qt.flowlayout import FlowLayout
-from src.qt.modals.build_color import BuildColorPanel
-from src.qt.translations import Translations
-from src.qt.widgets.fields import FieldWidget
-from src.qt.widgets.panel import PanelModal
-from src.qt.widgets.tag_color_label import TagColorLabel
+
+from tagstudio.core.constants import RESERVED_NAMESPACE_PREFIX
+from tagstudio.core.library.alchemy.enums import TagColorEnum
+from tagstudio.core.library.alchemy.models import TagColorGroup
+from tagstudio.core.palette import ColorType, get_tag_color
+from tagstudio.qt.flowlayout import FlowLayout
+from tagstudio.qt.modals.build_color import BuildColorPanel
+from tagstudio.qt.translations import Translations
+from tagstudio.qt.widgets.fields import FieldWidget
+from tagstudio.qt.widgets.panel import PanelModal
+from tagstudio.qt.widgets.tag_color_label import TagColorLabel
 
 if typing.TYPE_CHECKING:
-    from src.core.library import Library
+    from tagstudio.core.library import Library
 
 logger = structlog.get_logger(__name__)
 
@@ -138,7 +139,7 @@ class ColorBoxWidget(FieldWidget):
         )
 
         self.edit_modal.saved.connect(
-            lambda: (self.lib.update_color(*build_color_panel.build_color()), self.updated.emit())
+            lambda: (self.lib.update_color(*build_color_panel.build_color()), self.updated.emit())  # type: ignore
         )
         self.edit_modal.show()
 
