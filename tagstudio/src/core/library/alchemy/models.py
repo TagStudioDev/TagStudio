@@ -233,6 +233,7 @@ class Entry(Base):
         self.path = path
         self.folder = folder
         self.id = id
+        self.filename = path.name
         self.suffix = path.suffix.lstrip(".").lower()
 
         # The date the file associated with this entry was created.
