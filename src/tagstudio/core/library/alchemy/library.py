@@ -896,6 +896,8 @@ class Library:
             match search.sorting_mode:
                 case SortingModeEnum.DATE_ADDED:
                     sort_on = Entry.id
+                case SortingModeEnum.FILE_NAME:
+                    sort_on = func.lower(Entry.filename)
                 case SortingModeEnum.PATH:
                     sort_on = func.lower(Entry.path)
 
