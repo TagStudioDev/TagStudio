@@ -59,6 +59,7 @@
     "file.date_added": "Date Added",
     "file.date_created": "Date Created",
     "file.date_modified": "Date Modified",
+    "file.name": "Filename",
     "file.dimensions": "Dimensions",
     "file.duplicates.description": "TagStudio supports importing DupeGuru results to manage duplicate files.",
     "file.duplicates.dupeguru.advice": "After mirroring, you're free to use DupeGuru to delete the unwanted files. Afterwards, use TagStudio's \"Fix Unlinked Entries\" feature in the Tools menu in order to delete the unlinked Entries.",
