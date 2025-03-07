@@ -187,6 +187,7 @@ class Entry(Base):
     folder: Mapped[Folder] = relationship("Folder")
 
     path: Mapped[Path] = mapped_column(PathType, unique=True)
+    filename: Mapped[str] = mapped_column()
     suffix: Mapped[str] = mapped_column()
     date_created: Mapped[dt | None]
     date_modified: Mapped[dt | None]

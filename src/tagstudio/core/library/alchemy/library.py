@@ -472,12 +472,25 @@ class Library:
 
             # Apply any post-SQL migration patches.
             if not is_new:
+                # save backup if patches will be applied
+                if LibraryPrefs.DB_VERSION.default != db_version:
+                    self.library_dir = library_dir
+                    self.save_library_backup_to_disk()
+                    self.library_dir = None
+
+                # schema changes first
                 if db_version < 8:
                     self.apply_db8_schema_changes(session)
+                if db_version < 9:
+                    self.apply_db9_schema_changes(session)
+
+                # now the data changes
                 if db_version == 6:
                     self.apply_repairs_for_db6(session)
                 if db_version >= 6 and db_version < 8:
                     self.apply_db8_default_data(session)
+                if db_version < 9:
+                    self.apply_db9_filename_population(session)
 
             # Update DB_VERSION
             if LibraryPrefs.DB_VERSION.default > db_version:
@@ -579,6 +592,29 @@ class Library:
                     error=e,
                 )
                 session.rollback()
+
+    def apply_db9_schema_changes(self, session: Session):
+        """Apply database schema changes introduced in DB_VERSION 9."""
+        add_filename_column = text(
+            "ALTER TABLE entries ADD COLUMN filename TEXT NOT NULL DEFAULT ''"
+        )
+        try:
+            session.execute(add_filename_column)
+            session.commit()
+            logger.info("[Library][Migration] Added filename column to entries table")
+        except Exception as e:
+            logger.error(
+                "[Library][Migration] Could not create filename column in entries table!",
+                error=e,
+            )
+            session.rollback()
+
+    def apply_db9_filename_population(self, session: Session):
+        """Populate the filename column introduced in DB_VERSION 9."""
+        for entry in self.get_entries():
+            session.merge(entry).filename = entry.path.name
+        session.commit()
+        logger.info("[Library][Migration] Populated filename column in entries table")
 
     @property
     def default_fields(self) -> list[BaseField]:
@@ -1372,6 +1408,8 @@ class Library:
             self.library_dir / TS_FOLDER_NAME / self.SQL_FILENAME,
             target_path,
         )
+
+        logger.info("Library backup saved to disk.", path=target_path)
 
         return target_path
 
