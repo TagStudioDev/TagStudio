@@ -97,7 +97,7 @@ class SettingsPanel(PanelWidget):
         else:
             display_path = library_directory.name
         self.driver.main_window.setWindowTitle(
-            Translations["app.title"].format(
-                base_title=self.driver.base_title, library_dir=display_path
+            Translations.format(
+                "app.title", base_title=self.driver.base_title, library_dir=display_path
             )
         )
