@@ -1828,13 +1828,13 @@ class QtDriver(DriverMixin, QObject):
 
     def open_library(self, path: Path) -> None:
         """Open a TagStudio library."""
-        message = Translations.format("splash.opening_library", library_path=str(path))
-        self.main_window.landing_widget.set_status_label(message)
-        self.main_window.statusbar.showMessage(message, 3)
         filepath_option: str = str(
             self.settings.value(SettingItems.SHOW_FILEPATH, defaultValue="show full path", type=str)
         )
         library_dir_display = path if filepath_option == "show full path" else path.name
+        message = Translations["splash.opening_library"].format(library_path=library_dir_display)
+        self.main_window.landing_widget.set_status_label(message)
+        self.main_window.statusbar.showMessage(message, 3)
         self.main_window.repaint()
 
         if self.lib.library_dir:
