@@ -63,7 +63,6 @@
     "file.date_added": "Hinzufügungsdatum",
     "file.date_created": "Erstellungsdatum",
     "file.date_modified": "Datum geändert",
-    "file.name": "Dateiname",
     "file.path": "Dateipfad",
     "file.dimensions": "Abmessungen",
     "file.duplicates.description": "TagStudio unterstützt das Importieren von DupeGuru-Ergebnissen um Dateiduplikate zu verwalten.",

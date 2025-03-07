@@ -59,7 +59,6 @@
     "file.date_added": "Date Added",
     "file.date_created": "Date Created",
     "file.date_modified": "Date Modified",
-    "file.name": "Filename",
     "file.path": "File Path",
     "file.dimensions": "Dimensions",
     "file.duplicates.description": "TagStudio supports importing DupeGuru results to manage duplicate files.",
