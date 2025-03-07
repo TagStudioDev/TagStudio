@@ -275,7 +275,7 @@
     "trash.dialog.disambiguation_warning.singular": "This will remove it from TagStudio <i>AND</i> your file system!",
     "trash.dialog.move.confirmation.plural": "Are you sure you want to move these {count} files to the {trash_term}?",
     "trash.dialog.move.confirmation.singular": "Are you sure you want to move this file to the {trash_term}?",
-    "trash.dialog.permanent_delete_warning": "<b>WARNING!</b> If this file can't be moved to the {trash_term}, <b>it will be <b>permanently deleted!</b>",
+    "trash.dialog.permanent_delete_warning": "<b>WARNING!</b> If this file can't be moved to the {trash_term}, it will be <b>permanently deleted!</b>",
     "trash.dialog.title.plural": "Delete Files",
     "trash.dialog.title.singular": "Delete File",
     "trash.name.generic": "Trash",
