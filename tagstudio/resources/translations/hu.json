@@ -1,5 +1,5 @@
 {
-    "about.content": "<h2>TagStudio Alfa {version} ({branch})</h2><p>A TagStudio egy fénykép- és fájlkezelő program, mely címkék segítségével nyújt felhasználói szabadságot és rugalmasságot. A TagStudio nem használ jogvédett formátumokat, társfájlokat és nem fordítja a feje tetejére a már létező fájlrendszert.</p>Licenc: GPLv3<br>Konfigurációs fájl: {config_path}<br>FFmpeg: {ffmpeg}<br>FFprobe: {ffprobe}<p><a href=\"https://github.com/TagStudioDev/TagStudio\">GitHub-adattár</a> | <a href=\"https://docs.tagstud.io\">Dokumentáció</a> | <a href=\"https://discord.com/invite/hRNnVKhF2G\">Discord-szerver</a></p>",
+    "about.content": "<p>A TagStudio egy fénykép- és fájlkezelő program, mely címkék segítségével nyújt felhasználói szabadságot és rugalmasságot. A TagStudio nem használ jogvédett formátumokat, társfájlokat és nem fordítja a feje tetejére a már létező fájlrendszert.</p>Licenc: GPLv3<br>Konfigurációs fájl: {config_path}<br>FFmpeg: {ffmpeg}<br>FFprobe: {ffprobe}<p><a href=\"https://github.com/TagStudioDev/TagStudio\">GitHub-adattár</a> | <a href=\"https://docs.tagstud.io\">Dokumentáció</a> | <a href=\"https://discord.com/invite/hRNnVKhF2G\">Discord-szerver</a></p>",
     "about.title": "Névjegy",
     "app.git": "Git-véglegesítés",
     "app.pre_release": "Kísérleti verzió",
