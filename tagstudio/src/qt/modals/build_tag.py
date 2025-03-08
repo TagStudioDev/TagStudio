@@ -89,6 +89,7 @@ class BuildTagPanel(PanelWidget):
         self.name_title = QLabel(Translations["tag.name"])
         self.name_layout.addWidget(self.name_title)
         self.name_field = QLineEdit()
+        self.name_title.setBuddy(self.name_field)
         self.name_field.setFixedHeight(24)
         self.name_field.textChanged.connect(self.on_name_changed)
         self.name_field.setPlaceholderText(Translations["tag.tag_name_required"])
@@ -104,6 +105,7 @@ class BuildTagPanel(PanelWidget):
         self.shorthand_title = QLabel(Translations["tag.shorthand"])
         self.shorthand_layout.addWidget(self.shorthand_title)
         self.shorthand_field = QLineEdit()
+        self.shorthand_title.setBuddy(self.shorthand_field)
         self.shorthand_layout.addWidget(self.shorthand_field)
 
         # Aliases --------------------------------------------------------------
@@ -117,6 +119,7 @@ class BuildTagPanel(PanelWidget):
         self.aliases_layout.addWidget(self.aliases_title)
 
         self.aliases_table = QTableWidget(0, 2)
+        self.aliases_title.setBuddy(self.aliases_table)
         self.aliases_table.horizontalHeader().setVisible(False)
         self.aliases_table.verticalHeader().setVisible(False)
         self.aliases_table.horizontalHeader().setStretchLastSection(True)
@@ -125,7 +128,7 @@ class BuildTagPanel(PanelWidget):
         self.aliases_table.setFocusPolicy(Qt.FocusPolicy.NoFocus)
 
         self.aliases_add_button = QPushButton()
-        self.aliases_add_button.setText("+")
+        self.aliases_add_button.setText(Translations["tag.alias.new"])
         self.aliases_add_button.clicked.connect(self.add_alias_callback)
 
         # Parent Tags ----------------------------------------------------------
@@ -144,6 +147,7 @@ class BuildTagPanel(PanelWidget):
 
         self.scroll_contents = QWidget()
         self.parent_tags_scroll_layout = QVBoxLayout(self.scroll_contents)
+        self.parent_tags_title.setBuddy(self.scroll_contents)
         self.parent_tags_scroll_layout.setContentsMargins(6, 6, 6, 0)
         self.parent_tags_scroll_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
 
@@ -157,7 +161,7 @@ class BuildTagPanel(PanelWidget):
 
         self.parent_tags_add_button = QPushButton()
         self.parent_tags_add_button.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.parent_tags_add_button.setText("+")
+        self.parent_tags_add_button.setText(Translations["tag.parent_tags.add.button"])
         self.parent_tags_layout.addWidget(self.parent_tags_add_button)
 
         exclude_ids: list[int] = list()
@@ -199,6 +203,7 @@ class BuildTagPanel(PanelWidget):
         )
         self.color_button.button.clicked.connect(self.choose_color_modal.show)
         self.color_layout.addWidget(self.color_button)
+        self.color_title.setBuddy(self.color_button)
 
         # Category -------------------------------------------------------------
         self.cat_widget = QWidget()
@@ -209,6 +214,7 @@ class BuildTagPanel(PanelWidget):
         self.cat_layout.setAlignment(Qt.AlignmentFlag.AlignLeft)
         self.cat_title = QLabel(Translations["tag.is_category"])
         self.cat_checkbox = QCheckBox()
+        self.cat_title.setBuddy(self.cat_checkbox)
         self.cat_checkbox.setFixedSize(22, 22)
 
         primary_color = QColor(get_tag_color(ColorType.PRIMARY, TagColorEnum.DEFAULT))
