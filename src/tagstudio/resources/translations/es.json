@@ -1,5 +1,8 @@
 {
-    "about.content": "<p>TagStudio es una aplicación de fotografías y archivos con un sistema de etiquetas subyacentes que se centra en dar libertad y flexibilidad al usuario. Sin programas ni formatos propios, ni un mar de archivos y sin trastornar completamente tu sistema de estructurar los archivos.</p>. Licencia: GPLv3<br>Archivo de configuración: {config_path}<br>FFmpeg: {ffmpeg}<br>FFprobe: {ffprobe}<p><a href=\"https://github.com/TagStudioDev/TagStudio\">GitHub</a> | <a href=\"https://docs.tagstud.io\">Documentación</a> | <a href=\"https://discord.com/invite/hRNnVKhF2G\">Discord</a></p>",
+    "about.config_path": "Archivo de configuración",
+    "about.description": "TagStudio es una aplicación de fotografías y archivos con un sistema de etiquetas subyacentes que se centra en dar libertad y flexibilidad al usuario. Sin programas ni formatos propios, ni un mar de archivos y sin trastornar completamente tu sistema de estructurar los archivos.",
+    "about.documentation": "Documentación",
+    "about.license": "Licencia",
     "about.title": "Acerca de",
     "app.git": "Git Commit",
     "app.pre_release": "Previas al lanzamiento",
@@ -116,7 +119,6 @@
     "generic.save": "Guardar",
     "generic.skip": "Saltear",
     "generic.skip_alt": "&Saltear",
-    "help.visit_github": "Visitar el repositorio en GitHub",
     "home.search": "Buscar",
     "home.search_entries": "Buscar entradas",
     "home.search_library": "Buscar el biblioteca",

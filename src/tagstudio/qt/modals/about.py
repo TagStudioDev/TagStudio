@@ -3,10 +3,12 @@
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
 
+import math
+
 from PIL import ImageQt
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QPixmap
-from PySide6.QtWidgets import QHBoxLayout, QLabel, QPushButton, QVBoxLayout, QWidget
+from PySide6.QtWidgets import QFormLayout, QHBoxLayout, QLabel, QPushButton, QVBoxLayout, QWidget
 
 from tagstudio.core.constants import VERSION, VERSION_BRANCH
 from tagstudio.core.palette import ColorType, UiColor, get_ui_color
@@ -25,49 +27,91 @@ class AboutModal(QWidget):
 
         self.setWindowModality(Qt.WindowModality.ApplicationModal)
         self.setMinimumSize(360, 480)
+        self.setMaximumSize(480, 540)
         self.root_layout = QVBoxLayout(self)
-        self.root_layout.setContentsMargins(24, 24, 24, 6)
-        self.root_layout.setSpacing(12)
-        self.root_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
+        self.root_layout.setContentsMargins(0, 0, 0, 0)
+        self.root_layout.setSpacing(0)
+        self.root_layout.setAlignment(Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignCenter)
 
+        self.content_widget = QWidget()
+        self.content_layout = QVBoxLayout(self.content_widget)
+        self.content_layout.setContentsMargins(0, 0, 0, 0)
+        self.content_layout.setSpacing(12)
+
+        # TagStudio Icon Logo --------------------------------------------------
         self.logo_widget = QLabel()
-        self.logo_widget.setObjectName("logo")
         self.logo_pixmap = QPixmap.fromImage(ImageQt.ImageQt(self.rm.get("icon")))
+        self.logo_pixmap.setDevicePixelRatio(self.devicePixelRatio())
         self.logo_pixmap = self.logo_pixmap.scaledToWidth(
-            128, Qt.TransformationMode.SmoothTransformation
+            math.floor(128 * self.devicePixelRatio()), Qt.TransformationMode.SmoothTransformation
         )
         self.logo_widget.setPixmap(self.logo_pixmap)
-        self.logo_widget.setAlignment(Qt.AlignmentFlag.AlignHCenter)
-        self.logo_widget.setContentsMargins(0, 0, 0, 24)
+        self.logo_widget.setContentsMargins(0, 0, 0, 0)
+        self.logo_widget.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
+        # Title ----------------------------------------------------------------
+        branch: str = (" (" + VERSION_BRANCH + ")") if VERSION_BRANCH else ""
+        self.title_label = QLabel(f"<h2>TagStudio Alpha {VERSION}{branch}</h2>")
+        self.title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+        # Description ----------------------------------------------------------
+        self.desc_label = QLabel(Translations["about.description"])
+        self.desc_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.desc_label.setWordWrap(True)
+
+        # System Info ----------------------------------------------------------
         ff_version = self.fc.version()
         red = get_ui_color(ColorType.PRIMARY, UiColor.RED)
         green = get_ui_color(ColorType.PRIMARY, UiColor.GREEN)
+        missing = Translations["generic.missing"]
+        found = Translations["about.module.found"]
 
-        ffmpeg = f'<span style="color:{red}">Missing</span>'
+        ffmpeg_status = f'<span style="color:{red}">{missing}</span>'
         if ff_version["ffmpeg"] is not None:
-            ffmpeg = f'<span style="color:{green}">Found</span> (' + ff_version["ffmpeg"] + ")"
-
-        ffprobe = f'<span style="color:{red}">Missing</span>'
-        if ff_version["ffprobe"] is not None:
-            ffprobe = f'<span style="color:{green}">Found</span> (' + ff_version["ffprobe"] + ")"
-
-        branch: str = (" (" + VERSION_BRANCH + ")") if VERSION_BRANCH else ""
-        self.title_label = QLabel(f"<h2>TagStudio Alpha {VERSION}{branch}</h2>")
-        self.title_label.setAlignment(Qt.AlignmentFlag.AlignHCenter)
-
-        self.content_label = QLabel(
-            Translations.format(
-                "about.content", config_path=config_path, ffmpeg=ffmpeg, ffprobe=ffprobe
+            ffmpeg_status = (
+                f'<span style="color:{green}">{found}</span> (' + ff_version["ffmpeg"] + ")"
             )
-        )
-        self.content_label.setObjectName("contentLabel")
-        self.content_label.setWordWrap(True)
-        self.content_label.setOpenExternalLinks(True)
-        self.content_label.setAlignment(Qt.AlignmentFlag.AlignHCenter)
 
+        ffprobe_status = f'<span style="color:{red}">{missing}</span>'
+        if ff_version["ffprobe"] is not None:
+            ffprobe_status = (
+                f'<span style="color:{green}">{found}</span> (' + ff_version["ffprobe"] + ")"
+            )
+
+        self.system_info_widget = QWidget()
+        self.system_info_layout = QFormLayout(self.system_info_widget)
+        self.system_info_layout.setLabelAlignment(Qt.AlignmentFlag.AlignRight)
+        license_title = QLabel(f'{Translations["about.license"]}:')
+        license_content = QLabel("GPLv3")
+        self.system_info_layout.addRow(license_title, license_content)
+        config_path_title = QLabel(f'{Translations["about.config_path"]}:')
+        config_path_content = QLabel(f"{config_path}")
+        self.system_info_layout.addRow(config_path_title, config_path_content)
+        ffmpeg_path_title = QLabel("FFmpeg:")
+        ffmpeg_path_content = QLabel(f"{ffmpeg_status}")
+        self.system_info_layout.addRow(ffmpeg_path_title, ffmpeg_path_content)
+        ffprobe_path_title = QLabel("FFprobe:")
+        ffprobe_path_content = QLabel(f"{ffprobe_status}")
+        self.system_info_layout.addRow(ffprobe_path_title, ffprobe_path_content)
+
+        # Links ----------------------------------------------------------------
+        repo_link = "https://github.com/TagStudioDev/TagStudio"
+        docs_link = "https://docs.tagstud.io"
+        discord_link = "https://discord.com/invite/hRNnVKhF2G"
+
+        self.links_label = QLabel(
+            f'<p><a href="{repo_link}">GitHub</a> | '
+            f'<a href="{docs_link}">{Translations["about.documentation"]}</a> | '
+            f'<a href="{discord_link}">Discord</a></p>'
+        )
+        self.links_label.setWordWrap(True)
+        self.links_label.setOpenExternalLinks(True)
+        self.links_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+        # Buttons --------------------------------------------------------------
         self.button_widget = QWidget()
         self.button_layout = QHBoxLayout(self.button_widget)
+        self.content_layout.setContentsMargins(12, 12, 12, 12)
         self.button_layout.addStretch(1)
 
         self.close_button = QPushButton(Translations["generic.close"])
@@ -75,8 +119,14 @@ class AboutModal(QWidget):
 
         self.button_layout.addWidget(self.close_button)
 
-        self.root_layout.addWidget(self.logo_widget)
-        self.root_layout.addWidget(self.title_label)
-        self.root_layout.addWidget(self.content_label)
-        self.root_layout.addStretch(1)
+        # Add Widgets to Layouts -----------------------------------------------
+        self.content_layout.addWidget(self.logo_widget)
+        self.content_layout.addWidget(self.title_label)
+        self.content_layout.addWidget(self.desc_label)
+        self.content_layout.addWidget(self.system_info_widget)
+        self.content_layout.addWidget(self.links_label)
+        self.content_layout.addStretch(1)
+        self.content_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+        self.root_layout.addWidget(self.content_widget)
         self.root_layout.addWidget(self.button_widget)

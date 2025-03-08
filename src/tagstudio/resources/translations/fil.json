@@ -1,5 +1,8 @@
 {
-    "about.content": "<p>Ang TagStudio ay isang application ng pagsasaayos ng file at larawan na may pinagbabatayan na tag-based na sistema na nakatutok sa pagbibigay ng kalayaan at kakayahang umangkop sa user. Walang mga proprietary na format o program, walang dagat ng mga sidecar file, at walang kaguluhan ng iyong estruktura ng filesystem.</p>Lisensya: GPLv3<br>Path ng config: {config_path}<br>FFMpeg: {ffmpeg}<br>FFProbe: {ffprobe}<p><a href=\"https://github.com/TagStudioDev/TagStudio\">GitHub</a> | <a href=\"https://docs.tagstud.io\">Dokumentasyon</a> | <a href=\"https://discord.gg/invite/hRNnVKhF2G\">Discord</a></p>",
+    "about.config_path": "Path ng Config",
+    "about.description": "Ang TagStudio ay isang application ng pagsasaayos ng file at larawan na may pinagbabatayan na tag-based na sistema na nakatutok sa pagbibigay ng kalayaan at kakayahang umangkop sa user. Walang mga proprietary na format o program, walang dagat ng mga sidecar file, at walang kaguluhan ng iyong estruktura ng filesystem.",
+    "about.documentation": "Dokumentasyon",
+    "about.license": "Lisensya",
     "about.title": "Tungkol sa TagStudio",
     "app.git": "Git Commit",
     "app.pre_release": "Pre-Release",
