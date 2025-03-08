@@ -7,10 +7,19 @@ import math
 
 from PIL import ImageQt
 from PySide6.QtCore import Qt
-from PySide6.QtGui import QPixmap
-from PySide6.QtWidgets import QFormLayout, QHBoxLayout, QLabel, QPushButton, QVBoxLayout, QWidget
+from PySide6.QtGui import QGuiApplication, QPixmap
+from PySide6.QtWidgets import (
+    QFormLayout,
+    QHBoxLayout,
+    QLabel,
+    QPushButton,
+    QSizePolicy,
+    QVBoxLayout,
+    QWidget,
+)
 
 from tagstudio.core.constants import VERSION, VERSION_BRANCH
+from tagstudio.core.enums import Theme
 from tagstudio.core.palette import ColorType, UiColor, get_ui_color
 from tagstudio.qt.modals.ffmpeg_checker import FfmpegChecker
 from tagstudio.qt.resource_manager import ResourceManager
@@ -25,17 +34,27 @@ class AboutModal(QWidget):
         self.fc: FfmpegChecker = FfmpegChecker()
         self.rm: ResourceManager = ResourceManager()
 
+        # TODO: There should be a global button theme somewhere.
+        self.form_content_style = (
+            f"background-color:{Theme.COLOR_BG.value
+            if QGuiApplication.styleHints().colorScheme() is Qt.ColorScheme.Dark
+            else Theme.COLOR_BG_LIGHT.value};"
+            "border-radius:3px;"
+            "font-weight: 500;"
+            "padding: 2px;"
+        )
+
         self.setWindowModality(Qt.WindowModality.ApplicationModal)
-        self.setMinimumSize(360, 480)
-        self.setMaximumSize(480, 540)
+        self.setMinimumSize(360, 540)
+        self.setMaximumSize(600, 600)
         self.root_layout = QVBoxLayout(self)
-        self.root_layout.setContentsMargins(0, 0, 0, 0)
+        self.root_layout.setContentsMargins(0, 12, 0, 0)
         self.root_layout.setSpacing(0)
         self.root_layout.setAlignment(Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignCenter)
 
         self.content_widget = QWidget()
         self.content_layout = QVBoxLayout(self.content_widget)
-        self.content_layout.setContentsMargins(0, 0, 0, 0)
+        self.content_layout.setContentsMargins(12, 12, 12, 12)
         self.content_layout.setSpacing(12)
 
         # TagStudio Icon Logo --------------------------------------------------
@@ -58,6 +77,7 @@ class AboutModal(QWidget):
         self.desc_label = QLabel(Translations["about.description"])
         self.desc_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.desc_label.setWordWrap(True)
+        self.desc_label.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
 
         # System Info ----------------------------------------------------------
         ff_version = self.fc.version()
@@ -81,17 +101,33 @@ class AboutModal(QWidget):
         self.system_info_widget = QWidget()
         self.system_info_layout = QFormLayout(self.system_info_widget)
         self.system_info_layout.setLabelAlignment(Qt.AlignmentFlag.AlignRight)
-        license_title = QLabel(f'{Translations["about.license"]}:')
+
+        # License
+        license_title = QLabel(f'{Translations["about.license"]}')
         license_content = QLabel("GPLv3")
+        license_content.setStyleSheet(self.form_content_style)
+        license_content.setMaximumWidth(license_content.sizeHint().width())
         self.system_info_layout.addRow(license_title, license_content)
-        config_path_title = QLabel(f'{Translations["about.config_path"]}:')
+
+        # Config Path
+        config_path_title = QLabel(f'{Translations["about.config_path"]}')
         config_path_content = QLabel(f"{config_path}")
+        config_path_content.setStyleSheet(self.form_content_style)
+        config_path_content.setWordWrap(True)
         self.system_info_layout.addRow(config_path_title, config_path_content)
-        ffmpeg_path_title = QLabel("FFmpeg:")
+
+        # FFmpeg Status
+        ffmpeg_path_title = QLabel("FFmpeg")
         ffmpeg_path_content = QLabel(f"{ffmpeg_status}")
+        ffmpeg_path_content.setStyleSheet(self.form_content_style)
+        ffmpeg_path_content.setMaximumWidth(ffmpeg_path_content.sizeHint().width())
         self.system_info_layout.addRow(ffmpeg_path_title, ffmpeg_path_content)
-        ffprobe_path_title = QLabel("FFprobe:")
+
+        # FFprobe Status
+        ffprobe_path_title = QLabel("FFprobe")
         ffprobe_path_content = QLabel(f"{ffprobe_status}")
+        ffprobe_path_content.setStyleSheet(self.form_content_style)
+        ffprobe_path_content.setMaximumWidth(ffprobe_path_content.sizeHint().width())
         self.system_info_layout.addRow(ffprobe_path_title, ffprobe_path_content)
 
         # Links ----------------------------------------------------------------
@@ -111,12 +147,11 @@ class AboutModal(QWidget):
         # Buttons --------------------------------------------------------------
         self.button_widget = QWidget()
         self.button_layout = QHBoxLayout(self.button_widget)
-        self.content_layout.setContentsMargins(12, 12, 12, 12)
+        self.button_layout.setContentsMargins(12, 12, 12, 12)
         self.button_layout.addStretch(1)
 
         self.close_button = QPushButton(Translations["generic.close"])
         self.close_button.clicked.connect(lambda: self.close())
-
         self.button_layout.addWidget(self.close_button)
 
         # Add Widgets to Layouts -----------------------------------------------
