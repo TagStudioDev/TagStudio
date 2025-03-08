@@ -11,7 +11,7 @@ from PySide6.QtWidgets import (QComboBox, QFrame, QGridLayout,
                                QHBoxLayout, QVBoxLayout, QLayout, QLineEdit, QMainWindow,
                                QPushButton, QScrollArea, QSizePolicy,
                                QStatusBar, QWidget, QSplitter, QCheckBox,
-                               QSpacerItem, QCompleter)
+                               QSpacerItem, QCompleter, QLabel)
 from src.qt.pagination import Pagination
 from src.qt.widgets.landing import LandingWidget
 
@@ -63,15 +63,22 @@ class Ui_MainWindow(QMainWindow):
         self.horizontalLayout_3.addItem(spacerItem)
   
         # Sorting Dropdowns
+        self.sorting_mode_label = QLabel(Translations["home.sorting_mode"])
         self.sorting_mode_combobox = QComboBox(self.centralwidget)
         self.sorting_mode_combobox.setObjectName(u"sortingModeComboBox")
+        self.horizontalLayout_3.addWidget(self.sorting_mode_label)
         self.horizontalLayout_3.addWidget(self.sorting_mode_combobox)
+        self.sorting_mode_label.setBuddy(self.sorting_mode_combobox)
         
+        self.sorting_direction_label = QLabel(Translations["home.sorting_direction"])
         self.sorting_direction_combobox = QComboBox(self.centralwidget)
         self.sorting_direction_combobox.setObjectName(u"sortingDirectionCombobox")
+        self.horizontalLayout_3.addWidget(self.sorting_direction_label)
         self.horizontalLayout_3.addWidget(self.sorting_direction_combobox)
+        self.sorting_direction_label.setBuddy(self.sorting_direction_combobox)
 
         # Thumbnail Size placeholder
+        self.thumb_size_label = QLabel(Translations["home.thumbnail_size_label"])
         self.thumb_size_combobox = QComboBox(self.centralwidget)
         self.thumb_size_combobox.setObjectName(u"thumbSizeComboBox")
         self.thumb_size_combobox.setPlaceholderText(Translations["home.thumbnail_size"])
@@ -84,7 +91,9 @@ class Ui_MainWindow(QMainWindow):
         self.thumb_size_combobox.setSizePolicy(sizePolicy)
         self.thumb_size_combobox.setMinimumWidth(128)
         self.thumb_size_combobox.setMaximumWidth(352)
+        self.horizontalLayout_3.addWidget(self.thumb_size_label)
         self.horizontalLayout_3.addWidget(self.thumb_size_combobox)
+        self.thumb_size_label.setBuddy(self.thumb_size_combobox)
         self.gridLayout.addLayout(self.horizontalLayout_3, 5, 0, 1, 1)
 
         self.splitter = QSplitter()
