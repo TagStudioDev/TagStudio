@@ -81,6 +81,7 @@ class TagSearchPanel(PanelWidget):
         self.limit_layout.addWidget(self.limit_title)
 
         self.limit_combobox = QComboBox()
+        self.limit_title.setBuddy(self.limit_combobox)
         self.limit_combobox.setEditable(False)
         self.limit_combobox.addItems([str(x) for x in TagSearchPanel._limit_items])
         self.limit_combobox.setCurrentIndex(TagSearchPanel._default_limit_idx)

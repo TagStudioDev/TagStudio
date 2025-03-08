@@ -268,7 +268,7 @@
     "tag.search_for_tag": "Search for Tag",
     "tag.shorthand": "Shorthand",
     "tag.tag_name_required": "Tag Name (Required)",
-    "tag.view_limit": "View Limit:",
+    "tag.view_limit": "&View Limit:",
     "trash.context.ambiguous": "Move file(s) to {trash_term}",
     "trash.context.plural": "Move files to {trash_term}",
     "trash.context.singular": "Move file to {trash_term}",
