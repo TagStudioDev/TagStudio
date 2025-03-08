@@ -98,13 +98,13 @@ class PreviewPanel(QWidget):
         add_buttons_layout.setContentsMargins(0, 0, 0, 0)
         add_buttons_layout.setSpacing(6)
 
-        self.add_tag_button = QPushButton(Translations["tag.add"])
+        self.add_tag_button = QPushButton(Translations["tag.add.button"])
         self.add_tag_button.setEnabled(False)
         self.add_tag_button.setCursor(Qt.CursorShape.PointingHandCursor)
         self.add_tag_button.setMinimumHeight(28)
         self.add_tag_button.setStyleSheet(PreviewPanel.button_style)
 
-        self.add_field_button = QPushButton(Translations["library.field.add"])
+        self.add_field_button = QPushButton(Translations["library.field.add.button"])
         self.add_field_button.setEnabled(False)
         self.add_field_button.setCursor(Qt.CursorShape.PointingHandCursor)
         self.add_field_button.setMinimumHeight(28)

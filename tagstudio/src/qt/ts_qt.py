@@ -1768,10 +1768,10 @@ class QtDriver(DriverMixin, QObject):
         settings.endGroup()
 
         # Create actions for each library
-        for library_key in libs_sorted:
+        for index, library_key in enumerate(libs_sorted):
             path = Path(library_key[1][0])
             action = QAction(self.open_recent_library_menu)
-            action.setText(str(path))
+            action.setText(f"&{index + 1}: {str(path)}")
             action.triggered.connect(lambda checked=False, p=path: self.open_library(p))
             actions.append(action)
 

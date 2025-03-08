@@ -62,6 +62,7 @@ class FileExtensionModal(PanelWidget):
         self.mode_layout.setSpacing(12)
         self.mode_label = QLabel(Translations["ignore_list.mode.label"])
         self.mode_combobox = QComboBox()
+        self.mode_label.setBuddy(self.mode_combobox)
         self.mode_combobox.setEditable(False)
         self.mode_combobox.addItem("")
         self.mode_combobox.addItem("")
