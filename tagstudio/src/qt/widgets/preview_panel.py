@@ -98,7 +98,7 @@ class PreviewPanel(QWidget):
         add_buttons_layout.setContentsMargins(0, 0, 0, 0)
         add_buttons_layout.setSpacing(6)
 
-        self.add_tag_button = QPushButton(Translations["tag.add"])
+        self.add_tag_button = QPushButton(Translations["tag.add.button"])
         self.add_tag_button.setEnabled(False)
         self.add_tag_button.setCursor(Qt.CursorShape.PointingHandCursor)
         self.add_tag_button.setMinimumHeight(28)
