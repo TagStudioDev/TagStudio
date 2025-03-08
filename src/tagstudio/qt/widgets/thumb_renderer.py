@@ -818,6 +818,7 @@ class ThumbRenderer(QObject):
         except (
             UnidentifiedImageError,
             DecompressionBombError,
+            NotImplementedError,
         ) as e:
             logger.error("Couldn't render thumbnail", filepath=filepath, error=type(e).__name__)
         return im
