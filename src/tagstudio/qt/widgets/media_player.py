@@ -241,6 +241,7 @@ class MediaPlayer(QGraphicsView):
         master_layout.addWidget(self.sub_controls, 1, 0)
 
         self.position_label = QLabel("0:00")
+        self.position_label.setStyleSheet("color: #ffffff;")
         master_layout.addWidget(self.position_label, 1, 1)
         master_layout.setAlignment(self.position_label, Qt.AlignmentFlag.AlignRight)
         self.position_label.hide()
