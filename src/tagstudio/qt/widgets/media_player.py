@@ -7,15 +7,20 @@ from pathlib import Path
 from time import gmtime
 
 from PIL import Image, ImageDraw
-from PySide6.QtCore import QEvent, QObject, QRectF, Qt, QUrl, QVariantAnimation
-from PySide6.QtGui import QAction, QBitmap, QBrush, QColor, QFont, QPen, QRegion, QResizeEvent
+from PySide6.QtCore import QEvent, QObject, QRectF, QSize, Qt, QUrl, QVariantAnimation
+from PySide6.QtGui import QAction, QBitmap, QBrush, QColor, QPen, QRegion, QResizeEvent
 from PySide6.QtMultimedia import QAudioOutput, QMediaDevices, QMediaPlayer
 from PySide6.QtMultimediaWidgets import QGraphicsVideoItem
 from PySide6.QtSvgWidgets import QSvgWidget
 from PySide6.QtWidgets import (
     QGraphicsScene,
     QGraphicsView,
+    QGridLayout,
+    QHBoxLayout,
+    QLabel,
+    QSizePolicy,
     QSlider,
+    QWidget,
 )
 
 from tagstudio.core.enums import SettingItems
@@ -33,13 +38,6 @@ class MediaPlayer(QGraphicsView):
 
     Gives a basic control set to manage media playback.
     """
-
-    # These mouse_over_* variables are used to help
-    # determine if a mouse click should be handled
-    # by the media player or by some parent widget.
-    mouse_over_volume_slider = False
-    mouse_over_play_pause = False
-    mouse_over_mute_unmute = False
 
     video_preview = None
 
@@ -79,6 +77,36 @@ class MediaPlayer(QGraphicsView):
                 background: #6ea0ff;
                 height: 2px;
                 margin: 2px 0;
+                border-radius: 2px;
+            }
+
+            QSlider::groove:vertical {
+                border: 1px solid #999999;
+                width: 2px;
+                margin: 0 2px;
+                border-radius: 2px;
+            }
+
+            QSlider::handle:vertical {
+                background: #6ea0ff;
+                border: 1px solid #5c5c5c;
+                width: 12px;
+                height: 12px;
+                margin: 0 -6px;
+                border-radius: 6px;
+            }
+
+            QSlider::add-page:vertical {
+                background: #6ea0ff;
+                width: 2px;
+                margin: 0 2px;
+                border-radius: 2px;
+            }
+
+            QSlider::sup-page:vertical {
+                background: #3f4144;
+                width: 2px;
+                margin: 0 2px;
                 border-radius: 2px;
             }
         """
@@ -136,6 +164,12 @@ class MediaPlayer(QGraphicsView):
         self.player.audioOutput().mutedChanged.connect(self.muted_changed)
 
         # Media controls
+        self.master_controls = QWidget()
+        master_layout = QGridLayout(self.master_controls)
+        master_layout.setContentsMargins(0, 0, 0, 0)
+        self.master_controls.setStyleSheet("background: transparent;")
+        self.master_controls.setMinimumHeight(75)
+
         self.pslider = QClickSlider()
         self.pslider.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         self.pslider.setTickPosition(QSlider.TickPosition.NoTicks)
@@ -146,14 +180,31 @@ class MediaPlayer(QGraphicsView):
         self.pslider.valueChanged.connect(self.slider_value_changed)
         self.pslider.hide()
 
+        master_layout.addWidget(self.pslider, 0, 0, 0, 2)
+        master_layout.setAlignment(self.pslider, Qt.AlignmentFlag.AlignCenter)
+
+        fixed_policy = QSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
+
+        self.sub_controls = QWidget()
+        self.sub_controls.setMouseTracking(True)
+        self.sub_controls.installEventFilter(self)
+        sub_layout = QHBoxLayout(self.sub_controls)
+        sub_layout.setContentsMargins(0, 0, 0, 0)
+        self.sub_controls.setStyleSheet("background: transparent;")
+
         self.play_pause = QSvgWidget()
         self.play_pause.setCursor(Qt.CursorShape.PointingHandCursor)
         self.play_pause.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, on=True)
         self.play_pause.setMouseTracking(True)
         self.play_pause.installEventFilter(self)
         self.load_toggle_play_icon(playing=False)
-        self.play_pause.resize(24, 24)
+        self.play_pause.resize(16, 16)
+        self.play_pause.setSizePolicy(fixed_policy)
+        self.play_pause.setStyleSheet("background: transparent;")
         self.play_pause.hide()
+
+        sub_layout.addWidget(self.play_pause)
+        sub_layout.setAlignment(self.play_pause, Qt.AlignmentFlag.AlignLeft)
 
         self.mute_unmute = QSvgWidget()
         self.mute_unmute.setCursor(Qt.CursorShape.PointingHandCursor)
@@ -161,30 +212,40 @@ class MediaPlayer(QGraphicsView):
         self.mute_unmute.setMouseTracking(True)
         self.mute_unmute.installEventFilter(self)
         self.load_mute_unmute_icon(muted=False)
-        self.mute_unmute.resize(24, 24)
+        self.mute_unmute.resize(16, 16)
+        self.mute_unmute.setSizePolicy(fixed_policy)
         self.mute_unmute.hide()
+
+        sub_layout.addWidget(self.mute_unmute)
+        sub_layout.setAlignment(self.mute_unmute, Qt.AlignmentFlag.AlignLeft)
+
+        retain_policy = QSizePolicy()
+        retain_policy.setRetainSizeWhenHidden(True)
 
         self.volume_slider = QClickSlider()
         self.volume_slider.setOrientation(Qt.Orientation.Horizontal)
         self.volume_slider.setValue(int(self.player.audioOutput().volume() * 100))
         self.volume_slider.valueChanged.connect(self.volume_slider_changed)
-        self.volume_slider.setMaximumWidth(100)
         self.volume_slider.setStyleSheet(slider_style)
+        self.volume_slider.setSizePolicy(retain_policy)
         self.volume_slider.hide()
 
-        self.position_label = self.scene().addText("0:00")
+        sub_layout.addWidget(self.volume_slider)
+        sub_layout.setAlignment(self.volume_slider, Qt.AlignmentFlag.AlignLeft)
+
+        # Adding a stretch here ensures the rest of the widgets
+        # in the sub_layout will not stretch to fill the remaining
+        # space.
+        sub_layout.addStretch()
+
+        master_layout.addWidget(self.sub_controls, 1, 0)
+
+        self.position_label = QLabel("0:00")
+        master_layout.addWidget(self.position_label, 1, 1)
+        master_layout.setAlignment(self.position_label, Qt.AlignmentFlag.AlignRight)
         self.position_label.hide()
 
-        font = QFont()
-        font.setPointSize(11)
-        self.position_label.setFont(font)
-        self.position_label.setDefaultTextColor(QColor(255, 255, 255, 255))
-        self.position_label.hide()
-
-        self.scene().addWidget(self.pslider)
-        self.scene().addWidget(self.play_pause)
-        self.scene().addWidget(self.mute_unmute)
-        self.scene().addWidget(self.volume_slider)
+        self.scene().addWidget(self.master_controls)
 
         self.setContextMenuPolicy(Qt.ContextMenuPolicy.ActionsContextMenu)
         self.opener = FileOpenerHelper(filepath=self.filepath)
@@ -254,7 +315,6 @@ class MediaPlayer(QGraphicsView):
         self.pslider.show()
         self.play_pause.show()
         self.mute_unmute.show()
-        self.volume_slider.show()
         self.position_label.show()
 
         return super().underMouse()
@@ -272,13 +332,6 @@ class MediaPlayer(QGraphicsView):
 
         return super().releaseMouse()
 
-    def mouse_over_elements(self) -> bool:
-        return (
-            self.mouse_over_play_pause
-            or self.mouse_over_mute_unmute
-            or self.mouse_over_volume_slider
-        )
-
     def eventFilter(self, obj: QObject, event: QEvent) -> bool:  # noqa: N802
         """Manage events for the media player."""
         if (
@@ -289,26 +342,18 @@ class MediaPlayer(QGraphicsView):
                 self.toggle_play()
             elif obj == self.mute_unmute:
                 self.toggle_mute()
-            elif self.mouse_over_elements() is False:
+            else:
                 self.toggle_play()
         elif event.type() is QEvent.Type.Enter:
             if obj == self or obj == self.video_preview:
                 self.underMouse()
             elif obj == self.mute_unmute:
-                self.mouse_over_mute_unmute = True
-            elif obj == self.play_pause:
-                self.mouse_over_play_pause = True
-            elif obj == self.volume_slider:
-                self.mouse_over_volume_slider = True
+                self.volume_slider.show()
         elif event.type() == QEvent.Type.Leave:
             if obj == self or obj == self.video_preview:
                 self.releaseMouse()
-            elif obj == self.mute_unmute:
-                self.mouse_over_mute_unmute = False
-            elif obj == self.play_pause:
-                self.mouse_over_play_pause = False
-            elif obj == self.volume_slider:
-                self.mouse_over_volume_slider = False
+            elif obj == self.sub_controls:
+                self.volume_slider.hide()
 
         return super().eventFilter(obj, event)
 
@@ -387,7 +432,6 @@ class MediaPlayer(QGraphicsView):
     def load_toggle_play_icon(self, playing: bool) -> None:
         icon = self.driver.rm.pause_icon if playing else self.driver.rm.play_icon
         self.play_pause.load(icon)
-        # self.set_icon(self.toggle_play, icon)
 
     def load_mute_unmute_icon(self, muted: bool) -> None:
         icon = self.driver.rm.volume_mute_icon if muted else self.driver.rm.volume_icon
@@ -396,8 +440,7 @@ class MediaPlayer(QGraphicsView):
     def slider_value_changed(self, value: int) -> None:
         current = self.format_time(value)
         duration = self.format_time(self.player.duration())
-        self.position_label.setPlainText(f"{current} / {duration}")
-        self._move_position_label()
+        self.position_label.setText(f"{current} / {duration}")
 
     def slider_released(self) -> None:
         was_playing = self.player.isPlaying()
@@ -416,8 +459,7 @@ class MediaPlayer(QGraphicsView):
             self.pslider.setValue(position)
             current = self.format_time(self.player.position())
             duration = self.format_time(self.player.duration())
-            self.position_label.setPlainText(f"{current} / {duration}")
-            self._move_position_label()
+            self.position_label.setText(f"{current} / {duration}")
 
         if self.player.duration() == position:
             self.player.pause()
@@ -431,30 +473,29 @@ class MediaPlayer(QGraphicsView):
 
             current = self.format_time(self.player.position())
             duration = self.format_time(self.player.duration())
-            self.position_label.setPlainText(f"{current} / {duration}")
-            self._move_position_label()
+            self.position_label.setText(f"{current} / {duration}")
 
-    def resizeEvent(self, event: QResizeEvent) -> None:  # noqa: N802
-        size = event.size()
-
+    def _update_controls(self, size: QSize) -> None:
         self.scene().setSceneRect(0, 0, size.width(), size.height())
 
-        self.play_pause.move(0, int(self.scene().height() - self.play_pause.height()))
-        self.mute_unmute.move(
-            self.play_pause.width(), int(self.scene().height() - self.mute_unmute.height())
-        )
+        # occupy entire scene width
+        self.master_controls.setMinimumWidth(size.width())
+        self.master_controls.setMaximumWidth(size.width())
 
-        self._move_position_label()
+        self.master_controls.move(0, int(self.scene().height() - self.master_controls.height()))
 
-        self.pslider.setMinimumWidth(self.size().width() - 10)
-        self.pslider.setMaximumWidth(self.size().width() - 10)
-        self.pslider.move(
-            3, int(self.scene().height() - self.play_pause.height() - self.pslider.height())
-        )
+        ps_w = self.master_controls.width() - 5
+        self.pslider.setMinimumWidth(ps_w)
+        self.pslider.setMaximumWidth(ps_w)
 
-        pos_w = int(self.play_pause.width() + self.mute_unmute.width())
-        pos_h = int(size.height() - self.mute_unmute.height() + 5)
-        self.volume_slider.move(pos_w, pos_h)
+        # Changing the orientation of the volume slider to
+        # make it easier to use in smaller sizes.
+        orientation = self.volume_slider.orientation()
+        if size.width() <= 175 and orientation is Qt.Orientation.Horizontal:
+            self.volume_slider.setOrientation(Qt.Orientation.Vertical)
+            self.volume_slider.setMaximumHeight(30)
+        elif size.width() > 175 and orientation is Qt.Orientation.Vertical:
+            self.volume_slider.setOrientation(Qt.Orientation.Horizontal)
 
         self.video_preview.setSize(self.size())
         if self.player.hasVideo():
@@ -463,16 +504,8 @@ class MediaPlayer(QGraphicsView):
         self.tint.setRect(0, 0, self.size().width(), self.size().height())
         self.apply_rounded_corners()
 
-    def _move_position_label(self):
-        """Convenience function for repositioning the position label.
-
-        This is needed because the position label is not automatically
-        resized after changing the text.
-        """
-        rect = self.position_label.boundingRect()
-        pos_w = int(self.size().width() - rect.width() - 2)
-        pos_h = int(self.size().height() - self.mute_unmute.size().height() - 2)
-        self.position_label.setPos(pos_w, pos_h)
+    def resizeEvent(self, event: QResizeEvent) -> None:  # noqa: N802
+        self._update_controls(event.size())
 
     def volume_slider_changed(self, position: int) -> None:
         self.player.audioOutput().setVolume(position / 100)
