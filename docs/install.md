@@ -12,6 +12,8 @@ TagStudio has builds for **Windows**, **macOS** _(Apple Silicon & Intel)_, and *
 !!! info "For macOS Users"
     On macOS, you may be met with a message saying "**"TagStudio" can't be opened because Apple cannot check it for malicious software.**" If you encounter this, then you'll need to go to the "Settings" app, navigate to "Privacy & Security", and scroll down to a section that says "**"TagStudio" was blocked from use because it is not from an identified developer.**" Click the "Open Anyway" button to allow TagStudio to run. You should only have to do this once after downloading the application.
 
+---
+
 ### Package Managers
 
 <!-- prettier-ignore -->
@@ -45,6 +47,8 @@ pip install .
     _See more under "[Creating a Development Environment](#creating-a-development-environment)"_
 
 TagStudio can now be launched via the `tagstudio` command in your terminal.
+
+---
 
 ### Linux
 
@@ -197,6 +201,8 @@ Finally, `inputs` can be used in a module to add the package to your packages li
 
 Don't forget to rebuild!
 
+---
+
 ## Creating a Development Environment
 
 If you wish to develop for TagStudio, you'll need to create a development environment by installing the required dependencies. You have a number of options depending on your level of experience and familiarly with existing Python toolchains.
@@ -219,6 +225,8 @@ If you already have Python installed on your system, you can check the version b
 python --version
 ```
 
+---
+
 #### Installing with pyenv
 
 If you choose to install Python using pyenv, please refer to the following instructions:
@@ -226,6 +234,8 @@ If you choose to install Python using pyenv, please refer to the following instr
 1. Follow pyenv's [install instructions](https://github.com/pyenv/pyenv/?tab=readme-ov-file#installation) for your system.
 2. Install the appropriate Python version with pyenv by running `pyenv install 3.12` (This will **not** mess with your existing Python installation).
 3. Navigate to the repository root folder in your terminal and run `pyenv local 3.12`. You could alternatively use `pyenv shell 3.12` or `pyenv global 3.12` instead to set the Python version for the current terminal session or the entire system respectively, however using `local` is recommended.
+
+---
 
 ### Installing Dependencies
 
@@ -239,6 +249,8 @@ If using [uv](https://docs.astral.sh/uv), you can install the dependencies for T
 uv pip install -e .[dev]
 ```
 
+---
+
 #### Installing with Poetry
 
 If using [Poetry](https://python-poetry.org), you can install the dependencies for TagStudio with the following command:
@@ -246,6 +258,8 @@ If using [Poetry](https://python-poetry.org), you can install the dependencies f
 ```sh
 poetry install --with dev
 ```
+
+---
 
 #### Installing with Nix
 
@@ -271,6 +285,8 @@ You will have to allow usage of it.
 cat .envrc # You are checking them, right?
 direnv allow
 ```
+
+---
 
 #### Manual Installation
 
