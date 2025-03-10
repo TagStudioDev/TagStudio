@@ -129,9 +129,6 @@ Then, make sure you add the `inputs` context to your configuration:
           };
     }
     ```
-<!-- prettier-ignore-end -->
-
-<!-- prettier-ignore-start -->
 === "NixOS"
     ```nix title="flake.nix"
     {
@@ -186,9 +183,6 @@ Finally, `inputs` can be used in a module to add the package to your packages li
       ];
     }
     ```
-<!-- prettier-ignore-end -->
-
-<!-- prettier-ignore-start -->
 === "NixOS module"
     ```nix title="configuration.nix"
     { inputs, pkgs, ... }:
