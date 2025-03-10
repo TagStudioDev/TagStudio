@@ -7,10 +7,11 @@ from PySide6.QtGui import (
     QAction,
 )
 from PySide6.QtWidgets import QMenu, QMenuBar
-from src.core.enums import SettingItems
-from src.core.library.alchemy.library import LibraryStatus
-from src.qt.modals.settings_panel import SettingsPanel
-from src.qt.widgets.preview_panel import PreviewPanel
+
+from tagstudio.core.enums import SettingItems
+from tagstudio.core.library.alchemy.library import LibraryStatus
+from tagstudio.qt.modals.settings_panel import SettingsPanel
+from tagstudio.qt.widgets.preview_panel import PreviewPanel
 
 
 # Tests to see if the file path setting is applied correctly

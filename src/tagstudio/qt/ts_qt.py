@@ -1832,7 +1832,7 @@ class QtDriver(DriverMixin, QObject):
             self.settings.value(SettingItems.SHOW_FILEPATH, defaultValue="show full path", type=str)
         )
         library_dir_display = path if filepath_option == "show full path" else path.name
-        message = Translations.format("splash.opening_library",library_path=library_dir_display)
+        message = Translations.format("splash.opening_library", library_path=library_dir_display)
         self.main_window.landing_widget.set_status_label(message)
         self.main_window.statusbar.showMessage(message, 3)
         self.main_window.repaint()
