@@ -1,5 +1,8 @@
 {
-    "about.content": "<p>TagStudio — это приложение для организации фотографий и прочих файлов основанное на системе \"тегов\", которое фокусируется на пользовательских свободе и гибкости. Никаких проприетарных форматов и программ, никакой кучи сопроводительных файлов, и никакого переворота вашей файловой системы.</p>Лицензия: GPLv3<br>Путь к конфигурации: {config_path}<br>FFmpeg: {ffmpeg}<br>FFprobe: {ffprobe}<p><a href=\"https://github.com/TagStudioDev/TagStudio\">GitHub</a> | <a href=\"https://docs.tagstud.io\">Документация</a> | <a href=\"https://discord.com/invite/hRNnVKhF2G\">Discord</a></p>",
+    "about.config_path": "Путь к конфигурации",
+    "about.description": "TagStudio — это приложение для организации фотографий и прочих файлов основанное на системе \"тегов\", которое фокусируется на пользовательских свободе и гибкости. Никаких проприетарных форматов и программ, никакой кучи сопроводительных файлов, и никакого переворота вашей файловой системы.",
+    "about.documentation": "Документация",
+    "about.license": "Лицензия",
     "about.title": "О программе TagStudio",
     "app.git": "Коммит Git",
     "app.pre_release": "Пре-релиз",
@@ -116,7 +119,6 @@
     "generic.save": "Сохранить",
     "generic.skip": "Пропустить",
     "generic.skip_alt": "&Пропустить",
-    "help.visit_github": "Посетить GitHub-репозиторий",
     "home.search": "Поиск",
     "home.search_entries": "Поиск записей",
     "home.search_library": "Поиск по библиотеке",
