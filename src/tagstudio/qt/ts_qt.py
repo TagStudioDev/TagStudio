@@ -333,7 +333,7 @@ class QtDriver(DriverMixin, QObject):
         menu_bar.setNativeMenuBar(True)
 
         file_menu = QMenu(Translations["menu.file"], menu_bar)
-        edit_menu = QMenu(Translations["generic.edit_alt"], menu_bar)
+        edit_menu = QMenu(Translations["generic.edit"], menu_bar)
         view_menu = QMenu(Translations["menu.view"], menu_bar)
         tools_menu = QMenu(Translations["menu.tools"], menu_bar)
         macros_menu = QMenu(Translations["menu.macros"], menu_bar)

@@ -102,7 +102,7 @@ class TagColorManager(QWidget):
 
         self.button_layout.addStretch(1)
 
-        self.done_button = QPushButton(Translations["generic.done_alt"])
+        self.done_button = QPushButton(Translations["generic.done"])
         self.done_button.clicked.connect(self.hide)
         self.button_layout.addWidget(self.done_button)
 
@@ -195,10 +195,10 @@ class TagColorManager(QWidget):
         message_box.setWindowTitle(Translations["color.namespace.delete.title"])
         message_box.setIcon(QMessageBox.Icon.Warning)
         cancel_button = message_box.addButton(
-            Translations["generic.cancel_alt"], QMessageBox.ButtonRole.RejectRole
+            Translations["generic.cancel"], QMessageBox.ButtonRole.RejectRole
         )
         message_box.addButton(
-            Translations["generic.delete_alt"], QMessageBox.ButtonRole.DestructiveRole
+            Translations["generic.delete"], QMessageBox.ButtonRole.DestructiveRole
         )
         message_box.setEscapeButton(cancel_button)
         result = message_box.exec_()
