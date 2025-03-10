@@ -60,6 +60,7 @@ ignore_missing_imports = true
 implicit_optional = true
 strict_optional = false
 warn_unused_ignores = true
+exclude = ["build", "dist"]
 
 [[tool.mypy.overrides]]
 module = "tagstudio.qt.main_window"
