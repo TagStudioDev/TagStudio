@@ -5,7 +5,7 @@ tags:
 
 # Tag Overrides
 
-Tag overrides are the ability to add or remove [parent tags](tag.md#parent-tags) from a [tag](tag.md) on a per- [entry](entry.md) basis.
+Tag overrides are the ability to add or remove [parent tags](./tag.md#parent-tags) from a [tag](./tag.md) on a per-[entry](./entry.md) basis.
 
 ## Examples
 

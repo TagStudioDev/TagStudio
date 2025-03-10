@@ -1,3 +1,4 @@
+---
 name: Release
 
 on:
@@ -19,15 +20,27 @@ jobs:
             suffix: _portable
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-          cache: 'pip'
-      - run: pip install -Ur requirements.txt pyinstaller
-      - run: pyinstaller tagstudio.spec -- ${{ matrix.build-flag }}
-      - run: tar czfC dist/tagstudio_linux_x86_64${{ matrix.suffix }}.tar.gz dist tagstudio
-      - uses: actions/upload-artifact@v4
+          cache: pip
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade uv
+          uv pip install --system .[pyinstaller]
+
+      - name: Execute PyInstaller
+        run: |
+          pyinstaller tagstudio.spec -- ${{ matrix.build-flag }}
+          tar czfC dist/tagstudio_linux_x86_64${{ matrix.suffix }}.tar.gz dist tagstudio
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
         with:
           name: tagstudio_linux_x86_64${{ matrix.suffix }}
           path: dist/tagstudio_linux_x86_64${{ matrix.suffix }}.tar.gz
@@ -41,20 +54,35 @@ jobs:
             arch: x86_64
           - os-version: '14'
             arch: aarch64
+
     runs-on: macos-${{ matrix.os-version }}
+
     env:
-      # even though we run on 12, target towards compatibility
+      # INFO: Even though we run on 13, target towards compatibility
       MACOSX_DEPLOYMENT_TARGET: '11.0'
+
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-          cache: 'pip'
-      - run: pip install -Ur requirements.txt pyinstaller
-      - run: pyinstaller tagstudio.spec
-      - run: tar czfC dist/tagstudio_macos_${{ matrix.arch }}.tar.gz dist TagStudio.app
-      - uses: actions/upload-artifact@v4
+          cache: pip
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade uv
+          uv pip install --system .[pyinstaller]
+
+
+      - name: Execute PyInstaller
+        run: |
+          pyinstaller tagstudio.spec
+          tar czfC dist/tagstudio_macos_${{ matrix.arch }}.tar.gz dist TagStudio.app
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
         with:
           name: tagstudio_macos_${{ matrix.arch }}
           path: dist/tagstudio_macos_${{ matrix.arch }}.tar.gz
@@ -72,30 +100,51 @@ jobs:
             build-flag: --portable
             suffix: _portable
             file-end: .exe
+
     runs-on: windows-2019
+
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-          cache: 'pip'
-      - run: pip install -Ur requirements.txt pyinstaller
-      - run: PyInstaller tagstudio.spec -- ${{ matrix.build-flag }}
-      - run: Compress-Archive -Path dist/TagStudio${{ matrix.file-end }} -DestinationPath dist/tagstudio_windows_x86_64${{ matrix.suffix }}.zip
-      - uses: actions/upload-artifact@v4
+          cache: pip
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade uv
+          uv pip install --system .[pyinstaller]
+
+      - name: Execute PyInstaller
+        run: |
+          PyInstaller tagstudio.spec -- ${{ matrix.build-flag }}
+          Compress-Archive -Path dist/TagStudio${{ matrix.file-end }} -DestinationPath dist/tagstudio_windows_x86_64${{ matrix.suffix }}.zip
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
         with:
           name: tagstudio_windows_x86_64${{ matrix.suffix }}
           path: dist/tagstudio_windows_x86_64${{ matrix.suffix }}.zip
 
   publish:
     needs: [linux, macos, windows]
+
     runs-on: ubuntu-latest
+
     permissions:
       contents: write
+
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/download-artifact@v4
-      - uses: softprops/action-gh-release@v2
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Fetch artifacts
+        uses: actions/download-artifact@v4
+
+      - name: Publish release
+        uses: softprops/action-gh-release@v2
         with:
           files: |
             tagstudio_linux_x86_64/*

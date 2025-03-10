@@ -43,4 +43,4 @@ Migration from the legacy JSON format is provided via a walkthrough when opening
 
 -   Adds the `color_border` column to `tag_colors` table. Used for instructing the [secondary color](../library/tag_color.md#secondary-color) to apply to a tag's border as a new optional behavior.
 -   Adds three new default colors: "Burgundy (TagStudio Shades)", "Dark Teal (TagStudio Shades)", and "Dark Lavender (TagStudio Shades)".
--   Updates Neon colors to use the the new `color_border` property.
+-   Updates Neon colors to use the new `color_border` property.

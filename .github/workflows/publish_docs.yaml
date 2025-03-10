@@ -1,19 +1,20 @@
-name: Publish Docs 
+---
+name: Publish Docs
 
 on:
   push:
     branches:
       - main
     paths:
-      - 'docs/**'
-      - 'mkdocs.yml'
-      - 'CHANGELOG.md'
-      - '.github/workflows/publish_docs.yaml'
+      - .github/workflows/publish_docs.yaml
+      - docs/**
+      - mkdocs.yml
+      - CHANGELOG.md
 
 permissions:
   contents: write
 
-concurrency: 
+concurrency:
   group: publish-docs
   cancel-in-progress: true
 
@@ -21,18 +22,28 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
         with:
-          python-version: 3.x
-      - run: echo "cache_id=$(date --utc '+%V')" >> $GITHUB_ENV 
+          python-version: '3.12'
+          cache: pip
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade uv
+          uv pip install --system .[mkdocs]
+
+      - run: echo "cache_id=$(date --utc '+%V')" >> $GITHUB_ENV
+
       - uses: actions/cache@v4
         with:
           key: mkdocs-material-${{ env.cache_id }}
           path: .cache
           restore-keys: |
                   mkdocs-material-
-      - run: pip install mkdocs-material mkdocs-material[imaging]
-      - run: mkdocs gh-deploy --force
 
-
+      - name: Execute mkdocs
+        run: mkdocs gh-deploy --force

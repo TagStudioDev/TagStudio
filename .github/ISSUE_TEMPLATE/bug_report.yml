@@ -1,3 +1,4 @@
+---
 name: Bug Report
 description: File a bug or issue report.
 title: '[Bug]: '
@@ -51,7 +52,7 @@ body:
   - type: textarea
     attributes:
       label: Steps to Reproduce
-      description: Minimal steps neded for the problem to occur.
+      description: Minimal steps needed for the problem to occur.
       placeholder: |
         1.
         2.
