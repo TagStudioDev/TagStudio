@@ -1,5 +1,8 @@
 {
-    "about.content": "<p>TagStudio, kullanıcıya özgürlük ve esneklik sunmaya odaklanan, etiketler kullanarak fotoğraflarınızı ve dosyalarınızı yönetebilmenizi sağlayan bir uygulamasıdır. Kapalı kaynak programlar veya formatlar kullanmaz (Kodu herkese açık!), sisteminizin yapısında değişiklikler yapmaz ve arkada derya deniz dolusu yan dosyalar bırakmaz.</p>Lisans: GPLv3<br>Yapılandırma yolu: {config_path}<br>FFmpeg: {ffmpeg}<br>FFprobe: {ffprobe}<p><a href=\"https://github.com/TagStudioDev/TagStudio\">GitHub</a> | <a href=\"https://docs.tagstud.io\">Dökümantasyon</a> | <a href=\"https://discord.com/invite/hRNnVKhF2G\">Discord</a></p>",
+    "about.config_path": "Yapılandırma yolu",
+    "about.description": "TagStudio, kullanıcıya özgürlük ve esneklik sunmaya odaklanan, etiketler kullanarak fotoğraflarınızı ve dosyalarınızı yönetebilmenizi sağlayan bir uygulamasıdır. Kapalı kaynak programlar veya formatlar kullanmaz (Kodu herkese açık!), sisteminizin yapısında değişiklikler yapmaz ve arkada derya deniz dolusu yan dosyalar bırakmaz.",
+    "about.documentation": "Dökümantasyon",
+    "about.license": "Lisans",
     "about.title": "TagStudio Hakkında",
     "app.git": "Git Kaydet",
     "app.pre_release": "Test-Sürümü",
