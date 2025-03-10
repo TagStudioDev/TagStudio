@@ -45,7 +45,6 @@ class FfmpegChecker(QMessageBox):
         if which(FFPROBE_CMD):
             self.ffprobe = True
 
-        logger.info("FFmpeg found: {self.ffmpeg}, FFprobe found: {self.ffprobe}")
         return self.ffmpeg and self.ffprobe
 
     def version(self):
