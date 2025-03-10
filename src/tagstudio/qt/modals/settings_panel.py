@@ -52,7 +52,7 @@ class SettingsPanel(PanelWidget):
             "Turkish": "tr",
         }
         self.language_combobox = QComboBox()
-        language_label.setBuddy(self.language_combobox);
+        language_label.setBuddy(self.language_combobox)
         self.language_combobox.addItems(list(self.languages.keys()))
         current_lang: str = str(
             driver.settings.value(SettingItems.LANGUAGE, defaultValue="en", type=str)
