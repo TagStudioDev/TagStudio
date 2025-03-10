@@ -89,6 +89,7 @@ theme:
     #- navigation.top
     - search.suggest
     - content.code.annotate
+    - content.code.copy
     - content.action.edit
   icon:
     repo: fontawesome/brands/github
@@ -136,3 +137,6 @@ plugins:
   - tags
   - social: # social embed cards
       enabled: !ENV [CI, false] # enabled only when running in CI (eg GitHub Actions)
+
+extra_css:
+  - stylesheets/extra.css

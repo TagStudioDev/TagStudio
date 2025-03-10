@@ -1,6 +1,6 @@
 # File Entries
 
-File entries are the individual representations of your files inside a TagStudio [library](index.md). Each one corresponds one-to-one to a file on disk, and tracks all of the additional [tags](tag.md) and metadata that you attach to it inside TagStudio.
+File entries are the individual representations of your files inside a TagStudio [library](./index.md). Each one corresponds one-to-one to a file on disk, and tracks all of the additional [tags](tag.md) and metadata that you attach to it inside TagStudio.
 
 ## Storage
 
@@ -14,7 +14,7 @@ File entries appear as file previews both inside the thumbnail grid. The preview
 
 If the file that an entry is referencing has been moved, renamed, or deleted on disk, then TagStudio will display a red chain-link icon for the thumbnail image. Certain uncached stats such as the file size and image dimensions will also be unavailable to see in the preview panel when a file becomes unlinked.
 
-To fix file entries that have become unlinked, select the "Fix Unlinked Entries" option from the Tools menu. From there, refresh the unlinked entry count and choose whether to search and relink you files, and/or delete the file entires from your library. This will NOT delete or modify any files on disk.
+To fix file entries that have become unlinked, select the "Fix Unlinked Entries" option from the Tools menu. From there, refresh the unlinked entry count and choose whether to search and relink you files, and/or delete the file entries from your library. This will NOT delete or modify any files on disk.
 
 ## Internal Structure
 

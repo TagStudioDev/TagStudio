@@ -265,3 +265,6 @@ TagStudio.ini
 .envrc
 .direnv
 .devenv
+
+result
+result-*

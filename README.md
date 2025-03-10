@@ -44,7 +44,7 @@ TagStudio is a photo & file organization application with an underlying tag-base
 ## Goals
 
 -   To achieve a portable, private, extensible, open-format, and feature-rich system of organizing and rediscovering files.
--   To provide powerful methods for organization, notably the concept of tag inheritance, or “taggable tags” _(and in the near future, the combination of composition-based tags)._
+-   To provide powerful methods for organization, notably the concept of tag inheritance, or "taggable tags" _(and in the near future, the combination of composition-based tags)._
 -   To create an implementation of such a system that is resilient against a user’s actions outside the program (modifying, moving, or renaming files) while also not burdening the user with mandatory sidecar files or requiring them to change their existing file structures and workflows.
 -   To support a wide range of users spanning across different platforms, multi-user setups, and those with large (several terabyte) libraries.
 -   To make the dang thing look nice, too. It’s 2025, not 1995.
@@ -75,7 +75,7 @@ Translation hosting generously provided by [Weblate](https://weblate.org/en/). C
 -   Add metadata to your library entries, including:
     -   Name, Author, Artist (Single-Line Text Fields)
     -   Description, Notes (Multiline Text Fields)
--   Create rich tags composed of a name, color, a list of aliases, and a list of “parent tags” - these being tags in which these tags inherit values from.
+-   Create rich tags composed of a name, color, a list of aliases, and a list of "parent tags" - these being tags in which these tags inherit values from.
 -   Copy and paste tags and fields across file entries
 -   Automatically organize tags into groups based on parent tags marked as "categories"
 -   Generate tags from your existing folder structure with the "Folders to Tags" macro (NOTE: these tags do NOT sync with folders after they are created)
@@ -98,29 +98,21 @@ Translation hosting generously provided by [Weblate](https://weblate.org/en/). C
 
 ## Installation
 
-To download TagStudio, visit the [Releases](https://github.com/TagStudioDev/TagStudio/releases) section of the GitHub repository and download the latest release for your system under the "Assets" section. TagStudio is available for **Windows**, **macOS** _(Apple Silicon & Intel)_, and **Linux**. Windows and Linux builds are also available in portable versions if you want a more self-contained executable to move around.
+To download executable builds of TagStudio, visit the [Releases](https://github.com/TagStudioDev/TagStudio/releases) page of the GitHub repository and download the latest release for your system under the "Assets" section at the bottom of the release.
 
-**We do not currently publish TagStudio to any package managers. Any TagStudio distributions outside of the GitHub releases page are _unofficial_ and not maintained by us.** Installation support will not be given to users installing from unofficial sources. Use these versions at your own risk.
+TagStudio has builds for **Windows**, **macOS** _(Apple Silicon & Intel)_, and **Linux**. We also offer portable releases for Windows and Linux which are self-contained and easier to move around.
 
-> [!IMPORTANT]
-> On macOS, you may be met with a message saying _""TagStudio" can't be opened because Apple cannot check it for malicious software."_ If you encounter this, then you'll need to go to the "Settings" app, navigate to "Privacy & Security", and scroll down to a section that says _""TagStudio" was blocked from use because it is not from an identified developer."_ Click the "Open Anyway" button to allow TagStudio to run. You should only have to do this once after downloading the application.
+For detailed instructions, installation help, and instructions for developing for TagStudio, please see the "[Installation](https://docs.tagstud.io/install/)" page on our documentation website.
 
-> [!IMPORTANT]
-> On Linux with non-Qt based Desktop Environments you may be unable to open TagStudio. You need to make sure that "xcb-cursor0" or "libxcb-cursor0" packages are installed. For more info check [Missing linux dependencies](https://github.com/TagStudioDev/TagStudio/discussions/182#discussioncomment-9452896)
+<!-- prettier-ignore -->
+> [!CAUTION]
+> **We do not currently publish TagStudio to any package managers. Any TagStudio distributions outside of the GitHub [Releases](https://github.com/TagStudioDev/TagStudio/releases) page are _unofficial_ and not maintained by us.**
+>
+> Installation support will not be given to users installing from unofficial sources. Use these versions at your own risk!
 
 ### Third-Party Dependencies
 
--   For video thumbnails and playback, you'll also need [FFmpeg](https://ffmpeg.org/download.html) installed on your system. If you encounter any issues with this, please reference our [FFmpeg Help](/docs/help/ffmpeg.md) guide.
-
-### Optional Arguments
-
-Arguments available to pass to the program, either via the command line or a shortcut.
-
-> `--open <path>` / `-o <path>`
-> Path to a TagStudio Library folder to open on start.
->
-> `--config-file <path>` / `-c <path>`
-> Path to the TagStudio config file to load.
+For video thumbnails and playback, you'll also need [FFmpeg](https://ffmpeg.org/download.html) installed on your system. If you encounter any issues with this, please reference our [FFmpeg Help](/docs/help/ffmpeg.md) guide.
 
 ## Usage
 
@@ -136,13 +128,13 @@ Libraries under 10,000 files automatically scan for new or modified files when o
 
 Access the "Add Tag" search box by either clicking on the "Add Tag" button at the bottom of the right sidebar, accessing the "Add Tags to Selected" option from the File menu, or by pressing <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>T</kbd>.
 
-From here you can search for existing tags or create a new one if the one you're looking for doesn't exist. Click the “+” button next to any tags you want to to the currently selected file entries. To quickly add the top result, press the <kbd>Enter</kbd>/<kbd>Return</kbd> key to add the the topmost tag and reset the tag search. Press <kbd>Enter</kbd>/<kbd>Return</kbd> once more to close the dialog box. By using this method, you can quickly add various tags in quick succession just by using the keyboard!
+From here you can search for existing tags or create a new one if the one you're looking for doesn't exist. Click the "+" button next to any tags you want to to the currently selected file entries. To quickly add the top result, press the <kbd>Enter</kbd>/<kbd>Return</kbd> key to add the the topmost tag and reset the tag search. Press <kbd>Enter</kbd>/<kbd>Return</kbd> once more to close the dialog box. By using this method, you can quickly add various tags in quick succession just by using the keyboard!
 
 To remove a tag from a file entry, hover over the tag in the preview panel and click on the "-" icon that appears.
 
 ### Adding Metadata to File Entries
 
-To add a metadata field to a file entry, start by clicking the “Add Field” button at the bottom of the preview panel. From the dropdown menu, select the type of metadata field you’d like to add to the entry
+To add a metadata field to a file entry, start by clicking the "Add Field" button at the bottom of the preview panel. From the dropdown menu, select the type of metadata field you’d like to add to the entry
 
 ### Editing Metadata Fields
 
@@ -172,11 +164,11 @@ You can manage your library of tags from opening the "Tag Manager" panel from Ed
 
 ### Editing Tags
 
-To edit a tag, click on it inside the preview panel or right-click the tag and select “Edit Tag” from the context menu.
+To edit a tag, click on it inside the preview panel or right-click the tag and select "Edit Tag" from the context menu.
 
 ### Relinking Moved Files
 
-Inevitably some of the files inside your library will be renamed, moved, or deleted. If a file has been renamed or moved, TagStudio will display the thumbnail as a red broken chain link. To relink moved files or delete these entries, select the "Manage Unlinked Entries" option under the Tools menu. Click the "Refresh" button to scan your library for unlinked entries. Once complete, you can attempt to “Search & Relink” any unlinked file entries to their respective files, or “Delete Unlinked Entries” in the event the original files have been deleted and you no longer wish to keep their entries inside your library.
+Inevitably some of the files inside your library will be renamed, moved, or deleted. If a file has been renamed or moved, TagStudio will display the thumbnail as a red broken chain link. To relink moved files or delete these entries, select the "Manage Unlinked Entries" option under the Tools menu. Click the "Refresh" button to scan your library for unlinked entries. Once complete, you can attempt to "Search & Relink" any unlinked file entries to their respective files, or "Delete Unlinked Entries" in the event the original files have been deleted and you no longer wish to keep their entries inside your library.
 
 > [!WARNING]
 > There is currently no method to relink entries to files that have been renamed - only moved or deleted. This is a high priority for future releases.
@@ -194,7 +186,7 @@ These features were present in pre-public versions of TagStudio (9.0 and below) 
 
 #### Fix Duplicate Files
 
-Load in a .dupeguru file generated by [dupeGuru](https://github.com/arsenetar/dupeguru/) and mirror metadata across entries marked as duplicates. After mirroring, return to dupeGuru to manage deletion of the duplicate files. After deletion, use the “Fix Unlinked Entries” feature in TagStudio to delete the duplicate set of entries for the now-deleted files
+Load in a .dupeguru file generated by [dupeGuru](https://github.com/arsenetar/dupeguru/) and mirror metadata across entries marked as duplicates. After mirroring, return to dupeGuru to manage deletion of the duplicate files. After deletion, use the "Fix Unlinked Entries" feature in TagStudio to delete the duplicate set of entries for the now-deleted files
 
 > [!CAUTION]
 > While this feature is functional, it’s a pretty roundabout process and can be streamlined in the future.
