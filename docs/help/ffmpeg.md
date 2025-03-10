@@ -43,7 +43,7 @@ FFmpeg is available under the macOS section of the [FFmpeg website](https://www.
 
 ### Package Managers
 
-FFmpeg may be installed by default on some Linux distributions, but if not, it is available via your distro's package manager of choice:
+FFmpeg may be installed by default on some Linux distributions, but if not, it is available via your distribution package manager of choice:
 
 1. Debian/Ubuntu (`sudo apt install ffmpeg`)
 2. Fedora (`sudo dnf install ffmpeg-free`)

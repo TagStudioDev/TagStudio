@@ -1,32 +1,33 @@
-# -*- mode: python ; coding: utf-8 -*-
-# vi: ft=python
-
-
+import platform
 from argparse import ArgumentParser
-import sys
+
 from PyInstaller.building.api import COLLECT, EXE, PYZ
 from PyInstaller.building.build_main import Analysis
 from PyInstaller.building.osx import BUNDLE
-
+from tomllib import load
 
 parser = ArgumentParser()
-parser.add_argument('--portable', action='store_true')
+parser.add_argument("--portable", action="store_true")
 options = parser.parse_args()
 
+with open("pyproject.toml", "rb") as file:
+    pyproject = load(file)["project"]
 
-name = 'TagStudio' if sys.platform == 'win32' else 'tagstudio'
+system = platform.system()
+
+name = pyproject["name"] if system == "Windows" else "tagstudio"
 icon = None
-if sys.platform == 'win32':
-    icon = 'tagstudio/resources/icon.ico'
-elif sys.platform == 'darwin':
-    icon = 'tagstudio/resources/icon.icns'
+if system == "Windows":
+    icon = "src/tagstudio/resources/icon.ico"
+elif system == "Darwin":
+    icon = "src/tagstudio/resources/icon.icns"
 
 
 a = Analysis(
-    ['tagstudio/tag_studio.py'],
+    ["src/tagstudio/main.py"],
     pathex=[],
     binaries=[],
-    datas=[('tagstudio/resources', 'resources'), ('tagstudio/src', 'src')],
+    datas=[("src/tagstudio", "tagstudio")],
     hiddenimports=[],
     hookspath=[],
     hooksconfig={},
@@ -47,7 +48,7 @@ exe = EXE(
     [],
     bootloader_ignore_signals=False,
     console=False,
-    hide_console='hide-early',
+    hide_console="hide-early",
     disable_windowed_traceback=False,
     debug=False,
     name=name,
@@ -60,27 +61,34 @@ exe = EXE(
     strip=False,
     upx=True,
     upx_exclude=[],
-    runtime_tmpdir=None
+    runtime_tmpdir=None,
 )
 
-coll = None if options.portable else COLLECT(
-    exe,
-    a.binaries,
-    a.datas,
-    name=name,
-    strip=False,
-    upx=True,
-    upx_exclude=[],
+coll = (
+    None
+    if options.portable
+    else COLLECT(
+        exe,
+        a.binaries,
+        a.datas,
+        name=name,
+        strip=False,
+        upx=True,
+        upx_exclude=[],
+    )
 )
 
-app = BUNDLE(
-    exe if coll is None else coll,
-    name='TagStudio.app',
-    icon=icon,
-    bundle_identifier='com.cyanvoxel.tagstudio',
-    version='9.5.1',
-    info_plist={
-        'NSAppleScriptEnabled': False,
-        'NSPrincipalClass': 'NSApplication',
-    }
-)
+if system == "Darwin":
+    app = BUNDLE(
+        exe if coll is None else coll,
+        name=f"{pyproject['name']}.app",
+        icon=icon,
+        bundle_identifier="com.cyanvoxel.tagstudio",
+        version=pyproject["version"],
+        info_plist={
+            "NSAppleScriptEnabled": False,
+            "NSPrincipalClass": "NSApplication",
+        },
+    )
+
+# vi: ft=python

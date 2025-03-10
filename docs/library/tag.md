@@ -52,7 +52,7 @@ In a system where tags have no relationships, you're required to add as many tag
 
 #### Intuition via Substitution
 
-Now when searching for for images that have `Dreamworks` and `Character`, any images or files originally just tagged with `Shrek` will appear as you would expect. A little bit of tag setup goes a long way not only saving so much time during tagging, but also to ensure an intuitive way to search your files!
+Now when searching for images that have `Dreamworks` and `Character`, any images or files originally just tagged with `Shrek` will appear as you would expect. A little bit of tag setup goes a long way not only saving so much time during tagging, but also to ensure an intuitive way to search your files!
 
 #### Rediscovery via Linking
 
