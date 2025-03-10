@@ -88,7 +88,7 @@ class FixUnlinkedEntriesModal(QWidget):
         self.button_layout.setContentsMargins(6, 6, 6, 6)
         self.button_layout.addStretch(1)
 
-        self.done_button = QPushButton(Translations["generic.done_alt"])
+        self.done_button = QPushButton(Translations["generic.done"])
         self.done_button.setDefault(True)
         self.done_button.clicked.connect(self.hide)
         self.button_layout.addWidget(self.done_button)

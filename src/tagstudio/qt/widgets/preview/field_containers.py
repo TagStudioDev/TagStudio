@@ -509,7 +509,7 @@ class FieldContainers(QWidget):
         remove_mb.setWindowTitle("Remove Field")
         remove_mb.setIcon(QMessageBox.Icon.Warning)
         cancel_button = remove_mb.addButton(
-            Translations["generic.cancel_alt"], QMessageBox.ButtonRole.DestructiveRole
+            Translations["generic.cancel"], QMessageBox.ButtonRole.DestructiveRole
         )
         remove_mb.addButton("&Remove", QMessageBox.ButtonRole.RejectRole)
         remove_mb.setEscapeButton(cancel_button)
