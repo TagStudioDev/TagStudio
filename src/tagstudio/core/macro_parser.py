@@ -12,6 +12,8 @@ import structlog
 import toml
 from wcmatch import glob
 
+from tagstudio.core.library.alchemy.library import _FieldID
+
 if TYPE_CHECKING:
     from tagstudio.core.library.alchemy.library import Library
     from tagstudio.core.library.alchemy.models import Tag
