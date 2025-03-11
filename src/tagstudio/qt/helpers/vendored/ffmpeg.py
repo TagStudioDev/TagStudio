@@ -80,12 +80,12 @@ def version():
         ret = silent_run([FFMPEG_CMD, "-version"], shell=False, capture_output=True, text=True)
         if ret.returncode == 0:
             with contextlib.suppress(Exception):
-                version["ffmpeg"] = ret.stdout.split(" ")[2]
+                version["ffmpeg"] = str(ret.stdout).split(" ")[2]
 
     if which(FFPROBE_CMD):
         ret = silent_run([FFPROBE_CMD, "-version"], shell=False, capture_output=True, text=True)
         if ret.returncode == 0:
             with contextlib.suppress(Exception):
-                version["ffprobe"] = ret.stdout.split(" ")[2]
+                version["ffprobe"] = str(ret.stdout).split(" ")[2]
 
     return version
