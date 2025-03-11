@@ -11,7 +11,7 @@ from shutil import which
 import ffmpeg
 import structlog
 
-from tagstudio.qt.helpers.silent_popen import silent_Popen
+from tagstudio.qt.helpers.silent_popen import silent_Popen, silent_run
 
 logger = structlog.get_logger(__name__)
 
@@ -77,17 +77,15 @@ def version():
     version: dict[str, str | None] = {"ffmpeg": None, "ffprobe": None}
 
     if which(FFMPEG_CMD):
-        ret = subprocess.run([FFMPEG_CMD, "-version"], shell=False, capture_output=True, text=True)
+        ret = silent_run([FFMPEG_CMD, "-version"], shell=False, capture_output=True, text=True)
         if ret.returncode == 0:
             with contextlib.suppress(Exception):
-                version["ffmpeg"] = ret.stdout.replace("-", " ").split(" ")[2]
+                version["ffmpeg"] = ret.stdout.split(" ")[2]
 
     if which(FFPROBE_CMD):
-        ret = subprocess.run(
-            [FFPROBE_CMD, "-show_program_version"], shell=False, capture_output=True, text=True
-        )
+        ret = silent_run([FFPROBE_CMD, "-version"], shell=False, capture_output=True, text=True)
         if ret.returncode == 0:
             with contextlib.suppress(Exception):
-                version["ffprobe"] = ret.stdout.split("\n")[1].replace("-", "=").split("=")[1]
+                version["ffprobe"] = ret.stdout.split(" ")[2]
 
     return version
