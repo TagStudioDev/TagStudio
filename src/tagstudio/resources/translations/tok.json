@@ -1,5 +1,7 @@
 {
-    "about.content": "<p>ilo Tagstudio li ilo pi lawa lipu pi lawa sitelen li kepeken nasin pi poki pona. ilo Tagstudio li wile pana e lawa mute tawa e jan kepeken. nasin pi open ala li lon ala, en ma pi lipu poka li lon ala, en sina li ante ala e nasin lipu ale sina.</p>lipu lawa: GPLv3<br>Config path: {config_path}<br>FFmpeg: {ffmpeg}<br>FFprobe: {ffprobe}<p><a href=\"https://github.com/TagStudioDev/TagStudio\">ma GitHub</a> | <a href=\"https://docs.tagstud.io\">lipu sona</a> | <a href=\"https://discord.com/invite/hRNnVKhF2G\">ma Siko</a></p>",
+    "about.description": "ilo Tagstudio li ilo pi lawa lipu pi lawa sitelen li kepeken nasin pi poki pona. ilo Tagstudio li wile pana e lawa mute tawa e jan kepeken. nasin pi open ala li lon ala, en ma pi lipu poka li lon ala, en sina li ante ala e nasin lipu ale sina.",
+    "about.documentation": "lipu sona",
+    "about.license": "lipu lawa",
     "about.title": "sona pi ilo Tagstudio",
     "app.git": "Git Commit",
     "app.pre_release": "ilo pi pakala lili",
