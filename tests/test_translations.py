@@ -30,17 +30,23 @@ def find_format_keys(format_string: str) -> set[str]:
 def test_format_key_validity(translation_filename: str):
     default_translation = load_translation("en.json")
     translation = load_translation(translation_filename)
+    invalid_keys: list[tuple[str, list[str]]] = []
+    missing_keys: list[tuple[str, list[str]]] = []
     for key in default_translation:
         if key not in translation:
             continue
         default_keys = find_format_keys(default_translation[key])
         translation_keys = find_format_keys(translation[key])
-        assert default_keys.issuperset(translation_keys), (
-            f"Translation {translation_filename} for key {key} is using an invalid format key ({translation_keys.difference(default_keys)})"  # noqa: E501
-        )
-        assert translation_keys.issuperset(default_keys), (
-            f"Translation {translation_filename} for key {key} is missing format keys ({default_keys.difference(translation_keys)})"  # noqa: E501
-        )
+        if not default_keys.issuperset(translation_keys):
+            invalid_keys.append((key, list(translation_keys.difference(default_keys))))
+        if not translation_keys.issuperset(default_keys):
+            missing_keys.append((key, list(default_keys.difference(translation_keys))))
+    assert len(invalid_keys) == 0, (
+        f"Translation {translation_filename} has invalid format keys in some translations: {invalid_keys}"  # noqa: E501
+    )
+    assert len(missing_keys) == 0, (
+        f"Translation {translation_filename} is missing format keys in some translations: {missing_keys}"  # noqa: E501
+    )
 
 
 @pytest.mark.parametrize(["translation_filename"], get_translation_filenames())
