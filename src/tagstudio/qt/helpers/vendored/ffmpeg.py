@@ -2,10 +2,11 @@
 # Licensed under the GPL-3.0 License.
 # Vendored from ffmpeg-python and ffmpeg-python PR#790 by amamic1803
 
+import contextlib
 import json
 import platform
-import shutil
 import subprocess
+from shutil import which
 
 import ffmpeg
 import structlog
@@ -21,10 +22,12 @@ def _get_ffprobe_location() -> str:
     cmd: str = "ffprobe"
     if platform.system() == "Darwin":
         for loc in FFMPEG_MACOS_LOCATIONS:
-            if shutil.which(loc + cmd):
+            if which(loc + cmd):
                 cmd = loc + cmd
                 break
-    logger.info(f"[FFMPEG] Using FFprobe location: {cmd}")
+    logger.info(
+        f"[FFmpeg] Using FFprobe location: {cmd}{' (Found)' if which(cmd) else ' (Not Found)'}"
+    )
     return cmd
 
 
@@ -32,10 +35,12 @@ def _get_ffmpeg_location() -> str:
     cmd: str = "ffmpeg"
     if platform.system() == "Darwin":
         for loc in FFMPEG_MACOS_LOCATIONS:
-            if shutil.which(loc + cmd):
+            if which(loc + cmd):
                 cmd = loc + cmd
                 break
-    logger.info(f"[FFMPEG] Using FFmpeg location: {cmd}")
+    logger.info(
+        f"[FFmpeg] Using FFmpeg location: {cmd}{' (Found)' if which(cmd) else ' (Not Found)'}"
+    )
     return cmd
 
 
@@ -43,7 +48,7 @@ FFPROBE_CMD = _get_ffprobe_location()
 FFMPEG_CMD = _get_ffmpeg_location()
 
 
-def _probe(filename, cmd=FFPROBE_CMD, timeout=None, **kwargs):
+def probe(filename, cmd=FFPROBE_CMD, timeout=None, **kwargs):
     """Run ffprobe on the specified file and return a JSON representation of the output.
 
     Raises:
@@ -65,3 +70,24 @@ def _probe(filename, cmd=FFPROBE_CMD, timeout=None, **kwargs):
     if p.returncode != 0:
         raise ffmpeg.Error("ffprobe", out, err)
     return json.loads(out.decode("utf-8"))
+
+
+def version():
+    """Checks the version of FFmpeg and FFprobe and returns None if they dont exist."""
+    version: dict[str, str | None] = {"ffmpeg": None, "ffprobe": None}
+
+    if which(FFMPEG_CMD):
+        ret = subprocess.run([FFMPEG_CMD, "-version"], shell=False, capture_output=True, text=True)
+        if ret.returncode == 0:
+            with contextlib.suppress(Exception):
+                version["ffmpeg"] = ret.stdout.replace("-", " ").split(" ")[2]
+
+    if which(FFPROBE_CMD):
+        ret = subprocess.run(
+            [FFPROBE_CMD, "-show_program_version"], shell=False, capture_output=True, text=True
+        )
+        if ret.returncode == 0:
+            with contextlib.suppress(Exception):
+                version["ffprobe"] = ret.stdout.split("\n")[1].replace("-", "=").split("=")[1]
+
+    return version
