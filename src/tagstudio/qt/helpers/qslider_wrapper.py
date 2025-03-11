@@ -12,8 +12,6 @@ class QClickSlider(QSlider):
     based on click events.
     """
 
-    mouse_pressed = False
-
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -32,9 +30,7 @@ class QClickSlider(QSlider):
 
         was_slider_clicked = handle_rect.contains(event.position().x(), event.position().y())
 
-        if was_slider_clicked:
-            super().mousePressEvent(event)
-        else:
+        if not was_slider_clicked:
             self.setValue(
                 QStyle.sliderValueFromPosition(
                     self.minimum(), self.maximum(), event.x(), self.width()
@@ -42,15 +38,4 @@ class QClickSlider(QSlider):
             )
             self.mouse_pressed = True
 
-    def observe_mouse(self) -> bool:
-        """Getter for the mouse_pressed property.
-
-        This will also clear the mouse_pressed property
-        if it is set. We do this so that consumers of slider
-        events can modify the sliders position.
-        """
-        if self.mouse_pressed:
-            self.mouse_pressed = False
-            return True
-
-        return False
+        super().mousePressEvent(event)

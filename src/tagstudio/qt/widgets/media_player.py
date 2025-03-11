@@ -453,9 +453,7 @@ class MediaPlayer(QGraphicsView):
             self.player.pause()
 
     def player_position_changed(self, position: int) -> None:
-        if self.pslider.observe_mouse():
-            self.player.setPosition(self.pslider.value())
-        elif not self.pslider.isSliderDown():
+        if not self.pslider.isSliderDown():
             # User isn't using the slider, so update position in widgets.
             self.pslider.setValue(position)
             current = self.format_time(self.player.position())
