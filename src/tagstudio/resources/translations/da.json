@@ -1,5 +1,6 @@
 {
     "app.pre_release": "Forududgivelse",
+    "app.title": "{base_title} - Bibliotek '{library_dir}'",
     "color.title.no_color": "Ingen Farve",
     "drop_import.description": "De følgende filer har allerede eksisterende stier i biblioteket",
     "drop_import.duplicates_choice.plural": "Følgende {count} filer passer allerede til stier der eksistere i biblioteket.",
@@ -9,5 +10,6 @@
     "drop_import.progress.label.singular": "Importere nye filer...\n1 fil importeret.{suffix}",
     "drop_import.progress.window_title": "Importer Filer",
     "drop_import.title": "Konflikterende Fil(er)",
-    "edit.tag_manager": "Håndtere Tags"
+    "edit.tag_manager": "Håndtere Tags",
+    "entries.running.dialog.new_entries": "Tilføjer {total} Nye Filer..."
 }
