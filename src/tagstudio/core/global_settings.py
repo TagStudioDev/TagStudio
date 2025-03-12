@@ -4,13 +4,18 @@
 import sys
 from pathlib import Path
 
+import structlog
 import toml
 from pydantic import BaseModel, Field
 
 if sys.platform == "win32":
-    DEFAULT_SETTINGS_PATH = Path.home() / "Appdata" / "Roaming" / "TagStudio" / "settings.toml"
+    DEFAULT_GLOBAL_SETTINGS_PATH = (
+        Path.home() / "Appdata" / "Roaming" / "TagStudio" / "settings.toml"
+    )
 else:
-    DEFAULT_SETTINGS_PATH = Path.home() / ".config" / "TagStudio" / "settings.toml"
+    DEFAULT_GLOBAL_SETTINGS_PATH = Path.home() / ".config" / "TagStudio" / "settings.toml"
+
+logger = structlog.get_logger(__name__)
 
 
 # NOTE: pydantic also has a BaseSettings class (from pydantic-settings) that allows any settings
@@ -27,18 +32,19 @@ class GlobalSettings(BaseModel):
     show_filenames_in_grid: bool = Field(default=False)
 
     @staticmethod
-    def read_settings(path: Path = DEFAULT_SETTINGS_PATH) -> "GlobalSettings":
+    def read_settings(path: Path = DEFAULT_GLOBAL_SETTINGS_PATH) -> "GlobalSettings":
         if path.exists():
             with open(path) as file:
                 filecontents = file.read()
                 if len(filecontents.strip()) != 0:
+                    logger.info("[Settings] Reading Global Settings File", path=path)
                     settings_data = toml.loads(filecontents)
                     settings = GlobalSettings(**settings_data)
                     return settings
 
         return GlobalSettings()
 
-    def save(self, path: Path = DEFAULT_SETTINGS_PATH) -> None:
+    def save(self, path: Path = DEFAULT_GLOBAL_SETTINGS_PATH) -> None:
         if not path.parent.exists():
             path.parent.mkdir(parents=True, exist_ok=True)
 

@@ -16,6 +16,7 @@ import os
 import re
 import sys
 import time
+from argparse import Namespace
 from pathlib import Path
 from queue import Queue
 from warnings import catch_warnings
@@ -55,6 +56,7 @@ import tagstudio.qt.resources_rc  # noqa: F401
 from tagstudio.core.constants import TAG_ARCHIVED, TAG_FAVORITE, VERSION, VERSION_BRANCH
 from tagstudio.core.driver import DriverMixin
 from tagstudio.core.enums import LibraryPrefs, MacroID, SettingItems
+from tagstudio.core.global_settings import DEFAULT_GLOBAL_SETTINGS_PATH, GlobalSettings
 from tagstudio.core.library.alchemy.enums import (
     FieldTypeEnum,
     FilterState,
@@ -145,10 +147,14 @@ class QtDriver(DriverMixin, QObject):
     file_extension_panel: PanelModal | None = None
     tag_search_panel: TagSearchPanel | None = None
     add_tag_modal: PanelModal | None = None
+    folders_modal: FoldersToTagsModal
+    about_modal: AboutModal
+    unlinked_modal: FixUnlinkedEntriesModal
+    dupe_modal: FixDupeFilesModal
 
     lib: Library
 
-    def __init__(self, args):
+    def __init__(self, args: Namespace):
         super().__init__()
         # prevent recursive badges update when multiple items selected
         self.badge_update_lock = False
@@ -174,14 +180,24 @@ class QtDriver(DriverMixin, QObject):
 
         self.SIGTERM.connect(self.handle_sigterm)
 
-        self.config_path = ""
-        if self.args.config_file:
-            path = Path(self.args.config_file)
+        self.global_settings_path = DEFAULT_GLOBAL_SETTINGS_PATH
+        if self.args.settings_file:
+            self.global_settings_path = Path(self.args.settings_file)
+        else:
+            logger.info("[Settings] Global Settings File Path not specified, using default")
+        self.settings = GlobalSettings.read_settings(self.global_settings_path)
+        if not self.global_settings_path.exists():
+            logger.warning(
+                "[Settings] Global Settings File does not exist creating",
+                path=self.global_settings_path,
+            )
+
+        if self.args.cache_file:
+            path = Path(self.args.cache_file)
             if not path.exists():
-                logger.warning("[Config] Config File does not exist creating", path=path)
-            logger.info("[Config] Using Config File", path=path)
+                logger.warning("[Cache] Cache File does not exist creating", path=path)
+            logger.info("[Cache] Using Cache File", path=path)
             self.cached_values = QSettings(str(path), QSettings.Format.IniFormat)
-            self.config_path = str(path)
         else:
             self.cached_values = QSettings(
                 QSettings.Format.IniFormat,
@@ -190,10 +206,9 @@ class QtDriver(DriverMixin, QObject):
                 "TagStudio",
             )
             logger.info(
-                "[Config] Config File not specified, using default one",
+                "[Cache] Cache File not specified, using default one",
                 filename=self.cached_values.fileName(),
             )
-            self.config_path = self.cached_values.fileName()
 
         Translations.change_language(self.settings.language)
 
@@ -604,7 +619,7 @@ class QtDriver(DriverMixin, QObject):
         # Help Menu ============================================================
         def create_about_modal():
             if not hasattr(self, "about_modal"):
-                self.about_modal = AboutModal(self.config_path)
+                self.about_modal = AboutModal(self.global_settings_path)
             self.about_modal.show()
 
         self.about_action = QAction(Translations["menu.help.about"], menu_bar)
