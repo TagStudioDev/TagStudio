@@ -17,6 +17,7 @@ import re
 import sys
 import time
 from pathlib import Path
+from platform import system
 from queue import Queue
 from warnings import catch_warnings
 
@@ -97,6 +98,7 @@ from tagstudio.qt.widgets.migration_modal import JsonMigrationModal
 from tagstudio.qt.widgets.panel import PanelModal
 from tagstudio.qt.widgets.preview_panel import PreviewPanel
 from tagstudio.qt.widgets.progress import ProgressWidget
+from tagstudio.qt.widgets.thumb_button import ThumbButton
 from tagstudio.qt.widgets.thumb_renderer import ThumbRenderer
 
 BADGE_TAGS = {
@@ -404,6 +406,21 @@ class QtDriver(DriverMixin, QObject):
         self.refresh_dir_action.setStatusTip("Ctrl+R")
         self.refresh_dir_action.setEnabled(False)
         file_menu.addAction(self.refresh_dir_action)
+        file_menu.addSeparator()
+
+        self.open_selected_action = QAction(Translations["file.open_files.title.plural"], self)
+        self.open_selected_action.triggered.connect(self.open_selected_files)
+        if system() == "Darwin":
+            shortcut: QtCore.QKeyCombination | Qt.Key = QtCore.QKeyCombination(
+                QtCore.Qt.KeyboardModifier(QtCore.Qt.KeyboardModifier.ControlModifier),
+                QtCore.Qt.Key.Key_Down,
+            )
+        else:
+            shortcut = Qt.Key.Key_Return
+
+        self.open_selected_action.setShortcut(shortcut)
+        self.open_selected_action.setEnabled(False)
+        file_menu.addAction(self.open_selected_action)
         file_menu.addSeparator()
 
         self.close_library_action = QAction(Translations["menu.file.close_library"], menu_bar)
@@ -1426,6 +1443,40 @@ class QtDriver(DriverMixin, QObject):
 
         self.preview_panel.update_widgets()
 
+    def open_selected_files(self):
+        if not (
+            QApplication.focusWidget() == self.main_window.scrollArea
+            or isinstance(QApplication.focusWidget(), ThumbButton)
+        ):
+            return
+        count = len(self.selected)
+        result = QMessageBox.ButtonRole.ActionRole
+
+        if count >= 5:  # Only confirm if we have lots of files
+            confirm_open = QMessageBox()
+            confirm_open.setText(Translations.format("file.open_files.warning", count=count))
+            confirm_open.setWindowTitle(Translations["file.open_files.title"])
+            confirm_open.setIcon(QMessageBox.Icon.Question)
+
+            cancel_button = confirm_open.addButton(
+                Translations["generic.cancel_alt"], QMessageBox.ButtonRole.RejectRole
+            )
+            confirm_open.setEscapeButton(cancel_button)
+
+            open_button = confirm_open.addButton(
+                Translations["generic.open"], QMessageBox.ButtonRole.ActionRole
+            )
+            confirm_open.setDefaultButton(open_button)
+
+            result = QMessageBox.ButtonRole(confirm_open.exec())
+
+        if result == QMessageBox.ButtonRole.ActionRole:
+            opened = []
+            for it in self.item_thumbs:
+                if it.item_id in self.selected and it.item_id not in opened:
+                    it.opener.open_file()
+                    opened.append(it.item_id)
+
     def set_macro_menu_viability(self):
         # self.autofill_action.setDisabled(not self.selected)
         pass
@@ -1453,10 +1504,19 @@ class QtDriver(DriverMixin, QObject):
             self.add_tag_to_selected_action.setEnabled(True)
             self.clear_select_action.setEnabled(True)
             self.delete_file_action.setEnabled(True)
+
+            self.open_selected_action.setEnabled(True)
+            if len(self.selected) == 1:
+                self.open_selected_action.setText(Translations["file.open_files.title.singular"])
+            else:
+                self.open_selected_action.setText(Translations["file.open_files.title.plural"])
         else:
             self.add_tag_to_selected_action.setEnabled(False)
             self.clear_select_action.setEnabled(False)
             self.delete_file_action.setEnabled(False)
+
+            self.open_selected_action.setEnabled(False)
+            self.open_selected_action.setText(Translations["file.open_files.title.plural"])
 
     def update_completions_list(self, text: str) -> None:
         matches = re.search(
