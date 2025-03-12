@@ -17,7 +17,7 @@ from PySide6.QtCore import Qt
 from PySide6.QtGui import QGuiApplication
 from PySide6.QtWidgets import QLabel, QVBoxLayout, QWidget
 
-from tagstudio.core.enums import SettingItems, Theme
+from tagstudio.core.enums import SettingItems, ShowFilepathOption, Theme
 from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.media_types import MediaCategories
 from tagstudio.qt.helpers.file_opener import FileOpenerHelper, FileOpenerLabel
@@ -145,16 +145,15 @@ class FileAttributes(QWidget):
             self.dimensions_label.setHidden(True)
         else:
             filepath_option = self.driver.settings.value(
-                SettingItems.SHOW_FILEPATH, defaultValue="show full path", type=str
+                SettingItems.SHOW_FILEPATH, defaultValue=ShowFilepathOption.DEFAULT.value, type=int
             )
-
             self.library_path = self.library.library_dir
             display_path = filepath
-            if filepath_option == "show full path":
+            if filepath_option == ShowFilepathOption.SHOW_FULL_PATHS:
                 display_path = filepath
-            elif filepath_option == "show relative path":
+            elif filepath_option == ShowFilepathOption.SHOW_RELATIVE_PATHS:
                 display_path = Path(filepath).relative_to(self.library_path)
-            elif filepath_option == "show only file name":
+            elif filepath_option == ShowFilepathOption.SHOW_FILENAMES_ONLY:
                 display_path = Path(filepath.name)
 
             self.layout().setSpacing(6)

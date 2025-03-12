@@ -6,7 +6,7 @@
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QComboBox, QFormLayout, QLabel, QVBoxLayout, QWidget
 
-from tagstudio.core.enums import SettingItems
+from tagstudio.core.enums import SettingItems, ShowFilepathOption
 from tagstudio.qt.translations import Translations
 from tagstudio.qt.widgets.panel import PanelWidget
 
@@ -63,20 +63,24 @@ class SettingsPanel(PanelWidget):
         )
         self.form_layout.addRow(language_label, self.language_combobox)
 
-        self.filepath_options = ["show full path", "show relative path", "show only file name"]
+        filepath_option_map: dict[int, str] = {
+            ShowFilepathOption.SHOW_FULL_PATHS: Translations["settings.filepath.option.full"],
+            ShowFilepathOption.SHOW_RELATIVE_PATHS: Translations[
+                "settings.filepath.option.relative"
+            ],
+            ShowFilepathOption.SHOW_FILENAMES_ONLY: Translations["settings.filepath.option.name"],
+        }
         self.filepath_combobox = QComboBox()
-        self.filepath_combobox.addItems(self.filepath_options)
-        show_filepath: str = str(
+        self.filepath_combobox.addItems(list(filepath_option_map.values()))
+        filepath_option: int = int(
             driver.settings.value(
-                SettingItems.SHOW_FILEPATH, defaultValue="show full path", type=str
+                SettingItems.SHOW_FILEPATH, defaultValue=ShowFilepathOption.DEFAULT.value, type=int
             )
         )
-        show_filepath = (
-            "show full path" if show_filepath not in self.filepath_options else show_filepath
-        )
-        self.filepath_combobox.setCurrentIndex(self.filepath_options.index(show_filepath))
-        self.filepath_combobox.currentIndexChanged.connect(lambda: self.apply_filepath_setting())
-        self.form_layout.addRow("Show file path", self.filepath_combobox)
+        filepath_option = 0 if filepath_option not in filepath_option_map else filepath_option
+        self.filepath_combobox.setCurrentIndex(filepath_option)
+        self.filepath_combobox.currentIndexChanged.connect(self.apply_filepath_setting)
+        self.form_layout.addRow(Translations["settings.filepath.label"], self.filepath_combobox)
 
         self.root_layout.addWidget(self.form_container)
         self.root_layout.addStretch(1)
@@ -87,12 +91,12 @@ class SettingsPanel(PanelWidget):
         return values[self.language_combobox.currentIndex()]
 
     def apply_filepath_setting(self):
-        selected_value = self.filepath_combobox.currentText()
+        selected_value = self.filepath_combobox.currentIndex()
         self.driver.settings.setValue(SettingItems.SHOW_FILEPATH, selected_value)
         self.driver.update_recent_lib_menu()
         self.driver.preview_panel.update_widgets()
         library_directory = self.driver.lib.library_dir
-        if selected_value == "show full path":
+        if selected_value == ShowFilepathOption.SHOW_FULL_PATHS:
             display_path = library_directory
         else:
             display_path = library_directory.name

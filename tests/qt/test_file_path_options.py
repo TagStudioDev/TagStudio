@@ -8,7 +8,7 @@ from PySide6.QtGui import (
 )
 from PySide6.QtWidgets import QMenu, QMenuBar
 
-from tagstudio.core.enums import SettingItems
+from tagstudio.core.enums import SettingItems, ShowFilepathOption
 from tagstudio.core.library.alchemy.library import LibraryStatus
 from tagstudio.qt.modals.settings_panel import SettingsPanel
 from tagstudio.qt.widgets.preview_panel import PreviewPanel
@@ -16,7 +16,12 @@ from tagstudio.qt.widgets.preview_panel import PreviewPanel
 
 # Tests to see if the file path setting is applied correctly
 @pytest.mark.parametrize(
-    "filepath_option", ["show full path", "show relative path", "show only file name"]
+    "filepath_option",
+    [
+        ShowFilepathOption.SHOW_FULL_PATHS.value,
+        ShowFilepathOption.SHOW_RELATIVE_PATHS.value,
+        ShowFilepathOption.SHOW_FILENAMES_ONLY.value,
+    ],
 )
 def test_filepath_setting(qtbot, qt_driver, filepath_option):
     settings_panel = SettingsPanel(qt_driver)
@@ -25,7 +30,7 @@ def test_filepath_setting(qtbot, qt_driver, filepath_option):
     # Mock the update_recent_lib_menu method
     with patch.object(qt_driver, "update_recent_lib_menu", return_value=None):
         # Set the file path option
-        settings_panel.filepath_combobox.setCurrentText(filepath_option)
+        settings_panel.filepath_combobox.setCurrentIndex(filepath_option)
         settings_panel.apply_filepath_setting()
 
         # Assert the setting is applied
@@ -36,9 +41,12 @@ def test_filepath_setting(qtbot, qt_driver, filepath_option):
 @pytest.mark.parametrize(
     "filepath_option, expected_path",
     [
-        ("show full path", lambda library: pathlib.Path(library.library_dir / "one/two/bar.md")),
-        ("show relative path", lambda library: pathlib.Path("one/two/bar.md")),
-        ("show only file name", lambda library: pathlib.Path("bar.md")),
+        (
+            ShowFilepathOption.SHOW_FULL_PATHS,
+            lambda library: pathlib.Path(library.library_dir / "one/two/bar.md"),
+        ),
+        (ShowFilepathOption.SHOW_RELATIVE_PATHS, lambda library: pathlib.Path("one/two/bar.md")),
+        (ShowFilepathOption.SHOW_FILENAMES_ONLY, lambda library: pathlib.Path("bar.md")),
     ],
 )
 def test_file_path_display(qt_driver, library, filepath_option, expected_path):
@@ -75,13 +83,16 @@ def test_file_path_display(qt_driver, library, filepath_option, expected_path):
 @pytest.mark.parametrize(
     "filepath_option, expected_title",
     [
-        ("show full path", lambda path, base_title: f"{base_title} - Library '{path}'"),
         (
-            "show relative path",
+            ShowFilepathOption.SHOW_FULL_PATHS.value,
+            lambda path, base_title: f"{base_title} - Library '{path}'",
+        ),
+        (
+            ShowFilepathOption.SHOW_RELATIVE_PATHS.value,
             lambda path, base_title: f"{base_title} - Library '{path.name}'",
         ),
         (
-            "show only file name",
+            ShowFilepathOption.SHOW_FILENAMES_ONLY.value,
             lambda path, base_title: f"{base_title} - Library '{path.name}'",
         ),
     ],

@@ -54,7 +54,7 @@ from PySide6.QtWidgets import (
 import tagstudio.qt.resources_rc  # noqa: F401
 from tagstudio.core.constants import TAG_ARCHIVED, TAG_FAVORITE, VERSION, VERSION_BRANCH
 from tagstudio.core.driver import DriverMixin
-from tagstudio.core.enums import LibraryPrefs, MacroID, SettingItems
+from tagstudio.core.enums import LibraryPrefs, MacroID, SettingItems, ShowFilepathOption
 from tagstudio.core.library.alchemy.enums import (
     FieldTypeEnum,
     FilterState,
@@ -1749,8 +1749,10 @@ class QtDriver(DriverMixin, QObject):
         """Updates the recent library menu from the latest values from the settings file."""
         actions: list[QAction] = []
         lib_items: dict[str, tuple[str, str]] = {}
-        filepath_option: str = str(
-            self.settings.value(SettingItems.SHOW_FILEPATH, defaultValue="show full path", type=str)
+        filepath_option: int = int(
+            self.settings.value(
+                SettingItems.SHOW_FILEPATH, defaultValue=ShowFilepathOption.DEFAULT.value, type=int
+            )
         )
 
         settings = self.settings
@@ -1770,7 +1772,7 @@ class QtDriver(DriverMixin, QObject):
         for library_key in libs_sorted:
             path = Path(library_key[1][0])
             action = QAction(self.open_recent_library_menu)
-            if filepath_option == "show full path":
+            if filepath_option == ShowFilepathOption.SHOW_FULL_PATHS:
                 action.setText(str(path))
             else:
                 action.setText(str(Path(path).name))
@@ -1828,10 +1830,14 @@ class QtDriver(DriverMixin, QObject):
 
     def open_library(self, path: Path) -> None:
         """Open a TagStudio library."""
-        filepath_option: str = str(
-            self.settings.value(SettingItems.SHOW_FILEPATH, defaultValue="show full path", type=str)
+        filepath_option: int = int(
+            self.settings.value(
+                SettingItems.SHOW_FILEPATH, defaultValue=ShowFilepathOption.DEFAULT.value, type=int
+            )
         )
-        library_dir_display = path if filepath_option == "show full path" else path.name
+        library_dir_display = (
+            path if filepath_option == ShowFilepathOption.SHOW_FULL_PATHS else path.name
+        )
         message = Translations.format("splash.opening_library", library_path=library_dir_display)
         self.main_window.landing_widget.set_status_label(message)
         self.main_window.statusbar.showMessage(message, 3)
@@ -1878,10 +1884,12 @@ class QtDriver(DriverMixin, QObject):
             self.add_new_files_callback()
 
         library_dir_display = self.lib.library_dir
-        filepath_option: str = str(
-            self.settings.value(SettingItems.SHOW_FILEPATH, defaultValue="show full path", type=str)
+        filepath_option: int = int(
+            self.settings.value(
+                SettingItems.SHOW_FILEPATH, defaultValue=ShowFilepathOption.DEFAULT.value, type=int
+            )
         )
-        if filepath_option == "show full path":
+        if filepath_option == ShowFilepathOption.SHOW_FULL_PATHS:
             library_dir_display = self.lib.library_dir
         else:
             library_dir_display = self.lib.library_dir.name
