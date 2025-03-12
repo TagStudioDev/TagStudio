@@ -65,8 +65,11 @@ class SettingsPanel(PanelWidget):
 
     def __build_library_settings(self, driver):
         self.library_settings_container = QWidget()
-        form_layout = QFormLayout(self.global_settings_container)
+        form_layout = QFormLayout(self.library_settings_container)
         form_layout.setContentsMargins(6, 6, 6, 6)
+
+        todo_label = QLabel("TODO")
+        form_layout.addRow(todo_label)
 
     def get_language(self) -> str:
         values: list[str] = list(LANGUAGES.values())
