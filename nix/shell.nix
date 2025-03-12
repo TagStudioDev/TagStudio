@@ -58,12 +58,18 @@ in
 pkgs.mkShellNoCC {
   nativeBuildInputs = with pkgs; [
     coreutils
+    uv
 
     ruff
   ];
   buildInputs = [ pythonWrapped ] ++ (with pkgs; [ ffmpeg-headless ]);
 
-  env.QT_QPA_PLATFORM = "wayland;xcb";
+  env = {
+    QT_QPA_PLATFORM = "wayland;xcb";
+
+    UV_NO_SYNC = "1";
+    UV_PYTHON_DOWNLOADS = "never";
+  };
 
   shellHook =
     let
@@ -71,18 +77,20 @@ pkgs.mkShellNoCC {
     in
     # bash
     ''
-      if [ ! -f .venv/bin/activate ] || [ "$(readlink -f .venv/bin/python)" != "$(readlink -f ${python})" ]; then
+      venv="''${UV_PROJECT_ENVIRONMENT:-.venv}"
+
+      if [ ! -f "''${venv}"/bin/activate ] || [ "$(readlink -f "''${venv}"/bin/python)" != "$(readlink -f ${python})" ]; then
           printf '%s\n' 'Regenerating virtual environment, Python interpreter changed...' >&2
-          rm -rf .venv
-          ${python} -m venv .venv
+          rm -rf "''${venv}"
+          uv venv --python ${python} "''${venv}"
       fi
 
-      source .venv/bin/activate
+      source "''${venv}"/bin/activate
 
-      if [ ! -f .venv/pyproject.toml ] || [ "$(cat .venv/pyproject.toml)" != "$(cat pyproject.toml)" ]; then
+      if [ ! -f "''${venv}"/pyproject.toml ] || ! diff --brief pyproject.toml "''${venv}"/pyproject.toml >/dev/null; then
           printf '%s\n' 'Installing dependencies, pyproject.toml changed...' >&2
-          pip install --quiet --editable '.[mkdocs,mypy,pytest]'
-          cp pyproject.toml .venv/pyproject.toml
+          uv pip install --quiet --editable '.[mkdocs,mypy,pytest]'
+          cp pyproject.toml "''${venv}"/pyproject.toml
       fi
     '';
 
