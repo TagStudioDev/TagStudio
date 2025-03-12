@@ -180,10 +180,10 @@ class QtDriver(DriverMixin, QObject):
             if not path.exists():
                 logger.warning("[Config] Config File does not exist creating", path=path)
             logger.info("[Config] Using Config File", path=path)
-            self.settings = QSettings(str(path), QSettings.Format.IniFormat)
+            self.cached_values = QSettings(str(path), QSettings.Format.IniFormat)
             self.config_path = str(path)
         else:
-            self.settings = QSettings(
+            self.cached_values = QSettings(
                 QSettings.Format.IniFormat,
                 QSettings.Scope.UserScope,
                 "TagStudio",
@@ -191,18 +191,16 @@ class QtDriver(DriverMixin, QObject):
             )
             logger.info(
                 "[Config] Config File not specified, using default one",
-                filename=self.settings.fileName(),
+                filename=self.cached_values.fileName(),
             )
-            self.config_path = self.settings.fileName()
+            self.config_path = self.cached_values.fileName()
 
-        Translations.change_language(
-            str(self.settings.value(SettingItems.LANGUAGE, defaultValue="en", type=str))
-        )
+        Translations.change_language(self.settings.language)
 
         # NOTE: This should be a per-library setting rather than an application setting.
         thumb_cache_size_limit: int = int(
             str(
-                self.settings.value(
+                self.cached_values.value(
                     SettingItems.THUMB_CACHE_SIZE_LIMIT,
                     defaultValue=CacheManager.size_limit,
                     type=int,
@@ -211,8 +209,8 @@ class QtDriver(DriverMixin, QObject):
         )
 
         CacheManager.size_limit = thumb_cache_size_limit
-        self.settings.setValue(SettingItems.THUMB_CACHE_SIZE_LIMIT, CacheManager.size_limit)
-        self.settings.sync()
+        self.cached_values.setValue(SettingItems.THUMB_CACHE_SIZE_LIMIT, CacheManager.size_limit)
+        self.cached_values.sync()
         logger.info(
             f"[Config] Thumbnail cache size limit: {format_size(CacheManager.size_limit)}",
         )
@@ -381,12 +379,13 @@ class QtDriver(DriverMixin, QObject):
 
         open_on_start_action = QAction(Translations["settings.open_library_on_start"], self)
         open_on_start_action.setCheckable(True)
-        open_on_start_action.setChecked(
-            bool(self.settings.value(SettingItems.START_LOAD_LAST, defaultValue=True, type=bool))
-        )
-        open_on_start_action.triggered.connect(
-            lambda checked: self.settings.setValue(SettingItems.START_LOAD_LAST, checked)
-        )
+        open_on_start_action.setChecked(self.settings.open_last_loaded_on_startup)
+
+        def set_open_last_loaded_on_startup(checked: bool):
+            self.settings.open_last_loaded_on_startup = checked
+            self.settings.save()
+
+        open_on_start_action.triggered.connect(set_open_last_loaded_on_startup)
         file_menu.addAction(open_on_start_action)
 
         file_menu.addSeparator()
@@ -528,21 +527,17 @@ class QtDriver(DriverMixin, QObject):
         # View Menu ============================================================
         show_libs_list_action = QAction(Translations["settings.show_recent_libraries"], menu_bar)
         show_libs_list_action.setCheckable(True)
-        show_libs_list_action.setChecked(
-            bool(self.settings.value(SettingItems.WINDOW_SHOW_LIBS, defaultValue=True, type=bool))
-        )
+        show_libs_list_action.setChecked(self.settings.show_library_list)
+
+        def on_show_filenames_action(checked: bool):
+            self.settings.show_library_list = checked
+            self.settings.save()
+            self.show_grid_filenames(checked)
 
         show_filenames_action = QAction(Translations["settings.show_filenames_in_grid"], menu_bar)
         show_filenames_action.setCheckable(True)
-        show_filenames_action.setChecked(
-            bool(self.settings.value(SettingItems.SHOW_FILENAMES, defaultValue=True, type=bool))
-        )
-        show_filenames_action.triggered.connect(
-            lambda checked: (
-                self.settings.setValue(SettingItems.SHOW_FILENAMES, checked),
-                self.show_grid_filenames(checked),
-            )
-        )
+        show_filenames_action.setChecked(self.settings.show_filenames_in_grid)
+        show_filenames_action.triggered.connect(on_show_filenames_action)
         view_menu.addAction(show_filenames_action)
 
         # Tools Menu ===========================================================
@@ -662,7 +657,7 @@ class QtDriver(DriverMixin, QObject):
         path_result = self.evaluate_path(str(self.args.open).lstrip().rstrip())
         if path_result.success and path_result.library_path:
             self.open_library(path_result.library_path)
-        elif self.settings.value(SettingItems.START_LOAD_LAST):
+        elif self.settings.open_last_loaded_on_startup:
             # evaluate_path() with argument 'None' returns a LibraryStatus for the last library
             path_result = self.evaluate_path(None)
             if path_result.success and path_result.library_path:
@@ -818,8 +813,8 @@ class QtDriver(DriverMixin, QObject):
         self.main_window.statusbar.showMessage(Translations["status.library_closing"])
         start_time = time.time()
 
-        self.settings.setValue(SettingItems.LAST_LIBRARY, str(self.lib.library_dir))
-        self.settings.sync()
+        self.cached_values.setValue(SettingItems.LAST_LIBRARY, str(self.lib.library_dir))
+        self.cached_values.sync()
 
         # Reset library state
         self.preview_panel.update_widgets()
@@ -1305,9 +1300,7 @@ class QtDriver(DriverMixin, QObject):
                 self.lib,
                 self,
                 (self.thumb_size, self.thumb_size),
-                bool(
-                    self.settings.value(SettingItems.SHOW_FILENAMES, defaultValue=True, type=bool)
-                ),
+                self.settings.show_filenames_in_grid,
             )
 
             layout.addWidget(item_thumb)
@@ -1713,22 +1706,22 @@ class QtDriver(DriverMixin, QObject):
         )
 
     def remove_recent_library(self, item_key: str):
-        self.settings.beginGroup(SettingItems.LIBS_LIST)
-        self.settings.remove(item_key)
-        self.settings.endGroup()
-        self.settings.sync()
+        self.cached_values.beginGroup(SettingItems.LIBS_LIST)
+        self.cached_values.remove(item_key)
+        self.cached_values.endGroup()
+        self.cached_values.sync()
 
     def update_libs_list(self, path: Path | str):
         """Add library to list in SettingItems.LIBS_LIST."""
         item_limit: int = 5
         path = Path(path)
 
-        self.settings.beginGroup(SettingItems.LIBS_LIST)
+        self.cached_values.beginGroup(SettingItems.LIBS_LIST)
 
         all_libs = {str(time.time()): str(path)}
 
-        for item_key in self.settings.allKeys():
-            item_path = str(self.settings.value(item_key, type=str))
+        for item_key in self.cached_values.allKeys():
+            item_path = str(self.cached_values.value(item_key, type=str))
             if Path(item_path) != path:
                 all_libs[item_key] = item_path
 
@@ -1736,13 +1729,13 @@ class QtDriver(DriverMixin, QObject):
         all_libs_list = sorted(all_libs.items(), key=lambda item: item[0], reverse=True)
 
         # remove previously saved items
-        self.settings.remove("")
+        self.cached_values.remove("")
 
         for item_key, item_value in all_libs_list[:item_limit]:
-            self.settings.setValue(item_key, item_value)
+            self.cached_values.setValue(item_key, item_value)
 
-        self.settings.endGroup()
-        self.settings.sync()
+        self.cached_values.endGroup()
+        self.cached_values.sync()
         self.update_recent_lib_menu()
 
     def update_recent_lib_menu(self):
@@ -1750,7 +1743,7 @@ class QtDriver(DriverMixin, QObject):
         actions: list[QAction] = []
         lib_items: dict[str, tuple[str, str]] = {}
 
-        settings = self.settings
+        settings = self.cached_values
         settings.beginGroup(SettingItems.LIBS_LIST)
         for item_tstamp in settings.allKeys():
             val = str(settings.value(item_tstamp, type=str))
@@ -1795,11 +1788,11 @@ class QtDriver(DriverMixin, QObject):
 
     def clear_recent_libs(self):
         """Clear the list of recent libraries from the settings file."""
-        settings = self.settings
+        settings = self.cached_values
         settings.beginGroup(SettingItems.LIBS_LIST)
-        self.settings.remove("")
-        self.settings.endGroup()
-        self.settings.sync()
+        self.cached_values.remove("")
+        self.cached_values.endGroup()
+        self.cached_values.sync()
         self.update_recent_lib_menu()
 
     def open_settings_modal(self):

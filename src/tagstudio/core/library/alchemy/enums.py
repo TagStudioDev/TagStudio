@@ -74,14 +74,14 @@ class FilterState:
     """Represent a state of the Library grid view."""
 
     # these should remain
-    page_index: int | None = 0
-    page_size: int | None = 500
+    page_index: int = 0
+    page_size: int = 500
     sorting_mode: SortingModeEnum = SortingModeEnum.DATE_ADDED
     ascending: bool = True
 
     # these should be erased on update
     # Abstract Syntax Tree Of the current Search Query
-    ast: AST = None
+    ast: AST | None = None
 
     @property
     def limit(self):

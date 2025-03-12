@@ -14,7 +14,6 @@ from PySide6.QtWidgets import (
 )
 
 from tagstudio.core.driver import DriverMixin
-from tagstudio.core.enums import SettingItems
 from tagstudio.qt.translations import LANGUAGES, Translations
 from tagstudio.qt.widgets.panel import PanelModal, PanelWidget
 
@@ -55,10 +54,9 @@ class SettingsPanel(PanelWidget):
         language_label = QLabel(Translations["settings.language"])
         self.language_combobox = QComboBox()
         self.language_combobox.addItems(list(LANGUAGES.keys()))
-        current_lang: str = str(
-            driver.settings.value(SettingItems.LANGUAGE, defaultValue="en", type=str)
-        )
-        current_lang = "en" if current_lang not in LANGUAGES.values() else current_lang
+        current_lang: str = driver.settings.language
+        if current_lang not in LANGUAGES.values():
+            current_lang = "en"
         self.language_combobox.setCurrentIndex(list(LANGUAGES.values()).index(current_lang))
         self.language_combobox.currentIndexChanged.connect(
             lambda: self.restart_label.setHidden(False)
@@ -78,14 +76,15 @@ class SettingsPanel(PanelWidget):
     def build_modal(cls, driver: DriverMixin) -> PanelModal:
         settings_panel = cls(driver)
 
-        def update_language():
+        def update_settings():
             Translations.change_language(settings_panel.get_language())
-            driver.settings.setValue(SettingItems.LANGUAGE, settings_panel.get_language())
-            driver.settings.sync()
+            driver.settings.language = settings_panel.get_language()
+
+            driver.settings.save()
 
         modal = PanelModal(
             widget=settings_panel,
-            done_callback=update_language,
+            done_callback=update_settings,
             has_save=False,
         )
         modal.title_widget.setVisible(False)

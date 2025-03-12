@@ -21,7 +21,6 @@ from PySide6.QtMultimediaWidgets import QGraphicsVideoItem
 from PySide6.QtSvgWidgets import QSvgWidget
 from PySide6.QtWidgets import QGraphicsScene, QGraphicsView
 
-from tagstudio.core.enums import SettingItems
 from tagstudio.qt.helpers.file_opener import FileOpenerHelper
 from tagstudio.qt.platform_strings import open_file_str
 from tagstudio.qt.translations import Translations
@@ -112,9 +111,7 @@ class VideoPlayer(QGraphicsView):
         autoplay_action = QAction(Translations["media_player.autoplay"], self)
         autoplay_action.setCheckable(True)
         self.addAction(autoplay_action)
-        autoplay_action.setChecked(
-            self.driver.settings.value(SettingItems.AUTOPLAY, defaultValue=True, type=bool)
-        )
+        autoplay_action.setChecked(self.driver.settings.autoplay)
         autoplay_action.triggered.connect(lambda: self.toggle_autoplay())
         self.autoplay = autoplay_action
 
@@ -133,8 +130,8 @@ class VideoPlayer(QGraphicsView):
 
     def toggle_autoplay(self) -> None:
         """Toggle the autoplay state of the video."""
-        self.driver.settings.setValue(SettingItems.AUTOPLAY, self.autoplay.isChecked())
-        self.driver.settings.sync()
+        self.driver.settings.autoplay = self.autoplay.isChecked()
+        self.driver.settings.save()
 
     def check_media_status(self, media_status: QMediaPlayer.MediaStatus) -> None:
         if media_status == QMediaPlayer.MediaStatus.EndOfMedia:
