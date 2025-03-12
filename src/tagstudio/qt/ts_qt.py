@@ -540,12 +540,12 @@ class QtDriver(DriverMixin, QObject):
         edit_menu.addAction(self.color_manager_action)
 
         # View Menu ============================================================
-        show_libs_list_action = QAction(Translations["settings.show_recent_libraries"], menu_bar)
-        show_libs_list_action.setCheckable(True)
-        show_libs_list_action.setChecked(self.settings.show_library_list)
+        # show_libs_list_action = QAction(Translations["settings.show_recent_libraries"], menu_bar)
+        # show_libs_list_action.setCheckable(True)
+        # show_libs_list_action.setChecked(self.settings.show_library_list)
 
         def on_show_filenames_action(checked: bool):
-            self.settings.show_library_list = checked
+            self.settings.show_filenames_in_grid = checked
             self.settings.save()
             self.show_grid_filenames(checked)
 

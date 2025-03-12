@@ -27,7 +27,6 @@ class GlobalSettings(BaseModel):
 
     # settings from the old SettingItems enum
     open_last_loaded_on_startup: bool = Field(default=False)
-    show_library_list: bool = Field(default=True)
     autoplay: bool = Field(default=False)
     show_filenames_in_grid: bool = Field(default=False)
 
