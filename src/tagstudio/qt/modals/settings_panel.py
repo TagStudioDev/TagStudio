@@ -13,9 +13,10 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from tagstudio.core.driver import DriverMixin
 from tagstudio.core.enums import SettingItems
 from tagstudio.qt.translations import LANGUAGES, Translations
-from tagstudio.qt.widgets.panel import PanelWidget
+from tagstudio.qt.widgets.panel import PanelModal, PanelWidget
 
 
 class SettingsPanel(PanelWidget):
@@ -72,3 +73,22 @@ class SettingsPanel(PanelWidget):
     def get_language(self) -> str:
         values: list[str] = list(LANGUAGES.values())
         return values[self.language_combobox.currentIndex()]
+
+    @classmethod
+    def build_modal(cls, driver: DriverMixin) -> PanelModal:
+        settings_panel = cls(driver)
+
+        def update_language():
+            Translations.change_language(settings_panel.get_language())
+            driver.settings.setValue(SettingItems.LANGUAGE, settings_panel.get_language())
+            driver.settings.sync()
+
+        modal = PanelModal(
+            widget=settings_panel,
+            done_callback=update_language,
+            has_save=False,
+        )
+        modal.setTitle(Translations["settings.title"])
+        modal.setWindowTitle(Translations["settings.title"])
+
+        return modal

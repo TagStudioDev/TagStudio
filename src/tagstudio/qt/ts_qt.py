@@ -1803,22 +1803,8 @@ class QtDriver(DriverMixin, QObject):
         self.update_recent_lib_menu()
 
     def open_settings_modal(self):
-        # TODO: Implement a proper settings panel, and don't re-create it each time it's opened.
-        settings_panel = SettingsPanel(self)
-        modal = PanelModal(
-            widget=settings_panel,
-            done_callback=lambda: self.update_language_settings(settings_panel.get_language()),
-            has_save=False,
-        )
-        modal.setTitle(Translations["settings.title"])
-        modal.setWindowTitle(Translations["settings.title"])
-        modal.show()
-
-    def update_language_settings(self, language: str):
-        Translations.change_language(language)
-
-        self.settings.setValue(SettingItems.LANGUAGE, language)
-        self.settings.sync()
+        # TODO: don't re-create each time this is opened.
+        SettingsPanel.build_modal(self).show()
 
     def open_library(self, path: Path) -> None:
         """Open a TagStudio library."""
