@@ -229,6 +229,8 @@
     "settings.show_filenames_in_grid": "Show Filenames in Grid",
     "settings.show_recent_libraries": "Show Recent Libraries",
     "settings.title": "Settings",
+    "settings.global": "Global Settings",
+    "settings.library": "Library Settings",
     "sorting.direction.ascending": "Ascending",
     "sorting.direction.descending": "Descending",
     "splash.opening_library": "Opening Library \"{library_path}\"...",

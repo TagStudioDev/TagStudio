@@ -226,6 +226,8 @@
     "settings.show_filenames_in_grid": "Dateinamen in Raster darstellen",
     "settings.show_recent_libraries": "Zuletzt verwendete Bibliotheken anzeigen",
     "settings.title": "Einstellungen",
+    "settings.global": "Globale Einstellungen",
+    "settings.library": "Bibliothekseinstellungen",
     "sorting.direction.ascending": "Aufsteigend",
     "sorting.direction.descending": "Absteigend",
     "splash.opening_library": "Öffne Bibliothek \"{library_path}\"...",
