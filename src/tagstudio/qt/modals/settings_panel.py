@@ -26,7 +26,7 @@ class SettingsPanel(PanelWidget):
         self.setMinimumSize(320, 200)
 
         self.root_layout = QVBoxLayout(self)
-        self.root_layout.setContentsMargins(0, 0, 0, 0)
+        self.root_layout.setContentsMargins(0, 6, 0, 0)
 
         # Tabs
         self.tab_widget = QTabWidget()
@@ -88,7 +88,7 @@ class SettingsPanel(PanelWidget):
             done_callback=update_language,
             has_save=False,
         )
-        modal.setTitle(Translations["settings.title"])
+        modal.title_widget.setVisible(False)
         modal.setWindowTitle(Translations["settings.title"])
 
         return modal
