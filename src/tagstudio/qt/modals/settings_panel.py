@@ -5,6 +5,7 @@
 
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
+    QCheckBox,
     QComboBox,
     QFormLayout,
     QLabel,
@@ -51,6 +52,7 @@ class SettingsPanel(PanelWidget):
         form_layout = QFormLayout(self.global_settings_container)
         form_layout.setContentsMargins(6, 6, 6, 6)
 
+        # Language
         language_label = QLabel(Translations["settings.language"])
         self.language_combobox = QComboBox()
         self.language_combobox.addItems(list(LANGUAGES.keys()))
@@ -63,6 +65,24 @@ class SettingsPanel(PanelWidget):
         )
         form_layout.addRow(language_label, self.language_combobox)
 
+        # Open Last Library on Start
+        open_last_lib_label = QLabel(Translations["settings.open_library_on_start"])
+        self.open_last_lib_checkbox = QCheckBox()
+        self.open_last_lib_checkbox.setChecked(driver.settings.open_last_loaded_on_startup)
+        form_layout.addRow(open_last_lib_label, self.open_last_lib_checkbox)
+
+        # Autoplay
+        autoplay_label = QLabel(Translations["media_player.autoplay"])
+        self.autoplay_checkbox = QCheckBox()
+        self.autoplay_checkbox.setChecked(driver.settings.autoplay)
+        form_layout.addRow(autoplay_label, self.autoplay_checkbox)
+
+        # Show Filenames in Grid
+        show_filenames_label = QLabel(Translations["settings.show_filenames_in_grid"])
+        self.show_filenames_checkbox = QCheckBox()
+        self.show_filenames_checkbox.setChecked(driver.settings.show_filenames_in_grid)
+        form_layout.addRow(show_filenames_label, self.show_filenames_checkbox)
+
     def __build_library_settings(self, driver):
         self.library_settings_container = QWidget()
         form_layout = QFormLayout(self.library_settings_container)
@@ -71,17 +91,27 @@ class SettingsPanel(PanelWidget):
         todo_label = QLabel("TODO")
         form_layout.addRow(todo_label)
 
-    def get_language(self) -> str:
-        values: list[str] = list(LANGUAGES.values())
-        return values[self.language_combobox.currentIndex()]
+    def get_settings(self) -> dict:
+        return {
+            "language": list(LANGUAGES.values())[self.language_combobox.currentIndex()],
+            "open_last_loaded_on_startup": self.open_last_lib_checkbox.isChecked(),
+            "autoplay": self.autoplay_checkbox.isChecked(),
+            "show_filenames_in_grid": self.show_filenames_checkbox.isChecked(),
+        }
 
     @classmethod
     def build_modal(cls, driver: DriverMixin) -> PanelModal:
         settings_panel = cls(driver)
 
         def update_settings():
-            Translations.change_language(settings_panel.get_language())
-            driver.settings.language = settings_panel.get_language()
+            settings = settings_panel.get_settings()
+
+            Translations.change_language(settings["language"])
+            driver.settings.language = settings["language"]
+
+            driver.settings.open_last_loaded_on_startup = settings["open_last_loaded_on_startup"]
+            driver.settings.autoplay = settings["autoplay"]
+            driver.settings.show_filenames_in_grid = settings["show_filenames_in_grid"]
 
             driver.settings.save()
 
