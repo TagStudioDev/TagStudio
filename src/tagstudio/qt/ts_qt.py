@@ -1855,7 +1855,7 @@ class QtDriver(DriverMixin, QObject):
 
         self.init_workers()
 
-        self.filter.page_size = self.lib.prefs(LibraryPrefs.PAGE_SIZE)
+        self.filter.page_size = self.settings.page_size
 
         # TODO - make this call optional
         if self.lib.entries_count < 10000:

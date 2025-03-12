@@ -9,6 +9,7 @@ from PySide6.QtWidgets import (
     QComboBox,
     QFormLayout,
     QLabel,
+    QLineEdit,
     QTabWidget,
     QVBoxLayout,
     QWidget,
@@ -83,6 +84,19 @@ class SettingsPanel(PanelWidget):
         self.show_filenames_checkbox.setChecked(driver.settings.show_filenames_in_grid)
         form_layout.addRow(show_filenames_label, self.show_filenames_checkbox)
 
+        # Page Size
+        page_size_label = QLabel(Translations["settings.page_size"])
+        self.page_size_line_edit = QLineEdit()
+        self.page_size_line_edit.setText(str(driver.settings.page_size))
+
+        def on_page_size_changed():
+            text = self.page_size_line_edit.text()
+            if not text.isdigit() or int(text) < 1:
+                self.page_size_line_edit.setText(str(driver.settings.page_size))
+
+        self.page_size_line_edit.editingFinished.connect(on_page_size_changed)
+        form_layout.addRow(page_size_label, self.page_size_line_edit)
+
     def __build_library_settings(self, driver):
         self.library_settings_container = QWidget()
         form_layout = QFormLayout(self.library_settings_container)
@@ -97,6 +111,7 @@ class SettingsPanel(PanelWidget):
             "open_last_loaded_on_startup": self.open_last_lib_checkbox.isChecked(),
             "autoplay": self.autoplay_checkbox.isChecked(),
             "show_filenames_in_grid": self.show_filenames_checkbox.isChecked(),
+            "page_size": int(self.page_size_line_edit.text()),
         }
 
     @classmethod
@@ -112,6 +127,7 @@ class SettingsPanel(PanelWidget):
             driver.settings.open_last_loaded_on_startup = settings["open_last_loaded_on_startup"]
             driver.settings.autoplay = settings["autoplay"]
             driver.settings.show_filenames_in_grid = settings["show_filenames_in_grid"]
+            driver.settings.page_size = settings["page_size"]
 
             driver.settings.save()
 

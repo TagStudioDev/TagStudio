@@ -66,5 +66,4 @@ class LibraryPrefs(DefaultEnum):
 
     IS_EXCLUDE_LIST = True
     EXTENSION_LIST = [".json", ".xmp", ".aae"]
-    PAGE_SIZE = 500
     DB_VERSION = 8

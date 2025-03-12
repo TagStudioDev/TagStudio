@@ -228,6 +228,7 @@
     "settings.title": "Einstellungen",
     "settings.global": "Globale Einstellungen",
     "settings.library": "Bibliothekseinstellungen",
+    "settings.page_size": "Elemente pro Seite",
     "sorting.direction.ascending": "Aufsteigend",
     "sorting.direction.descending": "Absteigend",
     "splash.opening_library": "Öffne Bibliothek \"{library_path}\"...",
