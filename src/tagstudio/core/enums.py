@@ -15,9 +15,19 @@ class SettingItems(str, enum.Enum):
     LIBS_LIST = "libs_list"
     WINDOW_SHOW_LIBS = "window_show_libs"
     SHOW_FILENAMES = "show_filenames"
+    SHOW_FILEPATH = "show_filepath"
     AUTOPLAY = "autoplay_videos"
     THUMB_CACHE_SIZE_LIMIT = "thumb_cache_size_limit"
     LANGUAGE = "language"
+
+
+class ShowFilepathOption(int, enum.Enum):
+    """Values representing the options for the "show_filenames" setting."""
+
+    SHOW_FULL_PATHS = 0
+    SHOW_RELATIVE_PATHS = 1
+    SHOW_FILENAMES_ONLY = 2
+    DEFAULT = SHOW_RELATIVE_PATHS
 
 
 class Theme(str, enum.Enum):
