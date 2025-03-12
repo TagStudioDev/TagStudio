@@ -74,7 +74,7 @@ class DropImportModal(QWidget):
         self.skip_button.clicked.connect(lambda: self.begin_transfer(DuplicateChoice.SKIP))
         self.button_layout.addWidget(self.skip_button)
 
-        self.overwrite_button = QPushButton(Translations["generic.overwrite_alt"])
+        self.overwrite_button = QPushButton(Translations["generic.overwrite"])
         self.overwrite_button.clicked.connect(
             lambda: self.begin_transfer(DuplicateChoice.OVERWRITE)
         )
@@ -84,7 +84,7 @@ class DropImportModal(QWidget):
         self.rename_button.clicked.connect(lambda: self.begin_transfer(DuplicateChoice.RENAME))
         self.button_layout.addWidget(self.rename_button)
 
-        self.cancel_button = QPushButton(Translations["generic.cancel_alt"])
+        self.cancel_button = QPushButton(Translations["generic.cancel"])
         self.cancel_button.clicked.connect(lambda: self.begin_transfer(DuplicateChoice.CANCEL))
         self.button_layout.addWidget(self.cancel_button)
 

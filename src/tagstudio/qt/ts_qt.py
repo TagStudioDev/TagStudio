@@ -333,7 +333,7 @@ class QtDriver(DriverMixin, QObject):
         menu_bar.setNativeMenuBar(True)
 
         file_menu = QMenu(Translations["menu.file"], menu_bar)
-        edit_menu = QMenu(Translations["generic.edit_alt"], menu_bar)
+        edit_menu = QMenu(Translations["generic.edit"], menu_bar)
         view_menu = QMenu(Translations["menu.view"], menu_bar)
         tools_menu = QMenu(Translations["menu.tools"], menu_bar)
         macros_menu = QMenu(Translations["menu.macros"], menu_bar)
@@ -1764,10 +1764,10 @@ class QtDriver(DriverMixin, QObject):
         settings.endGroup()
 
         # Create actions for each library
-        for library_key in libs_sorted:
+        for index, library_key in enumerate(libs_sorted):
             path = Path(library_key[1][0])
             action = QAction(self.open_recent_library_menu)
-            action.setText(str(path))
+            action.setText(f"&{index + 1}: {str(path)}")
             action.triggered.connect(lambda checked=False, p=path: self.open_library(p))
             actions.append(action)
 
