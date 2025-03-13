@@ -4,9 +4,10 @@ from pathlib import Path
 from queue import Empty, Queue
 
 import numpy as np
+import numpy.typing as npt
 import structlog
-from open3d.io import read_triangle_model  # type: ignore
-from open3d.visualization.rendering import (  # type: ignore
+from open3d.io import read_triangle_model
+from open3d.visualization.rendering import (
     MaterialRecord,
     OffscreenRenderer,
     TriangleMeshModel,
@@ -27,7 +28,7 @@ class QueueRequest:
 class QueueResponse:
     filename: Path
     size: tuple[int, int]
-    image: np.array
+    image: npt.NDArray
 
 
 QUEUE_TIMEOUT = 0.1
@@ -69,7 +70,7 @@ class Open3DRenderer:
         while response is None:
             # Fetch only the correct response
             try:
-                response: QueueResponse = self._image_response_queue.get(timeout=QUEUE_TIMEOUT)
+                response = self._image_response_queue.get(timeout=QUEUE_TIMEOUT)
                 if response.filename != filename:
                     self._image_response_queue.put(response)
                     response = None
