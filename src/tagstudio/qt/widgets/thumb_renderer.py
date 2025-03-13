@@ -62,8 +62,8 @@ from tagstudio.qt.helpers.color_overlay import theme_fg_overlay
 from tagstudio.qt.helpers.file_tester import is_readable_video
 from tagstudio.qt.helpers.gradient import four_corner_gradient
 from tagstudio.qt.helpers.image_effects import replace_transparent_pixels
-from tagstudio.qt.helpers.text_wrapper import wrap_full_text
 from tagstudio.qt.helpers.model_thumbnailer import Open3DRenderer
+from tagstudio.qt.helpers.text_wrapper import wrap_full_text
 from tagstudio.qt.helpers.vendored.pydub.audio_segment import (
     _AudioSegment as AudioSegment,
 )
@@ -615,7 +615,7 @@ class ThumbRenderer(QObject):
             else:
                 logger.error("Couldn't render thumbnail", filepath=filepath, error=type(e).__name__)
         return im
-    
+
     def _3d_model(self, filepath: Path, size: tuple[int, int]) -> Image.Image:
         im: Image.Image = None
         try:
@@ -1339,7 +1339,7 @@ class ThumbRenderer(QObject):
                 elif MediaCategories.is_ext_in_category(
                     ext, MediaCategories.MODEL_TYPES, mime_fallback=True
                 ):
-                    image = self._3d_model(_filepath, (adj_size,adj_size))
+                    image = self._3d_model(_filepath, (adj_size, adj_size))
                 # No Rendered Thumbnail ========================================
                 if not image:
                     raise NoRendererError
