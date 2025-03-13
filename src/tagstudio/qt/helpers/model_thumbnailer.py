@@ -121,11 +121,6 @@ class Open3DRenderer:
                 logger.info(f"RESIZING from {old_size} to {request.size}")
                 self.renderer = OffscreenRenderer(request.size[0], request.size[1])
                 old_size = request.size
-                # Signal that the renderer is ready for use
-            #   self.renderer_ready_event.set()
-
-            # # Wait until renderer is ready for the first use
-            # self.renderer_ready_event.wait()
 
             # Setup Scene
             self.renderer.scene.clear_geometry()
