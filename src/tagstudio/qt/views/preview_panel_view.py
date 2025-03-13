@@ -133,6 +133,10 @@ class PreviewPanelView(QWidget):
     def _set_selection_callback(self):
         raise NotImplementedError()
 
+    def update_preview(self):
+        """Refresh the panel's widgets to use current library data."""
+        self.set_selection(self._selected)
+
     def set_selection(self, selected: list[int] | None = None, update_preview: bool = True):
         """Render the panel widgets with the newest data from the Library.
 

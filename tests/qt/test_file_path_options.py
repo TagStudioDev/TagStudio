@@ -145,6 +145,7 @@ def test_title_update(
     qt_driver.main_window.menu_bar.fix_dupe_files_action = QAction(menu_bar)
     qt_driver.main_window.menu_bar.clear_thumb_cache_action = QAction(menu_bar)
     qt_driver.main_window.menu_bar.folders_to_tags_action = QAction(menu_bar)
+    qt_driver.main_window.menu_bar.macros_menu = None
 
     # Trigger the update
     qt_driver._init_library(library_dir, open_status)  # pyright: ignore[reportPrivateUsage]

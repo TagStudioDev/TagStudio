@@ -20,13 +20,19 @@ from tagstudio.core.utils.types import unwrap
 logger = structlog.get_logger(__name__)
 
 
-def open_file(path: str | Path, file_manager: bool = False, windows_start_command: bool = False):
+def open_file(
+    path: str | Path,
+    file_manager: bool = False,
+    is_dir: bool = False,
+    windows_start_command: bool = False,
+):
     """Open a file in the default application or file explorer.
 
     Args:
         path (str): The path to the file to open.
         file_manager (bool, optional): Whether to open the file in the file manager
             (e.g. Finder on macOS). Defaults to False.
+        is_dir (bool): True if the path points towards a directory, false if a file.
         windows_start_command (bool): Flag to determine if the older 'start' command should be used
             on Windows for opening files. This fixes issues on some systems in niche cases.
     """
@@ -77,7 +83,7 @@ def open_file(path: str | Path, file_manager: bool = False, windows_start_comman
             if sys.platform == "darwin":
                 command_name = "open"
                 command_args = [str(path)]
-                if file_manager:
+                if file_manager and not is_dir:
                     # will reveal in Finder
                     command_args.append("-R")
             else:
