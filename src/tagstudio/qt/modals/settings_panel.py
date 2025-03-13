@@ -193,7 +193,7 @@ class SettingsPanel(PanelWidget):
         modal = PanelModal(
             widget=settings_panel,
             done_callback=lambda: settings_panel.update_settings(driver),
-            has_save=False,
+            has_save=True,
         )
         modal.title_widget.setVisible(False)
         modal.setWindowTitle(Translations["settings.title"])
