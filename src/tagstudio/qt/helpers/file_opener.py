@@ -20,13 +20,14 @@ from tagstudio.qt.helpers.silent_popen import silent_Popen
 logger = structlog.get_logger(__name__)
 
 
-def open_file(path: str | Path, file_manager: bool = False):
+def open_file(path: str | Path, file_manager: bool = False, is_dir: bool = False):
     """Open a file in the default application or file explorer.
 
     Args:
         path (str): The path to the file to open.
         file_manager (bool, optional): Whether to open the file in the file manager
             (e.g. Finder on macOS). Defaults to False.
+        is_dir (bool): True if the path points towards a directory, false if a file.
     """
     path = Path(path)
     logger.info("Opening file", path=path)
@@ -63,7 +64,7 @@ def open_file(path: str | Path, file_manager: bool = False):
             if sys.platform == "darwin":
                 command_name = "open"
                 command_args = [str(path)]
-                if file_manager:
+                if file_manager and not is_dir:
                     # will reveal in Finder
                     command_args.append("-R")
             else:
