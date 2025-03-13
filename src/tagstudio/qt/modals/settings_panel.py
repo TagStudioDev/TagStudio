@@ -121,6 +121,16 @@ class SettingsPanel(PanelWidget):
         )
         form_layout.addRow(Translations["settings.filepath.label"], self.filepath_combobox)
 
+        # Dark Mode
+        self.dark_mode_checkbox = QCheckBox()
+        self.dark_mode_checkbox.setChecked(driver.settings.dark_mode)
+        self.dark_mode_checkbox.checkStateChanged.connect(
+            lambda: self.restart_label.setHidden(
+                self.dark_mode_checkbox.isChecked() == driver.settings.dark_mode
+            )
+        )
+        form_layout.addRow(Translations["settings.dark_mode"], self.dark_mode_checkbox)
+
     def __build_library_settings(self, driver: "QtDriver"):
         self.library_settings_container = QWidget()
         form_layout = QFormLayout(self.library_settings_container)
@@ -137,6 +147,7 @@ class SettingsPanel(PanelWidget):
             "show_filenames_in_grid": self.show_filenames_checkbox.isChecked(),
             "page_size": int(self.page_size_line_edit.text()),
             "show_filepath": self.filepath_combobox.currentData(),
+            "dark_mode": self.dark_mode_checkbox.isChecked(),
         }
 
     def update_settings(self, driver: "QtDriver"):
@@ -148,11 +159,15 @@ class SettingsPanel(PanelWidget):
         driver.settings.show_filenames_in_grid = settings["show_filenames_in_grid"]
         driver.settings.page_size = settings["page_size"]
         driver.settings.show_filepath = settings["show_filepath"]
+        driver.settings.dark_mode = settings["dark_mode"]
 
         driver.settings.save()
 
+        # Apply changes
+        # Language
         Translations.change_language(settings["language"])
 
+        # Show File Path
         driver.update_recent_lib_menu()
         driver.preview_panel.update_widgets()
         library_directory = driver.lib.library_dir

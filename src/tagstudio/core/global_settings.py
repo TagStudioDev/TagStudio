@@ -32,13 +32,13 @@ class TomlEnumEncoder(toml.TomlEncoder):
 # properties to be overwritten with environment variables. as tagstudio is not currently using
 # environment variables, i did not base it on that, but that may be useful in the future.
 class GlobalSettings(BaseModel):
-    # TODO: dark mode
     language: str = Field(default="en")
     open_last_loaded_on_startup: bool = Field(default=False)
     autoplay: bool = Field(default=False)
     show_filenames_in_grid: bool = Field(default=False)
     page_size: int = Field(default=500)
     show_filepath: ShowFilepathOption = Field(default=ShowFilepathOption.DEFAULT)
+    dark_mode: bool = Field(default=True)
 
     @staticmethod
     def read_settings(path: Path = DEFAULT_GLOBAL_SETTINGS_PATH) -> "GlobalSettings":

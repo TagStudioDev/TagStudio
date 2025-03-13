@@ -230,6 +230,7 @@
     "settings.global": "Globale Einstellungen",
     "settings.library": "Bibliothekseinstellungen",
     "settings.page_size": "Elemente pro Seite",
+    "settings.dark_mode": "Dunkles Design",
     "sorting.direction.ascending": "Aufsteigend",
     "sorting.direction.descending": "Absteigend",
     "splash.opening_library": "Öffne Bibliothek \"{library_path}\"...",

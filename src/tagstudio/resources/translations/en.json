@@ -237,6 +237,7 @@
     "settings.global": "Global Settings",
     "settings.library": "Library Settings",
     "settings.page_size": "Page Size",
+    "settings.dark_mode": "Dark Mode",
     "sorting.direction.ascending": "Ascending",
     "sorting.direction.descending": "Descending",
     "splash.opening_library": "Opening Library \"{library_path}\"...",

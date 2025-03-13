@@ -264,11 +264,12 @@ class QtDriver(DriverMixin, QObject):
     def start(self) -> None:
         """Launch the main Qt window."""
         _ = QUiLoader()
-        if os.name == "nt":
-            sys.argv += ["-platform", "windows:darkmode=2"]
 
         app = QApplication(sys.argv)
         app.setStyle("Fusion")
+        app.styleHints().setColorScheme(
+            Qt.ColorScheme.Dark if self.settings.dark_mode else Qt.ColorScheme.Light
+        )
 
         if QGuiApplication.styleHints().colorScheme() is Qt.ColorScheme.Dark:
             pal: QPalette = app.palette()
