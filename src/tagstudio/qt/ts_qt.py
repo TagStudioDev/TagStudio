@@ -72,6 +72,7 @@ from tagstudio.core.library.alchemy.models import Entry
 from tagstudio.core.macro_parser import (
     Instruction,
     exec_instructions,
+    get_macro_name,
     parse_macro_file,
 )
 from tagstudio.core.media_types import MediaCategories
@@ -82,6 +83,7 @@ from tagstudio.qt.cache_manager import CacheManager
 from tagstudio.qt.flowlayout import FlowLayout
 from tagstudio.qt.helpers.custom_runnable import CustomRunnable
 from tagstudio.qt.helpers.file_deleter import delete_file
+from tagstudio.qt.helpers.file_opener import open_file
 from tagstudio.qt.helpers.function_iterator import FunctionIterator
 from tagstudio.qt.main_window import Ui_MainWindow
 from tagstudio.qt.modals.about import AboutModal
@@ -226,6 +228,7 @@ class QtDriver(DriverMixin, QObject):
         )
 
         self.add_tag_to_selected_action: QAction | None = None
+        self.macros_menu: QMenu | None = None
 
     def init_workers(self):
         """Init workers for rendering thumbnails."""
@@ -354,7 +357,7 @@ class QtDriver(DriverMixin, QObject):
         edit_menu = QMenu(Translations["generic.edit_alt"], menu_bar)
         view_menu = QMenu(Translations["menu.view"], menu_bar)
         tools_menu = QMenu(Translations["menu.tools"], menu_bar)
-        macros_menu = QMenu(Translations["menu.macros"], menu_bar)
+        self.macros_menu = QMenu(Translations["menu.macros"], menu_bar)
         help_menu = QMenu(Translations["menu.help"], menu_bar)
 
         # File Menu ============================================================
@@ -605,25 +608,8 @@ class QtDriver(DriverMixin, QObject):
         # tools_menu.addAction(create_collage_action)
 
         # Macros Menu ==========================================================
-        test_macro_1 = "import_metadata.toml"
-        self.test_macro_1_action = QAction(test_macro_1, menu_bar)
-        self.test_macro_1_action.triggered.connect(
-            lambda: (
-                self.run_macros(test_macro_1, self.selected),
-                self.preview_panel.update_widgets(update_preview=False),
-            )
-        )
-        macros_menu.addAction(self.test_macro_1_action)
-
-        test_macro_2 = "conditionals.toml"
-        self.test_macro_2_action = QAction(test_macro_2, menu_bar)
-        self.test_macro_2_action.triggered.connect(
-            lambda: (
-                self.run_macros(test_macro_2, self.selected),
-                self.preview_panel.update_widgets(update_preview=False),
-            )
-        )
-        macros_menu.addAction(self.test_macro_2_action)
+        self.macros_menu.aboutToShow.connect(self.update_macros_menu)
+        self.update_macros_menu()
 
         def create_folders_tags_modal():
             if not hasattr(self, "folders_modal"):
@@ -633,7 +619,7 @@ class QtDriver(DriverMixin, QObject):
         self.folders_to_tags_action = QAction(Translations["menu.macros.folders_to_tags"], menu_bar)
         self.folders_to_tags_action.triggered.connect(create_folders_tags_modal)
         self.folders_to_tags_action.setEnabled(False)
-        macros_menu.addAction(self.folders_to_tags_action)
+        self.macros_menu.addAction(self.folders_to_tags_action)
 
         # Help Menu ============================================================
         def create_about_modal():
@@ -650,7 +636,7 @@ class QtDriver(DriverMixin, QObject):
         menu_bar.addMenu(edit_menu)
         menu_bar.addMenu(view_menu)
         menu_bar.addMenu(tools_menu)
-        menu_bar.addMenu(macros_menu)
+        menu_bar.addMenu(self.macros_menu)
         menu_bar.addMenu(help_menu)
 
         self.main_window.searchField.textChanged.connect(self.update_completions_list)
@@ -874,6 +860,7 @@ class QtDriver(DriverMixin, QObject):
 
         self.set_clipboard_menu_viability()
         self.set_select_actions_visibility()
+        self.update_macros_menu(clear=True)
 
         self.preview_panel.update_widgets()
         self.main_window.toggle_landing_page(enabled=True)
@@ -1436,8 +1423,11 @@ class QtDriver(DriverMixin, QObject):
 
         self.preview_panel.update_widgets()
 
+    # TODO: Remove?
     def set_macro_menu_viability(self):
-        self.test_macro_1_action.setDisabled(not self.selected)
+        # for action in self.macros_menu.actions():
+        #     action.setDisabled(not self.selected)
+        pass
 
     def set_clipboard_menu_viability(self):
         if len(self.selected) == 1:
@@ -1771,8 +1761,6 @@ class QtDriver(DriverMixin, QObject):
 
     def update_recent_lib_menu(self):
         """Updates the recent library menu from the latest values from the settings file."""
-        actions: list[QAction] = []
-        lib_items: dict[str, tuple[str, str]] = {}
         filepath_option: int = int(
             self.settings.value(
                 SettingItems.SHOW_FILEPATH, defaultValue=ShowFilepathOption.DEFAULT.value, type=int
@@ -1781,6 +1769,9 @@ class QtDriver(DriverMixin, QObject):
 
         settings = self.settings
         settings.beginGroup(SettingItems.LIBS_LIST)
+
+        # Truncate library names
+        lib_items: dict[str, tuple[str, str]] = {}
         for item_tstamp in settings.allKeys():
             val = str(settings.value(item_tstamp, type=str))
             cut_val = val
@@ -1793,6 +1784,7 @@ class QtDriver(DriverMixin, QObject):
         settings.endGroup()
 
         # Create actions for each library
+        actions: list[QAction] = []
         for library_key in libs_sorted:
             path = Path(library_key[1][0])
             action = QAction(self.open_recent_library_menu)
@@ -1834,6 +1826,52 @@ class QtDriver(DriverMixin, QObject):
         self.settings.endGroup()
         self.settings.sync()
         self.update_recent_lib_menu()
+
+    def update_macros_menu(self, clear: bool = False):
+        if not self.macros_menu:  # NOTE: Needed for tests?
+            return
+
+        # Create actions for each macro
+        actions: list[QAction] = []
+        if self.lib.library_dir and not clear:
+            macros_path = self.lib.library_dir / TS_FOLDER_NAME / MACROS_FOLDER_NAME
+            for f in macros_path.glob("*"):
+                logger.info(f)
+                if f.suffix != ".toml" or f.is_dir() or f.name.startswith("._"):
+                    continue
+                action = QAction(get_macro_name(f), self.macros_menu.parentWidget())
+                action.triggered.connect(
+                    lambda checked=False, name=f.name: (
+                        self.run_macros(name, self.selected),
+                        self.preview_panel.update_widgets(update_preview=False),
+                    ),
+                )
+                actions.append(action)
+
+        open_folder = QAction("Open Macros Folder...", self.macros_menu)
+        open_folder.triggered.connect(self.open_macros_folder)
+        actions.append(open_folder)
+
+        if clear:
+            open_folder.setEnabled(False)
+
+        # Clear previous actions
+        for action in self.macros_menu.actions():
+            self.macros_menu.removeAction(action)
+
+        # Add new actions
+        for action in actions:
+            self.macros_menu.addAction(action)
+
+        self.macros_menu.addSeparator()
+        self.macros_menu.addAction(open_folder)
+
+    def open_macros_folder(self):
+        if not self.lib.library_dir:
+            return
+        path = self.lib.library_dir / TS_FOLDER_NAME / MACROS_FOLDER_NAME
+        path.mkdir(exist_ok=True)
+        open_file(path, file_manager=True, is_dir=True)
 
     def open_settings_modal(self):
         # TODO: Implement a proper settings panel, and don't re-create it each time it's opened.
@@ -1923,6 +1961,7 @@ class QtDriver(DriverMixin, QObject):
             library_dir_display = self.lib.library_dir.name
 
         self.update_libs_list(path)
+        self.update_macros_menu()
         self.main_window.setWindowTitle(
             Translations.format(
                 "app.title",
@@ -1931,7 +1970,6 @@ class QtDriver(DriverMixin, QObject):
             )
         )
         self.main_window.setAcceptDrops(True)
-
         self.init_file_extension_manager()
 
         self.selected.clear()

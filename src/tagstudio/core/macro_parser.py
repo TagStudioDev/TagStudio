@@ -105,6 +105,37 @@ class AddTagInstruction(Instruction):
         return str(self.tag_strings)
 
 
+def get_macro_name(
+    macro_path: Path,
+) -> str:
+    """Return the name of a macro, as read from the file.
+
+    Defaults to the filename if no name is declared or able to be read.
+
+    Args:
+        macro_path (Path): The full path of the macro file.
+    """
+    name = macro_path.name
+    logger.info("[MacroParser] Parsing Macro for Name", macro_path=macro_path)
+
+    if not macro_path.exists():
+        logger.error("[MacroParser] Macro path does not exist", macro_path=macro_path)
+        return name
+
+    if not macro_path.exists():
+        logger.error("[MacroParser] Filepath does not exist", macro_path=macro_path)
+        return name
+
+    with open(macro_path) as f:
+        try:
+            macro = toml.load(f)
+            name = str(macro.get("name", name))
+        except toml.TomlDecodeError as e:
+            logger.error("[MacroParser] Could not parse macro", macro_path=macro_path, error=e)
+    logger.info("[MacroParser] Macro Name:", name=name, macro_path=macro_path)
+    return name
+
+
 def parse_macro_file(
     macro_path: Path,
     filepath: Path,
@@ -122,7 +153,7 @@ def parse_macro_file(
         logger.error("[MacroParser] Macro path does not exist", macro_path=macro_path)
         return results
 
-    if not macro_path.exists():
+    if not filepath.exists():
         logger.error("[MacroParser] Filepath does not exist", filepath=filepath)
         return results
 
@@ -130,11 +161,7 @@ def parse_macro_file(
         try:
             macro = toml.load(f)
         except toml.TomlDecodeError as e:
-            logger.error(
-                "[MacroParser] Could not parse macro",
-                path=macro_path,
-                error=e,
-            )
+            logger.error("[MacroParser] Could not parse macro", macro_path=macro_path, error=e)
             return results
 
     logger.info(macro)
@@ -155,15 +182,15 @@ def parse_macro_file(
     logger.info(f"[MacroParser] Schema Version: {schema_ver}")
 
     # Load Triggers
-    triggers = macro[TRIGGERS]
-    if not isinstance(triggers, list):
+    triggers = macro.get(TRIGGERS)
+    if triggers and not isinstance(triggers, list):
         logger.error(
             f"[MacroParser] Incorrect type for {TRIGGERS}, expected list", triggers=triggers
         )
 
     # Parse each action table
     for table_key in macro:
-        if table_key in {SCHEMA_VERSION, TRIGGERS}:
+        if table_key in {SCHEMA_VERSION, TRIGGERS, NAME}:
             continue
 
         logger.info("[MacroParser] Parsing Table", table_key=table_key)
@@ -174,7 +201,7 @@ def parse_macro_file(
         source_filters: list[str] = table.get(SOURCE_FILER, [])
         conditions_met: bool = False
         if not source_filters:
-            logger.info('[MacroParser] No "{SOURCE_FILER}" provided')
+            conditions_met = True
         else:
             for filter_ in source_filters:
                 if glob.globmatch(filepath, filter_, flags=glob.GLOBSTAR):

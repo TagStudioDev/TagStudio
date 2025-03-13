@@ -70,11 +70,11 @@ def test_file_path_display(qt_driver, library, filepath_option, expected_path):
         for i, part in enumerate(display_path.parts):
             part_ = part.strip(os.path.sep)
             if i != len(display_path.parts) - 1:
-                file_str += f"{"\u200b".join(part_)}{separator}</b>"
+                file_str += f"{'\u200b'.join(part_)}{separator}</b>"
             else:
                 if file_str != "":
                     file_str += "<br>"
-                file_str += f"<b>{"\u200b".join(part_)}</b>"
+                file_str += f"<b>{'\u200b'.join(part_)}</b>"
 
         # Assert the file path is displayed correctly
         assert panel.file_attrs.file_label.text() == file_str
@@ -122,6 +122,7 @@ def test_title_update(qtbot, qt_driver, filepath_option, expected_title):
     qt_driver.fix_unlinked_entries_action = QAction(menu_bar)
     qt_driver.clear_thumb_cache_action = QAction(menu_bar)
     qt_driver.folders_to_tags_action = QAction(menu_bar)
+    qt_driver.macros_menu = None
 
     # Trigger the update
     qt_driver.init_library(pathlib.Path(test_path), open_status)
