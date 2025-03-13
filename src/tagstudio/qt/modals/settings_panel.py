@@ -18,7 +18,7 @@ from PySide6.QtWidgets import (
 )
 
 from tagstudio.core.enums import ShowFilepathOption
-from tagstudio.qt.translations import LANGUAGES, Translations
+from tagstudio.qt.translations import DEFAULT_TRANSLATION, LANGUAGES, Translations
 from tagstudio.qt.widgets.panel import PanelModal, PanelWidget
 
 if TYPE_CHECKING:
@@ -37,7 +37,7 @@ class SettingsPanel(PanelWidget):
     def __init__(self, driver: "QtDriver"):
         super().__init__()
         self.driver = driver
-        self.setMinimumSize(320, 200)
+        self.setMinimumSize(400, 300)
 
         self.root_layout = QVBoxLayout(self)
         self.root_layout.setContentsMargins(0, 6, 0, 0)
@@ -45,10 +45,10 @@ class SettingsPanel(PanelWidget):
         # Tabs
         self.tab_widget = QTabWidget()
 
-        self.__build_global_settings(driver)
+        self.__build_global_settings()
         self.tab_widget.addTab(self.global_settings_container, Translations["settings.global"])
 
-        self.__build_library_settings(driver)
+        self.__build_library_settings()
         self.tab_widget.addTab(self.library_settings_container, Translations["settings.library"])
 
         self.root_layout.addWidget(self.tab_widget)
@@ -61,50 +61,61 @@ class SettingsPanel(PanelWidget):
         self.root_layout.addStretch(1)
         self.root_layout.addWidget(self.restart_label)
 
-    def __build_global_settings(self, driver: "QtDriver"):
+        self.__update_restart_label()
+
+    def __update_restart_label(self):
+        show_label = (
+            self.language_combobox.currentData() != Translations.current_language
+            or (
+                Qt.ColorScheme.Dark if self.dark_mode_checkbox.isChecked() else Qt.ColorScheme.Light
+            )
+            != self.driver.app.styleHints().colorScheme()
+        )
+        self.restart_label.setHidden(not show_label)
+
+    def __build_global_settings(self):
         self.global_settings_container = QWidget()
         form_layout = QFormLayout(self.global_settings_container)
         form_layout.setContentsMargins(6, 6, 6, 6)
 
         # Language
         self.language_combobox = QComboBox()
-        self.language_combobox.addItems(list(LANGUAGES.keys()))
-        current_lang: str = driver.settings.language
+        for k in LANGUAGES:
+            self.language_combobox.addItem(k, LANGUAGES[k])
+        current_lang: str = self.driver.settings.language
         if current_lang not in LANGUAGES.values():
-            current_lang = "en"
+            current_lang = DEFAULT_TRANSLATION
         self.language_combobox.setCurrentIndex(list(LANGUAGES.values()).index(current_lang))
-        self.language_combobox.currentIndexChanged.connect(
-            lambda: self.restart_label.setHidden(False)
-        )
+        self.language_combobox.currentIndexChanged.connect(self.__update_restart_label)
         form_layout.addRow(Translations["settings.language"], self.language_combobox)
 
         # Open Last Library on Start
         self.open_last_lib_checkbox = QCheckBox()
-        self.open_last_lib_checkbox.setChecked(driver.settings.open_last_loaded_on_startup)
+        self.open_last_lib_checkbox.setChecked(self.driver.settings.open_last_loaded_on_startup)
         form_layout.addRow(
             Translations["settings.open_library_on_start"], self.open_last_lib_checkbox
         )
 
         # Autoplay
         self.autoplay_checkbox = QCheckBox()
-        self.autoplay_checkbox.setChecked(driver.settings.autoplay)
+        self.autoplay_checkbox.setChecked(self.driver.settings.autoplay)
         form_layout.addRow(Translations["media_player.autoplay"], self.autoplay_checkbox)
 
         # Show Filenames in Grid
         self.show_filenames_checkbox = QCheckBox()
-        self.show_filenames_checkbox.setChecked(driver.settings.show_filenames_in_grid)
+        self.show_filenames_checkbox.setChecked(self.driver.settings.show_filenames_in_grid)
         form_layout.addRow(
             Translations["settings.show_filenames_in_grid"], self.show_filenames_checkbox
         )
 
         # Page Size
         self.page_size_line_edit = QLineEdit()
-        self.page_size_line_edit.setText(str(driver.settings.page_size))
+        self.page_size_line_edit.setText(str(self.driver.settings.page_size))
 
         def on_page_size_changed():
             text = self.page_size_line_edit.text()
             if not text.isdigit() or int(text) < 1:
-                self.page_size_line_edit.setText(str(driver.settings.page_size))
+                self.page_size_line_edit.setText(str(self.driver.settings.page_size))
 
         self.page_size_line_edit.editingFinished.connect(on_page_size_changed)
         form_layout.addRow(Translations["settings.page_size"], self.page_size_line_edit)
@@ -113,7 +124,7 @@ class SettingsPanel(PanelWidget):
         self.filepath_combobox = QComboBox()
         for k in FILEPATH_OPTION_MAP:
             self.filepath_combobox.addItem(FILEPATH_OPTION_MAP[k], k)
-        filepath_option: ShowFilepathOption = driver.settings.show_filepath
+        filepath_option: ShowFilepathOption = self.driver.settings.show_filepath
         if filepath_option not in FILEPATH_OPTION_MAP:
             filepath_option = ShowFilepathOption.DEFAULT
         self.filepath_combobox.setCurrentIndex(
@@ -123,15 +134,11 @@ class SettingsPanel(PanelWidget):
 
         # Dark Mode
         self.dark_mode_checkbox = QCheckBox()
-        self.dark_mode_checkbox.setChecked(driver.settings.dark_mode)
-        self.dark_mode_checkbox.checkStateChanged.connect(
-            lambda: self.restart_label.setHidden(
-                self.dark_mode_checkbox.isChecked() == driver.settings.dark_mode
-            )
-        )
+        self.dark_mode_checkbox.setChecked(self.driver.settings.dark_mode)
+        self.dark_mode_checkbox.checkStateChanged.connect(self.__update_restart_label)
         form_layout.addRow(Translations["settings.dark_mode"], self.dark_mode_checkbox)
 
-    def __build_library_settings(self, driver: "QtDriver"):
+    def __build_library_settings(self):
         self.library_settings_container = QWidget()
         form_layout = QFormLayout(self.library_settings_container)
         form_layout.setContentsMargins(6, 6, 6, 6)
@@ -139,9 +146,12 @@ class SettingsPanel(PanelWidget):
         todo_label = QLabel("TODO")
         form_layout.addRow(todo_label)
 
+    def __get_language(self) -> str:
+        return list(LANGUAGES.values())[self.language_combobox.currentIndex()]
+
     def get_settings(self) -> dict:
         return {
-            "language": list(LANGUAGES.values())[self.language_combobox.currentIndex()],
+            "language": self.__get_language(),
             "open_last_loaded_on_startup": self.open_last_lib_checkbox.isChecked(),
             "autoplay": self.autoplay_checkbox.isChecked(),
             "show_filenames_in_grid": self.show_filenames_checkbox.isChecked(),
@@ -164,9 +174,6 @@ class SettingsPanel(PanelWidget):
         driver.settings.save()
 
         # Apply changes
-        # Language
-        Translations.change_language(settings["language"])
-
         # Show File Path
         driver.update_recent_lib_menu()
         driver.preview_panel.update_widgets()

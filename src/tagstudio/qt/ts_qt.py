@@ -265,14 +265,14 @@ class QtDriver(DriverMixin, QObject):
         """Launch the main Qt window."""
         _ = QUiLoader()
 
-        app = QApplication(sys.argv)
-        app.setStyle("Fusion")
-        app.styleHints().setColorScheme(
+        self.app = QApplication(sys.argv)
+        self.app.setStyle("Fusion")
+        self.app.styleHints().setColorScheme(
             Qt.ColorScheme.Dark if self.settings.dark_mode else Qt.ColorScheme.Light
         )
 
         if QGuiApplication.styleHints().colorScheme() is Qt.ColorScheme.Dark:
-            pal: QPalette = app.palette()
+            pal: QPalette = self.app.palette()
             pal.setColor(QPalette.ColorGroup.Normal, QPalette.ColorRole.Window, QColor("#1e1e1e"))
             pal.setColor(QPalette.ColorGroup.Normal, QPalette.ColorRole.Button, QColor("#1e1e1e"))
             pal.setColor(QPalette.ColorGroup.Inactive, QPalette.ColorRole.Window, QColor("#232323"))
@@ -281,7 +281,7 @@ class QtDriver(DriverMixin, QObject):
                 QPalette.ColorGroup.Inactive, QPalette.ColorRole.ButtonText, QColor("#666666")
             )
 
-            app.setPalette(pal)
+            self.app.setPalette(pal)
 
         # Handle OS signals
         self.setup_signals()
@@ -313,7 +313,7 @@ class QtDriver(DriverMixin, QObject):
         if sys.platform != "darwin":
             icon = QIcon()
             icon.addFile(str(self.rm.get_path("icon")))
-            app.setWindowIcon(icon)
+            self.app.setWindowIcon(icon)
 
         # Initialize the Tag Manager panel
         self.tag_manager_panel = PanelModal(
@@ -685,7 +685,7 @@ class QtDriver(DriverMixin, QObject):
         if not self.ffmpeg_checker.installed():
             self.ffmpeg_checker.show_warning()
 
-        app.exec()
+        self.app.exec()
         self.shutdown()
 
     def show_error_message(self, error_name: str, error_desc: str | None = None):

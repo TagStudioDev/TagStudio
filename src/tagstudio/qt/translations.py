@@ -13,7 +13,7 @@ DEFAULT_TRANSLATION = "en"
 class Translator:
     _default_strings: dict[str, str]
     _strings: dict[str, str] = {}
-    _lang: str = DEFAULT_TRANSLATION
+    __lang: str = DEFAULT_TRANSLATION
 
     def __init__(self):
         self._default_strings = self.__get_translation_dict(DEFAULT_TRANSLATION)
@@ -26,7 +26,7 @@ class Translator:
             return ujson.loads(f.read())
 
     def change_language(self, lang: str):
-        self._lang = lang
+        self.__lang = lang
         self._strings = self.__get_translation_dict(lang)
 
     def __format(self, text: str, **kwargs) -> str:
@@ -37,7 +37,7 @@ class Translator:
                 "[Translations] Error while formatting translation.",
                 text=text,
                 kwargs=kwargs,
-                language=self._lang,
+                language=self.__lang,
             )
             params: defaultdict[str, Any] = defaultdict(lambda: "{unknown_key}")
             params.update(kwargs)
@@ -48,6 +48,10 @@ class Translator:
 
     def __getitem__(self, key: str) -> str:
         return self._strings.get(key) or self._default_strings.get(key) or f"[{key}]"
+
+    @property
+    def current_language(self) -> str:
+        return self.__lang
 
 
 Translations = Translator()
