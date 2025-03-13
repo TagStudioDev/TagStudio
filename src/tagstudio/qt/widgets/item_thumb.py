@@ -116,7 +116,7 @@ class ItemThumb(FlowWidget):
 
     def __init__(
         self,
-        mode: ItemType,
+        mode: ItemType | None,
         library: Library,
         driver: "QtDriver",
         thumb_size: tuple[int, int],
@@ -124,7 +124,7 @@ class ItemThumb(FlowWidget):
     ):
         super().__init__()
         self.lib = library
-        self.mode: ItemType = mode
+        self.mode: ItemType | None = mode
         self.driver = driver
         self.item_id: int | None = None
         self.thumb_size: tuple[int, int] = thumb_size

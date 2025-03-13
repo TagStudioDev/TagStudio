@@ -33,11 +33,18 @@ def main():
         help="Path to a TagStudio Library folder to open on start.",
     )
     parser.add_argument(
-        "-c",
-        "--config-file",
-        dest="config_file",
+        "-s",
+        "--settings-file",
+        dest="settings_file",
         type=str,
-        help="Path to a TagStudio .ini or .plist config file to use.",
+        help="Path to a TagStudio .toml global settings file to use.",
+    )
+    parser.add_argument(
+        "-c",
+        "--cache-file",
+        dest="cache_file",
+        type=str,
+        help="Path to a TagStudio .ini or .plist cache file to use.",
     )
 
     # parser.add_argument('--browse', dest='browse', action='store_true',
@@ -50,12 +57,12 @@ def main():
         action="store_true",
         help="Reveals additional internal data useful for debugging.",
     )
-    parser.add_argument(
-        "--ui",
-        dest="ui",
-        type=str,
-        help="User interface option for TagStudio. Options: qt, cli (Default: qt)",
-    )
+    # parser.add_argument(
+    #     "--ui",
+    #     dest="ui",
+    #     type=str,
+    #     help="User interface option for TagStudio. Options: qt, cli (Default: qt)",
+    # )
     args = parser.parse_args()
 
     driver = QtDriver(args)
