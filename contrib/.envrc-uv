@@ -24,4 +24,6 @@ if [ ! -f "${venv}"/pyproject.toml ] || ! diff --brief pyproject.toml "${venv}"/
     cp pyproject.toml "${venv}"/pyproject.toml
 fi
 
+pre-commit install
+
 # vi: ft=bash

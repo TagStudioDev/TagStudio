@@ -89,9 +89,11 @@ pkgs.mkShellNoCC {
 
       if [ ! -f "''${venv}"/pyproject.toml ] || ! diff --brief pyproject.toml "''${venv}"/pyproject.toml >/dev/null; then
           printf '%s\n' 'Installing dependencies, pyproject.toml changed...' >&2
-          uv pip install --quiet --editable '.[mkdocs,mypy,pytest]'
+          uv pip install --quiet --editable '.[mkdocs,mypy,pre-commit,pytest]'
           cp pyproject.toml "''${venv}"/pyproject.toml
       fi
+
+      pre-commit install
     '';
 
   meta = {
