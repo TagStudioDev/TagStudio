@@ -55,7 +55,7 @@ from PySide6.QtWidgets import (
 import tagstudio.qt.resources_rc  # noqa: F401
 from tagstudio.core.constants import TAG_ARCHIVED, TAG_FAVORITE, VERSION, VERSION_BRANCH
 from tagstudio.core.driver import DriverMixin
-from tagstudio.core.enums import LibraryPrefs, MacroID, SettingItems
+from tagstudio.core.enums import MacroID, SettingItems, ShowFilepathOption
 from tagstudio.core.global_settings import DEFAULT_GLOBAL_SETTINGS_PATH, GlobalSettings
 from tagstudio.core.library.alchemy.enums import (
     FieldTypeEnum,
@@ -1775,7 +1775,10 @@ class QtDriver(DriverMixin, QObject):
         for library_key in libs_sorted:
             path = Path(library_key[1][0])
             action = QAction(self.open_recent_library_menu)
-            action.setText(str(path))
+            if self.settings.show_filepath == ShowFilepathOption.SHOW_FULL_PATHS:
+                action.setText(str(path))
+            else:
+                action.setText(str(path.name))
             action.triggered.connect(lambda checked=False, p=path: self.open_library(p))
             actions.append(action)
 
@@ -1816,7 +1819,10 @@ class QtDriver(DriverMixin, QObject):
 
     def open_library(self, path: Path) -> None:
         """Open a TagStudio library."""
-        message = Translations.format("splash.opening_library", library_path=str(path))
+        library_dir_display = (
+            path if self.settings.show_filepath == ShowFilepathOption.SHOW_FULL_PATHS else path.name
+        )
+        message = Translations.format("splash.opening_library", library_path=library_dir_display)
         self.main_window.landing_widget.set_status_label(message)
         self.main_window.statusbar.showMessage(message, 3)
         self.main_window.repaint()
@@ -1861,12 +1867,17 @@ class QtDriver(DriverMixin, QObject):
         if self.lib.entries_count < 10000:
             self.add_new_files_callback()
 
+        if self.settings.show_filepath == ShowFilepathOption.SHOW_FULL_PATHS:
+            library_dir_display = self.lib.library_dir
+        else:
+            library_dir_display = self.lib.library_dir.name
+
         self.update_libs_list(path)
         self.main_window.setWindowTitle(
             Translations.format(
                 "app.title",
                 base_title=self.base_title,
-                library_dir=self.lib.library_dir,
+                library_dir=library_dir_display,
             )
         )
         self.main_window.setAcceptDrops(True)

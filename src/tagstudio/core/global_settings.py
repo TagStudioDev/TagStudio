@@ -2,11 +2,14 @@
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
 import sys
+from enum import Enum
 from pathlib import Path
 
 import structlog
 import toml
 from pydantic import BaseModel, Field
+
+from tagstudio.core.enums import ShowFilepathOption
 
 if sys.platform == "win32":
     DEFAULT_GLOBAL_SETTINGS_PATH = (
@@ -16,6 +19,13 @@ else:
     DEFAULT_GLOBAL_SETTINGS_PATH = Path.home() / ".config" / "TagStudio" / "settings.toml"
 
 logger = structlog.get_logger(__name__)
+
+
+class TomlEnumEncoder(toml.TomlEncoder):
+    def dump_value(self, v):
+        if isinstance(v, Enum):
+            return super().dump_value(v.value)
+        return super().dump_value(v)
 
 
 # NOTE: pydantic also has a BaseSettings class (from pydantic-settings) that allows any settings
@@ -28,6 +38,7 @@ class GlobalSettings(BaseModel):
     autoplay: bool = Field(default=False)
     show_filenames_in_grid: bool = Field(default=False)
     page_size: int = Field(default=500)
+    show_filepath: ShowFilepathOption = Field(default=ShowFilepathOption.DEFAULT)
 
     @staticmethod
     def read_settings(path: Path = DEFAULT_GLOBAL_SETTINGS_PATH) -> "GlobalSettings":
@@ -47,4 +58,4 @@ class GlobalSettings(BaseModel):
             path.parent.mkdir(parents=True, exist_ok=True)
 
         with open(path, "w") as f:
-            toml.dump(dict(self), f)
+            toml.dump(dict(self), f, encoder=TomlEnumEncoder())

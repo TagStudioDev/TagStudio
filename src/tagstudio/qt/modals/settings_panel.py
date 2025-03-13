@@ -3,6 +3,8 @@
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
 
+from typing import TYPE_CHECKING
+
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QCheckBox,
@@ -15,13 +17,24 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from tagstudio.core.driver import DriverMixin
+from tagstudio.core.enums import ShowFilepathOption
 from tagstudio.qt.translations import LANGUAGES, Translations
 from tagstudio.qt.widgets.panel import PanelModal, PanelWidget
 
+if TYPE_CHECKING:
+    from tagstudio.qt.ts_qt import QtDriver
+
+FILEPATH_OPTION_MAP: dict[ShowFilepathOption, str] = {
+    ShowFilepathOption.SHOW_FULL_PATHS: Translations["settings.filepath.option.full"],
+    ShowFilepathOption.SHOW_RELATIVE_PATHS: Translations["settings.filepath.option.relative"],
+    ShowFilepathOption.SHOW_FILENAMES_ONLY: Translations["settings.filepath.option.name"],
+}
+
 
 class SettingsPanel(PanelWidget):
-    def __init__(self, driver):
+    driver: "QtDriver"
+
+    def __init__(self, driver: "QtDriver"):
         super().__init__()
         self.driver = driver
         self.setMinimumSize(320, 200)
@@ -48,13 +61,12 @@ class SettingsPanel(PanelWidget):
         self.root_layout.addStretch(1)
         self.root_layout.addWidget(self.restart_label)
 
-    def __build_global_settings(self, driver):
+    def __build_global_settings(self, driver: "QtDriver"):
         self.global_settings_container = QWidget()
         form_layout = QFormLayout(self.global_settings_container)
         form_layout.setContentsMargins(6, 6, 6, 6)
 
         # Language
-        language_label = QLabel(Translations["settings.language"])
         self.language_combobox = QComboBox()
         self.language_combobox.addItems(list(LANGUAGES.keys()))
         current_lang: str = driver.settings.language
@@ -64,28 +76,28 @@ class SettingsPanel(PanelWidget):
         self.language_combobox.currentIndexChanged.connect(
             lambda: self.restart_label.setHidden(False)
         )
-        form_layout.addRow(language_label, self.language_combobox)
+        form_layout.addRow(Translations["settings.language"], self.language_combobox)
 
         # Open Last Library on Start
-        open_last_lib_label = QLabel(Translations["settings.open_library_on_start"])
         self.open_last_lib_checkbox = QCheckBox()
         self.open_last_lib_checkbox.setChecked(driver.settings.open_last_loaded_on_startup)
-        form_layout.addRow(open_last_lib_label, self.open_last_lib_checkbox)
+        form_layout.addRow(
+            Translations["settings.open_library_on_start"], self.open_last_lib_checkbox
+        )
 
         # Autoplay
-        autoplay_label = QLabel(Translations["media_player.autoplay"])
         self.autoplay_checkbox = QCheckBox()
         self.autoplay_checkbox.setChecked(driver.settings.autoplay)
-        form_layout.addRow(autoplay_label, self.autoplay_checkbox)
+        form_layout.addRow(Translations["media_player.autoplay"], self.autoplay_checkbox)
 
         # Show Filenames in Grid
-        show_filenames_label = QLabel(Translations["settings.show_filenames_in_grid"])
         self.show_filenames_checkbox = QCheckBox()
         self.show_filenames_checkbox.setChecked(driver.settings.show_filenames_in_grid)
-        form_layout.addRow(show_filenames_label, self.show_filenames_checkbox)
+        form_layout.addRow(
+            Translations["settings.show_filenames_in_grid"], self.show_filenames_checkbox
+        )
 
         # Page Size
-        page_size_label = QLabel(Translations["settings.page_size"])
         self.page_size_line_edit = QLineEdit()
         self.page_size_line_edit.setText(str(driver.settings.page_size))
 
@@ -95,9 +107,21 @@ class SettingsPanel(PanelWidget):
                 self.page_size_line_edit.setText(str(driver.settings.page_size))
 
         self.page_size_line_edit.editingFinished.connect(on_page_size_changed)
-        form_layout.addRow(page_size_label, self.page_size_line_edit)
+        form_layout.addRow(Translations["settings.page_size"], self.page_size_line_edit)
 
-    def __build_library_settings(self, driver):
+        # Show Filepath
+        self.filepath_combobox = QComboBox()
+        for k in FILEPATH_OPTION_MAP:
+            self.filepath_combobox.addItem(FILEPATH_OPTION_MAP[k], k)
+        filepath_option: ShowFilepathOption = driver.settings.show_filepath
+        if filepath_option not in FILEPATH_OPTION_MAP:
+            filepath_option = ShowFilepathOption.DEFAULT
+        self.filepath_combobox.setCurrentIndex(
+            list(FILEPATH_OPTION_MAP.keys()).index(filepath_option)
+        )
+        form_layout.addRow(Translations["settings.filepath.label"], self.filepath_combobox)
+
+    def __build_library_settings(self, driver: "QtDriver"):
         self.library_settings_container = QWidget()
         form_layout = QFormLayout(self.library_settings_container)
         form_layout.setContentsMargins(6, 6, 6, 6)
@@ -112,28 +136,41 @@ class SettingsPanel(PanelWidget):
             "autoplay": self.autoplay_checkbox.isChecked(),
             "show_filenames_in_grid": self.show_filenames_checkbox.isChecked(),
             "page_size": int(self.page_size_line_edit.text()),
+            "show_filepath": self.filepath_combobox.currentData(),
         }
 
+    def update_settings(self, driver: "QtDriver"):
+        settings = self.get_settings()
+
+        driver.settings.language = settings["language"]
+        driver.settings.open_last_loaded_on_startup = settings["open_last_loaded_on_startup"]
+        driver.settings.autoplay = settings["autoplay"]
+        driver.settings.show_filenames_in_grid = settings["show_filenames_in_grid"]
+        driver.settings.page_size = settings["page_size"]
+        driver.settings.show_filepath = settings["show_filepath"]
+
+        driver.settings.save()
+
+        Translations.change_language(settings["language"])
+
+        driver.update_recent_lib_menu()
+        driver.preview_panel.update_widgets()
+        library_directory = driver.lib.library_dir
+        if settings["show_filepath"] == ShowFilepathOption.SHOW_FULL_PATHS:
+            display_path = library_directory or ""
+        else:
+            display_path = library_directory.name if library_directory else ""
+        driver.main_window.setWindowTitle(
+            Translations.format("app.title", base_title=driver.base_title, library_dir=display_path)
+        )
+
     @classmethod
-    def build_modal(cls, driver: DriverMixin) -> PanelModal:
+    def build_modal(cls, driver: "QtDriver") -> PanelModal:
         settings_panel = cls(driver)
-
-        def update_settings():
-            settings = settings_panel.get_settings()
-
-            Translations.change_language(settings["language"])
-            driver.settings.language = settings["language"]
-
-            driver.settings.open_last_loaded_on_startup = settings["open_last_loaded_on_startup"]
-            driver.settings.autoplay = settings["autoplay"]
-            driver.settings.show_filenames_in_grid = settings["show_filenames_in_grid"]
-            driver.settings.page_size = settings["page_size"]
-
-            driver.settings.save()
 
         modal = PanelModal(
             widget=settings_panel,
-            done_callback=update_settings,
+            done_callback=lambda: settings_panel.update_settings(driver),
             has_save=False,
         )
         modal.title_widget.setVisible(False)

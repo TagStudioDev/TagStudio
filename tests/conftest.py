@@ -133,7 +133,8 @@ def qt_driver(qtbot, library):
     with TemporaryDirectory() as tmp_dir:
 
         class Args:
-            config_file = Path(tmp_dir) / "tagstudio.ini"
+            settings_file = Path(tmp_dir) / "settings.toml"
+            cache_file = Path(tmp_dir) / "tagstudio.ini"
             open = Path(tmp_dir)
             ci = True
 

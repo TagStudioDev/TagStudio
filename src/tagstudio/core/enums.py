@@ -15,6 +15,15 @@ class SettingItems(str, enum.Enum):
     THUMB_CACHE_SIZE_LIMIT = "thumb_cache_size_limit"
 
 
+class ShowFilepathOption(int, enum.Enum):
+    """Values representing the options for the "show_filenames" setting."""
+
+    SHOW_FULL_PATHS = 0
+    SHOW_RELATIVE_PATHS = 1
+    SHOW_FILENAMES_ONLY = 2
+    DEFAULT = SHOW_RELATIVE_PATHS
+
+
 class Theme(str, enum.Enum):
     COLOR_BG_DARK = "#65000000"
     COLOR_BG_LIGHT = "#22000000"
