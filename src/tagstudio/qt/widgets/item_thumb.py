@@ -230,6 +230,7 @@ class ItemThumb(FlowWidget):
         self.thumb_button.addAction(open_file_action)
         self.thumb_button.addAction(open_explorer_action)
         self.thumb_button.addAction(self.delete_action)
+        self.thumb_button.double_clicked.connect(self.opener.open_file)
 
         # Static Badges ========================================================
 
