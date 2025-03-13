@@ -63,6 +63,7 @@ from tagstudio.qt.helpers.file_tester import is_readable_video
 from tagstudio.qt.helpers.gradient import four_corner_gradient
 from tagstudio.qt.helpers.image_effects import replace_transparent_pixels
 from tagstudio.qt.helpers.text_wrapper import wrap_full_text
+from tagstudio.qt.helpers.model_thumbnailer import Open3DRenderer
 from tagstudio.qt.helpers.vendored.pydub.audio_segment import (
     _AudioSegment as AudioSegment,
 )
@@ -84,6 +85,7 @@ class ThumbRenderer(QObject):
     """A class for rendering image and file thumbnails."""
 
     rm: ResourceManager = ResourceManager()
+    open3d_renderer = Open3DRenderer()
     cache: CacheManager = CacheManager()
     updated = Signal(float, QPixmap, QSize, Path, str)
     updated_ratio = Signal(float)
@@ -612,6 +614,14 @@ class ThumbRenderer(QObject):
 
             else:
                 logger.error("Couldn't render thumbnail", filepath=filepath, error=type(e).__name__)
+        return im
+    
+    def _3d_model(self, filepath: Path, size: tuple[int, int]) -> Image.Image:
+        im: Image.Image = None
+        try:
+            im = self.open3d_renderer.render(filepath, size)
+        except Exception as e:
+            logger.error("Couldn't render 3d model", path=filepath.name, error=type(e).__name__)
         return im
 
     def _source_engine(self, filepath: Path) -> Image.Image:
@@ -1325,6 +1335,11 @@ class ThumbRenderer(QObject):
                     ext, MediaCategories.SOURCE_ENGINE_TYPES, mime_fallback=True
                 ):
                     image = self._source_engine(_filepath)
+                # Model ==========================================================
+                elif MediaCategories.is_ext_in_category(
+                    ext, MediaCategories.MODEL_TYPES, mime_fallback=True
+                ):
+                    image = self._3d_model(_filepath, (adj_size,adj_size))
                 # No Rendered Thumbnail ========================================
                 if not image:
                     raise NoRendererError
