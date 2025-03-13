@@ -21,7 +21,7 @@ from PySide6.QtWidgets import (
 from tagstudio.core.constants import VERSION, VERSION_BRANCH
 from tagstudio.core.enums import Theme
 from tagstudio.core.palette import ColorType, UiColor, get_ui_color
-from tagstudio.qt.modals.ffmpeg_checker import FfmpegChecker
+from tagstudio.qt.helpers.vendored import ffmpeg
 from tagstudio.qt.resource_manager import ResourceManager
 from tagstudio.qt.translations import Translations
 
@@ -31,7 +31,6 @@ class AboutModal(QWidget):
         super().__init__()
         self.setWindowTitle(Translations["about.title"])
 
-        self.fc: FfmpegChecker = FfmpegChecker()
         self.rm: ResourceManager = ResourceManager()
 
         # TODO: There should be a global button theme somewhere.
@@ -80,7 +79,7 @@ class AboutModal(QWidget):
         self.desc_label.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
 
         # System Info ----------------------------------------------------------
-        ff_version = self.fc.version()
+        ff_version = ffmpeg.version()
         red = get_ui_color(ColorType.PRIMARY, UiColor.RED)
         green = get_ui_color(ColorType.PRIMARY, UiColor.GREEN)
         missing = Translations["generic.missing"]

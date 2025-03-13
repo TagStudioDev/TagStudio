@@ -7,7 +7,7 @@ from pathlib import Path
 
 import ffmpeg
 
-from tagstudio.qt.helpers.vendored.ffmpeg import _probe
+from tagstudio.qt.helpers.vendored.ffmpeg import probe
 
 
 def is_readable_video(filepath: Path | str):
@@ -19,8 +19,8 @@ def is_readable_video(filepath: Path | str):
         filepath (Path | str): The filepath of the video to check.
     """
     try:
-        probe = _probe(Path(filepath))
-        for stream in probe["streams"]:
+        result = probe(Path(filepath))
+        for stream in result["streams"]:
             # DRM check
             if stream.get("codec_tag_string") in [
                 "drma",
