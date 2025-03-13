@@ -1,5 +1,6 @@
 from collections import defaultdict
 from pathlib import Path
+from platform import system
 from typing import Any
 
 import structlog
@@ -28,6 +29,11 @@ class Translator:
     def change_language(self, lang: str):
         self._lang = lang
         self._strings = self.__get_translation_dict(lang)
+        if system() == "Darwin":
+            for k, v in self._strings.items():
+                self._strings[k] = (
+                    v.replace("&&", "<ESC_AMP>").replace("&", "", 1).replace("<ESC_AMP>", "&&")
+                )
 
     def __format(self, text: str, **kwargs) -> str:
         try:
