@@ -142,6 +142,7 @@ def qt_driver(qtbot, library):
         with patch("tagstudio.qt.ts_qt.Consumer"), patch("tagstudio.qt.ts_qt.CustomRunnable"):
             driver = QtDriver(Args())
 
+            driver.app = Mock()
             driver.main_window = Mock()
             driver.preview_panel = Mock()
             driver.flow_container = Mock()
