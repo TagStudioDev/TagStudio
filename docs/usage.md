@@ -1,5 +1,11 @@
 # Usage
 
+## Third-Party Dependencies
+
+For audio/video thumbnails and playback you'll need [FFmpeg](https://ffmpeg.org/download.html) installed on your system. If you encounter any issues with this, please reference our [FFmpeg Help](./help/ffmpeg.md) guide.
+
+You can check to see if FFmpeg and FFprobe are correctly located by launching TagStudio and going to "About TagStudio" in the menu bar.
+
 ## Creating/Opening a Library
 
 With TagStudio opened, start by creating a new library or opening an existing one using File -> Open/Create Library from the menu bar. TagStudio will automatically create a new library from the chosen directory if one does not already exist. Upon creating a new library, TagStudio will automatically scan your folders for files and add those to your library (no files are moved during this process!).
@@ -62,3 +68,12 @@ Inevitably some of the files inside your library will be renamed, moved, or dele
 ### Saving the Library
 
 As of version 9.5, libraries are saved automatically as you go. To save a backup of your library, select File -> Save Library Backup from the menu bar.
+
+## Launch Arguments
+
+There are a handful of launch arguments you can pass to TagStudio via the command line or a desktop shortcut.
+
+| Argument               | Short | Description                                          |
+| ---------------------- | ----- | ---------------------------------------------------- |
+| `--open <path>`        | `-o`  | Path to a TagStudio Library folder to open on start. |
+| `--config-file <path>` | `-c`  | Path to the TagStudio config file to load.           |

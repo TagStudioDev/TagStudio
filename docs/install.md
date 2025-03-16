@@ -1,8 +1,8 @@
 # Installation
 
-## Releases
+TagStudio provides [releases](https://github.com/TagStudioDev/TagStudio/releases) as well as full access to its [source code](https://github.com/TagStudioDev/TagStudio) under the [GPLv3](https://github.com/TagStudioDev/TagStudio/blob/main/LICENSE) license.
 
-TagStudio provides executable [releases](https://github.com/TagStudioDev/TagStudio/releases) as well as full access to its [source code](https://github.com/TagStudioDev/TagStudio) under the [GPLv3](https://github.com/TagStudioDev/TagStudio/blob/main/LICENSE) license.
+## Executables
 
 To download executable builds of TagStudio, visit the [Releases](https://github.com/TagStudioDev/TagStudio/releases) page of the GitHub repository and download the latest release for your system under the "Assets" section at the bottom of the release.
 
@@ -14,7 +14,7 @@ TagStudio has builds for **Windows**, **macOS** _(Apple Silicon & Intel)_, and *
 
 ---
 
-### Package Managers
+## Package Managers
 
 <!-- prettier-ignore -->
 !!! danger "Unofficial Releases"
@@ -44,7 +44,7 @@ pip install .
     ```sh
     pip install -e .[dev]
     ```
-    _See more under "[Creating a Development Environment](#creating-a-development-environment)"_
+    _See more under "[Developing](./develop.md)"_
 
 TagStudio can now be launched via the `tagstudio` command in your terminal.
 
@@ -200,184 +200,3 @@ Finally, `inputs` can be used in a module to add the package to your packages li
 <!-- prettier-ignore-end -->
 
 Don't forget to rebuild!
-
----
-
-## Creating a Development Environment
-
-If you wish to develop for TagStudio, you'll need to create a development environment by installing the required dependencies. You have a number of options depending on your level of experience and familiarly with existing Python toolchains.
-
-<!-- prettier-ignore -->
-!!! tip "Contributing"
-    If you wish to contribute to TagStudio's development, please read our [CONTRIBUTING.md](https://github.com/TagStudioDev/TagStudio/blob/main/CONTRIBUTING.md)!
-
-### Install Python
-
-Python [3.12](https://www.python.org/downloads/) is required to develop for TagStudio. Any version matching "Python 3.12.x" should work, with "x" being any number. Alternatively you can use a tool such as [pyenv](https://github.com/pyenv/pyenv/) to install this version of Python without affecting any existing Python installations on your system.
-
-<!-- prettier-ignore -->
-!!! info "Python Aliases"
-    Depending on your system, Python may be called `python`, `py`, `python3`, or `py3`. These instructions use the alias `python` for consistency.
-
-If you already have Python installed on your system, you can check the version by running the following command:
-
-```sh
-python --version
-```
-
----
-
-#### Installing with pyenv
-
-If you choose to install Python using pyenv, please refer to the following instructions:
-
-1. Follow pyenv's [install instructions](https://github.com/pyenv/pyenv/?tab=readme-ov-file#installation) for your system.
-2. Install the appropriate Python version with pyenv by running `pyenv install 3.12` (This will **not** mess with your existing Python installation).
-3. Navigate to the repository root folder in your terminal and run `pyenv local 3.12`. You could alternatively use `pyenv shell 3.12` or `pyenv global 3.12` instead to set the Python version for the current terminal session or the entire system respectively, however using `local` is recommended.
-
----
-
-### Installing Dependencies
-
-To install the required dependencies, you can use a dependency manager such as [uv](https://docs.astral.sh/uv) or [Poetry 2.0](https://python-poetry.org). Alternatively you can create a virtual environment and manually install the dependencies yourself.
-
-#### Installing with uv
-
-If using [uv](https://docs.astral.sh/uv), you can install the dependencies for TagStudio with the following command:
-
-```sh
-uv pip install -e .[dev]
-```
-
----
-
-#### Installing with Poetry
-
-If using [Poetry](https://python-poetry.org), you can install the dependencies for TagStudio with the following command:
-
-```sh
-poetry install --with dev
-```
-
----
-
-#### Installing with Nix
-
-If using [Nix](https://nixos.org/), there is a development environment already provided in the [flake](https://wiki.nixos.org/wiki/Flakes) that is accessible with the following command:
-
-```sh
-nix develop
-```
-
-You can automatically enter this development shell, and keep your user shell, with a tool like [direnv](https://direnv.net/). A reference `.envrc` is provided in the repository; to use it:
-
-```sh
-ln -s .envrc.recommended .envrc
-```
-
-You will have to allow usage of it.
-
-<!-- prettier-ignore -->
-!!! warning "`.envrc` Security"
-    These files are generally a good idea to check, as they execute commands on directory load. direnv has a security framework to only run `.envrc` files you have allowed, and does keep track on if it has changed. So, with that being said, the file may need to be allowed again if modifications are made.
-
-```sh
-cat .envrc # You are checking them, right?
-direnv allow
-```
-
----
-
-#### Manual Installation
-
-If you choose to manually set up a virtual environment and install dependencies instead of using a dependency manager, please refer to the following instructions:
-
-<!-- prettier-ignore -->
-!!! tip "Virtual Environments"
-    Learn more about setting up a virtual environment with Python's [official tutorial](https://docs.python.org/3/tutorial/venv.html).
-
-1.  In the root repository directory, create a python virtual environment:
-
-    ```sh
-    python -m venv .venv
-    ```
-
-2.  Activate your environment:
-
-    -   Windows w/Powershell: `.venv\Scripts\Activate.ps1`
-    -   Windows w/Command Prompt: `.venv\Scripts\activate.bat`
-    -   Linux/macOS: `source .venv/bin/activate`
-
-    <!-- prettier-ignore -->
-    !!! info "Supported Shells"
-        Depending on your system, the regular activation script _might_ not work on alternative shells. In this case, refer to the table below for supported shells:
-
-        |      Shell | Script                    |
-        | ---------: | :------------------------ |
-        |   Bash/ZSH | `.venv/bin/activate`      |
-        |       Fish | `.venv/bin/activate.fish` |
-        |   CSH/TCSH | `.venv/bin/activate.csh`  |
-        | PowerShell | `.venv/bin/activate.ps1`  |
-
-3.  Use the following PIP command to create an editable installation and install the required development dependencies:
-
-    ```sh
-    pip install -e .[dev]
-    ```
-
-### Launching
-
-The entry point for TagStudio is `src/tagstudio/main.py`. You can target this file from your IDE to run or connect a debug session. The example(s) below show off example launch scripts for different IDEs. Here you can also take advantage of [launch arguments](#launch-arguments) to pass your own test [libraries](./library/index.md) to use while developing.
-
-<!-- prettier-ignore -->
-=== "VS Code"
-    ```json title=".vscode/launch.json"
-    {
-        // Use IntelliSense to learn about possible attributes.
-        // Hover to view descriptions of existing attributes.
-        // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
-        "version": "0.2.0",
-        "configurations": [
-            {
-                "name": "TagStudio",
-                "type": "python",
-                "request": "launch",
-                "program": "${workspaceRoot}/src/tagstudio/main.py",
-                "console": "integratedTerminal",
-                "justMyCode": true,
-                "args": ["-o", "~/Documents/Example"]
-            }
-        ]
-    }
-    ```
-
-## Building
-
-To build your own executables of TagStudio, first follow the steps in "[Installing with PIP](#installing-with-pip)" including the developer dependencies step. Once that's complete, run the following PyInstaller command:
-
-```
-pyinstaller tagstudio.spec
-```
-
-If you're on Windows or Linux and wish to build a portable executable, then pass the following flag:
-
-```
-pyinstaller tagstudio.spec -- --portable
-```
-
-The resulting executable file(s) will be located in a new folder named "dist".
-
-## Third-Party Dependencies
-
-For audio/video thumbnails and playback you'll also need [FFmpeg](https://ffmpeg.org/download.html) installed on your system. If you encounter any issues with this, please reference our [FFmpeg Help](./help/ffmpeg.md) guide.
-
-You can check to see if FFmpeg and FFprobe are correctly located by launching TagStudio and going to "About TagStudio" in the menu bar.
-
-## Launch Arguments
-
-There are a handful of launch arguments you can pass to TagStudio via the command line or a desktop shortcut.
-
-| Argument               | Short | Description                                          |
-| ---------------------- | ----- | ---------------------------------------------------- |
-| `--open <path>`        | `-o`  | Path to a TagStudio Library folder to open on start. |
-| `--config-file <path>` | `-c`  | Path to the TagStudio config file to load.           |
