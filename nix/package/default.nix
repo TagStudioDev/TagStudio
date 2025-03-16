@@ -58,6 +58,14 @@ buildPythonApplication {
     syrupy
   ];
 
+  # TODO: Install more icon resolutions when available.
+  preInstall = ''
+    mkdir -p $out/share/applications $out/share/icons/hicolor/512x512/apps
+
+    cp $src/src/tagstudio/resources/tagstudio.desktop $out/share/applications
+    cp $src/src/tagstudio/resources/icon.png $out/share/icons/hicolor/512x512/apps/tagstudio.png
+  '';
+
   makeWrapperArgs =
     [ "--prefix PATH : ${lib.makeBinPath [ ffmpeg-headless ]}" ]
     ++ lib.optional stdenv.hostPlatform.isLinux "--prefix LD_LIBRARY_PATH : ${

@@ -13,6 +13,7 @@ import ctypes
 import dataclasses
 import math
 import os
+import platform
 import re
 import sys
 import time
@@ -327,6 +328,14 @@ class QtDriver(DriverMixin, QObject):
                 self.preview_panel.update_widgets(),
             )
         )
+
+        if platform.system() != "Darwin":
+            icon = QIcon()
+            icon.fromTheme("tagstudio")
+            app.setWindowIcon(icon)
+
+            if platform.system() != "Windows":
+                app.setDesktopFileName("tagstudio")
 
         menu_bar = QMenuBar(self.main_window)
         self.main_window.setMenuBar(menu_bar)
