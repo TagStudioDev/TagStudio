@@ -297,10 +297,12 @@ class QtDriver(DriverMixin, QObject):
             appid = "cyanvoxel.tagstudio.9"
             ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(appid)  # type: ignore[attr-defined,unused-ignore]
 
+        app.setApplicationName("tagstudio")
+        app.setApplicationDisplayName("TagStudio")
         if platform.system() != "Darwin":
-            icon = QIcon()
-            icon.fromTheme("tagstudio")
-            app.setWindowIcon(icon)
+            fallback_icon = QIcon()
+            fallback_icon.addFile(str(self.rm.get_path("icon")))
+            app.setWindowIcon(QIcon.fromTheme("tagstudio", fallback_icon))
 
             if platform.system() != "Windows":
                 app.setDesktopFileName("tagstudio")
