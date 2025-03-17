@@ -1,4 +1,4 @@
-# Copyright (C) 2024 Travis Abendshien (CyanVoxel).
+# Copyright (C) 2025
 # Licensed under the GPL-3.0 License.
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
@@ -15,8 +15,9 @@ class QClickSlider(QSlider):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-    def mousePressEvent(self, event):  # noqa: N802
-        """Overide to handle mouse clicks.
+    @override
+    def mousePressEvent(self, ev: QMouseEvent):
+        """Override to handle mouse clicks.
 
         Overriding the mousePressEvent allows us to seek
         directly to the position the user clicked instead
@@ -28,7 +29,7 @@ class QClickSlider(QSlider):
             QStyle.ComplexControl.CC_Slider, opt, QStyle.SubControl.SC_SliderHandle, self
         )
 
-        was_slider_clicked = handle_rect.contains(event.position().x(), event.position().y())
+        was_slider_clicked = handle_rect.contains(int(ev.position().x()), int(ev.position().y()))
 
         if not was_slider_clicked:
             self.setValue(

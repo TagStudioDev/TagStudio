@@ -39,7 +39,7 @@ class MediaPlayer(QGraphicsView):
     Gives a basic control set to manage media playback.
     """
 
-    video_preview = None
+    video_preview: "VideoPreview | None" = None
 
     def __init__(self, driver: "QtDriver") -> None:
         super().__init__()
@@ -259,7 +259,7 @@ class MediaPlayer(QGraphicsView):
         autoplay_action.triggered.connect(lambda: self.toggle_autoplay())
         self.autoplay = autoplay_action
 
-        open_file_action = QAction(Translations["media_player.autoplay"], self)
+        open_file_action = QAction(Translations["file.open_file"], self)
         open_file_action.triggered.connect(self.opener.open_file)
 
         open_explorer_action = QAction(open_file_str(), self)
@@ -333,7 +333,8 @@ class MediaPlayer(QGraphicsView):
 
         return super().releaseMouse()
 
-    def eventFilter(self, obj: QObject, event: QEvent) -> bool:  # noqa: N802
+    @override
+    def eventFilter(self, arg__1: QObject, arg__2: QEvent) -> bool:
         """Manage events for the media player."""
         if (
             event.type() == QEvent.Type.MouseButtonPress
@@ -404,6 +405,8 @@ class MediaPlayer(QGraphicsView):
         self.load_mute_unmute_icon(muted)
 
     def has_video_changed(self, video_available: bool) -> None:
+        if not self.video_preview:
+            return
         if video_available:
             self.scene().addItem(self.video_preview)
             self.video_preview.setZValue(-1)
@@ -496,14 +499,16 @@ class MediaPlayer(QGraphicsView):
         elif size.width() > 175 and orientation is Qt.Orientation.Vertical:
             self.volume_slider.setOrientation(Qt.Orientation.Horizontal)
 
-        self.video_preview.setSize(self.size())
-        if self.player.hasVideo():
-            self.centerOn(self.video_preview)
+        if self.video_preview:
+            self.video_preview.setSize(self.size())
+            if self.player.hasVideo():
+                self.centerOn(self.video_preview)
 
         self.tint.setRect(0, 0, self.size().width(), self.size().height())
         self.apply_rounded_corners()
 
-    def resizeEvent(self, event: QResizeEvent) -> None:  # noqa: N802
+    @override
+    def resizeEvent(self, event: QResizeEvent) -> None:
         self._update_controls(event.size())
 
     def volume_slider_changed(self, position: int) -> None:
@@ -511,9 +516,11 @@ class MediaPlayer(QGraphicsView):
 
 
 class VideoPreview(QGraphicsVideoItem):
-    def boundingRect(self):  # noqa: N802
+    @override
+    def boundingRect(self):
         return QRectF(0, 0, self.size().width(), self.size().height())
 
+    @override
     def paint(self, painter, option, widget=None) -> None:
         # painter.brush().setColor(QColor(0, 0, 0, 255))
         # You can set any shape you want here.
