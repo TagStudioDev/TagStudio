@@ -9,7 +9,11 @@ To download executable builds of TagStudio, visit the [Releases](https://github.
 TagStudio has builds for **Windows**, **macOS** _(Apple Silicon & Intel)_, and **Linux**. We also offer portable releases for Windows and Linux which are self-contained and easier to move around.
 
 <!-- prettier-ignore -->
-!!! info "For macOS Users"
+!!! info "Third-Party Dependencies"
+    You may need to install [third-party dependencies](#third-party-dependencies) such as [FFmpeg](https://ffmpeg.org/download.html) to use the full feature set of TagStudio.
+
+<!-- prettier-ignore -->
+!!! warning "For macOS Users"
     On macOS, you may be met with a message saying "**"TagStudio" can't be opened because Apple cannot check it for malicious software.**" If you encounter this, then you'll need to go to the "Settings" app, navigate to "Privacy & Security", and scroll down to a section that says "**"TagStudio" was blocked from use because it is not from an identified developer.**" Click the "Open Anyway" button to allow TagStudio to run. You should only have to do this once after downloading the application.
 
 ---
@@ -200,3 +204,9 @@ Finally, `inputs` can be used in a module to add the package to your packages li
 <!-- prettier-ignore-end -->
 
 Don't forget to rebuild!
+
+## Third-Party Dependencies
+
+For audio/video thumbnails and playback you'll need [FFmpeg](https://ffmpeg.org/download.html) installed on your system. If you encounter any issues with this, please reference our [FFmpeg Help](./help/ffmpeg.md) guide.
+
+You can check to see if FFmpeg and FFprobe are correctly located by launching TagStudio and going to "About TagStudio" in the menu bar.

@@ -115,9 +115,6 @@ The entry point for TagStudio is `src/tagstudio/main.py`. You can target this fi
 === "VS Code"
     ```json title=".vscode/launch.json"
     {
-        // Use IntelliSense to learn about possible attributes.
-        // Hover to view descriptions of existing attributes.
-        // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
         "version": "0.2.0",
         "configurations": [
             {
