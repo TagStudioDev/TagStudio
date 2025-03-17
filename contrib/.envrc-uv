@@ -1,3 +1,5 @@
+# shellcheck shell=bash
+
 # If you wish to use this file, symlink or copy it to `.envrc` for direnv to read it.
 # This will use a virtual environment created by uv.
 #
@@ -16,6 +18,7 @@ fi
 # Only watch now, or direnv will execute again if created or modified by itself.
 watch_file "${venv}"/bin/activate
 
+# shellcheck disable=SC1091
 source "${venv}"/bin/activate
 
 if [ ! -f "${venv}"/pyproject.toml ] || ! diff --brief pyproject.toml "${venv}"/pyproject.toml >/dev/null; then
