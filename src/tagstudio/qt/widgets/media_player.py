@@ -25,9 +25,7 @@ from PySide6.QtWidgets import (
 )
 
 from tagstudio.core.enums import SettingItems
-from tagstudio.qt.helpers.file_opener import FileOpenerHelper
 from tagstudio.qt.helpers.qslider_wrapper import QClickSlider
-from tagstudio.qt.platform_strings import open_file_str
 from tagstudio.qt.translations import Translations
 
 if typing.TYPE_CHECKING:
@@ -250,7 +248,6 @@ class MediaPlayer(QGraphicsView):
         self.scene().addWidget(self.master_controls)
 
         self.setContextMenuPolicy(Qt.ContextMenuPolicy.ActionsContextMenu)
-        self.opener = FileOpenerHelper(filepath=self.filepath)
         autoplay_action = QAction(Translations["media_player.autoplay"], self)
         autoplay_action.setCheckable(True)
         self.addAction(autoplay_action)
@@ -260,14 +257,14 @@ class MediaPlayer(QGraphicsView):
         autoplay_action.triggered.connect(lambda: self.toggle_autoplay())
         self.autoplay = autoplay_action
 
-        open_file_action = QAction(Translations["file.open_file"], self)
-        open_file_action.triggered.connect(self.opener.open_file)
-
-        open_explorer_action = QAction(open_file_str(), self)
-
-        open_explorer_action.triggered.connect(self.opener.open_explorer)
-        self.addAction(open_file_action)
-        self.addAction(open_explorer_action)
+        loop_action = QAction(Translations["media_player.loop"], self)
+        loop_action.setCheckable(True)
+        self.addAction(loop_action)
+        loop_action.setChecked(
+            self.driver.settings.value(SettingItems.LOOP_MEDIA, defaultValue=True, type=bool)
+        )
+        loop_action.triggered.connect(lambda: self.toggle_loop())
+        self.loop = loop_action
 
         # start the player muted
         self.player.audioOutput().setMuted(True)
@@ -278,6 +275,10 @@ class MediaPlayer(QGraphicsView):
     def toggle_autoplay(self) -> None:
         """Toggle the autoplay state of the video."""
         self.driver.settings.setValue(SettingItems.AUTOPLAY, self.autoplay.isChecked())
+        self.driver.settings.sync()
+
+    def toggle_loop(self) -> None:
+        self.driver.settings.setValue(SettingItems.LOOP_MEDIA, self.loop.isChecked())
         self.driver.settings.sync()
 
     def apply_rounded_corners(self) -> None:
@@ -432,8 +433,6 @@ class MediaPlayer(QGraphicsView):
         else:
             self.player.setSource(QUrl.fromLocalFile(self.filepath))
 
-        self.opener.set_filepath(self.filepath)
-
     def load_toggle_play_icon(self, playing: bool) -> None:
         icon = self.driver.rm.pause_icon if playing else self.driver.rm.play_icon
         self.play_pause.load(icon)
@@ -464,10 +463,6 @@ class MediaPlayer(QGraphicsView):
             duration = self.format_time(self.player.duration())
             self.position_label.setText(f"{current} / {duration}")
 
-        if self.player.duration() == position:
-            self.player.pause()
-            self.player.setPosition(0)
-
     def media_status_changed(self, status: QMediaPlayer.MediaStatus) -> None:
         # We can only set the slider duration once we know the size of the media
         if status == QMediaPlayer.MediaStatus.LoadedMedia and self.filepath is not None:
@@ -477,6 +472,12 @@ class MediaPlayer(QGraphicsView):
             current = self.format_time(self.player.position())
             duration = self.format_time(self.player.duration())
             self.position_label.setText(f"{current} / {duration}")
+        elif status == QMediaPlayer.MediaStatus.EndOfMedia:
+            self.player.setPosition(0)
+            if self.loop.isChecked():
+                self.player.play()
+            else:
+                self.player.pause()
 
     def _update_controls(self, size: QSize) -> None:
         self.scene().setSceneRect(0, 0, size.width(), size.height())

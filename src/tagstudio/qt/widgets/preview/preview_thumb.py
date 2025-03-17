@@ -79,6 +79,7 @@ class PreviewThumb(QWidget):
         self.preview_gif.addAction(self.open_file_action)
         self.preview_gif.addAction(self.open_explorer_action)
         self.preview_gif.hide()
+        self.preview_gif.addAction(self.delete_action)
         self.gif_buffer: QBuffer = QBuffer()
 
         self.preview_gif_page = QWidget()
@@ -106,6 +107,9 @@ class PreviewThumb(QWidget):
         self.media_player_page = QWidget()
         self.preview_img_page.setContentsMargins(0, 0, 0, 0)
         self._stacked_page_setup(self.media_player_page, self.media_player)
+        self.media_player.addAction(self.open_file_action)
+        self.media_player.addAction(self.open_explorer_action)
+        self.media_player.addAction(self.delete_action)
 
         image_layout.addWidget(self.preview_img_page)
         image_layout.addWidget(self.preview_gif_page)

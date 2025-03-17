@@ -183,6 +183,7 @@
     "macros.running.dialog.new_entries": "Running Configured Macros on {count}/{total} New File Entries...",
     "macros.running.dialog.title": "Running Macros on New Entries",
     "media_player.autoplay": "Autoplay",
+    "media_player.loop": "Loop",
     "menu.delete_selected_files_ambiguous": "Move File(s) to {trash_term}",
     "menu.delete_selected_files_plural": "Move Files to {trash_term}",
     "menu.delete_selected_files_singular": "Move File to {trash_term}",
