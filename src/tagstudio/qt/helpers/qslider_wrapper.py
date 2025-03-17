@@ -2,6 +2,9 @@
 # Licensed under the GPL-3.0 License.
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
+from typing import override
+
+from PySide6.QtGui import QMouseEvent
 from PySide6.QtWidgets import QSlider, QStyle, QStyleOptionSlider
 
 
@@ -33,10 +36,8 @@ class QClickSlider(QSlider):
 
         if not was_slider_clicked:
             self.setValue(
-                QStyle.sliderValueFromPosition(
-                    self.minimum(), self.maximum(), event.x(), self.width()
-                )
+                QStyle.sliderValueFromPosition(self.minimum(), self.maximum(), ev.x(), self.width())
             )
             self.mouse_pressed = True
 
-        super().mousePressEvent(event)
+        super().mousePressEvent(ev)

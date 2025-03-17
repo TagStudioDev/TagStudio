@@ -5,6 +5,7 @@
 import typing
 from pathlib import Path
 from time import gmtime
+from typing import override
 
 from PIL import Image, ImageDraw
 from PySide6.QtCore import QEvent, QObject, QRectF, QSize, Qt, QUrl, QVariantAnimation
@@ -337,27 +338,27 @@ class MediaPlayer(QGraphicsView):
     def eventFilter(self, arg__1: QObject, arg__2: QEvent) -> bool:
         """Manage events for the media player."""
         if (
-            event.type() == QEvent.Type.MouseButtonPress
-            and event.button() == Qt.MouseButton.LeftButton  # type: ignore
+            arg__2.type() == QEvent.Type.MouseButtonPress
+            and arg__2.button() == Qt.MouseButton.LeftButton  # type: ignore
         ):
-            if obj == self.play_pause:
+            if arg__1 == self.play_pause:
                 self.toggle_play()
-            elif obj == self.mute_unmute:
+            elif arg__1 == self.mute_unmute:
                 self.toggle_mute()
             else:
                 self.toggle_play()
-        elif event.type() is QEvent.Type.Enter:
-            if obj == self or obj == self.video_preview:
+        elif arg__2.type() is QEvent.Type.Enter:
+            if arg__1 == self or arg__1 == self.video_preview:
                 self.underMouse()
-            elif obj == self.mute_unmute:
+            elif arg__1 == self.mute_unmute:
                 self.volume_slider.show()
-        elif event.type() == QEvent.Type.Leave:
-            if obj == self or obj == self.video_preview:
+        elif arg__2.type() == QEvent.Type.Leave:
+            if arg__1 == self or arg__1 == self.video_preview:
                 self.releaseMouse()
-            elif obj == self.sub_controls:
+            elif arg__1 == self.sub_controls:
                 self.volume_slider.hide()
 
-        return super().eventFilter(obj, event)
+        return super().eventFilter(arg__1, arg__2)
 
     def format_time(self, ms: int) -> str:
         """Format the given time.

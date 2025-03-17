@@ -17,7 +17,7 @@ from PySide6.QtGui import QAction, QMovie, QResizeEvent
 from PySide6.QtWidgets import QHBoxLayout, QLabel, QStackedLayout, QWidget
 
 from tagstudio.core.library.alchemy.library import Library
-from tagstudio.core.media_types import MediaCategories
+from tagstudio.core.media_types import MediaCategories, MediaType
 from tagstudio.qt.helpers.file_opener import FileOpenerHelper, open_file
 from tagstudio.qt.helpers.file_tester import is_readable_video
 from tagstudio.qt.helpers.qbutton_wrapper import QPushButtonWrapper
@@ -171,7 +171,7 @@ class PreviewThumb(QWidget):
         if preview != "image" and preview != "media":
             self.preview_img.hide()
 
-        if preview not in ["media", "video_legacy"]:
+        if preview != "media":
             self.media_player.stop()
             self.media_player.hide()
 
@@ -290,42 +290,43 @@ class PreviewThumb(QWidget):
 
         return stats
 
-    def _update_video_legacy(self, filepath: Path) -> dict:
+    def _get_video_res(self, filepath: str) -> tuple[bool, QSize]:
+        video = cv2.VideoCapture(filepath, cv2.CAP_FFMPEG)
+        success, frame = video.read()
+        frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        image = Image.fromarray(frame)
+        return (success, QSize(image.width, image.height))
+
+    def _update_media(self, filepath: Path, type: MediaType) -> dict:
         stats: dict = {}
-        filepath_ = str(filepath)
-        self.switch_preview("video_legacy")
 
-        try:
-            video = cv2.VideoCapture(filepath_, cv2.CAP_FFMPEG)
-            success, frame = video.read()
-            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-            image = Image.fromarray(frame)
-            stats["width"] = image.width
-            stats["height"] = image.height
-            if success:
-                self.media_player.show()
-                self.update_image_size((image.width, image.height), image.width / image.height)
-                self.resizeEvent(
-                    QResizeEvent(
-                        QSize(image.width, image.height),
-                        QSize(image.width, image.height),
-                    )
-                )
-                self.media_player.play(filepath)
-
-            stats["duration"] = video.get(cv2.CAP_PROP_FRAME_COUNT) / video.get(cv2.CAP_PROP_FPS)
-        except cv2.error as e:
-            logger.error("[PreviewThumb] Could not play video", filepath=filepath_, error=e)
-
-        return stats
-
-    def _update_media(self, filepath: Path) -> dict:
-        stats: dict = {}
         self.switch_preview("media")
-
-        self.preview_img.show()
-        self.media_player.show()
         self.media_player.play(filepath)
+
+        match type:
+            case MediaType.AUDIO:
+                self.preview_img.show()
+            case MediaType.VIDEO:
+                try:
+                    success, size = self._get_video_res(str(filepath))
+                    if success:
+                        self.update_image_size(
+                            (size.width(), size.height()), size.width() / size.height()
+                        )
+                        self.resizeEvent(
+                            QResizeEvent(
+                                QSize(size.width(), size.height()),
+                                QSize(size.width(), size.height()),
+                            )
+                        )
+
+                        stats["width"] = size.width()
+                        stats["height"] = size.height()
+
+                except cv2.error as e:
+                    logger.error("[PreviewThumb] Could not play video", filepath=filepath, error=e)
+
+        self.media_player.show()
 
         stats["duration"] = self.media_player.player.duration() * 1000
         return stats
@@ -334,18 +335,18 @@ class PreviewThumb(QWidget):
         """Render a single file preview."""
         stats: dict = {}
 
-        # Video (Legacy)
+        # Video
         if MediaCategories.is_ext_in_category(
             ext, MediaCategories.VIDEO_TYPES, mime_fallback=True
         ) and is_readable_video(filepath):
-            stats = self._update_video_legacy(filepath)
+            stats = self._update_media(filepath, MediaType.VIDEO)
 
         # Audio
         elif MediaCategories.is_ext_in_category(
             ext, MediaCategories.AUDIO_TYPES, mime_fallback=True
         ):
             self._update_image(filepath, ext)
-            stats = self._update_media(filepath)
+            stats = self._update_media(filepath, MediaType.AUDIO)
             self.thumb_renderer.render(
                 time.time(),
                 filepath,
