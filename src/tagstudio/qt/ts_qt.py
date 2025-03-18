@@ -13,6 +13,7 @@ import ctypes
 import dataclasses
 import math
 import os
+import platform
 import re
 import sys
 import time
@@ -257,7 +258,9 @@ class QtDriver(DriverMixin, QObject):
         app = QApplication(sys.argv)
         app.setStyle("Fusion")
 
-        if QGuiApplication.styleHints().colorScheme() is Qt.ColorScheme.Dark:
+        if (
+            platform.system() == "Darwin" or platform.system() == "Windows"
+        ) and QGuiApplication.styleHints().colorScheme() is Qt.ColorScheme.Dark:
             pal: QPalette = app.palette()
             pal.setColor(QPalette.ColorGroup.Normal, QPalette.ColorRole.Window, QColor("#1e1e1e"))
             pal.setColor(QPalette.ColorGroup.Normal, QPalette.ColorRole.Button, QColor("#1e1e1e"))
