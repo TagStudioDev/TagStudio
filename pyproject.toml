@@ -30,9 +30,10 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = ["pre-commit==3.7.0", "tagstudio[mkdocs,mypy,pyinstaller,pytest,ruff]"]
+dev = ["tagstudio[mkdocs,mypy,pre-commit,pyinstaller,pytest,ruff]"]
 mkdocs = ["mkdocs-material[imaging]==9.*"]
 mypy = ["mypy==1.11.2", "mypy-extensions==1.*", "types-ujson>=5.8.0,<5.9.0"]
+pre-commit = ["pre-commit==3.7.0"]
 pyinstaller = ["Pyinstaller==6.6.0"]
 pytest = [
     "pytest==8.2.0",

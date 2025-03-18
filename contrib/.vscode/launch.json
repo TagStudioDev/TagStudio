@@ -1,0 +1,17 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "TagStudio",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceRoot}/src/tagstudio/main.py",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "args": [
+                "-o",
+                "~/Documents/Example"
+            ]
+        }
+    ]
+}

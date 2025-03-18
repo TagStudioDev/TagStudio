@@ -32,19 +32,19 @@
         {
           packages =
             let
-              python = pkgs.python312Packages;
+              pythonPackages = pkgs.python312Packages;
 
-              pillow-jxl-plugin = python.callPackage ./nix/package/pillow-jxl-plugin.nix {
+              pillow-jxl-plugin = pythonPackages.callPackage ./nix/package/pillow-jxl-plugin.nix {
                 inherit (pkgs) cmake;
                 inherit pyexiv2;
                 inherit (pkgs) rustPlatform;
               };
-              pyexiv2 = python.callPackage ./nix/package/pyexiv2.nix { inherit (pkgs) exiv2; };
-              vtf2img = python.callPackage ./nix/package/vtf2img.nix { };
+              pyexiv2 = pythonPackages.callPackage ./nix/package/pyexiv2.nix { inherit (pkgs) exiv2; };
+              vtf2img = pythonPackages.callPackage ./nix/package/vtf2img.nix { };
             in
             rec {
               default = tagstudio;
-              tagstudio = pkgs.python312Packages.callPackage ./nix/package {
+              tagstudio = pythonPackages.callPackage ./nix/package {
                 inherit pillow-jxl-plugin vtf2img;
               };
               tagstudio-jxl = tagstudio.override { withJXLSupport = true; };
