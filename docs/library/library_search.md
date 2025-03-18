@@ -36,7 +36,7 @@ Searches can be grouped and nested by using parentheses to surround parts of you
 
 <!-- prettier-ignore -->
 !!! example
-    Searching for "(Tag1 `OR` Tag2) `AND` Tag3" will return results any results that contain Tag3, plus one or the other (or both) of Tag1 and Tag2.
+    Searching for "(Tag1 `OR` Tag2) `AND` Tag3" will return any results that contain Tag3, plus one or the other (or both) of Tag1 and Tag2.
 
 ### Escaping Characters
 
@@ -54,13 +54,13 @@ Sometimes search queries have ambiguous characters and need to be "escaped". Thi
 
 ## Tags
 
-[Tag](#tags) search is the default mode of file entry search in TagStudio. No keyword prefix is required, however using `tag:` will also work. The tag search attempts to match tag [names](tag.md#name), [shorthands](tag.md#shorthand), [aliases](tag.md#aliases), as well as allows for tags to [substitute](tag.md#intuition-via-substitution) in for any of their [parent tags](tag.md#parent-tags).
+[Tag](#tags) search is the default mode of file entry search in TagStudio. No keyword prefix is required, however using `tag:` will also work. The tag search attempts to match tag [names](./tag.md#name), [shorthands](./tag.md#shorthand), [aliases](./tag.md#aliases), as well as allows for tags to [substitute](./tag.md#intuition-via-substitution) in for any of their [parent tags](./tag.md#parent-tags).
 
-You may also see the `tag_id:` prefix keyword show up with using the right-click "Search for Tag" option on tags. This is meant for internal use, and eventually will not be displayed or accessible to the user.
+You may also see the `tag_id:` prefix keyword show up when using the right-click "Search for Tag" option on tags. This is meant for internal use, and eventually will not be displayed or accessible to the user.
 
 ## Fields
 
-_[Field](field.md) search is currently not in the program, however is coming in a future version._
+_[Field](./field.md) search is currently not in the program, however is coming in a future version._
 
 ## File Entry Search
 

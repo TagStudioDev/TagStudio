@@ -35,11 +35,11 @@ This tool is a preview of an upcoming feature. When selected, TagStudio will gen
 
 ### Auto-fill [WIP]
 
-Tool is in development and will be documented in future update.
+Tool is in development and will be documented in a future update.
 
 ### Sort fields
 
-Tool is in development, will allow for user-defined sorting of [fields](../library/field.md).
+Tool is in development. Will allow for user-defined sorting of [fields](../library/field.md).
 
 ### Folders to Tags
 
