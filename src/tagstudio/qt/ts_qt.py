@@ -299,10 +299,15 @@ class QtDriver(DriverMixin, QObject):
             appid = "cyanvoxel.tagstudio.9"
             ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(appid)  # type: ignore[attr-defined,unused-ignore]
 
-        if sys.platform != "darwin":
-            icon = QIcon()
-            icon.addFile(str(self.rm.get_path("icon")))
-            app.setWindowIcon(icon)
+        app.setApplicationName("tagstudio")
+        app.setApplicationDisplayName("TagStudio")
+        if platform.system() != "Darwin":
+            fallback_icon = QIcon()
+            fallback_icon.addFile(str(self.rm.get_path("icon")))
+            app.setWindowIcon(QIcon.fromTheme("tagstudio", fallback_icon))
+
+            if platform.system() != "Windows":
+                app.setDesktopFileName("tagstudio")
 
         # Initialize the Tag Manager panel
         self.tag_manager_panel = PanelModal(
