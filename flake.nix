@@ -9,8 +9,6 @@
 
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
 
-    nixpkgs-qt6.url = "github:NixOS/nixpkgs/93ff48c9be84a76319dac293733df09bbbe3f25c";
-
     systems.url = "github:nix-systems/default";
   };
 

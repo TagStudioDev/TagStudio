@@ -1,12 +1,13 @@
-{
-  inputs,
-  lib,
-  pkgs,
-  ...
-}:
+{ lib, pkgs, ... }:
 
 let
-  qt6Pkgs = import inputs.nixpkgs-qt6 { inherit (pkgs) system; };
+  # INFO: PySide6 from PIP is compiled for 6.8.0 of Qt, must pin to match version.
+  # Long term this can be solved with an alternative like uv2nix for the devshell.
+  qt6Pkgs = import (builtins.fetchTarball {
+    name = "nixos-unstable-qt6-pinned";
+    url = "https://github.com/NixOS/nixpkgs/archive/93ff48c9be84a76319dac293733df09bbbe3f25c.tar.gz";
+    sha256 = "038m7932v4z0zn2lk7k7mbqbank30q84r1viyhchw9pcm3aq3q23";
+  }) { inherit (pkgs) system; };
 
   pythonLibraryPath = lib.makeLibraryPath (
     (with pkgs; [
