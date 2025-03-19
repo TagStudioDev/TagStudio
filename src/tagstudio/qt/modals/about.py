@@ -36,9 +36,11 @@ class AboutModal(QWidget):
 
         # TODO: There should be a global button theme somewhere.
         self.form_content_style = (
-            f"background-color:{Theme.COLOR_BG.value
-            if QGuiApplication.styleHints().colorScheme() is Qt.ColorScheme.Dark
-            else Theme.COLOR_BG_LIGHT.value};"
+            f"background-color:{
+                Theme.COLOR_BG.value
+                if QGuiApplication.styleHints().colorScheme() is Qt.ColorScheme.Dark
+                else Theme.COLOR_BG_LIGHT.value
+            };"
             "border-radius:3px;"
             "font-weight: 500;"
             "padding: 2px;"
@@ -103,14 +105,14 @@ class AboutModal(QWidget):
         self.system_info_layout.setLabelAlignment(Qt.AlignmentFlag.AlignRight)
 
         # License
-        license_title = QLabel(f'{Translations["about.license"]}')
+        license_title = QLabel(f"{Translations['about.license']}")
         license_content = QLabel("GPLv3")
         license_content.setStyleSheet(self.form_content_style)
         license_content.setMaximumWidth(license_content.sizeHint().width())
         self.system_info_layout.addRow(license_title, license_content)
 
         # Config Path
-        config_path_title = QLabel(f'{Translations["about.config_path"]}')
+        config_path_title = QLabel(f"{Translations['about.config_path']}")
         config_path_content = QLabel(f"{config_path}")
         config_path_content.setStyleSheet(self.form_content_style)
         config_path_content.setWordWrap(True)

@@ -13,6 +13,7 @@ import ctypes
 import dataclasses
 import math
 import os
+import platform
 import re
 import sys
 import time
@@ -271,7 +272,9 @@ class QtDriver(DriverMixin, QObject):
             Qt.ColorScheme.Dark if self.settings.dark_mode else Qt.ColorScheme.Light
         )
 
-        if QGuiApplication.styleHints().colorScheme() is Qt.ColorScheme.Dark:
+        if (
+            platform.system() == "Darwin" or platform.system() == "Windows"
+        ) and QGuiApplication.styleHints().colorScheme() is Qt.ColorScheme.Dark:
             pal: QPalette = self.app.palette()
             pal.setColor(QPalette.ColorGroup.Normal, QPalette.ColorRole.Window, QColor("#1e1e1e"))
             pal.setColor(QPalette.ColorGroup.Normal, QPalette.ColorRole.Button, QColor("#1e1e1e"))
@@ -310,10 +313,15 @@ class QtDriver(DriverMixin, QObject):
             appid = "cyanvoxel.tagstudio.9"
             ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(appid)  # type: ignore[attr-defined,unused-ignore]
 
-        if sys.platform != "darwin":
-            icon = QIcon()
-            icon.addFile(str(self.rm.get_path("icon")))
-            self.app.setWindowIcon(icon)
+        self.app.setApplicationName("tagstudio")
+        self.app.setApplicationDisplayName("TagStudio")
+        if platform.system() != "Darwin":
+            fallback_icon = QIcon()
+            fallback_icon.addFile(str(self.rm.get_path("icon")))
+            self.app.setWindowIcon(QIcon.fromTheme("tagstudio", fallback_icon))
+
+            if platform.system() != "Windows":
+                self.app.setDesktopFileName("tagstudio")
 
         # Initialize the Tag Manager panel
         self.tag_manager_panel = PanelModal(
