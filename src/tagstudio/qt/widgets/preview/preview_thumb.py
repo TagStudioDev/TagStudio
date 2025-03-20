@@ -14,7 +14,7 @@ import structlog
 from PIL import Image, UnidentifiedImageError
 from PySide6.QtCore import QBuffer, QByteArray, QSize, Qt
 from PySide6.QtGui import QAction, QMovie, QResizeEvent
-from PySide6.QtWidgets import QLabel, QStackedLayout, QWidget
+from PySide6.QtWidgets import QHBoxLayout, QLabel, QStackedLayout, QWidget
 
 from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.media_types import MediaCategories, MediaType
@@ -67,6 +67,11 @@ class PreviewThumb(QWidget):
         self.preview_img.addAction(self.open_explorer_action)
         self.preview_img.addAction(self.delete_action)
 
+        # In testing, it didn't seem possible to center the widgets directly
+        # on the QStackedLayout. Adding sublayouts allows us to center the widgets.
+        self.preview_img_page = QWidget()
+        self._stacked_page_setup(self.preview_img_page, self.preview_img)
+
         self.preview_gif = QLabel()
         self.preview_gif.setMinimumSize(*self.img_button_size)
         self.preview_gif.setContextMenuPolicy(Qt.ContextMenuPolicy.ActionsContextMenu)
@@ -75,6 +80,9 @@ class PreviewThumb(QWidget):
         self.preview_gif.addAction(self.open_explorer_action)
         self.preview_gif.addAction(self.delete_action)
         self.gif_buffer: QBuffer = QBuffer()
+
+        self.preview_gif_page = QWidget()
+        self._stacked_page_setup(self.preview_gif_page, self.preview_gif)
 
         self.thumb_renderer = ThumbRenderer(self.lib)
         self.thumb_renderer.updated.connect(lambda ts, i, s: (self.preview_img.setIcon(i)))
@@ -96,13 +104,23 @@ class PreviewThumb(QWidget):
         self.media_player.addAction(self.open_explorer_action)
         self.media_player.addAction(self.delete_action)
 
-        self.image_layout.addWidget(self.preview_img)
-        self.image_layout.addWidget(self.preview_gif)
-        self.image_layout.addWidget(self.media_player)
+        self.media_player_page = QWidget()
+        self._stacked_page_setup(self.media_player_page, self.media_player)
+
+        self.image_layout.addWidget(self.preview_img_page)
+        self.image_layout.addWidget(self.preview_gif_page)
+        self.image_layout.addWidget(self.media_player_page)
 
         self.setMinimumSize(*self.img_button_size)
 
         self.hide_preview()
+
+    def _stacked_page_setup(self, page: QWidget, widget: QWidget):
+        layout = QHBoxLayout(page)
+        layout.addWidget(widget)
+        layout.setAlignment(widget, Qt.AlignmentFlag.AlignCenter)
+        layout.setContentsMargins(0, 0, 0, 0)
+        page.setLayout(layout)
 
     def set_image_ratio(self, ratio: float):
         self.image_ratio = ratio
@@ -153,7 +171,7 @@ class PreviewThumb(QWidget):
     def switch_preview(self, preview: str):
         if preview in ["audio", "video"]:
             self.media_player.show()
-            self.image_layout.setCurrentWidget(self.media_player)
+            self.image_layout.setCurrentWidget(self.media_player_page)
         else:
             self.media_player.stop()
             self.media_player.hide()
@@ -161,14 +179,14 @@ class PreviewThumb(QWidget):
         if preview in ["image", "audio"]:
             self.preview_img.show()
             self.image_layout.setCurrentWidget(
-                self.preview_img if preview == "image" else self.media_player
+                self.preview_img_page if preview == "image" else self.media_player_page
             )
         else:
             self.preview_img.hide()
 
         if preview == "animated":
             self.preview_gif.show()
-            self.image_layout.setCurrentWidget(self.preview_gif)
+            self.image_layout.setCurrentWidget(self.preview_gif_page)
         else:
             if self.preview_gif.movie():
                 self.preview_gif.movie().stop()
