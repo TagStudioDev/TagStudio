@@ -67,14 +67,10 @@ class ItemType(enum.Enum):
 
 class SortingModeEnum(enum.Enum):
     DATE_ADDED = "file.date_added"
-<<<<<<< HEAD:src/tagstudio/core/library/alchemy/enums.py
     FILE_NAME = "generic.filename"
     PATH = "file.path"
-=======
->>>>>>> 8f17c362203a368c5860599b75c2e89e6c8c1fc5:tagstudio/src/core/library/alchemy/enums.py
     DATE_CREATED = "file.date_created"
     DATE_MODIFIED = "file.date_modified"
-
 
 @dataclass
 class FilterState:

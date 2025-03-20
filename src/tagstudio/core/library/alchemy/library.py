@@ -299,12 +299,12 @@ class Library:
                     fields=[],
                     id=entry.id + 1,  # JSON IDs start at 0 instead of 1
                     date_added=datetime.now(),
-                   # date_modified=date_modified,
-                   # date_created=date_created,
+                    date_modified=date_modified,
+                    date_created=date_created,
                 )
                 for entry in json_lib.entries
-               # if (date_created := get_file_time(entry.path / entry.filename)[0]) is not None
-               # and (date_modified := get_file_time(entry.path / entry.filename)[1]) is not None  
+                    if (date_created := self.get_file_time(entry.path / entry.filename)[0]) is not None
+                    and (date_modified := self.get_file_time(entry.path / entry.filename)[1]) is not None
             ]
         )
         for entry in json_lib.entries:
@@ -375,7 +375,7 @@ class Library:
             drivername="sqlite",
             database=str(self.storage_path),
         )
-        # NOTE: File-based databases should use NullPool ito create new DB connection in order to
+        # NOTE: File-based databases should use NullPool to create new DB connection in order to
         # keep connections on separate threads, which prevents the DB files from being locked
         # even after a connection has been closed.
         # SingletonThreadPool (the default for :memory:) should still be used for in-memory DBs.
