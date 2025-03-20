@@ -57,12 +57,6 @@ def main():
         action="store_true",
         help="Reveals additional internal data useful for debugging.",
     )
-    # parser.add_argument(
-    #     "--ui",
-    #     dest="ui",
-    #     type=str,
-    #     help="User interface option for TagStudio. Options: qt, cli (Default: qt)",
-    # )
     args = parser.parse_args()
 
     driver = QtDriver(args)
