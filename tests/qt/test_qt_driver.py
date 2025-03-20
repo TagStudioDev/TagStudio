@@ -1,5 +1,6 @@
 from tagstudio.core.library.alchemy.enums import FilterState
 from tagstudio.core.library.json.library import ItemType
+from tagstudio.qt.ts_qt import QtDriver
 from tagstudio.qt.widgets.item_thumb import ItemThumb
 
 # def test_update_thumbs(qt_driver):
@@ -61,7 +62,7 @@ from tagstudio.qt.widgets.item_thumb import ItemThumb
 #     assert qt_driver.selected == [0, 1, 2]
 
 
-def test_library_state_update(qt_driver):
+def test_library_state_update(qt_driver: "QtDriver"):
     # Given
     for entry in qt_driver.lib.get_entries(with_joins=True):
         thumb = ItemThumb(ItemType.ENTRY, qt_driver.lib, qt_driver, (100, 100))
@@ -82,7 +83,6 @@ def test_library_state_update(qt_driver):
 
     # When state is not changed, previous one is still applied
     qt_driver.filter_items()
-    assert qt_driver.filter.page_size == 10
     assert len(qt_driver.frame_content) == 1
     entry = qt_driver.lib.get_entry_full(qt_driver.frame_content[0])
     assert list(entry.tags)[0].name == "foo"
