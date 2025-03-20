@@ -39,10 +39,9 @@ class RefreshDirTracker:
     def get_file_times(self, file_path: Path):
         """Get the creation and modification times of a file."""
         stat = file_path.stat()
-        system = platform.system()
 
         # st_birthtime on Windows and Mac, st_ctime on Linux.
-        if system in ["Windows", "Darwin"]:  # Windows & macOS
+        if platform.system() in ["Windows", "Darwin"]:  # Windows & macOS
             date_created = dt.datetime.fromtimestamp(stat.st_birthtime)
         else:  # Linux
             date_created = dt.datetime.fromtimestamp(stat.st_ctime)  # Linux lacks st_birthtime

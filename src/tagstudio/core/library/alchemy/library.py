@@ -227,10 +227,9 @@ class Library:
     def get_file_time(self, file_path: Path):
         """Get the creation and modification times of a file."""
         stat = file_path.stat()
-        system = platform.system()
 
         # st_birthtime on Windows and Mac, st_ctime on Linux.
-        if system in ["Windows", "Darwin"]:  # Windows & macOS
+        if platform.system() in ["Windows", "Darwin"]:  # Windows & macOS
             date_created = datetime.fromtimestamp(stat.st_birthtime)
         else:  # Linux
             date_created = datetime.fromtimestamp(stat.st_ctime)  # Linux lacks st_birthtime
