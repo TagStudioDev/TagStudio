@@ -304,7 +304,7 @@ class Library:
                 )
                 for entry in json_lib.entries
                # if (date_created := get_file_time(entry.path / entry.filename)[0]) is not None
-               # and (date_modified := get_file_time(entry.path / entry.filename)[1]) is not None  # noqa: F821
+               # and (date_modified := get_file_time(entry.path / entry.filename)[1]) is not None  
             ]
         )
         for entry in json_lib.entries:
@@ -763,15 +763,6 @@ class Library:
                 return None
             session.expunge(entry)
             make_transient(entry)
-            return entry
-
-    def get_entry_by_path(self, path: Path) -> Entry | None:
-        """Get the entry with the corresponding path."""
-        with Session(self.engine) as session:
-            entry = session.scalar(select(Entry).where(Entry.path == path))
-            if entry:
-                session.expunge(entry)
-                make_transient(entry)
             return entry
 
     @property

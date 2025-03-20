@@ -1,4 +1,4 @@
-import datetime as dt
+from datetime import datetime as dt
 from collections.abc import Iterator
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -36,11 +36,15 @@ class RefreshDirTracker:
     def files_count(self) -> int:
         return len(self.files_not_in_library)
 
+<<<<<<< HEAD:src/tagstudio/core/utils/refresh_dir.py
     # moving get_file_times to library to avoid circular import
+=======
+>>>>>>> 8f17c362203a368c5860599b75c2e89e6c8c1fc5:tagstudio/src/core/utils/refresh_dir.py
     def get_file_times(self, file_path: Path):
         """Get the creation and modification times of a file."""
         stat = file_path.stat()
         system = platform.system()
+<<<<<<< HEAD:src/tagstudio/core/utils/refresh_dir.py
 
         # st_birthtime on Windows and Mac, st_ctime on Linux.
         if system in ['Windows', 'Darwin']:  # Windows & macOS
@@ -49,11 +53,25 @@ class RefreshDirTracker:
             date_created = dt.datetime.fromtimestamp(stat.st_ctime)  # Linux lacks st_birthtime
 
         date_modified = dt.datetime.fromtimestamp(stat.st_mtime)
+=======
+        if system == 'Windows':  # Windows
+            date_created = dt.fromtimestamp(stat.st_ctime, dt.timezone.utc)
+        elif system == 'Darwin':  # macOS
+            date_created = dt.fromtimestamp(stat.st_birthtime, dt.timezone.utc)
+        else:  # Linux and other systems
+            try:
+                date_created = dt.fromtimestamp(stat.st_birthtime, dt.timezone.utc)
+            except AttributeError:
+                # st_birthtime is not available on some Linux filesystems
+                date_created = dt.fromtimestamp(stat.st_ctime, dt.timezone.utc)
+        date_modified = dt.fromtimestamp(stat.st_mtime, dt.timezone.utc)
+>>>>>>> 8f17c362203a368c5860599b75c2e89e6c8c1fc5:tagstudio/src/core/utils/refresh_dir.py
         return date_created, date_modified
 
     def save_new_files(self):
         """Save the list of files that are not in the library."""
         if self.files_not_in_library:
+<<<<<<< HEAD:src/tagstudio/core/utils/refresh_dir.py
             entries = [
                 Entry(
                     path=entry_path,
@@ -67,6 +85,23 @@ class RefreshDirTracker:
                 if (date_created := self.get_file_times(entry_path)[0]) is not None
                 and (date_modified := self.get_file_times(entry_path)[1]) is not None
             ]
+=======
+            entries = []
+            for entry_path in self.files_not_in_library:
+                date_created, date_modified = self.get_file_times(entry_path)
+                if date_created is None or date_modified is None:
+                    continue  # Skip files that could not be processed
+                entries.append(
+                    Entry(
+                        path=entry_path,
+                        folder=self.library.folder,
+                        fields=[],
+                        date_added=dt.now(),
+                        date_created=dt.now(),
+                        date_modified=dt.now(),
+                    )
+                )
+>>>>>>> 8f17c362203a368c5860599b75c2e89e6c8c1fc5:tagstudio/src/core/utils/refresh_dir.py
             self.library.add_entries(entries)
 
         self.files_not_in_library = []
@@ -117,7 +152,19 @@ class RefreshDirTracker:
             relative_path = f.relative_to(lib_path)
             # TODO - load these in batch somehow
             if not self.library.has_path_entry(relative_path):
+<<<<<<< HEAD:src/tagstudio/core/utils/refresh_dir.py
                 self.files_not_in_library.append(f)
+=======
+                self.files_not_in_library.append(relative_path)
+            else:
+                # Update date_modified for existing entries if it has changed
+                entry = self.library.get_entry_by_path(relative_path)
+                if entry:
+                    date_modified = dt.fromtimestamp(f.stat().st_mtime, dt.timezone.utc)
+                    if entry.date_modified != date_modified:
+                        entry.date_modified = date_modified
+                        self.library.update_entry(entry)
+>>>>>>> 8f17c362203a368c5860599b75c2e89e6c8c1fc5:tagstudio/src/core/utils/refresh_dir.py
 
         end_time_total = time()
         yield dir_file_count
