@@ -1,7 +1,7 @@
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-from tagstudio.core.global_settings import GlobalSettings
+from tagstudio.core.global_settings import GlobalSettings, Theme
 
 
 def test_read_settings():
@@ -15,7 +15,7 @@ def test_read_settings():
                 show_filenames_in_grid = true
                 page_size = 1337
                 show_filepath = 0
-                dark_mode = false
+                dark_mode = 2
             """)
 
         settings = GlobalSettings.read_settings(settings_path)
@@ -25,4 +25,4 @@ def test_read_settings():
         assert settings.show_filenames_in_grid
         assert settings.page_size == 1337
         assert settings.show_filepath == 0
-        assert not settings.theme
+        assert settings.theme == Theme.SYSTEM
