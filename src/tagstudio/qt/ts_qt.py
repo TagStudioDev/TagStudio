@@ -13,11 +13,13 @@ import ctypes
 import dataclasses
 import math
 import os
+import platform
 import re
 import sys
 import time
 from pathlib import Path
 from queue import Queue
+from shutil import which
 from warnings import catch_warnings
 
 import structlog
@@ -54,7 +56,7 @@ from PySide6.QtWidgets import (
 import tagstudio.qt.resources_rc  # noqa: F401
 from tagstudio.core.constants import TAG_ARCHIVED, TAG_FAVORITE, VERSION, VERSION_BRANCH
 from tagstudio.core.driver import DriverMixin
-from tagstudio.core.enums import LibraryPrefs, MacroID, SettingItems
+from tagstudio.core.enums import LibraryPrefs, MacroID, SettingItems, ShowFilepathOption
 from tagstudio.core.library.alchemy.enums import (
     FieldTypeEnum,
     FilterState,
@@ -75,6 +77,7 @@ from tagstudio.qt.flowlayout import FlowLayout
 from tagstudio.qt.helpers.custom_runnable import CustomRunnable
 from tagstudio.qt.helpers.file_deleter import delete_file
 from tagstudio.qt.helpers.function_iterator import FunctionIterator
+from tagstudio.qt.helpers.vendored.ffmpeg import FFMPEG_CMD, FFPROBE_CMD
 from tagstudio.qt.main_window import Ui_MainWindow
 from tagstudio.qt.modals.about import AboutModal
 from tagstudio.qt.modals.build_tag import BuildTagPanel
@@ -257,7 +260,9 @@ class QtDriver(DriverMixin, QObject):
         app = QApplication(sys.argv)
         app.setStyle("Fusion")
 
-        if QGuiApplication.styleHints().colorScheme() is Qt.ColorScheme.Dark:
+        if (
+            platform.system() == "Darwin" or platform.system() == "Windows"
+        ) and QGuiApplication.styleHints().colorScheme() is Qt.ColorScheme.Dark:
             pal: QPalette = app.palette()
             pal.setColor(QPalette.ColorGroup.Normal, QPalette.ColorRole.Window, QColor("#1e1e1e"))
             pal.setColor(QPalette.ColorGroup.Normal, QPalette.ColorRole.Button, QColor("#1e1e1e"))
@@ -296,10 +301,15 @@ class QtDriver(DriverMixin, QObject):
             appid = "cyanvoxel.tagstudio.9"
             ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(appid)  # type: ignore[attr-defined,unused-ignore]
 
-        if sys.platform != "darwin":
-            icon = QIcon()
-            icon.addFile(str(self.rm.get_path("icon")))
-            app.setWindowIcon(icon)
+        app.setApplicationName("tagstudio")
+        app.setApplicationDisplayName("TagStudio")
+        if platform.system() != "Darwin":
+            fallback_icon = QIcon()
+            fallback_icon.addFile(str(self.rm.get_path("icon")))
+            app.setWindowIcon(QIcon.fromTheme("tagstudio", fallback_icon))
+
+            if platform.system() != "Windows":
+                app.setDesktopFileName("tagstudio")
 
         # Initialize the Tag Manager panel
         self.tag_manager_panel = PanelModal(
@@ -668,11 +678,9 @@ class QtDriver(DriverMixin, QObject):
             if path_result.success and path_result.library_path:
                 self.open_library(path_result.library_path)
 
-        # check ffmpeg and show warning if not
-        # NOTE: Does this need to use self?
-        self.ffmpeg_checker = FfmpegChecker()
-        if not self.ffmpeg_checker.installed():
-            self.ffmpeg_checker.show_warning()
+        # Check if FFmpeg or FFprobe are missing and show warning if so
+        if not which(FFMPEG_CMD) or not which(FFPROBE_CMD):
+            FfmpegChecker().show()
 
         app.exec()
         self.shutdown()
@@ -1749,6 +1757,11 @@ class QtDriver(DriverMixin, QObject):
         """Updates the recent library menu from the latest values from the settings file."""
         actions: list[QAction] = []
         lib_items: dict[str, tuple[str, str]] = {}
+        filepath_option: int = int(
+            self.settings.value(
+                SettingItems.SHOW_FILEPATH, defaultValue=ShowFilepathOption.DEFAULT.value, type=int
+            )
+        )
 
         settings = self.settings
         settings.beginGroup(SettingItems.LIBS_LIST)
@@ -1767,7 +1780,10 @@ class QtDriver(DriverMixin, QObject):
         for index, library_key in enumerate(libs_sorted):
             path = Path(library_key[1][0])
             action = QAction(self.open_recent_library_menu)
-            action.setText(f"&{index + 1}: {str(path)}")
+            if filepath_option == ShowFilepathOption.SHOW_FULL_PATHS:
+                action.setText(f"&{index + 1}: {str(path)})
+            else:
+                action.setText(f"&{index + 1}: {str(Path(path).name}))
             action.triggered.connect(lambda checked=False, p=path: self.open_library(p))
             actions.append(action)
 
@@ -1822,7 +1838,15 @@ class QtDriver(DriverMixin, QObject):
 
     def open_library(self, path: Path) -> None:
         """Open a TagStudio library."""
-        message = Translations.format("splash.opening_library", library_path=str(path))
+        filepath_option: int = int(
+            self.settings.value(
+                SettingItems.SHOW_FILEPATH, defaultValue=ShowFilepathOption.DEFAULT.value, type=int
+            )
+        )
+        library_dir_display = (
+            path if filepath_option == ShowFilepathOption.SHOW_FULL_PATHS else path.name
+        )
+        message = Translations.format("splash.opening_library", library_path=library_dir_display)
         self.main_window.landing_widget.set_status_label(message)
         self.main_window.statusbar.showMessage(message, 3)
         self.main_window.repaint()
@@ -1867,12 +1891,23 @@ class QtDriver(DriverMixin, QObject):
         if self.lib.entries_count < 10000:
             self.add_new_files_callback()
 
+        library_dir_display = self.lib.library_dir
+        filepath_option: int = int(
+            self.settings.value(
+                SettingItems.SHOW_FILEPATH, defaultValue=ShowFilepathOption.DEFAULT.value, type=int
+            )
+        )
+        if filepath_option == ShowFilepathOption.SHOW_FULL_PATHS:
+            library_dir_display = self.lib.library_dir
+        else:
+            library_dir_display = self.lib.library_dir.name
+
         self.update_libs_list(path)
         self.main_window.setWindowTitle(
             Translations.format(
                 "app.title",
                 base_title=self.base_title,
-                library_dir=self.lib.library_dir,
+                library_dir=library_dir_display,
             )
         )
         self.main_window.setAcceptDrops(True)

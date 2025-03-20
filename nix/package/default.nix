@@ -28,6 +28,7 @@
   syrupy,
   ujson,
   vtf2img,
+  wrapGAppsHook,
 
   withJXLSupport ? false,
 }:
@@ -45,6 +46,11 @@ buildPythonApplication {
   nativeBuildInputs = [
     pythonRelaxDepsHook
     qt6.wrapQtAppsHook
+
+    # INFO: Should be unnecessary once PR is pulled.
+    # PR: https://github.com/NixOS/nixpkgs/pull/271037
+    # Issue: https://github.com/NixOS/nixpkgs/issues/149812
+    wrapGAppsHook
   ];
   buildInputs = [
     qt6.qtbase
@@ -57,6 +63,14 @@ buildPythonApplication {
     pytestCheckHook
     syrupy
   ];
+
+  # TODO: Install more icon resolutions when available.
+  preInstall = ''
+    mkdir -p $out/share/applications $out/share/icons/hicolor/512x512/apps
+
+    cp $src/src/tagstudio/resources/tagstudio.desktop $out/share/applications
+    cp $src/src/tagstudio/resources/icon.png $out/share/icons/hicolor/512x512/apps/tagstudio.png
+  '';
 
   makeWrapperArgs =
     [ "--prefix PATH : ${lib.makeBinPath [ ffmpeg-headless ]}" ]

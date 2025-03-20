@@ -96,7 +96,7 @@ TAG_CHILDREN_QUERY = text("""
 -- Note for this entire query that tag_parents.child_id is the parent id and tag_parents.parent_id is the child id due to bad naming
 WITH RECURSIVE ChildTags AS (
     SELECT :tag_id AS child_id
-    UNION ALL
+    UNION
     SELECT tp.parent_id AS child_id
 	FROM tag_parents tp
     INNER JOIN ChildTags c ON tp.child_id = c.child_id
@@ -472,12 +472,25 @@ class Library:
 
             # Apply any post-SQL migration patches.
             if not is_new:
+                # save backup if patches will be applied
+                if LibraryPrefs.DB_VERSION.default != db_version:
+                    self.library_dir = library_dir
+                    self.save_library_backup_to_disk()
+                    self.library_dir = None
+
+                # schema changes first
                 if db_version < 8:
                     self.apply_db8_schema_changes(session)
+                if db_version < 9:
+                    self.apply_db9_schema_changes(session)
+
+                # now the data changes
                 if db_version == 6:
                     self.apply_repairs_for_db6(session)
                 if db_version >= 6 and db_version < 8:
                     self.apply_db8_default_data(session)
+                if db_version < 9:
+                    self.apply_db9_filename_population(session)
 
             # Update DB_VERSION
             if LibraryPrefs.DB_VERSION.default > db_version:
@@ -579,6 +592,29 @@ class Library:
                     error=e,
                 )
                 session.rollback()
+
+    def apply_db9_schema_changes(self, session: Session):
+        """Apply database schema changes introduced in DB_VERSION 9."""
+        add_filename_column = text(
+            "ALTER TABLE entries ADD COLUMN filename TEXT NOT NULL DEFAULT ''"
+        )
+        try:
+            session.execute(add_filename_column)
+            session.commit()
+            logger.info("[Library][Migration] Added filename column to entries table")
+        except Exception as e:
+            logger.error(
+                "[Library][Migration] Could not create filename column in entries table!",
+                error=e,
+            )
+            session.rollback()
+
+    def apply_db9_filename_population(self, session: Session):
+        """Populate the filename column introduced in DB_VERSION 9."""
+        for entry in self.get_entries():
+            session.merge(entry).filename = entry.path.name
+        session.commit()
+        logger.info("[Library][Migration] Populated filename column in entries table")
 
     @property
     def default_fields(self) -> list[BaseField]:
@@ -852,7 +888,7 @@ class Library:
             statement = statement.distinct(Entry.id)
             start_time = time.time()
             query_count = select(func.count()).select_from(statement.alias("entries"))
-            count_all: int = session.execute(query_count).scalar()
+            count_all: int = session.execute(query_count).scalar() or 0
             end_time = time.time()
             logger.info(f"finished counting ({format_timespan(end_time - start_time)})")
 
@@ -860,6 +896,10 @@ class Library:
             match search.sorting_mode:
                 case SortingModeEnum.DATE_ADDED:
                     sort_on = Entry.id
+                case SortingModeEnum.FILE_NAME:
+                    sort_on = func.lower(Entry.filename)
+                case SortingModeEnum.PATH:
+                    sort_on = func.lower(Entry.path)
 
             statement = statement.order_by(asc(sort_on) if search.ascending else desc(sort_on))
             statement = statement.limit(search.limit).offset(search.offset)
@@ -1370,6 +1410,8 @@ class Library:
             self.library_dir / TS_FOLDER_NAME / self.SQL_FILENAME,
             target_path,
         )
+
+        logger.info("Library backup saved to disk.", path=target_path)
 
         return target_path
 

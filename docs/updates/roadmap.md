@@ -94,7 +94,7 @@ These version milestones are rough estimations for when the previous core featur
 -   [ ] Field content search [HIGH]
 -   [ ] Sort by date created [HIGH]
 -   [ ] Sort by date modified [HIGH]
--   [ ] Sort by filename [HIGH]
+-   [x] Sort by filename [HIGH]
 -   [ ] HAS operator for composition tags [HIGH]
 -   [ ] Search bar rework
     -   [ ] Improved tag autocomplete [HIGH]
@@ -113,7 +113,7 @@ These version milestones are rough estimations for when the previous core featur
     -   [ ] Stored in `.TagStudio` folder [HIGH]
 -   [ ] Tagging Panel [HIGH]
 
-    Togglebale persistent main window panel or popout. Replaces the current tag manager.
+    Toggleable persistent main window panel or pop-out. Replaces the current tag manager.
 
     -   [ ] Top Tags [HIGH]
     -   [ ] Recent Tags [HIGH]

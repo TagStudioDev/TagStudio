@@ -114,7 +114,8 @@ def library(request):
 @pytest.fixture
 def search_library() -> Library:
     lib = Library()
-    lib.open_library(Path(CWD / "fixtures" / "search_library"))
+    status = lib.open_library(Path(CWD / "fixtures" / "search_library"))
+    assert status.success
     return lib
 
 

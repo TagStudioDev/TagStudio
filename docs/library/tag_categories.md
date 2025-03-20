@@ -4,7 +4,7 @@ tags:
 
 # Tag Categories
 
-The "Is Category" property of tags determines if a tag should be treated as a category itself when being organized inside the preview panel. Tags marked as categories will show themselves and all tags inheriting from it (including recursively) underneath a field-like section with the tag's name. This means that duplicates of tags can appear on entries if the tag inherits from multiple parent categories, however this is by design and reflects the nature multiple inheritance. Any tags not inheriting from a category tag will simply show under a default "Tag" section.
+The "Is Category" property of tags determines if a tag should be treated as a category itself when being organized inside the preview panel. Tags marked as categories will show themselves and all tags inheriting from it (including recursively) underneath a field-like section with the tag's name. This means that duplicates of tags can appear on entries if the tag inherits from multiple parent categories, however this is by design and reflects the nature of multiple inheritance. Any tags not inheriting from a category tag will simply show under a default "Tag" section.
 
 ![Tag Categories Example](../assets/tag_categories_example.png)
 
