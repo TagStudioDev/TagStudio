@@ -37,8 +37,8 @@ logger = structlog.get_logger(__name__)
 
 # Only import for type checking/autocompletion, will not be imported at runtime.
 if TYPE_CHECKING:
-    from tagstudio.qt.ts_qt import QtDriver
     from tagstudio.qt.modals.build_tag import BuildTagPanel
+    from tagstudio.qt.ts_qt import QtDriver
 
 
 class TagSearchPanel(PanelWidget):
@@ -63,7 +63,6 @@ class TagSearchPanel(PanelWidget):
     ):
         super().__init__()
         self.lib = library
-        self.driver = None
         self.exclude = exclude or []
 
         self.is_tag_chooser = is_tag_chooser
