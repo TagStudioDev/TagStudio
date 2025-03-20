@@ -1781,9 +1781,9 @@ class QtDriver(DriverMixin, QObject):
             path = Path(library_key[1][0])
             action = QAction(self.open_recent_library_menu)
             if filepath_option == ShowFilepathOption.SHOW_FULL_PATHS:
-                action.setText(f"&{index + 1}: {str(path)})
+                action.setText(f"&{index + 1}: {str(path)}")
             else:
-                action.setText(f"&{index + 1}: {str(Path(path).name}))
+                action.setText(f"&{index + 1}: {str(Path(path).name)}")
             action.triggered.connect(lambda checked=False, p=path: self.open_library(p))
             actions.append(action)
 
