@@ -25,4 +25,4 @@ def test_read_settings():
         assert settings.show_filenames_in_grid
         assert settings.page_size == 1337
         assert settings.show_filepath == 0
-        assert not settings.dark_mode
+        assert not settings.theme

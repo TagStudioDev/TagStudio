@@ -63,6 +63,7 @@ class TagSearchPanel(PanelWidget):
     ):
         super().__init__()
         self.lib = library
+        self.driver = None
         self.exclude = exclude or []
 
         self.is_tag_chooser = is_tag_chooser

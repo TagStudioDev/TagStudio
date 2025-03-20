@@ -135,7 +135,7 @@ def test_entries_count(library):
     new_ids = library.add_entries(entries)
     assert len(new_ids) == 10
 
-    results = library.search_library(FilterState.show_all().with_page_size(5))
+    results = library.search_library(FilterState.show_all(page_size=500))
 
     assert results.total_count == 12
     assert len(results) == 5
