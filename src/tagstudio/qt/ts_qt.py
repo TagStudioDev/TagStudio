@@ -165,7 +165,7 @@ class QtDriver(DriverMixin, QObject):
         self.args = args
         self.frame_content: list[int] = []  # List of Entry IDs on the current page
         self.pages_count = 0
-        self.applied_theme = None  # type: ignore
+        self.applied_theme = None
 
         self.scrollbar_pos = 0
         self.thumb_size = 128
