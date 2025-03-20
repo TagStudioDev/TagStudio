@@ -22,7 +22,7 @@ This is a special type of alias that's used for shortening the tag name under sp
 
 Aliases are alternate names that the tag can go by. This may include individual first names for people, alternate spellings, shortened names, and more. If there's a common abbreviation or shortened name for your tag, it's recommended to use the [shorthand](#shorthand) field for this instead.
 
-When searching for a tag, aliases (including the shorthand) can also be used to find the tag. This not only includes searching for tags themselves, but for tagged [file entries](entry.md) as well!
+When searching for a tag, aliases (including the shorthand) can also be used to find the tag. This not only includes searching for tags themselves, but for tagged [file entries](./entry.md) as well!
 
 ### Automatic Disambiguation
 
@@ -32,7 +32,7 @@ Given a tag named "Freddy", we may confuse it with other "Freddy" tags in our li
 
 ![Tag Disambiguation Example](../assets/tag_disambiguation_example.png)
 
-So if the "Five Night's at Freddy's" tag is added as a parent tag on the "Freddy" tag, and the disambiguation box next to it is checked, then our tag name will automatically be displayed as "Freddy (Five Nights at Freddy's)". Better yet, if the "Five Night's at Freddy's" tag has a shorthand such as "FNAF", then our "Freddy" tag will be displayed as "Freddy (FNAF)". This process preserves our base tag name ("Freddy") and provides an option to get a clean and consistent method to display disambiguating parent categories, rather than having to type this information in manually for each applicable tag.
+So if the "Five Nights at Freddy's" tag is added as a parent tag on the "Freddy" tag, and the disambiguation box next to it is checked, then our tag name will automatically be displayed as "Freddy (Five Nights at Freddy's)". Better yet, if the "Five Nights at Freddy's" tag has a shorthand such as "FNAF", then our "Freddy" tag will be displayed as "Freddy (FNAF)". This process preserves our base tag name ("Freddy") and provides an option to get a clean and consistent method to display disambiguating parent categories, rather than having to type this information in manually for each applicable tag.
 
 ## Tag Relationships
 
@@ -62,7 +62,7 @@ Lastly, when searching your files with broader categories such as `Character` or
 
 **_[Coming in version 9.6](../updates/roadmap.md#v96)_**
 
-Component tags will be built from a composition-based, or "HAS" type relationship between tags. This takes care of instances where an attribute may "have" another attribute, but doesn't inherit from it. Shrek may be an `Orge`, he may be a `Character`, but he is NOT a `Leather Vest` - even if he's commonly seen _with_ it. Component tags, along with the upcoming [Tag Override](tag_overrides.md) feature, are built to handle these cases in a way that still simplifies the tagging process without adding too much undue complexity for the user.
+Component tags will be built from a composition-based, or "HAS" type relationship between tags. This takes care of instances where an attribute may "have" another attribute, but doesn't inherit from it. Shrek may be an `Ogre`, he may be a `Character`, but he is NOT a `Leather Vest` - even if he's commonly seen _with_ it. Component tags, along with the upcoming [Tag Override](./tag_overrides.md) feature, are built to handle these cases in a way that still simplifies the tagging process without adding too much undue complexity for the user.
 
 ## Tag Appearance
 
