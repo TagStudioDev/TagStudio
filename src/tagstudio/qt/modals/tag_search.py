@@ -30,7 +30,6 @@ from tagstudio.core.library.alchemy.models import Tag
 from tagstudio.core.palette import ColorType, get_tag_color
 from tagstudio.qt.modals import build_tag
 from tagstudio.qt.translations import Translations
-from tagstudio.qt.ts_qt import QtDriver
 from tagstudio.qt.widgets.panel import PanelModal, PanelWidget
 from tagstudio.qt.widgets.tag import TagWidget
 
@@ -38,13 +37,14 @@ logger = structlog.get_logger(__name__)
 
 # Only import for type checking/autocompletion, will not be imported at runtime.
 if TYPE_CHECKING:
+    from tagstudio.qt.ts_qt import QtDriver
     from tagstudio.qt.modals.build_tag import BuildTagPanel
 
 
 class TagSearchPanel(PanelWidget):
     tag_chosen = Signal(int)
     lib: Library
-    driver: QtDriver
+    driver: "QtDriver"
     is_initialized: bool = False
     first_tag_id: int | None = None
     is_tag_chooser: bool

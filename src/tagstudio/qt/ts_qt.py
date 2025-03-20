@@ -163,7 +163,6 @@ class QtDriver(DriverMixin, QObject):
         self.lib = Library()
         self.rm: ResourceManager = ResourceManager()
         self.args = args
-        self.filter = FilterState.show_all(page_size=self.settings.page_size)
         self.frame_content: list[int] = []  # List of Entry IDs on the current page
         self.pages_count = 0
 
@@ -193,6 +192,7 @@ class QtDriver(DriverMixin, QObject):
                 "[Settings] Global Settings File does not exist creating",
                 path=self.global_settings_path,
             )
+        self.filter = FilterState.show_all(page_size=self.settings.page_size)
 
         if self.args.cache_file:
             path = Path(self.args.cache_file)

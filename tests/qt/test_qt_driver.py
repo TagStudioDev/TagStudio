@@ -1,7 +1,11 @@
+from typing import TYPE_CHECKING
+
 from tagstudio.core.library.alchemy.enums import FilterState
 from tagstudio.core.library.json.library import ItemType
-from tagstudio.qt.ts_qt import QtDriver
 from tagstudio.qt.widgets.item_thumb import ItemThumb
+
+if TYPE_CHECKING:
+    from tagstudio.qt.ts_qt import QtDriver
 
 # def test_update_thumbs(qt_driver):
 #     qt_driver.frame_content = [
