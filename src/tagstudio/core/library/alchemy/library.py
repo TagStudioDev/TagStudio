@@ -15,6 +15,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 from uuid import uuid4
 from warnings import catch_warnings
+import platform
 
 import structlog
 from humanfriendly import format_timespan
@@ -223,6 +224,20 @@ class Library:
         self.folder = None
         self.included_files = set()
 
+    def get_file_time(self, file_path: Path):
+        """Get the creation and modification times of a file."""
+        stat = file_path.stat()
+        system = platform.system()
+
+        # st_birthtime on Windows and Mac, st_ctime on Linux.
+        if system in ["Windows", "Darwin"]:  # Windows & macOS
+            date_created = datetime.fromtimestamp(stat.st_birthtime)
+        else:  # Linux
+            date_created = datetime.fromtimestamp(stat.st_ctime)  # Linux lacks st_birthtime
+
+        date_modified = datetime.fromtimestamp(stat.st_mtime)
+        return date_created, date_modified
+
     def migrate_json_to_sqlite(self, json_lib: JsonLibrary):
         """Migrate JSON library data to the SQLite database."""
         logger.info("Starting Library Conversion...")
@@ -284,8 +299,12 @@ class Library:
                     fields=[],
                     id=entry.id + 1,  # JSON IDs start at 0 instead of 1
                     date_added=datetime.now(),
+                   # date_modified=date_modified,
+                   # date_created=date_created,
                 )
                 for entry in json_lib.entries
+               # if (date_created := get_file_time(entry.path / entry.filename)[0]) is not None
+               # and (date_modified := get_file_time(entry.path / entry.filename)[1]) is not None  # noqa: F821
             ]
         )
         for entry in json_lib.entries:
@@ -356,7 +375,7 @@ class Library:
             drivername="sqlite",
             database=str(self.storage_path),
         )
-        # NOTE: File-based databases should use NullPool to create new DB connection in order to
+        # NOTE: File-based databases should use NullPool ito create new DB connection in order to
         # keep connections on separate threads, which prevents the DB files from being locked
         # even after a connection has been closed.
         # SingletonThreadPool (the default for :memory:) should still be used for in-memory DBs.
@@ -746,6 +765,15 @@ class Library:
             make_transient(entry)
             return entry
 
+    def get_entry_by_path(self, path: Path) -> Entry | None:
+        """Get the entry with the corresponding path."""
+        with Session(self.engine) as session:
+            entry = session.scalar(select(Entry).where(Entry.path == path))
+            if entry:
+                session.expunge(entry)
+                make_transient(entry)
+            return entry
+
     @property
     def entries_count(self) -> int:
         with Session(self.engine) as session:
@@ -896,6 +924,10 @@ class Library:
             match search.sorting_mode:
                 case SortingModeEnum.DATE_ADDED:
                     sort_on = Entry.id
+                case SortingModeEnum.DATE_CREATED:
+                    sort_on = Entry.date_created
+                case SortingModeEnum.DATE_MODIFIED:
+                    sort_on = Entry.date_modified
                 case SortingModeEnum.FILE_NAME:
                     sort_on = func.lower(Entry.filename)
                 case SortingModeEnum.PATH:

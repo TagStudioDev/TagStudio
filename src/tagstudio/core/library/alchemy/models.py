@@ -280,7 +280,7 @@ class ValueType(Base):
     is_default: Mapped[bool]
     position: Mapped[int]
 
-    # add relations to other tables
+    # add relations to otheu tables
     text_fields: Mapped[list[TextField]] = relationship("TextField", back_populates="type")
     datetime_fields: Mapped[list[DatetimeField]] = relationship(
         "DatetimeField", back_populates="type"

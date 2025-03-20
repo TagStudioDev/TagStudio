@@ -1,11 +1,11 @@
+import datetime as dt
 from collections.abc import Iterator
 from dataclasses import dataclass, field
-from datetime import datetime as dt
 from pathlib import Path
 from time import time
+import platform
 
 import structlog
-
 from tagstudio.core.constants import TS_FOLDER_NAME
 from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.library.alchemy.models import Entry
@@ -36,6 +36,21 @@ class RefreshDirTracker:
     def files_count(self) -> int:
         return len(self.files_not_in_library)
 
+    # moving get_file_times to library to avoid circular import
+    def get_file_times(self, file_path: Path):
+        """Get the creation and modification times of a file."""
+        stat = file_path.stat()
+        system = platform.system()
+
+        # st_birthtime on Windows and Mac, st_ctime on Linux.
+        if system in ['Windows', 'Darwin']:  # Windows & macOS
+            date_created = dt.datetime.fromtimestamp(stat.st_birthtime)
+        else:  # Linux
+            date_created = dt.datetime.fromtimestamp(stat.st_ctime)  # Linux lacks st_birthtime
+
+        date_modified = dt.datetime.fromtimestamp(stat.st_mtime)
+        return date_created, date_modified
+
     def save_new_files(self):
         """Save the list of files that are not in the library."""
         if self.files_not_in_library:
@@ -44,9 +59,13 @@ class RefreshDirTracker:
                     path=entry_path,
                     folder=self.library.folder,
                     fields=[],
-                    date_added=dt.now(),
+                    date_added=dt.datetime.now(),
+                    date_created=date_created,
+                    date_modified=date_modified,
                 )
                 for entry_path in self.files_not_in_library
+                if (date_created := self.get_file_times(entry_path)[0]) is not None
+                and (date_modified := self.get_file_times(entry_path)[1]) is not None
             ]
             self.library.add_entries(entries)
 
@@ -98,7 +117,7 @@ class RefreshDirTracker:
             relative_path = f.relative_to(lib_path)
             # TODO - load these in batch somehow
             if not self.library.has_path_entry(relative_path):
-                self.files_not_in_library.append(relative_path)
+                self.files_not_in_library.append(f)
 
         end_time_total = time()
         yield dir_file_count
