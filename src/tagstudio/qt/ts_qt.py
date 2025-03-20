@@ -1697,6 +1697,7 @@ class QtDriver(DriverMixin, QObject):
         if filter:
             self.filter = dataclasses.replace(self.filter, **dataclasses.asdict(filter))
         else:
+            self.filter.page_size = self.settings.page_size
             self.filter.sorting_mode = self.sorting_mode
             self.filter.ascending = self.sorting_direction
 
