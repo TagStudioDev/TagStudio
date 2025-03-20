@@ -163,7 +163,7 @@ class QtDriver(DriverMixin, QObject):
         self.lib = Library()
         self.rm: ResourceManager = ResourceManager()
         self.args = args
-        self.filter = FilterState.show_all()
+        self.filter = FilterState.show_all(page_size=self.settings.page_size)
         self.frame_content: list[int] = []  # List of Entry IDs on the current page
         self.pages_count = 0
 
@@ -682,7 +682,7 @@ class QtDriver(DriverMixin, QObject):
         ]
         self.item_thumbs: list[ItemThumb] = []
         self.thumb_renderers: list[ThumbRenderer] = []
-        self.filter = FilterState.show_all()
+        self.filter = FilterState.show_all(page_size=self.settings.page_size)
         self.init_library_window()
         self.migration_modal: JsonMigrationModal = None
 
@@ -731,7 +731,9 @@ class QtDriver(DriverMixin, QObject):
         def _filter_items():
             try:
                 self.filter_items(
-                    FilterState.from_search_query(self.main_window.searchField.text())
+                    FilterState.from_search_query(
+                        self.main_window.searchField.text(), page_size=self.settings.page_size
+                    )
                     .with_sorting_mode(self.sorting_mode)
                     .with_sorting_direction(self.sorting_direction)
                 )
@@ -853,7 +855,7 @@ class QtDriver(DriverMixin, QObject):
         self.main_window.searchField.setText("")
         scrollbar: QScrollArea = self.main_window.scrollArea
         scrollbar.verticalScrollBar().setValue(0)
-        self.filter = FilterState.show_all()
+        self.filter = FilterState.show_all(page_size=self.settings.page_size)
 
         self.lib.close()
 
@@ -1705,7 +1707,6 @@ class QtDriver(DriverMixin, QObject):
         if filter:
             self.filter = dataclasses.replace(self.filter, **dataclasses.asdict(filter))
         else:
-            self.filter.page_size = self.settings.page_size
             self.filter.sorting_mode = self.sorting_mode
             self.filter.ascending = self.sorting_direction
 
