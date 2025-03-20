@@ -57,7 +57,7 @@ import tagstudio.qt.resources_rc  # noqa: F401
 from tagstudio.core.constants import TAG_ARCHIVED, TAG_FAVORITE, VERSION, VERSION_BRANCH
 from tagstudio.core.driver import DriverMixin
 from tagstudio.core.enums import MacroID, SettingItems, ShowFilepathOption
-from tagstudio.core.global_settings import DEFAULT_GLOBAL_SETTINGS_PATH, GlobalSettings
+from tagstudio.core.global_settings import DEFAULT_GLOBAL_SETTINGS_PATH, GlobalSettings, Theme
 from tagstudio.core.library.alchemy.enums import (
     FieldTypeEnum,
     FilterState,
@@ -152,6 +152,7 @@ class QtDriver(DriverMixin, QObject):
     about_modal: AboutModal
     unlinked_modal: FixUnlinkedEntriesModal
     dupe_modal: FixDupeFilesModal
+    applied_theme: Theme
 
     lib: Library
 
@@ -266,11 +267,18 @@ class QtDriver(DriverMixin, QObject):
         """Launch the main Qt window."""
         _ = QUiLoader()
 
+        if self.settings.theme == Theme.SYSTEM and platform.system() == "Windows":
+            sys.argv += ["-platform", "windows:darkmode=2"]
         self.app = QApplication(sys.argv)
         self.app.setStyle("Fusion")
-        self.app.styleHints().setColorScheme(
-            Qt.ColorScheme.Dark if self.settings.dark_mode else Qt.ColorScheme.Light
-        )
+        if self.settings.theme == Theme.SYSTEM:
+            # TODO: detect theme instead of always setting dark
+            self.app.styleHints().setColorScheme(Qt.ColorScheme.Dark)
+        else:
+            self.app.styleHints().setColorScheme(
+                Qt.ColorScheme.Dark if self.settings.theme == Theme.DARK else Qt.ColorScheme.Light
+            )
+        self.applied_theme = self.settings.theme
 
         if (
             platform.system() == "Darwin" or platform.system() == "Windows"

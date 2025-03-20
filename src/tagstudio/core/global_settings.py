@@ -30,6 +30,13 @@ class TomlEnumEncoder(toml.TomlEncoder):
         return super().dump_value(v)
 
 
+class Theme(Enum):
+    DARK = 0
+    LIGHT = 1
+    SYSTEM = 2
+    DEFAULT = SYSTEM
+
+
 # NOTE: pydantic also has a BaseSettings class (from pydantic-settings) that allows any settings
 # properties to be overwritten with environment variables. as tagstudio is not currently using
 # environment variables, i did not base it on that, but that may be useful in the future.
@@ -40,7 +47,7 @@ class GlobalSettings(BaseModel):
     show_filenames_in_grid: bool = Field(default=False)
     page_size: int = Field(default=500)
     show_filepath: ShowFilepathOption = Field(default=ShowFilepathOption.DEFAULT)
-    dark_mode: bool = Field(default=True)
+    theme: Theme = Field(default=Theme.SYSTEM)
 
     @staticmethod
     def read_settings(path: Path = DEFAULT_GLOBAL_SETTINGS_PATH) -> "GlobalSettings":

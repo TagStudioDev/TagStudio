@@ -18,6 +18,7 @@ from PySide6.QtWidgets import (
 )
 
 from tagstudio.core.enums import ShowFilepathOption
+from tagstudio.core.global_settings import Theme
 from tagstudio.qt.translations import DEFAULT_TRANSLATION, LANGUAGES, Translations
 from tagstudio.qt.widgets.panel import PanelModal, PanelWidget
 
@@ -28,6 +29,12 @@ FILEPATH_OPTION_MAP: dict[ShowFilepathOption, str] = {
     ShowFilepathOption.SHOW_FULL_PATHS: Translations["settings.filepath.option.full"],
     ShowFilepathOption.SHOW_RELATIVE_PATHS: Translations["settings.filepath.option.relative"],
     ShowFilepathOption.SHOW_FILENAMES_ONLY: Translations["settings.filepath.option.name"],
+}
+
+THEME_MAP: dict[Theme, str] = {
+    Theme.DARK: Translations["settings.theme.dark"],
+    Theme.LIGHT: Translations["settings.theme.light"],
+    Theme.SYSTEM: Translations["settings.theme.system"],
 }
 
 
@@ -66,10 +73,7 @@ class SettingsPanel(PanelWidget):
     def __update_restart_label(self):
         show_label = (
             self.language_combobox.currentData() != Translations.current_language
-            or (
-                Qt.ColorScheme.Dark if self.dark_mode_checkbox.isChecked() else Qt.ColorScheme.Light
-            )
-            != self.driver.app.styleHints().colorScheme()
+            or self.theme_combobox.currentData() != self.driver.applied_theme
         )
         self.restart_label.setHidden(not show_label)
 
@@ -133,10 +137,15 @@ class SettingsPanel(PanelWidget):
         form_layout.addRow(Translations["settings.filepath.label"], self.filepath_combobox)
 
         # Dark Mode
-        self.dark_mode_checkbox = QCheckBox()
-        self.dark_mode_checkbox.setChecked(self.driver.settings.dark_mode)
-        self.dark_mode_checkbox.checkStateChanged.connect(self.__update_restart_label)
-        form_layout.addRow(Translations["settings.dark_mode"], self.dark_mode_checkbox)
+        self.theme_combobox = QComboBox()
+        for k in THEME_MAP:
+            self.theme_combobox.addItem(THEME_MAP[k], k)
+        theme: Theme = self.driver.settings.theme
+        if theme not in THEME_MAP:
+            theme = Theme.DEFAULT
+        self.theme_combobox.setCurrentIndex(list(THEME_MAP.keys()).index(theme))
+        self.theme_combobox.currentIndexChanged.connect(self.__update_restart_label)
+        form_layout.addRow(Translations["settings.theme.label"], self.theme_combobox)
 
     def __build_library_settings(self):
         self.library_settings_container = QWidget()
@@ -157,7 +166,7 @@ class SettingsPanel(PanelWidget):
             "show_filenames_in_grid": self.show_filenames_checkbox.isChecked(),
             "page_size": int(self.page_size_line_edit.text()),
             "show_filepath": self.filepath_combobox.currentData(),
-            "dark_mode": self.dark_mode_checkbox.isChecked(),
+            "theme": self.theme_combobox.currentData(),
         }
 
     def update_settings(self, driver: "QtDriver"):
@@ -169,7 +178,7 @@ class SettingsPanel(PanelWidget):
         driver.settings.show_filenames_in_grid = settings["show_filenames_in_grid"]
         driver.settings.page_size = settings["page_size"]
         driver.settings.show_filepath = settings["show_filepath"]
-        driver.settings.dark_mode = settings["dark_mode"]
+        driver.settings.theme = settings["theme"]
 
         driver.settings.save()
 
