@@ -19,6 +19,7 @@ import sys
 import time
 from pathlib import Path
 from queue import Queue
+from shutil import which
 from warnings import catch_warnings
 
 import structlog
@@ -76,6 +77,7 @@ from tagstudio.qt.flowlayout import FlowLayout
 from tagstudio.qt.helpers.custom_runnable import CustomRunnable
 from tagstudio.qt.helpers.file_deleter import delete_file
 from tagstudio.qt.helpers.function_iterator import FunctionIterator
+from tagstudio.qt.helpers.vendored.ffmpeg import FFMPEG_CMD, FFPROBE_CMD
 from tagstudio.qt.main_window import Ui_MainWindow
 from tagstudio.qt.modals.about import AboutModal
 from tagstudio.qt.modals.build_tag import BuildTagPanel
@@ -676,11 +678,9 @@ class QtDriver(DriverMixin, QObject):
             if path_result.success and path_result.library_path:
                 self.open_library(path_result.library_path)
 
-        # check ffmpeg and show warning if not
-        # NOTE: Does this need to use self?
-        self.ffmpeg_checker = FfmpegChecker()
-        if not self.ffmpeg_checker.installed():
-            self.ffmpeg_checker.show_warning()
+        # Check if FFmpeg or FFprobe are missing and show warning if so
+        if not which(FFMPEG_CMD) or not which(FFPROBE_CMD):
+            FfmpegChecker().show()
 
         app.exec()
         self.shutdown()
