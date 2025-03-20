@@ -1823,7 +1823,6 @@ class QtDriver(DriverMixin, QObject):
         self.update_recent_lib_menu()
 
     def open_settings_modal(self):
-        # TODO: don't re-create each time this is opened.
         SettingsPanel.build_modal(self).show()
 
     def open_library(self, path: Path) -> None:

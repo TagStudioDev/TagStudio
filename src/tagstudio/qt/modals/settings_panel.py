@@ -48,8 +48,8 @@ class SettingsPanel(PanelWidget):
         self.__build_global_settings()
         self.tab_widget.addTab(self.global_settings_container, Translations["settings.global"])
 
-        self.__build_library_settings()
-        self.tab_widget.addTab(self.library_settings_container, Translations["settings.library"])
+        # self.__build_library_settings()
+        # self.tab_widget.addTab(self.library_settings_container, Translations["settings.library"])
 
         self.root_layout.addWidget(self.tab_widget)
 

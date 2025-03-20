@@ -1,9 +1,10 @@
 # Licensed under the GPL-3.0 License.
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
-import sys
+import platform
 from enum import Enum
 from pathlib import Path
+from typing import override
 
 import structlog
 import toml
@@ -11,7 +12,7 @@ from pydantic import BaseModel, Field
 
 from tagstudio.core.enums import ShowFilepathOption
 
-if sys.platform == "win32":
+if platform.system() == "Windows":
     DEFAULT_GLOBAL_SETTINGS_PATH = (
         Path.home() / "Appdata" / "Roaming" / "TagStudio" / "settings.toml"
     )
@@ -22,6 +23,7 @@ logger = structlog.get_logger(__name__)
 
 
 class TomlEnumEncoder(toml.TomlEncoder):
+    @override
     def dump_value(self, v):
         if isinstance(v, Enum):
             return super().dump_value(v.value)
