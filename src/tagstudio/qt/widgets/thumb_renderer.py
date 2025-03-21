@@ -119,6 +119,14 @@ class ThumbRenderer(QObject):
         ext = url.suffix.lower()
         types: set[MediaType] = MediaCategories.get_types(ext, mime_fallback=True)
 
+        # Manual icon overrides.
+        if ext in {".gif", ".vtf"}:
+            return MediaType.IMAGE
+        elif ext in {".dll", ".pyc", ".o", ".dylib"}:
+            return MediaType.PROGRAM
+        elif ext in {".mscz"}:  # noqa: SIM114
+            return MediaType.TEXT
+
         # Loop though the specific (non-IANA) categories and return the string
         # name of the first matching category found.
         for cat in MediaCategories.ALL_CATEGORIES:
@@ -739,7 +747,7 @@ class ThumbRenderer(QObject):
                 cropped_im,
                 box=(margin, margin + ((size - new_y) // 2)),
             )
-            im = self._apply_overlay_color(bg, UiColor.PURPLE)
+            im = self._apply_overlay_color(bg, UiColor.BLUE)
         except OSError as e:
             logger.error("Couldn't render thumbnail", filepath=filepath, error=type(e).__name__)
         return im
@@ -1252,7 +1260,7 @@ class ThumbRenderer(QObject):
                 # Missing Files ================================================
                 if not _filepath.exists():
                     raise FileNotFoundError
-                ext: str = _filepath.suffix.lower()
+                ext: str = _filepath.suffix.lower() if _filepath.suffix else _filepath.stem.lower()
                 # Images =======================================================
                 if MediaCategories.is_ext_in_category(
                     ext, MediaCategories.IMAGE_TYPES, mime_fallback=True
