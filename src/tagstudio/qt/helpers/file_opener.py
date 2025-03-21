@@ -136,7 +136,7 @@ class FileOpenerLabel(QLabel):
         self.filepath = filepath
 
     @override
-    def mousePressEvent(self, ev: QMouseEvent) -> None:  # noqa: N802
+    def mousePressEvent(self, ev: QMouseEvent) -> None:
         """Handle mouse press events.
 
         On a left click, open the file in the default file explorer.
