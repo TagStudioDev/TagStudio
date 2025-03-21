@@ -43,6 +43,10 @@
     "path": "qt/images/file_icons/affinity_photo.png",
     "mode": "pil"
   },
+  "archive": {
+    "path": "qt/images/file_icons/archive.png",
+    "mode": "pil"
+  },
   "audio": {
     "path": "qt/images/file_icons/audio.png",
     "mode": "pil"
@@ -51,8 +55,16 @@
     "path": "qt/images/file_icons/blender.png",
     "mode": "pil"
   },
+  "database": {
+    "path": "qt/images/file_icons/database.png",
+    "mode": "pil"
+  },
   "document": {
     "path": "qt/images/file_icons/document.png",
+    "mode": "pil"
+  },
+  "ebook": {
+    "path": "qt/images/file_icons/ebook.png",
     "mode": "pil"
   },
   "file_generic": {
@@ -85,6 +97,14 @@
   },
   "program": {
     "path": "qt/images/file_icons/program.png",
+    "mode": "pil"
+  },
+  "shader": {
+    "path": "qt/images/file_icons/shader.png",
+    "mode": "pil"
+  },
+  "shortcut": {
+    "path": "qt/images/file_icons/shortcut.png",
     "mode": "pil"
   },
   "spreadsheet": {
