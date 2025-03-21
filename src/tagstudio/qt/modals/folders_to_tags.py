@@ -212,7 +212,7 @@ class FoldersToTagsModal(QWidget):
         self.scroll_area.setFrameShape(QFrame.Shape.NoFrame)
         self.scroll_area.setWidget(self.scroll_contents)
 
-        self.apply_button = QPushButton(Translations["generic.apply_alt"])
+        self.apply_button = QPushButton(Translations["generic.apply"])
         self.apply_button.setMinimumWidth(100)
         self.apply_button.clicked.connect(self.on_apply)
 

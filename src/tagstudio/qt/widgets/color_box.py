@@ -150,10 +150,10 @@ class ColorBoxWidget(FieldWidget):
             Translations.format("color.confirm_delete", color_name=color_group.name),
         )
         cancel_button = message_box.addButton(
-            Translations["generic.cancel_alt"], QMessageBox.ButtonRole.RejectRole
+            Translations["generic.cancel"], QMessageBox.ButtonRole.RejectRole
         )
         message_box.addButton(
-            Translations["generic.delete_alt"], QMessageBox.ButtonRole.DestructiveRole
+            Translations["generic.delete"], QMessageBox.ButtonRole.DestructiveRole
         )
         message_box.setEscapeButton(cancel_button)
         result = message_box.exec_()
