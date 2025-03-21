@@ -20,7 +20,7 @@ class FlowWidget(QWidget):
 
 
 class FlowLayout(QLayout):
-    def __init__(self, parent: QWidget | None = None):
+    def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
 
         if parent is not None:
@@ -35,24 +35,24 @@ class FlowLayout(QLayout):
             item = self.takeAt(0)
 
     @override
-    def addItem(self, item: QLayoutItem) -> None:
-        self._item_list.append(item)
+    def addItem(self, arg__1: QLayoutItem) -> None:
+        self._item_list.append(arg__1)
 
     @override
     def count(self) -> int:
         return len(self._item_list)
 
     @override
-    def itemAt(self, index: int) -> QLayoutItem | None:
-        if 0 <= index < len(self._item_list):
-            return self._item_list[index]
+    def itemAt(self, arg__1: int) -> QLayoutItem | None:
+        if 0 <= arg__1 < len(self._item_list):
+            return self._item_list[arg__1]
 
         return None
 
     @override
-    def takeAt(self, index: int) -> QLayoutItem | None:
-        if 0 <= index < len(self._item_list):
-            return self._item_list.pop(index)
+    def takeAt(self, arg__1: int) -> QLayoutItem | None:
+        if 0 <= arg__1 < len(self._item_list):
+            return self._item_list.pop(arg__1)
 
         return None
 
@@ -65,25 +65,25 @@ class FlowLayout(QLayout):
         return True
 
     @override
-    def heightForWidth(self, width: int):
-        height = self._do_layout(QRect(0, 0, width, 0), test_only=True)
-        return height
+    def heightForWidth(self, arg__1: int) -> int:
+        height = self._do_layout(QRect(0, 0, arg__1, 0), test_only=True)
+        return int(height)
 
     @override
-    def setGeometry(self, rect):
-        super().setGeometry(rect)
-        self._do_layout(rect, test_only=False)
+    def setGeometry(self, arg__1: QRect) -> None:
+        super().setGeometry(arg__1)
+        self._do_layout(arg__1, test_only=False)
 
-    def enable_grid_optimizations(self, value: bool):
+    def enable_grid_optimizations(self, value: bool) -> None:
         """Enable or Disable efficiencies when all objects are equally sized."""
         self.grid_efficiency = value
 
     @override
-    def sizeHint(self):
+    def sizeHint(self) -> QSize:
         return self.minimumSize()
 
     @override
-    def minimumSize(self):
+    def minimumSize(self) -> QSize:
         if self.grid_efficiency:
             if self._item_list:
                 return self._item_list[0].minimumSize()
