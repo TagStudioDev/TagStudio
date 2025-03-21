@@ -1728,7 +1728,7 @@ class QtDriver(DriverMixin, QObject):
 
     def update_libs_list(self, path: Path | str):
         """Add library to list in SettingItems.LIBS_LIST."""
-        item_limit: int = 5
+        item_limit: int = 10
         path = Path(path)
 
         self.settings.beginGroup(SettingItems.LIBS_LIST)
