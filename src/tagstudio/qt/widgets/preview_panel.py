@@ -64,7 +64,7 @@ class PreviewPanel(QWidget):
         self.driver: QtDriver = driver
         self.initialized = False
         self.is_open: bool = True
-        self.is_preview_open: bool = True
+        self.is_thumb_visible: bool = True
 
         self.thumb = PreviewThumb(library, driver)
         self.file_attrs = FileAttributes(library, driver)
@@ -89,7 +89,7 @@ class PreviewPanel(QWidget):
         splitter = QSplitter()
         splitter.setOrientation(Qt.Orientation.Vertical)
         splitter.setHandleWidth(12)
-        splitter.splitterMoved.connect(self.preview_state_sync)
+        splitter.splitterMoved.connect(self.thumb_state_sync)
 
         add_buttons_container = QWidget()
         add_buttons_layout = QHBoxLayout(add_buttons_container)
@@ -150,8 +150,8 @@ class PreviewPanel(QWidget):
                 filepath: Path = self.lib.library_dir / entry.path  # pyright: ignore
                 ext: str = filepath.suffix.lower()
 
-                if update_preview & self.is_preview_open:
-                    self.update_preview_stats(filepath, ext)
+                if update_preview and self.is_thumb_visible:
+                    self.update_thumb_and_stats(filepath, ext)
                 else:
                     self.file_attrs.update_stats(filepath, ext, None)
                 self.file_attrs.update_date_label(filepath)
@@ -181,28 +181,28 @@ class PreviewPanel(QWidget):
             traceback.print_exc()
             return False
 
-    def update_preview_stats(self, filepath: Path, ext: str):
+    def update_thumb_and_stats(self, filepath: Path, ext: str):
         stats: dict = self.thumb.update_preview(filepath, ext)
         self.file_attrs.update_stats(filepath, ext, stats)
 
     @Slot(int, int)
-    def preview_state_sync(self, pos, index):
+    def thumb_state_sync(self, pos, index):
         if index != 1:
             return
 
-        if self.is_preview_open:
+        if self.is_thumb_visible:
             if pos == 0:
                 logger.info("[Preview Panel] Closing preview")
                 self.thumb.hide_preview()
-                self.is_preview_open = False
+                self.is_thumb_visible = False
         elif pos > 0:
             if (filepath := self.file_attrs.file_label.filepath) and isinstance(filepath, Path):
                 logger.info("[Preview Panel] Opening preview and updating stats")
                 ext: str = filepath.suffix.lower()
-                self.update_preview_stats(filepath, ext)
+                self.update_thumb_and_stats(filepath, ext)
             else:
                 logger.info("[Preview Panel] Opening preview")
-            self.is_preview_open = True
+            self.is_thumb_visible = True
 
     def update_add_field_button(self, entry_id: int | None = None):
         with catch_warnings(record=True):
