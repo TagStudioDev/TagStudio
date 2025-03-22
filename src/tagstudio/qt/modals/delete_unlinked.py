@@ -59,12 +59,12 @@ class DeleteUnlinkedEntriesModal(QWidget):
         self.button_layout.setContentsMargins(6, 6, 6, 6)
         self.button_layout.addStretch(1)
 
-        self.cancel_button = QPushButton(Translations["generic.cancel_alt"])
+        self.cancel_button = QPushButton(Translations["generic.cancel"])
         self.cancel_button.setDefault(True)
         self.cancel_button.clicked.connect(self.hide)
         self.button_layout.addWidget(self.cancel_button)
 
-        self.delete_button = QPushButton(Translations["generic.delete_alt"])
+        self.delete_button = QPushButton(Translations["generic.delete"])
         self.delete_button.clicked.connect(self.hide)
         self.delete_button.clicked.connect(lambda: self.delete_entries())
         self.button_layout.addWidget(self.delete_button)
