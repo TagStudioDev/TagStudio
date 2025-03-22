@@ -11,6 +11,7 @@ import zipfile
 from copy import deepcopy
 from io import BytesIO
 from pathlib import Path
+from typing import cast
 
 import cv2
 import numpy as np
@@ -712,8 +713,8 @@ class ThumbRenderer(QObject):
             data = np.asarray(raw.getchannel(0))
 
             m, n = data.shape[:2]
-            col: np.ndarray = data.any(0)
-            row: np.ndarray = data.any(1)
+            col: np.ndarray = cast(np.ndarray, data.any(0))
+            row: np.ndarray = cast(np.ndarray, data.any(1))
             cropped_data = np.asarray(raw)[
                 row.argmax() : m - row[::-1].argmax(),
                 col.argmax() : n - col[::-1].argmax(),
@@ -759,7 +760,7 @@ class ThumbRenderer(QObject):
             bg = Image.new("RGBA", (size, size), color="#00000000")
             draw = ImageDraw.Draw(bg)
             lines_of_padding = 2
-            y_offset = 0
+            y_offset = 0.0
 
             for font_size in scaled_sizes:
                 font = ImageFont.truetype(filepath, size=font_size)
