@@ -145,9 +145,9 @@ class PreviewPanel(QWidget):
 
             # One Item Selected
             elif len(self.driver.selected) == 1:
-                entry: Entry = self.lib.get_entry(self.driver.selected[0])
+                entry: Entry = self.lib.get_entry(self.driver.selected[0])  # pyright: ignore
                 entry_id = self.driver.selected[0]
-                filepath: Path = self.lib.library_dir / entry.path
+                filepath: Path = self.lib.library_dir / entry.path  # pyright: ignore
                 ext: str = filepath.suffix.lower()
 
                 if update_preview & self.is_preview_open:
@@ -217,7 +217,7 @@ class PreviewPanel(QWidget):
         )
         self.add_field_button.clicked.connect(self.add_field_modal.show)
 
-    def update_add_tag_button(self, entry_id: int = None):
+    def update_add_tag_button(self, entry_id: int | None = None):
         with catch_warnings(record=True):
             self.tag_search_panel.tag_chosen.disconnect()
             self.add_tag_button.clicked.disconnect()

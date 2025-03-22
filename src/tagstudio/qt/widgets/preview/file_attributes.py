@@ -102,7 +102,7 @@ class FileAttributes(QWidget):
     def update_date_label(self, filepath: Path | None = None) -> None:
         """Update the "Date Created" and "Date Modified" file property labels."""
         if filepath and filepath.is_file():
-            created: dt = None
+            created: dt | None = None
             if platform.system() == "Windows" or platform.system() == "Darwin":
                 created = dt.fromtimestamp(filepath.stat().st_birthtime)  # type: ignore[attr-defined, unused-ignore]
             else:
@@ -130,7 +130,7 @@ class FileAttributes(QWidget):
             self.date_created_label.setHidden(True)
             self.date_modified_label.setHidden(True)
 
-    def update_stats(self, filepath: Path | None = None, ext: str = ".", stats: dict = None):
+    def update_stats(self, filepath: Path | None = None, ext: str = ".", stats: dict | None = None):
         """Render the panel widgets with the newest data from the Library."""
         if not stats:
             stats = {}
@@ -152,7 +152,7 @@ class FileAttributes(QWidget):
             if filepath_option == ShowFilepathOption.SHOW_FULL_PATHS:
                 display_path = filepath
             elif filepath_option == ShowFilepathOption.SHOW_RELATIVE_PATHS:
-                display_path = Path(filepath).relative_to(self.library_path)
+                display_path = Path(filepath).relative_to(self.library_path)  # pyright: ignore
             elif filepath_option == ShowFilepathOption.SHOW_FILENAMES_ONLY:
                 display_path = Path(filepath.name)
 
