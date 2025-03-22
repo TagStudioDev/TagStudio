@@ -41,7 +41,7 @@ class FfmpegChecker(QMessageBox):
 
         red = get_ui_color(ColorType.PRIMARY, UiColor.RED)
         green = get_ui_color(ColorType.PRIMARY, UiColor.GREEN)
-        missing = f"<span style='color:{red}'>{Translations["generic.missing"]}</span>"
+        missing = f"<span style='color:{red}'>{Translations['generic.missing']}</span>"
         found = f"<span style='color:{green}'>{Translations['about.module.found']}</span>"
         status = Translations.format(
             "ffmpeg.missing.status",
@@ -50,4 +50,4 @@ class FfmpegChecker(QMessageBox):
             ffprobe=ffprobe,
             ffprobe_status=found if which(FFPROBE_CMD) else missing,
         )
-        self.setText(f"{Translations["ffmpeg.missing.description"]}<br><br>{status}")
+        self.setText(f"{Translations['ffmpeg.missing.description']}<br><br>{status}")
