@@ -67,7 +67,9 @@ class TagBoxWidget(FieldWidget):
             tag_widget.search_for_tag_action.triggered.connect(
                 lambda checked=False, tag_id=tag.id: (
                     self.driver.main_window.searchField.setText(f"tag_id:{tag_id}"),
-                    self.driver.filter_items(FilterState.from_tag_id(tag_id)),
+                    self.driver.filter_items(
+                        FilterState.from_tag_id(tag_id, page_size=self.driver.settings.page_size)
+                    ),
                 )
             )
 

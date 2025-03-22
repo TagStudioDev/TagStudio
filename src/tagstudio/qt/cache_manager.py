@@ -32,7 +32,7 @@ class CacheManager(metaclass=Singleton):
         self.last_lib_path: Path | None = None
 
     @staticmethod
-    def clear_cache(library_dir: Path) -> bool:
+    def clear_cache(library_dir: Path | None) -> bool:
         """Clear all files and folders within the cached folder.
 
         Returns:

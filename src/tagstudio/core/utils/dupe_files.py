@@ -52,7 +52,7 @@ class DupeRegistry:
                         continue
 
                     results = self.library.search_library(
-                        FilterState.from_path(path_relative),
+                        FilterState.from_path(path_relative, page_size=500),
                     )
 
                     if not results:

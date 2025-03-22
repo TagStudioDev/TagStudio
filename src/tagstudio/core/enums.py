@@ -10,15 +10,9 @@ from uuid import uuid4
 class SettingItems(str, enum.Enum):
     """List of setting item names."""
 
-    START_LOAD_LAST = "start_load_last"
     LAST_LIBRARY = "last_library"
     LIBS_LIST = "libs_list"
-    WINDOW_SHOW_LIBS = "window_show_libs"
-    SHOW_FILENAMES = "show_filenames"
-    SHOW_FILEPATH = "show_filepath"
-    AUTOPLAY = "autoplay_videos"
     THUMB_CACHE_SIZE_LIMIT = "thumb_cache_size_limit"
-    LANGUAGE = "language"
 
 
 class ShowFilepathOption(int, enum.Enum):
@@ -81,5 +75,4 @@ class LibraryPrefs(DefaultEnum):
 
     IS_EXCLUDE_LIST = True
     EXTENSION_LIST = [".json", ".xmp", ".aae"]
-    PAGE_SIZE = 500
     DB_VERSION = 9

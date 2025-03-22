@@ -1,6 +1,11 @@
+from typing import TYPE_CHECKING
+
 from tagstudio.core.library.alchemy.enums import FilterState
 from tagstudio.core.library.json.library import ItemType
 from tagstudio.qt.widgets.item_thumb import ItemThumb
+
+if TYPE_CHECKING:
+    from tagstudio.qt.ts_qt import QtDriver
 
 # def test_update_thumbs(qt_driver):
 #     qt_driver.frame_content = [
@@ -61,7 +66,7 @@ from tagstudio.qt.widgets.item_thumb import ItemThumb
 #     assert qt_driver.selected == [0, 1, 2]
 
 
-def test_library_state_update(qt_driver):
+def test_library_state_update(qt_driver: "QtDriver"):
     # Given
     for entry in qt_driver.lib.get_entries(with_joins=True):
         thumb = ItemThumb(ItemType.ENTRY, qt_driver.lib, qt_driver, (100, 100))
@@ -73,7 +78,7 @@ def test_library_state_update(qt_driver):
     assert len(qt_driver.frame_content) == 2
 
     # filter by tag
-    state = FilterState.from_tag_name("foo").with_page_size(10)
+    state = FilterState.from_tag_name("foo", page_size=10)
     qt_driver.filter_items(state)
     assert qt_driver.filter.page_size == 10
     assert len(qt_driver.frame_content) == 1
@@ -88,7 +93,7 @@ def test_library_state_update(qt_driver):
     assert list(entry.tags)[0].name == "foo"
 
     # When state property is changed, previous one is overwritten
-    state = FilterState.from_path("*bar.md")
+    state = FilterState.from_path("*bar.md", page_size=qt_driver.settings.page_size)
     qt_driver.filter_items(state)
     assert len(qt_driver.frame_content) == 1
     entry = qt_driver.lib.get_entry_full(qt_driver.frame_content[0])
