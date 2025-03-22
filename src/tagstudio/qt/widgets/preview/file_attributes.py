@@ -163,11 +163,11 @@ class FileAttributes(QWidget):
             for i, part in enumerate(display_path.parts):
                 part_ = part.strip(os.path.sep)
                 if i != len(display_path.parts) - 1:
-                    file_str += f"{"\u200b".join(part_)}{separator}</b>"
+                    file_str += f"{'\u200b'.join(part_)}{separator}</b>"
                 else:
                     if file_str != "":
                         file_str += "<br>"
-                    file_str += f"<b>{"\u200b".join(part_)}</b>"
+                    file_str += f"<b>{'\u200b'.join(part_)}</b>"
             self.file_label.setText(file_str)
             self.file_label.setCursor(Qt.CursorShape.PointingHandCursor)
             self.opener = FileOpenerHelper(filepath)
