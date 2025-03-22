@@ -84,8 +84,26 @@ class PreviewThumb(QWidget):
         self.preview_gif_page = QWidget()
         self._stacked_page_setup(self.preview_gif_page, self.preview_gif)
 
+        self.media_player = MediaPlayer(driver)
+        self.media_player.addAction(self.open_file_action)
+        self.media_player.addAction(self.open_explorer_action)
+        self.media_player.addAction(self.delete_action)
+
+        # Need to watch for this to resize the player appropriately.
+        self.media_player.player.hasVideoChanged.connect(self._has_video_changed)
+
+        self.mp_max_size = QSize(*self.img_button_size)
+
+        self.media_player_page = QWidget()
+        self._stacked_page_setup(self.media_player_page, self.media_player)
+
         self.thumb_renderer = ThumbRenderer(self.lib)
-        self.thumb_renderer.updated.connect(lambda ts, i, s: (self.preview_img.setIcon(i)))
+        self.thumb_renderer.updated.connect(
+            lambda ts, i, s: (
+                self.preview_img.setIcon(i),
+                self._set_mp_max_size(i.size()),
+            )
+        )
         self.thumb_renderer.updated_ratio.connect(
             lambda ratio: (
                 self.set_image_ratio(ratio),
@@ -99,14 +117,6 @@ class PreviewThumb(QWidget):
             )
         )
 
-        self.media_player = MediaPlayer(driver)
-        self.media_player.addAction(self.open_file_action)
-        self.media_player.addAction(self.open_explorer_action)
-        self.media_player.addAction(self.delete_action)
-
-        self.media_player_page = QWidget()
-        self._stacked_page_setup(self.media_player_page, self.media_player)
-
         self.image_layout.addWidget(self.preview_img_page)
         self.image_layout.addWidget(self.preview_gif_page)
         self.image_layout.addWidget(self.media_player_page)
@@ -114,6 +124,12 @@ class PreviewThumb(QWidget):
         self.setMinimumSize(*self.img_button_size)
 
         self.hide_preview()
+
+    def _set_mp_max_size(self, size: QSize) -> None:
+        self.mp_max_size = size
+
+    def _has_video_changed(self, video: bool) -> None:
+        self.update_image_size((self.size().width(), self.size().height()))
 
     def _stacked_page_setup(self, page: QWidget, widget: QWidget):
         layout = QHBoxLayout(page)
@@ -153,8 +169,26 @@ class PreviewThumb(QWidget):
         self.preview_gif.setMaximumSize(adj_size)
         self.preview_gif.setMinimumSize(adj_size)
 
-        self.media_player.setMaximumSize(adj_size)
-        self.media_player.setMinimumSize(adj_size)
+        if not self.media_player.player.hasVideo():
+            # ensure we do not exceed the thumbnail size
+            mp_width = (
+                adj_size.width()
+                if adj_size.width() < self.mp_max_size.width()
+                else self.mp_max_size.width()
+            )
+            mp_height = (
+                adj_size.height()
+                if adj_size.height() < self.mp_max_size.height()
+                else self.mp_max_size.height()
+            )
+            mp_size = QSize(mp_width, mp_height)
+            self.media_player.setMinimumSize(mp_size)
+            self.media_player.setMaximumSize(mp_size)
+        else:
+            # have video, so just resize as normal
+            self.media_player.setMaximumSize(adj_size)
+            self.media_player.setMinimumSize(adj_size)
+
         proxy_style = RoundedPixmapStyle(radius=8)
         self.preview_gif.setStyle(proxy_style)
         self.media_player.setStyle(proxy_style)
