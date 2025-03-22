@@ -17,6 +17,7 @@ class SettingItems(str, enum.Enum):
     SHOW_FILENAMES = "show_filenames"
     SHOW_FILEPATH = "show_filepath"
     AUTOPLAY = "autoplay_videos"
+    LOOP_MEDIA = "loop_media"
     THUMB_CACHE_SIZE_LIMIT = "thumb_cache_size_limit"
     LANGUAGE = "language"
 
