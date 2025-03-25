@@ -1,6 +1,6 @@
 {
     "about.config_path": "Config Path",
-    "about.description": "TagStudio is a photo & file organization application with an underlying tag-based system that focuses on giving freedom and flexibility to the user. No proprietary programs or formats, no sea of sidecar files, and no complete upheaval of your filesystem structure.",
+    "about.description": "TagStudio is a photo and file organization application with an underlying tag-based system that focuses on giving freedom and flexibility to the user. No proprietary programs or formats, no sea of sidecar files, and no complete upheaval of your filesystem structure.",
     "about.documentation": "Documentation",
     "about.license": "License",
     "about.module.found": "Found",
