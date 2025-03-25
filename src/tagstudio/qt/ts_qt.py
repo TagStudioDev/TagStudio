@@ -947,7 +947,7 @@ class QtDriver(DriverMixin, QObject):
         """Set the selection to all visible items."""
         self.selected.clear()
         for item in self.item_thumbs:
-            if item.mode and item.item_id not in self.selected:
+            if item.mode and item.item_id not in self.selected and not item.isHidden():
                 self.selected.append(item.item_id)
                 item.thumb_button.set_selected(True)
 
