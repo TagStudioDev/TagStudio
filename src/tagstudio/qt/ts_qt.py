@@ -1322,14 +1322,10 @@ class QtDriver(DriverMixin, QObject):
         self.frame_content[grid_idx] = None
         self.item_thumbs[grid_idx].hide()
 
-    def _init_thumb_grid(self):
-        layout = FlowLayout()
-        layout.enable_grid_optimizations(value=True)
-        layout.setSpacing(min(self.thumb_size // 10, 12))
-        layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
-
-        # TODO - init after library is loaded, it can have different page_size
-        for _ in range(self.filter.page_size):
+    def _update_thumb_count(self):
+        missing_count = max(0, self.filter.page_size - len(self.item_thumbs))
+        layout = self.flow_container.layout()
+        for _ in range(missing_count):
             item_thumb = ItemThumb(
                 None,
                 self.lib,
@@ -1341,9 +1337,18 @@ class QtDriver(DriverMixin, QObject):
             layout.addWidget(item_thumb)
             self.item_thumbs.append(item_thumb)
 
+    def _init_thumb_grid(self):
+        layout = FlowLayout()
+        layout.enable_grid_optimizations(value=True)
+        layout.setSpacing(min(self.thumb_size // 10, 12))
+        layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
         self.flow_container: QWidget = QWidget()
         self.flow_container.setObjectName("flowContainer")
         self.flow_container.setLayout(layout)
+
+        self._update_thumb_count()
+
         sa: QScrollArea = self.main_window.scrollArea
         sa.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         sa.setWidgetResizable(True)
@@ -1558,6 +1563,7 @@ class QtDriver(DriverMixin, QObject):
 
     def update_thumbs(self):
         """Update search thumbnails."""
+        self._update_thumb_count()
         # start_time = time.time()
         # logger.info(f'Current Page: {self.cur_page_idx}, Stack Length:{len(self.nav_stack)}')
         with self.thumb_job_queue.mutex:
