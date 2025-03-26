@@ -13,6 +13,7 @@
   pillow-heif,
   pillow-jxl-plugin,
   pipewire,
+  pydantic,
   pydub,
   pyside6,
   pytest-qt,
@@ -26,6 +27,7 @@
   stdenv,
   structlog,
   syrupy,
+  toml,
   ujson,
   vtf2img,
   wrapGAppsHook,
@@ -91,19 +93,21 @@ buildPythonApplication {
     opencv-python
     pillow
     pillow-heif
+    pydantic
     pydub
     pyside6
     rawpy
     send2trash
     sqlalchemy
     structlog
+    toml
     ujson
     vtf2img
   ] ++ lib.optional withJXLSupport pillow-jxl-plugin;
 
-  # INFO: These tests require modifications to a library, which does not work
-  # in a read-only environment.
   disabledTests = [
+    # INFO: These tests require modifications to a library, which does not work
+    # in a read-only environment.
     "test_build_tag_panel_add_alias_callback"
     "test_build_tag_panel_add_aliases"
     "test_build_tag_panel_add_sub_tag_callback"
@@ -115,6 +119,9 @@ buildPythonApplication {
     "test_build_tag_panel_set_tag"
     "test_json_migration"
     "test_library_migrations"
+
+    # INFO: This test requires modification of a configuration file.
+    "test_filepath_setting"
   ];
 
   meta = {
