@@ -1754,7 +1754,7 @@ class QtDriver(DriverMixin, QObject):
 
     def update_libs_list(self, path: Path | str):
         """Add library to list in SettingItems.LIBS_LIST."""
-        item_limit: int = 5
+        item_limit: int = 10
         path = Path(path)
 
         self.cached_values.beginGroup(SettingItems.LIBS_LIST)
@@ -1858,8 +1858,18 @@ class QtDriver(DriverMixin, QObject):
         open_status: LibraryStatus | None = None
         try:
             open_status = self.lib.open_library(path)
+        except ValueError as e:
+            logger.warning(e)
+            open_status = LibraryStatus(
+                success=False,
+                library_path=path,
+                message=Translations["menu.file.missing_library.title"],
+                msg_description=Translations.format(
+                    "menu.file.missing_library.message", library=library_dir_display
+                ),
+            )
         except Exception as e:
-            logger.exception(e)
+            logger.error(e)
             open_status = LibraryStatus(
                 success=False, library_path=path, message=type(e).__name__, msg_description=str(e)
             )
