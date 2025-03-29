@@ -910,6 +910,7 @@ class ThumbRenderer(QObject):
             return im
         document: QPdfDocument = QPdfDocument()
         document.load(file)
+        file.close()
         # Transform page_size in points to pixels with proper aspect ratio
         page_size: QSizeF = document.pagePointSize(0)
         ratio_hw: float = page_size.height() / page_size.width()
