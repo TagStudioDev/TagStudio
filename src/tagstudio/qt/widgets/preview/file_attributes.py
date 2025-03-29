@@ -148,7 +148,6 @@ class FileAttributes(QWidget):
             display_path = filepath
             if self.driver.settings.show_filepath == ShowFilepathOption.SHOW_FULL_PATHS:
                 display_path = filepath
-
             elif self.driver.settings.show_filepath == ShowFilepathOption.SHOW_RELATIVE_PATHS:
                 display_path = Path(filepath).relative_to(self.library_path) # pyright: ignore
             elif self.driver.settings.show_filepath == ShowFilepathOption.SHOW_FILENAMES_ONLY:
