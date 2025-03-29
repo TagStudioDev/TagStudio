@@ -2,6 +2,7 @@
 # Licensed under the GPL-3.0 License.
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
+import io
 import time
 import typing
 from pathlib import Path
@@ -236,8 +237,26 @@ class PreviewThumb(QWidget):
             image: Image.Image = Image.open(filepath)
             stats["width"] = image.width
             stats["height"] = image.height
+
             self.update_image_size((image.width, image.height), image.width / image.height)
-            movie = QMovie(str(filepath.resolve()), QByteArray())
+            if ext == ".apng":
+                image_bytes_io = io.BytesIO()
+                image.save(
+                    image_bytes_io,
+                    "GIF",
+                    lossless=True,
+                    save_all=True,
+                    loop=0,
+                    disposal=2,
+                )
+                image.close()
+                image_bytes_io.seek(0)
+                self.gif_buffer.setData(image_bytes_io.read())
+            else:
+                image.close()
+                with open(filepath, "rb") as f:
+                    self.gif_buffer.setData(f.read())
+            movie = QMovie(self.gif_buffer, QByteArray())
             self.preview_gif.setMovie(movie)
 
             # If the animation only has 1 frame, display it like a normal image.
@@ -249,8 +268,8 @@ class PreviewThumb(QWidget):
             self.switch_preview("animated")
             self.resizeEvent(
                 QResizeEvent(
-                    QSize(image.width, image.height),
-                    QSize(image.width, image.height),
+                    QSize(stats["width"], stats["height"]),
+                    QSize(stats["width"], stats["height"]),
                 )
             )
             movie.start()
