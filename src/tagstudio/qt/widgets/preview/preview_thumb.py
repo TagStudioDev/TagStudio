@@ -200,8 +200,8 @@ class PreviewThumb(QWidget):
                     stats["width"] = image.width
                     stats["height"] = image.height
             except (
-                rawpy._rawpy.LibRawIOError,  # type: ignore
-                rawpy._rawpy.LibRawFileUnsupportedError,  # type: ignore
+                rawpy._rawpy._rawpy.LibRawIOError,  # pyright: ignore[reportAttributeAccessIssue]
+                rawpy._rawpy.LibRawFileUnsupportedError,  # pyright: ignore[reportAttributeAccessIssue]
                 FileNotFoundError,
             ):
                 pass
