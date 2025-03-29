@@ -15,6 +15,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 from uuid import uuid4
 from warnings import catch_warnings
+import platform
 
 import structlog
 from humanfriendly import format_timespan
@@ -223,6 +224,19 @@ class Library:
         self.folder = None
         self.included_files = set()
 
+    def get_file_time(self, file_path: Path):
+        """Get the creation and modification times of a file."""
+        stat = file_path.stat()
+
+        # st_birthtime on Windows and Mac, st_ctime on Linux.
+        if platform.system() in ["Windows", "Darwin"]:  # Windows & macOS
+            date_created = datetime.fromtimestamp(stat.st_birthtime)
+        else:  # Linux
+            date_created = datetime.fromtimestamp(stat.st_ctime)  # Linux lacks st_birthtime
+
+        date_modified = datetime.fromtimestamp(stat.st_mtime)
+        return date_created, date_modified
+
     def migrate_json_to_sqlite(self, json_lib: JsonLibrary):
         """Migrate JSON library data to the SQLite database."""
         logger.info("Starting Library Conversion...")
@@ -284,8 +298,12 @@ class Library:
                     fields=[],
                     id=entry.id + 1,  # JSON IDs start at 0 instead of 1
                     date_added=datetime.now(),
+                    date_modified=date_modified,
+                    date_created=date_created,
                 )
                 for entry in json_lib.entries
+                    if (date_created := self.get_file_time(entry.path / entry.filename)[0]) is not None
+                    and (date_modified := self.get_file_time(entry.path / entry.filename)[1]) is not None
             ]
         )
         for entry in json_lib.entries:
@@ -896,6 +914,10 @@ class Library:
             match search.sorting_mode:
                 case SortingModeEnum.DATE_ADDED:
                     sort_on = Entry.id
+                case SortingModeEnum.DATE_CREATED:
+                    sort_on = Entry.date_created
+                case SortingModeEnum.DATE_MODIFIED:
+                    sort_on = Entry.date_modified
                 case SortingModeEnum.FILE_NAME:
                     sort_on = func.lower(Entry.filename)
                 case SortingModeEnum.PATH:
