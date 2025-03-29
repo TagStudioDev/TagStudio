@@ -38,11 +38,13 @@ logger = structlog.get_logger(__name__)
 # Only import for type checking/autocompletion, will not be imported at runtime.
 if TYPE_CHECKING:
     from tagstudio.qt.modals.build_tag import BuildTagPanel
+    from tagstudio.qt.ts_qt import QtDriver
 
 
 class TagSearchPanel(PanelWidget):
     tag_chosen = Signal(int)
     lib: Library
+    driver: "QtDriver"
     is_initialized: bool = False
     first_tag_id: int | None = None
     is_tag_chooser: bool
@@ -290,7 +292,9 @@ class TagSearchPanel(PanelWidget):
             tag_widget.search_for_tag_action.triggered.connect(
                 lambda checked=False, tag_id=tag.id: (
                     self.driver.main_window.searchField.setText(f"tag_id:{tag_id}"),
-                    self.driver.filter_items(FilterState.from_tag_id(tag_id)),
+                    self.driver.filter_items(
+                        FilterState.from_tag_id(tag_id, page_size=self.driver.settings.page_size)
+                    ),
                 )
             )
             tag_widget.search_for_tag_action.setEnabled(True)

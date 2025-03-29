@@ -76,14 +76,14 @@ class FilterState:
     """Represent a state of the Library grid view."""
 
     # these should remain
-    page_index: int | None = 0
-    page_size: int | None = 500
+    page_size: int
+    page_index: int = 0
     sorting_mode: SortingModeEnum = SortingModeEnum.DATE_ADDED
     ascending: bool = True
 
     # these should be erased on update
     # Abstract Syntax Tree Of the current Search Query
-    ast: AST = None
+    ast: AST | None = None
 
     @property
     def limit(self):
@@ -94,35 +94,32 @@ class FilterState:
         return self.page_size * self.page_index
 
     @classmethod
-    def show_all(cls) -> "FilterState":
-        return FilterState()
+    def show_all(cls, page_size: int) -> "FilterState":
+        return FilterState(page_size=page_size)
 
     @classmethod
-    def from_search_query(cls, search_query: str) -> "FilterState":
-        return cls(ast=Parser(search_query).parse())
+    def from_search_query(cls, search_query: str, page_size: int) -> "FilterState":
+        return cls(ast=Parser(search_query).parse(), page_size=page_size)
 
     @classmethod
-    def from_tag_id(cls, tag_id: int | str) -> "FilterState":
-        return cls(ast=Constraint(ConstraintType.TagID, str(tag_id), []))
+    def from_tag_id(cls, tag_id: int | str, page_size: int) -> "FilterState":
+        return cls(ast=Constraint(ConstraintType.TagID, str(tag_id), []), page_size=page_size)
 
     @classmethod
-    def from_path(cls, path: Path | str) -> "FilterState":
-        return cls(ast=Constraint(ConstraintType.Path, str(path).strip(), []))
+    def from_path(cls, path: Path | str, page_size: int) -> "FilterState":
+        return cls(ast=Constraint(ConstraintType.Path, str(path).strip(), []), page_size=page_size)
 
     @classmethod
-    def from_mediatype(cls, mediatype: str) -> "FilterState":
-        return cls(ast=Constraint(ConstraintType.MediaType, mediatype, []))
+    def from_mediatype(cls, mediatype: str, page_size: int) -> "FilterState":
+        return cls(ast=Constraint(ConstraintType.MediaType, mediatype, []), page_size=page_size)
 
     @classmethod
-    def from_filetype(cls, filetype: str) -> "FilterState":
-        return cls(ast=Constraint(ConstraintType.FileType, filetype, []))
+    def from_filetype(cls, filetype: str, page_size: int) -> "FilterState":
+        return cls(ast=Constraint(ConstraintType.FileType, filetype, []), page_size=page_size)
 
     @classmethod
-    def from_tag_name(cls, tag_name: str) -> "FilterState":
-        return cls(ast=Constraint(ConstraintType.Tag, tag_name, []))
-
-    def with_page_size(self, page_size: int) -> "FilterState":
-        return replace(self, page_size=page_size)
+    def from_tag_name(cls, tag_name: str, page_size: int) -> "FilterState":
+        return cls(ast=Constraint(ConstraintType.Tag, tag_name, []), page_size=page_size)
 
     def with_sorting_mode(self, mode: SortingModeEnum) -> "FilterState":
         return replace(self, sorting_mode=mode)

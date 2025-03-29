@@ -255,7 +255,7 @@ class PreviewThumb(QWidget):
             self.preview_gif.setMovie(movie)
 
             # If the animation only has 1 frame, display it like a normal image.
-            if movie.frameCount() == 1:
+            if movie.frameCount() <= 1:
                 self._display_fallback_image(filepath, ext)
                 return stats
 

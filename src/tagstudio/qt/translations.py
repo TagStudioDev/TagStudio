@@ -10,11 +10,35 @@ logger = structlog.get_logger(__name__)
 
 DEFAULT_TRANSLATION = "en"
 
+LANGUAGES = {
+    # "Cantonese (Traditional)": "yue_Hant",  # Empty
+    "Chinese (Traditional)": "zh_Hant",
+    # "Czech": "cs",  # Minimal
+    # "Danish": "da",  # Minimal
+    "Dutch": "nl",
+    "English": "en",
+    "Filipino": "fil",
+    "French": "fr",
+    "German": "de",
+    "Hungarian": "hu",
+    # "Italian": "it",  # Minimal
+    "Norwegian Bokmål": "nb_NO",
+    "Polish": "pl",
+    "Portuguese (Brazil)": "pt_BR",
+    # "Portuguese (Portugal)": "pt",  # Empty
+    "Russian": "ru",
+    "Spanish": "es",
+    "Swedish": "sv",
+    "Tamil": "ta",
+    "Toki Pona": "tok",
+    "Turkish": "tr",
+}
+
 
 class Translator:
     _default_strings: dict[str, str]
     _strings: dict[str, str] = {}
-    _lang: str = DEFAULT_TRANSLATION
+    __lang: str = DEFAULT_TRANSLATION
 
     def __init__(self):
         self._default_strings = self.__get_translation_dict(DEFAULT_TRANSLATION)
@@ -27,7 +51,7 @@ class Translator:
             return ujson.loads(f.read())
 
     def change_language(self, lang: str):
-        self._lang = lang
+        self.__lang = lang
         self._strings = self.__get_translation_dict(lang)
         if system() == "Darwin":
             for k, v in self._strings.items():
@@ -43,7 +67,7 @@ class Translator:
                 "[Translations] Error while formatting translation.",
                 text=text,
                 kwargs=kwargs,
-                language=self._lang,
+                language=self.__lang,
             )
             params: defaultdict[str, Any] = defaultdict(lambda: "{unknown_key}")
             params.update(kwargs)
@@ -54,6 +78,10 @@ class Translator:
 
     def __getitem__(self, key: str) -> str:
         return self._strings.get(key) or self._default_strings.get(key) or f"[{key}]"
+
+    @property
+    def current_language(self) -> str:
+        return self.__lang
 
 
 Translations = Translator()
