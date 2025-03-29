@@ -2,7 +2,6 @@
 # Licensed under the GPL-3.0 License.
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
-import io
 import time
 import typing
 from pathlib import Path
@@ -108,7 +107,7 @@ class PreviewThumb(QWidget):
     def set_image_ratio(self, ratio: float):
         self.image_ratio = ratio
 
-    def update_image_size(self, size: tuple[int, int], ratio: float = None):
+    def update_image_size(self, size: tuple[int, int], ratio: float | None = None):
         if ratio:
             self.set_image_ratio(ratio)
 
@@ -168,7 +167,7 @@ class PreviewThumb(QWidget):
                 self.gif_buffer.close()
             self.preview_gif.hide()
 
-    def _display_fallback_image(self, filepath: Path, ext=str) -> dict:
+    def _display_fallback_image(self, filepath: Path, ext: str) -> dict:
         """Renders the given file as an image, no matter its media type.
 
         Useful for fallback scenarios.
@@ -189,7 +188,7 @@ class PreviewThumb(QWidget):
         stats: dict = {}
         self.switch_preview("image")
 
-        image: Image.Image = None
+        image: Image.Image | None = None
 
         if MediaCategories.is_ext_in_category(
             ext, MediaCategories.IMAGE_RAW_TYPES, mime_fallback=True
@@ -201,8 +200,8 @@ class PreviewThumb(QWidget):
                     stats["width"] = image.width
                     stats["height"] = image.height
             except (
-                rawpy._rawpy.LibRawIOError,
-                rawpy._rawpy.LibRawFileUnsupportedError,
+                rawpy._rawpy.LibRawIOError,  # type: ignore
+                rawpy._rawpy.LibRawFileUnsupportedError,  # type: ignore
                 FileNotFoundError,
             ):
                 pass
@@ -238,20 +237,7 @@ class PreviewThumb(QWidget):
             stats["width"] = image.width
             stats["height"] = image.height
             self.update_image_size((image.width, image.height), image.width / image.height)
-            anim_image: Image.Image = image
-            image_bytes_io: io.BytesIO = io.BytesIO()
-            anim_image.save(
-                image_bytes_io,
-                "GIF",
-                lossless=True,
-                save_all=True,
-                loop=0,
-                disposal=2,
-            )
-            image_bytes_io.seek(0)
-            ba: bytes = image_bytes_io.read()
-            self.gif_buffer.setData(ba)
-            movie = QMovie(self.gif_buffer, QByteArray())
+            movie = QMovie(str(filepath.resolve()), QByteArray())
             self.preview_gif.setMovie(movie)
 
             # If the animation only has 1 frame, display it like a normal image.
