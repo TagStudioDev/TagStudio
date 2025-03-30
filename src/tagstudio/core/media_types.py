@@ -355,7 +355,15 @@ class MediaCategories:
     }
     _PROGRAM_SET: set[str] = {".app", ".bin", ".exe"}
     _SOURCE_ENGINE_SET: set[str] = {".vtf"}
-    _SHADER_SET: set[str] = {".frag", ".fsh", ".glsl", ".vert", ".vsh"}
+    _SHADER_SET: set[str] = {
+        ".effect",
+        ".frag",
+        ".fsh",
+        ".glsl",
+        ".shader",
+        ".vert",
+        ".vsh",
+    }
     _SHORTCUT_SET: set[str] = {".desktop", ".lnk", ".url"}
     _SPREADSHEET_SET: set[str] = {
         ".csv",
