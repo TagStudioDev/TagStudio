@@ -257,7 +257,7 @@ class FileAttributes(QWidget):
             case DateFormat.SYSTEM:
                 locale.setlocale(locale.LC_ALL, locale.getdefaultlocale()[0])
             case DateFormat.ENGLISH:
-                locale.setlocale(locale.LC_ALL, 'en-EN')
+                locale.setlocale(locale.LC_ALL, "en-EN")
 
     def get_date_with_format(self, date: dt) -> str:
         date_format = self.driver.settings.date_format
@@ -265,16 +265,15 @@ class FileAttributes(QWidget):
 
         match date_format:
             case DateFormat.INTERNATIONAL:
-                return date.isoformat(sep=' ', timespec='seconds')
+                return date.isoformat(sep=" ", timespec="seconds")
             case DateFormat.SYSTEM | DateFormat.ENGLISH | _:
-                return dt.strftime(date, f'%a, %x, {self.get_hour_format(date.hour, is_24h)}')
-    
+                return dt.strftime(date, f"%a, %x, {self.get_hour_format(date.hour, is_24h)}")
+
     def get_hour_format(self, hour: int, is_24h: bool) -> str:
-        format_24h = '%H:%M:%S'
-        format_12h = '%I:%M:%S'
+        format_24h = "%H:%M:%S"
+        format_12h = "%I:%M:%S"
         if is_24h:
             return format_24h
         else:
-            hour_sufix = 'PM' if hour > 11 else 'AM'
-            return f'{format_12h} {hour_sufix}'
-
+            hour_sufix = "PM" if hour > 11 else "AM"
+            return f"{format_12h} {hour_sufix}"
