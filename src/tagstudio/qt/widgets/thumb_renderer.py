@@ -916,20 +916,23 @@ class ThumbRenderer(QObject):
             thumb_im = Image.open(BytesIO(file_data))
             return thumb_im
 
-        with zipfile.ZipFile(filepath, "r") as zip_file:
-            thumb: Image.Image | None = None
+        try:
+            with zipfile.ZipFile(filepath, "r") as zip_file:
+                thumb: Image.Image | None = None
 
-            # Check if the file exists in the zip
-            if preview_thumb_dir in zip_file.namelist():
-                thumb = get_image(preview_thumb_dir)
-            elif quicklook_thumb_dir in zip_file.namelist():
-                thumb = get_image(quicklook_thumb_dir)
-            else:
-                logger.error("Couldn't render thumbnail", filepath=filepath)
+                # Check if the file exists in the zip
+                if preview_thumb_dir in zip_file.namelist():
+                    thumb = get_image(preview_thumb_dir)
+                elif quicklook_thumb_dir in zip_file.namelist():
+                    thumb = get_image(quicklook_thumb_dir)
+                else:
+                    logger.error("Couldn't render thumbnail", filepath=filepath)
 
-            if thumb:
-                im = Image.new("RGB", thumb.size, color="#1e1e1e")
-                im.paste(thumb)
+                if thumb:
+                    im = Image.new("RGB", thumb.size, color="#1e1e1e")
+                    im.paste(thumb)
+        except zipfile.BadZipFile as e:
+            logger.error("Couldn't render thumbnail", filepath=filepath, error=e)
 
         return im
 
