@@ -193,11 +193,13 @@ class MediaCategories:
         ".ps1",
         ".py",
         ".pyi",
+        ".qml",
         ".qrc",
         ".qss",
         ".rs",
         ".sh",
         ".shtml",
+        ".sip",
         ".spec",
         ".tcl",
         ".timestamp",
@@ -337,6 +339,8 @@ class MediaCategories:
     _PDF_SET: set[str] = {".pdf"}
     _PLAINTEXT_SET: set[str] = {
         ".csv",
+        ".i3u",
+        ".lang",
         ".lock",
         ".log",
         ".markdown",
