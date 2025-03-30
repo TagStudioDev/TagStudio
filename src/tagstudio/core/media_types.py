@@ -12,6 +12,7 @@ from pathlib import Path
 logging.basicConfig(format="%(message)s", level=logging.INFO)
 
 FILETYPE_EQUIVALENTS = [
+    set(["aif", "aiff", "aifc"]),
     set(["html", "htm", "xhtml", "shtml", "dhtml"]),
     set(["jfif", "jpeg_large", "jpeg", "jpg_large", "jpg"]),
     set(["json", "jsonc", "json5"]),
