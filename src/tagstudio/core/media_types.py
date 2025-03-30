@@ -109,6 +109,7 @@ class MediaCategories:
     _AUDIO_SET: set[str] = {
         ".aac",
         ".aif",
+        ".aifc",
         ".aiff",
         ".alac",
         ".flac",
@@ -338,14 +339,14 @@ class MediaCategories:
         ".csv",
         ".lock",
         ".log",
+        ".markdown",
         ".md",
+        ".mkd",
+        ".rmd",
         ".txt",
         "contributing",
         "license",
-        "markdown",
-        "mkd",
         "readme",
-        "rmd",
     }
     _PRESENTATION_SET: set[str] = {
         ".key",
