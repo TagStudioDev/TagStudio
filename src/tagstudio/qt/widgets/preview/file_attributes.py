@@ -259,7 +259,6 @@ class FileAttributes(QWidget):
             case DateFormat.ENGLISH:
                 locale.setlocale(locale.LC_ALL, 'en-EN')
 
-
     def get_date_with_format(self, date: dt) -> str:
         date_format = self.driver.settings.date_format
         is_24h = self.driver.settings.hour_format
