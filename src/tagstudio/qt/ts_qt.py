@@ -994,6 +994,7 @@ class QtDriver(DriverMixin, QObject):
 
     def add_new_files_callback(self):
         """Run when user initiates adding new files to the Library."""
+        assert self.lib.library_dir
         tracker = RefreshDirTracker(self.lib)
 
         pw = ProgressWidget(
@@ -1003,10 +1004,9 @@ class QtDriver(DriverMixin, QObject):
         )
         pw.setWindowTitle(Translations["library.refresh.title"])
         pw.update_label(Translations["library.refresh.scanning_preparing"])
-
         pw.show()
 
-        iterator = FunctionIterator(lambda: tracker.refresh_dir(self.lib.library_dir))
+        iterator = FunctionIterator(lambda lib=self.lib.library_dir: tracker.refresh_dir(lib))
         iterator.value.connect(
             lambda x: (
                 pw.update_progress(x + 1),

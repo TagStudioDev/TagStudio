@@ -83,6 +83,7 @@ from tagstudio.core.library.alchemy.models import (
     ValueType,
 )
 from tagstudio.core.library.alchemy.visitors import SQLBoolExpressionBuilder
+from tagstudio.core.library.ignore import Ignore
 from tagstudio.core.library.json.library import Library as JsonLibrary
 from tagstudio.qt.translations import Translations
 
@@ -91,6 +92,7 @@ if TYPE_CHECKING:
 
 
 logger = structlog.get_logger(__name__)
+
 
 TAG_CHILDREN_QUERY = text("""
 -- Note for this entire query that tag_parents.child_id is the parent id and tag_parents.parent_id is the child id due to bad naming
@@ -659,7 +661,10 @@ class Library:
                 entry_stmt = (
                     entry_stmt.outerjoin(Entry.text_fields)
                     .outerjoin(Entry.datetime_fields)
-                    .options(selectinload(Entry.text_fields), selectinload(Entry.datetime_fields))
+                    .options(
+                        selectinload(Entry.text_fields),
+                        selectinload(Entry.datetime_fields),
+                    )
                 )
             # if with_tags:
             #     entry_stmt = entry_stmt.outerjoin(Entry.tags).options(selectinload(Entry.tags))
@@ -885,6 +890,7 @@ class Library:
         """
         assert isinstance(search, BrowsingState)
         assert self.engine
+        assert self.library_dir
 
         with Session(self.engine, expire_on_commit=False) as session:
             statement = select(Entry.id, func.count().over())
@@ -897,6 +903,7 @@ class Library:
                     f"SQL Expression Builder finished ({format_timespan(end_time - start_time)})"
                 )
 
+            # TODO: Convert old extension lists to new .ts_ignore format
             extensions = self.prefs(LibraryPrefs.EXTENSION_LIST)
             is_exclude_list = self.prefs(LibraryPrefs.IS_EXCLUDE_LIST)
 
@@ -904,6 +911,31 @@ class Library:
                 statement = statement.where(Entry.suffix.notin_(extensions))
             elif extensions:
                 statement = statement.where(Entry.suffix.in_(extensions))
+
+            statement = statement.distinct(Entry.id)
+            ignore_patterns: list[str] = Ignore.get_patterns(self.library_dir)
+
+            # Add glob pattern filters with exclusion patterns allowing for overrides.
+            statement = statement.filter(
+                and_(
+                    or_(
+                        or_(
+                            *[
+                                Entry.path.op("GLOB")(p.lstrip("!"))
+                                for p in ignore_patterns
+                                if p.startswith("!")
+                            ]
+                        ),
+                        and_(
+                            *[
+                                Entry.path.op("NOT GLOB")(p)
+                                for p in ignore_patterns
+                                if not p.startswith("!")
+                            ]
+                        ),
+                    )
+                )
+            )
 
             sort_on: ColumnExpressionArgument = Entry.id
             match search.sorting_mode:
@@ -1710,7 +1742,10 @@ class Library:
                 session.expunge(en)
 
         return dict(
-            sorted(color_groups.items(), key=lambda kv: self.get_namespace_name(kv[0]).lower())
+            sorted(
+                color_groups.items(),
+                key=lambda kv: self.get_namespace_name(kv[0]).lower(),
+            )
         )
 
     @property
