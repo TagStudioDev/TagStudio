@@ -3,6 +3,7 @@
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
 
+import locale
 import os
 import platform
 import typing
@@ -18,6 +19,7 @@ from PySide6.QtGui import QGuiApplication
 from PySide6.QtWidgets import QLabel, QVBoxLayout, QWidget
 
 from tagstudio.core.enums import ShowFilepathOption, Theme
+from tagstudio.core.global_settings import DateFormat
 from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.media_types import MediaCategories
 from tagstudio.qt.helpers.file_opener import FileOpenerHelper, FileOpenerLabel
@@ -98,6 +100,7 @@ class FileAttributes(QWidget):
         root_layout.addWidget(self.dimensions_label)
         self.library = library
         self.driver = driver
+        self.set_locale()
 
     def update_date_label(self, filepath: Path | None = None) -> None:
         """Update the "Date Created" and "Date Modified" file property labels."""
@@ -109,11 +112,11 @@ class FileAttributes(QWidget):
                 created = dt.fromtimestamp(filepath.stat().st_ctime)
             modified: dt = dt.fromtimestamp(filepath.stat().st_mtime)
             self.date_created_label.setText(
-                f"<b>{Translations['file.date_created']}:</b> {dt.strftime(created, '%a, %x, %X')}"
+                f"<b>{Translations['file.date_created']}:</b> {self.get_date_with_format(created)}"
             )
             self.date_modified_label.setText(
                 f"<b>{Translations['file.date_modified']}:</b> "
-                f"{dt.strftime(modified, '%a, %x, %X')}"
+                f"{self.get_date_with_format(modified)}"
             )
             self.date_created_label.setHidden(False)
             self.date_modified_label.setHidden(False)
@@ -246,3 +249,33 @@ class FileAttributes(QWidget):
         self.file_label.set_file_path("")
         self.dimensions_label.setText("")
         self.dimensions_label.setHidden(True)
+
+    def set_locale(self):
+        date_format = self.driver.settings.date_format
+
+        match date_format:
+            case DateFormat.SYSTEM:
+                locale.setlocale(locale.LC_ALL, locale.getdefaultlocale()[0])
+            case DateFormat.ENGLISH:
+                locale.setlocale(locale.LC_ALL, 'en-EN')
+
+
+    def get_date_with_format(self, date: dt) -> str:
+        date_format = self.driver.settings.date_format
+        is_24h = self.driver.settings.hour_format
+
+        match date_format:
+            case DateFormat.INTERNATIONAL:
+                return date.isoformat(sep=' ', timespec='seconds')
+            case DateFormat.SYSTEM | DateFormat.ENGLISH | _:
+                return dt.strftime(date, f'%a, %x, {self.get_hour_format(date.hour, is_24h)}')
+    
+    def get_hour_format(self, hour: int, is_24h: bool) -> str:
+        format_24h = '%H:%M:%S'
+        format_12h = '%I:%M:%S'
+        if is_24h:
+            return format_24h
+        else:
+            hour_sufix = 'PM' if hour > 11 else 'AM'
+            return f'{format_12h} {hour_sufix}'
+

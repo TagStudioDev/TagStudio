@@ -18,7 +18,7 @@ from PySide6.QtWidgets import (
 )
 
 from tagstudio.core.enums import ShowFilepathOption
-from tagstudio.core.global_settings import Theme
+from tagstudio.core.global_settings import DateFormat, Theme
 from tagstudio.qt.translations import DEFAULT_TRANSLATION, LANGUAGES, Translations
 from tagstudio.qt.widgets.panel import PanelModal, PanelWidget
 
@@ -35,6 +35,12 @@ THEME_MAP: dict[Theme, str] = {
     Theme.DARK: Translations["settings.theme.dark"],
     Theme.LIGHT: Translations["settings.theme.light"],
     Theme.SYSTEM: Translations["settings.theme.system"],
+}
+
+DATE_FORMAT_MAP: dict[DateFormat, str] = {
+    DateFormat.SYSTEM: Translations["settings.dateformat.system"],
+    DateFormat.ENGLISH: Translations["settings.dateformat.english"],
+    DateFormat.INTERNATIONAL: Translations["settings.dateformat.international"],
 }
 
 
@@ -147,6 +153,22 @@ class SettingsPanel(PanelWidget):
         self.theme_combobox.currentIndexChanged.connect(self.__update_restart_label)
         form_layout.addRow(Translations["settings.theme.label"], self.theme_combobox)
 
+        # Date Format
+        self.dateformat_combobox = QComboBox()
+        for k in DATE_FORMAT_MAP:
+            self.dateformat_combobox.addItem(DATE_FORMAT_MAP[k], k)
+        dateformat: DateFormat = self.driver.settings.date_format
+        if dateformat not in DATE_FORMAT_MAP:
+            dateformat = DateFormat.DEFAULT
+        self.dateformat_combobox.setCurrentIndex(list(DATE_FORMAT_MAP.keys()).index(dateformat))
+        self.dateformat_combobox.currentIndexChanged.connect(self.__update_restart_label)
+        form_layout.addRow(Translations["settings.dateformat.label"], self.dateformat_combobox)
+
+        # Hour Format
+        self.hourformat_checkbox = QCheckBox("24H", self)
+        self.hourformat_checkbox.setChecked(self.driver.settings.hour_format)
+        form_layout.addRow(Translations["settings.hourformat.label"], self.hourformat_checkbox)
+
     def __build_library_settings(self):
         self.library_settings_container = QWidget()
         form_layout = QFormLayout(self.library_settings_container)
@@ -167,6 +189,8 @@ class SettingsPanel(PanelWidget):
             "page_size": int(self.page_size_line_edit.text()),
             "show_filepath": self.filepath_combobox.currentData(),
             "theme": self.theme_combobox.currentData(),
+            "date_format": self.dateformat_combobox.currentData(),
+            "hour_format": self.hourformat_checkbox.isChecked(),
         }
 
     def update_settings(self, driver: "QtDriver"):
@@ -179,6 +203,8 @@ class SettingsPanel(PanelWidget):
         driver.settings.page_size = settings["page_size"]
         driver.settings.show_filepath = settings["show_filepath"]
         driver.settings.theme = settings["theme"]
+        driver.settings.date_format = settings["date_format"]
+        driver.settings.hour_format = settings["hour_format"]
 
         driver.settings.save()
 

@@ -36,6 +36,12 @@ class Theme(Enum):
     SYSTEM = 2
     DEFAULT = SYSTEM
 
+class DateFormat(Enum):
+    SYSTEM = 0
+    ENGLISH = 1
+    INTERNATIONAL = 2
+    DEFAULT = SYSTEM
+
 
 # NOTE: pydantic also has a BaseSettings class (from pydantic-settings) that allows any settings
 # properties to be overwritten with environment variables. as tagstudio is not currently using
@@ -48,6 +54,8 @@ class GlobalSettings(BaseModel):
     page_size: int = Field(default=500)
     show_filepath: ShowFilepathOption = Field(default=ShowFilepathOption.DEFAULT)
     theme: Theme = Field(default=Theme.SYSTEM)
+    date_format: DateFormat = Field(default=DateFormat.SYSTEM)
+    hour_format: bool = Field(default=True)
 
     @staticmethod
     def read_settings(path: Path = DEFAULT_GLOBAL_SETTINGS_PATH) -> "GlobalSettings":

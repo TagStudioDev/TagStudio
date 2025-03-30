@@ -151,6 +151,7 @@ class PreviewPanel(QWidget):
                 if update_preview:
                     stats: dict = self.thumb.update_preview(filepath, ext)
                     self.file_attrs.update_stats(filepath, ext, stats)
+                self.file_attrs.set_locale()
                 self.file_attrs.update_date_label(filepath)
                 self.fields.update_from_entry(entry_id)
                 self.update_add_tag_button(entry_id)
