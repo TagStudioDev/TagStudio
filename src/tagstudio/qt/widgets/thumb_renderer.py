@@ -105,11 +105,11 @@ class ThumbRenderer(QObject):
         # Cached thumbnail elements.
         # Key: Size + Pixel Ratio Tuple + Radius Scale
         #      (Ex. (512, 512, 1.25, 4))
-        self.thumb_masks: dict = {}
-        self.raised_edges: dict = {}
+        self.thumb_masks: dict[tuple[int, int, float, float], Image.Image] = {}
+        self.raised_edges: dict[tuple[int, int, float], tuple[Image.Image, Image.Image]] = {}
 
         # Key: ("name", UiColor, 512, 512, 1.25)
-        self.icons: dict = {}
+        self.icons: dict[tuple[str, UiColor, int, int, float], Image.Image] = {}
 
     def _get_resource_id(self, url: Path) -> str:
         """Return the name of the icon resource to use for a file type.
@@ -160,7 +160,7 @@ class ThumbRenderer(QObject):
         if scale_radius:
             radius_scale = max(size[0], size[1]) / thumb_scale
 
-        item: Image.Image = self.thumb_masks.get((*size, pixel_ratio, radius_scale))
+        item: Image.Image | None = self.thumb_masks.get((*size, pixel_ratio, radius_scale))
         if not item:
             item = self._render_mask(size, pixel_ratio, radius_scale)
             self.thumb_masks[(*size, pixel_ratio, radius_scale)] = item
@@ -177,7 +177,7 @@ class ThumbRenderer(QObject):
             size (tuple[int, int]): The size of the graphic.
             pixel_ratio (float): The screen pixel ratio.
         """
-        item: tuple[Image.Image, Image.Image] = self.raised_edges.get((*size, pixel_ratio))
+        item: tuple[Image.Image, Image.Image] | None = self.raised_edges.get((*size, pixel_ratio))
         if not item:
             item = self._render_edge(size, pixel_ratio)
             self.raised_edges[(*size, pixel_ratio)] = item
@@ -198,7 +198,7 @@ class ThumbRenderer(QObject):
         if name == "thumb_loading":
             draw_border = False
 
-        item: Image.Image = self.icons.get((name, color, *size, pixel_ratio))
+        item: Image.Image | None = self.icons.get((name, color, *size, pixel_ratio))
         if not item:
             item_flat: Image.Image = self._render_icon(name, color, size, pixel_ratio, draw_border)
             edge: tuple[Image.Image, Image.Image] = self._get_edge(size, pixel_ratio)
