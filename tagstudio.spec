@@ -25,7 +25,7 @@ elif system == "Darwin":
 
 a = Analysis(
     ["src/tagstudio/main.py"],
-    pathex=[],
+    pathex=["src"],
     binaries=[],
     datas=[("src/tagstudio", "tagstudio")],
     hiddenimports=[],
