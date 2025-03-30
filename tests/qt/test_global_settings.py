@@ -1,7 +1,7 @@
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-from tagstudio.core.global_settings import GlobalSettings, Theme
+from tagstudio.core.global_settings import DateFormat, GlobalSettings, Theme
 
 
 def test_read_settings():
@@ -16,6 +16,8 @@ def test_read_settings():
                 page_size = 1337
                 show_filepath = 0
                 dark_mode = 2
+                date_format = 0
+                hour_format = true
             """)
 
         settings = GlobalSettings.read_settings(settings_path)
@@ -26,3 +28,5 @@ def test_read_settings():
         assert settings.page_size == 1337
         assert settings.show_filepath == 0
         assert settings.theme == Theme.SYSTEM
+        assert settings.date_format == DateFormat.SYSTEM
+        assert settings.hour_format
