@@ -11,11 +11,13 @@ import zipfile
 from copy import deepcopy
 from io import BytesIO
 from pathlib import Path
+from warnings import catch_warnings
 
 import cv2
 import numpy as np
 import rawpy
 import structlog
+from cv2.typing import MatLike
 from mutagen import MutagenError, flac, id3, mp4
 from PIL import (
     Image,
@@ -71,11 +73,12 @@ from tagstudio.qt.resource_manager import ResourceManager
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 
 logger = structlog.get_logger(__name__)
+Image.MAX_IMAGE_PIXELS = None
 register_heif_opener()
 register_avif_opener()
 
 try:
-    import pillow_jxl  # noqa: F401
+    import pillow_jxl  # noqa: F401 # pyright: ignore[reportUnusedImport]
 except ImportError:
     logger.exception('[ThumbRenderer] Could not import the "pillow_jxl" module')
 
@@ -470,7 +473,7 @@ class ThumbRenderer(QObject):
             filepath (Path): The path of the file.
             ext (str): The file extension (with leading ".").
         """
-        image: Image.Image = None
+        image: Image.Image | None = None
         try:
             if not filepath.is_file():
                 raise FileNotFoundError
@@ -539,8 +542,9 @@ class ThumbRenderer(QObject):
                 d = data[math.ceil(data_indices[i]) - 1]
                 if count < samples_per_bar:
                     count = count + 1
-                    if abs(d) > maximum_item:
-                        maximum_item = abs(d)
+                    with catch_warnings(record=True):
+                        if abs(d) > maximum_item:
+                            maximum_item = abs(d)
                 else:
                     max_array.append(maximum_item)
 
@@ -1001,20 +1005,20 @@ class ThumbRenderer(QObject):
         buffer: QBuffer = QBuffer()
         buffer.open(QBuffer.OpenModeFlag.ReadWrite)
         try:
-            q_image.save(buffer, "PNG")  # type: ignore[call-overload]
+            q_image.save(buffer, "PNG")  # type: ignore # pyright: ignore
             im = Image.open(BytesIO(buffer.buffer().data()))
         finally:
             buffer.close()
         # Replace transparent pixels with white (otherwise Background defaults to transparent)
         return replace_transparent_pixels(im)
 
-    def _text_thumb(self, filepath: Path) -> Image.Image:
+    def _text_thumb(self, filepath: Path) -> Image.Image | None:
         """Render a thumbnail for a plaintext file.
 
         Args:
             filepath (Path): The path of the file.
         """
-        im: Image.Image = None
+        im: Image.Image | None = None
 
         bg_color: str = (
             "#1e1e1e"
@@ -1045,13 +1049,14 @@ class ThumbRenderer(QObject):
             logger.error("Couldn't render thumbnail", filepath=filepath, error=type(e).__name__)
         return im
 
-    def _video_thumb(self, filepath: Path) -> Image.Image:
+    def _video_thumb(self, filepath: Path) -> Image.Image | None:
         """Render a thumbnail for a video file.
 
         Args:
             filepath (Path): The path of the file.
         """
-        im: Image.Image = None
+        im: Image.Image | None = None
+        frame: MatLike | None = None
         try:
             if is_readable_video(filepath):
                 video = cv2.VideoCapture(str(filepath), cv2.CAP_FFMPEG)
@@ -1075,8 +1080,9 @@ class ThumbRenderer(QObject):
                         video.set(cv2.CAP_PROP_POS_FRAMES, i)
                     else:
                         break
-                frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-                im = Image.fromarray(frame)
+                if frame:
+                    frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+                    im = Image.fromarray(frame)
         except (
             UnidentifiedImageError,
             cv2.error,
@@ -1141,7 +1147,7 @@ class ThumbRenderer(QObject):
             cached_path: Path | None = None
 
             if hash_value and self.lib.library_dir:
-                cached_path = (
+                cached_path = Path(
                     self.lib.library_dir
                     / TS_FOLDER_NAME
                     / THUMB_CACHE_NAME
@@ -1152,7 +1158,7 @@ class ThumbRenderer(QObject):
                 try:
                     image = Image.open(cached_path)
                     if not image:
-                        raise UnidentifiedImageError
+                        raise UnidentifiedImageError  # pyright: ignore[reportUnreachable]
                     ThumbRenderer.last_cache_folder = folder
                 except Exception as e:
                     logger.error(
@@ -1174,7 +1180,7 @@ class ThumbRenderer(QObject):
 
         image: Image.Image | None = None
         # Try to get a non-loading thumbnail for the grid.
-        if not is_loading and is_grid_thumb and filepath and filepath != ".":
+        if not is_loading and is_grid_thumb and filepath and filepath != Path("."):
             # Attempt to retrieve cached image from disk
             mod_time: str = ""
             with contextlib.suppress(Exception):
@@ -1312,7 +1318,7 @@ class ThumbRenderer(QObject):
 
         """
         adj_size = math.ceil(max(base_size[0], base_size[1]) * pixel_ratio)
-        image: Image.Image = None
+        image: Image.Image | None = None
         _filepath: Path = Path(filepath)
         savable_media_type: bool = True
 
@@ -1425,7 +1431,7 @@ class ThumbRenderer(QObject):
 
         return image
 
-    def _resize_image(self, image, size: tuple[int, int]) -> Image.Image:
+    def _resize_image(self, image: Image.Image, size: tuple[int, int]) -> Image.Image:
         orig_x, orig_y = image.size
         new_x, new_y = size
 
