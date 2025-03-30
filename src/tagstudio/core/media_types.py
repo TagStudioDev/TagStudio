@@ -1,6 +1,7 @@
-# Copyright (C) 2024 Travis Abendshien (CyanVoxel).
+# Copyright (C) 2025 Travis Abendshien (CyanVoxel).
 # Licensed under the GPL-3.0 License.
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
+
 
 import logging
 import mimetypes
@@ -41,6 +42,7 @@ class MediaType(str, Enum):
     IMAGE_VECTOR = "image_vector"
     IMAGE = "image"
     INSTALLER = "installer"
+    IWORK = "iwork"
     MATERIAL = "material"
     MODEL = "model"
     OPEN_DOCUMENT = "open_document"
@@ -306,6 +308,7 @@ class MediaCategories:
         ".webp",
     }
     _INSTALLER_SET: set[str] = {".appx", ".msi", ".msix"}
+    _IWORK_SET: set[str] = {".key", ".pages", ".numbers"}
     _MATERIAL_SET: set[str] = {".mtl"}
     _MODEL_SET: set[str] = {".3ds", ".fbx", ".obj", ".stl"}
     _OPEN_DOCUMENT_SET: set[str] = {
@@ -483,6 +486,12 @@ class MediaCategories:
         is_iana=False,
         name="installer",
     )
+    IWORK_TYPES = MediaCategory(
+        media_type=MediaType.IWORK,
+        extensions=_IWORK_SET,
+        is_iana=False,
+        name="iwork",
+    )
     MATERIAL_TYPES = MediaCategory(
         media_type=MediaType.MATERIAL,
         extensions=_MATERIAL_SET,
@@ -585,6 +594,7 @@ class MediaCategories:
         IMAGE_TYPES,
         IMAGE_VECTOR_TYPES,
         INSTALLER_TYPES,
+        IWORK_TYPES,
         MATERIAL_TYPES,
         MODEL_TYPES,
         OPEN_DOCUMENT_TYPES,

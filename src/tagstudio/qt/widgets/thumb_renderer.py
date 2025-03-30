@@ -669,6 +669,32 @@ class ThumbRenderer(QObject):
         return im
 
     @classmethod
+    def _powerpoint_thumb(cls, filepath: Path) -> Image.Image | None:
+        """Extract and render a thumbnail for a Microsoft PowerPoint file.
+
+        Args:
+            filepath (Path): The path of the file.
+        """
+        file_path_within_zip = "docProps/thumbnail.jpeg"
+        im: Image.Image | None = None
+        try:
+            with zipfile.ZipFile(filepath, "r") as zip_file:
+                # Check if the file exists in the zip
+                if file_path_within_zip in zip_file.namelist():
+                    # Read the specific file into memory
+                    file_data = zip_file.read(file_path_within_zip)
+                    thumb_im = Image.open(BytesIO(file_data))
+                    if thumb_im:
+                        im = Image.new("RGB", thumb_im.size, color="#1e1e1e")
+                        im.paste(thumb_im)
+                else:
+                    logger.error("Couldn't render thumbnail", filepath=filepath)
+        except zipfile.BadZipFile as e:
+            logger.error("Couldn't render thumbnail", filepath=filepath, error=e)
+
+        return im
+
+    @classmethod
     def _epub_cover(cls, filepath: Path) -> Image.Image:
         """Extracts and returns the first image found in the ePub file at the given filepath.
 
@@ -866,6 +892,41 @@ class ThumbRenderer(QObject):
         im = im.convert(mode="RGB")
 
         buffer.close()
+        return im
+
+    @classmethod
+    def _iwork_thumb(cls, filepath: Path) -> Image.Image:
+        """Extract and render a thumbnail for an Apple iWork (Pages, Numbers, Keynote) file.
+
+        Args:
+            filepath (Path): The path of the file.
+        """
+        preview_thumb_dir = "preview.jpg"
+        quicklook_thumb_dir = "QuickLook/Thumbnail.jpg"
+        im: Image.Image | None = None
+
+        def get_image(path: str) -> Image.Image | None:
+            thumb_im: Image.Image | None = None
+            # Read the specific file into memory
+            file_data = zip_file.read(path)
+            thumb_im = Image.open(BytesIO(file_data))
+            return thumb_im
+
+        with zipfile.ZipFile(filepath, "r") as zip_file:
+            thumb: Image.Image | None = None
+
+            # Check if the file exists in the zip
+            if preview_thumb_dir in zip_file.namelist():
+                thumb = get_image(preview_thumb_dir)
+            elif quicklook_thumb_dir in zip_file.namelist():
+                thumb = get_image(quicklook_thumb_dir)
+            else:
+                logger.error("Couldn't render thumbnail", filepath=filepath)
+
+            if thumb:
+                im = Image.new("RGB", thumb.size, color="#1e1e1e")
+                im.paste(thumb)
+
         return im
 
     def _model_stl_thumb(self, filepath: Path, size: int) -> Image.Image:
@@ -1283,11 +1344,17 @@ class ThumbRenderer(QObject):
                     ext, MediaCategories.VIDEO_TYPES, mime_fallback=True
                 ):
                     image = self._video_thumb(_filepath)
+                # PowerPoint Slideshow
+                elif ext in {".pptx"}:
+                    image = self._powerpoint_thumb(_filepath)
                 # OpenDocument/OpenOffice ======================================
                 elif MediaCategories.is_ext_in_category(
                     ext, MediaCategories.OPEN_DOCUMENT_TYPES, mime_fallback=True
                 ):
                     image = self._open_doc_thumb(_filepath)
+                # Apple iWork Suite ============================================
+                elif MediaCategories.is_ext_in_category(ext, MediaCategories.IWORK_TYPES):
+                    image = self._iwork_thumb(_filepath)
                 # Plain Text ===================================================
                 elif MediaCategories.is_ext_in_category(
                     ext, MediaCategories.PLAINTEXT_TYPES, mime_fallback=True
