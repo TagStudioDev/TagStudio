@@ -36,11 +36,13 @@ class Theme(Enum):
     SYSTEM = 2
     DEFAULT = SYSTEM
 
+
 class DateFormat(Enum):
     SYSTEM = 0
     ENGLISH = 1
     INTERNATIONAL = 2
     DEFAULT = SYSTEM
+
 
 # NOTE: pydantic also has a BaseSettings class (from pydantic-settings) that allows any settings
 # properties to be overwritten with environment variables. as tagstudio is not currently using
