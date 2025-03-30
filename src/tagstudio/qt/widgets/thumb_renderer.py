@@ -466,7 +466,8 @@ class ThumbRenderer(QObject):
 
         return im
 
-    def _audio_album_thumb(self, filepath: Path, ext: str) -> Image.Image | None:
+    @staticmethod
+    def _audio_album_thumb(filepath: Path, ext: str) -> Image.Image | None:
         """Return an album cover thumb from an audio file if a cover is present.
 
         Args:
@@ -505,8 +506,9 @@ class ThumbRenderer(QObject):
             logger.error("Couldn't read album artwork", path=filepath, error=type(e).__name__)
         return image
 
+    @staticmethod
     def _audio_waveform_thumb(
-        self, filepath: Path, ext: str, size: int, pixel_ratio: float
+        filepath: Path, ext: str, size: int, pixel_ratio: float
     ) -> Image.Image | None:
         """Render a waveform image from an audio file.
 
@@ -592,7 +594,8 @@ class ThumbRenderer(QObject):
 
         return im
 
-    def _blender(self, filepath: Path) -> Image.Image:
+    @staticmethod
+    def _blender(filepath: Path) -> Image.Image:
         """Get an emended thumbnail from a Blender file, if a thumbnail is present.
 
         Args:
@@ -626,7 +629,8 @@ class ThumbRenderer(QObject):
                 logger.error("Couldn't render thumbnail", filepath=filepath, error=type(e).__name__)
         return im
 
-    def _source_engine(self, filepath: Path) -> Image.Image:
+    @staticmethod
+    def _source_engine(filepath: Path) -> Image.Image:
         """This is a function to convert the VTF (Valve Texture Format) files to thumbnails.
 
         It works using the VTF2IMG library for PILLOW.
@@ -649,8 +653,8 @@ class ThumbRenderer(QObject):
                 logger.error("Couldn't render thumbnail", filepath=filepath, error=type(e).__name__)
         return im
 
-    @classmethod
-    def _open_doc_thumb(cls, filepath: Path) -> Image.Image:
+    @staticmethod
+    def _open_doc_thumb(filepath: Path) -> Image.Image:
         """Extract and render a thumbnail for an OpenDocument file.
 
         Args:
@@ -672,8 +676,8 @@ class ThumbRenderer(QObject):
 
         return im
 
-    @classmethod
-    def _powerpoint_thumb(cls, filepath: Path) -> Image.Image | None:
+    @staticmethod
+    def _powerpoint_thumb(filepath: Path) -> Image.Image | None:
         """Extract and render a thumbnail for a Microsoft PowerPoint file.
 
         Args:
@@ -698,8 +702,8 @@ class ThumbRenderer(QObject):
 
         return im
 
-    @classmethod
-    def _epub_cover(cls, filepath: Path) -> Image.Image:
+    @staticmethod
+    def _epub_cover(filepath: Path) -> Image.Image:
         """Extracts and returns the first image found in the ePub file at the given filepath.
 
         Args:
@@ -782,7 +786,8 @@ class ThumbRenderer(QObject):
             logger.error("Couldn't render thumbnail", filepath=filepath, error=type(e).__name__)
         return im
 
-    def _font_long_thumb(self, filepath: Path, size: int) -> Image.Image:
+    @staticmethod
+    def _font_long_thumb(filepath: Path, size: int) -> Image.Image:
         """Render a large font preview ("Alphabet") thumbnail from a font file.
 
         Args:
@@ -813,7 +818,8 @@ class ThumbRenderer(QObject):
             logger.error("Couldn't render thumbnail", filepath=filepath, error=type(e).__name__)
         return im
 
-    def _image_raw_thumb(self, filepath: Path) -> Image.Image:
+    @staticmethod
+    def _image_raw_thumb(filepath: Path) -> Image.Image:
         """Render a thumbnail for a RAW image type.
 
         Args:
@@ -837,7 +843,8 @@ class ThumbRenderer(QObject):
             logger.error("Couldn't render thumbnail", filepath=filepath, error=type(e).__name__)
         return im
 
-    def _image_thumb(self, filepath: Path) -> Image.Image:
+    @staticmethod
+    def _image_thumb(filepath: Path) -> Image.Image:
         """Render a thumbnail for a standard image type.
 
         Args:
@@ -861,8 +868,8 @@ class ThumbRenderer(QObject):
             logger.error("Couldn't render thumbnail", filepath=filepath, error=type(e).__name__)
         return im
 
-    @classmethod
-    def _image_vector_thumb(cls, filepath: Path, size: int) -> Image.Image:
+    @staticmethod
+    def _image_vector_thumb(filepath: Path, size: int) -> Image.Image:
         """Render a thumbnail for a vector image, such as SVG.
 
         Args:
@@ -898,8 +905,8 @@ class ThumbRenderer(QObject):
         buffer.close()
         return im
 
-    @classmethod
-    def _iwork_thumb(cls, filepath: Path) -> Image.Image:
+    @staticmethod
+    def _iwork_thumb(filepath: Path) -> Image.Image:
         """Extract and render a thumbnail for an Apple iWork (Pages, Numbers, Keynote) file.
 
         Args:
@@ -936,7 +943,8 @@ class ThumbRenderer(QObject):
 
         return im
 
-    def _model_stl_thumb(self, filepath: Path, size: int) -> Image.Image:
+    @staticmethod
+    def _model_stl_thumb(filepath: Path, size: int) -> Image.Image:
         """Render a thumbnail for an STL file.
 
         Args:
@@ -968,8 +976,8 @@ class ThumbRenderer(QObject):
 
         return im
 
-    @classmethod
-    def _pdf_thumb(cls, filepath: Path, size: int) -> Image.Image:
+    @staticmethod
+    def _pdf_thumb(filepath: Path, size: int) -> Image.Image:
         """Render a thumbnail for a PDF file.
 
         filepath (Path): The path of the file.
@@ -1015,7 +1023,8 @@ class ThumbRenderer(QObject):
         # Replace transparent pixels with white (otherwise Background defaults to transparent)
         return replace_transparent_pixels(im)
 
-    def _text_thumb(self, filepath: Path) -> Image.Image | None:
+    @staticmethod
+    def _text_thumb(filepath: Path) -> Image.Image | None:
         """Render a thumbnail for a plaintext file.
 
         Args:
@@ -1052,7 +1061,8 @@ class ThumbRenderer(QObject):
             logger.error("Couldn't render thumbnail", filepath=filepath, error=type(e).__name__)
         return im
 
-    def _video_thumb(self, filepath: Path) -> Image.Image | None:
+    @staticmethod
+    def _video_thumb(filepath: Path) -> Image.Image | None:
         """Render a thumbnail for a video file.
 
         Args:
