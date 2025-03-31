@@ -91,6 +91,7 @@ reportMissingTypeArgument = false
 # reportOptionalMemberAccess = false
 reportUnannotatedClassAttribute = false
 reportUnknownArgumentType = false
+reportUnknownLambdaType = false
 reportUnknownMemberType = false
 reportUnusedCallResult = false
 
