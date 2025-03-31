@@ -24,7 +24,6 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from tagstudio.core.enums import SettingItems
 from tagstudio.qt.helpers.qslider_wrapper import QClickSlider
 from tagstudio.qt.translations import Translations
 
@@ -251,18 +250,14 @@ class MediaPlayer(QGraphicsView):
         autoplay_action = QAction(Translations["media_player.autoplay"], self)
         autoplay_action.setCheckable(True)
         self.addAction(autoplay_action)
-        autoplay_action.setChecked(
-            self.driver.settings.value(SettingItems.AUTOPLAY, defaultValue=True, type=bool)
-        )
+        autoplay_action.setChecked(self.driver.settings.autoplay)
         autoplay_action.triggered.connect(lambda: self.toggle_autoplay())
         self.autoplay = autoplay_action
 
         loop_action = QAction(Translations["media_player.loop"], self)
         loop_action.setCheckable(True)
         self.addAction(loop_action)
-        loop_action.setChecked(
-            self.driver.settings.value(SettingItems.LOOP_MEDIA, defaultValue=True, type=bool)
-        )
+        loop_action.setChecked(self.driver.settings.loop)
         loop_action.triggered.connect(lambda: self.toggle_loop())
         self.loop = loop_action
 
@@ -274,12 +269,12 @@ class MediaPlayer(QGraphicsView):
 
     def toggle_autoplay(self) -> None:
         """Toggle the autoplay state of the video."""
-        self.driver.settings.setValue(SettingItems.AUTOPLAY, self.autoplay.isChecked())
-        self.driver.settings.sync()
+        self.driver.settings.autoplay = self.autoplay.isChecked()
+        self.driver.settings.save()
 
     def toggle_loop(self) -> None:
-        self.driver.settings.setValue(SettingItems.LOOP_MEDIA, self.loop.isChecked())
-        self.driver.settings.sync()
+        self.driver.settings.loop = self.loop.isChecked()
+        self.driver.settings.save()
 
     def apply_rounded_corners(self) -> None:
         """Apply a rounded corner effect to the video player."""
