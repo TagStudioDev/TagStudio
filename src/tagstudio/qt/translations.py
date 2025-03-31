@@ -22,7 +22,8 @@ LANGUAGES = {
     "German": "de",
     "Hungarian": "hu",
     # "Italian": "it",  # Minimal
-    "Norwegian Bokmål": "nb_NO",
+    "Japanese": "ja",
+    "Norwegian Bokmål": "nb_NO",  # Minimal
     "Polish": "pl",
     "Portuguese (Brazil)": "pt_BR",
     # "Portuguese (Portugal)": "pt",  # Empty
@@ -32,6 +33,7 @@ LANGUAGES = {
     "Tamil": "ta",
     "Toki Pona": "tok",
     "Turkish": "tr",
+    # "Viossa": "qpv", # Minimal
 }
 
 
@@ -44,11 +46,14 @@ class Translator:
         self._default_strings = self.__get_translation_dict(DEFAULT_TRANSLATION)
 
     def __get_translation_dict(self, lang: str) -> dict[str, str]:
-        with open(
-            Path(__file__).parents[1] / "resources" / "translations" / f"{lang}.json",
-            encoding="utf-8",
-        ) as f:
-            return ujson.loads(f.read())
+        try:
+            with open(
+                Path(__file__).parents[1] / "resources" / "translations" / f"{lang}.json",
+                encoding="utf-8",
+            ) as f:
+                return ujson.loads(f.read())
+        except FileNotFoundError:
+            return self._default_strings
 
     def change_language(self, lang: str):
         self.__lang = lang
