@@ -70,10 +70,11 @@ GLOBAL_IGNORE = _ignore_to_glob(
         ".Trashes",
         "$RECYCLE.BIN",
         # macOS Generated -------------
+        "._*",
         ".DS_Store",
         ".fseventsd",
         ".Spotlight-V100",
-        "._*",
+        ".TemporaryItems",
         "System Volume Information",
     ]
 )
