@@ -42,11 +42,11 @@ class Theme(Enum):
 # environment variables, i did not base it on that, but that may be useful in the future.
 class GlobalSettings(BaseModel):
     language: str = Field(default="en")
-    open_last_loaded_on_startup: bool = Field(default=False)
-    autoplay: bool = Field(default=False)
+    open_last_loaded_on_startup: bool = Field(default=True)
+    autoplay: bool = Field(default=True)
     loop: bool = Field(default=True)
-    show_filenames_in_grid: bool = Field(default=False)
-    page_size: int = Field(default=500)
+    show_filenames_in_grid: bool = Field(default=True)
+    page_size: int = Field(default=100)
     show_filepath: ShowFilepathOption = Field(default=ShowFilepathOption.DEFAULT)
     theme: Theme = Field(default=Theme.SYSTEM)
 
