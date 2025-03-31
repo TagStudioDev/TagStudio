@@ -110,7 +110,6 @@ class PreviewPanel(QWidget):
         add_buttons_layout.addWidget(self.add_field_button)
 
         preview_layout.addWidget(self.thumb)
-        preview_layout.addWidget(self.thumb.media_player)
         info_layout.addWidget(self.file_attrs)
         info_layout.addWidget(self.fields)
 
