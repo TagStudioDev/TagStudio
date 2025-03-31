@@ -261,6 +261,7 @@ class MediaPlayer(QGraphicsView):
         loop_action.setChecked(self.driver.settings.loop)
         loop_action.triggered.connect(lambda: self.toggle_loop())
         self.loop = loop_action
+        self.toggle_loop()
 
         # start the player muted
         self.player.audioOutput().setMuted(True)
@@ -276,6 +277,8 @@ class MediaPlayer(QGraphicsView):
     def toggle_loop(self) -> None:
         self.driver.settings.loop = self.loop.isChecked()
         self.driver.settings.save()
+
+        self.player.setLoops(-1 if self.driver.settings.loop else 1)
 
     def apply_rounded_corners(self) -> None:
         """Apply a rounded corner effect to the video player."""
@@ -468,12 +471,6 @@ class MediaPlayer(QGraphicsView):
             current = self.format_time(self.player.position())
             duration = self.format_time(self.player.duration())
             self.position_label.setText(f"{current} / {duration}")
-        elif status == QMediaPlayer.MediaStatus.EndOfMedia:
-            self.player.setPosition(0)
-            if self.loop.isChecked():
-                self.player.play()
-            else:
-                self.player.pause()
 
     def _update_controls(self, size: QSize) -> None:
         self.scene().setSceneRect(0, 0, size.width(), size.height())
