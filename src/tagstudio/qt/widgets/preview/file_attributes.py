@@ -17,7 +17,7 @@ from PySide6.QtCore import Qt
 from PySide6.QtGui import QGuiApplication
 from PySide6.QtWidgets import QLabel, QVBoxLayout, QWidget
 
-from tagstudio.core.enums import Theme
+from tagstudio.core.enums import ShowFilepathOption, Theme
 from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.media_types import MediaCategories
 from tagstudio.qt.helpers.file_opener import FileOpenerHelper, FileOpenerLabel
@@ -96,6 +96,8 @@ class FileAttributes(QWidget):
         root_layout.addWidget(self.file_label)
         root_layout.addWidget(self.date_container)
         root_layout.addWidget(self.dimensions_label)
+        self.library = library
+        self.driver = driver
 
     def update_date_label(self, filepath: Path | None = None) -> None:
         """Update the "Date Created" and "Date Modified" file property labels."""
@@ -142,6 +144,15 @@ class FileAttributes(QWidget):
             self.dimensions_label.setText("")
             self.dimensions_label.setHidden(True)
         else:
+            self.library_path = self.library.library_dir
+            display_path = filepath
+            if self.driver.settings.show_filepath == ShowFilepathOption.SHOW_FULL_PATHS:
+                display_path = filepath
+            elif self.driver.settings.show_filepath == ShowFilepathOption.SHOW_RELATIVE_PATHS:
+                display_path = Path(filepath).relative_to(self.library_path)
+            elif self.driver.settings.show_filepath == ShowFilepathOption.SHOW_FILENAMES_ONLY:
+                display_path = Path(filepath.name)
+
             self.layout().setSpacing(6)
             self.file_label.setAlignment(Qt.AlignmentFlag.AlignLeft)
             self.file_label.set_file_path(filepath)
@@ -149,12 +160,14 @@ class FileAttributes(QWidget):
 
             file_str: str = ""
             separator: str = f"<a style='color: #777777'><b>{os.path.sep}</a>"  # Gray
-            for i, part in enumerate(filepath.parts):
+            for i, part in enumerate(display_path.parts):
                 part_ = part.strip(os.path.sep)
-                if i != len(filepath.parts) - 1:
-                    file_str += f"{'\u200b'.join(part_)}{separator}</b>"
+                if i != len(display_path.parts) - 1:
+                    file_str += f"{"\u200b".join(part_)}{separator}</b>"
                 else:
-                    file_str += f"<br><b>{'\u200b'.join(part_)}</b>"
+                    if file_str != "":
+                        file_str += "<br>"
+                    file_str += f"<b>{"\u200b".join(part_)}</b>"
             self.file_label.setText(file_str)
             self.file_label.setCursor(Qt.CursorShape.PointingHandCursor)
             self.opener = FileOpenerHelper(filepath)

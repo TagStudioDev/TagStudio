@@ -27,12 +27,15 @@ dependencies = [
     "typing_extensions>=3.10.0.0,<4.11.0",
     "ujson>=5.8.0,<5.9.0",
     "vtf2img==0.1.0",
+    "toml==0.10.2",
+    "pydantic==2.9.2",
 ]
 
 [project.optional-dependencies]
-dev = ["pre-commit==3.7.0", "tagstudio[mkdocs,mypy,pyinstaller,pytest,ruff]"]
+dev = ["tagstudio[mkdocs,mypy,pre-commit,pyinstaller,pytest,ruff]"]
 mkdocs = ["mkdocs-material[imaging]==9.*"]
 mypy = ["mypy==1.11.2", "mypy-extensions==1.*", "types-ujson>=5.8.0,<5.9.0"]
+pre-commit = ["pre-commit==3.7.0"]
 pyinstaller = ["Pyinstaller==6.6.0"]
 pytest = [
     "pytest==8.2.0",
@@ -82,7 +85,9 @@ qt_api = "pyside6"
 ignore = [".venv/**"]
 include = ["src/tagstudio/**"]
 reportAny = false
+reportIgnoreCommentWithoutRule = false
 reportImplicitStringConcatenation = false
+reportMissingTypeArgument = false
 # reportOptionalMemberAccess = false
 reportUnannotatedClassAttribute = false
 reportUnknownArgumentType = false

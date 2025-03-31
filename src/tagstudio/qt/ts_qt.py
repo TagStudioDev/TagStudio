@@ -13,11 +13,14 @@ import ctypes
 import dataclasses
 import math
 import os
+import platform
 import re
 import sys
 import time
+from argparse import Namespace
 from pathlib import Path
 from queue import Queue
+from shutil import which
 from warnings import catch_warnings
 
 import structlog
@@ -54,7 +57,8 @@ from PySide6.QtWidgets import (
 import tagstudio.qt.resources_rc  # noqa: F401
 from tagstudio.core.constants import TAG_ARCHIVED, TAG_FAVORITE, VERSION, VERSION_BRANCH
 from tagstudio.core.driver import DriverMixin
-from tagstudio.core.enums import LibraryPrefs, MacroID, SettingItems
+from tagstudio.core.enums import MacroID, SettingItems, ShowFilepathOption
+from tagstudio.core.global_settings import DEFAULT_GLOBAL_SETTINGS_PATH, GlobalSettings, Theme
 from tagstudio.core.library.alchemy.enums import (
     FieldTypeEnum,
     FilterState,
@@ -75,6 +79,7 @@ from tagstudio.qt.flowlayout import FlowLayout
 from tagstudio.qt.helpers.custom_runnable import CustomRunnable
 from tagstudio.qt.helpers.file_deleter import delete_file
 from tagstudio.qt.helpers.function_iterator import FunctionIterator
+from tagstudio.qt.helpers.vendored.ffmpeg import FFMPEG_CMD, FFPROBE_CMD
 from tagstudio.qt.main_window import Ui_MainWindow
 from tagstudio.qt.modals.about import AboutModal
 from tagstudio.qt.modals.build_tag import BuildTagPanel
@@ -139,25 +144,30 @@ class QtDriver(DriverMixin, QObject):
 
     SIGTERM = Signal()
 
-    preview_panel: PreviewPanel | None = None
+    preview_panel: PreviewPanel
     tag_manager_panel: PanelModal | None = None
     color_manager_panel: TagColorManager | None = None
     file_extension_panel: PanelModal | None = None
     tag_search_panel: TagSearchPanel | None = None
     add_tag_modal: PanelModal | None = None
+    folders_modal: FoldersToTagsModal
+    about_modal: AboutModal
+    unlinked_modal: FixUnlinkedEntriesModal
+    dupe_modal: FixDupeFilesModal
+    applied_theme: Theme
 
     lib: Library
 
-    def __init__(self, args):
+    def __init__(self, args: Namespace):
         super().__init__()
         # prevent recursive badges update when multiple items selected
         self.badge_update_lock = False
         self.lib = Library()
         self.rm: ResourceManager = ResourceManager()
         self.args = args
-        self.filter = FilterState.show_all()
         self.frame_content: list[int] = []  # List of Entry IDs on the current page
         self.pages_count = 0
+        self.applied_theme = None
 
         self.scrollbar_pos = 0
         self.thumb_size = 128
@@ -174,35 +184,43 @@ class QtDriver(DriverMixin, QObject):
 
         self.SIGTERM.connect(self.handle_sigterm)
 
-        self.config_path = ""
-        if self.args.config_file:
-            path = Path(self.args.config_file)
-            if not path.exists():
-                logger.warning("[Config] Config File does not exist creating", path=path)
-            logger.info("[Config] Using Config File", path=path)
-            self.settings = QSettings(str(path), QSettings.Format.IniFormat)
-            self.config_path = str(path)
+        self.global_settings_path = DEFAULT_GLOBAL_SETTINGS_PATH
+        if self.args.settings_file:
+            self.global_settings_path = Path(self.args.settings_file)
         else:
-            self.settings = QSettings(
+            logger.info("[Settings] Global Settings File Path not specified, using default")
+        self.settings = GlobalSettings.read_settings(self.global_settings_path)
+        if not self.global_settings_path.exists():
+            logger.warning(
+                "[Settings] Global Settings File does not exist creating",
+                path=self.global_settings_path,
+            )
+        self.filter = FilterState.show_all(page_size=self.settings.page_size)
+
+        if self.args.cache_file:
+            path = Path(self.args.cache_file)
+            if not path.exists():
+                logger.warning("[Cache] Cache File does not exist creating", path=path)
+            logger.info("[Cache] Using Cache File", path=path)
+            self.cached_values = QSettings(str(path), QSettings.Format.IniFormat)
+        else:
+            self.cached_values = QSettings(
                 QSettings.Format.IniFormat,
                 QSettings.Scope.UserScope,
                 "TagStudio",
                 "TagStudio",
             )
             logger.info(
-                "[Config] Config File not specified, using default one",
-                filename=self.settings.fileName(),
+                "[Cache] Cache File not specified, using default one",
+                filename=self.cached_values.fileName(),
             )
-            self.config_path = self.settings.fileName()
 
-        Translations.change_language(
-            str(self.settings.value(SettingItems.LANGUAGE, defaultValue="en", type=str))
-        )
+        Translations.change_language(self.settings.language)
 
         # NOTE: This should be a per-library setting rather than an application setting.
         thumb_cache_size_limit: int = int(
             str(
-                self.settings.value(
+                self.cached_values.value(
                     SettingItems.THUMB_CACHE_SIZE_LIMIT,
                     defaultValue=CacheManager.size_limit,
                     type=int,
@@ -211,8 +229,8 @@ class QtDriver(DriverMixin, QObject):
         )
 
         CacheManager.size_limit = thumb_cache_size_limit
-        self.settings.setValue(SettingItems.THUMB_CACHE_SIZE_LIMIT, CacheManager.size_limit)
-        self.settings.sync()
+        self.cached_values.setValue(SettingItems.THUMB_CACHE_SIZE_LIMIT, CacheManager.size_limit)
+        self.cached_values.sync()
         logger.info(
             f"[Config] Thumbnail cache size limit: {format_size(CacheManager.size_limit)}",
         )
@@ -251,14 +269,24 @@ class QtDriver(DriverMixin, QObject):
     def start(self) -> None:
         """Launch the main Qt window."""
         _ = QUiLoader()
-        if os.name == "nt":
+
+        if self.settings.theme == Theme.SYSTEM and platform.system() == "Windows":
             sys.argv += ["-platform", "windows:darkmode=2"]
+        self.app = QApplication(sys.argv)
+        self.app.setStyle("Fusion")
+        if self.settings.theme == Theme.SYSTEM:
+            # TODO: detect theme instead of always setting dark
+            self.app.styleHints().setColorScheme(Qt.ColorScheme.Dark)
+        else:
+            self.app.styleHints().setColorScheme(
+                Qt.ColorScheme.Dark if self.settings.theme == Theme.DARK else Qt.ColorScheme.Light
+            )
+        self.applied_theme = self.settings.theme
 
-        app = QApplication(sys.argv)
-        app.setStyle("Fusion")
-
-        if QGuiApplication.styleHints().colorScheme() is Qt.ColorScheme.Dark:
-            pal: QPalette = app.palette()
+        if (
+            platform.system() == "Darwin" or platform.system() == "Windows"
+        ) and QGuiApplication.styleHints().colorScheme() is Qt.ColorScheme.Dark:
+            pal: QPalette = self.app.palette()
             pal.setColor(QPalette.ColorGroup.Normal, QPalette.ColorRole.Window, QColor("#1e1e1e"))
             pal.setColor(QPalette.ColorGroup.Normal, QPalette.ColorRole.Button, QColor("#1e1e1e"))
             pal.setColor(QPalette.ColorGroup.Inactive, QPalette.ColorRole.Window, QColor("#232323"))
@@ -267,7 +295,7 @@ class QtDriver(DriverMixin, QObject):
                 QPalette.ColorGroup.Inactive, QPalette.ColorRole.ButtonText, QColor("#666666")
             )
 
-            app.setPalette(pal)
+            self.app.setPalette(pal)
 
         # Handle OS signals
         self.setup_signals()
@@ -296,10 +324,15 @@ class QtDriver(DriverMixin, QObject):
             appid = "cyanvoxel.tagstudio.9"
             ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(appid)  # type: ignore[attr-defined,unused-ignore]
 
-        if sys.platform != "darwin":
-            icon = QIcon()
-            icon.addFile(str(self.rm.get_path("icon")))
-            app.setWindowIcon(icon)
+        self.app.setApplicationName("tagstudio")
+        self.app.setApplicationDisplayName("TagStudio")
+        if platform.system() != "Darwin":
+            fallback_icon = QIcon()
+            fallback_icon.addFile(str(self.rm.get_path("icon")))
+            self.app.setWindowIcon(QIcon.fromTheme("tagstudio", fallback_icon))
+
+            if platform.system() != "Windows":
+                self.app.setDesktopFileName("tagstudio")
 
         # Initialize the Tag Manager panel
         self.tag_manager_panel = PanelModal(
@@ -381,12 +414,13 @@ class QtDriver(DriverMixin, QObject):
 
         open_on_start_action = QAction(Translations["settings.open_library_on_start"], self)
         open_on_start_action.setCheckable(True)
-        open_on_start_action.setChecked(
-            bool(self.settings.value(SettingItems.START_LOAD_LAST, defaultValue=True, type=bool))
-        )
-        open_on_start_action.triggered.connect(
-            lambda checked: self.settings.setValue(SettingItems.START_LOAD_LAST, checked)
-        )
+        open_on_start_action.setChecked(self.settings.open_last_loaded_on_startup)
+
+        def set_open_last_loaded_on_startup(checked: bool):
+            self.settings.open_last_loaded_on_startup = checked
+            self.settings.save()
+
+        open_on_start_action.triggered.connect(set_open_last_loaded_on_startup)
         file_menu.addAction(open_on_start_action)
 
         file_menu.addSeparator()
@@ -526,23 +560,19 @@ class QtDriver(DriverMixin, QObject):
         edit_menu.addAction(self.color_manager_action)
 
         # View Menu ============================================================
-        show_libs_list_action = QAction(Translations["settings.show_recent_libraries"], menu_bar)
-        show_libs_list_action.setCheckable(True)
-        show_libs_list_action.setChecked(
-            bool(self.settings.value(SettingItems.WINDOW_SHOW_LIBS, defaultValue=True, type=bool))
-        )
+        # show_libs_list_action = QAction(Translations["settings.show_recent_libraries"], menu_bar)
+        # show_libs_list_action.setCheckable(True)
+        # show_libs_list_action.setChecked(self.settings.show_library_list)
+
+        def on_show_filenames_action(checked: bool):
+            self.settings.show_filenames_in_grid = checked
+            self.settings.save()
+            self.show_grid_filenames(checked)
 
         show_filenames_action = QAction(Translations["settings.show_filenames_in_grid"], menu_bar)
         show_filenames_action.setCheckable(True)
-        show_filenames_action.setChecked(
-            bool(self.settings.value(SettingItems.SHOW_FILENAMES, defaultValue=True, type=bool))
-        )
-        show_filenames_action.triggered.connect(
-            lambda checked: (
-                self.settings.setValue(SettingItems.SHOW_FILENAMES, checked),
-                self.show_grid_filenames(checked),
-            )
-        )
+        show_filenames_action.setChecked(self.settings.show_filenames_in_grid)
+        show_filenames_action.triggered.connect(on_show_filenames_action)
         view_menu.addAction(show_filenames_action)
 
         # Tools Menu ===========================================================
@@ -609,7 +639,7 @@ class QtDriver(DriverMixin, QObject):
         # Help Menu ============================================================
         def create_about_modal():
             if not hasattr(self, "about_modal"):
-                self.about_modal = AboutModal(self.config_path)
+                self.about_modal = AboutModal(self.global_settings_path)
             self.about_modal.show()
 
         self.about_action = QAction(Translations["menu.help.about"], menu_bar)
@@ -655,26 +685,24 @@ class QtDriver(DriverMixin, QObject):
         ]
         self.item_thumbs: list[ItemThumb] = []
         self.thumb_renderers: list[ThumbRenderer] = []
-        self.filter = FilterState.show_all()
+        self.filter = FilterState.show_all(page_size=self.settings.page_size)
         self.init_library_window()
         self.migration_modal: JsonMigrationModal = None
 
         path_result = self.evaluate_path(str(self.args.open).lstrip().rstrip())
         if path_result.success and path_result.library_path:
             self.open_library(path_result.library_path)
-        elif self.settings.value(SettingItems.START_LOAD_LAST):
+        elif self.settings.open_last_loaded_on_startup:
             # evaluate_path() with argument 'None' returns a LibraryStatus for the last library
             path_result = self.evaluate_path(None)
             if path_result.success and path_result.library_path:
                 self.open_library(path_result.library_path)
 
-        # check ffmpeg and show warning if not
-        # NOTE: Does this need to use self?
-        self.ffmpeg_checker = FfmpegChecker()
-        if not self.ffmpeg_checker.installed():
-            self.ffmpeg_checker.show_warning()
+        # Check if FFmpeg or FFprobe are missing and show warning if so
+        if not which(FFMPEG_CMD) or not which(FFPROBE_CMD):
+            FfmpegChecker().show()
 
-        app.exec()
+        self.app.exec()
         self.shutdown()
 
     def show_error_message(self, error_name: str, error_desc: str | None = None):
@@ -704,7 +732,9 @@ class QtDriver(DriverMixin, QObject):
         def _filter_items():
             try:
                 self.filter_items(
-                    FilterState.from_search_query(self.main_window.searchField.text())
+                    FilterState.from_search_query(
+                        self.main_window.searchField.text(), page_size=self.settings.page_size
+                    )
                     .with_sorting_mode(self.sorting_mode)
                     .with_sorting_direction(self.sorting_direction)
                 )
@@ -818,15 +848,15 @@ class QtDriver(DriverMixin, QObject):
         self.main_window.statusbar.showMessage(Translations["status.library_closing"])
         start_time = time.time()
 
-        self.settings.setValue(SettingItems.LAST_LIBRARY, str(self.lib.library_dir))
-        self.settings.sync()
+        self.cached_values.setValue(SettingItems.LAST_LIBRARY, str(self.lib.library_dir))
+        self.cached_values.sync()
 
         # Reset library state
         self.preview_panel.update_widgets()
         self.main_window.searchField.setText("")
         scrollbar: QScrollArea = self.main_window.scrollArea
         scrollbar.verticalScrollBar().setValue(0)
-        self.filter = FilterState.show_all()
+        self.filter = FilterState.show_all(page_size=self.settings.page_size)
 
         self.lib.close()
 
@@ -917,7 +947,7 @@ class QtDriver(DriverMixin, QObject):
         """Set the selection to all visible items."""
         self.selected.clear()
         for item in self.item_thumbs:
-            if item.mode and item.item_id not in self.selected:
+            if item.mode and item.item_id not in self.selected and not item.isHidden():
                 self.selected.append(item.item_id)
                 item.thumb_button.set_selected(True)
 
@@ -1292,30 +1322,33 @@ class QtDriver(DriverMixin, QObject):
         self.frame_content[grid_idx] = None
         self.item_thumbs[grid_idx].hide()
 
+    def _update_thumb_count(self):
+        missing_count = max(0, self.filter.page_size - len(self.item_thumbs))
+        layout = self.flow_container.layout()
+        for _ in range(missing_count):
+            item_thumb = ItemThumb(
+                None,
+                self.lib,
+                self,
+                (self.thumb_size, self.thumb_size),
+                self.settings.show_filenames_in_grid,
+            )
+
+            layout.addWidget(item_thumb)
+            self.item_thumbs.append(item_thumb)
+
     def _init_thumb_grid(self):
         layout = FlowLayout()
         layout.enable_grid_optimizations(value=True)
         layout.setSpacing(min(self.thumb_size // 10, 12))
         layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
-        # TODO - init after library is loaded, it can have different page_size
-        for _ in range(self.filter.page_size):
-            item_thumb = ItemThumb(
-                None,
-                self.lib,
-                self,
-                (self.thumb_size, self.thumb_size),
-                bool(
-                    self.settings.value(SettingItems.SHOW_FILENAMES, defaultValue=True, type=bool)
-                ),
-            )
-
-            layout.addWidget(item_thumb)
-            self.item_thumbs.append(item_thumb)
-
         self.flow_container: QWidget = QWidget()
         self.flow_container.setObjectName("flowContainer")
         self.flow_container.setLayout(layout)
+
+        self._update_thumb_count()
+
         sa: QScrollArea = self.main_window.scrollArea
         sa.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         sa.setWidgetResizable(True)
@@ -1530,6 +1563,7 @@ class QtDriver(DriverMixin, QObject):
 
     def update_thumbs(self):
         """Update search thumbnails."""
+        self._update_thumb_count()
         # start_time = time.time()
         # logger.info(f'Current Page: {self.cur_page_idx}, Stack Length:{len(self.nav_stack)}')
         with self.thumb_job_queue.mutex:
@@ -1713,22 +1747,22 @@ class QtDriver(DriverMixin, QObject):
         )
 
     def remove_recent_library(self, item_key: str):
-        self.settings.beginGroup(SettingItems.LIBS_LIST)
-        self.settings.remove(item_key)
-        self.settings.endGroup()
-        self.settings.sync()
+        self.cached_values.beginGroup(SettingItems.LIBS_LIST)
+        self.cached_values.remove(item_key)
+        self.cached_values.endGroup()
+        self.cached_values.sync()
 
     def update_libs_list(self, path: Path | str):
         """Add library to list in SettingItems.LIBS_LIST."""
         item_limit: int = 5
         path = Path(path)
 
-        self.settings.beginGroup(SettingItems.LIBS_LIST)
+        self.cached_values.beginGroup(SettingItems.LIBS_LIST)
 
         all_libs = {str(time.time()): str(path)}
 
-        for item_key in self.settings.allKeys():
-            item_path = str(self.settings.value(item_key, type=str))
+        for item_key in self.cached_values.allKeys():
+            item_path = str(self.cached_values.value(item_key, type=str))
             if Path(item_path) != path:
                 all_libs[item_key] = item_path
 
@@ -1736,13 +1770,13 @@ class QtDriver(DriverMixin, QObject):
         all_libs_list = sorted(all_libs.items(), key=lambda item: item[0], reverse=True)
 
         # remove previously saved items
-        self.settings.remove("")
+        self.cached_values.remove("")
 
         for item_key, item_value in all_libs_list[:item_limit]:
-            self.settings.setValue(item_key, item_value)
+            self.cached_values.setValue(item_key, item_value)
 
-        self.settings.endGroup()
-        self.settings.sync()
+        self.cached_values.endGroup()
+        self.cached_values.sync()
         self.update_recent_lib_menu()
 
     def update_recent_lib_menu(self):
@@ -1750,7 +1784,7 @@ class QtDriver(DriverMixin, QObject):
         actions: list[QAction] = []
         lib_items: dict[str, tuple[str, str]] = {}
 
-        settings = self.settings
+        settings = self.cached_values
         settings.beginGroup(SettingItems.LIBS_LIST)
         for item_tstamp in settings.allKeys():
             val = str(settings.value(item_tstamp, type=str))
@@ -1767,7 +1801,10 @@ class QtDriver(DriverMixin, QObject):
         for library_key in libs_sorted:
             path = Path(library_key[1][0])
             action = QAction(self.open_recent_library_menu)
-            action.setText(str(path))
+            if self.settings.show_filepath == ShowFilepathOption.SHOW_FULL_PATHS:
+                action.setText(str(path))
+            else:
+                action.setText(str(path.name))
             action.triggered.connect(lambda checked=False, p=path: self.open_library(p))
             actions.append(action)
 
@@ -1795,34 +1832,22 @@ class QtDriver(DriverMixin, QObject):
 
     def clear_recent_libs(self):
         """Clear the list of recent libraries from the settings file."""
-        settings = self.settings
+        settings = self.cached_values
         settings.beginGroup(SettingItems.LIBS_LIST)
-        self.settings.remove("")
-        self.settings.endGroup()
-        self.settings.sync()
+        self.cached_values.remove("")
+        self.cached_values.endGroup()
+        self.cached_values.sync()
         self.update_recent_lib_menu()
 
     def open_settings_modal(self):
-        # TODO: Implement a proper settings panel, and don't re-create it each time it's opened.
-        settings_panel = SettingsPanel(self)
-        modal = PanelModal(
-            widget=settings_panel,
-            done_callback=lambda: self.update_language_settings(settings_panel.get_language()),
-            has_save=False,
-        )
-        modal.setTitle(Translations["settings.title"])
-        modal.setWindowTitle(Translations["settings.title"])
-        modal.show()
-
-    def update_language_settings(self, language: str):
-        Translations.change_language(language)
-
-        self.settings.setValue(SettingItems.LANGUAGE, language)
-        self.settings.sync()
+        SettingsPanel.build_modal(self).show()
 
     def open_library(self, path: Path) -> None:
         """Open a TagStudio library."""
-        message = Translations.format("splash.opening_library", library_path=str(path))
+        library_dir_display = (
+            path if self.settings.show_filepath == ShowFilepathOption.SHOW_FULL_PATHS else path.name
+        )
+        message = Translations.format("splash.opening_library", library_path=library_dir_display)
         self.main_window.landing_widget.set_status_label(message)
         self.main_window.statusbar.showMessage(message, 3)
         self.main_window.repaint()
@@ -1861,18 +1886,23 @@ class QtDriver(DriverMixin, QObject):
 
         self.init_workers()
 
-        self.filter.page_size = self.lib.prefs(LibraryPrefs.PAGE_SIZE)
+        self.filter.page_size = self.settings.page_size
 
         # TODO - make this call optional
         if self.lib.entries_count < 10000:
             self.add_new_files_callback()
+
+        if self.settings.show_filepath == ShowFilepathOption.SHOW_FULL_PATHS:
+            library_dir_display = self.lib.library_dir
+        else:
+            library_dir_display = self.lib.library_dir.name
 
         self.update_libs_list(path)
         self.main_window.setWindowTitle(
             Translations.format(
                 "app.title",
                 base_title=self.base_title,
-                library_dir=self.lib.library_dir,
+                library_dir=library_dir_display,
             )
         )
         self.main_window.setAcceptDrops(True)

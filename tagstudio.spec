@@ -23,11 +23,17 @@ elif system == "Darwin":
     icon = "src/tagstudio/resources/icon.icns"
 
 
+datafiles = [
+    ("src/tagstudio/qt/*.json", "tagstudio/qt"),
+    ("src/tagstudio/qt/*.qrc", "tagstudio/qt"),
+    ("src/tagstudio/resources", "tagstudio/resources"),
+]
+
 a = Analysis(
     ["src/tagstudio/main.py"],
-    pathex=[],
+    pathex=["src"],
     binaries=[],
-    datas=[("src/tagstudio", "tagstudio")],
+    datas=datafiles,
     hiddenimports=[],
     hookspath=[],
     hooksconfig={},

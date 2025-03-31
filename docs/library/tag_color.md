@@ -4,7 +4,7 @@ TagStudio features a variety of built-in tag colors, alongside the ability for u
 
 ## Tag Color Manager
 
-The Tag Color Manager is where you can create and manage your custom tag colors and associated namespaces. To open the Tag Color Manager, go to "File -> Manage Tag Colors" option in the menu bar.
+The Tag Color Manager is where you can create and manage your custom tag colors and associated namespaces. You can access the Tag Color Manager from the "File -> Manage Tag Colors" option in the menu bar.
 
 ![Tag Color Manager](../assets/tag_color_manager.png)
 

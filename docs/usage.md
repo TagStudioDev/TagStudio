@@ -12,7 +12,7 @@ Libraries under 10,000 files automatically scan for new or modified files when o
 
 Access the "Add Tag" search box by either clicking on the "Add Tag" button at the bottom of the right sidebar, accessing the "Add Tags to Selected" option from the File menu, or by pressing <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>T</kbd>.
 
-From here you can search for existing tags or create a new one if the one you're looking for doesn't exist. Click the "+" button next to any tags you want to the currently selected file entries. To quickly add the top result, press the <kbd>Enter</kbd>/<kbd>Return</kbd> key to add the the topmost tag and reset the tag search. Press <kbd>Enter</kbd>/<kbd>Return</kbd> once more to close the dialog box. By using this method, you can quickly add various tags in quick succession just by using the keyboard!
+From here you can search for existing tags or create a new one if the one you're looking for doesn't exist. Click the "+" button next to any tags you want to the currently selected file entries. To quickly add the top result, press the <kbd>Enter</kbd>/<kbd>Return</kbd> key to add the topmost tag and reset the tag search. Press <kbd>Enter</kbd>/<kbd>Return</kbd> once more to close the dialog box. By using this method, you can quickly add various tags in quick succession just by using the keyboard!
 
 To remove a tag from a file entry, hover over the tag in the preview panel and click on the "-" icon that appears.
 
@@ -41,7 +41,7 @@ Create a new tag by accessing the "New Tag" option from the Edit menu or by pres
 
 ### Tag Manager
 
-You can manage your library of tags from opening the "Tag Manager" panel from Edit -> "Manage Tags". From here you can create, search for, edit, and permanently delete any tags you've created in your library.
+You can manage your library of tags by opening the "Tag Manager" panel from Edit -> "Manage Tags". From here you can create, search for, edit, and permanently delete any tags you've created in your library.
 
 ## Editing Tags
 
@@ -62,3 +62,12 @@ Inevitably some of the files inside your library will be renamed, moved, or dele
 ### Saving the Library
 
 As of version 9.5, libraries are saved automatically as you go. To save a backup of your library, select File -> Save Library Backup from the menu bar.
+
+## Launch Arguments
+
+There are a handful of launch arguments you can pass to TagStudio via the command line or a desktop shortcut.
+
+| Argument               | Short | Description                                          |
+| ---------------------- | ----- | ---------------------------------------------------- |
+| `--open <path>`        | `-o`  | Path to a TagStudio Library folder to open on start. |
+| `--config-file <path>` | `-c`  | Path to the TagStudio config file to load.           |

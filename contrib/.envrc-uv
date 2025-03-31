@@ -1,0 +1,32 @@
+# shellcheck shell=bash
+
+# If you wish to use this file, symlink or copy it to `.envrc` for direnv to read it.
+# This will use a virtual environment created by uv.
+#
+# ln -s contrib/.envrc-uv .envrc
+
+watch_file .python-version pyproject.toml uv.lock
+
+venv="$(expand_path "${UV_PROJECT_ENVIRONMENT:-.venv}")"
+
+if [ ! -f "${venv}"/bin/activate ]; then
+    printf '%s\n' 'Generating virtual environment...' >&2
+    rm -rf "${venv}"
+    uv venv "${venv}"
+fi
+
+# Only watch now, or direnv will execute again if created or modified by itself.
+watch_file "${venv}"/bin/activate
+
+# shellcheck disable=SC1091
+source "${venv}"/bin/activate
+
+if [ ! -f "${venv}"/pyproject.toml ] || ! diff --brief pyproject.toml "${venv}"/pyproject.toml >/dev/null; then
+    printf '%s\n' 'Installing dependencies, pyproject.toml changed...' >&2
+    uv pip install --quiet --editable '.[dev]'
+    cp pyproject.toml "${venv}"/pyproject.toml
+fi
+
+pre-commit install
+
+# vi: ft=bash
