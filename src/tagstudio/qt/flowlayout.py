@@ -43,9 +43,9 @@ class FlowLayout(QLayout):
         return len(self._item_list)
 
     @override
-    def itemAt(self, arg__1: int) -> QLayoutItem | None:
-        if 0 <= arg__1 < len(self._item_list):
-            return self._item_list[arg__1]
+    def itemAt(self, index: int) -> QLayoutItem | None:  # pyright: ignore[reportIncompatibleMethodOverride]
+        if 0 <= index< len(self._item_list):
+            return self._item_list[index]
 
         return None
 
