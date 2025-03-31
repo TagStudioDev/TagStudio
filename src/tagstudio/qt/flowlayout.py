@@ -5,24 +5,28 @@
 
 """PySide6 port of the widgets/layouts/flowlayout example from Qt v6.x."""
 
+from typing import Literal, override
+
 from PySide6.QtCore import QMargins, QPoint, QRect, QSize, Qt
-from PySide6.QtWidgets import QLayout, QSizePolicy, QWidget
+from PySide6.QtWidgets import QLayout, QLayoutItem, QSizePolicy, QWidget
+
+IGNORE_SIZE = "ignore_size"
 
 
 class FlowWidget(QWidget):
-    def __init__(self, parent=None) -> None:
+    def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
-        self.ignore_size: bool = False
+        self.setProperty(IGNORE_SIZE, False)  # noqa: FBT003
 
 
 class FlowLayout(QLayout):
-    def __init__(self, parent=None):
+    def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
 
         if parent is not None:
             self.setContentsMargins(QMargins(0, 0, 0, 0))
 
-        self._item_list = []
+        self._item_list: list[QLayoutItem] = []
         self.grid_efficiency = False
 
     def __del__(self):
@@ -30,46 +34,56 @@ class FlowLayout(QLayout):
         while item:
             item = self.takeAt(0)
 
-    def addItem(self, item):  # noqa: N802
-        self._item_list.append(item)
+    @override
+    def addItem(self, arg__1: QLayoutItem) -> None:
+        self._item_list.append(arg__1)
 
-    def count(self):
+    @override
+    def count(self) -> int:
         return len(self._item_list)
 
-    def itemAt(self, index):  # noqa: N802
+    @override
+    def itemAt(self, index: int) -> QLayoutItem | None:  # pyright: ignore[reportIncompatibleMethodOverride]
         if 0 <= index < len(self._item_list):
             return self._item_list[index]
 
         return None
 
-    def takeAt(self, index):  # noqa: N802
+    @override
+    def takeAt(self, index: int) -> QLayoutItem | None:  # pyright: ignore[reportIncompatibleMethodOverride]
         if 0 <= index < len(self._item_list):
             return self._item_list.pop(index)
 
         return None
 
-    def expandingDirections(self):  # noqa: N802
-        return Qt.Orientation(0)
+    @override
+    def expandingDirections(self) -> Qt.Orientation:
+        return Qt.Orientation.Horizontal
 
-    def hasHeightForWidth(self):  # noqa: N802
+    @override
+    def hasHeightForWidth(self) -> Literal[True]:
         return True
 
-    def heightForWidth(self, width):  # noqa: N802
-        height = self._do_layout(QRect(0, 0, width, 0), test_only=True)
-        return height
+    @override
+    def heightForWidth(self, arg__1: int) -> int:
+        height = self._do_layout(QRect(0, 0, arg__1, 0), test_only=True)
+        return int(height)
 
-    def setGeometry(self, rect):  # noqa: N802
-        super().setGeometry(rect)
-        self._do_layout(rect, test_only=False)
+    @override
+    def setGeometry(self, arg__1: QRect) -> None:
+        super().setGeometry(arg__1)
+        self._do_layout(arg__1, test_only=False)
 
-    def enable_grid_optimizations(self, value: bool):
+    def enable_grid_optimizations(self, value: bool) -> None:
         """Enable or Disable efficiencies when all objects are equally sized."""
         self.grid_efficiency = value
 
-    def sizeHint(self):  # noqa: N802
+    @override
+    def sizeHint(self) -> QSize:
         return self.minimumSize()
 
-    def minimumSize(self):  # noqa: N802
+    @override
+    def minimumSize(self) -> QSize:
         if self.grid_efficiency:
             if self._item_list:
                 return self._item_list[0].minimumSize()
@@ -89,8 +103,8 @@ class FlowLayout(QLayout):
         y = rect.y()
         line_height = 0
         spacing = self.spacing()
-        layout_spacing_x = None
-        layout_spacing_y = None
+        layout_spacing_x = 0
+        layout_spacing_y = 0
 
         if self.grid_efficiency and self._item_list:
             item = self._item_list[0]
@@ -108,12 +122,12 @@ class FlowLayout(QLayout):
 
         for item in self._item_list:
             skip_count = 0
-            if issubclass(type(item.widget()), FlowWidget) and item.widget().ignore_size:
+            ignore_size: bool | None = item.widget().property(IGNORE_SIZE)
+
+            if ignore_size:
                 skip_count += 1
 
-            if (issubclass(type(item.widget()), FlowWidget) and not item.widget().ignore_size) or (
-                not issubclass(type(item.widget()), FlowWidget)
-            ):
+            else:
                 if not self.grid_efficiency:
                     style = item.widget().style()
                     layout_spacing_x = style.layoutSpacing(
