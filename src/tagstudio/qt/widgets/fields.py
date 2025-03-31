@@ -5,7 +5,7 @@
 
 import math
 from pathlib import Path
-from typing import Callable
+from typing import Callable, override
 from warnings import catch_warnings
 
 import structlog
@@ -54,9 +54,9 @@ class FieldContainer(QWidget):
         self.setObjectName("fieldContainer")
         self.title: str = title
         self.inline: bool = inline
-        self.copy_callback: Callable = None
-        self.edit_callback: Callable = None
-        self.remove_callback: Callable = None
+        self.copy_callback: Callable[[], None] | None = None
+        self.edit_callback: Callable[[], None] | None = None
+        self.remove_callback: Callable[[], None] | None = None
         button_size = 24
 
         self.root_layout = QVBoxLayout(self)
@@ -129,7 +129,7 @@ class FieldContainer(QWidget):
         self.set_title(title)
         self.setStyleSheet(FieldContainer.container_style)
 
-    def set_copy_callback(self, callback: Callable | None = None):
+    def set_copy_callback(self, callback: Callable[[], None] | None = None) -> None:
         with catch_warnings(record=True):
             self.copy_button.clicked.disconnect()
 
@@ -137,7 +137,7 @@ class FieldContainer(QWidget):
         if callback:
             self.copy_button.clicked.connect(callback)
 
-    def set_edit_callback(self, callback: Callable | None = None):
+    def set_edit_callback(self, callback: Callable[[], None] | None = None) -> None:
         with catch_warnings(record=True):
             self.edit_button.clicked.disconnect()
 
@@ -145,7 +145,7 @@ class FieldContainer(QWidget):
         if callback:
             self.edit_button.clicked.connect(callback)
 
-    def set_remove_callback(self, callback: Callable | None = None):
+    def set_remove_callback(self, callback: Callable[[], None] | None = None) -> None:
         with catch_warnings(record=True):
             self.remove_button.clicked.disconnect()
 
@@ -153,7 +153,7 @@ class FieldContainer(QWidget):
         if callback:
             self.remove_button.clicked.connect(callback)
 
-    def set_inner_widget(self, widget: "FieldWidget"):
+    def set_inner_widget(self, widget: "FieldWidget") -> None:
         if self.field_layout.itemAt(0):
             old: QWidget = self.field_layout.itemAt(0).widget()
             self.field_layout.removeWidget(old)
@@ -161,19 +161,20 @@ class FieldContainer(QWidget):
 
         self.field_layout.addWidget(widget)
 
-    def get_inner_widget(self):
+    def get_inner_widget(self) -> QWidget | None:
         if self.field_layout.itemAt(0):
             return self.field_layout.itemAt(0).widget()
         return None
 
-    def set_title(self, title: str):
+    def set_title(self, title: str) -> None:
         self.title = self.title = f"<h4>{title}</h4>"
         self.title_widget.setText(self.title)
 
-    def set_inline(self, inline: bool):
+    def set_inline(self, inline: bool) -> None:
         self.inline = inline
 
-    def enterEvent(self, event: QEnterEvent) -> None:  # noqa: N802
+    @override
+    def enterEvent(self, event: QEnterEvent) -> None:
         # NOTE: You could pass the hover event to the FieldWidget if needed.
         if self.copy_callback:
             self.copy_button.setHidden(False)
@@ -183,7 +184,8 @@ class FieldContainer(QWidget):
             self.remove_button.setHidden(False)
         return super().enterEvent(event)
 
-    def leaveEvent(self, event: QEvent) -> None:  # noqa: N802
+    @override
+    def leaveEvent(self, event: QEvent) -> None:
         if self.copy_callback:
             self.copy_button.setHidden(True)
         if self.edit_callback:
@@ -192,12 +194,13 @@ class FieldContainer(QWidget):
             self.remove_button.setHidden(True)
         return super().leaveEvent(event)
 
-    def resizeEvent(self, event: QResizeEvent) -> None:  # noqa: N802
+    @override
+    def resizeEvent(self, event: QResizeEvent) -> None:
         self.title_widget.setFixedWidth(int(event.size().width() // 1.5))
         return super().resizeEvent(event)
 
 
 class FieldWidget(QWidget):
-    def __init__(self, title) -> None:
+    def __init__(self, title: str) -> None:
         super().__init__()
-        self.title = title
+        self.title: str = title
