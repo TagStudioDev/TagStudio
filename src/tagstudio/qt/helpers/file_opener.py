@@ -7,10 +7,12 @@ import subprocess
 import sys
 import traceback
 from pathlib import Path
+from typing import override
 
 import structlog
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QLabel
+from PySide6.QtGui import QMouseEvent
+from PySide6.QtWidgets import QLabel, QWidget
 
 from tagstudio.qt.helpers.silent_popen import silent_Popen
 
@@ -115,15 +117,17 @@ class FileOpenerHelper:
 
 
 class FileOpenerLabel(QLabel):
-    def __init__(self, parent=None):
+    def __init__(self, parent: QWidget | None = None) -> None:
         """Initialize the FileOpenerLabel.
 
         Args:
             parent (QWidget, optional): The parent widget. Defaults to None.
         """
+        self.filepath: str | Path | None = None
+
         super().__init__(parent)
 
-    def set_file_path(self, filepath):
+    def set_file_path(self, filepath: str | Path) -> None:
         """Set the filepath to open.
 
         Args:
@@ -131,20 +135,22 @@ class FileOpenerLabel(QLabel):
         """
         self.filepath = filepath
 
-    def mousePressEvent(self, event):  # noqa: N802
+    @override
+    def mousePressEvent(self, ev: QMouseEvent) -> None:
         """Handle mouse press events.
 
         On a left click, open the file in the default file explorer.
         On a right click, show a context menu.
 
         Args:
-            event (QMouseEvent): The mouse press event.
+            ev (QMouseEvent): The mouse press event.
         """
-        super().mousePressEvent(event)
-
-        if event.button() == Qt.MouseButton.LeftButton:
+        if ev.button() == Qt.MouseButton.LeftButton:
+            assert self.filepath is not None, "File path is not set"
             opener = FileOpenerHelper(self.filepath)
             opener.open_explorer()
-        elif event.button() == Qt.MouseButton.RightButton:
+        elif ev.button() == Qt.MouseButton.RightButton:
             # Show context menu
             pass
+        else:
+            super().mousePressEvent(ev)

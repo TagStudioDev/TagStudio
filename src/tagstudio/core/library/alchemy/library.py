@@ -96,7 +96,7 @@ TAG_CHILDREN_QUERY = text("""
 -- Note for this entire query that tag_parents.child_id is the parent id and tag_parents.parent_id is the child id due to bad naming
 WITH RECURSIVE ChildTags AS (
     SELECT :tag_id AS child_id
-    UNION ALL
+    UNION
     SELECT tp.parent_id AS child_id
 	FROM tag_parents tp
     INNER JOIN ChildTags c ON tp.child_id = c.child_id

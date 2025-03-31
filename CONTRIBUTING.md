@@ -103,7 +103,7 @@ Most of the style guidelines can be checked, fixed, and enforced via Ruff. Older
     -   If you're modifying an existing function that does _not_ have docstrings, you don't _have_ to add docstrings to it... but it would be pretty cool if you did ;)
 -   Imports should be ordered alphabetically.
 -   Lists of values should be ordered using their [natural sort order](https://en.wikipedia.org/wiki/Natural_sort_order).
-    -   Some files have their methods ordered alphabetically as well (i.e. [`thumb_renderer`](https://github.com/TagStudioDev/TagStudio/blob/main/tagstudio/src/qt/widgets/thumb_renderer.py)). If you're working in a file and notice this, please try and keep to the pattern.
+    -   Some files have their methods ordered alphabetically as well (i.e. [`thumb_renderer`](https://github.com/TagStudioDev/TagStudio/blob/main/src/tagstudio/qt/widgets/thumb_renderer.py)). If you're working in a file and notice this, please try and keep to the pattern.
 -   When writing text for window titles or form titles, use "[Title Case](https://apastyle.apa.org/style-grammar-guidelines/capitalization/title-case)" capitalization. Your IDE may have a command to format this for you automatically, although some may incorrectly capitalize short prepositions. In a pinch you can use a website such as [capitalizemytitle.com](https://capitalizemytitle.com/) to check.
 -   If it wasn't mentioned above, then stick to [**PEP-8**](https://peps.python.org/pep-0008/)!
 

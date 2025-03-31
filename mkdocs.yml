@@ -9,6 +9,7 @@
 # To run the preview server:
 # mkdocs serve
 
+---
 site_name: TagStudio
 site_description: "A User-Focused Photo & File Management System"
 site_url: https://docs.tagstud.io/
@@ -25,30 +26,30 @@ extra:
   tags:
     Upcoming Feature: upcoming
 
-# by default the navigation is an alphanumerically sorted, 
-# nested list of all the Markdown files found within the /docs directory
-# where index files are always first
-# uncomment the following to configure the navigation manually:
-
-# nav:
-#   - Home:
-#     - index.md
-#     - install.md
-#     - usage.md
-#   - Library:
-#     - library/index.md
-#     - library/entry.md
-#     - library/entry_groups.md
-#     - library/field.md
-#     - library/tag.md
-#     - library/tag_categories.md
-#     - library/tag_overrides.md
-#   - Utilities:
-#     - utilities/macro.md
-#   - Updates:
-#     - updates/changelog.md
-#     - updates/roadmap.md
-#     - updates/db_migration.md
+nav:
+  - Home:
+      - index.md
+      - install.md
+      - usage.md
+      - develop.md
+  - Help:
+      - help/ffmpeg.md
+  - Library:
+      - library/index.md
+      - library/entry.md
+      - library/entry_groups.md
+      - library/field.md
+      - library/library_search.md
+      - library/tag.md
+      - library/tag_categories.md
+      - library/tag_color.md
+      - library/tag_overrides.md
+  - Utilities:
+      - utilities/macro.md
+  - Updates:
+      - updates/changelog.md
+      - updates/roadmap.md
+      - updates/schema_changes.md
 
 theme:
   name: material
@@ -59,7 +60,7 @@ theme:
         icon: material/brightness-auto
         name: Switch to light mode
     # Palette toggle for light mode
-    - media: "(prefers-color-scheme: light)" 
+    - media: "(prefers-color-scheme: light)"
       scheme: default
       primary: deep purple
       accent: deep purple
@@ -67,7 +68,7 @@ theme:
         icon: material/brightness-7
         name: Switch to dark mode
     # Palette toggle for dark mode
-    - media: "(prefers-color-scheme: dark)" 
+    - media: "(prefers-color-scheme: dark)"
       scheme: slate
       primary: deep purple
       accent: deep purple
@@ -76,7 +77,7 @@ theme:
         name: SSwitch to system preference
   logo: assets/icon.png
   favicon: assets/icon.ico
-  font: false # use system fonts
+  font: false  # use system fonts
   language: en
   features:
     - navigation.instant
@@ -84,9 +85,6 @@ theme:
     - navigation.tracking
     - navigation.expand
     - navigation.sections
-    #- navigation.tabs
-    #- content.tabs.link
-    #- navigation.top
     - search.suggest
     - content.code.annotate
     - content.code.copy
@@ -135,8 +133,8 @@ markdown_extensions:
 plugins:
   - search
   - tags
-  - social: # social embed cards
-      enabled: !ENV [CI, false] # enabled only when running in CI (eg GitHub Actions)
+  - social:  # social embed cards
+      enabled: !ENV [CI, false]  # enabled only when running in CI (eg GitHub Actions)
 
 extra_css:
   - stylesheets/extra.css

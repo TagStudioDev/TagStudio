@@ -106,14 +106,14 @@ These version milestones are rough estimations for when the previous core featur
 -   [ ] 3D Model Previews [MEDIUM]
     -   [ ] STL Previews [HIGH]
 -   [ ] Word count/line count on text thumbnails [LOW]
--   [ ] Settings Menu [HIGH]
--   [ ] Application Settings [HIGH]
-    -   [ ] Stored in system user folder/designated folder [HIGH]
+-   [x] Settings Menu [HIGH]
+-   [x] Application Settings [HIGH]
+    -   [x] Stored in system user folder/designated folder [HIGH]
 -   [ ] Library Settings [HIGH]
     -   [ ] Stored in `.TagStudio` folder [HIGH]
 -   [ ] Tagging Panel [HIGH]
 
-    Togglebale persistent main window panel or popout. Replaces the current tag manager.
+    Toggleable persistent main window panel or pop-out. Replaces the current tag manager.
 
     -   [ ] Top Tags [HIGH]
     -   [ ] Recent Tags [HIGH]

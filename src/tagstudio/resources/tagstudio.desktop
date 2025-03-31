@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=TagStudio
+GenericName=Tag Management System
+Comment=Tag, find, and organize files
+Icon=tagstudio
+Exec=tagstudio
+Terminal=false
+Categories=AudioVideo;Qt;
+Keywords=files;folders;tags;

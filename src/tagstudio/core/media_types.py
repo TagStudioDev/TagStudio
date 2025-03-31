@@ -1,6 +1,7 @@
-# Copyright (C) 2024 Travis Abendshien (CyanVoxel).
+# Copyright (C) 2025 Travis Abendshien (CyanVoxel).
 # Licensed under the GPL-3.0 License.
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
+
 
 import logging
 import mimetypes
@@ -10,7 +11,16 @@ from pathlib import Path
 
 logging.basicConfig(format="%(message)s", level=logging.INFO)
 
-FILETYPE_EQUIVALENTS = [set(["jpg", "jpeg"])]
+FILETYPE_EQUIVALENTS = [
+    set(["aif", "aiff", "aifc"]),
+    set(["html", "htm", "xhtml", "shtml", "dhtml"]),
+    set(["jfif", "jpeg_large", "jpeg", "jpg_large", "jpg"]),
+    set(["json", "jsonc", "json5"]),
+    set(["md", "markdown", "mkd", "rmd"]),
+    set(["tar.gz", "tgz"]),
+    set(["xml", "xul"]),
+    set(["yaml", "yml"]),
+]
 
 
 class MediaType(str, Enum):
@@ -22,6 +32,7 @@ class MediaType(str, Enum):
     AUDIO_MIDI = "audio_midi"
     AUDIO = "audio"
     BLENDER = "blender"
+    CODE = "code"
     DATABASE = "database"
     DISK_IMAGE = "disk_image"
     DOCUMENT = "document"
@@ -32,6 +43,7 @@ class MediaType(str, Enum):
     IMAGE_VECTOR = "image_vector"
     IMAGE = "image"
     INSTALLER = "installer"
+    IWORK = "iwork"
     MATERIAL = "material"
     MODEL = "model"
     OPEN_DOCUMENT = "open_document"
@@ -40,6 +52,7 @@ class MediaType(str, Enum):
     PLAINTEXT = "plaintext"
     PRESENTATION = "presentation"
     PROGRAM = "program"
+    SHADER = "shader"
     SHORTCUT = "shortcut"
     SOURCE_ENGINE = "source_engine"
     SPREADSHEET = "spreadsheet"
@@ -96,6 +109,7 @@ class MediaCategories:
     _AUDIO_SET: set[str] = {
         ".aac",
         ".aif",
+        ".aifc",
         ".aiff",
         ".alac",
         ".flac",
@@ -143,9 +157,71 @@ class MediaCategories:
         ".blend31",
         ".blend32",
     }
+    _CODE_SET: set[str] = {
+        ".bat",
+        ".cfg",
+        ".conf",
+        ".cpp",
+        ".cs",
+        ".csh",
+        ".css",
+        ".d",
+        ".dhtml",
+        ".fgd",
+        ".fish",
+        ".gitignore",
+        ".h",
+        ".hpp",
+        ".htm",
+        ".html",
+        ".inf",
+        ".ini",
+        ".js",
+        ".json",
+        ".json5",
+        ".jsonc",
+        ".jsx",
+        ".kv3",
+        ".lua",
+        ".meta",
+        ".nix",
+        ".nu",
+        ".nut",
+        ".php",
+        ".plist",
+        ".prefs",
+        ".ps1",
+        ".py",
+        ".pyi",
+        ".qml",
+        ".qrc",
+        ".qss",
+        ".rs",
+        ".sh",
+        ".shtml",
+        ".sip",
+        ".spec",
+        ".tcl",
+        ".timestamp",
+        ".toml",
+        ".ts",
+        ".tsx",
+        ".vcfg",
+        ".vdf",
+        ".vmt",
+        ".vqlayout",
+        ".vsc",
+        ".vsnd_template",
+        ".xhtml",
+        ".xml",
+        ".xul",
+        ".yaml",
+        ".yml",
+    }
     _DATABASE_SET: set[str] = {
         ".accdb",
         ".mdb",
+        ".pdb",
         ".sqlite",
         ".sqlite3",
     }
@@ -166,23 +242,23 @@ class MediaCategories:
         ".wps",
     }
     _EBOOK_SET: set[str] = {
+        ".azw",
+        ".azw3",
+        ".cb7",
+        ".cba",
+        ".cbr",
+        ".cbt",
+        ".cbz",
+        ".djvu",
         ".epub",
-        # ".azw",
-        # ".azw3",
-        # ".cb7",
-        # ".cba",
-        # ".cbr",
-        # ".cbt",
-        # ".cbz",
-        # ".djvu",
-        # ".fb2",
-        # ".ibook",
-        # ".inf",
-        # ".kfx",
-        # ".lit",
-        # ".mobi",
-        # ".pdb"
-        # ".prc",
+        ".fb2",
+        ".ibook",
+        ".inf",
+        ".kfx",
+        ".lit",
+        ".mobi",
+        ".pdb",
+        ".prc",
     }
     _FONT_SET: set[str] = {
         ".fon",
@@ -209,7 +285,7 @@ class MediaCategories:
         ".raw",
         ".rw2",
     }
-    _IMAGE_VECTOR_SET: set[str] = {".svg"}
+    _IMAGE_VECTOR_SET: set[str] = {".eps", ".epsf", ".epsi", ".svg", ".svgz"}
     _IMAGE_RASTER_SET: set[str] = {
         ".apng",
         ".avif",
@@ -218,6 +294,7 @@ class MediaCategories:
         ".gif",
         ".heic",
         ".heif",
+        ".icns",
         ".j2k",
         ".jfif",
         ".jp2",
@@ -235,6 +312,7 @@ class MediaCategories:
         ".webp",
     }
     _INSTALLER_SET: set[str] = {".appx", ".msi", ".msix"}
+    _IWORK_SET: set[str] = {".key", ".pages", ".numbers"}
     _MATERIAL_SET: set[str] = {".mtl"}
     _MODEL_SET: set[str] = {".3ds", ".fbx", ".obj", ".stl"}
     _OPEN_DOCUMENT_SET: set[str] = {
@@ -258,51 +336,21 @@ class MediaCategories:
         ".pkg",
         ".xapk",
     }
-    _PDF_SET: set[str] = {
-        ".pdf",
-    }
+    _PDF_SET: set[str] = {".pdf"}
     _PLAINTEXT_SET: set[str] = {
-        ".bat",
-        ".cfg",
-        ".conf",
-        ".cpp",
-        ".cs",
-        ".css",
         ".csv",
-        ".fgd",
-        ".gi",
-        ".h",
-        ".hpp",
-        ".htm",
-        ".html",
-        ".inf",
-        ".ini",
-        ".js",
-        ".json",
-        ".jsonc",
-        ".kv3",
-        ".lua",
+        ".i3u",
+        ".lang",
+        ".lock",
+        ".log",
+        ".markdown",
         ".md",
-        ".nut",
-        ".php",
-        ".plist",
-        ".prefs",
-        ".py",
-        ".pyc",
-        ".qss",
-        ".sh",
-        ".toml",
-        ".ts",
+        ".mkd",
+        ".rmd",
         ".txt",
-        ".vcfg",
-        ".vdf",
-        ".vmt",
-        ".vqlayout",
-        ".vsc",
-        ".vsnd_template",
-        ".xml",
-        ".yaml",
-        ".yml",
+        "contributing",
+        "license",
+        "readme",
     }
     _PRESENTATION_SET: set[str] = {
         ".key",
@@ -310,9 +358,16 @@ class MediaCategories:
         ".ppt",
         ".pptx",
     }
-    _PROGRAM_SET: set[str] = {".app", ".exe"}
-    _SOURCE_ENGINE_SET: set[str] = {
-        ".vtf",
+    _PROGRAM_SET: set[str] = {".app", ".bin", ".exe"}
+    _SOURCE_ENGINE_SET: set[str] = {".vtf"}
+    _SHADER_SET: set[str] = {
+        ".effect",
+        ".frag",
+        ".fsh",
+        ".glsl",
+        ".shader",
+        ".vert",
+        ".vsh",
     }
     _SHORTCUT_SET: set[str] = {".desktop", ".lnk", ".url"}
     _SPREADSHEET_SET: set[str] = {
@@ -372,6 +427,12 @@ class MediaCategories:
         extensions=_BLENDER_SET,
         is_iana=False,
         name="blender",
+    )
+    CODE_TYPES = MediaCategory(
+        media_type=MediaType.CODE,
+        extensions=_CODE_SET,
+        is_iana=False,
+        name="code",
     )
     DATABASE_TYPES = MediaCategory(
         media_type=MediaType.DATABASE,
@@ -439,6 +500,12 @@ class MediaCategories:
         is_iana=False,
         name="installer",
     )
+    IWORK_TYPES = MediaCategory(
+        media_type=MediaType.IWORK,
+        extensions=_IWORK_SET,
+        is_iana=False,
+        name="iwork",
+    )
     MATERIAL_TYPES = MediaCategory(
         media_type=MediaType.MATERIAL,
         extensions=_MATERIAL_SET,
@@ -471,7 +538,7 @@ class MediaCategories:
     )
     PLAINTEXT_TYPES = MediaCategory(
         media_type=MediaType.PLAINTEXT,
-        extensions=_PLAINTEXT_SET,
+        extensions=_PLAINTEXT_SET | _CODE_SET,
         is_iana=False,
         name="plaintext",
     )
@@ -486,6 +553,12 @@ class MediaCategories:
         extensions=_PROGRAM_SET,
         is_iana=False,
         name="program",
+    )
+    SHADER_TYPES = MediaCategory(
+        media_type=MediaType.SHADER,
+        extensions=_SHADER_SET,
+        is_iana=False,
+        name="shader",
     )
     SHORTCUT_TYPES = MediaCategory(
         media_type=MediaType.SHORTCUT,
@@ -535,6 +608,7 @@ class MediaCategories:
         IMAGE_TYPES,
         IMAGE_VECTOR_TYPES,
         INSTALLER_TYPES,
+        IWORK_TYPES,
         MATERIAL_TYPES,
         MODEL_TYPES,
         OPEN_DOCUMENT_TYPES,
@@ -543,6 +617,8 @@ class MediaCategories:
         PLAINTEXT_TYPES,
         PRESENTATION_TYPES,
         PROGRAM_TYPES,
+        CODE_TYPES,
+        SHADER_TYPES,
         SHORTCUT_TYPES,
         SOURCE_ENGINE_TYPES,
         SPREADSHEET_TYPES,

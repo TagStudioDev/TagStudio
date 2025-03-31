@@ -1,0 +1,19 @@
+# shellcheck shell=bash
+
+# If you wish to use this file, symlink or copy it to `.envrc` for direnv to read it.
+# This will use the Nix flake development shell.
+#
+# ln -s contrib/.envrc-nix .envrc
+
+if ! has nix_direnv_version || ! nix_direnv_version 3.0.6; then
+    source_url "https://raw.githubusercontent.com/nix-community/nix-direnv/3.0.6/direnvrc" "sha256-RYcUJaRMf8oF5LznDrlCXbkOQrywm0HDv1VjYGaJGdM="
+fi
+
+watch_file nix/shell.nix pyproject.toml
+
+use flake
+
+# Only watch now, or direnv will execute again if created or modified by itself.
+watch_file "${UV_PROJECT_ENVIRONMENT:-.venv}"/bin/activate
+
+# vi: ft=bash

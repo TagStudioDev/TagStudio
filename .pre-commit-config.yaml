@@ -1,7 +1,26 @@
+---
 repos:
-  - repo: https://github.com/astral-sh/ruff-pre-commit
-    # Ruff version.
-    rev: v0.6.4
+  - repo: local
     hooks:
-      - id: ruff-format
+      - id: mypy
+        name: mypy
+        entry: mypy
+        language: system
+        types_or: [python, pyi]
+        require_serial: true
+
       - id: ruff
+        name: ruff
+        entry: ruff check
+        language: system
+        types_or: [python, pyi, jupyter]
+        args: [--force-exclude]
+        require_serial: true
+
+      - id: ruff-format
+        name: ruff-format
+        entry: ruff format
+        language: system
+        types_or: [python, pyi, jupyter]
+        args: [--force-exclude, --check]
+        require_serial: true

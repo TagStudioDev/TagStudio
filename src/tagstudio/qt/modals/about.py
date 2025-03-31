@@ -21,7 +21,7 @@ from PySide6.QtWidgets import (
 from tagstudio.core.constants import VERSION, VERSION_BRANCH
 from tagstudio.core.enums import Theme
 from tagstudio.core.palette import ColorType, UiColor, get_ui_color
-from tagstudio.qt.modals.ffmpeg_checker import FfmpegChecker
+from tagstudio.qt.helpers.vendored import ffmpeg
 from tagstudio.qt.resource_manager import ResourceManager
 from tagstudio.qt.translations import Translations
 
@@ -31,14 +31,15 @@ class AboutModal(QWidget):
         super().__init__()
         self.setWindowTitle(Translations["about.title"])
 
-        self.fc: FfmpegChecker = FfmpegChecker()
         self.rm: ResourceManager = ResourceManager()
 
         # TODO: There should be a global button theme somewhere.
         self.form_content_style = (
-            f"background-color:{Theme.COLOR_BG.value
-            if QGuiApplication.styleHints().colorScheme() is Qt.ColorScheme.Dark
-            else Theme.COLOR_BG_LIGHT.value};"
+            f"background-color:{
+                Theme.COLOR_BG.value
+                if QGuiApplication.styleHints().colorScheme() is Qt.ColorScheme.Dark
+                else Theme.COLOR_BG_LIGHT.value
+            };"
             "border-radius:3px;"
             "font-weight: 500;"
             "padding: 2px;"
@@ -80,7 +81,7 @@ class AboutModal(QWidget):
         self.desc_label.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
 
         # System Info ----------------------------------------------------------
-        ff_version = self.fc.version()
+        ff_version = ffmpeg.version()
         red = get_ui_color(ColorType.PRIMARY, UiColor.RED)
         green = get_ui_color(ColorType.PRIMARY, UiColor.GREEN)
         missing = Translations["generic.missing"]
@@ -103,14 +104,14 @@ class AboutModal(QWidget):
         self.system_info_layout.setLabelAlignment(Qt.AlignmentFlag.AlignRight)
 
         # License
-        license_title = QLabel(f'{Translations["about.license"]}')
+        license_title = QLabel(f"{Translations['about.license']}")
         license_content = QLabel("GPLv3")
         license_content.setStyleSheet(self.form_content_style)
         license_content.setMaximumWidth(license_content.sizeHint().width())
         self.system_info_layout.addRow(license_title, license_content)
 
         # Config Path
-        config_path_title = QLabel(f'{Translations["about.config_path"]}')
+        config_path_title = QLabel(f"{Translations['about.config_path']}")
         config_path_content = QLabel(f"{config_path}")
         config_path_content.setStyleSheet(self.form_content_style)
         config_path_content.setWordWrap(True)
