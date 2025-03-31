@@ -1094,7 +1094,7 @@ class ThumbRenderer(QObject):
                         video.set(cv2.CAP_PROP_POS_FRAMES, i)
                     else:
                         break
-                if frame:
+                if frame is not None:
                     frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
                     im = Image.fromarray(frame)
         except (
