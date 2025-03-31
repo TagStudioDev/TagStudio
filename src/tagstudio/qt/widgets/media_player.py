@@ -118,6 +118,7 @@ class MediaPlayer(QGraphicsView):
         self.setStyleSheet("""
             QGraphicsView {
                background: transparent;
+               border: none;
             }
         """)
         self.setAlignment(Qt.AlignmentFlag.AlignCenter)
