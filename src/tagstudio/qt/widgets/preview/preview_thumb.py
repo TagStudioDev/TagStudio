@@ -12,6 +12,7 @@ import cv2
 import rawpy
 import structlog
 from PIL import Image, UnidentifiedImageError
+from PIL.Image import DecompressionBombError
 from PySide6.QtCore import QBuffer, QByteArray, QSize, Qt
 from PySide6.QtGui import QAction, QMovie, QResizeEvent
 from PySide6.QtWidgets import QHBoxLayout, QLabel, QStackedLayout, QWidget
@@ -32,6 +33,7 @@ if typing.TYPE_CHECKING:
     from tagstudio.qt.ts_qt import QtDriver
 
 logger = structlog.get_logger(__name__)
+Image.MAX_IMAGE_PIXELS = None
 
 
 class PreviewThumb(QWidget):
@@ -271,7 +273,12 @@ class PreviewThumb(QWidget):
                 image = Image.open(str(filepath))
                 stats["width"] = image.width
                 stats["height"] = image.height
-            except (UnidentifiedImageError, FileNotFoundError, NotImplementedError) as e:
+            except (
+                DecompressionBombError,
+                FileNotFoundError,
+                NotImplementedError,
+                UnidentifiedImageError,
+            ) as e:
                 logger.error("[PreviewThumb] Could not get image stats", filepath=filepath, error=e)
         elif MediaCategories.is_ext_in_category(
             ext, MediaCategories.IMAGE_VECTOR_TYPES, mime_fallback=True
@@ -331,7 +338,7 @@ class PreviewThumb(QWidget):
             movie.start()
 
             stats["duration"] = movie.frameCount() // 60
-        except UnidentifiedImageError as e:
+        except (UnidentifiedImageError, FileNotFoundError) as e:
             logger.error("[PreviewThumb] Could not load animated image", filepath=filepath, error=e)
             return self._display_fallback_image(filepath, ext)
 
