@@ -20,7 +20,7 @@ dependencies = [
     "pillow-jxl-plugin~=1.3",
     "pydantic~=2.9",
     "pydub~=0.25",
-    "PySide6~=6.8.0",
+    "PySide6==6.8.0.*",
     "rawpy~=0.24",
     "Send2Trash~=1.8",
     "SQLAlchemy~=2.0",
