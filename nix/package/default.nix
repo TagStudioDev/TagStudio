@@ -120,6 +120,17 @@ buildPythonApplication {
     "test_json_migration"
     "test_library_migrations"
 
+    "test_add_same_tag_to_selection_single"
+    "test_add_tag_to_selection_multiple"
+    "test_add_tag_to_selection_single"
+    "test_custom_tag_category"
+    "test_file_path_display"
+    "test_meta_tag_category"
+    "test_update_selection_empty"
+    "test_update_selection_empty"
+    "test_update_selection_multiple"
+    "test_update_selection_single"
+
     # INFO: This test requires modification of a configuration file.
     "test_filepath_setting"
   ];
