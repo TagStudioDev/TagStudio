@@ -60,9 +60,7 @@ def temp_dir():
 
     test_dir.mkdir(parents=True, exist_ok=True)
 
-    yield test_dir
-
-    shutil.rmtree(test_dir, ignore_errors=True)
+    return test_dir
 
 
 @pytest.fixture
