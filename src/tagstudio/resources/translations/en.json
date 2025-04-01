@@ -247,7 +247,7 @@
     "settings.dateformat.system": "System",
     "settings.dateformat.english": "English",
     "settings.dateformat.international": "International",
-    "settings.hourformat.label": "Hour Format",
+    "settings.hourformat.label": "24-Hour Time",
     "settings.title": "Settings",
     "sorting.direction.ascending": "Ascending",
     "sorting.direction.descending": "Descending",

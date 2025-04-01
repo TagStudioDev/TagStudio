@@ -3,6 +3,7 @@
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
 
+from datetime import datetime as dt
 from typing import TYPE_CHECKING
 
 from PySide6.QtCore import Qt
@@ -18,7 +19,7 @@ from PySide6.QtWidgets import (
 )
 
 from tagstudio.core.enums import ShowFilepathOption
-from tagstudio.core.global_settings import DateFormat, Theme
+from tagstudio.core.global_settings import Theme
 from tagstudio.qt.translations import DEFAULT_TRANSLATION, LANGUAGES, Translations
 from tagstudio.qt.widgets.panel import PanelModal, PanelWidget
 
@@ -37,10 +38,21 @@ THEME_MAP: dict[Theme, str] = {
     Theme.SYSTEM: Translations["settings.theme.system"],
 }
 
-DATE_FORMAT_MAP: dict[DateFormat, str] = {
-    DateFormat.SYSTEM: Translations["settings.dateformat.system"],
-    DateFormat.ENGLISH: Translations["settings.dateformat.english"],
-    DateFormat.INTERNATIONAL: Translations["settings.dateformat.international"],
+DATE_FORMAT_MAP: dict[str, str] = {
+    "%x": dt.now().strftime("%x"),
+    "%d/%m/%y": dt.now().strftime("%d/%m/%y"),
+    "%d/%m/%Y": dt.now().strftime("%d/%m/%Y"),
+    "%d.%m.%y": dt.now().strftime("%d.%m.%y"),
+    "%d.%m.%Y": dt.now().strftime("%d.%m.%Y"),
+    "%d-%m-%y": dt.now().strftime("%d-%m-%y"),
+    "%d-%m-%Y": dt.now().strftime("%d-%m-%Y"),
+    "%m/%d/%Y": dt.now().strftime("%m/%d/%Y"),
+    "%m-%d-%Y": dt.now().strftime("%m/%d/%Y"),
+    "%m/%d/%y": dt.now().strftime("%m/%d/%y"),
+    "%m-%d-%y": dt.now().strftime("%m/%d/%y"),
+    "%Y/%m/%d": dt.now().strftime("%Y/%m/%d"),
+    "%Y-%m-%d": dt.now().strftime("%Y-%m-%d"),
+    "%Y.%m.%d": dt.now().strftime("%Y.%m.%d"),
 }
 
 
@@ -157,15 +169,15 @@ class SettingsPanel(PanelWidget):
         self.dateformat_combobox = QComboBox()
         for k in DATE_FORMAT_MAP:
             self.dateformat_combobox.addItem(DATE_FORMAT_MAP[k], k)
-        dateformat: DateFormat = self.driver.settings.date_format
+        dateformat: str = self.driver.settings.date_format
         if dateformat not in DATE_FORMAT_MAP:
-            dateformat = DateFormat.DEFAULT
+            dateformat = "%x"
         self.dateformat_combobox.setCurrentIndex(list(DATE_FORMAT_MAP.keys()).index(dateformat))
         self.dateformat_combobox.currentIndexChanged.connect(self.__update_restart_label)
         form_layout.addRow(Translations["settings.dateformat.label"], self.dateformat_combobox)
 
-        # Hour Format
-        self.hourformat_checkbox = QCheckBox("24H", self)
+        # 24-Hour Format
+        self.hourformat_checkbox = QCheckBox()
         self.hourformat_checkbox.setChecked(self.driver.settings.hour_format)
         form_layout.addRow(Translations["settings.hourformat.label"], self.hourformat_checkbox)
 

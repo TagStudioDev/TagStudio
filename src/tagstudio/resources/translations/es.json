@@ -240,7 +240,7 @@
     "settings.dateformat.system": "Sistema",
     "settings.dateformat.english": "Inglés",
     "settings.dateformat.international": "Internacional",
-    "settings.hourformat.label": "Formato hora",
+    "settings.hourformat.label": "Formato 24-horas",
     "settings.title": "Ajustes",
     "sorting.direction.ascending": "Ascendiente",
     "sorting.direction.descending": "Descendiente",
