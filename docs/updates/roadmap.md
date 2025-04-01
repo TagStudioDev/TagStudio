@@ -47,7 +47,17 @@ These version milestones are rough estimations for when the previous core featur
 
 #### UI
 
--   [ ] Translations _(Any applicable)_ [MEDIUM]
+-   [x] Translations _(Any applicable)_ [MEDIUM]
+-   [x] Unified Media Player [HIGH]
+    -   [x] Auto-hiding player controls
+    -   [x] Play/Pause [HIGH]
+    -   [x] Loop [HIGH]
+    -   [x] Toggle Autoplay [MEDIUM]
+    -   [x] Volume Control [HIGH]
+    -   [x] Toggle Mute [HIGH]
+    -   [x] Timeline scrubber [HIGH]
+    -   [ ] Fullscreen [MEDIUM]
+-   [x] Configurable page size [HIGH]
 
 #### Performance
 
@@ -163,17 +173,7 @@ These version milestones are rough estimations for when the previous core featur
 -   [ ] Toggle File Extension Label [MEDIUM]
 -   [ ] Toggle Duration Label [MEDIUM]
 -   [ ] Custom Tag Badges [LOW]
--   [ ] Unified Media Player [HIGH]
-    -   [ ] Auto-hiding player controls
-    -   [x] Play/Pause [HIGH]
-    -   [x] Loop [HIGH]
-    -   [x] Toggle Autoplay [MEDIUM]
-    -   [ ] Volume Control [HIGH]
-    -   [x] Toggle Mute [HIGH]
-    -   [ ] Timeline scrubber [HIGH]
-    -   [ ] Fullscreen [MEDIUM]
 -   [ ] Library list view [HIGH]
--   [ ] Configurable page size [HIGH]
 
 ### v9.8
 
