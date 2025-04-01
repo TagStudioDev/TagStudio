@@ -31,6 +31,7 @@
   ujson,
   vtf2img,
   wrapGAppsHook,
+  wcmatch,
 
   withJXLSupport ? false,
 }:
