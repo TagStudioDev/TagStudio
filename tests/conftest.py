@@ -58,9 +58,7 @@ def temp_dir():
     temp_root = Path(tempfile.gettempdir())
     test_dir = temp_root / "ts-test-temp"
 
-    if test_dir.exists():
-        shutil.rmtree(test_dir)
-    test_dir.mkdir(parents=True)
+    test_dir.mkdir(parents=True, exist_ok=True)
 
     yield test_dir
 
