@@ -106,9 +106,14 @@ def test_file_path_display(
         ),
     ],
 )
-def test_title_update(qt_driver: QtDriver, filepath_option: ShowFilepathOption, expected_title):
+def test_title_update(
+    qt_driver: QtDriver, filepath_option: ShowFilepathOption, expected_title, temp_dir
+):
     base_title = qt_driver.base_title
-    test_path = Path("/dev/null")
+
+    test_path = temp_dir
+    test_path.mkdir(parents=True, exist_ok=True)
+
     open_status = LibraryStatus(
         success=True,
         library_path=test_path,
