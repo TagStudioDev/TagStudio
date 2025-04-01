@@ -145,11 +145,10 @@ class PreviewPanel(QWidget):
                 entry: Entry = self.lib.get_entry(self.driver.selected[0])
                 entry_id = self.driver.selected[0]
                 filepath: Path = self.lib.library_dir / entry.path
-                ext: str = filepath.suffix.lower()
 
                 if update_preview:
-                    stats: dict = self.thumb.update_preview(filepath, ext)
-                    self.file_attrs.update_stats(filepath, ext, stats)
+                    stats: dict = self.thumb.update_preview(filepath)
+                    self.file_attrs.update_stats(filepath, stats)
                 self.file_attrs.update_date_label(filepath)
                 self.fields.update_from_entry(entry_id)
                 self.update_add_tag_button(entry_id)
