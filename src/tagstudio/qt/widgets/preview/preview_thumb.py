@@ -24,7 +24,6 @@ from tagstudio.qt.helpers.file_tester import is_readable_video
 from tagstudio.qt.helpers.qbutton_wrapper import QPushButtonWrapper
 from tagstudio.qt.helpers.rounded_pixmap_style import RoundedPixmapStyle
 from tagstudio.qt.platform_strings import open_file_str, trash_term
-from tagstudio.qt.resource_manager import ResourceManager
 from tagstudio.qt.translations import Translations
 from tagstudio.qt.widgets.media_player import MediaPlayer
 from tagstudio.qt.widgets.thumb_renderer import ThumbRenderer
@@ -144,7 +143,7 @@ class PreviewThumb(QWidget):
     def set_image_ratio(self, ratio: float) -> None:
         self.image_ratio = ratio
 
-    def update_image_size(self, size: tuple[int, int], ratio: float | None = None):
+    def update_image_size(self, size: tuple[int, int], ratio: float | None = None) -> None:
         if ratio:
             self.set_image_ratio(ratio)
 
@@ -230,7 +229,7 @@ class PreviewThumb(QWidget):
                 self.gif_buffer.close()
             self.preview_gif.hide()
 
-    def _display_fallback_image(self, filepath: Path, ext: str) -> dict:
+    def _display_fallback_image(self, filepath: Path, ext: str) -> dict[str, int]:
         """Renders the given file as an image, no matter its media type.
 
         Useful for fallback scenarios.
@@ -352,8 +351,8 @@ class PreviewThumb(QWidget):
         image = Image.fromarray(frame)
         return (success, QSize(image.width, image.height))
 
-    def _update_media(self, filepath: Path, type: MediaType) -> dict:
-        stats: dict = {}
+    def _update_media(self, filepath: Path, type: MediaType) -> dict[str, int]:
+        stats: dict[str, int] = {}
 
         self.media_player.play(filepath)
 
@@ -452,13 +451,6 @@ class PreviewThumb(QWidget):
     def hide_preview(self) -> None:
         """Completely hide the file preview."""
         self.switch_preview("")
-
-    def stop_file_use(self) -> None:
-        """Stops the use of the currently previewed file. Used to release file permissions."""
-        logger.info("[PreviewThumb] Stopping file use in video playback...")
-        # This swaps the video out for a placeholder so the previous video's file
-        # is no longer in use by this object.
-        self.media_player.play(ResourceManager.get_path("placeholder_mp4"))
 
     @override
     def resizeEvent(self, event: QResizeEvent) -> None:
