@@ -65,7 +65,7 @@ def temp_dir():
 @pytest.fixture
 def library(request, temp_dir: Path):
     # when no param is passed, use the default
-    library_path = temp_dir
+    library_path = str(temp_dir)
     if hasattr(request, "param"):
         if isinstance(request.param, TemporaryDirectory):
             library_path = request.param.name
