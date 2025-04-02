@@ -4,8 +4,8 @@
 
 import io
 import time
-import typing
 from pathlib import Path
+from typing import TYPE_CHECKING, override
 from warnings import catch_warnings
 
 import cv2
@@ -29,7 +29,7 @@ from tagstudio.qt.translations import Translations
 from tagstudio.qt.widgets.media_player import MediaPlayer
 from tagstudio.qt.widgets.thumb_renderer import ThumbRenderer
 
-if typing.TYPE_CHECKING:
+if TYPE_CHECKING:
     from tagstudio.qt.ts_qt import QtDriver
 
 logger = structlog.get_logger(__name__)
@@ -39,7 +39,7 @@ Image.MAX_IMAGE_PIXELS = None
 class PreviewThumb(QWidget):
     """The Preview Panel Widget."""
 
-    def __init__(self, library: Library, driver: "QtDriver"):
+    def __init__(self, library: Library, driver: "QtDriver") -> None:
         super().__init__()
 
         self.is_connected = False
@@ -54,6 +54,7 @@ class PreviewThumb(QWidget):
         self.image_layout.setStackingMode(QStackedLayout.StackingMode.StackAll)
         self.image_layout.setContentsMargins(0, 0, 0, 0)
 
+        self.opener: FileOpenerHelper | None = None
         self.open_file_action = QAction(Translations["file.open_file"], self)
         self.open_explorer_action = QAction(open_file_str(), self)
         self.delete_action = QAction(
@@ -133,14 +134,14 @@ class PreviewThumb(QWidget):
     def _has_video_changed(self, video: bool) -> None:
         self.update_image_size((self.size().width(), self.size().height()))
 
-    def _stacked_page_setup(self, page: QWidget, widget: QWidget):
+    def _stacked_page_setup(self, page: QWidget, widget: QWidget) -> None:
         layout = QHBoxLayout(page)
         layout.addWidget(widget)
         layout.setAlignment(widget, Qt.AlignmentFlag.AlignCenter)
         layout.setContentsMargins(0, 0, 0, 0)
         page.setLayout(layout)
 
-    def set_image_ratio(self, ratio: float):
+    def set_image_ratio(self, ratio: float) -> None:
         self.image_ratio = ratio
 
     def update_image_size(self, size: tuple[int, int], ratio: float | None = None):
@@ -204,7 +205,7 @@ class PreviewThumb(QWidget):
             self.size().height(),
         )
 
-    def switch_preview(self, preview: str):
+    def switch_preview(self, preview: str) -> None:
         if preview in ["audio", "video"]:
             self.media_player.show()
             self.image_layout.setCurrentWidget(self.media_player_page)
@@ -244,9 +245,9 @@ class PreviewThumb(QWidget):
         )
         return self._update_image(filepath, ext)
 
-    def _update_image(self, filepath: Path, ext: str) -> dict:
+    def _update_image(self, filepath: Path, ext: str) -> dict[str, int]:
         """Update the static image preview from a filepath."""
-        stats: dict = {}
+        stats: dict[str, int] = {}
         self.switch_preview("image")
 
         image: Image.Image | None = None
@@ -287,9 +288,9 @@ class PreviewThumb(QWidget):
 
         return stats
 
-    def _update_animation(self, filepath: Path, ext: str) -> dict:
+    def _update_animation(self, filepath: Path, ext: str) -> dict[str, int]:
         """Update the animated image preview from a filepath."""
-        stats: dict = {}
+        stats: dict[str, int] = {}
 
         # Ensure that any movie and buffer from previous animations are cleared.
         if self.preview_gif.movie():
@@ -380,9 +381,9 @@ class PreviewThumb(QWidget):
         stats["duration"] = self.media_player.player.duration() * 1000
         return stats
 
-    def update_preview(self, filepath: Path, ext: str) -> dict:
+    def update_preview(self, filepath: Path, ext: str) -> dict[str, int]:
         """Render a single file preview."""
-        stats: dict = {}
+        stats: dict[str, int] = {}
 
         # Video
         if MediaCategories.is_ext_in_category(
@@ -448,17 +449,18 @@ class PreviewThumb(QWidget):
 
         return stats
 
-    def hide_preview(self):
+    def hide_preview(self) -> None:
         """Completely hide the file preview."""
         self.switch_preview("")
 
-    def stop_file_use(self):
+    def stop_file_use(self) -> None:
         """Stops the use of the currently previewed file. Used to release file permissions."""
         logger.info("[PreviewThumb] Stopping file use in video playback...")
         # This swaps the video out for a placeholder so the previous video's file
         # is no longer in use by this object.
         self.media_player.play(ResourceManager.get_path("placeholder_mp4"))
 
-    def resizeEvent(self, event: QResizeEvent) -> None:  # noqa: N802
+    @override
+    def resizeEvent(self, event: QResizeEvent) -> None:
         self.update_image_size((self.size().width(), self.size().height()))
         return super().resizeEvent(event)
