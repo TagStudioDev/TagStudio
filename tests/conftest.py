@@ -1,4 +1,5 @@
 import sys
+import tempfile
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest.mock import Mock, patch
@@ -50,15 +51,29 @@ def file_mediatypes_library():
     return lib
 
 
+@pytest.fixture(scope="session")
+def temp_dir():
+    """Creates a shared library path for tests, and cleans it up after the session."""
+    temp_root = Path(tempfile.gettempdir())
+    test_dir = temp_root / "ts-test-temp"
+
+    test_dir.mkdir(parents=True, exist_ok=True)
+
+    return test_dir
+
+
 @pytest.fixture
-def library(request):
+def library(request, temp_dir: Path):
     # when no param is passed, use the default
-    library_path = "/dev/null/"
+    library_path = str(temp_dir)
     if hasattr(request, "param"):
         if isinstance(request.param, TemporaryDirectory):
             library_path = request.param.name
         else:
             library_path = request.param
+
+    thumbs_path = Path(library_path) / ".TagStudio" / "thumbs"
+    thumbs_path.mkdir(parents=True, exist_ok=True)
 
     lib = Library()
     status = lib.open_library(Path(library_path), ":memory:")
