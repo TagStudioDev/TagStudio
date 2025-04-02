@@ -2,7 +2,8 @@
 # Licensed under the GPL-3.0 License.
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
-from typing import TYPE_CHECKING, Callable, override
+from collections.abc import Callable
+from typing import TYPE_CHECKING, override
 
 import structlog
 from PySide6 import QtCore, QtGui
