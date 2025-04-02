@@ -416,9 +416,9 @@ class MediaPlayer(QGraphicsView):
             self.scene().removeItem(self.video_preview)
 
     def stop(self) -> None:
-        """Clear the filepath and stop the player."""
+        """Clear the filepath, stop the player and release the source."""
         self.filepath = None
-        self.player.stop()
+        self.player.setSource(QUrl())
 
     def play(self, filepath: Path) -> None:
         """Set the source of the QMediaPlayer and play."""
