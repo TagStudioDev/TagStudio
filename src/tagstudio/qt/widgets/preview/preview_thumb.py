@@ -242,17 +242,18 @@ class PreviewThumb(QWidget):
             self.devicePixelRatio(),
             update_on_ratio_change=True,
         )
-        return self._update_image(filepath, ext)
+        return self._update_image(filepath)
 
-    def _update_image(self, filepath: Path, ext: str) -> dict:
+    def _update_image(self, filepath: Path) -> dict:
         """Update the static image preview from a filepath."""
         stats: dict = {}
+        ext = filepath.suffix.lower()
         self.switch_preview("image")
 
         image: Image.Image | None = None
 
         if MediaCategories.is_ext_in_category(
-            ext, MediaCategories.IMAGE_RAW_TYPES, mime_fallback=True
+            filepath.suffix.lower(), MediaCategories.IMAGE_RAW_TYPES, mime_fallback=True
         ):
             try:
                 with rawpy.imread(str(filepath)) as raw:
@@ -380,8 +381,9 @@ class PreviewThumb(QWidget):
         stats["duration"] = self.media_player.player.duration() * 1000
         return stats
 
-    def update_preview(self, filepath: Path, ext: str) -> dict:
+    def update_preview(self, filepath: Path) -> dict:
         """Render a single file preview."""
+        ext = filepath.suffix.lower()
         stats: dict = {}
 
         # Video
@@ -394,7 +396,7 @@ class PreviewThumb(QWidget):
         elif MediaCategories.is_ext_in_category(
             ext, MediaCategories.AUDIO_TYPES, mime_fallback=True
         ):
-            self._update_image(filepath, ext)
+            self._update_image(filepath)
             stats = self._update_media(filepath, MediaType.AUDIO)
             self.thumb_renderer.render(
                 time.time(),
@@ -413,7 +415,7 @@ class PreviewThumb(QWidget):
         # Other Types (Including Images)
         else:
             # TODO: Get thumb renderer to return this stuff to pass on
-            stats = self._update_image(filepath, ext)
+            stats = self._update_image(filepath)
 
             self.thumb_renderer.render(
                 time.time(),

@@ -130,8 +130,9 @@ class FileAttributes(QWidget):
             self.date_created_label.setHidden(True)
             self.date_modified_label.setHidden(True)
 
-    def update_stats(self, filepath: Path | None = None, ext: str = ".", stats: dict = None):
+    def update_stats(self, filepath: Path | None = None, stats: dict | None = None):
         """Render the panel widgets with the newest data from the Library."""
+        ext = filepath.suffix.lower()
         if not stats:
             stats = {}
 
@@ -186,8 +187,7 @@ class FileAttributes(QWidget):
             height_px_text = stats.get("height", "")
             duration_text = stats.get("duration", "")
             font_family = stats.get("font_family", "")
-            if ext:
-                ext_display = ext.upper()[1:]
+            ext_display = ext.upper()[1:] or filepath.stem.upper()
             if filepath:
                 try:
                     file_size = format_size(filepath.stat().st_size)
