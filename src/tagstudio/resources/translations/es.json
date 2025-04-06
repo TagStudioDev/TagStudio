@@ -241,7 +241,7 @@
     "settings.dateformat.english": "Inglés",
     "settings.dateformat.international": "Internacional",
     "settings.hourformat.label": "Formato 24-horas",
-    "settings.zeropadding.label": "Rellenar ceros",
+    "settings.zeropadding.label": "Rellenar ceros en fechas",
     "settings.title": "Ajustes",
     "sorting.direction.ascending": "Ascendiente",
     "sorting.direction.descending": "Descendiente",

@@ -248,7 +248,7 @@
     "settings.dateformat.english": "English",
     "settings.dateformat.international": "International",
     "settings.hourformat.label": "24-Hour Time",
-    "settings.zeropadding.label": "Zero Padding",
+    "settings.zeropadding.label": "Date Zero-Padding",
     "settings.title": "Settings",
     "sorting.direction.ascending": "Ascending",
     "sorting.direction.descending": "Descending",

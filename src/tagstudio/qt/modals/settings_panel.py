@@ -38,22 +38,24 @@ THEME_MAP: dict[Theme, str] = {
     Theme.SYSTEM: Translations["settings.theme.system"],
 }
 
+DEFAULT_DATE: dt = dt(2024, 8, 21)
+
 DATE_FORMAT_MAP: dict[str, str] = {
-    "%d/%m/%y": f"{dt.now().strftime("%d/%m/%y")} - (DD/MM/YY)",
-    "%d/%m/%Y": f"{dt.now().strftime("%d/%m/%Y")} - (DD/MM/YYYY)",
-    "%d.%m.%y": f"{dt.now().strftime("%d.%m.%y")} - (DD.MM.YY)",
-    "%d.%m.%Y": f"{dt.now().strftime("%d.%m.%Y")} - (DD.MM.YYYY)",
-    "%d-%m-%y": f"{dt.now().strftime("%d-%m-%y")} - (DD-MM-YY)",
-    "%d-%m-%Y": f"{dt.now().strftime("%d-%m-%Y")} - (DD-MM-YYYY)",
-    "%x": f"{dt.now().strftime("%x")} - (MM/DD/YY)",
-    "%m/%d/%Y": f"{dt.now().strftime("%m/%d/%Y")} - (MM/DD/YYYY)",
-    "%m-%d-%y": f"{dt.now().strftime("%m-%d-%y")} - (MM-DD-YY)",
-    "%m-%d-%Y": f"{dt.now().strftime("%m-%d-%Y")} - (MM-DD-YYYY)",
-    "%m.%d.%y": f"{dt.now().strftime("%m.%d.%y")} - (MM.DD.YY)",
-    "%m.%d.%Y": f"{dt.now().strftime("%m.%d.%Y")} - (MM.DD.YYYY)",
-    "%Y/%m/%d": f"{dt.now().strftime("%Y/%m/%d")} - (YYYY/MM/DD)",
-    "%Y-%m-%d": f"{dt.now().strftime("%Y-%m-%d")} - (YYYY-MM-DD)",
-    "%Y.%m.%d": f"{dt.now().strftime("%Y.%m.%d")} - (YYYY.MM.DD)",
+    "%d/%m/%y": f"{DEFAULT_DATE.strftime("%d/%m/%y")}",
+    "%d/%m/%Y": f"{DEFAULT_DATE.strftime("%d/%m/%Y")}",
+    "%d.%m.%y": f"{DEFAULT_DATE.strftime("%d.%m.%y")}",
+    "%d.%m.%Y": f"{DEFAULT_DATE.strftime("%d.%m.%Y")}",
+    "%d-%m-%y": f"{DEFAULT_DATE.strftime("%d-%m-%y")}",
+    "%d-%m-%Y": f"{DEFAULT_DATE.strftime("%d-%m-%Y")}",
+    "%x": f"{DEFAULT_DATE.strftime("%x")}",
+    "%m/%d/%Y": f"{DEFAULT_DATE.strftime("%m/%d/%Y")}",
+    "%m-%d-%y": f"{DEFAULT_DATE.strftime("%m-%d-%y")}",
+    "%m-%d-%Y": f"{DEFAULT_DATE.strftime("%m-%d-%Y")}",
+    "%m.%d.%y": f"{DEFAULT_DATE.strftime("%m.%d.%y")}",
+    "%m.%d.%Y": f"{DEFAULT_DATE.strftime("%m.%d.%Y")}",
+    "%Y/%m/%d": f"{DEFAULT_DATE.strftime("%Y/%m/%d")}",
+    "%Y-%m-%d": f"{DEFAULT_DATE.strftime("%Y-%m-%d")}",
+    "%Y.%m.%d": f"{DEFAULT_DATE.strftime("%Y.%m.%d")}",
 }
 
 
