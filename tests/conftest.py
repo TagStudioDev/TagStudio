@@ -54,12 +54,9 @@ def file_mediatypes_library():
 @pytest.fixture(scope="session")
 def temp_dir():
     """Creates a shared library path for tests, and cleans it up after the session."""
-    temp_root = Path(tempfile.gettempdir())
-    test_dir = temp_root / "ts-test-temp"
-
-    test_dir.mkdir(parents=True, exist_ok=True)
-
-    return test_dir
+    with tempfile.TemporaryDirectory() as tmp_dir_name:
+        temp_root = Path(tmp_dir_name)
+        yield temp_root
 
 
 @pytest.fixture
