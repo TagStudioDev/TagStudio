@@ -9,7 +9,7 @@ from pathlib import Path
 from warnings import catch_warnings
 
 import structlog
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, Slot
 from PySide6.QtWidgets import QHBoxLayout, QPushButton, QSplitter, QVBoxLayout, QWidget
 
 from tagstudio.core.enums import Theme
@@ -64,6 +64,7 @@ class PreviewPanel(QWidget):
         self.driver: QtDriver = driver
         self.initialized = False
         self.is_open: bool = True
+        self.is_thumb_visible: bool = True
 
         self.thumb = PreviewThumb(library, driver)
         self.file_attrs = FileAttributes(library, driver)
@@ -88,6 +89,7 @@ class PreviewPanel(QWidget):
         splitter = QSplitter()
         splitter.setOrientation(Qt.Orientation.Vertical)
         splitter.setHandleWidth(12)
+        splitter.splitterMoved.connect(self.thumb_state_sync)
 
         add_buttons_container = QWidget()
         add_buttons_layout = QHBoxLayout(add_buttons_container)
@@ -142,14 +144,15 @@ class PreviewPanel(QWidget):
 
             # One Item Selected
             elif len(self.driver.selected) == 1:
-                entry: Entry = self.lib.get_entry(self.driver.selected[0])
+                entry: Entry = self.lib.get_entry(self.driver.selected[0])  # pyright: ignore
                 entry_id = self.driver.selected[0]
-                filepath: Path = self.lib.library_dir / entry.path
+                filepath: Path = self.lib.library_dir / entry.path  # pyright: ignore
                 ext: str = filepath.suffix.lower()
 
-                if update_preview:
-                    stats: dict = self.thumb.update_preview(filepath, ext)
-                    self.file_attrs.update_stats(filepath, ext, stats)
+                if update_preview and self.is_thumb_visible:
+                    self.update_thumb_and_stats(filepath, ext)
+                else:
+                    self.file_attrs.update_stats(filepath, ext, None)
                 self.file_attrs.update_date_label(filepath)
                 self.fields.update_from_entry(entry_id)
                 self.update_add_tag_button(entry_id)
@@ -177,6 +180,29 @@ class PreviewPanel(QWidget):
             traceback.print_exc()
             return False
 
+    def update_thumb_and_stats(self, filepath: Path, ext: str):
+        stats: dict = self.thumb.update_preview(filepath, ext)
+        self.file_attrs.update_stats(filepath, ext, stats)
+
+    @Slot(int, int)
+    def thumb_state_sync(self, pos, index):
+        if index != 1:
+            return
+
+        if self.is_thumb_visible:
+            if pos == 0:
+                logger.info("[Preview Panel] Closing preview")
+                self.thumb.hide_preview()
+                self.is_thumb_visible = False
+        elif pos > 0:
+            if (filepath := self.file_attrs.file_label.filepath) and isinstance(filepath, Path):
+                logger.info("[Preview Panel] Opening preview and updating stats")
+                ext: str = filepath.suffix.lower()
+                self.update_thumb_and_stats(filepath, ext)
+            else:
+                logger.info("[Preview Panel] Opening preview")
+            self.is_thumb_visible = True
+
     def update_add_field_button(self, entry_id: int | None = None):
         with catch_warnings(record=True):
             self.add_field_modal.done.disconnect()
@@ -190,7 +216,7 @@ class PreviewPanel(QWidget):
         )
         self.add_field_button.clicked.connect(self.add_field_modal.show)
 
-    def update_add_tag_button(self, entry_id: int = None):
+    def update_add_tag_button(self, entry_id: int | None = None):
         with catch_warnings(record=True):
             self.tag_search_panel.tag_chosen.disconnect()
             self.add_tag_button.clicked.disconnect()
