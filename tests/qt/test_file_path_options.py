@@ -107,13 +107,13 @@ def test_file_path_display(
     ],
 )
 def test_title_update(
-    qt_driver: QtDriver, filepath_option: ShowFilepathOption, expected_title, temp_dir: Path
+    qt_driver: QtDriver, filepath_option: ShowFilepathOption, expected_title, library_dir: Path
 ):
     base_title = qt_driver.base_title
 
     open_status = LibraryStatus(
         success=True,
-        library_path=temp_dir,
+        library_path=library_dir,
         message="",
         msg_description="",
     )
@@ -135,7 +135,7 @@ def test_title_update(
     qt_driver.folders_to_tags_action = QAction(menu_bar)
 
     # Trigger the update
-    qt_driver.init_library(temp_dir, open_status)
+    qt_driver.init_library(library_dir, open_status)
 
     # Assert the title is updated correctly
-    qt_driver.main_window.setWindowTitle.assert_called_with(expected_title(temp_dir, base_title))
+    qt_driver.main_window.setWindowTitle.assert_called_with(expected_title(library_dir, base_title))
