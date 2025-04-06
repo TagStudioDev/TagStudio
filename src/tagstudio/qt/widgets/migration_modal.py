@@ -616,7 +616,7 @@ class JsonMigrationModal(QObject):
 
             logger.info(
                 "[Field Comparison]",
-                fields="\n".join([str(x) for x in zip(json_fields, sql_fields)]),
+                fields="\n".join([str(x) for x in zip(json_fields, sql_fields, strict=False)]),
             )
 
         self.field_parity = True
