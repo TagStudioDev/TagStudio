@@ -122,9 +122,5 @@
   "thumb_loading": {
     "path": "qt/images/thumb_loading.png",
     "mode": "pil"
-  },
-  "placeholder_mp4": {
-    "path": "qt/videos/placeholder.mp4",
-    "mode": "rb"
   }
 }

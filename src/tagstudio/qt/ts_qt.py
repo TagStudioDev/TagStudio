@@ -1045,7 +1045,7 @@ class QtDriver(DriverMixin, QObject):
                 for i, tup in enumerate(pending):
                     e_id, f = tup
                     if (origin_path == f) or (not origin_path):
-                        self.preview_panel.thumb.stop_file_use()
+                        self.preview_panel.thumb.media_player.stop()
                     if delete_file(self.lib.library_dir / f):
                         self.main_window.statusbar.showMessage(
                             Translations.format(
