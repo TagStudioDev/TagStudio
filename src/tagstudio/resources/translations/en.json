@@ -229,6 +229,7 @@
     "select.add_tag_to_selected": "Add Tag to Selected",
     "select.all": "Select All",
     "select.clear": "Clear Selection",
+    "select.inverse": "Invert Selection",
     "settings.clear_thumb_cache.title": "Clear Thumbnail Cache",
     "settings.filepath.label": "Filepath Visibility",
     "settings.filepath.option.full": "Show Full Paths",
