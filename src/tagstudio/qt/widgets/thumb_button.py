@@ -1,32 +1,35 @@
-# Copyright (C) 2024 Travis Abendshien (CyanVoxel).
+# Copyright (C) 2025 Travis Abendshien (CyanVoxel).
 # Licensed under the GPL-3.0 License.
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
 
 import sys
+from typing import override
 
 from PySide6 import QtCore
-from PySide6.QtCore import QEvent
+from PySide6.QtCore import QEvent, Signal
 from PySide6.QtGui import (
     QColor,
     QEnterEvent,
+    QMouseEvent,
     QPainter,
     QPainterPath,
     QPaintEvent,
     QPalette,
     QPen,
 )
-from PySide6.QtWidgets import QWidget
-
-from tagstudio.qt.helpers.qbutton_wrapper import QPushButtonWrapper
+from PySide6.QtWidgets import QPushButton, QWidget
 
 
-class ThumbButton(QPushButtonWrapper):
+class ThumbButton(QPushButton):
+    double_clicked = Signal()
+
     def __init__(self, parent: QWidget, thumb_size: tuple[int, int]) -> None:  # noqa: N802
         super().__init__(parent)
         self.thumb_size: tuple[int, int] = thumb_size
         self.hovered = False
         self.selected = False
+        self.double_click = False
 
         # NOTE: As of PySide 6.8.0.1, the QPalette.ColorRole.Accent role no longer works on Windows.
         # The QPalette.ColorRole.AlternateBase does for some reason, but not on macOS.
@@ -85,8 +88,9 @@ class ThumbButton(QPushButtonWrapper):
             self.hover_color.alpha(),
         )
 
-    def paintEvent(self, event: QPaintEvent) -> None:  # noqa: N802
-        super().paintEvent(event)
+    @override
+    def paintEvent(self, arg__1: QPaintEvent) -> None:  # noqa: N802
+        super().paintEvent(arg__1)
         if self.hovered or self.selected:
             painter = QPainter()
             painter.begin(self)
@@ -125,11 +129,13 @@ class ThumbButton(QPushButtonWrapper):
 
             painter.end()
 
+    @override
     def enterEvent(self, event: QEnterEvent) -> None:  # noqa: N802
         self.hovered = True
         self.repaint()
         return super().enterEvent(event)
 
+    @override
     def leaveEvent(self, event: QEvent) -> None:  # noqa: N802
         self.hovered = False
         self.repaint()
@@ -138,3 +144,18 @@ class ThumbButton(QPushButtonWrapper):
     def set_selected(self, value: bool) -> None:  # noqa: N802
         self.selected = value
         self.repaint()
+
+    @override
+    def mousePressEvent(self, e: QMouseEvent) -> None:  # noqa: N802
+        self.double_click = False
+
+    @override
+    def mouseDoubleClickEvent(self, event: QMouseEvent) -> None:  # noqa: N802
+        self.double_click = True
+
+    @override
+    def mouseReleaseEvent(self, e: QMouseEvent) -> None:  # noqa: N802
+        if self.double_click:
+            self.double_clicked.emit()
+        else:
+            self.clicked.emit()
