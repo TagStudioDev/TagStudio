@@ -18,6 +18,7 @@ def test_read_settings():
                 dark_mode = 2
                 date_format = "%x"
                 hour_format = true
+                zero_padding = true
             """)
 
         settings = GlobalSettings.read_settings(settings_path)
@@ -30,3 +31,4 @@ def test_read_settings():
         assert settings.theme == Theme.SYSTEM
         assert settings.date_format == "%x"
         assert settings.hour_format
+        assert settings.zero_padding
