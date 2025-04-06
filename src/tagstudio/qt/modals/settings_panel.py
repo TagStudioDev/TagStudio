@@ -39,20 +39,21 @@ THEME_MAP: dict[Theme, str] = {
 }
 
 DATE_FORMAT_MAP: dict[str, str] = {
-    "%x": dt.now().strftime("%x"),
-    "%d/%m/%y": dt.now().strftime("%d/%m/%y"),
-    "%d/%m/%Y": dt.now().strftime("%d/%m/%Y"),
-    "%d.%m.%y": dt.now().strftime("%d.%m.%y"),
-    "%d.%m.%Y": dt.now().strftime("%d.%m.%Y"),
-    "%d-%m-%y": dt.now().strftime("%d-%m-%y"),
-    "%d-%m-%Y": dt.now().strftime("%d-%m-%Y"),
-    "%m/%d/%Y": dt.now().strftime("%m/%d/%Y"),
-    "%m-%d-%Y": dt.now().strftime("%m/%d/%Y"),
-    "%m/%d/%y": dt.now().strftime("%m/%d/%y"),
-    "%m-%d-%y": dt.now().strftime("%m/%d/%y"),
-    "%Y/%m/%d": dt.now().strftime("%Y/%m/%d"),
-    "%Y-%m-%d": dt.now().strftime("%Y-%m-%d"),
-    "%Y.%m.%d": dt.now().strftime("%Y.%m.%d"),
+    "%d/%m/%y": f"{dt.now().strftime("%d/%m/%y")} - (DD/MM/YY)",
+    "%d/%m/%Y": f"{dt.now().strftime("%d/%m/%Y")} - (DD/MM/YYYY)",
+    "%d.%m.%y": f"{dt.now().strftime("%d.%m.%y")} - (DD.MM.YY)",
+    "%d.%m.%Y": f"{dt.now().strftime("%d.%m.%Y")} - (DD.MM.YYYY)",
+    "%d-%m-%y": f"{dt.now().strftime("%d-%m-%y")} - (DD-MM-YY)",
+    "%d-%m-%Y": f"{dt.now().strftime("%d-%m-%Y")} - (DD-MM-YYYY)",
+    "%x": f"{dt.now().strftime("%x")} - (MM/DD/YY)",
+    "%m/%d/%Y": f"{dt.now().strftime("%m/%d/%Y")} - (MM/DD/YYYY)",
+    "%m-%d-%y": f"{dt.now().strftime("%m-%d-%y")} - (MM-DD-YY)",
+    "%m-%d-%Y": f"{dt.now().strftime("%m-%d-%Y")} - (MM-DD-YYYY)",
+    "%m.%d.%y": f"{dt.now().strftime("%m.%d.%y")} - (MM.DD.YY)",
+    "%m.%d.%Y": f"{dt.now().strftime("%m.%d.%Y")} - (MM.DD.YYYY)",
+    "%Y/%m/%d": f"{dt.now().strftime("%Y/%m/%d")} - (YYYY/MM/DD)",
+    "%Y-%m-%d": f"{dt.now().strftime("%Y-%m-%d")} - (YYYY-MM-DD)",
+    "%Y.%m.%d": f"{dt.now().strftime("%Y.%m.%d")} - (YYYY.MM.DD)",
 }
 
 
@@ -181,6 +182,11 @@ class SettingsPanel(PanelWidget):
         self.hourformat_checkbox.setChecked(self.driver.settings.hour_format)
         form_layout.addRow(Translations["settings.hourformat.label"], self.hourformat_checkbox)
 
+        # Zero-padding
+        self.zeropadding_checkbox = QCheckBox()
+        self.zeropadding_checkbox.setChecked(self.driver.settings.zero_padding)
+        form_layout.addRow(Translations["settings.zeropadding.label"], self.zeropadding_checkbox)
+
     def __build_library_settings(self):
         self.library_settings_container = QWidget()
         form_layout = QFormLayout(self.library_settings_container)
@@ -203,6 +209,7 @@ class SettingsPanel(PanelWidget):
             "theme": self.theme_combobox.currentData(),
             "date_format": self.dateformat_combobox.currentData(),
             "hour_format": self.hourformat_checkbox.isChecked(),
+            "zero_padding": self.zeropadding_checkbox.isChecked(),
         }
 
     def update_settings(self, driver: "QtDriver"):
@@ -217,6 +224,7 @@ class SettingsPanel(PanelWidget):
         driver.settings.theme = settings["theme"]
         driver.settings.date_format = settings["date_format"]
         driver.settings.hour_format = settings["hour_format"]
+        driver.settings.zero_padding = settings["zero_padding"]
 
         driver.settings.save()
 

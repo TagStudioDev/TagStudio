@@ -50,6 +50,7 @@ class GlobalSettings(BaseModel):
     theme: Theme = Field(default=Theme.SYSTEM)
     date_format: str = Field(default="%x")
     hour_format: bool = Field(default=True)
+    zero_padding: bool = Field(default=True)
 
     @staticmethod
     def read_settings(path: Path = DEFAULT_GLOBAL_SETTINGS_PATH) -> "GlobalSettings":

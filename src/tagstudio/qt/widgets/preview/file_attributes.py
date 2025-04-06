@@ -250,4 +250,17 @@ class FileAttributes(QWidget):
     def get_date_with_format(self, date: dt) -> str:
         date_format = self.driver.settings.date_format
         is_24h = self.driver.settings.hour_format
-        return dt.strftime(date, f"{date_format}, {"%H:%M:%S" if is_24h else "%I:%M:%S %p"}")
+        hour_format = "%H:%M:%S" if is_24h else "%I:%M:%S %p"
+        zero_padding = self.driver.settings.zero_padding
+        zero_padding_symbol = ""
+
+        if not zero_padding:
+            zero_padding_symbol = "#" if platform.system() == "Windows" else "-"
+            date_format = date_format.replace("%d", f"%{zero_padding_symbol}d").replace(
+                "%m", f"%{zero_padding_symbol}m"
+            )
+            hour_format = hour_format.replace("%H", f"%{zero_padding_symbol}H").replace(
+                "%I", f"%{zero_padding_symbol}I"
+            )
+
+        return dt.strftime(date, f"{date_format}, {hour_format}")
