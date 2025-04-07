@@ -38,24 +38,22 @@ THEME_MAP: dict[Theme, str] = {
     Theme.SYSTEM: Translations["settings.theme.system"],
 }
 
-DEFAULT_DATE: dt = dt(2024, 8, 21)
-
 DATE_FORMAT_MAP: dict[str, str] = {
-    "%d/%m/%y": f"{DEFAULT_DATE.strftime("%d/%m/%y")}",
-    "%d/%m/%Y": f"{DEFAULT_DATE.strftime("%d/%m/%Y")}",
-    "%d.%m.%y": f"{DEFAULT_DATE.strftime("%d.%m.%y")}",
-    "%d.%m.%Y": f"{DEFAULT_DATE.strftime("%d.%m.%Y")}",
-    "%d-%m-%y": f"{DEFAULT_DATE.strftime("%d-%m-%y")}",
-    "%d-%m-%Y": f"{DEFAULT_DATE.strftime("%d-%m-%Y")}",
-    "%x": f"{DEFAULT_DATE.strftime("%x")}",
-    "%m/%d/%Y": f"{DEFAULT_DATE.strftime("%m/%d/%Y")}",
-    "%m-%d-%y": f"{DEFAULT_DATE.strftime("%m-%d-%y")}",
-    "%m-%d-%Y": f"{DEFAULT_DATE.strftime("%m-%d-%Y")}",
-    "%m.%d.%y": f"{DEFAULT_DATE.strftime("%m.%d.%y")}",
-    "%m.%d.%Y": f"{DEFAULT_DATE.strftime("%m.%d.%Y")}",
-    "%Y/%m/%d": f"{DEFAULT_DATE.strftime("%Y/%m/%d")}",
-    "%Y-%m-%d": f"{DEFAULT_DATE.strftime("%Y-%m-%d")}",
-    "%Y.%m.%d": f"{DEFAULT_DATE.strftime("%Y.%m.%d")}",
+    "%d/%m/%y": "21/08/24",
+    "%d/%m/%Y": "21/08/2024",
+    "%d.%m.%y": "21.08.24",
+    "%d.%m.%Y": "21.08.2024",
+    "%d-%m-%y": "21-08-24",
+    "%d-%m-%Y": "21-08-2024",
+    "%x": "08/21/24",
+    "%m/%d/%Y": "08/21/2024",
+    "%m-%d-%y": "08-21-24",
+    "%m-%d-%Y": "08-21-2024",
+    "%m.%d.%y": "08.21.24",
+    "%m.%d.%Y": "08.21.2024",
+    "%Y/%m/%d": "2024/08/21",
+    "%Y-%m-%d": "2024-08-21",
+    "%Y.%m.%d": "2024.08.21",
 }
 
 
