@@ -375,21 +375,20 @@ class FieldContainers(QWidget):
                 )
 
         elif field.type.type == FieldTypeEnum.DATETIME:
+            logger.info("[FieldContainers][write_container] Datetime Field", field=field)
             if not is_mixed:
+                container.set_title(field.type.name)
+                container.set_inline(False)
                 try:
-                    container.set_title(field.type.name)
-                    container.set_inline(False)
-                    # TODO: Localize this and/or add preferences.
-                    date = dt.strptime(field.value, "%Y-%m-%d %H:%M:%S")
                     title = f"{field.type.name} (Date)"
-                    inner_widget = TextWidget(title, date.strftime("%D - %r"))
-                    container.set_inner_widget(inner_widget)
-                except Exception:
-                    container.set_title(field.type.name)
-                    container.set_inline(False)
+                    # TODO: Localize this and/or add preferences.
+                    text = dt.strptime(field.value, "%Y-%m-%d %H:%M:%S").strftime("%D - %r")
+                except ValueError:
                     title = f"{field.type.name} (Date) (Unknown Format)"
-                    inner_widget = TextWidget(title, str(field.value))
-                    container.set_inner_widget(inner_widget)
+                    text = str(field.value)
+
+                inner_widget = TextWidget(title, text)
+                container.set_inner_widget(inner_widget)
 
                 container.set_edit_callback()
                 container.set_remove_callback(
