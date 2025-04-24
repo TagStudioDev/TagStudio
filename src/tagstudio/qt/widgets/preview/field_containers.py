@@ -393,7 +393,7 @@ class FieldContainers(QWidget):
                 try:
                     title = f"{field.type.name} (Date)"
                     # TODO: Localize this and/or add preferences.
-                    text = dt.strptime(field.value, "%Y-%m-%d %H:%M:%S").strftime("%D - %r")
+                    text = dt.strptime(field.value or "", "%Y-%m-%d %H:%M:%S").strftime("%D - %r")
                 except ValueError:
                     title = f"{field.type.name} (Date) (Unknown Format)"
                     text = str(field.value)
@@ -401,7 +401,19 @@ class FieldContainers(QWidget):
                 inner_widget = TextWidget(title, text)
                 container.set_inner_widget(inner_widget)
 
-                container.set_edit_callback()
+                modal = PanelModal(  # TODO Replace with proper date picker including timezone etc.
+                    EditTextLine(field.value),
+                    title=f"Edit {field.type.name} in 'YYYY-MM-DD HH:MM:SS' format",
+                    window_title=f"Edit {field.type.name}",
+                    save_callback=(
+                        lambda content: (
+                            self.update_field(field, content),  # type: ignore
+                            self.update_from_entry(self.cached_entries[0].id),
+                        )
+                    ),
+                )
+
+                container.set_edit_callback(modal.show)
                 container.set_remove_callback(
                     lambda: self.remove_message_box(
                         prompt=self.remove_field_prompt(field.type.name),
