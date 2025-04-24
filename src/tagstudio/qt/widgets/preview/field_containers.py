@@ -337,7 +337,7 @@ class FieldContainers(QWidget):
                 )
                 if "pytest" in sys.modules:
                     # for better testability
-                    container.modal = modal  # type: ignore
+                    container.modal = modal  # pyright: ignore[reportAttributeAccessIssue]
 
                 container.set_edit_callback(modal.show)
                 container.set_remove_callback(
