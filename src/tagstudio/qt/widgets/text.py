@@ -3,15 +3,13 @@
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
 
+import re
+
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QHBoxLayout, QLabel
 
-import re
-import structlog
-
 from tagstudio.qt.widgets.fields import FieldWidget
 
-logger = structlog.get_logger(__name__)
 
 class TextWidget(FieldWidget):
     def __init__(self, title, text: str) -> None:
@@ -43,5 +41,5 @@ def linkify(text: str):
         url_pattern,
         lambda url: f'<a href="{url.group(0)}">{url.group(0)}</a>',
         text,
-        re.IGNORECASE
+        flags=re.IGNORECASE
     )
