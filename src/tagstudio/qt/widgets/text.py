@@ -18,8 +18,6 @@ class TextWidget(FieldWidget):
         self.base_layout = QHBoxLayout()
         self.base_layout.setContentsMargins(0, 0, 0, 0)
         self.setLayout(self.base_layout)
-        
-		# Label
         self.text_label = QLabel()
         self.text_label.setStyleSheet("font-size: 12px")
         self.text_label.setWordWrap(True)
