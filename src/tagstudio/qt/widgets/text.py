@@ -6,8 +6,12 @@
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QHBoxLayout, QLabel
 
+import re
+import structlog
+
 from tagstudio.qt.widgets.fields import FieldWidget
 
+logger = structlog.get_logger(__name__)
 
 class TextWidget(FieldWidget):
     def __init__(self, title, text: str) -> None:
@@ -16,12 +20,28 @@ class TextWidget(FieldWidget):
         self.base_layout = QHBoxLayout()
         self.base_layout.setContentsMargins(0, 0, 0, 0)
         self.setLayout(self.base_layout)
+        
+		# Label
         self.text_label = QLabel()
         self.text_label.setStyleSheet("font-size: 12px")
         self.text_label.setWordWrap(True)
-        self.text_label.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
+        self.text_label.setTextFormat(Qt.TextFormat.RichText)
+        self.text_label.setOpenExternalLinks(True)
+        self.text_label.setTextInteractionFlags(Qt.TextInteractionFlag.TextBrowserInteraction)
         self.base_layout.addWidget(self.text_label)
         self.set_text(text)
 
     def set_text(self, text: str):
+        text = linkify(text)
         self.text_label.setText(text)
+
+# A more complete regex should be used
+# This one is fairly basic and limited, but works
+def linkify(text: str):
+    url_pattern = "(https?://[^\s]+)"
+    return re.sub(
+        url_pattern,
+        lambda url: f'<a href="{url.group(0)}">{url.group(0)}</a>',
+        text,
+        re.IGNORECASE
+    )
