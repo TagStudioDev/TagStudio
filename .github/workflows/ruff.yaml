@@ -27,5 +27,5 @@ jobs:
       - name: Execute Ruff check
         uses: astral-sh/ruff-action@v3
         with:
-          version: 0.11.0
+          version: 0.11.8
           args: check
