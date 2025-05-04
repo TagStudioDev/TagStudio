@@ -392,8 +392,9 @@ class FieldContainers(QWidget):
                 container.set_inline(False)
                 try:
                     title = f"{field.type.name} (Date)"
-                    # TODO: Localize this and/or add preferences.
-                    text = dt.strptime(field.value or "", "%Y-%m-%d %H:%M:%S").strftime("%D - %r")
+                    text = self.driver.settings.format_datetime(
+                        dt.strptime(field.value or "", "%Y-%m-%d %H:%M:%S")
+                    )
                 except ValueError:
                     title = f"{field.type.name} (Date) (Unknown Format)"
                     text = str(field.value)
