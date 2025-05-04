@@ -102,18 +102,19 @@ class FileAttributes(QWidget):
     def update_date_label(self, filepath: Path | None = None) -> None:
         """Update the "Date Created" and "Date Modified" file property labels."""
         if filepath and filepath.is_file():
-            created: dt = None
+            created: dt
             if platform.system() == "Windows" or platform.system() == "Darwin":
                 created = dt.fromtimestamp(filepath.stat().st_birthtime)  # type: ignore[attr-defined, unused-ignore]
             else:
                 created = dt.fromtimestamp(filepath.stat().st_ctime)
             modified: dt = dt.fromtimestamp(filepath.stat().st_mtime)
             self.date_created_label.setText(
-                f"<b>{Translations['file.date_created']}:</b> {self.get_date_with_format(created)}"
+                f"<b>{Translations['file.date_created']}:</b>"
+                + f" {self.driver.settings.format_datetime(created)}"
             )
             self.date_modified_label.setText(
                 f"<b>{Translations['file.date_modified']}:</b> "
-                f"{self.get_date_with_format(modified)}"
+                f"{self.driver.settings.format_datetime(modified)}"
             )
             self.date_created_label.setHidden(False)
             self.date_modified_label.setHidden(False)
@@ -130,7 +131,7 @@ class FileAttributes(QWidget):
             self.date_created_label.setHidden(True)
             self.date_modified_label.setHidden(True)
 
-    def update_stats(self, filepath: Path | None = None, ext: str = ".", stats: dict = None):
+    def update_stats(self, filepath: Path | None = None, ext: str = ".", stats: dict | None = None):
         """Render the panel widgets with the newest data from the Library."""
         if not stats:
             stats = {}
@@ -149,6 +150,7 @@ class FileAttributes(QWidget):
             if self.driver.settings.show_filepath == ShowFilepathOption.SHOW_FULL_PATHS:
                 display_path = filepath
             elif self.driver.settings.show_filepath == ShowFilepathOption.SHOW_RELATIVE_PATHS:
+                assert self.library_path is not None
                 display_path = Path(filepath).relative_to(self.library_path)
             elif self.driver.settings.show_filepath == ShowFilepathOption.SHOW_FILENAMES_ONLY:
                 display_path = Path(filepath.name)
@@ -246,21 +248,3 @@ class FileAttributes(QWidget):
         self.file_label.set_file_path("")
         self.dimensions_label.setText("")
         self.dimensions_label.setHidden(True)
-
-    def get_date_with_format(self, date: dt) -> str:
-        date_format = self.driver.settings.date_format
-        is_24h = self.driver.settings.hour_format
-        hour_format = "%H:%M:%S" if is_24h else "%I:%M:%S %p"
-        zero_padding = self.driver.settings.zero_padding
-        zero_padding_symbol = ""
-
-        if not zero_padding:
-            zero_padding_symbol = "#" if platform.system() == "Windows" else "-"
-            date_format = date_format.replace("%d", f"%{zero_padding_symbol}d").replace(
-                "%m", f"%{zero_padding_symbol}m"
-            )
-            hour_format = hour_format.replace("%H", f"%{zero_padding_symbol}H").replace(
-                "%I", f"%{zero_padding_symbol}I"
-            )
-
-        return dt.strftime(date, f"{date_format}, {hour_format}")
