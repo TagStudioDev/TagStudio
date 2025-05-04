@@ -16,7 +16,7 @@ dependencies = [
     "mutagen~=1.47",
     "numpy~=2.2",
     "opencv_python~=4.11",
-    "Pillow~=11.1",
+    "Pillow~=11.2",
     "pillow-heif~=0.22",
     "pillow-jxl-plugin~=1.3",
     "pydantic~=2.10",
@@ -25,9 +25,9 @@ dependencies = [
     "rawpy~=0.24",
     "Send2Trash~=1.8",
     "SQLAlchemy~=2.0",
-    "structlog~=25.2",
+    "structlog~=25.3",
     "toml~=0.10",
-    "typing_extensions~=4.12",
+    "typing_extensions~=4.13",
     "ujson~=5.10",
     "vtf2img~=0.1",
 ]
@@ -36,15 +36,15 @@ dependencies = [
 dev = ["tagstudio[mkdocs,mypy,pre-commit,pyinstaller,pytest,ruff]"]
 mkdocs = ["mkdocs-material==9.*"]
 mypy = ["mypy==1.15.0", "mypy-extensions==1.*", "types-ujson~=5.10"]
-pre-commit = ["pre-commit~=4.1"]
-pyinstaller = ["Pyinstaller~=6.12"]
+pre-commit = ["pre-commit~=4.2"]
+pyinstaller = ["Pyinstaller~=6.13"]
 pytest = [
     "pytest==8.3.5",
-    "pytest-cov==6.0.0",
+    "pytest-cov==6.1.1",
     "pytest-qt==4.4.0",
-    "syrupy==4.9.0",
+    "syrupy==4.9.1",
 ]
-ruff = ["ruff==0.11.0"]
+ruff = ["ruff==0.11.8"]
 
 [project.gui-scripts]
 tagstudio = "tagstudio.main:main"
