@@ -3,7 +3,6 @@
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
 
-from datetime import datetime as dt
 from typing import TYPE_CHECKING
 
 from PySide6.QtCore import Qt
