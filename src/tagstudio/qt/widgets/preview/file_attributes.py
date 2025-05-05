@@ -132,7 +132,6 @@ class FileAttributes(QWidget):
 
     def update_stats(self, filepath: Path | None = None, stats: dict | None = None):
         """Render the panel widgets with the newest data from the Library."""
-        ext = filepath.suffix.lower()
         if not stats:
             stats = {}
 
@@ -145,6 +144,7 @@ class FileAttributes(QWidget):
             self.dimensions_label.setText("")
             self.dimensions_label.setHidden(True)
         else:
+            ext = filepath.suffix.lower()
             self.library_path = self.library.library_dir
             display_path = filepath
             if self.driver.settings.show_filepath == ShowFilepathOption.SHOW_FULL_PATHS:
