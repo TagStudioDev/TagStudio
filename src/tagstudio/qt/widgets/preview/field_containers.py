@@ -315,7 +315,7 @@ class FieldContainers(QWidget):
 
             # Normalize line endings in any text content.
             if not is_mixed:
-                assert isinstance(field.value, (str, type(None)))
+                assert isinstance(field.value, str | type(None))
                 text = field.value or ""
             else:
                 text = "<i>Mixed Data</i>"
@@ -355,7 +355,7 @@ class FieldContainers(QWidget):
             container.set_inline(False)
             # Normalize line endings in any text content.
             if not is_mixed:
-                assert isinstance(field.value, (str, type(None)))
+                assert isinstance(field.value, str | type(None))
                 text = (field.value or "").replace("\r", "\n")
             else:
                 text = "<i>Mixed Data</i>"
@@ -392,8 +392,9 @@ class FieldContainers(QWidget):
                 container.set_inline(False)
                 try:
                     title = f"{field.type.name} (Date)"
-                    # TODO: Localize this and/or add preferences.
-                    text = dt.strptime(field.value or "", "%Y-%m-%d %H:%M:%S").strftime("%D - %r")
+                    text = self.driver.settings.format_datetime(
+                        dt.strptime(field.value or "", "%Y-%m-%d %H:%M:%S")
+                    )
                 except ValueError:
                     title = f"{field.type.name} (Date) (Unknown Format)"
                     text = str(field.value)
@@ -513,7 +514,7 @@ class FieldContainers(QWidget):
         """Update a field in all selected Entries, given a field object."""
         assert isinstance(
             field,
-            (TextField, DatetimeField),
+            TextField | DatetimeField,
         ), f"instance: {type(field)}"
 
         entry_ids = [e.id for e in self.cached_entries]

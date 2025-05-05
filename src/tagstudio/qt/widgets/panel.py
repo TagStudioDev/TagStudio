@@ -3,7 +3,8 @@
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
 
-from typing import Callable, override
+from collections.abc import Callable
+from typing import override
 
 import structlog
 from PySide6 import QtCore, QtGui
