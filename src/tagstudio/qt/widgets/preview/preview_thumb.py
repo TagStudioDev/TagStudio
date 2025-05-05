@@ -253,7 +253,7 @@ class PreviewThumb(QWidget):
         image: Image.Image | None = None
 
         if MediaCategories.is_ext_in_category(
-            filepath.suffix.lower(), MediaCategories.IMAGE_RAW_TYPES, mime_fallback=True
+            ext, MediaCategories.IMAGE_RAW_TYPES, mime_fallback=True
         ):
             try:
                 with rawpy.imread(str(filepath)) as raw:

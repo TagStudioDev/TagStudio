@@ -209,7 +209,7 @@ class ItemThumb(FlowWidget):
                 self.update_thumb(timestamp, image=image),
                 self.update_size(timestamp, size=size),
                 self.set_filename_text(filename),
-                self.set_extension(filename),  # type: ignore
+                self.set_extension(filename),
             )
         )
         self.thumb_button.setFlat(True)
