@@ -8,7 +8,7 @@ from typing import override
 
 import structlog
 import toml
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, PrivateAttr
 
 from tagstudio.core.enums import ShowFilepathOption
 
@@ -53,6 +53,8 @@ class GlobalSettings(BaseModel):
     hour_format: bool = Field(default=True)
     zero_padding: bool = Field(default=True)
 
+    _loaded_from: Path = PrivateAttr()
+
     @staticmethod
     def read_settings(path: Path = DEFAULT_GLOBAL_SETTINGS_PATH) -> "GlobalSettings":
         if path.exists():
@@ -62,11 +64,14 @@ class GlobalSettings(BaseModel):
                     logger.info("[Settings] Reading Global Settings File", path=path)
                     settings_data = toml.loads(filecontents)
                     settings = GlobalSettings(**settings_data)
+                    settings._loaded_from = path
                     return settings
 
         return GlobalSettings()
 
-    def save(self, path: Path = DEFAULT_GLOBAL_SETTINGS_PATH) -> None:
+    def save(self, path: Path | None = None) -> None:
+        if path is None:
+            path = self._loaded_from
         if not path.parent.exists():
             path.parent.mkdir(parents=True, exist_ok=True)
 
