@@ -141,8 +141,7 @@ class CacheManager(metaclass=Singleton):
         self.last_lib_path = self.lib.library_dir
         CacheManager.folder_dict.clear()
 
-        # NOTE: The /dev/null check is a workaround for current test assumptions.
-        if self.last_lib_path and self.last_lib_path != Path("/dev/null"):
+        if self.last_lib_path:
             # Ensure thumbnail cache path exists.
             self.cache_dir().mkdir(exist_ok=True)
             # Registers any existing folders and counts the capacity of the most recent one.
