@@ -89,7 +89,7 @@ class ThumbRenderer(QObject):
 
     rm: ResourceManager = ResourceManager()
     cache: CacheManager = CacheManager()
-    updated = Signal(float, QPixmap, QSize, Path, str)
+    updated = Signal(float, QPixmap, QSize, Path)
     updated_ratio = Signal(float)
 
     cached_img_res: int = 256  # TODO: Pull this from config
@@ -1300,7 +1300,6 @@ class ThumbRenderer(QObject):
                     math.ceil(image.size[1] / pixel_ratio),
                 ),
                 filepath,
-                filepath.suffix.lower(),
             )
         else:
             self.updated.emit(
@@ -1308,7 +1307,6 @@ class ThumbRenderer(QObject):
                 QPixmap(),
                 QSize(*base_size),
                 filepath,
-                filepath.suffix.lower(),
             )
 
     def _render(
