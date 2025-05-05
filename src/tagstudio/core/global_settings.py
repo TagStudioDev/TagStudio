@@ -75,4 +75,4 @@ class GlobalSettings(BaseModel):
             path.parent.mkdir(parents=True, exist_ok=True)
 
         with open(path, "w") as f:
-            toml.dump(dict(self), f, encoder=TomlEnumEncoder())
+            toml.dump(self.model_dump(), f, encoder=TomlEnumEncoder())
