@@ -53,7 +53,7 @@ class GlobalSettings(BaseModel):
     hour_format: bool = Field(default=True)
     zero_padding: bool = Field(default=True)
 
-    _loaded_from: Path = PrivateAttr()
+    _loaded_from: Path = PrivateAttr(default=DEFAULT_GLOBAL_SETTINGS_PATH)
 
     @staticmethod
     def read_settings(path: Path = DEFAULT_GLOBAL_SETTINGS_PATH) -> "GlobalSettings":
