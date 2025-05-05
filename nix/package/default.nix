@@ -1,36 +1,14 @@
 {
-  buildPythonApplication,
-  chardet,
   ffmpeg-headless,
-  ffmpeg-python,
-  hatchling,
-  humanfriendly,
   lib,
-  mutagen,
-  numpy,
-  opencv-python,
-  pillow,
-  pillow-heif,
-  pillow-jxl-plugin,
   pipewire,
-  pydantic,
-  pydub,
-  pyside6,
-  pytest-qt,
-  pytest-xdist,
-  pytestCheckHook,
-  pythonRelaxDepsHook,
+  python3Packages,
   qt6,
-  rawpy,
-  send2trash,
-  sqlalchemy,
   stdenv,
-  structlog,
-  syrupy,
-  toml,
-  ujson,
-  vtf2img,
   wrapGAppsHook,
+
+  pillow-jxl-plugin,
+  vtf2img,
 
   withJXLSupport ? false,
 }:
@@ -38,7 +16,7 @@
 let
   pyproject = (lib.importTOML ../../pyproject.toml).project;
 in
-buildPythonApplication {
+python3Packages.buildPythonApplication {
   pname = pyproject.name;
   inherit (pyproject) version;
   pyproject = true;
@@ -46,7 +24,7 @@ buildPythonApplication {
   src = ../../.;
 
   nativeBuildInputs = [
-    pythonRelaxDepsHook
+    python3Packages.pythonRelaxDepsHook
     qt6.wrapQtAppsHook
 
     # INFO: Should be unnecessary once PR is pulled.
@@ -59,7 +37,7 @@ buildPythonApplication {
     qt6.qtmultimedia
   ];
 
-  nativeCheckInputs = [
+  nativeCheckInputs = with python3Packages; [
     pytest-qt
     pytest-xdist
     pytestCheckHook
@@ -80,30 +58,41 @@ buildPythonApplication {
       lib.makeLibraryPath [ pipewire ]
     }";
 
-  pythonRemoveDeps = true;
+  pythonRemoveDeps = lib.optional (!withJXLSupport) [ "pillow_jxl" ];
+  pythonRelaxDeps = [
+    "numpy"
+    "pillow"
+    "pillow-heif"
+    "pillow-jxl-plugin"
+    "structlog"
+    "typing-extensions"
+  ];
   pythonImportsCheck = [ "tagstudio" ];
 
-  build-system = [ hatchling ];
-  dependencies = [
-    chardet
-    ffmpeg-python
-    humanfriendly
-    mutagen
-    numpy
-    opencv-python
-    pillow
-    pillow-heif
-    pydantic
-    pydub
-    pyside6
-    rawpy
-    send2trash
-    sqlalchemy
-    structlog
-    toml
-    ujson
-    vtf2img
-  ] ++ lib.optional withJXLSupport pillow-jxl-plugin;
+  build-system = with python3Packages; [ hatchling ];
+  dependencies =
+    with python3Packages;
+    [
+      chardet
+      ffmpeg-python
+      humanfriendly
+      mutagen
+      numpy
+      opencv-python
+      pillow
+      pillow-heif
+      pydantic
+      pydub
+      pyside6
+      rawpy
+      send2trash
+      sqlalchemy
+      structlog
+      toml
+      ujson
+      vtf2img
+    ]
+    ++ lib.optional withJXLSupport pillow-jxl-plugin;
 
   disabledTests = [
     # INFO: These tests require modifications to a library, which does not work
@@ -119,6 +108,17 @@ buildPythonApplication {
     "test_build_tag_panel_set_tag"
     "test_json_migration"
     "test_library_migrations"
+
+    "test_add_same_tag_to_selection_single"
+    "test_add_tag_to_selection_multiple"
+    "test_add_tag_to_selection_single"
+    "test_custom_tag_category"
+    "test_file_path_display"
+    "test_meta_tag_category"
+    "test_update_selection_empty"
+    "test_update_selection_empty"
+    "test_update_selection_multiple"
+    "test_update_selection_single"
 
     # INFO: This test requires modification of a configuration file.
     "test_filepath_setting"

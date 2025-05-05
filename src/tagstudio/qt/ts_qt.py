@@ -473,6 +473,21 @@ class QtDriver(DriverMixin, QObject):
         self.select_all_action.setEnabled(False)
         edit_menu.addAction(self.select_all_action)
 
+        self.select_inverse_action = QAction(Translations["select.inverse"], menu_bar)
+        self.select_inverse_action.triggered.connect(self.select_inverse_action_callback)
+        self.select_inverse_action.setShortcut(
+            QtCore.QKeyCombination(
+                QtCore.Qt.KeyboardModifier(
+                    QtCore.Qt.KeyboardModifier.ControlModifier
+                    ^ QtCore.Qt.KeyboardModifier.ShiftModifier
+                ),
+                QtCore.Qt.Key.Key_I,
+            )
+        )
+        self.select_inverse_action.setToolTip("Ctrl+Shift+I")
+        self.select_inverse_action.setEnabled(False)
+        edit_menu.addAction(self.select_inverse_action)
+
         self.clear_select_action = QAction(Translations["select.clear"], menu_bar)
         self.clear_select_action.triggered.connect(self.clear_select_action_callback)
         self.clear_select_action.setShortcut(QtCore.Qt.Key.Key_Escape)
@@ -957,6 +972,26 @@ class QtDriver(DriverMixin, QObject):
 
         self.preview_panel.update_widgets(update_preview=False)
 
+    def select_inverse_action_callback(self):
+        """Invert the selection of all visible items."""
+        new_selected = []
+
+        for item in self.item_thumbs:
+            if item.mode and not item.isHidden():
+                if item.item_id in self.selected:
+                    item.thumb_button.set_selected(False)
+                else:
+                    item.thumb_button.set_selected(True)
+                    new_selected.append(item.item_id)
+
+        self.selected = new_selected
+
+        self.set_macro_menu_viability()
+        self.set_clipboard_menu_viability()
+        self.set_select_actions_visibility()
+
+        self.preview_panel.update_widgets(update_preview=False)
+
     def clear_select_action_callback(self):
         self.selected.clear()
         self.set_select_actions_visibility()
@@ -1010,7 +1045,7 @@ class QtDriver(DriverMixin, QObject):
                 for i, tup in enumerate(pending):
                     e_id, f = tup
                     if (origin_path == f) or (not origin_path):
-                        self.preview_panel.thumb.stop_file_use()
+                        self.preview_panel.thumb.media_player.stop()
                     if delete_file(self.lib.library_dir / f):
                         self.main_window.statusbar.showMessage(
                             Translations.format(
@@ -1479,8 +1514,10 @@ class QtDriver(DriverMixin, QObject):
 
         if self.frame_content:
             self.select_all_action.setEnabled(True)
+            self.select_inverse_action.setEnabled(True)
         else:
             self.select_all_action.setEnabled(False)
+            self.select_inverse_action.setEnabled(False)
 
         if self.selected:
             self.add_tag_to_selected_action.setEnabled(True)

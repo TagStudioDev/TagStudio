@@ -41,7 +41,7 @@ To install the required dependencies, you can use a dependency manager such as [
 If using [uv](https://docs.astral.sh/uv), you can install the dependencies for TagStudio with the following command:
 
 ```sh
-uv pip install -e .[dev]
+uv pip install -e ".[dev]"
 ```
 
 A reference `.envrc` is provided for use with [direnv](#direnv), see [`contrib/.envrc-uv`](https://github.com/TagStudioDev/TagStudio/blob/main/contrib/.envrc-uv).
@@ -92,7 +92,7 @@ If you choose to manually set up a virtual environment and install dependencies 
 3.  Use the following PIP command to create an editable installation and install the required development dependencies:
 
     ```sh
-    pip install -e .[dev]
+    pip install -e ".[dev]"
     ```
 
 ## Nix(OS)

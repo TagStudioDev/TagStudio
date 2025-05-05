@@ -2,6 +2,7 @@
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
 import platform
+from datetime import datetime
 from enum import Enum
 from pathlib import Path
 from typing import override
@@ -50,6 +51,10 @@ class GlobalSettings(BaseModel):
     show_filepath: ShowFilepathOption = Field(default=ShowFilepathOption.DEFAULT)
     theme: Theme = Field(default=Theme.SYSTEM)
 
+    date_format: str = Field(default="%x")
+    hour_format: bool = Field(default=True)
+    zero_padding: bool = Field(default=True)
+
     @staticmethod
     def read_settings(path: Path = DEFAULT_GLOBAL_SETTINGS_PATH) -> "GlobalSettings":
         if path.exists():
@@ -69,3 +74,21 @@ class GlobalSettings(BaseModel):
 
         with open(path, "w") as f:
             toml.dump(dict(self), f, encoder=TomlEnumEncoder())
+
+    def format_datetime(self, dt: datetime) -> str:
+        date_format = self.date_format
+        is_24h = self.hour_format
+        hour_format = "%H:%M:%S" if is_24h else "%I:%M:%S %p"
+        zero_padding = self.zero_padding
+        zero_padding_symbol = ""
+
+        if not zero_padding:
+            zero_padding_symbol = "#" if platform.system() == "Windows" else "-"
+            date_format = date_format.replace("%d", f"%{zero_padding_symbol}d").replace(
+                "%m", f"%{zero_padding_symbol}m"
+            )
+            hour_format = hour_format.replace("%H", f"%{zero_padding_symbol}H").replace(
+                "%I", f"%{zero_padding_symbol}I"
+            )
+
+        return datetime.strftime(dt, f"{date_format}, {hour_format}")

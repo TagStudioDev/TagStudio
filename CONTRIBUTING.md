@@ -43,13 +43,13 @@ If you know what you're doing and have developed for Python projects in the past
 4.  If using a virtual environment instead of a dependency manager, install an editable version of the program and development dependencies with the following PIP command:
 
     ```
-    pip install -e .[dev]
+    pip install -e ".[dev]"
     ```
 
     Otherwise, modify the command above for use with your dependency manager of choice. For example if using uv, you may use this:
 
     ```
-    uv pip install -e .[dev]
+    uv pip install -e ".[dev]"
     ```
 
 ## Workflow Checks

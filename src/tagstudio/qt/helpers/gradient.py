@@ -49,8 +49,8 @@ def four_corner_gradient(
 
 
 def linear_gradient(
-    size=tuple[int, int],
-    colors=list[str],
+    size: tuple[int, int],
+    colors: list[str],
     interpolation: Image.Resampling = Image.Resampling.BICUBIC,
 ) -> Image.Image:
     seed: Image.Image = Image.new(mode="RGBA", size=(len(colors), 1), color="#000000")

@@ -6,11 +6,11 @@
 from PIL import Image, ImageDraw, ImageFont
 
 
-def wrap_line(  # type: ignore
+def wrap_line(
     text: str,
     font: ImageFont.ImageFont,
     width: int = 256,
-    draw: ImageDraw.ImageDraw = None,
+    draw: ImageDraw.ImageDraw | None = None,
 ) -> int:
     """Take in a single text line and return the index it should be broken up at.
 
@@ -27,15 +27,14 @@ def wrap_line(  # type: ignore
         ):
             if draw.textlength(text[:i], font=font) < width:
                 return i
-    else:
-        return -1
+    return -1
 
 
 def wrap_full_text(
     text: str,
     font: ImageFont.ImageFont,
     width: int = 256,
-    draw: ImageDraw.ImageDraw = None,
+    draw: ImageDraw.ImageDraw | None = None,
 ) -> str:
     """Break up a string to fit the canvas given a kerning value, font size, etc."""
     lines = []
