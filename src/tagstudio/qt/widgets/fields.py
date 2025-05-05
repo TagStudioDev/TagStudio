@@ -4,8 +4,9 @@
 
 
 import math
+from collections.abc import Callable
 from pathlib import Path
-from typing import Callable, override
+from typing import override
 from warnings import catch_warnings
 
 import structlog
