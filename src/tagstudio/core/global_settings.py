@@ -55,6 +55,8 @@ class GlobalSettings(BaseModel):
     hour_format: bool = Field(default=True)
     zero_padding: bool = Field(default=True)
 
+    loaded_from: Path = Field(default=DEFAULT_GLOBAL_SETTINGS_PATH, exclude=True)
+
     @staticmethod
     def read_settings(path: Path = DEFAULT_GLOBAL_SETTINGS_PATH) -> "GlobalSettings":
         if path.exists():
@@ -63,17 +65,19 @@ class GlobalSettings(BaseModel):
                 if len(filecontents.strip()) != 0:
                     logger.info("[Settings] Reading Global Settings File", path=path)
                     settings_data = toml.loads(filecontents)
-                    settings = GlobalSettings(**settings_data)
+                    settings = GlobalSettings(**settings_data, loaded_from=path)
                     return settings
 
-        return GlobalSettings()
+        return GlobalSettings(loaded_from=path)
 
-    def save(self, path: Path = DEFAULT_GLOBAL_SETTINGS_PATH) -> None:
+    def save(self, path: Path | None = None) -> None:
+        if path is None:
+            path = self.loaded_from
         if not path.parent.exists():
             path.parent.mkdir(parents=True, exist_ok=True)
 
         with open(path, "w") as f:
-            toml.dump(dict(self), f, encoder=TomlEnumEncoder())
+            toml.dump(self.model_dump(), f, encoder=TomlEnumEncoder())
 
     def format_datetime(self, dt: datetime) -> str:
         date_format = self.date_format
