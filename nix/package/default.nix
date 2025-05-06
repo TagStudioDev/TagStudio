@@ -8,6 +8,7 @@
   wrapGAppsHook,
 
   pillow-jxl-plugin,
+  pyside6,
   vtf2img,
 
   withJXLSupport ? false,
