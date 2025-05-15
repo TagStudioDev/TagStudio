@@ -121,6 +121,10 @@ else:
 logger = structlog.get_logger(__name__)
 
 
+def clamp(value, lower_bound, upper_bound):
+    return max(lower_bound, min(upper_bound, value))
+
+
 class Consumer(QThread):
     MARKER_QUIT = "MARKER_QUIT"
 
@@ -142,6 +146,11 @@ class Consumer(QThread):
 T = TypeVar("T")
 
 
+# Ex. User visits | A ->[B]     |
+#                 | A    B ->[C]|
+#                 | A   [B]<- C |
+#                 |[A]<- B    C |  Previous routes still exist
+#                 | A ->[D]     |  Stack is cut from [:A] on new route
 class History(Generic[T]):
     __history: list[T]
     __index: int = 0
@@ -151,12 +160,15 @@ class History(Generic[T]):
         super().__init__()
 
     def erase_future(self) -> None:
-        self.__history = self.__history[self.__index + 1 :]
+        self.__history = self.__history[: self.__index + 1]
 
     def push(self, value: T) -> None:
         self.erase_future()
         self.__history.append(value)
         self.__index = len(self.__history) - 1
+
+    def move(self, delta: int):
+        self.__index = clamp(self.__index + delta, 0, len(self.__history) - 1)
 
     @property
     def current(self) -> T:
@@ -821,13 +833,9 @@ class QtDriver(DriverMixin, QObject):
         self._init_thumb_grid()
 
         back_button: QPushButton = self.main_window.backButton
-        back_button.clicked.connect(
-            lambda: self.page_move(-1)
-        )  # TODO: change to proper callback for navigation
+        back_button.clicked.connect(lambda: self.navigation_callback(-1))
         forward_button: QPushButton = self.main_window.forwardButton
-        forward_button.clicked.connect(
-            lambda: self.page_move(1)
-        )  # TODO: change to proper callback for navigation
+        forward_button.clicked.connect(lambda: self.navigation_callback(1))
 
         # NOTE: Putting this early will result in a white non-responsive
         # window until everything is loaded. Consider adding a splash screen
@@ -836,7 +844,7 @@ class QtDriver(DriverMixin, QObject):
         self.main_window.activateWindow()
         self.main_window.toggle_landing_page(enabled=True)
 
-        self.main_window.pagination.index.connect(lambda i: self.page_move(page_id=i))
+        self.main_window.pagination.index.connect(lambda i: self.page_move(i, absolute=True))
 
         self.splash.finish(self.main_window)
 
@@ -1361,35 +1369,34 @@ class QtDriver(DriverMixin, QObject):
     def mouse_navigation(self, event: QMouseEvent):
         # print(event.button())
         if event.button() == Qt.MouseButton.ForwardButton:
-            self.page_move(1)
+            self.navigation_callback(1)
         elif event.button() == Qt.MouseButton.BackButton:
-            self.page_move(-1)
+            self.navigation_callback(-1)
 
-    def page_move(self, delta: int = None, page_id: int = None) -> None:
-        """Navigate a step further into the navigation stack."""
-        logger.info(
-            "page_move",
-            delta=delta,
-            page_id=page_id,
+    def page_move(self, value: int, absolute=False) -> None:
+        logger.info("page_move", value=value, absolute=absolute)
+
+        if not absolute:
+            value += self.browsing_history.current.page_index
+
+        self.browsing_history.push(
+            self.browsing_history.current.with_page_index(clamp(value, 0, self.pages_count - 1))
         )
 
-        # Ex. User visits | A ->[B]     |
-        #                 | A    B ->[C]|
-        #                 | A   [B]<- C |
-        #                 |[A]<- B    C |  Previous routes still exist
-        #                 | A ->[D]     |  Stack is cut from [:A] on new route
-
-        # sb: QScrollArea = self.main_window.scrollArea
-        # sb_pos = sb.verticalScrollBar().value()
-
-        page_index = (
-            page_id if page_id is not None else self.browsing_history.current.page_index + delta
-        )
-        page_index = max(0, min(page_index, self.pages_count - 1))
-
-        self.browsing_history.current.page_index = page_index
         # TODO: Re-allow selecting entries across multiple pages at once.
         # This works fine with additive selection but becomes a nightmare with bridging.
+
+        self.update_browsing_state()
+
+    def navigation_callback(self, delta: int) -> None:
+        """Callback for the Forwads and Backwards Navigation Buttons next to the search bar."""
+        logger.info(
+            "navigation_callback",
+            delta=delta,
+        )
+
+        self.browsing_history.move(delta)
+
         self.update_browsing_state()
 
     def remove_grid_item(self, grid_idx: int):

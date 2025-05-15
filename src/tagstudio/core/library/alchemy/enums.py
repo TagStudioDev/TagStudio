@@ -110,6 +110,9 @@ class BrowsingState:
     def from_tag_name(cls, tag_name: str) -> "BrowsingState":
         return cls(ast=Constraint(ConstraintType.Tag, tag_name, []))
 
+    def with_page_index(self, index: int) -> "BrowsingState":
+        return replace(self, page_index=index)
+
     def with_sorting_mode(self, mode: SortingModeEnum) -> "BrowsingState":
         return replace(self, sorting_mode=mode)
 
