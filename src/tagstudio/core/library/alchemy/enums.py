@@ -71,9 +71,8 @@ class SortingModeEnum(enum.Enum):
     PATH = "file.path"
 
 
-# TODO: rename to remove term "filter"
 @dataclass
-class FilterState:
+class BrowsingState:
     """Represent a state of the Library grid view."""
 
     page_index: int = 0
@@ -84,37 +83,37 @@ class FilterState:
     ast: AST | None = None
 
     @classmethod
-    def show_all(cls) -> "FilterState":
-        return FilterState()
+    def show_all(cls) -> "BrowsingState":
+        return BrowsingState()
 
     @classmethod
-    def from_search_query(cls, search_query: str) -> "FilterState":
+    def from_search_query(cls, search_query: str) -> "BrowsingState":
         return cls(ast=Parser(search_query).parse())
 
     @classmethod
-    def from_tag_id(cls, tag_id: int | str) -> "FilterState":
+    def from_tag_id(cls, tag_id: int | str) -> "BrowsingState":
         return cls(ast=Constraint(ConstraintType.TagID, str(tag_id), []))
 
     @classmethod
-    def from_path(cls, path: Path | str) -> "FilterState":
+    def from_path(cls, path: Path | str) -> "BrowsingState":
         return cls(ast=Constraint(ConstraintType.Path, str(path).strip(), []))
 
     @classmethod
-    def from_mediatype(cls, mediatype: str) -> "FilterState":
+    def from_mediatype(cls, mediatype: str) -> "BrowsingState":
         return cls(ast=Constraint(ConstraintType.MediaType, mediatype, []))
 
     @classmethod
-    def from_filetype(cls, filetype: str) -> "FilterState":
+    def from_filetype(cls, filetype: str) -> "BrowsingState":
         return cls(ast=Constraint(ConstraintType.FileType, filetype, []))
 
     @classmethod
-    def from_tag_name(cls, tag_name: str) -> "FilterState":
+    def from_tag_name(cls, tag_name: str) -> "BrowsingState":
         return cls(ast=Constraint(ConstraintType.Tag, tag_name, []))
 
-    def with_sorting_mode(self, mode: SortingModeEnum) -> "FilterState":
+    def with_sorting_mode(self, mode: SortingModeEnum) -> "BrowsingState":
         return replace(self, sorting_mode=mode)
 
-    def with_sorting_direction(self, ascending: bool) -> "FilterState":
+    def with_sorting_direction(self, ascending: bool) -> "BrowsingState":
         return replace(self, ascending=ascending)
 
 

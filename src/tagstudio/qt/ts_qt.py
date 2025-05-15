@@ -61,8 +61,8 @@ from tagstudio.core.driver import DriverMixin
 from tagstudio.core.enums import MacroID, SettingItems, ShowFilepathOption
 from tagstudio.core.global_settings import DEFAULT_GLOBAL_SETTINGS_PATH, GlobalSettings, Theme
 from tagstudio.core.library.alchemy.enums import (
+    BrowsingState,
     FieldTypeEnum,
-    FilterState,
     ItemType,
     SortingModeEnum,
 )
@@ -143,8 +143,7 @@ class Consumer(QThread):
 T = TypeVar("T")
 
 
-# TODO: rename to conform with new name of FilterState
-class NavigationHistory(Generic[T]):
+class History(Generic[T]):
     __history: list[T]
     __index: int = 0
 
@@ -152,11 +151,11 @@ class NavigationHistory(Generic[T]):
         self.__history = [initial_value]
         super().__init__()
 
-    def clear_future(self) -> None:
+    def erase_future(self) -> None:
         self.__history = self.__history[self.__index + 1 :]
 
     def push(self, value: T) -> None:
-        self.clear_future()
+        self.erase_future()
         self.__history.append(value)
         self.__index = len(self.__history) - 1
 
@@ -185,7 +184,7 @@ class QtDriver(DriverMixin, QObject):
 
     lib: Library
 
-    navigation: NavigationHistory[FilterState]
+    browsing_history: History[BrowsingState]
 
     def __init__(self, args: Namespace):
         super().__init__()
@@ -266,7 +265,7 @@ class QtDriver(DriverMixin, QObject):
         self.add_tag_to_selected_action: QAction | None = None
 
     def __reset_navigation(self) -> None:
-        self.navigation = NavigationHistory(FilterState.show_all())
+        self.browsing_history = History(BrowsingState.show_all())
 
     def init_workers(self):
         """Init workers for rendering thumbnails."""
@@ -774,10 +773,10 @@ class QtDriver(DriverMixin, QObject):
         # in a global dict for methods to access for different DPIs.
         # adj_font_size = math.floor(12 * self.main_window.devicePixelRatio())
 
-        def _filter_items():
+        def _update_browsing_state():
             try:
-                self.filter_items(
-                    FilterState.from_search_query(self.main_window.searchField.text())
+                self.update_browsing_state(
+                    BrowsingState.from_search_query(self.main_window.searchField.text())
                     .with_sorting_mode(self.sorting_mode)
                     .with_sorting_direction(self.sorting_direction)
                 )
@@ -786,20 +785,20 @@ class QtDriver(DriverMixin, QObject):
                     f"{Translations['status.results.invalid_syntax']} "
                     f'"{self.main_window.searchField.text()}"'
                 )
-                logger.error("[QtDriver] Could not filter items", error=e)
+                logger.error("[QtDriver] Could not update BrowsingState", error=e)
 
         # Search Button
         search_button: QPushButton = self.main_window.searchButton
-        search_button.clicked.connect(_filter_items)
+        search_button.clicked.connect(_update_browsing_state)
         # Search Field
         search_field: QLineEdit = self.main_window.searchField
-        search_field.returnPressed.connect(_filter_items)
+        search_field.returnPressed.connect(_update_browsing_state)
         # Sorting Dropdowns
         sort_mode_dropdown: QComboBox = self.main_window.sorting_mode_combobox
         for sort_mode in SortingModeEnum:
             sort_mode_dropdown.addItem(Translations[sort_mode.value], sort_mode)
         sort_mode_dropdown.setCurrentIndex(
-            list(SortingModeEnum).index(self.navigation.current.sorting_mode)
+            list(SortingModeEnum).index(self.browsing_history.current.sorting_mode)
         )  # set according to navigation state
         sort_mode_dropdown.currentIndexChanged.connect(self.sorting_mode_callback)
 
@@ -857,7 +856,9 @@ class QtDriver(DriverMixin, QObject):
         )
         self.file_extension_panel.setTitle(Translations["ignore_list.title"])
         self.file_extension_panel.setWindowTitle(Translations["ignore_list.title"])
-        self.file_extension_panel.saved.connect(lambda: (panel.save(), self.filter_items()))
+        self.file_extension_panel.saved.connect(
+            lambda: (panel.save(), self.update_browsing_state())
+        )
         self.manage_file_ext_action.triggered.connect(self.file_extension_panel.show)
 
     def show_grid_filenames(self, value: bool):
@@ -1091,7 +1092,7 @@ class QtDriver(DriverMixin, QObject):
                 self.selected.clear()
 
         if deleted_count > 0:
-            self.filter_items()
+            self.update_browsing_state()
             self.preview_panel.update_widgets()
 
         if len(self.selected) <= 1 and deleted_count == 0:
@@ -1243,7 +1244,7 @@ class QtDriver(DriverMixin, QObject):
                 pw.hide(),
                 pw.deleteLater(),
                 # refresh the library only when new items are added
-                files_count and self.filter_items(),  # type: ignore
+                files_count and self.update_browsing_state(),  # type: ignore
             )
         )
         QThreadPool.globalInstance().start(r)
@@ -1314,7 +1315,9 @@ class QtDriver(DriverMixin, QObject):
 
     def sorting_direction_callback(self):
         logger.info("Sorting Direction Changed", ascending=self.sorting_direction)
-        self.filter_items(self.navigation.current.with_sorting_direction(self.sorting_direction))
+        self.update_browsing_state(
+            self.browsing_history.current.with_sorting_direction(self.sorting_direction)
+        )
 
     @property
     def sorting_mode(self) -> SortingModeEnum:
@@ -1323,7 +1326,9 @@ class QtDriver(DriverMixin, QObject):
 
     def sorting_mode_callback(self):
         logger.info("Sorting Mode Changed", mode=self.sorting_mode)
-        self.filter_items(self.navigation.current.with_sorting_mode(self.sorting_mode))
+        self.update_browsing_state(
+            self.browsing_history.current.with_sorting_mode(self.sorting_mode)
+        )
 
     def thumb_size_callback(self, index: int):
         """Perform actions needed when the thumbnail size selection is changed.
@@ -1377,13 +1382,15 @@ class QtDriver(DriverMixin, QObject):
         # sb: QScrollArea = self.main_window.scrollArea
         # sb_pos = sb.verticalScrollBar().value()
 
-        page_index = page_id if page_id is not None else self.navigation.current.page_index + delta
+        page_index = (
+            page_id if page_id is not None else self.browsing_history.current.page_index + delta
+        )
         page_index = max(0, min(page_index, self.pages_count - 1))
 
-        self.navigation.current.page_index = page_index
+        self.browsing_history.current.page_index = page_index
         # TODO: Re-allow selecting entries across multiple pages at once.
         # This works fine with additive selection but becomes a nightmare with bridging.
-        self.filter_items()
+        self.update_browsing_state()
 
     def remove_grid_item(self, grid_idx: int):
         self.frame_content[grid_idx] = None
@@ -1774,16 +1781,15 @@ class QtDriver(DriverMixin, QObject):
                     pending_entries.get(badge_type, []), BADGE_TAGS[badge_type]
                 )
 
-    def filter_items(self, filter: FilterState | None = None) -> None:
-        # TODO rename to remove term "filter" (also remove that term from everywhere else; also update comment below)  # noqa: E501
-        """Navigates to a new ???-state when filter is given, otherwise updates the results."""
+    def update_browsing_state(self, state: BrowsingState | None = None) -> None:
+        """Navigates to a new BrowsingState when state is given, otherwise updates the results."""
         if not self.lib.library_dir:
             logger.info("Library not loaded")
             return
         assert self.lib.engine
 
-        if filter:
-            self.navigation.push(filter)
+        if state:
+            self.browsing_history.push(state)
 
         # inform user about running search
         self.main_window.statusbar.showMessage(Translations["status.library_search_query"])
@@ -1791,7 +1797,7 @@ class QtDriver(DriverMixin, QObject):
 
         # search the library
         start_time = time.time()
-        results = self.lib.search_library(self.navigation.current, self.settings.page_size)
+        results = self.lib.search_library(self.browsing_history.current, self.settings.page_size)
         logger.info("items to render", count=len(results))
         end_time = time.time()
 
@@ -1811,7 +1817,7 @@ class QtDriver(DriverMixin, QObject):
         # update pagination
         self.pages_count = math.ceil(results.total_count / self.settings.page_size)
         self.main_window.pagination.update_buttons(
-            self.pages_count, self.navigation.current.page_index, emit=False
+            self.pages_count, self.browsing_history.current.page_index, emit=False
         )
 
     def remove_recent_library(self, item_key: str):
@@ -2004,7 +2010,7 @@ class QtDriver(DriverMixin, QObject):
         self.preview_panel.update_widgets()
 
         # page (re)rendering, extract eventually
-        self.filter_items()
+        self.update_browsing_state()
 
         self.main_window.toggle_landing_page(enabled=False)
         return open_status

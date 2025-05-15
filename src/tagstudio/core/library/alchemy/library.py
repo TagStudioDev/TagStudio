@@ -62,7 +62,7 @@ from tagstudio.core.library.alchemy.db import make_tables
 from tagstudio.core.library.alchemy.enums import (
     MAX_SQL_VARIABLES,
     FieldTypeEnum,
-    FilterState,
+    BrowsingState,
     SortingModeEnum,
 )
 from tagstudio.core.library.alchemy.fields import (
@@ -857,14 +857,14 @@ class Library:
 
     def search_library(
         self,
-        search: FilterState,
+        search: BrowsingState,
         page_size: int,
     ) -> SearchResult:
         """Filter library by search query.
 
         :return: number of entries matching the query and one page of results.
         """
-        assert isinstance(search, FilterState)
+        assert isinstance(search, BrowsingState)
         assert self.engine
 
         with Session(self.engine, expire_on_commit=False) as session:

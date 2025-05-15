@@ -4,7 +4,7 @@ from pathlib import Path
 
 import structlog
 
-from tagstudio.core.library.alchemy.enums import FilterState
+from tagstudio.core.library.alchemy.enums import BrowsingState
 from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.library.alchemy.models import Entry
 
@@ -51,7 +51,9 @@ class DupeRegistry:
                         # The file is not in the library directory
                         continue
 
-                    results = self.library.search_library(FilterState.from_path(path_relative), 500)
+                    results = self.library.search_library(
+                        BrowsingState.from_path(path_relative), 500
+                    )
 
                     if not results:
                         # file not in library
