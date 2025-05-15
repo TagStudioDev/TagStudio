@@ -221,6 +221,8 @@ class QtDriver(DriverMixin, QObject):
                 "[Settings] Global Settings File does not exist creating",
                 path=self.global_settings_path,
             )
+        self.applied_theme = self.settings.theme
+
         self.__reset_navigation()
 
         if self.args.cache_file:
@@ -310,7 +312,6 @@ class QtDriver(DriverMixin, QObject):
             self.app.styleHints().setColorScheme(
                 Qt.ColorScheme.Dark if self.settings.theme == Theme.DARK else Qt.ColorScheme.Light
             )
-        self.applied_theme = self.settings.theme
 
         if (
             platform.system() == "Darwin" or platform.system() == "Windows"
@@ -1951,14 +1952,14 @@ class QtDriver(DriverMixin, QObject):
         if open_status.json_migration_req:
             self.migration_modal = JsonMigrationModal(path)
             self.migration_modal.migration_finished.connect(
-                lambda: self.__init_library(path, self.lib.open_library(path))
+                lambda: self._init_library(path, self.lib.open_library(path))
             )
             self.main_window.landing_widget.set_status_label("")
             self.migration_modal.paged_panel.show()
         else:
-            self.__init_library(path, open_status)
+            self._init_library(path, open_status)
 
-    def __init_library(self, path: Path, open_status: LibraryStatus):
+    def _init_library(self, path: Path, open_status: LibraryStatus):
         if not open_status.success:
             self.show_error_message(
                 error_name=open_status.message
