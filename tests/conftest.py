@@ -9,6 +9,7 @@ CWD = Path(__file__).parent
 # this needs to be above `src` imports
 sys.path.insert(0, str(CWD.parent))
 
+from tagstudio.core.constants import THUMB_CACHE_NAME, TS_FOLDER_NAME
 from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.library.alchemy.models import Entry, Tag
 from tagstudio.qt.ts_qt import QtDriver
@@ -50,18 +51,30 @@ def file_mediatypes_library():
     return lib
 
 
+@pytest.fixture(scope="session")
+def library_dir():
+    """Creates a shared library path for tests, that cleans up after the session."""
+    with TemporaryDirectory() as tmp_dir_name:
+        library_path = Path(tmp_dir_name)
+
+        thumbs_path = library_path / TS_FOLDER_NAME / THUMB_CACHE_NAME
+        thumbs_path.mkdir(parents=True, exist_ok=True)
+
+        yield library_path
+
+
 @pytest.fixture
-def library(request):
+def library(request, library_dir: Path):
     # when no param is passed, use the default
-    library_path = "/dev/null/"
+    library_path = library_dir
     if hasattr(request, "param"):
         if isinstance(request.param, TemporaryDirectory):
-            library_path = request.param.name
+            library_path = Path(request.param.name)
         else:
-            library_path = request.param
+            library_path = Path(request.param)
 
     lib = Library()
-    status = lib.open_library(Path(library_path), ":memory:")
+    status = lib.open_library(library_path, ":memory:")
     assert status.success
 
     tag = Tag(
@@ -130,34 +143,32 @@ def entry_full(library: Library):
 
 
 @pytest.fixture
-def qt_driver(qtbot, library):
-    with TemporaryDirectory() as tmp_dir:
+def qt_driver(qtbot, library, library_dir: Path):
+    class Args:
+        settings_file = library_dir / "settings.toml"
+        cache_file = library_dir / "tagstudio.ini"
+        open = library_dir
+        ci = True
 
-        class Args:
-            settings_file = Path(tmp_dir) / "settings.toml"
-            cache_file = Path(tmp_dir) / "tagstudio.ini"
-            open = Path(tmp_dir)
-            ci = True
+    with patch("tagstudio.qt.ts_qt.Consumer"), patch("tagstudio.qt.ts_qt.CustomRunnable"):
+        driver = QtDriver(Args())
 
-        with patch("tagstudio.qt.ts_qt.Consumer"), patch("tagstudio.qt.ts_qt.CustomRunnable"):
-            driver = QtDriver(Args())
+        driver.app = Mock()
+        driver.main_window = Mock()
+        driver.preview_panel = Mock()
+        driver.flow_container = Mock()
+        driver.item_thumbs = []
+        driver.autofill_action = Mock()
 
-            driver.app = Mock()
-            driver.main_window = Mock()
-            driver.preview_panel = Mock()
-            driver.flow_container = Mock()
-            driver.item_thumbs = []
-            driver.autofill_action = Mock()
+        driver.copy_buffer = {"fields": [], "tags": []}
+        driver.copy_fields_action = Mock()
+        driver.paste_fields_action = Mock()
 
-            driver.copy_buffer = {"fields": [], "tags": []}
-            driver.copy_fields_action = Mock()
-            driver.paste_fields_action = Mock()
-
-            driver.lib = library
-            # TODO - downsize this method and use it
-            # driver.start()
-            driver.frame_content = list(library.get_entries())
-            yield driver
+        driver.lib = library
+        # TODO - downsize this method and use it
+        # driver.start()
+        driver.frame_content = list(library.get_entries())
+        yield driver
 
 
 @pytest.fixture

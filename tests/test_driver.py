@@ -1,10 +1,7 @@
-from os import makedirs
 from pathlib import Path
-from tempfile import TemporaryDirectory
 
 from PySide6.QtCore import QSettings
 
-from tagstudio.core.constants import TS_FOLDER_NAME
 from tagstudio.core.driver import DriverMixin
 from tagstudio.core.enums import SettingItems
 from tagstudio.core.global_settings import GlobalSettings
@@ -52,22 +49,20 @@ def test_evaluate_path_last_lib_not_exists():
     assert result == LibraryStatus(success=True, library_path=None, message=None)
 
 
-def test_evaluate_path_last_lib_present():
+def test_evaluate_path_last_lib_present(library_dir: Path):
     # Given
-    with TemporaryDirectory() as tmpdir:
-        cache_file = tmpdir + "/test_settings.ini"
-        cache = QSettings(cache_file, QSettings.Format.IniFormat)
-        cache.setValue(SettingItems.LAST_LIBRARY, tmpdir)
-        cache.sync()
+    cache_file = library_dir / "test_settings.ini"
+    cache = QSettings(str(cache_file), QSettings.Format.IniFormat)
+    cache.setValue(SettingItems.LAST_LIBRARY, library_dir)
+    cache.sync()
 
-        settings = GlobalSettings()
-        settings.open_last_loaded_on_startup = True
+    settings = GlobalSettings()
+    settings.open_last_loaded_on_startup = True
 
-        makedirs(Path(tmpdir) / TS_FOLDER_NAME)
-        driver = TestDriver(settings, cache)
+    driver = TestDriver(settings, cache)
 
-        # When
-        result = driver.evaluate_path(None)
+    # When
+    result = driver.evaluate_path(None)
 
-        # Then
-        assert result == LibraryStatus(success=True, library_path=Path(tmpdir))
+    # Then
+    assert result == LibraryStatus(success=True, library_path=library_dir)
