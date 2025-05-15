@@ -1798,6 +1798,8 @@ class QtDriver(DriverMixin, QObject):
         if state:
             self.browsing_history.push(state)
 
+        self.main_window.searchField.setText(self.browsing_history.current.query or "")
+
         # inform user about running search
         self.main_window.statusbar.showMessage(Translations["status.library_search_query"])
         self.main_window.statusbar.repaint()

@@ -4,7 +4,7 @@ from pathlib import Path
 
 import structlog
 
-from tagstudio.core.query_lang.ast import AST, Constraint, ConstraintType
+from tagstudio.core.query_lang.ast import AST
 from tagstudio.core.query_lang.parser import Parser
 
 MAX_SQL_VARIABLES = 32766  # 32766 is the max sql bind parameter count as defined here: https://github.com/sqlite/sqlite/blob/master/src/sqliteLimit.h#L140
@@ -79,8 +79,14 @@ class BrowsingState:
     sorting_mode: SortingModeEnum = SortingModeEnum.DATE_ADDED
     ascending: bool = True
 
+    query: str | None = None
+
     # Abstract Syntax Tree Of the current Search Query
-    ast: AST | None = None
+    @property
+    def ast(self) -> AST | None:
+        if self.query is None:
+            return None
+        return Parser(self.query).parse()
 
     @classmethod
     def show_all(cls) -> "BrowsingState":
@@ -88,27 +94,27 @@ class BrowsingState:
 
     @classmethod
     def from_search_query(cls, search_query: str) -> "BrowsingState":
-        return cls(ast=Parser(search_query).parse())
+        return cls(query=search_query)
 
     @classmethod
     def from_tag_id(cls, tag_id: int | str) -> "BrowsingState":
-        return cls(ast=Constraint(ConstraintType.TagID, str(tag_id), []))
+        return cls(query=f"tag_id:{str(tag_id)}")
 
     @classmethod
     def from_path(cls, path: Path | str) -> "BrowsingState":
-        return cls(ast=Constraint(ConstraintType.Path, str(path).strip(), []))
+        return cls(query=f'path:"{str(path).strip()}"')
 
     @classmethod
     def from_mediatype(cls, mediatype: str) -> "BrowsingState":
-        return cls(ast=Constraint(ConstraintType.MediaType, mediatype, []))
+        return cls(query=f"mediatype:{mediatype}")
 
     @classmethod
     def from_filetype(cls, filetype: str) -> "BrowsingState":
-        return cls(ast=Constraint(ConstraintType.FileType, filetype, []))
+        return cls(query=f"filetype:{filetype}")
 
     @classmethod
     def from_tag_name(cls, tag_name: str) -> "BrowsingState":
-        return cls(ast=Constraint(ConstraintType.Tag, tag_name, []))
+        return cls(query=f'tag:"{tag_name}"')
 
     def with_page_index(self, index: int) -> "BrowsingState":
         return replace(self, page_index=index)
