@@ -10,7 +10,6 @@
 
 import contextlib
 import ctypes
-import dataclasses
 import math
 import os
 import platform

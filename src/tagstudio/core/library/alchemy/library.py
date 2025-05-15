@@ -61,8 +61,8 @@ from tagstudio.core.library.alchemy import default_color_groups
 from tagstudio.core.library.alchemy.db import make_tables
 from tagstudio.core.library.alchemy.enums import (
     MAX_SQL_VARIABLES,
-    FieldTypeEnum,
     BrowsingState,
+    FieldTypeEnum,
     SortingModeEnum,
 )
 from tagstudio.core.library.alchemy.fields import (
