@@ -4,7 +4,7 @@ from tempfile import TemporaryDirectory
 import pytest
 
 from tagstudio.core.enums import DefaultEnum, LibraryPrefs
-from tagstudio.core.library.alchemy.enums import FilterState
+from tagstudio.core.library.alchemy.enums import BrowsingState
 from tagstudio.core.library.alchemy.fields import TextField, _FieldID
 from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.library.alchemy.models import Entry, Tag
@@ -123,7 +123,8 @@ def test_library_search(library: Library, generate_tag, entry_full):
     tag = list(entry_full.tags)[0]
 
     results = library.search_library(
-        FilterState.from_tag_name(tag.name, page_size=500),
+        BrowsingState.from_tag_name(tag.name),
+        page_size=500,
     )
 
     assert results.total_count == 1
@@ -152,7 +153,7 @@ def test_entries_count(library: Library):
     new_ids = library.add_entries(entries)
     assert len(new_ids) == 10
 
-    results = library.search_library(FilterState.show_all(page_size=5))
+    results = library.search_library(BrowsingState.show_all(), page_size=5)
 
     assert results.total_count == 12
     assert len(results) == 5
@@ -199,9 +200,7 @@ def test_search_filter_extensions(library: Library, is_exclude: bool):
     library.set_prefs(LibraryPrefs.EXTENSION_LIST, ["md"])
 
     # When
-    results = library.search_library(
-        FilterState.show_all(page_size=500),
-    )
+    results = library.search_library(BrowsingState.show_all(), page_size=500)
 
     # Then
     assert results.total_count == 1
@@ -221,7 +220,8 @@ def test_search_library_case_insensitive(library: Library):
 
     # When
     results = library.search_library(
-        FilterState.from_tag_name(tag.name.upper(), page_size=500),
+        BrowsingState.from_tag_name(tag.name.upper()),
+        page_size=500,
     )
 
     # Then
@@ -443,100 +443,102 @@ def test_library_prefs_multiple_identical_vals():
 
 
 def test_path_search_ilike(library: Library):
-    results = library.search_library(FilterState.from_path("bar.md", page_size=500))
+    results = library.search_library(BrowsingState.from_path("bar.md"), page_size=500)
     assert results.total_count == 1
     assert len(results.items) == 1
 
 
 def test_path_search_like(library: Library):
-    results = library.search_library(FilterState.from_path("BAR.MD", page_size=500))
+    results = library.search_library(BrowsingState.from_path("BAR.MD"), page_size=500)
     assert results.total_count == 0
     assert len(results.items) == 0
 
 
 def test_path_search_default_with_sep(library: Library):
-    results = library.search_library(FilterState.from_path("one/two", page_size=500))
+    results = library.search_library(BrowsingState.from_path("one/two"), page_size=500)
     assert results.total_count == 1
     assert len(results.items) == 1
 
 
 def test_path_search_glob_after(library: Library):
-    results = library.search_library(FilterState.from_path("foo*", page_size=500))
+    results = library.search_library(BrowsingState.from_path("foo*"), page_size=500)
     assert results.total_count == 1
     assert len(results.items) == 1
 
 
 def test_path_search_glob_in_front(library: Library):
-    results = library.search_library(FilterState.from_path("*bar.md", page_size=500))
+    results = library.search_library(BrowsingState.from_path("*bar.md"), page_size=500)
     assert results.total_count == 1
     assert len(results.items) == 1
 
 
 def test_path_search_glob_both_sides(library: Library):
-    results = library.search_library(FilterState.from_path("*one/two*", page_size=500))
+    results = library.search_library(BrowsingState.from_path("*one/two*"), page_size=500)
     assert results.total_count == 1
     assert len(results.items) == 1
 
 
+# TODO: deduplicate this code with pytest parametrisation or a for loop
 def test_path_search_ilike_glob_equality(library: Library):
-    results_ilike = library.search_library(FilterState.from_path("one/two", page_size=500))
-    results_glob = library.search_library(FilterState.from_path("*one/two*", page_size=500))
+    results_ilike = library.search_library(BrowsingState.from_path("one/two"), page_size=500)
+    results_glob = library.search_library(BrowsingState.from_path("*one/two*"), page_size=500)
     assert [e.id for e in results_ilike.items] == [e.id for e in results_glob.items]
     results_ilike, results_glob = None, None
 
-    results_ilike = library.search_library(FilterState.from_path("bar.md", page_size=500))
-    results_glob = library.search_library(FilterState.from_path("*bar.md*", page_size=500))
+    results_ilike = library.search_library(BrowsingState.from_path("bar.md"), page_size=500)
+    results_glob = library.search_library(BrowsingState.from_path("*bar.md*"), page_size=500)
     assert [e.id for e in results_ilike.items] == [e.id for e in results_glob.items]
     results_ilike, results_glob = None, None
 
-    results_ilike = library.search_library(FilterState.from_path("bar", page_size=500))
-    results_glob = library.search_library(FilterState.from_path("*bar*", page_size=500))
+    results_ilike = library.search_library(BrowsingState.from_path("bar"), page_size=500)
+    results_glob = library.search_library(BrowsingState.from_path("*bar*"), page_size=500)
     assert [e.id for e in results_ilike.items] == [e.id for e in results_glob.items]
     results_ilike, results_glob = None, None
 
-    results_ilike = library.search_library(FilterState.from_path("bar.md", page_size=500))
-    results_glob = library.search_library(FilterState.from_path("*bar.md*", page_size=500))
+    results_ilike = library.search_library(BrowsingState.from_path("bar.md"), page_size=500)
+    results_glob = library.search_library(BrowsingState.from_path("*bar.md*"), page_size=500)
     assert [e.id for e in results_ilike.items] == [e.id for e in results_glob.items]
     results_ilike, results_glob = None, None
 
 
+# TODO: isn't this the exact same as the one before?
 def test_path_search_like_glob_equality(library: Library):
-    results_ilike = library.search_library(FilterState.from_path("ONE/two", page_size=500))
-    results_glob = library.search_library(FilterState.from_path("*ONE/two*", page_size=500))
+    results_ilike = library.search_library(BrowsingState.from_path("ONE/two"), page_size=500)
+    results_glob = library.search_library(BrowsingState.from_path("*ONE/two*"), page_size=500)
     assert [e.id for e in results_ilike.items] == [e.id for e in results_glob.items]
     results_ilike, results_glob = None, None
 
-    results_ilike = library.search_library(FilterState.from_path("BAR.MD", page_size=500))
-    results_glob = library.search_library(FilterState.from_path("*BAR.MD*", page_size=500))
+    results_ilike = library.search_library(BrowsingState.from_path("BAR.MD"), page_size=500)
+    results_glob = library.search_library(BrowsingState.from_path("*BAR.MD*"), page_size=500)
     assert [e.id for e in results_ilike.items] == [e.id for e in results_glob.items]
     results_ilike, results_glob = None, None
 
-    results_ilike = library.search_library(FilterState.from_path("BAR.MD", page_size=500))
-    results_glob = library.search_library(FilterState.from_path("*bar.md*", page_size=500))
+    results_ilike = library.search_library(BrowsingState.from_path("BAR.MD"), page_size=500)
+    results_glob = library.search_library(BrowsingState.from_path("*bar.md*"), page_size=500)
     assert [e.id for e in results_ilike.items] != [e.id for e in results_glob.items]
     results_ilike, results_glob = None, None
 
-    results_ilike = library.search_library(FilterState.from_path("bar.md", page_size=500))
-    results_glob = library.search_library(FilterState.from_path("*BAR.MD*", page_size=500))
+    results_ilike = library.search_library(BrowsingState.from_path("bar.md"), page_size=500)
+    results_glob = library.search_library(BrowsingState.from_path("*BAR.MD*"), page_size=500)
     assert [e.id for e in results_ilike.items] != [e.id for e in results_glob.items]
     results_ilike, results_glob = None, None
 
 
 @pytest.mark.parametrize(["filetype", "num_of_filetype"], [("md", 1), ("txt", 1), ("png", 0)])
 def test_filetype_search(library: Library, filetype, num_of_filetype):
-    results = library.search_library(FilterState.from_filetype(filetype, page_size=500))
+    results = library.search_library(BrowsingState.from_filetype(filetype), page_size=500)
     assert len(results.items) == num_of_filetype
 
 
 @pytest.mark.parametrize(["filetype", "num_of_filetype"], [("png", 2), ("apng", 1), ("ng", 0)])
 def test_filetype_return_one_filetype(file_mediatypes_library: Library, filetype, num_of_filetype):
     results = file_mediatypes_library.search_library(
-        FilterState.from_filetype(filetype, page_size=500)
+        BrowsingState.from_filetype(filetype), page_size=500
     )
     assert len(results.items) == num_of_filetype
 
 
 @pytest.mark.parametrize(["mediatype", "num_of_mediatype"], [("plaintext", 2), ("image", 0)])
 def test_mediatype_search(library: Library, mediatype, num_of_mediatype):
-    results = library.search_library(FilterState.from_mediatype(mediatype, page_size=500))
+    results = library.search_library(BrowsingState.from_mediatype(mediatype), page_size=500)
     assert len(results.items) == num_of_mediatype

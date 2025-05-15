@@ -24,7 +24,7 @@ from PySide6.QtWidgets import (
 )
 
 from tagstudio.core.constants import RESERVED_TAG_END, RESERVED_TAG_START
-from tagstudio.core.library.alchemy.enums import FilterState, TagColorEnum
+from tagstudio.core.library.alchemy.enums import BrowsingState, TagColorEnum
 from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.library.alchemy.models import Tag
 from tagstudio.core.palette import ColorType, get_tag_color
@@ -292,9 +292,7 @@ class TagSearchPanel(PanelWidget):
             tag_widget.search_for_tag_action.triggered.connect(
                 lambda checked=False, tag_id=tag.id: (
                     self.driver.main_window.searchField.setText(f"tag_id:{tag_id}"),
-                    self.driver.filter_items(
-                        FilterState.from_tag_id(tag_id, page_size=self.driver.settings.page_size)
-                    ),
+                    self.driver.update_browsing_state(BrowsingState.from_tag_id(tag_id)),
                 )
             )
             tag_widget.search_for_tag_action.setEnabled(True)
