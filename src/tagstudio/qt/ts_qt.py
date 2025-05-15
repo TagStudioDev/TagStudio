@@ -266,7 +266,7 @@ class QtDriver(DriverMixin, QObject):
         self.add_tag_to_selected_action: QAction | None = None
 
     def __reset_navigation(self) -> None:
-        self.navigation = NavigationHistory(FilterState.show_all(page_size=self.settings.page_size))
+        self.navigation = NavigationHistory(FilterState.show_all())
 
     def init_workers(self):
         """Init workers for rendering thumbnails."""
@@ -777,9 +777,7 @@ class QtDriver(DriverMixin, QObject):
         def _filter_items():
             try:
                 self.filter_items(
-                    FilterState.from_search_query(
-                        self.main_window.searchField.text(), page_size=self.settings.page_size
-                    )
+                    FilterState.from_search_query(self.main_window.searchField.text())
                     .with_sorting_mode(self.sorting_mode)
                     .with_sorting_direction(self.sorting_direction)
                 )
@@ -1793,7 +1791,7 @@ class QtDriver(DriverMixin, QObject):
 
         # search the library
         start_time = time.time()
-        results = self.lib.search_library(self.navigation.current)
+        results = self.lib.search_library(self.navigation.current, self.settings.page_size)
         logger.info("items to render", count=len(results))
         end_time = time.time()
 
@@ -1811,7 +1809,7 @@ class QtDriver(DriverMixin, QObject):
         self.update_thumbs()
 
         # update pagination
-        self.pages_count = math.ceil(results.total_count / self.navigation.current.page_size)
+        self.pages_count = math.ceil(results.total_count / self.settings.page_size)
         self.main_window.pagination.update_buttons(
             self.pages_count, self.navigation.current.page_index, emit=False
         )

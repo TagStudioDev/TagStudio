@@ -858,6 +858,7 @@ class Library:
     def search_library(
         self,
         search: FilterState,
+        page_size: int,
     ) -> SearchResult:
         """Filter library by search query.
 
@@ -902,7 +903,7 @@ class Library:
                     sort_on = func.lower(Entry.path)
 
             statement = statement.order_by(asc(sort_on) if search.ascending else desc(sort_on))
-            statement = statement.limit(search.limit).offset(search.offset)
+            statement = statement.limit(page_size).offset(search.page_index * page_size)
 
             logger.info(
                 "searching library",

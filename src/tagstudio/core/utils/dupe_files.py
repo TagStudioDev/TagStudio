@@ -51,9 +51,7 @@ class DupeRegistry:
                         # The file is not in the library directory
                         continue
 
-                    results = self.library.search_library(
-                        FilterState.from_path(path_relative, page_size=500),
-                    )
+                    results = self.library.search_library(FilterState.from_path(path_relative), 500)
 
                     if not results:
                         # file not in library
