@@ -21,6 +21,7 @@ from argparse import Namespace
 from pathlib import Path
 from queue import Queue
 from shutil import which
+from typing import Generic, TypeVar
 from warnings import catch_warnings
 
 import structlog
@@ -139,6 +140,31 @@ class Consumer(QThread):
                 pass
 
 
+T = TypeVar("T")
+
+
+# TODO: rename to conform with new name of FilterState
+class NavigationHistory(Generic[T]):
+    __history: list[T]
+    __index: int = 0
+
+    def __init__(self, initial_value: T):
+        self.__history = [initial_value]
+        super().__init__()
+
+    def clear_future(self) -> None:
+        self.__history = self.__history[self.__index + 1 :]
+
+    def push(self, value: T) -> None:
+        self.clear_future()
+        self.__history.append(value)
+        self.__index = len(self.__history) - 1
+
+    @property
+    def current(self) -> T:
+        return self.__history[self.__index]
+
+
 class QtDriver(DriverMixin, QObject):
     """A Qt GUI frontend driver for TagStudio."""
 
@@ -154,9 +180,12 @@ class QtDriver(DriverMixin, QObject):
     about_modal: AboutModal
     unlinked_modal: FixUnlinkedEntriesModal
     dupe_modal: FixDupeFilesModal
+
     applied_theme: Theme
 
     lib: Library
+
+    navigation: NavigationHistory[FilterState]
 
     def __init__(self, args: Namespace):
         super().__init__()
@@ -167,7 +196,6 @@ class QtDriver(DriverMixin, QObject):
         self.args = args
         self.frame_content: list[int] = []  # List of Entry IDs on the current page
         self.pages_count = 0
-        self.applied_theme = None
 
         self.scrollbar_pos = 0
         self.thumb_size = 128
@@ -195,7 +223,7 @@ class QtDriver(DriverMixin, QObject):
                 "[Settings] Global Settings File does not exist creating",
                 path=self.global_settings_path,
             )
-        self.filter = FilterState.show_all(page_size=self.settings.page_size)
+        self.__reset_navigation()
 
         if self.args.cache_file:
             path = Path(self.args.cache_file)
@@ -236,6 +264,9 @@ class QtDriver(DriverMixin, QObject):
         )
 
         self.add_tag_to_selected_action: QAction | None = None
+
+    def __reset_navigation(self) -> None:
+        self.navigation = NavigationHistory(FilterState.show_all(page_size=self.settings.page_size))
 
     def init_workers(self):
         """Init workers for rendering thumbnails."""
@@ -700,7 +731,6 @@ class QtDriver(DriverMixin, QObject):
         ]
         self.item_thumbs: list[ItemThumb] = []
         self.thumb_renderers: list[ThumbRenderer] = []
-        self.filter = FilterState.show_all(page_size=self.settings.page_size)
         self.init_library_window()
         self.migration_modal: JsonMigrationModal = None
 
@@ -771,8 +801,8 @@ class QtDriver(DriverMixin, QObject):
         for sort_mode in SortingModeEnum:
             sort_mode_dropdown.addItem(Translations[sort_mode.value], sort_mode)
         sort_mode_dropdown.setCurrentIndex(
-            list(SortingModeEnum).index(self.filter.sorting_mode)
-        )  # set according to self.filter
+            list(SortingModeEnum).index(self.navigation.current.sorting_mode)
+        )  # set according to navigation state
         sort_mode_dropdown.currentIndexChanged.connect(self.sorting_mode_callback)
 
         sort_dir_dropdown: QComboBox = self.main_window.sorting_direction_combobox
@@ -794,9 +824,13 @@ class QtDriver(DriverMixin, QObject):
         self._init_thumb_grid()
 
         back_button: QPushButton = self.main_window.backButton
-        back_button.clicked.connect(lambda: self.page_move(-1))
+        back_button.clicked.connect(
+            lambda: self.page_move(-1)
+        )  # TODO: change to proper callback for navigation
         forward_button: QPushButton = self.main_window.forwardButton
-        forward_button.clicked.connect(lambda: self.page_move(1))
+        forward_button.clicked.connect(
+            lambda: self.page_move(1)
+        )  # TODO: change to proper callback for navigation
 
         # NOTE: Putting this early will result in a white non-responsive
         # window until everything is loaded. Consider adding a splash screen
@@ -871,7 +905,7 @@ class QtDriver(DriverMixin, QObject):
         self.main_window.searchField.setText("")
         scrollbar: QScrollArea = self.main_window.scrollArea
         scrollbar.verticalScrollBar().setValue(0)
-        self.filter = FilterState.show_all(page_size=self.settings.page_size)
+        self.__reset_navigation()
 
         self.lib.close()
 
@@ -1282,7 +1316,7 @@ class QtDriver(DriverMixin, QObject):
 
     def sorting_direction_callback(self):
         logger.info("Sorting Direction Changed", ascending=self.sorting_direction)
-        self.filter_items()
+        self.filter_items(self.navigation.current.with_sorting_direction(self.sorting_direction))
 
     @property
     def sorting_mode(self) -> SortingModeEnum:
@@ -1291,7 +1325,7 @@ class QtDriver(DriverMixin, QObject):
 
     def sorting_mode_callback(self):
         logger.info("Sorting Mode Changed", mode=self.sorting_mode)
-        self.filter_items()
+        self.filter_items(self.navigation.current.with_sorting_mode(self.sorting_mode))
 
     def thumb_size_callback(self, index: int):
         """Perform actions needed when the thumbnail size selection is changed.
@@ -1345,10 +1379,10 @@ class QtDriver(DriverMixin, QObject):
         # sb: QScrollArea = self.main_window.scrollArea
         # sb_pos = sb.verticalScrollBar().value()
 
-        page_index = page_id if page_id is not None else self.filter.page_index + delta
+        page_index = page_id if page_id is not None else self.navigation.current.page_index + delta
         page_index = max(0, min(page_index, self.pages_count - 1))
 
-        self.filter.page_index = page_index
+        self.navigation.current.page_index = page_index
         # TODO: Re-allow selecting entries across multiple pages at once.
         # This works fine with additive selection but becomes a nightmare with bridging.
         self.filter_items()
@@ -1358,7 +1392,7 @@ class QtDriver(DriverMixin, QObject):
         self.item_thumbs[grid_idx].hide()
 
     def _update_thumb_count(self):
-        missing_count = max(0, self.filter.page_size - len(self.item_thumbs))
+        missing_count = max(0, self.settings.page_size - len(self.item_thumbs))
         layout = self.flow_container.layout()
         for _ in range(missing_count):
             item_thumb = ItemThumb(
@@ -1743,16 +1777,15 @@ class QtDriver(DriverMixin, QObject):
                 )
 
     def filter_items(self, filter: FilterState | None = None) -> None:
+        # TODO rename to remove term "filter" (also remove that term from everywhere else; also update comment below)  # noqa: E501
+        """Navigates to a new ???-state when filter is given, otherwise updates the results."""
         if not self.lib.library_dir:
             logger.info("Library not loaded")
             return
         assert self.lib.engine
 
         if filter:
-            self.filter = dataclasses.replace(self.filter, **dataclasses.asdict(filter))
-        else:
-            self.filter.sorting_mode = self.sorting_mode
-            self.filter.ascending = self.sorting_direction
+            self.navigation.push(filter)
 
         # inform user about running search
         self.main_window.statusbar.showMessage(Translations["status.library_search_query"])
@@ -1760,7 +1793,7 @@ class QtDriver(DriverMixin, QObject):
 
         # search the library
         start_time = time.time()
-        results = self.lib.search_library(self.filter)
+        results = self.lib.search_library(self.navigation.current)
         logger.info("items to render", count=len(results))
         end_time = time.time()
 
@@ -1778,9 +1811,9 @@ class QtDriver(DriverMixin, QObject):
         self.update_thumbs()
 
         # update pagination
-        self.pages_count = math.ceil(results.total_count / self.filter.page_size)
+        self.pages_count = math.ceil(results.total_count / self.navigation.current.page_size)
         self.main_window.pagination.update_buttons(
-            self.pages_count, self.filter.page_index, emit=False
+            self.pages_count, self.navigation.current.page_index, emit=False
         )
 
     def remove_recent_library(self, item_key: str):
@@ -1915,14 +1948,14 @@ class QtDriver(DriverMixin, QObject):
         if open_status.json_migration_req:
             self.migration_modal = JsonMigrationModal(path)
             self.migration_modal.migration_finished.connect(
-                lambda: self.init_library(path, self.lib.open_library(path))
+                lambda: self.__init_library(path, self.lib.open_library(path))
             )
             self.main_window.landing_widget.set_status_label("")
             self.migration_modal.paged_panel.show()
         else:
-            self.init_library(path, open_status)
+            self.__init_library(path, open_status)
 
-    def init_library(self, path: Path, open_status: LibraryStatus):
+    def __init_library(self, path: Path, open_status: LibraryStatus):
         if not open_status.success:
             self.show_error_message(
                 error_name=open_status.message
@@ -1933,7 +1966,7 @@ class QtDriver(DriverMixin, QObject):
 
         self.init_workers()
 
-        self.filter.page_size = self.settings.page_size
+        self.__reset_navigation()
 
         # TODO - make this call optional
         if self.lib.entries_count < 10000:
