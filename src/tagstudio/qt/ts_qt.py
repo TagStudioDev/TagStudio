@@ -272,8 +272,6 @@ class QtDriver(DriverMixin, QObject):
             f"[Config] Thumbnail cache size limit: {format_size(CacheManager.size_limit)}",
         )
 
-        self.add_tag_to_selected_action: QAction | None = None
-
     def __reset_navigation(self) -> None:
         self.browsing_history = History(BrowsingState.show_all())
 
@@ -442,8 +440,7 @@ class QtDriver(DriverMixin, QObject):
         )
 
         # Refresh Directories
-        self.refresh_dir_action = self.main_window.menu_bar.refresh_dir_action
-        self.refresh_dir_action.triggered.connect(
+        self.main_window.menu_bar.refresh_dir_action.triggered.connect(
             lambda: self.call_if_library_open(self.add_new_files_callback)
         )
 
@@ -452,133 +449,48 @@ class QtDriver(DriverMixin, QObject):
 
         # endregion
 
-        # Edit Menu ============================================================
-        self.new_tag_action = QAction(Translations["menu.edit.new_tag"], menu_bar)
-        self.new_tag_action.triggered.connect(lambda: self.add_tag_action_callback())
-        self.new_tag_action.setShortcut(
-            QtCore.QKeyCombination(
-                QtCore.Qt.KeyboardModifier(QtCore.Qt.KeyboardModifier.ControlModifier),
-                QtCore.Qt.Key.Key_T,
-            )
+        # region Edit Menu ============================================================
+        self.main_window.menu_bar.new_tag_action.triggered.connect(
+            lambda: self.add_tag_action_callback()
         )
-        self.new_tag_action.setToolTip("Ctrl+T")
-        self.new_tag_action.setEnabled(False)
-        edit_menu.addAction(self.new_tag_action)
 
-        edit_menu.addSeparator()
-
-        self.select_all_action = QAction(Translations["select.all"], menu_bar)
-        self.select_all_action.triggered.connect(self.select_all_action_callback)
-        self.select_all_action.setShortcut(
-            QtCore.QKeyCombination(
-                QtCore.Qt.KeyboardModifier(QtCore.Qt.KeyboardModifier.ControlModifier),
-                QtCore.Qt.Key.Key_A,
-            )
+        self.main_window.menu_bar.select_all_action.triggered.connect(
+            self.select_all_action_callback
         )
-        self.select_all_action.setToolTip("Ctrl+A")
-        self.select_all_action.setEnabled(False)
-        edit_menu.addAction(self.select_all_action)
 
-        self.select_inverse_action = QAction(Translations["select.inverse"], menu_bar)
-        self.select_inverse_action.triggered.connect(self.select_inverse_action_callback)
-        self.select_inverse_action.setShortcut(
-            QtCore.QKeyCombination(
-                QtCore.Qt.KeyboardModifier(
-                    QtCore.Qt.KeyboardModifier.ControlModifier
-                    ^ QtCore.Qt.KeyboardModifier.ShiftModifier
-                ),
-                QtCore.Qt.Key.Key_I,
-            )
+        self.main_window.menu_bar.select_inverse_action.triggered.connect(
+            self.select_inverse_action_callback
         )
-        self.select_inverse_action.setToolTip("Ctrl+Shift+I")
-        self.select_inverse_action.setEnabled(False)
-        edit_menu.addAction(self.select_inverse_action)
 
-        self.clear_select_action = QAction(Translations["select.clear"], menu_bar)
-        self.clear_select_action.triggered.connect(self.clear_select_action_callback)
-        self.clear_select_action.setShortcut(QtCore.Qt.Key.Key_Escape)
-        self.clear_select_action.setToolTip("Esc")
-        self.clear_select_action.setEnabled(False)
-        edit_menu.addAction(self.clear_select_action)
+        self.main_window.menu_bar.clear_select_action.triggered.connect(
+            self.clear_select_action_callback
+        )
 
         self.copy_buffer: dict = {"fields": [], "tags": []}
 
-        self.copy_fields_action = QAction(Translations["edit.copy_fields"], menu_bar)
-        self.copy_fields_action.triggered.connect(self.copy_fields_action_callback)
-        self.copy_fields_action.setShortcut(
-            QtCore.QKeyCombination(
-                QtCore.Qt.KeyboardModifier(QtCore.Qt.KeyboardModifier.ControlModifier),
-                QtCore.Qt.Key.Key_C,
-            )
+        self.main_window.menu_bar.copy_fields_action.triggered.connect(
+            self.copy_fields_action_callback
         )
-        self.copy_fields_action.setToolTip("Ctrl+C")
-        self.copy_fields_action.setEnabled(False)
-        edit_menu.addAction(self.copy_fields_action)
 
-        self.paste_fields_action = QAction(Translations["edit.paste_fields"], menu_bar)
-        self.paste_fields_action.triggered.connect(self.paste_fields_action_callback)
-        self.paste_fields_action.setShortcut(
-            QtCore.QKeyCombination(
-                QtCore.Qt.KeyboardModifier(QtCore.Qt.KeyboardModifier.ControlModifier),
-                QtCore.Qt.Key.Key_V,
-            )
+        self.main_window.menu_bar.paste_fields_action.triggered.connect(
+            self.paste_fields_action_callback
         )
-        self.paste_fields_action.setToolTip("Ctrl+V")
-        self.paste_fields_action.setEnabled(False)
-        edit_menu.addAction(self.paste_fields_action)
 
-        self.add_tag_to_selected_action = QAction(
-            Translations["select.add_tag_to_selected"], menu_bar
+        self.main_window.menu_bar.add_tag_to_selected_action.triggered.connect(
+            self.add_tag_modal.show
         )
-        self.add_tag_to_selected_action.triggered.connect(self.add_tag_modal.show)
-        self.add_tag_to_selected_action.setShortcut(
-            QtCore.QKeyCombination(
-                QtCore.Qt.KeyboardModifier(
-                    QtCore.Qt.KeyboardModifier.ControlModifier
-                    ^ QtCore.Qt.KeyboardModifier.ShiftModifier
-                ),
-                QtCore.Qt.Key.Key_T,
-            )
+
+        self.main_window.menu_bar.delete_file_action.triggered.connect(
+            lambda f="": self.delete_files_callback(f)
         )
-        self.add_tag_to_selected_action.setToolTip("Ctrl+Shift+T")
-        self.add_tag_to_selected_action.setEnabled(False)
-        edit_menu.addAction(self.add_tag_to_selected_action)
 
-        edit_menu.addSeparator()
+        self.main_window.menu_bar.tag_manager_action.triggered.connect(self.tag_manager_panel.show)
 
-        self.delete_file_action = QAction(
-            Translations.format("menu.delete_selected_files_ambiguous", trash_term=trash_term()),
-            menu_bar,
+        self.main_window.menu_bar.color_manager_action.triggered.connect(
+            self.color_manager_panel.show
         )
-        self.delete_file_action.triggered.connect(lambda f="": self.delete_files_callback(f))
-        self.delete_file_action.setShortcut(QtCore.Qt.Key.Key_Delete)
-        self.delete_file_action.setEnabled(False)
-        edit_menu.addAction(self.delete_file_action)
 
-        edit_menu.addSeparator()
-
-        self.manage_file_ext_action = QAction(
-            Translations["menu.edit.manage_file_extensions"], menu_bar
-        )
-        edit_menu.addAction(self.manage_file_ext_action)
-        self.manage_file_ext_action.setEnabled(False)
-
-        self.tag_manager_action = QAction(Translations["menu.edit.manage_tags"], menu_bar)
-        self.tag_manager_action.triggered.connect(self.tag_manager_panel.show)
-        self.tag_manager_action.setShortcut(
-            QtCore.QKeyCombination(
-                QtCore.Qt.KeyboardModifier(QtCore.Qt.KeyboardModifier.ControlModifier),
-                QtCore.Qt.Key.Key_M,
-            )
-        )
-        self.tag_manager_action.setEnabled(False)
-        self.tag_manager_action.setToolTip("Ctrl+M")
-        edit_menu.addAction(self.tag_manager_action)
-
-        self.color_manager_action = QAction(Translations["edit.color_manager"], menu_bar)
-        self.color_manager_action.triggered.connect(self.color_manager_panel.show)
-        self.color_manager_action.setEnabled(False)
-        edit_menu.addAction(self.color_manager_action)
+        # endregion
 
         # View Menu ============================================================
         # show_libs_list_action = QAction(Translations["settings.show_recent_libraries"], menu_bar)
@@ -668,7 +580,6 @@ class QtDriver(DriverMixin, QObject):
         help_menu.addAction(self.about_action)
         self.set_macro_menu_viability()
 
-        menu_bar.addMenu(edit_menu)
         menu_bar.addMenu(view_menu)
         menu_bar.addMenu(tools_menu)
         menu_bar.addMenu(macros_menu)
@@ -812,7 +723,7 @@ class QtDriver(DriverMixin, QObject):
         """Initialize the File Extension panel."""
         if self.file_extension_panel:
             with catch_warnings(record=True):
-                self.manage_file_ext_action.triggered.disconnect()
+                self.main_window.menu_bar.manage_file_ext_action.triggered.disconnect()
                 self.file_extension_panel.saved.disconnect()
             self.file_extension_panel.deleteLater()
             self.file_extension_panel = None
@@ -827,7 +738,9 @@ class QtDriver(DriverMixin, QObject):
         self.file_extension_panel.saved.connect(
             lambda: (panel.save(), self.update_browsing_state())
         )
-        self.manage_file_ext_action.triggered.connect(self.file_extension_panel.show)
+        self.main_window.menu_bar.manage_file_ext_action.triggered.connect(
+            self.file_extension_panel.show
+        )
 
     def show_grid_filenames(self, value: bool):
         for thumb in self.item_thumbs:
@@ -897,12 +810,12 @@ class QtDriver(DriverMixin, QObject):
         self.main_window.pagination.setHidden(True)
         try:
             self.main_window.menu_bar.save_library_backup_action.setEnabled(False)
-            self.close_library_action.setEnabled(False)
-            self.refresh_dir_action.setEnabled(False)
-            self.tag_manager_action.setEnabled(False)
-            self.color_manager_action.setEnabled(False)
-            self.manage_file_ext_action.setEnabled(False)
-            self.new_tag_action.setEnabled(False)
+            self.main_window.menu_bar.close_library_action.setEnabled(False)
+            self.main_window.menu_bar.refresh_dir_action.setEnabled(False)
+            self.main_window.menu_bar.tag_manager_action.setEnabled(False)
+            self.main_window.menu_bar.color_manager_action.setEnabled(False)
+            self.main_window.menu_bar.manage_file_ext_action.setEnabled(False)
+            self.main_window.menu_bar.new_tag_action.setEnabled(False)
             self.fix_unlinked_entries_action.setEnabled(False)
             self.fix_dupe_files_action.setEnabled(False)
             self.clear_thumb_cache_action.setEnabled(False)
@@ -913,8 +826,8 @@ class QtDriver(DriverMixin, QObject):
             )
 
         # NOTE: Doesn't try to disable during tests
-        if self.add_tag_to_selected_action:
-            self.add_tag_to_selected_action.setEnabled(False)
+        if self.main_window.menu_bar.add_tag_to_selected_action:
+            self.main_window.menu_bar.add_tag_to_selected_action.setEnabled(False)
 
         end_time = time.time()
         self.main_window.status_bar.showMessage(
@@ -1506,33 +1419,33 @@ class QtDriver(DriverMixin, QObject):
 
     def set_clipboard_menu_viability(self):
         if len(self.selected) == 1:
-            self.copy_fields_action.setEnabled(True)
+            self.main_window.menu_bar.copy_fields_action.setEnabled(True)
         else:
-            self.copy_fields_action.setEnabled(False)
+            self.main_window.menu_bar.copy_fields_action.setEnabled(False)
         if self.selected and (self.copy_buffer["fields"] or self.copy_buffer["tags"]):
-            self.paste_fields_action.setEnabled(True)
+            self.main_window.menu_bar.paste_fields_action.setEnabled(True)
         else:
-            self.paste_fields_action.setEnabled(False)
+            self.main_window.menu_bar.paste_fields_action.setEnabled(False)
 
     def set_select_actions_visibility(self):
-        if not self.add_tag_to_selected_action:
+        if not self.main_window.menu_bar.add_tag_to_selected_action:
             return
 
         if self.frame_content:
-            self.select_all_action.setEnabled(True)
-            self.select_inverse_action.setEnabled(True)
+            self.main_window.menu_bar.select_all_action.setEnabled(True)
+            self.main_window.menu_bar.select_inverse_action.setEnabled(True)
         else:
-            self.select_all_action.setEnabled(False)
-            self.select_inverse_action.setEnabled(False)
+            self.main_window.menu_bar.select_all_action.setEnabled(False)
+            self.main_window.menu_bar.select_inverse_action.setEnabled(False)
 
         if self.selected:
-            self.add_tag_to_selected_action.setEnabled(True)
-            self.clear_select_action.setEnabled(True)
-            self.delete_file_action.setEnabled(True)
+            self.main_window.menu_bar.add_tag_to_selected_action.setEnabled(True)
+            self.main_window.menu_bar.clear_select_action.setEnabled(True)
+            self.main_window.menu_bar.delete_file_action.setEnabled(True)
         else:
-            self.add_tag_to_selected_action.setEnabled(False)
-            self.clear_select_action.setEnabled(False)
-            self.delete_file_action.setEnabled(False)
+            self.main_window.menu_bar.add_tag_to_selected_action.setEnabled(False)
+            self.main_window.menu_bar.clear_select_action.setEnabled(False)
+            self.main_window.menu_bar.delete_file_action.setEnabled(False)
 
     def update_completions_list(self, text: str) -> None:
         matches = re.search(
@@ -1938,12 +1851,12 @@ class QtDriver(DriverMixin, QObject):
         self.selected.clear()
         self.set_select_actions_visibility()
         self.main_window.menu_bar.save_library_backup_action.setEnabled(True)
-        self.close_library_action.setEnabled(True)
-        self.refresh_dir_action.setEnabled(True)
-        self.tag_manager_action.setEnabled(True)
-        self.color_manager_action.setEnabled(True)
-        self.manage_file_ext_action.setEnabled(True)
-        self.new_tag_action.setEnabled(True)
+        self.main_window.menu_bar.close_library_action.setEnabled(True)
+        self.main_window.menu_bar.refresh_dir_action.setEnabled(True)
+        self.main_window.menu_bar.tag_manager_action.setEnabled(True)
+        self.main_window.menu_bar.color_manager_action.setEnabled(True)
+        self.main_window.menu_bar.manage_file_ext_action.setEnabled(True)
+        self.main_window.menu_bar.new_tag_action.setEnabled(True)
         self.fix_dupe_files_action.setEnabled(True)
         self.fix_unlinked_entries_action.setEnabled(True)
         self.clear_thumb_cache_action.setEnabled(True)
