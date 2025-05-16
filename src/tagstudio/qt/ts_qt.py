@@ -80,7 +80,7 @@ from tagstudio.qt.helpers.custom_runnable import CustomRunnable
 from tagstudio.qt.helpers.file_deleter import delete_file
 from tagstudio.qt.helpers.function_iterator import FunctionIterator
 from tagstudio.qt.helpers.vendored.ffmpeg import FFMPEG_CMD, FFPROBE_CMD
-from tagstudio.qt.main_window import Ui_MainWindow
+from tagstudio.qt.main_window import MainWindow
 from tagstudio.qt.modals.about import AboutModal
 from tagstudio.qt.modals.build_tag import BuildTagPanel
 from tagstudio.qt.modals.drop_import import DropImportModal
@@ -347,7 +347,7 @@ class QtDriver(DriverMixin, QObject):
         timer.timeout.connect(lambda: None)
 
         # self.main_window = loader.load(home_path)
-        self.main_window = Ui_MainWindow(self)
+        self.main_window = MainWindow(self)
         self.main_window.setWindowTitle(self.base_title)
         self.main_window.mousePressEvent = self.mouse_navigation
         self.main_window.dragEnterEvent = self.drag_enter_event
