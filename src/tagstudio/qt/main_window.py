@@ -3,10 +3,10 @@
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
 
-import logging
 import typing
 from pathlib import Path
 
+import structlog
 from PySide6 import QtCore
 from PySide6.QtCore import QMetaObject, QSize, QStringListModel, Qt
 from PySide6.QtGui import QAction
@@ -33,6 +33,7 @@ from PySide6.QtWidgets import (
 
 from tagstudio.core.enums import ShowFilepathOption
 from tagstudio.qt.pagination import Pagination
+from tagstudio.qt.platform_strings import trash_term
 from tagstudio.qt.translations import Translations
 from tagstudio.qt.widgets.landing import LandingWidget
 from tagstudio.qt.widgets.preview_panel import PreviewPanel
@@ -41,7 +42,8 @@ from tagstudio.qt.widgets.preview_panel import PreviewPanel
 if typing.TYPE_CHECKING:
     from tagstudio.qt.ts_qt import QtDriver
 
-logging.basicConfig(format="%(message)s", level=logging.INFO)
+
+logger = structlog.get_logger(__name__)
 
 
 class MainMenuBar(QMenuBar):
@@ -54,10 +56,24 @@ class MainMenuBar(QMenuBar):
     refresh_dir_action: QAction
     close_library_action: QAction
 
+    edit_menu: QMenu
+    new_tag_action: QAction
+    select_all_action: QAction
+    select_inverse_action: QAction
+    clear_select_action: QAction
+    copy_fields_action: QAction
+    paste_fields_action: QAction
+    add_tag_to_selected_action: QAction
+    delete_file_action: QAction
+    manage_file_ext_action: QAction
+    tag_manager_action: QAction
+    color_manager_action: QAction
+
     def __init__(self, parent=...):
         super().__init__(parent)
 
         self.setup_file_menu()
+        self.setup_edit_menu()
 
     def setup_file_menu(self):
         self.file_menu = QMenu(Translations["menu.file"], self)
@@ -127,6 +143,135 @@ class MainMenuBar(QMenuBar):
         self.file_menu.addSeparator()
 
         self.addMenu(self.file_menu)
+
+    def setup_edit_menu(self):
+        self.edit_menu = QMenu(Translations["generic.edit_alt"], self)
+
+        # New Tag
+        self.new_tag_action = QAction(Translations["menu.edit.new_tag"], self)
+        self.new_tag_action.setShortcut(
+            QtCore.QKeyCombination(
+                QtCore.Qt.KeyboardModifier(QtCore.Qt.KeyboardModifier.ControlModifier),
+                QtCore.Qt.Key.Key_T,
+            )
+        )
+        self.new_tag_action.setToolTip("Ctrl+T")
+        self.new_tag_action.setEnabled(False)
+        self.edit_menu.addAction(self.new_tag_action)
+
+        self.edit_menu.addSeparator()
+
+        # Select All
+        self.select_all_action = QAction(Translations["select.all"], self)
+        self.select_all_action.setShortcut(
+            QtCore.QKeyCombination(
+                QtCore.Qt.KeyboardModifier(QtCore.Qt.KeyboardModifier.ControlModifier),
+                QtCore.Qt.Key.Key_A,
+            )
+        )
+        self.select_all_action.setToolTip("Ctrl+A")
+        self.select_all_action.setEnabled(False)
+        self.edit_menu.addAction(self.select_all_action)
+
+        # Invert Selection
+        self.select_inverse_action = QAction(Translations["select.inverse"], self)
+        self.select_inverse_action.setShortcut(
+            QtCore.QKeyCombination(
+                QtCore.Qt.KeyboardModifier(
+                    QtCore.Qt.KeyboardModifier.ControlModifier
+                    ^ QtCore.Qt.KeyboardModifier.ShiftModifier
+                ),
+                QtCore.Qt.Key.Key_I,
+            )
+        )
+        self.select_inverse_action.setToolTip("Ctrl+Shift+I")
+        self.select_inverse_action.setEnabled(False)
+        self.edit_menu.addAction(self.select_inverse_action)
+
+        # Clear Selection
+        self.clear_select_action = QAction(Translations["select.clear"], self)
+        self.clear_select_action.setShortcut(QtCore.Qt.Key.Key_Escape)
+        self.clear_select_action.setToolTip("Esc")
+        self.clear_select_action.setEnabled(False)
+        self.edit_menu.addAction(self.clear_select_action)
+
+        # Copy Fields
+        self.copy_fields_action = QAction(Translations["edit.copy_fields"], self)
+        self.copy_fields_action.setShortcut(
+            QtCore.QKeyCombination(
+                QtCore.Qt.KeyboardModifier(QtCore.Qt.KeyboardModifier.ControlModifier),
+                QtCore.Qt.Key.Key_C,
+            )
+        )
+        self.copy_fields_action.setToolTip("Ctrl+C")
+        self.copy_fields_action.setEnabled(False)
+        self.edit_menu.addAction(self.copy_fields_action)
+
+        # Paste Fields
+        self.paste_fields_action = QAction(Translations["edit.paste_fields"], self)
+        self.paste_fields_action.setShortcut(
+            QtCore.QKeyCombination(
+                QtCore.Qt.KeyboardModifier(QtCore.Qt.KeyboardModifier.ControlModifier),
+                QtCore.Qt.Key.Key_V,
+            )
+        )
+        self.paste_fields_action.setToolTip("Ctrl+V")
+        self.paste_fields_action.setEnabled(False)
+        self.edit_menu.addAction(self.paste_fields_action)
+
+        # Add Tag to Selected
+        self.add_tag_to_selected_action = QAction(Translations["select.add_tag_to_selected"], self)
+        self.add_tag_to_selected_action.setShortcut(
+            QtCore.QKeyCombination(
+                QtCore.Qt.KeyboardModifier(
+                    QtCore.Qt.KeyboardModifier.ControlModifier
+                    ^ QtCore.Qt.KeyboardModifier.ShiftModifier
+                ),
+                QtCore.Qt.Key.Key_T,
+            )
+        )
+        self.add_tag_to_selected_action.setToolTip("Ctrl+Shift+T")
+        self.add_tag_to_selected_action.setEnabled(False)
+        self.edit_menu.addAction(self.add_tag_to_selected_action)
+
+        self.edit_menu.addSeparator()
+
+        # Move Files to trash
+        self.delete_file_action = QAction(
+            Translations.format("menu.delete_selected_files_ambiguous", trash_term=trash_term()),
+            self,
+        )
+        self.delete_file_action.setShortcut(QtCore.Qt.Key.Key_Delete)
+        self.delete_file_action.setEnabled(False)
+        self.edit_menu.addAction(self.delete_file_action)
+
+        self.edit_menu.addSeparator()
+
+        # Manage File Extensions
+        self.manage_file_ext_action = QAction(
+            Translations["menu.edit.manage_file_extensions"], self
+        )
+        self.manage_file_ext_action.setEnabled(False)
+        self.edit_menu.addAction(self.manage_file_ext_action)
+
+        self.addMenu(self.edit_menu)
+
+        # Manage Tags
+        self.tag_manager_action = QAction(Translations["menu.edit.manage_tags"], self)
+        self.tag_manager_action.setShortcut(
+            QtCore.QKeyCombination(
+                QtCore.Qt.KeyboardModifier(QtCore.Qt.KeyboardModifier.ControlModifier),
+                QtCore.Qt.Key.Key_M,
+            )
+        )
+        self.tag_manager_action.setEnabled(False)
+        self.tag_manager_action.setToolTip("Ctrl+M")
+        self.edit_menu.addAction(self.tag_manager_action)
+
+        # Color Manager
+        self.color_manager_action = QAction(Translations["edit.color_manager"], self)
+        self.color_manager_action.setEnabled(False)
+        self.edit_menu.addAction(self.color_manager_action)
 
     def rebuild_open_recent_library_menu(
         self,
