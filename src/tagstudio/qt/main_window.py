@@ -77,6 +77,9 @@ class MainMenuBar(QMenuBar):
     fix_dupe_files_action: QAction
     clear_thumb_cache_action: QAction
 
+    macros_menu: QMenu
+    folders_to_tags_action: QAction
+
     def __init__(self, parent=...):
         super().__init__(parent)
 
@@ -84,6 +87,7 @@ class MainMenuBar(QMenuBar):
         self.setup_edit_menu()
         self.setup_view_menu()
         self.setup_tools_menu()
+        self.setup_macros_menu()
 
     def setup_file_menu(self):
         self.file_menu = QMenu(Translations["menu.file"], self)
@@ -321,6 +325,15 @@ class MainMenuBar(QMenuBar):
         self.tools_menu.addAction(self.clear_thumb_cache_action)
 
         self.addMenu(self.tools_menu)
+
+    def setup_macros_menu(self):
+        self.macros_menu = QMenu(Translations["menu.macros"], self)
+
+        self.folders_to_tags_action = QAction(Translations["menu.macros.folders_to_tags"], self)
+        self.folders_to_tags_action.setEnabled(False)
+        self.macros_menu.addAction(self.folders_to_tags_action)
+
+        self.addMenu(self.macros_menu)
 
     def rebuild_open_recent_library_menu(
         self,

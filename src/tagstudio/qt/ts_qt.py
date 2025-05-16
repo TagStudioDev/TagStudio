@@ -403,7 +403,6 @@ class QtDriver(DriverMixin, QObject):
         # region Menu Bar
         menu_bar = self.main_window.menu_bar
 
-        macros_menu = QMenu(Translations["menu.macros"], menu_bar)
         help_menu = QMenu(Translations["menu.help"], menu_bar)
 
         # region File Menu ============================================================
@@ -527,25 +526,17 @@ class QtDriver(DriverMixin, QObject):
 
         # endregion
 
-        # Macros Menu ==========================================================
-        # self.autofill_action = QAction("Autofill", menu_bar)
-        # self.autofill_action.triggered.connect(
-        #     lambda: (
-        #         self.run_macros(MacroID.AUTOFILL, self.selected),
-        #         self.preview_panel.update_widgets(update_preview=False),
-        #     )
-        # )
-        # macros_menu.addAction(self.autofill_action)
-
+        # region Macros Menu ==========================================================
         def create_folders_tags_modal():
             if not hasattr(self, "folders_modal"):
                 self.folders_modal = FoldersToTagsModal(self.lib, self)
             self.folders_modal.show()
 
-        self.folders_to_tags_action = QAction(Translations["menu.macros.folders_to_tags"], menu_bar)
-        self.folders_to_tags_action.triggered.connect(create_folders_tags_modal)
-        self.folders_to_tags_action.setEnabled(False)
-        macros_menu.addAction(self.folders_to_tags_action)
+        self.main_window.menu_bar.folders_to_tags_action.triggered.connect(
+            create_folders_tags_modal
+        )
+
+        # endregion
 
         # Help Menu ============================================================
         def create_about_modal():
@@ -558,7 +549,6 @@ class QtDriver(DriverMixin, QObject):
         help_menu.addAction(self.about_action)
         self.set_macro_menu_viability()
 
-        menu_bar.addMenu(macros_menu)
         menu_bar.addMenu(help_menu)
         # endregion
 
@@ -795,7 +785,7 @@ class QtDriver(DriverMixin, QObject):
             self.main_window.menu_bar.fix_unlinked_entries_action.setEnabled(False)
             self.main_window.menu_bar.fix_dupe_files_action.setEnabled(False)
             self.main_window.menu_bar.clear_thumb_cache_action.setEnabled(False)
-            self.folders_to_tags_action.setEnabled(False)
+            self.main_window.menu_bar.folders_to_tags_action.setEnabled(False)
         except AttributeError:
             logger.warning(
                 "[Library] Could not disable library management menu actions. Is this in a test?"
@@ -1836,7 +1826,7 @@ class QtDriver(DriverMixin, QObject):
         self.main_window.menu_bar.fix_unlinked_entries_action.setEnabled(True)
         self.main_window.menu_bar.fix_dupe_files_action.setEnabled(True)
         self.main_window.menu_bar.clear_thumb_cache_action.setEnabled(True)
-        self.folders_to_tags_action.setEnabled(True)
+        self.main_window.menu_bar.folders_to_tags_action.setEnabled(True)
 
         self.main_window.preview_panel.update_widgets()
 
