@@ -5,8 +5,11 @@
 
 import logging
 import typing
+from pathlib import Path
 
+from PySide6 import QtCore
 from PySide6.QtCore import QMetaObject, QSize, QStringListModel, Qt
+from PySide6.QtGui import QAction
 from PySide6.QtWidgets import (
     QComboBox,
     QCompleter,
@@ -16,6 +19,8 @@ from PySide6.QtWidgets import (
     QLayout,
     QLineEdit,
     QMainWindow,
+    QMenu,
+    QMenuBar,
     QPushButton,
     QScrollArea,
     QSizePolicy,
@@ -26,6 +31,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from tagstudio.core.enums import ShowFilepathOption
 from tagstudio.qt.pagination import Pagination
 from tagstudio.qt.translations import Translations
 from tagstudio.qt.widgets.landing import LandingWidget
@@ -38,6 +44,130 @@ if typing.TYPE_CHECKING:
 logging.basicConfig(format="%(message)s", level=logging.INFO)
 
 
+class MainMenuBar(QMenuBar):
+    file_menu: QMenu
+    open_library_action: QAction
+    open_recent_library_menu: QMenu
+    save_library_backup_action: QAction
+    settings_action: QAction
+    open_on_start_action: QAction
+    refresh_dir_action: QAction
+    close_library_action: QAction
+
+    def __init__(self, parent=...):
+        super().__init__(parent)
+
+        self.setup_file_menu()
+
+    def setup_file_menu(self):
+        self.file_menu = QMenu(Translations["menu.file"], self)
+
+        # Open/Create Library
+        self.open_library_action = QAction(Translations["menu.file.open_create_library"], self)
+        self.open_library_action.setShortcut(
+            QtCore.QKeyCombination(
+                QtCore.Qt.KeyboardModifier(QtCore.Qt.KeyboardModifier.ControlModifier),
+                QtCore.Qt.Key.Key_O,
+            )
+        )
+        self.open_library_action.setToolTip("Ctrl+O")
+        self.file_menu.addAction(self.open_library_action)
+
+        # Open Recent
+        self.open_recent_library_menu = QMenu(Translations["menu.file.open_recent_library"], self)
+        self.file_menu.addMenu(self.open_recent_library_menu)
+
+        # Save Library Backup
+        self.save_library_backup_action = QAction(Translations["menu.file.save_backup"], self)
+        self.save_library_backup_action.setShortcut(
+            QtCore.QKeyCombination(
+                QtCore.Qt.KeyboardModifier(
+                    QtCore.Qt.KeyboardModifier.ControlModifier
+                    | QtCore.Qt.KeyboardModifier.ShiftModifier
+                ),
+                QtCore.Qt.Key.Key_S,
+            )
+        )
+        self.save_library_backup_action.setStatusTip("Ctrl+Shift+S")
+        self.save_library_backup_action.setEnabled(False)
+        self.file_menu.addAction(self.save_library_backup_action)
+
+        self.file_menu.addSeparator()
+
+        # Settings...
+        self.settings_action = QAction(Translations["menu.settings"], self)
+        self.file_menu.addAction(self.settings_action)
+
+        # Open Library on Start
+        self.open_on_start_action = QAction(Translations["settings.open_library_on_start"], self)
+        self.open_on_start_action.setCheckable(True)
+        self.file_menu.addAction(self.open_on_start_action)
+
+        self.file_menu.addSeparator()
+
+        # Refresh Directories
+        self.refresh_dir_action = QAction(Translations["menu.file.refresh_directories"], self)
+        self.refresh_dir_action.setShortcut(
+            QtCore.QKeyCombination(
+                QtCore.Qt.KeyboardModifier(QtCore.Qt.KeyboardModifier.ControlModifier),
+                QtCore.Qt.Key.Key_R,
+            )
+        )
+        self.refresh_dir_action.setStatusTip("Ctrl+R")
+        self.refresh_dir_action.setEnabled(False)
+        self.file_menu.addAction(self.refresh_dir_action)
+
+        self.file_menu.addSeparator()
+
+        # Close Library
+        self.close_library_action = QAction(Translations["menu.file.close_library"], self)
+        self.close_library_action.setEnabled(False)
+        self.file_menu.addAction(self.close_library_action)
+
+        self.file_menu.addSeparator()
+
+        self.addMenu(self.file_menu)
+
+    def rebuild_open_recent_library_menu(
+        self,
+        libraries: list[Path],
+        show_filepath: ShowFilepathOption,
+        open_library_callback,
+        clear_libraries_callback,
+    ):
+        actions: list[QAction] = []
+        for path in libraries:
+            action = QAction(self.open_recent_library_menu)
+            if show_filepath == ShowFilepathOption.SHOW_FULL_PATHS:
+                action.setText(str(path))
+            else:
+                action.setText(str(path.name))
+            action.triggered.connect(lambda checked=False, p=path: open_library_callback(p))
+            actions.append(action)
+
+        clear_recent_action = QAction(
+            Translations["menu.file.clear_recent_libraries"], self.open_recent_library_menu
+        )
+        clear_recent_action.triggered.connect(clear_libraries_callback)
+        actions.append(clear_recent_action)
+
+        # Clear previous actions
+        for action in self.open_recent_library_menu.actions():
+            self.open_recent_library_menu.removeAction(action)
+
+        # Add new actions
+        for action in actions:
+            self.open_recent_library_menu.addAction(action)
+
+        # Only enable add "clear recent" if there are still recent libraries.
+        if len(actions) > 1:
+            self.open_recent_library_menu.setDisabled(False)
+            self.open_recent_library_menu.addSeparator()
+            self.open_recent_library_menu.addAction(clear_recent_action)
+        else:
+            self.open_recent_library_menu.setDisabled(True)
+
+
 # View Component
 class MainWindow(QMainWindow):
     def __init__(self, driver: "QtDriver", parent=None) -> None:
@@ -46,6 +176,8 @@ class MainWindow(QMainWindow):
         if not self.objectName():
             self.setObjectName("MainWindow")
         self.resize(1300, 720)
+
+        self.setup_menu_bar()
 
         self.setup_central_widget(driver)
 
@@ -64,6 +196,16 @@ class MainWindow(QMainWindow):
         # self.windowFX.setAcrylicEffect(self.winId(), isEnableShadow=False)
 
     # region UI Setup Methods
+
+    # region Menu Bar
+
+    def setup_menu_bar(self):
+        self.menu_bar = MainMenuBar(self)
+
+        self.setMenuBar(self.menu_bar)
+        self.menu_bar.setNativeMenuBar(True)
+
+    # endregion
 
     def setup_central_widget(self, driver: "QtDriver"):
         self.central_widget = QWidget(self)

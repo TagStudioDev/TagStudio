@@ -46,7 +46,6 @@ from PySide6.QtWidgets import (
     QFileDialog,
     QLineEdit,
     QMenu,
-    QMenuBar,
     QMessageBox,
     QPushButton,
     QScrollArea,
@@ -403,90 +402,55 @@ class QtDriver(DriverMixin, QObject):
             )
         )
 
-        menu_bar = QMenuBar(self.main_window)
-        self.main_window.setMenuBar(menu_bar)
-        menu_bar.setNativeMenuBar(True)
+        # region Menu Bar
+        menu_bar = self.main_window.menu_bar
 
-        file_menu = QMenu(Translations["menu.file"], menu_bar)
         edit_menu = QMenu(Translations["generic.edit_alt"], menu_bar)
         view_menu = QMenu(Translations["menu.view"], menu_bar)
         tools_menu = QMenu(Translations["menu.tools"], menu_bar)
         macros_menu = QMenu(Translations["menu.macros"], menu_bar)
         help_menu = QMenu(Translations["menu.help"], menu_bar)
 
-        # File Menu ============================================================
-        open_library_action = QAction(Translations["menu.file.open_create_library"], menu_bar)
-        open_library_action.triggered.connect(lambda: self.open_library_from_dialog())
-        open_library_action.setShortcut(
-            QtCore.QKeyCombination(
-                QtCore.Qt.KeyboardModifier(QtCore.Qt.KeyboardModifier.ControlModifier),
-                QtCore.Qt.Key.Key_O,
-            )
+        # region File Menu ============================================================
+        # Open/Create Library
+        self.main_window.menu_bar.open_library_action.triggered.connect(
+            self.open_library_from_dialog
         )
-        open_library_action.setToolTip("Ctrl+O")
-        file_menu.addAction(open_library_action)
 
-        self.open_recent_library_menu = QMenu(
-            Translations["menu.file.open_recent_library"], menu_bar
-        )
-        file_menu.addMenu(self.open_recent_library_menu)
+        # Open Recent
         self.update_recent_lib_menu()
 
-        self.save_library_backup_action = QAction(Translations["menu.file.save_backup"], menu_bar)
-        self.save_library_backup_action.triggered.connect(
-            lambda: self.callback_library_needed_check(self.backup_library)
+        # Save Library Backup
+        self.main_window.menu_bar.save_library_backup_action.triggered.connect(
+            lambda: self.call_if_library_open(self.backup_library)
         )
-        self.save_library_backup_action.setShortcut(
-            QtCore.QKeyCombination(
-                QtCore.Qt.KeyboardModifier(
-                    QtCore.Qt.KeyboardModifier.ControlModifier
-                    | QtCore.Qt.KeyboardModifier.ShiftModifier
-                ),
-                QtCore.Qt.Key.Key_S,
-            )
+
+        # Settings...
+        self.main_window.menu_bar.settings_action.triggered.connect(self.open_settings_modal)
+
+        # Open Library on Start
+        self.main_window.menu_bar.open_on_start_action.setChecked(
+            self.settings.open_last_loaded_on_startup
         )
-        self.save_library_backup_action.setStatusTip("Ctrl+Shift+S")
-        self.save_library_backup_action.setEnabled(False)
-        file_menu.addAction(self.save_library_backup_action)
-
-        file_menu.addSeparator()
-        settings_action = QAction(Translations["menu.settings"], self)
-        settings_action.triggered.connect(self.open_settings_modal)
-        file_menu.addAction(settings_action)
-
-        open_on_start_action = QAction(Translations["settings.open_library_on_start"], self)
-        open_on_start_action.setCheckable(True)
-        open_on_start_action.setChecked(self.settings.open_last_loaded_on_startup)
 
         def set_open_last_loaded_on_startup(checked: bool):
             self.settings.open_last_loaded_on_startup = checked
             self.settings.save()
 
-        open_on_start_action.triggered.connect(set_open_last_loaded_on_startup)
-        file_menu.addAction(open_on_start_action)
+        self.main_window.menu_bar.open_on_start_action.triggered.connect(
+            set_open_last_loaded_on_startup
+        )
 
-        file_menu.addSeparator()
-
-        self.refresh_dir_action = QAction(Translations["menu.file.refresh_directories"], menu_bar)
+        # Refresh Directories
+        self.refresh_dir_action = self.main_window.menu_bar.refresh_dir_action
         self.refresh_dir_action.triggered.connect(
-            lambda: self.callback_library_needed_check(self.add_new_files_callback)
+            lambda: self.call_if_library_open(self.add_new_files_callback)
         )
-        self.refresh_dir_action.setShortcut(
-            QtCore.QKeyCombination(
-                QtCore.Qt.KeyboardModifier(QtCore.Qt.KeyboardModifier.ControlModifier),
-                QtCore.Qt.Key.Key_R,
-            )
-        )
-        self.refresh_dir_action.setStatusTip("Ctrl+R")
-        self.refresh_dir_action.setEnabled(False)
-        file_menu.addAction(self.refresh_dir_action)
-        file_menu.addSeparator()
 
-        self.close_library_action = QAction(Translations["menu.file.close_library"], menu_bar)
-        self.close_library_action.triggered.connect(self.close_library)
-        self.close_library_action.setEnabled(False)
-        file_menu.addAction(self.close_library_action)
-        file_menu.addSeparator()
+        # Close Library
+        self.main_window.menu_bar.close_library_action.triggered.connect(self.close_library)
+
+        # endregion
 
         # Edit Menu ============================================================
         self.new_tag_action = QAction(Translations["menu.edit.new_tag"], menu_bar)
@@ -704,12 +668,12 @@ class QtDriver(DriverMixin, QObject):
         help_menu.addAction(self.about_action)
         self.set_macro_menu_viability()
 
-        menu_bar.addMenu(file_menu)
         menu_bar.addMenu(edit_menu)
         menu_bar.addMenu(view_menu)
         menu_bar.addMenu(tools_menu)
         menu_bar.addMenu(macros_menu)
         menu_bar.addMenu(help_menu)
+        # endregion
 
         self.main_window.search_field.textChanged.connect(self.update_completions_list)
 
@@ -869,7 +833,7 @@ class QtDriver(DriverMixin, QObject):
         for thumb in self.item_thumbs:
             thumb.set_filename_visibility(value)
 
-    def callback_library_needed_check(self, func):
+    def call_if_library_open(self, func):
         """Check if loaded library has valid path before executing the button function."""
         if self.lib.library_dir:
             func()
@@ -932,7 +896,7 @@ class QtDriver(DriverMixin, QObject):
         self.main_window.toggle_landing_page(enabled=True)
         self.main_window.pagination.setHidden(True)
         try:
-            self.save_library_backup_action.setEnabled(False)
+            self.main_window.menu_bar.save_library_backup_action.setEnabled(False)
             self.close_library_action.setEnabled(False)
             self.refresh_dir_action.setEnabled(False)
             self.tag_manager_action.setEnabled(False)
@@ -1860,13 +1824,12 @@ class QtDriver(DriverMixin, QObject):
 
     def update_recent_lib_menu(self):
         """Updates the recent library menu from the latest values from the settings file."""
-        actions: list[QAction] = []
         lib_items: dict[str, tuple[str, str]] = {}
 
-        settings = self.cached_values
-        settings.beginGroup(SettingItems.LIBS_LIST)
-        for item_tstamp in settings.allKeys():
-            val = str(settings.value(item_tstamp, type=str))
+        # get recent libraries sorted by timestamp
+        self.cached_values.beginGroup(SettingItems.LIBS_LIST)
+        for item_tstamp in self.cached_values.allKeys():
+            val = str(self.cached_values.value(item_tstamp, type=str))
             cut_val = val
             if len(val) > 45:
                 cut_val = f"{val[0:10]} ... {val[-10:]}"
@@ -1874,40 +1837,14 @@ class QtDriver(DriverMixin, QObject):
 
         # Sort lib_items by the key
         libs_sorted = sorted(lib_items.items(), key=lambda item: item[0], reverse=True)
-        settings.endGroup()
+        self.cached_values.endGroup()
 
-        # Create actions for each library
-        for library_key in libs_sorted:
-            path = Path(library_key[1][0])
-            action = QAction(self.open_recent_library_menu)
-            if self.settings.show_filepath == ShowFilepathOption.SHOW_FULL_PATHS:
-                action.setText(str(path))
-            else:
-                action.setText(str(path.name))
-            action.triggered.connect(lambda checked=False, p=path: self.open_library(p))
-            actions.append(action)
-
-        clear_recent_action = QAction(
-            Translations["menu.file.clear_recent_libraries"], self.open_recent_library_menu
+        self.main_window.menu_bar.rebuild_open_recent_library_menu(
+            [Path(key[1][0]) for key in libs_sorted],
+            self.settings.show_filepath,  # TODO: once QtDriver is a Singleton remove this parameter
+            self.open_library,
+            self.clear_recent_libs,
         )
-        clear_recent_action.triggered.connect(self.clear_recent_libs)
-        actions.append(clear_recent_action)
-
-        # Clear previous actions
-        for action in self.open_recent_library_menu.actions():
-            self.open_recent_library_menu.removeAction(action)
-
-        # Add new actions
-        for action in actions:
-            self.open_recent_library_menu.addAction(action)
-
-        # Only enable add "clear recent" if there are still recent libraries.
-        if len(actions) > 1:
-            self.open_recent_library_menu.setDisabled(False)
-            self.open_recent_library_menu.addSeparator()
-            self.open_recent_library_menu.addAction(clear_recent_action)
-        else:
-            self.open_recent_library_menu.setDisabled(True)
 
     def clear_recent_libs(self):
         """Clear the list of recent libraries from the settings file."""
@@ -2000,7 +1937,7 @@ class QtDriver(DriverMixin, QObject):
 
         self.selected.clear()
         self.set_select_actions_visibility()
-        self.save_library_backup_action.setEnabled(True)
+        self.main_window.menu_bar.save_library_backup_action.setEnabled(True)
         self.close_library_action.setEnabled(True)
         self.refresh_dir_action.setEnabled(True)
         self.tag_manager_action.setEnabled(True)
