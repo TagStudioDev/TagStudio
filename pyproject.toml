@@ -97,7 +97,7 @@ reportUnknownMemberType = false
 reportUnusedCallResult = false
 
 [tool.ruff]
-exclude = ["main_window.py", "home_ui.py", "resources.py", "resources_rc.py"]
+exclude = ["home_ui.py", "resources.py", "resources_rc.py"]
 line-length = 100
 
 [tool.ruff.lint]

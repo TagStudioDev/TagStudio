@@ -37,71 +37,56 @@ if typing.TYPE_CHECKING:
 logging.basicConfig(format="%(message)s", level=logging.INFO)
 
 
-class Ui_MainWindow(QMainWindow):
-  
+class MainWindow(QMainWindow):
     def __init__(self, driver: "QtDriver", parent=None) -> None:
         super().__init__(parent)
-        self.driver: "QtDriver" = driver
-        self.setupUi(self)
 
-        # NOTE: These are old attempts to allow for a translucent/acrylic
-        # window effect. This may be attempted again in the future.
-        # self.setWindowFlag(Qt.WindowType.NoDropShadowWindowHint, True)
-        # self.setWindowFlag(Qt.WindowType.WindowTransparentForInput, False)
-        # # self.setWindowFlag(Qt.WindowType.FramelessWindowHint, True)
-        # self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
+        if not self.objectName():
+            self.setObjectName("MainWindow")
+        self.resize(1300, 720)
 
-        # self.windowFX = WindowEffect()
-        # self.windowFX.setAcrylicEffect(self.winId(), isEnableShadow=False)
-
-
-    def setupUi(self, MainWindow):
-        if not MainWindow.objectName():
-            MainWindow.setObjectName(u"MainWindow")
-        MainWindow.resize(1300, 720)
-        
-        self.centralwidget = QWidget(MainWindow)
-        self.centralwidget.setObjectName(u"centralwidget")
+        self.centralwidget = QWidget(self)
+        self.centralwidget.setObjectName("centralwidget")
         self.gridLayout = QGridLayout(self.centralwidget)
-        self.gridLayout.setObjectName(u"gridLayout")
+        self.gridLayout.setObjectName("gridLayout")
         self.horizontalLayout = QHBoxLayout()
-        self.horizontalLayout.setObjectName(u"horizontalLayout")
-  
+        self.horizontalLayout.setObjectName("horizontalLayout")
+
         # ComboBox group for search type and thumbnail size
         self.horizontalLayout_3 = QHBoxLayout()
         self.horizontalLayout_3.setObjectName("horizontalLayout_3")
-  
+
         # left side spacer
-        spacerItem = QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
-        self.horizontalLayout_3.addItem(spacerItem)
-  
+        self.horizontalLayout_3.addItem(
+            QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+        )
+
         # Sorting Dropdowns
         self.sorting_mode_combobox = QComboBox(self.centralwidget)
-        self.sorting_mode_combobox.setObjectName(u"sortingModeComboBox")
+        self.sorting_mode_combobox.setObjectName("sortingModeComboBox")
         self.horizontalLayout_3.addWidget(self.sorting_mode_combobox)
-        
+
         self.sorting_direction_combobox = QComboBox(self.centralwidget)
-        self.sorting_direction_combobox.setObjectName(u"sortingDirectionCombobox")
+        self.sorting_direction_combobox.setObjectName("sortingDirectionCombobox")
         self.horizontalLayout_3.addWidget(self.sorting_direction_combobox)
 
         # Thumbnail Size placeholder
         self.thumb_size_combobox = QComboBox(self.centralwidget)
-        self.thumb_size_combobox.setObjectName(u"thumbSizeComboBox")
+        self.thumb_size_combobox.setObjectName("thumbSizeComboBox")
         self.thumb_size_combobox.setPlaceholderText(Translations["home.thumbnail_size"])
         self.thumb_size_combobox.setCurrentText("")
-        sizePolicy = QSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Fixed)
-        sizePolicy.setHorizontalStretch(0)
-        sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(
-            self.thumb_size_combobox.sizePolicy().hasHeightForWidth())
-        self.thumb_size_combobox.setSizePolicy(sizePolicy)
+        size_policy = QSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Fixed)
+        size_policy.setHorizontalStretch(0)
+        size_policy.setVerticalStretch(0)
+        size_policy.setHeightForWidth(self.thumb_size_combobox.sizePolicy().hasHeightForWidth())
+        self.thumb_size_combobox.setSizePolicy(size_policy)
         self.thumb_size_combobox.setMinimumWidth(128)
         self.thumb_size_combobox.setMaximumWidth(352)
         self.horizontalLayout_3.addWidget(self.thumb_size_combobox)
         self.gridLayout.addLayout(self.horizontalLayout_3, 5, 0, 1, 1)
 
         self.splitter = QSplitter()
-        self.splitter.setObjectName(u"splitter")
+        self.splitter.setObjectName("splitter")
         self.splitter.setHandleWidth(12)
 
         self.frame_container = QWidget()
@@ -109,23 +94,22 @@ class Ui_MainWindow(QMainWindow):
         self.frame_layout.setSpacing(0)
 
         self.scrollArea = QScrollArea()
-        self.scrollArea.setObjectName(u"scrollArea")
+        self.scrollArea.setObjectName("scrollArea")
         self.scrollArea.setFocusPolicy(Qt.FocusPolicy.WheelFocus)
         self.scrollArea.setFrameShape(QFrame.Shape.NoFrame)
         self.scrollArea.setFrameShadow(QFrame.Shadow.Plain)
         self.scrollArea.setWidgetResizable(True)
         self.scrollAreaWidgetContents = QWidget()
-        self.scrollAreaWidgetContents.setObjectName(
-            u"scrollAreaWidgetContents")
+        self.scrollAreaWidgetContents.setObjectName("scrollAreaWidgetContents")
         self.scrollAreaWidgetContents.setGeometry(QRect(0, 0, 1260, 590))
         self.gridLayout_2 = QGridLayout(self.scrollAreaWidgetContents)
         self.gridLayout_2.setSpacing(8)
-        self.gridLayout_2.setObjectName(u"gridLayout_2")
+        self.gridLayout_2.setObjectName("gridLayout_2")
         self.gridLayout_2.setContentsMargins(0, 0, 0, 8)
         self.scrollArea.setWidget(self.scrollAreaWidgetContents)
         self.frame_layout.addWidget(self.scrollArea)
-        
-        self.landing_widget: LandingWidget = LandingWidget(self.driver, self.devicePixelRatio())
+
+        self.landing_widget: LandingWidget = LandingWidget(driver, self.devicePixelRatio())
         self.frame_layout.addWidget(self.landing_widget)
 
         self.pagination = Pagination()
@@ -138,17 +122,17 @@ class Ui_MainWindow(QMainWindow):
 
         nav_button_style = "font-size:14;font-weight:bold;"
         self.horizontalLayout_2 = QHBoxLayout()
-        self.horizontalLayout_2.setObjectName(u"horizontalLayout_2")
+        self.horizontalLayout_2.setObjectName("horizontalLayout_2")
         self.horizontalLayout_2.setSizeConstraint(QLayout.SizeConstraint.SetMinimumSize)
         self.backButton = QPushButton("<", self.centralwidget)
-        self.backButton.setObjectName(u"backButton")
+        self.backButton.setObjectName("backButton")
         self.backButton.setMinimumSize(QSize(0, 32))
         self.backButton.setMaximumSize(QSize(32, 16777215))
         self.backButton.setStyleSheet(nav_button_style)
         self.horizontalLayout_2.addWidget(self.backButton)
 
         self.forwardButton = QPushButton(">", self.centralwidget)
-        self.forwardButton.setObjectName(u"forwardButton")
+        self.forwardButton.setObjectName("forwardButton")
         self.forwardButton.setMinimumSize(QSize(0, 32))
         self.forwardButton.setMaximumSize(QSize(32, 16777215))
         self.forwardButton.setStyleSheet(nav_button_style)
@@ -156,7 +140,7 @@ class Ui_MainWindow(QMainWindow):
 
         self.searchField = QLineEdit(self.centralwidget)
         self.searchField.setPlaceholderText(Translations["home.search_entries"])
-        self.searchField.setObjectName(u"searchField")
+        self.searchField.setObjectName("searchField")
         self.searchField.setMinimumSize(QSize(0, 32))
 
         self.searchFieldCompletionList = QStringListModel()
@@ -166,33 +150,41 @@ class Ui_MainWindow(QMainWindow):
         self.horizontalLayout_2.addWidget(self.searchField)
 
         self.searchButton = QPushButton(Translations["home.search"], self.centralwidget)
-        self.searchButton.setObjectName(u"searchButton")
+        self.searchButton.setObjectName("searchButton")
         self.searchButton.setMinimumSize(QSize(0, 32))
 
         self.horizontalLayout_2.addWidget(self.searchButton)
         self.gridLayout.addLayout(self.horizontalLayout_2, 3, 0, 1, 1)
         self.gridLayout_2.setContentsMargins(6, 6, 6, 6)
 
-        MainWindow.setCentralWidget(self.centralwidget)
-        self.statusbar = QStatusBar(MainWindow)
-        self.statusbar.setObjectName(u"statusbar")
-        sizePolicy1 = QSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Maximum)
-        sizePolicy1.setHorizontalStretch(0)
-        sizePolicy1.setVerticalStretch(0)
-        sizePolicy1.setHeightForWidth(
-            self.statusbar.sizePolicy().hasHeightForWidth())
-        self.statusbar.setSizePolicy(sizePolicy1)
+        self.setCentralWidget(self.centralwidget)
+        self.statusbar = QStatusBar(self)
+        self.statusbar.setObjectName("statusbar")
+        size_policy1 = QSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Maximum)
+        size_policy1.setHorizontalStretch(0)
+        size_policy1.setVerticalStretch(0)
+        size_policy1.setHeightForWidth(self.statusbar.sizePolicy().hasHeightForWidth())
+        self.statusbar.setSizePolicy(size_policy1)
         self.statusbar.setSizeGripEnabled(False)
-        MainWindow.setStatusBar(self.statusbar)
+        self.setStatusBar(self.statusbar)
 
-        QMetaObject.connectSlotsByName(MainWindow)
-    # setupUi
+        QMetaObject.connectSlotsByName(self)
 
-    def moveEvent(self, event) -> None:
+        # NOTE: These are old attempts to allow for a translucent/acrylic
+        # window effect. This may be attempted again in the future.
+        # self.setWindowFlag(Qt.WindowType.NoDropShadowWindowHint, True)
+        # self.setWindowFlag(Qt.WindowType.WindowTransparentForInput, False)
+        # # self.setWindowFlag(Qt.WindowType.FramelessWindowHint, True)
+        # self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
+
+        # self.windowFX = WindowEffect()
+        # self.windowFX.setAcrylicEffect(self.winId(), isEnableShadow=False)
+
+    def moveEvent(self, event) -> None:  # noqa: N802
         # time.sleep(0.02)  # sleep for 20ms
         pass
 
-    def resizeEvent(self, event) -> None:
+    def resizeEvent(self, event) -> None:  # noqa: N802
         # time.sleep(0.02)  # sleep for 20ms
         pass
 
@@ -205,4 +197,3 @@ class Ui_MainWindow(QMainWindow):
             self.landing_widget.setHidden(True)
             self.landing_widget.set_status_label("")
             self.scrollArea.setHidden(False)
-            
