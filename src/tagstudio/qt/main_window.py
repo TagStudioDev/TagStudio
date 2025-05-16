@@ -569,7 +569,7 @@ class MainWindow(QMainWindow):
         self.entry_scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
 
         self.thumb_grid: QWidget = QWidget()
-        self.thumb_grid.setObjectName("flow_container")
+        self.thumb_grid.setObjectName("thumb_grid")
         self.thumb_layout = FlowLayout()
         self.thumb_layout.enable_grid_optimizations(value=True)
         self.thumb_layout.setSpacing(min(self.thumb_size // 10, 12))
