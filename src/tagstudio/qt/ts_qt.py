@@ -25,10 +25,8 @@ from warnings import catch_warnings
 
 import structlog
 from humanfriendly import format_size, format_timespan
-from PySide6 import QtCore
 from PySide6.QtCore import QObject, QSettings, Qt, QThread, QThreadPool, QTimer, Signal
 from PySide6.QtGui import (
-    QAction,
     QColor,
     QDragEnterEvent,
     QDragMoveEvent,
@@ -45,7 +43,6 @@ from PySide6.QtWidgets import (
     QComboBox,
     QFileDialog,
     QLineEdit,
-    QMenu,
     QMessageBox,
     QPushButton,
     QScrollArea,
@@ -205,7 +202,6 @@ class QtDriver(DriverMixin, QObject):
         self.pages_count = 0
 
         self.scrollbar_pos = 0
-        self.thumb_size = 128
         self.spacing = None
 
         self.branch: str = (" (" + VERSION_BRANCH + ")") if VERSION_BRANCH else ""
@@ -564,14 +560,6 @@ class QtDriver(DriverMixin, QObject):
             str(Path(__file__).parents[1] / "resources/qt/fonts/Oxanium-Bold.ttf")
         )
 
-        # TODO this doesn't update when the language is changed
-        self.thumb_sizes: list[tuple[str, int]] = [
-            (Translations["home.thumbnail_size.extra_large"], 256),
-            (Translations["home.thumbnail_size.large"], 192),
-            (Translations["home.thumbnail_size.medium"], 128),
-            (Translations["home.thumbnail_size.small"], 96),
-            (Translations["home.thumbnail_size.mini"], 76),
-        ]
         self.item_thumbs: list[ItemThumb] = []
         self.thumb_renderers: list[ThumbRenderer] = []
         self.init_library_window()
@@ -621,8 +609,8 @@ class QtDriver(DriverMixin, QObject):
             try:
                 self.update_browsing_state(
                     BrowsingState.from_search_query(self.main_window.search_field.text())
-                    .with_sorting_mode(self.sorting_mode)
-                    .with_sorting_direction(self.sorting_direction)
+                    .with_sorting_mode(self.main_window.sorting_mode)
+                    .with_sorting_direction(self.main_window.sorting_direction)
                 )
             except ParsingError as e:
                 self.main_window.status_bar.showMessage(
@@ -632,42 +620,31 @@ class QtDriver(DriverMixin, QObject):
                 logger.error("[QtDriver] Could not update BrowsingState", error=e)
 
         # Search Button
-        search_button: QPushButton = self.main_window.search_button
-        search_button.clicked.connect(_update_browsing_state)
-        # Search Field
-        search_field: QLineEdit = self.main_window.search_field
-        search_field.returnPressed.connect(_update_browsing_state)
-        # Sorting Dropdowns
-        sort_mode_dropdown: QComboBox = self.main_window.sorting_mode_combobox
-        for sort_mode in SortingModeEnum:
-            sort_mode_dropdown.addItem(Translations[sort_mode.value], sort_mode)
-        sort_mode_dropdown.setCurrentIndex(
-            list(SortingModeEnum).index(self.browsing_history.current.sorting_mode)
-        )  # set according to navigation state
-        sort_mode_dropdown.currentIndexChanged.connect(self.sorting_mode_callback)
+        self.main_window.search_button.clicked.connect(_update_browsing_state)
 
-        sort_dir_dropdown: QComboBox = self.main_window.sorting_direction_combobox
-        sort_dir_dropdown.addItem("Ascending", userData=True)
-        sort_dir_dropdown.addItem("Descending", userData=False)
-        sort_dir_dropdown.setItemText(0, Translations["sorting.direction.ascending"])
-        sort_dir_dropdown.setItemText(1, Translations["sorting.direction.descending"])
-        sort_dir_dropdown.setCurrentIndex(1)  # Default: Descending
-        sort_dir_dropdown.currentIndexChanged.connect(self.sorting_direction_callback)
+        # Search Field
+        self.main_window.search_field.returnPressed.connect(_update_browsing_state)
+
+        # Sorting Dropdowns
+        self.main_window.sorting_mode_combobox.setCurrentIndex(
+            list(SortingModeEnum).index(self.browsing_history.current.sorting_mode)
+        )
+        self.main_window.sorting_mode_combobox.currentIndexChanged.connect(
+            self.sorting_mode_callback
+        )
+
+        self.main_window.sorting_direction_combobox.currentIndexChanged.connect(
+            self.sorting_direction_callback
+        )
 
         # Thumbnail Size ComboBox
-        thumb_size_combobox: QComboBox = self.main_window.thumb_size_combobox
-        for size in self.thumb_sizes:
-            thumb_size_combobox.addItem(size[0])
-        thumb_size_combobox.setCurrentIndex(2)  # Default: Medium
-        thumb_size_combobox.currentIndexChanged.connect(
-            lambda: self.thumb_size_callback(thumb_size_combobox.currentIndex())
+        self.main_window.thumb_size_combobox.currentIndexChanged.connect(
+            lambda: self.thumb_size_callback(self.main_window.thumb_size_combobox.currentData())
         )
-        self._init_thumb_grid()
+        self._update_thumb_count()
 
-        back_button: QPushButton = self.main_window.back_button
-        back_button.clicked.connect(lambda: self.navigation_callback(-1))
-        forward_button: QPushButton = self.main_window.forward_button
-        forward_button.clicked.connect(lambda: self.navigation_callback(1))
+        self.main_window.back_button.clicked.connect(lambda: self.navigation_callback(-1))
+        self.main_window.forward_button.clicked.connect(lambda: self.navigation_callback(1))
 
         # NOTE: Putting this early will result in a white non-responsive
         # window until everything is loaded. Consider adding a splash screen
@@ -1147,54 +1124,34 @@ class QtDriver(DriverMixin, QObject):
                         content=strip_web_protocol(field.value),
                     )
 
-    @property
-    def sorting_direction(self) -> bool:
-        """Whether to Sort the results in ascending order."""
-        return self.main_window.sorting_direction_combobox.currentData()
-
     def sorting_direction_callback(self):
-        logger.info("Sorting Direction Changed", ascending=self.sorting_direction)
+        logger.info("Sorting Direction Changed", ascending=self.main_window.sorting_direction)
         self.update_browsing_state(
-            self.browsing_history.current.with_sorting_direction(self.sorting_direction)
+            self.browsing_history.current.with_sorting_direction(self.main_window.sorting_direction)
         )
-
-    @property
-    def sorting_mode(self) -> SortingModeEnum:
-        """What to sort by."""
-        return self.main_window.sorting_mode_combobox.currentData()
 
     def sorting_mode_callback(self):
-        logger.info("Sorting Mode Changed", mode=self.sorting_mode)
+        logger.info("Sorting Mode Changed", mode=self.main_window.sorting_mode)
         self.update_browsing_state(
-            self.browsing_history.current.with_sorting_mode(self.sorting_mode)
+            self.browsing_history.current.with_sorting_mode(self.main_window.sorting_mode)
         )
 
-    def thumb_size_callback(self, index: int):
-        """Perform actions needed when the thumbnail size selection is changed.
-
-        Args:
-            index (int): The index of the item_thumbs/ComboBox list to use.
-        """
+    def thumb_size_callback(self, size: int):
+        """Perform actions needed when the thumbnail size selection is changed."""
         spacing_divisor: int = 10
         min_spacing: int = 12
-        # Index 2 is the default (Medium)
-        if index < len(self.thumb_sizes) and index >= 0:
-            self.thumb_size = self.thumb_sizes[index][1]
-        else:
-            logger.error(f"ERROR: Invalid thumbnail size index ({index}). Defaulting to 128px.")
-            self.thumb_size = 128
 
         self.update_thumbs()
         blank_icon: QIcon = QIcon()
         for it in self.item_thumbs:
             it.thumb_button.setIcon(blank_icon)
-            it.resize(self.thumb_size, self.thumb_size)
-            it.thumb_size = (self.thumb_size, self.thumb_size)
-            it.setFixedSize(self.thumb_size, self.thumb_size)
-            it.thumb_button.thumb_size = (self.thumb_size, self.thumb_size)
+            it.resize(self.main_window.thumb_size, self.main_window.thumb_size)
+            it.thumb_size = (self.main_window.thumb_size, self.main_window.thumb_size)
+            it.setFixedSize(self.main_window.thumb_size, self.main_window.thumb_size)
+            it.thumb_button.thumb_size = (self.main_window.thumb_size, self.main_window.thumb_size)
             it.set_filename_visibility(it.show_filename_label)
-        self.flow_container.layout().setSpacing(
-            min(self.thumb_size // spacing_divisor, min_spacing)
+        self.main_window.thumb_layout.setSpacing(
+            min(self.main_window.thumb_size // spacing_divisor, min_spacing)
         )
 
     def mouse_navigation(self, event: QMouseEvent):
@@ -1236,35 +1193,18 @@ class QtDriver(DriverMixin, QObject):
 
     def _update_thumb_count(self):
         missing_count = max(0, self.settings.page_size - len(self.item_thumbs))
-        layout = self.flow_container.layout()
+        layout = self.main_window.thumb_layout
         for _ in range(missing_count):
             item_thumb = ItemThumb(
                 None,
                 self.lib,
                 self,
-                (self.thumb_size, self.thumb_size),
+                (self.main_window.thumb_size, self.main_window.thumb_size),
                 self.settings.show_filenames_in_grid,
             )
 
             layout.addWidget(item_thumb)
             self.item_thumbs.append(item_thumb)
-
-    def _init_thumb_grid(self):
-        layout = FlowLayout()
-        layout.enable_grid_optimizations(value=True)
-        layout.setSpacing(min(self.thumb_size // 10, 12))
-        layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
-
-        self.flow_container: QWidget = QWidget()
-        self.flow_container.setObjectName("flowContainer")
-        self.flow_container.setLayout(layout)
-
-        self._update_thumb_count()
-
-        sa: QScrollArea = self.main_window.entry_scroll_area
-        sa.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-        sa.setWidgetResizable(True)
-        sa.setWidget(self.flow_container)
 
     def copy_fields_action_callback(self):
         if len(self.selected) > 0:
@@ -1473,7 +1413,6 @@ class QtDriver(DriverMixin, QObject):
     def update_thumbs(self):
         """Update search thumbnails."""
         self._update_thumb_count()
-        # start_time = time.time()
         # logger.info(f'Current Page: {self.cur_page_idx}, Stack Length:{len(self.nav_stack)}')
         with self.thumb_job_queue.mutex:
             # Cancels all thumb jobs waiting to be started
@@ -1484,11 +1423,9 @@ class QtDriver(DriverMixin, QObject):
             ItemThumb.update_cutoff = time.time()
 
         ratio: float = self.main_window.devicePixelRatio()
-        base_size: tuple[int, int] = (self.thumb_size, self.thumb_size)
+        base_size: tuple[int, int] = (self.main_window.thumb_size, self.main_window.thumb_size)
 
-        # scrollbar: QScrollArea = self.main_window.scrollArea
-        # scrollbar.verticalScrollBar().setValue(scrollbar_pos)
-        self.flow_container.layout().update()
+        self.main_window.thumb_layout.update()
         self.main_window.update()
 
         is_grid_thumb = True
