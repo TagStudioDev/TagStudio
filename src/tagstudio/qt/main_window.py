@@ -6,7 +6,7 @@
 import logging
 import typing
 
-from PySide6.QtCore import QMetaObject, QRect, QSize, QStringListModel, Qt
+from PySide6.QtCore import QMetaObject, QSize, QStringListModel, Qt
 from PySide6.QtWidgets import (
     QComboBox,
     QCompleter,
@@ -37,6 +37,7 @@ if typing.TYPE_CHECKING:
 logging.basicConfig(format="%(message)s", level=logging.INFO)
 
 
+# View Component
 class MainWindow(QMainWindow):
     def __init__(self, driver: "QtDriver", parent=None) -> None:
         super().__init__(parent)
@@ -45,33 +46,72 @@ class MainWindow(QMainWindow):
             self.setObjectName("MainWindow")
         self.resize(1300, 720)
 
-        self.centralwidget = QWidget(self)
-        self.centralwidget.setObjectName("centralwidget")
-        self.gridLayout = QGridLayout(self.centralwidget)
-        self.gridLayout.setObjectName("gridLayout")
-        self.horizontalLayout = QHBoxLayout()
-        self.horizontalLayout.setObjectName("horizontalLayout")
+        # region Central Widget
+        self.central_widget = QWidget(self)
+        self.central_widget.setObjectName("centralwidget")
+        self.central_layout = QGridLayout(self.central_widget)
+        self.central_layout.setObjectName("centralLayout")
 
-        # ComboBox group for search type and thumbnail size
-        self.horizontalLayout_3 = QHBoxLayout()
-        self.horizontalLayout_3.setObjectName("horizontalLayout_3")
+        # region Search Bar:        Nav Buttons, Search Field, Search Button
+        nav_button_style = "font-size:14;font-weight:bold;"
+        self.search_bar_layout = QHBoxLayout()
+        self.search_bar_layout.setObjectName("search_bar_layout")
+        self.search_bar_layout.setSizeConstraint(QLayout.SizeConstraint.SetMinimumSize)
 
-        # left side spacer
-        self.horizontalLayout_3.addItem(
+        self.back_button = QPushButton("<", self.central_widget)
+        self.back_button.setObjectName("backButton")
+        self.back_button.setMinimumSize(QSize(0, 32))
+        self.back_button.setMaximumSize(QSize(32, 16777215))
+        self.back_button.setStyleSheet(nav_button_style)
+        self.search_bar_layout.addWidget(self.back_button)
+
+        self.forward_button = QPushButton(">", self.central_widget)
+        self.forward_button.setObjectName("forwardButton")
+        self.forward_button.setMinimumSize(QSize(0, 32))
+        self.forward_button.setMaximumSize(QSize(32, 16777215))
+        self.forward_button.setStyleSheet(nav_button_style)
+        self.search_bar_layout.addWidget(self.forward_button)
+
+        self.search_field = QLineEdit(self.central_widget)
+        self.search_field.setPlaceholderText(Translations["home.search_entries"])
+        self.search_field.setObjectName("searchField")
+        self.search_field.setMinimumSize(QSize(0, 32))
+        self.search_field_completion_list = QStringListModel()
+        self.search_field_completer = QCompleter(
+            self.search_field_completion_list, self.search_field
+        )
+        self.search_field_completer.setCaseSensitivity(Qt.CaseSensitivity.CaseInsensitive)
+        self.search_field.setCompleter(self.search_field_completer)
+        self.search_bar_layout.addWidget(self.search_field)
+
+        self.search_button = QPushButton(Translations["home.search"], self.central_widget)
+        self.search_button.setObjectName("searchButton")
+        self.search_button.setMinimumSize(QSize(0, 32))
+        self.search_bar_layout.addWidget(self.search_button)
+
+        self.central_layout.addLayout(self.search_bar_layout, 3, 0, 1, 1)
+        # endregion
+
+        # region Extra Input Bar:   Inputs for Sorting Settings and Thumbnail Size
+        self.extra_input_layout = QHBoxLayout()
+        self.extra_input_layout.setObjectName("extra_input_layout")
+
+        ## left side spacer
+        self.extra_input_layout.addItem(
             QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
         )
 
-        # Sorting Dropdowns
-        self.sorting_mode_combobox = QComboBox(self.centralwidget)
+        ## Sorting Dropdowns
+        self.sorting_mode_combobox = QComboBox(self.central_widget)
         self.sorting_mode_combobox.setObjectName("sortingModeComboBox")
-        self.horizontalLayout_3.addWidget(self.sorting_mode_combobox)
+        self.extra_input_layout.addWidget(self.sorting_mode_combobox)
 
-        self.sorting_direction_combobox = QComboBox(self.centralwidget)
+        self.sorting_direction_combobox = QComboBox(self.central_widget)
         self.sorting_direction_combobox.setObjectName("sortingDirectionCombobox")
-        self.horizontalLayout_3.addWidget(self.sorting_direction_combobox)
+        self.extra_input_layout.addWidget(self.sorting_direction_combobox)
 
-        # Thumbnail Size placeholder
-        self.thumb_size_combobox = QComboBox(self.centralwidget)
+        ## Thumbnail Size placeholder
+        self.thumb_size_combobox = QComboBox(self.central_widget)
         self.thumb_size_combobox.setObjectName("thumbSizeComboBox")
         self.thumb_size_combobox.setPlaceholderText(Translations["home.thumbnail_size"])
         self.thumb_size_combobox.setCurrentText("")
@@ -82,91 +122,62 @@ class MainWindow(QMainWindow):
         self.thumb_size_combobox.setSizePolicy(size_policy)
         self.thumb_size_combobox.setMinimumWidth(128)
         self.thumb_size_combobox.setMaximumWidth(352)
-        self.horizontalLayout_3.addWidget(self.thumb_size_combobox)
-        self.gridLayout.addLayout(self.horizontalLayout_3, 5, 0, 1, 1)
+        self.extra_input_layout.addWidget(self.thumb_size_combobox)
 
-        self.splitter = QSplitter()
-        self.splitter.setObjectName("splitter")
-        self.splitter.setHandleWidth(12)
+        self.central_layout.addLayout(self.extra_input_layout, 5, 0, 1, 1)
+        # endregion
 
-        self.frame_container = QWidget()
-        self.frame_layout = QVBoxLayout(self.frame_container)
-        self.frame_layout.setSpacing(0)
+        # region Content: Entry Scroll List
+        self.content_layout = QHBoxLayout()
+        self.content_layout.setObjectName("horizontalLayout")
 
-        self.scrollArea = QScrollArea()
-        self.scrollArea.setObjectName("scrollArea")
-        self.scrollArea.setFocusPolicy(Qt.FocusPolicy.WheelFocus)
-        self.scrollArea.setFrameShape(QFrame.Shape.NoFrame)
-        self.scrollArea.setFrameShadow(QFrame.Shadow.Plain)
-        self.scrollArea.setWidgetResizable(True)
-        self.scrollAreaWidgetContents = QWidget()
-        self.scrollAreaWidgetContents.setObjectName("scrollAreaWidgetContents")
-        self.scrollAreaWidgetContents.setGeometry(QRect(0, 0, 1260, 590))
-        self.gridLayout_2 = QGridLayout(self.scrollAreaWidgetContents)
-        self.gridLayout_2.setSpacing(8)
-        self.gridLayout_2.setObjectName("gridLayout_2")
-        self.gridLayout_2.setContentsMargins(0, 0, 0, 8)
-        self.scrollArea.setWidget(self.scrollAreaWidgetContents)
-        self.frame_layout.addWidget(self.scrollArea)
+        self.content_splitter = QSplitter()
+        self.content_splitter.setObjectName("splitter")
+        self.content_splitter.setHandleWidth(12)
+
+        # region Entry List
+        self.entry_list_container = QWidget()
+        self.entry_list_layout = QVBoxLayout(self.entry_list_container)
+        self.entry_list_layout.setSpacing(0)
+
+        self.entry_scroll_area = QScrollArea()
+        self.entry_scroll_area.setObjectName("scrollArea")
+        self.entry_scroll_area.setFocusPolicy(Qt.FocusPolicy.WheelFocus)
+        self.entry_scroll_area.setFrameShape(QFrame.Shape.NoFrame)
+        self.entry_scroll_area.setFrameShadow(QFrame.Shadow.Plain)
+        self.entry_scroll_area.setWidgetResizable(True)
+        self.entry_list_layout.addWidget(self.entry_scroll_area)
 
         self.landing_widget: LandingWidget = LandingWidget(driver, self.devicePixelRatio())
-        self.frame_layout.addWidget(self.landing_widget)
+        self.entry_list_layout.addWidget(self.landing_widget)
 
         self.pagination = Pagination()
-        self.frame_layout.addWidget(self.pagination)
+        self.entry_list_layout.addWidget(self.pagination)
+        # endregion
 
-        self.horizontalLayout.addWidget(self.splitter)
-        self.splitter.addWidget(self.frame_container)
-        self.splitter.setStretchFactor(0, 1)
-        self.gridLayout.addLayout(self.horizontalLayout, 10, 0, 1, 1)
+        self.content_splitter.addWidget(self.entry_list_container)
+        self.content_splitter.setStretchFactor(0, 1)
+        self.content_layout.addWidget(self.content_splitter)
 
-        nav_button_style = "font-size:14;font-weight:bold;"
-        self.horizontalLayout_2 = QHBoxLayout()
-        self.horizontalLayout_2.setObjectName("horizontalLayout_2")
-        self.horizontalLayout_2.setSizeConstraint(QLayout.SizeConstraint.SetMinimumSize)
-        self.backButton = QPushButton("<", self.centralwidget)
-        self.backButton.setObjectName("backButton")
-        self.backButton.setMinimumSize(QSize(0, 32))
-        self.backButton.setMaximumSize(QSize(32, 16777215))
-        self.backButton.setStyleSheet(nav_button_style)
-        self.horizontalLayout_2.addWidget(self.backButton)
+        self.central_layout.addLayout(self.content_layout, 10, 0, 1, 1)
+        # endregion
 
-        self.forwardButton = QPushButton(">", self.centralwidget)
-        self.forwardButton.setObjectName("forwardButton")
-        self.forwardButton.setMinimumSize(QSize(0, 32))
-        self.forwardButton.setMaximumSize(QSize(32, 16777215))
-        self.forwardButton.setStyleSheet(nav_button_style)
-        self.horizontalLayout_2.addWidget(self.forwardButton)
+        self.setCentralWidget(self.central_widget)
+        # endregion
 
-        self.searchField = QLineEdit(self.centralwidget)
-        self.searchField.setPlaceholderText(Translations["home.search_entries"])
-        self.searchField.setObjectName("searchField")
-        self.searchField.setMinimumSize(QSize(0, 32))
-
-        self.searchFieldCompletionList = QStringListModel()
-        self.searchFieldCompleter = QCompleter(self.searchFieldCompletionList, self.searchField)
-        self.searchFieldCompleter.setCaseSensitivity(Qt.CaseSensitivity.CaseInsensitive)
-        self.searchField.setCompleter(self.searchFieldCompleter)
-        self.horizontalLayout_2.addWidget(self.searchField)
-
-        self.searchButton = QPushButton(Translations["home.search"], self.centralwidget)
-        self.searchButton.setObjectName("searchButton")
-        self.searchButton.setMinimumSize(QSize(0, 32))
-
-        self.horizontalLayout_2.addWidget(self.searchButton)
-        self.gridLayout.addLayout(self.horizontalLayout_2, 3, 0, 1, 1)
-        self.gridLayout_2.setContentsMargins(6, 6, 6, 6)
-
-        self.setCentralWidget(self.centralwidget)
-        self.statusbar = QStatusBar(self)
-        self.statusbar.setObjectName("statusbar")
-        size_policy1 = QSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Maximum)
-        size_policy1.setHorizontalStretch(0)
-        size_policy1.setVerticalStretch(0)
-        size_policy1.setHeightForWidth(self.statusbar.sizePolicy().hasHeightForWidth())
-        self.statusbar.setSizePolicy(size_policy1)
-        self.statusbar.setSizeGripEnabled(False)
-        self.setStatusBar(self.statusbar)
+        # region Status Bar
+        self.status_bar = QStatusBar(self)
+        self.status_bar.setObjectName("statusbar")
+        status_bar_size_policy = QSizePolicy(
+            QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Maximum
+        )
+        status_bar_size_policy.setHorizontalStretch(0)
+        status_bar_size_policy.setVerticalStretch(0)
+        status_bar_size_policy.setHeightForWidth(self.status_bar.sizePolicy().hasHeightForWidth())
+        self.status_bar.setSizePolicy(status_bar_size_policy)
+        self.status_bar.setSizeGripEnabled(False)
+        self.setStatusBar(self.status_bar)
+        # endregion
 
         QMetaObject.connectSlotsByName(self)
 
@@ -190,10 +201,10 @@ class MainWindow(QMainWindow):
 
     def toggle_landing_page(self, enabled: bool):
         if enabled:
-            self.scrollArea.setHidden(True)
+            self.entry_scroll_area.setHidden(True)
             self.landing_widget.setHidden(False)
             self.landing_widget.animate_logo_in()
         else:
             self.landing_widget.setHidden(True)
             self.landing_widget.set_status_label("")
-            self.scrollArea.setHidden(False)
+            self.entry_scroll_area.setHidden(False)

@@ -291,7 +291,7 @@ class TagSearchPanel(PanelWidget):
         if self.driver:
             tag_widget.search_for_tag_action.triggered.connect(
                 lambda checked=False, tag_id=tag.id: (
-                    self.driver.main_window.searchField.setText(f"tag_id:{tag_id}"),
+                    self.driver.main_window.search_field.setText(f"tag_id:{tag_id}"),
                     self.driver.update_browsing_state(BrowsingState.from_tag_id(tag_id)),
                 )
             )
