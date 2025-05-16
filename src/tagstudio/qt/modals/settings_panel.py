@@ -230,7 +230,7 @@ class SettingsPanel(PanelWidget):
         # Apply changes
         # Show File Path
         driver.update_recent_lib_menu()
-        driver.preview_panel.update_widgets()
+        driver.main_window.preview_panel.update_widgets()
         library_directory = driver.lib.library_dir
         if settings["show_filepath"] == ShowFilepathOption.SHOW_FULL_PATHS:
             display_path = library_directory or ""

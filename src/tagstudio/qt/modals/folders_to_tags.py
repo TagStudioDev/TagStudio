@@ -227,7 +227,7 @@ class FoldersToTagsModal(QWidget):
     def on_apply(self, event):
         folders_to_tags(self.library)
         self.close()
-        self.driver.preview_panel.update_widgets(update_preview=False)
+        self.driver.main_window.preview_panel.update_widgets(update_preview=False)
 
     def on_open(self, event):
         for i in reversed(range(self.scroll_layout.count())):

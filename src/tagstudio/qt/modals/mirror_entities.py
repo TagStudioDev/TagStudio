@@ -87,7 +87,7 @@ class MirrorEntriesModal(QWidget):
         pw.from_iterable_function(
             self.mirror_entries_runnable,
             displayed_text,
-            self.driver.preview_panel.update_widgets,
+            self.driver.main_window.preview_panel.update_widgets,
             self.done.emit,
         )
 

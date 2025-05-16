@@ -155,7 +155,7 @@ def qt_driver(qtbot, library, library_dir: Path):
 
         driver.app = Mock()
         driver.main_window = Mock()
-        driver.preview_panel = Mock()
+        driver.main_window.preview_panel = Mock()
         driver.flow_container = Mock()
         driver.item_thumbs = []
         driver.autofill_action = Mock()
