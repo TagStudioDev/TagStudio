@@ -711,7 +711,7 @@ class QtDriver(DriverMixin, QObject):
         menu_bar.addMenu(macros_menu)
         menu_bar.addMenu(help_menu)
 
-        self.main_window.searchField.textChanged.connect(self.update_completions_list)
+        self.main_window.search_field.textChanged.connect(self.update_completions_list)
 
         self.preview_panel = PreviewPanel(self.lib, self)
         self.preview_panel.fields.archived_updated.connect(
@@ -725,7 +725,7 @@ class QtDriver(DriverMixin, QObject):
             )
         )
 
-        splitter = self.main_window.splitter
+        splitter = self.main_window.content_splitter
         splitter.addWidget(self.preview_panel)
 
         QFontDatabase.addApplicationFont(
@@ -762,7 +762,7 @@ class QtDriver(DriverMixin, QObject):
         self.shutdown()
 
     def show_error_message(self, error_name: str, error_desc: str | None = None):
-        self.main_window.statusbar.showMessage(error_name, Qt.AlignmentFlag.AlignLeft)
+        self.main_window.status_bar.showMessage(error_name, Qt.AlignmentFlag.AlignLeft)
         self.main_window.landing_widget.set_status_label(error_name)
         self.main_window.setWindowTitle(f"{self.base_title} - {error_name}")
 
@@ -788,22 +788,22 @@ class QtDriver(DriverMixin, QObject):
         def _update_browsing_state():
             try:
                 self.update_browsing_state(
-                    BrowsingState.from_search_query(self.main_window.searchField.text())
+                    BrowsingState.from_search_query(self.main_window.search_field.text())
                     .with_sorting_mode(self.sorting_mode)
                     .with_sorting_direction(self.sorting_direction)
                 )
             except ParsingError as e:
-                self.main_window.statusbar.showMessage(
+                self.main_window.status_bar.showMessage(
                     f"{Translations['status.results.invalid_syntax']} "
-                    f'"{self.main_window.searchField.text()}"'
+                    f'"{self.main_window.search_field.text()}"'
                 )
                 logger.error("[QtDriver] Could not update BrowsingState", error=e)
 
         # Search Button
-        search_button: QPushButton = self.main_window.searchButton
+        search_button: QPushButton = self.main_window.search_button
         search_button.clicked.connect(_update_browsing_state)
         # Search Field
-        search_field: QLineEdit = self.main_window.searchField
+        search_field: QLineEdit = self.main_window.search_field
         search_field.returnPressed.connect(_update_browsing_state)
         # Sorting Dropdowns
         sort_mode_dropdown: QComboBox = self.main_window.sorting_mode_combobox
@@ -832,9 +832,9 @@ class QtDriver(DriverMixin, QObject):
         )
         self._init_thumb_grid()
 
-        back_button: QPushButton = self.main_window.backButton
+        back_button: QPushButton = self.main_window.back_button
         back_button.clicked.connect(lambda: self.navigation_callback(-1))
-        forward_button: QPushButton = self.main_window.forwardButton
+        forward_button: QPushButton = self.main_window.forward_button
         forward_button.clicked.connect(lambda: self.navigation_callback(1))
 
         # NOTE: Putting this early will result in a white non-responsive
@@ -901,7 +901,7 @@ class QtDriver(DriverMixin, QObject):
             return
 
         logger.info("Closing Library...")
-        self.main_window.statusbar.showMessage(Translations["status.library_closing"])
+        self.main_window.status_bar.showMessage(Translations["status.library_closing"])
         start_time = time.time()
 
         self.cached_values.setValue(SettingItems.LAST_LIBRARY, str(self.lib.library_dir))
@@ -909,8 +909,8 @@ class QtDriver(DriverMixin, QObject):
 
         # Reset library state
         self.preview_panel.update_widgets()
-        self.main_window.searchField.setText("")
-        scrollbar: QScrollArea = self.main_window.scrollArea
+        self.main_window.search_field.setText("")
+        scrollbar: QScrollArea = self.main_window.entry_scroll_area
         scrollbar.verticalScrollBar().setValue(0)
         self.__reset_navigation()
 
@@ -957,7 +957,7 @@ class QtDriver(DriverMixin, QObject):
             self.add_tag_to_selected_action.setEnabled(False)
 
         end_time = time.time()
-        self.main_window.statusbar.showMessage(
+        self.main_window.status_bar.showMessage(
             Translations.format(
                 "status.library_closed", time_span=format_timespan(end_time - start_time)
             )
@@ -965,11 +965,11 @@ class QtDriver(DriverMixin, QObject):
 
     def backup_library(self):
         logger.info("Backing Up Library...")
-        self.main_window.statusbar.showMessage(Translations["status.library_backup_in_progress"])
+        self.main_window.status_bar.showMessage(Translations["status.library_backup_in_progress"])
         start_time = time.time()
         target_path = self.lib.save_library_backup_to_disk()
         end_time = time.time()
-        self.main_window.statusbar.showMessage(
+        self.main_window.status_bar.showMessage(
             Translations.format(
                 "status.library_backup_success",
                 path=target_path,
@@ -1088,12 +1088,12 @@ class QtDriver(DriverMixin, QObject):
                     if (origin_path == f) or (not origin_path):
                         self.preview_panel.thumb.media_player.stop()
                     if delete_file(self.lib.library_dir / f):
-                        self.main_window.statusbar.showMessage(
+                        self.main_window.status_bar.showMessage(
                             Translations.format(
                                 "status.deleting_file", i=i, count=len(pending), path=f
                             )
                         )
-                        self.main_window.statusbar.repaint()
+                        self.main_window.status_bar.repaint()
                         self.lib.remove_entries([e_id])
 
                         deleted_count += 1
@@ -1104,22 +1104,22 @@ class QtDriver(DriverMixin, QObject):
             self.preview_panel.update_widgets()
 
         if len(self.selected) <= 1 and deleted_count == 0:
-            self.main_window.statusbar.showMessage(Translations["status.deleted_none"])
+            self.main_window.status_bar.showMessage(Translations["status.deleted_none"])
         elif len(self.selected) <= 1 and deleted_count == 1:
-            self.main_window.statusbar.showMessage(
+            self.main_window.status_bar.showMessage(
                 Translations.format("status.deleted_file_plural", count=deleted_count)
             )
         elif len(self.selected) > 1 and deleted_count == 0:
-            self.main_window.statusbar.showMessage(Translations["status.deleted_none"])
+            self.main_window.status_bar.showMessage(Translations["status.deleted_none"])
         elif len(self.selected) > 1 and deleted_count < len(self.selected):
-            self.main_window.statusbar.showMessage(
+            self.main_window.status_bar.showMessage(
                 Translations.format("status.deleted_partial_warning", count=deleted_count)
             )
         elif len(self.selected) > 1 and deleted_count == len(self.selected):
-            self.main_window.statusbar.showMessage(
+            self.main_window.status_bar.showMessage(
                 Translations.format("status.deleted_file_plural", count=deleted_count)
             )
-        self.main_window.statusbar.repaint()
+        self.main_window.status_bar.repaint()
 
     def delete_file_confirmation(self, count: int, filename: Path | None = None) -> int:
         """A confirmation dialogue box for deleting files.
@@ -1430,7 +1430,7 @@ class QtDriver(DriverMixin, QObject):
 
         self._update_thumb_count()
 
-        sa: QScrollArea = self.main_window.scrollArea
+        sa: QScrollArea = self.main_window.entry_scroll_area
         sa.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         sa.setWidgetResizable(True)
         sa.setWidget(self.flow_container)
@@ -1589,7 +1589,7 @@ class QtDriver(DriverMixin, QObject):
                 "tag_id:",
                 "special:untagged",
             ]
-            self.main_window.searchFieldCompletionList.setStringList(completion_list)
+            self.main_window.search_field_completion_list.setStringList(completion_list)
 
         if not matches:
             return
@@ -1638,11 +1638,11 @@ class QtDriver(DriverMixin, QObject):
             )
 
         update_completion_list: bool = (
-            completion_list != self.main_window.searchFieldCompletionList.stringList()
-            or self.main_window.searchFieldCompletionList == []
+            completion_list != self.main_window.search_field_completion_list.stringList()
+            or self.main_window.search_field_completion_list == []
         )
         if update_completion_list:
-            self.main_window.searchFieldCompletionList.setStringList(completion_list)
+            self.main_window.search_field_completion_list.setStringList(completion_list)
 
     def update_thumbs(self):
         """Update search thumbnails."""
@@ -1798,11 +1798,11 @@ class QtDriver(DriverMixin, QObject):
         if state:
             self.browsing_history.push(state)
 
-        self.main_window.searchField.setText(self.browsing_history.current.query or "")
+        self.main_window.search_field.setText(self.browsing_history.current.query or "")
 
         # inform user about running search
-        self.main_window.statusbar.showMessage(Translations["status.library_search_query"])
-        self.main_window.statusbar.repaint()
+        self.main_window.status_bar.showMessage(Translations["status.library_search_query"])
+        self.main_window.status_bar.repaint()
 
         # search the library
         start_time = time.time()
@@ -1811,7 +1811,7 @@ class QtDriver(DriverMixin, QObject):
         end_time = time.time()
 
         # inform user about completed search
-        self.main_window.statusbar.showMessage(
+        self.main_window.status_bar.showMessage(
             Translations.format(
                 "status.results_found",
                 count=results.total_count,
@@ -1932,7 +1932,7 @@ class QtDriver(DriverMixin, QObject):
         )
         message = Translations.format("splash.opening_library", library_path=library_dir_display)
         self.main_window.landing_widget.set_status_label(message)
-        self.main_window.statusbar.showMessage(message, 3)
+        self.main_window.status_bar.showMessage(message, 3)
         self.main_window.repaint()
 
         if self.lib.library_dir:
