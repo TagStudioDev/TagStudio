@@ -129,9 +129,9 @@ def test_title_update(
     qt_driver.main_window.menu_bar.tag_manager_action = QAction(menu_bar)
     qt_driver.main_window.menu_bar.color_manager_action = QAction(menu_bar)
     qt_driver.main_window.menu_bar.new_tag_action = QAction(menu_bar)
-    qt_driver.fix_dupe_files_action = QAction(menu_bar)
-    qt_driver.fix_unlinked_entries_action = QAction(menu_bar)
-    qt_driver.clear_thumb_cache_action = QAction(menu_bar)
+    qt_driver.main_window.menu_bar.fix_unlinked_entries_action = QAction(menu_bar)
+    qt_driver.main_window.menu_bar.fix_dupe_files_action = QAction(menu_bar)
+    qt_driver.main_window.menu_bar.clear_thumb_cache_action = QAction(menu_bar)
     qt_driver.folders_to_tags_action = QAction(menu_bar)
 
     # Trigger the update

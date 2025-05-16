@@ -403,7 +403,6 @@ class QtDriver(DriverMixin, QObject):
         # region Menu Bar
         menu_bar = self.main_window.menu_bar
 
-        tools_menu = QMenu(Translations["menu.tools"], menu_bar)
         macros_menu = QMenu(Translations["menu.macros"], menu_bar)
         help_menu = QMenu(Translations["menu.help"], menu_bar)
 
@@ -504,46 +503,29 @@ class QtDriver(DriverMixin, QObject):
 
         # endregion
 
-        # Tools Menu ===========================================================
+        # region Tools Menu ===========================================================
         def create_fix_unlinked_entries_modal():
             if not hasattr(self, "unlinked_modal"):
                 self.unlinked_modal = FixUnlinkedEntriesModal(self.lib, self)
             self.unlinked_modal.show()
 
-        self.fix_unlinked_entries_action = QAction(
-            Translations["menu.tools.fix_unlinked_entries"], menu_bar
+        self.main_window.menu_bar.fix_unlinked_entries_action.triggered.connect(
+            create_fix_unlinked_entries_modal
         )
-        self.fix_unlinked_entries_action.triggered.connect(create_fix_unlinked_entries_modal)
-        self.fix_unlinked_entries_action.setEnabled(False)
-        tools_menu.addAction(self.fix_unlinked_entries_action)
 
         def create_dupe_files_modal():
             if not hasattr(self, "dupe_modal"):
                 self.dupe_modal = FixDupeFilesModal(self.lib, self)
             self.dupe_modal.show()
 
-        self.fix_dupe_files_action = QAction(
-            Translations["menu.tools.fix_duplicate_files"], menu_bar
-        )
-        self.fix_dupe_files_action.triggered.connect(create_dupe_files_modal)
-        self.fix_dupe_files_action.setEnabled(False)
-        tools_menu.addAction(self.fix_dupe_files_action)
-
-        tools_menu.addSeparator()
+        self.main_window.menu_bar.fix_dupe_files_action.triggered.connect(create_dupe_files_modal)
 
         # TODO: Move this to a settings screen.
-        self.clear_thumb_cache_action = QAction(
-            Translations["settings.clear_thumb_cache.title"], menu_bar
-        )
-        self.clear_thumb_cache_action.triggered.connect(
+        self.main_window.menu_bar.clear_thumb_cache_action.triggered.connect(
             lambda: CacheManager.clear_cache(self.lib.library_dir)
         )
-        self.clear_thumb_cache_action.setEnabled(False)
-        tools_menu.addAction(self.clear_thumb_cache_action)
 
-        # create_collage_action = QAction("Create Collage", menu_bar)
-        # create_collage_action.triggered.connect(lambda: self.create_collage())
-        # tools_menu.addAction(create_collage_action)
+        # endregion
 
         # Macros Menu ==========================================================
         # self.autofill_action = QAction("Autofill", menu_bar)
@@ -576,7 +558,6 @@ class QtDriver(DriverMixin, QObject):
         help_menu.addAction(self.about_action)
         self.set_macro_menu_viability()
 
-        menu_bar.addMenu(tools_menu)
         menu_bar.addMenu(macros_menu)
         menu_bar.addMenu(help_menu)
         # endregion
@@ -811,9 +792,9 @@ class QtDriver(DriverMixin, QObject):
             self.main_window.menu_bar.color_manager_action.setEnabled(False)
             self.main_window.menu_bar.manage_file_ext_action.setEnabled(False)
             self.main_window.menu_bar.new_tag_action.setEnabled(False)
-            self.fix_unlinked_entries_action.setEnabled(False)
-            self.fix_dupe_files_action.setEnabled(False)
-            self.clear_thumb_cache_action.setEnabled(False)
+            self.main_window.menu_bar.fix_unlinked_entries_action.setEnabled(False)
+            self.main_window.menu_bar.fix_dupe_files_action.setEnabled(False)
+            self.main_window.menu_bar.clear_thumb_cache_action.setEnabled(False)
             self.folders_to_tags_action.setEnabled(False)
         except AttributeError:
             logger.warning(
@@ -1852,9 +1833,9 @@ class QtDriver(DriverMixin, QObject):
         self.main_window.menu_bar.color_manager_action.setEnabled(True)
         self.main_window.menu_bar.manage_file_ext_action.setEnabled(True)
         self.main_window.menu_bar.new_tag_action.setEnabled(True)
-        self.fix_dupe_files_action.setEnabled(True)
-        self.fix_unlinked_entries_action.setEnabled(True)
-        self.clear_thumb_cache_action.setEnabled(True)
+        self.main_window.menu_bar.fix_unlinked_entries_action.setEnabled(True)
+        self.main_window.menu_bar.fix_dupe_files_action.setEnabled(True)
+        self.main_window.menu_bar.clear_thumb_cache_action.setEnabled(True)
         self.folders_to_tags_action.setEnabled(True)
 
         self.main_window.preview_panel.update_widgets()
