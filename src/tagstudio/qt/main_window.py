@@ -69,11 +69,15 @@ class MainMenuBar(QMenuBar):
     tag_manager_action: QAction
     color_manager_action: QAction
 
+    view_menu: QMenu
+    show_filenames_action: QAction
+
     def __init__(self, parent=...):
         super().__init__(parent)
 
         self.setup_file_menu()
         self.setup_edit_menu()
+        self.setup_view_menu()
 
     def setup_file_menu(self):
         self.file_menu = QMenu(Translations["menu.file"], self)
@@ -254,8 +258,6 @@ class MainMenuBar(QMenuBar):
         self.manage_file_ext_action.setEnabled(False)
         self.edit_menu.addAction(self.manage_file_ext_action)
 
-        self.addMenu(self.edit_menu)
-
         # Manage Tags
         self.tag_manager_action = QAction(Translations["menu.edit.manage_tags"], self)
         self.tag_manager_action.setShortcut(
@@ -272,6 +274,21 @@ class MainMenuBar(QMenuBar):
         self.color_manager_action = QAction(Translations["edit.color_manager"], self)
         self.color_manager_action.setEnabled(False)
         self.edit_menu.addAction(self.color_manager_action)
+
+        self.addMenu(self.edit_menu)
+
+    def setup_view_menu(self):
+        self.view_menu = QMenu(Translations["menu.view"], self)
+
+        # show_libs_list_action = QAction(Translations["settings.show_recent_libraries"], menu_bar)
+        # show_libs_list_action.setCheckable(True)
+        # show_libs_list_action.setChecked(self.settings.show_library_list)
+
+        self.show_filenames_action = QAction(Translations["settings.show_filenames_in_grid"], self)
+        self.show_filenames_action.setCheckable(True)
+        self.view_menu.addAction(self.show_filenames_action)
+
+        self.addMenu(self.view_menu)
 
     def rebuild_open_recent_library_menu(
         self,

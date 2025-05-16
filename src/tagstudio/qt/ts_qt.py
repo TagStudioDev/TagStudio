@@ -403,8 +403,6 @@ class QtDriver(DriverMixin, QObject):
         # region Menu Bar
         menu_bar = self.main_window.menu_bar
 
-        edit_menu = QMenu(Translations["generic.edit_alt"], menu_bar)
-        view_menu = QMenu(Translations["menu.view"], menu_bar)
         tools_menu = QMenu(Translations["menu.tools"], menu_bar)
         macros_menu = QMenu(Translations["menu.macros"], menu_bar)
         help_menu = QMenu(Translations["menu.help"], menu_bar)
@@ -492,21 +490,19 @@ class QtDriver(DriverMixin, QObject):
 
         # endregion
 
-        # View Menu ============================================================
-        # show_libs_list_action = QAction(Translations["settings.show_recent_libraries"], menu_bar)
-        # show_libs_list_action.setCheckable(True)
-        # show_libs_list_action.setChecked(self.settings.show_library_list)
+        # region View Menu ============================================================
 
         def on_show_filenames_action(checked: bool):
             self.settings.show_filenames_in_grid = checked
             self.settings.save()
             self.show_grid_filenames(checked)
 
-        show_filenames_action = QAction(Translations["settings.show_filenames_in_grid"], menu_bar)
-        show_filenames_action.setCheckable(True)
-        show_filenames_action.setChecked(self.settings.show_filenames_in_grid)
-        show_filenames_action.triggered.connect(on_show_filenames_action)
-        view_menu.addAction(show_filenames_action)
+        self.main_window.menu_bar.show_filenames_action.triggered.connect(on_show_filenames_action)
+        self.main_window.menu_bar.show_filenames_action.setChecked(
+            self.settings.show_filenames_in_grid
+        )
+
+        # endregion
 
         # Tools Menu ===========================================================
         def create_fix_unlinked_entries_modal():
@@ -580,7 +576,6 @@ class QtDriver(DriverMixin, QObject):
         help_menu.addAction(self.about_action)
         self.set_macro_menu_viability()
 
-        menu_bar.addMenu(view_menu)
         menu_bar.addMenu(tools_menu)
         menu_bar.addMenu(macros_menu)
         menu_bar.addMenu(help_menu)
