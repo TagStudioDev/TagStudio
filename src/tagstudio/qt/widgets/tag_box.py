@@ -8,7 +8,7 @@ import typing
 import structlog
 from PySide6.QtCore import Signal
 
-from tagstudio.core.library.alchemy.enums import FilterState
+from tagstudio.core.library.alchemy.enums import BrowsingState
 from tagstudio.core.library.alchemy.models import Tag
 from tagstudio.qt.flowlayout import FlowLayout
 from tagstudio.qt.modals.build_tag import BuildTagPanel
@@ -59,17 +59,15 @@ class TagBoxWidget(FieldWidget):
             tag_widget.on_remove.connect(
                 lambda tag_id=tag.id: (
                     self.remove_tag(tag_id),
-                    self.driver.preview_panel.update_widgets(update_preview=False),
+                    self.driver.main_window.preview_panel.update_widgets(update_preview=False),
                 )
             )
             tag_widget.on_edit.connect(lambda t=tag: self.edit_tag(t))
 
             tag_widget.search_for_tag_action.triggered.connect(
                 lambda checked=False, tag_id=tag.id: (
-                    self.driver.main_window.searchField.setText(f"tag_id:{tag_id}"),
-                    self.driver.filter_items(
-                        FilterState.from_tag_id(tag_id, page_size=self.driver.settings.page_size)
-                    ),
+                    self.driver.main_window.search_field.setText(f"tag_id:{tag_id}"),
+                    self.driver.update_browsing_state(BrowsingState.from_tag_id(tag_id)),
                 )
             )
 
@@ -83,7 +81,9 @@ class TagBoxWidget(FieldWidget):
             build_tag_panel,
             self.driver.lib.tag_display_name(tag.id),
             "Edit Tag",
-            done_callback=lambda: self.driver.preview_panel.update_widgets(update_preview=False),
+            done_callback=lambda: self.driver.main_window.preview_panel.update_widgets(
+                update_preview=False
+            ),
             has_save=True,
         )
         # TODO - this was update_tag()

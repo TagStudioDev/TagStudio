@@ -124,7 +124,7 @@ class TagColorManager(QWidget):
                         self.setup_color_groups(),
                         ()
                         if len(self.driver.selected) < 1
-                        else self.driver.preview_panel.fields.update_from_entry(
+                        else self.driver.main_window.preview_panel.fields.update_from_entry(
                             self.driver.selected[0], update_badges=False
                         ),
                     )
@@ -141,7 +141,7 @@ class TagColorManager(QWidget):
                                 self.setup_color_groups(),
                                 ()
                                 if len(self.driver.selected) < 1
-                                else self.driver.preview_panel.fields.update_from_entry(
+                                else self.driver.main_window.preview_panel.fields.update_from_entry(
                                     self.driver.selected[0], update_badges=False
                                 ),
                             ),
