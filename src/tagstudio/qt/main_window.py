@@ -72,12 +72,18 @@ class MainMenuBar(QMenuBar):
     view_menu: QMenu
     show_filenames_action: QAction
 
+    tools_menu: QMenu
+    fix_unlinked_entries_action: QAction
+    fix_dupe_files_action: QAction
+    clear_thumb_cache_action: QAction
+
     def __init__(self, parent=...):
         super().__init__(parent)
 
         self.setup_file_menu()
         self.setup_edit_menu()
         self.setup_view_menu()
+        self.setup_tools_menu()
 
     def setup_file_menu(self):
         self.file_menu = QMenu(Translations["menu.file"], self)
@@ -289,6 +295,32 @@ class MainMenuBar(QMenuBar):
         self.view_menu.addAction(self.show_filenames_action)
 
         self.addMenu(self.view_menu)
+
+    def setup_tools_menu(self):
+        self.tools_menu = QMenu(Translations["menu.tools"], self)
+
+        # Fix Unlinked Entries
+        self.fix_unlinked_entries_action = QAction(
+            Translations["menu.tools.fix_unlinked_entries"], self
+        )
+        self.fix_unlinked_entries_action.setEnabled(False)
+        self.tools_menu.addAction(self.fix_unlinked_entries_action)
+
+        # Fix Duplicate Files
+        self.fix_dupe_files_action = QAction(Translations["menu.tools.fix_duplicate_files"], self)
+        self.fix_dupe_files_action.setEnabled(False)
+        self.tools_menu.addAction(self.fix_dupe_files_action)
+
+        self.tools_menu.addSeparator()
+
+        # Clear Thumbnail Cache
+        self.clear_thumb_cache_action = QAction(
+            Translations["settings.clear_thumb_cache.title"], self
+        )
+        self.clear_thumb_cache_action.setEnabled(False)
+        self.tools_menu.addAction(self.clear_thumb_cache_action)
+
+        self.addMenu(self.tools_menu)
 
     def rebuild_open_recent_library_menu(
         self,
