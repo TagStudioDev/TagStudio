@@ -100,7 +100,6 @@ from tagstudio.qt.translations import Translations
 from tagstudio.qt.widgets.item_thumb import BadgeType, ItemThumb
 from tagstudio.qt.widgets.migration_modal import JsonMigrationModal
 from tagstudio.qt.widgets.panel import PanelModal
-from tagstudio.qt.widgets.preview_panel import PreviewPanel
 from tagstudio.qt.widgets.progress import ProgressWidget
 from tagstudio.qt.widgets.thumb_renderer import ThumbRenderer
 
@@ -180,7 +179,6 @@ class QtDriver(DriverMixin, QObject):
 
     SIGTERM = Signal()
 
-    preview_panel: PreviewPanel
     tag_manager_panel: PanelModal | None = None
     color_manager_panel: TagColorManager | None = None
     file_extension_panel: PanelModal | None = None
@@ -379,7 +377,9 @@ class QtDriver(DriverMixin, QObject):
         # Initialize the Tag Manager panel
         self.tag_manager_panel = PanelModal(
             widget=TagDatabasePanel(self, self.lib),
-            done_callback=lambda: self.preview_panel.update_widgets(update_preview=False),
+            done_callback=lambda: self.main_window.preview_panel.update_widgets(
+                update_preview=False
+            ),
             has_save=False,
         )
         self.tag_manager_panel.setTitle(Translations["tag_manager.title"])
@@ -399,7 +399,7 @@ class QtDriver(DriverMixin, QObject):
         self.tag_search_panel.tag_chosen.connect(
             lambda t: (
                 self.add_tags_to_selected_callback(t),
-                self.preview_panel.update_widgets(),
+                self.main_window.preview_panel.update_widgets(),
             )
         )
 
@@ -713,20 +713,16 @@ class QtDriver(DriverMixin, QObject):
 
         self.main_window.search_field.textChanged.connect(self.update_completions_list)
 
-        self.preview_panel = PreviewPanel(self.lib, self)
-        self.preview_panel.fields.archived_updated.connect(
+        self.main_window.preview_panel.fields.archived_updated.connect(
             lambda hidden: self.update_badges(
                 {BadgeType.ARCHIVED: hidden}, origin_id=0, add_tags=False
             )
         )
-        self.preview_panel.fields.favorite_updated.connect(
+        self.main_window.preview_panel.fields.favorite_updated.connect(
             lambda hidden: self.update_badges(
                 {BadgeType.FAVORITE: hidden}, origin_id=0, add_tags=False
             )
         )
-
-        splitter = self.main_window.content_splitter
-        splitter.addWidget(self.preview_panel)
 
         QFontDatabase.addApplicationFont(
             str(Path(__file__).parents[1] / "resources/qt/fonts/Oxanium-Bold.ttf")
@@ -908,7 +904,7 @@ class QtDriver(DriverMixin, QObject):
         self.cached_values.sync()
 
         # Reset library state
-        self.preview_panel.update_widgets()
+        self.main_window.preview_panel.update_widgets()
         self.main_window.search_field.setText("")
         scrollbar: QScrollArea = self.main_window.entry_scroll_area
         scrollbar.verticalScrollBar().setValue(0)
@@ -932,7 +928,7 @@ class QtDriver(DriverMixin, QObject):
         self.set_clipboard_menu_viability()
         self.set_select_actions_visibility()
 
-        self.preview_panel.update_widgets()
+        self.main_window.preview_panel.update_widgets()
         self.main_window.toggle_landing_page(enabled=True)
         self.main_window.pagination.setHidden(True)
         try:
@@ -1011,7 +1007,7 @@ class QtDriver(DriverMixin, QObject):
         self.set_clipboard_menu_viability()
         self.set_select_actions_visibility()
 
-        self.preview_panel.update_widgets(update_preview=False)
+        self.main_window.preview_panel.update_widgets(update_preview=False)
 
     def select_inverse_action_callback(self):
         """Invert the selection of all visible items."""
@@ -1031,7 +1027,7 @@ class QtDriver(DriverMixin, QObject):
         self.set_clipboard_menu_viability()
         self.set_select_actions_visibility()
 
-        self.preview_panel.update_widgets(update_preview=False)
+        self.main_window.preview_panel.update_widgets(update_preview=False)
 
     def clear_select_action_callback(self):
         self.selected.clear()
@@ -1041,7 +1037,7 @@ class QtDriver(DriverMixin, QObject):
 
         self.set_macro_menu_viability()
         self.set_clipboard_menu_viability()
-        self.preview_panel.update_widgets()
+        self.main_window.preview_panel.update_widgets()
 
     def add_tags_to_selected_callback(self, tag_ids: list[int]):
         self.lib.add_tags_to_entries(self.selected, tag_ids)
@@ -1086,7 +1082,7 @@ class QtDriver(DriverMixin, QObject):
                 for i, tup in enumerate(pending):
                     e_id, f = tup
                     if (origin_path == f) or (not origin_path):
-                        self.preview_panel.thumb.media_player.stop()
+                        self.main_window.preview_panel.thumb.media_player.stop()
                     if delete_file(self.lib.library_dir / f):
                         self.main_window.status_bar.showMessage(
                             Translations.format(
@@ -1101,7 +1097,7 @@ class QtDriver(DriverMixin, QObject):
 
         if deleted_count > 0:
             self.update_browsing_state()
-            self.preview_panel.update_widgets()
+            self.main_window.preview_panel.update_widgets()
 
         if len(self.selected) <= 1 and deleted_count == 0:
             self.main_window.status_bar.showMessage(Translations["status.deleted_none"])
@@ -1463,7 +1459,7 @@ class QtDriver(DriverMixin, QObject):
             if TAG_FAVORITE in self.copy_buffer["tags"]:
                 self.update_badges({BadgeType.FAVORITE: True}, origin_id=0, add_tags=False)
         else:
-            self.preview_panel.update_widgets()
+            self.main_window.preview_panel.update_widgets()
 
     def toggle_item_selection(self, item_id: int, append: bool, bridge: bool):
         """Toggle the selection of an item in the Thumbnail Grid.
@@ -1538,7 +1534,7 @@ class QtDriver(DriverMixin, QObject):
         self.set_clipboard_menu_viability()
         self.set_select_actions_visibility()
 
-        self.preview_panel.update_widgets()
+        self.main_window.preview_panel.update_widgets()
 
     def set_macro_menu_viability(self):
         # self.autofill_action.setDisabled(not self.selected)
@@ -2016,7 +2012,7 @@ class QtDriver(DriverMixin, QObject):
         self.clear_thumb_cache_action.setEnabled(True)
         self.folders_to_tags_action.setEnabled(True)
 
-        self.preview_panel.update_widgets()
+        self.main_window.preview_panel.update_widgets()
 
         # page (re)rendering, extract eventually
         self.update_browsing_state()

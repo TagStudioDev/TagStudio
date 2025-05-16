@@ -29,6 +29,7 @@ from PySide6.QtWidgets import (
 from tagstudio.qt.pagination import Pagination
 from tagstudio.qt.translations import Translations
 from tagstudio.qt.widgets.landing import LandingWidget
+from tagstudio.qt.widgets.preview_panel import PreviewPanel
 
 # Only import for type checking/autocompletion, will not be imported at runtime.
 if typing.TYPE_CHECKING:
@@ -163,6 +164,8 @@ class MainWindow(QMainWindow):
 
         self.setup_entry_list(driver)
 
+        self.setup_preview_panel(driver)
+
         self.content_splitter.setStretchFactor(0, 1)
         self.content_layout.addWidget(self.content_splitter)
 
@@ -187,6 +190,10 @@ class MainWindow(QMainWindow):
         self.pagination = Pagination()
         self.entry_list_layout.addWidget(self.pagination)
         self.content_splitter.addWidget(self.entry_list_container)
+
+    def setup_preview_panel(self, driver: "QtDriver"):
+        self.preview_panel = PreviewPanel(driver.lib, driver)
+        self.content_splitter.addWidget(self.preview_panel)
 
     def setup_status_bar(self):
         self.status_bar = QStatusBar(self)
