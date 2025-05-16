@@ -40,13 +40,10 @@ from PySide6.QtGui import (
 from PySide6.QtUiTools import QUiLoader
 from PySide6.QtWidgets import (
     QApplication,
-    QComboBox,
     QFileDialog,
-    QLineEdit,
     QMessageBox,
     QPushButton,
     QScrollArea,
-    QWidget,
 )
 
 # this import has side-effect of import PySide resources
@@ -71,7 +68,6 @@ from tagstudio.core.ts_core import TagStudioCore
 from tagstudio.core.utils.refresh_dir import RefreshDirTracker
 from tagstudio.core.utils.web import strip_web_protocol
 from tagstudio.qt.cache_manager import CacheManager
-from tagstudio.qt.flowlayout import FlowLayout
 from tagstudio.qt.helpers.custom_runnable import CustomRunnable
 from tagstudio.qt.helpers.file_deleter import delete_file
 from tagstudio.qt.helpers.function_iterator import FunctionIterator
