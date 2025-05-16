@@ -80,6 +80,9 @@ class MainMenuBar(QMenuBar):
     macros_menu: QMenu
     folders_to_tags_action: QAction
 
+    help_menu: QMenu
+    about_action: QAction
+
     def __init__(self, parent=...):
         super().__init__(parent)
 
@@ -88,6 +91,7 @@ class MainMenuBar(QMenuBar):
         self.setup_view_menu()
         self.setup_tools_menu()
         self.setup_macros_menu()
+        self.setup_help_menu()
 
     def setup_file_menu(self):
         self.file_menu = QMenu(Translations["menu.file"], self)
@@ -334,6 +338,14 @@ class MainMenuBar(QMenuBar):
         self.macros_menu.addAction(self.folders_to_tags_action)
 
         self.addMenu(self.macros_menu)
+
+    def setup_help_menu(self):
+        self.help_menu = QMenu(Translations["menu.help"], self)
+
+        self.about_action = QAction(Translations["menu.help.about"], self)
+        self.help_menu.addAction(self.about_action)
+
+        self.addMenu(self.help_menu)
 
     def rebuild_open_recent_library_menu(
         self,
