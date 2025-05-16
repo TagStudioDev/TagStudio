@@ -401,9 +401,6 @@ class QtDriver(DriverMixin, QObject):
         )
 
         # region Menu Bar
-        menu_bar = self.main_window.menu_bar
-
-        help_menu = QMenu(Translations["menu.help"], menu_bar)
 
         # region File Menu ============================================================
         # Open/Create Library
@@ -538,18 +535,16 @@ class QtDriver(DriverMixin, QObject):
 
         # endregion
 
-        # Help Menu ============================================================
+        # region Help Menu ============================================================
         def create_about_modal():
             if not hasattr(self, "about_modal"):
                 self.about_modal = AboutModal(self.global_settings_path)
             self.about_modal.show()
 
-        self.about_action = QAction(Translations["menu.help.about"], menu_bar)
-        self.about_action.triggered.connect(create_about_modal)
-        help_menu.addAction(self.about_action)
-        self.set_macro_menu_viability()
+        self.main_window.menu_bar.about_action.triggered.connect(create_about_modal)
 
-        menu_bar.addMenu(help_menu)
+        # endregion
+
         # endregion
 
         self.main_window.search_field.textChanged.connect(self.update_completions_list)
@@ -846,7 +841,6 @@ class QtDriver(DriverMixin, QObject):
                 self.selected.append(item.item_id)
                 item.thumb_button.set_selected(True)
 
-        self.set_macro_menu_viability()
         self.set_clipboard_menu_viability()
         self.set_select_actions_visibility()
 
@@ -866,7 +860,6 @@ class QtDriver(DriverMixin, QObject):
 
         self.selected = new_selected
 
-        self.set_macro_menu_viability()
         self.set_clipboard_menu_viability()
         self.set_select_actions_visibility()
 
@@ -878,7 +871,6 @@ class QtDriver(DriverMixin, QObject):
         for item in self.item_thumbs:
             item.thumb_button.set_selected(False)
 
-        self.set_macro_menu_viability()
         self.set_clipboard_menu_viability()
         self.main_window.preview_panel.update_widgets()
 
@@ -1373,15 +1365,10 @@ class QtDriver(DriverMixin, QObject):
             else:
                 it.thumb_button.set_selected(False)
 
-        self.set_macro_menu_viability()
         self.set_clipboard_menu_viability()
         self.set_select_actions_visibility()
 
         self.main_window.preview_panel.update_widgets()
-
-    def set_macro_menu_viability(self):
-        # self.autofill_action.setDisabled(not self.selected)
-        pass
 
     def set_clipboard_menu_viability(self):
         if len(self.selected) == 1:
