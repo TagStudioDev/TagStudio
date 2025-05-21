@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from enum import Enum
-from typing import Generic, TypeVar
+from typing import Generic, TypeVar, Union
 
 
 class ConstraintType(Enum):
@@ -12,7 +12,7 @@ class ConstraintType(Enum):
     Special = 5
 
     @staticmethod
-    def from_string(text: str) -> "ConstraintType":
+    def from_string(text: str) -> Union["ConstraintType", None]:
         return {
             "tag": ConstraintType.Tag,
             "tag_id": ConstraintType.TagID,
@@ -24,7 +24,7 @@ class ConstraintType(Enum):
 
 
 class AST:
-    parent: "AST" = None
+    parent: Union["AST", None] = None
 
     def __str__(self):
         class_name = self.__class__.__name__

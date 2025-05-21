@@ -26,19 +26,19 @@ class Token:
     start: int
     end: int
 
-    def __init__(self, type: TokenType, value: Any, start: int = None, end: int = None) -> None:
+    def __init__(self, type: TokenType, value: Any, start: int, end: int) -> None:
         self.type = type
         self.value = value
         self.start = start
         self.end = end
 
     @staticmethod
-    def from_type(type: TokenType, pos: int = None) -> "Token":
+    def from_type(type: TokenType, pos: int) -> "Token":
         return Token(type, None, pos, pos)
 
     @staticmethod
-    def EOF() -> "Token":  # noqa: N802
-        return Token.from_type(TokenType.EOF)
+    def EOF(pos: int) -> "Token":  # noqa: N802
+        return Token.from_type(TokenType.EOF, pos)
 
     def __str__(self) -> str:
         return f"Token({self.type}, {self.value}, {self.start}, {self.end})"  # pragma: nocover
@@ -50,7 +50,7 @@ class Token:
 class Tokenizer:
     text: str
     pos: int
-    current_char: str
+    current_char: str | None
 
     ESCAPABLE_CHARS = ["\\", '"', '"']
     NOT_IN_ULITERAL = [":", " ", "[", "]", "(", ")", "=", ","]
@@ -63,7 +63,7 @@ class Tokenizer:
     def get_next_token(self) -> Token:
         self.__skip_whitespace()
         if self.current_char is None:
-            return Token.EOF()
+            return Token.EOF(self.pos)
 
         if self.current_char in ("'", '"'):
             return self.__quoted_string()
@@ -119,6 +119,8 @@ class Tokenizer:
         out = ""
 
         while escape or self.current_char != quote:
+            if self.current_char is None:
+                raise ParsingError(start, self.pos, "Unterminated quoted string")
             if escape:
                 escape = False
                 if self.current_char not in Tokenizer.ESCAPABLE_CHARS:
