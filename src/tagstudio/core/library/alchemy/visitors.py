@@ -147,7 +147,7 @@ class SQLBoolExpressionBuilder(BaseVisitor[ColumnElement[bool]]):
         # raise exception if Constraint stays unhandled
         raise NotImplementedError("This type of constraint is not implemented yet")
 
-    def visit_property(self, node: Property) -> None:
+    def visit_property(self, node: Property) -> ColumnElement[bool]:
         raise NotImplementedError("This should never be reached!")
 
     def visit_not(self, node: Not) -> ColumnElement[bool]:
