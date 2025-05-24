@@ -590,6 +590,46 @@ class QtDriver(DriverMixin, QObject):
         show_filenames_action.triggered.connect(on_show_filenames_action)
         view_menu.addAction(show_filenames_action)
 
+        view_menu.addSeparator()
+
+        def on_decrease_thumbnail_size_action():
+            new_val = self.thumb_size_combobox.currentIndex() + 1
+            if not (new_val + 1) > len(self.thumb_sizes):
+                self.thumb_size_combobox.setCurrentIndex(new_val)
+
+        decrease_thumbnail_size_action = QAction(
+            Translations["menu.view.decrease_thumbnail_size"], menu_bar
+        )
+        decrease_thumbnail_size_action.setShortcut(
+            QtCore.QKeyCombination(
+                QtCore.Qt.KeyboardModifier(QtCore.Qt.KeyboardModifier.ControlModifier),
+                QtCore.Qt.Key.Key_Minus,
+            )
+        )
+        decrease_thumbnail_size_action.setToolTip("Ctrl+-")
+        decrease_thumbnail_size_action.triggered.connect(on_decrease_thumbnail_size_action)
+        view_menu.addAction(decrease_thumbnail_size_action)
+
+        def on_increase_thumbnail_size_action():
+            new_val = self.thumb_size_combobox.currentIndex() - 1
+            if not new_val < 0:
+                self.thumb_size_combobox.setCurrentIndex(new_val)
+
+        increase_thumbnail_size_action = QAction(
+            Translations["menu.view.increase_thumbnail_size"], menu_bar
+        )
+        increase_thumbnail_size_action.setShortcut(
+            QtCore.QKeyCombination(
+                QtCore.Qt.KeyboardModifier(QtCore.Qt.KeyboardModifier.ControlModifier),
+                QtCore.Qt.Key.Key_Plus,
+            )
+        )
+        increase_thumbnail_size_action.setToolTip("Ctrl+=")
+        increase_thumbnail_size_action.triggered.connect(on_increase_thumbnail_size_action)
+        view_menu.addAction(increase_thumbnail_size_action)
+
+        view_menu.addSeparator()
+
         # Tools Menu ===========================================================
         def create_fix_unlinked_entries_modal():
             if not hasattr(self, "unlinked_modal"):
@@ -784,12 +824,12 @@ class QtDriver(DriverMixin, QObject):
         sort_dir_dropdown.currentIndexChanged.connect(self.sorting_direction_callback)
 
         # Thumbnail Size ComboBox
-        thumb_size_combobox: QComboBox = self.main_window.thumb_size_combobox
+        self.thumb_size_combobox: QComboBox = self.main_window.thumb_size_combobox
         for size in self.thumb_sizes:
-            thumb_size_combobox.addItem(size[0])
-        thumb_size_combobox.setCurrentIndex(2)  # Default: Medium
-        thumb_size_combobox.currentIndexChanged.connect(
-            lambda: self.thumb_size_callback(thumb_size_combobox.currentIndex())
+            self.thumb_size_combobox.addItem(size[0])
+        self.thumb_size_combobox.setCurrentIndex(2)  # Default: Medium
+        self.thumb_size_combobox.currentIndexChanged.connect(
+            lambda: self.thumb_size_callback(self.thumb_size_combobox.currentIndex())
         )
         self._init_thumb_grid()
 
