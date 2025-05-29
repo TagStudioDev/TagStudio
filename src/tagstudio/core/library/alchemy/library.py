@@ -1474,7 +1474,12 @@ class Library:
                     current_tag_ids.add(tag_parent.child_id)
                 current_tag_ids = current_tag_ids.difference(all_tag_ids)
 
-            statement = select(Tag).where(Tag.id.in_(all_tag_ids)).options(noload(Tag.parent_tags))
+            statement = select(Tag).where(Tag.id.in_(all_tag_ids))
+            statement = statement.options(
+                noload(Tag.parent_tags),
+                selectinload(Tag.aliases),
+                joinedload(Tag.color)
+            )
             tags = session.scalars(statement).fetchall()
             for tag in tags:
                 all_tags[tag.id] = tag
