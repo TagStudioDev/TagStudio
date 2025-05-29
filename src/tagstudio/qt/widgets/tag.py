@@ -254,7 +254,7 @@ class TagWidget(QWidget):
         )
 
         if self.lib:
-            self.bg_button.setText(escape_text(self.lib.tag_display_name(tag.id)))
+            self.bg_button.setText(escape_text(self.lib.tag_display_name(tag)))
         else:
             self.bg_button.setText(escape_text(tag.name))
 

@@ -47,7 +47,7 @@ class TagBoxWidget(FieldWidget):
         self.set_tags(self.tags)
 
     def set_tags(self, tags: typing.Iterable[Tag]):
-        tags_ = sorted(list(tags), key=lambda tag: self.driver.lib.tag_display_name(tag.id))
+        tags_ = sorted(list(tags), key=lambda tag: self.driver.lib.tag_display_name(tag))
         logger.info("[TagBoxWidget] Tags:", tags=tags)
         while self.base_layout.itemAt(0):
             self.base_layout.takeAt(0).widget().deleteLater()
@@ -81,7 +81,7 @@ class TagBoxWidget(FieldWidget):
 
         self.edit_modal = PanelModal(
             build_tag_panel,
-            self.driver.lib.tag_display_name(tag.id),
+            self.driver.lib.tag_display_name(tag),
             "Edit Tag",
             done_callback=lambda: self.driver.preview_panel.update_widgets(update_preview=False),
             has_save=True,

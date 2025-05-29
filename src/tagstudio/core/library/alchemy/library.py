@@ -314,13 +314,12 @@ class Library:
                 return f
         return None
 
-    def tag_display_name(self, tag_id: int) -> str:
-        with Session(self.engine) as session:
-            tag = session.scalar(select(Tag).where(Tag.id == tag_id))
-            if not tag:
-                return "<NO TAG>"
+    def tag_display_name(self, tag: Tag | None) -> str:
+        if not tag:
+            return "<NO TAG>"
 
-            if tag.disambiguation_id:
+        if tag.disambiguation_id:
+            with Session(self.engine) as session:
                 disam_tag = session.scalar(select(Tag).where(Tag.id == tag.disambiguation_id))
                 if not disam_tag:
                     return "<NO DISAM TAG>"
@@ -328,8 +327,8 @@ class Library:
                 if not disam_name:
                     disam_name = disam_tag.name
                 return f"{tag.name} ({disam_name})"
-            else:
-                return tag.name
+        else:
+            return tag.name
 
     def open_library(self, library_dir: Path, storage_path: Path | None = None) -> LibraryStatus:
         is_new: bool = True
