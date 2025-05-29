@@ -187,6 +187,8 @@ class FieldContainers(QWidget):
 
         cats = {}
         for category_id, descendent_ids in categories.items():
+            if len(descendent_ids) == 0:
+                continue
             key = None if category_id is None else hierarchy_tags[category_id]
             cats[key] = {hierarchy_tags[d] for d in descendent_ids}
         logger.info("[FieldContainers] Tag Categories", categories=cats)
