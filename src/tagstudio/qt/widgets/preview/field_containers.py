@@ -158,86 +158,37 @@ class FieldContainers(QWidget):
             c.setHidden(True)
 
     def get_tag_categories(self, tags: set[Tag]) -> dict[Tag | None, set[Tag]]:
-        """Get a dictionary of category tags mapped to their respective tags."""
-        cats: dict[Tag | None, set[Tag]] = {}
-        cats[None] = set()
+        """Get a dictionary of category tags mapped to their respective tags.
+        Example:
+        Tag: ["Johnny Bravo", Parent Tags: "Cartoon Network (TV)", "Character"] maps to:
+        "Cartoon Network" -> Johnny Bravo,
+        "Character" -> "Johnny Bravo",
+        "TV" -> Johnny Bravo"
+        """
+        tag_parents, hierarchy_tags = self.lib.get_tag_hierarchy(t.id for t in tags)
 
-        base_tag_ids: set[int] = {x.id for x in tags}
-        exhausted: set[int] = set()
-        cluster_map: dict[int, set[int]] = {}
-
-        def add_to_cluster(tag_id: int, p_ids: list[int] | None = None):
-            """Maps a Tag's child tags' IDs back to it's parent tag's ID.
-
-            Example:
-            Tag: ["Johnny Bravo", Parent Tags: "Cartoon Network (TV)", "Character"] maps to:
-            "Cartoon Network" -> Johnny Bravo,
-            "Character" -> "Johnny Bravo",
-            "TV" -> Johnny Bravo"
-            """
-            tag_obj = self.lib.get_tag(tag_id)  # Get full object
-            if p_ids is None:
-                p_ids = tag_obj.parent_ids
-
-            for p_id in p_ids:
-                if cluster_map.get(p_id) is None:
-                    cluster_map[p_id] = set()
-                # If the p_tag has p_tags of its own, recursively link those to the original Tag.
-                if tag_id not in cluster_map[p_id]:
-                    cluster_map[p_id].add(tag_id)
-                    p_tag = self.lib.get_tag(p_id)  # Get full object
-                    if p_tag.parent_ids:
-                        add_to_cluster(
-                            tag_id,
-                            [sub_id for sub_id in p_tag.parent_ids if sub_id != tag_id],
-                        )
-                exhausted.add(p_id)
-            exhausted.add(tag_id)
-
-        for tag in tags:
-            add_to_cluster(tag.id)
-
-        logger.info("[FieldContainers] Entry Cluster", entry_cluster=exhausted)
-        logger.info("[FieldContainers] Cluster Map", cluster_map=cluster_map)
-
-        # Initialize all categories from parents.
-        tags_ = {self.lib.get_tag(x) for x in exhausted}
-        for tag in tags_:
+        categories: dict[int | None, set[int]] = {None: set()}
+        for tag in hierarchy_tags.values():
             if tag.is_category:
-                cats[tag] = set()
-        logger.info("[FieldContainers] Blank Tag Categories", cats=cats)
+                categories[tag.id] = set()
+        for tag in tags:
+            has_category_parent = False
+            parent_ids = tag_parents.get(tag.id, [])
+            while len(parent_ids) > 0:
+                grandparent_ids = set()
+                for parent_id in parent_ids:
+                    if parent_id in categories:
+                        categories[parent_id].add(tag.id)
+                        has_category_parent = True
+                    grandparent_ids.update(tag_parents.get(parent_id, []))
+                parent_ids = grandparent_ids
+            if not has_category_parent:
+                categories[None].add(tag.id)
 
-        # Add tags to any applicable categories.
-        added_ids: set[int] = set()
-        for key in cats:
-            logger.info("[FieldContainers] Checking category tag key", key=key)
-
-            if key:
-                logger.info(
-                    "[FieldContainers] Key cluster:", key=key, cluster=cluster_map.get(key.id)
-                )
-
-                if final_tags := cluster_map.get(key.id, set()).union([key.id]):
-                    cats[key] = {self.lib.get_tag(x) for x in final_tags if x in base_tag_ids}
-                    added_ids = added_ids.union({x for x in final_tags if x in base_tag_ids})
-
-        # Add remaining tags to None key (general case).
-        cats[None] = {self.lib.get_tag(x) for x in base_tag_ids if x not in added_ids}
-        logger.info(
-            f"[FieldContainers] [{key}] Key cluster: None, general case!",
-            general_tags=cats[key],
-            added=added_ids,
-            base_tag_ids=base_tag_ids,
-        )
-
-        # Remove unused categories
-        empty: list[Tag] = []
-        for k, v in list(cats.items()):
-            if not v:
-                empty.append(k)
-        for key in empty:
-            cats.pop(key, None)
-
+        cats = {}
+        for category_id, descendent_ids in categories.items():
+            key = None if category_id is None else hierarchy_tags[category_id]
+            cats[key] = {hierarchy_tags[d] for d in descendent_ids}
         logger.info("[FieldContainers] Tag Categories", categories=cats)
         return cats
 

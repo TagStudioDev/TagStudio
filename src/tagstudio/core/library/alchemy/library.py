@@ -1456,6 +1456,34 @@ class Library:
 
             return session.scalar(statement)
 
+    def get_tag_hierarchy(
+        self, tag_ids: Iterable[int]
+    ) -> tuple[dict[int, list[int]], dict[int, Tag]]:
+        current_tag_ids: set[int] = set(tag_ids)
+        all_tag_ids: set[int] = set()
+        all_tags: dict[int, Tag] = {}
+        all_tag_parents: dict[int, list[int]] = {}
+
+        with Session(self.engine) as session:
+            while len(current_tag_ids) > 0:
+                all_tag_ids.update(current_tag_ids)
+                statement = select(TagParent).where(TagParent.parent_id.in_(current_tag_ids))
+                tag_parents = session.scalars(statement).fetchall()
+                current_tag_ids.clear()
+                for tag_parent in tag_parents:
+                    all_tag_parents.setdefault(tag_parent.parent_id, []).append(tag_parent.child_id)
+                    current_tag_ids.add(tag_parent.child_id)
+                current_tag_ids = current_tag_ids.difference(all_tag_ids)
+
+            statement = select(Tag).where(Tag.id.in_(all_tag_ids)).options(noload(Tag.parent_tags))
+            tags = session.scalars(statement).fetchall()
+            for tag in tags:
+                all_tags[tag.id] = tag
+            for tag in all_tags.values():
+                tag.parent_tags = {all_tags[p] for p in all_tag_parents.get(tag.id, [])}
+
+        return all_tag_parents, all_tags
+
     def add_parent_tag(self, parent_id: int, child_id: int) -> bool:
         if parent_id == child_id:
             return False
