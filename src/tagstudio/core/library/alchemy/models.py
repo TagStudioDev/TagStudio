@@ -156,6 +156,9 @@ class Tag(Base):
     def __repr__(self) -> str:
         return self.__str__()
 
+    def __hash__(self) -> int:
+        return hash(self.id)
+
     def __lt__(self, other) -> bool:
         return self.name < other.name
 

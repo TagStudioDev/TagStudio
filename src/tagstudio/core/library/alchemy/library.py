@@ -12,7 +12,7 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 from os import makedirs
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Iterable
 from uuid import uuid4
 from warnings import catch_warnings
 
@@ -42,6 +42,7 @@ from sqlalchemy.orm import (
     contains_eager,
     joinedload,
     make_transient,
+    noload,
     selectinload,
 )
 
@@ -1457,7 +1458,8 @@ class Library:
 
     def get_tag_hierarchy(
         self, tag_ids: Iterable[int]
-    ) -> tuple[dict[int, list[int]], dict[int, Tag]]:
+    ) -> dict[int, Tag]:
+        """Get a dictionary containing tags in `tag_ids` and all of their ancestor tags."""
         current_tag_ids: set[int] = set(tag_ids)
         all_tag_ids: set[int] = set()
         all_tags: dict[int, Tag] = {}
@@ -1486,7 +1488,8 @@ class Library:
             for tag in all_tags.values():
                 tag.parent_tags = {all_tags[p] for p in all_tag_parents.get(tag.id, [])}
 
-        return all_tag_parents, all_tags
+        return all_tags
+
 
     def add_parent_tag(self, parent_id: int, child_id: int) -> bool:
         if parent_id == child_id:

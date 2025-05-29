@@ -165,34 +165,28 @@ class FieldContainers(QWidget):
         "Character" -> "Johnny Bravo",
         "TV" -> Johnny Bravo"
         """
-        tag_parents, hierarchy_tags = self.lib.get_tag_hierarchy(t.id for t in tags)
+        hierarchy_tags = self.lib.get_tag_hierarchy(t.id for t in tags)
 
-        categories: dict[int | None, set[int]] = {None: set()}
+        categories: dict[Tag | None, set[Tag]] = {None: set()}
         for tag in hierarchy_tags.values():
             if tag.is_category:
-                categories[tag.id] = set()
+                categories[tag] = set()
         for tag in tags:
+            tag = hierarchy_tags[tag.id]
             has_category_parent = False
-            parent_ids = tag_parents.get(tag.id, [])
-            while len(parent_ids) > 0:
-                grandparent_ids = set()
-                for parent_id in parent_ids:
-                    if parent_id in categories:
-                        categories[parent_id].add(tag.id)
+            parent_tags = tag.parent_tags
+            while len(parent_tags) > 0:
+                grandparent_tags: set[Tag] = set()
+                for parent_tag in parent_tags:
+                    if parent_tag in categories:
+                        categories[parent_tag].add(tag)
                         has_category_parent = True
-                    grandparent_ids.update(tag_parents.get(parent_id, []))
-                parent_ids = grandparent_ids
+                    grandparent_tags.update(parent_tag.parent_tags)
+                parent_tags = grandparent_tags
             if not has_category_parent:
-                categories[None].add(tag.id)
+                categories[None].add(tag)
 
-        cats = {}
-        for category_id, descendent_ids in categories.items():
-            if len(descendent_ids) == 0:
-                continue
-            key = None if category_id is None else hierarchy_tags[category_id]
-            cats[key] = {hierarchy_tags[d] for d in descendent_ids}
-        logger.info("[FieldContainers] Tag Categories", categories=cats)
-        return cats
+        return dict((c, d) for c, d in categories.items() if len(d) > 0)
 
     def remove_field_prompt(self, name: str) -> str:
         return Translations.format("library.field.confirm_remove", name=name)
