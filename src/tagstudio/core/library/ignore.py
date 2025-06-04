@@ -64,18 +64,20 @@ GLOBAL_IGNORE = _ignore_to_glob(
     [
         # TagStudio -------------------
         f"{TS_FOLDER_NAME}",
-        # System Trashes --------------
-        ".Trash",
+        # Trash -----------------------
         ".Trash-*",
+        ".Trash",
         ".Trashes",
         "$RECYCLE.BIN",
-        # macOS Generated -------------
+        # System ----------------------
         "._*",
         ".DS_Store",
         ".fseventsd",
         ".Spotlight-V100",
         ".TemporaryItems",
+        "desktop.ini",
         "System Volume Information",
+        ".localized",
     ]
 )
 
