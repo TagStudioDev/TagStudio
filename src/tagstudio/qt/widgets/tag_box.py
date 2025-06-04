@@ -8,7 +8,7 @@ import typing
 import structlog
 from PySide6.QtCore import Signal
 
-from tagstudio.core.library.alchemy.enums import FilterState
+from tagstudio.core.library.alchemy.enums import BrowsingState
 from tagstudio.core.library.alchemy.models import Tag
 from tagstudio.qt.flowlayout import FlowLayout
 from tagstudio.qt.modals.build_tag import BuildTagPanel
@@ -67,9 +67,7 @@ class TagBoxWidget(FieldWidget):
             tag_widget.search_for_tag_action.triggered.connect(
                 lambda checked=False, tag_id=tag.id: (
                     self.driver.main_window.searchField.setText(f"tag_id:{tag_id}"),
-                    self.driver.filter_items(
-                        FilterState.from_tag_id(tag_id, page_size=self.driver.settings.page_size)
-                    ),
+                    self.driver.update_browsing_state(BrowsingState.from_tag_id(tag_id)),
                 )
             )
 
