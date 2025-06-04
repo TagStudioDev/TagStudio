@@ -229,6 +229,7 @@
     "select.add_tag_to_selected": "Ajouter un Tag à la sélection",
     "select.all": "Tout Sélectionner",
     "select.clear": "Effacer la Sélection",
+    "select.inverse": "Inverser la Sélection",
     "settings.clear_thumb_cache.title": "Effacer le cache des vignettes",
     "settings.filepath.label": "Visibilités du Chemin de Fichier",
     "settings.filepath.option.full": "Afficher le Chemin Complet",
