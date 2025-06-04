@@ -11,7 +11,7 @@ import structlog
 import toml
 from pydantic import BaseModel, Field
 
-from tagstudio.core.enums import ShowFilepathOption
+from tagstudio.core.enums import ShowFilepathOption, TagClickActionOption
 
 if platform.system() == "Windows":
     DEFAULT_GLOBAL_SETTINGS_PATH = (
@@ -50,6 +50,7 @@ class GlobalSettings(BaseModel):
     page_size: int = Field(default=100)
     show_filepath: ShowFilepathOption = Field(default=ShowFilepathOption.DEFAULT)
     theme: Theme = Field(default=Theme.SYSTEM)
+    tag_click_action: TagClickActionOption = Field(default=TagClickActionOption.DEFAULT)
 
     date_format: str = Field(default="%x")
     hour_format: bool = Field(default=True)
