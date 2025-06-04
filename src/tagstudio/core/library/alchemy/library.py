@@ -7,12 +7,12 @@ import re
 import shutil
 import time
 import unicodedata
-from collections.abc import Iterator
+from collections.abc import Iterable, Iterator
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from os import makedirs
 from pathlib import Path
-from typing import TYPE_CHECKING, Iterable
+from typing import TYPE_CHECKING
 from uuid import uuid4
 from warnings import catch_warnings
 
@@ -1456,9 +1456,7 @@ class Library:
 
             return session.scalar(statement)
 
-    def get_tag_hierarchy(
-        self, tag_ids: Iterable[int]
-    ) -> dict[int, Tag]:
+    def get_tag_hierarchy(self, tag_ids: Iterable[int]) -> dict[int, Tag]:
         """Get a dictionary containing tags in `tag_ids` and all of their ancestor tags."""
         current_tag_ids: set[int] = set(tag_ids)
         all_tag_ids: set[int] = set()
@@ -1478,9 +1476,7 @@ class Library:
 
             statement = select(Tag).where(Tag.id.in_(all_tag_ids))
             statement = statement.options(
-                noload(Tag.parent_tags),
-                selectinload(Tag.aliases),
-                joinedload(Tag.color)
+                noload(Tag.parent_tags), selectinload(Tag.aliases), joinedload(Tag.color)
             )
             tags = session.scalars(statement).fetchall()
             for tag in tags:
@@ -1489,7 +1485,6 @@ class Library:
                 tag.parent_tags = {all_tags[p] for p in all_tag_parents.get(tag.id, [])}
 
         return all_tags
-
 
     def add_parent_tag(self, parent_id: int, child_id: int) -> bool:
         if parent_id == child_id:

@@ -159,6 +159,7 @@ class FieldContainers(QWidget):
 
     def get_tag_categories(self, tags: set[Tag]) -> dict[Tag | None, set[Tag]]:
         """Get a dictionary of category tags mapped to their respective tags.
+
         Example:
         Tag: ["Johnny Bravo", Parent Tags: "Cartoon Network (TV)", "Character"] maps to:
         "Cartoon Network" -> Johnny Bravo,
@@ -183,7 +184,9 @@ class FieldContainers(QWidget):
                         has_category_parent = True
                     grandparent_tags.update(parent_tag.parent_tags)
                 parent_tags = grandparent_tags
-            if not has_category_parent:
+            if tag.is_category:
+                categories[tag].add(tag)
+            elif not has_category_parent:
                 categories[None].add(tag)
 
         return dict((c, d) for c, d in categories.items() if len(d) > 0)
