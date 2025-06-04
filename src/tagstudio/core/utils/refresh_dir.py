@@ -63,8 +63,6 @@ class RefreshDirTracker:
                 yield dir_file_count
                 start_time_loop = time()
 
-            logger.info(f)
-
             # Skip if the file/path is already mapped in the Library
             if f in self.library.included_files:
                 dir_file_count += 1
