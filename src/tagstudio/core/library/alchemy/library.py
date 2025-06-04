@@ -61,8 +61,8 @@ from tagstudio.core.library.alchemy import default_color_groups
 from tagstudio.core.library.alchemy.db import make_tables
 from tagstudio.core.library.alchemy.enums import (
     MAX_SQL_VARIABLES,
+    BrowsingState,
     FieldTypeEnum,
-    FilterState,
     SortingModeEnum,
 )
 from tagstudio.core.library.alchemy.fields import (
@@ -857,13 +857,14 @@ class Library:
 
     def search_library(
         self,
-        search: FilterState,
+        search: BrowsingState,
+        page_size: int,
     ) -> SearchResult:
         """Filter library by search query.
 
         :return: number of entries matching the query and one page of results.
         """
-        assert isinstance(search, FilterState)
+        assert isinstance(search, BrowsingState)
         assert self.engine
 
         with Session(self.engine, expire_on_commit=False) as session:
@@ -902,7 +903,7 @@ class Library:
                     sort_on = func.lower(Entry.path)
 
             statement = statement.order_by(asc(sort_on) if search.ascending else desc(sort_on))
-            statement = statement.limit(search.limit).offset(search.offset)
+            statement = statement.limit(page_size).offset(search.page_index * page_size)
 
             logger.info(
                 "searching library",

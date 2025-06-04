@@ -3,7 +3,7 @@ from tempfile import TemporaryDirectory
 
 import pytest
 
-from tagstudio.core.library.alchemy.enums import FilterState
+from tagstudio.core.library.alchemy.enums import BrowsingState
 from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.utils.missing_files import MissingRegistry
 
@@ -28,5 +28,5 @@ def test_refresh_missing_files(library: Library):
     assert list(registry.fix_unlinked_entries()) == [0, 1]
 
     # `bar.md` should be relinked to new correct path
-    results = library.search_library(FilterState.from_path("bar.md", page_size=500))
+    results = library.search_library(BrowsingState.from_path("bar.md"), page_size=500)
     assert results[0].path == Path("bar.md")

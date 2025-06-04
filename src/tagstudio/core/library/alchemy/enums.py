@@ -4,7 +4,7 @@ from pathlib import Path
 
 import structlog
 
-from tagstudio.core.query_lang.ast import AST, Constraint, ConstraintType
+from tagstudio.core.query_lang.ast import AST
 from tagstudio.core.query_lang.parser import Parser
 
 MAX_SQL_VARIABLES = 32766  # 32766 is the max sql bind parameter count as defined here: https://github.com/sqlite/sqlite/blob/master/src/sqliteLimit.h#L140
@@ -72,59 +72,57 @@ class SortingModeEnum(enum.Enum):
 
 
 @dataclass
-class FilterState:
+class BrowsingState:
     """Represent a state of the Library grid view."""
 
-    # these should remain
-    page_size: int
     page_index: int = 0
     sorting_mode: SortingModeEnum = SortingModeEnum.DATE_ADDED
     ascending: bool = True
 
-    # these should be erased on update
+    query: str | None = None
+
     # Abstract Syntax Tree Of the current Search Query
-    ast: AST | None = None
-
     @property
-    def limit(self):
-        return self.page_size
-
-    @property
-    def offset(self):
-        return self.page_size * self.page_index
+    def ast(self) -> AST | None:
+        if self.query is None:
+            return None
+        return Parser(self.query).parse()
 
     @classmethod
-    def show_all(cls, page_size: int) -> "FilterState":
-        return FilterState(page_size=page_size)
+    def show_all(cls) -> "BrowsingState":
+        return BrowsingState()
 
     @classmethod
-    def from_search_query(cls, search_query: str, page_size: int) -> "FilterState":
-        return cls(ast=Parser(search_query).parse(), page_size=page_size)
+    def from_search_query(cls, search_query: str) -> "BrowsingState":
+        return cls(query=search_query)
 
     @classmethod
-    def from_tag_id(cls, tag_id: int | str, page_size: int) -> "FilterState":
-        return cls(ast=Constraint(ConstraintType.TagID, str(tag_id), []), page_size=page_size)
+    def from_tag_id(cls, tag_id: int | str) -> "BrowsingState":
+        return cls(query=f"tag_id:{str(tag_id)}")
 
     @classmethod
-    def from_path(cls, path: Path | str, page_size: int) -> "FilterState":
-        return cls(ast=Constraint(ConstraintType.Path, str(path).strip(), []), page_size=page_size)
+    def from_path(cls, path: Path | str) -> "BrowsingState":
+        return cls(query=f'path:"{str(path).strip()}"')
 
     @classmethod
-    def from_mediatype(cls, mediatype: str, page_size: int) -> "FilterState":
-        return cls(ast=Constraint(ConstraintType.MediaType, mediatype, []), page_size=page_size)
+    def from_mediatype(cls, mediatype: str) -> "BrowsingState":
+        return cls(query=f"mediatype:{mediatype}")
 
     @classmethod
-    def from_filetype(cls, filetype: str, page_size: int) -> "FilterState":
-        return cls(ast=Constraint(ConstraintType.FileType, filetype, []), page_size=page_size)
+    def from_filetype(cls, filetype: str) -> "BrowsingState":
+        return cls(query=f"filetype:{filetype}")
 
     @classmethod
-    def from_tag_name(cls, tag_name: str, page_size: int) -> "FilterState":
-        return cls(ast=Constraint(ConstraintType.Tag, tag_name, []), page_size=page_size)
+    def from_tag_name(cls, tag_name: str) -> "BrowsingState":
+        return cls(query=f'tag:"{tag_name}"')
 
-    def with_sorting_mode(self, mode: SortingModeEnum) -> "FilterState":
+    def with_page_index(self, index: int) -> "BrowsingState":
+        return replace(self, page_index=index)
+
+    def with_sorting_mode(self, mode: SortingModeEnum) -> "BrowsingState":
         return replace(self, sorting_mode=mode)
 
-    def with_sorting_direction(self, ascending: bool) -> "FilterState":
+    def with_sorting_direction(self, ascending: bool) -> "BrowsingState":
         return replace(self, ascending=ascending)
 
 

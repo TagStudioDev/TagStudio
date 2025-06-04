@@ -2,6 +2,7 @@
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
 import platform
+from datetime import datetime
 from enum import Enum
 from pathlib import Path
 from typing import override
@@ -50,6 +51,12 @@ class GlobalSettings(BaseModel):
     show_filepath: ShowFilepathOption = Field(default=ShowFilepathOption.DEFAULT)
     theme: Theme = Field(default=Theme.SYSTEM)
 
+    date_format: str = Field(default="%x")
+    hour_format: bool = Field(default=True)
+    zero_padding: bool = Field(default=True)
+
+    loaded_from: Path = Field(default=DEFAULT_GLOBAL_SETTINGS_PATH, exclude=True)
+
     @staticmethod
     def read_settings(path: Path = DEFAULT_GLOBAL_SETTINGS_PATH) -> "GlobalSettings":
         if path.exists():
@@ -58,14 +65,34 @@ class GlobalSettings(BaseModel):
                 if len(filecontents.strip()) != 0:
                     logger.info("[Settings] Reading Global Settings File", path=path)
                     settings_data = toml.loads(filecontents)
-                    settings = GlobalSettings(**settings_data)
+                    settings = GlobalSettings(**settings_data, loaded_from=path)
                     return settings
 
-        return GlobalSettings()
+        return GlobalSettings(loaded_from=path)
 
-    def save(self, path: Path = DEFAULT_GLOBAL_SETTINGS_PATH) -> None:
+    def save(self, path: Path | None = None) -> None:
+        if path is None:
+            path = self.loaded_from
         if not path.parent.exists():
             path.parent.mkdir(parents=True, exist_ok=True)
 
         with open(path, "w") as f:
-            toml.dump(dict(self), f, encoder=TomlEnumEncoder())
+            toml.dump(self.model_dump(), f, encoder=TomlEnumEncoder())
+
+    def format_datetime(self, dt: datetime) -> str:
+        date_format = self.date_format
+        is_24h = self.hour_format
+        hour_format = "%H:%M:%S" if is_24h else "%I:%M:%S %p"
+        zero_padding = self.zero_padding
+        zero_padding_symbol = ""
+
+        if not zero_padding:
+            zero_padding_symbol = "#" if platform.system() == "Windows" else "-"
+            date_format = date_format.replace("%d", f"%{zero_padding_symbol}d").replace(
+                "%m", f"%{zero_padding_symbol}m"
+            )
+            hour_format = hour_format.replace("%H", f"%{zero_padding_symbol}H").replace(
+                "%I", f"%{zero_padding_symbol}I"
+            )
+
+        return datetime.strftime(dt, f"{date_format}, {hour_format}")

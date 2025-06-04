@@ -109,8 +109,9 @@ class FieldContainers(QWidget):
         """Update tags and fields from a single Entry source."""
         logger.warning("[FieldContainers] Updating Selection", entry_id=entry_id)
 
-        self.cached_entries = [self.lib.get_entry_full(entry_id)]
-        entry = self.cached_entries[0]
+        entry = self.lib.get_entry_full(entry_id)
+        assert entry is not None
+        self.cached_entries = [entry]
         self.update_granular(entry.tags, entry.fields, update_badges)
 
     def update_granular(
@@ -177,6 +178,7 @@ class FieldContainers(QWidget):
             """
             tag_obj = self.lib.get_tag(tag_id)  # Get full object
             if p_ids is None:
+                assert tag_obj is not None
                 p_ids = tag_obj.parent_ids
 
             for p_id in p_ids:
@@ -186,6 +188,7 @@ class FieldContainers(QWidget):
                 if tag_id not in cluster_map[p_id]:
                     cluster_map[p_id].add(tag_id)
                     p_tag = self.lib.get_tag(p_id)  # Get full object
+                    assert p_tag is not None
                     if p_tag.parent_ids:
                         add_to_cluster(
                             tag_id,
@@ -201,7 +204,7 @@ class FieldContainers(QWidget):
         logger.info("[FieldContainers] Cluster Map", cluster_map=cluster_map)
 
         # Initialize all categories from parents.
-        tags_ = {self.lib.get_tag(x) for x in exhausted}
+        tags_ = {t for tid in exhausted if (t := self.lib.get_tag(tid)) is not None}
         for tag in tags_:
             if tag.is_category:
                 cats[tag] = set()
@@ -218,20 +221,28 @@ class FieldContainers(QWidget):
                 )
 
                 if final_tags := cluster_map.get(key.id, set()).union([key.id]):
-                    cats[key] = {self.lib.get_tag(x) for x in final_tags if x in base_tag_ids}
-                    added_ids = added_ids.union({x for x in final_tags if x in base_tag_ids})
+                    cats[key] = {
+                        t
+                        for tid in final_tags
+                        if tid in base_tag_ids and (t := self.lib.get_tag(tid)) is not None
+                    }
+                    added_ids = added_ids.union({tid for tid in final_tags if tid in base_tag_ids})
 
         # Add remaining tags to None key (general case).
-        cats[None] = {self.lib.get_tag(x) for x in base_tag_ids if x not in added_ids}
+        cats[None] = {
+            t
+            for tid in base_tag_ids
+            if tid not in added_ids and (t := self.lib.get_tag(tid)) is not None
+        }
         logger.info(
-            f"[FieldContainers] [{key}] Key cluster: None, general case!",
-            general_tags=cats[key],
+            "[FieldContainers] Key cluster: None, general case!",
+            general_tags=cats[None],
             added=added_ids,
             base_tag_ids=base_tag_ids,
         )
 
         # Remove unused categories
-        empty: list[Tag] = []
+        empty: list[Tag | None] = []
         for k, v in list(cats.items()):
             if not v:
                 empty.append(k)
@@ -304,7 +315,7 @@ class FieldContainers(QWidget):
 
             # Normalize line endings in any text content.
             if not is_mixed:
-                assert isinstance(field.value, (str, type(None)))
+                assert isinstance(field.value, str | type(None))
                 text = field.value or ""
             else:
                 text = "<i>Mixed Data</i>"
@@ -326,7 +337,7 @@ class FieldContainers(QWidget):
                 )
                 if "pytest" in sys.modules:
                     # for better testability
-                    container.modal = modal
+                    container.modal = modal  # pyright: ignore[reportAttributeAccessIssue]
 
                 container.set_edit_callback(modal.show)
                 container.set_remove_callback(
@@ -344,7 +355,7 @@ class FieldContainers(QWidget):
             container.set_inline(False)
             # Normalize line endings in any text content.
             if not is_mixed:
-                assert isinstance(field.value, (str, type(None)))
+                assert isinstance(field.value, str | type(None))
                 text = (field.value or "").replace("\r", "\n")
             else:
                 text = "<i>Mixed Data</i>"
@@ -375,23 +386,35 @@ class FieldContainers(QWidget):
                 )
 
         elif field.type.type == FieldTypeEnum.DATETIME:
+            logger.info("[FieldContainers][write_container] Datetime Field", field=field)
             if not is_mixed:
+                container.set_title(field.type.name)
+                container.set_inline(False)
                 try:
-                    container.set_title(field.type.name)
-                    container.set_inline(False)
-                    # TODO: Localize this and/or add preferences.
-                    date = dt.strptime(field.value, "%Y-%m-%d %H:%M:%S")
                     title = f"{field.type.name} (Date)"
-                    inner_widget = TextWidget(title, date.strftime("%D - %r"))
-                    container.set_inner_widget(inner_widget)
-                except Exception:
-                    container.set_title(field.type.name)
-                    container.set_inline(False)
+                    text = self.driver.settings.format_datetime(
+                        dt.strptime(field.value or "", "%Y-%m-%d %H:%M:%S")
+                    )
+                except ValueError:
                     title = f"{field.type.name} (Date) (Unknown Format)"
-                    inner_widget = TextWidget(title, str(field.value))
-                    container.set_inner_widget(inner_widget)
+                    text = str(field.value)
 
-                container.set_edit_callback()
+                inner_widget = TextWidget(title, text)
+                container.set_inner_widget(inner_widget)
+
+                modal = PanelModal(  # TODO Replace with proper date picker including timezone etc.
+                    EditTextLine(field.value),
+                    title=f"Edit {field.type.name} in 'YYYY-MM-DD HH:MM:SS' format",
+                    window_title=f"Edit {field.type.name}",
+                    save_callback=(
+                        lambda content: (
+                            self.update_field(field, content),  # type: ignore
+                            self.update_from_entry(self.cached_entries[0].id),
+                        )
+                    ),
+                )
+
+                container.set_edit_callback(modal.show)
                 container.set_remove_callback(
                     lambda: self.remove_message_box(
                         prompt=self.remove_field_prompt(field.type.name),
@@ -491,7 +514,7 @@ class FieldContainers(QWidget):
         """Update a field in all selected Entries, given a field object."""
         assert isinstance(
             field,
-            (TextField, DatetimeField),
+            TextField | DatetimeField,
         ), f"instance: {type(field)}"
 
         entry_ids = [e.id for e in self.cached_entries]

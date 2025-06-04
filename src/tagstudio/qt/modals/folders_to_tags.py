@@ -44,14 +44,14 @@ class BranchData:
 
 def add_folders_to_tree(library: Library, tree: BranchData, items: tuple[str, ...]) -> BranchData:
     branch = tree
+    parent_tag = None
     for folder in items:
         if folder not in branch.dirs:
-            # TODO: Reimplement parent tags
-            new_tag = Tag(name=folder)
+            new_tag = Tag(name=folder, parent_tags=({parent_tag} if parent_tag else None))
             library.add_tag(new_tag)
             branch.dirs[folder] = BranchData(tag=new_tag)
-            branch.tag = new_tag
         branch = branch.dirs[folder]
+        parent_tag = branch.tag
     return branch
 
 
@@ -71,7 +71,7 @@ def folders_to_tags(library: Library):
         add_tag_to_tree(reversed_tag)
 
     for entry in library.get_entries():
-        folders = entry.path.parts[1:-1]
+        folders = entry.path.parts[0:-1]
         if not folders:
             continue
 
@@ -124,7 +124,7 @@ def generate_preview_data(library: Library) -> BranchData:
         add_tag_to_tree(reversed_tag)
 
     for entry in library.get_entries():
-        folders = entry.path.parts[1:-1]
+        folders = entry.path.parts[0:-1]
         if not folders:
             continue
 

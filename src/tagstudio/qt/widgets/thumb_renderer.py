@@ -11,6 +11,7 @@ import zipfile
 from copy import deepcopy
 from io import BytesIO
 from pathlib import Path
+from typing import cast
 from warnings import catch_warnings
 
 import cv2
@@ -88,7 +89,7 @@ class ThumbRenderer(QObject):
 
     rm: ResourceManager = ResourceManager()
     cache: CacheManager = CacheManager()
-    updated = Signal(float, QPixmap, QSize, Path, str)
+    updated = Signal(float, QPixmap, QSize, Path)
     updated_ratio = Signal(float)
 
     cached_img_res: int = 256  # TODO: Pull this from config
@@ -754,8 +755,8 @@ class ThumbRenderer(QObject):
             data = np.asarray(raw.getchannel(0))
 
             m, n = data.shape[:2]
-            col: np.ndarray = data.any(0)
-            row: np.ndarray = data.any(1)
+            col: np.ndarray = cast(np.ndarray, data.any(0))
+            row: np.ndarray = cast(np.ndarray, data.any(1))
             cropped_data = np.asarray(raw)[
                 row.argmax() : m - row[::-1].argmax(),
                 col.argmax() : n - col[::-1].argmax(),
@@ -802,7 +803,7 @@ class ThumbRenderer(QObject):
             bg = Image.new("RGBA", (size, size), color="#00000000")
             draw = ImageDraw.Draw(bg)
             lines_of_padding = 2
-            y_offset = 0
+            y_offset = 0.0
 
             for font_size in scaled_sizes:
                 font = ImageFont.truetype(filepath, size=font_size)
@@ -1299,7 +1300,6 @@ class ThumbRenderer(QObject):
                     math.ceil(image.size[1] / pixel_ratio),
                 ),
                 filepath,
-                filepath.suffix.lower(),
             )
         else:
             self.updated.emit(
@@ -1307,7 +1307,6 @@ class ThumbRenderer(QObject):
                 QPixmap(),
                 QSize(*base_size),
                 filepath,
-                filepath.suffix.lower(),
             )
 
     def _render(

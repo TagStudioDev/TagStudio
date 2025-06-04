@@ -37,6 +37,24 @@ THEME_MAP: dict[Theme, str] = {
     Theme.SYSTEM: Translations["settings.theme.system"],
 }
 
+DATE_FORMAT_MAP: dict[str, str] = {
+    "%d/%m/%y": "21/08/24",
+    "%d/%m/%Y": "21/08/2024",
+    "%d.%m.%y": "21.08.24",
+    "%d.%m.%Y": "21.08.2024",
+    "%d-%m-%y": "21-08-24",
+    "%d-%m-%Y": "21-08-2024",
+    "%x": "08/21/24",
+    "%m/%d/%Y": "08/21/2024",
+    "%m-%d-%y": "08-21-24",
+    "%m-%d-%Y": "08-21-2024",
+    "%m.%d.%y": "08.21.24",
+    "%m.%d.%Y": "08.21.2024",
+    "%Y/%m/%d": "2024/08/21",
+    "%Y-%m-%d": "2024-08-21",
+    "%Y.%m.%d": "2024.08.21",
+}
+
 
 class SettingsPanel(PanelWidget):
     driver: "QtDriver"
@@ -147,6 +165,27 @@ class SettingsPanel(PanelWidget):
         self.theme_combobox.currentIndexChanged.connect(self.__update_restart_label)
         form_layout.addRow(Translations["settings.theme.label"], self.theme_combobox)
 
+        # Date Format
+        self.dateformat_combobox = QComboBox()
+        for k in DATE_FORMAT_MAP:
+            self.dateformat_combobox.addItem(DATE_FORMAT_MAP[k], k)
+        dateformat: str = self.driver.settings.date_format
+        if dateformat not in DATE_FORMAT_MAP:
+            dateformat = "%x"
+        self.dateformat_combobox.setCurrentIndex(list(DATE_FORMAT_MAP.keys()).index(dateformat))
+        self.dateformat_combobox.currentIndexChanged.connect(self.__update_restart_label)
+        form_layout.addRow(Translations["settings.dateformat.label"], self.dateformat_combobox)
+
+        # 24-Hour Format
+        self.hourformat_checkbox = QCheckBox()
+        self.hourformat_checkbox.setChecked(self.driver.settings.hour_format)
+        form_layout.addRow(Translations["settings.hourformat.label"], self.hourformat_checkbox)
+
+        # Zero-padding
+        self.zeropadding_checkbox = QCheckBox()
+        self.zeropadding_checkbox.setChecked(self.driver.settings.zero_padding)
+        form_layout.addRow(Translations["settings.zeropadding.label"], self.zeropadding_checkbox)
+
     def __build_library_settings(self):
         self.library_settings_container = QWidget()
         form_layout = QFormLayout(self.library_settings_container)
@@ -167,6 +206,9 @@ class SettingsPanel(PanelWidget):
             "page_size": int(self.page_size_line_edit.text()),
             "show_filepath": self.filepath_combobox.currentData(),
             "theme": self.theme_combobox.currentData(),
+            "date_format": self.dateformat_combobox.currentData(),
+            "hour_format": self.hourformat_checkbox.isChecked(),
+            "zero_padding": self.zeropadding_checkbox.isChecked(),
         }
 
     def update_settings(self, driver: "QtDriver"):
@@ -179,6 +221,9 @@ class SettingsPanel(PanelWidget):
         driver.settings.page_size = settings["page_size"]
         driver.settings.show_filepath = settings["show_filepath"]
         driver.settings.theme = settings["theme"]
+        driver.settings.date_format = settings["date_format"]
+        driver.settings.hour_format = settings["hour_format"]
+        driver.settings.zero_padding = settings["zero_padding"]
 
         driver.settings.save()
 
