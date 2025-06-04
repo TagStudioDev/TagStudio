@@ -109,8 +109,9 @@ class FieldContainers(QWidget):
         """Update tags and fields from a single Entry source."""
         logger.warning("[FieldContainers] Updating Selection", entry_id=entry_id)
 
-        self.cached_entries = [self.lib.get_entry_full(entry_id)]
-        entry = self.cached_entries[0]
+        entry = self.lib.get_entry_full(entry_id)
+        assert entry is not None
+        self.cached_entries = [entry]
         self.update_granular(entry.tags, entry.fields, update_badges)
 
     def update_granular(
@@ -254,7 +255,7 @@ class FieldContainers(QWidget):
 
             # Normalize line endings in any text content.
             if not is_mixed:
-                assert isinstance(field.value, (str, type(None)))
+                assert isinstance(field.value, str | type(None))
                 text = field.value or ""
             else:
                 text = "<i>Mixed Data</i>"
@@ -276,7 +277,7 @@ class FieldContainers(QWidget):
                 )
                 if "pytest" in sys.modules:
                     # for better testability
-                    container.modal = modal
+                    container.modal = modal  # pyright: ignore[reportAttributeAccessIssue]
 
                 container.set_edit_callback(modal.show)
                 container.set_remove_callback(
@@ -294,7 +295,7 @@ class FieldContainers(QWidget):
             container.set_inline(False)
             # Normalize line endings in any text content.
             if not is_mixed:
-                assert isinstance(field.value, (str, type(None)))
+                assert isinstance(field.value, str | type(None))
                 text = (field.value or "").replace("\r", "\n")
             else:
                 text = "<i>Mixed Data</i>"
@@ -325,23 +326,35 @@ class FieldContainers(QWidget):
                 )
 
         elif field.type.type == FieldTypeEnum.DATETIME:
+            logger.info("[FieldContainers][write_container] Datetime Field", field=field)
             if not is_mixed:
+                container.set_title(field.type.name)
+                container.set_inline(False)
                 try:
-                    container.set_title(field.type.name)
-                    container.set_inline(False)
-                    # TODO: Localize this and/or add preferences.
-                    date = dt.strptime(field.value, "%Y-%m-%d %H:%M:%S")
                     title = f"{field.type.name} (Date)"
-                    inner_widget = TextWidget(title, date.strftime("%D - %r"))
-                    container.set_inner_widget(inner_widget)
-                except Exception:
-                    container.set_title(field.type.name)
-                    container.set_inline(False)
+                    text = self.driver.settings.format_datetime(
+                        dt.strptime(field.value or "", "%Y-%m-%d %H:%M:%S")
+                    )
+                except ValueError:
                     title = f"{field.type.name} (Date) (Unknown Format)"
-                    inner_widget = TextWidget(title, str(field.value))
-                    container.set_inner_widget(inner_widget)
+                    text = str(field.value)
 
-                container.set_edit_callback()
+                inner_widget = TextWidget(title, text)
+                container.set_inner_widget(inner_widget)
+
+                modal = PanelModal(  # TODO Replace with proper date picker including timezone etc.
+                    EditTextLine(field.value),
+                    title=f"Edit {field.type.name} in 'YYYY-MM-DD HH:MM:SS' format",
+                    window_title=f"Edit {field.type.name}",
+                    save_callback=(
+                        lambda content: (
+                            self.update_field(field, content),  # type: ignore
+                            self.update_from_entry(self.cached_entries[0].id),
+                        )
+                    ),
+                )
+
+                container.set_edit_callback(modal.show)
                 container.set_remove_callback(
                     lambda: self.remove_message_box(
                         prompt=self.remove_field_prompt(field.type.name),
@@ -441,7 +454,7 @@ class FieldContainers(QWidget):
         """Update a field in all selected Entries, given a field object."""
         assert isinstance(
             field,
-            (TextField, DatetimeField),
+            TextField | DatetimeField,
         ), f"instance: {type(field)}"
 
         entry_ids = [e.id for e in self.cached_entries]

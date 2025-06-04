@@ -1,4 +1,4 @@
 # serializer version: 1
 # name: test_generate_preview_data
-  BranchData(dirs={'two': BranchData(dirs={}, files=['bar.md'], tag=<Tag ID: None Name: two>)}, files=[], tag=None)
+  BranchData(dirs={'one': BranchData(dirs={'two': BranchData(dirs={}, files=['bar.md'], tag=<Tag ID: None Name: two>)}, files=[], tag=<Tag ID: None Name: one>)}, files=[], tag=None)
 # ---

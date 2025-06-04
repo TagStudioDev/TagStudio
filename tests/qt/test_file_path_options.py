@@ -79,11 +79,11 @@ def test_file_path_display(
     for i, part in enumerate(display_path.parts):
         part_ = part.strip(os.path.sep)
         if i != len(display_path.parts) - 1:
-            file_str += f"{"\u200b".join(part_)}{separator}</b>"
+            file_str += f"{'\u200b'.join(part_)}{separator}</b>"
         else:
             if file_str != "":
                 file_str += "<br>"
-            file_str += f"<b>{"\u200b".join(part_)}</b>"
+            file_str += f"<b>{'\u200b'.join(part_)}</b>"
 
     # Assert the file path is displayed correctly
     assert panel.file_attrs.file_label.text() == file_str
@@ -135,7 +135,7 @@ def test_title_update(
     qt_driver.folders_to_tags_action = QAction(menu_bar)
 
     # Trigger the update
-    qt_driver.init_library(library_dir, open_status)
+    qt_driver._init_library(library_dir, open_status)
 
     # Assert the title is updated correctly
     qt_driver.main_window.setWindowTitle.assert_called_with(expected_title(library_dir, base_title))

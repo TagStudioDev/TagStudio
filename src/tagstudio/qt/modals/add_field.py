@@ -87,6 +87,8 @@ class AddFieldModal(QWidget):
     def keyPressEvent(self, event: QtGui.QKeyEvent) -> None:  # noqa N802
         if event.key() == QtCore.Qt.Key.Key_Escape:
             self.cancel_button.click()
+        elif event.key() in (QtCore.Qt.Key.Key_Enter, QtCore.Qt.Key.Key_Return):
+            self.save_button.click()
         else:  # Other key presses
             pass
         return super().keyPressEvent(event)

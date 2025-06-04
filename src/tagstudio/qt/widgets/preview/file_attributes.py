@@ -102,18 +102,19 @@ class FileAttributes(QWidget):
     def update_date_label(self, filepath: Path | None = None) -> None:
         """Update the "Date Created" and "Date Modified" file property labels."""
         if filepath and filepath.is_file():
-            created: dt = None
+            created: dt
             if platform.system() == "Windows" or platform.system() == "Darwin":
                 created = dt.fromtimestamp(filepath.stat().st_birthtime)  # type: ignore[attr-defined, unused-ignore]
             else:
                 created = dt.fromtimestamp(filepath.stat().st_ctime)
             modified: dt = dt.fromtimestamp(filepath.stat().st_mtime)
             self.date_created_label.setText(
-                f"<b>{Translations['file.date_created']}:</b> {dt.strftime(created, '%a, %x, %X')}"
+                f"<b>{Translations['file.date_created']}:</b>"
+                + f" {self.driver.settings.format_datetime(created)}"
             )
             self.date_modified_label.setText(
                 f"<b>{Translations['file.date_modified']}:</b> "
-                f"{dt.strftime(modified, '%a, %x, %X')}"
+                f"{self.driver.settings.format_datetime(modified)}"
             )
             self.date_created_label.setHidden(False)
             self.date_modified_label.setHidden(False)
@@ -130,7 +131,7 @@ class FileAttributes(QWidget):
             self.date_created_label.setHidden(True)
             self.date_modified_label.setHidden(True)
 
-    def update_stats(self, filepath: Path | None = None, ext: str = ".", stats: dict = None):
+    def update_stats(self, filepath: Path | None = None, stats: dict | None = None):
         """Render the panel widgets with the newest data from the Library."""
         if not stats:
             stats = {}
@@ -144,11 +145,13 @@ class FileAttributes(QWidget):
             self.dimensions_label.setText("")
             self.dimensions_label.setHidden(True)
         else:
+            ext = filepath.suffix.lower()
             self.library_path = self.library.library_dir
             display_path = filepath
             if self.driver.settings.show_filepath == ShowFilepathOption.SHOW_FULL_PATHS:
                 display_path = filepath
             elif self.driver.settings.show_filepath == ShowFilepathOption.SHOW_RELATIVE_PATHS:
+                assert self.library_path is not None
                 display_path = Path(filepath).relative_to(self.library_path)
             elif self.driver.settings.show_filepath == ShowFilepathOption.SHOW_FILENAMES_ONLY:
                 display_path = Path(filepath.name)
@@ -163,11 +166,11 @@ class FileAttributes(QWidget):
             for i, part in enumerate(display_path.parts):
                 part_ = part.strip(os.path.sep)
                 if i != len(display_path.parts) - 1:
-                    file_str += f"{"\u200b".join(part_)}{separator}</b>"
+                    file_str += f"{'\u200b'.join(part_)}{separator}</b>"
                 else:
                     if file_str != "":
                         file_str += "<br>"
-                    file_str += f"<b>{"\u200b".join(part_)}</b>"
+                    file_str += f"<b>{'\u200b'.join(part_)}</b>"
             self.file_label.setText(file_str)
             self.file_label.setCursor(Qt.CursorShape.PointingHandCursor)
             self.opener = FileOpenerHelper(filepath)
@@ -186,8 +189,7 @@ class FileAttributes(QWidget):
             height_px_text = stats.get("height", "")
             duration_text = stats.get("duration", "")
             font_family = stats.get("font_family", "")
-            if ext:
-                ext_display = ext.upper()[1:]
+            ext_display = ext.upper()[1:] or filepath.stem.upper()
             if filepath:
                 try:
                     file_size = format_size(filepath.stat().st_size)

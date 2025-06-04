@@ -1,12 +1,12 @@
 import pytest
 
-from tagstudio.core.library.alchemy.enums import FilterState
+from tagstudio.core.library.alchemy.enums import BrowsingState
 from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.query_lang.util import ParsingError
 
 
 def verify_count(lib: Library, query: str, count: int):
-    results = lib.search_library(FilterState.from_search_query(query, page_size=500))
+    results = lib.search_library(BrowsingState.from_search_query(query), page_size=500)
     assert results.total_count == count
     assert len(results.items) == count
 
@@ -136,4 +136,4 @@ def test_parent_tags(search_library: Library, query: str, count: int):
 )
 def test_syntax(search_library: Library, invalid_query: str):
     with pytest.raises(ParsingError) as e_info:  # noqa: F841
-        search_library.search_library(FilterState.from_search_query(invalid_query, page_size=500))
+        search_library.search_library(BrowsingState.from_search_query(invalid_query), page_size=500)
