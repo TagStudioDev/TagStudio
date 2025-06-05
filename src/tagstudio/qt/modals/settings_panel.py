@@ -25,23 +25,11 @@ from tagstudio.qt.widgets.panel import PanelModal, PanelWidget
 if TYPE_CHECKING:
     from tagstudio.qt.ts_qt import QtDriver
 
-FILEPATH_OPTION_MAP: dict[ShowFilepathOption, str] = {
-    ShowFilepathOption.SHOW_FULL_PATHS: Translations["settings.filepath.option.full"],
-    ShowFilepathOption.SHOW_RELATIVE_PATHS: Translations["settings.filepath.option.relative"],
-    ShowFilepathOption.SHOW_FILENAMES_ONLY: Translations["settings.filepath.option.name"],
-}
+FILEPATH_OPTION_MAP: dict[ShowFilepathOption, str] = {}
 
-THEME_MAP: dict[Theme, str] = {
-    Theme.DARK: Translations["settings.theme.dark"],
-    Theme.LIGHT: Translations["settings.theme.light"],
-    Theme.SYSTEM: Translations["settings.theme.system"],
-}
+THEME_MAP: dict[Theme, str] = {}
 
-TAG_CLICK_ACTION_MAP: dict[TagClickActionOption, str] = {
-    TagClickActionOption.OPEN_EDIT: Translations["settings.tag_click_action.open_edit"],
-    TagClickActionOption.SET_SEARCH: Translations["settings.tag_click_action.set_search"],
-    TagClickActionOption.ADD_TO_SEARCH: Translations["settings.tag_click_action.add_to_search"],
-}
+TAG_CLICK_ACTION_MAP: dict[TagClickActionOption, str] = {}
 
 DATE_FORMAT_MAP: dict[str, str] = {
     "%d/%m/%y": "21/08/24",
@@ -67,6 +55,29 @@ class SettingsPanel(PanelWidget):
 
     def __init__(self, driver: "QtDriver"):
         super().__init__()
+        # set these "constants" because language will be loaded from config shortly after startup
+        # and we want to use the current language for the dropdowns
+        global FILEPATH_OPTION_MAP, THEME_MAP, TAG_CLICK_ACTION_MAP
+        FILEPATH_OPTION_MAP = {
+            ShowFilepathOption.SHOW_FULL_PATHS: Translations["settings.filepath.option.full"],
+            ShowFilepathOption.SHOW_RELATIVE_PATHS: Translations[
+                "settings.filepath.option.relative"
+            ],
+            ShowFilepathOption.SHOW_FILENAMES_ONLY: Translations["settings.filepath.option.name"],
+        }
+        THEME_MAP = {
+            Theme.DARK: Translations["settings.theme.dark"],
+            Theme.LIGHT: Translations["settings.theme.light"],
+            Theme.SYSTEM: Translations["settings.theme.system"],
+        }
+        TAG_CLICK_ACTION_MAP = {
+            TagClickActionOption.OPEN_EDIT: Translations["settings.tag_click_action.open_edit"],
+            TagClickActionOption.SET_SEARCH: Translations["settings.tag_click_action.set_search"],
+            TagClickActionOption.ADD_TO_SEARCH: Translations[
+                "settings.tag_click_action.add_to_search"
+            ],
+        }
+
         self.driver = driver
         self.setMinimumSize(400, 300)
 
