@@ -53,7 +53,7 @@ class TagBoxWidget(FieldWidget):
         tags_ = sorted(list(tags), key=lambda tag: self.driver.lib.tag_display_name(tag.id))
         logger.info("[TagBoxWidget] Tags:", tags=tags)
         while self.base_layout.itemAt(0):
-            self.base_layout.takeAt(0).widget().deleteLater()  # type: ignore
+            self.base_layout.takeAt(0).widget().deleteLater()  # pyright: ignore[reportOptionalMemberAccess]
 
         for tag in tags_:
             tag_widget = TagWidget(tag, library=self.driver.lib, has_edit=True, has_remove=True)
