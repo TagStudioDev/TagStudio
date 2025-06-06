@@ -37,7 +37,6 @@ from PySide6.QtGui import (
     QMouseEvent,
     QPalette,
 )
-from PySide6.QtUiTools import QUiLoader
 from PySide6.QtWidgets import (
     QApplication,
     QFileDialog,
@@ -298,8 +297,6 @@ class QtDriver(DriverMixin, QObject):
 
     def start(self) -> None:
         """Launch the main Qt window."""
-        _ = QUiLoader()
-
         if self.settings.theme == Theme.SYSTEM and platform.system() == "Windows":
             sys.argv += ["-platform", "windows:darkmode=2"]
         self.app = QApplication(sys.argv)
