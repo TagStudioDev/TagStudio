@@ -28,7 +28,6 @@ from tagstudio.core.library.alchemy.enums import BrowsingState, TagColorEnum
 from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.library.alchemy.models import Tag
 from tagstudio.core.palette import ColorType, get_tag_color
-from tagstudio.qt.modals import build_tag
 from tagstudio.qt.translations import Translations
 from tagstudio.qt.widgets.panel import PanelModal, PanelWidget
 from tagstudio.qt.widgets.tag import TagWidget
@@ -37,7 +36,6 @@ logger = structlog.get_logger(__name__)
 
 # Only import for type checking/autocompletion, will not be imported at runtime.
 if TYPE_CHECKING:
-    from tagstudio.qt.modals.build_tag import BuildTagPanel
     from tagstudio.qt.ts_qt import QtDriver
 
 
@@ -177,7 +175,9 @@ class TagSearchPanel(PanelWidget):
             self.search_field.setFocus()
             self.update_tags()
 
-        self.build_tag_modal: BuildTagPanel = build_tag.BuildTagPanel(self.lib)
+        from tagstudio.qt.modals.build_tag import BuildTagPanel  # here due to circular imports
+
+        self.build_tag_modal: BuildTagPanel = BuildTagPanel(self.lib)
         self.add_tag_modal: PanelModal = PanelModal(self.build_tag_modal, has_save=True)
         self.add_tag_modal.setTitle(Translations["tag.new"])
         self.add_tag_modal.setWindowTitle(Translations["tag.add"])
@@ -291,7 +291,7 @@ class TagSearchPanel(PanelWidget):
         if self.driver:
             tag_widget.search_for_tag_action.triggered.connect(
                 lambda checked=False, tag_id=tag.id: (
-                    self.driver.main_window.searchField.setText(f"tag_id:{tag_id}"),
+                    self.driver.main_window.search_field.setText(f"tag_id:{tag_id}"),
                     self.driver.update_browsing_state(BrowsingState.from_tag_id(tag_id)),
                 )
             )
@@ -352,13 +352,15 @@ class TagSearchPanel(PanelWidget):
         pass
 
     def edit_tag(self, tag: Tag):
-        def callback(btp: build_tag.BuildTagPanel):
+        from tagstudio.qt.modals.build_tag import BuildTagPanel
+
+        def callback(btp: BuildTagPanel):
             self.lib.update_tag(
                 btp.build_tag(), set(btp.parent_ids), set(btp.alias_names), set(btp.alias_ids)
             )
             self.update_tags(self.search_field.text())
 
-        build_tag_panel = build_tag.BuildTagPanel(self.lib, tag=tag)
+        build_tag_panel = BuildTagPanel(self.lib, tag=tag)
 
         self.edit_modal = PanelModal(
             build_tag_panel,

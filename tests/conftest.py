@@ -155,14 +155,15 @@ def qt_driver(qtbot, library, library_dir: Path):
 
         driver.app = Mock()
         driver.main_window = Mock()
-        driver.preview_panel = Mock()
-        driver.flow_container = Mock()
+        driver.main_window.preview_panel = Mock()
+        driver.main_window.thumb_grid = Mock()
+        driver.main_window.thumb_size = 128
         driver.item_thumbs = []
-        driver.autofill_action = Mock()
+        driver.main_window.menu_bar.autofill_action = Mock()
 
         driver.copy_buffer = {"fields": [], "tags": []}
-        driver.copy_fields_action = Mock()
-        driver.paste_fields_action = Mock()
+        driver.main_window.menu_bar.copy_fields_action = Mock()
+        driver.main_window.menu_bar.paste_fields_action = Mock()
 
         driver.lib = library
         # TODO - downsize this method and use it
