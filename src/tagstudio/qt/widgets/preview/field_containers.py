@@ -33,6 +33,7 @@ from tagstudio.core.library.alchemy.fields import (
 from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.library.alchemy.models import Entry, Tag
 from tagstudio.qt.translations import Translations
+from tagstudio.qt.widgets.datetime_picker import DatetimePicker
 from tagstudio.qt.widgets.fields import FieldContainer
 from tagstudio.qt.widgets.panel import PanelModal
 from tagstudio.qt.widgets.tag_box import TagBoxWidget
@@ -390,21 +391,23 @@ class FieldContainers(QWidget):
             if not is_mixed:
                 container.set_title(field.type.name)
                 container.set_inline(False)
+
+                title = f"{field.type.name} (Date)"
                 try:
-                    title = f"{field.type.name} (Date)"
+                    assert field.value is not None
                     text = self.driver.settings.format_datetime(
-                        dt.strptime(field.value or "", "%Y-%m-%d %H:%M:%S")
+                        DatetimePicker.string2dt(field.value)
                     )
-                except ValueError:
-                    title = f"{field.type.name} (Date) (Unknown Format)"
+                except (ValueError, AssertionError):
+                    title += " (Unknown Format)"
                     text = str(field.value)
 
                 inner_widget = TextWidget(title, text)
                 container.set_inner_widget(inner_widget)
 
-                modal = PanelModal(  # TODO Replace with proper date picker including timezone etc.
-                    EditTextLine(field.value),
-                    title=f"Edit {field.type.name} in 'YYYY-MM-DD HH:MM:SS' format",
+                modal = PanelModal(
+                    DatetimePicker(self.driver, field.value or dt.now()),
+                    title=f"Edit {field.type.name}",
                     window_title=f"Edit {field.type.name}",
                     save_callback=(
                         lambda content: (
