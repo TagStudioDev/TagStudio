@@ -79,7 +79,8 @@ class GlobalSettings(BaseModel):
         with open(path, "w") as f:
             toml.dump(self.model_dump(), f, encoder=TomlEnumEncoder())
 
-    def format_datetime(self, dt: datetime) -> str:
+    @property
+    def datetime_format(self) -> str:
         date_format = self.date_format
         is_24h = self.hour_format
         hour_format = "%H:%M:%S" if is_24h else "%I:%M:%S %p"
@@ -94,5 +95,7 @@ class GlobalSettings(BaseModel):
             hour_format = hour_format.replace("%H", f"%{zero_padding_symbol}H").replace(
                 "%I", f"%{zero_padding_symbol}I"
             )
+        return f"{date_format}, {hour_format}"
 
-        return datetime.strftime(dt, f"{date_format}, {hour_format}")
+    def format_datetime(self, dt: datetime) -> str:
+        return datetime.strftime(dt, self.datetime_format)

@@ -406,7 +406,7 @@ class FieldContainers(QWidget):
                 container.set_inner_widget(inner_widget)
 
                 modal = PanelModal(
-                    DatetimePicker(field.value or dt.now()),
+                    DatetimePicker(self.driver, field.value or dt.now()),
                     title=f"Edit {field.type.name}",
                     window_title=f"Edit {field.type.name}",
                     save_callback=(
