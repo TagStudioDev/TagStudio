@@ -6,7 +6,6 @@ import structlog
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QHBoxLayout,
-    QListWidgetItem,
     QPushButton,
     QSplitter,
     QVBoxLayout,
@@ -63,7 +62,9 @@ class PreviewPanelView(QWidget):
 
         self.__thumb = PreviewThumb(self.lib, driver)
         self.__file_attrs = FileAttributes(self.lib, driver)
-        self.__fields = FieldContainers(self.lib, driver)
+        self._fields = FieldContainers(
+            self.lib, driver
+        )  # TODO: this should be name mangled, but is still needed on the controller side atm
 
         preview_section = QWidget()
         preview_layout = QVBoxLayout(preview_section)
@@ -101,7 +102,7 @@ class PreviewPanelView(QWidget):
 
         preview_layout.addWidget(self.__thumb)
         info_layout.addWidget(self.__file_attrs)
-        info_layout.addWidget(self.__fields)
+        info_layout.addWidget(self._fields)
 
         splitter.addWidget(preview_section)
         splitter.addWidget(info_section)
@@ -127,16 +128,6 @@ class PreviewPanelView(QWidget):
     def _set_selection_callback(self):
         raise NotImplementedError()
 
-    def _add_field_to_selected(self, field_list: list[QListWidgetItem]):
-        self.__fields.add_field_to_selected(field_list)
-        if len(self._selected) == 1:
-            self.__fields.update_from_entry(self._selected[0])
-
-    def _add_tag_to_selected(self, tag_id: int):
-        self.__fields.add_tags_to_selected(tag_id)
-        if len(self._selected) == 1:
-            self.__fields.update_from_entry(self._selected[0])
-
     def thumb_media_player_stop(self):
         self.__thumb.media_player.stop()
 
@@ -155,7 +146,7 @@ class PreviewPanelView(QWidget):
                 self.__thumb.hide_preview()
                 self.__file_attrs.update_stats()
                 self.__file_attrs.update_date_label()
-                self.__fields.hide_containers()
+                self._fields.hide_containers()
 
                 self.add_buttons_enabled = False
 
@@ -172,7 +163,7 @@ class PreviewPanelView(QWidget):
                     stats: dict = self.__thumb.update_preview(filepath)
                     self.__file_attrs.update_stats(filepath, stats)
                 self.__file_attrs.update_date_label(filepath)
-                self.__fields.update_from_entry(entry_id)
+                self._fields.update_from_entry(entry_id)
 
                 self._set_selection_callback()
 
@@ -184,7 +175,7 @@ class PreviewPanelView(QWidget):
                 self.__thumb.hide_preview()  # TODO: Render mixed selection
                 self.__file_attrs.update_multi_selection(len(selected))
                 self.__file_attrs.update_date_label()
-                self.__fields.hide_containers()  # TODO: Allow for mixed editing
+                self._fields.hide_containers()  # TODO: Allow for mixed editing
 
                 self._set_selection_callback()
 
@@ -214,4 +205,4 @@ class PreviewPanelView(QWidget):
     @property
     def field_containers_widget(self) -> FieldContainers:  # needed for the tests
         """Getter for the field containers widget."""
-        return self.__fields
+        return self._fields
