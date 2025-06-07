@@ -83,6 +83,7 @@ from tagstudio.core.library.alchemy.models import (
     ValueType,
 )
 from tagstudio.core.library.alchemy.visitors import SQLBoolExpressionBuilder
+from tagstudio.core.library.ignore import Ignore
 from tagstudio.core.library.json.library import Library as JsonLibrary
 from tagstudio.qt.translations import Translations
 
@@ -91,6 +92,7 @@ if TYPE_CHECKING:
 
 
 logger = structlog.get_logger(__name__)
+
 
 TAG_CHILDREN_QUERY = text("""
 -- Note for this entire query that tag_parents.child_id is the parent id and tag_parents.parent_id is the child id due to bad naming
@@ -866,6 +868,7 @@ class Library:
         """
         assert isinstance(search, BrowsingState)
         assert self.engine
+        assert self.library_dir
 
         with Session(self.engine, expire_on_commit=False) as session:
             statement = select(Entry)
@@ -878,6 +881,7 @@ class Library:
                     f"SQL Expression Builder finished ({format_timespan(end_time - start_time)})"
                 )
 
+            # TODO: Convert old extension lists to new .ts_ignore format
             extensions = self.prefs(LibraryPrefs.EXTENSION_LIST)
             is_exclude_list = self.prefs(LibraryPrefs.IS_EXCLUDE_LIST)
 
@@ -887,11 +891,37 @@ class Library:
                 statement = statement.where(Entry.suffix.in_(extensions))
 
             statement = statement.distinct(Entry.id)
+            ignore_patterns: list[str] = Ignore.get_patterns(self.library_dir)
+
+            # Add glob pattern filters with exclusion patterns allowing for overrides.
+            statement = statement.filter(
+                and_(
+                    or_(
+                        or_(
+                            *[
+                                Entry.path.op("GLOB")(p.lstrip("!"))
+                                for p in ignore_patterns
+                                if p.startswith("!")
+                            ]
+                        ),
+                        and_(
+                            *[
+                                Entry.path.op("NOT GLOB")(p)
+                                for p in ignore_patterns
+                                if not p.startswith("!")
+                            ]
+                        ),
+                    )
+                )
+            )
+
+            # TODO: This query will become unnecessary once this method returns unlimited IDs and
+            # the it becomes the frontend's responsibility (once again) to split and display them.
             start_time = time.time()
             query_count = select(func.count()).select_from(statement.alias("entries"))
             count_all: int = session.execute(query_count).scalar() or 0
             end_time = time.time()
-            logger.info(f"finished counting ({format_timespan(end_time - start_time)})")
+            logger.info(f"[Library] Finished counting ({format_timespan(end_time - start_time)})")
 
             sort_on: ColumnExpressionArgument = Entry.id
             match search.sorting_mode:
