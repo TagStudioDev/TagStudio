@@ -4,7 +4,7 @@
 
 
 import contextlib
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Union
 from warnings import catch_warnings
 
 import structlog
@@ -39,10 +39,33 @@ if TYPE_CHECKING:
     from tagstudio.qt.ts_qt import QtDriver
 
 
+class TagSearchModal(PanelModal):
+    tsp: "TagSearchPanel"
+
+    def __init__(
+        self,
+        library: Library,
+        exclude: list[int] | None = None,
+        is_tag_chooser: bool = True,
+        done_callback=None,
+        save_callback=None,
+        has_save=False,
+    ):
+        self.tsp = TagSearchPanel(library, exclude, is_tag_chooser)
+        super().__init__(
+            self.tsp,
+            Translations["tag.add.plural"],
+            Translations["tag.add.plural"],
+            done_callback,
+            save_callback,
+            has_save,
+        )
+
+
 class TagSearchPanel(PanelWidget):
     tag_chosen = Signal(int)
     lib: Library
-    driver: "QtDriver"
+    driver: Union["QtDriver", None]
     is_initialized: bool = False
     first_tag_id: int | None = None
     is_tag_chooser: bool
@@ -56,7 +79,7 @@ class TagSearchPanel(PanelWidget):
     def __init__(
         self,
         library: Library,
-        exclude: list[int] = None,
+        exclude: list[int] | None = None,
         is_tag_chooser: bool = True,
     ):
         super().__init__()
@@ -194,6 +217,7 @@ class TagSearchPanel(PanelWidget):
         create_button: QPushButton | None = None
         if self.create_button_in_layout and self.scroll_layout.count():
             create_button = self.scroll_layout.takeAt(self.scroll_layout.count() - 1).widget()  # type: ignore
+            assert create_button is not None
             create_button.deleteLater()
             self.create_button_in_layout = False
 
@@ -264,7 +288,8 @@ class TagSearchPanel(PanelWidget):
                 self.scroll_layout.addWidget(new_tw)
 
         # Assign the tag to the widget at the given index.
-        tag_widget: TagWidget = self.scroll_layout.itemAt(index).widget()
+        tag_widget: TagWidget = self.scroll_layout.itemAt(index).widget()  # type: ignore
+        assert isinstance(tag_widget, TagWidget)
         tag_widget.set_tag(tag)
 
         # Set tag widget viability and potentially return early
@@ -288,11 +313,11 @@ class TagSearchPanel(PanelWidget):
         tag_widget.on_remove.connect(lambda t=tag: self.delete_tag(t))
         tag_widget.bg_button.clicked.connect(lambda: self.tag_chosen.emit(tag_id))
 
-        if self.driver:
+        if self.driver is not None:
             tag_widget.search_for_tag_action.triggered.connect(
-                lambda checked=False, tag_id=tag.id: (
-                    self.driver.main_window.search_field.setText(f"tag_id:{tag_id}"),
-                    self.driver.update_browsing_state(BrowsingState.from_tag_id(tag_id)),
+                lambda checked=False, tag_id=tag.id, driver=self.driver: (
+                    driver.main_window.search_field.setText(f"tag_id:{tag_id}"),
+                    driver.update_browsing_state(BrowsingState.from_tag_id(tag_id)),
                 )
             )
             tag_widget.search_for_tag_action.setEnabled(True)

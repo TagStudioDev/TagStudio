@@ -59,7 +59,7 @@ def test_file_path_display(
 
     # Select 2
     qt_driver.toggle_item_selection(2, append=False, bridge=False)
-    panel.update_view(qt_driver)
+    panel.qt_driver(qt_driver.selected)
 
     qt_driver.settings.show_filepath = filepath_option
 

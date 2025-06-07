@@ -1,7 +1,6 @@
 import traceback
 import typing
 from pathlib import Path
-from warnings import catch_warnings
 
 import structlog
 from PySide6.QtCore import Qt
@@ -11,8 +10,6 @@ from tagstudio.core.enums import Theme
 from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.library.alchemy.models import Entry
 from tagstudio.core.palette import ColorType, UiColor, get_ui_color
-from tagstudio.qt.modals.add_field import AddFieldModal
-from tagstudio.qt.modals.tag_search import TagSearchPanel
 from tagstudio.qt.translations import Translations
 from tagstudio.qt.widgets.preview.field_containers import FieldContainers
 from tagstudio.qt.widgets.preview.file_attributes import FileAttributes
@@ -57,11 +54,7 @@ class PreviewPanelView(QWidget):
 
         self.__thumb = PreviewThumb(self.lib, driver)
         self.__file_attrs = FileAttributes(self.lib, driver)
-        self.__fields = FieldContainers(self.lib, driver)
-
-        self._tag_search_panel = TagSearchPanel(self.lib, is_tag_chooser=True)
-
-        self.add_field_modal = AddFieldModal(self.lib)
+        self._fields = FieldContainers(self.lib, driver)
 
         preview_section = QWidget()
         preview_layout = QVBoxLayout(preview_section)
@@ -99,7 +92,7 @@ class PreviewPanelView(QWidget):
 
         preview_layout.addWidget(self.__thumb)
         info_layout.addWidget(self.__file_attrs)
-        info_layout.addWidget(self.__fields)
+        info_layout.addWidget(self._fields)
 
         splitter.addWidget(preview_section)
         splitter.addWidget(info_section)
@@ -113,9 +106,16 @@ class PreviewPanelView(QWidget):
         self.__connect_callbacks()
 
     def __connect_callbacks(self):
+        self.__add_field_button.clicked.connect(self._add_field_button_callback)
         self.__add_tag_button.clicked.connect(self._add_tag_button_callback)
 
+    def _add_field_button_callback(self):
+        raise NotImplementedError()
+
     def _add_tag_button_callback(self):
+        raise NotImplementedError()
+
+    def _set_selection_callback(self, selected: list[int]):
         raise NotImplementedError()
 
     def thumb_media_player_stop(self):
@@ -141,11 +141,11 @@ class PreviewPanelView(QWidget):
     @property
     def _field_containers_widget(self) -> FieldContainers:  # needed for the tests
         """Getter for the field containers widget."""
-        return self.__fields  # TODO: try to remove non-test uses of this
+        return self._fields  # TODO: try to remove non-test uses of this
 
-    # \/ to be refactored \/ #
+    # TODO: \/ to be refactored \/ #
 
-    def _set_selection(self, selected: list[int], update_preview: bool = True):
+    def set_selection(self, selected: list[int], update_preview: bool = True):
         """Render the panel widgets with the newest data from the Library.
 
         Args:
@@ -159,7 +159,7 @@ class PreviewPanelView(QWidget):
                 self.__thumb.hide_preview()
                 self.__file_attrs.update_stats()
                 self.__file_attrs.update_date_label()
-                self.__fields.hide_containers()
+                self._fields.hide_containers()
 
                 self.add_buttons_enabled = False
 
@@ -176,9 +176,9 @@ class PreviewPanelView(QWidget):
                     stats: dict = self.__thumb.update_preview(filepath)
                     self.__file_attrs.update_stats(filepath, stats)
                 self.__file_attrs.update_date_label(filepath)
-                self.__fields.update_from_entry(entry_id)
-                self.__update_add_tag_button(entry_id)
-                self.__update_add_field_button(entry_id)
+                self._fields.update_from_entry(entry_id)
+
+                self._set_selection_callback(selected)
 
                 self.add_buttons_enabled = True
 
@@ -188,37 +188,12 @@ class PreviewPanelView(QWidget):
                 self.__thumb.hide_preview()  # TODO: Render mixed selection
                 self.__file_attrs.update_multi_selection(len(selected))
                 self.__file_attrs.update_date_label()
-                self.__fields.hide_containers()  # TODO: Allow for mixed editing
-                self.__update_add_tag_button()
-                self.__update_add_field_button()
+                self._fields.hide_containers()  # TODO: Allow for mixed editing
+
+                self._set_selection_callback(selected)
 
                 self.add_buttons_enabled = True
 
         except Exception as e:
             logger.error("[Preview Panel] Error updating selection", error=e)
             traceback.print_exc()
-
-    def __update_add_field_button(self, entry_id: int | None = None):
-        with catch_warnings(record=True):
-            self.add_field_modal.done.disconnect()
-            self.__add_field_button.clicked.disconnect()
-
-        self.add_field_modal.done.connect(
-            lambda f: (
-                self.__fields.add_field_to_selected(f),
-                (self.__fields.update_from_entry(entry_id) if entry_id else ()),
-            )
-        )
-        self.__add_field_button.clicked.connect(self.add_field_modal.show)
-
-    def __update_add_tag_button(self, entry_id: int | None = None):
-        with catch_warnings(record=True):
-            self._tag_search_panel.tag_chosen.disconnect()
-            self.__add_tag_button.clicked.disconnect()
-
-        self._tag_search_panel.tag_chosen.connect(
-            lambda t: (
-                self.__fields.add_tags_to_selected(t),
-                (self.__fields.update_from_entry(entry_id) if entry_id else ()),
-            )
-        )
