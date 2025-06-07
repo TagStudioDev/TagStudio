@@ -66,6 +66,14 @@ class MyCoolWidget(MyCoolWidgetView):
         print(f"The selected color is now: {color}")
 ```
 
+Observe the following key aspects of this example:
+- The Controller is just called `MyCoolWidget` instead of `MyCoolWidgetController` as it will be directly used by other code
+- the ui elements are in private variables
+  - this enforces that the controller shouldn't directly access UI elements
+  - instead the view should provide a protected API (e.g. `_get_color()`) for things like setting/getting the value of a dropdown, etc.
+- the callback methods are already defined as protected methods with NotImplementedErrors
+  - defines the interface the callbacks
+  - enforces that UI events be handled
 
 
 [^1]: For an explanation of the Model-View-Controller (MVC) Model, checkout this article: [MVC Framework Introduction](https://www.geeksforgeeks.org/mvc-framework-introduction/).
