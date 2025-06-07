@@ -14,7 +14,7 @@ Most of the style guidelines can be checked, fixed, and enforced via Ruff. Older
 -   If it wasn't mentioned above, then stick to [**PEP-8**](https://peps.python.org/pep-0008/)!
 
 ## QT
-As of writing this section, the QT part of the code base is quite unstructured and the View and Controller parts are completely intermixed[^1]. This makes maintenance, fixes and general understanding of the code base quite challenging, because the interesting parts you are looking for are entangled in a bunch of repetetive UI setup code. To address this we are aiming to more strictly separate the view and controller aspects of the QT frontend.
+As of writing this section, the QT part of the code base is quite unstructured and the View and Controller parts are completely intermixed[^1]. This makes maintenance, fixes and general understanding of the code base quite challenging, because the interesting parts you are looking for are entangled in a bunch of repetitive UI setup code. To address this we are aiming to more strictly separate the view and controller aspects of the QT frontend.
 
 The general structure of the QT code base should look like this:
 ```
@@ -68,12 +68,13 @@ class MyCoolWidget(MyCoolWidgetView):
 
 Observe the following key aspects of this example:
 - The Controller is just called `MyCoolWidget` instead of `MyCoolWidgetController` as it will be directly used by other code
-- the ui elements are in private variables
-  - this enforces that the controller shouldn't directly access UI elements
-  - instead the view should provide a protected API (e.g. `_get_color()`) for things like setting/getting the value of a dropdown, etc.
-- the callback methods are already defined as protected methods with NotImplementedErrors
-  - defines the interface the callbacks
-  - enforces that UI events be handled
+- The UI elements are in private variables
+  - This enforces that the controller shouldn't directly access UI elements
+  - Instead the view should provide a protected API (e.g. `_get_color()`) for things like setting/getting the value of a dropdown, etc.
+  - Instead of `_get_color()` there could also be a `_color` method marked with `@property` 
+- The callback methods are already defined as protected methods with NotImplementedErrors
+  - Defines the interface the callbacks
+  - Enforces that UI events be handled
 
 
 [^1]: For an explanation of the Model-View-Controller (MVC) Model, checkout this article: [MVC Framework Introduction](https://www.geeksforgeeks.org/mvc-framework-introduction/).
