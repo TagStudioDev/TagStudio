@@ -5,7 +5,7 @@ Most of the style guidelines can be checked, fixed, and enforced via Ruff. Older
 -   Do your best to write clear, concise, and modular code.
     - This should include making methods private by default (e.g. `__method()`)
     - Methods should only be protected (e.g. `_method()`) or public (e.g. `method()`) when needed and warranted
--   Keep a maximum column with of no more than **100** characters.
+-   Keep a maximum column width of no more than **100** characters.
 -   Code comments should be used to help describe sections of code that can't speak for themselves.
 -   Use [Google style](https://google.github.io/styleguide/pyguide.html#s3.8-comments-and-docstrings) docstrings for any classes and functions you add.
     -   If you're modifying an existing function that does _not_ have docstrings, you don't _have_ to add docstrings to it... but it would be pretty cool if you did ;)
