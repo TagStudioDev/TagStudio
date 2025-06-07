@@ -366,8 +366,8 @@ class QtDriver(DriverMixin, QObject):
         # Initialize the Tag Manager panel
         self.tag_manager_panel = PanelModal(
             widget=TagDatabasePanel(self, self.lib),
-            done_callback=lambda s=self.selected: self.main_window.preview_panel.update_view(
-                s, update_preview=False
+            done_callback=lambda: self.main_window.preview_panel.update_view(
+                self, update_preview=False
             ),
             has_save=False,
         )
@@ -386,9 +386,9 @@ class QtDriver(DriverMixin, QObject):
             window_title=Translations["tag.add.plural"],
         )
         self.tag_search_panel.tag_chosen.connect(
-            lambda t, s=self.selected: (
+            lambda t: (
                 self.add_tags_to_selected_callback(t),
-                self.main_window.preview_panel.update_view(s),
+                self.main_window.preview_panel.update_view(self),
             )
         )
 
@@ -715,7 +715,7 @@ class QtDriver(DriverMixin, QObject):
         self.cached_values.sync()
 
         # Reset library state
-        self.main_window.preview_panel.update_view(self.selected)
+        self.main_window.preview_panel.update_view(self)
         self.main_window.search_field.setText("")
         scrollbar: QScrollArea = self.main_window.entry_scroll_area
         scrollbar.verticalScrollBar().setValue(0)
@@ -739,7 +739,7 @@ class QtDriver(DriverMixin, QObject):
         self.set_clipboard_menu_viability()
         self.set_select_actions_visibility()
 
-        self.main_window.preview_panel.update_view(self.selected)
+        self.main_window.preview_panel.update_view(self)
         self.main_window.toggle_landing_page(enabled=True)
         self.main_window.pagination.setHidden(True)
         try:
@@ -817,7 +817,7 @@ class QtDriver(DriverMixin, QObject):
         self.set_clipboard_menu_viability()
         self.set_select_actions_visibility()
 
-        self.main_window.preview_panel.update_view(self.selected, update_preview=False)
+        self.main_window.preview_panel.update_view(self, update_preview=False)
 
     def select_inverse_action_callback(self):
         """Invert the selection of all visible items."""
@@ -836,7 +836,7 @@ class QtDriver(DriverMixin, QObject):
         self.set_clipboard_menu_viability()
         self.set_select_actions_visibility()
 
-        self.main_window.preview_panel.update_view(self.selected, update_preview=False)
+        self.main_window.preview_panel.update_view(self, update_preview=False)
 
     def clear_select_action_callback(self):
         self.selected.clear()
@@ -845,7 +845,7 @@ class QtDriver(DriverMixin, QObject):
             item.thumb_button.set_selected(False)
 
         self.set_clipboard_menu_viability()
-        self.main_window.preview_panel.update_view(self.selected)
+        self.main_window.preview_panel.update_view(self)
 
     def add_tags_to_selected_callback(self, tag_ids: list[int]):
         self.lib.add_tags_to_entries(self.selected, tag_ids)
@@ -905,7 +905,7 @@ class QtDriver(DriverMixin, QObject):
 
         if deleted_count > 0:
             self.update_browsing_state()
-            self.main_window.preview_panel.update_view(self.selected)
+            self.main_window.preview_panel.update_view(self)
 
         if len(self.selected) <= 1 and deleted_count == 0:
             self.main_window.status_bar.showMessage(Translations["status.deleted_none"])
@@ -1230,7 +1230,7 @@ class QtDriver(DriverMixin, QObject):
             if TAG_FAVORITE in self.copy_buffer["tags"]:
                 self.update_badges({BadgeType.FAVORITE: True}, origin_id=0, add_tags=False)
         else:
-            self.main_window.preview_panel.update_view(self.selected)
+            self.main_window.preview_panel.update_view(self)
 
     def toggle_item_selection(self, item_id: int, append: bool, bridge: bool):
         """Toggle the selection of an item in the Thumbnail Grid.
@@ -1304,7 +1304,7 @@ class QtDriver(DriverMixin, QObject):
         self.set_clipboard_menu_viability()
         self.set_select_actions_visibility()
 
-        self.main_window.preview_panel.update_view(self.selected)
+        self.main_window.preview_panel.update_view(self)
 
     def set_clipboard_menu_viability(self):
         if len(self.selected) == 1:
@@ -1748,7 +1748,7 @@ class QtDriver(DriverMixin, QObject):
         self.main_window.menu_bar.clear_thumb_cache_action.setEnabled(True)
         self.main_window.menu_bar.folders_to_tags_action.setEnabled(True)
 
-        self.main_window.preview_panel.update_view(self.selected)
+        self.main_window.preview_panel.update_view(self)
 
         # page (re)rendering, extract eventually
         self.update_browsing_state()

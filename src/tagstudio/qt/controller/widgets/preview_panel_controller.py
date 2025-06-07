@@ -19,12 +19,12 @@ class PreviewPanel(PreviewPanelView):
     def _add_tag_button_callback(self):
         self.__add_tag_modal.show()
 
-    def update_view(self, selected, update_preview=True):
+    def update_view(self, driver: "QtDriver", update_preview=True):
         """Render the panel widgets with the newest data from the Library.
 
         Args:
-            selected  (list[int]): List of the IDs of the selected entries.
+            driver  (QtDriver): List of the IDs of the selected entries.
             update_preview (bool): Should the file preview be updated?
-            (Only works with one or more items selected)
+                                   (Only works with one or more items selected)
         """
-        return super().update_view(selected, update_preview)
+        self._set_selection(driver.selected, update_preview)

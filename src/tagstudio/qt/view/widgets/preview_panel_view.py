@@ -115,13 +115,23 @@ class PreviewPanelView(QWidget):
     def __connect_callbacks(self):
         self.__add_tag_button.clicked.connect(self._add_tag_button_callback)
 
-    def add_tag_button_enabled(self) -> bool:  # needed for the tests
-        """Returns whether the 'Add Tag' Button is enabled."""
-        return self.__add_tag_button.isEnabled()
+    def _add_tag_button_callback(self):
+        raise NotImplementedError()
 
-    def add_field_button_enabled(self) -> bool:  # needed for the tests
-        """Returns whether the 'Add Field' Button is enabled."""
-        return self.__add_field_button.isEnabled()
+    def thumb_media_player_stop(self):
+        self.__thumb.media_player.stop()
+
+    @property
+    def add_buttons_enabled(self) -> bool:  # needed for the tests
+        field = self.__add_field_button.isEnabled()
+        tag = self.__add_tag_button.isEnabled()
+        assert field == tag
+        return field
+
+    @add_buttons_enabled.setter
+    def add_buttons_enabled(self, enabled: bool):
+        self.__add_field_button.setEnabled(enabled)
+        self.__add_tag_button.setEnabled(enabled)
 
     @property
     def _file_attributes_widget(self) -> FileAttributes:  # needed for the tests
@@ -133,13 +143,9 @@ class PreviewPanelView(QWidget):
         """Getter for the field containers widget."""
         return self.__fields  # TODO: try to remove non-test uses of this
 
-    def thumb_media_player_stop(self):
-        self.__thumb.media_player.stop()
+    # \/ to be refactored \/ #
 
-    def _add_tag_button_callback(self):
-        raise NotImplementedError()
-
-    def update_view(self, selected: list[int], update_preview: bool = True):
+    def _set_selection(self, selected: list[int], update_preview: bool = True):
         """Render the panel widgets with the newest data from the Library.
 
         Args:
@@ -155,8 +161,7 @@ class PreviewPanelView(QWidget):
                 self.__file_attrs.update_date_label()
                 self.__fields.hide_containers()
 
-                self.__add_tag_button.setEnabled(False)
-                self.__add_field_button.setEnabled(False)
+                self.add_buttons_enabled = False
 
             # One Item Selected
             elif len(selected) == 1:
@@ -175,8 +180,7 @@ class PreviewPanelView(QWidget):
                 self.__update_add_tag_button(entry_id)
                 self.__update_add_field_button(entry_id)
 
-                self.__add_tag_button.setEnabled(True)
-                self.__add_field_button.setEnabled(True)
+                self.add_buttons_enabled = True
 
             # Multiple Selected Items
             elif len(selected) > 1:
@@ -188,8 +192,7 @@ class PreviewPanelView(QWidget):
                 self.__update_add_tag_button()
                 self.__update_add_field_button()
 
-                self.__add_tag_button.setEnabled(True)
-                self.__add_field_button.setEnabled(True)
+                self.add_buttons_enabled = True
 
         except Exception as e:
             logger.error("[Preview Panel] Error updating selection", error=e)
