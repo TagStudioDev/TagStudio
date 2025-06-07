@@ -93,19 +93,7 @@ Mypy is also available as a VS Code [extension](https://marketplace.visualstudio
 -   Run all tests by running `pytest tests/` in the repository root.
 
 ## Code Style
-
-Most of the style guidelines can be checked, fixed, and enforced via Ruff. Older code may not be adhering to all of these guidelines, in which case _"do as I say, not as I do"..._
-
--   Do your best to write clear, concise, and modular code.
--   Keep a maximum column with of no more than **100** characters.
--   Code comments should be used to help describe sections of code that can't speak for themselves.
--   Use [Google style](https://google.github.io/styleguide/pyguide.html#s3.8-comments-and-docstrings) docstrings for any classes and functions you add.
-    -   If you're modifying an existing function that does _not_ have docstrings, you don't _have_ to add docstrings to it... but it would be pretty cool if you did ;)
--   Imports should be ordered alphabetically.
--   Lists of values should be ordered using their [natural sort order](https://en.wikipedia.org/wiki/Natural_sort_order).
-    -   Some files have their methods ordered alphabetically as well (i.e. [`thumb_renderer`](https://github.com/TagStudioDev/TagStudio/blob/main/src/tagstudio/qt/widgets/thumb_renderer.py)). If you're working in a file and notice this, please try and keep to the pattern.
--   When writing text for window titles or form titles, use "[Title Case](https://apastyle.apa.org/style-grammar-guidelines/capitalization/title-case)" capitalization. Your IDE may have a command to format this for you automatically, although some may incorrectly capitalize short prepositions. In a pinch you can use a website such as [capitalizemytitle.com](https://capitalizemytitle.com/) to check.
--   If it wasn't mentioned above, then stick to [**PEP-8**](https://peps.python.org/pep-0008/)!
+See the [Style Guide](/STYLE.md)
 
 ### Modules & Implementations
 
