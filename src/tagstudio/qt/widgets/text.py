@@ -31,12 +31,15 @@ class TextWidget(FieldWidget):
         text = linkify(text)
         self.text_label.setText(text)
 
+
 # Regex from https://stackoverflow.com/a/6041965
 def linkify(text: str):
-    url_pattern = r"(http|ftp|https):\/\/([\w_-]+(?:(?:\.[\w_-]+)+))([\w.,@?^=%&:\/~+#-*]*[\w@?^=%&\/~+#-*])"  # noqa: E501
+    url_pattern = (
+        r"(http|ftp|https):\/\/([\w_-]+(?:(?:\.[\w_-]+)+))([\w.,@?^=%&:\/~+#-*]*[\w@?^=%&\/~+#-*])"
+    )
     return re.sub(
         url_pattern,
         lambda url: f'<a href="{url.group(0)}">{url.group(0)}</a>',
         text,
-        flags=re.IGNORECASE
+        flags=re.IGNORECASE,
     )
