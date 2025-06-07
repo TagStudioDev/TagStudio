@@ -288,7 +288,7 @@ class TagSearchPanel(PanelWidget):
                 self.scroll_layout.addWidget(new_tw)
 
         # Assign the tag to the widget at the given index.
-        tag_widget: TagWidget = self.scroll_layout.itemAt(index).widget()  # type: ignore
+        tag_widget: TagWidget = self.scroll_layout.itemAt(index).widget()  # pyright: ignore[reportAssignmentType]
         assert isinstance(tag_widget, TagWidget)
         tag_widget.set_tag(tag)
 
