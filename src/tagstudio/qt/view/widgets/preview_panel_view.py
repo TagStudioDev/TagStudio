@@ -57,7 +57,7 @@ class PreviewPanelView(QWidget):
 
         self.__thumb = PreviewThumb(self.lib, driver)
         self.__file_attrs = FileAttributes(self.lib, driver)
-        self._fields = FieldContainers(self.lib, driver)
+        self.__fields = FieldContainers(self.lib, driver)
 
         self._tag_search_panel = TagSearchPanel(self.lib, is_tag_chooser=True)
 
@@ -99,7 +99,7 @@ class PreviewPanelView(QWidget):
 
         preview_layout.addWidget(self.__thumb)
         info_layout.addWidget(self.__file_attrs)
-        info_layout.addWidget(self._fields)
+        info_layout.addWidget(self.__fields)
 
         splitter.addWidget(preview_section)
         splitter.addWidget(info_section)
@@ -114,6 +114,24 @@ class PreviewPanelView(QWidget):
 
     def __connect_callbacks(self):
         self.__add_tag_button.clicked.connect(self._add_tag_button_callback)
+
+    def add_tag_button_enabled(self) -> bool:  # needed for the tests
+        """Returns whether the 'Add Tag' Button is enabled."""
+        return self.__add_tag_button.isEnabled()
+
+    def add_field_button_enabled(self) -> bool:  # needed for the tests
+        """Returns whether the 'Add Field' Button is enabled."""
+        return self.__add_field_button.isEnabled()
+
+    @property
+    def _file_attributes_widget(self) -> FileAttributes:  # needed for the tests
+        """Getter for the file attributes widget."""
+        return self.__file_attrs
+
+    @property
+    def _field_containers_widget(self) -> FieldContainers:  # needed for the tests
+        """Getter for the field containers widget."""
+        return self.__fields  # TODO: try to remove non-test uses of this
 
     def thumb_media_player_stop(self):
         self.__thumb.media_player.stop()
@@ -135,7 +153,7 @@ class PreviewPanelView(QWidget):
                 self.__thumb.hide_preview()
                 self.__file_attrs.update_stats()
                 self.__file_attrs.update_date_label()
-                self._fields.hide_containers()
+                self.__fields.hide_containers()
 
                 self.__add_tag_button.setEnabled(False)
                 self.__add_field_button.setEnabled(False)
@@ -153,7 +171,7 @@ class PreviewPanelView(QWidget):
                     stats: dict = self.__thumb.update_preview(filepath)
                     self.__file_attrs.update_stats(filepath, stats)
                 self.__file_attrs.update_date_label(filepath)
-                self._fields.update_from_entry(entry_id)
+                self.__fields.update_from_entry(entry_id)
                 self.__update_add_tag_button(entry_id)
                 self.__update_add_field_button(entry_id)
 
@@ -166,7 +184,7 @@ class PreviewPanelView(QWidget):
                 self.__thumb.hide_preview()  # TODO: Render mixed selection
                 self.__file_attrs.update_multi_selection(len(selected))
                 self.__file_attrs.update_date_label()
-                self._fields.hide_containers()  # TODO: Allow for mixed editing
+                self.__fields.hide_containers()  # TODO: Allow for mixed editing
                 self.__update_add_tag_button()
                 self.__update_add_field_button()
 
@@ -184,8 +202,8 @@ class PreviewPanelView(QWidget):
 
         self.add_field_modal.done.connect(
             lambda f: (
-                self._fields.add_field_to_selected(f),
-                (self._fields.update_from_entry(entry_id) if entry_id else ()),
+                self.__fields.add_field_to_selected(f),
+                (self.__fields.update_from_entry(entry_id) if entry_id else ()),
             )
         )
         self.__add_field_button.clicked.connect(self.add_field_modal.show)
@@ -197,7 +215,7 @@ class PreviewPanelView(QWidget):
 
         self._tag_search_panel.tag_chosen.connect(
             lambda t: (
-                self._fields.add_tags_to_selected(t),
-                (self._fields.update_from_entry(entry_id) if entry_id else ()),
+                self.__fields.add_tags_to_selected(t),
+                (self.__fields.update_from_entry(entry_id) if entry_id else ()),
             )
         )
