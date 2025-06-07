@@ -212,6 +212,6 @@ class PreviewPanelView(QWidget):
         return self.__file_attrs
 
     @property
-    def _field_containers_widget(self) -> FieldContainers:  # needed for the tests
+    def field_containers_widget(self) -> FieldContainers:  # needed for the tests
         """Getter for the field containers widget."""
-        return self.__fields  # TODO: try to remove non-test uses of this
+        return self.__fields

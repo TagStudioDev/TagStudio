@@ -535,12 +535,12 @@ class QtDriver(DriverMixin, QObject):
 
         self.main_window.search_field.textChanged.connect(self.update_completions_list)
 
-        self.main_window.preview_panel._field_containers_widget.archived_updated.connect(
+        self.main_window.preview_panel.field_containers_widget.archived_updated.connect(
             lambda hidden: self.update_badges(
                 {BadgeType.ARCHIVED: hidden}, origin_id=0, add_tags=False
             )
         )
-        self.main_window.preview_panel._field_containers_widget.favorite_updated.connect(
+        self.main_window.preview_panel.field_containers_widget.favorite_updated.connect(
             lambda hidden: self.update_badges(
                 {BadgeType.FAVORITE: hidden}, origin_id=0, add_tags=False
             )

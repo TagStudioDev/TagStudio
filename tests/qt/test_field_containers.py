@@ -10,7 +10,7 @@ def test_update_selection_empty(qt_driver, library):
     panel.set_selection(qt_driver.selected)
 
     # FieldContainer should hide all containers
-    for container in panel._field_containers_widget.containers:
+    for container in panel.field_containers_widget.containers:
         assert container.isHidden()
 
 
@@ -22,7 +22,7 @@ def test_update_selection_single(qt_driver, library, entry_full):
     panel.set_selection(qt_driver.selected)
 
     # FieldContainer should show all applicable tags and field containers
-    for container in panel._field_containers_widget.containers:
+    for container in panel.field_containers_widget.containers:
         assert not container.isHidden()
 
 
@@ -37,7 +37,7 @@ def test_update_selection_multiple(qt_driver, library):
     panel.set_selection(qt_driver.selected)
 
     # FieldContainer should show mixed field editing
-    for container in panel._field_containers_widget.containers:
+    for container in panel.field_containers_widget.containers:
         assert container.isHidden()
 
 
@@ -51,7 +51,7 @@ def test_add_tag_to_selection_single(qt_driver, library, entry_full):
     panel.set_selection(qt_driver.selected)
 
     # Add new tag
-    panel._field_containers_widget.add_tags_to_selected(2000)
+    panel.field_containers_widget.add_tags_to_selected(2000)
 
     # Then reload entry
     refreshed_entry = next(library.get_entries(with_joins=True))
@@ -68,7 +68,7 @@ def test_add_same_tag_to_selection_single(qt_driver, library, entry_full):
     panel.set_selection(qt_driver.selected)
 
     # Add an existing tag
-    panel._field_containers_widget.add_tags_to_selected(1000)
+    panel.field_containers_widget.add_tags_to_selected(1000)
 
     # Then reload entry
     refreshed_entry = next(library.get_entries(with_joins=True))
@@ -98,7 +98,7 @@ def test_add_tag_to_selection_multiple(qt_driver, library):
     panel.set_selection(qt_driver.selected)
 
     # Add new tag
-    panel._field_containers_widget.add_tags_to_selected(1000)
+    panel.field_containers_widget.add_tags_to_selected(1000)
 
     # Then reload all entries and recheck the presence of tag 1000
     refreshed_entries = library.get_entries(with_joins=True)
@@ -126,8 +126,8 @@ def test_meta_tag_category(qt_driver, library, entry_full):
     panel.set_selection(qt_driver.selected)
 
     # FieldContainer should hide all containers
-    assert len(panel._field_containers_widget.containers) == 3
-    for i, container in enumerate(panel._field_containers_widget.containers):
+    assert len(panel.field_containers_widget.containers) == 3
+    for i, container in enumerate(panel.field_containers_widget.containers):
         match i:
             case 0:
                 # Check if the container is the Meta Tags category
@@ -158,8 +158,8 @@ def test_custom_tag_category(qt_driver, library, entry_full):
     panel.set_selection(qt_driver.selected)
 
     # FieldContainer should hide all containers
-    assert len(panel._field_containers_widget.containers) == 3
-    for i, container in enumerate(panel._field_containers_widget.containers):
+    assert len(panel.field_containers_widget.containers) == 3
+    for i, container in enumerate(panel.field_containers_widget.containers):
         match i:
             case 0:
                 # Check if the container is the Meta Tags category
