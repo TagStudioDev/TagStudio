@@ -26,29 +26,29 @@ if typing.TYPE_CHECKING:
 
 logger = structlog.get_logger(__name__)
 
-BUTTON_STYLE = (
-    f"QPushButton{{"
-    f"background-color:{Theme.COLOR_BG.value};"
-    "border-radius:6px;"
-    "font-weight: 500;"
-    "text-align: center;"
-    f"}}"
-    f"QPushButton::hover{{"
-    f"background-color:{Theme.COLOR_HOVER.value};"
-    f"border-color:{get_ui_color(ColorType.BORDER, UiColor.THEME_DARK)};"
-    f"border-style:solid;"
-    f"border-width: 2px;"
-    f"}}"
-    f"QPushButton::pressed{{"
-    f"background-color:{Theme.COLOR_PRESSED.value};"
-    f"border-color:{get_ui_color(ColorType.LIGHT_ACCENT, UiColor.THEME_DARK)};"
-    f"border-style:solid;"
-    f"border-width: 2px;"
-    f"}}"
-    f"QPushButton::disabled{{"
-    f"background-color:{Theme.COLOR_DISABLED_BG.value};"
-    f"}}"
-)
+BUTTON_STYLE = f"""
+    QPushButton{{
+        background-color: {Theme.COLOR_BG.value};
+        border-radius: 6px;
+        font-weight: 500;
+        text-align: center;
+    }}
+    QPushButton::hover{{
+        background-color: {Theme.COLOR_HOVER.value};
+        border-color: {get_ui_color(ColorType.BORDER, UiColor.THEME_DARK)};
+        border-style: solid;
+        border-width: 2px;
+    }}
+    QPushButton::pressed{{
+        background-color: {Theme.COLOR_PRESSED.value};
+        border-color: {get_ui_color(ColorType.LIGHT_ACCENT, UiColor.THEME_DARK)};
+        border-style: solid;
+        border-width: 2px;
+    }}
+    QPushButton::disabled{{
+        background-color: {Theme.COLOR_DISABLED_BG.value};
+    }}
+"""
 
 
 class PreviewPanelView(QWidget):
