@@ -30,7 +30,7 @@ from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.library.alchemy.models import Tag, TagColorGroup
 from tagstudio.core.palette import ColorType, UiColor, get_tag_color, get_ui_color
 from tagstudio.qt.modals.tag_color_selection import TagColorSelection
-from tagstudio.qt.modals.tag_search import TagSearchPanel
+from tagstudio.qt.modals.tag_search import TagSearchModal
 from tagstudio.qt.translations import Translations
 from tagstudio.qt.widgets.panel import PanelModal, PanelWidget
 from tagstudio.qt.widgets.tag import (
@@ -166,11 +166,8 @@ class BuildTagPanel(PanelWidget):
         if tag is not None:
             exclude_ids.append(tag.id)
 
-        tsp = TagSearchPanel(self.lib, exclude_ids)
-        tsp.tag_chosen.connect(lambda x: self.add_parent_tag_callback(x))
-        self.add_tag_modal = PanelModal(tsp)
-        self.add_tag_modal.setTitle(Translations["tag.parent_tags.add"])
-        self.add_tag_modal.setWindowTitle(Translations["tag.parent_tags.add"])
+        self.add_tag_modal = TagSearchModal(self.lib, exclude_ids)
+        self.add_tag_modal.tsp.tag_chosen.connect(lambda x: self.add_parent_tag_callback(x))
         self.parent_tags_add_button.clicked.connect(self.add_tag_modal.show)
 
         # Color ----------------------------------------------------------------
