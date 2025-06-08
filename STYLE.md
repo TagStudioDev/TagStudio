@@ -33,7 +33,7 @@ qt
 └── mixed.py
 ```
 
-In this structure there is are the `view` and `controller` sub-directories. The have the exact same structure and for every `<component>_view.py` there is a `<component>_controller.py` at the same location in the other subdirectory and vice versa.
+In this structure there are the `view` and `controller` sub-directories. They have the exact same structure and for every `<component>_view.py` there is a `<component>_controller.py` at the same location in the other subdirectory and vice versa.
 
 Typically the classes should look like this:
 ```py
