@@ -3,7 +3,6 @@
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
 
-import time
 import typing
 from enum import Enum
 from functools import wraps
@@ -33,7 +32,7 @@ from tagstudio.qt.helpers.file_opener import FileOpenerHelper
 from tagstudio.qt.platform_strings import open_file_str, trash_term
 from tagstudio.qt.translations import Translations
 from tagstudio.qt.widgets.thumb_button import ThumbButton
-from tagstudio.qt.widgets.thumb_renderer import ThumbRenderer
+from tagstudio.qt.widgets.thumb_renderer import RenderJob
 
 if TYPE_CHECKING:
     from tagstudio.qt.ts_qt import QtDriver
@@ -73,8 +72,6 @@ def badge_update_lock(func):
 
 class ItemThumb(FlowWidget):
     """The thumbnail widget for a library item (Entry, Collation, Tag Group, etc.)."""
-
-    update_cutoff: float = time.time()
 
     collation_icon_128: Image.Image = Image.open(
         str(Path(__file__).parents[2] / "resources/qt/images/collation_icon_128.png")
@@ -124,6 +121,7 @@ class ItemThumb(FlowWidget):
     ):
         super().__init__()
         self.lib = library
+        self.last_update = 0.0
         self.mode: ItemType | None = mode
         self.driver = driver
         self.item_id: int | None = None
@@ -202,16 +200,18 @@ class ItemThumb(FlowWidget):
         self.bottom_container.setLayout(self.bottom_layout)
         self.thumb_layout.addWidget(self.bottom_container)
 
+        def update_thumb(timestamp, image, size, file_path):
+            if timestamp < self.last_update:
+                return
+            self.last_update = timestamp
+            self.update_thumb(image)
+            self.update_size(size)
+            self.set_filename_text(file_path)
+            self.set_extension(file_path)
+
         self.thumb_button = ThumbButton(self.thumb_container, thumb_size)
-        self.renderer = ThumbRenderer(self.lib)
-        self.renderer.updated.connect(
-            lambda timestamp, image, size, filename: (
-                self.update_thumb(timestamp, image=image),
-                self.update_size(timestamp, size=size),
-                self.set_filename_text(filename),
-                self.set_extension(filename),
-            )
-        )
+        self.render_job = RenderJob()
+        self.render_job.updated.connect(update_thumb)
         self.thumb_button.setFlat(True)
         self.thumb_button.setLayout(self.thumb_layout)
         self.thumb_button.setContextMenuPolicy(Qt.ContextMenuPolicy.ActionsContextMenu)
@@ -422,25 +422,20 @@ class ItemThumb(FlowWidget):
             self.setFixedHeight(self.thumb_size[1])
         self.show_filename_label = set_visible
 
-    def update_thumb(self, timestamp: float, image: QPixmap | None = None):
+    def update_thumb(self, image: QPixmap | None):
         """Update attributes of a thumbnail element."""
-        if timestamp > ItemThumb.update_cutoff:
-            self.thumb_button.setIcon(image if image else QPixmap())
+        self.thumb_button.setIcon(image if image else QPixmap())
 
-    def update_size(self, timestamp: float, size: QSize):
+    def update_size(self, size: QSize):
         """Updates attributes of a thumbnail element.
 
         Args:
-            timestamp (float | None): The UTC timestamp for when this call was
-                originally dispatched. Used to skip outdated jobs.
-
             size (QSize): The new thumbnail size to set.
         """
-        if timestamp > ItemThumb.update_cutoff:
-            self.thumb_size = size.toTuple()  # type: ignore
-            self.thumb_button.setIconSize(size)
-            self.thumb_button.setMinimumSize(size)
-            self.thumb_button.setMaximumSize(size)
+        self.thumb_size = size.toTuple()  # type: ignore
+        self.thumb_button.setIconSize(size)
+        self.thumb_button.setMinimumSize(size)
+        self.thumb_button.setMaximumSize(size)
 
     def update_clickable(self, clickable: typing.Callable):
         """Updates attributes of a thumbnail element."""

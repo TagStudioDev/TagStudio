@@ -18,13 +18,12 @@ import sys
 import time
 from argparse import Namespace
 from pathlib import Path
-from queue import Queue
 from shutil import which
 from typing import Generic, TypeVar
 from warnings import catch_warnings
 
 import structlog
-from humanfriendly import format_size, format_timespan
+from humanfriendly import format_timespan
 from PySide6 import QtCore
 from PySide6.QtCore import QObject, QSettings, Qt, QThread, QThreadPool, QTimer, Signal
 from PySide6.QtGui import (
@@ -53,7 +52,6 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-# this import has side-effect of import PySide resources
 import tagstudio.qt.resources_rc  # noqa: F401
 from tagstudio.core.constants import TAG_ARCHIVED, TAG_FAVORITE, VERSION, VERSION_BRANCH
 from tagstudio.core.driver import DriverMixin
@@ -74,7 +72,9 @@ from tagstudio.core.query_lang.util import ParsingError
 from tagstudio.core.ts_core import TagStudioCore
 from tagstudio.core.utils.refresh_dir import RefreshDirTracker
 from tagstudio.core.utils.web import strip_web_protocol
-from tagstudio.qt.cache_manager import CacheManager
+
+# this import has side-effect of import PySide resources
+from tagstudio.qt import cache_manager
 from tagstudio.qt.flowlayout import FlowLayout
 from tagstudio.qt.helpers.custom_runnable import CustomRunnable
 from tagstudio.qt.helpers.file_deleter import delete_file
@@ -102,7 +102,6 @@ from tagstudio.qt.widgets.migration_modal import JsonMigrationModal
 from tagstudio.qt.widgets.panel import PanelModal
 from tagstudio.qt.widgets.preview_panel import PreviewPanel
 from tagstudio.qt.widgets.progress import ProgressWidget
-from tagstudio.qt.widgets.thumb_renderer import ThumbRenderer
 
 BADGE_TAGS = {
     BadgeType.FAVORITE: TAG_FAVORITE,
@@ -215,9 +214,6 @@ class QtDriver(DriverMixin, QObject):
         self.base_title: str = f"TagStudio Alpha {VERSION}{self.branch}"
         # self.title_text: str = self.base_title
         # self.buffer = {}
-        self.thumb_job_queue: Queue = Queue()
-        self.thumb_threads: list[Consumer] = []
-        self.thumb_cutoff: float = time.time()
         self.selected: list[int] = []  # Selected Entry IDs
 
         self.SIGTERM.connect(self.handle_sigterm)
@@ -257,38 +253,10 @@ class QtDriver(DriverMixin, QObject):
 
         Translations.change_language(self.settings.language)
 
-        # NOTE: This should be a per-library setting rather than an application setting.
-        thumb_cache_size_limit: int = int(
-            str(
-                self.cached_values.value(
-                    SettingItems.THUMB_CACHE_SIZE_LIMIT,
-                    defaultValue=CacheManager.size_limit,
-                    type=int,
-                )
-            )
-        )
-
-        CacheManager.size_limit = thumb_cache_size_limit
-        self.cached_values.setValue(SettingItems.THUMB_CACHE_SIZE_LIMIT, CacheManager.size_limit)
-        self.cached_values.sync()
-        logger.info(
-            f"[Config] Thumbnail cache size limit: {format_size(CacheManager.size_limit)}",
-        )
-
         self.add_tag_to_selected_action: QAction | None = None
 
     def __reset_navigation(self) -> None:
         self.browsing_history = History(BrowsingState.show_all())
-
-    def init_workers(self):
-        """Init workers for rendering thumbnails."""
-        if not self.thumb_threads:
-            max_threads = os.cpu_count() or 1
-            for i in range(max_threads):
-                thread = Consumer(self.thumb_job_queue)
-                thread.setObjectName(f"ThumbRenderer_{i}")
-                self.thumb_threads.append(thread)
-                thread.start()
 
     def open_library_from_dialog(self):
         dir = QFileDialog.getExistingDirectory(
@@ -664,7 +632,7 @@ class QtDriver(DriverMixin, QObject):
             Translations["settings.clear_thumb_cache.title"], menu_bar
         )
         self.clear_thumb_cache_action.triggered.connect(
-            lambda: CacheManager.clear_cache(self.lib.library_dir)
+            lambda: cache_manager.clear_cache(self.lib.thumbnail_manager.cache_folder)
         )
         self.clear_thumb_cache_action.setEnabled(False)
         tools_menu.addAction(self.clear_thumb_cache_action)
@@ -741,7 +709,6 @@ class QtDriver(DriverMixin, QObject):
             (Translations["home.thumbnail_size.mini"], 76),
         ]
         self.item_thumbs: list[ItemThumb] = []
-        self.thumb_renderers: list[ThumbRenderer] = []
         self.init_library_window()
         self.migration_modal: JsonMigrationModal = None
 
@@ -884,15 +851,6 @@ class QtDriver(DriverMixin, QObject):
     def shutdown(self):
         """Save Library on Application Exit."""
         self.close_library(is_shutdown=True)
-        logger.info("[SHUTDOWN] Ending Thumbnail Threads...")
-        for _ in self.thumb_threads:
-            self.thumb_job_queue.put(Consumer.MARKER_QUIT)
-
-        # wait for threads to quit
-        for thread in self.thumb_threads:
-            thread.quit()
-            thread.wait()
-
         QApplication.quit()
 
     def close_library(self, is_shutdown: bool = False):
@@ -916,7 +874,6 @@ class QtDriver(DriverMixin, QObject):
 
         self.lib.close()
 
-        self.thumb_job_queue.queue.clear()
         if is_shutdown:
             # no need to do other things on shutdown
             return
@@ -1649,13 +1606,7 @@ class QtDriver(DriverMixin, QObject):
         self._update_thumb_count()
         # start_time = time.time()
         # logger.info(f'Current Page: {self.cur_page_idx}, Stack Length:{len(self.nav_stack)}')
-        with self.thumb_job_queue.mutex:
-            # Cancels all thumb jobs waiting to be started
-            self.thumb_job_queue.queue.clear()
-            self.thumb_job_queue.all_tasks_done.notify_all()
-            self.thumb_job_queue.not_full.notify_all()
-            # Stops in-progress jobs from finishing
-            ItemThumb.update_cutoff = time.time()
+        self.lib.thumbnail_manager.cancel_pending_thumbnails()
 
         ratio: float = self.main_window.devicePixelRatio()
         base_size: tuple[int, int] = (self.thumb_size, self.thumb_size)
@@ -1665,14 +1616,15 @@ class QtDriver(DriverMixin, QObject):
         self.flow_container.layout().update()
         self.main_window.update()
 
-        is_grid_thumb = True
         logger.info("[QtDriver] Loading Entries...")
         # TODO: The full entries with joins don't need to be grabbed here.
         # Use a method that only selects the frame content but doesn't include the joins.
         entries: list[Entry] = list(self.lib.get_entries_full(self.frame_content))
         logger.info("[QtDriver] Building Filenames...")
-        filenames: list[Path] = [self.lib.library_dir / e.path for e in entries]
+        file_paths: list[Path] = [self.lib.library_dir / e.path for e in entries]
         logger.info("[QtDriver] Done! Processing ItemThumbs...")
+        is_dark_theme = QGuiApplication.styleHints().colorScheme() == Qt.ColorScheme.Dark
+        loading_path = ResourceManager.get_path("thumb_loading")
         for index, item_thumb in enumerate(self.item_thumbs, start=0):
             entry = None
             try:
@@ -1689,12 +1641,12 @@ class QtDriver(DriverMixin, QObject):
             item_thumb.set_mode(ItemType.ENTRY)
             item_thumb.set_item_id(entry.id)
             item_thumb.show()
-            is_loading = True
-            self.thumb_job_queue.put(
-                (
-                    item_thumb.renderer.render,
-                    (sys.float_info.max, "", base_size, ratio, is_loading, is_grid_thumb),
-                )
+            color = UiColor.THEME_LIGHT if is_dark_theme else UiColor.THEME_DARK
+
+            if loading_path is None:
+                continue
+            self.lib.thumbnail_manager.render_icon(
+                loading_path, base_size, ratio, color, True, item_thumb.render_job
             )
 
         # Show rendered thumbnails
@@ -1708,12 +1660,9 @@ class QtDriver(DriverMixin, QObject):
             if not entry:
                 continue
 
-            is_loading = False
-            self.thumb_job_queue.put(
-                (
-                    item_thumb.renderer.render,
-                    (time.time(), filenames[index], base_size, ratio, is_loading, is_grid_thumb),
-                )
+            file_path = file_paths[index]
+            self.lib.thumbnail_manager.render_thumbnail(
+                file_path, base_size, ratio, item_thumb.render_job
             )
             item_thumb.assign_badge(BadgeType.ARCHIVED, entry.is_archived)
             item_thumb.assign_badge(BadgeType.FAVORITE, entry.is_favorite)
@@ -1732,7 +1681,7 @@ class QtDriver(DriverMixin, QObject):
                 )
             )
             item_thumb.delete_action.triggered.connect(
-                lambda checked=False, f=filenames[index], e_id=entry.id: self.delete_files_callback(
+                lambda checked=False, f=file_path, e_id=entry.id: self.delete_files_callback(
                     f, e_id
                 )
             )
@@ -1976,8 +1925,6 @@ class QtDriver(DriverMixin, QObject):
                 error_desc=open_status.msg_description,
             )
             return open_status
-
-        self.init_workers()
 
         self.__reset_navigation()
 

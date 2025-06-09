@@ -3,7 +3,6 @@
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
 import io
-import time
 from pathlib import Path
 from typing import TYPE_CHECKING, override
 from warnings import catch_warnings
@@ -26,7 +25,7 @@ from tagstudio.qt.helpers.rounded_pixmap_style import RoundedPixmapStyle
 from tagstudio.qt.platform_strings import open_file_str, trash_term
 from tagstudio.qt.translations import Translations
 from tagstudio.qt.widgets.media_player import MediaPlayer
-from tagstudio.qt.widgets.thumb_renderer import ThumbRenderer
+from tagstudio.qt.widgets.thumb_renderer import RenderJob
 
 if TYPE_CHECKING:
     from tagstudio.qt.ts_qt import QtDriver
@@ -99,14 +98,14 @@ class PreviewThumb(QWidget):
         self.media_player_page = QWidget()
         self._stacked_page_setup(self.media_player_page, self.media_player)
 
-        self.thumb_renderer = ThumbRenderer(self.lib)
-        self.thumb_renderer.updated.connect(
+        self.render_job = RenderJob()
+        self.render_job.updated.connect(
             lambda ts, i, s: (
                 self.preview_img.setIcon(i),
                 self._set_mp_max_size(i.size()),
             )
         )
-        self.thumb_renderer.updated_ratio.connect(
+        self.render_job.updated_ratio.connect(
             lambda ratio: (
                 self.set_image_ratio(ratio),
                 self.update_image_size(
@@ -235,12 +234,8 @@ class PreviewThumb(QWidget):
         Useful for fallback scenarios.
         """
         self.switch_preview("image")
-        self.thumb_renderer.render(
-            time.time(),
-            filepath,
-            (512, 512),
-            self.devicePixelRatio(),
-            update_on_ratio_change=True,
+        self.lib.thumbnail_manager.render_preview(
+            filepath, (512, 512), self.devicePixelRatio(), self.render_job
         )
         return self._update_image(filepath)
 
@@ -398,12 +393,8 @@ class PreviewThumb(QWidget):
         ):
             self._update_image(filepath)
             stats = self._update_media(filepath, MediaType.AUDIO)
-            self.thumb_renderer.render(
-                time.time(),
-                filepath,
-                (512, 512),
-                self.devicePixelRatio(),
-                update_on_ratio_change=True,
+            self.lib.thumbnail_manager.render_preview(
+                filepath, (512, 512), self.devicePixelRatio(), self.render_job
             )
 
         # Animated Images
@@ -417,12 +408,8 @@ class PreviewThumb(QWidget):
             # TODO: Get thumb renderer to return this stuff to pass on
             stats = self._update_image(filepath)
 
-            self.thumb_renderer.render(
-                time.time(),
-                filepath,
-                (512, 512),
-                self.devicePixelRatio(),
-                update_on_ratio_change=True,
+            self.lib.thumbnail_manager.render_preview(
+                filepath, (512, 512), self.devicePixelRatio(), self.render_job
             )
 
         with catch_warnings(record=True):

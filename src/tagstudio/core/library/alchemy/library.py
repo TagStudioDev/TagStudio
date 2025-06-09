@@ -84,7 +84,9 @@ from tagstudio.core.library.alchemy.models import (
 )
 from tagstudio.core.library.alchemy.visitors import SQLBoolExpressionBuilder
 from tagstudio.core.library.json.library import Library as JsonLibrary
+from tagstudio.qt import cache_manager
 from tagstudio.qt.translations import Translations
+from tagstudio.qt.widgets.thumb_renderer import ThumbnailManager
 
 if TYPE_CHECKING:
     from sqlalchemy import Select
@@ -212,6 +214,8 @@ class Library:
     folder: Folder | None
     included_files: set[Path] = set()
 
+    thumbnail_manager: ThumbnailManager
+
     SQL_FILENAME: str = "ts_library.sqlite"
     JSON_FILENAME: str = "ts_library.json"
 
@@ -222,6 +226,7 @@ class Library:
         self.storage_path = None
         self.folder = None
         self.included_files = set()
+        self.thumbnail_manager.close()
 
     def migrate_json_to_sqlite(self, json_lib: JsonLibrary):
         """Migrate JSON library data to the SQLite database."""
@@ -348,6 +353,8 @@ class Library:
                         message="[JSON] Legacy v9.4 library requires conversion to v9.5+",
                         json_migration_req=True,
                     )
+
+        self.thumbnail_manager = ThumbnailManager(library_dir)
 
         return self.open_sqlite_library(library_dir, is_new)
 
@@ -837,7 +844,12 @@ class Library:
                 entry_ids[i : i + MAX_SQL_VARIABLES]
                 for i in range(0, len(entry_ids), MAX_SQL_VARIABLES)
             ]:
-                session.query(Entry).where(Entry.id.in_(sub_list)).delete()
+                paths = session.scalars(
+                    delete(Entry).where(Entry.id.in_(sub_list)).returning(Entry.path)
+                )
+                for path in paths:
+                    cache_folder = self.thumbnail_manager.cache_folder
+                    cache_manager.remove_from_cache(cache_folder, path)
             session.commit()
 
     def has_path_entry(self, path: Path) -> bool:
@@ -985,19 +997,18 @@ class Library:
         if isinstance(entry_id, Entry):
             entry_id = entry_id.id
 
+        old_path = None
         with Session(self.engine) as session:
-            update_stmt = (
-                update(Entry)
-                .where(
-                    and_(
-                        Entry.id == entry_id,
-                    )
-                )
-                .values(path=path)
-            )
-
-            session.execute(update_stmt)
+            entry = session.scalar(select(Entry).where(Entry.id == entry_id))
+            if entry is None:
+                return False
+            old_path = entry.path
+            session.execute(update(Entry).where(Entry.id == entry_id).values(path=path))
             session.commit()
+        if old_path is not None:
+            cache_folder = self.thumbnail_manager.cache_folder
+            cache_manager.remove_from_cache(cache_folder, old_path)
+
         return True
 
     def remove_tag(self, tag: Tag):
