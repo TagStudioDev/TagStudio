@@ -403,9 +403,13 @@ class ItemThumb(FlowWidget):
                 self.ext_badge.setHidden(True)
                 self.count_badge.setHidden(True)
 
-    def set_filename_text(self, filename: Path | None):
-        self.set_item_path(filename)
-        self.file_label.setText(str(filename.name))
+    def set_filename_text(self, filename: Path):
+        if filename.is_relative_to(self.lib.library_dir):
+            self.set_item_path(filename)
+            self.file_label.setText(str(filename.name))
+        else:
+            self.set_item_path(None)
+            self.file_label.setText("")
 
     def set_filename_visibility(self, set_visible: bool):
         """Toggle the visibility of the filename label.

@@ -235,7 +235,7 @@ class PreviewThumb(QWidget):
         """
         self.switch_preview("image")
         self.lib.thumbnail_manager.render_preview(
-            filepath, (512, 512), self.devicePixelRatio(), self.render_job
+            filepath, (512, 512), self.devicePixelRatio(), self.render_job.on_finish
         )
         return self._update_image(filepath)
 
@@ -394,7 +394,7 @@ class PreviewThumb(QWidget):
             self._update_image(filepath)
             stats = self._update_media(filepath, MediaType.AUDIO)
             self.lib.thumbnail_manager.render_preview(
-                filepath, (512, 512), self.devicePixelRatio(), self.render_job
+                filepath, (512, 512), self.devicePixelRatio(), self.render_job.on_finish
             )
 
         # Animated Images
@@ -409,7 +409,7 @@ class PreviewThumb(QWidget):
             stats = self._update_image(filepath)
 
             self.lib.thumbnail_manager.render_preview(
-                filepath, (512, 512), self.devicePixelRatio(), self.render_job
+                filepath, (512, 512), self.devicePixelRatio(), self.render_job.on_finish
             )
 
         with catch_warnings(record=True):

@@ -1646,7 +1646,7 @@ class QtDriver(DriverMixin, QObject):
             if loading_path is None:
                 continue
             self.lib.thumbnail_manager.render_icon(
-                loading_path, base_size, ratio, color, True, item_thumb.render_job
+                loading_path, base_size, ratio, color, True, item_thumb.render_job.on_finish
             )
 
         # Show rendered thumbnails
@@ -1662,7 +1662,7 @@ class QtDriver(DriverMixin, QObject):
 
             file_path = file_paths[index]
             self.lib.thumbnail_manager.render_thumbnail(
-                file_path, base_size, ratio, item_thumb.render_job
+                file_path, base_size, ratio, item_thumb.render_job.on_finish
             )
             item_thumb.assign_badge(BadgeType.ARCHIVED, entry.is_archived)
             item_thumb.assign_badge(BadgeType.FAVORITE, entry.is_favorite)

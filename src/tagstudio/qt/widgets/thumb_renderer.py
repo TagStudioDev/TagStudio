@@ -13,7 +13,7 @@ from concurrent.futures import Future, ProcessPoolExecutor
 from copy import deepcopy
 from io import BytesIO
 from pathlib import Path
-from typing import cast
+from typing import Any, Callable, Iterable, cast
 from warnings import catch_warnings
 
 import cv2
@@ -90,7 +90,7 @@ class RenderJob(QObject):
     updated = Signal(float, QPixmap, QSize, Path)
     updated_ratio = Signal(float, float)
 
-    def _callback(
+    def on_finish(
         self,
         timestamp: float,
         file_path: Path,
@@ -128,20 +128,29 @@ class JobType(enum.Enum):
     Thumbnail = 2
 
 
-# TODO: move out duplicated logic in render methods
+# fn(timestamp, file_path, base_size, pixel_ratio, image) -> Any
+Callback = Callable[[float, Path, tuple[int, int], float, Image.Image | None], Any]
+
+
 class ThumbnailManager:
     def __init__(self, library_path: Path) -> None:
         self.cache_folder = library_path / TS_FOLDER_NAME / THUMB_CACHE_NAME
         self.rm = ResourceManager()
         max_workers = int((os.cpu_count() or 2) / 2)
         self._pool = ProcessPoolExecutor(max_workers=max_workers)
-        self._jobs: dict[tuple[JobType, Path], Future] = {}
-        self._callbacks: dict[tuple[JobType, Path], list[tuple[float, RenderJob]]] = {}
+        self._jobs: dict[tuple[JobType, Path], Future[Image.Image | None]] = {}
+        self._callbacks: dict[
+            tuple[JobType, Path],
+            list[tuple[float, Callback]]
+        ] = {}
 
         self._error_cache: dict[tuple[JobType, Path], Future[Image.Image | None]] = {}
 
     def close(self):
         self._pool.shutdown(cancel_futures=True)
+        self._jobs.clear()
+        self._callbacks.clear()
+        self._error_cache.clear()
 
     def cancel_pending_thumbnails(self):
         thumbnail_jobs = []
@@ -152,53 +161,19 @@ class ThumbnailManager:
             job = self._jobs.pop(key)
             job.cancel()
 
-    def render_thumbnail(
-        self, file_path: Path, base_size: tuple[int, int], pixel_ratio: float, callback: RenderJob
-    ):
-        timestamp = time.time()
+    def render_thumbnail(self, file_path: Path, base_size: tuple[int, int], pixel_ratio: float, callback: Callback | None):
+        is_dark_theme = QGuiApplication.styleHints().colorScheme() == Qt.ColorScheme.Dark
         key = (JobType.Thumbnail, file_path)
-        if key in self._callbacks:
-            self._callbacks[key].append((timestamp, callback))
-            return
-        if key in self._error_cache:
-            self._callbacks[key] = [(timestamp, callback)]
-            job = self._error_cache[key]
-            job.add_done_callback(lambda job: self._on_completed(key, base_size, pixel_ratio, job))
-            return
+        fn = _render_thumbnail
+        args = (file_path, base_size, pixel_ratio, is_dark_theme, self.cache_folder)
+        self._queue_job(key, base_size, pixel_ratio, fn, args, callback)
 
+    def render_preview(self, file_path: Path, base_size: tuple[int, int], pixel_ratio: float, callback: Callback | None):
         is_dark_theme = QGuiApplication.styleHints().colorScheme() == Qt.ColorScheme.Dark
-        job = self._pool.submit(
-            _render_thumbnail, file_path, base_size, pixel_ratio, is_dark_theme, self.cache_folder
-        )
-        job.add_done_callback(lambda job: self._on_completed(key, base_size, pixel_ratio, job))
-        self._jobs[key] = job
-        self._callbacks[key] = [(timestamp, callback)]
-
-    def render_preview(
-        self, file_path: Path, base_size: tuple[int, int], pixel_ratio: float, callback: RenderJob
-    ):
-        timestamp = time.time()
         key = (JobType.Preview, file_path)
-        if key in self._callbacks:
-            self._callbacks[key].append((timestamp, callback))
-            return
-        if key in self._error_cache:
-            self._callbacks[key] = [(timestamp, callback)]
-            job = self._error_cache[key]
-            job.add_done_callback(lambda job: self._on_completed(key, base_size, pixel_ratio, job))
-            return
-
-        is_dark_theme = QGuiApplication.styleHints().colorScheme() == Qt.ColorScheme.Dark
-        job = self._pool.submit(
-            _render_preview,
-            file_path,
-            base_size,
-            pixel_ratio,
-            is_dark_theme,
-        )
-        job.add_done_callback(lambda job: self._on_completed(key, base_size, pixel_ratio, job))
-        self._jobs[key] = job
-        self._callbacks[key] = [(timestamp, callback)]
+        fn = _render_preview
+        args = (file_path, base_size, pixel_ratio, is_dark_theme)
+        self._queue_job(key, base_size, pixel_ratio, fn, args, callback)
 
     def render_icon(
         self,
@@ -207,32 +182,38 @@ class ThumbnailManager:
         pixel_ratio: float,
         color: UiColor,
         draw_border: bool,
-        callback: RenderJob,
+        callback: Callback | None,
+    ):
+        is_dark_theme = QGuiApplication.styleHints().colorScheme() == Qt.ColorScheme.Dark
+        key = (JobType.Icon, file_path)
+        fn = _render_icon
+        args = (file_path, color, base_size, pixel_ratio, draw_border, is_dark_theme)
+        self._queue_job(key, base_size, pixel_ratio, fn, args, callback)
+
+    def _queue_job(
+        self,
+        key: tuple[JobType, Path],
+        base_size: tuple[int, int],
+        pixel_ratio: float,
+        fn: Callable,
+        args: Iterable[Any],
+        callback: Callback | None
     ):
         timestamp = time.time()
-        key = (JobType.Icon, file_path)
         if key in self._callbacks:
-            self._callbacks[key].append((timestamp, callback))
-            return
-        if key in self._error_cache:
-            self._callbacks[key] = [(timestamp, callback)]
-            job = self._error_cache[key]
-            job.add_done_callback(lambda job: self._on_completed(key, base_size, pixel_ratio, job))
+            if callback is not None:
+                self._callbacks[key].append((timestamp, callback))
             return
 
-        is_dark_theme = QGuiApplication.styleHints().colorScheme() == Qt.ColorScheme.Dark
-        job = self._pool.submit(
-            _render_icon,
-            file_path,
-            color,
-            base_size,
-            pixel_ratio,
-            draw_border,
-            is_dark_theme,
-        )
+        if key in self._error_cache:
+            job = self._error_cache[key]
+        else:
+            job = self._pool.submit(fn, *args)
+            self._jobs[key] = job
+
+        if callback is not None:
+            self._callbacks[key] = [(timestamp, callback)]
         job.add_done_callback(lambda job: self._on_completed(key, base_size, pixel_ratio, job))
-        self._jobs[key] = job
-        self._callbacks[key] = [(timestamp, callback)]
 
     def _on_completed(
         self,
@@ -250,11 +231,16 @@ class ThumbnailManager:
             if isinstance(error, FileNotFoundError):
                 icon_path = self.rm.get_path("broken_link_icon")
                 assert icon_path
+                new_key = (JobType.Icon, icon_path)
+                if key == new_key:
+                    return
+
                 color = UiColor.RED
                 self.render_icon(icon_path, base_size, pixel_ratio, color, draw_border=True, callback=None)
-                key = (JobType.Icon, icon_path)
-                self._callbacks.setdefault(key, []).extend(callbacks)
+                callbacks = ((ts, lambda t, _p, s, r, i: cb(t, key[1], s, r, i)) for ts, cb in callbacks)
+                self._callbacks.setdefault(new_key, []).extend(callbacks)
             else:
+                logger.error("[ThumbnailManager] Job error", file_path=key[1], error_name=type(error).__name__, error=error)
                 self._error_cache[key] = job
             return
 
@@ -267,24 +253,25 @@ class ThumbnailManager:
             if icon_path is None:
                 icon_path = self.rm.get_path("file_generic")
             assert icon_path
+            new_key = (JobType.Icon, icon_path)
+            if key == new_key:
+                return
+
             theme_color = (
                 UiColor.THEME_LIGHT
                 if QGuiApplication.styleHints().colorScheme() == Qt.ColorScheme.Light
                 else UiColor.THEME_DARK
             )
             self.render_icon(icon_path, base_size, pixel_ratio, theme_color, draw_border=True, callback=None)
-            key = (JobType.Icon, icon_path)
-            self._callbacks.setdefault(key, []).extend(callbacks)
+            callbacks = ((ts, lambda t, _p, s, r, i: cb(t, key[1], s, r, i)) for ts, cb in callbacks)
+            self._callbacks.setdefault(new_key, []).extend(callbacks)
             return
 
         for timestamp, callback in callbacks:
-            # TODO
-            if callback is None:
-                continue
             try:
-                callback._callback(timestamp, key[1], base_size, pixel_ratio, image)
+                callback(timestamp, key[1], base_size, pixel_ratio, image)
             except BaseException as e:
-                logger.error("[ThumbnailManager] Callback error", job=key[0], file_path=key[1], error_name=type(e).__name__, error=e)
+                logger.error("[ThumbnailManager] Callback error", file_path=key[1], error_name=type(e).__name__, error=e)
 
 
 def _render_thumbnail(
@@ -297,7 +284,7 @@ def _render_thumbnail(
     """Render a thumbnail image.
 
     Args:
-        file_path (str | Path): The path of the file to render a thumbnail for.
+        file_path (Path): The path of the file to render a thumbnail for.
         base_size (tuple[int,int]): The unmodified base size of the thumbnail.
         pixel_ratio (float): The screen pixel ratio.
     """
@@ -337,7 +324,7 @@ def _render_preview(
     """Render a preview image.
 
     Args:
-        file_path (str | Path): The path of the file to render a thumbnail for.
+        file_path (Path): The path of the file to render a thumbnail for.
         base_size (tuple[int,int]): The unmodified base size of the thumbnail.
         pixel_ratio (float): The screen pixel ratio.
     """
@@ -345,14 +332,14 @@ def _render_preview(
     if image is None:
         return None
 
-    mask = _render_mask(image.size, pixel_ratio)  # TODO
+    mask = _render_mask(image.size, pixel_ratio, radius_scale=1)
     bg = Image.new("RGBA", image.size, (0, 0, 0, 0))
     bg.paste(image, mask=mask.getchannel(0))
     return bg
 
 
 def _render_icon(
-    path: Path,
+    file_path: Path,
     color: UiColor,
     size: tuple[int, int],
     pixel_ratio: float,
@@ -362,13 +349,13 @@ def _render_icon(
     """Render a thumbnail icon.
 
     Args:
-        name (str): The name of the icon resource.
+        file_path (Path): The path of the file to render a thumbnail for.
         color (UiColor): The color to use for the icon.
         size (tuple[int,int]): The size of the icon.
         pixel_ratio (float): The screen pixel ratio.
         draw_border (bool): Option to draw a border.
     """
-    icon: Image.Image = Image.open(path)
+    icon: Image.Image = Image.open(file_path)
     border_factor: int = 5
     smooth_factor: int = math.ceil(2 * pixel_ratio)
     radius_factor: int = 8
@@ -417,13 +404,6 @@ def _render_icon(
         size=size,
         color="#00FF00",
     )
-
-    # Get icon by name
-    # icon: Image.Image = self.rm.get(name)
-    # if not icon:
-    #    icon = self.rm.get("file_generic")
-    #    if not icon:
-    #        icon = Image.new(mode="RGBA", size=(32, 32), color="magenta")
 
     # Resize icon to fit icon_ratio
     icon = icon.resize((math.ceil(size[0] // icon_ratio), math.ceil(size[1] // icon_ratio)))
