@@ -58,7 +58,7 @@ from tagstudio.core.constants import (
     TS_FOLDER_NAME,
 )
 from tagstudio.core.exceptions import NoRendererError
-from tagstudio.core.media_types import MediaCategories
+from tagstudio.core.media_types import MediaCategories, MediaType
 from tagstudio.core.palette import ColorType, UiColor, get_ui_color
 from tagstudio.core.utils.encoding import detect_char_encoding
 from tagstudio.qt import cache_manager
@@ -71,6 +71,7 @@ from tagstudio.qt.helpers.text_wrapper import wrap_full_text
 from tagstudio.qt.helpers.vendored.pydub.audio_segment import (
     _AudioSegment as AudioSegment,
 )
+from tagstudio.qt.resource_manager import ResourceManager
 
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 
@@ -87,7 +88,7 @@ except ImportError:
 
 class RenderJob(QObject):
     updated = Signal(float, QPixmap, QSize, Path)
-    updated_ratio = Signal(float, QSize)
+    updated_ratio = Signal(float, float)
 
     def _callback(
         self,
@@ -100,6 +101,7 @@ class RenderJob(QObject):
         if image is None:
             pixmap = QPixmap()
             qsize = QSize(*base_size)
+            ratio = 1.0
         else:
             adj_size = math.ceil(max(base_size[0], base_size[1]) * pixel_ratio)
             qim = ImageQt.ImageQt(image)
@@ -109,6 +111,7 @@ class RenderJob(QObject):
                 math.ceil(adj_size / pixel_ratio),
                 math.ceil(image.size[1] / pixel_ratio),
             )
+            ratio = image.size[0] / image.size[1]
 
         self.updated.emit(
             timestamp,
@@ -116,7 +119,7 @@ class RenderJob(QObject):
             qsize,
             file_path,
         )
-        self.updated_ratio.emit(image.size[0] / image.size[1])
+        self.updated_ratio.emit(timestamp, ratio)
 
 
 class JobType(enum.Enum):
@@ -125,13 +128,17 @@ class JobType(enum.Enum):
     Thumbnail = 2
 
 
+# TODO: move out duplicated logic in render methods
 class ThumbnailManager:
     def __init__(self, library_path: Path) -> None:
         self.cache_folder = library_path / TS_FOLDER_NAME / THUMB_CACHE_NAME
+        self.rm = ResourceManager()
         max_workers = int((os.cpu_count() or 2) / 2)
         self._pool = ProcessPoolExecutor(max_workers=max_workers)
         self._jobs: dict[tuple[JobType, Path], Future] = {}
         self._callbacks: dict[tuple[JobType, Path], list[tuple[float, RenderJob]]] = {}
+
+        self._error_cache: dict[tuple[JobType, Path], Future[Image.Image | None]] = {}
 
     def close(self):
         self._pool.shutdown(cancel_futures=True)
@@ -153,6 +160,11 @@ class ThumbnailManager:
         if key in self._callbacks:
             self._callbacks[key].append((timestamp, callback))
             return
+        if key in self._error_cache:
+            self._callbacks[key] = [(timestamp, callback)]
+            job = self._error_cache[key]
+            job.add_done_callback(lambda job: self._on_completed(key, base_size, pixel_ratio, job))
+            return
 
         is_dark_theme = QGuiApplication.styleHints().colorScheme() == Qt.ColorScheme.Dark
         job = self._pool.submit(
@@ -169,6 +181,11 @@ class ThumbnailManager:
         key = (JobType.Preview, file_path)
         if key in self._callbacks:
             self._callbacks[key].append((timestamp, callback))
+            return
+        if key in self._error_cache:
+            self._callbacks[key] = [(timestamp, callback)]
+            job = self._error_cache[key]
+            job.add_done_callback(lambda job: self._on_completed(key, base_size, pixel_ratio, job))
             return
 
         is_dark_theme = QGuiApplication.styleHints().colorScheme() == Qt.ColorScheme.Dark
@@ -193,9 +210,14 @@ class ThumbnailManager:
         callback: RenderJob,
     ):
         timestamp = time.time()
-        key = (JobType.Preview, file_path)
+        key = (JobType.Icon, file_path)
         if key in self._callbacks:
             self._callbacks[key].append((timestamp, callback))
+            return
+        if key in self._error_cache:
+            self._callbacks[key] = [(timestamp, callback)]
+            job = self._error_cache[key]
+            job.add_done_callback(lambda job: self._on_completed(key, base_size, pixel_ratio, job))
             return
 
         is_dark_theme = QGuiApplication.styleHints().colorScheme() == Qt.ColorScheme.Dark
@@ -222,12 +244,47 @@ class ThumbnailManager:
         callbacks = self._callbacks.pop(key)
         if job.cancelled():
             return
+
+        if error := job.exception():
+            # Render unlinked
+            if isinstance(error, FileNotFoundError):
+                icon_path = self.rm.get_path("broken_link_icon")
+                assert icon_path
+                color = UiColor.RED
+                self.render_icon(icon_path, base_size, pixel_ratio, color, draw_border=True, callback=None)
+                key = (JobType.Icon, icon_path)
+                self._callbacks.setdefault(key, []).extend(callbacks)
+            else:
+                self._error_cache[key] = job
+            return
+
         image = job.result()
+        if image is None:
+            self._error_cache[key] = job
+            # Render file_ext icon
+            name = _get_resource_id(key[1])
+            icon_path = self.rm.get_path(name)
+            if icon_path is None:
+                icon_path = self.rm.get_path("file_generic")
+            assert icon_path
+            theme_color = (
+                UiColor.THEME_LIGHT
+                if QGuiApplication.styleHints().colorScheme() == Qt.ColorScheme.Light
+                else UiColor.THEME_DARK
+            )
+            self.render_icon(icon_path, base_size, pixel_ratio, theme_color, draw_border=True, callback=None)
+            key = (JobType.Icon, icon_path)
+            self._callbacks.setdefault(key, []).extend(callbacks)
+            return
+
         for timestamp, callback in callbacks:
+            # TODO
+            if callback is None:
+                continue
             try:
                 callback._callback(timestamp, key[1], base_size, pixel_ratio, image)
-            except:
-                pass
+            except BaseException as e:
+                logger.error("[ThumbnailManager] Callback error", job=key[0], file_path=key[1], error_name=type(e).__name__, error=e)
 
 
 def _render_thumbnail(
@@ -250,8 +307,7 @@ def _render_thumbnail(
     cache_path = cache_manager.get_cache_path(cache_folder, file_path)
     if cache_path.exists():
         image = Image.open(cache_path)
-
-    if image is None:
+    else:
         # TODO: Audio waveforms are dynamically sized based on the base_size, so hardcoding
         # the resolution breaks that.
         image = _render(file_path, (256, 256), 1.0, False, is_dark_theme, cache_folder=cache_folder)
@@ -262,7 +318,7 @@ def _render_thumbnail(
     # Apply the mask and edge
     image = _resize_image(image, (adj_size, adj_size))
     mask = _render_mask((adj_size, adj_size), pixel_ratio, radius_scale=1.0)
-    edge: tuple[Image.Image, Image.Image] = _render_edge((adj_size, adj_size), pixel_ratio)
+    edge = _render_edge((adj_size, adj_size), pixel_ratio)
     image = _apply_edge(
         four_corner_gradient(image, (adj_size, adj_size), mask),
         edge,
@@ -494,15 +550,13 @@ def _render(
                 cache_path.parent.mkdir(parents=True, exist_ok=True)
                 image.save(cache_path, mode="RGBA")
 
-    except FileNotFoundError:
-        image = None
     except (
         UnidentifiedImageError,
         DecompressionBombError,
         ValueError,
         ChildProcessError,
     ) as e:
-        logger.error("Couldn't render thumbnail", filepath=file_path, error=type(e).__name__)
+        logger.error("[ThumbnailManager] Couldn't render thumbnail", filepath=file_path, error_name=type(e).__name__, error=e)
         image = None
     except NoRendererError:
         image = None
@@ -1325,3 +1379,36 @@ def _resize_image(image: Image.Image, size: tuple[int, int]) -> Image.Image:
     image = image.resize((new_x, new_y), resample=resampling_method)
 
     return image
+
+def _get_resource_id(url: Path) -> str:
+    """Return the name of the icon resource to use for a file type.
+
+    Special terms will return special resources.
+
+    Args:
+        url (Path): The file url to assess. "$LOADING" will return the loading graphic.
+    """
+    ext = url.suffix.lower()
+    types: set[MediaType] = MediaCategories.get_types(ext, mime_fallback=True)
+
+    # Manual icon overrides.
+    if ext in {".gif", ".vtf"}:
+        return MediaType.IMAGE
+    elif ext in {".dll", ".pyc", ".o", ".dylib"}:
+        return MediaType.PROGRAM
+    elif ext in {".mscz"}:  # noqa: SIM114
+        return MediaType.TEXT
+
+    # Loop though the specific (non-IANA) categories and return the string
+    # name of the first matching category found.
+    for cat in MediaCategories.ALL_CATEGORIES:
+        if not cat.is_iana and cat.media_type in types:
+            return cat.media_type.value
+
+    # If the type is broader (IANA registered) then search those types.
+    for cat in MediaCategories.ALL_CATEGORIES:
+        if cat.is_iana and cat.media_type in types:
+            return cat.media_type.value
+
+    return "file_generic"
+

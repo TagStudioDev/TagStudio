@@ -100,13 +100,13 @@ class PreviewThumb(QWidget):
 
         self.render_job = RenderJob()
         self.render_job.updated.connect(
-            lambda ts, i, s: (
+            lambda ts, i, s, p: (
                 self.preview_img.setIcon(i),
                 self._set_mp_max_size(i.size()),
             )
         )
         self.render_job.updated_ratio.connect(
-            lambda ratio: (
+            lambda ts, ratio: (
                 self.set_image_ratio(ratio),
                 self.update_image_size(
                     (
