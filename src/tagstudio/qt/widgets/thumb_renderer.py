@@ -23,7 +23,6 @@ from PySide6.QtCore import (
     Signal,
 )
 from PySide6.QtGui import QGuiApplication, QPixmap
-from PySide6.QtPdf import QPdfDocument # TODO app crashes without this import?
 
 from tagstudio.core.constants import (
     THUMB_CACHE_NAME,

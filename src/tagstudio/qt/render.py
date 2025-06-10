@@ -32,6 +32,17 @@ from PIL import (
 )
 from PIL.Image import DecompressionBombError
 from pillow_heif import register_avif_opener, register_heif_opener
+from PySide6.QtCore import (
+    QBuffer,
+    QFile,
+    QFileDevice,
+    QIODeviceBase,
+    QSizeF,
+    Qt,
+)
+from PySide6.QtGui import QImage, QPainter
+from PySide6.QtPdf import QPdfDocument, QPdfDocumentRenderOptions
+from PySide6.QtSvg import QSvgRenderer
 from vtf2img import Parser
 
 from tagstudio.core.constants import (
