@@ -404,7 +404,7 @@ class ItemThumb(FlowWidget):
                 self.count_badge.setHidden(True)
 
     def set_filename_text(self, filename: Path):
-        if filename.is_relative_to(self.lib.library_dir):
+        if self.lib.library_dir and filename.is_relative_to(self.lib.library_dir):
             self.set_item_path(filename)
             self.file_label.setText(str(filename.name))
         else:

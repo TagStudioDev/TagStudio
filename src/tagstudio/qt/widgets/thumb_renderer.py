@@ -133,21 +133,28 @@ class JobType(enum.Enum):
 Callback = Callable[[float, Path, tuple[int, int], float, Image.Image | None], Any]
 
 
+def init_worker():
+    import os
+
+    os.setpriority(os.PRIO_PROCESS, 0, 10)
+
+
+def init_pool() -> ProcessPoolExecutor:
+    import multiprocessing
+
+    context = multiprocessing.get_context(method="spawn")
+    max_workers = int((os.cpu_count() or 2) / 2)
+    return ProcessPoolExecutor(max_workers=max_workers, mp_context=context, initializer=init_worker)
+
+
 class ThumbnailManager:
     def __init__(self, library_path: Path) -> None:
         self.cache_folder = library_path / TS_FOLDER_NAME / THUMB_CACHE_NAME
         self.rm = ResourceManager()
-        max_workers = int((os.cpu_count() or 2) / 2)
 
-        def init():
-            import os
-
-            os.setpriority(os.PRIO_PROCESS, 0, 10)
-
-        self._pool = ProcessPoolExecutor(max_workers=max_workers, initializer=init)
+        self._pool = init_pool()
         self._jobs: dict[tuple[JobType, Path], Future[Image.Image | None]] = {}
         self._callbacks: dict[tuple[JobType, Path], list[tuple[float, Callback]]] = {}
-
         self._error_cache: dict[tuple[JobType, Path], Future[Image.Image | None]] = {}
 
     def close(self):
