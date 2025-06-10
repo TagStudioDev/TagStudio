@@ -337,6 +337,7 @@ class Library:
                 return tag.name
 
     def open_library(self, library_dir: Path, storage_path: Path | None = None) -> LibraryStatus:
+        self.thumbnail_manager = ThumbnailManager(library_dir)
         is_new: bool = True
         if storage_path == ":memory:":
             self.storage_path = storage_path
@@ -353,8 +354,6 @@ class Library:
                         message="[JSON] Legacy v9.4 library requires conversion to v9.5+",
                         json_migration_req=True,
                     )
-
-        self.thumbnail_manager = ThumbnailManager(library_dir)
 
         return self.open_sqlite_library(library_dir, is_new)
 

@@ -7,7 +7,7 @@ import math
 import os
 import struct
 import zipfile
-from concurrent.futures import ProcessPoolExecutor
+from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
 from copy import deepcopy
 from io import BytesIO
 from pathlib import Path
@@ -87,12 +87,17 @@ def init_worker():
     os.setpriority(os.PRIO_PROCESS, 0, 10)
 
 
-def init_pool() -> ProcessPoolExecutor:
+def init_pool() -> ProcessPoolExecutor | ThreadPoolExecutor:
     import multiprocessing
 
-    context = multiprocessing.get_context(method="spawn")
     max_workers = int((os.cpu_count() or 2) / 2)
-    pool = ProcessPoolExecutor(max_workers=max_workers, mp_context=context, initializer=init_worker)
+    if "PYTEST_CURRENT_TEST" in os.environ:
+        pool = ThreadPoolExecutor(max_workers=max_workers, initializer=init_worker)
+    else:
+        context = multiprocessing.get_context(method="spawn")
+        pool = ProcessPoolExecutor(
+            max_workers=max_workers, mp_context=context, initializer=init_worker
+        )
     for _ in range(max_workers):
         pool.submit(_dummy)
     return pool

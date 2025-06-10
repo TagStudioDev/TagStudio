@@ -29,9 +29,14 @@ from tagstudio.core.constants import (
     TS_FOLDER_NAME,
 )
 from tagstudio.core.palette import UiColor
-from tagstudio.qt.render import init_pool, _render_icon, _render_preview, _render_thumbnail, _get_resource_id
+from tagstudio.qt.render import (
+    _get_resource_id,
+    _render_icon,
+    _render_preview,
+    _render_thumbnail,
+    init_pool,
+)
 from tagstudio.qt.resource_manager import ResourceManager
-
 
 logger = structlog.get_logger(__name__)
 
