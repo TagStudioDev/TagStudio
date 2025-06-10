@@ -1645,8 +1645,9 @@ class QtDriver(DriverMixin, QObject):
 
             if loading_path is None:
                 continue
+            draw_border = False
             self.lib.thumbnail_manager.render_icon(
-                loading_path, base_size, ratio, color, True, item_thumb.render_job.on_finish
+                loading_path, base_size, ratio, color, draw_border, item_thumb.render_job.on_finish
             )
 
         # Show rendered thumbnails

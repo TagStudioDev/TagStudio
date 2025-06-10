@@ -9,11 +9,12 @@ import os
 import struct
 import time
 import zipfile
+from collections.abc import Callable, Iterable
 from concurrent.futures import Future, ProcessPoolExecutor
 from copy import deepcopy
 from io import BytesIO
 from pathlib import Path
-from typing import Any, Callable, Iterable, cast
+from typing import Any, cast
 from warnings import catch_warnings
 
 import cv2
@@ -137,12 +138,15 @@ class ThumbnailManager:
         self.cache_folder = library_path / TS_FOLDER_NAME / THUMB_CACHE_NAME
         self.rm = ResourceManager()
         max_workers = int((os.cpu_count() or 2) / 2)
-        self._pool = ProcessPoolExecutor(max_workers=max_workers)
+
+        def init():
+            import os
+
+            os.setpriority(os.PRIO_PROCESS, 0, 10)
+
+        self._pool = ProcessPoolExecutor(max_workers=max_workers, initializer=init)
         self._jobs: dict[tuple[JobType, Path], Future[Image.Image | None]] = {}
-        self._callbacks: dict[
-            tuple[JobType, Path],
-            list[tuple[float, Callback]]
-        ] = {}
+        self._callbacks: dict[tuple[JobType, Path], list[tuple[float, Callback]]] = {}
 
         self._error_cache: dict[tuple[JobType, Path], Future[Image.Image | None]] = {}
 
@@ -154,21 +158,33 @@ class ThumbnailManager:
 
     def cancel_pending_thumbnails(self):
         thumbnail_jobs = []
-        for job_type, file_path in self._jobs.keys():
+        for job_type, file_path in self._jobs:
             if job_type == JobType.Thumbnail:
                 thumbnail_jobs.append((job_type, file_path))
         for key in thumbnail_jobs:
             job = self._jobs.pop(key)
             job.cancel()
 
-    def render_thumbnail(self, file_path: Path, base_size: tuple[int, int], pixel_ratio: float, callback: Callback | None):
+    def render_thumbnail(
+        self,
+        file_path: Path,
+        base_size: tuple[int, int],
+        pixel_ratio: float,
+        callback: Callback | None,
+    ):
         is_dark_theme = QGuiApplication.styleHints().colorScheme() == Qt.ColorScheme.Dark
         key = (JobType.Thumbnail, file_path)
         fn = _render_thumbnail
         args = (file_path, base_size, pixel_ratio, is_dark_theme, self.cache_folder)
         self._queue_job(key, base_size, pixel_ratio, fn, args, callback)
 
-    def render_preview(self, file_path: Path, base_size: tuple[int, int], pixel_ratio: float, callback: Callback | None):
+    def render_preview(
+        self,
+        file_path: Path,
+        base_size: tuple[int, int],
+        pixel_ratio: float,
+        callback: Callback | None,
+    ):
         is_dark_theme = QGuiApplication.styleHints().colorScheme() == Qt.ColorScheme.Dark
         key = (JobType.Preview, file_path)
         fn = _render_preview
@@ -197,7 +213,7 @@ class ThumbnailManager:
         pixel_ratio: float,
         fn: Callable,
         args: Iterable[Any],
-        callback: Callback | None
+        callback: Callback | None,
     ):
         timestamp = time.time()
         if key in self._callbacks:
@@ -222,6 +238,8 @@ class ThumbnailManager:
         pixel_ratio: float,
         job: Future[Image.Image | None],
     ):
+        if key in self._jobs:
+            self._jobs.pop(key)
         callbacks = self._callbacks.pop(key)
         if job.cancelled():
             return
@@ -236,11 +254,21 @@ class ThumbnailManager:
                     return
 
                 color = UiColor.RED
-                self.render_icon(icon_path, base_size, pixel_ratio, color, draw_border=True, callback=None)
-                callbacks = ((ts, lambda t, _p, s, r, i: cb(t, key[1], s, r, i)) for ts, cb in callbacks)
-                self._callbacks.setdefault(new_key, []).extend(callbacks)
+                self.render_icon(
+                    icon_path, base_size, pixel_ratio, color, draw_border=True, callback=None
+                )
+                o_callbacks = (
+                    (ts, lambda t, _p, s, r, i, cb=cb: cb(t, key[1], s, r, i))
+                    for ts, cb in callbacks
+                )
+                self._callbacks.setdefault(new_key, []).extend(o_callbacks)
             else:
-                logger.error("[ThumbnailManager] Job error", file_path=key[1], error_name=type(error).__name__, error=error)
+                logger.error(
+                    "[ThumbnailManager] Job error",
+                    file_path=key[1],
+                    error_name=type(error).__name__,
+                    error=error,
+                )
                 self._error_cache[key] = job
             return
 
@@ -262,16 +290,25 @@ class ThumbnailManager:
                 if QGuiApplication.styleHints().colorScheme() == Qt.ColorScheme.Light
                 else UiColor.THEME_DARK
             )
-            self.render_icon(icon_path, base_size, pixel_ratio, theme_color, draw_border=True, callback=None)
-            callbacks = ((ts, lambda t, _p, s, r, i: cb(t, key[1], s, r, i)) for ts, cb in callbacks)
-            self._callbacks.setdefault(new_key, []).extend(callbacks)
+            self.render_icon(
+                icon_path, base_size, pixel_ratio, theme_color, draw_border=True, callback=None
+            )
+            o_callbacks = (
+                (ts, lambda t, _p, s, r, i, cb=cb: cb(t, key[1], s, r, i)) for ts, cb in callbacks
+            )
+            self._callbacks.setdefault(new_key, []).extend(o_callbacks)
             return
 
         for timestamp, callback in callbacks:
             try:
                 callback(timestamp, key[1], base_size, pixel_ratio, image)
             except BaseException as e:
-                logger.error("[ThumbnailManager] Callback error", file_path=key[1], error_name=type(e).__name__, error=e)
+                logger.error(
+                    "[ThumbnailManager] Callback error",
+                    file_path=key[1],
+                    error_name=type(e).__name__,
+                    error=e,
+                )
 
 
 def _render_thumbnail(
@@ -287,6 +324,8 @@ def _render_thumbnail(
         file_path (Path): The path of the file to render a thumbnail for.
         base_size (tuple[int,int]): The unmodified base size of the thumbnail.
         pixel_ratio (float): The screen pixel ratio.
+        is_dark_theme (bool): Determines what background colors should be used.
+        cache_folder (Path): The path to look for and save cached thumbnails.
     """
     adj_size = math.ceil(max(base_size[0], base_size[1]) * pixel_ratio)
 
@@ -297,7 +336,10 @@ def _render_thumbnail(
     else:
         # TODO: Audio waveforms are dynamically sized based on the base_size, so hardcoding
         # the resolution breaks that.
-        image = _render(file_path, (256, 256), 1.0, False, is_dark_theme, cache_folder=cache_folder)
+        is_preview = False
+        image = _render(
+            file_path, (256, 256), 1.0, is_preview, is_dark_theme, cache_folder=cache_folder
+        )
 
     if image is None:
         return None
@@ -327,8 +369,10 @@ def _render_preview(
         file_path (Path): The path of the file to render a thumbnail for.
         base_size (tuple[int,int]): The unmodified base size of the thumbnail.
         pixel_ratio (float): The screen pixel ratio.
+        is_dark_theme (bool): Determines what background colors should be used.
     """
-    image = _render(file_path, base_size, pixel_ratio, True, is_dark_theme)
+    is_preview = True
+    image = _render(file_path, base_size, pixel_ratio, is_preview, is_dark_theme)
     if image is None:
         return None
 
@@ -354,6 +398,7 @@ def _render_icon(
         size (tuple[int,int]): The size of the icon.
         pixel_ratio (float): The screen pixel ratio.
         draw_border (bool): Option to draw a border.
+        is_dark_theme (bool): Determines what background colors should be used.
     """
     icon: Image.Image = Image.open(file_path)
     border_factor: int = 5
@@ -536,7 +581,12 @@ def _render(
         ValueError,
         ChildProcessError,
     ) as e:
-        logger.error("[ThumbnailManager] Couldn't render thumbnail", filepath=file_path, error_name=type(e).__name__, error=e)
+        logger.error(
+            "[ThumbnailManager] Couldn't render thumbnail",
+            filepath=file_path,
+            error_name=type(e).__name__,
+            error=e,
+        )
         image = None
     except NoRendererError:
         image = None
@@ -671,6 +721,7 @@ def _apply_overlay_color(image: Image.Image, color: UiColor, is_dark_theme: bool
     Args:
         image (Image.Image): The image to apply an overlay to.
         color (UiColor): The name of the ColorType color to use.
+        is_dark_theme (bool): Determines what background colors should be used.
     """
     bg_color: str = (
         get_ui_color(ColorType.DARK_ACCENT, color)
@@ -969,6 +1020,7 @@ def _font_short_thumb(filepath: Path, size: int, is_dark_theme: bool) -> Image.I
     Args:
         filepath (Path): The path of the file.
         size (tuple[int,int]): The size of the thumbnail.
+        is_dark_theme (bool): Determines what background colors should be used.
     """
     im: Image.Image | None = None
     try:
@@ -1360,6 +1412,7 @@ def _resize_image(image: Image.Image, size: tuple[int, int]) -> Image.Image:
 
     return image
 
+
 def _get_resource_id(url: Path) -> str:
     """Return the name of the icon resource to use for a file type.
 
@@ -1391,4 +1444,3 @@ def _get_resource_id(url: Path) -> str:
             return cat.media_type.value
 
     return "file_generic"
-
