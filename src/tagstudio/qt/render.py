@@ -311,7 +311,7 @@ def _render(
         elif MediaCategories.is_ext_in_category(
             ext, MediaCategories.PLAINTEXT_TYPES, mime_fallback=True
         ):
-            image = _text_thumb(file_path)
+            image = _text_thumb(file_path, is_dark_theme)
         # Fonts ========================================================
         elif MediaCategories.is_ext_in_category(
             ext, MediaCategories.FONT_TYPES, mime_fallback=True
@@ -341,7 +341,7 @@ def _render(
         elif MediaCategories.is_ext_in_category(
             ext, MediaCategories.BLENDER_TYPES, mime_fallback=True
         ):
-            image = _blender(file_path)
+            image = _blender(file_path, is_dark_theme)
         # PDF ==========================================================
         elif MediaCategories.is_ext_in_category(ext, MediaCategories.PDF_TYPES, mime_fallback=True):
             image = _pdf_thumb(file_path, adj_size)
