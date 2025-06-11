@@ -29,4 +29,5 @@ def test_refresh_missing_files(library: Library):
 
     # `bar.md` should be relinked to new correct path
     results = library.search_library(BrowsingState.from_path("bar.md"), page_size=500)
-    assert results[0].path == Path("bar.md")
+    entries = library.get_entries(results.ids)
+    assert entries[0].path == Path("bar.md")

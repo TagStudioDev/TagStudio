@@ -7,7 +7,7 @@ import re
 import shutil
 import time
 import unicodedata
-from collections.abc import Iterator
+from collections.abc import Iterable, Iterator
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from os import makedirs
@@ -170,26 +170,26 @@ class SearchResult:
 
     Attributes:
         total_count(int): total number of items for given query, might be different than len(items).
-        items(list[Entry]): for current page (size matches filter.page_size).
+        ids(list[int]): for current page (size matches filter.page_size).
     """
 
     total_count: int
-    items: list[Entry]
+    ids: list[int]
 
     def __bool__(self) -> bool:
         """Boolean evaluation for the wrapper.
 
-        :return: True if there are items in the result.
+        :return: True if there are ids in the result.
         """
         return self.total_count > 0
 
     def __len__(self) -> int:
-        """Return the total number of items in the result."""
-        return len(self.items)
+        """Return the total number of ids in the result."""
+        return len(self.ids)
 
-    def __getitem__(self, index: int) -> Entry:
-        """Allow to access items via index directly on the wrapper."""
-        return self.items[index]
+    def __getitem__(self, index: int) -> int:
+        """Allow to access ids via index directly on the wrapper."""
+        return self.ids[index]
 
 
 @dataclass
@@ -611,7 +611,7 @@ class Library:
 
     def apply_db9_filename_population(self, session: Session):
         """Populate the filename column introduced in DB_VERSION 9."""
-        for entry in self.get_entries():
+        for entry in self.all_entries():
             session.merge(entry).filename = entry.path.name
         session.commit()
         logger.info("[Library][Migration] Populated filename column in entries table")
@@ -692,6 +692,13 @@ class Library:
                 entry.tags = tags
             return entry
 
+    def get_entries(self, entry_ids: Iterable[int]) -> list[Entry]:
+        with Session(self.engine) as session:
+            statement = select(Entry).where(Entry.id.in_(entry_ids))
+            entries = dict((e.id, e) for e in  session.scalars(statement))
+            return [entries[id] for id in entry_ids]
+
+
     def get_entries_full(self, entry_ids: list[int] | set[int]) -> Iterator[Entry]:
         """Load entry and join with all joins and all tags."""
         with Session(self.engine) as session:
@@ -751,7 +758,7 @@ class Library:
         with Session(self.engine) as session:
             return session.scalar(select(func.count(Entry.id)))
 
-    def get_entries(self, with_joins: bool = False) -> Iterator[Entry]:
+    def all_entries(self, with_joins: bool = False) -> Iterator[Entry]:
         """Load entries without joins."""
         with Session(self.engine) as session:
             stmt = select(Entry)
@@ -868,7 +875,7 @@ class Library:
         assert self.engine
 
         with Session(self.engine, expire_on_commit=False) as session:
-            statement = select(Entry)
+            statement = select(Entry.id, func.count().over())
 
             if search.ast:
                 start_time = time.time()
@@ -885,13 +892,6 @@ class Library:
                 statement = statement.where(Entry.suffix.notin_(extensions))
             elif extensions:
                 statement = statement.where(Entry.suffix.in_(extensions))
-
-            statement = statement.distinct(Entry.id)
-            start_time = time.time()
-            query_count = select(func.count()).select_from(statement.alias("entries"))
-            count_all: int = session.execute(query_count).scalar() or 0
-            end_time = time.time()
-            logger.info(f"finished counting ({format_timespan(end_time - start_time)})")
 
             sort_on: ColumnExpressionArgument = Entry.id
             match search.sorting_mode:
@@ -912,13 +912,18 @@ class Library:
             )
 
             start_time = time.time()
-            items = session.scalars(statement).fetchall()
+            rows = session.execute(statement).fetchall()
+            ids = []
+            count = 0
+            for row in rows:
+                id, count = row._tuple()
+                ids.append(id)
             end_time = time.time()
             logger.info(f"SQL Execution finished ({format_timespan(end_time - start_time)})")
 
             res = SearchResult(
-                total_count=count_all,
-                items=list(items),
+                total_count=count,
+                ids=ids,
             )
 
             session.expunge_all()

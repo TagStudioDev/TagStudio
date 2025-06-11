@@ -134,12 +134,12 @@ def search_library() -> Library:
 
 @pytest.fixture
 def entry_min(library):
-    yield next(library.get_entries())
+    yield next(library.all_entries())
 
 
 @pytest.fixture
 def entry_full(library: Library):
-    yield next(library.get_entries(with_joins=True))
+    yield next(library.all_entries(with_joins=True))
 
 
 @pytest.fixture
@@ -168,7 +168,7 @@ def qt_driver(qtbot, library, library_dir: Path):
         driver.lib = library
         # TODO - downsize this method and use it
         # driver.start()
-        driver.frame_content = list(library.get_entries())
+        driver.frame_content = list(library.all_entries())
         yield driver
 
 
