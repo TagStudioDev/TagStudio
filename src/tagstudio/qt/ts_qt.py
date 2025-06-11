@@ -1425,7 +1425,8 @@ class QtDriver(DriverMixin, QObject):
         logger.info("[QtDriver] Loading Entries...")
         # TODO: The full entries with joins don't need to be grabbed here.
         # Use a method that only selects the frame content but doesn't include the joins.
-        entries: list[Entry] = list(self.lib.get_entries_full(self.frame_content))
+        entries = self.lib.get_entries(self.frame_content)
+        tag_entries = self.lib.get_tag_entries([TAG_ARCHIVED, TAG_FAVORITE], self.frame_content)
         logger.info("[QtDriver] Building Filenames...")
         filenames: list[Path] = [self.lib.library_dir / e.path for e in entries]
         logger.info("[QtDriver] Done! Processing ItemThumbs...")
@@ -1471,27 +1472,8 @@ class QtDriver(DriverMixin, QObject):
                     (time.time(), filenames[index], base_size, ratio, is_loading, is_grid_thumb),
                 )
             )
-            item_thumb.assign_badge(BadgeType.ARCHIVED, entry.is_archived)
-            item_thumb.assign_badge(BadgeType.FAVORITE, entry.is_favorite)
-            item_thumb.update_clickable(
-                clickable=(
-                    lambda checked=False, item_id=entry.id: self.toggle_item_selection(
-                        item_id,
-                        append=(
-                            QGuiApplication.keyboardModifiers()
-                            == Qt.KeyboardModifier.ControlModifier
-                        ),
-                        bridge=(
-                            QGuiApplication.keyboardModifiers() == Qt.KeyboardModifier.ShiftModifier
-                        ),
-                    )
-                )
-            )
-            item_thumb.delete_action.triggered.connect(
-                lambda checked=False, f=filenames[index], e_id=entry.id: self.delete_files_callback(
-                    f, e_id
-                )
-            )
+            item_thumb.assign_badge(BadgeType.ARCHIVED, entry.id in tag_entries[TAG_ARCHIVED])
+            item_thumb.assign_badge(BadgeType.FAVORITE, entry.id in tag_entries[TAG_FAVORITE])
 
             # Restore Selected Borders
             is_selected = item_thumb.item_id in self.selected
@@ -1576,7 +1558,7 @@ class QtDriver(DriverMixin, QObject):
         )
 
         # update page content
-        self.frame_content = [item.id for item in results.items]
+        self.frame_content = results.ids
         self.update_thumbs()
 
         # update pagination
