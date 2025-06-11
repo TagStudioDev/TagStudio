@@ -695,9 +695,8 @@ class Library:
     def get_entries(self, entry_ids: Iterable[int]) -> list[Entry]:
         with Session(self.engine) as session:
             statement = select(Entry).where(Entry.id.in_(entry_ids))
-            entries = dict((e.id, e) for e in  session.scalars(statement))
+            entries = dict((e.id, e) for e in session.scalars(statement))
             return [entries[id] for id in entry_ids]
-
 
     def get_entries_full(self, entry_ids: list[int] | set[int]) -> Iterator[Entry]:
         """Load entry and join with all joins and all tags."""
@@ -752,6 +751,19 @@ class Library:
             session.expunge(entry)
             make_transient(entry)
             return entry
+
+    def get_tag_entries(
+        self, tag_ids: Iterable[int], entry_ids: Iterable[int]
+    ) -> dict[int, set[int]]:
+        """Returns a dict of tag_id->(entry_ids with tag_id)."""
+        tag_entries: dict[int, set[int]] = dict((id, set()) for id in tag_ids)
+        with Session(self.engine) as session:
+            statement = select(TagEntry).where(
+                and_(TagEntry.tag_id.in_(tag_ids), TagEntry.entry_id.in_(entry_ids))
+            )
+            for tag_entry in session.scalars(statement).fetchall():
+                tag_entries[tag_entry.tag_id].add(tag_entry.entry_id)
+        return tag_entries
 
     @property
     def entries_count(self) -> int:
