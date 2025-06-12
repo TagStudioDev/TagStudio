@@ -2,7 +2,8 @@
 # Licensed under the GPL-3.0 License.
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
-from typing import TYPE_CHECKING, Callable, override
+from collections.abc import Callable
+from typing import TYPE_CHECKING, override
 
 import structlog
 from PySide6 import QtCore, QtGui
@@ -123,7 +124,7 @@ class TagColorManager(QWidget):
                         self.setup_color_groups(),
                         ()
                         if len(self.driver.selected) < 1
-                        else self.driver.preview_panel.fields.update_from_entry(
+                        else self.driver.main_window.preview_panel.fields.update_from_entry(
                             self.driver.selected[0], update_badges=False
                         ),
                     )
@@ -140,7 +141,7 @@ class TagColorManager(QWidget):
                                 self.setup_color_groups(),
                                 ()
                                 if len(self.driver.selected) < 1
-                                else self.driver.preview_panel.fields.update_from_entry(
+                                else self.driver.main_window.preview_panel.fields.update_from_entry(
                                     self.driver.selected[0], update_badges=False
                                 ),
                             ),

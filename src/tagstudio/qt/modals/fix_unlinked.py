@@ -63,7 +63,7 @@ class FixUnlinkedEntriesModal(QWidget):
         self.relink_class.done.connect(
             # refresh the grid
             lambda: (
-                self.driver.filter_items(),
+                self.driver.update_browsing_state(),
                 self.refresh_missing_files(),
             )
         )
@@ -78,7 +78,7 @@ class FixUnlinkedEntriesModal(QWidget):
             lambda: (
                 self.set_missing_count(),
                 # refresh the grid
-                self.driver.filter_items(),
+                self.driver.update_browsing_state(),
             )
         )
         self.delete_button.clicked.connect(self.delete_modal.show)

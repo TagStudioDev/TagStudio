@@ -51,7 +51,7 @@ class TagDatabasePanel(TagSearchPanel):
                     alias_ids=panel.alias_ids,
                 ),
                 self.modal.hide(),
-                self.update_tags(),
+                self.update_tags(self.search_field.text()),
             )
         )
         self.modal.show()

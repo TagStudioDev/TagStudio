@@ -98,15 +98,17 @@ class TagWidget(QWidget):
     on_click = Signal()
     on_edit = Signal()
 
+    tag: Tag | None
+
     def __init__(
         self,
         tag: Tag | None,
         has_edit: bool,
         has_remove: bool,
         library: "Library | None" = None,
-        on_remove_callback: FunctionType = None,
-        on_click_callback: FunctionType = None,
-        on_edit_callback: FunctionType = None,
+        on_remove_callback: FunctionType | None = None,
+        on_click_callback: FunctionType | None = None,
+        on_edit_callback: FunctionType | None = None,
     ) -> None:
         super().__init__()
         self.tag = tag
@@ -123,10 +125,18 @@ class TagWidget(QWidget):
         self.bg_button = QPushButton(self)
         self.bg_button.setFlat(True)
 
+        # add callbacks
+        if on_remove_callback is not None:
+            self.on_remove.connect(on_remove_callback)
+        if on_click_callback is not None:
+            self.on_click.connect(on_click_callback)
+        if on_edit_callback is not None:
+            self.on_edit.connect(on_edit_callback)
+
+        # add edit action
         if has_edit:
             edit_action = QAction(self)
             edit_action.setText(Translations["generic.edit"])
-            edit_action.triggered.connect(on_edit_callback)
             edit_action.triggered.connect(self.on_edit.emit)
             self.bg_button.addAction(edit_action)
         # if on_click_callback:

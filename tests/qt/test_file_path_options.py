@@ -79,11 +79,11 @@ def test_file_path_display(
     for i, part in enumerate(display_path.parts):
         part_ = part.strip(os.path.sep)
         if i != len(display_path.parts) - 1:
-            file_str += f"{"\u200b".join(part_)}{separator}</b>"
+            file_str += f"{'\u200b'.join(part_)}{separator}</b>"
         else:
             if file_str != "":
                 file_str += "<br>"
-            file_str += f"<b>{"\u200b".join(part_)}</b>"
+            file_str += f"<b>{'\u200b'.join(part_)}</b>"
 
     # Assert the file path is displayed correctly
     assert panel.file_attrs.file_label.text() == file_str
@@ -121,21 +121,21 @@ def test_title_update(
     qt_driver.settings.show_filepath = filepath_option
     menu_bar = QMenuBar()
 
-    qt_driver.open_recent_library_menu = QMenu(menu_bar)
-    qt_driver.manage_file_ext_action = QAction(menu_bar)
-    qt_driver.save_library_backup_action = QAction(menu_bar)
-    qt_driver.close_library_action = QAction(menu_bar)
-    qt_driver.refresh_dir_action = QAction(menu_bar)
-    qt_driver.tag_manager_action = QAction(menu_bar)
-    qt_driver.color_manager_action = QAction(menu_bar)
-    qt_driver.new_tag_action = QAction(menu_bar)
-    qt_driver.fix_dupe_files_action = QAction(menu_bar)
-    qt_driver.fix_unlinked_entries_action = QAction(menu_bar)
-    qt_driver.clear_thumb_cache_action = QAction(menu_bar)
-    qt_driver.folders_to_tags_action = QAction(menu_bar)
+    qt_driver.main_window.menu_bar.open_recent_library_menu = QMenu(menu_bar)
+    qt_driver.main_window.menu_bar.manage_file_ext_action = QAction(menu_bar)
+    qt_driver.main_window.menu_bar.save_library_backup_action = QAction(menu_bar)
+    qt_driver.main_window.menu_bar.close_library_action = QAction(menu_bar)
+    qt_driver.main_window.menu_bar.refresh_dir_action = QAction(menu_bar)
+    qt_driver.main_window.menu_bar.tag_manager_action = QAction(menu_bar)
+    qt_driver.main_window.menu_bar.color_manager_action = QAction(menu_bar)
+    qt_driver.main_window.menu_bar.new_tag_action = QAction(menu_bar)
+    qt_driver.main_window.menu_bar.fix_unlinked_entries_action = QAction(menu_bar)
+    qt_driver.main_window.menu_bar.fix_dupe_files_action = QAction(menu_bar)
+    qt_driver.main_window.menu_bar.clear_thumb_cache_action = QAction(menu_bar)
+    qt_driver.main_window.menu_bar.folders_to_tags_action = QAction(menu_bar)
 
     # Trigger the update
-    qt_driver.init_library(library_dir, open_status)
+    qt_driver._init_library(library_dir, open_status)
 
     # Assert the title is updated correctly
     qt_driver.main_window.setWindowTitle.assert_called_with(expected_title(library_dir, base_title))

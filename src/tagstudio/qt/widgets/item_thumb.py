@@ -205,11 +205,11 @@ class ItemThumb(FlowWidget):
         self.thumb_button = ThumbButton(self.thumb_container, thumb_size)
         self.renderer = ThumbRenderer(self.lib)
         self.renderer.updated.connect(
-            lambda timestamp, image, size, filename, ext: (
+            lambda timestamp, image, size, filename: (
                 self.update_thumb(timestamp, image=image),
                 self.update_size(timestamp, size=size),
                 self.set_filename_text(filename),
-                self.set_extension(ext),  # type: ignore
+                self.set_extension(filename),
             )
         )
         self.thumb_button.setFlat(True)
@@ -365,13 +365,13 @@ class ItemThumb(FlowWidget):
             self.item_type_badge.setHidden(False)
         self.mode = mode
 
-    def set_extension(self, ext: str) -> None:
+    def set_extension(self, filename: Path) -> None:
+        ext = filename.suffix
         if ext and ext.startswith(".") is False:
             ext = "." + ext
         media_types: set[MediaType] = MediaCategories.get_types(ext)
         if (
-            ext
-            and not MediaCategories.is_ext_in_category(ext, MediaCategories.IMAGE_TYPES)
+            not MediaCategories.is_ext_in_category(ext, MediaCategories.IMAGE_TYPES)
             or MediaCategories.is_ext_in_category(ext, MediaCategories.IMAGE_RAW_TYPES)
             or MediaCategories.is_ext_in_category(ext, MediaCategories.IMAGE_VECTOR_TYPES)
             or MediaCategories.is_ext_in_category(ext, MediaCategories.ADOBE_PHOTOSHOP_TYPES)
@@ -386,7 +386,7 @@ class ItemThumb(FlowWidget):
             ]
         ):
             self.ext_badge.setHidden(False)
-            self.ext_badge.setText(ext.upper()[1:])
+            self.ext_badge.setText(ext.upper()[1:] or filename.stem.upper())
             if MediaType.VIDEO in media_types or MediaType.AUDIO in media_types:
                 self.count_badge.setHidden(False)
         else:
@@ -498,9 +498,11 @@ class ItemThumb(FlowWidget):
         toggle_value: bool,
         tag_id: int,
     ):
-        if entry_id in self.driver.selected and self.driver.preview_panel.is_open:
+        if entry_id in self.driver.selected and self.driver.main_window.preview_panel.is_open:
             if len(self.driver.selected) == 1:
-                self.driver.preview_panel.fields.update_toggled_tag(tag_id, toggle_value)
+                self.driver.main_window.preview_panel.fields.update_toggled_tag(
+                    tag_id, toggle_value
+                )
             else:
                 pass
 
