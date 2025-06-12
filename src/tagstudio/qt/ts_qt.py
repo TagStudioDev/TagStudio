@@ -621,7 +621,7 @@ class QtDriver(DriverMixin, QObject):
         increase_thumbnail_size_action.setShortcut(
             QtCore.QKeyCombination(
                 QtCore.Qt.KeyboardModifier(QtCore.Qt.KeyboardModifier.ControlModifier),
-                QtCore.Qt.Key.Key_Plus,
+                QtCore.Qt.Key.Key_Equal,
             )
         )
         increase_thumbnail_size_action.setToolTip("Ctrl+=")
