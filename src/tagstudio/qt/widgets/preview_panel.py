@@ -142,9 +142,8 @@ class PreviewPanel(QWidget):
 
             # One Item Selected
             elif len(self.driver.selected) == 1:
-                entry: Entry | None = self.lib.get_entry(self.driver.selected[0])
+                entry: Entry = self.lib.get_entry(self.driver.selected[0])
                 entry_id = self.driver.selected[0]
-                assert self.lib.library_dir is not None and entry is not None
                 filepath: Path = self.lib.library_dir / entry.path
 
                 if update_preview:
@@ -190,7 +189,7 @@ class PreviewPanel(QWidget):
         )
         self.add_field_button.clicked.connect(self.add_field_modal.show)
 
-    def update_add_tag_button(self, entry_id: int | None = None):
+    def update_add_tag_button(self, entry_id: int = None):
         with catch_warnings(record=True):
             self.tag_search_panel.tag_chosen.disconnect()
             self.add_tag_button.clicked.disconnect()
