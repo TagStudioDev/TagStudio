@@ -44,7 +44,7 @@ class PanelModal(QWidget):
         self.title_widget.setObjectName("fieldTitle")
         self.title_widget.setWordWrap(True)
         self.title_widget.setStyleSheet("font-weight:bold;font-size:14px;padding-top: 6px")
-        self.set_title(title)
+        self.title_widget.setText(title)
         self.title_widget.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         self.button_container = QWidget()
@@ -106,9 +106,6 @@ class PanelModal(QWidget):
         elif self.done_button:
             self.done_button.click()
         event.accept()
-
-    def set_title(self, title: str) -> None:
-        self.title_widget.setText(title)
 
 
 class PanelWidget(QWidget):

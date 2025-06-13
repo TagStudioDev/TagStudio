@@ -363,12 +363,12 @@ class QtDriver(DriverMixin, QObject):
         # Initialize the Tag Manager panel
         self.tag_manager_panel = PanelModal(
             widget=TagDatabasePanel(self, self.lib),
+            title=Translations["tag_manager.title"],
             done_callback=lambda: self.main_window.preview_panel.update_widgets(
                 update_preview=False
             ),
             has_save=False,
         )
-        self.tag_manager_panel.set_title(Translations["tag_manager.title"])
         self.tag_manager_panel.setWindowTitle(Translations["tag_manager.title"])
 
         # Initialize the Color Group Manager panel
@@ -662,9 +662,9 @@ class QtDriver(DriverMixin, QObject):
         panel = FileExtensionModal(self.lib)
         self.file_extension_panel = PanelModal(
             panel,
+            Translations["ignore_list.title"],
             has_save=True,
         )
-        self.file_extension_panel.set_title(Translations["ignore_list.title"])
         self.file_extension_panel.setWindowTitle(Translations["ignore_list.title"])
         self.file_extension_panel.saved.connect(
             lambda: (panel.save(), self.update_browsing_state())
@@ -785,9 +785,9 @@ class QtDriver(DriverMixin, QObject):
         panel = BuildTagPanel(self.lib)
         self.modal = PanelModal(
             panel,
+            Translations["tag.new"],
             has_save=True,
         )
-        self.modal.set_title(Translations["tag.new"])
         self.modal.setWindowTitle(Translations["tag.add"])
 
         self.modal.saved.connect(
