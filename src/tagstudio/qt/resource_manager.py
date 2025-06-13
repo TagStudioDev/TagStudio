@@ -85,18 +85,19 @@ class ResourceManager:
 
             data: TData | None = None
             try:
-                if mode == "r":
-                    data = file_path.read_text()
+                match mode:
+                    case "r":
+                        data = file_path.read_text()
 
-                elif mode == "rb":
-                    data = file_path.read_bytes()
+                    case "rb":
+                        data = file_path.read_bytes()
 
-                elif mode == "pil":
-                    data = Image.open(file_path)
-                    data.load()
+                    case "pil":
+                        data = Image.open(file_path)
+                        data.load()
 
-                elif mode == "qpixmap":
-                    data = QPixmap(file_path.as_posix())
+                    case "qpixmap":
+                        data = QPixmap(file_path.as_posix())
 
             except FileNotFoundError:
                 logger.error("[ResourceManager][ERROR]: Could not find resource: ", path=file_path)
