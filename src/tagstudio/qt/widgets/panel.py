@@ -136,7 +136,7 @@ class PanelWidget(QWidget):
         logger.warning(f"[PanelModal] add_callback not implemented for {self.__class__.__name__}")
 
     @override
-    def keyPressEvent(self, event: QtGui.QKeyEvent) -> None:  # noqa N802
+    def keyPressEvent(self, event: QtGui.QKeyEvent) -> None:
         if event.key() == QtCore.Qt.Key.Key_Escape:
             if self.panel_cancel_button:
                 self.panel_cancel_button.click()
