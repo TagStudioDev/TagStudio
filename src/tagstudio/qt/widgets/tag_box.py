@@ -4,6 +4,7 @@
 
 
 import typing
+from collections.abc import Iterable
 
 import structlog
 from PySide6.QtCore import Signal
@@ -37,6 +38,8 @@ class TagBoxWidget(FieldWidget):
     ) -> None:
         super().__init__(title)
 
+        self.edit_modal: PanelModal
+
         self.tags: set[Tag] = tags
         self.driver = (
             driver  # Used for creating tag click callbacks that search entries for that tag.
@@ -49,7 +52,7 @@ class TagBoxWidget(FieldWidget):
 
         self.set_tags(self.tags)
 
-    def set_tags(self, tags: typing.Iterable[Tag]):
+    def set_tags(self, tags: Iterable[Tag]) -> None:
         tags_ = sorted(list(tags), key=lambda tag: self.driver.lib.tag_display_name(tag.id))
         logger.info("[TagBoxWidget] Tags:", tags=tags)
         while self.base_layout.itemAt(0):
