@@ -4,34 +4,44 @@
 
 
 from pathlib import Path
-from typing import Any
+from typing import Literal, TypedDict
 
 import structlog
 import ujson
-from PIL import Image, ImageQt
+from PIL import Image, ImageFile
 from PySide6.QtGui import QPixmap
 
 logger = structlog.get_logger(__name__)
 
 
+class TResourceJsonAttrDict(TypedDict):
+    path: str
+    mode: Literal["qpixmap", "pil", "rb", "r"]
+
+
+TData = bytes | str | ImageFile.ImageFile | QPixmap
+
+RESOURCE_FOLDER: Path = Path(__file__).parents[1]
+
+
 class ResourceManager:
     """A resource manager for retrieving resources."""
 
-    _map: dict = {}
-    _cache: dict[str, Any] = {}
-    _initialized: bool = False
-    _res_folder: Path = Path(__file__).parents[1]
+    _map: dict[str, TResourceJsonAttrDict] = {}
+    _cache: dict[str, TData] = {}
+    _instance: "ResourceManager | None" = None
 
-    def __init__(self) -> None:
-        # Load JSON resource map
-        if not ResourceManager._initialized:
+    def __new__(cls):
+        if ResourceManager._instance is None:
+            ResourceManager._instance = super().__new__(cls)
+            # Load JSON resource map
             with open(Path(__file__).parent / "resources.json", encoding="utf-8") as f:
                 ResourceManager._map = ujson.load(f)
                 logger.info(
                     "[ResourceManager] Resources Registered:",
                     count=len(ResourceManager._map.items()),
                 )
-            ResourceManager._initialized = True
+        return ResourceManager._instance
 
     @staticmethod
     def get_path(id: str) -> Path | None:
@@ -43,57 +53,61 @@ class ResourceManager:
         Returns:
             Path: The resource path if found, else None.
         """
-        res: dict = ResourceManager._map.get(id)
-        if res:
-            return ResourceManager._res_folder / "resources" / res.get("path")
+        res: TResourceJsonAttrDict | None = ResourceManager._map.get(id)
+        if res is not None:
+            return RESOURCE_FOLDER / "resources" / res.get("path")
         return None
 
-    def get(self, id: str) -> Any:
+    def get(self, id: str) -> TData | None:
         """Get a resource from the ResourceManager.
-
-        This can include resources inside and outside of QResources, and will return
-        theme-respecting variations of resources if available.
 
         Args:
             id (str): The name of the resource.
 
         Returns:
-            Any: The resource if found, else None.
+            bytes: When the data is in byte format.
+            str: When the data is in str format.
+            ImageFile: When the data is in PIL.ImageFile.ImageFile format.
+            QPixmap: When the data is in PySide6.QtGui.QPixmap format.
+            None: If resource couldn't load.
         """
-        cached_res = ResourceManager._cache.get(id)
-        if cached_res:
+        cached_res: TData | None = ResourceManager._cache.get(id)
+        if cached_res is not None:
             return cached_res
+
         else:
-            res: dict = ResourceManager._map.get(id)
-            if not res:
-                return None
-            try:
-                if res.get("mode") in ["r", "rb"]:
-                    with open(
-                        (ResourceManager._res_folder / "resources" / res.get("path")),
-                        res.get("mode"),
-                    ) as f:
-                        data = f.read()
-                        if res.get("mode") == "rb":
-                            data = bytes(data)
-                        ResourceManager._cache[id] = data
-                        return data
-                elif res and res.get("mode") == "pil":
-                    data = Image.open(ResourceManager._res_folder / "resources" / res.get("path"))
-                    return data
-                elif res.get("mode") in ["qpixmap"]:
-                    data = Image.open(ResourceManager._res_folder / "resources" / res.get("path"))
-                    qim = ImageQt.ImageQt(data)
-                    pixmap = QPixmap.fromImage(qim)
-                    ResourceManager._cache[id] = pixmap
-                    return pixmap
-            except FileNotFoundError:
-                path: Path = ResourceManager._res_folder / "resources" / res.get("path")
-                logger.error("[ResourceManager][ERROR]: Could not find resource: ", path=path)
+            res: TResourceJsonAttrDict | None = ResourceManager._map.get(id)
+            if res is None:
                 return None
 
-    def __getattr__(self, __name: str) -> Any:
+            file_path: Path = RESOURCE_FOLDER / "resources" / res.get("path")
+            mode = res.get("mode")
+
+            data: TData | None = None
+            try:
+                match mode:
+                    case "r":
+                        data = file_path.read_text()
+
+                    case "rb":
+                        data = file_path.read_bytes()
+
+                    case "pil":
+                        data = Image.open(file_path)
+                        data.load()
+
+                    case "qpixmap":
+                        data = QPixmap(file_path.as_posix())
+
+            except FileNotFoundError:
+                logger.error("[ResourceManager][ERROR]: Could not find resource: ", path=file_path)
+
+        if data is not None:
+            ResourceManager._cache[id] = data
+        return data
+
+    def __getattr__(self, __name: str) -> TData:
         attr = self.get(__name)
-        if attr:
+        if attr is not None:
             return attr
         raise AttributeError(f"Attribute {id} not found")
