@@ -63,7 +63,11 @@ class ResourceManager:
             id (str): The name of the resource.
 
         Returns:
-            Any: The resource if found, else None.
+            bytes: When the data is in byte format.
+            str: When the data is in str format.
+            ImageFile: When the data is in PIL.ImageFile.ImageFile format.
+            QPixmap: When the data is in PySide6.QtGui.QPixmap format.
+            None: If resource couldn't load.
         """
         cached_res: TData | None = ResourceManager._cache.get(id)
         if cached_res is not None:
