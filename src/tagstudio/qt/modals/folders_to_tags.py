@@ -90,8 +90,10 @@ def reverse_tag(library: Library, tag: Tag, items: list[Tag] | None) -> list[Tag
         items.reverse()
         return items
 
+    subtag = None  # to avoid subtag unbound error
     for subtag_id in tag.parent_ids:
         subtag = library.get_tag(subtag_id)
+    assert subtag is not None
     return reverse_tag(library, subtag, items)
 
 
@@ -132,7 +134,7 @@ def generate_preview_data(library: Library) -> BranchData:
         if branch:
             has_tag = False
             for tag in entry.tags:
-                if tag.name == branch.tag.name:
+                if branch.tag and tag.name == branch.tag.name:
                     has_tag = True
                     break
             if not has_tag:
@@ -216,20 +218,19 @@ class FoldersToTagsModal(QWidget):
         self.apply_button.setMinimumWidth(100)
         self.apply_button.clicked.connect(self.on_apply)
 
-        self.showEvent = self.on_open  # type: ignore
-
         self.root_layout.addWidget(self.title_widget)
         self.root_layout.addWidget(self.desc_widget)
         self.root_layout.addWidget(self.open_close_button_w)
         self.root_layout.addWidget(self.scroll_area)
         self.root_layout.addWidget(self.apply_button, alignment=Qt.AlignmentFlag.AlignCenter)
 
-    def on_apply(self, event):
+    def on_apply(self):
         folders_to_tags(self.library)
         self.close()
         self.driver.main_window.preview_panel.update_widgets(update_preview=False)
 
-    def on_open(self, event):
+    @override
+    def showEvent(self, event: QtGui.QShowEvent):
         for i in reversed(range(self.scroll_layout.count())):
             self.scroll_layout.itemAt(i).widget().setParent(None)
 
@@ -271,6 +272,7 @@ class TreeItem(QWidget):
 
         self.label = QLabel()
         self.tag_layout.addWidget(self.label)
+        assert data.tag is not None and parent_tag is not None
         self.tag_widget = ModifiedTagWidget(data.tag, parent_tag)
         self.tag_widget.bg_button.clicked.connect(lambda: self.hide_show())
         self.tag_layout.addWidget(self.tag_widget)
@@ -323,10 +325,7 @@ class ModifiedTagWidget(QWidget):
 
         self.bg_button = QPushButton(self)
         self.bg_button.setFlat(True)
-        if parent_tag is not None:
-            text = f"{tag.name} ({parent_tag.name})".replace("&", "&&")
-        else:
-            text = tag.name.replace("&", "&&")
+        text = f"{tag.name} ({parent_tag.name})".replace("&", "&&")
         self.bg_button.setText(text)
         self.bg_button.setContextMenuPolicy(Qt.ContextMenuPolicy.ActionsContextMenu)
 
