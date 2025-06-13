@@ -145,5 +145,4 @@ class PanelWidget(QWidget):
             elif self.panel_done_button:
                 self.panel_done_button.click()
         else:  # Other key presses
-            pass
-        return super().keyPressEvent(event)
+            super().keyPressEvent(event)
