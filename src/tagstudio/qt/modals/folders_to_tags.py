@@ -90,11 +90,11 @@ def reverse_tag(library: Library, tag: Tag, items: list[Tag] | None) -> list[Tag
         items.reverse()
         return items
 
-    subtag = None  # to avoid subtag unbound error
-    for subtag_id in tag.parent_ids:
-        subtag = library.get_tag(subtag_id)
-    assert subtag is not None
-    return reverse_tag(library, subtag, items)
+    parent_tag = None  # to avoid subtag unbound error
+    for parent_tag_id in tag.parent_ids:
+        parent_tag = library.get_tag(parent_tag_id)
+    assert parent_tag is not None
+    return reverse_tag(library, parent_tag, items)
 
 
 # =========== UI ===========
