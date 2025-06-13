@@ -169,7 +169,7 @@ class BuildTagPanel(PanelWidget):
         tsp = TagSearchPanel(self.lib, exclude_ids)
         tsp.tag_chosen.connect(lambda x: self.add_parent_tag_callback(x))
         self.add_tag_modal = PanelModal(tsp)
-        self.add_tag_modal.setTitle(Translations["tag.parent_tags.add"])
+        self.add_tag_modal.set_title(Translations["tag.parent_tags.add"])
         self.add_tag_modal.setWindowTitle(Translations["tag.parent_tags.add"])
         self.parent_tags_add_button.clicked.connect(self.add_tag_modal.show)
 

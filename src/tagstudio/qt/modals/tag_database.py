@@ -37,7 +37,7 @@ class TagDatabasePanel(TagSearchPanel):
             panel,
             has_save=True,
         )
-        self.modal.setTitle(Translations["tag.new"])
+        self.modal.set_title(Translations["tag.new"])
         self.modal.setWindowTitle(Translations["tag.new"])
         if name.strip():
             panel.name_field.setText(name)
