@@ -21,25 +21,27 @@ class TResourceJsonAttrDict(TypedDict):
 
 TData = bytes | str | ImageFile.ImageFile | QPixmap
 
+RESOURCE_FOLDER: Path = Path(__file__).parents[1]
+
 
 class ResourceManager:
     """A resource manager for retrieving resources."""
 
     _map: dict[str, TResourceJsonAttrDict] = {}
     _cache: dict[str, TData] = {}
-    _initialized: bool = False
-    _res_folder: Path = Path(__file__).parents[1]
+    _instance: "ResourceManager | None" = None
 
-    def __init__(self) -> None:
-        # Load JSON resource map
-        if not ResourceManager._initialized:
+    def __new__(cls):
+        if ResourceManager._instance is None:
+            ResourceManager._instance = super().__new__(cls)
+            # Load JSON resource map
             with open(Path(__file__).parent / "resources.json", encoding="utf-8") as f:
                 ResourceManager._map = ujson.load(f)
                 logger.info(
                     "[ResourceManager] Resources Registered:",
                     count=len(ResourceManager._map.items()),
                 )
-            ResourceManager._initialized = True
+        return ResourceManager._instance
 
     @staticmethod
     def get_path(id: str) -> Path | None:
@@ -53,7 +55,7 @@ class ResourceManager:
         """
         res: TResourceJsonAttrDict | None = ResourceManager._map.get(id)
         if res is not None:
-            return ResourceManager._res_folder / "resources" / res.get("path")
+            return RESOURCE_FOLDER / "resources" / res.get("path")
         return None
 
     def get(self, id: str) -> TData | None:
@@ -78,7 +80,7 @@ class ResourceManager:
             if res is None:
                 return None
 
-            file_path: Path = ResourceManager._res_folder / "resources" / res.get("path")
+            file_path: Path = RESOURCE_FOLDER / "resources" / res.get("path")
             mode = res.get("mode")
 
             data: TData | None = None
