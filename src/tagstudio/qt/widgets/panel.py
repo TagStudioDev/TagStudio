@@ -25,7 +25,7 @@ class PanelModal(QWidget):
         self,
         widget: "PanelWidget",
         title: str = "",
-        window_title: str = "",
+        window_title: str | None = None,
         done_callback: Callable[[], None] | None = None,
         save_callback: Callable[[str], None] | None = None,
         has_save: bool = False,
@@ -35,7 +35,7 @@ class PanelModal(QWidget):
         # [Cancel] [Save]
         super().__init__()
         self.widget = widget
-        self.setWindowTitle(window_title)
+        self.setWindowTitle(title if window_title is None else window_title)
         self.setWindowModality(Qt.WindowModality.ApplicationModal)
         self.root_layout = QVBoxLayout(self)
         self.root_layout.setContentsMargins(6, 0, 6, 6)

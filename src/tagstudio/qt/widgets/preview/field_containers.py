@@ -408,7 +408,6 @@ class FieldContainers(QWidget):
                 modal = PanelModal(
                     DatetimePicker(self.driver, field.value or dt.now()),
                     title=f"Edit {field.type.name}",
-                    window_title=f"Edit {field.type.name}",
                     save_callback=(
                         lambda content: (
                             self.update_field(field, content),  # type: ignore
