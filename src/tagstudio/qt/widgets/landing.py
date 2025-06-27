@@ -84,13 +84,12 @@ class LandingWidget(QWidget):
         self.landing_layout.addWidget(self.open_button, alignment=Qt.AlignmentFlag.AlignCenter)
         self.landing_layout.addWidget(self.status_label, alignment=Qt.AlignmentFlag.AlignCenter)
 
-    def update_logo_color(self, style: str = "mono"):
+    def update_logo_color(self, style: typing.Literal["mono", "gradient"] = "mono"):
         """Update the color of the TagStudio logo.
 
         Args:
             style (str): = The style of the logo. Either "mono" or "gradient".
         """
-        logo_im: Image.Image = None
         if style == "mono":
             logo_im = theme_fg_overlay(self.logo_raw)
         elif style == "gradient":

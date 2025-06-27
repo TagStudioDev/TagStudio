@@ -178,9 +178,9 @@ class TagSearchPanel(PanelWidget):
         from tagstudio.qt.modals.build_tag import BuildTagPanel  # here due to circular imports
 
         self.build_tag_modal: BuildTagPanel = BuildTagPanel(self.lib)
-        self.add_tag_modal: PanelModal = PanelModal(self.build_tag_modal, has_save=True)
-        self.add_tag_modal.setTitle(Translations["tag.new"])
-        self.add_tag_modal.setWindowTitle(Translations["tag.add"])
+        self.add_tag_modal: PanelModal = PanelModal(
+            self.build_tag_modal, Translations["tag.new"], Translations["tag.add"], has_save=True
+        )
 
         self.build_tag_modal.name_field.setText(name)
         self.add_tag_modal.saved.connect(on_tag_modal_saved)
@@ -365,10 +365,10 @@ class TagSearchPanel(PanelWidget):
         self.edit_modal = PanelModal(
             build_tag_panel,
             self.lib.tag_display_name(tag.id),
+            Translations["tag.edit"],
             done_callback=(self.update_tags(self.search_field.text())),
             has_save=True,
         )
-        self.edit_modal.setWindowTitle(Translations["tag.edit"])
 
         self.edit_modal.saved.connect(lambda: callback(build_tag_panel))
         self.edit_modal.show()
