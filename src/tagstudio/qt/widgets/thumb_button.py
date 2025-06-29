@@ -136,5 +136,6 @@ class ThumbButton(QPushButtonWrapper):
         return super().leaveEvent(event)
 
     def set_selected(self, value: bool) -> None:  # noqa: N802
-        self.selected = value
-        self.repaint()
+        if value != self.selected:
+            self.selected = value
+            self.repaint()
