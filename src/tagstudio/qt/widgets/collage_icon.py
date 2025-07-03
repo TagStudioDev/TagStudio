@@ -29,14 +29,16 @@ class CollageIconRenderer(QObject):
 
     def render(
         self,
-        entry_id,
+        entry_id: int,
         size: tuple[int, int],
-        data_tint_mode,
-        data_only_mode,
-        keep_aspect,
+        data_tint_mode: bool,
+        data_only_mode: bool,
+        keep_aspect: bool,
     ):
         entry = self.lib.get_entry(entry_id)
-        filepath = self.lib.library_dir / entry.path
+        lib_dir = self.lib.library_dir
+        assert lib_dir is not None and entry is not None
+        filepath = lib_dir / entry.path
         color: str = ""
 
         try:
@@ -57,7 +59,7 @@ class CollageIconRenderer(QObject):
                 ext: str = filepath.suffix.lower()
                 if MediaCategories.is_ext_in_category(ext, MediaCategories.IMAGE_TYPES):
                     try:
-                        with Image.open(str(self.lib.library_dir / entry.path)) as pic:
+                        with Image.open(filepath) as pic:
                             if keep_aspect:
                                 pic.thumbnail(size)
                             else:
