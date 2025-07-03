@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [9.5.2] - 2024-03-06
+## [9.5.2] - 2025-03-06
 
 ### Added
 
@@ -85,7 +85,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Updated Toki Pona (80%)
     - [@Math-Bee](https://github.com/Math-Bee)
 
-## [9.5.1] - 2024-03-06
+## [9.5.1] - 2025-03-06
 
 ### Fixed
 
@@ -113,7 +113,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - docs: fix category typo by [@salem404](https://github.com/salem404) in [#834](https://github.com/TagStudioDev/TagStudio/pull/834)
 
-## [9.5.0] - 2024-03-03
+## [9.5.0] - 2025-03-03
 
 ### Added
 
