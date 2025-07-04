@@ -11,7 +11,7 @@ import structlog
 import toml
 from pydantic import BaseModel, Field
 
-from tagstudio.core.enums import ShowFilepathOption
+from tagstudio.core.enums import ShowFilepathOption, TagClickActionOption
 
 if platform.system() == "Windows":
     DEFAULT_GLOBAL_SETTINGS_PATH = (
@@ -50,6 +50,7 @@ class GlobalSettings(BaseModel):
     page_size: int = Field(default=100)
     show_filepath: ShowFilepathOption = Field(default=ShowFilepathOption.DEFAULT)
     theme: Theme = Field(default=Theme.SYSTEM)
+    tag_click_action: TagClickActionOption = Field(default=TagClickActionOption.DEFAULT)
 
     date_format: str = Field(default="%x")
     hour_format: bool = Field(default=True)
@@ -79,7 +80,8 @@ class GlobalSettings(BaseModel):
         with open(path, "w") as f:
             toml.dump(self.model_dump(), f, encoder=TomlEnumEncoder())
 
-    def format_datetime(self, dt: datetime) -> str:
+    @property
+    def datetime_format(self) -> str:
         date_format = self.date_format
         is_24h = self.hour_format
         hour_format = "%H:%M:%S" if is_24h else "%I:%M:%S %p"
@@ -94,5 +96,7 @@ class GlobalSettings(BaseModel):
             hour_format = hour_format.replace("%H", f"%{zero_padding_symbol}H").replace(
                 "%I", f"%{zero_padding_symbol}I"
             )
+        return f"{date_format}, {hour_format}"
 
-        return datetime.strftime(dt, f"{date_format}, {hour_format}")
+    def format_datetime(self, dt: datetime) -> str:
+        return datetime.strftime(dt, self.datetime_format)

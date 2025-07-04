@@ -17,7 +17,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from tagstudio.core.enums import ShowFilepathOption
+from tagstudio.core.enums import ShowFilepathOption, TagClickActionOption
 from tagstudio.core.global_settings import Theme
 from tagstudio.qt.translations import DEFAULT_TRANSLATION, LANGUAGES, Translations
 from tagstudio.qt.widgets.panel import PanelModal, PanelWidget
@@ -25,17 +25,11 @@ from tagstudio.qt.widgets.panel import PanelModal, PanelWidget
 if TYPE_CHECKING:
     from tagstudio.qt.ts_qt import QtDriver
 
-FILEPATH_OPTION_MAP: dict[ShowFilepathOption, str] = {
-    ShowFilepathOption.SHOW_FULL_PATHS: Translations["settings.filepath.option.full"],
-    ShowFilepathOption.SHOW_RELATIVE_PATHS: Translations["settings.filepath.option.relative"],
-    ShowFilepathOption.SHOW_FILENAMES_ONLY: Translations["settings.filepath.option.name"],
-}
+FILEPATH_OPTION_MAP: dict[ShowFilepathOption, str] = {}
 
-THEME_MAP: dict[Theme, str] = {
-    Theme.DARK: Translations["settings.theme.dark"],
-    Theme.LIGHT: Translations["settings.theme.light"],
-    Theme.SYSTEM: Translations["settings.theme.system"],
-}
+THEME_MAP: dict[Theme, str] = {}
+
+TAG_CLICK_ACTION_MAP: dict[TagClickActionOption, str] = {}
 
 DATE_FORMAT_MAP: dict[str, str] = {
     "%d/%m/%y": "21/08/24",
@@ -61,6 +55,29 @@ class SettingsPanel(PanelWidget):
 
     def __init__(self, driver: "QtDriver"):
         super().__init__()
+        # set these "constants" because language will be loaded from config shortly after startup
+        # and we want to use the current language for the dropdowns
+        global FILEPATH_OPTION_MAP, THEME_MAP, TAG_CLICK_ACTION_MAP
+        FILEPATH_OPTION_MAP = {
+            ShowFilepathOption.SHOW_FULL_PATHS: Translations["settings.filepath.option.full"],
+            ShowFilepathOption.SHOW_RELATIVE_PATHS: Translations[
+                "settings.filepath.option.relative"
+            ],
+            ShowFilepathOption.SHOW_FILENAMES_ONLY: Translations["settings.filepath.option.name"],
+        }
+        THEME_MAP = {
+            Theme.DARK: Translations["settings.theme.dark"],
+            Theme.LIGHT: Translations["settings.theme.light"],
+            Theme.SYSTEM: Translations["settings.theme.system"],
+        }
+        TAG_CLICK_ACTION_MAP = {
+            TagClickActionOption.OPEN_EDIT: Translations["settings.tag_click_action.open_edit"],
+            TagClickActionOption.SET_SEARCH: Translations["settings.tag_click_action.set_search"],
+            TagClickActionOption.ADD_TO_SEARCH: Translations[
+                "settings.tag_click_action.add_to_search"
+            ],
+        }
+
         self.driver = driver
         self.setMinimumSize(400, 300)
 
@@ -158,12 +175,26 @@ class SettingsPanel(PanelWidget):
         self.theme_combobox = QComboBox()
         for k in THEME_MAP:
             self.theme_combobox.addItem(THEME_MAP[k], k)
-        theme: Theme = self.driver.settings.theme
+        theme = self.driver.settings.theme
         if theme not in THEME_MAP:
             theme = Theme.DEFAULT
         self.theme_combobox.setCurrentIndex(list(THEME_MAP.keys()).index(theme))
         self.theme_combobox.currentIndexChanged.connect(self.__update_restart_label)
         form_layout.addRow(Translations["settings.theme.label"], self.theme_combobox)
+
+        # Tag Click Action
+        self.tag_click_action_combobox = QComboBox()
+        for k in TAG_CLICK_ACTION_MAP:
+            self.tag_click_action_combobox.addItem(TAG_CLICK_ACTION_MAP[k], k)
+        tag_click_action = self.driver.settings.tag_click_action
+        if tag_click_action not in TAG_CLICK_ACTION_MAP:
+            tag_click_action = TagClickActionOption.DEFAULT
+        self.tag_click_action_combobox.setCurrentIndex(
+            list(TAG_CLICK_ACTION_MAP.keys()).index(tag_click_action)
+        )
+        form_layout.addRow(
+            Translations["settings.tag_click_action.label"], self.tag_click_action_combobox
+        )
 
         # Date Format
         self.dateformat_combobox = QComboBox()
@@ -206,6 +237,7 @@ class SettingsPanel(PanelWidget):
             "page_size": int(self.page_size_line_edit.text()),
             "show_filepath": self.filepath_combobox.currentData(),
             "theme": self.theme_combobox.currentData(),
+            "tag_click_action": self.tag_click_action_combobox.currentData(),
             "date_format": self.dateformat_combobox.currentData(),
             "hour_format": self.hourformat_checkbox.isChecked(),
             "zero_padding": self.zeropadding_checkbox.isChecked(),
@@ -221,6 +253,7 @@ class SettingsPanel(PanelWidget):
         driver.settings.page_size = settings["page_size"]
         driver.settings.show_filepath = settings["show_filepath"]
         driver.settings.theme = settings["theme"]
+        driver.settings.tag_click_action = settings["tag_click_action"]
         driver.settings.date_format = settings["date_format"]
         driver.settings.hour_format = settings["hour_format"]
         driver.settings.zero_padding = settings["zero_padding"]
@@ -246,10 +279,10 @@ class SettingsPanel(PanelWidget):
 
         modal = PanelModal(
             widget=settings_panel,
+            window_title=Translations["settings.title"],
             done_callback=lambda: settings_panel.update_settings(driver),
             has_save=True,
         )
         modal.title_widget.setVisible(False)
-        modal.setWindowTitle(Translations["settings.title"])
 
         return modal

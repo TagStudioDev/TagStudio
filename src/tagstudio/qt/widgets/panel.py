@@ -25,9 +25,9 @@ class PanelModal(QWidget):
         self,
         widget: "PanelWidget",
         title: str = "",
-        window_title: str = "",
-        done_callback: Callable | None = None,
-        save_callback: Callable | None = None,
+        window_title: str | None = None,
+        done_callback: Callable[[], None] | None = None,
+        save_callback: Callable[[str], None] | None = None,
         has_save: bool = False,
     ):
         # [Done]
@@ -35,7 +35,7 @@ class PanelModal(QWidget):
         # [Cancel] [Save]
         super().__init__()
         self.widget = widget
-        self.setWindowTitle(window_title)
+        self.setWindowTitle(title if window_title is None else window_title)
         self.setWindowModality(Qt.WindowModality.ApplicationModal)
         self.root_layout = QVBoxLayout(self)
         self.root_layout.setContentsMargins(6, 0, 6, 6)
@@ -44,7 +44,7 @@ class PanelModal(QWidget):
         self.title_widget.setObjectName("fieldTitle")
         self.title_widget.setWordWrap(True)
         self.title_widget.setStyleSheet("font-weight:bold;font-size:14px;padding-top: 6px")
-        self.setTitle(title)
+        self.title_widget.setText(title)
         self.title_widget.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         self.button_container = QWidget()
@@ -89,7 +89,8 @@ class PanelModal(QWidget):
             # trigger save button actions when pressing enter in the widget
             self.widget.add_callback(lambda: self.save_button.click())
 
-        widget.done.connect(lambda: save_callback(widget.get_content()))
+        if save_callback is not None:
+            widget.done.connect(lambda: save_callback(widget.get_content()))
 
         self.root_layout.addWidget(self.title_widget)
         self.root_layout.addWidget(widget)
@@ -98,22 +99,20 @@ class PanelModal(QWidget):
         self.root_layout.addWidget(self.button_container)
         widget.parent_post_init()
 
-    def closeEvent(self, event):  # noqa: N802
+    @override
+    def closeEvent(self, event: QtGui.QCloseEvent) -> None:
         if self.cancel_button:
             self.cancel_button.click()
         elif self.done_button:
             self.done_button.click()
         event.accept()
 
-    def setTitle(self, title: str):  # noqa: N802
-        self.title_widget.setText(title)
-
 
 class PanelWidget(QWidget):
     """Used for widgets that go in a modal panel, ex. for editing or searching."""
 
     done = Signal()
-    parent_modal: PanelModal = None
+    parent_modal: PanelModal | None = None
     panel_save_button: QPushButton | None = None
     panel_cancel_button: QPushButton | None = None
     panel_done_button: QPushButton | None = None
@@ -122,19 +121,19 @@ class PanelWidget(QWidget):
         super().__init__()
 
     def get_content(self) -> str:
+        return ""
+
+    def reset(self) -> None:
         pass
 
-    def reset(self):
+    def parent_post_init(self) -> None:
         pass
 
-    def parent_post_init(self):
-        pass
-
-    def add_callback(self, callback: Callable, event: str = "returnPressed"):
+    def add_callback(self, callback: Callable[[], None], event: str = "returnPressed"):
         logger.warning(f"[PanelModal] add_callback not implemented for {self.__class__.__name__}")
 
     @override
-    def keyPressEvent(self, event: QtGui.QKeyEvent) -> None:  # noqa N802
+    def keyPressEvent(self, event: QtGui.QKeyEvent) -> None:
         if event.key() == QtCore.Qt.Key.Key_Escape:
             if self.panel_cancel_button:
                 self.panel_cancel_button.click()
@@ -146,5 +145,4 @@ class PanelWidget(QWidget):
             elif self.panel_done_button:
                 self.panel_done_button.click()
         else:  # Other key presses
-            pass
-        return super().keyPressEvent(event)
+            super().keyPressEvent(event)

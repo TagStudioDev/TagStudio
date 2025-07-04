@@ -3,8 +3,8 @@
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
 
-import typing
-from types import FunctionType
+from collections.abc import Callable
+from typing import TYPE_CHECKING, override
 
 import structlog
 from PySide6.QtCore import QEvent, Qt, Signal
@@ -20,7 +20,7 @@ from tagstudio.qt.translations import Translations
 logger = structlog.get_logger(__name__)
 
 # Only import for type checking/autocompletion, will not be imported at runtime.
-if typing.TYPE_CHECKING:
+if TYPE_CHECKING:
     from tagstudio.core.library.alchemy.library import Library
 
 
@@ -31,7 +31,7 @@ class TagAliasWidget(QWidget):
         self,
         id: int | None = 0,
         alias: str | None = None,
-        on_remove_callback=None,
+        on_remove_callback: Callable[[], None] | None = None,
     ) -> None:
         super().__init__()
 
@@ -84,11 +84,13 @@ class TagAliasWidget(QWidget):
         self.text_field.setMinimumWidth(text_width)
         self.text_field.adjustSize()
 
-    def enterEvent(self, event: QEnterEvent) -> None:  # noqa: N802
+    @override
+    def enterEvent(self, event: QEnterEvent) -> None:
         self.update()
         return super().enterEvent(event)
 
-    def leaveEvent(self, event: QEvent) -> None:  # noqa: N802
+    @override
+    def leaveEvent(self, event: QEvent) -> None:
         self.update()
         return super().leaveEvent(event)
 
@@ -98,15 +100,17 @@ class TagWidget(QWidget):
     on_click = Signal()
     on_edit = Signal()
 
+    tag: Tag | None
+
     def __init__(
         self,
         tag: Tag | None,
         has_edit: bool,
         has_remove: bool,
         library: "Library | None" = None,
-        on_remove_callback: FunctionType = None,
-        on_click_callback: FunctionType = None,
-        on_edit_callback: FunctionType = None,
+        on_remove_callback: Callable[[], None] | None = None,
+        on_click_callback: Callable[[], None] | None = None,
+        on_edit_callback: Callable[[], None] | None = None,
     ) -> None:
         super().__init__()
         self.tag = tag
@@ -123,10 +127,18 @@ class TagWidget(QWidget):
         self.bg_button = QPushButton(self)
         self.bg_button.setFlat(True)
 
+        # add callbacks
+        if on_remove_callback is not None:
+            self.on_remove.connect(on_remove_callback)
+        if on_click_callback is not None:
+            self.on_click.connect(on_click_callback)
+        if on_edit_callback is not None:
+            self.on_edit.connect(on_edit_callback)
+
+        # add edit action
         if has_edit:
             edit_action = QAction(self)
             edit_action.setText(Translations["generic.edit"])
-            edit_action.triggered.connect(on_edit_callback)
             edit_action.triggered.connect(self.on_edit.emit)
             self.bg_button.addAction(edit_action)
         # if on_click_callback:
@@ -261,13 +273,15 @@ class TagWidget(QWidget):
     def set_has_remove(self, has_remove: bool):
         self.has_remove = has_remove
 
-    def enterEvent(self, event: QEnterEvent) -> None:  # noqa: N802
+    @override
+    def enterEvent(self, event: QEnterEvent) -> None:
         if self.has_remove:
             self.remove_button.setHidden(False)
         self.update()
         return super().enterEvent(event)
 
-    def leaveEvent(self, event: QEvent) -> None:  # noqa: N802
+    @override
+    def leaveEvent(self, event: QEvent) -> None:
         if self.has_remove:
             self.remove_button.setHidden(True)
         self.update()
