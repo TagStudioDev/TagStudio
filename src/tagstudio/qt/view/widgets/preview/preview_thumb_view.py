@@ -10,12 +10,11 @@ import cv2
 import structlog
 from PIL import Image, UnidentifiedImageError
 from PySide6.QtCore import QBuffer, QByteArray, QSize, Qt
-from PySide6.QtGui import QAction, QMovie, QResizeEvent
-from PySide6.QtWidgets import QHBoxLayout, QLabel, QStackedLayout, QWidget
+from PySide6.QtGui import QAction, QMovie, QPixmap, QResizeEvent
+from PySide6.QtWidgets import QHBoxLayout, QLabel, QPushButton, QStackedLayout, QWidget
 
 from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.media_types import MediaType
-from tagstudio.qt.helpers.qbutton_wrapper import QPushButtonWrapper
 from tagstudio.qt.helpers.rounded_pixmap_style import RoundedPixmapStyle
 from tagstudio.qt.platform_strings import open_file_str, trash_term
 from tagstudio.qt.translations import Translations
@@ -56,7 +55,7 @@ class PreviewThumbView(QWidget):
         )
         self.__delete_action.triggered.connect(self._delete_action_callback)
 
-        self.__button_wrapper = QPushButtonWrapper()
+        self.__button_wrapper = QPushButton()
         self.__button_wrapper.setMinimumSize(*self.__img_button_size)
         self.__button_wrapper.setFlat(True)
         self.__button_wrapper.setContextMenuPolicy(Qt.ContextMenuPolicy.ActionsContextMenu)
@@ -88,7 +87,9 @@ class PreviewThumbView(QWidget):
         self.__media_player.addAction(self.__delete_action)
 
         # Need to watch for this to resize the player appropriately.
-        self.__media_player.player.hasVideoChanged.connect(self.__has_video_changed)
+        self.__media_player.player.hasVideoChanged.connect(
+            self.__media_player_video_changed_callback
+        )
 
         self.__mp_max_size = QSize(*self.__img_button_size)
 
@@ -96,24 +97,8 @@ class PreviewThumbView(QWidget):
         self.__stacked_page_setup(self.__media_player_page, self.__media_player)
 
         self.__thumb_renderer = ThumbRenderer(self.lib)
-        self.__thumb_renderer.updated.connect(
-            lambda ts, i, s: (
-                self.__button_wrapper.setIcon(i),
-                self.__set_mp_max_size(i.size()),
-            )
-        )
-        self.__thumb_renderer.updated_ratio.connect(
-            lambda ratio: (
-                self.__set_image_ratio(ratio),
-                self.__update_image_size(
-                    (
-                        self.size().width(),
-                        self.size().height(),
-                    ),
-                    ratio,
-                ),
-            )
-        )
+        self.__thumb_renderer.updated.connect(self.__thumb_renderer_updated_callback)
+        self.__thumb_renderer.updated_ratio.connect(self.__thumb_renderer_updated_ratio_callback)
 
         self.__image_layout.addWidget(self.preview_img_page)
         self.__image_layout.addWidget(self.__preview_gif_page)
@@ -135,11 +120,23 @@ class PreviewThumbView(QWidget):
     def _button_wrapper_callback(self):
         raise NotImplementedError
 
-    def __set_mp_max_size(self, size: QSize) -> None:
-        self.__mp_max_size = size
-
-    def __has_video_changed(self, video: bool) -> None:
+    def __media_player_video_changed_callback(self, video: bool) -> None:
         self.__update_image_size((self.size().width(), self.size().height()))
+
+    def __thumb_renderer_updated_callback(
+        self, _timestamp: float, img: QPixmap, _size: QSize, _path: Path
+    ) -> None:
+        self.__button_wrapper.setIcon(img)
+        self.__mp_max_size = img.size()
+
+    def __thumb_renderer_updated_ratio_callback(self, ratio: float) -> None:
+        self.__image_ratio = ratio
+        self.__update_image_size(
+            (
+                self.size().width(),
+                self.size().height(),
+            )
+        )
 
     def __stacked_page_setup(self, page: QWidget, widget: QWidget) -> None:
         layout = QHBoxLayout(page)
@@ -148,13 +145,7 @@ class PreviewThumbView(QWidget):
         layout.setContentsMargins(0, 0, 0, 0)
         page.setLayout(layout)
 
-    def __set_image_ratio(self, ratio: float) -> None:
-        self.__image_ratio = ratio
-
-    def __update_image_size(self, size: tuple[int, int], ratio: float | None = None) -> None:
-        if ratio:
-            self.__set_image_ratio(ratio)
-
+    def __update_image_size(self, size: tuple[int, int]) -> None:
         adj_width: float = size[0]
         adj_height: float = size[1]
         # Landscape
@@ -253,9 +244,7 @@ class PreviewThumbView(QWidget):
         try:
             success, size = self.__get_video_res(str(filepath))
             if success:
-                self.__update_image_size(
-                    (size.width(), size.height()), size.width() / size.height()
-                )
+                self.__image_ratio = size.width() / size.height()
                 self.resizeEvent(
                     QResizeEvent(
                         QSize(size.width(), size.height()),
@@ -296,7 +285,7 @@ class PreviewThumbView(QWidget):
             stats["width"] = image.width
             stats["height"] = image.height
 
-            self.__update_image_size((image.width, image.height), image.width / image.height)
+            self.__image_ratio = image.width / image.height
             if ext == ".apng":
                 image_bytes_io = io.BytesIO()
                 image.save(
