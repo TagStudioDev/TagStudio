@@ -35,7 +35,7 @@ logger = structlog.get_logger(__name__)
 Image.MAX_IMAGE_PIXELS = None
 
 
-class PreviewThumb(QWidget):
+class PreviewThumbView(QWidget):
     """The Preview Panel Widget."""
 
     def __init__(self, library: Library, driver: "QtDriver") -> None:
