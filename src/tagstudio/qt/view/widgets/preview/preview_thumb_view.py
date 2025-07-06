@@ -72,7 +72,7 @@ class PreviewThumbView(QWidget):
         # In testing, it didn't seem possible to center the widgets directly
         # on the QStackedLayout. Adding sublayouts allows us to center the widgets.
         self.preview_img_page = QWidget()
-        self._stacked_page_setup(self.preview_img_page, self.preview_img)
+        self.__stacked_page_setup(self.preview_img_page, self.preview_img)
 
         self.preview_gif = QLabel()
         self.preview_gif.setMinimumSize(*self.img_button_size)
@@ -84,7 +84,7 @@ class PreviewThumbView(QWidget):
         self.gif_buffer: QBuffer = QBuffer()
 
         self.preview_gif_page = QWidget()
-        self._stacked_page_setup(self.preview_gif_page, self.preview_gif)
+        self.__stacked_page_setup(self.preview_gif_page, self.preview_gif)
 
         self.media_player = MediaPlayer(driver)
         self.media_player.addAction(self.open_file_action)
@@ -92,24 +92,24 @@ class PreviewThumbView(QWidget):
         self.media_player.addAction(self.delete_action)
 
         # Need to watch for this to resize the player appropriately.
-        self.media_player.player.hasVideoChanged.connect(self._has_video_changed)
+        self.media_player.player.hasVideoChanged.connect(self.__has_video_changed)
 
         self.mp_max_size = QSize(*self.img_button_size)
 
         self.media_player_page = QWidget()
-        self._stacked_page_setup(self.media_player_page, self.media_player)
+        self.__stacked_page_setup(self.media_player_page, self.media_player)
 
         self.thumb_renderer = ThumbRenderer(self.lib)
         self.thumb_renderer.updated.connect(
             lambda ts, i, s: (
                 self.preview_img.setIcon(i),
-                self._set_mp_max_size(i.size()),
+                self.__set_mp_max_size(i.size()),
             )
         )
         self.thumb_renderer.updated_ratio.connect(
             lambda ratio: (
-                self.set_image_ratio(ratio),
-                self.update_image_size(
+                self.__set_image_ratio(ratio),
+                self.__update_image_size(
                     (
                         self.size().width(),
                         self.size().height(),
@@ -127,25 +127,25 @@ class PreviewThumbView(QWidget):
 
         self.hide_preview()
 
-    def _set_mp_max_size(self, size: QSize) -> None:
+    def __set_mp_max_size(self, size: QSize) -> None:
         self.mp_max_size = size
 
-    def _has_video_changed(self, video: bool) -> None:
-        self.update_image_size((self.size().width(), self.size().height()))
+    def __has_video_changed(self, video: bool) -> None:
+        self.__update_image_size((self.size().width(), self.size().height()))
 
-    def _stacked_page_setup(self, page: QWidget, widget: QWidget) -> None:
+    def __stacked_page_setup(self, page: QWidget, widget: QWidget) -> None:
         layout = QHBoxLayout(page)
         layout.addWidget(widget)
         layout.setAlignment(widget, Qt.AlignmentFlag.AlignCenter)
         layout.setContentsMargins(0, 0, 0, 0)
         page.setLayout(layout)
 
-    def set_image_ratio(self, ratio: float) -> None:
+    def __set_image_ratio(self, ratio: float) -> None:
         self.image_ratio = ratio
 
-    def update_image_size(self, size: tuple[int, int], ratio: float | None = None) -> None:
+    def __update_image_size(self, size: tuple[int, int], ratio: float | None = None) -> None:
         if ratio:
-            self.set_image_ratio(ratio)
+            self.__set_image_ratio(ratio)
 
         adj_width: float = size[0]
         adj_height: float = size[1]
@@ -198,13 +198,7 @@ class PreviewThumbView(QWidget):
         if m:
             m.setScaledSize(adj_size)
 
-    def get_preview_size(self) -> tuple[int, int]:
-        return (
-            self.size().width(),
-            self.size().height(),
-        )
-
-    def switch_preview(self, preview: str) -> None:
+    def __switch_preview(self, preview: str) -> None:
         if preview in ["audio", "video"]:
             self.media_player.show()
             self.image_layout.setCurrentWidget(self.media_player_page)
@@ -229,12 +223,12 @@ class PreviewThumbView(QWidget):
                 self.gif_buffer.close()
             self.preview_gif.hide()
 
-    def _display_fallback_image(self, filepath: Path, ext: str) -> dict[str, int]:
+    def __display_fallback_image(self, filepath: Path, ext: str) -> dict[str, int]:
         """Renders the given file as an image, no matter its media type.
 
         Useful for fallback scenarios.
         """
-        self.switch_preview("image")
+        self.__switch_preview("image")
         self.thumb_renderer.render(
             time.time(),
             filepath,
@@ -242,13 +236,13 @@ class PreviewThumbView(QWidget):
             self.devicePixelRatio(),
             update_on_ratio_change=True,
         )
-        return self._update_image(filepath)
+        return self.__display_image(filepath)
 
-    def _update_image(self, filepath: Path) -> dict[str, int]:
+    def __display_image(self, filepath: Path) -> dict[str, int]:
         """Update the static image preview from a filepath."""
         stats: dict[str, int] = {}
         ext = filepath.suffix.lower()
-        self.switch_preview("image")
+        self.__switch_preview("image")
 
         image: Image.Image | None = None
 
@@ -288,7 +282,7 @@ class PreviewThumbView(QWidget):
 
         return stats
 
-    def _update_animation(self, filepath: Path, ext: str) -> dict[str, int]:
+    def __update_animation(self, filepath: Path, ext: str) -> dict[str, int]:
         """Update the animated image preview from a filepath."""
         stats: dict[str, int] = {}
 
@@ -302,7 +296,7 @@ class PreviewThumbView(QWidget):
             stats["width"] = image.width
             stats["height"] = image.height
 
-            self.update_image_size((image.width, image.height), image.width / image.height)
+            self.__update_image_size((image.width, image.height), image.width / image.height)
             if ext == ".apng":
                 image_bytes_io = io.BytesIO()
                 image.save(
@@ -325,11 +319,11 @@ class PreviewThumbView(QWidget):
 
             # If the animation only has 1 frame, display it like a normal image.
             if movie.frameCount() <= 1:
-                self._display_fallback_image(filepath, ext)
+                self.__display_fallback_image(filepath, ext)
                 return stats
 
             # The animation has more than 1 frame, continue displaying it as an animation
-            self.switch_preview("animated")
+            self.__switch_preview("animated")
             self.resizeEvent(
                 QResizeEvent(
                     QSize(stats["width"], stats["height"]),
@@ -341,27 +335,27 @@ class PreviewThumbView(QWidget):
             stats["duration"] = movie.frameCount() // 60
         except (UnidentifiedImageError, FileNotFoundError) as e:
             logger.error("[PreviewThumb] Could not load animated image", filepath=filepath, error=e)
-            return self._display_fallback_image(filepath, ext)
+            return self.__display_fallback_image(filepath, ext)
 
         return stats
 
-    def _get_video_res(self, filepath: str) -> tuple[bool, QSize]:
+    def __get_video_res(self, filepath: str) -> tuple[bool, QSize]:
         video = cv2.VideoCapture(filepath, cv2.CAP_FFMPEG)
         success, frame = video.read()
         frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         image = Image.fromarray(frame)
         return (success, QSize(image.width, image.height))
 
-    def _update_media(self, filepath: Path, type: MediaType) -> dict[str, int]:
+    def __update_media(self, filepath: Path, type: MediaType) -> dict[str, int]:
         stats: dict[str, int] = {}
 
         self.media_player.play(filepath)
 
         if type == MediaType.VIDEO:
             try:
-                success, size = self._get_video_res(str(filepath))
+                success, size = self.__get_video_res(str(filepath))
                 if success:
-                    self.update_image_size(
+                    self.__update_image_size(
                         (size.width(), size.height()), size.width() / size.height()
                     )
                     self.resizeEvent(
@@ -377,7 +371,7 @@ class PreviewThumbView(QWidget):
             except cv2.error as e:
                 logger.error("[PreviewThumb] Could not play video", filepath=filepath, error=e)
 
-        self.switch_preview("video" if type == MediaType.VIDEO else "audio")
+        self.__switch_preview("video" if type == MediaType.VIDEO else "audio")
         stats["duration"] = self.media_player.player.duration() * 1000
         return stats
 
@@ -390,14 +384,14 @@ class PreviewThumbView(QWidget):
         if MediaCategories.is_ext_in_category(
             ext, MediaCategories.VIDEO_TYPES, mime_fallback=True
         ) and is_readable_video(filepath):
-            stats = self._update_media(filepath, MediaType.VIDEO)
+            stats = self.__update_media(filepath, MediaType.VIDEO)
 
         # Audio
         elif MediaCategories.is_ext_in_category(
             ext, MediaCategories.AUDIO_TYPES, mime_fallback=True
         ):
-            self._update_image(filepath)
-            stats = self._update_media(filepath, MediaType.AUDIO)
+            self.__display_image(filepath)
+            stats = self.__update_media(filepath, MediaType.AUDIO)
             self.thumb_renderer.render(
                 time.time(),
                 filepath,
@@ -410,12 +404,12 @@ class PreviewThumbView(QWidget):
         elif MediaCategories.is_ext_in_category(
             ext, MediaCategories.IMAGE_ANIMATED_TYPES, mime_fallback=True
         ):
-            stats = self._update_animation(filepath, ext)
+            stats = self.__update_animation(filepath, ext)
 
         # Other Types (Including Images)
         else:
             # TODO: Get thumb renderer to return this stuff to pass on
-            stats = self._update_image(filepath)
+            stats = self.__display_image(filepath)
 
             self.thumb_renderer.render(
                 time.time(),
@@ -452,9 +446,9 @@ class PreviewThumbView(QWidget):
 
     def hide_preview(self) -> None:
         """Completely hide the file preview."""
-        self.switch_preview("")
+        self.__switch_preview("")
 
     @override
     def resizeEvent(self, event: QResizeEvent) -> None:
-        self.update_image_size((self.size().width(), self.size().height()))
+        self.__update_image_size((self.size().width(), self.size().height()))
         return super().resizeEvent(event)
