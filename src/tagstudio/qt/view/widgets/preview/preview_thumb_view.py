@@ -245,9 +245,7 @@ class PreviewThumbView(QWidget):
 
         image: Image.Image | None = None
 
-        if MediaCategories.is_ext_in_category(
-            ext, MediaCategories.IMAGE_RAW_TYPES, mime_fallback=True
-        ):
+        if MediaCategories.IMAGE_RAW_TYPES.contains(ext, mime_fallback=True):
             try:
                 with rawpy.imread(str(filepath)) as raw:
                     rgb = raw.postprocess()
@@ -260,9 +258,7 @@ class PreviewThumbView(QWidget):
                 FileNotFoundError,
             ):
                 pass
-        elif MediaCategories.is_ext_in_category(
-            ext, MediaCategories.IMAGE_RASTER_TYPES, mime_fallback=True
-        ):
+        elif MediaCategories.IMAGE_RASTER_TYPES.contains(ext, mime_fallback=True):
             try:
                 image = Image.open(str(filepath))
                 stats["width"] = image.width
@@ -274,9 +270,7 @@ class PreviewThumbView(QWidget):
                 UnidentifiedImageError,
             ) as e:
                 logger.error("[PreviewThumb] Could not get image stats", filepath=filepath, error=e)
-        elif MediaCategories.is_ext_in_category(
-            ext, MediaCategories.IMAGE_VECTOR_TYPES, mime_fallback=True
-        ):
+        elif MediaCategories.IMAGE_VECTOR_TYPES.contains(ext, mime_fallback=True):
             pass
 
         return stats
@@ -381,15 +375,13 @@ class PreviewThumbView(QWidget):
         stats: dict[str, int] = {}
 
         # Video
-        if MediaCategories.is_ext_in_category(
-            ext, MediaCategories.VIDEO_TYPES, mime_fallback=True
-        ) and is_readable_video(filepath):
+        if MediaCategories.VIDEO_TYPES.contains(ext, mime_fallback=True) and is_readable_video(
+            filepath
+        ):
             stats = self.__display_av_media(filepath, MediaType.VIDEO)
 
         # Audio
-        elif MediaCategories.is_ext_in_category(
-            ext, MediaCategories.AUDIO_TYPES, mime_fallback=True
-        ):
+        elif MediaCategories.AUDIO_TYPES.contains(ext, mime_fallback=True):
             self.__display_image(filepath)
             stats = self.__display_av_media(filepath, MediaType.AUDIO)
             self.__thumb_renderer.render(
@@ -401,9 +393,7 @@ class PreviewThumbView(QWidget):
             )
 
         # Animated Images
-        elif MediaCategories.is_ext_in_category(
-            ext, MediaCategories.IMAGE_ANIMATED_TYPES, mime_fallback=True
-        ):
+        elif MediaCategories.IMAGE_ANIMATED_TYPES.contains(ext, mime_fallback=True):
             stats = self.__display_animated_image(filepath, ext)
 
         # Other Types (Including Images)
