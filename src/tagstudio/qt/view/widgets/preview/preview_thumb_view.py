@@ -56,7 +56,7 @@ class PreviewThumbView(QWidget):
         self.__open_file_action = QAction(Translations["file.open_file"], self)
         self.__open_explorer_action = QAction(open_file_str(), self)
         self.__delete_action = QAction(
-            Translations.format("trash.context.ambiguous", trash_term=trash_term()),
+            Translations.format("trash.context.singular", trash_term=trash_term()),
             self,
         )
 
@@ -415,9 +415,6 @@ class PreviewThumbView(QWidget):
         with catch_warnings(record=True):
             self.__delete_action.triggered.disconnect()
 
-        self.__delete_action.setText(
-            Translations.format("trash.context.singular", trash_term=trash_term())
-        )
         self.__delete_action.triggered.connect(
             lambda checked=False, f=filepath: self.driver.delete_files_callback(f)
         )
