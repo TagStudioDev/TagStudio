@@ -78,5 +78,7 @@ Observe the following key aspects of this example:
   - Defines the interface the callbacks
   - Enforces that UI events be handled
 
+> [!NOTE]
+> A good (non-exhaustive) rule of thumb is: If it requires a non-UI import, then it doesn't belong in the `*_view.py` file.
 
 [^1]: For an explanation of the Model-View-Controller (MVC) Model, checkout this article: [MVC Framework Introduction](https://www.geeksforgeeks.org/mvc-framework-introduction/).

@@ -34,9 +34,6 @@ class PreviewThumbView(QWidget):
     def __init__(self, library: Library, driver: "QtDriver") -> None:
         super().__init__()
 
-        self.lib = library
-        self.driver: QtDriver = driver
-
         self.__img_button_size = (266, 266)
         self.__image_ratio = 1.0
 
@@ -96,7 +93,7 @@ class PreviewThumbView(QWidget):
         self.__media_player_page = QWidget()
         self.__stacked_page_setup(self.__media_player_page, self.__media_player)
 
-        self.__thumb_renderer = ThumbRenderer(self.lib)
+        self.__thumb_renderer = ThumbRenderer(library)
         self.__thumb_renderer.updated.connect(self.__thumb_renderer_updated_callback)
         self.__thumb_renderer.updated_ratio.connect(self.__thumb_renderer_updated_ratio_callback)
 

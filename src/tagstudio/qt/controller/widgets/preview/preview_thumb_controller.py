@@ -32,6 +32,8 @@ class PreviewThumb(PreviewThumbView):
     def __init__(self, library: Library, driver: "QtDriver"):
         super().__init__(library, driver)
 
+        self.__driver: QtDriver = driver
+
     def __get_image_stats(self, filepath: Path) -> FileAttributeData:
         """Get width and height of an image as dict."""
         stats = FileAttributeData()
@@ -147,7 +149,7 @@ class PreviewThumb(PreviewThumbView):
 
     def _delete_action_callback(self):
         if bool(self.__current_file):
-            self.driver.delete_files_callback(self.__current_file)
+            self.__driver.delete_files_callback(self.__current_file)
 
     def _button_wrapper_callback(self):
         open_file(self.__current_file)
