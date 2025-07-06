@@ -6,7 +6,6 @@ import io
 import time
 from pathlib import Path
 from typing import TYPE_CHECKING, override
-from warnings import catch_warnings
 
 import cv2
 import rawpy
@@ -19,8 +18,6 @@ from PySide6.QtWidgets import QHBoxLayout, QLabel, QStackedLayout, QWidget
 
 from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.media_types import MediaCategories, MediaType
-from tagstudio.qt.helpers.file_opener import FileOpenerHelper, open_file
-from tagstudio.qt.helpers.file_tester import is_readable_video
 from tagstudio.qt.helpers.qbutton_wrapper import QPushButtonWrapper
 from tagstudio.qt.helpers.rounded_pixmap_style import RoundedPixmapStyle
 from tagstudio.qt.platform_strings import open_file_str, trash_term
@@ -52,13 +49,15 @@ class PreviewThumbView(QWidget):
         self.__image_layout.setStackingMode(QStackedLayout.StackingMode.StackAll)
         self.__image_layout.setContentsMargins(0, 0, 0, 0)
 
-        self.__opener: FileOpenerHelper | None = None
         self.__open_file_action = QAction(Translations["file.open_file"], self)
+        self.__open_file_action.triggered.connect(self._open_file_action_callback)
         self.__open_explorer_action = QAction(open_file_str(), self)
+        self.__open_explorer_action.triggered.connect(self._open_explorer_action_callback)
         self.__delete_action = QAction(
             Translations.format("trash.context.singular", trash_term=trash_term()),
             self,
         )
+        self.__delete_action.triggered.connect(self._delete_action_callback)
 
         self.__button_wrapper = QPushButtonWrapper()
         self.__button_wrapper.setMinimumSize(*self.__img_button_size)
@@ -67,6 +66,7 @@ class PreviewThumbView(QWidget):
         self.__button_wrapper.addAction(self.__open_file_action)
         self.__button_wrapper.addAction(self.__open_explorer_action)
         self.__button_wrapper.addAction(self.__delete_action)
+        self.__button_wrapper.clicked.connect(self._button_wrapper_callback)
 
         # In testing, it didn't seem possible to center the widgets directly
         # on the QStackedLayout. Adding sublayouts allows us to center the widgets.
@@ -125,6 +125,18 @@ class PreviewThumbView(QWidget):
         self.setMinimumSize(*self.__img_button_size)
 
         self.hide_preview()
+
+    def _open_file_action_callback(self):
+        raise NotImplementedError
+
+    def _open_explorer_action_callback(self):
+        raise NotImplementedError
+
+    def _delete_action_callback(self):
+        raise NotImplementedError
+
+    def _button_wrapper_callback(self):
+        raise NotImplementedError
 
     def __set_mp_max_size(self, size: QSize) -> None:
         self.__mp_max_size = size
@@ -264,7 +276,7 @@ class PreviewThumbView(QWidget):
         image = Image.fromarray(frame)
         return (success, QSize(image.width, image.height))
 
-    def __display_av_media(self, filepath: Path, type: MediaType) -> dict[str, int]:
+    def _display_av_media(self, filepath: Path, type: MediaType) -> dict[str, int]:
         """Display either audio or video."""
         stats: dict[str, int] = {}
 
@@ -303,8 +315,9 @@ class PreviewThumbView(QWidget):
         stats["duration"] = self.__media_player.player.duration() * 1000
         return stats
 
-    def __display_animated_image(self, filepath: Path, ext: str) -> dict[str, int]:
+    def _display_animated_image(self, filepath: Path) -> dict[str, int]:
         """Update the animated image preview from a filepath."""
+        ext = filepath.suffix.lower()
         stats: dict[str, int] = {}
 
         # Ensure that any movie and buffer from previous animations are cleared.
@@ -340,7 +353,7 @@ class PreviewThumbView(QWidget):
 
             # If the animation only has 1 frame, display it like a normal image.
             if movie.frameCount() <= 1:
-                self.__display_image(filepath)
+                self._display_image(filepath)
                 return stats
 
             # The animation has more than 1 frame, continue displaying it as an animation
@@ -356,11 +369,11 @@ class PreviewThumbView(QWidget):
             stats["duration"] = movie.frameCount() // 60
         except (UnidentifiedImageError, FileNotFoundError) as e:
             logger.error("[PreviewThumb] Could not load animated image", filepath=filepath, error=e)
-            return self.__display_image(filepath)
+            return self._display_image(filepath)
 
         return stats
 
-    def __display_image(self, filepath: Path) -> dict[str, int]:
+    def _display_image(self, filepath: Path) -> dict[str, int]:
         """Renders the given file as an image, no matter its media type.
 
         Useful for fallback scenarios.
@@ -377,48 +390,21 @@ class PreviewThumbView(QWidget):
             filepath
         )  # TODO: Get thumb renderer to return this stuff to pass on
 
-    def display_file(self, filepath: Path) -> dict[str, int]:
+    def _display_file(self, filepath: Path, media_type: MediaType) -> dict[str, int]:
         """Render a single file preview."""
-        ext = filepath.suffix.lower()
         stats: dict[str, int] = {}
 
-        # Video
-        if MediaCategories.VIDEO_TYPES.contains(ext, mime_fallback=True) and is_readable_video(
-            filepath
-        ):
-            stats = self.__display_av_media(filepath, MediaType.VIDEO)
-
-        # Audio
-        elif MediaCategories.AUDIO_TYPES.contains(ext, mime_fallback=True):
-            stats = self.__display_av_media(filepath, MediaType.AUDIO)
-
-        # Animated Images
-        elif MediaCategories.IMAGE_ANIMATED_TYPES.contains(ext, mime_fallback=True):
-            stats = self.__display_animated_image(filepath, ext)
-
-        # Other Types (Including Images)
-        else:
-            stats = self.__display_image(filepath)
-
-        with catch_warnings(record=True):
-            self.__button_wrapper.clicked.disconnect()
-        self.__button_wrapper.clicked.connect(lambda checked=False, path=filepath: open_file(path))
-        self.__button_wrapper.is_connected = True
-
-        self.__button_wrapper.setContextMenuPolicy(Qt.ContextMenuPolicy.ActionsContextMenu)
-        self.__button_wrapper.setCursor(Qt.CursorShape.PointingHandCursor)
-
-        self.__opener = FileOpenerHelper(filepath)
-        self.__open_file_action.triggered.connect(self.__opener.open_file)
-        self.__open_explorer_action.triggered.connect(self.__opener.open_explorer)
-
-        with catch_warnings(record=True):
-            self.__delete_action.triggered.disconnect()
-
-        self.__delete_action.triggered.connect(
-            lambda checked=False, f=filepath: self.driver.delete_files_callback(f)
-        )
-        self.__delete_action.setEnabled(bool(filepath))
+        match media_type:
+            case MediaType.VIDEO:
+                stats = self._display_av_media(filepath, MediaType.VIDEO)
+            case MediaType.AUDIO:
+                stats = self._display_av_media(filepath, MediaType.AUDIO)
+            case MediaType.IMAGE_ANIMATED:
+                stats = self._display_animated_image(filepath)
+            case MediaType.IMAGE:
+                stats = self._display_image(filepath)
+            case _:
+                raise NotImplementedError
 
         return stats
 
