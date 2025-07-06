@@ -7,16 +7,14 @@ from pathlib import Path
 from typing import TYPE_CHECKING, override
 
 import cv2
-import rawpy
 import structlog
 from PIL import Image, UnidentifiedImageError
-from PIL.Image import DecompressionBombError
 from PySide6.QtCore import QBuffer, QByteArray, QSize, Qt
 from PySide6.QtGui import QAction, QMovie, QResizeEvent
 from PySide6.QtWidgets import QHBoxLayout, QLabel, QStackedLayout, QWidget
 
 from tagstudio.core.library.alchemy.library import Library
-from tagstudio.core.media_types import MediaCategories, MediaType
+from tagstudio.core.media_types import MediaType
 from tagstudio.qt.helpers.qbutton_wrapper import QPushButtonWrapper
 from tagstudio.qt.helpers.rounded_pixmap_style import RoundedPixmapStyle
 from tagstudio.qt.platform_strings import open_file_str, trash_term
@@ -233,41 +231,6 @@ class PreviewThumbView(QWidget):
                 self.__gif_buffer.close()
             self.__preview_gif.hide()
 
-    def __get_image_stats(self, filepath: Path) -> dict[str, int]:
-        """Get width and height of an image as dict."""
-        stats: dict[str, int] = {}
-        ext = filepath.suffix.lower()
-
-        if MediaCategories.IMAGE_RAW_TYPES.contains(ext, mime_fallback=True):
-            try:
-                with rawpy.imread(str(filepath)) as raw:
-                    rgb = raw.postprocess()
-                    image = Image.new("L", (rgb.shape[1], rgb.shape[0]), color="black")
-                    stats["width"] = image.width
-                    stats["height"] = image.height
-            except (
-                rawpy._rawpy._rawpy.LibRawIOError,  # pyright: ignore[reportAttributeAccessIssue]
-                rawpy._rawpy.LibRawFileUnsupportedError,  # pyright: ignore[reportAttributeAccessIssue]
-                FileNotFoundError,
-            ):
-                pass
-        elif MediaCategories.IMAGE_RASTER_TYPES.contains(ext, mime_fallback=True):
-            try:
-                image = Image.open(str(filepath))
-                stats["width"] = image.width
-                stats["height"] = image.height
-            except (
-                DecompressionBombError,
-                FileNotFoundError,
-                NotImplementedError,
-                UnidentifiedImageError,
-            ) as e:
-                logger.error("[PreviewThumb] Could not get image stats", filepath=filepath, error=e)
-        elif MediaCategories.IMAGE_VECTOR_TYPES.contains(ext, mime_fallback=True):
-            pass  # TODO
-
-        return stats
-
     def __get_video_res(self, filepath: str) -> tuple[bool, QSize]:
         video = cv2.VideoCapture(filepath, cv2.CAP_FFMPEG)
         success, frame = video.read()
@@ -319,7 +282,7 @@ class PreviewThumbView(QWidget):
     def _display_audio(self, filepath: Path) -> dict[str, int]:
         return self.__display_av_media(filepath, MediaType.AUDIO)
 
-    def _display_animated_image(self, filepath: Path) -> dict[str, int]:
+    def _display_animated_image(self, filepath: Path) -> dict[str, int] | None:
         """Update the animated image preview from a filepath."""
         ext = filepath.suffix.lower()
         stats: dict[str, int] = {}
@@ -373,15 +336,12 @@ class PreviewThumbView(QWidget):
             stats["duration"] = movie.frameCount() // 60
         except (UnidentifiedImageError, FileNotFoundError) as e:
             logger.error("[PreviewThumb] Could not load animated image", filepath=filepath, error=e)
-            return self._display_image(filepath)
+            return None
 
         return stats
 
-    def _display_image(self, filepath: Path) -> dict[str, int]:
-        """Renders the given file as an image, no matter its media type.
-
-        Useful for fallback scenarios.
-        """
+    def _display_image(self, filepath: Path):
+        """Renders the given file as an image, no matter its media type."""
         self.__switch_preview(MediaType.IMAGE)
         self.__thumb_renderer.render(
             time.time(),
@@ -390,9 +350,6 @@ class PreviewThumbView(QWidget):
             self.devicePixelRatio(),
             update_on_ratio_change=True,
         )
-        return self.__get_image_stats(
-            filepath
-        )  # TODO: Get thumb renderer to return this stuff to pass on
 
     def hide_preview(self) -> None:
         """Completely hide the file preview."""
