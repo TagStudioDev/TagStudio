@@ -1,6 +1,7 @@
 # Licensed under the GPL-3.0 License.
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
+import io
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -63,6 +64,35 @@ class PreviewThumb(PreviewThumbView):
 
         return stats
 
+    def __get_gif_data(self, filepath: Path) -> tuple[bytes, tuple[int, int]] | None:
+        """Loads an animated image and returns gif data and size, if successful."""
+        ext = filepath.suffix.lower()
+
+        try:
+            image: Image.Image = Image.open(filepath)
+
+            if ext == ".apng":
+                image_bytes_io = io.BytesIO()
+                image.save(
+                    image_bytes_io,
+                    "GIF",
+                    lossless=True,
+                    save_all=True,
+                    loop=0,
+                    disposal=2,
+                )
+                image.close()
+                image_bytes_io.seek(0)
+                return (image_bytes_io.read(), (image.width, image.height))
+            else:
+                image.close()
+                with open(filepath, "rb") as f:
+                    return (f.read(), (image.width, image.height))
+
+        except (UnidentifiedImageError, FileNotFoundError) as e:
+            logger.error("[PreviewThumb] Could not load animated image", filepath=filepath, error=e)
+            return None
+
     def display_file(self, filepath: Path) -> FileAttributeData:
         """Render a single file preview."""
         self.__current_file = filepath
@@ -79,7 +109,9 @@ class PreviewThumb(PreviewThumbView):
             return self._display_audio(filepath)
         # Animated Images
         elif MediaCategories.IMAGE_ANIMATED_TYPES.contains(ext, mime_fallback=True):
-            if (stats := self._display_animated_image(filepath)) is not None:
+            if (ret := self.__get_gif_data(filepath)) and (
+                stats := self._display_gif(ret[0], ret[1])
+            ) is not None:
                 return stats
             else:
                 self._display_image(filepath)

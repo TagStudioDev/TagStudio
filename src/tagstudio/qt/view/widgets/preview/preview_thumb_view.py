@@ -1,14 +1,13 @@
 # Licensed under the GPL-3.0 License.
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
-import io
 import time
 from pathlib import Path
 from typing import TYPE_CHECKING, override
 
 import cv2
 import structlog
-from PIL import Image, UnidentifiedImageError
+from PIL import Image
 from PySide6.QtCore import QBuffer, QByteArray, QSize, Qt
 from PySide6.QtGui import QAction, QMovie, QPixmap, QResizeEvent
 from PySide6.QtWidgets import QHBoxLayout, QLabel, QPushButton, QStackedLayout, QWidget
@@ -277,9 +276,8 @@ class PreviewThumbView(QWidget):
         self.__render_thumb(filepath)
         return FileAttributeData(duration=self.__update_media_player(filepath))
 
-    def _display_animated_image(self, filepath: Path) -> FileAttributeData | None:
+    def _display_gif(self, gif_data: bytes, size: tuple[int, int]) -> FileAttributeData | None:
         """Update the animated image preview from a filepath."""
-        ext = filepath.suffix.lower()
         stats = FileAttributeData()
 
         # Ensure that any movie and buffer from previous animations are cleared.
@@ -287,51 +285,30 @@ class PreviewThumbView(QWidget):
             self.__preview_gif.movie().stop()
             self.__gif_buffer.close()
 
-        try:
-            image: Image.Image = Image.open(filepath)
-            stats.width = image.width
-            stats.height = image.height
+        stats.width = size[0]
+        stats.height = size[1]
 
-            self.__image_ratio = image.width / image.height
-            if ext == ".apng":
-                image_bytes_io = io.BytesIO()
-                image.save(
-                    image_bytes_io,
-                    "GIF",
-                    lossless=True,
-                    save_all=True,
-                    loop=0,
-                    disposal=2,
-                )
-                image.close()
-                image_bytes_io.seek(0)
-                self.__gif_buffer.setData(image_bytes_io.read())
-            else:
-                image.close()
-                with open(filepath, "rb") as f:
-                    self.__gif_buffer.setData(f.read())
-            movie = QMovie(self.__gif_buffer, QByteArray())
-            self.__preview_gif.setMovie(movie)
+        self.__image_ratio = stats.width / stats.height
 
-            # If the animation only has 1 frame, display it like a normal image.
-            if movie.frameCount() <= 1:
-                self._display_image(filepath)
-                return stats
+        self.__gif_buffer.setData(gif_data)
+        movie = QMovie(self.__gif_buffer, QByteArray())
+        self.__preview_gif.setMovie(movie)
 
-            # The animation has more than 1 frame, continue displaying it as an animation
-            self.__switch_preview(MediaType.IMAGE_ANIMATED)
-            self.resizeEvent(
-                QResizeEvent(
-                    QSize(stats.width, stats.height),
-                    QSize(stats.width, stats.height),
-                )
-            )
-            movie.start()
-
-            stats.duration = movie.frameCount() // 60
-        except (UnidentifiedImageError, FileNotFoundError) as e:
-            logger.error("[PreviewThumb] Could not load animated image", filepath=filepath, error=e)
+        # If the animation only has 1 frame, it isn't animated and shouldn't be treated as such
+        if movie.frameCount() <= 1:
             return None
+
+        # The animation has more than 1 frame, continue displaying it as an animation
+        self.__switch_preview(MediaType.IMAGE_ANIMATED)
+        self.resizeEvent(
+            QResizeEvent(
+                QSize(stats.width, stats.height),
+                QSize(stats.width, stats.height),
+            )
+        )
+        movie.start()
+
+        stats.duration = movie.frameCount() // 60
 
         return stats
 
