@@ -14,12 +14,12 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
-from qt.controller.widgets.preview.preview_thumb_controller import PreviewThumb
 
 from tagstudio.core.enums import Theme
 from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.library.alchemy.models import Entry
 from tagstudio.core.palette import ColorType, UiColor, get_ui_color
+from tagstudio.qt.controller.widgets.preview.preview_thumb_controller import PreviewThumb
 from tagstudio.qt.translations import Translations
 from tagstudio.qt.widgets.preview.field_containers import FieldContainers
 from tagstudio.qt.widgets.preview.file_attributes import FileAttributes
