@@ -11,6 +11,7 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
+from qt.controller.widgets.preview.preview_thumb_controller import PreviewThumb
 
 from tagstudio.core.enums import Theme
 from tagstudio.core.library.alchemy.library import Library
@@ -19,7 +20,6 @@ from tagstudio.core.palette import ColorType, UiColor, get_ui_color
 from tagstudio.qt.translations import Translations
 from tagstudio.qt.widgets.preview.field_containers import FieldContainers
 from tagstudio.qt.widgets.preview.file_attributes import FileAttributes
-from tagstudio.qt.widgets.preview.preview_thumb import PreviewThumb
 
 if typing.TYPE_CHECKING:
     from tagstudio.qt.ts_qt import QtDriver
