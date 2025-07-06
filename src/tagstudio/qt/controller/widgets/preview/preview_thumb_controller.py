@@ -5,10 +5,12 @@ import io
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+import cv2
 import rawpy
 import structlog
 from PIL import Image, UnidentifiedImageError
 from PIL.Image import DecompressionBombError
+from PySide6.QtCore import QSize
 
 from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.media_types import MediaCategories
@@ -21,6 +23,7 @@ if TYPE_CHECKING:
     from tagstudio.qt.ts_qt import QtDriver
 
 logger = structlog.get_logger(__name__)
+Image.MAX_IMAGE_PIXELS = None
 
 
 class PreviewThumb(PreviewThumbView):
@@ -93,6 +96,13 @@ class PreviewThumb(PreviewThumbView):
             logger.error("[PreviewThumb] Could not load animated image", filepath=filepath, error=e)
             return None
 
+    def __get_video_res(self, filepath: str) -> tuple[bool, QSize]:
+        video = cv2.VideoCapture(filepath, cv2.CAP_FFMPEG)
+        success, frame = video.read()
+        frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        image = Image.fromarray(frame)
+        return (success, QSize(image.width, image.height))
+
     def display_file(self, filepath: Path) -> FileAttributeData:
         """Render a single file preview."""
         self.__current_file = filepath
@@ -103,7 +113,15 @@ class PreviewThumb(PreviewThumbView):
         if MediaCategories.VIDEO_TYPES.contains(ext, mime_fallback=True) and is_readable_video(
             filepath
         ):
-            return self._display_video(filepath)
+            size: QSize | None = None
+            try:
+                success, size = self.__get_video_res(str(filepath))
+                if not success:
+                    size = None
+            except cv2.error as e:
+                logger.error("[PreviewThumb] Could not play video", filepath=filepath, error=e)
+
+            return self._display_video(filepath, size)
         # Audio
         elif MediaCategories.AUDIO_TYPES.contains(ext, mime_fallback=True):
             return self._display_audio(filepath)

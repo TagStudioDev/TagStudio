@@ -5,9 +5,7 @@ import time
 from pathlib import Path
 from typing import TYPE_CHECKING, override
 
-import cv2
 import structlog
-from PIL import Image
 from PySide6.QtCore import QBuffer, QByteArray, QSize, Qt
 from PySide6.QtGui import QAction, QMovie, QPixmap, QResizeEvent
 from PySide6.QtWidgets import QHBoxLayout, QLabel, QPushButton, QStackedLayout, QWidget
@@ -25,7 +23,6 @@ if TYPE_CHECKING:
     from tagstudio.qt.ts_qt import QtDriver
 
 logger = structlog.get_logger(__name__)
-Image.MAX_IMAGE_PIXELS = None
 
 
 class PreviewThumbView(QWidget):
@@ -234,13 +231,6 @@ class PreviewThumbView(QWidget):
             update_on_ratio_change=True,
         )
 
-    def __get_video_res(self, filepath: str) -> tuple[bool, QSize]:
-        video = cv2.VideoCapture(filepath, cv2.CAP_FFMPEG)
-        success, frame = video.read()
-        frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-        image = Image.fromarray(frame)
-        return (success, QSize(image.width, image.height))
-
     def __update_media_player(self, filepath: Path) -> int:
         """Display either audio or video.
 
@@ -249,25 +239,21 @@ class PreviewThumbView(QWidget):
         self.__media_player.play(filepath)
         return self.__media_player.player.duration() * 1000
 
-    def _display_video(self, filepath: Path) -> FileAttributeData:
+    def _display_video(self, filepath: Path, size: QSize | None) -> FileAttributeData:
         self.__switch_preview(MediaType.VIDEO)
         stats = FileAttributeData(duration=self.__update_media_player(filepath))
 
-        try:
-            success, size = self.__get_video_res(str(filepath))
-            if success:
-                stats.width = size.width()
-                stats.height = size.height()
+        if size is not None:
+            stats.width = size.width()
+            stats.height = size.height()
 
-                self.__image_ratio = stats.width / stats.height
-                self.resizeEvent(
-                    QResizeEvent(
-                        QSize(stats.width, stats.height),
-                        QSize(stats.width, stats.height),
-                    )
+            self.__image_ratio = stats.width / stats.height
+            self.resizeEvent(
+                QResizeEvent(
+                    QSize(stats.width, stats.height),
+                    QSize(stats.width, stats.height),
                 )
-        except cv2.error as e:
-            logger.error("[PreviewThumb] Could not play video", filepath=filepath, error=e)
+            )
 
         return stats
 
