@@ -238,49 +238,48 @@ class PreviewThumbView(QWidget):
         image = Image.fromarray(frame)
         return (success, QSize(image.width, image.height))
 
-    def __display_av_media(self, filepath: Path, type: MediaType) -> dict[str, int]:
-        """Display either audio or video."""
-        stats: dict[str, int] = {}
+    def __update_media_player(self, filepath: Path) -> int:
+        """Display either audio or video.
 
+        Returns the duration of the audio / video.
+        """
         self.__media_player.play(filepath)
-
-        if type == MediaType.VIDEO:
-            try:
-                success, size = self.__get_video_res(str(filepath))
-                if success:
-                    self.__update_image_size(
-                        (size.width(), size.height()), size.width() / size.height()
-                    )
-                    self.resizeEvent(
-                        QResizeEvent(
-                            QSize(size.width(), size.height()),
-                            QSize(size.width(), size.height()),
-                        )
-                    )
-
-                    stats["width"] = size.width()
-                    stats["height"] = size.height()
-
-            except cv2.error as e:
-                logger.error("[PreviewThumb] Could not play video", filepath=filepath, error=e)
-        else:
-            self.__thumb_renderer.render(
-                time.time(),
-                filepath,
-                (512, 512),
-                self.devicePixelRatio(),
-                update_on_ratio_change=True,
-            )
-
-        self.__switch_preview(type)
-        stats["duration"] = self.__media_player.player.duration() * 1000
-        return stats
+        return self.__media_player.player.duration() * 1000
 
     def _display_video(self, filepath: Path) -> dict[str, int]:
-        return self.__display_av_media(filepath, MediaType.VIDEO)
+        self.__switch_preview(MediaType.VIDEO)
+        stats = {"duration": self.__update_media_player(filepath)}
+
+        try:
+            success, size = self.__get_video_res(str(filepath))
+            if success:
+                self.__update_image_size(
+                    (size.width(), size.height()), size.width() / size.height()
+                )
+                self.resizeEvent(
+                    QResizeEvent(
+                        QSize(size.width(), size.height()),
+                        QSize(size.width(), size.height()),
+                    )
+                )
+
+                stats["width"] = size.width()
+                stats["height"] = size.height()
+        except cv2.error as e:
+            logger.error("[PreviewThumb] Could not play video", filepath=filepath, error=e)
+
+        return stats
 
     def _display_audio(self, filepath: Path) -> dict[str, int]:
-        return self.__display_av_media(filepath, MediaType.AUDIO)
+        self.__switch_preview(MediaType.AUDIO)
+        self.__thumb_renderer.render(
+            time.time(),
+            filepath,
+            (512, 512),
+            self.devicePixelRatio(),
+            update_on_ratio_change=True,
+        )
+        return {"duration": self.__update_media_player(filepath)}
 
     def _display_animated_image(self, filepath: Path) -> dict[str, int] | None:
         """Update the animated image preview from a filepath."""
