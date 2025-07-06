@@ -157,7 +157,7 @@ class PreviewPanelView(QWidget):
                 filepath: Path = self.lib.library_dir / entry.path
 
                 if update_preview:
-                    stats: dict = self.__thumb.update_preview(filepath)
+                    stats: dict = self.__thumb.display_file(filepath)
                     self.__file_attrs.update_stats(filepath, stats)
                 self.__file_attrs.update_date_label(filepath)
                 self._fields.update_from_entry(entry_id)

@@ -222,28 +222,10 @@ class PreviewThumbView(QWidget):
                 self.__gif_buffer.close()
             self.__preview_gif.hide()
 
-    def __display_fallback_image(self, filepath: Path, ext: str) -> dict[str, int]:
-        """Renders the given file as an image, no matter its media type.
-
-        Useful for fallback scenarios.
-        """
-        self.__switch_preview("image")
-        self.__thumb_renderer.render(
-            time.time(),
-            filepath,
-            (512, 512),
-            self.devicePixelRatio(),
-            update_on_ratio_change=True,
-        )
-        return self.__display_image(filepath)
-
-    def __display_image(self, filepath: Path) -> dict[str, int]:
-        """Update the static image preview from a filepath."""
+    def __get_image_stats(self, filepath: Path) -> dict[str, int]:
+        """Get width and height of an image as dict."""
         stats: dict[str, int] = {}
         ext = filepath.suffix.lower()
-        self.__switch_preview("image")
-
-        image: Image.Image | None = None
 
         if MediaCategories.IMAGE_RAW_TYPES.contains(ext, mime_fallback=True):
             try:
@@ -271,8 +253,54 @@ class PreviewThumbView(QWidget):
             ) as e:
                 logger.error("[PreviewThumb] Could not get image stats", filepath=filepath, error=e)
         elif MediaCategories.IMAGE_VECTOR_TYPES.contains(ext, mime_fallback=True):
-            pass
+            pass  # TODO
 
+        return stats
+
+    def __get_video_res(self, filepath: str) -> tuple[bool, QSize]:
+        video = cv2.VideoCapture(filepath, cv2.CAP_FFMPEG)
+        success, frame = video.read()
+        frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        image = Image.fromarray(frame)
+        return (success, QSize(image.width, image.height))
+
+    def __display_av_media(self, filepath: Path, type: MediaType) -> dict[str, int]:
+        """Display either audio or video."""
+        stats: dict[str, int] = {}
+
+        self.__media_player.play(filepath)
+
+        if type == MediaType.VIDEO:
+            try:
+                success, size = self.__get_video_res(str(filepath))
+                if success:
+                    self.__update_image_size(
+                        (size.width(), size.height()), size.width() / size.height()
+                    )
+                    self.resizeEvent(
+                        QResizeEvent(
+                            QSize(size.width(), size.height()),
+                            QSize(size.width(), size.height()),
+                        )
+                    )
+
+                    stats["width"] = size.width()
+                    stats["height"] = size.height()
+
+            except cv2.error as e:
+                logger.error("[PreviewThumb] Could not play video", filepath=filepath, error=e)
+            self.__switch_preview("video")
+        else:
+            self.__switch_preview("audio")
+            self.__thumb_renderer.render(
+                time.time(),
+                filepath,
+                (512, 512),
+                self.devicePixelRatio(),
+                update_on_ratio_change=True,
+            )
+
+        stats["duration"] = self.__media_player.player.duration() * 1000
         return stats
 
     def __display_animated_image(self, filepath: Path, ext: str) -> dict[str, int]:
@@ -312,7 +340,7 @@ class PreviewThumbView(QWidget):
 
             # If the animation only has 1 frame, display it like a normal image.
             if movie.frameCount() <= 1:
-                self.__display_fallback_image(filepath, ext)
+                self.__display_image(filepath)
                 return stats
 
             # The animation has more than 1 frame, continue displaying it as an animation
@@ -328,48 +356,28 @@ class PreviewThumbView(QWidget):
             stats["duration"] = movie.frameCount() // 60
         except (UnidentifiedImageError, FileNotFoundError) as e:
             logger.error("[PreviewThumb] Could not load animated image", filepath=filepath, error=e)
-            return self.__display_fallback_image(filepath, ext)
+            return self.__display_image(filepath)
 
         return stats
 
-    def __get_video_res(self, filepath: str) -> tuple[bool, QSize]:
-        video = cv2.VideoCapture(filepath, cv2.CAP_FFMPEG)
-        success, frame = video.read()
-        frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-        image = Image.fromarray(frame)
-        return (success, QSize(image.width, image.height))
+    def __display_image(self, filepath: Path) -> dict[str, int]:
+        """Renders the given file as an image, no matter its media type.
 
-    def __display_av_media(self, filepath: Path, type: MediaType) -> dict[str, int]:
-        """Display either audio or video."""
-        stats: dict[str, int] = {}
+        Useful for fallback scenarios.
+        """
+        self.__switch_preview("image")
+        self.__thumb_renderer.render(
+            time.time(),
+            filepath,
+            (512, 512),
+            self.devicePixelRatio(),
+            update_on_ratio_change=True,
+        )
+        return self.__get_image_stats(
+            filepath
+        )  # TODO: Get thumb renderer to return this stuff to pass on
 
-        self.__media_player.play(filepath)
-
-        if type == MediaType.VIDEO:
-            try:
-                success, size = self.__get_video_res(str(filepath))
-                if success:
-                    self.__update_image_size(
-                        (size.width(), size.height()), size.width() / size.height()
-                    )
-                    self.resizeEvent(
-                        QResizeEvent(
-                            QSize(size.width(), size.height()),
-                            QSize(size.width(), size.height()),
-                        )
-                    )
-
-                    stats["width"] = size.width()
-                    stats["height"] = size.height()
-
-            except cv2.error as e:
-                logger.error("[PreviewThumb] Could not play video", filepath=filepath, error=e)
-
-        self.__switch_preview("video" if type == MediaType.VIDEO else "audio")
-        stats["duration"] = self.__media_player.player.duration() * 1000
-        return stats
-
-    def update_preview(self, filepath: Path) -> dict[str, int]:
+    def display_file(self, filepath: Path) -> dict[str, int]:
         """Render a single file preview."""
         ext = filepath.suffix.lower()
         stats: dict[str, int] = {}
@@ -382,15 +390,7 @@ class PreviewThumbView(QWidget):
 
         # Audio
         elif MediaCategories.AUDIO_TYPES.contains(ext, mime_fallback=True):
-            self.__display_image(filepath)
             stats = self.__display_av_media(filepath, MediaType.AUDIO)
-            self.__thumb_renderer.render(
-                time.time(),
-                filepath,
-                (512, 512),
-                self.devicePixelRatio(),
-                update_on_ratio_change=True,
-            )
 
         # Animated Images
         elif MediaCategories.IMAGE_ANIMATED_TYPES.contains(ext, mime_fallback=True):
@@ -398,16 +398,7 @@ class PreviewThumbView(QWidget):
 
         # Other Types (Including Images)
         else:
-            # TODO: Get thumb renderer to return this stuff to pass on
             stats = self.__display_image(filepath)
-
-            self.__thumb_renderer.render(
-                time.time(),
-                filepath,
-                (512, 512),
-                self.devicePixelRatio(),
-                update_on_ratio_change=True,
-            )
 
         with catch_warnings(record=True):
             self.__button_wrapper.clicked.disconnect()
