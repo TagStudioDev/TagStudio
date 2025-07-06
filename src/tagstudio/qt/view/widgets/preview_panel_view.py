@@ -128,9 +128,6 @@ class PreviewPanelView(QWidget):
     def _set_selection_callback(self):
         raise NotImplementedError()
 
-    def thumb_media_player_stop(self):
-        self.__thumb.media_player.stop()
-
     def set_selection(self, selected: list[int], update_preview: bool = True):
         """Render the panel widgets with the newest data from the Library.
 
@@ -206,3 +203,7 @@ class PreviewPanelView(QWidget):
     def field_containers_widget(self) -> FieldContainers:  # needed for the tests
         """Getter for the field containers widget."""
         return self._fields
+
+    @property
+    def preview_thumb(self) -> PreviewThumb:
+        return self.__thumb

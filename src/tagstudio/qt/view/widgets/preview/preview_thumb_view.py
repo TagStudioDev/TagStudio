@@ -41,72 +41,71 @@ class PreviewThumbView(QWidget):
     def __init__(self, library: Library, driver: "QtDriver") -> None:
         super().__init__()
 
-        self.is_connected = False
         self.lib = library
         self.driver: QtDriver = driver
 
-        self.img_button_size: tuple[int, int] = (266, 266)
-        self.image_ratio: float = 1.0
+        self.__img_button_size: tuple[int, int] = (266, 266)
+        self.__image_ratio: float = 1.0
 
-        self.image_layout = QStackedLayout(self)
-        self.image_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.image_layout.setStackingMode(QStackedLayout.StackingMode.StackAll)
-        self.image_layout.setContentsMargins(0, 0, 0, 0)
+        self.__image_layout = QStackedLayout(self)
+        self.__image_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.__image_layout.setStackingMode(QStackedLayout.StackingMode.StackAll)
+        self.__image_layout.setContentsMargins(0, 0, 0, 0)
 
-        self.opener: FileOpenerHelper | None = None
-        self.open_file_action = QAction(Translations["file.open_file"], self)
-        self.open_explorer_action = QAction(open_file_str(), self)
-        self.delete_action = QAction(
+        self.__opener: FileOpenerHelper | None = None
+        self.__open_file_action = QAction(Translations["file.open_file"], self)
+        self.__open_explorer_action = QAction(open_file_str(), self)
+        self.__delete_action = QAction(
             Translations.format("trash.context.ambiguous", trash_term=trash_term()),
             self,
         )
 
-        self.preview_img = QPushButtonWrapper()
-        self.preview_img.setMinimumSize(*self.img_button_size)
-        self.preview_img.setFlat(True)
-        self.preview_img.setContextMenuPolicy(Qt.ContextMenuPolicy.ActionsContextMenu)
-        self.preview_img.addAction(self.open_file_action)
-        self.preview_img.addAction(self.open_explorer_action)
-        self.preview_img.addAction(self.delete_action)
+        self.__button_wrapper = QPushButtonWrapper()
+        self.__button_wrapper.setMinimumSize(*self.__img_button_size)
+        self.__button_wrapper.setFlat(True)
+        self.__button_wrapper.setContextMenuPolicy(Qt.ContextMenuPolicy.ActionsContextMenu)
+        self.__button_wrapper.addAction(self.__open_file_action)
+        self.__button_wrapper.addAction(self.__open_explorer_action)
+        self.__button_wrapper.addAction(self.__delete_action)
 
         # In testing, it didn't seem possible to center the widgets directly
         # on the QStackedLayout. Adding sublayouts allows us to center the widgets.
         self.preview_img_page = QWidget()
-        self.__stacked_page_setup(self.preview_img_page, self.preview_img)
+        self.__stacked_page_setup(self.preview_img_page, self.__button_wrapper)
 
-        self.preview_gif = QLabel()
-        self.preview_gif.setMinimumSize(*self.img_button_size)
-        self.preview_gif.setContextMenuPolicy(Qt.ContextMenuPolicy.ActionsContextMenu)
-        self.preview_gif.setCursor(Qt.CursorShape.ArrowCursor)
-        self.preview_gif.addAction(self.open_file_action)
-        self.preview_gif.addAction(self.open_explorer_action)
-        self.preview_gif.addAction(self.delete_action)
-        self.gif_buffer: QBuffer = QBuffer()
+        self.__preview_gif = QLabel()
+        self.__preview_gif.setMinimumSize(*self.__img_button_size)
+        self.__preview_gif.setContextMenuPolicy(Qt.ContextMenuPolicy.ActionsContextMenu)
+        self.__preview_gif.setCursor(Qt.CursorShape.ArrowCursor)
+        self.__preview_gif.addAction(self.__open_file_action)
+        self.__preview_gif.addAction(self.__open_explorer_action)
+        self.__preview_gif.addAction(self.__delete_action)
+        self.__gif_buffer: QBuffer = QBuffer()
 
-        self.preview_gif_page = QWidget()
-        self.__stacked_page_setup(self.preview_gif_page, self.preview_gif)
+        self.__preview_gif_page = QWidget()
+        self.__stacked_page_setup(self.__preview_gif_page, self.__preview_gif)
 
-        self.media_player = MediaPlayer(driver)
-        self.media_player.addAction(self.open_file_action)
-        self.media_player.addAction(self.open_explorer_action)
-        self.media_player.addAction(self.delete_action)
+        self.__media_player = MediaPlayer(driver)
+        self.__media_player.addAction(self.__open_file_action)
+        self.__media_player.addAction(self.__open_explorer_action)
+        self.__media_player.addAction(self.__delete_action)
 
         # Need to watch for this to resize the player appropriately.
-        self.media_player.player.hasVideoChanged.connect(self.__has_video_changed)
+        self.__media_player.player.hasVideoChanged.connect(self.__has_video_changed)
 
-        self.mp_max_size = QSize(*self.img_button_size)
+        self.__mp_max_size = QSize(*self.__img_button_size)
 
-        self.media_player_page = QWidget()
-        self.__stacked_page_setup(self.media_player_page, self.media_player)
+        self.__media_player_page = QWidget()
+        self.__stacked_page_setup(self.__media_player_page, self.__media_player)
 
-        self.thumb_renderer = ThumbRenderer(self.lib)
-        self.thumb_renderer.updated.connect(
+        self.__thumb_renderer = ThumbRenderer(self.lib)
+        self.__thumb_renderer.updated.connect(
             lambda ts, i, s: (
-                self.preview_img.setIcon(i),
+                self.__button_wrapper.setIcon(i),
                 self.__set_mp_max_size(i.size()),
             )
         )
-        self.thumb_renderer.updated_ratio.connect(
+        self.__thumb_renderer.updated_ratio.connect(
             lambda ratio: (
                 self.__set_image_ratio(ratio),
                 self.__update_image_size(
@@ -119,16 +118,16 @@ class PreviewThumbView(QWidget):
             )
         )
 
-        self.image_layout.addWidget(self.preview_img_page)
-        self.image_layout.addWidget(self.preview_gif_page)
-        self.image_layout.addWidget(self.media_player_page)
+        self.__image_layout.addWidget(self.preview_img_page)
+        self.__image_layout.addWidget(self.__preview_gif_page)
+        self.__image_layout.addWidget(self.__media_player_page)
 
-        self.setMinimumSize(*self.img_button_size)
+        self.setMinimumSize(*self.__img_button_size)
 
         self.hide_preview()
 
     def __set_mp_max_size(self, size: QSize) -> None:
-        self.mp_max_size = size
+        self.__mp_max_size = size
 
     def __has_video_changed(self, video: bool) -> None:
         self.__update_image_size((self.size().width(), self.size().height()))
@@ -141,7 +140,7 @@ class PreviewThumbView(QWidget):
         page.setLayout(layout)
 
     def __set_image_ratio(self, ratio: float) -> None:
-        self.image_ratio = ratio
+        self.__image_ratio = ratio
 
     def __update_image_size(self, size: tuple[int, int], ratio: float | None = None) -> None:
         if ratio:
@@ -150,11 +149,11 @@ class PreviewThumbView(QWidget):
         adj_width: float = size[0]
         adj_height: float = size[1]
         # Landscape
-        if self.image_ratio > 1:
-            adj_height = size[0] * (1 / self.image_ratio)
+        if self.__image_ratio > 1:
+            adj_height = size[0] * (1 / self.__image_ratio)
         # Portrait
-        elif self.image_ratio <= 1:
-            adj_width = size[1] * self.image_ratio
+        elif self.__image_ratio <= 1:
+            adj_width = size[1] * self.__image_ratio
 
         if adj_width > size[0]:
             adj_height = adj_height * (size[0] / adj_width)
@@ -165,63 +164,63 @@ class PreviewThumbView(QWidget):
 
         adj_size = QSize(int(adj_width), int(adj_height))
 
-        self.img_button_size = (int(adj_width), int(adj_height))
-        self.preview_img.setMaximumSize(adj_size)
-        self.preview_img.setIconSize(adj_size)
-        self.preview_gif.setMaximumSize(adj_size)
-        self.preview_gif.setMinimumSize(adj_size)
+        self.__img_button_size = (int(adj_width), int(adj_height))
+        self.__button_wrapper.setMaximumSize(adj_size)
+        self.__button_wrapper.setIconSize(adj_size)
+        self.__preview_gif.setMaximumSize(adj_size)
+        self.__preview_gif.setMinimumSize(adj_size)
 
-        if not self.media_player.player.hasVideo():
+        if not self.__media_player.player.hasVideo():
             # ensure we do not exceed the thumbnail size
             mp_width = (
                 adj_size.width()
-                if adj_size.width() < self.mp_max_size.width()
-                else self.mp_max_size.width()
+                if adj_size.width() < self.__mp_max_size.width()
+                else self.__mp_max_size.width()
             )
             mp_height = (
                 adj_size.height()
-                if adj_size.height() < self.mp_max_size.height()
-                else self.mp_max_size.height()
+                if adj_size.height() < self.__mp_max_size.height()
+                else self.__mp_max_size.height()
             )
             mp_size = QSize(mp_width, mp_height)
-            self.media_player.setMinimumSize(mp_size)
-            self.media_player.setMaximumSize(mp_size)
+            self.__media_player.setMinimumSize(mp_size)
+            self.__media_player.setMaximumSize(mp_size)
         else:
             # have video, so just resize as normal
-            self.media_player.setMaximumSize(adj_size)
-            self.media_player.setMinimumSize(adj_size)
+            self.__media_player.setMaximumSize(adj_size)
+            self.__media_player.setMinimumSize(adj_size)
 
         proxy_style = RoundedPixmapStyle(radius=8)
-        self.preview_gif.setStyle(proxy_style)
-        self.media_player.setStyle(proxy_style)
-        m = self.preview_gif.movie()
+        self.__preview_gif.setStyle(proxy_style)
+        self.__media_player.setStyle(proxy_style)
+        m = self.__preview_gif.movie()
         if m:
             m.setScaledSize(adj_size)
 
     def __switch_preview(self, preview: str) -> None:
         if preview in ["audio", "video"]:
-            self.media_player.show()
-            self.image_layout.setCurrentWidget(self.media_player_page)
+            self.__media_player.show()
+            self.__image_layout.setCurrentWidget(self.__media_player_page)
         else:
-            self.media_player.stop()
-            self.media_player.hide()
+            self.__media_player.stop()
+            self.__media_player.hide()
 
         if preview in ["image", "audio"]:
-            self.preview_img.show()
-            self.image_layout.setCurrentWidget(
-                self.preview_img_page if preview == "image" else self.media_player_page
+            self.__button_wrapper.show()
+            self.__image_layout.setCurrentWidget(
+                self.preview_img_page if preview == "image" else self.__media_player_page
             )
         else:
-            self.preview_img.hide()
+            self.__button_wrapper.hide()
 
         if preview == "animated":
-            self.preview_gif.show()
-            self.image_layout.setCurrentWidget(self.preview_gif_page)
+            self.__preview_gif.show()
+            self.__image_layout.setCurrentWidget(self.__preview_gif_page)
         else:
-            if self.preview_gif.movie():
-                self.preview_gif.movie().stop()
-                self.gif_buffer.close()
-            self.preview_gif.hide()
+            if self.__preview_gif.movie():
+                self.__preview_gif.movie().stop()
+                self.__gif_buffer.close()
+            self.__preview_gif.hide()
 
     def __display_fallback_image(self, filepath: Path, ext: str) -> dict[str, int]:
         """Renders the given file as an image, no matter its media type.
@@ -229,7 +228,7 @@ class PreviewThumbView(QWidget):
         Useful for fallback scenarios.
         """
         self.__switch_preview("image")
-        self.thumb_renderer.render(
+        self.__thumb_renderer.render(
             time.time(),
             filepath,
             (512, 512),
@@ -282,14 +281,14 @@ class PreviewThumbView(QWidget):
 
         return stats
 
-    def __update_animation(self, filepath: Path, ext: str) -> dict[str, int]:
+    def __display_animated_image(self, filepath: Path, ext: str) -> dict[str, int]:
         """Update the animated image preview from a filepath."""
         stats: dict[str, int] = {}
 
         # Ensure that any movie and buffer from previous animations are cleared.
-        if self.preview_gif.movie():
-            self.preview_gif.movie().stop()
-            self.gif_buffer.close()
+        if self.__preview_gif.movie():
+            self.__preview_gif.movie().stop()
+            self.__gif_buffer.close()
 
         try:
             image: Image.Image = Image.open(filepath)
@@ -309,13 +308,13 @@ class PreviewThumbView(QWidget):
                 )
                 image.close()
                 image_bytes_io.seek(0)
-                self.gif_buffer.setData(image_bytes_io.read())
+                self.__gif_buffer.setData(image_bytes_io.read())
             else:
                 image.close()
                 with open(filepath, "rb") as f:
-                    self.gif_buffer.setData(f.read())
-            movie = QMovie(self.gif_buffer, QByteArray())
-            self.preview_gif.setMovie(movie)
+                    self.__gif_buffer.setData(f.read())
+            movie = QMovie(self.__gif_buffer, QByteArray())
+            self.__preview_gif.setMovie(movie)
 
             # If the animation only has 1 frame, display it like a normal image.
             if movie.frameCount() <= 1:
@@ -346,10 +345,11 @@ class PreviewThumbView(QWidget):
         image = Image.fromarray(frame)
         return (success, QSize(image.width, image.height))
 
-    def __update_media(self, filepath: Path, type: MediaType) -> dict[str, int]:
+    def __display_av_media(self, filepath: Path, type: MediaType) -> dict[str, int]:
+        """Display either audio or video."""
         stats: dict[str, int] = {}
 
-        self.media_player.play(filepath)
+        self.__media_player.play(filepath)
 
         if type == MediaType.VIDEO:
             try:
@@ -372,7 +372,7 @@ class PreviewThumbView(QWidget):
                 logger.error("[PreviewThumb] Could not play video", filepath=filepath, error=e)
 
         self.__switch_preview("video" if type == MediaType.VIDEO else "audio")
-        stats["duration"] = self.media_player.player.duration() * 1000
+        stats["duration"] = self.__media_player.player.duration() * 1000
         return stats
 
     def update_preview(self, filepath: Path) -> dict[str, int]:
@@ -384,15 +384,15 @@ class PreviewThumbView(QWidget):
         if MediaCategories.is_ext_in_category(
             ext, MediaCategories.VIDEO_TYPES, mime_fallback=True
         ) and is_readable_video(filepath):
-            stats = self.__update_media(filepath, MediaType.VIDEO)
+            stats = self.__display_av_media(filepath, MediaType.VIDEO)
 
         # Audio
         elif MediaCategories.is_ext_in_category(
             ext, MediaCategories.AUDIO_TYPES, mime_fallback=True
         ):
             self.__display_image(filepath)
-            stats = self.__update_media(filepath, MediaType.AUDIO)
-            self.thumb_renderer.render(
+            stats = self.__display_av_media(filepath, MediaType.AUDIO)
+            self.__thumb_renderer.render(
                 time.time(),
                 filepath,
                 (512, 512),
@@ -404,14 +404,14 @@ class PreviewThumbView(QWidget):
         elif MediaCategories.is_ext_in_category(
             ext, MediaCategories.IMAGE_ANIMATED_TYPES, mime_fallback=True
         ):
-            stats = self.__update_animation(filepath, ext)
+            stats = self.__display_animated_image(filepath, ext)
 
         # Other Types (Including Images)
         else:
             # TODO: Get thumb renderer to return this stuff to pass on
             stats = self.__display_image(filepath)
 
-            self.thumb_renderer.render(
+            self.__thumb_renderer.render(
                 time.time(),
                 filepath,
                 (512, 512),
@@ -420,27 +420,27 @@ class PreviewThumbView(QWidget):
             )
 
         with catch_warnings(record=True):
-            self.preview_img.clicked.disconnect()
-        self.preview_img.clicked.connect(lambda checked=False, path=filepath: open_file(path))
-        self.preview_img.is_connected = True
+            self.__button_wrapper.clicked.disconnect()
+        self.__button_wrapper.clicked.connect(lambda checked=False, path=filepath: open_file(path))
+        self.__button_wrapper.is_connected = True
 
-        self.preview_img.setContextMenuPolicy(Qt.ContextMenuPolicy.ActionsContextMenu)
-        self.preview_img.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.__button_wrapper.setContextMenuPolicy(Qt.ContextMenuPolicy.ActionsContextMenu)
+        self.__button_wrapper.setCursor(Qt.CursorShape.PointingHandCursor)
 
-        self.opener = FileOpenerHelper(filepath)
-        self.open_file_action.triggered.connect(self.opener.open_file)
-        self.open_explorer_action.triggered.connect(self.opener.open_explorer)
+        self.__opener = FileOpenerHelper(filepath)
+        self.__open_file_action.triggered.connect(self.__opener.open_file)
+        self.__open_explorer_action.triggered.connect(self.__opener.open_explorer)
 
         with catch_warnings(record=True):
-            self.delete_action.triggered.disconnect()
+            self.__delete_action.triggered.disconnect()
 
-        self.delete_action.setText(
+        self.__delete_action.setText(
             Translations.format("trash.context.singular", trash_term=trash_term())
         )
-        self.delete_action.triggered.connect(
+        self.__delete_action.triggered.connect(
             lambda checked=False, f=filepath: self.driver.delete_files_callback(f)
         )
-        self.delete_action.setEnabled(bool(filepath))
+        self.__delete_action.setEnabled(bool(filepath))
 
         return stats
 
@@ -452,3 +452,7 @@ class PreviewThumbView(QWidget):
     def resizeEvent(self, event: QResizeEvent) -> None:
         self.__update_image_size((self.size().width(), self.size().height()))
         return super().resizeEvent(event)
+
+    @property
+    def media_player(self) -> MediaPlayer:
+        return self.__media_player
