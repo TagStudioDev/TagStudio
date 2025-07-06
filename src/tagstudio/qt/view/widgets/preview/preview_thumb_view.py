@@ -275,7 +275,7 @@ class PreviewThumbView(QWidget):
         image = Image.fromarray(frame)
         return (success, QSize(image.width, image.height))
 
-    def _display_av_media(self, filepath: Path, type: MediaType) -> dict[str, int]:
+    def __display_av_media(self, filepath: Path, type: MediaType) -> dict[str, int]:
         """Display either audio or video."""
         stats: dict[str, int] = {}
 
@@ -312,6 +312,12 @@ class PreviewThumbView(QWidget):
         self.__switch_preview(type)
         stats["duration"] = self.__media_player.player.duration() * 1000
         return stats
+
+    def _display_video(self, filepath: Path) -> dict[str, int]:
+        return self.__display_av_media(filepath, MediaType.VIDEO)
+
+    def _display_audio(self, filepath: Path) -> dict[str, int]:
+        return self.__display_av_media(filepath, MediaType.AUDIO)
 
     def _display_animated_image(self, filepath: Path) -> dict[str, int]:
         """Update the animated image preview from a filepath."""
@@ -387,24 +393,6 @@ class PreviewThumbView(QWidget):
         return self.__get_image_stats(
             filepath
         )  # TODO: Get thumb renderer to return this stuff to pass on
-
-    def _display_file(self, filepath: Path, media_type: MediaType) -> dict[str, int]:
-        """Render a single file preview."""
-        stats: dict[str, int] = {}
-
-        match media_type:
-            case MediaType.VIDEO:
-                stats = self._display_av_media(filepath, MediaType.VIDEO)
-            case MediaType.AUDIO:
-                stats = self._display_av_media(filepath, MediaType.AUDIO)
-            case MediaType.IMAGE_ANIMATED:
-                stats = self._display_animated_image(filepath)
-            case MediaType.IMAGE:
-                stats = self._display_image(filepath)
-            case _:
-                raise NotImplementedError
-
-        return stats
 
     def hide_preview(self) -> None:
         """Completely hide the file preview."""

@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING
 import structlog
 
 from tagstudio.core.library.alchemy.library import Library
-from tagstudio.core.media_types import MediaCategories, MediaType
+from tagstudio.core.media_types import MediaCategories
 from tagstudio.qt.helpers.file_opener import open_file
 from tagstudio.qt.helpers.file_tester import is_readable_video
 from tagstudio.qt.view.widgets.preview.preview_thumb_view import PreviewThumbView
@@ -34,16 +34,16 @@ class PreviewThumb(PreviewThumbView):
         if MediaCategories.VIDEO_TYPES.contains(ext, mime_fallback=True) and is_readable_video(
             filepath
         ):
-            return self._display_file(filepath, MediaType.VIDEO)
+            return self._display_video(filepath)
         # Audio
         elif MediaCategories.AUDIO_TYPES.contains(ext, mime_fallback=True):
-            return self._display_file(filepath, MediaType.AUDIO)
+            return self._display_audio(filepath)
         # Animated Images
         elif MediaCategories.IMAGE_ANIMATED_TYPES.contains(ext, mime_fallback=True):
-            return self._display_file(filepath, MediaType.IMAGE_ANIMATED)
+            return self._display_animated_image(filepath)
         # Other Types (Including Images)
         else:
-            return self._display_file(filepath, MediaType.IMAGE)
+            return self._display_image(filepath)
 
     def _open_file_action_callback(self):
         open_file(self.__current_file)
