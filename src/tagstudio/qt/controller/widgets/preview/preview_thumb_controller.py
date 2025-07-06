@@ -1,3 +1,6 @@
+# Licensed under the GPL-3.0 License.
+# Created for TagStudio: https://github.com/CyanVoxel/TagStudio
+
 from pathlib import Path
 from typing import TYPE_CHECKING
 

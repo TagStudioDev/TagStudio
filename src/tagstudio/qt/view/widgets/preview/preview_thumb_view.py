@@ -1,4 +1,3 @@
-# Copyright (C) 2025 Travis Abendshien (CyanVoxel).
 # Licensed under the GPL-3.0 License.
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
@@ -209,23 +208,23 @@ class PreviewThumbView(QWidget):
         if m:
             m.setScaledSize(adj_size)
 
-    def __switch_preview(self, preview: str) -> None:
-        if preview in ["audio", "video"]:
+    def __switch_preview(self, preview: MediaType | None) -> None:
+        if preview in [MediaType.AUDIO, MediaType.VIDEO]:
             self.__media_player.show()
             self.__image_layout.setCurrentWidget(self.__media_player_page)
         else:
             self.__media_player.stop()
             self.__media_player.hide()
 
-        if preview in ["image", "audio"]:
+        if preview in [MediaType.IMAGE, MediaType.AUDIO]:
             self.__button_wrapper.show()
             self.__image_layout.setCurrentWidget(
-                self.preview_img_page if preview == "image" else self.__media_player_page
+                self.preview_img_page if preview == MediaType.IMAGE else self.__media_player_page
             )
         else:
             self.__button_wrapper.hide()
 
-        if preview == "animated":
+        if preview == MediaType.IMAGE_ANIMATED:
             self.__preview_gif.show()
             self.__image_layout.setCurrentWidget(self.__preview_gif_page)
         else:
@@ -301,9 +300,7 @@ class PreviewThumbView(QWidget):
 
             except cv2.error as e:
                 logger.error("[PreviewThumb] Could not play video", filepath=filepath, error=e)
-            self.__switch_preview("video")
         else:
-            self.__switch_preview("audio")
             self.__thumb_renderer.render(
                 time.time(),
                 filepath,
@@ -312,6 +309,7 @@ class PreviewThumbView(QWidget):
                 update_on_ratio_change=True,
             )
 
+        self.__switch_preview(type)
         stats["duration"] = self.__media_player.player.duration() * 1000
         return stats
 
@@ -357,7 +355,7 @@ class PreviewThumbView(QWidget):
                 return stats
 
             # The animation has more than 1 frame, continue displaying it as an animation
-            self.__switch_preview("animated")
+            self.__switch_preview(MediaType.IMAGE_ANIMATED)
             self.resizeEvent(
                 QResizeEvent(
                     QSize(stats["width"], stats["height"]),
@@ -378,7 +376,7 @@ class PreviewThumbView(QWidget):
 
         Useful for fallback scenarios.
         """
-        self.__switch_preview("image")
+        self.__switch_preview(MediaType.IMAGE)
         self.__thumb_renderer.render(
             time.time(),
             filepath,
@@ -410,7 +408,7 @@ class PreviewThumbView(QWidget):
 
     def hide_preview(self) -> None:
         """Completely hide the file preview."""
-        self.__switch_preview("")
+        self.__switch_preview(None)
 
     @override
     def resizeEvent(self, event: QResizeEvent) -> None:
