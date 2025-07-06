@@ -13,6 +13,8 @@ class QPushButtonWrapper(QPushButton):
     the warning that is triggered by disconnecting a signal that is not currently connected.
     """
 
+    is_connected: bool
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.is_connected = False
