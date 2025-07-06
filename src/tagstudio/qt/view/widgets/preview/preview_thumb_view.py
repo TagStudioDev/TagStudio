@@ -19,6 +19,7 @@ from tagstudio.qt.helpers.rounded_pixmap_style import RoundedPixmapStyle
 from tagstudio.qt.platform_strings import open_file_str, trash_term
 from tagstudio.qt.translations import Translations
 from tagstudio.qt.widgets.media_player import MediaPlayer
+from tagstudio.qt.widgets.preview.file_attributes import FileAttributeData
 from tagstudio.qt.widgets.thumb_renderer import ThumbRenderer
 
 if TYPE_CHECKING:
@@ -249,37 +250,37 @@ class PreviewThumbView(QWidget):
         self.__media_player.play(filepath)
         return self.__media_player.player.duration() * 1000
 
-    def _display_video(self, filepath: Path) -> dict[str, int]:
+    def _display_video(self, filepath: Path) -> FileAttributeData:
         self.__switch_preview(MediaType.VIDEO)
-        stats = {"duration": self.__update_media_player(filepath)}
+        stats = FileAttributeData(duration=self.__update_media_player(filepath))
 
         try:
             success, size = self.__get_video_res(str(filepath))
             if success:
-                self.__image_ratio = size.width() / size.height()
+                stats.width = size.width()
+                stats.height = size.height()
+
+                self.__image_ratio = stats.width / stats.height
                 self.resizeEvent(
                     QResizeEvent(
-                        QSize(size.width(), size.height()),
-                        QSize(size.width(), size.height()),
+                        QSize(stats.width, stats.height),
+                        QSize(stats.width, stats.height),
                     )
                 )
-
-                stats["width"] = size.width()
-                stats["height"] = size.height()
         except cv2.error as e:
             logger.error("[PreviewThumb] Could not play video", filepath=filepath, error=e)
 
         return stats
 
-    def _display_audio(self, filepath: Path) -> dict[str, int]:
+    def _display_audio(self, filepath: Path) -> FileAttributeData:
         self.__switch_preview(MediaType.AUDIO)
         self.__render_thumb(filepath)
-        return {"duration": self.__update_media_player(filepath)}
+        return FileAttributeData(duration=self.__update_media_player(filepath))
 
-    def _display_animated_image(self, filepath: Path) -> dict[str, int] | None:
+    def _display_animated_image(self, filepath: Path) -> FileAttributeData | None:
         """Update the animated image preview from a filepath."""
         ext = filepath.suffix.lower()
-        stats: dict[str, int] = {}
+        stats = FileAttributeData()
 
         # Ensure that any movie and buffer from previous animations are cleared.
         if self.__preview_gif.movie():
@@ -288,8 +289,8 @@ class PreviewThumbView(QWidget):
 
         try:
             image: Image.Image = Image.open(filepath)
-            stats["width"] = image.width
-            stats["height"] = image.height
+            stats.width = image.width
+            stats.height = image.height
 
             self.__image_ratio = image.width / image.height
             if ext == ".apng":
@@ -321,13 +322,13 @@ class PreviewThumbView(QWidget):
             self.__switch_preview(MediaType.IMAGE_ANIMATED)
             self.resizeEvent(
                 QResizeEvent(
-                    QSize(stats["width"], stats["height"]),
-                    QSize(stats["width"], stats["height"]),
+                    QSize(stats.width, stats.height),
+                    QSize(stats.width, stats.height),
                 )
             )
             movie.start()
 
-            stats["duration"] = movie.frameCount() // 60
+            stats.duration = movie.frameCount() // 60
         except (UnidentifiedImageError, FileNotFoundError) as e:
             logger.error("[PreviewThumb] Could not load animated image", filepath=filepath, error=e)
             return None

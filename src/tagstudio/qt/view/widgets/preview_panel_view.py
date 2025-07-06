@@ -22,7 +22,7 @@ from tagstudio.core.palette import ColorType, UiColor, get_ui_color
 from tagstudio.qt.controller.widgets.preview.preview_thumb_controller import PreviewThumb
 from tagstudio.qt.translations import Translations
 from tagstudio.qt.widgets.preview.field_containers import FieldContainers
-from tagstudio.qt.widgets.preview.file_attributes import FileAttributes
+from tagstudio.qt.widgets.preview.file_attributes import FileAttributeData, FileAttributes
 
 if typing.TYPE_CHECKING:
     from tagstudio.qt.ts_qt import QtDriver
@@ -160,7 +160,7 @@ class PreviewPanelView(QWidget):
                 filepath: Path = self.lib.library_dir / entry.path
 
                 if update_preview:
-                    stats: dict = self.__thumb.display_file(filepath)
+                    stats: FileAttributeData = self.__thumb.display_file(filepath)
                     self.__file_attrs.update_stats(filepath, stats)
                 self.__file_attrs.update_date_label(filepath)
                 self._fields.update_from_entry(entry_id)

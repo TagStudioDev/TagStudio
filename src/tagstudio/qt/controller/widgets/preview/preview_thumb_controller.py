@@ -14,6 +14,7 @@ from tagstudio.core.media_types import MediaCategories
 from tagstudio.qt.helpers.file_opener import open_file
 from tagstudio.qt.helpers.file_tester import is_readable_video
 from tagstudio.qt.view.widgets.preview.preview_thumb_view import PreviewThumbView
+from tagstudio.qt.widgets.preview.file_attributes import FileAttributeData
 
 if TYPE_CHECKING:
     from tagstudio.qt.ts_qt import QtDriver
@@ -27,9 +28,9 @@ class PreviewThumb(PreviewThumbView):
     def __init__(self, library: Library, driver: "QtDriver"):
         super().__init__(library, driver)
 
-    def __get_image_stats(self, filepath: Path) -> dict[str, int]:
+    def __get_image_stats(self, filepath: Path) -> FileAttributeData:
         """Get width and height of an image as dict."""
-        stats: dict[str, int] = {}
+        stats = FileAttributeData()
         ext = filepath.suffix.lower()
 
         if MediaCategories.IMAGE_RAW_TYPES.contains(ext, mime_fallback=True):
@@ -37,8 +38,8 @@ class PreviewThumb(PreviewThumbView):
                 with rawpy.imread(str(filepath)) as raw:
                     rgb = raw.postprocess()
                     image = Image.new("L", (rgb.shape[1], rgb.shape[0]), color="black")
-                    stats["width"] = image.width
-                    stats["height"] = image.height
+                    stats.width = image.width
+                    stats.height = image.height
             except (
                 rawpy._rawpy._rawpy.LibRawIOError,  # pyright: ignore[reportAttributeAccessIssue]
                 rawpy._rawpy.LibRawFileUnsupportedError,  # pyright: ignore[reportAttributeAccessIssue]
@@ -48,8 +49,8 @@ class PreviewThumb(PreviewThumbView):
         elif MediaCategories.IMAGE_RASTER_TYPES.contains(ext, mime_fallback=True):
             try:
                 image = Image.open(str(filepath))
-                stats["width"] = image.width
-                stats["height"] = image.height
+                stats.width = image.width
+                stats.height = image.height
             except (
                 DecompressionBombError,
                 FileNotFoundError,
@@ -62,7 +63,7 @@ class PreviewThumb(PreviewThumbView):
 
         return stats
 
-    def display_file(self, filepath: Path) -> dict[str, int]:
+    def display_file(self, filepath: Path) -> FileAttributeData:
         """Render a single file preview."""
         self.__current_file = filepath
 
