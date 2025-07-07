@@ -225,7 +225,7 @@ class MediaCategories:
         ".sqlite",
         ".sqlite3",
     }
-    _DISK_IMAGE_SET: set[str] = {".bios", ".dmg", ".iso"}
+    _DISK_IMAGE_SET: set[str] = {".bios", ".dmg", ".fhdx", ".iso"}
     _DOCUMENT_SET: set[str] = {
         ".doc",
         ".docm",
@@ -390,6 +390,7 @@ class MediaCategories:
         ".mp4",
         ".webm",
         ".wmv",
+        ".ts",
     }
 
     ADOBE_PHOTOSHOP_TYPES = MediaCategory(
