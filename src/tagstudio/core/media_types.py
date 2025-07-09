@@ -93,6 +93,7 @@ class MediaCategories:
         ".psd",
     }
     _AFFINITY_PHOTO_SET: set[str] = {".afphoto"}
+    _KRITA_SET: set[str] = {".kra", ".krz"}
     _ARCHIVE_SET: set[str] = {
         ".7z",
         ".gz",
@@ -590,6 +591,12 @@ class MediaCategories:
         is_iana=True,
         name="video",
     )
+    KRITA_TYPES = MediaCategory(
+        media_type=MediaType.IMAGE,
+        extensions=_KRITA_SET,
+        is_iana=False,
+        name="krita",
+    )
 
     ALL_CATEGORIES = [
         ADOBE_PHOTOSHOP_TYPES,
@@ -624,6 +631,7 @@ class MediaCategories:
         SPREADSHEET_TYPES,
         TEXT_TYPES,
         VIDEO_TYPES,
+        KRITA_TYPES,
     ]
 
     @staticmethod
