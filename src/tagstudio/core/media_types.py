@@ -327,6 +327,7 @@ class MediaCategories:
         ".odp",
         ".ods",
         ".odt",
+        ".ora",
     }
     _PACKAGE_SET: set[str] = {
         ".aab",
