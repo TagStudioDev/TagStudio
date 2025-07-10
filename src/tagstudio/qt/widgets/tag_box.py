@@ -107,7 +107,8 @@ class TagBoxWidget(FieldWidget):
             build_tag_panel,
             self.driver.lib.tag_display_name(tag.id),
             "Edit Tag",
-            done_callback=lambda s=self.driver.selected: self.driver.main_window.preview_panel.set_selection(  # noqa: E501
+            done_callback=lambda _=None,
+            s=self.driver.selected: self.driver.main_window.preview_panel.set_selection(  # noqa: E501
                 s, update_preview=False
             ),
             has_save=True,
