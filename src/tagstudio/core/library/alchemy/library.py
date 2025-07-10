@@ -674,7 +674,7 @@ class Library:
             start_time = time.time()
             entry = session.scalar(entry_stmt)
             if with_tags:
-                tags = set(session.scalars(tag_stmt))  # pyright: ignore [reportPossiblyUnboundVariable]
+                tags = set(session.scalars(tag_stmt))  # pyright: ignore[reportPossiblyUnboundVariable]
             end_time = time.time()
             logger.info(
                 f"[Library] Time it took to get entry: "
