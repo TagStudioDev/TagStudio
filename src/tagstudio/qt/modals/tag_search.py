@@ -42,7 +42,7 @@ if TYPE_CHECKING:
 class TagSearchPanel(PanelWidget):
     tag_chosen = Signal(int)
     lib: Library
-    driver: "QtDriver"
+    driver: QtDriver | None = None
     is_initialized: bool = False
     first_tag_id: int | None = None
     is_tag_chooser: bool
@@ -56,13 +56,12 @@ class TagSearchPanel(PanelWidget):
     def __init__(
         self,
         library: Library,
-        exclude: list[int] = None,
+        exclude: list[int] = [],
         is_tag_chooser: bool = True,
     ):
         super().__init__()
         self.lib = library
-        self.driver = None
-        self.exclude = exclude or []
+        self.exclude = exclude
 
         self.is_tag_chooser = is_tag_chooser
         self.create_button_in_layout: bool = False
@@ -194,7 +193,7 @@ class TagSearchPanel(PanelWidget):
         create_button: QPushButton | None = None
         if self.create_button_in_layout and self.scroll_layout.count():
             create_button = self.scroll_layout.takeAt(self.scroll_layout.count() - 1).widget()  # type: ignore
-            create_button.deleteLater()
+            if create_button: create_button.deleteLater()
             self.create_button_in_layout = False
 
         # Get results for the search query
@@ -264,7 +263,8 @@ class TagSearchPanel(PanelWidget):
                 self.scroll_layout.addWidget(new_tw)
 
         # Assign the tag to the widget at the given index.
-        tag_widget: TagWidget = self.scroll_layout.itemAt(index).widget()
+        tag_widget = self.scroll_layout.itemAt(index).widget()
+        assert isinstance(tag_widget, TagWidget)
         tag_widget.set_tag(tag)
 
         # Set tag widget viability and potentially return early
@@ -292,7 +292,7 @@ class TagSearchPanel(PanelWidget):
                 lambda checked=False, tag_id=tag.id: (
                     self.driver.main_window.search_field.setText(f"tag_id:{tag_id}"),
                     self.driver.update_browsing_state(BrowsingState.from_tag_id(tag_id)),
-                )
+                ) if self.driver else None
             )
             tag_widget.search_for_tag_action.setEnabled(True)
         else:
