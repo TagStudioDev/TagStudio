@@ -56,7 +56,7 @@ class TagSearchPanel(PanelWidget):
     def __init__(
         self,
         library: Library,
-        exclude: list[int],
+        exclude: list[int] | None = None,
         is_tag_chooser: bool = True,
     ):
         super().__init__()
