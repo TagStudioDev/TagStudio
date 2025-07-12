@@ -279,14 +279,13 @@ class TagSearchPanel(PanelWidget):
         tag_widget.has_remove = has_remove_button
 
         with catch_warnings(record=True):
+            tag_widget.on_click.disconnect()
             tag_widget.on_edit.disconnect()
             tag_widget.on_remove.disconnect()
-            tag_widget.bg_button.clicked.disconnect()
 
-        tag_id = tag.id
+        tag_widget.on_click.connect(lambda t=tag: self.edit_tag(t))
         tag_widget.on_edit.connect(lambda t=tag: self.edit_tag(t))
         tag_widget.on_remove.connect(lambda t=tag: self.delete_tag(t))
-        tag_widget.bg_button.clicked.connect(lambda: self.tag_chosen.emit(tag_id))
 
         if self.driver:
             tag_widget.search_for_tag_action.triggered.connect(
