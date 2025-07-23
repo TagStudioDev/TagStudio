@@ -1602,8 +1602,8 @@ class Library:
         for parent_id in parent_ids:
             # add new parent tag
             parent_tag = TagParent(
-                parent_id=tag.id,
-                child_id=parent_id,
+                parent_id=parent_id,
+                child_id=tag.id,
             )
             session.add(parent_tag)
 
