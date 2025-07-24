@@ -84,4 +84,4 @@ class LibraryPrefs(DefaultEnum):
 
     IS_EXCLUDE_LIST = True
     EXTENSION_LIST = [".json", ".xmp", ".aae"]
-    DB_VERSION = 9
+    DB_VERSION = 10

@@ -491,6 +491,8 @@ class Library:
                     self.apply_db8_default_data(session)
                 if db_version < 9:
                     self.apply_db9_filename_population(session)
+                if db_version < 10:
+                    self.apply_db10_parent_repairs(session)
 
             # Update DB_VERSION
             if LibraryPrefs.DB_VERSION.default > db_version:
@@ -521,6 +523,20 @@ class Library:
                 .values(disambiguation_id=None)
             )
             session.execute(disam_stmt)
+            session.flush()
+
+            session.commit()
+
+    def apply_db10_parent_repairs(self, session: Session):
+        """Apply database repairs introduced in DB_VERSION 10."""
+        logger.info("[Library][Migration] Applying patches to DB_VERSION: 10 library...")
+        with session:
+            # Repair parent-child tag relationships that are the wrong way around.
+            stmt = update(TagParent).values(
+                parent_id=TagParent.child_id,
+                child_id=TagParent.parent_id,
+            )
+            session.execute(stmt)
             session.flush()
 
             session.commit()
