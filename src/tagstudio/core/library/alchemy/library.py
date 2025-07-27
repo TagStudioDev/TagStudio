@@ -1604,15 +1604,15 @@ class Library:
 
         # load all tag's parent tags to know which to remove
         prev_parent_tags = session.scalars(
-            select(TagParent).where(TagParent.parent_id == tag.id)
+            select(TagParent).where(TagParent.child_id == tag.id)
         ).all()
 
         for parent_tag in prev_parent_tags:
-            if parent_tag.child_id not in parent_ids:
+            if parent_tag.parent_id not in parent_ids:
                 session.delete(parent_tag)
             else:
                 # no change, remove from list
-                parent_ids.remove(parent_tag.child_id)
+                parent_ids.remove(parent_tag.parent_id)
 
                 # create remaining items
         for parent_id in parent_ids:
