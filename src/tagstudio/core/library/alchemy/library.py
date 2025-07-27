@@ -272,8 +272,8 @@ class Library:
 
         # Parent Tags (Previously known as "Subtags" in JSON)
         for tag in json_lib.tags:
-            for child_id in tag.subtag_ids:
-                self.add_parent_tag(parent_id=tag.id, child_id=child_id)
+            for parent_id in tag.subtag_ids:
+                self.add_parent_tag(parent_id=parent_id, child_id=tag.id)
 
         # Entries
         self.add_entries(
