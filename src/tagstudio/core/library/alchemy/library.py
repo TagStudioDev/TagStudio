@@ -527,20 +527,6 @@ class Library:
 
             session.commit()
 
-    def apply_db10_parent_repairs(self, session: Session):
-        """Apply database repairs introduced in DB_VERSION 10."""
-        logger.info("[Library][Migration] Applying patches to DB_VERSION: 10 library...")
-        with session:
-            # Repair parent-child tag relationships that are the wrong way around.
-            stmt = update(TagParent).values(
-                parent_id=TagParent.child_id,
-                child_id=TagParent.parent_id,
-            )
-            session.execute(stmt)
-            session.flush()
-
-            session.commit()
-
     def apply_db8_schema_changes(self, session: Session):
         """Apply database schema changes introduced in DB_VERSION 8."""
         # TODO: Use Alembic for this part instead
@@ -631,6 +617,20 @@ class Library:
             session.merge(entry).filename = entry.path.name
         session.commit()
         logger.info("[Library][Migration] Populated filename column in entries table")
+
+    def apply_db10_parent_repairs(self, session: Session):
+        """Apply database repairs introduced in DB_VERSION 10."""
+        logger.info("[Library][Migration] Applying patches to DB_VERSION: 10 library...")
+        with session:
+            # Repair parent-child tag relationships that are the wrong way around.
+            stmt = update(TagParent).values(
+                parent_id=TagParent.child_id,
+                child_id=TagParent.parent_id,
+            )
+            session.execute(stmt)
+            session.flush()
+
+            session.commit()
 
     @property
     def default_fields(self) -> list[BaseField]:
