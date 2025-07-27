@@ -641,7 +641,7 @@ class JsonMigrationModal(QObject):
             for tag in self.sql_lib.tags:
                 tag_id = tag.id  # Tag IDs start at 0
                 sql_parent_tags = set(
-                    session.scalars(select(TagParent.child_id).where(TagParent.parent_id == tag.id))
+                    session.scalars(select(TagParent.parent_id).where(TagParent.child_id == tag.id))
                 )
 
                 # JSON tags allowed self-parenting; SQL tags no longer allow this.
