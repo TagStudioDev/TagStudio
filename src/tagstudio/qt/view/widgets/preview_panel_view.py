@@ -1,3 +1,6 @@
+# Licensed under the GPL-3.0 License.
+# Created for TagStudio: https://github.com/CyanVoxel/TagStudio
+
 import traceback
 import typing
 from pathlib import Path
@@ -16,10 +19,10 @@ from tagstudio.core.enums import Theme
 from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.library.alchemy.models import Entry
 from tagstudio.core.palette import ColorType, UiColor, get_ui_color
+from tagstudio.qt.controller.widgets.preview.preview_thumb_controller import PreviewThumb
 from tagstudio.qt.translations import Translations
 from tagstudio.qt.widgets.preview.field_containers import FieldContainers
-from tagstudio.qt.widgets.preview.file_attributes import FileAttributes
-from tagstudio.qt.widgets.preview.preview_thumb import PreviewThumb
+from tagstudio.qt.widgets.preview.file_attributes import FileAttributeData, FileAttributes
 
 if typing.TYPE_CHECKING:
     from tagstudio.qt.ts_qt import QtDriver
@@ -128,9 +131,6 @@ class PreviewPanelView(QWidget):
     def _set_selection_callback(self):
         raise NotImplementedError()
 
-    def thumb_media_player_stop(self):
-        self.__thumb.media_player.stop()
-
     def set_selection(self, selected: list[int], update_preview: bool = True):
         """Render the panel widgets with the newest data from the Library.
 
@@ -160,7 +160,7 @@ class PreviewPanelView(QWidget):
                 filepath: Path = self.lib.library_dir / entry.path
 
                 if update_preview:
-                    stats: dict = self.__thumb.update_preview(filepath)
+                    stats: FileAttributeData = self.__thumb.display_file(filepath)
                     self.__file_attrs.update_stats(filepath, stats)
                 self.__file_attrs.update_date_label(filepath)
                 self._fields.update_from_entry(entry_id)
@@ -206,3 +206,7 @@ class PreviewPanelView(QWidget):
     def field_containers_widget(self) -> FieldContainers:  # needed for the tests
         """Getter for the field containers widget."""
         return self._fields
+
+    @property
+    def preview_thumb(self) -> PreviewThumb:
+        return self.__thumb

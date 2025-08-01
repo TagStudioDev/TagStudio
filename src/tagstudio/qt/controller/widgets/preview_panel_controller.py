@@ -1,3 +1,6 @@
+# Licensed under the GPL-3.0 License.
+# Created for TagStudio: https://github.com/CyanVoxel/TagStudio
+
 import typing
 from warnings import catch_warnings
 
