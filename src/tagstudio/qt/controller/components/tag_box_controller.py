@@ -24,7 +24,7 @@ logger = structlog.get_logger(__name__)
 class TagBoxWidget(TagBoxWidgetView):
     on_update = Signal()
 
-    __entries: list[int]
+    __entries: list[int] = []
 
     def __init__(self, title: str, driver: "QtDriver"):
         super().__init__(title, driver)
