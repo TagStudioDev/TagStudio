@@ -272,8 +272,8 @@ class Library:
 
         # Parent Tags (Previously known as "Subtags" in JSON)
         for tag in json_lib.tags:
-            for child_id in tag.subtag_ids:
-                self.add_parent_tag(parent_id=tag.id, child_id=child_id)
+            for parent_id in tag.subtag_ids:
+                self.add_parent_tag(parent_id=parent_id, child_id=tag.id)
 
         # Entries
         self.add_entries(
@@ -491,6 +491,8 @@ class Library:
                     self.apply_db8_default_data(session)
                 if db_version < 9:
                     self.apply_db9_filename_population(session)
+                if db_version < 10:
+                    self.apply_db10_parent_repairs(session)
 
             # Update DB_VERSION
             if LibraryPrefs.DB_VERSION.default > db_version:
@@ -615,6 +617,20 @@ class Library:
             session.merge(entry).filename = entry.path.name
         session.commit()
         logger.info("[Library][Migration] Populated filename column in entries table")
+
+    def apply_db10_parent_repairs(self, session: Session):
+        """Apply database repairs introduced in DB_VERSION 10."""
+        logger.info("[Library][Migration] Applying patches to DB_VERSION: 10 library...")
+        with session:
+            # Repair parent-child tag relationships that are the wrong way around.
+            stmt = update(TagParent).values(
+                parent_id=TagParent.child_id,
+                child_id=TagParent.parent_id,
+            )
+            session.execute(stmt)
+            session.flush()
+
+            session.commit()
 
     @property
     def default_fields(self) -> list[BaseField]:
@@ -1588,22 +1604,22 @@ class Library:
 
         # load all tag's parent tags to know which to remove
         prev_parent_tags = session.scalars(
-            select(TagParent).where(TagParent.parent_id == tag.id)
+            select(TagParent).where(TagParent.child_id == tag.id)
         ).all()
 
         for parent_tag in prev_parent_tags:
-            if parent_tag.child_id not in parent_ids:
+            if parent_tag.parent_id not in parent_ids:
                 session.delete(parent_tag)
             else:
                 # no change, remove from list
-                parent_ids.remove(parent_tag.child_id)
+                parent_ids.remove(parent_tag.parent_id)
 
                 # create remaining items
         for parent_id in parent_ids:
             # add new parent tag
             parent_tag = TagParent(
-                parent_id=tag.id,
-                child_id=parent_id,
+                parent_id=parent_id,
+                child_id=tag.id,
             )
             session.add(parent_tag)
 
