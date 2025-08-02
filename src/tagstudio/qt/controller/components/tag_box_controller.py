@@ -57,15 +57,13 @@ class TagBoxWidget(TagBoxWidgetView):
     def _on_remove(self, tag: Tag) -> None:
         logger.info(
             "[TagBoxWidget] remove_tag",
-            selected=self.__driver.selected,
+            selected=self.__entries,
         )
 
         for entry_id in self.__entries:
             self.__driver.lib.remove_tags_from_entries(entry_id, tag.id)
 
         self.on_update.emit()
-
-        self.__driver.main_window.preview_panel.set_selection(self.__entries, update_preview=False)
 
     def _on_edit(self, tag: Tag) -> None:
         build_tag_panel = BuildTagPanel(self.__driver.lib, tag=tag)
@@ -74,10 +72,7 @@ class TagBoxWidget(TagBoxWidgetView):
             build_tag_panel,
             self.__driver.lib.tag_display_name(tag.id),
             "Edit Tag",
-            done_callback=lambda _=None,
-            s=self.__entries: self.__driver.main_window.preview_panel.set_selection(  # noqa: E501
-                s, update_preview=False
-            ),
+            done_callback=self.on_update.emit,
             has_save=True,
         )
         # TODO - this was update_tag()
