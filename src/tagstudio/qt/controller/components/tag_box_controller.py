@@ -1,0 +1,96 @@
+# Licensed under the GPL-3.0 License.
+# Created for TagStudio: https://github.com/CyanVoxel/TagStudio
+
+
+import typing
+from collections.abc import Iterable
+
+import structlog
+from PySide6.QtCore import Signal
+
+from tagstudio.core.enums import TagClickActionOption
+from tagstudio.core.library.alchemy.enums import BrowsingState
+from tagstudio.core.library.alchemy.models import Tag
+from tagstudio.qt.modals.build_tag import BuildTagPanel
+from tagstudio.qt.view.components.tag_box_view import TagBoxWidgetView
+from tagstudio.qt.widgets.panel import PanelModal
+
+if typing.TYPE_CHECKING:
+    from tagstudio.qt.ts_qt import QtDriver
+
+logger = structlog.get_logger(__name__)
+
+
+class TagBoxWidget(TagBoxWidgetView):
+    on_update = Signal()
+
+    __entries: list[int]
+
+    def __init__(self, title: str, driver: "QtDriver"):
+        super().__init__(title, driver)
+        self.__driver = driver
+
+    def set_tags(self, tags: Iterable[Tag], entries: list[int]) -> None:
+        self.__entries = entries
+        self._set_tags(tags)
+
+    def _on_click(self, tag: Tag) -> None:
+        match self.__driver.settings.tag_click_action:
+            case TagClickActionOption.OPEN_EDIT:
+                self._on_edit(tag)
+            case TagClickActionOption.SET_SEARCH:
+                self.__driver.update_browsing_state(BrowsingState.from_tag_id(tag.id))
+            case TagClickActionOption.ADD_TO_SEARCH:
+                # NOTE: modifying the ast and then setting that would be nicer
+                #       than this string manipulation, but also much more complex,
+                #       due to needing to implement a visitor that turns an AST to a string
+                #       So if that exists when you read this, change the following accordingly.
+                current = self.__driver.browsing_history.current
+                suffix = BrowsingState.from_tag_id(tag.id).query
+                assert suffix is not None
+                self.__driver.update_browsing_state(
+                    current.with_search_query(
+                        f"{current.query} {suffix}" if current.query else suffix
+                    )
+                )
+
+    def _on_remove(self, tag: Tag) -> None:
+        logger.info(
+            "[TagBoxWidget] remove_tag",
+            selected=self.__driver.selected,
+        )
+
+        for entry_id in self.__entries:
+            self.__driver.lib.remove_tags_from_entries(entry_id, tag.id)
+
+        self.on_update.emit()
+
+        self.__driver.main_window.preview_panel.set_selection(self.__entries, update_preview=False)
+
+    def _on_edit(self, tag: Tag) -> None:
+        build_tag_panel = BuildTagPanel(self.__driver.lib, tag=tag)
+
+        edit_modal = PanelModal(
+            build_tag_panel,
+            self.__driver.lib.tag_display_name(tag.id),
+            "Edit Tag",
+            done_callback=lambda _=None,
+            s=self.__entries: self.__driver.main_window.preview_panel.set_selection(  # noqa: E501
+                s, update_preview=False
+            ),
+            has_save=True,
+        )
+        # TODO - this was update_tag()
+        edit_modal.saved.connect(
+            lambda: self.__driver.lib.update_tag(
+                build_tag_panel.build_tag(),
+                parent_ids=set(build_tag_panel.parent_ids),
+                alias_names=set(build_tag_panel.alias_names),
+                alias_ids=set(build_tag_panel.alias_ids),
+            )
+        )
+        edit_modal.show()
+
+    def _on_search(self, tag: Tag) -> None:
+        self.__driver.main_window.search_field.setText(f"tag_id:{tag.id}")
+        self.__driver.update_browsing_state(BrowsingState.from_tag_id(tag.id))
