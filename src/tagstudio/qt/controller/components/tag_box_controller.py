@@ -2,8 +2,7 @@
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
 
-import typing
-from collections.abc import Iterable
+from typing import TYPE_CHECKING
 
 import structlog
 from PySide6.QtCore import Signal
@@ -15,7 +14,7 @@ from tagstudio.qt.modals.build_tag import BuildTagPanel
 from tagstudio.qt.view.components.tag_box_view import TagBoxWidgetView
 from tagstudio.qt.widgets.panel import PanelModal
 
-if typing.TYPE_CHECKING:
+if TYPE_CHECKING:
     from tagstudio.qt.ts_qt import QtDriver
 
 logger = structlog.get_logger(__name__)
@@ -30,9 +29,8 @@ class TagBoxWidget(TagBoxWidgetView):
         super().__init__(title, driver)
         self.__driver = driver
 
-    def set_tags(self, tags: Iterable[Tag], entries: list[int]) -> None:
+    def set_entries(self, entries: list[int]) -> None:
         self.__entries = entries
-        self._set_tags(tags)
 
     def _on_click(self, tag: Tag) -> None:
         match self.__driver.settings.tag_click_action:

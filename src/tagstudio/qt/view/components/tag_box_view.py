@@ -31,7 +31,7 @@ class TagBoxWidgetView(FieldWidget):
         self.__root_layout.setContentsMargins(0, 0, 0, 0)
         self.setLayout(self.__root_layout)
 
-    def _set_tags(self, tags: Iterable[Tag]) -> None:
+    def set_tags(self, tags: Iterable[Tag]) -> None:
         tags_ = sorted(list(tags), key=lambda tag: self.__lib.tag_display_name(tag.id))
         logger.info("[TagBoxWidget] Tags:", tags=tags)
         while self.__root_layout.itemAt(0):
