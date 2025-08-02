@@ -2,7 +2,7 @@
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, override
 
 import structlog
 from PySide6.QtCore import Signal
@@ -32,6 +32,7 @@ class TagBoxWidget(TagBoxWidgetView):
     def set_entries(self, entries: list[int]) -> None:
         self.__entries = entries
 
+    @override
     def _on_click(self, tag: Tag) -> None:
         match self.__driver.settings.tag_click_action:
             case TagClickActionOption.OPEN_EDIT:
@@ -52,6 +53,7 @@ class TagBoxWidget(TagBoxWidgetView):
                     )
                 )
 
+    @override
     def _on_remove(self, tag: Tag) -> None:
         logger.info(
             "[TagBoxWidget] remove_tag",
@@ -63,6 +65,7 @@ class TagBoxWidget(TagBoxWidgetView):
 
         self.on_update.emit()
 
+    @override
     def _on_edit(self, tag: Tag) -> None:
         build_tag_panel = BuildTagPanel(self.__driver.lib, tag=tag)
 
@@ -84,6 +87,7 @@ class TagBoxWidget(TagBoxWidgetView):
         )
         edit_modal.show()
 
+    @override
     def _on_search(self, tag: Tag) -> None:
         self.__driver.main_window.search_field.setText(f"tag_id:{tag.id}")
         self.__driver.update_browsing_state(BrowsingState.from_tag_id(tag.id))
