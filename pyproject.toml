@@ -30,6 +30,7 @@ dependencies = [
     "typing_extensions~=4.13",
     "ujson~=5.10",
     "vtf2img~=0.1",
+    "wcmatch==10.*",
 ]
 
 [project.optional-dependencies]
