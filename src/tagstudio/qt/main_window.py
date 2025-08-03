@@ -4,6 +4,7 @@
 
 
 import typing
+from collections.abc import Callable
 from pathlib import Path
 
 import structlog
@@ -85,7 +86,7 @@ class MainMenuBar(QMenuBar):
     help_menu: QMenu
     about_action: QAction
 
-    def __init__(self, parent=...):
+    def __init__(self, parent: QWidget | None = None):
         super().__init__(parent)
 
         self.setup_file_menu()
@@ -381,8 +382,8 @@ class MainMenuBar(QMenuBar):
         self,
         libraries: list[Path],
         show_filepath: ShowFilepathOption,
-        open_library_callback,
-        clear_libraries_callback,
+        open_library_callback: Callable[[Path], None],
+        clear_libraries_callback: Callable[[], None],
     ):
         actions: list[QAction] = []
         for path in libraries:
@@ -427,8 +428,41 @@ class MainWindow(QMainWindow):
         (Translations["home.thumbnail_size.mini"], 76),
     ]
 
-    def __init__(self, driver: "QtDriver", parent=None) -> None:
+    def __init__(self, driver: "QtDriver", parent: QWidget | None = None) -> None:
         super().__init__(parent)
+
+        # region Type declarations for variables that will be initialized in methods
+        # initialized in setup_search_bar
+        self.search_bar_layout: QHBoxLayout
+        self.back_button: QPushButton
+        self.forward_button: QPushButton
+        self.search_field: QLineEdit
+        self.search_field_completion_list: QStringListModel
+        self.search_field_completer: QCompleter
+        self.search_button: QPushButton
+
+        # initialized in setup_extra_input_bar
+        self.extra_input_layout: QHBoxLayout
+        self.sorting_mode_combobox: QComboBox
+        self.sorting_direction_combobox: QComboBox
+        self.thumb_size_combobox: QComboBox
+
+        # initialized in setup_content
+        self.content_layout: QHBoxLayout
+        self.content_splitter: QSplitter
+
+        # initialized in setup_entry_list
+        self.entry_list_container: QWidget
+        self.entry_list_layout: QVBoxLayout
+        self.entry_scroll_area: QScrollArea
+        self.thumb_grid: QWidget
+        self.thumb_layout: FlowLayout
+        self.landing_widget: LandingWidget
+        self.pagination: Pagination
+
+        # initialized in setup_preview_panel
+        self.preview_panel: PreviewPanel
+        # endregion
 
         if not self.objectName():
             self.setObjectName("MainWindow")
@@ -596,7 +630,7 @@ class MainWindow(QMainWindow):
         self.entry_scroll_area.setWidgetResizable(True)
         self.entry_scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
 
-        self.thumb_grid: QWidget = QWidget()
+        self.thumb_grid = QWidget()
         self.thumb_grid.setObjectName("thumb_grid")
         self.thumb_layout = FlowLayout()
         self.thumb_layout.enable_grid_optimizations(value=True)
@@ -607,7 +641,7 @@ class MainWindow(QMainWindow):
 
         self.entry_list_layout.addWidget(self.entry_scroll_area)
 
-        self.landing_widget: LandingWidget = LandingWidget(driver, self.devicePixelRatio())
+        self.landing_widget = LandingWidget(driver, self.devicePixelRatio())
         self.entry_list_layout.addWidget(self.landing_widget)
 
         self.pagination = Pagination()
@@ -632,14 +666,6 @@ class MainWindow(QMainWindow):
         self.setStatusBar(self.status_bar)
 
     # endregion
-
-    def moveEvent(self, event) -> None:  # noqa: N802
-        # time.sleep(0.02)  # sleep for 20ms
-        pass
-
-    def resizeEvent(self, event) -> None:  # noqa: N802
-        # time.sleep(0.02)  # sleep for 20ms
-        pass
 
     def toggle_landing_page(self, enabled: bool):
         if enabled:
