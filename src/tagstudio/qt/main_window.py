@@ -304,6 +304,34 @@ class MainMenuBar(QMenuBar):
         self.show_filenames_action.setCheckable(True)
         self.view_menu.addAction(self.show_filenames_action)
 
+        self.view_menu.addSeparator()
+
+        self.decrease_thumbnail_size_action = QAction(
+            Translations["menu.view.decrease_thumbnail_size"], self
+        )
+        self.decrease_thumbnail_size_action.setShortcut(
+            QtCore.QKeyCombination(
+                QtCore.Qt.KeyboardModifier(QtCore.Qt.KeyboardModifier.ControlModifier),
+                QtCore.Qt.Key.Key_Minus,
+            )
+        )
+        self.decrease_thumbnail_size_action.setToolTip("Ctrl+-")
+        self.view_menu.addAction(self.decrease_thumbnail_size_action)
+
+        self.increase_thumbnail_size_action = QAction(
+            Translations["menu.view.increase_thumbnail_size"], self
+        )
+        self.increase_thumbnail_size_action.setShortcut(
+            QtCore.QKeyCombination(
+                QtCore.Qt.KeyboardModifier(QtCore.Qt.KeyboardModifier.ControlModifier),
+                QtCore.Qt.Key.Key_Equal,
+            )
+        )
+        self.increase_thumbnail_size_action.setToolTip("Ctrl+=")
+        self.view_menu.addAction(self.increase_thumbnail_size_action)
+
+        self.view_menu.addSeparator()
+
         self.addMenu(self.view_menu)
 
     def setup_tools_menu(self):

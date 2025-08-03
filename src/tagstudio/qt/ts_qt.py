@@ -479,9 +479,28 @@ class QtDriver(DriverMixin, QObject):
             self.settings.show_filenames_in_grid
         )
 
+        def on_decrease_thumbnail_size_action():
+            new_val = self.main_window.thumb_size_combobox.currentIndex() + 1
+            if not (new_val + 1) > len(self.main_window.THUMB_SIZES):
+                self.main_window.thumb_size_combobox.setCurrentIndex(new_val)
+
+        self.main_window.menu_bar.decrease_thumbnail_size_action.triggered.connect(
+            on_decrease_thumbnail_size_action
+        )
+
+        def on_increase_thumbnail_size_action():
+            new_val = self.main_window.thumb_size_combobox.currentIndex() - 1
+            if not new_val < 0:
+                self.main_window.thumb_size_combobox.setCurrentIndex(new_val)
+
+        self.main_window.menu_bar.increase_thumbnail_size_action.triggered.connect(
+            on_increase_thumbnail_size_action
+        )
+
         # endregion
 
         # region Tools Menu ===========================================================
+
         def create_fix_unlinked_entries_modal():
             if not hasattr(self, "unlinked_modal"):
                 self.unlinked_modal = FixUnlinkedEntriesModal(self.lib, self)
@@ -624,8 +643,9 @@ class QtDriver(DriverMixin, QObject):
         )
 
         # Thumbnail Size ComboBox
+        self.main_window.thumb_size_combobox.setCurrentIndex(2)  # Default: Medium
         self.main_window.thumb_size_combobox.currentIndexChanged.connect(
-            lambda: self.thumb_size_callback(self.main_window.thumb_size_combobox.currentData())
+            lambda: self.thumb_size_callback(self.main_window.thumb_size_combobox.currentIndex())
         )
         self._update_thumb_count()
 
