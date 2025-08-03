@@ -4,6 +4,7 @@
 
 import contextlib
 import json
+import os
 import platform
 import subprocess
 from shutil import which
@@ -20,7 +21,7 @@ FFMPEG_MACOS_LOCATIONS: list[str] = [
     "",
     "/opt/homebrew/bin/",
     "/usr/local/bin/",
-    f"/etc/profiles/per-user/{user}/bin"
+    f"/etc/profiles/per-user/{user}/bin",
 ]
 
 
