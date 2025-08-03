@@ -2,8 +2,8 @@
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
 
-import typing
 from collections.abc import Iterable
+from typing import TYPE_CHECKING
 
 import structlog
 
@@ -13,7 +13,7 @@ from tagstudio.qt.flowlayout import FlowLayout
 from tagstudio.qt.widgets.fields import FieldWidget
 from tagstudio.qt.widgets.tag import TagWidget
 
-if typing.TYPE_CHECKING:
+if TYPE_CHECKING:
     from tagstudio.qt.ts_qt import QtDriver
 
 logger = structlog.get_logger(__name__)
