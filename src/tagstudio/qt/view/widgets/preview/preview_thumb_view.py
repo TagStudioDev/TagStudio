@@ -220,10 +220,12 @@ class PreviewThumbView(QWidget):
             self.__preview_gif.hide()
 
     def __render_thumb(self, filepath: Path) -> None:
+        screen_size = self.screen().size()
+        base_size = (screen_size.width(), screen_size.height())
         self.__thumb_renderer.render(
             time.time(),
             filepath,
-            (512, 512),
+            base_size,
             self.devicePixelRatio(),
             update_on_ratio_change=True,
         )
