@@ -32,11 +32,11 @@ from tagstudio.core.library.alchemy.fields import (
 )
 from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.library.alchemy.models import Entry, Tag
+from tagstudio.qt.controller.components.tag_box_controller import TagBoxWidget
 from tagstudio.qt.translations import Translations
 from tagstudio.qt.widgets.datetime_picker import DatetimePicker
 from tagstudio.qt.widgets.fields import FieldContainer
 from tagstudio.qt.widgets.panel import PanelModal
-from tagstudio.qt.widgets.tag_box import TagBoxWidget
 from tagstudio.qt.widgets.text import TextWidget
 from tagstudio.qt.widgets.text_box_edit import EditTextBox
 from tagstudio.qt.widgets.text_line_edit import EditTextLine
@@ -478,19 +478,19 @@ class FieldContainers(QWidget):
             inner_widget = container.get_inner_widget()
 
             if isinstance(inner_widget, TagBoxWidget):
-                inner_widget.set_tags(tags)
                 with catch_warnings(record=True):
-                    inner_widget.updated.disconnect()
+                    inner_widget.on_update.disconnect()
 
             else:
                 inner_widget = TagBoxWidget(
-                    tags,
                     "Tags",
                     self.driver,
                 )
                 container.set_inner_widget(inner_widget)
+            inner_widget.set_entries([e.id for e in self.cached_entries])
+            inner_widget.set_tags(tags)
 
-            inner_widget.updated.connect(
+            inner_widget.on_update.connect(
                 lambda: (self.update_from_entry(self.cached_entries[0].id, update_badges=True))
             )
         else:
