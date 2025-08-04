@@ -1,6 +1,7 @@
 # Licensed under the GPL-3.0 License.
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
+import math
 import time
 from pathlib import Path
 from typing import TYPE_CHECKING, override
@@ -23,6 +24,9 @@ if TYPE_CHECKING:
     from tagstudio.qt.ts_qt import QtDriver
 
 logger = structlog.get_logger(__name__)
+
+
+THUMB_SIZE_FACTOR = 2
 
 
 class PreviewThumbView(QWidget):
@@ -220,12 +224,16 @@ class PreviewThumbView(QWidget):
             self.__preview_gif.hide()
 
     def __render_thumb(self, filepath: Path) -> None:
-        screen_size = self.screen().size()
-        base_size = (screen_size.width(), screen_size.height())
+        self.__filepath = filepath
+        self.__rendered_res = (
+            math.ceil(self.__img_button_size[0] * THUMB_SIZE_FACTOR),
+            math.ceil(self.__img_button_size[1] * THUMB_SIZE_FACTOR),
+        )
+
         self.__thumb_renderer.render(
             time.time(),
             filepath,
-            base_size,
+            self.__rendered_res,
             self.devicePixelRatio(),
             update_on_ratio_change=True,
         )
@@ -305,10 +313,15 @@ class PreviewThumbView(QWidget):
     def hide_preview(self) -> None:
         """Completely hide the file preview."""
         self.__switch_preview(None)
+        self.__filepath = None
 
     @override
     def resizeEvent(self, event: QResizeEvent) -> None:
         self.__update_image_size((self.size().width(), self.size().height()))
+
+        if self.__filepath is not None and self.__rendered_res < self.__img_button_size:
+            self.__render_thumb(self.__filepath)
+
         return super().resizeEvent(event)
 
     @property
