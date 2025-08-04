@@ -193,7 +193,7 @@ def test_remove_tag(library: Library, generate_tag):
 @pytest.mark.parametrize("is_exclude", [True, False])
 def test_search_filter_extensions(library: Library, is_exclude: bool):
     # Given
-    entries = list(library.get_entries())
+    entries = list(library.all_entries())
     assert len(entries) == 2, entries
 
     library.set_prefs(LibraryPrefs.IS_EXCLUDE_LIST, is_exclude)
@@ -201,18 +201,19 @@ def test_search_filter_extensions(library: Library, is_exclude: bool):
 
     # When
     results = library.search_library(BrowsingState.show_all(), page_size=500)
+    entries = library.get_entries(results.ids)
 
     # Then
     assert results.total_count == 1
     assert len(results) == 1
 
-    entry = results[0]
+    entry = entries[0]
     assert (entry.path.suffix == ".txt") == is_exclude
 
 
 def test_search_library_case_insensitive(library: Library):
     # Given
-    entries = list(library.get_entries(with_joins=True))
+    entries = list(library.all_entries(with_joins=True))
     assert len(entries) == 2, entries
 
     entry = entries[0]
@@ -228,7 +229,7 @@ def test_search_library_case_insensitive(library: Library):
     assert results.total_count == 1
     assert len(results) == 1
 
-    assert results[0].id == entry.id
+    assert results[0] == entry.id
 
 
 def test_preferences(library: Library):
@@ -241,7 +242,7 @@ def test_remove_entry_field(library: Library, entry_full):
 
     library.remove_entry_field(title_field, [entry_full.id])
 
-    entry = next(library.get_entries(with_joins=True))
+    entry = next(library.all_entries(with_joins=True))
     assert not entry.text_fields
 
 
@@ -257,7 +258,7 @@ def test_remove_field_entry_with_multiple_field(library: Library, entry_full):
     library.remove_entry_field(title_field, [entry_full.id])
 
     # Then one field should remain
-    entry = next(library.get_entries(with_joins=True))
+    entry = next(library.all_entries(with_joins=True))
     assert len(entry.text_fields) == 1
 
 
@@ -270,7 +271,7 @@ def test_update_entry_field(library: Library, entry_full):
         "new value",
     )
 
-    entry = next(library.get_entries(with_joins=True))
+    entry = next(library.all_entries(with_joins=True))
     assert entry.text_fields[0].value == "new value"
 
 
@@ -290,7 +291,7 @@ def test_update_entry_with_multiple_identical_fields(library: Library, entry_ful
     )
 
     # Then only one should be updated
-    entry = next(library.get_entries(with_joins=True))
+    entry = next(library.all_entries(with_joins=True))
     assert entry.text_fields[0].value == ""
     assert entry.text_fields[1].value == "new value"
 
@@ -378,7 +379,7 @@ def test_remove_tags_from_entries(library: Library, entry_full):
         removed_tag_id = tag.id
         library.remove_tags_from_entries(entry_full.id, tag.id)
 
-    entry = next(library.get_entries(with_joins=True))
+    entry = next(library.all_entries(with_joins=True))
     assert removed_tag_id not in [t.id for t in entry.tags]
 
 
@@ -417,7 +418,7 @@ def test_update_field_order(library: Library, entry_full):
     )
 
     # Then
-    entry = next(library.get_entries(with_joins=True))
+    entry = next(library.all_entries(with_joins=True))
     assert entry.text_fields[0].position == 0
     assert entry.text_fields[0].value == "first"
     assert entry.text_fields[1].position == 1
@@ -445,59 +446,59 @@ def test_library_prefs_multiple_identical_vals():
 def test_path_search_ilike(library: Library):
     results = library.search_library(BrowsingState.from_path("bar.md"), page_size=500)
     assert results.total_count == 1
-    assert len(results.items) == 1
+    assert len(results.ids) == 1
 
 
 def test_path_search_like(library: Library):
     results = library.search_library(BrowsingState.from_path("BAR.MD"), page_size=500)
     assert results.total_count == 0
-    assert len(results.items) == 0
+    assert len(results.ids) == 0
 
 
 def test_path_search_default_with_sep(library: Library):
     results = library.search_library(BrowsingState.from_path("one/two"), page_size=500)
     assert results.total_count == 1
-    assert len(results.items) == 1
+    assert len(results.ids) == 1
 
 
 def test_path_search_glob_after(library: Library):
     results = library.search_library(BrowsingState.from_path("foo*"), page_size=500)
     assert results.total_count == 1
-    assert len(results.items) == 1
+    assert len(results.ids) == 1
 
 
 def test_path_search_glob_in_front(library: Library):
     results = library.search_library(BrowsingState.from_path("*bar.md"), page_size=500)
     assert results.total_count == 1
-    assert len(results.items) == 1
+    assert len(results.ids) == 1
 
 
 def test_path_search_glob_both_sides(library: Library):
     results = library.search_library(BrowsingState.from_path("*one/two*"), page_size=500)
     assert results.total_count == 1
-    assert len(results.items) == 1
+    assert len(results.ids) == 1
 
 
 # TODO: deduplicate this code with pytest parametrisation or a for loop
 def test_path_search_ilike_glob_equality(library: Library):
     results_ilike = library.search_library(BrowsingState.from_path("one/two"), page_size=500)
     results_glob = library.search_library(BrowsingState.from_path("*one/two*"), page_size=500)
-    assert [e.id for e in results_ilike.items] == [e.id for e in results_glob.items]
+    assert results_ilike.ids == results_glob.ids
     results_ilike, results_glob = None, None
 
     results_ilike = library.search_library(BrowsingState.from_path("bar.md"), page_size=500)
     results_glob = library.search_library(BrowsingState.from_path("*bar.md*"), page_size=500)
-    assert [e.id for e in results_ilike.items] == [e.id for e in results_glob.items]
+    assert results_ilike.ids == results_glob.ids
     results_ilike, results_glob = None, None
 
     results_ilike = library.search_library(BrowsingState.from_path("bar"), page_size=500)
     results_glob = library.search_library(BrowsingState.from_path("*bar*"), page_size=500)
-    assert [e.id for e in results_ilike.items] == [e.id for e in results_glob.items]
+    assert results_ilike.ids == results_glob.ids
     results_ilike, results_glob = None, None
 
     results_ilike = library.search_library(BrowsingState.from_path("bar.md"), page_size=500)
     results_glob = library.search_library(BrowsingState.from_path("*bar.md*"), page_size=500)
-    assert [e.id for e in results_ilike.items] == [e.id for e in results_glob.items]
+    assert results_ilike.ids == results_glob.ids
     results_ilike, results_glob = None, None
 
 
@@ -505,29 +506,29 @@ def test_path_search_ilike_glob_equality(library: Library):
 def test_path_search_like_glob_equality(library: Library):
     results_ilike = library.search_library(BrowsingState.from_path("ONE/two"), page_size=500)
     results_glob = library.search_library(BrowsingState.from_path("*ONE/two*"), page_size=500)
-    assert [e.id for e in results_ilike.items] == [e.id for e in results_glob.items]
+    assert results_ilike.ids == results_glob.ids
     results_ilike, results_glob = None, None
 
     results_ilike = library.search_library(BrowsingState.from_path("BAR.MD"), page_size=500)
     results_glob = library.search_library(BrowsingState.from_path("*BAR.MD*"), page_size=500)
-    assert [e.id for e in results_ilike.items] == [e.id for e in results_glob.items]
+    assert results_ilike.ids == results_glob.ids
     results_ilike, results_glob = None, None
 
     results_ilike = library.search_library(BrowsingState.from_path("BAR.MD"), page_size=500)
     results_glob = library.search_library(BrowsingState.from_path("*bar.md*"), page_size=500)
-    assert [e.id for e in results_ilike.items] != [e.id for e in results_glob.items]
+    assert results_ilike.ids != results_glob.ids
     results_ilike, results_glob = None, None
 
     results_ilike = library.search_library(BrowsingState.from_path("bar.md"), page_size=500)
     results_glob = library.search_library(BrowsingState.from_path("*BAR.MD*"), page_size=500)
-    assert [e.id for e in results_ilike.items] != [e.id for e in results_glob.items]
+    assert results_ilike.ids != results_glob.ids
     results_ilike, results_glob = None, None
 
 
 @pytest.mark.parametrize(["filetype", "num_of_filetype"], [("md", 1), ("txt", 1), ("png", 0)])
 def test_filetype_search(library: Library, filetype, num_of_filetype):
     results = library.search_library(BrowsingState.from_filetype(filetype), page_size=500)
-    assert len(results.items) == num_of_filetype
+    assert len(results.ids) == num_of_filetype
 
 
 @pytest.mark.parametrize(["filetype", "num_of_filetype"], [("png", 2), ("apng", 1), ("ng", 0)])
@@ -535,10 +536,10 @@ def test_filetype_return_one_filetype(file_mediatypes_library: Library, filetype
     results = file_mediatypes_library.search_library(
         BrowsingState.from_filetype(filetype), page_size=500
     )
-    assert len(results.items) == num_of_filetype
+    assert len(results.ids) == num_of_filetype
 
 
 @pytest.mark.parametrize(["mediatype", "num_of_mediatype"], [("plaintext", 2), ("image", 0)])
 def test_mediatype_search(library: Library, mediatype, num_of_mediatype):
     results = library.search_library(BrowsingState.from_mediatype(mediatype), page_size=500)
-    assert len(results.items) == num_of_mediatype
+    assert len(results.ids) == num_of_mediatype

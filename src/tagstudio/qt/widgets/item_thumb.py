@@ -14,7 +14,7 @@ from warnings import catch_warnings
 import structlog
 from PIL import Image, ImageQt
 from PySide6.QtCore import QEvent, QMimeData, QSize, Qt, QUrl
-from PySide6.QtGui import QAction, QDrag, QEnterEvent, QMouseEvent, QPixmap
+from PySide6.QtGui import QAction, QDrag, QEnterEvent, QGuiApplication, QMouseEvent, QPixmap
 from PySide6.QtWidgets import (
     QBoxLayout,
     QCheckBox,
@@ -321,7 +321,16 @@ class ItemThumb(FlowWidget):
 
         self.base_layout.addWidget(self.thumb_container)
         self.base_layout.addWidget(self.file_label)
-
+        self.thumb_button.clicked.connect(
+            lambda: self.driver.toggle_item_selection(
+                self.item_id,
+                append=(QGuiApplication.keyboardModifiers() == Qt.KeyboardModifier.ControlModifier),
+                bridge=(QGuiApplication.keyboardModifiers() == Qt.KeyboardModifier.ShiftModifier),
+            )
+        )
+        self.delete_action.triggered.connect(
+            lambda: self.driver.delete_files_callback(self.opener.filepath, self.item_id)
+        )
         self.set_mode(mode)
 
     @property

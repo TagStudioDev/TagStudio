@@ -70,7 +70,7 @@ def folders_to_tags(library: Library):
         reversed_tag = reverse_tag(library, tag, None)
         add_tag_to_tree(reversed_tag)
 
-    for entry in library.get_entries():
+    for entry in library.all_entries():
         folders = entry.path.parts[0:-1]
         if not folders:
             continue
@@ -125,7 +125,7 @@ def generate_preview_data(library: Library) -> BranchData:
         reversed_tag = reverse_tag(library, tag, None)
         add_tag_to_tree(reversed_tag)
 
-    for entry in library.get_entries():
+    for entry in library.all_entries():
         folders = entry.path.parts[0:-1]
         if not folders:
             continue
