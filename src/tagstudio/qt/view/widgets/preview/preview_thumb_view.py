@@ -35,6 +35,9 @@ class PreviewThumbView(QWidget):
     __img_button_size: tuple[int, int]
     __image_ratio: float
 
+    __filepath: Path | None
+    __rendered_res: tuple[int, int]
+
     def __init__(self, library: Library, driver: "QtDriver") -> None:
         super().__init__()
 
