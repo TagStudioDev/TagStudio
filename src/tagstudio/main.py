@@ -7,16 +7,13 @@
 """TagStudio launcher."""
 
 import argparse
-import logging
 import traceback
 
 import structlog
 
 from tagstudio.qt.ts_qt import QtDriver
 
-structlog.configure(
-    wrapper_class=structlog.make_filtering_bound_logger(logging.INFO),
-)
+logger = structlog.get_logger(__name__)
 
 
 def main():
@@ -67,7 +64,7 @@ def main():
         driver.start()
     except Exception:
         traceback.print_exc()
-        logging.info(f"\nTagStudio Frontend ({ui_name}) Crashed! Press Enter to Continue...")
+        logger.info(f"\nTagStudio Frontend ({ui_name}) Crashed! Press Enter to Continue...")
         input()
 
 

@@ -3,13 +3,14 @@
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
 
-import logging
 import mimetypes
 from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
 
-logging.basicConfig(format="%(message)s", level=logging.INFO)
+import structlog
+
+logger = structlog.get_logger(__name__)
 
 FILETYPE_EQUIVALENTS = [
     set(["aif", "aiff", "aifc"]),
