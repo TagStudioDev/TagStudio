@@ -206,10 +206,10 @@ class ItemThumb(FlowWidget):
         self.renderer = ThumbRenderer(self.lib)
         self.renderer.updated.connect(
             lambda timestamp, image, size, filename: (
-                self.update_thumb(timestamp, image=image),
-                self.update_size(timestamp, size=size),
-                self.set_filename_text(filename),
-                self.set_extension(filename),
+                self.update_thumb(image, timestamp),
+                self.update_size(size, timestamp),
+                self.set_filename_text(filename, timestamp),
+                self.set_extension(filename, timestamp),
             )
         )
         self.thumb_button.setFlat(True)
@@ -365,7 +365,10 @@ class ItemThumb(FlowWidget):
             self.item_type_badge.setHidden(False)
         self.mode = mode
 
-    def set_extension(self, filename: Path) -> None:
+    def set_extension(self, filename: Path, timestamp: float | None = None) -> None:
+        if timestamp and timestamp < ItemThumb.update_cutoff:
+            return
+
         ext = filename.suffix.lower()
         if ext and ext.startswith(".") is False:
             ext = "." + ext
@@ -404,7 +407,10 @@ class ItemThumb(FlowWidget):
                 self.ext_badge.setHidden(True)
                 self.count_badge.setHidden(True)
 
-    def set_filename_text(self, filename: Path):
+    def set_filename_text(self, filename: Path, timestamp: float | None = None):
+        if timestamp and timestamp < ItemThumb.update_cutoff:
+            return
+
         self.set_item_path(filename)
         self.file_label.setText(str(filename.name))
 
@@ -423,12 +429,14 @@ class ItemThumb(FlowWidget):
             self.setFixedHeight(self.thumb_size[1])
         self.show_filename_label = set_visible
 
-    def update_thumb(self, timestamp: float, image: QPixmap | None = None):
+    def update_thumb(self, image: QPixmap | None = None, timestamp: float | None = None):
         """Update attributes of a thumbnail element."""
-        if timestamp > ItemThumb.update_cutoff:
-            self.thumb_button.setIcon(image if image else QPixmap())
+        if timestamp and timestamp < ItemThumb.update_cutoff:
+            return
 
-    def update_size(self, timestamp: float, size: QSize):
+        self.thumb_button.setIcon(image if image else QPixmap())
+
+    def update_size(self, size: QSize, timestamp: float | None = None):
         """Updates attributes of a thumbnail element.
 
         Args:
@@ -437,11 +445,13 @@ class ItemThumb(FlowWidget):
 
             size (QSize): The new thumbnail size to set.
         """
-        if timestamp > ItemThumb.update_cutoff:
-            self.thumb_size = size.width(), size.height()
-            self.thumb_button.setIconSize(size)
-            self.thumb_button.setMinimumSize(size)
-            self.thumb_button.setMaximumSize(size)
+        if timestamp and timestamp < ItemThumb.update_cutoff:
+            return
+
+        self.thumb_size = size.width(), size.height()
+        self.thumb_button.setIconSize(size)
+        self.thumb_button.setMinimumSize(size)
+        self.thumb_button.setMaximumSize(size)
 
     def update_clickable(self, clickable: typing.Callable[[], None]):
         """Updates attributes of a thumbnail element."""
