@@ -83,7 +83,7 @@ from tagstudio.qt.modals.folders_to_tags import FoldersToTagsModal
 from tagstudio.qt.modals.settings_panel import SettingsPanel
 from tagstudio.qt.modals.tag_color_manager import TagColorManager
 from tagstudio.qt.modals.tag_database import TagDatabasePanel
-from tagstudio.qt.modals.tag_search import TagSearchPanel
+from tagstudio.qt.modals.tag_search import TagSearchModal
 from tagstudio.qt.platform_strings import trash_term
 from tagstudio.qt.resource_manager import ResourceManager
 from tagstudio.qt.splash import Splash
@@ -173,7 +173,6 @@ class QtDriver(DriverMixin, QObject):
     tag_manager_panel: PanelModal | None = None
     color_manager_panel: TagColorManager | None = None
     file_extension_panel: PanelModal | None = None
-    tag_search_panel: TagSearchPanel | None = None
     add_tag_modal: PanelModal | None = None
     folders_modal: FoldersToTagsModal
     about_modal: AboutModal
@@ -363,29 +362,23 @@ class QtDriver(DriverMixin, QObject):
         # Initialize the Tag Manager panel
         self.tag_manager_panel = PanelModal(
             widget=TagDatabasePanel(self, self.lib),
-            done_callback=lambda: self.main_window.preview_panel.update_widgets(
-                update_preview=False
+            title=Translations["tag_manager.title"],
+            done_callback=lambda s=self.selected: self.main_window.preview_panel.set_selection(
+                s, update_preview=False
             ),
             has_save=False,
         )
-        self.tag_manager_panel.setTitle(Translations["tag_manager.title"])
-        self.tag_manager_panel.setWindowTitle(Translations["tag_manager.title"])
 
         # Initialize the Color Group Manager panel
         self.color_manager_panel = TagColorManager(self)
 
         # Initialize the Tag Search panel
-        self.tag_search_panel = TagSearchPanel(self.lib, is_tag_chooser=True)
-        self.tag_search_panel.set_driver(self)
-        self.add_tag_modal = PanelModal(
-            widget=self.tag_search_panel,
-            title=Translations["tag.add.plural"],
-            window_title=Translations["tag.add.plural"],
-        )
-        self.tag_search_panel.tag_chosen.connect(
-            lambda t: (
+        self.add_tag_modal = TagSearchModal(self.lib, is_tag_chooser=True)
+        self.add_tag_modal.tsp.set_driver(self)
+        self.add_tag_modal.tsp.tag_chosen.connect(
+            lambda t, s=self.selected: (
                 self.add_tags_to_selected_callback(t),
-                self.main_window.preview_panel.update_widgets(),
+                self.main_window.preview_panel.set_selection(s),
             )
         )
 
@@ -486,9 +479,28 @@ class QtDriver(DriverMixin, QObject):
             self.settings.show_filenames_in_grid
         )
 
+        def on_decrease_thumbnail_size_action():
+            new_val = self.main_window.thumb_size_combobox.currentIndex() + 1
+            if not (new_val + 1) > len(self.main_window.THUMB_SIZES):
+                self.main_window.thumb_size_combobox.setCurrentIndex(new_val)
+
+        self.main_window.menu_bar.decrease_thumbnail_size_action.triggered.connect(
+            on_decrease_thumbnail_size_action
+        )
+
+        def on_increase_thumbnail_size_action():
+            new_val = self.main_window.thumb_size_combobox.currentIndex() - 1
+            if not new_val < 0:
+                self.main_window.thumb_size_combobox.setCurrentIndex(new_val)
+
+        self.main_window.menu_bar.increase_thumbnail_size_action.triggered.connect(
+            on_increase_thumbnail_size_action
+        )
+
         # endregion
 
         # region Tools Menu ===========================================================
+
         def create_fix_unlinked_entries_modal():
             if not hasattr(self, "unlinked_modal"):
                 self.unlinked_modal = FixUnlinkedEntriesModal(self.lib, self)
@@ -538,12 +550,12 @@ class QtDriver(DriverMixin, QObject):
 
         self.main_window.search_field.textChanged.connect(self.update_completions_list)
 
-        self.main_window.preview_panel.fields.archived_updated.connect(
+        self.main_window.preview_panel.field_containers_widget.archived_updated.connect(
             lambda hidden: self.update_badges(
                 {BadgeType.ARCHIVED: hidden}, origin_id=0, add_tags=False
             )
         )
-        self.main_window.preview_panel.fields.favorite_updated.connect(
+        self.main_window.preview_panel.field_containers_widget.favorite_updated.connect(
             lambda hidden: self.update_badges(
                 {BadgeType.FAVORITE: hidden}, origin_id=0, add_tags=False
             )
@@ -631,8 +643,9 @@ class QtDriver(DriverMixin, QObject):
         )
 
         # Thumbnail Size ComboBox
+        self.main_window.thumb_size_combobox.setCurrentIndex(2)  # Default: Medium
         self.main_window.thumb_size_combobox.currentIndexChanged.connect(
-            lambda: self.thumb_size_callback(self.main_window.thumb_size_combobox.currentData())
+            lambda: self.thumb_size_callback(self.main_window.thumb_size_combobox.currentIndex())
         )
         self._update_thumb_count()
 
@@ -662,10 +675,9 @@ class QtDriver(DriverMixin, QObject):
         panel = FileExtensionModal(self.lib)
         self.file_extension_panel = PanelModal(
             panel,
+            Translations["ignore_list.title"],
             has_save=True,
         )
-        self.file_extension_panel.setTitle(Translations["ignore_list.title"])
-        self.file_extension_panel.setWindowTitle(Translations["ignore_list.title"])
         self.file_extension_panel.saved.connect(
             lambda: (panel.save(), self.update_browsing_state())
         )
@@ -712,7 +724,7 @@ class QtDriver(DriverMixin, QObject):
         self.cached_values.sync()
 
         # Reset library state
-        self.main_window.preview_panel.update_widgets()
+        self.main_window.preview_panel.set_selection(self.selected)
         self.main_window.search_field.setText("")
         scrollbar: QScrollArea = self.main_window.entry_scroll_area
         scrollbar.verticalScrollBar().setValue(0)
@@ -736,7 +748,7 @@ class QtDriver(DriverMixin, QObject):
         self.set_clipboard_menu_viability()
         self.set_select_actions_visibility()
 
-        self.main_window.preview_panel.update_widgets()
+        self.main_window.preview_panel.set_selection(self.selected)
         self.main_window.toggle_landing_page(enabled=True)
         self.main_window.pagination.setHidden(True)
         try:
@@ -785,10 +797,10 @@ class QtDriver(DriverMixin, QObject):
         panel = BuildTagPanel(self.lib)
         self.modal = PanelModal(
             panel,
+            Translations["tag.new"],
+            Translations["tag.add"],
             has_save=True,
         )
-        self.modal.setTitle(Translations["tag.new"])
-        self.modal.setWindowTitle(Translations["tag.add"])
 
         self.modal.saved.connect(
             lambda: (
@@ -814,7 +826,7 @@ class QtDriver(DriverMixin, QObject):
         self.set_clipboard_menu_viability()
         self.set_select_actions_visibility()
 
-        self.main_window.preview_panel.update_widgets(update_preview=False)
+        self.main_window.preview_panel.set_selection(self.selected, update_preview=False)
 
     def select_inverse_action_callback(self):
         """Invert the selection of all visible items."""
@@ -833,7 +845,7 @@ class QtDriver(DriverMixin, QObject):
         self.set_clipboard_menu_viability()
         self.set_select_actions_visibility()
 
-        self.main_window.preview_panel.update_widgets(update_preview=False)
+        self.main_window.preview_panel.set_selection(self.selected, update_preview=False)
 
     def clear_select_action_callback(self):
         self.selected.clear()
@@ -842,7 +854,7 @@ class QtDriver(DriverMixin, QObject):
             item.thumb_button.set_selected(False)
 
         self.set_clipboard_menu_viability()
-        self.main_window.preview_panel.update_widgets()
+        self.main_window.preview_panel.set_selection(self.selected)
 
     def add_tags_to_selected_callback(self, tag_ids: list[int]):
         self.lib.add_tags_to_entries(self.selected, tag_ids)
@@ -887,7 +899,7 @@ class QtDriver(DriverMixin, QObject):
                 for i, tup in enumerate(pending):
                     e_id, f = tup
                     if (origin_path == f) or (not origin_path):
-                        self.main_window.preview_panel.thumb.media_player.stop()
+                        self.main_window.preview_panel.preview_thumb.media_player.stop()
                     if delete_file(self.lib.library_dir / f):
                         self.main_window.status_bar.showMessage(
                             Translations.format(
@@ -902,7 +914,7 @@ class QtDriver(DriverMixin, QObject):
 
         if deleted_count > 0:
             self.update_browsing_state()
-            self.main_window.preview_panel.update_widgets()
+            self.main_window.preview_panel.set_selection(self.selected)
 
         if len(self.selected) <= 1 and deleted_count == 0:
             self.main_window.status_bar.showMessage(Translations["status.deleted_none"])
@@ -1227,7 +1239,7 @@ class QtDriver(DriverMixin, QObject):
             if TAG_FAVORITE in self.copy_buffer["tags"]:
                 self.update_badges({BadgeType.FAVORITE: True}, origin_id=0, add_tags=False)
         else:
-            self.main_window.preview_panel.update_widgets()
+            self.main_window.preview_panel.set_selection(self.selected)
 
     def toggle_item_selection(self, item_id: int, append: bool, bridge: bool):
         """Toggle the selection of an item in the Thumbnail Grid.
@@ -1301,7 +1313,7 @@ class QtDriver(DriverMixin, QObject):
         self.set_clipboard_menu_viability()
         self.set_select_actions_visibility()
 
-        self.main_window.preview_panel.update_widgets()
+        self.main_window.preview_panel.set_selection(self.selected)
 
     def set_clipboard_menu_viability(self):
         if len(self.selected) == 1:
@@ -1727,10 +1739,15 @@ class QtDriver(DriverMixin, QObject):
         self.main_window.menu_bar.clear_thumb_cache_action.setEnabled(True)
         self.main_window.menu_bar.folders_to_tags_action.setEnabled(True)
 
-        self.main_window.preview_panel.update_widgets()
+        self.main_window.preview_panel.set_selection(self.selected)
 
         # page (re)rendering, extract eventually
-        self.update_browsing_state()
+        initial_state = BrowsingState(
+            page_index=0,
+            sorting_mode=self.main_window.sorting_mode,
+            ascending=self.main_window.sorting_direction,
+        )
+        self.update_browsing_state(initial_state)
 
         self.main_window.toggle_landing_page(enabled=False)
         return open_status

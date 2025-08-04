@@ -674,7 +674,7 @@ class Library:
             start_time = time.time()
             entry = session.scalar(entry_stmt)
             if with_tags:
-                tags = set(session.scalars(tag_stmt))  # pyright: ignore [reportPossiblyUnboundVariable]
+                tags = set(session.scalars(tag_stmt))  # pyright: ignore[reportPossiblyUnboundVariable]
             end_time = time.time()
             logger.info(
                 f"[Library] Time it took to get entry: "
@@ -877,7 +877,7 @@ class Library:
     def search_library(
         self,
         search: BrowsingState,
-        page_size: int,
+        page_size: int | None,
     ) -> SearchResult:
         """Filter library by search query.
 
@@ -915,7 +915,8 @@ class Library:
                     sort_on = func.lower(Entry.path)
 
             statement = statement.order_by(asc(sort_on) if search.ascending else desc(sort_on))
-            statement = statement.limit(page_size).offset(search.page_index * page_size)
+            if page_size is not None:
+                statement = statement.limit(page_size).offset(search.page_index * page_size)
 
             logger.info(
                 "searching library",
@@ -1442,12 +1443,14 @@ class Library:
             )
             tag = session.scalar(tags_query.where(Tag.id == tag_id))
 
-            session.expunge(tag)
-            for parent in tag.parent_tags:
-                session.expunge(parent)
+            if tag is not None:
+                session.expunge(tag)
 
-            for alias in tag.aliases:
-                session.expunge(alias)
+                for parent in tag.parent_tags:
+                    session.expunge(parent)
+
+                for alias in tag.aliases:
+                    session.expunge(alias)
 
         return tag
 
@@ -1455,10 +1458,23 @@ class Library:
         with Session(self.engine) as session:
             statement = (
                 select(Tag)
+                .options(selectinload(Tag.parent_tags), selectinload(Tag.aliases))
                 .outerjoin(TagAlias)
                 .where(or_(Tag.name == tag_name, TagAlias.name == tag_name))
             )
-            return session.scalar(statement)
+
+            tag = session.scalar(statement)
+
+            if tag is not None:
+                session.expunge(tag)
+
+                for parent in tag.parent_tags:
+                    session.expunge(parent)
+
+                for alias in tag.aliases:
+                    session.expunge(alias)
+
+        return tag
 
     def get_alias(self, tag_id: int, alias_id: int) -> TagAlias | None:
         with Session(self.engine) as session:

@@ -8,13 +8,13 @@ import typing
 from enum import Enum
 from functools import wraps
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, override
 from warnings import catch_warnings
 
 import structlog
 from PIL import Image, ImageQt
 from PySide6.QtCore import QEvent, QMimeData, QSize, Qt, QUrl
-from PySide6.QtGui import QAction, QDrag, QEnterEvent, QGuiApplication, QPixmap
+from PySide6.QtGui import QAction, QDrag, QEnterEvent, QGuiApplication, QMouseEvent, QPixmap
 from PySide6.QtWidgets import (
     QBoxLayout,
     QCheckBox,
@@ -412,7 +412,7 @@ class ItemThumb(FlowWidget):
                 self.ext_badge.setHidden(True)
                 self.count_badge.setHidden(True)
 
-    def set_filename_text(self, filename: Path | None):
+    def set_filename_text(self, filename: Path):
         self.set_item_path(filename)
         self.file_label.setText(str(filename.name))
 
@@ -446,22 +446,21 @@ class ItemThumb(FlowWidget):
             size (QSize): The new thumbnail size to set.
         """
         if timestamp > ItemThumb.update_cutoff:
-            self.thumb_size = size.toTuple()  # type: ignore
+            self.thumb_size = size.width(), size.height()
             self.thumb_button.setIconSize(size)
             self.thumb_button.setMinimumSize(size)
             self.thumb_button.setMaximumSize(size)
 
-    def update_clickable(self, clickable: typing.Callable):
+    def update_clickable(self, clickable: typing.Callable[[], None]):
         """Updates attributes of a thumbnail element."""
-        if clickable:
-            with catch_warnings(record=True):
-                self.thumb_button.clicked.disconnect()
-            self.thumb_button.clicked.connect(clickable)
+        with catch_warnings(record=True):
+            self.thumb_button.clicked.disconnect()
+        self.thumb_button.clicked.connect(clickable)
 
     def set_item_id(self, item_id: int):
         self.item_id = item_id
 
-    def set_item_path(self, path: Path | str | None):
+    def set_item_path(self, path: Path | str):
         """Set the absolute filepath for the item. Used for locating on disk."""
         self.opener.set_filepath(path)
 
@@ -483,11 +482,13 @@ class ItemThumb(FlowWidget):
                 is_hidden = not (show or self.badge_active[badge_type])
                 badge.setHidden(is_hidden)
 
-    def enterEvent(self, event: QEnterEvent) -> None:  # noqa: N802
+    @override
+    def enterEvent(self, event: QEnterEvent) -> None:  # type: ignore[misc]
         self.show_check_badges(show=True)
         return super().enterEvent(event)
 
-    def leaveEvent(self, event: QEvent) -> None:  # noqa: N802
+    @override
+    def leaveEvent(self, event: QEvent) -> None:  # type: ignore[misc]
         self.show_check_badges(show=False)
         return super().leaveEvent(event)
 
@@ -499,6 +500,9 @@ class ItemThumb(FlowWidget):
         toggle_value = self.badges[badge_type].isChecked()
         self.badge_active[badge_type] = toggle_value
         badge_values: dict[BadgeType, bool] = {badge_type: toggle_value}
+        # TODO: Ensure that self.item_id is always an integer. During tests, it is currently None.
+        # This issue should be addressed by either fixing the test setup or modifying the
+        # self.driver.update_badges() method.
         self.driver.update_badges(badge_values, self.item_id)
 
     def toggle_item_tag(
@@ -507,15 +511,16 @@ class ItemThumb(FlowWidget):
         toggle_value: bool,
         tag_id: int,
     ):
-        if entry_id in self.driver.selected and self.driver.main_window.preview_panel.is_open:
+        if entry_id in self.driver.selected:
             if len(self.driver.selected) == 1:
-                self.driver.main_window.preview_panel.fields.update_toggled_tag(
+                self.driver.main_window.preview_panel.field_containers_widget.update_toggled_tag(
                     tag_id, toggle_value
                 )
             else:
                 pass
 
-    def mouseMoveEvent(self, event):  # noqa: N802
+    @override
+    def mouseMoveEvent(self, event: QMouseEvent) -> None:  # type: ignore[misc]
         if event.buttons() is not Qt.MouseButton.LeftButton:
             return
 
@@ -530,6 +535,7 @@ class ItemThumb(FlowWidget):
             if not entry:
                 continue
 
+            assert self.lib.library_dir is not None
             url = QUrl.fromLocalFile(Path(self.lib.library_dir) / entry.path)
             paths.append(url)
 

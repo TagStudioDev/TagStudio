@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [9.5.2] - 2024-03-06
+## [9.5.2] - 2025-03-31
 
 ### Added
 
@@ -85,7 +85,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Updated Toki Pona (80%)
     - [@Math-Bee](https://github.com/Math-Bee)
 
-## [9.5.1] - 2024-03-06
+## [9.5.1] - 2025-03-06
 
 ### Fixed
 
@@ -113,7 +113,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - docs: fix category typo by [@salem404](https://github.com/salem404) in [#834](https://github.com/TagStudioDev/TagStudio/pull/834)
 
-## [9.5.0] - 2024-03-03
+## [9.5.0] - 2025-03-03
 
 ### Added
 
@@ -669,7 +669,7 @@ This was the main focus of this update, and where the majority of development ti
 
 - Create auto-backup of library for use in save failures (Fix [#343](https://github.com/TagStudioDev/TagStudio/issues/343)) by [@CyanVoxel](https://github.com/CyanVoxel) in [#554](https://github.com/TagStudioDev/TagStudio/pull/554)
 
-## [9.4.1] - 2024-09-14
+## [9.4.1] - 2024-09-13
 
 ### Added
 
@@ -686,7 +686,7 @@ This was the main focus of this update, and where the majority of development ti
 
 - Significantly improve file re-scanning performance
 
-## [9.4.0] - 2024-09-04
+## [9.4.0] - 2024-09-03
 
 ### Added
 
@@ -734,7 +734,7 @@ This was the main focus of this update, and where the majority of development ti
 - Revamp Nix flake with devenv/direnv in cb4798b
 - Remove impurity of Nix flake when used with direnv in bc38e56
 
-## [9.3.2] - 2024-07-19
+## [9.3.2] - 2024-07-18
 
 ### Fixed
 
@@ -758,7 +758,7 @@ This was the main focus of this update, and where the majority of development ti
 - Toggle Mouse Event Transparency on ItemThumbs
 - Refactor `video_player.py`
 
-## [9.3.0] - 2024-06-09
+## [9.3.0] - 2024-06-08
 
 ### Added
 
