@@ -4,12 +4,10 @@
 
 
 import time
-import typing
 from enum import Enum
 from functools import wraps
 from pathlib import Path
 from typing import TYPE_CHECKING, override
-from warnings import catch_warnings
 
 import structlog
 from PIL import Image, ImageQt
@@ -126,7 +124,7 @@ class ItemThumb(FlowWidget):
         self.lib = library
         self.mode: ItemType | None = mode
         self.driver = driver
-        self.item_id: int | None = None
+        self.item_id: int = -1
         self.thumb_size: tuple[int, int] = thumb_size
         self.show_filename_label: bool = show_filename_label
         self.label_height = 12
@@ -321,15 +319,15 @@ class ItemThumb(FlowWidget):
 
         self.base_layout.addWidget(self.thumb_container)
         self.base_layout.addWidget(self.file_label)
+        # NOTE: self.item_id seems to act as a reference here and does not need to be updated inside
+        # QtDriver.update_thumbs() while item_thumb.delete_action does.
+        # If this behavior ever changes, move this method back to QtDriver.update_thumbs().
         self.thumb_button.clicked.connect(
             lambda: self.driver.toggle_item_selection(
                 self.item_id,
                 append=(QGuiApplication.keyboardModifiers() == Qt.KeyboardModifier.ControlModifier),
                 bridge=(QGuiApplication.keyboardModifiers() == Qt.KeyboardModifier.ShiftModifier),
             )
-        )
-        self.delete_action.triggered.connect(
-            lambda: self.driver.delete_files_callback(self.opener.filepath, self.item_id)
         )
         self.set_mode(mode)
 
@@ -450,12 +448,6 @@ class ItemThumb(FlowWidget):
             self.thumb_button.setIconSize(size)
             self.thumb_button.setMinimumSize(size)
             self.thumb_button.setMaximumSize(size)
-
-    def update_clickable(self, clickable: typing.Callable[[], None]):
-        """Updates attributes of a thumbnail element."""
-        with catch_warnings(record=True):
-            self.thumb_button.clicked.disconnect()
-        self.thumb_button.clicked.connect(clickable)
 
     def set_item_id(self, item_id: int):
         self.item_id = item_id

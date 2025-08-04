@@ -1486,6 +1486,11 @@ class QtDriver(DriverMixin, QObject):
             )
             item_thumb.assign_badge(BadgeType.ARCHIVED, entry.id in tag_entries[TAG_ARCHIVED])
             item_thumb.assign_badge(BadgeType.FAVORITE, entry.id in tag_entries[TAG_FAVORITE])
+            item_thumb.delete_action.triggered.connect(
+                lambda checked=False, f=filenames[index], e_id=entry.id: self.delete_files_callback(
+                    f, e_id
+                )
+            )
 
             # Restore Selected Borders
             is_selected = item_thumb.item_id in self.selected
