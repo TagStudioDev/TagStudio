@@ -1760,7 +1760,12 @@ class QtDriver(DriverMixin, QObject):
         self.main_window.preview_panel.set_selection(self.selected)
 
         # page (re)rendering, extract eventually
-        self.update_browsing_state()
+        initial_state = BrowsingState(
+            page_index=0,
+            sorting_mode=self.main_window.sorting_mode,
+            ascending=self.main_window.sorting_direction,
+        )
+        self.update_browsing_state(initial_state)
 
         self.main_window.toggle_landing_page(enabled=False)
         return open_status
