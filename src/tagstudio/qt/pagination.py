@@ -5,11 +5,14 @@
 
 """A pagination widget created for TagStudio."""
 
+from PIL import Image, ImageQt
 from PySide6.QtCore import QObject, QSize, Signal
-from PySide6.QtGui import QIntValidator
+from PySide6.QtGui import QIntValidator, QPixmap
 from PySide6.QtWidgets import QHBoxLayout, QLabel, QLineEdit, QSizePolicy, QWidget
 
+from tagstudio.qt.helpers.color_overlay import theme_fg_overlay
 from tagstudio.qt.helpers.qbutton_wrapper import QPushButtonWrapper
+from tagstudio.qt.resource_manager import ResourceManager
 
 
 class Pagination(QWidget, QObject):
@@ -19,6 +22,7 @@ class Pagination(QWidget, QObject):
 
     def __init__(self, parent=None) -> None:
         super().__init__(parent)
+        self.rm = ResourceManager()
         self.page_count: int = 0
         self.current_page_index: int = 0
         self.buffer_page_count: int = 4
@@ -39,7 +43,10 @@ class Pagination(QWidget, QObject):
 
         # [<] ----------------------------------
         self.prev_button = QPushButtonWrapper()
-        self.prev_button.setText("<")
+        prev_icon: Image.Image = self.rm.get("bxs-left-arrow")  # pyright: ignore[reportAssignmentType]
+        prev_icon = theme_fg_overlay(prev_icon, use_alpha=False)
+        self.prev_button.setIcon(QPixmap.fromImage(ImageQt.ImageQt(prev_icon)))
+        self.prev_button.setIconSize(QSize(12, 12))
         self.prev_button.setMinimumSize(self.button_size)
         self.prev_button.setMaximumSize(self.button_size)
 
@@ -89,7 +96,10 @@ class Pagination(QWidget, QObject):
 
         # ---------------------------------- [>]
         self.next_button = QPushButtonWrapper()
-        self.next_button.setText(">")
+        next_icon: Image.Image = self.rm.get("bxs-right-arrow")  # pyright: ignore[reportAssignmentType]
+        next_icon = theme_fg_overlay(next_icon, use_alpha=False)
+        self.next_button.setIcon(QPixmap.fromImage(ImageQt.ImageQt(next_icon)))
+        self.next_button.setIconSize(QSize(12, 12))
         self.next_button.setMinimumSize(self.button_size)
         self.next_button.setMaximumSize(self.button_size)
 
