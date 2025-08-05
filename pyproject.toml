@@ -34,7 +34,7 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = ["tagstudio[mkdocs,mypy,pre-commit,pyinstaller,pytest,ruff]"]
-mkdocs = ["mkdocs-material==9.*"]
+mkdocs = ["mkdocs-material[imaging]==9.*"]
 mypy = ["mypy==1.15.0", "mypy-extensions==1.*", "types-ujson~=5.10"]
 pre-commit = ["pre-commit~=4.2"]
 pyinstaller = ["Pyinstaller~=6.13"]
