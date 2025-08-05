@@ -8,9 +8,10 @@ from collections.abc import Callable
 from pathlib import Path
 
 import structlog
+from PIL import Image, ImageQt
 from PySide6 import QtCore
 from PySide6.QtCore import QMetaObject, QSize, QStringListModel, Qt
-from PySide6.QtGui import QAction
+from PySide6.QtGui import QAction, QPixmap
 from PySide6.QtWidgets import (
     QComboBox,
     QCompleter,
@@ -36,8 +37,10 @@ from tagstudio.core.enums import ShowFilepathOption
 from tagstudio.core.library.alchemy.enums import SortingModeEnum
 from tagstudio.qt.controller.widgets.preview_panel_controller import PreviewPanel
 from tagstudio.qt.flowlayout import FlowLayout
+from tagstudio.qt.helpers.color_overlay import theme_fg_overlay
 from tagstudio.qt.pagination import Pagination
 from tagstudio.qt.platform_strings import trash_term
+from tagstudio.qt.resource_manager import ResourceManager
 from tagstudio.qt.translations import Translations
 from tagstudio.qt.widgets.landing import LandingWidget
 
@@ -430,6 +433,7 @@ class MainWindow(QMainWindow):
 
     def __init__(self, driver: "QtDriver", parent: QWidget | None = None) -> None:
         super().__init__(parent)
+        self.rm = ResourceManager()
 
         # region Type declarations for variables that will be initialized in methods
         # initialized in setup_search_bar
@@ -514,23 +518,27 @@ class MainWindow(QMainWindow):
 
     def setup_search_bar(self):
         """Sets up Nav Buttons, Search Field, Search Button."""
-        nav_button_style = "font-size:14;font-weight:bold;"
         self.search_bar_layout = QHBoxLayout()
         self.search_bar_layout.setObjectName("search_bar_layout")
         self.search_bar_layout.setSizeConstraint(QLayout.SizeConstraint.SetMinimumSize)
 
-        self.back_button = QPushButton("<", self.central_widget)
+        self.back_button = QPushButton(self.central_widget)
+        back_icon: Image.Image = self.rm.get("bxs-left-arrow")  # pyright: ignore[reportAssignmentType]
+        back_icon = theme_fg_overlay(back_icon, use_alpha=False)
+        self.back_button.setIcon(QPixmap.fromImage(ImageQt.ImageQt(back_icon)))
         self.back_button.setObjectName("back_button")
-        self.back_button.setMinimumSize(QSize(0, 32))
+        self.back_button.setMinimumSize(QSize(32, 32))
         self.back_button.setMaximumSize(QSize(32, 16777215))
-        self.back_button.setStyleSheet(nav_button_style)
         self.search_bar_layout.addWidget(self.back_button)
 
-        self.forward_button = QPushButton(">", self.central_widget)
+        self.forward_button = QPushButton(self.central_widget)
+        forward_icon: Image.Image = self.rm.get("bxs-right-arrow")  # pyright: ignore[reportAssignmentType]
+        forward_icon = theme_fg_overlay(forward_icon, use_alpha=False)
+        self.forward_button.setIcon(QPixmap.fromImage(ImageQt.ImageQt(forward_icon)))
+        self.forward_button.setIconSize(QSize(16, 16))
         self.forward_button.setObjectName("forward_button")
-        self.forward_button.setMinimumSize(QSize(0, 32))
+        self.forward_button.setMinimumSize(QSize(32, 32))
         self.forward_button.setMaximumSize(QSize(32, 16777215))
-        self.forward_button.setStyleSheet(nav_button_style)
         self.search_bar_layout.addWidget(self.forward_button)
 
         self.search_field = QLineEdit(self.central_widget)
