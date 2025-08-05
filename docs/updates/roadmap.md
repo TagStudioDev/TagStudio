@@ -1,28 +1,77 @@
-# Feature Roadmap
+# Roadmap
 
-This checklist details the current and remaining features required at a minimum for TagStudio to be considered "Feature Complete". This list is _not_ a definitive list for additional feature requests and PRs as they come in, but rather an outline of my personal core feature set intended for TagStudio.
+This page outlines the current and planned features required for TagStudio to be considered "feature complete" (v10.0.0). Features and changes are broken up by group in order to better assess the overall state of those features. [Priority levels](#priority-levels) and [version estimates](#version-estimates) are provided in order to give a rough idea of what's planned and when it may release.
 
-## Priorities
+This page will update as new features are planned or completed. If there's a feature you'd like to see but is not listed on this page, please check the GitHub [Issues](https://github.com/TagStudioDev/TagStudio/issues) page and submit a feature request if one does not already exist!
 
-Features are broken up into the following priority levels, with nested priorities referencing their relative priority for the overall feature (i.e. A [LOW] priority feature can have a [HIGH] priority element but it otherwise still a [LOW] priority item overall):
+## Priority Levels
 
--   [HIGH] - Core feature
--   [MEDIUM] - Important but not necessary
--   [LOW] - Just nice to have
-
-## Version Milestones
-
-These version milestones are rough estimations for when the previous core features will be added. For a more definitive idea for when features are coming, please reference the current GitHub [milestones](https://github.com/TagStudioDev/TagStudio/milestones).
+Planned features and changes are assigned **priority levels** to signify how important they are to the feature-complete version of TagStudio and to serve as a general guide for what should be worked on first, along with [version estimates](#version-estimates). When features are completed, their priority level icons are removed.
 
 <!-- prettier-ignore -->
-!!! note
-    This list was created after the release of version 9.4
+!!! info "Priority Level Icons"
+    -   :material-chevron-triple-up:{ .priority-high title="High Priority" } **High Priority** - Core features
+    -   :material-chevron-double-up:{ .priority-med title="Medium Priority" } **Medium Priority** - Important, but not necessary
+    -   :material-chevron-up:{ .priority-low title="Low Priority" } **Low Priority** - Just nice to have
+
+## Version Estimates
+
+Features are given rough estimations for which version they will be completed in, and are listed next to their names (e.g. Feature **[v9.0.0]**). They are eventually replaced with links to the version changelog in which they were completed in.
+
+<!-- prettier-ignore -->
+!!! tip
+    For a more definitive and up-to-date list of features planned for near-future updates, please reference the current GitHub [Milestones](https://github.com/TagStudioDev/TagStudio/milestones)!
+
+## Features
+
+### Core
+
+<div class="grid cards" markdown>
+- #### :material-database: SQL Library Format
+An improved library save file format in which legacy JSON libraries will be migrated to.
+Must be finalized or deemed "feature complete" before other core features are developed or finalized.
+
+    ---
+    - [x] A SQLite-based library save file format **[[v9.5.0](./changelog.md#950-2025-03-03)]**
+    - [ ] Cached File Properties Table :material-chevron-triple-up:{ .priority-high title="High Priority" } **[v9.6.0]**
+        - [ ] File Date Created :material-chevron-triple-up:{ .priority-high title="High Priority" }
+        - [ ] File Date Modified :material-chevron-triple-up:{ .priority-high title="High Priority" }
+        - [ ] Entry Added to Library :material-chevron-triple-up:{ .priority-high title="High Priority" }
+        - [ ] Media Duration :material-chevron-triple-up:{ .priority-high title="High Priority" }
+        - [ ] Image Resolution :material-chevron-double-up:{ .priority-med title="Medium Priority" }
+        - [ ] Word Count :material-chevron-up:{ .priority-low  title="Low Priority" }
+
+</div>
+
+<div class="grid cards" markdown>
+- #### :material-database-cog: Core Library + API
+A separated, UI agnostic core library that's used to interface with the TagStudio library format. Would host an API for communication from outside the program.
+
+    ---
+    - [ ] Core Library :material-chevron-triple-up:{ .priority-high title="High Priority" } **[v10.0.0]**
+    - [ ] Core Library API :material-chevron-triple-up:{ .priority-high title="High Priority" } **[v10.0.0]**
+
+</div>
+
+<div class="grid cards" markdown>
+- #### :material-puzzle: Plugin Support
+Some form of official plugin support for TagStudio, likely with its own API that may or may not connect to or share attributes with the core library API.
+
+    ---
+    - [ ] Plugin Support :material-chevron-triple-up:{ .priority-high title="High Priority" } **[v10.0.0]**
+
+</div>
+
+<div class="grid cards" markdown>
+- #### :material-clipboard-text: TagStudio Format Specification
+    A detailed written specification for the TagStudio tag and/or library format. Intended for use by third-parties to build alternative cores or protocols that can interoperate between one another.
+
+    ---
+    - [ ] "TAGSPEC" Specification Established :material-chevron-triple-up:{ .priority-high title="High Priority" } **[v10.0.0]**
+
+</div>
 
 ### v9.5
-
-#### Core
-
--   [x] SQL backend [HIGH]
 
 #### Tags
 
@@ -65,14 +114,10 @@ These version milestones are rough estimations for when the previous core featur
 
 ### v9.6
 
-#### Core
-
--   [ ] Cached file property table (media duration, word count, dimensions, etc.) [MEDIUM]
-
 #### Library
 
 -   [ ] Multiple Root Directories per Library [HIGH]
--   [ ] `.ts_ignore` (`.gitignore`-style glob ignoring) [HIGH]
+
 -   [ ] Sharable Color Packs [MEDIUM]
     -   [ ] Human-readable (TOML) files containing tag data [HIGH]
     -   [ ] Importable [HIGH]
@@ -208,10 +253,3 @@ These version milestones are rough estimations for when the previous core featur
 ### v10.0
 
 -   [ ] All remaining [HIGH] and optional [MEDIUM] features
-
-### Post v10.0
-
-#### Core
-
--   [ ] Core Library/API
--   [ ] Plugin Support
