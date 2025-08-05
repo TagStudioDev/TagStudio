@@ -525,12 +525,12 @@ class ThumbRenderer(QObject):
         samples_per_bar: int = 3
         size_scaled: int = size * base_scale
         allow_small_min: bool = False
-        im: Image.Image = None
+        im: Image.Image | None = None
 
         try:
             bar_count: int = min(math.floor((size // pixel_ratio) / 5), 64)
-            audio: AudioSegment = AudioSegment.from_file(filepath, ext[1:])
-            data = np.fromstring(audio._data, np.int16)  # type: ignore
+            audio = AudioSegment.from_file(filepath, ext[1:])
+            data = np.frombuffer(buffer=audio._data, dtype=np.int16)
             data_indices = np.linspace(1, len(data), num=bar_count * samples_per_bar)
             bar_margin: float = ((size_scaled / (bar_count * 3)) * base_scale) / 2
             line_width: float = ((size_scaled - bar_margin) / (bar_count * 3)) * base_scale
@@ -538,7 +538,7 @@ class ThumbRenderer(QObject):
 
             count: int = 0
             maximum_item: int = 0
-            max_array: list = []
+            max_array: list[int] = []
             highest_line: int = 0
 
             for i in range(-1, len(data_indices)):
@@ -547,7 +547,7 @@ class ThumbRenderer(QObject):
                     count = count + 1
                     with catch_warnings(record=True):
                         if abs(d) > maximum_item:
-                            maximum_item = abs(d)
+                            maximum_item = int(abs(d))
                 else:
                     max_array.append(maximum_item)
 
