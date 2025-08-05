@@ -6,7 +6,6 @@
 import contextlib
 import hashlib
 import math
-import struct
 import zipfile
 from copy import deepcopy
 from io import BytesIO
@@ -17,6 +16,7 @@ from warnings import catch_warnings
 import cv2
 import numpy as np
 import rawpy
+import srctools
 import structlog
 from cv2.typing import MatLike
 from mutagen import MutagenError, flac, id3, mp4
@@ -47,7 +47,6 @@ from PySide6.QtCore import (
 from PySide6.QtGui import QGuiApplication, QImage, QPainter, QPixmap
 from PySide6.QtPdf import QPdfDocument, QPdfDocumentRenderOptions
 from PySide6.QtSvg import QSvgRenderer
-from vtf2img import Parser
 
 from tagstudio.core.constants import (
     FONT_SAMPLE_SIZES,
@@ -631,27 +630,22 @@ class ThumbRenderer(QObject):
         return im
 
     @staticmethod
-    def _source_engine(filepath: Path) -> Image.Image:
-        """This is a function to convert the VTF (Valve Texture Format) files to thumbnails.
+    def _vtf_thumb(filepath: Path) -> Image.Image | None:
+        """Extract and render a thumbnail for VTF (Valve Texture Format) images.
 
-        It works using the VTF2IMG library for PILLOW.
+        Uses the srctools library for reading VTF files.
+
+        Args:
+            filepath (Path): The path of the file.
         """
-        parser = Parser(filepath)
-        im: Image.Image = None
+        im: Image.Image | None = None
         try:
-            im = parser.get_image()
+            with open(filepath, "rb") as f:
+                vtf = srctools.VTF.read(f)
+                im = vtf.get(frame=0).to_PIL()
 
-        except (
-            AttributeError,
-            UnidentifiedImageError,
-            TypeError,
-            struct.error,
-        ) as e:
-            if str(e) == "expected string or buffer":
-                logger.error("Couldn't render thumbnail", filepath=filepath, error=type(e).__name__)
-
-            else:
-                logger.error("Couldn't render thumbnail", filepath=filepath, error=type(e).__name__)
+        except ValueError as e:
+            logger.error("Couldn't render thumbnail", filepath=filepath, error=type(e).__name__)
         return im
 
     @staticmethod
@@ -1446,7 +1440,7 @@ class ThumbRenderer(QObject):
                 elif MediaCategories.is_ext_in_category(
                     ext, MediaCategories.SOURCE_ENGINE_TYPES, mime_fallback=True
                 ):
-                    image = self._source_engine(_filepath)
+                    image = self._vtf_thumb(_filepath)
                 # No Rendered Thumbnail ========================================
                 if not image:
                     raise NoRendererError
