@@ -16,14 +16,13 @@ from tagstudio.qt.helpers.silent_popen import silent_Popen, silent_run
 
 logger = structlog.get_logger(__name__)
 
-if platform.system() == "Darwin":
-    user = os.environ["USER"]
-    FFMPEG_MACOS_LOCATIONS: list[str] = [
-        "",
-        "/opt/homebrew/bin/",
-        "/usr/local/bin/",
-        f"/etc/profiles/per-user/{user}/bin",
-    ]
+user = os.environ.get("USER", None)
+FFMPEG_MACOS_LOCATIONS: list[str] = [
+    "",
+    "/opt/homebrew/bin/",
+    "/usr/local/bin/",
+    f"/etc/profiles/per-user/{user}/bin",
+]
 
 
 def _get_ffprobe_location() -> str:
