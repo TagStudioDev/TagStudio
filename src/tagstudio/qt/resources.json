@@ -122,5 +122,13 @@
   "thumb_loading": {
     "path": "qt/images/thumb_loading.png",
     "mode": "pil"
+  },
+  "bxs-left-arrow": {
+    "path": "qt/images/bxs-left-arrow.png",
+    "mode": "pil"
+  },
+  "bxs-right-arrow": {
+    "path": "qt/images/bxs-right-arrow.png",
+    "mode": "pil"
   }
 }

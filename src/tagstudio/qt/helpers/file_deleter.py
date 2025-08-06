@@ -3,12 +3,12 @@
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
 
-import logging
 from pathlib import Path
 
+import structlog
 from send2trash import send2trash
 
-logging.basicConfig(format="%(message)s", level=logging.INFO)
+logger = structlog.get_logger(__name__)
 
 
 def delete_file(path: str | Path) -> bool:
@@ -19,13 +19,13 @@ def delete_file(path: str | Path) -> bool:
     """
     _path = Path(path)
     try:
-        logging.info(f"[delete_file] Sending to Trash: {_path}")
+        logger.info(f"[delete_file] Sending to Trash: {_path}")
         send2trash(_path)
         return True
     except PermissionError as e:
-        logging.error(f"[delete_file][ERROR] PermissionError: {e}")
+        logger.error(f"[delete_file][ERROR] PermissionError: {e}")
     except FileNotFoundError:
-        logging.error(f"[delete_file][ERROR] File Not Found: {_path}")
+        logger.error(f"[delete_file][ERROR] File Not Found: {_path}")
     except Exception as e:
-        logging.error(e)
+        logger.error(e)
     return False
