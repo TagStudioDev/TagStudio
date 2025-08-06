@@ -34,11 +34,12 @@ Must be finalized or deemed "feature complete" before other core features are de
     ---
     - [x] A SQLite-based library save file format **[[v9.5.0](./changelog.md#950-2025-03-03)]**
     - [ ] Cached File Properties Table :material-chevron-triple-up:{ .priority-high title="High Priority" } **[v9.6.0]**
-        - [ ] File Date Created :material-chevron-triple-up:{ .priority-high title="High Priority" }
-        - [ ] File Date Modified :material-chevron-triple-up:{ .priority-high title="High Priority" }
-        - [ ] Entry Added to Library :material-chevron-triple-up:{ .priority-high title="High Priority" }
+        - [ ] Date Entry Added to Library :material-chevron-triple-up:{ .priority-high title="High Priority" }
+        - [ ] Date File Created :material-chevron-triple-up:{ .priority-high title="High Priority" }
+        - [ ] Date File Modified :material-chevron-triple-up:{ .priority-high title="High Priority" }
+        - [ ] Date Photo Taken :material-chevron-triple-up:{ .priority-high title="High Priority" }
         - [ ] Media Duration :material-chevron-triple-up:{ .priority-high title="High Priority" }
-        - [ ] Image Resolution :material-chevron-double-up:{ .priority-med title="Medium Priority" }
+        - [ ] Media Dimensions :material-chevron-double-up:{ .priority-med title="Medium Priority" }
         - [ ] Word Count :material-chevron-up:{ .priority-low  title="Low Priority" }
 
 </div>
@@ -146,7 +147,44 @@ Discrete library objects representing [attributes](https://en.wikipedia.org/wiki
 </div>
 
 <div class="grid cards" markdown>
-- #### :material-tag-multiple: Sharable Data
+- #### :material-magnify: Search
+
+    ---
+    -   [x] Tag Search **[v8.0.0]**
+    -   [x] Filename Search **[[v9.5.0](./changelog.md#950-2025-03-03)]**
+        -   [x] Glob Search **[[v9.5.0](./changelog.md#950-2025-03-03)]**
+    -   [x] Filetype Search **[[v9.5.0](./changelog.md#950-2025-03-03)]**
+        -   [x] Search by Extension (e.g. ".jpg", ".png") **[[v9.5.0](./changelog.md#950-2025-03-03)]**
+            -   [x] Optional consolidation of extension synonyms (i.e. ".jpg" can equal ".jpeg") **[[v9.5.0](./changelog.md#950-2025-03-03)]**
+        -   [x] Search by media type (e.g. "image", "video", "document") **[[v9.5.0](./changelog.md#950-2025-03-03)]**
+    -   [ ] Field Content Search :material-chevron-triple-up:{ .priority-high title="High Priority" } **[v9.6.0]**
+    -   [x] [Boolean Operators](../library/library_search.md) **[[v9.5.0](./changelog.md#950-2025-03-03)]**
+        -   [x] `AND` Operator
+        -   [x] `OR` Operator
+        -   [x] `NOT` Operator
+        -   [x] Parenthesis Grouping
+        -   [x] Character Escaping
+    -   [ ] `HAS` Operator (for [Component Tags](../library/tag.md#component-tags)) :material-chevron-triple-up:{ .priority-high title="High Priority" } **[v9.6.0]**
+    -   [ ] Conditional Search :material-chevron-double-up:{ .priority-med title="Medium Priority" } **[v9.7.0]**
+        -   [ ] Compare Dates  :material-chevron-double-up:{ .priority-med title="Medium Priority" }
+        -   [ ] Compare Durations  :material-chevron-double-up:{ .priority-med title="Medium Priority" }
+        -   [ ] Compare File Sizes  :material-chevron-double-up:{ .priority-med title="Medium Priority" }
+        -   [ ] Compare Dimensions  :material-chevron-double-up:{ .priority-med title="Medium Priority" }
+    -   [x] Smartcase Search [[v9.5.0](./changelog.md#950-2025-03-03)]
+    -   [ ] Search Result Sorting
+        -   [x] Sort by Filename **[[v9.5.2](./changelog.md#952-2025-03-31)]**
+        -   [x] Sort by Date Entry Added to Library **[[v9.5.2](./changelog.md#952-2025-03-31)]**
+        -   [ ] Sort by File Creation Date :material-chevron-triple-up:{ .priority-high title="High Priority" } **[v9.6.0]**
+        -   [ ] Sort by File Modification Date :material-chevron-triple-up:{ .priority-high title="High Priority" } **[v9.6.0]**
+        -   [ ] Sort by File Modification Date :material-chevron-triple-up:{ .priority-high title="High Priority" }
+        -   [ ] Sort by Date Taken (Photos) :material-chevron-triple-up:{ .priority-high title="High Priority" } **[v9.6.0]**
+    -   [ ] OCR search :material-chevron-up:{ .priority-low title="Low Priority" }
+    -   [ ] Fuzzy Search :material-chevron-up:{ .priority-low title="Low Priority" }
+
+</div>
+
+<div class="grid cards" markdown>
+- #### :material-table-arrow-right: Sharable Data
 Sharable TagStudio library data in the form of data packs (tags, colors, etc.) or other formats.
 Packs are intended as an easy way to import and export specific data between libraries and users, while export-only formats are intended to be imported by other programs.
 
@@ -170,16 +208,6 @@ Packs are intended as an easy way to import and export specific data between lib
 
 ### v9.5
 
-#### Search
-
--   [x] Boolean operators [HIGH]
--   [x] Filename search [HIGH]
--   [x] File type search [HIGH]
-    -   [x] Search by extension (e.g. ".jpg", ".png") [HIGH]
-        -   [x] Optional consolidation of extension synonyms (i.e. ".jpg" can equal ".jpeg") [LOW]
-    -   [x] Search by media type (e.g. "image", "video", "document") [MEDIUM]
--   [x] Sort by date added [HIGH]
-
 #### UI
 
 -   [x] Translations _(Any applicable)_ [MEDIUM]
@@ -200,13 +228,6 @@ Packs are intended as an easy way to import and export specific data between lib
 
 ### v9.6
 
-#### Search
-
--   [ ] Field content search [HIGH]
--   [ ] Sort by date created [HIGH]
--   [ ] Sort by date modified [HIGH]
--   [x] Sort by filename [HIGH]
--   [ ] HAS operator for composition tags [HIGH]
 -   [ ] Search bar rework
     -   [ ] Improved tag autocomplete [HIGH]
     -   [ ] Tags appear as widgets in search bar [HIGH]
@@ -235,13 +256,6 @@ Packs are intended as an easy way to import and export specific data between lib
 
 ### v9.7
 
-#### Search
-
--   [ ] Sort by relevance [HIGH]
--   [ ] Sort by date taken (photos) [MEDIUM]
--   [ ] Sort by file size [HIGH]
--   [ ] Sort by file dimension (images/video) [LOW]
-
 #### [Macros](../utilities/macro.md)
 
 -   [ ] Sharable Macros [MEDIUM]
@@ -265,10 +279,3 @@ Packs are intended as an easy way to import and export specific data between lib
 -   [ ] Toggle Duration Label [MEDIUM]
 -   [ ] Custom Tag Badges [LOW]
 -   [ ] Library list view [HIGH]
-
-### v9.8
-
-#### Search
-
--   [ ] OCR search [LOW]
--   [ ] Fuzzy Search [LOW]
