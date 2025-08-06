@@ -74,12 +74,48 @@ Some form of official plugin support for TagStudio, likely with its own API that
 ### [Library](../library/index.md)
 
 <div class="grid cards" markdown>
+- #### :material-wrench: Library Mechanics
+
+    ---
+    -   [x] Per-Library Tags
+    -   [ ] Global Tags :material-chevron-triple-up:{ .priority-high title="High Priority" }
+    -   [ ] Multiple Root Directories :material-chevron-triple-up:{ .priority-high title="High Priority" } **[v9.6.0]**
+    -   [ ] Automatic Entry Relinking :material-chevron-triple-up:{ .priority-high title="High Priority" } **[v9.7.0]**
+        -   [ ] Detect Renames :material-chevron-triple-up:{ .priority-high title="High Priority" } **[v9.7.0]**
+        -   [ ] Detect Moves :material-chevron-triple-up:{ .priority-high title="High Priority" } **[v9.7.0]**
+        -   [ ] Detect Deletions :material-chevron-triple-up:{ .priority-high title="High Priority" } **[v9.7.0]**
+
+</div>
+
+<div class="grid cards" markdown>
+- #### :material-grid: Entries
+Representations of files or file-like objects.
+
+    ---
+    -   [x] [File Entries](../library/entry.md) **[v1.0.0]**
+    -   [ ] Folder Entries :material-chevron-triple-up:{ .priority-high title="High Priority" }
+    -   [ ] URL Entries / Bookmarks :material-chevron-up:{ .priority-low title="Low Priority" }
+    -   [x] Fields
+        - [x] Text Lines
+        - [x] Text Boxes
+        - [x] Datetimes **[v9.5.4]**
+        - [ ] User-Titled Fields :material-chevron-triple-up:{ .priority-high title="High Priority" } **[v9.6.0]**
+        - [ ] Removal of Deprecated Fields :material-chevron-triple-up:{ .priority-high title="High Priority" } **[v9.6.0]**
+    -   [ ] [Entry Groups](../library/entry_groups.md) :material-chevron-triple-up:{ .priority-high title="High Priority" } **[v9.7.0]**
+        -   [ ] Non-exclusive; Entries can be in multiple groups :material-chevron-triple-up:{ .priority-high title="High Priority" }
+        -   [ ] Ability to number entries within group :material-chevron-triple-up:{ .priority-high title="High Priority" }
+        -   [ ] Ability to set sorting method for group :material-chevron-triple-up:{ .priority-high title="High Priority" }
+        -   [ ] Ability to set custom thumbnail for group :material-chevron-triple-up:{ .priority-high title="High Priority" }
+        -   [ ] Group is treated as entry with tags and metadata :material-chevron-double-up:{ .priority-med title="Medium Priority" }
+        -   [ ] Nested groups :material-chevron-double-up:{ .priority-med title="Medium Priority" }
+
+</div>
+
+<div class="grid cards" markdown>
 - #### :material-tag-text: [Tags](../library/tag.md)
 Discrete library objects representing [attributes](https://en.wikipedia.org/wiki/Property_(philosophy)). Can be applied to library [entries](../library/entry.md), or applied to other tags to build traversable relationships.
 
     ---
-    -   [x] Create and Edit Tags **[v8.0.0]**
-    -   [x] Delete Tags **[[v9.5.0](./changelog.md#950-2025-03-03)]**
     -   [x] Tag Name **[v8.0.0]**
     -   [x] Tag Shorthand Name **[v8.0.0]**
     -   [x] Tag Aliases List **[v8.0.0]**
@@ -132,10 +168,6 @@ Packs are intended as an easy way to import and export specific data between lib
 
 </div>
 
-#### Library
-
--   [ ] Multiple Root Directories per Library [HIGH]
-
 ### v9.5
 
 #### Search
@@ -167,11 +199,6 @@ Packs are intended as an easy way to import and export specific data between lib
 -   [x] Thumbnail caching [HIGH]
 
 ### v9.6
-
-#### Fields
-
--   [ ] Datetime fields [HIGH]
--   [ ] Custom field names [HIGH]
 
 #### Search
 
@@ -208,16 +235,6 @@ Packs are intended as an easy way to import and export specific data between lib
 
 ### v9.7
 
-#### Library
-
--   [ ] [Entry groups](../library/entry_groups.md) [HIGH]
-    -   [ ] Groups for files/entries where the same entry can be in multiple groups [HIGH]
-    -   [ ] Ability to number entries within group [HIGH]
-    -   [ ] Ability to set sorting method for group [HIGH]
-    -   [ ] Ability to set custom thumbnail for group [HIGH]
-    -   [ ] Group is treated as entry with tags and metadata [HIGH]
-    -   [ ] Nested groups [MEDIUM]
-
 #### Search
 
 -   [ ] Sort by relevance [HIGH]
@@ -251,21 +268,7 @@ Packs are intended as an easy way to import and export specific data between lib
 
 ### v9.8
 
-#### Library
-
--   [ ] Automatic Entry Relinking [HIGH]
-    -   [ ] Detect Renames [HIGH]
-    -   [ ] Detect Moves [HIGH]
-    -   [ ] Detect Deletions [HIGH]
-
 #### Search
 
 -   [ ] OCR search [LOW]
 -   [ ] Fuzzy Search [LOW]
-
-### v9.9
-
-#### Library
-
--   [ ] Exportable Library Data [HIGH]
-    -   [ ] Standard notation format (i.e. JSON) contacting all library data [HIGH]
