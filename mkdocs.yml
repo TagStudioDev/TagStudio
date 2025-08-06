@@ -78,7 +78,8 @@ theme:
         name: Switch to System Preference
   logo: assets/icon_mono.svg
   favicon: assets/icon.ico
-  font: false  # use system fonts
+  font:
+    code: Jetbrains Mono
   language: en
   features:
     - navigation.instant
@@ -139,3 +140,4 @@ plugins:
 
 extra_css:
   - stylesheets/extra.css
+  - https://fonts.googleapis.com/css2?family=Bai+Jamjuree:ital,wght@0,200;0,300;0,400;0,500;0,600;0,700;1,200;1,300;1,400;1,500;1,600;1,700&display=swap
