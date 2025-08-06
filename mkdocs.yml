@@ -53,29 +53,30 @@ nav:
 
 theme:
   name: material
+  custom_dir: overrides
   palette:
     # Palette toggle for automatic mode
     - media: "(prefers-color-scheme)"
       toggle:
-        icon: material/brightness-auto
-        name: Switch to light mode
+        icon: material/lightbulb-auto-outline
+        name: Switch to Light Mode
     # Palette toggle for light mode
     - media: "(prefers-color-scheme: light)"
       scheme: default
       primary: deep purple
       accent: deep purple
       toggle:
-        icon: material/brightness-7
-        name: Switch to dark mode
+        icon: material/lightbulb
+        name: Switch to Dark Mode
     # Palette toggle for dark mode
     - media: "(prefers-color-scheme: dark)"
       scheme: slate
       primary: deep purple
       accent: deep purple
       toggle:
-        icon: material/brightness-4
-        name: SSwitch to system preference
-  logo: assets/icon.png
+        icon: material/lightbulb-night-outline
+        name: Switch to System Preference
+  logo: assets/icon_mono.svg
   favicon: assets/icon.ico
   font: false  # use system fonts
   language: en
