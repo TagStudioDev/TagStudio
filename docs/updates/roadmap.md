@@ -16,7 +16,7 @@ Planned features and changes are assigned **priority levels** to signify how imp
 
 ## Version Estimates
 
-Features are given rough estimations for which version they will be completed in, and are listed next to their names (e.g. Feature **[v9.0.0]**). They are eventually replaced with links to the version changelog in which they were completed in.
+Features are given rough estimations for which version they will be completed in, and are listed next to their names (e.g. Feature **[v9.0.0]**). They are eventually replaced with links to the version changelog in which they were completed in, if applicable.
 
 <!-- prettier-ignore -->
 !!! tip
@@ -71,18 +71,72 @@ Some form of official plugin support for TagStudio, likely with its own API that
 
 </div>
 
+### [Library](../library/index.md)
+
+<div class="grid cards" markdown>
+- #### :material-tag-text: [Tags](../library/tag.md)
+Discrete library objects representing [attributes](https://en.wikipedia.org/wiki/Property_(philosophy)). Can be applied to library [entries](../library/entry.md), or applied to other tags to build traversable relationships.
+
+    ---
+    -   [x] Create and Edit Tags **[v8.0.0]**
+    -   [x] Delete Tags **[[v9.5.0](./changelog.md#950-2025-03-03)]**
+    -   [x] Tag Name **[v8.0.0]**
+    -   [x] Tag Shorthand Name **[v8.0.0]**
+    -   [x] Tag Aliases List **[v8.0.0]**
+    -   [x] Tag Color **[v8.0.0]**
+    -   [ ] Tag Description :material-chevron-double-up:{ .priority-med title="Medium Priority" } **[v9.6.0]**
+    -   [x] Tag Colors
+        -   [x] Built-in Color Palette **[v8.0.0]**
+        -   [x] User-Defined Colors **[[v9.5.0](./changelog.md#950-2025-03-03)]**
+        -   [x] Primary and Secondary Colors **[[v9.5.0](./changelog.md#950-2025-03-03)]**
+    -   [ ] Tag Icons :material-chevron-triple-up:{ .priority-high title="High Priority" } **[v9.6.0]**
+        -   [ ] Small Icons :material-chevron-triple-up:{ .priority-high title="High Priority" } **[v9.6.0]**
+        -   [ ] Large Icons for Profiles :material-chevron-double-up:{ .priority-med title="Medium Priority" } **[v9.6.0]**
+        -   [ ] Built-in Icon Packs (i.e. Boxicons) :material-chevron-triple-up:{ .priority-high title="High Priority" } **[v9.6.0]**
+        -   [ ] User-Defined Icons :material-chevron-triple-up:{ .priority-high title="High Priority" } **[v9.6.0]**
+    -   [x] [Category Property](../library/tag_categories.md) **[[v9.5.0](./changelog.md#950-2025-03-03)]**
+        -   [x] Property available for tags that allow the tag and any inheriting from it to be displayed separately in the preview panel under a title
+        -   [ ] Fine-tuned exclusion from categories :material-chevron-triple-up:{ .priority-high title="High Priority" } **[v9.6.0]**
+    -   [ ] Hidden Property :material-chevron-triple-up:{ .priority-high title="High Priority" } **[v9.6.0]**
+        - [ ] Built-in "Archived" tag has this property by default :material-chevron-triple-up:{ .priority-high title="High Priority" } **[v9.6.0]**
+        - [ ] Checkbox near search bar to show hidden tags in search :material-chevron-triple-up:{ .priority-high title="High Priority" } **[v9.6.0]**
+    -   [ ] Tag Relationships
+        -   [x] [Parent Tags](../library/tag.md#parent-tags) ([Inheritance](<https://en.wikipedia.org/wiki/Inheritance_(object-oriented_programming)>) Relationship) **[v9.0.0]**
+        -   [ ] [Component Tags](../library/tag.md#component-tags) ([Composition](https://en.wikipedia.org/wiki/Object_composition) Relationship) :material-chevron-triple-up:{ .priority-high title="High Priority" } **[v9.6.0]**
+    -   [ ] Multiple Language Support :material-chevron-up:{ .priority-low title="Low Priority" } **[v9.9.0]**
+    -   [ ] [Tag Overrides](../library/tag_overrides.md) :material-chevron-double-up:{ .priority-med title="Medium Priority" }
+    -   [ ] Tag Merging :material-chevron-double-up:{ .priority-med title="Medium Priority" }
+
+</div>
+
+<div class="grid cards" markdown>
+- #### :material-tag-multiple: Sharable Data
+Sharable TagStudio library data in the form of data packs (tags, colors, etc.) or other formats.
+Packs are intended as an easy way to import and export specific data between libraries and users, while export-only formats are intended to be imported by other programs.
+
+    ---
+    -   [ ] Color Packs **[v9.6.0]**
+        -   [ ] Importable :material-chevron-triple-up:{ .priority-high title="High Priority" }
+        -   [ ] Exportable :material-chevron-triple-up:{ .priority-high title="High Priority" }
+        -   [x] UUIDs + Namespaces :material-chevron-triple-up:{ .priority-high title="High Priority" }
+        -   [x] Standard, human readable format (TOML) :material-chevron-triple-up:{ .priority-high title="High Priority" }
+        -   [ ] Versioning System :material-chevron-double-up:{ .priority-med title="Medium Priority" }
+    -   [ ] Tag Packs **[v9.9.0]**
+        -   [ ] Importable :material-chevron-triple-up:{ .priority-high title="High Priority" }
+        -   [ ] Exportable :material-chevron-triple-up:{ .priority-high title="High Priority" }
+        -   [ ] UUIDs + Namespaces :material-chevron-triple-up:{ .priority-high title="High Priority" }
+        -   [ ] Standard, human readable format (TOML) :material-chevron-triple-up:{ .priority-high title="High Priority" }
+        -   [ ] Versioning System :material-chevron-double-up:{ .priority-med title="Medium Priority" }
+    -   [ ] Export Library to Human Readable Format :material-chevron-triple-up:{ .priority-high title="High Priority" } **[v10.0.0]**
+        -   Intended to give users more flexible options with their data if they wish to migrate away from TagStudio
+
+</div>
+
+#### Library
+
+-   [ ] Multiple Root Directories per Library [HIGH]
+
 ### v9.5
-
-#### Tags
-
--   [x] Deleting Tags [HIGH]
--   [ ] User-defined tag colors [HIGH]
-    -   [x] ID based, not string or hex [HIGH]
-    -   [x] Color name [HIGH]
-    -   [x] Color value (hex) [HIGH]
-    -   [x] Existing colors are now a set of base colors [HIGH]
--   [x] [Tag Categories](../library/tag_categories.md) [HIGH]
-    -   [x] Property available for tags that allow the tag and any inheriting from it to be displayed separately in the preview panel under a title [HIGH]
 
 #### Search
 
@@ -113,31 +167,6 @@ Some form of official plugin support for TagStudio, likely with its own API that
 -   [x] Thumbnail caching [HIGH]
 
 ### v9.6
-
-#### Library
-
--   [ ] Multiple Root Directories per Library [HIGH]
-
--   [ ] Sharable Color Packs [MEDIUM]
-    -   [ ] Human-readable (TOML) files containing tag data [HIGH]
-    -   [ ] Importable [HIGH]
-    -   [ ] Exportable [HIGH]
-
-#### Tags
-
--   [ ] Merging Tags [HIGH]
--   [ ] [Component/HAS](../library/tag.md#component-tags) subtags [HIGH]
--   [ ] Tag Icons [HIGH]
-    -   [ ] Small Icons [HIGH]
-    -   [ ] Large Icons for Profiles [MEDIUM]
-    -   [ ] Built-in Icon Packs (i.e. Boxicons) [HIGH]
-    -   [ ] User Defined Icons [HIGH]
--   [ ] Multiple Languages for Tag Strings [MEDIUM]
-    -   [ ] Title is tag name [HIGH]
-    -   [ ] Title has tag color [MEDIUM]
-    -   [ ] Tag marked as category does not display as a tag itself [HIGH]
--   [ ] [Tag Overrides](../library/tag_overrides.md) [MEDIUM]
-    -   [ ] Per-file overrides of subtags [HIGH]
 
 #### Fields
 
@@ -240,16 +269,3 @@ Some form of official plugin support for TagStudio, likely with its own API that
 
 -   [ ] Exportable Library Data [HIGH]
     -   [ ] Standard notation format (i.e. JSON) contacting all library data [HIGH]
-
-#### Tags
-
--   [ ] Tag Packs [MEDIUM]
-    -   [ ] Human-readable (TOML) files containing tag data [HIGH]
-    -   [ ] Multiple Languages for Tag Strings [MEDIUM]
-    -   [ ] Importable [HIGH]
-    -   [ ] Exportable [HIGH]
-    -   [ ] Conflict resolution [HIGH]
-
-### v10.0
-
--   [ ] All remaining [HIGH] and optional [MEDIUM] features
