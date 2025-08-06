@@ -1,0 +1,4654 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="A User-Focused Photo & File Management System">
+      
+      
+      
+        <link rel="canonical" href="https://docs.tagstud.io/updates/changelog/">
+      
+      
+        <link rel="prev" href="../../utilities/macro/">
+      
+      
+        <link rel="next" href="../roadmap/">
+      
+      
+      <link rel="icon" href="../../assets/icon.ico">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.6.16">
+    
+    
+      
+        <title>Changelog - TagStudio</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.7e37652d.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.06af60db.min.css">
+      
+      
+
+
+  
+  
+    
+    
+      
+    
+    
+  
+  
+  <style>:root{.md-tag.md-tag--upcoming{--md-tag-icon:url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%2024%2024%22%3E%3Cpath%20d%3D%22M5%2019a1%201%200%200%200%201%201h12a1%201%200%200%200%201-1c0-.21-.07-.41-.18-.57L13%208.35V4h-2v4.35L5.18%2018.43c-.11.16-.18.36-.18.57m1%203a3%203%200%200%201-3-3c0-.6.18-1.16.5-1.63L9%207.81V6a1%201%200%200%201-1-1V4a2%202%200%200%201%202-2h4a2%202%200%200%201%202%202v1a1%201%200%200%201-1%201v1.81l5.5%209.56c.32.47.5%201.03.5%201.63a3%203%200%200%201-3%203zm7-6%201.34-1.34L16.27%2018H7.73l2.66-4.61zm-.5-4a.5.5%200%200%201%20.5.5.5.5%200%200%201-.5.5.5.5%200%200%201-.5-.5.5.5%200%200%201%20.5-.5%22/%3E%3C/svg%3E');}}</style>
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CJetbrains+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Jetbrains Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../stylesheets/extra.css">
+    
+      <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bai+Jamjuree:ital,wght@0,200;0,300;0,400;0,500;0,600;0,700;1,200;1,300;1,400;1,500;1,600;1,700&display=swap">
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+      
+        <meta  property="og:type"  content="website" >
+      
+        <meta  property="og:title"  content="Changelog - TagStudio" >
+      
+        <meta  property="og:description"  content="A User-Focused Photo & File Management System" >
+      
+        <meta  property="og:image"  content="https://docs.tagstud.io/assets/images/social/updates/changelog.png" >
+      
+        <meta  property="og:image:type"  content="image/png" >
+      
+        <meta  property="og:image:width"  content="1200" >
+      
+        <meta  property="og:image:height"  content="630" >
+      
+        <meta  property="og:url"  content="https://docs.tagstud.io/updates/changelog/" >
+      
+        <meta  name="twitter:card"  content="summary_large_image" >
+      
+        <meta  name="twitter:title"  content="Changelog - TagStudio" >
+      
+        <meta  name="twitter:description"  content="A User-Focused Photo & File Management System" >
+      
+        <meta  name="twitter:image"  content="https://docs.tagstud.io/assets/images/social/updates/changelog.png" >
+      
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#tagstudio-changelog" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      <!--
+  Copyright (c) 2016-2025 Martin Donath <martin.donath@squidfunk.com>
+
+  Permission is hereby granted, free of charge, to any person obtaining a copy
+  of this software and associated documentation files (the "Software"), to
+  deal in the Software without restriction, including without limitation the
+  rights to use, copy, modify, merge, publish, distribute, sublicense, and/or
+  sell copies of the Software, and to permit persons to whom the Software is
+  furnished to do so, subject to the following conditions:
+
+  The above copyright notice and this permission notice shall be included in
+  all copies or substantial portions of the Software.
+
+  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+  FITNESS FOR A PARTICULAR PURPOSE AND NON-INFRINGEMENT. IN NO EVENT SHALL THE
+  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
+  IN THE SOFTWARE.
+-->
+
+<!-- Determine classes -->
+
+
+  
+
+
+<!-- Header -->
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav
+    class="md-header__inner md-grid"
+    aria-label="Header"
+  >
+
+    <!-- Link to home -->
+    <a
+      href="../.."
+      title="TagStudio"
+      class="md-header__button md-logo"
+      aria-label="TagStudio"
+      data-md-component="logo"
+    >
+      
+  <img src="../../assets/icon_mono.svg" alt="logo">
+
+    </a>
+
+    <!-- Button to open drawer -->
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+
+    <!-- Header title -->
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            <a style="font-weight: 900;">Tag</a><a style="font-weight: 500;"><i>Studio</i></a>
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Changelog
+            
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Color palette toggle -->
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to Light Mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to Light Mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9 2c3.87 0 7 3.13 7 7 0 2.38-1.19 4.47-3 5.74V17c0 .55-.45 1-1 1H6c-.55 0-1-.45-1-1v-2.26C3.19 13.47 2 11.38 2 9c0-3.87 3.13-7 7-7M6 21v-1h6v1c0 .55-.45 1-1 1H7c-.55 0-1-.45-1-1M9 4C6.24 4 4 6.24 4 9c0 2.05 1.23 3.81 3 4.58V16h4v-2.42c1.77-.77 3-2.53 3-4.58 0-2.76-2.24-5-5-5m10 9h-2l-3.2 9h1.9l.7-2h3.2l.7 2h1.9zm-2.15 5.65L18 15l1.15 3.65z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="deep-purple" data-md-color-accent="deep-purple"  aria-label="Switch to Dark Mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to Dark Mode" for="__palette_2" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 2a7 7 0 0 0-7 7c0 2.38 1.19 4.47 3 5.74V17a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1v-2.26c1.81-1.27 3-3.36 3-5.74a7 7 0 0 0-7-7M9 21a1 1 0 0 0 1 1h4a1 1 0 0 0 1-1v-1H9z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="deep-purple" data-md-color-accent="deep-purple"  aria-label="Switch to System Preference"  type="radio" name="__palette" id="__palette_2">
+    
+      <label class="md-header__button md-icon" title="Switch to System Preference" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M6 20h6v1c0 .55-.45 1-1 1H7c-.55 0-1-.45-1-1zm5-5.11V16H7v-2.42C5.23 12.81 4 11.05 4 9c0-2.76 2.24-5 5-5 .9 0 1.73.26 2.46.67.54-.47 1.2-.86 1.89-1.17C12.16 2.57 10.65 2 9 2 5.13 2 2 5.13 2 9c0 2.38 1.19 4.47 3 5.74V17c0 .55.45 1 1 1h6c.55 0 1-.45 1-1v-.68c-.75-.36-1.43-.82-2-1.43m9.92-4.95-.5-1.64 1.3-1.08-1.68-.04-.63-1.58-.56 1.61-1.68.11 1.33 1.03-.4 1.65 1.4-.97zm-1.8 2.31a4.62 4.62 0 0 1-3.27-2.28c-.73-1.26-.8-2.72-.35-4 .14-.34-.16-.68-.5-.63-3.44.66-5 4.79-2.78 7.61 1.81 2.24 5.28 2.32 7.17.05.23-.26.08-.7-.27-.75"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+
+    <!-- User preference: color palette -->
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+
+    <!-- Site language selector -->
+    
+
+    <!-- Button to open search modal -->
+    
+      
+
+      <!-- Check if search is actually enabled - see https://t.ly/DT_0V -->
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+
+        <!-- Search interface -->
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+
+    <!-- Repository information -->
+    
+      <div class="md-header__source">
+        <a href="https://github.com/TagStudioDev/TagStudio" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.0.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path fill="currentColor" d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TagStudioDev/TagStudio
+  </div>
+</a>
+      </div>
+    
+  </nav>
+
+  <!-- Navigation tabs (sticky) -->
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    <!--
+  Copyright (c) 2016-2025 Martin Donath <martin.donath@squidfunk.com>
+
+  Permission is hereby granted, free of charge, to any person obtaining a copy
+  of this software and associated documentation files (the "Software"), to
+  deal in the Software without restriction, including without limitation the
+  rights to use, copy, modify, merge, publish, distribute, sublicense, and/or
+  sell copies of the Software, and to permit persons to whom the Software is
+  furnished to do so, subject to the following conditions:
+
+  The above copyright notice and this permission notice shall be included in
+  all copies or substantial portions of the Software.
+
+  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+  FITNESS FOR A PARTICULAR PURPOSE AND NON-INFRINGEMENT. IN NO EVENT SHALL THE
+  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
+  IN THE SOFTWARE.
+-->
+
+
+
+<!-- Determine classes -->
+
+
+
+
+<!-- Navigation -->
+<nav
+  class="md-nav md-nav--primary"
+  aria-label="Navigation"
+  data-md-level="0"
+>
+
+  <!-- Site title -->
+  <!-- <label class="md-nav__title" for="__drawer">
+    <a
+      href="../.."
+      title="TagStudio"
+      class="md-nav__button md-logo"
+      aria-label="TagStudio"
+      data-md-component="logo"
+    >
+      
+  <img src="../../assets/icon_mono.svg" alt="logo">
+
+    </a>
+    TagStudio
+  </label> -->
+
+  <!-- Repository information -->
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/TagStudioDev/TagStudio" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.0.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path fill="currentColor" d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TagStudioDev/TagStudio
+  </div>
+</a>
+    </div>
+  
+
+  <!-- Navigation list -->
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_1" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../.." class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    Home
+    
+  </span>
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_1" id="__nav_1_label" tabindex="">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_1_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_1">
+            <span class="md-nav__icon md-icon"></span>
+            Home
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../install/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Installation
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../usage/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Usage
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../develop/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Developing
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    Help
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            Help
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../help/ffmpeg/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    FFmpeg
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_3" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../library/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    Library
+    
+  </span>
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_3" id="__nav_3_label" tabindex="">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            Library
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../library/entry/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    File Entries
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../library/entry_groups/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Entry Groups
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../library/field/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Fields
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../library/library_search/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Library Search
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../library/tag/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Tags
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../library/tag_categories/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Tag Categories
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../library/tag_color/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Tag Colors
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../library/tag_overrides/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Tag Overrides
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    Utilities
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            Utilities
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../utilities/macro/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Tools &amp; Macros
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    Updates
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            Updates
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    Changelog
+    
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    Changelog
+    
+  </span>
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#952-2025-03-31" class="md-nav__link">
+    <span class="md-ellipsis">
+      [9.5.2] - 2025-03-31
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="[9.5.2] - 2025-03-31">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#added" class="md-nav__link">
+    <span class="md-ellipsis">
+      Added
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Added">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#search" class="md-nav__link">
+    <span class="md-ellipsis">
+      Search
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#settings" class="md-nav__link">
+    <span class="md-ellipsis">
+      Settings
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ui" class="md-nav__link">
+    <span class="md-ellipsis">
+      UI
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#misc" class="md-nav__link">
+    <span class="md-ellipsis">
+      Misc
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fixed" class="md-nav__link">
+    <span class="md-ellipsis">
+      Fixed
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#internal-changes" class="md-nav__link">
+    <span class="md-ellipsis">
+      Internal Changes
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#documentation" class="md-nav__link">
+    <span class="md-ellipsis">
+      Documentation
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#translations" class="md-nav__link">
+    <span class="md-ellipsis">
+      Translations
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#951-2025-03-06" class="md-nav__link">
+    <span class="md-ellipsis">
+      [9.5.1] - 2025-03-06
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="[9.5.1] - 2025-03-06">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#fixed_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      Fixed
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#translations_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      Translations
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#documentation_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      Documentation
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#950-2025-03-03" class="md-nav__link">
+    <span class="md-ellipsis">
+      [9.5.0] - 2025-03-03
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="[9.5.0] - 2025-03-03">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#added_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      Added
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Added">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#overhauled-search-engine" class="md-nav__link">
+    <span class="md-ellipsis">
+      Overhauled Search Engine
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Overhauled Search Engine">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#boolean-operators" class="md-nav__link">
+    <span class="md-ellipsis">
+      Boolean Operators
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#filetype-mediatype-and-glob-path-smartcase-searches" class="md-nav__link">
+    <span class="md-ellipsis">
+      Filetype, Mediatype, and Glob Path + Smartcase Searches
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sortable-results" class="md-nav__link">
+    <span class="md-ellipsis">
+      Sortable Results
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#autocomplete" class="md-nav__link">
+    <span class="md-ellipsis">
+      Autocomplete
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#replaced-tag-fields-with-tag-categories" class="md-nav__link">
+    <span class="md-ellipsis">
+      Replaced "Tag Fields" with Tag Categories
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#thumbnails-and-file-previews" class="md-nav__link">
+    <span class="md-ellipsis">
+      Thumbnails and File Previews
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Thumbnails and File Previews">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#new-thumbnail-support" class="md-nav__link">
+    <span class="md-ellipsis">
+      New Thumbnail Support
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#audio-playback" class="md-nav__link">
+    <span class="md-ellipsis">
+      Audio Playback
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#thumbnail-caching" class="md-nav__link">
+    <span class="md-ellipsis">
+      Thumbnail Caching
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tags" class="md-nav__link">
+    <span class="md-ellipsis">
+      Tags
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Tags">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#delete-tags-finally" class="md-nav__link">
+    <span class="md-ellipsis">
+      Delete Tags (Finally!)
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#custom-user-created-tag-colors" class="md-nav__link">
+    <span class="md-ellipsis">
+      Custom User-Created Tag Colors
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#new-tag-colors-ui" class="md-nav__link">
+    <span class="md-ellipsis">
+      New Tag Colors + UI
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#new-tag-alias-ui" class="md-nav__link">
+    <span class="md-ellipsis">
+      New Tag Alias UI
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#translations_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      Translations
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#miscellaneous" class="md-nav__link">
+    <span class="md-ellipsis">
+      Miscellaneous
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fixed_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      Fixed
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#changed" class="md-nav__link">
+    <span class="md-ellipsis">
+      Changed
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Changed">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#sqlite-save-file-format" class="md-nav__link">
+    <span class="md-ellipsis">
+      SQLite Save File Format
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#uiux" class="md-nav__link">
+    <span class="md-ellipsis">
+      UI/UX
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#performance" class="md-nav__link">
+    <span class="md-ellipsis">
+      Performance
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#internal-changes_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      Internal Changes
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#950-pre-release-4-2025-02-17" class="md-nav__link">
+    <span class="md-ellipsis">
+      [9.5.0 Pre-Release 4] - 2025-02-17
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="[9.5.0 Pre-Release 4] - 2025-02-17">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#added_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      Added
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Added">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#custom-user-created-tag-colors-cyanvoxel-in-801" class="md-nav__link">
+    <span class="md-ellipsis">
+      Custom User-Created Tag Colors (@CyanVoxel in #801)
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#translations_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      Translations
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fixed_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      Fixed
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#internal-changes_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      Internal Changes
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#950-pre-release-3-2025-02-10" class="md-nav__link">
+    <span class="md-ellipsis">
+      [9.5.0 Pre-Release 3] - 2025-02-10
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="[9.5.0 Pre-Release 3] - 2025-02-10">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#added_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      Added
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Added">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#743-by-cyanvoxel" class="md-nav__link">
+    <span class="md-ellipsis">
+      #743 by @CyanVoxel
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#788-by-cyanvoxel" class="md-nav__link">
+    <span class="md-ellipsis">
+      #788 by @CyanVoxel
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#changed_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      Changed
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Changed">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#788-by-cyanvoxel_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      #788 by @CyanVoxel
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fixed_4" class="md-nav__link">
+    <span class="md-ellipsis">
+      Fixed
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#docs" class="md-nav__link">
+    <span class="md-ellipsis">
+      Docs
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#950-pre-release-2-2025-02-03" class="md-nav__link">
+    <span class="md-ellipsis">
+      [9.5.0 Pre-Release 2] - 2025-02-03
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="[9.5.0 Pre-Release 2] - 2025-02-03">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#added_4" class="md-nav__link">
+    <span class="md-ellipsis">
+      Added
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Added">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#784-by-cyanvoxel" class="md-nav__link">
+    <span class="md-ellipsis">
+      #784 by @CyanVoxel
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fixed_5" class="md-nav__link">
+    <span class="md-ellipsis">
+      Fixed
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Fixed">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#784-by-cyanvoxel_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      #784 by @CyanVoxel
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#changed_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      Changed
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Changed">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#784-by-cyanvoxel_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      #784 by @CyanVoxel
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#internal-changes_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      Internal Changes
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#docs_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      Docs
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#950-pre-release-1-2025-01-31" class="md-nav__link">
+    <span class="md-ellipsis">
+      [9.5.0 Pre-Release 1] - 2025-01-31
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="[9.5.0 Pre-Release 1] - 2025-01-31">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#added_5" class="md-nav__link">
+    <span class="md-ellipsis">
+      Added
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Added">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#overhauled-search-engine_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      Overhauled Search Engine
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Overhauled Search Engine">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#boolean-operators_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      Boolean Operators
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#filetype-mediatype-and-glob-path-searches" class="md-nav__link">
+    <span class="md-ellipsis">
+      Filetype, Mediatype, and Glob Path Searches
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sortable-results_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      Sortable Results
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#autocomplete_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      Autocomplete
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#replaced-tag-fields-with-tag-categories_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      Replaced "Tag Fields" with Tag Categories
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#thumbnails-and-file-previews_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      Thumbnails and File Previews
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Thumbnails and File Previews">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#new-thumbnail-support_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      New Thumbnail Support
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#audio-playback_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      Audio Playback
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#thumbnail-caching_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      Thumbnail Caching
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tags_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      Tags
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Tags">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#delete-tags-finally_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      Delete Tags (Finally!)
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#new-tag-colors-ui_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      New Tag Colors + UI
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#new-tag-alias-ui_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      New Tag Alias UI
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#miscellaneous_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      Miscellaneous
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fixed_6" class="md-nav__link">
+    <span class="md-ellipsis">
+      Fixed
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#changed_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      Changed
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Changed">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#sqlite-save-file-format_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      SQLite Save File Format
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#uiux_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      UI/UX
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#performance_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      Performance
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#internal-changes_4" class="md-nav__link">
+    <span class="md-ellipsis">
+      Internal Changes
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#942-2024-12-01" class="md-nav__link">
+    <span class="md-ellipsis">
+      [9.4.2] - 2024-12-01
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="[9.4.2] - 2024-12-01">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#addedfixed" class="md-nav__link">
+    <span class="md-ellipsis">
+      Added/Fixed
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#941-2024-09-13" class="md-nav__link">
+    <span class="md-ellipsis">
+      [9.4.1] - 2024-09-13
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="[9.4.1] - 2024-09-13">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#added_6" class="md-nav__link">
+    <span class="md-ellipsis">
+      Added
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fixed_7" class="md-nav__link">
+    <span class="md-ellipsis">
+      Fixed
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#changed_4" class="md-nav__link">
+    <span class="md-ellipsis">
+      Changed
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#940-2024-09-03" class="md-nav__link">
+    <span class="md-ellipsis">
+      [9.4.0] - 2024-09-03
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="[9.4.0] - 2024-09-03">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#added_7" class="md-nav__link">
+    <span class="md-ellipsis">
+      Added
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fixed_8" class="md-nav__link">
+    <span class="md-ellipsis">
+      Fixed
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#internal-changes_5" class="md-nav__link">
+    <span class="md-ellipsis">
+      Internal Changes
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#932-2024-07-18" class="md-nav__link">
+    <span class="md-ellipsis">
+      [9.3.2] - 2024-07-18
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="[9.3.2] - 2024-07-18">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#fixed_9" class="md-nav__link">
+    <span class="md-ellipsis">
+      Fixed
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#internal-changes_6" class="md-nav__link">
+    <span class="md-ellipsis">
+      Internal Changes
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#931-2024-06-13" class="md-nav__link">
+    <span class="md-ellipsis">
+      [9.3.1] - 2024-06-13
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="[9.3.1] - 2024-06-13">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#fixed_10" class="md-nav__link">
+    <span class="md-ellipsis">
+      Fixed
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#930-2024-06-08" class="md-nav__link">
+    <span class="md-ellipsis">
+      [9.3.0] - 2024-06-08
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="[9.3.0] - 2024-06-08">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#added_8" class="md-nav__link">
+    <span class="md-ellipsis">
+      Added
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fixed_11" class="md-nav__link">
+    <span class="md-ellipsis">
+      Fixed
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#changed_5" class="md-nav__link">
+    <span class="md-ellipsis">
+      Changed
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#921-2024-05-23" class="md-nav__link">
+    <span class="md-ellipsis">
+      [9.2.1] - 2024-05-23
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="[9.2.1] - 2024-05-23">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#added_9" class="md-nav__link">
+    <span class="md-ellipsis">
+      Added
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fixed_12" class="md-nav__link">
+    <span class="md-ellipsis">
+      Fixed
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#920-2024-05-14" class="md-nav__link">
+    <span class="md-ellipsis">
+      [9.2.0] - 2024-05-14
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="[9.2.0] - 2024-05-14">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#added_10" class="md-nav__link">
+    <span class="md-ellipsis">
+      Added
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fixed_13" class="md-nav__link">
+    <span class="md-ellipsis">
+      Fixed
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#changed_6" class="md-nav__link">
+    <span class="md-ellipsis">
+      Changed
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#known-issues" class="md-nav__link">
+    <span class="md-ellipsis">
+      Known Issues
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#910-2024-04-22" class="md-nav__link">
+    <span class="md-ellipsis">
+      [9.1.0] - 2024-04-22
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="[9.1.0] - 2024-04-22">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#added_11" class="md-nav__link">
+    <span class="md-ellipsis">
+      Added
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../roadmap/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Feature Roadmap
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../schema_changes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Save Format Changes
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#952-2025-03-31" class="md-nav__link">
+    <span class="md-ellipsis">
+      [9.5.2] - 2025-03-31
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="[9.5.2] - 2025-03-31">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#added" class="md-nav__link">
+    <span class="md-ellipsis">
+      Added
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Added">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#search" class="md-nav__link">
+    <span class="md-ellipsis">
+      Search
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#settings" class="md-nav__link">
+    <span class="md-ellipsis">
+      Settings
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ui" class="md-nav__link">
+    <span class="md-ellipsis">
+      UI
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#misc" class="md-nav__link">
+    <span class="md-ellipsis">
+      Misc
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fixed" class="md-nav__link">
+    <span class="md-ellipsis">
+      Fixed
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#internal-changes" class="md-nav__link">
+    <span class="md-ellipsis">
+      Internal Changes
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#documentation" class="md-nav__link">
+    <span class="md-ellipsis">
+      Documentation
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#translations" class="md-nav__link">
+    <span class="md-ellipsis">
+      Translations
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#951-2025-03-06" class="md-nav__link">
+    <span class="md-ellipsis">
+      [9.5.1] - 2025-03-06
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="[9.5.1] - 2025-03-06">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#fixed_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      Fixed
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#translations_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      Translations
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#documentation_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      Documentation
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#950-2025-03-03" class="md-nav__link">
+    <span class="md-ellipsis">
+      [9.5.0] - 2025-03-03
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="[9.5.0] - 2025-03-03">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#added_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      Added
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Added">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#overhauled-search-engine" class="md-nav__link">
+    <span class="md-ellipsis">
+      Overhauled Search Engine
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Overhauled Search Engine">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#boolean-operators" class="md-nav__link">
+    <span class="md-ellipsis">
+      Boolean Operators
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#filetype-mediatype-and-glob-path-smartcase-searches" class="md-nav__link">
+    <span class="md-ellipsis">
+      Filetype, Mediatype, and Glob Path + Smartcase Searches
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sortable-results" class="md-nav__link">
+    <span class="md-ellipsis">
+      Sortable Results
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#autocomplete" class="md-nav__link">
+    <span class="md-ellipsis">
+      Autocomplete
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#replaced-tag-fields-with-tag-categories" class="md-nav__link">
+    <span class="md-ellipsis">
+      Replaced "Tag Fields" with Tag Categories
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#thumbnails-and-file-previews" class="md-nav__link">
+    <span class="md-ellipsis">
+      Thumbnails and File Previews
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Thumbnails and File Previews">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#new-thumbnail-support" class="md-nav__link">
+    <span class="md-ellipsis">
+      New Thumbnail Support
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#audio-playback" class="md-nav__link">
+    <span class="md-ellipsis">
+      Audio Playback
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#thumbnail-caching" class="md-nav__link">
+    <span class="md-ellipsis">
+      Thumbnail Caching
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tags" class="md-nav__link">
+    <span class="md-ellipsis">
+      Tags
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Tags">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#delete-tags-finally" class="md-nav__link">
+    <span class="md-ellipsis">
+      Delete Tags (Finally!)
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#custom-user-created-tag-colors" class="md-nav__link">
+    <span class="md-ellipsis">
+      Custom User-Created Tag Colors
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#new-tag-colors-ui" class="md-nav__link">
+    <span class="md-ellipsis">
+      New Tag Colors + UI
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#new-tag-alias-ui" class="md-nav__link">
+    <span class="md-ellipsis">
+      New Tag Alias UI
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#translations_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      Translations
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#miscellaneous" class="md-nav__link">
+    <span class="md-ellipsis">
+      Miscellaneous
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fixed_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      Fixed
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#changed" class="md-nav__link">
+    <span class="md-ellipsis">
+      Changed
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Changed">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#sqlite-save-file-format" class="md-nav__link">
+    <span class="md-ellipsis">
+      SQLite Save File Format
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#uiux" class="md-nav__link">
+    <span class="md-ellipsis">
+      UI/UX
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#performance" class="md-nav__link">
+    <span class="md-ellipsis">
+      Performance
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#internal-changes_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      Internal Changes
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#950-pre-release-4-2025-02-17" class="md-nav__link">
+    <span class="md-ellipsis">
+      [9.5.0 Pre-Release 4] - 2025-02-17
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="[9.5.0 Pre-Release 4] - 2025-02-17">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#added_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      Added
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Added">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#custom-user-created-tag-colors-cyanvoxel-in-801" class="md-nav__link">
+    <span class="md-ellipsis">
+      Custom User-Created Tag Colors (@CyanVoxel in #801)
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#translations_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      Translations
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fixed_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      Fixed
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#internal-changes_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      Internal Changes
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#950-pre-release-3-2025-02-10" class="md-nav__link">
+    <span class="md-ellipsis">
+      [9.5.0 Pre-Release 3] - 2025-02-10
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="[9.5.0 Pre-Release 3] - 2025-02-10">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#added_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      Added
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Added">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#743-by-cyanvoxel" class="md-nav__link">
+    <span class="md-ellipsis">
+      #743 by @CyanVoxel
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#788-by-cyanvoxel" class="md-nav__link">
+    <span class="md-ellipsis">
+      #788 by @CyanVoxel
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#changed_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      Changed
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Changed">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#788-by-cyanvoxel_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      #788 by @CyanVoxel
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fixed_4" class="md-nav__link">
+    <span class="md-ellipsis">
+      Fixed
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#docs" class="md-nav__link">
+    <span class="md-ellipsis">
+      Docs
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#950-pre-release-2-2025-02-03" class="md-nav__link">
+    <span class="md-ellipsis">
+      [9.5.0 Pre-Release 2] - 2025-02-03
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="[9.5.0 Pre-Release 2] - 2025-02-03">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#added_4" class="md-nav__link">
+    <span class="md-ellipsis">
+      Added
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Added">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#784-by-cyanvoxel" class="md-nav__link">
+    <span class="md-ellipsis">
+      #784 by @CyanVoxel
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fixed_5" class="md-nav__link">
+    <span class="md-ellipsis">
+      Fixed
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Fixed">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#784-by-cyanvoxel_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      #784 by @CyanVoxel
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#changed_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      Changed
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Changed">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#784-by-cyanvoxel_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      #784 by @CyanVoxel
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#internal-changes_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      Internal Changes
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#docs_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      Docs
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#950-pre-release-1-2025-01-31" class="md-nav__link">
+    <span class="md-ellipsis">
+      [9.5.0 Pre-Release 1] - 2025-01-31
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="[9.5.0 Pre-Release 1] - 2025-01-31">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#added_5" class="md-nav__link">
+    <span class="md-ellipsis">
+      Added
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Added">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#overhauled-search-engine_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      Overhauled Search Engine
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Overhauled Search Engine">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#boolean-operators_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      Boolean Operators
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#filetype-mediatype-and-glob-path-searches" class="md-nav__link">
+    <span class="md-ellipsis">
+      Filetype, Mediatype, and Glob Path Searches
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sortable-results_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      Sortable Results
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#autocomplete_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      Autocomplete
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#replaced-tag-fields-with-tag-categories_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      Replaced "Tag Fields" with Tag Categories
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#thumbnails-and-file-previews_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      Thumbnails and File Previews
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Thumbnails and File Previews">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#new-thumbnail-support_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      New Thumbnail Support
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#audio-playback_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      Audio Playback
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#thumbnail-caching_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      Thumbnail Caching
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tags_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      Tags
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Tags">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#delete-tags-finally_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      Delete Tags (Finally!)
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#new-tag-colors-ui_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      New Tag Colors + UI
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#new-tag-alias-ui_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      New Tag Alias UI
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#miscellaneous_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      Miscellaneous
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fixed_6" class="md-nav__link">
+    <span class="md-ellipsis">
+      Fixed
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#changed_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      Changed
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Changed">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#sqlite-save-file-format_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      SQLite Save File Format
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#uiux_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      UI/UX
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#performance_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      Performance
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#internal-changes_4" class="md-nav__link">
+    <span class="md-ellipsis">
+      Internal Changes
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#942-2024-12-01" class="md-nav__link">
+    <span class="md-ellipsis">
+      [9.4.2] - 2024-12-01
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="[9.4.2] - 2024-12-01">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#addedfixed" class="md-nav__link">
+    <span class="md-ellipsis">
+      Added/Fixed
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#941-2024-09-13" class="md-nav__link">
+    <span class="md-ellipsis">
+      [9.4.1] - 2024-09-13
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="[9.4.1] - 2024-09-13">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#added_6" class="md-nav__link">
+    <span class="md-ellipsis">
+      Added
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fixed_7" class="md-nav__link">
+    <span class="md-ellipsis">
+      Fixed
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#changed_4" class="md-nav__link">
+    <span class="md-ellipsis">
+      Changed
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#940-2024-09-03" class="md-nav__link">
+    <span class="md-ellipsis">
+      [9.4.0] - 2024-09-03
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="[9.4.0] - 2024-09-03">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#added_7" class="md-nav__link">
+    <span class="md-ellipsis">
+      Added
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fixed_8" class="md-nav__link">
+    <span class="md-ellipsis">
+      Fixed
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#internal-changes_5" class="md-nav__link">
+    <span class="md-ellipsis">
+      Internal Changes
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#932-2024-07-18" class="md-nav__link">
+    <span class="md-ellipsis">
+      [9.3.2] - 2024-07-18
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="[9.3.2] - 2024-07-18">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#fixed_9" class="md-nav__link">
+    <span class="md-ellipsis">
+      Fixed
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#internal-changes_6" class="md-nav__link">
+    <span class="md-ellipsis">
+      Internal Changes
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#931-2024-06-13" class="md-nav__link">
+    <span class="md-ellipsis">
+      [9.3.1] - 2024-06-13
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="[9.3.1] - 2024-06-13">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#fixed_10" class="md-nav__link">
+    <span class="md-ellipsis">
+      Fixed
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#930-2024-06-08" class="md-nav__link">
+    <span class="md-ellipsis">
+      [9.3.0] - 2024-06-08
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="[9.3.0] - 2024-06-08">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#added_8" class="md-nav__link">
+    <span class="md-ellipsis">
+      Added
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fixed_11" class="md-nav__link">
+    <span class="md-ellipsis">
+      Fixed
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#changed_5" class="md-nav__link">
+    <span class="md-ellipsis">
+      Changed
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#921-2024-05-23" class="md-nav__link">
+    <span class="md-ellipsis">
+      [9.2.1] - 2024-05-23
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="[9.2.1] - 2024-05-23">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#added_9" class="md-nav__link">
+    <span class="md-ellipsis">
+      Added
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fixed_12" class="md-nav__link">
+    <span class="md-ellipsis">
+      Fixed
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#920-2024-05-14" class="md-nav__link">
+    <span class="md-ellipsis">
+      [9.2.0] - 2024-05-14
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="[9.2.0] - 2024-05-14">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#added_10" class="md-nav__link">
+    <span class="md-ellipsis">
+      Added
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fixed_13" class="md-nav__link">
+    <span class="md-ellipsis">
+      Fixed
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#changed_6" class="md-nav__link">
+    <span class="md-ellipsis">
+      Changed
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#known-issues" class="md-nav__link">
+    <span class="md-ellipsis">
+      Known Issues
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#910-2024-04-22" class="md-nav__link">
+    <span class="md-ellipsis">
+      [9.1.0] - 2024-04-22
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="[9.1.0] - 2024-04-22">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#added_11" class="md-nav__link">
+    <span class="md-ellipsis">
+      Added
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+    <a href="https://github.com/TagStudioDev/TagStudio/blob/main/docs/updates/changelog.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
+    </a>
+  
+  
+
+
+<h1 id="tagstudio-changelog">TagStudio Changelog<a class="headerlink" href="#tagstudio-changelog" title="Permanent link">&para;</a></h1>
+<p>All notable changes to this project will be documented in this file.</p>
+<p>The format is based on <a href="https://keepachangelog.com/en/1.1.0/">Keep a Changelog</a>,
+and this project adheres to <a href="https://semver.org/spec/v2.0.0.html">Semantic Versioning</a>.</p>
+<h2 id="952-2025-03-31">[9.5.2] - 2025-03-31<a class="headerlink" href="#952-2025-03-31" title="Permanent link">&para;</a></h2>
+<h3 id="added">Added<a class="headerlink" href="#added" title="Permanent link">&para;</a></h3>
+<h4 id="search">Search<a class="headerlink" href="#search" title="Permanent link">&para;</a></h4>
+<ul>
+<li>feat(ui): add setting to not display full filepaths by <a href="https://github.com/HermanKassler">@HermanKassler</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/841">#841</a></li>
+<li>feat: add filename and path sorting by <a href="https://github.com/Computerdores">@Computerdores</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/842">#842</a></li>
+</ul>
+<h4 id="settings">Settings<a class="headerlink" href="#settings" title="Permanent link">&para;</a></h4>
+<ul>
+<li>feat: new settings menu + settings backend by <a href="https://github.com/Computerdores">@Computerdores</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/859">#859</a></li>
+</ul>
+<h4 id="ui">UI<a class="headerlink" href="#ui" title="Permanent link">&para;</a></h4>
+<ul>
+<li>feat(ui): merge media controls by <a href="https://github.com/csponge">@csponge</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/805">#805</a><ul>
+<li>fix: Remove border from video preview top and left by <a href="https://github.com/zfbx">@zfbx</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/900">#900</a></li>
+</ul>
+</li>
+<li>feat(ui): add more default icons and file type equivalencies by <a href="https://github.com/CyanVoxel">@CyanVoxel</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/882">#882</a></li>
+<li>ui: recent libraries list improvements by <a href="https://github.com/CyanVoxel">@CyanVoxel</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/881">#881</a></li>
+</ul>
+<h4 id="misc">Misc<a class="headerlink" href="#misc" title="Permanent link">&para;</a></h4>
+<ul>
+<li>feat: provide a .desktop file by <a href="https://github.com/xarvex">@xarvex</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/870">#870</a></li>
+</ul>
+<h3 id="fixed">Fixed<a class="headerlink" href="#fixed" title="Permanent link">&para;</a></h3>
+<ul>
+<li>fix: catch NotImplementedError for Float16 JPEG-XL files by <a href="https://github.com/CyanVoxel">@CyanVoxel</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/849">#849</a></li>
+<li>fix(nix/package): account for GTK platform by <a href="https://github.com/xarvex">@xarvex</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/868">#868</a></li>
+<li>fix: do not set palette for Linux-like systems that offer theming by <a href="https://github.com/xarvex">@xarvex</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/869">#869</a></li>
+<li>fix(flake): remove pinned input, only consume in Nix shell by <a href="https://github.com/xarvex">@xarvex</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/872">#872</a></li>
+<li>fix: stop ffmpeg cmd windows, refactor ffmpeg_checker by <a href="https://github.com/CyanVoxel">@CyanVoxel</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/855">#855</a></li>
+<li>fix: hide mnemonics on macOS by <a href="https://github.com/CyanVoxel">@CyanVoxel</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/856">#856</a></li>
+<li>fix: use UNION instead of UNION ALL by <a href="https://github.com/CyanVoxel">@CyanVoxel</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/877">#877</a></li>
+<li>fix: remove unescaped ampersand from "about.description" by <a href="https://github.com/CyanVoxel">@CyanVoxel</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/885">#885</a></li>
+<li>fix(ui): display 0 frame webp files in preview panel by <a href="https://github.com/CyanVoxel">@CyanVoxel</a> in <a href="https://github.com/TagStudioDev/TagStudio/commit/64dc88afa90bb11f3c9b74a2522f947370ce21db">64dc88a</a></li>
+<li>fix: close pdf file object in thumb renderer by <a href="https://github.com/Computerdores">@Computerdores</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/893">#893</a></li>
+<li>perf: improve responsiveness of GIF entries by <a href="https://github.com/Computerdores">@Computerdores</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/894">#894</a></li>
+<li>fix(ui): seamlessly loop videos by <a href="https://github.com/CyanVoxel">@CyanVoxel</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/902">#902</a></li>
+</ul>
+<h3 id="internal-changes">Internal Changes<a class="headerlink" href="#internal-changes" title="Permanent link">&para;</a></h3>
+<ul>
+<li>refactor!: change layout; import and build change by <a href="https://github.com/xarvex">@xarvex</a> and <a href="https://github.com/CyanVoxel">@CyanVoxel</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/844">#844</a></li>
+<li>fix: log all problems in translation test by <a href="https://github.com/Computerdores">@Computerdores</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/839">#839</a></li>
+<li>refactor: split translation keys for about screen by <a href="https://github.com/CyanVoxel">@CyanVoxel</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/845">#845</a></li>
+<li>feat(ci): development tooling refresh and split documentation by <a href="https://github.com/xarvex">@xarvex</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/867">#867</a></li>
+<li>refactor: type hints and improvements in file_opener.py by <a href="https://github.com/VasigaranAndAngel">@VasigaranAndAngel</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/876">#876</a></li>
+<li>build: update spec file to use proper pathex and datas paths by <a href="https://github.com/Leonard2">@Leonard2</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/895">#895</a></li>
+<li>refactor: fix various missing and broken type hints@VasigaranAndAngel in <a href="https://github.com/TagStudioDev/TagStudio/pull/901">#901</a></li>
+<li>refactor: fix type hints and overrides in flowlayout.py by <a href="https://github.com/VasigaranAndAngel">@VasigaranAndAngel</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/880">#880</a></li>
+</ul>
+<h3 id="documentation">Documentation<a class="headerlink" href="#documentation" title="Permanent link">&para;</a></h3>
+<ul>
+<li>docs: fix typos and grammar by <a href="https://github.com/Gawidev">@Gawidev</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/879">#879</a></li>
+<li>docs: update <code>ThumbRenderer</code> source by <a href="https://github.com/emmanuel-ferdman">@emmanuel-ferdman</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/896">#896</a></li>
+</ul>
+<h3 id="translations">Translations<a class="headerlink" href="#translations" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Added Japanese (50%)<ul>
+<li><a href="https://github.com/needledetector">@needledetector</a></li>
+</ul>
+</li>
+<li>Updated Turkish (93%)<ul>
+<li><a href="https://github.com/Nyghl">@Nyghl</a></li>
+</ul>
+</li>
+<li>Updated Filipino (57%)<ul>
+<li><a href="https://github.com/searinminecraft">@searinminecraft</a></li>
+</ul>
+</li>
+<li>Updated Tamil (92%)<ul>
+<li><a href="https://github.com/TamilNeram">@TamilNeram</a></li>
+</ul>
+</li>
+<li>Updated Portuguese (Brazil) (83%)<ul>
+<li><a href="https://github.com/viniciushelder">@viniciushelder</a></li>
+</ul>
+</li>
+<li>Updated German (95%)<ul>
+<li><a href="https://github.com/DontBlameMe99">@DontBlameMe99</a>, <a href="https://github.com/Computerdores">@Computerdores</a></li>
+</ul>
+</li>
+<li>Updated Russian (85%)<ul>
+<li>werdi, <a href="https://github.com/Dott-rus">@Dott-rus</a></li>
+</ul>
+</li>
+<li>Updated Hungarian (100%)<ul>
+<li>Szíjártó Levente Pál</li>
+</ul>
+</li>
+<li>Updated Spanish (96%)<ul>
+<li>Joan, <a href="https://github.com/Nginearing">@Nginearing</a></li>
+</ul>
+</li>
+<li>Updated French (100%)<ul>
+<li><a href="https://github.com/kitsumed">@kitsumed</a></li>
+</ul>
+</li>
+<li>Updated Toki Pona (80%)<ul>
+<li><a href="https://github.com/Math-Bee">@Math-Bee</a></li>
+</ul>
+</li>
+</ul>
+<h2 id="951-2025-03-06">[9.5.1] - 2025-03-06<a class="headerlink" href="#951-2025-03-06" title="Permanent link">&para;</a></h2>
+<h3 id="fixed_1">Fixed<a class="headerlink" href="#fixed_1" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Fixed translations crashing the program and preventing it from being reopened (<a href="https://github.com/TagStudioDev/TagStudio/issues/827">#827</a>)<ul>
+<li>fix: restore <code>translate_formatted()</code> method as <code>format()</code> by <a href="https://github.com/CyanVoxel">@CyanVoxel</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/830">#830</a></li>
+<li>tests: add tests for translations by <a href="https://github.com/Computerdores">@Computerdores</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/833">#833</a></li>
+<li>fix(translations): fix invalid placeholders by <a href="https://github.com/CyanVoxel">@CyanVoxel</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/835">#835</a></li>
+</ul>
+</li>
+<li>Removed empty parentheses from the "About" screen title<ul>
+<li>fix: separate about screen title from translations by <a href="https://github.com/CyanVoxel">@CyanVoxel</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/836">#836</a></li>
+</ul>
+</li>
+</ul>
+<h3 id="translations_1">Translations<a class="headerlink" href="#translations_1" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Updated French (99%)<ul>
+<li><a href="https://github.com/alessdangelo">@alessdangelo</a>, <a href="https://github.com/Bamowen">@Bamowen</a>, <a href="https://github.com/kitsumed">@kitsumed</a></li>
+</ul>
+</li>
+<li>Updated German (98%)<ul>
+<li><a href="https://github.com/Thesacraft">@Thesacraft</a></li>
+</ul>
+</li>
+<li>Updated Portuguese (Brazil) (88%)<ul>
+<li><a href="https://github.com/viniciushelder">@viniciushelder</a></li>
+</ul>
+</li>
+<li>Updated Russian (73%)<ul>
+<li>werdei</li>
+</ul>
+</li>
+<li>Updated Spanish (95%)<ul>
+<li><a href="https://github.com/JCC1998">@JCC1998</a></li>
+</ul>
+</li>
+</ul>
+<h3 id="documentation_1">Documentation<a class="headerlink" href="#documentation_1" title="Permanent link">&para;</a></h3>
+<ul>
+<li>docs: fix category typo by <a href="https://github.com/salem404">@salem404</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/834">#834</a></li>
+</ul>
+<h2 id="950-2025-03-03">[9.5.0] - 2025-03-03<a class="headerlink" href="#950-2025-03-03" title="Permanent link">&para;</a></h2>
+<h3 id="added_1">Added<a class="headerlink" href="#added_1" title="Permanent link">&para;</a></h3>
+<h4 id="overhauled-search-engine">Overhauled Search Engine<a class="headerlink" href="#overhauled-search-engine" title="Permanent link">&para;</a></h4>
+<h5 id="boolean-operators">Boolean Operators<a class="headerlink" href="#boolean-operators" title="Permanent link">&para;</a></h5>
+<ul>
+<li>feat: implement query language by <a href="https://github.com/Computerdores">@Computerdores</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/606">#606</a></li>
+<li>feat: optimize AND queries by <a href="https://github.com/Computerdores">@Computerdores</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/679">#679</a></li>
+</ul>
+<h5 id="filetype-mediatype-and-glob-path-smartcase-searches">Filetype, Mediatype, and Glob Path + Smartcase Searches<a class="headerlink" href="#filetype-mediatype-and-glob-path-smartcase-searches" title="Permanent link">&para;</a></h5>
+<ul>
+<li>fix: remove wildcard requirement for tags by <a href="https://github.com/Tyrannicodin">@Tyrannicodin</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/481">#481</a></li>
+<li>feat: add filetype and mediatype searches by <a href="https://github.com/python357-1">@python357-1</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/575">#575</a></li>
+<li>feat: make path search use globs by <a href="https://github.com/python357-1">@python357-1</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/582">#582</a></li>
+<li>feat: implement search equivalence of "jpg" and "jpeg" filetypes by <a href="https://github.com/Computerdores">@Computerdores</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/649">#649</a></li>
+<li>feat: add smartcase and globless path searches by <a href="https://github.com/CyanVoxel">@CyanVoxel</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/743">#743</a></li>
+</ul>
+<h5 id="sortable-results">Sortable Results<a class="headerlink" href="#sortable-results" title="Permanent link">&para;</a></h5>
+<ul>
+<li>feat: sort by "date added" in library by <a href="https://github.com/Computerdores">@Computerdores</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/674">#674</a></li>
+</ul>
+<h5 id="autocomplete">Autocomplete<a class="headerlink" href="#autocomplete" title="Permanent link">&para;</a></h5>
+<ul>
+<li>feat: add autocomplete for search engine by <a href="https://github.com/python357-1">@python357-1</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/586">#586</a></li>
+</ul>
+<h4 id="replaced-tag-fields-with-tag-categories">Replaced "Tag Fields" with Tag Categories<a class="headerlink" href="#replaced-tag-fields-with-tag-categories" title="Permanent link">&para;</a></h4>
+<p>Instead of tags needing to be added to a tag field type such as "Meta Tags", "Content Tags", or just the "Tags" field, tags are now added directly to file entries with no intermediary step. While tag field types offered a way to further organize tags, it was cumbersome, inflexible, and simply not fully fleshed out. Tag Categories offer all of the previous (intentional) functionality while greatly increasing the ease of use and customization.</p>
+<ul>
+<li>
+<p>feat!: tag categories by <a href="https://github.com/CyanVoxel">@CyanVoxel</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/655">#655</a></p>
+<p><a href="https://private-user-images.githubusercontent.com/46939827/400138597-0b92eca5-db8f-4e3e-954b-1b4f3795f073.png?jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3NDY2NTU5ODIsIm5iZiI6MTc0NjY1NTY4MiwicGF0aCI6Ii80NjkzOTgyNy80MDAxMzg1OTctMGI5MmVjYTUtZGI4Zi00ZTNlLTk1NGItMWI0ZjM3OTVmMDczLnBuZz9YLUFtei1BbGdvcml0aG09QVdTNC1ITUFDLVNIQTI1NiZYLUFtei1DcmVkZW50aWFsPUFLSUFWQ09EWUxTQTUzUFFLNFpBJTJGMjAyNTA1MDclMkZ1cy1lYXN0LTElMkZzMyUyRmF3czRfcmVxdWVzdCZYLUFtei1EYXRlPTIwMjUwNTA3VDIyMDgwMlomWC1BbXotRXhwaXJlcz0zMDAmWC1BbXotU2lnbmF0dXJlPWY4ZWEzOWRkZjkwOGZmYjZmZDUzMjU1MjJhNDNkNzYzZmM4YjZkMTUyNWIzMjNhMGY1NWNhYmU4ODNiNzlhMzYmWC1BbXotU2lnbmVkSGVhZGVycz1ob3N0In0.cE_WO9AHsigusAbtaQV0QtN4FjYJz0lyHLLwFFDBO-0"><img alt="Screenshot 2025-01-04 at 04 23 43" src="https://private-user-images.githubusercontent.com/46939827/400138597-0b92eca5-db8f-4e3e-954b-1b4f3795f073.png?jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3NDY2NTU5ODIsIm5iZiI6MTc0NjY1NTY4MiwicGF0aCI6Ii80NjkzOTgyNy80MDAxMzg1OTctMGI5MmVjYTUtZGI4Zi00ZTNlLTk1NGItMWI0ZjM3OTVmMDczLnBuZz9YLUFtei1BbGdvcml0aG09QVdTNC1ITUFDLVNIQTI1NiZYLUFtei1DcmVkZW50aWFsPUFLSUFWQ09EWUxTQTUzUFFLNFpBJTJGMjAyNTA1MDclMkZ1cy1lYXN0LTElMkZzMyUyRmF3czRfcmVxdWVzdCZYLUFtei1EYXRlPTIwMjUwNTA3VDIyMDgwMlomWC1BbXotRXhwaXJlcz0zMDAmWC1BbXotU2lnbmF0dXJlPWY4ZWEzOWRkZjkwOGZmYjZmZDUzMjU1MjJhNDNkNzYzZmM4YjZkMTUyNWIzMjNhMGY1NWNhYmU4ODNiNzlhMzYmWC1BbXotU2lnbmVkSGVhZGVycz1ob3N0In0.cE_WO9AHsigusAbtaQV0QtN4FjYJz0lyHLLwFFDBO-0" /></a></p>
+</li>
+</ul>
+<h4 id="thumbnails-and-file-previews">Thumbnails and File Previews<a class="headerlink" href="#thumbnails-and-file-previews" title="Permanent link">&para;</a></h4>
+<h5 id="new-thumbnail-support">New Thumbnail Support<a class="headerlink" href="#new-thumbnail-support" title="Permanent link">&para;</a></h5>
+<ul>
+<li>feat: add svg thumbnail support (port <a href="https://github.com/TagStudioDev/TagStudio/pull/442">#442</a>) by <a href="https://github.com/Tyrannicodin">@Tyrannicodin</a> and <a href="https://github.com/CyanVoxel">@CyanVoxel</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/540">#540</a></li>
+<li>feat: add pdf thumbnail support (port <a href="https://github.com/TagStudioDev/TagStudio/pull/378">#378</a>) by <a href="https://github.com/Heiholf">@Heiholf</a> and <a href="https://github.com/CyanVoxel">@CyanVoxel</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/543">#543</a></li>
+<li>feat: add ePub thumbnail support (port <a href="https://github.com/TagStudioDev/TagStudio/pull/387">#387</a>) by <a href="https://github.com/Heiholf">@Heiholf</a> and <a href="https://github.com/CyanVoxel">@CyanVoxel</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/539">#539</a></li>
+<li>feat: add OpenDocument thumbnail support (port <a href="https://github.com/TagStudioDev/TagStudio/pull/366">#366</a>) by <a href="https://github.com/Joshua-Beatty">@Joshua-Beatty</a> and <a href="https://github.com/CyanVoxel">@CyanVoxel</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/545">#545</a></li>
+<li>feat: add JXL thumbnail and animated APNG + WEBP support (port <a href="https://github.com/TagStudioDev/TagStudio/pull/344">#344</a> and partially port <a href="https://github.com/TagStudioDev/TagStudio/pull/357">#357</a>) by <a href="https://github.com/BPplays">@BPplays</a> and <a href="https://github.com/CyanVoxel">@CyanVoxel</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/549">#549</a><ul>
+<li>fix: catch ImportError for pillow_jxl module by <a href="https://github.com/CyanVoxel">@CyanVoxel</a> in <a href="https://github.com/TagStudioDev/TagStudio/commit/a2f9685bc0d744ea6f5334c6d2926aad3f6d375a">a2f9685</a></li>
+</ul>
+</li>
+</ul>
+<h5 id="audio-playback">Audio Playback<a class="headerlink" href="#audio-playback" title="Permanent link">&para;</a></h5>
+<ul>
+<li>feat: audio playback by <a href="https://github.com/csponge">@csponge</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/576">#576</a><ul>
+<li>feat(ui): add audio volume slider by <a href="https://github.com/SkeleyM">@SkeleyM</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/691">#691</a></li>
+</ul>
+</li>
+</ul>
+<h5 id="thumbnail-caching">Thumbnail Caching<a class="headerlink" href="#thumbnail-caching" title="Permanent link">&para;</a></h5>
+<ul>
+<li>feat(ui): add thumbnail caching by <a href="https://github.com/CyanVoxel">@CyanVoxel</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/694">#694</a></li>
+</ul>
+<h4 id="tags">Tags<a class="headerlink" href="#tags" title="Permanent link">&para;</a></h4>
+<h5 id="delete-tags-finally">Delete Tags <em>(Finally!)</em><a class="headerlink" href="#delete-tags-finally" title="Permanent link">&para;</a></h5>
+<ul>
+<li>feat: remove and create tags from tag database panel by <a href="https://github.com/DandyDev01">@DandyDev01</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/569">#569</a></li>
+</ul>
+<h5 id="custom-user-created-tag-colors">Custom User-Created Tag Colors<a class="headerlink" href="#custom-user-created-tag-colors" title="Permanent link">&para;</a></h5>
+<p>Create your own custom tag colors via the new Tag Color Manager! Tag colors are assigned a namespace (group) and include a name, primary color, and optional secondary color. By default the secondary color is used for the tag text color, but this can also be toggled to apply to the border color as well!</p>
+<ul>
+<li>feat(ui)!: user-created tag colors@CyanVoxel in <a href="https://github.com/TagStudioDev/TagStudio/pull/801">#801</a></li>
+</ul>
+<p><a href="https://private-user-images.githubusercontent.com/46939827/413668576-b591f1fe-1c44-4d82-b6e5-d166590aeab1.png?jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3NDY2NTU5ODIsIm5iZiI6MTc0NjY1NTY4MiwicGF0aCI6Ii80NjkzOTgyNy80MTM2Njg1NzYtYjU5MWYxZmUtMWM0NC00ZDgyLWI2ZTUtZDE2NjU5MGFlYWIxLnBuZz9YLUFtei1BbGdvcml0aG09QVdTNC1ITUFDLVNIQTI1NiZYLUFtei1DcmVkZW50aWFsPUFLSUFWQ09EWUxTQTUzUFFLNFpBJTJGMjAyNTA1MDclMkZ1cy1lYXN0LTElMkZzMyUyRmF3czRfcmVxdWVzdCZYLUFtei1EYXRlPTIwMjUwNTA3VDIyMDgwMlomWC1BbXotRXhwaXJlcz0zMDAmWC1BbXotU2lnbmF0dXJlPTdiZjM4NzczYTFhYmFhNjgwMWJlYjgwNTkzYjA3ZWFlNTkwNzBiYTlhNTAzM2Y0MWM1MWQ0MzY1YmEyNmE4NjAmWC1BbXotU2lnbmVkSGVhZGVycz1ob3N0In0.EOEVWLDMx5CT-Gg5UhBmdMIYT49IZPKrrA9VL7N-pBQ"><img alt="" src="https://private-user-images.githubusercontent.com/46939827/413668576-b591f1fe-1c44-4d82-b6e5-d166590aeab1.png?jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3NDY2NTU5ODIsIm5iZiI6MTc0NjY1NTY4MiwicGF0aCI6Ii80NjkzOTgyNy80MTM2Njg1NzYtYjU5MWYxZmUtMWM0NC00ZDgyLWI2ZTUtZDE2NjU5MGFlYWIxLnBuZz9YLUFtei1BbGdvcml0aG09QVdTNC1ITUFDLVNIQTI1NiZYLUFtei1DcmVkZW50aWFsPUFLSUFWQ09EWUxTQTUzUFFLNFpBJTJGMjAyNTA1MDclMkZ1cy1lYXN0LTElMkZzMyUyRmF3czRfcmVxdWVzdCZYLUFtei1EYXRlPTIwMjUwNTA3VDIyMDgwMlomWC1BbXotRXhwaXJlcz0zMDAmWC1BbXotU2lnbmF0dXJlPTdiZjM4NzczYTFhYmFhNjgwMWJlYjgwNTkzYjA3ZWFlNTkwNzBiYTlhNTAzM2Y0MWM1MWQ0MzY1YmEyNmE4NjAmWC1BbXotU2lnbmVkSGVhZGVycz1ob3N0In0.EOEVWLDMx5CT-Gg5UhBmdMIYT49IZPKrrA9VL7N-pBQ" /></a> <a href="https://private-user-images.githubusercontent.com/46939827/413668612-96e81b08-6993-4a5e-96d0-3b05b50fbe44.png?jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3NDY2NTU5ODIsIm5iZiI6MTc0NjY1NTY4MiwicGF0aCI6Ii80NjkzOTgyNy80MTM2Njg2MTItOTZlODFiMDgtNjk5My00YTVlLTk2ZDAtM2IwNWI1MGZiZTQ0LnBuZz9YLUFtei1BbGdvcml0aG09QVdTNC1ITUFDLVNIQTI1NiZYLUFtei1DcmVkZW50aWFsPUFLSUFWQ09EWUxTQTUzUFFLNFpBJTJGMjAyNTA1MDclMkZ1cy1lYXN0LTElMkZzMyUyRmF3czRfcmVxdWVzdCZYLUFtei1EYXRlPTIwMjUwNTA3VDIyMDgwMlomWC1BbXotRXhwaXJlcz0zMDAmWC1BbXotU2lnbmF0dXJlPWJkNTUxODJiMDZhN2I2MDAxYzZlNzIyOTAzYTgwZDg3ZDFlYWM3ODM1YWY0Mzg5MDJjNDY0NzJhYjU4ZTAzMmEmWC1BbXotU2lnbmVkSGVhZGVycz1ob3N0In0.rqM3YOwrYdBCiwbBbEvalj7Tsfl-XWqgD1K9PeE46tI"><img alt="" src="https://private-user-images.githubusercontent.com/46939827/413668612-96e81b08-6993-4a5e-96d0-3b05b50fbe44.png?jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3NDY2NTU5ODIsIm5iZiI6MTc0NjY1NTY4MiwicGF0aCI6Ii80NjkzOTgyNy80MTM2Njg2MTItOTZlODFiMDgtNjk5My00YTVlLTk2ZDAtM2IwNWI1MGZiZTQ0LnBuZz9YLUFtei1BbGdvcml0aG09QVdTNC1ITUFDLVNIQTI1NiZYLUFtei1DcmVkZW50aWFsPUFLSUFWQ09EWUxTQTUzUFFLNFpBJTJGMjAyNTA1MDclMkZ1cy1lYXN0LTElMkZzMyUyRmF3czRfcmVxdWVzdCZYLUFtei1EYXRlPTIwMjUwNTA3VDIyMDgwMlomWC1BbXotRXhwaXJlcz0zMDAmWC1BbXotU2lnbmF0dXJlPWJkNTUxODJiMDZhN2I2MDAxYzZlNzIyOTAzYTgwZDg3ZDFlYWM3ODM1YWY0Mzg5MDJjNDY0NzJhYjU4ZTAzMmEmWC1BbXotU2lnbmVkSGVhZGVycz1ob3N0In0.rqM3YOwrYdBCiwbBbEvalj7Tsfl-XWqgD1K9PeE46tI" /></a></p>
+<h5 id="new-tag-colors-ui">New Tag Colors + UI<a class="headerlink" href="#new-tag-colors-ui" title="Permanent link">&para;</a></h5>
+<ul>
+<li>feat: expanded tag color system by <a href="https://github.com/CyanVoxel">@CyanVoxel</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/709">#709</a></li>
+<li>fix(ui): use correct pink tag color by <a href="https://github.com/CyanVoxel">@CyanVoxel</a> in <a href="https://github.com/TagStudioDev/TagStudio/commit/431efe4fe93213141c763e59ca9887215766fd42">431efe4</a></li>
+<li>fix(ui): use consistent tag outline colors by <a href="https://github.com/CyanVoxel">@CyanVoxel</a> in <a href="https://github.com/TagStudioDev/TagStudio/commit/020a73d095c74283d6c80426d3c3db8874409952">020a73d</a></li>
+</ul>
+<p><a href="https://private-user-images.githubusercontent.com/46939827/408753168-c8f82d89-ad7e-4be6-830e-b91cdc58e4c6.png?jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3NDY2NTU5ODIsIm5iZiI6MTc0NjY1NTY4MiwicGF0aCI6Ii80NjkzOTgyNy80MDg3NTMxNjgtYzhmODJkODktYWQ3ZS00YmU2LTgzMGUtYjkxY2RjNThlNGM2LnBuZz9YLUFtei1BbGdvcml0aG09QVdTNC1ITUFDLVNIQTI1NiZYLUFtei1DcmVkZW50aWFsPUFLSUFWQ09EWUxTQTUzUFFLNFpBJTJGMjAyNTA1MDclMkZ1cy1lYXN0LTElMkZzMyUyRmF3czRfcmVxdWVzdCZYLUFtei1EYXRlPTIwMjUwNTA3VDIyMDgwMlomWC1BbXotRXhwaXJlcz0zMDAmWC1BbXotU2lnbmF0dXJlPTk1OWNhZGNkOTRiZGJhNGQxNGU1MjJhYTViYTc0OTNiNTA4NDUxODA4OTYxZDUwNzYxZDhmYWZkNzM4NTE3N2QmWC1BbXotU2lnbmVkSGVhZGVycz1ob3N0In0.HLnwHyp3BYg8vXo3BtvqBoOqtpQTI1eykqa-L3chLUk"><img alt="Screenshot 2025-01-04 at 04 23 43" src="https://private-user-images.githubusercontent.com/46939827/408753168-c8f82d89-ad7e-4be6-830e-b91cdc58e4c6.png?jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3NDY2NTU5ODIsIm5iZiI6MTc0NjY1NTY4MiwicGF0aCI6Ii80NjkzOTgyNy80MDg3NTMxNjgtYzhmODJkODktYWQ3ZS00YmU2LTgzMGUtYjkxY2RjNThlNGM2LnBuZz9YLUFtei1BbGdvcml0aG09QVdTNC1ITUFDLVNIQTI1NiZYLUFtei1DcmVkZW50aWFsPUFLSUFWQ09EWUxTQTUzUFFLNFpBJTJGMjAyNTA1MDclMkZ1cy1lYXN0LTElMkZzMyUyRmF3czRfcmVxdWVzdCZYLUFtei1EYXRlPTIwMjUwNTA3VDIyMDgwMlomWC1BbXotRXhwaXJlcz0zMDAmWC1BbXotU2lnbmF0dXJlPTk1OWNhZGNkOTRiZGJhNGQxNGU1MjJhYTViYTc0OTNiNTA4NDUxODA4OTYxZDUwNzYxZDhmYWZkNzM4NTE3N2QmWC1BbXotU2lnbmVkSGVhZGVycz1ob3N0In0.HLnwHyp3BYg8vXo3BtvqBoOqtpQTI1eykqa-L3chLUk" /></a></p>
+<h5 id="new-tag-alias-ui">New Tag Alias UI<a class="headerlink" href="#new-tag-alias-ui" title="Permanent link">&para;</a></h5>
+<ul>
+<li>fix: preview panel aliases not staying up to date with database by <a href="https://github.com/DandyDev01">@DandyDev01</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/641">#641</a></li>
+<li>fix: subtags/parent tags &amp; aliases update the UI for building a tag by <a href="https://github.com/DandyDev01">@DandyDev01</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/534">#534</a></li>
+</ul>
+<h4 id="translations_2">Translations<a class="headerlink" href="#translations_2" title="Permanent link">&para;</a></h4>
+<p>TagStudio now has official translation support! Head to the new settings panel and select from one of the initial languages included. Note that many languages currently have incomplete translations.</p>
+<p>Translation hosting generously provided by <a href="https://weblate.org/en/">Weblate</a>. Check out our <a href="https://hosted.weblate.org/projects/tagstudio/">project page</a> to help translate TagStudio! Thank you to everyone who's helped contribute to the translations so far!</p>
+<ul>
+<li>translations: add string tokens for en.json by <a href="https://github.com/Bamowen">@Bamowen</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/507">#507</a></li>
+<li>feat: translations by <a href="https://github.com/Computerdores">@Computerdores</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/662">#662</a></li>
+<li>feat(ui): add language setting by <a href="https://github.com/CyanVoxel">@CyanVoxel</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/803">#803</a></li>
+</ul>
+<p>Initial Languages:</p>
+<ul>
+<li>Chinese (Traditional) (68%)<ul>
+<li><a href="https://github.com/brisu">@brisu</a></li>
+</ul>
+</li>
+<li>Dutch (35%)<ul>
+<li><a href="https://github.com/Pheubel">@Pheubel</a></li>
+</ul>
+</li>
+<li>Filipino (43%)<ul>
+<li><a href="https://github.com/searinminecraft">@searinminecraft</a></li>
+</ul>
+</li>
+<li>French (100%)<ul>
+<li><a href="https://github.com/Bamowen">@Bamowen</a>, <a href="https://github.com/alessdangelo">@alessdangelo</a>, <a href="https://github.com/kitsumed">@kitsumed</a>, Obscaeris</li>
+</ul>
+</li>
+<li>German (98%)<ul>
+<li><a href="https://github.com/Ryussei">@Ryussei</a>, <a href="https://github.com/Computerdores">@Computerdores</a>, Aaron M, <a href="https://github.com/JoeJoeTV">@JoeJoeTV</a>, <a href="https://github.com/Kurty00">@Kurty00</a></li>
+</ul>
+</li>
+<li>Hungarian (100%)<ul>
+<li><a href="https://github.com/smileyhead">@smileyhead</a></li>
+</ul>
+</li>
+<li>Norwegian Bokmål (16%)<ul>
+<li><a href="https://github.com/comradekingu">@comradekingu</a></li>
+</ul>
+</li>
+<li>Polish (97%)<ul>
+<li>Anonymous</li>
+</ul>
+</li>
+<li>Portuguese (Brazil) (64%)<ul>
+<li><a href="https://github.com/LoboMetalurgico">@LoboMetalurgico</a>, <a href="https://github.com/SpaceFox1">@SpaceFox1</a>, <a href="https://github.com/DaviMarquezeli">@DaviMarquezeli</a>, <a href="https://github.com/viniciushelder">@viniciushelder</a>, Alexander Lennart Formiga Johnsson</li>
+</ul>
+</li>
+<li>Russian (22%)<ul>
+<li><a href="https://github.com/The-Stolas">@The-Stolas</a></li>
+</ul>
+</li>
+<li>Spanish (57%)<ul>
+<li><a href="https://github.com/gallegonovato">@gallegonovato</a>, <a href="https://github.com/Nginearing">@Nginearing</a>, <a href="https://github.com/noceno">@noceno</a></li>
+</ul>
+</li>
+<li>Swedish (24%)<ul>
+<li><a href="https://github.com/adampawelec">@adampawelec</a>, <a href="https://github.com/mashed5894">@mashed5894</a></li>
+</ul>
+</li>
+<li>Tamil (22%)<ul>
+<li><a href="https://github.com/VasigaranAndAngel">@VasigaranAndAngel</a></li>
+</ul>
+</li>
+<li>Toki Pona (32%)<ul>
+<li><a href="https://github.com/goldstargloww">@goldstargloww</a></li>
+</ul>
+</li>
+<li>Turkish (22%)<ul>
+<li><a href="https://github.com/Nyghl">@Nyghl</a></li>
+</ul>
+</li>
+</ul>
+<h4 id="miscellaneous">Miscellaneous<a class="headerlink" href="#miscellaneous" title="Permanent link">&para;</a></h4>
+<ul>
+<li>feat: about section by <a href="https://github.com/mashed5894">@mashed5894</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/712">#712</a></li>
+<li>feat(ui): add configurable splash screens by <a href="https://github.com/CyanVoxel">@CyanVoxel</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/703">#703</a></li>
+<li>feat(ui): show filenames in thumbnail grid by <a href="https://github.com/CyanVoxel">@CyanVoxel</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/633">#633</a></li>
+<li>feat(about): clickable links to docs/discord/etc in about modal by <a href="https://github.com/SkeleyM">@SkeleyM</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/799">#799</a></li>
+</ul>
+<h3 id="fixed_2">Fixed<a class="headerlink" href="#fixed_2" title="Permanent link">&para;</a></h3>
+<ul>
+<li>fix(ui): display all tags in panel during empty search by <a href="https://github.com/samuellieberman">@samuellieberman</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/328">#328</a></li>
+<li>fix: avoid <code>KeyError</code> in <code>add_folders_to_tree()</code> (fix <a href="https://github.com/TagStudioDev/TagStudio/issues/346">#346</a>) by <a href="https://github.com/CyanVoxel">@CyanVoxel</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/347">#347</a></li>
+<li>fix: error on closing library by <a href="https://github.com/yedpodtrzitko">@yedpodtrzitko</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/484">#484</a></li>
+<li>fix: resolution info <a href="https://github.com/TagStudioDev/TagStudio/issues/550">#550</a> by <a href="https://github.com/Roc25">@Roc25</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/551">#551</a></li>
+<li>fix: remove queued thumnail jobs when closing library by <a href="https://github.com/yedpodtrzitko">@yedpodtrzitko</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/583">#583</a></li>
+<li>fix: use absolute ffprobe path on macos (Fix <a href="https://github.com/TagStudioDev/TagStudio/issues/511">#511</a>) by <a href="https://github.com/CyanVoxel">@CyanVoxel</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/629">#629</a></li>
+<li>fix(ui): prevent duplicate parent tags in UI by <a href="https://github.com/SkeleyM">@SkeleyM</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/665">#665</a></li>
+<li>fix: fix -o flag not working if path has whitespace around it by <a href="https://github.com/python357-1">@python357-1</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/670">#670</a></li>
+<li>fix: better file opening compatibility with non-ascii filenames by <a href="https://github.com/SkeleyM">@SkeleyM</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/667">#667</a></li>
+<li>fix: restore environment before launching external programs by <a href="https://github.com/mashed5894">@mashed5894</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/707">#707</a></li>
+<li>fix: have pydub use known ffmpeg + ffprobe locations by <a href="https://github.com/CyanVoxel">@CyanVoxel</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/724">#724</a></li>
+<li>fix: add ".DS_Store" to <code>GLOBAL_IGNORE_SET</code> by <a href="https://github.com/CyanVoxel">@CyanVoxel</a> in <a href="https://github.com/TagStudioDev/TagStudio/commit/b72a2f233141db4db6aa6be8796b626ebd3f0756">b72a2f2</a></li>
+<li>fix: don't add "._" files to libraries by <a href="https://github.com/CyanVoxel">@CyanVoxel</a> in <a href="https://github.com/TagStudioDev/TagStudio/commit/eb1f634d386cd8a5ecee1e6ff6a0b7d8811550fa">eb1f634</a></li>
+</ul>
+<h3 id="changed">Changed<a class="headerlink" href="#changed" title="Permanent link">&para;</a></h3>
+<h4 id="sqlite-save-file-format">SQLite Save File Format<a class="headerlink" href="#sqlite-save-file-format" title="Permanent link">&para;</a></h4>
+<p>This was the main focus of this update, and where the majority of development time and resources have been spent since v9.4. These changes include everything that was done to migrate from the JSON format to SQLite starting from the initial SQLite PR, while re-implementing every feature from v9.4 as the initial SQLite PR was based on v9.3.x at the time.</p>
+<ul>
+<li>refactor!: use SQLite and SQLAlchemy for database backend by <a href="https://github.com/yedpodtrzitko">@yedpodtrzitko</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/332">#332</a></li>
+<li>feat: make search results more ergonomic by <a href="https://github.com/yedpodtrzitko">@yedpodtrzitko</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/498">#498</a></li>
+<li>feat: store <code>Entry</code> suffix separately by <a href="https://github.com/yedpodtrzitko">@yedpodtrzitko</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/503">#503</a></li>
+<li>feat: port thumbnail (<a href="https://github.com/TagStudioDev/TagStudio/pull/390">#390</a>) and related features to v9.5 by <a href="https://github.com/CyanVoxel">@CyanVoxel</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/522">#522</a></li>
+<li>fix: don't check db version with new library by <a href="https://github.com/yedpodtrzitko">@yedpodtrzitko</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/536">#536</a></li>
+<li>fix(ui): update ui when removing fields by <a href="https://github.com/DandyDev01">@DandyDev01</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/560">#560</a></li>
+<li>feat(parity): backend for aliases and parent tags by <a href="https://github.com/DandyDev01">@DandyDev01</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/596">#596</a></li>
+<li>fix: "open in explorer" opens correct folder by <a href="https://github.com/KirilBourakov">@KirilBourakov</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/603">#603</a></li>
+<li>fix: ui/ux parity fixes for thumbnails and files by <a href="https://github.com/CyanVoxel">@CyanVoxel</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/608">#608</a></li>
+<li>feat(parity): migrate json libraries to sqlite by <a href="https://github.com/CyanVoxel">@CyanVoxel</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/604">#604</a></li>
+<li>fix: clear all setting values when opening a library by <a href="https://github.com/VasigaranAndAngel">@VasigaranAndAngel</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/622">#622</a></li>
+<li>fix: remove/rework windows path tests by <a href="https://github.com/VasigaranAndAngel">@VasigaranAndAngel</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/625">#625</a></li>
+<li>fix: add check to see if library is loaded in filter_items by <a href="https://github.com/Roc25">@Roc25</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/547">#547</a></li>
+<li>fix: multiple macro errors by <a href="https://github.com/Computerdores">@Computerdores</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/612">#612</a></li>
+<li>fix: don't allow blank tag alias values in db by <a href="https://github.com/CyanVoxel">@CyanVoxel</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/628">#628</a></li>
+<li>feat: Reimplement drag drop files on sql migration by <a href="https://github.com/seakrueger">@seakrueger</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/528">#528</a></li>
+<li>fix: stop sqlite db from being updated while running tests by <a href="https://github.com/python357-1">@python357-1</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/648">#648</a></li>
+<li>fix: enter/return adds top result tag by <a href="https://github.com/SkeleyM">@SkeleyM</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/651">#651</a></li>
+<li>fix: show correct unlinked files count by <a href="https://github.com/SkeleyM">@SkeleyM</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/653">#653</a></li>
+<li>feat: implement parent tag search by <a href="https://github.com/Computerdores">@Computerdores</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/673">#673</a></li>
+<li>fix: only close add tag menu with no search by <a href="https://github.com/SkeleyM">@SkeleyM</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/685">#685</a></li>
+<li>fix: drag and drop no longer resets by <a href="https://github.com/SkeleyM">@SkeleyM</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/710">#710</a></li>
+<li>feat(ui): port "create and add tag" to main branch by <a href="https://github.com/SkeleyM">@SkeleyM</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/711">#711</a></li>
+<li>fix: don't add default title field, use proper phrasing for adding files by <a href="https://github.com/CyanVoxel">@CyanVoxel</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/701">#701</a></li>
+<li>fix: preview panel + main window fixes and optimizations by <a href="https://github.com/CyanVoxel">@CyanVoxel</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/700">#700</a></li>
+<li>fix: sort tag results by <a href="https://github.com/mashed5894">@mashed5894</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/721">#721</a></li>
+<li>fix: restore opening last library on startup by <a href="https://github.com/SkeleyM">@SkeleyM</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/729">#729</a></li>
+<li>fix(ui): don't always create tag on enter by <a href="https://github.com/SkeleyM">@SkeleyM</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/731">#731</a></li>
+<li>fix: use tag aliases in tag search by <a href="https://github.com/CyanVoxel">@CyanVoxel</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/726">#726</a></li>
+<li>fix: keep initial id order in <code>get_entries_full()</code> by <a href="https://github.com/CyanVoxel">@CyanVoxel</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/736">#736</a></li>
+<li>fix: always catch db mismatch by <a href="https://github.com/CyanVoxel">@CyanVoxel</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/738">#738</a></li>
+<li>fix: relink unlinked entry to existing entry without sql error by <a href="https://github.com/mashed5894">@mashed5894</a> in <a href="https://github.com/TagStudioDev/TagStudio/issues/730">#730</a></li>
+<li>fix: refactor and fix bugs with missing_files.py by <a href="https://github.com/CyanVoxel">@CyanVoxel</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/739">#739</a></li>
+<li>fix: dragging files references correct entry IDs <a href="https://github.com/CyanVoxel">@CyanVoxel</a> in <a href="https://github.com/TagStudioDev/TagStudio/commit/44ff17c0b3f05570e356c112f005dbc14c7cc05d">44ff17c</a></li>
+<li>ui: port splash screen from Alpha-v9.4 by <a href="https://github.com/CyanVoxel">@CyanVoxel</a> in <a href="https://github.com/TagStudioDev/TagStudio/commit/af760ee61a523c84bab0fb03a68d7465866d0e05">af760ee</a></li>
+<li>fix: tags created from tag database now add aliases by <a href="https://github.com/CyanVoxel">@CyanVoxel</a> in <a href="https://github.com/TagStudioDev/TagStudio/commit/2903dd22c45c02498687073d075bb88886de6b62">2903dd2</a></li>
+<li>fix: check for tag name parity during JSON migration by <a href="https://github.com/CyanVoxel">@CyanVoxel</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/748">#748</a></li>
+<li>feat(ui): re-implement tag display names on sql by <a href="https://github.com/CyanVoxel">@CyanVoxel</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/747">#747</a></li>
+<li>fix(ui): restore Windows accent color on PySide 6.8.0.1 by <a href="https://github.com/CyanVoxel">@CyanVoxel</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/755">#755</a></li>
+<li>fix(ui): (mostly) fix right-click search option on tags by <a href="https://github.com/CyanVoxel">@CyanVoxel</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/756">#756</a></li>
+<li>feat: copy/paste fields and tags by <a href="https://github.com/mashed5894">@mashed5894</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/722">#722</a></li>
+<li>perf: optimize query methods and reduce preview panel updates by <a href="https://github.com/CyanVoxel">@CyanVoxel</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/794">#794</a></li>
+<li>feat: port file trashing (<a href="https://github.com/TagStudioDev/TagStudio/pull/409">#409</a>) to v9.5 by <a href="https://github.com/CyanVoxel">@CyanVoxel</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/792">#792</a></li>
+<li>fix: prevent future library versions from being opened by <a href="https://github.com/CyanVoxel">@CyanVoxel</a> in <a href="https://github.com/TagStudioDev/TagStudio/commit/bcf3b2f96bc8b876ca4b0c1d1882ce14a190f249">bcf3b2f</a></li>
+</ul>
+<h4 id="uiux">UI/UX<a class="headerlink" href="#uiux" title="Permanent link">&para;</a></h4>
+<ul>
+<li>feat(ui): pre-select default tag name in <code>BuildTagPanel</code> by <a href="https://github.com/Cool-Game-Dev">@Cool-Game-Dev</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/592">#592</a></li>
+<li>feat(ui): keyboard navigation for editing tags by <a href="https://github.com/Computerdores">@Computerdores</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/407">#407</a></li>
+<li>feat(ui): use tag query as default new tag name by <a href="https://github.com/CyanVoxel">@CyanVoxel</a> in <a href="https://github.com/TagStudioDev/TagStudio/commit/29c0dfdb2d88e8f473e27c7f1fe7ede6e5bd0feb">29c0dfd</a></li>
+<li>feat(ui): shortcut to add tags to selected entries; change click behavior of tags to edit by <a href="https://github.com/CyanVoxel">@CyanVoxel</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/749">#749</a></li>
+<li>fix(ui): use consistent dark mode colors for all systems by <a href="https://github.com/CyanVoxel">@CyanVoxel</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/752">#752</a></li>
+<li>fix(ui): use camera white balance for raw images by <a href="https://github.com/CyanVoxel">@CyanVoxel</a> in <a href="https://github.com/TagStudioDev/TagStudio/commit/6ee5304b52f217af0f5df543fcb389649203d6b2">6ee5304</a></li>
+<li>Mixed field editing has been limited due to various bugs in both the JSON and SQL implementations. This will be re-implemented in a future release.</li>
+<li>fix(ui): improve tagging ux by <a href="https://github.com/CyanVoxel">@CyanVoxel</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/633">#633</a></li>
+<li>fix(ui): hide library actions when no library is open by <a href="https://github.com/CyanVoxel">@CyanVoxel</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/787">#787</a></li>
+<li>refactor(ui): recycle tag list in TagSearchPanel by <a href="https://github.com/CyanVoxel">@CyanVoxel</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/788">#788</a><ul>
+<li>feat(ui): add tag view limit dropdown</li>
+</ul>
+</li>
+<li>fix(ui): expand usage of esc and enter for modals by <a href="https://github.com/CyanVoxel">@CyanVoxel</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/793">#793</a></li>
+</ul>
+<h4 id="performance">Performance<a class="headerlink" href="#performance" title="Permanent link">&para;</a></h4>
+<ul>
+<li>feat: improve performance of "Delete Missing Entries" by <a href="https://github.com/Toby222">@Toby222</a> and <a href="https://github.com/Computerdores">@Computerdores</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/696">#696</a></li>
+</ul>
+<h4 id="internal-changes_1">Internal Changes<a class="headerlink" href="#internal-changes_1" title="Permanent link">&para;</a></h4>
+<ul>
+<li>refactor: combine open launch args by <a href="https://github.com/UnusualEgg">@UnusualEgg</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/364">#364</a></li>
+<li>feat: add date_created, date_modified, and date_added columns to entries table by <a href="https://github.com/CyanVoxel">@CyanVoxel</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/740">#740</a></li>
+</ul>
+<h2 id="950-pre-release-4-2025-02-17">[9.5.0 Pre-Release 4] - 2025-02-17<a class="headerlink" href="#950-pre-release-4-2025-02-17" title="Permanent link">&para;</a></h2>
+<h3 id="added_2">Added<a class="headerlink" href="#added_2" title="Permanent link">&para;</a></h3>
+<h4 id="custom-user-created-tag-colors-cyanvoxel-in-801">Custom User-Created Tag Colors (<a href="https://github.com/CyanVoxel">@CyanVoxel</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/801">#801</a>)<a class="headerlink" href="#custom-user-created-tag-colors-cyanvoxel-in-801" title="Permanent link">&para;</a></h4>
+<p>Create your own custom tag colors via the new Tag Color Manager! Tag colors are assigned a namespace (group) and include a name, primary color, and optional secondary color. By default the secondary color is used for the tag text color, but this can also be toggled to apply to the border color as well!</p>
+<p><a href="https://private-user-images.githubusercontent.com/46939827/413668576-b591f1fe-1c44-4d82-b6e5-d166590aeab1.png?jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3NDY2NTQ3MTYsIm5iZiI6MTc0NjY1NDQxNiwicGF0aCI6Ii80NjkzOTgyNy80MTM2Njg1NzYtYjU5MWYxZmUtMWM0NC00ZDgyLWI2ZTUtZDE2NjU5MGFlYWIxLnBuZz9YLUFtei1BbGdvcml0aG09QVdTNC1ITUFDLVNIQTI1NiZYLUFtei1DcmVkZW50aWFsPUFLSUFWQ09EWUxTQTUzUFFLNFpBJTJGMjAyNTA1MDclMkZ1cy1lYXN0LTElMkZzMyUyRmF3czRfcmVxdWVzdCZYLUFtei1EYXRlPTIwMjUwNTA3VDIxNDY1NlomWC1BbXotRXhwaXJlcz0zMDAmWC1BbXotU2lnbmF0dXJlPTBhYzUwZmExZjRlMWI4YzJjZTZmNDRiMjFiN2ZlZjg4ZjE3MWM4NzBkNmJlZWNjMzg2OWU5YTE2OWVmZTA2YTEmWC1BbXotU2lnbmVkSGVhZGVycz1ob3N0In0.nEs6bk1euKTEkIqDipNJBrXHbHegb3PHWoW3tKI02_8"><img alt="Screenshot 2025-02-16 at 17 34 22" src="https://private-user-images.githubusercontent.com/46939827/413668576-b591f1fe-1c44-4d82-b6e5-d166590aeab1.png?jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3NDY2NTQ3MTYsIm5iZiI6MTc0NjY1NDQxNiwicGF0aCI6Ii80NjkzOTgyNy80MTM2Njg1NzYtYjU5MWYxZmUtMWM0NC00ZDgyLWI2ZTUtZDE2NjU5MGFlYWIxLnBuZz9YLUFtei1BbGdvcml0aG09QVdTNC1ITUFDLVNIQTI1NiZYLUFtei1DcmVkZW50aWFsPUFLSUFWQ09EWUxTQTUzUFFLNFpBJTJGMjAyNTA1MDclMkZ1cy1lYXN0LTElMkZzMyUyRmF3czRfcmVxdWVzdCZYLUFtei1EYXRlPTIwMjUwNTA3VDIxNDY1NlomWC1BbXotRXhwaXJlcz0zMDAmWC1BbXotU2lnbmF0dXJlPTBhYzUwZmExZjRlMWI4YzJjZTZmNDRiMjFiN2ZlZjg4ZjE3MWM4NzBkNmJlZWNjMzg2OWU5YTE2OWVmZTA2YTEmWC1BbXotU2lnbmVkSGVhZGVycz1ob3N0In0.nEs6bk1euKTEkIqDipNJBrXHbHegb3PHWoW3tKI02_8" /></a></p>
+<p><a href="https://private-user-images.githubusercontent.com/46939827/413668612-96e81b08-6993-4a5e-96d0-3b05b50fbe44.png?jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3NDY2NTQ3MTYsIm5iZiI6MTc0NjY1NDQxNiwicGF0aCI6Ii80NjkzOTgyNy80MTM2Njg2MTItOTZlODFiMDgtNjk5My00YTVlLTk2ZDAtM2IwNWI1MGZiZTQ0LnBuZz9YLUFtei1BbGdvcml0aG09QVdTNC1ITUFDLVNIQTI1NiZYLUFtei1DcmVkZW50aWFsPUFLSUFWQ09EWUxTQTUzUFFLNFpBJTJGMjAyNTA1MDclMkZ1cy1lYXN0LTElMkZzMyUyRmF3czRfcmVxdWVzdCZYLUFtei1EYXRlPTIwMjUwNTA3VDIxNDY1NlomWC1BbXotRXhwaXJlcz0zMDAmWC1BbXotU2lnbmF0dXJlPTlhOGU2NjA2ZjRhMjNjZGYxZDE1ZWYzZmVjN2RjM2Q0YzA1NTcwZGE5OGFkMjc2MDIzMTk1YTFlYjY2NTQxNmImWC1BbXotU2lnbmVkSGVhZGVycz1ob3N0In0.VD2trGcVKQVKUpzVog1UhZUM0JRcEHUhwGCiHpZ8zF0"><img alt="Screenshot 2025-02-16 at 17 32 56" src="https://private-user-images.githubusercontent.com/46939827/413668612-96e81b08-6993-4a5e-96d0-3b05b50fbe44.png?jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3NDY2NTQ3MTYsIm5iZiI6MTc0NjY1NDQxNiwicGF0aCI6Ii80NjkzOTgyNy80MTM2Njg2MTItOTZlODFiMDgtNjk5My00YTVlLTk2ZDAtM2IwNWI1MGZiZTQ0LnBuZz9YLUFtei1BbGdvcml0aG09QVdTNC1ITUFDLVNIQTI1NiZYLUFtei1DcmVkZW50aWFsPUFLSUFWQ09EWUxTQTUzUFFLNFpBJTJGMjAyNTA1MDclMkZ1cy1lYXN0LTElMkZzMyUyRmF3czRfcmVxdWVzdCZYLUFtei1EYXRlPTIwMjUwNTA3VDIxNDY1NlomWC1BbXotRXhwaXJlcz0zMDAmWC1BbXotU2lnbmF0dXJlPTlhOGU2NjA2ZjRhMjNjZGYxZDE1ZWYzZmVjN2RjM2Q0YzA1NTcwZGE5OGFkMjc2MDIzMTk1YTFlYjY2NTQxNmImWC1BbXotU2lnbmVkSGVhZGVycz1ob3N0In0.VD2trGcVKQVKUpzVog1UhZUM0JRcEHUhwGCiHpZ8zF0" /></a></p>
+<h4 id="translations_3">Translations<a class="headerlink" href="#translations_3" title="Permanent link">&para;</a></h4>
+<p>TagStudio now has official translation support! Head to the new settings panel and select from one of the initial languages included. Note that many languages currently have incomplete translations.</p>
+<p>Translation hosting generously provided by <a href="https://weblate.org/en/">Weblate</a>. Check out our <a href="https://hosted.weblate.org/projects/tagstudio/">project page</a> to help translate TagStudio! Thank you to everyone who's helped contribute to the translations so far!</p>
+<ul>
+<li>translations: add string tokens for en.json by <a href="https://github.com/Bamowen">@Bamowen</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/507">#507</a></li>
+<li>feat: translations by <a href="https://github.com/Computerdores">@Computerdores</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/662">#662</a></li>
+<li>feat(ui): add language setting by <a href="https://github.com/CyanVoxel">@CyanVoxel</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/803">#803</a></li>
+</ul>
+<p>Initial Languages:</p>
+<ul>
+<li>Chinese (Traditional) (68%)<ul>
+<li><a href="https://github.com/brisu">@brisu</a></li>
+</ul>
+</li>
+<li>Dutch (35%)<ul>
+<li><a href="https://github.com/Pheubel">@Pheubel</a></li>
+</ul>
+</li>
+<li>Filipino (15%)<ul>
+<li><a href="https://github.com/searinminecraft">@searinminecraft</a></li>
+</ul>
+</li>
+<li>French (89%)<ul>
+<li><a href="https://github.com/Bamowen">@Bamowen</a>, <a href="https://github.com/alessdangelo">@alessdangelo</a>, <a href="https://github.com/kitsumed">@kitsumed</a>, Obscaeris</li>
+</ul>
+</li>
+<li>German (73%)<ul>
+<li><a href="https://github.com/Ryussei">@Ryussei</a>, <a href="https://github.com/Computerdores">@Computerdores</a>, Aaron M</li>
+</ul>
+</li>
+<li>Hungarian (89%)<ul>
+<li><a href="https://github.com/smileyhead">@smileyhead</a></li>
+</ul>
+</li>
+<li>Norwegian Bokmål (16%)<ul>
+<li><a href="https://github.com/comradekingu">@comradekingu</a></li>
+</ul>
+</li>
+<li>Polish (76%)<ul>
+<li>Anonymous</li>
+</ul>
+</li>
+<li>Portuguese (Brazil) (22%)<ul>
+<li><a href="https://github.com/LoboMetalurgico">@LoboMetalurgico</a>, <a href="https://github.com/SpaceFox1">@SpaceFox1</a></li>
+</ul>
+</li>
+<li>Russian (22%)<ul>
+<li><a href="https://github.com/The-Stolas">@The-Stolas</a></li>
+</ul>
+</li>
+<li>Spanish (46%)<ul>
+<li><a href="https://github.com/gallegonovato">@gallegonovato</a>, <a href="https://github.com/Nginearing">@Nginearing</a>, <a href="https://github.com/noceno">@noceno</a></li>
+</ul>
+</li>
+<li>Swedish (24%)<ul>
+<li><a href="https://github.com/adampawelec">@adampawelec</a>, <a href="https://github.com/mashed5894">@mashed5894</a></li>
+</ul>
+</li>
+<li>Tamil (22%)<ul>
+<li><a href="https://github.com/VasigaranAndAngel">@VasigaranAndAngel</a></li>
+</ul>
+</li>
+<li>Toki Pona (32%)<ul>
+<li><a href="https://github.com/goldstargloww">@goldstargloww</a></li>
+</ul>
+</li>
+<li>Turkish (22%)<ul>
+<li><a href="https://github.com/Nyghl">@Nyghl</a></li>
+</ul>
+</li>
+</ul>
+<h3 id="fixed_3">Fixed<a class="headerlink" href="#fixed_3" title="Permanent link">&para;</a></h3>
+<ul>
+<li>feat(about): clickable links to docs/discord/etc in about modal by <a href="https://github.com/SkeleyM">@SkeleyM</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/799">#799</a></li>
+</ul>
+<h3 id="internal-changes_2">Internal Changes<a class="headerlink" href="#internal-changes_2" title="Permanent link">&para;</a></h3>
+<p>This release increases the internal <code>DB_VERSION</code> to 8. Libraries created with this version of TagStudio can still be opened in earlier v9.5.0 pre-release versions, however the behavior of custom color borders will not be identical to the behavior in this PR. Otherwise it should still be possible to use any custom colors created in this version in these earlier pre-releases (but not really recommended).</p>
+<h2 id="950-pre-release-3-2025-02-10">[9.5.0 Pre-Release 3] - 2025-02-10<a class="headerlink" href="#950-pre-release-3-2025-02-10" title="Permanent link">&para;</a></h2>
+<h3 id="added_3">Added<a class="headerlink" href="#added_3" title="Permanent link">&para;</a></h3>
+<h5 id="743-by-cyanvoxel"><a href="https://github.com/TagStudioDev/TagStudio/pull/743">#743</a> by <a href="https://github.com/CyanVoxel">@CyanVoxel</a><a class="headerlink" href="#743-by-cyanvoxel" title="Permanent link">&para;</a></h5>
+<p>Added "Smartcase" and Globless Path Search</p>
+<ul>
+<li>
+<p><code>path: temp</code>: Returns all paths that have "temp" <strong>(Case insensitive)</strong> somewhere in the name.</p>
+</li>
+<li>
+<p><code>path: Temp</code>: Returns all paths that have "Temp" <strong>(Case sensitive)</strong> somewhere in the name.</p>
+</li>
+</ul>
+<p>Glob Patterns w/ Smartcase</p>
+<ul>
+<li>
+<p><code>path: *temp*</code>: Returns all paths that have "temp" <strong>(Case insensitive)</strong> somewhere in the name.</p>
+</li>
+<li>
+<p><code>path: *Temp*</code>: Returns all paths that have "Temp" <strong>(Case sensitive)</strong> somewhere in the name.</p>
+</li>
+<li>
+<p><code>path: temp*</code>: Returns all paths that start with "temp" <strong>(Case insensitive)</strong> somewhere in the name.</p>
+</li>
+<li>
+<p><code>path: Temp*</code>: Returns all paths that start with "Temp" <strong>(Case sensitive)</strong> somewhere in the name.</p>
+</li>
+<li>
+<p><code>path: *temp</code>: Returns all paths that end with "temp" <strong>(Case insensitive)</strong> somewhere in the name.</p>
+</li>
+<li>
+<p><code>path: *TEmP</code>: Returns all paths that end with "TEmP" <strong>(Case sensitive)</strong> somewhere in the name.</p>
+</li>
+</ul>
+<h5 id="788-by-cyanvoxel"><a href="https://github.com/TagStudioDev/TagStudio/pull/788">#788</a> by <a href="https://github.com/CyanVoxel">@CyanVoxel</a><a class="headerlink" href="#788-by-cyanvoxel" title="Permanent link">&para;</a></h5>
+<ul>
+<li>Added a "View Limit" dropdown to tag search boxes to limit the number of on-screen tags. Previously this limit was hardcoded to 100, but now options range from 25 to unlimited.<br />
+<a href="https://private-user-images.githubusercontent.com/46939827/411701461-7f7da065-888d-4fe5-a4e7-f99447bcce98.png?jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3NDY2NTQ3MTYsIm5iZiI6MTc0NjY1NDQxNiwicGF0aCI6Ii80NjkzOTgyNy80MTE3MDE0NjEtN2Y3ZGEwNjUtODg4ZC00ZmU1LWE0ZTctZjk5NDQ3YmNjZTk4LnBuZz9YLUFtei1BbGdvcml0aG09QVdTNC1ITUFDLVNIQTI1NiZYLUFtei1DcmVkZW50aWFsPUFLSUFWQ09EWUxTQTUzUFFLNFpBJTJGMjAyNTA1MDclMkZ1cy1lYXN0LTElMkZzMyUyRmF3czRfcmVxdWVzdCZYLUFtei1EYXRlPTIwMjUwNTA3VDIxNDY1NlomWC1BbXotRXhwaXJlcz0zMDAmWC1BbXotU2lnbmF0dXJlPWVlZjVhZjYyNWQwY2FmMjhmMWI1MzI5ZDdjYWMxMmM0N2M0Nzc4MmY1YjE0NWY4MjVhZmIyMDI1NzQzY2M0YmQmWC1BbXotU2lnbmVkSGVhZGVycz1ob3N0In0.a3xUaH5r3HsDgOb6-lo3T-xSRRSy7dDOrln5i62KFP8"><img alt="" src="https://private-user-images.githubusercontent.com/46939827/411701461-7f7da065-888d-4fe5-a4e7-f99447bcce98.png?jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3NDY2NTQ3MTYsIm5iZiI6MTc0NjY1NDQxNiwicGF0aCI6Ii80NjkzOTgyNy80MTE3MDE0NjEtN2Y3ZGEwNjUtODg4ZC00ZmU1LWE0ZTctZjk5NDQ3YmNjZTk4LnBuZz9YLUFtei1BbGdvcml0aG09QVdTNC1ITUFDLVNIQTI1NiZYLUFtei1DcmVkZW50aWFsPUFLSUFWQ09EWUxTQTUzUFFLNFpBJTJGMjAyNTA1MDclMkZ1cy1lYXN0LTElMkZzMyUyRmF3czRfcmVxdWVzdCZYLUFtei1EYXRlPTIwMjUwNTA3VDIxNDY1NlomWC1BbXotRXhwaXJlcz0zMDAmWC1BbXotU2lnbmF0dXJlPWVlZjVhZjYyNWQwY2FmMjhmMWI1MzI5ZDdjYWMxMmM0N2M0Nzc4MmY1YjE0NWY4MjVhZmIyMDI1NzQzY2M0YmQmWC1BbXotU2lnbmVkSGVhZGVycz1ob3N0In0.a3xUaH5r3HsDgOb6-lo3T-xSRRSy7dDOrln5i62KFP8" /></a></li>
+</ul>
+<h3 id="changed_1">Changed<a class="headerlink" href="#changed_1" title="Permanent link">&para;</a></h3>
+<ul>
+<li>fix(ui): expand usage of esc and enter for modals by <a href="https://github.com/CyanVoxel">@CyanVoxel</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/793">#793</a></li>
+<li>perf: optimize query methods and reduce preview panel updates by <a href="https://github.com/CyanVoxel">@CyanVoxel</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/794">#794</a></li>
+</ul>
+<h5 id="788-by-cyanvoxel_1"><a href="https://github.com/TagStudioDev/TagStudio/pull/788">#788</a> by <a href="https://github.com/CyanVoxel">@CyanVoxel</a><a class="headerlink" href="#788-by-cyanvoxel_1" title="Permanent link">&para;</a></h5>
+<ul>
+<li>Improved performance of tag search boxes, including the tag manager</li>
+</ul>
+<h3 id="fixed_4">Fixed<a class="headerlink" href="#fixed_4" title="Permanent link">&para;</a></h3>
+<ul>
+<li>fix(ui): hide library actions when no library is open by <a href="https://github.com/CyanVoxel">@CyanVoxel</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/787">#787</a></li>
+<li>feat: port file trashing (<a href="https://github.com/TagStudioDev/TagStudio/pull/409">#409</a>) to v9.5 by <a href="https://github.com/CyanVoxel">@CyanVoxel</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/792">#792</a></li>
+</ul>
+<h3 id="docs">Docs<a class="headerlink" href="#docs" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Added references to alternative POSIX shells, as well as pyenv to CONTRIBUTING.md by <a href="https://github.com/ChloeZamorano">@ChloeZamorano</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/791">#791</a></li>
+</ul>
+<h2 id="950-pre-release-2-2025-02-03">[9.5.0 Pre-Release 2] - 2025-02-03<a class="headerlink" href="#950-pre-release-2-2025-02-03" title="Permanent link">&para;</a></h2>
+<h3 id="added_4">Added<a class="headerlink" href="#added_4" title="Permanent link">&para;</a></h3>
+<h5 id="784-by-cyanvoxel"><a href="https://github.com/TagStudioDev/TagStudio/pull/784">#784</a> by <a href="https://github.com/CyanVoxel">@CyanVoxel</a><a class="headerlink" href="#784-by-cyanvoxel" title="Permanent link">&para;</a></h5>
+<ul>
+<li>Add Ctrl+M shortcut to open the "Tag Manager"</li>
+</ul>
+<h3 id="fixed_5">Fixed<a class="headerlink" href="#fixed_5" title="Permanent link">&para;</a></h3>
+<ul>
+<li>fix: don't wrap field names too early by <a href="https://github.com/CyanVoxel">@CyanVoxel</a> in <a href="https://github.com/TagStudioDev/TagStudio/commit/2215403201e3b416a43ead0a322688180af6d71b">2215403</a> and <a href="https://github.com/TagStudioDev/TagStudio/commit/90a826d12804b3386a0b9003abb20f23f88ab3be">90a826d</a></li>
+<li>fix: save all tag attributes from "Create &amp; Add" modal by <a href="https://github.com/SkeleyM">@SkeleyM</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/762">#762</a></li>
+<li>fix: allow tag names with colons in search by <a href="https://github.com/SkeleyM">@SkeleyM</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/765">#765</a></li>
+<li>fix: catch <code>ParsingError</code> by <a href="https://github.com/CyanVoxel">@CyanVoxel</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/779">#779</a></li>
+<li>fix: patch incorrect description type &amp; invalid disambiguation_id refs by <a href="https://github.com/CyanVoxel">@CyanVoxel</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/782">#782</a></li>
+</ul>
+<h5 id="784-by-cyanvoxel_1"><a href="https://github.com/TagStudioDev/TagStudio/pull/784">#784</a> by <a href="https://github.com/CyanVoxel">@CyanVoxel</a><a class="headerlink" href="#784-by-cyanvoxel_1" title="Permanent link">&para;</a></h5>
+<ul>
+<li>Reset tag search box and focus each time a tag search panel is opened</li>
+<li>Include tag parents in tag search results (v9.4 parity)</li>
+<li>Lowercase tag names now get properly sorted with uppercase ones</li>
+<li>Don't include tag display names in "closeness" factor when searching</li>
+<li>Escape "&amp;" characters inside tag names so Qt doesn't treat them as mnemonics</li>
+<li>Set minimum tag width</li>
+<li>Fix "Add Tags" panel missing its window title when accessing from the keyboard shortcut</li>
+</ul>
+<h3 id="changed_2">Changed<a class="headerlink" href="#changed_2" title="Permanent link">&para;</a></h3>
+<h5 id="784-by-cyanvoxel_2"><a href="https://github.com/TagStudioDev/TagStudio/pull/784">#784</a> by <a href="https://github.com/CyanVoxel">@CyanVoxel</a><a class="headerlink" href="#784-by-cyanvoxel_2" title="Permanent link">&para;</a></h5>
+<ul>
+<li>The "use for disambiguation" button has been moved to the right-hand side of parent tags in order to prevent accidental clicks involving the left-hand "remove tag" button</li>
+<li>Add "Create &amp; Add" button to the bottom of all non-whitespace searches, even if they return some tags</li>
+<li>The awkward "+" button next to tags in the "Add Tags" panel has been removed in favor of clicking on tags themselves</li>
+<li>Improved visual feedback for highlighting, keyboard focusing, and clicking tags</li>
+<li>The clickable area of the "-" button on tags has been increased and has visual feedback when you hover and click it</li>
+<li>You can now tab into the tag search list and add tags with a spacebar press (previously possible but very janky)</li>
+<li>In tag search panels, pressing the Esc key will return your focus to the search bar and highlight your previous query. If the search box is already highlighted, pressing Esc will close the modal</li>
+<li>In modals such as the "Add Tag" and "Edit Tag" panels, pressing Esc will cancel the operation and close the modal</li>
+</ul>
+<h3 id="internal-changes_3">Internal Changes<a class="headerlink" href="#internal-changes_3" title="Permanent link">&para;</a></h3>
+<ul>
+<li>refactor: wrap migration_iterator lambda in a try/except block by <a href="https://github.com/CyanVoxel">@CyanVoxel</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/773">#773</a></li>
+</ul>
+<h3 id="docs_1">Docs<a class="headerlink" href="#docs_1" title="Permanent link">&para;</a></h3>
+<ul>
+<li>docs: update field and library pages by <a href="https://github.com/CyanVoxel">@CyanVoxel</a> in <a href="https://github.com/TagStudioDev/TagStudio/commit/f5ff4d78c1ad53134e9c64698886aee68c0f1dc1">f5ff4d7</a></li>
+<li>docs: add information about "tag manager" by <a href="https://github.com/CyanVoxel">@CyanVoxel</a> in <a href="https://github.com/TagStudioDev/TagStudio/commit/9bdbafa40c4274922f6533b5b5fcee9a4fe43030">9bdbafa</a></li>
+<li>docs: add note about glob searching in the readme by <a href="https://github.com/CyanVoxel">@CyanVoxel</a> in <a href="https://github.com/TagStudioDev/TagStudio/commit/6e402ac34d2d60e71fbd36ad234fe3914d5eb8e0">6e402ac</a></li>
+<li>docs: add library_search page by <a href="https://github.com/CyanVoxel">@CyanVoxel</a> in <a href="https://github.com/TagStudioDev/TagStudio/commit/5be7dfc314b21042c18b2f08893f2b452d12394a">5be7dfc</a></li>
+<li>docs: docs: add more links to index.md by <a href="https://github.com/CyanVoxel">@CyanVoxel</a> in <a href="https://github.com/TagStudioDev/TagStudio/commit/d7958892b7762586837204d686a6a2a993e3c26e">d795889</a></li>
+<li>docs: fix typo for "category" in usage.md by <a href="https://github.com/pinheadtf2">@pinheadtf2</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/760">#760</a></li>
+<li>fix(docs): fix screenshot sometimes not rendering by <a href="https://github.com/SkeleyM">@SkeleyM</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/775">#775</a></li>
+</ul>
+<h2 id="950-pre-release-1-2025-01-31">[9.5.0 Pre-Release 1] - 2025-01-31<a class="headerlink" href="#950-pre-release-1-2025-01-31" title="Permanent link">&para;</a></h2>
+<h3 id="added_5">Added<a class="headerlink" href="#added_5" title="Permanent link">&para;</a></h3>
+<h4 id="overhauled-search-engine_1">Overhauled Search Engine<a class="headerlink" href="#overhauled-search-engine_1" title="Permanent link">&para;</a></h4>
+<h5 id="boolean-operators_1">Boolean Operators<a class="headerlink" href="#boolean-operators_1" title="Permanent link">&para;</a></h5>
+<ul>
+<li>feat: implement query language by <a href="https://github.com/Computerdores">@Computerdores</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/606">#606</a></li>
+<li>feat: optimize AND queries by <a href="https://github.com/Computerdores">@Computerdores</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/679">#679</a></li>
+</ul>
+<h5 id="filetype-mediatype-and-glob-path-searches">Filetype, Mediatype, and Glob Path Searches<a class="headerlink" href="#filetype-mediatype-and-glob-path-searches" title="Permanent link">&para;</a></h5>
+<ul>
+<li>fix: remove wildcard requirement for tags by <a href="https://github.com/Tyrannicodin">@Tyrannicodin</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/481">#481</a></li>
+<li>feat: add filetype and mediatype searches by <a href="https://github.com/python357-1">@python357-1</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/575">#575</a></li>
+<li>feat: make path search use globs by <a href="https://github.com/python357-1">@python357-1</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/582">#582</a></li>
+<li>feat: implement search equivalence of "jpg" and "jpeg" filetypes by <a href="https://github.com/Computerdores">@Computerdores</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/649">#649</a></li>
+</ul>
+<h5 id="sortable-results_1">Sortable Results<a class="headerlink" href="#sortable-results_1" title="Permanent link">&para;</a></h5>
+<ul>
+<li>feat: sort by "date added" in library by <a href="https://github.com/Computerdores">@Computerdores</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/674">#674</a></li>
+</ul>
+<h5 id="autocomplete_1">Autocomplete<a class="headerlink" href="#autocomplete_1" title="Permanent link">&para;</a></h5>
+<ul>
+<li>feat: add autocomplete for search engine by <a href="https://github.com/python357-1">@python357-1</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/586">#586</a></li>
+</ul>
+<h4 id="replaced-tag-fields-with-tag-categories_1">Replaced "Tag Fields" with Tag Categories<a class="headerlink" href="#replaced-tag-fields-with-tag-categories_1" title="Permanent link">&para;</a></h4>
+<p>Instead of tags needing to be added to a tag field type such as "Meta Tags", "Content Tags", or just the "Tags" field, tags are now added directly to file entries with no intermediary step. While tag field types offered a way to further organize tags, it was cumbersome, inflexible, and simply not fully fleshed out. Tag Categories offer all of the previous (intentional) functionality while greatly increasing the ease of use and customization.</p>
+<ul>
+<li>
+<p>feat!: tag categories by <a href="https://github.com/CyanVoxel">@CyanVoxel</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/655">#655</a></p>
+<p><a href="https://private-user-images.githubusercontent.com/46939827/400138597-0b92eca5-db8f-4e3e-954b-1b4f3795f073.png?jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3NDY2NTUwODcsIm5iZiI6MTc0NjY1NDc4NywicGF0aCI6Ii80NjkzOTgyNy80MDAxMzg1OTctMGI5MmVjYTUtZGI4Zi00ZTNlLTk1NGItMWI0ZjM3OTVmMDczLnBuZz9YLUFtei1BbGdvcml0aG09QVdTNC1ITUFDLVNIQTI1NiZYLUFtei1DcmVkZW50aWFsPUFLSUFWQ09EWUxTQTUzUFFLNFpBJTJGMjAyNTA1MDclMkZ1cy1lYXN0LTElMkZzMyUyRmF3czRfcmVxdWVzdCZYLUFtei1EYXRlPTIwMjUwNTA3VDIxNTMwN1omWC1BbXotRXhwaXJlcz0zMDAmWC1BbXotU2lnbmF0dXJlPTM1M2EwNGFjYmJiM2QwZjg2YzNmNTVjMGYwZDJkZGJkZTg5NjZjNDFhNTYyNDE0OGNlOWFhNzRkMzE3MjBkNzEmWC1BbXotU2lnbmVkSGVhZGVycz1ob3N0In0.B5NRZmHygdHlMy2ZnZtHjfOs83jjEliwfxoe3eMBnEQ"><img alt="Screenshot 2025-01-04 at 04 23 43" src="https://private-user-images.githubusercontent.com/46939827/400138597-0b92eca5-db8f-4e3e-954b-1b4f3795f073.png?jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3NDY2NTUwODcsIm5iZiI6MTc0NjY1NDc4NywicGF0aCI6Ii80NjkzOTgyNy80MDAxMzg1OTctMGI5MmVjYTUtZGI4Zi00ZTNlLTk1NGItMWI0ZjM3OTVmMDczLnBuZz9YLUFtei1BbGdvcml0aG09QVdTNC1ITUFDLVNIQTI1NiZYLUFtei1DcmVkZW50aWFsPUFLSUFWQ09EWUxTQTUzUFFLNFpBJTJGMjAyNTA1MDclMkZ1cy1lYXN0LTElMkZzMyUyRmF3czRfcmVxdWVzdCZYLUFtei1EYXRlPTIwMjUwNTA3VDIxNTMwN1omWC1BbXotRXhwaXJlcz0zMDAmWC1BbXotU2lnbmF0dXJlPTM1M2EwNGFjYmJiM2QwZjg2YzNmNTVjMGYwZDJkZGJkZTg5NjZjNDFhNTYyNDE0OGNlOWFhNzRkMzE3MjBkNzEmWC1BbXotU2lnbmVkSGVhZGVycz1ob3N0In0.B5NRZmHygdHlMy2ZnZtHjfOs83jjEliwfxoe3eMBnEQ" /></a></p>
+</li>
+</ul>
+<h4 id="thumbnails-and-file-previews_1">Thumbnails and File Previews<a class="headerlink" href="#thumbnails-and-file-previews_1" title="Permanent link">&para;</a></h4>
+<h5 id="new-thumbnail-support_1">New Thumbnail Support<a class="headerlink" href="#new-thumbnail-support_1" title="Permanent link">&para;</a></h5>
+<ul>
+<li>feat: add svg thumbnail support (port <a href="https://github.com/TagStudioDev/TagStudio/pull/442">#442</a>) by <a href="https://github.com/Tyrannicodin">@Tyrannicodin</a> and <a href="https://github.com/CyanVoxel">@CyanVoxel</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/540">#540</a></li>
+<li>feat: add pdf thumbnail support (port <a href="https://github.com/TagStudioDev/TagStudio/pull/378">#378</a>) by <a href="https://github.com/Heiholf">@Heiholf</a> and <a href="https://github.com/CyanVoxel">@CyanVoxel</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/543">#543</a></li>
+<li>feat: add ePub thumbnail support (port <a href="https://github.com/TagStudioDev/TagStudio/pull/387">#387</a>) by <a href="https://github.com/Heiholf">@Heiholf</a> and <a href="https://github.com/CyanVoxel">@CyanVoxel</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/539">#539</a></li>
+<li>feat: add OpenDocument thumbnail support (port <a href="https://github.com/TagStudioDev/TagStudio/pull/366">#366</a>) by <a href="https://github.com/Joshua-Beatty">@Joshua-Beatty</a> and <a href="https://github.com/CyanVoxel">@CyanVoxel</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/545">#545</a></li>
+<li>feat: add JXL thumbnail and animated APNG + WEBP support (port <a href="https://github.com/TagStudioDev/TagStudio/pull/344">#344</a> and partially port <a href="https://github.com/TagStudioDev/TagStudio/pull/357">#357</a>) by <a href="https://github.com/BPplays">@BPplays</a> and <a href="https://github.com/CyanVoxel">@CyanVoxel</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/549">#549</a><ul>
+<li>fix: catch ImportError for pillow_jxl module by <a href="https://github.com/CyanVoxel">@CyanVoxel</a> in <a href="https://github.com/TagStudioDev/TagStudio/commit/a2f9685bc0d744ea6f5334c6d2926aad3f6d375a">a2f9685</a></li>
+</ul>
+</li>
+</ul>
+<h5 id="audio-playback_1">Audio Playback<a class="headerlink" href="#audio-playback_1" title="Permanent link">&para;</a></h5>
+<ul>
+<li>feat: audio playback by <a href="https://github.com/csponge">@csponge</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/576">#576</a><ul>
+<li>feat(ui): add audio volume slider by <a href="https://github.com/SkeleyM">@SkeleyM</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/691">#691</a></li>
+</ul>
+</li>
+</ul>
+<h5 id="thumbnail-caching_1">Thumbnail Caching<a class="headerlink" href="#thumbnail-caching_1" title="Permanent link">&para;</a></h5>
+<ul>
+<li>feat(ui): add thumbnail caching by <a href="https://github.com/CyanVoxel">@CyanVoxel</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/694">#694</a></li>
+</ul>
+<h4 id="tags_1">Tags<a class="headerlink" href="#tags_1" title="Permanent link">&para;</a></h4>
+<h5 id="delete-tags-finally_1">Delete Tags <em>(Finally!)</em><a class="headerlink" href="#delete-tags-finally_1" title="Permanent link">&para;</a></h5>
+<ul>
+<li>feat: remove and create tags from tag database panel by <a href="https://github.com/DandyDev01">@DandyDev01</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/569">#569</a></li>
+</ul>
+<h5 id="new-tag-colors-ui_1">New Tag Colors + UI<a class="headerlink" href="#new-tag-colors-ui_1" title="Permanent link">&para;</a></h5>
+<ul>
+<li>feat: expanded tag color system by <a href="https://github.com/CyanVoxel">@CyanVoxel</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/709">#709</a></li>
+<li>fix(ui): use correct pink tag color by <a href="https://github.com/CyanVoxel">@CyanVoxel</a> in <a href="https://github.com/TagStudioDev/TagStudio/commit/431efe4fe93213141c763e59ca9887215766fd42">431efe4</a></li>
+<li>fix(ui): use consistent tag outline colors by <a href="https://github.com/CyanVoxel">@CyanVoxel</a> in <a href="https://github.com/TagStudioDev/TagStudio/commit/020a73d095c74283d6c80426d3c3db8874409952">020a73d</a></li>
+</ul>
+<p><a href="https://private-user-images.githubusercontent.com/46939827/408753168-c8f82d89-ad7e-4be6-830e-b91cdc58e4c6.png?jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3NDY2NTUwODcsIm5iZiI6MTc0NjY1NDc4NywicGF0aCI6Ii80NjkzOTgyNy80MDg3NTMxNjgtYzhmODJkODktYWQ3ZS00YmU2LTgzMGUtYjkxY2RjNThlNGM2LnBuZz9YLUFtei1BbGdvcml0aG09QVdTNC1ITUFDLVNIQTI1NiZYLUFtei1DcmVkZW50aWFsPUFLSUFWQ09EWUxTQTUzUFFLNFpBJTJGMjAyNTA1MDclMkZ1cy1lYXN0LTElMkZzMyUyRmF3czRfcmVxdWVzdCZYLUFtei1EYXRlPTIwMjUwNTA3VDIxNTMwN1omWC1BbXotRXhwaXJlcz0zMDAmWC1BbXotU2lnbmF0dXJlPWI3ZDk2MDg5ODVjYzA2ZGU2Njc1ODE5M2U4OWU4ZGMwY2MxNzUzM2M2YmM2ZmRiMTdlOTkyNGM3MjlhMWNiOWUmWC1BbXotU2lnbmVkSGVhZGVycz1ob3N0In0.0RYUWgVW8VFvu2unzdWHtDCE4USYM77OcMvWeZkd8Hs"><img alt="Screenshot 2025-01-04 at 04 23 43" src="https://private-user-images.githubusercontent.com/46939827/408753168-c8f82d89-ad7e-4be6-830e-b91cdc58e4c6.png?jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3NDY2NTUwODcsIm5iZiI6MTc0NjY1NDc4NywicGF0aCI6Ii80NjkzOTgyNy80MDg3NTMxNjgtYzhmODJkODktYWQ3ZS00YmU2LTgzMGUtYjkxY2RjNThlNGM2LnBuZz9YLUFtei1BbGdvcml0aG09QVdTNC1ITUFDLVNIQTI1NiZYLUFtei1DcmVkZW50aWFsPUFLSUFWQ09EWUxTQTUzUFFLNFpBJTJGMjAyNTA1MDclMkZ1cy1lYXN0LTElMkZzMyUyRmF3czRfcmVxdWVzdCZYLUFtei1EYXRlPTIwMjUwNTA3VDIxNTMwN1omWC1BbXotRXhwaXJlcz0zMDAmWC1BbXotU2lnbmF0dXJlPWI3ZDk2MDg5ODVjYzA2ZGU2Njc1ODE5M2U4OWU4ZGMwY2MxNzUzM2M2YmM2ZmRiMTdlOTkyNGM3MjlhMWNiOWUmWC1BbXotU2lnbmVkSGVhZGVycz1ob3N0In0.0RYUWgVW8VFvu2unzdWHtDCE4USYM77OcMvWeZkd8Hs" /></a></p>
+<h5 id="new-tag-alias-ui_1">New Tag Alias UI<a class="headerlink" href="#new-tag-alias-ui_1" title="Permanent link">&para;</a></h5>
+<ul>
+<li>fix: preview panel aliases not staying up to date with database by <a href="https://github.com/DandyDev01">@DandyDev01</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/641">#641</a></li>
+<li>fix: subtags/parent tags &amp; aliases update the UI for building a tag by <a href="https://github.com/DandyDev01">@DandyDev01</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/534">#534</a></li>
+</ul>
+<h4 id="miscellaneous_1">Miscellaneous<a class="headerlink" href="#miscellaneous_1" title="Permanent link">&para;</a></h4>
+<ul>
+<li>feat: about section by <a href="https://github.com/mashed5894">@mashed5894</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/712">#712</a></li>
+<li>feat(ui): add configurable splash screens by <a href="https://github.com/CyanVoxel">@CyanVoxel</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/703">#703</a></li>
+<li>feat(ui): show filenames in thumbnail grid by <a href="https://github.com/CyanVoxel">@CyanVoxel</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/633">#633</a></li>
+</ul>
+<h3 id="fixed_6">Fixed<a class="headerlink" href="#fixed_6" title="Permanent link">&para;</a></h3>
+<ul>
+<li>fix(ui): display all tags in panel during empty search by <a href="https://github.com/samuellieberman">@samuellieberman</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/328">#328</a></li>
+<li>fix: avoid <code>KeyError</code> in <code>add_folders_to_tree()</code> (fix <a href="https://github.com/TagStudioDev/TagStudio/issues/346">#346</a>) by <a href="https://github.com/CyanVoxel">@CyanVoxel</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/347">#347</a></li>
+<li>fix: error on closing library by <a href="https://github.com/yedpodtrzitko">@yedpodtrzitko</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/484">#484</a></li>
+<li>fix: resolution info <a href="https://github.com/TagStudioDev/TagStudio/issues/550">#550</a> by <a href="https://github.com/Roc25">@Roc25</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/551">#551</a></li>
+<li>fix: remove queued thumnail jobs when closing library by <a href="https://github.com/yedpodtrzitko">@yedpodtrzitko</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/583">#583</a></li>
+<li>fix: use absolute ffprobe path on macos (Fix <a href="https://github.com/TagStudioDev/TagStudio/issues/511">#511</a>) by <a href="https://github.com/CyanVoxel">@CyanVoxel</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/629">#629</a></li>
+<li>fix(ui): prevent duplicate parent tags in UI by <a href="https://github.com/SkeleyM">@SkeleyM</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/665">#665</a></li>
+<li>fix: fix -o flag not working if path has whitespace around it by <a href="https://github.com/python357-1">@python357-1</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/670">#670</a></li>
+<li>fix: better file opening compatibility with non-ascii filenames by <a href="https://github.com/SkeleyM">@SkeleyM</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/667">#667</a></li>
+<li>fix: restore environment before launching external programs by <a href="https://github.com/mashed5894">@mashed5894</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/707">#707</a></li>
+<li>fix: have pydub use known ffmpeg + ffprobe locations by <a href="https://github.com/CyanVoxel">@CyanVoxel</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/724">#724</a></li>
+<li>fix: add ".DS_Store" to <code>GLOBAL_IGNORE_SET</code> by <a href="https://github.com/CyanVoxel">@CyanVoxel</a> in <a href="https://github.com/TagStudioDev/TagStudio/commit/b72a2f233141db4db6aa6be8796b626ebd3f0756">b72a2f2</a></li>
+<li>fix: don't add "._" files to libraries by <a href="https://github.com/CyanVoxel">@CyanVoxel</a> in <a href="https://github.com/TagStudioDev/TagStudio/commit/eb1f634d386cd8a5ecee1e6ff6a0b7d8811550fa">eb1f634</a></li>
+</ul>
+<h3 id="changed_3">Changed<a class="headerlink" href="#changed_3" title="Permanent link">&para;</a></h3>
+<h4 id="sqlite-save-file-format_1">SQLite Save File Format<a class="headerlink" href="#sqlite-save-file-format_1" title="Permanent link">&para;</a></h4>
+<p>This was the main focus of this update, and where the majority of development time and resources have been spent since v9.4. These changes include everything that was done to migrate from the JSON format to SQLite starting from the initial SQLite PR, while re-implementing every feature from v9.4 as the initial SQLite PR was based on v9.3.x at the time.</p>
+<ul>
+<li>refactor!: use SQLite and SQLAlchemy for database backend by <a href="https://github.com/yedpodtrzitko">@yedpodtrzitko</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/332">#332</a></li>
+<li>feat: make search results more ergonomic by <a href="https://github.com/yedpodtrzitko">@yedpodtrzitko</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/498">#498</a></li>
+<li>feat: store <code>Entry</code> suffix separately by <a href="https://github.com/yedpodtrzitko">@yedpodtrzitko</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/503">#503</a></li>
+<li>feat: port thumbnail (<a href="https://github.com/TagStudioDev/TagStudio/pull/390">#390</a>) and related features to v9.5 by <a href="https://github.com/CyanVoxel">@CyanVoxel</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/522">#522</a></li>
+<li>fix: don't check db version with new library by <a href="https://github.com/yedpodtrzitko">@yedpodtrzitko</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/536">#536</a></li>
+<li>fix(ui): update ui when removing fields by <a href="https://github.com/DandyDev01">@DandyDev01</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/560">#560</a></li>
+<li>feat(parity): backend for aliases and parent tags by <a href="https://github.com/DandyDev01">@DandyDev01</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/596">#596</a></li>
+<li>fix: "open in explorer" opens correct folder by <a href="https://github.com/KirilBourakov">@KirilBourakov</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/603">#603</a></li>
+<li>fix: ui/ux parity fixes for thumbnails and files by <a href="https://github.com/CyanVoxel">@CyanVoxel</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/608">#608</a></li>
+<li>feat(parity): migrate json libraries to sqlite by <a href="https://github.com/CyanVoxel">@CyanVoxel</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/604">#604</a></li>
+<li>fix: clear all setting values when opening a library by <a href="https://github.com/VasigaranAndAngel">@VasigaranAndAngel</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/622">#622</a></li>
+<li>fix: remove/rework windows path tests by <a href="https://github.com/VasigaranAndAngel">@VasigaranAndAngel</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/625">#625</a></li>
+<li>fix: add check to see if library is loaded in filter_items by <a href="https://github.com/Roc25">@Roc25</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/547">#547</a></li>
+<li>fix: multiple macro errors by <a href="https://github.com/Computerdores">@Computerdores</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/612">#612</a></li>
+<li>fix: don't allow blank tag alias values in db by <a href="https://github.com/CyanVoxel">@CyanVoxel</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/628">#628</a></li>
+<li>feat: Reimplement drag drop files on sql migration by <a href="https://github.com/seakrueger">@seakrueger</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/528">#528</a></li>
+<li>fix: stop sqlite db from being updated while running tests by <a href="https://github.com/python357-1">@python357-1</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/648">#648</a></li>
+<li>fix: enter/return adds top result tag by <a href="https://github.com/SkeleyM">@SkeleyM</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/651">#651</a></li>
+<li>fix: show correct unlinked files count by <a href="https://github.com/SkeleyM">@SkeleyM</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/653">#653</a></li>
+<li>feat: implement parent tag search by <a href="https://github.com/Computerdores">@Computerdores</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/673">#673</a></li>
+<li>fix: only close add tag menu with no search by <a href="https://github.com/SkeleyM">@SkeleyM</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/685">#685</a></li>
+<li>fix: drag and drop no longer resets by <a href="https://github.com/SkeleyM">@SkeleyM</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/710">#710</a></li>
+<li>feat(ui): port "create and add tag" to main branch by <a href="https://github.com/SkeleyM">@SkeleyM</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/711">#711</a></li>
+<li>fix: don't add default title field, use proper phrasing for adding files by <a href="https://github.com/CyanVoxel">@CyanVoxel</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/701">#701</a></li>
+<li>fix: preview panel + main window fixes and optimizations by <a href="https://github.com/CyanVoxel">@CyanVoxel</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/700">#700</a></li>
+<li>fix: sort tag results by <a href="https://github.com/mashed5894">@mashed5894</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/721">#721</a></li>
+<li>fix: restore opening last library on startup by <a href="https://github.com/SkeleyM">@SkeleyM</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/729">#729</a></li>
+<li>fix(ui): don't always create tag on enter by <a href="https://github.com/SkeleyM">@SkeleyM</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/731">#731</a></li>
+<li>fix: use tag aliases in tag search by <a href="https://github.com/CyanVoxel">@CyanVoxel</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/726">#726</a></li>
+<li>fix: keep initial id order in <code>get_entries_full()</code> by <a href="https://github.com/CyanVoxel">@CyanVoxel</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/736">#736</a></li>
+<li>fix: always catch db mismatch by <a href="https://github.com/CyanVoxel">@CyanVoxel</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/738">#738</a></li>
+<li>fix: relink unlinked entry to existing entry without sql error by <a href="https://github.com/mashed5894">@mashed5894</a> in <a href="https://github.com/TagStudioDev/TagStudio/issues/730">#730</a></li>
+<li>fix: refactor and fix bugs with missing_files.py by <a href="https://github.com/CyanVoxel">@CyanVoxel</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/739">#739</a></li>
+<li>fix: dragging files references correct entry IDs <a href="https://github.com/CyanVoxel">@CyanVoxel</a> in <a href="https://github.com/TagStudioDev/TagStudio/commit/44ff17c0b3f05570e356c112f005dbc14c7cc05d">44ff17c</a></li>
+<li>ui: port splash screen from Alpha-v9.4 by <a href="https://github.com/CyanVoxel">@CyanVoxel</a> in <a href="https://github.com/TagStudioDev/TagStudio/commit/af760ee61a523c84bab0fb03a68d7465866d0e05">af760ee</a></li>
+<li>fix: tags created from tag database now add aliases by <a href="https://github.com/CyanVoxel">@CyanVoxel</a> in <a href="https://github.com/TagStudioDev/TagStudio/commit/2903dd22c45c02498687073d075bb88886de6b62">2903dd2</a></li>
+<li>fix: check for tag name parity during JSON migration by <a href="https://github.com/CyanVoxel">@CyanVoxel</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/748">#748</a></li>
+<li>feat(ui): re-implement tag display names on sql by <a href="https://github.com/CyanVoxel">@CyanVoxel</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/747">#747</a></li>
+<li>fix(ui): restore Windows accent color on PySide 6.8.0.1 by <a href="https://github.com/CyanVoxel">@CyanVoxel</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/755">#755</a></li>
+<li>fix(ui): (mostly) fix right-click search option on tags by <a href="https://github.com/CyanVoxel">@CyanVoxel</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/756">#756</a></li>
+<li>feat: copy/paste fields and tags by <a href="https://github.com/mashed5894">@mashed5894</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/722">#722</a></li>
+</ul>
+<h4 id="uiux_1">UI/UX<a class="headerlink" href="#uiux_1" title="Permanent link">&para;</a></h4>
+<ul>
+<li>feat(ui): pre-select default tag name in <code>BuildTagPanel</code> by <a href="https://github.com/Cool-Game-Dev">@Cool-Game-Dev</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/592">#592</a></li>
+<li>feat(ui): keyboard navigation for editing tags by <a href="https://github.com/Computerdores">@Computerdores</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/407">#407</a></li>
+<li>feat(ui): use tag query as default new tag name by <a href="https://github.com/CyanVoxel">@CyanVoxel</a> in <a href="https://github.com/TagStudioDev/TagStudio/commit/29c0dfdb2d88e8f473e27c7f1fe7ede6e5bd0feb">29c0dfd</a></li>
+<li>feat(ui): shortcut to add tags to selected entries; change click behavior of tags to edit by <a href="https://github.com/CyanVoxel">@CyanVoxel</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/749">#749</a></li>
+<li>fix(ui): use consistent dark mode colors for all systems by <a href="https://github.com/CyanVoxel">@CyanVoxel</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/752">#752</a></li>
+<li>fix(ui): use camera white balance for raw images by <a href="https://github.com/CyanVoxel">@CyanVoxel</a> in <a href="https://github.com/TagStudioDev/TagStudio/commit/6ee5304b52f217af0f5df543fcb389649203d6b2">6ee5304</a></li>
+<li>Mixed field editing has been limited due to various bugs in both the JSON and SQL implementations. This will be re-implemented in a future release.</li>
+</ul>
+<h4 id="performance_1">Performance<a class="headerlink" href="#performance_1" title="Permanent link">&para;</a></h4>
+<ul>
+<li>feat: improve performance of "Delete Missing Entries" by <a href="https://github.com/Toby222">@Toby222</a> and <a href="https://github.com/Computerdores">@Computerdores</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/696">#696</a></li>
+</ul>
+<h4 id="internal-changes_4">Internal Changes<a class="headerlink" href="#internal-changes_4" title="Permanent link">&para;</a></h4>
+<ul>
+<li>refactor: combine open launch args by <a href="https://github.com/UnusualEgg">@UnusualEgg</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/364">#364</a></li>
+<li>feat: add date_created, date_modified, and date_added columns to entries table by <a href="https://github.com/CyanVoxel">@CyanVoxel</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/740">#740</a></li>
+</ul>
+<h2 id="942-2024-12-01">[9.4.2] - 2024-12-01<a class="headerlink" href="#942-2024-12-01" title="Permanent link">&para;</a></h2>
+<h3 id="addedfixed">Added/Fixed<a class="headerlink" href="#addedfixed" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Create auto-backup of library for use in save failures (Fix <a href="https://github.com/TagStudioDev/TagStudio/issues/343">#343</a>) by <a href="https://github.com/CyanVoxel">@CyanVoxel</a> in <a href="https://github.com/TagStudioDev/TagStudio/pull/554">#554</a></li>
+</ul>
+<h2 id="941-2024-09-13">[9.4.1] - 2024-09-13<a class="headerlink" href="#941-2024-09-13" title="Permanent link">&para;</a></h2>
+<h3 id="added_6">Added<a class="headerlink" href="#added_6" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Warn user if FFmpeg is not installed</li>
+<li>Support for <code>.raf</code> and <code>.orf</code> raw image thumbnails and previews</li>
+</ul>
+<h3 id="fixed_7">Fixed<a class="headerlink" href="#fixed_7" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Use <code>birthtime</code> for file creation time on Mac &amp; Windows</li>
+<li>Use audio icon fallback when FFmpeg is not detected</li>
+<li>Retain search query upon directory refresh</li>
+</ul>
+<h3 id="changed_4">Changed<a class="headerlink" href="#changed_4" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Significantly improve file re-scanning performance</li>
+</ul>
+<h2 id="940-2024-09-03">[9.4.0] - 2024-09-03<a class="headerlink" href="#940-2024-09-03" title="Permanent link">&para;</a></h2>
+<h3 id="added_7">Added<a class="headerlink" href="#added_7" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Copy and paste fields</li>
+<li>Add multiple fields at once</li>
+<li>Drag and drop files in/out of the program</li>
+<li>Files can be shared by dragging them from the thumbnail grid to other programs</li>
+<li>Files can be added to library folder by dragging them into the program</li>
+<li>Manage Python virtual environment in Nix flake</li>
+<li>Ability to create tag when adding tags</li>
+<li>Blender preview thumbnail support</li>
+<li>File deletion/trashing</li>
+<li>Added right-click option on thumbnails and preview panel to delete files</li>
+<li>Added Edit Menu option for deleting files</li>
+<li>Added <kbd>Delete</kbd> key shortcut for deleting files</li>
+<li>Font preview thumbnail support</li>
+<li>Short "Aa" previews for thumbnails</li>
+<li>Full alphabet preview for the preview pane</li>
+<li>Sort tags by alphabetical/color</li>
+<li>File explorer action follows OS naming</li>
+<li>Preview Source Engine files</li>
+<li>Expanded thumbnail and preview features</li>
+<li>Add album cover art thumbnails</li>
+<li>Add audio waveform thumbnails for audio files without embedded cover art</li>
+<li>Add new default file thumbnails, both for generic and specific file types</li>
+<li>Change the unlinked file icon to better convey its meaning</li>
+<li>Add dropdown for different thumbnail sizes</li>
+<li>Show File Creation and Modified dates; Restyle file path label</li>
+</ul>
+<h3 id="fixed_8">Fixed<a class="headerlink" href="#fixed_8" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Backslashes in f-string on file dupe widget</li>
+<li>Tags not shown when none searched</li>
+<li>Avoid error from eagerly grabbing data values</li>
+<li>Correct behavior for tag search options</li>
+<li>Load Gallery-DL sidecar files correctly</li>
+<li>Correct duplicate file matching</li>
+<li>GPU hardware acceleration in Nix flake</li>
+<li>Suppress command prompt windows for FFmpeg in builds</li>
+</ul>
+<h3 id="internal-changes_5">Internal Changes<a class="headerlink" href="#internal-changes_5" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Move type constants to media classes</li>
+<li>Combine open launch arguments</li>
+<li>Revamp Nix flake with devenv/direnv in cb4798b</li>
+<li>Remove impurity of Nix flake when used with direnv in bc38e56</li>
+</ul>
+<h2 id="932-2024-07-18">[9.3.2] - 2024-07-18<a class="headerlink" href="#932-2024-07-18" title="Permanent link">&para;</a></h2>
+<h3 id="fixed_9">Fixed<a class="headerlink" href="#fixed_9" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Fix signal log warning</li>
+<li>Fix "Folders to Tags" feature</li>
+<li>Fix search ignoring case of extension list</li>
+</ul>
+<h3 id="internal-changes_6">Internal Changes<a class="headerlink" href="#internal-changes_6" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Add tests into CI by</li>
+<li>Create testing library files ad-hoc</li>
+<li>Refactoring: centralize field IDs</li>
+<li>Update to pyside6 version 6.7.1</li>
+</ul>
+<h2 id="931-2024-06-13">[9.3.1] - 2024-06-13<a class="headerlink" href="#931-2024-06-13" title="Permanent link">&para;</a></h2>
+<h3 id="fixed_10">Fixed<a class="headerlink" href="#fixed_10" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Separately pin QT nixpkg version</li>
+<li>Bugfix for #252, don't attempt to read video file if invalid or 0 frames long</li>
+<li>Toggle Mouse Event Transparency on ItemThumbs</li>
+<li>Refactor <code>video_player.py</code></li>
+</ul>
+<h2 id="930-2024-06-08">[9.3.0] - 2024-06-08<a class="headerlink" href="#930-2024-06-08" title="Permanent link">&para;</a></h2>
+<h3 id="added_8">Added<a class="headerlink" href="#added_8" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Added playback previews for video files</li>
+<li>Added Boolean "and/or" search mode selection</li>
+<li>Added ability to scan and fix duplicate entries (not to be confused with duplicate files) from the "Fix Unlinked Entries" menu</li>
+<li>Added “Select All” (<kbd>Ctrl</kbd>+<kbd>A</kbd> / <kbd>⌘ Command</kbd>+<kbd>A</kbd>) hotkey for the library grid view</li>
+<li>Added "Clear Selection" hotkey (<kbd>Esc</kbd>) for the library grid view</li>
+<li>Added the ability to invert the file extension inclusion list into an exclusion list</li>
+<li>Added default landing page when no library is open</li>
+</ul>
+<h3 id="fixed_11">Fixed<a class="headerlink" href="#fixed_11" title="Permanent link">&para;</a></h3>
+<ul>
+<li>TagStudio will no longer attempt to or allow you to reopen a library from a missing location</li>
+<li>Fixed <code>PermissionError</code> when attempting to access files with a higher permission level upon scanning the library directory</li>
+<li>Fixed RAW image previews sometimes not loadingand</li>
+<li>Fixed most non-UTF-8 encoded text files from not being able to be previewed</li>
+<li>Fixed "Refresh Directories"/"Fix Unlinked Entries" creating duplicate entries</li>
+<li>Other miscellaneous fixes</li>
+</ul>
+<h3 id="changed_5">Changed<a class="headerlink" href="#changed_5" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Renamed "Subtags" to "Parent Tags" to help better describe their function</li>
+<li>Increased number of tags shown by default in the "Add Tag" modal from 29 to 100</li>
+<li>Documentation is now split into individual linked files and updated to include future features</li>
+<li>Replaced use of <code>os.path</code> with <code>pathlib</code></li>
+<li><code>.cr2</code> files are now included in the list of RAW image file types</li>
+<li>Minimum supported macOS version raised to 12.0</li>
+</ul>
+<h2 id="921-2024-05-23">[9.2.1] - 2024-05-23<a class="headerlink" href="#921-2024-05-23" title="Permanent link">&para;</a></h2>
+<h3 id="added_9">Added<a class="headerlink" href="#added_9" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Basic thumbnail/preview support for RAW images (currently <code>.raw</code>, <code>.dng</code>, <code>.rw2</code>, <code>.nef</code>, <code>.arw</code>, <code>.crw</code>, <code>.cr3</code>)</li>
+<li>NOTE: These previews are currently slow to load given the nature of rendering them. In the future once thumbnail caching is added, this process should only happen once.</li>
+<li>Thumbnail/preview support for HEIF images</li>
+</ul>
+<h3 id="fixed_12">Fixed<a class="headerlink" href="#fixed_12" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Fixed sidebar not expanding horizontally</li>
+<li>Fixed "Recent Library" list not updating when creating a new library</li>
+<li>Fixed palletized images not loading with alpha channels</li>
+<li>Low resolution images (such as pixel art) now render with crisp edges in thumbnails and previews</li>
+<li>Fixed visual bug where the edit icon would show for incorrect fields</li>
+</ul>
+<h2 id="920-2024-05-14">[9.2.0] - 2024-05-14<a class="headerlink" href="#920-2024-05-14" title="Permanent link">&para;</a></h2>
+<h3 id="added_10">Added<a class="headerlink" href="#added_10" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Full macOS and Linux support</li>
+<li>Ability to apply tags to multiple selections at once</li>
+<li>Right-click context menu for opening files or their locations</li>
+<li>Support for all filetypes inside of the library</li>
+<li>Configurable filetype blacklist</li>
+<li>Option to automatically open last used library on startup</li>
+<li>Tool to convert folder structure to tag tree</li>
+<li>SIGTERM handling in console window</li>
+<li>Keyboard shortcuts for basic functions</li>
+<li>Basic support for plaintext thumbnails</li>
+<li>Default icon for files with no thumbnail support</li>
+<li>Menu action to close library</li>
+<li>All tags now show in the "Add Tag" panel by default</li>
+<li>Modal view to view and manage all library tags</li>
+<li>Build scripts for Windows and macOS</li>
+<li>Help menu option to visit the GitHub repository</li>
+<li>Toggleable "Recent Libraries" list in the entry side panel</li>
+</ul>
+<h3 id="fixed_13">Fixed<a class="headerlink" href="#fixed_13" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Fixed errors when performing actions with no library open</li>
+<li>Fixed bug where built-in tags were duplicated upon saving</li>
+<li>QThreads are now properly terminated on application exit</li>
+<li>Images with rotational EXIF data are now properly displayed</li>
+<li>Fixed "truncated" images causing errors</li>
+<li>Fixed images with large resolutions causing errors</li>
+</ul>
+<h3 id="changed_6">Changed<a class="headerlink" href="#changed_6" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Updated minimum Python version to 3.12</li>
+<li>Various UI improvements</li>
+<li>Improved legibility of the Light Theme (still a WIP)</li>
+<li>Updated Dark Theme</li>
+<li>Added hand cursor to several clickable elements</li>
+<li>Fixed network paths not being able to load</li>
+<li>Various code cleanup and refactoring</li>
+<li>New application icons</li>
+</ul>
+<h3 id="known-issues">Known Issues<a class="headerlink" href="#known-issues" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Using and editing multiple entry fields of the same type may result in incorrect field(s) being updated</li>
+<li>Adding Favorite or Archived tags via the thumbnail badges may apply the tag(s) to incorrect fields</li>
+<li>Searching for tag names with spaces does not currently function as intended<ul>
+<li>A temporary workaround it to omit spaces in tag names when  searching</li>
+</ul>
+</li>
+<li>Sorting fields using the "Sort Fields" macro may result in edit icons being shown for incorrect fields</li>
+</ul>
+<h2 id="910-2024-04-22">[9.1.0] - 2024-04-22<a class="headerlink" href="#910-2024-04-22" title="Permanent link">&para;</a></h2>
+<h3 id="added_11">Added<a class="headerlink" href="#added_11" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Initial public release</li>
+</ul>
+
+
+
+
+
+
+
+  
+  
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+        <div class="md-social">
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://github.com/TagStudioDev" target="_blank" rel="noopener" title="github.com" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.0.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path fill="currentColor" d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+    </a>
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://discord.gg/hRNnVKhF2G" target="_blank" rel="noopener" title="discord.gg" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512"><!--! Font Awesome Free 7.0.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path fill="currentColor" d="M492.5 69.8c-.2-.3-.4-.6-.8-.7-38.1-17.5-78.4-30-119.7-37.1-.4-.1-.8 0-1.1.1s-.6.4-.8.8c-5.5 9.9-10.5 20.2-14.9 30.6-44.6-6.8-89.9-6.8-134.4 0-4.5-10.5-9.5-20.7-15.1-30.6-.2-.3-.5-.6-.8-.8s-.7-.2-1.1-.2C162.5 39 122.2 51.5 84.1 69c-.3.1-.6.4-.8.7C7.1 183.5-13.8 294.6-3.6 404.2c0 .3.1.5.2.8s.3.4.5.6c44.4 32.9 94 58 146.8 74.2.4.1.8.1 1.1 0s.7-.4.9-.7c11.3-15.4 21.4-31.8 30-48.8.1-.2.2-.5.2-.8s0-.5-.1-.8-.2-.5-.4-.6-.4-.3-.7-.4c-15.8-6.1-31.2-13.4-45.9-21.9-.3-.2-.5-.4-.7-.6s-.3-.6-.3-.9 0-.6.2-.9.3-.5.6-.7c3.1-2.3 6.2-4.7 9.1-7.1.3-.2.6-.4.9-.4s.7 0 1 .1c96.2 43.9 200.4 43.9 295.5 0 .3-.1.7-.2 1-.2s.7.2.9.4c2.9 2.4 6 4.9 9.1 7.2.2.2.4.4.6.7s.2.6.2.9-.1.6-.3.9-.4.5-.6.6c-14.7 8.6-30 15.9-45.9 21.8-.2.1-.5.2-.7.4s-.3.4-.4.7-.1.5-.1.8.1.5.2.8c8.8 17 18.8 33.3 30 48.8.2.3.6.6.9.7s.8.1 1.1 0c52.9-16.2 102.6-41.3 147.1-74.2.2-.2.4-.4.5-.6s.2-.5.2-.8c12.3-126.8-20.5-236.9-86.9-334.5zm-302 267.7c-29 0-52.8-26.6-52.8-59.2s23.4-59.2 52.8-59.2c29.7 0 53.3 26.8 52.8 59.2 0 32.7-23.4 59.2-52.8 59.2m195.4 0c-29 0-52.8-26.6-52.8-59.2s23.4-59.2 52.8-59.2c29.7 0 53.3 26.8 52.8 59.2 0 32.7-23.2 59.2-52.8 59.2"/></svg>
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      <script id="__config" type="application/json">{"base": "../..", "features": ["navigation.instant", "navigation.indexes", "navigation.tracking", "navigation.expand", "navigation.sections", "search.suggest", "content.code.annotate", "content.code.copy", "content.action.edit"], "search": "../../assets/javascripts/workers/search.d50fe291.min.js", "tags": {"Upcoming Feature": "upcoming"}, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.50899def.min.js"></script>
+      
+    
+  </body>
+</html>

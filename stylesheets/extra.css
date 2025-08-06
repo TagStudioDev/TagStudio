@@ -1,0 +1,99 @@
+/* Dark Theme */
+[data-md-color-scheme="slate"] {
+    --md-default-bg-color: #060617;
+    --md-default-fg-color: #eae1ff;
+    --md-default-fg-color--light: #b898ff;
+    --md-code-fg-color: #eae1ffcc;
+    --md-code-hl-string-color: rgb(92, 255, 228);
+    --md-code-hl-keyword-color: rgb(61, 155, 255);
+    --md-code-hl-constant-color: rgb(205, 78, 255);
+    --md-footer-bg-color--dark: #03030c;
+    --md-code-bg-color: #090a26;
+}
+
+/* Light Theme */
+[data-md-color-scheme="default"] {
+    --md-default-fg-color--light: #090a26;
+}
+
+.md-header {
+    background: linear-gradient(
+        60deg,
+        rgb(205, 78, 255) 10%,
+        rgb(116, 123, 255) 50%,
+        rgb(72, 145, 255) 75%,
+        rgb(98, 242, 255) 100%
+    );
+}
+
+th,
+td {
+    padding: 0.5em 1em 0.5em 1em !important;
+}
+
+.md-header {
+    border-style: solid;
+    border-width: 0 0 2px 0;
+    border-color: #ffffff33;
+}
+
+.md-header__title {
+    font-family: "Bai Jamjuree", Roboto, sans-serif;
+    font-weight: 500 !important;
+    font-size: 1.1rem;
+    letter-spacing: -0.05rem !important;
+}
+
+.md-nav__title,
+h1,
+h2,
+.md-nav__item--section > .md-nav__link {
+    font-family: "Bai Jamjuree", Roboto, sans-serif;
+    font-weight: 500 !important;
+    font-size: 0.8rem;
+    letter-spacing: -0.05rem !important;
+}
+
+/* Add padding to stop text from cutting off early due to negative letter spacing */
+.md-nav__item--section > .md-nav__link > .md-ellipsis {
+    padding-right: 0.5rem;
+}
+.md-header__title .md-header__topic .md-ellipsis {
+    padding-right: 0.5rem;
+}
+
+.md-header__button.md-logo {
+    padding-right: 0;
+    padding-bottom: 0.3rem;
+    margin-right: -0.8rem;
+}
+
+.md-search__form {
+    height: 1.5rem;
+    background-color: #00004444;
+    border-radius: 0.3rem !important;
+    border-style: solid;
+    border-width: 2px 1px 0 1px;
+    border-color: #00004422;
+    padding-bottom: 2px;
+}
+.md-search__form > .md-icon {
+    margin-top: -0.2rem;
+}
+
+.twemoji {
+    margin-top: 0.05rem;
+}
+
+/* Matches the palette used by mkdocs-material */
+.priority-high {
+    color: #f1185a;
+}
+
+.priority-med {
+    color: #7c4eff;
+}
+
+.priority-low {
+    color: #28afff;
+}
