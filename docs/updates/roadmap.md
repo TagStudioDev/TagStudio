@@ -55,20 +55,74 @@ A separated, UI agnostic core library that's used to interface with the TagStudi
 </div>
 
 <div class="grid cards" markdown>
-- #### :material-puzzle: Plugin Support
-Some form of official plugin support for TagStudio, likely with its own API that may or may not connect to or share attributes with the core library API.
-
-    ---
-    - [ ] Plugin Support :material-chevron-triple-up:{ .priority-high title="High Priority" } **[v10.0.0]**
-
-</div>
-
-<div class="grid cards" markdown>
 - #### :material-clipboard-text: TagStudio Format Specification
     A detailed written specification for the TagStudio tag and/or library format. Intended for use by third-parties to build alternative cores or protocols that can interoperate between one another.
 
     ---
     - [ ] "TAGSPEC" Specification Established :material-chevron-triple-up:{ .priority-high title="High Priority" } **[v10.0.0]**
+
+</div>
+
+### Application
+
+<div class="grid cards" markdown>
+- #### :material-application-outline: UI/UX
+
+    ---
+    -   [ ] Library List View :material-chevron-triple-up:{ .priority-high title="High Priority" }
+    -   [ ] Folder Explorer View Mode :material-chevron-triple-up:{ .priority-high title="High Priority" }
+    -   [x] Translations
+    -   [ ] Search Bar Rework :material-chevron-triple-up:{ .priority-high title="High Priority" } **[v9.7.0]**
+        -   [ ] Improved Tag Autocomplete :material-chevron-triple-up:{ .priority-high title="High Priority" }
+        -   [ ] Tags appear as widgets in search bar :material-chevron-triple-up:{ .priority-high title="High Priority" }
+    -   [x] Unified Media Player
+        -   [x] Auto-hiding player controls
+        -   [x] Play/Pause
+        -   [x] Loop
+        -   [x] Toggle Autoplay
+        -   [x] Volume Control
+        -   [x] Toggle Mute
+        -   [x] Timeline scrubber
+        -   [ ] Fullscreen :material-chevron-double-up:{ .priority-med title="Medium Priority" }
+    -   [ ] 3D Model Thumbnails/Previews :material-chevron-triple-up:{ .priority-high title="High Priority" }
+        -   [ ] STL Previews
+        -   [ ] OBJ Previews
+    -   [ ] Tagging Panel :material-chevron-triple-up:{ .priority-high title="High Priority" }
+        -   Toggleable persistent main window panel or pop-out. Replaces the current tag manager.
+        -   [ ] Top Tags
+        -   [ ] Recent Tags
+        -   [ ] Tag Search
+        -   [ ] Pinned Tags
+    -   [ ] New tabbed tag building UI to support the new tag features :material-chevron-triple-up:{ .priority-high title="High Priority" } **[v9.6.0]**
+    -   [ ] Custom Thumbnail Overrides :material-chevron-double-up:{ .priority-med title="Medium Priority" }
+    -   [ ] Media Duration Labels :material-chevron-triple-up:{ .priority-high title="High Priority" } **[v9.6.0]**
+    -   [ ] Word/Line Count Labels :material-chevron-up:{ .priority-low title="Low Priority" }
+    -   [ ] Custom Tag Badges :material-chevron-up:{ .priority-low title="Low Priority" }
+        -   Would serve as an addition/alternative to the Favorite and Archived badges.
+
+</div>
+
+<div class="grid cards" markdown>
+- #### :material-cog: Settings
+
+    ---
+    -   [x] Language Selection
+    -   [x] Configurable Page Size
+    -   [x] Application Settings
+        -   [x] Stored in system user folder/designated folder
+    -   [ ] Library Settings :material-chevron-triple-up:{ .priority-high title="High Priority" }
+        -   [ ] Stored in `.TagStudio` folder :material-chevron-triple-up:{ .priority-high title="High Priority" }
+    -   [ ] Toggle File Extension Label :material-chevron-double-up:{ .priority-med title="Medium Priority" }
+    -   [ ] Toggle Duration Label :material-chevron-double-up:{ .priority-med title="Medium Priority" }
+
+</div>
+
+<div class="grid cards" markdown>
+- #### :material-puzzle: Plugin Support
+Some form of official plugin support for TagStudio, likely with its own API that may or may not connect to or share attributes with the core library API.
+
+    ---
+    - [ ] Plugin Support :material-chevron-triple-up:{ .priority-high title="High Priority" } **[v10.0.0]**
 
 </div>
 
@@ -85,6 +139,7 @@ Some form of official plugin support for TagStudio, likely with its own API that
         -   [ ] Detect Renames :material-chevron-triple-up:{ .priority-high title="High Priority" } **[v9.7.0]**
         -   [ ] Detect Moves :material-chevron-triple-up:{ .priority-high title="High Priority" } **[v9.7.0]**
         -   [ ] Detect Deletions :material-chevron-triple-up:{ .priority-high title="High Priority" } **[v9.7.0]**
+    -   [x] Thumbnail Caching **[[v9.5.0](./changelog.md#950-2025-03-03)]**
 
 </div>
 
@@ -206,56 +261,6 @@ Packs are intended as an easy way to import and export specific data between lib
 
 </div>
 
-### v9.5
-
-#### UI
-
--   [x] Translations _(Any applicable)_ [MEDIUM]
--   [x] Unified Media Player [HIGH]
-    -   [x] Auto-hiding player controls
-    -   [x] Play/Pause [HIGH]
-    -   [x] Loop [HIGH]
-    -   [x] Toggle Autoplay [MEDIUM]
-    -   [x] Volume Control [HIGH]
-    -   [x] Toggle Mute [HIGH]
-    -   [x] Timeline scrubber [HIGH]
-    -   [ ] Fullscreen [MEDIUM]
--   [x] Configurable page size [HIGH]
-
-#### Performance
-
--   [x] Thumbnail caching [HIGH]
-
-### v9.6
-
--   [ ] Search bar rework
-    -   [ ] Improved tag autocomplete [HIGH]
-    -   [ ] Tags appear as widgets in search bar [HIGH]
-
-#### UI
-
--   [ ] File duration on video thumbnails [HIGH]
--   [ ] 3D Model Previews [MEDIUM]
-    -   [ ] STL Previews [HIGH]
--   [ ] Word count/line count on text thumbnails [LOW]
--   [x] Settings Menu [HIGH]
--   [x] Application Settings [HIGH]
-    -   [x] Stored in system user folder/designated folder [HIGH]
--   [ ] Library Settings [HIGH]
-    -   [ ] Stored in `.TagStudio` folder [HIGH]
--   [ ] Tagging Panel [HIGH]
-
-    Toggleable persistent main window panel or pop-out. Replaces the current tag manager.
-
-    -   [ ] Top Tags [HIGH]
-    -   [ ] Recent Tags [HIGH]
-    -   [ ] Tag Search [HIGH]
-    -   [ ] Pinned Tags [HIGH]
-
--   [ ] New tabbed tag building UI to support the new tag features [HIGH]
-
-### v9.7
-
 #### [Macros](../utilities/macro.md)
 
 -   [ ] Sharable Macros [MEDIUM]
@@ -271,11 +276,3 @@ Packs are intended as an easy way to import and export specific data between lib
     -   [ ] Add field(s) [HIGH]
     -   [ ] Set field content [HIGH]
     -   [ ] [...]
-
-#### UI
-
--   [ ] Custom thumbnail overrides [MEDIUM]
--   [ ] Toggle File Extension Label [MEDIUM]
--   [ ] Toggle Duration Label [MEDIUM]
--   [ ] Custom Tag Badges [LOW]
--   [ ] Library list view [HIGH]
