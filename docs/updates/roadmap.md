@@ -1,8 +1,8 @@
-# Roadmap
+# :material-map-check: Roadmap
 
 This page outlines the current and planned features required for TagStudio to be considered "feature complete" (v10.0.0). Features and changes are broken up by group in order to better assess the overall state of those features. [Priority levels](#priority-levels) and [version estimates](#version-estimates) are provided in order to give a rough idea of what's planned and when it may release.
 
-This page will update as new features are planned or completed. If there's a feature you'd like to see but is not listed on this page, please check the GitHub [Issues](https://github.com/TagStudioDev/TagStudio/issues) page and submit a feature request if one does not already exist!
+This roadmap will update as new features are planned or completed. If there's a feature you'd like to see but is not listed on this page, please check the GitHub [Issues](https://github.com/TagStudioDev/TagStudio/issues) page and submit a feature request if one does not already exist!
 
 ## Priority Levels
 
@@ -26,9 +26,9 @@ Features are given rough estimations for which version they will be completed in
 
 ## Core
 
-### :material-database: SQL Library Format
+### :material-database: SQL Library Database
 
-An improved library save file format in which legacy JSON libraries will be migrated to.
+An improved SQLite-based library save file format in which legacy JSON libraries are be migrated to.
 Must be finalized or deemed "feature complete" before other core features are developed or finalized.
 
 -   [x] A SQLite-based library save file format **[[v9.5.0](./changelog.md#950-2025-03-03)]**
@@ -43,31 +43,36 @@ Must be finalized or deemed "feature complete" before other core features are de
 
 ### :material-database-cog: Core Library + API
 
-A separated, UI agnostic core library that's used to interface with the TagStudio library format. Would host an API for communication from outside the program.
+A separated, UI agnostic core library that is used to interface with the TagStudio library format. Would host an API for communication from outside the program.
 
 -   [ ] Core Library :material-chevron-triple-up:{ .priority-high title="High Priority" } **[v10.0.0]**
 -   [ ] Core Library API :material-chevron-triple-up:{ .priority-high title="High Priority" } **[v10.0.0]**
 
-### :material-clipboard-text: TagStudio Format Specification
+### :material-clipboard-text: Format Specification
 
-A detailed written specification for the TagStudio tag and/or library format. Intended for use by third-parties to build alternative cores or protocols that can interoperate between one another.
+A detailed written specification for the TagStudio tag and/or library format. Intended for used by third-parties to build alternative cores or protocols that can remain interoperable.
 
--   [ ] "TAGSPEC" Specification Established :material-chevron-triple-up:{ .priority-high title="High Priority" } **[v10.0.0]**
+-   [ ] Format Specification Established :material-chevron-triple-up:{ .priority-high title="High Priority" } **[v10.0.0]**
 
 ---
 
 ## Application
 
-### :material-application-outline: UI/UX
+### :material-button-cursor: UI/UX
 
+-   [x] Library Grid View
+    -   [ ] Explore Filesystem in Grid View :material-chevron-triple-up:{ .priority-high title="High Priority" }
 -   [ ] Library List View :material-chevron-triple-up:{ .priority-high title="High Priority" }
--   [ ] Folder Explorer View Mode :material-chevron-triple-up:{ .priority-high title="High Priority" }
+    -   [ ] Explore Filesystem in List View :material-chevron-triple-up:{ .priority-high title="High Priority" }
+-   [ ] Lightbox View :material-chevron-triple-up:{ .priority-high title="High Priority" }
+    -   Similar to List View in concept, but displays one large preview that can cycle back/forth between entries.
+    -   [ ] Smaller thumbnails of immediate adjacent entries below :material-chevron-double-up:{ .priority-med title="Medium Priority" }
 -   [x] Translations
 -   [ ] Search Bar Rework :material-chevron-triple-up:{ .priority-high title="High Priority" } **[v9.7.0]**
     -   [ ] Improved Tag Autocomplete :material-chevron-triple-up:{ .priority-high title="High Priority" }
     -   [ ] Tags appear as widgets in search bar :material-chevron-triple-up:{ .priority-high title="High Priority" }
 -   [x] Unified Media Player
-    -   [x] Auto-hiding player controls
+    -   [x] Auto-Hiding Player Controls
     -   [x] Play/Pause
     -   [x] Loop
     -   [x] Toggle Autoplay
@@ -75,16 +80,16 @@ A detailed written specification for the TagStudio tag and/or library format. In
     -   [x] Toggle Mute
     -   [x] Timeline scrubber
     -   [ ] Fullscreen :material-chevron-double-up:{ .priority-med title="Medium Priority" }
+    -   [ ] Fine-Tuned UI/UX :material-chevron-triple-up:{ .priority-high title="High Priority" } **[v9.5.4]**
 -   [ ] 3D Model Thumbnails/Previews :material-chevron-triple-up:{ .priority-high title="High Priority" }
-    -   [ ] STL Previews
-    -   [ ] OBJ Previews
--   [ ] Tagging Panel :material-chevron-triple-up:{ .priority-high title="High Priority" }
-    -   Toggleable persistent main window panel or pop-out. Replaces the current tag manager.
+    -   [ ] STL File Support
+    -   [ ] OBJ File Support
+-   [ ] Toggleable Persistent Tagging Panel :material-chevron-triple-up:{ .priority-high title="High Priority" }
     -   [ ] Top Tags
     -   [ ] Recent Tags
     -   [ ] Tag Search
     -   [ ] Pinned Tags
--   [ ] New tabbed tag building UI to support the new tag features :material-chevron-triple-up:{ .priority-high title="High Priority" } **[v9.6.0]**
+-   [ ] New Tabbed Tag Building UI to Support New Tag Features :material-chevron-triple-up:{ .priority-high title="High Priority" } **[v9.6.0]**
 -   [ ] Custom Thumbnail Overrides :material-chevron-double-up:{ .priority-med title="Medium Priority" }
 -   [ ] Media Duration Labels :material-chevron-triple-up:{ .priority-high title="High Priority" } **[v9.6.0]**
 -   [ ] Word/Line Count Labels :material-chevron-up:{ .priority-low title="Low Priority" }
@@ -93,10 +98,12 @@ A detailed written specification for the TagStudio tag and/or library format. In
 
 ### :material-cog: Settings
 
--   [x] Language Selection
--   [x] Configurable Page Size
 -   [x] Application Settings
-    -   [x] Stored in system user folder/designated folder
+    -   [x] Stored in System User Folder/Designated Folder
+    -   [x] Language
+    -   [x] Date and Time Format
+    -   [x] Theme
+-   [x] Configurable Page Size
 -   [ ] Library Settings :material-chevron-triple-up:{ .priority-high title="High Priority" }
     -   [ ] Stored in `.TagStudio` folder :material-chevron-triple-up:{ .priority-high title="High Priority" }
 -   [ ] Toggle File Extension Label :material-chevron-double-up:{ .priority-med title="Medium Priority" }
@@ -104,7 +111,7 @@ A detailed written specification for the TagStudio tag and/or library format. In
 
 ### :material-puzzle: Plugin Support
 
-Some form of official plugin support for TagStudio, likely with its own API that may or may not connect to or share attributes with the core library API.
+Some form of official plugin support for TagStudio, likely with its own API that may connect to or encapsulate part of the the [core library API](#core-library-api).
 
 -   [ ] Plugin Support :material-chevron-triple-up:{ .priority-high title="High Priority" } **[v10.0.0]**
 
@@ -118,16 +125,19 @@ Some form of official plugin support for TagStudio, likely with its own API that
 -   [ ] Global Tags :material-chevron-triple-up:{ .priority-high title="High Priority" }
 -   [ ] Multiple Root Directories :material-chevron-triple-up:{ .priority-high title="High Priority" } **[v9.6.0]**
 -   [ ] Automatic Entry Relinking :material-chevron-triple-up:{ .priority-high title="High Priority" } **[v9.7.0]**
-    -   [ ] Detect Renames :material-chevron-triple-up:{ .priority-high title="High Priority" } **[v9.7.0]**
-    -   [ ] Detect Moves :material-chevron-triple-up:{ .priority-high title="High Priority" } **[v9.7.0]**
-    -   [ ] Detect Deletions :material-chevron-triple-up:{ .priority-high title="High Priority" } **[v9.7.0]**
+    -   [ ] Detect Renames :material-chevron-triple-up:{ .priority-high title="High Priority" }
+    -   [ ] Detect Moves :material-chevron-triple-up:{ .priority-high title="High Priority" }
+    -   [ ] Detect Deletions :material-chevron-triple-up:{ .priority-high title="High Priority" }
+    -   [ ] Performant :material-chevron-triple-up:{ .priority-high title="High Priority" }
+-   [ ] Background File Scanning :material-chevron-triple-up:{ .priority-high title="High Priority" } **[v9.7.0]**
 -   [x] Thumbnail Caching **[[v9.5.0](./changelog.md#950-2025-03-03)]**
+    -   [ ] Audio Waveform Caching :material-chevron-double-up:{ .priority-med title="Medium Priority" } **[v9.7.0]**
 
-### :material-grid: Entries
+### :material-grid: [Entries](../library/entry.md)
 
-Representations of files or file-like objects.
+Library representations of files or file-like objects.
 
--   [x] [File Entries](../library/entry.md) **[v1.0.0]**
+-   [x] File Entries **[v1.0.0]**
 -   [ ] Folder Entries :material-chevron-triple-up:{ .priority-high title="High Priority" }
 -   [ ] URL Entries / Bookmarks :material-chevron-up:{ .priority-low title="Low Priority" }
 -   [x] Fields
@@ -205,21 +215,21 @@ Discrete library objects representing [attributes](<https://en.wikipedia.org/wik
     -   [ ] Sort by File Modification Date :material-chevron-triple-up:{ .priority-high title="High Priority" } **[v9.6.0]**
     -   [ ] Sort by File Modification Date :material-chevron-triple-up:{ .priority-high title="High Priority" }
     -   [ ] Sort by Date Taken (Photos) :material-chevron-triple-up:{ .priority-high title="High Priority" } **[v9.6.0]**
--   [ ] OCR search :material-chevron-up:{ .priority-low title="Low Priority" }
+-   [ ] OCR Search :material-chevron-up:{ .priority-low title="Low Priority" }
 -   [ ] Fuzzy Search :material-chevron-up:{ .priority-low title="Low Priority" }
 
-### :material-format-list-checks: [Macros](../utilities/macro.md)
+### :material-file-cog: [Macros](../utilities/macro.md)
 
--   [ ] Standard, human readable format (TOML) :material-chevron-triple-up:{ .priority-high title="High Priority" } **[v9.5.4]**
+-   [ ] Standard, Human Readable Format (TOML) :material-chevron-triple-up:{ .priority-high title="High Priority" } **[v9.5.4]**
 -   [ ] Versioning System :material-chevron-triple-up:{ .priority-high title="High Priority" } **[v9.5.4]**
 -   [ ] Triggers **[v9.5.4]**
-    -   [ ] On new file :material-chevron-triple-up:{ .priority-high title="High Priority" }
-    -   [ ] On library refresh :material-chevron-triple-up:{ .priority-high title="High Priority" }
+    -   [ ] On File Added :material-chevron-triple-up:{ .priority-high title="High Priority" }
+    -   [ ] On Library Refresh :material-chevron-triple-up:{ .priority-high title="High Priority" }
     -   [ ] [...]
 -   [ ] Actions **[v9.5.4]**
-    -   [ ] Add tag(s) :material-chevron-triple-up:{ .priority-high title="High Priority" }
-    -   [ ] Add field(s) :material-chevron-triple-up:{ .priority-high title="High Priority" }
-    -   [ ] Set field content :material-chevron-triple-up:{ .priority-high title="High Priority" }
+    -   [ ] Add Tag(s) :material-chevron-triple-up:{ .priority-high title="High Priority" }
+    -   [ ] Add Field(s) :material-chevron-triple-up:{ .priority-high title="High Priority" }
+    -   [ ] Set Field Content :material-chevron-triple-up:{ .priority-high title="High Priority" }
     -   [ ] [...]
 
 ### :material-table-arrow-right: Sharable Data
@@ -231,16 +241,18 @@ Packs are intended as an easy way to import and export specific data between lib
     -   [ ] Importable
     -   [ ] Exportable
     -   [x] UUIDs + Namespaces :material-chevron-triple-up:{ .priority-high title="High Priority" }
-    -   [x] Standard, human readable format (TOML) :material-chevron-triple-up:{ .priority-high title="High Priority" }
+    -   [x] Standard, Human Readable Format (TOML) :material-chevron-triple-up:{ .priority-high title="High Priority" }
     -   [ ] Versioning System :material-chevron-double-up:{ .priority-med title="Medium Priority" }
--   [ ] Tag Packs **[v9.9.0]**
+-   [ ] Tag Packs :material-chevron-triple-up:{ .priority-high title="High Priority" } **[v9.9.0]**
     -   [ ] Importable :material-chevron-triple-up:{ .priority-high title="High Priority" }
     -   [ ] Exportable :material-chevron-triple-up:{ .priority-high title="High Priority" }
     -   [ ] UUIDs + Namespaces :material-chevron-triple-up:{ .priority-high title="High Priority" }
-    -   [ ] Standard, human readable format (TOML) :material-chevron-triple-up:{ .priority-high title="High Priority" }
+    -   [ ] Standard, Human Readable Format (TOML) :material-chevron-triple-up:{ .priority-high title="High Priority" }
     -   [ ] Versioning System :material-chevron-double-up:{ .priority-med title="Medium Priority" }
--   [ ] Macro Sharing **[v9.6.0]**
+-   [ ] Macro Sharing :material-chevron-triple-up:{ .priority-high title="High Priority" } **[v9.6.0]**
     -   [ ] Importable :material-chevron-triple-up:{ .priority-high title="High Priority" }
     -   [ ] Exportable :material-chevron-triple-up:{ .priority-high title="High Priority" }
+-   [ ] Sharable Entry Data :material-chevron-double-up:{ .priority-med title="Medium Priority" } **[v9.9.0]**
+    -   _Specifics of this are yet to be determined_
 -   [ ] Export Library to Human Readable Format :material-chevron-triple-up:{ .priority-high title="High Priority" } **[v10.0.0]**
     -   Intended to give users more flexible options with their data if they wish to migrate away from TagStudio
