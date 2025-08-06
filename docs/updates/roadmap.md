@@ -202,7 +202,7 @@ Discrete library objects representing [attributes](https://en.wikipedia.org/wiki
 </div>
 
 <div class="grid cards" markdown>
-- #### :material-magnify: Search
+- #### :material-magnify: [Search](../library/library_search.md)
 
     ---
     -   [x] Tag Search **[v8.0.0]**
@@ -239,14 +239,32 @@ Discrete library objects representing [attributes](https://en.wikipedia.org/wiki
 </div>
 
 <div class="grid cards" markdown>
+- #### :material-format-list-checks: [Macros](../utilities/macro.md)
+
+    ---
+    -   [ ] Standard, human readable format (TOML) :material-chevron-triple-up:{ .priority-high title="High Priority" } **[v9.5.4]**
+    -   [ ] Versioning System :material-chevron-triple-up:{ .priority-high title="High Priority" } **[v9.5.4]**
+    -   [ ] Triggers **[v9.5.4]**
+        -   [ ] On new file :material-chevron-triple-up:{ .priority-high title="High Priority" }
+        -   [ ] On library refresh :material-chevron-triple-up:{ .priority-high title="High Priority" }
+        -   [ ] [...]
+    -   [ ] Actions **[v9.5.4]**
+        -   [ ] Add tag(s) :material-chevron-triple-up:{ .priority-high title="High Priority" }
+        -   [ ] Add field(s) :material-chevron-triple-up:{ .priority-high title="High Priority" }
+        -   [ ] Set field content :material-chevron-triple-up:{ .priority-high title="High Priority" }
+        -   [ ] [...]
+
+</div>
+
+<div class="grid cards" markdown>
 - #### :material-table-arrow-right: Sharable Data
 Sharable TagStudio library data in the form of data packs (tags, colors, etc.) or other formats.
 Packs are intended as an easy way to import and export specific data between libraries and users, while export-only formats are intended to be imported by other programs.
 
     ---
-    -   [ ] Color Packs **[v9.6.0]**
-        -   [ ] Importable :material-chevron-triple-up:{ .priority-high title="High Priority" }
-        -   [ ] Exportable :material-chevron-triple-up:{ .priority-high title="High Priority" }
+    -   [ ] Color Packs :material-chevron-triple-up:{ .priority-high title="High Priority" } **[v9.6.0]**
+        -   [ ] Importable
+        -   [ ] Exportable
         -   [x] UUIDs + Namespaces :material-chevron-triple-up:{ .priority-high title="High Priority" }
         -   [x] Standard, human readable format (TOML) :material-chevron-triple-up:{ .priority-high title="High Priority" }
         -   [ ] Versioning System :material-chevron-double-up:{ .priority-med title="Medium Priority" }
@@ -256,23 +274,10 @@ Packs are intended as an easy way to import and export specific data between lib
         -   [ ] UUIDs + Namespaces :material-chevron-triple-up:{ .priority-high title="High Priority" }
         -   [ ] Standard, human readable format (TOML) :material-chevron-triple-up:{ .priority-high title="High Priority" }
         -   [ ] Versioning System :material-chevron-double-up:{ .priority-med title="Medium Priority" }
+    -   [ ] Macro Sharing **[v9.6.0]**
+        -   [ ] Importable :material-chevron-triple-up:{ .priority-high title="High Priority" }
+        -   [ ] Exportable :material-chevron-triple-up:{ .priority-high title="High Priority" }
     -   [ ] Export Library to Human Readable Format :material-chevron-triple-up:{ .priority-high title="High Priority" } **[v10.0.0]**
         -   Intended to give users more flexible options with their data if they wish to migrate away from TagStudio
 
 </div>
-
-#### [Macros](../utilities/macro.md)
-
--   [ ] Sharable Macros [MEDIUM]
-    -   [ ] Standard notation format (TOML) contacting macro instructions [HIGH]
-    -   [ ] Exportable [HIGH]
-    -   [ ] Importable [HIGH]
--   [ ] Triggers [HIGH]
-    -   [ ] On new file [HIGH]
-    -   [ ] On library refresh [HIGH]
-    -   [ ] [...]
--   [ ] Actions [HIGH]
-    -   [ ] Add tag(s) [HIGH]
-    -   [ ] Add field(s) [HIGH]
-    -   [ ] Set field content [HIGH]
-    -   [ ] [...]
