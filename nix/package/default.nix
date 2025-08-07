@@ -7,11 +7,8 @@
   stdenv,
   wrapGAppsHook,
 
-  pillow-jxl-plugin,
   pyside6,
   vtf2img,
-
-  withJXLSupport ? false,
 }:
 
 let
@@ -59,7 +56,6 @@ python3Packages.buildPythonApplication {
       lib.makeLibraryPath [ pipewire ]
     }";
 
-  pythonRemoveDeps = lib.optional (!withJXLSupport) [ "pillow_jxl" ];
   pythonRelaxDeps = [
     "numpy"
     "pillow"
@@ -82,6 +78,7 @@ python3Packages.buildPythonApplication {
       opencv-python
       pillow
       pillow-heif
+			pillow-jpls
       pydantic
       pydub
       pyside6
@@ -92,8 +89,7 @@ python3Packages.buildPythonApplication {
       toml
       ujson
       vtf2img
-    ]
-    ++ lib.optional withJXLSupport pillow-jxl-plugin;
+    ];
 
   disabledTests = [
     # INFO: These tests require modifications to a library, which does not work

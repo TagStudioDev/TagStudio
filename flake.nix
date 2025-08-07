@@ -32,11 +32,6 @@
             let
               python3Packages = pkgs.python312Packages;
 
-              pillow-jxl-plugin = python3Packages.callPackage ./nix/package/pillow-jxl-plugin.nix {
-                inherit (pkgs) cmake;
-                inherit pyexiv2;
-              };
-              pyexiv2 = python3Packages.callPackage ./nix/package/pyexiv2.nix { inherit (pkgs) exiv2; };
               vtf2img = python3Packages.callPackage ./nix/package/vtf2img.nix { };
             in
             rec {
@@ -64,11 +59,13 @@
                   else
                     python3Packages.pyside6;
 
-                inherit pillow-jxl-plugin vtf2img;
+                inherit vtf2img;
               };
-              tagstudio-jxl = tagstudio.override { withJXLSupport = true; };
+              tagstudio-jxl = lib.derivations.warnOnInstantiate 
+								"Warning: The jxl fucntionality has been added to the 'tagstudio' package. The 'tagstudio-jxl' package will be removed in a future release." 
+								tagstudio;
 
-              inherit pillow-jxl-plugin pyexiv2 vtf2img;
+              inherit vtf2img;
             };
 
           devShells = rec {
