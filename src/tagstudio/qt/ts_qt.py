@@ -1418,7 +1418,6 @@ class QtDriver(DriverMixin, QObject):
     def update_thumbs(self):
         """Update search thumbnails."""
         self._update_thumb_count()
-        # logger.info(f'Current Page: {self.cur_page_idx}, Stack Length:{len(self.nav_stack)}')
         with self.thumb_job_queue.mutex:
             # Cancels all thumb jobs waiting to be started
             self.thumb_job_queue.queue.clear()
@@ -1444,6 +1443,8 @@ class QtDriver(DriverMixin, QObject):
         logger.info("[QtDriver] Done! Processing ItemThumbs...")
         for index, item_thumb in enumerate(self.item_thumbs, start=0):
             entry = None
+            item_thumb.set_mode(None)
+
             try:
                 entry = entries[index]
             except IndexError:
