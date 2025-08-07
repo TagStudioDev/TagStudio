@@ -15,6 +15,7 @@ from PySide6.QtGui import (
     QBitmap,
     QBrush,
     QColor,
+    QLinearGradient,
     QMouseEvent,
     QPainter,
     QPen,
@@ -120,7 +121,7 @@ class MediaPlayer(QGraphicsView):
             0,
             0,
             self.size().width(),
-            self.size().height(),
+            12,
             QPen(QColor(0, 0, 0, 0)),
             QBrush(QColor(0, 0, 0, 0)),
         )
@@ -284,12 +285,15 @@ class MediaPlayer(QGraphicsView):
         Args:
             opacity(int): The opacity value, from 0-255.
         """
-        self.tint.setBrush(QBrush(QColor(0, 0, 0, opacity)))
+        gradient = QLinearGradient(0, 0, 0, self.height())
+        gradient.setColorAt(0.8, QColor(0, 0, 0, 0))
+        gradient.setColorAt(1, QColor(0, 0, 0, opacity))
+        self.tint.setBrush(QBrush(gradient))
 
     @override
     def underMouse(self) -> bool:  # noqa: N802
-        self.animation.setStartValue(self.tint.brush().color().alpha())
-        self.animation.setEndValue(150)
+        self.animation.setStartValue(0)
+        self.animation.setEndValue(160)
         self.animation.setDuration(125)
         self.animation.start()
         self.timeline_slider.show()
@@ -301,7 +305,7 @@ class MediaPlayer(QGraphicsView):
 
     @override
     def releaseMouse(self) -> None:  # noqa: N802
-        self.animation.setStartValue(self.tint.brush().color().alpha())
+        self.animation.setStartValue(160)
         self.animation.setEndValue(0)
         self.animation.setDuration(125)
         self.animation.start()
