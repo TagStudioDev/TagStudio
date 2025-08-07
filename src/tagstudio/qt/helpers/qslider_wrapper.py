@@ -4,9 +4,9 @@
 
 from typing import override
 
+import structlog
 from PySide6.QtGui import QMouseEvent
 from PySide6.QtWidgets import QSlider, QStyle, QStyleOptionSlider
-import structlog
 
 logger = structlog.get_logger(__name__)
 
