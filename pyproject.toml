@@ -25,11 +25,11 @@ dependencies = [
     "rawpy~=0.24",
     "Send2Trash~=1.8",
     "SQLAlchemy~=2.0",
+    "srctools~=2.6",
     "structlog~=25.3",
     "toml~=0.10",
     "typing_extensions~=4.13",
     "ujson~=5.10",
-    "vtf2img~=0.1",
 ]
 
 [project.optional-dependencies]
