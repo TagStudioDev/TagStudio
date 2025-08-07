@@ -67,6 +67,9 @@ class MediaPlayer(QGraphicsView):
             QSlider::add-page:horizontal {
                 background: #65000000;
                 border-radius: 3px;
+                border-style: solid;
+                border-width: 1px;
+                border-color: #65444444;
             }
 
             QSlider::sub-page:horizontal {
