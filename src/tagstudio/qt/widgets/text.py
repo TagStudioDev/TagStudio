@@ -21,7 +21,7 @@ class TextWidget(FieldWidget):
         self.text_label = QLabel()
         self.text_label.setStyleSheet("font-size: 12px")
         self.text_label.setWordWrap(True)
-        self.text_label.setTextFormat(Qt.TextFormat.RichText)
+        self.text_label.setTextFormat(Qt.TextFormat.MarkdownText)
         self.text_label.setOpenExternalLinks(True)
         self.text_label.setTextInteractionFlags(Qt.TextInteractionFlag.TextBrowserInteraction)
         self.base_layout.addWidget(self.text_label)
