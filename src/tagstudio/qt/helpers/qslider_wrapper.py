@@ -6,6 +6,9 @@ from typing import override
 
 from PySide6.QtGui import QMouseEvent
 from PySide6.QtWidgets import QSlider, QStyle, QStyleOptionSlider
+import structlog
+
+logger = structlog.get_logger(__name__)
 
 
 class QClickSlider(QSlider):
@@ -35,9 +38,14 @@ class QClickSlider(QSlider):
         was_slider_clicked = handle_rect.contains(int(ev.position().x()), int(ev.position().y()))
 
         if not was_slider_clicked:
+            self.setSliderDown(True)
             self.setValue(
                 QStyle.sliderValueFromPosition(self.minimum(), self.maximum(), ev.x(), self.width())
             )
-            self.mouse_pressed = True
 
         super().mousePressEvent(ev)
+
+    @override
+    def mouseReleaseEvent(self, ev: QMouseEvent) -> None:
+        self.setSliderDown(False)
+        return super().mouseReleaseEvent(ev)
