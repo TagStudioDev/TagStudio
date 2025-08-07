@@ -7,20 +7,32 @@ from pathlib import Path
 from time import gmtime
 from typing import override
 
+import structlog
 from PIL import Image, ImageDraw
 from PySide6.QtCore import QEvent, QObject, QRectF, QSize, Qt, QUrl, QVariantAnimation
-from PySide6.QtGui import QAction, QBitmap, QBrush, QColor, QPen, QRegion, QResizeEvent
+from PySide6.QtGui import (
+    QAction,
+    QBitmap,
+    QBrush,
+    QColor,
+    QMouseEvent,
+    QPainter,
+    QPen,
+    QRegion,
+    QResizeEvent,
+)
 from PySide6.QtMultimedia import QAudioOutput, QMediaDevices, QMediaPlayer
 from PySide6.QtMultimediaWidgets import QGraphicsVideoItem
 from PySide6.QtSvgWidgets import QSvgWidget
 from PySide6.QtWidgets import (
     QGraphicsScene,
     QGraphicsView,
-    QGridLayout,
     QHBoxLayout,
     QLabel,
     QSizePolicy,
     QSlider,
+    QStyleOptionGraphicsItem,
+    QVBoxLayout,
     QWidget,
 )
 
@@ -29,6 +41,8 @@ from tagstudio.qt.translations import Translations
 
 if typing.TYPE_CHECKING:
     from tagstudio.qt.ts_qt import QtDriver
+
+logger = structlog.get_logger(__name__)
 
 
 class MediaPlayer(QGraphicsView):
@@ -46,70 +60,37 @@ class MediaPlayer(QGraphicsView):
         slider_style = """
             QSlider {
                 background: transparent;
-            }
-
-            QSlider::groove:horizontal {
-                border: 1px solid #999999;
-                height: 2px;
-                margin: 2px 0;
-                border-radius: 2px;
-            }
-
-            QSlider::handle:horizontal {
-                background: #6ea0ff;
-                border: 1px solid #5c5c5c;
-                width: 12px;
-                height: 12px;
-                margin: -6px 0; 
-                border-radius: 6px;
+                margin-right: 6px;
             }
 
             QSlider::add-page:horizontal {
-                background: #3f4144;
-                height: 2px;
-                margin: 2px 0;
-                border-radius: 2px;
+                background: #65000000;
+                border-radius: 3px;
             }
 
             QSlider::sub-page:horizontal {
-                background: #6ea0ff;
-                height: 2px;
-                margin: 2px 0;
-                border-radius: 2px;
+                background: #88FFFFFF;
+                border-radius: 3px;
             }
 
-            QSlider::groove:vertical {
-                border: 1px solid #999999;
-                width: 2px;
-                margin: 0 2px;
-                border-radius: 2px;
+            QSlider::groove:horizontal {
+                background: transparent;
+                height: 6px;
             }
 
-            QSlider::handle:vertical {
-                background: #6ea0ff;
-                border: 1px solid #5c5c5c;
+            QSlider::handle:horizontal {
+                background: #FFFFFF;
                 width: 12px;
-                height: 12px;
-                margin: 0 -6px;
+                margin: -3px 0;
                 border-radius: 6px;
-            }
-
-            QSlider::add-page:vertical {
-                background: #6ea0ff;
-                width: 2px;
-                margin: 0 2px;
-                border-radius: 2px;
-            }
-
-            QSlider::sup-page:vertical {
-                background: #3f4144;
-                width: 2px;
-                margin: 0 2px;
-                border-radius: 2px;
             }
         """
 
-        # setup the scene
+        fixed_policy = QSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
+        retain_policy = QSizePolicy()
+        retain_policy.setRetainSizeWhenHidden(True)
+
+        # Set up the scene
         self.installEventFilter(self)
         self.setScene(QGraphicsScene(self))
         self.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
@@ -121,6 +102,7 @@ class MediaPlayer(QGraphicsView):
                border: none;
             }
         """)
+        self.setObjectName("mediaPlayer")
         self.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         self.video_preview = VideoPreview()
@@ -129,7 +111,7 @@ class MediaPlayer(QGraphicsView):
         self.video_preview.setAcceptedMouseButtons(Qt.MouseButton.LeftButton)
         self.video_preview.installEventFilter(self)
 
-        # animation
+        # Animation
         self.animation = QVariantAnimation(self)
         self.animation.valueChanged.connect(lambda value: self.set_tint_opacity(value))
 
@@ -143,7 +125,7 @@ class MediaPlayer(QGraphicsView):
             QBrush(QColor(0, 0, 0, 0)),
         )
 
-        # setup the player
+        # Set up the player
         self.filepath: Path | None = None
         self.player = QMediaPlayer()
         self.player.setAudioOutput(QAudioOutput(QMediaDevices().defaultAudioOutput(), self.player))
@@ -163,33 +145,35 @@ class MediaPlayer(QGraphicsView):
         self.player.audioOutput().mutedChanged.connect(self.muted_changed)
 
         # Media controls
-        self.master_controls = QWidget()
-        master_layout = QGridLayout(self.master_controls)
-        master_layout.setContentsMargins(0, 0, 0, 0)
-        self.master_controls.setStyleSheet("background: transparent;")
-        self.master_controls.setMinimumHeight(75)
+        self.controls = QWidget()
+        self.controls.setObjectName("controls")
+        root_layout = QVBoxLayout(self.controls)
+        root_layout.setContentsMargins(6, 0, 6, 0)
+        root_layout.setSpacing(6)
+        self.controls.setStyleSheet("background: transparent;")
+        self.controls.setMinimumHeight(48)
 
-        self.pslider = QClickSlider()
-        self.pslider.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
-        self.pslider.setTickPosition(QSlider.TickPosition.NoTicks)
-        self.pslider.setSingleStep(1)
-        self.pslider.setOrientation(Qt.Orientation.Horizontal)
-        self.pslider.setStyleSheet(slider_style)
-        self.pslider.sliderReleased.connect(self.slider_released)
-        self.pslider.valueChanged.connect(self.slider_value_changed)
-        self.pslider.hide()
+        self.timeline_slider = QClickSlider()
+        self.timeline_slider.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+        self.timeline_slider.setTickPosition(QSlider.TickPosition.NoTicks)
+        self.timeline_slider.setSingleStep(1)
+        self.timeline_slider.setOrientation(Qt.Orientation.Horizontal)
+        self.timeline_slider.setStyleSheet(slider_style)
+        self.timeline_slider.sliderReleased.connect(self.slider_released)
+        self.timeline_slider.valueChanged.connect(self.slider_value_changed)
+        self.timeline_slider.hide()
+        self.timeline_slider.setFixedHeight(12)
 
-        master_layout.addWidget(self.pslider, 0, 0, 0, 2)
-        master_layout.setAlignment(self.pslider, Qt.AlignmentFlag.AlignCenter)
-
-        fixed_policy = QSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
+        root_layout.addWidget(self.timeline_slider)
+        root_layout.setAlignment(self.timeline_slider, Qt.AlignmentFlag.AlignBottom)
 
         self.sub_controls = QWidget()
         self.sub_controls.setMouseTracking(True)
         self.sub_controls.installEventFilter(self)
         sub_layout = QHBoxLayout(self.sub_controls)
-        sub_layout.setContentsMargins(0, 0, 0, 0)
+        sub_layout.setContentsMargins(0, 0, 0, 6)
         self.sub_controls.setStyleSheet("background: transparent;")
+        self.sub_controls.setMinimumHeight(16)
 
         self.play_pause = QSvgWidget()
         self.play_pause.setCursor(Qt.CursorShape.PointingHandCursor)
@@ -218,9 +202,6 @@ class MediaPlayer(QGraphicsView):
         sub_layout.addWidget(self.mute_unmute)
         sub_layout.setAlignment(self.mute_unmute, Qt.AlignmentFlag.AlignLeft)
 
-        retain_policy = QSizePolicy()
-        retain_policy.setRetainSizeWhenHidden(True)
-
         self.volume_slider = QClickSlider()
         self.volume_slider.setOrientation(Qt.Orientation.Horizontal)
         self.volume_slider.setValue(int(self.player.audioOutput().volume() * 100))
@@ -228,24 +209,20 @@ class MediaPlayer(QGraphicsView):
         self.volume_slider.setStyleSheet(slider_style)
         self.volume_slider.setSizePolicy(retain_policy)
         self.volume_slider.hide()
+        self.volume_slider.setMinimumWidth(32)
 
         sub_layout.addWidget(self.volume_slider)
         sub_layout.setAlignment(self.volume_slider, Qt.AlignmentFlag.AlignLeft)
-
-        # Adding a stretch here ensures the rest of the widgets
-        # in the sub_layout will not stretch to fill the remaining
-        # space.
         sub_layout.addStretch()
 
-        master_layout.addWidget(self.sub_controls, 1, 0)
-
         self.position_label = QLabel("0:00")
-        self.position_label.setStyleSheet("color: #ffffff;")
-        master_layout.addWidget(self.position_label, 1, 1)
-        master_layout.setAlignment(self.position_label, Qt.AlignmentFlag.AlignRight)
+        self.position_label.setStyleSheet("color: white;")
+        sub_layout.addWidget(self.position_label)
+        root_layout.setAlignment(self.position_label, Qt.AlignmentFlag.AlignRight)
         self.position_label.hide()
 
-        self.scene().addWidget(self.master_controls)
+        root_layout.addWidget(self.sub_controls)
+        self.scene().addWidget(self.controls)
 
         self.setContextMenuPolicy(Qt.ContextMenuPolicy.ActionsContextMenu)
         autoplay_action = QAction(Translations["media_player.autoplay"], self)
@@ -263,7 +240,7 @@ class MediaPlayer(QGraphicsView):
         self.loop = loop_action
         self.toggle_loop()
 
-        # start the player muted
+        # Start the player muted
         self.player.audioOutput().setMuted(True)
 
     def set_video_output(self, video: QGraphicsVideoItem):
@@ -309,30 +286,40 @@ class MediaPlayer(QGraphicsView):
         """
         self.tint.setBrush(QBrush(QColor(0, 0, 0, opacity)))
 
+    @override
     def underMouse(self) -> bool:  # noqa: N802
         self.animation.setStartValue(self.tint.brush().color().alpha())
-        self.animation.setEndValue(100)
-        self.animation.setDuration(250)
+        self.animation.setEndValue(150)
+        self.animation.setDuration(125)
         self.animation.start()
-        self.pslider.show()
+        self.timeline_slider.show()
         self.play_pause.show()
         self.mute_unmute.show()
         self.position_label.show()
 
         return super().underMouse()
 
+    @override
     def releaseMouse(self) -> None:  # noqa: N802
         self.animation.setStartValue(self.tint.brush().color().alpha())
         self.animation.setEndValue(0)
-        self.animation.setDuration(500)
+        self.animation.setDuration(125)
         self.animation.start()
-        self.pslider.hide()
+        self.timeline_slider.hide()
         self.play_pause.hide()
         self.mute_unmute.hide()
         self.volume_slider.hide()
         self.position_label.hide()
 
         return super().releaseMouse()
+
+    @override
+    def mousePressEvent(self, event: QMouseEvent) -> None:
+        # Pause media if background is clicked, with buffer around controls
+        buffer: int = 6
+        if event.y() < (self.height() - self.controls.height() - buffer):
+            self.toggle_play()
+        return super().mousePressEvent(event)
 
     @override
     def eventFilter(self, arg__1: QObject, arg__2: QEvent) -> bool:
@@ -345,8 +332,6 @@ class MediaPlayer(QGraphicsView):
                 self.toggle_play()
             elif arg__1 == self.mute_unmute:
                 self.toggle_mute()
-            else:
-                self.toggle_play()
         elif arg__2.type() is QEvent.Type.Enter:
             if arg__1 == self or arg__1 == self.video_preview:
                 self.underMouse()
@@ -447,7 +432,7 @@ class MediaPlayer(QGraphicsView):
 
     def slider_released(self) -> None:
         was_playing = self.player.isPlaying()
-        self.player.setPosition(self.pslider.value())
+        self.player.setPosition(self.timeline_slider.value())
 
         # Setting position causes the player to start playing again.
         # We should reset back to initial state.
@@ -455,9 +440,9 @@ class MediaPlayer(QGraphicsView):
             self.player.pause()
 
     def player_position_changed(self, position: int) -> None:
-        if not self.pslider.isSliderDown():
+        if not self.timeline_slider.isSliderDown():
             # User isn't using the slider, so update position in widgets.
-            self.pslider.setValue(position)
+            self.timeline_slider.setValue(position)
             current = self.format_time(self.player.position())
             duration = self.format_time(self.player.duration())
             self.position_label.setText(f"{current} / {duration}")
@@ -465,8 +450,8 @@ class MediaPlayer(QGraphicsView):
     def media_status_changed(self, status: QMediaPlayer.MediaStatus) -> None:
         # We can only set the slider duration once we know the size of the media
         if status == QMediaPlayer.MediaStatus.LoadedMedia and self.filepath is not None:
-            self.pslider.setMinimum(0)
-            self.pslider.setMaximum(self.player.duration())
+            self.timeline_slider.setMinimum(0)
+            self.timeline_slider.setMaximum(self.player.duration())
 
             current = self.format_time(self.player.position())
             duration = self.format_time(self.player.duration())
@@ -475,15 +460,15 @@ class MediaPlayer(QGraphicsView):
     def _update_controls(self, size: QSize) -> None:
         self.scene().setSceneRect(0, 0, size.width(), size.height())
 
-        # occupy entire scene width
-        self.master_controls.setMinimumWidth(size.width())
-        self.master_controls.setMaximumWidth(size.width())
+        # Occupy entire scene width
+        self.controls.setMinimumWidth(size.width())
+        self.controls.setMaximumWidth(size.width())
 
-        self.master_controls.move(0, int(self.scene().height() - self.master_controls.height()))
+        self.controls.move(0, int(self.scene().height() - self.controls.height()))
 
-        ps_w = self.master_controls.width() - 5
-        self.pslider.setMinimumWidth(ps_w)
-        self.pslider.setMaximumWidth(ps_w)
+        ps_w = self.controls.width() - 5
+        self.timeline_slider.setMinimumWidth(ps_w)
+        self.timeline_slider.setMaximumWidth(ps_w)
 
         # Changing the orientation of the volume slider to
         # make it easier to use in smaller sizes.
@@ -516,7 +501,9 @@ class VideoPreview(QGraphicsVideoItem):
         return QRectF(0, 0, self.size().width(), self.size().height())
 
     @override
-    def paint(self, painter, option, widget=None) -> None:
+    def paint(
+        self, painter: QPainter, option: QStyleOptionGraphicsItem, widget: QWidget | None = None
+    ) -> None:
         # painter.brush().setColor(QColor(0, 0, 0, 255))
         # You can set any shape you want here.
         # RoundedRect is the standard rectangle with rounded corners.
