@@ -433,6 +433,10 @@ class MediaPlayer(QGraphicsView):
         self.mute_unmute.load(icon)
 
     def slider_value_changed(self, value: int) -> None:
+        if self.timeline_slider.isSliderDown():
+            self.player.setPosition(value)
+            self.player.setPlaybackRate(0.0001)
+
         current = self.format_time(value)
         duration = self.format_time(self.player.duration())
         self.position_label.setText(f"{current} / {duration}")
@@ -440,6 +444,7 @@ class MediaPlayer(QGraphicsView):
     def slider_released(self) -> None:
         was_playing = self.player.isPlaying()
         self.player.setPosition(self.timeline_slider.value())
+        self.player.setPlaybackRate(1)  # Restore from slider_value_changed()
 
         # Setting position causes the player to start playing again.
         # We should reset back to initial state.
