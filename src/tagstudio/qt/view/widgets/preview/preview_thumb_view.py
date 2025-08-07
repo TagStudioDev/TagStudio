@@ -95,8 +95,6 @@ class PreviewThumbView(QWidget):
             self.__media_player_video_changed_callback
         )
 
-        self.__mp_max_size = QSize(*self.__img_button_size)
-
         self.__media_player_page = QWidget()
         self.__stacked_page_setup(self.__media_player_page, self.__media_player)
 
@@ -131,7 +129,6 @@ class PreviewThumbView(QWidget):
         self, _timestamp: float, img: QPixmap, _size: QSize, _path: Path
     ) -> None:
         self.__button_wrapper.setIcon(img)
-        self.__mp_max_size = img.size()
 
     def __thumb_renderer_updated_ratio_callback(self, ratio: float) -> None:
         self.__image_ratio = ratio
@@ -174,25 +171,8 @@ class PreviewThumbView(QWidget):
         self.__preview_gif.setMaximumSize(adj_size)
         self.__preview_gif.setMinimumSize(adj_size)
 
-        if not self.__media_player.player.hasVideo():
-            # ensure we do not exceed the thumbnail size
-            mp_width = (
-                adj_size.width()
-                if adj_size.width() < self.__mp_max_size.width()
-                else self.__mp_max_size.width()
-            )
-            mp_height = (
-                adj_size.height()
-                if adj_size.height() < self.__mp_max_size.height()
-                else self.__mp_max_size.height()
-            )
-            mp_size = QSize(mp_width, mp_height)
-            self.__media_player.setMinimumSize(mp_size)
-            self.__media_player.setMaximumSize(mp_size)
-        else:
-            # have video, so just resize as normal
-            self.__media_player.setMaximumSize(adj_size)
-            self.__media_player.setMinimumSize(adj_size)
+        self.__media_player.setMaximumSize(adj_size)
+        self.__media_player.setMinimumSize(adj_size)
 
         proxy_style = RoundedPixmapStyle(radius=8)
         self.__preview_gif.setStyle(proxy_style)

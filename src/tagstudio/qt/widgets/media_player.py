@@ -17,7 +17,6 @@ from PySide6.QtGui import (
     QColor,
     QLinearGradient,
     QMouseEvent,
-    QPainter,
     QPen,
     QRegion,
     QResizeEvent,
@@ -32,7 +31,6 @@ from PySide6.QtWidgets import (
     QLabel,
     QSizePolicy,
     QSlider,
-    QStyleOptionGraphicsItem,
     QVBoxLayout,
     QWidget,
 )
@@ -93,8 +91,9 @@ class MediaPlayer(QGraphicsView):
         fixed_policy = QSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
         retain_policy = QSizePolicy()
         retain_policy.setRetainSizeWhenHidden(True)
+        self.filepath: Path | None = None
 
-        # Set up the scene
+        # Graphics Scene
         self.installEventFilter(self)
         self.setScene(QGraphicsScene(self))
         self.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
@@ -115,11 +114,8 @@ class MediaPlayer(QGraphicsView):
         self.video_preview.setAcceptedMouseButtons(Qt.MouseButton.LeftButton)
         self.video_preview.installEventFilter(self)
 
-        # Animation
         self.animation = QVariantAnimation(self)
         self.animation.valueChanged.connect(lambda value: self.set_tint_opacity(value))
-
-        # Set up the tint.
         self.tint = self.scene().addRect(
             0,
             0,
@@ -129,26 +125,20 @@ class MediaPlayer(QGraphicsView):
             QBrush(QColor(0, 0, 0, 0)),
         )
 
-        # Set up the player
-        self.filepath: Path | None = None
+        # Player
         self.player = QMediaPlayer()
         self.player.setAudioOutput(QAudioOutput(QMediaDevices().defaultAudioOutput(), self.player))
+        self.is_paused = (
+            False  # Q MediaPlayer.PlaybackState shows StoppedState when changing tracks
+        )
 
-        # Used to keep track of play state.
-        # It would be nice if we could use QMediaPlayer.PlaybackState,
-        # but this will always show StoppedState when changing
-        # tracks. Therefore, we wouldn't know if the previous
-        # state was paused or playing
-        self.is_paused = False
-
-        # Subscribe to player events from MediaPlayer
         self.player.positionChanged.connect(self.player_position_changed)
         self.player.mediaStatusChanged.connect(self.media_status_changed)
         self.player.playingChanged.connect(self.playing_changed)
         self.player.hasVideoChanged.connect(self.has_video_changed)
         self.player.audioOutput().mutedChanged.connect(self.muted_changed)
 
-        # Media controls
+        # Media Controls
         self.controls = QWidget()
         self.controls.setObjectName("controls")
         root_layout = QVBoxLayout(self.controls)
@@ -244,7 +234,6 @@ class MediaPlayer(QGraphicsView):
         self.loop = loop_action
         self.toggle_loop()
 
-        # Start the player muted
         self.player.audioOutput().setMuted(True)
 
     def set_video_output(self, video: QGraphicsVideoItem):
@@ -258,7 +247,6 @@ class MediaPlayer(QGraphicsView):
     def toggle_loop(self) -> None:
         self.driver.settings.loop = self.loop.isChecked()
         self.driver.settings.save()
-
         self.player.setLoops(-1 if self.driver.settings.loop else 1)
 
     def apply_rounded_corners(self) -> None:
@@ -361,9 +349,7 @@ class MediaPlayer(QGraphicsView):
             ms: Time in ms
 
         Returns:
-            A formatted time:
-
-            "1:43"
+            A formatted time: "1:43"
 
             The formatted time will only include the hour if
             the provided time is at least 60 minutes.
@@ -446,14 +432,13 @@ class MediaPlayer(QGraphicsView):
         self.player.setPosition(self.timeline_slider.value())
         self.player.setPlaybackRate(1)  # Restore from slider_value_changed()
 
-        # Setting position causes the player to start playing again.
-        # We should reset back to initial state.
+        # Setting position causes the player to start playing again
         if not was_playing:
             self.player.pause()
 
     def player_position_changed(self, position: int) -> None:
         if not self.timeline_slider.isSliderDown():
-            # User isn't using the slider, so update position in widgets.
+            # User isn't using the slider, so update position in widgets
             self.timeline_slider.setValue(position)
             current = self.format_time(self.player.position())
             duration = self.format_time(self.player.duration())
@@ -482,15 +467,6 @@ class MediaPlayer(QGraphicsView):
         self.timeline_slider.setMinimumWidth(ps_w)
         self.timeline_slider.setMaximumWidth(ps_w)
 
-        # Changing the orientation of the volume slider to
-        # make it easier to use in smaller sizes.
-        orientation = self.volume_slider.orientation()
-        if size.width() <= 175 and orientation is Qt.Orientation.Horizontal:
-            self.volume_slider.setOrientation(Qt.Orientation.Vertical)
-            self.volume_slider.setMaximumHeight(30)
-        elif size.width() > 175 and orientation is Qt.Orientation.Vertical:
-            self.volume_slider.setOrientation(Qt.Orientation.Horizontal)
-
         if self.video_preview:
             self.video_preview.setSize(self.size())
             if self.player.hasVideo():
@@ -511,14 +487,3 @@ class VideoPreview(QGraphicsVideoItem):
     @override
     def boundingRect(self):
         return QRectF(0, 0, self.size().width(), self.size().height())
-
-    @override
-    def paint(
-        self, painter: QPainter, option: QStyleOptionGraphicsItem, widget: QWidget | None = None
-    ) -> None:
-        # painter.brush().setColor(QColor(0, 0, 0, 255))
-        # You can set any shape you want here.
-        # RoundedRect is the standard rectangle with rounded corners.
-        # With 2nd and 3rd parameter you can tweak the curve until you get what you expect
-
-        super().paint(painter, option, widget)
