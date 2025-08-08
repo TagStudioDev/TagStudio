@@ -3,10 +3,11 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 import structlog
+from wcmatch import pathlib
 
 from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.library.alchemy.models import Entry
-from tagstudio.core.utils.refresh_dir import GLOBAL_IGNORE_SET
+from tagstudio.core.library.ignore import PATH_GLOB_FLAGS, Ignore
 
 logger = structlog.get_logger()
 
@@ -25,7 +26,9 @@ class MissingRegistry:
 
     def refresh_missing_files(self) -> Iterator[int]:
         """Track the number of entries that point to an invalid filepath."""
+        assert self.library.library_dir
         logger.info("[refresh_missing_files] Refreshing missing files...")
+
         self.missing_file_entries = []
         for i, entry in enumerate(self.library.all_entries()):
             full_path = self.library.library_dir / entry.path
@@ -38,16 +41,15 @@ class MissingRegistry:
 
         Works if files were just moved to different subfolders and don't have duplicate names.
         """
-        matches = []
-        for path in self.library.library_dir.glob(f"**/{match_entry.path.name}"):
-            # Ensure matched file isn't in a globally ignored folder
-            skip: bool = False
-            for part in path.parts:
-                if part in GLOBAL_IGNORE_SET:
-                    skip = True
-                    break
-            if skip:
-                continue
+        assert self.library.library_dir
+        matches: list[Path] = []
+
+        ignore_patterns = Ignore.get_patterns(self.library.library_dir)
+        for path in pathlib.Path(str(self.library.library_dir)).glob(
+            f"***/{match_entry.path.name}",
+            flags=PATH_GLOB_FLAGS,
+            exclude=ignore_patterns,
+        ):
             if path.name == match_entry.path.name:
                 new_path = Path(path).relative_to(self.library.library_dir)
                 matches.append(new_path)
