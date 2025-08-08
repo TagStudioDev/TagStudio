@@ -10,15 +10,15 @@ TagStudio is a photo & file organization application with an underlying tag-base
 
 <figure width="60%" markdown="span">
 
-  ![TagStudio screenshot](./assets/screenshot.png)
+![TagStudio screenshot](./assets/screenshot.png)
 
   <figcaption>TagStudio Alpha v9.5.0 running on macOS Sequoia.</figcaption>
 
 </figure>
 
-## Feature Roadmap
+## Roadmap
 
-The [Feature Roadmap](./updates/roadmap.md) lists all of the planned core features for TagStudio to be considered "feature complete" along with estimated release milestones. The development and testing of these features takes priority over all other requested or submitted features unless they are later added to this roadmap. This helps ensure that TagStudio eventually sees a full release and becomes more usable by more people more quickly.
+The feature [roadmap](./updates/roadmap.md) lists all of the planned core features for TagStudio to be considered "feature complete" along with estimated release milestones. The development and testing of these features takes priority over all other requested or submitted features unless they are later added to this roadmap. This helps ensure that TagStudio eventually sees a full release and becomes more usable by more people more quickly.
 
 ## Current Features
 
