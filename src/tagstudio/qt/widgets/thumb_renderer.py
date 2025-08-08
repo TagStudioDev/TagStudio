@@ -1454,7 +1454,7 @@ class ThumbRenderer(QObject):
                 if not image:
                     image = (
                         render_unlinked((adj_size, adj_size), pixel_ratio)
-                        if not filepath.exists()
+                        if not filepath.exists() or filepath.is_dir()
                         else render_default((adj_size, adj_size), pixel_ratio)
                     )
                     render_mask_and_edge = False
@@ -1498,7 +1498,7 @@ class ThumbRenderer(QObject):
             if not image:
                 image = (
                     render_unlinked((512, 512), 2)
-                    if not filepath.exists()
+                    if not filepath.exists() or filepath.is_dir()
                     else render_default((512, 512), 2)
                 )
                 render_mask_and_edge = False
