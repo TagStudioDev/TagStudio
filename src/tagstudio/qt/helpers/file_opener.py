@@ -113,7 +113,8 @@ class FileOpenerHelper:
 
     def open_explorer(self):
         """Open the file in the default file explorer."""
-        open_file(self.filepath, file_manager=True)
+        if Path(self.filepath).is_file():
+            open_file(self.filepath, file_manager=True)
 
 
 class FileOpenerLabel(QLabel):
