@@ -109,7 +109,8 @@ class FileOpenerHelper:
 
     def open_file(self):
         """Open the file in the default application."""
-        open_file(self.filepath)
+        if Path(self.filepath).is_file():
+            open_file(self.filepath)
 
     def open_explorer(self):
         """Open the file in the default file explorer."""
