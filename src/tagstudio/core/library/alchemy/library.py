@@ -83,7 +83,6 @@ from tagstudio.core.library.alchemy.models import (
     ValueType,
 )
 from tagstudio.core.library.alchemy.visitors import SQLBoolExpressionBuilder
-from tagstudio.core.library.ignore import Ignore
 from tagstudio.core.library.json.library import Library as JsonLibrary
 from tagstudio.qt.translations import Translations
 
@@ -903,7 +902,7 @@ class Library:
                     f"SQL Expression Builder finished ({format_timespan(end_time - start_time)})"
                 )
 
-            # TODO: Convert old extension lists to new .ts_ignore format
+            # TODO: Remove this from the search function and update tests.
             extensions = self.prefs(LibraryPrefs.EXTENSION_LIST)
             is_exclude_list = self.prefs(LibraryPrefs.IS_EXCLUDE_LIST)
 
@@ -913,29 +912,6 @@ class Library:
                 statement = statement.where(Entry.suffix.in_(extensions))
 
             statement = statement.distinct(Entry.id)
-            ignore_patterns: list[str] = Ignore.get_patterns(self.library_dir)
-
-            # Add glob pattern filters with exclusion patterns allowing for overrides.
-            statement = statement.filter(
-                and_(
-                    or_(
-                        or_(
-                            *[
-                                Entry.path.op("GLOB")(p.lstrip("!"))
-                                for p in ignore_patterns
-                                if p.startswith("!")
-                            ]
-                        ),
-                        and_(
-                            *[
-                                Entry.path.op("NOT GLOB")(p)
-                                for p in ignore_patterns
-                                if not p.startswith("!")
-                            ]
-                        ),
-                    )
-                )
-            )
 
             sort_on: ColumnExpressionArgument = Entry.id
             match search.sorting_mode:

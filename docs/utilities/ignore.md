@@ -12,7 +12,7 @@ title: Ignore Files
 
 TagStudio offers the ability to ignore specific files and directories via a `.ts_ignore` file located inside your [library's](../library/index.md) `.TagStudio` folder. This file is designed to use very similar [glob](<https://en.wikipedia.org/wiki/Glob_(programming)>)-style pattern matching as the [`.gitignore`](https://git-scm.com/docs/gitignore) file used by Git™[^1]. It can be edited within TagStudio or opened to edit with an external program by going to the "Edit -> Ignore Files" option in the menubar.
 
-This file is referenced both when scanning directories for new files to add to your library, as well as when searching for any files to ignore files that have already been previously added to your library.
+This file is only referenced when scanning directories for new files to add to your library, and does not apply to files that have already been added to your library.
 
 <!-- prettier-ignore -->
 !!! tip
@@ -53,11 +53,7 @@ Minecraft/Website
 
 ### Internal Processes
 
-When scanning your library directories, the `.ts_ignore` file is read by either the [`wcmatch`](https://facelessuser.github.io/wcmatch/glob/) library or [`ripgrep`](https://github.com/BurntSushi/ripgrep) in glob mode depending if you have the later installed on your system and it's detected by TagStudio. Ripgrep is the preferred method for scanning directories due to its improved performance and identical pattern matching to `.gitignore`.
-
-Search queries instead use [SQLite's `GLOB`](https://www.sqlitetutorial.net/sqlite-glob/) function which operates differently from these other glob matching tools, requiring TagStudio to dynamically expand upon the patterns inside the `.ts_ignore` file to compensate for the differences in implementation.
-
-This mixture of tools and implementations may lead to inconsistent behavior for some patterns and when executed on different operating systems.
+When scanning your library directories, the `.ts_ignore` file is read by either the [`wcmatch`](https://facelessuser.github.io/wcmatch/glob/) library or [`ripgrep`](https://github.com/BurntSushi/ripgrep) in glob mode depending if you have the later installed on your system and it's detected by TagStudio. Ripgrep is the preferred method for scanning directories due to its improved performance and identical pattern matching to `.gitignore`. This mixture of tools may lead to slight inconsistencies if not using `ripgrep`.
 
 ---
 
