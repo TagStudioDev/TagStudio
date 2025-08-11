@@ -45,6 +45,7 @@ nav:
       - library/tag_color.md
       - library/tag_overrides.md
   - Utilities:
+      - utilities/ignore.md
       - utilities/macro.md
   - Updates:
       - updates/changelog.md
@@ -115,6 +116,9 @@ markdown_extensions:
       smart_enable: all
   - pymdownx.caret
   - pymdownx.details
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
   - pymdownx.highlight
   - pymdownx.inlinehilite
   - pymdownx.keys

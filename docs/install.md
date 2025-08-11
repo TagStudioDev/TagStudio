@@ -207,6 +207,14 @@ Don't forget to rebuild!
 
 ## Third-Party Dependencies
 
+<!-- prettier-ignore -->
+!!! tip
+    You can check to see if any of these dependencies are correctly located by launching TagStudio and going to "About TagStudio" in the menu bar.
+
+### FFmpeg/FFprobe
+
 For audio/video thumbnails and playback you'll need [FFmpeg](https://ffmpeg.org/download.html) installed on your system. If you encounter any issues with this, please reference our [FFmpeg Help](./help/ffmpeg.md) guide.
 
-You can check to see if FFmpeg and FFprobe are correctly located by launching TagStudio and going to "About TagStudio" in the menu bar.
+### ripgrep
+
+A recommended tool to improve the performance of directory scanning is [`ripgrep`](https://github.com/BurntSushi/ripgrep), a Rust-based directory walker that natively integrates with our [`.ts_ignore`](./utilities/ignore.md) (`.gitignore`-style) pattern matching system for excluding files and directories. Ripgrep is already pre-installed on some Linux distributions and also available from several package managers.
