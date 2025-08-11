@@ -285,11 +285,10 @@ class FieldContainers(QWidget):
             selected=self.driver.selected,
             tags=tags,
         )
-        for entry_id in self.driver.selected:
-            self.lib.add_tags_to_entries(
-                entry_id,
-                tag_ids=tags,
-            )
+        self.lib.add_tags_to_entries(
+            self.driver.selected,
+            tag_ids=tags,
+        )
         self.emit_badge_signals(tags, emit_on_absent=False)
 
     def write_container(self, index: int, field: BaseField, is_mixed: bool = False):
