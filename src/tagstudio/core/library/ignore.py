@@ -2,9 +2,11 @@
 # Licensed under the GPL-3.0 License.
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
+from copy import deepcopy
 from pathlib import Path
 
 import structlog
+import wcmatch.fnmatch as fnmatch
 from wcmatch import glob, pathlib
 
 from tagstudio.core.constants import IGNORE_NAME, TS_FOLDER_NAME
@@ -35,11 +37,56 @@ GLOBAL_IGNORE = [
 ]
 
 
+def _ignore_to_glob(ignore_patterns: list[str]) -> list[str]:
+    """Convert .gitignore-like patterns to explicit glob syntax.
+
+    Args:
+        ignore_patterns (list[str]): The .gitignore-like patterns to convert.
+    """
+    glob_patterns: list[str] = deepcopy(ignore_patterns)
+    additional_patterns: list[str] = []
+
+    # Mimic implicit .gitignore syntax behavior for the SQLite GLOB function.
+    for pattern in glob_patterns:
+        # Temporarily remove any exclusion character before processing
+        exclusion_char = ""
+        gp = pattern
+        if pattern.startswith("!"):
+            gp = pattern[1:]
+            exclusion_char = "!"
+
+        if not gp.startswith("**/") and not gp.startswith("*/") and not gp.startswith("/"):
+            # Create a version of a prefix-less pattern that starts with "**/"
+            gp = "**/" + gp
+            additional_patterns.append(exclusion_char + gp)
+
+            gp = gp.removesuffix("/**").removesuffix("/*").removesuffix("/")
+            additional_patterns.append(exclusion_char + gp)
+
+            gp = gp.removeprefix("**/").removeprefix("*/")
+            additional_patterns.append(exclusion_char + gp)
+
+    glob_patterns = glob_patterns + additional_patterns
+
+    # Add "/**" suffix to suffix-less patterns to match implicit .gitignore behavior.
+    for pattern in glob_patterns:
+        if pattern.endswith("/**"):
+            continue
+
+        glob_patterns.append(pattern.removesuffix("/*").removesuffix("/") + "/**")
+
+    glob_patterns = list(set(glob_patterns))
+
+    logger.info("[Ignore]", glob_patterns=glob_patterns)
+    return glob_patterns
+
+
 class Ignore(metaclass=Singleton):
     """Class for processing and managing glob-like file ignore file patterns."""
 
     _last_loaded: tuple[Path, float] | None = None
     _patterns: list[str] = []
+    compiled_patterns: fnmatch.WcMatcher | None = None
 
     @staticmethod
     def get_patterns(library_dir: Path, include_global: bool = True) -> list[str]:
@@ -73,6 +120,9 @@ class Ignore(metaclass=Singleton):
                 new_mtime=loaded[1],
             )
             Ignore._patterns = patterns + Ignore._load_ignore_file(ts_ignore_path)
+            Ignore.compiled_patterns = fnmatch.compile(
+                "*", PATH_GLOB_FLAGS, exclude=_ignore_to_glob(Ignore._patterns)
+            )
         else:
             logger.info(
                 "[Ignore] No updates to the .ts_ignore detected",

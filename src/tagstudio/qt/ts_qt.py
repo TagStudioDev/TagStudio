@@ -60,6 +60,7 @@ from tagstudio.core.library.alchemy.enums import (
 from tagstudio.core.library.alchemy.fields import _FieldID
 from tagstudio.core.library.alchemy.library import Library, LibraryStatus
 from tagstudio.core.library.alchemy.models import Entry
+from tagstudio.core.library.ignore import Ignore
 from tagstudio.core.media_types import MediaCategories
 from tagstudio.core.palette import ColorType, UiColor, get_ui_color
 from tagstudio.core.query_lang.util import ParsingError
@@ -1562,6 +1563,7 @@ class QtDriver(DriverMixin, QObject):
 
         # search the library
         start_time = time.time()
+        Ignore.get_patterns(self.lib.library_dir, include_global=True)
         results = self.lib.search_library(self.browsing_history.current, self.settings.page_size)
         logger.info("items to render", count=len(results))
         end_time = time.time()
@@ -1706,8 +1708,9 @@ class QtDriver(DriverMixin, QObject):
             )
             return open_status
 
+        assert self.lib.library_dir
         self.init_workers()
-
+        Ignore.get_patterns(self.lib.library_dir, include_global=True)
         self.__reset_navigation()
 
         # TODO - make this call optional

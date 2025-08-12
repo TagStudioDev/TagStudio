@@ -26,9 +26,10 @@ class UiColor(IntEnum):
     THEME_DARK = 1
     THEME_LIGHT = 2
     RED = 3
-    GREEN = 4
-    BLUE = 5
-    PURPLE = 6
+    AMBER = 4
+    GREEN = 5
+    BLUE = 6
+    PURPLE = 7
 
 
 TAG_COLORS: dict[TagColorEnum, dict[ColorType, Any]] = {
@@ -53,6 +54,12 @@ UI_COLORS: dict[UiColor, dict[ColorType, Any]] = {
         ColorType.BORDER: "#e54252",
         ColorType.LIGHT_ACCENT: "#f39caa",
         ColorType.DARK_ACCENT: "#440d12",
+    },
+    UiColor.AMBER: {
+        ColorType.PRIMARY: "#FFC107",
+        ColorType.BORDER: "#FFD54F",
+        ColorType.LIGHT_ACCENT: "#FFECB3",
+        ColorType.DARK_ACCENT: "#772505",
     },
     UiColor.GREEN: {
         ColorType.PRIMARY: "#28bb48",

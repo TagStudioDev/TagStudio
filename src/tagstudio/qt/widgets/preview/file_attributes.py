@@ -20,7 +20,9 @@ from PySide6.QtWidgets import QLabel, QVBoxLayout, QWidget
 
 from tagstudio.core.enums import ShowFilepathOption, Theme
 from tagstudio.core.library.alchemy.library import Library
+from tagstudio.core.library.ignore import Ignore
 from tagstudio.core.media_types import MediaCategories
+from tagstudio.core.palette import ColorType, UiColor, get_ui_color
 from tagstudio.qt.helpers.file_opener import FileOpenerHelper, FileOpenerLabel
 from tagstudio.qt.translations import Translations
 
@@ -213,6 +215,24 @@ class FileAttributes(QWidget):
 
             if ext_display:
                 stats_label_text += ext_display
+                assert self.library.library_dir
+                red = get_ui_color(ColorType.PRIMARY, UiColor.RED)
+                amber = get_ui_color(ColorType.PRIMARY, UiColor.AMBER)
+
+                if Ignore.compiled_patterns and not Ignore.compiled_patterns.match(
+                    filepath.relative_to(self.library.library_dir)
+                ):
+                    stats_label_text = (
+                        f"{stats_label_text}"
+                        f"  •  <span style='color:{amber}'>"
+                        f"{Translations['preview.ignored'].upper()}</span>"
+                    )
+                if not filepath.exists():
+                    stats_label_text = (
+                        f"{stats_label_text}"
+                        f"  •  <span style='color:{red}'>"
+                        f"{Translations['preview.unlinked'].upper()}</span>"
+                    )
                 if file_size:
                     stats_label_text += f"  •  {file_size}"
             elif file_size:
