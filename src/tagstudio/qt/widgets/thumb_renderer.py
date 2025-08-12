@@ -1355,41 +1355,18 @@ class ThumbRenderer(QObject):
                         is_grid_thumb,
                         save_to_file=cached_path,
                     )
-            # Search for cached thumbnail for unlinked file
-            elif cached_path and not cached_path.exists():
-                cached_folder_path = Path(
-                    self.lib.library_dir / TS_FOLDER_NAME / THUMB_CACHE_NAME / folder
-                )
-                pattern = f"{hash_value.split('_')[0]}_*{ThumbRenderer.cached_img_ext}"
-
-                matched_hashes: list[Path] = []
-                for f in cached_folder_path.glob(pattern):
-                    matched_hashes.append(f)
-                matched_hashes = sorted(matched_hashes, key=lambda x: x.stat().st_mtime)
-
-                if matched_hashes:
-                    cached_im = Image.open(matched_hashes[0])
-                    image = render_unlinked((adj_size, adj_size), pixel_ratio, cached_im)
-                    if not image:
-                        raise UnidentifiedImageError  # pyright: ignore[reportUnreachable]
 
             return image
 
         image: Image.Image | None = None
         # Try to get a non-loading thumbnail for the grid.
-        if not is_loading and is_grid_thumb and filepath != Path("."):
+        if not is_loading and is_grid_thumb and filepath and filepath != Path("."):
             # Attempt to retrieve cached image from disk
             mod_time: str = ""
-            hash_mt_value: str = ""
             with contextlib.suppress(Exception):
-                if filepath.exists():
-                    mod_time = str(filepath.stat().st_mtime_ns)
-                    hash_mt_value = hashlib.shake_128(mod_time.encode("utf-8")).hexdigest(8)
-            hash_fn_value = hashlib.shake_128(str(filepath).encode("utf-8")).hexdigest(8)
-
-            hash_value = hash_fn_value
-            if hash_mt_value:
-                hash_value = f"{hash_value}_{hash_mt_value}"
+                mod_time = str(filepath.stat().st_mtime_ns)
+            hashable_str: str = f"{str(filepath)}{mod_time}"
+            hash_value = hashlib.shake_128(hashable_str.encode("utf-8")).hexdigest(8)
 
             # Check the last successful folder first.
             if ThumbRenderer.last_cache_folder:
