@@ -209,8 +209,8 @@ class FileAttributes(QWidget):
 
             # Format and display any stat variables
             def add_newline(stats_label_text: str) -> str:
-                if stats_label_text and stats_label_text[-2:] != "\n":
-                    return stats_label_text + "\n"
+                if stats_label_text and stats_label_text[-4:] != "<br>":
+                    return stats_label_text + "<br>"
                 return stats_label_text
 
             if ext_display:
