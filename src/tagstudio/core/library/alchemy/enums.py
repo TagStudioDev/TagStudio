@@ -1,4 +1,5 @@
 import enum
+import random
 from dataclasses import dataclass, replace
 from pathlib import Path
 
@@ -69,6 +70,7 @@ class SortingModeEnum(enum.Enum):
     DATE_ADDED = "file.date_added"
     FILE_NAME = "generic.filename"
     PATH = "file.path"
+    RANDOM = "sorting.mode.random"
 
 
 @dataclass
@@ -78,6 +80,7 @@ class BrowsingState:
     page_index: int = 0
     sorting_mode: SortingModeEnum = SortingModeEnum.DATE_ADDED
     ascending: bool = True
+    random_seed: int = 0
 
     query: str | None = None
 
@@ -120,7 +123,10 @@ class BrowsingState:
         return replace(self, page_index=index)
 
     def with_sorting_mode(self, mode: SortingModeEnum) -> "BrowsingState":
-        return replace(self, sorting_mode=mode)
+        seed = self.random_seed
+        if mode == SortingModeEnum.RANDOM:
+            seed = random.randrange(2**32)
+        return replace(self, sorting_mode=mode, random_seed=seed)
 
     def with_sorting_direction(self, ascending: bool) -> "BrowsingState":
         return replace(self, ascending=ascending)

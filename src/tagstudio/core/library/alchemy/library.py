@@ -913,6 +913,8 @@ class Library:
                     sort_on = func.lower(Entry.filename)
                 case SortingModeEnum.PATH:
                     sort_on = func.lower(Entry.path)
+                case SortingModeEnum.RANDOM:
+                    sort_on = func.sin(Entry.id + search.random_seed)
 
             statement = statement.order_by(asc(sort_on) if search.ascending else desc(sort_on))
             if page_size is not None:
