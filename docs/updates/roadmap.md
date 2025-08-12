@@ -245,8 +245,8 @@ Discrete library objects representing [attributes](<https://en.wikipedia.org/wik
 
 ### :material-file-cog: [Macros](../utilities/macro.md)
 
--   [ ] Standard, Human Readable Format (TOML) :material-chevron-triple-up:{ .priority-high title="High Priority" } **[v9.5.5]**
--   [ ] Versioning System :material-chevron-triple-up:{ .priority-high title="High Priority" } **[v9.5.5]**
+-   [x] Standard, Human Readable Format (TOML) :material-chevron-triple-up:{ .priority-high title="High Priority" } **[v9.5.5]**
+-   [x] Versioning System :material-chevron-triple-up:{ .priority-high title="High Priority" } **[v9.5.5]**
 -   [ ] Triggers **[v9.5.5]**
     -   [ ] On File Added :material-chevron-triple-up:{ .priority-high title="High Priority" }
     -   [ ] On Library Refresh :material-chevron-triple-up:{ .priority-high title="High Priority" }
@@ -273,12 +273,15 @@ Packs are intended as an easy way to import and export specific data between lib
     -   [x] UUIDs + Namespaces :material-chevron-triple-up:{ .priority-high title="High Priority" }
     -   [x] Standard, Human Readable Format (TOML) :material-chevron-triple-up:{ .priority-high title="High Priority" }
     -   [ ] Versioning System :material-chevron-double-up:{ .priority-med title="Medium Priority" }
--   [ ] Tag Packs :material-chevron-triple-up:{ .priority-high title="High Priority" } **[v9.9.0]** - [ ] Importable :material-chevron-triple-up:{ .priority-high title="High Priority" } - [ ] Exportable :material-chevron-triple-up:{ .priority-high title="High Priority" } - [ ] UUIDs + Namespaces :material-chevron-triple-up:{ .priority-high title="High Priority" } - [ ] Standard, Human Readable Format (TOML) :material-chevron-triple-up:{ .priority-high title="High Priority" } - [ ] Versioning System :material-chevron-double-up:{ .priority-med title="Medium Priority" }
-        <<<<<<< HEAD
--   [ ] Macro Sharing :material-chevron-triple-up:{ .priority-high title="High Priority" } **[v9.5.5]** - [ ] Importable :material-chevron-triple-up:{ .priority-high title="High Priority" } - [ ] Exportable :material-chevron-triple-up:{ .priority-high title="High Priority" }
-        =======
--   [x] Macro Sharing :material-chevron-triple-up:{ .priority-high title="High Priority" } **[v9.6.0]** - [x] Importable :material-chevron-triple-up:{ .priority-high title="High Priority" } - [x] Exportable :material-chevron-triple-up:{ .priority-high title="High Priority" }
-    > > > > > > > 96ae273a (feat: implement base macro system)
+-   [ ] Tag Packs :material-chevron-triple-up:{ .priority-high title="High Priority" } **[v9.9.0]**
+    -   [ ] Importable :material-chevron-triple-up:{ .priority-high title="High Priority" }
+    -   [ ] Exportable :material-chevron-triple-up:{ .priority-high title="High Priority" }
+    -   [ ] UUIDs + Namespaces :material-chevron-triple-up:{ .priority-high title="High Priority" }
+    -   [ ] Standard, Human Readable Format (TOML) :material-chevron-triple-up:{ .priority-high title="High Priority" }
+    -   [ ] Versioning System :material-chevron-double-up:{ .priority-med title="Medium Priority" }
+-   [x] Macro Sharing :material-chevron-triple-up:{ .priority-high title="High Priority" } **[v9.5.5]**
+    -   [x] Importable :material-chevron-triple-up:{ .priority-high title="High Priority" }
+    -   [x] Exportable :material-chevron-triple-up:{ .priority-high title="High Priority" }
 -   [ ] Sharable Entry Data :material-chevron-double-up:{ .priority-med title="Medium Priority" } **[v9.9.0]**
     -   _Specifics of this are yet to be determined_
 -   [ ] Export Library to Human Readable Format :material-chevron-triple-up:{ .priority-high title="High Priority" } **[v10.0.0]**
