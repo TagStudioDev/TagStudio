@@ -10,7 +10,7 @@ from wcmatch import pathlib
 
 from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.library.alchemy.models import Entry
-from tagstudio.core.library.ignore import PATH_GLOB_FLAGS, Ignore
+from tagstudio.core.library.ignore import PATH_GLOB_FLAGS, Ignore, ignore_to_glob
 from tagstudio.qt.helpers.silent_popen import silent_run
 
 logger = structlog.get_logger(__name__)
@@ -57,7 +57,7 @@ class RefreshDirTracker:
         ignore_patterns = Ignore.get_patterns(library_dir)
 
         if force_internal_tools:
-            return self.__wc_add(library_dir, ignore_patterns)
+            return self.__wc_add(library_dir, ignore_to_glob(ignore_patterns))
 
         dir_list: list[str] | None = self.__get_dir_list(library_dir, ignore_patterns)
 
@@ -65,7 +65,7 @@ class RefreshDirTracker:
         if dir_list is not None:
             return self.__rg_add(library_dir, dir_list)
         else:
-            return self.__wc_add(library_dir, ignore_patterns)
+            return self.__wc_add(library_dir, ignore_to_glob(ignore_patterns))
 
     def __get_dir_list(self, library_dir: Path, ignore_patterns: list[str]) -> list[str] | None:
         """Use ripgrep to return a list of matched directories and files.

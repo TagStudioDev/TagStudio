@@ -37,7 +37,7 @@ GLOBAL_IGNORE = [
 ]
 
 
-def _ignore_to_glob(ignore_patterns: list[str]) -> list[str]:
+def ignore_to_glob(ignore_patterns: list[str]) -> list[str]:
     """Convert .gitignore-like patterns to explicit glob syntax.
 
     Args:
@@ -121,7 +121,7 @@ class Ignore(metaclass=Singleton):
             )
             Ignore._patterns = patterns + Ignore._load_ignore_file(ts_ignore_path)
             Ignore.compiled_patterns = fnmatch.compile(
-                "*", PATH_GLOB_FLAGS, exclude=_ignore_to_glob(Ignore._patterns)
+                "*", PATH_GLOB_FLAGS, exclude=ignore_to_glob(Ignore._patterns)
             )
         else:
             logger.info(
