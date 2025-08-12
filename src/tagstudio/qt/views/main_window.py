@@ -381,14 +381,6 @@ class MainMenuBar(QMenuBar):
     def setup_macros_menu(self):
         self.macros_menu = QMenu(Translations["menu.macros"], self)
 
-        self.test_macro_1 = "import_metadata.toml"
-        self.test_macro_1_action = QAction(self.test_macro_1, self)
-        self.macros_menu.addAction(self.test_macro_1_action)
-
-        self.test_macro_2 = "conditionals.toml"
-        self.test_macro_2_action = QAction(self.test_macro_2, self)
-        self.macros_menu.addAction(self.test_macro_2_action)
-
         self.folders_to_tags_action = QAction(Translations["menu.macros.folders_to_tags"], self)
         self.folders_to_tags_action.setEnabled(False)
         self.macros_menu.addAction(self.folders_to_tags_action)
