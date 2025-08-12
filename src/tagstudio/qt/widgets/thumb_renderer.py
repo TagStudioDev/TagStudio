@@ -1303,7 +1303,7 @@ class ThumbRenderer(QObject):
                 size=size,
                 pixel_ratio=pixel_ratio,
                 bg_image=cached_im,
-                draw_edge=False,
+                draw_edge=not cached_im,
                 is_corner=False,
             )
             return im
@@ -1448,12 +1448,17 @@ class ThumbRenderer(QObject):
                     )
 
             # Check if the file is supposed to be ignored and render an overlay if needed
-            if (
-                image
-                and Ignore.compiled_patterns
-                and not Ignore.compiled_patterns.match(filepath.relative_to(self.lib.library_dir))
-            ):
-                image = render_ignored((adj_size, adj_size), pixel_ratio, image)
+            try:
+                if (
+                    image
+                    and Ignore.compiled_patterns
+                    and not Ignore.compiled_patterns.match(
+                        filepath.relative_to(self.lib.library_dir)
+                    )
+                ):
+                    image = render_ignored((adj_size, adj_size), pixel_ratio, image)
+            except TypeError:
+                pass
 
         # A loading thumbnail (cached in memory)
         elif is_loading:
