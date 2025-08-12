@@ -556,7 +556,6 @@ class QtDriver(DriverMixin, QObject):
 
         # region Macros Menu ==========================================================
         self.main_window.menu_bar.macros_menu.aboutToShow.connect(self.update_macros_menu)
-        self.update_macros_menu()
 
         def create_folders_tags_modal():
             if not hasattr(self, "folders_modal"):

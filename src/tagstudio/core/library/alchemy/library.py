@@ -1094,14 +1094,6 @@ class Library:
                 {at for at in ancestor_tags if at not in direct_tags},
             ]
 
-            # logger.info(
-            #     "searching tags",
-            #     search=name,
-            #     limit=limit,
-            #     statement=str(query),
-            #     results=len(res),
-            # )
-
             session.expunge_all()
 
             return res
