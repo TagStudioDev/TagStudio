@@ -79,7 +79,7 @@ def test_build_tag_panel_set_parent_tags(library, generate_tag):
     assert parent
     assert child
 
-    library.add_parent_tag(child.id, parent.id)
+    library.add_parent_tag(parent.id, child.id)
 
     child = library.get_tag(child.id)
 
