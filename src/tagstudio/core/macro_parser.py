@@ -31,6 +31,7 @@ SOURCE_FORMAT = "source_format"
 FILENAME_PLACEHOLDER = "{filename}"
 EXT_PLACEHOLDER = "{ext}"
 TEMPLATE = "template"
+KEY = "key"
 
 SOURCE_TYPE = "source_type"
 TS_TYPE = "ts_type"
@@ -280,7 +281,7 @@ def _import_data(table: dict[str, Any], table_key: str, filepath: Path) -> list[
             return results
         logger.info(json_dump.items())
 
-        for key, table_value in table.items():
+        for table_key, table_value in table.items():
             objects: list[dict[str, Any] | str] = []
             content_value = ""
             if isinstance(table_value, list):
@@ -297,11 +298,12 @@ def _import_data(table: dict[str, Any], table_key: str, filepath: Path) -> list[
                     )
                     continue
 
-                if key in json_dump:
-                    json_value = json_dump.get(key)
+                json_key: str = str(obj.get(KEY, ""))
+                if json_key and json_key in json_dump:
+                    json_value = json_dump.get(table_key)
                     logger.info(
                         f"[MacroParser] [{table_key}] Parsing JSON sidecar key",
-                        key=key,
+                        key=table_key,
                         table_value=obj,
                         json_value=json_value,
                     )
@@ -313,7 +315,7 @@ def _import_data(table: dict[str, Any], table_key: str, filepath: Path) -> list[
                         )
                         continue
 
-                elif key == TEMPLATE:
+                elif table_key == TEMPLATE:
                     template: str = str(obj.get(TEMPLATE, ""))
                     logger.info(f"[MacroParser] [{table_key}] Filling template", template=template)
                     if not template:
