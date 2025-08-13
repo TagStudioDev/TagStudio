@@ -4,7 +4,7 @@ icon: material/script-text
 
 # :material-script-text: Macros
 
-TagStudio features a configurable macro system which allows you to set up automatic or manually triggered actions to perform a wide array of operations on your [library](libraries.md). Each macro is stored in an individual script file and is created using [TOML](https://toml.io/en/) with a predefined schema described below. Macro files are stored in your library's ".TagStudio/macros" folder.
+TagStudio features a configurable macro system which allows you to set up automatic or manually triggered actions to perform a wide array of operations on your [library](libraries.md). Each macro is stored in an individual script file and is created using [TOML](https://toml.io/en/) with a predefined schema described below. Macro files are stored in your library's "`.TagStudio/macros`" folder.
 
 ## Schema Version
 
@@ -28,7 +28,7 @@ triggers = ["on_new_entry"]
 
 ## Actions
 
-Actions are defined as TOML tables and serve as an individual action that the macro will perform. An action table must have a unique name, but the name itself has no importance to the macro.
+Actions are the general task that a macro will perform. They are represented by TOML tables and must have a unique name in your macro file, but the name itself has no importance to the macro. The root table will contain general configuration info about your action, and nested tables (e.g. `[action.task]`) will further define the specifics of your action.
 
 ```toml
 [newgrounds]
@@ -44,19 +44,98 @@ Action tables must have an `action` key with one of the following values:
 action = "import_data"
 ```
 
-### Import Data
-
-The `import_data` action allows you to import external data from any supported source. While some sources need explicit support (e.g. ID3, EXIF) generic sources such as JSON sidecar files can leverage wide array of data shaping options that allow the underlying data structure to be abstracted from TagStudio's internal data structures. This macro pairs very well with tools such as [gallery-dl](https://github.com/mikf/gallery-dl).
-
 ### Add Data
 
 The `add_data` action lets you add data to a [file entry](entries.md) given one or more conditional statements. Unlike the [`import_data`](#import-data) action, the `add_data` action adds data declared in the macro itself rather than importing it form a source external to the macro.
 
+### Import Data
+
+The `import_data` action allows you to import external data into your TagStudio library in the form of [tags](tags.md) and [fields](fields.md). While some sources need explicit support (e.g. ID3, EXIF) generic sources such as JSON sidecar files can leverage wide array of data shaping options that allow the underlying data structure to be abstracted from TagStudio's internal data structures. This macro pairs very well with tools such as [gallery-dl](https://github.com/mikf/gallery-dl).
+
+If you're importing from an object or table-like source (i.e. JSON), you'll need to create a nested table with the name format of "`[action.task]`" and provide a [`key`](#key) field filled with the name of the targeted source key. In this case the "task" name does not matter as long as it doesn't conflict with one of the built-in names (i.e. "`map`", "`template`, "`inverse_map`").
+
+<!-- prettier-ignore -->
+=== "Importable JSON Data"
+    ```json
+    {
+        "newgrounds": {
+            "tags": ["tag1", "tag2"]
+        }
+    }
+    ```
+=== "TOML Macro"
+    ```toml
+    [newgrounds]
+    action="import_data"
+    [newgrounds.tags]
+    key="tags"
+    ```
+
+Inside the new table we can now declare additional information about the native data formats and how they should be imported into TagStudio.
+
 ### Data Sources
+
+#### Key
+
+The `key` key is used in conjunction with the [`import_data`](#import-data) action to specify the object/table key to target in your import data. If you're targeting a nested object, separate the names of the keys with a dot.
+
+```toml
+[artstation]
+action = "import_data"
+source_format = "json"
+[artstation.tags]
+key="tags"
+ts_type = "tags"
+[artstation.mediums]
+key="mediums.name" # Nested key
+ts_type = "tags"
+```
+
+When importing from the same key multiple times, you have the option to either choose different names for your "task" tables or use the same name with these tables wrapped in an extra pair of brackets.
+
+<!-- prettier-ignore -->
+=== "Single Import"
+    ```toml
+    [newgrounds]
+    # Newgrounds table info here
+    [newgrounds.artist]
+    key="artist"
+    ts_type = "tags"
+    use_context = false
+    on_missing = "create"
+    ```
+=== "Multiple Imports"
+    ```toml
+    [newgrounds]
+    # Newgrounds table info here
+    [newgrounds.artist_tag]
+    key="artist"
+    ts_type = "tags"
+    use_context = false
+    on_missing = "skip"
+    [newgrounds.artist_text]
+    key="artist"
+    ts_type = "text_line"
+    name = "Artist"
+    ```
+=== "Multiple Imports (Wrapped)"
+    ```toml
+    [newgrounds]
+    # Newgrounds table info here
+    [[newgrounds.artist]]
+    key="artist"
+    ts_type = "tags"
+    use_context = false
+    on_missing = "skip"
+    [[newgrounds.artist]]
+    key="artist"
+    ts_type = "text_line"
+    name = "Artist"
+    ```
 
 #### Source Format
 
-The `source_format` key is used in conjunction with the [`import_data`](#import-data) key to declare what type of source data will be imported from.
+The `source_format` key is used in conjunction with the [`import_data`](#import-data) action to declare what type of source data will be imported from.
 
 ```toml
 [newgrounds]
@@ -142,31 +221,6 @@ The `value` key is specifically used with the [`add_data`](#add-data) action to 
     value = ["Animated"]
     ```
 
-### Importing Data
-
-With the [`import_data`](#import-data) action it's possible to import various types of data into your TagStudio library in the form of [tags](tags.md) and [fields](fields.md). Since TagStudio tags are more complex than other tag implementations you may be aware of, there are several options for fine-tuning how tags should be imported.
-
-In order to target the specific kind of TagStudio data you wish to import as, create a table with your action name followed by the "key" name separated by a dot. In most object notation formats (e.g. JSON) this is the key of the key/value pair.
-
-<!-- prettier-ignore -->
-=== "Importable JSON Data"
-    ```json
-    {
-        "newgrounds": {
-            "tags": ["tag1", "tag2"]
-        }
-    }
-    ```
-=== "TOML Macro"
-    ```toml
-    [newgrounds]
-    # Newgrounds table info here
-    [newgrounds.tags]
-    # Tag key config here
-    ```
-
-Inside "key" table we can now declare additional information about the native data formats and how they should be imported into TagStudio.
-
 <!-- #### Source Types
 
 The `source_type` key allows for the explicit declaration of the type and/or format of the source data. When this key is omitted, TagStudio will default to the data type that makes the most sense for the destination [TagStudio type](#tagstudio-types).
@@ -206,33 +260,6 @@ The required `ts_type` key defines the destination data format inside TagStudio 
     ts_type = "tags"
     ```
 
-### Multiple Imports per Key
-
-You may wish to import from the same source key more than once with different instructions. In this case, wrap the table name in an extra pair of brackets for every duplicate key table. This ensures that TagStudio will individually processes each group of instructions for the single key.
-
-<!-- prettier-ignore -->
-=== "Single Import per Key"
-    ```toml
-    [newgrounds]
-    # Newgrounds table info here
-    [newgrounds.artist]
-    ts_type = "tags"
-    use_context = false
-    on_missing = "create"
-    ```
-=== "Multiple Imports per Key"
-    ```toml
-    [newgrounds]
-    # Newgrounds table info here
-    [[newgrounds.artist]]
-    ts_type = "tags"
-    use_context = false
-    on_missing = "skip"
-    [[newgrounds.artist]]
-    ts_type = "text_line"
-    name = "Artist"
-    ```
-
 ### Field Specific Keys
 
 #### Name
@@ -243,25 +270,29 @@ You may wish to import from the same source key more than once with different in
 === "text_line"
     ```toml
     [newgrounds.user]
+    key="user"
     ts_type = "text_line"
     name = "Author"
     ```
 === "text_box"
     ```toml
     [newgrounds.content]
+    key="content"
     ts_type = "text_box"
     name = "Description"
     ```
 
 <!-- prettier-ignore -->
 !!! note
-    As of writing (v9.5.0) TagStudio fields still do not allow for custom names. The macro system is designed to be forward-thinking with this feature in mind, however currently only existing TagStudio field names are considered valid. Any invalid field names will default to the "Notes" field.
+    As of writing (v9.5.3) TagStudio fields still do not allow for custom names. The macro system is designed to be forward-thinking with this feature in mind, however only existing TagStudio field names are currently considered valid. Any invalid field names will default to the "Notes" field.
 
 ### Tag Specific Keys
 
+Since TagStudio tags are more complex than other traditional tag formats, there are several options for fine-tuning how tags should be imported.
+
 #### Delimiter
 
-`delimiter`: The delimiter between tags to use.
+`delimiter`: The delimiter between string tags to use.
 
 <!-- prettier-ignore -->
 === "Comma + Space Separation"
@@ -281,7 +312,9 @@ You may wish to import from the same source key more than once with different in
 
 `prefix`: An optional prefix to remove.
 
-Given a list of tags such as `["#tag1", "#tag2", "#tag3"]`, you may wish to remove the "#" prefix.
+<!-- prettier-ignore -->
+!!! example
+    Given a list of tags such as `["#tag1", "#tag2", "#tag3"]`, you may wish to remove the "`#`" prefix.
 
 ```toml
 [instagram.tags]
