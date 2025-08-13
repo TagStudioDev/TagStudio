@@ -243,7 +243,7 @@ Discrete library objects representing [attributes](<https://en.wikipedia.org/wik
 -   [ ] OCR Search :material-chevron-up:{ .priority-low title="Low Priority" }
 -   [ ] Fuzzy Search :material-chevron-up:{ .priority-low title="Low Priority" }
 
-### :material-file-cog: [Macros](../utilities/macro.md)
+### :material-script-text: [Macros](../utilities/macro.md)
 
 <<<<<<< HEAD
 
