@@ -243,7 +243,7 @@ Discrete library objects representing [attributes](<https://en.wikipedia.org/wik
 -   [ ] OCR Search :material-chevron-up:{ .priority-low title="Low Priority" }
 -   [ ] Fuzzy Search :material-chevron-up:{ .priority-low title="Low Priority" }
 
-### :material-file-cog: [Macros](../utilities/macro.md)
+### :material-script-text: [Macros](../utilities/macro.md)
 
 -   [x] Standard, Human Readable Format (TOML) :material-chevron-triple-up:{ .priority-high title="High Priority" } **[v9.5.5]**
 -   [x] Versioning System :material-chevron-triple-up:{ .priority-high title="High Priority" } **[v9.5.5]**
