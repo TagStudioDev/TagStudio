@@ -464,6 +464,8 @@ def _fill_template(
 
     if isinstance(value, dict):
         for v in value:
+            # NOTE: This f-string is the only thing defining how the nested key syntax works.
+            # If instead you wanted to use key[nested] syntax for example, use: f"{key}[{str(v)}]"
             normalized_key: str = f"{key}.{str(v)}"
             template = _fill_template(template, value, str(v), normalized_key)
 
