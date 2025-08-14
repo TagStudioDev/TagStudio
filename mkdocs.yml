@@ -45,6 +45,7 @@ nav:
   - Utilities:
       - utilities/ignore.md
       - utilities/macro.md
+      - utilities/relinking.md
   - Updates:
       - updates/changelog.md
       - updates/roadmap.md

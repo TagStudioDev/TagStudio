@@ -1,4 +1,6 @@
-# File and Entry Relinking
+icon: material/link-variant
+
+# :material-link-variant: Entry Relinking
 
 Tools and macros are features that serve to create a more fluid [library](../library/index.md)-managing process, or provide some extra functionality. Please note that some are still in active development and will be fleshed out in future updates.
 
