@@ -1,5 +1,12 @@
 {
+    "about.documentation": "Dokumentation",
+    "about.license": "Licens",
+    "about.module.found": "Hittade",
+    "about.title": "Om TagStudio",
+    "about.website": "Webbsida",
     "app.title": "{base_title} - Bibliotek '{library_dir}'",
+    "color.confirm_delete": "Är du säker på att du vill ta bort färgen \"{color_name}\"?",
+    "color.name": "Namn",
     "drop_import.description": "Följande filer har namn som redan finns i biblioteket",
     "drop_import.duplicates_choice.plural": "Följande {count} filer har namn som redan finns i biblioteket.",
     "drop_import.duplicates_choice.singular": "Följande fil har ett namn som redan finns i biblioteket.",

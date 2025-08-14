@@ -218,6 +218,8 @@
     "menu.tools.fix_duplicate_files": "&Egyező fájlok egyesítése",
     "menu.tools.fix_unlinked_entries": "Kapcsolat &nélküli elemek javítása",
     "menu.view": "&Nézet",
+    "menu.view.decrease_thumbnail_size": "Indexkép méretének csökkentése",
+    "menu.view.increase_thumbnail_size": "Indexkép méretének növelése",
     "menu.window": "&Ablak",
     "namespace.create.description": "A TagStudio névterekkel különíti el az adatcsoportokat, mint a címkék és a színek, így azok könnyen exportálhatóak és megoszthatóak. A „tagstudio”-val kezdődő névterek belső használatra vannak lefoglalva.",
     "namespace.create.description_color": "Minden szín névterekbe van foglalva, amelyek színpalettaként viselkednek. Minden egyéni színt névtérbe kell foglalni.",
