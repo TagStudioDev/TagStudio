@@ -218,6 +218,8 @@
     "menu.tools.fix_duplicate_files": "Réparer les entrées de fichiers en double",
     "menu.tools.fix_unlinked_entries": "Réparer les entrées de fichier non liée",
     "menu.view": "&Vues",
+    "menu.view.decrease_thumbnail_size": "Rétrécir les vignettes",
+    "menu.view.increase_thumbnail_size": "Agrandir les vignettes",
     "menu.window": "Fenêtre",
     "namespace.create.description": "Les namespaces sont utilisés par TagStudio pour séparer les groupes d'éléments tels que les Tags et les couleurs de manière à faciliter leur exportation et leur partage. Les namespace avec des noms commençant par « tagstudio » sont réservés par TagStudio pour un usage interne.",
     "namespace.create.description_color": "Les tags utilise les namespace pour regrouper plusieurs couleurs. Toutes les couleurs personnalisées doivent être ajoutées à un namespace.",
