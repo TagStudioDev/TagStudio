@@ -452,7 +452,7 @@ def _fill_template(
     Args:
         template (str): The string containing placeholder keys.
             Key names should be surrounded in curly braces. (e.g. "{key}").
-            Nested keys should be accessed with square bracket syntax. (e.g. "{key[nested_key]}").
+            Nested keys are accessed by separating the keys with a dot (e.g. "{key.nested_key}").
         table (dict[str, Any]): The table to lookup values from.
         table_key (str): The key to search for in the template and access the table with.
         template_key (str): Similar to table_key, but is not used for accessing the table and
@@ -464,7 +464,7 @@ def _fill_template(
 
     if isinstance(value, dict):
         for v in value:
-            normalized_key: str = f"{key}[{str(v)}]"
+            normalized_key: str = f"{key}.{str(v)}"
             template = _fill_template(template, value, str(v), normalized_key)
 
     value = str(value)

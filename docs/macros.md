@@ -73,7 +73,7 @@ If you're importing from an object or table-like source (i.e. JSON), you'll need
 
 Inside the new table we can now declare additional information about the native data formats and how they should be imported into TagStudio.
 
-### Data Sources
+### Action Configuration
 
 #### Key
 
@@ -413,7 +413,7 @@ video = ["Animation (2D)", "Animated (Meta Tags)"]
 
 #### Many to 1 (Inverse Map)
 
-By mapping a key of the name of one of your TagStudio tags to a list of source tags, you can declare a combination of required source tags that result in a wholly new matched TagStudio tag. This is useful if you use a single tag in your TagStudio library that is represented by multiple split tags from your source.
+By mapping a key with the name of one of your TagStudio tags to a list of source tags, you can declare a combination of required source tags that result in a wholly new matched TagStudio tag. This is useful if you use a single tag in your TagStudio library that is represented by multiple separate tags from your source.
 
 ```toml
 [newgrounds.tags.inverse_map]
@@ -421,3 +421,29 @@ By mapping a key of the name of one of your TagStudio tags to a list of source t
 "Animation (2D)" = ["drawing", "video"]
 "Animation (3D)" = ["3D", "video"]
 ```
+
+### Templates
+
+Templates are part of the `input_data` action and allow you to take data from one or more keys of a source and combine them into a single value. Template sub-action tables must begin with the action name and end with `.template` (e.g. `[action.template]`). Source object keys can be embedded in a string value if surrounded by curly braces (`{}`). Nested keys are accessed by separating the keys with a dot (e.g. `{key.nested_key}`).
+
+<!-- prettier-ignore-start -->
+=== "Composite Template"
+    ```toml
+    [bluesky.template]
+    template = "https://www.bsky.app/profile/{author.handle}/post/{post_id}"
+    ts_type = "text_line"
+    name = "Source"
+    ```
+=== "Multiple Templates per Action"
+    ```toml
+    [[artstation.template]]
+    template = "Original Tags: {tags}"
+    ts_type = "text_box"
+    name = "Notes"
+
+    [[artstation.template]]
+    template = "Original Mediums: {mediums}"
+    ts_type = "text_box"
+    name = "Notes"
+    ```
+<!-- prettier-ignore-end -->
