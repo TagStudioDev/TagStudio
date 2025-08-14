@@ -218,6 +218,8 @@
     "menu.tools.fix_duplicate_files": "重複ファイルの修正(&F)",
     "menu.tools.fix_unlinked_entries": "未リンク項目の修正(&U)",
     "menu.view": "表示(&V)",
+    "menu.view.decrease_thumbnail_size": "サムネイル サイズの縮小",
+    "menu.view.increase_thumbnail_size": "サムネイル サイズの拡大",
     "menu.window": "ウィンドウ",
     "namespace.create.description": "タグや色などの項目グループを分離し、エクスポートや共有をしやすくするために、TagStudio では名前空間を使用します。「tagstudio」で始まる名前空間は、TagStudio の内部用途として予約されています。",
     "namespace.create.description_color": "タグの色は、名前空間をカラーパレットのグループとして使用します。すべてのカスタムカラーは、最初に名前空間グループに属している必要があります。",
