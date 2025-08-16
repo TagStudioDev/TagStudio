@@ -80,7 +80,7 @@ class BrowsingState:
     page_index: int = 0
     sorting_mode: SortingModeEnum = SortingModeEnum.DATE_ADDED
     ascending: bool = True
-    random_seed: int = 0
+    random_seed: float = 0
 
     query: str | None = None
 
@@ -125,7 +125,7 @@ class BrowsingState:
     def with_sorting_mode(self, mode: SortingModeEnum) -> "BrowsingState":
         seed = self.random_seed
         if mode == SortingModeEnum.RANDOM:
-            seed = random.randrange(2**32)
+            seed = random.random()
         return replace(self, sorting_mode=mode, random_seed=seed)
 
     def with_sorting_direction(self, ascending: bool) -> "BrowsingState":
