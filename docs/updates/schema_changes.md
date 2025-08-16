@@ -1,4 +1,8 @@
-# Save Format Changes
+---
+icon: material/database-edit
+---
+
+# :material-database-edit: Save Format Changes
 
 This page outlines the various changes made to the TagStudio save file format over time, sometimes referred to as the "database" or "database file".
 

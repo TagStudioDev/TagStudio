@@ -1,9 +1,10 @@
 ---
 tags:
     - Upcoming Feature
+icon: material/tag-hidden
 ---
 
-# Tag Overrides
+# :material-tag-hidden: Tag Overrides
 
 Tag overrides are the ability to add or remove [parent tags](./tag.md#parent-tags) from a [tag](./tag.md) on a per-[entry](./entry.md) basis.
 

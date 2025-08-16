@@ -36,10 +36,10 @@ nav:
       - help/ffmpeg.md
   - Library:
       - library/index.md
+      - library/library_search.md
       - library/entry.md
       - library/entry_groups.md
       - library/field.md
-      - library/library_search.md
       - library/tag.md
       - library/tag_categories.md
       - library/tag_color.md

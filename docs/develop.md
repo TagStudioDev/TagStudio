@@ -1,4 +1,8 @@
-# Developing
+---
+icon: material/code-braces
+---
+
+# :material-code-braces: Developing
 
 If you wish to develop for TagStudio, you'll need to create a development environment by installing the required dependencies. You have a number of options depending on your level of experience and familiarity with existing Python toolchains.
 

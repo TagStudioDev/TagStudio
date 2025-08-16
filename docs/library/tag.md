@@ -1,4 +1,8 @@
-# Tags
+---
+icon: material/tag-text
+---
+
+# :material-tag-text: Tags
 
 Tags are discrete objects that represent some attribute. This could be a person, place, object, concept, and more. Unlike most tagging systems, TagStudio tags are not solely represented by a line of text or a hashtag. Tags in TagStudio consist of several properties and relationships that give extra customization, searching power, and ease of tagging that cannot be achieved by string-based tags alone. TagStudio tags are designed to be as simple or as complex as you'd like, giving options to users of all skill levels and use cases.
 

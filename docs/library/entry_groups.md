@@ -1,8 +1,9 @@
 ---
 tags:
-  - Upcoming Feature
+    - Upcoming Feature
+icon: material/group
 ---
 
-# Entry Groups
+# :material-group: Entry Groups
 
 Entries can be grouped via tags marked as "groups" which when applied to different entries will signal TagStudio to treat those entries as a single group inside of searches and browsing.

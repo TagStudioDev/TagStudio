@@ -1,3 +1,7 @@
+---
+icon: material/map-check
+---
+
 # :material-map-check: Roadmap
 
 This page outlines the current and planned features required for TagStudio to be considered "feature complete" (v10.0.0). Features and changes are broken up by group in order to better assess the overall state of those features. [Priority levels](#priority-levels) and [version estimates](#version-estimates) are provided in order to give a rough idea of what's planned and when it may release.
