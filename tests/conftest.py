@@ -134,12 +134,12 @@ def search_library() -> Library:
 
 @pytest.fixture
 def entry_min(library):
-    yield next(library.get_entries())
+    yield next(library.all_entries())
 
 
 @pytest.fixture
 def entry_full(library: Library):
-    yield next(library.get_entries(with_joins=True))
+    yield next(library.all_entries(with_joins=True))
 
 
 @pytest.fixture
@@ -155,19 +155,20 @@ def qt_driver(qtbot, library, library_dir: Path):
 
         driver.app = Mock()
         driver.main_window = Mock()
-        driver.preview_panel = Mock()
-        driver.flow_container = Mock()
+        driver.main_window.preview_panel = Mock()
+        driver.main_window.thumb_grid = Mock()
+        driver.main_window.thumb_size = 128
         driver.item_thumbs = []
-        driver.autofill_action = Mock()
+        driver.main_window.menu_bar.autofill_action = Mock()
 
         driver.copy_buffer = {"fields": [], "tags": []}
-        driver.copy_fields_action = Mock()
-        driver.paste_fields_action = Mock()
+        driver.main_window.menu_bar.copy_fields_action = Mock()
+        driver.main_window.menu_bar.paste_fields_action = Mock()
 
         driver.lib = library
         # TODO - downsize this method and use it
         # driver.start()
-        driver.frame_content = list(library.get_entries())
+        driver.frame_content = list(library.all_entries())
         yield driver
 
 

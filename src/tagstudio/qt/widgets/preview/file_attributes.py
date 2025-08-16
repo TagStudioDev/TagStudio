@@ -6,6 +6,7 @@
 import os
 import platform
 import typing
+from dataclasses import dataclass
 from datetime import datetime as dt
 from datetime import timedelta
 from pathlib import Path
@@ -27,6 +28,13 @@ if typing.TYPE_CHECKING:
     from tagstudio.qt.ts_qt import QtDriver
 
 logger = structlog.get_logger(__name__)
+
+
+@dataclass
+class FileAttributeData:
+    width: int | None = None
+    height: int | None = None
+    duration: int | None = None
 
 
 class FileAttributes(QWidget):
@@ -131,10 +139,10 @@ class FileAttributes(QWidget):
             self.date_created_label.setHidden(True)
             self.date_modified_label.setHidden(True)
 
-    def update_stats(self, filepath: Path | None = None, stats: dict | None = None):
+    def update_stats(self, filepath: Path | None = None, stats: FileAttributeData | None = None):
         """Render the panel widgets with the newest data from the Library."""
         if not stats:
-            stats = {}
+            stats = FileAttributeData()
 
         if not filepath:
             self.layout().setSpacing(0)
@@ -179,16 +187,9 @@ class FileAttributes(QWidget):
             stats_label_text = ""
             ext_display: str = ""
             file_size: str = ""
-            width_px_text: str = ""
-            height_px_text: str = ""
-            duration_text: str = ""
             font_family: str = ""
 
             # Attempt to populate the stat variables
-            width_px_text = stats.get("width", "")
-            height_px_text = stats.get("height", "")
-            duration_text = stats.get("duration", "")
-            font_family = stats.get("font_family", "")
             ext_display = ext.upper()[1:] or filepath.stem.upper()
             if filepath:
                 try:
@@ -217,14 +218,14 @@ class FileAttributes(QWidget):
             elif file_size:
                 stats_label_text += file_size
 
-            if width_px_text and height_px_text:
+            if stats.width is not None and stats.height is not None:
                 stats_label_text = add_newline(stats_label_text)
-                stats_label_text += f"{width_px_text} x {height_px_text} px"
+                stats_label_text += f"{stats.width} x {stats.height} px"
 
-            if duration_text:
+            if stats.duration is not None:
                 stats_label_text = add_newline(stats_label_text)
                 try:
-                    dur_str = str(timedelta(seconds=float(duration_text)))[:-7]
+                    dur_str = str(timedelta(seconds=float(stats.duration)))[:-7]
                     if dur_str.startswith("0:"):
                         dur_str = dur_str[2:]
                     if dur_str.startswith("0"):

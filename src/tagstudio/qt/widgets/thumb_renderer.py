@@ -6,7 +6,6 @@
 import contextlib
 import hashlib
 import math
-import struct
 import zipfile
 from copy import deepcopy
 from io import BytesIO
@@ -17,6 +16,7 @@ from warnings import catch_warnings
 import cv2
 import numpy as np
 import rawpy
+import srctools
 import structlog
 from cv2.typing import MatLike
 from mutagen import MutagenError, flac, id3, mp4
@@ -47,7 +47,6 @@ from PySide6.QtCore import (
 from PySide6.QtGui import QGuiApplication, QImage, QPainter, QPixmap
 from PySide6.QtPdf import QPdfDocument, QPdfDocumentRenderOptions
 from PySide6.QtSvg import QSvgRenderer
-from vtf2img import Parser
 
 from tagstudio.core.constants import (
     FONT_SAMPLE_SIZES,
@@ -525,12 +524,12 @@ class ThumbRenderer(QObject):
         samples_per_bar: int = 3
         size_scaled: int = size * base_scale
         allow_small_min: bool = False
-        im: Image.Image = None
+        im: Image.Image | None = None
 
         try:
             bar_count: int = min(math.floor((size // pixel_ratio) / 5), 64)
-            audio: AudioSegment = AudioSegment.from_file(filepath, ext[1:])
-            data = np.fromstring(audio._data, np.int16)  # type: ignore
+            audio = AudioSegment.from_file(filepath, ext[1:])
+            data = np.frombuffer(buffer=audio._data, dtype=np.int16)
             data_indices = np.linspace(1, len(data), num=bar_count * samples_per_bar)
             bar_margin: float = ((size_scaled / (bar_count * 3)) * base_scale) / 2
             line_width: float = ((size_scaled - bar_margin) / (bar_count * 3)) * base_scale
@@ -538,7 +537,7 @@ class ThumbRenderer(QObject):
 
             count: int = 0
             maximum_item: int = 0
-            max_array: list = []
+            max_array: list[int] = []
             highest_line: int = 0
 
             for i in range(-1, len(data_indices)):
@@ -547,7 +546,7 @@ class ThumbRenderer(QObject):
                     count = count + 1
                     with catch_warnings(record=True):
                         if abs(d) > maximum_item:
-                            maximum_item = abs(d)
+                            maximum_item = int(abs(d))
                 else:
                     max_array.append(maximum_item)
 
@@ -631,27 +630,22 @@ class ThumbRenderer(QObject):
         return im
 
     @staticmethod
-    def _source_engine(filepath: Path) -> Image.Image:
-        """This is a function to convert the VTF (Valve Texture Format) files to thumbnails.
+    def _vtf_thumb(filepath: Path) -> Image.Image | None:
+        """Extract and render a thumbnail for VTF (Valve Texture Format) images.
 
-        It works using the VTF2IMG library for PILLOW.
+        Uses the srctools library for reading VTF files.
+
+        Args:
+            filepath (Path): The path of the file.
         """
-        parser = Parser(filepath)
-        im: Image.Image = None
+        im: Image.Image | None = None
         try:
-            im = parser.get_image()
+            with open(filepath, "rb") as f:
+                vtf = srctools.VTF.read(f)
+                im = vtf.get(frame=0).to_PIL()
 
-        except (
-            AttributeError,
-            UnidentifiedImageError,
-            TypeError,
-            struct.error,
-        ) as e:
-            if str(e) == "expected string or buffer":
-                logger.error("Couldn't render thumbnail", filepath=filepath, error=type(e).__name__)
-
-            else:
-                logger.error("Couldn't render thumbnail", filepath=filepath, error=type(e).__name__)
+        except ValueError as e:
+            logger.error("Couldn't render thumbnail", filepath=filepath, error=type(e).__name__)
         return im
 
     @staticmethod
@@ -662,6 +656,29 @@ class ThumbRenderer(QObject):
             filepath (Path): The path of the file.
         """
         file_path_within_zip = "Thumbnails/thumbnail.png"
+        im: Image.Image = None
+        with zipfile.ZipFile(filepath, "r") as zip_file:
+            # Check if the file exists in the zip
+            if file_path_within_zip in zip_file.namelist():
+                # Read the specific file into memory
+                file_data = zip_file.read(file_path_within_zip)
+                thumb_im = Image.open(BytesIO(file_data))
+                if thumb_im:
+                    im = Image.new("RGB", thumb_im.size, color="#1e1e1e")
+                    im.paste(thumb_im)
+            else:
+                logger.error("Couldn't render thumbnail", filepath=filepath)
+
+        return im
+
+    @staticmethod
+    def _krita_thumb(filepath: Path) -> Image.Image:
+        """Extract and render a thumbnail for an Krita file.
+
+        Args:
+            filepath (Path): The path of the file.
+        """
+        file_path_within_zip = "preview.png"
         im: Image.Image = None
         with zipfile.ZipFile(filepath, "r") as zip_file:
             # Check if the file exists in the zip
@@ -1366,6 +1383,11 @@ class ThumbRenderer(QObject):
                 # PowerPoint Slideshow
                 elif ext in {".pptx"}:
                     image = self._powerpoint_thumb(_filepath)
+                # Krita ========================================================
+                elif MediaCategories.is_ext_in_category(
+                    ext, MediaCategories.KRITA_TYPES, mime_fallback=True
+                ):
+                    image = self._krita_thumb(_filepath)
                 # OpenDocument/OpenOffice ======================================
                 elif MediaCategories.is_ext_in_category(
                     ext, MediaCategories.OPEN_DOCUMENT_TYPES, mime_fallback=True
@@ -1418,7 +1440,7 @@ class ThumbRenderer(QObject):
                 elif MediaCategories.is_ext_in_category(
                     ext, MediaCategories.SOURCE_ENGINE_TYPES, mime_fallback=True
                 ):
-                    image = self._source_engine(_filepath)
+                    image = self._vtf_thumb(_filepath)
                 # No Rendered Thumbnail ========================================
                 if not image:
                     raise NoRendererError

@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "TagStudio"
 description = "A User-Focused Photo & File Management System."
-version = "9.5.2"
+version = "9.5.3"
 license = "GPL-3.0-only"
 readme = "README.md"
 requires-python = ">=3.12,<3.13"
@@ -16,7 +16,7 @@ dependencies = [
     "mutagen~=1.47",
     "numpy~=2.2",
     "opencv_python~=4.11",
-    "Pillow~=11.2",
+    "Pillow>=10.2,<=12.0",
     "pillow-heif~=0.22",
     "pillow-jxl-plugin~=1.3",
     "pydantic~=2.10",
@@ -25,16 +25,16 @@ dependencies = [
     "rawpy~=0.24",
     "Send2Trash~=1.8",
     "SQLAlchemy~=2.0",
+    "srctools~=2.6",
     "structlog~=25.3",
     "toml~=0.10",
     "typing_extensions~=4.13",
     "ujson~=5.10",
-    "vtf2img~=0.1",
 ]
 
 [project.optional-dependencies]
 dev = ["tagstudio[mkdocs,mypy,pre-commit,pyinstaller,pytest,ruff]"]
-mkdocs = ["mkdocs-material==9.*"]
+mkdocs = ["mkdocs-material[imaging]>=9.6.14"]
 mypy = ["mypy==1.15.0", "mypy-extensions==1.*", "types-ujson~=5.10"]
 pre-commit = ["pre-commit~=4.2"]
 pyinstaller = ["Pyinstaller~=6.13"]
@@ -84,7 +84,8 @@ qt_api = "pyside6"
 
 [tool.pyright]
 ignore = [".venv/**"]
-include = ["src/tagstudio/**"]
+include = ["src/tagstudio", "tests"]
+extraPaths = ["src/tagstudio", "tests"]
 reportAny = false
 reportIgnoreCommentWithoutRule = false
 reportImplicitStringConcatenation = false
@@ -97,7 +98,7 @@ reportUnknownMemberType = false
 reportUnusedCallResult = false
 
 [tool.ruff]
-exclude = ["main_window.py", "home_ui.py", "resources.py", "resources_rc.py"]
+exclude = ["home_ui.py", "resources.py", "resources_rc.py"]
 line-length = 100
 
 [tool.ruff.lint]

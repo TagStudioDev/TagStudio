@@ -1,7 +1,5 @@
-# Copyright (C) 2025 Travis Abendshien (CyanVoxel).
 # Licensed under the GPL-3.0 License.
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
-
 
 from collections.abc import Callable
 

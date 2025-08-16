@@ -4,6 +4,7 @@
 
 import contextlib
 import json
+import os
 import platform
 import subprocess
 from shutil import which
@@ -15,7 +16,13 @@ from tagstudio.qt.helpers.silent_popen import silent_Popen, silent_run
 
 logger = structlog.get_logger(__name__)
 
-FFMPEG_MACOS_LOCATIONS: list[str] = ["", "/opt/homebrew/bin/", "/usr/local/bin/"]
+user = os.environ.get("USER", None)
+FFMPEG_MACOS_LOCATIONS: list[str] = [
+    "",
+    "/opt/homebrew/bin/",
+    "/usr/local/bin/",
+    f"/etc/profiles/per-user/{user}/bin",
+]
 
 
 def _get_ffprobe_location() -> str:
@@ -58,7 +65,7 @@ def probe(filename, cmd=FFPROBE_CMD, timeout=None, **kwargs):
             ``stderr`` property of the exception.
     """
     args = [cmd, "-show_format", "-show_streams", "-of", "json"]
-    args += ffmpeg._utils.convert_kwargs_to_cmd_line_args(kwargs)
+    args += ffmpeg._utils.convert_kwargs_to_cmd_line_args(kwargs)  # pyright: ignore[reportAttributeAccessIssue]
     args += [filename]
 
     # PATCHED

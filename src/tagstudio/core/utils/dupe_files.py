@@ -54,12 +54,13 @@ class DupeRegistry:
                     results = self.library.search_library(
                         BrowsingState.from_path(path_relative), 500
                     )
+                    entries = self.library.get_entries(results.ids)
 
                     if not results:
                         # file not in library
                         continue
 
-                    files.append(results[0])
+                    files.append(entries[0])
 
                 if not len(files) > 1:
                     # only one file in the group, nothing to do
@@ -79,7 +80,7 @@ class DupeRegistry:
         )
 
         for i, entries in enumerate(self.groups):
-            remove_ids = [x.id for x in entries[1:]]
+            remove_ids = entries[1:]
             logger.info("Removing entries group", ids=remove_ids)
             self.library.remove_entries(remove_ids)
             yield i - 1  # The -1 waits for the next step to finish

@@ -12,6 +12,7 @@ DEFAULT_TRANSLATION = "en"
 
 LANGUAGES = {
     # "Cantonese (Traditional)": "yue_Hant",  # Empty
+    "Chinese (Simplified)": "zh_Hans",
     "Chinese (Traditional)": "zh_Hant",
     # "Czech": "cs",  # Minimal
     # "Danish": "da",  # Minimal
@@ -23,7 +24,7 @@ LANGUAGES = {
     "Hungarian": "hu",
     # "Italian": "it",  # Minimal
     "Japanese": "ja",
-    "Norwegian Bokmål": "nb_NO",  # Minimal
+    "Norwegian Bokmål": "nb_NO",
     "Polish": "pl",
     "Portuguese (Brazil)": "pt_BR",
     # "Portuguese (Portugal)": "pt",  # Empty
@@ -33,7 +34,7 @@ LANGUAGES = {
     "Tamil": "ta",
     "Toki Pona": "tok",
     "Turkish": "tr",
-    # "Viossa": "qpv", # Minimal
+    "Viossa": "qpv",
 }
 
 

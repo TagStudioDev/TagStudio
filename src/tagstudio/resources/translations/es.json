@@ -1,6 +1,6 @@
 {
     "about.config_path": "Archivo de configuración",
-    "about.description": "TagStudio es una aplicación para organizar fotografías y archivos que utiliza un sistema de etiquetas subyacentes centrado en dar libertad y flexibilidad al usuario. Sin programas ni formatos propios, ni un mar de archivos y sin trastornar completamente tu sistema de estructurar los archivos.",
+    "about.description": "TagStudio es una aplicación para organizar fotografías y archivos que utiliza un sistema de etiquetas subyacentes centrado en dar libertad y flexibilidad al usuario. Sin programas ni formatos propios, ni un mar de archivos y sin trastornar completamente la estructura de tu sistema de archivos.",
     "about.documentation": "Documentación",
     "about.license": "Licencia",
     "about.module.found": "Encontrado",
@@ -248,6 +248,10 @@
     "settings.restart_required": "Por favor, reinicia TagStudio para que se los cambios surtan efecto.",
     "settings.show_filenames_in_grid": "Mostrar el nombre de archivo en la cuadrícula",
     "settings.show_recent_libraries": "Mostrar bibliotecas recientes",
+    "settings.tag_click_action.add_to_search": "Añadir Etiqueta a la Búsqueda",
+    "settings.tag_click_action.label": "Acción al hacer Clic a la Etiqueta",
+    "settings.tag_click_action.open_edit": "Editar Etiqueta",
+    "settings.tag_click_action.set_search": "Buscar Etiqueta",
     "settings.theme.dark": "Oscuro",
     "settings.theme.label": "Tema:",
     "settings.theme.light": "Claro",

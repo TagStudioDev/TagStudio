@@ -6,7 +6,7 @@ If you wish to develop for TagStudio, you'll need to create a development enviro
 !!! tip "Contributing"
     If you wish to contribute to TagStudio's development, please read our [CONTRIBUTING.md](https://github.com/TagStudioDev/TagStudio/blob/main/CONTRIBUTING.md)!
 
-## Install Python
+## Installing Python
 
 Python [3.12](https://www.python.org/downloads) is required to develop for TagStudio. Any version matching "Python 3.12.x" should work, with "x" being any number. Alternatively you can use a tool such as [pyenv](https://github.com/pyenv/pyenv) to install this version of Python without affecting any existing Python installations on your system. Tools such as [uv](#installing-with-uv) can also install Python versions.
 
@@ -22,7 +22,7 @@ python --version
 
 ---
 
-#### Installing with pyenv
+### Installing with pyenv
 
 If you choose to install Python using pyenv, please refer to the following instructions:
 
@@ -32,11 +32,19 @@ If you choose to install Python using pyenv, please refer to the following instr
 
 ---
 
-### Installing Dependencies
+## Cloning from GitHub
+
+The repository can be cloned/downloaded via `git` in your terminal, or by downloading the zip file from the "Code" button on the [repository page](https://github.com/TagStudioDev/TagStudio).
+
+```sh
+git clone https://github.com/TagStudioDev/TagStudio.git
+```
+
+## Installing Dependencies
 
 To install the required dependencies, you can use a dependency manager such as [uv](https://docs.astral.sh/uv) or [Poetry 2.0](https://python-poetry.org). Alternatively you can create a virtual environment and manually install the dependencies yourself.
 
-#### Installing with uv
+### Installing with uv
 
 If using [uv](https://docs.astral.sh/uv), you can install the dependencies for TagStudio with the following command:
 
@@ -48,7 +56,7 @@ A reference `.envrc` is provided for use with [direnv](#direnv), see [`contrib/.
 
 ---
 
-#### Installing with Poetry
+### Installing with Poetry
 
 If using [Poetry](https://python-poetry.org), you can install the dependencies for TagStudio with the following command:
 
@@ -58,7 +66,7 @@ poetry install --with dev
 
 ---
 
-#### Manual Installation
+### Manual Installation
 
 If you choose to manually set up a virtual environment and install dependencies instead of using a dependency manager, please refer to the following instructions:
 

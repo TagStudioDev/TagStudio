@@ -24,6 +24,15 @@ class ShowFilepathOption(int, enum.Enum):
     DEFAULT = SHOW_RELATIVE_PATHS
 
 
+class TagClickActionOption(int, enum.Enum):
+    """Values representing the options for the "tag_click_action" setting."""
+
+    OPEN_EDIT = 0
+    SET_SEARCH = 1
+    ADD_TO_SEARCH = 2
+    DEFAULT = OPEN_EDIT
+
+
 class Theme(str, enum.Enum):
     COLOR_BG_DARK = "#65000000"
     COLOR_BG_LIGHT = "#22000000"

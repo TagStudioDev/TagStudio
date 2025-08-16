@@ -171,26 +171,26 @@ class SearchResult:
 
     Attributes:
         total_count(int): total number of items for given query, might be different than len(items).
-        items(list[Entry]): for current page (size matches filter.page_size).
+        ids(list[int]): for current page (size matches filter.page_size).
     """
 
     total_count: int
-    items: list[Entry]
+    ids: list[int]
 
     def __bool__(self) -> bool:
         """Boolean evaluation for the wrapper.
 
-        :return: True if there are items in the result.
+        :return: True if there are ids in the result.
         """
         return self.total_count > 0
 
     def __len__(self) -> int:
-        """Return the total number of items in the result."""
-        return len(self.items)
+        """Return the total number of ids in the result."""
+        return len(self.ids)
 
-    def __getitem__(self, index: int) -> Entry:
-        """Allow to access items via index directly on the wrapper."""
-        return self.items[index]
+    def __getitem__(self, index: int) -> int:
+        """Allow to access ids via index directly on the wrapper."""
+        return self.ids[index]
 
 
 @dataclass
@@ -611,7 +611,7 @@ class Library:
 
     def apply_db9_filename_population(self, session: Session):
         """Populate the filename column introduced in DB_VERSION 9."""
-        for entry in self.get_entries():
+        for entry in self.all_entries():
             session.merge(entry).filename = entry.path.name
         session.commit()
         logger.info("[Library][Migration] Populated filename column in entries table")
@@ -674,7 +674,7 @@ class Library:
             start_time = time.time()
             entry = session.scalar(entry_stmt)
             if with_tags:
-                tags = set(session.scalars(tag_stmt))  # pyright: ignore [reportPossiblyUnboundVariable]
+                tags = set(session.scalars(tag_stmt))  # pyright: ignore[reportPossiblyUnboundVariable]
             end_time = time.time()
             logger.info(
                 f"[Library] Time it took to get entry: "
@@ -691,6 +691,12 @@ class Library:
             if with_tags and tags:
                 entry.tags = tags
             return entry
+
+    def get_entries(self, entry_ids: Iterable[int]) -> list[Entry]:
+        with Session(self.engine) as session:
+            statement = select(Entry).where(Entry.id.in_(entry_ids))
+            entries = dict((e.id, e) for e in session.scalars(statement))
+            return [entries[id] for id in entry_ids]
 
     def get_entries_full(self, entry_ids: list[int] | set[int]) -> Iterator[Entry]:
         """Load entry and join with all joins and all tags."""
@@ -746,12 +752,25 @@ class Library:
             make_transient(entry)
             return entry
 
+    def get_tag_entries(
+        self, tag_ids: Iterable[int], entry_ids: Iterable[int]
+    ) -> dict[int, set[int]]:
+        """Returns a dict of tag_id->(entry_ids with tag_id)."""
+        tag_entries: dict[int, set[int]] = dict((id, set()) for id in tag_ids)
+        with Session(self.engine) as session:
+            statement = select(TagEntry).where(
+                and_(TagEntry.tag_id.in_(tag_ids), TagEntry.entry_id.in_(entry_ids))
+            )
+            for tag_entry in session.scalars(statement).fetchall():
+                tag_entries[tag_entry.tag_id].add(tag_entry.entry_id)
+        return tag_entries
+
     @property
     def entries_count(self) -> int:
         with Session(self.engine) as session:
             return session.scalar(select(func.count(Entry.id)))
 
-    def get_entries(self, with_joins: bool = False) -> Iterator[Entry]:
+    def all_entries(self, with_joins: bool = False) -> Iterator[Entry]:
         """Load entries without joins."""
         with Session(self.engine) as session:
             stmt = select(Entry)
@@ -858,7 +877,7 @@ class Library:
     def search_library(
         self,
         search: BrowsingState,
-        page_size: int,
+        page_size: int | None,
     ) -> SearchResult:
         """Filter library by search query.
 
@@ -868,7 +887,7 @@ class Library:
         assert self.engine
 
         with Session(self.engine, expire_on_commit=False) as session:
-            statement = select(Entry)
+            statement = select(Entry.id, func.count().over())
 
             if search.ast:
                 start_time = time.time()
@@ -886,13 +905,6 @@ class Library:
             elif extensions:
                 statement = statement.where(Entry.suffix.in_(extensions))
 
-            statement = statement.distinct(Entry.id)
-            start_time = time.time()
-            query_count = select(func.count()).select_from(statement.alias("entries"))
-            count_all: int = session.execute(query_count).scalar() or 0
-            end_time = time.time()
-            logger.info(f"finished counting ({format_timespan(end_time - start_time)})")
-
             sort_on: ColumnExpressionArgument = Entry.id
             match search.sorting_mode:
                 case SortingModeEnum.DATE_ADDED:
@@ -903,7 +915,8 @@ class Library:
                     sort_on = func.lower(Entry.path)
 
             statement = statement.order_by(asc(sort_on) if search.ascending else desc(sort_on))
-            statement = statement.limit(page_size).offset(search.page_index * page_size)
+            if page_size is not None:
+                statement = statement.limit(page_size).offset(search.page_index * page_size)
 
             logger.info(
                 "searching library",
@@ -912,13 +925,18 @@ class Library:
             )
 
             start_time = time.time()
-            items = session.scalars(statement).fetchall()
+            rows = session.execute(statement).fetchall()
+            ids = []
+            count = 0
+            for row in rows:
+                id, count = row._tuple()
+                ids.append(id)
             end_time = time.time()
             logger.info(f"SQL Execution finished ({format_timespan(end_time - start_time)})")
 
             res = SearchResult(
-                total_count=count_all,
-                items=list(items),
+                total_count=count,
+                ids=ids,
             )
 
             session.expunge_all()
@@ -1425,12 +1443,14 @@ class Library:
             )
             tag = session.scalar(tags_query.where(Tag.id == tag_id))
 
-            session.expunge(tag)
-            for parent in tag.parent_tags:
-                session.expunge(parent)
+            if tag is not None:
+                session.expunge(tag)
 
-            for alias in tag.aliases:
-                session.expunge(alias)
+                for parent in tag.parent_tags:
+                    session.expunge(parent)
+
+                for alias in tag.aliases:
+                    session.expunge(alias)
 
         return tag
 
@@ -1438,10 +1458,23 @@ class Library:
         with Session(self.engine) as session:
             statement = (
                 select(Tag)
+                .options(selectinload(Tag.parent_tags), selectinload(Tag.aliases))
                 .outerjoin(TagAlias)
                 .where(or_(Tag.name == tag_name, TagAlias.name == tag_name))
             )
-            return session.scalar(statement)
+
+            tag = session.scalar(statement)
+
+            if tag is not None:
+                session.expunge(tag)
+
+                for parent in tag.parent_tags:
+                    session.expunge(parent)
+
+                for alias in tag.aliases:
+                    session.expunge(alias)
+
+        return tag
 
     def get_alias(self, tag_id: int, alias_id: int) -> TagAlias | None:
         with Session(self.engine) as session:

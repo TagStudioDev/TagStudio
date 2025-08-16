@@ -68,7 +68,7 @@ if TYPE_CHECKING:
 
 def test_browsing_state_update(qt_driver: "QtDriver"):
     # Given
-    for entry in qt_driver.lib.get_entries(with_joins=True):
+    for entry in qt_driver.lib.all_entries(with_joins=True):
         thumb = ItemThumb(ItemType.ENTRY, qt_driver.lib, qt_driver, (100, 100))
         qt_driver.item_thumbs.append(thumb)
         qt_driver.frame_content.append(entry)

@@ -8,7 +8,7 @@ from tagstudio.core.query_lang.util import ParsingError
 def verify_count(lib: Library, query: str, count: int):
     results = lib.search_library(BrowsingState.from_search_query(query), page_size=500)
     assert results.total_count == count
-    assert len(results.items) == count
+    assert len(results.ids) == count
 
 
 @pytest.mark.parametrize(

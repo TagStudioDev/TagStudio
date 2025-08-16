@@ -3,11 +3,11 @@
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
 
-import logging
 import sys
 import typing
 from pathlib import Path
 
+import structlog
 from PIL import Image, ImageQt
 from PySide6.QtCore import QEasingCurve, QPoint, QPropertyAnimation, Qt
 from PySide6.QtGui import QPixmap
@@ -21,7 +21,7 @@ from tagstudio.qt.widgets.clickable_label import ClickableLabel
 if typing.TYPE_CHECKING:
     from tagstudio.qt.ts_qt import QtDriver
 
-logging.basicConfig(format="%(message)s", level=logging.INFO)
+logger = structlog.get_logger(__name__)
 
 
 class LandingWidget(QWidget):
@@ -84,13 +84,12 @@ class LandingWidget(QWidget):
         self.landing_layout.addWidget(self.open_button, alignment=Qt.AlignmentFlag.AlignCenter)
         self.landing_layout.addWidget(self.status_label, alignment=Qt.AlignmentFlag.AlignCenter)
 
-    def update_logo_color(self, style: str = "mono"):
+    def update_logo_color(self, style: typing.Literal["mono", "gradient"] = "mono"):
         """Update the color of the TagStudio logo.
 
         Args:
             style (str): = The style of the logo. Either "mono" or "gradient".
         """
-        logo_im: Image.Image = None
         if style == "mono":
             logo_im = theme_fg_overlay(self.logo_raw)
         elif style == "gradient":
@@ -154,7 +153,7 @@ class LandingWidget(QWidget):
 
     # def animate_status(self):
     #     # if self.status_label.y() > 50:
-    #     logging.info(f"{self.status_label.pos()}")
+    #     logger.info(f"{self.status_label.pos()}")
     #     self.status_pos_anim.setStartValue(
     #         QPoint(self.status_label.x(), self.status_label.y() + 50)
     #     )

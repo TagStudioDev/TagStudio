@@ -3,13 +3,14 @@
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
 
-import logging
 import mimetypes
 from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
 
-logging.basicConfig(format="%(message)s", level=logging.INFO)
+import structlog
+
+logger = structlog.get_logger(__name__)
 
 FILETYPE_EQUIVALENTS = [
     set(["aif", "aiff", "aifc"]),
@@ -80,6 +81,21 @@ class MediaCategory:
     name: str
     is_iana: bool = False
 
+    def contains(self, ext: str, mime_fallback: bool = False) -> bool:
+        """Check if an extension is a member of this MediaCategory.
+
+        Args:
+            ext (str): File extension with a leading "." and in all lowercase.
+            mime_fallback (bool): Flag to guess MIME type if no set matches are made.
+        """
+        if ext in self.extensions:
+            return True
+        elif mime_fallback and self.is_iana:
+            mime_type: str | None = mimetypes.guess_type(Path("x" + ext), strict=False)[0]
+            if mime_type is not None and mime_type.startswith(self.media_type.value):
+                return True
+        return False
+
 
 class MediaCategories:
     """Contain pre-made MediaCategory objects as well as methods to interact with them."""
@@ -93,6 +109,7 @@ class MediaCategories:
         ".psd",
     }
     _AFFINITY_PHOTO_SET: set[str] = {".afphoto"}
+    _KRITA_SET: set[str] = {".kra", ".krz"}
     _ARCHIVE_SET: set[str] = {
         ".7z",
         ".gz",
@@ -326,6 +343,7 @@ class MediaCategories:
         ".odp",
         ".ods",
         ".odt",
+        ".ora",
     }
     _PACKAGE_SET: set[str] = {
         ".aab",
@@ -590,6 +608,12 @@ class MediaCategories:
         is_iana=True,
         name="video",
     )
+    KRITA_TYPES = MediaCategory(
+        media_type=MediaType.IMAGE,
+        extensions=_KRITA_SET,
+        is_iana=False,
+        name="krita",
+    )
 
     ALL_CATEGORIES = [
         ADOBE_PHOTOSHOP_TYPES,
@@ -624,6 +648,7 @@ class MediaCategories:
         SPREADSHEET_TYPES,
         TEXT_TYPES,
         VIDEO_TYPES,
+        KRITA_TYPES,
     ]
 
     @staticmethod
@@ -635,16 +660,11 @@ class MediaCategories:
             mime_fallback (bool): Flag to guess MIME type if no set matches are made.
         """
         media_types: set[MediaType] = set()
-        # mime_guess: bool = False
 
         for cat in MediaCategories.ALL_CATEGORIES:
-            if ext in cat.extensions:
+            if cat.contains(ext, mime_fallback):
                 media_types.add(cat.media_type)
-            elif mime_fallback and cat.is_iana:
-                mime_type: str = mimetypes.guess_type(Path("x" + ext), strict=False)[0]
-                if mime_type and mime_type.startswith(cat.media_type.value):
-                    media_types.add(cat.media_type)
-                    # mime_guess = True
+
         return media_types
 
     @staticmethod
@@ -656,10 +676,4 @@ class MediaCategories:
             media_cat (MediaCategory): The MediaCategory to to check for extension membership.
             mime_fallback (bool): Flag to guess MIME type if no set matches are made.
         """
-        if ext in media_cat.extensions:
-            return True
-        elif mime_fallback and media_cat.is_iana:
-            mime_type: str = mimetypes.guess_type(Path("x" + ext), strict=False)[0]
-            if mime_type and mime_type.startswith(media_cat.media_type.value):
-                return True
-        return False
+        return media_cat.contains(ext, mime_fallback)

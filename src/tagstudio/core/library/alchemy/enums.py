@@ -125,6 +125,9 @@ class BrowsingState:
     def with_sorting_direction(self, ascending: bool) -> "BrowsingState":
         return replace(self, ascending=ascending)
 
+    def with_search_query(self, search_query: str) -> "BrowsingState":
+        return replace(self, query=search_query)
+
 
 class FieldTypeEnum(enum.Enum):
     TEXT_LINE = "Text Line"

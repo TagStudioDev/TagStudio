@@ -4,7 +4,7 @@
 
 
 import contextlib
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Union
 from warnings import catch_warnings
 
 import structlog
@@ -28,7 +28,6 @@ from tagstudio.core.library.alchemy.enums import BrowsingState, TagColorEnum
 from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.library.alchemy.models import Tag
 from tagstudio.core.palette import ColorType, get_tag_color
-from tagstudio.qt.modals import build_tag
 from tagstudio.qt.translations import Translations
 from tagstudio.qt.widgets.panel import PanelModal, PanelWidget
 from tagstudio.qt.widgets.tag import TagWidget
@@ -37,14 +36,35 @@ logger = structlog.get_logger(__name__)
 
 # Only import for type checking/autocompletion, will not be imported at runtime.
 if TYPE_CHECKING:
-    from tagstudio.qt.modals.build_tag import BuildTagPanel
     from tagstudio.qt.ts_qt import QtDriver
+
+
+class TagSearchModal(PanelModal):
+    tsp: "TagSearchPanel"
+
+    def __init__(
+        self,
+        library: Library,
+        exclude: list[int] | None = None,
+        is_tag_chooser: bool = True,
+        done_callback=None,
+        save_callback=None,
+        has_save=False,
+    ):
+        self.tsp = TagSearchPanel(library, exclude, is_tag_chooser)
+        super().__init__(
+            self.tsp,
+            Translations["tag.add.plural"],
+            done_callback=done_callback,
+            save_callback=save_callback,
+            has_save=has_save,
+        )
 
 
 class TagSearchPanel(PanelWidget):
     tag_chosen = Signal(int)
     lib: Library
-    driver: "QtDriver"
+    driver: Union["QtDriver", None]
     is_initialized: bool = False
     first_tag_id: int | None = None
     is_tag_chooser: bool
@@ -58,7 +78,7 @@ class TagSearchPanel(PanelWidget):
     def __init__(
         self,
         library: Library,
-        exclude: list[int] = None,
+        exclude: list[int] | None = None,
         is_tag_chooser: bool = True,
     ):
         super().__init__()
@@ -177,10 +197,12 @@ class TagSearchPanel(PanelWidget):
             self.search_field.setFocus()
             self.update_tags()
 
-        self.build_tag_modal: BuildTagPanel = build_tag.BuildTagPanel(self.lib)
-        self.add_tag_modal: PanelModal = PanelModal(self.build_tag_modal, has_save=True)
-        self.add_tag_modal.setTitle(Translations["tag.new"])
-        self.add_tag_modal.setWindowTitle(Translations["tag.add"])
+        from tagstudio.qt.modals.build_tag import BuildTagPanel  # here due to circular imports
+
+        self.build_tag_modal: BuildTagPanel = BuildTagPanel(self.lib)
+        self.add_tag_modal: PanelModal = PanelModal(
+            self.build_tag_modal, Translations["tag.new"], Translations["tag.add"], has_save=True
+        )
 
         self.build_tag_modal.name_field.setText(name)
         self.add_tag_modal.saved.connect(on_tag_modal_saved)
@@ -194,6 +216,7 @@ class TagSearchPanel(PanelWidget):
         create_button: QPushButton | None = None
         if self.create_button_in_layout and self.scroll_layout.count():
             create_button = self.scroll_layout.takeAt(self.scroll_layout.count() - 1).widget()  # type: ignore
+            assert create_button is not None
             create_button.deleteLater()
             self.create_button_in_layout = False
 
@@ -264,7 +287,8 @@ class TagSearchPanel(PanelWidget):
                 self.scroll_layout.addWidget(new_tw)
 
         # Assign the tag to the widget at the given index.
-        tag_widget: TagWidget = self.scroll_layout.itemAt(index).widget()
+        tag_widget: TagWidget = self.scroll_layout.itemAt(index).widget()  # pyright: ignore[reportAssignmentType]
+        assert isinstance(tag_widget, TagWidget)
         tag_widget.set_tag(tag)
 
         # Set tag widget viability and potentially return early
@@ -288,11 +312,11 @@ class TagSearchPanel(PanelWidget):
         tag_widget.on_remove.connect(lambda t=tag: self.delete_tag(t))
         tag_widget.bg_button.clicked.connect(lambda: self.tag_chosen.emit(tag_id))
 
-        if self.driver:
+        if self.driver is not None:
             tag_widget.search_for_tag_action.triggered.connect(
-                lambda checked=False, tag_id=tag.id: (
-                    self.driver.main_window.searchField.setText(f"tag_id:{tag_id}"),
-                    self.driver.update_browsing_state(BrowsingState.from_tag_id(tag_id)),
+                lambda checked=False, tag_id=tag.id, driver=self.driver: (
+                    driver.main_window.search_field.setText(f"tag_id:{tag_id}"),
+                    driver.update_browsing_state(BrowsingState.from_tag_id(tag_id)),
                 )
             )
             tag_widget.search_for_tag_action.setEnabled(True)
@@ -352,21 +376,23 @@ class TagSearchPanel(PanelWidget):
         pass
 
     def edit_tag(self, tag: Tag):
-        def callback(btp: build_tag.BuildTagPanel):
+        from tagstudio.qt.modals.build_tag import BuildTagPanel
+
+        def callback(btp: BuildTagPanel):
             self.lib.update_tag(
                 btp.build_tag(), set(btp.parent_ids), set(btp.alias_names), set(btp.alias_ids)
             )
             self.update_tags(self.search_field.text())
 
-        build_tag_panel = build_tag.BuildTagPanel(self.lib, tag=tag)
+        build_tag_panel = BuildTagPanel(self.lib, tag=tag)
 
         self.edit_modal = PanelModal(
             build_tag_panel,
             self.lib.tag_display_name(tag),
+            Translations["tag.edit"],
             done_callback=(self.update_tags(self.search_field.text())),
             has_save=True,
         )
-        self.edit_modal.setWindowTitle(Translations["tag.edit"])
 
         self.edit_modal.saved.connect(lambda: callback(build_tag_panel))
         self.edit_modal.show()
