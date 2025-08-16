@@ -1099,13 +1099,13 @@ class QtDriver(DriverMixin, QObject):
         yield 0
 
     def run_macros(self, macro_name: str, entry_ids: list[int]):
-        """Run a specific Macro on a group of given entry_ids."""
+        """Run a Macro on a list of entires."""
         for entry_id in entry_ids:
             self.run_macro(macro_name, entry_id)
-        self.main_window.preview_panel.update_preview()
+        self.main_window.preview_panel.refresh_selection(update_preview=False)
 
     def run_macro(self, macro_name: str, entry_id: int):
-        """Run a specific Macro on an Entry given a Macro name."""
+        """Run a Macro on a single entry."""
         if not self.lib.library_dir:
             logger.error("[QtDriver] Can't run macro when no library is open!")
             return
