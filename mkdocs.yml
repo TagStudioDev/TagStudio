@@ -61,16 +61,16 @@ theme:
     # Palette toggle for light mode
     - media: "(prefers-color-scheme: light)"
       scheme: default
-      primary: deep purple
-      accent: deep purple
+      primary: purple
+      accent: purple
       toggle:
         icon: material/lightbulb
         name: Switch to Dark Mode
     # Palette toggle for dark mode
     - media: "(prefers-color-scheme: dark)"
       scheme: slate
-      primary: deep purple
-      accent: deep purple
+      primary: purple
+      accent: purple
       toggle:
         icon: material/lightbulb-night-outline
         name: Switch to System Preference
