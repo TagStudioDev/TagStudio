@@ -43,6 +43,7 @@ nav:
       - library/tag_categories.md
       - library/tag_color.md
   - Utilities:
+      - utilities/ignore.md
       - utilities/macro.md
   - Updates:
       - updates/changelog.md

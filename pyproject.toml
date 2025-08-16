@@ -30,6 +30,7 @@ dependencies = [
     "toml~=0.10",
     "typing_extensions~=4.13",
     "ujson~=5.10",
+    "wcmatch==10.*",
 ]
 
 [project.optional-dependencies]
