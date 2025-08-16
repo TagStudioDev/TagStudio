@@ -150,7 +150,7 @@ Library representations of files or file-like objects.
     -   [x] Datetimes **[v9.5.4]**
     -   [ ] User-Titled Fields :material-chevron-triple-up:{ .priority-high title="High Priority" } **[v9.6.0]**
     -   [ ] Removal of Deprecated Fields :material-chevron-triple-up:{ .priority-high title="High Priority" } **[v9.6.0]**
--   [ ] [Entry Groups](../library/entry_groups.md) :material-chevron-triple-up:{ .priority-high title="High Priority" } **[v9.7.0]**
+-   [ ] Entry Groups :material-chevron-triple-up:{ .priority-high title="High Priority" } **[v9.7.0]**
     -   [ ] Non-exclusive; Entries can be in multiple groups :material-chevron-triple-up:{ .priority-high title="High Priority" }
     -   [ ] Ability to number entries within group :material-chevron-triple-up:{ .priority-high title="High Priority" }
     -   [ ] Ability to set sorting method for group :material-chevron-triple-up:{ .priority-high title="High Priority" }
@@ -186,7 +186,7 @@ Discrete library objects representing [attributes](<https://en.wikipedia.org/wik
     -   [x] [Parent Tags](../library/tag.md#parent-tags) ([Inheritance](<https://en.wikipedia.org/wiki/Inheritance_(object-oriented_programming)>) Relationship) **[v9.0.0]**
     -   [ ] [Component Tags](../library/tag.md#component-tags) ([Composition](https://en.wikipedia.org/wiki/Object_composition) Relationship) :material-chevron-triple-up:{ .priority-high title="High Priority" } **[v9.6.0]**
 -   [ ] Multiple Language Support :material-chevron-up:{ .priority-low title="Low Priority" } **[v9.9.0]**
--   [ ] [Tag Overrides](../library/tag_overrides.md) :material-chevron-double-up:{ .priority-med title="Medium Priority" }
+-   [ ] Tag Overrides :material-chevron-double-up:{ .priority-med title="Medium Priority" }
 -   [ ] Tag Merging :material-chevron-double-up:{ .priority-med title="Medium Priority" }
 
 ### :material-magnify: [Search](../library/library_search.md)

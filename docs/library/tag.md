@@ -66,7 +66,7 @@ Lastly, when searching your files with broader categories such as `Character` or
 
 **_Coming in version 9.6_**
 
-Component tags will be built from a composition-based, or "HAS" type relationship between tags. This takes care of instances where an attribute may "have" another attribute, but doesn't inherit from it. Shrek may be an `Ogre`, he may be a `Character`, but he is NOT a `Leather Vest` - even if he's commonly seen _with_ it. Component tags, along with the upcoming [Tag Override](./tag_overrides.md) feature, are built to handle these cases in a way that still simplifies the tagging process without adding too much undue complexity for the user.
+Component tags will be built from a composition-based, or "HAS" type relationship between tags. This takes care of instances where an attribute may "have" another attribute, but doesn't inherit from it. Shrek may be an `Ogre`, he may be a `Character`, but he is NOT a `Leather Vest` - even if he's commonly seen _with_ it. Component tags, along with the upcoming "Tag Override" feature, are built to handle these cases in a way that still simplifies the tagging process without adding too much undue complexity for the user.
 
 ## Tag Appearance
 
