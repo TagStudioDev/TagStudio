@@ -51,10 +51,11 @@ Must be finalized or deemed "feature complete" before other core features are de
 
 ### :material-database-cog: Core Library + API
 
-A separated, UI agnostic core library that is used to interface with the TagStudio library format. Would host an API for communication from outside the program.
+A separated, UI agnostic core library that would be used to interface with the TagStudio library format. Would host an API for communication from outside the program. This would be licensed under the more permissive [MIT](https://en.wikipedia.org/wiki/MIT_License) license to foster wider adoption compared to the TagStudio application source code.
 
 -   [ ] Core Library :material-chevron-triple-up:{ .priority-high title="High Priority" } **[v10.0.0]**
 -   [ ] Core Library API :material-chevron-triple-up:{ .priority-high title="High Priority" } **[v10.0.0]**
+-   [ ] MIT License :material-chevron-triple-up:{ .priority-high title="High Priority" } **[v10.0.0]**
 
 ### :material-clipboard-text: Format Specification
 

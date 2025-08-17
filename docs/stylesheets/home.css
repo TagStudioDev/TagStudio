@@ -1,0 +1,14 @@
+h2 {
+    margin: 1rem 0 0 0 !important;
+}
+
+.md-content .md-typeset h1 {
+    /* display: none; */
+    font-size: 0;
+}
+
+.grid > p {
+    align-content: center;
+    font-size: 1rem !important;
+    line-height: 1.25rem;
+}

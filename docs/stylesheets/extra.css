@@ -68,6 +68,10 @@ h2,
     margin-right: -0.8rem;
 }
 
+figcaption {
+    margin-top: 0 !important;
+}
+
 .md-search__form {
     height: 1.5rem;
     background-color: #00004444;
@@ -81,8 +85,12 @@ h2,
     margin-top: -0.2rem;
 }
 
-.twemoji {
+h1 > .twemoji {
     margin-top: 0.14rem;
+}
+
+h2 > .twemoji {
+    margin-top: 0.08rem;
 }
 
 /* Matches the palette used by mkdocs-material */
