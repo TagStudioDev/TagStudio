@@ -129,6 +129,7 @@ class MediaCategories:
         ".aifc",
         ".aiff",
         ".alac",
+        ".caf",
         ".flac",
         ".m4a",
         ".m4p",
@@ -297,10 +298,13 @@ class MediaCategories:
         ".crw",
         ".dng",
         ".nef",
+        ".nrw",
         ".orf",
         ".raf",
         ".raw",
         ".rw2",
+        ".srf",
+        ".srf2",
     }
     _IMAGE_VECTOR_SET: set[str] = {".eps", ".epsf", ".epsi", ".svg", ".svgz"}
     _IMAGE_RASTER_SET: set[str] = {
@@ -365,6 +369,7 @@ class MediaCategories:
         ".md",
         ".mkd",
         ".rmd",
+        ".text",
         ".txt",
         "contributing",
         "license",
