@@ -35,6 +35,10 @@ Features are given rough estimations for which version they will be completed in
 An improved SQLite-based library save file format in which legacy JSON libraries are be migrated to.
 Must be finalized or deemed "feature complete" before other core features are developed or finalized.
 
+<!-- prettier-ignore -->
+!!! note
+    See the "[Library](#library)" section for features related to the library database rather than the underlying schema.
+
 -   [x] A SQLite-based library save file format **[[v9.5.0](./changelog.md#950-2025-03-03)]**
 -   [ ] Cached File Properties Table :material-chevron-triple-up:{ .priority-high title="High Priority" } **[v9.6.0]**
     -   [ ] Date Entry Added to Library :material-chevron-triple-up:{ .priority-high title="High Priority" }
@@ -88,6 +92,10 @@ A detailed written specification for the TagStudio tag and/or library format. In
 -   [ ] 3D Model Thumbnails/Previews :material-chevron-triple-up:{ .priority-high title="High Priority" }
     -   [ ] STL File Support
     -   [ ] OBJ File Support
+-   [ ] Plaintext Thumbnails/Previews :material-chevron-triple-up:{ .priority-high title="High Priority" }
+    -   [x] Basic Support
+    -   [ ] Full File Preview :material-chevron-triple-up:{ .priority-high title="High Priority" }
+    -   [ ] Syntax Highlighting :material-chevron-double-up:{ .priority-med title="Medium Priority" }
 -   [ ] Toggleable Persistent Tagging Panel :material-chevron-triple-up:{ .priority-high title="High Priority" }
     -   [ ] Top Tags
     -   [ ] Recent Tags

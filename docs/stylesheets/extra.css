@@ -97,3 +97,19 @@ h2,
 .priority-low {
     color: #28afff;
 }
+
+.red {
+    color: rgb(245, 0, 87);
+}
+
+.amber {
+    color: rgb(255, 145, 0);
+}
+
+.green {
+    color: rgb(0, 191, 165);
+}
+
+.gray {
+    color: rgb(158, 158, 158);
+}
