@@ -887,7 +887,14 @@ class Library:
         assert self.engine
 
         with Session(self.engine, expire_on_commit=False) as session:
-            statement = select(Entry.id, func.count().over())
+            if page_size is None:
+                statement = select(Entry.id)
+            else:
+                statement = (
+                    select(Entry.id, func.count().over())
+                    .offset(search.page_index * page_size)
+                    .limit(page_size)
+                )
 
             if search.ast:
                 start_time = time.time()
@@ -915,8 +922,6 @@ class Library:
                     sort_on = func.lower(Entry.path)
 
             statement = statement.order_by(asc(sort_on) if search.ascending else desc(sort_on))
-            if page_size is not None:
-                statement = statement.limit(page_size).offset(search.page_index * page_size)
 
             logger.info(
                 "searching library",
@@ -925,17 +930,21 @@ class Library:
             )
 
             start_time = time.time()
-            rows = session.execute(statement).fetchall()
-            ids = []
-            count = 0
-            for row in rows:
-                id, count = row._tuple()
-                ids.append(id)
+            if page_size is None:
+                ids = list(session.scalars(statement))
+                total_count = len(ids)
+            else:
+                rows = session.execute(statement).fetchall()
+                ids = []
+                total_count = 0
+                for row in rows:
+                    ids.append(row[0])
+                    total_count = row[1]
             end_time = time.time()
             logger.info(f"SQL Execution finished ({format_timespan(end_time - start_time)})")
 
             res = SearchResult(
-                total_count=count,
+                total_count=total_count,
                 ids=ids,
             )
 
