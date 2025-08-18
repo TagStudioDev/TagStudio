@@ -26,6 +26,18 @@
     );
 }
 
+/* Mobile Nav Header */
+.md-nav__source {
+    background: linear-gradient(
+        60deg,
+        rgb(205, 78, 255) 0%,
+        rgb(116, 123, 255) 100%
+    );
+    border-style: solid;
+    border-width: 0 0 2px 0;
+    border-color: #ffffff33;
+}
+
 th,
 td {
     padding: 0.5em 1em 0.5em 1em !important;
@@ -120,4 +132,24 @@ h2 > .twemoji {
 
 .gray {
     color: rgb(158, 158, 158);
+}
+
+@media screen and (max-width: 76.234375em) {
+    /* Always show image logo on mobile */
+    .md-header__button.md-logo {
+        display: block;
+    }
+
+    label[for="__drawer"].md-header__button.md-icon {
+        order: -1;
+    }
+
+    .md-header {
+        background: linear-gradient(
+            60deg,
+            rgb(205, 78, 255) 10%,
+            rgb(116, 123, 255) 70%,
+            rgb(72, 179, 255) 100%
+        );
+    }
 }
