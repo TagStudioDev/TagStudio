@@ -9,8 +9,7 @@ def test_badge_visual_state(library, qt_driver, entry_min, new_value):
     thumb = ItemThumb(ItemType.ENTRY, qt_driver.lib, qt_driver, (100, 100), 0)
 
     qt_driver.frame_content = [entry_min]
-    qt_driver.selected = [0]
-    qt_driver.item_thumbs = [thumb]
+    qt_driver.toggle_item_selection(0, append=False, bridge=False)
 
     thumb.badges[BadgeType.FAVORITE].setChecked(new_value)
     assert thumb.badges[BadgeType.FAVORITE].isChecked() == new_value

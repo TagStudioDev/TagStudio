@@ -4,6 +4,7 @@ from tempfile import TemporaryDirectory
 from unittest.mock import Mock, patch
 
 import pytest
+from PySide6.QtWidgets import QScrollArea
 
 CWD = Path(__file__).parent
 # this needs to be above `src` imports
@@ -12,6 +13,7 @@ sys.path.insert(0, str(CWD.parent))
 from tagstudio.core.constants import THUMB_CACHE_NAME, TS_FOLDER_NAME
 from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.library.alchemy.models import Entry, Tag
+from tagstudio.qt.thumb_grid_layout import ThumbGridLayout
 from tagstudio.qt.ts_qt import QtDriver
 
 
@@ -158,7 +160,7 @@ def qt_driver(qtbot, library, library_dir: Path):
         driver.main_window.preview_panel = Mock()
         driver.main_window.thumb_grid = Mock()
         driver.main_window.thumb_size = 128
-        driver.item_thumbs = []
+        driver.main_window.thumb_layout = ThumbGridLayout(driver, QScrollArea())
         driver.main_window.menu_bar.autofill_action = Mock()
 
         driver.copy_buffer = {"fields": [], "tags": []}
