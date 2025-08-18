@@ -463,7 +463,7 @@ class ItemThumb(FlowWidget):
     def set_item_id(self, item_id: int):
         self.item_id = item_id
 
-    def set_item_path(self, path: Path | str):
+    def set_item_path(self, path: Path):
         """Set the absolute filepath for the item. Used for locating on disk."""
         self.opener.set_filepath(path)
 
