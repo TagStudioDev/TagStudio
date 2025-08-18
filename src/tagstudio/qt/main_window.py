@@ -36,11 +36,11 @@ from PySide6.QtWidgets import (
 from tagstudio.core.enums import ShowFilepathOption
 from tagstudio.core.library.alchemy.enums import SortingModeEnum
 from tagstudio.qt.controller.widgets.preview_panel_controller import PreviewPanel
-from tagstudio.qt.flowlayout import FlowLayout
 from tagstudio.qt.helpers.color_overlay import theme_fg_overlay
 from tagstudio.qt.pagination import Pagination
 from tagstudio.qt.platform_strings import trash_term
 from tagstudio.qt.resource_manager import ResourceManager
+from tagstudio.qt.thumb_grid_layout import ThumbGridLayout
 from tagstudio.qt.translations import Translations
 from tagstudio.qt.widgets.landing import LandingWidget
 
@@ -460,7 +460,7 @@ class MainWindow(QMainWindow):
         self.entry_list_layout: QVBoxLayout
         self.entry_scroll_area: QScrollArea
         self.thumb_grid: QWidget
-        self.thumb_layout: FlowLayout
+        self.thumb_layout: ThumbGridLayout
         self.landing_widget: LandingWidget
         self.pagination: Pagination
 
@@ -637,11 +637,13 @@ class MainWindow(QMainWindow):
         self.entry_scroll_area.setFrameShadow(QFrame.Shadow.Plain)
         self.entry_scroll_area.setWidgetResizable(True)
         self.entry_scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.entry_scroll_area.verticalScrollBar().valueChanged.connect(
+            lambda value: self.thumb_layout.update()
+        )
 
         self.thumb_grid = QWidget()
         self.thumb_grid.setObjectName("thumb_grid")
-        self.thumb_layout = FlowLayout()
-        self.thumb_layout.enable_grid_optimizations(value=True)
+        self.thumb_layout = ThumbGridLayout(driver, self.entry_scroll_area)
         self.thumb_layout.setSpacing(min(self.thumb_size // 10, 12))
         self.thumb_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.thumb_grid.setLayout(self.thumb_layout)

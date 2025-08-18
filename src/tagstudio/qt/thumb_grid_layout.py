@@ -1,0 +1,350 @@
+import math
+import time
+from pathlib import Path
+from typing import TYPE_CHECKING, Any, override
+
+from PySide6.QtCore import QPoint, QRect, QSize
+from PySide6.QtGui import QPixmap
+from PySide6.QtWidgets import QLayout, QLayoutItem, QScrollArea
+
+from tagstudio.core.constants import TAG_ARCHIVED, TAG_FAVORITE
+from tagstudio.core.library.alchemy.enums import ItemType
+from tagstudio.core.library.alchemy.models import Entry
+from tagstudio.qt.widgets.item_thumb import BadgeType, ItemThumb
+from tagstudio.qt.widgets.thumb_renderer import ThumbRenderer
+
+if TYPE_CHECKING:
+    from tagstudio.qt.ts_qt import QtDriver
+
+
+class ThumbGridLayout(QLayout):
+    def __init__(self, driver: "QtDriver", scroll_area: QScrollArea) -> None:
+        super().__init__(None)
+        self.driver: QtDriver = driver
+        self.scroll_area: QScrollArea = scroll_area
+
+        self._item_thumbs: list[ItemThumb] = []
+        self._items: list[QLayoutItem] = []
+        # Entry.id -> _entry_ids[index]
+        self._selected: dict[int, int] = {}
+        # _entry_ids[index]
+        self._last_selected: int | None = None
+
+        self._entry_ids: list[int] = []
+        self._entries: dict[int, Entry] = {}
+        # Tag.id -> {Entry.id}
+        self._tag_entries: dict[int, set[int]] = {}
+        self._entry_paths: dict[Path, int] = {}
+        # Entry.id -> _items[index]
+        self._entry_items: dict[int, int] = {}
+        self._render_results: dict[Path, Any] = {}
+        self._renderer: ThumbRenderer = ThumbRenderer(self.driver.lib)
+        self._renderer.updated.connect(self._on_rendered)
+
+    def set_entries(self, entry_ids: list[int]):
+        self.scroll_area.verticalScrollBar().setValue(0)
+
+        self._selected.clear()
+        self._last_selected = None
+
+        self._entry_ids = entry_ids
+        self._entries.clear()
+        self._tag_entries.clear()
+        self._entry_paths.clear()
+
+        self._entry_items.clear()
+        self._render_results.clear()
+        self.driver.thumb_job_queue.queue.clear()
+
+        base_size: tuple[int, int] = (
+            self.driver.main_window.thumb_size,
+            self.driver.main_window.thumb_size,
+        )
+        self.driver.thumb_job_queue.put(
+            (
+                self._renderer.render,
+                (0.0, Path(), base_size, self.driver.main_window.devicePixelRatio(), True, True),
+            )
+        )
+
+    def select_all(self):
+        self._selected.clear()
+        for index, id in enumerate(self._entry_ids):
+            self._selected[id] = index
+            self._last_selected = index
+        self.update()
+
+    def select_inverse(self):
+        selected = {}
+        for index, id in enumerate(self._entry_ids):
+            if id not in self._selected:
+                selected[id] = index
+                self._last_selected = index
+        self._selected = selected
+        self.update()
+
+    def select_entry(self, entry_id: int):
+        if entry_id in self._selected:
+            index = self._selected.pop(entry_id)
+            if index == self._last_selected:
+                self._last_selected = None
+        else:
+            try:
+                index = self._entry_ids.index(entry_id)
+            except ValueError:
+                index = -1
+
+            self._selected[entry_id] = index
+            self._last_selected = index
+        self.update()
+
+    def select_to_entry(self, entry_id: int):
+        index = self._entry_ids.index(entry_id)
+        if len(self._selected) == 0:
+            self.select_entry(entry_id)
+            return
+        if self._last_selected is None:
+            # TODO
+            self._last_selected = min(self._selected.values(), key=lambda i: abs(index - i))
+
+        start = self._last_selected
+        self._last_selected = index
+
+        if start > index:
+            index, start = start, index
+        else:
+            index += 1
+
+        for i in range(start, index):
+            self._selected[self._entry_ids[i]] = i
+        self.update()
+
+    def clear_selected(self):
+        self._selected.clear()
+        self._last_selected = None
+        self.update()
+
+    def add_tags(self, entry_ids: list[int], tag_ids: list[int]):
+        for tag_id in tag_ids:
+            self._tag_entries.setdefault(tag_id, set()).update(entry_ids)
+
+    def remove_tags(self, entry_ids: list[int], tag_ids: list[int]):
+        for tag_id in tag_ids:
+            self._tag_entries.setdefault(tag_id, set()).difference_update(entry_ids)
+
+    def _fetch_entries(self, ids: list[int]):
+        entries = self.driver.lib.get_entries(ids)
+        for entry in entries:
+            self._entry_paths[self.driver.lib.library_dir / entry.path] = entry.id
+            self._entries[entry.id] = entry
+
+        tag_ids = [TAG_ARCHIVED, TAG_FAVORITE]
+        tag_entries = self.driver.lib.get_tag_entries(tag_ids, ids)
+        for tag_id in tag_ids:
+            if tag_id not in self._tag_entries:
+                self._tag_entries[tag_id] = tag_entries[tag_id]
+                continue
+            new = tag_entries[tag_id]
+            current = self._tag_entries[tag_id]
+            for id in ids:
+                if id in new:
+                    current.add(id)
+                elif id in current:
+                    current.remove(id)
+
+    def _on_rendered(self, timestamp: float, image: QPixmap, size: QSize, file_path: Path):
+        self._render_results[file_path] = (timestamp, image, size, file_path)
+        if file_path == Path():
+            return
+        if file_path not in self._entry_paths:
+            return
+        entry_id = self._entry_paths[file_path]
+        index = self._entry_items.get(entry_id)
+        if index is None:
+            return
+        timestamp = time.time()
+        item_thumb = self._item_thumbs[index]
+        item_thumb.update_thumb(image, timestamp)
+        item_thumb.update_size(size, timestamp)
+        item_thumb.set_filename_text(file_path, timestamp)
+        item_thumb.set_extension(file_path, timestamp)
+
+    def _item_thumb(self, index: int) -> ItemThumb:
+        if w := getattr(self.driver, "main_window", None):
+            base_size = (w.thumb_size, w.thumb_size)
+        else:
+            base_size = (128, 128)
+        while index >= len(self._item_thumbs):
+            item = ItemThumb(
+                ItemType.ENTRY, self.driver.lib, self.driver, base_size, show_filename_label=True
+            )
+            item.set_filename_visibility(self.driver.settings.show_filenames_in_grid)
+            self._item_thumbs.append(item)
+            self.addWidget(item)
+        return self._item_thumbs[index]
+
+    @override
+    def heightForWidth(self, arg__1: int) -> int:
+        width = arg__1
+        if len(self._entry_ids) == 0:
+            return 0
+        spacing = self.spacing()
+
+        _item_thumb = self._item_thumb(0)
+        item = self._items[0]
+        item_size = item.sizeHint()
+        width_offset = item_size.width() + spacing
+        if width_offset == 0:
+            return 0
+        height_offset = item_size.height() + spacing
+        per_row = int(width / width_offset)
+        if per_row == 0:
+            return height_offset
+        height = math.ceil(len(self._entry_ids) / per_row) * height_offset
+        return height
+
+    @override
+    def setGeometry(self, arg__1: QRect) -> None:
+        super().setGeometry(arg__1)
+        rect = arg__1
+        for item in self._item_thumbs:
+            item.setGeometry(32_000, 32_000, 0, 0)
+        if len(self._entry_ids) == 0:
+            return
+
+        spacing = self.spacing()
+        view_height = self.parentWidget().parentWidget().height()
+        offset = self.scroll_area.verticalScrollBar().value()
+
+        _item_thumb = self._item_thumb(0)
+        item = self._items[0]
+        item_size = item.sizeHint()
+        if item_size.width() == 0 or item_size.height() == 0:
+            return
+        item_width = item_size.width()
+        item_height = item_size.height()
+        width_offset = item_width + spacing
+        if width_offset == 0:
+            return
+        height_offset = item_height + spacing
+        per_row = int(rect.right() / width_offset)
+        if per_row == 0:
+            return
+        visible_rows = math.ceil((view_height + (offset % height_offset)) / height_offset)
+        offset = int(offset / height_offset)
+        # end_row = offset + visible_rows
+        start = offset * per_row
+        end = start + (visible_rows * per_row)
+        # print(f"Layout: offset: {offset}, visible_rows: {visible_rows}, end_row: {end_row}")
+
+        if len(self.driver.thumb_job_queue.queue) > (per_row * visible_rows * 2):
+            self.driver.thumb_job_queue.queue.clear()
+            pending = []
+            for k, v in self._render_results.items():
+                if v is None:
+                    pending.append(k)
+            for k in pending:
+                self._render_results.pop(k)
+
+        _ = self._item_thumb(min(len(self._entry_ids), end) - start)
+        for item_index, i in enumerate(range(start, end)):
+            if i >= len(self._entry_ids):
+                continue
+            entry_id = self._entry_ids[i]
+            if entry_id not in self._entry_items:
+                continue
+            prev_item_index = self._entry_items[entry_id]
+            if item_index == prev_item_index:
+                break
+            diff = prev_item_index - item_index
+            self._items = self._items[diff:] + self._items[:diff]
+            self._item_thumbs = self._item_thumbs[diff:] + self._item_thumbs[:diff]
+            break
+        self._entry_items.clear()
+
+        ratio = self.driver.main_window.devicePixelRatio()
+        base_size: tuple[int, int] = (
+            self.driver.main_window.thumb_size,
+            self.driver.main_window.thumb_size,
+        )
+        timestamp = time.time()
+        for item_index, i in enumerate(range(start, end)):
+            if i >= len(self._entry_ids):
+                continue
+            entry_id = self._entry_ids[i]
+            if entry_id not in self._entries:
+                ids = [id for id in self._entry_ids[start:end] if id not in self._entries]
+                self._fetch_entries(ids)
+
+            entry = self._entries[entry_id]
+            row = int(i / per_row)
+            self._entry_items[entry_id] = item_index
+            item_thumb = self._item_thumb(item_index)
+            col = i % per_row
+            item_x = width_offset * col
+            item_y = height_offset * row
+            item_thumb.setGeometry(QRect(QPoint(item_x, item_y), item.sizeHint()))
+            file_path = self.driver.lib.library_dir / entry.path
+            item_thumb.set_item(entry)
+
+            if result := self._render_results.get(file_path):
+                _t, i, s, p = result
+                if item_thumb.rendered_path == p:
+                    continue
+                item_thumb.update_thumb(i, timestamp)
+                item_thumb.update_size(s, timestamp)
+                item_thumb.set_filename_text(p, timestamp)
+                item_thumb.set_extension(p, timestamp)
+            else:
+                if Path() in self._render_results:
+                    _t, i, s, p = self._render_results[Path()]
+                    item_thumb.update_thumb(i, timestamp)
+                    item_thumb.update_size(s, timestamp)
+                    item_thumb.set_filename_text(p, timestamp)
+                    item_thumb.set_extension(p, timestamp)
+                if file_path not in self._render_results:
+                    self._render_results[file_path] = None
+                    self.driver.thumb_job_queue.put(
+                        (
+                            self._renderer.render,
+                            (0.0, file_path, base_size, ratio, False, True),
+                        )
+                    )
+
+        # set_selected causes stutters making thumbs after selected not show for a frame
+        # setting it after positioning thumbs fixes this
+        for i in range(start, end):
+            if i >= len(self._entry_ids):
+                continue
+            entry_id = self._entry_ids[i]
+            item_index = self._entry_items[entry_id]
+            item_thumb = self._item_thumbs[item_index]
+            item_thumb.thumb_button.set_selected(entry_id in self._selected)
+
+            item_thumb.assign_badge(BadgeType.ARCHIVED, entry_id in self._tag_entries[TAG_ARCHIVED])
+            item_thumb.assign_badge(BadgeType.FAVORITE, entry_id in self._tag_entries[TAG_FAVORITE])
+
+        # print(f"LayoutEnd: entries: {len(self._entry_ids)}, items: {len(self._item_thumbs)}")
+
+    @override
+    def addItem(self, arg__1: QLayoutItem) -> None:
+        self._items.append(arg__1)
+
+    @override
+    def count(self) -> int:
+        return len(self._entries)
+
+    @override
+    def hasHeightForWidth(self) -> bool:
+        return True
+
+    @override
+    def itemAt(self, index: int) -> QLayoutItem:
+        if index >= len(self._items):
+            return None
+        return self._items[index]
+
+    @override
+    def sizeHint(self) -> QSize:
+        self._item_thumb(0)
+        return self._items[0].minimumSize()

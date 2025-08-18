@@ -10,7 +10,6 @@
 
 import contextlib
 import ctypes
-import math
 import os
 import platform
 import re
@@ -54,7 +53,6 @@ from tagstudio.core.global_settings import DEFAULT_GLOBAL_SETTINGS_PATH, GlobalS
 from tagstudio.core.library.alchemy.enums import (
     BrowsingState,
     FieldTypeEnum,
-    ItemType,
     SortingModeEnum,
 )
 from tagstudio.core.library.alchemy.fields import _FieldID
@@ -88,11 +86,10 @@ from tagstudio.qt.platform_strings import trash_term
 from tagstudio.qt.resource_manager import ResourceManager
 from tagstudio.qt.splash import Splash
 from tagstudio.qt.translations import Translations
-from tagstudio.qt.widgets.item_thumb import BadgeType, ItemThumb
+from tagstudio.qt.widgets.item_thumb import BadgeType
 from tagstudio.qt.widgets.migration_modal import JsonMigrationModal
 from tagstudio.qt.widgets.panel import PanelModal
 from tagstudio.qt.widgets.progress import ProgressWidget
-from tagstudio.qt.widgets.thumb_renderer import ThumbRenderer
 
 BADGE_TAGS = {
     BadgeType.FAVORITE: TAG_FAVORITE,
@@ -220,7 +217,6 @@ class QtDriver(DriverMixin, QObject):
         self.thumb_job_queue: Queue = Queue()
         self.thumb_threads: list[Consumer] = []
         self.thumb_cutoff: float = time.time()
-        self.selected: list[int] = []  # Selected Entry IDs
 
         self.SIGTERM.connect(self.handle_sigterm)
 
@@ -276,6 +272,10 @@ class QtDriver(DriverMixin, QObject):
         logger.info(
             f"[Config] Thumbnail cache size limit: {format_size(CacheManager.size_limit)}",
         )
+
+    @property
+    def selected(self) -> list[int]:
+        return list(self.main_window.thumb_layout._selected.keys())
 
     def __reset_navigation(self) -> None:
         self.browsing_history = History(BrowsingState.show_all())
@@ -599,8 +599,6 @@ class QtDriver(DriverMixin, QObject):
             str(Path(__file__).parents[1] / "resources/qt/fonts/Oxanium-Bold.ttf")
         )
 
-        self.item_thumbs: list[ItemThumb] = []
-        self.thumb_renderers: list[ThumbRenderer] = []
         self.init_library_window()
         self.migration_modal: JsonMigrationModal = None
 
@@ -681,7 +679,6 @@ class QtDriver(DriverMixin, QObject):
         self.main_window.thumb_size_combobox.currentIndexChanged.connect(
             lambda: self.thumb_size_callback(self.main_window.thumb_size_combobox.currentIndex())
         )
-        self._update_thumb_count()
 
         self.main_window.back_button.clicked.connect(lambda: self.navigation_callback(-1))
         self.main_window.forward_button.clicked.connect(lambda: self.navigation_callback(1))
@@ -720,7 +717,7 @@ class QtDriver(DriverMixin, QObject):
         )
 
     def show_grid_filenames(self, value: bool):
-        for thumb in self.item_thumbs:
+        for thumb in self.main_window.thumb_layout._item_thumbs:
             thumb.set_filename_visibility(value)
 
     def call_if_library_open(self, func):
@@ -775,7 +772,7 @@ class QtDriver(DriverMixin, QObject):
 
         self.selected.clear()
         self.frame_content.clear()
-        [x.set_mode(None) for x in self.item_thumbs]
+        self.main_window.thumb_layout.set_entries([])
         if self.color_manager_panel:
             self.color_manager_panel.reset()
 
@@ -851,11 +848,7 @@ class QtDriver(DriverMixin, QObject):
 
     def select_all_action_callback(self):
         """Set the selection to all visible items."""
-        self.selected.clear()
-        for item in self.item_thumbs:
-            if item.mode and item.item_id not in self.selected and not item.isHidden():
-                self.selected.append(item.item_id)
-                item.thumb_button.set_selected(True)
+        self.main_window.thumb_layout.select_all()
 
         self.set_clipboard_menu_viability()
         self.set_select_actions_visibility()
@@ -864,17 +857,7 @@ class QtDriver(DriverMixin, QObject):
 
     def select_inverse_action_callback(self):
         """Invert the selection of all visible items."""
-        new_selected = []
-
-        for item in self.item_thumbs:
-            if item.mode and not item.isHidden():
-                if item.item_id in self.selected:
-                    item.thumb_button.set_selected(False)
-                else:
-                    item.thumb_button.set_selected(True)
-                    new_selected.append(item.item_id)
-
-        self.selected = new_selected
+        self.main_window.thumb_layout.select_inverse()
 
         self.set_clipboard_menu_viability()
         self.set_select_actions_visibility()
@@ -882,11 +865,9 @@ class QtDriver(DriverMixin, QObject):
         self.main_window.preview_panel.set_selection(self.selected, update_preview=False)
 
     def clear_select_action_callback(self):
-        self.selected.clear()
-        self.set_select_actions_visibility()
-        for item in self.item_thumbs:
-            item.thumb_button.set_selected(False)
+        self.main_window.thumb_layout.clear_selected()
 
+        self.set_select_actions_visibility()
         self.set_clipboard_menu_viability()
         self.main_window.preview_panel.set_selection(self.selected)
 
@@ -1182,7 +1163,7 @@ class QtDriver(DriverMixin, QObject):
 
         self.update_thumbs()
         blank_icon: QIcon = QIcon()
-        for it in self.item_thumbs:
+        for it in self.main_window.thumb_layout._item_thumbs:
             it.thumb_button.setIcon(blank_icon)
             it.resize(self.main_window.thumb_size, self.main_window.thumb_size)
             it.thumb_size = (self.main_window.thumb_size, self.main_window.thumb_size)
@@ -1225,25 +1206,6 @@ class QtDriver(DriverMixin, QObject):
         self.browsing_history.move(delta)
 
         self.update_browsing_state()
-
-    def remove_grid_item(self, grid_idx: int):
-        self.frame_content[grid_idx] = None
-        self.item_thumbs[grid_idx].hide()
-
-    def _update_thumb_count(self):
-        missing_count = max(0, self.settings.page_size - len(self.item_thumbs))
-        layout = self.main_window.thumb_layout
-        for _ in range(missing_count):
-            item_thumb = ItemThumb(
-                None,
-                self.lib,
-                self,
-                (self.main_window.thumb_size, self.main_window.thumb_size),
-                self.settings.show_filenames_in_grid,
-            )
-
-            layout.addWidget(item_thumb)
-            self.item_thumbs.append(item_thumb)
 
     def copy_fields_action_callback(self):
         if len(self.selected) > 0:
@@ -1291,58 +1253,13 @@ class QtDriver(DriverMixin, QObject):
                 Setting to True acts like "Shift + Click" selecting.
         """
         logger.info("[QtDriver] Selecting Items:", item_id=item_id, append=append, bridge=bridge)
-
         if append:
-            if item_id not in self.selected:
-                self.selected.append(item_id)
-                for it in self.item_thumbs:
-                    if it.item_id == item_id:
-                        it.thumb_button.set_selected(True)
-            else:
-                self.selected.remove(item_id)
-                for it in self.item_thumbs:
-                    if it.item_id == item_id:
-                        it.thumb_button.set_selected(False)
-
-        #  TODO: Allow bridge selecting across pages.
-        elif bridge and self.selected:
-            last_index = -1
-            current_index = -1
-            try:
-                contents = self.frame_content
-                last_index = self.frame_content.index(self.selected[-1])
-                current_index = self.frame_content.index(item_id)
-                index_range: list = contents[
-                    min(last_index, current_index) : max(last_index, current_index) + 1
-                ]
-
-                # Preserve bridge direction for correct appending order.
-                if last_index < current_index:
-                    index_range.reverse()
-                for entry_id in index_range:
-                    for it in self.item_thumbs:
-                        if it.item_id == entry_id:
-                            it.thumb_button.set_selected(True)
-                            if entry_id not in self.selected:
-                                self.selected.append(entry_id)
-            except Exception as e:
-                # TODO: Allow bridge selecting across pages.
-                logger.error(
-                    "[QtDriver] Previous selected item not on current page!",
-                    error=e,
-                    item_id=item_id,
-                    current_index=current_index,
-                    last_index=last_index,
-                )
-
+            self.main_window.thumb_layout.select_entry(item_id)
+        elif bridge:
+            self.main_window.thumb_layout.select_to_entry(item_id)
         else:
-            self.selected.clear()
-            self.selected.append(item_id)
-        for it in self.item_thumbs:
-            if it.item_id in self.selected:
-                it.thumb_button.set_selected(True)
-            else:
-                it.thumb_button.set_selected(False)
+            self.main_window.thumb_layout.clear_selected()
+            self.main_window.thumb_layout.select_entry(item_id)
 
         self.set_clipboard_menu_viability()
         self.set_select_actions_visibility()
@@ -1451,85 +1368,17 @@ class QtDriver(DriverMixin, QObject):
 
     def update_thumbs(self):
         """Update search thumbnails."""
-        self._update_thumb_count()
         with self.thumb_job_queue.mutex:
             # Cancels all thumb jobs waiting to be started
             self.thumb_job_queue.queue.clear()
             self.thumb_job_queue.all_tasks_done.notify_all()
             self.thumb_job_queue.not_full.notify_all()
             # Stops in-progress jobs from finishing
-            ItemThumb.update_cutoff = time.time()
+            # ItemThumb.update_cutoff = time.time()
 
-        ratio: float = self.main_window.devicePixelRatio()
-        base_size: tuple[int, int] = (self.main_window.thumb_size, self.main_window.thumb_size)
-
+        self.main_window.thumb_layout.set_entries(self.frame_content)
         self.main_window.thumb_layout.update()
         self.main_window.update()
-
-        is_grid_thumb = True
-        logger.info("[QtDriver] Loading Entries...")
-        # TODO: The full entries with joins don't need to be grabbed here.
-        # Use a method that only selects the frame content but doesn't include the joins.
-        entries = self.lib.get_entries(self.frame_content)
-        tag_entries = self.lib.get_tag_entries([TAG_ARCHIVED, TAG_FAVORITE], self.frame_content)
-        logger.info("[QtDriver] Building Filenames...")
-        filenames: list[Path] = [self.lib.library_dir / e.path for e in entries]
-        logger.info("[QtDriver] Done! Processing ItemThumbs...")
-        for index, item_thumb in enumerate(self.item_thumbs, start=0):
-            entry = None
-            item_thumb.set_mode(None)
-
-            try:
-                entry = entries[index]
-            except IndexError:
-                item_thumb.hide()
-                continue
-            if not entry:
-                continue
-
-            with catch_warnings(record=True):
-                item_thumb.delete_action.triggered.disconnect()
-
-            item_thumb.set_mode(ItemType.ENTRY)
-            item_thumb.set_item_id(entry.id)
-            item_thumb.show()
-            is_loading = True
-            self.thumb_job_queue.put(
-                (
-                    item_thumb.renderer.render,
-                    (sys.float_info.max, "", base_size, ratio, is_loading, is_grid_thumb),
-                )
-            )
-
-        # Show rendered thumbnails
-        for index, item_thumb in enumerate(self.item_thumbs, start=0):
-            entry = None
-            try:
-                entry = entries[index]
-            except IndexError:
-                item_thumb.hide()
-                continue
-            if not entry:
-                continue
-
-            is_loading = False
-            self.thumb_job_queue.put(
-                (
-                    item_thumb.renderer.render,
-                    (time.time(), filenames[index], base_size, ratio, is_loading, is_grid_thumb),
-                )
-            )
-            item_thumb.assign_badge(BadgeType.ARCHIVED, entry.id in tag_entries[TAG_ARCHIVED])
-            item_thumb.assign_badge(BadgeType.FAVORITE, entry.id in tag_entries[TAG_FAVORITE])
-            item_thumb.delete_action.triggered.connect(
-                lambda checked=False, f=filenames[index], e_id=entry.id: self.delete_files_callback(
-                    f, e_id
-                )
-            )
-
-            # Restore Selected Borders
-            is_selected = item_thumb.item_id in self.selected
-            item_thumb.thumb_button.set_selected(is_selected)
 
     def update_badges(self, badge_values: dict[BadgeType, bool], origin_id: int, add_tags=True):
         """Update the tag badges for item_thumbs.
@@ -1551,7 +1400,7 @@ class QtDriver(DriverMixin, QObject):
             origin_id=origin_id,
             add_tags=add_tags,
         )
-        for it in self.item_thumbs:
+        for it in self.main_window.thumb_layout._item_thumbs:
             if it.item_id in item_ids:
                 for badge_type, value in badge_values.items():
                     if add_tags:
@@ -1569,14 +1418,15 @@ class QtDriver(DriverMixin, QObject):
             pending_entries=pending_entries,
         )
         for badge_type, value in badge_values.items():
+            entry_ids = pending_entries.get(badge_type, [])
+            tag_ids = [BADGE_TAGS[badge_type]]
+
             if value:
-                self.lib.add_tags_to_entries(
-                    pending_entries.get(badge_type, []), BADGE_TAGS[badge_type]
-                )
+                self.main_window.thumb_layout.add_tags(entry_ids, tag_ids)
+                self.lib.add_tags_to_entries(entry_ids, tag_ids)
             else:
-                self.lib.remove_tags_from_entries(
-                    pending_entries.get(badge_type, []), BADGE_TAGS[badge_type]
-                )
+                self.main_window.thumb_layout.remove_tags(entry_ids, tag_ids)
+                self.lib.remove_tags_from_entries(entry_ids, tag_ids)
 
     def update_browsing_state(self, state: BrowsingState | None = None) -> None:
         """Navigates to a new BrowsingState when state is given, otherwise updates the results."""
@@ -1596,7 +1446,7 @@ class QtDriver(DriverMixin, QObject):
 
         # search the library
         start_time = time.time()
-        results = self.lib.search_library(self.browsing_history.current, self.settings.page_size)
+        results = self.lib.search_library(self.browsing_history.current, None)
         logger.info("items to render", count=len(results))
         end_time = time.time()
 
@@ -1614,7 +1464,7 @@ class QtDriver(DriverMixin, QObject):
         self.update_thumbs()
 
         # update pagination
-        self.pages_count = math.ceil(results.total_count / self.settings.page_size)
+        self.pages_count = 1
         self.main_window.pagination.update_buttons(
             self.pages_count, self.browsing_history.current.page_index, emit=False
         )
