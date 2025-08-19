@@ -97,7 +97,20 @@ class BrowsingState:
         return cls(query=search_query)
 
     @classmethod
-    def from_tag_id(cls, tag_id: int | str) -> "BrowsingState":
+    def from_tag_id(
+        cls, tag_id: int | str, state: "BrowsingState | None" = None
+    ) -> "BrowsingState":
+        """Create and return a BrowsingState object given a tag ID.
+
+        Args:
+            tag_id(int): The tag ID to search for.
+            state(BrowsingState|None): An optional BrowsingState object to use
+                existing options from, such as sorting options.
+
+        """
+        logger.warning(state)
+        if state:
+            return state.with_search_query(f"tag_id:{str(tag_id)}")
         return cls(query=f"tag_id:{str(tag_id)}")
 
     @classmethod
