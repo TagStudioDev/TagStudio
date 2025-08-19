@@ -104,7 +104,7 @@ class BrowsingState:
 
         Args:
             tag_id(int): The tag ID to search for.
-            browsing_state(BrowsingState|None): An optional BrowsingState object to use
+            state(BrowsingState|None): An optional BrowsingState object to use
                 existing options from, such as sorting options.
 
         """
