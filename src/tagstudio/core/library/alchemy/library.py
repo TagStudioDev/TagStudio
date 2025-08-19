@@ -84,7 +84,6 @@ from tagstudio.core.library.alchemy.models import (
 )
 from tagstudio.core.library.alchemy.visitors import SQLBoolExpressionBuilder
 from tagstudio.core.library.json.library import Library as JsonLibrary
-from tagstudio.qt.cache_manager import CacheManager
 from tagstudio.qt.translations import Translations
 
 if TYPE_CHECKING:
@@ -213,8 +212,6 @@ class Library:
     folder: Folder | None
     included_files: set[Path] = set()
 
-    cache_manager: CacheManager
-
     SQL_FILENAME: str = "ts_library.sqlite"
     JSON_FILENAME: str = "ts_library.json"
 
@@ -335,7 +332,6 @@ class Library:
                 return tag.name
 
     def open_library(self, library_dir: Path, storage_path: Path | None = None) -> LibraryStatus:
-        self.cache_manager = CacheManager(library_dir)
         is_new: bool = True
         if storage_path == ":memory:":
             self.storage_path = storage_path

@@ -16,11 +16,19 @@ logger = structlog.get_logger(__name__)
 
 
 class CacheManager:
-    def __init__(self, library_dir: Path, max_folder_size_mb: int = 10, max_size_mb: int = 500):
+    DEFAULT_MAX_SIZE = 500_000_000
+    DEFAULT_MAX_FOLDER_SIZE = 10_000_000
+
+    def __init__(
+        self,
+        library_dir: Path,
+        max_size: int = DEFAULT_MAX_SIZE,
+        max_folder_size: int = DEFAULT_MAX_FOLDER_SIZE,
+    ):
         self._lock = RLock()
         self.cache_folder = library_dir / TS_FOLDER_NAME / THUMB_CACHE_NAME
-        self.max_folder_size = max_folder_size_mb * 1000 * 1000
-        self.max_size = max(max_size_mb, max_folder_size_mb) * 1000 * 1000
+        self.max_folder_size = max_folder_size
+        self.max_size = max(max_size, max_folder_size)
 
         self.folders: dict[Path, int] = {}
         self.current_size = 0

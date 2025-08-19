@@ -69,6 +69,7 @@ from tagstudio.qt.resource_manager import ResourceManager
 
 if TYPE_CHECKING:
     from tagstudio.core.library.alchemy.library import Library
+    from tagstudio.qt.ts_qt import QtDriver
 
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 
@@ -93,9 +94,10 @@ class ThumbRenderer(QObject):
     cached_img_res: int = 256  # TODO: Pull this from config
     cached_img_ext: str = ".webp"  # TODO: Pull this from config
 
-    def __init__(self, library: "Library") -> None:
+    def __init__(self, driver: "QtDriver", library: "Library") -> None:
         """Initialize the class."""
         super().__init__()
+        self.driver = driver
         self.lib = library
 
         # Cached thumbnail elements.
@@ -1172,7 +1174,7 @@ class ThumbRenderer(QObject):
 
         def fetch_cached_image(file_name: Path):
             image: Image.Image | None = None
-            cached_path = self.lib.cache_manager.get_file_path(file_name)
+            cached_path = self.driver.cache_manager.get_file_path(file_name)
 
             if cached_path and cached_path.is_file():
                 try:
@@ -1406,7 +1408,7 @@ class ThumbRenderer(QObject):
                     image = self._resize_image(image, (adj_size, adj_size))
 
                 if save_to_file and savable_media_type and image:
-                    self.lib.cache_manager.save_image(image, save_to_file, mode="RGBA")
+                    self.driver.cache_manager.save_image(image, save_to_file, mode="RGBA")
 
             except FileNotFoundError:
                 image = None

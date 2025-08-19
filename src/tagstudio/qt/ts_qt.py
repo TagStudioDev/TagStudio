@@ -66,6 +66,7 @@ from tagstudio.core.query_lang.util import ParsingError
 from tagstudio.core.ts_core import TagStudioCore
 from tagstudio.core.utils.refresh_dir import RefreshDirTracker
 from tagstudio.core.utils.web import strip_web_protocol
+from tagstudio.qt.cache_manager import CacheManager
 from tagstudio.qt.helpers.custom_runnable import CustomRunnable
 from tagstudio.qt.helpers.file_deleter import delete_file
 from tagstudio.qt.helpers.function_iterator import FunctionIterator
@@ -181,6 +182,7 @@ class QtDriver(DriverMixin, QObject):
     applied_theme: Theme
 
     lib: Library
+    cache_manager: CacheManager
 
     browsing_history: History[BrowsingState]
 
@@ -500,7 +502,7 @@ class QtDriver(DriverMixin, QObject):
 
         # TODO: Move this to a settings screen.
         self.main_window.menu_bar.clear_thumb_cache_action.triggered.connect(
-            lambda: self.lib.cache_manager.clear_cache()
+            lambda: self.cache_manager.clear_cache()
         )
 
         # endregion
@@ -712,6 +714,7 @@ class QtDriver(DriverMixin, QObject):
         self.__reset_navigation()
 
         self.lib.close()
+        self.cache_manager = None
 
         self.thumb_job_queue.queue.clear()
         if is_shutdown:
@@ -1667,17 +1670,14 @@ class QtDriver(DriverMixin, QObject):
                 success=False, library_path=path, message=type(e).__name__, msg_description=str(e)
             )
 
-        self.lib.cache_manager.max_size = self.cached_values.value(
+        max_size: int = self.cached_values.value(
             SettingItems.THUMB_CACHE_SIZE_LIMIT,
-            defaultValue=self.lib.cache_manager.max_size,
+            defaultValue=CacheManager.DEFAULT_MAX_SIZE,
             type=int,
-        )
-        self.cached_values.setValue(
-            SettingItems.THUMB_CACHE_SIZE_LIMIT, self.lib.cache_manager.max_size
-        )
-        self.cached_values.sync()
+        )  # type: ignore
+        self.cache_manager = CacheManager(path, max_size=max_size)
         logger.info(
-            f"[Config] Thumbnail cache size limit: {format_size(self.lib.cache_manager.max_size)}",
+            f"[Config] Thumbnail cache size limit: {format_size(max_size)}",
         )
 
         # Migration is required
