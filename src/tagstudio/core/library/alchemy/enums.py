@@ -110,11 +110,7 @@ class BrowsingState:
         """
         logger.warning(state)
         if state:
-            return (
-                cls(query=f"tag_id:{str(tag_id)}")
-                .with_sorting_direction(state.ascending)
-                .with_sorting_mode(state.sorting_mode)
-            )
+            return state.with_search_query(f"tag_id:{str(tag_id)}")
         return cls(query=f"tag_id:{str(tag_id)}")
 
     @classmethod
