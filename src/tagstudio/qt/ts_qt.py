@@ -66,7 +66,6 @@ from tagstudio.core.query_lang.util import ParsingError
 from tagstudio.core.ts_core import TagStudioCore
 from tagstudio.core.utils.refresh_dir import RefreshDirTracker
 from tagstudio.core.utils.web import strip_web_protocol
-from tagstudio.qt.cache_manager import CacheManager
 from tagstudio.qt.helpers.custom_runnable import CustomRunnable
 from tagstudio.qt.helpers.file_deleter import delete_file
 from tagstudio.qt.helpers.function_iterator import FunctionIterator
@@ -243,24 +242,6 @@ class QtDriver(DriverMixin, QObject):
             )
 
         Translations.change_language(self.settings.language)
-
-        # NOTE: This should be a per-library setting rather than an application setting.
-        thumb_cache_size_limit: int = int(
-            str(
-                self.cached_values.value(
-                    SettingItems.THUMB_CACHE_SIZE_LIMIT,
-                    defaultValue=CacheManager.size_limit,
-                    type=int,
-                )
-            )
-        )
-
-        CacheManager.size_limit = thumb_cache_size_limit
-        self.cached_values.setValue(SettingItems.THUMB_CACHE_SIZE_LIMIT, CacheManager.size_limit)
-        self.cached_values.sync()
-        logger.info(
-            f"[Config] Thumbnail cache size limit: {format_size(CacheManager.size_limit)}",
-        )
 
     def __reset_navigation(self) -> None:
         self.browsing_history = History(BrowsingState.show_all())
@@ -519,7 +500,7 @@ class QtDriver(DriverMixin, QObject):
 
         # TODO: Move this to a settings screen.
         self.main_window.menu_bar.clear_thumb_cache_action.triggered.connect(
-            lambda: CacheManager.clear_cache(self.lib.library_dir)
+            lambda: self.lib.cache_manager.clear_cache()
         )
 
         # endregion
@@ -1685,6 +1666,19 @@ class QtDriver(DriverMixin, QObject):
             open_status = LibraryStatus(
                 success=False, library_path=path, message=type(e).__name__, msg_description=str(e)
             )
+
+        self.lib.cache_manager.max_size = self.cached_values.value(
+            SettingItems.THUMB_CACHE_SIZE_LIMIT,
+            defaultValue=self.lib.cache_manager.max_size,
+            type=int,
+        )
+        self.cached_values.setValue(
+            SettingItems.THUMB_CACHE_SIZE_LIMIT, self.lib.cache_manager.max_size
+        )
+        self.cached_values.sync()
+        logger.info(
+            f"[Config] Thumbnail cache size limit: {format_size(self.lib.cache_manager.max_size)}",
+        )
 
         # Migration is required
         if open_status.json_migration_req:
