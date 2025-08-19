@@ -34,6 +34,8 @@ class CacheManager:
         self.current_size = 0
         if self.cache_folder.exists():
             for folder in self.cache_folder.iterdir():
+                if not folder.is_dir():
+                    continue
                 folder_size = 0
                 for file in folder.iterdir():
                     folder_size += file.stat().st_size
@@ -43,18 +45,21 @@ class CacheManager:
     def clear_cache(self):
         """Clear all files and folders within the cached folder."""
         with self._lock as _lock:
-            all_removed = True
-            for folder in self.cache_folder.iterdir():
-                all_removed = self._remove_folder(folder)
-            if all_removed:
-                self.cache_folder.rmdir()
+            folders = list(self.folders.keys())
+            for folder in folders:
+                if not self._remove_folder(folder):
+                    logger.warn("[CacheManager] Failed to remove folder", folder=folder)
         logger.info("[CacheManager] Cleared cache!")
 
     def _remove_folder(self, folder: Path) -> bool:
         with self._lock as _lock:
             if folder not in self.folders:
-                return True
+                return False
             size = self.folders.pop(folder)
+            self.current_size -= size
+            if not folder.is_dir():
+                return False
+
             is_empty = True
             for file in folder.iterdir():
                 assert file.is_file() and file.suffix == ".webp"
@@ -63,7 +68,6 @@ class CacheManager:
                 except BaseException as e:
                     is_empty = False
                     logger.warn("[CacheManager] Failed to remove file", file=file, error=e)
-            self.current_size -= size
 
             if is_empty:
                 folder.rmdir()
@@ -113,7 +117,13 @@ class CacheManager:
             folders = sorted(self.folders.keys())
             if self.folders[folders[-1]] >= self.max_folder_size:
                 return self._create_folder()
-            return folders[-1]
+
+            folder = folders[-1]
+            if not folder.is_dir():
+                logger.warn("[CacheManager] Invalid folder", folder=folder)
+                self._remove_folder(folder)
+                return self._create_folder()
+            return folder
 
     def _cull_folders(self):
         """Remove folders and their cached context based on size or age limits."""
