@@ -56,6 +56,10 @@ class RefreshDirTracker:
 
         ignore_patterns = Ignore.get_patterns(library_dir)
 
+        if len(self.library.included_files) == 0:
+            paths = set(library_dir / p for p in self.library.all_paths())
+            self.library.included_files = paths
+
         if force_internal_tools:
             return self.__wc_add(library_dir, ignore_to_glob(ignore_patterns))
 
@@ -92,6 +96,7 @@ class RefreshDirTracker:
                         "--hidden",
                         "--ignore-file",
                         f'"{str(compiled_ignore_path)}"',
+                        str(library_dir),
                     ]
                 ),
                 cwd=library_dir,
@@ -115,8 +120,8 @@ class RefreshDirTracker:
         dir_file_count = 0
         self.files_not_in_library = []
 
-        for r in dir_list:
-            f = pathlib.Path(r)
+        for p in dir_list:
+            f = Path(p)
 
             end_time_loop = time()
             # Yield output every 1/30 of a second
@@ -136,8 +141,10 @@ class RefreshDirTracker:
             dir_file_count += 1
             self.library.included_files.add(f)
 
-            if not self.library.has_path_entry(f):
-                self.files_not_in_library.append(f)
+            relative_path = f.relative_to(library_dir)
+
+            if not self.library.has_path_entry(relative_path):
+                self.files_not_in_library.append(relative_path)
 
         end_time_total = time()
         yield dir_file_count
