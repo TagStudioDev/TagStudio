@@ -1051,7 +1051,7 @@ class QtDriver(DriverMixin, QObject):
         pw.show()
 
         iterator.value.connect(
-            lambda: (
+            lambda _count: (
                 pw.update_label(
                     Translations.format(
                         "entries.running.dialog.new_entries", total=f"{files_count:n}"
