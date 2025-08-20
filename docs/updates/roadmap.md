@@ -71,6 +71,7 @@ A detailed written specification for the TagStudio tag and/or library format. In
 
 -   [x] Library Grid View
     -   [ ] Explore Filesystem in Grid View :material-chevron-triple-up:{ .priority-high title="High Priority" }
+    -   [ ] Infinite Scrolling (No Pagination) :material-chevron-triple-up:{ .priority-high title="High Priority" }
 -   [ ] Library List View :material-chevron-triple-up:{ .priority-high title="High Priority" }
     -   [ ] Explore Filesystem in List View :material-chevron-triple-up:{ .priority-high title="High Priority" }
 -   [ ] Lightbox View :material-chevron-triple-up:{ .priority-high title="High Priority" }
