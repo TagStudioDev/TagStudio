@@ -20,7 +20,8 @@ def test_refresh_new_files(library, exclude_mode):
     (library.library_dir / "FOO.MD").touch()
 
     # When
-    assert len(list(registry.refresh_dir(library.library_dir))) == 1
+    counts = registry.refresh_dir(library.library_dir)
+    assert list(counts) == [0, 1]
 
     # Then
     assert registry.files_not_in_library == [Path("FOO.MD")]
