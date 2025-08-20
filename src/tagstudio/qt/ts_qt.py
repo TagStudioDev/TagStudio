@@ -1009,13 +1009,15 @@ class QtDriver(DriverMixin, QObject):
         iterator = FunctionIterator(lambda: tracker.refresh_dir(self.lib.library_dir))
         iterator.value.connect(
             lambda x: (
-                pw.update_progress(x + 1),
+                pw.update_progress(x),
                 pw.update_label(
                     Translations.format(
-                        "library.refresh.scanning.plural"
-                        if x + 1 != 1
-                        else "library.refresh.scanning.singular",
-                        searched_count=f"{x + 1:n}",
+                        [
+                            "library.refresh.scanning_preparing",
+                            "library.refresh.scanning.singular",
+                            "library.refresh.scanning.plural",
+                        ][min(x, 2)],
+                        searched_count=f"{x:n}",
                         found_count=f"{tracker.files_count:n}",
                     )
                 ),
