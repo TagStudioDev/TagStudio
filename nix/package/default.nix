@@ -6,6 +6,7 @@
   qt6,
   stdenv,
   wrapGAppsHook,
+  wcmatch,
 
   pillow-jxl-plugin,
   pyside6,

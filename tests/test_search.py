@@ -1,12 +1,16 @@
 import pytest
+import structlog
 
 from tagstudio.core.library.alchemy.enums import BrowsingState
 from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.query_lang.util import ParsingError
 
+logger = structlog.get_logger()
+
 
 def verify_count(lib: Library, query: str, count: int):
     results = lib.search_library(BrowsingState.from_search_query(query), page_size=500)
+    logger.info("results", entry_ids=results.ids, count=results.total_count)
     assert results.total_count == count
     assert len(results.ids) == count
 
