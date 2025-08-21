@@ -6,6 +6,7 @@
 import contextlib
 import hashlib
 import math
+import os
 import zipfile
 from copy import deepcopy
 from io import BytesIO
@@ -72,6 +73,7 @@ from tagstudio.qt.helpers.vendored.pydub.audio_segment import (
 from tagstudio.qt.resource_manager import ResourceManager
 
 ImageFile.LOAD_TRUNCATED_IMAGES = True
+os.environ["OPENCV_IO_ENABLE_OPENEXR"] = "1"
 
 logger = structlog.get_logger(__name__)
 Image.MAX_IMAGE_PIXELS = None
@@ -989,6 +991,36 @@ class ThumbRenderer(QObject):
         return im
 
     @staticmethod
+    def _image_exr_thumb(filepath: Path) -> Image.Image | None:
+        """Render a thumbnail for a EXR image type.
+
+        Args:
+            filepath (Path): The path of the file.
+        """
+        im: Image.Image | None = None
+        try:
+            # Load the EXR data to an array and rotate the color space from BGRA -> RGBA
+            raw_array = cv2.imread(str(filepath), cv2.IMREAD_UNCHANGED)
+            raw_array[..., :3] = raw_array[..., 2::-1]
+
+            # Correct the gamma of the raw array
+            gamma = 2.2
+            array_gamma = np.power(np.clip(raw_array, 0, 1), 1 / gamma)
+            array = (array_gamma * 255).astype(np.uint8)
+
+            im = Image.fromarray(array, mode="RGBA")
+
+            # Paste solid background
+            if im.mode == "RGBA":
+                new_bg = Image.new("RGB", im.size, color="#1e1e1e")
+                new_bg.paste(im, mask=im.getchannel(3))
+                im = new_bg
+
+        except Exception as e:
+            logger.error("Couldn't render thumbnail", filepath=filepath, error=type(e).__name__)
+        return im
+
+    @staticmethod
     def _image_thumb(filepath: Path) -> Image.Image:
         """Render a thumbnail for a standard image type.
 
@@ -1544,6 +1576,9 @@ class ThumbRenderer(QObject):
                         ext, MediaCategories.IMAGE_VECTOR_TYPES, mime_fallback=True
                     ):
                         image = self._image_vector_thumb(_filepath, adj_size)
+                    # EXR Images -----------------------------------------------
+                    if ext in [".exr"]:
+                        image = self._image_exr_thumb(_filepath)
                     # Normal Images --------------------------------------------
                     else:
                         image = self._image_thumb(_filepath)
