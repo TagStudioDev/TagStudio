@@ -501,7 +501,7 @@ class ThumbRenderer(QObject):
             )
         )
 
-        # Paste icon centered
+        # Paste icon
         im.paste(
             im=fg.resize(
                 (
@@ -1309,18 +1309,32 @@ class ThumbRenderer(QObject):
             return im
 
         def render_ignored(
-            size: tuple[int, int], pixel_ratio: float, cached_im: Image.Image | None = None
+            size: tuple[int, int], pixel_ratio: float, im: Image.Image
         ) -> Image.Image:
-            im = self._get_icon(
-                name="bxs-error",
-                color=UiColor.AMBER,
-                size=size,
-                pixel_ratio=pixel_ratio,
-                bg_image=cached_im,
-                draw_edge=False,
-                is_corner=bool(cached_im),
+            icon_ratio: float = 5
+            padding_factor = 18
+
+            im_ = im
+            icon: Image.Image = self.rm.get("ignored")  # pyright: ignore[reportAssignmentType]
+
+            icon = icon.resize(
+                (
+                    math.ceil(size[0] // icon_ratio),
+                    math.ceil(size[1] // icon_ratio),
+                )
             )
-            return im
+
+            im_.paste(
+                im=icon.resize(
+                    (
+                        math.ceil(size[0] // icon_ratio),
+                        math.ceil(size[1] // icon_ratio),
+                    )
+                ),
+                box=(size[0] // padding_factor, size[1] // padding_factor),
+            )
+
+            return im_
 
         def fetch_cached_image(folder: Path):
             image: Image.Image | None = None

@@ -217,14 +217,14 @@ class FileAttributes(QWidget):
                 stats_label_text += ext_display
                 assert self.library.library_dir
                 red = get_ui_color(ColorType.PRIMARY, UiColor.RED)
-                amber = get_ui_color(ColorType.PRIMARY, UiColor.AMBER)
+                orange = get_ui_color(ColorType.PRIMARY, UiColor.ORANGE)
 
                 if Ignore.compiled_patterns and not Ignore.compiled_patterns.match(
                     filepath.relative_to(self.library.library_dir)
                 ):
                     stats_label_text = (
                         f"{stats_label_text}"
-                        f"  •  <span style='color:{amber}'>"
+                        f"  •  <span style='color:{orange}'>"
                         f"{Translations['preview.ignored'].upper()}</span>"
                     )
                 if not filepath.exists():

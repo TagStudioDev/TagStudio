@@ -31,8 +31,8 @@
     "path": "qt/images/broken_link_icon.png",
     "mode": "pil"
   },
-   "bxs-error": {
-    "path": "qt/images/bxs-error.png",
+   "ignored": {
+    "path": "qt/images/ignored_128.png",
     "mode": "pil"
   },
   "adobe_illustrator": {
