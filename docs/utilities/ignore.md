@@ -1,5 +1,6 @@
 ---
 title: Ignore Files
+icon: material/file-document-remove
 ---
 
 # :material-file-document-remove: Ignore Files & Directories
