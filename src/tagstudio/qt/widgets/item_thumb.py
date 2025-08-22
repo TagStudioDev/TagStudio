@@ -30,7 +30,6 @@ from tagstudio.qt.helpers.file_opener import FileOpenerHelper
 from tagstudio.qt.platform_strings import open_file_str, trash_term
 from tagstudio.qt.translations import Translations
 from tagstudio.qt.widgets.thumb_button import ThumbButton
-from tagstudio.qt.widgets.thumb_renderer import ThumbRenderer
 
 if TYPE_CHECKING:
     from tagstudio.core.library.alchemy.models import Entry
@@ -125,7 +124,6 @@ class ItemThumb(FlowWidget):
         self.item_id: int = -1
         self.item_path: Path | None = None
         self.rendered_path: Path | None = None
-        self.update_cutoff: float = 0.0
         self.thumb_size: tuple[int, int] = thumb_size
         self.show_filename_label: bool = show_filename_label
         self.label_height = 12
@@ -202,15 +200,6 @@ class ItemThumb(FlowWidget):
         self.thumb_layout.addWidget(self.bottom_container)
 
         self.thumb_button = ThumbButton(self.thumb_container, thumb_size)
-        self.renderer = ThumbRenderer(self.lib)
-        self.renderer.updated.connect(
-            lambda timestamp, image, size, filename: (
-                self.update_thumb(image, timestamp),
-                self.update_size(size, timestamp),
-                self.set_filename_text(filename, timestamp),
-                self.set_extension(filename, timestamp),
-            )
-        )
         self.thumb_button.setFlat(True)
         self.thumb_button.setLayout(self.thumb_layout)
         self.thumb_button.setContextMenuPolicy(Qt.ContextMenuPolicy.ActionsContextMenu)
@@ -379,10 +368,7 @@ class ItemThumb(FlowWidget):
             self.item_type_badge.setHidden(False)
         self.mode = mode
 
-    def set_extension(self, filename: Path, timestamp: float | None = None) -> None:
-        if timestamp and timestamp < self.update_cutoff:
-            return
-
+    def set_extension(self, filename: Path) -> None:
         ext = filename.suffix.lower()
         if ext and ext.startswith(".") is False:
             ext = "." + ext
@@ -421,10 +407,7 @@ class ItemThumb(FlowWidget):
                 self.ext_badge.setHidden(True)
                 self.count_badge.setHidden(True)
 
-    def set_filename_text(self, filename: Path, timestamp: float | None = None):
-        if timestamp and timestamp < self.update_cutoff:
-            return
-
+    def set_filename_text(self, filename: Path):
         self.rendered_path = filename
         self.file_label.setText(str(filename.name))
 
@@ -443,25 +426,16 @@ class ItemThumb(FlowWidget):
             self.setFixedHeight(self.thumb_size[1])
         self.show_filename_label = set_visible
 
-    def update_thumb(self, image: QPixmap | None = None, timestamp: float | None = None):
+    def update_thumb(self, image: QPixmap | None = None):
         """Update attributes of a thumbnail element."""
-        if timestamp and timestamp < self.update_cutoff:
-            return
-
         self.thumb_button.setIcon(image if image else QPixmap())
 
-    def update_size(self, size: QSize, timestamp: float | None = None):
+    def update_size(self, size: QSize):
         """Updates attributes of a thumbnail element.
 
         Args:
-            timestamp (float | None): The UTC timestamp for when this call was
-                originally dispatched. Used to skip outdated jobs.
-
             size (QSize): The new thumbnail size to set.
         """
-        if timestamp and timestamp < self.update_cutoff:
-            return
-
         self.thumb_size = size.width(), size.height()
         self.thumb_button.setIconSize(size)
         self.thumb_button.setMinimumSize(size)
