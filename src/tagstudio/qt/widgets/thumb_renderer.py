@@ -1560,7 +1560,7 @@ class ThumbRenderer(QObject):
         _filepath: Path = Path(filepath)
         savable_media_type: bool = True
 
-        if _filepath:
+        if _filepath and _filepath.is_file():
             try:
                 ext: str = _filepath.suffix.lower() if _filepath.suffix else _filepath.stem.lower()
                 # Images =======================================================
