@@ -1364,6 +1364,7 @@ class ThumbRenderer(QObject):
                     )
                 ),
                 box=(size[0] // padding_factor, size[1] // padding_factor),
+                mask=icon.getchannel(3),
             )
 
             return im_
