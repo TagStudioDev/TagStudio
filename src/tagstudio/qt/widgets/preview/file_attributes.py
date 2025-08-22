@@ -219,7 +219,7 @@ class FileAttributes(QWidget):
                 red = get_ui_color(ColorType.PRIMARY, UiColor.RED)
                 orange = get_ui_color(ColorType.PRIMARY, UiColor.ORANGE)
 
-                if Ignore.compiled_patterns and not Ignore.compiled_patterns.match(
+                if Ignore.compiled_patterns and Ignore.compiled_patterns.match(
                     filepath.relative_to(self.library.library_dir)
                 ):
                     stats_label_text = (
