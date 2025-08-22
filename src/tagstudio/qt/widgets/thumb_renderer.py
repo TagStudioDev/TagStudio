@@ -1578,7 +1578,7 @@ class ThumbRenderer(QObject):
                     ):
                         image = self._image_vector_thumb(_filepath, adj_size)
                     # EXR Images -----------------------------------------------
-                    if ext in [".exr"]:
+                    elif ext in [".exr"]:
                         image = self._image_exr_thumb(_filepath)
                     # Normal Images --------------------------------------------
                     else:
