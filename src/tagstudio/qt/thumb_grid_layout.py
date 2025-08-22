@@ -87,7 +87,9 @@ class ThumbGridLayout(QLayout):
         for index, id in enumerate(self._entry_ids):
             self._selected[id] = index
             self._last_selected = index
-        self.update()
+
+        for entry_id in self._entry_items:
+            self._set_selected(entry_id)
 
     def select_inverse(self):
         selected = {}
@@ -95,14 +97,21 @@ class ThumbGridLayout(QLayout):
             if id not in self._selected:
                 selected[id] = index
                 self._last_selected = index
+
+        for id in self._selected:
+            if id not in selected:
+                self._set_selected(id, value=False)
+        for id in selected:
+            self._set_selected(id)
+
         self._selected = selected
-        self.update()
 
     def select_entry(self, entry_id: int):
         if entry_id in self._selected:
             index = self._selected.pop(entry_id)
             if index == self._last_selected:
                 self._last_selected = None
+            self._set_selected(entry_id, value=False)
         else:
             try:
                 index = self._entry_ids.index(entry_id)
@@ -111,7 +120,7 @@ class ThumbGridLayout(QLayout):
 
             self._selected[entry_id] = index
             self._last_selected = index
-        self.update()
+            self._set_selected(entry_id)
 
     def select_to_entry(self, entry_id: int):
         index = self._entry_ids.index(entry_id)
@@ -131,13 +140,23 @@ class ThumbGridLayout(QLayout):
             index += 1
 
         for i in range(start, index):
-            self._selected[self._entry_ids[i]] = i
-        self.update()
+            entry_id = self._entry_ids[i]
+            self._selected[entry_id] = i
+            self._set_selected(entry_id)
 
     def clear_selected(self):
+        for entry_id in self._entry_items:
+            self._set_selected(entry_id, value=False)
+
         self._selected.clear()
         self._last_selected = None
-        self.update()
+
+    def _set_selected(self, entry_id: int, value: bool = True):
+        if entry_id not in self._entry_items:
+            return
+        index = self._entry_items[entry_id]
+        if index < len(self._item_thumbs):
+            self._item_thumbs[index].thumb_button.set_selected(value)
 
     def add_tags(self, entry_ids: list[int], tag_ids: list[int]):
         for tag_id in tag_ids:
