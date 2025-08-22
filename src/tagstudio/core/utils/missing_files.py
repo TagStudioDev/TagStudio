@@ -41,6 +41,7 @@ class MissingRegistry:
 
         Works if files were just moved to different subfolders and don't have duplicate names.
         """
+
         assert self.library.library_dir
         matches: list[Path] = []
 
@@ -50,6 +51,8 @@ class MissingRegistry:
             flags=PATH_GLOB_FLAGS,
             exclude=ignore_patterns,
         ):
+            if path.is_dir():
+                continue
             if path.name == match_entry.path.name:
                 new_path = Path(path).relative_to(self.library.library_dir)
                 matches.append(new_path)
