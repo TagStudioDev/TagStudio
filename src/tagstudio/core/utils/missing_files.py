@@ -41,7 +41,6 @@ class MissingRegistry:
 
         Works if files were just moved to different subfolders and don't have duplicate names.
         """
-
         assert self.library.library_dir
         matches: list[Path] = []
 
