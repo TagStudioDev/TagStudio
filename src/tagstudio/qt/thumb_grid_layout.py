@@ -277,9 +277,6 @@ class ThumbGridLayout(QLayout):
             return
         self._last_page_update = (start, end)
 
-        for item in self._item_thumbs[end:]:
-            item.setGeometry(32_000, 32_000, 0, 0)
-
         # Clear render queue if len > 2 pages
         if len(self.driver.thumb_job_queue.queue) > (per_row * visible_rows * 2):
             self.driver.thumb_job_queue.queue.clear()
@@ -308,6 +305,10 @@ class ThumbGridLayout(QLayout):
             self._item_thumbs = self._item_thumbs[diff:] + self._item_thumbs[:diff]
             break
         self._entry_items.clear()
+
+        count = end - start
+        for item in self._item_thumbs[count:]:
+            item.setGeometry(32_000, 32_000, 0, 0)
 
         ratio = self.driver.main_window.devicePixelRatio()
         base_size: tuple[int, int] = (
