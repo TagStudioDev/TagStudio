@@ -37,9 +37,13 @@ class ThumbGridLayout(QLayout):
         self._entry_paths: dict[Path, int] = {}
         # Entry.id -> _items[index]
         self._entry_items: dict[int, int] = {}
+
         self._render_results: dict[Path, Any] = {}
         self._renderer: ThumbRenderer = ThumbRenderer(self.driver.lib)
         self._renderer.updated.connect(self._on_rendered)
+
+        # _entry_ids[StartIndex:EndIndex]
+        self._last_page_update: tuple[int, int] | None = None
 
     def set_entries(self, entry_ids: list[int]):
         self.scroll_area.verticalScrollBar().setValue(0)
@@ -66,6 +70,8 @@ class ThumbGridLayout(QLayout):
                 (0.0, Path(), base_size, self.driver.main_window.devicePixelRatio(), True, True),
             )
         )
+
+        self._last_page_update = None
 
     def select_all(self):
         self._selected.clear()
@@ -207,9 +213,9 @@ class ThumbGridLayout(QLayout):
     def setGeometry(self, arg__1: QRect) -> None:
         super().setGeometry(arg__1)
         rect = arg__1
-        for item in self._item_thumbs:
-            item.setGeometry(32_000, 32_000, 0, 0)
         if len(self._entry_ids) == 0:
+            for item in self._item_thumbs:
+                item.setGeometry(32_000, 32_000, 0, 0)
             return
 
         spacing = self.spacing()
@@ -232,10 +238,15 @@ class ThumbGridLayout(QLayout):
             return
         visible_rows = math.ceil((view_height + (offset % height_offset)) / height_offset)
         offset = int(offset / height_offset)
-        # end_row = offset + visible_rows
         start = offset * per_row
         end = start + (visible_rows * per_row)
-        # print(f"Layout: offset: {offset}, visible_rows: {visible_rows}, end_row: {end_row}")
+        end = min(len(self._entry_ids), end)
+
+        if (start, end) == self._last_page_update:
+            return
+        self._last_page_update = (start, end)
+        for item in self._item_thumbs[end:]:
+            item.setGeometry(32_000, 32_000, 0, 0)
 
         if len(self.driver.thumb_job_queue.queue) > (per_row * visible_rows * 2):
             self.driver.thumb_job_queue.queue.clear()
@@ -323,8 +334,6 @@ class ThumbGridLayout(QLayout):
 
             item_thumb.assign_badge(BadgeType.ARCHIVED, entry_id in self._tag_entries[TAG_ARCHIVED])
             item_thumb.assign_badge(BadgeType.FAVORITE, entry_id in self._tag_entries[TAG_FAVORITE])
-
-        # print(f"LayoutEnd: entries: {len(self._entry_ids)}, items: {len(self._item_thumbs)}")
 
     @override
     def addItem(self, arg__1: QLayoutItem) -> None:
