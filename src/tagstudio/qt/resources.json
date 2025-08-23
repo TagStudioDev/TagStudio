@@ -31,6 +31,10 @@
     "path": "qt/images/broken_link_icon.png",
     "mode": "pil"
   },
+   "ignored": {
+    "path": "qt/images/ignored_128.png",
+    "mode": "pil"
+  },
   "adobe_illustrator": {
     "path": "qt/images/file_icons/adobe_illustrator.png",
     "mode": "pil"

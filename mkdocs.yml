@@ -36,15 +36,14 @@ nav:
       - help/ffmpeg.md
   - Library:
       - library/index.md
-      - library/entry.md
-      - library/entry_groups.md
-      - library/field.md
       - library/library_search.md
+      - library/entry.md
+      - library/field.md
       - library/tag.md
       - library/tag_categories.md
       - library/tag_color.md
-      - library/tag_overrides.md
   - Utilities:
+      - utilities/ignore.md
       - utilities/macro.md
   - Updates:
       - updates/changelog.md
@@ -63,16 +62,16 @@ theme:
     # Palette toggle for light mode
     - media: "(prefers-color-scheme: light)"
       scheme: default
-      primary: deep purple
-      accent: deep purple
+      primary: purple
+      accent: purple
       toggle:
         icon: material/lightbulb
         name: Switch to Dark Mode
     # Palette toggle for dark mode
     - media: "(prefers-color-scheme: dark)"
       scheme: slate
-      primary: deep purple
-      accent: deep purple
+      primary: purple
+      accent: purple
       toggle:
         icon: material/lightbulb-night-outline
         name: Switch to System Preference
@@ -91,6 +90,7 @@ theme:
     - content.code.annotate
     - content.code.copy
     - content.action.edit
+    - content.tooltips
   icon:
     repo: fontawesome/brands/github
     tag:
@@ -105,6 +105,7 @@ markdown_extensions:
   - def_list
   - footnotes
   - md_in_html
+  - tables
   - toc:
       permalink: true
 
@@ -115,11 +116,15 @@ markdown_extensions:
       smart_enable: all
   - pymdownx.caret
   - pymdownx.details
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
   - pymdownx.highlight
   - pymdownx.inlinehilite
   - pymdownx.keys
   - pymdownx.mark
   - pymdownx.smartsymbols
+  - pymdownx.snippets
   - pymdownx.superfences:
       custom_fences:
         - name: mermaid
