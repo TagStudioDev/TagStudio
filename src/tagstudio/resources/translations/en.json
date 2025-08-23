@@ -264,6 +264,7 @@
     "settings.title": "Settings",
     "sorting.direction.ascending": "Ascending",
     "sorting.direction.descending": "Descending",
+    "sorting.mode.random": "Random",
     "splash.opening_library": "Opening Library \"{library_path}\"...",
     "status.deleted_file_plural": "Deleted {count} files!",
     "status.deleted_file_singular": "Deleted 1 file!",
