@@ -8,8 +8,9 @@ description = "A User-Focused Photo & File Management System."
 version = "9.5.3"
 license = "GPL-3.0-only"
 readme = "README.md"
-requires-python = ">=3.12,<3.13"
+requires-python = ">=3.12,<3.14"
 dependencies = [
+    "audioop-lts; python_version >= '3.13'",
     "chardet~=5.2",
     "ffmpeg-python~=0.2",
     "humanfriendly==10.*",
