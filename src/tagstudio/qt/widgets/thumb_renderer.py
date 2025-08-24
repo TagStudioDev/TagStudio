@@ -1364,6 +1364,7 @@ class ThumbRenderer(QObject):
                     )
                 ),
                 box=(size[0] // padding_factor, size[1] // padding_factor),
+                mask=icon.getchannel(3),
             )
 
             return im_
@@ -1575,7 +1576,7 @@ class ThumbRenderer(QObject):
                     ):
                         image = self._image_vector_thumb(_filepath, adj_size)
                     # EXR Images -----------------------------------------------
-                    if ext in [".exr"]:
+                    elif ext in [".exr"]:
                         image = self._image_exr_thumb(_filepath)
                     # Normal Images --------------------------------------------
                     else:
