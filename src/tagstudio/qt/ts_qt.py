@@ -68,6 +68,7 @@ from tagstudio.core.ts_core import TagStudioCore
 from tagstudio.core.utils.refresh_dir import RefreshDirTracker
 from tagstudio.core.utils.web import strip_web_protocol
 from tagstudio.qt.cache_manager import CacheManager
+from tagstudio.qt.controller.widgets.library_info_window_controller import LibraryInfoWindow
 from tagstudio.qt.helpers.custom_runnable import CustomRunnable
 from tagstudio.qt.helpers.file_deleter import delete_file
 from tagstudio.qt.helpers.function_iterator import FunctionIterator
@@ -179,6 +180,7 @@ class QtDriver(DriverMixin, QObject):
     about_modal: AboutModal
     unlinked_modal: FixUnlinkedEntriesModal
     dupe_modal: FixDupeFilesModal
+    library_info_window: LibraryInfoWindow
 
     applied_theme: Theme
 
@@ -364,9 +366,8 @@ class QtDriver(DriverMixin, QObject):
         self.tag_manager_panel = PanelModal(
             widget=TagDatabasePanel(self, self.lib),
             title=Translations["tag_manager.title"],
-            done_callback=lambda s=self.selected: self.main_window.preview_panel.set_selection(
-                s, update_preview=False
-            ),
+            done_callback=lambda checked=False,
+            s=self.selected: self.main_window.preview_panel.set_selection(s, update_preview=False),
             has_save=False,
         )
 
@@ -469,6 +470,13 @@ class QtDriver(DriverMixin, QObject):
         # endregion
 
         # region View Menu ============================================================
+
+        def create_library_info_window():
+            if not hasattr(self, "library_info_window"):
+                self.library_info_window = LibraryInfoWindow(self.lib, self)
+            self.library_info_window.show()
+
+        self.main_window.menu_bar.library_info_action.triggered.connect(create_library_info_window)
 
         def on_show_filenames_action(checked: bool):
             self.settings.show_filenames_in_grid = checked
@@ -749,6 +757,9 @@ class QtDriver(DriverMixin, QObject):
         self.set_clipboard_menu_viability()
         self.set_select_actions_visibility()
 
+        if hasattr(self, "library_info_window"):
+            self.library_info_window.close()
+
         self.main_window.preview_panel.set_selection(self.selected)
         self.main_window.toggle_landing_page(enabled=True)
         self.main_window.pagination.setHidden(True)
@@ -764,6 +775,7 @@ class QtDriver(DriverMixin, QObject):
             self.main_window.menu_bar.fix_dupe_files_action.setEnabled(False)
             self.main_window.menu_bar.clear_thumb_cache_action.setEnabled(False)
             self.main_window.menu_bar.folders_to_tags_action.setEnabled(False)
+            self.main_window.menu_bar.library_info_action.setEnabled(False)
         except AttributeError:
             logger.warning(
                 "[Library] Could not disable library management menu actions. Is this in a test?"
@@ -1747,6 +1759,7 @@ class QtDriver(DriverMixin, QObject):
         self.main_window.menu_bar.fix_dupe_files_action.setEnabled(True)
         self.main_window.menu_bar.clear_thumb_cache_action.setEnabled(True)
         self.main_window.menu_bar.folders_to_tags_action.setEnabled(True)
+        self.main_window.menu_bar.library_info_action.setEnabled(True)
 
         self.main_window.preview_panel.set_selection(self.selected)
 

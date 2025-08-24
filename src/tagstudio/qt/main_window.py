@@ -300,6 +300,9 @@ class MainMenuBar(QMenuBar):
     def setup_view_menu(self):
         self.view_menu = QMenu(Translations["menu.view"], self)
 
+        self.library_info_action = QAction(Translations["menu.view.library_info"])
+        self.view_menu.addAction(self.library_info_action)
+
         # show_libs_list_action = QAction(Translations["settings.show_recent_libraries"], menu_bar)
         # show_libs_list_action.setCheckable(True)
         # show_libs_list_action.setChecked(self.settings.show_library_list)
