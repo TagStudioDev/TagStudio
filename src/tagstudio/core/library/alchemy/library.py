@@ -665,7 +665,7 @@ class Library:
             session.flush()
 
             session.commit()
-    
+
     def migrate_sql_to_ts_ignore(self, library_dir: Path):
         # Do not continue if existing '.ts_ignore' file is found
         if Path(library_dir / TS_FOLDER_NAME / IGNORE_NAME).exists():
