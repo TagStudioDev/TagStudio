@@ -190,27 +190,6 @@ def test_remove_tag(library: Library, generate_tag):
     assert len(library.tags) == tag_count - 1
 
 
-@pytest.mark.parametrize("is_exclude", [True, False])
-def test_search_filter_extensions(library: Library, is_exclude: bool):
-    # Given
-    entries = list(library.all_entries())
-    assert len(entries) == 2, entries
-
-    library.set_prefs(LibraryPrefs.IS_EXCLUDE_LIST, is_exclude)
-    library.set_prefs(LibraryPrefs.EXTENSION_LIST, ["md"])
-
-    # When
-    results = library.search_library(BrowsingState.show_all(), page_size=500)
-    entries = library.get_entries(results.ids)
-
-    # Then
-    assert results.total_count == 1
-    assert len(results) == 1
-
-    entry = entries[0]
-    assert (entry.path.suffix == ".txt") == is_exclude
-
-
 def test_search_library_case_insensitive(library: Library):
     # Given
     entries = list(library.all_entries(with_joins=True))

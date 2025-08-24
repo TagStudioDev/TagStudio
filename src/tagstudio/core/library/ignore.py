@@ -89,6 +89,38 @@ class Ignore(metaclass=Singleton):
     compiled_patterns: fnmatch.WcMatcher | None = None
 
     @staticmethod
+    def read_ignore_file(library_dir: Path) -> list[str]:
+        """Get the entire raw '.ts_ignore' file contents as a list of strings."""
+        ts_ignore_path = Path(library_dir / TS_FOLDER_NAME / IGNORE_NAME)
+
+        if not ts_ignore_path.exists():
+            logger.info(
+                "[Ignore] No .ts_ignore file found",
+                path=ts_ignore_path,
+            )
+
+            return []
+
+        with open(ts_ignore_path, encoding="utf8") as f:
+            return f.readlines()
+
+    @staticmethod
+    def write_ignore_file(library_dir: Path, lines: list[str]) -> None:
+        """Write to the '.ts_ignore' file."""
+        ts_ignore_path = Path(library_dir / TS_FOLDER_NAME / IGNORE_NAME)
+
+        if not ts_ignore_path.exists():
+            logger.info(
+                "[Ignore] No .ts_ignore file found",
+                path=ts_ignore_path,
+            )
+
+            return
+
+        with open(ts_ignore_path, "w", encoding="utf8") as f:
+            f.writelines(lines)
+
+    @staticmethod
     def get_patterns(library_dir: Path, include_global: bool = True) -> list[str]:
         """Get the ignore patterns for the given library directory.
 
@@ -121,7 +153,8 @@ class Ignore(metaclass=Singleton):
             )
             Ignore._patterns = patterns + Ignore._load_ignore_file(ts_ignore_path)
             Ignore.compiled_patterns = fnmatch.compile(
-                "*", PATH_GLOB_FLAGS, exclude=ignore_to_glob(Ignore._patterns)
+                ignore_to_glob(Ignore._patterns),
+                PATH_GLOB_FLAGS,
             )
         else:
             logger.info(
