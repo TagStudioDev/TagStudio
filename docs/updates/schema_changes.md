@@ -71,8 +71,21 @@ Migration from the legacy JSON format is provided via a walkthrough when opening
 
 ### Version 9
 
-| Used From                                                               | Used Until | Format | Location                                        |
-| ----------------------------------------------------------------------- | ---------- | ------ | ----------------------------------------------- |
-| [v9.5.2](https://github.com/TagStudioDev/TagStudio/releases/tag/v9.5.2) | _Current_  | SQLite | `<Library Folder>`/.TagStudio/ts_library.sqlite |
+| Used From                                                               | Used Until                                                              | Format | Location                                        |
+| ----------------------------------------------------------------------- | ----------------------------------------------------------------------- | ------ | ----------------------------------------------- |
+| [v9.5.2](https://github.com/TagStudioDev/TagStudio/releases/tag/v9.5.2) | [v9.5.3](https://github.com/TagStudioDev/TagStudio/releases/tag/v9.5.3) | SQLite | `<Library Folder>`/.TagStudio/ts_library.sqlite |
 
 -   Adds the `filename` column to the `entries` table. Used for sorting entries by filename in search results.
+
+---
+
+### Version 100
+
+| Used From                                                               | Used Until | Format | Location                                        |
+| ----------------------------------------------------------------------- | ---------- | ------ | ----------------------------------------------- |
+| [v9.5.4](https://github.com/TagStudioDev/TagStudio/releases/tag/v9.5.4) | _Current_  | SQLite | `<Library Folder>`/.TagStudio/ts_library.sqlite |
+
+-   Introduces built-in minor versioning
+    -   The version number divided by 100 (and floored) constitutes the **major** version. Major version indicate breaking changes that prevent libraries from being opened in TagStudio versions older than the ones they were created in.
+    -   Values more precise than this ("ones" through "tens" columns) constitute the **minor** version. These indicate minor changes that don't prevent a newer library from being opened in an older version of TagStudio, as long as the major version is not also increased.
+-   Swaps `parent_id` and `child_id` values in the `tag_parents` table, which have erroneously been flipped since the first SQLite DB version.

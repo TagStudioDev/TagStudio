@@ -79,9 +79,9 @@ class DefaultEnum(enum.Enum):
         raise AttributeError("access the value via .default property instead")
 
 
+# TODO: Remove DefaultEnum and LibraryPrefs classes once remaining values are removed.
 class LibraryPrefs(DefaultEnum):
     """Library preferences with default value accessible via .default property."""
 
     IS_EXCLUDE_LIST = True
     EXTENSION_LIST = [".json", ".xmp", ".aae"]
-    DB_VERSION = 9

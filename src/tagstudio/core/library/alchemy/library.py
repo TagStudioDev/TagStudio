@@ -12,7 +12,7 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 from os import makedirs
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 from uuid import uuid4
 from warnings import catch_warnings
 
@@ -92,6 +92,8 @@ if TYPE_CHECKING:
 
 logger = structlog.get_logger(__name__)
 
+DB_VERSION_KEY: str = "DB_VERSION"
+DB_VERSION: int = 100
 
 TAG_CHILDREN_QUERY = text("""
 -- Note for this entire query that tag_parents.child_id is the parent id and tag_parents.parent_id is the child id due to bad naming
@@ -273,8 +275,8 @@ class Library:
 
         # Parent Tags (Previously known as "Subtags" in JSON)
         for tag in json_lib.tags:
-            for child_id in tag.subtag_ids:
-                self.add_parent_tag(parent_id=tag.id, child_id=child_id)
+            for parent_id in tag.subtag_ids:
+                self.add_parent_tag(parent_id=parent_id, child_id=tag.id)
 
         # Entries
         self.add_entries(
@@ -365,7 +367,7 @@ class Library:
         # https://docs.sqlalchemy.org/en/20/changelog/migration_07.html
         # Under -> sqlite-the-sqlite-dialect-now-uses-nullpool-for-file-based-databases
         poolclass = None if self.storage_path == ":memory:" else NullPool
-        db_version: int = 0
+        loaded_db_version: int = 0
 
         logger.info(
             "[Library] Opening SQLite Library",
@@ -377,13 +379,21 @@ class Library:
             # dont check db version when creating new library
             if not is_new:
                 db_result = session.scalar(
-                    select(Preferences).where(Preferences.key == LibraryPrefs.DB_VERSION.name)
+                    select(Preferences).where(Preferences.key == DB_VERSION_KEY)
                 )
                 if db_result:
-                    db_version = db_result.value
+                    assert isinstance(db_result.value, int)
+                    loaded_db_version = db_result.value
 
-                # NOTE: DB_VERSION 6 is the first supported SQL DB version.
-                if db_version < 6 or db_version > LibraryPrefs.DB_VERSION.default:
+                # ======================== Library Database Version Checking =======================
+                # DB_VERSION 6 is the first supported SQLite DB version.
+                # If the DB_VERSION is >= 100, that means it's a compound major + minor version.
+                #   - Dividing by 100 and flooring gives the major (breaking changes) version.
+                #   - If a DB has major version higher than the current program, don't load it.
+                #   - If only the minor version is higher, it's still allowed to load.
+                if loaded_db_version < 6 or (
+                    loaded_db_version >= 100 and loaded_db_version // 100 > DB_VERSION // 100
+                ):
                     mismatch_text = Translations["status.library_version_mismatch"]
                     found_text = Translations["status.library_version_found"]
                     expected_text = Translations["status.library_version_expected"]
@@ -391,12 +401,12 @@ class Library:
                         success=False,
                         message=(
                             f"{mismatch_text}\n"
-                            f"{found_text} v{db_version}, "
-                            f"{expected_text} v{LibraryPrefs.DB_VERSION.default}"
+                            f"{found_text} v{loaded_db_version}, "
+                            f"{expected_text} v{DB_VERSION}"
                         ),
                     )
 
-            logger.info(f"[Library] DB_VERSION: {db_version}")
+            logger.info(f"[Library] DB_VERSION: {loaded_db_version}")
             make_tables(self.engine)
 
             # Add default tag color namespaces.
@@ -432,6 +442,15 @@ class Library:
                     session.add_all(tags)
                     session.commit()
                 except IntegrityError:
+                    session.rollback()
+
+            # TODO: Completely rework this "preferences" system.
+            with catch_warnings(record=True):
+                try:
+                    session.add(Preferences(key=DB_VERSION_KEY, value=DB_VERSION))
+                    session.commit()
+                except IntegrityError:
+                    logger.debug("preference already exists", pref=DB_VERSION_KEY)
                     session.rollback()
 
             for pref in LibraryPrefs:
@@ -474,28 +493,30 @@ class Library:
             # Apply any post-SQL migration patches.
             if not is_new:
                 # save backup if patches will be applied
-                if LibraryPrefs.DB_VERSION.default != db_version:
+                if loaded_db_version != DB_VERSION:
                     self.library_dir = library_dir
                     self.save_library_backup_to_disk()
                     self.library_dir = None
 
                 # schema changes first
-                if db_version < 8:
+                if loaded_db_version < 8:
                     self.apply_db8_schema_changes(session)
-                if db_version < 9:
+                if loaded_db_version < 9:
                     self.apply_db9_schema_changes(session)
 
                 # now the data changes
-                if db_version == 6:
+                if loaded_db_version == 6:
                     self.apply_repairs_for_db6(session)
-                if db_version >= 6 and db_version < 8:
+                if loaded_db_version >= 6 and loaded_db_version < 8:
                     self.apply_db8_default_data(session)
-                if db_version < 9:
+                if loaded_db_version < 9:
                     self.apply_db9_filename_population(session)
+                if loaded_db_version < 100:
+                    self.apply_db100_parent_repairs(session)
 
             # Update DB_VERSION
-            if LibraryPrefs.DB_VERSION.default > db_version:
-                self.set_prefs(LibraryPrefs.DB_VERSION, LibraryPrefs.DB_VERSION.default)
+            if loaded_db_version < DB_VERSION:
+                self.set_prefs(DB_VERSION_KEY, DB_VERSION)
 
         # everything is fine, set the library path
         self.library_dir = library_dir
@@ -616,6 +637,20 @@ class Library:
             session.merge(entry).filename = entry.path.name
         session.commit()
         logger.info("[Library][Migration] Populated filename column in entries table")
+
+    def apply_db100_parent_repairs(self, session: Session):
+        """Apply database repairs introduced in DB_VERSION 100."""
+        logger.info("[Library][Migration] Applying patches to DB_VERSION 100 library...")
+        with session:
+            # Repair parent-child tag relationships that are the wrong way around.
+            stmt = update(TagParent).values(
+                parent_id=TagParent.child_id,
+                child_id=TagParent.parent_id,
+            )
+            session.execute(stmt)
+            session.flush()
+
+            session.commit()
 
     @property
     def default_fields(self) -> list[BaseField]:
@@ -1631,35 +1666,49 @@ class Library:
 
         # load all tag's parent tags to know which to remove
         prev_parent_tags = session.scalars(
-            select(TagParent).where(TagParent.parent_id == tag.id)
+            select(TagParent).where(TagParent.child_id == tag.id)
         ).all()
 
         for parent_tag in prev_parent_tags:
-            if parent_tag.child_id not in parent_ids:
+            if parent_tag.parent_id not in parent_ids:
                 session.delete(parent_tag)
             else:
                 # no change, remove from list
-                parent_ids.remove(parent_tag.child_id)
+                parent_ids.remove(parent_tag.parent_id)
 
                 # create remaining items
         for parent_id in parent_ids:
             # add new parent tag
             parent_tag = TagParent(
-                parent_id=tag.id,
-                child_id=parent_id,
+                parent_id=parent_id,
+                child_id=tag.id,
             )
             session.add(parent_tag)
 
-    def prefs(self, key: LibraryPrefs):
+    def prefs(self, key: str | LibraryPrefs):
         # load given item from Preferences table
         with Session(self.engine) as session:
-            return session.scalar(select(Preferences).where(Preferences.key == key.name)).value
+            if isinstance(key, LibraryPrefs):
+                return session.scalar(select(Preferences).where(Preferences.key == key.name)).value
+            else:
+                return session.scalar(select(Preferences).where(Preferences.key == key)).value
 
-    def set_prefs(self, key: LibraryPrefs, value) -> None:
+    def set_prefs(self, key: str | LibraryPrefs, value: Any) -> None:
         # set given item in Preferences table
         with Session(self.engine) as session:
             # load existing preference and update value
-            pref = session.scalar(select(Preferences).where(Preferences.key == key.name))
+            pref: Preferences | None
+
+            stuff = session.scalars(select(Preferences))
+            logger.info([x.key for x in list(stuff)])
+
+            if isinstance(key, LibraryPrefs):
+                pref = session.scalar(select(Preferences).where(Preferences.key == key.name))
+            else:
+                pref = session.scalar(select(Preferences).where(Preferences.key == key))
+
+            logger.info("loading pref", pref=pref, key=key, value=value)
+            assert pref is not None
             pref.value = value
             session.add(pref)
             session.commit()
