@@ -31,7 +31,7 @@ dependencies = [
     "typing_extensions~=4.13",
     "ujson~=5.10",
     "wcmatch==10.*",
-    "rarfile = "^4.1",
+    "rarfile~=4.1",
 ]
 
 [project.optional-dependencies]
