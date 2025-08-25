@@ -101,8 +101,8 @@ class MediaPlayer(QGraphicsView):
         self.setCursor(Qt.CursorShape.PointingHandCursor)
         self.setStyleSheet("""
             QGraphicsView {
-               background: transparent;
-               border: none;
+                background: transparent;
+                border: none;
             }
         """)
         self.setObjectName("mediaPlayer")
@@ -409,6 +409,8 @@ class MediaPlayer(QGraphicsView):
                 self.player.play()
         else:
             self.player.setSource(QUrl.fromLocalFile(self.filepath))
+            if not self.autoplay.isChecked():
+                self.player.pause()
 
     def load_toggle_play_icon(self, playing: bool) -> None:
         icon = self.driver.rm.pause_icon if playing else self.driver.rm.play_icon
@@ -453,6 +455,10 @@ class MediaPlayer(QGraphicsView):
             current = self.format_time(self.player.position())
             duration = self.format_time(self.player.duration())
             self.position_label.setText(f"{current} / {duration}")
+            
+            # The key change: if autoplay is off, pause the player after the media is loaded
+            if not self.autoplay.isChecked():
+                self.player.pause()
 
     def _update_controls(self, size: QSize) -> None:
         self.scene().setSceneRect(0, 0, size.width(), size.height())
@@ -487,3 +493,4 @@ class VideoPreview(QGraphicsVideoItem):
     @override
     def boundingRect(self):
         return QRectF(0, 0, self.size().width(), self.size().height())
+    
