@@ -183,6 +183,7 @@ class QtDriver(DriverMixin, QObject):
     applied_theme: Theme
 
     lib: Library
+    cache_manager: CacheManager
 
     browsing_history: History[BrowsingState]
 
@@ -244,24 +245,6 @@ class QtDriver(DriverMixin, QObject):
             )
 
         Translations.change_language(self.settings.language)
-
-        # NOTE: This should be a per-library setting rather than an application setting.
-        thumb_cache_size_limit: int = int(
-            str(
-                self.cached_values.value(
-                    SettingItems.THUMB_CACHE_SIZE_LIMIT,
-                    defaultValue=CacheManager.size_limit,
-                    type=int,
-                )
-            )
-        )
-
-        CacheManager.size_limit = thumb_cache_size_limit
-        self.cached_values.setValue(SettingItems.THUMB_CACHE_SIZE_LIMIT, CacheManager.size_limit)
-        self.cached_values.sync()
-        logger.info(
-            f"[Config] Thumbnail cache size limit: {format_size(CacheManager.size_limit)}",
-        )
 
     def __reset_navigation(self) -> None:
         self.browsing_history = History(BrowsingState.show_all())
@@ -520,7 +503,7 @@ class QtDriver(DriverMixin, QObject):
 
         # TODO: Move this to a settings screen.
         self.main_window.menu_bar.clear_thumb_cache_action.triggered.connect(
-            lambda: CacheManager.clear_cache(self.lib.library_dir)
+            lambda: self.cache_manager.clear_cache()
         )
 
         # endregion
@@ -732,6 +715,7 @@ class QtDriver(DriverMixin, QObject):
         self.__reset_navigation()
 
         self.lib.close()
+        self.cache_manager = None
 
         self.thumb_job_queue.queue.clear()
         if is_shutdown:
@@ -1687,6 +1671,16 @@ class QtDriver(DriverMixin, QObject):
             open_status = LibraryStatus(
                 success=False, library_path=path, message=type(e).__name__, msg_description=str(e)
             )
+
+        max_size: int = self.cached_values.value(
+            SettingItems.THUMB_CACHE_SIZE_LIMIT,
+            defaultValue=CacheManager.DEFAULT_MAX_SIZE,
+            type=int,
+        )  # type: ignore
+        self.cache_manager = CacheManager(path, max_size=max_size)
+        logger.info(
+            f"[Config] Thumbnail cache size limit: {format_size(max_size)}",
+        )
 
         # Migration is required
         if open_status.json_migration_req:
