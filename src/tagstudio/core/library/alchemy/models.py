@@ -311,8 +311,17 @@ def slugify_field_key(mapper, connection, target):
         target.key = slugify(target.tag)
 
 
+# NOTE: The "Preferences" table has been depreciated as of TagStudio 9.5.4
+# and is set to be removed in a future release.
 class Preferences(Base):
     __tablename__ = "preferences"
 
     key: Mapped[str] = mapped_column(primary_key=True)
     value: Mapped[dict] = mapped_column(JSON, nullable=False)
+
+
+class Version(Base):
+    __tablename__ = "versions"
+
+    key: Mapped[str] = mapped_column(primary_key=True)
+    value: Mapped[int] = mapped_column(nullable=False, default=0)
