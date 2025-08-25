@@ -99,10 +99,11 @@ class ThumbRenderer(QObject):
 
     last_cache_folder: Path | None = None
 
-    def __init__(self, library) -> None:
+    def __init__(self, library, driver: "QtDriver") -> None:
         """Initialize the class."""
         super().__init__()
         self.lib = library
+        self.driver = driver
         ThumbRenderer.cache.set_library(self.lib)
 
         # Cached thumbnail elements.
@@ -1441,14 +1442,15 @@ class ThumbRenderer(QObject):
                 # Render from file, return result, and try to save a cached version.
                 # TODO: Audio waveforms are dynamically sized based on the base_size, so hardcoding
                 # the resolution breaks that.
-                image = self._render(
-                    timestamp,
-                    filepath,
-                    (ThumbRenderer.cached_img_res, ThumbRenderer.cached_img_res),
-                    1,
-                    is_grid_thumb,
-                    save_to_file=Path(f"{hash_value}{ThumbRenderer.cached_img_ext}"),
-                )
+                if self.driver.settings.auto_generate_sound_thumbnail:
+                    image = self._render(
+                        timestamp,
+                        filepath,
+                        (ThumbRenderer.cached_img_res, ThumbRenderer.cached_img_res),
+                        1,
+                        is_grid_thumb,
+                        save_to_file=Path(f"{hash_value}{ThumbRenderer.cached_img_ext}"),
+                    )
                 # If the normal renderer failed, fallback the the defaults
                 # (with native non-cached sizing!)
                 if not image:
