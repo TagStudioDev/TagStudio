@@ -243,6 +243,7 @@
     "settings.language": "Language",
     "settings.library": "Library Settings",
     "settings.open_library_on_start": "Open Library on Start",
+    "settings.generate_thumbs": "Thumbnail Generation",
     "settings.page_size": "Page Size",
     "settings.restart_required": "Please restart TagStudio for changes to take effect.",
     "settings.show_filenames_in_grid": "Show Filenames in Grid",
