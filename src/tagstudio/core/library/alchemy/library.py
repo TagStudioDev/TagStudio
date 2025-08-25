@@ -497,7 +497,7 @@ class Library:
             # Apply any post-SQL migration patches.
             if not is_new:
                 # save backup if patches will be applied
-                if loaded_db_version != DB_VERSION:
+                if loaded_db_version < DB_VERSION:
                     self.library_dir = library_dir
                     self.save_library_backup_to_disk()
                     self.library_dir = None
