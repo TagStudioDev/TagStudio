@@ -42,6 +42,7 @@ from sqlalchemy.orm import (
     contains_eager,
     joinedload,
     make_transient,
+    noload,
     selectinload,
 )
 
@@ -317,13 +318,12 @@ class Library:
                 return f
         return None
 
-    def tag_display_name(self, tag_id: int) -> str:
-        with Session(self.engine) as session:
-            tag = session.scalar(select(Tag).where(Tag.id == tag_id))
-            if not tag:
-                return "<NO TAG>"
+    def tag_display_name(self, tag: Tag | None) -> str:
+        if not tag:
+            return "<NO TAG>"
 
-            if tag.disambiguation_id:
+        if tag.disambiguation_id:
+            with Session(self.engine) as session:
                 disam_tag = session.scalar(select(Tag).where(Tag.id == tag.disambiguation_id))
                 if not disam_tag:
                     return "<NO DISAM TAG>"
@@ -331,8 +331,8 @@ class Library:
                 if not disam_name:
                     disam_name = disam_tag.name
                 return f"{tag.name} ({disam_name})"
-            else:
-                return tag.name
+        else:
+            return tag.name
 
     def open_library(self, library_dir: Path, storage_path: Path | None = None) -> LibraryStatus:
         is_new: bool = True
@@ -1534,6 +1534,36 @@ class Library:
             )
 
             return session.scalar(statement)
+
+    def get_tag_hierarchy(self, tag_ids: Iterable[int]) -> dict[int, Tag]:
+        """Get a dictionary containing tags in `tag_ids` and all of their ancestor tags."""
+        current_tag_ids: set[int] = set(tag_ids)
+        all_tag_ids: set[int] = set()
+        all_tags: dict[int, Tag] = {}
+        all_tag_parents: dict[int, list[int]] = {}
+
+        with Session(self.engine) as session:
+            while len(current_tag_ids) > 0:
+                all_tag_ids.update(current_tag_ids)
+                statement = select(TagParent).where(TagParent.parent_id.in_(current_tag_ids))
+                tag_parents = session.scalars(statement).fetchall()
+                current_tag_ids.clear()
+                for tag_parent in tag_parents:
+                    all_tag_parents.setdefault(tag_parent.parent_id, []).append(tag_parent.child_id)
+                    current_tag_ids.add(tag_parent.child_id)
+                current_tag_ids = current_tag_ids.difference(all_tag_ids)
+
+            statement = select(Tag).where(Tag.id.in_(all_tag_ids))
+            statement = statement.options(
+                noload(Tag.parent_tags), selectinload(Tag.aliases), joinedload(Tag.color)
+            )
+            tags = session.scalars(statement).fetchall()
+            for tag in tags:
+                all_tags[tag.id] = tag
+            for tag in all_tags.values():
+                tag.parent_tags = {all_tags[p] for p in all_tag_parents.get(tag.id, [])}
+
+        return all_tags
 
     def add_parent_tag(self, parent_id: int, child_id: int) -> bool:
         if parent_id == child_id:
