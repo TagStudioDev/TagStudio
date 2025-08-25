@@ -455,7 +455,7 @@ class MediaPlayer(QGraphicsView):
             current = self.format_time(self.player.position())
             duration = self.format_time(self.player.duration())
             self.position_label.setText(f"{current} / {duration}")
-            
+
             # The key change: if autoplay is off, pause the player after the media is loaded
             if not self.autoplay.isChecked():
                 self.player.pause()
@@ -493,4 +493,3 @@ class VideoPreview(QGraphicsVideoItem):
     @override
     def boundingRect(self):
         return QRectF(0, 0, self.size().width(), self.size().height())
-    
