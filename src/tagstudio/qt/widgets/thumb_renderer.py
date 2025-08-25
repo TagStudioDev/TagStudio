@@ -11,7 +11,7 @@ import zipfile
 from copy import deepcopy
 from io import BytesIO
 from pathlib import Path
-from typing import cast
+from typing import cast, TYPE_CHECKING
 from warnings import catch_warnings
 
 import cv2
@@ -71,6 +71,9 @@ from tagstudio.qt.helpers.vendored.pydub.audio_segment import (
     _AudioSegment as AudioSegment,
 )
 from tagstudio.qt.resource_manager import ResourceManager
+
+if TYPE_CHECKING:
+    from tagstudio.qt.ts_qt import QtDriver
 
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 os.environ["OPENCV_IO_ENABLE_OPENEXR"] = "1"
@@ -1438,28 +1441,29 @@ class ThumbRenderer(QObject):
                     if image:
                         ThumbRenderer.last_cache_folder = folder
                         break
-            if not image:
+
+            if not image and self.driver.settings.generate_thumbs:
                 # Render from file, return result, and try to save a cached version.
                 # TODO: Audio waveforms are dynamically sized based on the base_size, so hardcoding
                 # the resolution breaks that.
-                if self.driver.settings.auto_generate_sound_thumbnail:
-                    image = self._render(
-                        timestamp,
-                        filepath,
-                        (ThumbRenderer.cached_img_res, ThumbRenderer.cached_img_res),
-                        1,
-                        is_grid_thumb,
-                        save_to_file=Path(f"{hash_value}{ThumbRenderer.cached_img_ext}"),
-                    )
-                # If the normal renderer failed, fallback the the defaults
-                # (with native non-cached sizing!)
-                if not image:
-                    image = (
-                        render_unlinked((adj_size, adj_size), pixel_ratio)
-                        if not filepath.exists()
-                        else render_default((adj_size, adj_size), pixel_ratio)
-                    )
-                    render_mask_and_edge = False
+                image = self._render(
+                    timestamp,
+                    filepath,
+                    (ThumbRenderer.cached_img_res, ThumbRenderer.cached_img_res),
+                    1,
+                    is_grid_thumb,
+                    save_to_file=Path(f"{hash_value}{ThumbRenderer.cached_img_ext}"),
+                )
+
+            # If the normal renderer failed, fallback the the defaults
+            # (with native non-cached sizing!)
+            if not image:
+                image = (
+                    render_unlinked((adj_size, adj_size), pixel_ratio)
+                    if not filepath.exists()
+                    else render_default((adj_size, adj_size), pixel_ratio)
+                )
+                render_mask_and_edge = False
 
             # Apply the mask and edge
             if image:

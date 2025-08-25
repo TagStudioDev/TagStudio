@@ -135,10 +135,10 @@ class SettingsPanel(PanelWidget):
             Translations["settings.open_library_on_start"], self.open_last_lib_checkbox
         )
 
-        self.auto_generate_sound_thumbnail = QCheckBox()
-        self.auto_generate_sound_thumbnail.setChecked(self.driver.settings.auto_generate_sound_thumbnail)
+        self.generate_thumbs = QCheckBox()
+        self.generate_thumbs.setChecked(self.driver.settings.generate_thumbs)
         form_layout.addRow(
-            Translations["settings.auto_generate_sound_thumbnail"], self.auto_generate_sound_thumbnail
+            Translations["settings.generate_thumbs"], self.generate_thumbs
         )
 
         # Autoplay
@@ -238,7 +238,7 @@ class SettingsPanel(PanelWidget):
         return {
             "language": self.__get_language(),
             "open_last_loaded_on_startup": self.open_last_lib_checkbox.isChecked(),
-            "auto_generate_sound_thumbnail": self.auto_generate_sound_thumbnail.isChecked(),
+            "generate_thumbs": self.generate_thumbs.isChecked(),
             "autoplay": self.autoplay_checkbox.isChecked(),
             "show_filenames_in_grid": self.show_filenames_checkbox.isChecked(),
             "page_size": int(self.page_size_line_edit.text()),
@@ -256,7 +256,7 @@ class SettingsPanel(PanelWidget):
         driver.settings.language = settings["language"]
         driver.settings.open_last_loaded_on_startup = settings["open_last_loaded_on_startup"]
         driver.settings.autoplay = settings["autoplay"]
-        driver.settings.auto_generate_sound_thumbnail = settings["auto_generate_sound_thumbnail"]
+        driver.settings.generate_thumbs = settings["generate_thumbs"]
         driver.settings.show_filenames_in_grid = settings["show_filenames_in_grid"]
         driver.settings.page_size = settings["page_size"]
         driver.settings.show_filepath = settings["show_filepath"]
