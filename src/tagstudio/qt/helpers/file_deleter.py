@@ -21,6 +21,8 @@ def delete_file(path: str | Path) -> bool:
     """
     _path = Path(path)
     try:
+        if _path.is_dir():
+            return False
         logger.info(f"[delete_file] Sending to Trash: {_path}")
         send2trash(_path)
         return True

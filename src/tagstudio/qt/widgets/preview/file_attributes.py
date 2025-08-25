@@ -193,7 +193,7 @@ class FileAttributes(QWidget):
 
             # Attempt to populate the stat variables
             ext_display = ext.upper()[1:] or filepath.stem.upper()
-            if filepath:
+            if filepath and filepath.is_file():
                 try:
                     file_size = format_size(filepath.stat().st_size)
 
