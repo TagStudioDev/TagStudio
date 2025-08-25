@@ -14,6 +14,9 @@ from pathlib import Path
 from typing import cast
 from warnings import catch_warnings
 
+import zipfile
+import rarfile
+
 import cv2
 import numpy as np
 import rawpy
@@ -1634,6 +1637,9 @@ class ThumbRenderer(QObject):
                     ext, MediaCategories.EBOOK_TYPES, mime_fallback=True
                 ):
                     image = self._epub_cover(_filepath)
+                # Comic Book Archives =========================================
+                elif ext in {".cbr", ".cbz"}:
+                    image = self._render_comic_archive(str(_filepath), QSize(*base_size))
                 # Blender ======================================================
                 elif MediaCategories.is_ext_in_category(
                     ext, MediaCategories.BLENDER_TYPES, mime_fallback=True
@@ -1691,3 +1697,49 @@ class ThumbRenderer(QObject):
         image = image.resize((new_x, new_y), resample=resampling_method)
 
         return image
+    
+    def _get_first_image_from_archive(self, file_path: str) -> bytes | None:
+        """Extracts the first image file from a zip or rar archive."""
+        image_bytes = None
+        ext = Path(file_path).suffix.lower()
+
+        try:
+            archive_files = []
+            if ext == ".cbz":
+                with zipfile.ZipFile(file_path, "r") as archive:
+                    archive_files = archive.namelist()
+                    # Filter for image files and sort them
+                    image_files = sorted(
+                        [f for f in archive_files if not f.endswith("/") and f.lower().endswith((".png", ".jpg", ".jpeg", ".webp", ".gif"))]
+                    )
+                    if image_files:
+                        with archive.open(image_files[0]) as image_file:
+                            image_bytes = image_file.read()
+
+            elif ext == ".cbr":
+                with rarfile.RarFile(file_path, "r") as archive:
+                    archive_files = [f.filename for f in archive.infolist()]
+                    # Filter for image files and sort them
+                    image_files = sorted(
+                        [f for f in archive_files if not f.endswith("/") and f.lower().endswith((".png", ".jpg", ".jpeg", ".webp", ".gif"))]
+                    )
+                    if image_files:
+                        with archive.open(image_files[0]) as image_file:
+                            image_bytes = image_file.read()
+        except Exception:
+            # Silently fail if archive is corrupt or unreadable
+            return None
+
+        return image_bytes
+
+    def _render_comic_archive(self, file_path: str, size: QSize) -> QPixmap | None:
+        """Renders a thumbnail from the first image in a comic archive."""
+        image_data = self._get_first_image_from_archive(file_path)
+        if not image_data:
+            return None
+
+        pixmap = QPixmap()
+        if not pixmap.loadFromData(image_data):
+            return None
+        
+        return self.scale_pixmap(pixmap, size)
