@@ -40,7 +40,7 @@ WITH RECURSIVE ChildTags AS (
     INNER JOIN ChildTags c ON tp.parent_id = c.tag_id
 )
 SELECT tag_id FROM ChildTags;
-""")  # noqa: E501
+""")
 
 
 def get_filetype_equivalency_list(item: str) -> list[str] | set[str]:
