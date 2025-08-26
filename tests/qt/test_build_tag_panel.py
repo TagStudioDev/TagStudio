@@ -1,3 +1,12 @@
+# pyright: reportArgumentType=false
+# pyright: reportAttributeAccessIssue=false
+# pyright: reportMissingParameterType=false
+# pyright: reportOptionalMemberAccess=false
+# pyright: reportPrivateUsage=false
+# pyright: reportUnknownParameterType=false
+# pyright: reportUnknownVariableType=false
+# pyright: reportUnusedParameter=false
+
 from tagstudio.core.library.alchemy.models import Tag
 from tagstudio.qt.modals.build_tag import BuildTagPanel
 from tagstudio.qt.translations import Translations

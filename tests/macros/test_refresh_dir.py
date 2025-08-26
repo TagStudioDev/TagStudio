@@ -1,3 +1,7 @@
+# pyright: reportMissingParameterType=false
+# pyright: reportUnknownParameterType=false
+
+
 from pathlib import Path
 from tempfile import TemporaryDirectory
 

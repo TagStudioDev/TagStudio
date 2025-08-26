@@ -1,3 +1,13 @@
+# pyright: reportArgumentType=false
+# pyright: reportAttributeAccessIssue=false
+# pyright: reportMissingParameterType=false
+# pyright: reportOptionalMemberAccess=false
+# pyright: reportPrivateUsage=false
+# pyright: reportUnknownParameterType=false
+# pyright: reportUnknownVariableType=false
+# pyright: reportUnusedParameter=false
+
+
 import sys
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -155,7 +165,7 @@ def qt_driver(qtbot, library, library_dir: Path):
 
         driver.app = Mock()
         driver.main_window = Mock()
-        driver.main_window.preview_panel = Mock()
+        # driver.main_window.preview_panel = Mock()
         driver.main_window.thumb_grid = Mock()
         driver.main_window.thumb_size = 128
         driver.item_thumbs = []

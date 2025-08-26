@@ -1,3 +1,13 @@
+# pyright: reportArgumentType=false
+# pyright: reportAttributeAccessIssue=false
+# pyright: reportMissingParameterType=false
+# pyright: reportOptionalMemberAccess=false
+# pyright: reportPrivateUsage=false
+# pyright: reportUnknownParameterType=false
+# pyright: reportUnknownVariableType=false
+# pyright: reportUnusedParameter=false
+
+
 from pathlib import Path
 from tempfile import TemporaryDirectory
 

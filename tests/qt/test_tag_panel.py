@@ -1,3 +1,8 @@
+# pyright: reportMissingParameterType=false
+# pyright: reportUnknownParameterType=false
+# pyright: reportUnknownVariableType=false
+
+
 from tagstudio.core.library.alchemy.models import Tag
 from tagstudio.qt.modals.build_tag import BuildTagPanel
 

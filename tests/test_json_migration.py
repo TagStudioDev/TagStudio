@@ -48,5 +48,5 @@ def test_json_migration():
     # List Type
     assert modal.check_ext_type()
     # No Leading Dot
-    for ext in modal.sql_lib.prefs(LibraryPrefs.EXTENSION_LIST):
+    for ext in modal.sql_lib.prefs(LibraryPrefs.EXTENSION_LIST):  # pyright: ignore[reportUnknownVariableType]
         assert ext[0] != "."

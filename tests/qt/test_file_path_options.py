@@ -1,3 +1,10 @@
+# pyright: reportAttributeAccessIssue=false
+# pyright: reportMissingParameterType=false
+# pyright: reportPrivateUsage=false
+# pyright: reportUnknownParameterType=false
+# pyright: reportUnknownVariableType=false
+
+
 import os
 from pathlib import Path
 from unittest.mock import patch

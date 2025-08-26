@@ -1,3 +1,7 @@
+# pyright: reportMissingParameterType=false
+# pyright: reportUnknownParameterType=false
+
+
 from tagstudio.qt.modals.tag_search import TagSearchPanel
 
 

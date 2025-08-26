@@ -1,3 +1,8 @@
+# pyright: reportMissingParameterType=false
+# pyright: reportUnknownParameterType=false
+# pyright: reportUnusedParameter=false
+
+
 from tagstudio.qt.controller.widgets.preview_panel_controller import PreviewPanel
 
 

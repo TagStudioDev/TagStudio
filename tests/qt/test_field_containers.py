@@ -1,3 +1,8 @@
+# pyright: reportMissingParameterType=false
+# pyright: reportUnknownParameterType=false
+# pyright: reportUnknownVariableType=false
+
+
 from tagstudio.qt.controller.widgets.preview_panel_controller import PreviewPanel
 
 
@@ -102,8 +107,8 @@ def test_add_tag_to_selection_multiple(qt_driver, library):
 
     # Then reload all entries and recheck the presence of tag 1000
     refreshed_entries = library.all_entries(with_joins=True)
-    tag_present_on_some: bool = False
-    tag_absent_on_some: bool = False
+    tag_present_on_some = False
+    tag_absent_on_some = False
 
     for e in refreshed_entries:
         if 1000 in [t.id for t in e.tags]:
@@ -138,6 +143,8 @@ def test_meta_tag_category(qt_driver, library, entry_full):
             case 2:
                 # Make sure the container isn't a duplicate Tags category
                 assert container.title != "<h4>Tags</h4>"
+            case _:
+                pass
 
 
 def test_custom_tag_category(qt_driver, library, entry_full):
@@ -170,3 +177,5 @@ def test_custom_tag_category(qt_driver, library, entry_full):
             case 2:
                 # Make sure the container isn't a plain Tags category
                 assert container.title != "<h4>Tags</h4>"
+            case _:
+                pass

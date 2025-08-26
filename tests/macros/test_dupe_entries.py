@@ -1,3 +1,7 @@
+# pyright: reportMissingParameterType=false
+# pyright: reportUnknownParameterType=false
+
+
 from pathlib import Path
 
 from tagstudio.core.library.alchemy.models import Entry

@@ -1,3 +1,9 @@
+# pyright: reportArgumentType=false
+# pyright: reportMissingParameterType=false
+# pyright: reportUnknownParameterType=false
+# pyright: reportUnusedParameter=false
+
+
 import pytest
 
 from tagstudio.core.library.alchemy.enums import ItemType

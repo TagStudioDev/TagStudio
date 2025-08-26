@@ -1,3 +1,8 @@
+# pyright: reportMissingParameterType=false
+# pyright: reportUnknownParameterType=false
+# pyright: reportUnknownVariableType=false
+
+
 from tagstudio.qt.modals.folders_to_tags import folders_to_tags
 
 

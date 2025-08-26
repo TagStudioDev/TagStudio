@@ -1,3 +1,9 @@
+# pyright: reportMissingParameterType=false
+# pyright: reportPrivateUsage=false
+# pyright: reportUnknownParameterType=false
+# pyright: reportUnusedParameter=false
+
+
 from PySide6.QtCore import QRect
 from PySide6.QtWidgets import QPushButton, QWidget
 

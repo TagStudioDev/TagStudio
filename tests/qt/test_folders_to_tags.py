@@ -1,3 +1,7 @@
+# pyright: reportMissingParameterType=false
+# pyright: reportUnknownParameterType=false
+
+
 from tagstudio.qt.modals.folders_to_tags import generate_preview_data
 
 
