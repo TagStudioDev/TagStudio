@@ -86,7 +86,6 @@ qt_api = "pyside6"
 [tool.pyright]
 ignore = [".venv/**"]
 include = ["src/tagstudio", "tests"]
-extraPaths = ["src/tagstudio", "tests"]
 reportAny = false
 reportIgnoreCommentWithoutRule = false
 reportImplicitStringConcatenation = false
