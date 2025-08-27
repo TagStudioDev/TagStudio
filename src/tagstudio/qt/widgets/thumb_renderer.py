@@ -52,15 +52,12 @@ from PySide6.QtSvg import QSvgRenderer
 from tagstudio.core.constants import (
     FONT_SAMPLE_SIZES,
     FONT_SAMPLE_TEXT,
-    THUMB_CACHE_NAME,
-    TS_FOLDER_NAME,
 )
 from tagstudio.core.exceptions import NoRendererError
 from tagstudio.core.library.ignore import Ignore
 from tagstudio.core.media_types import MediaCategories, MediaType
 from tagstudio.core.palette import UI_COLORS, ColorType, UiColor, get_ui_color
 from tagstudio.core.utils.encoding import detect_char_encoding
-from tagstudio.qt.cache_manager import CacheManager
 from tagstudio.qt.helpers.blender_thumbnailer import blend_thumb
 from tagstudio.qt.helpers.color_overlay import theme_fg_overlay
 from tagstudio.qt.helpers.file_tester import is_readable_video
@@ -73,6 +70,7 @@ from tagstudio.qt.helpers.vendored.pydub.audio_segment import (
 from tagstudio.qt.resource_manager import ResourceManager
 
 if TYPE_CHECKING:
+    from tagstudio.core.library.alchemy.library import Library
     from tagstudio.qt.ts_qt import QtDriver
 
 ImageFile.LOAD_TRUNCATED_IMAGES = True
@@ -93,21 +91,17 @@ class ThumbRenderer(QObject):
     """A class for rendering image and file thumbnails."""
 
     rm: ResourceManager = ResourceManager()
-    cache: CacheManager = CacheManager()
     updated = Signal(float, QPixmap, QSize, Path)
     updated_ratio = Signal(float)
 
     cached_img_res: int = 256  # TODO: Pull this from config
     cached_img_ext: str = ".webp"  # TODO: Pull this from config
 
-    last_cache_folder: Path | None = None
-
-    def __init__(self, library, driver: "QtDriver") -> None:
+    def __init__(self, driver: "QtDriver", library: "Library") -> None:
         """Initialize the class."""
         super().__init__()
-        self.lib = library
         self.driver = driver
-        ThumbRenderer.cache.set_library(self.lib)
+        self.lib = library
 
         # Cached thumbnail elements.
         # Key: Size + Pixel Ratio Tuple + Radius Scale
@@ -739,7 +733,7 @@ class ThumbRenderer(QObject):
             if QGuiApplication.styleHints().colorScheme() is Qt.ColorScheme.Dark
             else "#FFFFFF"
         )
-        im: Image.Image = None
+        im: Image.Image | None = None
         try:
             blend_image = blend_thumb(str(filepath))
 
@@ -782,14 +776,14 @@ class ThumbRenderer(QObject):
         return im
 
     @staticmethod
-    def _open_doc_thumb(filepath: Path) -> Image.Image:
+    def _open_doc_thumb(filepath: Path) -> Image.Image | None:
         """Extract and render a thumbnail for an OpenDocument file.
 
         Args:
             filepath (Path): The path of the file.
         """
         file_path_within_zip = "Thumbnails/thumbnail.png"
-        im: Image.Image = None
+        im: Image.Image | None = None
         with zipfile.ZipFile(filepath, "r") as zip_file:
             # Check if the file exists in the zip
             if file_path_within_zip in zip_file.namelist():
@@ -805,14 +799,14 @@ class ThumbRenderer(QObject):
         return im
 
     @staticmethod
-    def _krita_thumb(filepath: Path) -> Image.Image:
+    def _krita_thumb(filepath: Path) -> Image.Image | None:
         """Extract and render a thumbnail for an Krita file.
 
         Args:
             filepath (Path): The path of the file.
         """
         file_path_within_zip = "preview.png"
-        im: Image.Image = None
+        im: Image.Image | None = None
         with zipfile.ZipFile(filepath, "r") as zip_file:
             # Check if the file exists in the zip
             if file_path_within_zip in zip_file.namelist():
@@ -1373,40 +1367,21 @@ class ThumbRenderer(QObject):
 
             return im_
 
-        def fetch_cached_image(folder: Path):
+        def fetch_cached_image(file_name: Path):
             image: Image.Image | None = None
-            cached_path: Path | None = None
+            cached_path = self.driver.cache_manager.get_file_path(file_name)
 
-            if hash_value and self.lib.library_dir:
-                cached_path = Path(
-                    self.lib.library_dir
-                    / TS_FOLDER_NAME
-                    / THUMB_CACHE_NAME
-                    / folder
-                    / f"{hash_value}{ThumbRenderer.cached_img_ext}"
-                )
-            if cached_path and cached_path.exists() and not cached_path.is_dir():
+            if cached_path and cached_path.is_file():
                 try:
                     image = Image.open(cached_path)
                     if not image:
                         raise UnidentifiedImageError  # pyright: ignore[reportUnreachable]
-                    ThumbRenderer.last_cache_folder = folder
                 except Exception as e:
                     logger.error(
                         "[ThumbRenderer] Couldn't open cached thumbnail!",
                         path=cached_path,
                         error=e,
                     )
-                    # If the cached thumbnail failed, try rendering a new one
-                    image = self._render(
-                        timestamp,
-                        filepath,
-                        (ThumbRenderer.cached_img_res, ThumbRenderer.cached_img_res),
-                        1,
-                        is_grid_thumb,
-                        save_to_file=cached_path,
-                    )
-
             return image
 
         image: Image.Image | None = None
@@ -1418,29 +1393,8 @@ class ThumbRenderer(QObject):
                 mod_time = str(filepath.stat().st_mtime_ns)
             hashable_str: str = f"{str(filepath)}{mod_time}"
             hash_value = hashlib.shake_128(hashable_str.encode("utf-8")).hexdigest(8)
-
-            # Check the last successful folder first.
-            if ThumbRenderer.last_cache_folder:
-                image = fetch_cached_image(ThumbRenderer.last_cache_folder)
-
-            # If there was no last folder or the check failed, check all folders.
-            if not image:
-                thumb_folders: list[Path] = []
-                try:
-                    for f in (self.lib.library_dir / TS_FOLDER_NAME / THUMB_CACHE_NAME).glob("*"):
-                        if f.is_dir() and f is not ThumbRenderer.last_cache_folder:
-                            thumb_folders.append(f)
-                except TypeError:
-                    logger.error(
-                        "[ThumbRenderer] Couldn't check thumb cache folder, is the library closed?",
-                        library_dir=self.lib.library_dir,
-                    )
-
-                for folder in thumb_folders:
-                    image = fetch_cached_image(folder)
-                    if image:
-                        ThumbRenderer.last_cache_folder = folder
-                        break
+            file_name = Path(f"{hash_value}{ThumbRenderer.cached_img_ext}")
+            image = fetch_cached_image(file_name)
 
             if not image and self.driver.settings.generate_thumbs:
                 # Render from file, return result, and try to save a cached version.
@@ -1452,7 +1406,7 @@ class ThumbRenderer(QObject):
                     (ThumbRenderer.cached_img_res, ThumbRenderer.cached_img_res),
                     1,
                     is_grid_thumb,
-                    save_to_file=Path(f"{hash_value}{ThumbRenderer.cached_img_ext}"),
+                    save_to_file=file_name,
                 )
 
             # If the normal renderer failed, fallback the the defaults
@@ -1663,7 +1617,7 @@ class ThumbRenderer(QObject):
                     image = self._resize_image(image, (adj_size, adj_size))
 
                 if save_to_file and savable_media_type and image:
-                    ThumbRenderer.cache.save_image(image, save_to_file, mode="RGBA")
+                    self.driver.cache_manager.save_image(image, save_to_file, mode="RGBA")
 
             except (
                 UnidentifiedImageError,
