@@ -77,7 +77,7 @@ def test_file_path_display(
     assert isinstance(entry, Entry)
     filename = entry.path
     assert library.library_dir is not None
-    panel.file_attributes_widget.update_stats(filepath=library.library_dir / filename)
+    panel._file_attributes_widget.update_stats(filepath=library.library_dir / filename)  # pyright: ignore[reportPrivateUsage]
 
     # Generate the expected file string.
     # This is copied directly from the file_attributes.py file
@@ -95,7 +95,7 @@ def test_file_path_display(
             file_str += f"<b>{'\u200b'.join(part_)}</b>"
 
     # Assert the file path is displayed correctly
-    assert panel.file_attributes_widget.file_label.text() == file_str
+    assert panel._file_attributes_widget.file_label.text() == file_str  # pyright: ignore[reportPrivateUsage]
 
 
 @pytest.mark.parametrize(

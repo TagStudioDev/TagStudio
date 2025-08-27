@@ -31,7 +31,7 @@ def cwd():
 def file_mediatypes_library():
     lib = Library()
 
-    status = lib.open_library(Path(""), ":memory:")  # pyright: ignore[reportArgumentType]
+    status = lib.open_library(Path(""), ":memory:")
     assert status.success
     assert lib.folder
 
@@ -82,7 +82,7 @@ def library(request, library_dir: Path):  # pyright: ignore
             library_path = Path(request.param)
 
     lib = Library()
-    status = lib.open_library(library_path, ":memory:")  # pyright: ignore[reportArgumentType]
+    status = lib.open_library(library_path, ":memory:")
     assert status.success
     assert lib.folder
 

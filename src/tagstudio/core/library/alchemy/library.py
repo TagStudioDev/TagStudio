@@ -210,7 +210,7 @@ class Library:
     """Class for the Library object, and all CRUD operations made upon it."""
 
     library_dir: Path | None = None
-    storage_path: Path | None
+    storage_path: Path | str | None
     engine: Engine | None = None
     folder: Folder | None
     included_files: set[Path] = set()
@@ -334,7 +334,9 @@ class Library:
             else:
                 return tag.name
 
-    def open_library(self, library_dir: Path, storage_path: Path | None = None) -> LibraryStatus:
+    def open_library(
+        self, library_dir: Path, storage_path: Path | str | None = None
+    ) -> LibraryStatus:
         is_new: bool = True
         if storage_path == ":memory:":
             self.storage_path = storage_path
@@ -342,6 +344,7 @@ class Library:
             return self.open_sqlite_library(library_dir, is_new)
         else:
             self.storage_path = library_dir / TS_FOLDER_NAME / self.SQL_FILENAME
+            assert isinstance(self.storage_path, Path)
             if self.verify_ts_folder(library_dir) and (is_new := not self.storage_path.exists()):
                 json_path = library_dir / TS_FOLDER_NAME / self.JSON_FILENAME
                 if json_path.exists():
@@ -896,7 +899,6 @@ class Library:
                 for i in range(0, len(entry_ids), MAX_SQL_VARIABLES)
             ]:
                 session.query(Entry).where(Entry.id.in_(sub_list)).delete()
-                session.flush()
             session.commit()
 
     def has_path_entry(self, path: Path) -> bool:

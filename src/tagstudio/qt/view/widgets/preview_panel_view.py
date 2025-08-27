@@ -198,7 +198,7 @@ class PreviewPanelView(QWidget):
         self.__add_tag_button.setEnabled(enabled)
 
     @property
-    def file_attributes_widget(self) -> FileAttributes:  # needed for the tests
+    def _file_attributes_widget(self) -> FileAttributes:  # needed for the tests
         """Getter for the file attributes widget."""
         return self.__file_attrs
 
