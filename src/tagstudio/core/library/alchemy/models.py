@@ -99,8 +99,8 @@ class Tag(Base):
     aliases: Mapped[set[TagAlias]] = relationship(back_populates="tag")
     parent_tags: Mapped[set["Tag"]] = relationship(
         secondary=TagParent.__tablename__,
-        primaryjoin="Tag.id == TagParent.parent_id",
-        secondaryjoin="Tag.id == TagParent.child_id",
+        primaryjoin="Tag.id == TagParent.child_id",
+        secondaryjoin="Tag.id == TagParent.parent_id",
         back_populates="parent_tags",
     )
     disambiguation_id: Mapped[int | None]

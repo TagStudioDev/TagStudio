@@ -1396,7 +1396,7 @@ class ThumbRenderer(QObject):
             file_name = Path(f"{hash_value}{ThumbRenderer.cached_img_ext}")
             image = fetch_cached_image(file_name)
 
-            if not image:
+            if not image and self.driver.settings.generate_thumbs:
                 # Render from file, return result, and try to save a cached version.
                 # TODO: Audio waveforms are dynamically sized based on the base_size, so hardcoding
                 # the resolution breaks that.
@@ -1408,15 +1408,16 @@ class ThumbRenderer(QObject):
                     is_grid_thumb,
                     save_to_file=file_name,
                 )
-                # If the normal renderer failed, fallback the the defaults
-                # (with native non-cached sizing!)
-                if not image:
-                    image = (
-                        render_unlinked((adj_size, adj_size), pixel_ratio)
-                        if not filepath.exists()
-                        else render_default((adj_size, adj_size), pixel_ratio)
-                    )
-                    render_mask_and_edge = False
+
+            # If the normal renderer failed, fallback the the defaults
+            # (with native non-cached sizing!)
+            if not image:
+                image = (
+                    render_unlinked((adj_size, adj_size), pixel_ratio)
+                    if not filepath.exists() or filepath.is_dir()
+                    else render_default((adj_size, adj_size), pixel_ratio)
+                )
+                render_mask_and_edge = False
 
             # Apply the mask and edge
             if image:
@@ -1457,7 +1458,7 @@ class ThumbRenderer(QObject):
             if not image:
                 image = (
                     render_unlinked((512, 512), 2)
-                    if not filepath.exists()
+                    if not filepath.exists() or filepath.is_dir()
                     else render_default((512, 512), 2)
                 )
                 render_mask_and_edge = False
@@ -1519,7 +1520,7 @@ class ThumbRenderer(QObject):
         _filepath: Path = Path(filepath)
         savable_media_type: bool = True
 
-        if _filepath:
+        if _filepath and _filepath.is_file():
             try:
                 ext: str = _filepath.suffix.lower() if _filepath.suffix else _filepath.stem.lower()
                 # Images =======================================================
