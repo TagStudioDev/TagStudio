@@ -1,3 +1,7 @@
+# Copyright (C) 2025
+# Licensed under the GPL-3.0 License.
+# Created for TagStudio: https://github.com/CyanVoxel/TagStudio
+
 from pathlib import Path
 from tempfile import TemporaryDirectory
 

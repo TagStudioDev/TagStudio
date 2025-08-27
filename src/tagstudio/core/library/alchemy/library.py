@@ -896,6 +896,7 @@ class Library:
                 for i in range(0, len(entry_ids), MAX_SQL_VARIABLES)
             ]:
                 session.query(Entry).where(Entry.id.in_(sub_list)).delete()
+                session.flush()
             session.commit()
 
     def has_path_entry(self, path: Path) -> bool:
@@ -1214,7 +1215,7 @@ class Library:
         value: str | datetime | None = None,
     ) -> bool:
         logger.info(
-            "add_field_to_entry",
+            "[Library][add_field_to_entry]",
             entry_id=entry_id,
             field_type=field,
             field_id=field_id,
@@ -1389,6 +1390,12 @@ class Library:
         self, entry_ids: int | list[int], tag_ids: int | list[int] | set[int]
     ) -> bool:
         """Add one or more tags to one or more entries."""
+        logger.info(
+            "[Library][add_tags_to_entries]",
+            entry_ids=entry_ids,
+            tag_ids=tag_ids,
+        )
+
         entry_ids_ = [entry_ids] if isinstance(entry_ids, int) else entry_ids
         tag_ids_ = [tag_ids] if isinstance(tag_ids, int) else tag_ids
         with Session(self.engine, expire_on_commit=False) as session:
@@ -1733,17 +1740,25 @@ class Library:
                         value=field.value,
                     )
 
-    def merge_entries(self, from_entry: Entry, into_entry: Entry) -> None:
+    def merge_entries(self, from_entry: Entry, into_entry: Entry) -> bool:
         """Add fields and tags from the first entry to the second, and then delete the first."""
+        success = True
         for field in from_entry.fields:
-            self.add_field_to_entry(
+            result = self.add_field_to_entry(
                 entry_id=into_entry.id,
                 field_id=field.type_key,
                 value=field.value,
             )
+            if not result:
+                success = False
         tag_ids = [tag.id for tag in from_entry.tags]
-        self.add_tags_to_entries(into_entry.id, tag_ids)
+        add_result = self.add_tags_to_entries(into_entry.id, tag_ids)
         self.remove_entries([from_entry.id])
+
+        if not add_result:
+            success = False
+
+        return success
 
     @property
     def tag_color_groups(self) -> dict[str, list[TagColorGroup]]:

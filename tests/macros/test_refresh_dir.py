@@ -1,6 +1,6 @@
-# pyright: reportMissingParameterType=false
-# pyright: reportUnknownParameterType=false
-
+# Copyright (C) 2025
+# Licensed under the GPL-3.0 License.
+# Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -8,6 +8,7 @@ from tempfile import TemporaryDirectory
 import pytest
 
 from tagstudio.core.enums import LibraryPrefs
+from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.utils.refresh_dir import RefreshDirTracker
 
 CWD = Path(__file__).parent
@@ -15,7 +16,8 @@ CWD = Path(__file__).parent
 
 @pytest.mark.parametrize("exclude_mode", [True, False])
 @pytest.mark.parametrize("library", [TemporaryDirectory()], indirect=True)
-def test_refresh_new_files(library, exclude_mode):
+def test_refresh_new_files(library: Library, exclude_mode: bool):
+    assert library.library_dir
     # Given
     library.set_prefs(LibraryPrefs.IS_EXCLUDE_LIST, exclude_mode)
     library.set_prefs(LibraryPrefs.EXTENSION_LIST, [".md"])
