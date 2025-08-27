@@ -10,7 +10,6 @@ from tempfile import TemporaryDirectory
 from unittest.mock import Mock, patch
 
 import pytest
-from pytestqt.qtbot import QtBot
 
 CWD = Path(__file__).parent
 # this needs to be above `src` imports
@@ -152,7 +151,7 @@ def entry_full(library: Library):
 
 
 @pytest.fixture
-def qt_driver(qtbot: QtBot, library: Library, library_dir: Path):  # pyright: ignore[reportUnusedParameter]
+def qt_driver(library: Library, library_dir: Path):
     class Args:
         settings_file = library_dir / "settings.toml"
         cache_file = library_dir / "tagstudio.ini"
