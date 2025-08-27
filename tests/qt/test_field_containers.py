@@ -1,7 +1,15 @@
+# Copyright (C) 2025
+# Licensed under the GPL-3.0 License.
+# Created for TagStudio: https://github.com/CyanVoxel/TagStudio
+
+
+from tagstudio.core.library.alchemy.library import Library
+from tagstudio.core.library.alchemy.models import Entry, Tag
 from tagstudio.qt.controller.widgets.preview_panel_controller import PreviewPanel
+from tagstudio.qt.ts_qt import QtDriver
 
 
-def test_update_selection_empty(qt_driver, library):
+def test_update_selection_empty(qt_driver: QtDriver, library: Library):
     panel = PreviewPanel(library, qt_driver)
 
     # Clear the library selection (selecting 1 then unselecting 1)
@@ -14,7 +22,7 @@ def test_update_selection_empty(qt_driver, library):
         assert container.isHidden()
 
 
-def test_update_selection_single(qt_driver, library, entry_full):
+def test_update_selection_single(qt_driver: QtDriver, library: Library, entry_full: Entry):
     panel = PreviewPanel(library, qt_driver)
 
     # Select the single entry
@@ -26,7 +34,7 @@ def test_update_selection_single(qt_driver, library, entry_full):
         assert not container.isHidden()
 
 
-def test_update_selection_multiple(qt_driver, library):
+def test_update_selection_multiple(qt_driver: QtDriver, library: Library):
     # TODO: Implement mixed field editing. Currently these containers will be hidden,
     # same as the empty selection behavior.
     panel = PreviewPanel(library, qt_driver)
@@ -41,7 +49,7 @@ def test_update_selection_multiple(qt_driver, library):
         assert container.isHidden()
 
 
-def test_add_tag_to_selection_single(qt_driver, library, entry_full):
+def test_add_tag_to_selection_single(qt_driver: QtDriver, library: Library, entry_full: Entry):
     panel = PreviewPanel(library, qt_driver)
 
     assert {t.id for t in entry_full.tags} == {1000}
@@ -54,11 +62,11 @@ def test_add_tag_to_selection_single(qt_driver, library, entry_full):
     panel.field_containers_widget.add_tags_to_selected(2000)
 
     # Then reload entry
-    refreshed_entry = next(library.all_entries(with_joins=True))
+    refreshed_entry: Entry = next(library.all_entries(with_joins=True))
     assert {t.id for t in refreshed_entry.tags} == {1000, 2000}
 
 
-def test_add_same_tag_to_selection_single(qt_driver, library, entry_full):
+def test_add_same_tag_to_selection_single(qt_driver: QtDriver, library: Library, entry_full: Entry):
     panel = PreviewPanel(library, qt_driver)
 
     assert {t.id for t in entry_full.tags} == {1000}
@@ -75,7 +83,7 @@ def test_add_same_tag_to_selection_single(qt_driver, library, entry_full):
     assert {t.id for t in refreshed_entry.tags} == {1000}
 
 
-def test_add_tag_to_selection_multiple(qt_driver, library):
+def test_add_tag_to_selection_multiple(qt_driver: QtDriver, library: Library):
     panel = PreviewPanel(library, qt_driver)
     all_entries = library.all_entries(with_joins=True)
 
@@ -102,8 +110,8 @@ def test_add_tag_to_selection_multiple(qt_driver, library):
 
     # Then reload all entries and recheck the presence of tag 1000
     refreshed_entries = library.all_entries(with_joins=True)
-    tag_present_on_some: bool = False
-    tag_absent_on_some: bool = False
+    tag_present_on_some = False
+    tag_absent_on_some = False
 
     for e in refreshed_entries:
         if 1000 in [t.id for t in e.tags]:
@@ -115,7 +123,7 @@ def test_add_tag_to_selection_multiple(qt_driver, library):
     assert not tag_absent_on_some
 
 
-def test_meta_tag_category(qt_driver, library, entry_full):
+def test_meta_tag_category(qt_driver: QtDriver, library: Library, entry_full: Entry):
     panel = PreviewPanel(library, qt_driver)
 
     # Ensure the Favorite tag is on entry_full
@@ -131,20 +139,25 @@ def test_meta_tag_category(qt_driver, library, entry_full):
         match i:
             case 0:
                 # Check if the container is the Meta Tags category
-                assert container.title == f"<h4>{library.get_tag(2).name}</h4>"
+                tag: Tag | None = library.get_tag(2)
+                assert tag
+                assert container.title == f"<h4>{tag.name}</h4>"
             case 1:
                 # Check if the container is the Tags category
                 assert container.title == "<h4>Tags</h4>"
             case 2:
                 # Make sure the container isn't a duplicate Tags category
                 assert container.title != "<h4>Tags</h4>"
+            case _:
+                pass
 
 
-def test_custom_tag_category(qt_driver, library, entry_full):
+def test_custom_tag_category(qt_driver: QtDriver, library: Library, entry_full: Entry):
     panel = PreviewPanel(library, qt_driver)
 
     # Set tag 1000 (foo) as a category
-    tag = library.get_tag(1000)
+    tag: Tag | None = library.get_tag(1000)
+    assert tag
     tag.is_category = True
     library.update_tag(
         tag,
@@ -163,10 +176,14 @@ def test_custom_tag_category(qt_driver, library, entry_full):
         match i:
             case 0:
                 # Check if the container is the Meta Tags category
-                assert container.title == f"<h4>{library.get_tag(2).name}</h4>"
+                tag_2: Tag | None = library.get_tag(2)
+                assert tag_2
+                assert container.title == f"<h4>{tag_2.name}</h4>"
             case 1:
                 # Check if the container is the custom "foo" category
                 assert container.title == f"<h4>{tag.name}</h4>"
             case 2:
                 # Make sure the container isn't a plain Tags category
                 assert container.title != "<h4>Tags</h4>"
+            case _:
+                pass

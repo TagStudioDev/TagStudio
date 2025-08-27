@@ -1,3 +1,8 @@
+# Copyright (C) 2025
+# Licensed under the GPL-3.0 License.
+# Created for TagStudio: https://github.com/CyanVoxel/TagStudio
+
+
 import pytest
 import structlog
 
@@ -139,5 +144,5 @@ def test_parent_tags(search_library: Library, query: str, count: int):
     "invalid_query", ["asd AND", "asd AND AND", "tag:(", "(asd", "asd[]", "asd]", ":", "tag: :"]
 )
 def test_syntax(search_library: Library, invalid_query: str):
-    with pytest.raises(ParsingError) as e_info:  # noqa: F841
+    with pytest.raises(ParsingError) as e_info:  # noqa: F841  # pyright: ignore[reportUnusedVariable]
         search_library.search_library(BrowsingState.from_search_query(invalid_query), page_size=500)

@@ -209,7 +209,7 @@ class Library:
     """Class for the Library object, and all CRUD operations made upon it."""
 
     library_dir: Path | None = None
-    storage_path: Path | None
+    storage_path: Path | str | None
     engine: Engine | None = None
     folder: Folder | None
     included_files: set[Path] = set()
@@ -333,7 +333,9 @@ class Library:
             else:
                 return tag.name
 
-    def open_library(self, library_dir: Path, storage_path: Path | None = None) -> LibraryStatus:
+    def open_library(
+        self, library_dir: Path, storage_path: Path | str | None = None
+    ) -> LibraryStatus:
         is_new: bool = True
         if storage_path == ":memory:":
             self.storage_path = storage_path
@@ -341,6 +343,7 @@ class Library:
             return self.open_sqlite_library(library_dir, is_new)
         else:
             self.storage_path = library_dir / TS_FOLDER_NAME / self.SQL_FILENAME
+            assert isinstance(self.storage_path, Path)
             if self.verify_ts_folder(library_dir) and (is_new := not self.storage_path.exists()):
                 json_path = library_dir / TS_FOLDER_NAME / self.JSON_FILENAME
                 if json_path.exists():
@@ -1213,7 +1216,7 @@ class Library:
         value: str | datetime | None = None,
     ) -> bool:
         logger.info(
-            "add_field_to_entry",
+            "[Library][add_field_to_entry]",
             entry_id=entry_id,
             field_type=field,
             field_id=field_id,
@@ -1388,6 +1391,12 @@ class Library:
         self, entry_ids: int | list[int], tag_ids: int | list[int] | set[int]
     ) -> bool:
         """Add one or more tags to one or more entries."""
+        logger.info(
+            "[Library][add_tags_to_entries]",
+            entry_ids=entry_ids,
+            tag_ids=tag_ids,
+        )
+
         entry_ids_ = [entry_ids] if isinstance(entry_ids, int) else entry_ids
         tag_ids_ = [tag_ids] if isinstance(tag_ids, int) else tag_ids
         with Session(self.engine, expire_on_commit=False) as session:
@@ -1732,17 +1741,25 @@ class Library:
                         value=field.value,
                     )
 
-    def merge_entries(self, from_entry: Entry, into_entry: Entry) -> None:
+    def merge_entries(self, from_entry: Entry, into_entry: Entry) -> bool:
         """Add fields and tags from the first entry to the second, and then delete the first."""
+        success = True
         for field in from_entry.fields:
-            self.add_field_to_entry(
+            result = self.add_field_to_entry(
                 entry_id=into_entry.id,
                 field_id=field.type_key,
                 value=field.value,
             )
+            if not result:
+                success = False
         tag_ids = [tag.id for tag in from_entry.tags]
-        self.add_tags_to_entries(into_entry.id, tag_ids)
+        add_result = self.add_tags_to_entries(into_entry.id, tag_ids)
         self.remove_entries([from_entry.id])
+
+        if not add_result:
+            success = False
+
+        return success
 
     @property
     def tag_color_groups(self) -> dict[str, list[TagColorGroup]]:

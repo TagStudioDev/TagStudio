@@ -1,4 +1,10 @@
+# Copyright (C) 2025
+# Licensed under the GPL-3.0 License.
+# Created for TagStudio: https://github.com/CyanVoxel/TagStudio
+
+
 import os
+from collections.abc import Callable
 from pathlib import Path
 from unittest.mock import patch
 
@@ -53,7 +59,10 @@ def test_filepath_setting(qtbot: QtBot, qt_driver: QtDriver, filepath_option: Sh
     ],
 )
 def test_file_path_display(
-    qt_driver: QtDriver, library: Library, filepath_option: ShowFilepathOption, expected_path
+    qt_driver: QtDriver,
+    library: Library,
+    filepath_option: ShowFilepathOption,
+    expected_path: Callable[[Library], Path],
 ):
     panel = PreviewPanel(library, qt_driver)
 
@@ -68,12 +77,12 @@ def test_file_path_display(
     assert isinstance(entry, Entry)
     filename = entry.path
     assert library.library_dir is not None
-    panel._file_attributes_widget.update_stats(filepath=library.library_dir / filename)
+    panel._file_attributes_widget.update_stats(filepath=library.library_dir / filename)  # pyright: ignore[reportPrivateUsage]
 
     # Generate the expected file string.
     # This is copied directly from the file_attributes.py file
     # can be imported as a function in the future
-    display_path = expected_path(library)
+    display_path: Path = expected_path(library)
     file_str: str = ""
     separator: str = f"<a style='color: #777777'><b>{os.path.sep}</a>"  # Gray
     for i, part in enumerate(display_path.parts):
@@ -86,7 +95,7 @@ def test_file_path_display(
             file_str += f"<b>{'\u200b'.join(part_)}</b>"
 
     # Assert the file path is displayed correctly
-    assert panel._file_attributes_widget.file_label.text() == file_str
+    assert panel._file_attributes_widget.file_label.text() == file_str  # pyright: ignore[reportPrivateUsage]
 
 
 @pytest.mark.parametrize(
@@ -107,7 +116,10 @@ def test_file_path_display(
     ],
 )
 def test_title_update(
-    qt_driver: QtDriver, filepath_option: ShowFilepathOption, expected_title, library_dir: Path
+    qt_driver: QtDriver,
+    filepath_option: ShowFilepathOption,
+    expected_title: Callable[[Path, str], str],
+    library_dir: Path,
 ):
     base_title = qt_driver.base_title
 
@@ -135,7 +147,7 @@ def test_title_update(
     qt_driver.main_window.menu_bar.folders_to_tags_action = QAction(menu_bar)
 
     # Trigger the update
-    qt_driver._init_library(library_dir, open_status)
+    qt_driver._init_library(library_dir, open_status)  # pyright: ignore[reportPrivateUsage]
 
     # Assert the title is updated correctly
-    qt_driver.main_window.setWindowTitle.assert_called_with(expected_title(library_dir, base_title))
+    qt_driver.main_window.setWindowTitle.assert_called_with(expected_title(library_dir, base_title))  # pyright: ignore[reportAttributeAccessIssue]
