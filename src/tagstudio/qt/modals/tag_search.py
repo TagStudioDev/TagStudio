@@ -213,11 +213,8 @@ class TagSearchPanel(PanelWidget):
         logger.info("[TagSearchPanel] Updating Tags")
 
         # Remove the "Create & Add" button if one exists
-        create_button: QPushButton | None = None
         if self.create_button_in_layout and self.scroll_layout.count():
-            create_button = self.scroll_layout.takeAt(self.scroll_layout.count() - 1).widget()  # type: ignore
-            assert create_button is not None
-            create_button.deleteLater()
+            self.scroll_layout.takeAt(self.scroll_layout.count() - 1).widget().deleteLater()
             self.create_button_in_layout = False
 
         # Get results for the search query

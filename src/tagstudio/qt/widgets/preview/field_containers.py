@@ -32,6 +32,7 @@ from tagstudio.core.library.alchemy.fields import (
 )
 from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.library.alchemy.models import Entry, Tag
+from tagstudio.core.utils.types import unwrap
 from tagstudio.qt.controller.components.tag_box_controller import TagBoxWidget
 from tagstudio.qt.translations import Translations
 from tagstudio.qt.widgets.datetime_picker import DatetimePicker
@@ -110,8 +111,7 @@ class FieldContainers(QWidget):
         """Update tags and fields from a single Entry source."""
         logger.warning("[FieldContainers] Updating Selection", entry_id=entry_id)
 
-        entry = self.lib.get_entry_full(entry_id)
-        assert entry is not None
+        entry = unwrap(self.lib.get_entry_full(entry_id))
         self.cached_entries = [entry]
         self.update_granular(entry.tags, entry.fields, update_badges)
 
@@ -177,9 +177,8 @@ class FieldContainers(QWidget):
             "Character" -> "Johnny Bravo",
             "TV" -> Johnny Bravo"
             """
-            tag_obj = self.lib.get_tag(tag_id)  # Get full object
+            tag_obj = unwrap(self.lib.get_tag(tag_id))  # Get full object
             if p_ids is None:
-                assert tag_obj is not None
                 p_ids = tag_obj.parent_ids
 
             for p_id in p_ids:
@@ -188,8 +187,7 @@ class FieldContainers(QWidget):
                 # If the p_tag has p_tags of its own, recursively link those to the original Tag.
                 if tag_id not in cluster_map[p_id]:
                     cluster_map[p_id].add(tag_id)
-                    p_tag = self.lib.get_tag(p_id)  # Get full object
-                    assert p_tag is not None
+                    p_tag = unwrap(self.lib.get_tag(p_id))  # Get full object
                     if p_tag.parent_ids:
                         add_to_cluster(
                             tag_id,

@@ -5,6 +5,7 @@
 
 from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.library.alchemy.models import Entry, Tag
+from tagstudio.core.utils.types import unwrap
 from tagstudio.qt.controller.widgets.preview_panel_controller import PreviewPanel
 from tagstudio.qt.ts_qt import QtDriver
 
@@ -139,8 +140,7 @@ def test_meta_tag_category(qt_driver: QtDriver, library: Library, entry_full: En
         match i:
             case 0:
                 # Check if the container is the Meta Tags category
-                tag: Tag | None = library.get_tag(2)
-                assert tag
+                tag: Tag = unwrap(library.get_tag(2))
                 assert container.title == f"<h4>{tag.name}</h4>"
             case 1:
                 # Check if the container is the Tags category
@@ -156,8 +156,7 @@ def test_custom_tag_category(qt_driver: QtDriver, library: Library, entry_full: 
     panel = PreviewPanel(library, qt_driver)
 
     # Set tag 1000 (foo) as a category
-    tag: Tag | None = library.get_tag(1000)
-    assert tag
+    tag: Tag = unwrap(library.get_tag(1000))
     tag.is_category = True
     library.update_tag(
         tag,
@@ -176,8 +175,7 @@ def test_custom_tag_category(qt_driver: QtDriver, library: Library, entry_full: 
         match i:
             case 0:
                 # Check if the container is the Meta Tags category
-                tag_2: Tag | None = library.get_tag(2)
-                assert tag_2
+                tag_2: Tag = unwrap(library.get_tag(2))
                 assert container.title == f"<h4>{tag_2.name}</h4>"
             case 1:
                 # Check if the container is the custom "foo" category

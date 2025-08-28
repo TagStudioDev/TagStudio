@@ -126,8 +126,8 @@ class Tag(Base):
 
     def __init__(
         self,
+        name: str,
         id: int | None = None,
-        name: str | None = None,
         shorthand: str | None = None,
         aliases: set[TagAlias] | None = None,
         parent_tags: set["Tag"] | None = None,
@@ -146,6 +146,7 @@ class Tag(Base):
         self.shorthand = shorthand
         self.disambiguation_id = disambiguation_id
         self.is_category = is_category
+        # TODO: @reviewer any idea what this assert is for? This will always be true, no?
         assert not self.id
         self.id = id
         super().__init__()

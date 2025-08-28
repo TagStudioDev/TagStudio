@@ -18,6 +18,7 @@ from pytestqt.qtbot import QtBot
 from tagstudio.core.enums import ShowFilepathOption
 from tagstudio.core.library.alchemy.library import Library, LibraryStatus
 from tagstudio.core.library.alchemy.models import Entry
+from tagstudio.core.utils.types import unwrap
 from tagstudio.qt.controller.widgets.preview_panel_controller import PreviewPanel
 from tagstudio.qt.modals.settings_panel import SettingsPanel
 from tagstudio.qt.ts_qt import QtDriver
@@ -76,8 +77,7 @@ def test_file_path_display(
     entry = library.get_entry(2)
     assert isinstance(entry, Entry)
     filename = entry.path
-    assert library.library_dir is not None
-    panel._file_attributes_widget.update_stats(filepath=library.library_dir / filename)  # pyright: ignore[reportPrivateUsage]
+    panel._file_attributes_widget.update_stats(filepath=unwrap(library.library_dir) / filename)  # pyright: ignore[reportPrivateUsage]
 
     # Generate the expected file string.
     # This is copied directly from the file_attributes.py file

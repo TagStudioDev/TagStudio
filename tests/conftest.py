@@ -18,6 +18,7 @@ sys.path.insert(0, str(CWD.parent))
 from tagstudio.core.constants import THUMB_CACHE_NAME, TS_FOLDER_NAME
 from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.library.alchemy.models import Entry, Tag
+from tagstudio.core.utils.types import unwrap
 from tagstudio.qt.ts_qt import QtDriver
 
 
@@ -32,22 +33,22 @@ def file_mediatypes_library():
 
     status = lib.open_library(Path(""), ":memory:")
     assert status.success
-    assert lib.folder
+    folder = unwrap(lib.folder)
 
     entry1 = Entry(
-        folder=lib.folder,
+        folder=folder,
         path=Path("foo.png"),
         fields=lib.default_fields,
     )
 
     entry2 = Entry(
-        folder=lib.folder,
+        folder=folder,
         path=Path("bar.png"),
         fields=lib.default_fields,
     )
 
     entry3 = Entry(
-        folder=lib.folder,
+        folder=folder,
         path=Path("baz.apng"),
         fields=lib.default_fields,
     )
@@ -83,7 +84,7 @@ def library(request, library_dir: Path):  # pyright: ignore
     lib = Library()
     status = lib.open_library(library_path, ":memory:")
     assert status.success
-    assert lib.folder
+    folder = unwrap(lib.folder)
 
     tag = Tag(
         name="foo",
@@ -112,7 +113,7 @@ def library(request, library_dir: Path):  # pyright: ignore
     # default item with deterministic name
     entry = Entry(
         id=1,
-        folder=lib.folder,
+        folder=folder,
         path=Path("foo.txt"),
         fields=lib.default_fields,
     )
@@ -120,7 +121,7 @@ def library(request, library_dir: Path):  # pyright: ignore
 
     entry2 = Entry(
         id=2,
-        folder=lib.folder,
+        folder=folder,
         path=Path("one/two/bar.md"),
         fields=lib.default_fields,
     )

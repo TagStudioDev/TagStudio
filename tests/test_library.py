@@ -18,81 +18,70 @@ from tagstudio.core.library.alchemy.fields import (
 )
 from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.library.alchemy.models import Entry, Tag
+from tagstudio.core.utils.types import unwrap
 
 logger = structlog.get_logger()
 
 
 def test_library_add_alias(library: Library, generate_tag: Callable[..., Tag]):
-    tag = library.add_tag(generate_tag("xxx", id=123))
-    assert tag
+    tag = unwrap(library.add_tag(generate_tag("xxx", id=123)))
 
     parent_ids: set[int] = set()
     alias_ids: set[int] = set()
     alias_names: set[str] = set()
     alias_names.add("test_alias")
     library.update_tag(tag, parent_ids, alias_names, alias_ids)
-    tag = library.get_tag(tag.id)
-    assert tag is not None
+    tag = unwrap(library.get_tag(tag.id))
     alias_ids = set(tag.alias_ids)
 
     assert len(alias_ids) == 1
 
 
 def test_library_get_alias(library: Library, generate_tag: Callable[..., Tag]):
-    tag = library.add_tag(generate_tag("xxx", id=123))
-    assert tag
+    tag = unwrap(library.add_tag(generate_tag("xxx", id=123)))
 
     parent_ids: set[int] = set()
     alias_ids: list[int] = []
     alias_names: set[str] = set()
     alias_names.add("test_alias")
     library.update_tag(tag, parent_ids, alias_names, alias_ids)
-    tag = library.get_tag(tag.id)
-    assert tag is not None
+    tag = unwrap(library.get_tag(tag.id))
     alias_ids = tag.alias_ids
 
-    alias = library.get_alias(tag.id, alias_ids[0])
-    assert alias is not None
+    alias = unwrap(library.get_alias(tag.id, alias_ids[0]))
     assert alias.name == "test_alias"
 
 
 def test_library_update_alias(library: Library, generate_tag: Callable[..., Tag]):
-    tag: Tag | None = library.add_tag(generate_tag("xxx", id=123))
-    assert tag is not None
+    tag: Tag = unwrap(library.add_tag(generate_tag("xxx", id=123)))
 
     parent_ids: set[int] = set()
     alias_ids: list[int] = []
     alias_names: set[str] = set()
     alias_names.add("test_alias")
     library.update_tag(tag, parent_ids, alias_names, alias_ids)
-    tag = library.get_tag(tag.id)
-    assert tag is not None
+    tag = unwrap(library.get_tag(tag.id))
     alias_ids = tag.alias_ids
 
-    alias = library.get_alias(tag.id, alias_ids[0])
-    assert alias is not None
+    alias = unwrap(library.get_alias(tag.id, alias_ids[0]))
     assert alias.name == "test_alias"
 
     alias_names.remove("test_alias")
     alias_names.add("alias_update")
     library.update_tag(tag, parent_ids, alias_names, alias_ids)
 
-    tag = library.get_tag(tag.id)
-    assert tag is not None
+    tag = unwrap(library.get_tag(tag.id))
     assert len(tag.alias_ids) == 1
-    alias = library.get_alias(tag.id, tag.alias_ids[0])
-    assert alias is not None
+    alias = unwrap(library.get_alias(tag.id, tag.alias_ids[0]))
     assert alias.name == "alias_update"
 
 
 @pytest.mark.parametrize("library", [TemporaryDirectory()], indirect=True)
 def test_library_add_file(library: Library):
     """Check Entry.path handling for insert vs lookup"""
-    assert library.folder is not None
-
     entry = Entry(
         path=Path("bar.txt"),
-        folder=library.folder,
+        folder=unwrap(library.folder),
         fields=library.default_fields,
     )
 
@@ -103,30 +92,26 @@ def test_library_add_file(library: Library):
 
 def test_create_tag(library: Library, generate_tag: Callable[..., Tag]):
     # tag already exists
-    assert not library.add_tag(generate_tag("foo", id=1000))
+    assert library.add_tag(generate_tag("foo", id=1000)) is None
 
     # new tag name
-    tag = library.add_tag(generate_tag("xxx", id=123))
-    assert tag
+    tag = unwrap(library.add_tag(generate_tag("xxx", id=123)))
     assert tag.id == 123
 
-    tag_inc = library.add_tag(generate_tag("yyy"))
-    assert tag_inc is not None
+    tag_inc = unwrap(library.add_tag(generate_tag("yyy")))
     assert tag_inc.id > 1000
 
 
 def test_tag_self_parent(library: Library, generate_tag: Callable[..., Tag]):
     # tag already exists
-    assert not library.add_tag(generate_tag("foo", id=1000))
+    assert library.add_tag(generate_tag("foo", id=1000)) is None
 
     # new tag name
-    tag = library.add_tag(generate_tag("xxx", id=123))
-    assert tag
+    tag = unwrap(library.add_tag(generate_tag("xxx", id=123)))
     assert tag.id == 123
 
     library.update_tag(tag, {tag.id}, [], [])
-    tag = library.get_tag(tag.id)
-    assert tag is not None
+    tag = unwrap(library.get_tag(tag.id))
     assert len(tag.parent_ids) == 0
 
 
@@ -153,15 +138,13 @@ def test_tag_search(library: Library):
 
 
 def test_get_entry(library: Library, entry_min: Entry):
-    assert entry_min.id
-    result = library.get_entry_full(entry_min.id)
-    assert result
+    result = unwrap(library.get_entry_full(unwrap(entry_min.id)))
     assert len(result.tags) == 1
 
 
 def test_entries_count(library: Library):
-    assert library.folder is not None
-    entries = [Entry(path=Path(f"{x}.txt"), folder=library.folder, fields=[]) for x in range(10)]
+    folder = unwrap(library.folder)
+    entries = [Entry(path=Path(f"{x}.txt"), folder=folder, fields=[]) for x in range(10)]
     new_ids = library.add_entries(entries)
     assert len(new_ids) == 10
 
@@ -173,29 +156,21 @@ def test_entries_count(library: Library):
 
 def test_parents_add(library: Library, generate_tag: Callable[..., Tag]):
     # Given
-    tag: Tag | None = library.tags[0]
-    assert tag.id is not None
+    tag: Tag = library.tags[0]
 
-    parent_tag: Tag | None = generate_tag("parent_tag_01")
-    assert parent_tag
-    parent_tag = library.add_tag(parent_tag)
-    assert parent_tag is not None
-    assert parent_tag.id is not None
+    parent_tag: Tag = generate_tag("parent_tag_01")
+    parent_tag = unwrap(library.add_tag(parent_tag))
 
     # When
-    assert library.add_parent_tag(tag.id, parent_tag.id)
+    assert library.add_parent_tag(tag.id, unwrap(parent_tag.id))
 
     # Then
-    assert tag.id is not None
-    tag = library.get_tag(tag.id)
-    assert tag is not None
+    tag = unwrap(library.get_tag(unwrap(tag.id)))
     assert tag.parent_ids
 
 
 def test_remove_tag(library: Library, generate_tag: Callable[..., Tag]):
-    tag = library.add_tag(generate_tag("food", id=123))
-
-    assert tag
+    tag = unwrap(library.add_tag(generate_tag("food", id=123)))
 
     tag_count = len(library.tags)
 
@@ -311,9 +286,8 @@ def test_update_entry_with_multiple_identical_fields(library: Library, entry_ful
 
 def test_mirror_entry_fields(library: Library, entry_full: Entry):
     # new entry
-    assert library.folder is not None
     target_entry = Entry(
-        folder=library.folder,
+        folder=unwrap(library.folder),
         path=Path("xxx"),
         fields=[
             TextField(
@@ -328,15 +302,13 @@ def test_mirror_entry_fields(library: Library, entry_full: Entry):
     entry_id = library.add_entries([target_entry])[0]
 
     # get new entry from library
-    new_entry = library.get_entry_full(entry_id)
-    assert new_entry is not None
+    new_entry = unwrap(library.get_entry_full(entry_id))
 
     # mirror fields onto new entry
     library.mirror_entry_fields(new_entry, entry_full)
 
     # get new entry from library again
-    entry = library.get_entry_full(entry_id)
-    assert entry is not None
+    entry = unwrap(library.get_entry_full(entry_id))
 
     # make sure fields are there after getting it from the library again
     assert len(entry.fields) == 2
@@ -347,17 +319,14 @@ def test_mirror_entry_fields(library: Library, entry_full: Entry):
 
 
 def test_merge_entries(library: Library):
-    assert library.folder is not None
+    folder = unwrap(library.folder)
 
-    tag_0: Tag | None = library.add_tag(Tag(id=1010, name="tag_0"))
-    assert tag_0 is not None
-    tag_1: Tag | None = library.add_tag(Tag(id=1011, name="tag_1"))
-    assert tag_1 is not None
-    tag_2: Tag | None = library.add_tag(Tag(id=1012, name="tag_2"))
-    assert tag_2 is not None
+    tag_0: Tag = unwrap(library.add_tag(Tag(id=1010, name="tag_0")))
+    tag_1: Tag = unwrap(library.add_tag(Tag(id=1011, name="tag_1")))
+    tag_2: Tag = unwrap(library.add_tag(Tag(id=1012, name="tag_2")))
 
     a = Entry(
-        folder=library.folder,
+        folder=folder,
         path=Path("a"),
         fields=[
             TextField(type_key=_FieldID.AUTHOR.name, value="Author McAuthorson", position=0),
@@ -365,7 +334,7 @@ def test_merge_entries(library: Library):
         ],
     )
     b = Entry(
-        folder=library.folder,
+        folder=folder,
         path=Path("b"),
         fields=[TextField(type_key=_FieldID.NOTES.name, value="test note", position=1)],
     )
@@ -374,17 +343,14 @@ def test_merge_entries(library: Library):
     library.add_tags_to_entries(ids[0], [tag_0.id, tag_2.id])
     library.add_tags_to_entries(ids[1], [tag_1.id])
 
-    entry_a: Entry | None = library.get_entry_full(ids[0])
-    assert entry_a is not None
-    entry_b: Entry | None = library.get_entry_full(ids[1])
-    assert entry_b is not None
+    entry_a: Entry = unwrap(library.get_entry_full(ids[0]))
+    entry_b: Entry = unwrap(library.get_entry_full(ids[1]))
 
     assert library.merge_entries(entry_a, entry_b)
     assert not library.has_path_entry(Path("a"))
     assert library.has_path_entry(Path("b"))
 
-    entry_b_merged = library.get_entry_full(ids[1])
-    assert entry_b_merged
+    entry_b_merged = unwrap(library.get_entry_full(ids[1]))
 
     fields = [field.value for field in entry_b_merged.fields]
     assert "Author McAuthorson" in fields

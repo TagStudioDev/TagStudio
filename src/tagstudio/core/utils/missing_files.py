@@ -8,6 +8,7 @@ from wcmatch import pathlib
 from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.library.alchemy.models import Entry
 from tagstudio.core.library.ignore import PATH_GLOB_FLAGS, Ignore
+from tagstudio.core.utils.types import unwrap
 
 logger = structlog.get_logger()
 
@@ -26,12 +27,11 @@ class MissingRegistry:
 
     def refresh_missing_files(self) -> Iterator[int]:
         """Track the number of entries that point to an invalid filepath."""
-        assert self.library.library_dir
         logger.info("[refresh_missing_files] Refreshing missing files...")
 
         self.missing_file_entries = []
         for i, entry in enumerate(self.library.all_entries()):
-            full_path = self.library.library_dir / entry.path
+            full_path = unwrap(self.library.library_dir) / entry.path
             if not full_path.exists() or not full_path.is_file():
                 self.missing_file_entries.append(entry)
             yield i
@@ -41,7 +41,7 @@ class MissingRegistry:
 
         Works if files were just moved to different subfolders and don't have duplicate names.
         """
-        assert self.library.library_dir
+        assert self.library.library_dir is not None
         matches: list[Path] = []
 
         ignore_patterns = Ignore.get_patterns(self.library.library_dir)

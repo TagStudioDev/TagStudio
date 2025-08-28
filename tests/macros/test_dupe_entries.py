@@ -7,22 +7,23 @@ from pathlib import Path
 from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.library.alchemy.models import Entry
 from tagstudio.core.utils.dupe_files import DupeRegistry
+from tagstudio.core.utils.types import unwrap
 
 CWD = Path(__file__).parent
 
 
 def test_refresh_dupe_files(library: Library):
     library.library_dir = Path("/tmp/")
-    assert library.folder
+    folder = unwrap(library.folder)
 
     entry = Entry(
-        folder=library.folder,
+        folder=folder,
         path=Path("bar/foo.txt"),
         fields=library.default_fields,
     )
 
     entry2 = Entry(
-        folder=library.folder,
+        folder=folder,
         path=Path("foo/foo.txt"),
         fields=library.default_fields,
     )

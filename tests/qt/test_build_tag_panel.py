@@ -9,6 +9,7 @@ from pytestqt.qtbot import QtBot
 
 from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.library.alchemy.models import Tag, TagAlias
+from tagstudio.core.utils.types import unwrap
 from tagstudio.qt.modals.build_tag import BuildTagPanel, CustomTableItem
 from tagstudio.qt.translations import Translations
 
@@ -16,10 +17,8 @@ from tagstudio.qt.translations import Translations
 def test_build_tag_panel_add_sub_tag_callback(
     qtbot: QtBot, library: Library, generate_tag: Callable[..., Tag]
 ):
-    parent = library.add_tag(generate_tag("xxx", id=123))
-    child = library.add_tag(generate_tag("xx", id=124))
-    assert child
-    assert parent
+    parent = unwrap(library.add_tag(generate_tag("xxx", id=123)))
+    child = unwrap(library.add_tag(generate_tag("xx", id=124)))
 
     panel: BuildTagPanel = BuildTagPanel(library, child)
     qtbot.addWidget(panel)
@@ -32,16 +31,12 @@ def test_build_tag_panel_add_sub_tag_callback(
 def test_build_tag_panel_remove_subtag_callback(
     qtbot: QtBot, library: Library, generate_tag: Callable[..., Tag]
 ):
-    parent = library.add_tag(generate_tag("xxx", id=123))
-    child = library.add_tag(generate_tag("xx", id=124))
-    assert child
-    assert parent
+    parent = unwrap(library.add_tag(generate_tag("xxx", id=123)))
+    child = unwrap(library.add_tag(generate_tag("xx", id=124)))
 
     library.update_tag(child, {parent.id}, [], [])
 
-    child = library.get_tag(child.id)
-
-    assert child
+    child = unwrap(library.get_tag(child.id))
 
     panel: BuildTagPanel = BuildTagPanel(library, child)
     qtbot.addWidget(panel)
@@ -59,8 +54,7 @@ os.environ["QT_QPA_PLATFORM"] = "offscreen"
 def test_build_tag_panel_add_alias_callback(
     qtbot: QtBot, library: Library, generate_tag: Callable[..., Tag]
 ):
-    tag = library.add_tag(generate_tag("xxx", id=123))
-    assert tag
+    tag = unwrap(library.add_tag(generate_tag("xxx", id=123)))
 
     panel: BuildTagPanel = BuildTagPanel(library, tag)
     qtbot.addWidget(panel)
@@ -73,13 +67,11 @@ def test_build_tag_panel_add_alias_callback(
 def test_build_tag_panel_remove_alias_callback(
     qtbot: QtBot, library: Library, generate_tag: Callable[..., Tag]
 ):
-    tag: Tag | None = library.add_tag(generate_tag("xxx", id=123))
-    assert tag
+    tag: Tag = unwrap(library.add_tag(generate_tag("xxx", id=123)))
 
     library.update_tag(tag, [], {"alias", "alias_2"}, {123, 124})
 
-    tag = library.get_tag(tag.id)
-    assert tag
+    tag = unwrap(library.get_tag(tag.id))
 
     assert "alias" in tag.alias_strings
     assert "alias_2" in tag.alias_strings
@@ -87,8 +79,7 @@ def test_build_tag_panel_remove_alias_callback(
     panel: BuildTagPanel = BuildTagPanel(library, tag)
     qtbot.addWidget(panel)
 
-    alias: TagAlias | None = library.get_alias(tag.id, tag.alias_ids[0])
-    assert alias
+    alias: TagAlias = unwrap(library.get_alias(tag.id, tag.alias_ids[0]))
 
     panel.remove_alias_callback(alias.name, alias.id)
 
@@ -100,10 +91,8 @@ def test_build_tag_panel_remove_alias_callback(
 def test_build_tag_panel_set_parent_tags(
     qtbot: QtBot, library: Library, generate_tag: Callable[..., Tag]
 ):
-    parent = library.add_tag(generate_tag("parent", id=123))
-    child = library.add_tag(generate_tag("child", id=124))
-    assert parent
-    assert child
+    parent = unwrap(library.add_tag(generate_tag("parent", id=123)))
+    child = unwrap(library.add_tag(generate_tag("child", id=124)))
 
     library.add_parent_tag(parent.id, child.id)
 
@@ -119,13 +108,11 @@ def test_build_tag_panel_set_parent_tags(
 def test_build_tag_panel_add_aliases(
     qtbot: QtBot, library: Library, generate_tag: Callable[..., Tag]
 ):
-    tag: Tag | None = library.add_tag(generate_tag("xxx", id=123))
-    assert tag
+    tag: Tag = unwrap(library.add_tag(generate_tag("xxx", id=123)))
 
     library.update_tag(tag, [], {"alias", "alias_2"}, {123, 124})
 
-    tag = library.get_tag(tag.id)
-    assert tag
+    tag = unwrap(library.get_tag(tag.id))
 
     assert "alias" in tag.alias_strings
     assert "alias_2" in tag.alias_strings
@@ -159,13 +146,11 @@ def test_build_tag_panel_add_aliases(
 def test_build_tag_panel_set_aliases(
     qtbot: QtBot, library: Library, generate_tag: Callable[..., Tag]
 ):
-    tag: Tag | None = library.add_tag(generate_tag("xxx", id=123))
-    assert tag
+    tag: Tag = unwrap(library.add_tag(generate_tag("xxx", id=123)))
 
     library.update_tag(tag, [], {"alias"}, {123})
 
-    tag = library.get_tag(tag.id)
-    assert tag
+    tag = unwrap(library.get_tag(tag.id))
 
     assert len(tag.alias_ids) == 1
 
@@ -178,14 +163,12 @@ def test_build_tag_panel_set_aliases(
 
 
 def test_build_tag_panel_set_tag(qtbot: QtBot, library: Library, generate_tag: Callable[..., Tag]):
-    tag = library.add_tag(generate_tag("xxx", id=123))
-    assert tag
+    tag = unwrap(library.add_tag(generate_tag("xxx", id=123)))
 
     panel: BuildTagPanel = BuildTagPanel(library, tag)
     qtbot.addWidget(panel)
 
-    assert panel.tag
-    assert panel.tag.name == "xxx"
+    assert unwrap(panel.tag).name == "xxx"
 
 
 def test_build_tag_panel_build_tag(qtbot: QtBot, library: Library):
@@ -194,5 +177,4 @@ def test_build_tag_panel_build_tag(qtbot: QtBot, library: Library):
 
     tag: Tag = panel.build_tag()
 
-    assert tag
     assert tag.name == Translations["tag.new"]

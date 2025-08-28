@@ -66,6 +66,7 @@ from tagstudio.core.palette import ColorType, UiColor, get_ui_color
 from tagstudio.core.query_lang.util import ParsingError
 from tagstudio.core.ts_core import TagStudioCore
 from tagstudio.core.utils.refresh_dir import RefreshDirTracker
+from tagstudio.core.utils.types import unwrap
 from tagstudio.core.utils.web import strip_web_protocol
 from tagstudio.qt.cache_manager import CacheManager
 from tagstudio.qt.helpers.custom_runnable import CustomRunnable
@@ -979,7 +980,6 @@ class QtDriver(DriverMixin, QObject):
 
     def add_new_files_callback(self):
         """Run when user initiates adding new files to the Library."""
-        assert self.lib.library_dir
         tracker = RefreshDirTracker(self.lib)
 
         pw = ProgressWidget(
@@ -991,7 +991,9 @@ class QtDriver(DriverMixin, QObject):
         pw.update_label(Translations["library.refresh.scanning_preparing"])
         pw.show()
 
-        iterator = FunctionIterator(lambda lib=self.lib.library_dir: tracker.refresh_dir(lib))
+        iterator = FunctionIterator(
+            lambda lib=unwrap(self.lib.library_dir): tracker.refresh_dir(lib)  # noqa: B008
+        )
         iterator.value.connect(
             lambda x: (
                 pw.update_progress(x + 1),
@@ -1534,7 +1536,6 @@ class QtDriver(DriverMixin, QObject):
         if not self.lib.library_dir:
             logger.info("Library not loaded")
             return
-        assert self.lib.engine
 
         if state:
             self.browsing_history.push(state)
