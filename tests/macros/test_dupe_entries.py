@@ -4,8 +4,7 @@
 
 from pathlib import Path
 
-from tagstudio.core.library.alchemy.library import Library
-from tagstudio.core.library.alchemy.models import Entry
+from tagstudio.core.library.alchemy.library import Entry, Library
 from tagstudio.core.utils.dupe_files import DupeRegistry
 from tagstudio.core.utils.types import unwrap
 

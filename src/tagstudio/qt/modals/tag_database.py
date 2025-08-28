@@ -7,8 +7,7 @@ import structlog
 from PySide6.QtWidgets import QMessageBox, QPushButton
 
 from tagstudio.core.constants import RESERVED_TAG_END, RESERVED_TAG_START
-from tagstudio.core.library.alchemy.library import Library
-from tagstudio.core.library.alchemy.models import Tag
+from tagstudio.core.library.alchemy.library import Library, Tag
 from tagstudio.qt.modals.build_tag import BuildTagPanel
 from tagstudio.qt.modals.tag_search import TagSearchPanel
 from tagstudio.qt.translations import Translations

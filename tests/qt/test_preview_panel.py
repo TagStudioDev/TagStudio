@@ -3,8 +3,7 @@
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
 
-from tagstudio.core.library.alchemy.library import Library
-from tagstudio.core.library.alchemy.models import Entry
+from tagstudio.core.library.alchemy.library import Entry, Library
 from tagstudio.qt.controller.widgets.preview_panel_controller import PreviewPanel
 from tagstudio.qt.ts_qt import QtDriver
 

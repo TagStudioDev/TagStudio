@@ -11,7 +11,7 @@ from PySide6.QtGui import QColor
 from PySide6.QtWidgets import QPushButton, QVBoxLayout, QWidget
 
 from tagstudio.core.library.alchemy.enums import TagColorEnum
-from tagstudio.core.library.alchemy.models import TagColorGroup
+from tagstudio.core.library.alchemy.library import TagColorGroup
 from tagstudio.core.palette import ColorType, get_tag_color
 from tagstudio.qt.translations import Translations
 from tagstudio.qt.widgets.tag import (

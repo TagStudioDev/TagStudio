@@ -24,14 +24,15 @@ from PySide6.QtWidgets import (
 
 from tagstudio.core.constants import TAG_ARCHIVED, TAG_FAVORITE
 from tagstudio.core.enums import Theme
-from tagstudio.core.library.alchemy.fields import (
+from tagstudio.core.library.alchemy.enums import FieldTypeEnum
+from tagstudio.core.library.alchemy.library import (
     BaseField,
     DatetimeField,
-    FieldTypeEnum,
+    Entry,
+    Library,
+    Tag,
     TextField,
 )
-from tagstudio.core.library.alchemy.library import Library
-from tagstudio.core.library.alchemy.models import Entry, Tag
 from tagstudio.core.utils.types import unwrap
 from tagstudio.qt.controller.components.tag_box_controller import TagBoxWidget
 from tagstudio.qt.translations import Translations

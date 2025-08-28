@@ -11,8 +11,12 @@ from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import QLabel, QLineEdit, QVBoxLayout, QWidget
 
 from tagstudio.core.constants import RESERVED_NAMESPACE_PREFIX
-from tagstudio.core.library.alchemy.library import Library, ReservedNamespaceError, slugify
-from tagstudio.core.library.alchemy.models import Namespace
+from tagstudio.core.library.alchemy.library import (
+    Library,
+    Namespace,
+    ReservedNamespaceError,
+    slugify,
+)
 from tagstudio.core.palette import ColorType, UiColor, get_ui_color
 from tagstudio.qt.translations import Translations
 from tagstudio.qt.widgets.panel import PanelWidget

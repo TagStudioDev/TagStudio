@@ -30,10 +30,9 @@ from tagstudio.core.constants import (
     TS_FOLDER_NAME,
 )
 from tagstudio.core.enums import LibraryPrefs
-from tagstudio.core.library.alchemy import default_color_groups
-from tagstudio.core.library.alchemy.joins import TagParent
+from tagstudio.core.library.alchemy.library import Entry, TagAlias, TagParent
 from tagstudio.core.library.alchemy.library import Library as SqliteLibrary
-from tagstudio.core.library.alchemy.models import Entry, TagAlias
+from tagstudio.core.library.helpers.migration import json_to_sql_color
 from tagstudio.core.library.json.library import Library as JsonLibrary
 from tagstudio.core.library.json.library import Tag as JsonTag
 from tagstudio.qt.helpers.custom_runnable import CustomRunnable
@@ -779,7 +778,7 @@ class JsonMigrationModal(QObject):
         for tag in self.sql_lib.tags:
             tag_id = tag.id  # Tag IDs start at 0
             sql_color = (tag.color_namespace, tag.color_slug)
-            json_color = default_color_groups.json_to_sql_color(self.json_lib.get_tag(tag_id).color)
+            json_color = json_to_sql_color(self.json_lib.get_tag(tag_id).color)
 
             logger.info(
                 "[Color Parity]",

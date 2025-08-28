@@ -10,7 +10,7 @@ from PySide6.QtCore import QEvent, Qt, Signal
 from PySide6.QtGui import QAction, QColor, QEnterEvent
 from PySide6.QtWidgets import QHBoxLayout, QPushButton, QVBoxLayout, QWidget
 
-from tagstudio.core.library.alchemy.models import TagColorGroup
+from tagstudio.core.library.alchemy.library import TagColorGroup
 from tagstudio.qt.helpers.escape_text import escape_text
 from tagstudio.qt.translations import Translations
 from tagstudio.qt.widgets.tag import (
