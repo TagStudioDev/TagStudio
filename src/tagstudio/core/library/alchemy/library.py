@@ -93,6 +93,7 @@ from tagstudio.core.library.alchemy.models import (
 )
 from tagstudio.core.library.alchemy.visitors import SQLBoolExpressionBuilder
 from tagstudio.core.library.json.library import Library as JsonLibrary
+from tagstudio.core.utils.types import unwrap
 from tagstudio.qt.translations import Translations
 
 if TYPE_CHECKING:
@@ -926,10 +927,9 @@ class Library:
         :return: number of entries matching the query and one page of results.
         """
         assert isinstance(search, BrowsingState)
-        assert self.engine
         assert self.library_dir
 
-        with Session(self.engine, expire_on_commit=False) as session:
+        with Session(unwrap(self.engine), expire_on_commit=False) as session:
             statement = select(Entry.id, func.count().over())
 
             if search.ast:
@@ -1762,18 +1762,18 @@ class Library:
         # set given item in Preferences table
         with Session(self.engine) as session:
             # load existing preference and update value
-            pref: Preferences | None
-
             stuff = session.scalars(select(Preferences))
             logger.info([x.key for x in list(stuff)])
 
-            if isinstance(key, LibraryPrefs):
-                pref = session.scalar(select(Preferences).where(Preferences.key == key.name))
-            else:
-                pref = session.scalar(select(Preferences).where(Preferences.key == key))
+            pref: Preferences = unwrap(
+                session.scalar(
+                    select(Preferences).where(
+                        Preferences.key == (key.name if isinstance(key, LibraryPrefs) else key)
+                    )
+                )
+            )
 
             logger.info("loading pref", pref=pref, key=key, value=value)
-            assert pref is not None
             pref.value = value
             session.add(pref)
             session.commit()

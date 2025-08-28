@@ -127,8 +127,8 @@ class Tag(Base):
 
     def __init__(
         self,
+        name: str,
         id: int | None = None,
-        name: str | None = None,
         shorthand: str | None = None,
         aliases: set[TagAlias] | None = None,
         parent_tags: set["Tag"] | None = None,
@@ -147,8 +147,7 @@ class Tag(Base):
         self.shorthand = shorthand
         self.disambiguation_id = disambiguation_id
         self.is_category = is_category
-        assert not self.id
-        self.id = id
+        self.id = id  # pyright: ignore[reportAttributeAccessIssue]
         super().__init__()
 
     def __str__(self) -> str:
@@ -233,7 +232,7 @@ class Entry(Base):
     ) -> None:
         self.path = path
         self.folder = folder
-        self.id = id
+        self.id = id  # pyright: ignore[reportAttributeAccessIssue]
         self.filename = path.name
         self.suffix = path.suffix.lstrip(".").lower()
 
