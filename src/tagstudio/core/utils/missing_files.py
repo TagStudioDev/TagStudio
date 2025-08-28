@@ -50,6 +50,8 @@ class MissingRegistry:
             flags=PATH_GLOB_FLAGS,
             exclude=ignore_patterns,
         ):
+            if path.is_dir():
+                continue
             if path.name == match_entry.path.name:
                 new_path = Path(path).relative_to(self.library.library_dir)
                 matches.append(new_path)

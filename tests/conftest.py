@@ -1,4 +1,10 @@
+# Copyright (C) 2025
+# Licensed under the GPL-3.0 License.
+# Created for TagStudio: https://github.com/CyanVoxel/TagStudio
+
+
 import sys
+from collections.abc import Callable, Generator
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest.mock import Mock, patch
@@ -26,6 +32,7 @@ def file_mediatypes_library():
 
     status = lib.open_library(Path(""), ":memory:")
     assert status.success
+    assert lib.folder
 
     entry1 = Entry(
         folder=lib.folder,
@@ -64,18 +71,19 @@ def library_dir():
 
 
 @pytest.fixture
-def library(request, library_dir: Path):
+def library(request, library_dir: Path):  # pyright: ignore
     # when no param is passed, use the default
     library_path = library_dir
     if hasattr(request, "param"):
         if isinstance(request.param, TemporaryDirectory):
-            library_path = Path(request.param.name)
+            library_path = Path(request.param.name)  # pyright: ignore[reportArgumentType]
         else:
             library_path = Path(request.param)
 
     lib = Library()
     status = lib.open_library(library_path, ":memory:")
     assert status.success
+    assert lib.folder
 
     tag = Tag(
         name="foo",
@@ -133,7 +141,7 @@ def search_library() -> Library:
 
 
 @pytest.fixture
-def entry_min(library):
+def entry_min(library: Library):
     yield next(library.all_entries())
 
 
@@ -143,7 +151,7 @@ def entry_full(library: Library):
 
 
 @pytest.fixture
-def qt_driver(qtbot, library, library_dir: Path):
+def qt_driver(library: Library, library_dir: Path):
     class Args:
         settings_file = library_dir / "settings.toml"
         cache_file = library_dir / "tagstudio.ini"
@@ -151,31 +159,26 @@ def qt_driver(qtbot, library, library_dir: Path):
         ci = True
 
     with patch("tagstudio.qt.ts_qt.Consumer"), patch("tagstudio.qt.ts_qt.CustomRunnable"):
-        driver = QtDriver(Args())
+        driver = QtDriver(Args())  # pyright: ignore[reportArgumentType]
 
         driver.app = Mock()
         driver.main_window = Mock()
-        driver.main_window.preview_panel = Mock()
-        driver.main_window.thumb_grid = Mock()
         driver.main_window.thumb_size = 128
         driver.item_thumbs = []
-        driver.main_window.menu_bar.autofill_action = Mock()
 
         driver.copy_buffer = {"fields": [], "tags": []}
-        driver.main_window.menu_bar.copy_fields_action = Mock()
-        driver.main_window.menu_bar.paste_fields_action = Mock()
 
         driver.lib = library
         # TODO - downsize this method and use it
         # driver.start()
-        driver.frame_content = list(library.all_entries())
+        driver.frame_content = [e.id for e in library.all_entries()]
         yield driver
 
 
 @pytest.fixture
-def generate_tag():
-    def inner(name, **kwargs):
+def generate_tag() -> Generator[Callable[..., Tag]]:
+    def inner(name: str, **kwargs) -> Tag:  # pyright: ignore
         params = dict(name=name, color_namespace="tagstudio-standard", color_slug="red") | kwargs
-        return Tag(**params)
+        return Tag(**params)  # pyright: ignore[reportArgumentType]
 
     yield inner
