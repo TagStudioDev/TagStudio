@@ -16,6 +16,7 @@ from typing import TYPE_CHECKING, Any
 from uuid import uuid4
 from warnings import catch_warnings
 
+import sqlalchemy
 import structlog
 from humanfriendly import format_timespan
 from sqlalchemy import (
@@ -58,6 +59,13 @@ from tagstudio.core.constants import (
 )
 from tagstudio.core.enums import LibraryPrefs
 from tagstudio.core.library.alchemy import default_color_groups
+from tagstudio.core.library.alchemy.constants import (
+    DB_VERSION,
+    DB_VERSION_CURRENT_KEY,
+    DB_VERSION_INITIAL_KEY,
+    DB_VERSION_LEGACY_KEY,
+    TAG_CHILDREN_QUERY,
+)
 from tagstudio.core.library.alchemy.db import make_tables
 from tagstudio.core.library.alchemy.enums import (
     MAX_SQL_VARIABLES,
@@ -81,6 +89,7 @@ from tagstudio.core.library.alchemy.models import (
     TagAlias,
     TagColorGroup,
     ValueType,
+    Version,
 )
 from tagstudio.core.library.alchemy.visitors import SQLBoolExpressionBuilder
 from tagstudio.core.library.json.library import Library as JsonLibrary
@@ -91,20 +100,6 @@ if TYPE_CHECKING:
 
 
 logger = structlog.get_logger(__name__)
-
-DB_VERSION_KEY: str = "DB_VERSION"
-DB_VERSION: int = 100
-
-TAG_CHILDREN_QUERY = text("""
-WITH RECURSIVE ChildTags AS (
-    SELECT :tag_id AS tag_id
-    UNION
-    SELECT tp.child_id AS tag_id
-	FROM tag_parents tp
-    INNER JOIN ChildTags c ON tp.parent_id = c.tag_id
-)
-SELECT * FROM ChildTags;
-""")
 
 
 class ReservedNamespaceError(Exception):
@@ -378,14 +373,9 @@ class Library:
         )
         self.engine = create_engine(connection_string, poolclass=poolclass)
         with Session(self.engine) as session:
-            # dont check db version when creating new library
+            # Don't check DB version when creating new library
             if not is_new:
-                db_result = session.scalar(
-                    select(Preferences).where(Preferences.key == DB_VERSION_KEY)
-                )
-                if db_result:
-                    assert isinstance(db_result.value, int)
-                    loaded_db_version = db_result.value
+                loaded_db_version = self.get_version(DB_VERSION_CURRENT_KEY)
 
                 # ======================== Library Database Version Checking =======================
                 # DB_VERSION 6 is the first supported SQLite DB version.
@@ -446,22 +436,37 @@ class Library:
                 except IntegrityError:
                     session.rollback()
 
-            # TODO: Completely rework this "preferences" system.
+            # Ensure version rows are present
             with catch_warnings(record=True):
+                # NOTE: The "Preferences" table is depreciated and will be removed in the future.
+                # The DB_VERSION is still being set to it in order to remain backwards-compatible
+                # with existing TagStudio versions until it is removed.
                 try:
-                    session.add(Preferences(key=DB_VERSION_KEY, value=DB_VERSION))
+                    session.add(Preferences(key=DB_VERSION_LEGACY_KEY, value=DB_VERSION))
                     session.commit()
                 except IntegrityError:
-                    logger.debug("preference already exists", pref=DB_VERSION_KEY)
                     session.rollback()
 
+                try:
+                    initial = DB_VERSION if is_new else 100
+                    session.add(Version(key=DB_VERSION_INITIAL_KEY, value=initial))
+                    session.commit()
+                except IntegrityError:
+                    session.rollback()
+
+                try:
+                    session.add(Version(key=DB_VERSION_CURRENT_KEY, value=DB_VERSION))
+                    session.commit()
+                except IntegrityError:
+                    session.rollback()
+
+            # TODO: Remove this "Preferences" system.
             for pref in LibraryPrefs:
                 with catch_warnings(record=True):
                     try:
                         session.add(Preferences(key=pref.name, value=pref.default))
                         session.commit()
                     except IntegrityError:
-                        logger.debug("preference already exists", pref=pref)
                         session.rollback()
 
             for field in _FieldID:
@@ -495,36 +500,36 @@ class Library:
             # Apply any post-SQL migration patches.
             if not is_new:
                 # save backup if patches will be applied
-                if loaded_db_version != DB_VERSION:
+                if loaded_db_version < DB_VERSION:
                     self.library_dir = library_dir
                     self.save_library_backup_to_disk()
                     self.library_dir = None
 
                 # schema changes first
                 if loaded_db_version < 8:
-                    self.apply_db8_schema_changes(session)
+                    self.__apply_db8_schema_changes(session)
                 if loaded_db_version < 9:
-                    self.apply_db9_schema_changes(session)
+                    self.__apply_db9_schema_changes(session)
 
                 # now the data changes
                 if loaded_db_version == 6:
-                    self.apply_repairs_for_db6(session)
+                    self.__apply_repairs_for_db6(session)
                 if loaded_db_version >= 6 and loaded_db_version < 8:
-                    self.apply_db8_default_data(session)
+                    self.__apply_db8_default_data(session)
                 if loaded_db_version < 9:
-                    self.apply_db9_filename_population(session)
+                    self.__apply_db9_filename_population(session)
                 if loaded_db_version < 100:
-                    self.apply_db100_parent_repairs(session)
+                    self.__apply_db100_parent_repairs(session)
 
             # Update DB_VERSION
             if loaded_db_version < DB_VERSION:
-                self.set_prefs(DB_VERSION_KEY, DB_VERSION)
+                self.set_version(DB_VERSION_CURRENT_KEY, DB_VERSION)
 
         # everything is fine, set the library path
         self.library_dir = library_dir
         return LibraryStatus(success=True, library_path=library_dir)
 
-    def apply_repairs_for_db6(self, session: Session):
+    def __apply_repairs_for_db6(self, session: Session):
         """Apply database repairs introduced in DB_VERSION 7."""
         logger.info("[Library][Migration] Applying patches to DB_VERSION: 6 library...")
         with session:
@@ -545,11 +550,9 @@ class Library:
                 .values(disambiguation_id=None)
             )
             session.execute(disam_stmt)
-            session.flush()
-
             session.commit()
 
-    def apply_db8_schema_changes(self, session: Session):
+    def __apply_db8_schema_changes(self, session: Session):
         """Apply database schema changes introduced in DB_VERSION 8."""
         # TODO: Use Alembic for this part instead
         # Add the missing color_border column to the TagColorGroups table.
@@ -567,7 +570,7 @@ class Library:
             )
             session.rollback()
 
-    def apply_db8_default_data(self, session: Session):
+    def __apply_db8_default_data(self, session: Session):
         """Apply default data changes introduced in DB_VERSION 8."""
         tag_colors: list[TagColorGroup] = default_color_groups.standard()
         tag_colors += default_color_groups.pastels()
@@ -617,7 +620,7 @@ class Library:
                 )
                 session.rollback()
 
-    def apply_db9_schema_changes(self, session: Session):
+    def __apply_db9_schema_changes(self, session: Session):
         """Apply database schema changes introduced in DB_VERSION 9."""
         add_filename_column = text(
             "ALTER TABLE entries ADD COLUMN filename TEXT NOT NULL DEFAULT ''"
@@ -633,16 +636,15 @@ class Library:
             )
             session.rollback()
 
-    def apply_db9_filename_population(self, session: Session):
+    def __apply_db9_filename_population(self, session: Session):
         """Populate the filename column introduced in DB_VERSION 9."""
         for entry in self.all_entries():
             session.merge(entry).filename = entry.path.name
         session.commit()
         logger.info("[Library][Migration] Populated filename column in entries table")
 
-    def apply_db100_parent_repairs(self, session: Session):
-        """Apply database repairs introduced in DB_VERSION 100."""
-        logger.info("[Library][Migration] Applying patches to DB_VERSION 100 library...")
+    def __apply_db100_parent_repairs(self, session: Session):
+        """Swap the child_id and parent_id values in the TagParent table."""
         with session:
             # Repair parent-child tag relationships that are the wrong way around.
             stmt = update(TagParent).values(
@@ -650,9 +652,8 @@ class Library:
                 child_id=TagParent.parent_id,
             )
             session.execute(stmt)
-            session.flush()
-
             session.commit()
+            logger.info("[Library][Migration] Refactored TagParent column")
 
     @property
     def default_fields(self) -> list[BaseField]:
@@ -1692,6 +1693,62 @@ class Library:
                 child_id=tag.id,
             )
             session.add(parent_tag)
+
+    def get_version(self, key: str) -> int:
+        """Get a version value from the DB.
+
+        Args:
+            key(str): The key for the name of the version type to set.
+        """
+        with Session(self.engine) as session:
+            engine = sqlalchemy.inspect(self.engine)
+            try:
+                # "Version" table added in DB_VERSION 101
+                if engine and engine.has_table("Version"):
+                    version = session.scalar(select(Version).where(Version.key == key))
+                    assert version
+                    return version.value
+                # NOTE: The "Preferences" table has been depreciated as of TagStudio 9.5.4
+                # and is set to be removed in a future release.
+                else:
+                    pref_version = session.scalar(
+                        select(Preferences).where(Preferences.key == DB_VERSION_LEGACY_KEY)
+                    )
+                    assert pref_version
+                    assert isinstance(pref_version.value, int)
+                    return pref_version.value
+            except Exception:
+                return 0
+
+    def set_version(self, key: str, value: int) -> None:
+        """Set a version value to the DB.
+
+        Args:
+            key(str): The key for the name of the version type to set.
+            value(int): The version value to set.
+        """
+        with Session(self.engine) as session:
+            try:
+                version = session.scalar(select(Version).where(Version.key == key))
+                assert version
+                version.value = value
+                session.add(version)
+                session.commit()
+
+                # If a depreciated "Preferences" table is found, update the version value to be read
+                # by older TagStudio versions.
+                engine = sqlalchemy.inspect(self.engine)
+                if engine and engine.has_table("Preferences"):
+                    pref = session.scalar(
+                        select(Preferences).where(Preferences.key == DB_VERSION_LEGACY_KEY)
+                    )
+                    assert pref is not None
+                    pref.value = value  # pyright: ignore
+                    session.add(pref)
+                    session.commit()
+            except (IntegrityError, AssertionError) as e:
+                logger.error("[Library][ERROR] Couldn't add default tag color namespaces", error=e)
+                session.rollback()
 
     def prefs(self, key: str | LibraryPrefs):
         # load given item from Preferences table
