@@ -146,9 +146,7 @@ class Tag(Base):
         self.shorthand = shorthand
         self.disambiguation_id = disambiguation_id
         self.is_category = is_category
-        # TODO: @reviewer any idea what this assert is for? This will always be true, no?
-        assert not self.id
-        self.id = id
+        self.id = id  # pyright: ignore[reportAttributeAccessIssue]
         super().__init__()
 
     def __str__(self) -> str:
@@ -233,7 +231,7 @@ class Entry(Base):
     ) -> None:
         self.path = path
         self.folder = folder
-        self.id = id
+        self.id = id  # pyright: ignore[reportAttributeAccessIssue]
         self.filename = path.name
         self.suffix = path.suffix.lstrip(".").lower()
 
