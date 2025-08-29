@@ -66,9 +66,11 @@ from tagstudio.core.palette import ColorType, UiColor, get_ui_color
 from tagstudio.core.query_lang.util import ParsingError
 from tagstudio.core.ts_core import TagStudioCore
 from tagstudio.core.utils.refresh_dir import RefreshDirTracker
+from tagstudio.core.utils.types import unwrap
 from tagstudio.core.utils.web import strip_web_protocol
 from tagstudio.qt.cache_manager import CacheManager
 from tagstudio.qt.controller.widgets.ignore_modal_controller import IgnoreModal
+from tagstudio.qt.controller.widgets.library_info_window_controller import LibraryInfoWindow
 from tagstudio.qt.helpers.custom_runnable import CustomRunnable
 from tagstudio.qt.helpers.file_deleter import delete_file
 from tagstudio.qt.helpers.function_iterator import FunctionIterator
@@ -179,10 +181,12 @@ class QtDriver(DriverMixin, QObject):
     about_modal: AboutModal
     unlinked_modal: FixUnlinkedEntriesModal
     dupe_modal: FixDupeFilesModal
+    library_info_window: LibraryInfoWindow
 
     applied_theme: Theme
 
     lib: Library
+    cache_manager: CacheManager
 
     browsing_history: History[BrowsingState]
 
@@ -244,24 +248,6 @@ class QtDriver(DriverMixin, QObject):
             )
 
         Translations.change_language(self.settings.language)
-
-        # NOTE: This should be a per-library setting rather than an application setting.
-        thumb_cache_size_limit: int = int(
-            str(
-                self.cached_values.value(
-                    SettingItems.THUMB_CACHE_SIZE_LIMIT,
-                    defaultValue=CacheManager.size_limit,
-                    type=int,
-                )
-            )
-        )
-
-        CacheManager.size_limit = thumb_cache_size_limit
-        self.cached_values.setValue(SettingItems.THUMB_CACHE_SIZE_LIMIT, CacheManager.size_limit)
-        self.cached_values.sync()
-        logger.info(
-            f"[Config] Thumbnail cache size limit: {format_size(CacheManager.size_limit)}",
-        )
 
     def __reset_navigation(self) -> None:
         self.browsing_history = History(BrowsingState.show_all())
@@ -364,9 +350,8 @@ class QtDriver(DriverMixin, QObject):
         self.tag_manager_panel = PanelModal(
             widget=TagDatabasePanel(self, self.lib),
             title=Translations["tag_manager.title"],
-            done_callback=lambda s=self.selected: self.main_window.preview_panel.set_selection(
-                s, update_preview=False
-            ),
+            done_callback=lambda checked=False,
+            s=self.selected: self.main_window.preview_panel.set_selection(s, update_preview=False),
             has_save=False,
         )
 
@@ -470,6 +455,13 @@ class QtDriver(DriverMixin, QObject):
 
         # region View Menu ============================================================
 
+        def create_library_info_window():
+            if not hasattr(self, "library_info_window"):
+                self.library_info_window = LibraryInfoWindow(self.lib, self)
+            self.library_info_window.show()
+
+        self.main_window.menu_bar.library_info_action.triggered.connect(create_library_info_window)
+
         def on_show_filenames_action(checked: bool):
             self.settings.show_filenames_in_grid = checked
             self.settings.save()
@@ -520,7 +512,7 @@ class QtDriver(DriverMixin, QObject):
 
         # TODO: Move this to a settings screen.
         self.main_window.menu_bar.clear_thumb_cache_action.triggered.connect(
-            lambda: CacheManager.clear_cache(self.lib.library_dir)
+            lambda: self.cache_manager.clear_cache()
         )
 
         # endregion
@@ -728,6 +720,7 @@ class QtDriver(DriverMixin, QObject):
         self.__reset_navigation()
 
         self.lib.close()
+        self.cache_manager = None
 
         self.thumb_job_queue.queue.clear()
         if is_shutdown:
@@ -745,6 +738,9 @@ class QtDriver(DriverMixin, QObject):
         self.set_clipboard_menu_viability()
         self.set_select_actions_visibility()
 
+        if hasattr(self, "library_info_window"):
+            self.library_info_window.close()
+
         self.main_window.preview_panel.set_selection(self.selected)
         self.main_window.toggle_landing_page(enabled=True)
         self.main_window.pagination.setHidden(True)
@@ -760,6 +756,7 @@ class QtDriver(DriverMixin, QObject):
             self.main_window.menu_bar.fix_dupe_files_action.setEnabled(False)
             self.main_window.menu_bar.clear_thumb_cache_action.setEnabled(False)
             self.main_window.menu_bar.folders_to_tags_action.setEnabled(False)
+            self.main_window.menu_bar.library_info_action.setEnabled(False)
         except AttributeError:
             logger.warning(
                 "[Library] Could not disable library management menu actions. Is this in a test?"
@@ -991,7 +988,6 @@ class QtDriver(DriverMixin, QObject):
 
     def add_new_files_callback(self):
         """Run when user initiates adding new files to the Library."""
-        assert self.lib.library_dir
         tracker = RefreshDirTracker(self.lib)
 
         pw = ProgressWidget(
@@ -1003,7 +999,9 @@ class QtDriver(DriverMixin, QObject):
         pw.update_label(Translations["library.refresh.scanning_preparing"])
         pw.show()
 
-        iterator = FunctionIterator(lambda lib=self.lib.library_dir: tracker.refresh_dir(lib))
+        iterator = FunctionIterator(
+            lambda lib=unwrap(self.lib.library_dir): tracker.refresh_dir(lib)  # noqa: B008
+        )
         iterator.value.connect(
             lambda x: (
                 pw.update_progress(x + 1),
@@ -1546,7 +1544,6 @@ class QtDriver(DriverMixin, QObject):
         if not self.lib.library_dir:
             logger.info("Library not loaded")
             return
-        assert self.lib.engine
 
         if state:
             self.browsing_history.push(state)
@@ -1684,6 +1681,16 @@ class QtDriver(DriverMixin, QObject):
                 success=False, library_path=path, message=type(e).__name__, msg_description=str(e)
             )
 
+        max_size: int = self.cached_values.value(
+            SettingItems.THUMB_CACHE_SIZE_LIMIT,
+            defaultValue=CacheManager.DEFAULT_MAX_SIZE,
+            type=int,
+        )  # type: ignore
+        self.cache_manager = CacheManager(path, max_size=max_size)
+        logger.info(
+            f"[Config] Thumbnail cache size limit: {format_size(max_size)}",
+        )
+
         # Migration is required
         if open_status.json_migration_req:
             self.migration_modal = JsonMigrationModal(path)
@@ -1743,6 +1750,7 @@ class QtDriver(DriverMixin, QObject):
         self.main_window.menu_bar.fix_dupe_files_action.setEnabled(True)
         self.main_window.menu_bar.clear_thumb_cache_action.setEnabled(True)
         self.main_window.menu_bar.folders_to_tags_action.setEnabled(True)
+        self.main_window.menu_bar.library_info_action.setEnabled(True)
 
         self.main_window.preview_panel.set_selection(self.selected)
 

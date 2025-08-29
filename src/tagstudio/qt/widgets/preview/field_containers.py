@@ -32,6 +32,7 @@ from tagstudio.core.library.alchemy.fields import (
 )
 from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.library.alchemy.models import Entry, Tag
+from tagstudio.core.utils.types import unwrap
 from tagstudio.qt.controller.components.tag_box_controller import TagBoxWidget
 from tagstudio.qt.translations import Translations
 from tagstudio.qt.widgets.datetime_picker import DatetimePicker
@@ -110,8 +111,7 @@ class FieldContainers(QWidget):
         """Update tags and fields from a single Entry source."""
         logger.warning("[FieldContainers] Updating Selection", entry_id=entry_id)
 
-        entry = self.lib.get_entry_full(entry_id)
-        assert entry is not None
+        entry = unwrap(self.lib.get_entry_full(entry_id))
         self.cached_entries = [entry]
         self.update_granular(entry.tags, entry.fields, update_badges)
 
@@ -160,98 +160,38 @@ class FieldContainers(QWidget):
             c.setHidden(True)
 
     def get_tag_categories(self, tags: set[Tag]) -> dict[Tag | None, set[Tag]]:
-        """Get a dictionary of category tags mapped to their respective tags."""
-        cats: dict[Tag | None, set[Tag]] = {}
-        cats[None] = set()
+        """Get a dictionary of category tags mapped to their respective tags.
 
-        base_tag_ids: set[int] = {x.id for x in tags}
-        exhausted: set[int] = set()
-        cluster_map: dict[int, set[int]] = {}
+        Example:
+        Tag: ["Johnny Bravo", Parent Tags: "Cartoon Network (TV)", "Character"] maps to:
+        "Cartoon Network" -> Johnny Bravo,
+        "Character" -> "Johnny Bravo",
+        "TV" -> Johnny Bravo"
+        """
+        hierarchy_tags = self.lib.get_tag_hierarchy(t.id for t in tags)
 
-        def add_to_cluster(tag_id: int, p_ids: list[int] | None = None):
-            """Maps a Tag's child tags' IDs back to it's parent tag's ID.
-
-            Example:
-            Tag: ["Johnny Bravo", Parent Tags: "Cartoon Network (TV)", "Character"] maps to:
-            "Cartoon Network" -> Johnny Bravo,
-            "Character" -> "Johnny Bravo",
-            "TV" -> Johnny Bravo"
-            """
-            tag_obj = self.lib.get_tag(tag_id)  # Get full object
-            if p_ids is None:
-                assert tag_obj is not None
-                p_ids = tag_obj.parent_ids
-
-            for p_id in p_ids:
-                if cluster_map.get(p_id) is None:
-                    cluster_map[p_id] = set()
-                # If the p_tag has p_tags of its own, recursively link those to the original Tag.
-                if tag_id not in cluster_map[p_id]:
-                    cluster_map[p_id].add(tag_id)
-                    p_tag = self.lib.get_tag(p_id)  # Get full object
-                    assert p_tag is not None
-                    if p_tag.parent_ids:
-                        add_to_cluster(
-                            tag_id,
-                            [sub_id for sub_id in p_tag.parent_ids if sub_id != tag_id],
-                        )
-                exhausted.add(p_id)
-            exhausted.add(tag_id)
-
-        for tag in tags:
-            add_to_cluster(tag.id)
-
-        logger.info("[FieldContainers] Entry Cluster", entry_cluster=exhausted)
-        logger.info("[FieldContainers] Cluster Map", cluster_map=cluster_map)
-
-        # Initialize all categories from parents.
-        tags_ = {t for tid in exhausted if (t := self.lib.get_tag(tid)) is not None}
-        for tag in tags_:
+        categories: dict[Tag | None, set[Tag]] = {None: set()}
+        for tag in hierarchy_tags.values():
             if tag.is_category:
-                cats[tag] = set()
-        logger.info("[FieldContainers] Blank Tag Categories", cats=cats)
+                categories[tag] = set()
+        for tag in tags:
+            tag = hierarchy_tags[tag.id]
+            has_category_parent = False
+            parent_tags = tag.parent_tags
+            while len(parent_tags) > 0:
+                grandparent_tags: set[Tag] = set()
+                for parent_tag in parent_tags:
+                    if parent_tag in categories:
+                        categories[parent_tag].add(tag)
+                        has_category_parent = True
+                    grandparent_tags.update(parent_tag.parent_tags)
+                parent_tags = grandparent_tags
+            if tag.is_category:
+                categories[tag].add(tag)
+            elif not has_category_parent:
+                categories[None].add(tag)
 
-        # Add tags to any applicable categories.
-        added_ids: set[int] = set()
-        for key in cats:
-            logger.info("[FieldContainers] Checking category tag key", key=key)
-
-            if key:
-                logger.info(
-                    "[FieldContainers] Key cluster:", key=key, cluster=cluster_map.get(key.id)
-                )
-
-                if final_tags := cluster_map.get(key.id, set()).union([key.id]):
-                    cats[key] = {
-                        t
-                        for tid in final_tags
-                        if tid in base_tag_ids and (t := self.lib.get_tag(tid)) is not None
-                    }
-                    added_ids = added_ids.union({tid for tid in final_tags if tid in base_tag_ids})
-
-        # Add remaining tags to None key (general case).
-        cats[None] = {
-            t
-            for tid in base_tag_ids
-            if tid not in added_ids and (t := self.lib.get_tag(tid)) is not None
-        }
-        logger.info(
-            "[FieldContainers] Key cluster: None, general case!",
-            general_tags=cats[None],
-            added=added_ids,
-            base_tag_ids=base_tag_ids,
-        )
-
-        # Remove unused categories
-        empty: list[Tag | None] = []
-        for k, v in list(cats.items()):
-            if not v:
-                empty.append(k)
-        for key in empty:
-            cats.pop(key, None)
-
-        logger.info("[FieldContainers] Tag Categories", categories=cats)
-        return cats
+        return dict((c, d) for c, d in categories.items() if len(d) > 0)
 
     def remove_field_prompt(self, name: str) -> str:
         return Translations.format("library.field.confirm_remove", name=name)

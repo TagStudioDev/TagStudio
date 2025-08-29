@@ -84,13 +84,13 @@ ignore_errors = true
 qt_api = "pyside6"
 
 [tool.pyright]
-ignore = [".venv/**"]
+ignore = ["src/tagstudio/qt/helpers/vendored/pydub/", ".venv/**"]
 include = ["src/tagstudio", "tests"]
-extraPaths = ["src/tagstudio", "tests"]
 reportAny = false
 reportIgnoreCommentWithoutRule = false
 reportImplicitStringConcatenation = false
 reportMissingTypeArgument = false
+reportMissingTypeStubs = false
 # reportOptionalMemberAccess = false
 reportUnannotatedClassAttribute = false
 reportUnknownArgumentType = false

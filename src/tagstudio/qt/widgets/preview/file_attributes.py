@@ -23,6 +23,7 @@ from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.library.ignore import Ignore
 from tagstudio.core.media_types import MediaCategories
 from tagstudio.core.palette import ColorType, UiColor, get_ui_color
+from tagstudio.core.utils.types import unwrap
 from tagstudio.qt.helpers.file_opener import FileOpenerHelper, FileOpenerLabel
 from tagstudio.qt.translations import Translations
 
@@ -156,13 +157,11 @@ class FileAttributes(QWidget):
             self.dimensions_label.setHidden(True)
         else:
             ext = filepath.suffix.lower()
-            self.library_path = self.library.library_dir
             display_path = filepath
             if self.driver.settings.show_filepath == ShowFilepathOption.SHOW_FULL_PATHS:
                 display_path = filepath
             elif self.driver.settings.show_filepath == ShowFilepathOption.SHOW_RELATIVE_PATHS:
-                assert self.library_path is not None
-                display_path = Path(filepath).relative_to(self.library_path)
+                display_path = Path(filepath).relative_to(unwrap(self.library.library_dir))
             elif self.driver.settings.show_filepath == ShowFilepathOption.SHOW_FILENAMES_ONLY:
                 display_path = Path(filepath.name)
 
@@ -193,7 +192,7 @@ class FileAttributes(QWidget):
 
             # Attempt to populate the stat variables
             ext_display = ext.upper()[1:] or filepath.stem.upper()
-            if filepath:
+            if filepath and filepath.is_file():
                 try:
                     file_size = format_size(filepath.stat().st_size)
 
@@ -215,12 +214,11 @@ class FileAttributes(QWidget):
 
             if ext_display:
                 stats_label_text += ext_display
-                assert self.library.library_dir
                 red = get_ui_color(ColorType.PRIMARY, UiColor.RED)
                 orange = get_ui_color(ColorType.PRIMARY, UiColor.ORANGE)
 
                 if Ignore.compiled_patterns and Ignore.compiled_patterns.match(
-                    filepath.relative_to(self.library.library_dir)
+                    filepath.relative_to(unwrap(self.library.library_dir))
                 ):
                     stats_label_text = (
                         f"{stats_label_text}"

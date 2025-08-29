@@ -11,6 +11,7 @@ import traceback
 
 import structlog
 
+from tagstudio.core.constants import VERSION, VERSION_BRANCH
 from tagstudio.qt.ts_qt import QtDriver
 
 logger = structlog.get_logger(__name__)
@@ -53,6 +54,13 @@ def main():
         dest="debug",
         action="store_true",
         help="Reveals additional internal data useful for debugging.",
+    )
+    parser.add_argument(
+        "-v",
+        "--version",
+        action="version",
+        help="Displays TagStudio version information.",
+        version=f"TagStudio v{VERSION} {VERSION_BRANCH}",
     )
     args = parser.parse_args()
 

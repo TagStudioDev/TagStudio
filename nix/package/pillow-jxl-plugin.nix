@@ -13,18 +13,18 @@
 
 buildPythonPackage rec {
   pname = "pillow-jxl-plugin";
-  version = "1.3.2";
+  version = "1.3.4";
   pyproject = true;
 
   src = fetchPypi {
-    pname = builtins.replaceStrings [ "-" ] [ "_" ] pname;
+    pname = "pillow_jxl_plugin";
     inherit version;
-    hash = "sha256-efBoek8yUFR+ArhS55lm9F2XhkZ7/I3GsScQEe8U/2I=";
+    hash = "sha256-jqWJ/FWep8XfzLQq9NgUj121CPX01FGDKLq1ox/LJo4=";
   };
 
   cargoDeps = rustPlatform.fetchCargoVendor {
     inherit src;
-    hash = "sha256-vZHrwGfgo3fIIOY7p0vy4XIKiHoddPDdJggkBen+w/A=";
+    hash = "sha256-7j+sCn+P6q6tsm2MJ/cM7hF2KEjILJNA6SDb35tecPg=";
   };
 
   nativeBuildInputs = [
@@ -39,9 +39,9 @@ buildPythonPackage rec {
     pytestCheckHook
   ];
 
-  # INFO: Working directory takes precedence in the Python path. Remove
+  # Working directory takes precedence in the Python path. Remove
   # `pillow_jxl` to prevent it from being loaded during pytest, rather than the
-  # built module, as it includes a `pillow_jxl.pillow_jxl` .so that is imported.
+  # built module, as it includes a `pillow_jxl.pillow_jxl.so` that is imported.
   # See: https://github.com/NixOS/nixpkgs/issues/255262
   # See: https://github.com/NixOS/nixpkgs/pull/255471
   preCheck = ''
@@ -58,8 +58,9 @@ buildPythonPackage rec {
   ];
 
   meta = {
-    description = "Pillow plugin for JPEG-XL, using Rust for bindings.";
+    description = "Pillow plugin for JPEG-XL, using Rust for bindings";
     homepage = "https://github.com/Isotr0py/pillow-jpegxl-plugin";
+    changelog = "https://github.com/Isotr0py/pillow-jpegxl-plugin/releases/tag/v${version}";
     license = lib.licenses.gpl3;
     maintainers = with lib.maintainers; [ xarvex ];
     platforms = lib.platforms.unix;
