@@ -69,6 +69,7 @@ from tagstudio.core.utils.refresh_dir import RefreshDirTracker
 from tagstudio.core.utils.types import unwrap
 from tagstudio.core.utils.web import strip_web_protocol
 from tagstudio.qt.cache_manager import CacheManager
+from tagstudio.qt.controller.widgets.ignore_modal_controller import IgnoreModal
 from tagstudio.qt.controller.widgets.library_info_window_controller import LibraryInfoWindow
 from tagstudio.qt.helpers.custom_runnable import CustomRunnable
 from tagstudio.qt.helpers.file_deleter import delete_file
@@ -79,7 +80,6 @@ from tagstudio.qt.modals.about import AboutModal
 from tagstudio.qt.modals.build_tag import BuildTagPanel
 from tagstudio.qt.modals.drop_import import DropImportModal
 from tagstudio.qt.modals.ffmpeg_checker import FfmpegChecker
-from tagstudio.qt.modals.file_extension import FileExtensionModal
 from tagstudio.qt.modals.fix_dupes import FixDupeFilesModal
 from tagstudio.qt.modals.fix_unlinked import FixUnlinkedEntriesModal
 from tagstudio.qt.modals.folders_to_tags import FoldersToTagsModal
@@ -175,7 +175,7 @@ class QtDriver(DriverMixin, QObject):
 
     tag_manager_panel: PanelModal | None = None
     color_manager_panel: TagColorManager | None = None
-    file_extension_panel: PanelModal | None = None
+    ignore_modal: PanelModal | None = None
     add_tag_modal: PanelModal | None = None
     folders_modal: FoldersToTagsModal
     about_modal: AboutModal
@@ -656,27 +656,23 @@ class QtDriver(DriverMixin, QObject):
 
         self.splash.finish(self.main_window)
 
-    def init_file_extension_manager(self):
-        """Initialize the File Extension panel."""
-        if self.file_extension_panel:
+    def init_ignore_modal(self):
+        """Initialize the Ignore Files panel."""
+        if self.ignore_modal:
             with catch_warnings(record=True):
-                self.main_window.menu_bar.manage_file_ext_action.triggered.disconnect()
-                self.file_extension_panel.saved.disconnect()
-            self.file_extension_panel.deleteLater()
-            self.file_extension_panel = None
+                self.main_window.menu_bar.ignore_modal_action.triggered.disconnect()
+                self.ignore_modal.saved.disconnect()
+            self.ignore_modal.deleteLater()
+            self.ignore_modal = None
 
-        panel = FileExtensionModal(self.lib)
-        self.file_extension_panel = PanelModal(
+        panel = IgnoreModal(self.lib)
+        self.ignore_modal = PanelModal(
             panel,
-            Translations["ignore_list.title"],
+            Translations["menu.edit.ignore_files"],
             has_save=True,
         )
-        self.file_extension_panel.saved.connect(
-            lambda: (panel.save(), self.update_browsing_state())
-        )
-        self.main_window.menu_bar.manage_file_ext_action.triggered.connect(
-            self.file_extension_panel.show
-        )
+        self.ignore_modal.saved.connect(panel.save)
+        self.main_window.menu_bar.ignore_modal_action.triggered.connect(self.ignore_modal.show)
 
     def show_grid_filenames(self, value: bool):
         for thumb in self.item_thumbs:
@@ -754,7 +750,7 @@ class QtDriver(DriverMixin, QObject):
             self.main_window.menu_bar.refresh_dir_action.setEnabled(False)
             self.main_window.menu_bar.tag_manager_action.setEnabled(False)
             self.main_window.menu_bar.color_manager_action.setEnabled(False)
-            self.main_window.menu_bar.manage_file_ext_action.setEnabled(False)
+            self.main_window.menu_bar.ignore_modal_action.setEnabled(False)
             self.main_window.menu_bar.new_tag_action.setEnabled(False)
             self.main_window.menu_bar.fix_unlinked_entries_action.setEnabled(False)
             self.main_window.menu_bar.fix_dupe_files_action.setEnabled(False)
@@ -1739,7 +1735,7 @@ class QtDriver(DriverMixin, QObject):
         )
         self.main_window.setAcceptDrops(True)
 
-        self.init_file_extension_manager()
+        self.init_ignore_modal()
 
         self.selected.clear()
         self.set_select_actions_visibility()
@@ -1748,7 +1744,7 @@ class QtDriver(DriverMixin, QObject):
         self.main_window.menu_bar.refresh_dir_action.setEnabled(True)
         self.main_window.menu_bar.tag_manager_action.setEnabled(True)
         self.main_window.menu_bar.color_manager_action.setEnabled(True)
-        self.main_window.menu_bar.manage_file_ext_action.setEnabled(True)
+        self.main_window.menu_bar.ignore_modal_action.setEnabled(True)
         self.main_window.menu_bar.new_tag_action.setEnabled(True)
         self.main_window.menu_bar.fix_unlinked_entries_action.setEnabled(True)
         self.main_window.menu_bar.fix_dupe_files_action.setEnabled(True)

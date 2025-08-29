@@ -71,7 +71,7 @@ class MainMenuBar(QMenuBar):
     paste_fields_action: QAction
     add_tag_to_selected_action: QAction
     delete_file_action: QAction
-    manage_file_ext_action: QAction
+    ignore_modal_action: QAction
     tag_manager_action: QAction
     color_manager_action: QAction
 
@@ -271,12 +271,10 @@ class MainMenuBar(QMenuBar):
 
         self.edit_menu.addSeparator()
 
-        # Manage File Extensions
-        self.manage_file_ext_action = QAction(
-            Translations["menu.edit.manage_file_extensions"], self
-        )
-        self.manage_file_ext_action.setEnabled(False)
-        self.edit_menu.addAction(self.manage_file_ext_action)
+        # Ignore Files and Directories (.ts_ignore System)
+        self.ignore_modal_action = QAction(Translations["menu.edit.ignore_files"], self)
+        self.ignore_modal_action.setEnabled(False)
+        self.edit_menu.addAction(self.ignore_modal_action)
 
         # Manage Tags
         self.tag_manager_action = QAction(Translations["menu.edit.manage_tags"], self)

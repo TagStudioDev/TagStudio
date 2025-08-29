@@ -50,6 +50,7 @@ from sqlalchemy.orm import (
 
 from tagstudio.core.constants import (
     BACKUP_FOLDER_NAME,
+    IGNORE_NAME,
     LEGACY_TAG_FIELD_IDS,
     RESERVED_NAMESPACE_PREFIX,
     RESERVED_TAG_END,
@@ -499,6 +500,16 @@ class Library:
                 session.commit()
                 self.folder = folder
 
+            # Generate default .ts_ignore file
+            if is_new:
+                try:
+                    ts_ignore_template = (
+                        Path(__file__).parents[3] / "resources/templates/ts_ignore_template.txt"
+                    )
+                    shutil.copy2(ts_ignore_template, library_dir / TS_FOLDER_NAME / IGNORE_NAME)
+                except Exception as e:
+                    logger.error("[ERROR][Library] Could not generate '.ts_ignore' file!", error=e)
+
             # Apply any post-SQL migration patches.
             if not is_new:
                 # save backup if patches will be applied
@@ -522,6 +533,9 @@ class Library:
                     self.__apply_db9_filename_population(session)
                 if loaded_db_version < 100:
                     self.__apply_db100_parent_repairs(session)
+
+                # Convert file extension list to ts_ignore file, if a .ts_ignore file does not exist
+                self.migrate_sql_to_ts_ignore(library_dir)
 
             # Update DB_VERSION
             if loaded_db_version < DB_VERSION:
@@ -656,6 +670,34 @@ class Library:
             session.execute(stmt)
             session.commit()
             logger.info("[Library][Migration] Refactored TagParent column")
+
+    def migrate_sql_to_ts_ignore(self, library_dir: Path):
+        # Do not continue if existing '.ts_ignore' file is found
+        if Path(library_dir / TS_FOLDER_NAME / IGNORE_NAME).exists():
+            return
+
+        # Create blank '.ts_ignore' file
+        ts_ignore_template = (
+            Path(__file__).parents[3] / "resources/templates/ts_ignore_template_blank.txt"
+        )
+        ts_ignore = library_dir / TS_FOLDER_NAME / IGNORE_NAME
+        try:
+            shutil.copy2(ts_ignore_template, ts_ignore)
+        except Exception as e:
+            logger.error("[ERROR][Library] Could not generate '.ts_ignore' file!", error=e)
+
+        # Load legacy extension data
+        extensions: list[str] = self.prefs(LibraryPrefs.EXTENSION_LIST)  # pyright: ignore[reportAssignmentType]
+        is_exclude_list: bool = self.prefs(LibraryPrefs.IS_EXCLUDE_LIST)  # pyright: ignore[reportAssignmentType]
+
+        # Copy extensions to '.ts_ignore' file
+        if ts_ignore.exists():
+            with open(ts_ignore, "a") as f:
+                prefix = ""
+                if not is_exclude_list:
+                    prefix = "!"
+                    f.write("*\n")
+                f.writelines([f"{prefix}*.{x.lstrip('.')}\n" for x in extensions])
 
     @property
     def default_fields(self) -> list[BaseField]:
@@ -940,16 +982,6 @@ class Library:
                 logger.info(
                     f"SQL Expression Builder finished ({format_timespan(end_time - start_time)})"
                 )
-
-            # TODO: Remove this from the search function and update tests.
-            extensions = self.prefs(LibraryPrefs.EXTENSION_LIST)
-            is_exclude_list = self.prefs(LibraryPrefs.IS_EXCLUDE_LIST)
-
-            if extensions and is_exclude_list:
-                statement = statement.where(Entry.suffix.notin_(extensions))
-            elif extensions:
-                statement = statement.where(Entry.suffix.in_(extensions))
-
             statement = statement.distinct(Entry.id)
 
             sort_on: ColumnExpressionArgument = Entry.id
