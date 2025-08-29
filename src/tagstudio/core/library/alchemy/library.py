@@ -32,6 +32,7 @@ from sqlalchemy import (
     desc,
     exists,
     func,
+    inspect,
     or_,
     select,
     text,
@@ -1570,7 +1571,16 @@ class Library:
             for tag in tags:
                 all_tags[tag.id] = tag
             for tag in all_tags.values():
+                # Sqlalchemy tracks this as a change to the parent_tags field
                 tag.parent_tags = {all_tags[p] for p in all_tag_parents.get(tag.id, [])}
+                # When calling session.add with this tag instance sqlalchemy will
+                # attempt to create TagParents that already exist.
+
+                state = inspect(tag)
+                # Prevent sqlalchemy from thinking any fields are different from what's commited
+                # commited_state contains original values for fields that have changed.
+                # empty when no fields have changed
+                state.committed_state.clear()
 
         return all_tags
 
