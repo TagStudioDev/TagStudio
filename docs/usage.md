@@ -1,4 +1,8 @@
-# Usage
+---
+icon: material/mouse
+---
+
+# :material-mouse: Usage
 
 ## Creating/Opening a Library
 

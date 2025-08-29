@@ -26,6 +26,18 @@
     );
 }
 
+/* Mobile Nav Header */
+.md-nav__source {
+    background: linear-gradient(
+        60deg,
+        rgb(205, 78, 255) 0%,
+        rgb(116, 123, 255) 100%
+    );
+    border-style: solid;
+    border-width: 0 0 2px 0;
+    border-color: #ffffff33;
+}
+
 th,
 td {
     padding: 0.5em 1em 0.5em 1em !important;
@@ -68,6 +80,10 @@ h2,
     margin-right: -0.8rem;
 }
 
+figcaption {
+    margin-top: 0 !important;
+}
+
 .md-search__form {
     height: 1.5rem;
     background-color: #00004444;
@@ -81,8 +97,12 @@ h2,
     margin-top: -0.2rem;
 }
 
-.twemoji {
-    margin-top: 0.05rem;
+h1 > .twemoji {
+    margin-top: 0.14rem;
+}
+
+h2 > .twemoji {
+    margin-top: 0.08rem;
 }
 
 /* Matches the palette used by mkdocs-material */
@@ -96,4 +116,40 @@ h2,
 
 .priority-low {
     color: #28afff;
+}
+
+.red {
+    color: rgb(245, 0, 87);
+}
+
+.amber {
+    color: rgb(255, 145, 0);
+}
+
+.green {
+    color: rgb(0, 191, 165);
+}
+
+.gray {
+    color: rgb(158, 158, 158);
+}
+
+@media screen and (max-width: 76.234375em) {
+    /* Always show image logo on mobile */
+    .md-header__button.md-logo {
+        display: block;
+    }
+
+    label[for="__drawer"].md-header__button.md-icon {
+        order: -1;
+    }
+
+    .md-header {
+        background: linear-gradient(
+            60deg,
+            rgb(205, 78, 255) 10%,
+            rgb(116, 123, 255) 70%,
+            rgb(72, 179, 255) 100%
+        );
+    }
 }

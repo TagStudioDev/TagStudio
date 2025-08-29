@@ -1,3 +1,7 @@
+# Copyright (C) 2025
+# Licensed under the GPL-3.0 License.
+# Created for TagStudio: https://github.com/CyanVoxel/TagStudio
+
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
@@ -6,6 +10,7 @@ import pytest
 from tagstudio.core.library.alchemy.enums import BrowsingState
 from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.utils.missing_files import MissingRegistry
+from tagstudio.core.utils.types import unwrap
 
 CWD = Path(__file__).parent
 
@@ -16,7 +21,7 @@ def test_refresh_missing_files(library: Library):
     registry = MissingRegistry(library=library)
 
     # touch the file `one/two/bar.md` but in wrong location to simulate a moved file
-    (library.library_dir / "bar.md").touch()
+    (unwrap(library.library_dir) / "bar.md").touch()
 
     # no files actually exist, so it should return all entries
     assert list(registry.refresh_missing_files()) == [0, 1]

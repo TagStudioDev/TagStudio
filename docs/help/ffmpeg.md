@@ -1,4 +1,8 @@
-# FFmpeg
+---
+icon: material/movie-open-cog
+---
+
+# :material-movie-open-cog: FFmpeg
 
 FFmpeg is required for thumbnail previews and playback features on audio and video files. FFmpeg is a free Open Source project dedicated to the handling of multimedia (video, audio, etc) files. For more information, see their official website at [ffmpeg.org](https://www.ffmpeg.org/).
 

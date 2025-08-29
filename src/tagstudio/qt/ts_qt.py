@@ -60,11 +60,13 @@ from tagstudio.core.library.alchemy.enums import (
 from tagstudio.core.library.alchemy.fields import _FieldID
 from tagstudio.core.library.alchemy.library import Library, LibraryStatus
 from tagstudio.core.library.alchemy.models import Entry
+from tagstudio.core.library.ignore import Ignore
 from tagstudio.core.media_types import MediaCategories
 from tagstudio.core.palette import ColorType, UiColor, get_ui_color
 from tagstudio.core.query_lang.util import ParsingError
 from tagstudio.core.ts_core import TagStudioCore
 from tagstudio.core.utils.refresh_dir import RefreshDirTracker
+from tagstudio.core.utils.types import unwrap
 from tagstudio.core.utils.web import strip_web_protocol
 from tagstudio.qt.cache_manager import CacheManager
 from tagstudio.qt.helpers.custom_runnable import CustomRunnable
@@ -182,6 +184,7 @@ class QtDriver(DriverMixin, QObject):
     applied_theme: Theme
 
     lib: Library
+    cache_manager: CacheManager
 
     browsing_history: History[BrowsingState]
 
@@ -243,24 +246,6 @@ class QtDriver(DriverMixin, QObject):
             )
 
         Translations.change_language(self.settings.language)
-
-        # NOTE: This should be a per-library setting rather than an application setting.
-        thumb_cache_size_limit: int = int(
-            str(
-                self.cached_values.value(
-                    SettingItems.THUMB_CACHE_SIZE_LIMIT,
-                    defaultValue=CacheManager.size_limit,
-                    type=int,
-                )
-            )
-        )
-
-        CacheManager.size_limit = thumb_cache_size_limit
-        self.cached_values.setValue(SettingItems.THUMB_CACHE_SIZE_LIMIT, CacheManager.size_limit)
-        self.cached_values.sync()
-        logger.info(
-            f"[Config] Thumbnail cache size limit: {format_size(CacheManager.size_limit)}",
-        )
 
     def __reset_navigation(self) -> None:
         self.browsing_history = History(BrowsingState.show_all())
@@ -519,7 +504,7 @@ class QtDriver(DriverMixin, QObject):
 
         # TODO: Move this to a settings screen.
         self.main_window.menu_bar.clear_thumb_cache_action.triggered.connect(
-            lambda: CacheManager.clear_cache(self.lib.library_dir)
+            lambda: self.cache_manager.clear_cache()
         )
 
         # endregion
@@ -731,6 +716,7 @@ class QtDriver(DriverMixin, QObject):
         self.__reset_navigation()
 
         self.lib.close()
+        self.cache_manager = None
 
         self.thumb_job_queue.queue.clear()
         if is_shutdown:
@@ -1003,10 +989,11 @@ class QtDriver(DriverMixin, QObject):
         )
         pw.setWindowTitle(Translations["library.refresh.title"])
         pw.update_label(Translations["library.refresh.scanning_preparing"])
-
         pw.show()
 
-        iterator = FunctionIterator(lambda: tracker.refresh_dir(self.lib.library_dir))
+        iterator = FunctionIterator(
+            lambda lib=unwrap(self.lib.library_dir): tracker.refresh_dir(lib)  # noqa: B008
+        )
         iterator.value.connect(
             lambda x: (
                 pw.update_progress(x + 1),
@@ -1549,7 +1536,6 @@ class QtDriver(DriverMixin, QObject):
         if not self.lib.library_dir:
             logger.info("Library not loaded")
             return
-        assert self.lib.engine
 
         if state:
             self.browsing_history.push(state)
@@ -1562,6 +1548,7 @@ class QtDriver(DriverMixin, QObject):
 
         # search the library
         start_time = time.time()
+        Ignore.get_patterns(self.lib.library_dir, include_global=True)
         results = self.lib.search_library(self.browsing_history.current, self.settings.page_size)
         logger.info("items to render", count=len(results))
         end_time = time.time()
@@ -1686,6 +1673,16 @@ class QtDriver(DriverMixin, QObject):
                 success=False, library_path=path, message=type(e).__name__, msg_description=str(e)
             )
 
+        max_size: int = self.cached_values.value(
+            SettingItems.THUMB_CACHE_SIZE_LIMIT,
+            defaultValue=CacheManager.DEFAULT_MAX_SIZE,
+            type=int,
+        )  # type: ignore
+        self.cache_manager = CacheManager(path, max_size=max_size)
+        logger.info(
+            f"[Config] Thumbnail cache size limit: {format_size(max_size)}",
+        )
+
         # Migration is required
         if open_status.json_migration_req:
             self.migration_modal = JsonMigrationModal(path)
@@ -1706,8 +1703,9 @@ class QtDriver(DriverMixin, QObject):
             )
             return open_status
 
+        assert self.lib.library_dir
         self.init_workers()
-
+        Ignore.get_patterns(self.lib.library_dir, include_global=True)
         self.__reset_navigation()
 
         # TODO - make this call optional

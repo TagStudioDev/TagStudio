@@ -6,11 +6,12 @@
 import contextlib
 import hashlib
 import math
+import os
 import zipfile
 from copy import deepcopy
 from io import BytesIO
 from pathlib import Path
-from typing import cast
+from typing import TYPE_CHECKING, cast
 from warnings import catch_warnings
 
 import cv2
@@ -51,14 +52,12 @@ from PySide6.QtSvg import QSvgRenderer
 from tagstudio.core.constants import (
     FONT_SAMPLE_SIZES,
     FONT_SAMPLE_TEXT,
-    THUMB_CACHE_NAME,
-    TS_FOLDER_NAME,
 )
 from tagstudio.core.exceptions import NoRendererError
+from tagstudio.core.library.ignore import Ignore
 from tagstudio.core.media_types import MediaCategories, MediaType
-from tagstudio.core.palette import ColorType, UiColor, get_ui_color
+from tagstudio.core.palette import UI_COLORS, ColorType, UiColor, get_ui_color
 from tagstudio.core.utils.encoding import detect_char_encoding
-from tagstudio.qt.cache_manager import CacheManager
 from tagstudio.qt.helpers.blender_thumbnailer import blend_thumb
 from tagstudio.qt.helpers.color_overlay import theme_fg_overlay
 from tagstudio.qt.helpers.file_tester import is_readable_video
@@ -70,7 +69,12 @@ from tagstudio.qt.helpers.vendored.pydub.audio_segment import (
 )
 from tagstudio.qt.resource_manager import ResourceManager
 
+if TYPE_CHECKING:
+    from tagstudio.core.library.alchemy.library import Library
+    from tagstudio.qt.ts_qt import QtDriver
+
 ImageFile.LOAD_TRUNCATED_IMAGES = True
+os.environ["OPENCV_IO_ENABLE_OPENEXR"] = "1"
 
 logger = structlog.get_logger(__name__)
 Image.MAX_IMAGE_PIXELS = None
@@ -87,20 +91,17 @@ class ThumbRenderer(QObject):
     """A class for rendering image and file thumbnails."""
 
     rm: ResourceManager = ResourceManager()
-    cache: CacheManager = CacheManager()
     updated = Signal(float, QPixmap, QSize, Path)
     updated_ratio = Signal(float)
 
     cached_img_res: int = 256  # TODO: Pull this from config
     cached_img_ext: str = ".webp"  # TODO: Pull this from config
 
-    last_cache_folder: Path | None = None
-
-    def __init__(self, library) -> None:
+    def __init__(self, driver: "QtDriver", library: "Library") -> None:
         """Initialize the class."""
         super().__init__()
+        self.driver = driver
         self.lib = library
-        ThumbRenderer.cache.set_library(self.lib)
 
         # Cached thumbnail elements.
         # Key: Size + Pixel Ratio Tuple + Radius Scale
@@ -184,7 +185,14 @@ class ThumbRenderer(QObject):
         return item
 
     def _get_icon(
-        self, name: str, color: UiColor, size: tuple[int, int], pixel_ratio: float = 1.0
+        self,
+        name: str,
+        color: UiColor,
+        size: tuple[int, int],
+        pixel_ratio: float = 1.0,
+        bg_image: Image.Image | None = None,
+        draw_edge: bool = True,
+        is_corner: bool = False,
     ) -> Image.Image:
         """Return an icon given a size, pixel ratio, and radius scaling option.
 
@@ -193,6 +201,9 @@ class ThumbRenderer(QObject):
             color (str): The color to use for the icon.
             size (tuple[int,int]): The size of the icon.
             pixel_ratio (float): The screen pixel ratio.
+            bg_image (Image.Image): Optional background image to go behind the icon.
+            draw_edge (bool): Flag for is the raised edge should be drawn.
+            is_corner (bool): Flag for is the icon should render with the "corner" style
         """
         draw_border: bool = True
         if name == "thumb_loading":
@@ -200,10 +211,17 @@ class ThumbRenderer(QObject):
 
         item: Image.Image | None = self.icons.get((name, color, *size, pixel_ratio))
         if not item:
-            item_flat: Image.Image = self._render_icon(name, color, size, pixel_ratio, draw_border)
-            edge: tuple[Image.Image, Image.Image] = self._get_edge(size, pixel_ratio)
-            item = self._apply_edge(item_flat, edge, faded=True)
-            self.icons[(name, color, *size, pixel_ratio)] = item
+            item_flat: Image.Image = (
+                self._render_corner_icon(name, color, size, pixel_ratio, bg_image)
+                if is_corner
+                else self._render_center_icon(name, color, size, pixel_ratio, draw_border, bg_image)
+            )
+            if draw_edge:
+                edge: tuple[Image.Image, Image.Image] = self._get_edge(size, pixel_ratio)
+                item = self._apply_edge(item_flat, edge, faded=True)
+                self.icons[(name, color, *size, pixel_ratio)] = item
+            else:
+                item = item_flat
         return item
 
     def _render_mask(
@@ -289,13 +307,14 @@ class ThumbRenderer(QObject):
 
         return (im_hl, im_sh)
 
-    def _render_icon(
+    def _render_center_icon(
         self,
         name: str,
         color: UiColor,
         size: tuple[int, int],
         pixel_ratio: float,
         draw_border: bool = True,
+        bg_image: Image.Image | None = None,
     ) -> Image.Image:
         """Render a thumbnail icon.
 
@@ -305,6 +324,7 @@ class ThumbRenderer(QObject):
             size (tuple[int,int]): The size of the icon.
             pixel_ratio (float): The screen pixel ratio.
             draw_border (bool): Option to draw a border.
+            bg_image (Image.Image): Optional background image to go behind the icon.
         """
         border_factor: int = 5
         smooth_factor: int = math.ceil(2 * pixel_ratio)
@@ -315,15 +335,22 @@ class ThumbRenderer(QObject):
         im: Image.Image = Image.new(
             "RGBA",
             size=tuple([d * smooth_factor for d in size]),  # type: ignore
-            color="#00000000",
+            color="#FF000000",
         )
 
         # Create solid background color
-        bg: Image.Image = Image.new(
+        bg: Image.Image
+        bg = Image.new(
             "RGB",
             size=tuple([d * smooth_factor for d in size]),  # type: ignore
-            color="#000000",
+            color="#000000FF",
         )
+
+        # Use a background image if provided
+        if bg_image:
+            bg_im = Image.Image.resize(bg_image, size=tuple([d * smooth_factor for d in size]))  # type: ignore
+            bg_im = ImageEnhance.Brightness(bg_im).enhance(0.3)  # Reduce the brightness
+            bg.paste(bg_im)
 
         # Paste background color with rounded rectangle mask onto blank image
         im.paste(
@@ -343,7 +370,7 @@ class ThumbRenderer(QObject):
                 radius=math.ceil(
                     (radius_factor * smooth_factor * pixel_ratio) + (pixel_ratio * 1.5)
                 ),
-                fill="black",
+                fill=None if bg_image else "black",
                 outline="#FF0000",
                 width=math.floor(
                     (border_factor * smooth_factor * pixel_ratio) - (pixel_ratio * 1.5)
@@ -362,7 +389,7 @@ class ThumbRenderer(QObject):
         )
 
         # Get icon by name
-        icon: Image.Image = self.rm.get(name)
+        icon: Image.Image | None = self.rm.get(name)
         if not icon:
             icon = self.rm.get("file_generic")
             if not icon:
@@ -385,6 +412,105 @@ class ThumbRenderer(QObject):
         im = self._apply_overlay_color(
             im,
             color,
+        )
+
+        return im
+
+    def _render_corner_icon(
+        self,
+        name: str,
+        color: UiColor,
+        size: tuple[int, int],
+        pixel_ratio: float,
+        bg_image: Image.Image | None = None,
+    ) -> Image.Image:
+        """Render a thumbnail icon with the icon in the upper-left corner.
+
+        Args:
+            name (str): The name of the icon resource.
+            color (UiColor): The color to use for the icon.
+            size (tuple[int,int]): The size of the icon.
+            pixel_ratio (float): The screen pixel ratio.
+            draw_border (bool): Option to draw a border.
+            bg_image (Image.Image): Optional background image to go behind the icon.
+        """
+        smooth_factor: int = math.ceil(2 * pixel_ratio)
+        icon_ratio: float = 5
+        padding_factor = 18
+
+        # Create larger blank image based on smooth_factor
+        im: Image.Image = Image.new(
+            "RGBA",
+            size=tuple([d * smooth_factor for d in size]),  # type: ignore
+            color="#00000000",
+        )
+
+        bg: Image.Image
+        # Use a background image if provided
+        if bg_image:
+            bg = Image.Image.resize(bg_image, size=tuple([d * smooth_factor for d in size]))  # type: ignore
+        # Create solid background color
+        else:
+            bg = Image.new(
+                "RGB",
+                size=tuple([d * smooth_factor for d in size]),  # type: ignore
+                color="#000000",
+            )
+            # Apply color overlay
+            bg = self._apply_overlay_color(
+                im,
+                color,
+            )
+
+        # Paste background color with rounded rectangle mask onto blank image
+        im.paste(
+            bg,
+            (0, 0),
+            mask=self._get_mask(
+                tuple([d * smooth_factor for d in size]),  # type: ignore
+                (pixel_ratio * smooth_factor),
+            ),
+        )
+
+        colors = UI_COLORS.get(color) or UI_COLORS[UiColor.DEFAULT]
+        primary_color = colors.get(ColorType.PRIMARY)
+
+        # Resize image to final size
+        im = im.resize(
+            size,
+            resample=Image.Resampling.BILINEAR,
+        )
+        fg: Image.Image = Image.new(
+            "RGB",
+            size=size,
+            color=primary_color,
+        )
+
+        # Get icon by name
+        icon: Image.Image | None = self.rm.get(name)
+        if not icon:
+            icon = self.rm.get("file_generic")
+            if not icon:
+                icon = Image.new(mode="RGBA", size=(32, 32), color="magenta")
+
+        # Resize icon to fit icon_ratio
+        icon = icon.resize(
+            (
+                math.ceil(size[0] // icon_ratio),
+                math.ceil(size[1] // icon_ratio),
+            )
+        )
+
+        # Paste icon
+        im.paste(
+            im=fg.resize(
+                (
+                    math.ceil(size[0] // icon_ratio),
+                    math.ceil(size[1] // icon_ratio),
+                )
+            ),
+            box=(size[0] // padding_factor, size[1] // padding_factor),
+            mask=icon.getchannel(3),
         )
 
         return im
@@ -498,9 +624,10 @@ class ThumbRenderer(QObject):
             if artwork:
                 image = artwork
         except (
+            FileNotFoundError,
+            id3.ID3NoHeaderError,
             mp4.MP4MetadataError,
             mp4.MP4StreamInfoError,
-            id3.ID3NoHeaderError,
             MutagenError,
         ) as e:
             logger.error("Couldn't read album artwork", path=filepath, error=type(e).__name__)
@@ -606,7 +733,7 @@ class ThumbRenderer(QObject):
             if QGuiApplication.styleHints().colorScheme() is Qt.ColorScheme.Dark
             else "#FFFFFF"
         )
-        im: Image.Image = None
+        im: Image.Image | None = None
         try:
             blend_image = blend_thumb(str(filepath))
 
@@ -644,19 +771,19 @@ class ThumbRenderer(QObject):
                 vtf = srctools.VTF.read(f)
                 im = vtf.get(frame=0).to_PIL()
 
-        except ValueError as e:
+        except (ValueError, FileNotFoundError) as e:
             logger.error("Couldn't render thumbnail", filepath=filepath, error=type(e).__name__)
         return im
 
     @staticmethod
-    def _open_doc_thumb(filepath: Path) -> Image.Image:
+    def _open_doc_thumb(filepath: Path) -> Image.Image | None:
         """Extract and render a thumbnail for an OpenDocument file.
 
         Args:
             filepath (Path): The path of the file.
         """
         file_path_within_zip = "Thumbnails/thumbnail.png"
-        im: Image.Image = None
+        im: Image.Image | None = None
         with zipfile.ZipFile(filepath, "r") as zip_file:
             # Check if the file exists in the zip
             if file_path_within_zip in zip_file.namelist():
@@ -672,14 +799,14 @@ class ThumbRenderer(QObject):
         return im
 
     @staticmethod
-    def _krita_thumb(filepath: Path) -> Image.Image:
+    def _krita_thumb(filepath: Path) -> Image.Image | None:
         """Extract and render a thumbnail for an Krita file.
 
         Args:
             filepath (Path): The path of the file.
         """
         file_path_within_zip = "preview.png"
-        im: Image.Image = None
+        im: Image.Image | None = None
         with zipfile.ZipFile(filepath, "r") as zip_file:
             # Check if the file exists in the zip
             if file_path_within_zip in zip_file.namelist():
@@ -862,6 +989,36 @@ class ThumbRenderer(QObject):
         return im
 
     @staticmethod
+    def _image_exr_thumb(filepath: Path) -> Image.Image | None:
+        """Render a thumbnail for a EXR image type.
+
+        Args:
+            filepath (Path): The path of the file.
+        """
+        im: Image.Image | None = None
+        try:
+            # Load the EXR data to an array and rotate the color space from BGRA -> RGBA
+            raw_array = cv2.imread(str(filepath), cv2.IMREAD_UNCHANGED)
+            raw_array[..., :3] = raw_array[..., 2::-1]
+
+            # Correct the gamma of the raw array
+            gamma = 2.2
+            array_gamma = np.power(np.clip(raw_array, 0, 1), 1 / gamma)
+            array = (array_gamma * 255).astype(np.uint8)
+
+            im = Image.fromarray(array, mode="RGBA")
+
+            # Paste solid background
+            if im.mode == "RGBA":
+                new_bg = Image.new("RGB", im.size, color="#1e1e1e")
+                new_bg.paste(im, mask=im.getchannel(3))
+                im = new_bg
+
+        except Exception as e:
+            logger.error("Couldn't render thumbnail", filepath=filepath, error=type(e).__name__)
+        return im
+
+    @staticmethod
     def _image_thumb(filepath: Path) -> Image.Image:
         """Render a thumbnail for a standard image type.
 
@@ -879,6 +1036,7 @@ class ThumbRenderer(QObject):
                 im = new_bg
             im = ImageOps.exif_transpose(im)
         except (
+            FileNotFoundError,
             UnidentifiedImageError,
             DecompressionBombError,
             NotImplementedError,
@@ -1076,6 +1234,7 @@ class ThumbRenderer(QObject):
             DecompressionBombError,
             UnicodeDecodeError,
             OSError,
+            FileNotFoundError,
         ) as e:
             logger.error("Couldn't render thumbnail", filepath=filepath, error=type(e).__name__)
         return im
@@ -1165,49 +1324,64 @@ class ThumbRenderer(QObject):
             )
             return im
 
-        def render_unlinked(size: tuple[int, int], pixel_ratio: float) -> Image.Image:
+        def render_unlinked(
+            size: tuple[int, int], pixel_ratio: float, cached_im: Image.Image | None = None
+        ) -> Image.Image:
             im = self._get_icon(
                 name="broken_link_icon",
                 color=UiColor.RED,
                 size=size,
                 pixel_ratio=pixel_ratio,
+                bg_image=cached_im,
+                draw_edge=not cached_im,
+                is_corner=False,
             )
             return im
 
-        def fetch_cached_image(folder: Path):
-            image: Image.Image | None = None
-            cached_path: Path | None = None
+        def render_ignored(
+            size: tuple[int, int], pixel_ratio: float, im: Image.Image
+        ) -> Image.Image:
+            icon_ratio: float = 5
+            padding_factor = 18
 
-            if hash_value and self.lib.library_dir:
-                cached_path = Path(
-                    self.lib.library_dir
-                    / TS_FOLDER_NAME
-                    / THUMB_CACHE_NAME
-                    / folder
-                    / f"{hash_value}{ThumbRenderer.cached_img_ext}"
+            im_ = im
+            icon: Image.Image = self.rm.get("ignored")  # pyright: ignore[reportAssignmentType]
+
+            icon = icon.resize(
+                (
+                    math.ceil(size[0] // icon_ratio),
+                    math.ceil(size[1] // icon_ratio),
                 )
-            if cached_path and cached_path.exists() and not cached_path.is_dir():
+            )
+
+            im_.paste(
+                im=icon.resize(
+                    (
+                        math.ceil(size[0] // icon_ratio),
+                        math.ceil(size[1] // icon_ratio),
+                    )
+                ),
+                box=(size[0] // padding_factor, size[1] // padding_factor),
+                mask=icon.getchannel(3),
+            )
+
+            return im_
+
+        def fetch_cached_image(file_name: Path):
+            image: Image.Image | None = None
+            cached_path = self.driver.cache_manager.get_file_path(file_name)
+
+            if cached_path and cached_path.is_file():
                 try:
                     image = Image.open(cached_path)
                     if not image:
                         raise UnidentifiedImageError  # pyright: ignore[reportUnreachable]
-                    ThumbRenderer.last_cache_folder = folder
                 except Exception as e:
                     logger.error(
                         "[ThumbRenderer] Couldn't open cached thumbnail!",
                         path=cached_path,
                         error=e,
                     )
-                    # If the cached thumbnail failed, try rendering a new one
-                    image = self._render(
-                        timestamp,
-                        filepath,
-                        (ThumbRenderer.cached_img_res, ThumbRenderer.cached_img_res),
-                        1,
-                        is_grid_thumb,
-                        save_to_file=cached_path,
-                    )
-
             return image
 
         image: Image.Image | None = None
@@ -1219,30 +1393,10 @@ class ThumbRenderer(QObject):
                 mod_time = str(filepath.stat().st_mtime_ns)
             hashable_str: str = f"{str(filepath)}{mod_time}"
             hash_value = hashlib.shake_128(hashable_str.encode("utf-8")).hexdigest(8)
+            file_name = Path(f"{hash_value}{ThumbRenderer.cached_img_ext}")
+            image = fetch_cached_image(file_name)
 
-            # Check the last successful folder first.
-            if ThumbRenderer.last_cache_folder:
-                image = fetch_cached_image(ThumbRenderer.last_cache_folder)
-
-            # If there was no last folder or the check failed, check all folders.
-            if not image:
-                thumb_folders: list[Path] = []
-                try:
-                    for f in (self.lib.library_dir / TS_FOLDER_NAME / THUMB_CACHE_NAME).glob("*"):
-                        if f.is_dir() and f is not ThumbRenderer.last_cache_folder:
-                            thumb_folders.append(f)
-                except TypeError:
-                    logger.error(
-                        "[ThumbRenderer] Couldn't check thumb cache folder, is the library closed?",
-                        library_dir=self.lib.library_dir,
-                    )
-
-                for folder in thumb_folders:
-                    image = fetch_cached_image(folder)
-                    if image:
-                        ThumbRenderer.last_cache_folder = folder
-                        break
-            if not image:
+            if not image and self.driver.settings.generate_thumbs:
                 # Render from file, return result, and try to save a cached version.
                 # TODO: Audio waveforms are dynamically sized based on the base_size, so hardcoding
                 # the resolution breaks that.
@@ -1252,17 +1406,18 @@ class ThumbRenderer(QObject):
                     (ThumbRenderer.cached_img_res, ThumbRenderer.cached_img_res),
                     1,
                     is_grid_thumb,
-                    save_to_file=Path(f"{hash_value}{ThumbRenderer.cached_img_ext}"),
+                    save_to_file=file_name,
                 )
-                # If the normal renderer failed, fallback the the defaults
-                # (with native non-cached sizing!)
-                if not image:
-                    image = (
-                        render_unlinked((adj_size, adj_size), pixel_ratio)
-                        if not filepath.exists()
-                        else render_default((adj_size, adj_size), pixel_ratio)
-                    )
-                    render_mask_and_edge = False
+
+            # If the normal renderer failed, fallback the the defaults
+            # (with native non-cached sizing!)
+            if not image:
+                image = (
+                    render_unlinked((adj_size, adj_size), pixel_ratio)
+                    if not filepath.exists() or filepath.is_dir()
+                    else render_default((adj_size, adj_size), pixel_ratio)
+                )
+                render_mask_and_edge = False
 
             # Apply the mask and edge
             if image:
@@ -1275,6 +1430,19 @@ class ThumbRenderer(QObject):
                     image = self._apply_edge(
                         four_corner_gradient(image, (adj_size, adj_size), mask), edge
                     )
+
+            # Check if the file is supposed to be ignored and render an overlay if needed
+            try:
+                if (
+                    image
+                    and Ignore.compiled_patterns
+                    and not Ignore.compiled_patterns.match(
+                        filepath.relative_to(self.lib.library_dir)
+                    )
+                ):
+                    image = render_ignored((adj_size, adj_size), pixel_ratio, image)
+            except TypeError:
+                pass
 
         # A loading thumbnail (cached in memory)
         elif is_loading:
@@ -1290,7 +1458,7 @@ class ThumbRenderer(QObject):
             if not image:
                 image = (
                     render_unlinked((512, 512), 2)
-                    if not filepath.exists()
+                    if not filepath.exists() or filepath.is_dir()
                     else render_default((512, 512), 2)
                 )
                 render_mask_and_edge = False
@@ -1352,11 +1520,8 @@ class ThumbRenderer(QObject):
         _filepath: Path = Path(filepath)
         savable_media_type: bool = True
 
-        if _filepath:
+        if _filepath and _filepath.is_file():
             try:
-                # Missing Files ================================================
-                if not _filepath.exists():
-                    raise FileNotFoundError
                 ext: str = _filepath.suffix.lower() if _filepath.suffix else _filepath.stem.lower()
                 # Images =======================================================
                 if MediaCategories.is_ext_in_category(
@@ -1372,6 +1537,9 @@ class ThumbRenderer(QObject):
                         ext, MediaCategories.IMAGE_VECTOR_TYPES, mime_fallback=True
                     ):
                         image = self._image_vector_thumb(_filepath, adj_size)
+                    # EXR Images -----------------------------------------------
+                    elif ext in [".exr"]:
+                        image = self._image_exr_thumb(_filepath)
                     # Normal Images --------------------------------------------
                     else:
                         image = self._image_thumb(_filepath)
@@ -1449,10 +1617,8 @@ class ThumbRenderer(QObject):
                     image = self._resize_image(image, (adj_size, adj_size))
 
                 if save_to_file and savable_media_type and image:
-                    ThumbRenderer.cache.save_image(image, save_to_file, mode="RGBA")
+                    self.driver.cache_manager.save_image(image, save_to_file, mode="RGBA")
 
-            except FileNotFoundError:
-                image = None
             except (
                 UnidentifiedImageError,
                 DecompressionBombError,

@@ -1,6 +1,10 @@
-# File Entries
+---
+icon: material/file
+---
 
-File entries are the individual representations of your files inside a TagStudio [library](./index.md). Each one corresponds one-to-one to a file on disk, and tracks all of the additional [tags](tag.md) and metadata that you attach to it inside TagStudio.
+# :material-file: Entries
+
+Entries are the individual representations of your files inside a TagStudio [library](./index.md). Each one corresponds one-to-one to a file on disk, and tracks all of the additional [tags](tag.md) and metadata that you attach to it inside TagStudio.
 
 ## Storage
 
@@ -10,7 +14,7 @@ File entry data is stored within the `ts_library.sqlite` file inside each librar
 
 File entries appear as thumbnails inside the grid display. The preview panel shows a more detailed preview of the file, along with extra file stats and all attached TagStudio tags and fields.
 
-## Unlinked File Entries
+## Unlinked Entries
 
 If the file that an entry is referencing has been moved, renamed, or deleted on disk, then TagStudio will display its unlinked status with a red chain-link icon instead of its thumbnail image. Certain uncached stats such as the file size and image dimensions will also be unavailable to see in the preview panel.
 

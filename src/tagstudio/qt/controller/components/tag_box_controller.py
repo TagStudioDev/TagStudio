@@ -10,6 +10,7 @@ from PySide6.QtCore import Signal
 from tagstudio.core.enums import TagClickActionOption
 from tagstudio.core.library.alchemy.enums import BrowsingState
 from tagstudio.core.library.alchemy.models import Tag
+from tagstudio.core.utils.types import unwrap
 from tagstudio.qt.modals.build_tag import BuildTagPanel
 from tagstudio.qt.view.components.tag_box_view import TagBoxWidgetView
 from tagstudio.qt.widgets.panel import PanelModal
@@ -38,15 +39,18 @@ class TagBoxWidget(TagBoxWidgetView):
             case TagClickActionOption.OPEN_EDIT:
                 self._on_edit(tag)
             case TagClickActionOption.SET_SEARCH:
-                self.__driver.update_browsing_state(BrowsingState.from_tag_id(tag.id))
+                self.__driver.update_browsing_state(
+                    BrowsingState.from_tag_id(tag.id, self.__driver.browsing_history.current)
+                )
             case TagClickActionOption.ADD_TO_SEARCH:
                 # NOTE: modifying the ast and then setting that would be nicer
                 #       than this string manipulation, but also much more complex,
                 #       due to needing to implement a visitor that turns an AST to a string
                 #       So if that exists when you read this, change the following accordingly.
                 current = self.__driver.browsing_history.current
-                suffix = BrowsingState.from_tag_id(tag.id).query
-                assert suffix is not None
+                suffix = unwrap(
+                    BrowsingState.from_tag_id(tag.id, self.__driver.browsing_history.current).query
+                )
                 self.__driver.update_browsing_state(
                     current.with_search_query(
                         f"{current.query} {suffix}" if current.query else suffix
@@ -90,4 +94,6 @@ class TagBoxWidget(TagBoxWidgetView):
     @override
     def _on_search(self, tag: Tag) -> None:  # type: ignore[misc]
         self.__driver.main_window.search_field.setText(f"tag_id:{tag.id}")
-        self.__driver.update_browsing_state(BrowsingState.from_tag_id(tag.id))
+        self.__driver.update_browsing_state(
+            BrowsingState.from_tag_id(tag.id, self.__driver.browsing_history.current)
+        )
