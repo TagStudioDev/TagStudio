@@ -387,7 +387,7 @@ class TagSearchPanel(PanelWidget):
 
         self.edit_modal = PanelModal(
             build_tag_panel,
-            self.lib.tag_display_name(tag.id),
+            self.lib.tag_display_name(tag),
             Translations["tag.edit"],
             done_callback=(self.update_tags(self.search_field.text())),
             has_save=True,

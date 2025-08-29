@@ -32,7 +32,7 @@ class TagBoxWidgetView(FieldWidget):
         self.setLayout(self.__root_layout)
 
     def set_tags(self, tags: Iterable[Tag]) -> None:
-        tags_ = sorted(list(tags), key=lambda tag: self.__lib.tag_display_name(tag.id))
+        tags_ = sorted(list(tags), key=lambda tag: self.__lib.tag_display_name(tag))
         logger.info("[TagBoxWidget] Tags:", tags=tags)
         while self.__root_layout.itemAt(0):
             self.__root_layout.takeAt(0).widget().deleteLater()  # pyright: ignore[reportOptionalMemberAccess]

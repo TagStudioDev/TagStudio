@@ -75,7 +75,7 @@ class TagBoxWidget(TagBoxWidgetView):
 
         edit_modal = PanelModal(
             build_tag_panel,
-            self.__driver.lib.tag_display_name(tag.id),
+            self.__driver.lib.tag_display_name(tag),
             "Edit Tag",
             done_callback=self.on_update.emit,
             has_save=True,
