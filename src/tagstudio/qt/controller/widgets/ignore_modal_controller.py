@@ -4,14 +4,14 @@
 
 
 from pathlib import Path
+from typing import override
 
 import structlog
 from PySide6 import QtGui
 from PySide6.QtCore import Signal
 
 from tagstudio.core.constants import IGNORE_NAME, TS_FOLDER_NAME
-from tagstudio.core.library.alchemy.library import Library
-from tagstudio.core.library.alchemy.models import Tag
+from tagstudio.core.library.alchemy.library import Library, Tag
 from tagstudio.core.library.ignore import Ignore
 from tagstudio.qt.helpers import file_opener
 from tagstudio.qt.view.widgets.ignore_modal_view import IgnoreModalView
@@ -45,6 +45,7 @@ class IgnoreModal(IgnoreModalView):
         lines = [f"{line}\n" for line in lines]
         Ignore.write_ignore_file(self.lib.library_dir, lines)
 
-    def showEvent(self, event: QtGui.QShowEvent) -> None:  # noqa N802
+    @override
+    def showEvent(self, event: QtGui.QShowEvent) -> None:  # type: ignore
         self.__load_file()
         return super().showEvent(event)
