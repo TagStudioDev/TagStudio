@@ -1554,12 +1554,12 @@ class Library:
         with Session(self.engine) as session:
             while len(current_tag_ids) > 0:
                 all_tag_ids.update(current_tag_ids)
-                statement = select(TagParent).where(TagParent.parent_id.in_(current_tag_ids))
+                statement = select(TagParent).where(TagParent.child_id.in_(current_tag_ids))
                 tag_parents = session.scalars(statement).fetchall()
                 current_tag_ids.clear()
                 for tag_parent in tag_parents:
-                    all_tag_parents.setdefault(tag_parent.parent_id, []).append(tag_parent.child_id)
-                    current_tag_ids.add(tag_parent.child_id)
+                    all_tag_parents.setdefault(tag_parent.child_id, []).append(tag_parent.parent_id)
+                    current_tag_ids.add(tag_parent.parent_id)
                 current_tag_ids = current_tag_ids.difference(all_tag_ids)
 
             statement = select(Tag).where(Tag.id.in_(all_tag_ids))
