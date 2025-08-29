@@ -409,8 +409,8 @@ class MediaPlayer(QGraphicsView):
                 self.player.play()
         else:
             self.player.setSource(QUrl.fromLocalFile(self.filepath))
-            if not self.autoplay.isChecked():
-                self.player.pause()
+            if  self.autoplay.isChecked():
+                self.player.play()
 
     def load_toggle_play_icon(self, playing: bool) -> None:
         icon = self.driver.rm.pause_icon if playing else self.driver.rm.play_icon
