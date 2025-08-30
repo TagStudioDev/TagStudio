@@ -77,7 +77,7 @@ A detailed written specification for the TagStudio tag and/or library format. In
 -   [ ] Lightbox View :material-chevron-triple-up:{ .priority-high title="High Priority" }
     -   Similar to List View in concept, but displays one large preview that can cycle back/forth between entries.
     -   [ ] Smaller thumbnails of immediate adjacent entries below :material-chevron-double-up:{ .priority-med title="Medium Priority" }
--   [ ] Library Statistics Screen :material-chevron-double-up:{ .priority-med title="Medium Priority" } **[v9.5.4]**
+-   [x] Library Statistics Screen :material-chevron-double-up:{ .priority-med title="Medium Priority" } **[v9.5.4]**
 -   [ ] Unified Library Health/Cleanup Screen :material-chevron-double-up:{ .priority-med title="Medium Priority" } **[v9.5.4]**
     -   [x] Fix Unlinked Entries
     -   [x] Fix Duplicate Files
@@ -125,7 +125,7 @@ A detailed written specification for the TagStudio tag and/or library format. In
     -   [x] Language
     -   [x] Date and Time Format
     -   [x] Theme
-    -   [ ] Thumbnail Generation :material-chevron-double-up:{ .priority-med title="Medium Priority" } **[v9.5.4]**
+    -   [x] Thumbnail Generation :material-chevron-double-up:{ .priority-med title="Medium Priority" } **[v9.5.4]**
 -   [x] Configurable Page Size
 -   [ ] Library Settings :material-chevron-triple-up:{ .priority-high title="High Priority" }
     -   [ ] Stored in `.TagStudio` folder :material-chevron-triple-up:{ .priority-high title="High Priority" }
@@ -147,6 +147,7 @@ Some form of official plugin support for TagStudio, likely with its own API that
 -   [x] Per-Library Tags
 -   [ ] Global Tags :material-chevron-triple-up:{ .priority-high title="High Priority" }
 -   [ ] Multiple Root Directories :material-chevron-triple-up:{ .priority-high title="High Priority" } **[v9.6.0]**
+    -   [ ] Ability to store TagStudio library folder separate from library files :material-chevron-triple-up:{ .priority-high title="High Priority" } **[v9.6.0]**
 -   [ ] Automatic Entry Relinking :material-chevron-triple-up:{ .priority-high title="High Priority" } **[v9.7.0]**
     -   [ ] Detect Renames :material-chevron-triple-up:{ .priority-high title="High Priority" }
     -   [ ] Detect Moves :material-chevron-triple-up:{ .priority-high title="High Priority" }
@@ -168,7 +169,7 @@ Library representations of files or file-like objects.
     -   [x] Text Boxes
     -   [x] Datetimes **[v9.5.4]**
     -   [ ] User-Titled Fields :material-chevron-triple-up:{ .priority-high title="High Priority" } **[v9.6.0]**
-    -   [ ] Removal of Deprecated Fields :material-chevron-triple-up:{ .priority-high title="High Priority" } **[v9.6.0]**
+        -   [ ] Removal of Deprecated Fields :material-chevron-triple-up:{ .priority-high title="High Priority" } **[v9.6.0]**
 -   [ ] Entry Groups :material-chevron-triple-up:{ .priority-high title="High Priority" } **[v9.7.0]**
     -   [ ] Non-exclusive; Entries can be in multiple groups :material-chevron-triple-up:{ .priority-high title="High Priority" }
     -   [ ] Ability to number entries within group :material-chevron-triple-up:{ .priority-high title="High Priority" }
