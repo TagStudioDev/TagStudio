@@ -134,5 +134,13 @@
   "bxs-right-arrow": {
     "path": "qt/images/bxs-right-arrow.png",
     "mode": "pil"
+  },
+  "ignored_stat": {
+      "path": "qt/images/ignored_stat.png",
+      "mode": "pil"
+  },
+"dupe_file_stat": {
+      "path": "qt/images/dupe_file_stat.png",
+      "mode": "pil"
   }
 }

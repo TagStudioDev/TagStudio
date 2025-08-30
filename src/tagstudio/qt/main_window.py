@@ -80,6 +80,7 @@ class MainMenuBar(QMenuBar):
 
     tools_menu: QMenu
     fix_unlinked_entries_action: QAction
+    fix_ignored_files_action: QAction
     fix_dupe_files_action: QAction
     clear_thumb_cache_action: QAction
 
@@ -348,6 +349,11 @@ class MainMenuBar(QMenuBar):
         )
         self.fix_unlinked_entries_action.setEnabled(False)
         self.tools_menu.addAction(self.fix_unlinked_entries_action)
+
+        # Fix Ignored Files
+        self.fix_ignored_files_action = QAction(Translations["menu.tools.fix_ignored_files"], self)
+        self.fix_ignored_files_action.setEnabled(False)
+        self.tools_menu.addAction(self.fix_ignored_files_action)
 
         # Fix Duplicate Files
         self.fix_dupe_files_action = QAction(Translations["menu.tools.fix_duplicate_files"], self)
