@@ -14,6 +14,7 @@ from PySide6.QtCore import QObject, Signal
 
 from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.media_types import MediaCategories
+from tagstudio.core.utils.types import unwrap
 from tagstudio.qt.helpers.file_tester import is_readable_video
 
 logger = structlog.get_logger(__name__)
@@ -35,10 +36,8 @@ class CollageIconRenderer(QObject):
         data_only_mode: bool,
         keep_aspect: bool,
     ):
-        entry = self.lib.get_entry(entry_id)
-        lib_dir = self.lib.library_dir
-        assert lib_dir is not None and entry is not None
-        filepath = lib_dir / entry.path
+        entry = unwrap(self.lib.get_entry(entry_id))
+        filepath = unwrap(self.lib.library_dir) / entry.path
         color: str = ""
 
         try:

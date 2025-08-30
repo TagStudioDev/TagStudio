@@ -1,3 +1,8 @@
+# Copyright (C) 2025
+# Licensed under the GPL-3.0 License.
+# Created for TagStudio: https://github.com/CyanVoxel/TagStudio
+
+
 import pytest
 import structlog
 
@@ -18,11 +23,11 @@ def verify_count(lib: Library, query: str, count: int):
 @pytest.mark.parametrize(
     ["query", "count"],
     [
-        ("", 31),
-        ("path:*", 31),
+        ("", 32),
+        ("path:*", 32),
         ("path:*inherit*", 24),
         ("path:*comp*", 5),
-        ("special:untagged", 2),
+        ("special:untagged", 3),
         ("filetype:png", 25),
         ("filetype:jpg", 6),
         ("filetype:'jpg'", 6),
@@ -84,22 +89,22 @@ def test_or(search_library: Library, query: str, count: int):
 @pytest.mark.parametrize(
     ["query", "count"],
     [
-        ("not unexistant", 31),
+        ("not unexistant", 32),
         ("not path:*", 0),
-        ("not not path:*", 31),
+        ("not not path:*", 32),
         ("not special:untagged", 29),
-        ("not filetype:png", 6),
-        ("not filetype:jpg", 25),
-        ("not tag_id:1011", 26),
-        ("not tag_id:1038", 20),
-        ("not green", 26),
+        ("not filetype:png", 7),
+        ("not filetype:jpg", 26),
+        ("not tag_id:1011", 27),
+        ("not tag_id:1038", 21),
+        ("not green", 27),
         ("tag:favorite", 0),
-        ("not circle", 20),
-        ("not tag:square", 20),
+        ("not circle", 21),
+        ("not tag:square", 21),
         ("circle and not square", 6),
         ("not circle and square", 6),
-        ("special:untagged or not filetype:jpg", 25),
-        ("not square or green", 22),
+        ("special:untagged or not filetype:jpg", 26),
+        ("not square or green", 23),
     ],
 )
 def test_not(search_library: Library, query: str, count: int):
@@ -113,7 +118,7 @@ def test_not(search_library: Library, query: str, count: int):
         ("(((tag_id:1041)))", 11),
         ("not (not tag_id:1041)", 11),
         ("((circle) and (not square))", 6),
-        ("(not ((square) OR (green)))", 17),
+        ("(not ((square) OR (green)))", 18),
         ("filetype:png and (tag:square or green)", 12),
     ],
 )
@@ -139,5 +144,5 @@ def test_parent_tags(search_library: Library, query: str, count: int):
     "invalid_query", ["asd AND", "asd AND AND", "tag:(", "(asd", "asd[]", "asd]", ":", "tag: :"]
 )
 def test_syntax(search_library: Library, invalid_query: str):
-    with pytest.raises(ParsingError) as e_info:  # noqa: F841
+    with pytest.raises(ParsingError) as e_info:  # noqa: F841  # pyright: ignore[reportUnusedVariable]
         search_library.search_library(BrowsingState.from_search_query(invalid_query), page_size=500)

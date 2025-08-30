@@ -1,0 +1,12 @@
+# This is a '.ts_ignore' file for TagStudio.
+#
+# Basic Usage:
+#    Ignore filetypes: "*.extension"
+#    Ignore folders: "/folder_name"
+#
+# For full usage details, visit https://docs.tagstud.io/utilities/ignore
+
+# Ignored Filetypes
+*.aae
+*.json
+*.xmp

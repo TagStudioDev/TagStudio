@@ -8,6 +8,7 @@ from wcmatch import pathlib
 from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.library.alchemy.models import Entry
 from tagstudio.core.library.ignore import PATH_GLOB_FLAGS, Ignore
+from tagstudio.core.utils.types import unwrap
 
 logger = structlog.get_logger()
 
@@ -26,12 +27,11 @@ class MissingRegistry:
 
     def refresh_missing_files(self) -> Iterator[int]:
         """Track the number of entries that point to an invalid filepath."""
-        assert self.library.library_dir
         logger.info("[refresh_missing_files] Refreshing missing files...")
 
         self.missing_file_entries = []
         for i, entry in enumerate(self.library.all_entries()):
-            full_path = self.library.library_dir / entry.path
+            full_path = unwrap(self.library.library_dir) / entry.path
             if not full_path.exists() or not full_path.is_file():
                 self.missing_file_entries.append(entry)
             yield i
@@ -41,17 +41,19 @@ class MissingRegistry:
 
         Works if files were just moved to different subfolders and don't have duplicate names.
         """
-        assert self.library.library_dir
+        library_dir = unwrap(self.library.library_dir)
         matches: list[Path] = []
 
-        ignore_patterns = Ignore.get_patterns(self.library.library_dir)
-        for path in pathlib.Path(str(self.library.library_dir)).glob(
+        ignore_patterns = Ignore.get_patterns(library_dir)
+        for path in pathlib.Path(str(library_dir)).glob(
             f"***/{match_entry.path.name}",
             flags=PATH_GLOB_FLAGS,
             exclude=ignore_patterns,
         ):
+            if path.is_dir():
+                continue
             if path.name == match_entry.path.name:
-                new_path = Path(path).relative_to(self.library.library_dir)
+                new_path = Path(path).relative_to(library_dir)
                 matches.append(new_path)
 
         logger.info("[MissingRegistry] Matches", matches=matches)
@@ -71,8 +73,8 @@ class MissingRegistry:
                 )
                 if not self.library.update_entry_path(entry.id, item_matches[0]):
                     try:
-                        match = self.library.get_entry_full_by_path(item_matches[0])
-                        entry_full = self.library.get_entry_full(entry.id)
+                        match = unwrap(self.library.get_entry_full_by_path(item_matches[0]))
+                        entry_full = unwrap(self.library.get_entry_full(entry.id))
                         self.library.merge_entries(entry_full, match)
                     except AttributeError:
                         continue

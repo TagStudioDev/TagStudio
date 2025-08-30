@@ -7,6 +7,7 @@ from pathlib import Path
 
 from sqlalchemy import JSON, ForeignKey, ForeignKeyConstraint, Integer, event
 from sqlalchemy.orm import Mapped, mapped_column, relationship
+from typing_extensions import deprecated
 
 from tagstudio.core.constants import TAG_ARCHIVED, TAG_FAVORITE
 from tagstudio.core.library.alchemy.db import Base, PathType
@@ -126,8 +127,8 @@ class Tag(Base):
 
     def __init__(
         self,
+        name: str,
         id: int | None = None,
-        name: str | None = None,
         shorthand: str | None = None,
         aliases: set[TagAlias] | None = None,
         parent_tags: set["Tag"] | None = None,
@@ -146,8 +147,7 @@ class Tag(Base):
         self.shorthand = shorthand
         self.disambiguation_id = disambiguation_id
         self.is_category = is_category
-        assert not self.id
-        self.id = id
+        self.id = id  # pyright: ignore[reportAttributeAccessIssue]
         super().__init__()
 
     def __str__(self) -> str:
@@ -155,6 +155,9 @@ class Tag(Base):
 
     def __repr__(self) -> str:
         return self.__str__()
+
+    def __hash__(self) -> int:
+        return hash(self.id)
 
     def __lt__(self, other) -> bool:
         return self.name < other.name
@@ -232,7 +235,7 @@ class Entry(Base):
     ) -> None:
         self.path = path
         self.folder = folder
-        self.id = id
+        self.id = id  # pyright: ignore[reportAttributeAccessIssue]
         self.filename = path.name
         self.suffix = path.suffix.lstrip(".").lower()
 
@@ -311,8 +314,18 @@ def slugify_field_key(mapper, connection, target):
         target.key = slugify(target.tag)
 
 
+# NOTE: The "Preferences" table has been depreciated as of TagStudio 9.5.4
+# and is set to be removed in a future release.
+@deprecated("Use `Version` for storing version, and `ts_ignore` system for file exclusion.")
 class Preferences(Base):
     __tablename__ = "preferences"
 
     key: Mapped[str] = mapped_column(primary_key=True)
     value: Mapped[dict] = mapped_column(JSON, nullable=False)
+
+
+class Version(Base):
+    __tablename__ = "versions"
+
+    key: Mapped[str] = mapped_column(primary_key=True)
+    value: Mapped[int] = mapped_column(nullable=False, default=0)

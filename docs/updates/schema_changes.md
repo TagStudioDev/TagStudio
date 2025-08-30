@@ -26,7 +26,19 @@ Replaced by the new SQLite format introduced in TagStudio [v9.5.0 Pre-Release 1]
 
 ## SQLite
 
-Starting with TagStudio [v9.5.0-pr1](https://github.com/TagStudioDev/TagStudio/releases/tag/v9.5.0-pr1), the library save format has been moved to a [SQLite](https://sqlite.org) format. Legacy JSON libraries are migrated (with the user's consent) to the new format when opening in current versions of the program. The save format versioning is now separate from the program's versioning number and stored inside a `DB_VERSION` attribute inside the SQLite file.
+Starting with TagStudio [v9.5.0-pr1](https://github.com/TagStudioDev/TagStudio/releases/tag/v9.5.0-pr1), the library save format has been moved to a [SQLite](https://sqlite.org) format. Legacy JSON libraries are migrated (with the user's consent) to the new format when opening in current versions of the program. The save format versioning is now separate from the program's versioning number.
+
+Versions **1-100** stored the database version in a table called `preferences` in a row with the `key` column of `"DB_VERSION"` inside the corresponding `value` column.
+
+Versions **>101** store the database version in a table called `versions` in a row with the `key` column of `'CURRENT'` inside the corresponding `value` column. The `versions` table also stores the initial database version in which the file was created with under the `'INITIAL'` key. Databases created before this key was introduced will always have `'INITIAL'` value of `100`.
+
+```mermaid
+erDiagram
+  versions {
+    TEXT key PK "Values: ['INITIAL', 'CURRENT']"
+    INTEGER value
+  }
+```
 
 ### Versions 1 - 5
 
@@ -81,11 +93,25 @@ Migration from the legacy JSON format is provided via a walkthrough when opening
 
 ### Version 100
 
-| Used From                                                               | Used Until | Format | Location                                        |
-| ----------------------------------------------------------------------- | ---------- | ------ | ----------------------------------------------- |
-| [v9.5.4](https://github.com/TagStudioDev/TagStudio/releases/tag/v9.5.4) | _Current_  | SQLite | `<Library Folder>`/.TagStudio/ts_library.sqlite |
+| Used From                                                                                            | Used Until                                                              | Format | Location                                        |
+| ---------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------- | ------ | ----------------------------------------------- |
+| [74383e3](https://github.com/TagStudioDev/TagStudio/commit/74383e3c3c12f72be1481ab0b86c7360b95c2d85) | [v9.5.4](https://github.com/TagStudioDev/TagStudio/releases/tag/v9.5.4) | SQLite | `<Library Folder>`/.TagStudio/ts_library.sqlite |
 
 -   Introduces built-in minor versioning
     -   The version number divided by 100 (and floored) constitutes the **major** version. Major version indicate breaking changes that prevent libraries from being opened in TagStudio versions older than the ones they were created in.
     -   Values more precise than this ("ones" through "tens" columns) constitute the **minor** version. These indicate minor changes that don't prevent a newer library from being opened in an older version of TagStudio, as long as the major version is not also increased.
 -   Swaps `parent_id` and `child_id` values in the `tag_parents` table, which have erroneously been flipped since the first SQLite DB version.
+
+#### Version 101
+
+| Used From                                                               | Used Until | Format | Location                                        |
+| ----------------------------------------------------------------------- | ---------- | ------ | ----------------------------------------------- |
+| [v9.5.4](https://github.com/TagStudioDev/TagStudio/releases/tag/v9.5.4) | _Current_  | SQLite | `<Library Folder>`/.TagStudio/ts_library.sqlite |
+
+-   Deprecates the `preferences` table, set to be removed in a future TagStudio version.
+-   Introduces the `versions` table
+    -   Has a string `key` column and an int `value` column
+    -   The `key` column stores one of two values: `'INITIAL'` and `'CURRENT'`
+    -   `'INITIAL'` stores the database version number in which in was created
+        -   Pre-existing databases set this number to `100`
+    -   `'CURRENT'` stores the current database version number

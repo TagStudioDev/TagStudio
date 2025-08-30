@@ -16,7 +16,8 @@ dependencies = [
     "mutagen~=1.47",
     "numpy~=2.2",
     "opencv_python~=4.11",
-    "Pillow>=10.2,<=12.0",
+    "Pillow>=10.2,<=11",
+    "pillow-avif-plugin~=1.5",
     "pillow-heif~=0.22",
     "pillow-jxl-plugin~=1.3",
     "pydantic~=2.10",
@@ -84,13 +85,13 @@ ignore_errors = true
 qt_api = "pyside6"
 
 [tool.pyright]
-ignore = [".venv/**"]
+ignore = ["src/tagstudio/qt/helpers/vendored/pydub/", ".venv/**"]
 include = ["src/tagstudio", "tests"]
-extraPaths = ["src/tagstudio", "tests"]
 reportAny = false
 reportIgnoreCommentWithoutRule = false
 reportImplicitStringConcatenation = false
 reportMissingTypeArgument = false
+reportMissingTypeStubs = false
 # reportOptionalMemberAccess = false
 reportUnannotatedClassAttribute = false
 reportUnknownArgumentType = false

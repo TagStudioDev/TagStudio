@@ -66,8 +66,10 @@ from tagstudio.core.palette import ColorType, UiColor, get_ui_color
 from tagstudio.core.query_lang.util import ParsingError
 from tagstudio.core.ts_core import TagStudioCore
 from tagstudio.core.utils.refresh_dir import RefreshDirTracker
+from tagstudio.core.utils.types import unwrap
 from tagstudio.core.utils.web import strip_web_protocol
 from tagstudio.qt.cache_manager import CacheManager
+from tagstudio.qt.controller.widgets.ignore_modal_controller import IgnoreModal
 from tagstudio.qt.controller.widgets.library_info_window_controller import LibraryInfoWindow
 from tagstudio.qt.helpers.custom_runnable import CustomRunnable
 from tagstudio.qt.helpers.file_deleter import delete_file
@@ -78,7 +80,6 @@ from tagstudio.qt.modals.about import AboutModal
 from tagstudio.qt.modals.build_tag import BuildTagPanel
 from tagstudio.qt.modals.drop_import import DropImportModal
 from tagstudio.qt.modals.ffmpeg_checker import FfmpegChecker
-from tagstudio.qt.modals.file_extension import FileExtensionModal
 from tagstudio.qt.modals.fix_dupes import FixDupeFilesModal
 from tagstudio.qt.modals.fix_unlinked import FixUnlinkedEntriesModal
 from tagstudio.qt.modals.folders_to_tags import FoldersToTagsModal
@@ -174,7 +175,7 @@ class QtDriver(DriverMixin, QObject):
 
     tag_manager_panel: PanelModal | None = None
     color_manager_panel: TagColorManager | None = None
-    file_extension_panel: PanelModal | None = None
+    ignore_modal: PanelModal | None = None
     add_tag_modal: PanelModal | None = None
     folders_modal: FoldersToTagsModal
     about_modal: AboutModal
@@ -185,6 +186,7 @@ class QtDriver(DriverMixin, QObject):
     applied_theme: Theme
 
     lib: Library
+    cache_manager: CacheManager
 
     browsing_history: History[BrowsingState]
 
@@ -246,24 +248,6 @@ class QtDriver(DriverMixin, QObject):
             )
 
         Translations.change_language(self.settings.language)
-
-        # NOTE: This should be a per-library setting rather than an application setting.
-        thumb_cache_size_limit: int = int(
-            str(
-                self.cached_values.value(
-                    SettingItems.THUMB_CACHE_SIZE_LIMIT,
-                    defaultValue=CacheManager.size_limit,
-                    type=int,
-                )
-            )
-        )
-
-        CacheManager.size_limit = thumb_cache_size_limit
-        self.cached_values.setValue(SettingItems.THUMB_CACHE_SIZE_LIMIT, CacheManager.size_limit)
-        self.cached_values.sync()
-        logger.info(
-            f"[Config] Thumbnail cache size limit: {format_size(CacheManager.size_limit)}",
-        )
 
     def __reset_navigation(self) -> None:
         self.browsing_history = History(BrowsingState.show_all())
@@ -528,7 +512,7 @@ class QtDriver(DriverMixin, QObject):
 
         # TODO: Move this to a settings screen.
         self.main_window.menu_bar.clear_thumb_cache_action.triggered.connect(
-            lambda: CacheManager.clear_cache(self.lib.library_dir)
+            lambda: self.cache_manager.clear_cache()
         )
 
         # endregion
@@ -672,27 +656,23 @@ class QtDriver(DriverMixin, QObject):
 
         self.splash.finish(self.main_window)
 
-    def init_file_extension_manager(self):
-        """Initialize the File Extension panel."""
-        if self.file_extension_panel:
+    def init_ignore_modal(self):
+        """Initialize the Ignore Files panel."""
+        if self.ignore_modal:
             with catch_warnings(record=True):
-                self.main_window.menu_bar.manage_file_ext_action.triggered.disconnect()
-                self.file_extension_panel.saved.disconnect()
-            self.file_extension_panel.deleteLater()
-            self.file_extension_panel = None
+                self.main_window.menu_bar.ignore_modal_action.triggered.disconnect()
+                self.ignore_modal.saved.disconnect()
+            self.ignore_modal.deleteLater()
+            self.ignore_modal = None
 
-        panel = FileExtensionModal(self.lib)
-        self.file_extension_panel = PanelModal(
+        panel = IgnoreModal(self.lib)
+        self.ignore_modal = PanelModal(
             panel,
-            Translations["ignore_list.title"],
+            Translations["menu.edit.ignore_files"],
             has_save=True,
         )
-        self.file_extension_panel.saved.connect(
-            lambda: (panel.save(), self.update_browsing_state())
-        )
-        self.main_window.menu_bar.manage_file_ext_action.triggered.connect(
-            self.file_extension_panel.show
-        )
+        self.ignore_modal.saved.connect(panel.save)
+        self.main_window.menu_bar.ignore_modal_action.triggered.connect(self.ignore_modal.show)
 
     def show_grid_filenames(self, value: bool):
         for thumb in self.item_thumbs:
@@ -740,6 +720,7 @@ class QtDriver(DriverMixin, QObject):
         self.__reset_navigation()
 
         self.lib.close()
+        self.cache_manager = None
 
         self.thumb_job_queue.queue.clear()
         if is_shutdown:
@@ -769,7 +750,7 @@ class QtDriver(DriverMixin, QObject):
             self.main_window.menu_bar.refresh_dir_action.setEnabled(False)
             self.main_window.menu_bar.tag_manager_action.setEnabled(False)
             self.main_window.menu_bar.color_manager_action.setEnabled(False)
-            self.main_window.menu_bar.manage_file_ext_action.setEnabled(False)
+            self.main_window.menu_bar.ignore_modal_action.setEnabled(False)
             self.main_window.menu_bar.new_tag_action.setEnabled(False)
             self.main_window.menu_bar.fix_unlinked_entries_action.setEnabled(False)
             self.main_window.menu_bar.fix_dupe_files_action.setEnabled(False)
@@ -1007,7 +988,6 @@ class QtDriver(DriverMixin, QObject):
 
     def add_new_files_callback(self):
         """Run when user initiates adding new files to the Library."""
-        assert self.lib.library_dir
         tracker = RefreshDirTracker(self.lib)
 
         pw = ProgressWidget(
@@ -1019,7 +999,9 @@ class QtDriver(DriverMixin, QObject):
         pw.update_label(Translations["library.refresh.scanning_preparing"])
         pw.show()
 
-        iterator = FunctionIterator(lambda lib=self.lib.library_dir: tracker.refresh_dir(lib))
+        iterator = FunctionIterator(
+            lambda lib=unwrap(self.lib.library_dir): tracker.refresh_dir(lib)  # noqa: B008
+        )
         iterator.value.connect(
             lambda x: (
                 pw.update_progress(x + 1),
@@ -1562,7 +1544,6 @@ class QtDriver(DriverMixin, QObject):
         if not self.lib.library_dir:
             logger.info("Library not loaded")
             return
-        assert self.lib.engine
 
         if state:
             self.browsing_history.push(state)
@@ -1700,6 +1681,16 @@ class QtDriver(DriverMixin, QObject):
                 success=False, library_path=path, message=type(e).__name__, msg_description=str(e)
             )
 
+        max_size: int = self.cached_values.value(
+            SettingItems.THUMB_CACHE_SIZE_LIMIT,
+            defaultValue=CacheManager.DEFAULT_MAX_SIZE,
+            type=int,
+        )  # type: ignore
+        self.cache_manager = CacheManager(path, max_size=max_size)
+        logger.info(
+            f"[Config] Thumbnail cache size limit: {format_size(max_size)}",
+        )
+
         # Migration is required
         if open_status.json_migration_req:
             self.migration_modal = JsonMigrationModal(path)
@@ -1744,7 +1735,7 @@ class QtDriver(DriverMixin, QObject):
         )
         self.main_window.setAcceptDrops(True)
 
-        self.init_file_extension_manager()
+        self.init_ignore_modal()
 
         self.selected.clear()
         self.set_select_actions_visibility()
@@ -1753,7 +1744,7 @@ class QtDriver(DriverMixin, QObject):
         self.main_window.menu_bar.refresh_dir_action.setEnabled(True)
         self.main_window.menu_bar.tag_manager_action.setEnabled(True)
         self.main_window.menu_bar.color_manager_action.setEnabled(True)
-        self.main_window.menu_bar.manage_file_ext_action.setEnabled(True)
+        self.main_window.menu_bar.ignore_modal_action.setEnabled(True)
         self.main_window.menu_bar.new_tag_action.setEnabled(True)
         self.main_window.menu_bar.fix_unlinked_entries_action.setEnabled(True)
         self.main_window.menu_bar.fix_dupe_files_action.setEnabled(True)

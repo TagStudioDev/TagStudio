@@ -4,13 +4,11 @@
   pipewire,
   python3Packages,
   qt6,
+  ripgrep,
   stdenv,
   wrapGAppsHook,
-  wcmatch,
 
   pillow-jxl-plugin,
-  pyside6,
-  vtf2img,
 
   withJXLSupport ? false,
 }:
@@ -29,7 +27,7 @@ python3Packages.buildPythonApplication {
     python3Packages.pythonRelaxDepsHook
     qt6.wrapQtAppsHook
 
-    # INFO: Should be unnecessary once PR is pulled.
+    # Should be unnecessary once PR is pulled.
     # PR: https://github.com/NixOS/nixpkgs/pull/271037
     # Issue: https://github.com/NixOS/nixpkgs/issues/149812
     wrapGAppsHook
@@ -54,18 +52,32 @@ python3Packages.buildPythonApplication {
     cp $src/src/tagstudio/resources/icon.png $out/share/icons/hicolor/512x512/apps/tagstudio.png
   '';
 
-  makeWrapperArgs =
-    [ "--prefix PATH : ${lib.makeBinPath [ ffmpeg-headless ]}" ]
-    ++ lib.optional stdenv.hostPlatform.isLinux "--prefix LD_LIBRARY_PATH : ${
-      lib.makeLibraryPath [ pipewire ]
-    }";
+  dontWrapGApps = true;
+  dontWrapQtApps = true;
+  makeWrapperArgs = [
+    "--prefix PATH : ${
+      lib.makeBinPath [
+        ffmpeg-headless
+        ripgrep
+      ]
+    }"
+  ]
+  ++ lib.optional stdenv.hostPlatform.isLinux "--prefix LD_LIBRARY_PATH : ${
+    lib.makeLibraryPath [ pipewire ]
+  }"
+  ++ [
+    "\${gappsWrapperArgs[@]}"
+    "\${qtWrapperArgs[@]}"
+  ];
 
   pythonRemoveDeps = lib.optional (!withJXLSupport) [ "pillow_jxl" ];
   pythonRelaxDeps = [
     "numpy"
     "pillow"
+    "pillow-avif-plugin"
     "pillow-heif"
     "pillow-jxl-plugin"
+    "pyside6"
     "structlog"
     "typing-extensions"
   ];
@@ -82,6 +94,7 @@ python3Packages.buildPythonApplication {
       numpy
       opencv-python
       pillow
+      pillow-avif-plugin
       pillow-heif
       pydantic
       pydub
@@ -89,15 +102,16 @@ python3Packages.buildPythonApplication {
       rawpy
       send2trash
       sqlalchemy
+      srctools
       structlog
       toml
       ujson
-      vtf2img
+      wcmatch
     ]
     ++ lib.optional withJXLSupport pillow-jxl-plugin;
 
   disabledTests = [
-    # INFO: These tests require modifications to a library, which does not work
+    # These tests require modifications to a library, which does not work
     # in a read-only environment.
     "test_build_tag_panel_add_alias_callback"
     "test_build_tag_panel_add_aliases"
@@ -122,7 +136,7 @@ python3Packages.buildPythonApplication {
     "test_update_selection_multiple"
     "test_update_selection_single"
 
-    # INFO: This test requires modification of a configuration file.
+    # This test requires modification of a configuration file.
     "test_filepath_setting"
   ];
 
