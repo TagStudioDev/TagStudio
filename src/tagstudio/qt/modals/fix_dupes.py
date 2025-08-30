@@ -18,7 +18,7 @@ from PySide6.QtWidgets import (
 
 from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.utils.dupe_files import DupeRegistry
-from tagstudio.qt.modals.mirror_entities import MirrorEntriesModal
+from tagstudio.qt.modals.mirror_entries_modal import MirrorEntriesModal
 from tagstudio.qt.translations import Translations
 
 # Only import for type checking/autocompletion, will not be imported at runtime.

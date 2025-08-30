@@ -11,9 +11,9 @@ from PySide6.QtWidgets import QHBoxLayout, QLabel, QPushButton, QVBoxLayout, QWi
 
 from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.utils.unlinked_registry import UnlinkedRegistry
-from tagstudio.qt.modals.delete_unlinked import RemoveUnlinkedEntriesModal
 from tagstudio.qt.modals.merge_dupe_entries import MergeDuplicateEntries
-from tagstudio.qt.modals.relink_unlinked import RelinkUnlinkedEntries
+from tagstudio.qt.modals.relink_entries_modal import RelinkUnlinkedEntries
+from tagstudio.qt.modals.remove_unlinked_modal import RemoveUnlinkedEntriesModal
 from tagstudio.qt.translations import Translations
 from tagstudio.qt.widgets.progress import ProgressWidget
 
