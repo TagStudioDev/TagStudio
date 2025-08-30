@@ -74,6 +74,7 @@ python3Packages.buildPythonApplication {
   pythonRelaxDeps = [
     "numpy"
     "pillow"
+    "pillow-avif-plugin"
     "pillow-heif"
     "pillow-jxl-plugin"
     "pyside6"
@@ -93,6 +94,7 @@ python3Packages.buildPythonApplication {
       numpy
       opencv-python
       pillow
+      pillow-avif-plugin
       pillow-heif
       pydantic
       pydub

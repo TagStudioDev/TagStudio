@@ -16,6 +16,7 @@ from warnings import catch_warnings
 
 import cv2
 import numpy as np
+import pillow_avif  # noqa: F401 # pyright: ignore[reportUnusedImport]
 import rawpy
 import srctools
 import structlog
@@ -33,7 +34,7 @@ from PIL import (
     UnidentifiedImageError,
 )
 from PIL.Image import DecompressionBombError
-from pillow_heif import register_avif_opener, register_heif_opener
+from pillow_heif import register_heif_opener
 from PySide6.QtCore import (
     QBuffer,
     QFile,
@@ -79,7 +80,6 @@ os.environ["OPENCV_IO_ENABLE_OPENEXR"] = "1"
 logger = structlog.get_logger(__name__)
 Image.MAX_IMAGE_PIXELS = None
 register_heif_opener()
-register_avif_opener()
 
 try:
     import pillow_jxl  # noqa: F401 # pyright: ignore[reportUnusedImport]
