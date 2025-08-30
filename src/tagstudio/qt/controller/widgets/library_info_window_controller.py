@@ -4,6 +4,7 @@
 import os
 from pathlib import Path
 from typing import TYPE_CHECKING, override
+from warnings import catch_warnings
 
 import structlog
 from humanfriendly import format_size  # pyright: ignore[reportUnknownVariableType]
@@ -17,6 +18,7 @@ from tagstudio.core.library.alchemy.constants import (
 )
 from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.utils.types import unwrap
+from tagstudio.qt.helpers import file_opener
 from tagstudio.qt.translations import Translations
 from tagstudio.qt.view.widgets.library_info_window_view import LibraryInfoWindowView
 
@@ -102,6 +104,27 @@ class LibraryInfoWindow(LibraryInfoWindowView):
         # Backups
         self.backups_count_label.setText(
             f"<b>{self.__backups_count}</b> ({format_size(self.__backups_size)})"
+        )
+
+        # Buttons
+        with catch_warnings(record=True):
+            self.view_legacy_json_file.clicked.disconnect()
+            self.open_backups_folder.clicked.disconnect()
+
+        if self.__is_json_library_present:
+            self.view_legacy_json_file.setEnabled(True)
+            self.view_legacy_json_file.clicked.connect(
+                lambda: file_opener.open_file(
+                    unwrap(self.lib.library_dir) / TS_FOLDER_NAME / JSON_FILENAME, file_manager=True
+                )
+            )
+        else:
+            self.view_legacy_json_file.setEnabled(False)
+
+        self.open_backups_folder.clicked.connect(
+            lambda: file_opener.open_file(
+                unwrap(self.lib.library_dir) / TS_FOLDER_NAME / BACKUP_FOLDER_NAME
+            )
         )
 
     def update_version(self):

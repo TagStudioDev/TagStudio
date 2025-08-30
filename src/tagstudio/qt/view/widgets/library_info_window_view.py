@@ -23,6 +23,7 @@ from PySide6.QtWidgets import (
 )
 
 from tagstudio.qt.helpers.color_overlay import theme_fg_overlay
+from tagstudio.qt.platform_strings import open_file_str
 from tagstudio.qt.translations import Translations
 
 # Only import for type checking/autocompletion, will not be imported at runtime.
@@ -398,6 +399,8 @@ class LibraryInfoWindowView(QWidget):
         self.fix_unlinked_entries = QPushButton(Translations["menu.tools.fix_unlinked_entries"])
         self.fix_ignored_entries = QPushButton(Translations["menu.tools.fix_ignored_entries"])
         self.fix_dupe_files = QPushButton(Translations["menu.tools.fix_duplicate_files"])
+        self.view_legacy_json_file = QPushButton(open_file_str())
+        self.open_backups_folder = QPushButton(Translations["menu.file.open_backups_folder"])
 
         self.cleanup_grid_layout.addWidget(
             self.fix_unlinked_entries,
@@ -412,6 +415,16 @@ class LibraryInfoWindowView(QWidget):
         self.cleanup_grid_layout.addWidget(
             self.fix_dupe_files,
             self.cleanup_dupe_files_row,
+            self.cleanup_buttons_col,
+        )
+        self.cleanup_grid_layout.addWidget(
+            self.view_legacy_json_file,
+            self.cleanup_legacy_json_row,
+            self.cleanup_buttons_col,
+        )
+        self.cleanup_grid_layout.addWidget(
+            self.open_backups_folder,
+            self.cleanup_backups_row,
             self.cleanup_buttons_col,
         )
 
