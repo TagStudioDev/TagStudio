@@ -135,12 +135,16 @@
     "path": "qt/images/bxs-right-arrow.png",
     "mode": "pil"
   },
+  "unlinked_stat": {
+    "path": "qt/images/unlinked_stat.png",
+    "mode": "pil"
+  },
   "ignored_stat": {
-      "path": "qt/images/ignored_stat.png",
-      "mode": "pil"
+    "path": "qt/images/ignored_stat.png",
+    "mode": "pil"
   },
 "dupe_file_stat": {
-      "path": "qt/images/dupe_file_stat.png",
-      "mode": "pil"
+    "path": "qt/images/dupe_file_stat.png",
+    "mode": "pil"
   }
 }
