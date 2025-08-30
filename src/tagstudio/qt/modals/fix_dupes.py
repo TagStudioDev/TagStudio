@@ -26,6 +26,7 @@ if TYPE_CHECKING:
     from tagstudio.qt.ts_qt import QtDriver
 
 
+# TODO: Break up into MVC classes, similar to fix_ignored_modal
 class FixDupeFilesModal(QWidget):
     def __init__(self, library: "Library", driver: "QtDriver"):
         super().__init__()

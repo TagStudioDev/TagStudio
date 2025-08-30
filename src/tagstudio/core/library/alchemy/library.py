@@ -67,6 +67,8 @@ from tagstudio.core.library.alchemy.constants import (
     DB_VERSION_CURRENT_KEY,
     DB_VERSION_INITIAL_KEY,
     DB_VERSION_LEGACY_KEY,
+    JSON_FILENAME,
+    SQL_FILENAME,
     TAG_CHILDREN_QUERY,
 )
 from tagstudio.core.library.alchemy.db import make_tables
@@ -213,8 +215,11 @@ class Library:
     folder: Folder | None
     included_files: set[Path] = set()
 
-    SQL_FILENAME: str = "ts_library.sqlite"
-    JSON_FILENAME: str = "ts_library.json"
+    def __init__(self) -> None:
+        self.dupe_entries_count: int = -1  # NOTE: For internal management.
+        self.dupe_files_count: int = -1
+        self.ignored_entries_count: int = -1
+        self.unlinked_entries_count: int = -1
 
     def close(self):
         if self.engine:
@@ -223,6 +228,11 @@ class Library:
         self.storage_path = None
         self.folder = None
         self.included_files = set()
+
+        self.dupe_entries_count = -1
+        self.dupe_files_count = -1
+        self.ignored_entries_count = -1
+        self.unlinked_entries_count = -1
 
     def migrate_json_to_sqlite(self, json_lib: JsonLibrary):
         """Migrate JSON library data to the SQLite database."""
@@ -340,10 +350,10 @@ class Library:
             is_new = True
             return self.open_sqlite_library(library_dir, is_new)
         else:
-            self.storage_path = library_dir / TS_FOLDER_NAME / self.SQL_FILENAME
+            self.storage_path = library_dir / TS_FOLDER_NAME / SQL_FILENAME
             assert isinstance(self.storage_path, Path)
             if self.verify_ts_folder(library_dir) and (is_new := not self.storage_path.exists()):
-                json_path = library_dir / TS_FOLDER_NAME / self.JSON_FILENAME
+                json_path = library_dir / TS_FOLDER_NAME / JSON_FILENAME
                 if json_path.exists():
                     return LibraryStatus(
                         success=False,
@@ -1513,7 +1523,7 @@ class Library:
         target_path = self.library_dir / TS_FOLDER_NAME / BACKUP_FOLDER_NAME / filename
 
         shutil.copy2(
-            self.library_dir / TS_FOLDER_NAME / self.SQL_FILENAME,
+            self.library_dir / TS_FOLDER_NAME / SQL_FILENAME,
             target_path,
         )
 

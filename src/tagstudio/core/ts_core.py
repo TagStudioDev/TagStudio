@@ -11,7 +11,7 @@ from tagstudio.core.constants import TS_FOLDER_NAME
 from tagstudio.core.library.alchemy.fields import _FieldID
 from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.library.alchemy.models import Entry
-from tagstudio.core.utils.missing_files import logger
+from tagstudio.core.utils.unlinked_registry import logger
 
 
 class TagStudioCore:

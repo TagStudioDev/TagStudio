@@ -358,11 +358,11 @@ class LibraryInfoWindowView(QWidget):
         self.cleanup_grid_layout.setRowMinimumHeight(self.cleanup_legacy_json_row, row_height)
         self.cleanup_grid_layout.setRowMinimumHeight(self.cleanup_backups_row, row_height)
 
-        self.unlinked_count_label: QLabel = QLabel("<b>—</b>")
+        self.unlinked_count_label: QLabel = QLabel()
         self.unlinked_count_label.setAlignment(cell_alignment)
-        self.ignored_count_label: QLabel = QLabel("<b>—</b>")
+        self.ignored_count_label: QLabel = QLabel()
         self.ignored_count_label.setAlignment(cell_alignment)
-        self.dupe_files_count_label: QLabel = QLabel("<b>—</b>")
+        self.dupe_files_count_label: QLabel = QLabel()
         self.dupe_files_count_label.setAlignment(cell_alignment)
         self.legacy_json_status_label: QLabel = QLabel()
         self.legacy_json_status_label.setAlignment(cell_alignment)
@@ -396,8 +396,7 @@ class LibraryInfoWindowView(QWidget):
         )
 
         self.fix_unlinked_entries = QPushButton(Translations["menu.tools.fix_unlinked_entries"])
-        self.fix_ignored_files = QPushButton(Translations["menu.tools.fix_ignored_files"])
-        self.fix_ignored_files.setEnabled(False)
+        self.fix_ignored_entries = QPushButton(Translations["menu.tools.fix_ignored_entries"])
         self.fix_dupe_files = QPushButton(Translations["menu.tools.fix_duplicate_files"])
 
         self.cleanup_grid_layout.addWidget(
@@ -406,7 +405,7 @@ class LibraryInfoWindowView(QWidget):
             self.cleanup_buttons_col,
         )
         self.cleanup_grid_layout.addWidget(
-            self.fix_ignored_files,
+            self.fix_ignored_entries,
             self.cleanup_ignored_row,
             self.cleanup_buttons_col,
         )

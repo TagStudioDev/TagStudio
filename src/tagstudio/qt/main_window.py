@@ -80,7 +80,7 @@ class MainMenuBar(QMenuBar):
 
     tools_menu: QMenu
     fix_unlinked_entries_action: QAction
-    fix_ignored_files_action: QAction
+    fix_ignored_entries_action: QAction
     fix_dupe_files_action: QAction
     clear_thumb_cache_action: QAction
 
@@ -350,10 +350,12 @@ class MainMenuBar(QMenuBar):
         self.fix_unlinked_entries_action.setEnabled(False)
         self.tools_menu.addAction(self.fix_unlinked_entries_action)
 
-        # Fix Ignored Files
-        self.fix_ignored_files_action = QAction(Translations["menu.tools.fix_ignored_files"], self)
-        self.fix_ignored_files_action.setEnabled(False)
-        self.tools_menu.addAction(self.fix_ignored_files_action)
+        # Fix Ignored Entries
+        self.fix_ignored_entries_action = QAction(
+            Translations["menu.tools.fix_ignored_entries"], self
+        )
+        self.fix_ignored_entries_action.setEnabled(False)
+        self.tools_menu.addAction(self.fix_ignored_entries_action)
 
         # Fix Duplicate Files
         self.fix_dupe_files_action = QAction(Translations["menu.tools.fix_duplicate_files"], self)
@@ -516,11 +518,8 @@ class MainWindow(QMainWindow):
         self.central_layout.setObjectName("central_layout")
 
         self.setup_search_bar()
-
         self.setup_extra_input_bar()
-
         self.setup_content(driver)
-
         self.setCentralWidget(self.central_widget)
 
     def setup_search_bar(self):
@@ -624,7 +623,6 @@ class MainWindow(QMainWindow):
         self.content_splitter.setHandleWidth(12)
 
         self.setup_entry_list(driver)
-
         self.setup_preview_panel(driver)
 
         self.content_splitter.setStretchFactor(0, 1)
