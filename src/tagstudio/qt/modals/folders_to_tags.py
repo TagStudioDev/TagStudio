@@ -23,8 +23,7 @@ from PySide6.QtWidgets import (
 
 from tagstudio.core.constants import TAG_ARCHIVED, TAG_FAVORITE
 from tagstudio.core.library.alchemy.enums import TagColorEnum
-from tagstudio.core.library.alchemy.library import Library
-from tagstudio.core.library.alchemy.models import Tag
+from tagstudio.core.library.alchemy.library import Library, Tag
 from tagstudio.core.palette import ColorType, get_tag_color
 from tagstudio.core.utils.types import unwrap
 from tagstudio.qt.flowlayout import FlowLayout

@@ -16,8 +16,7 @@ CWD = Path(__file__).parent
 sys.path.insert(0, str(CWD.parent))
 
 from tagstudio.core.constants import THUMB_CACHE_NAME, TS_FOLDER_NAME
-from tagstudio.core.library.alchemy.library import Library
-from tagstudio.core.library.alchemy.models import Entry, Tag
+from tagstudio.core.library.alchemy.library import Entry, Library, Tag
 from tagstudio.core.utils.types import unwrap
 from tagstudio.qt.ts_qt import QtDriver
 

@@ -5,8 +5,7 @@ from pathlib import Path
 import structlog
 from wcmatch import pathlib
 
-from tagstudio.core.library.alchemy.library import Library
-from tagstudio.core.library.alchemy.models import Entry
+from tagstudio.core.library.alchemy.library import Entry, Library
 from tagstudio.core.library.ignore import PATH_GLOB_FLAGS, Ignore
 from tagstudio.core.utils.types import unwrap
 

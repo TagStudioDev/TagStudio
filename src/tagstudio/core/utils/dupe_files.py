@@ -5,8 +5,7 @@ from pathlib import Path
 import structlog
 
 from tagstudio.core.library.alchemy.enums import BrowsingState
-from tagstudio.core.library.alchemy.library import Library
-from tagstudio.core.library.alchemy.models import Entry
+from tagstudio.core.library.alchemy.library import Entry, Library
 
 logger = structlog.get_logger()
 

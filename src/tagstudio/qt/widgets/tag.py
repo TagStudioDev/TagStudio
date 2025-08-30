@@ -12,7 +12,7 @@ from PySide6.QtGui import QAction, QColor, QEnterEvent, QFontMetrics
 from PySide6.QtWidgets import QHBoxLayout, QLineEdit, QPushButton, QVBoxLayout, QWidget
 
 from tagstudio.core.library.alchemy.enums import TagColorEnum
-from tagstudio.core.library.alchemy.models import Tag
+from tagstudio.core.library.alchemy.library import Tag
 from tagstudio.core.palette import ColorType, get_tag_color
 from tagstudio.qt.helpers.escape_text import escape_text
 from tagstudio.qt.translations import Translations

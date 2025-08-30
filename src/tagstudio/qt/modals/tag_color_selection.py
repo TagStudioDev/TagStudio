@@ -19,8 +19,7 @@ from PySide6.QtWidgets import (
 )
 
 from tagstudio.core.library.alchemy.enums import TagColorEnum
-from tagstudio.core.library.alchemy.library import Library
-from tagstudio.core.library.alchemy.models import TagColorGroup
+from tagstudio.core.library.alchemy.library import Library, TagColorGroup
 from tagstudio.core.palette import ColorType, get_tag_color
 from tagstudio.qt.flowlayout import FlowLayout
 from tagstudio.qt.translations import Translations

@@ -9,7 +9,7 @@ from PySide6.QtCore import Signal
 
 from tagstudio.core.enums import TagClickActionOption
 from tagstudio.core.library.alchemy.enums import BrowsingState
-from tagstudio.core.library.alchemy.models import Tag
+from tagstudio.core.library.alchemy.library import Tag
 from tagstudio.core.utils.types import unwrap
 from tagstudio.qt.modals.build_tag import BuildTagPanel
 from tagstudio.qt.view.components.tag_box_view import TagBoxWidgetView

@@ -16,8 +16,7 @@ from PySide6.QtWidgets import (
 )
 
 from tagstudio.core.enums import Theme
-from tagstudio.core.library.alchemy.library import Library
-from tagstudio.core.library.alchemy.models import Entry
+from tagstudio.core.library.alchemy.library import Entry, Library
 from tagstudio.core.palette import ColorType, UiColor, get_ui_color
 from tagstudio.core.utils.types import unwrap
 from tagstudio.qt.controller.widgets.preview.preview_thumb_controller import PreviewThumb

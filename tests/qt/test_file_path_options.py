@@ -16,8 +16,7 @@ from PySide6.QtWidgets import QMenu, QMenuBar
 from pytestqt.qtbot import QtBot
 
 from tagstudio.core.enums import ShowFilepathOption
-from tagstudio.core.library.alchemy.library import Library, LibraryStatus
-from tagstudio.core.library.alchemy.models import Entry
+from tagstudio.core.library.alchemy.library import Entry, Library, LibraryStatus
 from tagstudio.core.utils.types import unwrap
 from tagstudio.qt.controller.widgets.preview_panel_controller import PreviewPanel
 from tagstudio.qt.modals.settings_panel import SettingsPanel
