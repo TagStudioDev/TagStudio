@@ -44,7 +44,7 @@ class Theme(Enum):
 class GlobalSettings(BaseModel):
     language: str = Field(default="en")
     open_last_loaded_on_startup: bool = Field(default=True)
-    generate_thumbs: bool = Field(default=False)
+    generate_thumbs: bool = Field(default=True)
     autoplay: bool = Field(default=True)
     loop: bool = Field(default=True)
     show_filenames_in_grid: bool = Field(default=True)
