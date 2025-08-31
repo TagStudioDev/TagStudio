@@ -9,6 +9,9 @@ from pathlib import Path
 import pytest
 
 from tagstudio.core.constants import TS_FOLDER_NAME
+from tagstudio.core.library.alchemy.constants import (
+    SQL_FILENAME,
+)
 from tagstudio.core.library.alchemy.library import Library
 
 CWD = Path(__file__)
@@ -36,8 +39,8 @@ def test_library_migrations(path: str):
     temp_path_ts = temp_path / TS_FOLDER_NAME
     temp_path_ts.mkdir(exist_ok=True)
     shutil.copy(
-        original_path / TS_FOLDER_NAME / Library.SQL_FILENAME,
-        temp_path / TS_FOLDER_NAME / Library.SQL_FILENAME,
+        original_path / TS_FOLDER_NAME / SQL_FILENAME,
+        temp_path / TS_FOLDER_NAME / SQL_FILENAME,
     )
 
     try:
