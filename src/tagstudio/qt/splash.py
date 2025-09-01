@@ -11,12 +11,13 @@ from PySide6.QtGui import QColor, QFont, QPainter, QPen, QPixmap
 from PySide6.QtWidgets import QSplashScreen, QWidget
 
 from tagstudio.core.constants import VERSION, VERSION_BRANCH
+from tagstudio.core.global_settings import Splash
 from tagstudio.qt.resource_manager import ResourceManager
 
 logger = structlog.get_logger(__name__)
 
 
-class Splash:
+class SplashScreen:
     """The custom splash screen widget for TagStudio."""
 
     COPYRIGHT_YEARS: str = "2021-2025"
@@ -24,11 +25,7 @@ class Splash:
     VERSION_STR: str = (
         f"Version {VERSION} {(' (' + VERSION_BRANCH + ')') if VERSION_BRANCH else ''}"
     )
-
-    SPLASH_CLASSIC: str = "classic"
-    SPLASH_GOO_GEARS: str = "goo_gears"
-    SPLASH_95: str = "95"
-    DEFAULT_SPLASH: str = SPLASH_GOO_GEARS
+    DEFAULT_SPLASH = Splash.GOO_GEARS
 
     def __init__(
         self,
@@ -41,11 +38,14 @@ class Splash:
         self.screen_width = screen_width
         self.ratio: float = device_ratio
         self.splash_screen: QSplashScreen | None = None
-        self.splash_name: str = splash_name if splash_name else Splash.DEFAULT_SPLASH
+        if not splash_name or splash_name == Splash.DEFAULT:
+            self.splash_name: str = SplashScreen.DEFAULT_SPLASH
+        else:
+            self.splash_name = splash_name
 
     def get_pixmap(self) -> QPixmap:
         """Get the pixmap used for the splash screen."""
-        pixmap: QPixmap | None = self.rm.get(f"splash_{self.splash_name}")
+        pixmap: QPixmap | None = self.rm.get(f"splash_{self.splash_name}")  # pyright: ignore[reportAssignmentType]
         if not pixmap:
             logger.error("[Splash] Splash screen not found:", splash_name=self.splash_name)
             pixmap = QPixmap(960, 540)
@@ -55,10 +55,12 @@ class Splash:
         match painter.font().family():
             case "Segoe UI":
                 point_size_scale = 0.75
+            case _:
+                pass
 
         # TODO: Store any differing data elsewhere and load dynamically instead of hardcoding.
         match self.splash_name:
-            case Splash.SPLASH_CLASSIC:
+            case Splash.CLASSIC:
                 # Copyright
                 font = painter.font()
                 font.setPointSize(math.floor(22 * point_size_scale))
@@ -68,7 +70,7 @@ class Splash:
                 painter.drawText(
                     QRect(0, -50, 960, 540),
                     int(Qt.AlignmentFlag.AlignBottom | Qt.AlignmentFlag.AlignHCenter),
-                    Splash.COPYRIGHT_STR,
+                    SplashScreen.COPYRIGHT_STR,
                 )
                 # Version
                 pen = QPen(QColor("#809782ff"))
@@ -76,10 +78,10 @@ class Splash:
                 painter.drawText(
                     QRect(0, -25, 960, 540),
                     int(Qt.AlignmentFlag.AlignBottom | Qt.AlignmentFlag.AlignHCenter),
-                    Splash.VERSION_STR,
+                    SplashScreen.VERSION_STR,
                 )
 
-            case Splash.SPLASH_GOO_GEARS:
+            case Splash.GOO_GEARS:
                 # Copyright
                 font = painter.font()
                 font.setPointSize(math.floor(22 * point_size_scale))
@@ -88,7 +90,7 @@ class Splash:
                 painter.setPen(pen)
                 painter.drawText(
                     QRect(40, 450, 960, 540),
-                    Splash.COPYRIGHT_STR,
+                    SplashScreen.COPYRIGHT_STR,
                 )
                 # Version
                 font = painter.font()
@@ -98,10 +100,10 @@ class Splash:
                 painter.setPen(pen)
                 painter.drawText(
                     QRect(40, 475, 960, 540),
-                    Splash.VERSION_STR,
+                    SplashScreen.VERSION_STR,
                 )
 
-            case Splash.SPLASH_95:
+            case Splash.NINETY_FIVE:
                 # Copyright
                 font = QFont()
                 font.setFamily("Times")
@@ -114,7 +116,7 @@ class Splash:
                 painter.drawText(
                     QRect(88, -25, 960, 540),
                     int(Qt.AlignmentFlag.AlignBottom | Qt.AlignmentFlag.AlignLeft),
-                    Splash.COPYRIGHT_STR,
+                    SplashScreen.COPYRIGHT_STR,
                 )
                 # Version
                 font.setPointSize(math.floor(22 * point_size_scale))
@@ -124,7 +126,7 @@ class Splash:
                 painter.drawText(
                     QRect(-30, 25, 960, 540),
                     int(Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignRight),
-                    Splash.VERSION_STR,
+                    SplashScreen.VERSION_STR,
                 )
 
             case _:

@@ -91,7 +91,7 @@ from tagstudio.qt.modals.tag_database import TagDatabasePanel
 from tagstudio.qt.modals.tag_search import TagSearchModal
 from tagstudio.qt.platform_strings import trash_term
 from tagstudio.qt.resource_manager import ResourceManager
-from tagstudio.qt.splash import Splash
+from tagstudio.qt.splash import SplashScreen
 from tagstudio.qt.translations import Translations
 from tagstudio.qt.widgets.item_thumb import BadgeType, ItemThumb
 from tagstudio.qt.widgets.migration_modal import JsonMigrationModal
@@ -327,10 +327,10 @@ class QtDriver(DriverMixin, QObject):
         self.main_window.dragMoveEvent = self.drag_move_event
         self.main_window.dropEvent = self.drop_event
 
-        self.splash: Splash = Splash(
+        self.splash: SplashScreen = SplashScreen(
             resource_manager=self.rm,
             screen_width=QGuiApplication.primaryScreen().geometry().width(),
-            splash_name="",  # TODO: Get splash name from config
+            splash_name=self.settings.splash,
             device_ratio=self.main_window.devicePixelRatio(),
         )
         self.splash.show()
