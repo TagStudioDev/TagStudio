@@ -1433,8 +1433,13 @@ class Library:
 
     def add_tags_to_entries(
         self, entry_ids: int | list[int], tag_ids: int | list[int] | set[int]
-    ) -> bool:
-        """Add one or more tags to one or more entries."""
+    ) -> int:
+        """Add one or more tags to one or more entries.
+
+        Returns:
+            The total number of tags added across all entries.
+        """
+        total_added: int = 0
         logger.info(
             "[Library][add_tags_to_entries]",
             entry_ids=entry_ids,
@@ -1448,16 +1453,12 @@ class Library:
                 for entry_id in entry_ids_:
                     try:
                         session.add(TagEntry(tag_id=tag_id, entry_id=entry_id))
-                        session.flush()
+                        total_added += 1
+                        session.commit()
                     except IntegrityError:
                         session.rollback()
-            try:
-                session.commit()
-            except IntegrityError as e:
-                logger.warning("[Library][add_tags_to_entries]", warning=e)
-                session.rollback()
-                return False
-            return True
+
+        return total_added
 
     def remove_tags_from_entries(
         self, entry_ids: int | list[int], tag_ids: int | list[int] | set[int]
@@ -1892,11 +1893,8 @@ class Library:
             if not result:
                 success = False
         tag_ids = [tag.id for tag in from_entry.tags]
-        add_result = self.add_tags_to_entries(into_entry.id, tag_ids)
+        self.add_tags_to_entries(into_entry.id, tag_ids)
         self.remove_entries([from_entry.id])
-
-        if not add_result:
-            success = False
 
         return success
 
