@@ -7,6 +7,10 @@
         "path": "qt/images/splash/goo_gears.png",
         "mode": "qpixmap"
     },
+    "splash_95": {
+        "path": "qt/images/splash/95.png",
+        "mode": "qpixmap"
+    },
     "icon": {
         "path": "icon.png",
         "mode": "pil"
