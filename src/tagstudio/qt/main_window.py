@@ -52,6 +52,142 @@ if typing.TYPE_CHECKING:
 logger = structlog.get_logger(__name__)
 
 
+def remove_accelerator_marker(label: str) -> str:
+    """Remove existing accelerator markers (&) from a label."""
+    result = ""
+    skip = False
+    for i, ch in enumerate(label):
+        if skip:
+            skip = False
+            continue
+        if ch == "&":
+            # escaped ampersand "&&"
+            if i + 1 < len(label) and label[i + 1] == "&":
+                result += "&"
+                skip = True
+            # otherwise skip this '&'
+            continue
+        result += ch
+    return result
+
+
+# Additional weight for first character in string
+FIRST_CHARACTER_EXTRA_WEIGHT = 50
+# Additional weight for the beginning of a word
+WORD_BEGINNING_EXTRA_WEIGHT = 50
+# Additional weight for a 'wanted' accelerator ie string with '&'
+WANTED_ACCEL_EXTRA_WEIGHT = 150
+
+
+def calculate_weights(text: str):
+    weights: dict[int, str] = {}
+
+    pos = 0
+    start_character = True
+    wanted_character = False
+
+    while pos < len(text):
+        c = text[pos]
+
+        # skip non typeable characters
+        if not c.isalnum() and c != "&":
+            start_character = True
+            pos += 1
+            continue
+
+        weight = 1
+
+        # add special weight to first character
+        if pos == 0:
+            weight += FIRST_CHARACTER_EXTRA_WEIGHT
+        elif start_character:  # add weight to word beginnings
+            weight += WORD_BEGINNING_EXTRA_WEIGHT
+            start_character = False
+
+        # add weight to characters that have an & beforehand
+        if wanted_character:
+            weight += WANTED_ACCEL_EXTRA_WEIGHT
+            wanted_character = False
+
+        # add decreasing weight to left characters
+        if pos < 50:
+            weight += 50 - pos
+
+        # try to preserve the wanted accelerators
+        if c == "&" and (pos != len(text) - 1 and text[pos + 1] != "&" and text[pos + 1].isalnum()):
+            wanted_character = True
+            pos += 1
+            continue
+
+        while weight in weights:
+            weight += 1
+
+        if c != "&":
+            weights[weight] = c
+
+        pos += 1
+
+    # update our maximum weight
+    max_weight = 0 if len(weights) == 0 else max(weights.keys())
+    return max_weight, weights
+
+
+def insert_mnemonic(label: str, char: str) -> str:
+    pos = label.lower().find(char)
+    if pos >= 0:
+        return label[:pos] + "&" + label[pos:]
+    return label
+
+
+def assign_mnemonics(menu: QMenu):
+    # Collect actions
+    actions = [a for a in menu.actions() if not a.isSeparator()]
+
+    # Sequence map: mnemonic key -> QAction
+    sequence_to_action: dict[str, QAction] = {}
+
+    final_text: dict[QAction, str] = {}
+
+    actions.reverse()
+
+    while len(actions) > 0:
+        action = actions.pop()
+        label = action.text()
+        _, weights = calculate_weights(label)
+
+        chosen_char = None
+
+        # Try candidates, starting from highest weight
+        for weight in sorted(weights.keys(), reverse=True):
+            c = weights[weight].lower()
+            other = sequence_to_action.get(c)
+
+            if other is None:
+                chosen_char = c
+                sequence_to_action[c] = action
+                break
+            else:
+                # Compare weights with existing action
+                other_max, _ = calculate_weights(remove_accelerator_marker(other.text()))
+                if weight > other_max:
+                    # Take over from weaker action
+                    actions.append(other)
+                    sequence_to_action[c] = action
+                    chosen_char = c
+
+        # Apply mnemonic if found
+        if chosen_char:
+            plain = remove_accelerator_marker(label)
+            new_label = insert_mnemonic(plain, chosen_char)
+            final_text[action] = new_label
+        else:
+            # No mnemonic assigned → clean text
+            final_text[action] = remove_accelerator_marker(label)
+
+    for a, t in final_text.items():
+        a.setText(t)
+
+
 class MainMenuBar(QMenuBar):
     file_menu: QMenu
     open_library_action: QAction
@@ -166,6 +302,7 @@ class MainMenuBar(QMenuBar):
 
         self.file_menu.addSeparator()
 
+        assign_mnemonics(self.file_menu)
         self.addMenu(self.file_menu)
 
     def setup_edit_menu(self):
@@ -295,6 +432,7 @@ class MainMenuBar(QMenuBar):
         self.color_manager_action.setEnabled(False)
         self.edit_menu.addAction(self.color_manager_action)
 
+        assign_mnemonics(self.edit_menu)
         self.addMenu(self.edit_menu)
 
     def setup_view_menu(self):
@@ -336,6 +474,7 @@ class MainMenuBar(QMenuBar):
 
         self.view_menu.addSeparator()
 
+        assign_mnemonics(self.view_menu)
         self.addMenu(self.view_menu)
 
     def setup_tools_menu(self):
@@ -362,6 +501,7 @@ class MainMenuBar(QMenuBar):
         self.clear_thumb_cache_action.setEnabled(False)
         self.tools_menu.addAction(self.clear_thumb_cache_action)
 
+        assign_mnemonics(self.tools_menu)
         self.addMenu(self.tools_menu)
 
     def setup_macros_menu(self):
@@ -371,6 +511,7 @@ class MainMenuBar(QMenuBar):
         self.folders_to_tags_action.setEnabled(False)
         self.macros_menu.addAction(self.folders_to_tags_action)
 
+        assign_mnemonics(self.macros_menu)
         self.addMenu(self.macros_menu)
 
     def setup_help_menu(self):
@@ -379,6 +520,7 @@ class MainMenuBar(QMenuBar):
         self.about_action = QAction(Translations["menu.help.about"], self)
         self.help_menu.addAction(self.about_action)
 
+        assign_mnemonics(self.help_menu)
         self.addMenu(self.help_menu)
 
     def rebuild_open_recent_library_menu(
