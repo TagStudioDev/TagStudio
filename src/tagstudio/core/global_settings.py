@@ -39,6 +39,7 @@ class Theme(IntEnum):
 
 class Splash(StrEnum):
     DEFAULT = "default"
+    RANDOM = "random"
     CLASSIC = "classic"
     GOO_GEARS = "goo_gears"
     NINETY_FIVE = "95"

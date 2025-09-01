@@ -43,6 +43,7 @@ class SettingsPanel(PanelWidget):
 
     splash_map: dict[Splash, str] = {
         Splash.DEFAULT: Translations["settings.splash.option.default"],
+        Splash.RANDOM: Translations["settings.splash.option.random"],
         Splash.CLASSIC: Translations["settings.splash.option.classic"],
         Splash.GOO_GEARS: Translations["settings.splash.option.goo_gears"],
         Splash.NINETY_FIVE: Translations["settings.splash.option.ninety_five"],

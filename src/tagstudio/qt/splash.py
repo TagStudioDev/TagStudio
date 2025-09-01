@@ -4,6 +4,7 @@
 
 
 import math
+import random
 
 import structlog
 from PySide6.QtCore import QRect, Qt
@@ -40,6 +41,11 @@ class SplashScreen:
         self.splash_screen: QSplashScreen | None = None
         if not splash_name or splash_name == Splash.DEFAULT:
             self.splash_name: str = SplashScreen.DEFAULT_SPLASH
+        elif splash_name == Splash.RANDOM:
+            splash_list = list(Splash)
+            splash_list.remove(Splash.DEFAULT)
+            splash_list.remove(Splash.RANDOM)
+            self.splash_name = random.choice(splash_list)
         else:
             self.splash_name = splash_name
 
