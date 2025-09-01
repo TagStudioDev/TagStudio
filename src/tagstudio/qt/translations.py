@@ -6,6 +6,8 @@ from typing import Any
 import structlog
 import ujson
 
+from tagstudio.qt.mnemonics import remove_mnemonic_marker
+
 logger = structlog.get_logger(__name__)
 
 DEFAULT_TRANSLATION = "en"
@@ -61,9 +63,7 @@ class Translator:
         self._strings = self.__get_translation_dict(lang)
         if system() == "Darwin":
             for k, v in self._strings.items():
-                self._strings[k] = (
-                    v.replace("&&", "<ESC_AMP>").replace("&", "", 1).replace("<ESC_AMP>", "&&")
-                )
+                self._strings[k] = remove_mnemonic_marker(v)
 
     def __format(self, text: str, **kwargs) -> str:
         try:
