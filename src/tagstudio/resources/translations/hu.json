@@ -197,7 +197,7 @@
     "library_info.stats.namespaces": "Névterek:",
     "library_info.stats.tags": "Címkék:",
     "library_info.title": "„{library_dir}” könyvtár",
-    "library_info.version": "Könyvtárformátum verziója: {verzió}",
+    "library_info.version": "Könyvtárformátum verziója: {version}",
     "library_object.name": "Megnevezés",
     "library_object.name_required": "Megnevezés (kötelező)",
     "library_object.slug": "Azonosító-helyőrző",
