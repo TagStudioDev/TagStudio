@@ -13,21 +13,16 @@ from pydantic import BaseModel, Field
 
 from tagstudio.core.enums import ShowFilepathOption, TagClickActionOption
 
+logger = structlog.get_logger(__name__)
+
 DEFAULT_GLOBAL_SETTINGS_PATH = (
     Path.home() / "Appdata" / "Roaming" / "TagStudio" / "settings.toml"
     if platform.system() == "Windows"
     else Path.home() / ".config" / "TagStudio" / "settings.toml"
 )
 
-logger = structlog.get_logger(__name__)
-
-
-class TomlEnumEncoder(toml.TomlEncoder):
-    @override
-    def dump_value(self, v):  # pyright: ignore[reportMissingParameterType]
-        if isinstance(v, Enum):
-            return super().dump_value(v.value)
-        return super().dump_value(v)
+DEFAULT_THUMB_CACHE_SIZE = 500_000_000  # Number in bytes
+MIN_THUMB_CACHE_SIZE = 10_000_000  # Number in bytes
 
 
 class Theme(IntEnum):
@@ -45,6 +40,14 @@ class Splash(StrEnum):
     NINETY_FIVE = "95"
 
 
+class TomlEnumEncoder(toml.TomlEncoder):
+    @override
+    def dump_value(self, v):  # pyright: ignore[reportMissingParameterType]
+        if isinstance(v, Enum):
+            return super().dump_value(v.value)
+        return super().dump_value(v)
+
+
 # NOTE: pydantic also has a BaseSettings class (from pydantic-settings) that allows any settings
 # properties to be overwritten with environment variables. As TagStudio is not currently using
 # environment variables, this was not based on that, but that may be useful in the future.
@@ -52,6 +55,7 @@ class GlobalSettings(BaseModel):
     language: str = Field(default="en")
     open_last_loaded_on_startup: bool = Field(default=True)
     generate_thumbs: bool = Field(default=True)
+    thumb_cache_size: int = Field(default=DEFAULT_THUMB_CACHE_SIZE)
     autoplay: bool = Field(default=True)
     loop: bool = Field(default=True)
     show_filenames_in_grid: bool = Field(default=True)

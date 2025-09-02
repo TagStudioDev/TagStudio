@@ -5,6 +5,8 @@
 
 """A pagination widget created for TagStudio."""
 
+from typing import override
+
 from PIL import Image, ImageQt
 from PySide6.QtCore import QObject, QSize, Signal
 from PySide6.QtGui import QIntValidator, QPixmap
@@ -285,9 +287,10 @@ class Pagination(QWidget, QObject):
 
 
 class Validator(QIntValidator):
-    def __init__(self, bottom: int, top: int, parent=None) -> None:
-        super().__init__(bottom, top, parent)
+    def __init__(self, bottom: int, top: int) -> None:
+        super().__init__(bottom, top)
 
+    @override
     def fixup(self, input: str) -> str:
         input = input.strip("0")
         return super().fixup(str(self.top()) if input else "1")

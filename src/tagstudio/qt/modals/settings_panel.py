@@ -3,13 +3,17 @@
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
 
+import math
 from typing import TYPE_CHECKING, Any
 
+import structlog
 from PySide6.QtCore import Qt
+from PySide6.QtGui import QDoubleValidator
 from PySide6.QtWidgets import (
     QCheckBox,
     QComboBox,
     QFormLayout,
+    QHBoxLayout,
     QLabel,
     QLineEdit,
     QTabWidget,
@@ -18,12 +22,19 @@ from PySide6.QtWidgets import (
 )
 
 from tagstudio.core.enums import ShowFilepathOption, TagClickActionOption
-from tagstudio.core.global_settings import Splash, Theme
+from tagstudio.core.global_settings import (
+    DEFAULT_THUMB_CACHE_SIZE,
+    MIN_THUMB_CACHE_SIZE,
+    Splash,
+    Theme,
+)
 from tagstudio.qt.translations import DEFAULT_TRANSLATION, LANGUAGES, Translations
 from tagstudio.qt.widgets.panel import PanelModal, PanelWidget
 
 if TYPE_CHECKING:
     from tagstudio.qt.ts_qt import QtDriver
+
+logger = structlog.get_logger(__name__)
 
 
 class SettingsPanel(PanelWidget):
@@ -142,6 +153,26 @@ class SettingsPanel(PanelWidget):
         self.generate_thumbs.setChecked(self.driver.settings.generate_thumbs)
         form_layout.addRow(Translations["settings.generate_thumbs"], self.generate_thumbs)
 
+        # Thumbnail Cache Size
+        self.thumb_cache_size_container = QWidget()
+        self.thumb_cache_size_layout = QHBoxLayout(self.thumb_cache_size_container)
+        self.thumb_cache_size_layout.setContentsMargins(0, 0, 0, 0)
+        self.thumb_cache_size_layout.setSpacing(6)
+        self.thumb_cache_size = QLineEdit()
+        self.thumb_cache_size.setAlignment(Qt.AlignmentFlag.AlignRight)
+        # NOTE: The GUI shows the values in MiB, while the CacheManager uses bytes.
+        self.validator = QDoubleValidator(MIN_THUMB_CACHE_SIZE / 1000, 1_000_000_000, 2)
+        self.thumb_cache_size.setValidator(self.validator)
+        self.thumb_cache_size.setText(
+            self.__bytes_to_mb_str(max(self.driver.settings.thumb_cache_size, MIN_THUMB_CACHE_SIZE))
+        )
+        self.thumb_cache_size_layout.addWidget(self.thumb_cache_size)
+        self.thumb_cache_size_layout.setStretch(1, 2)
+        self.thumb_cache_size_layout.addWidget(QLabel("MiB"))
+        form_layout.addRow(
+            Translations["settings.thumb_cache_size.label"], self.thumb_cache_size_container
+        )
+
         # Autoplay
         self.autoplay_checkbox = QCheckBox()
         self.autoplay_checkbox.setChecked(self.driver.settings.autoplay)
@@ -252,6 +283,10 @@ class SettingsPanel(PanelWidget):
             "language": self.__get_language(),
             "open_last_loaded_on_startup": self.open_last_lib_checkbox.isChecked(),
             "generate_thumbs": self.generate_thumbs.isChecked(),
+            "thumb_cache_size": max(
+                self.__mb_str_to_bytes(self.thumb_cache_size.text(), DEFAULT_THUMB_CACHE_SIZE),
+                MIN_THUMB_CACHE_SIZE,
+            ),
             "autoplay": self.autoplay_checkbox.isChecked(),
             "show_filenames_in_grid": self.show_filenames_checkbox.isChecked(),
             "page_size": int(self.page_size_line_edit.text()),
@@ -264,6 +299,17 @@ class SettingsPanel(PanelWidget):
             "splash": self.splash_combobox.currentData(),
         }
 
+    def __mb_str_to_bytes(self, string: str, default: int = 0) -> int:
+        try:
+            mb_float: float = float(string)
+            return math.floor(mb_float * 1_000_000)
+        except ValueError:
+            logger.error(f"[SettingsPanel] Count not convert string '{string}' to float value")
+            return default
+
+    def __bytes_to_mb_str(self, byte_int: int) -> str:
+        return str(byte_int / 1_000_000).removesuffix(".0")
+
     def update_settings(self, driver: "QtDriver"):
         settings = self.get_settings()
 
@@ -271,6 +317,7 @@ class SettingsPanel(PanelWidget):
         driver.settings.open_last_loaded_on_startup = settings["open_last_loaded_on_startup"]
         driver.settings.autoplay = settings["autoplay"]
         driver.settings.generate_thumbs = settings["generate_thumbs"]
+        driver.settings.thumb_cache_size = settings["thumb_cache_size"]
         driver.settings.show_filenames_in_grid = settings["show_filenames_in_grid"]
         driver.settings.page_size = settings["page_size"]
         driver.settings.show_filepath = settings["show_filepath"]

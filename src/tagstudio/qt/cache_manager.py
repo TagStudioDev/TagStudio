@@ -12,6 +12,7 @@ import structlog
 from PIL import Image
 
 from tagstudio.core.constants import THUMB_CACHE_NAME, TS_FOLDER_NAME
+from tagstudio.core.global_settings import DEFAULT_THUMB_CACHE_SIZE
 
 logger = structlog.get_logger(__name__)
 
@@ -23,14 +24,13 @@ class CacheEntry:
 
 
 class CacheManager:
-    DEFAULT_MAX_SIZE = 500_000_000
-    DEFAULT_MAX_FOLDER_SIZE = 10_000_000
+    MAX_FOLDER_SIZE = 10_000_000  # Number in bytes
 
     def __init__(
         self,
         library_dir: Path,
-        max_size: int = DEFAULT_MAX_SIZE,
-        max_folder_size: int = DEFAULT_MAX_FOLDER_SIZE,
+        max_size: int = DEFAULT_THUMB_CACHE_SIZE,
+        max_folder_size: int = MAX_FOLDER_SIZE,
     ):
         self._lock = RLock()
         self.cache_folder = library_dir / TS_FOLDER_NAME / THUMB_CACHE_NAME
