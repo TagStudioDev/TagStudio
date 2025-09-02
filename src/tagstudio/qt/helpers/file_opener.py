@@ -20,13 +20,15 @@ from tagstudio.qt.helpers.silent_popen import silent_Popen
 logger = structlog.get_logger(__name__)
 
 
-def open_file(path: str | Path, file_manager: bool = False):
+def open_file(path: str | Path, file_manager: bool = False, windows_start_command: bool = False):
     """Open a file in the default application or file explorer.
 
     Args:
         path (str): The path to the file to open.
         file_manager (bool, optional): Whether to open the file in the file manager
             (e.g. Finder on macOS). Defaults to False.
+        windows_start_command (bool): Flag to determine if the older 'start' command should be used
+            on Windows for opening files. This fixes issues on some systems in niche cases.
     """
     path = Path(path)
     logger.info("Opening file", path=path)
@@ -51,14 +53,26 @@ def open_file(path: str | Path, file_manager: bool = False):
                     | subprocess.CREATE_BREAKAWAY_FROM_JOB,
                 )
             else:
-                command = f'"{normpath}"'
-                silent_Popen(
-                    command,
-                    shell=True,
-                    close_fds=True,
-                    creationflags=subprocess.CREATE_NEW_PROCESS_GROUP
-                    | subprocess.CREATE_BREAKAWAY_FROM_JOB,
-                )
+                if windows_start_command:
+                    command_name = "start"
+                    # First parameter is for title, NOT filepath
+                    command_args = ["", normpath]
+                    subprocess.Popen(
+                        [command_name] + command_args,
+                        shell=True,
+                        close_fds=True,
+                        creationflags=subprocess.CREATE_NEW_PROCESS_GROUP
+                        | subprocess.CREATE_BREAKAWAY_FROM_JOB,
+                    )
+                else:
+                    command = f'"{normpath}"'
+                    silent_Popen(
+                        command,
+                        shell=True,
+                        close_fds=True,
+                        creationflags=subprocess.CREATE_NEW_PROCESS_GROUP
+                        | subprocess.CREATE_BREAKAWAY_FROM_JOB,
+                    )
         else:
             if sys.platform == "darwin":
                 command_name = "open"

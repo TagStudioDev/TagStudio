@@ -144,7 +144,9 @@ class PreviewThumb(PreviewThumbView):
             return self.__get_image_stats(filepath)
 
     def _open_file_action_callback(self):
-        open_file(self.__current_file)
+        open_file(
+            self.__current_file, windows_start_command=self.__driver.settings.windows_start_command
+        )
 
     def _open_explorer_action_callback(self):
         open_file(self.__current_file, file_manager=True)
@@ -154,4 +156,6 @@ class PreviewThumb(PreviewThumbView):
             self.__driver.delete_files_callback(self.__current_file)
 
     def _button_wrapper_callback(self):
-        open_file(self.__current_file)
+        open_file(
+            self.__current_file, windows_start_command=self.__driver.settings.windows_start_command
+        )
