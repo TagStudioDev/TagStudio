@@ -162,31 +162,34 @@ class RefreshDirTracker:
 
         logger.info("[Refresh]: Falling back to wcmatch for scanning")
 
-        for f in pathlib.Path(str(library_dir)).glob(
-            "***/*", flags=PATH_GLOB_FLAGS, exclude=ignore_patterns
-        ):
-            end_time_loop = time()
-            # Yield output every 1/30 of a second
-            if (end_time_loop - start_time_loop) > 0.034:
-                yield dir_file_count
-                start_time_loop = time()
+        try:
+            for f in pathlib.Path(str(library_dir)).glob(
+                "***/*", flags=PATH_GLOB_FLAGS, exclude=ignore_patterns
+            ):
+                end_time_loop = time()
+                # Yield output every 1/30 of a second
+                if (end_time_loop - start_time_loop) > 0.034:
+                    yield dir_file_count
+                    start_time_loop = time()
 
-            # Skip if the file/path is already mapped in the Library
-            if f in self.library.included_files:
+                # Skip if the file/path is already mapped in the Library
+                if f in self.library.included_files:
+                    dir_file_count += 1
+                    continue
+
+                # Ignore if the file is a directory
+                if f.is_dir():
+                    continue
+
                 dir_file_count += 1
-                continue
+                self.library.included_files.add(f)
 
-            # Ignore if the file is a directory
-            if f.is_dir():
-                continue
+                relative_path = f.relative_to(library_dir)
 
-            dir_file_count += 1
-            self.library.included_files.add(f)
-
-            relative_path = f.relative_to(library_dir)
-
-            if not self.library.has_path_entry(relative_path):
-                self.files_not_in_library.append(relative_path)
+                if not self.library.has_path_entry(relative_path):
+                    self.files_not_in_library.append(relative_path)
+        except ValueError:
+            logger.info("[Refresh]: ValueError when refreshing directory with wcmatch!")
 
         end_time_total = time()
         yield dir_file_count
