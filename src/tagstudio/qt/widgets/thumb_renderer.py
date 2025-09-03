@@ -1524,23 +1524,8 @@ class ThumbRenderer(QObject):
         if _filepath and _filepath.is_file():
             try:
                 ext: str = _filepath.suffix.lower() if _filepath.suffix else _filepath.stem.lower()
-                # Ebooks =======================================================
-                if MediaCategories.is_ext_in_category(
-                    ext, MediaCategories.EBOOK_TYPES, mime_fallback=True
-                ):
-                    image = self._epub_cover(_filepath)
-                # Krita ========================================================
-                elif MediaCategories.is_ext_in_category(
-                    ext, MediaCategories.KRITA_TYPES, mime_fallback=True
-                ):
-                    image = self._krita_thumb(_filepath)
-                # VTF ==========================================================
-                elif MediaCategories.is_ext_in_category(
-                    ext, MediaCategories.SOURCE_ENGINE_TYPES, mime_fallback=True
-                ):
-                    image = self._vtf_thumb(_filepath)
                 # Images =======================================================
-                elif MediaCategories.is_ext_in_category(
+                if MediaCategories.is_ext_in_category(
                     ext, MediaCategories.IMAGE_TYPES, mime_fallback=True
                 ):
                     # Raw Images -----------------------------------------------
@@ -1567,6 +1552,11 @@ class ThumbRenderer(QObject):
                 # PowerPoint Slideshow
                 elif ext in {".pptx"}:
                     image = self._powerpoint_thumb(_filepath)
+                # Krita ========================================================
+                elif MediaCategories.is_ext_in_category(
+                    ext, MediaCategories.KRITA_TYPES, mime_fallback=True
+                ):
+                    image = self._krita_thumb(_filepath)
                 # OpenDocument/OpenOffice ======================================
                 elif MediaCategories.is_ext_in_category(
                     ext, MediaCategories.OPEN_DOCUMENT_TYPES, mime_fallback=True
@@ -1600,6 +1590,11 @@ class ThumbRenderer(QObject):
                         savable_media_type = False
                         if image is not None:
                             image = self._apply_overlay_color(image, UiColor.GREEN)
+                # Ebooks =======================================================
+                elif MediaCategories.is_ext_in_category(
+                    ext, MediaCategories.EBOOK_TYPES, mime_fallback=True
+                ):
+                    image = self._epub_cover(_filepath)
                 # Blender ======================================================
                 elif MediaCategories.is_ext_in_category(
                     ext, MediaCategories.BLENDER_TYPES, mime_fallback=True
@@ -1610,6 +1605,11 @@ class ThumbRenderer(QObject):
                     ext, MediaCategories.PDF_TYPES, mime_fallback=True
                 ):
                     image = self._pdf_thumb(_filepath, adj_size)
+                # VTF ==========================================================
+                elif MediaCategories.is_ext_in_category(
+                    ext, MediaCategories.SOURCE_ENGINE_TYPES, mime_fallback=True
+                ):
+                    image = self._vtf_thumb(_filepath)
                 # No Rendered Thumbnail ========================================
                 if not image:
                     raise NoRendererError
