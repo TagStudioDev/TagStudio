@@ -31,6 +31,7 @@ from tagstudio.core.constants import (
 )
 from tagstudio.core.enums import LibraryPrefs
 from tagstudio.core.library.alchemy import default_color_groups
+from tagstudio.core.library.alchemy.constants import SQL_FILENAME
 from tagstudio.core.library.alchemy.joins import TagParent
 from tagstudio.core.library.alchemy.library import Library as SqliteLibrary
 from tagstudio.core.library.alchemy.models import Entry, TagAlias
@@ -492,7 +493,7 @@ class JsonMigrationModal(QObject):
 
     def finish_migration(self):
         """Finish the migration upon user approval."""
-        final_name = self.json_lib.library_dir / TS_FOLDER_NAME / SqliteLibrary.SQL_FILENAME
+        final_name = self.json_lib.library_dir / TS_FOLDER_NAME / SQL_FILENAME
         if self.temp_path.exists():
             self.temp_path.rename(final_name)
 
