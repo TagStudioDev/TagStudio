@@ -29,7 +29,7 @@ from tagstudio.core.library.alchemy.enums import TagColorEnum
 from tagstudio.core.library.alchemy.library import Library, Tag, TagColorGroup
 from tagstudio.core.palette import ColorType, UiColor, get_tag_color, get_ui_color
 from tagstudio.qt.modals.tag_color_selection import TagColorSelection
-from tagstudio.qt.modals.tag_search import TagSearchModal
+from tagstudio.qt.modals.tag_search import TagSearchModal, TagSearchPanel
 from tagstudio.qt.translations import Translations
 from tagstudio.qt.widgets.panel import PanelModal, PanelWidget
 from tagstudio.qt.widgets.tag import (
@@ -384,10 +384,11 @@ class BuildTagPanel(PanelWidget):
         tag_widget = TagWidget(
             tag,
             library=self.lib,
-            has_edit=False,
+            has_edit=True,
             has_remove=True,
         )
         tag_widget.on_remove.connect(lambda t=parent_id: self.remove_parent_tag_callback(t))
+        tag_widget.on_edit.connect(lambda t=tag: TagSearchPanel(library=self.lib).edit_tag(t))
         row.addWidget(tag_widget)
 
         # Add Disambiguation Tag Button

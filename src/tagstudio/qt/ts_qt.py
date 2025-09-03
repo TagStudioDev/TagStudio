@@ -45,7 +45,6 @@ from PySide6.QtWidgets import (
     QScrollArea,
 )
 
-# this import has side-effect of import PySide resources
 import tagstudio.qt.resources_rc  # noqa: F401
 from tagstudio.core.constants import TAG_ARCHIVED, TAG_FAVORITE, VERSION, VERSION_BRANCH
 from tagstudio.core.driver import DriverMixin
@@ -67,6 +66,9 @@ from tagstudio.core.utils.refresh_dir import RefreshDirTracker
 from tagstudio.core.utils.types import unwrap
 from tagstudio.core.utils.web import strip_web_protocol
 from tagstudio.qt.cache_manager import CacheManager
+
+# this import has side-effect of import PySide resources
+from tagstudio.qt.controller.fix_ignored_modal_controller import FixIgnoredEntriesModal
 from tagstudio.qt.controller.widgets.ignore_modal_controller import IgnoreModal
 from tagstudio.qt.controller.widgets.library_info_window_controller import LibraryInfoWindow
 from tagstudio.qt.helpers.custom_runnable import CustomRunnable
@@ -87,7 +89,7 @@ from tagstudio.qt.modals.tag_database import TagDatabasePanel
 from tagstudio.qt.modals.tag_search import TagSearchModal
 from tagstudio.qt.platform_strings import trash_term
 from tagstudio.qt.resource_manager import ResourceManager
-from tagstudio.qt.splash import Splash
+from tagstudio.qt.splash import SplashScreen
 from tagstudio.qt.translations import Translations
 from tagstudio.qt.widgets.item_thumb import BadgeType, ItemThumb
 from tagstudio.qt.widgets.migration_modal import JsonMigrationModal
@@ -178,6 +180,7 @@ class QtDriver(DriverMixin, QObject):
     folders_modal: FoldersToTagsModal
     about_modal: AboutModal
     unlinked_modal: FixUnlinkedEntriesModal
+    ignored_modal: FixIgnoredEntriesModal
     dupe_modal: FixDupeFilesModal
     library_info_window: LibraryInfoWindow
 
@@ -322,10 +325,10 @@ class QtDriver(DriverMixin, QObject):
         self.main_window.dragMoveEvent = self.drag_move_event
         self.main_window.dropEvent = self.drop_event
 
-        self.splash: Splash = Splash(
+        self.splash: SplashScreen = SplashScreen(
             resource_manager=self.rm,
             screen_width=QGuiApplication.primaryScreen().geometry().width(),
-            splash_name="",  # TODO: Get splash name from config
+            splash_name=self.settings.splash,
             device_ratio=self.main_window.devicePixelRatio(),
         )
         self.splash.show()
@@ -499,6 +502,15 @@ class QtDriver(DriverMixin, QObject):
 
         self.main_window.menu_bar.fix_unlinked_entries_action.triggered.connect(
             create_fix_unlinked_entries_modal
+        )
+
+        def create_ignored_entries_modal():
+            if not hasattr(self, "ignored_modal"):
+                self.ignored_modal = FixIgnoredEntriesModal(self.lib, self)
+            self.ignored_modal.show()
+
+        self.main_window.menu_bar.fix_ignored_entries_action.triggered.connect(
+            create_ignored_entries_modal
         )
 
         def create_dupe_files_modal():
@@ -751,6 +763,7 @@ class QtDriver(DriverMixin, QObject):
             self.main_window.menu_bar.ignore_modal_action.setEnabled(False)
             self.main_window.menu_bar.new_tag_action.setEnabled(False)
             self.main_window.menu_bar.fix_unlinked_entries_action.setEnabled(False)
+            self.main_window.menu_bar.fix_ignored_entries_action.setEnabled(False)
             self.main_window.menu_bar.fix_dupe_files_action.setEnabled(False)
             self.main_window.menu_bar.clear_thumb_cache_action.setEnabled(False)
             self.main_window.menu_bar.folders_to_tags_action.setEnabled(False)
@@ -1745,6 +1758,7 @@ class QtDriver(DriverMixin, QObject):
         self.main_window.menu_bar.ignore_modal_action.setEnabled(True)
         self.main_window.menu_bar.new_tag_action.setEnabled(True)
         self.main_window.menu_bar.fix_unlinked_entries_action.setEnabled(True)
+        self.main_window.menu_bar.fix_ignored_entries_action.setEnabled(True)
         self.main_window.menu_bar.fix_dupe_files_action.setEnabled(True)
         self.main_window.menu_bar.clear_thumb_cache_action.setEnabled(True)
         self.main_window.menu_bar.folders_to_tags_action.setEnabled(True)

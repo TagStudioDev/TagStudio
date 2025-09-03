@@ -38,6 +38,7 @@ from tagstudio.core.library.alchemy.enums import SortingModeEnum
 from tagstudio.qt.controller.widgets.preview_panel_controller import PreviewPanel
 from tagstudio.qt.flowlayout import FlowLayout
 from tagstudio.qt.helpers.color_overlay import theme_fg_overlay
+from tagstudio.qt.mnemonics import assign_mnemonics
 from tagstudio.qt.pagination import Pagination
 from tagstudio.qt.platform_strings import trash_term
 from tagstudio.qt.resource_manager import ResourceManager
@@ -80,6 +81,7 @@ class MainMenuBar(QMenuBar):
 
     tools_menu: QMenu
     fix_unlinked_entries_action: QAction
+    fix_ignored_entries_action: QAction
     fix_dupe_files_action: QAction
     clear_thumb_cache_action: QAction
 
@@ -166,6 +168,7 @@ class MainMenuBar(QMenuBar):
 
         self.file_menu.addSeparator()
 
+        assign_mnemonics(self.file_menu)
         self.addMenu(self.file_menu)
 
     def setup_edit_menu(self):
@@ -293,6 +296,7 @@ class MainMenuBar(QMenuBar):
         self.color_manager_action.setEnabled(False)
         self.edit_menu.addAction(self.color_manager_action)
 
+        assign_mnemonics(self.edit_menu)
         self.addMenu(self.edit_menu)
 
     def setup_view_menu(self):
@@ -337,6 +341,7 @@ class MainMenuBar(QMenuBar):
 
         self.view_menu.addSeparator()
 
+        assign_mnemonics(self.view_menu)
         self.addMenu(self.view_menu)
 
     def setup_tools_menu(self):
@@ -348,6 +353,13 @@ class MainMenuBar(QMenuBar):
         )
         self.fix_unlinked_entries_action.setEnabled(False)
         self.tools_menu.addAction(self.fix_unlinked_entries_action)
+
+        # Fix Ignored Entries
+        self.fix_ignored_entries_action = QAction(
+            Translations["menu.tools.fix_ignored_entries"], self
+        )
+        self.fix_ignored_entries_action.setEnabled(False)
+        self.tools_menu.addAction(self.fix_ignored_entries_action)
 
         # Fix Duplicate Files
         self.fix_dupe_files_action = QAction(Translations["menu.tools.fix_duplicate_files"], self)
@@ -363,6 +375,7 @@ class MainMenuBar(QMenuBar):
         self.clear_thumb_cache_action.setEnabled(False)
         self.tools_menu.addAction(self.clear_thumb_cache_action)
 
+        assign_mnemonics(self.tools_menu)
         self.addMenu(self.tools_menu)
 
     def setup_macros_menu(self):
@@ -372,6 +385,7 @@ class MainMenuBar(QMenuBar):
         self.folders_to_tags_action.setEnabled(False)
         self.macros_menu.addAction(self.folders_to_tags_action)
 
+        assign_mnemonics(self.macros_menu)
         self.addMenu(self.macros_menu)
 
     def setup_help_menu(self):
@@ -380,6 +394,7 @@ class MainMenuBar(QMenuBar):
         self.about_action = QAction(Translations["menu.help.about"], self)
         self.help_menu.addAction(self.about_action)
 
+        assign_mnemonics(self.help_menu)
         self.addMenu(self.help_menu)
 
     def rebuild_open_recent_library_menu(
@@ -510,11 +525,8 @@ class MainWindow(QMainWindow):
         self.central_layout.setObjectName("central_layout")
 
         self.setup_search_bar()
-
         self.setup_extra_input_bar()
-
         self.setup_content(driver)
-
         self.setCentralWidget(self.central_widget)
 
     def setup_search_bar(self):
@@ -618,7 +630,6 @@ class MainWindow(QMainWindow):
         self.content_splitter.setHandleWidth(12)
 
         self.setup_entry_list(driver)
-
         self.setup_preview_panel(driver)
 
         self.content_splitter.setStretchFactor(0, 1)

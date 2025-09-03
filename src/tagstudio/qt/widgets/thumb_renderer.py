@@ -16,6 +16,7 @@ from warnings import catch_warnings
 
 import cv2
 import numpy as np
+import pillow_avif  # noqa: F401 # pyright: ignore[reportUnusedImport]
 import rawpy
 import srctools
 import structlog
@@ -33,7 +34,7 @@ from PIL import (
     UnidentifiedImageError,
 )
 from PIL.Image import DecompressionBombError
-from pillow_heif import register_avif_opener, register_heif_opener
+from pillow_heif import register_heif_opener
 from PySide6.QtCore import (
     QBuffer,
     QFile,
@@ -58,6 +59,7 @@ from tagstudio.core.library.ignore import Ignore
 from tagstudio.core.media_types import MediaCategories, MediaType
 from tagstudio.core.palette import UI_COLORS, ColorType, UiColor, get_ui_color
 from tagstudio.core.utils.encoding import detect_char_encoding
+from tagstudio.core.utils.types import unwrap
 from tagstudio.qt.helpers.blender_thumbnailer import blend_thumb
 from tagstudio.qt.helpers.color_overlay import theme_fg_overlay
 from tagstudio.qt.helpers.file_tester import is_readable_video
@@ -79,7 +81,6 @@ os.environ["OPENCV_IO_ENABLE_OPENEXR"] = "1"
 logger = structlog.get_logger(__name__)
 Image.MAX_IMAGE_PIXELS = None
 register_heif_opener()
-register_avif_opener()
 
 try:
     import pillow_jxl  # noqa: F401 # pyright: ignore[reportUnusedImport]
@@ -1436,7 +1437,9 @@ class ThumbRenderer(QObject):
                 if (
                     image
                     and Ignore.compiled_patterns
-                    and Ignore.compiled_patterns.match(filepath.relative_to(self.lib.library_dir))
+                    and Ignore.compiled_patterns.match(
+                        filepath.relative_to(unwrap(self.lib.library_dir))
+                    )
                 ):
                     image = render_ignored((adj_size, adj_size), pixel_ratio, image)
             except TypeError:

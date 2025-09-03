@@ -169,9 +169,11 @@ class FieldContainers(QWidget):
         "Character" -> "Johnny Bravo",
         "TV" -> Johnny Bravo"
         """
-        hierarchy_tags = self.lib.get_tag_hierarchy(t.id for t in tags)
+        loop_cutoff = 1024  # Used for stopping the while loop
 
+        hierarchy_tags = self.lib.get_tag_hierarchy(t.id for t in tags)
         categories: dict[Tag | None, set[Tag]] = {None: set()}
+
         for tag in hierarchy_tags.values():
             if tag.is_category:
                 categories[tag] = set()
@@ -179,7 +181,15 @@ class FieldContainers(QWidget):
             tag = hierarchy_tags[tag.id]
             has_category_parent = False
             parent_tags = tag.parent_tags
+
+            loop_counter = 0
             while len(parent_tags) > 0:
+                # NOTE: This is for preventing infinite loops in the event a tag is parented
+                # to itself cyclically.
+                loop_counter += 1
+                if loop_counter >= loop_cutoff:
+                    break
+
                 grandparent_tags: set[Tag] = set()
                 for parent_tag in parent_tags:
                     if parent_tag in categories:
@@ -187,6 +197,7 @@ class FieldContainers(QWidget):
                         has_category_parent = True
                     grandparent_tags.update(parent_tag.parent_tags)
                 parent_tags = grandparent_tags
+
             if tag.is_category:
                 categories[tag].add(tag)
             elif not has_category_parent:

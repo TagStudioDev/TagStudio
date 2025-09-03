@@ -1,3 +1,8 @@
+# Copyright (C) 2025
+# Licensed under the GPL-3.0 License.
+# Created for TagStudio: https://github.com/CyanVoxel/TagStudio
+
+
 import shutil
 from collections.abc import Iterator
 from dataclasses import dataclass, field
@@ -10,7 +15,7 @@ from wcmatch import pathlib
 
 from tagstudio.core.library.alchemy.library import Entry, Library
 from tagstudio.core.library.ignore import PATH_GLOB_FLAGS, Ignore, ignore_to_glob
-from tagstudio.qt.helpers.silent_popen import silent_run
+from tagstudio.qt.helpers.silent_popen import silent_run  # pyright: ignore
 
 logger = structlog.get_logger(__name__)
 

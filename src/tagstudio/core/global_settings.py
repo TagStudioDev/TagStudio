@@ -3,7 +3,7 @@
 
 import platform
 from datetime import datetime
-from enum import Enum
+from enum import Enum, IntEnum, StrEnum
 from pathlib import Path
 from typing import override
 
@@ -13,45 +13,53 @@ from pydantic import BaseModel, Field
 
 from tagstudio.core.enums import ShowFilepathOption, TagClickActionOption
 
-if platform.system() == "Windows":
-    DEFAULT_GLOBAL_SETTINGS_PATH = (
-        Path.home() / "Appdata" / "Roaming" / "TagStudio" / "settings.toml"
-    )
-else:
-    DEFAULT_GLOBAL_SETTINGS_PATH = Path.home() / ".config" / "TagStudio" / "settings.toml"
+DEFAULT_GLOBAL_SETTINGS_PATH = (
+    Path.home() / "Appdata" / "Roaming" / "TagStudio" / "settings.toml"
+    if platform.system() == "Windows"
+    else Path.home() / ".config" / "TagStudio" / "settings.toml"
+)
 
 logger = structlog.get_logger(__name__)
 
 
 class TomlEnumEncoder(toml.TomlEncoder):
     @override
-    def dump_value(self, v):
+    def dump_value(self, v):  # pyright: ignore[reportMissingParameterType]
         if isinstance(v, Enum):
             return super().dump_value(v.value)
         return super().dump_value(v)
 
 
-class Theme(Enum):
+class Theme(IntEnum):
     DARK = 0
     LIGHT = 1
     SYSTEM = 2
     DEFAULT = SYSTEM
 
 
+class Splash(StrEnum):
+    DEFAULT = "default"
+    RANDOM = "random"
+    CLASSIC = "classic"
+    GOO_GEARS = "goo_gears"
+    NINETY_FIVE = "95"
+
+
 # NOTE: pydantic also has a BaseSettings class (from pydantic-settings) that allows any settings
-# properties to be overwritten with environment variables. as tagstudio is not currently using
-# environment variables, i did not base it on that, but that may be useful in the future.
+# properties to be overwritten with environment variables. As TagStudio is not currently using
+# environment variables, this was not based on that, but that may be useful in the future.
 class GlobalSettings(BaseModel):
     language: str = Field(default="en")
     open_last_loaded_on_startup: bool = Field(default=True)
-    generate_thumbs: bool = Field(default=False)
+    generate_thumbs: bool = Field(default=True)
     autoplay: bool = Field(default=True)
     loop: bool = Field(default=True)
     show_filenames_in_grid: bool = Field(default=True)
     page_size: int = Field(default=100)
     show_filepath: ShowFilepathOption = Field(default=ShowFilepathOption.DEFAULT)
-    theme: Theme = Field(default=Theme.SYSTEM)
     tag_click_action: TagClickActionOption = Field(default=TagClickActionOption.DEFAULT)
+    theme: Theme = Field(default=Theme.SYSTEM)
+    splash: Splash = Field(default=Splash.DEFAULT)
 
     date_format: str = Field(default="%x")
     hour_format: bool = Field(default=True)

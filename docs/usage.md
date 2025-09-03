@@ -71,7 +71,9 @@ As of version 9.5, libraries are saved automatically as you go. To save a backup
 
 There are a handful of launch arguments you can pass to TagStudio via the command line or a desktop shortcut.
 
-| Argument               | Short | Description                                          |
-| ---------------------- | ----- | ---------------------------------------------------- |
-| `--open <path>`        | `-o`  | Path to a TagStudio Library folder to open on start. |
-| `--config-file <path>` | `-c`  | Path to the TagStudio config file to load.           |
+| Argument                 | Short | Description                                            |
+| ------------------------ | ----- | ------------------------------------------------------ |
+| `--cache-file <path>`    | `-c`  | Path to a TagStudio .ini or .plist cache file to use.  |
+| `--open <path>`          | `-o`  | Path to a TagStudio Library folder to open on start.   |
+| `--settings-file <path>` | `-s`  | Path to a TagStudio .toml global settings file to use. |
+| `--version`              | `-v`  | Displays TagStudio version information.                |

@@ -9,7 +9,7 @@ from pathlib import Path
 
 from tagstudio.core.constants import TS_FOLDER_NAME
 from tagstudio.core.library.alchemy.library import Entry, FieldID, Library
-from tagstudio.core.utils.missing_files import logger
+from tagstudio.core.utils.unlinked_registry import logger
 
 
 class TagStudioCore:
