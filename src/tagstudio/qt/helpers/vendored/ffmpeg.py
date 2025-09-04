@@ -12,7 +12,7 @@ from shutil import which
 import ffmpeg
 import structlog
 
-from tagstudio.core.utils.silent_popen import silent_Popen, silent_run
+from tagstudio.core.utils.silent_subprocess import silent_popen, silent_run
 
 logger = structlog.get_logger(__name__)
 
@@ -69,7 +69,7 @@ def probe(filename, cmd=FFPROBE_CMD, timeout=None, **kwargs):
     args += [filename]
 
     # PATCHED
-    p = silent_Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    p = silent_popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     communicate_kwargs = {}
     if timeout is not None:
         communicate_kwargs["timeout"] = timeout

@@ -14,7 +14,7 @@ from PySide6.QtCore import Qt
 from PySide6.QtGui import QMouseEvent
 from PySide6.QtWidgets import QLabel, QWidget
 
-from tagstudio.core.utils.silent_popen import silent_Popen
+from tagstudio.core.utils.silent_subprocess import silent_popen  # pyright: ignore
 from tagstudio.core.utils.types import unwrap
 
 logger = structlog.get_logger(__name__)
@@ -45,7 +45,7 @@ def open_file(path: str | Path, file_manager: bool = False, windows_start_comman
 
                 # For some reason, if the args are passed in a list, this will error when the
                 # path has spaces, even while surrounded in double quotes.
-                silent_Popen(
+                silent_popen(
                     command_name + command_arg,
                     shell=True,
                     close_fds=True,
@@ -66,7 +66,7 @@ def open_file(path: str | Path, file_manager: bool = False, windows_start_comman
                     )
                 else:
                     command = f'"{normpath}"'
-                    silent_Popen(
+                    silent_popen(
                         command,
                         shell=True,
                         close_fds=True,
@@ -98,7 +98,7 @@ def open_file(path: str | Path, file_manager: bool = False, windows_start_comman
                     command_args = [str(path)]
             command = shutil.which(command_name)
             if command is not None:
-                silent_Popen([command] + command_args, close_fds=True)
+                silent_popen([command] + command_args, close_fds=True)
             else:
                 logger.info("Could not find command on system PATH", command=command_name)
     except Exception:

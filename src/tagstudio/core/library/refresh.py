@@ -16,7 +16,7 @@ from wcmatch import pathlib
 from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.library.alchemy.models import Entry
 from tagstudio.core.library.ignore import PATH_GLOB_FLAGS, Ignore, ignore_to_glob
-from tagstudio.core.utils.silent_popen import silent_run  # pyright: ignore
+from tagstudio.core.utils.silent_subprocess import silent_run  # pyright: ignore
 
 logger = structlog.get_logger(__name__)
 

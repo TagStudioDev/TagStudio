@@ -8,7 +8,7 @@ from pydub.utils import (
     get_extra_info,
 )
 
-from tagstudio.core.utils.silent_popen import silent_Popen
+from tagstudio.core.utils.silent_subprocess import silent_popen
 from tagstudio.qt.helpers.vendored.ffmpeg import FFPROBE_CMD
 
 
@@ -39,7 +39,7 @@ def _mediainfo_json(filepath, read_ahead_limit=-1):
 
     command = [prober, "-of", "json"] + command_args
     # PATCHED
-    res = silent_Popen(
+    res = silent_popen(
         command, stdin=stdin_parameter, stdout=subprocess.PIPE, stderr=subprocess.PIPE
     )
     output, stderr = res.communicate(input=stdin_data)

@@ -42,7 +42,7 @@ from pydub.utils import (
     ratio_to_db,
 )
 
-from tagstudio.core.utils.silent_popen import silent_Popen
+from tagstudio.core.utils.silent_subprocess import silent_popen
 from tagstudio.qt.helpers.vendored.pydub.utils import _mediainfo_json
 
 basestring = str
@@ -608,7 +608,7 @@ class _AudioSegment:
 
         with open(os.devnull, "rb") as devnull:
             # PATCHED
-            p = silent_Popen(
+            p = silent_popen(
                 conversion_command, stdin=devnull, stdout=subprocess.PIPE, stderr=subprocess.PIPE
             )
         p_out, p_err = p.communicate()
@@ -781,7 +781,7 @@ class _AudioSegment:
         log_conversion(conversion_command)
 
         # PATCHED
-        p = silent_Popen(
+        p = silent_popen(
             conversion_command,
             stdin=stdin_parameter,
             stdout=subprocess.PIPE,
@@ -1008,7 +1008,7 @@ class _AudioSegment:
         # read stdin / write stdout
         with open(os.devnull, "rb") as devnull:
             # PATCHED
-            p = silent_Popen(
+            p = silent_popen(
                 conversion_command, stdin=devnull, stdout=subprocess.PIPE, stderr=subprocess.PIPE
             )
         p_out, p_err = p.communicate()
