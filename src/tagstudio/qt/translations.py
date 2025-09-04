@@ -13,10 +13,9 @@ logger = structlog.get_logger(__name__)
 DEFAULT_TRANSLATION = "en"
 
 LANGUAGES = {
-    # "Cantonese (Traditional)": "yue_Hant",  # Empty
     "Chinese (Simplified)": "zh_Hans",
     "Chinese (Traditional)": "zh_Hant",
-    # "Czech": "cs",  # Minimal
+    "Czech": "cs",
     # "Danish": "da",  # Minimal
     "Dutch": "nl",
     "English": "en",
@@ -29,7 +28,8 @@ LANGUAGES = {
     "Norwegian Bokmål": "nb_NO",
     "Polish": "pl",
     "Portuguese (Brazil)": "pt_BR",
-    # "Portuguese (Portugal)": "pt",  # Empty
+    "Portuguese (Portugal)": "pt",
+    "Romanian": "ro",
     "Russian": "ru",
     "Spanish": "es",
     "Swedish": "sv",
