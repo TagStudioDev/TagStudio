@@ -21,7 +21,7 @@ from PySide6.QtWidgets import (
 )
 
 from tagstudio.core.enums import ShowFilepathOption, TagClickActionOption
-from tagstudio.core.global_settings import (
+from tagstudio.qt.global_settings import (
     DEFAULT_THUMB_CACHE_SIZE,
     MIN_THUMB_CACHE_SIZE,
     Splash,

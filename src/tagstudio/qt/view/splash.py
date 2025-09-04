@@ -12,7 +12,7 @@ from PySide6.QtGui import QColor, QFont, QPainter, QPen, QPixmap
 from PySide6.QtWidgets import QSplashScreen, QWidget
 
 from tagstudio.core.constants import VERSION, VERSION_BRANCH
-from tagstudio.core.global_settings import Splash
+from tagstudio.qt.global_settings import Splash
 from tagstudio.qt.resource_manager import ResourceManager
 
 logger = structlog.get_logger(__name__)

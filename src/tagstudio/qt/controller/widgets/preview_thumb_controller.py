@@ -14,9 +14,9 @@ from PySide6.QtCore import QSize
 
 from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.media_types import MediaCategories
-from tagstudio.qt.helpers.file_opener import open_file
 from tagstudio.qt.helpers.file_tester import is_readable_video
-from tagstudio.qt.view.widgets.preview.preview_thumb_view import PreviewThumbView
+from tagstudio.qt.utils.file_opener import open_file
+from tagstudio.qt.view.widgets.preview_thumb_view import PreviewThumbView
 from tagstudio.qt.widgets.preview.file_attributes import FileAttributeData
 
 if TYPE_CHECKING:

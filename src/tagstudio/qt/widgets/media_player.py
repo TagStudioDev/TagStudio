@@ -35,8 +35,8 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from tagstudio.qt.helpers.qslider_wrapper import QClickSlider
 from tagstudio.qt.translations import Translations
+from tagstudio.qt.view.widgets.clickable_slider import ClickableSlider
 
 if typing.TYPE_CHECKING:
     from tagstudio.qt.ts_qt import QtDriver
@@ -147,7 +147,7 @@ class MediaPlayer(QGraphicsView):
         self.controls.setStyleSheet("background: transparent;")
         self.controls.setMinimumHeight(48)
 
-        self.timeline_slider = QClickSlider()
+        self.timeline_slider = ClickableSlider()
         self.timeline_slider.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         self.timeline_slider.setTickPosition(QSlider.TickPosition.NoTicks)
         self.timeline_slider.setSingleStep(1)
@@ -196,7 +196,7 @@ class MediaPlayer(QGraphicsView):
         sub_layout.addWidget(self.mute_unmute)
         sub_layout.setAlignment(self.mute_unmute, Qt.AlignmentFlag.AlignLeft)
 
-        self.volume_slider = QClickSlider()
+        self.volume_slider = ClickableSlider()
         self.volume_slider.setOrientation(Qt.Orientation.Horizontal)
         self.volume_slider.setValue(int(self.player.audioOutput().volume() * 100))
         self.volume_slider.valueChanged.connect(self.volume_slider_changed)

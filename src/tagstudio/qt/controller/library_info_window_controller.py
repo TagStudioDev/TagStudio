@@ -18,9 +18,9 @@ from tagstudio.core.library.alchemy.constants import (
 )
 from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.utils.types import unwrap
-from tagstudio.qt.helpers import file_opener
 from tagstudio.qt.translations import Translations
-from tagstudio.qt.view.widgets.library_info_window_view import LibraryInfoWindowView
+from tagstudio.qt.utils import file_opener
+from tagstudio.qt.view.library_info_window_view import LibraryInfoWindowView
 
 # Only import for type checking/autocompletion, will not be imported at runtime.
 if TYPE_CHECKING:

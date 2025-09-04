@@ -22,7 +22,7 @@ logger = structlog.get_logger(__name__)
 
 
 @dataclass
-class RefreshDirTracker:
+class RefreshTracker:
     library: Library
     files_not_in_library: list[Path] = field(default_factory=list)
 

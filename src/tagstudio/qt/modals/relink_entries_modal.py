@@ -5,7 +5,7 @@
 
 from PySide6.QtCore import QObject, Signal
 
-from tagstudio.core.utils.unlinked_registry import UnlinkedRegistry
+from tagstudio.core.library.alchemy.registries.unlinked_registry import UnlinkedRegistry
 from tagstudio.qt.translations import Translations
 from tagstudio.qt.widgets.progress import ProgressWidget
 

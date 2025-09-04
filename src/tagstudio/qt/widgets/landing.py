@@ -15,7 +15,7 @@ from PySide6.QtWidgets import QLabel, QPushButton, QVBoxLayout, QWidget
 
 from tagstudio.qt.helpers.color_overlay import gradient_overlay, theme_fg_overlay
 from tagstudio.qt.translations import Translations
-from tagstudio.qt.widgets.clickable_label import ClickableLabel
+from tagstudio.qt.view.widgets.clickable_label import ClickableLabel
 
 # Only import for type checking/autocompletion, will not be imported at runtime.
 if typing.TYPE_CHECKING:

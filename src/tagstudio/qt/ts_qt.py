@@ -49,11 +49,6 @@ import tagstudio.qt.resources_rc  # noqa: F401
 from tagstudio.core.constants import TAG_ARCHIVED, TAG_FAVORITE, VERSION, VERSION_BRANCH
 from tagstudio.core.driver import DriverMixin
 from tagstudio.core.enums import MacroID, SettingItems, ShowFilepathOption
-from tagstudio.core.global_settings import (
-    DEFAULT_GLOBAL_SETTINGS_PATH,
-    GlobalSettings,
-    Theme,
-)
 from tagstudio.core.library.alchemy.enums import (
     BrowsingState,
     FieldTypeEnum,
@@ -64,21 +59,23 @@ from tagstudio.core.library.alchemy.fields import _FieldID
 from tagstudio.core.library.alchemy.library import Library, LibraryStatus
 from tagstudio.core.library.alchemy.models import Entry
 from tagstudio.core.library.ignore import Ignore
+from tagstudio.core.library.refresh import RefreshTracker
 from tagstudio.core.media_types import MediaCategories
 from tagstudio.core.query_lang.util import ParsingError
 from tagstudio.core.ts_core import TagStudioCore
-from tagstudio.core.utils.refresh_dir import RefreshDirTracker
 from tagstudio.core.utils.str_formatting import strip_web_protocol
 from tagstudio.core.utils.types import unwrap
 from tagstudio.qt.cache_manager import CacheManager
 
 # this import has side-effect of import PySide resources
 from tagstudio.qt.controller.fix_ignored_modal_controller import FixIgnoredEntriesModal
-from tagstudio.qt.controller.widgets.ignore_modal_controller import IgnoreModal
-from tagstudio.qt.controller.widgets.library_info_window_controller import LibraryInfoWindow
-from tagstudio.qt.helpers.custom_runnable import CustomRunnable
-from tagstudio.qt.helpers.file_deleter import delete_file
-from tagstudio.qt.helpers.function_iterator import FunctionIterator
+from tagstudio.qt.controller.ignore_modal_controller import IgnoreModal
+from tagstudio.qt.controller.library_info_window_controller import LibraryInfoWindow
+from tagstudio.qt.global_settings import (
+    DEFAULT_GLOBAL_SETTINGS_PATH,
+    GlobalSettings,
+    Theme,
+)
 from tagstudio.qt.helpers.vendored.ffmpeg import FFMPEG_CMD, FFPROBE_CMD
 from tagstudio.qt.main_window import MainWindow
 from tagstudio.qt.modals.about import AboutModal
@@ -97,6 +94,9 @@ from tagstudio.qt.platform_strings import trash_term
 from tagstudio.qt.preview.renderer import ThumbRenderer
 from tagstudio.qt.resource_manager import ResourceManager
 from tagstudio.qt.translations import Translations
+from tagstudio.qt.utils.custom_runnable import CustomRunnable
+from tagstudio.qt.utils.file_deleter import delete_file
+from tagstudio.qt.utils.function_iterator import FunctionIterator
 from tagstudio.qt.view.splash import SplashScreen
 from tagstudio.qt.widgets.item_thumb import BadgeType, ItemThumb
 from tagstudio.qt.widgets.migration_modal import JsonMigrationModal
@@ -1005,7 +1005,7 @@ class QtDriver(DriverMixin, QObject):
 
     def add_new_files_callback(self):
         """Run when user initiates adding new files to the Library."""
-        tracker = RefreshDirTracker(self.lib)
+        tracker = RefreshTracker(self.lib)
 
         pw = ProgressWidget(
             cancel_button_text=None,
@@ -1043,7 +1043,7 @@ class QtDriver(DriverMixin, QObject):
         )
         QThreadPool.globalInstance().start(r)
 
-    def add_new_files_runnable(self, tracker: RefreshDirTracker):
+    def add_new_files_runnable(self, tracker: RefreshTracker):
         """Adds any known new files to the library and run default macros on them.
 
         Threaded method.

@@ -17,7 +17,7 @@ from PySide6.QtWidgets import (
 )
 
 from tagstudio.core.library.alchemy.library import Library
-from tagstudio.core.utils.dupe_files_registry import DupeFilesRegistry
+from tagstudio.core.library.alchemy.registries.dupe_files_registry import DupeFilesRegistry
 from tagstudio.qt.modals.mirror_entries_modal import MirrorEntriesModal
 from tagstudio.qt.translations import Translations
 

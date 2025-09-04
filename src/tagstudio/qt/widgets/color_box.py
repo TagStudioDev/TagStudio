@@ -13,10 +13,10 @@ from PySide6.QtWidgets import QMessageBox, QPushButton
 from tagstudio.core.constants import RESERVED_NAMESPACE_PREFIX
 from tagstudio.core.library.alchemy.enums import TagColorEnum
 from tagstudio.core.library.alchemy.models import TagColorGroup
-from tagstudio.qt.flowlayout import FlowLayout
 from tagstudio.qt.modals.build_color import BuildColorPanel
 from tagstudio.qt.model.palette import ColorType, get_tag_color
 from tagstudio.qt.translations import Translations
+from tagstudio.qt.view.layouts.flow_layout import FlowLayout
 from tagstudio.qt.widgets.fields import FieldWidget
 from tagstudio.qt.widgets.panel import PanelModal
 from tagstudio.qt.widgets.tag_color_label import TagColorLabel

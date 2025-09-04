@@ -4,6 +4,7 @@
 
 
 import sys
+from typing import override
 
 from PySide6 import QtCore
 from PySide6.QtCore import QEvent
@@ -18,11 +19,11 @@ from PySide6.QtGui import (
 )
 from PySide6.QtWidgets import QWidget
 
-from tagstudio.qt.helpers.qbutton_wrapper import QPushButtonWrapper
+from tagstudio.qt.view.widgets.qbutton_wrapper import QPushButtonWrapper
 
 
 class ThumbButton(QPushButtonWrapper):
-    def __init__(self, parent: QWidget, thumb_size: tuple[int, int]) -> None:  # noqa: N802
+    def __init__(self, parent: QWidget, thumb_size: tuple[int, int]) -> None:
         super().__init__(parent)
         self.thumb_size: tuple[int, int] = thumb_size
         self.hovered = False
@@ -85,8 +86,9 @@ class ThumbButton(QPushButtonWrapper):
             self.hover_color.alpha(),
         )
 
-    def paintEvent(self, event: QPaintEvent) -> None:  # noqa: N802
-        super().paintEvent(event)
+    @override
+    def paintEvent(self, arg__1: QPaintEvent) -> None:  # type: ignore
+        super().paintEvent(arg__1)
         if self.hovered or self.selected:
             painter = QPainter()
             painter.begin(self)
@@ -125,17 +127,19 @@ class ThumbButton(QPushButtonWrapper):
 
             painter.end()
 
-    def enterEvent(self, event: QEnterEvent) -> None:  # noqa: N802
+    @override
+    def enterEvent(self, event: QEnterEvent) -> None:  # type: ignore
         self.hovered = True
         self.repaint()
         return super().enterEvent(event)
 
-    def leaveEvent(self, event: QEvent) -> None:  # noqa: N802
+    @override
+    def leaveEvent(self, event: QEvent) -> None:  # type: ignore
         self.hovered = False
         self.repaint()
         return super().leaveEvent(event)
 
-    def set_selected(self, value: bool) -> None:  # noqa: N802
+    def set_selected(self, value: bool) -> None:
         if value != self.selected:
             self.selected = value
             self.repaint()

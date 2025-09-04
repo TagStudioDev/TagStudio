@@ -17,9 +17,9 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from tagstudio.core.utils.ignored_registry import IgnoredRegistry
-from tagstudio.qt.helpers.custom_runnable import CustomRunnable
+from tagstudio.core.library.alchemy.registries.ignored_registry import IgnoredRegistry
 from tagstudio.qt.translations import Translations
+from tagstudio.qt.utils.custom_runnable import CustomRunnable
 from tagstudio.qt.widgets.progress import ProgressWidget
 
 # Only import for type checking/autocompletion, will not be imported at runtime.

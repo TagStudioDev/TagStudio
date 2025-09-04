@@ -23,9 +23,9 @@ from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.library.ignore import Ignore
 from tagstudio.core.media_types import MediaCategories
 from tagstudio.core.utils.types import unwrap
-from tagstudio.qt.helpers.file_opener import FileOpenerHelper, FileOpenerLabel
 from tagstudio.qt.model.palette import ColorType, UiColor, get_ui_color
 from tagstudio.qt.translations import Translations
+from tagstudio.qt.utils.file_opener import FileOpenerHelper, FileOpenerLabel
 
 if typing.TYPE_CHECKING:
     from tagstudio.qt.ts_qt import QtDriver

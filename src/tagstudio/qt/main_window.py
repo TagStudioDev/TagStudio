@@ -35,14 +35,14 @@ from PySide6.QtWidgets import (
 
 from tagstudio.core.enums import ShowFilepathOption
 from tagstudio.core.library.alchemy.enums import SortingModeEnum
-from tagstudio.qt.controller.widgets.preview_panel_controller import PreviewPanel
-from tagstudio.qt.flowlayout import FlowLayout
+from tagstudio.qt.controller.preview_panel_controller import PreviewPanel
 from tagstudio.qt.helpers.color_overlay import theme_fg_overlay
 from tagstudio.qt.mnemonics import assign_mnemonics
 from tagstudio.qt.pagination import Pagination
 from tagstudio.qt.platform_strings import trash_term
 from tagstudio.qt.resource_manager import ResourceManager
 from tagstudio.qt.translations import Translations
+from tagstudio.qt.view.layouts.flow_layout import FlowLayout
 from tagstudio.qt.widgets.landing import LandingWidget
 
 # Only import for type checking/autocompletion, will not be imported at runtime.

@@ -10,7 +10,7 @@ from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QStandardItem, QStandardItemModel
 from PySide6.QtWidgets import QHBoxLayout, QLabel, QListView, QPushButton, QVBoxLayout, QWidget
 
-from tagstudio.core.utils.dupe_files_registry import DupeFilesRegistry
+from tagstudio.core.library.alchemy.registries.dupe_files_registry import DupeFilesRegistry
 from tagstudio.qt.translations import Translations
 from tagstudio.qt.widgets.progress import ProgressWidget
 

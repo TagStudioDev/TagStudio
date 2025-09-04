@@ -13,8 +13,8 @@ from PySide6.QtGui import QIntValidator, QPixmap
 from PySide6.QtWidgets import QHBoxLayout, QLabel, QLineEdit, QSizePolicy, QWidget
 
 from tagstudio.qt.helpers.color_overlay import theme_fg_overlay
-from tagstudio.qt.helpers.qbutton_wrapper import QPushButtonWrapper
 from tagstudio.qt.resource_manager import ResourceManager
+from tagstudio.qt.view.widgets.qbutton_wrapper import QPushButtonWrapper
 
 
 class Pagination(QWidget, QObject):

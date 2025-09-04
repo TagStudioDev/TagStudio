@@ -8,8 +8,8 @@ from collections.abc import Callable
 from PySide6.QtCore import Qt, QThreadPool
 from PySide6.QtWidgets import QProgressDialog, QVBoxLayout, QWidget
 
-from tagstudio.qt.helpers.custom_runnable import CustomRunnable
-from tagstudio.qt.helpers.function_iterator import FunctionIterator
+from tagstudio.qt.utils.custom_runnable import CustomRunnable
+from tagstudio.qt.utils.function_iterator import FunctionIterator
 
 
 class ProgressWidget(QWidget):

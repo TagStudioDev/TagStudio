@@ -37,10 +37,10 @@ from tagstudio.core.library.alchemy.library import Library as SqliteLibrary
 from tagstudio.core.library.alchemy.models import Entry, TagAlias
 from tagstudio.core.library.json.library import Library as JsonLibrary
 from tagstudio.core.library.json.library import Tag as JsonTag
-from tagstudio.qt.helpers.custom_runnable import CustomRunnable
-from tagstudio.qt.helpers.function_iterator import FunctionIterator
-from tagstudio.qt.helpers.qbutton_wrapper import QPushButtonWrapper
 from tagstudio.qt.translations import Translations
+from tagstudio.qt.utils.custom_runnable import CustomRunnable
+from tagstudio.qt.utils.function_iterator import FunctionIterator
+from tagstudio.qt.view.widgets.qbutton_wrapper import QPushButtonWrapper
 from tagstudio.qt.widgets.paged_panel.paged_body_wrapper import PagedBodyWrapper
 from tagstudio.qt.widgets.paged_panel.paged_panel import PagedPanel
 from tagstudio.qt.widgets.paged_panel.paged_panel_state import PagedPanelState

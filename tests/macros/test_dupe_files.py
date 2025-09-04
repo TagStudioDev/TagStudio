@@ -6,7 +6,7 @@ from pathlib import Path
 
 from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.library.alchemy.models import Entry
-from tagstudio.core.utils.dupe_files_registry import DupeFilesRegistry
+from tagstudio.core.library.alchemy.registries.dupe_files_registry import DupeFilesRegistry
 from tagstudio.core.utils.types import unwrap
 
 CWD = Path(__file__).parent

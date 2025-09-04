@@ -26,9 +26,9 @@ from tagstudio.core.library.alchemy.enums import TagColorEnum
 from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.library.alchemy.models import Tag
 from tagstudio.core.utils.types import unwrap
-from tagstudio.qt.flowlayout import FlowLayout
 from tagstudio.qt.model.palette import ColorType, get_tag_color
 from tagstudio.qt.translations import Translations
+from tagstudio.qt.view.layouts.flow_layout import FlowLayout
 
 if TYPE_CHECKING:
     from tagstudio.qt.ts_qt import QtDriver

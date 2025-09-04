@@ -9,7 +9,7 @@ import structlog
 
 from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.library.alchemy.models import Tag
-from tagstudio.qt.flowlayout import FlowLayout
+from tagstudio.qt.view.layouts.flow_layout import FlowLayout
 from tagstudio.qt.widgets.fields import FieldWidget
 from tagstudio.qt.widgets.tag import TagWidget
 

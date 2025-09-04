@@ -27,12 +27,12 @@ from tagstudio.core.library.alchemy.enums import ItemType
 from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.media_types import MediaCategories, MediaType
 from tagstudio.core.utils.types import unwrap
-from tagstudio.qt.flowlayout import FlowWidget
-from tagstudio.qt.helpers.file_opener import FileOpenerHelper
 from tagstudio.qt.platform_strings import open_file_str, trash_term
 from tagstudio.qt.preview.renderer import ThumbRenderer
 from tagstudio.qt.translations import Translations
-from tagstudio.qt.widgets.thumb_button import ThumbButton
+from tagstudio.qt.utils.file_opener import FileOpenerHelper
+from tagstudio.qt.view.components.thumb_button import ThumbButton
+from tagstudio.qt.view.layouts.flow_layout import FlowWidget
 
 if TYPE_CHECKING:
     from tagstudio.qt.ts_qt import QtDriver

@@ -10,7 +10,7 @@ from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QHBoxLayout, QLabel, QPushButton, QVBoxLayout, QWidget
 
 from tagstudio.core.library.alchemy.library import Library
-from tagstudio.core.utils.unlinked_registry import UnlinkedRegistry
+from tagstudio.core.library.alchemy.registries.unlinked_registry import UnlinkedRegistry
 from tagstudio.qt.modals.merge_dupe_entries import MergeDuplicateEntries
 from tagstudio.qt.modals.relink_entries_modal import RelinkUnlinkedEntries
 from tagstudio.qt.modals.remove_unlinked_modal import RemoveUnlinkedEntriesModal

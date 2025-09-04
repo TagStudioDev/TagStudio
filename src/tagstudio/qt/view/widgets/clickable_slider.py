@@ -11,8 +11,8 @@ from PySide6.QtWidgets import QSlider, QStyle, QStyleOptionSlider
 logger = structlog.get_logger(__name__)
 
 
-class QClickSlider(QSlider):
-    """Custom QSlider wrapper.
+class ClickableSlider(QSlider):
+    """A clickable QSlider wrapper.
 
     The purpose of this wrapper is to allow us to set slider positions
     based on click events.
