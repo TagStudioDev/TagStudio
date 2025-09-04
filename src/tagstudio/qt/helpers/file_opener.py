@@ -14,8 +14,8 @@ from PySide6.QtCore import Qt
 from PySide6.QtGui import QMouseEvent
 from PySide6.QtWidgets import QLabel, QWidget
 
+from tagstudio.core.utils.silent_popen import silent_Popen
 from tagstudio.core.utils.types import unwrap
-from tagstudio.qt.helpers.silent_popen import silent_Popen
 
 logger = structlog.get_logger(__name__)
 

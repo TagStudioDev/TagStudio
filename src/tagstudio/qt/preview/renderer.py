@@ -57,10 +57,8 @@ from tagstudio.core.constants import (
 from tagstudio.core.exceptions import NoRendererError
 from tagstudio.core.library.ignore import Ignore
 from tagstudio.core.media_types import MediaCategories, MediaType
-from tagstudio.core.palette import UI_COLORS, ColorType, UiColor, get_ui_color
 from tagstudio.core.utils.encoding import detect_char_encoding
 from tagstudio.core.utils.types import unwrap
-from tagstudio.qt.helpers.blender_thumbnailer import blend_thumb
 from tagstudio.qt.helpers.color_overlay import theme_fg_overlay
 from tagstudio.qt.helpers.file_tester import is_readable_video
 from tagstudio.qt.helpers.gradient import four_corner_gradient
@@ -69,6 +67,8 @@ from tagstudio.qt.helpers.text_wrapper import wrap_full_text
 from tagstudio.qt.helpers.vendored.pydub.audio_segment import (
     _AudioSegment as AudioSegment,
 )
+from tagstudio.qt.model.palette import UI_COLORS, ColorType, UiColor, get_ui_color
+from tagstudio.qt.preview.blender_renderer import blend_thumb
 from tagstudio.qt.resource_manager import ResourceManager
 
 if TYPE_CHECKING:

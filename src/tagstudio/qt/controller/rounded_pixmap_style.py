@@ -5,16 +5,22 @@
 # Modified for TagStudio: https://github.com/CyanVoxel/TagStudio
 
 
-from PySide6.QtGui import QBrush, QColor, QPainter, QPixmap
+from typing import override
+
+from PySide6.QtCore import QRect
+from PySide6.QtGui import QBrush, QColor, QImage, QPainter, QPixmap
 from PySide6.QtWidgets import QProxyStyle
 
 
 class RoundedPixmapStyle(QProxyStyle):
-    def __init__(self, radius=8):
+    def __init__(self, radius: int = 8):
         super().__init__()
         self._radius = radius
 
-    def drawItemPixmap(self, painter, rectangle, alignment, pixmap):  # noqa: N802
+    @override
+    def drawItemPixmap(
+        self, painter: QPainter, rect: QRect, alignment: int, pixmap: QPixmap | QImage
+    ):
         painter.save()
         pix = QPixmap(pixmap.size())
         pix.fill(QColor("transparent"))
@@ -24,5 +30,5 @@ class RoundedPixmapStyle(QProxyStyle):
         p.setRenderHint(QPainter.RenderHint.Antialiasing)
         p.drawRoundedRect(pixmap.rect(), self._radius, self._radius)
         p.end()
-        super().drawItemPixmap(painter, rectangle, alignment, pix)
+        super().drawItemPixmap(painter, rect, alignment, pix)
         painter.restore()

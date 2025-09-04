@@ -27,7 +27,7 @@ from tagstudio.core.constants import RESERVED_TAG_END, RESERVED_TAG_START
 from tagstudio.core.library.alchemy.enums import BrowsingState, TagColorEnum
 from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.library.alchemy.models import Tag
-from tagstudio.core.palette import ColorType, get_tag_color
+from tagstudio.qt.model.palette import ColorType, get_tag_color
 from tagstudio.qt.translations import Translations
 from tagstudio.qt.widgets.panel import PanelModal, PanelWidget
 from tagstudio.qt.widgets.tag import TagWidget

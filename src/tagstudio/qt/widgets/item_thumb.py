@@ -30,9 +30,9 @@ from tagstudio.core.utils.types import unwrap
 from tagstudio.qt.flowlayout import FlowWidget
 from tagstudio.qt.helpers.file_opener import FileOpenerHelper
 from tagstudio.qt.platform_strings import open_file_str, trash_term
+from tagstudio.qt.preview.renderer import ThumbRenderer
 from tagstudio.qt.translations import Translations
 from tagstudio.qt.widgets.thumb_button import ThumbButton
-from tagstudio.qt.widgets.thumb_renderer import ThumbRenderer
 
 if TYPE_CHECKING:
     from tagstudio.qt.ts_qt import QtDriver

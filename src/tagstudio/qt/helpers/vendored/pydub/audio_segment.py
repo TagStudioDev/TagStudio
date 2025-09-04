@@ -42,7 +42,7 @@ from pydub.utils import (
     ratio_to_db,
 )
 
-from tagstudio.qt.helpers.silent_popen import silent_Popen
+from tagstudio.core.utils.silent_popen import silent_Popen
 from tagstudio.qt.helpers.vendored.pydub.utils import _mediainfo_json
 
 basestring = str

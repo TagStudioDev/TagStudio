@@ -65,12 +65,11 @@ from tagstudio.core.library.alchemy.library import Library, LibraryStatus
 from tagstudio.core.library.alchemy.models import Entry
 from tagstudio.core.library.ignore import Ignore
 from tagstudio.core.media_types import MediaCategories
-from tagstudio.core.palette import ColorType, UiColor, get_ui_color
 from tagstudio.core.query_lang.util import ParsingError
 from tagstudio.core.ts_core import TagStudioCore
 from tagstudio.core.utils.refresh_dir import RefreshDirTracker
+from tagstudio.core.utils.str_formatting import strip_web_protocol
 from tagstudio.core.utils.types import unwrap
-from tagstudio.core.utils.web import strip_web_protocol
 from tagstudio.qt.cache_manager import CacheManager
 
 # this import has side-effect of import PySide resources
@@ -86,22 +85,23 @@ from tagstudio.qt.modals.about import AboutModal
 from tagstudio.qt.modals.build_tag import BuildTagPanel
 from tagstudio.qt.modals.drop_import import DropImportModal
 from tagstudio.qt.modals.ffmpeg_checker import FfmpegChecker
-from tagstudio.qt.modals.fix_dupes import FixDupeFilesModal
+from tagstudio.qt.modals.fix_dupe_files import FixDupeFilesModal
 from tagstudio.qt.modals.fix_unlinked import FixUnlinkedEntriesModal
 from tagstudio.qt.modals.folders_to_tags import FoldersToTagsModal
 from tagstudio.qt.modals.settings_panel import SettingsPanel
 from tagstudio.qt.modals.tag_color_manager import TagColorManager
 from tagstudio.qt.modals.tag_database import TagDatabasePanel
 from tagstudio.qt.modals.tag_search import TagSearchModal
+from tagstudio.qt.model.palette import ColorType, UiColor, get_ui_color
 from tagstudio.qt.platform_strings import trash_term
+from tagstudio.qt.preview.renderer import ThumbRenderer
 from tagstudio.qt.resource_manager import ResourceManager
-from tagstudio.qt.splash import SplashScreen
 from tagstudio.qt.translations import Translations
+from tagstudio.qt.view.splash import SplashScreen
 from tagstudio.qt.widgets.item_thumb import BadgeType, ItemThumb
 from tagstudio.qt.widgets.migration_modal import JsonMigrationModal
 from tagstudio.qt.widgets.panel import PanelModal
 from tagstudio.qt.widgets.progress import ProgressWidget
-from tagstudio.qt.widgets.thumb_renderer import ThumbRenderer
 
 BADGE_TAGS = {
     BadgeType.FAVORITE: TAG_FAVORITE,

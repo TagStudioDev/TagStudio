@@ -8,7 +8,7 @@ import typing
 from PySide6.QtCore import QObject, Signal
 
 from tagstudio.core.library.alchemy.library import Library
-from tagstudio.core.utils.dupe_files import DupeRegistry
+from tagstudio.core.utils.dupe_files_registry import DupeFilesRegistry
 from tagstudio.qt.translations import Translations
 from tagstudio.qt.widgets.progress import ProgressWidget
 
@@ -24,7 +24,7 @@ class MergeDuplicateEntries(QObject):
         super().__init__()
         self.lib = library
         self.driver = driver
-        self.tracker = DupeRegistry(library=self.lib)
+        self.tracker = DupeFilesRegistry(library=self.lib)
 
     def merge_entries(self):
         pw = ProgressWidget(

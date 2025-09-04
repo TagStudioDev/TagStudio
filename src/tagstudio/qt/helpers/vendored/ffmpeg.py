@@ -12,7 +12,7 @@ from shutil import which
 import ffmpeg
 import structlog
 
-from tagstudio.qt.helpers.silent_popen import silent_Popen, silent_run
+from tagstudio.core.utils.silent_popen import silent_Popen, silent_run
 
 logger = structlog.get_logger(__name__)
 

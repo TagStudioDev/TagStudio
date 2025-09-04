@@ -10,7 +10,7 @@ from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QStandardItem, QStandardItemModel
 from PySide6.QtWidgets import QHBoxLayout, QLabel, QListView, QPushButton, QVBoxLayout, QWidget
 
-from tagstudio.core.utils.dupe_files import DupeRegistry
+from tagstudio.core.utils.dupe_files_registry import DupeFilesRegistry
 from tagstudio.qt.translations import Translations
 from tagstudio.qt.widgets.progress import ProgressWidget
 
@@ -22,7 +22,7 @@ if typing.TYPE_CHECKING:
 class MirrorEntriesModal(QWidget):
     done = Signal()
 
-    def __init__(self, driver: "QtDriver", tracker: DupeRegistry):
+    def __init__(self, driver: "QtDriver", tracker: DupeFilesRegistry):
         super().__init__()
         self.driver = driver
         self.setWindowTitle(Translations["entries.mirror.window_title"])

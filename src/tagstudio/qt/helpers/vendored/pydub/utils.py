@@ -8,7 +8,7 @@ from pydub.utils import (
     get_extra_info,
 )
 
-from tagstudio.qt.helpers.silent_popen import silent_Popen
+from tagstudio.core.utils.silent_popen import silent_Popen
 from tagstudio.qt.helpers.vendored.ffmpeg import FFPROBE_CMD
 
 

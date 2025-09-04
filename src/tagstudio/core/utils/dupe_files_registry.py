@@ -12,7 +12,7 @@ logger = structlog.get_logger()
 
 
 @dataclass
-class DupeRegistry:
+class DupeFilesRegistry:
     """State handler for DupeGuru results."""
 
     library: Library

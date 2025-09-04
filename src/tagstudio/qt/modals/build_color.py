@@ -20,11 +20,10 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from tagstudio.core import palette
 from tagstudio.core.library.alchemy.enums import TagColorEnum
 from tagstudio.core.library.alchemy.library import Library, slugify
 from tagstudio.core.library.alchemy.models import TagColorGroup
-from tagstudio.core.palette import ColorType, UiColor, get_tag_color, get_ui_color
+from tagstudio.qt.model.palette import ColorType, UiColor, get_tag_color, get_ui_color
 from tagstudio.qt.translations import Translations
 from tagstudio.qt.widgets.panel import PanelWidget
 from tagstudio.qt.widgets.tag import (
@@ -265,7 +264,7 @@ class BuildColorPanel(PanelWidget):
     def update_secondary(self, color: QColor | None = None, color_border: bool = False):
         logger.info("[BuildColorPanel] Updating Secondary", color=color)
 
-        color_ = color or QColor(palette.get_tag_color(ColorType.PRIMARY, TagColorEnum.DEFAULT))
+        color_ = color or QColor(get_tag_color(ColorType.PRIMARY, TagColorEnum.DEFAULT))
 
         highlight_color = get_highlight_color(color_)
         text_color = get_text_color(color_, highlight_color)

@@ -28,9 +28,9 @@ from PySide6.QtWidgets import (
 from tagstudio.core.library.alchemy.enums import TagColorEnum
 from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.library.alchemy.models import Tag, TagColorGroup
-from tagstudio.core.palette import ColorType, UiColor, get_tag_color, get_ui_color
 from tagstudio.qt.modals.tag_color_selection import TagColorSelection
 from tagstudio.qt.modals.tag_search import TagSearchModal, TagSearchPanel
+from tagstudio.qt.model.palette import ColorType, UiColor, get_tag_color, get_ui_color
 from tagstudio.qt.translations import Translations
 from tagstudio.qt.widgets.panel import PanelModal, PanelWidget
 from tagstudio.qt.widgets.tag import (

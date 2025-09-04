@@ -17,7 +17,7 @@ from PySide6.QtWidgets import (
 )
 
 from tagstudio.core.library.alchemy.library import Library
-from tagstudio.core.utils.dupe_files import DupeRegistry
+from tagstudio.core.utils.dupe_files_registry import DupeFilesRegistry
 from tagstudio.qt.modals.mirror_entries_modal import MirrorEntriesModal
 from tagstudio.qt.translations import Translations
 
@@ -40,7 +40,7 @@ class FixDupeFilesModal(QWidget):
         self.root_layout = QVBoxLayout(self)
         self.root_layout.setContentsMargins(6, 6, 6, 6)
 
-        self.tracker = DupeRegistry(library=self.lib)
+        self.tracker = DupeFilesRegistry(library=self.lib)
 
         self.desc_widget = QLabel(Translations["file.duplicates.description"])
         self.desc_widget.setObjectName("descriptionLabel")

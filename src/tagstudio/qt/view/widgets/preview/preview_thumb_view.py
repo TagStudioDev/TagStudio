@@ -13,12 +13,12 @@ from PySide6.QtWidgets import QHBoxLayout, QLabel, QPushButton, QStackedLayout, 
 
 from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.media_types import MediaType
-from tagstudio.qt.helpers.rounded_pixmap_style import RoundedPixmapStyle
+from tagstudio.qt.controller.rounded_pixmap_style import RoundedPixmapStyle
 from tagstudio.qt.platform_strings import open_file_str, trash_term
+from tagstudio.qt.preview.renderer import ThumbRenderer
 from tagstudio.qt.translations import Translations
 from tagstudio.qt.widgets.media_player import MediaPlayer
 from tagstudio.qt.widgets.preview.file_attributes import FileAttributeData
-from tagstudio.qt.widgets.thumb_renderer import ThumbRenderer
 
 if TYPE_CHECKING:
     from tagstudio.qt.ts_qt import QtDriver

@@ -6,7 +6,7 @@ from pathlib import Path
 
 from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.library.alchemy.models import Entry
-from tagstudio.core.utils.dupe_files import DupeRegistry
+from tagstudio.core.utils.dupe_files_registry import DupeFilesRegistry
 from tagstudio.core.utils.types import unwrap
 
 CWD = Path(__file__).parent
@@ -30,7 +30,7 @@ def test_refresh_dupe_files(library: Library):
 
     library.add_entries([entry, entry2])
 
-    registry = DupeRegistry(library=library)
+    registry = DupeFilesRegistry(library=library)
 
     dupe_file_path = CWD.parent / "fixtures" / "result.dupeguru"
     registry.refresh_dupe_files(dupe_file_path)

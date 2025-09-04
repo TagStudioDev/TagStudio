@@ -5,8 +5,8 @@ from PySide6.QtCore import Qt, QUrl
 from PySide6.QtGui import QDesktopServices
 from PySide6.QtWidgets import QMessageBox
 
-from tagstudio.core.palette import ColorType, UiColor, get_ui_color
 from tagstudio.qt.helpers.vendored.ffmpeg import FFMPEG_CMD, FFPROBE_CMD
+from tagstudio.qt.model.palette import ColorType, UiColor, get_ui_color
 from tagstudio.qt.translations import Translations
 
 logger = structlog.get_logger(__name__)
