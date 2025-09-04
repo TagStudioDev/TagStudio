@@ -267,11 +267,21 @@ class ThumbGridLayout(QLayout):
         per_row, width_offset, height_offset = self._size(rect.right())
         view_height = self.parentWidget().parentWidget().height()
         offset = self.scroll_area.verticalScrollBar().value()
+        top_row_hidden = (offset % height_offset) / height_offset
 
         visible_rows = math.ceil((view_height + (offset % height_offset)) / height_offset)
         offset = int(offset / height_offset)
         start = offset * per_row
         end = start + (visible_rows * per_row)
+
+        # Load closest off screen row
+        # Loads both top and bottom if equally close
+        if top_row_hidden <= 0.5:
+            start -= per_row * 3
+        if top_row_hidden >= 0.5 or top_row_hidden == 0.0:
+            end += per_row * 3
+
+        start = max(0, start)
         end = min(len(self._entry_ids), end)
         if (start, end) == self._last_page_update:
             return
@@ -287,10 +297,9 @@ class ThumbGridLayout(QLayout):
             for k in pending:
                 self._render_results.pop(k)
 
-        _ = self._item_thumb(min(len(self._entry_ids), end) - start)
-
-        # Reorder items to so previously rendered rows will reuse same item_thumbs
+        # Reorder items so previously rendered rows will reuse same item_thumbs
         # When scrolling down top row gets moved to end of list
+        _ = self._item_thumb(end - start - 1)
         for item_index, i in enumerate(range(start, end)):
             if i >= len(self._entry_ids):
                 continue
@@ -306,6 +315,7 @@ class ThumbGridLayout(QLayout):
             break
         self._entry_items.clear()
 
+        # Move unused item_thumbs off screen
         count = end - start
         for item in self._item_thumbs[count:]:
             item.setGeometry(32_000, 32_000, 0, 0)
