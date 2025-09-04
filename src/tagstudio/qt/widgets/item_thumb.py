@@ -25,6 +25,7 @@ from tagstudio.core.constants import TAG_ARCHIVED, TAG_FAVORITE
 from tagstudio.core.library.alchemy.enums import ItemType
 from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.media_types import MediaCategories, MediaType
+from tagstudio.core.utils.types import unwrap
 from tagstudio.qt.flowlayout import FlowWidget
 from tagstudio.qt.helpers.file_opener import FileOpenerHelper
 from tagstudio.qt.platform_strings import open_file_str, trash_term
@@ -523,8 +524,7 @@ class ItemThumb(FlowWidget):
             if not entry:
                 continue
 
-            assert self.lib.library_dir is not None
-            url = QUrl.fromLocalFile(Path(self.lib.library_dir) / entry.path)
+            url = QUrl.fromLocalFile(Path(unwrap(self.lib.library_dir)) / entry.path)
             paths.append(url)
 
         mimedata.setUrls(paths)

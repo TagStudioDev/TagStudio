@@ -1,4 +1,8 @@
-# Library Search
+---
+icon: material/magnify
+---
+
+# :material-magnify: Search
 
 TagStudio provides various methods to search your library, ranging from TagStudio data such as tags to inherent file data such as paths or media types.
 
@@ -74,7 +78,7 @@ TagStudio uses a "[smartcase](https://neovim.io/doc/user/options.html#'smartcase
 
 #### Glob Syntax
 
-Optionally, you may use [glob](https://en.wikipedia.org/wiki/Glob_(programming)) syntax to search filepaths.
+Optionally, you may use [glob](<https://en.wikipedia.org/wiki/Glob_(programming)>) syntax to search filepaths.
 
 #### Examples
 

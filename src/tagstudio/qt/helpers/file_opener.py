@@ -14,6 +14,7 @@ from PySide6.QtCore import Qt
 from PySide6.QtGui import QMouseEvent
 from PySide6.QtWidgets import QLabel, QWidget
 
+from tagstudio.core.utils.types import unwrap
 from tagstudio.qt.helpers.silent_popen import silent_Popen
 
 logger = structlog.get_logger(__name__)
@@ -109,11 +110,13 @@ class FileOpenerHelper:
 
     def open_file(self):
         """Open the file in the default application."""
-        open_file(self.filepath)
+        if Path(self.filepath).is_file():
+            open_file(self.filepath)
 
     def open_explorer(self):
         """Open the file in the default file explorer."""
-        open_file(self.filepath, file_manager=True)
+        if Path(self.filepath).is_file():
+            open_file(self.filepath, file_manager=True)
 
 
 class FileOpenerLabel(QLabel):
@@ -146,8 +149,7 @@ class FileOpenerLabel(QLabel):
             ev (QMouseEvent): The mouse press event.
         """
         if ev.button() == Qt.MouseButton.LeftButton:
-            assert self.filepath is not None, "File path is not set"
-            opener = FileOpenerHelper(self.filepath)
+            opener = FileOpenerHelper(unwrap(self.filepath))
             opener.open_explorer()
         elif ev.button() == Qt.MouseButton.RightButton:
             # Show context menu

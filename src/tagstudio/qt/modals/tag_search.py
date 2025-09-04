@@ -213,11 +213,8 @@ class TagSearchPanel(PanelWidget):
         logger.info("[TagSearchPanel] Updating Tags")
 
         # Remove the "Create & Add" button if one exists
-        create_button: QPushButton | None = None
         if self.create_button_in_layout and self.scroll_layout.count():
-            create_button = self.scroll_layout.takeAt(self.scroll_layout.count() - 1).widget()  # type: ignore
-            assert create_button is not None
-            create_button.deleteLater()
+            self.scroll_layout.takeAt(self.scroll_layout.count() - 1).widget().deleteLater()
             self.create_button_in_layout = False
 
         # Get results for the search query
@@ -316,7 +313,9 @@ class TagSearchPanel(PanelWidget):
             tag_widget.search_for_tag_action.triggered.connect(
                 lambda checked=False, tag_id=tag.id, driver=self.driver: (
                     driver.main_window.search_field.setText(f"tag_id:{tag_id}"),
-                    driver.update_browsing_state(BrowsingState.from_tag_id(tag_id)),
+                    driver.update_browsing_state(
+                        BrowsingState.from_tag_id(tag_id, driver.browsing_history.current)
+                    ),
                 )
             )
             tag_widget.search_for_tag_action.setEnabled(True)
@@ -388,7 +387,7 @@ class TagSearchPanel(PanelWidget):
 
         self.edit_modal = PanelModal(
             build_tag_panel,
-            self.lib.tag_display_name(tag.id),
+            self.lib.tag_display_name(tag),
             Translations["tag.edit"],
             done_callback=(self.update_tags(self.search_field.text())),
             has_save=True,

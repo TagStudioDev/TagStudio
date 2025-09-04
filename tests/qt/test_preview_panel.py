@@ -1,7 +1,15 @@
+# Copyright (C) 2025
+# Licensed under the GPL-3.0 License.
+# Created for TagStudio: https://github.com/CyanVoxel/TagStudio
+
+
+from tagstudio.core.library.alchemy.library import Library
+from tagstudio.core.library.alchemy.models import Entry
 from tagstudio.qt.controller.widgets.preview_panel_controller import PreviewPanel
+from tagstudio.qt.ts_qt import QtDriver
 
 
-def test_update_selection_empty(qt_driver, library):
+def test_update_selection_empty(qt_driver: QtDriver, library: Library):
     panel = PreviewPanel(library, qt_driver)
 
     # Clear the library selection (selecting 1 then unselecting 1)
@@ -13,7 +21,7 @@ def test_update_selection_empty(qt_driver, library):
     assert not panel.add_buttons_enabled
 
 
-def test_update_selection_single(qt_driver, library, entry_full):
+def test_update_selection_single(qt_driver: QtDriver, library: Library, entry_full: Entry):
     panel = PreviewPanel(library, qt_driver)
 
     # Select the single entry
@@ -24,7 +32,7 @@ def test_update_selection_single(qt_driver, library, entry_full):
     assert panel.add_buttons_enabled
 
 
-def test_update_selection_multiple(qt_driver, library):
+def test_update_selection_multiple(qt_driver: QtDriver, library: Library):
     panel = PreviewPanel(library, qt_driver)
 
     # Select the multiple entries

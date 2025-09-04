@@ -12,10 +12,11 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 from os import makedirs
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 from uuid import uuid4
 from warnings import catch_warnings
 
+import sqlalchemy
 import structlog
 from humanfriendly import format_timespan
 from sqlalchemy import (
@@ -31,6 +32,7 @@ from sqlalchemy import (
     desc,
     exists,
     func,
+    inspect,
     or_,
     select,
     text,
@@ -42,11 +44,13 @@ from sqlalchemy.orm import (
     contains_eager,
     joinedload,
     make_transient,
+    noload,
     selectinload,
 )
 
 from tagstudio.core.constants import (
     BACKUP_FOLDER_NAME,
+    IGNORE_NAME,
     LEGACY_TAG_FIELD_IDS,
     RESERVED_NAMESPACE_PREFIX,
     RESERVED_TAG_END,
@@ -58,6 +62,15 @@ from tagstudio.core.constants import (
 )
 from tagstudio.core.enums import LibraryPrefs
 from tagstudio.core.library.alchemy import default_color_groups
+from tagstudio.core.library.alchemy.constants import (
+    DB_VERSION,
+    DB_VERSION_CURRENT_KEY,
+    DB_VERSION_INITIAL_KEY,
+    DB_VERSION_LEGACY_KEY,
+    JSON_FILENAME,
+    SQL_FILENAME,
+    TAG_CHILDREN_QUERY,
+)
 from tagstudio.core.library.alchemy.db import make_tables
 from tagstudio.core.library.alchemy.enums import (
     MAX_SQL_VARIABLES,
@@ -81,9 +94,11 @@ from tagstudio.core.library.alchemy.models import (
     TagAlias,
     TagColorGroup,
     ValueType,
+    Version,
 )
 from tagstudio.core.library.alchemy.visitors import SQLBoolExpressionBuilder
 from tagstudio.core.library.json.library import Library as JsonLibrary
+from tagstudio.core.utils.types import unwrap
 from tagstudio.qt.translations import Translations
 
 if TYPE_CHECKING:
@@ -91,18 +106,6 @@ if TYPE_CHECKING:
 
 
 logger = structlog.get_logger(__name__)
-
-TAG_CHILDREN_QUERY = text("""
--- Note for this entire query that tag_parents.child_id is the parent id and tag_parents.parent_id is the child id due to bad naming
-WITH RECURSIVE ChildTags AS (
-    SELECT :tag_id AS child_id
-    UNION
-    SELECT tp.parent_id AS child_id
-	FROM tag_parents tp
-    INNER JOIN ChildTags c ON tp.child_id = c.child_id
-)
-SELECT * FROM ChildTags;
-""")  # noqa: E501
 
 
 class ReservedNamespaceError(Exception):
@@ -207,13 +210,16 @@ class Library:
     """Class for the Library object, and all CRUD operations made upon it."""
 
     library_dir: Path | None = None
-    storage_path: Path | None
+    storage_path: Path | str | None
     engine: Engine | None = None
     folder: Folder | None
     included_files: set[Path] = set()
 
-    SQL_FILENAME: str = "ts_library.sqlite"
-    JSON_FILENAME: str = "ts_library.json"
+    def __init__(self) -> None:
+        self.dupe_entries_count: int = -1  # NOTE: For internal management.
+        self.dupe_files_count: int = -1
+        self.ignored_entries_count: int = -1
+        self.unlinked_entries_count: int = -1
 
     def close(self):
         if self.engine:
@@ -222,6 +228,11 @@ class Library:
         self.storage_path = None
         self.folder = None
         self.included_files = set()
+
+        self.dupe_entries_count = -1
+        self.dupe_files_count = -1
+        self.ignored_entries_count = -1
+        self.unlinked_entries_count = -1
 
     def migrate_json_to_sqlite(self, json_lib: JsonLibrary):
         """Migrate JSON library data to the SQLite database."""
@@ -272,8 +283,8 @@ class Library:
 
         # Parent Tags (Previously known as "Subtags" in JSON)
         for tag in json_lib.tags:
-            for child_id in tag.subtag_ids:
-                self.add_parent_tag(parent_id=tag.id, child_id=child_id)
+            for parent_id in tag.subtag_ids:
+                self.add_parent_tag(parent_id=parent_id, child_id=tag.id)
 
         # Entries
         self.add_entries(
@@ -314,13 +325,12 @@ class Library:
                 return f
         return None
 
-    def tag_display_name(self, tag_id: int) -> str:
-        with Session(self.engine) as session:
-            tag = session.scalar(select(Tag).where(Tag.id == tag_id))
-            if not tag:
-                return "<NO TAG>"
+    def tag_display_name(self, tag: Tag | None) -> str:
+        if not tag:
+            return "<NO TAG>"
 
-            if tag.disambiguation_id:
+        if tag.disambiguation_id:
+            with Session(self.engine) as session:
                 disam_tag = session.scalar(select(Tag).where(Tag.id == tag.disambiguation_id))
                 if not disam_tag:
                     return "<NO DISAM TAG>"
@@ -328,19 +338,22 @@ class Library:
                 if not disam_name:
                     disam_name = disam_tag.name
                 return f"{tag.name} ({disam_name})"
-            else:
-                return tag.name
+        else:
+            return tag.name
 
-    def open_library(self, library_dir: Path, storage_path: Path | None = None) -> LibraryStatus:
+    def open_library(
+        self, library_dir: Path, storage_path: Path | str | None = None
+    ) -> LibraryStatus:
         is_new: bool = True
         if storage_path == ":memory:":
             self.storage_path = storage_path
             is_new = True
             return self.open_sqlite_library(library_dir, is_new)
         else:
-            self.storage_path = library_dir / TS_FOLDER_NAME / self.SQL_FILENAME
+            self.storage_path = library_dir / TS_FOLDER_NAME / SQL_FILENAME
+            assert isinstance(self.storage_path, Path)
             if self.verify_ts_folder(library_dir) and (is_new := not self.storage_path.exists()):
-                json_path = library_dir / TS_FOLDER_NAME / self.JSON_FILENAME
+                json_path = library_dir / TS_FOLDER_NAME / JSON_FILENAME
                 if json_path.exists():
                     return LibraryStatus(
                         success=False,
@@ -364,7 +377,7 @@ class Library:
         # https://docs.sqlalchemy.org/en/20/changelog/migration_07.html
         # Under -> sqlite-the-sqlite-dialect-now-uses-nullpool-for-file-based-databases
         poolclass = None if self.storage_path == ":memory:" else NullPool
-        db_version: int = 0
+        loaded_db_version: int = 0
 
         logger.info(
             "[Library] Opening SQLite Library",
@@ -373,16 +386,19 @@ class Library:
         )
         self.engine = create_engine(connection_string, poolclass=poolclass)
         with Session(self.engine) as session:
-            # dont check db version when creating new library
+            # Don't check DB version when creating new library
             if not is_new:
-                db_result = session.scalar(
-                    select(Preferences).where(Preferences.key == LibraryPrefs.DB_VERSION.name)
-                )
-                if db_result:
-                    db_version = db_result.value
+                loaded_db_version = self.get_version(DB_VERSION_CURRENT_KEY)
 
-                # NOTE: DB_VERSION 6 is the first supported SQL DB version.
-                if db_version < 6 or db_version > LibraryPrefs.DB_VERSION.default:
+                # ======================== Library Database Version Checking =======================
+                # DB_VERSION 6 is the first supported SQLite DB version.
+                # If the DB_VERSION is >= 100, that means it's a compound major + minor version.
+                #   - Dividing by 100 and flooring gives the major (breaking changes) version.
+                #   - If a DB has major version higher than the current program, don't load it.
+                #   - If only the minor version is higher, it's still allowed to load.
+                if loaded_db_version < 6 or (
+                    loaded_db_version >= 100 and loaded_db_version // 100 > DB_VERSION // 100
+                ):
                     mismatch_text = Translations["status.library_version_mismatch"]
                     found_text = Translations["status.library_version_found"]
                     expected_text = Translations["status.library_version_expected"]
@@ -390,12 +406,12 @@ class Library:
                         success=False,
                         message=(
                             f"{mismatch_text}\n"
-                            f"{found_text} v{db_version}, "
-                            f"{expected_text} v{LibraryPrefs.DB_VERSION.default}"
+                            f"{found_text} v{loaded_db_version}, "
+                            f"{expected_text} v{DB_VERSION}"
                         ),
                     )
 
-            logger.info(f"[Library] DB_VERSION: {db_version}")
+            logger.info(f"[Library] DB_VERSION: {loaded_db_version}")
             make_tables(self.engine)
 
             # Add default tag color namespaces.
@@ -433,13 +449,37 @@ class Library:
                 except IntegrityError:
                     session.rollback()
 
+            # Ensure version rows are present
+            with catch_warnings(record=True):
+                # NOTE: The "Preferences" table is depreciated and will be removed in the future.
+                # The DB_VERSION is still being set to it in order to remain backwards-compatible
+                # with existing TagStudio versions until it is removed.
+                try:
+                    session.add(Preferences(key=DB_VERSION_LEGACY_KEY, value=DB_VERSION))
+                    session.commit()
+                except IntegrityError:
+                    session.rollback()
+
+                try:
+                    initial = DB_VERSION if is_new else 100
+                    session.add(Version(key=DB_VERSION_INITIAL_KEY, value=initial))
+                    session.commit()
+                except IntegrityError:
+                    session.rollback()
+
+                try:
+                    session.add(Version(key=DB_VERSION_CURRENT_KEY, value=DB_VERSION))
+                    session.commit()
+                except IntegrityError:
+                    session.rollback()
+
+            # TODO: Remove this "Preferences" system.
             for pref in LibraryPrefs:
                 with catch_warnings(record=True):
                     try:
                         session.add(Preferences(key=pref.name, value=pref.default))
                         session.commit()
                     except IntegrityError:
-                        logger.debug("preference already exists", pref=pref)
                         session.rollback()
 
             for field in _FieldID:
@@ -470,37 +510,52 @@ class Library:
                 session.commit()
                 self.folder = folder
 
+            # Generate default .ts_ignore file
+            if is_new:
+                try:
+                    ts_ignore_template = (
+                        Path(__file__).parents[3] / "resources/templates/ts_ignore_template.txt"
+                    )
+                    shutil.copy2(ts_ignore_template, library_dir / TS_FOLDER_NAME / IGNORE_NAME)
+                except Exception as e:
+                    logger.error("[ERROR][Library] Could not generate '.ts_ignore' file!", error=e)
+
             # Apply any post-SQL migration patches.
             if not is_new:
                 # save backup if patches will be applied
-                if LibraryPrefs.DB_VERSION.default != db_version:
+                if loaded_db_version < DB_VERSION:
                     self.library_dir = library_dir
                     self.save_library_backup_to_disk()
                     self.library_dir = None
 
                 # schema changes first
-                if db_version < 8:
-                    self.apply_db8_schema_changes(session)
-                if db_version < 9:
-                    self.apply_db9_schema_changes(session)
+                if loaded_db_version < 8:
+                    self.__apply_db8_schema_changes(session)
+                if loaded_db_version < 9:
+                    self.__apply_db9_schema_changes(session)
 
                 # now the data changes
-                if db_version == 6:
-                    self.apply_repairs_for_db6(session)
-                if db_version >= 6 and db_version < 8:
-                    self.apply_db8_default_data(session)
-                if db_version < 9:
-                    self.apply_db9_filename_population(session)
+                if loaded_db_version == 6:
+                    self.__apply_repairs_for_db6(session)
+                if loaded_db_version >= 6 and loaded_db_version < 8:
+                    self.__apply_db8_default_data(session)
+                if loaded_db_version < 9:
+                    self.__apply_db9_filename_population(session)
+                if loaded_db_version < 100:
+                    self.__apply_db100_parent_repairs(session)
+
+                # Convert file extension list to ts_ignore file, if a .ts_ignore file does not exist
+                self.migrate_sql_to_ts_ignore(library_dir)
 
             # Update DB_VERSION
-            if LibraryPrefs.DB_VERSION.default > db_version:
-                self.set_prefs(LibraryPrefs.DB_VERSION, LibraryPrefs.DB_VERSION.default)
+            if loaded_db_version < DB_VERSION:
+                self.set_version(DB_VERSION_CURRENT_KEY, DB_VERSION)
 
         # everything is fine, set the library path
         self.library_dir = library_dir
         return LibraryStatus(success=True, library_path=library_dir)
 
-    def apply_repairs_for_db6(self, session: Session):
+    def __apply_repairs_for_db6(self, session: Session):
         """Apply database repairs introduced in DB_VERSION 7."""
         logger.info("[Library][Migration] Applying patches to DB_VERSION: 6 library...")
         with session:
@@ -521,11 +576,9 @@ class Library:
                 .values(disambiguation_id=None)
             )
             session.execute(disam_stmt)
-            session.flush()
-
             session.commit()
 
-    def apply_db8_schema_changes(self, session: Session):
+    def __apply_db8_schema_changes(self, session: Session):
         """Apply database schema changes introduced in DB_VERSION 8."""
         # TODO: Use Alembic for this part instead
         # Add the missing color_border column to the TagColorGroups table.
@@ -543,7 +596,7 @@ class Library:
             )
             session.rollback()
 
-    def apply_db8_default_data(self, session: Session):
+    def __apply_db8_default_data(self, session: Session):
         """Apply default data changes introduced in DB_VERSION 8."""
         tag_colors: list[TagColorGroup] = default_color_groups.standard()
         tag_colors += default_color_groups.pastels()
@@ -593,7 +646,7 @@ class Library:
                 )
                 session.rollback()
 
-    def apply_db9_schema_changes(self, session: Session):
+    def __apply_db9_schema_changes(self, session: Session):
         """Apply database schema changes introduced in DB_VERSION 9."""
         add_filename_column = text(
             "ALTER TABLE entries ADD COLUMN filename TEXT NOT NULL DEFAULT ''"
@@ -609,12 +662,52 @@ class Library:
             )
             session.rollback()
 
-    def apply_db9_filename_population(self, session: Session):
+    def __apply_db9_filename_population(self, session: Session):
         """Populate the filename column introduced in DB_VERSION 9."""
         for entry in self.all_entries():
             session.merge(entry).filename = entry.path.name
         session.commit()
         logger.info("[Library][Migration] Populated filename column in entries table")
+
+    def __apply_db100_parent_repairs(self, session: Session):
+        """Swap the child_id and parent_id values in the TagParent table."""
+        with session:
+            # Repair parent-child tag relationships that are the wrong way around.
+            stmt = update(TagParent).values(
+                parent_id=TagParent.child_id,
+                child_id=TagParent.parent_id,
+            )
+            session.execute(stmt)
+            session.commit()
+            logger.info("[Library][Migration] Refactored TagParent column")
+
+    def migrate_sql_to_ts_ignore(self, library_dir: Path):
+        # Do not continue if existing '.ts_ignore' file is found
+        if Path(library_dir / TS_FOLDER_NAME / IGNORE_NAME).exists():
+            return
+
+        # Create blank '.ts_ignore' file
+        ts_ignore_template = (
+            Path(__file__).parents[3] / "resources/templates/ts_ignore_template_blank.txt"
+        )
+        ts_ignore = library_dir / TS_FOLDER_NAME / IGNORE_NAME
+        try:
+            shutil.copy2(ts_ignore_template, ts_ignore)
+        except Exception as e:
+            logger.error("[ERROR][Library] Could not generate '.ts_ignore' file!", error=e)
+
+        # Load legacy extension data
+        extensions: list[str] = self.prefs(LibraryPrefs.EXTENSION_LIST)  # pyright: ignore[reportAssignmentType]
+        is_exclude_list: bool = self.prefs(LibraryPrefs.IS_EXCLUDE_LIST)  # pyright: ignore[reportAssignmentType]
+
+        # Copy extensions to '.ts_ignore' file
+        if ts_ignore.exists():
+            with open(ts_ignore, "a") as f:
+                prefix = ""
+                if not is_exclude_list:
+                    prefix = "!"
+                    f.write("*\n")
+                f.writelines([f"{prefix}*.{x.lstrip('.')}\n" for x in extensions])
 
     @property
     def default_fields(self) -> list[BaseField]:
@@ -659,7 +752,10 @@ class Library:
                 entry_stmt = (
                     entry_stmt.outerjoin(Entry.text_fields)
                     .outerjoin(Entry.datetime_fields)
-                    .options(selectinload(Entry.text_fields), selectinload(Entry.datetime_fields))
+                    .options(
+                        selectinload(Entry.text_fields),
+                        selectinload(Entry.datetime_fields),
+                    )
                 )
             # if with_tags:
             #     entry_stmt = entry_stmt.outerjoin(Entry.tags).options(selectinload(Entry.tags))
@@ -884,7 +980,7 @@ class Library:
         :return: number of entries matching the query and one page of results.
         """
         assert isinstance(search, BrowsingState)
-        assert self.engine
+        assert self.library_dir
 
         with Session(self.engine, expire_on_commit=False) as session:
             if page_size is None:
@@ -903,14 +999,7 @@ class Library:
                 logger.info(
                     f"SQL Expression Builder finished ({format_timespan(end_time - start_time)})"
                 )
-
-            extensions = self.prefs(LibraryPrefs.EXTENSION_LIST)
-            is_exclude_list = self.prefs(LibraryPrefs.IS_EXCLUDE_LIST)
-
-            if extensions and is_exclude_list:
-                statement = statement.where(Entry.suffix.notin_(extensions))
-            elif extensions:
-                statement = statement.where(Entry.suffix.in_(extensions))
+            statement = statement.distinct(Entry.id)
 
             sort_on: ColumnExpressionArgument = Entry.id
             match search.sorting_mode:
@@ -920,6 +1009,8 @@ class Library:
                     sort_on = func.lower(Entry.filename)
                 case SortingModeEnum.PATH:
                     sort_on = func.lower(Entry.path)
+                case SortingModeEnum.RANDOM:
+                    sort_on = func.sin(Entry.id * search.random_seed)
 
             statement = statement.order_by(asc(sort_on) if search.ascending else desc(sort_on))
 
@@ -1178,7 +1269,7 @@ class Library:
         value: str | datetime | None = None,
     ) -> bool:
         logger.info(
-            "add_field_to_entry",
+            "[Library][add_field_to_entry]",
             entry_id=entry_id,
             field_type=field,
             field_id=field_id,
@@ -1351,8 +1442,19 @@ class Library:
 
     def add_tags_to_entries(
         self, entry_ids: int | list[int], tag_ids: int | list[int] | set[int]
-    ) -> bool:
-        """Add one or more tags to one or more entries."""
+    ) -> int:
+        """Add one or more tags to one or more entries.
+
+        Returns:
+            The total number of tags added across all entries.
+        """
+        total_added: int = 0
+        logger.info(
+            "[Library][add_tags_to_entries]",
+            entry_ids=entry_ids,
+            tag_ids=tag_ids,
+        )
+
         entry_ids_ = [entry_ids] if isinstance(entry_ids, int) else entry_ids
         tag_ids_ = [tag_ids] if isinstance(tag_ids, int) else tag_ids
         with Session(self.engine, expire_on_commit=False) as session:
@@ -1360,16 +1462,12 @@ class Library:
                 for entry_id in entry_ids_:
                     try:
                         session.add(TagEntry(tag_id=tag_id, entry_id=entry_id))
-                        session.flush()
+                        total_added += 1
+                        session.commit()
                     except IntegrityError:
                         session.rollback()
-            try:
-                session.commit()
-            except IntegrityError as e:
-                logger.warning("[Library][add_tags_to_entries]", warning=e)
-                session.rollback()
-                return False
-            return True
+
+        return total_added
 
     def remove_tags_from_entries(
         self, entry_ids: int | list[int], tag_ids: int | list[int] | set[int]
@@ -1435,7 +1533,7 @@ class Library:
         target_path = self.library_dir / TS_FOLDER_NAME / BACKUP_FOLDER_NAME / filename
 
         shutil.copy2(
-            self.library_dir / TS_FOLDER_NAME / self.SQL_FILENAME,
+            self.library_dir / TS_FOLDER_NAME / SQL_FILENAME,
             target_path,
         )
 
@@ -1498,6 +1596,45 @@ class Library:
             )
 
             return session.scalar(statement)
+
+    def get_tag_hierarchy(self, tag_ids: Iterable[int]) -> dict[int, Tag]:
+        """Get a dictionary containing tags in `tag_ids` and all of their ancestor tags."""
+        current_tag_ids: set[int] = set(tag_ids)
+        all_tag_ids: set[int] = set()
+        all_tags: dict[int, Tag] = {}
+        all_tag_parents: dict[int, list[int]] = {}
+
+        with Session(self.engine) as session:
+            while len(current_tag_ids) > 0:
+                all_tag_ids.update(current_tag_ids)
+                statement = select(TagParent).where(TagParent.child_id.in_(current_tag_ids))
+                tag_parents = session.scalars(statement).fetchall()
+                current_tag_ids.clear()
+                for tag_parent in tag_parents:
+                    all_tag_parents.setdefault(tag_parent.child_id, []).append(tag_parent.parent_id)
+                    current_tag_ids.add(tag_parent.parent_id)
+                current_tag_ids = current_tag_ids.difference(all_tag_ids)
+
+            statement = select(Tag).where(Tag.id.in_(all_tag_ids))
+            statement = statement.options(
+                noload(Tag.parent_tags), selectinload(Tag.aliases), joinedload(Tag.color)
+            )
+            tags = session.scalars(statement).fetchall()
+            for tag in tags:
+                all_tags[tag.id] = tag
+            for tag in all_tags.values():
+                # Sqlalchemy tracks this as a change to the parent_tags field
+                tag.parent_tags = {all_tags[p] for p in all_tag_parents.get(tag.id, [])}
+                # When calling session.add with this tag instance sqlalchemy will
+                # attempt to create TagParents that already exist.
+
+                state = inspect(tag)
+                # Prevent sqlalchemy from thinking any fields are different from what's commited
+                # commited_state contains original values for fields that have changed.
+                # empty when no fields have changed
+                state.committed_state.clear()
+
+        return all_tags
 
     def add_parent_tag(self, parent_id: int, child_id: int) -> bool:
         if parent_id == child_id:
@@ -1630,35 +1767,105 @@ class Library:
 
         # load all tag's parent tags to know which to remove
         prev_parent_tags = session.scalars(
-            select(TagParent).where(TagParent.parent_id == tag.id)
+            select(TagParent).where(TagParent.child_id == tag.id)
         ).all()
 
         for parent_tag in prev_parent_tags:
-            if parent_tag.child_id not in parent_ids:
+            if parent_tag.parent_id not in parent_ids:
                 session.delete(parent_tag)
             else:
                 # no change, remove from list
-                parent_ids.remove(parent_tag.child_id)
+                parent_ids.remove(parent_tag.parent_id)
 
                 # create remaining items
         for parent_id in parent_ids:
             # add new parent tag
             parent_tag = TagParent(
-                parent_id=tag.id,
-                child_id=parent_id,
+                parent_id=parent_id,
+                child_id=tag.id,
             )
             session.add(parent_tag)
 
-    def prefs(self, key: LibraryPrefs):
+    def get_version(self, key: str) -> int:
+        """Get a version value from the DB.
+
+        Args:
+            key(str): The key for the name of the version type to set.
+        """
+        with Session(self.engine) as session:
+            engine = sqlalchemy.inspect(self.engine)
+            try:
+                # "Version" table added in DB_VERSION 101
+                if engine and engine.has_table("Version"):
+                    version = session.scalar(select(Version).where(Version.key == key))
+                    assert version
+                    return version.value
+                # NOTE: The "Preferences" table has been depreciated as of TagStudio 9.5.4
+                # and is set to be removed in a future release.
+                else:
+                    pref_version = session.scalar(
+                        select(Preferences).where(Preferences.key == DB_VERSION_LEGACY_KEY)
+                    )
+                    assert pref_version
+                    assert isinstance(pref_version.value, int)
+                    return pref_version.value
+            except Exception:
+                return 0
+
+    def set_version(self, key: str, value: int) -> None:
+        """Set a version value to the DB.
+
+        Args:
+            key(str): The key for the name of the version type to set.
+            value(int): The version value to set.
+        """
+        with Session(self.engine) as session:
+            try:
+                version = session.scalar(select(Version).where(Version.key == key))
+                assert version
+                version.value = value
+                session.add(version)
+                session.commit()
+
+                # If a depreciated "Preferences" table is found, update the version value to be read
+                # by older TagStudio versions.
+                engine = sqlalchemy.inspect(self.engine)
+                if engine and engine.has_table("Preferences"):
+                    pref = session.scalar(
+                        select(Preferences).where(Preferences.key == DB_VERSION_LEGACY_KEY)
+                    )
+                    assert pref is not None
+                    pref.value = value  # pyright: ignore
+                    session.add(pref)
+                    session.commit()
+            except (IntegrityError, AssertionError) as e:
+                logger.error("[Library][ERROR] Couldn't add default tag color namespaces", error=e)
+                session.rollback()
+
+    def prefs(self, key: str | LibraryPrefs):
         # load given item from Preferences table
         with Session(self.engine) as session:
-            return session.scalar(select(Preferences).where(Preferences.key == key.name)).value
+            if isinstance(key, LibraryPrefs):
+                return session.scalar(select(Preferences).where(Preferences.key == key.name)).value
+            else:
+                return session.scalar(select(Preferences).where(Preferences.key == key)).value
 
-    def set_prefs(self, key: LibraryPrefs, value) -> None:
+    def set_prefs(self, key: str | LibraryPrefs, value: Any) -> None:
         # set given item in Preferences table
         with Session(self.engine) as session:
             # load existing preference and update value
-            pref = session.scalar(select(Preferences).where(Preferences.key == key.name))
+            stuff = session.scalars(select(Preferences))
+            logger.info([x.key for x in list(stuff)])
+
+            pref: Preferences = unwrap(
+                session.scalar(
+                    select(Preferences).where(
+                        Preferences.key == (key.name if isinstance(key, LibraryPrefs) else key)
+                    )
+                )
+            )
+
+            logger.info("loading pref", pref=pref, key=key, value=value)
             pref.value = value
             session.add(pref)
             session.commit()
@@ -1683,17 +1890,22 @@ class Library:
                         value=field.value,
                     )
 
-    def merge_entries(self, from_entry: Entry, into_entry: Entry) -> None:
+    def merge_entries(self, from_entry: Entry, into_entry: Entry) -> bool:
         """Add fields and tags from the first entry to the second, and then delete the first."""
+        success = True
         for field in from_entry.fields:
-            self.add_field_to_entry(
+            result = self.add_field_to_entry(
                 entry_id=into_entry.id,
                 field_id=field.type_key,
                 value=field.value,
             )
+            if not result:
+                success = False
         tag_ids = [tag.id for tag in from_entry.tags]
         self.add_tags_to_entries(into_entry.id, tag_ids)
         self.remove_entries([from_entry.id])
+
+        return success
 
     @property
     def tag_color_groups(self) -> dict[str, list[TagColorGroup]]:
@@ -1719,7 +1931,10 @@ class Library:
                 session.expunge(en)
 
         return dict(
-            sorted(color_groups.items(), key=lambda kv: self.get_namespace_name(kv[0]).lower())
+            sorted(
+                color_groups.items(),
+                key=lambda kv: self.get_namespace_name(kv[0]).lower(),
+            )
         )
 
     @property

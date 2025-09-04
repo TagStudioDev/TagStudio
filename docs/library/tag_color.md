@@ -1,4 +1,8 @@
-# Tag Colors
+---
+icon: material/palette
+---
+
+# :material-palette: Tag Colors
 
 TagStudio features a variety of built-in tag colors, alongside the ability for users to create their own custom tag color palettes.
 

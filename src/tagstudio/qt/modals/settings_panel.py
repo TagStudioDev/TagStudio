@@ -3,7 +3,7 @@
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
@@ -18,71 +18,73 @@ from PySide6.QtWidgets import (
 )
 
 from tagstudio.core.enums import ShowFilepathOption, TagClickActionOption
-from tagstudio.core.global_settings import Theme
+from tagstudio.core.global_settings import Splash, Theme
 from tagstudio.qt.translations import DEFAULT_TRANSLATION, LANGUAGES, Translations
 from tagstudio.qt.widgets.panel import PanelModal, PanelWidget
 
 if TYPE_CHECKING:
     from tagstudio.qt.ts_qt import QtDriver
 
-FILEPATH_OPTION_MAP: dict[ShowFilepathOption, str] = {}
-
-THEME_MAP: dict[Theme, str] = {}
-
-TAG_CLICK_ACTION_MAP: dict[TagClickActionOption, str] = {}
-
-DATE_FORMAT_MAP: dict[str, str] = {
-    "%d/%m/%y": "21/08/24",
-    "%d/%m/%Y": "21/08/2024",
-    "%d.%m.%y": "21.08.24",
-    "%d.%m.%Y": "21.08.2024",
-    "%d-%m-%y": "21-08-24",
-    "%d-%m-%Y": "21-08-2024",
-    "%x": "08/21/24",
-    "%m/%d/%Y": "08/21/2024",
-    "%m-%d-%y": "08-21-24",
-    "%m-%d-%Y": "08-21-2024",
-    "%m.%d.%y": "08.21.24",
-    "%m.%d.%Y": "08.21.2024",
-    "%Y/%m/%d": "2024/08/21",
-    "%Y-%m-%d": "2024-08-21",
-    "%Y.%m.%d": "2024.08.21",
-}
-
 
 class SettingsPanel(PanelWidget):
     driver: "QtDriver"
+
+    filepath_option_map: dict[ShowFilepathOption, str] = {
+        ShowFilepathOption.SHOW_FULL_PATHS: Translations["settings.filepath.option.full"],
+        ShowFilepathOption.SHOW_RELATIVE_PATHS: Translations["settings.filepath.option.relative"],
+        ShowFilepathOption.SHOW_FILENAMES_ONLY: Translations["settings.filepath.option.name"],
+    }
+
+    theme_map: dict[Theme, str] = {
+        Theme.SYSTEM: Translations["settings.theme.system"],
+        Theme.DARK: Translations["settings.theme.dark"],
+        Theme.LIGHT: Translations["settings.theme.light"],
+    }
+
+    splash_map: dict[Splash, str] = {
+        Splash.DEFAULT: Translations["settings.splash.option.default"],
+        Splash.RANDOM: Translations["settings.splash.option.random"],
+        Splash.CLASSIC: Translations["settings.splash.option.classic"],
+        Splash.GOO_GEARS: Translations["settings.splash.option.goo_gears"],
+        Splash.NINETY_FIVE: Translations["settings.splash.option.ninety_five"],
+    }
+
+    tag_click_action_map: dict[TagClickActionOption, str] = {
+        TagClickActionOption.OPEN_EDIT: Translations["settings.tag_click_action.open_edit"],
+        TagClickActionOption.SET_SEARCH: Translations["settings.tag_click_action.set_search"],
+        TagClickActionOption.ADD_TO_SEARCH: Translations["settings.tag_click_action.add_to_search"],
+    }
+
+    date_format_map: dict[str, str] = {
+        "%d/%m/%y": "21/08/24",
+        "%d/%m/%Y": "21/08/2024",
+        "%d.%m.%y": "21.08.24",
+        "%d.%m.%Y": "21.08.2024",
+        "%d-%m-%y": "21-08-24",
+        "%d-%m-%Y": "21-08-2024",
+        "%x": "08/21/24",
+        "%m/%d/%Y": "08/21/2024",
+        "%m-%d-%y": "08-21-24",
+        "%m-%d-%Y": "08-21-2024",
+        "%m.%d.%y": "08.21.24",
+        "%m.%d.%Y": "08.21.2024",
+        "%Y/%m/%d": "2024/08/21",
+        "%Y-%m-%d": "2024-08-21",
+        "%Y.%m.%d": "2024.08.21",
+    }
 
     def __init__(self, driver: "QtDriver"):
         super().__init__()
         # set these "constants" because language will be loaded from config shortly after startup
         # and we want to use the current language for the dropdowns
-        global FILEPATH_OPTION_MAP, THEME_MAP, TAG_CLICK_ACTION_MAP
-        FILEPATH_OPTION_MAP = {
-            ShowFilepathOption.SHOW_FULL_PATHS: Translations["settings.filepath.option.full"],
-            ShowFilepathOption.SHOW_RELATIVE_PATHS: Translations[
-                "settings.filepath.option.relative"
-            ],
-            ShowFilepathOption.SHOW_FILENAMES_ONLY: Translations["settings.filepath.option.name"],
-        }
-        THEME_MAP = {
-            Theme.DARK: Translations["settings.theme.dark"],
-            Theme.LIGHT: Translations["settings.theme.light"],
-            Theme.SYSTEM: Translations["settings.theme.system"],
-        }
-        TAG_CLICK_ACTION_MAP = {
-            TagClickActionOption.OPEN_EDIT: Translations["settings.tag_click_action.open_edit"],
-            TagClickActionOption.SET_SEARCH: Translations["settings.tag_click_action.set_search"],
-            TagClickActionOption.ADD_TO_SEARCH: Translations[
-                "settings.tag_click_action.add_to_search"
-            ],
-        }
 
         self.driver = driver
         self.setMinimumSize(400, 300)
 
         self.root_layout = QVBoxLayout(self)
         self.root_layout.setContentsMargins(0, 6, 0, 0)
+
+        self.library_settings_container = QWidget()
 
         # Tabs
         self.tab_widget = QTabWidget()
@@ -135,6 +137,11 @@ class SettingsPanel(PanelWidget):
             Translations["settings.open_library_on_start"], self.open_last_lib_checkbox
         )
 
+        # Generate Thumbnails
+        self.generate_thumbs = QCheckBox()
+        self.generate_thumbs.setChecked(self.driver.settings.generate_thumbs)
+        form_layout.addRow(Translations["settings.generate_thumbs"], self.generate_thumbs)
+
         # Autoplay
         self.autoplay_checkbox = QCheckBox()
         self.autoplay_checkbox.setChecked(self.driver.settings.autoplay)
@@ -161,49 +168,61 @@ class SettingsPanel(PanelWidget):
 
         # Show Filepath
         self.filepath_combobox = QComboBox()
-        for k in FILEPATH_OPTION_MAP:
-            self.filepath_combobox.addItem(FILEPATH_OPTION_MAP[k], k)
+        for k in SettingsPanel.filepath_option_map:
+            self.filepath_combobox.addItem(SettingsPanel.filepath_option_map[k], k)
         filepath_option: ShowFilepathOption = self.driver.settings.show_filepath
-        if filepath_option not in FILEPATH_OPTION_MAP:
+        if filepath_option not in SettingsPanel.filepath_option_map:
             filepath_option = ShowFilepathOption.DEFAULT
         self.filepath_combobox.setCurrentIndex(
-            list(FILEPATH_OPTION_MAP.keys()).index(filepath_option)
+            list(SettingsPanel.filepath_option_map.keys()).index(filepath_option)
         )
         form_layout.addRow(Translations["settings.filepath.label"], self.filepath_combobox)
 
-        # Dark Mode
-        self.theme_combobox = QComboBox()
-        for k in THEME_MAP:
-            self.theme_combobox.addItem(THEME_MAP[k], k)
-        theme = self.driver.settings.theme
-        if theme not in THEME_MAP:
-            theme = Theme.DEFAULT
-        self.theme_combobox.setCurrentIndex(list(THEME_MAP.keys()).index(theme))
-        self.theme_combobox.currentIndexChanged.connect(self.__update_restart_label)
-        form_layout.addRow(Translations["settings.theme.label"], self.theme_combobox)
-
         # Tag Click Action
         self.tag_click_action_combobox = QComboBox()
-        for k in TAG_CLICK_ACTION_MAP:
-            self.tag_click_action_combobox.addItem(TAG_CLICK_ACTION_MAP[k], k)
+        for k in SettingsPanel.tag_click_action_map:
+            self.tag_click_action_combobox.addItem(SettingsPanel.tag_click_action_map[k], k)
         tag_click_action = self.driver.settings.tag_click_action
-        if tag_click_action not in TAG_CLICK_ACTION_MAP:
+        if tag_click_action not in SettingsPanel.tag_click_action_map:
             tag_click_action = TagClickActionOption.DEFAULT
         self.tag_click_action_combobox.setCurrentIndex(
-            list(TAG_CLICK_ACTION_MAP.keys()).index(tag_click_action)
+            list(SettingsPanel.tag_click_action_map.keys()).index(tag_click_action)
         )
         form_layout.addRow(
             Translations["settings.tag_click_action.label"], self.tag_click_action_combobox
         )
 
+        # Dark Mode
+        self.theme_combobox = QComboBox()
+        for k in SettingsPanel.theme_map:
+            self.theme_combobox.addItem(SettingsPanel.theme_map[k], k)
+        theme = self.driver.settings.theme
+        if theme not in SettingsPanel.theme_map:
+            theme = Theme.DEFAULT
+        self.theme_combobox.setCurrentIndex(list(SettingsPanel.theme_map.keys()).index(theme))
+        self.theme_combobox.currentIndexChanged.connect(self.__update_restart_label)
+        form_layout.addRow(Translations["settings.theme.label"], self.theme_combobox)
+
+        # Splash Screen
+        self.splash_combobox = QComboBox()
+        for k in SettingsPanel.splash_map:
+            self.splash_combobox.addItem(SettingsPanel.splash_map[k], k)
+        splash = self.driver.settings.splash
+        if splash not in SettingsPanel.splash_map:
+            splash = Splash.DEFAULT
+        self.splash_combobox.setCurrentIndex(list(SettingsPanel.splash_map.keys()).index(splash))
+        form_layout.addRow(Translations["settings.splash.label"], self.splash_combobox)
+
         # Date Format
         self.dateformat_combobox = QComboBox()
-        for k in DATE_FORMAT_MAP:
-            self.dateformat_combobox.addItem(DATE_FORMAT_MAP[k], k)
+        for k in SettingsPanel.date_format_map:
+            self.dateformat_combobox.addItem(SettingsPanel.date_format_map[k], k)
         dateformat: str = self.driver.settings.date_format
-        if dateformat not in DATE_FORMAT_MAP:
+        if dateformat not in SettingsPanel.date_format_map:
             dateformat = "%x"
-        self.dateformat_combobox.setCurrentIndex(list(DATE_FORMAT_MAP.keys()).index(dateformat))
+        self.dateformat_combobox.setCurrentIndex(
+            list(SettingsPanel.date_format_map.keys()).index(dateformat)
+        )
         self.dateformat_combobox.currentIndexChanged.connect(self.__update_restart_label)
         form_layout.addRow(Translations["settings.dateformat.label"], self.dateformat_combobox)
 
@@ -217,8 +236,8 @@ class SettingsPanel(PanelWidget):
         self.zeropadding_checkbox.setChecked(self.driver.settings.zero_padding)
         form_layout.addRow(Translations["settings.zeropadding.label"], self.zeropadding_checkbox)
 
-    def __build_library_settings(self):
-        self.library_settings_container = QWidget()
+    # TODO: Implement Library Settings
+    def __build_library_settings(self):  # pyright: ignore[reportUnusedFunction]
         form_layout = QFormLayout(self.library_settings_container)
         form_layout.setContentsMargins(6, 6, 6, 6)
 
@@ -228,10 +247,11 @@ class SettingsPanel(PanelWidget):
     def __get_language(self) -> str:
         return list(LANGUAGES.values())[self.language_combobox.currentIndex()]
 
-    def get_settings(self) -> dict:
+    def get_settings(self) -> dict[str, Any]:  # pyright: ignore[reportExplicitAny]
         return {
             "language": self.__get_language(),
             "open_last_loaded_on_startup": self.open_last_lib_checkbox.isChecked(),
+            "generate_thumbs": self.generate_thumbs.isChecked(),
             "autoplay": self.autoplay_checkbox.isChecked(),
             "show_filenames_in_grid": self.show_filenames_checkbox.isChecked(),
             "page_size": int(self.page_size_line_edit.text()),
@@ -241,6 +261,7 @@ class SettingsPanel(PanelWidget):
             "date_format": self.dateformat_combobox.currentData(),
             "hour_format": self.hourformat_checkbox.isChecked(),
             "zero_padding": self.zeropadding_checkbox.isChecked(),
+            "splash": self.splash_combobox.currentData(),
         }
 
     def update_settings(self, driver: "QtDriver"):
@@ -249,6 +270,7 @@ class SettingsPanel(PanelWidget):
         driver.settings.language = settings["language"]
         driver.settings.open_last_loaded_on_startup = settings["open_last_loaded_on_startup"]
         driver.settings.autoplay = settings["autoplay"]
+        driver.settings.generate_thumbs = settings["generate_thumbs"]
         driver.settings.show_filenames_in_grid = settings["show_filenames_in_grid"]
         driver.settings.page_size = settings["page_size"]
         driver.settings.show_filepath = settings["show_filepath"]
@@ -257,6 +279,7 @@ class SettingsPanel(PanelWidget):
         driver.settings.date_format = settings["date_format"]
         driver.settings.hour_format = settings["hour_format"]
         driver.settings.zero_padding = settings["zero_padding"]
+        driver.settings.splash = settings["splash"]
 
         driver.settings.save()
 

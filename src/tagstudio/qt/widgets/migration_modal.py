@@ -119,8 +119,8 @@ class JsonMigrationModal(QObject):
         self.match_text: str = Translations["json_migration.heading.match"]
         self.differ_text: str = Translations["json_migration.heading.differ"]
 
-        entries_text: str = Translations["json_migration.heading.entires"]
-        tags_text: str = Translations["json_migration.heading.tags"]
+        entries_text: str = Translations["library_info.stats.entries"]
+        tags_text: str = Translations["library_info.stats.tags"]
         names_text: str = tab + Translations["json_migration.heading.names"]
         shorthand_text: str = tab + Translations["json_migration.heading.shorthands"]
         parent_tags_text: str = tab + Translations["json_migration.heading.parent_tags"]
@@ -130,7 +130,7 @@ class JsonMigrationModal(QObject):
         ext_type_text: str = Translations["json_migration.heading.extension_list_type"]
         desc_text: str = Translations["json_migration.description"]
         path_parity_text: str = tab + Translations["json_migration.heading.paths"]
-        field_parity_text: str = tab + Translations["json_migration.heading.fields"]
+        field_parity_text: str = tab + Translations["library_info.stats.fields"]
 
         self.entries_row: int = 0
         self.path_row: int = 1
@@ -641,7 +641,7 @@ class JsonMigrationModal(QObject):
             for tag in self.sql_lib.tags:
                 tag_id = tag.id  # Tag IDs start at 0
                 sql_parent_tags = set(
-                    session.scalars(select(TagParent.child_id).where(TagParent.parent_id == tag.id))
+                    session.scalars(select(TagParent.parent_id).where(TagParent.child_id == tag.id))
                 )
 
                 # JSON tags allowed self-parenting; SQL tags no longer allow this.

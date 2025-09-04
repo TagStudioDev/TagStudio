@@ -1,4 +1,8 @@
-# Tools & Macros
+---
+icon: material/script-text
+---
+
+# :material-script-text: Tools & Macros
 
 Tools and macros are features that serve to create a more fluid [library](../library/index.md)-managing process, or provide some extra functionality. Please note that some are still in active development and will be fleshed out in future updates.
 

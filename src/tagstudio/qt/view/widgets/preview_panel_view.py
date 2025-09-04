@@ -19,6 +19,7 @@ from tagstudio.core.enums import Theme
 from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.library.alchemy.models import Entry
 from tagstudio.core.palette import ColorType, UiColor, get_ui_color
+from tagstudio.core.utils.types import unwrap
 from tagstudio.qt.controller.widgets.preview.preview_thumb_controller import PreviewThumb
 from tagstudio.qt.translations import Translations
 from tagstudio.qt.widgets.preview.field_containers import FieldContainers
@@ -153,11 +154,9 @@ class PreviewPanelView(QWidget):
             # One Item Selected
             elif len(selected) == 1:
                 entry_id = selected[0]
-                entry: Entry | None = self.lib.get_entry(entry_id)
-                assert entry is not None
+                entry: Entry = unwrap(self.lib.get_entry(entry_id))
 
-                assert self.lib.library_dir is not None
-                filepath: Path = self.lib.library_dir / entry.path
+                filepath: Path = unwrap(self.lib.library_dir) / entry.path
 
                 if update_preview:
                     stats: FileAttributeData = self.__thumb.display_file(filepath)

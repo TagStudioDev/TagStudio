@@ -39,7 +39,9 @@ class PreviewThumb(PreviewThumbView):
         stats = FileAttributeData()
         ext = filepath.suffix.lower()
 
-        if MediaCategories.IMAGE_RAW_TYPES.contains(ext, mime_fallback=True):
+        if filepath.is_dir():
+            pass
+        elif MediaCategories.IMAGE_RAW_TYPES.contains(ext, mime_fallback=True):
             try:
                 with rawpy.imread(str(filepath)) as raw:
                     rgb = raw.postprocess()

@@ -86,7 +86,7 @@ def silent_Popen(  # noqa: N802
     )
 
 
-def silent_run(  # noqa: N802
+def silent_run(
     args,
     bufsize=-1,
     executable=None,

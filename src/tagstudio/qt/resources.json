@@ -1,134 +1,150 @@
 {
-  "splash_classic": {
-    "path": "qt/images/splash/classic.png",
-    "mode": "qpixmap"
-  },
-  "splash_goo_gears": {
-    "path": "qt/images/splash/goo_gears.png",
-    "mode": "qpixmap"
-  },
-  "icon": {
-    "path": "icon.png",
-    "mode": "pil"
-  },
-  "play_icon": {
-    "path": "qt/images/play.svg",
-    "mode": "rb"
-  },
-  "pause_icon": {
-    "path": "qt/images/pause.svg",
-    "mode": "rb"
-  },
-  "volume_icon": {
-    "path": "qt/images/volume.svg",
-    "mode": "rb"
-  },
-  "volume_mute_icon": {
-    "path": "qt/images/volume_mute.svg",
-    "mode": "rb"
-  },
-  "broken_link_icon": {
-    "path": "qt/images/broken_link_icon.png",
-    "mode": "pil"
-  },
-  "adobe_illustrator": {
-    "path": "qt/images/file_icons/adobe_illustrator.png",
-    "mode": "pil"
-  },
-  "adobe_photoshop": {
-    "path": "qt/images/file_icons/adobe_photoshop.png",
-    "mode": "pil"
-  },
-  "affinity_photo": {
-    "path": "qt/images/file_icons/affinity_photo.png",
-    "mode": "pil"
-  },
-  "archive": {
-    "path": "qt/images/file_icons/archive.png",
-    "mode": "pil"
-  },
-  "audio": {
-    "path": "qt/images/file_icons/audio.png",
-    "mode": "pil"
-  },
-  "blender": {
-    "path": "qt/images/file_icons/blender.png",
-    "mode": "pil"
-  },
-  "database": {
-    "path": "qt/images/file_icons/database.png",
-    "mode": "pil"
-  },
-  "document": {
-    "path": "qt/images/file_icons/document.png",
-    "mode": "pil"
-  },
-  "ebook": {
-    "path": "qt/images/file_icons/ebook.png",
-    "mode": "pil"
-  },
-  "file_generic": {
-    "path": "qt/images/file_icons/file_generic.png",
-    "mode": "pil"
-  },
-  "font": {
-    "path": "qt/images/file_icons/font.png",
-    "mode": "pil"
-  },
-  "image": {
-    "path": "qt/images/file_icons/image.png",
-    "mode": "pil"
-  },
-  "image_vector": {
-    "path": "qt/images/file_icons/image_vector.png",
-    "mode": "pil"
-  },
-  "material": {
-    "path": "qt/images/file_icons/material.png",
-    "mode": "pil"
-  },
-  "model": {
-    "path": "qt/images/file_icons/model.png",
-    "mode": "pil"
-  },
-  "presentation": {
-    "path": "qt/images/file_icons/presentation.png",
-    "mode": "pil"
-  },
-  "program": {
-    "path": "qt/images/file_icons/program.png",
-    "mode": "pil"
-  },
-  "shader": {
-    "path": "qt/images/file_icons/shader.png",
-    "mode": "pil"
-  },
-  "shortcut": {
-    "path": "qt/images/file_icons/shortcut.png",
-    "mode": "pil"
-  },
-  "spreadsheet": {
-    "path": "qt/images/file_icons/spreadsheet.png",
-    "mode": "pil"
-  },
-  "text": {
-    "path": "qt/images/file_icons/text.png",
-    "mode": "pil"
-  },
-  "video": {
-    "path": "qt/images/file_icons/video.png",
-    "mode": "pil"
-  },
-  "thumb_loading": {
-    "path": "qt/images/thumb_loading.png",
-    "mode": "pil"
-  },
-  "bxs-left-arrow": {
-    "path": "qt/images/bxs-left-arrow.png",
-    "mode": "pil"
-  },
-  "bxs-right-arrow": {
-    "path": "qt/images/bxs-right-arrow.png",
-    "mode": "pil"
-  }
+    "splash_classic": {
+        "path": "qt/images/splash/classic.png",
+        "mode": "qpixmap"
+    },
+    "splash_goo_gears": {
+        "path": "qt/images/splash/goo_gears.png",
+        "mode": "qpixmap"
+    },
+    "splash_95": {
+        "path": "qt/images/splash/95.png",
+        "mode": "qpixmap"
+    },
+    "icon": {
+        "path": "icon.png",
+        "mode": "pil"
+    },
+    "play_icon": {
+        "path": "qt/images/play.svg",
+        "mode": "rb"
+    },
+    "pause_icon": {
+        "path": "qt/images/pause.svg",
+        "mode": "rb"
+    },
+    "volume_icon": {
+        "path": "qt/images/volume.svg",
+        "mode": "rb"
+    },
+    "volume_mute_icon": {
+        "path": "qt/images/volume_mute.svg",
+        "mode": "rb"
+    },
+    "broken_link_icon": {
+        "path": "qt/images/broken_link_icon.png",
+        "mode": "pil"
+    },
+    "ignored": {
+        "path": "qt/images/ignored_128.png",
+        "mode": "pil"
+    },
+    "adobe_illustrator": {
+        "path": "qt/images/file_icons/adobe_illustrator.png",
+        "mode": "pil"
+    },
+    "adobe_photoshop": {
+        "path": "qt/images/file_icons/adobe_photoshop.png",
+        "mode": "pil"
+    },
+    "affinity_photo": {
+        "path": "qt/images/file_icons/affinity_photo.png",
+        "mode": "pil"
+    },
+    "archive": {
+        "path": "qt/images/file_icons/archive.png",
+        "mode": "pil"
+    },
+    "audio": {
+        "path": "qt/images/file_icons/audio.png",
+        "mode": "pil"
+    },
+    "database": {
+        "path": "qt/images/file_icons/database.png",
+        "mode": "pil"
+    },
+    "document": {
+        "path": "qt/images/file_icons/document.png",
+        "mode": "pil"
+    },
+    "ebook": {
+        "path": "qt/images/file_icons/ebook.png",
+        "mode": "pil"
+    },
+    "file_generic": {
+        "path": "qt/images/file_icons/file_generic.png",
+        "mode": "pil"
+    },
+    "font": {
+        "path": "qt/images/file_icons/font.png",
+        "mode": "pil"
+    },
+    "image": {
+        "path": "qt/images/file_icons/image.png",
+        "mode": "pil"
+    },
+    "image_vector": {
+        "path": "qt/images/file_icons/image_vector.png",
+        "mode": "pil"
+    },
+    "material": {
+        "path": "qt/images/file_icons/material.png",
+        "mode": "pil"
+    },
+    "model": {
+        "path": "qt/images/file_icons/model.png",
+        "mode": "pil"
+    },
+    "presentation": {
+        "path": "qt/images/file_icons/presentation.png",
+        "mode": "pil"
+    },
+    "program": {
+        "path": "qt/images/file_icons/program.png",
+        "mode": "pil"
+    },
+    "shader": {
+        "path": "qt/images/file_icons/shader.png",
+        "mode": "pil"
+    },
+    "shortcut": {
+        "path": "qt/images/file_icons/shortcut.png",
+        "mode": "pil"
+    },
+    "spreadsheet": {
+        "path": "qt/images/file_icons/spreadsheet.png",
+        "mode": "pil"
+    },
+    "text": {
+        "path": "qt/images/file_icons/text.png",
+        "mode": "pil"
+    },
+    "video": {
+        "path": "qt/images/file_icons/video.png",
+        "mode": "pil"
+    },
+    "thumb_loading": {
+        "path": "qt/images/thumb_loading.png",
+        "mode": "pil"
+    },
+    "bxs-left-arrow": {
+        "path": "qt/images/bxs-left-arrow.png",
+        "mode": "pil"
+    },
+    "bxs-right-arrow": {
+        "path": "qt/images/bxs-right-arrow.png",
+        "mode": "pil"
+    },
+    "unlinked_stat": {
+        "path": "qt/images/unlinked_stat.png",
+        "mode": "pil"
+    },
+    "ignored_stat": {
+        "path": "qt/images/ignored_stat.png",
+        "mode": "pil"
+    },
+    "dupe_file_stat": {
+        "path": "qt/images/dupe_file_stat.png",
+        "mode": "pil"
+    }
 }
