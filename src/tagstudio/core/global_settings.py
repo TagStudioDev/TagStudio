@@ -60,6 +60,7 @@ class GlobalSettings(BaseModel):
     tag_click_action: TagClickActionOption = Field(default=TagClickActionOption.DEFAULT)
     theme: Theme = Field(default=Theme.SYSTEM)
     splash: Splash = Field(default=Splash.DEFAULT)
+    windows_start_command: bool = Field(default=False)
 
     date_format: str = Field(default="%x")
     hour_format: bool = Field(default=True)
