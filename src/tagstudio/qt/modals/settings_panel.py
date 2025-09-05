@@ -3,7 +3,6 @@
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
 
-import math
 from typing import TYPE_CHECKING, Any
 
 import structlog
@@ -160,11 +159,10 @@ class SettingsPanel(PanelWidget):
         self.thumb_cache_size_layout.setSpacing(6)
         self.thumb_cache_size = QLineEdit()
         self.thumb_cache_size.setAlignment(Qt.AlignmentFlag.AlignRight)
-        # NOTE: The GUI shows the values in MiB, while the CacheManager uses bytes.
-        self.validator = QDoubleValidator(MIN_THUMB_CACHE_SIZE / 1000, 1_000_000_000, 2)
+        self.validator = QDoubleValidator(MIN_THUMB_CACHE_SIZE, 1_000_000_000, 2)  # High limit
         self.thumb_cache_size.setValidator(self.validator)
         self.thumb_cache_size.setText(
-            self.__bytes_to_mb_str(max(self.driver.settings.thumb_cache_size, MIN_THUMB_CACHE_SIZE))
+            str(max(self.driver.settings.thumb_cache_size, MIN_THUMB_CACHE_SIZE)).removesuffix(".0")
         )
         self.thumb_cache_size_layout.addWidget(self.thumb_cache_size)
         self.thumb_cache_size_layout.setStretch(1, 2)
@@ -284,7 +282,7 @@ class SettingsPanel(PanelWidget):
             "open_last_loaded_on_startup": self.open_last_lib_checkbox.isChecked(),
             "generate_thumbs": self.generate_thumbs.isChecked(),
             "thumb_cache_size": max(
-                self.__mb_str_to_bytes(self.thumb_cache_size.text(), DEFAULT_THUMB_CACHE_SIZE),
+                float(self.thumb_cache_size.text()) or DEFAULT_THUMB_CACHE_SIZE,
                 MIN_THUMB_CACHE_SIZE,
             ),
             "autoplay": self.autoplay_checkbox.isChecked(),
@@ -298,17 +296,6 @@ class SettingsPanel(PanelWidget):
             "zero_padding": self.zeropadding_checkbox.isChecked(),
             "splash": self.splash_combobox.currentData(),
         }
-
-    def __mb_str_to_bytes(self, string: str, default: int = 0) -> int:
-        try:
-            mb_float: float = float(string)
-            return math.floor(mb_float * 1_000_000)
-        except ValueError:
-            logger.error(f"[SettingsPanel] Count not convert string '{string}' to float value")
-            return default
-
-    def __bytes_to_mb_str(self, byte_int: int) -> str:
-        return str(byte_int / 1_000_000).removesuffix(".0")
 
     def update_settings(self, driver: "QtDriver"):
         settings = self.get_settings()

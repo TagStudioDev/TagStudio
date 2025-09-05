@@ -24,16 +24,26 @@ class CacheFolder:
 
 
 class CacheManager:
-    MAX_FOLDER_SIZE = 10_000_000  # Number in bytes
+    MAX_FOLDER_SIZE = 10  # Number in MiB
+    STAT_MULTIPLIER = 1_000_000  # Multiplier to apply to file stats (bytes) to get user units (MiB)
 
     def __init__(
         self,
         library_dir: Path,
-        max_size: int = DEFAULT_THUMB_CACHE_SIZE,
+        max_size: int | float = DEFAULT_THUMB_CACHE_SIZE,
     ):
+        """A class for managing frontend caches, such as for file thumbnails.
+
+        Args:
+            library_dir(Path): The path of the folder containing the .TagStudio library folder.
+            max_size: (int | float) The maximum size of the cache, in MiB.
+        """
         self._lock = RLock()
         self.cache_path = library_dir / TS_FOLDER_NAME / THUMB_CACHE_NAME
-        self.max_size = max(max_size, CacheManager.MAX_FOLDER_SIZE)
+        self.max_size: int = max(
+            math.floor(max_size * CacheManager.STAT_MULTIPLIER),
+            math.floor(CacheManager.MAX_FOLDER_SIZE * CacheManager.STAT_MULTIPLIER),
+        )
 
         self.folders: list[CacheFolder] = []
         self.current_size = 0
@@ -144,7 +154,7 @@ class CacheManager:
 
             for i in self._get_most_recent_folder():
                 cache_folder: CacheFolder = self.folders[i]
-                if cache_folder.size < CacheManager.MAX_FOLDER_SIZE:
+                if cache_folder.size < CacheManager.MAX_FOLDER_SIZE * CacheManager.STAT_MULTIPLIER:
                     self._set_most_recent_folder(i)
                     return cache_folder
 

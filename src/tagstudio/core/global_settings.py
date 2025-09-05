@@ -21,8 +21,8 @@ DEFAULT_GLOBAL_SETTINGS_PATH = (
     else Path.home() / ".config" / "TagStudio" / "settings.toml"
 )
 
-DEFAULT_THUMB_CACHE_SIZE = 500_000_000  # Number in bytes
-MIN_THUMB_CACHE_SIZE = 10_000_000  # Number in bytes
+DEFAULT_THUMB_CACHE_SIZE = 500  # Number in MiB
+MIN_THUMB_CACHE_SIZE = 10  # Number in MiB
 
 
 class Theme(IntEnum):
@@ -55,7 +55,7 @@ class GlobalSettings(BaseModel):
     language: str = Field(default="en")
     open_last_loaded_on_startup: bool = Field(default=True)
     generate_thumbs: bool = Field(default=True)
-    thumb_cache_size: int = Field(default=DEFAULT_THUMB_CACHE_SIZE)
+    thumb_cache_size: float = Field(default=DEFAULT_THUMB_CACHE_SIZE)
     autoplay: bool = Field(default=True)
     loop: bool = Field(default=True)
     show_filenames_in_grid: bool = Field(default=True)
