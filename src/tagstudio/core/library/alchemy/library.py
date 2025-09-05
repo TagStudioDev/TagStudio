@@ -542,7 +542,11 @@ class Library:
                 if loaded_db_version < 9:
                     self.__apply_db9_filename_population(session)
                 if loaded_db_version < 100:
-                    self.__apply_db100_parent_repairs(session)
+                    self.__apply_db100_parent_repairs(session)    
+
+                # This change might break stuff if done before the datachanges.
+                if loaded_db_version < 102:
+                    self.__apply_db102_schema_changes(session)   
 
                 # Convert file extension list to ts_ignore file, if a .ts_ignore file does not exist
                 self.migrate_sql_to_ts_ignore(library_dir)
@@ -680,6 +684,51 @@ class Library:
             session.execute(stmt)
             session.commit()
             logger.info("[Library][Migration] Refactored TagParent column")
+
+    def __apply_db102_schema_changes(self, session: Session):
+        """Add a trigger to prevent having a tag being its own parent"""
+        add_trigger = text(
+            """
+            CREATE TRIGGER `trigger_before_insert_tag_parents` BEFORE INSERT ON `tag_parents` BEGIN
+                WITH RECURSIVE
+                    ChildTags AS (
+                        SELECT
+                            NEW.child_id AS tag_id
+                        UNION
+                        SELECT
+                            tp.child_id AS tag_id
+                        FROM
+                            tag_parents tp
+                            INNER JOIN ChildTags c ON tp.parent_id = c.tag_id
+                    )
+                SELECT
+                    RAISE (
+                        ABORT,
+                        'Cannot insert a tag as a child when it is already a parent'
+                    )
+                WHERE
+                    EXISTS (
+                        SELECT
+                            1
+                        FROM
+                            ChildTags
+                        WHERE
+                            ChildTags.`tag_id` = NEW.`parent_id`
+                    );
+
+            END;
+            """
+        )
+        try:
+            session.execute(add_trigger)
+            session.commit()
+            logger.info("[Library][Migration] Added trigger to prevent having a tag being its own parent")
+        except Exception as e:
+            logger.error(
+                "[Library][Migration] Could not create trigger to prevent having a tag being its own parent!",
+                error=e,
+            )
+            session.rollback()
 
     def migrate_sql_to_ts_ignore(self, library_dir: Path):
         # Do not continue if existing '.ts_ignore' file is found
