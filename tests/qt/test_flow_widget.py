@@ -6,7 +6,7 @@
 from PySide6.QtCore import QRect
 from PySide6.QtWidgets import QPushButton, QWidget
 
-from tagstudio.qt.flowlayout import FlowLayout
+from tagstudio.qt.views.layouts.flow_layout import FlowLayout
 
 
 def test_flow_layout_happy_path():

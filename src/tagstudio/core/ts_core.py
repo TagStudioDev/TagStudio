@@ -7,11 +7,14 @@
 import json
 from pathlib import Path
 
+import structlog
+
 from tagstudio.core.constants import TS_FOLDER_NAME
 from tagstudio.core.library.alchemy.fields import FieldID
 from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.library.alchemy.models import Entry
-from tagstudio.core.utils.unlinked_registry import logger
+
+logger = structlog.get_logger(__name__)
 
 
 class TagStudioCore:

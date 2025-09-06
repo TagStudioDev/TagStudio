@@ -88,7 +88,7 @@ qt_api = "pyside6"
 ignore = [
     ".venv/**",
     "src/tagstudio/core/library/json/",
-    "src/tagstudio/qt/helpers/vendored/pydub/",
+    "src/tagstudio/qt/previews/vendored/pydub/",
 ]
 include = ["src/tagstudio", "tests"]
 reportAny = false
@@ -113,7 +113,7 @@ ignore = ["D100", "D101", "D102", "D103", "D104", "D105", "D106", "D107"]
 
 [tool.ruff.lint.per-file-ignores]
 "tests/**" = ["D", "E402"]
-"src/tagstudio/qt/helpers/vendored/**" = ["B", "E", "N", "UP", "SIM115"]
+"src/tagstudio/qt/previews/vendored/**" = ["B", "E", "N", "UP", "SIM115"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"

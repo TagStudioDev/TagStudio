@@ -9,8 +9,8 @@ import pytest
 
 from tagstudio.core.library.alchemy.enums import BrowsingState
 from tagstudio.core.library.alchemy.library import Library
+from tagstudio.core.library.alchemy.registries.unlinked_registry import UnlinkedRegistry
 from tagstudio.core.utils.types import unwrap
-from tagstudio.core.utils.unlinked_registry import UnlinkedRegistry
 
 CWD = Path(__file__).parent
 
