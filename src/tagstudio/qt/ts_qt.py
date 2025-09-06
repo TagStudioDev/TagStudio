@@ -66,6 +66,7 @@ from tagstudio.core.ts_core import TagStudioCore
 from tagstudio.core.utils.str_formatting import strip_web_protocol
 from tagstudio.core.utils.types import unwrap
 from tagstudio.qt.cache_manager import CacheManager
+from tagstudio.qt.controller.ffmpeg_missing_message_box import FfmpegMissingMessageBox
 
 # this import has side-effect of import PySide resources
 from tagstudio.qt.controller.fix_ignored_modal_controller import FixIgnoredEntriesModal
@@ -76,32 +77,31 @@ from tagstudio.qt.global_settings import (
     GlobalSettings,
     Theme,
 )
-from tagstudio.qt.helpers.vendored.ffmpeg import FFMPEG_CMD, FFPROBE_CMD
-from tagstudio.qt.main_window import MainWindow
-from tagstudio.qt.modals.about import AboutModal
-from tagstudio.qt.modals.build_tag import BuildTagPanel
-from tagstudio.qt.modals.drop_import import DropImportModal
-from tagstudio.qt.modals.ffmpeg_checker import FfmpegChecker
-from tagstudio.qt.modals.fix_dupe_files import FixDupeFilesModal
-from tagstudio.qt.modals.fix_unlinked import FixUnlinkedEntriesModal
-from tagstudio.qt.modals.folders_to_tags import FoldersToTagsModal
-from tagstudio.qt.modals.settings_panel import SettingsPanel
-from tagstudio.qt.modals.tag_color_manager import TagColorManager
-from tagstudio.qt.modals.tag_database import TagDatabasePanel
-from tagstudio.qt.modals.tag_search import TagSearchModal
+from tagstudio.qt.mixed.about_modal import AboutModal
+from tagstudio.qt.mixed.build_tag import BuildTagPanel
+from tagstudio.qt.mixed.drop_import_modal import DropImportModal
+from tagstudio.qt.mixed.fix_dupe_files import FixDupeFilesModal
+from tagstudio.qt.mixed.fix_unlinked import FixUnlinkedEntriesModal
+from tagstudio.qt.mixed.folders_to_tags import FoldersToTagsModal
+from tagstudio.qt.mixed.item_thumb import BadgeType, ItemThumb
+from tagstudio.qt.mixed.migration_modal import JsonMigrationModal
+from tagstudio.qt.mixed.progress_bar import ProgressWidget
+from tagstudio.qt.mixed.settings_panel import SettingsPanel
+from tagstudio.qt.mixed.tag_color_manager import TagColorManager
+from tagstudio.qt.mixed.tag_database import TagDatabasePanel
+from tagstudio.qt.mixed.tag_search import TagSearchModal
 from tagstudio.qt.model.palette import ColorType, UiColor, get_ui_color
 from tagstudio.qt.platform_strings import trash_term
-from tagstudio.qt.preview.renderer import ThumbRenderer
+from tagstudio.qt.previews.renderer import ThumbRenderer
+from tagstudio.qt.previews.vendored.ffmpeg import FFMPEG_CMD, FFPROBE_CMD
 from tagstudio.qt.resource_manager import ResourceManager
 from tagstudio.qt.translations import Translations
 from tagstudio.qt.utils.custom_runnable import CustomRunnable
 from tagstudio.qt.utils.file_deleter import delete_file
 from tagstudio.qt.utils.function_iterator import FunctionIterator
+from tagstudio.qt.view.main_window import MainWindow
+from tagstudio.qt.view.panel_modal import PanelModal
 from tagstudio.qt.view.splash import SplashScreen
-from tagstudio.qt.widgets.item_thumb import BadgeType, ItemThumb
-from tagstudio.qt.widgets.migration_modal import JsonMigrationModal
-from tagstudio.qt.widgets.panel import PanelModal
-from tagstudio.qt.widgets.progress import ProgressWidget
 
 BADGE_TAGS = {
     BadgeType.FAVORITE: TAG_FAVORITE,
@@ -590,7 +590,7 @@ class QtDriver(DriverMixin, QObject):
 
         # Check if FFmpeg or FFprobe are missing and show warning if so
         if not which(FFMPEG_CMD) or not which(FFPROBE_CMD):
-            FfmpegChecker().show()
+            FfmpegMissingMessageBox().show()
 
         self.app.exec()
         self.shutdown()

@@ -6,7 +6,7 @@
 from pytestqt.qtbot import QtBot
 
 from tagstudio.core.library.alchemy.library import Library
-from tagstudio.qt.modals.tag_search import TagSearchPanel
+from tagstudio.qt.mixed.tag_search import TagSearchPanel
 
 
 def test_update_tags(qtbot: QtBot, library: Library):
