@@ -404,11 +404,11 @@ class MediaPlayer(QGraphicsView):
         if not self.is_paused:
             self.player.stop()
             self.player.setSource(QUrl.fromLocalFile(self.filepath))
-
-            if self.autoplay.isChecked():
-                self.player.play()
         else:
             self.player.setSource(QUrl.fromLocalFile(self.filepath))
+
+        if self.autoplay.isChecked():
+            self.player.play()
 
     def load_toggle_play_icon(self, playing: bool) -> None:
         icon = self.driver.rm.pause_icon if playing else self.driver.rm.play_icon
@@ -453,6 +453,10 @@ class MediaPlayer(QGraphicsView):
             current = self.format_time(self.player.position())
             duration = self.format_time(self.player.duration())
             self.position_label.setText(f"{current} / {duration}")
+
+            # Ensures first frame of non-autoplay videos are loaded
+            if not self.autoplay.isChecked():
+                self.player.pause()
 
     def _update_controls(self, size: QSize) -> None:
         self.scene().setSceneRect(0, 0, size.width(), size.height())
