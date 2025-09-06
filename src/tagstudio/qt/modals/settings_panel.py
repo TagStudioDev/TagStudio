@@ -5,11 +5,14 @@
 
 from typing import TYPE_CHECKING, Any
 
+import structlog
 from PySide6.QtCore import Qt
+from PySide6.QtGui import QDoubleValidator
 from PySide6.QtWidgets import (
     QCheckBox,
     QComboBox,
     QFormLayout,
+    QHBoxLayout,
     QLabel,
     QLineEdit,
     QTabWidget,
@@ -18,12 +21,19 @@ from PySide6.QtWidgets import (
 )
 
 from tagstudio.core.enums import ShowFilepathOption, TagClickActionOption
-from tagstudio.core.global_settings import Splash, Theme
+from tagstudio.core.global_settings import (
+    DEFAULT_THUMB_CACHE_SIZE,
+    MIN_THUMB_CACHE_SIZE,
+    Splash,
+    Theme,
+)
 from tagstudio.qt.translations import DEFAULT_TRANSLATION, LANGUAGES, Translations
 from tagstudio.qt.widgets.panel import PanelModal, PanelWidget
 
 if TYPE_CHECKING:
     from tagstudio.qt.ts_qt import QtDriver
+
+logger = structlog.get_logger(__name__)
 
 
 class SettingsPanel(PanelWidget):
@@ -142,6 +152,25 @@ class SettingsPanel(PanelWidget):
         self.generate_thumbs.setChecked(self.driver.settings.generate_thumbs)
         form_layout.addRow(Translations["settings.generate_thumbs"], self.generate_thumbs)
 
+        # Thumbnail Cache Size
+        self.thumb_cache_size_container = QWidget()
+        self.thumb_cache_size_layout = QHBoxLayout(self.thumb_cache_size_container)
+        self.thumb_cache_size_layout.setContentsMargins(0, 0, 0, 0)
+        self.thumb_cache_size_layout.setSpacing(6)
+        self.thumb_cache_size = QLineEdit()
+        self.thumb_cache_size.setAlignment(Qt.AlignmentFlag.AlignRight)
+        self.validator = QDoubleValidator(MIN_THUMB_CACHE_SIZE, 1_000_000_000, 2)  # High limit
+        self.thumb_cache_size.setValidator(self.validator)
+        self.thumb_cache_size.setText(
+            str(max(self.driver.settings.thumb_cache_size, MIN_THUMB_CACHE_SIZE)).removesuffix(".0")
+        )
+        self.thumb_cache_size_layout.addWidget(self.thumb_cache_size)
+        self.thumb_cache_size_layout.setStretch(1, 2)
+        self.thumb_cache_size_layout.addWidget(QLabel("MiB"))
+        form_layout.addRow(
+            Translations["settings.thumb_cache_size.label"], self.thumb_cache_size_container
+        )
+
         # Autoplay
         self.autoplay_checkbox = QCheckBox()
         self.autoplay_checkbox.setChecked(self.driver.settings.autoplay)
@@ -252,6 +281,10 @@ class SettingsPanel(PanelWidget):
             "language": self.__get_language(),
             "open_last_loaded_on_startup": self.open_last_lib_checkbox.isChecked(),
             "generate_thumbs": self.generate_thumbs.isChecked(),
+            "thumb_cache_size": max(
+                float(self.thumb_cache_size.text()) or DEFAULT_THUMB_CACHE_SIZE,
+                MIN_THUMB_CACHE_SIZE,
+            ),
             "autoplay": self.autoplay_checkbox.isChecked(),
             "show_filenames_in_grid": self.show_filenames_checkbox.isChecked(),
             "page_size": int(self.page_size_line_edit.text()),
@@ -271,6 +304,7 @@ class SettingsPanel(PanelWidget):
         driver.settings.open_last_loaded_on_startup = settings["open_last_loaded_on_startup"]
         driver.settings.autoplay = settings["autoplay"]
         driver.settings.generate_thumbs = settings["generate_thumbs"]
+        driver.settings.thumb_cache_size = settings["thumb_cache_size"]
         driver.settings.show_filenames_in_grid = settings["show_filenames_in_grid"]
         driver.settings.page_size = settings["page_size"]
         driver.settings.show_filepath = settings["show_filepath"]

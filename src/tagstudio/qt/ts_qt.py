@@ -49,7 +49,11 @@ import tagstudio.qt.resources_rc  # noqa: F401
 from tagstudio.core.constants import TAG_ARCHIVED, TAG_FAVORITE, VERSION, VERSION_BRANCH
 from tagstudio.core.driver import DriverMixin
 from tagstudio.core.enums import MacroID, SettingItems, ShowFilepathOption
-from tagstudio.core.global_settings import DEFAULT_GLOBAL_SETTINGS_PATH, GlobalSettings, Theme
+from tagstudio.core.global_settings import (
+    DEFAULT_GLOBAL_SETTINGS_PATH,
+    GlobalSettings,
+    Theme,
+)
 from tagstudio.core.library.alchemy.enums import (
     BrowsingState,
     FieldTypeEnum,
@@ -1691,15 +1695,9 @@ class QtDriver(DriverMixin, QObject):
             open_status = LibraryStatus(
                 success=False, library_path=path, message=type(e).__name__, msg_description=str(e)
             )
-
-        max_size: int = self.cached_values.value(
-            SettingItems.THUMB_CACHE_SIZE_LIMIT,
-            defaultValue=CacheManager.DEFAULT_MAX_SIZE,
-            type=int,
-        )  # type: ignore
-        self.cache_manager = CacheManager(path, max_size=max_size)
+        self.cache_manager = CacheManager(path, max_size=self.settings.thumb_cache_size)
         logger.info(
-            f"[Config] Thumbnail cache size limit: {format_size(max_size)}",
+            f"[Config] Thumbnail Cache Size: {format_size(self.settings.thumb_cache_size)}",
         )
 
         # Migration is required
