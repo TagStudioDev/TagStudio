@@ -24,6 +24,10 @@ DEFAULT_GLOBAL_SETTINGS_PATH = (
 DEFAULT_THUMB_CACHE_SIZE = 500  # Number in MiB
 MIN_THUMB_CACHE_SIZE = 10  # Number in MiB
 
+# See: https://pillow.readthedocs.io/en/stable/handbook/image-file-formats.html#webp-saving
+DEFAULT_CACHED_IMAGE_QUALITY = 80
+DEFAULT_CACHED_IMAGE_RES = 256
+
 
 class Theme(IntEnum):
     DARK = 0
@@ -56,6 +60,8 @@ class GlobalSettings(BaseModel):
     open_last_loaded_on_startup: bool = Field(default=True)
     generate_thumbs: bool = Field(default=True)
     thumb_cache_size: float = Field(default=DEFAULT_THUMB_CACHE_SIZE)
+    cached_thumb_quality: int = Field(default=DEFAULT_CACHED_IMAGE_QUALITY)
+    cached_thumb_resolution: int = Field(default=DEFAULT_CACHED_IMAGE_RES)
     autoplay: bool = Field(default=True)
     loop: bool = Field(default=True)
     show_filenames_in_grid: bool = Field(default=True)
