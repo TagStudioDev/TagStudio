@@ -10,7 +10,7 @@ from pathlib import Path
 import structlog
 
 from tagstudio.core.constants import TS_FOLDER_NAME
-from tagstudio.core.library.alchemy.fields import _FieldID
+from tagstudio.core.library.alchemy.fields import FieldID
 from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.library.alchemy.models import Entry
 
@@ -46,27 +46,27 @@ class TagStudioCore:
                     return {}
 
                 if source == "twitter":
-                    info[_FieldID.DESCRIPTION] = json_dump["content"].strip()
-                    info[_FieldID.DATE_PUBLISHED] = json_dump["date"]
+                    info[FieldID.DESCRIPTION] = json_dump["content"].strip()
+                    info[FieldID.DATE_PUBLISHED] = json_dump["date"]
                 elif source == "instagram":
-                    info[_FieldID.DESCRIPTION] = json_dump["description"].strip()
-                    info[_FieldID.DATE_PUBLISHED] = json_dump["date"]
+                    info[FieldID.DESCRIPTION] = json_dump["description"].strip()
+                    info[FieldID.DATE_PUBLISHED] = json_dump["date"]
                 elif source == "artstation":
-                    info[_FieldID.TITLE] = json_dump["title"].strip()
-                    info[_FieldID.ARTIST] = json_dump["user"]["full_name"].strip()
-                    info[_FieldID.DESCRIPTION] = json_dump["description"].strip()
-                    info[_FieldID.TAGS] = json_dump["tags"]
+                    info[FieldID.TITLE] = json_dump["title"].strip()
+                    info[FieldID.ARTIST] = json_dump["user"]["full_name"].strip()
+                    info[FieldID.DESCRIPTION] = json_dump["description"].strip()
+                    info[FieldID.TAGS] = json_dump["tags"]
                     # info["tags"] = [x for x in json_dump["mediums"]["name"]]
-                    info[_FieldID.DATE_PUBLISHED] = json_dump["date"]
+                    info[FieldID.DATE_PUBLISHED] = json_dump["date"]
                 elif source == "newgrounds":
                     # info["title"] = json_dump["title"]
                     # info["artist"] = json_dump["artist"]
                     # info["description"] = json_dump["description"]
-                    info[_FieldID.TAGS] = json_dump["tags"]
-                    info[_FieldID.DATE_PUBLISHED] = json_dump["date"]
-                    info[_FieldID.ARTIST] = json_dump["user"].strip()
-                    info[_FieldID.DESCRIPTION] = json_dump["description"].strip()
-                    info[_FieldID.SOURCE] = json_dump["post_url"].strip()
+                    info[FieldID.TAGS] = json_dump["tags"]
+                    info[FieldID.DATE_PUBLISHED] = json_dump["date"]
+                    info[FieldID.ARTIST] = json_dump["user"].strip()
+                    info[FieldID.DESCRIPTION] = json_dump["description"].strip()
+                    info[FieldID.SOURCE] = json_dump["post_url"].strip()
 
         except Exception:
             logger.exception("Error handling sidecar file.", path=_filepath)

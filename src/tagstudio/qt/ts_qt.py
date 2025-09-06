@@ -55,7 +55,7 @@ from tagstudio.core.library.alchemy.enums import (
     ItemType,
     SortingModeEnum,
 )
-from tagstudio.core.library.alchemy.fields import _FieldID
+from tagstudio.core.library.alchemy.fields import FieldID
 from tagstudio.core.library.alchemy.library import Library, LibraryStatus
 from tagstudio.core.library.alchemy.models import Entry
 from tagstudio.core.library.ignore import Ignore
@@ -1129,7 +1129,7 @@ class QtDriver(DriverMixin, QObject):
         elif name == MacroID.BUILD_URL:
             url = TagStudioCore.build_url(entry, source)
             if url is not None:
-                self.lib.add_field_to_entry(entry.id, field_id=_FieldID.SOURCE, value=url)
+                self.lib.add_field_to_entry(entry.id, field_id=FieldID.SOURCE, value=url)
         elif name == MacroID.MATCH:
             TagStudioCore.match_conditions(self.lib, entry.id)
         elif name == MacroID.CLEAN_URL:

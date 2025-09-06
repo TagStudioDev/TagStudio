@@ -23,3 +23,14 @@ WITH RECURSIVE ChildTags AS (
 )
 SELECT * FROM ChildTags;
 """)
+
+TAG_CHILDREN_ID_QUERY = text("""
+WITH RECURSIVE ChildTags AS (
+    SELECT :tag_id AS tag_id
+    UNION
+    SELECT tp.child_id AS tag_id
+    FROM tag_parents tp
+    INNER JOIN ChildTags c ON tp.parent_id = c.tag_id
+)
+SELECT tag_id FROM ChildTags;
+""")
