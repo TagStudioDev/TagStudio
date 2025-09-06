@@ -13,8 +13,8 @@ import structlog
 from tagstudio.core.enums import DefaultEnum, LibraryPrefs
 from tagstudio.core.library.alchemy.enums import BrowsingState
 from tagstudio.core.library.alchemy.fields import (
+    FieldID,  # pyright: ignore[reportPrivateUsage]
     TextField,
-    _FieldID,  # pyright: ignore[reportPrivateUsage]
 )
 from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.library.alchemy.models import Entry, Tag
@@ -270,7 +270,7 @@ def test_mirror_entry_fields(library: Library, entry_full: Entry):
         path=Path("xxx"),
         fields=[
             TextField(
-                type_key=_FieldID.NOTES.name,
+                type_key=FieldID.NOTES.name,
                 value="notes",
                 position=0,
             )
@@ -292,8 +292,8 @@ def test_mirror_entry_fields(library: Library, entry_full: Entry):
     # make sure fields are there after getting it from the library again
     assert len(entry.fields) == 2
     assert {x.type_key for x in entry.fields} == {
-        _FieldID.TITLE.name,
-        _FieldID.NOTES.name,
+        FieldID.TITLE.name,
+        FieldID.NOTES.name,
     }
 
 
@@ -308,14 +308,14 @@ def test_merge_entries(library: Library):
         folder=folder,
         path=Path("a"),
         fields=[
-            TextField(type_key=_FieldID.AUTHOR.name, value="Author McAuthorson", position=0),
-            TextField(type_key=_FieldID.DESCRIPTION.name, value="test description", position=2),
+            TextField(type_key=FieldID.AUTHOR.name, value="Author McAuthorson", position=0),
+            TextField(type_key=FieldID.DESCRIPTION.name, value="test description", position=2),
         ],
     )
     b = Entry(
         folder=folder,
         path=Path("b"),
-        fields=[TextField(type_key=_FieldID.NOTES.name, value="test note", position=1)],
+        fields=[TextField(type_key=FieldID.NOTES.name, value="test note", position=1)],
     )
     ids = library.add_entries([a, b])
 

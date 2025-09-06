@@ -1,3 +1,8 @@
+# Copyright (C) 2025
+# Licensed under the GPL-3.0 License.
+# Created for TagStudio: https://github.com/CyanVoxel/TagStudio
+
+
 from tagstudio.core.query_lang.ast import (
     AST,
     ANDList,
@@ -27,7 +32,7 @@ class Parser:
         if self.next_token.type == TokenType.EOF:
             return ORList([])
         out = self.__or_list()
-        if self.next_token.type != TokenType.EOF:
+        if self.next_token.type != TokenType.EOF:  # pyright: ignore[reportUnnecessaryComparison]
             raise ParsingError(self.next_token.start, self.next_token.end, "Syntax Error")
         return out
 
@@ -41,7 +46,7 @@ class Parser:
         return ORList(terms) if len(terms) > 1 else terms[0]
 
     def __is_next_or(self) -> bool:
-        return self.next_token.type == TokenType.ULITERAL and self.next_token.value.upper() == "OR"
+        return self.next_token.type == TokenType.ULITERAL and self.next_token.value.upper() == "OR"  # pyright: ignore
 
     def __and_list(self) -> AST:
         elements = [self.__term()]
@@ -67,7 +72,7 @@ class Parser:
                 raise self.__syntax_error("Unexpected AND")
 
     def __is_next_and(self) -> bool:
-        return self.next_token.type == TokenType.ULITERAL and self.next_token.value.upper() == "AND"
+        return self.next_token.type == TokenType.ULITERAL and self.next_token.value.upper() == "AND"  # pyright: ignore
 
     def __term(self) -> AST:
         if self.__is_next_not():
@@ -85,11 +90,14 @@ class Parser:
             return self.__constraint()
 
     def __is_next_not(self) -> bool:
-        return self.next_token.type == TokenType.ULITERAL and self.next_token.value.upper() == "NOT"
+        return self.next_token.type == TokenType.ULITERAL and self.next_token.value.upper() == "NOT"  # pyright: ignore
 
     def __constraint(self) -> Constraint:
         if self.next_token.type == TokenType.CONSTRAINTTYPE:
-            self.last_constraint_type = self.__eat(TokenType.CONSTRAINTTYPE).value
+            constraint = self.__eat(TokenType.CONSTRAINTTYPE).value
+            if not isinstance(constraint, ConstraintType):
+                raise self.__syntax_error()
+            self.last_constraint_type = constraint
 
         value = self.__literal()
 
@@ -98,7 +106,7 @@ class Parser:
             self.__eat(TokenType.SBRACKETO)
             properties.append(self.__property())
 
-            while self.next_token.type == TokenType.COMMA:
+            while self.next_token.type == TokenType.COMMA:  # pyright: ignore[reportUnnecessaryComparison]
                 self.__eat(TokenType.COMMA)
                 properties.append(self.__property())
 
@@ -110,11 +118,16 @@ class Parser:
         key = self.__eat(TokenType.ULITERAL).value
         self.__eat(TokenType.EQUALS)
         value = self.__literal()
+        if not isinstance(key, str):
+            raise self.__syntax_error()
         return Property(key, value)
 
     def __literal(self) -> str:
         if self.next_token.type in [TokenType.QLITERAL, TokenType.ULITERAL]:
-            return self.__eat(self.next_token.type).value
+            literal = self.__eat(self.next_token.type).value
+            if not isinstance(literal, str):
+                raise self.__syntax_error()
+            return literal
         raise self.__syntax_error()
 
     def __eat(self, type: TokenType) -> Token:
