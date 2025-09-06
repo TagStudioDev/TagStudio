@@ -12,7 +12,7 @@ import structlog
 from PIL import Image
 
 from tagstudio.core.constants import THUMB_CACHE_NAME, TS_FOLDER_NAME
-from tagstudio.qt.global_settings import DEFAULT_THUMB_CACHE_SIZE
+from tagstudio.qt.global_settings import DEFAULT_CACHED_IMAGE_QUALITY, DEFAULT_THUMB_CACHE_SIZE
 
 logger = structlog.get_logger(__name__)
 
@@ -24,25 +24,30 @@ class CacheFolder:
 
 
 class CacheManager:
-    MAX_FOLDER_SIZE = 10  # Number in MiB
+    MAX_FOLDER_SIZE = 10  # Absolute maximum size of a folder, number in MiB
     STAT_MULTIPLIER = 1_000_000  # Multiplier to apply to file stats (bytes) to get user units (MiB)
 
     def __init__(
         self,
         library_dir: Path,
         max_size: int | float = DEFAULT_THUMB_CACHE_SIZE,
+        img_quality: int = DEFAULT_CACHED_IMAGE_QUALITY,
     ):
         """A class for managing frontend caches, such as for file thumbnails.
 
         Args:
             library_dir(Path): The path of the folder containing the .TagStudio library folder.
             max_size: (int | float) The maximum size of the cache, in MiB.
+            img_quality: (int) The image quality value to save PIL images (0-100, default=80)
         """
         self._lock = RLock()
         self.cache_path = library_dir / TS_FOLDER_NAME / THUMB_CACHE_NAME
         self.max_size: int = max(
             math.floor(max_size * CacheManager.STAT_MULTIPLIER),
             math.floor(CacheManager.MAX_FOLDER_SIZE * CacheManager.STAT_MULTIPLIER),
+        )
+        self.img_quality = (
+            img_quality if img_quality >= 0 and img_quality <= 100 else DEFAULT_CACHED_IMAGE_QUALITY
         )
 
         self.folders: list[CacheFolder] = []
@@ -127,12 +132,20 @@ class CacheManager:
         with self._lock as _lock:
             cache_folder: CacheFolder = self._get_current_folder()
             file_path = cache_folder.path / file_name
-            image.save(file_path, mode=mode)
+            try:
+                image.save(file_path, mode=mode, quality=self.img_quality)
 
-            size = file_path.stat().st_size
-            cache_folder.size += size
-            self.current_size += size
-            self._cull_folders()
+                size = file_path.stat().st_size
+                cache_folder.size += size
+                self.current_size += size
+                self._cull_folders()
+            except FileNotFoundError:
+                logger.warn(
+                    "[CacheManager] Failed to save cached image, was the folder deleted on disk?",
+                    folder=file_path,
+                )
+                if not cache_folder.path.exists():
+                    self.folders.remove(cache_folder)
 
     def _create_folder(self) -> CacheFolder:
         with self._lock as _lock:
