@@ -1697,7 +1697,11 @@ class QtDriver(DriverMixin, QObject):
             open_status = LibraryStatus(
                 success=False, library_path=path, message=type(e).__name__, msg_description=str(e)
             )
-        self.cache_manager = CacheManager(path, max_size=self.settings.thumb_cache_size)
+        self.cache_manager = CacheManager(
+            path,
+            max_size=self.settings.thumb_cache_size,
+            img_quality=self.settings.cached_thumb_quality,
+        )
         logger.info(
             f"[Config] Thumbnail Cache Size: {format_size(self.settings.thumb_cache_size)}",
         )

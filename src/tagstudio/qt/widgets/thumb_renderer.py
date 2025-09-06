@@ -55,6 +55,7 @@ from tagstudio.core.constants import (
     FONT_SAMPLE_TEXT,
 )
 from tagstudio.core.exceptions import NoRendererError
+from tagstudio.core.global_settings import DEFAULT_CACHED_IMAGE_RES
 from tagstudio.core.library.ignore import Ignore
 from tagstudio.core.media_types import MediaCategories, MediaType
 from tagstudio.core.palette import UI_COLORS, ColorType, UiColor, get_ui_color
@@ -94,15 +95,20 @@ class ThumbRenderer(QObject):
     rm: ResourceManager = ResourceManager()
     updated = Signal(float, QPixmap, QSize, Path)
     updated_ratio = Signal(float)
-
-    cached_img_res: int = 256  # TODO: Pull this from config
-    cached_img_ext: str = ".webp"  # TODO: Pull this from config
+    cached_img_ext: str = ".webp"
 
     def __init__(self, driver: "QtDriver", library: "Library") -> None:
         """Initialize the class."""
         super().__init__()
         self.driver = driver
         self.lib = library
+
+        settings_res = self.driver.settings.cached_thumb_resolution
+        self.cached_img_res = (
+            settings_res
+            if settings_res >= 16 and settings_res <= 2048
+            else DEFAULT_CACHED_IMAGE_RES
+        )
 
         # Cached thumbnail elements.
         # Key: Size + Pixel Ratio Tuple + Radius Scale
@@ -1404,7 +1410,7 @@ class ThumbRenderer(QObject):
                 image = self._render(
                     timestamp,
                     filepath,
-                    (ThumbRenderer.cached_img_res, ThumbRenderer.cached_img_res),
+                    (self.cached_img_res, self.cached_img_res),
                     1,
                     is_grid_thumb,
                     save_to_file=file_name,
