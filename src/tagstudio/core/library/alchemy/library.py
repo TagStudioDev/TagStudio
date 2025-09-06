@@ -2,7 +2,7 @@
 # Licensed under the GPL-3.0 License.
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
-# NOTE: This file contains nessisary use of deprecated first-party code until that
+# NOTE: This file contains necessary use of deprecated first-party code until that
 # code is removed in a future version (prefs).
 # pyright: reportDeprecated=false
 
@@ -11,7 +11,7 @@ import re
 import shutil
 import time
 import unicodedata
-from collections.abc import Iterable, Iterator
+from collections.abc import Iterable, Iterator, MutableSequence
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from os import makedirs
@@ -794,7 +794,7 @@ class Library:
             entries = dict((e.id, e) for e in session.scalars(statement))
             return [entries[id] for id in entry_ids]
 
-    def get_entries_full(self, entry_ids: list[int] | set[int]) -> Iterator[Entry]:
+    def get_entries_full(self, entry_ids: MutableSequence[int]) -> Iterator[Entry]:
         """Load entry and join with all joins and all tags."""
         with Session(self.engine) as session:
             statement = select(Entry).where(Entry.id.in_(set(entry_ids)))
@@ -1109,17 +1109,13 @@ class Library:
             session.commit()
         return True
 
-    def remove_tag(self, tag: Tag):
+    def remove_tag(self, tag_id: int):
         with Session(self.engine, expire_on_commit=False) as session:
             try:
                 child_tags = session.scalars(
-                    select(TagParent).where(TagParent.child_id == tag.id)
+                    select(TagParent).where(TagParent.child_id == tag_id)
                 ).all()
-                tags_query = select(Tag).options(
-                    selectinload(Tag.parent_tags), selectinload(Tag.aliases)
-                )
-                tag_: Tag = unwrap(session.scalar(tags_query.where(Tag.id == tag.id)))
-                aliases = session.scalars(select(TagAlias).where(TagAlias.tag_id == tag.id))
+                aliases = session.scalars(select(TagAlias).where(TagAlias.tag_id == tag_id))
 
                 for alias in aliases or []:
                     session.delete(alias)
@@ -1130,23 +1126,17 @@ class Library:
 
                 disam_stmt = (
                     update(Tag)
-                    .where(Tag.disambiguation_id == tag_.id)
+                    .where(Tag.disambiguation_id == tag_id)
                     .values(disambiguation_id=None)
                 )
                 session.execute(disam_stmt)
                 session.flush()
-
-                session.delete(tag_)
+                session.query(Tag).filter_by(id=tag_id).delete()
                 session.commit()
-                session.expunge(tag_)
-
-                return tag_
 
             except IntegrityError as e:
                 logger.error(e)
                 session.rollback()
-
-                return None
 
     def update_field_position(
         self,
@@ -1407,9 +1397,9 @@ class Library:
     def add_tag(
         self,
         tag: Tag,
-        parent_ids: list[int] | set[int] | None = None,
-        alias_names: list[str] | set[str] | None = None,
-        alias_ids: list[int] | set[int] | None = None,
+        parent_ids: MutableSequence[int] | None = None,
+        alias_names: MutableSequence[str] | None = None,
+        alias_ids: MutableSequence[int] | None = None,
     ) -> Tag | None:
         with Session(self.engine, expire_on_commit=False) as session:
             try:
@@ -1432,7 +1422,7 @@ class Library:
                 return None
 
     def add_tags_to_entries(
-        self, entry_ids: int | list[int], tag_ids: int | list[int] | set[int]
+        self, entry_ids: int | list[int], tag_ids: int | MutableSequence[int]
     ) -> int:
         """Add one or more tags to one or more entries.
 
@@ -1461,7 +1451,7 @@ class Library:
         return total_added
 
     def remove_tags_from_entries(
-        self, entry_ids: int | list[int], tag_ids: int | list[int] | set[int]
+        self, entry_ids: int | list[int], tag_ids: int | MutableSequence[int]
     ) -> bool:
         """Remove one or more tags from one or more entries."""
         entry_ids_ = [entry_ids] if isinstance(entry_ids, int) else entry_ids
@@ -1679,9 +1669,9 @@ class Library:
     def update_tag(
         self,
         tag: Tag,
-        parent_ids: list[int] | set[int] | None = None,
-        alias_names: list[str] | set[str] | None = None,
-        alias_ids: list[int] | set[int] | None = None,
+        parent_ids: MutableSequence[int] | None = None,
+        alias_names: MutableSequence[str] | None = None,
+        alias_ids: MutableSequence[int] | None = None,
     ) -> None:
         """Edit a Tag in the Library."""
         self.add_tag(tag, parent_ids, alias_names, alias_ids)
@@ -1738,8 +1728,8 @@ class Library:
     def update_aliases(
         self,
         tag: Tag,
-        alias_ids: list[int] | set[int],
-        alias_names: list[str] | set[str],
+        alias_ids: MutableSequence[int],
+        alias_names: MutableSequence[str],
         session: Session,
     ):
         prev_aliases = session.scalars(select(TagAlias).where(TagAlias.tag_id == tag.id)).all()
@@ -1755,7 +1745,7 @@ class Library:
             alias = TagAlias(alias_name, tag.id)
             session.add(alias)
 
-    def update_parent_tags(self, tag: Tag, parent_ids: list[int] | set[int], session: Session):
+    def update_parent_tags(self, tag: Tag, parent_ids: MutableSequence[int], session: Session):
         if tag.id in parent_ids:
             parent_ids.remove(tag.id)
 
@@ -1850,6 +1840,8 @@ class Library:
             else:
                 return session.scalar(select(Preferences).where(Preferences.key == key)).value  # pyright: ignore
 
+    # TODO: Remove this once the 'preferences' table is removed.
+    @deprecated("Use `get_version() for version and `ts_ignore` system for extension exclusion.")
     def set_prefs(self, key: str | LibraryPrefs, value: Any) -> None:  # pyright: ignore[reportExplicitAny]
         # set given item in Preferences table
         with Session(self.engine) as session:

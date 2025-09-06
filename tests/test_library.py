@@ -174,7 +174,7 @@ def test_remove_tag(library: Library, generate_tag: Callable[..., Tag]):
 
     tag_count = len(library.tags)
 
-    library.remove_tag(tag)
+    library.remove_tag(tag.id)
     assert len(library.tags) == tag_count - 1
 
 

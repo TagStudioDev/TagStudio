@@ -71,5 +71,5 @@ class TagDatabasePanel(TagSearchPanel):
         if result != QMessageBox.Ok:  # type: ignore
             return
 
-        self.lib.remove_tag(tag)
+        self.lib.remove_tag(tag.id)
         self.update_tags()

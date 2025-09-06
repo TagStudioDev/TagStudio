@@ -169,8 +169,14 @@ class SQLBoolExpressionBuilder(BaseVisitor[ColumnElement[bool]]):
                         elif len(ids) == 1:
                             tag_ids.append(ids[0])
                             continue
-                    case _:
+                    case ConstraintType.FileType:
                         pass
+                    case ConstraintType.Path:
+                        pass
+                    case ConstraintType.Special:
+                        pass
+                    case _:
+                        raise NotImplementedError(f"Unhandled constraint: '{term.type}'")
 
             bool_expressions.append(self.visit(term))
         return tag_ids, bool_expressions
