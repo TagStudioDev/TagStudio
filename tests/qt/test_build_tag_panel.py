@@ -10,7 +10,7 @@ from pytestqt.qtbot import QtBot
 from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.library.alchemy.models import Tag, TagAlias
 from tagstudio.core.utils.types import unwrap
-from tagstudio.qt.modals.build_tag import BuildTagPanel, CustomTableItem
+from tagstudio.qt.mixed.build_tag import BuildTagPanel, CustomTableItem
 from tagstudio.qt.translations import Translations
 
 

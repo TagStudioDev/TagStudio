@@ -12,7 +12,7 @@ import structlog
 from PIL import Image
 
 from tagstudio.core.constants import THUMB_CACHE_NAME, TS_FOLDER_NAME
-from tagstudio.core.global_settings import DEFAULT_THUMB_CACHE_SIZE
+from tagstudio.qt.global_settings import DEFAULT_THUMB_CACHE_SIZE
 
 logger = structlog.get_logger(__name__)
 

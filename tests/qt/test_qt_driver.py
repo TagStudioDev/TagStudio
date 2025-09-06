@@ -5,8 +5,8 @@
 
 from tagstudio.core.library.alchemy.enums import BrowsingState, ItemType
 from tagstudio.core.utils.types import unwrap
+from tagstudio.qt.mixed.item_thumb import ItemThumb
 from tagstudio.qt.ts_qt import QtDriver
-from tagstudio.qt.widgets.item_thumb import ItemThumb
 
 
 def test_browsing_state_update(qt_driver: QtDriver):

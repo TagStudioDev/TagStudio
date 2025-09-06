@@ -3,7 +3,7 @@
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
 from tagstudio.core.library.alchemy.library import Library
-from tagstudio.qt.modals.folders_to_tags import folders_to_tags
+from tagstudio.qt.mixed.folders_to_tags import folders_to_tags
 
 
 def test_folders_to_tags(library: Library):

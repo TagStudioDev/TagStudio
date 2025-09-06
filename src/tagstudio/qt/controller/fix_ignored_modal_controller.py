@@ -9,11 +9,11 @@ import structlog
 from PySide6 import QtGui
 
 from tagstudio.core.library.alchemy.library import Library
-from tagstudio.core.utils.ignored_registry import IgnoredRegistry
-from tagstudio.qt.modals.remove_ignored_modal import RemoveIgnoredModal
+from tagstudio.core.library.alchemy.registries.ignored_registry import IgnoredRegistry
+from tagstudio.qt.mixed.progress_bar import ProgressWidget
+from tagstudio.qt.mixed.remove_ignored_modal import RemoveIgnoredModal
 from tagstudio.qt.translations import Translations
-from tagstudio.qt.view.widgets.fix_ignored_modal_view import FixIgnoredEntriesModalView
-from tagstudio.qt.widgets.progress import ProgressWidget
+from tagstudio.qt.view.fix_ignored_modal_view import FixIgnoredEntriesModalView
 
 # Only import for type checking/autocompletion, will not be imported at runtime.
 if TYPE_CHECKING:

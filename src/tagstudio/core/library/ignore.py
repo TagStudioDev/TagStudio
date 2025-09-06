@@ -10,7 +10,7 @@ import wcmatch.fnmatch as fnmatch
 from wcmatch import glob, pathlib
 
 from tagstudio.core.constants import IGNORE_NAME, TS_FOLDER_NAME
-from tagstudio.core.singleton import Singleton
+from tagstudio.core.utils.singleton import Singleton
 
 logger = structlog.get_logger()
 

@@ -5,7 +5,7 @@
 
 from pathlib import Path
 
-from tagstudio.core.global_settings import GlobalSettings, Theme
+from tagstudio.qt.global_settings import GlobalSettings, Theme
 
 
 def test_read_settings(library_dir: Path):

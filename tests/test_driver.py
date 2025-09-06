@@ -9,8 +9,8 @@ from PySide6.QtCore import QSettings
 
 from tagstudio.core.driver import DriverMixin
 from tagstudio.core.enums import SettingItems
-from tagstudio.core.global_settings import GlobalSettings
 from tagstudio.core.library.alchemy.library import LibraryStatus
+from tagstudio.qt.global_settings import GlobalSettings
 
 
 class TestDriver(DriverMixin):

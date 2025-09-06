@@ -27,8 +27,7 @@ from tagstudio.core.constants import (
 )
 from tagstudio.core.enums import OpenStatus
 from tagstudio.core.library.json.fields import DEFAULT_FIELDS, TEXT_FIELDS
-from tagstudio.core.utils.str import strip_punctuation
-from tagstudio.core.utils.web import strip_web_protocol
+from tagstudio.core.utils.str_formatting import strip_punctuation, strip_web_protocol
 
 TYPE = ["file", "meta", "alt", "mask"]
 
