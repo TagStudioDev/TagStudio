@@ -1,6 +1,11 @@
+# Copyright (C) 2025
+# Licensed under the GPL-3.0 License.
+# Created for TagStudio: https://github.com/CyanVoxel/TagStudio
+
+
 from abc import ABC, abstractmethod
 from enum import Enum
-from typing import Generic, TypeVar, Union
+from typing import Generic, TypeVar, override
 
 
 class ConstraintType(Enum):
@@ -12,7 +17,7 @@ class ConstraintType(Enum):
     Special = 5
 
     @staticmethod
-    def from_string(text: str) -> Union["ConstraintType", None]:
+    def from_string(text: str) -> "ConstraintType | None":
         return {
             "tag": ConstraintType.Tag,
             "tag_id": ConstraintType.TagID,
@@ -24,14 +29,16 @@ class ConstraintType(Enum):
 
 
 class AST:
-    parent: Union["AST", None] = None
+    parent: "AST | None" = None
 
+    @override
     def __str__(self):
         class_name = self.__class__.__name__
         fields = vars(self)  # Get all instance variables as a dictionary
         field_str = ", ".join(f"{key}={value}" for key, value in fields.items())
         return f"{class_name}({field_str})"
 
+    @override
     def __repr__(self) -> str:
         return self.__str__()
 

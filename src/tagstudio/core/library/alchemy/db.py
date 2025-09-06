@@ -4,6 +4,7 @@
 
 
 from pathlib import Path
+from typing import override
 
 import structlog
 from sqlalchemy import Dialect, Engine, String, TypeDecorator, create_engine, text
@@ -19,12 +20,14 @@ class PathType(TypeDecorator):
     impl = String
     cache_ok = True
 
-    def process_bind_param(self, value: Path, dialect: Dialect):
+    @override
+    def process_bind_param(self, value: Path | None, dialect: Dialect):
         if value is not None:
             return Path(value).as_posix()
         return None
 
-    def process_result_value(self, value: str, dialect: Dialect):
+    @override
+    def process_result_value(self, value: str | None, dialect: Dialect):
         if value is not None:
             return Path(value)
         return None

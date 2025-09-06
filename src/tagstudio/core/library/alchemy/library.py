@@ -2,6 +2,10 @@
 # Licensed under the GPL-3.0 License.
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
+# NOTE: This file contains nessisary use of deprecated first-party code until that
+# code is removed in a future version (prefs).
+# pyright: reportDeprecated=false
+
 
 import re
 import shutil
@@ -18,7 +22,7 @@ from warnings import catch_warnings
 
 import sqlalchemy
 import structlog
-from humanfriendly import format_timespan
+from humanfriendly import format_timespan  # pyright: ignore[reportUnknownVariableType]
 from sqlalchemy import (
     URL,
     ColumnExpressionArgument,
@@ -40,6 +44,7 @@ from sqlalchemy import (
 )
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import (
+    InstanceState,
     Session,
     contains_eager,
     joinedload,
@@ -47,6 +52,7 @@ from sqlalchemy.orm import (
     noload,
     selectinload,
 )
+from typing_extensions import deprecated
 
 from tagstudio.core.constants import (
     BACKUP_FOLDER_NAME,
@@ -81,8 +87,8 @@ from tagstudio.core.library.alchemy.enums import (
 from tagstudio.core.library.alchemy.fields import (
     BaseField,
     DatetimeField,
+    FieldID,
     TextField,
-    _FieldID,
 )
 from tagstudio.core.library.alchemy.joins import TagEntry, TagParent
 from tagstudio.core.library.alchemy.models import (
@@ -210,9 +216,9 @@ class Library:
     """Class for the Library object, and all CRUD operations made upon it."""
 
     library_dir: Path | None = None
-    storage_path: Path | str | None
+    storage_path: Path | str | None = None
     engine: Engine | None = None
-    folder: Folder | None
+    folder: Folder | None = None
     included_files: set[Path] = set()
 
     def __init__(self) -> None:
@@ -224,7 +230,7 @@ class Library:
     def close(self):
         if self.engine:
             self.engine.dispose()
-        self.library_dir: Path | None = None
+        self.library_dir = None
         self.storage_path = None
         self.folder = None
         self.included_files = set()
@@ -300,8 +306,8 @@ class Library:
             ]
         )
         for entry in json_lib.entries:
-            for field in entry.fields:
-                for k, v in field.items():
+            for field in entry.fields:  # pyright: ignore[reportUnknownVariableType]
+                for k, v in field.items():  # pyright: ignore[reportUnknownVariableType]
                     # Old tag fields get added as tags
                     if k in LEGACY_TAG_FIELD_IDS:
                         self.add_tags_to_entries(entry_ids=entry.id + 1, tag_ids=v)
@@ -319,8 +325,8 @@ class Library:
         end_time = time.time()
         logger.info(f"Library Converted! ({format_timespan(end_time - start_time)})")
 
-    def get_field_name_from_id(self, field_id: int) -> _FieldID:
-        for f in _FieldID:
+    def get_field_name_from_id(self, field_id: int) -> FieldID | None:
+        for f in FieldID:
             if field_id == f.value.id:
                 return f
         return None
@@ -482,7 +488,7 @@ class Library:
                     except IntegrityError:
                         session.rollback()
 
-            for field in _FieldID:
+            for field in FieldID:
                 try:
                     session.add(
                         ValueType(
@@ -562,7 +568,7 @@ class Library:
             # Repair "Description" fields with a TEXT_LINE key instead of a TEXT_BOX key.
             desc_stmd = (
                 update(ValueType)
-                .where(ValueType.key == _FieldID.DESCRIPTION.name)
+                .where(ValueType.key == FieldID.DESCRIPTION.name)
                 .values(type=FieldTypeEnum.TEXT_BOX.name)
             )
             session.execute(desc_stmd)
@@ -697,8 +703,8 @@ class Library:
             logger.error("[ERROR][Library] Could not generate '.ts_ignore' file!", error=e)
 
         # Load legacy extension data
-        extensions: list[str] = self.prefs(LibraryPrefs.EXTENSION_LIST)  # pyright: ignore[reportAssignmentType]
-        is_exclude_list: bool = self.prefs(LibraryPrefs.IS_EXCLUDE_LIST)  # pyright: ignore[reportAssignmentType]
+        extensions: list[str] = self.prefs(LibraryPrefs.EXTENSION_LIST)  # pyright: ignore
+        is_exclude_list: bool = self.prefs(LibraryPrefs.IS_EXCLUDE_LIST)  # pyright: ignore
 
         # Copy extensions to '.ts_ignore' file
         if ts_ignore.exists():
@@ -719,12 +725,6 @@ class Library:
                 )
             )
             return [x.as_field for x in types]
-
-    def delete_item(self, item):
-        logger.info("deleting item", item=item)
-        with Session(self.engine) as session:
-            session.delete(item)
-            session.commit()
 
     def get_entry(self, entry_id: int) -> Entry | None:
         """Load entry without joins."""
@@ -864,7 +864,7 @@ class Library:
     @property
     def entries_count(self) -> int:
         with Session(self.engine) as session:
-            return session.scalar(select(func.count(Entry.id)))
+            return unwrap(session.scalar(select(func.count(Entry.id))))
 
     def all_entries(self, with_joins: bool = False) -> Iterator[Entry]:
         """Load entries without joins."""
@@ -906,7 +906,7 @@ class Library:
 
         return list(tags_list)
 
-    def verify_ts_folder(self, library_dir: Path) -> bool:
+    def verify_ts_folder(self, library_dir: Path | None) -> bool:
         """Verify/create folders required by TagStudio.
 
         Returns:
@@ -960,7 +960,7 @@ class Library:
         with Session(self.engine) as session:
             return session.query(exists().where(Entry.path == path)).scalar()
 
-    def get_paths(self, glob: str | None = None, limit: int = -1) -> list[str]:
+    def get_paths(self, limit: int = -1) -> list[str]:
         path_strings: list[str] = []
         with Session(self.engine) as session:
             if limit > 0:
@@ -1020,7 +1020,7 @@ class Library:
             ids = []
             count = 0
             for row in rows:
-                id, count = row._tuple()
+                id, count = row._tuple()  # pyright: ignore[reportPrivateUsage]
                 ids.append(id)
             end_time = time.time()
             logger.info(f"SQL Execution finished ({format_timespan(end_time - start_time)})")
@@ -1118,7 +1118,7 @@ class Library:
                 tags_query = select(Tag).options(
                     selectinload(Tag.parent_tags), selectinload(Tag.aliases)
                 )
-                tag = session.scalar(tags_query.where(Tag.id == tag.id))
+                tag_: Tag = unwrap(session.scalar(tags_query.where(Tag.id == tag.id)))
                 aliases = session.scalars(select(TagAlias).where(TagAlias.tag_id == tag.id))
 
                 for alias in aliases or []:
@@ -1130,17 +1130,17 @@ class Library:
 
                 disam_stmt = (
                     update(Tag)
-                    .where(Tag.disambiguation_id == tag.id)
+                    .where(Tag.disambiguation_id == tag_.id)
                     .values(disambiguation_id=None)
                 )
                 session.execute(disam_stmt)
                 session.flush()
 
-                session.delete(tag)
+                session.delete(tag_)
                 session.commit()
-                session.expunge(tag)
+                session.expunge(tag_)
 
-                return tag
+                return tag_
 
             except IntegrityError as e:
                 logger.error(e)
@@ -1247,7 +1247,7 @@ class Library:
 
     def get_value_type(self, field_key: str) -> ValueType:
         with Session(self.engine) as session:
-            field = session.scalar(select(ValueType).where(ValueType.key == field_key))
+            field = unwrap(session.scalar(select(ValueType).where(ValueType.key == field_key)))
             session.expunge(field)
             return field
 
@@ -1256,7 +1256,7 @@ class Library:
         entry_id: int,
         *,
         field: ValueType | None = None,
-        field_id: _FieldID | str | None = None,
+        field_id: FieldID | str | None = None,
         value: str | datetime | None = None,
     ) -> bool:
         logger.info(
@@ -1270,9 +1270,9 @@ class Library:
         assert bool(field) != (field_id is not None)
 
         if not field:
-            if isinstance(field_id, _FieldID):
+            if isinstance(field_id, FieldID):
                 field_id = field_id.name
-            field = self.get_value_type(field_id)
+            field = self.get_value_type(unwrap(field_id))
 
         field_model: TextField | DatetimeField
         if field.type in (FieldTypeEnum.TEXT_LINE, FieldTypeEnum.TEXT_BOX):
@@ -1619,9 +1619,9 @@ class Library:
                 # When calling session.add with this tag instance sqlalchemy will
                 # attempt to create TagParents that already exist.
 
-                state = inspect(tag)
-                # Prevent sqlalchemy from thinking any fields are different from what's commited
-                # commited_state contains original values for fields that have changed.
+                state: InstanceState[Tag] = inspect(tag)
+                # Prevent sqlalchemy from thinking any fields are different from what's committed
+                # committed_state contains original values for fields that have changed.
                 # empty when no fields have changed
                 state.committed_state.clear()
 
@@ -1735,7 +1735,13 @@ class Library:
             else:
                 self.add_color(new_color_group)
 
-    def update_aliases(self, tag, alias_ids, alias_names, session):
+    def update_aliases(
+        self,
+        tag: Tag,
+        alias_ids: list[int] | set[int],
+        alias_names: list[str] | set[str],
+        session: Session,
+    ):
         prev_aliases = session.scalars(select(TagAlias).where(TagAlias.tag_id == tag.id)).all()
 
         for alias in prev_aliases:
@@ -1749,7 +1755,7 @@ class Library:
             alias = TagAlias(alias_name, tag.id)
             session.add(alias)
 
-    def update_parent_tags(self, tag: Tag, parent_ids: list[int] | set[int], session):
+    def update_parent_tags(self, tag: Tag, parent_ids: list[int] | set[int], session: Session):
         if tag.id in parent_ids:
             parent_ids.remove(tag.id)
 
@@ -1822,10 +1828,11 @@ class Library:
                 # by older TagStudio versions.
                 engine = sqlalchemy.inspect(self.engine)
                 if engine and engine.has_table("Preferences"):
-                    pref = session.scalar(
-                        select(Preferences).where(Preferences.key == DB_VERSION_LEGACY_KEY)
+                    pref = unwrap(
+                        session.scalar(
+                            select(Preferences).where(Preferences.key == DB_VERSION_LEGACY_KEY)
+                        )
                     )
-                    assert pref is not None
                     pref.value = value  # pyright: ignore
                     session.add(pref)
                     session.commit()
@@ -1833,15 +1840,17 @@ class Library:
                 logger.error("[Library][ERROR] Couldn't add default tag color namespaces", error=e)
                 session.rollback()
 
-    def prefs(self, key: str | LibraryPrefs):
+    # TODO: Remove this once the 'preferences' table is removed.
+    @deprecated("Use `get_version() for version and `ts_ignore` system for extension exclusion.")
+    def prefs(self, key: str | LibraryPrefs):  # pyright: ignore[reportUnknownParameterType]
         # load given item from Preferences table
         with Session(self.engine) as session:
             if isinstance(key, LibraryPrefs):
-                return session.scalar(select(Preferences).where(Preferences.key == key.name)).value
+                return session.scalar(select(Preferences).where(Preferences.key == key.name)).value  # pyright: ignore
             else:
-                return session.scalar(select(Preferences).where(Preferences.key == key)).value
+                return session.scalar(select(Preferences).where(Preferences.key == key)).value  # pyright: ignore
 
-    def set_prefs(self, key: str | LibraryPrefs, value: Any) -> None:
+    def set_prefs(self, key: str | LibraryPrefs, value: Any) -> None:  # pyright: ignore[reportExplicitAny]
         # set given item in Preferences table
         with Session(self.engine) as session:
             # load existing preference and update value
@@ -1873,7 +1882,7 @@ class Library:
 
         # assign the field to all entries
         for entry in entries:
-            for field_key, field in fields.items():
+            for field_key, field in fields.items():  # pyright: ignore[reportUnknownVariableType]
                 if field_key not in existing_fields:
                     self.add_field_to_entry(
                         entry_id=entry.id,

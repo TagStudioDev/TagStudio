@@ -7,7 +7,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, override
 
 from sqlalchemy import ForeignKey
 from sqlalchemy.orm import Mapped, declared_attr, mapped_column, relationship
@@ -32,7 +32,7 @@ class BaseField(Base):
 
     @declared_attr
     def type(self) -> Mapped[ValueType]:
-        return relationship(foreign_keys=[self.type_key], lazy=False)  # type: ignore
+        return relationship(foreign_keys=[self.type_key], lazy=False)  # type: ignore # pyright: ignore[reportArgumentType]
 
     @declared_attr
     def entry_id(self) -> Mapped[int]:
@@ -40,19 +40,20 @@ class BaseField(Base):
 
     @declared_attr
     def entry(self) -> Mapped[Entry]:
-        return relationship(foreign_keys=[self.entry_id])  # type: ignore
+        return relationship(foreign_keys=[self.entry_id])  # type: ignore # pyright: ignore[reportArgumentType]
 
     @declared_attr
     def position(self) -> Mapped[int]:
         return mapped_column(default=0)
 
+    @override
     def __hash__(self):
         return hash(self.__key())
 
-    def __key(self):
+    def __key(self):  # pyright: ignore[reportUnknownParameterType]
         raise NotImplementedError
 
-    value: Any
+    value: Any  # pyright: ignore
 
 
 class BooleanField(BaseField):
@@ -63,7 +64,8 @@ class BooleanField(BaseField):
     def __key(self):
         return (self.type, self.value)
 
-    def __eq__(self, value) -> bool:
+    @override
+    def __eq__(self, value: object) -> bool:
         if isinstance(value, BooleanField):
             return self.__key() == value.__key()
         raise NotImplementedError
@@ -74,10 +76,11 @@ class TextField(BaseField):
 
     value: Mapped[str | None]
 
-    def __key(self) -> tuple:
+    def __key(self) -> tuple[ValueType, str | None]:
         return self.type, self.value
 
-    def __eq__(self, value) -> bool:
+    @override
+    def __eq__(self, value: object) -> bool:
         if isinstance(value, TextField):
             return self.__key() == value.__key()
         elif isinstance(value, DatetimeField):
@@ -93,7 +96,8 @@ class DatetimeField(BaseField):
     def __key(self):
         return (self.type, self.value)
 
-    def __eq__(self, value) -> bool:
+    @override
+    def __eq__(self, value: object) -> bool:
         if isinstance(value, DatetimeField):
             return self.__key() == value.__key()
         raise NotImplementedError
@@ -107,7 +111,7 @@ class DefaultField:
     is_default: bool = field(default=False)
 
 
-class _FieldID(Enum):
+class FieldID(Enum):
     """Only for bootstrapping content of DB table."""
 
     TITLE = DefaultField(id=0, name="Title", type=FieldTypeEnum.TEXT_LINE, is_default=True)

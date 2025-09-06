@@ -1,5 +1,10 @@
+# Copyright (C) 2025
+# Licensed under the GPL-3.0 License.
+# Created for TagStudio: https://github.com/CyanVoxel/TagStudio
+
+
 from enum import Enum
-from typing import Any
+from typing import override
 
 from tagstudio.core.query_lang.ast import ConstraintType
 from tagstudio.core.query_lang.util import ParsingError
@@ -21,12 +26,14 @@ class TokenType(Enum):
 
 class Token:
     type: TokenType
-    value: Any
+    value: str | ConstraintType | None
 
     start: int
     end: int
 
-    def __init__(self, type: TokenType, value: Any, start: int, end: int) -> None:
+    def __init__(
+        self, type: TokenType, value: str | ConstraintType | None, start: int, end: int
+    ) -> None:
         self.type = type
         self.value = value
         self.start = start
@@ -40,9 +47,11 @@ class Token:
     def EOF(pos: int) -> "Token":  # noqa: N802
         return Token.from_type(TokenType.EOF, pos)
 
+    @override
     def __str__(self) -> str:
         return f"Token({self.type}, {self.value}, {self.start}, {self.end})"  # pragma: nocover
 
+    @override
     def __repr__(self) -> str:
         return self.__str__()  # pragma: nocover
 

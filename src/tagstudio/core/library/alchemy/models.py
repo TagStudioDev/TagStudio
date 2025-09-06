@@ -4,6 +4,7 @@
 
 from datetime import datetime as dt
 from pathlib import Path
+from typing import override
 
 from sqlalchemy import JSON, ForeignKey, ForeignKeyConstraint, Integer, event
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -150,25 +151,28 @@ class Tag(Base):
         self.id = id  # pyright: ignore[reportAttributeAccessIssue]
         super().__init__()
 
+    @override
     def __str__(self) -> str:
         return f"<Tag ID: {self.id} Name: {self.name}>"
 
+    @override
     def __repr__(self) -> str:
         return self.__str__()
 
+    @override
     def __hash__(self) -> int:
         return hash(self.id)
 
-    def __lt__(self, other) -> bool:
+    def __lt__(self, other: "Tag") -> bool:
         return self.name < other.name
 
-    def __le__(self, other) -> bool:
+    def __le__(self, other: "Tag") -> bool:
         return self.name <= other.name
 
-    def __gt__(self, other) -> bool:
+    def __gt__(self, other: "Tag") -> bool:
         return self.name > other.name
 
-    def __ge__(self, other) -> bool:
+    def __ge__(self, other: "Tag") -> bool:
         return self.name >= other.name
 
 
@@ -233,6 +237,7 @@ class Entry(Base):
         date_modified: dt | None = None,
         date_added: dt | None = None,
     ) -> None:
+        super().__init__()
         self.path = path
         self.folder = folder
         self.id = id  # pyright: ignore[reportAttributeAccessIssue]
@@ -280,8 +285,8 @@ class ValueType(Base):
     key: Mapped[str] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(nullable=False)
     type: Mapped[FieldTypeEnum] = mapped_column(default=FieldTypeEnum.TEXT_LINE)
-    is_default: Mapped[bool]
-    position: Mapped[int]
+    is_default: Mapped[bool]  # pyright: ignore[reportUninitializedInstanceVariable]
+    position: Mapped[int]  # pyright: ignore[reportUninitializedInstanceVariable]
 
     # add relations to other tables
     text_fields: Mapped[list[TextField]] = relationship("TextField", back_populates="type")
@@ -306,7 +311,7 @@ class ValueType(Base):
 
 
 @event.listens_for(ValueType, "before_insert")
-def slugify_field_key(mapper, connection, target):
+def slugify_field_key(mapper, connection, target):  # pyright: ignore
     """Slugify the field key before inserting into the database."""
     if not target.key:
         from tagstudio.core.library.alchemy.library import slugify
