@@ -7,7 +7,7 @@ from pathlib import Path
 from time import time
 
 from tagstudio.core.enums import LibraryPrefs
-from tagstudio.qt.widgets.migration_modal import JsonMigrationModal
+from tagstudio.qt.mixed.migration_modal import JsonMigrationModal
 
 CWD = Path(__file__)
 

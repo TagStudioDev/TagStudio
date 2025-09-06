@@ -21,11 +21,11 @@ As of writing this section, the QT part of the code base is quite unstructured a
 The general structure of the QT code base should look like this:
 ```
 qt
-├── controller
+├── controllers
 │   ├── widgets
 │   │   └── preview_panel_controller.py
 │   └── main_window_controller.py
-├── view
+├── views
 │   ├── widgets
 │   │   └── preview_panel_view.py
 │   └── main_window_view.py
@@ -33,7 +33,7 @@ qt
 └── mixed.py
 ```
 
-In this structure there are the `view` and `controller` sub-directories. They have the exact same structure and for every `<component>_view.py` there is a `<component>_controller.py` at the same location in the other subdirectory and vice versa.
+In this structure there are the `views` and `controllers` sub-directories. They have the exact same structure and for every `<component>_view.py` there is a `<component>_controller.py` at the same location in the other subdirectory and vice versa.
 
 Typically the classes should look like this:
 ```py

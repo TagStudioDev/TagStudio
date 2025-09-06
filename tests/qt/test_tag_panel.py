@@ -7,7 +7,7 @@ from pytestqt.qtbot import QtBot
 
 from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.library.alchemy.models import Tag
-from tagstudio.qt.modals.build_tag import BuildTagPanel
+from tagstudio.qt.mixed.build_tag import BuildTagPanel
 from tagstudio.qt.ts_qt import QtDriver
 
 
