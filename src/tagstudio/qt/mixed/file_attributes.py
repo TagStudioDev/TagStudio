@@ -23,7 +23,7 @@ from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.library.ignore import Ignore
 from tagstudio.core.media_types import MediaCategories
 from tagstudio.core.utils.types import unwrap
-from tagstudio.qt.model.palette import ColorType, UiColor, get_ui_color
+from tagstudio.qt.models.palette import ColorType, UiColor, get_ui_color
 from tagstudio.qt.translations import Translations
 from tagstudio.qt.utils.file_opener import FileOpenerHelper, FileOpenerLabel
 

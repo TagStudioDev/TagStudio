@@ -9,7 +9,7 @@ from PySide6.QtWidgets import QListWidgetItem
 from tagstudio.core.library.alchemy.library import Library
 from tagstudio.qt.mixed.add_field import AddFieldModal
 from tagstudio.qt.mixed.tag_search import TagSearchModal
-from tagstudio.qt.view.preview_panel_view import PreviewPanelView
+from tagstudio.qt.views.preview_panel_view import PreviewPanelView
 
 if typing.TYPE_CHECKING:
     from tagstudio.qt.ts_qt import QtDriver

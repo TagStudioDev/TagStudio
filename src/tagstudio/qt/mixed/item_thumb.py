@@ -24,8 +24,8 @@ from tagstudio.qt.platform_strings import open_file_str, trash_term
 from tagstudio.qt.previews.renderer import ThumbRenderer
 from tagstudio.qt.translations import Translations
 from tagstudio.qt.utils.file_opener import FileOpenerHelper
-from tagstudio.qt.view.layouts.flow_layout import FlowWidget
-from tagstudio.qt.view.thumb_button import ThumbButton
+from tagstudio.qt.views.layouts.flow_layout import FlowWidget
+from tagstudio.qt.views.thumb_button import ThumbButton
 
 if TYPE_CHECKING:
     from tagstudio.qt.ts_qt import QtDriver

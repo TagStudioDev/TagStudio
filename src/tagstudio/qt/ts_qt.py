@@ -66,12 +66,12 @@ from tagstudio.core.ts_core import TagStudioCore
 from tagstudio.core.utils.str_formatting import strip_web_protocol
 from tagstudio.core.utils.types import unwrap
 from tagstudio.qt.cache_manager import CacheManager
-from tagstudio.qt.controller.ffmpeg_missing_message_box import FfmpegMissingMessageBox
+from tagstudio.qt.controllers.ffmpeg_missing_message_box import FfmpegMissingMessageBox
 
 # this import has side-effect of import PySide resources
-from tagstudio.qt.controller.fix_ignored_modal_controller import FixIgnoredEntriesModal
-from tagstudio.qt.controller.ignore_modal_controller import IgnoreModal
-from tagstudio.qt.controller.library_info_window_controller import LibraryInfoWindow
+from tagstudio.qt.controllers.fix_ignored_modal_controller import FixIgnoredEntriesModal
+from tagstudio.qt.controllers.ignore_modal_controller import IgnoreModal
+from tagstudio.qt.controllers.library_info_window_controller import LibraryInfoWindow
 from tagstudio.qt.global_settings import (
     DEFAULT_GLOBAL_SETTINGS_PATH,
     GlobalSettings,
@@ -90,7 +90,7 @@ from tagstudio.qt.mixed.settings_panel import SettingsPanel
 from tagstudio.qt.mixed.tag_color_manager import TagColorManager
 from tagstudio.qt.mixed.tag_database import TagDatabasePanel
 from tagstudio.qt.mixed.tag_search import TagSearchModal
-from tagstudio.qt.model.palette import ColorType, UiColor, get_ui_color
+from tagstudio.qt.models.palette import ColorType, UiColor, get_ui_color
 from tagstudio.qt.platform_strings import trash_term
 from tagstudio.qt.previews.renderer import ThumbRenderer
 from tagstudio.qt.previews.vendored.ffmpeg import FFMPEG_CMD, FFPROBE_CMD
@@ -99,9 +99,9 @@ from tagstudio.qt.translations import Translations
 from tagstudio.qt.utils.custom_runnable import CustomRunnable
 from tagstudio.qt.utils.file_deleter import delete_file
 from tagstudio.qt.utils.function_iterator import FunctionIterator
-from tagstudio.qt.view.main_window import MainWindow
-from tagstudio.qt.view.panel_modal import PanelModal
-from tagstudio.qt.view.splash import SplashScreen
+from tagstudio.qt.views.main_window import MainWindow
+from tagstudio.qt.views.panel_modal import PanelModal
+from tagstudio.qt.views.splash import SplashScreen
 
 BADGE_TAGS = {
     BadgeType.FAVORITE: TAG_FAVORITE,

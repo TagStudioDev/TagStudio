@@ -16,10 +16,10 @@ from tagstudio.core.library.alchemy.models import TagColorGroup
 from tagstudio.qt.mixed.build_color import BuildColorPanel
 from tagstudio.qt.mixed.field_widget import FieldWidget
 from tagstudio.qt.mixed.tag_color_label import TagColorLabel
-from tagstudio.qt.model.palette import ColorType, get_tag_color
+from tagstudio.qt.models.palette import ColorType, get_tag_color
 from tagstudio.qt.translations import Translations
-from tagstudio.qt.view.layouts.flow_layout import FlowLayout
-from tagstudio.qt.view.panel_modal import PanelModal
+from tagstudio.qt.views.layouts.flow_layout import FlowLayout
+from tagstudio.qt.views.panel_modal import PanelModal
 
 if typing.TYPE_CHECKING:
     from tagstudio.core.library.alchemy.library import Library

@@ -14,7 +14,7 @@ from PySide6.QtWidgets import QHBoxLayout, QLineEdit, QPushButton, QVBoxLayout, 
 from tagstudio.core.library.alchemy.enums import TagColorEnum
 from tagstudio.core.library.alchemy.models import Tag
 from tagstudio.qt.helpers.escape_text import escape_text
-from tagstudio.qt.model.palette import ColorType, get_tag_color
+from tagstudio.qt.models.palette import ColorType, get_tag_color
 from tagstudio.qt.translations import Translations
 
 logger = structlog.get_logger(__name__)

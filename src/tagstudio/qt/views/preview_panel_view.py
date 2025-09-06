@@ -19,10 +19,10 @@ from tagstudio.core.enums import Theme
 from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.library.alchemy.models import Entry
 from tagstudio.core.utils.types import unwrap
-from tagstudio.qt.controller.preview_thumb_controller import PreviewThumb
+from tagstudio.qt.controllers.preview_thumb_controller import PreviewThumb
 from tagstudio.qt.mixed.field_containers import FieldContainers
 from tagstudio.qt.mixed.file_attributes import FileAttributeData, FileAttributes
-from tagstudio.qt.model.palette import ColorType, UiColor, get_ui_color
+from tagstudio.qt.models.palette import ColorType, UiColor, get_ui_color
 from tagstudio.qt.translations import Translations
 
 if typing.TYPE_CHECKING:

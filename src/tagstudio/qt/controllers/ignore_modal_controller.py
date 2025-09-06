@@ -15,7 +15,7 @@ from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.library.alchemy.models import Tag
 from tagstudio.core.library.ignore import Ignore
 from tagstudio.qt.utils.file_opener import open_file
-from tagstudio.qt.view.ignore_modal_view import IgnoreModalView
+from tagstudio.qt.views.ignore_modal_view import IgnoreModalView
 
 logger = structlog.get_logger(__name__)
 

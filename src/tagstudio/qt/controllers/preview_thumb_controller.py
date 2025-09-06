@@ -17,7 +17,7 @@ from tagstudio.core.media_types import MediaCategories
 from tagstudio.qt.helpers.file_tester import is_readable_video
 from tagstudio.qt.mixed.file_attributes import FileAttributeData
 from tagstudio.qt.utils.file_opener import open_file
-from tagstudio.qt.view.preview_thumb_view import PreviewThumbView
+from tagstudio.qt.views.preview_thumb_view import PreviewThumbView
 
 if TYPE_CHECKING:
     from tagstudio.qt.ts_qt import QtDriver

@@ -18,7 +18,7 @@ from tagstudio.qt.mixed.media_player import MediaPlayer
 from tagstudio.qt.platform_strings import open_file_str, trash_term
 from tagstudio.qt.previews.renderer import ThumbRenderer
 from tagstudio.qt.translations import Translations
-from tagstudio.qt.view.styles.rounded_pixmap_style import RoundedPixmapStyle
+from tagstudio.qt.views.styles.rounded_pixmap_style import RoundedPixmapStyle
 
 if TYPE_CHECKING:
     from tagstudio.qt.ts_qt import QtDriver

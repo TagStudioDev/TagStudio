@@ -10,7 +10,7 @@ from PySide6 import QtCore, QtGui
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QHBoxLayout, QLabel, QVBoxLayout, QWidget
 
-from tagstudio.qt.controller.paged_panel_state import PagedPanelState
+from tagstudio.qt.controllers.paged_panel_state import PagedPanelState
 
 logger = structlog.get_logger(__name__)
 

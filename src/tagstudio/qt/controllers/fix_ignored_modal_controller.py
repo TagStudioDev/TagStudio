@@ -13,7 +13,7 @@ from tagstudio.core.library.alchemy.registries.ignored_registry import IgnoredRe
 from tagstudio.qt.mixed.progress_bar import ProgressWidget
 from tagstudio.qt.mixed.remove_ignored_modal import RemoveIgnoredModal
 from tagstudio.qt.translations import Translations
-from tagstudio.qt.view.fix_ignored_modal_view import FixIgnoredEntriesModalView
+from tagstudio.qt.views.fix_ignored_modal_view import FixIgnoredEntriesModalView
 
 # Only import for type checking/autocompletion, will not be imported at runtime.
 if TYPE_CHECKING:

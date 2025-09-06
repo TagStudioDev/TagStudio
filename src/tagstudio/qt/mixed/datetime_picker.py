@@ -6,7 +6,7 @@ from typing import cast
 from PySide6.QtCore import QDateTime
 from PySide6.QtWidgets import QDateTimeEdit, QVBoxLayout
 
-from tagstudio.qt.view.panel_modal import PanelWidget
+from tagstudio.qt.views.panel_modal import PanelWidget
 
 if typing.TYPE_CHECKING:
     from tagstudio.qt.ts_qt import QtDriver

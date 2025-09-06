@@ -5,7 +5,7 @@ from collections.abc import Callable
 
 from PySide6.QtWidgets import QLineEdit, QVBoxLayout
 
-from tagstudio.qt.view.panel_modal import PanelWidget
+from tagstudio.qt.views.panel_modal import PanelWidget
 
 
 class EditTextLine(PanelWidget):

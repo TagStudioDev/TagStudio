@@ -20,7 +20,7 @@ from PySide6.QtWidgets import (
 
 from tagstudio.core.constants import VERSION, VERSION_BRANCH
 from tagstudio.core.enums import Theme
-from tagstudio.qt.model.palette import ColorType, UiColor, get_ui_color
+from tagstudio.qt.models.palette import ColorType, UiColor, get_ui_color
 from tagstudio.qt.previews.vendored import ffmpeg
 from tagstudio.qt.resource_manager import ResourceManager
 from tagstudio.qt.translations import Translations

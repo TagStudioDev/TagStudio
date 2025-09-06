@@ -36,7 +36,7 @@ from PySide6.QtWidgets import (
 )
 
 from tagstudio.qt.translations import Translations
-from tagstudio.qt.view.clickable_slider import ClickableSlider
+from tagstudio.qt.views.clickable_slider import ClickableSlider
 
 if typing.TYPE_CHECKING:
     from tagstudio.qt.ts_qt import QtDriver

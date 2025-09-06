@@ -12,7 +12,7 @@ from tagstudio.core.library.alchemy.models import Tag
 from tagstudio.qt.mixed.build_tag import BuildTagPanel
 from tagstudio.qt.mixed.tag_search import TagSearchPanel
 from tagstudio.qt.translations import Translations
-from tagstudio.qt.view.panel_modal import PanelModal
+from tagstudio.qt.views.panel_modal import PanelModal
 
 logger = structlog.get_logger(__name__)
 

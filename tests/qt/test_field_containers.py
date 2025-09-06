@@ -6,7 +6,7 @@
 from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.library.alchemy.models import Entry, Tag
 from tagstudio.core.utils.types import unwrap
-from tagstudio.qt.controller.preview_panel_controller import PreviewPanel
+from tagstudio.qt.controllers.preview_panel_controller import PreviewPanel
 from tagstudio.qt.ts_qt import QtDriver
 
 

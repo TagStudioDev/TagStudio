@@ -29,9 +29,9 @@ from tagstudio.qt.mixed.tag_widget import (
     get_highlight_color,
     get_text_color,
 )
-from tagstudio.qt.model.palette import ColorType, UiColor, get_tag_color, get_ui_color
+from tagstudio.qt.models.palette import ColorType, UiColor, get_tag_color, get_ui_color
 from tagstudio.qt.translations import Translations
-from tagstudio.qt.view.panel_modal import PanelWidget
+from tagstudio.qt.views.panel_modal import PanelWidget
 
 logger = structlog.get_logger(__name__)
 

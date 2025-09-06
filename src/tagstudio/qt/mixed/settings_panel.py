@@ -28,7 +28,7 @@ from tagstudio.qt.global_settings import (
     Theme,
 )
 from tagstudio.qt.translations import DEFAULT_TRANSLATION, LANGUAGES, Translations
-from tagstudio.qt.view.panel_modal import PanelModal, PanelWidget
+from tagstudio.qt.views.panel_modal import PanelModal, PanelWidget
 
 if TYPE_CHECKING:
     from tagstudio.qt.ts_qt import QtDriver

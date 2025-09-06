@@ -64,7 +64,7 @@ from tagstudio.qt.helpers.file_tester import is_readable_video
 from tagstudio.qt.helpers.gradients import four_corner_gradient
 from tagstudio.qt.helpers.image_effects import replace_transparent_pixels
 from tagstudio.qt.helpers.text_wrapper import wrap_full_text
-from tagstudio.qt.model.palette import UI_COLORS, ColorType, UiColor, get_ui_color
+from tagstudio.qt.models.palette import UI_COLORS, ColorType, UiColor, get_ui_color
 from tagstudio.qt.previews.vendored.blender_renderer import blend_thumb
 from tagstudio.qt.previews.vendored.pydub.audio_segment import (
     _AudioSegment as AudioSegment,

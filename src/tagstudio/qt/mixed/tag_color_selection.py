@@ -22,10 +22,10 @@ from tagstudio.core.library.alchemy.enums import TagColorEnum
 from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.library.alchemy.models import TagColorGroup
 from tagstudio.qt.mixed.tag_widget import get_border_color, get_highlight_color, get_text_color
-from tagstudio.qt.model.palette import ColorType, get_tag_color
+from tagstudio.qt.models.palette import ColorType, get_tag_color
 from tagstudio.qt.translations import Translations
-from tagstudio.qt.view.layouts.flow_layout import FlowLayout
-from tagstudio.qt.view.panel_modal import PanelWidget
+from tagstudio.qt.views.layouts.flow_layout import FlowLayout
+from tagstudio.qt.views.panel_modal import PanelWidget
 
 logger = structlog.get_logger(__name__)
 

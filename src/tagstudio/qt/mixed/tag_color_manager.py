@@ -27,7 +27,7 @@ from tagstudio.qt.mixed.build_namespace import BuildNamespacePanel
 from tagstudio.qt.mixed.color_box import ColorBoxWidget
 from tagstudio.qt.mixed.field_widget import FieldContainer
 from tagstudio.qt.translations import Translations
-from tagstudio.qt.view.panel_modal import PanelModal
+from tagstudio.qt.views.panel_modal import PanelModal
 
 logger = structlog.get_logger(__name__)
 

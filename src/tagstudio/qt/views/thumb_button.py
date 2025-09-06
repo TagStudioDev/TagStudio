@@ -19,7 +19,7 @@ from PySide6.QtGui import (
 )
 from PySide6.QtWidgets import QWidget
 
-from tagstudio.qt.view.qbutton_wrapper import QPushButtonWrapper
+from tagstudio.qt.views.qbutton_wrapper import QPushButtonWrapper
 
 
 class ThumbButton(QPushButtonWrapper):
