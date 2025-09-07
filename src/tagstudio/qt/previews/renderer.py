@@ -7,12 +7,14 @@ import contextlib
 import hashlib
 import math
 import os
+import xml.etree.ElementTree as ET
 import zipfile
 from copy import deepcopy
 from io import BytesIO
 from pathlib import Path
 from typing import TYPE_CHECKING, cast
 from warnings import catch_warnings
+from xml.etree.ElementTree import Element
 
 import cv2
 import numpy as np
@@ -855,26 +857,62 @@ class ThumbRenderer(QObject):
         return im
 
     @staticmethod
-    def _epub_cover(filepath: Path) -> Image.Image:
-        """Extracts and returns the first image found in the ePub file at the given filepath.
+    def _epub_cover(filepath: Path) -> Image.Image | None:
+        """Extracts the cover specified by ComicInfo.xml or first image found in the ePub file.
 
         Args:
             filepath (Path): The path to the ePub file.
 
         Returns:
-            Image: The first image found in the ePub file, or None by default.
+            Image: The cover specified in ComicInfo.xml,
+            the first image found in the ePub file, or None by default.
         """
-        im: Image.Image = None
+        im: Image.Image | None = None
         try:
             with zipfile.ZipFile(filepath, "r") as zip_file:
-                for file_name in zip_file.namelist():
-                    if file_name.lower().endswith(
-                        (".png", ".jpg", ".jpeg", ".gif", ".bmp", ".svg")
-                    ):
-                        image_data = zip_file.read(file_name)
-                        im = Image.open(BytesIO(image_data))
+                if "ComicInfo.xml" in zip_file.namelist():
+                    comic_info = ET.fromstring(zip_file.read("ComicInfo.xml"))
+                    im = ThumbRenderer.__cover_from_comic_info(zip_file, comic_info, "FrontCover")
+                    if not im:
+                        im = ThumbRenderer.__cover_from_comic_info(
+                            zip_file, comic_info, "InnerCover"
+                        )
+
+                if not im:
+                    for file_name in zip_file.namelist():
+                        if file_name.lower().endswith(
+                            (".png", ".jpg", ".jpeg", ".gif", ".bmp", ".svg")
+                        ):
+                            image_data = zip_file.read(file_name)
+                            im = Image.open(BytesIO(image_data))
         except Exception as e:
             logger.error("Couldn't render thumbnail", filepath=filepath, error=type(e).__name__)
+
+        return im
+
+    @staticmethod
+    def __cover_from_comic_info(
+        zip_file: zipfile.ZipFile, comic_info: Element, cover_type: str
+    ) -> Image.Image | None:
+        """Extract the cover specified in ComicInfo.xml.
+
+        Args:
+            zip_file (zipfile.ZipFile): The current ePub file.
+            comic_info (Element): The parsed ComicInfo.xml.
+            cover_type (str): The type of cover to load.
+
+        Returns:
+            Image: The cover specified in ComicInfo.xml.
+        """
+        im: Image.Image | None = None
+
+        cover = comic_info.find(f"./*Page[@Type='{cover_type}']")
+        if cover is not None:
+            pages = [f for f in zip_file.namelist() if f != "ComicInfo.xml"]
+            page_name = pages[int(cover.get("Image"))]
+            if page_name.endswith((".png", ".jpg", ".jpeg", ".gif", ".bmp", ".svg")):
+                image_data = zip_file.read(page_name)
+                im = Image.open(BytesIO(image_data))
 
         return im
 
