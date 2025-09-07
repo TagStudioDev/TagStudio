@@ -14,9 +14,9 @@ Legacy (JSON) library save format versions were tied to the release version of t
 
 ### Versions 1.0.0 - 9.4.2
 
-| Used From | Used Until                                                              | Format | Location                                      |
-| --------- | ----------------------------------------------------------------------- | ------ | --------------------------------------------- |
-| v1.0.0    | [v9.4.2](https://github.com/TagStudioDev/TagStudio/releases/tag/v9.4.2) | JSON   | `<Library Folder>`/.TagStudio/ts_library.json |
+| Used From | Format | Location                                      |
+| --------- | ------ | --------------------------------------------- |
+| v1.0.0    | JSON   | `<Library Folder>`/.TagStudio/ts_library.json |
 
 The legacy database format for public TagStudio releases [v9.1](https://github.com/TagStudioDev/TagStudio/tree/Alpha-v9.1) through [v9.4.2](https://github.com/TagStudioDev/TagStudio/releases/tag/v9.4.2). Variations of this format had been used privately since v1.0.0.
 
@@ -48,9 +48,9 @@ These versions were used while developing the new SQLite file format, outside an
 
 ### Version 6
 
-| Used From                                                                       | Used Until                                                                      | Format | Location                                        |
-| ------------------------------------------------------------------------------- | ------------------------------------------------------------------------------- | ------ | ----------------------------------------------- |
-| [v9.5.0-pr1](https://github.com/TagStudioDev/TagStudio/releases/tag/v9.5.0-pr1) | [v9.5.0-pr1](https://github.com/TagStudioDev/TagStudio/releases/tag/v9.5.0-pr1) | SQLite | `<Library Folder>`/.TagStudio/ts_library.sqlite |
+| Used From                                                                       | Format | Location                                        |
+| ------------------------------------------------------------------------------- | ------ | ----------------------------------------------- |
+| [v9.5.0-pr1](https://github.com/TagStudioDev/TagStudio/releases/tag/v9.5.0-pr1) | SQLite | `<Library Folder>`/.TagStudio/ts_library.sqlite |
 
 The first public version of the SQLite save file format.
 
@@ -60,9 +60,9 @@ Migration from the legacy JSON format is provided via a walkthrough when opening
 
 ### Version 7
 
-| Used From                                                                       | Used Until                                                                      | Format | Location                                        |
-| ------------------------------------------------------------------------------- | ------------------------------------------------------------------------------- | ------ | ----------------------------------------------- |
-| [v9.5.0-pr2](https://github.com/TagStudioDev/TagStudio/releases/tag/v9.5.0-pr2) | [v9.5.0-pr3](https://github.com/TagStudioDev/TagStudio/releases/tag/v9.5.0-pr3) | SQLite | `<Library Folder>`/.TagStudio/ts_library.sqlite |
+| Used From                                                                       | Format | Location                                        |
+| ------------------------------------------------------------------------------- | ------ | ----------------------------------------------- |
+| [v9.5.0-pr2](https://github.com/TagStudioDev/TagStudio/releases/tag/v9.5.0-pr2) | SQLite | `<Library Folder>`/.TagStudio/ts_library.sqlite |
 
 -   Repairs "Description" fields to use a TEXT_LINE key instead of a TEXT_BOX key.
 -   Repairs tags that may have a disambiguation_id pointing towards a deleted tag.
@@ -71,9 +71,9 @@ Migration from the legacy JSON format is provided via a walkthrough when opening
 
 ### Version 8
 
-| Used From                                                                       | Used Until                                                              | Format | Location                                        |
-| ------------------------------------------------------------------------------- | ----------------------------------------------------------------------- | ------ | ----------------------------------------------- |
-| [v9.5.0-pr4](https://github.com/TagStudioDev/TagStudio/releases/tag/v9.5.0-pr4) | [v9.5.1](https://github.com/TagStudioDev/TagStudio/releases/tag/v9.5.1) | SQLite | `<Library Folder>`/.TagStudio/ts_library.sqlite |
+| Used From                                                                       | Format | Location                                        |
+| ------------------------------------------------------------------------------- | ------ | ----------------------------------------------- |
+| [v9.5.0-pr4](https://github.com/TagStudioDev/TagStudio/releases/tag/v9.5.0-pr4) | SQLite | `<Library Folder>`/.TagStudio/ts_library.sqlite |
 
 -   Adds the `color_border` column to the `tag_colors` table. Used for instructing the [secondary color](../library/tag_color.md#secondary-color) to apply to a tag's border as a new optional behavior.
 -   Adds three new default colors: "Burgundy (TagStudio Shades)", "Dark Teal (TagStudio Shades)", and "Dark Lavender (TagStudio Shades)".
@@ -83,9 +83,9 @@ Migration from the legacy JSON format is provided via a walkthrough when opening
 
 ### Version 9
 
-| Used From                                                               | Used Until                                                              | Format | Location                                        |
-| ----------------------------------------------------------------------- | ----------------------------------------------------------------------- | ------ | ----------------------------------------------- |
-| [v9.5.2](https://github.com/TagStudioDev/TagStudio/releases/tag/v9.5.2) | [v9.5.3](https://github.com/TagStudioDev/TagStudio/releases/tag/v9.5.3) | SQLite | `<Library Folder>`/.TagStudio/ts_library.sqlite |
+| Used From                                                               | Format | Location                                        |
+| ----------------------------------------------------------------------- | ------ | ----------------------------------------------- |
+| [v9.5.2](https://github.com/TagStudioDev/TagStudio/releases/tag/v9.5.2) | SQLite | `<Library Folder>`/.TagStudio/ts_library.sqlite |
 
 -   Adds the `filename` column to the `entries` table. Used for sorting entries by filename in search results.
 
@@ -93,20 +93,20 @@ Migration from the legacy JSON format is provided via a walkthrough when opening
 
 ### Version 100
 
-| Used From                                                                                            | Used Until                                                              | Format | Location                                        |
-| ---------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------- | ------ | ----------------------------------------------- |
-| [74383e3](https://github.com/TagStudioDev/TagStudio/commit/74383e3c3c12f72be1481ab0b86c7360b95c2d85) | [v9.5.4](https://github.com/TagStudioDev/TagStudio/releases/tag/v9.5.4) | SQLite | `<Library Folder>`/.TagStudio/ts_library.sqlite |
+| Used From                                                                                            | Format | Location                                        |
+| ---------------------------------------------------------------------------------------------------- | ------ | ----------------------------------------------- |
+| [74383e3](https://github.com/TagStudioDev/TagStudio/commit/74383e3c3c12f72be1481ab0b86c7360b95c2d85) | SQLite | `<Library Folder>`/.TagStudio/ts_library.sqlite |
 
 -   Introduces built-in minor versioning
     -   The version number divided by 100 (and floored) constitutes the **major** version. Major version indicate breaking changes that prevent libraries from being opened in TagStudio versions older than the ones they were created in.
     -   Values more precise than this ("ones" through "tens" columns) constitute the **minor** version. These indicate minor changes that don't prevent a newer library from being opened in an older version of TagStudio, as long as the major version is not also increased.
--   Swaps `parent_id` and `child_id` values in the `tag_parents` table, which have erroneously been flipped since the first SQLite DB version.
+-   Swaps `parent_id` and `child_id` values in the `tag_parents` table
 
 #### Version 101
 
-| Used From                                                               | Used Until | Format | Location                                        |
-| ----------------------------------------------------------------------- | ---------- | ------ | ----------------------------------------------- |
-| [v9.5.4](https://github.com/TagStudioDev/TagStudio/releases/tag/v9.5.4) | _Current_  | SQLite | `<Library Folder>`/.TagStudio/ts_library.sqlite |
+| Used From                                                               | Format | Location                                        |
+| ----------------------------------------------------------------------- | ------ | ----------------------------------------------- |
+| [v9.5.4](https://github.com/TagStudioDev/TagStudio/releases/tag/v9.5.4) | SQLite | `<Library Folder>`/.TagStudio/ts_library.sqlite |
 
 -   Deprecates the `preferences` table, set to be removed in a future TagStudio version.
 -   Introduces the `versions` table
@@ -115,3 +115,11 @@ Migration from the legacy JSON format is provided via a walkthrough when opening
     -   `'INITIAL'` stores the database version number in which in was created
         -   Pre-existing databases set this number to `100`
     -   `'CURRENT'` stores the current database version number
+
+#### Version 102
+
+| Used From                                                               | Format | Location                                        |
+| ----------------------------------------------------------------------- | ------ | ----------------------------------------------- |
+| [v9.5.4](https://github.com/TagStudioDev/TagStudio/releases/tag/v9.5.4) | SQLite | `<Library Folder>`/.TagStudio/ts_library.sqlite |
+
+-   Applies repairs to the `tag_parents` table created in [version 100](#version-100), removing rows that reference tags that have been deleted.
