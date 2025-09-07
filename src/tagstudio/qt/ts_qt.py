@@ -1702,8 +1702,9 @@ class QtDriver(DriverMixin, QObject):
             max_size=self.settings.thumb_cache_size,
             img_quality=self.settings.cached_thumb_quality,
         )
+        cache_size = self.settings.thumb_cache_size * self.cache_manager.STAT_MULTIPLIER
         logger.info(
-            f"[Config] Thumbnail Cache Size: {format_size(self.settings.thumb_cache_size)}",
+            f"[Config] Thumbnail Cache Size: {format_size(cache_size)}",
         )
 
         # Migration is required
