@@ -885,6 +885,7 @@ class ThumbRenderer(QObject):
                         ):
                             image_data = zip_file.read(file_name)
                             im = Image.open(BytesIO(image_data))
+                            break
         except Exception as e:
             logger.error("Couldn't render thumbnail", filepath=filepath, error=type(e).__name__)
 
