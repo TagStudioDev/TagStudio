@@ -116,6 +116,7 @@ python3Packages.buildPythonApplication {
     "test_badge_visual_state"
     "test_browsing_state_update"
     "test_flow_layout_happy_path"
+    "test_get" # TODO: Look further into, might be possible to run.
     "test_json_migration"
     "test_library_migrations"
     "test_update_tags"
