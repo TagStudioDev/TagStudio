@@ -219,6 +219,20 @@ Don't forget to rebuild!
 
 For audio/video thumbnails and playback you'll need [FFmpeg](https://ffmpeg.org/download.html) installed on your system. If you encounter any issues with this, please reference our [FFmpeg Help](./help/ffmpeg.md) guide.
 
+### RAR extractor
+
+To generate thumbnails for RAR-based files (like `.cbr`) you'll need an extractor capable of handling them.
+
+On Linux you'll need to install either `unrar` (likely in you distro's non-free repository) or `unrar-free` from your package manager.
+
+On Mac `unrar` can be installed through Homebrew's [`rar`](https://formulae.brew.sh/cask/rar) formula. 
+
+On Windows you'll need to install either [`WinRAR`](https://www.rarlab.com/download.htm) or [`7-zip`](https://www.7-zip.org/) and add their folder to you `PATH`.
+
+#### Note
+
+Both `unrar` and `WinRAR` require a license, but since the evaluation copy has no time limit you can simply dismiss the prompt.
+
 ### ripgrep
 
 A recommended tool to improve the performance of directory scanning is [`ripgrep`](https://github.com/BurntSushi/ripgrep), a Rust-based directory walker that natively integrates with our [`.ts_ignore`](./utilities/ignore.md) (`.gitignore`-style) pattern matching system for excluding files and directories. Ripgrep is already pre-installed on some Linux distributions and also available from several package managers.

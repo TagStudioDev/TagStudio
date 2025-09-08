@@ -23,6 +23,7 @@ dependencies = [
     "pydantic~=2.10",
     "pydub~=0.25",
     "PySide6==6.8.0.*",
+    "rarfile==4.2",
     "rawpy~=0.24",
     "Send2Trash~=1.8",
     "SQLAlchemy~=2.0",
