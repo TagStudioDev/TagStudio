@@ -20,6 +20,7 @@ dependencies = [
     "pillow-avif-plugin~=1.5",
     "pillow-heif~=0.22",
     "pillow-jxl-plugin~=1.3",
+    "py7zr==1.0.0",
     "pydantic~=2.10",
     "pydub~=0.25",
     "PySide6==6.8.0.*",
