@@ -19,6 +19,7 @@ from xml.etree.ElementTree import Element
 import cv2
 import numpy as np
 import pillow_avif  # noqa: F401 # pyright: ignore[reportUnusedImport]
+import rarfile
 import rawpy
 import srctools
 import structlog
@@ -857,11 +858,12 @@ class ThumbRenderer(QObject):
         return im
 
     @staticmethod
-    def _epub_cover(filepath: Path) -> Image.Image | None:
+    def _epub_cover(filepath: Path, ext: str) -> Image.Image | None:
         """Extracts the cover specified by ComicInfo.xml or first image found in the ePub file.
 
         Args:
             filepath (Path): The path to the ePub file.
+            ext (str): The file extension.
 
         Returns:
             Image: The cover specified in ComicInfo.xml,
@@ -869,21 +871,25 @@ class ThumbRenderer(QObject):
         """
         im: Image.Image | None = None
         try:
-            with zipfile.ZipFile(filepath, "r") as zip_file:
-                if "ComicInfo.xml" in zip_file.namelist():
-                    comic_info = ET.fromstring(zip_file.read("ComicInfo.xml"))
-                    im = ThumbRenderer.__cover_from_comic_info(zip_file, comic_info, "FrontCover")
+            archiver: type[zipfile.ZipFile] | type[rarfile.RarFile] = zipfile.ZipFile
+            if ext == ".cbr":
+                archiver = rarfile.RarFile
+
+            with archiver(filepath, "r") as archive:
+                if "ComicInfo.xml" in archive.namelist():
+                    comic_info = ET.fromstring(archive.read("ComicInfo.xml"))
+                    im = ThumbRenderer.__cover_from_comic_info(archive, comic_info, "FrontCover")
                     if not im:
                         im = ThumbRenderer.__cover_from_comic_info(
-                            zip_file, comic_info, "InnerCover"
+                            archive, comic_info, "InnerCover"
                         )
 
                 if not im:
-                    for file_name in zip_file.namelist():
+                    for file_name in archive.namelist():
                         if file_name.lower().endswith(
                             (".png", ".jpg", ".jpeg", ".gif", ".bmp", ".svg")
                         ):
-                            image_data = zip_file.read(file_name)
+                            image_data = archive.read(file_name)
                             im = Image.open(BytesIO(image_data))
                             break
         except Exception as e:
@@ -893,12 +899,12 @@ class ThumbRenderer(QObject):
 
     @staticmethod
     def __cover_from_comic_info(
-        zip_file: zipfile.ZipFile, comic_info: Element, cover_type: str
+        archive: zipfile.ZipFile | rarfile.RarFile, comic_info: Element, cover_type: str
     ) -> Image.Image | None:
         """Extract the cover specified in ComicInfo.xml.
 
         Args:
-            zip_file (zipfile.ZipFile): The current ePub file.
+            archive (zipfile.ZipFile | rarfile.RarFile): The current ePub file.
             comic_info (Element): The parsed ComicInfo.xml.
             cover_type (str): The type of cover to load.
 
@@ -909,10 +915,10 @@ class ThumbRenderer(QObject):
 
         cover = comic_info.find(f"./*Page[@Type='{cover_type}']")
         if cover is not None:
-            pages = [f for f in zip_file.namelist() if f != "ComicInfo.xml"]
+            pages = [f for f in archive.namelist() if f != "ComicInfo.xml"]
             page_name = pages[int(cover.get("Image"))]
             if page_name.endswith((".png", ".jpg", ".jpeg", ".gif", ".bmp", ".svg")):
-                image_data = zip_file.read(page_name)
+                image_data = archive.read(page_name)
                 im = Image.open(BytesIO(image_data))
 
         return im
@@ -1573,7 +1579,7 @@ class ThumbRenderer(QObject):
                 if MediaCategories.is_ext_in_category(
                     ext, MediaCategories.EBOOK_TYPES, mime_fallback=True
                 ):
-                    image = self._epub_cover(_filepath)
+                    image = self._epub_cover(_filepath, ext)
                 # Krita ========================================================
                 elif MediaCategories.is_ext_in_category(
                     ext, MediaCategories.KRITA_TYPES, mime_fallback=True
