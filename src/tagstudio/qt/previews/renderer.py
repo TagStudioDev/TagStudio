@@ -7,12 +7,13 @@ import contextlib
 import hashlib
 import math
 import os
+import tarfile
 import xml.etree.ElementTree as ET
 import zipfile
 from copy import deepcopy
 from io import BytesIO
 from pathlib import Path
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING, Literal, cast
 from warnings import catch_warnings
 from xml.etree.ElementTree import Element
 
@@ -90,6 +91,23 @@ try:
     import pillow_jxl  # noqa: F401 # pyright: ignore[reportUnusedImport]
 except ImportError:
     logger.exception('[ThumbRenderer] Could not import the "pillow_jxl" module')
+
+
+class _TarFile(tarfile.TarFile):
+    """Wrapper around tarfile.TarFile to mimic zipfile.ZipFile's API."""
+
+    def __init__(self, filepath: Path, mode: Literal["r"]) -> None:
+        super().__init__(filepath, mode)
+
+    def namelist(self) -> list[str]:
+        return self.getnames()
+
+    def read(self, name: str) -> bytes:
+        return self.extractfile(name).read()
+
+
+type _Archive_T = type[zipfile.ZipFile] | type[rarfile.RarFile] | type[_TarFile]
+type _Archive = zipfile.ZipFile | rarfile.RarFile | _TarFile
 
 
 class ThumbRenderer(QObject):
@@ -871,9 +889,11 @@ class ThumbRenderer(QObject):
         """
         im: Image.Image | None = None
         try:
-            archiver: type[zipfile.ZipFile] | type[rarfile.RarFile] = zipfile.ZipFile
+            archiver: _Archive_T = zipfile.ZipFile
             if ext == ".cbr":
                 archiver = rarfile.RarFile
+            elif ext == ".cbt":
+                archiver = _TarFile
 
             with archiver(filepath, "r") as archive:
                 if "ComicInfo.xml" in archive.namelist():
@@ -899,12 +919,12 @@ class ThumbRenderer(QObject):
 
     @staticmethod
     def __cover_from_comic_info(
-        archive: zipfile.ZipFile | rarfile.RarFile, comic_info: Element, cover_type: str
+        archive: _Archive, comic_info: Element, cover_type: str
     ) -> Image.Image | None:
         """Extract the cover specified in ComicInfo.xml.
 
         Args:
-            archive (zipfile.ZipFile | rarfile.RarFile): The current ePub file.
+            archive (_Archive): The current ePub file.
             comic_info (Element): The parsed ComicInfo.xml.
             cover_type (str): The type of cover to load.
 
