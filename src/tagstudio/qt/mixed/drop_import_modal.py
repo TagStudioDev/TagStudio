@@ -21,6 +21,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from tagstudio.core.utils.types import unwrap
 from tagstudio.qt.mixed.progress_bar import ProgressWidget
 from tagstudio.qt.translations import Translations
 
@@ -120,7 +121,9 @@ class DropImportModal(QWidget):
                         continue
 
                     self.files.append(f)
-                    if (self.driver.lib.library_dir / self._get_relative_path(file)).exists():
+                    if (
+                        unwrap(self.driver.lib.library_dir) / self._get_relative_path(file)
+                    ).exists():
                         self.duplicate_files.append(f)
 
                 self.dirs_in_root.append(file.parent)
@@ -132,7 +135,7 @@ class DropImportModal(QWidget):
                         file.parent
                     )  # to create relative path of files not in folder
 
-                if (Path(self.driver.lib.library_dir) / file.name).exists():
+                if (Path(unwrap(self.driver.lib.library_dir)) / file.name).exists():
                     self.duplicate_files.append(file)
 
     def ask_duplicates_choice(self):
@@ -205,8 +208,10 @@ class DropImportModal(QWidget):
                     new_name = self._get_renamed_duplicate_filename(dest_file)
                     dest_file = dest_file.with_name(new_name)
 
-            (self.driver.lib.library_dir / dest_file).parent.mkdir(parents=True, exist_ok=True)
-            shutil.copyfile(file, self.driver.lib.library_dir / dest_file)
+            (unwrap(self.driver.lib.library_dir) / dest_file).parent.mkdir(
+                parents=True, exist_ok=True
+            )
+            shutil.copyfile(file, unwrap(self.driver.lib.library_dir) / dest_file)
 
             file_count += 1
             yield [file_count, duplicated_files_progress]
@@ -226,7 +231,7 @@ class DropImportModal(QWidget):
         except ValueError:
             dot_idx = len(o_filename)
 
-        while (self.driver.lib.library_dir / filepath).exists():
+        while (unwrap(self.driver.lib.library_dir) / filepath).exists():
             filepath = filepath.with_name(
                 o_filename[:dot_idx] + f" ({index})" + o_filename[dot_idx:]
             )
