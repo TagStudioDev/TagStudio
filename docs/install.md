@@ -10,14 +10,14 @@ TagStudio provides [releases](https://github.com/TagStudioDev/TagStudio/releases
 
 To download executable builds of TagStudio, visit the [Releases](https://github.com/TagStudioDev/TagStudio/releases) page of the GitHub repository and download the latest release for your system under the "Assets" section at the bottom of the release.
 
-TagStudio has builds for **Windows**, **macOS** _(Apple Silicon & Intel)_, and **Linux**. We also offer portable releases for Windows and Linux which are self-contained and easier to move around.
+TagStudio has builds for :fontawesome-brands-windows: **Windows**, :fontawesome-brands-apple: **macOS** _(Apple Silicon & Intel)_, and :material-penguin: **Linux**. We also offer portable releases for Windows and Linux which are self-contained and easier to move around.
 
 <!-- prettier-ignore -->
 !!! info "Third-Party Dependencies"
     You may need to install [third-party dependencies](#third-party-dependencies) such as [FFmpeg](https://ffmpeg.org/download.html) to use the full feature set of TagStudio.
 
 <!-- prettier-ignore -->
-!!! warning "For macOS Users"
+!!! warning ":fontawesome-brands-apple: macOS "Privacy & Security" Popup"
     On macOS, you may be met with a message saying "**"TagStudio" can't be opened because Apple cannot check it for malicious software.**" If you encounter this, then you'll need to go to the "Settings" app, navigate to "Privacy & Security", and scroll down to a section that says "**"TagStudio" was blocked from use because it is not from an identified developer.**" Click the "Open Anyway" button to allow TagStudio to run. You should only have to do this once after downloading the application.
 
 ---
@@ -30,7 +30,7 @@ TagStudio has builds for **Windows**, **macOS** _(Apple Silicon & Intel)_, and *
 
     Installation support will not be given to users installing from unofficial sources. Use these versions at your own risk!
 
-### Installing with PIP
+### :fontawesome-brands-python: Installing with PIP
 
 TagStudio is installable via [PIP](https://pip.pypa.io/). Note that since we don't currently distribute on PyPI, the repository needs to be cloned and installed locally. Make sure you have Python 3.12 and PIP installed if you choose to install using this method.
 
@@ -58,7 +58,7 @@ TagStudio can now be launched via the `tagstudio` command in your terminal.
 
 ---
 
-### Linux
+### :material-penguin: Linux
 
 Some external dependencies are required for TagStudio to execute. Below is a table of known packages that will be necessary.
 
@@ -79,7 +79,7 @@ Some external dependencies are required for TagStudio to execute. Below is a tab
 | [qt-multimedia](https://repology.org/project/qt) | required |
 | [qt-wayland](https://repology.org/project/qt) | Wayland support |
 
-### Nix(OS)
+### :material-nix: Nix(OS)
 
 For [Nix(OS)](https://nixos.org/), the TagStudio repository includes a [flake](https://wiki.nixos.org/wiki/Flakes) that provides some outputs such as a development shell and package.
 
@@ -213,25 +213,29 @@ Don't forget to rebuild!
 
 <!-- prettier-ignore -->
 !!! tip
-    You can check to see if any of these dependencies are correctly located by launching TagStudio and going to "About TagStudio" in the menu bar.
+    You can check to see if these dependencies are correctly located by launching TagStudio and going to "About TagStudio" in the menu bar.
 
 ### FFmpeg/FFprobe
 
 For audio/video thumbnails and playback you'll need [FFmpeg](https://ffmpeg.org/download.html) installed on your system. If you encounter any issues with this, please reference our [FFmpeg Help](./help/ffmpeg.md) guide.
 
-### RAR extractor
+### RAR Extractor
 
 To generate thumbnails for RAR-based files (like `.cbr`) you'll need an extractor capable of handling them.
 
-On Linux you'll need to install either `unrar` (likely in you distro's non-free repository) or `unrar-free` from your package manager.
+-   :material-penguin: On Linux you'll need to install either `unrar` (likely in you distro's non-free repository) or `unrar-free` from your package manager.
 
-On Mac `unrar` can be installed through Homebrew's [`rar`](https://formulae.brew.sh/cask/rar) formula. 
+-   :fontawesome-brands-apple: On macOS `unrar` can be installed through Homebrew's [`rar`](https://formulae.brew.sh/cask/rar) formula.
 
-On Windows you'll need to install either [`WinRAR`](https://www.rarlab.com/download.htm) or [`7-zip`](https://www.7-zip.org/) and add their folder to you `PATH`.
+    <!-- prettier-ignore -->
+    !!! warning ":fontawesome-brands-apple: macOS "Privacy & Security" Popup"
+        On macOS, you may be met with a message similar to  "**"unrar" Not Opened. Apple could not verify "unrar" is free of malware that may harm your Mac or compromise your privacy**" If you encounter this, then you'll need to go to the "Settings" app, navigate to "Privacy & Security", and scroll down to a section that says "**"unrar" was blocked from use because it is not from an identified developer.**" Click the "Open Anyway" button to allow unrar to be used.
 
-#### Note
+-   :fontawesome-brands-windows: On Windows you'll need to install either [`WinRAR`](https://www.rarlab.com/download.htm) or [`7-zip`](https://www.7-zip.org/) and add their folder to you `PATH`.
 
-Both `unrar` and `WinRAR` require a license, but since the evaluation copy has no time limit you can simply dismiss the prompt.
+    <!-- prettier-ignore -->
+    !!! tip "WinRAR License"
+        Both `unrar` and `WinRAR` require a license, but since the evaluation copy has no time limit you can simply dismiss the prompt.
 
 ### ripgrep
 
