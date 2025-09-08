@@ -11,7 +11,7 @@ import re
 import shutil
 import time
 import unicodedata
-from collections.abc import Iterable, Iterator, MutableSequence
+from collections.abc import Iterable, Iterator
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from os import makedirs
@@ -534,21 +534,23 @@ class Library:
                     self.save_library_backup_to_disk()
                     self.library_dir = None
 
-                # schema changes first
+                # NOTE: Depending on the data, some data and schema changes need to be applied in
+                # different orders. This chain of methods can likely be cleaned up and/or moved.
                 if loaded_db_version < 8:
                     self.__apply_db8_schema_changes(session)
                 if loaded_db_version < 9:
                     self.__apply_db9_schema_changes(session)
-
-                # now the data changes
                 if loaded_db_version == 6:
                     self.__apply_repairs_for_db6(session)
+
                 if loaded_db_version >= 6 and loaded_db_version < 8:
                     self.__apply_db8_default_data(session)
                 if loaded_db_version < 9:
                     self.__apply_db9_filename_population(session)
                 if loaded_db_version < 100:
                     self.__apply_db100_parent_repairs(session)
+                if loaded_db_version < 102:
+                    self.__apply_db102_repairs(session)
 
                 # Convert file extension list to ts_ignore file, if a .ts_ignore file does not exist
                 self.migrate_sql_to_ts_ignore(library_dir)
@@ -566,12 +568,12 @@ class Library:
         logger.info("[Library][Migration] Applying patches to DB_VERSION: 6 library...")
         with session:
             # Repair "Description" fields with a TEXT_LINE key instead of a TEXT_BOX key.
-            desc_stmd = (
+            desc_stmt = (
                 update(ValueType)
                 .where(ValueType.key == FieldID.DESCRIPTION.name)
                 .values(type=FieldTypeEnum.TEXT_BOX.name)
             )
-            session.execute(desc_stmd)
+            session.execute(desc_stmt)
             session.flush()
 
             # Repair tags that may have a disambiguation_id pointing towards a deleted tag.
@@ -685,7 +687,16 @@ class Library:
             )
             session.execute(stmt)
             session.commit()
-            logger.info("[Library][Migration] Refactored TagParent column")
+            logger.info("[Library][Migration] Refactored TagParent table")
+
+    def __apply_db102_repairs(self, session: Session):
+        """Repair tag_parents rows with references to deleted tags."""
+        with session:
+            all_tag_ids: list[int] = [t.id for t in self.tags]
+            stmt = delete(TagParent).where(TagParent.parent_id.not_in(all_tag_ids))
+            session.execute(stmt)
+            session.commit()
+            logger.info("[Library][Migration] Verified TagParent table data")
 
     def migrate_sql_to_ts_ignore(self, library_dir: Path):
         # Do not continue if existing '.ts_ignore' file is found
@@ -794,7 +805,7 @@ class Library:
             entries = dict((e.id, e) for e in session.scalars(statement))
             return [entries[id] for id in entry_ids]
 
-    def get_entries_full(self, entry_ids: MutableSequence[int]) -> Iterator[Entry]:
+    def get_entries_full(self, entry_ids: list[int] | set[int]) -> Iterator[Entry]:
         """Load entry and join with all joins and all tags."""
         with Session(self.engine) as session:
             statement = select(Entry).where(Entry.id.in_(set(entry_ids)))
@@ -1112,17 +1123,17 @@ class Library:
     def remove_tag(self, tag_id: int):
         with Session(self.engine, expire_on_commit=False) as session:
             try:
-                child_tags = session.scalars(
-                    select(TagParent).where(TagParent.child_id == tag_id)
-                ).all()
                 aliases = session.scalars(select(TagAlias).where(TagAlias.tag_id == tag_id))
-
-                for alias in aliases or []:
+                for alias in aliases:
                     session.delete(alias)
+                    session.flush()
 
-                for child_tag in child_tags or []:
-                    session.delete(child_tag)
-                    session.expunge(child_tag)
+                tag_parents = session.scalars(
+                    select(TagParent).where(TagParent.parent_id == tag_id)
+                ).all()
+                for tag_parent in tag_parents:
+                    session.delete(tag_parent)
+                    session.flush()
 
                 disam_stmt = (
                     update(Tag)
@@ -1131,6 +1142,7 @@ class Library:
                 )
                 session.execute(disam_stmt)
                 session.flush()
+
                 session.query(Tag).filter_by(id=tag_id).delete()
                 session.commit()
 
@@ -1397,9 +1409,9 @@ class Library:
     def add_tag(
         self,
         tag: Tag,
-        parent_ids: MutableSequence[int] | None = None,
-        alias_names: MutableSequence[str] | None = None,
-        alias_ids: MutableSequence[int] | None = None,
+        parent_ids: list[int] | set[int] | None = None,
+        alias_names: list[str] | set[str] | None = None,
+        alias_ids: list[int] | set[int] | None = None,
     ) -> Tag | None:
         with Session(self.engine, expire_on_commit=False) as session:
             try:
@@ -1422,7 +1434,7 @@ class Library:
                 return None
 
     def add_tags_to_entries(
-        self, entry_ids: int | list[int], tag_ids: int | MutableSequence[int]
+        self, entry_ids: int | list[int] | set[int], tag_ids: int | list[int] | set[int]
     ) -> int:
         """Add one or more tags to one or more entries.
 
@@ -1451,7 +1463,7 @@ class Library:
         return total_added
 
     def remove_tags_from_entries(
-        self, entry_ids: int | list[int], tag_ids: int | MutableSequence[int]
+        self, entry_ids: int | list[int] | set[int], tag_ids: int | list[int] | set[int]
     ) -> bool:
         """Remove one or more tags from one or more entries."""
         entry_ids_ = [entry_ids] if isinstance(entry_ids, int) else entry_ids
@@ -1604,16 +1616,22 @@ class Library:
             for tag in tags:
                 all_tags[tag.id] = tag
             for tag in all_tags.values():
-                # Sqlalchemy tracks this as a change to the parent_tags field
-                tag.parent_tags = {all_tags[p] for p in all_tag_parents.get(tag.id, [])}
-                # When calling session.add with this tag instance sqlalchemy will
-                # attempt to create TagParents that already exist.
+                try:
+                    # Sqlalchemy tracks this as a change to the parent_tags field
+                    tag.parent_tags = {all_tags[p] for p in all_tag_parents.get(tag.id, [])}
+                    # When calling session.add with this tag instance sqlalchemy will
+                    # attempt to create TagParents that already exist.
 
-                state: InstanceState[Tag] = inspect(tag)
-                # Prevent sqlalchemy from thinking any fields are different from what's committed
-                # committed_state contains original values for fields that have changed.
-                # empty when no fields have changed
-                state.committed_state.clear()
+                    state: InstanceState[Tag] = inspect(tag)
+                    # Prevent sqlalchemy from thinking fields are different from what's committed
+                    # committed_state contains original values for fields that have changed.
+                    # empty when no fields have changed
+                    state.committed_state.clear()
+                except KeyError as e:
+                    logger.error(
+                        "[LIBRARY][get_tag_hierarchy] Tag referenced by TagParent does not exist!",
+                        error=e,
+                    )
 
         return all_tags
 
@@ -1669,9 +1687,9 @@ class Library:
     def update_tag(
         self,
         tag: Tag,
-        parent_ids: MutableSequence[int] | None = None,
-        alias_names: MutableSequence[str] | None = None,
-        alias_ids: MutableSequence[int] | None = None,
+        parent_ids: list[int] | set[int] | None = None,
+        alias_names: list[str] | set[str] | None = None,
+        alias_ids: list[int] | set[int] | None = None,
     ) -> None:
         """Edit a Tag in the Library."""
         self.add_tag(tag, parent_ids, alias_names, alias_ids)
@@ -1728,8 +1746,8 @@ class Library:
     def update_aliases(
         self,
         tag: Tag,
-        alias_ids: MutableSequence[int],
-        alias_names: MutableSequence[str],
+        alias_ids: list[int] | set[int],
+        alias_names: list[str] | set[str],
         session: Session,
     ):
         prev_aliases = session.scalars(select(TagAlias).where(TagAlias.tag_id == tag.id)).all()
@@ -1745,7 +1763,7 @@ class Library:
             alias = TagAlias(alias_name, tag.id)
             session.add(alias)
 
-    def update_parent_tags(self, tag: Tag, parent_ids: MutableSequence[int], session: Session):
+    def update_parent_tags(self, tag: Tag, parent_ids: list[int] | set[int], session: Session):
         if tag.id in parent_ids:
             parent_ids.remove(tag.id)
 

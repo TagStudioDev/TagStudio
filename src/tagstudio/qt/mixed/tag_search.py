@@ -197,7 +197,8 @@ class TagSearchPanel(PanelWidget):
             self.search_field.setFocus()
             self.update_tags()
 
-        from tagstudio.qt.modals.build_tag import BuildTagPanel  # here due to circular imports
+        # TODO: Move this to a top-level import
+        from tagstudio.qt.mixed.build_tag import BuildTagPanel  # here due to circular imports
 
         self.build_tag_modal: BuildTagPanel = BuildTagPanel(self.lib)
         self.add_tag_modal: PanelModal = PanelModal(
@@ -375,7 +376,8 @@ class TagSearchPanel(PanelWidget):
         pass
 
     def edit_tag(self, tag: Tag):
-        from tagstudio.qt.modals.build_tag import BuildTagPanel
+        # TODO: Move this to a top-level import
+        from tagstudio.qt.mixed.build_tag import BuildTagPanel
 
         def callback(btp: BuildTagPanel):
             self.lib.update_tag(
