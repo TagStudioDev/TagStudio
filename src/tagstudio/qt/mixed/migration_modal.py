@@ -5,6 +5,7 @@
 
 import traceback
 from pathlib import Path
+from typing import cast
 
 import structlog
 from PySide6.QtCore import QObject, Qt, QThreadPool, Signal
@@ -60,8 +61,8 @@ class JsonMigrationModal(QObject):
         self.path: Path = path
 
         self.stack: list[PagedPanelState] = []
-        self.json_lib: JsonLibrary = None
-        self.sql_lib: SqliteLibrary = None
+        self.json_lib: JsonLibrary = None  # pyright: ignore[reportAttributeAccessIssue]
+        self.sql_lib: SqliteLibrary = None  # pyright: ignore[reportAttributeAccessIssue]
         self.is_migration_initialized: bool = False
         self.discrepancies: list[str] = []
 
@@ -71,7 +72,7 @@ class JsonMigrationModal(QObject):
         self.old_entry_count: int = 0
         self.old_tag_count: int = 0
         self.old_ext_count: int = 0
-        self.old_ext_type: bool = None
+        self.old_ext_type: bool = None  # pyright: ignore[reportAttributeAccessIssue]
 
         self.field_parity: bool = False
         self.path_parity: bool = False
@@ -366,7 +367,7 @@ class JsonMigrationModal(QObject):
             minimum=0,
             maximum=0,
         )
-        pb.setCancelButton(None)
+        pb.setCancelButton(None)  # pyright: ignore[reportArgumentType]
         self.body_wrapper_01.layout().addWidget(pb)
 
         try:
@@ -389,7 +390,7 @@ class JsonMigrationModal(QObject):
                     pb.setMinimum(1),  # type: ignore
                     pb.setValue(1),  # type: ignore
                     # Enable the finish button
-                    self.stack[1].buttons[4].setDisabled(False),
+                    cast(QPushButtonWrapper, self.stack[1].buttons[4]).setDisabled(False),
                 )
             )
             QThreadPool.globalInstance().start(r)
@@ -473,7 +474,7 @@ class JsonMigrationModal(QObject):
         )
         self.update_sql_value(
             self.ext_type_row,
-            self.sql_lib.prefs(LibraryPrefs.IS_EXCLUDE_LIST),
+            self.sql_lib.prefs(LibraryPrefs.IS_EXCLUDE_LIST),  # pyright: ignore[reportArgumentType]
             self.old_ext_type,
         )
         logger.info("Parity check complete!")
@@ -635,18 +636,15 @@ class JsonMigrationModal(QObject):
 
     def check_subtag_parity(self) -> bool:
         """Check if all JSON parent tags match the new SQL parent tags."""
-        sql_parent_tags: set[int] = None
-        json_parent_tags: set[int] = None
-
         with Session(self.sql_lib.engine) as session:
             for tag in self.sql_lib.tags:
                 tag_id = tag.id  # Tag IDs start at 0
-                sql_parent_tags = set(
+                sql_parent_tags: set[int] = set(
                     session.scalars(select(TagParent.parent_id).where(TagParent.child_id == tag.id))
                 )
 
                 # JSON tags allowed self-parenting; SQL tags no longer allow this.
-                json_parent_tags = set(self.json_lib.get_tag(tag_id).subtag_ids)
+                json_parent_tags: set[int] = set(self.json_lib.get_tag(tag_id).subtag_ids)
                 json_parent_tags.discard(tag_id)
 
                 logger.info(
@@ -676,16 +674,15 @@ class JsonMigrationModal(QObject):
 
     def check_alias_parity(self) -> bool:
         """Check if all JSON aliases match the new SQL aliases."""
-        sql_aliases: set[str] = None
-        json_aliases: set[str] = None
-
         with Session(self.sql_lib.engine) as session:
             for tag in self.sql_lib.tags:
                 tag_id = tag.id  # Tag IDs start at 0
-                sql_aliases = set(
+                sql_aliases: set[str] = set(
                     session.scalars(select(TagAlias.name).where(TagAlias.tag_id == tag.id))
                 )
-                json_aliases = set([x for x in self.json_lib.get_tag(tag_id).aliases if x])
+                json_aliases: set[str] = set(
+                    [x for x in self.json_lib.get_tag(tag_id).aliases if x]
+                )
 
                 logger.info(
                     "[Alias Parity]",

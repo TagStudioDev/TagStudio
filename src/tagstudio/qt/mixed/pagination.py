@@ -5,10 +5,10 @@
 
 """A pagination widget created for TagStudio."""
 
-from typing import override
+from typing import cast, override
 
 from PIL import Image, ImageQt
-from PySide6.QtCore import QObject, QSize, Signal
+from PySide6.QtCore import QSize, Signal
 from PySide6.QtGui import QIntValidator, QPixmap
 from PySide6.QtWidgets import QHBoxLayout, QLabel, QLineEdit, QSizePolicy, QWidget
 
@@ -17,7 +17,7 @@ from tagstudio.qt.resource_manager import ResourceManager
 from tagstudio.qt.views.qbutton_wrapper import QPushButtonWrapper
 
 
-class Pagination(QWidget, QObject):
+class Pagination(QWidget):
     """Widget containing controls for navigating between pages of items."""
 
     index = Signal(int)
@@ -160,8 +160,8 @@ class Pagination(QWidget, QObject):
                 srt_scale = max(1, (7 - (end_page - index)))
 
             if page_count >= 8:
-                end_size = self.button_size.width() * end_scale + (3 * (end_scale - 1))
-                srt_size = self.button_size.width() * srt_scale + (3 * (srt_scale - 1))
+                end_size = self.button_size.width() * end_scale + (3 * (end_scale - 1))  # pyright: ignore[reportPossiblyUnboundVariable]
+                srt_size = self.button_size.width() * srt_scale + (3 * (srt_scale - 1))  # pyright: ignore[reportPossiblyUnboundVariable]
                 self.end_ellipses.setMinimumWidth(end_size)
                 self.end_ellipses.setMaximumWidth(end_size)
                 self.start_ellipses.setMinimumWidth(srt_size)
@@ -223,7 +223,10 @@ class Pagination(QWidget, QObject):
                             str(i + 1)
                         )
                         self._assign_click(
-                            self.start_buffer_layout.itemAt(i - start_offset).widget(),
+                            cast(
+                                QPushButtonWrapper,
+                                self.start_buffer_layout.itemAt(i - start_offset).widget(),
+                            ),
                             i,
                         )
                         sbc += 1
@@ -239,7 +242,10 @@ class Pagination(QWidget, QObject):
                             str(i + 1)
                         )
                         self._assign_click(
-                            self.end_buffer_layout.itemAt(i - end_offset).widget(),
+                            cast(
+                                QPushButtonWrapper,
+                                self.end_buffer_layout.itemAt(i - end_offset).widget(),
+                            ),
                             i,
                         )
                     else:
