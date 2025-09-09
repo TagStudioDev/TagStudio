@@ -994,14 +994,14 @@ class Library:
         assert self.library_dir
 
         with Session(unwrap(self.engine), expire_on_commit=False) as session:
-            if page_size is None:
-                statement = select(Entry.id)
-            else:
+            if page_size:
                 statement = (
                     select(Entry.id, func.count().over())
                     .offset(search.page_index * page_size)
                     .limit(page_size)
                 )
+            else:
+                statement = select(Entry.id)
 
             if search.ast:
                 start_time = time.time()
@@ -1032,16 +1032,16 @@ class Library:
             )
 
             start_time = time.time()
-            if page_size is None:
-                ids = list(session.scalars(statement))
-                total_count = len(ids)
-            else:
+            if page_size:
                 rows = session.execute(statement).fetchall()
                 ids = []
                 total_count = 0
                 for row in rows:
                     ids.append(row[0])
                     total_count = row[1]
+            else:
+                ids = list(session.scalars(statement))
+                total_count = len(ids)
             end_time = time.time()
             logger.info(f"SQL Execution finished ({format_timespan(end_time - start_time)})")
 

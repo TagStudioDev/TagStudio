@@ -1471,7 +1471,10 @@ class QtDriver(DriverMixin, QObject):
         self.update_thumbs()
 
         # update pagination
-        self.pages_count = math.ceil(results.total_count / self.settings.page_size)
+        if self.settings.page_size > 0:
+            self.pages_count = math.ceil(results.total_count / self.settings.page_size)
+        else:
+            self.pages_count = 1
         self.main_window.pagination.update_buttons(
             self.pages_count, self.browsing_history.current.page_index, emit=False
         )

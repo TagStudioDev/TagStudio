@@ -189,7 +189,7 @@ class SettingsPanel(PanelWidget):
 
         def on_page_size_changed():
             text = self.page_size_line_edit.text()
-            if not text.isdigit() or int(text) < 1:
+            if not text.isdigit():
                 self.page_size_line_edit.setText(str(self.driver.settings.page_size))
 
         self.page_size_line_edit.editingFinished.connect(on_page_size_changed)
