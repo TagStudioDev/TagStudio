@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "TagStudio"
 description = "A User-Focused Photo & File Management System."
-version = "9.5.4"
+version = "9.5.5"
 license = "GPL-3.0-only"
 readme = "README.md"
 requires-python = ">=3.12,<3.13"
@@ -20,9 +20,11 @@ dependencies = [
     "pillow-avif-plugin~=1.5",
     "pillow-heif~=0.22",
     "pillow-jxl-plugin~=1.3",
+    "py7zr==1.0.0",
     "pydantic~=2.10",
     "pydub~=0.25",
     "PySide6==6.8.0.*",
+    "rarfile==4.2",
     "rawpy~=0.24",
     "Send2Trash~=1.8",
     "SQLAlchemy~=2.0",

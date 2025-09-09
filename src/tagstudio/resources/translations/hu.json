@@ -287,6 +287,7 @@
     "settings.theme.label": "&Téma:",
     "settings.theme.light": "Világos",
     "settings.theme.system": "Automatikus",
+    "settings.thumb_cache_size.label": "Indexkép-gyorsítótár mérete",
     "settings.title": "Beállítások",
     "settings.zeropadding.label": "Egyszámjegyű napok kezdése nullával",
     "sorting.direction.ascending": "Növekvő sorrend",

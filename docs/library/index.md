@@ -31,7 +31,7 @@ Images will generate thumbnails the first time they are viewed or since the last
 | OpenEXR              | `.exr`                                             | :material-minus-circle:{.lg .gray}  |
 | OpenRaster           | `.ora`                                             | :material-minus-circle:{.lg .gray}  |
 | PNG                  | `.png`                                             | :material-minus-circle:{.lg .gray}  |
-| SVG                  | `.svg`                                             | :material-minus-circle:{.lg .gray}  |
+| SVG                  | `.svg`                                             |  :material-close-circle:{.lg .red}  |
 | TIFF                 | `.tiff`, `.tif`                                    | :material-minus-circle:{.lg .gray}  |
 | Valve Texture Format | `.vtf`                                             |  :material-close-circle:{.lg .red}  |
 | WebP                 | `.webp`                                            | :material-check-circle:{.lg .green} |
@@ -101,7 +101,14 @@ Preview support for office documents or well-known project file formats varies b
 | Photoshop                     | `.psd`                | Flattened image render                                                     |
 | PowerPoint (Microsoft Office) | `.pptx`, `.ppt`       | Embedded thumbnail :material-alert-circle:{ title="If available in file" } |
 
-### 3D Models
+### :material-book: eBooks
+
+| Filetype           | Extensions            | Preview Type                 |
+| ------------------ | --------------------- | ---------------------------- |
+| EPUB               | `.epub`               | Embedded cover               |
+| Comic Book Archive | `.cbr`, `.cbt` `.cbz` | Embedded cover or first page |
+
+### :material-cube-outline: 3D Models
 
 <!-- prettier-ignore -->
 !!! failure "3D Model Support"
@@ -135,12 +142,6 @@ Text files render the first 256 bytes of text information to an image preview fo
 | TOML       | `.toml`                                       | :material-close-circle:{.lg .red}  |
 | XML        | `.xml`, `.xul`                                | :material-close-circle:{.lg .red}  |
 | YAML       | `.yaml`, `.yml`                               | :material-close-circle:{.lg .red}  |
-
-### :material-file: Other
-
-| Filetype | Extensions | Preview Type         |
-| -------- | ---------- | -------------------- |
-| EPUB     | `.epub`    | Embedded ebook cover |
 
 <!-- prettier-ignore-start -->
 [^1]:

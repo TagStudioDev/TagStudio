@@ -7,18 +7,21 @@ import contextlib
 import hashlib
 import math
 import os
+import tarfile
 import xml.etree.ElementTree as ET
 import zipfile
 from copy import deepcopy
 from io import BytesIO
 from pathlib import Path
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING, Literal, cast
 from warnings import catch_warnings
 from xml.etree.ElementTree import Element
 
 import cv2
 import numpy as np
 import pillow_avif  # noqa: F401 # pyright: ignore[reportUnusedImport]
+import py7zr
+import rarfile
 import rawpy
 import srctools
 import structlog
@@ -90,6 +93,40 @@ try:
     import pillow_jxl  # noqa: F401 # pyright: ignore[reportUnusedImport]
 except ImportError:
     logger.exception('[ThumbRenderer] Could not import the "pillow_jxl" module')
+
+
+class _SevenZipFile(py7zr.SevenZipFile):
+    """Wrapper around py7zr.SevenZipFile to mimic zipfile.ZipFile's API."""
+
+    def __init__(self, filepath: Path, mode: Literal["r"]) -> None:
+        super().__init__(filepath, mode)
+
+    def read(self, name: str) -> bytes:
+        # SevenZipFile must be reset after every extraction
+        # See https://py7zr.readthedocs.io/en/stable/api.html#py7zr.SevenZipFile.extract
+        self.reset()
+        factory = py7zr.io.BytesIOFactory(limit=10485760)  # 10 MiB
+        self.extract(targets=[name], factory=factory)
+        return factory.get(name).read()
+
+
+class _TarFile(tarfile.TarFile):
+    """Wrapper around tarfile.TarFile to mimic zipfile.ZipFile's API."""
+
+    def __init__(self, filepath: Path, mode: Literal["r"]) -> None:
+        super().__init__(filepath, mode)
+
+    def namelist(self) -> list[str]:
+        return self.getnames()
+
+    def read(self, name: str) -> bytes:
+        return self.extractfile(name).read()
+
+
+type _Archive_T = (
+    type[zipfile.ZipFile] | type[rarfile.RarFile] | type[_SevenZipFile] | type[_TarFile]
+)
+type _Archive = zipfile.ZipFile | rarfile.RarFile | _SevenZipFile | _TarFile
 
 
 class ThumbRenderer(QObject):
@@ -858,11 +895,12 @@ class ThumbRenderer(QObject):
         return im
 
     @staticmethod
-    def _epub_cover(filepath: Path) -> Image.Image | None:
+    def _epub_cover(filepath: Path, ext: str) -> Image.Image | None:
         """Extracts the cover specified by ComicInfo.xml or first image found in the ePub file.
 
         Args:
             filepath (Path): The path to the ePub file.
+            ext (str): The file extension.
 
         Returns:
             Image: The cover specified in ComicInfo.xml,
@@ -870,21 +908,29 @@ class ThumbRenderer(QObject):
         """
         im: Image.Image | None = None
         try:
-            with zipfile.ZipFile(filepath, "r") as zip_file:
-                if "ComicInfo.xml" in zip_file.namelist():
-                    comic_info = ET.fromstring(zip_file.read("ComicInfo.xml"))
-                    im = ThumbRenderer.__cover_from_comic_info(zip_file, comic_info, "FrontCover")
+            archiver: _Archive_T = zipfile.ZipFile
+            if ext == ".cb7":
+                archiver = _SevenZipFile
+            elif ext == ".cbr":
+                archiver = rarfile.RarFile
+            elif ext == ".cbt":
+                archiver = _TarFile
+
+            with archiver(filepath, "r") as archive:
+                if "ComicInfo.xml" in archive.namelist():
+                    comic_info = ET.fromstring(archive.read("ComicInfo.xml"))
+                    im = ThumbRenderer.__cover_from_comic_info(archive, comic_info, "FrontCover")
                     if not im:
                         im = ThumbRenderer.__cover_from_comic_info(
-                            zip_file, comic_info, "InnerCover"
+                            archive, comic_info, "InnerCover"
                         )
 
                 if not im:
-                    for file_name in zip_file.namelist():
+                    for file_name in archive.namelist():
                         if file_name.lower().endswith(
                             (".png", ".jpg", ".jpeg", ".gif", ".bmp", ".svg")
                         ):
-                            image_data = zip_file.read(file_name)
+                            image_data = archive.read(file_name)
                             im = Image.open(BytesIO(image_data))
                             break
         except Exception as e:
@@ -894,12 +940,12 @@ class ThumbRenderer(QObject):
 
     @staticmethod
     def __cover_from_comic_info(
-        zip_file: zipfile.ZipFile, comic_info: Element, cover_type: str
+        archive: _Archive, comic_info: Element, cover_type: str
     ) -> Image.Image | None:
         """Extract the cover specified in ComicInfo.xml.
 
         Args:
-            zip_file (zipfile.ZipFile): The current ePub file.
+            archive (_Archive): The current ePub file.
             comic_info (Element): The parsed ComicInfo.xml.
             cover_type (str): The type of cover to load.
 
@@ -910,10 +956,10 @@ class ThumbRenderer(QObject):
 
         cover = comic_info.find(f"./*Page[@Type='{cover_type}']")
         if cover is not None:
-            pages = [f for f in zip_file.namelist() if f != "ComicInfo.xml"]
+            pages = [f for f in archive.namelist() if f != "ComicInfo.xml"]
             page_name = pages[int(unwrap(cover.get("Image")))]
             if page_name.endswith((".png", ".jpg", ".jpeg", ".gif", ".bmp", ".svg")):
-                image_data = zip_file.read(page_name)
+                image_data = archive.read(page_name)
                 im = Image.open(BytesIO(image_data))
 
         return im
@@ -1577,7 +1623,7 @@ class ThumbRenderer(QObject):
                 if MediaCategories.is_ext_in_category(
                     ext, MediaCategories.EBOOK_TYPES, mime_fallback=True
                 ):
-                    image = self._epub_cover(_filepath)
+                    image = self._epub_cover(_filepath, ext)
                 # Krita ========================================================
                 elif MediaCategories.is_ext_in_category(
                     ext, MediaCategories.KRITA_TYPES, mime_fallback=True
