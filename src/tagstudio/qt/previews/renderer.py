@@ -20,6 +20,7 @@ from xml.etree.ElementTree import Element
 import cv2
 import numpy as np
 import pillow_avif  # noqa: F401 # pyright: ignore[reportUnusedImport]
+import py7zr
 import rarfile
 import rawpy
 import srctools
@@ -93,6 +94,21 @@ except ImportError:
     logger.exception('[ThumbRenderer] Could not import the "pillow_jxl" module')
 
 
+class _SevenZipFile(py7zr.SevenZipFile):
+    """Wrapper around py7zr.SevenZipFile to mimic zipfile.ZipFile's API."""
+
+    def __init__(self, filepath: Path, mode: Literal["r"]) -> None:
+        super().__init__(filepath, mode)
+
+    def read(self, name: str) -> bytes:
+        # SevenZipFile must be reset after every extraction
+        # See https://py7zr.readthedocs.io/en/stable/api.html#py7zr.SevenZipFile.extract
+        self.reset()
+        factory = py7zr.io.BytesIOFactory(limit=10485760)  # 10 MiB
+        self.extract(targets=[name], factory=factory)
+        return factory.get(name).read()
+
+
 class _TarFile(tarfile.TarFile):
     """Wrapper around tarfile.TarFile to mimic zipfile.ZipFile's API."""
 
@@ -106,8 +122,10 @@ class _TarFile(tarfile.TarFile):
         return self.extractfile(name).read()
 
 
-type _Archive_T = type[zipfile.ZipFile] | type[rarfile.RarFile] | type[_TarFile]
-type _Archive = zipfile.ZipFile | rarfile.RarFile | _TarFile
+type _Archive_T = (
+    type[zipfile.ZipFile] | type[rarfile.RarFile] | type[_SevenZipFile] | type[_TarFile]
+)
+type _Archive = zipfile.ZipFile | rarfile.RarFile | _SevenZipFile | _TarFile
 
 
 class ThumbRenderer(QObject):
@@ -890,7 +908,9 @@ class ThumbRenderer(QObject):
         im: Image.Image | None = None
         try:
             archiver: _Archive_T = zipfile.ZipFile
-            if ext == ".cbr":
+            if ext == ".cb7":
+                archiver = _SevenZipFile
+            elif ext == ".cbr":
                 archiver = rarfile.RarFile
             elif ext == ".cbt":
                 archiver = _TarFile
