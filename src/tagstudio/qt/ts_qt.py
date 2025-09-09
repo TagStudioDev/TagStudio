@@ -10,6 +10,7 @@
 
 import contextlib
 import ctypes
+import math
 import os
 import platform
 import re
@@ -1452,7 +1453,7 @@ class QtDriver(DriverMixin, QObject):
         # search the library
         start_time = time.time()
         Ignore.get_patterns(self.lib.library_dir, include_global=True)
-        results = self.lib.search_library(self.browsing_history.current, None)
+        results = self.lib.search_library(self.browsing_history.current, self.settings.page_size)
         logger.info("items to render", count=len(results))
         end_time = time.time()
 
@@ -1470,7 +1471,7 @@ class QtDriver(DriverMixin, QObject):
         self.update_thumbs()
 
         # update pagination
-        self.pages_count = 1
+        self.pages_count = math.ceil(results.total_count / self.settings.page_size)
         self.main_window.pagination.update_buttons(
             self.pages_count, self.browsing_history.current.page_index, emit=False
         )
