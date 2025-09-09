@@ -748,8 +748,8 @@ class JsonMigrationModal(QObject):
 
         for tag in self.sql_lib.tags:
             tag_id = tag.id  # Tag IDs start at 0
-            sql_shorthand: str = unwrap(sanitize(tag.shorthand))
-            json_shorthand: str = unwrap(sanitize(self.json_lib.get_tag(tag_id).shorthand))
+            sql_shorthand = sanitize(tag.shorthand)
+            json_shorthand = sanitize(self.json_lib.get_tag(tag_id).shorthand)
 
             logger.info(
                 "[Shorthand Parity]",

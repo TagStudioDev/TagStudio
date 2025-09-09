@@ -481,7 +481,7 @@ class BuildTagPanel(PanelWidget):
 
         self.alias_names.clear()
 
-        last: QWidget = unwrap(self.panel_save_button)
+        last: QWidget = self.panel_save_button
         for alias_id in self.alias_ids:
             alias = self.lib.get_alias(self.tag.id, alias_id)
 
