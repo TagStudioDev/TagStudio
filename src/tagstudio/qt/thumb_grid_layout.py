@@ -11,8 +11,8 @@ from tagstudio.core.constants import TAG_ARCHIVED, TAG_FAVORITE
 from tagstudio.core.library.alchemy.enums import ItemType
 from tagstudio.core.library.alchemy.models import Entry
 from tagstudio.core.utils.types import unwrap
-from tagstudio.qt.widgets.item_thumb import BadgeType, ItemThumb
-from tagstudio.qt.widgets.thumb_renderer import ThumbRenderer
+from tagstudio.qt.mixed.item_thumb import BadgeType, ItemThumb
+from tagstudio.qt.previews.renderer import ThumbRenderer
 
 if TYPE_CHECKING:
     from tagstudio.qt.ts_qt import QtDriver
