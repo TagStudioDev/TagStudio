@@ -1850,7 +1850,7 @@ class Library:
 
     # TODO: Remove this once the 'preferences' table is removed.
     @deprecated("Use `get_version() for version and `ts_ignore` system for extension exclusion.")
-    def prefs(self, key: str | LibraryPrefs):
+    def prefs(self, key: str | LibraryPrefs):  # pyright: ignore[reportUnknownParameterType]
         # load given item from Preferences table
         with Session(self.engine) as session:
             if isinstance(key, LibraryPrefs):
