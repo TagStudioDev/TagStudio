@@ -129,7 +129,6 @@ class ThumbGridLayout(QLayout):
             self.select_entry(entry_id)
             return
         if self._last_selected is None:
-            # TODO
             self._last_selected = min(self._selected.values(), key=lambda i: abs(index - i))
 
         start = self._last_selected
