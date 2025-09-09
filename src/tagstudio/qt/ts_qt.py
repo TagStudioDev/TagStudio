@@ -136,18 +136,12 @@ class Consumer(QThread):
                 job = self.queue.get()
                 if job == self.MARKER_QUIT:
                     break
-                start_time = time.time()
                 job[0](*job[1])
-                elapsed = time.time() - start_time
-                to_sleep = int(self.sleep_ms - (elapsed * 1000.0))
-                if to_sleep > 0:
-                    # TODO currently render threads cause huge lag spikes in the ui.
-                    # sleeping between jobs fixes this for now
-                    self.msleep(to_sleep)
-                else:
-                    self.yieldCurrentThread()
             except RuntimeError:
                 pass
+            # TODO currently render threads cause huge lag spikes in the ui.
+            # sleeping between jobs fixes this for now
+            self.msleep(self.sleep_ms)
 
 
 T = TypeVar("T")
@@ -224,7 +218,6 @@ class QtDriver(DriverMixin, QObject):
         # self.buffer = {}
         self.thumb_job_queue: Queue = Queue()
         self.thumb_threads: list[Consumer] = []
-        self.thumb_cutoff: float = time.time()
 
         self.SIGTERM.connect(self.handle_sigterm)
 
@@ -263,24 +256,6 @@ class QtDriver(DriverMixin, QObject):
 
         Translations.change_language(self.settings.language)
 
-        # NOTE: This should be a per-library setting rather than an application setting.
-        thumb_cache_size_limit: int = int(
-            str(
-                self.cached_values.value(
-                    SettingItems.THUMB_CACHE_SIZE_LIMIT,
-                    defaultValue=CacheManager.size_limit,
-                    type=int,
-                )
-            )
-        )
-
-        CacheManager.size_limit = thumb_cache_size_limit
-        self.cached_values.setValue(SettingItems.THUMB_CACHE_SIZE_LIMIT, CacheManager.size_limit)
-        self.cached_values.sync()
-        logger.info(
-            f"[Config] Thumbnail cache size limit: {format_size(CacheManager.size_limit)}",
-        )
-
     @property
     def selected(self) -> list[int]:
         return list(self.main_window.thumb_layout._selected.keys())
@@ -306,8 +281,7 @@ class QtDriver(DriverMixin, QObject):
                 pair_size = int(total / 8)
                 workers = 7
 
-            sleep_ms = workers * 2
-            # print(f"Workers: {workers} pair_size: {pair_size}, sleep_ms: {sleep_ms}")
+            sleep_ms = 2
 
             for i in range(workers):
                 i *= pair_size
@@ -790,9 +764,7 @@ class QtDriver(DriverMixin, QObject):
 
         self.main_window.setWindowTitle(self.base_title)
 
-        self.selected.clear()
         self.frame_content.clear()
-        self.main_window.thumb_layout.set_entries([])
         if self.color_manager_panel:
             self.color_manager_panel.reset()
 
@@ -802,6 +774,7 @@ class QtDriver(DriverMixin, QObject):
         if hasattr(self, "library_info_window"):
             self.library_info_window.close()
 
+        self.main_window.thumb_layout.set_entries([])
         self.main_window.preview_panel.set_selection(self.selected)
         self.main_window.toggle_landing_page(enabled=True)
         self.main_window.pagination.setHidden(True)
@@ -897,7 +870,9 @@ class QtDriver(DriverMixin, QObject):
         self.main_window.preview_panel.set_selection(self.selected)
 
     def add_tags_to_selected_callback(self, tag_ids: list[int]):
-        self.lib.add_tags_to_entries(self.selected, tag_ids)
+        selected = self.selected
+        self.main_window.thumb_layout.add_tags(selected, tag_ids)
+        self.lib.add_tags_to_entries(selected, tag_ids)
 
     def delete_files_callback(self, origin_path: str | Path, origin_id: int | None = None):
         """Callback to send on or more files to the system trash.
@@ -916,15 +891,17 @@ class QtDriver(DriverMixin, QObject):
         pending: list[tuple[int, Path]] = []
         deleted_count: int = 0
 
-        if len(self.selected) <= 1 and origin_path:
+        selected = self.selected
+
+        if len(selected) <= 1 and origin_path:
             origin_id_ = origin_id
             if not origin_id_:
                 with contextlib.suppress(IndexError):
-                    origin_id_ = self.selected[0]
+                    origin_id_ = selected[0]
 
             pending.append((origin_id_, Path(origin_path)))
-        elif (len(self.selected) > 1) or (len(self.selected) <= 1):
-            for item in self.selected:
+        elif (len(selected) > 1) or (len(selected) <= 1):
+            for item in selected:
                 entry = self.lib.get_entry(item)
                 filepath: Path = entry.path
                 pending.append((item, filepath))
@@ -950,25 +927,26 @@ class QtDriver(DriverMixin, QObject):
                         self.lib.remove_entries([e_id])
 
                         deleted_count += 1
-                self.selected.clear()
+                selected.clear()
+                self.clear_select_action_callback()
 
         if deleted_count > 0:
             self.update_browsing_state()
-            self.main_window.preview_panel.set_selection(self.selected)
+            self.main_window.preview_panel.set_selection(selected)
 
-        if len(self.selected) <= 1 and deleted_count == 0:
+        if len(selected) <= 1 and deleted_count == 0:
             self.main_window.status_bar.showMessage(Translations["status.deleted_none"])
-        elif len(self.selected) <= 1 and deleted_count == 1:
+        elif len(selected) <= 1 and deleted_count == 1:
             self.main_window.status_bar.showMessage(
                 Translations.format("status.deleted_file_plural", count=deleted_count)
             )
-        elif len(self.selected) > 1 and deleted_count == 0:
+        elif len(selected) > 1 and deleted_count == 0:
             self.main_window.status_bar.showMessage(Translations["status.deleted_none"])
-        elif len(self.selected) > 1 and deleted_count < len(self.selected):
+        elif len(selected) > 1 and deleted_count < len(selected):
             self.main_window.status_bar.showMessage(
                 Translations.format("status.deleted_partial_warning", count=deleted_count)
             )
-        elif len(self.selected) > 1 and deleted_count == len(self.selected):
+        elif len(selected) > 1 and deleted_count == len(selected):
             self.main_window.status_bar.showMessage(
                 Translations.format("status.deleted_file_plural", count=deleted_count)
             )
@@ -1399,8 +1377,6 @@ class QtDriver(DriverMixin, QObject):
             self.thumb_job_queue.queue.clear()
             self.thumb_job_queue.all_tasks_done.notify_all()
             self.thumb_job_queue.not_full.notify_all()
-            # Stops in-progress jobs from finishing
-            # ItemThumb.update_cutoff = time.time()
 
         self.main_window.thumb_layout.set_entries(self.frame_content)
         self.main_window.thumb_layout.update()
@@ -1652,7 +1628,6 @@ class QtDriver(DriverMixin, QObject):
 
         self.init_ignore_modal()
 
-        self.selected.clear()
         self.set_select_actions_visibility()
         self.main_window.menu_bar.save_library_backup_action.setEnabled(True)
         self.main_window.menu_bar.close_library_action.setEnabled(True)

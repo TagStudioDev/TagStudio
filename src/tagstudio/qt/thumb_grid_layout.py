@@ -10,6 +10,7 @@ from PySide6.QtWidgets import QLayout, QLayoutItem, QScrollArea
 from tagstudio.core.constants import TAG_ARCHIVED, TAG_FAVORITE
 from tagstudio.core.library.alchemy.enums import ItemType
 from tagstudio.core.library.alchemy.models import Entry
+from tagstudio.core.utils.types import unwrap
 from tagstudio.qt.widgets.item_thumb import BadgeType, ItemThumb
 from tagstudio.qt.widgets.thumb_renderer import ThumbRenderer
 
@@ -39,7 +40,7 @@ class ThumbGridLayout(QLayout):
         self._entry_items: dict[int, int] = {}
 
         self._render_results: dict[Path, Any] = {}
-        self._renderer: ThumbRenderer = ThumbRenderer(self.driver.lib)
+        self._renderer: ThumbRenderer = ThumbRenderer(self.driver)
         self._renderer.updated.connect(self._on_rendered)
         self._render_cutoff: float = 0.0
 
@@ -167,24 +168,16 @@ class ThumbGridLayout(QLayout):
             self._tag_entries.setdefault(tag_id, set()).difference_update(entry_ids)
 
     def _fetch_entries(self, ids: list[int]):
+        ids = [id for id in ids if id not in self._entries]
         entries = self.driver.lib.get_entries(ids)
         for entry in entries:
-            self._entry_paths[self.driver.lib.library_dir / entry.path] = entry.id
+            self._entry_paths[unwrap(self.driver.lib.library_dir) / entry.path] = entry.id
             self._entries[entry.id] = entry
 
         tag_ids = [TAG_ARCHIVED, TAG_FAVORITE]
         tag_entries = self.driver.lib.get_tag_entries(tag_ids, ids)
-        for tag_id in tag_ids:
-            if tag_id not in self._tag_entries:
-                self._tag_entries[tag_id] = tag_entries[tag_id]
-                continue
-            new = tag_entries[tag_id]
-            current = self._tag_entries[tag_id]
-            for id in ids:
-                if id in new:
-                    current.add(id)
-                elif id in current:
-                    current.remove(id)
+        for tag_id, entries in tag_entries.items():
+            self._tag_entries.setdefault(tag_id, set()).update(entries)
 
     def _on_rendered(self, timestamp: float, image: QPixmap, size: QSize, file_path: Path):
         if timestamp < self._render_cutoff:
@@ -208,7 +201,7 @@ class ThumbGridLayout(QLayout):
         if index is None:
             return
         item_thumb = self._item_thumbs[index]
-        item_thumb.update_thumb(image)
+        item_thumb.update_thumb(image, file_path)
         item_thumb.update_size(size)
         item_thumb.set_filename_text(file_path)
         item_thumb.set_extension(file_path)
@@ -219,10 +212,14 @@ class ThumbGridLayout(QLayout):
         else:
             base_size = (128, 128)
         while index >= len(self._item_thumbs):
+            show_filename = self.driver.settings.show_filenames_in_grid
             item = ItemThumb(
-                ItemType.ENTRY, self.driver.lib, self.driver, base_size, show_filename_label=True
+                ItemType.ENTRY,
+                self.driver.lib,
+                self.driver,
+                base_size,
+                show_filename_label=show_filename,
             )
-            item.set_filename_visibility(self.driver.settings.show_filenames_in_grid)
             self._item_thumbs.append(item)
             self.addWidget(item)
         return self._item_thumbs[index]
@@ -327,11 +324,9 @@ class ThumbGridLayout(QLayout):
         )
         timestamp = time.time()
         for item_index, i in enumerate(range(start, end)):
-            if i >= len(self._entry_ids):
-                continue
             entry_id = self._entry_ids[i]
             if entry_id not in self._entries:
-                ids = [id for id in self._entry_ids[start:end] if id not in self._entries]
+                ids = self._entry_ids[start:end]
                 self._fetch_entries(ids)
 
             entry = self._entries[entry_id]
@@ -343,7 +338,7 @@ class ThumbGridLayout(QLayout):
             item_x = width_offset * col
             item_y = height_offset * row
             item_thumb.setGeometry(QRect(QPoint(item_x, item_y), item.sizeHint()))
-            file_path = self.driver.lib.library_dir / entry.path
+            file_path = unwrap(self.driver.lib.library_dir) / entry.path
             item_thumb.set_item(entry)
 
             if result := self._render_results.get(file_path):

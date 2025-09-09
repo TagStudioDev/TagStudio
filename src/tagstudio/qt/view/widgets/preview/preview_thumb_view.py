@@ -98,7 +98,7 @@ class PreviewThumbView(QWidget):
         self.__media_player_page = QWidget()
         self.__stacked_page_setup(self.__media_player_page, self.__media_player)
 
-        self.__thumb_renderer = ThumbRenderer(driver, library)
+        self.__thumb_renderer = ThumbRenderer(driver)
         self.__thumb_renderer.updated.connect(self.__thumb_renderer_updated_callback)
         self.__thumb_renderer.updated_ratio.connect(self.__thumb_renderer_updated_ratio_callback)
 

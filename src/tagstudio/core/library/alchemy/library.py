@@ -982,7 +982,7 @@ class Library:
         assert isinstance(search, BrowsingState)
         assert self.library_dir
 
-        with Session(self.engine, expire_on_commit=False) as session:
+        with Session(unwrap(self.engine), expire_on_commit=False) as session:
             if page_size is None:
                 statement = select(Entry.id)
             else:

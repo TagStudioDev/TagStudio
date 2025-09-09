@@ -409,7 +409,6 @@ class ItemThumb(FlowWidget):
                 self.count_badge.setHidden(True)
 
     def set_filename_text(self, filename: Path):
-        self.rendered_path = filename
         self.file_label.setText(str(filename.name))
 
     def set_filename_visibility(self, set_visible: bool):
@@ -427,9 +426,10 @@ class ItemThumb(FlowWidget):
             self.setFixedHeight(self.thumb_size[1])
         self.show_filename_label = set_visible
 
-    def update_thumb(self, image: QPixmap | None = None):
+    def update_thumb(self, image: QPixmap | None = None, file_path: Path | None = None):
         """Update attributes of a thumbnail element."""
         self.thumb_button.setIcon(image if image else QPixmap())
+        self.rendered_path = file_path
 
     def update_size(self, size: QSize):
         """Updates attributes of a thumbnail element.
