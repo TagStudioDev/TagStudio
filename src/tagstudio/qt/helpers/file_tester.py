@@ -7,7 +7,9 @@ from pathlib import Path
 
 import ffmpeg
 
-from tagstudio.qt.helpers.vendored.ffmpeg import probe
+from tagstudio.qt.previews.vendored.ffmpeg import (
+    probe,  # pyright: ignore[reportUnknownVariableType]
+)
 
 
 def is_readable_video(filepath: Path | str):

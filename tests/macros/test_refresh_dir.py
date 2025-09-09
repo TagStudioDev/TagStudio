@@ -9,7 +9,7 @@ import pytest
 
 from tagstudio.core.enums import LibraryPrefs
 from tagstudio.core.library.alchemy.library import Library
-from tagstudio.core.utils.refresh_dir import RefreshDirTracker
+from tagstudio.core.library.refresh import RefreshTracker
 from tagstudio.core.utils.types import unwrap
 
 CWD = Path(__file__).parent
@@ -22,7 +22,7 @@ def test_refresh_new_files(library: Library, exclude_mode: bool):
     # Given
     library.set_prefs(LibraryPrefs.IS_EXCLUDE_LIST, exclude_mode)
     library.set_prefs(LibraryPrefs.EXTENSION_LIST, [".md"])
-    registry = RefreshDirTracker(library=library)
+    registry = RefreshTracker(library=library)
     library.included_files.clear()
     (library_dir / "FOO.MD").touch()
 

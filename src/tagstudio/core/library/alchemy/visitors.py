@@ -3,13 +3,14 @@
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
 import re
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, override
 
 import structlog
-from sqlalchemy import ColumnElement, and_, distinct, func, or_, select, text
+from sqlalchemy import ColumnElement, and_, distinct, func, or_, select
 from sqlalchemy.orm import Session
 from sqlalchemy.sql.operators import ilike_op
 
+from tagstudio.core.library.alchemy.constants import TAG_CHILDREN_ID_QUERY
 from tagstudio.core.library.alchemy.joins import TagEntry
 from tagstudio.core.library.alchemy.models import Entry, Tag, TagAlias
 from tagstudio.core.media_types import FILETYPE_EQUIVALENTS, MediaCategories
@@ -32,17 +33,6 @@ else:
 
 logger = structlog.get_logger(__name__)
 
-TAG_CHILDREN_ID_QUERY = text("""
-WITH RECURSIVE ChildTags AS (
-    SELECT :tag_id AS tag_id
-    UNION
-    SELECT tp.child_id AS tag_id
-    FROM tag_parents tp
-    INNER JOIN ChildTags c ON tp.parent_id = c.tag_id
-)
-SELECT tag_id FROM ChildTags;
-""")
-
 
 def get_filetype_equivalency_list(item: str) -> list[str] | set[str]:
     for s in FILETYPE_EQUIVALENTS:
@@ -56,19 +46,22 @@ class SQLBoolExpressionBuilder(BaseVisitor[ColumnElement[bool]]):
         super().__init__()
         self.lib = lib
 
-    def visit_or_list(self, node: ORList) -> ColumnElement[bool]:
+    @override
+    def visit_or_list(self, node: ORList) -> ColumnElement[bool]:  # type: ignore
         tag_ids, bool_expressions = self.__separate_tags(node.elements, only_single=False)
         if len(tag_ids) > 0:
             bool_expressions.append(self.__entry_has_any_tags(tag_ids))
         return or_(*bool_expressions)
 
-    def visit_and_list(self, node: ANDList) -> ColumnElement[bool]:
+    @override
+    def visit_and_list(self, node: ANDList) -> ColumnElement[bool]:  # type: ignore
         tag_ids, bool_expressions = self.__separate_tags(node.terms, only_single=True)
         if len(tag_ids) > 0:
             bool_expressions.append(self.__entry_has_all_tags(tag_ids))
         return and_(*bool_expressions)
 
-    def visit_constraint(self, node: Constraint) -> ColumnElement[bool]:
+    @override
+    def visit_constraint(self, node: Constraint) -> ColumnElement[bool]:  # type: ignore
         """Returns a Boolean Expression that is true, if the Entry satisfies the constraint."""
         if len(node.properties) != 0:
             raise NotImplementedError("Properties are not implemented yet")  # TODO TSQLANG
@@ -119,10 +112,12 @@ class SQLBoolExpressionBuilder(BaseVisitor[ColumnElement[bool]]):
         # raise exception if Constraint stays unhandled
         raise NotImplementedError("This type of constraint is not implemented yet")
 
-    def visit_property(self, node: Property) -> ColumnElement[bool]:
+    @override
+    def visit_property(self, node: Property) -> ColumnElement[bool]:  # type: ignore
         raise NotImplementedError("This should never be reached!")
 
-    def visit_not(self, node: Not) -> ColumnElement[bool]:
+    @override
+    def visit_not(self, node: Not) -> ColumnElement[bool]:  # type: ignore
         return ~self.visit(node.child)
 
     def __get_tag_ids(self, tag_name: str, include_children: bool = True) -> list[int]:
@@ -143,7 +138,7 @@ class SQLBoolExpressionBuilder(BaseVisitor[ColumnElement[bool]]):
                 )
             if not include_children:
                 return tag_ids
-            outp = []
+            outp: list[int] = []
             for tag_id in tag_ids:
                 outp.extend(list(session.scalars(TAG_CHILDREN_ID_QUERY, {"tag_id": tag_id})))
             return outp
@@ -174,6 +169,14 @@ class SQLBoolExpressionBuilder(BaseVisitor[ColumnElement[bool]]):
                         elif len(ids) == 1:
                             tag_ids.append(ids[0])
                             continue
+                    case ConstraintType.FileType:
+                        pass
+                    case ConstraintType.Path:
+                        pass
+                    case ConstraintType.Special:
+                        pass
+                    case _:
+                        raise NotImplementedError(f"Unhandled constraint: '{term.type}'")
 
             bool_expressions.append(self.visit(term))
         return tag_ids, bool_expressions

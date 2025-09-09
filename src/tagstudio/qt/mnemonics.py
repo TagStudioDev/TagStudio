@@ -17,7 +17,7 @@ def remove_mnemonic_marker(label: str) -> str:
         if ch == "&":
             # escaped ampersand "&&"
             if i + 1 < len(label) and label[i + 1] == "&":
-                result += "&"
+                result += "&&"
                 skip = True
             # otherwise skip this '&'
             continue

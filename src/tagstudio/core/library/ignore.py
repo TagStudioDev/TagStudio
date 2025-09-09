@@ -10,7 +10,7 @@ import wcmatch.fnmatch as fnmatch
 from wcmatch import glob, pathlib
 
 from tagstudio.core.constants import IGNORE_NAME, TS_FOLDER_NAME
-from tagstudio.core.singleton import Singleton
+from tagstudio.core.utils.singleton import Singleton
 
 logger = structlog.get_logger()
 
@@ -44,7 +44,9 @@ def ignore_to_glob(ignore_patterns: list[str]) -> list[str]:
         ignore_patterns (list[str]): The .gitignore-like patterns to convert.
     """
     glob_patterns: list[str] = deepcopy(ignore_patterns)
+    glob_patterns_remove: list[str] = []
     additional_patterns: list[str] = []
+    root_patterns: list[str] = []
 
     # Mimic implicit .gitignore syntax behavior for the SQLite GLOB function.
     for pattern in glob_patterns:
@@ -66,6 +68,16 @@ def ignore_to_glob(ignore_patterns: list[str]) -> list[str]:
             gp = gp.removeprefix("**/").removeprefix("*/")
             additional_patterns.append(exclusion_char + gp)
 
+        elif gp.startswith("/"):
+            # Matches "/file" case for .gitignore behavior where it should only match
+            # a file or folder int the root directory, and nowhere else.
+            glob_patterns_remove.append(gp)
+            gp = gp.lstrip("/")
+            root_patterns.append(exclusion_char + gp)
+
+    for gp in glob_patterns_remove:
+        glob_patterns.remove(gp)
+
     glob_patterns = glob_patterns + additional_patterns
 
     # Add "/**" suffix to suffix-less patterns to match implicit .gitignore behavior.
@@ -75,6 +87,7 @@ def ignore_to_glob(ignore_patterns: list[str]) -> list[str]:
 
         glob_patterns.append(pattern.removesuffix("/*").removesuffix("/") + "/**")
 
+    glob_patterns = glob_patterns + root_patterns
     glob_patterns = list(set(glob_patterns))
 
     logger.info("[Ignore]", glob_patterns=glob_patterns)

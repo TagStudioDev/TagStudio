@@ -48,53 +48,57 @@ import tagstudio.qt.resources_rc  # noqa: F401
 from tagstudio.core.constants import TAG_ARCHIVED, TAG_FAVORITE, VERSION, VERSION_BRANCH
 from tagstudio.core.driver import DriverMixin
 from tagstudio.core.enums import MacroID, SettingItems, ShowFilepathOption
-from tagstudio.core.global_settings import DEFAULT_GLOBAL_SETTINGS_PATH, GlobalSettings, Theme
 from tagstudio.core.library.alchemy.enums import (
     BrowsingState,
     FieldTypeEnum,
     SortingModeEnum,
 )
-from tagstudio.core.library.alchemy.fields import _FieldID
+from tagstudio.core.library.alchemy.fields import FieldID
 from tagstudio.core.library.alchemy.library import Library, LibraryStatus
 from tagstudio.core.library.alchemy.models import Entry
 from tagstudio.core.library.ignore import Ignore
+from tagstudio.core.library.refresh import RefreshTracker
 from tagstudio.core.media_types import MediaCategories
-from tagstudio.core.palette import ColorType, UiColor, get_ui_color
 from tagstudio.core.query_lang.util import ParsingError
 from tagstudio.core.ts_core import TagStudioCore
-from tagstudio.core.utils.refresh_dir import RefreshDirTracker
+from tagstudio.core.utils.str_formatting import strip_web_protocol
 from tagstudio.core.utils.types import unwrap
-from tagstudio.core.utils.web import strip_web_protocol
 from tagstudio.qt.cache_manager import CacheManager
+from tagstudio.qt.controllers.ffmpeg_missing_message_box import FfmpegMissingMessageBox
 
 # this import has side-effect of import PySide resources
-from tagstudio.qt.controller.fix_ignored_modal_controller import FixIgnoredEntriesModal
-from tagstudio.qt.controller.widgets.ignore_modal_controller import IgnoreModal
-from tagstudio.qt.controller.widgets.library_info_window_controller import LibraryInfoWindow
-from tagstudio.qt.helpers.custom_runnable import CustomRunnable
-from tagstudio.qt.helpers.file_deleter import delete_file
-from tagstudio.qt.helpers.function_iterator import FunctionIterator
-from tagstudio.qt.helpers.vendored.ffmpeg import FFMPEG_CMD, FFPROBE_CMD
-from tagstudio.qt.main_window import MainWindow
-from tagstudio.qt.modals.about import AboutModal
-from tagstudio.qt.modals.build_tag import BuildTagPanel
-from tagstudio.qt.modals.drop_import import DropImportModal
-from tagstudio.qt.modals.ffmpeg_checker import FfmpegChecker
-from tagstudio.qt.modals.fix_dupes import FixDupeFilesModal
-from tagstudio.qt.modals.fix_unlinked import FixUnlinkedEntriesModal
-from tagstudio.qt.modals.folders_to_tags import FoldersToTagsModal
-from tagstudio.qt.modals.settings_panel import SettingsPanel
-from tagstudio.qt.modals.tag_color_manager import TagColorManager
-from tagstudio.qt.modals.tag_database import TagDatabasePanel
-from tagstudio.qt.modals.tag_search import TagSearchModal
+from tagstudio.qt.controllers.fix_ignored_modal_controller import FixIgnoredEntriesModal
+from tagstudio.qt.controllers.ignore_modal_controller import IgnoreModal
+from tagstudio.qt.controllers.library_info_window_controller import LibraryInfoWindow
+from tagstudio.qt.global_settings import (
+    DEFAULT_GLOBAL_SETTINGS_PATH,
+    GlobalSettings,
+    Theme,
+)
+from tagstudio.qt.mixed.about_modal import AboutModal
+from tagstudio.qt.mixed.build_tag import BuildTagPanel
+from tagstudio.qt.mixed.drop_import_modal import DropImportModal
+from tagstudio.qt.mixed.fix_dupe_files import FixDupeFilesModal
+from tagstudio.qt.mixed.fix_unlinked import FixUnlinkedEntriesModal
+from tagstudio.qt.mixed.folders_to_tags import FoldersToTagsModal
+from tagstudio.qt.mixed.item_thumb import BadgeType
+from tagstudio.qt.mixed.migration_modal import JsonMigrationModal
+from tagstudio.qt.mixed.progress_bar import ProgressWidget
+from tagstudio.qt.mixed.settings_panel import SettingsPanel
+from tagstudio.qt.mixed.tag_color_manager import TagColorManager
+from tagstudio.qt.mixed.tag_database import TagDatabasePanel
+from tagstudio.qt.mixed.tag_search import TagSearchModal
+from tagstudio.qt.models.palette import ColorType, UiColor, get_ui_color
 from tagstudio.qt.platform_strings import trash_term
+from tagstudio.qt.previews.vendored.ffmpeg import FFMPEG_CMD, FFPROBE_CMD
 from tagstudio.qt.resource_manager import ResourceManager
-from tagstudio.qt.splash import SplashScreen
 from tagstudio.qt.translations import Translations
-from tagstudio.qt.widgets.item_thumb import BadgeType
-from tagstudio.qt.widgets.migration_modal import JsonMigrationModal
-from tagstudio.qt.widgets.panel import PanelModal
-from tagstudio.qt.widgets.progress import ProgressWidget
+from tagstudio.qt.utils.custom_runnable import CustomRunnable
+from tagstudio.qt.utils.file_deleter import delete_file
+from tagstudio.qt.utils.function_iterator import FunctionIterator
+from tagstudio.qt.views.main_window import MainWindow
+from tagstudio.qt.views.panel_modal import PanelModal
+from tagstudio.qt.views.splash import SplashScreen
 
 BADGE_TAGS = {
     BadgeType.FAVORITE: TAG_FAVORITE,
@@ -610,7 +614,7 @@ class QtDriver(DriverMixin, QObject):
 
         # Check if FFmpeg or FFprobe are missing and show warning if so
         if not which(FFMPEG_CMD) or not which(FFPROBE_CMD):
-            FfmpegChecker().show()
+            FfmpegMissingMessageBox().show()
 
         self.app.exec()
         self.shutdown()
@@ -1012,7 +1016,7 @@ class QtDriver(DriverMixin, QObject):
 
     def add_new_files_callback(self):
         """Run when user initiates adding new files to the Library."""
-        tracker = RefreshDirTracker(self.lib)
+        tracker = RefreshTracker(self.lib)
 
         pw = ProgressWidget(
             cancel_button_text=None,
@@ -1050,7 +1054,7 @@ class QtDriver(DriverMixin, QObject):
         )
         QThreadPool.globalInstance().start(r)
 
-    def add_new_files_runnable(self, tracker: RefreshDirTracker):
+    def add_new_files_runnable(self, tracker: RefreshTracker):
         """Adds any known new files to the library and run default macros on them.
 
         Threaded method.
@@ -1136,7 +1140,7 @@ class QtDriver(DriverMixin, QObject):
         elif name == MacroID.BUILD_URL:
             url = TagStudioCore.build_url(entry, source)
             if url is not None:
-                self.lib.add_field_to_entry(entry.id, field_id=_FieldID.SOURCE, value=url)
+                self.lib.add_field_to_entry(entry.id, field_id=FieldID.SOURCE, value=url)
         elif name == MacroID.MATCH:
             TagStudioCore.match_conditions(self.lib, entry.id)
         elif name == MacroID.CLEAN_URL:
@@ -1571,15 +1575,14 @@ class QtDriver(DriverMixin, QObject):
             open_status = LibraryStatus(
                 success=False, library_path=path, message=type(e).__name__, msg_description=str(e)
             )
-
-        max_size: int = self.cached_values.value(
-            SettingItems.THUMB_CACHE_SIZE_LIMIT,
-            defaultValue=CacheManager.DEFAULT_MAX_SIZE,
-            type=int,
-        )  # type: ignore
-        self.cache_manager = CacheManager(path, max_size=max_size)
+        self.cache_manager = CacheManager(
+            path,
+            max_size=self.settings.thumb_cache_size,
+            img_quality=self.settings.cached_thumb_quality,
+        )
+        cache_size = self.settings.thumb_cache_size * self.cache_manager.STAT_MULTIPLIER
         logger.info(
-            f"[Config] Thumbnail cache size limit: {format_size(max_size)}",
+            f"[Config] Thumbnail Cache Size: {format_size(cache_size)}",
         )
 
         # Migration is required

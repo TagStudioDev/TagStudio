@@ -1,0 +1,172 @@
+# Copyright (C) 2024 Travis Abendshien (CyanVoxel).
+# Licensed under the GPL-3.0 License.
+# Created for TagStudio: https://github.com/CyanVoxel/TagStudio
+
+import shutil
+import subprocess
+import sys
+import traceback
+from pathlib import Path
+from typing import override
+
+import structlog
+from PySide6.QtCore import Qt
+from PySide6.QtGui import QMouseEvent
+from PySide6.QtWidgets import QLabel, QWidget
+
+from tagstudio.core.utils.silent_subprocess import silent_popen  # pyright: ignore
+from tagstudio.core.utils.types import unwrap
+
+logger = structlog.get_logger(__name__)
+
+
+def open_file(path: str | Path, file_manager: bool = False, windows_start_command: bool = False):
+    """Open a file in the default application or file explorer.
+
+    Args:
+        path (str): The path to the file to open.
+        file_manager (bool, optional): Whether to open the file in the file manager
+            (e.g. Finder on macOS). Defaults to False.
+        windows_start_command (bool): Flag to determine if the older 'start' command should be used
+            on Windows for opening files. This fixes issues on some systems in niche cases.
+    """
+    path = Path(path)
+    logger.info("Opening file", path=path)
+    if not path.exists():
+        logger.error("File not found", path=path)
+        return
+
+    try:
+        if sys.platform == "win32":
+            normpath = str(Path(path).resolve())
+            if file_manager:
+                command_name = "explorer"
+                command_arg = f'/select,"{normpath}"'
+
+                # For some reason, if the args are passed in a list, this will error when the
+                # path has spaces, even while surrounded in double quotes.
+                silent_popen(
+                    command_name + command_arg,
+                    shell=True,
+                    close_fds=True,
+                    creationflags=subprocess.CREATE_NEW_PROCESS_GROUP
+                    | subprocess.CREATE_BREAKAWAY_FROM_JOB,
+                )
+            else:
+                if windows_start_command:
+                    command_name = "start"
+                    # First parameter is for title, NOT filepath
+                    command_args = ["", normpath]
+                    subprocess.Popen(
+                        [command_name] + command_args,
+                        shell=True,
+                        close_fds=True,
+                        creationflags=subprocess.CREATE_NEW_PROCESS_GROUP
+                        | subprocess.CREATE_BREAKAWAY_FROM_JOB,
+                    )
+                else:
+                    command = f'"{normpath}"'
+                    silent_popen(
+                        command,
+                        shell=True,
+                        close_fds=True,
+                        creationflags=subprocess.CREATE_NEW_PROCESS_GROUP
+                        | subprocess.CREATE_BREAKAWAY_FROM_JOB,
+                    )
+        else:
+            if sys.platform == "darwin":
+                command_name = "open"
+                command_args = [str(path)]
+                if file_manager:
+                    # will reveal in Finder
+                    command_args.append("-R")
+            else:
+                if file_manager:
+                    command_name = "dbus-send"
+                    # might not be guaranteed to launch default?
+                    command_args = [
+                        "--session",
+                        "--dest=org.freedesktop.FileManager1",
+                        "--type=method_call",
+                        "/org/freedesktop/FileManager1",
+                        "org.freedesktop.FileManager1.ShowItems",
+                        f"array:string:file://{str(path)}",
+                        "string:",
+                    ]
+                else:
+                    command_name = "xdg-open"
+                    command_args = [str(path)]
+            command = shutil.which(command_name)
+            if command is not None:
+                silent_popen([command] + command_args, close_fds=True)
+            else:
+                logger.info("Could not find command on system PATH", command=command_name)
+    except Exception:
+        traceback.print_exc()
+
+
+class FileOpenerHelper:
+    def __init__(self, filepath: Path):
+        """Initialize the FileOpenerHelper.
+
+        Args:
+            filepath (Path): The path to the file to open.
+        """
+        self.filepath = filepath
+
+    def set_filepath(self, filepath: Path):
+        """Set the filepath to open.
+
+        Args:
+            filepath (Path): The path to the file to open.
+        """
+        self.filepath = filepath
+
+    def open_file(self):
+        """Open the file in the default application."""
+        if Path(self.filepath).is_file():
+            open_file(self.filepath)
+
+    def open_explorer(self):
+        """Open the file in the default file explorer."""
+        if Path(self.filepath).is_file():
+            open_file(self.filepath, file_manager=True)
+
+
+class FileOpenerLabel(QLabel):
+    def __init__(self, parent: QWidget | None = None) -> None:
+        """Initialize the FileOpenerLabel.
+
+        Args:
+            parent (QWidget, optional): The parent widget. Defaults to None.
+        """
+        self.filepath: Path | None = None
+
+        super().__init__(parent)
+
+    def set_file_path(self, filepath: Path) -> None:
+        """Set the filepath to open.
+
+        Args:
+            filepath (Path): The path to the file to open.
+        """
+        self.filepath = filepath
+
+    @override
+    def mousePressEvent(self, ev: QMouseEvent) -> None:
+        """Handle mouse press events.
+
+        On a left click, open the file in the default file explorer.
+        On a right click, show a context menu.
+
+        Args:
+            ev (QMouseEvent): The mouse press event.
+        """
+        if ev.button() == Qt.MouseButton.LeftButton:
+            opener = FileOpenerHelper(unwrap(self.filepath))
+            opener.open_explorer()
+        elif ev.button() == Qt.MouseButton.RightButton:
+            # Show context menu
+            pass
+        else:
+            super().mousePressEvent(ev)

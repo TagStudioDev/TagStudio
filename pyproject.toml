@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "TagStudio"
 description = "A User-Focused Photo & File Management System."
-version = "9.5.4"
+version = "9.5.5"
 license = "GPL-3.0-only"
 readme = "README.md"
 requires-python = ">=3.12,<3.13"
@@ -23,6 +23,7 @@ dependencies = [
     "pydantic~=2.10",
     "pydub~=0.25",
     "PySide6==6.8.0.*",
+    "rarfile==4.2",
     "rawpy~=0.24",
     "Send2Trash~=1.8",
     "SQLAlchemy~=2.0",
@@ -85,7 +86,11 @@ ignore_errors = true
 qt_api = "pyside6"
 
 [tool.pyright]
-ignore = ["src/tagstudio/qt/helpers/vendored/pydub/", ".venv/**"]
+ignore = [
+    ".venv/**",
+    "src/tagstudio/core/library/json/",
+    "src/tagstudio/qt/previews/vendored/pydub/",
+]
 include = ["src/tagstudio", "tests"]
 reportAny = false
 reportIgnoreCommentWithoutRule = false
@@ -109,7 +114,7 @@ ignore = ["D100", "D101", "D102", "D103", "D104", "D105", "D106", "D107"]
 
 [tool.ruff.lint.per-file-ignores]
 "tests/**" = ["D", "E402"]
-"src/tagstudio/qt/helpers/vendored/**" = ["B", "E", "N", "UP", "SIM115"]
+"src/tagstudio/qt/previews/vendored/**" = ["B", "E", "N", "UP", "SIM115"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"

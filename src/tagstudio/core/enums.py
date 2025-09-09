@@ -12,7 +12,6 @@ class SettingItems(str, enum.Enum):
 
     LAST_LIBRARY = "last_library"
     LIBS_LIST = "libs_list"
-    THUMB_CACHE_SIZE_LIMIT = "thumb_cache_size_limit"
 
 
 class ShowFilepathOption(int, enum.Enum):
