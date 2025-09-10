@@ -37,6 +37,7 @@ from tagstudio.core.library.alchemy.library import Library as SqliteLibrary
 from tagstudio.core.library.alchemy.models import Entry, TagAlias
 from tagstudio.core.library.json.library import Library as JsonLibrary
 from tagstudio.core.library.json.library import Tag as JsonTag
+from tagstudio.core.utils.types import unwrap
 from tagstudio.qt.controllers.paged_panel_controller import PagedPanel
 from tagstudio.qt.controllers.paged_panel_state import PagedPanelState
 from tagstudio.qt.translations import Translations
@@ -561,7 +562,7 @@ class JsonMigrationModal(QObject):
             sql_fields: list[tuple] = []
             json_fields: list[tuple] = []
 
-            sql_entry: Entry = self.sql_lib.get_entry_full(json_entry.id + 1)
+            sql_entry: Entry = unwrap(self.sql_lib.get_entry_full(json_entry.id + 1))
             if not sql_entry:
                 logger.info(
                     "[Field Comparison]",
@@ -595,7 +596,7 @@ class JsonMigrationModal(QObject):
                     tags_count += 1
                     json_tags = json_tags.union(value or [])
                 else:
-                    key: str = self.sql_lib.get_field_name_from_id(int_key).name
+                    key: str = unwrap(self.sql_lib.get_field_name_from_id(int_key)).name
                     json_fields.append((json_entry.id + 1, key, value))
             json_fields.sort()
 
@@ -710,8 +711,6 @@ class JsonMigrationModal(QObject):
 
     def check_name_parity(self) -> bool:
         """Check if all JSON tag names match the new SQL tag names."""
-        sql_name: str = None
-        json_name: str = None
 
         def sanitize(value):
             """Return value or convert a "not" value into None."""
@@ -719,8 +718,8 @@ class JsonMigrationModal(QObject):
 
         for tag in self.sql_lib.tags:
             tag_id = tag.id  # Tag IDs start at 0
-            sql_name = sanitize(tag.name)
-            json_name = sanitize(self.json_lib.get_tag(tag_id).name)
+            sql_name: str = unwrap(sanitize(tag.name))
+            json_name: str = unwrap(sanitize(self.json_lib.get_tag(tag_id).name))
 
             logger.info(
                 "[Name Parity]",
@@ -742,8 +741,6 @@ class JsonMigrationModal(QObject):
 
     def check_shorthand_parity(self) -> bool:
         """Check if all JSON shorthands match the new SQL shorthands."""
-        sql_shorthand: str = None
-        json_shorthand: str = None
 
         def sanitize(value):
             """Return value or convert a "not" value into None."""
