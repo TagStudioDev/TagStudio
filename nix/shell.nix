@@ -60,7 +60,7 @@ let
 
     postBuild = ''
       wrapProgram $out/bin/${python3.meta.mainProgram} \
-        --prefix ${libraryPath} : ${pythonLibraryPath} \
+        --suffix ${libraryPath} : ${pythonLibraryPath} \
         "''${gappsWrapperArgs[@]}" \
         "''${qtWrapperArgs[@]}"
     '';

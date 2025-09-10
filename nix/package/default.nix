@@ -55,14 +55,14 @@ python3Packages.buildPythonApplication {
   dontWrapGApps = true;
   dontWrapQtApps = true;
   makeWrapperArgs = [
-    "--prefix PATH : ${
+    "--suffix PATH : ${
       lib.makeBinPath [
         ffmpeg-headless
         ripgrep
       ]
     }"
   ]
-  ++ lib.optional stdenv.hostPlatform.isLinux "--prefix LD_LIBRARY_PATH : ${
+  ++ lib.optional stdenv.hostPlatform.isLinux "--suffix LD_LIBRARY_PATH : ${
     lib.makeLibraryPath [ pipewire ]
   }"
   ++ [
