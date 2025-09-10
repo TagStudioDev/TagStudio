@@ -1856,11 +1856,11 @@ class Library:
             if isinstance(key, LibraryPrefs):
                 return unwrap(
                     session.scalar(select(Preferences).where(Preferences.key == key.name))
-                ).value
+                ).value  # pyright: ignore[reportUnknownVariableType]
             else:
                 return unwrap(
                     session.scalar(select(Preferences).where(Preferences.key == key))
-                ).value
+                ).value  # pyright: ignore[reportUnknownVariableType]
 
     # TODO: Remove this once the 'preferences' table is removed.
     @deprecated("Use `get_version() for version and `ts_ignore` system for extension exclusion.")
