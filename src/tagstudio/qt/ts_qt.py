@@ -125,17 +125,11 @@ def clamp(value, lower_bound, upper_bound):
 class Consumer(QThread):
     MARKER_QUIT = "MARKER_QUIT"
 
-    def __init__(self, cpus: list[int], sleep_ms: int, queue) -> None:
+    def __init__(self, queue) -> None:
         self.queue = queue
-        self.cpus = cpus
-        self.sleep_ms = sleep_ms
         QThread.__init__(self)
 
     def run(self):
-        if setaffinity := getattr(os, "sched_setaffinity", None):
-            setaffinity(0, self.cpus)
-        if setpriority := getattr(os, "setpriority", None):
-            setpriority(os.PRIO_PROCESS, 0, 19)
         while True:
             try:
                 job = self.queue.get()
@@ -144,9 +138,6 @@ class Consumer(QThread):
                 job[0](*job[1])
             except RuntimeError:
                 pass
-            # TODO currently render threads cause huge lag spikes in the ui.
-            # sleeping between jobs fixes this for now
-            self.msleep(self.sleep_ms)
 
 
 T = TypeVar("T")
@@ -271,30 +262,12 @@ class QtDriver(DriverMixin, QObject):
     def init_workers(self):
         """Init workers for rendering thumbnails."""
         if not self.thumb_threads:
-            # Cpu threads main process is allowed to use 0,1,2,3
-            if getaffinity := getattr(os, "sched_getaffinity", None):
-                allowed = list(getaffinity(0))
-            else:
-                # TODO: use os.process_cpu_count() python 3.13
-                allowed = list(range(os.cpu_count() or 1))
-
-            total = len(allowed)
-            if total <= 8:
-                pair_size = 1
-                workers = max(1, total - 1)
-            else:
-                pair_size = int(total / 8)
-                workers = 7
-
-            sleep_ms = 2
-
-            for i in range(workers):
-                i *= pair_size
-                cpus = allowed[i : i + pair_size]
-                thread = Consumer(cpus, sleep_ms, self.thumb_job_queue)
+            max_threads = os.cpu_count() or 1
+            for i in range(max_threads):
+                thread = Consumer(self.thumb_job_queue)
                 thread.setObjectName(f"ThumbRenderer_{i}")
                 self.thumb_threads.append(thread)
-                thread.start(priority=QThread.Priority.LowestPriority)
+                thread.start()
 
     def open_library_from_dialog(self):
         dir = QFileDialog.getExistingDirectory(
