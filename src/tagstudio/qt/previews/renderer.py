@@ -21,12 +21,14 @@ import cv2
 import numpy as np
 import pillow_avif  # noqa: F401 # pyright: ignore[reportUnusedImport]
 import py7zr
+import py7zr.io
 import rarfile
 import rawpy
 import srctools
 import structlog
 from cv2.typing import MatLike
-from mutagen import MutagenError, flac, id3, mp4
+from mutagen import flac, id3, mp4
+from mutagen._util import MutagenError
 from PIL import (
     Image,
     ImageChops,
@@ -119,7 +121,7 @@ class _TarFile(tarfile.TarFile):
         return self.getnames()
 
     def read(self, name: str) -> bytes:
-        return self.extractfile(name).read()
+        return unwrap(self.extractfile(name)).read()
 
 
 type _Archive_T = (
@@ -435,9 +437,9 @@ class ThumbRenderer(QObject):
         )
 
         # Get icon by name
-        icon: Image.Image | None = self.rm.get(name)
+        icon: Image.Image | None = self.rm.get(name)  # pyright: ignore[reportAssignmentType]
         if not icon:
-            icon = self.rm.get("file_generic")
+            icon = self.rm.get("file_generic")  # pyright: ignore[reportAssignmentType]
             if not icon:
                 icon = Image.new(mode="RGBA", size=(32, 32), color="magenta")
 
@@ -533,9 +535,9 @@ class ThumbRenderer(QObject):
         )
 
         # Get icon by name
-        icon: Image.Image | None = self.rm.get(name)
+        icon: Image.Image | None = self.rm.get(name)  # pyright: ignore[reportAssignmentType]
         if not icon:
-            icon = self.rm.get("file_generic")
+            icon = self.rm.get("file_generic")  # pyright: ignore[reportAssignmentType]
             if not icon:
                 icon = Image.new(mode="RGBA", size=(32, 32), color="magenta")
 
@@ -664,14 +666,14 @@ class ThumbRenderer(QObject):
                     artwork = Image.open(BytesIO(flac_covers[0].data))
             elif ext in [".mp4", ".m4a", ".aac"]:
                 mp4_tags: mp4.MP4 = mp4.MP4(filepath)
-                mp4_covers: list = unwrap(mp4_tags.get("covr"))
+                mp4_covers: list | None = mp4_tags.get("covr")  # pyright: ignore[reportAssignmentType]
                 if mp4_covers:
                     artwork = Image.open(BytesIO(mp4_covers[0]))
             if artwork:
                 image = artwork
         except (
             FileNotFoundError,
-            id3.ID3NoHeaderError,
+            id3.ID3NoHeaderError,  # pyright: ignore[reportPrivateImportUsage]
             mp4.MP4MetadataError,
             mp4.MP4StreamInfoError,
             MutagenError,
@@ -768,7 +770,7 @@ class ThumbRenderer(QObject):
         return im
 
     @staticmethod
-    def _blender(filepath: Path) -> Image.Image:
+    def _blender(filepath: Path) -> Image.Image | None:
         """Get an emended thumbnail from a Blender file, if a thumbnail is present.
 
         Args:
@@ -956,21 +958,21 @@ class ThumbRenderer(QObject):
         cover = comic_info.find(f"./*Page[@Type='{cover_type}']")
         if cover is not None:
             pages = [f for f in archive.namelist() if f != "ComicInfo.xml"]
-            page_name = pages[int(cover.get("Image"))]
+            page_name = pages[int(unwrap(cover.get("Image")))]
             if page_name.endswith((".png", ".jpg", ".jpeg", ".gif", ".bmp", ".svg")):
                 image_data = archive.read(page_name)
                 im = Image.open(BytesIO(image_data))
 
         return im
 
-    def _font_short_thumb(self, filepath: Path, size: int) -> Image.Image:
+    def _font_short_thumb(self, filepath: Path, size: int) -> Image.Image | None:
         """Render a small font preview ("Aa") thumbnail from a font file.
 
         Args:
             filepath (Path): The path of the file.
             size (tuple[int,int]): The size of the thumbnail.
         """
-        im: Image.Image = None
+        im: Image.Image | None = None
         try:
             bg = Image.new("RGB", (size, size), color="#000000")
             raw = Image.new("RGB", (size * 3, size * 3), color="#000000")
@@ -1024,7 +1026,7 @@ class ThumbRenderer(QObject):
         return im
 
     @staticmethod
-    def _font_long_thumb(filepath: Path, size: int) -> Image.Image:
+    def _font_long_thumb(filepath: Path, size: int) -> Image.Image | None:
         """Render a large font preview ("Alphabet") thumbnail from a font file.
 
         Args:
@@ -1033,7 +1035,7 @@ class ThumbRenderer(QObject):
         """
         # Scale the sample font sizes to the preview image
         # resolution,assuming the sizes are tuned for 256px.
-        im: Image.Image = None
+        im: Image.Image | None = None
         try:
             scaled_sizes: list[int] = [math.floor(x * (size / 256)) for x in FONT_SAMPLE_SIZES]
             bg = Image.new("RGBA", (size, size), color="#00000000")
@@ -1044,7 +1046,10 @@ class ThumbRenderer(QObject):
             for font_size in scaled_sizes:
                 font = ImageFont.truetype(filepath, size=font_size)
                 text_wrapped: str = wrap_full_text(
-                    FONT_SAMPLE_TEXT, font=font, width=size, draw=draw
+                    FONT_SAMPLE_TEXT,
+                    font=font,  # pyright: ignore[reportArgumentType]
+                    width=size,
+                    draw=draw,
                 )
                 draw.multiline_text((0, y_offset), text_wrapped, font=font)
                 y_offset += (len(text_wrapped.split("\n")) + lines_of_padding) * draw.textbbox(
@@ -1056,13 +1061,13 @@ class ThumbRenderer(QObject):
         return im
 
     @staticmethod
-    def _image_raw_thumb(filepath: Path) -> Image.Image:
+    def _image_raw_thumb(filepath: Path) -> Image.Image | None:
         """Render a thumbnail for a RAW image type.
 
         Args:
             filepath (Path): The path of the file.
         """
-        im: Image.Image = None
+        im: Image.Image | None = None
         try:
             with rawpy.imread(str(filepath)) as raw:
                 rgb = raw.postprocess(use_camera_wb=True)
@@ -1074,8 +1079,8 @@ class ThumbRenderer(QObject):
                 )
         except (
             DecompressionBombError,
-            rawpy._rawpy.LibRawIOError,
-            rawpy._rawpy.LibRawFileUnsupportedError,
+            rawpy._rawpy.LibRawIOError,  # pyright: ignore[reportAttributeAccessIssue]
+            rawpy._rawpy.LibRawFileUnsupportedError,  # pyright: ignore[reportAttributeAccessIssue]
         ) as e:
             logger.error("Couldn't render thumbnail", filepath=filepath, error=type(e).__name__)
         return im
@@ -1111,13 +1116,13 @@ class ThumbRenderer(QObject):
         return im
 
     @staticmethod
-    def _image_thumb(filepath: Path) -> Image.Image:
+    def _image_thumb(filepath: Path) -> Image.Image | None:
         """Render a thumbnail for a standard image type.
 
         Args:
             filepath (Path): The path of the file.
         """
-        im: Image.Image = None
+        im: Image.Image | None = None
         try:
             im = Image.open(filepath)
             if im.mode != "RGB" and im.mode != "RGBA":
@@ -1144,7 +1149,7 @@ class ThumbRenderer(QObject):
             filepath (Path): The path of the file.
             size (tuple[int,int]): The size of the thumbnail.
         """
-        im: Image.Image = None
+        im: Image.Image | None = None
         # Create an image to draw the svg to and a painter to do the drawing
         q_image: QImage = QImage(size, size, QImage.Format.Format_ARGB32)
         q_image.fill("#1e1e1e")
@@ -1174,7 +1179,7 @@ class ThumbRenderer(QObject):
         return im
 
     @staticmethod
-    def _iwork_thumb(filepath: Path) -> Image.Image:
+    def _iwork_thumb(filepath: Path) -> Image.Image | None:
         """Extract and render a thumbnail for an Apple iWork (Pages, Numbers, Keynote) file.
 
         Args:
@@ -1212,7 +1217,7 @@ class ThumbRenderer(QObject):
         return im
 
     @staticmethod
-    def _model_stl_thumb(filepath: Path, size: int) -> Image.Image:
+    def _model_stl_thumb(filepath: Path, size: int) -> Image.Image | None:
         """Render a thumbnail for an STL file.
 
         Args:
@@ -1223,7 +1228,7 @@ class ThumbRenderer(QObject):
         # The following commented code describes a method for rendering via
         # matplotlib.
         # This implementation did not play nice with multithreading.
-        im: Image.Image = None
+        im: Image.Image | None = None
         # # Create a new plot
         # matplotlib.use('agg')
         # figure = plt.figure()
@@ -1245,13 +1250,13 @@ class ThumbRenderer(QObject):
         return im
 
     @staticmethod
-    def _pdf_thumb(filepath: Path, size: int) -> Image.Image:
+    def _pdf_thumb(filepath: Path, size: int) -> Image.Image | None:
         """Render a thumbnail for a PDF file.
 
         filepath (Path): The path of the file.
             size (int): The size of the icon.
         """
-        im: Image.Image = None
+        im: Image.Image | None = None
 
         file: QFile = QFile(filepath)
         success: bool = file.open(

@@ -5,7 +5,7 @@
 import typing
 from pathlib import Path
 from time import gmtime
-from typing import override
+from typing import cast, override
 
 import structlog
 from PIL import Image, ImageDraw
@@ -411,11 +411,11 @@ class MediaPlayer(QGraphicsView):
             self.player.play()
 
     def load_toggle_play_icon(self, playing: bool) -> None:
-        icon = self.driver.rm.pause_icon if playing else self.driver.rm.play_icon
+        icon = cast(bytes, self.driver.rm.pause_icon if playing else self.driver.rm.play_icon)
         self.play_pause.load(icon)
 
     def load_mute_unmute_icon(self, muted: bool) -> None:
-        icon = self.driver.rm.volume_mute_icon if muted else self.driver.rm.volume_icon
+        icon = cast(bytes, self.driver.rm.volume_mute_icon if muted else self.driver.rm.volume_icon)
         self.mute_unmute.load(icon)
 
     def slider_value_changed(self, value: int) -> None:
