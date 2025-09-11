@@ -263,19 +263,15 @@ class ThumbGridLayout(QLayout):
         per_row, width_offset, height_offset = self._size(rect.right())
         view_height = self.parentWidget().parentWidget().height()
         offset = self.scroll_area.verticalScrollBar().value()
-        top_row_hidden = (offset % height_offset) / height_offset
 
         visible_rows = math.ceil((view_height + (offset % height_offset)) / height_offset)
         offset = int(offset / height_offset)
         start = offset * per_row
         end = start + (visible_rows * per_row)
 
-        # Load closest off screen row
-        # Loads both top and bottom if equally close
-        if top_row_hidden <= 0.5:
-            start -= per_row * 3
-        if top_row_hidden >= 0.5 or top_row_hidden == 0.0:
-            end += per_row * 3
+        # Load closest off screen rows
+        start -= per_row * 3
+        end += per_row * 3
 
         start = max(0, start)
         end = min(len(self._entry_ids), end)
