@@ -17,6 +17,7 @@ from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.library.alchemy.models import Entry
 from tagstudio.core.library.ignore import PATH_GLOB_FLAGS, Ignore, ignore_to_glob
 from tagstudio.core.utils.silent_subprocess import silent_run  # pyright: ignore
+from tagstudio.core.utils.types import unwrap
 
 logger = structlog.get_logger(__name__)
 
@@ -32,14 +33,16 @@ class RefreshTracker:
 
     def save_new_files(self) -> Iterator[int]:
         """Save the list of files that are not in the library."""
+        batch_size = 200
+
         index = 0
         while index < len(self.files_not_in_library):
             yield index
-            end = min(len(self.files_not_in_library), index + 200)
+            end = min(len(self.files_not_in_library), index + batch_size)
             entries = [
                 Entry(
                     path=entry_path,
-                    folder=self.library.folder,  # pyright: ignore[reportArgumentType]
+                    folder=unwrap(self.library.folder),
                     fields=[],
                     date_added=dt.now(),
                 )
