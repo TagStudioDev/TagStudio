@@ -1453,7 +1453,8 @@ class QtDriver(DriverMixin, QObject):
         # search the library
         start_time = time.time()
         Ignore.get_patterns(self.lib.library_dir, include_global=True)
-        results = self.lib.search_library(self.browsing_history.current, self.settings.page_size)
+        page_size = 0 if self.settings.infinite_scroll else self.settings.page_size
+        results = self.lib.search_library(self.browsing_history.current, page_size)
         logger.info("items to render", count=len(results))
         end_time = time.time()
 
@@ -1471,8 +1472,8 @@ class QtDriver(DriverMixin, QObject):
         self.update_thumbs()
 
         # update pagination
-        if self.settings.page_size > 0:
-            self.pages_count = math.ceil(results.total_count / self.settings.page_size)
+        if page_size > 0:
+            self.pages_count = math.ceil(results.total_count / page_size)
         else:
             self.pages_count = 1
         self.main_window.pagination.update_buttons(

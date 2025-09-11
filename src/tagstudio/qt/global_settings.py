@@ -66,6 +66,7 @@ class GlobalSettings(BaseModel):
     loop: bool = Field(default=True)
     show_filenames_in_grid: bool = Field(default=True)
     page_size: int = Field(default=100)
+    infinite_scroll: bool = Field(default=True)
     show_filepath: ShowFilepathOption = Field(default=ShowFilepathOption.DEFAULT)
     tag_click_action: TagClickActionOption = Field(default=TagClickActionOption.DEFAULT)
     theme: Theme = Field(default=Theme.SYSTEM)
