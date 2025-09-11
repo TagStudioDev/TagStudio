@@ -23,6 +23,7 @@ from PySide6.QtWidgets import (
 from tagstudio.core.library.alchemy.enums import TagColorEnum
 from tagstudio.core.library.alchemy.library import Library, slugify
 from tagstudio.core.library.alchemy.models import TagColorGroup
+from tagstudio.core.utils.types import unwrap
 from tagstudio.qt.mixed.tag_color_preview import TagColorPreview
 from tagstudio.qt.mixed.tag_widget import (
     get_border_color,
@@ -126,8 +127,8 @@ class BuildColorPanel(PanelWidget):
         self.border_checkbox.setFixedSize(22, 22)
         self.border_checkbox.clicked.connect(
             lambda checked: self.update_secondary(
-                color=QColor(self.preview_button.tag_color_group.secondary)
-                if self.preview_button.tag_color_group.secondary
+                color=QColor(unwrap(self.preview_button.tag_color_group).secondary)
+                if unwrap(self.preview_button.tag_color_group).secondary
                 else None,
                 color_border=checked,
             )

@@ -5,16 +5,18 @@
 
 from PIL import Image
 
+from tagstudio.core.utils.types import unwrap
+
 
 def four_corner_gradient(
     image: Image.Image, size: tuple[int, int], mask: Image.Image | None = None
 ) -> Image.Image:
     if image.size != size:
         # Four-Corner Gradient Background.
-        tl = image.getpixel((0, 0))
-        tr = image.getpixel(((image.size[0] - 1), 0))
-        bl = image.getpixel((0, (image.size[1] - 1)))
-        br = image.getpixel(((image.size[0] - 1), (image.size[1] - 1)))
+        tl = unwrap(image.getpixel((0, 0)))
+        tr = unwrap(image.getpixel(((image.size[0] - 1), 0)))
+        bl = unwrap(image.getpixel((0, (image.size[1] - 1))))
+        br = unwrap(image.getpixel(((image.size[0] - 1), (image.size[1] - 1))))
         bg = Image.new(mode="RGB", size=(2, 2))
         bg.paste(tl, (0, 0, 2, 2))
         bg.paste(tr, (1, 0, 2, 2))

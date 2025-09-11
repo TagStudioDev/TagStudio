@@ -28,6 +28,7 @@ from PySide6.QtWidgets import (
 from tagstudio.core.library.alchemy.enums import TagColorEnum
 from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.library.alchemy.models import Tag, TagColorGroup
+from tagstudio.core.utils.types import unwrap
 from tagstudio.qt.mixed.tag_color_preview import TagColorPreview
 from tagstudio.qt.mixed.tag_color_selection import TagColorSelection
 from tagstudio.qt.mixed.tag_search import TagSearchModal, TagSearchPanel
@@ -181,6 +182,7 @@ class BuildTagPanel(PanelWidget):
         self.color_layout.addWidget(self.color_title)
         self.color_button: TagColorPreview
         try:
+            assert tag is not None
             self.color_button = TagColorPreview(self.lib, tag.color)
         except Exception as e:
             # TODO: Investigate why this happens during tests
@@ -316,7 +318,7 @@ class BuildTagPanel(PanelWidget):
         item = self.aliases_table.cellWidget(row, 1)
         item.setFocus()
 
-    def remove_alias_callback(self, alias_name: str, alias_id: int | None = None):
+    def remove_alias_callback(self, alias_name: str, alias_id: int):
         logger.info("remove_alias_callback")
 
         self.alias_ids.remove(alias_id)
@@ -468,7 +470,7 @@ class BuildTagPanel(PanelWidget):
 
     def _update_new_alias_name_dict(self):
         for i in range(0, self.aliases_table.rowCount()):
-            widget = self.aliases_table.cellWidget(i, 1)
+            widget = cast(CustomTableItem, self.aliases_table.cellWidget(i, 1))
             self.new_alias_names[widget.id] = widget.text()
 
     def _set_aliases(self):
@@ -574,8 +576,8 @@ class BuildTagPanel(PanelWidget):
         self.setTabOrder(self.shorthand_field, self.aliases_add_button)
         self.setTabOrder(self.aliases_add_button, self.parent_tags_add_button)
         self.setTabOrder(self.parent_tags_add_button, self.color_button)
-        self.setTabOrder(self.color_button, self.panel_cancel_button)
-        self.setTabOrder(self.panel_cancel_button, self.panel_save_button)
-        self.setTabOrder(self.panel_save_button, self.aliases_table.cellWidget(0, 1))
+        self.setTabOrder(self.color_button, unwrap(self.panel_cancel_button))
+        self.setTabOrder(unwrap(self.panel_cancel_button), unwrap(self.panel_save_button))
+        self.setTabOrder(unwrap(self.panel_save_button), self.aliases_table.cellWidget(0, 1))
         self.name_field.selectAll()
         self.name_field.setFocus()

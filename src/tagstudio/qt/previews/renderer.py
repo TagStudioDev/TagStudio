@@ -666,7 +666,7 @@ class ThumbRenderer(QObject):
                     artwork = Image.open(BytesIO(flac_covers[0].data))
             elif ext in [".mp4", ".m4a", ".aac"]:
                 mp4_tags: mp4.MP4 = mp4.MP4(filepath)
-                mp4_covers: list = mp4_tags.get("covr")  # pyright: ignore[reportAssignmentType]
+                mp4_covers: list | None = mp4_tags.get("covr")  # pyright: ignore[reportAssignmentType]
                 if mp4_covers:
                     artwork = Image.open(BytesIO(mp4_covers[0]))
             if artwork:
@@ -1131,7 +1131,7 @@ class ThumbRenderer(QObject):
                 new_bg = Image.new("RGB", im.size, color="#1e1e1e")
                 new_bg.paste(im, mask=im.getchannel(3))
                 im = new_bg
-            im = ImageOps.exif_transpose(im)
+            im = unwrap(ImageOps.exif_transpose(im))
         except (
             FileNotFoundError,
             UnidentifiedImageError,
