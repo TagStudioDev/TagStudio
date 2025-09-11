@@ -1,59 +1,72 @@
-{ lib, pkgs, ... }:
+{
+  lib,
+  pkgs,
+
+  python3,
+  ...
+}:
 
 let
-  # INFO: PySide6 from PIP is compiled for 6.8.0 of Qt, must pin to match version.
-  # Long term this can be solved with an alternative like uv2nix for the devshell.
-  qt6Pkgs = import (builtins.fetchTarball {
-    name = "nixos-unstable-qt6-pinned";
-    url = "https://github.com/NixOS/nixpkgs/archive/93ff48c9be84a76319dac293733df09bbbe3f25c.tar.gz";
-    sha256 = "038m7932v4z0zn2lk7k7mbqbank30q84r1viyhchw9pcm3aq3q23";
-  }) { inherit (pkgs) system; };
-
-  pythonLibraryPath = lib.makeLibraryPath (
-    (with pkgs; [
-      fontconfig.lib
-      freetype
-      glib
-      stdenv.cc.cc.lib
-      zstd
-    ])
-    ++ (with qt6Pkgs.qt6; [ qtbase ])
-    ++ lib.optionals (!pkgs.stdenv.isDarwin) (
-      (with pkgs; [
-        dbus.lib
+  pythonLibraryPath =
+    with pkgs;
+    lib.makeLibraryPath (
+      [
+        fontconfig
+        freetype
+        glib
+        qt6.qtbase
+        stdenv.cc.cc
+        zstd
+      ]
+      ++ lib.optionals (!stdenv.isDarwin) [
+        dbus
         libGL
         libdrm
         libpulseaudio
         libva
         libxkbcommon
         pipewire
+        qt6.qtwayland
         xorg.libX11
         xorg.libXrandr
-      ])
-      ++ (with qt6Pkgs.qt6; [ qtwayland ])
-    )
-  );
+      ]
+    );
+
   libraryPath = "${lib.optionalString pkgs.stdenv.isDarwin "DY"}LD_LIBRARY_PATH";
 
-  python = pkgs.python312;
-  pythonWrapped = pkgs.symlinkJoin {
-    inherit (python)
+  python3Wrapped = pkgs.symlinkJoin {
+    inherit (python3)
       name
       pname
       version
       meta
       ;
 
-    paths = [ python ];
+    paths = [ python3 ];
 
-    nativeBuildInputs = (with pkgs; [ makeWrapper ]) ++ (with qt6Pkgs.qt6; [ wrapQtAppsHook ]);
-    buildInputs = with qt6Pkgs.qt6; [ qtbase ];
+    nativeBuildInputs = with pkgs; [
+      makeWrapper
+      qt6.wrapQtAppsHook
+
+      # Should be unnecessary once PR is pulled.
+      # PR: https://github.com/NixOS/nixpkgs/pull/271037
+      # Issue: https://github.com/NixOS/nixpkgs/issues/149812
+      wrapGAppsHook
+    ];
+    buildInputs = with pkgs.qt6; [
+      qtbase
+      qtmultimedia
+    ];
 
     postBuild = ''
-      wrapProgram $out/bin/python3.12 \
+      wrapProgram $out/bin/${python3.meta.mainProgram} \
         --prefix ${libraryPath} : ${pythonLibraryPath} \
+        "''${gappsWrapperArgs[@]}" \
         "''${qtWrapperArgs[@]}"
     '';
+
+    dontWrapGApps = true;
+    dontWrapQtApps = true;
   };
 in
 pkgs.mkShellNoCC {
@@ -63,7 +76,13 @@ pkgs.mkShellNoCC {
 
     ruff
   ];
-  buildInputs = [ pythonWrapped ] ++ (with pkgs; [ ffmpeg-headless ]);
+  buildInputs = [
+    python3Wrapped
+  ]
+  ++ (with pkgs; [
+    ffmpeg-headless
+    ripgrep
+  ]);
 
   env = {
     QT_QPA_PLATFORM = "wayland;xcb";
@@ -74,11 +93,16 @@ pkgs.mkShellNoCC {
 
   shellHook =
     let
-      python = lib.getExe pythonWrapped;
+      python = lib.getExe python3Wrapped;
+
+      # PySide/Qt are very particular about matching versions. Override with nixpkgs package.
+      pythonPath = lib.makeSearchPathOutput "lib" python3.sitePackages (
+        with python3.pkgs; [ pyside6 ] ++ pyside6.propagatedBuildInputs or [ ]
+      );
     in
     # bash
     ''
-      venv="''${UV_PROJECT_ENVIRONMENT:-.venv}"
+      venv=''${UV_PROJECT_ENVIRONMENT:-.venv}
 
       if [ ! -f "''${venv}"/bin/activate ] || [ "$(readlink -f "''${venv}"/bin/python)" != "$(readlink -f ${python})" ]; then
           printf '%s\n' 'Regenerating virtual environment, Python interpreter changed...' >&2
@@ -87,6 +111,7 @@ pkgs.mkShellNoCC {
       fi
 
       source "''${venv}"/bin/activate
+      PYTHONPATH=${pythonPath}''${PYTHONPATH:+:}''${PYTHONPATH:-}
 
       if [ ! -f "''${venv}"/pyproject.toml ] || ! diff --brief pyproject.toml "''${venv}"/pyproject.toml >/dev/null; then
           printf '%s\n' 'Installing dependencies, pyproject.toml changed...' >&2

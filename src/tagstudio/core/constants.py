@@ -2,13 +2,14 @@
 # Licensed under the GPL-3.0 License.
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
-VERSION: str = "9.5.3"  # Major.Minor.Patch
+VERSION: str = "9.5.5"  # Major.Minor.Patch
 VERSION_BRANCH: str = ""  # Usually "" or "Pre-Release"
 
 # The folder & file names where TagStudio keeps its data relative to a library.
 TS_FOLDER_NAME: str = ".TagStudio"
 BACKUP_FOLDER_NAME: str = "backups"
 COLLAGE_FOLDER_NAME: str = "collages"
+IGNORE_NAME: str = ".ts_ignore"
 THUMB_CACHE_NAME: str = "thumbs"
 
 FONT_SAMPLE_TEXT: str = (

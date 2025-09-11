@@ -3,17 +3,19 @@
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
 import re
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, override
 
 import structlog
-from sqlalchemy import ColumnElement, and_, distinct, func, or_, select, text
+from sqlalchemy import ColumnElement, and_, distinct, func, or_, select
 from sqlalchemy.orm import Session
 from sqlalchemy.sql.operators import ilike_op
 
+from tagstudio.core.library.alchemy.constants import TAG_CHILDREN_ID_QUERY
 from tagstudio.core.library.alchemy.joins import TagEntry
 from tagstudio.core.library.alchemy.models import Entry, Tag, TagAlias
 from tagstudio.core.media_types import FILETYPE_EQUIVALENTS, MediaCategories
 from tagstudio.core.query_lang.ast import (
+    AST,
     ANDList,
     BaseVisitor,
     Constraint,
@@ -31,19 +33,6 @@ else:
 
 logger = structlog.get_logger(__name__)
 
-# TODO: Reevaluate after subtags -> parent tags name change
-TAG_CHILDREN_ID_QUERY = text("""
--- Note for this entire query that tag_parents.child_id is the parent id and tag_parents.parent_id is the child id due to bad naming
-WITH RECURSIVE ChildTags AS (
-    SELECT :tag_id AS child_id
-    UNION
-    SELECT tp.parent_id AS child_id
-	FROM tag_parents tp
-    INNER JOIN ChildTags c ON tp.child_id = c.child_id
-)
-SELECT child_id FROM ChildTags;
-""")  # noqa: E501
-
 
 def get_filetype_equivalency_list(item: str) -> list[str] | set[str]:
     for s in FILETYPE_EQUIVALENTS:
@@ -57,54 +46,30 @@ class SQLBoolExpressionBuilder(BaseVisitor[ColumnElement[bool]]):
         super().__init__()
         self.lib = lib
 
-    def visit_or_list(self, node: ORList) -> ColumnElement[bool]:
-        return or_(*[self.visit(element) for element in node.elements])
+    @override
+    def visit_or_list(self, node: ORList) -> ColumnElement[bool]:  # type: ignore
+        tag_ids, bool_expressions = self.__separate_tags(node.elements, only_single=False)
+        if len(tag_ids) > 0:
+            bool_expressions.append(self.__entry_has_any_tags(tag_ids))
+        return or_(*bool_expressions)
 
-    def visit_and_list(self, node: ANDList) -> ColumnElement[bool]:
-        tag_ids: list[int] = []
-        bool_expressions: list[ColumnElement[bool]] = []
-
-        # Search for TagID / unambiguous Tag Constraints and store the respective tag ids separately
-        for term in node.terms:
-            if isinstance(term, Constraint) and len(term.properties) == 0:
-                match term.type:
-                    case ConstraintType.TagID:
-                        try:
-                            tag_ids.append(int(term.value))
-                        except ValueError:
-                            logger.error(
-                                "[SQLBoolExpressionBuilder] Could not cast value to an int Tag ID",
-                                value=term.value,
-                            )
-                        continue
-                    case ConstraintType.Tag:
-                        if len(ids := self.__get_tag_ids(term.value)) == 1:
-                            tag_ids.append(ids[0])
-                            continue
-
-            bool_expressions.append(self.visit(term))
-
-        # If there are at least two tag ids use a relational division query
-        # to efficiently check all of them
-        if len(tag_ids) > 1:
+    @override
+    def visit_and_list(self, node: ANDList) -> ColumnElement[bool]:  # type: ignore
+        tag_ids, bool_expressions = self.__separate_tags(node.terms, only_single=True)
+        if len(tag_ids) > 0:
             bool_expressions.append(self.__entry_has_all_tags(tag_ids))
-        # If there is just one tag id, check the normal way
-        elif len(tag_ids) == 1:
-            bool_expressions.append(
-                self.__entry_satisfies_expression(TagEntry.tag_id == tag_ids[0])
-            )
-
         return and_(*bool_expressions)
 
-    def visit_constraint(self, node: Constraint) -> ColumnElement[bool]:
+    @override
+    def visit_constraint(self, node: Constraint) -> ColumnElement[bool]:  # type: ignore
         """Returns a Boolean Expression that is true, if the Entry satisfies the constraint."""
         if len(node.properties) != 0:
             raise NotImplementedError("Properties are not implemented yet")  # TODO TSQLANG
 
         if node.type == ConstraintType.Tag:
-            return self.__entry_matches_tag_ids(self.__get_tag_ids(node.value))
+            return self.__entry_has_any_tags(self.__get_tag_ids(node.value))
         elif node.type == ConstraintType.TagID:
-            return self.__entry_matches_tag_ids([int(node.value)])
+            return self.__entry_has_any_tags([int(node.value)])
         elif node.type == ConstraintType.Path:
             ilike = False
             glob = False
@@ -147,20 +112,13 @@ class SQLBoolExpressionBuilder(BaseVisitor[ColumnElement[bool]]):
         # raise exception if Constraint stays unhandled
         raise NotImplementedError("This type of constraint is not implemented yet")
 
-    def visit_property(self, node: Property) -> ColumnElement[bool]:
+    @override
+    def visit_property(self, node: Property) -> ColumnElement[bool]:  # type: ignore
         raise NotImplementedError("This should never be reached!")
 
-    def visit_not(self, node: Not) -> ColumnElement[bool]:
+    @override
+    def visit_not(self, node: Not) -> ColumnElement[bool]:  # type: ignore
         return ~self.visit(node.child)
-
-    def __entry_matches_tag_ids(self, tag_ids: list[int]) -> ColumnElement[bool]:
-        """Returns a boolean expression that is true if the entry has at least one of the supplied tags."""  # noqa: E501
-        return (
-            select(1)
-            .correlate(Entry)
-            .where(and_(TagEntry.entry_id == Entry.id, TagEntry.tag_id.in_(tag_ids)))
-            .exists()
-        )
 
     def __get_tag_ids(self, tag_name: str, include_children: bool = True) -> list[int]:
         """Given a tag name find the ids of all tags that this name could refer to."""
@@ -180,10 +138,48 @@ class SQLBoolExpressionBuilder(BaseVisitor[ColumnElement[bool]]):
                 )
             if not include_children:
                 return tag_ids
-            outp = []
+            outp: list[int] = []
             for tag_id in tag_ids:
                 outp.extend(list(session.scalars(TAG_CHILDREN_ID_QUERY, {"tag_id": tag_id})))
             return outp
+
+    def __separate_tags(
+        self, terms: list[AST], only_single: bool = True
+    ) -> tuple[list[int], list[ColumnElement[bool]]]:
+        tag_ids: list[int] = []
+        bool_expressions: list[ColumnElement[bool]] = []
+
+        for term in terms:
+            if isinstance(term, Constraint) and len(term.properties) == 0:
+                match term.type:
+                    case ConstraintType.TagID:
+                        try:
+                            tag_ids.append(int(term.value))
+                        except ValueError:
+                            logger.error(
+                                "[SQLBoolExpressionBuilder] Could not cast value to an int Tag ID",
+                                value=term.value,
+                            )
+                        continue
+                    case ConstraintType.Tag:
+                        ids = self.__get_tag_ids(term.value)
+                        if not only_single:
+                            tag_ids.extend(ids)
+                            continue
+                        elif len(ids) == 1:
+                            tag_ids.append(ids[0])
+                            continue
+                    case ConstraintType.FileType:
+                        pass
+                    case ConstraintType.Path:
+                        pass
+                    case ConstraintType.Special:
+                        pass
+                    case _:
+                        raise NotImplementedError(f"Unhandled constraint: '{term.type}'")
+
+            bool_expressions.append(self.visit(term))
+        return tag_ids, bool_expressions
 
     def __entry_has_all_tags(self, tag_ids: list[int]) -> ColumnElement[bool]:
         """Returns Binary Expression that is true if the Entry has all provided tag ids."""
@@ -195,9 +191,8 @@ class SQLBoolExpressionBuilder(BaseVisitor[ColumnElement[bool]]):
             .having(func.count(distinct(TagEntry.tag_id)) == len(tag_ids))
         )
 
-    def __entry_satisfies_expression(self, expr: ColumnElement[bool]) -> ColumnElement[bool]:
-        """Returns Binary Expression that is true if the Entry satisfies the column expression.
-
-        Executed on: Entry ⟕ TagEntry (Entry LEFT OUTER JOIN TagEntry).
-        """
-        return Entry.id.in_(select(Entry.id).outerjoin(TagEntry).where(expr))
+    def __entry_has_any_tags(self, tag_ids: list[int]) -> ColumnElement[bool]:
+        """Returns Binary Expression that is true if the Entry has any of the provided tag ids."""
+        return Entry.id.in_(
+            select(TagEntry.entry_id).where(TagEntry.tag_id.in_(tag_ids)).distinct()
+        )

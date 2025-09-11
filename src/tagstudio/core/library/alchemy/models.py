@@ -4,9 +4,11 @@
 
 from datetime import datetime as dt
 from pathlib import Path
+from typing import override
 
 from sqlalchemy import JSON, ForeignKey, ForeignKeyConstraint, Integer, event
 from sqlalchemy.orm import Mapped, mapped_column, relationship
+from typing_extensions import deprecated
 
 from tagstudio.core.constants import TAG_ARCHIVED, TAG_FAVORITE
 from tagstudio.core.library.alchemy.db import Base, PathType
@@ -99,8 +101,8 @@ class Tag(Base):
     aliases: Mapped[set[TagAlias]] = relationship(back_populates="tag")
     parent_tags: Mapped[set["Tag"]] = relationship(
         secondary=TagParent.__tablename__,
-        primaryjoin="Tag.id == TagParent.parent_id",
-        secondaryjoin="Tag.id == TagParent.child_id",
+        primaryjoin="Tag.id == TagParent.child_id",
+        secondaryjoin="Tag.id == TagParent.parent_id",
         back_populates="parent_tags",
     )
     disambiguation_id: Mapped[int | None]
@@ -126,8 +128,8 @@ class Tag(Base):
 
     def __init__(
         self,
+        name: str,
         id: int | None = None,
-        name: str | None = None,
         shorthand: str | None = None,
         aliases: set[TagAlias] | None = None,
         parent_tags: set["Tag"] | None = None,
@@ -146,26 +148,31 @@ class Tag(Base):
         self.shorthand = shorthand
         self.disambiguation_id = disambiguation_id
         self.is_category = is_category
-        assert not self.id
-        self.id = id
+        self.id = id  # pyright: ignore[reportAttributeAccessIssue]
         super().__init__()
 
+    @override
     def __str__(self) -> str:
         return f"<Tag ID: {self.id} Name: {self.name}>"
 
+    @override
     def __repr__(self) -> str:
         return self.__str__()
 
-    def __lt__(self, other) -> bool:
+    @override
+    def __hash__(self) -> int:
+        return hash(self.id)
+
+    def __lt__(self, other: "Tag") -> bool:
         return self.name < other.name
 
-    def __le__(self, other) -> bool:
+    def __le__(self, other: "Tag") -> bool:
         return self.name <= other.name
 
-    def __gt__(self, other) -> bool:
+    def __gt__(self, other: "Tag") -> bool:
         return self.name > other.name
 
-    def __ge__(self, other) -> bool:
+    def __ge__(self, other: "Tag") -> bool:
         return self.name >= other.name
 
 
@@ -230,9 +237,10 @@ class Entry(Base):
         date_modified: dt | None = None,
         date_added: dt | None = None,
     ) -> None:
+        super().__init__()
         self.path = path
         self.folder = folder
-        self.id = id
+        self.id = id  # pyright: ignore[reportAttributeAccessIssue]
         self.filename = path.name
         self.suffix = path.suffix.lstrip(".").lower()
 
@@ -277,8 +285,8 @@ class ValueType(Base):
     key: Mapped[str] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(nullable=False)
     type: Mapped[FieldTypeEnum] = mapped_column(default=FieldTypeEnum.TEXT_LINE)
-    is_default: Mapped[bool]
-    position: Mapped[int]
+    is_default: Mapped[bool]  # pyright: ignore[reportUninitializedInstanceVariable]
+    position: Mapped[int]  # pyright: ignore[reportUninitializedInstanceVariable]
 
     # add relations to other tables
     text_fields: Mapped[list[TextField]] = relationship("TextField", back_populates="type")
@@ -303,7 +311,7 @@ class ValueType(Base):
 
 
 @event.listens_for(ValueType, "before_insert")
-def slugify_field_key(mapper, connection, target):
+def slugify_field_key(mapper, connection, target):  # pyright: ignore
     """Slugify the field key before inserting into the database."""
     if not target.key:
         from tagstudio.core.library.alchemy.library import slugify
@@ -311,8 +319,18 @@ def slugify_field_key(mapper, connection, target):
         target.key = slugify(target.tag)
 
 
+# NOTE: The "Preferences" table has been depreciated as of TagStudio 9.5.4
+# and is set to be removed in a future release.
+@deprecated("Use `Version` for storing version, and `ts_ignore` system for file exclusion.")
 class Preferences(Base):
     __tablename__ = "preferences"
 
     key: Mapped[str] = mapped_column(primary_key=True)
     value: Mapped[dict] = mapped_column(JSON, nullable=False)
+
+
+class Version(Base):
+    __tablename__ = "versions"
+
+    key: Mapped[str] = mapped_column(primary_key=True)
+    value: Mapped[int] = mapped_column(nullable=False, default=0)

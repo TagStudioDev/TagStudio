@@ -12,7 +12,6 @@ class SettingItems(str, enum.Enum):
 
     LAST_LIBRARY = "last_library"
     LIBS_LIST = "libs_list"
-    THUMB_CACHE_SIZE_LIMIT = "thumb_cache_size_limit"
 
 
 class ShowFilepathOption(int, enum.Enum):
@@ -79,9 +78,9 @@ class DefaultEnum(enum.Enum):
         raise AttributeError("access the value via .default property instead")
 
 
+# TODO: Remove DefaultEnum and LibraryPrefs classes once remaining values are removed.
 class LibraryPrefs(DefaultEnum):
     """Library preferences with default value accessible via .default property."""
 
     IS_EXCLUDE_LIST = True
     EXTENSION_LIST = [".json", ".xmp", ".aae"]
-    DB_VERSION = 9

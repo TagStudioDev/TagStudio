@@ -129,6 +129,7 @@ class MediaCategories:
         ".aifc",
         ".aiff",
         ".alac",
+        ".caf",
         ".flac",
         ".m4a",
         ".m4p",
@@ -242,7 +243,7 @@ class MediaCategories:
         ".sqlite",
         ".sqlite3",
     }
-    _DISK_IMAGE_SET: set[str] = {".bios", ".dmg", ".iso"}
+    _DISK_IMAGE_SET: set[str] = {".bios", ".dmg", ".fhdx", ".iso"}
     _DOCUMENT_SET: set[str] = {
         ".doc",
         ".docm",
@@ -297,10 +298,13 @@ class MediaCategories:
         ".crw",
         ".dng",
         ".nef",
+        ".nrw",
         ".orf",
         ".raf",
         ".raw",
         ".rw2",
+        ".srf",
+        ".srf2",
     }
     _IMAGE_VECTOR_SET: set[str] = {".eps", ".epsf", ".epsi", ".svg", ".svgz"}
     _IMAGE_RASTER_SET: set[str] = {
@@ -365,6 +369,7 @@ class MediaCategories:
         ".md",
         ".mkd",
         ".rmd",
+        ".text",
         ".txt",
         "contributing",
         "license",
@@ -408,6 +413,7 @@ class MediaCategories:
         ".mp4",
         ".webm",
         ".wmv",
+        ".ts",
     }
 
     ADOBE_PHOTOSHOP_TYPES = MediaCategory(

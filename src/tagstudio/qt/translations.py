@@ -6,15 +6,16 @@ from typing import Any
 import structlog
 import ujson
 
+from tagstudio.qt.mnemonics import remove_mnemonic_marker
+
 logger = structlog.get_logger(__name__)
 
 DEFAULT_TRANSLATION = "en"
 
 LANGUAGES = {
-    # "Cantonese (Traditional)": "yue_Hant",  # Empty
     "Chinese (Simplified)": "zh_Hans",
     "Chinese (Traditional)": "zh_Hant",
-    # "Czech": "cs",  # Minimal
+    "Czech": "cs",
     # "Danish": "da",  # Minimal
     "Dutch": "nl",
     "English": "en",
@@ -27,7 +28,8 @@ LANGUAGES = {
     "Norwegian Bokmål": "nb_NO",
     "Polish": "pl",
     "Portuguese (Brazil)": "pt_BR",
-    # "Portuguese (Portugal)": "pt",  # Empty
+    "Portuguese (Portugal)": "pt",
+    "Romanian": "ro",
     "Russian": "ru",
     "Spanish": "es",
     "Swedish": "sv",
@@ -61,9 +63,7 @@ class Translator:
         self._strings = self.__get_translation_dict(lang)
         if system() == "Darwin":
             for k, v in self._strings.items():
-                self._strings[k] = (
-                    v.replace("&&", "<ESC_AMP>").replace("&", "", 1).replace("<ESC_AMP>", "&&")
-                )
+                self._strings[k] = remove_mnemonic_marker(v)
 
     def __format(self, text: str, **kwargs) -> str:
         try:

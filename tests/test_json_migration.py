@@ -1,4 +1,4 @@
-# Copyright (C) 2024 Travis Abendshien (CyanVoxel).
+# Copyright (C) 2025 Travis Abendshien (CyanVoxel).
 # Licensed under the GPL-3.0 License.
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
@@ -7,7 +7,7 @@ from pathlib import Path
 from time import time
 
 from tagstudio.core.enums import LibraryPrefs
-from tagstudio.qt.widgets.migration_modal import JsonMigrationModal
+from tagstudio.qt.mixed.migration_modal import JsonMigrationModal
 
 CWD = Path(__file__)
 
@@ -48,5 +48,5 @@ def test_json_migration():
     # List Type
     assert modal.check_ext_type()
     # No Leading Dot
-    for ext in modal.sql_lib.prefs(LibraryPrefs.EXTENSION_LIST):
+    for ext in modal.sql_lib.prefs(LibraryPrefs.EXTENSION_LIST):  # pyright: ignore[reportUnknownVariableType]
         assert ext[0] != "."
