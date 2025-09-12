@@ -89,7 +89,7 @@ class SettingsPanel(PanelWidget):
         # and we want to use the current language for the dropdowns
 
         self.driver = driver
-        self.setMinimumSize(400, 300)
+        self.setMinimumSize(400, 500)
 
         self.root_layout = QVBoxLayout(self)
         self.root_layout.setContentsMargins(0, 6, 0, 0)
@@ -183,9 +183,18 @@ class SettingsPanel(PanelWidget):
             Translations["settings.show_filenames_in_grid"], self.show_filenames_checkbox
         )
 
+        # Infinite Scrolling
+        self.infinite_scroll = QCheckBox()
+        self.infinite_scroll.setChecked(self.driver.settings.infinite_scroll)
+        self.infinite_scroll.checkStateChanged.connect(
+            lambda checked: self.page_size_line_edit.setEnabled(not checked.value)
+        )
+        form_layout.addRow(Translations["settings.infinite_scroll"], self.infinite_scroll)
+
         # Page Size
         self.page_size_line_edit = QLineEdit()
         self.page_size_line_edit.setText(str(self.driver.settings.page_size))
+        self.page_size_line_edit.setEnabled(not self.infinite_scroll.checkState().value)
 
         def on_page_size_changed():
             text = self.page_size_line_edit.text()
@@ -194,11 +203,6 @@ class SettingsPanel(PanelWidget):
 
         self.page_size_line_edit.editingFinished.connect(on_page_size_changed)
         form_layout.addRow(Translations["settings.page_size"], self.page_size_line_edit)
-
-        # Infinite Scrolling
-        self.infinite_scroll = QCheckBox()
-        self.infinite_scroll.setChecked(self.driver.settings.infinite_scroll)
-        form_layout.addRow(Translations["settings.infinite_scroll"], self.infinite_scroll)
 
         # Show Filepath
         self.filepath_combobox = QComboBox()

@@ -486,7 +486,7 @@ class MainWindow(QMainWindow):
 
         if not self.objectName():
             self.setObjectName("MainWindow")
-        self.resize(1300, 720)
+        self.resize(1316, 740)
 
         self.setup_menu_bar()
 
