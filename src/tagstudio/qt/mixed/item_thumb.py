@@ -367,7 +367,7 @@ class ItemThumb(FlowWidget):
         if ext and ext.startswith(".") is False:
             ext = "." + ext
         media_types: set[MediaType] = MediaCategories.get_types(ext)
-        if ext and (
+        if (
             not MediaCategories.is_ext_in_category(ext, MediaCategories.IMAGE_TYPES)
             or MediaCategories.is_ext_in_category(ext, MediaCategories.IMAGE_RAW_TYPES)
             or MediaCategories.is_ext_in_category(ext, MediaCategories.IMAGE_VECTOR_TYPES)
