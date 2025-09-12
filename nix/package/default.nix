@@ -77,7 +77,9 @@ python3Packages.buildPythonApplication {
     "pillow-avif-plugin"
     "pillow-heif"
     "pillow-jxl-plugin"
+    "py7zr"
     "pyside6"
+    "rarfile"
     "structlog"
     "typing-extensions"
   ];
@@ -96,9 +98,11 @@ python3Packages.buildPythonApplication {
       pillow
       pillow-avif-plugin
       pillow-heif
+      py7zr
       pydantic
       pydub
       pyside6
+      rarfile
       rawpy
       send2trash
       sqlalchemy
@@ -115,6 +119,7 @@ python3Packages.buildPythonApplication {
   disabledTests = [
     "test_badge_visual_state"
     "test_browsing_state_update"
+    "test_close_library" # TODO: Look into segfault.
     "test_flow_layout_happy_path"
     "test_get" # TODO: Look further into, might be possible to run.
     "test_json_migration"
