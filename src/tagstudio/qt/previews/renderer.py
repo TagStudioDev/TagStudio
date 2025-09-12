@@ -80,7 +80,6 @@ from tagstudio.qt.previews.vendored.pydub.audio_segment import (
 from tagstudio.qt.resource_manager import ResourceManager
 
 if TYPE_CHECKING:
-    from tagstudio.core.library.alchemy.library import Library
     from tagstudio.qt.ts_qt import QtDriver
 
 ImageFile.LOAD_TRUNCATED_IMAGES = True
@@ -138,11 +137,10 @@ class ThumbRenderer(QObject):
     updated_ratio = Signal(float)
     cached_img_ext: str = ".webp"
 
-    def __init__(self, driver: "QtDriver", library: "Library") -> None:
+    def __init__(self, driver: "QtDriver") -> None:
         """Initialize the class."""
         super().__init__()
         self.driver = driver
-        self.lib = library
 
         settings_res = self.driver.settings.cached_thumb_resolution
         self.cached_img_res = (
@@ -1534,7 +1532,7 @@ class ThumbRenderer(QObject):
                     image
                     and Ignore.compiled_patterns
                     and Ignore.compiled_patterns.match(
-                        filepath.relative_to(unwrap(self.lib.library_dir))
+                        filepath.relative_to(unwrap(self.driver.lib.library_dir))
                     )
                 ):
                     image = render_ignored((adj_size, adj_size), pixel_ratio, image)

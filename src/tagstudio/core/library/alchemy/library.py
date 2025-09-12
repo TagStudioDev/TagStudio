@@ -994,7 +994,14 @@ class Library:
         assert self.library_dir
 
         with Session(unwrap(self.engine), expire_on_commit=False) as session:
-            statement = select(Entry.id, func.count().over())
+            if page_size:
+                statement = (
+                    select(Entry.id, func.count().over())
+                    .offset(search.page_index * page_size)
+                    .limit(page_size)
+                )
+            else:
+                statement = select(Entry.id)
 
             if search.ast:
                 start_time = time.time()
@@ -1017,8 +1024,6 @@ class Library:
                     sort_on = func.sin(Entry.id * search.random_seed)
 
             statement = statement.order_by(asc(sort_on) if search.ascending else desc(sort_on))
-            if page_size is not None:
-                statement = statement.limit(page_size).offset(search.page_index * page_size)
 
             logger.info(
                 "searching library",
@@ -1027,17 +1032,21 @@ class Library:
             )
 
             start_time = time.time()
-            rows = session.execute(statement).fetchall()
-            ids = []
-            count = 0
-            for row in rows:
-                id, count = row._tuple()  # pyright: ignore[reportPrivateUsage]
-                ids.append(id)
+            if page_size:
+                rows = session.execute(statement).fetchall()
+                ids = []
+                total_count = 0
+                for row in rows:
+                    ids.append(row[0])
+                    total_count = row[1]
+            else:
+                ids = list(session.scalars(statement))
+                total_count = len(ids)
             end_time = time.time()
             logger.info(f"SQL Execution finished ({format_timespan(end_time - start_time)})")
 
             res = SearchResult(
-                total_count=count,
+                total_count=total_count,
                 ids=ids,
             )
 

@@ -106,21 +106,21 @@ def open_file(path: str | Path, file_manager: bool = False, windows_start_comman
 
 
 class FileOpenerHelper:
-    def __init__(self, filepath: str | Path):
+    def __init__(self, filepath: Path):
         """Initialize the FileOpenerHelper.
 
         Args:
-            filepath (str): The path to the file to open.
+            filepath (Path): The path to the file to open.
         """
-        self.filepath = str(filepath)
+        self.filepath = filepath
 
-    def set_filepath(self, filepath: str | Path):
+    def set_filepath(self, filepath: Path):
         """Set the filepath to open.
 
         Args:
-            filepath (str): The path to the file to open.
+            filepath (Path): The path to the file to open.
         """
-        self.filepath = str(filepath)
+        self.filepath = filepath
 
     def open_file(self):
         """Open the file in the default application."""
@@ -140,15 +140,15 @@ class FileOpenerLabel(QLabel):
         Args:
             parent (QWidget, optional): The parent widget. Defaults to None.
         """
-        self.filepath: str | Path | None = None
+        self.filepath: Path | None = None
 
         super().__init__(parent)
 
-    def set_file_path(self, filepath: str | Path) -> None:
+    def set_file_path(self, filepath: Path) -> None:
         """Set the filepath to open.
 
         Args:
-            filepath (str): The path to the file to open.
+            filepath (Path): The path to the file to open.
         """
         self.filepath = filepath
 

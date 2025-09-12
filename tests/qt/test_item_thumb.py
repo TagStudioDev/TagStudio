@@ -17,8 +17,7 @@ def test_badge_visual_state(qt_driver: QtDriver, entry_min: int, new_value: bool
     )
 
     qt_driver.frame_content = [entry_min]
-    qt_driver.selected = [0]
-    qt_driver.item_thumbs = [thumb]
+    qt_driver.toggle_item_selection(0, append=False, bridge=False)
 
     thumb.badges[BadgeType.FAVORITE].setChecked(new_value)
     assert thumb.badges[BadgeType.FAVORITE].isChecked() == new_value

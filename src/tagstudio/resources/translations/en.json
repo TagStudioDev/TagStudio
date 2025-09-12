@@ -266,6 +266,7 @@
     "settings.generate_thumbs": "Thumbnail Generation",
     "settings.global": "Global Settings",
     "settings.hourformat.label": "24-Hour Time",
+    "settings.infinite_scroll": "Infinite Scrolling",
     "settings.language": "Language",
     "settings.library": "Library Settings",
     "settings.open_library_on_start": "Open Library on Start",
