@@ -1067,12 +1067,18 @@ class Library:
 
             return res
 
-    def search_tags(self, name: str | None, limit: int = 100) -> list[set[Tag]]:
+    def search_tags(self, name: str | None, limit: int = 100) -> tuple[list[Tag], list[Tag]]:
         """Return a list of Tag records matching the query."""
-        with Session(self.engine) as session:
-            query = select(Tag.id, Tag.name).outerjoin(TagAlias)
+        name = name or ""
+        name = name.lower()
 
-            if limit > 0 and (not name or len(name) == 1):
+        def sort_key(text: str):
+            return (not text.startswith(name), text)
+
+        with Session(self.engine) as session:
+            query = select(Tag.id, Tag.name)
+
+            if limit > 0 and not name:
                 query = query.limit(limit).order_by(func.lower(Tag.name))
 
             if name:
@@ -1080,28 +1086,42 @@ class Library:
                     or_(
                         Tag.name.icontains(name),
                         Tag.shorthand.icontains(name),
-                        TagAlias.name.icontains(name),
                     )
                 )
 
             tags = list(session.execute(query))
+
+            if name:
+                query = select(TagAlias.tag_id, TagAlias.name).where(TagAlias.name.icontains(name))
+                tags.extend(session.execute(query))
+
+            tags.sort(key=lambda t: sort_key(t[1]))
+            seen_ids = set()
+            tag_ids = []
+            for row in tags:
+                id = row[0]
+                if id in seen_ids:
+                    continue
+                tag_ids.append(id)
+                seen_ids.add(id)
+
             logger.info(
                 "searching tags",
                 search=name,
                 limit=limit,
                 statement=str(query),
-                results=len(tags),
+                results=len(tag_ids),
             )
 
-            tags.sort(key=lambda t: t[1].lower())
             if limit <= 0:
-                limit = len(tags)
-            tag_ids = [t[0] for t in tags[:limit]]
+                limit = len(tag_ids)
+            tag_ids = tag_ids[:limit]
 
             hierarchy = self.get_tag_hierarchy(tag_ids)
-            direct_tags = {hierarchy.pop(id) for id in tag_ids}
-            ancestor_tags = set(hierarchy.values())
-            return [direct_tags, ancestor_tags]
+            direct_tags = [hierarchy.pop(id) for id in tag_ids]
+            ancestor_tags = list(hierarchy.values())
+            ancestor_tags.sort(key=lambda t: sort_key(t.name))
+            return direct_tags, ancestor_tags
 
     def update_entry_path(self, entry_id: int | Entry, path: Path) -> bool:
         """Set the path field of an entry.
