@@ -38,7 +38,7 @@ GLOBAL_IGNORE = [
 
 
 def ignore_to_glob(ignore_patterns: list[str]) -> list[str]:
-    """Convert .gitignore-like patterns to explicit glob syntax.
+    """Convert .gitignore-like patterns to Unix-like glob syntax.
 
     Args:
         ignore_patterns (list[str]): The .gitignore-like patterns to convert.
@@ -48,7 +48,7 @@ def ignore_to_glob(ignore_patterns: list[str]) -> list[str]:
     additional_patterns: list[str] = []
     root_patterns: list[str] = []
 
-    # Mimic implicit .gitignore syntax behavior for the SQLite GLOB function.
+    # Expand .gitignore patterns to mimic the same behavior with unix-like glob patterns.
     for pattern in glob_patterns:
         # Temporarily remove any exclusion character before processing
         exclusion_char = ""
@@ -60,9 +60,6 @@ def ignore_to_glob(ignore_patterns: list[str]) -> list[str]:
         if not gp.startswith("**/") and not gp.startswith("*/") and not gp.startswith("/"):
             # Create a version of a prefix-less pattern that starts with "**/"
             gp = "**/" + gp
-            additional_patterns.append(exclusion_char + gp)
-
-            gp = gp.removesuffix("/**").removesuffix("/*").removesuffix("/")
             additional_patterns.append(exclusion_char + gp)
 
             gp = gp.removeprefix("**/").removeprefix("*/")
