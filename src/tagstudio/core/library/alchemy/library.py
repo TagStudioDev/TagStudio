@@ -75,7 +75,6 @@ from tagstudio.core.library.alchemy.constants import (
     DB_VERSION_LEGACY_KEY,
     JSON_FILENAME,
     SQL_FILENAME,
-    TAG_CHILDREN_QUERY,
 )
 from tagstudio.core.library.alchemy.db import make_tables
 from tagstudio.core.library.alchemy.enums import (
@@ -1071,13 +1070,10 @@ class Library:
     def search_tags(self, name: str | None, limit: int = 100) -> list[set[Tag]]:
         """Return a list of Tag records matching the query."""
         with Session(self.engine) as session:
-            query = select(Tag).outerjoin(TagAlias).order_by(func.lower(Tag.name))
-            query = query.options(
-                selectinload(Tag.parent_tags),
-                selectinload(Tag.aliases),
-            )
-            if limit > 0:
-                query = query.limit(limit)
+            query = select(Tag.id, Tag.name).outerjoin(TagAlias)
+
+            if limit > 0 and (not name or len(name) == 1):
+                query = query.limit(limit).order_by(func.lower(Tag.name))
 
             if name:
                 query = query.where(
@@ -1088,35 +1084,24 @@ class Library:
                     )
                 )
 
-            direct_tags = set(session.scalars(query))
-            ancestor_tag_ids: list[Tag] = []
-            for tag in direct_tags:
-                ancestor_tag_ids.extend(
-                    list(session.scalars(TAG_CHILDREN_QUERY, {"tag_id": tag.id}))
-                )
-
-            ancestor_tags = session.scalars(
-                select(Tag)
-                .where(Tag.id.in_(ancestor_tag_ids))
-                .options(selectinload(Tag.parent_tags), selectinload(Tag.aliases))
-            )
-
-            res = [
-                direct_tags,
-                {at for at in ancestor_tags if at not in direct_tags},
-            ]
-
+            tags = list(session.execute(query))
             logger.info(
                 "searching tags",
                 search=name,
                 limit=limit,
                 statement=str(query),
-                results=len(res),
+                results=len(tags),
             )
 
-            session.expunge_all()
+            tags.sort(key=lambda t: t[1].lower())
+            if limit <= 0:
+                limit = len(tags)
+            tag_ids = [t[0] for t in tags[:limit]]
 
-            return res
+            hierarchy = self.get_tag_hierarchy(tag_ids)
+            direct_tags = {hierarchy.pop(id) for id in tag_ids}
+            ancestor_tags = set(hierarchy.values())
+            return [direct_tags, ancestor_tags]
 
     def update_entry_path(self, entry_id: int | Entry, path: Path) -> bool:
         """Set the path field of an entry.
