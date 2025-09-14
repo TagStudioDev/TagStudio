@@ -1073,7 +1073,7 @@ class Library:
         name = name.lower()
 
         def sort_key(text: str):
-            return (not text.startswith(name), text)
+            return (not text.startswith(name), len(text), text)
 
         with Session(self.engine) as session:
             query = select(Tag.id, Tag.name)
