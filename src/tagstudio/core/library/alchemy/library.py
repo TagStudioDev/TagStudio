@@ -555,6 +555,20 @@ class Library:
                 # Convert file extension list to ts_ignore file, if a .ts_ignore file does not exist
                 self.migrate_sql_to_ts_ignore(library_dir)
 
+            session.execute(
+                text("CREATE INDEX IF NOT EXISTS idx_tags_name_shorthand ON tags (name, shorthand)")
+            )
+            session.execute(
+                text(
+                    "CREATE INDEX IF NOT EXISTS idx_tag_parents_child_id ON tag_parents (child_id)"
+                )
+            )
+            session.execute(
+                text(
+                    "CREATE INDEX IF NOT EXISTS idx_tag_entries_entry_id ON tag_entries (entry_id)"
+                )
+            )
+
             # Update DB_VERSION
             if loaded_db_version < DB_VERSION:
                 self.set_version(DB_VERSION_CURRENT_KEY, DB_VERSION)
