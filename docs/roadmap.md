@@ -245,18 +245,15 @@ Discrete library objects representing [attributes](<https://en.wikipedia.org/wik
 
 ### :material-script-text: [Macros](macros.md)
 
-<<<<<<< HEAD
-
 -   [ ] Standard, Human Readable Format (TOML) :material-chevron-triple-up:{ .priority-high title="High Priority" } **[v9.5.x]**
 -   [ ] Versioning System :material-chevron-triple-up:{ .priority-high title="High Priority" } **[v9.5.x]**
 -   [ ] # Triggers **[v9.5.x]**
 -   [x] Standard, Human Readable Format (TOML) :material-chevron-triple-up:{ .priority-high title="High Priority" } **[v9.5.5]**
 -   [x] Versioning System :material-chevron-triple-up:{ .priority-high title="High Priority" } **[v9.5.5]**
 -   [ ] Triggers **[v9.5.5]**
-    > > > > > > > d8d2542f (chore: remove outdated changes)
-        -   [ ] On File Added :material-chevron-triple-up:{ .priority-high title="High Priority" }
-        -   [ ] On Library Refresh :material-chevron-triple-up:{ .priority-high title="High Priority" }
-        -   [ ] [...]
+    -   [ ] On File Added :material-chevron-triple-up:{ .priority-high title="High Priority" }
+    -   [ ] On Library Refresh :material-chevron-triple-up:{ .priority-high title="High Priority" }
+    -   [ ] [...]
 -   [ ] Actions **[v9.5.x]**
     -   [x] Import from JSON file :material-chevron-triple-up:{ .priority-high title="High Priority" }
     -   [ ] Import from plaintext file :material-chevron-triple-up:{ .priority-high title="High Priority" }
