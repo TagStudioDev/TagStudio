@@ -356,8 +356,12 @@ def _import_data(table: dict[str, Any], table_key: str, filepath: Path) -> list[
                         else:
                             # If no delimiter is provided, assume the string is a single tag
                             tag_strings.append(content_value)
+                    elif isinstance(content_value, bool):
+                        tag_strings = [str(content_value)]
+                    elif isinstance(content_value, list):
+                        tag_strings = [str(v) for v in content_value]  # pyright: ignore[reportUnknownVariableType]
                     else:
-                        tag_strings = deepcopy(content_value)
+                        tag_strings = deepcopy([content_value])
 
                     # Remove a prefix (if given) from all tags strings (if any)
                     prefix = str(obj.get(PREFIX, ""))
