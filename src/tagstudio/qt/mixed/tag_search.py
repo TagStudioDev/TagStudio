@@ -223,9 +223,7 @@ class TagSearchPanel(PanelWidget):
         direct_tags, ancestor_tags = self.lib.search_tags(name=query, limit=tag_limit)
 
         all_results = [t for t in direct_tags if t.id not in self.exclude]
-        for tag in ancestor_tags:
-            if tag.id not in self.exclude:
-                all_results.append(tag)
+        all_results.extend(t for t in ancestor_tags if t.id not in self.exclude)
 
         if tag_limit > 0:
             all_results = all_results[:tag_limit]
