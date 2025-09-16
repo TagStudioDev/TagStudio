@@ -1,9 +1,9 @@
 ---
-title: Ignore Files
+title: Ignoring Files
 icon: material/file-document-remove
 ---
 
-# :material-file-document-remove: Ignore Files & Directories
+# :material-file-document-remove: Ignoring Files & Directories
 
 <!-- prettier-ignore -->
 !!! warning "Legacy File Extension Ignoring"

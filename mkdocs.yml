@@ -29,26 +29,31 @@ extra:
 nav:
   - Home:
       - index.md
+  - Getting Started:
       - install.md
       - usage.md
-      - develop.md
-  - Help:
-      - help/ffmpeg.md
+      - Developing:
+        - developing.md
+        - contributing.md
+        - style.md
+      - Help:
+          - help/ffmpeg.md
   - Library:
-      - library/index.md
-      - library/library_search.md
-      - library/entry.md
-      - library/field.md
-      - library/tag.md
-      - library/tag_categories.md
-      - library/tag_color.md
-  - Utilities:
-      - utilities/ignore.md
-      - utilities/macro.md
+      - library.md
+      - entries.md
+      - preview_support.md
+      - search.md
+      - ignore.md
+      - macros.md
+      - Fields:
+        - fields.md
+      - Tags:
+          - tags.md
+          - colors.md
   - Updates:
-      - updates/changelog.md
-      - updates/roadmap.md
-      - updates/schema_changes.md
+      - changelog.md
+      - roadmap.md
+      - library_changes.md
 
 theme:
   name: material
@@ -81,16 +86,17 @@ theme:
     code: Jetbrains Mono
   language: en
   features:
-    - navigation.instant
-    - navigation.indexes
-    - navigation.tracking
-    - navigation.expand
-    - navigation.sections
-    - search.suggest
+    - content.action.edit
     - content.code.annotate
     - content.code.copy
-    - content.action.edit
     - content.tooltips
+    - navigation.indexes
+    - navigation.instant
+    - navigation.sections
+    - navigation.tabs
+    # - navigation.tabs.sticky
+    - navigation.tracking
+    - search.suggest
   icon:
     repo: fontawesome/brands/github
     tag:

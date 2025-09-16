@@ -2,6 +2,7 @@
 title: Home
 hide:
     - toc
+    - navigation
 ---
 
 #
