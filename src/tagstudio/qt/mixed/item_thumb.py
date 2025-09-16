@@ -363,6 +363,9 @@ class ItemThumb(FlowWidget):
         self.mode = mode
 
     def set_extension(self, filename: Path) -> None:
+        show_ext_badge = False
+        show_count_badge = False
+
         ext = filename.suffix.lower()
         if ext and ext.startswith(".") is False:
             ext = "." + ext
@@ -382,15 +385,14 @@ class ItemThumb(FlowWidget):
                 ".webp",
             ]
         ):
-            self.ext_badge.setText(ext.upper()[1:] or filename.stem.upper())
             if ext or filename.stem:
-                self.ext_badge.setHidden(False)
+                self.ext_badge.setText(ext.upper()[1:] or filename.stem.upper())
+                show_ext_badge = True
             if MediaType.VIDEO in media_types or MediaType.AUDIO in media_types:
-                self.count_badge.setHidden(False)
-        else:
-            if self.mode == ItemType.ENTRY or self.mode is None:
-                self.ext_badge.setHidden(True)
-                self.count_badge.setHidden(True)
+                show_count_badge = True
+
+        self.ext_badge.setHidden(not show_ext_badge)
+        self.count_badge.setHidden(not show_count_badge)
 
     def set_count(self, count: str) -> None:
         if count:
