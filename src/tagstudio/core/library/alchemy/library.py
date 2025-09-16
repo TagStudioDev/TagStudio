@@ -1099,13 +1099,9 @@ class Library:
                 tags.extend(session.execute(query))
 
             tags.sort(key=lambda t: sort_key(t[1]))
-            seen_ids = set()
-            tag_ids = []
             # Use order from Tag.name or TagAlias.name depending on which comes first for each tag.
-            for id, _ in tags:
-                if id not in seen_ids:
-                    seen_ids.add(id)
-                    tag_ids.append(id)
+            # Value=0 to avoid unnecessary copying of tag names.
+            tag_ids = list(dict((id, 0) for id, _ in tags).keys())
 
             logger.info(
                 "searching tags",
