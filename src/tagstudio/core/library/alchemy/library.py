@@ -9,6 +9,7 @@
 
 import re
 import shutil
+import sys
 import time
 import unicodedata
 from collections.abc import Iterable, Iterator
@@ -1073,13 +1074,15 @@ class Library:
         name = name.lower()
 
         def sort_key(text: str):
-            return (not text.startswith(name), len(text), text)
+            priority = text.startswith(name)
+            p_ordering = len(text) if priority else sys.maxsize
+            return (not priority, p_ordering, text)
 
         with Session(self.engine) as session:
             query = select(Tag.id, Tag.name)
 
             if limit > 0 and not name:
-                query = query.limit(limit).order_by(func.lower(Tag.name))
+                query = query.order_by(Tag.name).limit(limit)
 
             if name:
                 query = query.where(
