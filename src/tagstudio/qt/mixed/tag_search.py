@@ -218,32 +218,13 @@ class TagSearchPanel(PanelWidget):
             self.scroll_layout.takeAt(self.scroll_layout.count() - 1).widget().deleteLater()
             self.create_button_in_layout = False
 
-        # Get results for the search query
-        query_lower = "" if not query else query.lower()
         # Only use the tag limit if it's an actual number (aka not "All Tags")
         tag_limit = TagSearchPanel.tag_limit if isinstance(TagSearchPanel.tag_limit, int) else -1
-        tag_results: list[set[Tag]] = self.lib.search_tags(name=query, limit=tag_limit)
-        if self.exclude:
-            tag_results[0] = {t for t in tag_results[0] if t.id not in self.exclude}
-            tag_results[1] = {t for t in tag_results[1] if t.id not in self.exclude}
+        direct_tags, ancestor_tags = self.lib.search_tags(name=query, limit=tag_limit)
 
-        # Sort and prioritize the results
-        results_0 = list(tag_results[0])
-        results_0.sort(key=lambda tag: tag.name.lower())
-        results_1 = list(tag_results[1])
-        results_1.sort(key=lambda tag: tag.name.lower())
-        raw_results = list(results_0 + results_1)
-        priority_results: set[Tag] = set()
-        all_results: list[Tag] = []
+        all_results = [t for t in direct_tags if t.id not in self.exclude]
+        all_results.extend(t for t in ancestor_tags if t.id not in self.exclude)
 
-        if query and query.strip():
-            for tag in raw_results:
-                if tag.name.lower().startswith(query_lower):
-                    priority_results.add(tag)
-
-        all_results = sorted(list(priority_results), key=lambda tag: len(tag.name)) + [
-            r for r in raw_results if r not in priority_results
-        ]
         if tag_limit > 0:
             all_results = all_results[:tag_limit]
 
