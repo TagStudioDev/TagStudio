@@ -439,7 +439,8 @@ class ItemThumb(FlowWidget):
 
     def set_item(self, entry: "Entry"):
         self.set_item_id(entry.id)
-        self.set_item_path(entry.path)
+        path = unwrap(self.lib.library_dir) / entry.path
+        self.set_item_path(path)
 
     def set_item_id(self, item_id: int):
         self.item_id = item_id
