@@ -149,10 +149,12 @@ class FieldContainers(QWidget):
         tag = self.lib.get_tag(tag_id)
         if not tag:
             return
-        new_tags = (
-            entry.tags.union({tag}) if toggle_value else {t for t in entry.tags if t.id != tag_id}
-        )
-        self.update_granular(entry_tags=new_tags, entry_fields=entry.fields, update_badges=False)
+        if toggle_value:
+            entry.tags.add(tag)
+        else:
+            entry.tags.discard(tag)
+
+        self.update_granular(entry_tags=entry.tags, entry_fields=entry.fields, update_badges=False)
 
     def hide_containers(self):
         """Hide all field and tag containers."""
