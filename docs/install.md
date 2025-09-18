@@ -52,7 +52,7 @@ pip install .
     ```sh
     pip install -e ".[dev]"
     ```
-    _See more under "[Developing](./develop.md)"_
+    _See more under "[Developing](developing.md)"_
 
 TagStudio can now be launched via the `tagstudio` command in your terminal.
 
@@ -239,4 +239,4 @@ To generate thumbnails for RAR-based files (like `.cbr`) you'll need an extracto
 
 ### ripgrep
 
-A recommended tool to improve the performance of directory scanning is [`ripgrep`](https://github.com/BurntSushi/ripgrep), a Rust-based directory walker that natively integrates with our [`.ts_ignore`](./utilities/ignore.md) (`.gitignore`-style) pattern matching system for excluding files and directories. Ripgrep is already pre-installed on some Linux distributions and also available from several package managers.
+A recommended tool to improve the performance of directory scanning is [`ripgrep`](https://github.com/BurntSushi/ripgrep), a Rust-based directory walker that natively integrates with our [`.ts_ignore`](ignore.md) (`.gitignore`-style) pattern matching system for excluding files and directories. Ripgrep is already pre-installed on some Linux distributions and also available from several package managers.

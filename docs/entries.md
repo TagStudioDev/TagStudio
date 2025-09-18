@@ -4,7 +4,7 @@ icon: material/file
 
 # :material-file: Entries
 
-Entries are the individual representations of your files inside a TagStudio [library](./index.md). Each one corresponds one-to-one to a file on disk, and tracks all of the additional [tags](tag.md) and metadata that you attach to it inside TagStudio.
+Entries are the individual representations of your files inside a TagStudio [library](./index.md). Each one corresponds one-to-one to a file on disk, and tracks all of the additional [tags](tags.md) and metadata that you attach to it inside TagStudio.
 
 ## Storage
 

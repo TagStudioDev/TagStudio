@@ -38,10 +38,10 @@ nav:
         - style.md
       - Help:
           - help/ffmpeg.md
-  - Library:
-      - library.md
+  - Using Libraries:
+      - libraries.md
       - entries.md
-      - preview_support.md
+      - preview-support.md
       - search.md
       - ignore.md
       - macros.md
@@ -53,7 +53,8 @@ nav:
   - Updates:
       - changelog.md
       - roadmap.md
-      - library_changes.md
+      - Schema History:
+        - library-changes.md
 
 theme:
   name: material
@@ -114,6 +115,7 @@ markdown_extensions:
   - tables
   - toc:
       permalink: true
+      toc_depth: 3
 
   # Python Markdown Extensions
   - pymdownx.arithmatex:

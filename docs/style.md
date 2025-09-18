@@ -4,6 +4,8 @@ icon: material/sign-text
 
 # :material-sign-text: Style Guide
 
+## Formatting
+
 Most of the style guidelines can be checked, fixed, and enforced via Ruff. Older code may not be adhering to all of these guidelines, in which case _"do as I say, not as I do"..._
 
 -   Do your best to write clear, concise, and modular code.

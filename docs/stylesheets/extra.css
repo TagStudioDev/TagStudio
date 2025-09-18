@@ -73,6 +73,15 @@ td {
     padding: 0.5em 1em 0.5em 1em !important;
 }
 
+ul {
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+}
+
+li {
+    margin-bottom: 0 !important;
+}
+
 .md-header {
     border-style: solid;
     border-width: 0 0 2px 0;

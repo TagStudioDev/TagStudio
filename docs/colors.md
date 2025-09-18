@@ -10,7 +10,7 @@ TagStudio features a variety of built-in tag colors, alongside the ability for u
 
 The Tag Color Manager is where you can create and manage your custom tag colors and associated namespaces. You can access the Tag Color Manager from the "File -> Manage Tag Colors" option in the menu bar.
 
-![Tag Color Manager](../assets/tag_color_manager.png)
+![Tag Color Manager](assets/tag_color_manager.png)
 
 ## Creating a Namespace
 
@@ -20,7 +20,7 @@ _\* Color pack sharing coming in a future update_
 
 To create your first namespace, either click the "New Namespace" button or the large button prompt underneath the built-in colors.
 
-![Create Namespace](../assets/create_namespace.png)
+![Create Namespace](assets/create_namespace.png)
 
 ### Name
 
@@ -40,7 +40,7 @@ Namespaces beginning with "tagstudio" are reserved by TagStudio and will automat
 
 Once you've created your first namespace, click the "+" button inside the namespace section to create a color. To edit a color that you've previously created, either click on the color name or right click and select "Edit Color" from the context menu.
 
-![Create Color (Primary Color)](../assets/custom_color_primary_only.png)
+![Create Color (Primary Color)](assets/custom_color_primary_only.png)
 
 ### Name
 
@@ -62,14 +62,14 @@ The primary color is used as the main tag color and by default is used as the ba
 
 By default, the secondary color is only used as an optional override for the tag text color. This color can be cleared by clicking the adjacent "Reset" button.
 
-![Create Color (Secondary Color)](../assets/custom_color_no_border.png)
+![Create Color (Secondary Color)](assets/custom_color_no_border.png)
 
 The secondary color can also be used as the tag border color by checking the "Use Secondary Color for Border" box.
 
-![Create Color (Use Secondary for Border)](../assets/custom_color_border.png)
+![Create Color (Use Secondary for Border)](assets/custom_color_border.png)
 
 ## Using Colors
 
 When editing a tag, click the tag color button to bring up the tag color selection panel. From here you can choose any built-in TagStudio color as well as any of your custom colors.
 
-![Tag Color Selection](../assets/tag_color_selection.png)
+![Tag Color Selection](assets/tag_color_selection.png)

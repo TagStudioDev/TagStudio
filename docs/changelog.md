@@ -170,34 +170,20 @@ A new "Library Information" window has been added and is accessible under the "V
 
 ### Translations
 
--   Added Chinese (Simplified Han Script)
-    -   @tkiuvvv233, Luoyu, @ngivanyh
--   Updated Dutch
-    -   @Pheubel
--   Updated Filipino
-    -   @searinminecraft
--   Updated French
-    -   @kitsumed
--   Updated German
-    -   @Livesi5e, @Stereo157E
--   Updated Hungarian
-    -   @smileyhead
--   Updated Japanese
-    -   wany-oh
--   Updated Norwegian Bokmål
-    -   @Neemek
--   Updated Polish
-    -   @FeatherPrince
--   Updated Russian
-    -   @Dott-rus, Utof, @maximmax42
--   Updated Spanish
-    -   @JCC1998, Joan, Sunny, @danpg94
--   Updated Tamil
-    -   @TamilNeram
--   Updated Toki Pona
-    -   @Math-Bee
--   Updated Viossa
-    -   @Nginearing
+-   **Chinese** _(Simplified Han Script)_ added and updated by @tkiuvvv233, Luoyu, @ngivanyh
+-   **Dutch** updated by @Pheubel
+-   **Filipino** updated by @searinminecraft
+-   **French** updated by @kitsumed
+-   **German** updated by @Livesi5e, @Stereo157E
+-   **Hungarian** updated by @smileyhead
+-   **Japanese** updated by wany-oh
+-   **Norwegian Bokmål** updated by @Neemek
+-   **Polish** updated by @FeatherPrince
+-   **Russian** updated by @Dott-rus, Utof, @maximmax42
+-   **Spanish** updated by @JCC1998, Joan, Sunny, @danpg94
+-   **Tamil** updated by @TamilNeram
+-   **Toki Pona** updated by @Math-Bee
+-   **Viossa** updated by @Nginearing
 
 ### Internal Changes
 
@@ -288,28 +274,17 @@ A new "Library Information" window has been added and is accessible under the "V
 
 ### Translations
 
--   Added Japanese (50%)
-    -   [@needledetector](https://github.com/needledetector)
--   Updated Turkish (93%)
-    -   [@Nyghl](https://github.com/Nyghl)
--   Updated Filipino (57%)
-    -   [@searinminecraft](https://github.com/searinminecraft)
--   Updated Tamil (92%)
-    -   [@TamilNeram](https://github.com/TamilNeram)
--   Updated Portuguese (Brazil) (83%)
-    -   [@viniciushelder](https://github.com/viniciushelder)
--   Updated German (95%)
-    -   [@DontBlameMe99](https://github.com/DontBlameMe99), [@Computerdores](https://github.com/Computerdores)
--   Updated Russian (85%)
-    -   werdi, [@Dott-rus](https://github.com/Dott-rus)
--   Updated Hungarian (100%)
-    -   Szíjártó Levente Pál
--   Updated Spanish (96%)
-    -   Joan, [@Nginearing](https://github.com/Nginearing)
--   Updated French (100%)
-    -   [@kitsumed](https://github.com/kitsumed)
--   Updated Toki Pona (80%)
-    -   [@Math-Bee](https://github.com/Math-Bee)
+-   **Filipino** updated by [@searinminecraft](https://github.com/searinminecraft)
+-   **French** updated by [@kitsumed](https://github.com/kitsumed)
+-   **German** updated by [@DontBlameMe99](https://github.com/DontBlameMe99), [@Computerdores](https://github.com/Computerdores)
+-   **Hungarian** updated by Szíjártó Levente Pál
+-   **Japanese** added by [@needledetector](https://github.com/needledetector)
+-   **Portuguese** _(Brazil)_ updated by [@viniciushelder](https://github.com/viniciushelder)
+-   **Russian** updated by werdi, [@Dott-rus](https://github.com/Dott-rus)
+-   **Spanish** updated by Joan, [@Nginearing](https://github.com/Nginearing)
+-   **Tamil** updated by [@TamilNeram](https://github.com/TamilNeram)
+-   **Toki Pona** updated by [@Math-Bee](https://github.com/Math-Bee)
+-   **Turkish** updated by [@Nyghl](https://github.com/Nyghl)
 
 ---
 
@@ -326,16 +301,11 @@ A new "Library Information" window has been added and is accessible under the "V
 
 ### Translations
 
--   Updated French (99%)
-    -   [@alessdangelo](https://github.com/alessdangelo), [@Bamowen](https://github.com/Bamowen), [@kitsumed](https://github.com/kitsumed)
--   Updated German (98%)
-    -   [@Thesacraft](https://github.com/Thesacraft)
--   Updated Portuguese (Brazil) (88%)
-    -   [@viniciushelder](https://github.com/viniciushelder)
--   Updated Russian (73%)
-    -   werdei
--   Updated Spanish (95%)
-    -   [@JCC1998](https://github.com/JCC1998)
+-   **French** updated by [@alessdangelo](https://github.com/alessdangelo), [@Bamowen](https://github.com/Bamowen), [@kitsumed](https://github.com/kitsumed)
+-   **German** updated by [@Thesacraft](https://github.com/Thesacraft)
+-   **Portuguese** _(Brazil)_ updated by [@viniciushelder](https://github.com/viniciushelder)
+-   **Russian** updated by werdei
+-   **Spanish** updated by [@JCC1998](https://github.com/JCC1998)
 
 ### Documentation
 
@@ -440,36 +410,21 @@ Translation hosting generously provided by [Weblate](https://weblate.org/en/). C
 
 Initial Languages:
 
--   Chinese (Traditional) (68%)
-    -   [@brisu](https://github.com/brisu)
--   Dutch (35%)
-    -   [@Pheubel](https://github.com/Pheubel)
--   Filipino (43%)
-    -   [@searinminecraft](https://github.com/searinminecraft)
--   French (100%)
-    -   [@Bamowen](https://github.com/Bamowen), [@alessdangelo](https://github.com/alessdangelo), [@kitsumed](https://github.com/kitsumed), Obscaeris
--   German (98%)
-    -   [@Ryussei](https://github.com/Ryussei), [@Computerdores](https://github.com/Computerdores), Aaron M, [@JoeJoeTV](https://github.com/JoeJoeTV), [@Kurty00](https://github.com/Kurty00)
--   Hungarian (100%)
-    -   [@smileyhead](https://github.com/smileyhead)
--   Norwegian Bokmål (16%)
-    -   [@comradekingu](https://github.com/comradekingu)
--   Polish (97%)
-    -   Anonymous
--   Portuguese (Brazil) (64%)
-    -   [@LoboMetalurgico](https://github.com/LoboMetalurgico), [@SpaceFox1](https://github.com/SpaceFox1), [@DaviMarquezeli](https://github.com/DaviMarquezeli), [@viniciushelder](https://github.com/viniciushelder), Alexander Lennart Formiga Johnsson
--   Russian (22%)
-    -   [@The-Stolas](https://github.com/The-Stolas)
--   Spanish (57%)
-    -   [@gallegonovato](https://github.com/gallegonovato), [@Nginearing](https://github.com/Nginearing), [@noceno](https://github.com/noceno)
--   Swedish (24%)
-    -   [@adampawelec](https://github.com/adampawelec), [@mashed5894](https://github.com/mashed5894)
--   Tamil (22%)
-    -   [@VasigaranAndAngel](https://github.com/VasigaranAndAngel)
--   Toki Pona (32%)
-    -   [@goldstargloww](https://github.com/goldstargloww)
--   Turkish (22%)
-    -   [@Nyghl](https://github.com/Nyghl)
+-   **Chinese** _(Traditional Han Script)_ by [@brisu](https://github.com/brisu)
+-   **Dutch** by [@Pheubel](https://github.com/Pheubel)
+-   **Filipino** by [@searinminecraft](https://github.com/searinminecraft)
+-   **French** by [@Bamowen](https://github.com/Bamowen), [@alessdangelo](https://github.com/alessdangelo), [@kitsumed](https://github.com/kitsumed), Obscaeris
+-   **German** by [@Ryussei](https://github.com/Ryussei), [@Computerdores](https://github.com/Computerdores), Aaron M, [@JoeJoeTV](https://github.com/JoeJoeTV), [@Kurty00](https://github.com/Kurty00)
+-   **Hungarian** by [@smileyhead](https://github.com/smileyhead)
+-   **Norwegian Bokmål** by [@comradekingu](https://github.com/comradekingu)
+-   **Polish** by Anonymous
+-   **Portuguese** _(Brazil)_ by [@LoboMetalurgico](https://github.com/LoboMetalurgico), [@SpaceFox1](https://github.com/SpaceFox1), [@DaviMarquezeli](https://github.com/DaviMarquezeli), [@viniciushelder](https://github.com/viniciushelder), Alexander Lennart Formiga Johnsson
+-   **Russian** by [@The-Stolas](https://github.com/The-Stolas)
+-   **Spanish** by [@gallegonovato](https://github.com/gallegonovato), [@Nginearing](https://github.com/Nginearing), [@noceno](https://github.com/noceno)
+-   **Swedish** by [@adampawelec](https://github.com/adampawelec), [@mashed5894](https://github.com/mashed5894)
+-   **Tamil** by [@VasigaranAndAngel](https://github.com/VasigaranAndAngel)
+-   **Toki Pona** by [@goldstargloww](https://github.com/goldstargloww)
+-   **Turkish** by [@Nyghl](https://github.com/Nyghl)
 
 #### Miscellaneous
 

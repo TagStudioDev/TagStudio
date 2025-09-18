@@ -11,7 +11,7 @@ icon: material/file-document-remove
 
     If you're still running an older version of TagStudio in the meantime, you can access the legacy system by going to "Edit -> Manage File Extensions" in the menubar.
 
-TagStudio offers the ability to ignore specific files and directories via a `.ts_ignore` file located inside your [library's](../library/index.md) `.TagStudio` folder. This file is designed to use very similar [glob](<https://en.wikipedia.org/wiki/Glob_(programming)>)-style pattern matching as the [`.gitignore`](https://git-scm.com/docs/gitignore) file used by Git™[^1]. It can be edited within TagStudio or opened to edit with an external program by going to the "Edit -> Ignore Files" option in the menubar.
+TagStudio offers the ability to ignore specific files and directories via a `.ts_ignore` file located inside your [library's](libraries.md) `.TagStudio` folder. This file is designed to use very similar [glob](<https://en.wikipedia.org/wiki/Glob_(programming)>)-style pattern matching as the [`.gitignore`](https://git-scm.com/docs/gitignore) file used by Git™[^1]. It can be edited within TagStudio or opened to edit with an external program by going to the "Edit -> Ignore Files" option in the menubar.
 
 This file is only referenced when scanning directories for new files to add to your library, and does not apply to files that have already been added to your library.
 

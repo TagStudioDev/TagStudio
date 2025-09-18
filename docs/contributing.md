@@ -8,7 +8,7 @@ Thank you so much for showing interest in contributing to TagStudio! Here are a 
 
 ## Getting Started
 
--   Check the [Feature Roadmap](/docs/updates/roadmap.md) page to see what priority features there are, the [FAQ](/README.md/#faq), as well as the project's [Issues](https://github.com/TagStudioDev/TagStudio/issues) and [Pull Requests](https://github.com/TagStudioDev/TagStudio/pulls).
+-   Check the [Feature Roadmap](roadmap.md) page to see what priority features there are, the [FAQ](https://github.com/TagStudioDev/TagStudio/blob/main/README.md#faq), as well as the project's [Issues](https://github.com/TagStudioDev/TagStudio/issues) and [Pull Requests](https://github.com/TagStudioDev/TagStudio/pulls).
 -   If you'd like to add a feature that isn't on the feature roadmap or doesn't have an open issue, **PLEASE create a feature request** issue for it discussing your intentions so any feedback or important information can be given by the team first.
     -   We don't want you wasting time developing a feature or making a change that can't/won't be added for any reason ranging from pre-existing refactors to design philosophy differences.
 -   **Please don't** create pull requests that consist of large refactors, _especially_ without discussing them with us first. These end up doing more harm than good for the project by continuously delaying progress and disrupting everyone else's work.
@@ -16,12 +16,12 @@ Thank you so much for showing interest in contributing to TagStudio! Here are a 
 
 ### Contribution Checklist
 
--   I've read the [Feature Roadmap](/docs/updates/roadmap.md) page
--   I've read the [FAQ](/README.md/#faq), including the "[Features I Likely Won't Add/Pull](/README.md/#features-i-likely-wont-addpull)" section
+-   I've read the [Feature Roadmap](roadmap.md) page
+-   I've read the [FAQ](https://github.com/TagStudioDev/TagStudio/blob/main/README.md#faq)
 -   I've checked the project's [Issues](https://github.com/TagStudioDev/TagStudio/issues) and [Pull Requests](https://github.com/TagStudioDev/TagStudio/pulls)
 -   **I've created a new issue for my feature/fix _before_ starting work on it**, or have at least notified others in the relevant existing issue(s) of my intention to work on it
 -   I've set up my development environment including Ruff, Mypy, and PyTest
--   I've read the [Code Guidelines](#code-guidelines) and/or [Documentation Guidelines](#documentation-guidelines)
+-   I've read the CONTRIBUTING.md/Contributing page on the documentation site as well as the and/or [Style Guide](style.md)
 -   **_I mean it, I've found or created an issue for my feature/fix!_**
 
 <!-- prettier-ignore -->
@@ -98,7 +98,7 @@ Mypy is also available as a VS Code [extension](https://marketplace.visualstudio
 
 ## Code Style
 
-See the [Style Guide](/STYLE.md)
+See the [Style Guide](style.md)
 
 ### Modules & Implementations
 
@@ -142,7 +142,7 @@ See the [Style Guide](/STYLE.md)
 
 Documentation contributions include anything inside of the `docs/` folder, as well as the `README.md` and `CONTRIBUTING.md` files. Documentation inside the `docs/` folder is built and hosted on our static documentation site, [docs.tagstud.io](https://docs.tagstud.io/).
 
--   Use "[snake_case](https://developer.mozilla.org/en-US/docs/Glossary/Snake_case)" for file and folder names
+-   Use "[dash-case / kebab-case](https://developer.mozilla.org/en-US/docs/Glossary/Kebab_case)" for file and folder names
 -   Follow the folder structure pattern
 -   Don't add images or other media with excessively large file sizes
 -   Provide alt text for all embedded media

@@ -121,7 +121,7 @@ A reference `.envrc` is provided for use with [direnv](#direnv), see [`contrib/.
 
 ### Editor Integration
 
-The entry point for TagStudio is `src/tagstudio/main.py`. You can target this file from your IDE to run or connect a debug session. The example(s) below show off example launch scripts for different IDEs. Here you can also take advantage of [launch arguments](./usage.md/#launch-arguments) to pass your own test [libraries](./library/index.md) to use while developing. You can find more editor configurations in [`contrib`](https://github.com/TagStudioDev/TagStudio/tree/main/contrib).
+The entry point for TagStudio is `src/tagstudio/main.py`. You can target this file from your IDE to run or connect a debug session. The example(s) below show off example launch scripts for different IDEs. Here you can also take advantage of [launch arguments](./usage.md/#launch-arguments) to pass your own test [libraries](libraries.md) to use while developing. You can find more editor configurations in [`contrib`](https://github.com/TagStudioDev/TagStudio/tree/main/contrib).
 
 <!-- prettier-ignore -->
 === "VS Code"
