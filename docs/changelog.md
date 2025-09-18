@@ -1,16 +1,237 @@
 ---
 title: Changelog
 icon: material/script-text
+toc_depth: 2
 ---
 
 # :material-script-text: Changelog
 
-All notable changes to this project will be documented in this file.
+## 9.5.5 <small>[September 8th, 2025]</small>
 
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
-and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+### Added
 
-## [9.5.2] - 2025-03-31
+#### New Settings
+
+-   feat(ui): add thumbnail cache size setting to settings panel by @CyanVoxel in #1088
+-   feat: add cached thumbnail quality and resolution settings by @CyanVoxel in #1101
+    -   Only available by editing the `cached_thumb_quality` and `cached_thumb_resolution` options in the `settings.toml` config file
+-   fix: add option to use old Windows 'start' command by @CyanVoxel in #1084
+    -   Only available by editing the `windows_start_command` option in the `settings.toml` file
+    -   Fixes niche issue on Windows systems, see #1036
+-   translations: add Czech, Portuguese (Portugal), and Romanian to settings panel (2db8bed)
+
+#### File Previews
+
+-   feat: render .cbr thumbnails by @Sola-ris in #1112
+-   feat: render .cbt thumbnails by @Sola-ris in #1116
+
+### Fixed
+
+-   fix: JSON migration window getting stuck on finishing migration by @CyanVoxel in #1094
+-   fix: VTF files not rendering on Linux by @CyanVoxel in #1093
+-   fix: account for leading slash ignore pattern by @CyanVoxel in #1092
+-   fix: add option to use old Windows 'start' command by @CyanVoxel in #1084
+-   fix: always show first frame of video; autoplay will always play by @SumithSudheer and @CyanVoxel in #1104
+-   feat: read epub cover from ComicInfo.xml, if available. by @Sola-ris in #1109 and #1111
+-   fix: prevent mnemonic removal from removing escaped ampersands by @CyanVoxel in #1110
+-   fix: properly delete tag_parents row when deleting tag by @CyanVoxel in #1107
+
+### Changed
+
+#### Translations
+
+-   **French** updated by @kitsumed , @RustyNova016
+-   **Hungarian** updated by @smileyhead
+-   **Russian** updated by @purpletennisball
+-   **Spanish** updated by @danpg94
+-   **Toki Pona** updated by @Math-Bee
+
+#### Internal Changes
+
+-   refactor: untangle backend and frontend files by @CyanVoxel in #1095
+-   refactor: fix most pyright issues in `library/alchemy/` by @CyanVoxel in #1103
+
+---
+
+## 9.5.4 <small>[September 1st, 2025]</small>
+
+### Added
+
+#### `.ts_ignore` File and Folder Ignore System
+
+The previous system for ignoring file extensions has been replaced by a new `.gitignore`-style pattern matching system. This uses a `.ts_ignore` file inside your library's `.TagStudio` folder with glob-like rules to give more power options than what was previously possible. This file can be edited inside within TagStudio or externally, and rules are hot-reloaded in either case. Existing extension rules have been migrated as closely as possible to this new system. For more information on this new system, visit the "[Ignore Files](https://docs.tagstud.io/utilities/ignore/)" page on the documentation site.
+
+<img width="764" height="677" alt="Screenshot 2025-08-22 at 14 31 15" src="https://github.com/user-attachments/assets/116d6b71-939c-4aa2-9101-6134e1c22341" />
+
+Along with this system also comes the additional features:
+
+-   TagStudio can now traverse symlinks in your library folders
+-   TagStudio can now leverage [ripgrep](https://github.com/BurntSushi/ripgrep), a rust-based directory search tool, for faster library refreshing
+    -   ripgrep must be [installed on your system](https://docs.tagstud.io/install/#ripgrep) and able to be located by TagStudio
+
+##### Pull Requests:
+
+-   feat: add `.ts_ignore` pattern ignoring system by @CyanVoxel in #897
+-   feat: replace extension exclusion system with `.ts_ignore` by @CyanVoxel in #1046
+
+#### Library Information Window
+
+A new "Library Information" window has been added and is accessible under the "View" window. This window includes statistics about your currently opened library, as well as convenient access to library cleanup tools. This includes a new tool to cleanup "ignored files", which are files that have been previously added to your library but now no longer meet the ignore pattern rules.
+
+<img width="912" height="620" alt="Screenshot 2025-08-30 at 15 53 08" src="https://github.com/user-attachments/assets/a12b4a2e-8c4a-448b-9e78-d84d39b19e3e" />
+
+##### Pull Requests:
+
+-   feat: add LibraryInfoWindow with library statistics by @CyanVoxel in #1056
+-   feat: add library cleanup screen and 'fix ignored files' window by @CyanVoxel in #1070
+
+#### Other Additions
+
+-   feat: add random sorting by @TheBobBobs in #1029
+-   feat: add exr thumbnail support by @CyanVoxel in #1035
+-   feat: add thumbnail generation toggle by @ZwodahS in #1057
+-   feat: cli version argument by @HeikoWasTaken in #1060
+-   feat: add setting to select splash screen by @CyanVoxel in #1077
+    -   Includes a new "'95" splash screen originally intended for the [9.5.0](https://github.com/TagStudioDev/TagStudio/releases/tag/v9.5.0) release
+
+<img width="540" height="360" alt="splash_selection_half" src="https://github.com/user-attachments/assets/3cd6562f-0eaf-420d-9d70-d10d1519da84" />
+
+### Fixed
+
+-   fix: searching with internal tag ids ignores sorting order by @CyanVoxel in #1038
+-   fix: folders with names of unlinked entries are linked by @purpletennisball in #1027
+-   fix: parent tags in tag editor are uneditable by @purpletennisball in #1073
+-   feat: auto mnemonics by @Computerdores in #1082 and #1083
+
+### Changed
+
+#### Performance
+
+-   perf: optimize sql for or queries by @TheBobBobs in #948
+-   perf: Optimize db queries for preview panel by @TheBobBobs in #942
+-   fix: add tags to selected entries in bulk not individually by @Computerdores in #1028
+
+#### Translations
+
+-   **Chinese** _(Traditional Han Script)_ by @tkiuvvv233
+-   **French** updated by @Bamowen, @kitsumed
+-   **German** updated by @Livesi5e
+-   **Hungarian** updated by @smileyhead
+-   **Japanese** updated by wany-oh
+-   **Polish** updated by @FeatherPrince
+-   **Portuguese** updated by @SantosSi
+-   **Romanian** updated by @VLTNOgithub
+-   **Russian** updated by @Dott-rus
+-   **Spanish** updated by @JCC1998
+-   **Swedish** updated by konto
+
+#### Internal Changes
+
+-   feat: swap IDs in tag_parents table by @HeikoWasTaken in #998
+    -   fix: swap parent and child logic for TAG_CHILDREN_QUERY by @CyanVoxel in #1064
+-   fix(nix): fixup and rework, always use nixpkgs PySide/Qt by @xarvex in #1048
+-   refactor: make cache_manager thread safe by @TheBobBobs in #1039
+-   ci(tests): fix broken tests and add type hints by @CyanVoxel in #1062
+-   refactor: store DB version inside `versions` table by @CyanVoxel in #1058
+-   refactor: unwrap instead of assert not None by @Computerdores in #1068
+-   chore(thumb_renderer): prepare for pillow_heif removing AVIF support by @xarvex in #1065
+
+---
+
+## 9.5.3 <small>[August 7th, 2025]</small>
+
+### Added
+
+-   Datetime fields by @Computerdores in #921, #946, and #926
+-   Add date_format and hour_format settings by @JCC1998 in #904
+-   Invert selection by @zfbx in #909
+-   Show stems for extension-less files by @CyanVoxel in #899
+-   Press enter when adding fields by @rsazra in #941
+-   Option to change tag click behavior by @Computerdores in #945
+-   Krita/Open Raster thumbnails by @mashed5894 in #985
+-   Zoom keyboard shortcuts by @purpletennisball in #956
+-   Clickable links in text fields by @TrigamDev in #924
+
+### Fixed
+
+-   Restore page navigation state by @Computerdores in #933
+-   Proper error on unterminated quoted string by @Computerdores in #936
+-   Creating new tag now refreshes the menu using the current search text by @purpletennisball in #939
+-   Preview thumbnails don't scale as large as they could by @Computerdores in #1005
+-   Add Nix path to FFmpeg locations on macOS by @thibmaek in #990
+-   Use srctools instead of vtf2img to render vtf files by @CyanVoxel in #1014
+
+### Changed
+
+-   Add parent tags to `folders_to_tags` macro and start tagging at root folder by @rsazra in #940
+-   Optimize page loading by @TheBobBobs in #954
+-   Add arrow icons for navigation buttons by @CyanVoxel in #1016
+-   Tweak media player style and behavior by @CyanVoxel in #1025
+
+### Translations
+
+-   Added Chinese (Simplified Han Script)
+    -   @tkiuvvv233, Luoyu, @ngivanyh
+-   Updated Dutch
+    -   @Pheubel
+-   Updated Filipino
+    -   @searinminecraft
+-   Updated French
+    -   @kitsumed
+-   Updated German
+    -   @Livesi5e, @Stereo157E
+-   Updated Hungarian
+    -   @smileyhead
+-   Updated Japanese
+    -   wany-oh
+-   Updated Norwegian Bokmål
+    -   @Neemek
+-   Updated Polish
+    -   @FeatherPrince
+-   Updated Russian
+    -   @Dott-rus, Utof, @maximmax42
+-   Updated Spanish
+    -   @JCC1998, Joan, Sunny, @danpg94
+-   Updated Tamil
+    -   @TamilNeram
+-   Updated Toki Pona
+    -   @Math-Bee
+-   Updated Viossa
+    -   @Nginearing
+
+### Internal Changes
+
+-   refactor: type fixes and minor improvements to preview_thumb.py by @VasigaranAndAngel in #906
+-   fix(test): Fix tests to pass on windows without disrupting other platforms by @zfbx in #903
+-   chore(pyproject): version bumping/relaxing by @xarvex in #886
+-   fix: tests were overwriting the settings.toml by @Computerdores in #928
+-   fix(nix/package): override PySide6 if later version is being used by @xarvex in #917
+-   refactor: split QtDriver into View and Controller to follow MVC model by @Computerdores in #935
+-   refactor: resource_manager.py by @VasigaranAndAngel in #958
+-   Type fixes to folders_to_tags.py, collage_icon.py and item_thumb.py by @VasigaranAndAngel in #959
+-   Type fixes to preview_panel.py, progress.py, tag.py and tag_box.py by @VasigaranAndAngel in #961
+-   Type improvements to landing.py and panel.py by @VasigaranAndAngel in #960
+-   refactor(preview_panel): mvc split by @Computerdores in #952
+-   refactor(preview_thumb): mvc split by @Computerdores in #978
+-   refactor: type improvements for main_window.py by @VasigaranAndAngel in #957
+-   fix(library): get_tag_by_name by @Computerdores in #1006
+-   fix: ensure initial browsing state uses UI values by @CyanVoxel in #1008
+-   refactor(tag_box): mvc split by @Computerdores in #1003
+-   fix(ui): hide empty ProgressWidget cancel button by @CyanVoxel in #1011
+-   fix(ui): fix audio waveform generation on numpy 2.3 by @CyanVoxel in #1013
+-   refactor: replace remaining instances of logging with structlog by @CyanVoxel in #1012
+-   fix: don't fail when posix env var is not present by @Computerdores in #1018
+-   fix(ui): show correct thumb labels by @CyanVoxel in #1010
+
+### Documentation
+
+-   Update CHANGELOG.md by @Math-Bee in #914
+-   Add QT MVC structure to style guide by @Computerdores in #950
+-   Fix wrong date on Changelog by @ugurozturk in #966
+
+---
+
+## 9.5.2 <small>[March 31st, 2025]</small>
 
 ### Added
 
@@ -90,7 +311,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -   Updated Toki Pona (80%)
     -   [@Math-Bee](https://github.com/Math-Bee)
 
-## [9.5.1] - 2025-03-06
+---
+
+## 9.5.1 <small>[March 6th, 2025]</small>
 
 ### Fixed
 
@@ -118,7 +341,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 -   docs: fix category typo by [@salem404](https://github.com/salem404) in [#834](https://github.com/TagStudioDev/TagStudio/pull/834)
 
-## [9.5.0] - 2025-03-03
+---
+
+## 9.5.0 <small>[March 3rd, 2025]</small>
+
+<img width="500" src="https://github.com/user-attachments/assets/858f1494-216f-4521-aefe-d0aa4f754b9e" alt="TagStudio 9.5 Banner" />
 
 ### Added
 
@@ -150,7 +377,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 Instead of tags needing to be added to a tag field type such as "Meta Tags", "Content Tags", or just the "Tags" field, tags are now added directly to file entries with no intermediary step. While tag field types offered a way to further organize tags, it was cumbersome, inflexible, and simply not fully fleshed out. Tag Categories offer all of the previous (intentional) functionality while greatly increasing the ease of use and customization.
 
 -   feat!: tag categories by [@CyanVoxel](https://github.com/CyanVoxel) in [#655](https://github.com/TagStudioDev/TagStudio/pull/655)
-    [![Screenshot 2025-01-04 at 04 23 43](https://private-user-images.githubusercontent.com/46939827/400138597-0b92eca5-db8f-4e3e-954b-1b4f3795f073.png?jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3NDY2NTU5ODIsIm5iZiI6MTc0NjY1NTY4MiwicGF0aCI6Ii80NjkzOTgyNy80MDAxMzg1OTctMGI5MmVjYTUtZGI4Zi00ZTNlLTk1NGItMWI0ZjM3OTVmMDczLnBuZz9YLUFtei1BbGdvcml0aG09QVdTNC1ITUFDLVNIQTI1NiZYLUFtei1DcmVkZW50aWFsPUFLSUFWQ09EWUxTQTUzUFFLNFpBJTJGMjAyNTA1MDclMkZ1cy1lYXN0LTElMkZzMyUyRmF3czRfcmVxdWVzdCZYLUFtei1EYXRlPTIwMjUwNTA3VDIyMDgwMlomWC1BbXotRXhwaXJlcz0zMDAmWC1BbXotU2lnbmF0dXJlPWY4ZWEzOWRkZjkwOGZmYjZmZDUzMjU1MjJhNDNkNzYzZmM4YjZkMTUyNWIzMjNhMGY1NWNhYmU4ODNiNzlhMzYmWC1BbXotU2lnbmVkSGVhZGVycz1ob3N0In0.cE_WO9AHsigusAbtaQV0QtN4FjYJz0lyHLLwFFDBO-0)](https://private-user-images.githubusercontent.com/46939827/400138597-0b92eca5-db8f-4e3e-954b-1b4f3795f073.png?jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3NDY2NTU5ODIsIm5iZiI6MTc0NjY1NTY4MiwicGF0aCI6Ii80NjkzOTgyNy80MDAxMzg1OTctMGI5MmVjYTUtZGI4Zi00ZTNlLTk1NGItMWI0ZjM3OTVmMDczLnBuZz9YLUFtei1BbGdvcml0aG09QVdTNC1ITUFDLVNIQTI1NiZYLUFtei1DcmVkZW50aWFsPUFLSUFWQ09EWUxTQTUzUFFLNFpBJTJGMjAyNTA1MDclMkZ1cy1lYXN0LTElMkZzMyUyRmF3czRfcmVxdWVzdCZYLUFtei1EYXRlPTIwMjUwNTA3VDIyMDgwMlomWC1BbXotRXhwaXJlcz0zMDAmWC1BbXotU2lnbmF0dXJlPWY4ZWEzOWRkZjkwOGZmYjZmZDUzMjU1MjJhNDNkNzYzZmM4YjZkMTUyNWIzMjNhMGY1NWNhYmU4ODNiNzlhMzYmWC1BbXotU2lnbmVkSGVhZGVycz1ob3N0In0.cE_WO9AHsigusAbtaQV0QtN4FjYJz0lyHLLwFFDBO-0)
+
+    <img width="200" alt="Screenshot 2025-01-04 at 04 23 43" src="https://github.com/user-attachments/assets/0b92eca5-db8f-4e3e-954b-1b4f3795f073" />
 
 #### Thumbnails and File Previews
 
@@ -184,7 +412,8 @@ Create your own custom tag colors via the new Tag Color Manager! Tag colors are 
 
 -   feat(ui)!: user-created tag colors@CyanVoxel in [#801](https://github.com/TagStudioDev/TagStudio/pull/801)
 
-[![](https://private-user-images.githubusercontent.com/46939827/413668576-b591f1fe-1c44-4d82-b6e5-d166590aeab1.png?jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3NDY2NTU5ODIsIm5iZiI6MTc0NjY1NTY4MiwicGF0aCI6Ii80NjkzOTgyNy80MTM2Njg1NzYtYjU5MWYxZmUtMWM0NC00ZDgyLWI2ZTUtZDE2NjU5MGFlYWIxLnBuZz9YLUFtei1BbGdvcml0aG09QVdTNC1ITUFDLVNIQTI1NiZYLUFtei1DcmVkZW50aWFsPUFLSUFWQ09EWUxTQTUzUFFLNFpBJTJGMjAyNTA1MDclMkZ1cy1lYXN0LTElMkZzMyUyRmF3czRfcmVxdWVzdCZYLUFtei1EYXRlPTIwMjUwNTA3VDIyMDgwMlomWC1BbXotRXhwaXJlcz0zMDAmWC1BbXotU2lnbmF0dXJlPTdiZjM4NzczYTFhYmFhNjgwMWJlYjgwNTkzYjA3ZWFlNTkwNzBiYTlhNTAzM2Y0MWM1MWQ0MzY1YmEyNmE4NjAmWC1BbXotU2lnbmVkSGVhZGVycz1ob3N0In0.EOEVWLDMx5CT-Gg5UhBmdMIYT49IZPKrrA9VL7N-pBQ)](https://private-user-images.githubusercontent.com/46939827/413668576-b591f1fe-1c44-4d82-b6e5-d166590aeab1.png?jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3NDY2NTU5ODIsIm5iZiI6MTc0NjY1NTY4MiwicGF0aCI6Ii80NjkzOTgyNy80MTM2Njg1NzYtYjU5MWYxZmUtMWM0NC00ZDgyLWI2ZTUtZDE2NjU5MGFlYWIxLnBuZz9YLUFtei1BbGdvcml0aG09QVdTNC1ITUFDLVNIQTI1NiZYLUFtei1DcmVkZW50aWFsPUFLSUFWQ09EWUxTQTUzUFFLNFpBJTJGMjAyNTA1MDclMkZ1cy1lYXN0LTElMkZzMyUyRmF3czRfcmVxdWVzdCZYLUFtei1EYXRlPTIwMjUwNTA3VDIyMDgwMlomWC1BbXotRXhwaXJlcz0zMDAmWC1BbXotU2lnbmF0dXJlPTdiZjM4NzczYTFhYmFhNjgwMWJlYjgwNTkzYjA3ZWFlNTkwNzBiYTlhNTAzM2Y0MWM1MWQ0MzY1YmEyNmE4NjAmWC1BbXotU2lnbmVkSGVhZGVycz1ob3N0In0.EOEVWLDMx5CT-Gg5UhBmdMIYT49IZPKrrA9VL7N-pBQ) [![](https://private-user-images.githubusercontent.com/46939827/413668612-96e81b08-6993-4a5e-96d0-3b05b50fbe44.png?jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3NDY2NTU5ODIsIm5iZiI6MTc0NjY1NTY4MiwicGF0aCI6Ii80NjkzOTgyNy80MTM2Njg2MTItOTZlODFiMDgtNjk5My00YTVlLTk2ZDAtM2IwNWI1MGZiZTQ0LnBuZz9YLUFtei1BbGdvcml0aG09QVdTNC1ITUFDLVNIQTI1NiZYLUFtei1DcmVkZW50aWFsPUFLSUFWQ09EWUxTQTUzUFFLNFpBJTJGMjAyNTA1MDclMkZ1cy1lYXN0LTElMkZzMyUyRmF3czRfcmVxdWVzdCZYLUFtei1EYXRlPTIwMjUwNTA3VDIyMDgwMlomWC1BbXotRXhwaXJlcz0zMDAmWC1BbXotU2lnbmF0dXJlPWJkNTUxODJiMDZhN2I2MDAxYzZlNzIyOTAzYTgwZDg3ZDFlYWM3ODM1YWY0Mzg5MDJjNDY0NzJhYjU4ZTAzMmEmWC1BbXotU2lnbmVkSGVhZGVycz1ob3N0In0.rqM3YOwrYdBCiwbBbEvalj7Tsfl-XWqgD1K9PeE46tI)](https://private-user-images.githubusercontent.com/46939827/413668612-96e81b08-6993-4a5e-96d0-3b05b50fbe44.png?jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3NDY2NTU5ODIsIm5iZiI6MTc0NjY1NTY4MiwicGF0aCI6Ii80NjkzOTgyNy80MTM2Njg2MTItOTZlODFiMDgtNjk5My00YTVlLTk2ZDAtM2IwNWI1MGZiZTQ0LnBuZz9YLUFtei1BbGdvcml0aG09QVdTNC1ITUFDLVNIQTI1NiZYLUFtei1DcmVkZW50aWFsPUFLSUFWQ09EWUxTQTUzUFFLNFpBJTJGMjAyNTA1MDclMkZ1cy1lYXN0LTElMkZzMyUyRmF3czRfcmVxdWVzdCZYLUFtei1EYXRlPTIwMjUwNTA3VDIyMDgwMlomWC1BbXotRXhwaXJlcz0zMDAmWC1BbXotU2lnbmF0dXJlPWJkNTUxODJiMDZhN2I2MDAxYzZlNzIyOTAzYTgwZDg3ZDFlYWM3ODM1YWY0Mzg5MDJjNDY0NzJhYjU4ZTAzMmEmWC1BbXotU2lnbmVkSGVhZGVycz1ob3N0In0.rqM3YOwrYdBCiwbBbEvalj7Tsfl-XWqgD1K9PeE46tI)
+    <img width="300" src="https://github.com/user-attachments/assets/b591f1fe-1c44-4d82-b6e5-d166590aeab1" />
+    <img width="500" src="https://github.com/user-attachments/assets/96e81b08-6993-4a5e-96d0-3b05b50fbe44" />
 
 ##### New Tag Colors + UI
 
@@ -192,7 +421,7 @@ Create your own custom tag colors via the new Tag Color Manager! Tag colors are 
 -   fix(ui): use correct pink tag color by [@CyanVoxel](https://github.com/CyanVoxel) in [431efe4](https://github.com/TagStudioDev/TagStudio/commit/431efe4fe93213141c763e59ca9887215766fd42)
 -   fix(ui): use consistent tag outline colors by [@CyanVoxel](https://github.com/CyanVoxel) in [020a73d](https://github.com/TagStudioDev/TagStudio/commit/020a73d095c74283d6c80426d3c3db8874409952)
 
-[![Screenshot 2025-01-04 at 04 23 43](https://private-user-images.githubusercontent.com/46939827/408753168-c8f82d89-ad7e-4be6-830e-b91cdc58e4c6.png?jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3NDY2NTU5ODIsIm5iZiI6MTc0NjY1NTY4MiwicGF0aCI6Ii80NjkzOTgyNy80MDg3NTMxNjgtYzhmODJkODktYWQ3ZS00YmU2LTgzMGUtYjkxY2RjNThlNGM2LnBuZz9YLUFtei1BbGdvcml0aG09QVdTNC1ITUFDLVNIQTI1NiZYLUFtei1DcmVkZW50aWFsPUFLSUFWQ09EWUxTQTUzUFFLNFpBJTJGMjAyNTA1MDclMkZ1cy1lYXN0LTElMkZzMyUyRmF3czRfcmVxdWVzdCZYLUFtei1EYXRlPTIwMjUwNTA3VDIyMDgwMlomWC1BbXotRXhwaXJlcz0zMDAmWC1BbXotU2lnbmF0dXJlPTk1OWNhZGNkOTRiZGJhNGQxNGU1MjJhYTViYTc0OTNiNTA4NDUxODA4OTYxZDUwNzYxZDhmYWZkNzM4NTE3N2QmWC1BbXotU2lnbmVkSGVhZGVycz1ob3N0In0.HLnwHyp3BYg8vXo3BtvqBoOqtpQTI1eykqa-L3chLUk)](https://private-user-images.githubusercontent.com/46939827/408753168-c8f82d89-ad7e-4be6-830e-b91cdc58e4c6.png?jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3NDY2NTU5ODIsIm5iZiI6MTc0NjY1NTY4MiwicGF0aCI6Ii80NjkzOTgyNy80MDg3NTMxNjgtYzhmODJkODktYWQ3ZS00YmU2LTgzMGUtYjkxY2RjNThlNGM2LnBuZz9YLUFtei1BbGdvcml0aG09QVdTNC1ITUFDLVNIQTI1NiZYLUFtei1DcmVkZW50aWFsPUFLSUFWQ09EWUxTQTUzUFFLNFpBJTJGMjAyNTA1MDclMkZ1cy1lYXN0LTElMkZzMyUyRmF3czRfcmVxdWVzdCZYLUFtei1EYXRlPTIwMjUwNTA3VDIyMDgwMlomWC1BbXotRXhwaXJlcz0zMDAmWC1BbXotU2lnbmF0dXJlPTk1OWNhZGNkOTRiZGJhNGQxNGU1MjJhYTViYTc0OTNiNTA4NDUxODA4OTYxZDUwNzYxZDhmYWZkNzM4NTE3N2QmWC1BbXotU2lnbmVkSGVhZGVycz1ob3N0In0.HLnwHyp3BYg8vXo3BtvqBoOqtpQTI1eykqa-L3chLUk)
+<img width="250" alt="Screenshot 2025-01-04 at 04 23 43" src="https://github.com/user-attachments/assets/c8f82d89-ad7e-4be6-830e-b91cdc58e4c6" />
 
 ##### New Tag Alias UI
 
@@ -340,7 +569,9 @@ This was the main focus of this update, and where the majority of development ti
 -   refactor: combine open launch args by [@UnusualEgg](https://github.com/UnusualEgg) in [#364](https://github.com/TagStudioDev/TagStudio/pull/364)
 -   feat: add date_created, date_modified, and date_added columns to entries table by [@CyanVoxel](https://github.com/CyanVoxel) in [#740](https://github.com/TagStudioDev/TagStudio/pull/740)
 
-## [9.5.0 Pre-Release 4] - 2025-02-17
+---
+
+## 9.5.0-pr4 <small>[February 17th, 2025]</small>
 
 ### Added
 
@@ -348,9 +579,8 @@ This was the main focus of this update, and where the majority of development ti
 
 Create your own custom tag colors via the new Tag Color Manager! Tag colors are assigned a namespace (group) and include a name, primary color, and optional secondary color. By default the secondary color is used for the tag text color, but this can also be toggled to apply to the border color as well!
 
-[![Screenshot 2025-02-16 at 17 34 22](https://private-user-images.githubusercontent.com/46939827/413668576-b591f1fe-1c44-4d82-b6e5-d166590aeab1.png?jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3NDY2NTQ3MTYsIm5iZiI6MTc0NjY1NDQxNiwicGF0aCI6Ii80NjkzOTgyNy80MTM2Njg1NzYtYjU5MWYxZmUtMWM0NC00ZDgyLWI2ZTUtZDE2NjU5MGFlYWIxLnBuZz9YLUFtei1BbGdvcml0aG09QVdTNC1ITUFDLVNIQTI1NiZYLUFtei1DcmVkZW50aWFsPUFLSUFWQ09EWUxTQTUzUFFLNFpBJTJGMjAyNTA1MDclMkZ1cy1lYXN0LTElMkZzMyUyRmF3czRfcmVxdWVzdCZYLUFtei1EYXRlPTIwMjUwNTA3VDIxNDY1NlomWC1BbXotRXhwaXJlcz0zMDAmWC1BbXotU2lnbmF0dXJlPTBhYzUwZmExZjRlMWI4YzJjZTZmNDRiMjFiN2ZlZjg4ZjE3MWM4NzBkNmJlZWNjMzg2OWU5YTE2OWVmZTA2YTEmWC1BbXotU2lnbmVkSGVhZGVycz1ob3N0In0.nEs6bk1euKTEkIqDipNJBrXHbHegb3PHWoW3tKI02_8)](https://private-user-images.githubusercontent.com/46939827/413668576-b591f1fe-1c44-4d82-b6e5-d166590aeab1.png?jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3NDY2NTQ3MTYsIm5iZiI6MTc0NjY1NDQxNiwicGF0aCI6Ii80NjkzOTgyNy80MTM2Njg1NzYtYjU5MWYxZmUtMWM0NC00ZDgyLWI2ZTUtZDE2NjU5MGFlYWIxLnBuZz9YLUFtei1BbGdvcml0aG09QVdTNC1ITUFDLVNIQTI1NiZYLUFtei1DcmVkZW50aWFsPUFLSUFWQ09EWUxTQTUzUFFLNFpBJTJGMjAyNTA1MDclMkZ1cy1lYXN0LTElMkZzMyUyRmF3czRfcmVxdWVzdCZYLUFtei1EYXRlPTIwMjUwNTA3VDIxNDY1NlomWC1BbXotRXhwaXJlcz0zMDAmWC1BbXotU2lnbmF0dXJlPTBhYzUwZmExZjRlMWI4YzJjZTZmNDRiMjFiN2ZlZjg4ZjE3MWM4NzBkNmJlZWNjMzg2OWU5YTE2OWVmZTA2YTEmWC1BbXotU2lnbmVkSGVhZGVycz1ob3N0In0.nEs6bk1euKTEkIqDipNJBrXHbHegb3PHWoW3tKI02_8)
-
-[![Screenshot 2025-02-16 at 17 32 56](https://private-user-images.githubusercontent.com/46939827/413668612-96e81b08-6993-4a5e-96d0-3b05b50fbe44.png?jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3NDY2NTQ3MTYsIm5iZiI6MTc0NjY1NDQxNiwicGF0aCI6Ii80NjkzOTgyNy80MTM2Njg2MTItOTZlODFiMDgtNjk5My00YTVlLTk2ZDAtM2IwNWI1MGZiZTQ0LnBuZz9YLUFtei1BbGdvcml0aG09QVdTNC1ITUFDLVNIQTI1NiZYLUFtei1DcmVkZW50aWFsPUFLSUFWQ09EWUxTQTUzUFFLNFpBJTJGMjAyNTA1MDclMkZ1cy1lYXN0LTElMkZzMyUyRmF3czRfcmVxdWVzdCZYLUFtei1EYXRlPTIwMjUwNTA3VDIxNDY1NlomWC1BbXotRXhwaXJlcz0zMDAmWC1BbXotU2lnbmF0dXJlPTlhOGU2NjA2ZjRhMjNjZGYxZDE1ZWYzZmVjN2RjM2Q0YzA1NTcwZGE5OGFkMjc2MDIzMTk1YTFlYjY2NTQxNmImWC1BbXotU2lnbmVkSGVhZGVycz1ob3N0In0.VD2trGcVKQVKUpzVog1UhZUM0JRcEHUhwGCiHpZ8zF0)](https://private-user-images.githubusercontent.com/46939827/413668612-96e81b08-6993-4a5e-96d0-3b05b50fbe44.png?jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3NDY2NTQ3MTYsIm5iZiI6MTc0NjY1NDQxNiwicGF0aCI6Ii80NjkzOTgyNy80MTM2Njg2MTItOTZlODFiMDgtNjk5My00YTVlLTk2ZDAtM2IwNWI1MGZiZTQ0LnBuZz9YLUFtei1BbGdvcml0aG09QVdTNC1ITUFDLVNIQTI1NiZYLUFtei1DcmVkZW50aWFsPUFLSUFWQ09EWUxTQTUzUFFLNFpBJTJGMjAyNTA1MDclMkZ1cy1lYXN0LTElMkZzMyUyRmF3czRfcmVxdWVzdCZYLUFtei1EYXRlPTIwMjUwNTA3VDIxNDY1NlomWC1BbXotRXhwaXJlcz0zMDAmWC1BbXotU2lnbmF0dXJlPTlhOGU2NjA2ZjRhMjNjZGYxZDE1ZWYzZmVjN2RjM2Q0YzA1NTcwZGE5OGFkMjc2MDIzMTk1YTFlYjY2NTQxNmImWC1BbXotU2lnbmVkSGVhZGVycz1ob3N0In0.VD2trGcVKQVKUpzVog1UhZUM0JRcEHUhwGCiHpZ8zF0)
+<img width="300" src="https://github.com/user-attachments/assets/b591f1fe-1c44-4d82-b6e5-d166590aeab1" />
+<img width="500" src="https://github.com/user-attachments/assets/96e81b08-6993-4a5e-96d0-3b05b50fbe44" />
 
 #### Translations
 
@@ -403,7 +633,9 @@ Initial Languages:
 
 This release increases the internal `DB_VERSION` to 8. Libraries created with this version of TagStudio can still be opened in earlier v9.5.0 pre-release versions, however the behavior of custom color borders will not be identical to the behavior in this PR. Otherwise it should still be possible to use any custom colors created in this version in these earlier pre-releases (but not really recommended).
 
-## [9.5.0 Pre-Release 3] - 2025-02-10
+---
+
+## 9.5.0-pr3 <small>[February 10th, 2025]</small>
 
 ### Added
 
@@ -426,7 +658,7 @@ Glob Patterns w/ Smartcase
 ##### [#788](https://github.com/TagStudioDev/TagStudio/pull/788) by [@CyanVoxel](https://github.com/CyanVoxel)
 
 -   Added a "View Limit" dropdown to tag search boxes to limit the number of on-screen tags. Previously this limit was hardcoded to 100, but now options range from 25 to unlimited.  
-     [![](https://private-user-images.githubusercontent.com/46939827/411701461-7f7da065-888d-4fe5-a4e7-f99447bcce98.png?jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3NDY2NTQ3MTYsIm5iZiI6MTc0NjY1NDQxNiwicGF0aCI6Ii80NjkzOTgyNy80MTE3MDE0NjEtN2Y3ZGEwNjUtODg4ZC00ZmU1LWE0ZTctZjk5NDQ3YmNjZTk4LnBuZz9YLUFtei1BbGdvcml0aG09QVdTNC1ITUFDLVNIQTI1NiZYLUFtei1DcmVkZW50aWFsPUFLSUFWQ09EWUxTQTUzUFFLNFpBJTJGMjAyNTA1MDclMkZ1cy1lYXN0LTElMkZzMyUyRmF3czRfcmVxdWVzdCZYLUFtei1EYXRlPTIwMjUwNTA3VDIxNDY1NlomWC1BbXotRXhwaXJlcz0zMDAmWC1BbXotU2lnbmF0dXJlPWVlZjVhZjYyNWQwY2FmMjhmMWI1MzI5ZDdjYWMxMmM0N2M0Nzc4MmY1YjE0NWY4MjVhZmIyMDI1NzQzY2M0YmQmWC1BbXotU2lnbmVkSGVhZGVycz1ob3N0In0.a3xUaH5r3HsDgOb6-lo3T-xSRRSy7dDOrln5i62KFP8)](https://private-user-images.githubusercontent.com/46939827/411701461-7f7da065-888d-4fe5-a4e7-f99447bcce98.png?jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3NDY2NTQ3MTYsIm5iZiI6MTc0NjY1NDQxNiwicGF0aCI6Ii80NjkzOTgyNy80MTE3MDE0NjEtN2Y3ZGEwNjUtODg4ZC00ZmU1LWE0ZTctZjk5NDQ3YmNjZTk4LnBuZz9YLUFtei1BbGdvcml0aG09QVdTNC1ITUFDLVNIQTI1NiZYLUFtei1DcmVkZW50aWFsPUFLSUFWQ09EWUxTQTUzUFFLNFpBJTJGMjAyNTA1MDclMkZ1cy1lYXN0LTElMkZzMyUyRmF3czRfcmVxdWVzdCZYLUFtei1EYXRlPTIwMjUwNTA3VDIxNDY1NlomWC1BbXotRXhwaXJlcz0zMDAmWC1BbXotU2lnbmF0dXJlPWVlZjVhZjYyNWQwY2FmMjhmMWI1MzI5ZDdjYWMxMmM0N2M0Nzc4MmY1YjE0NWY4MjVhZmIyMDI1NzQzY2M0YmQmWC1BbXotU2lnbmVkSGVhZGVycz1ob3N0In0.a3xUaH5r3HsDgOb6-lo3T-xSRRSy7dDOrln5i62KFP8)
+    <img width="350" src="https://github.com/user-attachments/assets/7f7da065-888d-4fe5-a4e7-f99447bcce98" />
 
 ### Changed
 
@@ -446,7 +678,9 @@ Glob Patterns w/ Smartcase
 
 -   Added references to alternative POSIX shells, as well as pyenv to CONTRIBUTING.md by [@ChloeZamorano](https://github.com/ChloeZamorano) in [#791](https://github.com/TagStudioDev/TagStudio/pull/791)
 
-## [9.5.0 Pre-Release 2] - 2025-02-03
+---
+
+## 9.5.0-pr2 <small>[February 3rd, 2025]</small>
 
 ### Added
 
@@ -499,7 +733,9 @@ Glob Patterns w/ Smartcase
 -   docs: fix typo for "category" in usage.md by [@pinheadtf2](https://github.com/pinheadtf2) in [#760](https://github.com/TagStudioDev/TagStudio/pull/760)
 -   fix(docs): fix screenshot sometimes not rendering by [@SkeleyM](https://github.com/SkeleyM) in [#775](https://github.com/TagStudioDev/TagStudio/pull/775)
 
-## [9.5.0 Pre-Release 1] - 2025-01-31
+---
+
+## 9.5.0-pr1 <small>[January 31st, 2025]</small>
 
 ### Added
 
@@ -530,7 +766,6 @@ Glob Patterns w/ Smartcase
 Instead of tags needing to be added to a tag field type such as "Meta Tags", "Content Tags", or just the "Tags" field, tags are now added directly to file entries with no intermediary step. While tag field types offered a way to further organize tags, it was cumbersome, inflexible, and simply not fully fleshed out. Tag Categories offer all of the previous (intentional) functionality while greatly increasing the ease of use and customization.
 
 -   feat!: tag categories by [@CyanVoxel](https://github.com/CyanVoxel) in [#655](https://github.com/TagStudioDev/TagStudio/pull/655)
-    [![Screenshot 2025-01-04 at 04 23 43](https://private-user-images.githubusercontent.com/46939827/400138597-0b92eca5-db8f-4e3e-954b-1b4f3795f073.png?jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3NDY2NTUwODcsIm5iZiI6MTc0NjY1NDc4NywicGF0aCI6Ii80NjkzOTgyNy80MDAxMzg1OTctMGI5MmVjYTUtZGI4Zi00ZTNlLTk1NGItMWI0ZjM3OTVmMDczLnBuZz9YLUFtei1BbGdvcml0aG09QVdTNC1ITUFDLVNIQTI1NiZYLUFtei1DcmVkZW50aWFsPUFLSUFWQ09EWUxTQTUzUFFLNFpBJTJGMjAyNTA1MDclMkZ1cy1lYXN0LTElMkZzMyUyRmF3czRfcmVxdWVzdCZYLUFtei1EYXRlPTIwMjUwNTA3VDIxNTMwN1omWC1BbXotRXhwaXJlcz0zMDAmWC1BbXotU2lnbmF0dXJlPTM1M2EwNGFjYmJiM2QwZjg2YzNmNTVjMGYwZDJkZGJkZTg5NjZjNDFhNTYyNDE0OGNlOWFhNzRkMzE3MjBkNzEmWC1BbXotU2lnbmVkSGVhZGVycz1ob3N0In0.B5NRZmHygdHlMy2ZnZtHjfOs83jjEliwfxoe3eMBnEQ)](https://private-user-images.githubusercontent.com/46939827/400138597-0b92eca5-db8f-4e3e-954b-1b4f3795f073.png?jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3NDY2NTUwODcsIm5iZiI6MTc0NjY1NDc4NywicGF0aCI6Ii80NjkzOTgyNy80MDAxMzg1OTctMGI5MmVjYTUtZGI4Zi00ZTNlLTk1NGItMWI0ZjM3OTVmMDczLnBuZz9YLUFtei1BbGdvcml0aG09QVdTNC1ITUFDLVNIQTI1NiZYLUFtei1DcmVkZW50aWFsPUFLSUFWQ09EWUxTQTUzUFFLNFpBJTJGMjAyNTA1MDclMkZ1cy1lYXN0LTElMkZzMyUyRmF3czRfcmVxdWVzdCZYLUFtei1EYXRlPTIwMjUwNTA3VDIxNTMwN1omWC1BbXotRXhwaXJlcz0zMDAmWC1BbXotU2lnbmF0dXJlPTM1M2EwNGFjYmJiM2QwZjg2YzNmNTVjMGYwZDJkZGJkZTg5NjZjNDFhNTYyNDE0OGNlOWFhNzRkMzE3MjBkNzEmWC1BbXotU2lnbmVkSGVhZGVycz1ob3N0In0.B5NRZmHygdHlMy2ZnZtHjfOs83jjEliwfxoe3eMBnEQ)
 
 #### Thumbnails and File Previews
 
@@ -563,8 +798,6 @@ Instead of tags needing to be added to a tag field type such as "Meta Tags", "Co
 -   feat: expanded tag color system by [@CyanVoxel](https://github.com/CyanVoxel) in [#709](https://github.com/TagStudioDev/TagStudio/pull/709)
 -   fix(ui): use correct pink tag color by [@CyanVoxel](https://github.com/CyanVoxel) in [431efe4](https://github.com/TagStudioDev/TagStudio/commit/431efe4fe93213141c763e59ca9887215766fd42)
 -   fix(ui): use consistent tag outline colors by [@CyanVoxel](https://github.com/CyanVoxel) in [020a73d](https://github.com/TagStudioDev/TagStudio/commit/020a73d095c74283d6c80426d3c3db8874409952)
-
-[![Screenshot 2025-01-04 at 04 23 43](https://private-user-images.githubusercontent.com/46939827/408753168-c8f82d89-ad7e-4be6-830e-b91cdc58e4c6.png?jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3NDY2NTUwODcsIm5iZiI6MTc0NjY1NDc4NywicGF0aCI6Ii80NjkzOTgyNy80MDg3NTMxNjgtYzhmODJkODktYWQ3ZS00YmU2LTgzMGUtYjkxY2RjNThlNGM2LnBuZz9YLUFtei1BbGdvcml0aG09QVdTNC1ITUFDLVNIQTI1NiZYLUFtei1DcmVkZW50aWFsPUFLSUFWQ09EWUxTQTUzUFFLNFpBJTJGMjAyNTA1MDclMkZ1cy1lYXN0LTElMkZzMyUyRmF3czRfcmVxdWVzdCZYLUFtei1EYXRlPTIwMjUwNTA3VDIxNTMwN1omWC1BbXotRXhwaXJlcz0zMDAmWC1BbXotU2lnbmF0dXJlPWI3ZDk2MDg5ODVjYzA2ZGU2Njc1ODE5M2U4OWU4ZGMwY2MxNzUzM2M2YmM2ZmRiMTdlOTkyNGM3MjlhMWNiOWUmWC1BbXotU2lnbmVkSGVhZGVycz1ob3N0In0.0RYUWgVW8VFvu2unzdWHtDCE4USYM77OcMvWeZkd8Hs)](https://private-user-images.githubusercontent.com/46939827/408753168-c8f82d89-ad7e-4be6-830e-b91cdc58e4c6.png?jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3NDY2NTUwODcsIm5iZiI6MTc0NjY1NDc4NywicGF0aCI6Ii80NjkzOTgyNy80MDg3NTMxNjgtYzhmODJkODktYWQ3ZS00YmU2LTgzMGUtYjkxY2RjNThlNGM2LnBuZz9YLUFtei1BbGdvcml0aG09QVdTNC1ITUFDLVNIQTI1NiZYLUFtei1DcmVkZW50aWFsPUFLSUFWQ09EWUxTQTUzUFFLNFpBJTJGMjAyNTA1MDclMkZ1cy1lYXN0LTElMkZzMyUyRmF3czRfcmVxdWVzdCZYLUFtei1EYXRlPTIwMjUwNTA3VDIxNTMwN1omWC1BbXotRXhwaXJlcz0zMDAmWC1BbXotU2lnbmF0dXJlPWI3ZDk2MDg5ODVjYzA2ZGU2Njc1ODE5M2U4OWU4ZGMwY2MxNzUzM2M2YmM2ZmRiMTdlOTkyNGM3MjlhMWNiOWUmWC1BbXotU2lnbmVkSGVhZGVycz1ob3N0In0.0RYUWgVW8VFvu2unzdWHtDCE4USYM77OcMvWeZkd8Hs)
 
 ##### New Tag Alias UI
 
@@ -660,13 +893,17 @@ This was the main focus of this update, and where the majority of development ti
 -   refactor: combine open launch args by [@UnusualEgg](https://github.com/UnusualEgg) in [#364](https://github.com/TagStudioDev/TagStudio/pull/364)
 -   feat: add date_created, date_modified, and date_added columns to entries table by [@CyanVoxel](https://github.com/CyanVoxel) in [#740](https://github.com/TagStudioDev/TagStudio/pull/740)
 
-## [9.4.2] - 2024-12-01
+---
+
+## 9.4.2 <small>[December 1st, 2024]</small>
 
 ### Added/Fixed
 
 -   Create auto-backup of library for use in save failures (Fix [#343](https://github.com/TagStudioDev/TagStudio/issues/343)) by [@CyanVoxel](https://github.com/CyanVoxel) in [#554](https://github.com/TagStudioDev/TagStudio/pull/554)
 
-## [9.4.1] - 2024-09-13
+---
+
+## 9.4.1 <small>[September 13th, 2024]</small>
 
 ### Added
 
@@ -683,7 +920,9 @@ This was the main focus of this update, and where the majority of development ti
 
 -   Significantly improve file re-scanning performance
 
-## [9.4.0] - 2024-09-03
+---
+
+## 9.4.0 <small>[September 3rd, 2024]</small>
 
 ### Added
 
@@ -731,7 +970,7 @@ This was the main focus of this update, and where the majority of development ti
 -   Revamp Nix flake with devenv/direnv in cb4798b
 -   Remove impurity of Nix flake when used with direnv in bc38e56
 
-## [9.3.2] - 2024-07-18
+## 9.3.2 <small>[July 18th, 2024]</small>
 
 ### Fixed
 
@@ -746,7 +985,9 @@ This was the main focus of this update, and where the majority of development ti
 -   Refactoring: centralize field IDs
 -   Update to pyside6 version 6.7.1
 
-## [9.3.1] - 2024-06-13
+---
+
+## 9.3.1 <small>[June 13th, 2024]</small>
 
 ### Fixed
 
@@ -755,7 +996,9 @@ This was the main focus of this update, and where the majority of development ti
 -   Toggle Mouse Event Transparency on ItemThumbs
 -   Refactor `video_player.py`
 
-## [9.3.0] - 2024-06-08
+---
+
+## 9.3.0 <small>[June 8th, 2024]</small>
 
 ### Added
 
@@ -785,7 +1028,9 @@ This was the main focus of this update, and where the majority of development ti
 -   `.cr2` files are now included in the list of RAW image file types
 -   Minimum supported macOS version raised to 12.0
 
-## [9.2.1] - 2024-05-23
+---
+
+## 9.2.1 <small>[May 23rd, 2024]</small>
 
 ### Added
 
@@ -801,7 +1046,9 @@ This was the main focus of this update, and where the majority of development ti
 -   Low resolution images (such as pixel art) now render with crisp edges in thumbnails and previews
 -   Fixed visual bug where the edit icon would show for incorrect fields
 
-## [9.2.0] - 2024-05-14
+---
+
+## 9.2.0 <small>[May 14th, 2024]</small>
 
 ### Added
 
@@ -851,7 +1098,9 @@ This was the main focus of this update, and where the majority of development ti
     -   A temporary workaround it to omit spaces in tag names when searching
 -   Sorting fields using the "Sort Fields" macro may result in edit icons being shown for incorrect fields
 
-## [9.1.0] - 2024-04-22
+---
+
+## 9.1.0 <small>[April 22nd, 2024]</small>
 
 ### Added
 
