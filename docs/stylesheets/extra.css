@@ -73,13 +73,13 @@ td {
     padding: 0.5em 1em 0.5em 1em !important;
 }
 
-ul {
-    margin-top: 0 !important;
-    margin-bottom: 0 !important;
+.md-typeset ul li ul {
+    margin-top: 0;
+    margin-bottom: 0.1rem;
 }
 
-li {
-    margin-bottom: 0 !important;
+.md-typeset ul li {
+    margin-bottom: 0.1rem;
 }
 
 .md-header {
