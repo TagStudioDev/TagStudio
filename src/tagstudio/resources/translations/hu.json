@@ -266,6 +266,7 @@
     "settings.generate_thumbs": "Indexkép-előállítás",
     "settings.global": "Globális beállítások",
     "settings.hourformat.label": "24-órás idő",
+    "settings.infinite_scroll": "Végtelen görgetés",
     "settings.language": "&Nyelv",
     "settings.library": "Könyvtárbeállítások",
     "settings.open_library_on_start": "&Könyvtár megnyitása a program indulásakor",

@@ -83,11 +83,12 @@
     "json_migration.heading.shorthands": "Afkortingen:",
     "json_migration.migration_complete": "Migratie Afgerond!",
     "json_migration.title": "Migratie Formaat Opslaan: \"{path}\"",
-    "library_info.stats.fields": "Velden:",
-    "library_info.stats.tags": "Labels:",
     "library.field.add": "Veld Toevoegen",
     "library.field.mixed_data": "Gemixte Data",
     "library.field.remove": "Veld Weghalen",
+    "library.refresh.scanning_preparing": "Mappen scannen voor nieuwe bestanden...\nVoorbereiden...",
+    "library_info.stats.fields": "Velden:",
+    "library_info.stats.tags": "Labels:",
     "menu.delete_selected_files_ambiguous": "Bestand(en) verplaatsen naar {trash_term}",
     "menu.delete_selected_files_plural": "Bestanden verplaatsen naar {trash_term}",
     "menu.delete_selected_files_singular": "Bestand verplaatsen naar {trash_term}",
@@ -101,6 +102,7 @@
     "menu.select": "Selecteren",
     "menu.window": "Venster",
     "select.all": "Alles Selecteren",
+    "select.inverse": "Selectie omkeren",
     "sorting.direction.ascending": "Oplopend",
     "sorting.direction.descending": "Aflopend",
     "status.deleted_file_plural": "{count} Bestanden Verwijderd!",
@@ -120,5 +122,6 @@
     "tag.new": "Nieuw Label",
     "tag.remove": "Label Weghalen",
     "trash.dialog.title.plural": "Bestanden Verwijderen",
-    "trash.dialog.title.singular": "Bestand Verwijden"
+    "trash.dialog.title.singular": "Bestand Verwijden",
+    "trash.name.generic": "Prullenbak"
 }
