@@ -702,7 +702,7 @@ class Library:
             session.execute(stmt)
             session.commit()
             logger.info("[Library][Migration] Verified TagParent table data")
-    
+
     def __apply_db103_schema_changes(self, session: Session):
         """Apply database schema changes introduced in DB_VERSION 103."""
         add_is_hidden_column = text(
@@ -718,13 +718,11 @@ class Library:
                 error=e,
             )
             session.rollback()
-    
+
     def __apply_db103_default_data(self, session: Session):
         """Apply default data changes introduced in DB_VERSION 103."""
         try:
-            session.query(Tag).\
-                filter(Tag.id == TAG_ARCHIVED).\
-                update({ 'is_hidden': True })
+            session.query(Tag).filter(Tag.id == TAG_ARCHIVED).update({"is_hidden": True})
             session.commit()
             logger.info("[Library][Migration] Updated archived tag to be hidden")
             session.commit()

@@ -245,8 +245,8 @@ class BuildTagPanel(PanelWidget):
         )
         self.cat_layout.addWidget(self.cat_checkbox)
         self.cat_layout.addWidget(self.cat_title)
-        
-		# Hidden ---------------------------------------------------------------
+
+        # Hidden ---------------------------------------------------------------
         self.hidden_widget = QWidget()
         self.hidden_layout = QHBoxLayout(self.hidden_widget)
         self.hidden_layout.setStretch(1, 1)
