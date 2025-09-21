@@ -97,6 +97,7 @@ class Tag(Base):
     color_slug: Mapped[str | None] = mapped_column()
     color: Mapped[TagColorGroup | None] = relationship(lazy="joined")
     is_category: Mapped[bool]
+    is_hidden: Mapped[bool]
     icon: Mapped[str | None]
     aliases: Mapped[set[TagAlias]] = relationship(back_populates="tag")
     parent_tags: Mapped[set["Tag"]] = relationship(
@@ -138,6 +139,7 @@ class Tag(Base):
         color_slug: str | None = None,
         disambiguation_id: int | None = None,
         is_category: bool = False,
+        is_hidden: bool = False,
     ):
         self.name = name
         self.aliases = aliases or set()
@@ -148,6 +150,7 @@ class Tag(Base):
         self.shorthand = shorthand
         self.disambiguation_id = disambiguation_id
         self.is_category = is_category
+        self.is_hidden = is_hidden
         self.id = id  # pyright: ignore[reportAttributeAccessIssue]
         super().__init__()
 
