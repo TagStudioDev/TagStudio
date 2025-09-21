@@ -245,6 +245,46 @@ class BuildTagPanel(PanelWidget):
         )
         self.cat_layout.addWidget(self.cat_checkbox)
         self.cat_layout.addWidget(self.cat_title)
+        
+		# Hidden ---------------------------------------------------------------
+        self.hidden_widget = QWidget()
+        self.hidden_layout = QHBoxLayout(self.hidden_widget)
+        self.hidden_layout.setStretch(1, 1)
+        self.hidden_layout.setContentsMargins(0, 0, 0, 0)
+        self.hidden_layout.setSpacing(6)
+        self.hidden_layout.setAlignment(Qt.AlignmentFlag.AlignLeft)
+        self.hidden_title = QLabel(Translations["tag.is_hidden"])
+        self.hidden_checkbox = QCheckBox()
+        self.hidden_checkbox.setFixedSize(22, 22)
+
+        self.hidden_checkbox.setStyleSheet(
+            f"QCheckBox{{"
+            f"background: rgba{primary_color.toTuple()};"
+            f"color: rgba{text_color.toTuple()};"
+            f"border-color: rgba{border_color.toTuple()};"
+            f"border-radius: 6px;"
+            f"border-style:solid;"
+            f"border-width: 2px;"
+            f"}}"
+            f"QCheckBox::indicator{{"
+            f"width: 10px;"
+            f"height: 10px;"
+            f"border-radius: 2px;"
+            f"margin: 4px;"
+            f"}}"
+            f"QCheckBox::indicator:checked{{"
+            f"background: rgba{text_color.toTuple()};"
+            f"}}"
+            f"QCheckBox::hover{{"
+            f"border-color: rgba{highlight_color.toTuple()};"
+            f"}}"
+            f"QCheckBox::focus{{"
+            f"border-color: rgba{highlight_color.toTuple()};"
+            f"outline:none;"
+            f"}}"
+        )
+        self.hidden_layout.addWidget(self.hidden_checkbox)
+        self.hidden_layout.addWidget(self.hidden_title)
 
         # Add Widgets to Layout ================================================
         self.root_layout.addWidget(self.name_widget)
@@ -256,6 +296,7 @@ class BuildTagPanel(PanelWidget):
         self.root_layout.addWidget(self.color_widget)
         self.root_layout.addWidget(QLabel("<h3>Properties</h3>"))
         self.root_layout.addWidget(self.cat_widget)
+        self.root_layout.addWidget(self.hidden_widget)
 
         self.parent_ids: set[int] = set()
         self.alias_ids: list[int] = []
@@ -544,6 +585,7 @@ class BuildTagPanel(PanelWidget):
             self.color_button.set_tag_color_group(None)
 
         self.cat_checkbox.setChecked(tag.is_category)
+        self.hidden_checkbox.setChecked(tag.is_hidden)
 
     def on_name_changed(self):
         is_empty = not self.name_field.text().strip()
@@ -567,6 +609,7 @@ class BuildTagPanel(PanelWidget):
         tag.color_namespace = self.tag_color_namespace
         tag.color_slug = self.tag_color_slug
         tag.is_category = self.cat_checkbox.isChecked()
+        tag.is_hidden = self.hidden_checkbox.isChecked()
 
         logger.info("built tag", tag=tag)
         return tag
