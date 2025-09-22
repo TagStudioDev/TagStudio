@@ -1041,15 +1041,18 @@ class Library:
 
             ast = search.ast
 
-            exclude_hidden_tags = True # TODO: Replace with a setting in the BrowsingState
+            exclude_hidden_tags = True  # TODO: Replace with a setting in the BrowsingState
             if exclude_hidden_tags:
                 hidden_tag_ids = self.get_hidden_tag_ids()
                 hidden_tag_constraints: list[Constraint] = list(
-                    map(self.tag_id_to_constraint, hidden_tag_ids)
+                    map(
+                        lambda tag_id: Constraint(ConstraintType.TagID, str(tag_id), []),
+                        hidden_tag_ids,
+                    )
                 )
-                hidden_tag_ast = Not( ORList( hidden_tag_constraints ) )
+                hidden_tag_ast = Not(ORList(hidden_tag_constraints))
 
-                ast = hidden_tag_ast if not ast else ANDList( [ search.ast, hidden_tag_ast ] )
+                ast = hidden_tag_ast if not ast else ANDList([search.ast, hidden_tag_ast])
 
             if ast:
                 start_time = time.time()
@@ -1849,20 +1852,13 @@ class Library:
             )
             session.add(parent_tag)
 
-    def tag_id_to_constraint(self, tag_id: int):
-        return Constraint(
-            ConstraintType.TagID,
-            str(tag_id),
-            []
-        )
-
     def get_hidden_tag_ids(self) -> set[int]:
-        """Get a set containing the IDs of all of the hidden tags and their children."""
+        """Get a set containing the IDs of all of the hidden tags."""
         hidden_tag_ids: set[int] = set()
 
         with Session(self.engine) as session:
             root_hidden_tag_ids = session.scalars(
-                select(Tag.id).where(Tag.is_hidden == True) # noqa: E712
+                select(Tag.id).where(Tag.is_hidden == True)  # noqa: E712
             ).all()
             for root_hidden_tag_id in root_hidden_tag_ids:
                 hidden_tag_ids.add(root_hidden_tag_id)
