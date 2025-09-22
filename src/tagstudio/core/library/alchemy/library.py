@@ -104,6 +104,7 @@ from tagstudio.core.library.alchemy.models import (
 )
 from tagstudio.core.library.alchemy.visitors import SQLBoolExpressionBuilder
 from tagstudio.core.library.json.library import Library as JsonLibrary
+from tagstudio.core.query_lang.ast import Constraint, ConstraintType, ANDList, ORList, Not
 from tagstudio.core.utils.types import unwrap
 from tagstudio.qt.translations import Translations
 
@@ -1038,13 +1039,27 @@ class Library:
             else:
                 statement = select(Entry.id)
 
-            if search.ast:
+            ast = search.ast
+
+            exclude_hidden_tags = True # TODO: Replace with a setting in the BrowsingState
+            if exclude_hidden_tags:
+                hidden_tag_ids = self.get_hidden_tag_ids()
+                hidden_tag_constraints: list[Constraint] = list(map(self.tag_id_to_constraint, hidden_tag_ids))
+                hidden_tag_ast = Not( ORList( hidden_tag_constraints ) )
+
+                if not ast:
+                    ast = hidden_tag_ast
+                else:
+                    ast = ANDList( [ search.ast, hidden_tag_ast ] )
+
+            if ast:
                 start_time = time.time()
-                statement = statement.where(SQLBoolExpressionBuilder(self).visit(search.ast))
+                statement = statement.where(SQLBoolExpressionBuilder(self).visit(ast))
                 end_time = time.time()
                 logger.info(
                     f"SQL Expression Builder finished ({format_timespan(end_time - start_time)})"
                 )
+
             statement = statement.distinct(Entry.id)
 
             sort_on: ColumnExpressionArgument = Entry.id
@@ -1834,6 +1849,26 @@ class Library:
                 child_id=tag.id,
             )
             session.add(parent_tag)
+
+    def tag_id_to_constraint(self, tag_id: int):
+        return Constraint(
+            ConstraintType.TagID,
+            str(tag_id),
+            []
+        )
+
+    def get_hidden_tag_ids(self) -> set[int]:
+        """Get a set containing the IDs of all of the hidden tags and their children."""
+        hidden_tag_ids: set[int] = set()
+
+        with Session(self.engine) as session:
+            root_hidden_tag_ids = session.scalars(
+                select(Tag.id).where(Tag.is_hidden == True)
+            ).all()
+            for root_hidden_tag_id in root_hidden_tag_ids:
+                hidden_tag_ids.add(root_hidden_tag_id)
+
+        return hidden_tag_ids
 
     def get_version(self, key: str) -> int:
         """Get a version value from the DB.
