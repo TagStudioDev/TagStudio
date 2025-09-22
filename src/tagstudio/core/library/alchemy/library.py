@@ -104,7 +104,7 @@ from tagstudio.core.library.alchemy.models import (
 )
 from tagstudio.core.library.alchemy.visitors import SQLBoolExpressionBuilder
 from tagstudio.core.library.json.library import Library as JsonLibrary
-from tagstudio.core.query_lang.ast import Constraint, ConstraintType, ANDList, ORList, Not
+from tagstudio.core.query_lang.ast import ANDList, Constraint, ConstraintType, Not, ORList
 from tagstudio.core.utils.types import unwrap
 from tagstudio.qt.translations import Translations
 
@@ -1044,13 +1044,12 @@ class Library:
             exclude_hidden_tags = True # TODO: Replace with a setting in the BrowsingState
             if exclude_hidden_tags:
                 hidden_tag_ids = self.get_hidden_tag_ids()
-                hidden_tag_constraints: list[Constraint] = list(map(self.tag_id_to_constraint, hidden_tag_ids))
+                hidden_tag_constraints: list[Constraint] = list(
+                    map(self.tag_id_to_constraint, hidden_tag_ids)
+                )
                 hidden_tag_ast = Not( ORList( hidden_tag_constraints ) )
 
-                if not ast:
-                    ast = hidden_tag_ast
-                else:
-                    ast = ANDList( [ search.ast, hidden_tag_ast ] )
+                ast = hidden_tag_ast if not ast else ANDList( [ search.ast, hidden_tag_ast ] )
 
             if ast:
                 start_time = time.time()
@@ -1863,7 +1862,7 @@ class Library:
 
         with Session(self.engine) as session:
             root_hidden_tag_ids = session.scalars(
-                select(Tag.id).where(Tag.is_hidden == True)
+                select(Tag.id).where(Tag.is_hidden == True) # noqa: E712
             ).all()
             for root_hidden_tag_id in root_hidden_tag_ids:
                 hidden_tag_ids.add(root_hidden_tag_id)
