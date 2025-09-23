@@ -1041,8 +1041,7 @@ class Library:
 
             ast = search.ast
 
-            exclude_hidden_tags = True  # TODO: Replace with a setting in the BrowsingState
-            if exclude_hidden_tags:
+            if search.exclude_hidden_entries:
                 hidden_tag_ids = self.get_hidden_tag_ids()
                 hidden_tag_constraints: list[Constraint] = list(
                     map(
