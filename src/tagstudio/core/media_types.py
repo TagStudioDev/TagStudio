@@ -49,6 +49,7 @@ class MediaType(str, Enum):
     MODEL = "model"
     OPEN_DOCUMENT = "open_document"
     PACKAGE = "package"
+    PAINT_DOT_NET = "paint_dot_net"
     PDF = "pdf"
     PLAINTEXT = "plaintext"
     PRESENTATION = "presentation"
@@ -358,6 +359,7 @@ class MediaCategories:
         ".pkg",
         ".xapk",
     }
+    _PAINT_DOT_NET_SET: set[str] = {".pdn"}
     _PDF_SET: set[str] = {".pdf"}
     _PLAINTEXT_SET: set[str] = {
         ".csv",
@@ -554,6 +556,12 @@ class MediaCategories:
         is_iana=False,
         name="package",
     )
+    PAINT_DOT_NET_TYPES = MediaCategory(
+        media_type=MediaType.PAINT_DOT_NET,
+        extensions=_PAINT_DOT_NET_SET,
+        is_iana=False,
+        name="paint.net",
+    )
     PDF_TYPES = MediaCategory(
         media_type=MediaType.PDF,
         extensions=_PDF_SET,
@@ -679,7 +687,7 @@ class MediaCategories:
 
         Args:
             ext (str): File extension with a leading "." and in all lowercase.
-            media_cat (MediaCategory): The MediaCategory to to check for extension membership.
+            media_cat (MediaCategory): The MediaCategory to check for extension membership.
             mime_fallback (bool): Flag to guess MIME type if no set matches are made.
         """
         return media_cat.contains(ext, mime_fallback)
