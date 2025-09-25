@@ -33,6 +33,7 @@ class MediaType(str, Enum):
     AUDIO_MIDI = "audio_midi"
     AUDIO = "audio"
     BLENDER = "blender"
+    CLIP_STUDIO_PAINT = "clip_studio_paint"
     CODE = "code"
     DATABASE = "database"
     DISK_IMAGE = "disk_image"
@@ -177,6 +178,7 @@ class MediaCategories:
         ".blend31",
         ".blend32",
     }
+    _CLIP_STUDIO_PAINT_SET: set[str] = {".clip"}
     _CODE_SET: set[str] = {
         ".bat",
         ".cfg",
@@ -455,6 +457,12 @@ class MediaCategories:
         extensions=_BLENDER_SET,
         is_iana=False,
         name="blender",
+    )
+    CLIP_STUDIO_PAINT_TYPES = MediaCategory(
+        media_type=MediaType.CLIP_STUDIO_PAINT,
+        extensions=_CLIP_STUDIO_PAINT_SET,
+        is_iana=False,
+        name="clip studio paint",
     )
     CODE_TYPES = MediaCategory(
         media_type=MediaType.CODE,

@@ -8,6 +8,7 @@ import contextlib
 import hashlib
 import math
 import os
+import sqlite3
 import struct
 import tarfile
 import xml.etree.ElementTree as ET
@@ -1458,6 +1459,34 @@ class ThumbRenderer(QObject):
 
         return im
 
+    @staticmethod
+    def _clip_thumb(filepath: Path) -> Image.Image | None:
+        """Extract the thumbnail from the SQLite database embedded in a .clip file.
+
+        Args:
+            filepath (Path): The path of the .clip file.
+
+        Returns:
+            Image: The embedded thumbnail, if extractable.
+        """
+        im: Image.Image | None = None
+        try:
+            with open(filepath, "rb") as f:
+                blob = f.read()
+                sqlite_index = blob.find(b"SQLite format 3")
+                if sqlite_index == -1:
+                    return im
+
+            with sqlite3.connect(":memory:") as conn:
+                conn.deserialize(blob[sqlite_index:])
+                thumbnail = conn.execute("SELECT ImageData FROM CanvasPreview").fetchone()
+                if thumbnail:
+                    im = Image.open(BytesIO(thumbnail[0]))
+        except Exception as e:
+            logger.error("Couldn't render thumbnail", filepath=filepath, error=type(e).__name__)
+
+        return im
+
     def render(
         self,
         timestamp: float,
@@ -1708,6 +1737,11 @@ class ThumbRenderer(QObject):
                     ext, MediaCategories.KRITA_TYPES, mime_fallback=True
                 ):
                     image = self._krita_thumb(_filepath)
+                # Clip Studio Paint ============================================
+                elif MediaCategories.is_ext_in_category(
+                    ext, MediaCategories.CLIP_STUDIO_PAINT_TYPES
+                ):
+                    image = self._clip_thumb(_filepath)
                 # VTF ==========================================================
                 elif MediaCategories.is_ext_in_category(
                     ext, MediaCategories.SOURCE_ENGINE_TYPES, mime_fallback=True
