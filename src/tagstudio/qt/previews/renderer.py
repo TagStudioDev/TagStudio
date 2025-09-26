@@ -1407,6 +1407,10 @@ class ThumbRenderer(QObject):
                 if encoded_png:
                     decoded_png = base64.b64decode(encoded_png)
                     im = Image.open(BytesIO(decoded_png))
+                    if im.mode == "RGBA":
+                        new_bg = Image.new("RGB", im.size, color="#1e1e1e")
+                        new_bg.paste(im, mask=im.getchannel(3))
+                        im = new_bg
             except Exception as e:
                 logger.error("Couldn't render thumbnail", filepath=filepath, error=type(e).__name__)
 
