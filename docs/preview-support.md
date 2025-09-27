@@ -89,6 +89,7 @@ Preview support for office documents or well-known project file formats varies b
 | OpenDocument Spreadsheet      | `.ods`, `.fods`       | Embedded thumbnail                                                         |
 | OpenDocument Text             | `.odt`, `.fodt`       | Embedded thumbnail                                                         |
 | Pages (Apple iWork)           | `.pages`              | Embedded thumbnail                                                         |
+| Paint.NET                     | `.pdn`                | Embedded thumbnail                                                         |
 | PDF                           | `.pdf`                | First page render                                                          |
 | Photoshop                     | `.psd`                | Flattened image render                                                     |
 | PowerPoint (Microsoft Office) | `.pptx`, `.ppt`       | Embedded thumbnail :material-alert-circle:{ title="If available in file" } |
