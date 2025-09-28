@@ -12,3 +12,16 @@ h2 {
     font-size: 1rem !important;
     line-height: 1.25rem;
 }
+
+.md-content {
+    margin-left: 5.5rem;
+    margin-right: 5.5rem;
+}
+
+/* Keeps four cards in a square on all screens */
+@media screen and (max-width: 64em) {
+    .md-content {
+        margin-left: 0;
+        margin-right: 0;
+    }
+}

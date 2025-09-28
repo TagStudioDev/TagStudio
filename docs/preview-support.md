@@ -1,16 +1,8 @@
-# :material-database: Library
-
-<!-- prettier-ignore -->
-!!! info
-    This page is a work in progress and needs to be updated with additional information.
-
-The library is how TagStudio represents your chosen directory, with every file inside being represented by a [file entry](./entry.md). You can have as many or few libraries as you wish, since each libraries' data is stored within a `.TagStudio` folder at its root. From there the library save file itself is stored as `ts_library.sqlite`, with TagStudio versions 9.4 and below using a the legacy `ts_library.json` format.
-
-Note that this means [tags](./tag.md) you create only exist _per-library_. Global tags along with other library structure updates are planned for future releases on the [roadmap](../updates/roadmap.md#library).
-
+---
+icon: material/image-check
 ---
 
-## Preview Support
+# :material-image-check: Supported Previews
 
 TagStudio offers built-in preview and thumbnail support for a wide variety of file types. Files that don't have explicit support can still be added to your library like normal, they will just show a default icon for thumbnails and previews. TagStudio also references the file's [MIME](https://en.wikipedia.org/wiki/Media_type) type in an attempt to render previews for file types that haven't gained explicit support yet.
 
@@ -51,7 +43,7 @@ Images will generate thumbnails the first time they are viewed or since the last
 
 ### :material-movie-open: Videos
 
-Video thumbnails will default to the closest viable frame from the middle of the video. Both thumbnail generation and video playback in the Preview Panel requires [FFmpeg](../install.md#third-party-dependencies) installed on your system.
+Video thumbnails will default to the closest viable frame from the middle of the video. Both thumbnail generation and video playback in the Preview Panel requires [FFmpeg](install.md#third-party-dependencies) installed on your system.
 
 | Filetype              | Extensions              | Dependencies |
 | --------------------- | ----------------------- | :----------: |
@@ -69,7 +61,7 @@ Video thumbnails will default to the closest viable frame from the middle of the
 
 ### :material-sine-wave: Audio
 
-Audio thumbnails will default to embedded cover art (if any) andfallback to generated waveform thumbnails. Audio file playback is supported in the Preview Panel if you have [FFmpeg](../install.md#third-party-dependencies) installed on your system. Audio waveforms are currently not cached.
+Audio thumbnails will default to embedded cover art (if any) andfallback to generated waveform thumbnails. Audio file playback is supported in the Preview Panel if you have [FFmpeg](install.md#third-party-dependencies) installed on your system. Audio waveforms are currently not cached.
 
 | Filetype            | Extensions               | Dependencies |
 | ------------------- | ------------------------ | :----------: |
@@ -112,7 +104,7 @@ Preview support for office documents or well-known project file formats varies b
 
 <!-- prettier-ignore -->
 !!! failure "3D Model Support"
-    TagStudio does not currently support previews for 3D model files *(outside of Blender project embedded thumbnails)*. This is on our [roadmap](../updates/roadmap.md#uiux) for future features.
+    TagStudio does not currently support previews for 3D model files *(outside of Blender project embedded thumbnails)*. This is on our [roadmap](roadmap.md#uiux) for a future release.
 
 ### :material-format-font: Fonts
 
@@ -130,7 +122,7 @@ Font thumbnails will use a "Aa" example preview of the font, with a full alphanu
 !!! info "Plain Text Support"
     TagStudio supports the *vast* majority of files considered to be "[plain text](https://en.wikipedia.org/wiki/Plain_text)". If an extension or format is not listed here, odds are it's still supported anyway.
 
-Text files render the first 256 bytes of text information to an image preview for thumbnails and the Preview Panel. Improved thumbnails, full scrollable text, and syntax highlighting are on our [roadmap](../updates/roadmap.md#uiux) for future features.
+Text files render the first 256 bytes of text information to an image preview for thumbnails and the Preview Panel. Improved thumbnails, full scrollable text, and syntax highlighting are on our [roadmap](roadmap.md#uiux) for future features.
 
 | Filetype   | Extensions                                    |        Syntax Highlighting         |
 | ---------- | --------------------------------------------- | :--------------------------------: |
