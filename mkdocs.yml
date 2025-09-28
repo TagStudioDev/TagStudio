@@ -150,6 +150,21 @@ plugins:
   - tags
   - social:  # social embed cards
       enabled: !ENV [CI, false]  # enabled only when running in CI (eg GitHub Actions)
+  - redirects:
+      redirect_maps:
+        "develop.md": "developing.md"
+        "library/entry.md": "entries.md"
+        "library/field.md": "fields.md"
+        "library/index.md": "libraries.md"
+        "library/library_search.md": "search.md"
+        "library/tag_categories.md": "tags.md"
+        "library/tag_color.md": "colors.md"
+        "library/tag.md": "tags.md"
+        "updates/changelog.md": "changelog.md"
+        "updates/roadmap.md": "roadmap.md"
+        "updates/schema_changes.md": "library-changes.md"
+        "utilities/ignore.md": "ignore.md"
+        "utilities/macro.md": "macros.md"
 
 extra_css:
   - stylesheets/extra.css
