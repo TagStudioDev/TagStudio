@@ -651,6 +651,7 @@ class MediaCategories:
         MODEL_TYPES,
         OPEN_DOCUMENT_TYPES,
         PACKAGE_TYPES,
+        PAINT_DOT_NET_TYPES,
         PDF_TYPES,
         PLAINTEXT_TYPES,
         PRESENTATION_TYPES,
