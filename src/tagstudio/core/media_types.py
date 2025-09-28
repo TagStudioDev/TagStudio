@@ -652,6 +652,7 @@ class MediaCategories:
         AUDIO_MIDI_TYPES,
         AUDIO_TYPES,
         BLENDER_TYPES,
+        CLIP_STUDIO_PAINT_TYPES,
         DATABASE_TYPES,
         DISK_IMAGE_TYPES,
         DOCUMENT_TYPES,
