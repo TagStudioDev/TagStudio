@@ -312,7 +312,10 @@ class MediaPlayer(QGraphicsView):
     def mousePressEvent(self, event: QMouseEvent) -> None:
         # Pause media if background is clicked, with buffer around controls
         buffer: int = 6
-        if event.y() < (self.height() - self.controls.height() - buffer):
+        if (
+            event.y() < (self.height() - self.controls.height() - buffer)
+            and event.button() == Qt.MouseButton.LeftButton
+        ):
             self.toggle_play()
         return super().mousePressEvent(event)
 
