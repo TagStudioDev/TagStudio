@@ -171,6 +171,8 @@ class SQLBoolExpressionBuilder(BaseVisitor[ColumnElement[bool]]):
                             continue
                     case ConstraintType.FileType:
                         pass
+                    case ConstraintType.MediaType:
+                        pass
                     case ConstraintType.Path:
                         pass
                     case ConstraintType.Special:

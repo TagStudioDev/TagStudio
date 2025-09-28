@@ -104,6 +104,7 @@ from tagstudio.core.library.alchemy.models import (
 )
 from tagstudio.core.library.alchemy.visitors import SQLBoolExpressionBuilder
 from tagstudio.core.library.json.library import Library as JsonLibrary
+from tagstudio.core.query_lang.ast import ANDList, Constraint, ConstraintType, Not, ORList
 from tagstudio.core.utils.types import unwrap
 from tagstudio.qt.translations import Translations
 
@@ -151,6 +152,7 @@ def get_default_tags() -> tuple[Tag, ...]:
         name="Archived",
         aliases={TagAlias(name="Archive")},
         parent_tags={meta_tag},
+        is_hidden=True,
         color_slug="red",
         color_namespace="tagstudio-standard",
     )
@@ -540,6 +542,8 @@ class Library:
                     self.__apply_db8_schema_changes(session)
                 if loaded_db_version < 9:
                     self.__apply_db9_schema_changes(session)
+                if loaded_db_version < 103:
+                    self.__apply_db103_schema_changes(session)
                 if loaded_db_version == 6:
                     self.__apply_repairs_for_db6(session)
 
@@ -551,6 +555,8 @@ class Library:
                     self.__apply_db100_parent_repairs(session)
                 if loaded_db_version < 102:
                     self.__apply_db102_repairs(session)
+                if loaded_db_version < 103:
+                    self.__apply_db103_default_data(session)
 
                 # Convert file extension list to ts_ignore file, if a .ts_ignore file does not exist
                 self.migrate_sql_to_ts_ignore(library_dir)
@@ -697,6 +703,36 @@ class Library:
             session.execute(stmt)
             session.commit()
             logger.info("[Library][Migration] Verified TagParent table data")
+
+    def __apply_db103_schema_changes(self, session: Session):
+        """Apply database schema changes introduced in DB_VERSION 103."""
+        add_is_hidden_column = text(
+            "ALTER TABLE tags ADD COLUMN is_hidden BOOLEAN NOT NULL DEFAULT 0"
+        )
+        try:
+            session.execute(add_is_hidden_column)
+            session.commit()
+            logger.info("[Library][Migration] Added is_hidden column to tags table")
+        except Exception as e:
+            logger.error(
+                "[Library][Migration] Could not create is_hidden column in tags table!",
+                error=e,
+            )
+            session.rollback()
+
+    def __apply_db103_default_data(self, session: Session):
+        """Apply default data changes introduced in DB_VERSION 103."""
+        try:
+            session.query(Tag).filter(Tag.id == TAG_ARCHIVED).update({"is_hidden": True})
+            session.commit()
+            logger.info("[Library][Migration] Updated archived tag to be hidden")
+            session.commit()
+        except Exception as e:
+            logger.error(
+                "[Library][Migration] Could not update archived tag to be hidden!",
+                error=e,
+            )
+            session.rollback()
 
     def migrate_sql_to_ts_ignore(self, library_dir: Path):
         # Do not continue if existing '.ts_ignore' file is found
@@ -1003,13 +1039,28 @@ class Library:
             else:
                 statement = select(Entry.id)
 
-            if search.ast:
+            ast = search.ast
+
+            if search.exclude_hidden_entries:
+                hidden_tag_ids = self.get_hidden_tag_ids()
+                hidden_tag_constraints: list[Constraint] = list(
+                    map(
+                        lambda tag_id: Constraint(ConstraintType.TagID, str(tag_id), []),
+                        hidden_tag_ids,
+                    )
+                )
+                hidden_tag_ast = Not(ORList(hidden_tag_constraints))
+
+                ast = hidden_tag_ast if not ast else ANDList([search.ast, hidden_tag_ast])
+
+            if ast:
                 start_time = time.time()
-                statement = statement.where(SQLBoolExpressionBuilder(self).visit(search.ast))
+                statement = statement.where(SQLBoolExpressionBuilder(self).visit(ast))
                 end_time = time.time()
                 logger.info(
                     f"SQL Expression Builder finished ({format_timespan(end_time - start_time)})"
                 )
+
             statement = statement.distinct(Entry.id)
 
             sort_on: ColumnExpressionArgument = Entry.id
@@ -1799,6 +1850,19 @@ class Library:
                 child_id=tag.id,
             )
             session.add(parent_tag)
+
+    def get_hidden_tag_ids(self) -> set[int]:
+        """Get a set containing the IDs of all of the hidden tags."""
+        hidden_tag_ids: set[int] = set()
+
+        with Session(self.engine) as session:
+            root_hidden_tag_ids = session.scalars(
+                select(Tag.id).where(Tag.is_hidden == True)  # noqa: E712
+            ).all()
+            for root_hidden_tag_id in root_hidden_tag_ids:
+                hidden_tag_ids.add(root_hidden_tag_id)
+
+        return hidden_tag_ids
 
     def get_version(self, key: str) -> int:
         """Get a version value from the DB.

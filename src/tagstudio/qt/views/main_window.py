@@ -11,13 +11,15 @@ import structlog
 from PIL import Image, ImageQt
 from PySide6 import QtCore
 from PySide6.QtCore import QMetaObject, QSize, QStringListModel, Qt
-from PySide6.QtGui import QAction, QPixmap
+from PySide6.QtGui import QAction, QColor, QPixmap
 from PySide6.QtWidgets import (
+    QCheckBox,
     QComboBox,
     QCompleter,
     QFrame,
     QGridLayout,
     QHBoxLayout,
+    QLabel,
     QLayout,
     QLineEdit,
     QMainWindow,
@@ -34,12 +36,14 @@ from PySide6.QtWidgets import (
 )
 
 from tagstudio.core.enums import ShowFilepathOption
-from tagstudio.core.library.alchemy.enums import SortingModeEnum
+from tagstudio.core.library.alchemy.enums import SortingModeEnum, TagColorEnum
 from tagstudio.qt.controllers.preview_panel_controller import PreviewPanel
 from tagstudio.qt.helpers.color_overlay import theme_fg_overlay
 from tagstudio.qt.mixed.landing import LandingWidget
 from tagstudio.qt.mixed.pagination import Pagination
+from tagstudio.qt.mixed.tag_widget import get_border_color, get_highlight_color, get_text_color
 from tagstudio.qt.mnemonics import assign_mnemonics
+from tagstudio.qt.models.palette import ColorType, get_tag_color
 from tagstudio.qt.platform_strings import trash_term
 from tagstudio.qt.resource_manager import ResourceManager
 from tagstudio.qt.thumb_grid_layout import ThumbGridLayout
@@ -578,7 +582,57 @@ class MainWindow(QMainWindow):
         self.extra_input_layout = QHBoxLayout()
         self.extra_input_layout.setObjectName("extra_input_layout")
 
-        ## left side spacer
+        primary_color = QColor(get_tag_color(ColorType.PRIMARY, TagColorEnum.DEFAULT))
+        border_color = get_border_color(primary_color)
+        highlight_color = get_highlight_color(primary_color)
+        text_color: QColor = get_text_color(primary_color, highlight_color)
+
+        ## Exclude hidden tags checkbox
+        self.hidden_entries_widget = QWidget()
+        self.hidden_entries_layout = QHBoxLayout(self.hidden_entries_widget)
+        self.hidden_entries_layout.setStretch(1, 1)
+        self.hidden_entries_layout.setContentsMargins(0, 0, 0, 0)
+        self.hidden_entries_layout.setSpacing(6)
+        self.hidden_entries_layout.setAlignment(Qt.AlignmentFlag.AlignLeft)
+        self.hidden_entries_title = QLabel(Translations["home.exclude_hidden_entries"])
+        self.hidden_entries_checkbox = QCheckBox()
+        self.hidden_entries_checkbox.setFixedSize(22, 22)
+
+        self.hidden_entries_checkbox.setStyleSheet(
+            f"QCheckBox{{"
+            f"background: rgba{primary_color.toTuple()};"
+            f"color: rgba{text_color.toTuple()};"
+            f"border-color: rgba{border_color.toTuple()};"
+            f"border-radius: 6px;"
+            f"border-style:solid;"
+            f"border-width: 2px;"
+            f"}}"
+            f"QCheckBox::indicator{{"
+            f"width: 10px;"
+            f"height: 10px;"
+            f"border-radius: 2px;"
+            f"margin: 4px;"
+            f"}}"
+            f"QCheckBox::indicator:checked{{"
+            f"background: rgba{text_color.toTuple()};"
+            f"}}"
+            f"QCheckBox::hover{{"
+            f"border-color: rgba{highlight_color.toTuple()};"
+            f"}}"
+            f"QCheckBox::focus{{"
+            f"border-color: rgba{highlight_color.toTuple()};"
+            f"outline:none;"
+            f"}}"
+        )
+
+        self.hidden_entries_checkbox.setChecked(True)  # Default: Yes
+
+        self.hidden_entries_layout.addWidget(self.hidden_entries_checkbox)
+        self.hidden_entries_layout.addWidget(self.hidden_entries_title)
+
+        self.extra_input_layout.addWidget(self.hidden_entries_widget)
+
+        ## Spacer
         self.extra_input_layout.addItem(
             QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
         )
@@ -712,3 +766,8 @@ class MainWindow(QMainWindow):
     @property
     def thumb_size(self) -> int:
         return self.thumb_size_combobox.currentData()
+
+    @property
+    def exclude_hidden_entries(self) -> bool:
+        """Whether to exclude entries tagged with hidden tags."""
+        return self.hidden_entries_checkbox.isChecked()
