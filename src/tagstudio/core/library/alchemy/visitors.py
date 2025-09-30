@@ -146,7 +146,7 @@ class SQLBoolExpressionBuilder(BaseVisitor[ColumnElement[bool]]):
     def __separate_tags(
         self, terms: list[AST], only_single: bool = True
     ) -> tuple[list[int], list[ColumnElement[bool]]]:
-        tag_ids: list[int] = []
+        tag_ids: set[int] = set()
         bool_expressions: list[ColumnElement[bool]] = []
 
         for term in terms:
@@ -154,7 +154,7 @@ class SQLBoolExpressionBuilder(BaseVisitor[ColumnElement[bool]]):
                 match term.type:
                     case ConstraintType.TagID:
                         try:
-                            tag_ids.append(int(term.value))
+                            tag_ids.add(int(term.value))
                         except ValueError:
                             logger.error(
                                 "[SQLBoolExpressionBuilder] Could not cast value to an int Tag ID",
@@ -164,10 +164,10 @@ class SQLBoolExpressionBuilder(BaseVisitor[ColumnElement[bool]]):
                     case ConstraintType.Tag:
                         ids = self.__get_tag_ids(term.value)
                         if not only_single:
-                            tag_ids.extend(ids)
+                            tag_ids.update(ids)
                             continue
                         elif len(ids) == 1:
-                            tag_ids.append(ids[0])
+                            tag_ids.add(ids[0])
                             continue
                     case ConstraintType.FileType:
                         pass
@@ -179,7 +179,7 @@ class SQLBoolExpressionBuilder(BaseVisitor[ColumnElement[bool]]):
                         raise NotImplementedError(f"Unhandled constraint: '{term.type}'")
 
             bool_expressions.append(self.visit(term))
-        return tag_ids, bool_expressions
+        return list(tag_ids), bool_expressions
 
     def __entry_has_all_tags(self, tag_ids: list[int]) -> ColumnElement[bool]:
         """Returns Binary Expression that is true if the Entry has all provided tag ids."""
