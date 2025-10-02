@@ -61,7 +61,7 @@ Video thumbnails will default to the closest viable frame from the middle of the
 
 ### :material-sine-wave: Audio
 
-Audio thumbnails will default to embedded cover art (if any) andfallback to generated waveform thumbnails. Audio file playback is supported in the Preview Panel if you have [FFmpeg](install.md#third-party-dependencies) installed on your system. Audio waveforms are currently not cached.
+Audio thumbnails will default to embedded cover art (if any) and fallback to generated waveform thumbnails. Audio file playback is supported in the Preview Panel if you have [FFmpeg](install.md#third-party-dependencies) installed on your system. Audio waveforms are currently not cached.
 
 | Filetype            | Extensions               | Dependencies |
 | ------------------- | ------------------------ | :----------: |
@@ -69,7 +69,7 @@ Audio thumbnails will default to embedded cover art (if any) andfallback to gene
 | AIFF                | `.aiff`, `.aif`, `.aifc` |    FFmpeg    |
 | Apple Lossless[^2]  | `.alac`, `.aac`          |    FFmpeg    |
 | FLAC                | `.flac`                  |    FFmpeg    |
-| MP3                 | `.mp3`,                  |    FFmpeg    |
+| MP3                 | `.mp3`                   |    FFmpeg    |
 | Ogg                 | `.ogg`                   |    FFmpeg    |
 | WAVE                | `.wav`, `.wave`          |    FFmpeg    |
 | Windows Media Audio | `.wma`                   |    FFmpeg    |
