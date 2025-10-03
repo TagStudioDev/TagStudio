@@ -17,7 +17,7 @@ hide:
 
 <figure markdown="span">
   ![TagStudio screenshot](./assets/screenshot.png){ width=80% }
-  <figcaption>TagStudio Alpha v9.5.0 running on macOS Sequoia.</figcaption>
+  <figcaption>TagStudio Alpha v9.5.5 running on macOS Sequoia.</figcaption>
 </figure>
 
 <div class="grid" markdown>
