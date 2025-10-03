@@ -69,12 +69,12 @@ Tags currently consist of the following attributes:
     -   For example: If you had a tag for "Freddy Fazbear", you might add "Five Nights at Freddy's" as one of the parent tags. If the disambiguation box is checked next to "Five Nights at Freddy's" parent tag, then the tag "Freddy Fazbear" will display as "Freddy Fazbear (Five Nights at Freddy's)". Furthermore, if the "Five Nights at Freddy's" tag has a shorthand like "FNAF", then the "Freddy Fazbear" tag will display as "Freddy Fazbear (FNAF)".
 -   **Is Category**: A property that when checked, treats this tag as a category in the preview panel.
 
-Fields, like tags, are additional peices of custom metadata that you can add to your file entries. Fields currently have several hardcoded names (e.g. "Title", "Author", "Series") but custom field names are planned for an upcoming update.
+Fields, like tags, are additional pieces of custom metadata that you can add to your file entries. Fields currently have several hardcoded names (e.g. "Title", "Author", "Series") but custom field names are planned for an upcoming update.
 
 Field types currently include:
 
 -   **Text Lines**: Single lines of text.
--   **Text Boxes**: Multi-line peices of text.
+-   **Text Boxes**: Multi-line pieces of text.
 -   **Datetimes**: Dates and times.
 
 ### [Search](https://docs.tagstud.io/search)
@@ -112,7 +112,7 @@ To edit a tag, click on it inside the preview panel or right-click the tag and s
 
 Access the "Add Tag" search box by either clicking on the "Add Tag" button at the bottom of the right sidebar, accessing the "Add Tags to Selected" option from the File menu, or by pressing <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>T</kbd> (macOS: <kbd>⌘ Command</kbd>+<kbd>Shift</kbd>+<kbd>T</kbd>).
 
-From here you can search for existing tags or create a new one if the one you're looking for doesn't exist. Click the "+" button next to any tags you want to to the currently selected file entries. To quickly add the top result, press the <kbd>Enter</kbd>/<kbd>Return</kbd> key to add the the topmost tag and reset the tag search. Press <kbd>Enter</kbd>/<kbd>Return</kbd> once more to close the dialog box. By using this method, you can quickly add various tags in quick succession just by using the keyboard!
+From here you can search for existing tags or create a new one if the one you're looking for doesn't exist. Click the "+" button next to any tags you want to the currently selected file entries. To quickly add the top result, press the <kbd>Enter</kbd>/<kbd>Return</kbd> key to add the top-most tag and reset the tag search. Press <kbd>Enter</kbd>/<kbd>Return</kbd> once more to close the dialog box. By using this method, you can quickly add various tags in quick succession just by using the keyboard!
 
 To remove a tag from a file entry, hover over the tag in the preview panel and click on the "-" icon that appears.
 
