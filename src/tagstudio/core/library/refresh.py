@@ -17,6 +17,7 @@ from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.library.alchemy.models import Entry
 from tagstudio.core.library.ignore import PATH_GLOB_FLAGS, Ignore, ignore_to_glob
 from tagstudio.core.utils.silent_subprocess import silent_run  # pyright: ignore
+from tagstudio.core.utils.types import unwrap
 
 logger = structlog.get_logger(__name__)
 
@@ -30,23 +31,26 @@ class RefreshTracker:
     def files_count(self) -> int:
         return len(self.files_not_in_library)
 
-    def save_new_files(self):
+    def save_new_files(self) -> Iterator[int]:
         """Save the list of files that are not in the library."""
-        if self.files_not_in_library:
+        batch_size = 200
+
+        index = 0
+        while index < len(self.files_not_in_library):
+            yield index
+            end = min(len(self.files_not_in_library), index + batch_size)
             entries = [
                 Entry(
                     path=entry_path,
-                    folder=self.library.folder,  # pyright: ignore[reportArgumentType]
+                    folder=unwrap(self.library.folder),
                     fields=[],
                     date_added=dt.now(),
                 )
-                for entry_path in self.files_not_in_library
+                for entry_path in self.files_not_in_library[index:end]
             ]
             self.library.add_entries(entries)
-
+            index = end
         self.files_not_in_library = []
-
-        yield
 
     def refresh_dir(self, library_dir: Path, force_internal_tools: bool = False) -> Iterator[int]:
         """Scan a directory for files, and add those relative filenames to internal variables.
