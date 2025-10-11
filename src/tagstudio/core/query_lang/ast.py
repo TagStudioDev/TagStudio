@@ -94,6 +94,12 @@ class Not(AST):
         super().__init__()
         self.child = child
 
+class Boolean(AST):
+    value: bool
+
+    def __init__(self, value: bool) -> None:
+        super().__init__()
+        self.value = value
 
 T = TypeVar("T")
 
@@ -110,6 +116,8 @@ class BaseVisitor(ABC, Generic[T]):
             return self.visit_property(node)
         elif isinstance(node, Not):
             return self.visit_not(node)
+        elif isinstance(node, Boolean):
+            return self.visit_boolean(node)
         raise Exception(f"Unknown Node Type of {node}")  # pragma: nocover
 
     @abstractmethod
@@ -130,4 +138,8 @@ class BaseVisitor(ABC, Generic[T]):
 
     @abstractmethod
     def visit_not(self, node: Not) -> T:
+        raise NotImplementedError()  # pragma: nocover
+
+    @abstractmethod
+    def visit_boolean(self, node: Boolean) -> T:
         raise NotImplementedError()  # pragma: nocover
