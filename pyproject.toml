@@ -34,6 +34,7 @@ dependencies = [
     "typing_extensions~=4.13",
     "ujson~=5.10",
     "wcmatch==10.*",
+    "requests~=2.31.0",
 ]
 
 [project.optional-dependencies]
