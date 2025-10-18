@@ -29,6 +29,7 @@ from tagstudio.core.library.alchemy.fields import (
     BaseField,
     DatetimeField,
     TextField,
+    UrlField,
 )
 from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.library.alchemy.models import Entry, Tag
@@ -37,9 +38,11 @@ from tagstudio.qt.controllers.tag_box_controller import TagBoxWidget
 from tagstudio.qt.mixed.datetime_picker import DatetimePicker
 from tagstudio.qt.mixed.field_widget import FieldContainer
 from tagstudio.qt.mixed.text_field import TextWidget
+from tagstudio.qt.mixed.url_widget import UrlWidget
 from tagstudio.qt.translations import Translations
 from tagstudio.qt.views.edit_text_box_modal import EditTextBox
 from tagstudio.qt.views.edit_text_line_modal import EditTextLine
+from tagstudio.qt.views.edit_url_modal import EditUrl
 from tagstudio.qt.views.panel_modal import PanelModal
 
 if typing.TYPE_CHECKING:
@@ -282,8 +285,8 @@ class FieldContainers(QWidget):
                     title=title,
                     window_title=f"Edit {field.type.type.value}",
                     save_callback=(
-                        lambda content: (
-                            self.update_field(field, content),  # type: ignore
+                        lambda data: (
+                            self.update_field(field, value=data),
                             self.update_from_entry(self.cached_entries[0].id),
                         )
                     ),
@@ -321,8 +324,8 @@ class FieldContainers(QWidget):
                     title=title,
                     window_title=f"Edit {field.type.name}",
                     save_callback=(
-                        lambda content: (
-                            self.update_field(field, content),  # type: ignore
+                        lambda data: (
+                            self.update_field(field, value=data),
                             self.update_from_entry(self.cached_entries[0].id),
                         )
                     ),
@@ -331,6 +334,51 @@ class FieldContainers(QWidget):
                 container.set_remove_callback(
                     lambda: self.remove_message_box(
                         prompt=self.remove_field_prompt(field.type.name),
+                        callback=lambda: (
+                            self.remove_field(field),
+                            self.update_from_entry(self.cached_entries[0].id),
+                        ),
+                    )
+                )
+
+        elif field.type.type == FieldTypeEnum.URL:
+            logger.info("[FieldContainers][write_container] URL Line Field", field=field)
+
+            container.set_title(field.type.name)
+            container.set_inline(False)
+
+            # Normalize line endings in any text content.
+            if not is_mixed:
+                assert isinstance(field, UrlField)
+                url_title: str | None = field.title
+                url_value: str = field.value or ""
+            else:
+                url_title = ""
+                url_value = "<i>Mixed Data</i>"
+
+            title = f"{field.type.name} ({field.type.type.value})"
+            inner_widget = UrlWidget(title, url_title, url_value)
+            container.set_inner_widget(inner_widget)
+            if not is_mixed:
+                modal = PanelModal(
+                    EditUrl(url_title, url_value),
+                    title=title,
+                    window_title=f"Edit {field.type.type.value}",
+                    save_callback=(
+                        lambda data: (
+                            self.update_field(field, title=data[0], value=data[1]),
+                            self.update_from_entry(self.cached_entries[0].id),
+                        )
+                    ),
+                )
+                if "pytest" in sys.modules:
+                    # for better testability
+                    container.modal = modal  # pyright: ignore[reportAttributeAccessIssue]
+
+                container.set_edit_callback(modal.show)
+                container.set_remove_callback(
+                    lambda: self.remove_message_box(
+                        prompt=self.remove_field_prompt(field.type.type.value),
                         callback=lambda: (
                             self.remove_field(field),
                             self.update_from_entry(self.cached_entries[0].id),
@@ -361,8 +409,8 @@ class FieldContainers(QWidget):
                     DatetimePicker(self.driver, field.value or dt.now()),
                     title=f"Edit {field.type.name}",
                     save_callback=(
-                        lambda content: (
-                            self.update_field(field, content),  # type: ignore
+                        lambda data: (
+                            self.update_field(field, value=data),
                             self.update_from_entry(self.cached_entries[0].id),
                         )
                     ),
@@ -464,11 +512,11 @@ class FieldContainers(QWidget):
         entry_ids = [e.id for e in self.cached_entries]
         self.lib.remove_entry_field(field, entry_ids)
 
-    def update_field(self, field: BaseField, content: str) -> None:
+    def update_field(self, field: BaseField, **kwargs) -> None:
         """Update a field in all selected Entries, given a field object."""
         assert isinstance(
             field,
-            TextField | DatetimeField,
+            TextField | DatetimeField | UrlField,
         ), f"instance: {type(field)}"
 
         entry_ids = [e.id for e in self.cached_entries]
@@ -477,7 +525,7 @@ class FieldContainers(QWidget):
         self.lib.update_entry_field(
             entry_ids,
             field,
-            content,
+            **kwargs,
         )
 
     def remove_message_box(self, prompt: str, callback: Callable) -> None:
