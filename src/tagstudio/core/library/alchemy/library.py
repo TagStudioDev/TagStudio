@@ -708,7 +708,7 @@ class Library:
             with session:
                 stmt = (
                     update(ValueType)
-                    .filter(ValueType.key.in_([ FieldID.URL.name, FieldID.SOURCE.name ]))
+                    .filter(ValueType.key.in_([FieldID.URL.name, FieldID.SOURCE.name]))
                     .values(
                         type=FieldTypeEnum.URL.name,
                     )
@@ -723,7 +723,6 @@ class Library:
                 error=e,
             )
             session.rollback()
-
 
     def __apply_db104_url_migration(self, session: Session):
         """Moves all URL text fields to the new URL field table."""
@@ -745,7 +744,7 @@ class Library:
                         value=source_record.value,
                         type_key=source_record.type_key,
                         entry_id=source_record.entry_id,
-                        position=source_record.position
+                        position=source_record.position,
                     )
                     destination_records.append(destination_record)
 
@@ -913,7 +912,7 @@ class Library:
                 .options(
                     selectinload(Entry.text_fields),
                     selectinload(Entry.url_fields),
-                    selectinload(Entry.datetime_fields)
+                    selectinload(Entry.datetime_fields),
                 )
             )
             stmt = (
