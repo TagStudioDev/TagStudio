@@ -123,3 +123,13 @@ Migration from the legacy JSON format is provided via a walkthrough when opening
 | [v9.5.4](https://github.com/TagStudioDev/TagStudio/releases/tag/v9.5.4) | SQLite | `<Library Folder>`/.TagStudio/ts_library.sqlite |
 
 -   Applies repairs to the `tag_parents` table created in [version 100](#version-100), removing rows that reference tags that have been deleted.
+
+#### Version 104
+
+| Used From                                                               | Format | Location                                        |
+| ----------------------------------------------------------------------- | ------ | ----------------------------------------------- |
+| [v9.5.7](https://github.com/TagStudioDev/TagStudio/releases/tag/v9.5.7) | SQLite | `<Library Folder>`/.TagStudio/ts_library.sqlite |
+
+- Adds a new `url_fields` table.
+- Changes the type key of the `URL` and `SOURCE` fields to be `URL`.
+- Migrates any records in the `text_fields` whose type key has the type `URL` (so, if their type is either `URL` or `SOURCE`) to the new `url_fields` table.
