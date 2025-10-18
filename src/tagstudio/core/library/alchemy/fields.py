@@ -88,6 +88,22 @@ class TextField(BaseField):
         raise NotImplementedError
 
 
+class UrlField(BaseField):
+    __tablename__ = "url_fields"
+
+    title: Mapped[str | None]
+    value: Mapped[str | None]
+
+    def __key(self) -> tuple[ValueType, str | None, str | None]:
+        return self.type, self.title, self.value
+
+    @override
+    def __eq__(self, value: object) -> bool:
+        if isinstance(value, UrlField):
+            return self.__key() == value.__key()
+        raise NotImplementedError
+
+
 class DatetimeField(BaseField):
     __tablename__ = "datetime_fields"
 
@@ -117,7 +133,7 @@ class FieldID(Enum):
     TITLE = DefaultField(id=0, name="Title", type=FieldTypeEnum.TEXT_LINE, is_default=True)
     AUTHOR = DefaultField(id=1, name="Author", type=FieldTypeEnum.TEXT_LINE)
     ARTIST = DefaultField(id=2, name="Artist", type=FieldTypeEnum.TEXT_LINE)
-    URL = DefaultField(id=3, name="URL", type=FieldTypeEnum.TEXT_LINE)
+    URL = DefaultField(id=3, name="URL", type=FieldTypeEnum.URL)
     DESCRIPTION = DefaultField(id=4, name="Description", type=FieldTypeEnum.TEXT_BOX)
     NOTES = DefaultField(id=5, name="Notes", type=FieldTypeEnum.TEXT_BOX)
     COLLATION = DefaultField(id=9, name="Collation", type=FieldTypeEnum.TEXT_LINE)
@@ -132,7 +148,7 @@ class FieldID(Enum):
     COMIC = DefaultField(id=18, name="Comic", type=FieldTypeEnum.TEXT_LINE)
     SERIES = DefaultField(id=19, name="Series", type=FieldTypeEnum.TEXT_LINE)
     MANGA = DefaultField(id=20, name="Manga", type=FieldTypeEnum.TEXT_LINE)
-    SOURCE = DefaultField(id=21, name="Source", type=FieldTypeEnum.TEXT_LINE)
+    SOURCE = DefaultField(id=21, name="Source", type=FieldTypeEnum.URL)
     DATE_UPLOADED = DefaultField(id=22, name="Date Uploaded", type=FieldTypeEnum.DATETIME)
     DATE_RELEASED = DefaultField(id=23, name="Date Released", type=FieldTypeEnum.DATETIME)
     VOLUME = DefaultField(id=24, name="Volume", type=FieldTypeEnum.TEXT_LINE)

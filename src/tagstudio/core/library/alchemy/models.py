@@ -18,6 +18,7 @@ from tagstudio.core.library.alchemy.fields import (
     BooleanField,
     DatetimeField,
     TextField,
+    UrlField,
 )
 from tagstudio.core.library.alchemy.joins import TagParent
 
@@ -206,6 +207,10 @@ class Entry(Base):
         back_populates="entry",
         cascade="all, delete",
     )
+    url_fields: Mapped[list[UrlField]] = relationship(
+        back_populates="entry",
+        cascade="all, delete",
+    )
     datetime_fields: Mapped[list[DatetimeField]] = relationship(
         back_populates="entry",
         cascade="all, delete",
@@ -215,6 +220,7 @@ class Entry(Base):
     def fields(self) -> list[BaseField]:
         fields: list[BaseField] = []
         fields.extend(self.text_fields)
+        fields.extend(self.url_fields)
         fields.extend(self.datetime_fields)
         fields = sorted(fields, key=lambda field: field.type.position)
         return fields
@@ -255,6 +261,8 @@ class Entry(Base):
         for field in fields:
             if isinstance(field, TextField):
                 self.text_fields.append(field)
+            elif isinstance(field, UrlField):
+                self.url_fields.append(field)
             elif isinstance(field, DatetimeField):
                 self.datetime_fields.append(field)
             else:
@@ -290,6 +298,7 @@ class ValueType(Base):
 
     # add relations to other tables
     text_fields: Mapped[list[TextField]] = relationship("TextField", back_populates="type")
+    url_fields: Mapped[list[UrlField]] = relationship("UrlField", back_populates="type")
     datetime_fields: Mapped[list[DatetimeField]] = relationship(
         "DatetimeField", back_populates="type"
     )
@@ -300,6 +309,7 @@ class ValueType(Base):
         FieldClass = {  # noqa: N806
             FieldTypeEnum.TEXT_LINE: TextField,
             FieldTypeEnum.TEXT_BOX: TextField,
+            FieldTypeEnum.URL: UrlField,
             FieldTypeEnum.DATETIME: DatetimeField,
             FieldTypeEnum.BOOLEAN: BooleanField,
         }
