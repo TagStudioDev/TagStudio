@@ -120,7 +120,7 @@ class PanelWidget(QWidget):
     def __init__(self):
         super().__init__()
 
-    def get_content(self) -> tuple[Any, ...] | Any | None:
+    def get_content(self) -> tuple[Any, ...] | Any:
         pass
 
     def reset(self) -> None:
