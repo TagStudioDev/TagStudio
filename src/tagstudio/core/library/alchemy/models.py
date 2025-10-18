@@ -164,6 +164,11 @@ class Tag(Base):
     def __hash__(self) -> int:
         return hash(self.id)
 
+    def __eq__(self, value: object) -> bool:
+        if not isinstance(value, Tag):
+            return False
+        return self.id == value.id
+
     def __lt__(self, other: "Tag") -> bool:
         return self.name < other.name
 

@@ -26,15 +26,15 @@ This is a special type of alias that's used for shortening the tag name under sp
 
 Aliases are alternate names that the tag can go by. This may include individual first names for people, alternate spellings, shortened names, and more. If there's a common abbreviation or shortened name for your tag, it's recommended to use the [shorthand](#shorthand) field for this instead.
 
-When searching for a tag, aliases (including the shorthand) can also be used to find the tag. This not only includes searching for tags themselves, but for tagged [file entries](./entry.md) as well!
+When searching for a tag, aliases (including the shorthand) can also be used to find the tag. This not only includes searching for tags themselves, but for tagged [file entries](entries.md) as well!
 
-### Automatic Disambiguation
+### Disambiguation
 
 Just as in real life, sometimes there are different attributes that share the same name with one another. The process of adding specificity to something in order to not confuse it with something similar is known as [disambiguation](https://en.wikipedia.org/wiki/Word-sense_disambiguation). In TagStudio we give the option to automatically disambiguate tag names based on a specially marked [Parent Tag](#parent-tags). Parent tags are explained in further detail below, but for the purposes of tag names they can lend themselves to clarifying the name of a tag without the user needing to manually change the name or add complicated aliases.
 
 Given a tag named "Freddy", we may confuse it with other "Freddy" tags in our library. There are lots of Freddys in the world, after all. If we're talking about Freddy from "Five Nights at Freddy's", then we may already (and likely should) have a separate "Five Nights at Freddy's" tag added as a parent tag. When the disambiguation box next to a parent tag is selected (see image below) then our tag name will automatically display its name with that parent tag's name (or shorthand if available) in parentheses.
 
-![Tag Disambiguation Example](../assets/tag_disambiguation_example.png)
+![Tag Disambiguation Example](assets/tag_disambiguation_example.png)
 
 So if the "Five Nights at Freddy's" tag is added as a parent tag on the "Freddy" tag, and the disambiguation box next to it is checked, then our tag name will automatically be displayed as "Freddy (Five Nights at Freddy's)". Better yet, if the "Five Nights at Freddy's" tag has a shorthand such as "FNAF", then our "Freddy" tag will be displayed as "Freddy (FNAF)". This process preserves our base tag name ("Freddy") and provides an option to get a clean and consistent method to display disambiguating parent categories, rather than having to type this information in manually for each applicable tag.
 
@@ -52,7 +52,7 @@ One of the core properties of tags in TagStudio is their ability to form relatio
 
 In a system where tags have no relationships, you're required to add as many tags as you possibly can to describe every last element of an image or file. If you want to tag an image of Shrek, you need to add a tag for `Shrek` himself, a `Character` tag since he's a character, a `Movie` and perhaps `Dreamworks` tag since he's a character from a movie, or perhaps a `Book` tag if we're talking about the original character, and then of course tags for every other attribute of Shrek shown or implied. By allowing tags to have inheritance relationships, we can have a single `Shrek` tag inherit from `Character` (Shrek IS a character) as well as from a separate `Shrek (Movie Franchise)` tag that itself inherits from `Movie Franchise` and `Dreamworks`. Now by simply adding the `Shrek` tag to an image, we've effectively also added the `Character`, `Shrek (Move Franchise)`, `Movie Franchise`, and `Dreamworks` attributes all in one go. On the image entry itself we only see `Shrek`, but the rest of the attributes are implied.
 
-![Shrek Tag Details](../assets/built_tag_shrek.png)
+![Shrek Tag Details](assets/built_tag_shrek.png)
 
 #### Intuition via Substitution
 
@@ -64,7 +64,9 @@ Lastly, when searching your files with broader categories such as `Character` or
 
 ### Component Tags
 
-**_Coming in version 9.6_**
+<!-- prettier-ignore -->
+!!! warning ""
+    **_Coming in version 9.6.x_**
 
 Component tags will be built from a composition-based, or "HAS" type relationship between tags. This takes care of instances where an attribute may "have" another attribute, but doesn't inherit from it. Shrek may be an `Ogre`, he may be a `Character`, but he is NOT a `Leather Vest` - even if he's commonly seen _with_ it. Component tags, along with the upcoming "Tag Override" feature, are built to handle these cases in a way that still simplifies the tagging process without adding too much undue complexity for the user.
 
@@ -74,17 +76,19 @@ Component tags will be built from a composition-based, or "HAS" type relationshi
 
 Tags use a default uncolored appearance by default, however can take on a number of built-in and user-created colors and color palettes! Tag color palettes can be based on a single color value (see: TagStudio Standard, TagStudio Shades, TagStudio Pastels) or use an optional secondary color use for the text and optionally the tag border (e.g. TagStudio Neon).
 
-![Tag Color Selection](../assets/tag_color_selection.png)
+![Tag Color Selection](assets/tag_color_selection.png)
 
 #### User-Created Colors
 
-Custom palettes and colors can be created via the [Tag Color Manager](./tag_color.md). These colors will display alongside the built-in colors inside the tag selection window and are separated by their namespace names. Colors which use the secondary color for the tag border will be outlined in that color, otherwise they will only display the secondary color on the bottom of the swatch to indicate at a glance that the text colors are different.
+Custom palettes and colors can be created via the [Tag Color Manager](colors.md). These colors will display alongside the built-in colors inside the tag selection window and are separated by their namespace names. Colors which use the secondary color for the tag border will be outlined in that color, otherwise they will only display the secondary color on the bottom of the swatch to indicate at a glance that the text colors are different.
 
-![Custom Tag Color Selection](../assets/custom_tag_color_selection.png)
+![Custom Tag Color Selection](assets/custom_tag_color_selection.png)
 
 ### Icon
 
-**_Coming in version 9.6_**
+<!-- prettier-ignore -->
+!!! warning ""
+    **_Coming in version 9.6.x_**
 
 ## Tag Properties
 
@@ -92,13 +96,25 @@ Properties are special attributes of tags that change their behavior in some way
 
 #### Is Category
 
-When the "Is Category" property is checked, this tag now acts as a category separator inside the preview panel. If this tag or any tags inheriting from this tag (i.e. tags that have this tag as a "[Parent Tag](#parent-tags)"), then these tags will appear under a separated group that's named after this tag. Tags inheriting from multiple "category tags" will still show up under any applicable category. _Read more under: [Tag Categories](../library/tag_categories.md)._
+The "Is Category" property of tags determines if a tag should be treated as a category itself when being organized inside the preview panel. If this tag or any tags inheriting from this tag (i.e. tags that have this tag as a "[Parent Tag](#parent-tags)"), then these tags will appear under a separated group that's named after this tag. Tags inheriting from multiple "category tags" will still show up under any applicable category.
 
-![Tag Category Example](../assets/tag_categories_example.png)
+This means that duplicates of tags can appear on entries if the tag inherits from multiple parent categories, however this is by design and reflects the nature of multiple inheritance. Any tags not inheriting from a category tag will simply show under a default "Tag" section.
+
+![Tag Category Example](assets/tag_categories_example.png)
+
+### Built-In Tags and Categories
+
+The built-in tags "Favorite" and "Archived" inherit from the built-in "Meta Tags" category which is marked as a category by default. This behavior of default tags can be fully customized by disabling the category option and/or by adding/removing the tags' Parent Tags.
+
+### Migrating from v9.4 Libraries
+
+Due to the nature of how tags and Tag Felids operated prior to v9.5, the organization style of Tag Categories vs Tag Fields is not 1:1. Instead of tags being organized into fields on a per-entry basis, tags themselves determine their organizational layout via the "Is Property" flag. Any tags _(not currently inheriting from either the "Favorite" or "Archived" tags)_ will be shown under the default "Tags" header upon migrating to the v9.5+ library format. Similar organization to Tag Fields can be achieved by using the built-in "Meta Tags" tag or any other marked with "Is Category" and then setting those tags as parents for other tags to inherit from.
 
 #### Is Hidden
 
-**_Coming in version 9.6_**
+<!-- prettier-ignore -->
+!!! warning ""
+    **_Coming in version 9.6.x_**
 
 When the "Is Hidden" property is checked, any file entries tagged with this tag will not show up in searches by default. This property comes by default with the built-in "Archived" tag.
 

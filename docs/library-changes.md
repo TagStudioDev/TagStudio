@@ -2,7 +2,7 @@
 icon: material/database-edit
 ---
 
-# :material-database-edit: Save Format Changes
+# :material-database-edit: Library Format
 
 This page outlines the various changes made to the TagStudio library save file format over time, sometimes referred to as the "database" or "database file".
 
@@ -75,7 +75,7 @@ Migration from the legacy JSON format is provided via a walkthrough when opening
 | ------------------------------------------------------------------------------- | ------ | ----------------------------------------------- |
 | [v9.5.0-pr4](https://github.com/TagStudioDev/TagStudio/releases/tag/v9.5.0-pr4) | SQLite | `<Library Folder>`/.TagStudio/ts_library.sqlite |
 
--   Adds the `color_border` column to the `tag_colors` table. Used for instructing the [secondary color](../library/tag_color.md#secondary-color) to apply to a tag's border as a new optional behavior.
+-   Adds the `color_border` column to the `tag_colors` table. Used for instructing the [secondary color](colors.md#secondary-color) to apply to a tag's border as a new optional behavior.
 -   Adds three new default colors: "Burgundy (TagStudio Shades)", "Dark Teal (TagStudio Shades)", and "Dark Lavender (TagStudio Shades)".
 -   Updates Neon colors to use the new `color_border` property.
 
