@@ -4,7 +4,7 @@
 
 
 from collections.abc import Callable
-from typing import override
+from typing import Any, override
 
 import structlog
 from PySide6 import QtCore, QtGui
@@ -27,7 +27,7 @@ class PanelModal(QWidget):
         title: str = "",
         window_title: str | None = None,
         done_callback: Callable[[], None] | None = None,
-        save_callback: Callable[[str], None] | None = None,
+        save_callback: Callable[..., None | tuple[None, ...]] | None = None,
         has_save: bool = False,
     ):
         # [Done]
@@ -120,8 +120,8 @@ class PanelWidget(QWidget):
     def __init__(self):
         super().__init__()
 
-    def get_content(self) -> str:
-        return ""
+    def get_content(self) -> tuple[Any, ...] | Any | None:
+        pass
 
     def reset(self) -> None:
         pass

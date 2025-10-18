@@ -19,7 +19,7 @@ class EditTextBox(PanelWidget):
         self.text_edit.setPlainText(text)
         self.root_layout.addWidget(self.text_edit)
 
-    def get_content(self) -> str:
+    def get_content(self):
         return self.text_edit.toPlainText()
 
     def reset(self):

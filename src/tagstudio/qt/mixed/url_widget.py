@@ -17,7 +17,7 @@ def to_anchor(url_title: str | None, url_value: str) -> str:
 
 
 class UrlWidget(TextWidget):
-    def __init__(self, title, url_title: str, url_value: str) -> None:
+    def __init__(self, title, url_title: str | None, url_value: str) -> None:
         super().__init__(title, to_anchor(url_title, url_value))
         self.setObjectName("urlLine")
         self.text_label.setTextFormat(Qt.TextFormat.MarkdownText)
@@ -25,5 +25,5 @@ class UrlWidget(TextWidget):
         self.text_label.setTextInteractionFlags(Qt.TextInteractionFlag.TextBrowserInteraction)
         self.set_url(url_title, url_value)
 
-    def set_url(self, url_title: str, url_value: str) -> None:
+    def set_url(self, url_title: str | None, url_value: str) -> None:
         self.set_text(to_anchor(url_title, url_value))

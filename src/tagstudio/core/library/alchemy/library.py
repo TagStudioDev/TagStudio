@@ -1299,12 +1299,7 @@ class Library:
         # recalculate the remaining positions
         # self.update_field_position(type(field), field.type, entry_ids)
 
-    def update_entry_field(
-        self,
-        entry_ids: list[int] | int,
-        field: BaseField,
-        content: str | datetime,
-    ):
+    def update_entry_field(self, entry_ids: list[int] | int, field: BaseField, **kwargs):
         if isinstance(entry_ids, int):
             entry_ids = [entry_ids]
 
@@ -1320,7 +1315,7 @@ class Library:
                         FieldClass.entry_id.in_(entry_ids),
                     )
                 )
-                .values(value=content)
+                .values(**kwargs)
             )
 
             session.execute(update_stmt)
