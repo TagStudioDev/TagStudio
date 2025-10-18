@@ -235,7 +235,7 @@ def test_update_entry_field(library: Library, entry_full: Entry):
     library.update_entry_field(
         entry_full.id,
         title_field,
-        "new value",
+        value="new value",
     )
 
     entry = next(library.all_entries(with_joins=True))
@@ -254,7 +254,7 @@ def test_update_entry_with_multiple_identical_fields(library: Library, entry_ful
     library.update_entry_field(
         entry_full.id,
         title_field,
-        "new value",
+        value="new value",
     )
 
     # Then only one should be updated
