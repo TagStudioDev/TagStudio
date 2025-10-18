@@ -5,6 +5,7 @@ from collections.abc import Callable
 
 from PySide6.QtWidgets import QHBoxLayout, QLabel, QLineEdit, QVBoxLayout, QWidget
 
+from tagstudio.qt.translations import Translations
 from tagstudio.qt.views.panel_modal import PanelWidget
 
 
@@ -22,7 +23,7 @@ class EditUrl(PanelWidget):
         self.edit_title_widget = QWidget()
         self.edit_title_layout = QHBoxLayout(self.edit_title_widget)
 
-        self.edit_title_label = QLabel("Edit title")
+        self.edit_title_label = QLabel(Translations["field.url.edit_title"])
         self.edit_title_input = QLineEdit()
         self.edit_title_input.setText(self.url_title or "")
 
@@ -33,7 +34,7 @@ class EditUrl(PanelWidget):
         self.edit_url_widget = QWidget()
         self.edit_url_layout = QHBoxLayout(self.edit_url_widget)
 
-        self.edit_url_label = QLabel("Edit URL")
+        self.edit_url_label = QLabel(Translations["field.url.edit_url"])
         self.edit_url_input = QLineEdit()
         self.edit_url_input.setText(self.url_value)
 
