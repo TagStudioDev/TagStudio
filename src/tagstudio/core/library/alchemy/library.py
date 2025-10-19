@@ -1360,7 +1360,7 @@ class Library:
             case FieldTypeEnum.TEXT_LINE | FieldTypeEnum.TEXT_BOX:
                 field_model = TextField(type_key=field.key, **kwargs)
             case FieldTypeEnum.URL:
-                field_model = UrlField( type_key=field.key, **kwargs)
+                field_model = UrlField(type_key=field.key, **kwargs)
             case FieldTypeEnum.DATETIME:
                 field_model = DatetimeField(type_key=field.key, **kwargs)
             case _:
