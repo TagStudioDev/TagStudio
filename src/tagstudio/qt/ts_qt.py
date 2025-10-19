@@ -1211,9 +1211,13 @@ class QtDriver(DriverMixin, QObject):
                 if not exists:
                     match field.type.type:
                         case FieldTypeEnum.URL:
-                            self.lib.add_field_to_entry(id, field_id=field.type_key, title=field.title, value=field.value)
+                            self.lib.add_field_to_entry(
+                                id, field_id=field.type_key, title=field.title, value=field.value
+                            )
                         case _:
-                            self.lib.add_field_to_entry(id, field_id=field.type_key, value=field.value)
+                            self.lib.add_field_to_entry(
+                                id, field_id=field.type_key, value=field.value
+                            )
 
             self.lib.add_tags_to_entries(id, self.copy_buffer["tags"])
         if len(self.selected) > 1:

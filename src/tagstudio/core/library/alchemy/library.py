@@ -1338,7 +1338,7 @@ class Library:
         *,
         field: ValueType | None = None,
         field_id: FieldID | str | None = None,
-        **kwargs
+        **kwargs,
     ) -> bool:
         logger.info(
             "[Library][add_field_to_entry]",
@@ -1357,22 +1357,13 @@ class Library:
 
         field_model: TextField | UrlField | DatetimeField
         if field.type in (FieldTypeEnum.TEXT_LINE, FieldTypeEnum.TEXT_BOX):
-            field_model = TextField(
-                type_key=field.key,
-                **kwargs
-            )
+            field_model = TextField(type_key=field.key, **kwargs)
 
         elif field.type == FieldTypeEnum.URL:
-            field_model = UrlField(
-                type_key=field.key,
-                **kwargs
-            )
+            field_model = UrlField(type_key=field.key, **kwargs)
 
         elif field.type == FieldTypeEnum.DATETIME:
-            field_model = DatetimeField(
-                type_key=field.key,
-                **kwargs
-            )
+            field_model = DatetimeField(type_key=field.key, **kwargs)
         else:
             raise NotImplementedError(f"field type not implemented: {field.type}")
 
