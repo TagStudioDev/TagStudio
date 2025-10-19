@@ -259,7 +259,7 @@ def test_update_entry_with_multiple_identical_fields(library: Library, entry_ful
 
     # Then only one should be updated
     entry = next(library.all_entries(with_joins=True))
-    assert entry.text_fields[0].value == ""
+    assert entry.text_fields[0].value is None
     assert entry.text_fields[1].value == "new value"
 
 
