@@ -1356,16 +1356,15 @@ class Library:
             field = self.get_value_type(unwrap(field_id))
 
         field_model: TextField | UrlField | DatetimeField
-        if field.type in (FieldTypeEnum.TEXT_LINE, FieldTypeEnum.TEXT_BOX):
-            field_model = TextField(type_key=field.key, **kwargs)
-
-        elif field.type == FieldTypeEnum.URL:
-            field_model = UrlField(type_key=field.key, **kwargs)
-
-        elif field.type == FieldTypeEnum.DATETIME:
-            field_model = DatetimeField(type_key=field.key, **kwargs)
-        else:
-            raise NotImplementedError(f"field type not implemented: {field.type}")
+        match field.type:
+            case FieldTypeEnum.TEXT_LINE | FieldTypeEnum.TEXT_BOX:
+                field_model = TextField(type_key=field.key, **kwargs)
+            case FieldTypeEnum.URL:
+                field_model = UrlField( type_key=field.key, **kwargs)
+            case FieldTypeEnum.DATETIME:
+                field_model = DatetimeField(type_key=field.key, **kwargs)
+            case _:
+                raise NotImplementedError(f"field type not implemented: {field.type}")
 
         with Session(self.engine) as session:
             try:

@@ -9,21 +9,24 @@ from tagstudio.qt.views.panel_modal import PanelWidget
 
 
 class EditTextLine(PanelWidget):
-    def __init__(self, text):
+    def __init__(self, text: str | None):
         super().__init__()
         self.setMinimumWidth(480)
         self.root_layout = QVBoxLayout(self)
         self.root_layout.setContentsMargins(6, 0, 6, 0)
         self.text = text
         self.text_edit = QLineEdit()
-        self.text_edit.setText(text)
+        self.text_edit.setText(text or "")
         self.root_layout.addWidget(self.text_edit)
 
-    def get_content(self):
-        return self.text_edit.text()
+    def get_content(self) -> str | None:
+        text: str | None = self.text_edit.text()
+        if text == "":
+            text = None
+        return text
 
     def reset(self):
-        self.text_edit.setText(self.text)
+        self.text_edit.setText(self.text or "")
 
     def add_callback(self, callback: Callable, event: str = "returnPressed"):
         if event == "returnPressed":

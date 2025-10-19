@@ -10,7 +10,7 @@ logger = structlog.get_logger(__name__)
 
 
 def to_anchor(url_title: str | None, url_value: str) -> str:
-    if url_title is None or url_title == "":
+    if url_title is None:
         url_title = url_value
 
     return f'<a href="{url_value}">{url_title}</a>'

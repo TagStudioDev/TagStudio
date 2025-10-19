@@ -110,7 +110,7 @@ class DatetimeField(BaseField):
     value: Mapped[str | None]
 
     def __key(self):
-        return (self.type, self.value)
+        return self.type, self.value
 
     @override
     def __eq__(self, value: object) -> bool:
