@@ -1338,14 +1338,14 @@ class Library:
         *,
         field: ValueType | None = None,
         field_id: FieldID | str | None = None,
-        value: str | datetime | None = None,
+        **kwargs
     ) -> bool:
         logger.info(
             "[Library][add_field_to_entry]",
             entry_id=entry_id,
             field_type=field,
             field_id=field_id,
-            value=value,
+            **kwargs,
         )
         # supply only instance or ID, not both
         assert bool(field) != (field_id is not None)
@@ -1359,19 +1359,19 @@ class Library:
         if field.type in (FieldTypeEnum.TEXT_LINE, FieldTypeEnum.TEXT_BOX):
             field_model = TextField(
                 type_key=field.key,
-                value=value or "",
+                **kwargs
             )
 
         elif field.type == FieldTypeEnum.URL:
             field_model = UrlField(
                 type_key=field.key,
-                value=value or "",
+                **kwargs
             )
 
         elif field.type == FieldTypeEnum.DATETIME:
             field_model = DatetimeField(
                 type_key=field.key,
-                value=value,
+                **kwargs
             )
         else:
             raise NotImplementedError(f"field type not implemented: {field.type}")

@@ -1209,7 +1209,12 @@ class QtDriver(DriverMixin, QObject):
                     if field.type_key == e.type_key and field.value == e.value:
                         exists = True
                 if not exists:
-                    self.lib.add_field_to_entry(id, field_id=field.type_key, value=field.value)
+                    match field.type.type:
+                        case FieldTypeEnum.URL:
+                            self.lib.add_field_to_entry(id, field_id=field.type_key, title=field.title, value=field.value)
+                        case _:
+                            self.lib.add_field_to_entry(id, field_id=field.type_key, value=field.value)
+
             self.lib.add_tags_to_entries(id, self.copy_buffer["tags"])
         if len(self.selected) > 1:
             if TAG_ARCHIVED in self.copy_buffer["tags"]:
