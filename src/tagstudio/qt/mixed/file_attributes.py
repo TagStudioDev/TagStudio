@@ -242,15 +242,24 @@ class FileAttributes(QWidget):
 
             if stats.duration is not None:
                 stats_label_text = add_newline(stats_label_text)
+                logger.debug("[FileAttributes] Updating file duration", duration=stats.duration)
+
+                unknown_duration: str = "-:--"
+
                 try:
-                    dur_str = str(timedelta(seconds=float(stats.duration)))[:-7]
-                    if dur_str.startswith("0:"):
-                        dur_str = dur_str[2:]
-                    if dur_str.startswith("0"):
-                        dur_str = dur_str[1:]
+                    formatted_duration = str(timedelta(seconds=float(stats.duration)))[:-7]
+                    logger.debug("[FileAttributes]", formatted_duration=formatted_duration)
+                    if formatted_duration.startswith("0:"):
+                        formatted_duration = formatted_duration[2:]
+                    if formatted_duration.startswith("0"):
+                        formatted_duration = formatted_duration[1:]
                 except OverflowError:
-                    dur_str = "-:--"
-                stats_label_text += f"{dur_str}"
+                    formatted_duration = unknown_duration
+
+                if formatted_duration == "":
+                    formatted_duration = unknown_duration
+
+                stats_label_text += f"{formatted_duration}"
 
             if font_family:
                 stats_label_text = add_newline(stats_label_text)
