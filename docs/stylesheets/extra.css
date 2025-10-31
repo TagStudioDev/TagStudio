@@ -26,6 +26,36 @@
     );
 }
 
+.md-tabs {
+    background: none;
+    font-family: "Bai Jamjuree", Roboto, sans-serif;
+    font-weight: 500;
+    letter-spacing: -0.05rem !important;
+}
+.md-tabs__link {
+    opacity: 1;
+    color: var(--md-default-fg-color--light);
+    padding: 0.1rem;
+}
+.md-tabs__link:hover {
+    color: var(--md-accent-fg-color) !important;
+}
+.md-tabs__item--active {
+    color: var(--md-typeset-a-color) !important;
+
+    border-color: var(--md-typeset-a-color) !important;
+    border-width: 0 0 2px 0 !important;
+    border: solid;
+}
+.md-tabs__item {
+    height: 1.8rem;
+}
+.md-tabs__link {
+    font-size: 0.8rem;
+    margin-top: 0.2rem;
+    margin-bottom: 0.2rem;
+}
+
 /* Mobile Nav Header */
 .md-nav__source {
     background: linear-gradient(
@@ -41,6 +71,15 @@
 th,
 td {
     padding: 0.5em 1em 0.5em 1em !important;
+}
+
+.md-typeset ul li ul {
+    margin-top: 0;
+    margin-bottom: 0.1rem;
+}
+
+.md-typeset ul li {
+    margin-bottom: 0.1rem;
 }
 
 .md-header {
