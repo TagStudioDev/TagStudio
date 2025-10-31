@@ -22,11 +22,13 @@ logger = structlog.get_logger(__name__)
 
 
 class TagBoxWidget(TagBoxWidgetView):
+    """A widget that holds a list of tags."""
+
     on_update = Signal()
 
     __entries: list[int] = []
 
-    def __init__(self, title: str, driver: "QtDriver"):
+    def __init__(self, title: str, driver: "QtDriver") -> None:
         super().__init__(title, driver)
         self.__driver = driver
 

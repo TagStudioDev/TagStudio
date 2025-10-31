@@ -118,7 +118,7 @@ class TagColorManager(QWidget):
                 if not group.startswith(RESERVED_NAMESPACE_PREFIX):
                     all_default = False
                 color_box = ColorBoxWidget(group, colors, self.driver.lib)
-                color_box.updated.connect(
+                color_box.on_update.connect(
                     lambda: (
                         self.reset(),
                         self.setup_color_groups(),

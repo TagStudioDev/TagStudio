@@ -37,14 +37,15 @@ class TextFieldWidget(FieldWidget):
         # Fill data
         self.set_text(text)
 
-    def set_text(self, text: str):
+    def set_text(self, text: str) -> None:
         """Sets the text of the field."""
         text = linkify(text)
         self.text_label.setText(text)
 
 
 # Regex from https://stackoverflow.com/a/6041965
-def linkify(text: str):
+def linkify(text: str) -> str:
+    """Replaces any found URLs in a string with an embedded link."""
     url_pattern = (
         r"(http|ftp|https):\/\/([\w_-]+(?:(?:\.[\w_-]+)+))([\w.,@?^=%&:\/~+#-*]*[\w@?^=%&\/~+#-*])"
     )

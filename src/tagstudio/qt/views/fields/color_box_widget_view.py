@@ -55,8 +55,8 @@ BUTTON_STYLE = f"""
 
 
 class ColorBoxWidgetView(FieldWidget):
+    """A widget holding a list of tag colors."""
     __lib: Library
-    updated = Signal()
 
     def __init__(self, group: str, colors: list["TagColorGroup"], library: "Library") -> None:
         self.namespace: str = group
@@ -80,6 +80,7 @@ class ColorBoxWidgetView(FieldWidget):
         self.set_colors(self.colors)
 
     def set_colors(self, colors: Iterable[TagColorGroup]) -> None:
+        """Sets the colors the color box contains."""
         colors_ = sorted(
             list(colors), key=lambda color: self.__lib.get_namespace_name(color.namespace)
         )

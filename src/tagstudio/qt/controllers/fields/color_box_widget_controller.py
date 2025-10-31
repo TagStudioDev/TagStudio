@@ -1,5 +1,6 @@
 from typing import TYPE_CHECKING
 
+from PySide6.QtCore import Signal
 import structlog
 from PySide6.QtWidgets import QMessageBox
 
@@ -16,6 +17,10 @@ logger = structlog.get_logger(__name__)
 
 
 class ColorBoxWidget(ColorBoxWidgetView):
+    """A widget holding a list of tag colors."""
+
+    on_update = Signal()
+
     def __init__(self, group: str, colors: list[TagColorGroup], library: "Library") -> None:
         super().__init__(group, colors, library)
         self.__lib: Library = library
@@ -30,7 +35,7 @@ class ColorBoxWidget(ColorBoxWidgetView):
         )
 
         edit_color_modal.saved.connect(
-            lambda: (self.__lib.update_color(*build_color_panel.build_color()), self.updated.emit())
+            lambda: (self.__lib.update_color(*build_color_panel.build_color()), self.on_update.emit())
         )
 
         edit_color_modal.show()
@@ -61,4 +66,4 @@ class ColorBoxWidget(ColorBoxWidgetView):
 
         logger.info("[ColorBoxWidget] Removing color", color=color_group)
         self.__lib.delete_color(color_group)
-        self.updated.emit()
+        self.on_update.emit()
