@@ -21,6 +21,7 @@ logger = structlog.get_logger(__name__)
 
 class TagBoxWidgetView(FieldWidget):
     """A widget that holds a list of tags."""
+
     __lib: Library
 
     def __init__(self, title: str, driver: "QtDriver") -> None:

@@ -7,7 +7,6 @@ from collections.abc import Iterable
 from typing import TYPE_CHECKING
 
 import structlog
-from PySide6.QtCore import Signal
 from PySide6.QtWidgets import QPushButton
 
 from tagstudio.core.constants import RESERVED_NAMESPACE_PREFIX
@@ -56,6 +55,7 @@ BUTTON_STYLE = f"""
 
 class ColorBoxWidgetView(FieldWidget):
     """A widget holding a list of tag colors."""
+
     __lib: Library
 
     def __init__(self, group: str, colors: list["TagColorGroup"], library: "Library") -> None:

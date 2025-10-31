@@ -1,7 +1,7 @@
 from typing import TYPE_CHECKING
 
-from PySide6.QtCore import Signal
 import structlog
+from PySide6.QtCore import Signal
 from PySide6.QtWidgets import QMessageBox
 
 from tagstudio.core.library.alchemy.models import TagColorGroup
@@ -35,7 +35,10 @@ class ColorBoxWidget(ColorBoxWidgetView):
         )
 
         edit_color_modal.saved.connect(
-            lambda: (self.__lib.update_color(*build_color_panel.build_color()), self.on_update.emit())
+            lambda: (
+                self.__lib.update_color(*build_color_panel.build_color()),
+                self.on_update.emit(),
+            )
         )
 
         edit_color_modal.show()
