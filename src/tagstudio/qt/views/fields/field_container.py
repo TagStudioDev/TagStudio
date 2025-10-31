@@ -13,20 +13,20 @@ from tagstudio.core.enums import Theme
 from tagstudio.qt.views.fields.field_widget import FieldWidget
 
 # TODO: reference a resources folder rather than path.parents[2]?
-clipboard_icon: Image.Image = Image.open(
+clipboard_icon_128: Image.Image = Image.open(
     str(Path(__file__).parents[3] / "resources/qt/images/clipboard_icon_128.png")
 ).resize((math.floor(24 * 1.25), math.floor(24 * 1.25)))
-clipboard_icon.load()
+clipboard_icon_128.load()
 
-edit_icon: Image.Image = Image.open(
+edit_icon_128: Image.Image = Image.open(
     str(Path(__file__).parents[3] / "resources/qt/images/edit_icon_128.png")
 ).resize((math.floor(24 * 1.25), math.floor(24 * 1.25)))
-edit_icon.load()
+edit_icon_128.load()
 
-trash_icon: Image.Image = Image.open(
+trash_icon_128: Image.Image = Image.open(
     str(Path(__file__).parents[3] / "resources/qt/images/trash_icon_128.png")
 ).resize((math.floor(24 * 1.25), math.floor(24 * 1.25)))
-trash_icon.load()
+trash_icon_128.load()
 
 # TODO: There should be a global button theme somewhere.
 CONTAINER_STYLE = f"""
@@ -103,7 +103,7 @@ class FieldContainer(QWidget):
         self.copy_button.setMinimumSize(BUTTON_SIZE, BUTTON_SIZE)
         self.copy_button.setMaximumSize(BUTTON_SIZE, BUTTON_SIZE)
         self.copy_button.setFlat(True)
-        self.copy_button.setIcon(QPixmap.fromImage(ImageQt.ImageQt(clipboard_icon)))
+        self.copy_button.setIcon(QPixmap.fromImage(ImageQt.ImageQt(clipboard_icon_128)))
         self.copy_button.setCursor(Qt.CursorShape.PointingHandCursor)
         self.copy_button.setHidden(True)
 
@@ -115,7 +115,7 @@ class FieldContainer(QWidget):
         self.edit_button.setMinimumSize(BUTTON_SIZE, BUTTON_SIZE)
         self.edit_button.setMaximumSize(BUTTON_SIZE, BUTTON_SIZE)
         self.edit_button.setFlat(True)
-        self.edit_button.setIcon(QPixmap.fromImage(ImageQt.ImageQt(edit_icon)))
+        self.edit_button.setIcon(QPixmap.fromImage(ImageQt.ImageQt(edit_icon_128)))
         self.edit_button.setCursor(Qt.CursorShape.PointingHandCursor)
         self.edit_button.setHidden(True)
 
@@ -127,7 +127,7 @@ class FieldContainer(QWidget):
         self.remove_button.setMinimumSize(BUTTON_SIZE, BUTTON_SIZE)
         self.remove_button.setMaximumSize(BUTTON_SIZE, BUTTON_SIZE)
         self.remove_button.setFlat(True)
-        self.remove_button.setIcon(QPixmap.fromImage(ImageQt.ImageQt(trash_icon)))
+        self.remove_button.setIcon(QPixmap.fromImage(ImageQt.ImageQt(trash_icon_128)))
         self.remove_button.setCursor(Qt.CursorShape.PointingHandCursor)
         self.remove_button.setHidden(True)
 
