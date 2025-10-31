@@ -33,13 +33,13 @@ from tagstudio.core.library.alchemy.fields import (
 from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.library.alchemy.models import Entry, Tag
 from tagstudio.core.utils.types import unwrap
-from tagstudio.qt.controllers.tag_box_controller import TagBoxWidget
+from tagstudio.qt.controllers.fields.tag_box_widget_controller import TagBoxWidget
 from tagstudio.qt.mixed.datetime_picker import DatetimePicker
-from tagstudio.qt.mixed.field_widget import FieldContainer
-from tagstudio.qt.mixed.text_field import TextWidget
 from tagstudio.qt.translations import Translations
 from tagstudio.qt.views.edit_text_box_modal import EditTextBox
 from tagstudio.qt.views.edit_text_line_modal import EditTextLine
+from tagstudio.qt.views.fields.field_container import FieldContainer
+from tagstudio.qt.views.fields.text_field_widget import TextFieldWidget
 from tagstudio.qt.views.panel_modal import PanelModal
 
 if typing.TYPE_CHECKING:
@@ -272,8 +272,8 @@ class FieldContainers(QWidget):
                 text = "<i>Mixed Data</i>"
 
             title = f"{field.type.name} ({field.type.type.value})"
-            inner_widget = TextWidget(title, text)
-            container.set_inner_widget(inner_widget)
+            inner_widget = TextFieldWidget(title, text)
+            container.set_field_widget(inner_widget)
             if not is_mixed:
                 modal = PanelModal(
                     EditTextLine(field.value),
@@ -311,8 +311,8 @@ class FieldContainers(QWidget):
             else:
                 text = "<i>Mixed Data</i>"
             title = f"{field.type.name} (Text Box)"
-            inner_widget = TextWidget(title, text)
-            container.set_inner_widget(inner_widget)
+            inner_widget = TextFieldWidget(title, text)
+            container.set_field_widget(inner_widget)
             if not is_mixed:
                 modal = PanelModal(
                     EditTextBox(field.value),
@@ -352,8 +352,8 @@ class FieldContainers(QWidget):
                     title += " (Unknown Format)"
                     text = str(field.value)
 
-                inner_widget = TextWidget(title, text)
-                container.set_inner_widget(inner_widget)
+                inner_widget = TextFieldWidget(title, text)
+                container.set_field_widget(inner_widget)
 
                 modal = PanelModal(
                     DatetimePicker(self.driver, field.value or dt.now()),
@@ -379,15 +379,15 @@ class FieldContainers(QWidget):
             else:
                 text = "<i>Mixed Data</i>"
                 title = f"{field.type.name} (Wacky Date)"
-                inner_widget = TextWidget(title, text)
-                container.set_inner_widget(inner_widget)
+                inner_widget = TextFieldWidget(title, text)
+                container.set_field_widget(inner_widget)
         else:
             logger.warning("[FieldContainers][write_container] Unknown Field", field=field)
             container.set_title(field.type.name)
             container.set_inline(False)
             title = f"{field.type.name} (Unknown Field Type)"
-            inner_widget = TextWidget(title, field.type.name)
-            container.set_inner_widget(inner_widget)
+            inner_widget = TextFieldWidget(title, field.type.name)
+            container.set_field_widget(inner_widget)
             container.set_remove_callback(
                 lambda: self.remove_message_box(
                     prompt=self.remove_field_prompt(field.type.name),
@@ -425,28 +425,28 @@ class FieldContainers(QWidget):
         container.set_inline(False)
 
         if not is_mixed:
-            inner_widget = container.get_inner_widget()
+            field_widget = container.get_field_widget()
 
-            if isinstance(inner_widget, TagBoxWidget):
+            if isinstance(field_widget, TagBoxWidget):
                 with catch_warnings(record=True):
-                    inner_widget.on_update.disconnect()
+                    field_widget.on_update.disconnect()
 
             else:
-                inner_widget = TagBoxWidget(
+                field_widget = TagBoxWidget(
                     "Tags",
                     self.driver,
                 )
-                container.set_inner_widget(inner_widget)
-            inner_widget.set_entries([e.id for e in self.cached_entries])
-            inner_widget.set_tags(tags)
+                container.set_field_widget(field_widget)
+            field_widget.set_entries([e.id for e in self.cached_entries])
+            field_widget.set_tags(tags)
 
-            inner_widget.on_update.connect(
+            field_widget.on_update.connect(
                 lambda: (self.update_from_entry(self.cached_entries[0].id, update_badges=True))
             )
         else:
             text = "<i>Mixed Data</i>"
-            inner_widget = TextWidget("Mixed Tags", text)
-            container.set_inner_widget(inner_widget)
+            field_widget = TextFieldWidget("Mixed Tags", text)
+            container.set_field_widget(field_widget)
 
         container.set_edit_callback()
         container.set_remove_callback()

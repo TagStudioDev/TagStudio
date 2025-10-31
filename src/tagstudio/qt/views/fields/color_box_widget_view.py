@@ -15,10 +15,10 @@ from tagstudio.core.library.alchemy.enums import TagColorEnum
 from tagstudio.core.library.alchemy.models import TagColorGroup
 from tagstudio.core.utils.types import unwrap
 from tagstudio.qt.mixed.build_color import BuildColorPanel
-from tagstudio.qt.mixed.field_widget import FieldWidget
 from tagstudio.qt.mixed.tag_color_label import TagColorLabel
 from tagstudio.qt.models.palette import ColorType, get_tag_color
 from tagstudio.qt.translations import Translations
+from tagstudio.qt.views.fields.field_widget import FieldWidget
 from tagstudio.qt.views.layouts.flow_layout import FlowLayout
 from tagstudio.qt.views.panel_modal import PanelModal
 
