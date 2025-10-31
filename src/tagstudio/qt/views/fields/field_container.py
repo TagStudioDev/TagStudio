@@ -62,9 +62,9 @@ class FieldContainer(QWidget):
         self.inline: bool = inline
         self.setStyleSheet(CONTAINER_STYLE)
 
-        self.base_layout = QVBoxLayout(self)
-        self.base_layout.setObjectName("baseLayout")
-        self.base_layout.setContentsMargins(0, 0, 0, 0)
+        self.__root_layout = QVBoxLayout(self)
+        self.__root_layout.setObjectName("baseLayout")
+        self.__root_layout.setContentsMargins(0, 0, 0, 0)
 
         # Field container
         self.container_layout = QVBoxLayout()
@@ -76,7 +76,7 @@ class FieldContainer(QWidget):
         self.field_container.setObjectName("fieldContainer")
         self.field_container.setLayout(self.container_layout)
 
-        self.base_layout.addWidget(self.field_container)
+        self.__root_layout.addWidget(self.field_container)
 
         # Title
         self.title_container = QWidget()

@@ -20,9 +20,9 @@ class TextFieldWidget(FieldWidget):
         # Widget
         self.setObjectName("textBox")
 
-        self.base_layout = QHBoxLayout()
-        self.base_layout.setContentsMargins(0, 0, 0, 0)
-        self.setLayout(self.base_layout)
+        self.__root_layout = QHBoxLayout()
+        self.__root_layout.setContentsMargins(0, 0, 0, 0)
+        self.setLayout(self.__root_layout)
 
         # Label
         self.text_label = QLabel()
@@ -32,7 +32,7 @@ class TextFieldWidget(FieldWidget):
         self.text_label.setOpenExternalLinks(True)
         self.text_label.setTextInteractionFlags(Qt.TextInteractionFlag.TextBrowserInteraction)
 
-        self.base_layout.addWidget(self.text_label)
+        self.__root_layout.addWidget(self.text_label)
 
         # Fill data
         self.set_text(text)

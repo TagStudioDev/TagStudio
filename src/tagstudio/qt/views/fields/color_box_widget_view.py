@@ -68,10 +68,10 @@ class ColorBoxWidgetView(FieldWidget):
 
         # Color box
         self.setObjectName("colorBox")
-        self.__base_layout = FlowLayout()
-        self.__base_layout.enable_grid_optimizations(value=True)
-        self.__base_layout.setContentsMargins(0, 0, 0, 0)
-        self.setLayout(self.__base_layout)
+        self.__root_layout = FlowLayout()
+        self.__root_layout.enable_grid_optimizations(value=True)
+        self.__root_layout.setContentsMargins(0, 0, 0, 0)
+        self.setLayout(self.__root_layout)
 
         # Add button
         self.add_button_stylesheet = BUTTON_STYLE
@@ -87,8 +87,8 @@ class ColorBoxWidgetView(FieldWidget):
         is_mutable = not self.namespace.startswith(RESERVED_NAMESPACE_PREFIX)
         max_width = 60
 
-        while self.__base_layout.itemAt(0):
-            unwrap(self.__base_layout.takeAt(0)).widget().deleteLater()
+        while self.__root_layout.itemAt(0):
+            unwrap(self.__root_layout.takeAt(0)).widget().deleteLater()
 
         color_widgets: list[TagColorLabel] = []
 
@@ -108,7 +108,7 @@ class ColorBoxWidgetView(FieldWidget):
             color_widget.on_remove.connect(lambda c=color: self._on_delete_color(c))
 
             color_widgets.append(color_widget)
-            self.__base_layout.addWidget(color_widget)
+            self.__root_layout.addWidget(color_widget)
 
         for color_widget in color_widgets:
             color_widget.setFixedWidth(max_width)
@@ -133,7 +133,7 @@ class ColorBoxWidgetView(FieldWidget):
                 )
             )
 
-            self.__base_layout.addWidget(add_button)
+            self.__root_layout.addWidget(add_button)
 
     def _on_edit_color(self, color_group: TagColorGroup) -> None:
         raise NotImplementedError
