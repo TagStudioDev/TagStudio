@@ -36,7 +36,7 @@ class TagBoxWidget(TagBoxWidgetView):
         self.__entries = entries
 
     @override
-    def _on_click(self, tag: Tag) -> None:
+    def _on_click(self, tag: Tag) -> None: # type: ignore[misc]
         match self.__driver.settings.tag_click_action:
             case TagClickActionOption.OPEN_EDIT:
                 self._on_edit(tag)
@@ -60,7 +60,7 @@ class TagBoxWidget(TagBoxWidgetView):
                 )
 
     @override
-    def _on_remove(self, tag: Tag) -> None:
+    def _on_remove(self, tag: Tag) -> None: # type: ignore[misc]
         logger.info(
             "[TagBoxWidget] remove_tag",
             selected=self.__entries,
@@ -72,7 +72,7 @@ class TagBoxWidget(TagBoxWidgetView):
         self.on_update.emit()
 
     @override
-    def _on_edit(self, tag: Tag) -> None:
+    def _on_edit(self, tag: Tag) -> None: # type: ignore[misc]
         build_tag_panel = BuildTagPanel(self.__driver.lib, tag=tag)
 
         edit_modal = PanelModal(
@@ -94,7 +94,7 @@ class TagBoxWidget(TagBoxWidgetView):
         edit_modal.show()
 
     @override
-    def _on_search(self, tag: Tag) -> None:
+    def _on_search(self, tag: Tag) -> None: # type: ignore[misc]
         self.__driver.main_window.search_field.setText(f"tag_id:{tag.id}")
         self.__driver.update_browsing_state(
             BrowsingState.from_tag_id(tag.id, self.__driver.browsing_history.current)
