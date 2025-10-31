@@ -29,26 +29,32 @@ extra:
 nav:
   - Home:
       - index.md
+  - Getting Started:
       - install.md
       - usage.md
-      - develop.md
-  - Help:
-      - help/ffmpeg.md
-  - Library:
-      - library/index.md
-      - library/library_search.md
-      - library/entry.md
-      - library/field.md
-      - library/tag.md
-      - library/tag_categories.md
-      - library/tag_color.md
-  - Utilities:
-      - utilities/ignore.md
-      - utilities/macro.md
+      - Developing:
+        - developing.md
+        - contributing.md
+        - style.md
+      - Help:
+          - help/ffmpeg.md
+  - Using Libraries:
+      - libraries.md
+      - entries.md
+      - preview-support.md
+      - search.md
+      - ignore.md
+      - macros.md
+      - Fields:
+        - fields.md
+      - Tags:
+          - tags.md
+          - colors.md
   - Updates:
-      - updates/changelog.md
-      - updates/roadmap.md
-      - updates/schema_changes.md
+      - changelog.md
+      - roadmap.md
+      - Schema History:
+        - library-changes.md
 
 theme:
   name: material
@@ -81,16 +87,17 @@ theme:
     code: Jetbrains Mono
   language: en
   features:
-    - navigation.instant
-    - navigation.indexes
-    - navigation.tracking
-    - navigation.expand
-    - navigation.sections
-    - search.suggest
+    - content.action.edit
     - content.code.annotate
     - content.code.copy
-    - content.action.edit
     - content.tooltips
+    - navigation.indexes
+    - navigation.instant
+    - navigation.sections
+    - navigation.tabs
+    # - navigation.tabs.sticky
+    - navigation.tracking
+    - search.suggest
   icon:
     repo: fontawesome/brands/github
     tag:
@@ -108,6 +115,7 @@ markdown_extensions:
   - tables
   - toc:
       permalink: true
+      toc_depth: 3
 
   # Python Markdown Extensions
   - pymdownx.arithmatex:
@@ -142,6 +150,21 @@ plugins:
   - tags
   - social:  # social embed cards
       enabled: !ENV [CI, false]  # enabled only when running in CI (eg GitHub Actions)
+  - redirects:
+      redirect_maps:
+        "develop.md": "developing.md"
+        "library/entry.md": "entries.md"
+        "library/field.md": "fields.md"
+        "library/index.md": "libraries.md"
+        "library/library_search.md": "search.md"
+        "library/tag_categories.md": "tags.md"
+        "library/tag_color.md": "colors.md"
+        "library/tag.md": "tags.md"
+        "updates/changelog.md": "changelog.md"
+        "updates/roadmap.md": "roadmap.md"
+        "updates/schema_changes.md": "library-changes.md"
+        "utilities/ignore.md": "ignore.md"
+        "utilities/macro.md": "macros.md"
 
 extra_css:
   - stylesheets/extra.css
