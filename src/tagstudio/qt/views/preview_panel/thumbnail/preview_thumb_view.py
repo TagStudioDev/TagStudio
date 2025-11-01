@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, override
 
 import structlog
-from PySide6.QtCore import QBuffer, QByteArray, QSize, Qt, Signal
+from PySide6.QtCore import QBuffer, QByteArray, QSize, Qt
 from PySide6.QtGui import QAction, QMovie, QPixmap, QResizeEvent
 from PySide6.QtWidgets import QHBoxLayout, QLabel, QPushButton, QStackedLayout, QWidget
 
@@ -17,7 +17,6 @@ from tagstudio.qt.mixed.preview_panel.thumbnail.media_player import MediaPlayer
 from tagstudio.qt.platform_strings import open_file_str, trash_term
 from tagstudio.qt.previews.renderer import ThumbRenderer
 from tagstudio.qt.translations import Translations
-from tagstudio.qt.views.preview_panel.attributes.file_attributes_view import FileAttributeData
 from tagstudio.qt.views.styles.rounded_pixmap_style import RoundedPixmapStyle
 
 if TYPE_CHECKING:
@@ -117,7 +116,6 @@ class PreviewThumbView(QWidget):
         self.__thumb_renderer.updated.connect(self.__thumb_renderer_updated_callback)
         self.__thumb_renderer.updated_ratio.connect(self.__thumb_renderer_updated_ratio_callback)
 
-
         self.setMinimumSize(*self.__thumbnail_button_size)
         self.hide_preview()
 
@@ -157,14 +155,10 @@ class PreviewThumbView(QWidget):
 
         # Landscape
         if self.__thumbnail_ratio > 1:
-            adjusted_size.setHeight(
-                int(size.width() * (1 / self.__thumbnail_ratio))
-            )
+            adjusted_size.setHeight(int(size.width() * (1 / self.__thumbnail_ratio)))
         # Portrait
         elif self.__thumbnail_ratio <= 1:
-            adjusted_size.setWidth(
-                int(size.height() * self.__thumbnail_ratio)
-            )
+            adjusted_size.setWidth(int(size.height() * self.__thumbnail_ratio))
 
         if adjusted_size.width() > size.width():
             adjusted_size.setHeight(
@@ -238,33 +232,20 @@ class PreviewThumbView(QWidget):
 
         Returns the duration of the audio / video.
         """
-
         self._media_player.play(filepath)
 
     def _display_video(self, filepath: Path, size: QSize | None) -> None:
         self.__switch_preview(MediaType.VIDEO)
-        stats = FileAttributeData(duration=self.__update_media_player(filepath))
-
-        if size is not None:
-            stats.width = size.width()
-            stats.height = size.height()
-
-            self.__thumbnail_ratio = stats.width / stats.height
-            self.resizeEvent(
-                QResizeEvent(
-                    QSize(stats.width, stats.height),
-                    QSize(stats.width, stats.height),
-                )
-            )
+        self.__update_media_player(filepath)
 
     def _display_audio(self, filepath: Path) -> None:
         self.__switch_preview(MediaType.AUDIO)
         self.__render_thumb(filepath)
+        self.__update_media_player(filepath)
 
     def _display_gif(self, gif_data: bytes, size: QSize) -> None:
         """Update the animated image preview from a filepath."""
-
-       # Ensure that any movie and buffer from previous animations are cleared.
+        # Ensure that any movie and buffer from previous animations are cleared.
         if self.__preview_gif.movie():
             self.__preview_gif.movie().stop()
             self.__gif_buffer.close()
@@ -276,17 +257,9 @@ class PreviewThumbView(QWidget):
         self.__preview_gif.setMovie(movie)
 
         # If the animation only has 1 frame, it isn't animated and shouldn't be treated as such
-        if movie.frameCount() <= 1:
-            return None
-
-        # The animation has more than 1 frame, continue displaying it as an animation
-        self.__switch_preview(MediaType.IMAGE_ANIMATED)
-        self.resizeEvent(
-            QResizeEvent(
-                size, size
-            )
-        )
-        movie.start()
+        if movie.frameCount() > 1:
+            self.__switch_preview(MediaType.IMAGE_ANIMATED)
+            movie.start()
 
     def _display_image(self, filepath: Path) -> None:
         """Renders the given file as an image, no matter its media type."""
@@ -300,6 +273,7 @@ class PreviewThumbView(QWidget):
 
     @override
     def resizeEvent(self, event: QResizeEvent) -> None:
+        self.__thumbnail_ratio = self.size().width() / self.size().height()
         self.__update_thumbnail_size(self.size())
 
         if self.__filepath is not None and self.__rendered_res < self.__thumbnail_button_size:

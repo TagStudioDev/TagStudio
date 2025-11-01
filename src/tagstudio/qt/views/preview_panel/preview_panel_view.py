@@ -1,13 +1,11 @@
 # Licensed under the GPL-3.0 License.
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
-from functools import partial
-import random
 import traceback
 import typing
 from pathlib import Path
 
 import structlog
-from PySide6.QtCore import Qt
+from PySide6.QtCore import QSize, Qt
 from PySide6.QtWidgets import (
     QHBoxLayout,
     QPushButton,
@@ -25,7 +23,6 @@ from tagstudio.qt.controllers.preview_panel.thumbnail.preview_thumb_controller i
 from tagstudio.qt.mixed.field_containers import FieldContainers
 from tagstudio.qt.models.palette import ColorType, UiColor, get_ui_color
 from tagstudio.qt.translations import Translations
-from tagstudio.qt.views.preview_panel.attributes.file_attributes_view import FileAttributeData
 
 if typing.TYPE_CHECKING:
     from tagstudio.qt.ts_qt import QtDriver
@@ -138,7 +135,7 @@ class PreviewPanelView(QWidget):
     def _set_selection_callback(self):
         raise NotImplementedError()
 
-    def _file_dimensions_changed_callback(self, width: int, height: int) -> None:
+    def _file_dimensions_changed_callback(self, size: QSize) -> None:
         raise NotImplementedError()
 
     def _file_duration_changed_callback(self, duration: int) -> None:
@@ -170,9 +167,8 @@ class PreviewPanelView(QWidget):
                 filepath: Path = unwrap(self.lib.library_dir) / entry.path
 
                 if update_preview:
+                    self._thumb.display_file(filepath)
                     self._file_attributes.update_file_path(filepath)
-                    stats: FileAttributeData = self._thumb.display_file(filepath)
-                    logger.debug("[Preview Panel] Updating file stats", stats=stats)
 
                 self._file_attributes.set_selection_size(len(selected))
                 self._file_attributes.update_date_label(filepath)

@@ -4,6 +4,7 @@
 import typing
 from warnings import catch_warnings
 
+from PySide6.QtCore import QSize
 from PySide6.QtWidgets import QListWidgetItem
 
 from tagstudio.core.library.alchemy.library import Library
@@ -40,17 +41,13 @@ class PreviewPanel(PreviewPanelView):
         self.__add_field_modal.done.connect(self._add_field_to_selected)
         self.__add_tag_modal.tsp.tag_chosen.connect(self._add_tag_to_selected)
 
-    def _file_dimensions_changed_callback(self, width: int, height: int) -> None:
+    def _file_dimensions_changed_callback(self, size: QSize) -> None:
         self._file_attributes.update_file_property(
-            FilePropertyType.DIMENSIONS,
-            width=width, height=height
+            FilePropertyType.DIMENSIONS, width=size.width(), height=size.height()
         )
 
     def _file_duration_changed_callback(self, duration: int) -> None:
-        self._file_attributes.update_file_property(
-            FilePropertyType.DURATION,
-            duration=duration
-        )
+        self._file_attributes.update_file_property(FilePropertyType.DURATION, duration=duration)
 
     def _add_field_to_selected(self, field_list: list[QListWidgetItem]):
         self._fields.add_field_to_selected(field_list)

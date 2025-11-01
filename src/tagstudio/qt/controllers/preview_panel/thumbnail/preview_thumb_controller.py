@@ -11,6 +11,7 @@ import structlog
 from PIL import Image, UnidentifiedImageError
 from PIL.Image import DecompressionBombError
 from PySide6.QtCore import QSize, Signal
+from PySide6.QtGui import QResizeEvent
 
 from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.media_types import MediaCategories
@@ -26,7 +27,7 @@ Image.MAX_IMAGE_PIXELS = None
 
 
 class PreviewThumb(PreviewThumbView):
-    dimensions_changed = Signal(int, int)
+    dimensions_changed = Signal(QSize)
     duration_changed = Signal(int)
 
     __current_file: Path
@@ -37,6 +38,13 @@ class PreviewThumb(PreviewThumbView):
         self.__driver: QtDriver = driver
 
         self._media_player.duration_changed.connect(self.duration_changed.emit)
+
+    def _on_dimensions_change(self, size: QSize | None) -> None:
+        if size is None:
+            size = QSize(0, 0)
+
+        self.resizeEvent(QResizeEvent(size, size))
+        self.dimensions_changed.emit(size)
 
     def __get_image_size(self, filepath: Path) -> QSize:
         """Get width and height of an image as dict."""
@@ -127,10 +135,8 @@ class PreviewThumb(PreviewThumbView):
             except cv2.error as e:
                 logger.error("[PreviewThumb] Could not play video", filepath=filepath, error=e)
 
-            if video_size:
-                self.dimensions_changed.emit(video_size.width(), video_size.height())
-            else:
-                self.dimensions_changed.emit(0, 0)
+            self._display_video(filepath, video_size)
+            self._on_dimensions_change(video_size)
 
         # Audio
         elif MediaCategories.AUDIO_TYPES.contains(ext, mime_fallback=True):
@@ -146,14 +152,14 @@ class PreviewThumb(PreviewThumbView):
                 self._display_image(filepath)
                 gif_size = self.__get_image_size(filepath)
 
-            self.dimensions_changed.emit(gif_size.width(), gif_size.height())
+            self._on_dimensions_change(gif_size)
 
         # Other Types (Including Images)
         else:
             self._display_image(filepath)
 
             image_size: QSize = self.__get_image_size(filepath)
-            self.dimensions_changed.emit(image_size.width(), image_size.height())
+            self._on_dimensions_change(image_size)
 
     def _open_file_action_callback(self):
         open_file(

@@ -10,7 +10,7 @@ class DimensionPropertyWidget(FilePropertyWidget):
         self.setObjectName("dimensions_property")
 
     def set_value(self, **kwargs) -> None:
-        width: int = kwargs.get('width', 0)
-        height: int = kwargs.get('height', 0)
+        width: int = kwargs.get("width", 0)
+        height: int = kwargs.get("height", 0)
 
         self.setText(f"{width} x {height} px")

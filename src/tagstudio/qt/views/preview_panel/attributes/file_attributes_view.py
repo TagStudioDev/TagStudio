@@ -39,6 +39,7 @@ FILE_NAME_LABEL_STYLE = "font-size: 12px;"
 
 DATE_LABEL_STYLE = "font-size: 12px;"
 
+
 class FileAttributesView(QWidget):
     """A widget displaying a list of a file's attributes."""
 
@@ -152,7 +153,6 @@ class FileAttributesView(QWidget):
                 path_string += f"<b>{'\u200b'.join(directory_name)}</b>"
 
         self.file_path_label.setText(path_string)
-
 
     def update_date_label(self, filepath: Path | None = None) -> None:
         """Update the "Date Created" and "Date Modified" file property labels."""

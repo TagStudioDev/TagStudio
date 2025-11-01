@@ -58,7 +58,6 @@ class MediaPlayer(QGraphicsView):
         super().__init__()
         self.driver = driver
 
-
         slider_style = """
             QSlider {
                 background: transparent;
@@ -493,6 +492,7 @@ class MediaPlayer(QGraphicsView):
 
     def volume_slider_changed(self, position: int) -> None:
         self.player.audioOutput().setVolume(position / 100)
+
 
 class VideoPreview(QGraphicsVideoItem):
     @override

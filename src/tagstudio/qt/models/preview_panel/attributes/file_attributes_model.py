@@ -1,7 +1,11 @@
 from enum import Enum
 
-from tagstudio.qt.views.preview_panel.attributes.dimension_property_widget import DimensionPropertyWidget
-from tagstudio.qt.views.preview_panel.attributes.duration_property_widget import DurationPropertyWidget
+from tagstudio.qt.views.preview_panel.attributes.dimension_property_widget import (
+    DimensionPropertyWidget,
+)
+from tagstudio.qt.views.preview_panel.attributes.duration_property_widget import (
+    DurationPropertyWidget,
+)
 from tagstudio.qt.views.preview_panel.attributes.file_property_widget import FilePropertyWidget
 
 
