@@ -10,14 +10,13 @@ import rawpy
 import structlog
 from PIL import Image, UnidentifiedImageError
 from PIL.Image import DecompressionBombError
-from PySide6.QtCore import QSize
+from PySide6.QtCore import QSize, Signal
 
 from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.media_types import MediaCategories
 from tagstudio.qt.helpers.file_tester import is_readable_video
-from tagstudio.qt.mixed.file_attributes import FileAttributeData
 from tagstudio.qt.utils.file_opener import open_file
-from tagstudio.qt.views.preview_thumb_view import PreviewThumbView
+from tagstudio.qt.views.preview_panel.thumbnail.preview_thumb_view import PreviewThumbView
 
 if TYPE_CHECKING:
     from tagstudio.qt.ts_qt import QtDriver
@@ -27,6 +26,9 @@ Image.MAX_IMAGE_PIXELS = None
 
 
 class PreviewThumb(PreviewThumbView):
+    dimensions_changed = Signal(int, int)
+    duration_changed = Signal(int)
+
     __current_file: Path
 
     def __init__(self, library: Library, driver: "QtDriver"):
@@ -34,9 +36,11 @@ class PreviewThumb(PreviewThumbView):
 
         self.__driver: QtDriver = driver
 
-    def __get_image_stats(self, filepath: Path) -> FileAttributeData:
+        self._media_player.duration_changed.connect(self.duration_changed.emit)
+
+    def __get_image_size(self, filepath: Path) -> QSize:
         """Get width and height of an image as dict."""
-        stats = FileAttributeData()
+        size = QSize()
         ext = filepath.suffix.lower()
 
         if filepath.is_dir():
@@ -46,8 +50,7 @@ class PreviewThumb(PreviewThumbView):
                 with rawpy.imread(str(filepath)) as raw:
                     rgb = raw.postprocess()
                     image = Image.new("L", (rgb.shape[1], rgb.shape[0]), color="black")
-                    stats.width = image.width
-                    stats.height = image.height
+                    size = QSize(image.width, image.height)
             except (
                 rawpy._rawpy._rawpy.LibRawIOError,  # pyright: ignore[reportAttributeAccessIssue]
                 rawpy._rawpy.LibRawFileUnsupportedError,  # pyright: ignore[reportAttributeAccessIssue]
@@ -57,8 +60,7 @@ class PreviewThumb(PreviewThumbView):
         elif MediaCategories.IMAGE_RASTER_TYPES.contains(ext, mime_fallback=True):
             try:
                 image = Image.open(str(filepath))
-                stats.width = image.width
-                stats.height = image.height
+                size = QSize(image.width, image.height)
             except (
                 DecompressionBombError,
                 FileNotFoundError,
@@ -69,9 +71,9 @@ class PreviewThumb(PreviewThumbView):
         elif MediaCategories.IMAGE_VECTOR_TYPES.contains(ext, mime_fallback=True):
             pass  # TODO
 
-        return stats
+        return size
 
-    def __get_gif_data(self, filepath: Path) -> tuple[bytes, tuple[int, int]] | None:
+    def __get_gif_data(self, filepath: Path) -> tuple[bytes, QSize] | None:
         """Loads an animated image and returns gif data and size, if successful."""
         ext = filepath.suffix.lower()
 
@@ -90,11 +92,11 @@ class PreviewThumb(PreviewThumbView):
                 )
                 image.close()
                 image_bytes_io.seek(0)
-                return (image_bytes_io.read(), (image.width, image.height))
+                return image_bytes_io.read(), QSize(image.width, image.height)
             else:
                 image.close()
                 with open(filepath, "rb") as f:
-                    return (f.read(), (image.width, image.height))
+                    return f.read(), QSize(image.width, image.height)
 
         except (UnidentifiedImageError, FileNotFoundError) as e:
             logger.error("[PreviewThumb] Could not load animated image", filepath=filepath, error=e)
@@ -105,9 +107,9 @@ class PreviewThumb(PreviewThumbView):
         success, frame = video.read()
         frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         image = Image.fromarray(frame)
-        return (success, QSize(image.width, image.height))
+        return success, QSize(image.width, image.height)
 
-    def display_file(self, filepath: Path) -> FileAttributeData:
+    def display_file(self, filepath: Path) -> None:
         """Render a single file preview."""
         self.__current_file = filepath
 
@@ -117,31 +119,41 @@ class PreviewThumb(PreviewThumbView):
         if MediaCategories.VIDEO_TYPES.contains(ext, mime_fallback=True) and is_readable_video(
             filepath
         ):
-            size: QSize | None = None
+            video_size: QSize | None = None
             try:
-                success, size = self.__get_video_res(str(filepath))
+                success, video_size = self.__get_video_res(str(filepath))
                 if not success:
-                    size = None
+                    video_size = None
             except cv2.error as e:
                 logger.error("[PreviewThumb] Could not play video", filepath=filepath, error=e)
 
-            return self._display_video(filepath, size)
+            if video_size:
+                self.dimensions_changed.emit(video_size.width(), video_size.height())
+            else:
+                self.dimensions_changed.emit(0, 0)
+
         # Audio
         elif MediaCategories.AUDIO_TYPES.contains(ext, mime_fallback=True):
-            return self._display_audio(filepath)
+            self._display_audio(filepath)
+
         # Animated Images
         elif MediaCategories.IMAGE_ANIMATED_TYPES.contains(ext, mime_fallback=True):
-            if (ret := self.__get_gif_data(filepath)) and (
-                stats := self._display_gif(ret[0], ret[1])
-            ) is not None:
-                return stats
+            gif_data = self.__get_gif_data(filepath)
+            if gif_data:
+                self._display_gif(*gif_data)
+                gif_size = gif_data[1]
             else:
                 self._display_image(filepath)
-                return self.__get_image_stats(filepath)
+                gif_size = self.__get_image_size(filepath)
+
+            self.dimensions_changed.emit(gif_size.width(), gif_size.height())
+
         # Other Types (Including Images)
         else:
             self._display_image(filepath)
-            return self.__get_image_stats(filepath)
+
+            image_size: QSize = self.__get_image_size(filepath)
+            self.dimensions_changed.emit(image_size.width(), image_size.height())
 
     def _open_file_action_callback(self):
         open_file(

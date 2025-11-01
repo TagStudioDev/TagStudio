@@ -9,7 +9,8 @@ from PySide6.QtWidgets import QListWidgetItem
 from tagstudio.core.library.alchemy.library import Library
 from tagstudio.qt.mixed.add_field import AddFieldModal
 from tagstudio.qt.mixed.tag_search import TagSearchModal
-from tagstudio.qt.views.preview_panel_view import PreviewPanelView
+from tagstudio.qt.models.preview_panel.attributes.file_attributes_model import FilePropertyType
+from tagstudio.qt.views.preview_panel.preview_panel_view import PreviewPanelView
 
 if typing.TYPE_CHECKING:
     from tagstudio.qt.ts_qt import QtDriver
@@ -21,6 +22,9 @@ class PreviewPanel(PreviewPanelView):
 
         self.__add_field_modal = AddFieldModal(self.lib)
         self.__add_tag_modal = TagSearchModal(self.lib, is_tag_chooser=True)
+
+        self._thumb.dimensions_changed.connect(self._file_dimensions_changed_callback)
+        self._thumb.duration_changed.connect(self._file_duration_changed_callback)
 
     def _add_field_button_callback(self):
         self.__add_field_modal.show()
@@ -35,6 +39,18 @@ class PreviewPanel(PreviewPanelView):
 
         self.__add_field_modal.done.connect(self._add_field_to_selected)
         self.__add_tag_modal.tsp.tag_chosen.connect(self._add_tag_to_selected)
+
+    def _file_dimensions_changed_callback(self, width: int, height: int) -> None:
+        self._file_attributes.update_file_property(
+            FilePropertyType.DIMENSIONS,
+            width=width, height=height
+        )
+
+    def _file_duration_changed_callback(self, duration: int) -> None:
+        self._file_attributes.update_file_property(
+            FilePropertyType.DURATION,
+            duration=duration
+        )
 
     def _add_field_to_selected(self, field_list: list[QListWidgetItem]):
         self._fields.add_field_to_selected(field_list)

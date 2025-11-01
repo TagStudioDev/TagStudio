@@ -35,7 +35,7 @@ from PySide6.QtWidgets import (
 
 from tagstudio.core.enums import ShowFilepathOption
 from tagstudio.core.library.alchemy.enums import SortingModeEnum
-from tagstudio.qt.controllers.preview_panel_controller import PreviewPanel
+from tagstudio.qt.controllers.preview_panel.preview_panel_controller import PreviewPanel
 from tagstudio.qt.helpers.color_overlay import theme_fg_overlay
 from tagstudio.qt.mixed.landing import LandingWidget
 from tagstudio.qt.mixed.pagination import Pagination

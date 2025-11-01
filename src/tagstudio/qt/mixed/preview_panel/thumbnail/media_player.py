@@ -9,7 +9,7 @@ from typing import cast, override
 
 import structlog
 from PIL import Image, ImageDraw
-from PySide6.QtCore import QEvent, QObject, QRectF, QSize, Qt, QUrl, QVariantAnimation
+from PySide6.QtCore import QEvent, QObject, QRectF, QSize, Qt, QUrl, QVariantAnimation, Signal
 from PySide6.QtGui import (
     QAction,
     QBitmap,
@@ -50,11 +50,14 @@ class MediaPlayer(QGraphicsView):
     Gives a basic control set to manage media playback.
     """
 
+    duration_changed = Signal(int)
+
     video_preview: "VideoPreview | None" = None
 
     def __init__(self, driver: "QtDriver") -> None:
         super().__init__()
         self.driver = driver
+
 
         slider_style = """
             QSlider {
@@ -105,7 +108,7 @@ class MediaPlayer(QGraphicsView):
                border: none;
             }
         """)
-        self.setObjectName("mediaPlayer")
+        self.setObjectName("media_player")
         self.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         self.video_preview = VideoPreview()
@@ -131,6 +134,8 @@ class MediaPlayer(QGraphicsView):
         self.is_paused = (
             False  # Q MediaPlayer.PlaybackState shows StoppedState when changing tracks
         )
+
+        self.player.durationChanged.connect(self.duration_changed.emit)
 
         self.player.positionChanged.connect(self.player_position_changed)
         self.player.mediaStatusChanged.connect(self.media_status_changed)
@@ -488,7 +493,6 @@ class MediaPlayer(QGraphicsView):
 
     def volume_slider_changed(self, position: int) -> None:
         self.player.audioOutput().setVolume(position / 100)
-
 
 class VideoPreview(QGraphicsVideoItem):
     @override
