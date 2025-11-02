@@ -22,7 +22,7 @@ class DurationPropertyWidget(FilePropertyWidget):
         logger.debug("[DurationPropertyWidget] Updating duration", duration=duration)
 
         try:
-            formatted_duration = str(timedelta(seconds=float(duration)))[:-7]
+            formatted_duration = str(timedelta(milliseconds=float(duration)))[:-7]
             logger.debug("[DurationPropertyWidget]", formatted_duration=formatted_duration)
             if formatted_duration.startswith("0:"):
                 formatted_duration = formatted_duration[2:]
