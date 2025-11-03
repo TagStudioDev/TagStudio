@@ -1,11 +1,19 @@
-from pathlib import Path
+import os
+import platform
 import typing
+from datetime import datetime as dt
+from pathlib import Path
 
-from PySide6.QtGui import Qt
 import structlog
+from PySide6.QtGui import Qt
 
+from tagstudio.core.enums import ShowFilepathOption
 from tagstudio.core.library.alchemy.library import Library
-from tagstudio.qt.models.preview_panel.attributes.file_attributes_model import FileAttributesModel, FilePropertyType
+from tagstudio.core.utils.types import unwrap
+from tagstudio.qt.models.preview_panel.attributes.file_attributes_model import (
+    FileAttributesModel,
+    FilePropertyType,
+)
 from tagstudio.qt.translations import Translations
 from tagstudio.qt.views.preview_panel.attributes.file_attributes_view import FileAttributesView
 from tagstudio.qt.views.preview_panel.attributes.file_property_widget import FilePropertyWidget
@@ -21,9 +29,70 @@ class FileAttributes(FileAttributesView):
     """A widget displaying a list of a file's attributes."""
 
     def __init__(self, library: Library, driver: "QtDriver"):
-        super().__init__(library, driver)
+        super().__init__()
+        self.library = library
+        self.driver = driver
 
         self.model = FileAttributesModel()
+
+    def update_file_path(self, file_path: Path) -> None:
+        self.file_path_label.set_file_path(file_path)
+
+        # Format the path according to the user's settings
+        display_path: Path = file_path
+        match self.driver.settings.show_filepath:
+            case ShowFilepathOption.SHOW_FULL_PATHS:
+                display_path = file_path
+            case ShowFilepathOption.SHOW_RELATIVE_PATHS:
+                display_path = Path(file_path).relative_to(unwrap(self.library.library_dir))
+            case ShowFilepathOption.SHOW_FILENAMES_ONLY:
+                display_path = Path(file_path.name)
+
+        # Stringify the path
+        path_separator: str = f"<a style='color: #777777'><b>{os.path.sep}</b></a>"  # Gray
+
+        path_parts: list[str] = list(display_path.parts)
+        path_parts[-1] = f"<br><b>{path_parts[-1]}</b>"
+
+        path_string: str = path_separator.join(path_parts)
+        self.file_path_label.setText(path_string)
+
+    def update_date_label(self, file_path: Path | None = None) -> None:
+        """Update the "Date Created" and "Date Modified" file property labels."""
+        date_created: str | None = None
+        date_modified: str | None = None
+        if file_path and file_path.is_file():
+            # Date created
+            created_timestamp: dt
+            if platform.system() == "Windows" or platform.system() == "Darwin":
+                created_timestamp = dt.fromtimestamp(file_path.stat().st_birthtime)  # type: ignore[attr-defined, unused-ignore]
+            else:
+                created_timestamp = dt.fromtimestamp(file_path.stat().st_ctime)
+
+            date_created = self.driver.settings.format_datetime(created_timestamp)
+
+            # Date modified
+            modified_timestamp: dt = dt.fromtimestamp(file_path.stat().st_mtime)
+            date_modified = self.driver.settings.format_datetime(modified_timestamp)
+        elif file_path:
+            date_created = "<i>N/A</i>"
+            date_modified = "<i>N/A</i>"
+
+        if date_created is not None:
+            self.date_created_label.setText(
+                f"<b>{Translations['file.date_created']}:</b> {date_created}"
+            )
+            self.date_created_label.setHidden(False)
+        else:
+            self.date_created_label.setHidden(True)
+
+        if date_modified is not None:
+            self.date_modified_label.setText(
+                f"<b>{Translations['file.date_modified']}:</b> {date_modified}"
+            )
+            self.date_modified_label.setHidden(False)
+        else:
+            self.date_modified_label.setHidden(True)
 
     def update_file_property(self, property_type: FilePropertyType, **kwargs) -> None:
         """Update a property of the file."""

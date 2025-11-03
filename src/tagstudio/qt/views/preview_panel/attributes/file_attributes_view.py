@@ -2,26 +2,16 @@
 # Licensed under the GPL-3.0 License.
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
-import os
-import platform
-import typing
+
 from dataclasses import dataclass
-from datetime import datetime as dt
-from pathlib import Path
 
 import structlog
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QGuiApplication
 from PySide6.QtWidgets import QLabel, QVBoxLayout, QWidget
 
-from tagstudio.core.enums import ShowFilepathOption, Theme
-from tagstudio.core.library.alchemy.library import Library
-from tagstudio.core.utils.types import unwrap
-from tagstudio.qt.translations import Translations
+from tagstudio.core.enums import Theme
 from tagstudio.qt.utils.file_opener import FileOpenerLabel
-
-if typing.TYPE_CHECKING:
-    from tagstudio.qt.ts_qt import QtDriver
 
 logger = structlog.get_logger(__name__)
 
@@ -41,10 +31,8 @@ DATE_LABEL_STYLE = "font-size: 12px;"
 class FileAttributesView(QWidget):
     """A widget displaying a list of a file's attributes."""
 
-    def __init__(self, library: Library, driver: "QtDriver"):
+    def __init__(self):
         super().__init__()
-        self.library = library
-        self.driver = driver
 
         label_bg_color = (
             Theme.COLOR_BG_DARK.value
@@ -122,65 +110,6 @@ class FileAttributesView(QWidget):
         self.properties_layout.setSpacing(0)
 
         self.__root_layout.addWidget(self.properties)
-
-    def update_file_path(self, file_path: Path) -> None:
-        self.file_path_label.set_file_path(file_path)
-
-        # Format the path according to the user's settings
-        display_path: Path = file_path
-        match self.driver.settings.show_filepath:
-            case ShowFilepathOption.SHOW_FULL_PATHS:
-                display_path = file_path
-            case ShowFilepathOption.SHOW_RELATIVE_PATHS:
-                display_path = Path(file_path).relative_to(unwrap(self.library.library_dir))
-            case ShowFilepathOption.SHOW_FILENAMES_ONLY:
-                display_path = Path(file_path.name)
-
-        # Stringify the path
-        path_string: str = ""
-        path_separator: str = f"<a style='color: #777777'><b>{os.path.sep}</b></a>"  # Gray
-        for i, part in enumerate(display_path.parts):
-            directory_name = part.strip(os.path.sep)
-            if i < len(display_path.parts) - 1:
-                path_string += f"{'\u200b'.join(directory_name)}{path_separator}</b>"
-            else:
-                if path_string != "":
-                    path_string += "<br>"
-                path_string += f"<b>{'\u200b'.join(directory_name)}</b>"
-
-        self.file_path_label.setText(path_string)
-
-    def update_date_label(self, filepath: Path | None = None) -> None:
-        """Update the "Date Created" and "Date Modified" file property labels."""
-        if filepath and filepath.is_file():
-            created: dt
-            if platform.system() == "Windows" or platform.system() == "Darwin":
-                created = dt.fromtimestamp(filepath.stat().st_birthtime)  # type: ignore[attr-defined, unused-ignore]
-            else:
-                created = dt.fromtimestamp(filepath.stat().st_ctime)
-            modified: dt = dt.fromtimestamp(filepath.stat().st_mtime)
-            self.date_created_label.setText(
-                f"<b>{Translations['file.date_created']}:</b>"
-                + f" {self.driver.settings.format_datetime(created)}"
-            )
-            self.date_modified_label.setText(
-                f"<b>{Translations['file.date_modified']}:</b> "
-                f"{self.driver.settings.format_datetime(modified)}"
-            )
-            self.date_created_label.setHidden(False)
-            self.date_modified_label.setHidden(False)
-        elif filepath:
-            self.date_created_label.setText(
-                f"<b>{Translations['file.date_created']}:</b> <i>N/A</i>"
-            )
-            self.date_modified_label.setText(
-                f"<b>{Translations['file.date_modified']}:</b> <i>N/A</i>"
-            )
-            self.date_created_label.setHidden(False)
-            self.date_modified_label.setHidden(False)
-        else:
-            self.date_created_label.setHidden(True)
-            self.date_modified_label.setHidden(True)
 
     # def update_stats(self, filepath: Path | None = None, stats: FileAttributeData | None = None):
     #     """Render the panel widgets with the newest data from the Library."""

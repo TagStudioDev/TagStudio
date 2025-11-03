@@ -19,6 +19,7 @@ class FilePropertyType(Enum):
         self.__name = name
         self.widget_class = widget_class
 
+
 class FileAttributesModel(QAbstractItemModel):
     properties_changed: Signal = Signal(dict)
 
