@@ -151,6 +151,8 @@ class PreviewPanelView(QWidget):
         """
         self._selected = selected
         try:
+            self._file_attributes.clear_file_properties()
+
             # No Items Selected
             if len(selected) == 0:
                 self._thumb.hide_preview()

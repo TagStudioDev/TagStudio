@@ -17,10 +17,8 @@ from PySide6.QtWidgets import QLabel, QVBoxLayout, QWidget
 from tagstudio.core.enums import ShowFilepathOption, Theme
 from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.utils.types import unwrap
-from tagstudio.qt.models.preview_panel.attributes.file_attributes_model import FilePropertyType
 from tagstudio.qt.translations import Translations
 from tagstudio.qt.utils.file_opener import FileOpenerLabel
-from tagstudio.qt.views.preview_panel.attributes.file_property_widget import FilePropertyWidget
 
 if typing.TYPE_CHECKING:
     from tagstudio.qt.ts_qt import QtDriver
@@ -125,8 +123,6 @@ class FileAttributesView(QWidget):
 
         self.__root_layout.addWidget(self.properties)
 
-        self.__property_widgets: dict[FilePropertyType, FilePropertyWidget] = {}
-
     def update_file_path(self, file_path: Path) -> None:
         self.file_path_label.set_file_path(file_path)
 
@@ -185,17 +181,6 @@ class FileAttributesView(QWidget):
         else:
             self.date_created_label.setHidden(True)
             self.date_modified_label.setHidden(True)
-
-    def update_file_property(self, property_type: FilePropertyType, **kwargs) -> None:
-        """Update a property of the file."""
-        logger.debug("[FileAttributes] Updating file property", type=property_type, **kwargs)
-
-        if property_type not in self.__property_widgets:
-            property_widget: FilePropertyWidget = property_type.widget_class()
-            self.__property_widgets[property_type] = property_widget
-            self.properties_layout.addWidget(property_widget)
-
-        self.__property_widgets[property_type].set_value(**kwargs)
 
     # def update_stats(self, filepath: Path | None = None, stats: FileAttributeData | None = None):
     #     """Render the panel widgets with the newest data from the Library."""
@@ -256,39 +241,3 @@ class FileAttributesView(QWidget):
     #             stats_label_text += f"{font_family}"
     #
     #         self.dimensions_label.setText(stats_label_text)
-
-    def set_selection_size(self, num_selected: int):
-        match num_selected:
-            case 0:
-                # File path label
-                self.file_path_label.setText(f"<i>{Translations['preview.no_selection']}</i>")
-                self.file_path_label.set_file_path(Path())
-                self.file_path_label.setCursor(Qt.CursorShape.ArrowCursor)
-                self.file_path_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-
-                # Properties
-                self.date_created_label.setHidden(True)
-                self.date_modified_label.setHidden(True)
-                self.properties.setHidden(True)
-            case 1:
-                # File path label
-                self.file_path_label.setAlignment(Qt.AlignmentFlag.AlignLeft)
-                self.file_path_label.setCursor(Qt.CursorShape.PointingHandCursor)
-
-                # Properties
-                self.date_created_label.setHidden(False)
-                self.date_modified_label.setHidden(False)
-                self.properties.setHidden(False)
-            case _ if num_selected > 1:
-                # File path label
-                self.file_path_label.setText(
-                    Translations.format("preview.multiple_selection", count=num_selected)
-                )
-                self.file_path_label.set_file_path(Path())
-                self.file_path_label.setCursor(Qt.CursorShape.ArrowCursor)
-                self.file_path_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-
-                # Properties
-                self.date_created_label.setHidden(True)
-                self.date_modified_label.setHidden(True)
-                self.properties.setHidden(True)
