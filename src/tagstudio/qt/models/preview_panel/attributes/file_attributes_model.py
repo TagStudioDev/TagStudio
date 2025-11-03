@@ -8,10 +8,12 @@ from tagstudio.qt.views.preview_panel.attributes.dimension_property_widget impor
 from tagstudio.qt.views.preview_panel.attributes.duration_property_widget import (
     DurationPropertyWidget,
 )
+from tagstudio.qt.views.preview_panel.attributes.extension_and_size_property_widget import ExtensionAndSizePropertyWidget
 from tagstudio.qt.views.preview_panel.attributes.file_property_widget import FilePropertyWidget
 
 
 class FilePropertyType(Enum):
+    EXTENSION_AND_SIZE = "extension_and_size", ExtensionAndSizePropertyWidget
     DIMENSIONS = "dimensions", DimensionPropertyWidget
     DURATION = "duration", DurationPropertyWidget
 

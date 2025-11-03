@@ -38,6 +38,9 @@ class FileAttributes(FileAttributesView):
     def update_file_path(self, file_path: Path) -> None:
         self.file_path_label.set_file_path(file_path)
 
+        # Update path-based properties
+        self.update_file_property(FilePropertyType.EXTENSION_AND_SIZE, file_path=file_path)
+
         # Format the path according to the user's settings
         display_path: Path = file_path
         match self.driver.settings.show_filepath:
