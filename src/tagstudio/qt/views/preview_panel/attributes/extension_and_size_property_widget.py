@@ -34,12 +34,6 @@ class ExtensionAndSizePropertyWidget(FilePropertyWidget):
             extension: str = file_path.suffix.upper()[1:] or file_path.stem.upper()
             components.append(extension)
 
-            # File size
-            if file_path and file_path.is_file():
-                file_size = file_path.stat().st_size
-                if file_size and file_size > 0:
-                    components.append(format_size(file_size))
-
             # Ignored
             if (
                 library_dir
@@ -59,6 +53,12 @@ class ExtensionAndSizePropertyWidget(FilePropertyWidget):
                         {Translations["preview.unlinked"].upper()}
                     </span>"""
                 )
+
+            # File size
+            if file_path and file_path.is_file():
+                file_size = file_path.stat().st_size
+                if file_size and file_size > 0:
+                    components.append(format_size(file_size))
 
             self.setText("  •  ".join(components))
             return True
