@@ -92,6 +92,6 @@ class FileAttributesView(QWidget):
         self.properties_layout = QVBoxLayout(self.properties)
         self.properties_layout.setObjectName("properties_layout")
         self.properties_layout.setContentsMargins(4, 4, 4, 4)
-        self.properties_layout.setSpacing(0)
+        self.properties_layout.setSpacing(4)
 
         self.__root_layout.addWidget(self.properties)

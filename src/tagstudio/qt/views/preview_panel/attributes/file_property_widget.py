@@ -16,6 +16,7 @@ class FilePropertyWidget(QLabel):
             }
         """
         self.setStyleSheet(self.label_style)
+        self.setMaximumHeight(12)
 
     def set_value(self, **kwargs) -> bool:
         raise NotImplementedError()
