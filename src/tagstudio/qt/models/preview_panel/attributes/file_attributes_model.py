@@ -1,7 +1,7 @@
 from enum import Enum
 
-from PySide6.QtCore import QAbstractItemModel, Signal
 import structlog
+from PySide6.QtCore import QAbstractItemModel, Signal
 
 from tagstudio.qt.views.preview_panel.attributes.dimension_property_widget import (
     DimensionPropertyWidget,
@@ -9,9 +9,13 @@ from tagstudio.qt.views.preview_panel.attributes.dimension_property_widget impor
 from tagstudio.qt.views.preview_panel.attributes.duration_property_widget import (
     DurationPropertyWidget,
 )
-from tagstudio.qt.views.preview_panel.attributes.extension_and_size_property_widget import ExtensionAndSizePropertyWidget
+from tagstudio.qt.views.preview_panel.attributes.extension_and_size_property_widget import (
+    ExtensionAndSizePropertyWidget,
+)
 from tagstudio.qt.views.preview_panel.attributes.file_property_widget import FilePropertyWidget
-from tagstudio.qt.views.preview_panel.attributes.font_family_property_widget import FontFamilyPropertyWidget
+from tagstudio.qt.views.preview_panel.attributes.font_family_property_widget import (
+    FontFamilyPropertyWidget,
+)
 
 logger = structlog.get_logger(__name__)
 
@@ -45,7 +49,8 @@ class FileAttributesModel(QAbstractItemModel):
 
     def get_property_index(self, property_type: FilePropertyType) -> int:
         for index, key in enumerate(self.get_properties()):
-            if property_type == key: return index
+            if property_type == key:
+                return index
 
         return -1
 

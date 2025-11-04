@@ -1,10 +1,9 @@
 from pathlib import Path
 
-from PIL import ImageFont
 import structlog
+from PIL import ImageFont
 
 from tagstudio.qt.views.preview_panel.attributes.file_property_widget import FilePropertyWidget
-
 
 logger = structlog.get_logger(__name__)
 
@@ -29,6 +28,8 @@ class FontFamilyPropertyWidget(FilePropertyWidget):
             return True
         except (FileNotFoundError, OSError) as error:
             logger.error(
-                "[FontFamilyPropertyWidget] Could not process font family", file_path=file_path, error=error
+                "[FontFamilyPropertyWidget] Could not process font family",
+                file_path=file_path,
+                error=error,
             )
             return False

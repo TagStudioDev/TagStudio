@@ -1,15 +1,13 @@
 from pathlib import Path
 
-from humanfriendly import format_size
 import structlog
+from humanfriendly import format_size
 
-from tagstudio.core.library.alchemy.library import Library
+from tagstudio.core.library.ignore import Ignore
 from tagstudio.core.utils.types import unwrap
 from tagstudio.qt.models.palette import ColorType, UiColor, get_ui_color
 from tagstudio.qt.translations import Translations
 from tagstudio.qt.views.preview_panel.attributes.file_property_widget import FilePropertyWidget
-from tagstudio.core.library.ignore import Ignore
-
 
 logger = structlog.get_logger(__name__)
 
@@ -27,7 +25,7 @@ class ExtensionAndSizePropertyWidget(FilePropertyWidget):
 
     def set_value(self, **kwargs) -> bool:
         file_path = kwargs.get("file_path", Path())
-        library_dir: Path | None = kwargs.get("library_dir", None)
+        library_dir: Path | None = kwargs.get("library_dir")
 
         try:
             components: list[str] = []
@@ -43,17 +41,23 @@ class ExtensionAndSizePropertyWidget(FilePropertyWidget):
                     components.append(format_size(file_size))
 
             # Ignored
-            if library_dir and Ignore.compiled_patterns and Ignore.compiled_patterns.match(
-                file_path.relative_to(unwrap(library_dir))
+            if (
+                library_dir
+                and Ignore.compiled_patterns
+                and Ignore.compiled_patterns.match(file_path.relative_to(unwrap(library_dir)))
             ):
                 components.append(
-                    f"<span style='color: {self.orange};'>{Translations['preview.ignored'].upper()}</span>"
+                    f"""<span style='color: {self.orange};'>
+                        {Translations["preview.ignored"].upper()}
+                    </span>"""
                 )
 
             # Unlinked
             if not file_path.exists():
                 components.append(
-                    f"<span style='color: {self.red};'>{Translations['preview.unlinked'].upper()}</span>"
+                    f"""<span style='color: {self.red};'>
+                        {Translations["preview.unlinked"].upper()}
+                    </span>"""
                 )
 
             self.setText("  •  ".join(components))

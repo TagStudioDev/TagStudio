@@ -40,14 +40,16 @@ class FileAttributes(FileAttributesView):
         self.file_path_label.set_file_path(file_path)
 
         # Update path-based properties
-        self.update_file_property(FilePropertyType.EXTENSION_AND_SIZE, file_path=file_path, library_dir=self.library.library_dir)
+        self.update_file_property(
+            FilePropertyType.EXTENSION_AND_SIZE,
+            file_path=file_path,
+            library_dir=self.library.library_dir,
+        )
 
         if MediaCategories.is_ext_in_category(
             file_path.suffix.lower(), MediaCategories.FONT_TYPES, mime_fallback=True
         ):
-            self.update_file_property(
-                FilePropertyType.FONT_FAMILY, file_path=file_path
-            )
+            self.update_file_property(FilePropertyType.FONT_FAMILY, file_path=file_path)
 
         # Format the path according to the user's settings
         display_path: Path = file_path
@@ -116,8 +118,7 @@ class FileAttributes(FileAttributesView):
 
             self.model.add_property(property_type, new_property_widget)
             self.properties_layout.insertWidget(
-                self.model.get_property_index(property_type),
-                new_property_widget
+                self.model.get_property_index(property_type), new_property_widget
             )
         else:
             property_widget: FilePropertyWidget | None = self.model.get_property(property_type)
