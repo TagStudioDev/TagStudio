@@ -3,7 +3,6 @@
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
 
-import os
 from collections.abc import Callable
 from pathlib import Path
 from unittest.mock import patch
@@ -18,9 +17,9 @@ from pytestqt.qtbot import QtBot
 from tagstudio.core.enums import ShowFilepathOption
 from tagstudio.core.library.alchemy.library import Library, LibraryStatus
 from tagstudio.core.library.alchemy.models import Entry
+from tagstudio.core.utils.types import unwrap
 from tagstudio.qt.controllers.preview_panel.preview_panel_controller import PreviewPanel
 from tagstudio.qt.mixed.settings_panel import SettingsPanel
-from tagstudio.qt.models.preview_panel.attributes.file_attributes_model import FilePropertyType
 from tagstudio.qt.ts_qt import QtDriver
 
 
@@ -77,10 +76,10 @@ def test_file_path_display(
     entry = library.get_entry(2)
     assert isinstance(entry, Entry)
 
-    panel._file_attributes.update_file_property(FilePropertyType.EXTENSION_AND_SIZE, file_path=entry.path)
+    file_name = entry.path
+    panel._file_attributes.update_file_path(unwrap(library.library_dir) / file_name)
 
     display_path: Path = expected_path(library)
-    print(display_path)
     path_string: str = panel._file_attributes.format_path(display_path)
 
     # Assert the file path is displayed correctly
