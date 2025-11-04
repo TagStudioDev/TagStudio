@@ -106,7 +106,10 @@ class FileAttributes(FileAttributesView):
             new_property_widget.set_value(**kwargs)
 
             self.model.add_property(property_type, new_property_widget)
-            self.properties_layout.addWidget(new_property_widget)
+            self.properties_layout.insertWidget(
+                self.model.get_property_index(property_type),
+                new_property_widget
+            )
         else:
             property_widget: FilePropertyWidget | None = self.model.get_property(property_type)
             if property_widget:
