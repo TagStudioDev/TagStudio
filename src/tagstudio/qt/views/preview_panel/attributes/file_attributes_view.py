@@ -125,21 +125,11 @@ class FileAttributesView(QWidget):
     #             try:
     #                 file_size = format_size(filepath.stat().st_size)
     #
-    #                 if MediaCategories.is_ext_in_category(
-    #                     ext, MediaCategories.FONT_TYPES, mime_fallback=True
-    #                 ):
-    #                     font = ImageFont.truetype(filepath)
-    #                     font_family = f"{font.getname()[0]} ({font.getname()[1]}) "
     #             except (FileNotFoundError, OSError) as e:
     #                 logger.error(
     #                     "[FileAttributes] Could not process file stats", filepath=filepath, error=e
     #                 )
     #
-    #         # Format and display any stat variables
-    #         def add_newline(stats_label_text: str) -> str:
-    #             if stats_label_text and stats_label_text[-4:] != "<br>":
-    #                 return stats_label_text + "<br>"
-    #             return stats_label_text
     #
     #         if ext_display:
     #             stats_label_text += ext_display
@@ -164,9 +154,5 @@ class FileAttributesView(QWidget):
     #                 stats_label_text += f"  •  {file_size}"
     #         elif file_size:
     #             stats_label_text += file_size
-    #
-    #         if font_family:
-    #             stats_label_text = add_newline(stats_label_text)
-    #             stats_label_text += f"{font_family}"
     #
     #         self.dimensions_label.setText(stats_label_text)

@@ -9,6 +9,7 @@ from PySide6.QtGui import Qt
 
 from tagstudio.core.enums import ShowFilepathOption
 from tagstudio.core.library.alchemy.library import Library
+from tagstudio.core.media_types import MediaCategories
 from tagstudio.core.utils.types import unwrap
 from tagstudio.qt.models.preview_panel.attributes.file_attributes_model import (
     FileAttributesModel,
@@ -40,6 +41,13 @@ class FileAttributes(FileAttributesView):
 
         # Update path-based properties
         self.update_file_property(FilePropertyType.EXTENSION_AND_SIZE, file_path=file_path)
+
+        if MediaCategories.is_ext_in_category(
+            file_path.suffix.lower(), MediaCategories.FONT_TYPES, mime_fallback=True
+        ):
+            self.update_file_property(
+                FilePropertyType.FONT_FAMILY, file_path=file_path
+            )
 
         # Format the path according to the user's settings
         display_path: Path = file_path

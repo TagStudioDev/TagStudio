@@ -11,7 +11,7 @@ from tagstudio.qt.views.preview_panel.attributes.duration_property_widget import
 )
 from tagstudio.qt.views.preview_panel.attributes.extension_and_size_property_widget import ExtensionAndSizePropertyWidget
 from tagstudio.qt.views.preview_panel.attributes.file_property_widget import FilePropertyWidget
-
+from tagstudio.qt.views.preview_panel.attributes.font_family_property_widget import FontFamilyPropertyWidget
 
 logger = structlog.get_logger(__name__)
 
@@ -20,6 +20,7 @@ class FilePropertyType(Enum):
     EXTENSION_AND_SIZE = "extension_and_size", ExtensionAndSizePropertyWidget
     DIMENSIONS = "dimensions", DimensionPropertyWidget
     DURATION = "duration", DurationPropertyWidget
+    FONT_FAMILY = "font_family", FontFamilyPropertyWidget
 
     def __init__(self, name: str, widget_class: type[FilePropertyWidget]):
         self.__name = name
