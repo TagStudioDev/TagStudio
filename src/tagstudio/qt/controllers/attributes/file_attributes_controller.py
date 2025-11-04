@@ -40,7 +40,7 @@ class FileAttributes(FileAttributesView):
         self.file_path_label.set_file_path(file_path)
 
         # Update path-based properties
-        self.update_file_property(FilePropertyType.EXTENSION_AND_SIZE, file_path=file_path)
+        self.update_file_property(FilePropertyType.EXTENSION_AND_SIZE, file_path=file_path, library_dir=self.library.library_dir)
 
         if MediaCategories.is_ext_in_category(
             file_path.suffix.lower(), MediaCategories.FONT_TYPES, mime_fallback=True
