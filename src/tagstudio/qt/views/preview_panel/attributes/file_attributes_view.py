@@ -34,22 +34,16 @@ class FileAttributesView(QWidget):
     def __init__(self):
         super().__init__()
 
-        label_bg_color = (
+        self.panel_bg_color = (
             Theme.COLOR_BG_DARK.value
             if QGuiApplication.styleHints().colorScheme() is Qt.ColorScheme.Dark
             else Theme.COLOR_BG_LIGHT.value
         )
-        properties_style = f"""
-            background-color: {label_bg_color};
-            color: #FFFFFF;
-            font-family: Oxanium;
-            font-weight: bold;
-            font-size: 12px;
-            border-radius: 3px;
-            padding-top: 4px;
-            padding-right: 1px;
-            padding-bottom: 1px;
-            padding-left: 1px;
+        self.properties_style = f"""
+            QWidget#properties{{
+                background: {self.panel_bg_color};
+                border-radius: 3px;
+            }}
         """
 
         self.__root_layout = QVBoxLayout(self)
@@ -102,11 +96,11 @@ class FileAttributesView(QWidget):
         # File properties
         self.properties = QWidget()
         self.properties.setObjectName("properties")
-        self.properties.setStyleSheet(properties_style)
+        self.properties.setStyleSheet(self.properties_style)
 
         self.properties_layout = QVBoxLayout(self.properties)
         self.properties_layout.setObjectName("properties_layout")
-        self.properties_layout.setContentsMargins(0, 0, 0, 0)
+        self.properties_layout.setContentsMargins(4, 4, 4, 4)
         self.properties_layout.setSpacing(0)
 
         self.__root_layout.addWidget(self.properties)
