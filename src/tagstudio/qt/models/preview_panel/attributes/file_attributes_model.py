@@ -34,12 +34,13 @@ class FilePropertyType(Enum):
 class FileAttributesModel(QAbstractItemModel):
     properties_changed: Signal = Signal(dict)
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
 
         self.__property_widgets: dict[FilePropertyType, FilePropertyWidget] = {}
 
     def get_properties(self) -> dict[FilePropertyType, FilePropertyWidget]:
+        """Returns a sorted dictionary of all file properties."""
         return dict(
             sorted(
                 self.__property_widgets.items(),
@@ -48,32 +49,33 @@ class FileAttributesModel(QAbstractItemModel):
         )
 
     def get_property_index(self, property_type: FilePropertyType) -> int:
+        """Returns the sorted index of the given property type."""
         for index, key in enumerate(self.get_properties()):
             if property_type == key:
                 return index
 
         return -1
 
-    def get_property(self, property_type: FilePropertyType) -> FilePropertyWidget | None:
+    def get_property_widget(self, property_type: FilePropertyType) -> FilePropertyWidget | None:
+        """Returns the widget for the given property type."""
         if property_type in self.__property_widgets:
             return self.__property_widgets[property_type]
 
         return None
 
-    def add_property(self, property_type: FilePropertyType, widget: FilePropertyWidget) -> None:
-        if property_type not in self.__property_widgets:
-            self.__property_widgets[property_type] = widget
-
-        self.properties_changed.emit(self.get_properties())
-
-    def set_property(self, property_type: FilePropertyType, widget: FilePropertyWidget) -> None:
+    def set_property_widget(
+        self, property_type: FilePropertyType, widget: FilePropertyWidget
+    ) -> None:
+        """Sets the widget for the given property type."""
         if property_type not in self.__property_widgets:
             self.__property_widgets[property_type] = widget
 
         self.properties_changed.emit(self.get_properties())
 
     def delete_property(self, property_type: FilePropertyType) -> None:
+        """Removes the given property type."""
         self.__property_widgets.pop(property_type, None)
 
     def delete_properties(self) -> None:
+        """Removes all file properties."""
         self.__property_widgets.clear()

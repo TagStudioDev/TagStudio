@@ -29,12 +29,12 @@ logger = structlog.get_logger(__name__)
 class FileAttributes(FileAttributesView):
     """A widget displaying a list of a file's attributes."""
 
-    def __init__(self, library: Library, driver: "QtDriver"):
+    def __init__(self, library: Library, driver: "QtDriver") -> None:
         super().__init__()
-        self.library = library
-        self.driver = driver
+        self.__library = library
+        self.__driver = driver
 
-        self.model = FileAttributesModel()
+        self.__model = FileAttributesModel()
 
     def update_file_path(self, file_path: Path) -> None:
         self.file_path_label.set_file_path(file_path)
@@ -43,7 +43,7 @@ class FileAttributes(FileAttributesView):
         self.update_file_property(
             FilePropertyType.EXTENSION_AND_SIZE,
             file_path=file_path,
-            library_dir=self.library.library_dir,
+            library_dir=self.__library.library_dir,
         )
 
         if MediaCategories.is_ext_in_category(
@@ -54,11 +54,11 @@ class FileAttributes(FileAttributesView):
         display_path: Path = file_path
 
         # Format the path according to the user's settings
-        match self.driver.settings.show_filepath:
+        match self.__driver.settings.show_filepath:
             case ShowFilepathOption.SHOW_FULL_PATHS:
                 display_path = file_path
             case ShowFilepathOption.SHOW_RELATIVE_PATHS:
-                display_path = Path(file_path).relative_to(unwrap(self.library.library_dir))
+                display_path = Path(file_path).relative_to(unwrap(self.__library.library_dir))
             case ShowFilepathOption.SHOW_FILENAMES_ONLY:
                 display_path = Path(file_path.name)
 
@@ -76,11 +76,11 @@ class FileAttributes(FileAttributesView):
             else:
                 created_timestamp = dt.fromtimestamp(file_path.stat().st_ctime)
 
-            date_created = self.driver.settings.format_datetime(created_timestamp)
+            date_created = self.__driver.settings.format_datetime(created_timestamp)
 
             # Date modified
             modified_timestamp: dt = dt.fromtimestamp(file_path.stat().st_mtime)
-            date_modified = self.driver.settings.format_datetime(modified_timestamp)
+            date_modified = self.__driver.settings.format_datetime(modified_timestamp)
         elif file_path:
             date_created = "<i>N/A</i>"
             date_modified = "<i>N/A</i>"
@@ -102,37 +102,35 @@ class FileAttributes(FileAttributesView):
             self.date_modified_label.setHidden(True)
 
     def update_file_property(self, property_type: FilePropertyType, **kwargs) -> None:
-        """Update a property of the file."""
+        """Update a file property with a new value."""
         logger.debug("[FileAttributes] Updating file property", type=property_type, **kwargs)
 
-        if property_type not in self.model.get_properties():
-            new_property_widget: FilePropertyWidget = property_type.widget_class()
-            result = new_property_widget.set_value(**kwargs)
-            new_property_widget.setHidden(not result)
+        property_widget: FilePropertyWidget | None = self.__model.get_property_widget(property_type)
+        widget_exists: bool = property_widget is not None
+        if not widget_exists:
+            property_widget = property_type.widget_class()
 
-            self.model.add_property(property_type, new_property_widget)
+        result: bool = property_widget.set_value(**kwargs)
+        property_widget.setHidden(not result)
+
+        self.__model.set_property_widget(property_type, property_widget)
+
+        if not widget_exists:
             self.properties_layout.insertWidget(
-                self.model.get_property_index(property_type), new_property_widget
+                self.__model.get_property_index(property_type), property_widget
             )
-        else:
-            property_widget: FilePropertyWidget | None = self.model.get_property(property_type)
-            if property_widget:
-                result = property_widget.set_value(**kwargs)
-                property_widget.setHidden(not result)
-
-                self.model.set_property(property_type, property_widget)
-                property_widget.show()
 
     def clear_file_properties(self) -> None:
         """Clears the existing file properties."""
         logger.debug("[FileAttributes] Clearing file properties")
 
-        for property_widget in self.model.get_properties().values():
+        for property_widget in self.__model.get_properties().values():
             property_widget.hide()
 
-        self.model.delete_properties()
+        self.__model.delete_properties()
 
     def set_selection_size(self, num_selected: int):
+        """Sets the number of selected entries to adjust how the file properties are displayed."""
         match num_selected:
             case 0:
                 # File path label
@@ -169,6 +167,7 @@ class FileAttributes(FileAttributesView):
                 self.properties.setHidden(True)
 
     def format_path(self, path: Path) -> str:
+        """Formats a file path for display."""
         path_separator: str = f"<a style='color: #777777'><b>{os.path.sep}</b></a>"  # Gray
 
         path_parts: list[str] = list(path.parts)

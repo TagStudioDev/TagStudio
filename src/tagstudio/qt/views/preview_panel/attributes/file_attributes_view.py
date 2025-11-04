@@ -22,7 +22,7 @@ DATE_LABEL_STYLE = "font-size: 12px;"
 class FileAttributesView(QWidget):
     """A widget displaying a list of a file's attributes."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
 
         self.panel_bg_color = (
