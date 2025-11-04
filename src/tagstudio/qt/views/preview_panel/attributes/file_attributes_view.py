@@ -3,8 +3,6 @@
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
 
-from dataclasses import dataclass
-
 import structlog
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QGuiApplication
@@ -14,13 +12,6 @@ from tagstudio.core.enums import Theme
 from tagstudio.qt.utils.file_opener import FileOpenerLabel
 
 logger = structlog.get_logger(__name__)
-
-
-@dataclass
-class FileAttributeData:
-    width: int | None = None
-    height: int | None = None
-    duration: int | None = None
 
 
 FILE_NAME_LABEL_STYLE = "font-size: 12px;"
