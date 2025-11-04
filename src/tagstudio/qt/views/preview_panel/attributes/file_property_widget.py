@@ -7,5 +7,5 @@ class FilePropertyWidget(QLabel):
     def __init__(self) -> None:
         super().__init__()
 
-    def set_value(self, **kwargs) -> None:
+    def set_value(self, **kwargs) -> bool:
         raise NotImplementedError()

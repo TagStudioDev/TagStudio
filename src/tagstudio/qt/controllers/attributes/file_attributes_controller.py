@@ -111,7 +111,8 @@ class FileAttributes(FileAttributesView):
 
         if property_type not in self.model.get_properties():
             new_property_widget: FilePropertyWidget = property_type.widget_class()
-            new_property_widget.set_value(**kwargs)
+            result = new_property_widget.set_value(**kwargs)
+            new_property_widget.setHidden(not result)
 
             self.model.add_property(property_type, new_property_widget)
             self.properties_layout.insertWidget(
@@ -121,7 +122,8 @@ class FileAttributes(FileAttributesView):
         else:
             property_widget: FilePropertyWidget | None = self.model.get_property(property_type)
             if property_widget:
-                property_widget.set_value(**kwargs)
+                result = property_widget.set_value(**kwargs)
+                property_widget.setHidden(not result)
 
                 self.model.set_property(property_type, property_widget)
                 property_widget.show()

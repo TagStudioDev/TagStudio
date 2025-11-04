@@ -15,7 +15,7 @@ class DurationPropertyWidget(FilePropertyWidget):
 
         self.setObjectName("duration_property")
 
-    def set_value(self, **kwargs) -> None:
+    def set_value(self, **kwargs) -> bool:
         unknown_duration: str = "-:--"
         duration: int = kwargs.get("duration", 0)
 
@@ -35,3 +35,4 @@ class DurationPropertyWidget(FilePropertyWidget):
             formatted_duration = unknown_duration
 
         self.setText(formatted_duration)
+        return True
