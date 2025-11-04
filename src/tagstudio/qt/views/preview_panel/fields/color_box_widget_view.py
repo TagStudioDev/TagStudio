@@ -16,8 +16,8 @@ from tagstudio.core.library.alchemy.models import TagColorGroup
 from tagstudio.core.utils.types import unwrap
 from tagstudio.qt.mixed.tag_color_label import TagColorLabel
 from tagstudio.qt.models.palette import ColorType, get_tag_color
-from tagstudio.qt.views.fields.field_widget import FieldWidget
 from tagstudio.qt.views.layouts.flow_layout import FlowLayout
+from tagstudio.qt.views.preview_panel.fields.field_widget import FieldWidget
 
 if TYPE_CHECKING:
     from tagstudio.core.library.alchemy.library import Library

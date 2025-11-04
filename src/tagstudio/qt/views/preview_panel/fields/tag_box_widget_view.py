@@ -10,8 +10,8 @@ import structlog
 from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.library.alchemy.models import Tag
 from tagstudio.qt.mixed.tag_widget import TagWidget
-from tagstudio.qt.views.fields.field_widget import FieldWidget
 from tagstudio.qt.views.layouts.flow_layout import FlowLayout
+from tagstudio.qt.views.preview_panel.fields.field_widget import FieldWidget
 
 if TYPE_CHECKING:
     from tagstudio.qt.ts_qt import QtDriver

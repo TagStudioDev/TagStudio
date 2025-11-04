@@ -33,14 +33,14 @@ from tagstudio.core.library.alchemy.fields import (
 from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.library.alchemy.models import Entry, Tag
 from tagstudio.core.utils.types import unwrap
-from tagstudio.qt.controllers.fields.tag_box_widget_controller import TagBoxWidget
+from tagstudio.qt.controllers.preview_panel.fields.tag_box_widget_controller import TagBoxWidget
 from tagstudio.qt.mixed.datetime_picker import DatetimePicker
 from tagstudio.qt.translations import Translations
 from tagstudio.qt.views.edit_text_box_modal import EditTextBox
 from tagstudio.qt.views.edit_text_line_modal import EditTextLine
-from tagstudio.qt.views.fields.field_container import FieldContainer
-from tagstudio.qt.views.fields.text_field_widget import TextFieldWidget
 from tagstudio.qt.views.panel_modal import PanelModal
+from tagstudio.qt.views.preview_panel.fields.field_container import FieldContainer
+from tagstudio.qt.views.preview_panel.fields.text_field_widget import TextFieldWidget
 
 if typing.TYPE_CHECKING:
     from tagstudio.qt.ts_qt import QtDriver

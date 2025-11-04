@@ -23,11 +23,11 @@ from PySide6.QtWidgets import (
 
 from tagstudio.core.constants import RESERVED_NAMESPACE_PREFIX
 from tagstudio.core.enums import Theme
-from tagstudio.qt.controllers.fields.color_box_widget_controller import ColorBoxWidget
+from tagstudio.qt.controllers.preview_panel.fields.color_box_widget_controller import ColorBoxWidget
 from tagstudio.qt.mixed.build_namespace import BuildNamespacePanel
 from tagstudio.qt.translations import Translations
-from tagstudio.qt.views.fields.field_container import FieldContainer
 from tagstudio.qt.views.panel_modal import PanelModal
+from tagstudio.qt.views.preview_panel.fields.field_container import FieldContainer
 
 logger = structlog.get_logger(__name__)
 

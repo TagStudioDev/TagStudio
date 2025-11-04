@@ -7,8 +7,8 @@ from PySide6.QtWidgets import QMessageBox
 from tagstudio.core.library.alchemy.models import TagColorGroup
 from tagstudio.qt.mixed.build_color import BuildColorPanel
 from tagstudio.qt.translations import Translations
-from tagstudio.qt.views.fields.color_box_widget_view import ColorBoxWidgetView
 from tagstudio.qt.views.panel_modal import PanelModal
+from tagstudio.qt.views.preview_panel.fields.color_box_widget_view import ColorBoxWidgetView
 
 if TYPE_CHECKING:
     from tagstudio.core.library.alchemy.library import Library

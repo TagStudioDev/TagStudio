@@ -12,8 +12,8 @@ from tagstudio.core.library.alchemy.enums import BrowsingState
 from tagstudio.core.library.alchemy.models import Tag
 from tagstudio.core.utils.types import unwrap
 from tagstudio.qt.mixed.build_tag import BuildTagPanel
-from tagstudio.qt.views.fields.tag_box_widget_view import TagBoxWidgetView
 from tagstudio.qt.views.panel_modal import PanelModal
+from tagstudio.qt.views.preview_panel.fields.tag_box_widget_view import TagBoxWidgetView
 
 if TYPE_CHECKING:
     from tagstudio.qt.ts_qt import QtDriver
