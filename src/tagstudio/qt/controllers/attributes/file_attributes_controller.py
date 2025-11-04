@@ -51,8 +51,18 @@ class FileAttributes(FileAttributesView):
         ):
             self.update_file_property(FilePropertyType.FONT_FAMILY, file_path=file_path)
 
+        display_path: Path = file_path
+
         # Format the path according to the user's settings
-        self.file_path_label.setText(self.format_path(file_path))
+        match self.driver.settings.show_filepath:
+            case ShowFilepathOption.SHOW_FULL_PATHS:
+                display_path = file_path
+            case ShowFilepathOption.SHOW_RELATIVE_PATHS:
+                display_path = Path(file_path).relative_to(unwrap(self.library.library_dir))
+            case ShowFilepathOption.SHOW_FILENAMES_ONLY:
+                display_path = Path(file_path.name)
+
+        self.file_path_label.setText(self.format_path(display_path))
 
     def update_date_label(self, file_path: Path | None = None) -> None:
         """Update the "Date Created" and "Date Modified" file property labels."""
@@ -159,21 +169,9 @@ class FileAttributes(FileAttributesView):
                 self.properties.setHidden(True)
 
     def format_path(self, path: Path) -> str:
-        display_path: Path = path
-
-        # Tweak path to match library settings
-        match self.driver.settings.show_filepath:
-            case ShowFilepathOption.SHOW_FULL_PATHS:
-                display_path = path
-            case ShowFilepathOption.SHOW_RELATIVE_PATHS:
-                display_path = Path(path).relative_to(unwrap(self.library.library_dir))
-            case ShowFilepathOption.SHOW_FILENAMES_ONLY:
-                display_path = Path(path.name)
-
-        # Format the path
         path_separator: str = f"<a style='color: #777777'><b>{os.path.sep}</b></a>"  # Gray
 
-        path_parts: list[str] = list(display_path.parts)
+        path_parts: list[str] = list(path.parts)
         path_parts[-1] = f"<br><b>{path_parts[-1]}</b>"
 
         path_string: str = path_separator.join(path_parts)
