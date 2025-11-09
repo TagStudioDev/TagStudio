@@ -125,7 +125,7 @@ class _TarFile:
         return unwrap(self.tar.extractfile(name)).read()
 
     def __enter__(self) -> "_TarFile":
-        self.tar = tarfile.open(self.filepath).__enter__()
+        self.tar = tarfile.open(self.filepath, self.mode).__enter__()
         return self
 
     def __exit__(self, *args) -> None:
