@@ -1898,20 +1898,33 @@ class Library:
         """Mirror fields among multiple Entry items."""
         fields = {}
         # load all fields
-        existing_fields = {field.type_key for field in entries[0].fields}
         for entry in entries:
             for entry_field in entry.fields:
                 fields[entry_field.type_key] = entry_field
 
-        # assign the field to all entries
+        # assign the fields to all entries
         for entry in entries:
             for field_key, field in fields.items():  # pyright: ignore[reportUnknownVariableType]
+                existing_fields = {entry_field.type_key for entry_field in entry.fields}
                 if field_key not in existing_fields:
                     self.add_field_to_entry(
                         entry_id=entry.id,
                         field_id=field.type_key,
                         value=field.value,
                     )
+
+    def mirror_entry_tags(self, *entries: Entry) -> None:
+        """Mirror tags among multiple Entry items."""
+        tag_ids_set = set()
+        entry_ids = []
+        # load all entries and tags
+        for entry in entries:
+            entry_ids.append(entry.id)
+            for tag in entry.tags:
+                tag_ids_set.add(tag.id)
+        tag_ids = list(tag_ids_set)
+        # assign the tags to all entries
+        self.add_tags_to_entries(entry_ids, tag_ids)
 
     def merge_entries(self, from_entry: Entry, into_entry: Entry) -> bool:
         """Add fields and tags from the first entry to the second, and then delete the first."""
