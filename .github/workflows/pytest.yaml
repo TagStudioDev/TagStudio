@@ -9,16 +9,19 @@ jobs:
     runs-on: ubuntu-24.04
 
     steps:
-      - name: Checkout repo
+      - &checkout
+        name: Checkout repo
         uses: actions/checkout@v4
 
-      - name: Setup Python
+      - &setup-python
+        name: Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.12'
           cache: pip
 
-      - name: Install Python dependencies
+      - &install-dependencies
+        name: Install Python dependencies
         run: |
           python -m pip install --upgrade uv
           uv pip install --system .[pytest]
@@ -57,25 +60,16 @@ jobs:
     runs-on: windows-2025
 
     steps:
-      - name: Checkout repo
-        uses: actions/checkout@v4
-
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
-          cache: pip
-
-      - name: Install Python dependencies
-        run: |
-          python -m pip install --upgrade uv
-          uv pip install --system .[pytest]
+      - *checkout
+      - *setup-python
+      - *install-dependencies
 
       - name: Install system dependencies
         run: |
           choco install ripgrep
 
-      - name: Execute pytest
+      - &pytest
+        name: Execute pytest
         run: |
           pytest
 
@@ -84,27 +78,15 @@ jobs:
     runs-on: macos-15
 
     steps:
-      - name: Checkout repo
-        uses: actions/checkout@v4
-
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
-          cache: pip
-
-      - name: Install Python dependencies
-        run: |
-          python -m pip install --upgrade uv
-          uv pip install --system .[pytest]
+      - *checkout
+      - *setup-python
+      - *install-dependencies
 
       - name: Install system dependencies
         run: |
           brew install ripgrep
 
-      - name: Execute pytest
-        run: |
-          pytest
+      - *pytest
 
   coverage:
     name: Check coverage
