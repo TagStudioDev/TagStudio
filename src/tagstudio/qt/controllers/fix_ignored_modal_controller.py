@@ -32,7 +32,7 @@ class FixIgnoredEntriesModal(FixIgnoredEntriesModalView):
             lambda: (
                 self.update_ignored_count(),
                 self.driver.update_browsing_state(),
-                self.driver.library_info_window.update_cleanup(),
+                self.update_driver_widgets(),
                 self.refresh_ignored(),
             )
         )
@@ -52,20 +52,13 @@ class FixIgnoredEntriesModal(FixIgnoredEntriesModalView):
         pw.setWindowTitle(Translations["library.scan_library.title"])
         pw.update_label(Translations["entries.ignored.scanning"])
 
-        def update_driver_widgets():
-            if (
-                hasattr(self.driver, "library_info_window")
-                and self.driver.library_info_window.isVisible()
-            ):
-                self.driver.library_info_window.update_cleanup()
-
         pw.from_iterable_function(
             self.tracker.refresh_ignored_entries,
             None,
             self.set_ignored_count,
             self.update_ignored_count,
             self.remove_modal.refresh_list,
-            update_driver_widgets,
+            self.update_driver_widgets,
         )
 
     def set_ignored_count(self):
@@ -87,6 +80,13 @@ class FixIgnoredEntriesModal(FixIgnoredEntriesModalView):
             "entries.ignored.ignored_count", count=count if count >= 0 else "—"
         )
         self.ignored_count_label.setText(f"<h3>{count_text}</h3>")
+
+    def update_driver_widgets(self):
+        if (
+            hasattr(self.driver, "library_info_window")
+            and self.driver.library_info_window.isVisible()
+        ):
+            self.driver.library_info_window.update_cleanup()
 
     @override
     def showEvent(self, event: QtGui.QShowEvent) -> None:  # type: ignore
