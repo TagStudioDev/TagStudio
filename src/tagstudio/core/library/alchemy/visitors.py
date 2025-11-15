@@ -6,7 +6,7 @@ import re
 from typing import TYPE_CHECKING, override
 
 import structlog
-from sqlalchemy import ColumnElement, and_, distinct, func, or_, select
+from sqlalchemy import ColumnElement, and_, distinct, false, func, or_, select, true
 from sqlalchemy.orm import Session
 from sqlalchemy.sql.operators import ilike_op
 
@@ -18,6 +18,7 @@ from tagstudio.core.query_lang.ast import (
     AST,
     ANDList,
     BaseVisitor,
+    Boolean,
     Constraint,
     ConstraintType,
     Not,
@@ -115,6 +116,12 @@ class SQLBoolExpressionBuilder(BaseVisitor[ColumnElement[bool]]):
     @override
     def visit_property(self, node: Property) -> ColumnElement[bool]:  # type: ignore
         raise NotImplementedError("This should never be reached!")
+
+    def visit_boolean(self, node: Boolean) -> ColumnElement[bool]:
+        if node.value:
+            return true()
+        else:
+            return false()
 
     @override
     def visit_not(self, node: Not) -> ColumnElement[bool]:  # type: ignore

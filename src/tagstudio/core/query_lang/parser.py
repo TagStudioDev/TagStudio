@@ -6,6 +6,7 @@
 from tagstudio.core.query_lang.ast import (
     AST,
     ANDList,
+    Boolean,
     Constraint,
     ConstraintType,
     Not,
@@ -81,6 +82,12 @@ class Parser:
             if isinstance(term, Not):  # instead of Not(Not(child)) return child
                 return term.child
             return Not(term)
+        if self.__is_next_true():
+            self.__eat(TokenType.ULITERAL)
+            return Boolean(value = True)
+        if self.__is_next_false():
+            self.__eat(TokenType.ULITERAL)
+            return Boolean(value = False)
         if self.next_token.type == TokenType.RBRACKETO:
             self.__eat(TokenType.RBRACKETO)
             out = self.__or_list()
@@ -91,6 +98,18 @@ class Parser:
 
     def __is_next_not(self) -> bool:
         return self.next_token.type == TokenType.ULITERAL and self.next_token.value.upper() == "NOT"  # pyright: ignore
+
+    def __is_next_true(self) -> bool:
+        return (
+            self.next_token.type == TokenType.ULITERAL
+            and self.next_token.value.upper() == "TRUE"  # pyright: ignore
+        )
+
+    def __is_next_false(self) -> bool:
+        return (
+            self.next_token.type == TokenType.ULITERAL
+            and self.next_token.value.upper() == "TRUE"  # pyright: ignore
+        )
 
     def __constraint(self) -> Constraint:
         if self.next_token.type == TokenType.CONSTRAINTTYPE:
