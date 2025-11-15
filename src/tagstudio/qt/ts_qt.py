@@ -84,6 +84,7 @@ from tagstudio.qt.mixed.fix_unlinked import FixUnlinkedEntriesModal
 from tagstudio.qt.mixed.folders_to_tags import FoldersToTagsModal
 from tagstudio.qt.mixed.item_thumb import BadgeType
 from tagstudio.qt.mixed.migration_modal import JsonMigrationModal
+from tagstudio.qt.mixed.paths_to_fields import PathsToFieldsModal
 from tagstudio.qt.mixed.progress_bar import ProgressWidget
 from tagstudio.qt.mixed.settings_panel import SettingsPanel
 from tagstudio.qt.mixed.tag_color_manager import TagColorManager
@@ -543,6 +544,15 @@ class QtDriver(DriverMixin, QObject):
             create_folders_tags_modal
         )
 
+        def create_paths_fields_modal():
+            if not hasattr(self, "paths_fields_modal"):
+                self.paths_fields_modal = PathsToFieldsModal(self.lib, self)
+            self.paths_fields_modal.show()
+
+        self.main_window.menu_bar.paths_to_fields_action.triggered.connect(
+            create_paths_fields_modal
+        )
+
         # endregion
 
         # region Help Menu ============================================================
@@ -769,6 +779,7 @@ class QtDriver(DriverMixin, QObject):
             self.main_window.menu_bar.fix_dupe_files_action.setEnabled(False)
             self.main_window.menu_bar.clear_thumb_cache_action.setEnabled(False)
             self.main_window.menu_bar.folders_to_tags_action.setEnabled(False)
+            self.main_window.menu_bar.paths_to_fields_action.setEnabled(False)
             self.main_window.menu_bar.library_info_action.setEnabled(False)
         except AttributeError:
             logger.warning(
@@ -1622,6 +1633,7 @@ class QtDriver(DriverMixin, QObject):
         self.main_window.menu_bar.fix_dupe_files_action.setEnabled(True)
         self.main_window.menu_bar.clear_thumb_cache_action.setEnabled(True)
         self.main_window.menu_bar.folders_to_tags_action.setEnabled(True)
+        self.main_window.menu_bar.paths_to_fields_action.setEnabled(True)
         self.main_window.menu_bar.library_info_action.setEnabled(True)
 
         self.main_window.preview_panel.set_selection(self.selected)

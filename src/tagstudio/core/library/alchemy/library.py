@@ -1262,6 +1262,73 @@ class Library:
             session.expunge(field)
             return field
 
+    def add_value_type(
+        self,
+        key: str,
+        *,
+        name: str | None = None,
+        field_type: FieldTypeEnum = FieldTypeEnum.TEXT_LINE,
+        is_default: bool = False,
+        position: int | None = None,
+    ) -> ValueType:
+        """Create a new ValueType row and return it.
+
+        - Preserves the provided `key` as-is.
+        - Derives a display `name` from key when not provided.
+        - Appends to the end of current field positions when `position` is not provided.
+        """
+        display_name = name or key.replace("_", " ").title()
+
+        with Session(self.engine) as session:
+            existing = session.scalar(select(ValueType).where(ValueType.key == key))
+            if existing:
+                session.expunge(existing)
+                return existing
+
+            if position is None:
+                max_pos = session.scalar(select(func.max(ValueType.position)))
+                position = (max_pos or 0) + 1
+
+            vt = ValueType(
+                key=key,
+                name=display_name,
+                type=field_type,
+                is_default=is_default,
+                position=position,
+            )
+            try:
+                session.add(vt)
+                session.commit()
+                session.expunge(vt)
+            except IntegrityError:
+                session.rollback()
+                # Fetch the existing row to return a consistent object
+                vt = unwrap(session.scalar(select(ValueType).where(ValueType.key == key)))
+                session.expunge(vt)
+            return vt
+
+    def ensure_value_type(
+        self,
+        key: str,
+        *,
+        name: str | None = None,
+        field_type: FieldTypeEnum = FieldTypeEnum.TEXT_LINE,
+        is_default: bool = False,
+    ) -> ValueType:
+        """Get or create a `ValueType` with the provided key.
+
+        Returns the existing type when present; otherwise creates it.
+        """
+        try:
+            return self.get_value_type(key)
+        except Exception:
+            return self.add_value_type(
+                key,
+                name=name,
+                field_type=field_type,
+                is_default=is_default,
+            )
+
     def add_field_to_entry(
         self,
         entry_id: int,

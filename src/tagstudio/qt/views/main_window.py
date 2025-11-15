@@ -385,6 +385,11 @@ class MainMenuBar(QMenuBar):
         self.folders_to_tags_action.setEnabled(False)
         self.macros_menu.addAction(self.folders_to_tags_action)
 
+        # Paths → Fields
+        self.paths_to_fields_action = QAction(Translations["menu.macros.paths_to_fields"], self)
+        self.paths_to_fields_action.setEnabled(False)
+        self.macros_menu.addAction(self.paths_to_fields_action)
+
         assign_mnemonics(self.macros_menu)
         self.addMenu(self.macros_menu)
 
