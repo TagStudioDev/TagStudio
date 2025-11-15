@@ -5,16 +5,21 @@
 """The core classes and methods of TagStudio."""
 
 import json
+import re
 from pathlib import Path
 
+import requests
 import structlog
 
 from tagstudio.core.constants import TS_FOLDER_NAME
 from tagstudio.core.library.alchemy.fields import FieldID
 from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.library.alchemy.models import Entry
+from tagstudio.core.utils.types import unwrap
 
 logger = structlog.get_logger(__name__)
+
+MOST_RECENT_RELEASE_VERSION: str | None = None
 
 
 class TagStudioCore:
@@ -101,11 +106,11 @@ class TagStudioCore:
         """Match defined conditions against a file to add Entry data."""
         # TODO - what even is this file format?
         # TODO: Make this stored somewhere better instead of temporarily in this JSON file.
-        cond_file = lib.library_dir / TS_FOLDER_NAME / "conditions.json"
+        cond_file = unwrap(lib.library_dir) / TS_FOLDER_NAME / "conditions.json"
         if not cond_file.is_file():
             return False
 
-        entry: Entry = lib.get_entry(entry_id)
+        entry: Entry = unwrap(lib.get_entry(entry_id))
 
         try:
             with open(cond_file, encoding="utf8") as f:
@@ -130,7 +135,9 @@ class TagStudioCore:
                         is_new = field["id"] not in entry_field_types
                         field_key = field["id"]
                         if is_new:
-                            lib.add_field_to_entry(entry.id, field_key, field["value"])
+                            lib.add_field_to_entry(
+                                entry.id, field_id=field_key, value=field["value"]
+                            )
                         else:
                             lib.update_entry_field(entry.id, field_key, field["value"])
 
@@ -181,3 +188,23 @@ class TagStudioCore:
         except Exception:
             logger.exception("Error building Instagram URL.", entry=entry)
             return ""
+
+    @staticmethod
+    def get_most_recent_release_version() -> str | None:
+        """Get the version of the most recent Github release."""
+        global MOST_RECENT_RELEASE_VERSION
+        if MOST_RECENT_RELEASE_VERSION is not None:
+            return MOST_RECENT_RELEASE_VERSION
+
+        resp = requests.get("https://api.github.com/repos/TagStudioDev/TagStudio/releases/latest")
+        assert resp.status_code == 200, "Could not fetch information on latest release."
+
+        data = resp.json()
+        tag: str = data["tag_name"]
+        assert tag.startswith("v")
+
+        version = tag[1:]
+        assert re.match(r"^\d+\.\d+\.\d+(-\w+)?$", version) is not None, "Invalid version format."
+
+        MOST_RECENT_RELEASE_VERSION = version
+        return version

@@ -20,6 +20,7 @@ from PySide6.QtWidgets import (
 
 from tagstudio.core.constants import VERSION, VERSION_BRANCH
 from tagstudio.core.enums import Theme
+from tagstudio.core.ts_core import TagStudioCore
 from tagstudio.qt.models.palette import ColorType, UiColor, get_ui_color
 from tagstudio.qt.previews.vendored import ffmpeg
 from tagstudio.qt.resource_manager import ResourceManager
@@ -102,6 +103,19 @@ class AboutModal(QWidget):
         self.system_info_widget = QWidget()
         self.system_info_layout = QFormLayout(self.system_info_widget)
         self.system_info_layout.setLabelAlignment(Qt.AlignmentFlag.AlignRight)
+
+        # Version
+        version_title = QLabel("Version")
+        most_recent_release = TagStudioCore.get_most_recent_release_version()
+        version_content_style = self.form_content_style
+        if most_recent_release == VERSION:
+            version_content = QLabel(f"{VERSION}")
+        else:
+            version_content = QLabel(f"{VERSION} (Latest Release: {most_recent_release})")
+            version_content_style += "color: #d9534f;"
+        version_content.setStyleSheet(version_content_style)
+        version_content.setMaximumWidth(version_content.sizeHint().width())
+        self.system_info_layout.addRow(version_title, version_content)
 
         # License
         license_title = QLabel(f"{Translations['about.license']}")
