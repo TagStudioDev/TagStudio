@@ -89,6 +89,7 @@ python3Packages.buildPythonApplication {
   dependencies =
     with python3Packages;
     [
+      audioop-lts
       chardet
       ffmpeg-python
       humanfriendly
