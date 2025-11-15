@@ -131,10 +131,10 @@ def test_library_search(library: Library, entry_full: Entry):
 def test_tag_search(library: Library):
     tag = library.tags[0]
 
-    assert library.search_tags(tag.name.lower())
-    assert library.search_tags(tag.name.upper())
-    assert library.search_tags(tag.name[2:-2])
-    assert library.search_tags(tag.name * 2) == [set(), set()]
+    assert library.search_tags(tag.name.lower())[0]
+    assert library.search_tags(tag.name.upper())[0]
+    assert library.search_tags(tag.name[2:-2])[0]
+    assert library.search_tags(tag.name * 2) == ([], [])
 
 
 def test_get_entry(library: Library, entry_min: Entry):
