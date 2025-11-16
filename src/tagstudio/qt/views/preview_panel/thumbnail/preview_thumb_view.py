@@ -259,6 +259,7 @@ class PreviewThumbView(QWidget):
         # If the animation only has 1 frame, it isn't animated and shouldn't be treated as such
         if movie.frameCount() > 1:
             self.__switch_preview(MediaType.IMAGE_ANIMATED)
+            self.resizeEvent(QResizeEvent(size, size))
             movie.start()
 
     def _display_image(self, filepath: Path) -> None:
@@ -273,7 +274,6 @@ class PreviewThumbView(QWidget):
 
     @override
     def resizeEvent(self, event: QResizeEvent) -> None:
-        self.__thumbnail_ratio = self.size().width() / self.size().height()
         self.__update_thumbnail_size(self.size())
 
         if self.__filepath is not None and self.__rendered_res < self.__thumbnail_button_size:
