@@ -151,41 +151,39 @@ class PreviewThumbView(QWidget):
         page.setLayout(layout)
 
     def __update_thumbnail_size(self, size: QSize) -> None:
-        adjusted_size: QSize = size
-
+        adj_width: float = size.width()
+        adj_height: float = size.height()
         # Landscape
         if self.__thumbnail_ratio > 1:
-            adjusted_size.setHeight(int(size.width() * (1 / self.__thumbnail_ratio)))
+            adj_height = size.width() * (1 / self.__thumbnail_ratio)
         # Portrait
         elif self.__thumbnail_ratio <= 1:
-            adjusted_size.setWidth(int(size.height() * self.__thumbnail_ratio))
+            adj_width = size.height() * self.__thumbnail_ratio
 
-        if adjusted_size.width() > size.width():
-            adjusted_size.setHeight(
-                int(adjusted_size.height() * (size.width() / adjusted_size.width()))
-            )
-            adjusted_size.setWidth(size.width())
-        elif adjusted_size.height() > size.height():
-            adjusted_size.setWidth(
-                int(adjusted_size.width() * (size.height() / adjusted_size.height()))
-            )
-            adjusted_size.setHeight(size.height())
+        if adj_width > size.width():
+            adj_height = adj_height * (size.width() / adj_width)
+            adj_width = size.width()
+        elif adj_height > size.height():
+            adj_width = adj_width * (size.height() / adj_height)
+            adj_height = size.height()
 
-        self.__thumbnail_button_size = (adjusted_size.width(), adjusted_size.height())
-        self.__button_wrapper.setMaximumSize(adjusted_size)
-        self.__button_wrapper.setIconSize(adjusted_size)
-        self.__preview_gif.setMaximumSize(adjusted_size)
-        self.__preview_gif.setMinimumSize(adjusted_size)
+        adj_size: QSize = QSize(int(adj_width), int(adj_height))
 
-        self._media_player.setMaximumSize(adjusted_size)
-        self._media_player.setMinimumSize(adjusted_size)
+        self.__thumbnail_button_size = (adj_size.width(), adj_size.height())
+        self.__button_wrapper.setMaximumSize(adj_size)
+        self.__button_wrapper.setIconSize(adj_size)
+        self.__preview_gif.setMaximumSize(adj_size)
+        self.__preview_gif.setMinimumSize(adj_size)
+
+        self._media_player.setMaximumSize(adj_size)
+        self._media_player.setMinimumSize(adj_size)
 
         proxy_style = RoundedPixmapStyle(radius=8)
         self.__preview_gif.setStyle(proxy_style)
         self._media_player.setStyle(proxy_style)
         m = self.__preview_gif.movie()
         if m:
-            m.setScaledSize(adjusted_size)
+            m.setScaledSize(adj_size)
 
     def __switch_preview(self, preview: MediaType | None) -> None:
         if preview in [MediaType.AUDIO, MediaType.VIDEO]:
