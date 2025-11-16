@@ -121,6 +121,8 @@ class PreviewThumb(PreviewThumbView):
         """Render a single file preview."""
         self.__current_file = filepath
 
+        logger.info("[PreviewThumbController][display_file] Displaying file", path=filepath)
+
         ext = filepath.suffix.lower()
 
         # Video
@@ -145,8 +147,7 @@ class PreviewThumb(PreviewThumbView):
         # Animated Images
         elif MediaCategories.IMAGE_ANIMATED_TYPES.contains(ext, mime_fallback=True):
             gif_data = self.__get_gif_data(filepath)
-            if gif_data:
-                self._display_gif(*gif_data)
+            if gif_data and self._display_gif(*gif_data):
                 gif_size = gif_data[1]
             else:
                 self._display_image(filepath)

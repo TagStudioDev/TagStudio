@@ -235,15 +235,17 @@ class PreviewThumbView(QWidget):
         self._media_player.play(filepath)
 
     def _display_video(self, filepath: Path, size: QSize | None) -> None:
+        logger.debug("[PreviewThumbView][_display_image] Displaying video", path=filepath)
         self.__switch_preview(MediaType.VIDEO)
         self.__update_media_player(filepath)
 
     def _display_audio(self, filepath: Path) -> None:
+        logger.debug("[PreviewThumbView][_display_image] Displaying audio", path=filepath)
         self.__switch_preview(MediaType.AUDIO)
         self.__render_thumb(filepath)
         self.__update_media_player(filepath)
 
-    def _display_gif(self, gif_data: bytes, size: QSize) -> None:
+    def _display_gif(self, gif_data: bytes, size: QSize) -> bool:
         """Update the animated image preview from a filepath."""
         # Ensure that any movie and buffer from previous animations are cleared.
         if self.__preview_gif.movie():
@@ -256,14 +258,22 @@ class PreviewThumbView(QWidget):
         movie = QMovie(self.__gif_buffer, QByteArray())
         self.__preview_gif.setMovie(movie)
 
+        logger.debug(
+            "[PreviewThumbView][_display_gif] Displaying GIF", frame_count=movie.frameCount()
+        )
+
         # If the animation only has 1 frame, it isn't animated and shouldn't be treated as such
-        if movie.frameCount() > 1:
-            self.__switch_preview(MediaType.IMAGE_ANIMATED)
-            self.resizeEvent(QResizeEvent(size, size))
-            movie.start()
+        if movie.frameCount() <= 1:
+            return False
+
+        # The animation has more than 1 frame, continue displaying it as an animation
+        self.__switch_preview(MediaType.IMAGE_ANIMATED)
+        movie.start()
+        return True
 
     def _display_image(self, filepath: Path) -> None:
         """Renders the given file as an image, no matter its media type."""
+        logger.debug("[PreviewThumbView][_display_image] Displaying image", path=filepath)
         self.__switch_preview(MediaType.IMAGE)
         self.__render_thumb(filepath)
 
