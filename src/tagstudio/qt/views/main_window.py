@@ -11,7 +11,7 @@ import structlog
 from PIL import Image, ImageQt
 from PySide6 import QtCore
 from PySide6.QtCore import QMetaObject, QSize, QStringListModel, Qt
-from PySide6.QtGui import QAction, QPixmap
+from PySide6.QtGui import QAction, QPixmap, QKeyEvent
 from PySide6.QtWidgets import (
     QComboBox,
     QCompleter,
@@ -67,6 +67,8 @@ class MainMenuBar(QMenuBar):
     new_tag_action: QAction
     select_all_action: QAction
     select_inverse_action: QAction
+    undo_selection_action: QAction
+    redo_selection_action: QAction
     clear_select_action: QAction
     copy_fields_action: QAction
     paste_fields_action: QAction
@@ -214,6 +216,31 @@ class MainMenuBar(QMenuBar):
         self.select_inverse_action.setToolTip("Ctrl+Shift+I")
         self.select_inverse_action.setEnabled(False)
         self.edit_menu.addAction(self.select_inverse_action)
+
+        # Undo Selection
+        self.undo_selection_action = QAction(
+            Translations["select.undo"], self
+        )
+        self.undo_selection_action.setShortcut(
+            QtCore.QKeyCombination(
+                QtCore.Qt.Key.Key_R,
+            )
+        )
+        self.undo_selection_action.setToolTip("R")
+        self.edit_menu.addAction(self.undo_selection_action)
+
+        # Redo Selection
+        self.redo_selection_action = QAction(
+            Translations["select.redo"], self
+        )
+        self.redo_selection_action.setShortcut(
+            QtCore.QKeyCombination(
+                QtCore.Qt.KeyboardModifier(QtCore.Qt.KeyboardModifier.ShiftModifier),
+                QtCore.Qt.Key.Key_R,
+            )
+        )
+        self.redo_selection_action.setToolTip("Shift+R")
+        self.edit_menu.addAction(self.redo_selection_action)
 
         # Clear Selection
         self.clear_select_action = QAction(Translations["select.clear"], self)
@@ -450,6 +477,7 @@ class MainWindow(QMainWindow):
     def __init__(self, driver: "QtDriver", parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self.rm = ResourceManager()
+        self.installEventFilter(self)
 
         # region Type declarations for variables that will be initialized in methods
         # initialized in setup_search_bar
@@ -688,6 +716,37 @@ class MainWindow(QMainWindow):
         self.setStatusBar(self.status_bar)
 
     # endregion
+
+    #keyboard navigation of thumb_layout
+    def eventFilter(self, watched, event):
+        if isinstance(event, QKeyEvent):
+            key = event.key()
+            # KEY RELEASED
+            if event.type() == event.Type.KeyRelease:
+                if key == QtCore.Qt.Key.Key_Shift:
+                    self.thumb_layout.handle_shift_key_event(is_shift_key_pressed=False)
+            # KEY PRESSED
+            else:
+                if key == QtCore.Qt.Key.Key_Shift:
+                    self.thumb_layout.handle_shift_key_event(is_shift_key_pressed=True)
+                elif key == QtCore.Qt.Key.Key_Right:
+                    selected = self.thumb_layout.select_next()
+                    self.preview_panel.set_selection(selected, update_preview=True)
+                    return True
+                elif key == QtCore.Qt.Key.Key_Left:
+                    selected = self.thumb_layout.select_prev()
+                    self.preview_panel.set_selection(selected, update_preview=True)
+                    return True
+                elif key == QtCore.Qt.Key.Key_Up:
+                    selected = self.thumb_layout.select_up()
+                    self.preview_panel.set_selection(selected, update_preview=True)
+                    return True
+                elif key == QtCore.Qt.Key.Key_Down:
+                    selected = self.thumb_layout.select_down()
+                    self.preview_panel.set_selection(selected, update_preview=True)
+                    return True
+        return super().eventFilter(watched, event)
+    
 
     def toggle_landing_page(self, enabled: bool):
         if enabled:

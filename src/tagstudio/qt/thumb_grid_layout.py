@@ -2,6 +2,7 @@ import math
 import time
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, override
+from collections import deque
 
 from PySide6.QtCore import QPoint, QRect, QSize
 from PySide6.QtGui import QPixmap
@@ -17,6 +18,27 @@ from tagstudio.qt.previews.renderer import ThumbRenderer
 if TYPE_CHECKING:
     from tagstudio.qt.ts_qt import QtDriver
 
+#number of selection states to store (for undo/redo selection)
+MAX_HISTORY = 30
+
+def log_selection(method):
+    #decorator to keep a history of selection states
+    def wrapper(self, *args, **kwargs):
+        # Only log if the current state differs from the last
+        if (
+            self._selected
+            and (
+                not self._selection_history
+                or self._selection_history[-1] != self._selected
+            )
+        ):
+            # copy to avoid mutation issues
+            self._selection_history.append(dict(self._selected))
+            if self._undo_selection_history:
+                # clear undo history
+                self._undo_selection_history.clear()
+        return method(self, *args, **kwargs)
+    return wrapper
 
 class ThumbGridLayout(QLayout):
     def __init__(self, driver: "QtDriver", scroll_area: QScrollArea) -> None:
@@ -28,8 +50,12 @@ class ThumbGridLayout(QLayout):
         self._items: list[QLayoutItem] = []
         # Entry.id -> _entry_ids[index]
         self._selected: dict[int, int] = {}
+        self._selection_history:deque[dict[int, int]] = deque(maxlen=MAX_HISTORY)
+        self._undo_selection_history:deque[dict[int, int]] = deque(maxlen=MAX_HISTORY)
         # _entry_ids[index]
         self._last_selected: int | None = None
+        self._is_shift_key_down: bool = False
+        self._shift_select_start: int | None = None
 
         self._entry_ids: list[int] = []
         self._entries: dict[int, Entry] = {}
@@ -43,6 +69,7 @@ class ThumbGridLayout(QLayout):
         self._renderer: ThumbRenderer = ThumbRenderer(self.driver)
         self._renderer.updated.connect(self._on_rendered)
         self._render_cutoff: float = 0.0
+        self._per_row: int = 0
 
         # _entry_ids[StartIndex:EndIndex]
         self._last_page_update: tuple[int, int] | None = None
@@ -52,6 +79,8 @@ class ThumbGridLayout(QLayout):
 
         self._selected.clear()
         self._last_selected = None
+        self._selection_history.clear()
+        self._undo_selection_history.clear()
 
         self._entry_ids = entry_ids
         self._entries.clear()
@@ -83,6 +112,107 @@ class ThumbGridLayout(QLayout):
 
         self._last_page_update = None
 
+    def undo_selection(self):
+        """Loads selection state from history."""
+        if self._selection_history:
+            self._undo_selection_history.append(dict(self._selected))
+            selected = self._selection_history.pop()
+            for id in self._selected:
+                if id not in selected:
+                    self._set_selected(id, value=False)
+            for id in selected:
+                self._set_selected(id)
+                self._last_selected = selected[id]
+            self._selected = selected
+    
+
+    def redo_selection(self):
+        """Loads selection state from undo history."""
+        if self._undo_selection_history:
+            self._selection_history.append(dict(self._selected))
+            selected = self._undo_selection_history.pop()
+            for id in self._selected:
+                if id not in selected:
+                    self._set_selected(id, value=False)
+            for id in selected:
+                self._set_selected(id)
+                self._last_selected = selected[id]
+            self._selected = selected
+    
+    def handle_shift_key_event(self, is_shift_key_pressed:bool):
+        """Track last_selected and input for shift selecting with directional select."""
+        self._is_shift_key_down = is_shift_key_pressed
+        if is_shift_key_pressed:    
+            self._shift_select_start = self._last_selected
+        else:
+            self._shift_select_start = None
+
+    @log_selection
+    def _enact_directional_select(self,target_index:int):
+        """Common logic for select_next, prev, up, down.
+
+        Handles multi-select (shift+arrow key).
+        """
+        selection_start_index = None
+        if self._is_shift_key_down:
+            #find the multi-select start point
+            if self._shift_select_start is not None:
+                selection_start_index = self._shift_select_start
+            elif self._last_selected is not None:
+                self._shift_select_start = self._last_selected
+                selection_start_index = self._last_selected
+        target_indexes = [target_index]
+        if selection_start_index is not None:
+            #get all indexes from start point to target_index
+            target_indexes = list(
+                range(
+                    min(selection_start_index, target_index),
+                    max(selection_start_index, target_index) + 1
+                )
+            )
+        #update selection
+        selected = {self._entry_ids[i]: i for i in target_indexes}
+        for id in self._selected:
+            if id not in selected:
+                self._set_selected(id, value=False)
+        for id in selected:
+            self._set_selected(id)
+        self._selected = selected
+        self._last_selected = target_index
+        #return selected because this callback is handled in main_window.py (not ts_qt.py)
+        return list(self._selected.keys())
+    
+    def select_next(self):
+        target_index = 0
+        if self._last_selected is not None:
+            target_index = min(self._last_selected+1, len(self._entry_ids)-1)
+        return self._enact_directional_select(target_index)
+
+    def select_prev(self):
+        target_index = len(self._entry_ids)-1
+        if self._last_selected is not None:
+            target_index = max(self._last_selected-1, 0)
+        return self._enact_directional_select(target_index)
+    
+    def select_up(self):
+        target_index = len(self._entry_ids)-1
+        if self._last_selected is not None:
+            target_index = max(
+                self._last_selected-self._per_row,
+                self._last_selected % self._per_row
+            )
+        return self._enact_directional_select(target_index)
+    
+    def select_down(self):
+        target_index = 0
+        if self._last_selected is not None:
+            target_index = min(
+                self._last_selected+self._per_row,
+                len(self._entry_ids)-1
+            )
+        return self._enact_directional_select(target_index)
+
+    @log_selection
     def select_all(self):
         self._selected.clear()
         for index, id in enumerate(self._entry_ids):
@@ -92,6 +222,7 @@ class ThumbGridLayout(QLayout):
         for entry_id in self._entry_items:
             self._set_selected(entry_id)
 
+    @log_selection
     def select_inverse(self):
         selected = {}
         for index, id in enumerate(self._entry_ids):
@@ -107,6 +238,7 @@ class ThumbGridLayout(QLayout):
 
         self._selected = selected
 
+    @log_selection
     def select_entry(self, entry_id: int):
         if entry_id in self._selected:
             index = self._selected.pop(entry_id)
@@ -123,6 +255,7 @@ class ThumbGridLayout(QLayout):
             self._last_selected = index
             self._set_selected(entry_id)
 
+    @log_selection
     def select_to_entry(self, entry_id: int):
         index = self._entry_ids.index(entry_id)
         if len(self._selected) == 0:
@@ -144,6 +277,7 @@ class ThumbGridLayout(QLayout):
             self._selected[entry_id] = i
             self._set_selected(entry_id)
 
+    @log_selection
     def clear_selected(self):
         for entry_id in self._entry_items:
             self._set_selected(entry_id, value=False)
@@ -240,7 +374,7 @@ class ThumbGridLayout(QLayout):
         if width_offset == 0:
             return 0, 0, height_offset
         per_row = int(width / width_offset)
-
+        self._per_row = per_row
         return per_row, width_offset, height_offset
 
     @override

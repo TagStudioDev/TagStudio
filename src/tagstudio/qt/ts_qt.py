@@ -429,6 +429,14 @@ class QtDriver(DriverMixin, QObject):
         self.main_window.menu_bar.select_inverse_action.triggered.connect(
             self.select_inverse_action_callback
         )
+        
+        self.main_window.menu_bar.undo_selection_action.triggered.connect(
+            self.undo_selection_action_callback
+        )
+
+        self.main_window.menu_bar.redo_selection_action.triggered.connect(
+            self.redo_selection_action_callback
+        )
 
         self.main_window.menu_bar.clear_select_action.triggered.connect(
             self.clear_select_action_callback
@@ -851,6 +859,20 @@ class QtDriver(DriverMixin, QObject):
         selected = self.selected
         self.main_window.thumb_layout.add_tags(selected, tag_ids)
         self.lib.add_tags_to_entries(selected, tag_ids)
+
+    def undo_selection_action_callback(self):
+        """Undo most recent selection change."""
+        self.main_window.thumb_layout.undo_selection()
+        self.set_clipboard_menu_viability()
+        self.set_select_actions_visibility()
+        self.main_window.preview_panel.set_selection(self.selected, update_preview=True)
+
+    def redo_selection_action_callback(self):
+        """Redo most recent selection undo."""
+        self.main_window.thumb_layout.redo_selection()
+        self.set_clipboard_menu_viability()
+        self.set_select_actions_visibility()
+        self.main_window.preview_panel.set_selection(self.selected, update_preview=True)
 
     def delete_files_callback(self, origin_path: str | Path, origin_id: int | None = None):
         """Callback to send on or more files to the system trash.
