@@ -17,24 +17,28 @@ class KritaRenderer(BaseRenderer):
         super().__init__()
 
     @staticmethod
-    def render(path: Path) -> Image.Image | None:
+    def render(path: Path, extension: str) -> Image.Image | None:
         """Extract and render a thumbnail for a Krita file.
 
         Args:
             path (Path): The path of the file.
+            extension (str): The file extension.
         """
-        with zipfile.ZipFile(path, "r") as zip_file:
-            # Check if the file exists in the zip
-            if thumbnail_path_within_zip in zip_file.namelist():
-                # Read the specific file into memory
-                file_data: bytes = zip_file.read(thumbnail_path_within_zip)
-                embedded_thumbnail: Image.Image = Image.open(BytesIO(file_data))
+        try:
+            with zipfile.ZipFile(path, "r") as zip_file:
+                # Check if the file exists in the zip
+                if thumbnail_path_within_zip in zip_file.namelist():
+                    # Read the specific file into memory
+                    file_data: bytes = zip_file.read(thumbnail_path_within_zip)
+                    embedded_thumbnail: Image.Image = Image.open(BytesIO(file_data))
 
-                if embedded_thumbnail:
-                    rendered_image = Image.new("RGB", embedded_thumbnail.size, color="#1e1e1e")
-                    rendered_image.paste(embedded_thumbnail)
-                    return rendered_image
-            else:
-                logger.error("[KritaRenderer] Couldn't render thumbnail", path=path)
+                    if embedded_thumbnail:
+                        rendered_image = Image.new("RGB", embedded_thumbnail.size, color="#1e1e1e")
+                        rendered_image.paste(embedded_thumbnail)
+                        return rendered_image
+                else:
+                    raise FileNotFoundError
+        except Exception as e:
+            logger.error("[KritaRenderer] Couldn't render thumbnail", path=path, error=e)
 
         return None

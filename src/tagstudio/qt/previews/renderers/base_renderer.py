@@ -11,5 +11,5 @@ class BaseRenderer(ABC):
 
     @staticmethod
     @abstractmethod
-    def render(path: Path) -> Image.Image | None:
+    def render(path: Path, extension: str) -> Image.Image | None:
         raise NotImplementedError

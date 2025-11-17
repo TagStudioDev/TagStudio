@@ -18,11 +18,12 @@ class VideoRenderer(BaseRenderer):
         super().__init__()
 
     @staticmethod
-    def render(path: Path) -> Image.Image | None:
+    def render(path: Path, extension: str) -> Image.Image | None:
         """Render a thumbnail for a video file.
 
         Args:
             path (Path): The path of the file.
+            extension (str): The file extension.
         """
         try:
             if is_readable_video(path):
@@ -61,8 +62,6 @@ class VideoRenderer(BaseRenderer):
             DecompressionBombError,
             OSError,
         ) as e:
-            logger.error(
-                "[VideoRenderer] Couldn't render thumbnail", path=path, error=type(e).__name__
-            )
+            logger.error("[VideoRenderer] Couldn't render thumbnail", path=path, error=e)
 
         return None

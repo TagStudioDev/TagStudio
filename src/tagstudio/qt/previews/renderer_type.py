@@ -2,11 +2,13 @@ from enum import Enum
 
 from tagstudio.core.media_types import MediaCategories
 from tagstudio.qt.previews.renderers.base_renderer import BaseRenderer
+from tagstudio.qt.previews.renderers.ebook_renderer import EBookRenderer
 from tagstudio.qt.previews.renderers.krita_renderer import KritaRenderer
 from tagstudio.qt.previews.renderers.video_renderer import VideoRenderer
 
 
 class RendererType(Enum):
+    EBOOK = "ebook", MediaCategories.EBOOK_TYPES, EBookRenderer
     KRITA = "krita", MediaCategories.KRITA_TYPES, KritaRenderer
     VIDEO = "video", MediaCategories.VIDEO_TYPES, VideoRenderer
 
