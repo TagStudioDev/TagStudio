@@ -39,17 +39,23 @@ class PathFieldRule:
   """Define how to extract data from a path and map to fields.
 
   pattern: Full regex applied to the entry path (string form). Supports
-       numbered groups ($1) and named groups ($name / ${name}).
-  fields:  Mapping of field keys to value templates. Templates can contain
-       placeholders like "$1", "$name", or "${name}".
+    numbered groups ($1) and named groups ($name / ${name}).
+  fields:  A list of (field_key, template) pairs. Templates can contain
+    placeholders like "$1", "$name", or "${name}". Dicts are accepted
+    for backward compatibility and will be converted preserving iteration order.
   use_filename_only: If True, match only against the filename, else full path.
   flags: Regex flags OR'd, e.g. re.IGNORECASE.
   """
 
   pattern: str
-  fields: dict[str, str]
+  fields: list[tuple[str, str]]
   use_filename_only: bool = False
   flags: int = 0
+
+  def __post_init__(self) -> None:
+    # Back-compat: allow callers/tests to pass a dict mapping.
+    if isinstance(self.fields, dict):
+      self.fields = list(self.fields.items())
 
   def compile(self) -> re.Pattern[str]:
     return re.compile(self.pattern, self.flags)
@@ -59,7 +65,8 @@ class PathFieldRule:
 class EntryFieldUpdate:
   entry_id: int
   path: str
-  updates: dict[str, str] = field(default_factory=dict)
+  # list of (field_key, value) to preserve duplicates and order
+  updates: list[tuple[str, str]] = field(default_factory=list)
 
 
 PLACEHOLDER_RE = re.compile(
@@ -146,10 +153,17 @@ def preview_paths_to_fields(
         else str(entry.path).replace("\\", "/")
       )
 
-    pending: dict[str, str] = {}
+    pending_list: list[tuple[str, str]] = []
 
     # DEBUG: minimal trace for first entries (temporarily enabled to diagnose matching)
     # print(f"[preview] full_path={full_path}")
+
+    # Precompute keys that should be skipped entirely when only_unset=True
+    skip_keys: set[str] = set()
+    if only_unset:
+      for f in entry.fields:
+        if (f.value or "") != "":
+          skip_keys.add(f.type_key)
 
     for rule, cre in compiled:
       target = entry.filename if rule.use_filename_only else full_path
@@ -157,22 +171,17 @@ def preview_paths_to_fields(
       if not m:
         continue
 
-      for key, tmpl in rule.fields.items():
+      for key, tmpl in rule.fields:
+        if only_unset and key in skip_keys:
+          continue
         value = _expand_template(tmpl, m).strip()
         if value == "":
           continue
 
-        if only_unset:
-          # check if field key exists and has a non-empty value
-          existing = next((f for f in entry.fields if (
-            f.type_key == key and (f.value or "") != "")), None)
-          if existing:
-            continue
+        pending_list.append((key, value))
 
-        pending[key] = value
-
-    if pending:
-      results.append(EntryFieldUpdate(entry_id=entry.id, path=full_path, updates=pending))
+    if pending_list:
+      results.append(EntryFieldUpdate(entry_id=entry.id, path=full_path, updates=pending_list))
 
   return results
 
@@ -200,10 +209,14 @@ def apply_paths_to_fields(
   for upd in updates:
     entry = unwrap(library.get_entry_full(upd.entry_id))
 
-    for key, value in upd.updates.items(): # ** TODO: optimizeations can be made here
+    # Group proposed updates by field key to handle duplicates and overwrites deterministically
+    grouped: dict[str, list[str]] = {}
+    for key, value in upd.updates:
+      grouped.setdefault(key, []).append(value)
+
+    for key, values in grouped.items():
       # ensure field type exists if requested
       if create_missing_field_types:
-        # prefer library-provided helper if available, else attempt to create/get via available APIs
         _ensure_fn = getattr(library, "ensure_value_type", None)
         ftype = FieldTypeEnum.TEXT_LINE
         if field_types and key in field_types:
@@ -212,10 +225,8 @@ def apply_paths_to_fields(
           _ensure_fn(key, name=None, field_type=ftype)
         else:
           try:
-            # try to access existing type
             library.get_value_type(key)
           except Exception:
-            # try common creation APIs if present
             _create_fn = (
               getattr(library, "create_value_type", None)
               or getattr(library, "add_value_type", None)
@@ -223,22 +234,39 @@ def apply_paths_to_fields(
             if callable(_create_fn):
               _create_fn(key, name=None, field_type=ftype)
             else:
-              # fallback to calling get_value_type to raise a clear error
               library.get_value_type(key)
       else:
-        # will raise if missing; keep behavior explicit
         library.get_value_type(key)
 
-      existing = next((f for f in entry.fields if f.type_key == key), None)
-      if existing:
-        current = existing.value or ""
-        if overwrite or current == "":
-          library.update_entry_field(entry.id, existing, value)
-          applied += 1
+      existing_fields = [f for f in entry.fields if f.type_key == key]
+
+      if overwrite:
+        # Overwrite existing in order, then append any remaining values
+        for i, val in enumerate(values):
+          if i < len(existing_fields):
+            library.update_entry_field(entry.id, existing_fields[i], val)
+            applied += 1
+          else:
+            if library.add_field_to_entry(entry.id, field_id=key, value=val):
+              applied += 1
         continue
 
-      if library.add_field_to_entry(entry.id, field_id=key, value=value):
+      # not overwrite: only fill when all existing are empty
+      # (prior behavior was 'any non-empty blocks')
+      if any((f.value or "") != "" for f in existing_fields):
+        continue
+
+      # Fill existing empties first, then append extra
+      idx = 0
+      for f in existing_fields:
+        if idx >= len(values):
+          break
+        library.update_entry_field(entry.id, f, values[idx])
         applied += 1
+        idx += 1
+      for j in range(idx, len(values)):
+        if library.add_field_to_entry(entry.id, field_id=key, value=values[j]):
+          applied += 1
 
   return applied
 
@@ -255,21 +283,55 @@ class _MappingRow(QWidget):
     self.field_select = QComboBox()
     for fid in FieldID:
       self.field_select.addItem(fid.value.name, fid.name)
-    self.val_edit = QLineEdit()
-    self.val_edit.setPlaceholderText(Translations["paths_to_fields.template_placeholder"])
+    # Single-line editor
+    self.val_edit_line = QLineEdit()
+    self.val_edit_line.setPlaceholderText(Translations["paths_to_fields.template_placeholder"])
+    # Multi-line editor (for TEXT_BOX fields)
+    self.val_edit_box = QPlainTextEdit()
+    self.val_edit_box.setPlaceholderText(Translations["paths_to_fields.template_placeholder"])
+    self.val_edit_box.setFixedHeight(64)
     self.remove_btn = QPushButton("-")
     self.remove_btn.setFixedWidth(28)
     layout.addWidget(self.field_select)
-    layout.addWidget(self.val_edit)
+    layout.addWidget(self.val_edit_line)
+    layout.addWidget(self.val_edit_box)
     layout.addWidget(self.remove_btn)
+
+    # Start with proper editor based on current selection
+    self._update_editor_kind()
+    self.field_select.currentIndexChanged.connect(self._update_editor_kind)
 
 
   def as_pair(self) -> tuple[str, str] | None:
-    v = self.val_edit.text().strip()
+    editor = self._current_value_editor()
+    v = (
+      editor.toPlainText().strip()
+      if isinstance(editor, QPlainTextEdit)
+      else editor.text().strip()
+    )
     if not v:
       return None
     fid_name = self.field_select.currentData()
     return (str(fid_name), v)
+
+  def _current_value_editor(self) -> QLineEdit | QPlainTextEdit:
+    # TEXT_BOX => multi-line, else single-line
+    try:
+      fid_name = self.field_select.currentData()
+      ftype = (
+        FieldID[fid_name].value.type
+        if fid_name in FieldID.__members__
+        else FieldTypeEnum.TEXT_LINE
+      )
+    except Exception:
+      ftype = FieldTypeEnum.TEXT_LINE
+    return self.val_edit_box if ftype == FieldTypeEnum.TEXT_BOX else self.val_edit_line
+
+  def _update_editor_kind(self) -> None:
+    editor = self._current_value_editor()
+    use_box = isinstance(editor, QPlainTextEdit)
+    self.val_edit_box.setVisible(use_box)
+    self.val_edit_line.setVisible(not use_box)
 
 
 
@@ -346,6 +408,15 @@ class PathsToFieldsModal(QWidget):
     apply_btn.setMinimumWidth(100)
     apply_btn.clicked.connect(self._on_apply)
 
+    # Ensure pressing Enter in editors doesn't trigger any default button
+    # Explicitly disable default behaviors on buttons
+    for b in (preview_btn, apply_btn):
+      try:
+        b.setAutoDefault(False)
+        b.setDefault(False)
+      except Exception:
+        pass
+
     # Layout assembly
     root.addWidget(title)
     root.addWidget(desc)
@@ -381,17 +452,16 @@ class PathsToFieldsModal(QWidget):
       msg_box.addButton(Translations["generic.close"], QMessageBox.ButtonRole.AcceptRole)
       msg_box.exec_()
       return None
-    fields: dict[str, str] = {}
+    fields_list: list[tuple[str, str]] = []
     f_types: dict[str, FieldTypeEnum] = {}
     for i in range(self.map_v.count()):
       w = self.map_v.itemAt(i).widget()
       if isinstance(w, _MappingRow):
         kv = w.as_pair()
         if kv:
-          k, v = kv
-          fields[k] = v
+          fields_list.append(kv)
           # No custom fields support in UI; backend keeps optional field_types for tests
-    if not fields:
+    if not fields_list:
       msg_box = QMessageBox()
       msg_box.setIcon(QMessageBox.Icon.Warning)
       msg_box.setWindowTitle(Translations["window.title.error"])  # reuse common title
@@ -412,7 +482,7 @@ class PathsToFieldsModal(QWidget):
       return None
     rule = PathFieldRule(
       pattern=pattern,
-      fields=fields,
+      fields=fields_list,
       use_filename_only=self.filename_only_cb.isChecked(),
     )
     return [rule], f_types
@@ -429,7 +499,7 @@ class PathsToFieldsModal(QWidget):
     lines: list[str] = []
     for upd in previews:
       lines.append(f"{upd.path}")
-      for k, v in upd.updates.items():
+      for k, v in upd.updates:
         lines.append(f"  - {k}: {v}")
     self.preview_area.setPlainText("\n".join(lines))
 

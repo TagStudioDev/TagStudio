@@ -84,3 +84,33 @@ def test_paths_to_fields_preview_and_apply(library: Library):
     assert kv2.get(FieldID.SERIES.name) == "Some-Series"
     assert kv2.get(FieldID.SOURCE.name) == "source-name"
     assert kv2.get("page_number") == "003"
+
+
+def test_paths_to_fields_allows_duplicate_fields(library: Library):
+    folder = unwrap(library.folder)
+
+    entry = Entry(folder=folder, path=Path("multi-foo_bar.jpg"), fields=[])
+    [eid] = library.add_entries([entry])
+
+    rule = PathFieldRule(
+        pattern=r"^multi-(?P<a>[^_]+)_(?P<b>[^.]+)\.[^.]+$",
+        fields=[
+            (FieldID.COMMENTS.name, "$a"),
+            (FieldID.COMMENTS.name, "$b"),
+        ],
+    )
+
+    preview = preview_paths_to_fields(library, [rule])
+    assert len(preview) == 1
+    # Should propose two updates for the same key, in order
+    assert preview[0].updates == [
+        (FieldID.COMMENTS.name, "foo"),
+        (FieldID.COMMENTS.name, "bar"),
+    ]
+
+    applied = apply_paths_to_fields(library, preview, create_missing_field_types=True)
+    assert applied == 2
+
+    e = unwrap(library.get_entry_full(eid))
+    comment_values = [f.value or "" for f in e.fields if f.type_key == FieldID.COMMENTS.name]
+    assert sorted(comment_values) == ["bar", "foo"]
