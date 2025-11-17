@@ -16,8 +16,6 @@ from tagstudio.qt.previews.renderers.base_renderer import BaseRenderer
 
 logger = structlog.get_logger(__name__)
 
-thumbnail_path_within_zip: str = "preview.png"
-
 
 class EBookRenderer(BaseRenderer):
     def __init__(self):
