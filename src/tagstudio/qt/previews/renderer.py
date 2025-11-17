@@ -56,7 +56,6 @@ from tagstudio.core.constants import (
 from tagstudio.core.exceptions import NoRendererError
 from tagstudio.core.library.ignore import Ignore
 from tagstudio.core.media_types import MediaCategories, MediaType
-from tagstudio.core.utils.encoding import detect_char_encoding
 from tagstudio.core.utils.types import unwrap
 from tagstudio.qt.global_settings import DEFAULT_CACHED_IMAGE_RES
 from tagstudio.qt.helpers.color_overlay import theme_fg_overlay
@@ -1141,45 +1140,6 @@ class ThumbRenderer(QObject):
         # Replace transparent pixels with white (otherwise Background defaults to transparent)
         return replace_transparent_pixels(im)
 
-    @staticmethod
-    def _text_thumb(filepath: Path) -> Image.Image | None:
-        """Render a thumbnail for a plaintext file.
-
-        Args:
-            filepath (Path): The path of the file.
-        """
-        im: Image.Image | None = None
-
-        bg_color: str = (
-            "#1e1e1e"
-            if QGuiApplication.styleHints().colorScheme() is Qt.ColorScheme.Dark
-            else "#FFFFFF"
-        )
-        fg_color: str = (
-            "#FFFFFF"
-            if QGuiApplication.styleHints().colorScheme() is Qt.ColorScheme.Dark
-            else "#111111"
-        )
-
-        try:
-            encoding = detect_char_encoding(filepath)
-            with open(filepath, encoding=encoding) as text_file:
-                text = text_file.read(256)
-            bg = Image.new("RGB", (256, 256), color=bg_color)
-            draw = ImageDraw.Draw(bg)
-            draw.text((16, 16), text, fill=fg_color)
-            im = bg
-        except (
-            UnidentifiedImageError,
-            cv2.error,
-            DecompressionBombError,
-            UnicodeDecodeError,
-            OSError,
-            FileNotFoundError,
-        ) as e:
-            logger.error("Couldn't render thumbnail", filepath=filepath, error=type(e).__name__)
-        return im
-
     def render(
         self,
         timestamp: float,
@@ -1457,11 +1417,6 @@ class ThumbRenderer(QObject):
                 # Apple iWork Suite ============================================
                 elif MediaCategories.is_ext_in_category(ext, MediaCategories.IWORK_TYPES):
                     image = self._iwork_thumb(_filepath)
-                # Plain Text ===================================================
-                elif MediaCategories.is_ext_in_category(
-                    ext, MediaCategories.PLAINTEXT_TYPES, mime_fallback=True
-                ):
-                    image = self._text_thumb(_filepath)
                 # Fonts ========================================================
                 elif MediaCategories.is_ext_in_category(
                     ext, MediaCategories.FONT_TYPES, mime_fallback=True
