@@ -18,7 +18,6 @@ import cv2
 import numpy as np
 import pillow_avif  # noqa: F401 # pyright: ignore[reportUnusedImport]
 import rawpy
-import srctools
 import structlog
 from mutagen import flac, id3, mp4
 from mutagen._util import MutagenError
@@ -762,25 +761,6 @@ class ThumbRenderer(QObject):
         return im
 
     @staticmethod
-    def _vtf_thumb(filepath: Path) -> Image.Image | None:
-        """Extract and render a thumbnail for VTF (Valve Texture Format) images.
-
-        Uses the srctools library for reading VTF files.
-
-        Args:
-            filepath (Path): The path of the file.
-        """
-        im: Image.Image | None = None
-        try:
-            with open(filepath, "rb") as f:
-                vtf = srctools.VTF.read(f)
-                im = vtf.get(frame=0).to_PIL()
-
-        except (ValueError, FileNotFoundError) as e:
-            logger.error("Couldn't render thumbnail", filepath=filepath, error=type(e).__name__)
-        return im
-
-    @staticmethod
     def _open_doc_thumb(filepath: Path) -> Image.Image | None:
         """Extract and render a thumbnail for an OpenDocument file.
 
@@ -1446,11 +1426,6 @@ class ThumbRenderer(QObject):
                 if renderer_type:
                     image = renderer_type.renderer.render(_filepath, ext)
 
-                # VTF ==========================================================
-                elif MediaCategories.is_ext_in_category(
-                    ext, MediaCategories.SOURCE_ENGINE_TYPES, mime_fallback=True
-                ):
-                    image = self._vtf_thumb(_filepath)
                 # Images =======================================================
                 elif MediaCategories.is_ext_in_category(
                     ext, MediaCategories.IMAGE_TYPES, mime_fallback=True
