@@ -26,7 +26,6 @@ import rarfile
 import rawpy
 import srctools
 import structlog
-from cv2.typing import MatLike
 from mutagen import flac, id3, mp4
 from mutagen._util import MutagenError
 from PIL import (
@@ -68,11 +67,11 @@ from tagstudio.core.utils.encoding import detect_char_encoding
 from tagstudio.core.utils.types import unwrap
 from tagstudio.qt.global_settings import DEFAULT_CACHED_IMAGE_RES
 from tagstudio.qt.helpers.color_overlay import theme_fg_overlay
-from tagstudio.qt.helpers.file_tester import is_readable_video
 from tagstudio.qt.helpers.gradients import four_corner_gradient
 from tagstudio.qt.helpers.image_effects import replace_transparent_pixels
 from tagstudio.qt.helpers.text_wrapper import wrap_full_text
 from tagstudio.qt.models.palette import UI_COLORS, ColorType, UiColor, get_ui_color
+from tagstudio.qt.previews.renderer_type import RendererType
 from tagstudio.qt.previews.vendored.blender_renderer import blend_thumb
 from tagstudio.qt.previews.vendored.pydub.audio_segment import (
     _AudioSegment as AudioSegment,
@@ -845,29 +844,6 @@ class ThumbRenderer(QObject):
         return im
 
     @staticmethod
-    def _krita_thumb(filepath: Path) -> Image.Image | None:
-        """Extract and render a thumbnail for an Krita file.
-
-        Args:
-            filepath (Path): The path of the file.
-        """
-        file_path_within_zip = "preview.png"
-        im: Image.Image | None = None
-        with zipfile.ZipFile(filepath, "r") as zip_file:
-            # Check if the file exists in the zip
-            if file_path_within_zip in zip_file.namelist():
-                # Read the specific file into memory
-                file_data = zip_file.read(file_path_within_zip)
-                thumb_im = Image.open(BytesIO(file_data))
-                if thumb_im:
-                    im = Image.new("RGB", thumb_im.size, color="#1e1e1e")
-                    im.paste(thumb_im)
-            else:
-                logger.error("Couldn't render thumbnail", filepath=filepath)
-
-        return im
-
-    @staticmethod
     def _powerpoint_thumb(filepath: Path) -> Image.Image | None:
         """Extract and render a thumbnail for a Microsoft PowerPoint file.
 
@@ -1334,50 +1310,6 @@ class ThumbRenderer(QObject):
             logger.error("Couldn't render thumbnail", filepath=filepath, error=type(e).__name__)
         return im
 
-    @staticmethod
-    def _video_thumb(filepath: Path) -> Image.Image | None:
-        """Render a thumbnail for a video file.
-
-        Args:
-            filepath (Path): The path of the file.
-        """
-        im: Image.Image | None = None
-        frame: MatLike | None = None
-        try:
-            if is_readable_video(filepath):
-                video = cv2.VideoCapture(str(filepath), cv2.CAP_FFMPEG)
-                # TODO: Move this check to is_readable_video()
-                if video.get(cv2.CAP_PROP_FRAME_COUNT) <= 0:
-                    raise cv2.error("File is invalid or has 0 frames")
-                video.set(
-                    cv2.CAP_PROP_POS_FRAMES,
-                    (video.get(cv2.CAP_PROP_FRAME_COUNT) // 2),
-                )
-                # NOTE: Depending on the video format, compression, and
-                # frame count, seeking halfway does not work and the thumb
-                # must be pulled from the earliest available frame.
-                max_frame_seek: int = 10
-                for i in range(
-                    0,
-                    min(max_frame_seek, math.floor(video.get(cv2.CAP_PROP_FRAME_COUNT))),
-                ):
-                    success, frame = video.read()
-                    if not success:
-                        video.set(cv2.CAP_PROP_POS_FRAMES, i)
-                    else:
-                        break
-                if frame is not None:
-                    frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-                    im = Image.fromarray(frame)
-        except (
-            UnidentifiedImageError,
-            cv2.error,
-            DecompressionBombError,
-            OSError,
-        ) as e:
-            logger.error("Couldn't render thumbnail", filepath=filepath, error=type(e).__name__)
-        return im
-
     def render(
         self,
         timestamp: float,
@@ -1618,16 +1550,17 @@ class ThumbRenderer(QObject):
         if _filepath and _filepath.is_file():
             try:
                 ext: str = _filepath.suffix.lower() if _filepath.suffix else _filepath.stem.lower()
+
+                renderer_type = RendererType.get_renderer_type(ext)
+                logger.debug("[ThumbRenderer]", renderer_type=renderer_type)
+                if renderer_type:
+                    image = renderer_type.renderer.render(_filepath)
+
                 # Ebooks =======================================================
                 if MediaCategories.is_ext_in_category(
                     ext, MediaCategories.EBOOK_TYPES, mime_fallback=True
                 ):
                     image = self._epub_cover(_filepath, ext)
-                # Krita ========================================================
-                elif MediaCategories.is_ext_in_category(
-                    ext, MediaCategories.KRITA_TYPES, mime_fallback=True
-                ):
-                    image = self._krita_thumb(_filepath)
                 # VTF ==========================================================
                 elif MediaCategories.is_ext_in_category(
                     ext, MediaCategories.SOURCE_ENGINE_TYPES, mime_fallback=True
@@ -1653,11 +1586,6 @@ class ThumbRenderer(QObject):
                     # Normal Images --------------------------------------------
                     else:
                         image = self._image_thumb(_filepath)
-                # Videos =======================================================
-                elif MediaCategories.is_ext_in_category(
-                    ext, MediaCategories.VIDEO_TYPES, mime_fallback=True
-                ):
-                    image = self._video_thumb(_filepath)
                 # PowerPoint Slideshow
                 elif ext in {".pptx"}:
                     image = self._powerpoint_thumb(_filepath)
