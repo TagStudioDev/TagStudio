@@ -7,14 +7,13 @@ from tagstudio.qt.previews.renderers.blender_renderer import BlenderRenderer
 from tagstudio.qt.previews.renderers.ebook_renderer import EBookRenderer
 from tagstudio.qt.previews.renderers.font_renderer import FontRenderer
 from tagstudio.qt.previews.renderers.krita_renderer import KritaRenderer
+from tagstudio.qt.previews.renderers.pdf_renderer import PDFRenderer
 from tagstudio.qt.previews.renderers.text_renderer import TextRenderer
 from tagstudio.qt.previews.renderers.video_renderer import VideoRenderer
 from tagstudio.qt.previews.renderers.vtf_renderer import VTFRenderer
 
 
 class RendererType(Enum):
-    EBOOK = "ebook", MediaCategories.EBOOK_TYPES, EBookRenderer
-
     # Project files
     KRITA = "krita", MediaCategories.KRITA_TYPES, KritaRenderer
 
@@ -24,6 +23,10 @@ class RendererType(Enum):
     # Media files
     VIDEO = "video", MediaCategories.VIDEO_TYPES, VideoRenderer
     AUDIO = "audio", MediaCategories.AUDIO_TYPES, AudioRenderer
+
+    # Document files
+    EBOOK = "ebook", MediaCategories.EBOOK_TYPES, EBookRenderer
+    PDF = "pdf", MediaCategories.PDF_TYPES, PDFRenderer
 
     # Text files
     TEXT = "text", MediaCategories.PLAINTEXT_TYPES, TextRenderer

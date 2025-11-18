@@ -32,17 +32,12 @@ from PIL.Image import DecompressionBombError
 from pillow_heif import register_heif_opener
 from PySide6.QtCore import (
     QBuffer,
-    QFile,
-    QFileDevice,
-    QIODeviceBase,
     QObject,
     QSize,
-    QSizeF,
     Qt,
     Signal,
 )
 from PySide6.QtGui import QGuiApplication, QImage, QPainter, QPixmap
-from PySide6.QtPdf import QPdfDocument, QPdfDocumentRenderOptions
 from PySide6.QtSvg import QSvgRenderer
 
 from tagstudio.core.exceptions import NoRendererError
@@ -51,7 +46,7 @@ from tagstudio.core.media_types import MediaCategories, MediaType
 from tagstudio.core.utils.types import unwrap
 from tagstudio.qt.global_settings import DEFAULT_CACHED_IMAGE_RES
 from tagstudio.qt.helpers.gradients import four_corner_gradient
-from tagstudio.qt.helpers.image_effects import apply_overlay_color, replace_transparent_pixels
+from tagstudio.qt.helpers.image_effects import apply_overlay_color
 from tagstudio.qt.models.palette import UI_COLORS, ColorType, UiColor
 from tagstudio.qt.previews.renderer_type import RendererType
 from tagstudio.qt.previews.renderers.base_renderer import RendererContext
@@ -698,7 +693,7 @@ class ThumbRenderer(QObject):
         # Write the image to a buffer as png
         buffer: QBuffer = QBuffer()
         buffer.open(QBuffer.OpenModeFlag.ReadWrite)
-        q_image.save(buffer, "PNG")  # type: ignore[call-overload]
+        q_image.save(buffer, "PNG")  # type: ignore[call-overload,unused-ignore]
 
         # Load the image from the buffer
         im = Image.new("RGB", (size, size), color="#1e1e1e")
@@ -778,54 +773,6 @@ class ThumbRenderer(QObject):
         # im = Image.open(img_buf)
 
         return im
-
-    @staticmethod
-    def _pdf_thumb(filepath: Path, size: int) -> Image.Image | None:
-        """Render a thumbnail for a PDF file.
-
-        filepath (Path): The path of the file.
-            size (int): The size of the icon.
-        """
-        im: Image.Image | None = None
-
-        file: QFile = QFile(filepath)
-        success: bool = file.open(
-            QIODeviceBase.OpenModeFlag.ReadOnly, QFileDevice.Permission.ReadUser
-        )
-        if not success:
-            logger.error("Couldn't render thumbnail", filepath=filepath)
-            return im
-        document: QPdfDocument = QPdfDocument()
-        document.load(file)
-        file.close()
-        # Transform page_size in points to pixels with proper aspect ratio
-        page_size: QSizeF = document.pagePointSize(0)
-        ratio_hw: float = page_size.height() / page_size.width()
-        if ratio_hw >= 1:
-            page_size *= size / page_size.height()
-        else:
-            page_size *= size / page_size.width()
-        # Enlarge image for antialiasing
-        scale_factor = 2.5
-        page_size *= scale_factor
-        # Render image with no anti-aliasing for speed
-        render_options: QPdfDocumentRenderOptions = QPdfDocumentRenderOptions()
-        render_options.setRenderFlags(
-            QPdfDocumentRenderOptions.RenderFlag.TextAliased
-            | QPdfDocumentRenderOptions.RenderFlag.ImageAliased
-            | QPdfDocumentRenderOptions.RenderFlag.PathAliased
-        )
-        # Convert QImage to PIL Image
-        q_image: QImage = document.render(0, page_size.toSize(), render_options)
-        buffer: QBuffer = QBuffer()
-        buffer.open(QBuffer.OpenModeFlag.ReadWrite)
-        try:
-            q_image.save(buffer, "PNG")  # type: ignore # pyright: ignore
-            im = Image.open(BytesIO(buffer.buffer().data()))
-        finally:
-            buffer.close()
-        # Replace transparent pixels with white (otherwise Background defaults to transparent)
-        return replace_transparent_pixels(im)
 
     def render(
         self,
@@ -1116,11 +1063,6 @@ class ThumbRenderer(QObject):
                 # Apple iWork Suite ============================================
                 elif MediaCategories.is_ext_in_category(ext, MediaCategories.IWORK_TYPES):
                     image = self._iwork_thumb(_filepath)
-                # PDF ==========================================================
-                elif MediaCategories.is_ext_in_category(
-                    ext, MediaCategories.PDF_TYPES, mime_fallback=True
-                ):
-                    image = self._pdf_thumb(_filepath, adj_size)
                 # No Rendered Thumbnail ========================================
                 if not image:
                     raise NoRendererError
