@@ -13,7 +13,7 @@ logger = structlog.get_logger(__name__)
 
 
 class VideoRenderer(BaseRenderer):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
 
     @staticmethod
@@ -25,7 +25,7 @@ class VideoRenderer(BaseRenderer):
         """
         try:
             if is_readable_video(context.path):
-                video = cv2.VideoCapture(str(context.path), cv2.CAP_FFMPEG)
+                video: cv2.VideoCapture = cv2.VideoCapture(str(context.path), cv2.CAP_FFMPEG)
 
                 # TODO: Move this check to is_readable_video()
                 if video.get(cv2.CAP_PROP_FRAME_COUNT) <= 0:

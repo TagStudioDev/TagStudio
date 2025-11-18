@@ -19,7 +19,7 @@ logger = structlog.get_logger(__name__)
 
 
 class AudioRenderer(BaseRenderer):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
 
     @staticmethod
@@ -29,142 +29,140 @@ class AudioRenderer(BaseRenderer):
         Args:
             context (RendererContext): The renderer context.
         """
-        rendered_image: Image.Image | None = AudioRenderer._audio_album_thumb(context)
+        rendered_image: Image.Image | None = _extract_album_cover(context)
 
         if rendered_image is None:
-            rendered_image = AudioRenderer._audio_waveform_thumb(context)
+            rendered_image = _render_audio_waveform(context)
             if rendered_image is not None:
                 rendered_image = apply_overlay_color(rendered_image, UiColor.GREEN)
 
         return rendered_image
 
-    @staticmethod
-    def _audio_album_thumb(context: RendererContext) -> Image.Image | None:
-        """Return an album cover thumb from an audio file if a cover is present.
 
-        Args:
-            context (RendererContext): The renderer context.
-        """
-        try:
-            if not context.path.is_file():
-                raise FileNotFoundError
+def _extract_album_cover(context: RendererContext) -> Image.Image | None:
+    """Return an album cover thumb from an audio file if a cover is present.
 
-            artwork = None
+    Args:
+        context (RendererContext): The renderer context.
+    """
+    try:
+        if not context.path.is_file():
+            raise FileNotFoundError
 
-            # Get cover from .mp3 tags
-            if context.extension in [".mp3"]:
-                id3_tags: id3.ID3 = id3.ID3(context.path)
-                id3_covers: list = id3_tags.getall("APIC")
-                if id3_covers:
-                    artwork = Image.open(BytesIO(id3_covers[0].data))
+        artwork: Image.Image | None = None
 
-            # Get cover from .flac tags
-            elif context.extension in [".flac"]:
-                flac_tags: flac.FLAC = flac.FLAC(context.path)
-                flac_covers: list = flac_tags.pictures
-                if flac_covers:
-                    artwork = Image.open(BytesIO(flac_covers[0].data))
+        # Get cover from .mp3 tags
+        if context.extension in [".mp3"]:
+            id3_tags: id3.ID3 = id3.ID3(context.path)
+            id3_covers: list = id3_tags.getall("APIC")
+            if id3_covers:
+                artwork = Image.open(BytesIO(id3_covers[0].data))
 
-            # Get cover from .mp4 tags
-            elif context.extension in [".mp4", ".m4a", ".aac"]:
-                mp4_tags: mp4.MP4 = mp4.MP4(context.path)
-                mp4_covers: list | None = mp4_tags.get("covr")  # pyright: ignore[reportAssignmentType]
-                if mp4_covers:
-                    artwork = Image.open(BytesIO(mp4_covers[0]))
+        # Get cover from .flac tags
+        elif context.extension in [".flac"]:
+            flac_tags: flac.FLAC = flac.FLAC(context.path)
+            flac_covers: list = flac_tags.pictures
+            if flac_covers:
+                artwork = Image.open(BytesIO(flac_covers[0].data))
 
-            return artwork
-        except (
-            FileNotFoundError,
-            id3.ID3NoHeaderError,  # pyright: ignore[reportPrivateImportUsage]
-            mp4.MP4MetadataError,
-            mp4.MP4StreamInfoError,
-            MutagenError,
-        ) as e:
-            logger.error("[AudioRenderer] Couldn't read album artwork", path=context.path, error=e)
+        # Get cover from .mp4 tags
+        elif context.extension in [".mp4", ".m4a", ".aac"]:
+            mp4_tags: mp4.MP4 = mp4.MP4(context.path)
+            mp4_covers: list | None = mp4_tags.get("covr")  # pyright: ignore[reportAssignmentType]
+            if mp4_covers:
+                artwork = Image.open(BytesIO(mp4_covers[0]))
 
-        return None
+        return artwork
+    except (
+        FileNotFoundError,
+        id3.ID3NoHeaderError,  # pyright: ignore[reportPrivateImportUsage]
+        mp4.MP4MetadataError,
+        mp4.MP4StreamInfoError,
+        MutagenError,
+    ) as e:
+        logger.error("[AudioRenderer] Couldn't read album artwork", path=context.path, error=e)
 
-    @staticmethod
-    def _audio_waveform_thumb(context: RendererContext) -> Image.Image | None:
-        """Render a waveform image from an audio file.
+    return None
 
-        Args:
-            context (RendererContext): The renderer context.
-        """
-        # BASE_SCALE used for drawing on a larger image and resampling down
-        # to provide an antialiased effect.
-        base_scale: int = 2
-        samples_per_bar: int = 3
-        size_scaled: int = context.size * base_scale
-        allow_small_min: bool = False
 
-        try:
-            bar_count: int = min(math.floor((context.size // context.pixel_ratio) / 5), 64)
-            audio = AudioSegment.from_file(context.path, context.extension[1:])
-            data = np.frombuffer(buffer=audio._data, dtype=np.int16)
-            data_indices = np.linspace(1, len(data), num=bar_count * samples_per_bar)
-            bar_margin: float = ((size_scaled / (bar_count * 3)) * base_scale) / 2
-            line_width: float = ((size_scaled - bar_margin) / (bar_count * 3)) * base_scale
-            bar_height: float = size_scaled - (size_scaled // bar_margin)
+def _render_audio_waveform(context: RendererContext) -> Image.Image | None:
+    """Render a waveform image from an audio file.
 
-            count: int = 0
-            maximum_item: int = 0
-            max_array: list[int] = []
-            highest_line: int = 0
+    Args:
+        context (RendererContext): The renderer context.
+    """
+    # BASE_SCALE used for drawing on a larger image and resampling down
+    # to provide an antialiased effect.
+    base_scale: int = 2
+    samples_per_bar: int = 3
+    size_scaled: int = context.size * base_scale
+    allow_small_min: bool = False
 
-            for i in range(-1, len(data_indices)):
-                d = data[math.ceil(data_indices[i]) - 1]
-                if count < samples_per_bar:
-                    count = count + 1
-                    with catch_warnings(record=True):
-                        if abs(d) > maximum_item:
-                            maximum_item = int(abs(d))
-                else:
-                    max_array.append(maximum_item)
+    try:
+        bar_count: int = min(math.floor((context.size // context.pixel_ratio) / 5), 64)
+        audio = AudioSegment.from_file(context.path, context.extension[1:])
+        data = np.frombuffer(buffer=audio._data, dtype=np.int16)
+        data_indices = np.linspace(1, len(data), num=bar_count * samples_per_bar)
+        bar_margin: float = ((size_scaled / (bar_count * 3)) * base_scale) / 2
+        line_width: float = ((size_scaled - bar_margin) / (bar_count * 3)) * base_scale
+        bar_height: float = size_scaled - (size_scaled // bar_margin)
 
-                    if maximum_item > highest_line:
-                        highest_line = maximum_item
+        count: int = 0
+        maximum_item: int = 0
+        max_array: list[int] = []
+        highest_line: int = 0
 
-                    maximum_item = 0
-                    count = 1
+        for i in range(-1, len(data_indices)):
+            d = data[math.ceil(data_indices[i]) - 1]
+            if count < samples_per_bar:
+                count = count + 1
+                with catch_warnings(record=True):
+                    if abs(d) > maximum_item:
+                        maximum_item = int(abs(d))
+            else:
+                max_array.append(maximum_item)
 
-            line_ratio = max(highest_line / bar_height, 1)
+                if maximum_item > highest_line:
+                    highest_line = maximum_item
 
-            rendered_image = Image.new("RGB", (size_scaled, size_scaled), color="#000000")
-            draw = ImageDraw.Draw(rendered_image)
+                maximum_item = 0
+                count = 1
 
-            current_x = bar_margin
-            for item in max_array:
-                item_height = item / line_ratio
+        line_ratio = max(highest_line / bar_height, 1)
 
-                # If small minimums are not allowed, raise all values
-                # smaller than the line width to the same value.
-                if not allow_small_min:
-                    item_height = max(item_height, line_width)
+        rendered_image = Image.new("RGB", (size_scaled, size_scaled), color="#000000")
+        draw = ImageDraw.Draw(rendered_image)
 
-                current_y = (bar_height - item_height + (size_scaled // bar_margin)) // 2
+        current_x = bar_margin
+        for item in max_array:
+            item_height = item / line_ratio
 
-                draw.rounded_rectangle(
-                    (
-                        current_x,
-                        current_y,
-                        (current_x + line_width),
-                        (current_y + item_height),
-                    ),
-                    radius=100 * base_scale,
-                    fill="#FF0000",
-                    outline="#FFFF00",
-                    width=max(math.ceil(line_width / 6), base_scale),
-                )
+            # If small minimums are not allowed, raise all values
+            # smaller than the line width to the same value.
+            if not allow_small_min:
+                item_height = max(item_height, line_width)
 
-                current_x = current_x + line_width + bar_margin
+            current_y = (bar_height - item_height + (size_scaled // bar_margin)) // 2
 
-            rendered_image.resize((context.size, context.size), Image.Resampling.BILINEAR)
-            return rendered_image
-
-        except Exception as e:
-            logger.error(
-                "[AudioRenderer] Couldn't render waveform", path=context.path.name, error=e
+            draw.rounded_rectangle(
+                (
+                    current_x,
+                    current_y,
+                    (current_x + line_width),
+                    (current_y + item_height),
+                ),
+                radius=100 * base_scale,
+                fill="#FF0000",
+                outline="#FFFF00",
+                width=max(math.ceil(line_width / 6), base_scale),
             )
 
-        return None
+            current_x = current_x + line_width + bar_margin
+
+        rendered_image.resize((context.size, context.size), Image.Resampling.BILINEAR)
+        return rendered_image
+
+    except Exception as e:
+        logger.error("[AudioRenderer] Couldn't render waveform", path=context.path.name, error=e)
+
+    return None

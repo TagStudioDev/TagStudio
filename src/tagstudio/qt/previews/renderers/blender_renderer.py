@@ -28,6 +28,7 @@ import gzip
 import os
 import struct
 from io import BufferedReader
+from pathlib import Path
 
 import structlog
 from PIL import Image, ImageOps, UnidentifiedImageError
@@ -40,12 +41,12 @@ logger = structlog.get_logger(__name__)
 
 
 class BlenderRenderer(BaseRenderer):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
 
     @staticmethod
     def render(context: RendererContext) -> Image.Image | None:
-        """Get an emended thumbnail from a Blender file, if a thumbnail is present.
+        """Get an embedded thumbnail from a Blender file, if a thumbnail is present.
 
         Args:
             context (RendererContext): The renderer context.
@@ -57,19 +58,19 @@ class BlenderRenderer(BaseRenderer):
         )
 
         try:
-            buffer, width, height = BlenderRenderer.__extract_embedded_thumbnail(str(context.path))
+            buffer, width, height = _extract_embedded_thumbnail(context.path)
 
             if buffer is None:
                 return None
 
-            embedded_thumbnail = Image.frombuffer(
+            embedded_thumbnail: Image.Image = Image.frombuffer(
                 "RGBA",
                 (width, height),
                 buffer,
             )
             embedded_thumbnail = ImageOps.flip(embedded_thumbnail)
 
-            rendered_image = Image.new("RGB", embedded_thumbnail.size, color=bg_color)
+            rendered_image: Image.Image = Image.new("RGB", embedded_thumbnail.size, color=bg_color)
             rendered_image.paste(embedded_thumbnail, mask=embedded_thumbnail.getchannel(3))
             return rendered_image
 
@@ -89,70 +90,68 @@ class BlenderRenderer(BaseRenderer):
 
         return None
 
-    @staticmethod
-    def __extract_embedded_thumbnail(path) -> tuple[bytes | None, int, int]:
-        rend = b"REND"
-        test = b"TEST"
 
-        blender_file: BufferedReader | gzip.GzipFile = open(path, "rb")  # noqa: SIM115
+def _extract_embedded_thumbnail(path: Path) -> tuple[bytes | None, int, int]:
+    rend = b"REND"
+    test = b"TEST"
 
+    blender_file: BufferedReader | gzip.GzipFile = open(path, "rb")  # noqa: SIM115
+
+    header = blender_file.read(12)
+
+    if header[0:2] == b"\x1f\x8b":  # gzip magic
+        blender_file.close()
+        blender_file = gzip.GzipFile("", "rb", 0, open(path, "rb"))  # noqa: SIM115
         header = blender_file.read(12)
 
-        if header[0:2] == b"\x1f\x8b":  # gzip magic
-            blender_file.close()
-            blender_file = gzip.GzipFile("", "rb", 0, open(path, "rb"))  # noqa: SIM115
-            header = blender_file.read(12)
+    if not header.startswith(b"BLENDER"):
+        blender_file.close()
+        return None, 0, 0
 
-        if not header.startswith(b"BLENDER"):
-            blender_file.close()
+    is_64_bit = header[7] == b"-"[0]
+
+    # True for PPC, false for X86
+    is_big_endian = header[8] == b"V"[0]
+
+    # Blender pre-v2.5 had no thumbnails
+    if header[9:11] <= b"24":
+        return None, 0, 0
+
+    block_header_size = 24 if is_64_bit else 20
+    int_endian = ">i" if is_big_endian else "<i"
+    int_endian_pair = int_endian + "i"
+
+    # Continually read through file blocks until encountering a render thumbnail
+    while True:
+        block_header = blender_file.read(block_header_size)
+
+        if len(block_header) < block_header_size:
             return None, 0, 0
 
-        is_64_bit = header[7] == b"-"[0]
+        block_code = block_header[:4]  # (The 'code' is the block's identifier)
+        length = struct.unpack(int_endian, block_header[4:8])[0]  # 4 == sizeof(int)
 
-        # True for PPC, false for X86
-        is_big_endian = header[8] == b"V"[0]
+        if block_code == rend:
+            blender_file.seek(length, os.SEEK_CUR)
+        else:
+            break
 
-        # Blender pre-v2.5 had no thumbnails
-        if header[9:11] <= b"24":
-            return None, 0, 0
+    if block_code != test:
+        return None, 0, 0
 
-        block_header_size = 24 if is_64_bit else 20
-        int_endian = ">i" if is_big_endian else "<i"
-        int_endian_pair = int_endian + "i"
+    try:
+        width, height = struct.unpack(int_endian_pair, blender_file.read(8))  # 8 == sizeof(int) * 2
+    except struct.error:
+        return None, 0, 0
 
-        # Continually read through file blocks until encountering a render thumbnail
-        while True:
-            block_header = blender_file.read(block_header_size)
+    length -= 8  # sizeof(int) * 2
 
-            if len(block_header) < block_header_size:
-                return None, 0, 0
+    if length != width * height * 4:
+        return None, 0, 0
 
-            block_code = block_header[:4]  # (The 'code' is the block's identifier)
-            length = struct.unpack(int_endian, block_header[4:8])[0]  # 4 == sizeof(int)
+    image_buffer = blender_file.read(length)
 
-            if block_code == rend:
-                blender_file.seek(length, os.SEEK_CUR)
-            else:
-                break
+    if len(image_buffer) != length:
+        return None, 0, 0
 
-        if block_code != test:
-            return None, 0, 0
-
-        try:
-            width, height = struct.unpack(
-                int_endian_pair, blender_file.read(8)
-            )  # 8 == sizeof(int) * 2
-        except struct.error:
-            return None, 0, 0
-
-        length -= 8  # sizeof(int) * 2
-
-        if length != width * height * 4:
-            return None, 0, 0
-
-        image_buffer = blender_file.read(length)
-
-        if len(image_buffer) != length:
-            return None, 0, 0
-
-        return image_buffer, width, height
+    return image_buffer, width, height

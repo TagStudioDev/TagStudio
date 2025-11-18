@@ -8,7 +8,7 @@ logger = structlog.get_logger(__name__)
 
 
 class VTFRenderer(BaseRenderer):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
 
     @staticmethod
@@ -21,8 +21,8 @@ class VTFRenderer(BaseRenderer):
             context (RendererContext): The renderer context.
         """
         try:
-            with open(context.path, "rb") as f:
-                vtf = srctools.VTF.read(f)
+            with open(context.path, "rb") as vtf_file:
+                vtf = srctools.VTF.read(vtf_file)
                 return vtf.get(frame=0).to_PIL()
 
         except (ValueError, FileNotFoundError) as e:

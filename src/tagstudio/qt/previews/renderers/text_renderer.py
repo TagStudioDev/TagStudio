@@ -16,7 +16,7 @@ logger = structlog.get_logger(__name__)
 
 
 class TextRenderer(BaseRenderer):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
 
     @staticmethod
@@ -43,7 +43,7 @@ class TextRenderer(BaseRenderer):
             with open(context.path, encoding=encoding) as text_file:
                 text = text_file.read(256)
 
-            rendered_image = Image.new("RGB", (256, 256), color=bg_color)
+            rendered_image: Image.Image = Image.new("RGB", (256, 256), color=bg_color)
             draw = ImageDraw.Draw(rendered_image)
             draw.text((16, 16), text, fill=fg_color)
             return rendered_image

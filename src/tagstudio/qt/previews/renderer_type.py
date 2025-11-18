@@ -7,12 +7,12 @@ from tagstudio.qt.previews.renderers.blender_renderer import BlenderRenderer
 from tagstudio.qt.previews.renderers.ebook_renderer import EBookRenderer
 from tagstudio.qt.previews.renderers.exr_image_renderer import EXRImageRenderer
 from tagstudio.qt.previews.renderers.font_renderer import FontRenderer
-from tagstudio.qt.previews.renderers.image_renderer import ImageRenderer
 from tagstudio.qt.previews.renderers.iwork_renderer import IWorkRenderer
 from tagstudio.qt.previews.renderers.krita_renderer import KritaRenderer
 from tagstudio.qt.previews.renderers.open_doc_renderer import OpenDocRenderer
 from tagstudio.qt.previews.renderers.pdf_renderer import PDFRenderer
 from tagstudio.qt.previews.renderers.powerpoint_renderer import PowerPointRenderer
+from tagstudio.qt.previews.renderers.raster_image_renderer import RasterImageRenderer
 from tagstudio.qt.previews.renderers.raw_image_renderer import RawImageRenderer
 from tagstudio.qt.previews.renderers.text_renderer import TextRenderer
 from tagstudio.qt.previews.renderers.vector_image_renderer import VectorImageRenderer
@@ -47,7 +47,7 @@ class RendererType(Enum):
     RAW_IMAGE = "raw_image", MediaCategories.IMAGE_RAW_TYPES, RawImageRenderer, True
     EXR_IMAGE = "exr_image", MediaCategories.IMAGE_EXR_TYPES, EXRImageRenderer, True
     VECTOR_IMAGE = "vector_image", MediaCategories.IMAGE_VECTOR_TYPES, VectorImageRenderer, True
-    IMAGE = "image", MediaCategories.IMAGE_TYPES, ImageRenderer, True
+    RASTER_IMAGE = "image", MediaCategories.IMAGE_RASTER_TYPES, RasterImageRenderer, True
 
     def __init__(
         self,

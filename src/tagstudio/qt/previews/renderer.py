@@ -760,7 +760,7 @@ class ThumbRenderer(QObject):
             save_to_file(Path | None): A filepath to optionally save the output to.
 
         """
-        adj_size = math.ceil(max(base_size[0], base_size[1]) * pixel_ratio)
+        adj_size: int = math.ceil(max(base_size[0], base_size[1]) * pixel_ratio)
         _filepath: Path = Path(filepath)
 
         if _filepath and _filepath.is_file():

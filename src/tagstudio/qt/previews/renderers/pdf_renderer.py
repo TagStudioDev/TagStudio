@@ -15,7 +15,7 @@ logger = structlog.get_logger(__name__)
 
 
 class PDFRenderer(BaseRenderer):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
 
     @staticmethod

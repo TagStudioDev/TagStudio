@@ -12,8 +12,8 @@ from tagstudio.qt.previews.renderers.base_renderer import BaseRenderer, Renderer
 logger = structlog.get_logger(__name__)
 
 
-class ImageRenderer(BaseRenderer):
-    def __init__(self):
+class RasterImageRenderer(BaseRenderer):
+    def __init__(self) -> None:
         super().__init__()
 
     @staticmethod
@@ -31,7 +31,7 @@ class ImageRenderer(BaseRenderer):
                 rendered_image = rendered_image.convert(mode="RGBA")
 
             if rendered_image.mode == "RGBA":
-                new_bg = Image.new("RGB", rendered_image.size, color="#1e1e1e")
+                new_bg: Image.Image = Image.new("RGB", rendered_image.size, color="#1e1e1e")
                 new_bg.paste(rendered_image, mask=rendered_image.getchannel(3))
                 rendered_image = new_bg
 

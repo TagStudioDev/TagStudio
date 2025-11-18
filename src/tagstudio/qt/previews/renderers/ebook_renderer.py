@@ -17,7 +17,7 @@ logger = structlog.get_logger(__name__)
 
 
 class EBookRenderer(BaseRenderer):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
 
     @staticmethod
@@ -47,14 +47,11 @@ class EBookRenderer(BaseRenderer):
 
             # Get the cover from the comic metadata, if present
             if "ComicInfo.xml" in archive.get_name_list():
-                comic_info = ElementTree.fromstring(archive.read("ComicInfo.xml"))
-                rendered_image = EBookRenderer.__cover_from_comic_info(
-                    archive, comic_info, "FrontCover"
-                )
+                comic_info: Element = ElementTree.fromstring(archive.read("ComicInfo.xml"))
+                rendered_image = _extract_cover(archive, comic_info, "FrontCover")
+
                 if not rendered_image:
-                    rendered_image = EBookRenderer.__cover_from_comic_info(
-                        archive, comic_info, "InnerCover"
-                    )
+                    rendered_image = _extract_cover(archive, comic_info, "InnerCover")
 
             # Get the first image present
             if not rendered_image:
@@ -62,7 +59,7 @@ class EBookRenderer(BaseRenderer):
                     if file_name.lower().endswith(
                         (".png", ".jpg", ".jpeg", ".gif", ".bmp", ".svg")
                     ):
-                        image_data = archive.read(file_name)
+                        image_data: bytes = archive.read(file_name)
                         rendered_image = Image.open(BytesIO(image_data))
                         break
 
@@ -72,28 +69,28 @@ class EBookRenderer(BaseRenderer):
 
         return None
 
-    @staticmethod
-    def __cover_from_comic_info(
-        archive: ArchiveFile, comic_info: Element, cover_type: str
-    ) -> Image.Image | None:
-        """Extract the cover specified in ComicInfo.xml.
 
-        Args:
-            archive (ArchiveFile): The current ePub file.
-            comic_info (Element): The parsed ComicInfo.xml.
-            cover_type (str): The type of cover to load.
+def _extract_cover(
+    archive: ArchiveFile, comic_info: Element, cover_type: str
+) -> Image.Image | None:
+    """Extract the cover specified in ComicInfo.xml.
 
-        Returns:
-            Image: The cover specified in ComicInfo.xml.
-        """
-        cover = comic_info.find(f"./*Page[@Type='{cover_type}']")
-        if cover is not None:
-            pages = [
-                page_file for page_file in archive.get_name_list() if page_file != "ComicInfo.xml"
-            ]
-            page_name = pages[int(unwrap(cover.get("Image")))]
-            if page_name.endswith((".png", ".jpg", ".jpeg", ".gif", ".bmp", ".svg")):
-                image_data = archive.read(page_name)
-                return Image.open(BytesIO(image_data))
+    Args:
+        archive (ArchiveFile): The current ePub file.
+        comic_info (Element): The parsed ComicInfo.xml.
+        cover_type (str): The type of cover to load.
 
-        return None
+    Returns:
+        Image: The cover specified in ComicInfo.xml.
+    """
+    cover: Element | None = comic_info.find(f"./*Page[@Type='{cover_type}']")
+    if cover is not None:
+        pages: list[str] = [
+            page_file for page_file in archive.get_name_list() if page_file != "ComicInfo.xml"
+        ]
+        page_name: str = pages[int(unwrap(cover.get("Image")))]
+        if page_name.endswith((".png", ".jpg", ".jpeg", ".gif", ".bmp", ".svg")):
+            image_data: bytes = archive.read(page_name)
+            return Image.open(BytesIO(image_data))
+
+    return None

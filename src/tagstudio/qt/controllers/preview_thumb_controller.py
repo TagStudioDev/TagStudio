@@ -57,7 +57,7 @@ class PreviewThumb(PreviewThumbView):
                 pass
         elif MediaCategories.IMAGE_EXR_TYPES.contains(ext, mime_fallback=True):
             try:
-                exr_file = OpenEXR.File(filepath.as_posix())
+                exr_file = OpenEXR.File(str(filepath))
                 part = exr_file.parts[0]
                 logger.debug("[PreviewThumb]", part=part)
                 stats.width = part.width()

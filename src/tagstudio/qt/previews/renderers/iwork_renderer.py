@@ -16,7 +16,7 @@ quicklook_thumbnail_path_within_zip: str = "QuickLook/Thumbnail.jpg"
 
 
 class IWorkRenderer(BaseRenderer):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
 
     @staticmethod

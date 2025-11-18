@@ -5,6 +5,7 @@ import numexpr
 import numpy
 import OpenEXR
 import structlog
+from OpenEXR import InputFile
 from PIL import (
     Image,
     ImageOps,
@@ -17,7 +18,7 @@ logger = structlog.get_logger(__name__)
 
 
 class EXRImageRenderer(BaseRenderer):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
 
     @staticmethod
@@ -40,13 +41,16 @@ class EXRImageRenderer(BaseRenderer):
 FLOAT = Imath.PixelType(Imath.PixelType.FLOAT)
 
 
-def exr_to_array(path: Path):
-    exr_file = OpenEXR.InputFile(path.as_posix())
+def exr_to_array(path: Path) -> numpy.ndarray:
+    exr_file: InputFile = OpenEXR.InputFile(str(path))
     data_window = exr_file.header()["dataWindow"]
 
     channels = list(exr_file.header()["channels"].keys())
-    channels_list = [c for c in ("R", "G", "B", "A") if c in channels]
-    size = (data_window.max.x - data_window.min.x + 1, data_window.max.y - data_window.min.y + 1)
+    channels_list: list[str] = [c for c in ("R", "G", "B", "A") if c in channels]
+    size: tuple[int, int] = (
+        data_window.max.x - data_window.min.x + 1,
+        data_window.max.y - data_window.min.y + 1,
+    )
 
     color_channels = exr_file.channels(channels_list, FLOAT)
     channels_tuple = [numpy.frombuffer(channel, dtype="f") for channel in color_channels]
@@ -63,9 +67,9 @@ def encode_to_srgb(x):
     )""")
 
 
-def exr_to_srgb(exr_file):
-    array = exr_to_array(exr_file)
+def exr_to_srgb(exr_file) -> Image.Image:
+    array: numpy.ndarray = exr_to_array(exr_file)
     result = encode_to_srgb(array) * 255.0
-    present_channels = ["R", "G", "B", "A"][: result.shape[2]]
-    channels = "".join(present_channels)
+    present_channels: list[str] = ["R", "G", "B", "A"][: result.shape[2]]
+    channels: str = "".join(present_channels)
     return Image.fromarray(result.astype("uint8"), channels)

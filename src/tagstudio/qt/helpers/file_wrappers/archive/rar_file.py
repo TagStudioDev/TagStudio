@@ -39,8 +39,9 @@ class RarFile(ArchiveFile):
         return file_name in self.get_name_list()
 
     def read(self, file_name: str) -> bytes | None:
+        search_paths: list[Path] = [Path(file_name), Path(self.path.name, file_name)]
         try:
-            for file_path in [file_name, f"{self.path.name}/{file_name}"]:
+            for file_path in search_paths:
                 try:
                     return self.__rar_file.read(file_path)
                 except KeyError:

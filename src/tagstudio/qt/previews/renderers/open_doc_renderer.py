@@ -15,7 +15,7 @@ thumbnail_path_within_zip: str = "Thumbnails/thumbnail.png"
 
 
 class OpenDocRenderer(BaseRenderer):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
 
     @staticmethod

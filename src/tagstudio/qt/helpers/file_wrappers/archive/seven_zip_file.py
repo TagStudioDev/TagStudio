@@ -44,10 +44,12 @@ class SevenZipFile(ArchiveFile):
         self.__seven_zip_file.reset()
 
         factory = py7zr.io.BytesIOFactory(limit=10485760)  # 10 MiB
+
+        search_paths: list[Path] = [Path(file_name), Path(self.path.name, file_name)]
         try:
-            for file_path in [file_name, f"{self.path.name}/{file_name}"]:
+            for file_path in search_paths:
                 try:
-                    self.__seven_zip_file.extract(targets=[file_path], factory=factory)
+                    self.__seven_zip_file.extract(targets=[str(file_path)], factory=factory)
                     return factory.get(file_path).read()
                 except KeyError:
                     continue

@@ -12,7 +12,7 @@ logger = structlog.get_logger(__name__)
 
 
 class RawImageRenderer(BaseRenderer):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
 
     @staticmethod
@@ -25,7 +25,7 @@ class RawImageRenderer(BaseRenderer):
         try:
             with rawpy.imread(str(context.path)) as raw:
                 rgb = raw.postprocess(use_camera_wb=True)
-                rendered_image = Image.frombytes(
+                rendered_image: Image.Image = Image.frombytes(
                     "RGB",
                     (rgb.shape[1], rgb.shape[0]),
                     rgb,
