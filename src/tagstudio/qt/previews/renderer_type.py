@@ -22,37 +22,45 @@ from tagstudio.qt.previews.renderers.vtf_renderer import VTFRenderer
 
 class RendererType(Enum):
     # Project files
-    KRITA = "krita", MediaCategories.KRITA_TYPES, KritaRenderer
+    KRITA = "krita", MediaCategories.KRITA_TYPES, KritaRenderer, True
 
     # Model files
-    BLENDER = "blender", MediaCategories.BLENDER_TYPES, BlenderRenderer
+    BLENDER = "blender", MediaCategories.BLENDER_TYPES, BlenderRenderer, True
 
     # Media files
-    VIDEO = "video", MediaCategories.VIDEO_TYPES, VideoRenderer
-    AUDIO = "audio", MediaCategories.AUDIO_TYPES, AudioRenderer
+    VIDEO = "video", MediaCategories.VIDEO_TYPES, VideoRenderer, True
+    AUDIO = "audio", MediaCategories.AUDIO_TYPES, AudioRenderer, False
 
     # Document files
-    OPEN_DOC = "open_doc", MediaCategories.OPEN_DOCUMENT_TYPES, OpenDocRenderer
-    POWERPOINT = "powerpoint", MediaCategories.POWERPOINT_TYPES, PowerPointRenderer
-    PDF = "pdf", MediaCategories.PDF_TYPES, PDFRenderer
-    EBOOK = "ebook", MediaCategories.EBOOK_TYPES, EBookRenderer
-    IWORK = "iwork", MediaCategories.IWORK_TYPES, IWorkRenderer
+    OPEN_DOC = "open_doc", MediaCategories.OPEN_DOCUMENT_TYPES, OpenDocRenderer, True
+    POWERPOINT = "powerpoint", MediaCategories.POWERPOINT_TYPES, PowerPointRenderer, True
+    PDF = "pdf", MediaCategories.PDF_TYPES, PDFRenderer, True
+    EBOOK = "ebook", MediaCategories.EBOOK_TYPES, EBookRenderer, True
+    IWORK = "iwork", MediaCategories.IWORK_TYPES, IWorkRenderer, True
 
     # Text files
-    TEXT = "text", MediaCategories.PLAINTEXT_TYPES, TextRenderer
-    FONT = "font", MediaCategories.FONT_TYPES, FontRenderer
+    TEXT = "text", MediaCategories.PLAINTEXT_TYPES, TextRenderer, True
+    FONT = "font", MediaCategories.FONT_TYPES, FontRenderer, True
 
     # Image files
-    VTF = "vtf", MediaCategories.SOURCE_ENGINE_TYPES, VTFRenderer
-    RAW_IMAGE = "raw_image", MediaCategories.IMAGE_RAW_TYPES, RawImageRenderer
-    EXR_IMAGE = "exr_image", MediaCategories.IMAGE_EXR_TYPES, EXRImageRenderer
-    VECTOR_IMAGE = "vector_image", MediaCategories.IMAGE_VECTOR_TYPES, VectorImageRenderer
-    IMAGE = "image", MediaCategories.IMAGE_TYPES, ImageRenderer
+    VTF = "vtf", MediaCategories.SOURCE_ENGINE_TYPES, VTFRenderer, True
+    RAW_IMAGE = "raw_image", MediaCategories.IMAGE_RAW_TYPES, RawImageRenderer, True
+    EXR_IMAGE = "exr_image", MediaCategories.IMAGE_EXR_TYPES, EXRImageRenderer, True
+    VECTOR_IMAGE = "vector_image", MediaCategories.IMAGE_VECTOR_TYPES, VectorImageRenderer, True
+    IMAGE = "image", MediaCategories.IMAGE_TYPES, ImageRenderer, True
 
-    def __init__(self, name: str, media_category: MediaCategories, renderer: type[BaseRenderer]):
+    def __init__(
+        self,
+        name: str,
+        media_category: MediaCategories,
+        renderer: type[BaseRenderer],
+        is_savable_media_type: bool,
+    ):
         self.__name: str = name
         self.media_category: MediaCategories = media_category
         self.renderer: type[BaseRenderer] = renderer
+
+        self.is_savable_media_type = is_savable_media_type
 
     @staticmethod
     def get_renderer_type(file_extension: str) -> "RendererType | None":

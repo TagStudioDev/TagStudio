@@ -528,39 +528,6 @@ class ThumbRenderer(QObject):
 
         return im
 
-    @staticmethod
-    def _model_stl_thumb(filepath: Path, size: int) -> Image.Image | None:
-        """Render a thumbnail for an STL file.
-
-        Args:
-            filepath (Path): The path of the file.
-            size (tuple[int,int]): The size of the icon.
-        """
-        # TODO: Implement.
-        # The following commented code describes a method for rendering via
-        # matplotlib.
-        # This implementation did not play nice with multithreading.
-        im: Image.Image | None = None
-        # # Create a new plot
-        # matplotlib.use('agg')
-        # figure = plt.figure()
-        # axes = figure.add_subplot(projection='3d')
-
-        # # Load the STL files and add the vectors to the plot
-        # your_mesh = mesh.Mesh.from_file(_filepath)
-
-        # poly_collection = mplot3d.art3d.Poly3DCollection(your_mesh.vectors)
-        # poly_collection.set_color((0,0,1))  # play with color
-        # scale = your_mesh.points.flatten()
-        # axes.auto_scale_xyz(scale, scale, scale)
-        # axes.add_collection3d(poly_collection)
-        # # plt.show()
-        # img_buf = io.BytesIO()
-        # plt.savefig(img_buf, format='png')
-        # im = Image.open(img_buf)
-
-        return im
-
     def render(
         self,
         timestamp: float,
@@ -574,7 +541,7 @@ class ThumbRenderer(QObject):
         """Render a thumbnail or preview image.
 
         Args:
-            timestamp (float): The timestamp for which this this job was dispatched.
+            timestamp (float): The timestamp for which this job was dispatched.
             filepath (str | Path): The path of the file to render a thumbnail for.
             base_size (tuple[int,int]): The unmodified base size of the thumbnail.
             pixel_ratio (float): The screen pixel ratio.
@@ -784,7 +751,7 @@ class ThumbRenderer(QObject):
         """Render a thumbnail or preview image.
 
         Args:
-            timestamp (float): The timestamp for which this this job was dispatched.
+            timestamp (float): The timestamp for which this job was dispatched.
             filepath (str | Path): The path of the file to render a thumbnail for.
             base_size (tuple[int,int]): The unmodified base size of the thumbnail.
             pixel_ratio (float): The screen pixel ratio.
@@ -794,9 +761,7 @@ class ThumbRenderer(QObject):
 
         """
         adj_size = math.ceil(max(base_size[0], base_size[1]) * pixel_ratio)
-        image: Image.Image | None = None
         _filepath: Path = Path(filepath)
-        savable_media_type: bool = True
 
         if _filepath and _filepath.is_file():
             try:
@@ -816,17 +781,19 @@ class ThumbRenderer(QObject):
                     renderer_type=renderer_type,
                     renderer_context=renderer_context,
                 )
-                if renderer_type:
-                    image = renderer_type.renderer.render(renderer_context)
 
-                if not image:
+                if not renderer_type:
                     raise NoRendererError
+
+                image: Image.Image = renderer_type.renderer.render(renderer_context)
 
                 if image:
                     image = self._resize_image(image, (adj_size, adj_size))
 
-                if save_to_file and savable_media_type and image:
+                if save_to_file and renderer_type.is_savable_media_type and image:
                     self.driver.cache_manager.save_image(image, save_to_file, mode="RGBA")
+
+                return image
 
             except (
                 UnidentifiedImageError,
@@ -834,12 +801,11 @@ class ThumbRenderer(QObject):
                 ValueError,
                 ChildProcessError,
             ) as e:
-                logger.error("Couldn't render thumbnail", filepath=filepath, error=type(e).__name__)
-                image = None
-            except NoRendererError:
-                image = None
+                logger.error(
+                    "[ThumbRenderer] Couldn't render thumbnail", filepath=filepath, error=e
+                )
 
-        return image
+        return None
 
     def _resize_image(self, image: Image.Image, size: tuple[int, int]) -> Image.Image:
         orig_x, orig_y = image.size
