@@ -3,6 +3,7 @@ from enum import Enum
 from tagstudio.core.media_types import MediaCategories
 from tagstudio.qt.previews.renderers.base_renderer import BaseRenderer
 from tagstudio.qt.previews.renderers.ebook_renderer import EBookRenderer
+from tagstudio.qt.previews.renderers.font_renderer import FontRenderer
 from tagstudio.qt.previews.renderers.krita_renderer import KritaRenderer
 from tagstudio.qt.previews.renderers.text_renderer import TextRenderer
 from tagstudio.qt.previews.renderers.video_renderer import VideoRenderer
@@ -20,6 +21,7 @@ class RendererType(Enum):
     VIDEO = "video", MediaCategories.VIDEO_TYPES, VideoRenderer
 
     TEXT = "text", MediaCategories.PLAINTEXT_TYPES, TextRenderer
+    FONT = "font", MediaCategories.FONT_TYPES, FontRenderer
 
     def __init__(self, name: str, media_category: MediaCategories, renderer: type[BaseRenderer]):
         self.__name: str = name

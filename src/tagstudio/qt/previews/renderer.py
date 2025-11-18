@@ -11,7 +11,7 @@ import zipfile
 from copy import deepcopy
 from io import BytesIO
 from pathlib import Path
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING
 from warnings import catch_warnings
 
 import cv2
@@ -27,7 +27,6 @@ from PIL import (
     ImageDraw,
     ImageEnhance,
     ImageFile,
-    ImageFont,
     ImageOps,
     ImageQt,
     UnidentifiedImageError,
@@ -49,20 +48,14 @@ from PySide6.QtGui import QGuiApplication, QImage, QPainter, QPixmap
 from PySide6.QtPdf import QPdfDocument, QPdfDocumentRenderOptions
 from PySide6.QtSvg import QSvgRenderer
 
-from tagstudio.core.constants import (
-    FONT_SAMPLE_SIZES,
-    FONT_SAMPLE_TEXT,
-)
 from tagstudio.core.exceptions import NoRendererError
 from tagstudio.core.library.ignore import Ignore
 from tagstudio.core.media_types import MediaCategories, MediaType
 from tagstudio.core.utils.types import unwrap
 from tagstudio.qt.global_settings import DEFAULT_CACHED_IMAGE_RES
-from tagstudio.qt.helpers.color_overlay import theme_fg_overlay
 from tagstudio.qt.helpers.gradients import four_corner_gradient
-from tagstudio.qt.helpers.image_effects import replace_transparent_pixels
-from tagstudio.qt.helpers.text_wrapper import wrap_full_text
-from tagstudio.qt.models.palette import UI_COLORS, ColorType, UiColor, get_ui_color
+from tagstudio.qt.helpers.image_effects import apply_overlay_color, replace_transparent_pixels
+from tagstudio.qt.models.palette import UI_COLORS, ColorType, UiColor
 from tagstudio.qt.previews.renderer_type import RendererType
 from tagstudio.qt.previews.vendored.blender_renderer import blend_thumb
 from tagstudio.qt.previews.vendored.pydub.audio_segment import (
@@ -242,7 +235,7 @@ class ThumbRenderer(QObject):
 
         im: Image.Image = Image.new(
             mode="L",
-            size=tuple([d * smooth_factor for d in size]),  # type: ignore
+            size=([d * smooth_factor for d in size]),
             color="black",
         )
         draw = ImageDraw.Draw(im)
@@ -273,7 +266,7 @@ class ThumbRenderer(QObject):
         # Highlight
         im_hl: Image.Image = Image.new(
             mode="RGBA",
-            size=tuple([d * smooth_factor for d in size]),  # type: ignore
+            size=([d * smooth_factor for d in size]),
             color="#00000000",
         )
         draw = ImageDraw.Draw(im_hl)
@@ -292,7 +285,7 @@ class ThumbRenderer(QObject):
         # Shadow
         im_sh: Image.Image = Image.new(
             mode="RGBA",
-            size=tuple([d * smooth_factor for d in size]),  # type: ignore
+            size=([d * smooth_factor for d in size]),
             color="#00000000",
         )
         draw = ImageDraw.Draw(im_sh)
@@ -337,7 +330,7 @@ class ThumbRenderer(QObject):
         # Create larger blank image based on smooth_factor
         im: Image.Image = Image.new(
             "RGBA",
-            size=tuple([d * smooth_factor for d in size]),  # type: ignore
+            size=([d * smooth_factor for d in size]),
             color="#FF000000",
         )
 
@@ -345,13 +338,13 @@ class ThumbRenderer(QObject):
         bg: Image.Image
         bg = Image.new(
             "RGB",
-            size=tuple([d * smooth_factor for d in size]),  # type: ignore
+            size=([d * smooth_factor for d in size]),
             color="#000000FF",
         )
 
         # Use a background image if provided
         if bg_image:
-            bg_im = Image.Image.resize(bg_image, size=tuple([d * smooth_factor for d in size]))  # type: ignore
+            bg_im = Image.Image.resize(bg_image, size=([d * smooth_factor for d in size]))
             bg_im = ImageEnhance.Brightness(bg_im).enhance(0.3)  # Reduce the brightness
             bg.paste(bg_im)
 
@@ -412,7 +405,7 @@ class ThumbRenderer(QObject):
         )
 
         # Apply color overlay
-        im = self._apply_overlay_color(
+        im = apply_overlay_color(
             im,
             color,
         )
@@ -444,23 +437,23 @@ class ThumbRenderer(QObject):
         # Create larger blank image based on smooth_factor
         im: Image.Image = Image.new(
             "RGBA",
-            size=tuple([d * smooth_factor for d in size]),  # type: ignore
+            size=([d * smooth_factor for d in size]),
             color="#00000000",
         )
 
         bg: Image.Image
         # Use a background image if provided
         if bg_image:
-            bg = Image.Image.resize(bg_image, size=tuple([d * smooth_factor for d in size]))  # type: ignore
+            bg = Image.Image.resize(bg_image, size=([d * smooth_factor for d in size]))
         # Create solid background color
         else:
             bg = Image.new(
                 "RGB",
-                size=tuple([d * smooth_factor for d in size]),  # type: ignore
+                size=([d * smooth_factor for d in size]),
                 color="#000000",
             )
             # Apply color overlay
-            bg = self._apply_overlay_color(
+            bg = apply_overlay_color(
                 im,
                 color,
             )
@@ -517,47 +510,6 @@ class ThumbRenderer(QObject):
         )
 
         return im
-
-    def _apply_overlay_color(self, image: Image.Image, color: UiColor) -> Image.Image:
-        """Apply a color overlay effect to an image based on its color channel data.
-
-        Red channel for foreground, green channel for outline, none for background.
-
-        Args:
-            image (Image.Image): The image to apply an overlay to.
-            color (UiColor): The name of the ColorType color to use.
-        """
-        bg_color: str = (
-            get_ui_color(ColorType.DARK_ACCENT, color)
-            if QGuiApplication.styleHints().colorScheme() is Qt.ColorScheme.Dark
-            else get_ui_color(ColorType.PRIMARY, color)
-        )
-        fg_color: str = (
-            get_ui_color(ColorType.PRIMARY, color)
-            if QGuiApplication.styleHints().colorScheme() is Qt.ColorScheme.Dark
-            else get_ui_color(ColorType.LIGHT_ACCENT, color)
-        )
-        ol_color: str = (
-            get_ui_color(ColorType.BORDER, color)
-            if QGuiApplication.styleHints().colorScheme() is Qt.ColorScheme.Dark
-            else get_ui_color(ColorType.LIGHT_ACCENT, color)
-        )
-
-        bg: Image.Image = Image.new(image.mode, image.size, color=bg_color)
-        fg: Image.Image = Image.new(image.mode, image.size, color=fg_color)
-        ol: Image.Image = Image.new(image.mode, image.size, color=ol_color)
-
-        bg.paste(fg, (0, 0), mask=image.getchannel(0))
-        bg.paste(ol, (0, 0), mask=image.getchannel(1))
-
-        if image.mode == "RGBA":
-            alpha_bg: Image.Image = bg.copy()
-            alpha_bg.convert("RGBA")
-            alpha_bg.putalpha(0)
-            alpha_bg.paste(bg, (0, 0), mask=image.getchannel(3))
-            bg = alpha_bg
-
-        return bg
 
     def _apply_edge(
         self,
@@ -806,101 +758,6 @@ class ThumbRenderer(QObject):
         except zipfile.BadZipFile as e:
             logger.error("Couldn't render thumbnail", filepath=filepath, error=e)
 
-        return im
-
-    def _font_short_thumb(self, filepath: Path, size: int) -> Image.Image | None:
-        """Render a small font preview ("Aa") thumbnail from a font file.
-
-        Args:
-            filepath (Path): The path of the file.
-            size (tuple[int,int]): The size of the thumbnail.
-        """
-        im: Image.Image | None = None
-        try:
-            bg = Image.new("RGB", (size, size), color="#000000")
-            raw = Image.new("RGB", (size * 3, size * 3), color="#000000")
-            draw = ImageDraw.Draw(raw)
-            font = ImageFont.truetype(filepath, size=size)
-            # NOTE: While a stroke effect is desired, the text
-            # method only allows for outer strokes, which looks
-            # a bit weird when rendering fonts.
-            draw.text(
-                (size // 8, size // 8),
-                "Aa",
-                font=font,
-                fill="#FF0000",
-                # stroke_width=math.ceil(size / 96),
-                # stroke_fill="#FFFF00",
-            )
-            # NOTE: Change to getchannel(1) if using an outline.
-            data = np.asarray(raw.getchannel(0))
-
-            m, n = data.shape[:2]
-            col: np.ndarray = cast(np.ndarray, data.any(0))
-            row: np.ndarray = cast(np.ndarray, data.any(1))
-            cropped_data = np.asarray(raw)[
-                row.argmax() : m - row[::-1].argmax(),
-                col.argmax() : n - col[::-1].argmax(),
-            ]
-            cropped_im: Image.Image = Image.fromarray(cropped_data, "RGB")
-
-            margin: int = math.ceil(size // 16)
-
-            orig_x, orig_y = cropped_im.size
-            new_x, new_y = (size, size)
-            if orig_x > orig_y:
-                new_x = size
-                new_y = math.ceil(size * (orig_y / orig_x))
-            elif orig_y > orig_x:
-                new_y = size
-                new_x = math.ceil(size * (orig_x / orig_y))
-
-            cropped_im = cropped_im.resize(
-                size=(new_x - (margin * 2), new_y - (margin * 2)),
-                resample=Image.Resampling.BILINEAR,
-            )
-            bg.paste(
-                cropped_im,
-                box=(margin, margin + ((size - new_y) // 2)),
-            )
-            im = self._apply_overlay_color(bg, UiColor.BLUE)
-        except OSError as e:
-            logger.error("Couldn't render thumbnail", filepath=filepath, error=type(e).__name__)
-        return im
-
-    @staticmethod
-    def _font_long_thumb(filepath: Path, size: int) -> Image.Image | None:
-        """Render a large font preview ("Alphabet") thumbnail from a font file.
-
-        Args:
-            filepath (Path): The path of the file.
-            size (tuple[int,int]): The size of the thumbnail.
-        """
-        # Scale the sample font sizes to the preview image
-        # resolution,assuming the sizes are tuned for 256px.
-        im: Image.Image | None = None
-        try:
-            scaled_sizes: list[int] = [math.floor(x * (size / 256)) for x in FONT_SAMPLE_SIZES]
-            bg = Image.new("RGBA", (size, size), color="#00000000")
-            draw = ImageDraw.Draw(bg)
-            lines_of_padding = 2
-            y_offset = 0.0
-
-            for font_size in scaled_sizes:
-                font = ImageFont.truetype(filepath, size=font_size)
-                text_wrapped: str = wrap_full_text(
-                    FONT_SAMPLE_TEXT,
-                    font=font,  # pyright: ignore[reportArgumentType]
-                    width=size,
-                    draw=draw,
-                )
-                draw.multiline_text((0, y_offset), text_wrapped, font=font)
-                y_offset += (len(text_wrapped.split("\n")) + lines_of_padding) * draw.textbbox(
-                    (0, 0), "A", font=font
-                )[-1]
-            im = theme_fg_overlay(bg, use_alpha=False)
-        except OSError as e:
-            logger.error("Couldn't render thumbnail", filepath=filepath, error=type(e).__name__)
         return im
 
     @staticmethod
@@ -1384,7 +1241,7 @@ class ThumbRenderer(QObject):
                 renderer_type: RendererType | None = RendererType.get_renderer_type(ext)
                 logger.debug("[ThumbRenderer]", renderer_type=renderer_type)
                 if renderer_type:
-                    image = renderer_type.renderer.render(_filepath, ext)
+                    image = renderer_type.renderer.render(_filepath, ext, adj_size, is_grid_thumb)
 
                 # Images =======================================================
                 elif MediaCategories.is_ext_in_category(
@@ -1417,16 +1274,6 @@ class ThumbRenderer(QObject):
                 # Apple iWork Suite ============================================
                 elif MediaCategories.is_ext_in_category(ext, MediaCategories.IWORK_TYPES):
                     image = self._iwork_thumb(_filepath)
-                # Fonts ========================================================
-                elif MediaCategories.is_ext_in_category(
-                    ext, MediaCategories.FONT_TYPES, mime_fallback=True
-                ):
-                    if is_grid_thumb:
-                        # Short (Aa) Preview
-                        image = self._font_short_thumb(_filepath, adj_size)
-                    else:
-                        # Large (Full Alphabet) Preview
-                        image = self._font_long_thumb(_filepath, adj_size)
                 # Audio ========================================================
                 elif MediaCategories.is_ext_in_category(
                     ext, MediaCategories.AUDIO_TYPES, mime_fallback=True
@@ -1436,7 +1283,7 @@ class ThumbRenderer(QObject):
                         image = self._audio_waveform_thumb(_filepath, ext, adj_size, pixel_ratio)
                         savable_media_type = False
                         if image is not None:
-                            image = self._apply_overlay_color(image, UiColor.GREEN)
+                            image = apply_overlay_color(image, UiColor.GREEN)
                 # Blender ======================================================
                 elif MediaCategories.is_ext_in_category(
                     ext, MediaCategories.BLENDER_TYPES, mime_fallback=True

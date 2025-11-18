@@ -22,12 +22,14 @@ class EBookRenderer(BaseRenderer):
         super().__init__()
 
     @staticmethod
-    def render(path: Path, extension: str) -> Image.Image | None:
+    def render(path: Path, extension: str, size: int, is_grid_thumb: bool) -> Image.Image | None:
         """Extracts the cover specified by ComicInfo.xml or first image found in the ePub file.
 
         Args:
             path (Path): The path to the ePub file.
             extension (str): The file extension.
+            size (tuple[int,int]): The size of the thumbnail.
+            is_grid_thumb (bool): Whether the image will be used as a thumbnail in the file grid.
 
         Returns:
             Image: The cover specified in ComicInfo.xml,

@@ -11,5 +11,5 @@ class BaseRenderer(ABC):
 
     @staticmethod
     @abstractmethod
-    def render(path: Path, extension: str) -> Image.Image | None:
+    def render(path: Path, extension: str, size: int, is_grid_thumb: bool) -> Image.Image | None:
         raise NotImplementedError
