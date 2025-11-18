@@ -41,6 +41,7 @@ class MediaType(str, Enum):
     FONT = "font"
     IMAGE_ANIMATED = "image_animated"
     IMAGE_RAW = "image_raw"
+    IMAGE_EXR = "image_exr"
     IMAGE_VECTOR = "image_vector"
     IMAGE = "image"
     INSTALLER = "installer"
@@ -297,15 +298,25 @@ class MediaCategories:
         ".cr3",
         ".crw",
         ".dng",
+        ".erf",
+        ".mef",
+        ".mos",
+        ".mrw",
         ".nef",
         ".nrw",
         ".orf",
+        ".pef",
         ".raf",
         ".raw",
         ".rw2",
         ".srf",
         ".srf2",
+        ".sr2",
+        ".srw",
+        ".x3f",
+        ".3fr",
     }
+    _IMAGE_EXR_SET: set[str] = {".exr"}
     _IMAGE_VECTOR_SET: set[str] = {".eps", ".epsf", ".epsi", ".svg", ".svgz"}
     _IMAGE_RASTER_SET: set[str] = {
         ".apng",
@@ -500,6 +511,9 @@ class MediaCategories:
         extensions=_IMAGE_RAW_SET,
         is_iana=False,
         name="raw image",
+    )
+    IMAGE_EXR_TYPES = MediaCategory(
+        media_type=MediaType.IMAGE_EXR, extensions=_IMAGE_EXR_SET, is_iana=False, name="exr image"
     )
     IMAGE_VECTOR_TYPES = MediaCategory(
         media_type=MediaType.IMAGE_VECTOR,

@@ -8,14 +8,10 @@ import hashlib
 import math
 import os
 from copy import deepcopy
-from io import BytesIO
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-import cv2
-import numpy as np
 import pillow_avif  # noqa: F401 # pyright: ignore[reportUnusedImport]
-import rawpy
 import structlog
 from PIL import (
     Image,
@@ -23,21 +19,18 @@ from PIL import (
     ImageDraw,
     ImageEnhance,
     ImageFile,
-    ImageOps,
     ImageQt,
     UnidentifiedImageError,
 )
 from PIL.Image import DecompressionBombError
 from pillow_heif import register_heif_opener
 from PySide6.QtCore import (
-    QBuffer,
     QObject,
     QSize,
     Qt,
     Signal,
 )
-from PySide6.QtGui import QGuiApplication, QImage, QPainter, QPixmap
-from PySide6.QtSvg import QSvgRenderer
+from PySide6.QtGui import QGuiApplication, QPixmap
 
 from tagstudio.core.exceptions import NoRendererError
 from tagstudio.core.library.ignore import Ignore
@@ -536,124 +529,6 @@ class ThumbRenderer(QObject):
         return im
 
     @staticmethod
-    def _image_raw_thumb(filepath: Path) -> Image.Image | None:
-        """Render a thumbnail for a RAW image type.
-
-        Args:
-            filepath (Path): The path of the file.
-        """
-        im: Image.Image | None = None
-        try:
-            with rawpy.imread(str(filepath)) as raw:
-                rgb = raw.postprocess(use_camera_wb=True)
-                im = Image.frombytes(
-                    "RGB",
-                    (rgb.shape[1], rgb.shape[0]),
-                    rgb,
-                    decoder_name="raw",
-                )
-        except (
-            DecompressionBombError,
-            rawpy._rawpy.LibRawIOError,  # pyright: ignore[reportAttributeAccessIssue]
-            rawpy._rawpy.LibRawFileUnsupportedError,  # pyright: ignore[reportAttributeAccessIssue]
-        ) as e:
-            logger.error("Couldn't render thumbnail", filepath=filepath, error=type(e).__name__)
-        return im
-
-    @staticmethod
-    def _image_exr_thumb(filepath: Path) -> Image.Image | None:
-        """Render a thumbnail for a EXR image type.
-
-        Args:
-            filepath (Path): The path of the file.
-        """
-        im: Image.Image | None = None
-        try:
-            # Load the EXR data to an array and rotate the color space from BGRA -> RGBA
-            raw_array = cv2.imread(str(filepath), cv2.IMREAD_UNCHANGED)
-            raw_array[..., :3] = raw_array[..., 2::-1]
-
-            # Correct the gamma of the raw array
-            gamma = 2.2
-            array_gamma = np.power(np.clip(raw_array, 0, 1), 1 / gamma)
-            array = (array_gamma * 255).astype(np.uint8)
-
-            im = Image.fromarray(array, mode="RGBA")
-
-            # Paste solid background
-            if im.mode == "RGBA":
-                new_bg = Image.new("RGB", im.size, color="#1e1e1e")
-                new_bg.paste(im, mask=im.getchannel(3))
-                im = new_bg
-
-        except Exception as e:
-            logger.error("Couldn't render thumbnail", filepath=filepath, error=type(e).__name__)
-        return im
-
-    @staticmethod
-    def _image_thumb(filepath: Path) -> Image.Image | None:
-        """Render a thumbnail for a standard image type.
-
-        Args:
-            filepath (Path): The path of the file.
-        """
-        im: Image.Image | None = None
-        try:
-            im = Image.open(filepath)
-            if im.mode != "RGB" and im.mode != "RGBA":
-                im = im.convert(mode="RGBA")
-            if im.mode == "RGBA":
-                new_bg = Image.new("RGB", im.size, color="#1e1e1e")
-                new_bg.paste(im, mask=im.getchannel(3))
-                im = new_bg
-            im = unwrap(ImageOps.exif_transpose(im))
-        except (
-            FileNotFoundError,
-            UnidentifiedImageError,
-            DecompressionBombError,
-            NotImplementedError,
-        ) as e:
-            logger.error("Couldn't render thumbnail", filepath=filepath, error=type(e).__name__)
-        return im
-
-    @staticmethod
-    def _image_vector_thumb(filepath: Path, size: int) -> Image.Image:
-        """Render a thumbnail for a vector image, such as SVG.
-
-        Args:
-            filepath (Path): The path of the file.
-            size (tuple[int,int]): The size of the thumbnail.
-        """
-        im: Image.Image | None = None
-        # Create an image to draw the svg to and a painter to do the drawing
-        q_image: QImage = QImage(size, size, QImage.Format.Format_ARGB32)
-        q_image.fill("#1e1e1e")
-
-        # Create an svg renderer, then render to the painter
-        svg: QSvgRenderer = QSvgRenderer(str(filepath))
-
-        if not svg.isValid():
-            raise UnidentifiedImageError
-
-        painter: QPainter = QPainter(q_image)
-        svg.setAspectRatioMode(Qt.AspectRatioMode.KeepAspectRatio)
-        svg.render(painter)
-        painter.end()
-
-        # Write the image to a buffer as png
-        buffer: QBuffer = QBuffer()
-        buffer.open(QBuffer.OpenModeFlag.ReadWrite)
-        q_image.save(buffer, "PNG")  # type: ignore[call-overload,unused-ignore]
-
-        # Load the image from the buffer
-        im = Image.new("RGB", (size, size), color="#1e1e1e")
-        im.paste(Image.open(BytesIO(buffer.data().data())))
-        im = im.convert(mode="RGB")
-
-        buffer.close()
-        return im
-
-    @staticmethod
     def _model_stl_thumb(filepath: Path, size: int) -> Image.Image | None:
         """Render a thumbnail for an STL file.
 
@@ -944,27 +819,6 @@ class ThumbRenderer(QObject):
                 if renderer_type:
                     image = renderer_type.renderer.render(renderer_context)
 
-                # Images =======================================================
-                elif MediaCategories.is_ext_in_category(
-                    ext, MediaCategories.IMAGE_TYPES, mime_fallback=True
-                ):
-                    # Raw Images -----------------------------------------------
-                    if MediaCategories.is_ext_in_category(
-                        ext, MediaCategories.IMAGE_RAW_TYPES, mime_fallback=True
-                    ):
-                        image = self._image_raw_thumb(_filepath)
-                    # Vector Images --------------------------------------------
-                    elif MediaCategories.is_ext_in_category(
-                        ext, MediaCategories.IMAGE_VECTOR_TYPES, mime_fallback=True
-                    ):
-                        image = self._image_vector_thumb(_filepath, adj_size)
-                    # EXR Images -----------------------------------------------
-                    elif ext in [".exr"]:
-                        image = self._image_exr_thumb(_filepath)
-                    # Normal Images --------------------------------------------
-                    else:
-                        image = self._image_thumb(_filepath)
-                # No Rendered Thumbnail ========================================
                 if not image:
                     raise NoRendererError
 

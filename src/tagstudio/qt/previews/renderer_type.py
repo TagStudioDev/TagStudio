@@ -5,13 +5,17 @@ from tagstudio.qt.previews.renderers.audio_renderer import AudioRenderer
 from tagstudio.qt.previews.renderers.base_renderer import BaseRenderer
 from tagstudio.qt.previews.renderers.blender_renderer import BlenderRenderer
 from tagstudio.qt.previews.renderers.ebook_renderer import EBookRenderer
+from tagstudio.qt.previews.renderers.exr_image_renderer import EXRImageRenderer
 from tagstudio.qt.previews.renderers.font_renderer import FontRenderer
+from tagstudio.qt.previews.renderers.image_renderer import ImageRenderer
 from tagstudio.qt.previews.renderers.iwork_renderer import IWorkRenderer
 from tagstudio.qt.previews.renderers.krita_renderer import KritaRenderer
 from tagstudio.qt.previews.renderers.open_doc_renderer import OpenDocRenderer
 from tagstudio.qt.previews.renderers.pdf_renderer import PDFRenderer
 from tagstudio.qt.previews.renderers.powerpoint_renderer import PowerPointRenderer
+from tagstudio.qt.previews.renderers.raw_image_renderer import RawImageRenderer
 from tagstudio.qt.previews.renderers.text_renderer import TextRenderer
+from tagstudio.qt.previews.renderers.vector_image_renderer import VectorImageRenderer
 from tagstudio.qt.previews.renderers.video_renderer import VideoRenderer
 from tagstudio.qt.previews.renderers.vtf_renderer import VTFRenderer
 
@@ -40,6 +44,10 @@ class RendererType(Enum):
 
     # Image files
     VTF = "vtf", MediaCategories.SOURCE_ENGINE_TYPES, VTFRenderer
+    RAW_IMAGE = "raw_image", MediaCategories.IMAGE_RAW_TYPES, RawImageRenderer
+    EXR_IMAGE = "exr_image", MediaCategories.IMAGE_EXR_TYPES, EXRImageRenderer
+    VECTOR_IMAGE = "vector_image", MediaCategories.IMAGE_VECTOR_TYPES, VectorImageRenderer
+    IMAGE = "image", MediaCategories.IMAGE_TYPES, ImageRenderer
 
     def __init__(self, name: str, media_category: MediaCategories, renderer: type[BaseRenderer]):
         self.__name: str = name
