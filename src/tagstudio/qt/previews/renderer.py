@@ -7,7 +7,6 @@ import contextlib
 import hashlib
 import math
 import os
-import zipfile
 from copy import deepcopy
 from io import BytesIO
 from pathlib import Path
@@ -655,44 +654,6 @@ class ThumbRenderer(QObject):
         return im
 
     @staticmethod
-    def _iwork_thumb(filepath: Path) -> Image.Image | None:
-        """Extract and render a thumbnail for an Apple iWork (Pages, Numbers, Keynote) file.
-
-        Args:
-            filepath (Path): The path of the file.
-        """
-        preview_thumb_dir = "preview.jpg"
-        quicklook_thumb_dir = "QuickLook/Thumbnail.jpg"
-        im: Image.Image | None = None
-
-        def get_image(path: str) -> Image.Image | None:
-            thumb_im: Image.Image | None = None
-            # Read the specific file into memory
-            file_data = zip_file.read(path)
-            thumb_im = Image.open(BytesIO(file_data))
-            return thumb_im
-
-        try:
-            with zipfile.ZipFile(filepath, "r") as zip_file:
-                thumb: Image.Image | None = None
-
-                # Check if the file exists in the zip
-                if preview_thumb_dir in zip_file.namelist():
-                    thumb = get_image(preview_thumb_dir)
-                elif quicklook_thumb_dir in zip_file.namelist():
-                    thumb = get_image(quicklook_thumb_dir)
-                else:
-                    logger.error("Couldn't render thumbnail", filepath=filepath)
-
-                if thumb:
-                    im = Image.new("RGB", thumb.size, color="#1e1e1e")
-                    im.paste(thumb)
-        except zipfile.BadZipFile as e:
-            logger.error("Couldn't render thumbnail", filepath=filepath, error=e)
-
-        return im
-
-    @staticmethod
     def _model_stl_thumb(filepath: Path, size: int) -> Image.Image | None:
         """Render a thumbnail for an STL file.
 
@@ -1003,9 +964,6 @@ class ThumbRenderer(QObject):
                     # Normal Images --------------------------------------------
                     else:
                         image = self._image_thumb(_filepath)
-                # Apple iWork Suite ============================================
-                elif MediaCategories.is_ext_in_category(ext, MediaCategories.IWORK_TYPES):
-                    image = self._iwork_thumb(_filepath)
                 # No Rendered Thumbnail ========================================
                 if not image:
                     raise NoRendererError

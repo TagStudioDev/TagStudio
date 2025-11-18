@@ -6,6 +6,7 @@ from tagstudio.qt.previews.renderers.base_renderer import BaseRenderer
 from tagstudio.qt.previews.renderers.blender_renderer import BlenderRenderer
 from tagstudio.qt.previews.renderers.ebook_renderer import EBookRenderer
 from tagstudio.qt.previews.renderers.font_renderer import FontRenderer
+from tagstudio.qt.previews.renderers.iwork_renderer import IWorkRenderer
 from tagstudio.qt.previews.renderers.krita_renderer import KritaRenderer
 from tagstudio.qt.previews.renderers.open_doc_renderer import OpenDocRenderer
 from tagstudio.qt.previews.renderers.pdf_renderer import PDFRenderer
@@ -31,6 +32,7 @@ class RendererType(Enum):
     POWERPOINT = "powerpoint", MediaCategories.POWERPOINT_TYPES, PowerPointRenderer
     PDF = "pdf", MediaCategories.PDF_TYPES, PDFRenderer
     EBOOK = "ebook", MediaCategories.EBOOK_TYPES, EBookRenderer
+    IWORK = "iwork", MediaCategories.IWORK_TYPES, IWorkRenderer
 
     # Text files
     TEXT = "text", MediaCategories.PLAINTEXT_TYPES, TextRenderer
