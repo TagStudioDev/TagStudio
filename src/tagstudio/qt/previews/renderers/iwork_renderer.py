@@ -30,7 +30,6 @@ class IWorkRenderer(BaseRenderer):
             zip_file: ZipFile
             with ZipFile(context.path, "r") as zip_file:
                 # Preview thumbnail
-                logger.debug(zip_file.get_name_list())
                 if zip_file.has_file_name(preview_thumbnail_path_within_zip):
                     file_data: bytes = zip_file.read(preview_thumbnail_path_within_zip)
                     embedded_thumbnail: Image.Image = Image.open(BytesIO(file_data))
