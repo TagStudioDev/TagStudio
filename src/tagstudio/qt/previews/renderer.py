@@ -537,29 +537,6 @@ class ThumbRenderer(QObject):
         return im
 
     @staticmethod
-    def _open_doc_thumb(filepath: Path) -> Image.Image | None:
-        """Extract and render a thumbnail for an OpenDocument file.
-
-        Args:
-            filepath (Path): The path of the file.
-        """
-        file_path_within_zip = "Thumbnails/thumbnail.png"
-        im: Image.Image | None = None
-        with zipfile.ZipFile(filepath, "r") as zip_file:
-            # Check if the file exists in the zip
-            if file_path_within_zip in zip_file.namelist():
-                # Read the specific file into memory
-                file_data = zip_file.read(file_path_within_zip)
-                thumb_im = Image.open(BytesIO(file_data))
-                if thumb_im:
-                    im = Image.new("RGB", thumb_im.size, color="#1e1e1e")
-                    im.paste(thumb_im)
-            else:
-                logger.error("Couldn't render thumbnail", filepath=filepath)
-
-        return im
-
-    @staticmethod
     def _image_raw_thumb(filepath: Path) -> Image.Image | None:
         """Render a thumbnail for a RAW image type.
 
@@ -1026,11 +1003,6 @@ class ThumbRenderer(QObject):
                     # Normal Images --------------------------------------------
                     else:
                         image = self._image_thumb(_filepath)
-                # OpenDocument/OpenOffice ======================================
-                elif MediaCategories.is_ext_in_category(
-                    ext, MediaCategories.OPEN_DOCUMENT_TYPES, mime_fallback=True
-                ):
-                    image = self._open_doc_thumb(_filepath)
                 # Apple iWork Suite ============================================
                 elif MediaCategories.is_ext_in_category(ext, MediaCategories.IWORK_TYPES):
                     image = self._iwork_thumb(_filepath)

@@ -67,6 +67,6 @@ class PDFRenderer(BaseRenderer):
             return replace_transparent_pixels(rendered_thumbnail)
 
         except FileNotFoundError as e:
-            logger.error("[AudioRenderer] Couldn't render thumbnail", path=context.path, error=e)
+            logger.error("[PDFRenderer] Couldn't render thumbnail", path=context.path, error=e)
 
         return None
