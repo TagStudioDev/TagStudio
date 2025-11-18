@@ -26,21 +26,18 @@ class IWorkRenderer(BaseRenderer):
         Args:
             context (RendererContext): The renderer context.
         """
-        file_name: str = context.path.name
-        preview_thumbnail_path = f"{file_name}/{preview_thumbnail_path_within_zip}"
-        quicklook_thumbnail_path = f"{file_name}/{quicklook_thumbnail_path_within_zip}"
-
         try:
             zip_file: ZipFile
             with ZipFile(context.path, "r") as zip_file:
                 # Preview thumbnail
-                if zip_file.has_file_name(preview_thumbnail_path):
-                    file_data: bytes = zip_file.read(preview_thumbnail_path)
+                logger.debug(zip_file.get_name_list())
+                if zip_file.has_file_name(preview_thumbnail_path_within_zip):
+                    file_data: bytes = zip_file.read(preview_thumbnail_path_within_zip)
                     embedded_thumbnail: Image.Image = Image.open(BytesIO(file_data))
 
                 # Quicklook thumbnail
-                elif zip_file.has_file_name(quicklook_thumbnail_path):
-                    file_data = zip_file.read(quicklook_thumbnail_path)
+                elif zip_file.has_file_name(quicklook_thumbnail_path_within_zip):
+                    file_data = zip_file.read(quicklook_thumbnail_path_within_zip)
                     embedded_thumbnail = Image.open(BytesIO(file_data))
                 else:
                     raise FileNotFoundError
