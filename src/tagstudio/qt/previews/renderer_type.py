@@ -1,6 +1,7 @@
 from enum import Enum
 
 from tagstudio.core.media_types import MediaCategories
+from tagstudio.qt.previews.renderers.audio_renderer import AudioRenderer
 from tagstudio.qt.previews.renderers.base_renderer import BaseRenderer
 from tagstudio.qt.previews.renderers.ebook_renderer import EBookRenderer
 from tagstudio.qt.previews.renderers.font_renderer import FontRenderer
@@ -19,6 +20,7 @@ class RendererType(Enum):
     KRITA = "krita", MediaCategories.KRITA_TYPES, KritaRenderer
 
     VIDEO = "video", MediaCategories.VIDEO_TYPES, VideoRenderer
+    AUDIO = "audio", MediaCategories.AUDIO_TYPES, AudioRenderer
 
     TEXT = "text", MediaCategories.PLAINTEXT_TYPES, TextRenderer
     FONT = "font", MediaCategories.FONT_TYPES, FontRenderer

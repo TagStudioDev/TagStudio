@@ -1,5 +1,4 @@
 import math
-from pathlib import Path
 
 import cv2
 import structlog
@@ -8,7 +7,7 @@ from PIL import Image, UnidentifiedImageError
 from PIL.Image import DecompressionBombError
 
 from tagstudio.qt.helpers.file_tester import is_readable_video
-from tagstudio.qt.previews.renderers.base_renderer import BaseRenderer
+from tagstudio.qt.previews.renderers.base_renderer import BaseRenderer, RendererContext
 
 logger = structlog.get_logger(__name__)
 
@@ -18,18 +17,15 @@ class VideoRenderer(BaseRenderer):
         super().__init__()
 
     @staticmethod
-    def render(path: Path, extension: str, size: int, is_grid_thumb: bool) -> Image.Image | None:
+    def render(context: RendererContext) -> Image.Image | None:
         """Render a thumbnail for a video file.
 
         Args:
-            path (Path): The path of the file.
-            extension (str): The file extension.
-            size (tuple[int,int]): The size of the thumbnail.
-            is_grid_thumb (bool): Whether the image will be used as a thumbnail in the file grid.
+            context (RendererContext): The renderer context.
         """
         try:
-            if is_readable_video(path):
-                video = cv2.VideoCapture(str(path), cv2.CAP_FFMPEG)
+            if is_readable_video(context.path):
+                video = cv2.VideoCapture(str(context.path), cv2.CAP_FFMPEG)
 
                 # TODO: Move this check to is_readable_video()
                 if video.get(cv2.CAP_PROP_FRAME_COUNT) <= 0:
@@ -64,6 +60,6 @@ class VideoRenderer(BaseRenderer):
             DecompressionBombError,
             OSError,
         ) as e:
-            logger.error("[VideoRenderer] Couldn't render thumbnail", path=path, error=e)
+            logger.error("[VideoRenderer] Couldn't render thumbnail", path=context.path, error=e)
 
         return None

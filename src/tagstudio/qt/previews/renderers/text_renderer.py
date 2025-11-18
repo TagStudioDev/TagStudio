@@ -1,5 +1,3 @@
-from pathlib import Path
-
 import cv2
 import structlog
 from PIL import (
@@ -12,7 +10,7 @@ from PySide6.QtCore import Qt
 from PySide6.QtGui import QGuiApplication
 
 from tagstudio.core.utils.encoding import detect_char_encoding
-from tagstudio.qt.previews.renderers.base_renderer import BaseRenderer
+from tagstudio.qt.previews.renderers.base_renderer import BaseRenderer, RendererContext
 
 logger = structlog.get_logger(__name__)
 
@@ -22,14 +20,11 @@ class TextRenderer(BaseRenderer):
         super().__init__()
 
     @staticmethod
-    def render(path: Path, extension: str, size: int, is_grid_thumb: bool) -> Image.Image | None:
+    def render(context: RendererContext) -> Image.Image | None:
         """Render a thumbnail for a plaintext file.
 
         Args:
-            path (Path): The path of the file.
-            extension (str): The file extension.
-            size (tuple[int,int]): The size of the thumbnail.
-            is_grid_thumb (bool): Whether the image will be used as a thumbnail in the file grid.
+            context (RendererContext): The renderer context.
         """
         bg_color: str = (
             "#1e1e1e"
@@ -44,8 +39,8 @@ class TextRenderer(BaseRenderer):
 
         try:
             # Read text file
-            encoding = detect_char_encoding(path)
-            with open(path, encoding=encoding) as text_file:
+            encoding = detect_char_encoding(context.path)
+            with open(context.path, encoding=encoding) as text_file:
                 text = text_file.read(256)
 
             rendered_image = Image.new("RGB", (256, 256), color=bg_color)
@@ -60,6 +55,6 @@ class TextRenderer(BaseRenderer):
             OSError,
             FileNotFoundError,
         ) as e:
-            logger.error("Couldn't render thumbnail", path=path, error=e)
+            logger.error("Couldn't render thumbnail", path=context.path, error=e)
 
         return None

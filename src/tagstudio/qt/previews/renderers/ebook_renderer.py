@@ -1,5 +1,4 @@
 from io import BytesIO
-from pathlib import Path
 from xml.etree import ElementTree
 from xml.etree.ElementTree import Element
 
@@ -12,7 +11,7 @@ from tagstudio.qt.helpers.file_wrappers.archive.rar_file import RarFile
 from tagstudio.qt.helpers.file_wrappers.archive.seven_zip_file import SevenZipFile
 from tagstudio.qt.helpers.file_wrappers.archive.tar_file import TarFile
 from tagstudio.qt.helpers.file_wrappers.archive.zip_file import ZipFile
-from tagstudio.qt.previews.renderers.base_renderer import BaseRenderer
+from tagstudio.qt.previews.renderers.base_renderer import BaseRenderer, RendererContext
 
 logger = structlog.get_logger(__name__)
 
@@ -22,14 +21,11 @@ class EBookRenderer(BaseRenderer):
         super().__init__()
 
     @staticmethod
-    def render(path: Path, extension: str, size: int, is_grid_thumb: bool) -> Image.Image | None:
+    def render(context: RendererContext) -> Image.Image | None:
         """Extracts the cover specified by ComicInfo.xml or first image found in the ePub file.
 
         Args:
-            path (Path): The path to the ePub file.
-            extension (str): The file extension.
-            size (tuple[int,int]): The size of the thumbnail.
-            is_grid_thumb (bool): Whether the image will be used as a thumbnail in the file grid.
+            context (RendererContext): The renderer context.
 
         Returns:
             Image: The cover specified in ComicInfo.xml,
@@ -37,15 +33,15 @@ class EBookRenderer(BaseRenderer):
         """
         try:
             archive: ArchiveFile | None = None
-            match extension:
+            match context.extension:
                 case ".cb7":
-                    archive = SevenZipFile(path, "r")
+                    archive = SevenZipFile(context.path, "r")
                 case ".cbr":
-                    archive = RarFile(path, "r")
+                    archive = RarFile(context.path, "r")
                 case ".cbt":
-                    archive = TarFile(path, "r")
+                    archive = TarFile(context.path, "r")
                 case _:
-                    archive = ZipFile(path, "r")
+                    archive = ZipFile(context.path, "r")
 
             rendered_image: Image.Image | None = None
 
@@ -72,7 +68,7 @@ class EBookRenderer(BaseRenderer):
 
             return rendered_image
         except Exception as e:
-            logger.error("[EBookRenderer] Couldn't render thumbnail", path=path, error=e)
+            logger.error("[EBookRenderer] Couldn't render thumbnail", path=context.path, error=e)
 
         return None
 

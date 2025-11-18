@@ -12,15 +12,12 @@ from copy import deepcopy
 from io import BytesIO
 from pathlib import Path
 from typing import TYPE_CHECKING
-from warnings import catch_warnings
 
 import cv2
 import numpy as np
 import pillow_avif  # noqa: F401 # pyright: ignore[reportUnusedImport]
 import rawpy
 import structlog
-from mutagen import flac, id3, mp4
-from mutagen._util import MutagenError
 from PIL import (
     Image,
     ImageChops,
@@ -57,10 +54,8 @@ from tagstudio.qt.helpers.gradients import four_corner_gradient
 from tagstudio.qt.helpers.image_effects import apply_overlay_color, replace_transparent_pixels
 from tagstudio.qt.models.palette import UI_COLORS, ColorType, UiColor
 from tagstudio.qt.previews.renderer_type import RendererType
+from tagstudio.qt.previews.renderers.base_renderer import RendererContext
 from tagstudio.qt.previews.vendored.blender_renderer import blend_thumb
-from tagstudio.qt.previews.vendored.pydub.audio_segment import (
-    _AudioSegment as AudioSegment,
-)
 from tagstudio.qt.resource_manager import ResourceManager
 
 if TYPE_CHECKING:
@@ -544,135 +539,6 @@ class ThumbRenderer(QObject):
             ImageEnhance.Brightness(im_sh.getchannel(3)).enhance(max(0, opacity - shade_reduction))
         )
         im.paste(im_sh, mask=im_sh.getchannel(3))
-
-        return im
-
-    @staticmethod
-    def _audio_album_thumb(filepath: Path, ext: str) -> Image.Image | None:
-        """Return an album cover thumb from an audio file if a cover is present.
-
-        Args:
-            filepath (Path): The path of the file.
-            ext (str): The file extension (with leading ".").
-        """
-        image: Image.Image | None = None
-        try:
-            if not filepath.is_file():
-                raise FileNotFoundError
-
-            artwork = None
-            if ext in [".mp3"]:
-                id3_tags: id3.ID3 = id3.ID3(filepath)
-                id3_covers: list = id3_tags.getall("APIC")
-                if id3_covers:
-                    artwork = Image.open(BytesIO(id3_covers[0].data))
-            elif ext in [".flac"]:
-                flac_tags: flac.FLAC = flac.FLAC(filepath)
-                flac_covers: list = flac_tags.pictures
-                if flac_covers:
-                    artwork = Image.open(BytesIO(flac_covers[0].data))
-            elif ext in [".mp4", ".m4a", ".aac"]:
-                mp4_tags: mp4.MP4 = mp4.MP4(filepath)
-                mp4_covers: list | None = mp4_tags.get("covr")  # pyright: ignore[reportAssignmentType]
-                if mp4_covers:
-                    artwork = Image.open(BytesIO(mp4_covers[0]))
-            if artwork:
-                image = artwork
-        except (
-            FileNotFoundError,
-            id3.ID3NoHeaderError,  # pyright: ignore[reportPrivateImportUsage]
-            mp4.MP4MetadataError,
-            mp4.MP4StreamInfoError,
-            MutagenError,
-        ) as e:
-            logger.error("Couldn't read album artwork", path=filepath, error=type(e).__name__)
-        return image
-
-    @staticmethod
-    def _audio_waveform_thumb(
-        filepath: Path, ext: str, size: int, pixel_ratio: float
-    ) -> Image.Image | None:
-        """Render a waveform image from an audio file.
-
-        Args:
-            filepath (Path): The path of the file.
-            ext (str): The file extension (with leading ".").
-            size (tuple[int,int]): The size of the thumbnail.
-            pixel_ratio (float): The screen pixel ratio.
-        """
-        # BASE_SCALE used for drawing on a larger image and resampling down
-        # to provide an antialiased effect.
-        base_scale: int = 2
-        samples_per_bar: int = 3
-        size_scaled: int = size * base_scale
-        allow_small_min: bool = False
-        im: Image.Image | None = None
-
-        try:
-            bar_count: int = min(math.floor((size // pixel_ratio) / 5), 64)
-            audio = AudioSegment.from_file(filepath, ext[1:])
-            data = np.frombuffer(buffer=audio._data, dtype=np.int16)
-            data_indices = np.linspace(1, len(data), num=bar_count * samples_per_bar)
-            bar_margin: float = ((size_scaled / (bar_count * 3)) * base_scale) / 2
-            line_width: float = ((size_scaled - bar_margin) / (bar_count * 3)) * base_scale
-            bar_height: float = (size_scaled) - (size_scaled // bar_margin)
-
-            count: int = 0
-            maximum_item: int = 0
-            max_array: list[int] = []
-            highest_line: int = 0
-
-            for i in range(-1, len(data_indices)):
-                d = data[math.ceil(data_indices[i]) - 1]
-                if count < samples_per_bar:
-                    count = count + 1
-                    with catch_warnings(record=True):
-                        if abs(d) > maximum_item:
-                            maximum_item = int(abs(d))
-                else:
-                    max_array.append(maximum_item)
-
-                    if maximum_item > highest_line:
-                        highest_line = maximum_item
-
-                    maximum_item = 0
-                    count = 1
-
-            line_ratio = max(highest_line / bar_height, 1)
-
-            im = Image.new("RGB", (size_scaled, size_scaled), color="#000000")
-            draw = ImageDraw.Draw(im)
-
-            current_x = bar_margin
-            for item in max_array:
-                item_height = item / line_ratio
-
-                # If small minimums are not allowed, raise all values
-                # smaller than the line width to the same value.
-                if not allow_small_min:
-                    item_height = max(item_height, line_width)
-
-                current_y = (bar_height - item_height + (size_scaled // bar_margin)) // 2
-
-                draw.rounded_rectangle(
-                    (
-                        current_x,
-                        current_y,
-                        (current_x + line_width),
-                        (current_y + item_height),
-                    ),
-                    radius=100 * base_scale,
-                    fill=("#FF0000"),
-                    outline=("#FFFF00"),
-                    width=max(math.ceil(line_width / 6), base_scale),
-                )
-
-                current_x = current_x + line_width + bar_margin
-
-            im.resize((size, size), Image.Resampling.BILINEAR)
-
-        except Exception as e:
-            logger.error("Couldn't render waveform", path=filepath.name, error=type(e).__name__)
 
         return im
 
@@ -1239,9 +1105,21 @@ class ThumbRenderer(QObject):
                 ext: str = _filepath.suffix.lower() if _filepath.suffix else _filepath.stem.lower()
 
                 renderer_type: RendererType | None = RendererType.get_renderer_type(ext)
-                logger.debug("[ThumbRenderer]", renderer_type=renderer_type)
+                renderer_context: RendererContext = RendererContext(
+                    path=_filepath,
+                    extension=ext,
+                    size=adj_size,
+                    pixel_ratio=pixel_ratio,
+                    is_grid_thumb=is_grid_thumb,
+                )
+
+                logger.debug(
+                    "[ThumbRenderer]",
+                    renderer_type=renderer_type,
+                    renderer_context=renderer_context,
+                )
                 if renderer_type:
-                    image = renderer_type.renderer.render(_filepath, ext, adj_size, is_grid_thumb)
+                    image = renderer_type.renderer.render(renderer_context)
 
                 # Images =======================================================
                 elif MediaCategories.is_ext_in_category(
@@ -1274,16 +1152,6 @@ class ThumbRenderer(QObject):
                 # Apple iWork Suite ============================================
                 elif MediaCategories.is_ext_in_category(ext, MediaCategories.IWORK_TYPES):
                     image = self._iwork_thumb(_filepath)
-                # Audio ========================================================
-                elif MediaCategories.is_ext_in_category(
-                    ext, MediaCategories.AUDIO_TYPES, mime_fallback=True
-                ):
-                    image = self._audio_album_thumb(_filepath, ext)
-                    if image is None:
-                        image = self._audio_waveform_thumb(_filepath, ext, adj_size, pixel_ratio)
-                        savable_media_type = False
-                        if image is not None:
-                            image = apply_overlay_color(image, UiColor.GREEN)
                 # Blender ======================================================
                 elif MediaCategories.is_ext_in_category(
                     ext, MediaCategories.BLENDER_TYPES, mime_fallback=True

@@ -1,11 +1,10 @@
 import zipfile
 from io import BytesIO
-from pathlib import Path
 
 import structlog
 from PIL import Image
 
-from tagstudio.qt.previews.renderers.base_renderer import BaseRenderer
+from tagstudio.qt.previews.renderers.base_renderer import BaseRenderer, RendererContext
 
 logger = structlog.get_logger(__name__)
 
@@ -17,17 +16,14 @@ class KritaRenderer(BaseRenderer):
         super().__init__()
 
     @staticmethod
-    def render(path: Path, extension: str, size: int, is_grid_thumb: bool) -> Image.Image | None:
+    def render(context: RendererContext) -> Image.Image | None:
         """Extract and render a thumbnail for a Krita file.
 
         Args:
-            path (Path): The path of the file.
-            extension (str): The file extension.
-            size (tuple[int,int]): The size of the thumbnail.
-            is_grid_thumb (bool): Whether the image will be used as a thumbnail in the file grid.
+            context (RendererContext): The renderer context.
         """
         try:
-            with zipfile.ZipFile(path, "r") as zip_file:
+            with zipfile.ZipFile(context.path, "r") as zip_file:
                 # Check if the file exists in the zip
                 if thumbnail_path_within_zip in zip_file.namelist():
                     # Read the specific file into memory
@@ -41,6 +37,6 @@ class KritaRenderer(BaseRenderer):
                 else:
                     raise FileNotFoundError
         except Exception as e:
-            logger.error("[KritaRenderer] Couldn't render thumbnail", path=path, error=e)
+            logger.error("[KritaRenderer] Couldn't render thumbnail", path=context.path, error=e)
 
         return None
