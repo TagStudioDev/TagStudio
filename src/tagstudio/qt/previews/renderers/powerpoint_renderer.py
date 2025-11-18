@@ -8,16 +8,16 @@ from tagstudio.qt.previews.renderers.base_renderer import BaseRenderer, Renderer
 
 logger = structlog.get_logger(__name__)
 
-thumbnail_path_within_zip: str = "preview.png"
+thumbnail_path_within_zip: str = "docProps/thumbnail.jpeg"
 
 
-class KritaRenderer(BaseRenderer):
+class PowerPointRenderer(BaseRenderer):
     def __init__(self):
         super().__init__()
 
     @staticmethod
     def render(context: RendererContext) -> Image.Image | None:
-        """Extract and render a thumbnail for a Krita file.
+        """Extract and render a thumbnail for a Microsoft PowerPoint file.
 
         Args:
             context (RendererContext): The renderer context.
@@ -38,6 +38,8 @@ class KritaRenderer(BaseRenderer):
                 else:
                     raise FileNotFoundError
         except Exception as e:
-            logger.error("[KritaRenderer] Couldn't render thumbnail", path=context.path, error=e)
+            logger.error(
+                "[PowerPointRenderer] Couldn't render thumbnail", path=context.path, error=e
+            )
 
         return None

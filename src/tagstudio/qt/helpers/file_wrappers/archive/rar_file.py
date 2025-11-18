@@ -1,5 +1,6 @@
 from pathlib import Path
-from typing import Literal
+from types import TracebackType
+from typing import Literal, Self
 
 import rarfile
 
@@ -12,6 +13,17 @@ class RarFile(ArchiveFile):
     def __init__(self, path: Path, mode: Literal["r"]) -> None:
         super().__init__(path, mode)
         self.__rar_file: rarfile.RarFile = rarfile.RarFile(path, mode)
+
+    def __enter__(self) -> Self:
+        return self
+
+    def __exit__(
+        self,
+        exception_type: type[BaseException] | None,
+        exception_value: BaseException | None,
+        exception_traceback: TracebackType | None,
+    ) -> None:
+        self.__rar_file.close()
 
     def get_name_list(self) -> list[str]:
         return self.__rar_file.namelist()

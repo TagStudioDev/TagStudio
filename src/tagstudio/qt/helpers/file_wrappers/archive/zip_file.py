@@ -1,6 +1,7 @@
 import zipfile
 from pathlib import Path
-from typing import Literal
+from types import TracebackType
+from typing import Literal, Self
 
 from tagstudio.qt.helpers.file_wrappers.archive.archive_file import ArchiveFile
 
@@ -11,6 +12,17 @@ class ZipFile(ArchiveFile):
     def __init__(self, path: Path, mode: Literal["r"]) -> None:
         super().__init__(path, mode)
         self.__zip_file: zipfile.ZipFile = zipfile.ZipFile(path, mode)
+
+    def __enter__(self) -> Self:
+        return self
+
+    def __exit__(
+        self,
+        exception_type: type[BaseException] | None,
+        exception_value: BaseException | None,
+        exception_traceback: TracebackType | None,
+    ) -> None:
+        self.__zip_file.close()
 
     def get_name_list(self) -> list[str]:
         return self.__zip_file.namelist()

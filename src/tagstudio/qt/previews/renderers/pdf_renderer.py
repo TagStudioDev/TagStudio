@@ -59,7 +59,7 @@ class PDFRenderer(BaseRenderer):
             buffer: QBuffer = QBuffer()
             buffer.open(QBuffer.OpenModeFlag.ReadWrite)
             try:
-                q_image.save(buffer, "PNG")  # type: ignore[unused-ignore] # pyright: ignore
+                q_image.save(buffer, "PNG")  # type: ignore[call-overload,unused-ignore] # pyright: ignore
                 rendered_thumbnail = Image.open(BytesIO(buffer.buffer().data()))
             finally:
                 buffer.close()

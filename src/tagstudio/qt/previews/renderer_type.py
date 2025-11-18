@@ -8,6 +8,7 @@ from tagstudio.qt.previews.renderers.ebook_renderer import EBookRenderer
 from tagstudio.qt.previews.renderers.font_renderer import FontRenderer
 from tagstudio.qt.previews.renderers.krita_renderer import KritaRenderer
 from tagstudio.qt.previews.renderers.pdf_renderer import PDFRenderer
+from tagstudio.qt.previews.renderers.powerpoint_renderer import PowerPointRenderer
 from tagstudio.qt.previews.renderers.text_renderer import TextRenderer
 from tagstudio.qt.previews.renderers.video_renderer import VideoRenderer
 from tagstudio.qt.previews.renderers.vtf_renderer import VTFRenderer
@@ -25,8 +26,9 @@ class RendererType(Enum):
     AUDIO = "audio", MediaCategories.AUDIO_TYPES, AudioRenderer
 
     # Document files
-    EBOOK = "ebook", MediaCategories.EBOOK_TYPES, EBookRenderer
+    POWERPOINT = "powerpoint", MediaCategories.POWERPOINT_TYPES, PowerPointRenderer
     PDF = "pdf", MediaCategories.PDF_TYPES, PDFRenderer
+    EBOOK = "ebook", MediaCategories.EBOOK_TYPES, EBookRenderer
 
     # Text files
     TEXT = "text", MediaCategories.PLAINTEXT_TYPES, TextRenderer
