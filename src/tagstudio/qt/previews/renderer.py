@@ -55,7 +55,6 @@ from tagstudio.qt.helpers.image_effects import apply_overlay_color, replace_tran
 from tagstudio.qt.models.palette import UI_COLORS, ColorType, UiColor
 from tagstudio.qt.previews.renderer_type import RendererType
 from tagstudio.qt.previews.renderers.base_renderer import RendererContext
-from tagstudio.qt.previews.vendored.blender_renderer import blend_thumb
 from tagstudio.qt.resource_manager import ResourceManager
 
 if TYPE_CHECKING:
@@ -540,41 +539,6 @@ class ThumbRenderer(QObject):
         )
         im.paste(im_sh, mask=im_sh.getchannel(3))
 
-        return im
-
-    @staticmethod
-    def _blender(filepath: Path) -> Image.Image | None:
-        """Get an emended thumbnail from a Blender file, if a thumbnail is present.
-
-        Args:
-            filepath (Path): The path of the file.
-        """
-        bg_color: str = (
-            "#1e1e1e"
-            if QGuiApplication.styleHints().colorScheme() is Qt.ColorScheme.Dark
-            else "#FFFFFF"
-        )
-        im: Image.Image | None = None
-        try:
-            blend_image = blend_thumb(str(filepath))
-
-            bg = Image.new("RGB", blend_image.size, color=bg_color)
-            bg.paste(blend_image, mask=blend_image.getchannel(3))
-            im = bg
-
-        except (
-            AttributeError,
-            UnidentifiedImageError,
-            TypeError,
-        ) as e:
-            if str(e) == "expected string or buffer":
-                logger.info(
-                    f"[ThumbRenderer][BLENDER][INFO] {filepath.name} "
-                    f"Doesn't have an embedded thumbnail. ({type(e).__name__})"
-                )
-
-            else:
-                logger.error("Couldn't render thumbnail", filepath=filepath, error=type(e).__name__)
         return im
 
     @staticmethod
@@ -1152,11 +1116,6 @@ class ThumbRenderer(QObject):
                 # Apple iWork Suite ============================================
                 elif MediaCategories.is_ext_in_category(ext, MediaCategories.IWORK_TYPES):
                     image = self._iwork_thumb(_filepath)
-                # Blender ======================================================
-                elif MediaCategories.is_ext_in_category(
-                    ext, MediaCategories.BLENDER_TYPES, mime_fallback=True
-                ):
-                    image = self._blender(_filepath)
                 # PDF ==========================================================
                 elif MediaCategories.is_ext_in_category(
                     ext, MediaCategories.PDF_TYPES, mime_fallback=True
