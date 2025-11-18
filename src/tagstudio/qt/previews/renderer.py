@@ -804,6 +804,8 @@ class ThumbRenderer(QObject):
                 logger.error(
                     "[ThumbRenderer] Couldn't render thumbnail", filepath=filepath, error=e
                 )
+            except NoRendererError:
+                pass
 
         return None
 
