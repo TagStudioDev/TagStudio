@@ -48,3 +48,20 @@ Tool is in development. Will allow for user-defined sorting of [fields](fields.m
 ### Folders to Tags
 
 Creates tags from the existing folder structure in the library, which are previewed in a hierarchy view for the user to confirm. A tag will be created for each folder and applied to all entries, with each subfolder being linked to the parent folder as a [parent tag](tags.md#parent-tags). Tags will initially be named after the folders, but can be fully edited and customized afterwards.
+
+### Paths to Fields
+
+Populates fields on entries based on their file paths. Users can define regular expressions to extract specific parts of the path, which can be referenced when adding a field.
+In addition, simple operations (`++` and `--`) can be applied on numberic fields. This allows 0-indexed fields to be converted to 1-indexed fields, and vise-a-versa.
+Example usage:
+: Say you have paths like
+: `TagStudioLibrary/artist-artistusername/series name/work title --- page 0.png`
+: We want to extract `artistusername`, `series name`, `work title`, and `0` (the page number).
+: To do this, we can define an expression to fully constrain our path. We *can* allow looser constraints, however if we do that we need to be more careful ensuring the preview matches our desired outcome. 
+: Here are some handy pieces: 
+: * `[^\.]+$` - This matches anything after the final `.` in the path. In other words, the file extension. Even if your path contains a `.`, this ensures the matching does not end early. `$` is an anchor to the end of the line. Similarly, `^` is the anchor to the start, so can be used in the begining. We need to escape `.` with a `\`, because `.` means "match any character once" in regex. `+` means "match this pattern one or more times".
+: * `\\` and `\/` - these match your directory (folder) seperators. Which you use can depend on your Operating System, so use of `[\\\/]` (which matches both) is encouraged. 
+: * `[^\\\/]+` - Similar to the previous, but this does the opposite. This matches as many characters as it can, before it runs into a folder seperator. This is helpful in ensureing that each field you capture is truly in the folder level you expect, and not because the name of an internal folder is similar to that of an external one. 
+: * `\d+` and `\s+` - These match one or more digit and one or more whitespace (like spaces and tabs), respectively. If you need to further constrain this, you can use `\s?` (match a space if its there, otherwise continue) or `\d{3,5}` (match 3 to 5 digits only)  to do so.
+: * `(?P<name_of_group>match_pattern)` - This is a named capture group. We can define `match_pattern` to match the field we want, and make `name_of_group` our field name. This allows us to use `$name_of_group` to reference the item. If these groups were unnamed, we would need to count the order in which they occur, and use their number (ie, the first item is `$1`).
+: Putting this together, we can make our regex capture: `artist-(?P<artist>[^\\\/]+)[\\\/](?P<series>[^\\\/]+)[\\\/](?P<title>.+) --- page\s?(?P<page>\d+)[^\.]+$`

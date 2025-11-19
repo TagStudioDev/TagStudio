@@ -966,6 +966,12 @@ class Library:
                 session.query(Entry).where(Entry.id.in_(sub_list)).delete()
             session.commit()
 
+    def entry_count(self) -> int:
+        """Return the total number of entries in the library."""
+        with Session(self.engine) as session:
+            count = session.scalar(select(func.count(Entry.id)))
+            return int(count or 0)
+
     def has_path_entry(self, path: Path) -> bool:
         """Check if item with given path is in library already."""
         with Session(self.engine) as session:

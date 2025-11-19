@@ -1,12 +1,17 @@
-
+# TODO list
+# UI bugs
+# - When preview loads, it extends below the apply button, likely because scrollbar isn't calculated
+# - Multi-line fields sometimes get cut off when adding/removing mappings so they show up as 1 line.
 from __future__ import annotations
 
 import re
-from collections.abc import Iterable
+from collections.abc import Callable, Iterable, Iterator
+from contextlib import suppress
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, QThreadPool
+from PySide6.QtGui import QTextOption
 from PySide6.QtWidgets import (
   QCheckBox,
   QComboBox,
@@ -17,6 +22,7 @@ from PySide6.QtWidgets import (
   QLineEdit,
   QMessageBox,
   QPlainTextEdit,
+  QProgressBar,
   QPushButton,
   QSizePolicy,
   QVBoxLayout,
@@ -29,6 +35,8 @@ from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.library.alchemy.models import Entry
 from tagstudio.core.utils.types import unwrap
 from tagstudio.qt.translations import Translations
+from tagstudio.qt.utils.custom_runnable import CustomRunnable
+from tagstudio.qt.utils.function_iterator import FunctionIterator
 
 if TYPE_CHECKING:
   from tagstudio.qt.ts_qt import QtDriver
@@ -67,6 +75,14 @@ class EntryFieldUpdate:
   path: str
   # list of (field_key, value) to preserve duplicates and order
   updates: list[tuple[str, str]] = field(default_factory=list)
+
+
+@dataclass
+class PreviewProgress:
+  index: int
+  total: int | None
+  path: str
+  update: EntryFieldUpdate | None
 
 
 PLACEHOLDER_RE = re.compile(
@@ -112,20 +128,19 @@ def _iter_entries(library: Library) -> Iterable[Entry]:
   # with_joins=True ensures we can inspect current fields when needed
   yield from library.all_entries(with_joins=True)
 
-def preview_paths_to_fields(
+def iter_preview_paths_to_fields(
   library: Library,
   rules: list[PathFieldRule],
   only_unset: bool = True,
-) -> list[EntryFieldUpdate]:
-  """Return a dry-run of field updates inferred from entry paths.
-
-  - Respects existing non-empty field values when only_unset=True.
-  - Supports multiple rules; first matching rule contributes its mapped fields.
-  """
+  *,
+  cancel_callback: Callable[[], bool] | None = None,
+) -> Iterator[PreviewProgress]:
   compiled = [(r, r.compile()) for r in rules]
-  results: list[EntryFieldUpdate] = []
+  try:
+    total = library.entry_count()
+  except Exception:
+    total = None
 
-  # Determine library root for relative matching
   base_path = None
   try:
     folder_obj = getattr(library, "folder", None)
@@ -134,8 +149,10 @@ def preview_paths_to_fields(
   except Exception:
     base_path = None
 
-  for entry in _iter_entries(library):
-    # Normalize path for cross-platform matching (use forward slashes), use relative if possible
+  for index, entry in enumerate(_iter_entries(library), start=1):
+    if cancel_callback and cancel_callback():
+      break
+
     try:
       if base_path is not None:
         rel = entry.path.relative_to(base_path)
@@ -145,7 +162,7 @@ def preview_paths_to_fields(
           entry.path.as_posix()
           if hasattr(entry.path, "as_posix")
           else str(entry.path).replace("\\", "/")
-        )  # ** TODO: move to helper
+        )
     except Exception:
       full_path = (
         entry.path.as_posix()
@@ -155,10 +172,6 @@ def preview_paths_to_fields(
 
     pending_list: list[tuple[str, str]] = []
 
-    # DEBUG: minimal trace for first entries (temporarily enabled to diagnose matching)
-    # print(f"[preview] full_path={full_path}")
-
-    # Precompute keys that should be skipped entirely when only_unset=True
     skip_keys: set[str] = set()
     if only_unset:
       for f in entry.fields:
@@ -180,9 +193,27 @@ def preview_paths_to_fields(
 
         pending_list.append((key, value))
 
+    update = None
     if pending_list:
-      results.append(EntryFieldUpdate(entry_id=entry.id, path=full_path, updates=pending_list))
+      update = EntryFieldUpdate(entry_id=entry.id, path=full_path, updates=pending_list)
 
+    yield PreviewProgress(index=index, total=total, path=full_path, update=update)
+
+
+def preview_paths_to_fields(
+  library: Library,
+  rules: list[PathFieldRule],
+  only_unset: bool = True,
+) -> list[EntryFieldUpdate]:
+  """Return a dry-run of field updates inferred from entry paths.
+
+  - Respects existing non-empty field values when only_unset=True.
+  - Supports multiple rules; first matching rule contributes its mapped fields.
+  """
+  results: list[EntryFieldUpdate] = []
+  for progress in iter_preview_paths_to_fields(library, rules, only_unset=only_unset):
+    if progress.update:
+      results.append(progress.update)
   return results
 
 
@@ -194,13 +225,15 @@ def apply_paths_to_fields(
   create_missing_field_types: bool = True,
   overwrite: bool = False,
   field_types: dict[str, FieldTypeEnum] | None = None,
+  allow_existing: bool = False,
 ) -> int:
   """Apply field updates to entries.
 
   - If a field key doesn't exist, optionally create a new ValueType.
   - If the field already exists on an entry:
     - Overwrite when overwrite=True
-    - Otherwise only fill when existing value is empty or None.
+    - Otherwise only fill when existing value is empty or None unless allow_existing=True,
+      in which case new values are appended without replacing existing ones.
 
   Returns the count of individual field updates applied.
   """
@@ -239,34 +272,64 @@ def apply_paths_to_fields(
         library.get_value_type(key)
 
       existing_fields = [f for f in entry.fields if f.type_key == key]
+      existing_values = [(f.value or "") for f in existing_fields]
+      # De-duplicate incoming values while preserving order
+      seen: set[str] = set()
+      dedup_values: list[str] = []
+      for v in values:
+        if v not in seen:
+          dedup_values.append(v)
+          seen.add(v)
+      values = dedup_values
 
       if overwrite:
         # Overwrite existing in order, then append any remaining values
         for i, val in enumerate(values):
           if i < len(existing_fields):
-            library.update_entry_field(entry.id, existing_fields[i], val)
-            applied += 1
+            # Only write if changing the value
+            if (existing_values[i] if i < len(existing_values) else "") != val:
+              library.update_entry_field(entry.id, existing_fields[i], val)
+              applied += 1
           else:
+            # Skip appending if exact duplicate already exists
+            if val in existing_values:
+              continue
             if library.add_field_to_entry(entry.id, field_id=key, value=val):
               applied += 1
         continue
 
-      # not overwrite: only fill when all existing are empty
-      # (prior behavior was 'any non-empty blocks')
-      if any((f.value or "") != "" for f in existing_fields):
+      if not allow_existing and any(val != "" for val in existing_values):
         continue
 
-      # Fill existing empties first, then append extra
-      idx = 0
+      # Fill empty slots first without disturbing existing populated values
+      remaining: list[str] = []
+      seen_existing = set(existing_values)
+      for val in values:
+        if val in seen_existing:
+          continue
+        if val not in remaining:
+          remaining.append(val)
+
       for f in existing_fields:
-        if idx >= len(values):
+        if not remaining:
           break
-        library.update_entry_field(entry.id, f, values[idx])
-        applied += 1
-        idx += 1
-      for j in range(idx, len(values)):
-        if library.add_field_to_entry(entry.id, field_id=key, value=values[j]):
+        current = f.value or ""
+        if current != "":
+          continue
+        next_val = remaining.pop(0)
+        if current != next_val:
+          library.update_entry_field(entry.id, f, next_val)
           applied += 1
+          existing_values.append(next_val)
+          seen_existing.add(next_val)
+
+      for val in remaining:
+        if val in seen_existing:
+          continue
+        if library.add_field_to_entry(entry.id, field_id=key, value=val):
+          applied += 1
+          seen_existing.add(val)
+          existing_values.append(val)
 
   return applied
 
@@ -344,6 +407,17 @@ class PathsToFieldsModal(QWidget):
     self.setWindowModality(Qt.WindowModality.ApplicationModal)
     self.setMinimumSize(720, 640)
 
+    self._preview_results: list[EntryFieldUpdate] = []
+    self._preview_running = False
+    self._apply_running = False
+    self._cancel_preview = False
+    self._preview_iterator: FunctionIterator | None = None
+    self._preview_runnable: CustomRunnable | None = None
+    self._apply_iterator: FunctionIterator | None = None
+    self._apply_runnable: CustomRunnable | None = None
+    self._progress_prefix = ""
+    self._progress_cancel_handler: Callable[[], None] | None = None
+
     root = QVBoxLayout(self)
     root.setContentsMargins(8, 8, 8, 8)
 
@@ -374,9 +448,11 @@ class PathsToFieldsModal(QWidget):
     pattern_label.setBuddy(self.pattern_edit)
 
     self.filename_only_cb = QCheckBox(Translations["paths_to_fields.use_filename_only"])
+    self.allow_existing_cb = QCheckBox(Translations["paths_to_fields.allow_existing"])
 
     form_layout.addRow(pattern_label, self.pattern_edit)
     form_layout.addRow(self.filename_only_cb)
+    form_layout.addRow(self.allow_existing_cb)
 
     # Ensure the form block doesn't vertically stretch on resize
     form.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed)
@@ -390,27 +466,59 @@ class PathsToFieldsModal(QWidget):
     # Keep mappings area height fixed to its contents
     map_container.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed)
 
-    add_map_btn = QPushButton(Translations["paths_to_fields.add_mapping"])
-    add_map_btn.clicked.connect(self._add_mapping_row)
+    self.add_map_btn = QPushButton(Translations["paths_to_fields.add_mapping"])
+    self.add_map_btn.clicked.connect(self._add_mapping_row)
 
     # Preview area
-    preview_btn = QPushButton(Translations["paths_to_fields.preview"])
-    preview_btn.clicked.connect(self._on_preview)
+    self.preview_btn = QPushButton(Translations["paths_to_fields.preview"])
+    self.preview_btn.clicked.connect(self._on_preview)
     self.preview_area = QPlainTextEdit()
     self.preview_area.setReadOnly(True)
     self.preview_area.setFrameShape(QFrame.Shape.StyledPanel)
     self.preview_area.setPlaceholderText(Translations["paths_to_fields.preview_empty"])
     self.preview_area.setMinimumHeight(200)
     self.preview_area.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+    self.preview_area.setWordWrapMode(QTextOption.WrapMode.WrapAtWordBoundaryOrAnywhere)
+
+    self.progress_container = QWidget()
+    self.progress_container.setVisible(False)
+    self.progress_container.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+    progress_layout = QVBoxLayout(self.progress_container)
+    progress_layout.setContentsMargins(0, 0, 0, 0)
+    progress_layout.setSpacing(4)
+
+    self.progress_label = QLabel()
+    self.progress_label.setWordWrap(True)
+    self.progress_label.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+
+    progress_bar_row = QHBoxLayout()
+    progress_bar_row.setContentsMargins(0, 0, 0, 0)
+    progress_bar_row.setSpacing(6)
+
+    self.progress_bar = QProgressBar()
+    self.progress_bar.setMinimumWidth(240)
+    self.progress_bar.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+    self.progress_bar.setTextVisible(False)
+
+    self.progress_cancel_btn = QPushButton(Translations["generic.cancel"])
+    self.progress_cancel_btn.setVisible(False)
+    self.progress_cancel_btn.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
+    self.progress_cancel_btn.clicked.connect(self._handle_progress_cancel)
+
+    progress_bar_row.addWidget(self.progress_bar)
+    progress_bar_row.addWidget(self.progress_cancel_btn)
+
+    progress_layout.addWidget(self.progress_label)
+    progress_layout.addLayout(progress_bar_row)
 
     # Apply
-    apply_btn = QPushButton(Translations["generic.apply_alt"])  # existing key
-    apply_btn.setMinimumWidth(100)
-    apply_btn.clicked.connect(self._on_apply)
+    self.apply_btn = QPushButton(Translations["generic.apply_alt"])  # existing key
+    self.apply_btn.setMinimumWidth(100)
+    self.apply_btn.clicked.connect(self._on_apply)
 
     # Ensure pressing Enter in editors doesn't trigger any default button
     # Explicitly disable default behaviors on buttons
-    for b in (preview_btn, apply_btn):
+    for b in (self.preview_btn, self.apply_btn):
       try:
         b.setAutoDefault(False)
         b.setDefault(False)
@@ -423,10 +531,11 @@ class PathsToFieldsModal(QWidget):
     root.addWidget(form)
     root.addWidget(map_label)
     root.addWidget(map_container)
-    root.addWidget(add_map_btn, alignment=Qt.AlignmentFlag.AlignLeft)
-    root.addWidget(preview_btn, alignment=Qt.AlignmentFlag.AlignLeft)
+    root.addWidget(self.add_map_btn, alignment=Qt.AlignmentFlag.AlignLeft)
+    root.addWidget(self.preview_btn, alignment=Qt.AlignmentFlag.AlignLeft)
+    root.addWidget(self.progress_container)
     root.addWidget(self.preview_area)
-    root.addWidget(apply_btn, alignment=Qt.AlignmentFlag.AlignCenter)
+    root.addWidget(self.apply_btn, alignment=Qt.AlignmentFlag.AlignCenter)
 
     # Make only the preview area consume extra vertical space on resize
     root.setStretchFactor(self.preview_area, 1)
@@ -488,27 +597,61 @@ class PathsToFieldsModal(QWidget):
     return [rule], f_types
 
   def _on_preview(self):
+    if self._preview_running or self._apply_running:
+      return
     r = self._collect_rules()
     if not r:
       return
     rules, _ = r
-    previews = preview_paths_to_fields(self.library, rules)
-    if not previews:
-      self.preview_area.setPlainText(Translations["paths_to_fields.msg.no_matches"])
-      return
-    lines: list[str] = []
-    for upd in previews:
-      lines.append(f"{upd.path}")
-      for k, v in upd.updates:
-        lines.append(f"  - {k}: {v}")
-    self.preview_area.setPlainText("\n".join(lines))
+    self.preview_area.clear()
+    self._preview_results = []
+
+    try:
+      total = self.library.entry_count()
+    except Exception:
+      total = None
+
+    self._cancel_preview = False
+    self._preview_running = True
+    self._set_controls_enabled(enabled=False)
+
+    self._start_progress(
+      label=Translations["paths_to_fields.preview"],
+      total=total,
+      cancel_handler=self._request_preview_cancel,
+    )
+
+    def generator():
+      return iter_preview_paths_to_fields(
+        self.library,
+        rules,
+        only_unset=False,
+        cancel_callback=lambda: self._cancel_preview,
+      )
+
+    iterator = FunctionIterator(generator)
+    iterator.value.connect(self._handle_preview_progress)
+
+    runnable = CustomRunnable(iterator.run)
+    runnable.done.connect(self._finalize_preview)
+
+    self._preview_iterator = iterator
+    self._preview_runnable = runnable
+    QThreadPool.globalInstance().start(runnable)
 
   def _on_apply(self):
+    if self._preview_running or self._apply_running:
+      return
     r = self._collect_rules()
     if not r:
       return
     rules, f_types = r
-    previews = preview_paths_to_fields(self.library, rules)
+    allow_existing = self.allow_existing_cb.isChecked()
+    previews = preview_paths_to_fields(
+      self.library,
+      rules,
+      only_unset=not allow_existing,
+    )
     if not previews:
       msg_box = QMessageBox()
       msg_box.setIcon(QMessageBox.Icon.Information)
@@ -517,12 +660,201 @@ class PathsToFieldsModal(QWidget):
       msg_box.addButton(Translations["generic.close"], QMessageBox.ButtonRole.AcceptRole)
       msg_box.exec_()
       return
-    apply_paths_to_fields(
-      self.library,
-      previews,
-      create_missing_field_types=True,
-      field_types=f_types,
+
+    total = len(previews)
+    self._apply_running = True
+    self._set_controls_enabled(enabled=False)
+    self._start_progress(
+      label=Translations["paths_to_fields.progress.label.initial"],
+      total=total,
+      cancel_handler=None,
     )
+
+    def generator():
+      return self._iter_apply_updates(previews, f_types, allow_existing)
+
+    iterator = FunctionIterator(generator)
+    iterator.value.connect(self._handle_apply_progress)
+
+    runnable = CustomRunnable(iterator.run)
+    runnable.done.connect(self._finalize_apply)
+
+    self._apply_iterator = iterator
+    self._apply_runnable = runnable
+    QThreadPool.globalInstance().start(runnable)
+
+  def _iter_apply_updates(
+    self,
+    previews: list[EntryFieldUpdate],
+    field_types: dict[str, FieldTypeEnum],
+    allow_existing: bool,
+  ) -> Iterator[PreviewProgress]:
+    try:
+      from tagstudio.core.library.alchemy import library as _libmod  # local import
+    except Exception:
+      _libmod = None
+
+    class _NoInfoLogger:
+      def __init__(self, base):
+        self._base = base
+
+      def info(self, *_, **__):  # suppress info noise during bulk apply
+        return None
+
+      def debug(self, *_, **__):
+        return None
+
+      def warning(self, *args, **kwargs):
+        return self._base.warning(*args, **kwargs)
+
+      def error(self, *args, **kwargs):
+        return self._base.error(*args, **kwargs)
+
+      def exception(self, *args, **kwargs):
+        return self._base.exception(*args, **kwargs)
+
+      def __getattr__(self, name):
+        return getattr(self._base, name)
+
+    _saved_logger = None
+    if _libmod is not None and hasattr(_libmod, "logger"):
+      _saved_logger = _libmod.logger
+      _libmod.logger = _NoInfoLogger(_saved_logger)
+
+    total = len(previews)
+    try:
+      for index, upd in enumerate(previews, start=1):
+        apply_paths_to_fields(
+          self.library,
+          [upd],
+          create_missing_field_types=True,
+          field_types=field_types,
+          allow_existing=allow_existing,
+        )
+        yield PreviewProgress(index=index, total=total, path=upd.path, update=upd)
+    finally:
+      if _saved_logger is not None and _libmod is not None:
+        _libmod.logger = _saved_logger
+
+  def _append_preview_update(self, upd: EntryFieldUpdate) -> None:
+    lines = [upd.path]
+    entry = unwrap(self.library.get_entry_full(upd.entry_id))
+    for key, value in upd.updates:
+      existing_vals = [f.value or "" for f in entry.fields if f.type_key == key]
+      allow_existing = self.allow_existing_cb.isChecked()
+      # Flag duplicates before generic already_set so we only warn for actual conflicts
+      if value in existing_vals and value != "":
+        marker = Translations["paths_to_fields.preview.markers.duplicate"]
+      else:
+        already_set = any(val != "" for val in existing_vals)
+        marker = (
+          Translations["paths_to_fields.preview.markers.already_set"]
+          if already_set and not allow_existing
+          else None
+        )
+      prefix = f"⚠ {marker} — " if marker else ""
+      lines.append(f"  - {prefix}{key}: {value}")
+    self.preview_area.appendPlainText("\n".join(lines))
+    self.preview_area.ensureCursorVisible()
+
+  def _handle_preview_progress(self, progress: PreviewProgress) -> None:
+    self._update_progress(progress)
+    if progress.update:
+      self._preview_results.append(progress.update)
+      self._append_preview_update(progress.update)
+
+  def _handle_apply_progress(self, progress: PreviewProgress) -> None:
+    self._update_progress(progress)
+
+  def _update_progress(self, progress: PreviewProgress) -> None:
+    total = progress.total or 0
+    if total > 0:
+      self.progress_bar.setRange(0, total)
+      self.progress_bar.setValue(min(progress.index, total))
+    else:
+      self.progress_bar.setRange(0, 0)
+
+    lines: list[str] = []
+    if self._progress_prefix:
+      lines.append(self._progress_prefix)
+    if progress.total:
+      lines.append(f"{progress.index}/{progress.total}")
+    else:
+      lines.append(str(progress.index))
+    if progress.path:
+      lines.append(progress.path)
+    self.progress_label.setText("\n".join(filter(None, lines)))
+
+  def _start_progress(
+    self,
+    *,
+    label: str,
+    total: int | None,
+    cancel_handler: Callable[[], None] | None,
+  ) -> None:
+    self._progress_prefix = label
+    self.progress_label.setText(label)
+    self.progress_container.setVisible(True)
+    if total and total > 0:
+      self.progress_bar.setRange(0, total)
+      self.progress_bar.setValue(0)
+    else:
+      self.progress_bar.setRange(0, 0)
+    self._set_cancel_handler(cancel_handler)
+
+  def _finish_progress(self) -> None:
+    self.progress_container.setVisible(False)
+    self.progress_label.clear()
+    self.progress_bar.setValue(0)
+    self._progress_prefix = ""
+    self._set_cancel_handler(None)
+
+  def _set_cancel_handler(self, handler: Callable[[], None] | None) -> None:
+    self._progress_cancel_handler = handler
+    has_handler = handler is not None
+    self.progress_cancel_btn.setVisible(has_handler)
+    self.progress_cancel_btn.setEnabled(has_handler)
+
+  def _handle_progress_cancel(self) -> None:
+    if self._progress_cancel_handler:
+      self.progress_cancel_btn.setEnabled(False)
+      self._progress_cancel_handler()
+
+  def _request_preview_cancel(self) -> None:
+    self._cancel_preview = True
+
+  def _finalize_preview(self) -> None:
+    cancelled = self._cancel_preview
+    self._preview_running = False
+    self._cancel_preview = False
+    self._preview_iterator = None
+    self._preview_runnable = None
+    self._finish_progress()
+    self._set_controls_enabled(enabled=True)
+    if not self._preview_results and not cancelled:
+      self.preview_area.setPlainText(Translations["paths_to_fields.msg.no_matches"])
+
+  def _finalize_apply(self) -> None:
+    self._apply_running = False
+    self._apply_iterator = None
+    self._apply_runnable = None
+    self._finish_progress()
+    self._set_controls_enabled(enabled=True)
     self.close()
-    # refresh selection/preview pane like other macros
-    self.driver.main_window.preview_panel.set_selection(self.driver.selected, update_preview=False)
+    with suppress(Exception):
+      self.driver.main_window.preview_panel.set_selection(
+        self.driver.selected,
+        update_preview=False,
+      )
+
+  def _set_controls_enabled(self, *, enabled: bool) -> None:
+    self.preview_btn.setEnabled(enabled)
+    self.apply_btn.setEnabled(enabled)
+    self.add_map_btn.setEnabled(enabled)
+    self.pattern_edit.setEnabled(enabled)
+    self.filename_only_cb.setEnabled(enabled)
+    self.allow_existing_cb.setEnabled(enabled)
+    for i in range(self.map_v.count()):
+      widget = self.map_v.itemAt(i).widget()
+      if isinstance(widget, _MappingRow):
+        widget.setEnabled(enabled)

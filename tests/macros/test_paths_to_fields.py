@@ -11,6 +11,7 @@ from tagstudio.core.utils.types import unwrap
 from tagstudio.qt.mixed.paths_to_fields import (
     PathFieldRule,
     apply_paths_to_fields,
+    iter_preview_paths_to_fields,
     preview_paths_to_fields,
 )
 
@@ -114,3 +115,97 @@ def test_paths_to_fields_allows_duplicate_fields(library: Library):
     e = unwrap(library.get_entry_full(eid))
     comment_values = [f.value or "" for f in e.fields if f.type_key == FieldID.COMMENTS.name]
     assert sorted(comment_values) == ["bar", "foo"]
+
+
+def test_apply_paths_to_fields_allow_existing_appends(library: Library):
+    folder = unwrap(library.folder)
+
+    entry = Entry(folder=folder, path=Path("existing/NewSeries-extra.jpg"), fields=[])
+    [eid] = library.add_entries([entry])
+    assert library.add_field_to_entry(eid, field_id=FieldID.SERIES.name, value="Existing Series")
+
+    rule = PathFieldRule(
+        pattern=r"^existing/(?P<series>[^-]+)-(?P<suffix>[^.]+)\.[^.]+$",
+        fields=[(FieldID.SERIES.name, "$series")],
+    )
+
+    preview = preview_paths_to_fields(library, [rule], only_unset=False)
+    assert preview, "Expected preview to include updates even when field already set"
+
+    applied_without = apply_paths_to_fields(
+        library,
+        preview,
+        create_missing_field_types=True,
+        allow_existing=False,
+    )
+    assert applied_without == 0
+    entry_state = unwrap(library.get_entry_full(eid))
+    values = [f.value or "" for f in entry_state.fields if f.type_key == FieldID.SERIES.name]
+    assert values == ["Existing Series"]
+
+    preview = preview_paths_to_fields(library, [rule], only_unset=False)
+    applied_with = apply_paths_to_fields(
+        library,
+        preview,
+        create_missing_field_types=True,
+        allow_existing=True,
+    )
+    assert applied_with == 1
+    entry_state = unwrap(library.get_entry_full(eid))
+    values = [f.value or "" for f in entry_state.fields if f.type_key == FieldID.SERIES.name]
+    assert sorted(values) == ["Existing Series", "NewSeries"]
+
+
+def test_iter_preview_paths_to_fields_reports_progress(library: Library):
+    folder = unwrap(library.folder)
+
+    entries = [
+        Entry(folder=folder, path=Path("progress/alpha_01.jpg"), fields=[]),
+        Entry(folder=folder, path=Path("progress/beta_02.jpg"), fields=[]),
+    ]
+    library.add_entries(entries)
+
+    rule = PathFieldRule(
+        pattern=r"^progress/(?P<name>[^_]+)_(?P<page>\d+)\.[^.]+$",
+        fields=[
+            (FieldID.SERIES.name, "$name"),
+            ("page_number", "$page"),
+        ],
+    )
+
+    events = list(iter_preview_paths_to_fields(library, [rule], only_unset=False))
+    assert events, "Expected progress events to be emitted"
+
+    totals = {evt.total for evt in events if evt.total is not None}
+    assert totals == {library.entry_count()}
+    assert any(evt.update is not None for evt in events)
+
+
+def test_iter_preview_paths_to_fields_stop(library: Library):
+    folder = unwrap(library.folder)
+
+    entries = [
+        Entry(folder=folder, path=Path("stop/foo_01.jpg"), fields=[]),
+        Entry(folder=folder, path=Path("stop/bar_02.jpg"), fields=[]),
+    ]
+    library.add_entries(entries)
+
+    rule = PathFieldRule(
+        pattern=r"^stop/(?P<stem>[^_]+)_(?P<page>\d+)\.[^.]+$",
+        fields=[(FieldID.SERIES.name, "$stem")],
+    )
+
+    seen: list[int] = []
+
+    def should_cancel() -> bool:
+        return len(seen) >= 1
+
+    for evt in iter_preview_paths_to_fields(
+        library,
+        [rule],
+        only_unset=False,
+        cancel_callback=should_cancel,
+    ):
+        seen.append(evt.index)
+
+    assert seen == [1]
