@@ -32,6 +32,7 @@ dependencies = [
     "SQLAlchemy~=2.0",
     "srctools~=2.6",
     "structlog~=25.3",
+    "superqt>=0.7.6",
     "toml~=0.10",
     "typing_extensions~=4.13",
     "ujson~=5.10",

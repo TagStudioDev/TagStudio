@@ -13,6 +13,9 @@ from PySide6.QtWidgets import QHBoxLayout, QLabel, QPushButton, QStackedLayout, 
 
 from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.media_types import MediaType
+from tagstudio.qt.controllers.preview_panel.thumbnail.text_display_controller import (
+    TextDisplayController,
+)
 from tagstudio.qt.mixed.file_attributes import FileAttributeData
 from tagstudio.qt.mixed.media_player import MediaPlayer
 from tagstudio.qt.platform_strings import open_file_str, trash_term
@@ -98,6 +101,11 @@ class PreviewThumbView(QWidget):
         self.__media_player_page = QWidget()
         self.__stacked_page_setup(self.__media_player_page, self.__media_player)
 
+        self.__text_display = TextDisplayController()
+
+        self.__preview_text_page = QWidget()
+        self.__stacked_page_setup(self.__preview_text_page, self.__text_display)
+
         self.__thumb_renderer = ThumbRenderer(driver)
         self.__thumb_renderer.updated.connect(self.__thumb_renderer_updated_callback)
         self.__thumb_renderer.updated_ratio.connect(self.__thumb_renderer_updated_ratio_callback)
@@ -105,6 +113,7 @@ class PreviewThumbView(QWidget):
         self.__image_layout.addWidget(self.__preview_img_page)
         self.__image_layout.addWidget(self.__preview_gif_page)
         self.__image_layout.addWidget(self.__media_player_page)
+        self.__image_layout.addWidget(self.__preview_text_page)
 
         self.setMinimumSize(*self.__img_button_size)
 
@@ -174,6 +183,9 @@ class PreviewThumbView(QWidget):
         self.__media_player.setMaximumSize(adj_size)
         self.__media_player.setMinimumSize(adj_size)
 
+        self.__text_display.setMaximumSize(size[0], size[1])
+        self.__text_display.setMinimumSize(size[0], size[1])
+
         proxy_style = RoundedPixmapStyle(radius=8)
         self.__preview_gif.setStyle(proxy_style)
         self.__media_player.setStyle(proxy_style)
@@ -205,6 +217,12 @@ class PreviewThumbView(QWidget):
                 self.__preview_gif.movie().stop()
                 self.__gif_buffer.close()
             self.__preview_gif.hide()
+
+        if preview == MediaType.PLAINTEXT:
+            self.__text_display.show()
+            self.__image_layout.setCurrentWidget(self.__preview_text_page)
+        else:
+            self.__text_display.hide()
 
     def __render_thumb(self, filepath: Path) -> None:
         self.__filepath = filepath
@@ -292,6 +310,10 @@ class PreviewThumbView(QWidget):
         """Renders the given file as an image, no matter its media type."""
         self.__switch_preview(MediaType.IMAGE)
         self.__render_thumb(filepath)
+
+    def _display_text(self, filepath: Path):
+        self.__text_display.set_file(filepath)
+        self.__switch_preview(MediaType.PLAINTEXT)
 
     def hide_preview(self) -> None:
         """Completely hide the file preview."""
