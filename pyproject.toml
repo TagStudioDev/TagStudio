@@ -35,6 +35,7 @@ dependencies = [
     "ujson~=5.10",
     "wcmatch==10.*",
     "requests~=2.31.0",
+    "semver~=3.0.4",
 ]
 
 [project.optional-dependencies]

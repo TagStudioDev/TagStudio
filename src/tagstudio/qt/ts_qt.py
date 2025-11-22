@@ -576,7 +576,7 @@ class QtDriver(DriverMixin, QObject):
         )
 
         self.init_library_window()
-        self.migration_modal: JsonMigrationModal = None
+        self.migration_modal: JsonMigrationModal | None = None
 
         path_result = self.evaluate_path(str(self.args.open).lstrip().rstrip())
         if path_result.success and path_result.library_path:
@@ -1086,8 +1086,8 @@ class QtDriver(DriverMixin, QObject):
 
     def run_macro(self, name: MacroID, entry_id: int):
         """Run a specific Macro on an Entry given a Macro name."""
-        entry: Entry = self.lib.get_entry(entry_id)
-        full_path = self.lib.library_dir / entry.path
+        entry: Entry = unwrap(self.lib.get_entry(entry_id))
+        full_path = unwrap(self.lib.library_dir) / entry.path
         source = "" if entry.path.parent == Path(".") else entry.path.parts[0].lower()
 
         logger.info(

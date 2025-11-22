@@ -2,9 +2,7 @@
 # Licensed under the GPL-3.0 License.
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
-import re
-
-from tagstudio.core.utils.types import unwrap
+import semver
 
 
 def strip_punctuation(string: str) -> str:
@@ -38,23 +36,16 @@ def strip_web_protocol(string: str) -> str:
     return string
 
 
-def is_version_outdated(current, latest) -> bool:
-    regex = re.compile(r"^(\d+)\.(\d+)\.(\d+)(-\w+)?$")
-    mcurrent = unwrap(regex.match(current))
-    mlatest = unwrap(regex.match(latest))
+def is_version_outdated(current: str, latest: str) -> bool:
+    vcur = semver.Version.parse(current)
+    vlat = semver.Version.parse(latest)
+    assert vlat.prerelease is None and vlat.build is None
 
-    return (
-        int(mlatest[1]) > int(mcurrent[1])
-        or (mlatest[1] == mcurrent[1] and int(mlatest[2]) > int(mcurrent[2]))
-        or (
-            mlatest[1] == mcurrent[1]
-            and mlatest[2] == mcurrent[2]
-            and int(mlatest[3]) > int(mcurrent[3])
-        )
-        or (
-            mlatest[1] == mcurrent[1]
-            and mlatest[2] == mcurrent[2]
-            and mlatest[3] == mcurrent[3]
-            and (mlatest[4] is None and mcurrent[4] is not None)
-        )
-    )
+    if vcur.major != vlat.major:
+        return vcur.major < vlat.major
+    elif vcur.minor != vlat.minor:
+        return vcur.minor < vlat.minor
+    elif vcur.patch != vlat.patch:
+        return vcur.patch < vlat.patch
+    else:
+        return vcur.prerelease is not None or vcur.build is not None
