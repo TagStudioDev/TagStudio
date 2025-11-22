@@ -4,7 +4,8 @@
 ^^^ Summarize the changes done and why they were done above.
 
 By submitting this pull request, you certify that you have read the
-[CONTRIBUTING.md](https://github.com/TagStudioDev/TagStudio/blob/main/CONTRIBUTING.md).
+[Contributing](https://docs.tagstud.io/contributing) page on our documentation site,
+or in the project's [CONTRIBUTING.md](https://github.com/TagStudioDev/TagStudio/blob/main/docs/contributing.md) file.
 
 IMPORTANT FOR FEATURES: Please verify that a feature request or some other form
 of communication with maintainers was already conducted in terms of approving.
