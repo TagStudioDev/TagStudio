@@ -349,7 +349,7 @@
     "trash.name.generic": "Trash",
     "trash.name.windows": "Recycle Bin",
     "version_modal.title": "TagStudio Update Available",
-    "version_modal.description": "A new version of TagStudio is available! You can download the latest release from <a href=\"https://github.com/TagStudioDev/TagStudio\">Github</a>.",
+    "version_modal.description": "A new version of TagStudio is available! You can download the latest release from <a href=\"https://github.com/TagStudioDev/TagStudio/releases/latest\">Github</a>.",
     "version_modal.status": "Installed Version: {installed_version}<br>Latest Release Version: {latest_release_version}",
     "view.size.0": "Mini",
     "view.size.1": "Small",
