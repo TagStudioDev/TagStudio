@@ -370,7 +370,7 @@ class QtDriver(DriverMixin, QObject):
         self.add_tag_modal.tsp.set_driver(self)
         self.add_tag_modal.tsp.tag_chosen.connect(
             lambda t, s=self.selected: (
-                self.add_tags_to_selected_callback(t),
+                self.add_tags_to_selected_callback([t]),
                 self.main_window.preview_panel.set_selection(s),
             )
         )
@@ -848,7 +848,7 @@ class QtDriver(DriverMixin, QObject):
         self.main_window.preview_panel.set_selection(self.selected)
 
     def add_tags_to_selected_callback(self, tag_ids: list[int]):
-        selected = self.selected
+        selected: list[int] = self.selected
         self.main_window.thumb_layout.add_tags(selected, tag_ids)
         self.lib.add_tags_to_entries(selected, tag_ids)
 
