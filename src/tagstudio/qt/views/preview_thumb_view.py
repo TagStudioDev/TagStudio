@@ -101,7 +101,7 @@ class PreviewThumbView(QWidget):
         self.__media_player_page = QWidget()
         self.__stacked_page_setup(self.__media_player_page, self.__media_player)
 
-        self.__text_display = TextDisplayController()
+        self.__text_display = TextDisplayController(driver)
 
         self.__preview_text_page = QWidget()
         self.__stacked_page_setup(self.__preview_text_page, self.__text_display)
