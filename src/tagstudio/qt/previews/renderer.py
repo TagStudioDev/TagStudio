@@ -19,7 +19,6 @@ from xml.etree.ElementTree import Element
 
 import cv2
 import numpy as np
-import pillow_avif  # noqa: F401 # pyright: ignore[reportUnusedImport]
 import py7zr
 import py7zr.io
 import rarfile
