@@ -6,7 +6,7 @@
   qt6,
   ripgrep,
   stdenv,
-  wrapGAppsHook,
+  wrapGAppsHook3,
 
   pillow-jxl-plugin,
 
@@ -30,7 +30,7 @@ python3Packages.buildPythonApplication {
     # Should be unnecessary once PR is pulled.
     # PR: https://github.com/NixOS/nixpkgs/pull/271037
     # Issue: https://github.com/NixOS/nixpkgs/issues/149812
-    wrapGAppsHook
+    wrapGAppsHook3
   ];
   buildInputs = [
     qt6.qtbase
