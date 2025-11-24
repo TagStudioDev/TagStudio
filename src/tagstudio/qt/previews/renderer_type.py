@@ -1,3 +1,4 @@
+from collections.abc import Iterator
 from enum import Enum
 
 from tagstudio.core.media_types import MediaCategories
@@ -67,11 +68,9 @@ class RendererType(Enum):
         self.is_savable_media_type = is_savable_media_type
 
     @staticmethod
-    def get_renderer_type(file_extension: str) -> "RendererType | None":
+    def get_renderer_types(file_extension: str) -> Iterator["RendererType"]:
         for renderer_type in RendererType.__members__.values():
             if MediaCategories.is_ext_in_category(
                 file_extension, renderer_type.media_category, mime_fallback=True
             ):
-                return renderer_type
-
-        return None
+                yield renderer_type
