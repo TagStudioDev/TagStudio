@@ -30,3 +30,5 @@ class TextDisplayController(TextDisplayView):
             self.setText(content)
         except ValueError:
             logger.warn(f"[TextDisplayController] Couldn't find lexer for `{language}`")
+        except FileNotFoundError:
+            logger.error(f"[TextDisplayController] Couldn't find file {path}")
