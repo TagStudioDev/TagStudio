@@ -304,6 +304,7 @@ class TagSearchPanel(PanelWidget):
             tag_widget.on_edit.disconnect()
             tag_widget.on_remove.disconnect()
             tag_widget.bg_button.clicked.disconnect()
+            tag_widget.search_for_tag_action.triggered.disconnect()
 
         tag_id = tag.id
         tag_widget.on_edit.connect(lambda t=tag: self.edit_tag(t))

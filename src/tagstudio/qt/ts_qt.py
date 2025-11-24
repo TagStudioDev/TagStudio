@@ -177,6 +177,9 @@ class QtDriver(DriverMixin, QObject):
 
     SIGTERM = Signal()
 
+    favorite_updated = Signal(bool)
+    archived_updated = Signal(bool)
+
     tag_manager_panel: PanelModal | None = None
     color_manager_panel: TagColorManager | None = None
     ignore_modal: PanelModal | None = None
@@ -357,8 +360,9 @@ class QtDriver(DriverMixin, QObject):
         self.tag_manager_panel = PanelModal(
             widget=TagDatabasePanel(self, self.lib),
             title=Translations["tag_manager.title"],
-            done_callback=lambda checked=False,
-            s=self.selected: self.main_window.preview_panel.set_selection(s, update_preview=False),
+            done_callback=lambda checked=False: (
+                self.main_window.preview_panel.set_selection(self.selected, update_preview=False)
+            ),
             has_save=False,
         )
 
@@ -369,9 +373,9 @@ class QtDriver(DriverMixin, QObject):
         self.add_tag_modal = TagSearchModal(self.lib, is_tag_chooser=True)
         self.add_tag_modal.tsp.set_driver(self)
         self.add_tag_modal.tsp.tag_chosen.connect(
-            lambda t, s=self.selected: (
-                self.add_tags_to_selected_callback(t),
-                self.main_window.preview_panel.set_selection(s),
+            lambda chosen_tag: (
+                self.add_tags_to_selected_callback([chosen_tag]),
+                self.main_window.preview_panel.set_selection(self.selected),
             )
         )
 
@@ -559,12 +563,12 @@ class QtDriver(DriverMixin, QObject):
 
         self.main_window.search_field.textChanged.connect(self.update_completions_list)
 
-        self.main_window.preview_panel.field_containers_widget.archived_updated.connect(
+        self.archived_updated.connect(
             lambda hidden: self.update_badges(
                 {BadgeType.ARCHIVED: hidden}, origin_id=0, add_tags=False
             )
         )
-        self.main_window.preview_panel.field_containers_widget.favorite_updated.connect(
+        self.favorite_updated.connect(
             lambda hidden: self.update_badges(
                 {BadgeType.FAVORITE: hidden}, origin_id=0, add_tags=False
             )
@@ -800,6 +804,19 @@ class QtDriver(DriverMixin, QObject):
             )
         )
 
+    def emit_badge_signals(self, tag_ids: list[int] | set[int], emit_on_absent: bool = True):
+        """Emit any connected signals for updating badge icons."""
+        logger.info("[emit_badge_signals] Emitting", tag_ids=tag_ids, emit_on_absent=emit_on_absent)
+        if TAG_ARCHIVED in tag_ids:
+            self.archived_updated.emit(True)  # noqa: FBT003
+        elif emit_on_absent:
+            self.archived_updated.emit(False)  # noqa: FBT003
+
+        if TAG_FAVORITE in tag_ids:
+            self.favorite_updated.emit(True)  # noqa: FBT003
+        elif emit_on_absent:
+            self.favorite_updated.emit(False)  # noqa: FBT003
+
     def add_tag_action_callback(self):
         panel = BuildTagPanel(self.lib)
         self.modal = PanelModal(
@@ -848,9 +865,10 @@ class QtDriver(DriverMixin, QObject):
         self.main_window.preview_panel.set_selection(self.selected)
 
     def add_tags_to_selected_callback(self, tag_ids: list[int]):
-        selected = self.selected
+        selected: list[int] = self.selected
         self.main_window.thumb_layout.add_tags(selected, tag_ids)
         self.lib.add_tags_to_entries(selected, tag_ids)
+        self.emit_badge_signals(tag_ids)
 
     def delete_files_callback(self, origin_path: str | Path, origin_id: int | None = None):
         """Callback to send on or more files to the system trash.
