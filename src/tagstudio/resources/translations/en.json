@@ -254,6 +254,8 @@
     "select.all": "Select All",
     "select.clear": "Clear Selection",
     "select.inverse": "Invert Selection",
+    "select.undo": "Undo Selection",
+    "select.redo": "Redo Selection",
     "settings.clear_thumb_cache.title": "Clear Thumbnail Cache",
     "settings.dateformat.english": "English",
     "settings.dateformat.international": "International",
