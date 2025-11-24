@@ -59,7 +59,6 @@ class PreviewThumb(PreviewThumbView):
             try:
                 exr_file = OpenEXR.File(str(filepath))
                 part = exr_file.parts[0]
-                logger.debug("[PreviewThumb]", part=part)
                 stats.width = part.width()
                 stats.height = part.height()
             except Exception:
@@ -79,7 +78,6 @@ class PreviewThumb(PreviewThumbView):
         elif MediaCategories.IMAGE_VECTOR_TYPES.contains(ext, mime_fallback=True):
             pass  # TODO
 
-        logger.debug("[PreviewThumb]", stats=stats)
         return stats
 
     def __get_gif_data(self, filepath: Path) -> tuple[bytes, tuple[int, int]] | None:
