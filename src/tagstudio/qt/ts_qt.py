@@ -357,8 +357,9 @@ class QtDriver(DriverMixin, QObject):
         self.tag_manager_panel = PanelModal(
             widget=TagDatabasePanel(self, self.lib),
             title=Translations["tag_manager.title"],
-            done_callback=lambda checked=False,
-            s=self.selected: self.main_window.preview_panel.set_selection(s, update_preview=False),
+            done_callback=lambda checked=False: (
+                self.main_window.preview_panel.set_selection(self.selected, update_preview=False)
+            ),
             has_save=False,
         )
 
@@ -369,9 +370,9 @@ class QtDriver(DriverMixin, QObject):
         self.add_tag_modal = TagSearchModal(self.lib, is_tag_chooser=True)
         self.add_tag_modal.tsp.set_driver(self)
         self.add_tag_modal.tsp.tag_chosen.connect(
-            lambda t, s=self.selected: (
-                self.add_tags_to_selected_callback([t]),
-                self.main_window.preview_panel.set_selection(s),
+            lambda chosen_tag: (
+                self.add_tags_to_selected_callback([chosen_tag]),
+                self.main_window.preview_panel.set_selection(self.selected),
             )
         )
 
