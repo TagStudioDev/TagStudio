@@ -767,7 +767,7 @@ class ThumbRenderer(QObject):
             try:
                 ext: str = _filepath.suffix.lower() if _filepath.suffix else _filepath.stem.lower()
 
-                renderer_type: RendererType | None = RendererType.get_renderer_type(ext)
+                renderer_types: list[RendererType] = list(RendererType.get_renderer_types(ext))
                 renderer_context: RendererContext = RendererContext(
                     path=_filepath,
                     extension=ext,
@@ -778,19 +778,25 @@ class ThumbRenderer(QObject):
 
                 logger.debug(
                     "[ThumbRenderer]",
-                    renderer_type=renderer_type,
+                    renderer_types=renderer_types,
                     renderer_context=renderer_context,
                 )
 
-                if not renderer_type:
+                if len(renderer_types) == 0:
                     raise NoRendererError
 
-                image: Image.Image = renderer_type.renderer.render(renderer_context)
+                image: Image.Image | None = None
+                used_renderer_type: RendererType | None = None
+                for renderer_type in renderer_types:
+                    used_renderer_type = renderer_type
+                    image = renderer_type.renderer.render(renderer_context)
+                    if image is not None:
+                        break
 
                 if image:
                     image = self._resize_image(image, (adj_size, adj_size))
 
-                if save_to_file and renderer_type.is_savable_media_type and image:
+                if save_to_file and used_renderer_type.is_savable_media_type and image:
                     self.driver.cache_manager.save_image(image, save_to_file, mode="RGBA")
 
                 return image

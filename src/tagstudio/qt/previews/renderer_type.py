@@ -1,3 +1,4 @@
+from collections.abc import Iterator
 from enum import Enum
 
 from tagstudio.core.media_types import MediaCategories
@@ -21,33 +22,37 @@ from tagstudio.qt.previews.renderers.vtf_renderer import VTFRenderer
 
 
 class RendererType(Enum):
-    # Project files
-    KRITA = "krita", MediaCategories.KRITA_TYPES, KritaRenderer, True
-
-    # Model files
-    BLENDER = "blender", MediaCategories.BLENDER_TYPES, BlenderRenderer, True
+    # Image files
+    RASTER_IMAGE = "image", MediaCategories.IMAGE_RASTER_TYPES, RasterImageRenderer, True
+    VECTOR_IMAGE = "vector_image", MediaCategories.IMAGE_VECTOR_TYPES, VectorImageRenderer, True
+    EXR_IMAGE = "exr_image", MediaCategories.IMAGE_EXR_TYPES, EXRImageRenderer, True
+    VTF = "vtf", MediaCategories.SOURCE_ENGINE_TYPES, VTFRenderer, True
+    RAW_IMAGE = "raw_image", MediaCategories.IMAGE_RAW_TYPES, RawImageRenderer, True
 
     # Media files
     VIDEO = "video", MediaCategories.VIDEO_TYPES, VideoRenderer, True
     AUDIO = "audio", MediaCategories.AUDIO_TYPES, AudioRenderer, False
 
+    # Project files
+    KRITA = "krita", MediaCategories.KRITA_TYPES, KritaRenderer, True
+
     # Document files
     OPEN_DOC = "open_doc", MediaCategories.OPEN_DOCUMENT_TYPES, OpenDocRenderer, True
     POWERPOINT = "powerpoint", MediaCategories.POWERPOINT_TYPES, PowerPointRenderer, True
     PDF = "pdf", MediaCategories.PDF_TYPES, PDFRenderer, True
-    EBOOK = "ebook", MediaCategories.EBOOK_TYPES, EBookRenderer, True
     IWORK = "iwork", MediaCategories.IWORK_TYPES, IWorkRenderer, True
+
+    # eBook files
+    EBOOK = "ebook", MediaCategories.EBOOK_TYPES, EBookRenderer, True
+
+    # Model files
+    BLENDER = "blender", MediaCategories.BLENDER_TYPES, BlenderRenderer, True
+
+    # Font files
+    FONT = "font", MediaCategories.FONT_TYPES, FontRenderer, True
 
     # Text files
     TEXT = "text", MediaCategories.PLAINTEXT_TYPES, TextRenderer, True
-    FONT = "font", MediaCategories.FONT_TYPES, FontRenderer, True
-
-    # Image files
-    VTF = "vtf", MediaCategories.SOURCE_ENGINE_TYPES, VTFRenderer, True
-    RAW_IMAGE = "raw_image", MediaCategories.IMAGE_RAW_TYPES, RawImageRenderer, True
-    EXR_IMAGE = "exr_image", MediaCategories.IMAGE_EXR_TYPES, EXRImageRenderer, True
-    VECTOR_IMAGE = "vector_image", MediaCategories.IMAGE_VECTOR_TYPES, VectorImageRenderer, True
-    RASTER_IMAGE = "image", MediaCategories.IMAGE_RASTER_TYPES, RasterImageRenderer, True
 
     def __init__(
         self,
@@ -63,11 +68,9 @@ class RendererType(Enum):
         self.is_savable_media_type = is_savable_media_type
 
     @staticmethod
-    def get_renderer_type(file_extension: str) -> "RendererType | None":
+    def get_renderer_types(file_extension: str) -> Iterator["RendererType"]:
         for renderer_type in RendererType.__members__.values():
             if MediaCategories.is_ext_in_category(
                 file_extension, renderer_type.media_category, mime_fallback=True
             ):
-                return renderer_type
-
-        return None
+                yield renderer_type
