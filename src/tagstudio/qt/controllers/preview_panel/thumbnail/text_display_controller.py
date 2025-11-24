@@ -13,11 +13,19 @@ logger = structlog.get_logger(__name__)
 
 
 class TextDisplayController(TextDisplayView):
+    """A widget for displaying a plaintext file."""
+
     def __init__(self, driver: "QtDriver") -> None:
         super().__init__()
         self.driver = driver
 
-    def set_file(self, path: Path):
+    def set_file(self, path: Path) -> None:
+        """Sets the text file that the text display displays.
+
+        Args:
+            path (Path): The path of the text file.
+
+        """
         language: str = path.suffix[1:]
 
         try:

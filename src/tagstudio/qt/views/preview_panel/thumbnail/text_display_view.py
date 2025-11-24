@@ -6,6 +6,8 @@ from tagstudio.core.enums import Theme
 
 
 class TextDisplayView(QTextEdit):
+    """A widget for displaying a plaintext file."""
+
     def __init__(self, parent=None) -> None:
         super().__init__(parent)
 
