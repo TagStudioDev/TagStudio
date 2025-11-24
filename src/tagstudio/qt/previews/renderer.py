@@ -776,12 +776,6 @@ class ThumbRenderer(QObject):
                     is_grid_thumb=is_grid_thumb,
                 )
 
-                logger.debug(
-                    "[ThumbRenderer]",
-                    renderer_types=renderer_types,
-                    renderer_context=renderer_context,
-                )
-
                 if len(renderer_types) == 0:
                     raise NoRendererError
 
