@@ -780,25 +780,17 @@ class ThumbRenderer(QObject):
         )
         im: Image.Image | None = None
         try:
-            blend_image = blend_thumb(str(filepath))
-
-            bg = Image.new("RGB", blend_image.size, color=bg_color)
-            bg.paste(blend_image, mask=blend_image.getchannel(3))
-            im = bg
-
-        except (
-            AttributeError,
-            UnidentifiedImageError,
-            TypeError,
-        ) as e:
-            if str(e) == "expected string or buffer":
+            if (blend_image := blend_thumb(str(filepath))) is not None:
+                bg = Image.new("RGB", blend_image.size, color=bg_color)
+                bg.paste(blend_image, mask=blend_image.getchannel(3))
+                im = bg
+            else:
                 logger.info(
                     f"[ThumbRenderer][BLENDER][INFO] {filepath.name} "
-                    f"Doesn't have an embedded thumbnail. ({type(e).__name__})"
+                    "Doesn't have an embedded thumbnail."
                 )
-
-            else:
-                logger.error("Couldn't render thumbnail", filepath=filepath, error=type(e).__name__)
+        except Exception as e:
+            logger.error("Couldn't render thumbnail", filepath=filepath, error=type(e).__name__)
         return im
 
     @staticmethod

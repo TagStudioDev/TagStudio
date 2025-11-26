@@ -383,7 +383,7 @@ class ThumbGridLayout(QLayout):
     @override
     def itemAt(self, index: int) -> QLayoutItem:
         if index >= len(self._items):
-            return None
+            return None  # pyright: ignore[reportReturnType]
         return self._items[index]
 
     @override
