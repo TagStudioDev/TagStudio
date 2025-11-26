@@ -20,7 +20,7 @@ jobs:
       - name: Install Python dependencies
         run: |
           python -m pip install --upgrade uv
-          uv pip install --system .[pyright]
+          uv pip install --system .[pyright,pytest]
 
       - name: Execute Pyright
         uses: jordemort/action-pyright@v1
