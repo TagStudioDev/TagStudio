@@ -152,6 +152,7 @@ def get_default_tags() -> tuple[Tag, ...]:
         name="Archived",
         aliases={TagAlias(name="Archive")},
         parent_tags={meta_tag},
+        is_hidden=True,
         color_slug="red",
         color_namespace="tagstudio-standard",
     )
@@ -541,6 +542,8 @@ class Library:
                     self.__apply_db8_schema_changes(session)
                 if loaded_db_version < 9:
                     self.__apply_db9_schema_changes(session)
+                if loaded_db_version < 103:
+                    self.__apply_db103_schema_changes(session)
                 if loaded_db_version == 6:
                     self.__apply_repairs_for_db6(session)
 
@@ -552,6 +555,8 @@ class Library:
                     self.__apply_db100_parent_repairs(session)
                 if loaded_db_version < 102:
                     self.__apply_db102_repairs(session)
+                if loaded_db_version < 103:
+                    self.__apply_db103_default_data(session)
                 if loaded_db_version < 104:
                     self.__apply_db104_value_type_migration(session)
                     self.__apply_db104_url_migration(session)
@@ -701,6 +706,36 @@ class Library:
             session.execute(stmt)
             session.commit()
             logger.info("[Library][Migration] Verified TagParent table data")
+
+    def __apply_db103_schema_changes(self, session: Session):
+        """Apply database schema changes introduced in DB_VERSION 103."""
+        add_is_hidden_column = text(
+            "ALTER TABLE tags ADD COLUMN is_hidden BOOLEAN NOT NULL DEFAULT 0"
+        )
+        try:
+            session.execute(add_is_hidden_column)
+            session.commit()
+            logger.info("[Library][Migration] Added is_hidden column to tags table")
+        except Exception as e:
+            logger.error(
+                "[Library][Migration] Could not create is_hidden column in tags table!",
+                error=e,
+            )
+            session.rollback()
+
+    def __apply_db103_default_data(self, session: Session):
+        """Apply default data changes introduced in DB_VERSION 103."""
+        try:
+            session.query(Tag).filter(Tag.id == TAG_ARCHIVED).update({"is_hidden": True})
+            session.commit()
+            logger.info("[Library][Migration] Updated archived tag to be hidden")
+            session.commit()
+        except Exception as e:
+            logger.error(
+                "[Library][Migration] Could not update archived tag to be hidden!",
+                error=e,
+            )
+            session.rollback()
 
     def __apply_db104_value_type_migration(self, session: Session):
         """Changes the type of the URL field types to URL."""
@@ -1078,6 +1113,9 @@ class Library:
             else:
                 statement = select(Entry.id)
 
+            if not search.show_hidden_entries:
+                statement = statement.where(~Entry.tags.any(Tag.is_hidden))
+
             if search.ast:
                 start_time = time.time()
                 statement = statement.where(SQLBoolExpressionBuilder(self).visit(search.ast))
@@ -1085,6 +1123,7 @@ class Library:
                 logger.info(
                     f"SQL Expression Builder finished ({format_timespan(end_time - start_time)})"
                 )
+
             statement = statement.distinct(Entry.id)
 
             sort_on: ColumnExpressionArgument = Entry.id
