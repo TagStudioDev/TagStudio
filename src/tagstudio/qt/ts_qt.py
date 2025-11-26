@@ -8,7 +8,6 @@
 
 """A Qt driver for TagStudio."""
 
-import contextlib
 import ctypes
 import math
 import os
@@ -194,7 +193,7 @@ class QtDriver(DriverMixin, QObject):
     applied_theme: Theme
 
     lib: Library
-    cache_manager: CacheManager
+    cache_manager: CacheManager | None
 
     browsing_history: History[BrowsingState]
 
@@ -532,7 +531,7 @@ class QtDriver(DriverMixin, QObject):
 
         # TODO: Move this to a settings screen.
         self.main_window.menu_bar.clear_thumb_cache_action.triggered.connect(
-            lambda: self.cache_manager.clear_cache()
+            lambda: unwrap(self.cache_manager).clear_cache()
         )
 
         # endregion
@@ -579,7 +578,7 @@ class QtDriver(DriverMixin, QObject):
         )
 
         self.init_library_window()
-        self.migration_modal: JsonMigrationModal = None
+        self.migration_modal: JsonMigrationModal | None = None
 
         path_result = self.evaluate_path(str(self.args.open).lstrip().rstrip())
         if path_result.success and path_result.library_path:
@@ -891,21 +890,20 @@ class QtDriver(DriverMixin, QObject):
             origin_id(id): The entry ID associated with the widget making the call.
         """
         entry: Entry | None = None
-        pending: list[tuple[int, Path]] = []
+        pending: list[tuple[int | None, Path]] = []
         deleted_count: int = 0
 
         selected = self.selected
 
         if len(selected) <= 1 and origin_path:
             origin_id_ = origin_id
-            if not origin_id_:
-                with contextlib.suppress(IndexError):
-                    origin_id_ = selected[0]
+            if origin_id_ is None:
+                origin_id_ = selected[0] if len(selected) > 0 else None
 
             pending.append((origin_id_, Path(origin_path)))
         elif (len(selected) > 1) or (len(selected) <= 1):
             for item in selected:
-                entry = self.lib.get_entry(item)
+                entry = unwrap(self.lib.get_entry(item))
                 filepath: Path = entry.path
                 pending.append((item, filepath))
 
@@ -920,14 +918,15 @@ class QtDriver(DriverMixin, QObject):
                     e_id, f = tup
                     if (origin_path == f) or (not origin_path):
                         self.main_window.preview_panel.preview_thumb.media_player.stop()
-                    if delete_file(self.lib.library_dir / f):
+                    if delete_file(unwrap(self.lib.library_dir) / f):
                         self.main_window.status_bar.showMessage(
                             Translations.format(
                                 "status.deleting_file", i=i, count=len(pending), path=f
                             )
                         )
                         self.main_window.status_bar.repaint()
-                        self.lib.remove_entries([e_id])
+                        if e_id is not None:
+                            self.lib.remove_entries([e_id])
 
                         deleted_count += 1
                 selected.clear()
@@ -1107,8 +1106,9 @@ class QtDriver(DriverMixin, QObject):
 
     def run_macro(self, name: MacroID, entry_id: int):
         """Run a specific Macro on an Entry given a Macro name."""
-        entry: Entry = self.lib.get_entry(entry_id)
-        full_path = self.lib.library_dir / entry.path
+        raise NotImplementedError("incompatible with the rest of the codebase; needs fixes")
+        entry: Entry = unwrap(self.lib.get_entry(entry_id))
+        full_path = unwrap(self.lib.library_dir) / entry.path
         source = "" if entry.path.parent == Path(".") else entry.path.parts[0].lower()
 
         logger.info(
