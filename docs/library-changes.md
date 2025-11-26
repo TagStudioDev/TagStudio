@@ -123,3 +123,12 @@ Migration from the legacy JSON format is provided via a walkthrough when opening
 | [v9.5.4](https://github.com/TagStudioDev/TagStudio/releases/tag/v9.5.4) | SQLite | `<Library Folder>`/.TagStudio/ts_library.sqlite |
 
 -   Applies repairs to the `tag_parents` table created in [version 100](#version-100), removing rows that reference tags that have been deleted.
+
+#### Version 103
+
+| Used From                                                               | Format | Location                                        |
+| ----------------------------------------------------------------------- | ------ | ----------------------------------------------- |
+| [#1139](https://github.com/TagStudioDev/TagStudio/pull/1139) | SQLite | `<Library Folder>`/.TagStudio/ts_library.sqlite |
+
+-   Adds the `is_hidden` column to the `tags` table (default `0`). Used for excluding entries tagged with hidden tags from library searches.
+-   Sets the `is_hidden` field on the built-in Archived tag to `1`, to match the Archived tag now being hidden by default.
