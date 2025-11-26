@@ -1,7 +1,7 @@
 from collections.abc import Iterator
 from enum import Enum
 
-from tagstudio.core.media_types import MediaCategories
+from tagstudio.core.media_types import MediaCategories, MediaCategory
 from tagstudio.qt.previews.renderers.audio_renderer import AudioRenderer
 from tagstudio.qt.previews.renderers.base_renderer import BaseRenderer
 from tagstudio.qt.previews.renderers.blender_renderer import BlenderRenderer
@@ -57,12 +57,12 @@ class RendererType(Enum):
     def __init__(
         self,
         name: str,
-        media_category: MediaCategories,
+        media_category: MediaCategory,
         renderer: type[BaseRenderer],
         is_savable_media_type: bool,
     ):
         self.__name: str = name
-        self.media_category: MediaCategories = media_category
+        self.media_category: MediaCategory = media_category
         self.renderer: type[BaseRenderer] = renderer
 
         self.is_savable_media_type = is_savable_media_type

@@ -45,9 +45,19 @@ class EBookRenderer(BaseRenderer):
 
             rendered_image: Image.Image | None = None
 
+            logger.debug("Epub")
+            logger.debug(archive.get_name_list())
+
             # Get the cover from the comic metadata, if present
             if "ComicInfo.xml" in archive.get_name_list():
-                comic_info: Element = ElementTree.fromstring(archive.read("ComicInfo.xml"))
+                logger.debug("Found ComicInfo.xml!")
+
+                comic_info_bytes: bytes | None = archive.read("ComicInfo.xml")
+                if comic_info_bytes is None:
+                    raise OSError
+
+                comic_info: Element = ElementTree.fromstring(comic_info_bytes.decode("utf-8"))
+                logger.debug(comic_info)
                 rendered_image = _extract_cover(archive, comic_info, "FrontCover")
 
                 if not rendered_image:
@@ -59,7 +69,10 @@ class EBookRenderer(BaseRenderer):
                     if file_name.lower().endswith(
                         (".png", ".jpg", ".jpeg", ".gif", ".bmp", ".svg")
                     ):
-                        image_data: bytes = archive.read(file_name)
+                        image_data: bytes | None = archive.read(file_name)
+                        if image_data is None:
+                            raise OSError
+
                         rendered_image = Image.open(BytesIO(image_data))
                         break
 

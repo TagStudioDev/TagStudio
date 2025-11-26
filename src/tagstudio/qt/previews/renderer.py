@@ -790,7 +790,12 @@ class ThumbRenderer(QObject):
                 if image:
                     image = self._resize_image(image, (adj_size, adj_size))
 
-                if save_to_file and used_renderer_type.is_savable_media_type and image:
+                if (
+                    save_to_file
+                    and used_renderer_type
+                    and used_renderer_type.is_savable_media_type
+                    and image
+                ):
                     self.driver.cache_manager.save_image(image, save_to_file, mode="RGBA")
 
                 return image

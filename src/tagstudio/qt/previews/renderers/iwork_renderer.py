@@ -31,12 +31,18 @@ class IWorkRenderer(BaseRenderer):
             with ZipFile(context.path, "r") as zip_file:
                 # Preview thumbnail
                 if zip_file.has_file_name(preview_thumbnail_path_within_zip):
-                    file_data: bytes = zip_file.read(preview_thumbnail_path_within_zip)
+                    file_data: bytes | None = zip_file.read(preview_thumbnail_path_within_zip)
+                    if file_data is None:
+                        raise OSError
+
                     embedded_thumbnail: Image.Image = Image.open(BytesIO(file_data))
 
                 # Quicklook thumbnail
                 elif zip_file.has_file_name(quicklook_thumbnail_path_within_zip):
                     file_data = zip_file.read(quicklook_thumbnail_path_within_zip)
+                    if file_data is None:
+                        raise OSError
+
                     embedded_thumbnail = Image.open(BytesIO(file_data))
                 else:
                     raise FileNotFoundError
