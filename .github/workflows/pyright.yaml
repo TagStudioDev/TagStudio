@@ -11,10 +11,10 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
 
-      - name: Setup reviewdog
-        uses: reviewdog/action-setup@v1
-        with:
-          reviewdog_version: latest
+      #      - name: Setup reviewdog
+      #        uses: reviewdog/action-setup@v1
+      #        with:
+      #          reviewdog_version: latest
 
       - name: Setup Python
         uses: actions/setup-python@v5
