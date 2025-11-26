@@ -146,7 +146,7 @@
     "home.thumbnail_size.mini": "Mini Thumbnails",
     "home.thumbnail_size.small": "Small Thumbnails",
     "home.thumbnail_size": "Thumbnail Size",
-    "home.show_hidden_entries": "Show Hidden Entries?",
+    "home.show_hidden_entries": "Show Hidden Entries",
     "ignore.open_file": "Show \"{ts_ignore}\" File on Disk",
     "json_migration.checking_for_parity": "Checking for Parity...",
     "json_migration.creating_database_tables": "Creating SQL Database Tables...",

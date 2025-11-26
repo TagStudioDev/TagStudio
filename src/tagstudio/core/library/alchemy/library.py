@@ -1841,19 +1841,6 @@ class Library:
             )
             session.add(parent_tag)
 
-    def get_hidden_tag_ids(self) -> set[int]:
-        """Get a set containing the IDs of all of the hidden tags."""
-        hidden_tag_ids: set[int] = set()
-
-        with Session(self.engine) as session:
-            root_hidden_tag_ids = session.scalars(
-                select(Tag.id).where(Tag.is_hidden == True)  # noqa: E712
-            ).all()
-            for root_hidden_tag_id in root_hidden_tag_ids:
-                hidden_tag_ids.add(root_hidden_tag_id)
-
-        return hidden_tag_ids
-
     def get_version(self, key: str) -> int:
         """Get a version value from the DB.
 
