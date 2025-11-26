@@ -156,6 +156,7 @@ class BrowsingState:
 class FieldTypeEnum(enum.Enum):
     TEXT_LINE = "Text Line"
     TEXT_BOX = "Text Box"
+    URL = "URL"
     TAGS = "Tags"
     DATETIME = "Datetime"
     BOOLEAN = "Checkbox"

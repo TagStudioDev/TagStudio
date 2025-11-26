@@ -89,6 +89,7 @@ from tagstudio.core.library.alchemy.fields import (
     DatetimeField,
     FieldID,
     TextField,
+    UrlField,
 )
 from tagstudio.core.library.alchemy.joins import TagEntry, TagParent
 from tagstudio.core.library.alchemy.models import (
@@ -556,6 +557,9 @@ class Library:
                     self.__apply_db102_repairs(session)
                 if loaded_db_version < 103:
                     self.__apply_db103_default_data(session)
+                if loaded_db_version < 104:
+                    self.__apply_db104_value_type_migration(session)
+                    self.__apply_db104_url_migration(session)
 
                 # Convert file extension list to ts_ignore file, if a .ts_ignore file does not exist
                 self.migrate_sql_to_ts_ignore(library_dir)
@@ -733,6 +737,66 @@ class Library:
             )
             session.rollback()
 
+    def __apply_db104_value_type_migration(self, session: Session):
+        """Changes the type of the URL field types to URL."""
+        try:
+            with session:
+                stmt = (
+                    update(ValueType)
+                    .filter(ValueType.key.in_([FieldID.URL.name, FieldID.SOURCE.name]))
+                    .values(
+                        type=FieldTypeEnum.URL.name,
+                    )
+                )
+
+                session.execute(stmt)
+                session.commit()
+                logger.info("[Library][Migration] Changed the type of the URL field types to URL!")
+        except Exception as e:
+            logger.error(
+                "[Library][Migration] Could not change the type of the URL field types to URL!",
+                error=e,
+            )
+            session.rollback()
+
+    def __apply_db104_url_migration(self, session: Session):
+        """Moves all URL text fields to the new URL field table."""
+        try:
+            with session:
+                # Get all URL fields from the text fields table
+                source_records = (
+                    session.query(TextField)
+                    .join(ValueType)
+                    .filter(ValueType.type == FieldTypeEnum.URL.name)
+                    .with_for_update()
+                    .all()
+                )
+
+                destination_records = []
+                for source_record in source_records:
+                    destination_record = UrlField(
+                        title=None,
+                        value=source_record.value,
+                        type_key=source_record.type_key,
+                        entry_id=source_record.entry_id,
+                        position=source_record.position,
+                    )
+                    destination_records.append(destination_record)
+
+                for record in source_records:
+                    session.delete(record)
+
+                session.add_all(destination_records)
+                session.commit()
+
+                logger.info("[Library][Migration] Migrated URL fields to the url_fields table")
+        except Exception as e:
+            logger.error(
+                "[Library][Migration] Could not migrate URL fields to the url_fields table!",
+                error=e,
+            )
+            session.rollback()
+
     def migrate_sql_to_ts_ignore(self, library_dir: Path):
         # Do not continue if existing '.ts_ignore' file is found
         if Path(library_dir / TS_FOLDER_NAME / IGNORE_NAME).exists():
@@ -797,9 +861,11 @@ class Library:
             if with_fields:
                 entry_stmt = (
                     entry_stmt.outerjoin(Entry.text_fields)
+                    .outerjoin(Entry.url_fields)
                     .outerjoin(Entry.datetime_fields)
                     .options(
                         selectinload(Entry.text_fields),
+                        selectinload(Entry.url_fields),
                         selectinload(Entry.datetime_fields),
                     )
                 )
@@ -846,11 +912,13 @@ class Library:
             statement = select(Entry).where(Entry.id.in_(set(entry_ids)))
             statement = (
                 statement.outerjoin(Entry.text_fields)
+                .outerjoin(Entry.url_fields)
                 .outerjoin(Entry.datetime_fields)
                 .outerjoin(Entry.tags)
             )
             statement = statement.options(
                 selectinload(Entry.text_fields),
+                selectinload(Entry.url_fields),
                 selectinload(Entry.datetime_fields),
                 selectinload(Entry.tags).options(
                     selectinload(Tag.aliases),
@@ -874,8 +942,13 @@ class Library:
             stmt = select(Entry).where(Entry.path == path)
             stmt = (
                 stmt.outerjoin(Entry.text_fields)
+                .outerjoin(Entry.url_fields)
                 .outerjoin(Entry.datetime_fields)
-                .options(selectinload(Entry.text_fields), selectinload(Entry.datetime_fields))
+                .options(
+                    selectinload(Entry.text_fields),
+                    selectinload(Entry.url_fields),
+                    selectinload(Entry.datetime_fields),
+                )
             )
             stmt = (
                 stmt.outerjoin(Entry.tags)
@@ -920,11 +993,13 @@ class Library:
                 # load Entry with all joins and all tags
                 stmt = (
                     stmt.outerjoin(Entry.text_fields)
+                    .outerjoin(Entry.url_fields)
                     .outerjoin(Entry.datetime_fields)
                     .outerjoin(Entry.tags)
                 )
                 stmt = stmt.options(
                     contains_eager(Entry.text_fields),
+                    contains_eager(Entry.url_fields),
                     contains_eager(Entry.datetime_fields),
                     contains_eager(Entry.tags),
                 )
@@ -1038,14 +1113,12 @@ class Library:
             else:
                 statement = select(Entry.id)
 
-            ast = search.ast
-
             if not search.show_hidden_entries:
                 statement = statement.where(~Entry.tags.any(Tag.is_hidden))
 
-            if ast:
+            if search.ast:
                 start_time = time.time()
-                statement = statement.where(SQLBoolExpressionBuilder(self).visit(ast))
+                statement = statement.where(SQLBoolExpressionBuilder(self).visit(search.ast))
                 end_time = time.time()
                 logger.info(
                     f"SQL Expression Builder finished ({format_timespan(end_time - start_time)})"
@@ -1265,12 +1338,7 @@ class Library:
         # recalculate the remaining positions
         # self.update_field_position(type(field), field.type, entry_ids)
 
-    def update_entry_field(
-        self,
-        entry_ids: list[int] | int,
-        field: BaseField,
-        content: str | datetime,
-    ):
+    def update_entry_field(self, entry_ids: list[int] | int, field: BaseField, **kwargs):
         if isinstance(entry_ids, int):
             entry_ids = [entry_ids]
 
@@ -1286,7 +1354,7 @@ class Library:
                         FieldClass.entry_id.in_(entry_ids),
                     )
                 )
-                .values(value=content)
+                .values(**kwargs)
             )
 
             session.execute(update_stmt)
@@ -1309,14 +1377,14 @@ class Library:
         *,
         field: ValueType | None = None,
         field_id: FieldID | str | None = None,
-        value: str | datetime | None = None,
+        **kwargs,
     ) -> bool:
         logger.info(
             "[Library][add_field_to_entry]",
             entry_id=entry_id,
             field_type=field,
             field_id=field_id,
-            value=value,
+            **kwargs,
         )
         # supply only instance or ID, not both
         assert bool(field) != (field_id is not None)
@@ -1326,20 +1394,16 @@ class Library:
                 field_id = field_id.name
             field = self.get_value_type(unwrap(field_id))
 
-        field_model: TextField | DatetimeField
-        if field.type in (FieldTypeEnum.TEXT_LINE, FieldTypeEnum.TEXT_BOX):
-            field_model = TextField(
-                type_key=field.key,
-                value=value or "",
-            )
-
-        elif field.type == FieldTypeEnum.DATETIME:
-            field_model = DatetimeField(
-                type_key=field.key,
-                value=value,
-            )
-        else:
-            raise NotImplementedError(f"field type not implemented: {field.type}")
+        field_model: TextField | UrlField | DatetimeField
+        match field.type:
+            case FieldTypeEnum.TEXT_LINE | FieldTypeEnum.TEXT_BOX:
+                field_model = TextField(type_key=field.key, **kwargs)
+            case FieldTypeEnum.URL:
+                field_model = UrlField(type_key=field.key, **kwargs)
+            case FieldTypeEnum.DATETIME:
+                field_model = DatetimeField(type_key=field.key, **kwargs)
+            case _:
+                raise NotImplementedError(f"field type not implemented: {field.type}")
 
         with Session(self.engine) as session:
             try:
