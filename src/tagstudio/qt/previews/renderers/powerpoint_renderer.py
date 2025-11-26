@@ -28,7 +28,10 @@ class PowerPointRenderer(BaseRenderer):
                 # Check if the file exists in the zip
                 if zip_file.has_file_name(thumbnail_path_within_zip):
                     # Read the specific file into memory
-                    file_data: bytes = zip_file.read(thumbnail_path_within_zip)
+                    file_data: bytes | None = zip_file.read(thumbnail_path_within_zip)
+                    if file_data is None:
+                        raise OSError
+
                     embedded_thumbnail: Image.Image = Image.open(BytesIO(file_data))
 
                     if embedded_thumbnail:

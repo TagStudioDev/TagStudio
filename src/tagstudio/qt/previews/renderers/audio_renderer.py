@@ -4,7 +4,7 @@ from warnings import catch_warnings
 
 import numpy as np
 import structlog
-from mutagen import MutagenError, flac, id3, mp4
+from mutagen import flac, id3, mp4
 from PIL import (
     Image,
     ImageDraw,
@@ -73,13 +73,7 @@ def _extract_album_cover(context: RendererContext) -> Image.Image | None:
                 artwork = Image.open(BytesIO(mp4_covers[0]))
 
         return artwork
-    except (
-        FileNotFoundError,
-        id3.ID3NoHeaderError,  # pyright: ignore[reportPrivateImportUsage]
-        mp4.MP4MetadataError,
-        mp4.MP4StreamInfoError,
-        MutagenError,
-    ) as e:
+    except Exception as e:
         logger.error("[AudioRenderer] Couldn't read album artwork", path=context.path, error=e)
 
     return None
