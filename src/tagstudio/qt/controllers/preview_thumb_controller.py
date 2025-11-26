@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 import cv2
+import OpenEXR
 import rawpy
 import structlog
 from PIL import Image, UnidentifiedImageError
@@ -49,10 +50,18 @@ class PreviewThumb(PreviewThumbView):
                     stats.width = image.width
                     stats.height = image.height
             except (
-                rawpy._rawpy._rawpy.LibRawIOError,  # pyright: ignore[reportAttributeAccessIssue]
+                rawpy._rawpy.LibRawIOError,  # pyright: ignore[reportAttributeAccessIssue]
                 rawpy._rawpy.LibRawFileUnsupportedError,  # pyright: ignore[reportAttributeAccessIssue]
                 FileNotFoundError,
             ):
+                pass
+        elif MediaCategories.IMAGE_EXR_TYPES.contains(ext, mime_fallback=True):
+            try:
+                exr_file = OpenEXR.File(str(filepath))
+                part = exr_file.parts[0]
+                stats.width = part.width()
+                stats.height = part.height()
+            except Exception:
                 pass
         elif MediaCategories.IMAGE_RASTER_TYPES.contains(ext, mime_fallback=True):
             try:
