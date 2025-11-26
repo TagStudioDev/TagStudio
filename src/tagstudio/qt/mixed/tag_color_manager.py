@@ -23,11 +23,11 @@ from PySide6.QtWidgets import (
 
 from tagstudio.core.constants import RESERVED_NAMESPACE_PREFIX
 from tagstudio.core.enums import Theme
+from tagstudio.qt.controllers.preview_panel.fields.color_box_widget_controller import ColorBoxWidget
 from tagstudio.qt.mixed.build_namespace import BuildNamespacePanel
-from tagstudio.qt.mixed.color_box import ColorBoxWidget
-from tagstudio.qt.mixed.field_widget import FieldContainer
 from tagstudio.qt.translations import Translations
 from tagstudio.qt.views.panel_modal import PanelModal
+from tagstudio.qt.views.preview_panel.fields.field_container import FieldContainer
 
 logger = structlog.get_logger(__name__)
 
@@ -118,7 +118,7 @@ class TagColorManager(QWidget):
                 if not group.startswith(RESERVED_NAMESPACE_PREFIX):
                     all_default = False
                 color_box = ColorBoxWidget(group, colors, self.driver.lib)
-                color_box.updated.connect(
+                color_box.on_update.connect(
                     lambda: (
                         self.reset(),
                         self.setup_color_groups(),
@@ -130,7 +130,7 @@ class TagColorManager(QWidget):
                     )
                 )
                 field_container = FieldContainer(self.driver.lib.get_namespace_name(group))
-                field_container.set_inner_widget(color_box)
+                field_container.set_field_widget(color_box)
                 if not group.startswith(RESERVED_NAMESPACE_PREFIX):
                     field_container.set_remove_callback(
                         lambda checked=False, g=group: self.delete_namespace_dialog(
