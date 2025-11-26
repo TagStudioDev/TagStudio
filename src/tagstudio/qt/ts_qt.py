@@ -627,6 +627,7 @@ class QtDriver(DriverMixin, QObject):
                     BrowsingState.from_search_query(self.main_window.search_field.text())
                     .with_sorting_mode(self.main_window.sorting_mode)
                     .with_sorting_direction(self.main_window.sorting_direction)
+                    .with_show_hidden_entries(self.main_window.show_hidden_entries)
                 )
             except ParsingError as e:
                 self.main_window.status_bar.showMessage(
@@ -657,6 +658,12 @@ class QtDriver(DriverMixin, QObject):
         self.main_window.thumb_size_combobox.setCurrentIndex(2)  # Default: Medium
         self.main_window.thumb_size_combobox.currentIndexChanged.connect(
             lambda: self.thumb_size_callback(self.main_window.thumb_size_combobox.currentIndex())
+        )
+
+        # Exclude hidden entries checkbox
+        self.main_window.show_hidden_entries_checkbox.setChecked(False)  # Default: No
+        self.main_window.show_hidden_entries_checkbox.stateChanged.connect(
+            self.show_hidden_entries_callback
         )
 
         self.main_window.back_button.clicked.connect(lambda: self.navigation_callback(-1))
@@ -1172,6 +1179,14 @@ class QtDriver(DriverMixin, QObject):
             it.set_filename_visibility(it.show_filename_label)
         self.main_window.thumb_layout.setSpacing(
             min(self.main_window.thumb_size // spacing_divisor, min_spacing)
+        )
+
+    def show_hidden_entries_callback(self):
+        logger.info("Show Hidden Entries Changed", exclude=self.main_window.show_hidden_entries)
+        self.update_browsing_state(
+            self.browsing_history.current.with_show_hidden_entries(
+                self.main_window.show_hidden_entries
+            )
         )
 
     def mouse_navigation(self, event: QMouseEvent):
