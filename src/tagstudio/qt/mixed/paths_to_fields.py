@@ -1,16 +1,20 @@
 # TODO list
 # UI bugs
 # - When preview loads, it extends below the apply button, likely because scrollbar isn't calculated
-# - Multi-line fields sometimes get cut off when adding/removing mappings so they show up as 1 line.
+# - progress item: show a truncated path or find a way to show the full path without breaking the UI
+# Funcionality
+# - exiting while job is running keeps job running?
+# - clean up helpers that throttle UI updates, since they don't seem to work very well.
 from __future__ import annotations
 
 import re
+import time
 from collections.abc import Callable, Iterable, Iterator
 from contextlib import suppress
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
-from PySide6.QtCore import Qt, QThreadPool
+from PySide6.QtCore import Qt, QThreadPool, QTimer
 from PySide6.QtGui import QTextOption
 from PySide6.QtWidgets import (
   QCheckBox,
@@ -404,7 +408,7 @@ class PathsToFieldsModal(QWidget):
     self.library = library
     self.driver = driver
     self.setWindowTitle(Translations["paths_to_fields.title"])  # fallback shows [key]
-    self.setWindowModality(Qt.WindowModality.ApplicationModal)
+    self.setWindowModality(Qt.WindowModality.NonModal) # Fine to use other windows while processing
     self.setMinimumSize(720, 640)
 
     self._preview_results: list[EntryFieldUpdate] = []
@@ -417,6 +421,17 @@ class PathsToFieldsModal(QWidget):
     self._apply_runnable: CustomRunnable | None = None
     self._progress_prefix = ""
     self._progress_cancel_handler: Callable[[], None] | None = None
+    self._last_progress_update = 0.0
+    self._progress_update_interval = 0.12
+    self._pending_progress: PreviewProgress | None = None
+    self._progress_flush_timer = QTimer(self)
+    self._progress_flush_timer.setSingleShot(True)
+    self._progress_flush_timer.timeout.connect(self._handle_progress_flush_timeout)
+    self._preview_update_buffer: list[str] = []
+    self._preview_buffer_timer = QTimer(self)
+    self._preview_buffer_timer.setSingleShot(True)
+    self._preview_buffer_timer.timeout.connect(self._flush_preview_buffer)
+    self._preview_buffer_interval_ms = 160
 
     root = QVBoxLayout(self)
     root.setContentsMargins(8, 8, 8, 8)
@@ -488,8 +503,9 @@ class PathsToFieldsModal(QWidget):
     progress_layout.setSpacing(4)
 
     self.progress_label = QLabel()
-    self.progress_label.setWordWrap(True)
+    self.progress_label.setWordWrap(False)
     self.progress_label.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+    self.progress_label.setVisible(False)
 
     progress_bar_row = QHBoxLayout()
     progress_bar_row.setContentsMargins(0, 0, 0, 0)
@@ -498,7 +514,7 @@ class PathsToFieldsModal(QWidget):
     self.progress_bar = QProgressBar()
     self.progress_bar.setMinimumWidth(240)
     self.progress_bar.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
-    self.progress_bar.setTextVisible(False)
+    self.progress_bar.setTextVisible(True)
 
     self.progress_cancel_btn = QPushButton(Translations["generic.cancel"])
     self.progress_cancel_btn.setVisible(False)
@@ -615,6 +631,9 @@ class PathsToFieldsModal(QWidget):
     self._preview_running = True
     self._set_controls_enabled(enabled=False)
 
+    if self._preview_buffer_timer.isActive():
+      self._preview_buffer_timer.stop()
+    self._preview_update_buffer.clear()
     self._start_progress(
       label=Translations["paths_to_fields.preview"],
       total=total,
@@ -745,6 +764,7 @@ class PathsToFieldsModal(QWidget):
       # Flag duplicates before generic already_set so we only warn for actual conflicts
       if value in existing_vals and value != "":
         marker = Translations["paths_to_fields.preview.markers.duplicate"]
+        conflict_vals = [value]
       else:
         already_set = any(val != "" for val in existing_vals)
         marker = (
@@ -752,10 +772,22 @@ class PathsToFieldsModal(QWidget):
           if already_set and not allow_existing
           else None
         )
+        conflict_vals = [v for v in existing_vals if v != ""] if marker else []
       prefix = f"⚠ {marker} — " if marker else ""
-      lines.append(f"  - {prefix}{key}: {value}")
-    self.preview_area.appendPlainText("\n".join(lines))
-    self.preview_area.ensureCursorVisible()
+      conflict_note = ""
+      if marker and conflict_vals:
+        dedup_conflicts: list[str] = []
+        for val in conflict_vals:
+          if val not in dedup_conflicts:
+            dedup_conflicts.append(val)
+        conflicts_str = ", ".join(dedup_conflicts)
+        if conflicts_str:
+          conflict_note = f" (current: {conflicts_str})"
+      lines.append(f"  - {prefix}{key}: {value}{conflict_note}")
+    text = "\n".join(lines)
+    self._preview_update_buffer.append(text)
+    if not self._preview_buffer_timer.isActive():
+      self._preview_buffer_timer.start(self._preview_buffer_interval_ms)
 
   def _handle_preview_progress(self, progress: PreviewProgress) -> None:
     self._update_progress(progress)
@@ -766,24 +798,64 @@ class PathsToFieldsModal(QWidget):
   def _handle_apply_progress(self, progress: PreviewProgress) -> None:
     self._update_progress(progress)
 
-  def _update_progress(self, progress: PreviewProgress) -> None:
+  def _flush_pending_progress(self) -> None:
+    if self._pending_progress is not None:
+      if self._progress_flush_timer.isActive():
+        self._progress_flush_timer.stop()
+      self._update_progress(self._pending_progress, force=True)
+      self._pending_progress = None
+
+  def _flush_preview_buffer(self) -> None:
+    if not self._preview_update_buffer:
+      return
+    combined = "\n".join(self._preview_update_buffer)
+    self._preview_update_buffer.clear()
+    self.preview_area.appendPlainText(combined)
+    self.preview_area.ensureCursorVisible()
+
+  def _update_progress(self, progress: PreviewProgress, *, force: bool = False) -> None:
+    self._pending_progress = progress
+    now = time.perf_counter()
+    if not force and (now - self._last_progress_update) < self._progress_update_interval:
+      if not self._progress_flush_timer.isActive():
+        self._progress_flush_timer.start(int(self._progress_update_interval * 1000))
+      return
+    self._last_progress_update = now
+    self._pending_progress = None
+    if self._progress_flush_timer.isActive():
+      self._progress_flush_timer.stop()
+
     total = progress.total or 0
+    current = progress.index
+    percent: int | None = None
     if total > 0:
+      current = min(progress.index, total)
       self.progress_bar.setRange(0, total)
-      self.progress_bar.setValue(min(progress.index, total))
+      self.progress_bar.setValue(current)
+      try:
+        percent = round((current / total) * 100)
+      except ZeroDivisionError:
+        percent = 0
+      percent = max(0, min(100, percent))
+      prefix = self._progress_prefix.strip()
+      bar_text = f"{current}/{total} ({percent}%)"
+      if prefix:
+        bar_text = f"{prefix}: {bar_text}"
+      self.progress_bar.setFormat(bar_text)
     else:
       self.progress_bar.setRange(0, 0)
+      prefix = self._progress_prefix.strip()
+      bar_text = f"{current}"
+      if prefix:
+        bar_text = f"{prefix}: {bar_text}"
+      self.progress_bar.setFormat(bar_text)
 
-    lines: list[str] = []
-    if self._progress_prefix:
-      lines.append(self._progress_prefix)
-    if progress.total:
-      lines.append(f"{progress.index}/{progress.total}")
-    else:
-      lines.append(str(progress.index))
-    if progress.path:
-      lines.append(progress.path)
-    self.progress_label.setText("\n".join(filter(None, lines)))
+    display_text = progress.path or ""
+    if not display_text and force:
+      display_text = self._progress_prefix.strip()
+    self.progress_label.setVisible(bool(display_text))
+    self.progress_label.setText(display_text)
+    self.progress_label.setToolTip(display_text)
 
   def _start_progress(
     self,
@@ -793,21 +865,42 @@ class PathsToFieldsModal(QWidget):
     cancel_handler: Callable[[], None] | None,
   ) -> None:
     self._progress_prefix = label
-    self.progress_label.setText(label)
     self.progress_container.setVisible(True)
     if total and total > 0:
       self.progress_bar.setRange(0, total)
       self.progress_bar.setValue(0)
     else:
       self.progress_bar.setRange(0, 0)
+    prefix = label.strip()
+    self.progress_bar.setFormat(prefix)
+    self._last_progress_update = 0.0
+    self._pending_progress = None
+    if self._progress_flush_timer.isActive():
+      self._progress_flush_timer.stop()
+    if self._preview_buffer_timer.isActive():
+      self._preview_buffer_timer.stop()
+    self._preview_update_buffer.clear()
+    self.progress_label.clear()
+    self.progress_label.setToolTip("")
+    self.progress_label.setVisible(False)
     self._set_cancel_handler(cancel_handler)
 
   def _finish_progress(self) -> None:
+    self._flush_preview_buffer()
     self.progress_container.setVisible(False)
     self.progress_label.clear()
+    self.progress_label.setToolTip("")
+    self.progress_label.setVisible(False)
     self.progress_bar.setValue(0)
+    self.progress_bar.setFormat("")
     self._progress_prefix = ""
     self._set_cancel_handler(None)
+    self._last_progress_update = 0.0
+    self._pending_progress = None
+    if self._progress_flush_timer.isActive():
+      self._progress_flush_timer.stop()
+    if self._preview_buffer_timer.isActive():
+      self._preview_buffer_timer.stop()
 
   def _set_cancel_handler(self, handler: Callable[[], None] | None) -> None:
     self._progress_cancel_handler = handler
@@ -829,6 +922,8 @@ class PathsToFieldsModal(QWidget):
     self._cancel_preview = False
     self._preview_iterator = None
     self._preview_runnable = None
+    self._flush_pending_progress()
+    self._flush_preview_buffer()
     self._finish_progress()
     self._set_controls_enabled(enabled=True)
     if not self._preview_results and not cancelled:
@@ -838,6 +933,8 @@ class PathsToFieldsModal(QWidget):
     self._apply_running = False
     self._apply_iterator = None
     self._apply_runnable = None
+    self._flush_pending_progress()
+    self._flush_preview_buffer()
     self._finish_progress()
     self._set_controls_enabled(enabled=True)
     self.close()
@@ -858,3 +955,9 @@ class PathsToFieldsModal(QWidget):
       widget = self.map_v.itemAt(i).widget()
       if isinstance(widget, _MappingRow):
         widget.setEnabled(enabled)
+
+  def _handle_progress_flush_timeout(self) -> None:
+    if self._pending_progress is not None:
+      self._update_progress(self._pending_progress, force=True)
+    if self._preview_update_buffer and not self._preview_buffer_timer.isActive():
+      self._flush_preview_buffer()
