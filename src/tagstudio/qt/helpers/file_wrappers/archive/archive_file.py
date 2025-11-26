@@ -17,5 +17,5 @@ class ArchiveFile(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def read(self, file_name: str) -> bytes:
+    def read(self, file_name: str) -> bytes | None:
         raise NotImplementedError

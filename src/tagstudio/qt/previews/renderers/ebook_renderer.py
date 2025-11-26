@@ -103,7 +103,10 @@ def _extract_cover(
         ]
         page_name: str = pages[int(unwrap(cover.get("Image")))]
         if page_name.endswith((".png", ".jpg", ".jpeg", ".gif", ".bmp", ".svg")):
-            image_data: bytes = archive.read(page_name)
+            image_data: bytes | None = archive.read(page_name)
+            if image_data is None:
+                raise OSError
+
             return Image.open(BytesIO(image_data))
 
     return None

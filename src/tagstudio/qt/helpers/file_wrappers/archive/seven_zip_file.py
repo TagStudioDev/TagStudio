@@ -3,6 +3,7 @@ from types import TracebackType
 from typing import Literal, Self
 
 import py7zr
+from py7zr import io
 
 from tagstudio.qt.helpers.file_wrappers.archive.archive_file import ArchiveFile
 
@@ -43,7 +44,7 @@ class SevenZipFile(ArchiveFile):
         # See https://py7zr.readthedocs.io/en/stable/api.html#py7zr.SevenZipFile.extract
         self.__seven_zip_file.reset()
 
-        factory = py7zr.io.BytesIOFactory(limit=10485760)  # 10 MiB
+        factory = io.BytesIOFactory(limit=10485760)  # 10 MiB
 
         search_paths: list[Path] = [Path(file_name), Path(self.path.name, file_name)]
         try:
