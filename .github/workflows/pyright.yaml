@@ -11,11 +11,6 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
 
-      #      - name: Setup reviewdog
-      #        uses: reviewdog/action-setup@v1
-      #        with:
-      #          reviewdog_version: latest
-
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
@@ -32,4 +27,3 @@ jobs:
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           reporter: ${{ github.event_name == 'pull_request' && 'github-pr-review' || 'github-check' }}
-          lib: true
