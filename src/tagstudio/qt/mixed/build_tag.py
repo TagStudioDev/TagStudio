@@ -522,7 +522,7 @@ class BuildTagPanel(PanelWidget):
 
         self.alias_names.clear()
 
-        last: QWidget = self.panel_save_button
+        last: QWidget | None = self.panel_save_button
         for alias_id in self.alias_ids:
             alias = self.lib.get_alias(self.tag.id, alias_id)
 
@@ -549,7 +549,8 @@ class BuildTagPanel(PanelWidget):
             self.aliases_table.setCellWidget(row, 1, new_item)
             self.aliases_table.setCellWidget(row, 0, remove_btn)
 
-            self.setTabOrder(last, self.aliases_table.cellWidget(row, 1))
+            if last is not None:
+                self.setTabOrder(last, self.aliases_table.cellWidget(row, 1))
             self.setTabOrder(
                 self.aliases_table.cellWidget(row, 1), self.aliases_table.cellWidget(row, 0)
             )
@@ -624,3 +625,4 @@ class BuildTagPanel(PanelWidget):
         self.setTabOrder(unwrap(self.panel_save_button), self.aliases_table.cellWidget(0, 1))
         self.name_field.selectAll()
         self.name_field.setFocus()
+        self._set_aliases()
