@@ -266,6 +266,7 @@
     "settings.generate_thumbs": "Génération de vignettes",
     "settings.global": "Paramètres Globaux",
     "settings.hourformat.label": "Temps sur 24-Heure",
+    "settings.infinite_scroll": "Défilement continu",
     "settings.language": "Langage",
     "settings.library": "Paramètres de la Bibliothèque",
     "settings.open_library_on_start": "Ouvrir la Bibliothèque au Démarrage",

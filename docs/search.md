@@ -2,7 +2,7 @@
 icon: material/magnify
 ---
 
-# :material-magnify: Search
+# :material-magnify: Searching
 
 TagStudio provides various methods to search your library, ranging from TagStudio data such as tags to inherent file data such as paths or media types.
 
@@ -58,13 +58,13 @@ Sometimes search queries have ambiguous characters and need to be "escaped". Thi
 
 ## Tags
 
-[Tag](#tags) search is the default mode of file entry search in TagStudio. No keyword prefix is required, however using `tag:` will also work. The tag search attempts to match tag [names](./tag.md#name), [shorthands](./tag.md#shorthand), [aliases](./tag.md#aliases), as well as allows for tags to [substitute](./tag.md#intuition-via-substitution) in for any of their [parent tags](./tag.md#parent-tags).
+[Tag](#tags) search is the default mode of file entry search in TagStudio. No keyword prefix is required, however using `tag:` will also work. The tag search attempts to match tag [names](tags.md#name), [shorthands](tags.md#shorthand), [aliases](tags.md#aliases), as well as allows for tags to [substitute](tags.md#intuition-via-substitution) in for any of their [parent tags](tags.md#parent-tags).
 
 You may also see the `tag_id:` prefix keyword show up when using the right-click "Search for Tag" option on tags. This is meant for internal use, and eventually will not be displayed or accessible to the user.
 
 ## Fields
 
-_[Field](./field.md) search is currently not in the program, however is coming in a future version._
+_[Field](fields.md) search is currently not in the program, however is coming in a future version._
 
 ## File Entry Search
 

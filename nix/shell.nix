@@ -51,7 +51,7 @@ let
       # Should be unnecessary once PR is pulled.
       # PR: https://github.com/NixOS/nixpkgs/pull/271037
       # Issue: https://github.com/NixOS/nixpkgs/issues/149812
-      wrapGAppsHook
+      wrapGAppsHook3
     ];
     buildInputs = with pkgs.qt6; [
       qtbase
@@ -87,7 +87,7 @@ pkgs.mkShellNoCC {
   env = {
     QT_QPA_PLATFORM = "wayland;xcb";
 
-    UV_NO_SYNC = "1";
+    UV_NO_SYNC = 1;
     UV_PYTHON_DOWNLOADS = "never";
   };
 
@@ -111,7 +111,8 @@ pkgs.mkShellNoCC {
       fi
 
       source "''${venv}"/bin/activate
-      PYTHONPATH=${pythonPath}''${PYTHONPATH:+:}''${PYTHONPATH:-}
+      PYTHONPATH=${pythonPath}''${PYTHONPATH:+:''${PYTHONPATH}}
+      export PYTHONPATH
 
       if [ ! -f "''${venv}"/pyproject.toml ] || ! diff --brief pyproject.toml "''${venv}"/pyproject.toml >/dev/null; then
           printf '%s\n' 'Installing dependencies, pyproject.toml changed...' >&2

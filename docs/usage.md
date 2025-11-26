@@ -2,7 +2,7 @@
 icon: material/mouse
 ---
 
-# :material-mouse: Usage
+# :material-mouse: Basic Usage
 
 ## Creating/Opening a Library
 

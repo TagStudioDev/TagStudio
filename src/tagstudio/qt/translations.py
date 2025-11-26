@@ -23,7 +23,7 @@ LANGUAGES = {
     "French": "fr",
     "German": "de",
     "Hungarian": "hu",
-    # "Italian": "it",  # Minimal
+    "Italian": "it",
     "Japanese": "ja",
     "Norwegian Bokmål": "nb_NO",
     "Polish": "pl",

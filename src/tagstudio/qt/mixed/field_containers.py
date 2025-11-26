@@ -10,7 +10,7 @@ from datetime import datetime as dt
 from warnings import catch_warnings
 
 import structlog
-from PySide6.QtCore import Qt, Signal
+from PySide6.QtCore import Qt
 from PySide6.QtGui import QGuiApplication
 from PySide6.QtWidgets import (
     QFrame,
@@ -22,7 +22,6 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from tagstudio.core.constants import TAG_ARCHIVED, TAG_FAVORITE
 from tagstudio.core.enums import Theme
 from tagstudio.core.library.alchemy.enums import FieldTypeEnum
 from tagstudio.core.library.alchemy.fields import (
@@ -50,9 +49,6 @@ logger = structlog.get_logger(__name__)
 
 class FieldContainers(QWidget):
     """The Preview Panel Widget."""
-
-    favorite_updated = Signal(bool)
-    archived_updated = Signal(bool)
 
     def __init__(self, library: Library, driver: "QtDriver"):
         super().__init__()
@@ -131,7 +127,7 @@ class FieldContainers(QWidget):
                 container_index += 1
                 container_len += 1
         if update_badges:
-            self.emit_badge_signals({t.id for t in entry_tags})
+            self.driver.emit_badge_signals({t.id for t in entry_tags})
 
         # Write field container(s)
         for index, field in enumerate(entry_fields, start=container_index):
@@ -149,10 +145,12 @@ class FieldContainers(QWidget):
         tag = self.lib.get_tag(tag_id)
         if not tag:
             return
-        new_tags = (
-            entry.tags.union({tag}) if toggle_value else {t for t in entry.tags if t.id != tag_id}
-        )
-        self.update_granular(entry_tags=new_tags, entry_fields=entry.fields, update_badges=False)
+        if toggle_value:
+            entry.tags.add(tag)
+        else:
+            entry.tags.discard(tag)
+
+        self.update_granular(entry_tags=entry.tags, entry_fields=entry.fields, update_badges=False)
 
     def hide_containers(self):
         """Hide all field and tag containers."""
@@ -240,7 +238,7 @@ class FieldContainers(QWidget):
             self.driver.selected,
             tag_ids=tags,
         )
-        self.emit_badge_signals(tags, emit_on_absent=False)
+        self.driver.emit_badge_signals(tags, emit_on_absent=False)
 
     def write_container(self, index: int, field: BaseField, is_mixed: bool = False):
         """Update/Create data for a FieldContainer.
@@ -491,16 +489,3 @@ class FieldContainers(QWidget):
         result = remove_mb.exec_()
         if result == QMessageBox.ButtonRole.ActionRole.value:
             callback()
-
-    def emit_badge_signals(self, tag_ids: list[int] | set[int], emit_on_absent: bool = True):
-        """Emit any connected signals for updating badge icons."""
-        logger.info("[emit_badge_signals] Emitting", tag_ids=tag_ids, emit_on_absent=emit_on_absent)
-        if TAG_ARCHIVED in tag_ids:
-            self.archived_updated.emit(True)  # noqa: FBT003
-        elif emit_on_absent:
-            self.archived_updated.emit(False)  # noqa: FBT003
-
-        if TAG_FAVORITE in tag_ids:
-            self.favorite_updated.emit(True)  # noqa: FBT003
-        elif emit_on_absent:
-            self.favorite_updated.emit(False)  # noqa: FBT003

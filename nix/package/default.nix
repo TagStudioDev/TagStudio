@@ -6,7 +6,7 @@
   qt6,
   ripgrep,
   stdenv,
-  wrapGAppsHook,
+  wrapGAppsHook3,
 
   pillow-jxl-plugin,
 
@@ -30,7 +30,7 @@ python3Packages.buildPythonApplication {
     # Should be unnecessary once PR is pulled.
     # PR: https://github.com/NixOS/nixpkgs/pull/271037
     # Issue: https://github.com/NixOS/nixpkgs/issues/149812
-    wrapGAppsHook
+    wrapGAppsHook3
   ];
   buildInputs = [
     qt6.qtbase
@@ -70,7 +70,7 @@ python3Packages.buildPythonApplication {
     "\${qtWrapperArgs[@]}"
   ];
 
-  pythonRemoveDeps = lib.optional (!withJXLSupport) [ "pillow_jxl" ];
+  pythonRemoveDeps = lib.optional (!withJXLSupport) "pillow_jxl";
   pythonRelaxDeps = [
     "numpy"
     "pillow"
@@ -96,7 +96,6 @@ python3Packages.buildPythonApplication {
       numpy
       opencv-python
       pillow
-      pillow-avif-plugin
       pillow-heif
       py7zr
       pydantic
