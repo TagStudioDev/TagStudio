@@ -93,13 +93,11 @@ ignore = [
     "src/tagstudio/qt/previews/vendored/pydub/",
 ]
 include = ["src/tagstudio", "tests"]
-reportAny = false
-reportIgnoreCommentWithoutRule = false
+# reference for the settings here: https://github.com/microsoft/pyright/blob/main/docs/configuration.md
 reportImplicitStringConcatenation = false
 reportMissingTypeArgument = false
 reportMissingTypeStubs = false
 # reportOptionalMemberAccess = false
-reportUnannotatedClassAttribute = false
 reportUnknownArgumentType = false
 reportUnknownLambdaType = false
 reportUnknownMemberType = false
