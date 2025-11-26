@@ -13,6 +13,7 @@ from tagstudio.core.constants import TS_FOLDER_NAME
 from tagstudio.core.library.alchemy.fields import FieldID
 from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.library.alchemy.models import Entry
+from tagstudio.core.utils.types import unwrap
 
 logger = structlog.get_logger(__name__)
 
@@ -27,6 +28,7 @@ class TagStudioCore:
 
         Return a formatted object with notable values or an empty object if none is found.
         """
+        raise NotImplementedError("incompatible with the rest of the codebase; needs fixes")
         info = {}
         _filepath = filepath.parent / (filepath.name + ".json")
 
@@ -55,14 +57,14 @@ class TagStudioCore:
                     info[FieldID.TITLE] = json_dump["title"].strip()
                     info[FieldID.ARTIST] = json_dump["user"]["full_name"].strip()
                     info[FieldID.DESCRIPTION] = json_dump["description"].strip()
-                    info[FieldID.TAGS] = json_dump["tags"]
+                    # info[FieldID.TAGS] = json_dump["tags"]
                     # info["tags"] = [x for x in json_dump["mediums"]["name"]]
                     info[FieldID.DATE_PUBLISHED] = json_dump["date"]
                 elif source == "newgrounds":
                     # info["title"] = json_dump["title"]
                     # info["artist"] = json_dump["artist"]
                     # info["description"] = json_dump["description"]
-                    info[FieldID.TAGS] = json_dump["tags"]
+                    # info[FieldID.TAGS] = json_dump["tags"]
                     info[FieldID.DATE_PUBLISHED] = json_dump["date"]
                     info[FieldID.ARTIST] = json_dump["user"].strip()
                     info[FieldID.DESCRIPTION] = json_dump["description"].strip()
@@ -99,13 +101,14 @@ class TagStudioCore:
     @classmethod
     def match_conditions(cls, lib: Library, entry_id: int) -> bool:
         """Match defined conditions against a file to add Entry data."""
+        raise NotImplementedError("incompatible with the rest of the codebase; needs fixes")
         # TODO - what even is this file format?
         # TODO: Make this stored somewhere better instead of temporarily in this JSON file.
-        cond_file = lib.library_dir / TS_FOLDER_NAME / "conditions.json"
+        cond_file = unwrap(lib.library_dir) / TS_FOLDER_NAME / "conditions.json"
         if not cond_file.is_file():
             return False
 
-        entry: Entry = lib.get_entry(entry_id)
+        entry: Entry = unwrap(lib.get_entry(entry_id))
 
         try:
             with open(cond_file, encoding="utf8") as f:
