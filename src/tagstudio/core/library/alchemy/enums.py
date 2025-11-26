@@ -82,7 +82,7 @@ class BrowsingState:
     ascending: bool = True
     random_seed: float = 0
 
-    exclude_hidden_entries: bool = True
+    show_hidden_entries: bool = False
 
     query: str | None = None
 
@@ -149,8 +149,8 @@ class BrowsingState:
     def with_search_query(self, search_query: str) -> "BrowsingState":
         return replace(self, query=search_query)
 
-    def with_exclude_hidden_entries(self, exclude_hidden_entries: bool) -> "BrowsingState":
-        return replace(self, exclude_hidden_entries=exclude_hidden_entries)
+    def with_show_hidden_entries(self, show_hidden_entries: bool) -> "BrowsingState":
+        return replace(self, show_hidden_entries=show_hidden_entries)
 
 
 class FieldTypeEnum(enum.Enum):

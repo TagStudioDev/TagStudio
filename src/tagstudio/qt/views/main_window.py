@@ -587,18 +587,18 @@ class MainWindow(QMainWindow):
         highlight_color = get_highlight_color(primary_color)
         text_color: QColor = get_text_color(primary_color, highlight_color)
 
-        ## Exclude hidden tags checkbox
-        self.hidden_entries_widget = QWidget()
-        self.hidden_entries_layout = QHBoxLayout(self.hidden_entries_widget)
-        self.hidden_entries_layout.setStretch(1, 1)
-        self.hidden_entries_layout.setContentsMargins(0, 0, 0, 0)
-        self.hidden_entries_layout.setSpacing(6)
-        self.hidden_entries_layout.setAlignment(Qt.AlignmentFlag.AlignLeft)
-        self.hidden_entries_title = QLabel(Translations["home.exclude_hidden_entries"])
-        self.hidden_entries_checkbox = QCheckBox()
-        self.hidden_entries_checkbox.setFixedSize(22, 22)
+        ## Show hidden entries checkbox
+        self.show_hidden_entries_widget = QWidget()
+        self.show_hidden_entries_layout = QHBoxLayout(self.show_hidden_entries_widget)
+        self.show_hidden_entries_layout.setStretch(1, 1)
+        self.show_hidden_entries_layout.setContentsMargins(0, 0, 0, 0)
+        self.show_hidden_entries_layout.setSpacing(6)
+        self.show_hidden_entries_layout.setAlignment(Qt.AlignmentFlag.AlignLeft)
+        self.show_hidden_entries_title = QLabel(Translations["home.show_hidden_entries"])
+        self.show_hidden_entries_checkbox = QCheckBox()
+        self.show_hidden_entries_checkbox.setFixedSize(22, 22)
 
-        self.hidden_entries_checkbox.setStyleSheet(
+        self.show_hidden_entries_checkbox.setStyleSheet(
             f"QCheckBox{{"
             f"background: rgba{primary_color.toTuple()};"
             f"color: rgba{text_color.toTuple()};"
@@ -625,12 +625,12 @@ class MainWindow(QMainWindow):
             f"}}"
         )
 
-        self.hidden_entries_checkbox.setChecked(True)  # Default: Yes
+        self.show_hidden_entries_checkbox.setChecked(False)  # Default: No
 
-        self.hidden_entries_layout.addWidget(self.hidden_entries_checkbox)
-        self.hidden_entries_layout.addWidget(self.hidden_entries_title)
+        self.show_hidden_entries_layout.addWidget(self.show_hidden_entries_checkbox)
+        self.show_hidden_entries_layout.addWidget(self.show_hidden_entries_title)
 
-        self.extra_input_layout.addWidget(self.hidden_entries_widget)
+        self.extra_input_layout.addWidget(self.show_hidden_entries_widget)
 
         ## Spacer
         self.extra_input_layout.addItem(
@@ -768,6 +768,6 @@ class MainWindow(QMainWindow):
         return self.thumb_size_combobox.currentData()
 
     @property
-    def exclude_hidden_entries(self) -> bool:
-        """Whether to exclude entries tagged with hidden tags."""
-        return self.hidden_entries_checkbox.isChecked()
+    def show_hidden_entries(self) -> bool:
+        """Whether to show entries tagged with hidden tags."""
+        return self.show_hidden_entries_checkbox.isChecked()

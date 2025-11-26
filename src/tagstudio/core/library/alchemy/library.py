@@ -104,7 +104,6 @@ from tagstudio.core.library.alchemy.models import (
 )
 from tagstudio.core.library.alchemy.visitors import SQLBoolExpressionBuilder
 from tagstudio.core.library.json.library import Library as JsonLibrary
-from tagstudio.core.query_lang.ast import ANDList, Constraint, ConstraintType, Not, ORList
 from tagstudio.core.utils.types import unwrap
 from tagstudio.qt.translations import Translations
 
@@ -1041,17 +1040,8 @@ class Library:
 
             ast = search.ast
 
-            if search.exclude_hidden_entries:
-                hidden_tag_ids = self.get_hidden_tag_ids()
-                hidden_tag_constraints: list[Constraint] = list(
-                    map(
-                        lambda tag_id: Constraint(ConstraintType.TagID, str(tag_id), []),
-                        hidden_tag_ids,
-                    )
-                )
-                hidden_tag_ast = Not(ORList(hidden_tag_constraints))
-
-                ast = hidden_tag_ast if not ast else ANDList([search.ast, hidden_tag_ast])
+            if not search.show_hidden_entries:
+                statement = statement.where(~Entry.tags.any(Tag.is_hidden))
 
             if ast:
                 start_time = time.time()
