@@ -111,6 +111,51 @@ class FieldContainers(QWidget):
         self.cached_entries = [entry]
         self.update_granular(entry.tags, entry.fields, update_badges)
 
+    def update_from_entries(self, entry_ids: list[int], update_badges: bool = True):
+        """Update tags and fields from multiple Entry sources, showing shared tags."""
+        logger.warning("[FieldContainers] Updating Multiple Selection", entry_ids=entry_ids)
+
+        entries = list(self.lib.get_entries_full(entry_ids))
+        if not entries:
+            self.cached_entries = []
+            self.hide_containers()
+            return
+
+        self.cached_entries = entries
+
+        shared_tags = self._get_shared_tags(entries)
+        shared_fields = self._get_shared_fields(entries)
+
+        self.update_granular(shared_tags, shared_fields, update_badges)
+
+    def _get_shared_tags(self, entries: list[Entry]) -> set[Tag]:
+        """Get tags that are present in all entries."""
+        if not entries:
+            return set()
+
+        shared_tags = set(entries[0].tags)
+        for entry in entries[1:]:
+            shared_tags &= set(entry.tags)
+
+        return shared_tags
+
+    def _get_shared_fields(self, entries: list[Entry]) -> list[BaseField]:
+        """Get fields that are present in all entries with the same value."""
+        if not entries:
+            return []
+
+        shared_fields = []
+        first_entry_fields = entries[0].fields
+
+        for field in first_entry_fields:
+            if all(
+                any(f.type.id == field.type.id and f.value == field.value for f in entry.fields)
+                for entry in entries[1:]
+            ):
+                shared_fields.append(field)
+
+        return shared_fields
+
     def update_granular(
         self, entry_tags: set[Tag], entry_fields: list[BaseField], update_badges: bool = True
     ):
@@ -438,9 +483,14 @@ class FieldContainers(QWidget):
             inner_widget.set_entries([e.id for e in self.cached_entries])
             inner_widget.set_tags(tags)
 
-            inner_widget.on_update.connect(
-                lambda: (self.update_from_entry(self.cached_entries[0].id, update_badges=True))
-            )
+            def update_callback():
+                if len(self.cached_entries) == 1:
+                    self.update_from_entry(self.cached_entries[0].id, update_badges=True)
+                else:
+                    entry_ids = [e.id for e in self.cached_entries]
+                    self.update_from_entries(entry_ids, update_badges=True)
+
+            inner_widget.on_update.connect(update_callback)
         else:
             text = "<i>Mixed Data</i>"
             inner_widget = TextWidget("Mixed Tags", text)

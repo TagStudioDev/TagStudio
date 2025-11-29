@@ -248,7 +248,7 @@
     "namespace.new.button": "New Namespace",
     "namespace.new.prompt": "Create a New Namespace to Start Adding Custom Colors!",
     "preview.ignored": "Ignored",
-    "preview.multiple_selection": "<b>{count}</b> Items Selected",
+    "preview.multiple_selection": "<b>{count}</b> Items Selected<br><i>Showing tags shared by all selected entries</i>",
     "preview.no_selection": "No Items Selected",
     "preview.unlinked": "Unlinked",
     "select.add_tag_to_selected": "Add Tag to Selected",
