@@ -250,6 +250,7 @@
     "preview.ignored": "Ignored",
     "preview.multiple_selection": "<b>{count}</b> Items Selected<br><i>Showing tags shared by all selected entries</i>",
     "preview.no_selection": "No Items Selected",
+    "preview.partial_tags": "Tags (Some Entries)",
     "preview.unlinked": "Unlinked",
     "select.add_tag_to_selected": "Add Tag to Selected",
     "select.all": "Select All",

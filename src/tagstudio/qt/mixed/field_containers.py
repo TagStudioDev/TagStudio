@@ -124,9 +124,39 @@ class FieldContainers(QWidget):
         self.cached_entries = entries
 
         shared_tags = self._get_shared_tags(entries)
-        shared_fields = self._get_shared_fields(entries)
 
-        self.update_granular(shared_tags, shared_fields, update_badges)
+        # Compute shared and mixed fields by type id and value.
+        all_fields_by_type: dict[int, list[BaseField]] = {}
+        for entry in entries:
+            for field in entry.fields:
+                all_fields_by_type.setdefault(field.type.id, []).append(field)
+
+        shared_fields: list[BaseField] = []
+        mixed_fields: list[BaseField] = []
+        for fields in all_fields_by_type.values():
+            if len(fields) == len(entries) and all(f.value == fields[0].value for f in fields):
+                shared_fields.append(fields[0])
+            else:
+                mixed_fields.append(fields[0])
+
+        all_fields: list[BaseField] = shared_fields + mixed_fields
+        mixed_field_type_ids: set[int] = {f.type.id for f in mixed_fields}
+
+        self.update_granular(
+            shared_tags,
+            all_fields,
+            update_badges,
+            mixed_field_type_ids=mixed_field_type_ids if mixed_field_type_ids else None,
+        )
+
+        # Add a separate container for tags that aren't shared across all entries.
+        all_tags: set[Tag] = set()
+        for entry in entries:
+            all_tags.update(entry.tags)
+        mixed_tags: set[Tag] = all_tags - shared_tags
+        if mixed_tags:
+            index = len(self.containers)
+            self.write_tag_container(index, tags=mixed_tags, category_tag=None, is_mixed=True)
 
     def _get_shared_tags(self, entries: list[Entry]) -> set[Tag]:
         """Get tags that are present in all entries."""
@@ -157,7 +187,11 @@ class FieldContainers(QWidget):
         return shared_fields
 
     def update_granular(
-        self, entry_tags: set[Tag], entry_fields: list[BaseField], update_badges: bool = True
+        self,
+        entry_tags: set[Tag],
+        entry_fields: list[BaseField],
+        update_badges: bool = True,
+        mixed_field_type_ids: set[int] | None = None,
     ):
         """Individually update elements of the item preview."""
         container_len: int = len(entry_fields)
@@ -176,7 +210,8 @@ class FieldContainers(QWidget):
 
         # Write field container(s)
         for index, field in enumerate(entry_fields, start=container_index):
-            self.write_container(index, field, is_mixed=False)
+            is_mixed = mixed_field_type_ids is not None and field.type.id in mixed_field_type_ids
+            self.write_container(index, field, is_mixed=is_mixed)
 
         # Hide leftover container(s)
         if len(self.containers) > container_len:
@@ -467,34 +502,36 @@ class FieldContainers(QWidget):
         container.set_title("Tags" if not category_tag else category_tag.name)
         container.set_inline(False)
 
-        if not is_mixed:
-            inner_widget = container.get_inner_widget()
+        inner_widget = container.get_inner_widget()
 
-            if isinstance(inner_widget, TagBoxWidget):
-                with catch_warnings(record=True):
-                    inner_widget.on_update.disconnect()
-
-            else:
-                inner_widget = TagBoxWidget(
-                    "Tags",
-                    self.driver,
-                )
-                container.set_inner_widget(inner_widget)
-            inner_widget.set_entries([e.id for e in self.cached_entries])
-            inner_widget.set_tags(tags)
-
-            def update_callback():
-                if len(self.cached_entries) == 1:
-                    self.update_from_entry(self.cached_entries[0].id, update_badges=True)
-                else:
-                    entry_ids = [e.id for e in self.cached_entries]
-                    self.update_from_entries(entry_ids, update_badges=True)
-
-            inner_widget.on_update.connect(update_callback)
+        if isinstance(inner_widget, TagBoxWidget):
+            with catch_warnings(record=True):
+                inner_widget.on_update.disconnect()
         else:
-            text = "<i>Mixed Data</i>"
-            inner_widget = TextWidget("Mixed Tags", text)
+            inner_widget = TagBoxWidget(
+                "Tags",
+                self.driver,
+            )
             container.set_inner_widget(inner_widget)
+
+        # For mixed tag containers, mark the widget so it can gray out all tags.
+        if is_mixed:
+            inner_widget.set_mixed_only(True)
+            container.set_title(Translations["preview.partial_tags"])
+        else:
+            inner_widget.set_mixed_only(False)
+
+        inner_widget.set_entries([e.id for e in self.cached_entries])
+        inner_widget.set_tags(tags)
+
+        def update_callback():
+            if len(self.cached_entries) == 1:
+                self.update_from_entry(self.cached_entries[0].id, update_badges=True)
+            else:
+                entry_ids = [e.id for e in self.cached_entries]
+                self.update_from_entries(entry_ids, update_badges=True)
+
+        inner_widget.on_update.connect(update_callback)
 
         container.set_edit_callback()
         container.set_remove_callback()
