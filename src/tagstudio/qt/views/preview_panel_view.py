@@ -158,6 +158,8 @@ class PreviewPanelView(QWidget):
 
                 filepath: Path = unwrap(self.lib.library_dir) / entry.path
 
+                self.add_buttons_enabled = True
+
                 if update_preview:
                     stats: FileAttributeData = self.__thumb.display_file(filepath)
                     self.__file_attrs.update_stats(filepath, stats)
@@ -166,19 +168,15 @@ class PreviewPanelView(QWidget):
 
                 self._set_selection_callback()
 
-                self.add_buttons_enabled = True
-
             # Multiple Selected Items
             elif len(selected) > 1:
-                # items: list[Entry] = [self.lib.get_entry_full(x) for x in self.driver.selected]
+                self.add_buttons_enabled = True
                 self.__thumb.hide_preview()  # TODO: Render mixed selection
                 self.__file_attrs.update_multi_selection(len(selected))
                 self.__file_attrs.update_date_label()
-                self._fields.hide_containers()  # TODO: Allow for mixed editing
+                self._fields.update_from_entries(selected)
 
                 self._set_selection_callback()
-
-                self.add_buttons_enabled = True
 
         except Exception as e:
             logger.error("[Preview Panel] Error updating selection", error=e)
