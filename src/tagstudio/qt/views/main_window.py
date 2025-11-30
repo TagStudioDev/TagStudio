@@ -42,6 +42,7 @@ from tagstudio.qt.helpers.color_overlay import theme_fg_overlay
 from tagstudio.qt.mixed.landing import LandingWidget
 from tagstudio.qt.mixed.pagination import Pagination
 from tagstudio.qt.mixed.tag_widget import get_border_color, get_highlight_color, get_text_color
+from tagstudio.qt.views.widgets.search_bar_widget import SearchBarWidget
 from tagstudio.qt.mnemonics import assign_mnemonics
 from tagstudio.qt.models.palette import ColorType, get_tag_color
 from tagstudio.qt.platform_strings import trash_term
@@ -457,13 +458,7 @@ class MainWindow(QMainWindow):
 
         # region Type declarations for variables that will be initialized in methods
         # initialized in setup_search_bar
-        self.search_bar_layout: QHBoxLayout
-        self.back_button: QPushButton
-        self.forward_button: QPushButton
-        self.search_field: QLineEdit
-        self.search_field_completion_list: QStringListModel
-        self.search_field_completer: QCompleter
-        self.search_button: QPushButton
+        self.search_bar: SearchBarWidget
 
         # initialized in setup_extra_input_bar
         self.extra_input_layout: QHBoxLayout
@@ -534,48 +529,10 @@ class MainWindow(QMainWindow):
         self.setCentralWidget(self.central_widget)
 
     def setup_search_bar(self):
-        """Sets up Nav Buttons, Search Field, Search Button."""
-        self.search_bar_layout = QHBoxLayout()
-        self.search_bar_layout.setObjectName("search_bar_layout")
-        self.search_bar_layout.setSizeConstraint(QLayout.SizeConstraint.SetMinimumSize)
-
-        self.back_button = QPushButton(self.central_widget)
-        back_icon: Image.Image = self.rm.get("bxs-left-arrow")  # pyright: ignore[reportAssignmentType]
-        back_icon = theme_fg_overlay(back_icon, use_alpha=False)
-        self.back_button.setIcon(QPixmap.fromImage(ImageQt.ImageQt(back_icon)))
-        self.back_button.setObjectName("back_button")
-        self.back_button.setMinimumSize(QSize(32, 32))
-        self.back_button.setMaximumSize(QSize(32, 16777215))
-        self.search_bar_layout.addWidget(self.back_button)
-
-        self.forward_button = QPushButton(self.central_widget)
-        forward_icon: Image.Image = self.rm.get("bxs-right-arrow")  # pyright: ignore[reportAssignmentType]
-        forward_icon = theme_fg_overlay(forward_icon, use_alpha=False)
-        self.forward_button.setIcon(QPixmap.fromImage(ImageQt.ImageQt(forward_icon)))
-        self.forward_button.setIconSize(QSize(16, 16))
-        self.forward_button.setObjectName("forward_button")
-        self.forward_button.setMinimumSize(QSize(32, 32))
-        self.forward_button.setMaximumSize(QSize(32, 16777215))
-        self.search_bar_layout.addWidget(self.forward_button)
-
-        self.search_field = QLineEdit(self.central_widget)
-        self.search_field.setPlaceholderText(Translations["home.search_entries"])
-        self.search_field.setObjectName("search_field")
-        self.search_field.setMinimumSize(QSize(0, 32))
-        self.search_field_completion_list = QStringListModel()
-        self.search_field_completer = QCompleter(
-            self.search_field_completion_list, self.search_field
-        )
-        self.search_field_completer.setCaseSensitivity(Qt.CaseSensitivity.CaseInsensitive)
-        self.search_field.setCompleter(self.search_field_completer)
-        self.search_bar_layout.addWidget(self.search_field)
-
-        self.search_button = QPushButton(Translations["home.search"], self.central_widget)
-        self.search_button.setObjectName("search_button")
-        self.search_button.setMinimumSize(QSize(0, 32))
-        self.search_bar_layout.addWidget(self.search_button)
-
-        self.central_layout.addLayout(self.search_bar_layout, 3, 0, 1, 1)
+        self.search_bar = SearchBarWidget(self.central_widget)
+        # Restrict the size, as otherwise the widget will expand vertically.
+        self.search_bar.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed)
+        self.central_layout.addWidget(self.search_bar, 3, 0, 1, 1)
 
     def setup_extra_input_bar(self):
         """Sets up inputs for sorting settings and thumbnail size."""
