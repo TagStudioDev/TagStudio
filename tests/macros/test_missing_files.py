@@ -32,9 +32,10 @@ def test_refresh_missing_files(library: Library):
     assert tracker.missing_files_count == 2
 
     # iterate through two files
-    assert "one/two/bar.md" in tracker._missing_paths
+    bar = str(Path("one/two/bar.md"))
+    assert bar in tracker._missing_paths
     tracker.fix_unlinked_entries()
-    assert "one/two/bar.md" not in tracker._missing_paths
+    assert bar not in tracker._missing_paths
 
     # `bar.md` should be relinked to new correct path
     results = library.search_library(BrowsingState.from_path("bar.md"), page_size=500)
