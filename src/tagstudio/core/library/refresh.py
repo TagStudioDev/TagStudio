@@ -4,6 +4,7 @@
 
 
 import shutil
+import sys
 from collections.abc import Iterator
 from dataclasses import dataclass, field
 from datetime import datetime as dt
@@ -169,7 +170,6 @@ class RefreshTracker:
                 ),
                 cwd=library_dir,
                 capture_output=True,
-                text=True,
                 shell=True,
             )
             logger.info(
@@ -181,7 +181,7 @@ class RefreshTracker:
             if result.stderr:
                 logger.error(result.stderr)
 
-            paths: set[str] = set(result.stdout.splitlines())  # pyright: ignore [reportReturnType]
+            paths = set(result.stdout.decode(sys.stdout.encoding).splitlines())
             self.__add(library_dir, paths)
             yield len(paths)
             return None
