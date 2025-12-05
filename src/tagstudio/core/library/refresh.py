@@ -129,6 +129,7 @@ class RefreshTracker:
 
         ignore_patterns = Ignore.get_patterns(library_dir)
 
+        yield 0
         progress = None
         if not force_internal_tools:
             progress = self.__rg(library_dir, ignore_patterns)
@@ -200,13 +201,14 @@ class RefreshTracker:
                 "***/*", root_dir=library_dir, flags=PATH_GLOB_FLAGS, exclude=ignore_patterns
             )
             for i, path in enumerate(search):
-                if (i % 100) == 0:
+                if i < 100 or (i % 100) == 0:
                     yield i
                 paths.add(path)
             logger.info(
                 "[Refresh]: wcmatch scan time",
                 duration=(time() - start_time),
             )
+            yield len(paths)
 
             self.__add(library_dir, paths)
         except ValueError:
