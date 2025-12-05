@@ -22,10 +22,9 @@ def test_refresh_new_files(library: Library, exclude_mode: bool):
     # Given
     library.set_prefs(LibraryPrefs.IS_EXCLUDE_LIST, exclude_mode)
     library.set_prefs(LibraryPrefs.EXTENSION_LIST, [".md"])
-    registry = RefreshTracker(library=library)
-    library.included_files.clear()
+    tracker = RefreshTracker(library=library)
     (library_dir / "FOO.MD").touch()
 
     # Test if the single file was added
-    list(registry.refresh_dir(library_dir, force_internal_tools=True))
-    assert registry.files_not_in_library == [Path("FOO.MD")]
+    list(tracker.refresh_dir(library_dir, force_internal_tools=True))
+    assert tracker._new_paths == [Path("FOO.MD")]

@@ -9,7 +9,7 @@ import pytest
 
 from tagstudio.core.library.alchemy.enums import BrowsingState
 from tagstudio.core.library.alchemy.library import Library
-from tagstudio.core.library.alchemy.registries.unlinked_registry import UnlinkedRegistry
+from tagstudio.core.library.refresh import RefreshTracker
 from tagstudio.core.utils.types import unwrap
 
 CWD = Path(__file__).parent
@@ -18,19 +18,23 @@ CWD = Path(__file__).parent
 # NOTE: Does this test actually work?
 @pytest.mark.parametrize("library", [TemporaryDirectory()], indirect=True)
 def test_refresh_missing_files(library: Library):
-    registry = UnlinkedRegistry(lib=library)
+    library_dir = unwrap(library.library_dir)
+    tracker = RefreshTracker(library)
 
     # touch the file `one/two/bar.md` but in wrong location to simulate a moved file
-    (unwrap(library.library_dir) / "bar.md").touch()
+    (library_dir / "bar.md").touch()
 
     # no files actually exist, so it should return all entries
-    assert list(registry.refresh_unlinked_files()) == [0, 1]
+    list(tracker.refresh_dir(library_dir, force_internal_tools=True))
+    assert sorted(tracker._missing_paths.values()) == [1, 2]
 
     # neither of the library entries exist
-    assert len(registry.unlinked_entries) == 2
+    assert tracker.missing_files_count == 2
 
     # iterate through two files
-    assert list(registry.fix_unlinked_entries()) == [0, 1]
+    assert "one/two/bar.md" in tracker._missing_paths
+    tracker.fix_unlinked_entries()
+    assert "one/two/bar.md" not in tracker._missing_paths
 
     # `bar.md` should be relinked to new correct path
     results = library.search_library(BrowsingState.from_path("bar.md"), page_size=500)

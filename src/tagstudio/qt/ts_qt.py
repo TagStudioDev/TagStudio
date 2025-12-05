@@ -25,7 +25,7 @@ from warnings import catch_warnings
 
 import structlog
 from humanfriendly import format_size, format_timespan
-from PySide6.QtCore import QObject, QSettings, Qt, QThread, QThreadPool, QTimer, Signal
+from PySide6.QtCore import QObject, QSettings, Qt, QThread, QTimer, Signal
 from PySide6.QtGui import (
     QColor,
     QDragEnterEvent,
@@ -58,12 +58,10 @@ from tagstudio.core.library.alchemy.fields import FieldID
 from tagstudio.core.library.alchemy.library import Library, LibraryStatus
 from tagstudio.core.library.alchemy.models import Entry
 from tagstudio.core.library.ignore import Ignore
-from tagstudio.core.library.refresh import RefreshTracker
 from tagstudio.core.media_types import MediaCategories
 from tagstudio.core.query_lang.util import ParsingError
 from tagstudio.core.ts_core import TagStudioCore
 from tagstudio.core.utils.str_formatting import strip_web_protocol
-from tagstudio.core.utils.types import unwrap
 from tagstudio.qt.cache_manager import CacheManager
 from tagstudio.qt.controllers.ffmpeg_missing_message_box import FfmpegMissingMessageBox
 
@@ -71,6 +69,7 @@ from tagstudio.qt.controllers.ffmpeg_missing_message_box import FfmpegMissingMes
 from tagstudio.qt.controllers.fix_ignored_modal_controller import FixIgnoredEntriesModal
 from tagstudio.qt.controllers.ignore_modal_controller import IgnoreModal
 from tagstudio.qt.controllers.library_info_window_controller import LibraryInfoWindow
+from tagstudio.qt.controllers.library_scanner_controller import LibraryScannerController
 from tagstudio.qt.global_settings import (
     DEFAULT_GLOBAL_SETTINGS_PATH,
     GlobalSettings,
@@ -80,11 +79,9 @@ from tagstudio.qt.mixed.about_modal import AboutModal
 from tagstudio.qt.mixed.build_tag import BuildTagPanel
 from tagstudio.qt.mixed.drop_import_modal import DropImportModal
 from tagstudio.qt.mixed.fix_dupe_files import FixDupeFilesModal
-from tagstudio.qt.mixed.fix_unlinked import FixUnlinkedEntriesModal
 from tagstudio.qt.mixed.folders_to_tags import FoldersToTagsModal
 from tagstudio.qt.mixed.item_thumb import BadgeType
 from tagstudio.qt.mixed.migration_modal import JsonMigrationModal
-from tagstudio.qt.mixed.progress_bar import ProgressWidget
 from tagstudio.qt.mixed.settings_panel import SettingsPanel
 from tagstudio.qt.mixed.tag_color_manager import TagColorManager
 from tagstudio.qt.mixed.tag_database import TagDatabasePanel
@@ -94,9 +91,7 @@ from tagstudio.qt.platform_strings import trash_term
 from tagstudio.qt.previews.vendored.ffmpeg import FFMPEG_CMD, FFPROBE_CMD
 from tagstudio.qt.resource_manager import ResourceManager
 from tagstudio.qt.translations import Translations
-from tagstudio.qt.utils.custom_runnable import CustomRunnable
 from tagstudio.qt.utils.file_deleter import delete_file
-from tagstudio.qt.utils.function_iterator import FunctionIterator
 from tagstudio.qt.views.main_window import MainWindow
 from tagstudio.qt.views.panel_modal import PanelModal
 from tagstudio.qt.views.splash import SplashScreen
@@ -186,7 +181,6 @@ class QtDriver(DriverMixin, QObject):
     add_tag_modal: PanelModal | None = None
     folders_modal: FoldersToTagsModal
     about_modal: AboutModal
-    unlinked_modal: FixUnlinkedEntriesModal
     ignored_modal: FixIgnoredEntriesModal
     dupe_modal: FixDupeFilesModal
     library_info_window: LibraryInfoWindow
@@ -195,6 +189,7 @@ class QtDriver(DriverMixin, QObject):
 
     lib: Library
     cache_manager: CacheManager
+    library_scanner: LibraryScannerController
 
     browsing_history: History[BrowsingState]
 
@@ -505,13 +500,8 @@ class QtDriver(DriverMixin, QObject):
 
         # region Tools Menu ===========================================================
 
-        def create_fix_unlinked_entries_modal():
-            if not hasattr(self, "unlinked_modal"):
-                self.unlinked_modal = FixUnlinkedEntriesModal(self.lib, self)
-            self.unlinked_modal.show()
-
         self.main_window.menu_bar.fix_unlinked_entries_action.triggered.connect(
-            create_fix_unlinked_entries_modal
+            lambda: self.library_scanner.open_unlinked_view()
         )
 
         def create_ignored_entries_modal():
@@ -745,6 +735,7 @@ class QtDriver(DriverMixin, QObject):
 
         self.lib.close()
         self.cache_manager = None
+        self.library_scanner = None
 
         self.thumb_job_queue.queue.clear()
         if is_shutdown:
@@ -1015,82 +1006,8 @@ class QtDriver(DriverMixin, QObject):
 
     def add_new_files_callback(self):
         """Run when user initiates adding new files to the Library."""
-        tracker = RefreshTracker(self.lib)
-
-        pw = ProgressWidget(
-            cancel_button_text=None,
-            minimum=0,
-            maximum=0,
-        )
-        pw.setWindowTitle(Translations["library.refresh.title"])
-        pw.update_label(Translations["library.refresh.scanning_preparing"])
-        pw.show()
-
-        iterator = FunctionIterator(
-            lambda lib=unwrap(self.lib.library_dir): tracker.refresh_dir(lib)  # noqa: B008
-        )
-        iterator.value.connect(
-            lambda x: (
-                pw.update_progress(x + 1),
-                pw.update_label(
-                    Translations.format(
-                        "library.refresh.scanning.plural"
-                        if x + 1 != 1
-                        else "library.refresh.scanning.singular",
-                        searched_count=f"{x + 1:n}",
-                        found_count=f"{tracker.files_count:n}",
-                    )
-                ),
-            )
-        )
-        r = CustomRunnable(iterator.run)
-        r.done.connect(
-            lambda: (
-                pw.hide(),
-                pw.deleteLater(),
-                self.add_new_files_runnable(tracker),
-            )
-        )
-        QThreadPool.globalInstance().start(r)
-
-    def add_new_files_runnable(self, tracker: RefreshTracker):
-        """Adds any known new files to the library and run default macros on them.
-
-        Threaded method.
-        """
-        files_count = tracker.files_count
-
-        iterator = FunctionIterator(tracker.save_new_files)
-        pw = ProgressWidget(
-            cancel_button_text=None,
-            minimum=0,
-            maximum=0,
-        )
-        pw.setWindowTitle(Translations["entries.running.dialog.title"])
-        pw.update_label(
-            Translations.format("entries.running.dialog.new_entries", total=f"{files_count:n}")
-        )
-        pw.show()
-
-        iterator.value.connect(
-            lambda _count: (
-                pw.update_label(
-                    Translations.format(
-                        "entries.running.dialog.new_entries", total=f"{files_count:n}"
-                    )
-                ),
-            )
-        )
-        r = CustomRunnable(iterator.run)
-        r.done.connect(
-            lambda: (
-                pw.hide(),
-                pw.deleteLater(),
-                # refresh the library only when new items are added
-                files_count and self.update_browsing_state(),  # type: ignore
-            )
-        )
-        QThreadPool.globalInstance().start(r)
+        if hasattr(self, "library_scanner"):
+            self.library_scanner.scan()
 
     def new_file_macros_runnable(self, new_ids):
         """Threaded method that runs macros on a set of Entry IDs."""
@@ -1595,6 +1512,7 @@ class QtDriver(DriverMixin, QObject):
         logger.info(
             f"[Config] Thumbnail Cache Size: {format_size(cache_size)}",
         )
+        self.library_scanner = LibraryScannerController(self, self.lib)
 
         # Migration is required
         if open_status.json_migration_req:

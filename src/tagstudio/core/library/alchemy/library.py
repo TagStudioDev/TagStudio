@@ -1006,6 +1006,10 @@ class Library:
         with Session(self.engine) as session:
             return session.query(exists().where(Entry.path == path)).scalar()
 
+    def all_paths(self) -> Iterable[tuple[int, Path]]:
+        with Session(self.engine) as session:
+            return ((i, p) for i, p in session.execute(select(Entry.id, Entry.path)).all())
+
     def get_paths(self, limit: int = -1) -> list[str]:
         path_strings: list[str] = []
         with Session(self.engine) as session:
@@ -1040,8 +1044,8 @@ class Library:
 
             ast = search.ast
 
-            if not search.show_hidden_entries:
-                statement = statement.where(~Entry.tags.any(Tag.is_hidden))
+            # if not search.show_hidden_entries:
+            #    statement = statement.where(~Entry.tags.any(Tag.is_hidden))
 
             if ast:
                 start_time = time.time()
