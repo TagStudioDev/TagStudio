@@ -97,6 +97,7 @@ from tagstudio.qt.translations import Translations
 from tagstudio.qt.utils.custom_runnable import CustomRunnable
 from tagstudio.qt.utils.file_deleter import delete_file
 from tagstudio.qt.utils.function_iterator import FunctionIterator
+from tagstudio.qt.views.add_url_entry_panel_view import AddUrlEntryPanel
 from tagstudio.qt.views.main_window import MainWindow
 from tagstudio.qt.views.panel_modal import PanelModal
 from tagstudio.qt.views.splash import SplashScreen
@@ -424,6 +425,10 @@ class QtDriver(DriverMixin, QObject):
         # region Edit Menu ============================================================
         self.main_window.menu_bar.new_tag_action.triggered.connect(
             lambda: self.add_tag_action_callback()
+        )
+
+        self.main_window.menu_bar.new_url_entry_action.triggered.connect(
+            lambda: self.add_url_entry_action_callback()
         )
 
         self.main_window.menu_bar.select_all_action.triggered.connect(
@@ -775,6 +780,7 @@ class QtDriver(DriverMixin, QObject):
             self.main_window.menu_bar.color_manager_action.setEnabled(False)
             self.main_window.menu_bar.ignore_modal_action.setEnabled(False)
             self.main_window.menu_bar.new_tag_action.setEnabled(False)
+            self.main_window.menu_bar.new_url_entry_action.setEnabled(False)
             self.main_window.menu_bar.fix_unlinked_entries_action.setEnabled(False)
             self.main_window.menu_bar.fix_ignored_entries_action.setEnabled(False)
             self.main_window.menu_bar.fix_dupe_files_action.setEnabled(False)
@@ -844,6 +850,17 @@ class QtDriver(DriverMixin, QObject):
                 self.modal.hide(),
             )
         )
+        self.modal.show()
+
+    def add_url_entry_action_callback(self):
+        panel = AddUrlEntryPanel(self.lib)
+        self.modal = PanelModal(
+            panel,
+            Translations["entry.new.url"],
+            Translations["entry.add"],
+            has_save=True,
+        )
+
         self.modal.show()
 
     def select_all_action_callback(self):
@@ -1650,6 +1667,7 @@ class QtDriver(DriverMixin, QObject):
         self.main_window.menu_bar.color_manager_action.setEnabled(True)
         self.main_window.menu_bar.ignore_modal_action.setEnabled(True)
         self.main_window.menu_bar.new_tag_action.setEnabled(True)
+        self.main_window.menu_bar.new_url_entry_action.setEnabled(True)
         self.main_window.menu_bar.fix_unlinked_entries_action.setEnabled(True)
         self.main_window.menu_bar.fix_ignored_entries_action.setEnabled(True)
         self.main_window.menu_bar.fix_dupe_files_action.setEnabled(True)
