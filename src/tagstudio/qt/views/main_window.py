@@ -11,7 +11,7 @@ import structlog
 from PIL import Image, ImageQt
 from PySide6 import QtCore
 from PySide6.QtCore import QMetaObject, QSize, QStringListModel, Qt
-from PySide6.QtGui import QAction, QPixmap, QKeyEvent
+from PySide6.QtGui import QAction, QKeyEvent, QPixmap
 from PySide6.QtWidgets import (
     QComboBox,
     QCompleter,
@@ -218,9 +218,7 @@ class MainMenuBar(QMenuBar):
         self.edit_menu.addAction(self.select_inverse_action)
 
         # Undo Selection
-        self.undo_selection_action = QAction(
-            Translations["select.undo"], self
-        )
+        self.undo_selection_action = QAction(Translations["select.undo"], self)
         self.undo_selection_action.setShortcut(
             QtCore.QKeyCombination(
                 QtCore.Qt.Key.Key_R,
@@ -230,9 +228,7 @@ class MainMenuBar(QMenuBar):
         self.edit_menu.addAction(self.undo_selection_action)
 
         # Redo Selection
-        self.redo_selection_action = QAction(
-            Translations["select.redo"], self
-        )
+        self.redo_selection_action = QAction(Translations["select.redo"], self)
         self.redo_selection_action.setShortcut(
             QtCore.QKeyCombination(
                 QtCore.Qt.KeyboardModifier(QtCore.Qt.KeyboardModifier.ShiftModifier),
@@ -717,8 +713,8 @@ class MainWindow(QMainWindow):
 
     # endregion
 
-    #keyboard navigation of thumb_layout
-    def eventFilter(self, watched, event):
+    @typing.override
+    def eventFilter(self, watched, event) -> bool:
         if isinstance(event, QKeyEvent):
             key = event.key()
             # KEY RELEASED
@@ -746,7 +742,6 @@ class MainWindow(QMainWindow):
                     self.preview_panel.set_selection(selected, update_preview=True)
                     return True
         return super().eventFilter(watched, event)
-    
 
     def toggle_landing_page(self, enabled: bool):
         if enabled:

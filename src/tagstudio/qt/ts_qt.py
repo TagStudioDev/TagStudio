@@ -429,7 +429,7 @@ class QtDriver(DriverMixin, QObject):
         self.main_window.menu_bar.select_inverse_action.triggered.connect(
             self.select_inverse_action_callback
         )
-        
+
         self.main_window.menu_bar.undo_selection_action.triggered.connect(
             self.undo_selection_action_callback
         )

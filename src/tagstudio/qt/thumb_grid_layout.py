@@ -1,8 +1,8 @@
 import math
 import time
+from collections import deque
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, override
-from collections import deque
 
 from PySide6.QtCore import QPoint, QRect, QSize
 from PySide6.QtGui import QPixmap
@@ -18,19 +18,16 @@ from tagstudio.qt.previews.renderer import ThumbRenderer
 if TYPE_CHECKING:
     from tagstudio.qt.ts_qt import QtDriver
 
-#number of selection states to store (for undo/redo selection)
+# number of selection states to store (for undo/redo selection)
 MAX_HISTORY = 30
 
+
 def log_selection(method):
-    #decorator to keep a history of selection states
+    # decorator to keep a history of selection states
     def wrapper(self, *args, **kwargs):
         # Only log if the current state differs from the last
-        if (
-            self._selected
-            and (
-                not self._selection_history
-                or self._selection_history[-1] != self._selected
-            )
+        if self._selected and (
+            not self._selection_history or self._selection_history[-1] != self._selected
         ):
             # copy to avoid mutation issues
             self._selection_history.append(dict(self._selected))
@@ -38,7 +35,9 @@ def log_selection(method):
                 # clear undo history
                 self._undo_selection_history.clear()
         return method(self, *args, **kwargs)
+
     return wrapper
+
 
 class ThumbGridLayout(QLayout):
     def __init__(self, driver: "QtDriver", scroll_area: QScrollArea) -> None:
@@ -50,8 +49,8 @@ class ThumbGridLayout(QLayout):
         self._items: list[QLayoutItem] = []
         # Entry.id -> _entry_ids[index]
         self._selected: dict[int, int] = {}
-        self._selection_history:deque[dict[int, int]] = deque(maxlen=MAX_HISTORY)
-        self._undo_selection_history:deque[dict[int, int]] = deque(maxlen=MAX_HISTORY)
+        self._selection_history: deque[dict[int, int]] = deque(maxlen=MAX_HISTORY)
+        self._undo_selection_history: deque[dict[int, int]] = deque(maxlen=MAX_HISTORY)
         # _entry_ids[index]
         self._last_selected: int | None = None
         self._is_shift_key_down: bool = False
@@ -124,7 +123,6 @@ class ThumbGridLayout(QLayout):
                 self._set_selected(id)
                 self._last_selected = selected[id]
             self._selected = selected
-    
 
     def redo_selection(self):
         """Loads selection state from undo history."""
@@ -138,24 +136,24 @@ class ThumbGridLayout(QLayout):
                 self._set_selected(id)
                 self._last_selected = selected[id]
             self._selected = selected
-    
-    def handle_shift_key_event(self, is_shift_key_pressed:bool):
+
+    def handle_shift_key_event(self, is_shift_key_pressed: bool):
         """Track last_selected and input for shift selecting with directional select."""
         self._is_shift_key_down = is_shift_key_pressed
-        if is_shift_key_pressed:    
+        if is_shift_key_pressed:
             self._shift_select_start = self._last_selected
         else:
             self._shift_select_start = None
 
     @log_selection
-    def _enact_directional_select(self,target_index:int):
+    def _enact_directional_select(self, target_index: int):
         """Common logic for select_next, prev, up, down.
 
         Handles multi-select (shift+arrow key).
         """
         selection_start_index = None
         if self._is_shift_key_down:
-            #find the multi-select start point
+            # find the multi-select start point
             if self._shift_select_start is not None:
                 selection_start_index = self._shift_select_start
             elif self._last_selected is not None:
@@ -163,14 +161,14 @@ class ThumbGridLayout(QLayout):
                 selection_start_index = self._last_selected
         target_indexes = [target_index]
         if selection_start_index is not None:
-            #get all indexes from start point to target_index
+            # get all indexes from start point to target_index
             target_indexes = list(
                 range(
                     min(selection_start_index, target_index),
-                    max(selection_start_index, target_index) + 1
+                    max(selection_start_index, target_index) + 1,
                 )
             )
-        #update selection
+        # update selection
         selected = {self._entry_ids[i]: i for i in target_indexes}
         for id in self._selected:
             if id not in selected:
@@ -179,37 +177,33 @@ class ThumbGridLayout(QLayout):
             self._set_selected(id)
         self._selected = selected
         self._last_selected = target_index
-        #return selected because this callback is handled in main_window.py (not ts_qt.py)
+        # return selected because this callback is handled in main_window.py (not ts_qt.py)
         return list(self._selected.keys())
-    
+
     def select_next(self):
         target_index = 0
         if self._last_selected is not None:
-            target_index = min(self._last_selected+1, len(self._entry_ids)-1)
+            target_index = min(self._last_selected + 1, len(self._entry_ids) - 1)
         return self._enact_directional_select(target_index)
 
     def select_prev(self):
-        target_index = len(self._entry_ids)-1
+        target_index = len(self._entry_ids) - 1
         if self._last_selected is not None:
-            target_index = max(self._last_selected-1, 0)
+            target_index = max(self._last_selected - 1, 0)
         return self._enact_directional_select(target_index)
-    
+
     def select_up(self):
-        target_index = len(self._entry_ids)-1
+        target_index = len(self._entry_ids) - 1
         if self._last_selected is not None:
             target_index = max(
-                self._last_selected-self._per_row,
-                self._last_selected % self._per_row
+                self._last_selected - self._per_row, self._last_selected % self._per_row
             )
         return self._enact_directional_select(target_index)
-    
+
     def select_down(self):
         target_index = 0
         if self._last_selected is not None:
-            target_index = min(
-                self._last_selected+self._per_row,
-                len(self._entry_ids)-1
-            )
+            target_index = min(self._last_selected + self._per_row, len(self._entry_ids) - 1)
         return self._enact_directional_select(target_index)
 
     @log_selection
