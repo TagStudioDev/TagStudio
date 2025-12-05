@@ -716,31 +716,34 @@ class MainWindow(QMainWindow):
     @typing.override
     def eventFilter(self, watched, event) -> bool:
         if isinstance(event, QKeyEvent):
-            key = event.key()
-            # KEY RELEASED
+            # Key released
             if event.type() == event.Type.KeyRelease:
-                if key == QtCore.Qt.Key.Key_Shift:
-                    self.thumb_layout.handle_shift_key_event(is_shift_key_pressed=False)
-            # KEY PRESSED
+                match event.key():
+                    case QtCore.Qt.Key.Key_Shift:
+                        self.thumb_layout.handle_shift_key_event(is_shift_key_pressed=False)
+
+            # Key pressed
             else:
-                if key == QtCore.Qt.Key.Key_Shift:
-                    self.thumb_layout.handle_shift_key_event(is_shift_key_pressed=True)
-                elif key == QtCore.Qt.Key.Key_Right:
-                    selected = self.thumb_layout.select_next()
-                    self.preview_panel.set_selection(selected, update_preview=True)
-                    return True
-                elif key == QtCore.Qt.Key.Key_Left:
-                    selected = self.thumb_layout.select_prev()
-                    self.preview_panel.set_selection(selected, update_preview=True)
-                    return True
-                elif key == QtCore.Qt.Key.Key_Up:
-                    selected = self.thumb_layout.select_up()
-                    self.preview_panel.set_selection(selected, update_preview=True)
-                    return True
-                elif key == QtCore.Qt.Key.Key_Down:
-                    selected = self.thumb_layout.select_down()
-                    self.preview_panel.set_selection(selected, update_preview=True)
-                    return True
+                match event.key():
+                    case QtCore.Qt.Key.Key_Shift:
+                        self.thumb_layout.handle_shift_key_event(is_shift_key_pressed=True)
+                    case QtCore.Qt.Key.Key_Right:
+                        selected = self.thumb_layout.select_next()
+                        self.preview_panel.set_selection(selected, update_preview=True)
+                        return True
+                    case QtCore.Qt.Key.Key_Left:
+                        selected = self.thumb_layout.select_prev()
+                        self.preview_panel.set_selection(selected, update_preview=True)
+                        return True
+                    case QtCore.Qt.Key.Key_Up:
+                        selected = self.thumb_layout.select_up()
+                        self.preview_panel.set_selection(selected, update_preview=True)
+                        return True
+                    case QtCore.Qt.Key.Key_Down:
+                        selected = self.thumb_layout.select_down()
+                        self.preview_panel.set_selection(selected, update_preview=True)
+                        return True
+
         return super().eventFilter(watched, event)
 
     def toggle_landing_page(self, enabled: bool):
