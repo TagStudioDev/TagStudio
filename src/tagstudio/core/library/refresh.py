@@ -194,6 +194,8 @@ class RefreshTracker:
         ignore_patterns = ignore_to_glob(ignore_patterns)
         try:
             paths = set()
+
+            start_time = time()
             search = glob.iglob(
                 "***/*", root_dir=library_dir, flags=PATH_GLOB_FLAGS, exclude=ignore_patterns
             )
@@ -201,6 +203,11 @@ class RefreshTracker:
                 if (i % 100) == 0:
                     yield i
                 paths.add(path)
+            logger.info(
+                "[Refresh]: wcmatch scan time",
+                duration=(time() - start_time),
+            )
+
             self.__add(library_dir, paths)
         except ValueError:
             logger.info("[Refresh]: ValueError when refreshing directory with wcmatch!")
