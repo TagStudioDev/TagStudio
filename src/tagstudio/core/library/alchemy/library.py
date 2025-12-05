@@ -1044,8 +1044,8 @@ class Library:
 
             ast = search.ast
 
-            # if not search.show_hidden_entries:
-            #    statement = statement.where(~Entry.tags.any(Tag.is_hidden))
+            if not search.show_hidden_entries:
+                statement = statement.where(~Entry.tags.any(Tag.is_hidden))
 
             if ast:
                 start_time = time.time()
