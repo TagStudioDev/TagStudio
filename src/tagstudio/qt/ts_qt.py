@@ -861,6 +861,13 @@ class QtDriver(DriverMixin, QObject):
             has_save=True,
         )
 
+        self.modal.saved.connect(
+            lambda: (
+                self.lib.add_url_as_entry(panel.get_content()),
+                self.modal.hide(),
+            )
+        )
+
         self.modal.show()
 
     def select_all_action_callback(self):

@@ -9,9 +9,12 @@ class AddUrlEntryPanel(PanelWidget):
         super().__init__()
 
         self.setMinimumWidth(480)
-        self.root_layout = QVBoxLayout(self)
-        self.root_layout.setContentsMargins(6, 0, 6, 0)
-        self.root_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
+        self.__root_layout = QVBoxLayout(self)
+        self.__root_layout.setContentsMargins(6, 0, 6, 0)
+        self.__root_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
 
-        self.url_line = QLineEdit()
-        self.root_layout.addWidget(self.url_line)
+        self.__url_line = QLineEdit()
+        self.__root_layout.addWidget(self.__url_line)
+
+    def get_content(self) -> str:
+        return self.__url_line.text()
