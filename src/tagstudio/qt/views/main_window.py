@@ -42,7 +42,7 @@ from tagstudio.qt.helpers.color_overlay import theme_fg_overlay
 from tagstudio.qt.mixed.landing import LandingWidget
 from tagstudio.qt.mixed.pagination import Pagination
 from tagstudio.qt.mixed.tag_widget import get_border_color, get_highlight_color, get_text_color
-from tagstudio.qt.views.widgets.search_bar_widget import SearchBarWidget
+from tagstudio.qt.views.widgets.search_bar_view import SearchBarWidget
 from tagstudio.qt.mnemonics import assign_mnemonics
 from tagstudio.qt.models.palette import ColorType, get_tag_color
 from tagstudio.qt.platform_strings import trash_term
