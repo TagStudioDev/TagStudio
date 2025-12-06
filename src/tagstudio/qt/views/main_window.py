@@ -24,11 +24,11 @@ from tagstudio.core.library.alchemy.enums import SortingModeEnum
 from tagstudio.qt.controllers.preview_panel_controller import PreviewPanel
 from tagstudio.qt.mixed.landing import LandingWidget
 from tagstudio.qt.mixed.pagination import Pagination
-from tagstudio.qt.views.widgets.search_bar_view import SearchBarWidget
 from tagstudio.qt.resource_manager import ResourceManager
 from tagstudio.qt.thumb_grid_layout import ThumbGridLayout
-from tagstudio.qt.views.widgets.main_menu_bar_view import MainMenuBar
 from tagstudio.qt.views.widgets.content_display_toolbar_view import ContentDisplayToolbar
+from tagstudio.qt.views.widgets.search_bar_view import SearchBarWidget
+from tagstudio.qt.views.widgets.main_menu_bar_view import MainMenuBar
 
 # Only import for type checking/autocompletion, will not be imported at runtime.
 if typing.TYPE_CHECKING:

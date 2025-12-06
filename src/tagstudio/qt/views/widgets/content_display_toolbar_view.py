@@ -1,28 +1,25 @@
-import typing
-
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QColor
 from PySide6.QtWidgets import (
-    QWidget,
-    QHBoxLayout,
-    QHBoxLayout,
     QCheckBox,
     QComboBox,
+    QHBoxLayout,
     QLabel,
-    QWidget,
     QSpacerItem,
-    QSizePolicy
+    QSizePolicy,
+    QWidget
     )
 from tagstudio.core.library.alchemy.enums import SortingModeEnum, TagColorEnum
-from tagstudio.qt.translations import Translations
-from tagstudio.qt.models.thumb_sizes import THUMB_SIZES
 from tagstudio.qt.mixed.tag_widget import get_border_color, get_highlight_color, get_text_color
 from tagstudio.qt.models.palette import ColorType, get_tag_color
+from tagstudio.qt.models.thumb_sizes import THUMB_SIZES
+from tagstudio.qt.translations import Translations
+
 
 
 class ContentDisplayToolbar(QWidget):
-    show_hidden_entries_widget: QWidget
     show_hidden_entries_layout: QHBoxLayout
+    show_hidden_entries_widget: QWidget
 
 
     def __init__(self, parent: QWidget):
