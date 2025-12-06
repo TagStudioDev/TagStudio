@@ -7,35 +7,28 @@ import typing
 
 import structlog
 from PySide6.QtCore import QMetaObject, Qt
-from PySide6.QtGui import QColor
 from PySide6.QtWidgets import (
-    QCheckBox,
-    QComboBox,
     QFrame,
     QGridLayout,
     QHBoxLayout,
-    QLabel,
     QMainWindow,
     QScrollArea,
     QSizePolicy,
-    QSpacerItem,
     QSplitter,
     QStatusBar,
     QVBoxLayout,
     QWidget,
 )
 
-from tagstudio.core.library.alchemy.enums import SortingModeEnum, TagColorEnum
+from tagstudio.core.library.alchemy.enums import SortingModeEnum
 from tagstudio.qt.controllers.preview_panel_controller import PreviewPanel
 from tagstudio.qt.mixed.landing import LandingWidget
 from tagstudio.qt.mixed.pagination import Pagination
-from tagstudio.qt.mixed.tag_widget import get_border_color, get_highlight_color, get_text_color
 from tagstudio.qt.views.widgets.search_bar_view import SearchBarWidget
-from tagstudio.qt.models.palette import ColorType, get_tag_color
 from tagstudio.qt.resource_manager import ResourceManager
 from tagstudio.qt.thumb_grid_layout import ThumbGridLayout
-from tagstudio.qt.translations import Translations
 from tagstudio.qt.views.widgets.main_menu_bar_view import MainMenuBar
+from tagstudio.qt.views.widgets.content_display_toolbar_view import ContentDisplayToolbar
 
 # Only import for type checking/autocompletion, will not be imported at runtime.
 if typing.TYPE_CHECKING:
@@ -46,14 +39,6 @@ logger = structlog.get_logger(__name__)
 
 # View Component
 class MainWindow(QMainWindow):
-    THUMB_SIZES: list[tuple[str, int]] = [
-        (Translations["home.thumbnail_size.extra_large"], 256),
-        (Translations["home.thumbnail_size.large"], 192),
-        (Translations["home.thumbnail_size.medium"], 128),
-        (Translations["home.thumbnail_size.small"], 96),
-        (Translations["home.thumbnail_size.mini"], 76),
-    ]
-
     def __init__(self, driver: "QtDriver", parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self.rm = ResourceManager()
@@ -62,11 +47,8 @@ class MainWindow(QMainWindow):
         # initialized in setup_search_bar
         self.search_bar: SearchBarWidget
 
-        # initialized in setup_extra_input_bar
-        self.extra_input_layout: QHBoxLayout
-        self.sorting_mode_combobox: QComboBox
-        self.sorting_direction_combobox: QComboBox
-        self.thumb_size_combobox: QComboBox
+        # initialized in setup_content_display_toolbar
+        self.content_display_toolbar: ContentDisplayToolbar
 
         # initialized in setup_content
         self.content_layout: QHBoxLayout
@@ -126,7 +108,7 @@ class MainWindow(QMainWindow):
         self.central_layout.setObjectName("central_layout")
 
         self.setup_search_bar()
-        self.setup_extra_input_bar()
+        self.setup_content_display_toolbar()
         self.setup_content(driver)
         self.setCentralWidget(self.central_widget)
 
@@ -136,103 +118,12 @@ class MainWindow(QMainWindow):
         self.search_bar.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed)
         self.central_layout.addWidget(self.search_bar, 3, 0, 1, 1)
 
-    def setup_extra_input_bar(self):
+    def setup_content_display_toolbar(self):
         """Sets up inputs for sorting settings and thumbnail size."""
-        self.extra_input_layout = QHBoxLayout()
-        self.extra_input_layout.setObjectName("extra_input_layout")
+        self.content_display_toolbar = ContentDisplayToolbar(self)
+        self.content_display_toolbar.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed)
 
-        primary_color = QColor(get_tag_color(ColorType.PRIMARY, TagColorEnum.DEFAULT))
-        border_color = get_border_color(primary_color)
-        highlight_color = get_highlight_color(primary_color)
-        text_color: QColor = get_text_color(primary_color, highlight_color)
-
-        ## Show hidden entries checkbox
-        self.show_hidden_entries_widget = QWidget()
-        self.show_hidden_entries_layout = QHBoxLayout(self.show_hidden_entries_widget)
-        self.show_hidden_entries_layout.setStretch(1, 1)
-        self.show_hidden_entries_layout.setContentsMargins(0, 0, 0, 0)
-        self.show_hidden_entries_layout.setSpacing(6)
-        self.show_hidden_entries_layout.setAlignment(Qt.AlignmentFlag.AlignLeft)
-        self.show_hidden_entries_title = QLabel(Translations["home.show_hidden_entries"])
-        self.show_hidden_entries_checkbox = QCheckBox()
-        self.show_hidden_entries_checkbox.setFixedSize(22, 22)
-
-        self.show_hidden_entries_checkbox.setStyleSheet(
-            f"QCheckBox{{"
-            f"background: rgba{primary_color.toTuple()};"
-            f"color: rgba{text_color.toTuple()};"
-            f"border-color: rgba{border_color.toTuple()};"
-            f"border-radius: 6px;"
-            f"border-style:solid;"
-            f"border-width: 2px;"
-            f"}}"
-            f"QCheckBox::indicator{{"
-            f"width: 10px;"
-            f"height: 10px;"
-            f"border-radius: 2px;"
-            f"margin: 4px;"
-            f"}}"
-            f"QCheckBox::indicator:checked{{"
-            f"background: rgba{text_color.toTuple()};"
-            f"}}"
-            f"QCheckBox::hover{{"
-            f"border-color: rgba{highlight_color.toTuple()};"
-            f"}}"
-            f"QCheckBox::focus{{"
-            f"border-color: rgba{highlight_color.toTuple()};"
-            f"outline:none;"
-            f"}}"
-        )
-
-        self.show_hidden_entries_checkbox.setChecked(False)  # Default: No
-
-        self.show_hidden_entries_layout.addWidget(self.show_hidden_entries_checkbox)
-        self.show_hidden_entries_layout.addWidget(self.show_hidden_entries_title)
-
-        self.extra_input_layout.addWidget(self.show_hidden_entries_widget)
-
-        ## Spacer
-        self.extra_input_layout.addItem(
-            QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
-        )
-
-        ## Sorting Mode Dropdown
-        self.sorting_mode_combobox = QComboBox(self.central_widget)
-        self.sorting_mode_combobox.setObjectName("sorting_mode_combobox")
-        for sort_mode in SortingModeEnum:
-            self.sorting_mode_combobox.addItem(Translations[sort_mode.value], sort_mode)
-        self.extra_input_layout.addWidget(self.sorting_mode_combobox)
-
-        ## Sorting Direction Dropdown
-        self.sorting_direction_combobox = QComboBox(self.central_widget)
-        self.sorting_direction_combobox.setObjectName("sorting_direction_combobox")
-        self.sorting_direction_combobox.addItem(
-            Translations["sorting.direction.ascending"], userData=True
-        )
-        self.sorting_direction_combobox.addItem(
-            Translations["sorting.direction.descending"], userData=False
-        )
-        self.sorting_direction_combobox.setCurrentIndex(1)  # Default: Descending
-        self.extra_input_layout.addWidget(self.sorting_direction_combobox)
-
-        ## Thumbnail Size placeholder
-        self.thumb_size_combobox = QComboBox(self.central_widget)
-        self.thumb_size_combobox.setObjectName("thumb_size_combobox")
-        self.thumb_size_combobox.setPlaceholderText(Translations["home.thumbnail_size"])
-        self.thumb_size_combobox.setCurrentText("")
-        size_policy = QSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Fixed)
-        size_policy.setHorizontalStretch(0)
-        size_policy.setVerticalStretch(0)
-        size_policy.setHeightForWidth(self.thumb_size_combobox.sizePolicy().hasHeightForWidth())
-        self.thumb_size_combobox.setSizePolicy(size_policy)
-        self.thumb_size_combobox.setMinimumWidth(128)
-        self.thumb_size_combobox.setMaximumWidth(352)
-        self.extra_input_layout.addWidget(self.thumb_size_combobox)
-        for size in MainWindow.THUMB_SIZES:
-            self.thumb_size_combobox.addItem(size[0], size[1])
-        self.thumb_size_combobox.setCurrentIndex(2)  # Default: Medium
-
-        self.central_layout.addLayout(self.extra_input_layout, 5, 0, 1, 1)
+        self.central_layout.addWidget(self.content_display_toolbar, 5, 0, 1, 1)
 
     def setup_content(self, driver: "QtDriver"):
         self.content_layout = QHBoxLayout()
@@ -315,18 +206,18 @@ class MainWindow(QMainWindow):
     @property
     def sorting_mode(self) -> SortingModeEnum:
         """What to sort by."""
-        return self.sorting_mode_combobox.currentData()
+        return self.content_display_toolbar.sorting_mode_combobox.currentData()
 
     @property
     def sorting_direction(self) -> bool:
         """Whether to Sort the results in ascending order."""
-        return self.sorting_direction_combobox.currentData()
+        return self.content_display_toolbar.sorting_direction_combobox.currentData()
 
     @property
     def thumb_size(self) -> int:
-        return self.thumb_size_combobox.currentData()
+        return self.content_display_toolbar.thumb_size_combobox.currentData()
 
     @property
     def show_hidden_entries(self) -> bool:
         """Whether to show entries tagged with hidden tags."""
-        return self.show_hidden_entries_checkbox.isChecked()
+        return self.content_display_toolbar.show_hidden_entries_checkbox.isChecked()

@@ -90,6 +90,7 @@ from tagstudio.qt.mixed.tag_color_manager import TagColorManager
 from tagstudio.qt.mixed.tag_database import TagDatabasePanel
 from tagstudio.qt.mixed.tag_search import TagSearchModal
 from tagstudio.qt.models.palette import ColorType, UiColor, get_ui_color
+from tagstudio.qt.models.thumb_sizes import THUMB_SIZES
 from tagstudio.qt.platform_strings import trash_term
 from tagstudio.qt.previews.vendored.ffmpeg import FFMPEG_CMD, FFPROBE_CMD
 from tagstudio.qt.resource_manager import ResourceManager
@@ -484,18 +485,18 @@ class QtDriver(DriverMixin, QObject):
         )
 
         def on_decrease_thumbnail_size_action():
-            new_val = self.main_window.thumb_size_combobox.currentIndex() + 1
-            if not (new_val + 1) > len(self.main_window.THUMB_SIZES):
-                self.main_window.thumb_size_combobox.setCurrentIndex(new_val)
+            new_val = self.main_window.content_display_toolbar.thumb_size_combobox.currentIndex() + 1
+            if not (new_val + 1) > len(THUMB_SIZES):
+                self.main_window.content_display_toolbar.thumb_size_combobox.setCurrentIndex(new_val)
 
         self.main_window.menu_bar.decrease_thumbnail_size_action.triggered.connect(
             on_decrease_thumbnail_size_action
         )
 
         def on_increase_thumbnail_size_action():
-            new_val = self.main_window.thumb_size_combobox.currentIndex() - 1
+            new_val = self.main_window.content_display_toolbar.thumb_size_combobox.currentIndex() - 1
             if not new_val < 0:
-                self.main_window.thumb_size_combobox.setCurrentIndex(new_val)
+                self.main_window.content_display_toolbar.thumb_size_combobox.setCurrentIndex(new_val)
 
         self.main_window.menu_bar.increase_thumbnail_size_action.triggered.connect(
             on_increase_thumbnail_size_action
@@ -643,26 +644,26 @@ class QtDriver(DriverMixin, QObject):
         self.main_window.search_bar.search_field.returnPressed.connect(_update_browsing_state)
 
         # Sorting Dropdowns
-        self.main_window.sorting_mode_combobox.setCurrentIndex(
+        self.main_window.content_display_toolbar.sorting_mode_combobox.setCurrentIndex(
             list(SortingModeEnum).index(self.browsing_history.current.sorting_mode)
         )
-        self.main_window.sorting_mode_combobox.currentIndexChanged.connect(
+        self.main_window.content_display_toolbar.sorting_mode_combobox.currentIndexChanged.connect(
             self.sorting_mode_callback
         )
 
-        self.main_window.sorting_direction_combobox.currentIndexChanged.connect(
+        self.main_window.content_display_toolbar.sorting_direction_combobox.currentIndexChanged.connect(
             self.sorting_direction_callback
         )
 
         # Thumbnail Size ComboBox
-        self.main_window.thumb_size_combobox.setCurrentIndex(2)  # Default: Medium
-        self.main_window.thumb_size_combobox.currentIndexChanged.connect(
-            lambda: self.thumb_size_callback(self.main_window.thumb_size_combobox.currentIndex())
+        self.main_window.content_display_toolbar.thumb_size_combobox.setCurrentIndex(2)  # Default: Medium
+        self.main_window.content_display_toolbar.thumb_size_combobox.currentIndexChanged.connect(
+            lambda: self.thumb_size_callback(self.main_window.content_display_toolbar.thumb_size_combobox.currentIndex())
         )
 
         # Exclude hidden entries checkbox
-        self.main_window.show_hidden_entries_checkbox.setChecked(False)  # Default: No
-        self.main_window.show_hidden_entries_checkbox.stateChanged.connect(
+        self.main_window.content_display_toolbar.show_hidden_entries_checkbox.setChecked(False)  # Default: No
+        self.main_window.content_display_toolbar.show_hidden_entries_checkbox.stateChanged.connect(
             self.show_hidden_entries_callback
         )
 
