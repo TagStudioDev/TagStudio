@@ -5,12 +5,14 @@ from typing import TYPE_CHECKING, Any, override
 
 from PySide6.QtCore import QPoint, QRect, QSize
 from PySide6.QtGui import QPixmap
-from PySide6.QtWidgets import QLayout, QLayoutItem, QScrollArea
+from PySide6.QtWidgets import QFrame, QLayout, QLayoutItem, QScrollArea
 
 from tagstudio.core.constants import TAG_ARCHIVED, TAG_FAVORITE
 from tagstudio.core.library.alchemy.enums import ItemType
+from tagstudio.core.library.alchemy.library import GroupedSearchResult
 from tagstudio.core.library.alchemy.models import Entry
 from tagstudio.core.utils.types import unwrap
+from tagstudio.qt.mixed.group_header import GroupHeaderWidget
 from tagstudio.qt.mixed.item_thumb import BadgeType, ItemThumb
 from tagstudio.qt.previews.renderer import ThumbRenderer
 
@@ -39,6 +41,15 @@ class ThumbGridLayout(QLayout):
         # Entry.id -> _items[index]
         self._entry_items: dict[int, int] = {}
 
+        # Grouping support
+        self._grouped_result: GroupedSearchResult | None = None
+        self._group_headers: list[GroupHeaderWidget] = []
+        self._group_dividers: list[QFrame] = []
+        # Flat list of ("header", group_idx), ("divider", divider_idx), or ("thumb", entry_id)
+        self._layout_items: list[tuple[str, int]] = []
+        # Track total height for grouped layout
+        self._grouped_total_height: int = 0
+
         self._render_results: dict[Path, Any] = {}
         self._renderer: ThumbRenderer = ThumbRenderer(self.driver)
         self._renderer.updated.connect(self._on_rendered)
@@ -47,16 +58,29 @@ class ThumbGridLayout(QLayout):
         # _entry_ids[StartIndex:EndIndex]
         self._last_page_update: tuple[int, int] | None = None
 
-    def set_entries(self, entry_ids: list[int]):
+    def set_entries(self, entry_ids: list[int], grouped_result: GroupedSearchResult | None = None):
         self.scroll_area.verticalScrollBar().setValue(0)
 
         self._selected.clear()
         self._last_selected = None
 
         self._entry_ids = entry_ids
+        self._grouped_result = grouped_result
         self._entries.clear()
         self._tag_entries.clear()
         self._entry_paths.clear()
+
+        if grouped_result:
+            self._build_grouped_layout()
+        else:
+            for header in self._group_headers:
+                header.deleteLater()
+            for divider in self._group_dividers:
+                divider.deleteLater()
+            self._group_headers = []
+            self._group_dividers = []
+            self._layout_items = []
+            self._grouped_total_height = 0
 
         self._entry_items.clear()
         self._render_results.clear()
@@ -150,6 +174,71 @@ class ThumbGridLayout(QLayout):
 
         self._selected.clear()
         self._last_selected = None
+
+    def _build_grouped_layout(self):
+        """Build flat list of layout items for grouped rendering."""
+        if not self._grouped_result:
+            self._layout_items = []
+            return
+
+        self._layout_items = []
+
+        old_collapsed_states = {}
+        if self._group_headers:
+            for idx, header in enumerate(self._group_headers):
+                old_collapsed_states[idx] = header.is_collapsed
+            for header in self._group_headers:
+                header.deleteLater()
+            for divider in self._group_dividers:
+                divider.deleteLater()
+            self._group_headers = []
+            self._group_dividers = []
+
+        for group_idx, group in enumerate(self._grouped_result.groups):
+            if group_idx > 0:
+                from PySide6.QtWidgets import QWidget
+                divider = QWidget()
+                divider.setStyleSheet("QWidget { background-color: #444444; }")
+                divider.setFixedHeight(1)
+                divider.setMinimumWidth(1)
+                self._group_dividers.append(divider)
+                self.addWidget(divider)
+                self._layout_items.append(("divider", len(self._group_dividers) - 1))
+
+            self._layout_items.append(("header", group_idx))
+
+            default_collapsed = group.is_special and group.special_label == "No Tag"
+            is_collapsed = old_collapsed_states.get(group_idx, default_collapsed)
+            header = GroupHeaderWidget(
+                tag=group.tag,
+                entry_count=len(group.entry_ids),
+                is_collapsed=is_collapsed,
+                is_special=group.is_special,
+                special_label=group.special_label,
+                library=self.driver.lib,
+                is_first=group_idx == 0,
+                tags=group.tags,
+            )
+            header.toggle_collapsed.connect(
+                lambda g_idx=group_idx: self._on_group_collapsed(g_idx)
+            )
+            self._group_headers.append(header)
+            self.addWidget(header)
+
+            if not is_collapsed:
+                for entry_id in group.entry_ids:
+                    self._layout_items.append(("thumb", entry_id))
+
+    def _on_group_collapsed(self, group_idx: int):
+        """Handle group header collapse/expand."""
+        if not self._grouped_result or group_idx >= len(self._group_headers):
+            return
+
+        self._build_grouped_layout()
+
+        self._last_page_update = None
+        current_geometry = self.geometry()
+        self.setGeometry(current_geometry)
 
     def _set_selected(self, entry_id: int, value: bool = True):
         if entry_id not in self._entry_items:
@@ -249,6 +338,11 @@ class ThumbGridLayout(QLayout):
         per_row, _, height_offset = self._size(width)
         if per_row == 0:
             return height_offset
+
+        # Use calculated grouped height if in grouped mode
+        if self._grouped_result is not None and self._grouped_total_height > 0:
+            return self._grouped_total_height
+
         return math.ceil(len(self._entry_ids) / per_row) * height_offset
 
     @override
@@ -258,6 +352,13 @@ class ThumbGridLayout(QLayout):
         if len(self._entry_ids) == 0:
             for item in self._item_thumbs:
                 item.setGeometry(32_000, 32_000, 0, 0)
+            for header in self._group_headers:
+                header.setGeometry(32_000, 32_000, 0, 0)
+            return
+
+        # Use grouped rendering if layout items exist
+        if self._layout_items:
+            self._setGeometry_grouped(rect)
             return
 
         per_row, width_offset, height_offset = self._size(rect.right())
@@ -368,6 +469,128 @@ class ThumbGridLayout(QLayout):
             item_thumb.assign_badge(BadgeType.ARCHIVED, entry_id in self._tag_entries[TAG_ARCHIVED])
             item_thumb.assign_badge(BadgeType.FAVORITE, entry_id in self._tag_entries[TAG_FAVORITE])
 
+    def _setGeometry_grouped(self, rect: QRect):  # noqa: N802
+        """Render layout in grouped mode with headers and thumbnails."""
+        header_height = 32
+        per_row, width_offset, height_offset = self._size(rect.right())
+
+        for item in self._item_thumbs:
+            item.setGeometry(32_000, 32_000, 0, 0)
+        for header in self._group_headers:
+            header.setGeometry(32_000, 32_000, 0, 0)
+        for divider in self._group_dividers:
+            divider.setGeometry(32_000, 32_000, 0, 0)
+
+        current_y = 0
+        current_group_row = 0
+        thumb_in_current_row = 0
+        thumbs_in_current_group = 0
+        item_thumb_index = 0
+        self._entry_items.clear()
+
+        ratio = self.driver.main_window.devicePixelRatio()
+        base_size: tuple[int, int] = (
+            self.driver.main_window.thumb_size,
+            self.driver.main_window.thumb_size,
+        )
+        timestamp = time.time()
+
+        for item_type, item_id in self._layout_items:
+            if item_type == "divider":
+                if thumbs_in_current_group > 0:
+                    rows_needed = math.ceil(thumbs_in_current_group / per_row)
+                    current_y += rows_needed * height_offset
+
+                current_y += 8
+                if item_id < len(self._group_dividers):
+                    divider = self._group_dividers[item_id]
+                    divider.setGeometry(QRect(0, current_y, rect.width(), 1))
+                current_y += 1
+                current_y += 8
+
+                current_group_row = 0
+                thumb_in_current_row = 0
+                thumbs_in_current_group = 0
+
+            elif item_type == "header":
+                if thumbs_in_current_group > 0:
+                    rows_needed = math.ceil(thumbs_in_current_group / per_row)
+                    current_y += rows_needed * height_offset
+
+                if item_id < len(self._group_headers):
+                    header = self._group_headers[item_id]
+                    header.setGeometry(QRect(0, current_y, rect.width(), header_height))
+                current_y += header_height
+
+                current_group_row = 0
+                thumb_in_current_row = 0
+                thumbs_in_current_group = 0
+
+            elif item_type == "thumb":
+                entry_id = item_id
+                if entry_id not in self._entries:
+                    self._fetch_entries([entry_id])
+
+                if entry_id not in self._entries:
+                    continue
+
+                entry = self._entries[entry_id]
+
+                if item_thumb_index >= len(self._item_thumbs):
+                    item_thumb = self._item_thumb(item_thumb_index)
+                else:
+                    item_thumb = self._item_thumbs[item_thumb_index]
+
+                self._entry_items[entry_id] = item_thumb_index
+
+                col = thumb_in_current_row % per_row
+                item_x = width_offset * col
+                item_y = current_y + (current_group_row * height_offset)
+
+                size_hint = self._items[min(item_thumb_index, len(self._items) - 1)].sizeHint()
+                item_thumb.setGeometry(QRect(QPoint(item_x, item_y), size_hint))
+                item_thumb.set_item(entry)
+
+                file_path = unwrap(self.driver.lib.library_dir) / entry.path
+                if result := self._render_results.get(file_path):
+                    _t, im, s, p = result
+                    if item_thumb.rendered_path != p:
+                        self._update_thumb(entry_id, im, s, p)
+                else:
+                    if Path() in self._render_results:
+                        _t, im, s, p = self._render_results[Path()]
+                        self._update_thumb(entry_id, im, s, p)
+
+                    if file_path not in self._render_results:
+                        self._render_results[file_path] = None
+                        self.driver.thumb_job_queue.put(
+                            (
+                                self._renderer.render,
+                                (timestamp, file_path, base_size, ratio, False, True),
+                            )
+                        )
+
+                item_thumb.thumb_button.set_selected(entry_id in self._selected)
+                item_thumb.assign_badge(
+                    BadgeType.ARCHIVED, entry_id in self._tag_entries.get(TAG_ARCHIVED, set())
+                )
+                item_thumb.assign_badge(
+                    BadgeType.FAVORITE, entry_id in self._tag_entries.get(TAG_FAVORITE, set())
+                )
+
+                item_thumb_index += 1
+                thumb_in_current_row += 1
+                thumbs_in_current_group += 1
+
+                if thumb_in_current_row % per_row == 0:
+                    current_group_row += 1
+
+        if thumbs_in_current_group > 0:
+            rows_needed = math.ceil(thumbs_in_current_group / per_row)
+            current_y += rows_needed * height_offset
+
+        self._grouped_total_height = current_y
+
     @override
     def addItem(self, arg__1: QLayoutItem) -> None:
         self._items.append(arg__1)
@@ -385,6 +608,12 @@ class ThumbGridLayout(QLayout):
         if index >= len(self._items):
             return None
         return self._items[index]
+
+    @override
+    def takeAt(self, index: int) -> QLayoutItem | None:
+        if 0 <= index < len(self._items):
+            return self._items.pop(index)
+        return None
 
     @override
     def sizeHint(self) -> QSize:

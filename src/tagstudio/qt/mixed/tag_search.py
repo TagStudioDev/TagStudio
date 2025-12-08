@@ -17,6 +17,7 @@ from PySide6.QtWidgets import (
     QHBoxLayout,
     QLabel,
     QLineEdit,
+    QMessageBox,
     QPushButton,
     QScrollArea,
     QVBoxLayout,
@@ -50,8 +51,10 @@ class TagSearchModal(PanelModal):
         done_callback=None,
         save_callback=None,
         has_save=False,
+        driver: Union["QtDriver", None] = None,
     ):
         self.tsp = TagSearchPanel(library, exclude, is_tag_chooser)
+        self.tsp.driver = driver
         super().__init__(
             self.tsp,
             Translations["tag.add.plural"],
@@ -74,6 +77,7 @@ class TagSearchPanel(PanelWidget):
     _default_limit_idx: int = 0  # 50 Tag Limit (Default)
     cur_limit_idx: int = _default_limit_idx
     tag_limit: int | str = _limit_items[_default_limit_idx]
+    _column_count: int = 3  # Number of columns for tag display
 
     def __init__(
         self,
@@ -121,9 +125,22 @@ class TagSearchPanel(PanelWidget):
         self.search_field.returnPressed.connect(lambda: self.on_return(self.search_field.text()))
 
         self.scroll_contents = QWidget()
-        self.scroll_layout = QVBoxLayout(self.scroll_contents)
+        # Use HBoxLayout to hold multiple columns
+        self.scroll_layout = QHBoxLayout(self.scroll_contents)
         self.scroll_layout.setContentsMargins(6, 0, 6, 0)
+        self.scroll_layout.setSpacing(12)
         self.scroll_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
+
+        # Create column containers
+        self.tag_columns: list[QVBoxLayout] = []
+        for _ in range(self._column_count):
+            column_widget = QWidget()
+            column_layout = QVBoxLayout(column_widget)
+            column_layout.setContentsMargins(0, 0, 0, 0)
+            column_layout.setSpacing(6)
+            column_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
+            self.tag_columns.append(column_layout)
+            self.scroll_layout.addWidget(column_widget)
 
         self.scroll_area = QScrollArea()
         self.scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOn)
@@ -192,6 +209,11 @@ class TagSearchPanel(PanelWidget):
             )
             self.add_tag_modal.hide()
 
+            # Refresh group-by dropdown if driver is available
+            # Block signals to prevent triggering browsing state update during tag creation
+            if self.driver:
+                self.driver.populate_group_by_tags(block_signals=True)
+
             self.tag_chosen.emit(tag.id)
             self.search_field.setText("")
             self.search_field.setFocus()
@@ -214,8 +236,14 @@ class TagSearchPanel(PanelWidget):
         logger.info("[TagSearchPanel] Updating Tags")
 
         # Remove the "Create & Add" button if one exists
-        if self.create_button_in_layout and self.scroll_layout.count():
-            self.scroll_layout.takeAt(self.scroll_layout.count() - 1).widget().deleteLater()
+        if self.create_button_in_layout:
+            # Remove button from the last column that has it
+            for column in self.tag_columns:
+                if column.count() > 0:
+                    last_item = column.itemAt(column.count() - 1)
+                    if last_item and isinstance(last_item.widget(), QPushButton):
+                        column.takeAt(column.count() - 1).widget().deleteLater()
+                        break
             self.create_button_in_layout = False
 
         # Get results for the search query
@@ -265,27 +293,34 @@ class TagSearchPanel(PanelWidget):
             self.set_tag_widget(tag=tag, index=i)
         self.previous_limit = tag_limit
 
-        # Add back the "Create & Add" button
+        # Add back the "Create & Add" button (to first column)
         if query and query.strip():
             cb: QPushButton = self.build_create_button(query)
             cb.setText(Translations.format("tag.create_add", query=query))
             with catch_warnings(record=True):
                 cb.clicked.disconnect()
             cb.clicked.connect(lambda: self.create_and_add_tag(query or ""))
-            self.scroll_layout.addWidget(cb)
+            # Add button to the first column
+            self.tag_columns[0].addWidget(cb)
             self.create_button_in_layout = True
 
     def set_tag_widget(self, tag: Tag | None, index: int):
         """Set the tag of a tag widget at a specific index."""
-        # Create any new tag widgets needed up to the given index
-        if self.scroll_layout.count() <= index:
-            while self.scroll_layout.count() <= index:
-                new_tw = TagWidget(tag=None, has_edit=True, has_remove=True, library=self.lib)
-                new_tw.setHidden(True)
-                self.scroll_layout.addWidget(new_tw)
+        # Calculate which column this widget belongs to
+        col = index % self._column_count
+        col_index = index // self._column_count
 
-        # Assign the tag to the widget at the given index.
-        tag_widget: TagWidget = self.scroll_layout.itemAt(index).widget()  # pyright: ignore[reportAssignmentType]
+        # Get the target column layout
+        column_layout = self.tag_columns[col]
+
+        # Create any new tag widgets needed up to the given column index
+        while column_layout.count() <= col_index:
+            new_tw = TagWidget(tag=None, has_edit=True, has_remove=True, library=self.lib)
+            new_tw.setHidden(True)
+            column_layout.addWidget(new_tw)
+
+        # Assign the tag to the widget at the given position in its column
+        tag_widget: TagWidget = column_layout.itemAt(col_index).widget()  # pyright: ignore[reportAssignmentType]
         assert isinstance(tag_widget, TagWidget)
         tag_widget.set_tag(tag)
 
@@ -374,7 +409,30 @@ class TagSearchPanel(PanelWidget):
                 self.search_field.selectAll()
 
     def delete_tag(self, tag: Tag):
-        pass
+        """Delete a tag from the library after confirmation."""
+        if tag.id in range(RESERVED_TAG_START, RESERVED_TAG_END):
+            return
+
+        message_box = QMessageBox(
+            QMessageBox.Question,  # type: ignore
+            Translations["tag.remove"],
+            Translations.format("tag.confirm_delete", tag_name=self.lib.tag_display_name(tag)),
+            QMessageBox.Ok | QMessageBox.Cancel,  # type: ignore
+        )
+
+        result = message_box.exec()
+
+        if result != QMessageBox.Ok:  # type: ignore
+            return
+
+        self.lib.remove_tag(tag.id)
+
+        # Refresh group-by dropdown if driver is available
+        # Block signals to prevent triggering browsing state update during tag deletion
+        if self.driver:
+            self.driver.populate_group_by_tags(block_signals=True)
+
+        self.update_tags()
 
     def edit_tag(self, tag: Tag):
         # TODO: Move this to a top-level import

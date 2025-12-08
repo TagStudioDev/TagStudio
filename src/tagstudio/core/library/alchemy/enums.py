@@ -86,6 +86,9 @@ class BrowsingState:
 
     query: str | None = None
 
+    # Tag-based grouping (None = no grouping, int = group by tag ID)
+    group_by_tag_id: int | None = None
+
     # Abstract Syntax Tree Of the current Search Query
     @property
     def ast(self) -> AST | None:
@@ -151,6 +154,9 @@ class BrowsingState:
 
     def with_show_hidden_entries(self, show_hidden_entries: bool) -> "BrowsingState":
         return replace(self, show_hidden_entries=show_hidden_entries)
+
+    def with_group_by_tag(self, tag_id: int | None) -> "BrowsingState":
+        return replace(self, group_by_tag_id=tag_id)
 
 
 class FieldTypeEnum(enum.Enum):

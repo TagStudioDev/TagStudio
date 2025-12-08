@@ -13,6 +13,7 @@ from PySide6 import QtCore
 from PySide6.QtCore import QMetaObject, QSize, QStringListModel, Qt
 from PySide6.QtGui import QAction, QColor, QPixmap
 from PySide6.QtWidgets import (
+    QAbstractItemView,
     QCheckBox,
     QComboBox,
     QCompleter,
@@ -31,6 +32,7 @@ from PySide6.QtWidgets import (
     QSpacerItem,
     QSplitter,
     QStatusBar,
+    QTableView,
     QVBoxLayout,
     QWidget,
 )
@@ -74,6 +76,8 @@ class MainMenuBar(QMenuBar):
     clear_select_action: QAction
     copy_fields_action: QAction
     paste_fields_action: QAction
+    copy_tags_action: QAction
+    paste_tags_action: QAction
     add_tag_to_selected_action: QAction
     delete_file_action: QAction
     ignore_modal_action: QAction
@@ -249,6 +253,8 @@ class MainMenuBar(QMenuBar):
         self.paste_fields_action.setToolTip("Ctrl+V")
         self.paste_fields_action.setEnabled(False)
         self.edit_menu.addAction(self.paste_fields_action)
+
+        self.edit_menu.addSeparator()
 
         # Add Tag to Selected
         self.add_tag_to_selected_action = QAction(Translations["select.add_tag_to_selected"], self)
@@ -656,6 +662,34 @@ class MainWindow(QMainWindow):
         self.sorting_direction_combobox.setCurrentIndex(1)  # Default: Descending
         self.extra_input_layout.addWidget(self.sorting_direction_combobox)
 
+        ## Group By Tag Dropdown
+        self.group_by_tag_combobox = QComboBox(self.central_widget)
+        self.group_by_tag_combobox.setObjectName("group_by_tag_combobox")
+        self.group_by_tag_combobox.addItem("None", userData=None)
+        self.group_by_tag_combobox.setCurrentIndex(0)  # Default: No grouping
+
+        # Configure table view for hierarchical tag display
+        table_view = QTableView()
+        table_view.horizontalHeader().hide()
+        table_view.verticalHeader().hide()
+        table_view.setShowGrid(False)
+        table_view.setSelectionBehavior(QTableView.SelectionBehavior.SelectItems)
+        table_view.setSelectionMode(QTableView.SelectionMode.SingleSelection)
+        table_view.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        table_view.setHorizontalScrollMode(QAbstractItemView.ScrollMode.ScrollPerPixel)
+
+        # Reduce row height by 25% (default is typically font height + padding)
+        # Calculate based on font metrics
+        font_metrics = table_view.fontMetrics()
+        default_row_height = font_metrics.height() + 8  # 8px default padding
+        reduced_row_height = int(default_row_height * 0.75)  # 25% reduction
+        table_view.verticalHeader().setDefaultSectionSize(reduced_row_height)
+
+        self.group_by_tag_combobox.setView(table_view)
+        self.group_by_tag_combobox.setMaxVisibleItems(20)
+
+        self.extra_input_layout.addWidget(self.group_by_tag_combobox)
+
         ## Thumbnail Size placeholder
         self.thumb_size_combobox = QComboBox(self.central_widget)
         self.thumb_size_combobox.setObjectName("thumb_size_combobox")
@@ -762,6 +796,11 @@ class MainWindow(QMainWindow):
     def sorting_direction(self) -> bool:
         """Whether to Sort the results in ascending order."""
         return self.sorting_direction_combobox.currentData()
+
+    @property
+    def group_by_tag_id(self) -> int | None:
+        """Tag ID to group by, or None for no grouping."""
+        return self.group_by_tag_combobox.currentData()
 
     @property
     def thumb_size(self) -> int:
