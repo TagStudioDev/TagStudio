@@ -5,7 +5,7 @@
 
 from typing import TYPE_CHECKING
 
-from PySide6.QtCore import QModelIndex, QRect, QSize, Qt
+from PySide6.QtCore import QModelIndex, QPersistentModelIndex, QSize
 from PySide6.QtGui import QPainter
 from PySide6.QtWidgets import QStyledItemDelegate, QStyleOptionViewItem
 
@@ -21,13 +21,18 @@ class GroupByTagDelegate(QStyledItemDelegate):
         self.library = library
 
     def paint(
-        self, painter: QPainter, option: QStyleOptionViewItem, index: QModelIndex
+        self,
+        painter: QPainter,
+        option: QStyleOptionViewItem,
+        index: QModelIndex | QPersistentModelIndex,
     ) -> None:
         """Paint the tag item with proper decorations."""
         # For now, use default painting - we'll enhance this later
         super().paint(painter, option, index)
 
-    def sizeHint(self, option: QStyleOptionViewItem, index: QModelIndex) -> QSize:
+    def sizeHint(  # noqa: N802
+        self, option: QStyleOptionViewItem, index: QModelIndex | QPersistentModelIndex
+    ) -> QSize:
         """Return the size hint for the item."""
         # For now, use default size - we'll enhance this later
         return super().sizeHint(option, index)
