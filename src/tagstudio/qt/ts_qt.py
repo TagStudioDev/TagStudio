@@ -1430,8 +1430,11 @@ class QtDriver(DriverMixin, QObject):
             add_tags(bool): Flag determining if tags associated with the badges need to be added to
                 the items. Defaults to True.
         """
-        item_ids = self.selected if (not origin_id or origin_id in self._selected) else [origin_id]
-        pending_entries: dict[BadgeType, list[int]] = {}
+        entry_ids = (
+            set(self._selected.keys())
+            if (origin_id == 0 or origin_id in self._selected)
+            else {origin_id}
+        )
 
         logger.info(
             "[QtDriver][update_badges] Updating ItemThumb badges",
@@ -1440,12 +1443,9 @@ class QtDriver(DriverMixin, QObject):
             add_tags=add_tags,
         )
         for it in self.main_window.thumb_layout._item_thumbs:
-            if it.item_id in item_ids:
+            if it.item_id in entry_ids:
                 for badge_type, value in badge_values.items():
                     if add_tags:
-                        if not pending_entries.get(badge_type):
-                            pending_entries[badge_type] = []
-                        pending_entries[badge_type].append(it.item_id)
                         it.toggle_item_tag(it.item_id, value, BADGE_TAGS[badge_type])
                     it.assign_badge(badge_type, value)
 
@@ -1454,10 +1454,9 @@ class QtDriver(DriverMixin, QObject):
 
         logger.info(
             "[QtDriver][update_badges] Adding tags to updated entries",
-            pending_entries=pending_entries,
+            pending_entries=entry_ids,
         )
         for badge_type, value in badge_values.items():
-            entry_ids = pending_entries.get(badge_type, [])
             tag_ids = [BADGE_TAGS[badge_type]]
 
             if value:

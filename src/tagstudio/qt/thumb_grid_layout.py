@@ -1,5 +1,6 @@
 import math
 import time
+from collections.abc import Iterable
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, override
 
@@ -89,15 +90,15 @@ class ThumbGridLayout(QLayout):
             value = item_thumb.item_id in self.driver._selected
             item_thumb.thumb_button.set_selected(value)
 
-    def add_tags(self, entry_ids: list[int], tag_ids: list[int]):
+    def add_tags(self, entry_ids: Iterable[int], tag_ids: Iterable[int]):
         for tag_id in tag_ids:
             self._tag_entries.setdefault(tag_id, set()).update(entry_ids)
 
-    def remove_tags(self, entry_ids: list[int], tag_ids: list[int]):
+    def remove_tags(self, entry_ids: Iterable[int], tag_ids: Iterable[int]):
         for tag_id in tag_ids:
             self._tag_entries.setdefault(tag_id, set()).difference_update(entry_ids)
 
-    def _fetch_entries(self, ids: list[int]):
+    def _fetch_entries(self, ids: Iterable[int]):
         ids = [id for id in ids if id not in self._entries]
         entries = self.driver.lib.get_entries(ids)
         for entry in entries:
