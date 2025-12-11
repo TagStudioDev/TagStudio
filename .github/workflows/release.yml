@@ -21,7 +21,11 @@ jobs:
     runs-on: ubuntu-22.04
     env:
       LINUXDEPLOY: linuxdeploy-x86_64.AppImage
+      LINUXDEPLOY_URL: https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-x86_64.AppImage
+      LINUXDEPLOY_SHA256: 8e270ebe000a516cdef7a0b06d4ee428153e44c61675f9a126ca9b9ee74a81f0
       LINUXDEPLOY_PLUGIN_QT: linuxdeploy-plugin-qt-x86_64.AppImage
+      LINUXDEPLOY_PLUGIN_QT_URL: https://github.com/linuxdeploy/linuxdeploy-plugin-qt/releases/download/continuous/linuxdeploy-plugin-qt-x86_64.AppImage
+      LINUXDEPLOY_PLUGIN_QT_SHA256: 22b95fe7097c992b2b38e94c0aea2c25236eb11aa7f3b8f95cd42d1e2e3c2474
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
@@ -40,8 +44,10 @@ jobs:
           uv pip install --system ".[pyinstaller]"
 
       - name: Execute PyInstaller
+        env:
+          TS_PORTABLE: ${{ matrix.build-type == 'portable' && '1' || '0' }}
         run: |
-          pyinstaller tagstudio.spec -- ${{ matrix.build-flag }}
+          pyinstaller tagstudio.spec
           tar czfC dist/tagstudio_linux_x86_64${{ matrix.suffix }}.tar.gz dist tagstudio
 
       - name: Upload artifact
@@ -53,9 +59,11 @@ jobs:
       - name: Fetch linuxdeploy tools
         if: matrix.build-type == ''
         run: |
-          wget https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/$LINUXDEPLOY
-          wget https://github.com/linuxdeploy/linuxdeploy-plugin-qt/releases/download/continuous/$LINUXDEPLOY_PLUGIN_QT
-          chmod +x $LINUXDEPLOY $LINUXDEPLOY_PLUGIN_QT
+          curl -L "$LINUXDEPLOY_URL" -o "$LINUXDEPLOY"
+          curl -L "$LINUXDEPLOY_PLUGIN_QT_URL" -o "$LINUXDEPLOY_PLUGIN_QT"
+          echo "$LINUXDEPLOY_SHA256  $LINUXDEPLOY" | sha256sum -c -
+          echo "$LINUXDEPLOY_PLUGIN_QT_SHA256  $LINUXDEPLOY_PLUGIN_QT" | sha256sum -c -
+          chmod +x "$LINUXDEPLOY" "$LINUXDEPLOY_PLUGIN_QT"
 
       - name: Build AppImage
         if: matrix.build-type == ''
@@ -151,8 +159,10 @@ jobs:
           uv pip install --system ".[pyinstaller]"
 
       - name: Execute PyInstaller
+        env:
+          TS_PORTABLE: ${{ matrix.build-type == 'portable' && '1' || '0' }}
         run: |
-          PyInstaller tagstudio.spec -- ${{ matrix.build-flag }}
+          PyInstaller tagstudio.spec
           Compress-Archive -Path dist/TagStudio${{ matrix.file-end }} -DestinationPath dist/tagstudio_windows_x86_64${{ matrix.suffix }}.zip
       - name: Upload artifact
         uses: actions/upload-artifact@v4
