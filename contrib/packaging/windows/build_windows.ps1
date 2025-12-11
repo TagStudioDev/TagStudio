@@ -1,6 +1,7 @@
 param(
     [switch]$Portable,
-    [switch]$Clean
+    [switch]$Clean,
+    [switch]$SkipBuild
 )
 
 $ErrorActionPreference = "Stop"
@@ -39,8 +40,12 @@ $argsList = @("--distpath", $distRoot, "--workpath", $buildRoot)
 if ($Clean) { $argsList += "--clean" }
 if ($Portable) { $argsList += "--portable" }
 
-Write-Host "==> Running PyInstaller..."
-& $python "contrib\packaging\build_pyinstaller.py" @argsList
+if (-not $SkipBuild) {
+    Write-Host "==> Running PyInstaller..."
+    & $python "contrib\packaging\build_pyinstaller.py" @argsList
+} else {
+    Write-Host "==> Skipping PyInstaller build (SkipBuild set)"
+}
 
 $version = Read-Version -PythonBin $python
 $platformDist = Join-Path $distRoot "windows"
@@ -77,4 +82,3 @@ if ($signtool -and $certPath -and $certPass -and (Get-Command $signtool -ErrorAc
 }
 
 Write-Host "Done. Installer at $installerName"
-
