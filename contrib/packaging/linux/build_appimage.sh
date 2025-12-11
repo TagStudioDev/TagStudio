@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
 DIST_ROOT="${DIST_ROOT:-$ROOT/dist/pyinstaller}"
 BUILD_ROOT="${BUILD_ROOT:-$ROOT/build/pyinstaller}"
 APPDIR="${APPDIR:-$DIST_ROOT/linux/AppDir}"
@@ -74,7 +74,8 @@ if command -v fpm >/dev/null 2>&1; then
     --description "TagStudio desktop application" \
     --url "https://docs.tagstud.io" \
     $FPM_FLAGS \
-    -C "$stage_dir" .
+    -C "$stage_dir" . \
+    -p "$ROOT/dist/tagstudio_${version}_amd64.deb"
 else
   echo "==> Skipping .deb build (fpm not available)."
 fi

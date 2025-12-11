@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
 DIST_ROOT="${DIST_ROOT:-$ROOT/dist/pyinstaller}"
 BUILD_ROOT="${BUILD_ROOT:-$ROOT/build/pyinstaller}"
 CLEAN_FLAG="${CLEAN_FLAG:-}"
