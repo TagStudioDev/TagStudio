@@ -42,7 +42,7 @@ Signing (optional): set `TS_SIGNTOOL`, `TS_CERT_PATH`, and `TS_CERT_PASS` before
 ```bash
 bash contrib/packaging/macos/build_dmg.sh
 ```
-Outputs: `dist/TagStudio-<version>-macOS.dmg`
+Outputs: `dist/TagStudio-<version>-macOS-<arch>.dmg`
 
 Signing (optional): set `TS_IDENTITY="Developer ID Application: Your Name (TEAMID)"` to sign the `.app` before packing. Notarization should be performed separately using `notarytool` after the DMG is produced.
 
