@@ -5,16 +5,22 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
 DIST_ROOT="${DIST_ROOT:-$ROOT/dist/pyinstaller}"
 BUILD_ROOT="${BUILD_ROOT:-$ROOT/build/pyinstaller}"
 CLEAN_FLAG="${CLEAN_FLAG:-}"
+PYTHON="${PYTHON:-python}"
+SKIP_BUILD="${SKIP_BUILD:-}"
 
-version="$(python - <<'PY'
+version="$($PYTHON - <<'PY'
 import pathlib, tomllib
 pyproject = tomllib.loads(pathlib.Path("pyproject.toml").read_text("utf-8"))
 print(pyproject["project"]["version"])
 PY
 )"
 
-echo "==> Building PyInstaller bundle..."
-python "$ROOT/contrib/packaging/build_pyinstaller.py" --distpath "$DIST_ROOT" --workpath "$BUILD_ROOT" ${CLEAN_FLAG:+--clean}
+if [[ -z "$SKIP_BUILD" ]]; then
+  echo "==> Building PyInstaller bundle..."
+  "$PYTHON" "$ROOT/contrib/packaging/build_pyinstaller.py" --distpath "$DIST_ROOT" --workpath "$BUILD_ROOT" ${CLEAN_FLAG:+--clean}
+else
+  echo "==> Skipping PyInstaller build (SKIP_BUILD set)"
+fi
 
 APP_STAGE="$DIST_ROOT/darwin/TagStudio.app"
 if [[ ! -d "$APP_STAGE" ]]; then
@@ -31,7 +37,8 @@ fi
 
 DMG_DIR="$ROOT/dist"
 mkdir -p "$DMG_DIR"
-DMG_PATH="$DMG_DIR/TagStudio-${version}-macOS.dmg"
+arch="$(uname -m)"
+DMG_PATH="$DMG_DIR/TagStudio-${version}-macOS-${arch}.dmg"
 
 echo "==> Creating DMG..."
 TMP_DIR="$(mktemp -d)"
@@ -46,4 +53,3 @@ hdiutil create -volname "TagStudio" -srcfolder "$APP_BUNDLE_DIR" -ov -format UDZ
 
 echo "==> Output: $DMG_PATH"
 echo "Note: Notarization not performed. Set TS_IDENTITY and run notarytool separately if needed."
-
