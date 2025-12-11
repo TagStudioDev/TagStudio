@@ -1,15 +1,13 @@
+import os
 import platform
-from argparse import ArgumentParser
 
 from PyInstaller.building.api import COLLECT, EXE, PYZ
 from PyInstaller.building.build_main import Analysis
 from PyInstaller.building.osx import BUNDLE
+from PyInstaller.utils.hooks import collect_data_files, collect_dynamic_libs
 from tomllib import load
 
-parser = ArgumentParser()
-parser.add_argument("--portable", action="store_true")
-options = parser.parse_args()
-
+PORTABLE = os.environ.get("TS_PORTABLE", "0") == "1"
 with open("pyproject.toml", "rb") as file:
     pyproject = load(file)["project"]
 
@@ -28,12 +26,14 @@ datafiles = [
     ("src/tagstudio/qt/*.qrc", "tagstudio/qt"),
     ("src/tagstudio/resources", "tagstudio/resources"),
 ]
+pyside_datas = collect_data_files("PySide6", include_py_files=False)
+pyside_binaries = collect_dynamic_libs("PySide6")
 
 a = Analysis(
     ["src/tagstudio/main.py"],
     pathex=["src"],
-    binaries=[],
-    datas=datafiles,
+    binaries=pyside_binaries,
+    datas=datafiles + pyside_datas,
     hiddenimports=[],
     hookspath=[],
     hooksconfig={},
@@ -46,7 +46,7 @@ a = Analysis(
 pyz = PYZ(a.pure)
 
 include = [a.scripts]
-if options.portable:
+if PORTABLE:
     include += (a.binaries, a.datas)
 exe = EXE(
     pyz,
@@ -58,7 +58,7 @@ exe = EXE(
     disable_windowed_traceback=False,
     debug=False,
     name=name,
-    exclude_binaries=not options.portable,
+    exclude_binaries=not PORTABLE,
     icon=icon,
     argv_emulation=False,
     target_arch=None,
@@ -72,7 +72,7 @@ exe = EXE(
 
 coll = (
     None
-    if options.portable
+    if PORTABLE
     else COLLECT(
         exe,
         a.binaries,
