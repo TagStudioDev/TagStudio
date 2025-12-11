@@ -51,7 +51,7 @@ def run_pyinstaller(distpath: Path, workpath: Path, clean: bool, portable: bool)
     print(f"[build] Running PyInstaller ({'portable' if portable else 'standard'})...")
     subprocess.check_call(cmd, cwd=ROOT, env=env)
 
-    # PyInstaller names the output directory after the exe name.
+    # PyInstaller output name varies by platform/build (exe dir or .app bundle); pick the first produced entry.
     stage_candidates = list(dist_for_platform.glob("*"))
     if not stage_candidates:
         raise RuntimeError(f"No PyInstaller output in {dist_for_platform}")
@@ -89,4 +89,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-
