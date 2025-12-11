@@ -67,6 +67,8 @@ jobs:
 
       - name: Build AppImage
         if: matrix.build-type == ''
+        env:
+          SKIP_BUILD: '1'
         run: |
           LINUXDEPLOY=./$LINUXDEPLOY \
           LINUXDEPLOY_PLUGIN_QT=./$LINUXDEPLOY_PLUGIN_QT \
@@ -119,6 +121,8 @@ jobs:
           path: dist/tagstudio_macos_${{ matrix.arch }}.tar.gz
 
       - name: Build DMG
+        env:
+          SKIP_BUILD: '1'
         run: |
           bash contrib/packaging/macos/build_dmg.sh
 
@@ -126,7 +130,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: tagstudio_macos_dmg_${{ matrix.arch }}
-          path: dist/TagStudio-*-macOS.dmg
+          path: dist/TagStudio-*-macOS-*.dmg
 
   windows:
     strategy:
@@ -179,7 +183,7 @@ jobs:
         shell: pwsh
         run: |
           $env:Path="C:\Program Files (x86)\NSIS;C:\Program Files (x86)\NSIS\Bin;$env:Path"
-          pwsh -NoProfile -ExecutionPolicy Bypass -File contrib/packaging/windows/build_windows.ps1 -Clean
+          pwsh -NoProfile -ExecutionPolicy Bypass -File contrib/packaging/windows/build_windows.ps1 -Clean -SkipBuild
 
       - name: Upload artifact (Installer)
         if: matrix.build-type == ''
