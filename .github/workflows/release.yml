@@ -8,6 +8,16 @@ on:
 
 jobs:
   linux:
+    strategy:
+      matrix:
+        build-type: ['', portable]
+        include:
+          - build-type: ''
+            build-flag: ''
+            suffix: ''
+          - build-type: portable
+            build-flag: --portable
+            suffix: _portable
     runs-on: ubuntu-22.04
     env:
       LINUXDEPLOY: linuxdeploy-x86_64.AppImage
@@ -29,27 +39,51 @@ jobs:
           python -m pip install --upgrade uv
           uv pip install --system ".[pyinstaller]"
 
+      - name: Execute PyInstaller
+        run: |
+          pyinstaller tagstudio.spec -- ${{ matrix.build-flag }}
+          tar czfC dist/tagstudio_linux_x86_64${{ matrix.suffix }}.tar.gz dist tagstudio
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: tagstudio_linux_x86_64${{ matrix.suffix }}
+          path: dist/tagstudio_linux_x86_64${{ matrix.suffix }}.tar.gz
+
       - name: Fetch linuxdeploy tools
+        if: matrix.build-type == ''
         run: |
           wget https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/$LINUXDEPLOY
           wget https://github.com/linuxdeploy/linuxdeploy-plugin-qt/releases/download/continuous/$LINUXDEPLOY_PLUGIN_QT
           chmod +x $LINUXDEPLOY $LINUXDEPLOY_PLUGIN_QT
 
       - name: Build AppImage
+        if: matrix.build-type == ''
         run: |
           LINUXDEPLOY=./$LINUXDEPLOY \
           LINUXDEPLOY_PLUGIN_QT=./$LINUXDEPLOY_PLUGIN_QT \
           bash contrib/packaging/linux/build_appimage.sh
 
       - name: Upload artifact (AppImage)
+        if: matrix.build-type == ''
         uses: actions/upload-artifact@v4
         with:
           name: tagstudio_linux_appimage
           path: dist/TagStudio-*-linux.AppImage
 
   macos:
-    runs-on: macos-13
+    strategy:
+      matrix:
+        os-version: ['13', '14']
+        include:
+          - os-version: '13'
+            arch: x86_64
+          - os-version: '14'
+            arch: aarch64
+
+    runs-on: macos-${{ matrix.os-version }}
     env:
+      # INFO: Even though we run on 13, target towards compatibility
       MACOSX_DEPLOYMENT_TARGET: '11.0'
     steps:
       - name: Checkout repo
@@ -66,6 +100,16 @@ jobs:
           python -m pip install --upgrade uv
           uv pip install --system ".[pyinstaller]"
 
+      - name: Execute PyInstaller
+        run: |
+          pyinstaller tagstudio.spec
+          tar czfC dist/tagstudio_macos_${{ matrix.arch }}.tar.gz dist TagStudio.app
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: tagstudio_macos_${{ matrix.arch }}
+          path: dist/tagstudio_macos_${{ matrix.arch }}.tar.gz
+
       - name: Build DMG
         run: |
           bash contrib/packaging/macos/build_dmg.sh
@@ -73,10 +117,23 @@ jobs:
       - name: Upload artifact (DMG)
         uses: actions/upload-artifact@v4
         with:
-          name: tagstudio_macos_dmg
+          name: tagstudio_macos_dmg_${{ matrix.arch }}
           path: dist/TagStudio-*-macOS.dmg
 
   windows:
+    strategy:
+      matrix:
+        build-type: ['', portable]
+        include:
+          - build-type: ''
+            build-flag: ''
+            suffix: ''
+            file-end: ''
+          - build-type: portable
+            build-flag: --portable
+            suffix: _portable
+            file-end: .exe
+
     runs-on: windows-2022
     steps:
       - name: Checkout repo
@@ -93,16 +150,29 @@ jobs:
           python -m pip install --upgrade uv
           uv pip install --system ".[pyinstaller]"
 
+      - name: Execute PyInstaller
+        run: |
+          PyInstaller tagstudio.spec -- ${{ matrix.build-flag }}
+          Compress-Archive -Path dist/TagStudio${{ matrix.file-end }} -DestinationPath dist/tagstudio_windows_x86_64${{ matrix.suffix }}.zip
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: tagstudio_windows_x86_64${{ matrix.suffix }}
+          path: dist/tagstudio_windows_x86_64${{ matrix.suffix }}.zip
+
       - name: Install NSIS
+        if: matrix.build-type == ''
         run: choco install nsis -y
 
       - name: Build installer
+        if: matrix.build-type == ''
         shell: pwsh
         run: |
           $env:Path="C:\Program Files (x86)\NSIS;C:\Program Files (x86)\NSIS\Bin;$env:Path"
           pwsh -NoProfile -ExecutionPolicy Bypass -File contrib/packaging/windows/build_windows.ps1 -Clean
 
       - name: Upload artifact (Installer)
+        if: matrix.build-type == ''
         uses: actions/upload-artifact@v4
         with:
           name: tagstudio_windows_installer
@@ -127,6 +197,13 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: |
+            tagstudio_linux_x86_64/*
+            tagstudio_linux_x86_64_portable/*
             tagstudio_linux_appimage/*
-            tagstudio_macos_dmg/*
+            tagstudio_macos_x86_64/*
+            tagstudio_macos_aarch64/*
+            tagstudio_macos_dmg_x86_64/*
+            tagstudio_macos_dmg_aarch64/*
+            tagstudio_windows_x86_64/*
+            tagstudio_windows_x86_64_portable/*
             tagstudio_windows_installer/*
