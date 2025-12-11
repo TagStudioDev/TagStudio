@@ -1179,7 +1179,9 @@ class Library:
                     session.flush()
 
                 tag_parents = session.scalars(
-                    select(TagParent).where(TagParent.parent_id == tag_id)
+                    select(TagParent).where(
+                        or_(TagParent.parent_id == tag_id, TagParent.child_id == tag_id)
+                    )
                 ).all()
                 for tag_parent in tag_parents:
                     session.delete(tag_parent)
