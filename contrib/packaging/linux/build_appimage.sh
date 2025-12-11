@@ -63,6 +63,7 @@ if [[ -n "$appimage_path" ]]; then
   echo "==> AppImage: $final_appimage"
 else
   echo "AppImage output not found."
+  exit 1
 fi
 
 if command -v fpm >/dev/null 2>&1; then
