@@ -8,16 +8,22 @@ APPDIR="${APPDIR:-$DIST_ROOT/linux/AppDir}"
 LINUXDEPLOY="${LINUXDEPLOY:-linuxdeploy-x86_64.AppImage}"
 LINUXDEPLOY_PLUGIN_QT="${LINUXDEPLOY_PLUGIN_QT:-linuxdeploy-plugin-qt-x86_64.AppImage}"
 FPM_FLAGS="${FPM_FLAGS:-}"
+PYTHON="${PYTHON:-python}"
+SKIP_BUILD="${SKIP_BUILD:-}"
 
-version="$(python - <<'PY'
+version="$($PYTHON - <<'PY'
 import pathlib, tomllib
 pyproject = tomllib.loads(pathlib.Path("pyproject.toml").read_text("utf-8"))
 print(pyproject["project"]["version"])
 PY
 )"
 
-echo "==> Building PyInstaller app..."
-python "$ROOT/contrib/packaging/build_pyinstaller.py" --distpath "$DIST_ROOT" --workpath "$BUILD_ROOT" ${CLEAN_FLAG:+--clean}
+if [[ -z "$SKIP_BUILD" ]]; then
+  echo "==> Building PyInstaller app..."
+  "$PYTHON" "$ROOT/contrib/packaging/build_pyinstaller.py" --distpath "$DIST_ROOT" --workpath "$BUILD_ROOT" ${CLEAN_FLAG:+--clean}
+else
+  echo "==> Skipping PyInstaller build (SKIP_BUILD set)"
+fi
 
 platform_stage="$DIST_ROOT/linux"
 stage_dir="$(find "$platform_stage" -mindepth 1 -maxdepth 1 -type d | head -n 1)"
@@ -38,6 +44,7 @@ cp "$ROOT/src/tagstudio/resources/icon.png" "$APPDIR/usr/share/icons/hicolor/256
 
 cat > "$APPDIR/AppRun" <<'EOF'
 #!/usr/bin/env bash
+set -euo pipefail
 HERE="$(dirname "$(readlink -f "$0")")"
 export LD_LIBRARY_PATH="$HERE/usr/lib:$HERE/usr/lib/tagstudio:$LD_LIBRARY_PATH"
 exec "$HERE/usr/lib/tagstudio/tagstudio" "$@"
@@ -45,7 +52,11 @@ EOF
 chmod +x "$APPDIR/AppRun"
 
 echo "==> Running linuxdeploy..."
-chmod +x "$LINUXDEPLOY" "$LINUXDEPLOY_PLUGIN_QT" 2>/dev/null || true
+if [[ ! -f "$LINUXDEPLOY" || ! -f "$LINUXDEPLOY_PLUGIN_QT" ]]; then
+  echo "linuxdeploy binaries missing. Expected $LINUXDEPLOY and $LINUXDEPLOY_PLUGIN_QT" >&2
+  exit 1
+fi
+chmod +x "$LINUXDEPLOY" "$LINUXDEPLOY_PLUGIN_QT"
 "$LINUXDEPLOY" --appdir "$APPDIR" --desktop-file "$APPDIR/usr/share/applications/tagstudio.desktop" --icon-file "$ROOT/src/tagstudio/resources/icon.png"
 "$LINUXDEPLOY_PLUGIN_QT" --appdir "$APPDIR"
 
@@ -53,7 +64,7 @@ chmod +x "$LINUXDEPLOY" "$LINUXDEPLOY_PLUGIN_QT" 2>/dev/null || true
 
 appimage_path="$(find "$APPDIR" -maxdepth 1 -type f -name '*.AppImage' | head -n 1)"
 if [[ -z "$appimage_path" ]]; then
-  appimage_path="$(find "$ROOT" -maxdepth 2 -type f -name '*.AppImage' | head -n 1)"
+  appimage_path="$(find "$DIST_ROOT/linux" -maxdepth 2 -type f -name '*.AppImage' | head -n 1)"
 fi
 
 mkdir -p "$ROOT/dist"
@@ -75,8 +86,7 @@ if command -v fpm >/dev/null 2>&1; then
     --url "https://docs.tagstud.io" \
     $FPM_FLAGS \
     -C "$stage_dir" . \
-    -p "$ROOT/dist/tagstudio_${version}_amd64.deb"
+    -p "$ROOT/dist/TagStudio_${version}_amd64.deb"
 else
   echo "==> Skipping .deb build (fpm not available)."
 fi
-
