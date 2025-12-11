@@ -25,6 +25,7 @@ Runs the shared spec and writes to `dist/pyinstaller/<platform>`:
 ```sh
 python contrib/packaging/build_pyinstaller.py --clean
 # add --portable to bundle binaries/datas directly
+# (internally sets TS_PORTABLE=1 for the PyInstaller spec)
 ```
 
 ## Windows (.exe installer)
@@ -43,7 +44,7 @@ bash contrib/packaging/macos/build_dmg.sh
 ```
 Outputs: `dist/TagStudio-<version>-macOS.dmg`
 
-Signing (optional): set `TS_IDENTITY="Developer ID Application: Your Name (TEAMID)"` to sign the `.app` before packing. Notarization is left to `notarytool` after the DMG is produced.
+Signing (optional): set `TS_IDENTITY="Developer ID Application: Your Name (TEAMID)"` to sign the `.app` before packing. Notarization should be performed separately using `notarytool` after the DMG is produced.
 
 ## Linux (AppImage, optional .deb)
 ```bash
