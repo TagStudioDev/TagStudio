@@ -14,6 +14,10 @@ Thank you so much for showing interest in contributing to TagStudio! Here are a 
 -   **Please don't** create pull requests that consist of large refactors, _especially_ without discussing them with us first. These end up doing more harm than good for the project by continuously delaying progress and disrupting everyone else's work.
 -   If you wish to discuss TagStudio further, feel free to join the [Discord Server](https://discord.com/invite/hRNnVKhF2G)!
 
+<!-- prettier-ignore -->
+!!! note
+    If the fix is small and self-explanatory (i.e. a typo), then it doesn't require an issue to be opened first. Issue tracking is supposed to make our lives easier, not harder. Please use your best judgement to minimize the amount of work for everyone involved.
+
 ### Contribution Checklist
 
 -   I've read the [Feature Roadmap](roadmap.md) page
@@ -25,8 +29,10 @@ Thank you so much for showing interest in contributing to TagStudio! Here are a 
 -   **_I mean it, I've found or created an issue for my feature/fix!_**
 
 <!-- prettier-ignore -->
-!!! note
-    If the fix is small and self-explanatory (i.e. a typo), then it doesn't require an issue to be opened first. Issue tracking is supposed to make our lives easier, not harder. Please use your best judgement to minimize the amount of work for everyone involved.
+!!! failure "Unacceptable Code"
+    The following types of code will NOT be accepted to the project:
+    -   Code that is not yours or does not have a compatible license with TagStudio's [own one](../LICENSE)
+    -   Code that you do not understand and/or cannot explain
 
 ## Creating a Development Environment
 
