@@ -268,3 +268,5 @@ TagStudio.ini
 
 result
 result-*
+/.vscode
+uv.lock
