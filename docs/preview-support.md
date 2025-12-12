@@ -95,10 +95,10 @@ Preview support for office documents or well-known project file formats varies b
 
 ### :material-book: eBooks
 
-| Filetype           | Extensions            | Preview Type                 |
-| ------------------ | --------------------- | ---------------------------- |
-| EPUB               | `.epub`               | Embedded cover               |
-| Comic Book Archive | `.cbr`, `.cbt` `.cbz` | Embedded cover or first page |
+| Filetype           | Extensions                    | Preview Type                 |
+| ------------------ | ----------------------------- | ---------------------------- |
+| EPUB               | `.epub`                       | Embedded cover               |
+| Comic Book Archive | `.cbr`, `.cbt` `.cbz`, `.cb7` | Embedded cover or first page |
 
 ### :material-cube-outline: 3D Models
 
