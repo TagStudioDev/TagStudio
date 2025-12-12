@@ -156,55 +156,42 @@ class PreviewThumb(PreviewThumbView):
             pillow_converts = ["." + x.lower() for x in pillow_converts]
 
             if self.should_convert(ext, [".jxl"]):
+
+                st = time.perf_counter_ns()
                 ffprobe = ffmpeg.probe(filepath)
 
-                if ffprobe.get('format', {}).get('format_name', 'unknown') != "jpegxl_anim":
+                if ffprobe.get('format', {}).get('format_name', '') != "jpegxl_anim":
                     return False
 
-
+                probe_time = f"{(time.perf_counter_ns() - st) / 1_000_000} ms"
 
                 st = time.perf_counter_ns()
 
-                async def get_durations():
-                    try:
-                        return await asyncio.to_thread(self.jxlinfo_frame_durations, filepath)
-                    except:
-                        return 1000 / 30
-
-                async def decode_frames():
-                    def _load_and_decode():
-                        with open(filepath, "rb") as f:
-                            data = f.read()
-                        arr = imagecodecs.jpegxl_decode(data)
-                        return [Image.fromarray(frame) for frame in arr]
-                    return await asyncio.to_thread(_load_and_decode)
-
-                async def run_parallel():
-                    return await asyncio.gather(get_durations(), decode_frames())
-
-                durs, pil_frames = asyncio.run(
-                    run_parallel(),
+                out, _ = (
+                    ffmpeg
+                    .input(filepath)
+                    .output(
+                        'pipe:',
+                        format='webp',
+                        **{
+                            'lossless': 1,
+                            'compression_level': 0,
+                            'loop': 0,
+                        }
+                    )
+                    .global_args("-hide_banner", "-loglevel", "error")
+                    .run(capture_stdout=True)
                 )
 
-                image_bytes_io = io.BytesIO()
-                pil_frames[0].save(
-                    image_bytes_io,
-                    "WEBP",
-                    lossless=True,
-                    append_images=pil_frames[1:],
-                    save_all=True,
-                    duration=durs,
-                    loop=0,
-                    disposal=2,
-                )
                 logger.debug(
                     f"[PreviewThumb] Coversion has taken {(time.perf_counter_ns() - st) / 1_000_000} ms",
                     ext=ext,
+                    ffprobe_time=probe_time,
                 )
 
                 image.close()
-                image_bytes_io.seek(0)
-                return (image_bytes_io.read(), (image.width, image.height))
+
+                return (out, (image.width, image.height))
 
             elif self.should_convert(ext, pillow_converts):
                 if hasattr(image, "n_frames"):
