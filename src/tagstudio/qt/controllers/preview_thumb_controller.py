@@ -4,7 +4,10 @@
 import io
 import time
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, List
+import subprocess
+import re
+import asyncio
 
 import cv2
 import rawpy
@@ -76,12 +79,64 @@ class PreviewThumb(PreviewThumbView):
 
         return stats
 
+
     @staticmethod
-    def should_convert(ext, format_exts) -> bool:
-        if ext in QMovie.supportedFormats():
+    def jxlinfo_frame_durations(path: str, jxlinfo_cmd: str = "jxlinfo") -> List[float]:
+        """
+        Return per-frame durations (in seconds) by running `jxlinfo -v path`.
+        Requires `jxlinfo` (libjxl-tools) installed and on PATH.
+        """
+        try:
+            p = subprocess.run(
+                [jxlinfo_cmd, "-v", path],
+                capture_output=True,
+                check=False,
+                text=True,
+            )
+        except FileNotFoundError as e:
+            raise RuntimeError(f"{jxlinfo_cmd} not found. Install libjxl-tools.") from e
+
+        out = p.stdout + "\n" + p.stderr
+
+        dur_ms_matches = re.findall(
+            r"^frame:.*duration\s*:\s*([0-9]+(?:\.[0-9]+)?)\s*(ms)?",
+            out,
+            flags=re.IGNORECASE | re.MULTILINE
+        )
+
+        if dur_ms_matches:
+            durations = []
+            for val, unit in dur_ms_matches:
+                num = float(val)
+                if unit and unit.lower() == "ms":
+                    durations.append(num)
+                else:
+                    if num > 5:
+                        durations.append(num)
+                    else:
+                        durations.append(num * 1000)
+            return durations
+
+        return []
+
+    @staticmethod
+    def normalize_formats_to_exts(formats):
+        out = []
+        for format in formats:
+            format = str(format)
+            format = format.lower()
+            if not format.startswith("."):
+                format = "." + format
+
+            out.append(format)
+
+        return out
+
+    def should_convert(self, ext, format_exts) -> bool:
+        if ext in self.normalize_formats_to_exts([b.data().decode() for b in QMovie.supportedFormats()]):
             return False
 
-        if ext in format_exts:
+        if ext in self.normalize_formats_to_exts(format_exts):
             return True
 
         return False
@@ -89,30 +144,47 @@ class PreviewThumb(PreviewThumbView):
     def __get_gif_data(self, filepath: Path) -> tuple[bytes, tuple[int, int]] | None:
         """Loads an animated image and returns gif data and size, if successful."""
         ext = filepath.suffix.lower()
+        ext_mapping = {
+            ".apng": ".png",
+        }
+        ext = ext_mapping.get(ext, ext)
 
         try:
             image: Image.Image = Image.open(filepath)
 
-            pillow_converts = [
-                ".apng",
-                ".png",
-            ]
-
+            pillow_converts = Image.SAVE_ALL.keys()
+            pillow_converts = ["." + x.lower() for x in pillow_converts]
 
             if self.should_convert(ext, [".jxl"]):
                 ffprobe = ffmpeg.probe(filepath)
 
-                if not ffprobe.get('format', {}).get('format_name', 'unknown') == "jpegxl_anim":
+                if ffprobe.get('format', {}).get('format_name', 'unknown') != "jpegxl_anim":
                     return False
+
+
 
                 st = time.perf_counter_ns()
 
-                with open(filepath, 'rb') as f:
-                    jxl_data = f.read()
+                async def get_durations():
+                    try:
+                        return await asyncio.to_thread(self.jxlinfo_frame_durations, filepath)
+                    except:
+                        return 1000 / 30
 
-                frames_array = imagecodecs.jpegxl_decode(jxl_data)
+                async def decode_frames():
+                    def _load_and_decode():
+                        with open(filepath, "rb") as f:
+                            data = f.read()
+                        arr = imagecodecs.jpegxl_decode(data)
+                        return [Image.fromarray(frame) for frame in arr]
+                    return await asyncio.to_thread(_load_and_decode)
 
-                pil_frames = [Image.fromarray(frame) for frame in frames_array]
+                async def run_parallel():
+                    return await asyncio.gather(get_durations(), decode_frames())
+
+                durs, pil_frames = asyncio.run(
+                    run_parallel(),
+                )
 
                 image_bytes_io = io.BytesIO()
                 pil_frames[0].save(
@@ -121,6 +193,7 @@ class PreviewThumb(PreviewThumbView):
                     lossless=True,
                     append_images=pil_frames[1:],
                     save_all=True,
+                    duration=durs,
                     loop=0,
                     disposal=2,
                 )
@@ -157,10 +230,12 @@ class PreviewThumb(PreviewThumbView):
                 image_bytes_io.seek(0)
                 return (image_bytes_io.read(), (image.width, image.height))
 
-            else:
+            elif ext in self.normalize_formats_to_exts([b.data().decode() for b in QMovie.supportedFormats()]):
                 image.close()
                 with open(filepath, "rb") as f:
                     return (f.read(), (image.width, image.height))
+            else:
+                return False
 
         except (UnidentifiedImageError, FileNotFoundError) as e:
             logger.error("[PreviewThumb] Could not load animated image", filepath=filepath, error=e)
