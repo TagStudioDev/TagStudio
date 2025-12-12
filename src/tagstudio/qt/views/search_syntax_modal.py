@@ -19,7 +19,7 @@ class SearchSyntaxModal(QWidget):
         self.setWindowTitle(Translations["search_syntax.title"])
 
         self.setWindowModality(Qt.WindowModality.ApplicationModal)
-        self.setMinimumSize(360, 540)
+        self.setMinimumSize(320, 720)
         self.__root_layout = QVBoxLayout(self)
         self.__root_layout.setSpacing(0)
         self.__root_layout.setAlignment(Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignCenter)
