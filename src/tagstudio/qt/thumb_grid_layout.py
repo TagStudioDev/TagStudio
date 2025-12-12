@@ -197,6 +197,7 @@ class ThumbGridLayout(QLayout):
         for group_idx, group in enumerate(self._grouped_result.groups):
             if group_idx > 0:
                 from PySide6.QtWidgets import QWidget
+
                 divider = QWidget()
                 divider.setStyleSheet("QWidget { background-color: #444444; }")
                 divider.setFixedHeight(1)
@@ -219,9 +220,7 @@ class ThumbGridLayout(QLayout):
                 is_first=group_idx == 0,
                 tags=group.tags,
             )
-            header.toggle_collapsed.connect(
-                lambda g_idx=group_idx: self._on_group_collapsed(g_idx)
-            )
+            header.toggle_collapsed.connect(lambda g_idx=group_idx: self._on_group_collapsed(g_idx))
             self._group_headers.append(header)
             self.addWidget(header)
 

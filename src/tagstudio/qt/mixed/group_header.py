@@ -64,12 +64,7 @@ class GroupHeaderWidget(QWidget):
         self.arrow_button.setFixedSize(20, 20)
         self.arrow_button.setCursor(Qt.CursorShape.PointingHandCursor)
         self.arrow_button.setStyleSheet(
-            "QPushButton { "
-            "border: none; "
-            "text-align: center; "
-            "font-size: 12px; "
-            "padding: 0px; "
-            "}"
+            "QPushButton { border: none; text-align: center; font-size: 12px; padding: 0px; }"
         )
         self._update_arrow()
         self.arrow_button.clicked.connect(self._on_toggle)
@@ -100,9 +95,7 @@ class GroupHeaderWidget(QWidget):
             )
             self.main_layout.addWidget(self.label)
         elif tag:
-            self.tag_widget = TagWidget(
-                tag=tag, has_edit=False, has_remove=False, library=library
-            )
+            self.tag_widget = TagWidget(tag=tag, has_edit=False, has_remove=False, library=library)
             self.main_layout.addWidget(self.tag_widget)
 
         count_text = f"({entry_count} {'entry' if entry_count == 1 else 'entries'})"
