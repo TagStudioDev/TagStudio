@@ -2,15 +2,18 @@
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
 import io
+import time
 from pathlib import Path
 from typing import TYPE_CHECKING
 
 import cv2
 import rawpy
 import structlog
+import ffmpeg
 from PIL import Image, UnidentifiedImageError
 from PIL.Image import DecompressionBombError
 from PySide6.QtCore import QSize
+from PySide6.QtGui import QMovie
 
 from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.media_types import MediaCategories
@@ -21,6 +24,8 @@ from tagstudio.qt.views.preview_thumb_view import PreviewThumbView
 
 if TYPE_CHECKING:
     from tagstudio.qt.ts_qt import QtDriver
+
+import imagecodecs
 
 logger = structlog.get_logger(__name__)
 Image.MAX_IMAGE_PIXELS = None
@@ -71,6 +76,16 @@ class PreviewThumb(PreviewThumbView):
 
         return stats
 
+    @staticmethod
+    def should_convert(ext, format_exts) -> bool:
+        if ext in QMovie.supportedFormats():
+            return False
+
+        if ext in format_exts:
+            return True
+
+        return False
+
     def __get_gif_data(self, filepath: Path) -> tuple[bytes, tuple[int, int]] | None:
         """Loads an animated image and returns gif data and size, if successful."""
         ext = filepath.suffix.lower()
@@ -78,19 +93,70 @@ class PreviewThumb(PreviewThumbView):
         try:
             image: Image.Image = Image.open(filepath)
 
-            if ext == ".apng":
+            pillow_converts = [
+                ".apng",
+                ".png",
+            ]
+
+
+            if self.should_convert(ext, [".jxl"]):
+                ffprobe = ffmpeg.probe(filepath)
+
+                if not ffprobe.get('format', {}).get('format_name', 'unknown') == "jpegxl_anim":
+                    return False
+
+                st = time.perf_counter_ns()
+
+                with open(filepath, 'rb') as f:
+                    jxl_data = f.read()
+
+                frames_array = imagecodecs.jpegxl_decode(jxl_data)
+
+                pil_frames = [Image.fromarray(frame) for frame in frames_array]
+
                 image_bytes_io = io.BytesIO()
+                pil_frames[0].save(
+                    image_bytes_io,
+                    "WEBP",
+                    lossless=True,
+                    append_images=pil_frames[1:],
+                    save_all=True,
+                    loop=0,
+                    disposal=2,
+                )
+                logger.debug(
+                    f"[PreviewThumb] Coversion has taken {(time.perf_counter_ns() - st) / 1_000_000} ms",
+                    ext=ext,
+                )
+
+                image.close()
+                image_bytes_io.seek(0)
+                return (image_bytes_io.read(), (image.width, image.height))
+
+            elif self.should_convert(ext, pillow_converts):
+                if hasattr(image, "n_frames"):
+                    if image.n_frames <= 1:
+                        return False
+
+                image_bytes_io = io.BytesIO()
+                st = time.perf_counter_ns()
                 image.save(
                     image_bytes_io,
-                    "GIF",
+                    "WEBP",
                     lossless=True,
                     save_all=True,
                     loop=0,
                     disposal=2,
                 )
+                logger.debug(
+                    f"[PreviewThumb] Coversion has taken {(time.perf_counter_ns() - st) / 1_000_000} ms",
+                    ext=ext,
+                )
+
                 image.close()
                 image_bytes_io.seek(0)
                 return (image_bytes_io.read(), (image.width, image.height))
+
             else:
                 image.close()
                 with open(filepath, "rb") as f:

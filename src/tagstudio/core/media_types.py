@@ -288,6 +288,8 @@ class MediaCategories:
     }
     _IMAGE_ANIMATED_SET: set[str] = {
         ".apng",
+        ".png",
+        ".jxl",
         ".gif",
         ".webp",
     }
