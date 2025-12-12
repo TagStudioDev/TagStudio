@@ -92,7 +92,7 @@ hide:
 
     ***
 
-    Apposed to filling your drives with [sidecar files](https://en.wikipedia.org/wiki/Sidecar_file), TagStudio uses a project-like [library](libraries.md) system that stores your tags and metadata inside a single save file per-library.
+    Opposed to filling your drives with [sidecar files](https://en.wikipedia.org/wiki/Sidecar_file), TagStudio uses a project-like [library](libraries.md) system that stores your tags and metadata inside a single save file per-library.
 
     [:material-arrow-right: Learn About the Format](libraries.md)
 
