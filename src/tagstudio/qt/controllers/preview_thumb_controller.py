@@ -4,15 +4,12 @@
 import io
 import time
 from pathlib import Path
-from typing import TYPE_CHECKING, List
-import subprocess
-import re
-import asyncio
+from typing import TYPE_CHECKING
 
 import cv2
+import ffmpeg
 import rawpy
 import structlog
-import ffmpeg
 from PIL import Image, UnidentifiedImageError
 from PIL.Image import DecompressionBombError
 from PySide6.QtCore import QSize
@@ -27,8 +24,6 @@ from tagstudio.qt.views.preview_thumb_view import PreviewThumbView
 
 if TYPE_CHECKING:
     from tagstudio.qt.ts_qt import QtDriver
-
-import imagecodecs
 
 logger = structlog.get_logger(__name__)
 Image.MAX_IMAGE_PIXELS = None
@@ -81,45 +76,6 @@ class PreviewThumb(PreviewThumbView):
 
 
     @staticmethod
-    def jxlinfo_frame_durations(path: str, jxlinfo_cmd: str = "jxlinfo") -> List[float]:
-        """
-        Return per-frame durations (in seconds) by running `jxlinfo -v path`.
-        Requires `jxlinfo` (libjxl-tools) installed and on PATH.
-        """
-        try:
-            p = subprocess.run(
-                [jxlinfo_cmd, "-v", path],
-                capture_output=True,
-                check=False,
-                text=True,
-            )
-        except FileNotFoundError as e:
-            raise RuntimeError(f"{jxlinfo_cmd} not found. Install libjxl-tools.") from e
-
-        out = p.stdout + "\n" + p.stderr
-
-        dur_ms_matches = re.findall(
-            r"^frame:.*duration\s*:\s*([0-9]+(?:\.[0-9]+)?)\s*(ms)?",
-            out,
-            flags=re.IGNORECASE | re.MULTILINE
-        )
-
-        if dur_ms_matches:
-            durations = []
-            for val, unit in dur_ms_matches:
-                num = float(val)
-                if unit and unit.lower() == "ms":
-                    durations.append(num)
-                else:
-                    if num > 5:
-                        durations.append(num)
-                    else:
-                        durations.append(num * 1000)
-            return durations
-
-        return []
-
-    @staticmethod
     def normalize_formats_to_exts(formats):
         out = []
         for format in formats:
@@ -133,13 +89,12 @@ class PreviewThumb(PreviewThumbView):
         return out
 
     def should_convert(self, ext, format_exts) -> bool:
-        if ext in self.normalize_formats_to_exts([b.data().decode() for b in QMovie.supportedFormats()]):
+        if ext in self.normalize_formats_to_exts(
+            [b.data().decode() for b in QMovie.supportedFormats()]
+        ):
             return False
 
-        if ext in self.normalize_formats_to_exts(format_exts):
-            return True
-
-        return False
+        return ext in self.normalize_formats_to_exts(format_exts)
 
     def __get_gif_data(self, filepath: Path) -> tuple[bytes, tuple[int, int]] | None:
         """Loads an animated image and returns gif data and size, if successful."""
@@ -184,7 +139,8 @@ class PreviewThumb(PreviewThumbView):
                 )
 
                 logger.debug(
-                    f"[PreviewThumb] Coversion has taken {(time.perf_counter_ns() - st) / 1_000_000} ms",
+                    f"[PreviewThumb] Coversion has taken {
+                    (time.perf_counter_ns() - st) / 1_000_000} ms",
                     ext=ext,
                     ffprobe_time=probe_time,
                 )
@@ -194,9 +150,8 @@ class PreviewThumb(PreviewThumbView):
                 return (out, (image.width, image.height))
 
             elif self.should_convert(ext, pillow_converts):
-                if hasattr(image, "n_frames"):
-                    if image.n_frames <= 1:
-                        return False
+                if hasattr(image, "n_frames") and image.n_frames <= 1:
+                    return False
 
                 image_bytes_io = io.BytesIO()
                 st = time.perf_counter_ns()
@@ -209,7 +164,8 @@ class PreviewThumb(PreviewThumbView):
                     disposal=2,
                 )
                 logger.debug(
-                    f"[PreviewThumb] Coversion has taken {(time.perf_counter_ns() - st) / 1_000_000} ms",
+                    f"[PreviewThumb] Coversion has taken {
+                    (time.perf_counter_ns() - st) / 1_000_000} ms",
                     ext=ext,
                 )
 
@@ -217,7 +173,9 @@ class PreviewThumb(PreviewThumbView):
                 image_bytes_io.seek(0)
                 return (image_bytes_io.read(), (image.width, image.height))
 
-            elif ext in self.normalize_formats_to_exts([b.data().decode() for b in QMovie.supportedFormats()]):
+            elif ext in self.normalize_formats_to_exts(
+                [b.data().decode() for b in QMovie.supportedFormats()]
+            ):
                 image.close()
                 with open(filepath, "rb") as f:
                     return (f.read(), (image.width, image.height))
