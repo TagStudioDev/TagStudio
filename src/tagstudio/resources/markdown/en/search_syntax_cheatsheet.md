@@ -40,7 +40,7 @@ Search for any `.jpg` file
 - path: *.jpg
 
 Search for any file that ends in a number
-- path: *2.*
+- path: \*2.\*
 
 Search for a file located at `folder/file.jpg`
 - path: folder/file.jpg
