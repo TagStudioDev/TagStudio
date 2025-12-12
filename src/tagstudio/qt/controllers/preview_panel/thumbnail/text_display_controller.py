@@ -1,7 +1,11 @@
+import contextlib
 from pathlib import Path
 from typing import TYPE_CHECKING
 
 import structlog
+from pygments.lexer import Lexer
+from pygments.lexers import get_lexer_by_name
+from pygments.util import ClassNotFound
 from superqt.utils import CodeSyntaxHighlight
 
 from tagstudio.qt.views.preview_panel.thumbnail.text_display_view import TextDisplayView
@@ -27,16 +31,28 @@ class TextDisplayController(TextDisplayView):
 
         """
         language: str = path.suffix[1:]
+        content: str = ""
 
         try:
             with open(path) as text_file:
-                content: str = text_file.read()
+                content = text_file.read()
 
-            CodeSyntaxHighlight(
-                self.document(), language, self.driver.settings.syntax_highlighting_style
-            )
+            if lexer_exists(language):
+                CodeSyntaxHighlight(
+                    self.document(), language, self.driver.settings.syntax_highlighting_style
+                )
+            else:
+                logger.warn(f"[TextDisplayController] Couldn't find lexer for `{language}`")
+
             self.setText(content)
-        except ValueError:
-            logger.warn(f"[TextDisplayController] Couldn't find lexer for `{language}`")
         except FileNotFoundError:
             logger.error(f"[TextDisplayController] Couldn't find file {path}")
+
+
+def lexer_exists(language: str) -> bool:
+    lexer: Lexer | None = None
+
+    with contextlib.suppress(ClassNotFound):
+        lexer = get_lexer_by_name(language)
+
+    return lexer is not None
