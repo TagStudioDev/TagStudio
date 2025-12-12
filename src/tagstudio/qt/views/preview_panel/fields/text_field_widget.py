@@ -44,11 +44,9 @@ class TextFieldWidget(FieldWidget):
 
 
 # Regex from https://stackoverflow.com/a/6041965
-def linkify(text: str) -> str:
+def linkify(text: str):
     """Replaces any found URLs in a string with an embedded link."""
-    url_pattern = (
-        r"(http|ftp|https):\/\/([\w_-]+(?:(?:\.[\w_-]+)+))([\w.,@?^=%&:\/~+#-*]*[\w@?^=%&\/~+#-*])"
-    )
+    url_pattern = r"(http|ftp|https):\/\/([\w_-]+(?:(?:\.[\w_-]+)+))([\w.,@?^=%&:\/~+#\-*]*[\w@?^=%&\/~+#\-*])"  # noqa: E501
     return re.sub(
         url_pattern,
         lambda url: f'<a href="{url.group(0)}">{url.group(0)}</a>',
