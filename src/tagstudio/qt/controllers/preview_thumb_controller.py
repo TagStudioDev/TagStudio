@@ -77,7 +77,7 @@ class PreviewThumb(PreviewThumbView):
 
     @staticmethod
     def normalize_formats_to_exts(formats: Iterable[str]) -> list[str]:
-        out = []
+        out: set[str] = set()
         for format in formats:
             if not isinstance(format, str):
                 logger.error(
@@ -90,7 +90,7 @@ class PreviewThumb(PreviewThumbView):
             if not format.startswith("."):
                 format = "." + format
 
-            out.append(format)
+            out.add(format)
 
         return out
 
