@@ -4,7 +4,7 @@
 import io
 import time
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Iterable
 
 import cv2
 import ffmpeg
@@ -75,7 +75,7 @@ class PreviewThumb(PreviewThumbView):
         return stats
 
     @staticmethod
-    def normalize_formats_to_exts(formats):
+    def normalize_formats_to_exts(formats: Iterable[str]) -> list[str]:
         out = []
         for format in formats:
             if not isinstance(format, str):
@@ -93,7 +93,7 @@ class PreviewThumb(PreviewThumbView):
 
         return out
 
-    def should_convert(self, ext, format_exts) -> bool:
+    def should_convert(self, ext: str, format_exts: Iterable[str]) -> bool:
         if ext in self.normalize_formats_to_exts(
             [b.data().decode("utf-8") for b in QMovie.supportedFormats()]
         ):
@@ -153,7 +153,7 @@ class PreviewThumb(PreviewThumbView):
                 return (out, (image.width, image.height))
 
             elif self.should_convert(ext, pillow_converts):
-                if hasattr(image, "n_frames") and image.n_frames <= 1:
+                if getattr(image, "n_frames", -1)  <= 1:
                     return None
 
                 image_bytes_io = io.BytesIO()
