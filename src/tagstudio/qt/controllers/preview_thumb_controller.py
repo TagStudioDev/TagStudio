@@ -74,7 +74,6 @@ class PreviewThumb(PreviewThumbView):
 
         return stats
 
-
     @staticmethod
     def normalize_formats_to_exts(formats):
         out = []
@@ -90,7 +89,7 @@ class PreviewThumb(PreviewThumbView):
 
     def should_convert(self, ext, format_exts) -> bool:
         if ext in self.normalize_formats_to_exts(
-            [b.data().decode() for b in QMovie.supportedFormats()]
+            [str(b.data(), encoding="utf-8") for b in QMovie.supportedFormats()]
         ):
             return False
 
@@ -115,7 +114,7 @@ class PreviewThumb(PreviewThumbView):
                 start = time.perf_counter_ns()
                 ffprobe = ffmpeg.probe(filepath)
 
-                if ffprobe.get('format', {}).get('format_name', '') != "jpegxl_anim":
+                if ffprobe.get("format", {}).get("format_name", "") != "jpegxl_anim":
                     return None
 
                 probe_time = f"{(time.perf_counter_ns() - start) / 1_000_000} ms"
@@ -123,16 +122,15 @@ class PreviewThumb(PreviewThumbView):
                 start = time.perf_counter_ns()
 
                 out, _ = (
-                    ffmpeg
-                    .input(filepath)
+                    ffmpeg.input(filepath)
                     .output(
-                        'pipe:',
-                        format='webp',
+                        "pipe:",
+                        format="webp",
                         **{
-                            'lossless': 1,
-                            'compression_level': 0,
-                            'loop': 0,
-                        }
+                            "lossless": 1,
+                            "compression_level": 0,
+                            "loop": 0,
+                        },
                     )
                     .global_args("-hide_banner", "-loglevel", "error")
                     .run(capture_stdout=True)
@@ -140,11 +138,11 @@ class PreviewThumb(PreviewThumbView):
 
                 logger.debug(
                     f"[PreviewThumb] Coversion has taken {
-                    (time.perf_counter_ns() - start) / 1_000_000} ms",
+                        (time.perf_counter_ns() - start) / 1_000_000
+                    } ms",
                     ext=ext,
                     ffprobe_time=probe_time,
                 )
-
 
                 return (out, (image.width, image.height))
 
@@ -163,7 +161,8 @@ class PreviewThumb(PreviewThumbView):
                 )
                 logger.debug(
                     f"[PreviewThumb] Coversion has taken {
-                    (time.perf_counter_ns() - start) / 1_000_000} ms",
+                        (time.perf_counter_ns() - start) / 1_000_000
+                    } ms",
                     ext=ext,
                 )
 
@@ -172,7 +171,7 @@ class PreviewThumb(PreviewThumbView):
                 return (image_bytes_io.read(), (image.width, image.height))
 
             elif ext in self.normalize_formats_to_exts(
-                [b.data().decode() for b in QMovie.supportedFormats()]
+                [str(b.data(), encoding="utf-8") for b in QMovie.supportedFormats()]
             ):
                 image.close()
                 with open(filepath, "rb") as f:
