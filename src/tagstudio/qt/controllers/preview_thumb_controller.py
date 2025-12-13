@@ -160,7 +160,6 @@ class PreviewThumb(PreviewThumbView):
                     lossless=True,
                     save_all=True,
                     loop=0,
-                    disposal=2,
                 )
                 logger.debug(
                     f"[PreviewThumb] Coversion has taken {
