@@ -6,6 +6,8 @@ import time
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+import subprocess
+import re
 import cv2
 import ffmpeg
 import rawpy
@@ -112,13 +114,42 @@ class PreviewThumb(PreviewThumbView):
 
             if self.should_convert(ext, [".jxl"]):
 
-                st = time.perf_counter_ns()
-                ffprobe = ffmpeg.probe(filepath)
+                probe_time = "-1 ms"
+                try:
+                    jxlinfo_cmd = "jxlinfo"
 
-                if ffprobe.get('format', {}).get('format_name', '') != "jpegxl_anim":
-                    return False
+                    st = time.perf_counter_ns()
+                    p = subprocess.run(
+                        [jxlinfo_cmd, "-v", filepath],
+                        capture_output=True,
+                        check=False,
+                        text=True,
+                    )
 
-                probe_time = f"{(time.perf_counter_ns() - st) / 1_000_000} ms"
+                    probe_time = f"{(time.perf_counter_ns() - st) / 1_000_000} ms (jxlinfo)"
+
+                    anim_type = re.findall(
+                        r"^JPEG XL animation.*$",
+                        p.stdout,
+                        flags=re.IGNORECASE | re.MULTILINE
+                    )
+                    if len(anim_type) < 1:
+                        return False
+
+                except Exception as e:
+                    if isinstance(e, FileNotFoundError):
+                        logger.debug(f"{jxlinfo_cmd} not found")
+                    else:
+                        logger.debug("Can't use jxlinfo command")
+
+
+                    st = time.perf_counter_ns()
+                    ffprobe = ffmpeg.probe(filepath)
+
+                    if ffprobe.get('format', {}).get('format_name', '') != "jpegxl_anim":
+                        return False
+
+                    probe_time = f"{(time.perf_counter_ns() - st) / 1_000_000} ms (ffprobe)"
 
                 st = time.perf_counter_ns()
 
@@ -142,7 +173,7 @@ class PreviewThumb(PreviewThumbView):
                     f"[PreviewThumb] Coversion has taken {
                     (time.perf_counter_ns() - st) / 1_000_000} ms",
                     ext=ext,
-                    ffprobe_time=probe_time,
+                    probe_time=probe_time,
                 )
 
                 image.close()
