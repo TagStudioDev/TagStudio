@@ -108,7 +108,7 @@ class PreviewThumb(PreviewThumbView):
             image: Image.Image = Image.open(filepath)
 
             pillow_converts = Image.SAVE_ALL.keys()
-            pillow_converts = ["." + x.lower() for x in pillow_converts]
+            pillow_converts = self.normalize_formats_to_exts(pillow_converts)
 
             if self.should_convert(ext, [".jxl"]):
 
