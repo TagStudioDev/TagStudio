@@ -80,7 +80,8 @@ class PreviewThumb(PreviewThumbView):
         for format in formats:
             if not isinstance(format, str):
                 logger.error(
-                    "passed non-string to `normalize_formats_to_exts` skipping format"
+                    "passed non-string to `normalize_formats_to_exts` skipping format",
+                    item=format,
                 )
                 continue
 
