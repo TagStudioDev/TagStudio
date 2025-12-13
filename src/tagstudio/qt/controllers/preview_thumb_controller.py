@@ -78,7 +78,12 @@ class PreviewThumb(PreviewThumbView):
     def normalize_formats_to_exts(formats):
         out = []
         for format in formats:
-            format = str(format)
+            if not isinstance(format, str):
+                logger.error(
+                    "passed non-string to `normalize_formats_to_exts` skipping format"
+                )
+                continue
+
             format = format.lower()
             if not format.startswith("."):
                 format = "." + format
