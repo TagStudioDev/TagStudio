@@ -41,6 +41,7 @@ class MediaType(str, Enum):
     FONT = "font"
     IMAGE_ANIMATED = "image_animated"
     IMAGE_RAW = "image_raw"
+    IMAGE_EXR = "image_exr"
     IMAGE_VECTOR = "image_vector"
     IMAGE = "image"
     INSTALLER = "installer"
@@ -51,6 +52,7 @@ class MediaType(str, Enum):
     PACKAGE = "package"
     PDF = "pdf"
     PLAINTEXT = "plaintext"
+    POWERPOINT = "powerpoint"
     PRESENTATION = "presentation"
     PROGRAM = "program"
     SHADER = "shader"
@@ -109,7 +111,6 @@ class MediaCategories:
         ".psd",
     }
     _AFFINITY_PHOTO_SET: set[str] = {".afphoto"}
-    _KRITA_SET: set[str] = {".kra", ".krz"}
     _ARCHIVE_SET: set[str] = {
         ".7z",
         ".gz",
@@ -187,6 +188,7 @@ class MediaCategories:
         ".dhtml",
         ".fgd",
         ".fish",
+        ".gd",
         ".gitignore",
         ".h",
         ".hpp",
@@ -194,6 +196,7 @@ class MediaCategories:
         ".html",
         ".inf",
         ".ini",
+        ".java",
         ".js",
         ".json",
         ".json5",
@@ -296,16 +299,32 @@ class MediaCategories:
         ".cr2",
         ".cr3",
         ".crw",
+        ".dcs",
+        ".dcr",
         ".dng",
+        ".drf",
+        ".erf",
+        ".k25",
+        ".kdc",
+        ".mdc",
+        ".mef",
+        ".mos",
+        ".mrw",
         ".nef",
         ".nrw",
         ".orf",
+        ".pef",
         ".raf",
         ".raw",
         ".rw2",
         ".srf",
         ".srf2",
+        ".sr2",
+        ".srw",
+        ".x3f",
+        ".3fr",
     }
+    _IMAGE_EXR_SET: set[str] = {".exr"}
     _IMAGE_VECTOR_SET: set[str] = {".eps", ".epsf", ".epsi", ".svg", ".svgz"}
     _IMAGE_RASTER_SET: set[str] = {
         ".apng",
@@ -316,24 +335,34 @@ class MediaCategories:
         ".heic",
         ".heif",
         ".icns",
-        ".j2k",
-        ".jfif",
-        ".jp2",
-        ".jpeg_large",
         ".jpeg",
-        ".jpg_large",
         ".jpg",
+        ".jpe",
+        ".jif",
+        ".jfif",
+        ".jfi",
+        ".jpeg_large",
+        ".jpg_large",
+        ".jp2",
+        ".j2k",
+        ".jpf",
+        ".jpm",
         ".jpg2",
+        ".j2c",
+        ".jpc",
+        ".jpx",
+        ".mj2",
         ".jxl",
         ".png",
         ".psb",
         ".psd",
-        ".tif",
         ".tiff",
+        ".tif",
         ".webp",
     }
     _INSTALLER_SET: set[str] = {".appx", ".msi", ".msix"}
     _IWORK_SET: set[str] = {".key", ".pages", ".numbers"}
+    _KRITA_SET: set[str] = {".kra", ".krz"}
     _MATERIAL_SET: set[str] = {".mtl"}
     _MODEL_SET: set[str] = {".3ds", ".fbx", ".obj", ".stl"}
     _OPEN_DOCUMENT_SET: set[str] = {
@@ -375,11 +404,11 @@ class MediaCategories:
         "license",
         "readme",
     }
+    _POWERPOINT_SET: set[str] = {".pptx"}
     _PRESENTATION_SET: set[str] = {
         ".key",
         ".odp",
         ".ppt",
-        ".pptx",
     }
     _PROGRAM_SET: set[str] = {".app", ".bin", ".exe"}
     _SOURCE_ENGINE_SET: set[str] = {".vtf"}
@@ -410,6 +439,7 @@ class MediaCategories:
         ".m4v",
         ".mkv",
         ".mov",
+        ".movie",
         ".mp4",
         ".webm",
         ".wmv",
@@ -500,6 +530,9 @@ class MediaCategories:
         is_iana=False,
         name="raw image",
     )
+    IMAGE_EXR_TYPES = MediaCategory(
+        media_type=MediaType.IMAGE_EXR, extensions=_IMAGE_EXR_SET, is_iana=False, name="exr image"
+    )
     IMAGE_VECTOR_TYPES = MediaCategory(
         media_type=MediaType.IMAGE_VECTOR,
         extensions=_IMAGE_VECTOR_SET,
@@ -566,9 +599,15 @@ class MediaCategories:
         is_iana=False,
         name="plaintext",
     )
+    POWERPOINT_TYPES = MediaCategory(
+        media_type=MediaType.POWERPOINT,
+        extensions=_POWERPOINT_SET,
+        is_iana=False,
+        name="powerpoint",
+    )
     PRESENTATION_TYPES = MediaCategory(
         media_type=MediaType.PRESENTATION,
-        extensions=_PRESENTATION_SET,
+        extensions=_PRESENTATION_SET | _POWERPOINT_SET,
         is_iana=False,
         name="presentation",
     )

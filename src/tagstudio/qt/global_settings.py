@@ -70,6 +70,7 @@ class GlobalSettings(BaseModel):
     show_filepath: ShowFilepathOption = Field(default=ShowFilepathOption.DEFAULT)
     tag_click_action: TagClickActionOption = Field(default=TagClickActionOption.DEFAULT)
     theme: Theme = Field(default=Theme.SYSTEM)
+    syntax_highlighting_style: str = Field(default="github-dark")
     splash: Splash = Field(default=Splash.DEFAULT)
     windows_start_command: bool = Field(default=False)
 

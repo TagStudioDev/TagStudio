@@ -6,6 +6,7 @@
 from typing import TYPE_CHECKING, Any
 
 import structlog
+from pygments.styles import get_all_styles
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QDoubleValidator
 from PySide6.QtWidgets import (
@@ -230,7 +231,7 @@ class SettingsPanel(PanelWidget):
             Translations["settings.tag_click_action.label"], self.tag_click_action_combobox
         )
 
-        # Dark Mode
+        # Theme
         self.theme_combobox = QComboBox()
         for k in SettingsPanel.theme_map:
             self.theme_combobox.addItem(SettingsPanel.theme_map[k], k)
@@ -240,6 +241,25 @@ class SettingsPanel(PanelWidget):
         self.theme_combobox.setCurrentIndex(list(SettingsPanel.theme_map.keys()).index(theme))
         self.theme_combobox.currentIndexChanged.connect(self.__update_restart_label)
         form_layout.addRow(Translations["settings.theme.label"], self.theme_combobox)
+
+        # Syntax Highlighting Style
+        self.syntax_highlighting_style_combobox = QComboBox()
+        all_styles = list(get_all_styles())
+        for pygments_style in all_styles:
+            self.syntax_highlighting_style_combobox.addItem(
+                Translations[f"syntax_highlighting_style.{pygments_style}"], pygments_style
+            )
+        style = self.driver.settings.syntax_highlighting_style
+        if style not in all_styles:
+            style = "github-dark"
+        self.syntax_highlighting_style_combobox.setCurrentIndex(all_styles.index(style))
+        self.syntax_highlighting_style_combobox.currentIndexChanged.connect(
+            self.__update_restart_label
+        )
+        form_layout.addRow(
+            Translations["settings.syntax_highlighting_style.label"],
+            self.syntax_highlighting_style_combobox,
+        )
 
         # Splash Screen
         self.splash_combobox = QComboBox()
@@ -300,6 +320,7 @@ class SettingsPanel(PanelWidget):
             "infinite_scroll": self.infinite_scroll.isChecked(),
             "show_filepath": self.filepath_combobox.currentData(),
             "theme": self.theme_combobox.currentData(),
+            "syntax_highlighting_style": self.syntax_highlighting_style_combobox.currentData(),
             "tag_click_action": self.tag_click_action_combobox.currentData(),
             "date_format": self.dateformat_combobox.currentData(),
             "hour_format": self.hourformat_checkbox.isChecked(),
@@ -320,6 +341,7 @@ class SettingsPanel(PanelWidget):
         driver.settings.infinite_scroll = settings["infinite_scroll"]
         driver.settings.show_filepath = settings["show_filepath"]
         driver.settings.theme = settings["theme"]
+        driver.settings.syntax_highlighting_style = settings["syntax_highlighting_style"]
         driver.settings.tag_click_action = settings["tag_click_action"]
         driver.settings.date_format = settings["date_format"]
         driver.settings.hour_format = settings["hour_format"]
