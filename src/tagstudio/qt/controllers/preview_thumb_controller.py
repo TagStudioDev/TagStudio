@@ -110,16 +110,17 @@ class PreviewThumb(PreviewThumbView):
             pillow_converts = self.normalize_formats_to_exts(Image.SAVE_ALL.keys())
 
             if self.should_convert(ext, [".jxl"]):
+                image.close()
 
-                st = time.perf_counter_ns()
+                start = time.perf_counter_ns()
                 ffprobe = ffmpeg.probe(filepath)
 
                 if ffprobe.get('format', {}).get('format_name', '') != "jpegxl_anim":
-                    return False
+                    return None
 
-                probe_time = f"{(time.perf_counter_ns() - st) / 1_000_000} ms"
+                probe_time = f"{(time.perf_counter_ns() - start) / 1_000_000} ms"
 
-                st = time.perf_counter_ns()
+                start = time.perf_counter_ns()
 
                 out, _ = (
                     ffmpeg
@@ -139,21 +140,20 @@ class PreviewThumb(PreviewThumbView):
 
                 logger.debug(
                     f"[PreviewThumb] Coversion has taken {
-                    (time.perf_counter_ns() - st) / 1_000_000} ms",
+                    (time.perf_counter_ns() - start) / 1_000_000} ms",
                     ext=ext,
                     ffprobe_time=probe_time,
                 )
 
-                image.close()
 
                 return (out, (image.width, image.height))
 
             elif self.should_convert(ext, pillow_converts):
                 if hasattr(image, "n_frames") and image.n_frames <= 1:
-                    return False
+                    return None
 
                 image_bytes_io = io.BytesIO()
-                st = time.perf_counter_ns()
+                start = time.perf_counter_ns()
                 image.save(
                     image_bytes_io,
                     "WEBP",
@@ -164,7 +164,7 @@ class PreviewThumb(PreviewThumbView):
                 )
                 logger.debug(
                     f"[PreviewThumb] Coversion has taken {
-                    (time.perf_counter_ns() - st) / 1_000_000} ms",
+                    (time.perf_counter_ns() - start) / 1_000_000} ms",
                     ext=ext,
                 )
 
@@ -179,7 +179,7 @@ class PreviewThumb(PreviewThumbView):
                 with open(filepath, "rb") as f:
                     return (f.read(), (image.width, image.height))
             else:
-                return False
+                return None
 
         except (UnidentifiedImageError, FileNotFoundError) as e:
             logger.error("[PreviewThumb] Could not load animated image", filepath=filepath, error=e)
