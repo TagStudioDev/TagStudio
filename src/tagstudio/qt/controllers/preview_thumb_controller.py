@@ -3,8 +3,9 @@
 
 import io
 import time
+from collections.abc import Iterable
 from pathlib import Path
-from typing import TYPE_CHECKING, Iterable
+from typing import TYPE_CHECKING
 
 import cv2
 import ffmpeg
@@ -153,7 +154,7 @@ class PreviewThumb(PreviewThumbView):
                 return (out, (image.width, image.height))
 
             elif self.should_convert(ext, pillow_converts):
-                if getattr(image, "n_frames", -1)  <= 1:
+                if getattr(image, "n_frames", -1) <= 1:
                     return None
 
                 image_bytes_io = io.BytesIO()
