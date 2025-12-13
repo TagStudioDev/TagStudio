@@ -76,7 +76,7 @@ class PreviewThumb(PreviewThumbView):
         return stats
 
     @staticmethod
-    def normalize_formats_to_exts(formats: Iterable[str]) -> list[str]:
+    def normalize_formats_to_exts(formats: Iterable[str]) -> set[str]:
         out: set[str] = set()
         for format in formats:
             if not isinstance(format, str):
