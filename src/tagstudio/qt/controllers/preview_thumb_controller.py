@@ -89,7 +89,7 @@ class PreviewThumb(PreviewThumbView):
 
     def should_convert(self, ext, format_exts) -> bool:
         if ext in self.normalize_formats_to_exts(
-            [str(b.data(), encoding="utf-8") for b in QMovie.supportedFormats()]
+            [b.data().decode("utf-8") for b in QMovie.supportedFormats()]
         ):
             return False
 
@@ -171,7 +171,7 @@ class PreviewThumb(PreviewThumbView):
                 return (image_bytes_io.read(), (image.width, image.height))
 
             elif ext in self.normalize_formats_to_exts(
-                [str(b.data(), encoding="utf-8") for b in QMovie.supportedFormats()]
+                [b.data().decode("utf-8") for b in QMovie.supportedFormats()]
             ):
                 image.close()
                 with open(filepath, "rb") as f:
