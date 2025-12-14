@@ -91,6 +91,11 @@ from tagstudio.core.library.alchemy.fields import (
     FieldID,
     TextField,
 )
+from tagstudio.core.library.alchemy.grouping import (
+    GroupedSearchResult,
+    GroupingCriteria,
+    GroupingType,
+)
 from tagstudio.core.library.alchemy.joins import TagEntry, TagParent
 from tagstudio.core.library.alchemy.models import (
     Entry,
@@ -102,6 +107,10 @@ from tagstudio.core.library.alchemy.models import (
     TagColorGroup,
     ValueType,
     Version,
+)
+from tagstudio.core.library.alchemy.strategies import (
+    FiletypeGroupingStrategy,
+    TagGroupingStrategy,
 )
 from tagstudio.core.library.alchemy.visitors import SQLBoolExpressionBuilder
 from tagstudio.core.library.json.library import Library as JsonLibrary
@@ -203,54 +212,6 @@ class SearchResult:
         return self.ids[index]
 
 
-@dataclass(frozen=True)
-class TagGroup:
-    """Represents a group of entries sharing a tag.
-
-    Attributes:
-        tag: The tag for this group (None for special groups).
-        entry_ids: List of entry IDs in this group.
-        is_special: Whether this is a special group (Multiple Tags, No Tag).
-        special_label: Label for special groups ("Multiple Tags" or "No Tag").
-        tags: Multiple tags for multi-tag combination groups (None for others).
-    """
-
-    tag: "Tag | None"
-    entry_ids: list[int]
-    is_special: bool = False
-    special_label: str | None = None
-    tags: list["Tag"] | None = None
-
-
-@dataclass(frozen=True)
-class GroupedSearchResult:
-    """Wrapper for grouped search results.
-
-    Attributes:
-        total_count: Total number of entries across all groups.
-        groups: List of TagGroup objects.
-    """
-
-    total_count: int
-    groups: list[TagGroup]
-
-    @property
-    def all_entry_ids(self) -> list[int]:
-        """Flatten all entry IDs from all groups for backward compatibility."""
-        result: list[int] = []
-        for group in self.groups:
-            result.extend(group.entry_ids)
-        return result
-
-    def __bool__(self) -> bool:
-        """Boolean evaluation for the wrapper."""
-        return self.total_count > 0
-
-    def __len__(self) -> int:
-        """Return the total number of entries across all groups."""
-        return self.total_count
-
-
 @dataclass
 class LibraryStatus:
     """Keep status of library opening operation."""
@@ -276,6 +237,12 @@ class Library:
         self.dupe_files_count: int = -1
         self.ignored_entries_count: int = -1
         self.unlinked_entries_count: int = -1
+
+        # Initialize grouping strategies
+        self._grouping_strategies = {
+            GroupingType.TAG: TagGroupingStrategy(),
+            GroupingType.FILETYPE: FiletypeGroupingStrategy(),
+        }
 
     def close(self):
         if self.engine:
@@ -969,94 +936,42 @@ class Library:
             result = session.execute(TAG_CHILDREN_ID_QUERY, {"tag_id": group_by_tag_id})
             return set(row[0] for row in result)
 
+    def group_entries(
+        self, entry_ids: list[int], criteria: GroupingCriteria
+    ) -> GroupedSearchResult:
+        """Group entries according to criteria.
+
+        Args:
+            entry_ids: List of entry IDs to group.
+            criteria: Grouping criteria.
+
+        Returns:
+            GroupedSearchResult with entries organized into EntryGroup objects.
+        """
+        if criteria.type == GroupingType.NONE:
+            return GroupedSearchResult(total_count=len(entry_ids), groups=[])
+
+        strategy = self._grouping_strategies.get(criteria.type)
+        if strategy is None:
+            logger.warning("Unknown grouping type", type=criteria.type)
+            return GroupedSearchResult(total_count=len(entry_ids), groups=[])
+
+        return strategy.group_entries(self, entry_ids, criteria)
+
     def group_entries_by_tag(
         self, entry_ids: list[int], group_by_tag_id: int
     ) -> GroupedSearchResult:
-        """Group entries by tag hierarchy.
+        """Group entries by tag hierarchy (backward compatibility wrapper).
 
         Args:
             entry_ids: List of entry IDs to group.
             group_by_tag_id: The tag ID to group by.
 
         Returns:
-            GroupedSearchResult with entries organized into TagGroup objects.
+            GroupedSearchResult with entries organized into EntryGroup objects.
         """
-        if not entry_ids:
-            return GroupedSearchResult(total_count=0, groups=[])
-
-        with Session(self.engine) as session:
-            result = session.execute(TAG_CHILDREN_ID_QUERY, {"tag_id": group_by_tag_id})
-            child_tag_ids = [row[0] for row in result]
-
-        tags_by_id: dict[int, Tag] = {}
-        with Session(self.engine) as session:
-            for tag in session.scalars(select(Tag).where(Tag.id.in_(child_tag_ids))):
-                tags_by_id[tag.id] = tag
-
-        tag_to_entries = self.get_tag_entries(child_tag_ids, entry_ids)
-
-        entry_to_tags: dict[int, list[int]] = {entry_id: [] for entry_id in entry_ids}
-        for tag_id, entries_with_tag in tag_to_entries.items():
-            for entry_id in entries_with_tag:
-                entry_to_tags[entry_id].append(tag_id)
-
-        tag_groups: dict[int, list[int]] = {}
-        multi_tag_groups: dict[tuple[int, ...], list[int]] = {}
-        no_tag_entries: list[int] = []
-
-        for entry_id in entry_ids:
-            tag_count = len(entry_to_tags[entry_id])
-            if tag_count == 0:
-                no_tag_entries.append(entry_id)
-            elif tag_count == 1:
-                tag_id = entry_to_tags[entry_id][0]
-                if tag_id not in tag_groups:
-                    tag_groups[tag_id] = []
-                tag_groups[tag_id].append(entry_id)
-            else:
-                tag_tuple = tuple(sorted(entry_to_tags[entry_id]))
-                if tag_tuple not in multi_tag_groups:
-                    multi_tag_groups[tag_tuple] = []
-                multi_tag_groups[tag_tuple].append(entry_id)
-
-        groups: list[TagGroup] = []
-
-        sorted_tag_ids = sorted(tag_groups.keys(), key=lambda tid: tags_by_id[tid].name.lower())
-        for tag_id in sorted_tag_ids:
-            groups.append(
-                TagGroup(
-                    tag=tags_by_id[tag_id],
-                    entry_ids=tag_groups[tag_id],
-                    is_special=False,
-                )
-            )
-
-        if multi_tag_groups:
-            all_multi_tag_entries: list[int] = []
-            for entries in multi_tag_groups.values():
-                all_multi_tag_entries.extend(entries)
-
-            groups.append(
-                TagGroup(
-                    tag=None,
-                    entry_ids=all_multi_tag_entries,
-                    is_special=True,
-                    special_label="Multiple Tags",
-                    tags=None,
-                )
-            )
-
-        if no_tag_entries:
-            groups.append(
-                TagGroup(
-                    tag=None,
-                    entry_ids=no_tag_entries,
-                    is_special=True,
-                    special_label="No Tag",
-                )
-            )
-
-        return GroupedSearchResult(total_count=len(entry_ids), groups=groups)
+        criteria = GroupingCriteria(type=GroupingType.TAG, value=group_by_tag_id)
+        return self.group_entries(entry_ids, criteria)
 
     @property
     def entries_count(self) -> int:

@@ -210,15 +210,11 @@ class ThumbGridLayout(QLayout):
 
             default_collapsed = group.is_special and group.special_label == "No Tag"
             is_collapsed = old_collapsed_states.get(group_idx, default_collapsed)
-            header = GroupHeaderWidget(
-                tag=group.tag,
-                entry_count=len(group.entry_ids),
+            header = GroupHeaderWidget.from_group(
+                group=group,
                 is_collapsed=is_collapsed,
-                is_special=group.is_special,
-                special_label=group.special_label,
                 library=self.driver.lib,
                 is_first=group_idx == 0,
-                tags=group.tags,
             )
             header.toggle_collapsed.connect(lambda g_idx=group_idx: self._on_group_collapsed(g_idx))
             self._group_headers.append(header)
