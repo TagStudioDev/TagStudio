@@ -1006,6 +1006,10 @@ class Library:
         with Session(self.engine) as session:
             return session.query(exists().where(Entry.path == path)).scalar()
 
+    def all_paths(self) -> Iterable[tuple[int, Path]]:
+        with Session(self.engine) as session:
+            return ((i, p) for i, p in session.execute(select(Entry.id, Entry.path)).all())
+
     def get_paths(self, limit: int = -1) -> list[str]:
         path_strings: list[str] = []
         with Session(self.engine) as session:

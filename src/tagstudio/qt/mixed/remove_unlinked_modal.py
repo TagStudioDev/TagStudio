@@ -17,23 +17,23 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from tagstudio.core.library.alchemy.registries.unlinked_registry import UnlinkedRegistry
 from tagstudio.qt.mixed.progress_bar import ProgressWidget
 from tagstudio.qt.translations import Translations
 from tagstudio.qt.utils.custom_runnable import CustomRunnable
 
 # Only import for type checking/autocompletion, will not be imported at runtime.
 if TYPE_CHECKING:
+    from tagstudio.qt.controllers.library_scanner_controller import LibraryScannerController
     from tagstudio.qt.ts_qt import QtDriver
 
 
 class RemoveUnlinkedEntriesModal(QWidget):
     done = Signal()
 
-    def __init__(self, driver: "QtDriver", tracker: UnlinkedRegistry):
+    def __init__(self, driver: "QtDriver", scanner: "LibraryScannerController"):
         super().__init__()
         self.driver = driver
-        self.tracker = tracker
+        self.scanner = scanner
         self.setWindowTitle(Translations["entries.unlinked.remove"])
         self.setWindowModality(Qt.WindowModality.ApplicationModal)
         self.setMinimumSize(500, 400)
@@ -43,7 +43,7 @@ class RemoveUnlinkedEntriesModal(QWidget):
         self.desc_widget = QLabel(
             Translations.format(
                 "entries.remove.plural.confirm",
-                count=self.tracker.unlinked_entries_count,
+                count=self.scanner.unlinked_entries_count,
             )
         )
         self.desc_widget.setObjectName("descriptionLabel")
@@ -76,13 +76,14 @@ class RemoveUnlinkedEntriesModal(QWidget):
     def refresh_list(self):
         self.desc_widget.setText(
             Translations.format(
-                "entries.remove.plural.confirm", count=self.tracker.unlinked_entries_count
+                "entries.remove.plural.confirm", count=self.scanner.unlinked_entries_count
             )
         )
 
         self.model.clear()
-        for i in self.tracker.unlinked_entries:
-            item = QStandardItem(str(i.path))
+        unlinked = sorted(self.scanner.unlinked_paths)
+        for path in unlinked:
+            item = QStandardItem(str(path))
             item.setEditable(False)
             self.model.appendRow(item)
 
@@ -95,12 +96,12 @@ class RemoveUnlinkedEntriesModal(QWidget):
         pw.setWindowTitle(Translations["entries.generic.remove.removing"])
         pw.update_label(
             Translations.format(
-                "entries.generic.remove.removing_count", count=self.tracker.unlinked_entries_count
+                "entries.generic.remove.removing_count", count=self.scanner.unlinked_entries_count
             )
         )
         pw.show()
 
-        r = CustomRunnable(self.tracker.remove_unlinked_entries)
+        r = CustomRunnable(self.scanner.tracker.remove_unlinked_entries)
         QThreadPool.globalInstance().start(r)
         r.done.connect(
             lambda: (
