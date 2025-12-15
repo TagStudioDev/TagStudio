@@ -3,10 +3,12 @@
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
 
+import base64
 import contextlib
 import hashlib
 import math
 import os
+import struct
 import tarfile
 import xml.etree.ElementTree as ET
 import zipfile
@@ -1377,6 +1379,42 @@ class ThumbRenderer(QObject):
             logger.error("Couldn't render thumbnail", filepath=filepath, error=type(e).__name__)
         return im
 
+    @staticmethod
+    def _pdn_thumb(filepath: Path) -> Image.Image | None:
+        """Extract the base64-encoded thumbnail from a .pdn file header.
+
+        Args:
+            filepath (Path): The path of the .pdn file.
+
+        Returns:
+            Image: the decoded PNG thumbnail or None by default.
+        """
+        im: Image.Image | None = None
+        with open(filepath, "rb") as f:
+            try:
+                # First 4 bytes are the magic number
+                if f.read(4) != b"PDN3":
+                    return im
+
+                # Header length is a little-endian 24-bit int
+                header_size = struct.unpack("<i", f.read(3) + b"\x00")[0]
+                thumb_element = ET.fromstring(f.read(header_size)).find("./*thumb")
+                if thumb_element is None:
+                    return im
+
+                encoded_png = thumb_element.get("png")
+                if encoded_png:
+                    decoded_png = base64.b64decode(encoded_png)
+                    im = Image.open(BytesIO(decoded_png))
+                    if im.mode == "RGBA":
+                        new_bg = Image.new("RGB", im.size, color="#1e1e1e")
+                        new_bg.paste(im, mask=im.getchannel(3))
+                        im = new_bg
+            except Exception as e:
+                logger.error("Couldn't render thumbnail", filepath=filepath, error=type(e).__name__)
+
+        return im
+
     def render(
         self,
         timestamp: float,
@@ -1390,7 +1428,7 @@ class ThumbRenderer(QObject):
         """Render a thumbnail or preview image.
 
         Args:
-            timestamp (float): The timestamp for which this this job was dispatched.
+            timestamp (float): The timestamp for which this job was dispatched.
             filepath (str | Path): The path of the file to render a thumbnail for.
             base_size (tuple[int,int]): The unmodified base size of the thumbnail.
             pixel_ratio (float): The screen pixel ratio.
@@ -1503,7 +1541,7 @@ class ThumbRenderer(QObject):
                     save_to_file=file_name,
                 )
 
-            # If the normal renderer failed, fallback the the defaults
+            # If the normal renderer failed, fallback the defaults
             # (with native non-cached sizing!)
             if not image:
                 image = (
@@ -1600,7 +1638,7 @@ class ThumbRenderer(QObject):
         """Render a thumbnail or preview image.
 
         Args:
-            timestamp (float): The timestamp for which this this job was dispatched.
+            timestamp (float): The timestamp for which this job was dispatched.
             filepath (str | Path): The path of the file to render a thumbnail for.
             base_size (tuple[int,int]): The unmodified base size of the thumbnail.
             pixel_ratio (float): The screen pixel ratio.
@@ -1703,6 +1741,9 @@ class ThumbRenderer(QObject):
                     ext, MediaCategories.PDF_TYPES, mime_fallback=True
                 ):
                     image = self._pdf_thumb(_filepath, adj_size)
+                # Paint.NET ====================================================
+                elif MediaCategories.is_ext_in_category(ext, MediaCategories.PAINT_DOT_NET_TYPES):
+                    image = self._pdn_thumb(_filepath)
                 # No Rendered Thumbnail ========================================
                 if not image:
                     raise NoRendererError
