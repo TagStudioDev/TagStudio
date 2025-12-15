@@ -33,6 +33,7 @@ class MediaType(str, Enum):
     AUDIO_MIDI = "audio_midi"
     AUDIO = "audio"
     BLENDER = "blender"
+    CLIP_STUDIO_PAINT = "clip_studio_paint"
     CODE = "code"
     DATABASE = "database"
     DISK_IMAGE = "disk_image"
@@ -47,9 +48,11 @@ class MediaType(str, Enum):
     INSTALLER = "installer"
     IWORK = "iwork"
     MATERIAL = "material"
+    MDIPACK = "mdipack"
     MODEL = "model"
     OPEN_DOCUMENT = "open_document"
     PACKAGE = "package"
+    PAINT_DOT_NET = "paint_dot_net"
     PDF = "pdf"
     PLAINTEXT = "plaintext"
     POWERPOINT = "powerpoint"
@@ -176,6 +179,7 @@ class MediaCategories:
         ".blend31",
         ".blend32",
     }
+    _CLIP_STUDIO_PAINT_SET: set[str] = {".clip"}
     _CODE_SET: set[str] = {
         ".bat",
         ".cfg",
@@ -362,6 +366,7 @@ class MediaCategories:
     _IWORK_SET: set[str] = {".key", ".pages", ".numbers"}
     _KRITA_SET: set[str] = {".kra", ".krz"}
     _MATERIAL_SET: set[str] = {".mtl"}
+    _MDIPACK_SET: set[str] = {".mdp"}
     _MODEL_SET: set[str] = {".3ds", ".fbx", ".obj", ".stl"}
     _OPEN_DOCUMENT_SET: set[str] = {
         ".fodg",
@@ -385,6 +390,7 @@ class MediaCategories:
         ".pkg",
         ".xapk",
     }
+    _PAINT_DOT_NET_SET: set[str] = {".pdn"}
     _PDF_SET: set[str] = {".pdf"}
     _PLAINTEXT_SET: set[str] = {
         ".csv",
@@ -480,6 +486,12 @@ class MediaCategories:
         is_iana=False,
         name="blender",
     )
+    CLIP_STUDIO_PAINT_TYPES = MediaCategory(
+        media_type=MediaType.CLIP_STUDIO_PAINT,
+        extensions=_CLIP_STUDIO_PAINT_SET,
+        is_iana=False,
+        name="clip studio paint",
+    )
     CODE_TYPES = MediaCategory(
         media_type=MediaType.CODE,
         extensions=_CODE_SET,
@@ -567,6 +579,12 @@ class MediaCategories:
         is_iana=False,
         name="material",
     )
+    MDIPACK_TYPES = MediaCategory(
+        media_type=MediaType.MDIPACK,
+        extensions=_MDIPACK_SET,
+        is_iana=False,
+        name="mdipack",
+    )
     MODEL_TYPES = MediaCategory(
         media_type=MediaType.MODEL,
         extensions=_MODEL_SET,
@@ -584,6 +602,12 @@ class MediaCategories:
         extensions=_PACKAGE_SET,
         is_iana=False,
         name="package",
+    )
+    PAINT_DOT_NET_TYPES = MediaCategory(
+        media_type=MediaType.PAINT_DOT_NET,
+        extensions=_PAINT_DOT_NET_SET,
+        is_iana=False,
+        name="paint.net",
     )
     PDF_TYPES = MediaCategory(
         media_type=MediaType.PDF,
@@ -665,6 +689,7 @@ class MediaCategories:
         AUDIO_MIDI_TYPES,
         AUDIO_TYPES,
         BLENDER_TYPES,
+        CLIP_STUDIO_PAINT_TYPES,
         DATABASE_TYPES,
         DISK_IMAGE_TYPES,
         DOCUMENT_TYPES,
@@ -677,9 +702,11 @@ class MediaCategories:
         INSTALLER_TYPES,
         IWORK_TYPES,
         MATERIAL_TYPES,
+        MDIPACK_TYPES,
         MODEL_TYPES,
         OPEN_DOCUMENT_TYPES,
         PACKAGE_TYPES,
+        PAINT_DOT_NET_TYPES,
         PDF_TYPES,
         PLAINTEXT_TYPES,
         PRESENTATION_TYPES,
@@ -716,7 +743,7 @@ class MediaCategories:
 
         Args:
             ext (str): File extension with a leading "." and in all lowercase.
-            media_cat (MediaCategory): The MediaCategory to to check for extension membership.
+            media_cat (MediaCategory): The MediaCategory to check for extension membership.
             mime_fallback (bool): Flag to guess MIME type if no set matches are made.
         """
         return media_cat.contains(ext, mime_fallback)

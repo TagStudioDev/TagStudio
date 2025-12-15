@@ -31,6 +31,7 @@ Thank you so much for showing interest in contributing to TagStudio! Here are a 
 <!-- prettier-ignore -->
 !!! failure "Unacceptable Code"
     The following types of code will NOT be accepted to the project:
+
     -   Code that is not yours or does not have a compatible license with TagStudio's [own one](../LICENSE)
     -   Code that you do not understand and/or cannot explain
 

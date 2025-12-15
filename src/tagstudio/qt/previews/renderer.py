@@ -654,7 +654,7 @@ class ThumbRenderer(QObject):
                     save_to_file=file_name,
                 )
 
-            # If the normal renderer failed, fallback the the defaults
+            # If the normal renderer failed, fallback the defaults
             # (with native non-cached sizing!)
             if not image:
                 image = (

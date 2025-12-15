@@ -266,6 +266,7 @@
     "settings.generate_thumbs": "Generación de Miniaturas",
     "settings.global": "Ajustes globales",
     "settings.hourformat.label": "Formato 24-horas",
+    "settings.infinite_scroll": "Desplazamiento infinito",
     "settings.language": "Idioma",
     "settings.library": "Ajustes de la biblioteca",
     "settings.open_library_on_start": "Abrir biblioteca al iniciar",

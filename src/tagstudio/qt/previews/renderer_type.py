@@ -5,12 +5,15 @@ from tagstudio.core.media_types import MediaCategories, MediaCategory
 from tagstudio.qt.previews.renderers.audio_renderer import AudioRenderer
 from tagstudio.qt.previews.renderers.base_renderer import BaseRenderer
 from tagstudio.qt.previews.renderers.blender_renderer import BlenderRenderer
+from tagstudio.qt.previews.renderers.clip_studio_renderer import ClipStudioPaintRenderer
 from tagstudio.qt.previews.renderers.ebook_renderer import EBookRenderer
 from tagstudio.qt.previews.renderers.exr_image_renderer import EXRImageRenderer
 from tagstudio.qt.previews.renderers.font_renderer import FontRenderer
 from tagstudio.qt.previews.renderers.iwork_renderer import IWorkRenderer
 from tagstudio.qt.previews.renderers.krita_renderer import KritaRenderer
+from tagstudio.qt.previews.renderers.mdp_renderer import MDIPackRenderer
 from tagstudio.qt.previews.renderers.open_doc_renderer import OpenDocRenderer
+from tagstudio.qt.previews.renderers.paint_dot_net_renderer import PaintDotNetRenderer
 from tagstudio.qt.previews.renderers.pdf_renderer import PDFRenderer
 from tagstudio.qt.previews.renderers.powerpoint_renderer import PowerPointRenderer
 from tagstudio.qt.previews.renderers.raster_image_renderer import RasterImageRenderer
@@ -35,6 +38,14 @@ class RendererType(Enum):
 
     # Project files
     KRITA = "krita", MediaCategories.KRITA_TYPES, KritaRenderer, True
+    PAINT_DOT_NET = "paint_dot_net", MediaCategories.PAINT_DOT_NET_TYPES, PaintDotNetRenderer, True
+    CLIP_STUDIO_PAINT = (
+        "clip_studio_paint",
+        MediaCategories.CLIP_STUDIO_PAINT_TYPES,
+        ClipStudioPaintRenderer,
+        True,
+    )
+    MDP = "mdp", MediaCategories.MDIPACK_TYPES, MDIPackRenderer, True
 
     # Document files
     OPEN_DOC = "open_doc", MediaCategories.OPEN_DOCUMENT_TYPES, OpenDocRenderer, True

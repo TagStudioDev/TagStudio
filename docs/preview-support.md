@@ -121,11 +121,13 @@ Preview support for office documents or well-known project file formats varies b
 
 ### :material-layers: Project
 
-| Filetype                   | Extensions     | Preview Type                                                               |
-|----------------------------|----------------|----------------------------------------------------------------------------|
-| Krita[^3]                  | `.kra`, `.krz` | Embedded thumbnail :material-alert-circle:{ title="If available in file" } |
-| Photoshop                  | `.psd`, `.psb` | Flattened image render                                                     |
-
+| Filetype                             | Extensions     | Preview Type                                                               |
+|--------------------------------------|----------------|----------------------------------------------------------------------------|
+| Krita[^3]                            | `.kra`, `.krz` | Embedded thumbnail :material-alert-circle:{ title="If available in file" } |
+| Photoshop                            | `.psd`, `.psb` | Flattened image render                                                     |
+| Clip Studio Paint                    | `.clip`        | Embedded thumbnail                                                         |
+| Mdipack (FireAlpaca, Medibang Paint) | `.mdp`         | Embedded thumbnail                                                         |
+| Paint.NET                            | `.pdn`         | Embedded thumbnail                                                         |
 
 ### :material-format-font: Fonts
 
