@@ -1482,6 +1482,7 @@ class ThumbRenderer(QObject):
                 thumbnail = conn.execute("SELECT ImageData FROM CanvasPreview").fetchone()
                 if thumbnail:
                     im = Image.open(BytesIO(thumbnail[0]))
+            conn.close()
         except Exception as e:
             logger.error("Couldn't render thumbnail", filepath=filepath, error=type(e).__name__)
 
