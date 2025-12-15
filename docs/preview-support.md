@@ -79,8 +79,9 @@ Audio thumbnails will default to embedded cover art (if any) and fallback to gen
 Preview support for office documents or well-known project file formats varies by the format and whether or not embedded thumbnails are available to be read from. OpenDocument-based files are typically supported.
 
 | Filetype                             | Extensions            | Preview Type                                                               |
-| ------------------------------------ | --------------------- | -------------------------------------------------------------------------- |
+|--------------------------------------| --------------------- | -------------------------------------------------------------------------- |
 | Blender                              | `.blend`, `.blend<#>` | Embedded thumbnail :material-alert-circle:{ title="If available in file" } |
+| Clip Studio Paint                    | `.clip`               | Embedded thumbnail                                                         |
 | Keynote (Apple iWork)                | `.key`                | Embedded thumbnail                                                         |
 | Krita[^3]                            | `.kra`, `.krz`        | Embedded thumbnail :material-alert-circle:{ title="If available in file" } |
 | Mdipack (FireAlpaca, Medibang Paint) | `.mdp`                | Embedded thumbnail                                                         |
