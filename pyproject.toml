@@ -14,8 +14,11 @@ dependencies = [
     "ffmpeg-python~=0.2",
     "humanfriendly==10.*",
     "mutagen~=1.47",
+    "numexpr~=2.14.1",
     "numpy~=2.2",
     "opencv_python~=4.11",
+    "openexr~=3.4.3",
+    "pillow-avif-plugin~=1.5",
     "Pillow>=10.2,<12",
     "pillow-heif~=0.22",
     "pillow-jxl-plugin~=1.3",
@@ -34,7 +37,7 @@ dependencies = [
     "ujson~=5.10",
     "wcmatch==10.*",
     "requests~=2.31.0",
-    "semver~=3.0.4",
+    "semver~=3.0.4"
 ]
 
 [project.optional-dependencies]
