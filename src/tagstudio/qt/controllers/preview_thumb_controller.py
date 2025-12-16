@@ -154,7 +154,8 @@ class PreviewThumb(PreviewThumbView):
                 return (out, (image.width, image.height))
 
             elif self.should_convert(ext, pillow_converts):
-                if getattr(image, "n_frames", -1) <= 1:
+                if (not getattr(image, "is_animated", False)) or \
+                    getattr(image, "n_frames", -1) <= 1:
                     return None
 
                 image_bytes_io = io.BytesIO()
