@@ -2,15 +2,19 @@
 # Created for TagStudio: https://github.com/CyanVoxel/TagStudio
 
 import io
+import time
+from collections.abc import Iterable
 from pathlib import Path
 from typing import TYPE_CHECKING
 
 import cv2
+import ffmpeg
 import rawpy
 import structlog
 from PIL import Image, UnidentifiedImageError
 from PIL.Image import DecompressionBombError
 from PySide6.QtCore import QSize
+from PySide6.QtGui import QMovie
 
 from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.media_types import MediaCategories
@@ -71,30 +75,117 @@ class PreviewThumb(PreviewThumbView):
 
         return stats
 
+    @staticmethod
+    def normalize_formats_to_exts(formats: Iterable[str]) -> set[str]:
+        out: set[str] = set()
+        for format in formats:
+            if not isinstance(format, str):
+                logger.error(
+                    "passed non-string to `normalize_formats_to_exts` skipping format",
+                    item=format,
+                )
+                continue
+
+            format = format.lower()
+            if not format.startswith("."):
+                format = "." + format
+
+            out.add(format)
+
+        return out
+
+    def should_convert(self, ext: str, format_exts: Iterable[str]) -> bool:
+        if ext in self.normalize_formats_to_exts(
+            [bytes(b.data()).decode("utf-8") for b in QMovie.supportedFormats()]
+        ):
+            return False
+
+        return ext in self.normalize_formats_to_exts(format_exts)
+
     def __get_gif_data(self, filepath: Path) -> tuple[bytes, tuple[int, int]] | None:
         """Loads an animated image and returns gif data and size, if successful."""
         ext = filepath.suffix.lower()
+        ext_mapping = {
+            ".apng": ".png",
+        }
+        ext = ext_mapping.get(ext, ext)
 
         try:
             image: Image.Image = Image.open(filepath)
 
-            if ext == ".apng":
+            pillow_converts = self.normalize_formats_to_exts(Image.SAVE_ALL.keys())
+
+            if self.should_convert(ext, [".jxl"]):
+                image.close()
+
+                start = time.perf_counter_ns()
+                ffprobe = ffmpeg.probe(filepath)
+
+                if ffprobe.get("format", {}).get("format_name", "") != "jpegxl_anim":
+                    return None
+
+                probe_time = f"{(time.perf_counter_ns() - start) / 1_000_000} ms"
+
+                start = time.perf_counter_ns()
+
+                out, _ = (
+                    ffmpeg.input(filepath)
+                    .output(
+                        "pipe:",
+                        format="webp",
+                        **{
+                            "lossless": 1,
+                            "compression_level": 0,
+                            "loop": 0,
+                        },
+                    )
+                    .global_args("-hide_banner", "-loglevel", "error")
+                    .run(capture_stdout=True)
+                )
+
+                logger.debug(
+                    f"[PreviewThumb] Coversion has taken {
+                        (time.perf_counter_ns() - start) / 1_000_000
+                    } ms",
+                    ext=ext,
+                    ffprobe_time=probe_time,
+                )
+
+                return (out, (image.width, image.height))
+
+            elif self.should_convert(ext, pillow_converts):
+                if (not getattr(image, "is_animated", False)) or \
+                    getattr(image, "n_frames", -1) <= 1:  # fmt: skip
+                    return None
+
                 image_bytes_io = io.BytesIO()
+                start = time.perf_counter_ns()
                 image.save(
                     image_bytes_io,
-                    "GIF",
+                    "WEBP",
                     lossless=True,
                     save_all=True,
                     loop=0,
-                    disposal=2,
                 )
+                logger.debug(
+                    f"[PreviewThumb] Coversion has taken {
+                        (time.perf_counter_ns() - start) / 1_000_000
+                    } ms",
+                    ext=ext,
+                )
+
                 image.close()
                 image_bytes_io.seek(0)
                 return (image_bytes_io.read(), (image.width, image.height))
-            else:
+
+            elif ext in self.normalize_formats_to_exts(
+                [bytes(b.data()).decode("utf-8") for b in QMovie.supportedFormats()]
+            ):
                 image.close()
                 with open(filepath, "rb") as f:
                     return (f.read(), (image.width, image.height))
+            else:
+                return None
 
         except (UnidentifiedImageError, FileNotFoundError) as e:
             logger.error("[PreviewThumb] Could not load animated image", filepath=filepath, error=e)
