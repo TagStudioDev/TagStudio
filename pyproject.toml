@@ -41,6 +41,7 @@ dependencies = [
 dev = ["tagstudio[mkdocs,mypy,pre-commit,pyinstaller,pytest,ruff]"]
 mkdocs = ["mkdocs-material[imaging]>=9.6.14", "mkdocs-redirects~=1.2"]
 mypy = ["mypy==1.15.0", "mypy-extensions==1.*", "types-ujson~=5.10"]
+pyright = ["pyright~=1.1.405"]
 pre-commit = ["pre-commit~=4.2"]
 pyinstaller = ["Pyinstaller~=6.13"]
 pytest = [
@@ -94,13 +95,11 @@ ignore = [
     "src/tagstudio/qt/previews/vendored/pydub/",
 ]
 include = ["src/tagstudio", "tests"]
-reportAny = false
-reportIgnoreCommentWithoutRule = false
+# reference for the settings here: https://github.com/microsoft/pyright/blob/main/docs/configuration.md
 reportImplicitStringConcatenation = false
 reportMissingTypeArgument = false
 reportMissingTypeStubs = false
 # reportOptionalMemberAccess = false
-reportUnannotatedClassAttribute = false
 reportUnknownArgumentType = false
 reportUnknownLambdaType = false
 reportUnknownMemberType = false
