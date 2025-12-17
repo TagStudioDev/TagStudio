@@ -6,6 +6,7 @@
 from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.library.alchemy.models import Entry
 from tagstudio.qt.controllers.preview_panel_controller import PreviewPanel
+from tagstudio.qt.translations import Translations
 from tagstudio.qt.ts_qt import QtDriver
 
 
@@ -42,3 +43,10 @@ def test_update_selection_multiple(qt_driver: QtDriver, library: Library):
 
     # Panel should enable UI that allows for entry modification
     assert panel.add_buttons_enabled
+
+    # File attributes should indicate multiple selection and shared tags
+    attrs = panel._file_attributes_widget
+    expected_label = Translations.format(
+        "preview.multiple_selection", count=len(qt_driver.selected)
+    )
+    assert attrs.file_label.text() == expected_label
