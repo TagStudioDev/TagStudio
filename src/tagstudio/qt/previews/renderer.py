@@ -113,22 +113,28 @@ class _SevenZipFile(py7zr.SevenZipFile):
         return factory.get(name).read()
 
 
-class _TarFile(tarfile.TarFile):
+class _TarFile:
     """Wrapper around tarfile.TarFile to mimic zipfile.ZipFile's API."""
 
     def __init__(self, filepath: Path, mode: Literal["r"]) -> None:
-        super().__init__(filepath, mode)
+        self.tar: tarfile.TarFile
+        self.filepath = filepath
+        self.mode = mode
 
     def namelist(self) -> list[str]:
-        return self.getnames()
+        return self.tar.getnames()
 
     def read(self, name: str) -> bytes:
-        return unwrap(self.extractfile(name)).read()
+        return unwrap(self.tar.extractfile(name)).read()
+
+    def __enter__(self) -> "_TarFile":
+        self.tar = tarfile.open(self.filepath, self.mode).__enter__()
+        return self
+
+    def __exit__(self, *args) -> None:
+        self.tar.__exit__(*args)
 
 
-type _Archive_T = (
-    type[zipfile.ZipFile] | type[rarfile.RarFile] | type[_SevenZipFile] | type[_TarFile]
-)
 type _Archive = zipfile.ZipFile | rarfile.RarFile | _SevenZipFile | _TarFile
 
 
@@ -910,15 +916,7 @@ class ThumbRenderer(QObject):
         """
         im: Image.Image | None = None
         try:
-            archiver: _Archive_T = zipfile.ZipFile
-            if ext == ".cb7":
-                archiver = _SevenZipFile
-            elif ext == ".cbr":
-                archiver = rarfile.RarFile
-            elif ext == ".cbt":
-                archiver = _TarFile
-
-            with archiver(filepath, "r") as archive:
+            with ThumbRenderer.__open_archive(filepath, ext) as archive:
                 if "ComicInfo.xml" in archive.namelist():
                     comic_info = ET.fromstring(archive.read("ComicInfo.xml"))
                     im = ThumbRenderer.__cover_from_comic_info(archive, comic_info, "FrontCover")
@@ -928,13 +926,7 @@ class ThumbRenderer(QObject):
                         )
 
                 if not im:
-                    for file_name in archive.namelist():
-                        if file_name.lower().endswith(
-                            (".png", ".jpg", ".jpeg", ".gif", ".bmp", ".svg")
-                        ):
-                            image_data = archive.read(file_name)
-                            im = Image.open(BytesIO(image_data))
-                            break
+                    im = ThumbRenderer.__first_image(archive)
         except Exception as e:
             logger.error("Couldn't render thumbnail", filepath=filepath, error=type(e).__name__)
 
@@ -965,6 +957,63 @@ class ThumbRenderer(QObject):
                 im = Image.open(BytesIO(image_data))
 
         return im
+
+    @staticmethod
+    def _archive_thumb(filepath: Path, ext: str) -> Image.Image | None:
+        """Extract the first image found in the archive.
+
+        Args:
+            filepath (Path): The path to the archive.
+            ext (str): The file extension.
+
+        Returns:
+            Image: The first image found in the archive.
+        """
+        im: Image.Image | None = None
+        try:
+            with ThumbRenderer.__open_archive(filepath, ext) as archive:
+                im = ThumbRenderer.__first_image(archive)
+        except Exception as e:
+            logger.error("Couldn't render thumbnail", filepath=filepath, error=type(e).__name__)
+
+        return im
+
+    @staticmethod
+    def __open_archive(filepath: Path, ext: str) -> _Archive:
+        """Open an archive with its corresponding archiver.
+
+        Args:
+            filepath (Path): The path to the archive.
+            ext (str): The file extension.
+
+        Returns:
+            _Archive: The opened archive.
+        """
+        archiver: type[_Archive] = zipfile.ZipFile
+        if ext in {".7z", ".cb7", ".s7z"}:
+            archiver = _SevenZipFile
+        elif ext in {".cbr", ".rar"}:
+            archiver = rarfile.RarFile
+        elif ext in {".cbt", ".tar", ".tgz"}:
+            archiver = _TarFile
+        return archiver(filepath, "r")
+
+    @staticmethod
+    def __first_image(archive: _Archive) -> Image.Image | None:
+        """Find and extract the first renderable image in the archive.
+
+        Args:
+            archive (_Archive): The current archive.
+
+        Returns:
+            Image: The first renderable image in the archive.
+        """
+        for file_name in archive.namelist():
+            if file_name.lower().endswith((".png", ".jpg", ".jpeg", ".gif", ".bmp", ".svg")):
+                image_data = archive.read(file_name)
+                return Image.open(BytesIO(image_data))
+
+        return None
 
     def _font_short_thumb(self, filepath: Path, size: int) -> Image.Image | None:
         """Render a small font preview ("Aa") thumbnail from a font file.
@@ -1819,6 +1868,9 @@ class ThumbRenderer(QObject):
                     ext, MediaCategories.PDF_TYPES, mime_fallback=True
                 ):
                     image = self._pdf_thumb(_filepath, adj_size)
+                # Archives =====================================================
+                elif MediaCategories.is_ext_in_category(ext, MediaCategories.ARCHIVE_TYPES):
+                    image = self._archive_thumb(_filepath, ext)
                 # MDIPACK ======================================================
                 elif MediaCategories.is_ext_in_category(ext, MediaCategories.MDIPACK_TYPES):
                     image = self._mdp_thumb(_filepath)

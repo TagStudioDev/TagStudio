@@ -96,6 +96,17 @@ Preview support for office documents or well-known project file formats varies b
 | Photoshop                            | `.psd`                | Flattened image render                                                     |
 | PowerPoint (Microsoft Office)        | `.pptx`, `.ppt`       | Embedded thumbnail :material-alert-circle:{ title="If available in file" } |
 
+### :material-archive: Archives
+
+Archive thumbnails will display the first image from the archive within the Preview Panel.
+
+| Filetype | Extensions     |
+|----------|----------------|
+| 7-Zip    | `.7z`, `.s7z`  |
+| RAR      | `.rar`         |
+| Tar      | `.tar`, `.tgz` |
+| Zip      | `.zip`         |
+
 ### :material-book: eBooks
 
 | Filetype           | Extensions                    | Preview Type                 |
