@@ -100,6 +100,7 @@ from tagstudio.qt.utils.file_deleter import delete_file
 from tagstudio.qt.utils.function_iterator import FunctionIterator
 from tagstudio.qt.views.main_window import MainWindow
 from tagstudio.qt.views.panel_modal import PanelModal
+from tagstudio.qt.views.search_syntax_modal import SearchSyntaxModal
 from tagstudio.qt.views.splash import SplashScreen
 
 BADGE_TAGS = {
@@ -187,6 +188,7 @@ class QtDriver(DriverMixin, QObject):
     add_tag_modal: PanelModal | None = None
     folders_modal: FoldersToTagsModal
     about_modal: AboutModal
+    search_syntax_modal: SearchSyntaxModal
     unlinked_modal: FixUnlinkedEntriesModal
     ignored_modal: FixIgnoredEntriesModal
     dupe_modal: FixDupeFilesModal
@@ -557,6 +559,15 @@ class QtDriver(DriverMixin, QObject):
             self.about_modal.show()
 
         self.main_window.menu_bar.about_action.triggered.connect(create_about_modal)
+
+        def create_search_syntax_cheatsheet_modal():
+            if not hasattr(self, "search_syntax_modal"):
+                self.search_syntax_modal = SearchSyntaxModal(self)
+            self.search_syntax_modal.show()
+
+        self.main_window.menu_bar.search_syntax_action.triggered.connect(
+            create_search_syntax_cheatsheet_modal
+        )
 
         # endregion
 
