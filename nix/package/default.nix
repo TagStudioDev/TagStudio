@@ -70,7 +70,7 @@ python3Packages.buildPythonApplication {
     "\${qtWrapperArgs[@]}"
   ];
 
-  pythonRemoveDeps = lib.optional (!withJXLSupport) [ "pillow_jxl" ];
+  pythonRemoveDeps = lib.optional (!withJXLSupport) "pillow_jxl";
   pythonRelaxDeps = [
     "numpy"
     "pillow"
@@ -96,7 +96,6 @@ python3Packages.buildPythonApplication {
       numpy
       opencv-python
       pillow
-      pillow-avif-plugin
       pillow-heif
       py7zr
       pydantic
