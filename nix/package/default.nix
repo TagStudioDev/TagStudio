@@ -80,6 +80,8 @@ python3Packages.buildPythonApplication {
     "py7zr"
     "pyside6"
     "rarfile"
+    "requests"
+    "semver"
     "structlog"
     "typing-extensions"
   ];
@@ -103,6 +105,8 @@ python3Packages.buildPythonApplication {
       pyside6
       rarfile
       rawpy
+      requests
+      semver
       send2trash
       sqlalchemy
       srctools
