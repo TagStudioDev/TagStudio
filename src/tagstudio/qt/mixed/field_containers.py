@@ -240,6 +240,12 @@ class FieldContainers(QWidget):
         )
         self.driver.emit_badge_signals(tags, emit_on_absent=False)
 
+        group_by_tag_id = self.driver.browsing_history.current.group_by_tag_id
+        if group_by_tag_id is not None:
+            relevant_tag_ids = self.lib.get_grouping_tag_ids(group_by_tag_id)
+            if any(tag_id in relevant_tag_ids for tag_id in tags):
+                self.driver.update_browsing_state()
+
     def write_container(self, index: int, field: BaseField, is_mixed: bool = False):
         """Update/Create data for a FieldContainer.
 

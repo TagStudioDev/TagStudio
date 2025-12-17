@@ -18,6 +18,7 @@ if typing.TYPE_CHECKING:
 class PreviewPanel(PreviewPanelView):
     def __init__(self, library: Library, driver: "QtDriver"):
         super().__init__(library, driver)
+        self.__driver = driver
 
         self.__add_field_modal = AddFieldModal(self.lib)
         self.__add_tag_modal = TagSearchModal(self.lib, is_tag_chooser=True)
@@ -26,6 +27,8 @@ class PreviewPanel(PreviewPanelView):
         self.__add_field_modal.show()
 
     def _add_tag_button_callback(self):
+        # Set driver before showing to enable dropdown refresh when creating tags
+        self.__add_tag_modal.tsp.driver = self.__driver
         self.__add_tag_modal.show()
 
     def _set_selection_callback(self):

@@ -49,6 +49,7 @@ class TagDatabasePanel(TagSearchPanel):
                     alias_names=panel.alias_names,
                     alias_ids=panel.alias_ids,
                 ),
+                self.driver.populate_group_by_tags(block_signals=True),
                 self.modal.hide(),
                 self.update_tags(self.search_field.text()),
             )
@@ -72,4 +73,5 @@ class TagDatabasePanel(TagSearchPanel):
             return
 
         self.lib.remove_tag(tag.id)
+        self.driver.populate_group_by_tags(block_signals=True)
         self.update_tags()

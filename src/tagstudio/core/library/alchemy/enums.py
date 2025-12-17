@@ -2,11 +2,15 @@ import enum
 import random
 from dataclasses import dataclass, replace
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import structlog
 
 from tagstudio.core.query_lang.ast import AST
 from tagstudio.core.query_lang.parser import Parser
+
+if TYPE_CHECKING:
+    from tagstudio.core.library.alchemy.grouping import GroupingCriteria
 
 MAX_SQL_VARIABLES = 32766  # 32766 is the max sql bind parameter count as defined here: https://github.com/sqlite/sqlite/blob/master/src/sqliteLimit.h#L140
 
@@ -86,6 +90,9 @@ class BrowsingState:
 
     query: str | None = None
 
+    # Grouping criteria (None = no grouping)
+    grouping: "GroupingCriteria | None" = None
+
     # Abstract Syntax Tree Of the current Search Query
     @property
     def ast(self) -> AST | None:
@@ -151,6 +158,17 @@ class BrowsingState:
 
     def with_show_hidden_entries(self, show_hidden_entries: bool) -> "BrowsingState":
         return replace(self, show_hidden_entries=show_hidden_entries)
+
+    def with_grouping(self, criteria: "GroupingCriteria | None") -> "BrowsingState":
+        return replace(self, grouping=criteria)
+
+    def with_group_by_tag(self, tag_id: int | None) -> "BrowsingState":
+        """Backward compatibility wrapper for tag grouping."""
+        from tagstudio.core.library.alchemy.grouping import GroupingCriteria, GroupingType
+
+        if tag_id is None:
+            return replace(self, grouping=None)
+        return replace(self, grouping=GroupingCriteria(type=GroupingType.TAG, value=tag_id))
 
 
 class FieldTypeEnum(enum.Enum):

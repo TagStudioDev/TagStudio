@@ -75,6 +75,7 @@ from tagstudio.core.library.alchemy.constants import (
     DB_VERSION_LEGACY_KEY,
     JSON_FILENAME,
     SQL_FILENAME,
+    TAG_CHILDREN_ID_QUERY,
     TAG_CHILDREN_QUERY,
 )
 from tagstudio.core.library.alchemy.db import make_tables
@@ -90,6 +91,11 @@ from tagstudio.core.library.alchemy.fields import (
     FieldID,
     TextField,
 )
+from tagstudio.core.library.alchemy.grouping import (
+    GroupedSearchResult,
+    GroupingCriteria,
+    GroupingType,
+)
 from tagstudio.core.library.alchemy.joins import TagEntry, TagParent
 from tagstudio.core.library.alchemy.models import (
     Entry,
@@ -101,6 +107,10 @@ from tagstudio.core.library.alchemy.models import (
     TagColorGroup,
     ValueType,
     Version,
+)
+from tagstudio.core.library.alchemy.strategies import (
+    FiletypeGroupingStrategy,
+    TagGroupingStrategy,
 )
 from tagstudio.core.library.alchemy.visitors import SQLBoolExpressionBuilder
 from tagstudio.core.library.json.library import Library as JsonLibrary
@@ -227,6 +237,12 @@ class Library:
         self.dupe_files_count: int = -1
         self.ignored_entries_count: int = -1
         self.unlinked_entries_count: int = -1
+
+        # Initialize grouping strategies
+        self._grouping_strategies = {
+            GroupingType.TAG: TagGroupingStrategy(),
+            GroupingType.FILETYPE: FiletypeGroupingStrategy(),
+        }
 
     def close(self):
         if self.engine:
@@ -906,6 +922,56 @@ class Library:
             for tag_entry in session.scalars(statement).fetchall():
                 tag_entries[tag_entry.tag_id].add(tag_entry.entry_id)
         return tag_entries
+
+    def get_grouping_tag_ids(self, group_by_tag_id: int) -> set[int]:
+        """Get all tag IDs relevant to a grouping.
+
+        Args:
+            group_by_tag_id: The tag ID to get related tags for.
+
+        Returns:
+            Set of tag IDs including the tag and all its children.
+        """
+        with Session(self.engine) as session:
+            result = session.execute(TAG_CHILDREN_ID_QUERY, {"tag_id": group_by_tag_id})
+            return set(row[0] for row in result)
+
+    def group_entries(
+        self, entry_ids: list[int], criteria: GroupingCriteria
+    ) -> GroupedSearchResult:
+        """Group entries according to criteria.
+
+        Args:
+            entry_ids: List of entry IDs to group.
+            criteria: Grouping criteria.
+
+        Returns:
+            GroupedSearchResult with entries organized into EntryGroup objects.
+        """
+        if criteria.type == GroupingType.NONE:
+            return GroupedSearchResult(total_count=len(entry_ids), groups=[])
+
+        strategy = self._grouping_strategies.get(criteria.type)
+        if strategy is None:
+            logger.warning("Unknown grouping type", type=criteria.type)
+            return GroupedSearchResult(total_count=len(entry_ids), groups=[])
+
+        return strategy.group_entries(self, entry_ids, criteria)
+
+    def group_entries_by_tag(
+        self, entry_ids: list[int], group_by_tag_id: int
+    ) -> GroupedSearchResult:
+        """Group entries by tag hierarchy (backward compatibility wrapper).
+
+        Args:
+            entry_ids: List of entry IDs to group.
+            group_by_tag_id: The tag ID to group by.
+
+        Returns:
+            GroupedSearchResult with entries organized into EntryGroup objects.
+        """
+        criteria = GroupingCriteria(type=GroupingType.TAG, value=group_by_tag_id)
+        return self.group_entries(entry_ids, criteria)
 
     @property
     def entries_count(self) -> int:
