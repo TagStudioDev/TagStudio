@@ -1170,35 +1170,29 @@ class Library:
             session.commit()
         return True
 
-    def remove_tag(self, tag_id: int):
+    def remove_tag(self, tag_id: int) -> bool:
         with Session(self.engine, expire_on_commit=False) as session:
             try:
-                aliases = session.scalars(select(TagAlias).where(TagAlias.tag_id == tag_id))
-                for alias in aliases:
-                    session.delete(alias)
-                    session.flush()
-
-                tag_parents = session.scalars(
-                    select(TagParent).where(TagParent.parent_id == tag_id)
-                ).all()
-                for tag_parent in tag_parents:
-                    session.delete(tag_parent)
-                    session.flush()
-
-                disam_stmt = (
+                session.execute(delete(TagAlias).where(TagAlias.tag_id == tag_id))
+                session.execute(delete(TagEntry).where(TagEntry.tag_id == tag_id))
+                session.execute(
+                    delete(TagParent).where(
+                        or_(TagParent.child_id == tag_id, TagParent.parent_id == tag_id)
+                    )
+                )
+                session.execute(
                     update(Tag)
                     .where(Tag.disambiguation_id == tag_id)
                     .values(disambiguation_id=None)
                 )
-                session.execute(disam_stmt)
-                session.flush()
-
-                session.query(Tag).filter_by(id=tag_id).delete()
+                session.execute(delete(Tag).where(Tag.id == tag_id))
                 session.commit()
 
             except IntegrityError as e:
                 logger.error(e)
                 session.rollback()
+                return False
+        return True
 
     def update_field_position(
         self,
