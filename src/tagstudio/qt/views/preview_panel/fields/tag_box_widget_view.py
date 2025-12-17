@@ -9,9 +9,9 @@ import structlog
 
 from tagstudio.core.library.alchemy.library import Library
 from tagstudio.core.library.alchemy.models import Tag
-from tagstudio.qt.mixed.field_widget import FieldWidget
 from tagstudio.qt.mixed.tag_widget import TagWidget
 from tagstudio.qt.views.layouts.flow_layout import FlowLayout
+from tagstudio.qt.views.preview_panel.fields.field_widget import FieldWidget
 
 if TYPE_CHECKING:
     from tagstudio.qt.ts_qt import QtDriver
@@ -20,6 +20,8 @@ logger = structlog.get_logger(__name__)
 
 
 class TagBoxWidgetView(FieldWidget):
+    """A widget that holds a list of tags."""
+
     __lib: Library
 
     def __init__(self, title: str, driver: "QtDriver") -> None:
@@ -32,6 +34,7 @@ class TagBoxWidgetView(FieldWidget):
         self.setLayout(self.__root_layout)
 
     def set_tags(self, tags: Iterable[Tag]) -> None:
+        """Sets the tags the tag box contains."""
         tags_ = sorted(list(tags), key=lambda tag: self.__lib.tag_display_name(tag))
         logger.info("[TagBoxWidget] Tags:", tags=tags)
         while self.__root_layout.itemAt(0):
