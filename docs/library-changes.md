@@ -132,3 +132,13 @@ Migration from the legacy JSON format is provided via a walkthrough when opening
 
 -   Adds the `is_hidden` column to the `tags` table (default `0`). Used for excluding entries tagged with hidden tags from library searches.
 -   Sets the `is_hidden` field on the built-in Archived tag to `1`, to match the Archived tag now being hidden by default.
+
+#### Version 104
+
+| Used From                                                               | Format | Location                                        |
+| ----------------------------------------------------------------------- | ------ | ----------------------------------------------- |
+| [v9.5.7](https://github.com/TagStudioDev/TagStudio/releases/tag/v9.5.7) | SQLite | `<Library Folder>`/.TagStudio/ts_library.sqlite |
+
+- Adds a new `url_fields` table.
+- Changes the type key of the `URL` and `SOURCE` fields to be `URL`.
+- Migrates any records in the `text_fields` whose type key has the type `URL` (so, if their type is either `URL` or `SOURCE`) to the new `url_fields` table.

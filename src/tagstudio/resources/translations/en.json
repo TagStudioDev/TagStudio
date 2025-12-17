@@ -74,6 +74,8 @@
     "field.copy": "Copy Field",
     "field.edit": "Edit Field",
     "field.paste": "Paste Field",
+    "field.url.edit_title": "Edit Title",
+    "field.url.edit_url": "Edit URL",
     "file.date_added": "Date Added",
     "file.date_created": "Date Created",
     "file.date_modified": "Date Modified",
