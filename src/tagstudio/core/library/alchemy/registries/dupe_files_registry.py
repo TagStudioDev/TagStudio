@@ -49,18 +49,29 @@ class DupeFilesRegistry:
                         path_relative = file_path.relative_to(library_dir)
                     except ValueError:
                         # The file is not in the library directory
+                        logger.error("File not in library directory", file_path=file_path)
                         continue
 
                     results = self.library.search_library(
                         BrowsingState.from_path(path_relative), 500
                     )
-                    entries = self.library.get_entries(results.ids)
 
                     if not results:
                         # file not in library
+                        logger.error("No Entry matching file", path_relative=path_relative)
                         continue
 
-                    files.append(entries[0])
+                    entry = self.library.get_entry_full(results.ids[0])
+
+                    if not entry:
+                        # file not in library
+                        logger.error(
+                            "Unable to get entry",
+                            entry_id=results.ids[0],
+                            path_relative=path_relative,
+                        )
+                        continue
+                    files.append(entry)
 
                 if not len(files) > 1:
                     # only one file in the group, nothing to do
