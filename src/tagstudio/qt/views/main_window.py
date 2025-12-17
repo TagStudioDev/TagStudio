@@ -69,6 +69,7 @@ class MainMenuBar(QMenuBar):
 
     edit_menu: QMenu
     new_tag_action: QAction
+    new_url_entry_action: QAction
     select_all_action: QAction
     select_inverse_action: QAction
     clear_select_action: QAction
@@ -189,6 +190,14 @@ class MainMenuBar(QMenuBar):
         self.new_tag_action.setToolTip("Ctrl+T")
         self.new_tag_action.setEnabled(False)
         self.edit_menu.addAction(self.new_tag_action)
+
+        self.edit_menu.addSeparator()
+
+        # New URL Entry
+        self.new_url_entry_action = QAction(Translations["entry.new.url"], self)
+
+        self.new_url_entry_action.setEnabled(False)
+        self.edit_menu.addAction(self.new_url_entry_action)
 
         self.edit_menu.addSeparator()
 

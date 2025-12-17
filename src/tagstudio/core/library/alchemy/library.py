@@ -991,6 +991,23 @@ class Library:
 
         return new_ids
 
+    def add_url_as_entry(self, url: str):
+        # Write URL file
+        url_file_name: str = f"{hash(url)}.url"
+        url_file_path: Path = Path(self.library_dir, url_file_name)
+
+        with open(str(url_file_path), "w") as url_file:
+            url_file.write(f"[InternetShortcut]\nURL={url}")
+
+        # Add to library
+        url_entry: Entry = Entry(
+            path=Path(url_file_name),
+            folder=unwrap(self.folder),
+            fields=[],
+            date_added=datetime.now(),
+        )
+        self.add_entries([url_entry])
+
     def remove_entries(self, entry_ids: list[int]) -> None:
         """Remove Entry items matching supplied IDs from the Library."""
         with Session(self.engine) as session:
