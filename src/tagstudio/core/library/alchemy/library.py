@@ -1041,7 +1041,11 @@ class Library:
             ast = search.ast
 
             if not search.show_hidden_entries:
-                statement = statement.where(~Entry.tags.any(Tag.is_hidden))
+                hidden_tag_ids = select(Tag.id).where(Tag.is_hidden)
+                hidden_entry_ids = select(TagEntry.entry_id).where(
+                    TagEntry.tag_id.in_(hidden_tag_ids)
+                )
+                statement = statement.where(Entry.id.not_in(hidden_entry_ids))
 
             if ast:
                 start_time = time.time()
