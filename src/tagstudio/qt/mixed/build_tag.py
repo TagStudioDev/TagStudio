@@ -163,11 +163,12 @@ class BuildTagPanel(PanelWidget):
         self.parent_tags_add_button.setText("+")
         self.parent_tags_layout.addWidget(self.parent_tags_add_button)
 
-        exclude_ids: list[int] = list()
-        if tag is not None:
-            exclude_ids.append(tag.id)
+        exclude_ids: set[int] = set()
+        if tag is not None and tag.id is not None:
+            exclude_ids.add(tag.id)
+            exclude_ids.update(self.lib.get_tag_descendants(tag.id))
 
-        self.add_tag_modal = TagSearchModal(self.lib, exclude_ids)
+        self.add_tag_modal = TagSearchModal(self.lib, list(exclude_ids))
         self.add_tag_modal.tsp.tag_chosen.connect(lambda x: self.add_parent_tag_callback(x))
         self.parent_tags_add_button.clicked.connect(self.add_tag_modal.show)
 
@@ -561,6 +562,13 @@ class BuildTagPanel(PanelWidget):
     def set_tag(self, tag: Tag):
         logger.info("[BuildTagPanel] Setting Tag", tag=tag)
         self.tag = tag
+
+        if tag.id is not None:
+            exclude_ids: set[int] = {tag.id}
+            exclude_ids.update(self.lib.get_tag_descendants(tag.id))
+            self.add_tag_modal.tsp.exclude = list(exclude_ids)
+        else:
+            self.add_tag_modal.tsp.exclude = []
 
         self.name_field.setText(tag.name)
         self.shorthand_field.setText(tag.shorthand or "")
