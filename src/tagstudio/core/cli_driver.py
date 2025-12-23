@@ -35,6 +35,10 @@ class CliDriver:
             logger.error("Library path does not exist", path=path)
             return 1
 
+        if not path.is_dir():
+            logger.error("Library path is not a directory", path=path)
+            return 1
+
         logger.info("Opening library", path=path)
         open_status = self.lib.open_library(path)
 
@@ -84,8 +88,15 @@ class CliDriver:
             )
             return 0
 
-        except Exception as e:
-            logger.exception("Error during library refresh", error=str(e))
+        except (OSError, ValueError, RuntimeError) as e:
+            logger.error(
+                "Expected error during library refresh",
+                error_type=type(e).__name__,
+                error=str(e),
+            )
+            return 1
+        except Exception:
+            logger.exception("Unexpected error during library refresh")
             return 1
 
         finally:
