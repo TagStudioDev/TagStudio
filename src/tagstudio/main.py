@@ -7,10 +7,12 @@
 """TagStudio launcher."""
 
 import argparse
+import sys
 import traceback
 
 import structlog
 
+from tagstudio.core.cli_driver import CliDriver
 from tagstudio.core.constants import VERSION, VERSION_BRANCH
 from tagstudio.qt.ts_qt import QtDriver
 
@@ -44,6 +46,13 @@ def main():
         type=str,
         help="Path to a TagStudio .ini or .plist cache file to use.",
     )
+    parser.add_argument(
+        "-r",
+        "--refresh",
+        dest="refresh",
+        type=str,
+        help="Refresh a library without opening the GUI. Specify the library path.",
+    )
 
     # parser.add_argument('--browse', dest='browse', action='store_true',
     #                     help='Jumps to entry browsing on startup.')
@@ -63,6 +72,12 @@ def main():
         version=f"TagStudio v{VERSION} {VERSION_BRANCH}",
     )
     args = parser.parse_args()
+
+    # Handle CLI-only operations
+    if args.refresh:
+        cli_driver = CliDriver()
+        exit_code = cli_driver.refresh_library(args.refresh)
+        sys.exit(exit_code)
 
     driver = QtDriver(args)
     ui_name = "Qt"
