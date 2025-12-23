@@ -35,10 +35,6 @@ class CliDriver:
             logger.error("Library path does not exist", path=path)
             return 1
 
-        if not path.is_dir():
-            logger.error("Library path is not a directory", path=path)
-            return 1
-
         logger.info("Opening library", path=path)
         open_status = self.lib.open_library(path)
 

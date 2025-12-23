@@ -22,12 +22,12 @@ def test_cli_driver_refresh_nonexistent_library():
 
 
 def test_cli_driver_refresh_invalid_library():
-    """Test that refresh fails gracefully with a directory that's not a TagStudio library."""
+    """Test that refresh successfully creates and refreshes a new library in empty dir."""
     with TemporaryDirectory() as tmpdir:
         driver = CliDriver()
         result = driver.refresh_library(tmpdir)
-        # Should fail because it's not a TagStudio library (no .TagStudio folder)
-        assert result == 1, "Should return exit code 1 for invalid/unopenable library"
+        # Should succeed - creates new library if needed
+        assert result == 0, "Should return exit code 0 for newly created library"
 
 
 def test_cli_driver_init():
