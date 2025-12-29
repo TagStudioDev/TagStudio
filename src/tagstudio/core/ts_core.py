@@ -216,7 +216,7 @@ class TagStudioCore:
         version = tag[1:]
         # the assertion does not allow for prerelease/build,
         # because the latest release should never have them
-        if re.match(r"^\d+\.\d+\.\d+$", version) is not None:
+        if re.match(r"^\d+\.\d+\.\d+$", version) is None:
             logger.error("Invalid version format.", version=version)
             return None
 
