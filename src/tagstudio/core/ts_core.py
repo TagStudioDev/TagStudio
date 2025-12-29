@@ -196,7 +196,9 @@ class TagStudioCore:
     def get_most_recent_release_version() -> str | None:
         """Get the version of the most recent GitHub release."""
         try:
-            resp = requests.get("https://api.github.com/repos/TagStudioDev/TagStudio/releases/latest")
+            resp = requests.get(
+                "https://api.github.com/repos/TagStudioDev/TagStudio/releases/latest"
+            )
         except Exception as e:
             logger.error("Error getting most recent GitHub release.", error=e)
             return None

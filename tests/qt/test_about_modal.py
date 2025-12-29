@@ -8,7 +8,7 @@ def test_github_api_unavailable(qtbot: QtBot, mocker) -> None:
         "requests.get",
         side_effect=ConnectionError(
             "Failed to resolve 'api.github.com' ([Errno -3] Temporary failure in name resolution)"
-        )
+        ),
     )
     modal = AboutModal("/tmp")
     qtbot.addWidget(modal)
