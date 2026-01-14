@@ -33,6 +33,7 @@ class MediaType(str, Enum):
     AUDIO_MIDI = "audio_midi"
     AUDIO = "audio"
     BLENDER = "blender"
+    CLIP_STUDIO_PAINT = "clip_studio_paint"
     CODE = "code"
     DATABASE = "database"
     DISK_IMAGE = "disk_image"
@@ -46,6 +47,7 @@ class MediaType(str, Enum):
     INSTALLER = "installer"
     IWORK = "iwork"
     MATERIAL = "material"
+    MDIPACK = "mdipack"
     MODEL = "model"
     OPEN_DOCUMENT = "open_document"
     PACKAGE = "package"
@@ -176,6 +178,7 @@ class MediaCategories:
         ".blend31",
         ".blend32",
     }
+    _CLIP_STUDIO_PAINT_SET: set[str] = {".clip"}
     _CODE_SET: set[str] = {
         ".bat",
         ".cfg",
@@ -336,6 +339,7 @@ class MediaCategories:
     _INSTALLER_SET: set[str] = {".appx", ".msi", ".msix"}
     _IWORK_SET: set[str] = {".key", ".pages", ".numbers"}
     _MATERIAL_SET: set[str] = {".mtl"}
+    _MDIPACK_SET: set[str] = {".mdp"}
     _MODEL_SET: set[str] = {".3ds", ".fbx", ".obj", ".stl"}
     _OPEN_DOCUMENT_SET: set[str] = {
         ".fodg",
@@ -454,6 +458,12 @@ class MediaCategories:
         is_iana=False,
         name="blender",
     )
+    CLIP_STUDIO_PAINT_TYPES = MediaCategory(
+        media_type=MediaType.CLIP_STUDIO_PAINT,
+        extensions=_CLIP_STUDIO_PAINT_SET,
+        is_iana=False,
+        name="clip studio paint",
+    )
     CODE_TYPES = MediaCategory(
         media_type=MediaType.CODE,
         extensions=_CODE_SET,
@@ -537,6 +547,12 @@ class MediaCategories:
         extensions=_MATERIAL_SET,
         is_iana=False,
         name="material",
+    )
+    MDIPACK_TYPES = MediaCategory(
+        media_type=MediaType.MDIPACK,
+        extensions=_MDIPACK_SET,
+        is_iana=False,
+        name="mdipack",
     )
     MODEL_TYPES = MediaCategory(
         media_type=MediaType.MODEL,
@@ -636,6 +652,7 @@ class MediaCategories:
         AUDIO_MIDI_TYPES,
         AUDIO_TYPES,
         BLENDER_TYPES,
+        CLIP_STUDIO_PAINT_TYPES,
         DATABASE_TYPES,
         DISK_IMAGE_TYPES,
         DOCUMENT_TYPES,
@@ -648,6 +665,7 @@ class MediaCategories:
         INSTALLER_TYPES,
         IWORK_TYPES,
         MATERIAL_TYPES,
+        MDIPACK_TYPES,
         MODEL_TYPES,
         OPEN_DOCUMENT_TYPES,
         PACKAGE_TYPES,

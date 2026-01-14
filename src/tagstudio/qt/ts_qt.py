@@ -62,7 +62,7 @@ from tagstudio.core.library.refresh import RefreshTracker
 from tagstudio.core.media_types import MediaCategories
 from tagstudio.core.query_lang.util import ParsingError
 from tagstudio.core.ts_core import TagStudioCore
-from tagstudio.core.utils.str_formatting import strip_web_protocol
+from tagstudio.core.utils.str_formatting import is_version_outdated, strip_web_protocol
 from tagstudio.core.utils.types import unwrap
 from tagstudio.qt.cache_manager import CacheManager
 from tagstudio.qt.controllers.ffmpeg_missing_message_box import FfmpegMissingMessageBox
@@ -71,6 +71,7 @@ from tagstudio.qt.controllers.ffmpeg_missing_message_box import FfmpegMissingMes
 from tagstudio.qt.controllers.fix_ignored_modal_controller import FixIgnoredEntriesModal
 from tagstudio.qt.controllers.ignore_modal_controller import IgnoreModal
 from tagstudio.qt.controllers.library_info_window_controller import LibraryInfoWindow
+from tagstudio.qt.controllers.out_of_date_message_box import OutOfDateMessageBox
 from tagstudio.qt.global_settings import (
     DEFAULT_GLOBAL_SETTINGS_PATH,
     GlobalSettings,
@@ -579,7 +580,7 @@ class QtDriver(DriverMixin, QObject):
         )
 
         self.init_library_window()
-        self.migration_modal: JsonMigrationModal = None
+        self.migration_modal: JsonMigrationModal | None = None
 
         path_result = self.evaluate_path(str(self.args.open).lstrip().rstrip())
         if path_result.success and path_result.library_path:
@@ -593,6 +594,9 @@ class QtDriver(DriverMixin, QObject):
         # Check if FFmpeg or FFprobe are missing and show warning if so
         if not which(FFMPEG_CMD) or not which(FFPROBE_CMD):
             FfmpegMissingMessageBox().show()
+
+        if is_version_outdated(VERSION, TagStudioCore.get_most_recent_release_version()):
+            OutOfDateMessageBox().exec()
 
         self.app.exec()
         self.shutdown()
@@ -1107,8 +1111,8 @@ class QtDriver(DriverMixin, QObject):
 
     def run_macro(self, name: MacroID, entry_id: int):
         """Run a specific Macro on an Entry given a Macro name."""
-        entry: Entry = self.lib.get_entry(entry_id)
-        full_path = self.lib.library_dir / entry.path
+        entry: Entry = unwrap(self.lib.get_entry(entry_id))
+        full_path = unwrap(self.lib.library_dir) / entry.path
         source = "" if entry.path.parent == Path(".") else entry.path.parts[0].lower()
 
         logger.info(
