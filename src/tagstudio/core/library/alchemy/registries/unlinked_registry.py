@@ -34,10 +34,10 @@ class UnlinkedRegistry:
 
         self.unlinked_entries = []
         for i, entry in enumerate(self.lib.all_entries()):
+            yield i
             full_path = unwrap(self.lib.library_dir) / entry.path
             if not full_path.exists() or not full_path.is_file():
                 self.unlinked_entries.append(entry)
-            yield i
 
     def match_unlinked_file_entry(self, match_entry: Entry) -> list[Path]:
         """Try and match unlinked file entries with matching results in the library directory.
