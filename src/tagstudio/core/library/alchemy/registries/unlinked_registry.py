@@ -68,6 +68,7 @@ class UnlinkedRegistry:
         self.files_fixed_count = 0
         matched_entries: list[Entry] = []
         for i, entry in enumerate(self.unlinked_entries):
+            yield i
             item_matches = self.match_unlinked_file_entry(entry)
             if len(item_matches) == 1:
                 logger.info(
@@ -84,7 +85,6 @@ class UnlinkedRegistry:
                         continue
                 self.files_fixed_count += 1
                 matched_entries.append(entry)
-            yield i
 
         for entry in matched_entries:
             self.unlinked_entries.remove(entry)
