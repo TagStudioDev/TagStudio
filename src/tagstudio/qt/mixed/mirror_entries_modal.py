@@ -74,7 +74,7 @@ class MirrorEntriesModal(QWidget):
     def mirror_entries(self):
         def displayed_text(x):
             return Translations.format(
-                "entries.mirror.label", idx=x + 1, count=self.tracker.groups_count
+                "entries.mirror.label", idx=x, total=self.tracker.groups_count
             )
 
         pw = ProgressWidget(
