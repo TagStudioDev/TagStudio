@@ -552,15 +552,12 @@ class Library:
                 if loaded_db_version < 100:
                     # changes: tag_parents
                     self.__apply_db100_parent_repairs(session)
-                if loaded_db_version < 103:
-                    # changes: tags (add column)
-                    self.__apply_db103_schema_changes(session)
-
                 if loaded_db_version < 102:
                     # changes: tag_parents
                     self.__apply_db102_repairs(session)
                 if loaded_db_version < 103:
-                    # changes: tags (mark archived as hidden)
+                    # changes: tags
+                    self.__apply_db103_schema_changes(session)
                     self.__apply_db103_default_data(session)
 
                 # Convert file extension list to ts_ignore file, if a .ts_ignore file does not exist
