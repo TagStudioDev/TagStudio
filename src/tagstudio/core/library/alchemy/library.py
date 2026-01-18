@@ -539,26 +539,23 @@ class Library:
                 # NOTE: Depending on the data, some data and schema changes need to be applied in
                 # different orders. This chain of methods can likely be cleaned up and/or moved.
                 if loaded_db_version < 7:
-                    # changes: value_type, tags (remove invalid disam id)
-                    self.__apply_repairs_for_db6(session)
+                    # changes: value_type, tags
+                    self.__apply_db7_migration(session)
                 if loaded_db_version < 8:
                     # changes: tag_colors
-                    self.__apply_db8_schema_changes(session)
-                    self.__apply_db8_default_data(session)
+                    self.__apply_db8_migration(session)
                 if loaded_db_version < 9:
                     # changes: entries
-                    self.__apply_db9_schema_changes(session)
-                    self.__apply_db9_filename_population(session)
+                    self.__apply_db9_migration(session)
                 if loaded_db_version < 100:
                     # changes: tag_parents
-                    self.__apply_db100_parent_repairs(session)
+                    self.__apply_db100_migration(session)
                 if loaded_db_version < 102:
                     # changes: tag_parents
-                    self.__apply_db102_repairs(session)
+                    self.__apply_db102_migration(session)
                 if loaded_db_version < 103:
                     # changes: tags
-                    self.__apply_db103_schema_changes(session)
-                    self.__apply_db103_default_data(session)
+                    self.__apply_db103_migration(session)
 
                 # Convert file extension list to ts_ignore file, if a .ts_ignore file does not exist
                 # TODO: this currently does not delete the migrated data from the DB
@@ -572,8 +569,8 @@ class Library:
         self.library_dir = library_dir
         return LibraryStatus(success=True, library_path=library_dir)
 
-    def __apply_repairs_for_db6(self, session: Session):
-        """Apply database repairs introduced in DB_VERSION 7."""
+    def __apply_db7_migration(self, session: Session):
+        """Migrate DB from DB_VERSION 6 to 7."""
         logger.info("[Library][Migration] Applying patches to DB_VERSION: 6 library...")
         with session:
             # Repair "Description" fields with a TEXT_LINE key instead of a TEXT_BOX key.
@@ -595,9 +592,8 @@ class Library:
             session.execute(disam_stmt)
             session.commit()
 
-    def __apply_db8_schema_changes(self, session: Session):
-        """Apply database schema changes introduced in DB_VERSION 8."""
-        # TODO: Use Alembic for this part instead
+    def __apply_db8_migration(self, session: Session):
+        """Migrate DB from DB_VERSION 7 to 8."""
         # Add the missing color_border column to the TagColorGroups table.
         color_border_stmt = text(
             "ALTER TABLE tag_colors ADD COLUMN color_border BOOLEAN DEFAULT FALSE NOT NULL"
@@ -613,8 +609,7 @@ class Library:
             )
             session.rollback()
 
-    def __apply_db8_default_data(self, session: Session):
-        """Apply default data changes introduced in DB_VERSION 8."""
+        # collect new default tag colors
         tag_colors: list[TagColorGroup] = default_color_groups.standard()
         tag_colors += default_color_groups.pastels()
         tag_colors += default_color_groups.shades()
@@ -663,8 +658,9 @@ class Library:
                 )
                 session.rollback()
 
-    def __apply_db9_schema_changes(self, session: Session):
-        """Apply database schema changes introduced in DB_VERSION 9."""
+    def __apply_db9_migration(self, session: Session):
+        """Migrate DB from DB_VERSION 8 to 9."""
+        # Apply database schema changes
         add_filename_column = text(
             "ALTER TABLE entries ADD COLUMN filename TEXT NOT NULL DEFAULT ''"
         )
@@ -679,15 +675,14 @@ class Library:
             )
             session.rollback()
 
-    def __apply_db9_filename_population(self, session: Session):
-        """Populate the filename column introduced in DB_VERSION 9."""
+        # Populate the new filename column.
         for entry in self.all_entries():
             session.merge(entry).filename = entry.path.name
         session.commit()
         logger.info("[Library][Migration] Populated filename column in entries table")
 
-    def __apply_db100_parent_repairs(self, session: Session):
-        """Swap the child_id and parent_id values in the TagParent table."""
+    def __apply_db100_migration(self, session: Session):
+        """Migrate DB to DB_VERSION 100."""
         with session:
             # Repair parent-child tag relationships that are the wrong way around.
             stmt = update(TagParent).values(
@@ -698,8 +693,8 @@ class Library:
             session.commit()
             logger.info("[Library][Migration] Refactored TagParent table")
 
-    def __apply_db102_repairs(self, session: Session):
-        """Repair tag_parents rows with references to deleted tags."""
+    def __apply_db102_migration(self, session: Session):
+        """Migrate DB to DB_VERSION 102."""
         with session:
             all_tag_ids: list[int] = [t.id for t in self.tags]
             stmt = delete(TagParent).where(TagParent.parent_id.not_in(all_tag_ids))
@@ -707,8 +702,9 @@ class Library:
             session.commit()
             logger.info("[Library][Migration] Verified TagParent table data")
 
-    def __apply_db103_schema_changes(self, session: Session):
-        """Apply database schema changes introduced in DB_VERSION 103."""
+    def __apply_db103_migration(self, session: Session):
+        """Migrate DB from DB_VERSION 102 to 103."""
+        # add the new hidden column for tags
         add_is_hidden_column = text(
             "ALTER TABLE tags ADD COLUMN is_hidden BOOLEAN NOT NULL DEFAULT 0"
         )
@@ -723,8 +719,7 @@ class Library:
             )
             session.rollback()
 
-    def __apply_db103_default_data(self, session: Session):
-        """Apply default data changes introduced in DB_VERSION 103."""
+        # mark the "Archived" tag as hidden
         try:
             session.query(Tag).filter(Tag.id == TAG_ARCHIVED).update({"is_hidden": True})
             session.commit()
