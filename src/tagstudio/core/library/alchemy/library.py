@@ -549,13 +549,13 @@ class Library:
                     # changes: entries
                     self.__apply_db9_schema_changes(session)
                     self.__apply_db9_filename_population(session)
+                if loaded_db_version < 100:
+                    # changes: tag_parents
+                    self.__apply_db100_parent_repairs(session)
                 if loaded_db_version < 103:
                     # changes: tags (add column)
                     self.__apply_db103_schema_changes(session)
 
-                if loaded_db_version < 100:
-                    # changes: tag_parents
-                    self.__apply_db100_parent_repairs(session)
                 if loaded_db_version < 102:
                     # changes: tag_parents
                     self.__apply_db102_repairs(session)
