@@ -555,10 +555,12 @@ class Library:
                 if loaded_db_version < 103:
                     # changes: tags
                     self.__apply_db103_migration(session)
-
-                # Convert file extension list to ts_ignore file, if a .ts_ignore file does not exist
-                # TODO: do this in the migration step that will remove the preferences table
-                self.migrate_sql_to_ts_ignore(library_dir)
+                if loaded_db_version < 104:
+                    # Convert file extension list to ts_ignore file,
+                    # if a .ts_ignore file does not exist
+                    self.migrate_sql_to_ts_ignore(library_dir)
+                    # changes: deletes preferences
+                    self.__apply_db104_migrations(session)
 
             # Update DB_VERSION
             if loaded_db_version < DB_VERSION:
@@ -730,6 +732,11 @@ class Library:
                 error=e,
             )
             session.rollback()
+
+    def __apply_db104_migrations(self, session: Session):
+        """Migrate DB from DB_VERSION 103 to 104."""
+        session.execute(text("DROP TABLE perferences"))
+        session.commit()
 
     def migrate_sql_to_ts_ignore(self, library_dir: Path):
         # Do not continue if existing '.ts_ignore' file is found
