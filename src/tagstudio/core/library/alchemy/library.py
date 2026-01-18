@@ -16,7 +16,7 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 from os import makedirs
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 from uuid import uuid4
 from warnings import catch_warnings
 
@@ -103,6 +103,7 @@ from tagstudio.core.library.alchemy.models import (
     Version,
 )
 from tagstudio.core.library.alchemy.visitors import SQLBoolExpressionBuilder
+from tagstudio.core.library.ignore import migrate_ext_list
 from tagstudio.core.library.json.library import Library as JsonLibrary
 from tagstudio.core.utils.types import unwrap
 from tagstudio.qt.translations import Translations
@@ -318,8 +319,9 @@ class Library:
                         )
 
         # Preferences
-        self.set_prefs(LibraryPrefs.EXTENSION_LIST, [x.strip(".") for x in json_lib.ext_list])
-        self.set_prefs(LibraryPrefs.IS_EXCLUDE_LIST, json_lib.is_exclude_list)
+        (unwrap(self.library_dir) / TS_FOLDER_NAME / IGNORE_NAME).write_text(
+            migrate_ext_list([x.strip(".") for x in json_lib.ext_list], json_lib.is_exclude_list)
+        )
 
         end_time = time.time()
         logger.info(f"Library Converted! ({format_timespan(end_time - start_time)})")
@@ -478,15 +480,6 @@ class Library:
                     session.commit()
                 except IntegrityError:
                     session.rollback()
-
-            # TODO: Remove this "Preferences" system.
-            for pref in LibraryPrefs:
-                with catch_warnings(record=True):
-                    try:
-                        session.add(Preferences(key=pref.name, value=pref.default))
-                        session.commit()
-                    except IntegrityError:
-                        session.rollback()
 
             for field in FieldID:
                 try:
@@ -740,31 +733,16 @@ class Library:
 
     def migrate_sql_to_ts_ignore(self, library_dir: Path):
         # Do not continue if existing '.ts_ignore' file is found
-        if Path(library_dir / TS_FOLDER_NAME / IGNORE_NAME).exists():
-            return
-
-        # Create blank '.ts_ignore' file
-        ts_ignore_template = (
-            Path(__file__).parents[3] / "resources/templates/ts_ignore_template_blank.txt"
-        )
         ts_ignore = library_dir / TS_FOLDER_NAME / IGNORE_NAME
-        try:
-            shutil.copy2(ts_ignore_template, ts_ignore)
-        except Exception as e:
-            logger.error("[ERROR][Library] Could not generate '.ts_ignore' file!", error=e)
+        if Path(ts_ignore).exists():
+            return
 
         # Load legacy extension data
         extensions: list[str] = self.prefs(LibraryPrefs.EXTENSION_LIST)  # pyright: ignore
         is_exclude_list: bool = self.prefs(LibraryPrefs.IS_EXCLUDE_LIST)  # pyright: ignore
 
-        # Copy extensions to '.ts_ignore' file
-        if ts_ignore.exists():
-            with open(ts_ignore, "a") as f:
-                prefix = ""
-                if not is_exclude_list:
-                    prefix = "!"
-                    f.write("*\n")
-                f.writelines([f"{prefix}*.{x.lstrip('.')}\n" for x in extensions])
+        with open(ts_ignore, "w") as f:
+            f.write(migrate_ext_list(extensions, is_exclude_list))
 
     @property
     def default_fields(self) -> list[BaseField]:
@@ -1916,29 +1894,6 @@ class Library:
                 return unwrap(
                     session.scalar(select(Preferences).where(Preferences.key == key))
                 ).value  # pyright: ignore[reportUnknownVariableType]
-
-    # TODO: Remove this once the 'preferences' table is removed.
-    @deprecated("Use `get_version() for version and `ts_ignore` system for extension exclusion.")
-    def set_prefs(self, key: str | LibraryPrefs, value: Any) -> None:  # pyright: ignore[reportExplicitAny]
-        # set given item in Preferences table
-        with Session(self.engine) as session:
-            # load existing preference and update value
-            stuff = session.scalars(select(Preferences))
-            logger.info([x.key for x in list(stuff)])
-
-            pref: Preferences = unwrap(
-                session.scalar(
-                    select(Preferences).where(
-                        Preferences.key == (key.name if isinstance(key, LibraryPrefs) else key)
-                    )
-                )
-            )
-
-            logger.info("loading pref", pref=pref, key=key, value=value)
-            pref.value = value
-            session.add(pref)
-            session.commit()
-            # TODO - try/except
 
     def mirror_entry_fields(self, *entries: Entry) -> None:
         """Mirror fields among multiple Entry items."""

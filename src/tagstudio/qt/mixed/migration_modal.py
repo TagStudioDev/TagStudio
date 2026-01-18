@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import cast
 
 import structlog
+import wcmatch.fnmatch as fnmatch
 from PySide6.QtCore import QObject, Qt, QThreadPool, Signal
 from PySide6.QtWidgets import (
     QApplication,
@@ -24,6 +25,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from tagstudio.core.constants import (
+    IGNORE_NAME,
     LEGACY_TAG_FIELD_IDS,
     TAG_ARCHIVED,
     TAG_FAVORITE,
@@ -36,6 +38,7 @@ from tagstudio.core.library.alchemy.constants import SQL_FILENAME
 from tagstudio.core.library.alchemy.joins import TagParent
 from tagstudio.core.library.alchemy.library import Library as SqliteLibrary
 from tagstudio.core.library.alchemy.models import Entry, TagAlias
+from tagstudio.core.library.ignore import PATH_GLOB_FLAGS, Ignore, ignore_to_glob
 from tagstudio.core.library.json.library import Library as JsonLibrary
 from tagstudio.core.library.json.library import Tag as JsonTag
 from tagstudio.core.utils.types import unwrap
@@ -548,6 +551,22 @@ class JsonMigrationModal(QObject):
         color = green if old_value == new_value else red
         return str(f"<b><a style='color: {color}'>{new_value}</a></b>")
 
+    def check_ignore_parity(self) -> bool:
+        compiled_pats = fnmatch.compile(
+            ignore_to_glob(
+                Ignore._load_ignore_file(
+                    unwrap(self.sql_lib.library_dir) / TS_FOLDER_NAME / IGNORE_NAME
+                )
+            ),
+            PATH_GLOB_FLAGS,
+        )  # copied from Ignore.get_patterns since that method modifies singleton state
+        path = self.json_lib.library_dir / "filename"
+        out = False
+        for ext in self.json_lib.ext_list:
+            out &= compiled_pats.match(str(path / ext)) == self.json_lib.is_exclude_list
+        out &= compiled_pats.match(str(path / ".not_a_real_ext")) != self.json_lib.is_exclude_list
+        return out
+
     def check_field_parity(self) -> bool:
         """Check if all JSON field and tag data matches the new SQL data."""
 
@@ -670,9 +689,6 @@ class JsonMigrationModal(QObject):
 
         self.subtag_parity = True
         return self.subtag_parity
-
-    def check_ext_type(self) -> bool:
-        return self.json_lib.is_exclude_list == self.sql_lib.prefs(LibraryPrefs.IS_EXCLUDE_LIST)
 
     def check_alias_parity(self) -> bool:
         """Check if all JSON aliases match the new SQL aliases."""
