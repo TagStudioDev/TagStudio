@@ -217,7 +217,6 @@ class Library:
     """Class for the Library object, and all CRUD operations made upon it."""
 
     library_dir: Path | None = None
-    storage_path: Path | str | None = None
     engine: Engine | None = None
     folder: Folder | None = None
     included_files: set[Path] = set()
@@ -232,7 +231,6 @@ class Library:
         if self.engine:
             self.engine.dispose()
         self.library_dir = None
-        self.storage_path = None
         self.folder = None
         self.included_files = set()
 
@@ -348,33 +346,36 @@ class Library:
         else:
             return tag.name
 
-    def open_library(
-        self, library_dir: Path, storage_path: Path | str | None = None
+    def open_library(self, library_dir: Path, in_memory: bool = False) -> LibraryStatus:
+        """Wrapper for open_sqlite_library.
+
+        Handles in-memory storage and checks whether a JSON-migration is necessary.
+        """
+        assert isinstance(library_dir, Path)
+
+        if in_memory:
+            return self.open_sqlite_library(library_dir, is_new=True, storage_path=":memory:")
+
+        is_new = True
+        sql_path = library_dir / TS_FOLDER_NAME / SQL_FILENAME
+        if self.verify_ts_folder(library_dir) and (is_new := not sql_path.exists()):
+            json_path = library_dir / TS_FOLDER_NAME / JSON_FILENAME
+            if json_path.exists():
+                return LibraryStatus(
+                    success=False,
+                    library_path=library_dir,
+                    message="[JSON] Legacy v9.4 library requires conversion to v9.5+",
+                    json_migration_req=True,
+                )
+
+        return self.open_sqlite_library(library_dir, is_new, str(sql_path))
+
+    def open_sqlite_library(
+        self, library_dir: Path, is_new: bool, storage_path: str
     ) -> LibraryStatus:
-        is_new: bool = True
-        if storage_path == ":memory:":
-            self.storage_path = storage_path
-            is_new = True
-            return self.open_sqlite_library(library_dir, is_new)
-        else:
-            self.storage_path = library_dir / TS_FOLDER_NAME / SQL_FILENAME
-            assert isinstance(self.storage_path, Path)
-            if self.verify_ts_folder(library_dir) and (is_new := not self.storage_path.exists()):
-                json_path = library_dir / TS_FOLDER_NAME / JSON_FILENAME
-                if json_path.exists():
-                    return LibraryStatus(
-                        success=False,
-                        library_path=library_dir,
-                        message="[JSON] Legacy v9.4 library requires conversion to v9.5+",
-                        json_migration_req=True,
-                    )
-
-        return self.open_sqlite_library(library_dir, is_new)
-
-    def open_sqlite_library(self, library_dir: Path, is_new: bool) -> LibraryStatus:
         connection_string = URL.create(
             drivername="sqlite",
-            database=str(self.storage_path),
+            database=storage_path,
         )
         # NOTE: File-based databases should use NullPool to create new DB connection in order to
         # keep connections on separate threads, which prevents the DB files from being locked
@@ -383,7 +384,7 @@ class Library:
         # More info can be found on the SQLAlchemy docs:
         # https://docs.sqlalchemy.org/en/20/changelog/migration_07.html
         # Under -> sqlite-the-sqlite-dialect-now-uses-nullpool-for-file-based-databases
-        poolclass = None if self.storage_path == ":memory:" else NullPool
+        poolclass = None if storage_path == ":memory:" else NullPool
         loaded_db_version: int = 0
 
         logger.info(
