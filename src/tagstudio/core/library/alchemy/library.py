@@ -582,7 +582,7 @@ class Library:
             session.flush()
 
             # Repair tags that may have a disambiguation_id pointing towards a deleted tag.
-            all_tag_ids: set[int] = {tag.id for tag in self.tags}
+            all_tag_ids = session.scalars(text("SELECT DISTINCT id FROM tags")).all()
             disam_stmt = (
                 update(Tag)
                 .where(Tag.disambiguation_id.not_in(all_tag_ids))
@@ -695,7 +695,7 @@ class Library:
     def __apply_db102_migration(self, session: Session):
         """Migrate DB to DB_VERSION 102."""
         with session:
-            all_tag_ids: list[int] = [t.id for t in self.tags]
+            all_tag_ids = session.scalars(text("SELECT DISTINCT id FROM tags")).all()
             stmt = delete(TagParent).where(TagParent.parent_id.not_in(all_tag_ids))
             session.execute(stmt)
             session.commit()
