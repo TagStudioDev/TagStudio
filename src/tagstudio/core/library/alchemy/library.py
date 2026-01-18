@@ -544,6 +544,7 @@ class Library:
                 if loaded_db_version < 8:
                     # changes: tag_colors
                     self.__apply_db8_schema_changes(session)
+                    self.__apply_db8_default_data(session)
                 if loaded_db_version < 9:
                     # changes: entries
                     self.__apply_db9_schema_changes(session)
@@ -551,9 +552,6 @@ class Library:
                     # changes: tags (add column)
                     self.__apply_db103_schema_changes(session)
 
-                if loaded_db_version < 8:
-                    # changes: tag_colors
-                    self.__apply_db8_default_data(session)
                 if loaded_db_version < 9:
                     # changes: entries
                     self.__apply_db9_filename_population(session)
