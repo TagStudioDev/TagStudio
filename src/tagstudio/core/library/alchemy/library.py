@@ -538,6 +538,9 @@ class Library:
 
                 # NOTE: Depending on the data, some data and schema changes need to be applied in
                 # different orders. This chain of methods can likely be cleaned up and/or moved.
+                if loaded_db_version < 7:
+                    # changes: value_type, tags (remove invalid disam id)
+                    self.__apply_repairs_for_db6(session)
                 if loaded_db_version < 8:
                     # changes: tag_colors
                     self.__apply_db8_schema_changes(session)
@@ -547,9 +550,6 @@ class Library:
                 if loaded_db_version < 103:
                     # changes: tags (add column)
                     self.__apply_db103_schema_changes(session)
-                if loaded_db_version == 6:
-                    # changes: value_type, tags (remove invalid disam id)
-                    self.__apply_repairs_for_db6(session)
 
                 if loaded_db_version < 8:
                     # changes: tag_colors
