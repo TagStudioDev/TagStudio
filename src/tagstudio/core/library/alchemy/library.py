@@ -536,8 +536,7 @@ class Library:
                     self.save_library_backup_to_disk()
                     self.library_dir = None
 
-                # NOTE: Depending on the data, some data and schema changes need to be applied in
-                # different orders. This chain of methods can likely be cleaned up and/or moved.
+                # migrate DB step by step from one version to the next
                 if loaded_db_version < 7:
                     # changes: value_type, tags
                     self.__apply_db7_migration(session)
@@ -558,7 +557,7 @@ class Library:
                     self.__apply_db103_migration(session)
 
                 # Convert file extension list to ts_ignore file, if a .ts_ignore file does not exist
-                # TODO: this currently does not delete the migrated data from the DB
+                # TODO: do this in the migration step that will remove the preferences table
                 self.migrate_sql_to_ts_ignore(library_dir)
 
             # Update DB_VERSION
