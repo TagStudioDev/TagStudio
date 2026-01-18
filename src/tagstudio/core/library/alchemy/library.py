@@ -422,8 +422,8 @@ class Library:
             logger.info(f"[Library] DB_VERSION: {loaded_db_version}")
             make_tables(self.engine)
 
-            # Add default tag color namespaces.
             if is_new:
+                # Add default tag color namespaces.
                 namespaces = default_color_groups.namespaces()
                 try:
                     session.add_all(namespaces)
@@ -432,8 +432,7 @@ class Library:
                     logger.error("[Library] Couldn't add default tag color namespaces", error=e)
                     session.rollback()
 
-            # Add default tag colors.
-            if is_new:
+                # Add default tag colors.
                 tag_colors: list[TagColorGroup] = default_color_groups.standard()
                 tag_colors += default_color_groups.pastels()
                 tag_colors += default_color_groups.shades()
@@ -448,8 +447,7 @@ class Library:
                         logger.error("[Library] Couldn't add default tag colors", error=e)
                         session.rollback()
 
-            # Add default tags.
-            if is_new:
+                # Add default tags.
                 tags = get_default_tags()
                 try:
                     session.add_all(tags)
@@ -530,6 +528,8 @@ class Library:
 
             # Apply any post-SQL migration patches.
             if not is_new:
+                assert loaded_db_version >= 6
+
                 # save backup if patches will be applied
                 if loaded_db_version < DB_VERSION:
                     self.library_dir = library_dir
@@ -539,26 +539,36 @@ class Library:
                 # NOTE: Depending on the data, some data and schema changes need to be applied in
                 # different orders. This chain of methods can likely be cleaned up and/or moved.
                 if loaded_db_version < 8:
+                    # changes: tag_colors
                     self.__apply_db8_schema_changes(session)
                 if loaded_db_version < 9:
+                    # changes: entries
                     self.__apply_db9_schema_changes(session)
                 if loaded_db_version < 103:
+                    # changes: tags (add column)
                     self.__apply_db103_schema_changes(session)
                 if loaded_db_version == 6:
+                    # changes: value_type, tags (remove invalid disam id)
                     self.__apply_repairs_for_db6(session)
 
-                if loaded_db_version >= 6 and loaded_db_version < 8:
+                if loaded_db_version < 8:
+                    # changes: tag_colors
                     self.__apply_db8_default_data(session)
                 if loaded_db_version < 9:
+                    # changes: entries
                     self.__apply_db9_filename_population(session)
                 if loaded_db_version < 100:
+                    # changes: tag_parents
                     self.__apply_db100_parent_repairs(session)
                 if loaded_db_version < 102:
+                    # changes: tag_parents
                     self.__apply_db102_repairs(session)
                 if loaded_db_version < 103:
+                    # changes: tags (mark archived as hidden)
                     self.__apply_db103_default_data(session)
 
                 # Convert file extension list to ts_ignore file, if a .ts_ignore file does not exist
+                # TODO: this currently does not delete the migrated data from the DB
                 self.migrate_sql_to_ts_ignore(library_dir)
 
             # Update DB_VERSION
