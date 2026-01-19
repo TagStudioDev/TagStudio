@@ -20,7 +20,6 @@ from typing import TYPE_CHECKING
 from uuid import uuid4
 from warnings import catch_warnings
 
-import sqlalchemy
 import structlog
 from humanfriendly import format_timespan  # pyright: ignore[reportUnknownVariableType]
 from sqlalchemy import (
@@ -52,7 +51,6 @@ from sqlalchemy.orm import (
     noload,
     selectinload,
 )
-from typing_extensions import deprecated
 
 from tagstudio.core.constants import (
     BACKUP_FOLDER_NAME,
@@ -66,13 +64,11 @@ from tagstudio.core.constants import (
     TAG_META,
     TS_FOLDER_NAME,
 )
-from tagstudio.core.enums import LibraryPrefs
 from tagstudio.core.library.alchemy import default_color_groups
 from tagstudio.core.library.alchemy.constants import (
     DB_VERSION,
     DB_VERSION_CURRENT_KEY,
     DB_VERSION_INITIAL_KEY,
-    DB_VERSION_LEGACY_KEY,
     JSON_FILENAME,
     SQL_FILENAME,
     TAG_CHILDREN_QUERY,
@@ -95,7 +91,6 @@ from tagstudio.core.library.alchemy.models import (
     Entry,
     Folder,
     Namespace,
-    Preferences,
     Tag,
     TagAlias,
     TagColorGroup,
@@ -459,15 +454,6 @@ class Library:
 
             # Ensure version rows are present
             with catch_warnings(record=True):
-                # NOTE: The "Preferences" table is depreciated and will be removed in the future.
-                # The DB_VERSION is still being set to it in order to remain backwards-compatible
-                # with existing TagStudio versions until it is removed.
-                try:
-                    session.add(Preferences(key=DB_VERSION_LEGACY_KEY, value=DB_VERSION))
-                    session.commit()
-                except IntegrityError:
-                    session.rollback()
-
                 try:
                     initial = DB_VERSION if is_new else 100
                     session.add(Version(key=DB_VERSION_INITIAL_KEY, value=initial))
@@ -551,7 +537,7 @@ class Library:
                 if loaded_db_version < 104:
                     # Convert file extension list to ts_ignore file,
                     # if a .ts_ignore file does not exist
-                    self.migrate_sql_to_ts_ignore(library_dir)
+                    self.__migrate_sql_to_ts_ignore(library_dir)
                     # changes: deletes preferences
                     self.__apply_db104_migrations(session)
 
@@ -731,15 +717,20 @@ class Library:
         session.execute(text("DROP TABLE perferences"))
         session.commit()
 
-    def migrate_sql_to_ts_ignore(self, library_dir: Path):
+    def __migrate_sql_to_ts_ignore(self, library_dir: Path):
         # Do not continue if existing '.ts_ignore' file is found
         ts_ignore = library_dir / TS_FOLDER_NAME / IGNORE_NAME
         if Path(ts_ignore).exists():
             return
 
         # Load legacy extension data
-        extensions: list[str] = self.prefs(LibraryPrefs.EXTENSION_LIST)  # pyright: ignore
-        is_exclude_list: bool = self.prefs(LibraryPrefs.IS_EXCLUDE_LIST)  # pyright: ignore
+        with Session(self.engine) as session:
+            extensions: list[str] = unwrap(
+                session.scalar(text("SELECT value FROM preferences WHERE key = 'EXTENSION_LIST'"))
+            )
+            is_exclude_list: bool = unwrap(
+                session.scalar(text("SELECT value FROM preferences WHERE key = 'IS_EXCLUDE_LIST'"))
+            )
 
         with open(ts_ignore, "w") as f:
             f.write(migrate_ext_list(extensions, is_exclude_list))
@@ -1831,22 +1822,11 @@ class Library:
             key(str): The key for the name of the version type to set.
         """
         with Session(self.engine) as session:
-            engine = sqlalchemy.inspect(self.engine)
             try:
                 # "Version" table added in DB_VERSION 101
-                if engine and engine.has_table("Version"):
-                    version = session.scalar(select(Version).where(Version.key == key))
-                    assert version
-                    return version.value
-                # NOTE: The "Preferences" table has been depreciated as of TagStudio 9.5.4
-                # and is set to be removed in a future release.
-                else:
-                    pref_version = session.scalar(
-                        select(Preferences).where(Preferences.key == DB_VERSION_LEGACY_KEY)
-                    )
-                    assert pref_version
-                    assert isinstance(pref_version.value, int)
-                    return pref_version.value
+                version = session.scalar(select(Version).where(Version.key == key))
+                assert version
+                return version.value
             except Exception:
                 return 0
 
@@ -1864,36 +1844,9 @@ class Library:
                 version.value = value
                 session.add(version)
                 session.commit()
-
-                # If a depreciated "Preferences" table is found, update the version value to be read
-                # by older TagStudio versions.
-                engine = sqlalchemy.inspect(self.engine)
-                if engine and engine.has_table("Preferences"):
-                    pref = unwrap(
-                        session.scalar(
-                            select(Preferences).where(Preferences.key == DB_VERSION_LEGACY_KEY)
-                        )
-                    )
-                    pref.value = value  # pyright: ignore
-                    session.add(pref)
-                    session.commit()
             except (IntegrityError, AssertionError) as e:
                 logger.error("[Library][ERROR] Couldn't add default tag color namespaces", error=e)
                 session.rollback()
-
-    # TODO: Remove this once the 'preferences' table is removed.
-    @deprecated("Use `get_version() for version and `ts_ignore` system for extension exclusion.")
-    def prefs(self, key: str | LibraryPrefs):  # pyright: ignore[reportUnknownParameterType]
-        # load given item from Preferences table
-        with Session(self.engine) as session:
-            if isinstance(key, LibraryPrefs):
-                return unwrap(
-                    session.scalar(select(Preferences).where(Preferences.key == key.name))
-                ).value  # pyright: ignore[reportUnknownVariableType]
-            else:
-                return unwrap(
-                    session.scalar(select(Preferences).where(Preferences.key == key))
-                ).value  # pyright: ignore[reportUnknownVariableType]
 
     def mirror_entry_fields(self, *entries: Entry) -> None:
         """Mirror fields among multiple Entry items."""

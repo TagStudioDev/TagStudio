@@ -8,7 +8,6 @@ from sqlalchemy import text
 SQL_FILENAME: str = "ts_library.sqlite"
 JSON_FILENAME: str = "ts_library.json"
 
-DB_VERSION_LEGACY_KEY: str = "DB_VERSION"
 DB_VERSION_CURRENT_KEY: str = "CURRENT"
 DB_VERSION_INITIAL_KEY: str = "INITIAL"
 DB_VERSION: int = 104
