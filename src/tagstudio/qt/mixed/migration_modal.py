@@ -32,7 +32,6 @@ from tagstudio.core.constants import (
     TAG_META,
     TS_FOLDER_NAME,
 )
-from tagstudio.core.enums import LibraryPrefs
 from tagstudio.core.library.alchemy import default_color_groups
 from tagstudio.core.library.alchemy.constants import SQL_FILENAME
 from tagstudio.core.library.alchemy.joins import TagParent
@@ -75,8 +74,6 @@ class JsonMigrationModal(QObject):
 
         self.old_entry_count: int = 0
         self.old_tag_count: int = 0
-        self.old_ext_count: int = 0
-        self.old_ext_type: bool = None  # pyright: ignore[reportAttributeAccessIssue]
 
         self.field_parity: bool = False
         self.path_parity: bool = False
@@ -85,6 +82,7 @@ class JsonMigrationModal(QObject):
         self.subtag_parity: bool = False
         self.alias_parity: bool = False
         self.color_parity: bool = False
+        self.ext_parity: bool = False
 
         self.init_page_info()
         self.init_page_convert()
@@ -132,8 +130,7 @@ class JsonMigrationModal(QObject):
         parent_tags_text: str = tab + Translations["json_migration.heading.parent_tags"]
         aliases_text: str = tab + Translations["json_migration.heading.aliases"]
         colors_text: str = tab + Translations["json_migration.heading.colors"]
-        ext_text: str = Translations["json_migration.heading.file_extension_list"]
-        ext_type_text: str = Translations["json_migration.heading.extension_list_type"]
+        ext_parity_text: str = Translations["json_migration.heading.extensions"]
         desc_text: str = Translations["json_migration.description"]
         path_parity_text: str = tab + Translations["json_migration.heading.paths"]
         field_parity_text: str = tab + Translations["library_info.stats.fields"]
@@ -148,7 +145,6 @@ class JsonMigrationModal(QObject):
         self.aliases_row: int = 7
         self.colors_row: int = 8
         self.ext_row: int = 9
-        self.ext_type_row: int = 10
 
         old_lib_container: QWidget = QWidget()
         old_lib_layout: QVBoxLayout = QVBoxLayout(old_lib_container)
@@ -169,8 +165,7 @@ class JsonMigrationModal(QObject):
         self.old_content_layout.addWidget(QLabel(parent_tags_text), self.parent_tags_row, 0)
         self.old_content_layout.addWidget(QLabel(aliases_text), self.aliases_row, 0)
         self.old_content_layout.addWidget(QLabel(colors_text), self.colors_row, 0)
-        self.old_content_layout.addWidget(QLabel(ext_text), self.ext_row, 0)
-        self.old_content_layout.addWidget(QLabel(ext_type_text), self.ext_type_row, 0)
+        self.old_content_layout.addWidget(QLabel(ext_parity_text), self.ext_row, 0)
 
         old_entry_count: QLabel = QLabel()
         old_entry_count.setAlignment(Qt.AlignmentFlag.AlignRight)
@@ -190,10 +185,8 @@ class JsonMigrationModal(QObject):
         old_alias_value.setAlignment(Qt.AlignmentFlag.AlignRight)
         old_color_value: QLabel = QLabel()
         old_color_value.setAlignment(Qt.AlignmentFlag.AlignRight)
-        old_ext_count: QLabel = QLabel()
-        old_ext_count.setAlignment(Qt.AlignmentFlag.AlignRight)
-        old_ext_type: QLabel = QLabel()
-        old_ext_type.setAlignment(Qt.AlignmentFlag.AlignRight)
+        old_ext_value: QLabel = QLabel()
+        old_ext_value.setAlignment(Qt.AlignmentFlag.AlignRight)
 
         self.old_content_layout.addWidget(old_entry_count, self.entries_row, 1)
         self.old_content_layout.addWidget(old_path_value, self.path_row, 1)
@@ -204,8 +197,7 @@ class JsonMigrationModal(QObject):
         self.old_content_layout.addWidget(old_subtag_value, self.parent_tags_row, 1)
         self.old_content_layout.addWidget(old_alias_value, self.aliases_row, 1)
         self.old_content_layout.addWidget(old_color_value, self.colors_row, 1)
-        self.old_content_layout.addWidget(old_ext_count, self.ext_row, 1)
-        self.old_content_layout.addWidget(old_ext_type, self.ext_type_row, 1)
+        self.old_content_layout.addWidget(old_ext_value, self.ext_row, 1)
 
         self.old_content_layout.addWidget(QLabel(), self.path_row, 2)
         self.old_content_layout.addWidget(QLabel(), self.fields_row, 2)
@@ -214,6 +206,7 @@ class JsonMigrationModal(QObject):
         self.old_content_layout.addWidget(QLabel(), self.parent_tags_row, 2)
         self.old_content_layout.addWidget(QLabel(), self.aliases_row, 2)
         self.old_content_layout.addWidget(QLabel(), self.colors_row, 2)
+        self.old_content_layout.addWidget(QLabel(), self.ext_row, 2)
 
         old_lib_layout.addWidget(old_content_container)
 
@@ -236,8 +229,7 @@ class JsonMigrationModal(QObject):
         self.new_content_layout.addWidget(QLabel(parent_tags_text), self.parent_tags_row, 0)
         self.new_content_layout.addWidget(QLabel(aliases_text), self.aliases_row, 0)
         self.new_content_layout.addWidget(QLabel(colors_text), self.colors_row, 0)
-        self.new_content_layout.addWidget(QLabel(ext_text), self.ext_row, 0)
-        self.new_content_layout.addWidget(QLabel(ext_type_text), self.ext_type_row, 0)
+        self.new_content_layout.addWidget(QLabel(ext_parity_text), self.ext_row, 0)
 
         new_entry_count: QLabel = QLabel()
         new_entry_count.setAlignment(Qt.AlignmentFlag.AlignRight)
@@ -257,10 +249,8 @@ class JsonMigrationModal(QObject):
         alias_parity_value.setAlignment(Qt.AlignmentFlag.AlignRight)
         new_color_value: QLabel = QLabel()
         new_color_value.setAlignment(Qt.AlignmentFlag.AlignRight)
-        new_ext_count: QLabel = QLabel()
-        new_ext_count.setAlignment(Qt.AlignmentFlag.AlignRight)
-        new_ext_type: QLabel = QLabel()
-        new_ext_type.setAlignment(Qt.AlignmentFlag.AlignRight)
+        ext_parity_value: QLabel = QLabel()
+        ext_parity_value.setAlignment(Qt.AlignmentFlag.AlignRight)
 
         self.new_content_layout.addWidget(new_entry_count, self.entries_row, 1)
         self.new_content_layout.addWidget(path_parity_value, self.path_row, 1)
@@ -271,8 +261,7 @@ class JsonMigrationModal(QObject):
         self.new_content_layout.addWidget(subtag_parity_value, self.parent_tags_row, 1)
         self.new_content_layout.addWidget(alias_parity_value, self.aliases_row, 1)
         self.new_content_layout.addWidget(new_color_value, self.colors_row, 1)
-        self.new_content_layout.addWidget(new_ext_count, self.ext_row, 1)
-        self.new_content_layout.addWidget(new_ext_type, self.ext_type_row, 1)
+        self.new_content_layout.addWidget(ext_parity_value, self.ext_row, 1)
 
         self.new_content_layout.addWidget(QLabel(), self.entries_row, 2)
         self.new_content_layout.addWidget(QLabel(), self.path_row, 2)
@@ -284,7 +273,6 @@ class JsonMigrationModal(QObject):
         self.new_content_layout.addWidget(QLabel(), self.aliases_row, 2)
         self.new_content_layout.addWidget(QLabel(), self.colors_row, 2)
         self.new_content_layout.addWidget(QLabel(), self.ext_row, 2)
-        self.new_content_layout.addWidget(QLabel(), self.ext_type_row, 2)
 
         new_lib_layout.addWidget(new_content_container)
 
@@ -337,8 +325,6 @@ class JsonMigrationModal(QObject):
             # Update JSON UI
             self.update_json_entry_count(len(self.json_lib.entries))
             self.update_json_tag_count(len(self.json_lib.tags))
-            self.update_json_ext_count(len(self.json_lib.ext_list))
-            self.update_json_ext_type(self.json_lib.is_exclude_list)
 
             self.migration_progress(skip_ui=skip_ui)
             self.is_migration_initialized = True
@@ -432,6 +418,7 @@ class JsonMigrationModal(QObject):
             check_set.add(self.check_subtag_parity())
             check_set.add(self.check_alias_parity())
             check_set.add(self.check_color_parity())
+            check_set.add(self.check_ignore_parity())
             if False not in check_set:
                 yield Translations["json_migration.migration_complete"]
             else:
@@ -458,6 +445,7 @@ class JsonMigrationModal(QObject):
         self.update_parity_value(self.parent_tags_row, self.subtag_parity)
         self.update_parity_value(self.aliases_row, self.alias_parity)
         self.update_parity_value(self.colors_row, self.color_parity)
+        self.update_parity_value(self.ext_row, self.ext_parity)
         self.sql_lib.close()
 
     def update_sql_value_ui(self, show_msg_box: bool = True):
@@ -471,16 +459,6 @@ class JsonMigrationModal(QObject):
             self.tags_row,
             len(self.sql_lib.tags),
             self.old_tag_count,
-        )
-        self.update_sql_value(
-            self.ext_row,
-            len(self.sql_lib.prefs(LibraryPrefs.EXTENSION_LIST)),
-            self.old_ext_count,
-        )
-        self.update_sql_value(
-            self.ext_type_row,
-            self.sql_lib.prefs(LibraryPrefs.IS_EXCLUDE_LIST),  # pyright: ignore[reportArgumentType]
-            self.old_ext_type,
         )
         logger.info("Parity check complete!")
         if self.discrepancies:
@@ -511,16 +489,6 @@ class JsonMigrationModal(QObject):
     def update_json_tag_count(self, value: int):
         self.old_tag_count = value
         label: QLabel = self.old_content_layout.itemAtPosition(self.tags_row, 1).widget()  # type:ignore
-        label.setText(self.color_value_default(value))
-
-    def update_json_ext_count(self, value: int):
-        self.old_ext_count = value
-        label: QLabel = self.old_content_layout.itemAtPosition(self.ext_row, 1).widget()  # type:ignore
-        label.setText(self.color_value_default(value))
-
-    def update_json_ext_type(self, value: bool):
-        self.old_ext_type = value
-        label: QLabel = self.old_content_layout.itemAtPosition(self.ext_type_row, 1).widget()  # type:ignore
         label.setText(self.color_value_default(value))
 
     def update_sql_value(self, row: int, value: int | bool, old_value: int | bool):
@@ -565,7 +533,8 @@ class JsonMigrationModal(QObject):
         for ext in self.json_lib.ext_list:
             out &= compiled_pats.match(str(path / ext)) == self.json_lib.is_exclude_list
         out &= compiled_pats.match(str(path / ".not_a_real_ext")) != self.json_lib.is_exclude_list
-        return out
+        self.ext_parity = out
+        return self.ext_parity
 
     def check_field_parity(self) -> bool:
         """Check if all JSON field and tag data matches the new SQL data."""
