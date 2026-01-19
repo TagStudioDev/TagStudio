@@ -25,6 +25,7 @@ class TagBoxWidget(TagBoxWidgetView):
     on_update = Signal()
 
     __entries: list[int] = []
+    __mixed_only: bool = False
 
     def __init__(self, title: str, driver: "QtDriver"):
         super().__init__(title, driver)
@@ -32,6 +33,38 @@ class TagBoxWidget(TagBoxWidgetView):
 
     def set_entries(self, entries: list[int]) -> None:
         self.__entries = entries
+
+    def set_mixed_only(self, value: bool) -> None:
+        """If True, all tags in this widget are treated as non-shared (grayed out)."""
+        self.__mixed_only = value
+
+    def set_tags(self, tags):  # type: ignore[override]
+        """Render tags; optionally gray out those that are not shared across entries."""
+        tags_ = list(tags)
+
+        # When mixed_only is set, all tags in this widget are considered non-shared.
+        shared_tag_ids: set[int] = set()
+        if not self.__mixed_only and self.__entries:
+            tag_ids = [t.id for t in tags_]
+            tag_entries = self.__driver.lib.get_tag_entries(tag_ids, self.__entries)
+            required = set(self.__entries)
+            for tag_id, entries in tag_entries.items():
+                if set(entries) >= required:
+                    shared_tag_ids.add(tag_id)
+
+        super().set_tags(tags_)
+
+        # Gray out tags that are not shared across all selected entries.
+        from tagstudio.qt.mixed.tag_widget import TagWidget  # local import to avoid cycles
+
+        layout = getattr(self, "_TagBoxWidgetView__root_layout", None)
+        if layout is not None:
+            for i in range(layout.count()):
+                item = layout.itemAt(i)
+                widget = item.widget()
+                if isinstance(widget, TagWidget) and widget.tag:
+                    if self.__mixed_only or widget.tag.id not in shared_tag_ids:
+                        widget.setEnabled(False)
 
     @override
     def _on_click(self, tag: Tag) -> None:  # type: ignore[misc]

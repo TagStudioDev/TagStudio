@@ -36,8 +36,6 @@ def test_update_selection_single(qt_driver: QtDriver, library: Library, entry_fu
 
 
 def test_update_selection_multiple(qt_driver: QtDriver, library: Library):
-    # TODO: Implement mixed field editing. Currently these containers will be hidden,
-    # same as the empty selection behavior.
     panel = PreviewPanel(library, qt_driver)
 
     # Select the multiple entries
@@ -45,9 +43,9 @@ def test_update_selection_multiple(qt_driver: QtDriver, library: Library):
     qt_driver.toggle_item_selection(2, append=True, bridge=False)
     panel.set_selection(qt_driver.selected)
 
-    # FieldContainer should show mixed field editing
-    for container in panel.field_containers_widget.containers:
-        assert container.isHidden()
+    # Panel should enable UI that allows for entry modification and cache all selected entries
+    assert panel.add_buttons_enabled
+    assert len(panel.field_containers_widget.cached_entries) == 2
 
 
 def test_add_tag_to_selection_single(qt_driver: QtDriver, library: Library, entry_full: Entry):
