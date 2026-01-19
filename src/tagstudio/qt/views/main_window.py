@@ -4,50 +4,31 @@
 
 
 import typing
-from collections.abc import Callable
-from pathlib import Path
 
 import structlog
-from PIL import Image, ImageQt
-from PySide6 import QtCore
-from PySide6.QtCore import QMetaObject, QSize, QStringListModel, Qt
-from PySide6.QtGui import QAction, QColor, QPixmap
+from PySide6.QtCore import QMetaObject, Qt
 from PySide6.QtWidgets import (
-    QCheckBox,
-    QComboBox,
-    QCompleter,
     QFrame,
     QGridLayout,
     QHBoxLayout,
-    QLabel,
-    QLayout,
-    QLineEdit,
     QMainWindow,
-    QMenu,
-    QMenuBar,
-    QPushButton,
     QScrollArea,
     QSizePolicy,
-    QSpacerItem,
     QSplitter,
     QStatusBar,
     QVBoxLayout,
     QWidget,
 )
 
-from tagstudio.core.enums import ShowFilepathOption
-from tagstudio.core.library.alchemy.enums import SortingModeEnum, TagColorEnum
+from tagstudio.core.library.alchemy.enums import SortingModeEnum
 from tagstudio.qt.controllers.preview_panel_controller import PreviewPanel
-from tagstudio.qt.helpers.color_overlay import theme_fg_overlay
 from tagstudio.qt.mixed.landing import LandingWidget
 from tagstudio.qt.mixed.pagination import Pagination
-from tagstudio.qt.mixed.tag_widget import get_border_color, get_highlight_color, get_text_color
-from tagstudio.qt.mnemonics import assign_mnemonics
-from tagstudio.qt.models.palette import ColorType, get_tag_color
-from tagstudio.qt.platform_strings import trash_term
 from tagstudio.qt.resource_manager import ResourceManager
 from tagstudio.qt.thumb_grid_layout import ThumbGridLayout
-from tagstudio.qt.translations import Translations
+from tagstudio.qt.views.widgets.content_display_toolbar_view import ContentDisplayToolbar
+from tagstudio.qt.views.widgets.search_bar_view import SearchBarWidget
+from tagstudio.qt.views.widgets.main_menu_bar_view import MainMenuBar
 
 # Only import for type checking/autocompletion, will not be imported at runtime.
 if typing.TYPE_CHECKING:
@@ -56,420 +37,18 @@ if typing.TYPE_CHECKING:
 
 logger = structlog.get_logger(__name__)
 
-
-class MainMenuBar(QMenuBar):
-    file_menu: QMenu
-    open_library_action: QAction
-    open_recent_library_menu: QMenu
-    save_library_backup_action: QAction
-    settings_action: QAction
-    open_on_start_action: QAction
-    refresh_dir_action: QAction
-    close_library_action: QAction
-
-    edit_menu: QMenu
-    new_tag_action: QAction
-    select_all_action: QAction
-    select_inverse_action: QAction
-    clear_select_action: QAction
-    copy_fields_action: QAction
-    paste_fields_action: QAction
-    add_tag_to_selected_action: QAction
-    delete_file_action: QAction
-    ignore_modal_action: QAction
-    tag_manager_action: QAction
-    color_manager_action: QAction
-
-    view_menu: QMenu
-    show_filenames_action: QAction
-
-    tools_menu: QMenu
-    fix_unlinked_entries_action: QAction
-    fix_ignored_entries_action: QAction
-    fix_dupe_files_action: QAction
-    clear_thumb_cache_action: QAction
-
-    macros_menu: QMenu
-    folders_to_tags_action: QAction
-
-    help_menu: QMenu
-    about_action: QAction
-
-    def __init__(self, parent: QWidget | None = None):
-        super().__init__(parent)
-
-        self.setup_file_menu()
-        self.setup_edit_menu()
-        self.setup_view_menu()
-        self.setup_tools_menu()
-        self.setup_macros_menu()
-        self.setup_help_menu()
-
-    def setup_file_menu(self):
-        self.file_menu = QMenu(Translations["menu.file"], self)
-
-        # Open/Create Library
-        self.open_library_action = QAction(Translations["menu.file.open_create_library"], self)
-        self.open_library_action.setShortcut(
-            QtCore.QKeyCombination(
-                QtCore.Qt.KeyboardModifier(QtCore.Qt.KeyboardModifier.ControlModifier),
-                QtCore.Qt.Key.Key_O,
-            )
-        )
-        self.open_library_action.setToolTip("Ctrl+O")
-        self.file_menu.addAction(self.open_library_action)
-
-        # Open Recent
-        self.open_recent_library_menu = QMenu(Translations["menu.file.open_recent_library"], self)
-        self.file_menu.addMenu(self.open_recent_library_menu)
-
-        # Save Library Backup
-        self.save_library_backup_action = QAction(Translations["menu.file.save_backup"], self)
-        self.save_library_backup_action.setShortcut(
-            QtCore.QKeyCombination(
-                QtCore.Qt.KeyboardModifier(
-                    QtCore.Qt.KeyboardModifier.ControlModifier
-                    | QtCore.Qt.KeyboardModifier.ShiftModifier
-                ),
-                QtCore.Qt.Key.Key_S,
-            )
-        )
-        self.save_library_backup_action.setStatusTip("Ctrl+Shift+S")
-        self.save_library_backup_action.setEnabled(False)
-        self.file_menu.addAction(self.save_library_backup_action)
-
-        self.file_menu.addSeparator()
-
-        # Settings...
-        self.settings_action = QAction(Translations["menu.settings"], self)
-        self.file_menu.addAction(self.settings_action)
-
-        # Open Library on Start
-        self.open_on_start_action = QAction(Translations["settings.open_library_on_start"], self)
-        self.open_on_start_action.setCheckable(True)
-        self.file_menu.addAction(self.open_on_start_action)
-
-        self.file_menu.addSeparator()
-
-        # Refresh Directories
-        self.refresh_dir_action = QAction(Translations["menu.file.refresh_directories"], self)
-        self.refresh_dir_action.setShortcut(
-            QtCore.QKeyCombination(
-                QtCore.Qt.KeyboardModifier(QtCore.Qt.KeyboardModifier.ControlModifier),
-                QtCore.Qt.Key.Key_R,
-            )
-        )
-        self.refresh_dir_action.setStatusTip("Ctrl+R")
-        self.refresh_dir_action.setEnabled(False)
-        self.file_menu.addAction(self.refresh_dir_action)
-
-        self.file_menu.addSeparator()
-
-        # Close Library
-        self.close_library_action = QAction(Translations["menu.file.close_library"], self)
-        self.close_library_action.setEnabled(False)
-        self.file_menu.addAction(self.close_library_action)
-
-        self.file_menu.addSeparator()
-
-        assign_mnemonics(self.file_menu)
-        self.addMenu(self.file_menu)
-
-    def setup_edit_menu(self):
-        self.edit_menu = QMenu(Translations["generic.edit_alt"], self)
-
-        # New Tag
-        self.new_tag_action = QAction(Translations["menu.edit.new_tag"], self)
-        self.new_tag_action.setShortcut(
-            QtCore.QKeyCombination(
-                QtCore.Qt.KeyboardModifier(QtCore.Qt.KeyboardModifier.ControlModifier),
-                QtCore.Qt.Key.Key_T,
-            )
-        )
-        self.new_tag_action.setToolTip("Ctrl+T")
-        self.new_tag_action.setEnabled(False)
-        self.edit_menu.addAction(self.new_tag_action)
-
-        self.edit_menu.addSeparator()
-
-        # Select All
-        self.select_all_action = QAction(Translations["select.all"], self)
-        self.select_all_action.setShortcut(
-            QtCore.QKeyCombination(
-                QtCore.Qt.KeyboardModifier(QtCore.Qt.KeyboardModifier.ControlModifier),
-                QtCore.Qt.Key.Key_A,
-            )
-        )
-        self.select_all_action.setToolTip("Ctrl+A")
-        self.select_all_action.setEnabled(False)
-        self.edit_menu.addAction(self.select_all_action)
-
-        # Invert Selection
-        self.select_inverse_action = QAction(Translations["select.inverse"], self)
-        self.select_inverse_action.setShortcut(
-            QtCore.QKeyCombination(
-                QtCore.Qt.KeyboardModifier(
-                    QtCore.Qt.KeyboardModifier.ControlModifier
-                    ^ QtCore.Qt.KeyboardModifier.ShiftModifier
-                ),
-                QtCore.Qt.Key.Key_I,
-            )
-        )
-        self.select_inverse_action.setToolTip("Ctrl+Shift+I")
-        self.select_inverse_action.setEnabled(False)
-        self.edit_menu.addAction(self.select_inverse_action)
-
-        # Clear Selection
-        self.clear_select_action = QAction(Translations["select.clear"], self)
-        self.clear_select_action.setShortcut(QtCore.Qt.Key.Key_Escape)
-        self.clear_select_action.setToolTip("Esc")
-        self.clear_select_action.setEnabled(False)
-        self.edit_menu.addAction(self.clear_select_action)
-
-        # Copy Fields
-        self.copy_fields_action = QAction(Translations["edit.copy_fields"], self)
-        self.copy_fields_action.setShortcut(
-            QtCore.QKeyCombination(
-                QtCore.Qt.KeyboardModifier(QtCore.Qt.KeyboardModifier.ControlModifier),
-                QtCore.Qt.Key.Key_C,
-            )
-        )
-        self.copy_fields_action.setToolTip("Ctrl+C")
-        self.copy_fields_action.setEnabled(False)
-        self.edit_menu.addAction(self.copy_fields_action)
-
-        # Paste Fields
-        self.paste_fields_action = QAction(Translations["edit.paste_fields"], self)
-        self.paste_fields_action.setShortcut(
-            QtCore.QKeyCombination(
-                QtCore.Qt.KeyboardModifier(QtCore.Qt.KeyboardModifier.ControlModifier),
-                QtCore.Qt.Key.Key_V,
-            )
-        )
-        self.paste_fields_action.setToolTip("Ctrl+V")
-        self.paste_fields_action.setEnabled(False)
-        self.edit_menu.addAction(self.paste_fields_action)
-
-        # Add Tag to Selected
-        self.add_tag_to_selected_action = QAction(Translations["select.add_tag_to_selected"], self)
-        self.add_tag_to_selected_action.setShortcut(
-            QtCore.QKeyCombination(
-                QtCore.Qt.KeyboardModifier(
-                    QtCore.Qt.KeyboardModifier.ControlModifier
-                    ^ QtCore.Qt.KeyboardModifier.ShiftModifier
-                ),
-                QtCore.Qt.Key.Key_T,
-            )
-        )
-        self.add_tag_to_selected_action.setToolTip("Ctrl+Shift+T")
-        self.add_tag_to_selected_action.setEnabled(False)
-        self.edit_menu.addAction(self.add_tag_to_selected_action)
-
-        self.edit_menu.addSeparator()
-
-        # Move Files to trash
-        self.delete_file_action = QAction(
-            Translations.format("menu.delete_selected_files_ambiguous", trash_term=trash_term()),
-            self,
-        )
-        self.delete_file_action.setShortcut(QtCore.Qt.Key.Key_Delete)
-        self.delete_file_action.setEnabled(False)
-        self.edit_menu.addAction(self.delete_file_action)
-
-        self.edit_menu.addSeparator()
-
-        # Ignore Files and Directories (.ts_ignore System)
-        self.ignore_modal_action = QAction(Translations["menu.edit.ignore_files"], self)
-        self.ignore_modal_action.setEnabled(False)
-        self.edit_menu.addAction(self.ignore_modal_action)
-
-        # Manage Tags
-        self.tag_manager_action = QAction(Translations["menu.edit.manage_tags"], self)
-        self.tag_manager_action.setShortcut(
-            QtCore.QKeyCombination(
-                QtCore.Qt.KeyboardModifier(QtCore.Qt.KeyboardModifier.ControlModifier),
-                QtCore.Qt.Key.Key_M,
-            )
-        )
-        self.tag_manager_action.setEnabled(False)
-        self.tag_manager_action.setToolTip("Ctrl+M")
-        self.edit_menu.addAction(self.tag_manager_action)
-
-        # Color Manager
-        self.color_manager_action = QAction(Translations["edit.color_manager"], self)
-        self.color_manager_action.setEnabled(False)
-        self.edit_menu.addAction(self.color_manager_action)
-
-        assign_mnemonics(self.edit_menu)
-        self.addMenu(self.edit_menu)
-
-    def setup_view_menu(self):
-        self.view_menu = QMenu(Translations["menu.view"], self)
-
-        self.library_info_action = QAction(Translations["menu.view.library_info"])
-        self.view_menu.addAction(self.library_info_action)
-
-        # show_libs_list_action = QAction(Translations["settings.show_recent_libraries"], menu_bar)
-        # show_libs_list_action.setCheckable(True)
-        # show_libs_list_action.setChecked(self.settings.show_library_list)
-
-        self.show_filenames_action = QAction(Translations["settings.show_filenames_in_grid"], self)
-        self.show_filenames_action.setCheckable(True)
-        self.view_menu.addAction(self.show_filenames_action)
-
-        self.view_menu.addSeparator()
-
-        self.increase_thumbnail_size_action = QAction(
-            Translations["menu.view.increase_thumbnail_size"], self
-        )
-        self.increase_thumbnail_size_action.setShortcut(
-            QtCore.QKeyCombination(
-                QtCore.Qt.KeyboardModifier(QtCore.Qt.KeyboardModifier.ControlModifier),
-                QtCore.Qt.Key.Key_Plus,
-            )
-        )
-        self.increase_thumbnail_size_action.setToolTip("Ctrl++")
-        self.view_menu.addAction(self.increase_thumbnail_size_action)
-
-        self.decrease_thumbnail_size_action = QAction(
-            Translations["menu.view.decrease_thumbnail_size"], self
-        )
-        self.decrease_thumbnail_size_action.setShortcut(
-            QtCore.QKeyCombination(
-                QtCore.Qt.KeyboardModifier(QtCore.Qt.KeyboardModifier.ControlModifier),
-                QtCore.Qt.Key.Key_Minus,
-            )
-        )
-        self.decrease_thumbnail_size_action.setToolTip("Ctrl+-")
-        self.view_menu.addAction(self.decrease_thumbnail_size_action)
-
-        self.view_menu.addSeparator()
-
-        assign_mnemonics(self.view_menu)
-        self.addMenu(self.view_menu)
-
-    def setup_tools_menu(self):
-        self.tools_menu = QMenu(Translations["menu.tools"], self)
-
-        # Fix Unlinked Entries
-        self.fix_unlinked_entries_action = QAction(
-            Translations["menu.tools.fix_unlinked_entries"], self
-        )
-        self.fix_unlinked_entries_action.setEnabled(False)
-        self.tools_menu.addAction(self.fix_unlinked_entries_action)
-
-        # Fix Ignored Entries
-        self.fix_ignored_entries_action = QAction(
-            Translations["menu.tools.fix_ignored_entries"], self
-        )
-        self.fix_ignored_entries_action.setEnabled(False)
-        self.tools_menu.addAction(self.fix_ignored_entries_action)
-
-        # Fix Duplicate Files
-        self.fix_dupe_files_action = QAction(Translations["menu.tools.fix_duplicate_files"], self)
-        self.fix_dupe_files_action.setEnabled(False)
-        self.tools_menu.addAction(self.fix_dupe_files_action)
-
-        self.tools_menu.addSeparator()
-
-        # Clear Thumbnail Cache
-        self.clear_thumb_cache_action = QAction(
-            Translations["settings.clear_thumb_cache.title"], self
-        )
-        self.clear_thumb_cache_action.setEnabled(False)
-        self.tools_menu.addAction(self.clear_thumb_cache_action)
-
-        assign_mnemonics(self.tools_menu)
-        self.addMenu(self.tools_menu)
-
-    def setup_macros_menu(self):
-        self.macros_menu = QMenu(Translations["menu.macros"], self)
-
-        self.folders_to_tags_action = QAction(Translations["menu.macros.folders_to_tags"], self)
-        self.folders_to_tags_action.setEnabled(False)
-        self.macros_menu.addAction(self.folders_to_tags_action)
-
-        assign_mnemonics(self.macros_menu)
-        self.addMenu(self.macros_menu)
-
-    def setup_help_menu(self):
-        self.help_menu = QMenu(Translations["menu.help"], self)
-
-        self.about_action = QAction(Translations["menu.help.about"], self)
-        self.help_menu.addAction(self.about_action)
-
-        assign_mnemonics(self.help_menu)
-        self.addMenu(self.help_menu)
-
-    def rebuild_open_recent_library_menu(
-        self,
-        libraries: list[Path],
-        show_filepath: ShowFilepathOption,
-        open_library_callback: Callable[[Path], None],
-        clear_libraries_callback: Callable[[], None],
-    ):
-        actions: list[QAction] = []
-        for path in libraries:
-            action = QAction(self.open_recent_library_menu)
-            if show_filepath == ShowFilepathOption.SHOW_FULL_PATHS:
-                action.setText(str(path))
-            else:
-                action.setText(str(path.name))
-            action.triggered.connect(lambda checked=False, p=path: open_library_callback(p))
-            actions.append(action)
-
-        clear_recent_action = QAction(
-            Translations["menu.file.clear_recent_libraries"], self.open_recent_library_menu
-        )
-        clear_recent_action.triggered.connect(clear_libraries_callback)
-        actions.append(clear_recent_action)
-
-        # Clear previous actions
-        for action in self.open_recent_library_menu.actions():
-            self.open_recent_library_menu.removeAction(action)
-
-        # Add new actions
-        for action in actions:
-            self.open_recent_library_menu.addAction(action)
-
-        # Only enable add "clear recent" if there are still recent libraries.
-        if len(actions) > 1:
-            self.open_recent_library_menu.setDisabled(False)
-            self.open_recent_library_menu.addSeparator()
-            self.open_recent_library_menu.addAction(clear_recent_action)
-        else:
-            self.open_recent_library_menu.setDisabled(True)
-
-
 # View Component
 class MainWindow(QMainWindow):
-    THUMB_SIZES: list[tuple[str, int]] = [
-        (Translations["home.thumbnail_size.extra_large"], 256),
-        (Translations["home.thumbnail_size.large"], 192),
-        (Translations["home.thumbnail_size.medium"], 128),
-        (Translations["home.thumbnail_size.small"], 96),
-        (Translations["home.thumbnail_size.mini"], 76),
-    ]
-
     def __init__(self, driver: "QtDriver", parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self.rm = ResourceManager()
 
         # region Type declarations for variables that will be initialized in methods
         # initialized in setup_search_bar
-        self.search_bar_layout: QHBoxLayout
-        self.back_button: QPushButton
-        self.forward_button: QPushButton
-        self.search_field: QLineEdit
-        self.search_field_completion_list: QStringListModel
-        self.search_field_completer: QCompleter
-        self.search_button: QPushButton
+        self.search_bar: SearchBarWidget
 
-        # initialized in setup_extra_input_bar
-        self.extra_input_layout: QHBoxLayout
-        self.sorting_mode_combobox: QComboBox
-        self.sorting_direction_combobox: QComboBox
-        self.thumb_size_combobox: QComboBox
+        # initialized in setup_content_display_toolbar
+        self.content_display_toolbar: ContentDisplayToolbar
 
         # initialized in setup_content
         self.content_layout: QHBoxLayout
@@ -529,151 +108,22 @@ class MainWindow(QMainWindow):
         self.central_layout.setObjectName("central_layout")
 
         self.setup_search_bar()
-        self.setup_extra_input_bar()
+        self.setup_content_display_toolbar()
         self.setup_content(driver)
         self.setCentralWidget(self.central_widget)
 
     def setup_search_bar(self):
-        """Sets up Nav Buttons, Search Field, Search Button."""
-        self.search_bar_layout = QHBoxLayout()
-        self.search_bar_layout.setObjectName("search_bar_layout")
-        self.search_bar_layout.setSizeConstraint(QLayout.SizeConstraint.SetMinimumSize)
+        self.search_bar = SearchBarWidget(self.central_widget)
+        # Restrict the size, as otherwise the widget will expand vertically.
+        self.search_bar.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed)
+        self.central_layout.addWidget(self.search_bar, 3, 0, 1, 1)
 
-        self.back_button = QPushButton(self.central_widget)
-        back_icon: Image.Image = self.rm.get("bxs-left-arrow")  # pyright: ignore[reportAssignmentType]
-        back_icon = theme_fg_overlay(back_icon, use_alpha=False)
-        self.back_button.setIcon(QPixmap.fromImage(ImageQt.ImageQt(back_icon)))
-        self.back_button.setObjectName("back_button")
-        self.back_button.setMinimumSize(QSize(32, 32))
-        self.back_button.setMaximumSize(QSize(32, 16777215))
-        self.search_bar_layout.addWidget(self.back_button)
-
-        self.forward_button = QPushButton(self.central_widget)
-        forward_icon: Image.Image = self.rm.get("bxs-right-arrow")  # pyright: ignore[reportAssignmentType]
-        forward_icon = theme_fg_overlay(forward_icon, use_alpha=False)
-        self.forward_button.setIcon(QPixmap.fromImage(ImageQt.ImageQt(forward_icon)))
-        self.forward_button.setIconSize(QSize(16, 16))
-        self.forward_button.setObjectName("forward_button")
-        self.forward_button.setMinimumSize(QSize(32, 32))
-        self.forward_button.setMaximumSize(QSize(32, 16777215))
-        self.search_bar_layout.addWidget(self.forward_button)
-
-        self.search_field = QLineEdit(self.central_widget)
-        self.search_field.setPlaceholderText(Translations["home.search_entries"])
-        self.search_field.setObjectName("search_field")
-        self.search_field.setMinimumSize(QSize(0, 32))
-        self.search_field_completion_list = QStringListModel()
-        self.search_field_completer = QCompleter(
-            self.search_field_completion_list, self.search_field
-        )
-        self.search_field_completer.setCaseSensitivity(Qt.CaseSensitivity.CaseInsensitive)
-        self.search_field.setCompleter(self.search_field_completer)
-        self.search_bar_layout.addWidget(self.search_field)
-
-        self.search_button = QPushButton(Translations["home.search"], self.central_widget)
-        self.search_button.setObjectName("search_button")
-        self.search_button.setMinimumSize(QSize(0, 32))
-        self.search_bar_layout.addWidget(self.search_button)
-
-        self.central_layout.addLayout(self.search_bar_layout, 3, 0, 1, 1)
-
-    def setup_extra_input_bar(self):
+    def setup_content_display_toolbar(self):
         """Sets up inputs for sorting settings and thumbnail size."""
-        self.extra_input_layout = QHBoxLayout()
-        self.extra_input_layout.setObjectName("extra_input_layout")
+        self.content_display_toolbar = ContentDisplayToolbar(self)
+        self.content_display_toolbar.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed)
 
-        primary_color = QColor(get_tag_color(ColorType.PRIMARY, TagColorEnum.DEFAULT))
-        border_color = get_border_color(primary_color)
-        highlight_color = get_highlight_color(primary_color)
-        text_color: QColor = get_text_color(primary_color, highlight_color)
-
-        ## Show hidden entries checkbox
-        self.show_hidden_entries_widget = QWidget()
-        self.show_hidden_entries_layout = QHBoxLayout(self.show_hidden_entries_widget)
-        self.show_hidden_entries_layout.setStretch(1, 1)
-        self.show_hidden_entries_layout.setContentsMargins(0, 0, 0, 0)
-        self.show_hidden_entries_layout.setSpacing(6)
-        self.show_hidden_entries_layout.setAlignment(Qt.AlignmentFlag.AlignLeft)
-        self.show_hidden_entries_title = QLabel(Translations["home.show_hidden_entries"])
-        self.show_hidden_entries_checkbox = QCheckBox()
-        self.show_hidden_entries_checkbox.setFixedSize(22, 22)
-
-        self.show_hidden_entries_checkbox.setStyleSheet(
-            f"QCheckBox{{"
-            f"background: rgba{primary_color.toTuple()};"
-            f"color: rgba{text_color.toTuple()};"
-            f"border-color: rgba{border_color.toTuple()};"
-            f"border-radius: 6px;"
-            f"border-style:solid;"
-            f"border-width: 2px;"
-            f"}}"
-            f"QCheckBox::indicator{{"
-            f"width: 10px;"
-            f"height: 10px;"
-            f"border-radius: 2px;"
-            f"margin: 4px;"
-            f"}}"
-            f"QCheckBox::indicator:checked{{"
-            f"background: rgba{text_color.toTuple()};"
-            f"}}"
-            f"QCheckBox::hover{{"
-            f"border-color: rgba{highlight_color.toTuple()};"
-            f"}}"
-            f"QCheckBox::focus{{"
-            f"border-color: rgba{highlight_color.toTuple()};"
-            f"outline:none;"
-            f"}}"
-        )
-
-        self.show_hidden_entries_checkbox.setChecked(False)  # Default: No
-
-        self.show_hidden_entries_layout.addWidget(self.show_hidden_entries_checkbox)
-        self.show_hidden_entries_layout.addWidget(self.show_hidden_entries_title)
-
-        self.extra_input_layout.addWidget(self.show_hidden_entries_widget)
-
-        ## Spacer
-        self.extra_input_layout.addItem(
-            QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
-        )
-
-        ## Sorting Mode Dropdown
-        self.sorting_mode_combobox = QComboBox(self.central_widget)
-        self.sorting_mode_combobox.setObjectName("sorting_mode_combobox")
-        for sort_mode in SortingModeEnum:
-            self.sorting_mode_combobox.addItem(Translations[sort_mode.value], sort_mode)
-        self.extra_input_layout.addWidget(self.sorting_mode_combobox)
-
-        ## Sorting Direction Dropdown
-        self.sorting_direction_combobox = QComboBox(self.central_widget)
-        self.sorting_direction_combobox.setObjectName("sorting_direction_combobox")
-        self.sorting_direction_combobox.addItem(
-            Translations["sorting.direction.ascending"], userData=True
-        )
-        self.sorting_direction_combobox.addItem(
-            Translations["sorting.direction.descending"], userData=False
-        )
-        self.sorting_direction_combobox.setCurrentIndex(1)  # Default: Descending
-        self.extra_input_layout.addWidget(self.sorting_direction_combobox)
-
-        ## Thumbnail Size placeholder
-        self.thumb_size_combobox = QComboBox(self.central_widget)
-        self.thumb_size_combobox.setObjectName("thumb_size_combobox")
-        self.thumb_size_combobox.setPlaceholderText(Translations["home.thumbnail_size"])
-        self.thumb_size_combobox.setCurrentText("")
-        size_policy = QSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Fixed)
-        size_policy.setHorizontalStretch(0)
-        size_policy.setVerticalStretch(0)
-        size_policy.setHeightForWidth(self.thumb_size_combobox.sizePolicy().hasHeightForWidth())
-        self.thumb_size_combobox.setSizePolicy(size_policy)
-        self.thumb_size_combobox.setMinimumWidth(128)
-        self.thumb_size_combobox.setMaximumWidth(352)
-        self.extra_input_layout.addWidget(self.thumb_size_combobox)
-        for size in MainWindow.THUMB_SIZES:
-            self.thumb_size_combobox.addItem(size[0], size[1])
-        self.thumb_size_combobox.setCurrentIndex(2)  # Default: Medium
-
-        self.central_layout.addLayout(self.extra_input_layout, 5, 0, 1, 1)
+        self.central_layout.addWidget(self.content_display_toolbar, 5, 0, 1, 1)
 
     def setup_content(self, driver: "QtDriver"):
         self.content_layout = QHBoxLayout()
@@ -756,18 +206,18 @@ class MainWindow(QMainWindow):
     @property
     def sorting_mode(self) -> SortingModeEnum:
         """What to sort by."""
-        return self.sorting_mode_combobox.currentData()
+        return self.content_display_toolbar.sorting_mode_combobox.currentData()
 
     @property
     def sorting_direction(self) -> bool:
         """Whether to Sort the results in ascending order."""
-        return self.sorting_direction_combobox.currentData()
+        return self.content_display_toolbar.sorting_direction_combobox.currentData()
 
     @property
     def thumb_size(self) -> int:
-        return self.thumb_size_combobox.currentData()
+        return self.content_display_toolbar.thumb_size_combobox.currentData()
 
     @property
     def show_hidden_entries(self) -> bool:
         """Whether to show entries tagged with hidden tags."""
-        return self.show_hidden_entries_checkbox.isChecked()
+        return self.content_display_toolbar.show_hidden_entries_checkbox.isChecked()
