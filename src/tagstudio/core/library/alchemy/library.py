@@ -1679,12 +1679,47 @@ class Library:
 
         return all_tags
 
-    def add_parent_tag(self, parent_id: int, child_id: int) -> bool:
-        if parent_id == child_id:
-            return False
+    def get_tag_descendants(self, tag_id: int, session: Session | None = None) -> set[int]:
+        """Return ids of every tag that lists `tag_id` as an ancestor."""
+        owns_session = False
+        if session is None:
+            session = Session(self.engine)
+            owns_session = True
 
+        try:
+            descendants: set[int] = set()
+            frontier: set[int] = {tag_id}
+
+            while frontier:
+                stmt = select(TagParent.child_id).where(TagParent.parent_id.in_(frontier))
+                children = set(session.scalars(stmt).all())
+                children -= descendants
+                children.discard(tag_id)
+                descendants.update(children)
+                frontier = children
+
+            return descendants
+        finally:
+            if owns_session:
+                session.close()
+
+    def _would_create_parent_cycle(self, parent_id: int, child_id: int, session: Session) -> bool:
+        if parent_id == child_id:
+            return True
+
+        return parent_id in self.get_tag_descendants(child_id, session=session)
+
+    def add_parent_tag(self, parent_id: int, child_id: int) -> bool:
         # open session and save as parent tag
         with Session(self.engine) as session:
+            if self._would_create_parent_cycle(parent_id, child_id, session):
+                logger.warning(
+                    "[Library][add_parent_tag] Prevented cyclical parent assignment",
+                    parent_id=parent_id,
+                    child_id=child_id,
+                )
+                return False
+
             parent_tag = TagParent(
                 parent_id=parent_id,
                 child_id=child_id,
@@ -1808,10 +1843,10 @@ class Library:
             session.add(alias)
 
     def update_parent_tags(self, tag: Tag, parent_ids: list[int] | set[int], session: Session):
-        if tag.id in parent_ids:
-            parent_ids.remove(tag.id)
+        new_parent_ids: set[int] = set(parent_ids)
+        new_parent_ids.discard(tag.id)
 
-        if tag.disambiguation_id not in parent_ids:
+        if tag.disambiguation_id not in new_parent_ids:
             tag.disambiguation_id = None
 
         # load all tag's parent tags to know which to remove
@@ -1820,14 +1855,22 @@ class Library:
         ).all()
 
         for parent_tag in prev_parent_tags:
-            if parent_tag.parent_id not in parent_ids:
+            if parent_tag.parent_id not in new_parent_ids:
                 session.delete(parent_tag)
             else:
                 # no change, remove from list
-                parent_ids.remove(parent_tag.parent_id)
+                new_parent_ids.remove(parent_tag.parent_id)
 
-                # create remaining items
-        for parent_id in parent_ids:
+        # create remaining items
+        for parent_id in list(new_parent_ids):
+            if self._would_create_parent_cycle(parent_id, tag.id, session):
+                logger.warning(
+                    "[Library][update_parent_tags] Prevented cyclical parent assignment",
+                    parent_id=parent_id,
+                    child_id=tag.id,
+                )
+                continue
+
             # add new parent tag
             parent_tag = TagParent(
                 parent_id=parent_id,
