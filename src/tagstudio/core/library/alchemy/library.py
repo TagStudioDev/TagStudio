@@ -1495,7 +1495,7 @@ class Library:
 
         entry_ids_ = [entry_ids] if isinstance(entry_ids, int) else entry_ids
         tag_ids_ = [tag_ids] if isinstance(tag_ids, int) else tag_ids
-        values = []
+        values: list[tuple[int, int]] = []
         for tag_id in tag_ids_:
             values.extend((tag_id, entry_id) for entry_id in entry_ids_)
 
