@@ -27,4 +27,4 @@ def test_refresh_new_files(library: Library, exclude_mode: bool):
 
     # Test if the single file was added
     list(tracker.refresh_dir(library_dir, force_internal_tools=True))
-    assert tracker._new_paths == [Path("FOO.MD")]
+    assert tracker._new_paths == {Path("FOO.MD")}

@@ -32,7 +32,7 @@ def test_refresh_missing_files(library: Library):
     assert tracker.missing_files_count == 2
 
     # iterate through two files
-    bar = str(Path("one/two/bar.md"))
+    bar = Path("one/two/bar.md")
     assert bar in tracker._missing_paths
     tracker.fix_unlinked_entries()
     assert bar not in tracker._missing_paths
