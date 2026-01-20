@@ -11,6 +11,8 @@ from pathlib import Path
 from time import time
 
 import structlog
+from sqlalchemy import update
+from sqlalchemy.orm import Session
 from wcmatch import glob
 
 from tagstudio.core.library.alchemy.library import Library
@@ -82,23 +84,26 @@ class RefreshTracker:
             name = path.relative_to(path.parent)
             new_paths.setdefault(name, []).append(path)
 
-        fixed: list[Path] = []
-        for (
-            path,
-            entry_id,
-        ) in self._missing_paths.items():
-            name = Path(path.name)
-            if name not in new_paths or len(new_paths[name]) != 1:
-                continue
-            new_path = new_paths.pop(name)[0]
-            self._new_paths.remove(new_path)
+        fixed: list[tuple[int, Path, Path]] = []
+        with Session(self.library.engine) as session:
+            for (
+                path,
+                entry_id,
+            ) in self._missing_paths.items():
+                name = Path(path.name)
+                if name not in new_paths or len(new_paths[name]) != 1:
+                    continue
+                new_path = new_paths.pop(name)[0]
+                self._new_paths.remove(new_path)
 
-            if self.library.update_entry_path(entry_id, new_path):
-                self._del_path(path)
-                self._add_path(entry_id, new_path)
-                fixed.append(path)
+                stmt = update(Entry).where(Entry.id == entry_id).values(path=new_path)
+                session.execute(stmt)
+                fixed.append((entry_id, path, new_path))
+            session.commit()
 
-        for path in fixed:
+        for entry_id, path, new_path in fixed:
+            self._del_path(path)
+            self._add_path(entry_id, new_path)
             self._missing_paths.pop(path)
 
     def remove_unlinked_entries(self) -> None:
