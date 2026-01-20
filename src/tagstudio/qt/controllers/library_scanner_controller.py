@@ -1,3 +1,4 @@
+from pathlib import Path
 from typing import TYPE_CHECKING
 
 from PySide6.QtCore import QThreadPool
@@ -33,7 +34,7 @@ class LibraryScannerController(QWidget):
         return self.tracker.new_files_count
 
     @property
-    def unlinked_paths(self) -> list[str]:
+    def unlinked_paths(self) -> list[Path]:
         return list(self.tracker._missing_paths.keys())
 
     def _progress_bar(self, pw: ProgressWidget, iterator, on_update, on_finish):

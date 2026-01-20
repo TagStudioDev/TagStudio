@@ -4,7 +4,6 @@
 
 
 import shutil
-import sys
 from collections.abc import Iterator
 from dataclasses import dataclass, field
 from datetime import datetime as dt
@@ -27,11 +26,11 @@ logger = structlog.get_logger(__name__)
 class RefreshTracker:
     library: Library
 
-    _paths_to_id: dict[str, int] = field(default_factory=dict)
-    _expected_paths: set[str] = field(default_factory=set)
+    _paths_to_id: dict[Path, int] = field(default_factory=dict)
+    _expected_paths: set[Path] = field(default_factory=set)
 
-    _missing_paths: dict[str, int] = field(default_factory=dict)
-    _new_paths: list[Path] = field(default_factory=list)
+    _missing_paths: dict[Path, int] = field(default_factory=dict)
+    _new_paths: set[Path] = field(default_factory=set)
 
     @property
     def missing_files_count(self) -> int:
@@ -41,11 +40,11 @@ class RefreshTracker:
     def new_files_count(self) -> int:
         return len(self._new_paths)
 
-    def _add_path(self, entry_id: int, path: str):
+    def _add_path(self, entry_id: int, path: Path):
         self._paths_to_id[path] = entry_id
         self._expected_paths.add(path)
 
-    def _del_path(self, path: str):
+    def _del_path(self, path: Path):
         self._paths_to_id.pop(path)
         self._expected_paths.remove(path)
 
@@ -53,48 +52,50 @@ class RefreshTracker:
         """Save the list of files that are not in the library."""
         batch_size = 200
 
-        index = 0
-        while index < len(self._new_paths):
-            yield index
-            end = min(len(self._new_paths), index + batch_size)
-            entries = [
-                Entry(
-                    path=entry_path,
-                    folder=unwrap(self.library.folder),
-                    fields=[],
-                    date_added=dt.now(),
-                )
-                for entry_path in self._new_paths[index:end]
-            ]
+        all_entries = [
+            Entry(
+                path=entry_path,
+                folder=unwrap(self.library.folder),
+                fields=[],
+                date_added=dt.now(),
+            )
+            for entry_path in self._new_paths
+        ]
+        for start in range(0, len(all_entries), batch_size):
+            yield start
+            end = start + batch_size
+            entries = all_entries[start:end]
             entry_ids = self.library.add_entries(entries)
-            index = end
 
-            for i in range(len(entries)):
+            assert len(entry_ids) == len(entries)
+            for i in range(len(entry_ids)):
                 id = entry_ids[i]
-                path = str(entries[i].path)
+                path = entries[i].path
                 self._add_path(id, path)
 
         self._new_paths.clear()
 
     def fix_unlinked_entries(self):
         """Attempt to fix unlinked file entries by finding a match in the library directory."""
-        new_paths: dict[str, list[Path]] = {}
+        new_paths: dict[Path, list[Path]] = {}
         for path in self._new_paths:
-            path = Path(path)
-            new_paths.setdefault(path.name, []).append(path)
+            name = path.relative_to(path.parent)
+            new_paths.setdefault(name, []).append(path)
 
-        fixed: list[str] = []
+        fixed: list[Path] = []
         for (
             path,
             entry_id,
         ) in self._missing_paths.items():
-            name = Path(path).name
+            name = Path(path.name)
             if name not in new_paths or len(new_paths[name]) != 1:
                 continue
             new_path = new_paths.pop(name)[0]
+            self._new_paths.remove(new_path)
+
             if self.library.update_entry_path(entry_id, new_path):
                 self._del_path(path)
-                self._add_path(entry_id, str(new_path))
+                self._add_path(entry_id, new_path)
                 fixed.append(path)
 
         for path in fixed:
@@ -121,7 +122,7 @@ class RefreshTracker:
             raise ValueError("No library directory set.")
 
         start_time = time()
-        self._paths_to_id = dict((str(p), i) for i, p in self.library.all_paths())
+        self._paths_to_id = dict((p, i) for i, p in self.library.all_paths())
         self._expected_paths = set(self._paths_to_id.keys())
         logger.info(
             "[Refresh]: Fetch entry paths",
@@ -181,7 +182,7 @@ class RefreshTracker:
             if result.stderr:
                 logger.error(result.stderr)
 
-            paths = set(result.stdout.decode(sys.stdout.encoding).splitlines())
+            paths = set(Path(p) for p in result.stdout.decode("utf-8").splitlines())
             self.__add(library_dir, paths)
             yield len(paths)
             return None
@@ -194,7 +195,7 @@ class RefreshTracker:
 
         ignore_patterns = ignore_to_glob(ignore_patterns)
         try:
-            paths = set()
+            paths: set[Path] = set()
 
             start_time = time()
             search = glob.iglob(
@@ -203,7 +204,7 @@ class RefreshTracker:
             for i, path in enumerate(search):
                 if i < 100 or (i % 100) == 0:
                     yield i
-                paths.add(path)
+                paths.add(Path(path))
             logger.info(
                 "[Refresh]: wcmatch scan time",
                 duration=(time() - start_time),
@@ -214,12 +215,12 @@ class RefreshTracker:
         except ValueError:
             logger.info("[Refresh]: ValueError when refreshing directory with wcmatch!")
 
-    def __add(self, library_dir: Path, paths: set[str]):
+    def __add(self, library_dir: Path, paths: set[Path]):
         start_time_total = time()
 
-        new = paths.difference(self._expected_paths)
+        self._new_paths = paths.difference(self._expected_paths)
+
         missing = self._expected_paths.difference(paths)
-        self._new_paths = [Path(p) for p in new]
         self._missing_paths = dict((p, self._paths_to_id[p]) for p in missing)
 
         end_time_total = time()
