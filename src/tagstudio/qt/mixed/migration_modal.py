@@ -523,7 +523,7 @@ class JsonMigrationModal(QObject):
         compiled_pats = fnmatch.compile(
             ignore_to_glob(
                 Ignore._load_ignore_file(
-                    unwrap(self.sql_lib.library_dir) / TS_FOLDER_NAME / IGNORE_NAME
+                    unwrap(self.json_lib.library_dir) / TS_FOLDER_NAME / IGNORE_NAME
                 )
             ),
             PATH_GLOB_FLAGS,
