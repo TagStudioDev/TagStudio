@@ -1825,21 +1825,20 @@ class Library:
             engine = sqlalchemy.inspect(self.engine)
             try:
                 # "Version" table added in DB_VERSION 101
-                if engine and engine.has_table("Version"):
+                if engine and engine.has_table("versions"):
                     version = session.scalar(select(Version).where(Version.key == key))
                     assert version
                     return version.value
                 # NOTE: The "Preferences" table has been depreciated as of TagStudio 9.5.4
                 # and is set to be removed in a future release.
                 else:
-                    pref_version = int(
+                    return int(
                         unwrap(
                             session.scalar(
                                 text("SELECT value FROM preferences WHERE key == 'DB_VERSION'")
                             )
                         )
                     )
-                    return pref_version
             except Exception:
                 return 0
 
