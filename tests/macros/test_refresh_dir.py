@@ -27,4 +27,4 @@ def test_refresh_new_files(library: Library, exclude_mode: bool):
 
     # Test if the single file was added
     list(registry.refresh_dir(library_dir, force_internal_tools=True))
-    assert registry.files_not_in_library == [Path("FOO.MD")]
+    assert registry.files_not_in_library == [Path(".ts_ignore"), Path("FOO.MD")]
