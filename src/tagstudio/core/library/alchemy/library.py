@@ -313,7 +313,7 @@ class Library:
                             value=v,
                         )
 
-        # Preferences
+        # extension include/exclude list
         (unwrap(self.library_dir) / TS_FOLDER_NAME / IGNORE_NAME).write_text(
             migrate_ext_list([x.strip(".") for x in json_lib.ext_list], json_lib.is_exclude_list)
         )
