@@ -136,8 +136,6 @@
     "json_migration.heading.aliases": "Takma Adlar:",
     "json_migration.heading.colors": "Renkler:",
     "json_migration.heading.differ": "Uyuşmazlık",
-    "json_migration.heading.extension_list_type": "Uzantı Listesi Türü:",
-    "json_migration.heading.file_extension_list": "Dosya Uzantı Listesi:",
     "json_migration.heading.match": "Eşleşti",
     "json_migration.heading.names": "Adlar:",
     "json_migration.heading.parent_tags": "Üst Etiketler:",

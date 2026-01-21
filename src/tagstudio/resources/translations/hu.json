@@ -157,8 +157,6 @@
     "json_migration.heading.aliases": "Áljelek:",
     "json_migration.heading.colors": "Színek:",
     "json_migration.heading.differ": "Eltérés",
-    "json_migration.heading.extension_list_type": "Kiterjesztési lista típusa:",
-    "json_migration.heading.file_extension_list": "Fájlkiterjesztési lista:",
     "json_migration.heading.match": "Egységesítve",
     "json_migration.heading.names": "Nevek:",
     "json_migration.heading.parent_tags": "Szülőcímkék:",

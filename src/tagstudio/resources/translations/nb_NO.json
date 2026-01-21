@@ -148,8 +148,6 @@
     "json_migration.heading.aliases": "Alternative navn:",
     "json_migration.heading.colors": "Farger:",
     "json_migration.heading.differ": "Avvik",
-    "json_migration.heading.extension_list_type": "Type av Utvidelsesliste:",
-    "json_migration.heading.file_extension_list": "Filutvidelse Liste:",
     "json_migration.heading.match": "Matchet",
     "json_migration.heading.names": "Navn:",
     "json_migration.heading.parent_tags": "Overordnede Etiketter:",

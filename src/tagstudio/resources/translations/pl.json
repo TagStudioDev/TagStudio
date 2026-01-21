@@ -139,8 +139,6 @@
     "json_migration.heading.aliases": "Zastępcze nazwy:",
     "json_migration.heading.colors": "Kolory:",
     "json_migration.heading.differ": "Niezgodność",
-    "json_migration.heading.extension_list_type": "Typ listy rozszerzeń:",
-    "json_migration.heading.file_extension_list": "Lista rozszerzeń plików:",
     "json_migration.heading.match": "Dopasowane",
     "json_migration.heading.names": "Nazwy:",
     "json_migration.heading.parent_tags": "Tagi nadrzędne:",
