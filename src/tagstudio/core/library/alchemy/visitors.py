@@ -6,7 +6,7 @@ import re
 from typing import TYPE_CHECKING, override
 
 import structlog
-from sqlalchemy import ColumnElement, and_, distinct, false, func, or_, select, true
+from sqlalchemy import ColumnElement, and_, distinct, false, func, or_, select
 from sqlalchemy.orm import Session
 from sqlalchemy.sql.operators import ilike_op
 
@@ -48,14 +48,9 @@ class SQLBoolExpressionBuilder(BaseVisitor[ColumnElement[bool]]):
 
     @override
     def visit_or_list(self, node: ORList) -> ColumnElement[bool]:  # type: ignore
-        if len(node.elements) == 0:
-            return true()
-
         tag_ids, bool_expressions = self.__separate_tags(node.elements, only_single=False)
         if len(tag_ids) > 0:
             bool_expressions.append(self.__entry_has_any_tags(tag_ids))
-        if len(bool_expressions) == 0:
-            return false()
         return or_(*bool_expressions)
 
     @override
@@ -168,6 +163,9 @@ class SQLBoolExpressionBuilder(BaseVisitor[ColumnElement[bool]]):
                         continue
                     case ConstraintType.Tag:
                         ids = self.__get_tag_ids(term.value)
+                        if len(ids) == 0:
+                            bool_expressions.append(false())
+                            continue
                         if not only_single:
                             tag_ids.update(ids)
                             continue
