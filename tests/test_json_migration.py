@@ -42,4 +42,4 @@ def test_json_migration():
     assert modal.check_color_parity()
 
     # Extension Filter List ====================================================
-    assert modal.check_ignore_parity()
+    modal.assert_ignore_parity()

@@ -519,7 +519,7 @@ class JsonMigrationModal(QObject):
         color = green if old_value == new_value else red
         return str(f"<b><a style='color: {color}'>{new_value}</a></b>")
 
-    def check_ignore_parity(self) -> bool:
+    def assert_ignore_parity(self) -> None:
         compiled_pats = fnmatch.compile(
             ignore_to_glob(
                 Ignore._load_ignore_file(
@@ -529,11 +529,16 @@ class JsonMigrationModal(QObject):
             PATH_GLOB_FLAGS,
         )  # copied from Ignore.get_patterns since that method modifies singleton state
         path = self.json_lib.library_dir / "filename"
-        out = False
         for ext in self.json_lib.ext_list:
-            out &= compiled_pats.match(str(path / ext)) == self.json_lib.is_exclude_list
-        out &= compiled_pats.match(str(path / ".not_a_real_ext")) != self.json_lib.is_exclude_list
-        self.ext_parity = out
+            assert compiled_pats.match(str(path / ext)) == self.json_lib.is_exclude_list
+        assert compiled_pats.match(str(path / ".not_a_real_ext")) != self.json_lib.is_exclude_list
+
+    def check_ignore_parity(self) -> bool:
+        try:
+            self.assert_ignore_parity()
+            self.ext_parity = True
+        except AssertionError:
+            self.ext_parity = False
         return self.ext_parity
 
     def check_field_parity(self) -> bool:
