@@ -20,6 +20,7 @@ from typing import TYPE_CHECKING
 from uuid import uuid4
 from warnings import catch_warnings
 
+import sqlalchemy
 import structlog
 from humanfriendly import format_timespan  # pyright: ignore[reportUnknownVariableType]
 from sqlalchemy import (
@@ -1821,11 +1822,24 @@ class Library:
             key(str): The key for the name of the version type to set.
         """
         with Session(self.engine) as session:
+            engine = sqlalchemy.inspect(self.engine)
             try:
                 # "Version" table added in DB_VERSION 101
-                version = session.scalar(select(Version).where(Version.key == key))
-                assert version
-                return version.value
+                if engine and engine.has_table("Version"):
+                    version = session.scalar(select(Version).where(Version.key == key))
+                    assert version
+                    return version.value
+                # NOTE: The "Preferences" table has been depreciated as of TagStudio 9.5.4
+                # and is set to be removed in a future release.
+                else:
+                    pref_version = int(
+                        unwrap(
+                            session.scalar(
+                                text("SELECT value FROM preferences WHERE key == 'DB_VERSION'")
+                            )
+                        )
+                    )
+                    return pref_version
             except Exception:
                 return 0
 
