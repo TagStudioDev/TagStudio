@@ -713,7 +713,7 @@ class Library:
         """Migrate DB from DB_VERSION 103 to 104."""
         # Convert file extension list to ts_ignore file, if a .ts_ignore file does not exist
         self.__migrate_sql_to_ts_ignore(library_dir)
-        session.execute(text("DROP TABLE perferences"))
+        session.execute(text("DROP TABLE preferences"))
         session.commit()
 
     def __migrate_sql_to_ts_ignore(self, library_dir: Path):
